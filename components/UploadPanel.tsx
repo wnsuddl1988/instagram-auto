@@ -18,6 +18,7 @@ export default function UploadPanel({
   generationId,
   title,
   hashtags,
+  imageUrl,
 }: UploadPanelProps) {
   const [platforms, setPlatforms] = useState<Set<Platform>>(new Set());
   const [caption, setCaption] = useState(title);
@@ -44,6 +45,9 @@ export default function UploadPanel({
     setStatus("uploading");
     setError(null);
 
+    // 실제 비디오가 렌더링되지 않은 단계면, Pexels의 이미지 URL을 미디어 소스로 사용
+    const targetUrl = imageUrl || "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg";
+
     try {
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -51,7 +55,7 @@ export default function UploadPanel({
         body: JSON.stringify({
           generationId,
           platform: platforms.size === 1 ? Array.from(platforms)[0] : "both",
-          videoUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/videos/${generationId}`,
+          videoUrl: targetUrl,
           caption,
           title,
           hashtags,
@@ -64,6 +68,10 @@ export default function UploadPanel({
       }
 
       const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "업로드 처리 중 에러 발생");
+      }
+      
       setResults(data.results);
       setStatus("success");
     } catch (err) {
