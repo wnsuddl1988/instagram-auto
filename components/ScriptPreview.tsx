@@ -27,6 +27,7 @@ interface ScriptPreviewProps {
   isLoading: boolean;
   onEdit: (index: number, field: string, value: string) => void;
   onRegenerate: (index: number) => void;
+  onRenderSuccess: (index: number, videoUrl: string) => void; // 합성 성공 시 콜백
 }
 
 export default function ScriptPreview({
@@ -34,8 +35,48 @@ export default function ScriptPreview({
   isLoading,
   onEdit,
   onRegenerate,
+  onRenderSuccess,
 }: ScriptPreviewProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [renderStatus, setRenderStatus] = useState<Record<number, "idle" | "rendering" | "success" | "error">>({});
+  const [renderedVideos, setRenderedVideos] = useState<Record<number, string>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleRenderVideo = async (index: number, scriptItem: GeneratedScriptResult) => {
+    setRenderStatus((prev) => ({ ...prev, [index]: "rendering" }));
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: scriptItem.id,
+          title: scriptItem.title,
+          script: scriptItem.script,
+          imageUrl: scriptItem.image?.src?.large,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "영상 합성 API 에러");
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "영상 합성 실패");
+      }
+
+      setRenderedVideos((prev) => ({ ...prev, [index]: data.videoUrl }));
+      setRenderStatus((prev) => ({ ...prev, [index]: "success" }));
+      onRenderSuccess(index, data.videoUrl); // 상위 페이지 상태 갱신
+    } catch (err: any) {
+      console.error("영상 렌더링 에러:", err);
+      setErrorMessage(err.message || "영상 합성 도중 에러가 발생했습니다.");
+      setRenderStatus((prev) => ({ ...prev, [index]: "error" }));
+    }
+  };
 
   if (!isLoading && scripts.length === 0) {
     return null;
@@ -178,14 +219,80 @@ export default function ScriptPreview({
               ⏱️ 예상 재생 시간: {script.estimatedDuration}초
             </div>
 
+            {/* 🎬 영상 렌더링 (합성) 영역 */}
+            <div className="mb-6 p-6 rounded-2xl bg-slate-800/40 border border-slate-700/50 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-slate-200">🎬 9:16 비디오 합성 엔진</h4>
+                <span className={`px-2 py-0.5 text-xs font-semibold rounded-md ${
+                  renderStatus[index] === "rendering" ? "bg-blue-500/20 text-blue-400 animate-pulse" :
+                  renderStatus[index] === "success" ? "bg-green-500/20 text-green-400" :
+                  renderStatus[index] === "error" ? "bg-red-500/20 text-red-400" :
+                  "bg-slate-700 text-slate-400"
+                }`}>
+                  {renderStatus[index] === "rendering" ? "합성 중..." :
+                   renderStatus[index] === "success" ? "합성 완료" :
+                   renderStatus[index] === "error" ? "에러 발생" :
+                   "합성 대기"}
+                </span>
+              </div>
+
+              {/* 렌더링 중 상태 바 */}
+              {renderStatus[index] === "rendering" && (
+                <div className="space-y-2">
+                  <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-[shimmer_1.5s_infinite]" style={{ width: "85%", backgroundImage: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)" }}></div>
+                  </div>
+                  <p className="text-xs text-slate-400 text-center">로컬 파이썬 엔진에서 TTS 목소리와 자막을 합성하고 있습니다. 잠시만 기다려주세요...</p>
+                </div>
+              )}
+
+              {/* 에러 메시지 피드백 */}
+              {renderStatus[index] === "error" && errorMessage && (
+                <div className="p-3 text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  ⚠️ {errorMessage}
+                </div>
+              )}
+
+              {/* 합성 완료 시 HTML5 9:16 모바일 쇼츠 플레이어 출력 */}
+              {renderStatus[index] === "success" && renderedVideos[index] && (
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <p className="text-xs text-green-400 font-medium">🎉 완성작이 성공적으로 인코딩되었습니다!</p>
+                  <div className="relative w-[280px] h-[497px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl bg-black">
+                    <video
+                      src={renderedVideos[index]}
+                      controls
+                      className="w-full h-full object-cover"
+                      poster={script.image?.src?.large}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => handleRenderVideo(index, script)}
+                disabled={renderStatus[index] === "rendering"}
+                className={`w-full py-3 rounded-xl font-bold transition-all active:scale-[0.98] ${
+                  renderStatus[index] === "success" 
+                    ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                    : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {renderStatus[index] === "rendering" ? "⚙️ 로컬 비디오 합성 인코딩 중..." :
+                 renderStatus[index] === "success" ? "🎬 다시 비디오 합성하기" :
+                 "🎬 9:16 비디오 합성(렌더링) 시작"}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
               {/* 재생성 버튼 */}
               <button
                 onClick={() => onRegenerate(index)}
                 className="w-full py-3 rounded-xl font-medium transition-all bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 active:scale-95"
               >
-                🔄 재생성
+                🔄 대본 재생성
               </button>
             </div>
+          </div>
           </div>
         ))}
     </div>

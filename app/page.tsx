@@ -62,6 +62,14 @@ export default function Home() {
     });
   };
 
+  const handleRenderSuccess = (index: number, videoUrl: string) => {
+    setScripts((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], video_path: videoUrl };
+      return updated;
+    });
+  };
+
   const handleRegenerateScript = async (index: number) => {
     // TODO: 개별 스크립트 재생성 기능 구현
     alert("개별 재생성 기능은 추후 구현 예정입니다.");
@@ -120,6 +128,7 @@ export default function Home() {
           isLoading={isGenerating}
           onEdit={handleEditScript}
           onRegenerate={handleRegenerateScript}
+          onRenderSuccess={handleRenderSuccess}
         />
 
         {/* 스크립트별 업로드 패널 */}

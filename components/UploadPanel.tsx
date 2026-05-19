@@ -16,6 +16,7 @@ type Platform = "instagram" | "youtube";
 
 export default function UploadPanel({
   generationId,
+  videoPath,
   title,
   hashtags,
   imageUrl,
@@ -45,8 +46,8 @@ export default function UploadPanel({
     setStatus("uploading");
     setError(null);
 
-    // 실제 비디오가 렌더링되지 않은 단계면, Pexels의 이미지 URL을 미디어 소스로 사용
-    const targetUrl = imageUrl || "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg";
+    // 실제 렌더링 완료된 비디오 동영상이 존재하면 그것을 1순위 타겟으로 배포
+    const targetUrl = videoPath || imageUrl || "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg";
 
     try {
       const response = await fetch("/api/upload", {
