@@ -52,13 +52,21 @@ export async function POST(request: Request) {
 
     const runCommand = `"${pythonCmd}" "${pythonScriptPath}" "${scriptJsonPath}" "${outputVideoPath}"`;
     
-    const { stderr } = await execAsync(runCommand);
-    if (stderr && stderr.includes("Error")) {
-      console.error("파이썬 실행 경고/오류:", stderr);
+    let renderError = "";
+    try {
+      const { stderr, stdout } = await execAsync(runCommand);
+      console.log("파이썬 stdout:", stdout);
+      if (stderr) {
+        console.warn("파이썬 실행 stderr:", stderr);
+        renderError = stderr;
+      }
+    } catch (cmdErr: any) {
+      console.error("파이썬 프로세스 비정상 종료:", cmdErr);
+      renderError = cmdErr.stderr || cmdErr.message;
     }
 
     if (!fs.existsSync(outputVideoPath)) {
-      throw new Error("영상 합성 처리가 비정상적으로 완료되었거나 출력 비디오 파일이 누락되었습니다.");
+      throw new Error(`영상 합성 엔진 실행 실패 상세: ${renderError || "알 수 없는 파이썬 처리 지연"}`);
     }
 
     // 4. Supabase Storage 비디오 버킷에 합성 완료된 쇼츠 동영상 업로드

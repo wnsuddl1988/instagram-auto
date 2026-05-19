@@ -187,7 +187,6 @@ def render_shorts(script_data: dict, output_file: str):
             fps=24,
             codec="libx264",
             audio_codec="aac",
-            temp_audiofile="output/temp_render_voice.mp3",
             remove_temp=True,
             verbose=False,
             logger=None
