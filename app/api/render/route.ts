@@ -69,37 +69,57 @@ export async function POST(request: Request) {
       throw new Error(`영상 합성 엔진 실행 실패 상세: ${renderError || "알 수 없는 파이썬 처리 지연"}`);
     }
 
-    // 4. Supabase Storage 비디오 버킷에 합성 완료된 쇼츠 동영상 업로드
+    // 4. 로컬 public 폴더 복사 및 서비스 준비 (스토리지 실패 대비 선제 조치)
+    const publicVideosDir = path.join(projectRoot, "public", "videos");
+    if (!fs.existsSync(publicVideosDir)) {
+      fs.mkdirSync(publicVideosDir, { recursive: true });
+    }
+    const publicVideoPath = path.join(publicVideosDir, `${id}.mp4`);
+    fs.copyFileSync(outputVideoPath, publicVideoPath);
+    
+    // 로컬 기본 주소 매핑
+    let videoPublicUrl = `/videos/${id}.mp4`;
+
+    // 5. Supabase Storage 비디오 버킷에 합성 완료된 쇼츠 동영상 업로드 시도
     console.log(`☁️ Supabase Storage 업로드 중: video_${id}.mp4`);
     const fileBuffer = fs.readFileSync(outputVideoPath);
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("videos")
-      .upload(`${id}.mp4`, fileBuffer, {
-        contentType: "video/mp4",
-        upsert: true,
-      });
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("videos")
+        .upload(`${id}.mp4`, fileBuffer, {
+          contentType: "video/mp4",
+          upsert: true,
+        });
 
-    if (uploadError) {
-      throw new Error(`Supabase 업로드 실패: ${uploadError.message}`);
+      if (uploadError) {
+        console.warn("⚠️ Supabase Storage 업로드 건너뜀 (로컬 Fallback 가동):", uploadError.message);
+      } else {
+        // 업로드 성공 시에만 클라우드 URL로 대체
+        videoPublicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/videos/${id}.mp4`;
+      }
+    } catch (storageErr: any) {
+      console.warn("⚠️ Supabase 스토리지 API 연동 경고:", storageErr.message || storageErr);
     }
 
-    // 5. 생성 이력(generations) 테이블 데이터베이스 상태 업데이트
-    const videoPublicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/videos/${id}.mp4`;
-    
-    const { error: dbError } = await supabase
-      .from("generations")
-      .update({
-        status: "rendered",
-        video_path: videoPublicUrl,
-      })
-      .eq("id", id);
+    // 6. 생성 이력(generations) 테이블 데이터베이스 상태 업데이트
+    try {
+      const { error: dbError } = await supabase
+        .from("generations")
+        .update({
+          status: "rendered",
+          video_path: videoPublicUrl,
+        })
+        .eq("id", id);
 
-    if (dbError) {
-      console.error("데이터베이스 상태 업데이트 오류:", dbError.message);
+      if (dbError) {
+        console.error("데이터베이스 상태 업데이트 오류:", dbError.message);
+      }
+    } catch (dbErr) {
+      console.warn("DB 업데이트 건너뜀:", dbErr);
     }
 
-    // 6. 로컬 임시 파일 소거
+    // 7. 로컬 임시 연산 파일 소거
     try {
       fs.unlinkSync(scriptJsonPath);
       fs.unlinkSync(outputVideoPath);
@@ -110,7 +130,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       videoUrl: videoPublicUrl,
-      message: "성공적으로 쇼츠 영상 합성 및 스토리지가 업로드되었습니다.",
+      message: "성공적으로 쇼츠 영상 합성이 완료되었습니다.",
     });
   } catch (error: any) {
     console.error("영상 합성 API 최상위 실패:", error);
