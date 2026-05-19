@@ -1,11 +1,16 @@
 import OpenAI from "openai";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.");
+// 빌드 시점이 아닌 런타임에만 초기화 (Vercel 빌드 호환)
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.");
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+// 하위 호환성을 위한 named export (런타임에서만 사용)
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || "placeholder-for-build",
 });
 
 export interface GenerateScriptParams {
