@@ -46,12 +46,14 @@ export default function ScriptPreview({
     setRenderStatus((prev) => ({ ...prev, [index]: "rendering" }));
     setErrorMessage(null);
 
+    const safeId = scriptItem.id || `gen_${Date.now()}`;
+
     try {
       const response = await fetch("/api/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: scriptItem.id,
+          id: safeId,
           title: scriptItem.title,
           script: scriptItem.script,
           imageUrl: scriptItem.image?.src?.large,

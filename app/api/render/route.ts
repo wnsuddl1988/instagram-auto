@@ -10,13 +10,18 @@ const execAsync = promisify(exec);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { id, title, script, imageUrl } = body;
+    let { id, title, script, imageUrl } = body;
 
-    if (!id || !title || !script) {
+    // 만약 id가 비어있다면 자동 임시 ID 부여하여 빌드 방해 방지
+    if (!id) {
+      id = `gen_${Date.now()}`;
+    }
+
+    if (!title || !script) {
       return NextResponse.json(
-        { error: "필수 파라미터가 누락되었습니다." },
+        { error: "제목(title) 및 대본(script) 필수 파라미터가 누락되었습니다." },
         { status: 400 }
-      )
+      );
     }
 
     // 1. 임시 파일 디렉토리 정의
