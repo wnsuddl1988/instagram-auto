@@ -1,0 +1,146 @@
+{
+  "name": "AutoShorts AI - 하루 3회 자동화",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 9 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 0 14 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "⏰ 하루 3회 스케줄1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/auto",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "autoshorts-secret-2025" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "duration", "value": "30" },
+            { "name": "tone", "value": "정보전달" }
+          ]
+        }
+      },
+      "id": "generate-script",
+      "name": "🤖 스크립트 자동 생성",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "check-success",
+      "name": "✅ 생성 성공 확인",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "autoshorts-secret-2025" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"generationId\": \"{{ $('🤖 스크립트 자동 생성').item.json.generationId }}\",\n  \"platform\": \"instagram\",\n  \"title\": \"{{ $('🤖 스크립트 자동 생성').item.json.script.title }}\",\n  \"caption\": \"{{ $('🤖 스크립트 자동 생성').item.json.script.hook }}\",\n  \"hashtags\": {{ JSON.stringify($('🤖 스크립트 자동 생성').item.json.script.hashtags) }},\n  \"videoUrl\": \"{{ $('🤖 스크립트 자동 생성').item.json.imageUrl }}\"\n}"
+      },
+      "id": "instagram-upload",
+      "name": "📱 인스타그램 업로드",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"🎬 AutoShorts AI 자동 업로드 완료!\\n📌 카테고리: {{ $('🤖 스크립트 자동 생성').item.json.category.emoji }} {{ $('🤖 스크립트 자동 생성').item.json.category.name }}\\n📝 제목: {{ $('🤖 스크립트 자동 생성').item.json.script.title }}\\n✅ 인스타그램 업로드 성공\"\n}"
+      },
+      "id": "discord-notify",
+      "name": "💬 Discord 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"content\": \"❌ AutoShorts AI 생성 실패!\\n오류: {{ $json.error }}\"}"
+      },
+      "id": "error-notify",
+      "name": "❌ 실패 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [960, 420]
+    }
+  ],
+  "connections": {
+    "⏰ 하루 3회 스케줄1": {
+      "main": [[{ "node": "🤖 스크립트 자동 생성", "type": "main", "index": 0 }]]
+    },
+    "🤖 스크립트 자동 생성": {
+      "main": [[{ "node": "✅ 생성 성공 확인", "type": "main", "index": 0 }]]
+    },
+    "✅ 생성 성공 확인": {
+      "main": [
+        [{ "node": "📱 인스타그램 업로드", "type": "main", "index": 0 }],
+        [{ "node": "❌ 실패 알림", "type": "main", "index": 0 }]
+      ]
+    },
+    "📱 인스타그램 업로드": {
+      "main": [[{ "node": "💬 Discord 알림", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul"
+  },
+  "tags": [{ "name": "AutoShorts" }]
+}
