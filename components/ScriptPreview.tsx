@@ -57,6 +57,7 @@ export default function ScriptPreview({
           title: scriptItem.title,
           script: scriptItem.script,
           imageUrl: scriptItem.image?.src?.large,
+          scenes: scriptItem.scenes, // 멀티 비디오 씬 배열 정보 통째 전송
         }),
       });
 

@@ -7,96 +7,155 @@ export interface Category {
   color: string;
   gradient: string;
   viewPotential: number;
+  useAiImage?: boolean;
   systemPrompt: string;
+  voice?: string;
+  bgmType?: "emotional" | "mystery" | "upbeat" | "funny" | "dramatic";
 }
 
 export const CATEGORIES: Category[] = [
   {
+    id: "story-drama",
+    name: "사연 & 썰 (드라마)",
+    emoji: "🎭",
+    description: "공감·분노·반전 유발 사연/썰 콘텐츠",
+    tags: ["사연", "썰", "드라마"],
+    color: "#f97316",
+    gradient: "from-orange-500 to-red-600",
+    viewPotential: 5,
+    voice: "female_soft",
+    bgmType: "emotional",
+    systemPrompt: "당신은 공감·분노·반전 유발 사연/썰 전문 릴스 크리에이터입니다. 첫 1초 '헐 이거 실제 일이라고?' 충격 후킹으로 시작하여, 갈등과 반전을 통해 중반을 구성하고, '이 상황 어떻게 생각해?' 댓글 유도 + 팔로우 CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "mystery-horror",
+    name: "소름돋는 미스터리",
+    emoji: "🔍",
+    description: "미스터리·공포·충격 콘텐츠",
+    tags: ["미스터리", "공포", "충격"],
+    color: "#7c3aed",
+    gradient: "from-violet-600 to-purple-800",
+    viewPotential: 5,
+    voice: "male_deep",
+    bgmType: "mystery",
+    systemPrompt: "당신은 소름돋는 미스터리 릴스 크리에이터입니다. 첫 1초 '이거 들으면 잠 못 잠' 공포 후킹으로 시작하여, 미스터리 사건과 증거를 차례로 제시하며 중반을 구성하고, '너의 추론 댓글에 남겨줘' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "life-hacks",
+    name: "나만 몰랐던 인생 꿀팁",
+    emoji: "💡",
+    description: "저장 각인 실용 꿀팁 콘텐츠",
+    tags: ["지식", "꿀팁", "생활"],
+    color: "#10b981",
+    gradient: "from-emerald-500 to-teal-600",
+    viewPotential: 5,
+    voice: "female_energetic",
+    bgmType: "upbeat",
+    systemPrompt: "당신은 저장 각인 실용 꿀팁 릴스 크리에이터입니다. 첫 1초 '이거 모르면 손해 봄' 저장 유도 후킹으로 시작하여, 꿀팁 3가지의 Before/After를 대비시키며 중반을 구성하고, '저장해두고 써먹어' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "mbti-love",
+    name: "MBTI & 연애 심리",
+    emoji: "💕",
+    description: "MBTI·연애심리·공감 콘텐츠",
+    tags: ["연애", "MBTI", "공감"],
+    color: "#ec4899",
+    gradient: "from-pink-500 to-rose-600",
+    viewPotential: 5,
+    voice: "female_soft",
+    bgmType: "emotional",
+    systemPrompt: "당신은 MBTI·연애심리 공감 릴스 크리에이터입니다. 첫 1초 '[인기 MBTI] 급 [연애 상황] 주의' 즉각 참여 유도로 시작하여, MBTI별 반응과 심리 분석을 중반에 구성하고, '너의 MBTI 댓글에 알려줘' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "motivation-quotes",
+    name: "동기부여 & 뼈때리는 명언",
+    emoji: "🔥",
+    description: "동기부여·명언·성공 콘텐츠",
+    tags: ["동기부여", "명언", "성공"],
+    color: "#f59e0b",
+    gradient: "from-amber-500 to-orange-600",
+    viewPotential: 5,
+    voice: "male_energetic",
+    bgmType: "dramatic",
+    systemPrompt: "당신은 동기부여·명언 전문 릴스 크리에이터입니다. 첫 1초 '[유명인] 말인데 미쳤어' 관심 후킹으로 시작하여, 뼈때리는 명언과 그 의미를 차례로 제시하며 중반을 구성하고, '저장하고 오늘부터 시작해' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "health-diet",
+    name: "건강 & 다이어트 팩트",
+    emoji: "💪",
+    description: "건강·다이어트·정보 콘텐츠",
+    tags: ["건강", "다이어트", "정보"],
+    color: "#0ea5e9",
+    gradient: "from-sky-500 to-emerald-600",
+    viewPotential: 5,
+    voice: "female_energetic",
+    bgmType: "upbeat",
+    systemPrompt: "당신은 건강·다이어트 팩트 릴스 크리에이터입니다. 첫 1초 '의사도 몰랐던 진짜 팩트' 충격 후킹으로 시작하여, 과학 기반 다이어트·건강 팩트 3개를 명확히 제시하며 중반을 구성하고, '저장해두고 실천해' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "office-empathy",
+    name: "직장인 100% 공감",
+    emoji: "😂",
+    description: "직장인·유머·공감 콘텐츠",
+    tags: ["직장인", "유머", "공감"],
+    color: "#eab308",
+    gradient: "from-yellow-500 to-amber-600",
+    viewPotential: 5,
+    voice: "male_energetic",
+    bgmType: "funny",
+    systemPrompt: "당신은 직장인 100% 공감 유머 릴스 크리에이터입니다. 첫 1초 '직장인 무조건 공감함' 즉각 참여 유도로 시작하여, 현실적인 직장 상황 3가지를 재치 있게 표현하며 중반을 구성하고, '친구한테 공유해' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
+    id: "money-tips",
+    name: "현실적인 돈 버는 법",
+    emoji: "💸",
+    description: "부업·돈·재테크 콘텐츠",
+    tags: ["부업", "돈", "재테크"],
+    color: "#84cc16",
+    gradient: "from-lime-500 to-emerald-600",
+    viewPotential: 5,
+    voice: "male_energetic",
+    bgmType: "upbeat",
+    systemPrompt: "당신은 현실적 돈 버는 법 릴스 크리에이터입니다. 첫 1초 '이거로 월 100만원 벌었음' 수익 인증 후킹으로 시작하여, 구체적인 부업 방법과 단계별 수익을 명확히 제시하며 중반을 구성하고, '저장하고 오늘부터 시작해' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
+  },
+  {
     id: "ai-content",
-    name: "AI 생성 활용",
+    name: "AI가 만든 거 실화?",
     emoji: "🤖",
-    description: "놀라운 AI 기술 & 생성 쇼케이스",
+    description: "AI·기술·트렌드 콘텐츠",
     tags: ["AI", "기술", "트렌드"],
     color: "#818cf8",
     gradient: "from-indigo-500 to-purple-600",
     viewPotential: 5,
-    systemPrompt: "당신은 최신 AI 기술 트렌드 전문 숏폼 크리에이터입니다. 시청자가 'AI가 이런 것도 해?!'라며 놀랄 만한 30초 이내 쇼츠 스크립트를 작성하세요."
+    voice: "female_energetic",
+    bgmType: "upbeat",
+    useAiImage: true,
+    systemPrompt: "당신은 AI 도구 놀라운 결과물 공개 릴스 크리에이터입니다. 첫 1초 '이거 진짜 AI가 만든 거?' 충격 후킹으로 시작하여, AI 활용법과 놀라운 결과를 비교하며 중반을 구성하고, '저장하고 따라해봐' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
   },
   {
-    id: "meme",
-    name: "밈 & 짤",
-    emoji: "😂",
-    description: "실시간 트렌드 밈 & 유머 콘텐츠",
-    tags: ["밈", "유머", "바이럴"],
-    color: "#f59e0b",
-    gradient: "from-yellow-400 to-orange-500",
-    viewPotential: 5,
-    systemPrompt: "당신은 MZ세대 밈 전문 크리에이터입니다. 현재 유행하는 밈 포맷을 활용한 30초 이내 웃긴 쇼츠 스크립트를 작성하세요."
-  },
-  {
-    id: "shocking-news",
-    name: "오늘의 충격뉴스",
-    emoji: "📰",
-    description: "실시간 이슈 & 충격 뉴스 요약",
-    tags: ["뉴스", "이슈", "충격"],
+    id: "ranking-top5",
+    name: "역대급 랭킹 TOP 5",
+    emoji: "🏆",
+    description: "랭킹·차트·정보 콘텐츠",
+    tags: ["랭킹", "차트", "정보"],
     color: "#ef4444",
-    gradient: "from-red-500 to-rose-600",
-    viewPotential: 4,
-    systemPrompt: "당신은 쇼츠 전문 뉴스 크리에이터입니다. '이게 실화?'라는 반응이 나올 충격적인 실제 뉴스를 30초 이내 쇼츠 스크립트로 만드세요."
-  },
-  {
-    id: "tmi-knowledge",
-    name: "TMI 지식",
-    emoji: "💡",
-    description: "몰랐던 놀라운 잡학 지식",
-    tags: ["지식", "TMI", "교육"],
-    color: "#10b981",
-    gradient: "from-emerald-400 to-teal-500",
-    viewPotential: 4,
-    systemPrompt: "당신은 잡학지식 전문 쇼츠 크리에이터입니다. '나만 몰랐나?' 반응이 나올 놀라운 TMI 지식을 30초 이내 스크립트로 작성하세요."
-  },
-  {
-    id: "game-clip",
-    name: "게임 클립",
-    emoji: "🎮",
-    description: "게임 명장면 & 하이라이트 해설",
-    tags: ["게임", "클립", "하이라이트"],
-    color: "#8b5cf6",
-    gradient: "from-violet-500 to-purple-700",
-    viewPotential: 3,
-    systemPrompt: "당신은 게임 하이라이트 전문 쇼츠 크리에이터입니다. 게임 명장면을 흥미롭게 해설하는 30초 이내 스크립트를 작성하세요."
-  },
-  {
-    id: "finance-tip",
-    name: "재테크 팁",
-    emoji: "💰",
-    description: "주식 코인 절약 한 줄 꿀팁",
-    tags: ["재테크", "투자", "절약"],
-    color: "#f59e0b",
-    gradient: "from-amber-400 to-yellow-500",
-    viewPotential: 4,
-    systemPrompt: "당신은 재테크 전문 쇼츠 크리에이터입니다. 실용적인 재테크 팁을 '이걸 왜 몰랐지?' 반응이 나오게 30초 이내 스크립트로 작성하세요."
+    gradient: "from-red-500 to-orange-600",
+    viewPotential: 5,
+    voice: "male_energetic",
+    bgmType: "dramatic",
+    systemPrompt: "당신은 역대급 랭킹 TOP 5 릴스 크리에이터입니다. 첫 1초 '5위부터 충격 순위' 기대감 후킹으로 시작하여, TOP 5를 카운트 다운하며 각 항목의 매력을 명확히 전달하며 중반을 구성하고, '1순위 맞췄어?' 댓글 유도 CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
   },
   {
     id: "cute-animal",
-    name: "귀여운 동물",
+    name: "반려동물 심쿵",
     emoji: "🐾",
-    description: "힐링되는 동물 콘텐츠",
+    description: "동물·힐링·귀여움 콘텐츠",
     tags: ["동물", "힐링", "귀여움"],
     color: "#ec4899",
     gradient: "from-pink-400 to-rose-500",
-    viewPotential: 4,
-    systemPrompt: "당신은 동물 콘텐츠 전문 쇼츠 크리에이터입니다. '너무 귀여워 죽겠다'는 반응이 나올 동물 콘텐츠 30초 이내 스크립트를 작성하세요."
-  },
-  {
-    id: "celeb-enter",
-    name: "셀럽/엔터",
-    emoji: "🌟",
-    description: "연예인 트렌드 & 엔터 이슈",
-    tags: ["셀럽", "연예", "엔터"],
-    color: "#06b6d4",
-    gradient: "from-cyan-400 to-sky-500",
-    viewPotential: 3,
-    systemPrompt: "당신은 연예/엔터 전문 쇼츠 크리에이터입니다. 현재 화제의 셀럽 이슈를 30초 이내 흥미로운 스크립트로 작성하세요."
+    viewPotential: 5,
+    voice: "female_soft",
+    bgmType: "emotional",
+    systemPrompt: "당신은 반려동물 심쿵 힐링 릴스 크리에이터입니다. 첫 1초 '심쿵 주의' 감성 후킹으로 시작하여, 귀엽고 웃긴 반려동물 순간 3~4개를 명확히 묘사하며 중반을 구성하고, '팔로우하면 매일 힐링됨' CTA로 마무리하세요. 씬별 자막은 반드시 15자 이내로 작성하세요."
   },
 ];

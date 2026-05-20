@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
             systemPrompt: category.systemPrompt,
             duration: duration || 30,
             tone: tone || "정보전달",
+            useAiImage: category.useAiImage ?? false,
           } as GenerateScriptParams),
           fetchCategoryImage(category.id).catch(() => null),
         ]);
