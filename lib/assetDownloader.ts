@@ -79,11 +79,13 @@ async function downloadFile(
 }
 
 export async function ensureAssets(): Promise<void> {
-  const projectRoot = process.cwd();
-
   try {
     // 폰트 디렉토리 생성 및 다운로드
-    const fontsDir = path.join(projectRoot, "assets", "fonts");
+    const fontsDir = path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      "assets",
+      "fonts"
+    );
     await mkdir(fontsDir, { recursive: true });
 
     for (const font of ASSETS_FONTS) {
@@ -99,7 +101,11 @@ export async function ensureAssets(): Promise<void> {
     }
 
     // BGM 디렉토리 생성 및 다운로드
-    const bgmDir = path.join(projectRoot, "assets", "bgm");
+    const bgmDir = path.join(
+      /* turbopackIgnore: true */ process.cwd(),
+      "assets",
+      "bgm"
+    );
     await mkdir(bgmDir, { recursive: true });
 
     for (const bgm of ASSETS_BGM) {

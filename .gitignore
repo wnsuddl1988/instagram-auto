@@ -43,8 +43,21 @@ next-env.d.ts
 
 # AutoShorts AI
 /output/
+/public/voice-test/
 *.mp4
 *.mp3
 python/__pycache__/
 
 .vercel
+
+env
+.env.local
+.env.*.local
+
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+
+*.log
+.DS_Store

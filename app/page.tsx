@@ -6,7 +6,10 @@ import CategorySelector from "@/components/CategorySelector";
 import SettingsPanel, { GenerateSettings } from "@/components/SettingsPanel";
 import ScriptPreview from "@/components/ScriptPreview";
 import UploadPanel from "@/components/UploadPanel";
+import ReelV2Studio from "@/components/ReelV2Studio";
 import { GeneratedScript } from "@/lib/openai";
+
+type AppMode = "v1" | "v2";
 
 interface GeneratedScriptResult extends GeneratedScript {
   id?: string;
@@ -18,6 +21,7 @@ interface GeneratedScriptResult extends GeneratedScript {
 }
 
 export default function Home() {
+  const [appMode, setAppMode] = useState<AppMode>("v2");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [scripts, setScripts] = useState<GeneratedScriptResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -89,17 +93,36 @@ export default function Home() {
                 AI가 카테고리만 선택하면 쇼츠를 자동 생성합니다
               </p>
             </div>
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* v1 / v2 모드 스위처 */}
+              <div className="flex gap-1 bg-slate-800/60 rounded-xl p-1 border border-slate-700/40">
+                <button
+                  onClick={() => setAppMode("v2")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    appMode === "v2"
+                      ? "bg-indigo-600 text-white shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  ✨ v2 릴스
+                </button>
+                <button
+                  onClick={() => setAppMode("v1")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    appMode === "v1"
+                      ? "bg-slate-600 text-white shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  v1 쇼츠
+                </button>
+              </div>
               <Link
                 href="/history"
-                className="px-4 py-2 rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 text-sm font-medium transition-colors"
+                className="hidden sm:block px-3 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 text-xs font-medium transition-colors"
               >
                 📋 이력
               </Link>
-              <div className="text-right">
-                <p className="text-xs text-slate-500">프리미엄 대시보드</p>
-                <p className="text-sm font-semibold text-indigo-400">v1.0.0</p>
-              </div>
             </div>
           </div>
         </div>
@@ -107,46 +130,55 @@ export default function Home() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 왼쪽: 카테고리 선택 */}
-          <div className="lg:col-span-2">
-            <CategorySelector onChange={handleCategoryChange} />
-          </div>
 
-          {/* 오른쪽: 설정 & 생성 */}
-          <div className="lg:col-span-1">
-            <SettingsPanel
-              selectedCategories={selectedCategories}
-              onGenerate={handleGenerate}
-            />
-          </div>
-        </div>
+        {/* ── v2 릴스 스튜디오 ── */}
+        {appMode === "v2" && (
+          <ReelV2Studio />
+        )}
 
-        {/* 생성된 스크립트 미리보기 */}
-        <ScriptPreview
-          scripts={scripts}
-          isLoading={isGenerating}
-          onEdit={handleEditScript}
-          onRegenerate={handleRegenerateScript}
-          onRenderSuccess={handleRenderSuccess}
-        />
-
-        {/* 스크립트별 업로드 패널 */}
-        {scripts.length > 0 && (
-          <div className="mt-12 space-y-8">
-            {scripts.map((script, index) => (
-              <div key={index} className="mt-8">
-                <UploadPanel
-                  generationId={script.id}
-                  videoPath={script.video_path}
-                  title={script.title}
-                  script={script.script}
-                  hashtags={script.hashtags || []}
-                  imageUrl={script.image?.src?.large}
+        {/* ── v1 기존 쇼츠 생성 ── */}
+        {appMode === "v1" && (
+          <>
+            <div className="mb-4 px-3 py-2 rounded-xl bg-slate-800/40 border border-slate-700/40 text-xs text-slate-500">
+              v1 기존 쇼츠 생성 모드입니다. 새 v2 릴스 스튜디오는 상단 버튼으로 전환하세요.
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <CategorySelector onChange={handleCategoryChange} />
+              </div>
+              <div className="lg:col-span-1">
+                <SettingsPanel
+                  selectedCategories={selectedCategories}
+                  onGenerate={handleGenerate}
                 />
               </div>
-            ))}
-          </div>
+            </div>
+
+            <ScriptPreview
+              scripts={scripts}
+              isLoading={isGenerating}
+              onEdit={handleEditScript}
+              onRegenerate={handleRegenerateScript}
+              onRenderSuccess={handleRenderSuccess}
+            />
+
+            {scripts.length > 0 && (
+              <div className="mt-12 space-y-8">
+                {scripts.map((script, index) => (
+                  <div key={index} className="mt-8">
+                    <UploadPanel
+                      generationId={script.id}
+                      videoPath={script.video_path}
+                      title={script.title}
+                      script={script.script}
+                      hashtags={script.hashtags || []}
+                      imageUrl={script.image?.src?.large}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
 
