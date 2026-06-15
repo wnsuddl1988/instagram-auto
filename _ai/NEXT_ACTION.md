@@ -2,50 +2,41 @@
 
 ## Recommended next task
 
-audio recovery C-lite 실행: Jun/Boss TTS 재생성 + SFX/BGM 로컬 설계
+Checkpoint commit
 
 ## Current status
 
-- final_v1 technical QA: pass
-- final_v1 Owner QA: fail
-- Root causes: emotionless TTS, Boss tone mismatch, long silence, weak punchline setup
-- Existing video assets are usable
+- upload_002 audio recovery scripts 4개가 scripts/archive/로 이동됨
+- _ai/QUALITY_GATE.md 생성됨
+- _ai 문서는 Quality Gate 전환 상태
+- 외부 호출 0회
 
-## Codex decision
+## Decision
 
-Claude Code suggested B first (Jun only), but Codex recommends C-lite.
+Contract 작성 전에 checkpoint commit을 먼저 권장한다.
 
-Reason:
-- Owner explicitly flagged both Jun and Boss performance.
-- Boss line is central to the punchline.
-- Jun-only regeneration would likely leave the core S5 failure unresolved.
-- Harry Kim is not recommended due prior Korean voice rejection in project knowledge.
+이유:
+- 새 마지막 테스트 시작 전 working tree를 깨끗하게 고정해야 함
+- archive 이동과 Quality Gate 추가는 독립 checkpoint로 적합함
+- Contract 작성 이후 diff와 섞이면 실패 수습/새 테스트 경계가 흐려짐
 
-## Required approval
+## Required Owner approval
 
-ALLOW_ELEVENLABS=true, Audio recovery TTS 2회 승인
+checkpoint commit 승인
 
-## Scope after approval
+## Commit message candidate
 
-- Jun/Hyun emotional TTS regeneration: 1 call
-- Boss/Theo boss-like TTS regeneration: 1 call
-- Offset v3: move J6 to S3 around 15.50s
-- SFX/BGM plan with local/free sources only
-- final_v2 candidate generation
+chore(upload_002): archive 정리 + Quality Gate 준비
 
 ## Forbidden
 
-- Approval before ElevenLabs calls required
-- More than 2 TTS calls forbidden
-- Gemini/Veo submission forbidden
-- ChatGPT image submission forbidden
-- paid SFX/BGM purchase forbidden
-- push/merge/reset/clean forbidden
+- Owner 승인 전 commit 금지
+- push 금지
+- merge/reset/clean 금지
+- 외부 호출 금지
+- 생성 작업 금지
 
-## Quality target
+## After checkpoint
 
-- Jun expresses anxiety, relief, confusion, irritation, collapse
-- Boss sounds middle-aged, slow, subtly pressuring, not smooth/romantic
-- S3/S4 silence filled with comic copier rhythm/SFX
-- Boss to Jun punchline lands without needing viewer to read the script separately
+마지막 테스트 Event / Dialogue / Emotion / Sound / Stop-Loss Contract 작성.
 

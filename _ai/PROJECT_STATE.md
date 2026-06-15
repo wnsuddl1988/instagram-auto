@@ -35,7 +35,7 @@
 | silent_v2 | `silent_v2_pass` — 36.500s, 1080×1920, 17.2MB, MD5=`67b0feb6` |
 | TTS raw | `tts_raw_pass` — Jun 18.390s + Boss 1.950s, offset v2 PASS |
 | **final_v1** | **`owner_fail`** — 기술 QA PASS이나 감정연기/싱크/무대사 몰입 실패, 업로드 불가 |
-| **final_v2** | **`owner_qa_pending`** — 기술 QA PASS, 17.46 MB, MD5=`5793e45216210b0a82cc100aec46b210`, Owner 체감 QA 대기 |
+| **final_v2** | **`owner_fail`** — 기술 QA PASS, 감정연기/SFX 체감 불충분, 업로드 불가, 새 접근법으로 전환 |
 
 ---
 
@@ -160,8 +160,25 @@ feat(upload_002): Gemini Veo + ChatGPT 이미지 자동화 안정화
 - S3/S4 무대사 구간이 지루함
 - 펀치라인은 대본 자체보다 연기·억양·사운드 부재로 전달 실패
 
+## 현재 방향 전환 (2026-06-16)
+
+upload_002 final_v1/final_v2 모두 Owner QA FAIL. 수습 방식 반복은 비효율적.
+
+**새 접근법: 마지막 테스트 전 Quality Gate 선계약**
+- `_ai/QUALITY_GATE.md` 기준으로 Event / Dialogue / Emotion / Sound / Stop-Loss Contract 먼저 작성
+- 생성 전 계약 잠금 → 내부 품질 필터가 먼저 걸러내는 구조
+
+## scripts 정리 (2026-06-16)
+
+| 파일 | 처리 |
+|---|---|
+| `scripts/_upload002-tts-generate.mjs` | → `scripts/archive/` 이동 완료 |
+| `scripts/_upload002-voice-list.mjs` | → `scripts/archive/` 이동 완료 |
+| `scripts/_upload002-tts-generate-v2.mjs` | → `scripts/archive/` 이동 완료 |
+| `scripts/_upload002-tts-assemble-v3.mjs` | → `scripts/archive/` 이동 완료 |
+
 ## 다음 단계
 
-1. **Owner 체감 QA** — `output/v2/3d_sitcom_prod_v1/upload_002_copier/final/upload_002_copier_final_v2.mp4` 감상
-2. PASS → checkpoint commit 준비
-3. FAIL → 추가 조치 (Boss 대체 목소리, SFX 교체 등) Owner 판단
+1. checkpoint commit — Owner 승인 후 진행
+2. `_ai/QUALITY_GATE.md` 기반 Contract 작성 (외부 호출 없음)
+3. Owner 승인 후 마지막 테스트 생성 진행
