@@ -29,7 +29,7 @@ _Last updated: 2026-06-15_
 
 | 단계 | S1 | S2 | S3 | S4 | S5 |
 |---|---|---|---|---|---|
-| 키프레임 | ✅ | ✅ | ✅ | ⬜ | ⬜ |
+| 키프레임 | ✅ | ✅ | ✅ continuity_pass | ✅ continuity_pass | ✅ continuity_pass |
 | Veo 영상 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 무음 편집 QA | ⬜ | | | | |
 | TTS | ⬜ 준 연속 1회 | | | ⬜ Theo 1회 | |
@@ -37,10 +37,11 @@ _Last updated: 2026-06-15_
 
 ### 다음 Atomic Task
 
-1. **S4 키프레임 생성** — `node scripts/_upload002-kf-generate.mjs --scene 4`
-2. **S5 키프레임 생성** — `node scripts/_upload002-kf-generate.mjs --scene 5`
-3. **5장 contact sheet QA** — Owner 확인
-4. **S1~S5 Veo 생성** (최대 7회 총량)
+1. **5장 contact sheet Owner 최종 확인** — `output/v2/3d_sitcom_prod_v1/upload_002_copier/qa/s1_s2_s3_s4_s5_contact_sheet.png`
+   - S1~S5 전체 연속성 승인 후 Veo 시작 (승인 게이트)
+2. **S1~S5 Veo 영상 생성** (최대 7회 총량, Owner `ALLOW_VEO=true` 승인 필요)
+3. **무음 편집본 Owner 확인** (TTS 전 승인 게이트)
+4. **TTS 2회** — Jun(Hyun) + Boss(Theo), `ALLOW_ELEVENLABS=true` 명시 승인 필요
 5. **무음 편집본 Owner 확인**
 6. **TTS 2회** (ALLOW_ELEVENLABS=true 승인 필요)
 7. **자막+효과음 최종본**

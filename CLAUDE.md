@@ -166,3 +166,15 @@ type ReferenceStyle = "ai_character_tips" | "wealth_mindset" | "emotional_story"
 - 해상도: 1080x1920 (9:16 세로)
 - 길이: 15~60초
 - 출력: output/ 폴더 (gitignore 필수)
+
+<!-- IANPAPA_FILE_HANDOFF_START -->
+## Ianpapa File-Based Handoff
+
+* This project uses the `_ai` folder as the file-based handoff source of truth.
+* Codex creates or updates `_ai/HANDOFF_NOW.md`.
+* Claude Code executes only the approved scope in `_ai/HANDOFF_NOW.md`.
+* Claude Code updates `_ai/CLAUDE_REPORT.md` after work.
+* Codex reviews `_ai/CLAUDE_REPORT.md` and git diff, then updates `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, and `_ai/PROJECT_STATE.md`.
+* At a safe phase boundary, review accumulated diff and ask the Owner before checkpoint commit or branch cleanup.
+* Project files are preferred over chat summaries.
+<!-- IANPAPA_FILE_HANDOFF_END -->

@@ -1,5 +1,50 @@
 # AutoShorts AI — 작업 로그
 
+## 2026-06-15 S5 키프레임 — continuity_pass (편집 특례 1회)
+
+### S5 1차 시도 기록 (content_fail — 보존)
+- `kf_s5_boss_hand_finale.png` 1차 (3201KB, b4305cfb...) — 상사 손 미등장, 준 단독 장면. 폐기.
+
+### S5 편집본 PASS
+- 방식: S4 base 이미지 GPT 편집 특례 1회, $0
+- 회수: intercept(page.route+reload) — cand2(141b...) 선택 (cand1=이전 FAIL 원본 동일 파일, 제외)
+- 최종: `kf_s5_boss_hand_finale.png` (2195KB, md5=141b348a370374fbe0750fee67a32770)
+- BOSS RULE: 얼굴/머리/목/어깨/몸통/전신/실루엣/그림자/팔꿈치너머 — 전부 PASS-absent
+- 핵심 확인: 정장 소매 손+부분 팔뚝 오른쪽 끝 등장 ✅ / 종이 한 장 집는 행동 ✅ / 준 탈력 자세 ✅
+- 공간 연속성: 블라인드·목재수납장·천장등·베이지타일·동일 MFC·종이더미·준 의상 — 모두 ✅
+- 확대 QA 증거: `qa/s5_boss_rule_zoom_verify.png` (5687KB), `qa/s5_boss_rule_detail_sheet.png`
+- contact sheet 5장: `qa/s1_s2_s3_s4_s5_contact_sheet.png` (1227KB)
+- 다음: 5장 contact sheet Owner 승인 → Veo 생성
+
+---
+
+## 2026-06-15 S4 키프레임 생성 완료 (continuity_pass)
+
+### S4 PASS
+- GPT web 1회, S3 v2 reference 사용
+- 회수: 신규 탭 방문 response intercept — 2개 후보 중 cand2 선택
+- 최종: `kf_s4_paper_pile_button.png` (2181KB, md5=7efa35b8a681...)
+- 바닥까지 정적 종이 더미 + 복사기 출력 중 + 준 정지버튼 자세 + 지침표정 모두 확인
+- contact sheet: `output/v2/3d_sitcom_prod_v1/upload_002_copier/qa/s1_s2_s3_s4_contact_sheet.png`
+- 다음: S5 키프레임 생성 (Owner 승인 필요, boss_rule 적용 — 얼굴·전신 등장 시 즉시 FAIL, 재생성 0회)
+
+---
+
+## 2026-06-15 S3 연속성·행동 복구 완료 (continuity_pass)
+
+### S3 v2 PASS
+- GPT web 총 2회 제출 (1차: S2 ref → 행동 FAIL / 2차: S1 ref + 행동 강화 → PASS)
+- 회수: intercept(page.route+reload) 방식 — 403 우회 성공
+- 최종 파일: `kf_s3_tapping_relief_v2.png` (2020KB, md5=def65a3b8e49...)
+- 선택 후보: cand2 — 오른손 손바닥 두드리기·출력 중 용지·안도황당 표정 모두 확인
+- contact sheet: `output/v2/3d_sitcom_prod_v1/upload_002_copier/qa/s1_s2_s3v2_contact_sheet.png`
+- 다음 액션: S4 키프레임 생성 (Owner 승인 후)
+
+### S3 1차 시도 기록 (continuity_fail → 폐기)
+- `kf_s3_tapping_relief_continuity_fix.png` (3023KB) — 배경·복사기 PASS, 행동 FAIL (S2와 동일 포즈)
+
+---
+
 ## 2026-06-15 연속성 QA + S2 복구 + 작업트리 정리
 
 ### 연속성 QA
