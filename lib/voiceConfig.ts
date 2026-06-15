@@ -171,6 +171,160 @@ export const EMOTIONAL_STORY_VOICE_CANDIDATES: VoiceCandidate[] = [
   },
 ];
 
+// ── ElevenLabs 콘텐츠별 음성 풀 (2026-06-13 등록) ─────────────────────────────
+//
+// ElevenLabs GET /v1/voices 정확 일치 조회로 확인된 voiceId.
+// voiceId는 공개 메타데이터이므로 코드 저장 가능 (API key/계정정보는 금지).
+// 기존 카테고리 기본 음성 선택을 강제로 바꾸지 않음 — 참조용 매핑.
+//
+// 콘텐츠 타입 → 추천 보이스:
+//   relationship_advice        → Harry Kim (인간관계·현실 조언, 대화형)
+//   psychology_analysis        → Hyein (심리 해석·관계 신호)
+//   light_relationship_empathy → Hana Lee (가벼운 관계심리·공감)
+//   emotional_inner_monologue  → Mono Beige (내면 독백·감성)
+//   success_self_esteem        → Sola (성공·자존감)
+//   practical_information      → Mina (생활꿀팁·정보형 전용)
+
+export interface ContentVoiceEntry {
+  voiceName: string;
+  voiceId: string;
+  intendedContentType: string;
+  provider: "elevenlabs";
+  /** 한국어 콘텐츠 영구 탈락 여부 (사용자 청취 평가 기반) */
+  deprecated?: boolean;
+  deprecatedReason?: string;
+  /** 사용자 실제 청취 평가를 통과해 validated voice pool에 등록됨 */
+  validated?: boolean;
+}
+
+export const CONTENT_VOICE_POOL: Record<string, ContentVoiceEntry> = {
+  relationship_advice: {
+    voiceName: "Harry Kim - Conversational",
+    voiceId: "pb3lVZVjdFWbkhPKlelB",
+    intendedContentType: "인간관계·남녀심리·현실 조언",
+    provider: "elevenlabs",
+    deprecated: true,
+    deprecatedReason: "한국어 발음·억양·속도·연기 느낌 문제로 영구 탈락 (2026-06-13 사용자 평가). 한국어 콘텐츠 사용 금지.",
+  },
+  psychology_analysis: {
+    voiceName: "Hyein - Calm & Professional",
+    voiceId: "6Vgh4FaCc0SCcWPwcyXa",
+    intendedContentType: "심리 해석·관계 신호·투자심리",
+    provider: "elevenlabs",
+  },
+  light_relationship_empathy: {
+    voiceName: "Hana Lee - Natural and Cheerful",
+    voiceId: "QPFsEL6IBxlT15xfiD6C",
+    intendedContentType: "가벼운 관계심리·공감형",
+    provider: "elevenlabs",
+  },
+  emotional_inner_monologue: {
+    voiceName: "Mono Beige - Calm & Contemporary",
+    voiceId: "SE9upoSoM2ipDUdAVW8q",
+    intendedContentType: "내면 독백·감성심리",
+    provider: "elevenlabs",
+  },
+  success_self_esteem: {
+    voiceName: "Sola - Warm, Clear and Rich",
+    voiceId: "KlstlYt9VVf3zgie2Oht",
+    intendedContentType: "성공·마인드·자존감",
+    provider: "elevenlabs",
+  },
+  practical_information: {
+    voiceName: "Mina - Clear, calm & Warm Female Voice",
+    voiceId: "aiUUgjHa4mpHf6UenZuf",
+    intendedContentType: "생활꿀팁·정보형 심리 (관계심리 사용 금지)",
+    provider: "elevenlabs",
+  },
+};
+
+/** 콘텐츠 타입으로 추천 보이스 조회. 없으면 null. */
+export function getContentVoice(contentType: string): ContentVoiceEntry | null {
+  return CONTENT_VOICE_POOL[contentType] ?? null;
+}
+
+// ── 역할 기반 운영 음성 풀 (Voice Design 생성, 2026-06-13~) ───────────────────
+//
+// 남녀 각각 역할별 보이스. status:
+//   provisional = 블라인드 평가 통과했으나 실제 영상 적용 검증 전 (validated 금지)
+//   validated   = 실제 영상 적용 품질까지 확인된 최종 확정
+//   deprecated  = 탈락
+// voiceId는 My Voices 저장 후 영구 ID, generatedVoiceId는 Voice Design preview ID.
+
+export type VoicePoolStatus = "provisional" | "validated" | "deprecated";
+
+export interface VoicePoolEntry {
+  gender: "male" | "female";
+  role: string;
+  voiceId?: string | null;          // My Voices 저장 후 영구 ID
+  generatedVoiceId?: string | null; // Voice Design preview ID (저장 전)
+  status: VoicePoolStatus;
+  intendedContentTypes: string[];
+  userAssessment?: string;
+}
+
+export const VOICE_POOL: Record<string, VoicePoolEntry> = {
+  // ── 남성 (Voice Design male_v1 블라인드 A/B/C, 사용자 역할 매칭 확정) ─────────
+  male_persuasive_appeal: {
+    gender: "male",
+    role: "persuasive_appeal",
+    generatedVoiceId: "KgY3uQHUKw0hah6g2xjn", // 남성 A
+    status: "provisional",
+    intendedContentTypes: ["관계 경고", "현실 조언", "성공 마인드", "자존감"],
+    userAssessment: "호소력·설득형. 실제 영상 적용 후 validated 전환 검토.",
+  },
+  male_trusted_information: {
+    gender: "male",
+    role: "trusted_information",
+    voiceId: "uIDle50IpRkamKKmsOEc", // 남성 B — My Voices 저장됨 (2026-06-14, 투자심리 MVP01)
+    generatedVoiceId: "uIDle50IpRkamKKmsOEc", // 남성 B
+    status: "provisional",
+    intendedContentTypes: ["심리 분석", "투자심리", "경제 콘텐츠"],
+    userAssessment: "정보 전달형. My Voices 저장 완료 후 TTS 호출 검증(투자심리 MVP01). 실제 영상 적용 후 validated 전환 검토.",
+  },
+  male_light_emotional: {
+    gender: "male",
+    role: "light_emotional",
+    generatedVoiceId: "Cpod4JhRysPuubCUTcQi", // 남성 C
+    status: "provisional",
+    intendedContentTypes: ["공감형 관계심리", "짧은 내면 독백"],
+    userAssessment: "가벼운 감정 전달형. 실제 영상 적용 후 validated 전환 검토.",
+  },
+  // ── 여성 (Voice Design female_roles_v1, 사용자 역할 매칭 확정, My Voices 저장됨) ──
+  female_information_empathy: {
+    gender: "female",
+    role: "trusted_information + relatable_empathy",
+    voiceId: "Vcdpf78zk35fXQIvmObI", // 여성 A
+    generatedVoiceId: "Vcdpf78zk35fXQIvmObI",
+    status: "provisional",
+    intendedContentTypes: ["심리 분석", "관계 신호", "공감형 관계심리", "내면 독백"],
+    userAssessment: "정보형 + 공감형 겸용. 실제 영상 적용 후 validated 전환 검토.",
+  },
+  female_persuasive_appeal: {
+    gender: "female",
+    role: "persuasive_appeal",
+    voiceId: "n64q8n5KTcGLp392p3wn", // 여성 B
+    generatedVoiceId: "n64q8n5KTcGLp392p3wn",
+    status: "provisional",
+    intendedContentTypes: ["관계 경고", "현실 조언", "자존감", "성공 마인드"],
+    userAssessment: "호소·설득형. 관계 경고 MVP에 1순위 적용 (여성 화면 몰입감). 실제 영상 검증 진행 중.",
+  },
+  female_trusted_information_alt: {
+    gender: "female",
+    role: "trusted_information",
+    voiceId: "uP1FVX5bEfq8Dzb1LDTs", // 여성 C
+    generatedVoiceId: "uP1FVX5bEfq8Dzb1LDTs",
+    status: "provisional",
+    intendedContentTypes: ["심리 분석", "투자심리", "경제 정보"],
+    userAssessment: "정보 전달형 보조. 실제 영상 적용 후 validated 전환 검토.",
+  },
+};
+
+/** 역할 키로 운영 보이스 조회. 없으면 null. */
+export function getPoolVoice(key: string): VoicePoolEntry | null {
+  return VOICE_POOL[key] ?? null;
+}
+
 // ── 헬퍼 ─────────────────────────────────────────────────────────────────────
 
 /** 카테고리별 후보 맵 (추후 카테고리 추가 대비) */

@@ -11,6 +11,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { spawnSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ENV_PATH = join(__dirname, "..", ".env.local");
@@ -209,8 +210,33 @@ switch (command) {
   case "add-placeholders":
     cmdAddPlaceholders();
     break;
+  case "run-with-env": {
+    // .env.local 환경변수를 주입해 스크립트 실행. API 키 값 콘솔 출력 없음.
+    const scriptToRun = args[0];
+    if (!scriptToRun) {
+      console.error("Usage: env-safe.mjs run-with-env <script.mjs>");
+      process.exit(1);
+    }
+    const envMap = loadEnv();
+    const injectedEnv = { ...process.env };
+    for (const [k, v] of envMap) { injectedEnv[k] = v; }
+    // 존재 여부만 로그 (값 출력 금지)
+    for (const key of API_KEY_CHECKLIST) {
+      console.log(`[env] ${key}: ${injectedEnv[key] ? "present" : "missing"}`);
+    }
+    for (const key of FLAG_ALLOWLIST) {
+      if (injectedEnv[key] !== undefined) console.log(`[env] ${key}=${injectedEnv[key]}`);
+    }
+    const runResult = spawnSync("node", [scriptToRun], {
+      env: injectedEnv,
+      stdio: "inherit",
+      cwd: join(__dirname, ".."),
+      timeout: 360000,
+    });
+    process.exit(runResult.status ?? 1);
+  }
   default:
     console.error(`Unknown command: "${command}"`);
-    console.error("Available: check | flags | set-flag KEY true|false | add-placeholders");
+    console.error("Available: check | flags | set-flag KEY true|false | add-placeholders | run-with-env <script>");
     process.exit(1);
 }

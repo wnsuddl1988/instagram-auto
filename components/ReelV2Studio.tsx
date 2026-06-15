@@ -9,8 +9,12 @@
  *   3. 결과  — 생성된 영상 플레이어
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { GeneratedReelV2 } from "@/lib/openai";
+import ManualImageBridge, {
+  type SceneForBridge,
+  type ManualSceneStatus,
+} from "@/components/ManualImageBridge";
 import {
   readTopicHistory,
   appendTopicHistory,
@@ -162,6 +166,35 @@ export default function ReelV2Studio() {
   const [planWarnings, setPlanWarnings] = useState<PlanWarning[]>([]);
   const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
   const [forceRender, setForceRender] = useState(false); // fail 점수에도 강제 렌더
+
+  // 수동 AI 이미지 생성 브리지
+  const [bridgeScene, setBridgeScene] = useState<SceneForBridge | null>(null);
+  // 브리지 패널 영역 ref — MVP 불러오기 후 자동 스크롤 대상
+  const bridgePanelRef = useRef<HTMLDivElement>(null);
+  // bridgeScene autoStart 플래그 — MVP 불러오기 직후 한 번만 true
+  const [bridgeAutoStart, setBridgeAutoStart] = useState(false);
+  // polling 전용 자동 시작 — 씬 전환 후 Chrome 재실행 없이 polling만 재시작
+  const [bridgeAutoStartPollingOnly, setBridgeAutoStartPollingOnly] = useState(false);
+  // 씬별 수동 이미지 상태 맵 { sceneNumber → status }
+  const [manualSceneStatuses, setManualSceneStatuses] = useState<Record<number, ManualSceneStatus>>({});
+  // 씬별 로컬 이미지 경로 맵 { sceneNumber → absolutePath }
+  const [manualLocalImages, setManualLocalImages] = useState<Record<number, string>>({});
+
+  // 심리 MVP 불러오기 상태
+  const PSYCH_JOB_ID = "psychology_mvp_01";
+  const [psychLoadMsg, setPsychLoadMsg] = useState<string>("");
+  // MVP 불러오기 완료 여부 (Scene 1 이미지 만들기 버튼 표시 조건)
+  const [psychLoaded, setPsychLoaded] = useState(false);
+
+  // 무음 렌더 버튼 ref — 마지막 씬 승인 후 자동 스크롤 대상
+  const silentRenderRef = useRef<HTMLDivElement>(null);
+
+  // 무음 렌더 상태
+  type ManualRenderStep = "idle" | "saving" | "rendering" | "done" | "error";
+  const [manualRenderStep, setManualRenderStep] = useState<ManualRenderStep>("idle");
+  const [manualRenderError, setManualRenderError] = useState<string>("");
+  const [manualRenderVideoUrl, setManualRenderVideoUrl] = useState<string>("");
+
   // partial 렌더 실패 상태 (Imagen quota 소진 / 플랜 미활성 등)
   const [partialRenderError, setPartialRenderError] = useState<{
     imagenDailyQuotaExhausted?: boolean;
@@ -366,6 +399,8 @@ export default function ReelV2Studio() {
     setErrorMsg("");
     setPaidApiBlocked(null);
     setPlan(null);
+    setManualSceneStatuses({});
+    setManualLocalImages({});
     try {
       const postBody: Record<string, unknown> = {
         categoryId: selectedCatId,
@@ -444,6 +479,257 @@ export default function ReelV2Studio() {
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : String(e));
       setStep("error");
+    }
+  };
+
+  // ── 심리 MVP 01 불러오기 ────────────────────────────────────────────────────
+  /**
+   * psychology_mvp_01_script_final.json + ai_image_prompt_pack_v2.json 을
+   * plan + imagePrompt 맵으로 조합하여 앱에 직접 세팅한다.
+   * 외부 API 호출 없음 — 로컬 JSON 읽기 + load-state 복구만 수행.
+   *
+   * Scene 1: referenceImagePrompt.fullPrompt (기준 이미지 생성용)
+   * Scene 2~5: editPromptUsingReferenceImage (reference edit 프롬프트)
+   */
+
+  // 상태 즉시 저장 — 씬 승인/거부 시 호출
+  const savePsychState = async (
+    currentScene: number,
+    statuses: Record<number, ManualSceneStatus>,
+    images: Record<number, string>
+  ) => {
+    try {
+      const scenes = Array.from({ length: 5 }, (_, i) => ({
+        sceneNumber: i + 1,
+        status: statuses[i + 1] ?? "awaiting_user_generation",
+        registeredLocalImagePath: images[i + 1] ?? null,
+      }));
+      await fetch("/api/manual-render?action=save-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: PSYCH_JOB_ID,
+          currentSceneNumber: currentScene,
+          selectedProfileAlias: "GPT 1",
+          scenes,
+        }),
+      });
+    } catch {
+      // 저장 실패는 조용히 무시 (사용자 작업 방해 금지)
+    }
+  };
+
+  const handleLoadPsychMvp = async () => {
+    setPsychLoadMsg("불러오는 중...");
+    setErrorMsg("");
+
+    try {
+      const [scriptRes, packRes] = await Promise.all([
+        fetch("/api/psych-mvp-data?file=script"),
+        fetch("/api/psych-mvp-data?file=pack"),
+      ]);
+      if (!scriptRes.ok || !packRes.ok) {
+        throw new Error("JSON 파일 로드 실패. /api/psych-mvp-data 확인 필요.");
+      }
+      const script = await scriptRes.json();
+      const pack = await packRes.json();
+
+      // ── GeneratedReelV2 형태로 변환 ─────────────────────────────────────
+      // referenceImagePrompt.fullPrompt → Scene 1
+      // scenes[n].editPromptUsingReferenceImage → Scene 2~5
+      const scenePromptMap: Record<number, string> = {};
+      scenePromptMap[1] = pack.referenceImagePrompt?.fullPrompt ?? "";
+      for (const s of (pack.scenes ?? [])) {
+        if (s.sceneNumber !== 1 && s.editPromptUsingReferenceImage) {
+          scenePromptMap[s.sceneNumber] = s.editPromptUsingReferenceImage;
+        }
+      }
+
+      const reelScenes = script.scenes.map((sc: {
+        sceneNumber: number;
+        narration: string;
+        caption: string;
+        motion?: string;
+        duration?: number;
+      }) => ({
+        sceneNumber: sc.sceneNumber,
+        durationSec: sc.duration ?? 6,
+        narration: sc.narration,
+        caption: sc.caption,
+        emphasis: sc.caption,
+        imagePrompt: scenePromptMap[sc.sceneNumber] ?? "",
+        fallbackSearchQuery: sc.caption,
+        motion: (sc.motion as "slow_zoom_in" | "slow_zoom_out" | "pan_left" | "pan_right" | "hold") ?? "hold",
+      }));
+
+      const loadedPlan = {
+        title: script.title,
+        topTitle: script.title,
+        subtitle: "",
+        script: script.scenes.map((s: { narration: string }) => s.narration).join(" "),
+        hook: script.scenes[0]?.narration ?? "",
+        callToAction: script.scenes[script.scenes.length - 1]?.narration ?? "",
+        hashtags: ["심리", "자존감", "관계"],
+        targetAudience: "20~30대 한국인",
+        visualStyle: "photorealistic cinematic 9:16",
+        estimatedDuration: Math.round(script.totalEstimatedDuration ?? 32),
+        scenes: reelScenes,
+        _meta: {
+          categoryId: "psychology_analysis",
+          categoryName: "심리 분석",
+          subTopicId: "psych_mvp_01",
+          subTopicName: script.title,
+          topicMode: "custom" as const,
+          concreteTopic: script.title,
+          generatedAt: new Date().toISOString(),
+        },
+        _categoryId: "psychology_analysis",
+        _referenceStyle: "psychology_analysis",
+      };
+
+      // ── 상태 세팅 ────────────────────────────────────────────────────────
+      setPlan(loadedPlan as import("@/lib/openai").GeneratedReelV2);
+      setRenderId(PSYCH_JOB_ID);
+      setManualSceneStatuses({});
+      setManualLocalImages({});
+      setManualRenderStep("idle");
+      setManualRenderError("");
+      setManualRenderVideoUrl("");
+      setQualityScore(null);
+      setForceRender(false);
+      setStep("generated");
+
+      // ── load-state 복구 ──────────────────────────────────────────────────
+      let restoredCurrentScene = 1;
+      let hasRestoredState = false;
+      try {
+        const stateRes = await fetch("/api/manual-render?action=load-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: PSYCH_JOB_ID }),
+        });
+        const stateData = await stateRes.json();
+        if (stateData.found && stateData.state?.scenes) {
+          const restoredStatuses: Record<number, ManualSceneStatus> = {};
+          const restoredImages: Record<number, string> = {};
+          for (const sc of stateData.state.scenes) {
+            if (sc.status && sc.status !== "awaiting_user_generation") {
+              restoredStatuses[sc.sceneNumber] = sc.status as ManualSceneStatus;
+            }
+            if (sc.registeredLocalImagePath) {
+              restoredImages[sc.sceneNumber] = sc.registeredLocalImagePath;
+            }
+          }
+          setManualSceneStatuses(restoredStatuses);
+          setManualLocalImages(restoredImages);
+          // 복구된 currentSceneNumber 사용 (없으면 첫 미승인 씬)
+          if (stateData.state.currentSceneNumber) {
+            restoredCurrentScene = stateData.state.currentSceneNumber;
+          } else {
+            // 첫 미승인 씬 계산
+            const firstPending = loadedPlan.scenes.find(
+              (sc: {sceneNumber?: number}) => !restoredStatuses[(sc.sceneNumber ?? 1)]
+                || restoredStatuses[(sc.sceneNumber ?? 1)] === "awaiting_user_generation"
+                || restoredStatuses[(sc.sceneNumber ?? 1)] === "rejected"
+            );
+            restoredCurrentScene = firstPending?.sceneNumber ?? loadedPlan.scenes.length;
+          }
+          hasRestoredState = Object.keys(restoredStatuses).length > 0;
+          const acceptedCount = Object.values(restoredStatuses).filter(s => s === "accepted").length;
+          setPsychLoadMsg(
+            hasRestoredState
+              ? `✅ 불러오기 완료 — ${acceptedCount}씬 승인 복구, Scene ${restoredCurrentScene}부터 이어서 작업`
+              : "✅ 불러오기 완료 (새 작업)"
+          );
+        } else {
+          setPsychLoadMsg("✅ 불러오기 완료 (새 작업 시작)");
+        }
+      } catch {
+        setPsychLoadMsg("✅ 불러오기 완료 (상태 복구 건너뜀)");
+      }
+
+      // ── 불러오기 완료 후 브리지 씬 설정 ──────────────────────────────────
+      setPsychLoaded(true);
+      const targetScene = loadedPlan.scenes.find(
+        (sc: {sceneNumber?: number}) => (sc.sceneNumber ?? 1) === restoredCurrentScene
+      ) ?? loadedPlan.scenes[0];
+
+      if (targetScene) {
+        setBridgeScene({
+          sceneNumber: targetScene.sceneNumber ?? restoredCurrentScene,
+          caption: targetScene.caption,
+          imagePrompt: targetScene.imagePrompt,
+          localImagePath: null,
+          manualStatus: undefined,
+        });
+        // 복구된 상태가 있으면 Chrome 자동 실행 금지 (autoStart=false)
+        setBridgeAutoStart(!hasRestoredState);
+        setTimeout(() => {
+          bridgePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 300);
+      }
+    } catch (e) {
+      setPsychLoadMsg(`❌ 오류: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  // ── 수동 무음 렌더 ─────────────────────────────────────────────────────────
+  const handleManualSilentRender = async () => {
+    if (!plan) return;
+    const jobId = renderId || "default-job";
+
+    setManualRenderStep("saving");
+    setManualRenderError("");
+    setManualRenderVideoUrl("");
+
+    // 1) render_plan.json + state.json 저장
+    try {
+      const saveRes = await fetch("/api/manual-render?action=save-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId,
+          plan,
+          manualLocalImages: Object.fromEntries(
+            Object.entries(manualLocalImages).map(([k, v]) => [String(k), v])
+          ),
+          manualSceneStatuses: Object.fromEntries(
+            Object.entries(manualSceneStatuses).map(([k, v]) => [String(k), v])
+          ),
+        }),
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) {
+        const details = saveData.details ? `\n${(saveData.details as string[]).join("\n")}` : "";
+        setManualRenderStep("error");
+        setManualRenderError(`plan 저장 실패: ${saveData.error ?? "알 수 없는 오류"}${details}`);
+        return;
+      }
+    } catch (e) {
+      setManualRenderStep("error");
+      setManualRenderError(`plan 저장 중 오류: ${String(e)}`);
+      return;
+    }
+
+    // 2) 무음 렌더 실행
+    setManualRenderStep("rendering");
+    try {
+      const renderRes = await fetch("/api/manual-render?action=render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const renderData = await renderRes.json();
+      if (!renderRes.ok) {
+        setManualRenderStep("error");
+        setManualRenderError(`렌더 실패: ${renderData.error ?? "알 수 없는 오류"}`);
+        return;
+      }
+      setManualRenderVideoUrl(renderData.videoUrl ?? "");
+      setManualRenderStep("done");
+    } catch (e) {
+      setManualRenderStep("error");
+      setManualRenderError(`렌더 중 오류: ${String(e)}`);
     }
   };
 
@@ -1268,6 +1554,95 @@ export default function ReelV2Studio() {
               )}
             </div>
 
+            {/* ── 심리 MVP 01 불러오기 ── */}
+            <div className="glass-card rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white">
+                  <span className="text-purple-400 mr-1.5">🧠</span>심리 MVP 01
+                </h3>
+                <span className="text-[10px] text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full border border-slate-700/40">
+                  psychology_mvp_01
+                </span>
+              </div>
+              <div className="text-xs text-slate-400 leading-relaxed">
+                자존감을 무너뜨리는 말 — 처음엔 칭찬처럼 들립니다
+              </div>
+              <div className="text-[11px] text-slate-500 space-y-0.5">
+                <div>· 총 5씬 · 약 32초 · 이미지 수동 생성</div>
+                <div>· Scene 1: reference 이미지 프롬프트</div>
+                <div>· Scene 2~5: reference edit 프롬프트</div>
+              </div>
+              <button
+                onClick={handleLoadPsychMvp}
+                disabled={step === "generating"}
+                className="w-full py-2 rounded-xl text-xs font-bold bg-purple-700/40 hover:bg-purple-700/60 text-purple-200 border border-purple-500/40 transition-colors disabled:opacity-40"
+              >
+                심리 MVP 01 불러오기
+              </button>
+              {psychLoadMsg && (
+                <div className={`text-[11px] px-2 py-1.5 rounded-lg ${
+                  psychLoadMsg.startsWith("✅")
+                    ? "text-emerald-400 bg-emerald-900/20 border border-emerald-600/20"
+                    : psychLoadMsg.startsWith("❌")
+                    ? "text-red-400 bg-red-900/20 border border-red-600/20"
+                    : "text-slate-400 bg-slate-800/40"
+                }`}>
+                  {psychLoadMsg}
+                </div>
+              )}
+              {/* 불러온 후 — plan 정보 요약 */}
+              {plan && renderId === PSYCH_JOB_ID && (
+                <div className="rounded-xl bg-slate-800/40 border border-slate-700/30 px-3 py-2 space-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">주제</span>
+                    <span className="text-white font-medium truncate max-w-[160px]">{plan.title}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">총 씬</span>
+                    <span className="text-indigo-300">{plan.scenes.length}씬</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">예상 길이</span>
+                    <span className="text-slate-300">{plan.estimatedDuration}초</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">이미지 승인</span>
+                    <span className={
+                      Object.values(manualSceneStatuses).filter(s => s === "accepted").length === plan.scenes.length
+                        ? "text-emerald-400 font-bold"
+                        : "text-slate-300"
+                    }>
+                      {Object.values(manualSceneStatuses).filter(s => s === "accepted").length} / {plan.scenes.length}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Scene 1 이미지 만들기 버튼 (불러오기 완료 후 표시) ── */}
+              {psychLoaded && plan && renderId === PSYCH_JOB_ID && (
+                <button
+                  onClick={() => {
+                    const sc = plan.scenes[0];
+                    if (!sc) return;
+                    setBridgeScene({
+                      sceneNumber: sc.sceneNumber ?? 1,
+                      caption: sc.caption,
+                      imagePrompt: sc.imagePrompt,
+                      localImagePath: manualLocalImages[sc.sceneNumber ?? 1] ?? null,
+                      manualStatus: manualSceneStatuses[sc.sceneNumber ?? 1],
+                    });
+                    setBridgeAutoStart(true);
+                    setTimeout(() => {
+                      bridgePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 150);
+                  }}
+                  className="w-full py-3 rounded-xl text-sm font-bold bg-violet-600/50 hover:bg-violet-600/70 text-white border border-violet-400/50 transition-colors shadow-lg"
+                >
+                  🖼️ Scene 1 이미지 만들기
+                </button>
+              )}
+            </div>
+
             {/* 스크린리더용 CTA 상태 알림 (시각적으로 숨김) */}
             <div
               role="status"
@@ -1619,8 +1994,228 @@ export default function ReelV2Studio() {
                     🔄 모션만 재렌더 (이미지·TTS 재사용)
                   </button>
                 )}
+
+                {/* ── 수동 AI 이미지 생성 브리지 진입 ── */}
+                {plan && (() => {
+                  const totalScenes = plan.scenes.length;
+                  const acceptedCount = plan.scenes.filter(
+                    (sc, idx) => manualSceneStatuses[sc.sceneNumber ?? idx + 1] === "accepted"
+                  ).length;
+                  const renderReady = totalScenes > 0 && acceptedCount === totalScenes;
+                  return (
+                    <div className="pt-1 border-t border-slate-700/40 space-y-2">
+                      {/* 렌더 준비 완료 표시 */}
+                      <div className={`flex items-center justify-between px-2 py-1.5 rounded-lg border ${
+                        renderReady
+                          ? "bg-emerald-900/20 border-emerald-600/40"
+                          : "bg-slate-800/30 border-slate-700/30"
+                      }`}>
+                        <span className="text-[11px] text-slate-400">
+                          수동 이미지 승인: <span className={renderReady ? "text-emerald-300 font-bold" : "text-slate-300"}>
+                            {acceptedCount} / {totalScenes}
+                          </span>
+                        </span>
+                        {renderReady && (
+                          <span className="text-[11px] text-emerald-300 font-semibold">✓ 렌더 준비 완료</span>
+                        )}
+                      </div>
+
+                      {/* 전체 승인 완료 배너 */}
+                      {renderReady && (
+                        <div className="px-3 py-2 rounded-xl bg-emerald-900/25 border border-emerald-500/40 text-[11px] text-emerald-200 font-semibold text-center">
+                          🎉 {totalScenes}개 이미지 승인 완료 — 무음 미리보기 렌더를 시작하세요
+                        </div>
+                      )}
+
+                      {/* 무음 미리보기 렌더 버튼 */}
+                      <div ref={silentRenderRef} className="space-y-1.5">
+                        <button
+                          disabled={!renderReady || manualRenderStep === "saving" || manualRenderStep === "rendering"}
+                          onClick={handleManualSilentRender}
+                          className={`w-full py-2 rounded-xl text-xs font-bold border transition-colors ${
+                            !renderReady
+                              ? "bg-slate-800/30 text-slate-600 border-slate-700/30 cursor-not-allowed"
+                              : manualRenderStep === "saving" || manualRenderStep === "rendering"
+                              ? "bg-indigo-700/30 text-indigo-400 border-indigo-600/30 cursor-wait"
+                              : manualRenderStep === "done"
+                              ? "bg-emerald-700/30 text-emerald-300 border-emerald-600/40 hover:bg-emerald-700/50"
+                              : "bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border-indigo-500/40"
+                          }`}
+                        >
+                          {manualRenderStep === "saving"
+                            ? "plan 저장 중..."
+                            : manualRenderStep === "rendering"
+                            ? "렌더 중... (수십 초 소요)"
+                            : manualRenderStep === "done"
+                            ? "✓ 렌더 완료 — 다시 렌더"
+                            : "무음 미리보기 렌더"}
+                        </button>
+
+                        {/* 렌더 오류 */}
+                        {manualRenderStep === "error" && manualRenderError && (
+                          <div className="px-3 py-2 rounded-xl bg-red-900/20 border border-red-600/30">
+                            <div className="text-[11px] text-red-400 whitespace-pre-wrap">{manualRenderError}</div>
+                          </div>
+                        )}
+
+                        {/* 렌더 성공 — 미리보기 */}
+                        {manualRenderStep === "done" && manualRenderVideoUrl && (
+                          <div className="space-y-1">
+                            <div className="text-[11px] text-emerald-300 font-semibold px-1">무음 미리보기 완료</div>
+                            <video
+                              src={manualRenderVideoUrl}
+                              controls
+                              playsInline
+                              className="w-full rounded-xl border border-emerald-600/30 bg-black"
+                              style={{ maxHeight: "300px" }}
+                            />
+                            <div className="text-[10px] text-slate-600 break-all px-1">{manualRenderVideoUrl}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 씬 선택 목록 — 항상 표시 (접힌 details 제거) */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] text-slate-500 font-semibold px-0.5">씬별 이미지 생성</div>
+                        {plan.scenes.map((sc, idx) => {
+                          const sceneNum = sc.sceneNumber ?? idx + 1;
+                          const status = manualSceneStatuses[sceneNum];
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setBridgeScene({
+                                  sceneNumber: sceneNum,
+                                  caption: sc.caption,
+                                  imagePrompt: sc.imagePrompt,
+                                  localImagePath: manualLocalImages[sceneNum] ?? null,
+                                  manualStatus: status,
+                                });
+                                setBridgeAutoStart(false);
+                                setTimeout(() => {
+                                  bridgePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }, 150);
+                              }}
+                              className="w-full text-left px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/30 transition-colors"
+                            >
+                              <span className="text-[10px] text-slate-500 mr-1.5">씬{sceneNum}</span>
+                              <span className="text-[11px] text-slate-300">{sc.caption}</span>
+                              {status && (
+                                <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                                  status === "accepted"
+                                    ? "bg-emerald-900/40 text-emerald-400"
+                                    : status === "reviewing_image"
+                                    ? "bg-amber-900/30 text-amber-400"
+                                    : status === "rejected"
+                                    ? "bg-red-900/30 text-red-400"
+                                    : "bg-slate-700/40 text-slate-500"
+                                }`}>
+                                  {status === "accepted" ? "✓" : status === "reviewing_image" ? "검토" : status === "rejected" ? "✗" : ""}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
+
+            {/* ManualImageBridge 패널 */}
+            {/* ManualImageBridge 패널 — ref로 scroll 대상 */}
+            <div ref={bridgePanelRef}>
+              {bridgeScene && plan && (
+                <ManualImageBridge
+                  key={`bridge-${bridgeScene.sceneNumber}-${bridgeAutoStart ? "auto" : bridgeAutoStartPollingOnly ? "polling" : "manual"}`}
+                  scene={bridgeScene}
+                  jobId={renderId || "default-job"}
+                  totalScenes={plan.scenes.length}
+                  referenceImagePath={
+                    bridgeScene.sceneNumber > 1
+                      ? (manualLocalImages[1] ?? null)
+                      : null
+                  }
+                  autoStart={bridgeAutoStart}
+                  autoStartPollingOnly={bridgeAutoStartPollingOnly}
+                  autoProfileAlias="GPT 1"
+                  onRegisterImage={(sceneNumber, projectImagePath) => {
+                    setManualLocalImages((prev) => ({
+                      ...prev,
+                      [sceneNumber]: projectImagePath,
+                    }));
+                    setBridgeScene((prev) =>
+                      prev ? { ...prev, localImagePath: projectImagePath } : null
+                    );
+                  }}
+                  onStatusChange={(sceneNumber, status) => {
+                    setManualSceneStatuses((prev) => ({ ...prev, [sceneNumber]: status }));
+                    setBridgeScene((prev) =>
+                      prev ? { ...prev, manualStatus: status } : null
+                    );
+                  }}
+                  onAcceptAndNext={(acceptedSceneNumber, acceptedLocalPath) => {
+                    // 승인된 씬 상태 즉시 저장
+                    const updatedStatuses = {
+                      ...manualSceneStatuses,
+                      [acceptedSceneNumber]: "accepted" as ManualSceneStatus,
+                    };
+                    const updatedImages = acceptedLocalPath
+                      ? { ...manualLocalImages, [acceptedSceneNumber]: acceptedLocalPath }
+                      : manualLocalImages;
+                    setManualSceneStatuses(updatedStatuses);
+                    if (acceptedLocalPath) setManualLocalImages(updatedImages);
+
+                    // 다음 미승인 씬 자동 선택
+                    const nextSceneIdx = plan.scenes.findIndex(
+                      (sc, idx) => {
+                        const sn = sc.sceneNumber ?? idx + 1;
+                        return sn > acceptedSceneNumber;
+                      }
+                    );
+
+                    const nextSceneNum = nextSceneIdx !== -1
+                      ? (plan.scenes[nextSceneIdx].sceneNumber ?? nextSceneIdx + 1)
+                      : acceptedSceneNumber + 1;
+
+                    // state.json 즉시 저장
+                    savePsychState(nextSceneNum, updatedStatuses, updatedImages);
+
+                    if (nextSceneIdx === -1) return;
+                    const nextSc = plan.scenes[nextSceneIdx];
+                    setBridgeScene({
+                      sceneNumber: nextSceneNum,
+                      caption: nextSc.caption,
+                      imagePrompt: nextSc.imagePrompt,
+                      localImagePath: updatedImages[nextSceneNum] ?? null,
+                      manualStatus: updatedStatuses[nextSceneNum],
+                    });
+                    // 같은 GPT 1 프로필 유지 — Chrome 재실행 없이 polling만 재시작
+                    setBridgeAutoStart(false);
+                    setBridgeAutoStartPollingOnly(true);
+                    setTimeout(() => {
+                      bridgePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 150);
+                  }}
+                  onAllScenesAccepted={() => {
+                    // 마지막 씬 승인 — state 저장 + 무음 렌더 영역으로 스크롤
+                    savePsychState(plan.scenes.length, manualSceneStatuses, manualLocalImages);
+                    setBridgeScene(null);
+                    setBridgeAutoStart(false);
+                    setBridgeAutoStartPollingOnly(false);
+                    setTimeout(() => {
+                      silentRenderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 200);
+                  }}
+                  onClose={() => {
+                    setBridgeScene(null);
+                    setBridgeAutoStart(false);
+                    setBridgeAutoStartPollingOnly(false);
+                  }}
+                />
+              )}
+            </div>
 
             {/* 렌더 진행 중 메시지 */}
             {step === "rendering" && (

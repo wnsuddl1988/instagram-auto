@@ -100,20 +100,46 @@ def _draw_text_center(
     )
 
 
-def _draw_caption(draw: ImageDraw.ImageDraw, scene: Dict):
-    caption_font = _font(82, True)
+def _draw_caption(draw: ImageDraw.ImageDraw, scene: Dict, style: str = "default"):
+    # psychology_one_line: 하단 안전영역 + 작은 폰트 + 얇은 외곽선 (얼굴 미가림, 심리 전용)
+    # hook_top: 상단 안전영역 + 큰 폰트 + 명시 2줄 허용 (Scene1 Hook 전용)
+    # default: 기존 설정 유지 (living_tips, emotional_story 등 다른 카테고리)
+    if style == "psychology_one_line":
+        font_size, stroke_w, max_w, base_y_1, base_y_2, line_h = 80, 4, 980, 1550, 1510, 88
+    elif style == "hook_top":
+        font_size, stroke_w, max_w, base_y_1, base_y_2, line_h = 84, 5, 1000, 250, 240, 104
+    else:
+        font_size, stroke_w, max_w, base_y_1, base_y_2, line_h = 82, 6, 860, 1300, 1240, 96
+
     caption = scene.get("caption") or ""
     emphasis = scene.get("emphasis") or ""
-    caption_lines = _wrap_text(draw, caption, caption_font, 860)
-    base_y = 1300 if len(caption_lines) == 1 else 1240
+
+    # psychology_one_line: 한 줄 유지가 필수. 80px에서 넘치면 64px까지 자동 축소(긴 Hook 대응).
+    if style == "psychology_one_line" and caption:
+        for trial in (80, 78, 76, 74, 72, 70, 68, 66, 64):
+            trial_font = _font(trial, True)
+            box = draw.textbbox((0, 0), caption, font=trial_font, stroke_width=stroke_w)
+            if (box[2] - box[0]) <= max_w:
+                font_size = trial
+                break
+        else:
+            font_size = 64  # 64에서도 넘치면 64 고정 (wrap에 맡김)
+
+    caption_font = _font(font_size, True)
+    # caption에 명시적 \n 이 있으면 그 줄바꿈을 존중(의미 단위 고정), 없으면 자동 wrap
+    if "\n" in caption:
+        caption_lines = [ln for ln in caption.split("\n") if ln != ""]
+    else:
+        caption_lines = _wrap_text(draw, caption, caption_font, max_w)
+    base_y = base_y_1 if len(caption_lines) == 1 else base_y_2
     for line_idx, line in enumerate(caption_lines):
-        y_line = base_y + line_idx * 96
+        y_line = base_y + line_idx * line_h
         if emphasis and emphasis in line:
             before, after = line.split(emphasis, 1)
             parts = [(before, (255, 255, 255)), (emphasis, (255, 223, 45)), (after, (255, 255, 255))]
             widths = [
-                draw.textbbox((0, 0), p[0], font=caption_font, stroke_width=6)[2]
-                - draw.textbbox((0, 0), p[0], font=caption_font, stroke_width=6)[0]
+                draw.textbbox((0, 0), p[0], font=caption_font, stroke_width=stroke_w)[2]
+                - draw.textbbox((0, 0), p[0], font=caption_font, stroke_width=stroke_w)[0]
                 for p in parts
             ]
             x = (W - sum(widths)) // 2
@@ -123,13 +149,13 @@ def _draw_caption(draw: ImageDraw.ImageDraw, scene: Dict):
                     text,
                     font=caption_font,
                     fill=color,
-                    stroke_width=6,
+                    stroke_width=stroke_w,
                     stroke_fill=(0, 0, 0),
                 )
-                box = draw.textbbox((0, 0), text, font=caption_font, stroke_width=6)
+                box = draw.textbbox((0, 0), text, font=caption_font, stroke_width=stroke_w)
                 x += box[2] - box[0]
         else:
-            _draw_text_center(draw, y_line, line, caption_font, (255, 255, 255), stroke_width=6)
+            _draw_text_center(draw, y_line, line, caption_font, (255, 255, 255), stroke_width=stroke_w)
 
 
 def _make_base_overlay(plan: Dict, scene: Dict, index: int, duration: float, out_path: str):
@@ -164,17 +190,18 @@ def _make_base_overlay(plan: Dict, scene: Dict, index: int, duration: float, out
     if subtitle and index == 0:
         _draw_text_center(draw, y + 8, subtitle, subtitle_font, (210, 255, 245), stroke_width=4)
 
-    # Minimal production mark / pacing cue.
-    draw.rounded_rectangle((424, 1740, 656, 1796), radius=28, fill=(0, 0, 0, 130))
-    _draw_text_center(draw, 1750, f"{index + 1}/{plan.get('scenes') and len(plan.get('scenes')) or ''}", small_font, (215, 215, 215), stroke_width=2)
+    # Scene counter — hidden when plan has "showSceneCounter": false
+    if plan.get("showSceneCounter", True):
+        draw.rounded_rectangle((424, 1740, 656, 1796), radius=28, fill=(0, 0, 0, 130))
+        _draw_text_center(draw, 1750, f"{index + 1}/{plan.get('scenes') and len(plan.get('scenes')) or ''}", small_font, (215, 215, 215), stroke_width=2)
 
     img.save(out_path)
 
 
-def _make_caption_overlay(scene: Dict, out_path: str):
+def _make_caption_overlay(scene: Dict, out_path: str, style: str = "default"):
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    _draw_caption(draw, scene)
+    _draw_caption(draw, scene, style=style)
     img.save(out_path)
 
 
@@ -375,6 +402,18 @@ def _build_motion_filters(motion: str, frames: int, duration: float) -> tuple:
         x_expr = cx
         y_expr = cy
 
+    elif motion == "gentle_zoom_in":
+        # ~50% of slow_zoom_in intensity — stable for portrait/face shots
+        zoom   = "1.010+0.00030*on"
+        x_expr = cx
+        y_expr = cy
+
+    elif motion == "gentle_zoom_out":
+        # ~50% of slow_zoom_out intensity — calm exit for portrait shots
+        zoom   = "1.050-0.00033*on"
+        x_expr = cx
+        y_expr = cy
+
     else:
         # default: very gentle slow zoom-in
         zoom   = "1.020+0.00050*on"
@@ -391,10 +430,9 @@ def _render_segment(
     duration: float,
     motion: str,
     out_path: str,
+    caption_visible_sec: float = None,
 ):
     frames = max(1, int(duration * 30))
-
-    zoom, x_expr, y_expr, extra_vf = _build_motion_filters(motion, frames, duration)
 
     # Fade durations scale with clip length so short clips don't go dark too long.
     # Rule: fade_in + fade_out ≤ 30% of duration, each capped at 0.12s.
@@ -403,16 +441,32 @@ def _render_segment(
     fade_out_d = max_fade
     fade_out_start = max(0.0, duration - fade_out_d)
 
-    # Build the zoompan → optional eq → format chain
-    zp = (
-        f"zoompan=z='{zoom}':x='{x_expr}':y='{y_expr}'"
-        f":d={frames}:s={W}x{H}:fps=30"
-    )
-    post_zp = f",{extra_vf}" if extra_vf else ""
+    if motion == "static":
+        # static 전용 경로: zoompan 미사용.
+        # zoompan은 z=1.0 고정이라도 매 프레임 부동소수 보간으로 서브픽셀 떨림이 발생한다.
+        # scale로 9:16에 맞춰 cover한 뒤 crop으로 고정 프레임을 그대로 유지한다 (좌표 변화 0).
+        zp = (
+            f"scale={W}:{H}:force_original_aspect_ratio=increase,"
+            f"crop={W}:{H}"
+        )
+        post_zp = ""
+    else:
+        zoom, x_expr, y_expr, extra_vf = _build_motion_filters(motion, frames, duration)
+        # Build the zoompan → optional eq → format chain
+        zp = (
+            f"zoompan=z='{zoom}':x='{x_expr}':y='{y_expr}'"
+            f":d={frames}:s={W}x{H}:fps=30"
+        )
+        post_zp = f",{extra_vf}" if extra_vf else ""
     caption_in_start  = min(_CAPTION_DELAY_MAX, max(0.05, duration * _CAPTION_DELAY_RATIO))
     caption_in_d      = min(_CAPTION_FIN_MAX,   max(0.04, duration * _CAPTION_FIN_RATIO))
     caption_out_d     = min(_CAPTION_FOUT_MAX,  max(0.05, duration * _CAPTION_FOUT_RATIO))
-    caption_out_start = max(caption_in_start + caption_in_d, duration - caption_out_d)
+    # captionVisibleSec 지정 시: 씬 끝이 아니라 그 시점에 자막 fade-out (단일 세그먼트 위 시간 제어).
+    # 미지정(None)이면 기존 동작(씬 끝까지 표시) 그대로 유지.
+    if caption_visible_sec is not None and 0 < caption_visible_sec < duration:
+        caption_out_start = max(caption_in_start + caption_in_d, caption_visible_sec - caption_out_d)
+    else:
+        caption_out_start = max(caption_in_start + caption_in_d, duration - caption_out_d)
 
     filter_complex = (
         f"[0:v]{zp}{post_zp},"
@@ -546,7 +600,7 @@ def render(plan_path: str, output_path: str):
 
     segment_paths: List[str] = []
     for i, scene in enumerate(scenes):
-        duration = float(scene.get("durationSec") or 4.5)
+        duration = float(scene.get("durationSec") or scene.get("duration") or 4.5)
         src = scene.get("localImagePath")
         image_path = os.path.join(temp_dir, f"cover_{i + 1}.jpg")
         base_overlay_path = os.path.join(temp_dir, f"overlay_base_{i + 1}.png")
@@ -560,8 +614,9 @@ def render(plan_path: str, output_path: str):
                 f"씬 {i + 1} 이미지 없음: fallback 금지. imageProvider={scene.get('imageProvider')}"
             )
 
+        caption_style = scene.get("captionStyle") or plan.get("captionStyle", "default")
         _make_base_overlay(plan, scene, i, duration, base_overlay_path)
-        _make_caption_overlay(scene, caption_overlay_path)
+        _make_caption_overlay(scene, caption_overlay_path, style=caption_style)
         _render_segment(
             image_path,
             base_overlay_path,
@@ -569,6 +624,7 @@ def render(plan_path: str, output_path: str):
             duration,
             scene.get("motion", "slow_zoom_in"),
             segment_path,
+            caption_visible_sec=scene.get("captionVisibleSec"),
         )
         segment_paths.append(segment_path)
 
