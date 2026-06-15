@@ -2,36 +2,50 @@
 
 ## Recommended next task
 
-Checkpoint commit 승인
+audio recovery C-lite 실행: Jun/Boss TTS 재생성 + SFX/BGM 로컬 설계
 
-## Recommended option
+## Current status
 
-A안 완료: 일회성 probe/S3 복구 스크립트 archive 이동 완료. 이제 checkpoint commit 승인만 남음.
+- final_v1 technical QA: pass
+- final_v1 Owner QA: fail
+- Root causes: emotionless TTS, Boss tone mismatch, long silence, weak punchline setup
+- Existing video assets are usable
 
-## Why
+## Codex decision
 
-- Gemini Veo와 ChatGPT 이미지 자동화는 모두 PASS 상태다.
-- S5 마지막 Veo 예산 1회를 쓰기 전에 자동화 안정화 작업을 깨끗한 checkpoint로 고정하는 편이 안전하다.
-- probe와 S3 일회성 복구 스크립트가 archive로 이동되어 후속 유지보수 혼동이 줄었다.
+Claude Code suggested B first (Jun only), but Codex recommends C-lite.
 
-## Owner choice
+Reason:
+- Owner explicitly flagged both Jun and Boss performance.
+- Boss line is central to the punchline.
+- Jun-only regeneration would likely leave the core S5 failure unresolved.
+- Harry Kim is not recommended due prior Korean voice rejection in project knowledge.
 
-이 staging 목록으로 checkpoint commit을 승인할지 결정.
+## Required approval
 
-## Forbidden until Owner approval
+ALLOW_ELEVENLABS=true, Audio recovery TTS 2회 승인
 
-- git add/commit 금지
-- push/merge/clean/reset 금지
-- S5 최종 Veo 제출 금지
+## Scope after approval
 
-## After checkpoint
+- Jun/Hyun emotional TTS regeneration: 1 call
+- Boss/Theo boss-like TTS regeneration: 1 call
+- Offset v3: move J6 to S3 around 15.50s
+- SFX/BGM plan with local/free sources only
+- final_v2 candidate generation
 
-다음 atomic task는 S5 최종 Veo 제출.
+## Forbidden
 
-승인 문구:
+- Approval before ElevenLabs calls required
+- More than 2 TTS calls forbidden
+- Gemini/Veo submission forbidden
+- ChatGPT image submission forbidden
+- paid SFX/BGM purchase forbidden
+- push/merge/reset/clean forbidden
 
-ALLOW_VEO=true, S5 최종 1회 승인
+## Quality target
 
-실행 후보:
+- Jun expresses anxiety, relief, confusion, irritation, collapse
+- Boss sounds middle-aged, slow, subtly pressuring, not smooth/romantic
+- S3/S4 silence filled with comic copier rhythm/SFX
+- Boss to Jun punchline lands without needing viewer to read the script separately
 
-ALLOW_VEO=true node scripts/_upload002-s5-final.mjs --profile 2

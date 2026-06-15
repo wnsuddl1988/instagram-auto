@@ -6,12 +6,14 @@
 
 ## 현재 단계
 
-**자동화 2종 안정화 완료 — checkpoint commit 승인 대기**
+**final_v1 Owner QA FAIL — audio performance/sound redesign 필요**
 
-- Gemini Veo 공용 core + G2 preflight PASS + PREFLIGHT_STALE 게이트 완료
-- ChatGPT 이미지 공용 core + GPT-1 preflight PASS (11s) + s5-kf dry-run PASS (10s)
-- 외부 제출 0회, 사용자 브라우저 개입 0회
-- Archive 이동 완료, checkpoint commit Owner 승인 대기
+- S1~S5 veo_pass 영상 trim + 1080×1920 업스케일 + concat
+- 기술 QA PASS (1080×1920, 24fps, H.264, 36.500s, 오디오 없음)
+- 씬 경계 흐름 QA PASS (4개 경계 전부 자연스러움)
+- 무음 흐름 PASS — 사건 이해 가능, 내부 컷/자막/신규 인물 없음
+- final_v1 기술 QA는 PASS였으나 Owner 체감 QA에서 음성 연기·싱크·무대사 구간 몰입 실패로 업로드 불가
+- 다음: 추가 유료 호출 전 audio performance/sound redesign 설계
 
 ---
 
@@ -23,22 +25,24 @@
 | S2 | `veo_pass` | G1:9223 |
 | S3 | `veo_pass` | G1:9223 |
 | S4 | `veo_pass` | G2:9224 |
-| S5 | **`veo_regen_lost`** | 특례 1회 소진, 결과 회수 불가, 원본 보존 |
+| S5 | **`veo_pass`** | 최종 1회 제출, G2:9224, `s5_veo_final.mp4` 1567KB, MD5=739c1fa0 |
 
 ## 편집본 상태
 
 | 항목 | 상태 |
 |---|---|
 | silent_v1 | `content_fail` (기술PASS·콘텐츠FAIL, 보존) |
-| silent_v2 | 미생성 — S5 재생성 PASS 후 진행 |
-| TTS | 미진행 |
+| silent_v2 | `silent_v2_pass` — 36.500s, 1080×1920, 17.2MB, MD5=`67b0feb6` |
+| TTS raw | `tts_raw_pass` — Jun 18.390s + Boss 1.950s, offset v2 PASS |
+| **final_v1** | **`owner_fail`** — 기술 QA PASS이나 감정연기/싱크/무대사 몰입 실패, 업로드 불가 |
+| **final_v2** | **`owner_qa_pending`** — 기술 QA PASS, 17.46 MB, MD5=`5793e45216210b0a82cc100aec46b210`, Owner 체감 QA 대기 |
 
 ---
 
 ## Veo 예산
 
-- **총 7회 / 사용 6회 / 잔여 1회**
-  - S1~S5 각 1회 + S5 특례 1회 = 6회 사용
+- **총 7회 / 사용 7회 / 잔여 0회**
+  - S1~S5 각 1회 + S5 특례 1회 + S5 최종 1회 = 7회 전량 소진
 
 ---
 
@@ -126,8 +130,38 @@ feat(upload_002): Gemini Veo + ChatGPT 이미지 자동화 안정화
 - docs LOG/PLAN 현행화, AGENTS/CLAUDE 핸드오프 추가, _ai/ 초기화
 ```
 
+## Checkpoint
+
+- Commit: 2739f96
+- Message: feat(upload_002): Gemini Veo + ChatGPT 이미지 자동화 안정화
+- git status: clean
+
+## TTS Timing Plan v1 (2026-06-16, tts_timing_pass)
+
+| Offset | End | Who | 씬 | 대사 |
+|---|---|---|---|---|
+| 0.20s | 2.20s | Jun | S1 | 한 장만. 진짜 딱 한 장만. |
+| 2.40s | 4.90s | Jun | S1 | 화 안 낼게. 우리 오늘 좋게 끝내자. |
+| 6.20s | 7.40s | Jun | S2 | 그래. 그렇지. |
+| 8.00s | 9.80s | Jun | S2 | 근데 왜 계속 나오지? |
+| 10.20s | 11.20s | Jun | S2 | 한 장이라고. |
+| 14.80s | 16.80s | Jun | S3 | 우리 좋게 끝내기로 했잖아. |
+| 30.00s | 32.20s | Boss | S5 | 준 씨, 열정이 넘치네요. |
+| 33.00s | 35.00s | Jun | S5 | 제 열정 말고, 용지가요. |
+
+- Tail: 1.50s ✅ / S5 Boss+Jun punchline: PASS ✅ / Overlap: 없음 ✅
+- S3/S4 무음 13.2s: 시각 코미디 의도적 활용. BGM 추가는 Owner 판단 사항.
+
+## Owner QA 반영 (2026-06-16)
+
+- 화면 행동과 대본 싱크 체감이 약함
+- Jun/Boss 모두 감정 표현과 억양이 부족하고 평온한 낭독처럼 들림
+- Boss/Theo는 너무 좋은 목소리라 상사/부장님 캐릭터성이 약함
+- S3/S4 무대사 구간이 지루함
+- 펀치라인은 대본 자체보다 연기·억양·사운드 부재로 전달 실패
+
 ## 다음 단계
 
-1. **Checkpoint commit** — Owner commit 승인 후 즉시 실행 가능 (staging 준비 완료)
-2. **S5 최종 제출** — ALLOW_VEO=true, S5 최종 1회 승인 Owner 결정 후 G2에서 1회 실행
-3. **silent_v2 편집** — S5 veo_pass 후 진행
+1. **Owner 체감 QA** — `output/v2/3d_sitcom_prod_v1/upload_002_copier/final/upload_002_copier_final_v2.mp4` 감상
+2. PASS → checkpoint commit 준비
+3. FAIL → 추가 조치 (Boss 대체 목소리, SFX 교체 등) Owner 판단

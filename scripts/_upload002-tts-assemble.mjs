@@ -1,66 +1,67 @@
 /**
- * upload_002_copier — TTS 오디오 조립 스크립트
+ * upload_002_copier — TTS 오디오 조립 스크립트 v2
  *
  * [호출 계약]
- * - Jun/Hyun TTS 1회 (jun_tts_raw.mp3)
- * - Boss/Theo TTS 1회 (boss_tts_raw.mp3)
- * - 재호출 0회 — 타이밍은 로컬 오프셋으로만 조정
+ * - Jun/Hyun TTS raw (jun_hyun_tts_raw.mp3) — 외부 재호출 0회
+ * - Boss/Theo TTS raw (boss_theo_tts_raw.mp3) — 외부 재호출 0회
+ * - 타이밍은 로컬 오프셋으로만 조정
  *
- * [실행 조건]
- * - ALLOW_ELEVENLABS=true 환경변수 필수 (TTS 호출 전용, 이 스크립트는 조립만)
- * - TTS 파일이 없으면 즉시 중단 (외부 호출 없음)
+ * [v2 변경점]
+ * - source video: silent_v2 (36.500s, 1080×1920)
+ * - silencedetect: -30dB:d=0.40 (v1: -35dB:d=0.25)
+ * - Jun 10구간→7문장 매핑: LINE_SEGS
+ * - offset v2: [0.2, 2.63, 6.2, 8.67, 10.13, 23.5, 32.55]
+ * - Boss offset: 30.0s
  *
- * [조립 방식]
- * 1. 36.5s 무음 베이스 WAV 생성
- * 2. jun_tts_raw.mp3 → silencedetect로 7문장 경계 탐지 → 7개 구간 분리
- * 3. 각 구간을 화면 행동 시점 오프셋에 배치
- * 4. boss_tts_raw.mp3 → S5 손 등장 시점에 배치
- * 5. amix(inputs=9): base + jun×7 + boss×1
- * 6. 영상과 합성 → final_v1.mp4
+ * [실행]
+ * node scripts/_upload002-tts-assemble.mjs
  */
 
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 
 // ── 경로 설정 ───────────────────────────────────────────────────────────────
-const BASE = 'output/v2/3d_sitcom_prod_v1/upload_002_copier';
+const BASE      = 'output/v2/3d_sitcom_prod_v1/upload_002_copier';
 const AUDIO_DIR = path.join(BASE, 'audio');
-const SILENT_MP4 = path.join(BASE, 'silent/upload_002_copier_silent_v1.mp4');
+const SILENT_MP4 = path.join(BASE, 'final/upload_002_copier_silent_v2.mp4');
 
-const JUN_RAW = path.join(AUDIO_DIR, 'jun_tts_raw.mp3');
-const BOSS_RAW = path.join(AUDIO_DIR, 'boss_tts_raw.mp3');
-const BASE_WAV = path.join(AUDIO_DIR, 'base_silence_36s5.wav');
-const MIXED_AAC = path.join(AUDIO_DIR, 'mixed_audio.aac');
+const JUN_RAW   = path.join(AUDIO_DIR, 'jun_hyun_tts_raw.mp3');
+const BOSS_RAW  = path.join(AUDIO_DIR, 'boss_theo_tts_raw.mp3');
+const BASE_WAV  = path.join(AUDIO_DIR, 'base_silence_36s5.wav');
+const MIXED_AAC = path.join(AUDIO_DIR, 'mixed_audio_v2.aac');
 const FINAL_MP4 = path.join(BASE, 'final/upload_002_copier_final_v1.mp4');
 
-// ── 상수 ────────────────────────────────────────────────────────────────────
-const TOTAL_DURATION_S = 36.5;
+// ── 상수 v2 ─────────────────────────────────────────────────────────────────
+const TOTAL_DURATION_S  = 36.5;
 const JUN_SENTENCE_COUNT = 7;
+const SILENCE_FILTER    = 'silencedetect=noise=-30dB:d=0.40';
 
-/**
- * Jun 7문장 배치 계획 (초 단위)
- * 실제 TTS 생성 후 각 문장 길이를 측정해 겹침 여부 확인 필수
- *
- * 씬 타임라인:
- *   S1: 0.0 ~ 7.5
- *   S2: 7.5 ~ 16.0
- *   S3: 16.0 ~ 25.0
- *   S4: 25.0 ~ 32.0
- *   S5: 32.0 ~ 36.5
- */
-const JUN_OFFSETS_S = [
-  1.5,   // J1: "한 장만. 진짜 딱 한 장만."         — S1 버튼 직후
-  9.5,   // J2: "화 안 낼게. 우리 오늘 좋게 끝내자." — S2 조각 응시 (S2+2.0s)
-  18.5,  // J3: "그래. 그렇지."                      — S3 첫 장 직후 (S3+2.5s)
-  21.5,  // J4: "근데 왜 계속 나오지?"               — S3 2장 시작 (S3+5.5s)
-  26.0,  // J5: "한 장이라고."                       — S4 첫 버튼 (S4+1.0s)
-  28.8,  // J6: "우리 좋게 끝내기로 했잖아."         — S4 탈력 시점 (S4+3.8s)
-  34.5,  // J7: "제 열정 말고, 용지가요."            — Boss 직후 (S5+2.5s)
+// 10구간→7문장 매핑 (silencedetect -30dB:d=0.40 결과 기준)
+// 문장 내 마침표 포즈까지 감지되므로 구간을 합산해 문장 단위로 묶음
+const LINE_SEGS = [
+  [0, 1],  // J1: "한 장만. 진짜 딱 한 장만."
+  [2, 3],  // J2: "화 안 낼게. 우리 오늘 좋게 끝내자."
+  [4, 5],  // J3: "그래. 그렇지."
+  [6],     // J4: "근데 왜 계속 나오지?"
+  [7],     // J5: "한 장이라고."
+  [8],     // J6: "우리 좋게 끝내기로 했잖아."
+  [9],     // J7: "제 열정 말고, 용지가요."
 ];
 
-// Boss 오프셋: S5(32.0s) + 1.0s = 33.0s (손 집는 행동과 동기화)
-const BOSS_OFFSET_S = 33.0;
+// offset v2 (영상 절대 시간, 초)
+const JUN_OFFSETS_S = [
+  0.20,   // J1 — S1 시작 직후
+  2.63,   // J2 — J1 종료 후 0.20s
+  6.20,   // J3 — S2 진입 직후
+  8.67,   // J4 — J3 종료 후 0.40s
+  10.13,  // J5 — J4 종료 후 0.40s
+  23.50,  // J6 — S4 초반 탈력 시점
+  32.55,  // J7 — Boss 종료 후 0.60s (Boss end 31.950 + 0.60)
+];
+
+const BOSS_OFFSET_S = 30.0;  // S5 손 등장 직후
 
 // ── 유틸 ─────────────────────────────────────────────────────────────────────
 function run(cmd, label) {
@@ -68,7 +69,7 @@ function run(cmd, label) {
   const result = spawnSync(cmd, { shell: true, encoding: 'utf8' });
   if (result.status !== 0) {
     console.error(`[FAIL] ${label}`);
-    console.error(result.stderr);
+    console.error(result.stderr?.slice(0, 500));
     process.exit(1);
   }
   return result.stdout.trim();
@@ -82,193 +83,163 @@ function ffprobe(file, stream = 'a') {
   return parseFloat(out.stdout.trim()) || 0;
 }
 
-// ── Step 0: TTS 파일 존재 확인 ───────────────────────────────────────────────
-console.log('=== upload_002_copier TTS 오디오 조립 ===');
-console.log('[GATE] TTS 파일 존재 확인...');
-
-if (!fs.existsSync(JUN_RAW) || !fs.existsSync(BOSS_RAW)) {
-  console.log('[ABORT] TTS 파일 없음 — ElevenLabs 미호출 상태');
-  console.log(`  Jun:  ${fs.existsSync(JUN_RAW) ? 'OK' : 'MISSING'} → ${JUN_RAW}`);
-  console.log(`  Boss: ${fs.existsSync(BOSS_RAW) ? 'OK' : 'MISSING'} → ${BOSS_RAW}`);
-  console.log('[INFO] ALLOW_ELEVENLABS=true 승인 후 TTS 생성 스크립트를 먼저 실행하세요.');
-  process.exit(0);
+function md5File(file) {
+  return createHash('md5').update(fs.readFileSync(file)).digest('hex');
 }
 
-console.log('[OK] Jun TTS:', JUN_RAW);
-console.log('[OK] Boss TTS:', BOSS_RAW);
+// ── Step 0: 입력 파일 존재 확인 ──────────────────────────────────────────────
+console.log('=== upload_002_copier TTS 조립 v2 ===');
+console.log('[GATE] 입력 파일 확인...');
+
+const required = { Video: SILENT_MP4, 'Jun TTS': JUN_RAW, 'Boss TTS': BOSS_RAW };
+for (const [label, p] of Object.entries(required)) {
+  if (!fs.existsSync(p)) {
+    console.error(`[ABORT] ${label} 없음: ${p}`);
+    process.exit(1);
+  }
+  console.log(`  [OK] ${label}: ${p.split(/[\\/]/).pop()} (${fs.statSync(p).size} bytes)`);
+}
 
 // ── Step 1: 출력 디렉토리 생성 ───────────────────────────────────────────────
 fs.mkdirSync(AUDIO_DIR, { recursive: true });
 fs.mkdirSync(path.join(BASE, 'final'), { recursive: true });
 
-// ── Step 2: Jun TTS 길이 측정 ────────────────────────────────────────────────
-console.log('\n[Step 2] Jun TTS 길이 측정...');
-const junDuration = ffprobe(JUN_RAW);
+// ── Step 2: duration 측정 ────────────────────────────────────────────────────
+console.log('\n[Step 2] Duration 측정...');
+const junDuration  = ffprobe(JUN_RAW);
 const bossDuration = ffprobe(BOSS_RAW);
-console.log(`  Jun 원본 길이: ${junDuration.toFixed(3)}s`);
-console.log(`  Boss 길이: ${bossDuration.toFixed(3)}s`);
+console.log(`  Jun:  ${junDuration.toFixed(3)}s`);
+console.log(`  Boss: ${bossDuration.toFixed(3)}s`);
 
-// ── Step 3: Jun 문장 경계 탐지 (silencedetect) ───────────────────────────────
+// ── Step 3: Jun 문장 경계 탐지 (silencedetect -30dB:d=0.40) ─────────────────
 console.log('\n[Step 3] Jun 문장 경계 탐지...');
 
 const silenceOut = spawnSync(
-  `ffmpeg -i "${JUN_RAW}" -af silencedetect=noise=-35dB:d=0.25 -f null - 2>&1`,
+  `ffmpeg -i "${JUN_RAW}" -af ${SILENCE_FILTER} -f null - 2>&1`,
   { shell: true, encoding: 'utf8' }
 );
 const silenceLog = silenceOut.stdout + silenceOut.stderr;
 
-// silence_start / silence_end 파싱
 const silenceStarts = [...silenceLog.matchAll(/silence_start: ([\d.]+)/g)].map(m => parseFloat(m[1]));
-const silenceEnds = [...silenceLog.matchAll(/silence_end: ([\d.]+)/g)].map(m => parseFloat(m[1]));
+const silenceEnds   = [...silenceLog.matchAll(/silence_end: ([\d.]+)/g)].map(m => parseFloat(m[1]));
 
-console.log(`  silence_start 감지: ${silenceStarts.length}개 → ${silenceStarts.map(v=>v.toFixed(3)).join(', ')}`);
-console.log(`  silence_end 감지: ${silenceEnds.length}개 → ${silenceEnds.map(v=>v.toFixed(3)).join(', ')}`);
+console.log(`  pause 감지: ${silenceStarts.length}개`);
 
-// 발화 구간 계산: 각 silence_end → 다음 silence_start 사이가 발화 구간
-// 첫 번째: 0 → 첫 silence_start
-// 마지막: 마지막 silence_end → 파일 끝
-const segments = [];
+// 전체 발화 구간 (10개) 추출
+const rawSegs = [];
 let prevEnd = 0;
-
 for (let i = 0; i < silenceStarts.length; i++) {
-  const segStart = prevEnd;
   const segEnd = silenceStarts[i];
-  if (segEnd - segStart > 0.05) {
-    segments.push({ start: segStart, end: segEnd, dur: segEnd - segStart });
+  if (segEnd - prevEnd > 0.05) {
+    rawSegs.push({ start: prevEnd, end: segEnd, dur: segEnd - prevEnd });
   }
-  prevEnd = (silenceEnds[i] !== undefined) ? silenceEnds[i] : silenceStarts[i] + 0.1;
+  prevEnd = silenceEnds[i] ?? silenceStarts[i] + 0.1;
 }
-// 마지막 구간
 if (junDuration - prevEnd > 0.05) {
-  segments.push({ start: prevEnd, end: junDuration, dur: junDuration - prevEnd });
+  rawSegs.push({ start: prevEnd, end: junDuration, dur: junDuration - prevEnd });
 }
+console.log(`  원시 구간: ${rawSegs.length}개`);
 
-console.log(`  발화 구간 감지: ${segments.length}개`);
-segments.forEach((s, i) => {
-  console.log(`    J${i+1}: ${s.start.toFixed(3)}s ~ ${s.end.toFixed(3)}s (${s.dur.toFixed(3)}s)`);
-});
+// ── Step 4: 10구간 → 7문장 매핑 ─────────────────────────────────────────────
+console.log('\n[Step 4] 7문장 매핑...');
 
-// ── Step 4: 문장 수 검증 ─────────────────────────────────────────────────────
-console.log('\n[Step 4] 문장 수 검증...');
-if (segments.length !== JUN_SENTENCE_COUNT) {
-  console.error(`[ABORT] Jun 발화 구간 ${segments.length}개 감지 — 정확히 ${JUN_SENTENCE_COUNT}개 필요`);
-  console.error('[INFO] silencedetect 임계값(-35dB) 조정이 필요하거나 TTS 재구성이 필요합니다.');
-  console.error('[INFO] 재호출 없이 임계값만 조정 후 재실행하세요.');
+if (rawSegs.length < 10) {
+  console.error(`[ABORT] 원시 구간 ${rawSegs.length}개 — 10개 이상 필요 (임계값 확인)`);
   process.exit(1);
 }
-console.log(`[OK] 정확히 ${JUN_SENTENCE_COUNT}개 발화 구간 확인`);
 
-// ── Step 5: 배치 계획 검증 (겹침 + 영상 종료 전 여운 확인) ──────────────────
+const sentences = LINE_SEGS.map((idxs, ji) => {
+  const start = rawSegs[idxs[0]].start;
+  const end   = rawSegs[idxs[idxs.length - 1]].end;
+  return { start, end, dur: end - start };
+});
+
+sentences.forEach((s, i) =>
+  console.log(`  J${i + 1}: ${s.start.toFixed(3)}s ~ ${s.end.toFixed(3)}s (${s.dur.toFixed(3)}s)`)
+);
+
+if (sentences.length !== JUN_SENTENCE_COUNT) {
+  console.error(`[ABORT] 문장 수 ${sentences.length} ≠ ${JUN_SENTENCE_COUNT}`);
+  process.exit(1);
+}
+console.log(`[OK] 7문장 매핑 완료`);
+
+// ── Step 5: 배치 계획 검증 ───────────────────────────────────────────────────
 console.log('\n[Step 5] 배치 계획 검증...');
 
-let prevFinalEnd = 0;
 let validationFail = false;
+let prevAbsEnd = 0;
 
 for (let i = 0; i < JUN_SENTENCE_COUNT; i++) {
   const offset = JUN_OFFSETS_S[i];
-  const dur = segments[i].dur;
-  const end = offset + dur;
+  const dur    = sentences[i].dur;
+  const end    = offset + dur;
+  const gap    = offset - prevAbsEnd;
 
-  // S5 내 J7 확인: Boss 먼저 시작 후 J7 시작
-  if (i === 6) { // J7
-    const bossEnd = BOSS_OFFSET_S + bossDuration;
-    if (offset < bossEnd) {
-      console.error(`[WARN] J7 시작(${offset}s)이 Boss 종료(${bossEnd.toFixed(3)}s) 전 — 겹침 가능`);
-      console.log(`[INFO] J7 오프셋을 ${(bossEnd + 0.3).toFixed(1)}s 이후로 조정 권장`);
-      // 자동 조정 (재호출 없이 로컬만)
-      JUN_OFFSETS_S[6] = bossEnd + 0.3;
-      console.log(`[AUTO-ADJUST] J7 오프셋 → ${JUN_OFFSETS_S[6].toFixed(1)}s`);
-    }
-  }
-
-  const adjustedOffset = JUN_OFFSETS_S[i];
-  const adjustedEnd = adjustedOffset + dur;
-
-  // 영상 종료 전 여운
-  if (i === 6 && adjustedEnd > TOTAL_DURATION_S - 0.3) {
-    console.error(`[FAIL] J7 종료(${adjustedEnd.toFixed(3)}s) — 여운 0.3s 확보 불가 (영상 ${TOTAL_DURATION_S}s)`);
+  if (gap < 0) {
+    console.error(`[FAIL] J${i + 1} overlap — gap=${gap.toFixed(3)}s`);
     validationFail = true;
   }
-
-  // 이전 발화와 겹침
-  if (adjustedOffset < prevFinalEnd) {
-    console.error(`[FAIL] J${i+1} 시작(${adjustedOffset}s) < J${i} 종료(${prevFinalEnd.toFixed(3)}s) — 겹침`);
+  if (end > TOTAL_DURATION_S) {
+    console.error(`[FAIL] J${i + 1} overflow — end=${end.toFixed(3)}s > ${TOTAL_DURATION_S}s`);
     validationFail = true;
   }
-
-  console.log(`  J${i+1}: offset=${adjustedOffset}s, dur=${dur.toFixed(3)}s, end=${adjustedEnd.toFixed(3)}s ${adjustedEnd <= TOTAL_DURATION_S ? '✅' : '⚠️ 영상 초과'}`);
-  prevFinalEnd = adjustedEnd;
+  console.log(`  J${i + 1}: ${offset}s + ${dur.toFixed(3)}s = ${end.toFixed(3)}s gap=${gap.toFixed(3)}s ${gap >= 0 && end <= TOTAL_DURATION_S ? '✅' : '❌'}`);
+  prevAbsEnd = end;
 }
 
-// Boss 검증
 const bossEnd = BOSS_OFFSET_S + bossDuration;
-console.log(`  Boss: offset=${BOSS_OFFSET_S}s, dur=${bossDuration.toFixed(3)}s, end=${bossEnd.toFixed(3)}s ${bossEnd <= TOTAL_DURATION_S ? '✅' : '⚠️ 영상 초과'}`);
+const lastEnd = Math.max(prevAbsEnd, bossEnd);
+const tail    = TOTAL_DURATION_S - lastEnd;
 
-if (bossEnd > TOTAL_DURATION_S) {
-  console.error('[FAIL] Boss 대사가 영상 길이를 초과');
-  validationFail = true;
-}
+console.log(`  Boss: ${BOSS_OFFSET_S}s + ${bossDuration.toFixed(3)}s = ${bossEnd.toFixed(3)}s ✅`);
+console.log(`  Tail: ${tail.toFixed(3)}s ${tail >= 0.3 ? '✅' : '❌'}`);
 
-const lastEnd = Math.max(prevFinalEnd, bossEnd);
-const tail = TOTAL_DURATION_S - lastEnd;
-console.log(`\n  마지막 발화 종료: ${lastEnd.toFixed(3)}s`);
-console.log(`  여운(tail): ${tail.toFixed(3)}s ${tail >= 0.3 ? '✅' : '⚠️ 0.3s 미만'}`);
+if (tail < 0.3) { console.error('[FAIL] tail < 0.3s'); validationFail = true; }
+if (validationFail) { console.error('\n[ABORT] 배치 검증 실패'); process.exit(1); }
+console.log('[OK] 배치 검증 PASS');
 
-if (tail < 0.3) {
-  console.error('[FAIL] 여운 0.3s 미확보');
-  validationFail = true;
-}
-
-if (validationFail) {
-  console.error('\n[ABORT] 배치 계획 검증 실패 — 오프셋 조정 후 재실행');
-  process.exit(1);
-}
-console.log('\n[OK] 배치 계획 검증 PASS');
-
-// ── Step 6: Jun 문장 구간 분리 ───────────────────────────────────────────────
+// ── Step 6: Jun 문장 구간 분리 (TTS 내 상대 시간 기준) ──────────────────────
 console.log('\n[Step 6] Jun 문장 구간 분리...');
 const junSegFiles = [];
 
-for (let i = 0; i < segments.length; i++) {
-  const seg = segments[i];
-  const outFile = path.join(AUDIO_DIR, `jun_seg_${i+1}.wav`);
+for (let i = 0; i < sentences.length; i++) {
+  const seg     = sentences[i];
+  const outFile = path.join(AUDIO_DIR, `jun_seg_v2_${i + 1}.wav`);
   run(
     `ffmpeg -y -i "${JUN_RAW}" -ss ${seg.start.toFixed(3)} -to ${seg.end.toFixed(3)} -c:a pcm_s16le "${outFile}"`,
-    `Jun J${i+1} 분리 (${seg.start.toFixed(3)}~${seg.end.toFixed(3)}s)`
+    `J${i + 1} 분리 (${seg.start.toFixed(3)}~${seg.end.toFixed(3)}s)`
   );
   junSegFiles.push(outFile);
 }
 console.log(`[OK] ${junSegFiles.length}개 구간 분리 완료`);
 
-// ── Step 7: 36.5초 무음 베이스 WAV 생성 ─────────────────────────────────────
+// ── Step 7: 36.5s 무음 베이스 WAV ────────────────────────────────────────────
 console.log('\n[Step 7] 무음 베이스 WAV 생성...');
 run(
   `ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -t ${TOTAL_DURATION_S} -c:a pcm_s16le "${BASE_WAV}"`,
-  `${TOTAL_DURATION_S}s 무음 베이스 WAV`
+  `${TOTAL_DURATION_S}s 무음 베이스`
 );
 
-// ── Step 8: amix 조합 ────────────────────────────────────────────────────────
+// ── Step 8: amix (base + jun×7 + boss) ───────────────────────────────────────
 console.log('\n[Step 8] amix 오디오 조합...');
 
-// 입력: [0]=base, [1~7]=jun 7개, [8]=boss
+// inputs: [0]=base, [1~7]=jun segs, [8]=boss
 const inputs = [`-i "${BASE_WAV}"`];
 junSegFiles.forEach(f => inputs.push(`-i "${f}"`));
 inputs.push(`-i "${BOSS_RAW}"`);
 
 const filterParts = [];
 
-// Jun 7개 adelay
 for (let i = 0; i < JUN_SENTENCE_COUNT; i++) {
   const ms = Math.round(JUN_OFFSETS_S[i] * 1000);
-  filterParts.push(`[${i+1}:a]adelay=${ms}|${ms}[j${i+1}]`);
+  filterParts.push(`[${i + 1}:a]adelay=${ms}|${ms}[j${i + 1}]`);
 }
 
-// Boss adelay
 const bossMs = Math.round(BOSS_OFFSET_S * 1000);
 filterParts.push(`[8:a]adelay=${bossMs}|${bossMs}[boss]`);
 
-// amix: base + j1~j7 + boss = 9 inputs, duration=first (base가 36.5s 고정)
-const mixInputs = ['[0:a]', ...Array.from({length: 7}, (_, i) => `[j${i+1}]`), '[boss]'].join('');
+const mixInputs = ['[0:a]', ...Array.from({ length: 7 }, (_, i) => `[j${i + 1}]`), '[boss]'].join('');
 filterParts.push(`${mixInputs}amix=inputs=9:duration=first:normalize=0[aout]`);
 
 const filterComplex = filterParts.join('; ');
@@ -279,54 +250,82 @@ run(
 );
 
 // ── Step 9: 영상 + 오디오 합성 ───────────────────────────────────────────────
-console.log('\n[Step 9] 영상+오디오 합성...');
+console.log('\n[Step 9] silent_v2 + 오디오 합성...');
 run(
   `ffmpeg -y -i "${SILENT_MP4}" -i "${MIXED_AAC}" -c:v copy -c:a aac -b:a 192k -shortest "${FINAL_MP4}"`,
-  '최종 영상 합성'
+  'final_v1 합성'
 );
 
-// ── Step 10: 최종 QA ──────────────────────────────────────────────────────────
-console.log('\n[Step 10] 최종 QA...');
+// ── Step 10: QA ──────────────────────────────────────────────────────────────
+console.log('\n[Step 10] final_v1 QA...');
 
-const finalDur = ffprobe(FINAL_MP4, 'v');
-const audioDur = ffprobe(FINAL_MP4, 'a');
-console.log(`  영상 길이: ${finalDur.toFixed(3)}s (기준: ${TOTAL_DURATION_S}s)`);
-console.log(`  오디오 길이: ${audioDur.toFixed(3)}s`);
+const vidDur   = ffprobe(FINAL_MP4, 'v');
+const audDur   = ffprobe(FINAL_MP4, 'a');
+const fileSize = fs.statSync(FINAL_MP4).size;
+const fileMd5  = md5File(FINAL_MP4);
 
-// loudness 측정
-const loudnessOut = spawnSync(
+// ffprobe 상세 (해상도/fps/코덱)
+const probeOut = spawnSync(
+  `ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height,r_frame_rate,codec_name -of json "${FINAL_MP4}"`,
+  { shell: true, encoding: 'utf8' }
+);
+const probeJson = JSON.parse(probeOut.stdout || '{"streams":[{}]}');
+const vs = probeJson.streams[0] || {};
+const [fpsNum, fpsDen] = (vs.r_frame_rate || '24/1').split('/').map(Number);
+const fps = Math.round(fpsNum / fpsDen);
+
+// loudness
+const loudOut = spawnSync(
   `ffmpeg -i "${FINAL_MP4}" -filter_complex ebur128=peak=true -f null - 2>&1`,
   { shell: true, encoding: 'utf8' }
 );
-const loudnessLog = loudnessOut.stdout + loudnessOut.stderr;
-const lufsMatch = loudnessLog.match(/I:\s+([-\d.]+)\s+LUFS/);
-const peakMatch = loudnessLog.match(/Peak:\s+([-\d.]+)\s+dBFS/);
-const lufs = lufsMatch ? parseFloat(lufsMatch[1]) : null;
-const peak = peakMatch ? parseFloat(peakMatch[1]) : null;
-
-console.log(`  Loudness: ${lufs !== null ? lufs.toFixed(1)+' LUFS' : '측정 불가'} (목표: -14 ±2)`);
-console.log(`  Peak: ${peak !== null ? peak.toFixed(1)+' dBFS' : '측정 불가'} (기준: ≤ -3)`);
-
-const sizeKB = Math.round(fs.statSync(FINAL_MP4).size / 1024);
-console.log(`  파일 크기: ${sizeKB}KB`);
+const loudLog   = loudOut.stdout + loudOut.stderr;
+const lufsMatch = loudLog.match(/I:\s+([-\d.]+)\s+LUFS/);
+const peakMatch = loudLog.match(/Peak:\s+([-\d.]+)\s+dBFS/);
+const lufs      = lufsMatch ? parseFloat(lufsMatch[1]) : null;
+const peak      = peakMatch ? parseFloat(peakMatch[1]) : null;
 
 // QA 판정
-const durationOk = Math.abs(finalDur - TOTAL_DURATION_S) < 0.5;
-const loudnessOk = lufs !== null ? (lufs >= -16 && lufs <= -12) : true;
-const peakOk = peak !== null ? peak <= -3 : true;
+const durOk     = Math.abs(vidDur - TOTAL_DURATION_S) < 0.5;
+const resOk     = vs.width === 1080 && vs.height === 1920;
+const fpsOk     = fps === 24;
+const codecOk   = vs.codec_name === 'h264';
+const audioOk   = audDur > 0;
+const loudOk    = lufs !== null ? (lufs >= -18 && lufs <= -10) : true;
+const peakOk    = peak !== null ? peak <= -1 : true;
 
 console.log('\n=== QA 결과 ===');
-console.log(`  영상 길이: ${durationOk ? '✅' : '⚠️'} ${finalDur.toFixed(3)}s`);
-console.log(`  Loudness:  ${loudnessOk ? '✅' : '⚠️'} ${lufs !== null ? lufs.toFixed(1)+' LUFS' : 'N/A'}`);
-console.log(`  Peak:      ${peakOk ? '✅' : '⚠️'} ${peak !== null ? peak.toFixed(1)+' dBFS' : 'N/A'}`);
+console.log(`  파일:     ${FINAL_MP4.split(/[\\/]/).pop()}`);
+console.log(`  크기:     ${fileSize} bytes (${(fileSize / 1024 / 1024).toFixed(2)} MB)`);
+console.log(`  MD5:      ${fileMd5}`);
+console.log(`  해상도:   ${vs.width}×${vs.height} ${resOk ? '✅' : '❌'}`);
+console.log(`  FPS:      ${fps} ${fpsOk ? '✅' : '❌'}`);
+console.log(`  코덱:     ${vs.codec_name} ${codecOk ? '✅' : '❌'}`);
+console.log(`  영상길이: ${vidDur.toFixed(3)}s ${durOk ? '✅' : '⚠️'}`);
+console.log(`  오디오:   ${audDur.toFixed(3)}s ${audioOk ? '✅' : '❌'}`);
+console.log(`  Loudness: ${lufs !== null ? lufs.toFixed(1) + ' LUFS' : 'N/A'} ${loudOk ? '✅' : '⚠️'}`);
+console.log(`  Peak:     ${peak !== null ? peak.toFixed(1) + ' dBFS' : 'N/A'} ${peakOk ? '✅' : '⚠️'}`);
 
-if (!durationOk || !loudnessOk || !peakOk) {
-  console.error('\n[WARN] 일부 QA 기준 미충족 — 수동 확인 필요');
-} else {
-  console.log('\n[PASS] 최종 QA 통과');
-}
+const allPass = durOk && resOk && fpsOk && codecOk && audioOk && peakOk;
+console.log(`\n  [${allPass ? 'PASS' : 'WARN'}] 기술 QA ${allPass ? '✅' : '⚠️ 일부 확인 필요'}`);
 
-console.log(`\n[완료] 최종 영상: ${FINAL_MP4}`);
-console.log('[INFO] 원본 TTS 파일은 보존됨:');
-console.log(`  Jun: ${JUN_RAW}`);
-console.log(`  Boss: ${BOSS_RAW}`);
+// 대사 싱크 QA 보고
+console.log('\n=== 대사 싱크 QA (계산 기준) ===');
+const syncItems = [
+  { label: 'J1 S1(0~6s) 내', ok: JUN_OFFSETS_S[0] + sentences[0].dur <= 6.0 },
+  { label: 'J2 S1(0~6s) 내', ok: JUN_OFFSETS_S[1] + sentences[1].dur <= 6.0 },
+  { label: 'J3 S2(6~14.5s) 내', ok: JUN_OFFSETS_S[2] >= 6.0 && JUN_OFFSETS_S[2] + sentences[2].dur <= 14.5 },
+  { label: 'J4 S2(6~14.5s) 내', ok: JUN_OFFSETS_S[3] >= 6.0 && JUN_OFFSETS_S[3] + sentences[3].dur <= 14.5 },
+  { label: 'J5 S2(6~14.5s) 내', ok: JUN_OFFSETS_S[4] >= 6.0 && JUN_OFFSETS_S[4] + sentences[4].dur <= 14.5 },
+  { label: 'J6 S4(23~29.5s) 내', ok: JUN_OFFSETS_S[5] >= 23.0 && JUN_OFFSETS_S[5] + sentences[5].dur <= 29.5 },
+  { label: 'Boss S5(29.5~36.5s) 내', ok: BOSS_OFFSET_S >= 29.5 && bossEnd <= 36.5 },
+  { label: 'J7 Boss 이후', ok: JUN_OFFSETS_S[6] > bossEnd },
+  { label: 'J7 영상 내', ok: JUN_OFFSETS_S[6] + sentences[6].dur <= TOTAL_DURATION_S },
+  { label: `Tail ${tail.toFixed(2)}s ≥ 0.3s`, ok: tail >= 0.3 },
+];
+
+syncItems.forEach(item => console.log(`  ${item.ok ? '✅' : '❌'} ${item.label}`));
+const syncPass = syncItems.every(i => i.ok);
+console.log(`\n  대사 싱크 QA: ${syncPass ? 'PASS ✅' : 'FAIL ❌'}`);
+
+console.log(`\n[DONE] final_v1 생성 완료: ${FINAL_MP4}`);

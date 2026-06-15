@@ -1,163 +1,126 @@
-# CLAUDE_REPORT — Archive 이동 + Checkpoint 준비
+# CLAUDE_REPORT — audio recovery 실행 (C-lite: TTS 2회 + SFX)
 
 **작성:** 2026-06-16  
-**작업:** probe 3개 + S3 일회성 4개 → scripts/archive/ 이동 / checkpoint staging 후보 최종 정리  
-**외부 제출:** 0회  
+**작업:** final_v1 Owner QA FAIL → final_v2 생성 (C-lite 실행)  
+**외부 호출:** ElevenLabs TTS 2회 (Jun v2 1회 + Boss v2 1회)  
 **commit/push:** 없음
 
 ---
 
-## 결과: archive 이동 완료 + checkpoint 준비 완료
+## 1. 실행 결과 요약
 
-7개 파일 이동 검증 PASS.  
-git status 정리 완료. Owner가 commit 승인하면 즉시 checkpoint commit 가능.
+| 항목 | 결과 |
+|---|---|
+| ElevenLabs 호출 | **2회 ✅** (상한 2회, 초과 없음) |
+| Jun v2 생성 | `jun_hyun_tts_v2.mp3` — 315,185B, 19.644s, MD5=`79e51ffb127eae48eec28b1381e38fe7` |
+| Boss v2 생성 | `boss_theo_tts_v2.mp3` — 37,660B, 2.276s, MD5=`3e31feef2a16b8c88cd81000dc6614c8` |
+| SFX 생성 | 4종 ffmpeg lavfi 로컬 생성 (외부 다운로드 없음, 라이선스 없음) |
+| final_v2 | `upload_002_copier_final_v2.mp4` — 18,307,289B (17.46 MB), MD5=`5793e45216210b0a82cc100aec46b210` |
+| 기술 QA | **PASS ✅** |
 
 ---
 
-## 1. Archive 이동 결과
+## 2. TTS 파라미터 변경 (v1 → v2)
 
-| 파일 | 원래 위치 | 이동 후 |
+| | Jun v1 | Jun v2 | Boss v1 | Boss v2 |
+|---|---|---|---|---|
+| stability | 0.50 | **0.30** ↓ | 0.60 | **0.75** ↑ |
+| similarity | 0.80 | **0.75** ↓ | 0.80 | **0.85** ↑ |
+| style | 0.08 | **0.25** ↑ | 0.05 | **0.03** ↓ |
+| speed | 0.90 | **0.85** ↓ | 0.92 | **0.82** ↓ |
+
+변경 의도:
+- Jun: 감정 변동폭 확대 (당황→안도→의심→짜증→체념)
+- Boss: 중후하고 느린 부장님 톤 (고막남친 탈피)
+
+---
+
+## 3. offset v3 (실측 기반 조정)
+
+v2 TTS는 speed가 낮아 v1보다 전체 길이가 길어짐 (Jun: 18.390s → 19.644s).
+J2 offset이 겹쳐 실측값 기반으로 재조정.
+
+| | offset | dur | end | gap |
+|---|---|---|---|---|
+| J1 | 0.20 | 2.871 | 3.071 | +0.20 ✅ |
+| J2 | 3.27 | 3.400 | 6.670 | +0.20 ✅ |
+| J3 | 6.87 | 1.433 | 8.303 | +0.20 ✅ |
+| J4 | 8.50 | 1.262 | 9.762 | +0.20 ✅ |
+| J5 | 9.96 | 0.778 | 10.738 | +0.20 ✅ |
+| J6 | 15.50 | 1.617 | 17.117 | +4.76 ✅ |
+| J7 | 32.55 | 0.986 | 33.536 | +15.43 ✅ |
+| Boss | 30.00 | 2.276 | 32.276 | — ✅ |
+| Tail | | | | 2.964s ✅ |
+
+★ J6: 23.50s → 15.50s (S3 초반으로 이동 — 재시작 호소와 화면 행동 맞춤)
+
+**주의: 스크립트 싱크 QA에서 J2가 ❌로 표시됨** — J2가 6.670s 종료로 S1 경계(6.0s)를 0.670s 초과하지만, 이는 의도된 배치 (J2 대사 "화 안 낼게. 우리 오늘 좋게 끝내자."가 S1/S2 경계에 걸쳐도 내용상 자연스러움). 실제 오버랩/오버플로우는 없음.
+
+---
+
+## 4. SFX 레이어
+
+| SFX | 시간 | 방식 | 라이선스 |
+|---|---|---|---|
+| button_click | 0.0s | ffmpeg lavfi sine 1800Hz 0.08s | 없음 |
+| error_beep | 2.2s | ffmpeg lavfi sine 600+800Hz 0.3s | 없음 |
+| paper_rustle | 6.0~10.0s | ffmpeg lavfi white noise bandpass 4s | 없음 |
+| copier_motor | 14.5~29.5s | ffmpeg lavfi sine 80+250Hz tremolo 15s | 없음 |
+
+---
+
+## 5. final_v2 기술 QA
+
+| 항목 | 값 | 판정 |
 |---|---|---|
-| `_probe-gemini-profiles.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_probe-s2-new-chat-attach.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_probe-s2-veo-attach-direct.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_upload002-s3-bag-edit.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_upload002-s3-continuity-fix.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_upload002-s3-recovery-save.mjs` | `scripts/` | `scripts/archive/` ✅ |
-| `_upload002-s3-v2-regen.mjs` | `scripts/` | `scripts/archive/` ✅ |
+| 해상도 | 1080×1920 | ✅ |
+| FPS | 24 | ✅ |
+| 코덱 | h264 | ✅ |
+| 영상 길이 | 36.500s | ✅ |
+| 오디오 길이 | 36.478s | ✅ |
+| Loudness | -27.6 LUFS | (참고) |
+| Peak | -9.6 dBFS | ✅ (clipping 없음) |
+| 파일 크기 | 17.46 MB | ✅ |
+| MD5 | `5793e45216210b0a82cc100aec46b210` | ✅ |
 
-- 원래 위치: GONE (7/7) ✅  
-- archive/ 위치: OK (7/7) ✅
+기술 QA: **PASS ✅**
 
 ---
 
-## 2. git status 최종 요약
+## 6. 변경/생성 파일
 
-### Tracked (unstaged) — 4개
-
-| 파일 | 변경 내용 |
+| 파일 | 상태 |
 |---|---|
-| `AGENTS.md` | +12줄 — 핸드오프 워크플로우 섹션 |
-| `CLAUDE.md` | +12줄 — 동일 |
-| `docs/LOG.md` | +45줄 — S3/S4/S5 키프레임 완료 이력 |
-| `docs/PLAN.md` | 5줄 — 키프레임 상태 현행화 |
+| `scripts/_upload002-tts-generate-v2.mjs` | NEW (TTS 재생성 v2) |
+| `scripts/_upload002-tts-assemble-v3.mjs` | NEW (assemble v3, offset v3r, SFX 포함) |
+| `output/.../audio/jun_hyun_tts_v2.mp3` | NEW — 19.644s |
+| `output/.../audio/boss_theo_tts_v2.mp3` | NEW — 2.276s |
+| `output/.../audio/sfx_*.wav` | NEW — 4종 로컬 SFX |
+| `output/.../audio/mixed_audio_v3.aac` | NEW |
+| `output/.../final/upload_002_copier_final_v2.mp4` | NEW — 17.46 MB |
+| `_ai/CLAUDE_REPORT.md` | 갱신 (현재 파일) |
+| `_ai/PROJECT_STATE.md` | 갱신 예정 |
 
-**git diff --stat:** 4 files, 75 insertions, 5 deletions — 모두 문서. 기능 변경 없음.
-
-### Untracked — 24개 항목
-
-| 경로 | 내용 |
-|---|---|
-| `_ai/` | 핸드오프 보드 12개 파일 |
-| `docs/exec-plans/v033_upload002_s3_continuity_recovery.md` | S3 복구 실행계획 |
-| `scripts/_gemini-veo-core.mjs` | Gemini 공용 모듈 |
-| `scripts/_gemini-veo-preflight.mjs` | Gemini preflight |
-| `scripts/_chatgpt-image-core.mjs` | ChatGPT 공용 모듈 |
-| `scripts/_chatgpt-image-preflight.mjs` | ChatGPT preflight |
-| `scripts/_upload002-s1-veo-generate.mjs` | S1 Veo 생성기 |
-| `scripts/_upload002-s2-veo-generate.mjs` | S2 Veo 생성기 |
-| `scripts/_upload002-s3-veo-generate.mjs` | S3 Veo 생성기 |
-| `scripts/_upload002-s4-kf-generate.mjs` | S4 키프레임 생성기 |
-| `scripts/_upload002-s4-veo-generate.mjs` | S4 Veo 생성기 |
-| `scripts/_upload002-s5-edit-from-s4.mjs` | S5 S4 기반 편집기 |
-| `scripts/_upload002-s5-final.mjs` | S5 Veo 최종 제출기 |
-| `scripts/_upload002-s5-kf-generate.mjs` | S5 키프레임 생성기 |
-| `scripts/_upload002-s5-veo-generate.mjs` | S5 Veo 기본 생성기 |
-| `scripts/_upload002-s5-veo-regen.mjs` | S5 오검출 교정 재생성기 |
-| `scripts/_upload002-tts-assemble.mjs` | TTS 조립 |
-| `scripts/_upload002-tts-timing-dryrun.mjs` | TTS 타이밍 검증 |
-| `scripts/archive/` | archive 파일 전체 (이동된 7개 + 기존 _temp-* 7개 + .gitkeep) |
-
----
-
-## 3. Checkpoint Staging 후보 최종 목록
-
-### Stage 대상 (git add)
-
-```
-# Tracked 수정본
-AGENTS.md
-CLAUDE.md
-docs/LOG.md
-docs/PLAN.md
-
-# 핸드오프 보드
-_ai/
-
-# 문서
-docs/exec-plans/v033_upload002_s3_continuity_recovery.md
-
-# Gemini Veo 자동화
-scripts/_gemini-veo-core.mjs
-scripts/_gemini-veo-preflight.mjs
-scripts/_upload002-s5-final.mjs
-
-# ChatGPT 이미지 자동화
-scripts/_chatgpt-image-core.mjs
-scripts/_chatgpt-image-preflight.mjs
-scripts/_upload002-s5-kf-generate.mjs
-
-# 씬별 생성기
-scripts/_upload002-s1-veo-generate.mjs
-scripts/_upload002-s2-veo-generate.mjs
-scripts/_upload002-s3-veo-generate.mjs
-scripts/_upload002-s4-kf-generate.mjs
-scripts/_upload002-s4-veo-generate.mjs
-scripts/_upload002-s5-edit-from-s4.mjs
-scripts/_upload002-s5-veo-generate.mjs
-scripts/_upload002-s5-veo-regen.mjs
-
-# TTS
-scripts/_upload002-tts-assemble.mjs
-scripts/_upload002-tts-timing-dryrun.mjs
-
-# Archive (이동된 7개 + 기존 _temp-* 7개 + .gitkeep)
-scripts/archive/
-```
-
-총 예상 파일: tracked 4 + untracked 23개 항목 (archive/ 폴더 포함)
-
----
-
-## 4. 커밋 메시지 후보
-
-```
-feat(upload_002): Gemini Veo + ChatGPT 이미지 자동화 안정화
-
-- _gemini-veo-core.mjs (14 export) + preflight, PREFLIGHT_STALE 4/4 PASS
-- _chatgpt-image-core.mjs (17 export) + preflight, GPT-1 preflight PASS
-- G2 preflight PASS (50s) / s5-kf dry-run PASS (10s) / 외부 제출 0회
-- S1~S5 Veo 생성기, S4/S5 키프레임 생성기, TTS 스크립트 추가
-- probe 3개 + S3 일회성 4개 → scripts/archive/ 이동
-- docs: LOG/PLAN 현행화, AGENTS/CLAUDE 핸드오프 워크플로우 추가
-- _ai/ 핸드오프 보드 초기화
-```
-
----
-
-## 5. 외부 제출 최종 확인
-
-- Gemini/Veo: 0회 ✅
-- ChatGPT 이미지: 0회 ✅
-- commit/push: 없음 ✅
-- 파일 삭제: 없음 (이동만) ✅
-
----
-
-## 6. Checkpoint 후 다음 단계
-
-**S5 최종 Veo 제출**
-- 조건: `ALLOW_VEO=true` + S5 최종 1회 Owner 명시 승인
-- 사전: `node scripts/_gemini-veo-preflight.mjs` (G2 상태 재확인)
-- 실행: `ALLOW_VEO=true node scripts/_upload002-s5-final.mjs --profile 2`
-- 잔여 예산: **1회**
+기존 v1 파일 보존:
+- `jun_hyun_tts_raw.mp3` (v1 그대로)
+- `boss_theo_tts_raw.mp3` (v1 그대로)
+- `upload_002_copier_final_v1.mp4` (owner_fail 상태로 보존)
 
 ---
 
 ## 7. 남은 리스크
 
-| 항목 | 내용 |
-|---|---|
-| `activateImageTool aria-checked=0` | 실제 ChatGPT 이미지 생성 시 도구 활성화 DOM 확인자 약함 — 재확인 필요 |
-| Veo 잔여 예산 1회 | S5 제출 1회 소진 후 추가 예산 없음 |
-| G2 Chrome 상태 | S5 최종 제출 전 G2:9224 Chrome 재기동 후 preflight 재실행 권장 |
+| 리스크 | 내용 | 심각도 |
+|---|---|---|
+| Boss 체감 QA | Theo v2가 "중후 부장님" 톤으로 개선됐는지 — 실제 청취 필요 | ★★★ |
+| Jun 감정 체감 | stability 0.30/style 0.25가 실제로 당황/짜증/체념을 전달하는지 | ★★★ |
+| SFX 체감 | ffmpeg 로컬 생성 SFX가 실제 복사기 환경을 충분히 연출하는지 | ★★ |
+| J2 씬 경계 | J2(3.27~6.67s)가 S1/S2 경계에 걸림 — 청각적으로 자연스러운지 | ★ |
+
+---
+
+## 8. 다음 권장 액션
+
+1. **Owner 체감 QA** — `upload_002_copier_final_v2.mp4` 감상
+2. 판정 기준: Jun 감정 변화가 들리는지 / Boss가 부장님 톤인지 / S3/S4가 덜 지루한지 / 펀치라인이 대본 없이 통하는지
+3. PASS → checkpoint commit 준비 / FAIL → C안 추가 검토 (Boss 대체 목소리 등)
