@@ -2,43 +2,60 @@
 
 ## Task status
 
-Archive moved — checkpoint commit approval gate
+Final test Quality Gate Contract drafting
 
 ## Task goal
 
-Owner 승인 후 archive 이동 + Quality Gate 준비 변경분을 checkpoint commit한다.
+30~40초 오피스 코미디 마지막 테스트를 생성하기 전에 `_ai/QUALITY_GATE.md` 기준으로 품질 계약을 작성한다.
 
-## Required Owner approval
+## Important UI/Git note
 
-checkpoint commit 승인
+Git is clean and synced after commit `de475b6`. If Claude UI still shows a green branch icon or old diff badge, treat it as UI/cache/branch indicator, not working-tree dirt. Verify with `git status -sb` and continue.
 
-## Scope after approval
+## Approved scope
 
-Stage and commit:
-- _ai/CLAUDE_REPORT.md
-- _ai/CODEX_REVIEW.md
-- _ai/HANDOFF_NOW.md
-- _ai/NEXT_ACTION.md
-- _ai/PROJECT_STATE.md
-- _ai/QUALITY_GATE.md
-- scripts/archive/_upload002-tts-generate.mjs
-- scripts/archive/_upload002-voice-list.mjs
-- scripts/archive/_upload002-tts-generate-v2.mjs
-- scripts/archive/_upload002-tts-assemble-v3.mjs
-- corresponding git renames from scripts/
-
-## Commit message
-
-chore(upload_002): archive 정리 + Quality Gate 준비
+- Read `_ai/QUALITY_GATE.md`
+- Draft one final-test office comedy concept
+- Draft Event Contract
+- Draft Dialogue Contract
+- Draft Emotion / Voice Contract
+- Draft Sound Contract
+- Draft Stop-Loss Contract
+- Report expected external calls/cost
+- Update `_ai/CLAUDE_REPORT.md` and `_ai/PROJECT_STATE.md`
 
 ## Forbidden
 
-- push 금지
-- merge/reset/clean 금지
-- 외부 호출 금지
-- 생성 작업 금지
+- ElevenLabs call forbidden
+- Gemini/Veo submission forbidden
+- ChatGPT image generation forbidden
+- image/video/audio generation forbidden
+- mux/final generation forbidden
+- push/merge/reset/clean forbidden
 
-## After checkpoint
+## Required output
 
-마지막 테스트 Quality Gate Contract 작성으로 진행한다.
+Contract must answer:
+
+- What is different from upload_002 failure?
+- What conditions block generation before any paid call?
+- What conditions fail internally before Owner sees candidate?
+- How many Owner gates are expected?
+- Expected calls/cost for the later generation stage
+
+## Required final handoff
+
+## Codex에 붙여넣을 인수인계사항
+
+- Concept
+- Event Contract
+- Dialogue Contract
+- Emotion / Voice Contract
+- Sound Contract
+- Stop-Loss Contract
+- Expected calls/cost
+- Owner gates
+- Generation readiness
+- Changed files
+- git status
 

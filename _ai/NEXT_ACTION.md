@@ -2,41 +2,36 @@
 
 ## Recommended next task
 
-Checkpoint commit
+마지막 테스트 Quality Gate Contract 작성
 
 ## Current status
 
-- upload_002 audio recovery scripts 4개가 scripts/archive/로 이동됨
-- _ai/QUALITY_GATE.md 생성됨
-- _ai 문서는 Quality Gate 전환 상태
-- 외부 호출 0회
+- Git checkpoint pushed: de475b6
+- Working tree should be clean except current _ai handoff update
+- upload_002 final_v1/final_v2: Owner QA fail
+- New gate: `_ai/QUALITY_GATE.md`
 
-## Decision
+## Goal
 
-Contract 작성 전에 checkpoint commit을 먼저 권장한다.
+30~40초 오피스 코미디 마지막 테스트를 만들기 전, 생성 금지 상태에서 품질 계약을 먼저 작성한다.
 
-이유:
-- 새 마지막 테스트 시작 전 working tree를 깨끗하게 고정해야 함
-- archive 이동과 Quality Gate 추가는 독립 checkpoint로 적합함
-- Contract 작성 이후 diff와 섞이면 실패 수습/새 테스트 경계가 흐려짐
+## Required contracts
 
-## Required Owner approval
-
-checkpoint commit 승인
-
-## Commit message candidate
-
-chore(upload_002): archive 정리 + Quality Gate 준비
+1. Event Contract
+2. Dialogue Contract
+3. Emotion / Voice Contract
+4. Sound Contract
+5. Stop-Loss Contract
 
 ## Forbidden
 
-- Owner 승인 전 commit 금지
-- push 금지
-- merge/reset/clean 금지
-- 외부 호출 금지
-- 생성 작업 금지
+- Any external call
+- Any generation
+- Any paid API use
+- Any mux/final render
+- push/merge/reset/clean
 
-## After checkpoint
+## After contract
 
-마지막 테스트 Event / Dialogue / Emotion / Sound / Stop-Loss Contract 작성.
+Owner가 계약을 승인한 경우에만 이미지/Veo/TTS 실행 계획으로 넘어간다.
 
