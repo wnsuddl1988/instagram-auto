@@ -2,11 +2,17 @@
 
 **갱신:** 2026-06-16
 
+**전체프로젝트 진행률:** ?% — 신뢰 가능한 전체 프로젝트 퍼센트 기준 확인 필요.
+
 ---
 
 ## 현재 단계
 
-**final_v1 Owner QA FAIL — audio performance/sound redesign 필요**
+**upload_002_copier 에피소드 폐기 — 신규 기획 대기**
+
+- final_v3: technical_pass + event_contract_pass, Owner QA FAIL → 에피소드 폐기
+- 사유: 영상 사건-대사 구조 충돌, 기존 영상 수습 불가
+- 다음: 신규 에피소드 기획안 3개 Owner 승인 대기
 
 - S1~S5 veo_pass 영상 trim + 1080×1920 업스케일 + concat
 - 기술 QA PASS (1080×1920, 24fps, H.264, 36.500s, 오디오 없음)
@@ -35,7 +41,8 @@
 | silent_v2 | `silent_v2_pass` — 36.500s, 1080×1920, 17.2MB, MD5=`67b0feb6` |
 | TTS raw | `tts_raw_pass` — Jun 18.390s + Boss 1.950s, offset v2 PASS |
 | **final_v1** | **`owner_fail`** — 기술 QA PASS이나 감정연기/싱크/무대사 몰입 실패, 업로드 불가 |
-| **final_v2** | **`owner_fail`** — 기술 QA PASS, 감정연기/SFX 체감 불충분, 업로드 불가, 새 접근법으로 전환 |
+| **final_v2** | **`owner_fail`** — 기술 QA PASS, 감정연기/SFX 체감 불충분, 업로드 불가 |
+| **final_v3** | **`owner_fail` / 에피소드 폐기** — 기술·싱크 PASS, 영상-대사 구조 충돌로 에피소드 자체 폐기 |
 
 ---
 
@@ -190,6 +197,7 @@ Owner 확인 게이트:
 
 ## 다음 단계
 
-1. Owner가 Contract 승인 → TTS 생성 착수 가능
-2. 기존 silent_v2 재사용 여부 또는 새 영상 필요 여부 확인 필요
-3. Contract 미승인 시 → 계속 생성 금지
+**upload_002_copier 폐기 확정 (2026-06-16)**
+- 기존 2편 수습 작업 중단
+- 신규 30~40초 에피소드 기획안 3개 → Owner 승인 후 진행
+- 소재/대본/씬 구조 Owner 승인 전 생성 금지

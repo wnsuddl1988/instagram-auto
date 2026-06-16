@@ -1,37 +1,35 @@
 # Next Action
 
-## Recommended next task
+## 현재 상태
 
-마지막 테스트 Quality Gate Contract 작성
+- upload_002_copier: 에피소드 폐기 확정 (2026-06-16)
+- 기존 2편 수습 작업 중단
+- 신규 에피소드 기획 단계로 전환
 
-## Current status
+## 다음 atomic task
 
-- Git checkpoint pushed: de475b6
-- Working tree should be clean except current _ai handoff update
-- upload_002 final_v1/final_v2: Owner QA fail
-- New gate: `_ai/QUALITY_GATE.md`
+**신규 30~40초 에피소드 후보 3개 기획안 작성**
 
-## Goal
+- 각 후보에 소재, 씬 구조(씬 수/시간 배분), 핵심 사건, 펀치라인 포함
+- 대사가 화면 사건의 반응이 되는 구조인지 Event Contract 기준으로 자체 검증
+- 실제 이미지/Veo/TTS 생성 금지
+- Owner가 소재/대본/씬 구조 승인 전 생성 금지
 
-30~40초 오피스 코미디 마지막 테스트를 만들기 전, 생성 금지 상태에서 품질 계약을 먼저 작성한다.
+## 금지
 
-## Required contracts
+- Any external call (ElevenLabs / Veo / GPT 이미지)
+- 새 영상 생성
+- 기존 파일 삭제
+- commit/push/merge/reset/clean
 
-1. Event Contract
-2. Dialogue Contract
-3. Emotion / Voice Contract
-4. Sound Contract
-5. Stop-Loss Contract
+## 후보 기준 (QUALITY_GATE Episode Rules)
 
-## Forbidden
+- 대사가 화면 사건보다 먼저 나오는 구조 → FAIL
+- 컷 전환 중 핵심 대사가 걸리는 구조 → FAIL
+- 대사로 화면을 억지 설명하는 구조 → FAIL
+- Boss/제3자 등장은 화면상 진입 근거 없으면 → FAIL
+- 영상 없이 대본만 읽어도 의미가 통하는 구조 → FAIL (영상 의존도 필수)
 
-- Any external call
-- Any generation
-- Any paid API use
-- Any mux/final render
-- push/merge/reset/clean
+## After Owner approval
 
-## After contract
-
-Owner가 계약을 승인한 경우에만 이미지/Veo/TTS 실행 계획으로 넘어간다.
-
+Owner가 기획안 중 1개 승인 → Event/Dialogue/Emotion/Sound/Stop-Loss Contract 5종 작성 → 승인 후 생성
