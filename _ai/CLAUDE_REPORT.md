@@ -1,55 +1,52 @@
-# CLAUDE_REPORT — upload_002_copier Owner QA FAIL / 에피소드 폐기
+# CLAUDE_REPORT — 자동문 면접 Contract 5종 작성
 
 **작성:** 2026-06-16  
-**작업:** Owner QA FAIL 확정 기록 + _ai 파일 갱신 (외부 호출 0회)  
+**작업:** 신규 에피소드 Contract 5종 작성 (외부 호출 0회)  
 **외부 호출:** 0회  
 **commit/push:** 없음
 
 ---
 
-## Owner 최종 판정: `owner_fail` / 에피소드 폐기
+## 작업 요약
 
-### final_v3 기술 결과 (참고용)
+`_ai/CONTRACT_자동문면접.md` 신규 생성.  
+Event / Dialogue / Emotion / Sound / Stop-Loss Contract 5종 + §6 FAIL 체크 포함.
 
-| 항목 | 값 |
+---
+
+## §6 FAIL 체크 결과
+
+7개 조건 전부 PASS. 상세 내용은 `CONTRACT_자동문면접.md` 참조.
+
+---
+
+## Contract 상태
+
+| Contract | 상태 |
 |---|---|
-| 파일 | `final/upload_002_copier_final_v3.mp4` |
-| 크기 | 17.46 MB |
-| 길이 | 36.500s |
-| MD5 | `855bdfd65b46221b515eb1763f4d8d6c` |
-| technical_pass | ✅ |
-| event_contract_pass | ✅ |
-| **Owner QA** | **❌ FAIL → 폐기** |
+| 1. Event Contract | ✅ 씬별 visible action → 대사 조건 명확 |
+| 2. Dialogue Contract | ✅ 대사 2문장, 배치 조건 구체적 |
+| 3. Emotion/Voice Contract | ✅ Jun 3단계 감정, Boss 중후 톤 파라미터 범위 |
+| 4. Sound Contract | ✅ SFX 4종 타이밍/용도/생성 방식 명시 |
+| 5. Stop-Loss Contract | ✅ 현재 0회, 다음 단계 비용 산정 |
 
 ---
 
-## Owner FAIL 사유
+## 예상 다음 단계 호출 수/비용
 
-1. **영상-대사 구조 충돌** — 대사가 화면 사건과 타이밍·의미 양쪽에서 충돌함
-2. **첫 대사 충돌** — "한 장만. 진짜 딱 한 장만."이 버튼 누르기 직전/전환 구간에 걸림
-3. **의미 충돌** — "진짜 딱 한 장만."이 찢어진 종이 보는 장면에 걸려 원인-반응 관계가 깨짐
-4. **결말 어색** — Boss 손만 나오는 결말이 화면상 납득이 약함
-5. **에피소드 자체 재미 부족** — 수습 불가 수준
-6. **구조적 실패** — "기존 영상에 대사 위치를 맞추는 수습"이었고 새 에피소드 기획이 아님
-
-### 결론
-
-오디오로 살릴 수 있는 문제가 아니라 기획/영상 구조 실패. 기존 2편 수습 중단.
+| 단계 | 예상 호출 | 예상 비용 |
+|---|---|---|
+| 씬 키프레임 이미지 (ChatGPT) | 4~8회 | $0.04~0.32 |
+| Veo 영상 | 4회 | Veo 크레딧 4회 |
+| TTS (ElevenLabs) | 2회 | ~$0.004 |
+| 조립 (로컬) | 0회 외부 | $0 |
+| **합계** | **최소 10회 / 최대 14회** | **~$0.32 + Veo 4크레딧 + ~$0.004** |
 
 ---
 
-## 갱신 파일
+## 변경 파일
 
-- `_ai/PROJECT_STATE.md` — final_v3 owner_fail + 다음 단계 갱신
+- `_ai/CONTRACT_자동문면접.md` — 신규 생성
+- `_ai/PROJECT_STATE.md` — 현재 단계 갱신
+- `_ai/NEXT_ACTION.md` — 다음 태스크 갱신
 - `_ai/CLAUDE_REPORT.md` — 현재 파일
-- `_ai/NEXT_ACTION.md` — 신규 에피소드 기획으로 전환
-- `_ai/QUALITY_GATE.md` — 에피소드 레벨 운영 규칙 추가
-- `scripts/archive/_upload002-tts-generate-v3.mjs` — archive 이동 (수습 스크립트 정리)
-- `scripts/archive/_upload002-tts-assemble-v3-final.mjs` — archive 이동 (수습 스크립트 정리)
-
----
-
-## 다음 단계
-
-신규 30~40초 에피소드 기획안 3개 → Owner 승인 후 진행.  
-소재/대본/씬 구조 Owner 승인 전 생성 금지.
