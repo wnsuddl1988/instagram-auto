@@ -8,14 +8,17 @@
 
 ## 현재 단계
 
-**자동문 면접 — S1/S2/S3/S4 4씬 전부 Codex QA PASS, 키프레임 완료**
+**자동문 면접 — 키프레임 4씬 완료, Veo 사전설계 완료, Owner 승인 대기**
 
-- 누적 전송: 5/8회 / 잔여 예산: 3회
-- S1 → `s1_kf_try1.png` **Codex QA PASS** (md5=199791f8, 수동문+허공 손짓, 센서 없음)
+- 키프레임 누적 전송: 5/8회 / 잔여 예산: 3회
+- S1 → `s1_kf_try1.png` **Codex QA PASS** (md5=199791f8)
 - S2 → `s2_kf_qa_pass.png` **Owner QA PASS** (md5=8bdb9b66)
 - S3 → `s3_kf_try1.png` **Owner QA PASS** (md5=e9f6acf2)
 - S4 → `s4_kf_qa_pass.png` **Owner QA PASS** (md5=4a69bed3)
-- **키프레임 4씬 완료 (2026-06-19)**
+- **키프레임 완료 (2026-06-19)**
+- **Veo 사전설계 완료 (2026-06-19)** — `_ai/PREFLIGHT_자동문면접_VEO.md`
+  - S1~S4 씬별 행동 beat / Veo 프롬프트 / BOSS RULE 게이트 / 편집 예상 길이 (29~32s) 확정
+  - Veo 호출: 0회 (Owner 승인 전 금지)
 
 - S1~S5 veo_pass 영상 trim + 1080×1920 업스케일 + concat
 - 기술 QA PASS (1080×1920, 24fps, H.264, 36.500s, 오디오 없음)

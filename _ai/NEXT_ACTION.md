@@ -10,10 +10,23 @@
 
 ## 다음 atomic task
 
-**자동문 면접 — Veo 영상 생성 사전설계 (Owner 승인 대기)**
+**자동문 면접 — Veo 영상 생성 착수 (Owner 승인 대기)**
 
-- 키프레임 4씬 레퍼런스 확정, 사전 Veo 프롬프트 설계 단계
-- Codex/Owner 다음 승인 필요
+- Veo 사전설계 완료: `_ai/PREFLIGHT_자동문면접_VEO.md`
+- S1~S4 씬별 행동 beat + Veo 프롬프트 + BOSS RULE 게이트 확정
+- 예상 편집 길이: 29~32s (Contract 30~33s 범위 내)
+- Veo 호출: 0회 / Owner 생성 승인 필요
+
+### Veo 생성 승인 문구
+
+```
+자동문 면접 Veo 영상 생성 승인
+ALLOW_VEO=true
+대상 씬: S1 / S2 / S3 / S4 (씬당 1회 / 총 4회 상한)
+Boss Rule: 손목 위 신체 일체 → 즉시 FAIL + 재시도 금지
+자동 재시도 금지
+S3 Boss Rule FAIL 시 Codex 보고 후 대기
+```
 
 ## 금지
 
@@ -32,4 +45,6 @@
 
 ## After Owner approval
 
-Owner가 기획안 중 1개 승인 → Event/Dialogue/Emotion/Sound/Stop-Loss Contract 5종 작성 → 승인 후 생성
+~~Owner가 기획안 중 1개 승인 → Contract 5종 작성~~ (완료 2026-06-16)  
+~~키프레임 4씬 생성~~ (완료 2026-06-19)  
+**현재: Veo 생성 승인 대기 → 승인 후 S1~S4 Veo 생성 → TTS → 편집**
