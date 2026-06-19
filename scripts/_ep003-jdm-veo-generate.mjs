@@ -67,7 +67,7 @@ fs.mkdirSync(VEO_DIR, { recursive: true });
 const REF_FILES = {
   S1: path.join(KF_DIR, "s1_kf_try1.png"),
   S2: path.join(KF_DIR, "s2_kf_qa_pass.png"),
-  S3: path.join(KF_DIR, "s3_kf_try1.png"),
+  S3: path.join(KF_DIR, "s3_bossfree_kf_try6.png"),
   S4: path.join(KF_DIR, "s4_kf_qa_pass.png"),
 };
 
@@ -84,7 +84,7 @@ const PROMPTS = {
 
   S2: `Animate this 3D semi-deformed Pixar-style scene. Jun is pressing his palm against a glass office door, searching for a motion sensor. He slowly moves his hand left and right across the glass, then leans back to look at the top of the door frame, then steps closer again and runs his palm across the wall beside the door. His expression escalates from focused to embarrassed. The door remains closed throughout. The door handle is visible but Jun never looks at or touches it. Camera: fixed. Duration: 8 seconds. STRICT BANS: door opening, Jun touching or gripping the handle, Jun looking at the handle with recognition, any other character appearing, white shirt, internal cuts or scene jumps.`,
 
-  S3: `Animate this 3D semi-deformed Pixar-style scene. The glass meeting room door begins to open from the inside. Only the off-screen boss's hand, wrist, and a very short business-suit sleeve are visible at the extreme edge of the frame. No elbow or anything above the elbow may appear. No face, head, neck, shoulder, torso, silhouette, or reflection in the glass. The hand grips the door handle (marked PULL) and pulls the door open. Jun, standing outside, freezes mid-motion with a shocked expression. As the door opens further, Jun slowly lowers his hand and his expression shifts from shock to embarrassment. Camera: completely fixed, do NOT pan or move toward the inside. Duration: 6 seconds. STRICT BANS: any part of Boss above the elbow (face, head, neck, shoulders, torso, reflected in glass), camera moving toward interior, door closing again, Jun gripping the handle, white shirt, internal cuts.`,
+  S3: `Animate this 3D semi-deformed Pixar-style scene. The glass meeting room door is already open 15 to 25 cm — a narrow gap — and begins to open just a little more from the inside. No boss body is visible: no hand, no sleeve, no silhouette, no reflection in the glass. Only the door moving implies someone inside opened it. Jun remains outside in the corridor, completely still, wide-eyed with shock and embarrassment as he realizes the door was never automatic. He blinks once, does not take a single step, and his expression shifts from shock to embarrassed resignation. Both of Jun's hands remain away from the door and handle throughout. The same long vertical pull handle and black door frame are visible. The door must not fully open. Camera: completely fixed, do NOT pan or move toward the inside. Duration: 6 seconds. STRICT BANS: no boss body, no hand or sleeve, no silhouette or reflection of anyone in the glass, Jun entering or stepping through the doorway, Jun touching the handle or glass, door fully opening, door closing again, any second character, white shirt, internal cuts.`,
 
   S4: `Animate this 3D semi-deformed Pixar-style scene. Jun is standing alone in front of the now-open glass meeting room door. He slowly exhales, shoulders dropping slightly. He then gently raises his head to look forward with a resigned, slightly embarrassed expression — the look of someone accepting defeat gracefully. He holds this stable pose for the final 2 seconds, ready to deliver a closing line. No other characters appear. Camera: fixed. Duration: 3.5 seconds. STRICT BANS: door closing, any other character or body part appearing, Jun looking angry or laughing, white shirt, internal cuts.`,
 };
@@ -102,10 +102,14 @@ const REQUIRED_KEYWORDS = {
     { key: "fixed",                   label: "카메라 고정" },
   ],
   S3: [
-    { key: "above the elbow",         label: "팔꿈치 이상 금지" },
-    { key: "reflection in the glass", label: "유리 반사 금지" },
-    { key: "completely fixed",        label: "카메라 완전 고정" },
-    { key: "white shirt",             label: "white shirt BANS" },
+    { key: "no boss body",                label: "Boss 신체 없음" },
+    { key: "no hand or sleeve",           label: "손·소매 없음" },
+    { key: "no silhouette or reflection", label: "실루엣·반사 없음" },
+    { key: "Jun remains outside",         label: "Jun 복도 밖" },
+    { key: "same long vertical pull handle", label: "세로 PULL 손잡이" },
+    { key: "door must not fully open",    label: "문 완전 개방 금지" },
+    { key: "completely fixed",            label: "카메라 완전 고정" },
+    { key: "white shirt",                 label: "white shirt BANS" },
   ],
   S4: [
     { key: "stable pose",             label: "마지막 정지 자세" },
@@ -114,13 +118,14 @@ const REQUIRED_KEYWORDS = {
   ],
 };
 
-// ── S3 Boss Rule 하드 게이트 키워드 ─────────────────────────────────────────────
+// ── S3 Boss-Free 하드 게이트 키워드 ─────────────────────────────────────────────
 const S3_BOSS_RULE_KEYWORDS = [
-  "above the elbow",
-  "reflection in the glass",
-  "do NOT pan or move toward the inside",
-  "No face, head, neck, shoulder, torso",
-  "silhouette",
+  "no boss body",
+  "no hand or sleeve",
+  "no silhouette or reflection",
+  "Jun remains outside",
+  "same long vertical pull handle",
+  "door must not fully open",
 ];
 
 // ── 전송 카운터 (단일 전송 보장) ─────────────────────────────────────────────────

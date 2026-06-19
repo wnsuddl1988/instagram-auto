@@ -1,16 +1,21 @@
-# PROJECT_STATE — upload_002_copier
+# PROJECT_STATE — AutoShorts MVP
 
-**갱신:** 2026-06-16
+**갱신:** 2026-06-20
 
-**전체프로젝트 진행률:** 약 42% — 기준: 자동화/체크포인트 기반은 확보됐지만 upload_002 폐기 후 신규 에피소드 Contract 승인 대기.
+**전체프로젝트 진행률:** 약 62% — 기준: ep003 키프레임 S1~S4 확정, S1/S2 Veo 완료, S3 Boss-Free Veo preflight·dry-run PASS.
 
 ---
 
 ## 현재 단계
 
-**자동문 면접 — 키프레임 4씬 완료, Veo 사전설계 완료, Owner 승인 대기**
+**자동문 면접 — S3 Boss-Free Veo preflight PASS, 실제 S3 Veo 1회 제출 전 checkpoint 단계**
 
-- 키프레임 누적 전송: 5/8회 / 잔여 예산: 3회
+- S1/S2 Veo PASS
+- 기존 S3 Veo는 Boss 손 포함 장면으로 refusal, 재사용 금지
+- S3 Boss-Free v6 → `s3_bossfree_kf_try6.png` **Codex QA PASS** (md5=`aea43e2b`)
+- S3 Veo preflight/G1 dry-run PASS — prompt hash `bd88af5b`, TOTAL=0, VEO=0
+- S4 Veo는 S3 Veo PASS 이후 진행
+- checkpoint `c843689`, push 미실행
 - S1 → `s1_kf_try1.png` **Codex QA PASS** (md5=199791f8)
 - S2 → `s2_kf_qa_pass.png` **Owner QA PASS** (md5=8bdb9b66)
 - S3 → `s3_kf_try1.png` **Owner QA PASS** (md5=e9f6acf2)
@@ -207,4 +212,3 @@ Owner 확인 게이트:
 - 기존 2편 수습 작업 중단
 - 신규 30~40초 에피소드 기획안 3개 → Owner 승인 후 진행
 - 소재/대본/씬 구조 Owner 승인 전 생성 금지
-
