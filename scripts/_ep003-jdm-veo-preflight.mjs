@@ -71,19 +71,20 @@ const PROMPTS = {
 
   S2: `Animate this 3D semi-deformed Pixar-style scene. Jun is pressing his palm against a glass office door, searching for a motion sensor. He slowly moves his hand left and right across the glass, then leans back to look at the top of the door frame, then steps closer again and runs his palm across the wall beside the door. His expression escalates from focused to embarrassed. The door remains closed throughout. The door handle is visible but Jun never looks at or touches it. Camera: fixed. Duration: 8 seconds. STRICT BANS: door opening, Jun touching or gripping the handle, Jun looking at the handle with recognition, any other character appearing, white shirt, internal cuts or scene jumps.`,
 
-  S3: `Animate this 3D semi-deformed Pixar-style scene. The glass meeting room door is already slightly open — an empty doorway gap of about 15 to 25 cm. The door drifts open a few centimetres more on its own; the interior beyond the gap is empty and dim. Jun remains outside in the corridor, completely still. He stares at the moving door with wide eyes, then blinks once, and his expression shifts from shock to embarrassed resignation. Jun does not step forward. Jun's hands stay at his sides throughout and never touch the door, handle, or glass. The same long vertical pull handle and black door frame remain visible. The door must not fully open. Camera: completely fixed, do NOT move toward the interior. Duration: 6 seconds. No new person appears at any point. BANS: Jun entering the doorway, Jun touching the handle or glass, door fully opening, door closing again, any additional character, white shirt, internal cuts.`,
+  S3: `Animate this 3D semi-deformed Pixar-style scene. Keep the starting frame almost unchanged. The door stays slightly open and does not move — the gap remains exactly as in the reference image. Jun remains outside in the corridor, standing still. Only Jun's facial expression changes: wide-eyed shock, one blink, then embarrassed resignation. His shoulders drop slightly at the end. Jun does not step forward. Jun's hands stay at his sides and never touch the door, handle, or glass. The same long vertical pull handle and black door frame remain visible throughout. The door must not fully open. Camera: completely fixed. Duration: 6 seconds. No new person appears at any point. BANS: door moving, Jun entering the doorway, Jun touching the handle or glass, door fully opening, door closing, any additional character, white shirt, internal cuts.`,
 
   S4: `Animate this 3D semi-deformed Pixar-style scene. Jun is standing alone in front of the now-open glass meeting room door. He slowly exhales, shoulders dropping slightly. He then gently raises his head to look forward with a resigned, slightly embarrassed expression — the look of someone accepting defeat gracefully. He holds this stable pose for the final 2 seconds, ready to deliver a closing line. No other characters appear. Camera: fixed. Duration: 3.5 seconds. STRICT BANS: door closing, any other character or body part appearing, Jun looking angry or laughing, white shirt, internal cuts.`,
 };
 
-// ── S3 Empty-Doorway 게이트 키워드 (prompt 내 존재 확인) ────────────────────────
+// ── S3 Static-Reaction 게이트 키워드 (prompt 내 존재 확인) ────────────────────────
 const S3_GATE_KEYWORDS = [
-  { key: "empty doorway gap",                          label: "빈 문틈" },
+  { key: "Keep the starting frame almost unchanged",   label: "시작 프레임 유지" },
+  { key: "door stays slightly open and does not move", label: "문 정적 유지" },
   { key: "Jun remains outside",                        label: "Jun 복도 밖 유지" },
+  { key: "Only Jun's facial expression changes",       label: "표정 변화만" },
+  { key: "No new person appears",                      label: "신규 인물 없음" },
   { key: "same long vertical pull handle",             label: "세로 PULL 손잡이 유지" },
   { key: "door must not fully open",                   label: "문 완전 개방 금지" },
-  { key: "No new person appears",                      label: "신규 인물 없음" },
-  { key: "completely fixed",                           label: "카메라 완전 고정" },
 ];
 
 // ── 씬별 공통 필수 키워드 (prompt 내 존재 확인) ─────────────────────────────────
@@ -99,13 +100,14 @@ const COMMON_REQUIRED = {
     { key: "fixed",                   label: "카메라 고정" },
   ],
   S3: [
-    { key: "empty doorway gap",              label: "빈 문틈" },
-    { key: "Jun remains outside",            label: "Jun 복도 밖" },
-    { key: "same long vertical pull handle", label: "세로 PULL 손잡이" },
-    { key: "door must not fully open",       label: "문 완전 개방 금지" },
-    { key: "No new person appears",          label: "신규 인물 없음" },
-    { key: "completely fixed",               label: "카메라 완전 고정" },
-    { key: "white shirt",                    label: "white shirt BANS" },
+    { key: "Keep the starting frame almost unchanged",   label: "시작 프레임 유지" },
+    { key: "door stays slightly open and does not move", label: "문 정적 유지" },
+    { key: "Jun remains outside",                        label: "Jun 복도 밖" },
+    { key: "Only Jun's facial expression changes",       label: "표정 변화만" },
+    { key: "No new person appears",                      label: "신규 인물 없음" },
+    { key: "same long vertical pull handle",             label: "세로 PULL 손잡이" },
+    { key: "door must not fully open",                   label: "문 완전 개방 금지" },
+    { key: "white shirt",                                label: "white shirt BANS" },
   ],
   S4: [
     { key: "stable pose",             label: "마지막 정지 자세" },
@@ -234,7 +236,7 @@ async function runPreflight() {
   }
   stageDone("prompt_static_check", "4씬 키워드 전부 확인");
 
-  // ── STAGE 2: S3 Empty-Doorway 독립 게이트 ──────────────────────────────────────
+  // ── STAGE 2: S3 Static-Reaction 독립 게이트 ────────────────────────────────────
   stageStart("s3_boss_rule_gate");
   const s3p = PROMPTS.S3;
   const bossRuleFails = [];
@@ -245,9 +247,9 @@ async function runPreflight() {
   }
   if (bossRuleFails.length > 0) {
     await stageFail("s3_boss_rule_gate",
-      `S3 Empty-Doorway 필수 키워드 누락: ${bossRuleFails.join(" / ")}`);
+      `S3 Static-Reaction 필수 키워드 누락: ${bossRuleFails.join(" / ")}`);
   }
-  stageDone("s3_boss_rule_gate", `Empty-Doorway 게이트 ${S3_GATE_KEYWORDS.length}/${S3_GATE_KEYWORDS.length} PASS`);
+  stageDone("s3_boss_rule_gate", `Static-Reaction 게이트 ${S3_GATE_KEYWORDS.length}/${S3_GATE_KEYWORDS.length} PASS`);
 
   // ── STAGE 3: Chrome CDP 연결 ──────────────────────────────────────────────────
   stageStart("chrome_cdp");
@@ -369,7 +371,7 @@ async function runPreflight() {
   console.log(`VEO_SUBMIT:           ${VEO_SUBMISSION_COUNT}`);
   console.log(`Ref files (4씬):      ALL FOUND ✅`);
   console.log(`Prompt keywords:      ALL PASS ✅`);
-  console.log(`S3 Empty-Doorway gate: ${S3_GATE_KEYWORDS.length}/${S3_GATE_KEYWORDS.length} PASS ✅`);
+  console.log(`S3 Static-Reaction gate: ${S3_GATE_KEYWORDS.length}/${S3_GATE_KEYWORDS.length} PASS ✅`);
   console.log(`Thumbnails:           ${report.thumbnails}`);
   console.log(`Prompt typed len:     ${report.prompt_typed_len}`);
   console.log(`Send enabled:         ${report.send_enabled}`);
