@@ -8,12 +8,14 @@
 
 ## 현재 단계
 
-**자동문 면접 — Contract 5종 작성 완료, Owner 승인 대기**
+**자동문 면접 — S1/S2/S3/S4 4씬 전부 Codex QA PASS, 키프레임 완료**
 
-- upload_002_copier: 에피소드 폐기 확정 (commit ee5ca3e)
-- 신규 에피소드 "자동문 면접" Contract 5종 작성 완료 (외부 호출 0회)
-- §6 FAIL 체크 7개 조건 전부 PASS
-- 다음: Owner Contract 승인 → 생성 단계 착수
+- 누적 전송: 5/8회 / 잔여 예산: 3회
+- S1 → `s1_kf_try1.png` **Codex QA PASS** (md5=199791f8, 수동문+허공 손짓, 센서 없음)
+- S2 → `s2_kf_qa_pass.png` **Owner QA PASS** (md5=8bdb9b66)
+- S3 → `s3_kf_try1.png` **Owner QA PASS** (md5=e9f6acf2)
+- S4 → `s4_kf_qa_pass.png` **Owner QA PASS** (md5=4a69bed3)
+- **키프레임 4씬 완료 (2026-06-19)**
 
 - S1~S5 veo_pass 영상 trim + 1080×1920 업스케일 + concat
 - 기술 QA PASS (1080×1920, 24fps, H.264, 36.500s, 오디오 없음)

@@ -1,9 +1,32 @@
 # Contract 5종 — 자동문 면접
 
 **작성:** 2026-06-16  
-**상태:** Owner 승인 대기  
+**갱신:** 2026-06-16 (스타일/캐릭터 IP 고정)  
+**상태:** 스타일 고정 확정  
 **외부 호출:** 0회  
-**생성 금지:** 이미지/Veo/TTS — Owner Contract 승인 전 절대 금지
+**생성 금지:** 이미지/Veo/TTS — Owner 재승인 전 절대 금지
+
+---
+
+## §0 스타일 / 캐릭터 IP 고정 (Owner 확정, 2026-06-16)
+
+| 항목 | 확정값 |
+|---|---|
+| 스타일 | upload_002와 동일 — 3D semi-deformed / Pixar-like office sitcom style |
+| Jun 외형 | 기존 upload_002 준 그대로 유지 |
+| Jun 상세 | 둥근 얼굴 / 큰 갈색 눈 / 검은 사이드파트 머리 / 하늘색 롤업 셔츠 / 느슨한 빨간 넥타이 / 긴 네이비 슬랙스 / 검은 구두 / 갈색 크로스바디 메신저백 |
+| ref 이미지 (필수) | `kf_s3_tapping_relief_v3_bag.png` (우선) |
+| 보조 ref | `kf_s1_wide_copier_error.png`, `kf_s2_jammed_paper_continuity_fix.png` |
+
+### 절대 금지 (IP 이탈)
+
+- 실사/사람사진/시네마틱 리얼 인물 → **즉시 FAIL**
+- white shirt → **즉시 FAIL**
+- 신규 캐릭터 디자인 (Owner 별도 승인 없이) → **즉시 FAIL**
+- ref 이미지 미첨부 상태로 생성 → **즉시 FAIL**
+- 스타일 전환 (2D, 실사, 애니메이션 등) → Owner 별도 승인 필수
+
+---
 
 ---
 
