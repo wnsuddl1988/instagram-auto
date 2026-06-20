@@ -163,23 +163,29 @@ function checkPreflight(promptHash, refHash) {
   if (pf.result !== "PREFLIGHT_PASS") {
     abort("preflight_not_pass", `${SCENE_ID} preflight result=${pf.result} — PREFLIGHT_PASS 아님`);
   }
-  // prompt hash 일치 확인
-  if (pf.prompt_checks && pf.prompt_checks[SCENE_ID]) {
-    const pfHash = pf.prompt_checks[SCENE_ID].hash;
-    if (pfHash && pfHash !== promptHash) {
-      abort("PREFLIGHT_STALE",
-        `${SCENE_ID} prompt hash 불일치 — preflight:${pfHash.slice(0,8)} vs now:${promptHash.slice(0,8)}\n` +
-        "프롬프트가 변경됨. preflight를 다시 실행하세요.");
-    }
+  // prompt hash 일치 확인 (fail-closed: 필드/scene/hash 누락 시 ABORT)
+  const pfPromptHash = pf.prompt_checks?.[SCENE_ID]?.hash;
+  if (!pfPromptHash) {
+    abort("PREFLIGHT_INCOMPLETE",
+      `${SCENE_ID} preflight에 prompt hash 없음 — prompt_checks.${SCENE_ID}.hash 누락/빈값.\n` +
+      "preflight를 다시 실행하세요. (hash 검증 없이 제출 금지)");
   }
-  // ref hash 일치 확인
-  if (pf.ref_checks && pf.ref_checks[SCENE_ID]) {
-    const pfRef = pf.ref_checks[SCENE_ID].hash;
-    if (pfRef && pfRef !== refHash) {
-      abort("PREFLIGHT_STALE",
-        `${SCENE_ID} ref hash 불일치 — preflight:${pfRef.slice(0,8)} vs now:${refHash.slice(0,8)}\n` +
-        "ref 파일이 변경됨. preflight를 다시 실행하세요.");
-    }
+  if (pfPromptHash !== promptHash) {
+    abort("PREFLIGHT_STALE",
+      `${SCENE_ID} prompt hash 불일치 — preflight:${pfPromptHash.slice(0,8)} vs now:${promptHash.slice(0,8)}\n` +
+      "프롬프트가 변경됨. preflight를 다시 실행하세요.");
+  }
+  // ref hash 일치 확인 (fail-closed: 필드/scene/hash 누락 시 ABORT)
+  const pfRefHash = pf.ref_checks?.[SCENE_ID]?.hash;
+  if (!pfRefHash) {
+    abort("PREFLIGHT_INCOMPLETE",
+      `${SCENE_ID} preflight에 ref hash 없음 — ref_checks.${SCENE_ID}.hash 누락/빈값.\n` +
+      "preflight를 다시 실행하세요. (hash 검증 없이 제출 금지)");
+  }
+  if (pfRefHash !== refHash) {
+    abort("PREFLIGHT_STALE",
+      `${SCENE_ID} ref hash 불일치 — preflight:${pfRefHash.slice(0,8)} vs now:${refHash.slice(0,8)}\n` +
+      "ref 파일이 변경됨. preflight를 다시 실행하세요.");
   }
   // 24h STALE 체크
   if (pf.finished_at) {

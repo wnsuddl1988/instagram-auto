@@ -130,13 +130,46 @@ export async function ensureChrome(port, userDataDir, logFn = console.log) {
 }
 
 // ── quota / refusal 감지 ──────────────────────────────────────────────────────────
+// 정규식 기반 한/영 quota·refusal 감지. 반환값은 기존 호출부 호환을 위해
+// { type, text } 를 유지하고, 디버깅용으로 { pattern, snippet } 을 추가한다.
+// false positive 방지를 위해 "생성"/"만들기" 같은 일반 단어 단독 매칭은 쓰지 않는다.
+const VEO_QUOTA_PAT = [
+  /한도가/, /초기화됩니다/, /동영상 한도/, /video limit/i, /limit resets?/i,
+  /try again later/i, /quota/i, /사용량.{0,6}(초과|한도)/,
+];
+const VEO_REFUSAL_PAT = [
+  // 한국어
+  /만들 수 없/, /만들어 드릴 수 없/, /생성할 수 없/, /생성해 드릴 수 없/,
+  /처리할 수 없/, /도와드릴 수 없/, /제공할 수 없/, /지원하지 않/,
+  /정책에 위반/, /정책을 위반/, /policy를 위반/i, /안전 가이드라인/, /콘텐츠 정책/,
+  // 영어
+  /can'?t (make|create|generate|help|assist)/i,
+  /cannot (make|create|generate|help|assist)/i,
+  /(unable|not able) to (create|generate|help|make)/i,
+  /won'?t be able to/i,
+  /violates? (our )?(policy|policies|guidelines)/i,
+  /against (our )?(policy|guidelines)/i,
+];
+
+// bodyText 를 받아 상태를 분류하는 순수 함수. (테스트 용이성 위해 분리)
+export function classifyVeoBody(bodyText) {
+  const text = bodyText || "";
+  const snippet = (re) => {
+    const m = text.match(re);
+    if (!m) return null;
+    const i = Math.max(0, m.index - 30);
+    return text.slice(i, m.index + m[0].length + 40).replace(/\s+/g, " ").trim();
+  };
+  for (const re of VEO_QUOTA_PAT)
+    if (re.test(text)) { const s = snippet(re); return { type: "quota",   text: s, pattern: re.source, snippet: s }; }
+  for (const re of VEO_REFUSAL_PAT)
+    if (re.test(text)) { const s = snippet(re); return { type: "refusal", text: s, pattern: re.source, snippet: s }; }
+  return null;
+}
+
 export async function detectQuotaOrRefusal(page) {
   const bodyText = await page.evaluate(() => document.body.innerText || "").catch(() => "");
-  const QUOTA_PAT   = ["한도가", "초기화됩니다", "동영상 한도", "video limit", "limit resets", "Try again"];
-  const REFUSAL_PAT = ["만들 수 없", "만들어 드릴 수 없", "I can't make", "I cannot create", "unable to create", "can't generate"];
-  for (const p of QUOTA_PAT)   if (bodyText.includes(p)) return { type: "quota",   text: p };
-  for (const p of REFUSAL_PAT) if (bodyText.includes(p)) return { type: "refusal", text: p };
-  return null;
+  return classifyVeoBody(bodyText);
 }
 
 // ── Veo compositor 활성화 ─────────────────────────────────────────────────────────
