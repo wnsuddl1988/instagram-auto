@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-fact-card-to-blueprint-v1`
+`money-shorts-os-fact-card-script-generator-v1`
 
 ## Current State
 
@@ -17,8 +17,9 @@ The product core is source-based finance/economy shorts production:
 Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
-- Local checkpoint complete: `acbaba9 feat(source): add fact card types and validation`
-- Existing source/fact-card module: `lib/source-facts/`
+- Clean branch baseline: `909098b feat(source): establish clean source-first baseline`
+- Source/fact-card module exists: `lib/source-facts/`
+- Fact Card -> Video Blueprint module is checkpoint-ready: `lib/blueprints/`
 
 Active product/spec sources:
 
@@ -32,59 +33,31 @@ Active product/spec sources:
 
 ## Goal
 
-Create the first local Video Blueprint model and generator skeleton from an existing Fact Card.
+Create the first local script/caption/storyboard generation structure from a validated Fact Card and Video Blueprint.
 
-This task is only local TypeScript types/schema helpers and deterministic mock generation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
+This task is only local deterministic TypeScript generation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/source-facts/` and existing project TypeScript conventions.
-- Add a small local blueprint module, preferably `lib/blueprints/`, if no better local pattern exists.
-- Define local TypeScript types for Video Blueprint root fields and scene fields based on `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`.
-- Generate a mock/deterministic Video Blueprint from a `FactCard`.
-- Preserve Fact Card linkage through `factCardIds`, `sourceCitationIds`, `sourceSummary`, and per-scene source notes where useful.
-- Include 15/30/60 target duration support as types or lightweight helper logic if it stays small.
-- Add validation helpers if useful, focused on missing Fact Card/source links, empty scenes, unsafe CTA policy, and required title/topic/core message.
-- Add focused tests only if the existing repo has an obvious lightweight setup; otherwise run targeted TypeScript/ESLint checks.
+- Inspect `lib/source-facts/` and `lib/blueprints/`.
+- Add a small local script module, preferably `lib/scripts/`, if no better local pattern exists.
+- Define local TypeScript types for generated script package outputs.
+- Generate deterministic 15s/30s/60s script/caption/storyboard text from a `FactCard` and/or `VideoBlueprint`.
+- Preserve source linkage through `factCardId`, `blueprintId` or `videoId`, and source/citation references.
+- Keep generated numeric facts strictly limited to values already present in the Fact Card/Blueprint.
+- Add lightweight validation helpers if useful.
 - Keep code small, reusable, and local.
 
-Required model concepts:
+Required concepts:
 
-- `VideoBlueprint`
-- `VideoBlueprintScene`
-- `VideoBlueprintContentType`
-- `VideoBlueprintTemplateMode`
-- `VideoBlueprintTemplateKey`
-- `VideoBlueprintTargetAudience`
-- `VideoBlueprintSceneRole`
-- `VideoBlueprintVisualType`
-- `VideoBlueprintMotionType`
-- `VideoBlueprintValidationResult`
-
-Minimum generated blueprint fields:
-
-- schema version
-- video id
-- title
-- topic
-- target duration seconds
-- estimated duration seconds
-- core message
-- content type
-- template mode
-- template key
-- Fact Card ids
-- source citation ids
-- source summary
-- CTA policy
-- tone
-- target audience
-- risk level
-- source references
-- voice profile id
-- ordered scenes
+- generated scripts
+- captions
+- storyboard scenes
+- source notes
+- risk-safe wording flags or placeholders
+- output durations 15 / 30 / 60
 
 ## Forbidden
 
@@ -98,17 +71,18 @@ Minimum generated blueprint fields:
 - No ffmpeg pipeline implementation or execution.
 - No upload/post.
 - No git push.
-- Do not implement the full Money-OS product.
-- Do not implement script generation as a separate product yet; only include scene text needed to prove the Blueprint shape.
+- Do not implement full Money-OS product.
+- Do not implement chart/image/TTS/render pipelines yet.
 - Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
 
 ## Definition of Done
 
-- Video Blueprint types are available from a clear local module.
-- A deterministic helper can create a mock Video Blueprint from a valid `FactCard`.
-- The generated Blueprint keeps source links and citation ids from the Fact Card.
-- The generated Blueprint has ordered scenes and no imagined numeric facts beyond the Fact Card.
-- Validation catches missing title/topic/core message, missing Fact Card linkage, missing scenes, and invalid source citation linkage.
+- Script/caption/storyboard types are available from a clear local module.
+- A deterministic helper can create script package output from a valid Fact Card/Video Blueprint.
+- Generated output preserves Fact Card and source/citation linkage.
+- Generated text uses only Fact Card/Blueprint facts and does not invent numbers.
+- Output includes 15s/30s/60s variants or a clear duration-specific structure.
+- Validation or a focused sample catches missing source linkage and empty narration/captions.
 - No external service integration is added.
 - Focused type/check/test command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.

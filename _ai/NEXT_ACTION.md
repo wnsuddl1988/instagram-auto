@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Fact Card foundation checkpoint 완료
+## 2026-06-25 현재 — Fact Card -> Video Blueprint checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -10,14 +10,23 @@ Owner 결정:
 - 본체는 **출처 기반 금융·경제 쇼츠 제작 OS**다.
 - Money-OS는 메인 콘텐츠 주제가 아니라 보조 CTA/전환 레이어다.
 - 콘텐츠 비중은 출처 기반 금융·경제 쇼츠 70%, Money-OS 연결형 돈관리 쇼츠 30%.
-- 각 쇼츠는 반드시 Fact Card를 먼저 만든 뒤 대본을 생성한다.
+- 각 쇼츠는 반드시 Fact Card를 먼저 만든 뒤 Video Blueprint와 대본으로 넘어간다.
 - AI는 Fact Card에 없는 숫자나 사실을 상상해서 대본을 쓰면 안 된다.
 
 최신 checkpoint:
 
-- `acbaba9 feat(source): add fact card types and validation`
-- 포함: `lib/source-facts/types.ts`, `lib/source-facts/fixtures.ts`, `lib/source-facts/validation.ts`, `lib/source-facts/index.ts`
+- `909098b feat(source): establish clean source-first baseline`
+- 포함: source-first docs + `lib/source-facts/`
 - push: 미실행
+
+최근 완료:
+
+- `money-shorts-os-fact-card-to-blueprint-v1`
+- `lib/blueprints/` 로컬 타입/생성/검증 모듈 구현
+- review-fix에서 scene timing, deterministic output, template key spec alignment, validation timing invariants 수정 완료
+- Codex runtime verification:
+  - 15s/30s/60s fixtures: target, estimatedDurationSec, scene duration sum, max end all match
+  - broken duration sample: validation fail with expected timing errors
 
 Source of truth:
 
@@ -45,26 +54,25 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Fact Card -> Video Blueprint local model/generator**
+**MVP 1 — Fact Card/Blueprint 기반 script/caption/storyboard generator**
 
 Task ID:
 
-`money-shorts-os-fact-card-to-blueprint-v1`
+`money-shorts-os-fact-card-script-generator-v1`
 
 목표:
 
-- 기존 `lib/source-facts/`의 `FactCard`를 입력으로 받아, 외부 API 없이 deterministic mock Video Blueprint를 만든다.
-- 대본/차트/영상 생성 전에 Blueprint 계약을 먼저 고정한다.
+- 기존 `FactCard`와 `VideoBlueprint`를 입력으로 받아 외부 API 없이 deterministic script/caption/storyboard package를 만든다.
+- Fact Card/Blueprint 밖 숫자나 사실을 생성하지 않는다.
 
 포함:
 
-- Video Blueprint TypeScript types
-- scene model types
-- Fact Card linkage fields
-- source citation linkage
-- deterministic Fact Card -> Blueprint helper
+- generated script package TypeScript types
+- 15s/30s/60s script/caption/storyboard helper
+- Fact Card / Blueprint / citation linkage
+- source note preservation
 - lightweight validation helper
-- focused TypeScript/ESLint check
+- focused TypeScript/ESLint/runtime sample check
 
 금지:
 

@@ -25,21 +25,36 @@ Implemented source foundation:
 - `lib/source-facts/validation.ts`
 - `lib/source-facts/index.ts`
 
-Validation evidence from prior local checkpoint:
+Implemented Video Blueprint module (`money-shorts-os-fact-card-to-blueprint-v1` + review fix pass):
 
-- Source module TypeScript strict check: PASS
-- Source module ESLint: PASS
-- Runtime validation sample: PASS
+- `lib/blueprints/types.ts` — VideoBlueprint, VideoBlueprintScene, 7개 union type; TemplateKey를 spec 정렬값으로 교체 (indicator_summary / rate_fx_change / disclosure_summary / earnings_numbers / money_os_support)
+- `lib/blueprints/generator.ts` — createBlueprintFromFactCard (15/30/60s, CTA 옵션); estimatedDuration이 scene duration(not end timestamp)임을 보장; new Date() 제거 — createdAt은 options.createdAt 주입 방식으로만; deriveTemplateKey spec 정렬
+- `lib/blueprints/validation.ts` — validateVideoBlueprint; 신규 timing 검증 3개 추가: (1) start_time_not_ordered, (2) scene_exceeds_target_duration, (3) duration_mismatch
+- `lib/blueprints/fixtures.ts` — inflationBlueprint30, exchangeRateBlueprint15, dartDisclosureBlueprint60, MOCK_BLUEPRINTS
+- `lib/blueprints/index.ts` — re-export
+
+Validation evidence (2026-06-25, review fix):
+
+- Blueprint module TypeScript strict check: PASS (0 errors)
+- Blueprint module ESLint: PASS (0 warnings)
+- Timing arithmetic verification:
+  - 15s: sum=15, max_end=15 ✅
+  - 30s no-CTA: sum=30, max_end=30 ✅
+  - 30s CTA: sum=30, max_end=30 ✅
+  - 60s no-CTA: sum=60, max_end=60 ✅
+  - 60s CTA: sum=60, max_end=60 ✅
+- validation.ok for 3 mock fixtures: all true ✅
+- Broken blueprint (scene dur=99, sum mismatch): validation.ok=false, codes=[scene_exceeds_target_duration, duration_mismatch] ✅
 
 ## Active Next Task
 
 Task ID:
 
-- `money-shorts-os-fact-card-to-blueprint-v1`
+- `money-shorts-os-fact-card-script-generator-v1` (Implementation Order Step 5)
 
 Goal:
 
-- Add local Video Blueprint types and deterministic Fact Card -> Video Blueprint helper.
+- Generate scripts/captions/storyboard from Fact Card values only.
 - No external API, AI generation, TTS, video render, ffmpeg, DB, payment, upload, deploy, or push.
 
 ## Active Source Of Truth
