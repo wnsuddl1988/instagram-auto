@@ -107,16 +107,52 @@ Validation evidence (2026-06-25, review-fix 후):
   - T5: card scene 3개 전체 위반 없음 ✅
   - T6: "현재값 숫자 카드" → text_in_image_violation 탐지 ✅
 
+## Implemented Voice Profile module (`money-shorts-os-voice-profile-spec-v1`):
+
+- `lib/voice-profiles/types.ts` — `VOICE_PROFILE_SCHEMA_VERSION`, `TTS_SCRIPT_SCHEMA_VERSION`, `VoiceProvider` (5종), `VoiceLocale`, `VoiceGender`, `VoiceStyle`, `VoiceProviderSettings`, `VoiceProfile`, `TtsSceneBlock`, `TtsScriptPackage`, `VoiceProfileValidationResult`
+- `lib/voice-profiles/profiles.ts` — `DEFAULT_MONEY_SHORTS_VOICE_PROFILE` (한국어/남성/calm_confident/elevenlabs/PENDING voiceId), `MOCK_VOICE_PROFILES`
+- `lib/voice-profiles/formatter.ts` — `formatScriptPackageForTts(pkg, profile, opts?)`, `formatBlueprintForTts(blueprint, profile, opts?)`; 기존 narrationText/ttsScript 필드에서만 파생, 텍스트 날조 없음; terminal punctuation normalization; 결정론적, new Date() 없음
+- `lib/voice-profiles/validation.ts` — `validateVoiceProfile`, `validateTtsScriptPackage`; unsupported_provider/locale, missing profileId/voiceId, empty ttsText, empty scenes, missing parentId 탐지
+- `lib/voice-profiles/fixtures.ts` — inflationTtsPackage30, exchangeRateTtsPackage15, inflationBlueprintTtsPackage, MOCK_TTS_PACKAGES
+- `lib/voice-profiles/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/voice-profiles/): 0 errors ✅
+- ESLint (lib/voice-profiles/): 0 warnings ✅
+- Runtime sample (7 tests, node .cjs, 삭제 완료):
+  - T1: default profile validation.ok=true ✅
+  - T2: script package → TTS (sourceId/sourceType/scenes/charCount 정확, terminal punctuation 자동 추가) ✅
+  - T3: blueprint → TTS (ttsScript 있으면 우선, 없으면 narration fallback) ✅
+  - T4: scene parentId linkage 보존 ✅
+  - T5: valid TTS package validation.ok=true ✅
+  - T6: broken TTS package → 7개 에러 탐지 (empty_package_id 등) ✅
+  - T7: invalid profile (bad provider/locale/voiceId/speed) → 6개 에러 탐지 ✅
+
+review-fix 추가 검증 (2026-06-25, money-shorts-os-voice-profile-spec-v1-review-fix):
+
+- TypeScript strict check (lib/voice-profiles/): 0 errors ✅ (review-fix 후)
+- ESLint (lib/voice-profiles/): 0 warnings ✅ (review-fix 후)
+- review-fix 핵심 수정 2건:
+  1. `formatter.ts` line 78: `scene.sceneId` (TS2339) → `` `scene-${scene.sceneIndex}` `` 결정론적 fallback으로 교체
+  2. `profiles.ts`: `provider: "openai_tts"` / `voiceId: "onyx"` → `provider: "elevenlabs"` / `voiceId: "ELEVENLABS_VOICE_ID_PENDING"` + extras.selectionStatus: "pending_owner_selection"
+- Runtime sample (5 tests, node .cjs, 삭제 완료):
+  - T1: default profile provider=elevenlabs, voiceId=PENDING, selectionStatus=pending_owner_selection ✅
+  - T2: elevenlabs profile validation.ok=true (errors=[]) ✅
+  - T3: script package TTS → scene[0].sceneId="scene-1", scene[1].sceneId="scene-2", terminal punct 자동 추가 ✅
+  - T4: blueprint TTS → scene[0].sceneId="s1"(real), scene[1].sceneId="s2"(real), ttsScript 우선/narration fallback ✅
+  - T5: TTS package provider = "elevenlabs" (script pkg + blueprint 모두) ✅
+
 ## Active Next Task
 
 Task ID:
 
-`money-shorts-os-voice-profile-spec-v1`
+`money-shorts-os-timeline-recalc-v1`
 
 Goal:
 
-- Create local voice profile types/settings and deterministic TTS script formatting helpers from existing Script/Blueprint narration.
-- No ElevenLabs call, no audio generation, no duration measurement, no external API, no DB/env/dependency changes, no render, no upload/deploy/push.
+- Create local deterministic timeline recalculation types/helpers/validation from existing Blueprint/Script/TTS data plus supplied/mock measured duration values.
+- No ElevenLabs call, no audio generation, no real audio duration measurement, no external API, no DB/env/dependency changes, no render, no upload/deploy/push.
 
 ## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):
 

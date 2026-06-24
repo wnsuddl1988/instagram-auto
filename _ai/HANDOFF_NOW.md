@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-voice-profile-spec-v1`
+`money-shorts-os-timeline-recalc-v1`
 
 ## Current State
 
@@ -12,11 +12,12 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local checkpoint before image-prompts:
-  - `fa6b5a1 feat(chart-cards): add source-linked card props model`
-- Image prompt module is complete and checkpoint-ready:
-  - `lib/image-prompts/`
-  - review-fix prevents CTA/card labels/numeric card surfaces from entering generated image prompt text
+- Latest completed local checkpoint before voice-profiles:
+  - `5bb99fd feat(image-prompts): add source-linked prompt package generator`
+- Voice profile module is complete and checkpoint-ready:
+  - `lib/voice-profiles/`
+  - default voice profile aligned to `provider: "elevenlabs"` with pending placeholder voice id only
+  - no live ElevenLabs/OpenAI/TTS/audio call
 
 Active local modules:
 
@@ -26,6 +27,7 @@ Active local modules:
 - `lib/risk-review/`
 - `lib/chart-cards/`
 - `lib/image-prompts/`
+- `lib/voice-profiles/`
 
 Active product/spec sources:
 
@@ -39,39 +41,30 @@ Active product/spec sources:
 
 ## Goal
 
-Create a local deterministic voice profile and TTS script formatting module for Money Shorts OS.
+Create a local deterministic timeline recalculation module for Money Shorts OS.
 
-This task only models voice profile settings and formats existing script/blueprint narration into provider-ready text blocks. It must not call ElevenLabs, OpenAI, or any external TTS/audio service.
+This task only recalculates scene and caption timings from existing Blueprint/Script/TTS package data plus mocked or manually supplied audio duration values. It must not generate audio, measure real audio files, call ElevenLabs, or render video.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/blueprints/`, `lib/scripts/`, and specs listed above.
-- Add a small local module, preferably `lib/voice-profiles/`, if no better local pattern exists.
-- Define TypeScript types for voice profiles, voice settings, and formatted TTS script packages.
-- Create deterministic helpers that derive TTS-ready text from existing `GeneratedScriptPackage` and/or `VideoBlueprint` narration fields.
-- Preserve linkage to package/video/scene ids where available.
-- Include a default local voice profile matching the spec:
-  - Korean
-  - male
-  - calm
-  - confident
-  - trustworthy
-  - warm but not soft
-  - clear pronunciation
-  - not too slow
-  - not ad-like
-  - not news-anchor-like
+- Inspect `lib/blueprints/`, `lib/scripts/`, `lib/voice-profiles/`, and specs listed above.
+- Add a small local module, preferably `lib/timeline/`, if no better local pattern exists.
+- Define TypeScript types for timeline calculation input/output.
+- Accept a provided/mock measured audio duration in seconds.
+- Recalculate scene start/end/duration values deterministically.
+- Derive simple caption timing blocks from script scenes or TTS scene blocks.
+- Preserve linkage to source package/video/scene ids.
 - Add lightweight validation helpers if useful.
-- Add fixtures from existing script/blueprint fixtures.
+- Add fixtures from existing blueprint/script/TTS fixtures.
 
 ## Forbidden
 
 - No ElevenLabs call.
 - No OpenAI/GPT/Gemini/Veo call.
 - No audio generation.
-- No audio duration measurement.
+- No actual audio duration measurement from files.
 - No external API calls.
 - No ffmpeg pipeline implementation or execution.
 - No image/video rendering.
@@ -87,11 +80,11 @@ Allowed:
 
 ## Definition of Done
 
-- Voice profile model types are available from a clear local module.
-- A deterministic helper can build TTS-ready script text from existing mock script/blueprint data.
+- Timeline model types are available from a clear local module.
+- A deterministic helper can recalculate timeline from existing mock Blueprint/Script/TTS data and a supplied measured duration.
 - Scene/package linkage is preserved.
-- Formatter does not invent narration beyond existing script/blueprint narration fields.
-- Validation catches missing profile id/name/provider, empty TTS text, missing scene linkage, and unsupported provider/locale where practical.
+- Caption timing blocks are generated from existing caption/scene text without inventing new facts.
+- Validation catches missing source id, invalid duration, empty scenes, non-ordered scene times, and target/measured duration mismatches where practical.
 - No external service integration is added.
 - Focused type/check/sample command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.

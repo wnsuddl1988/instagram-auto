@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Image prompt checkpoint 준비 완료
+## 2026-06-25 현재 — Voice profile checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -20,17 +20,18 @@ Owner 결정:
 - `902e632 feat(scripts): add source-linked script package generator`
 - `79faa5b feat(risk): add financial expression scanner`
 - `fa6b5a1 feat(chart-cards): add source-linked card props model`
+- `5bb99fd feat(image-prompts): add source-linked prompt package generator`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-image-prompt-generator-v1`
-- review-fix: `number_card`/`chart_card`/`cta_card` prompt가 카드 표면/CTA/숫자/라벨을 만들지 않도록 safe fallback 처리
-- `lib/image-prompts/` 로컬 image prompt package model 구현
+- `money-shorts-os-voice-profile-spec-v1`
+- review-fix: `ScriptScene.sceneId` 접근 제거, default profile provider를 ElevenLabs-first placeholder로 정렬
+- `lib/voice-profiles/` 로컬 voice profile/TTS script formatter model 구현
 - Codex verification:
   - source-first module-only TypeScript diagnostics: 0
-  - ESLint `lib/image-prompts`: PASS
-  - runtime sample: generated prompt 금지 패턴 0개, valid package PASS, manually injected `Money-OS CTA 카드`/`현재값 숫자 카드` validation fail PASS
+  - ESLint `lib/voice-profiles`: PASS
+  - runtime sample: provider=elevenlabs, validation PASS, script fallback scene ids `scene-1..`, blueprint scene ids `s1/s2` 보존, terminal punctuation PASS
 
 Source of truth:
 
@@ -44,24 +45,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local voice profile and TTS script formatter model**
+**MVP 1 — local timeline recalculation model**
 
 Task ID:
 
-`money-shorts-os-voice-profile-spec-v1`
+`money-shorts-os-timeline-recalc-v1`
 
 목표:
 
-- ElevenLabs 호출 없이 로컬 voice profile 타입/설정과 TTS-ready script formatter를 만든다.
-- 기존 Blueprint/Script narration만 사용하고 새 사실이나 문장을 임의 생성하지 않는다.
+- 실제 오디오 파일 측정 없이, 제공된/mock measured audio duration을 바탕으로 scene/caption timing을 재계산한다.
+- 기존 Blueprint/Script/TTS text와 linkage만 사용하고 새 사실이나 문장을 임의 생성하지 않는다.
 
 포함:
 
-- voice profile TypeScript types
-- local provider/settings model
-- default Money Architect voice profile fixture
-- GeneratedScriptPackage 또는 VideoBlueprint 기반 TTS script package helper
-- scene/package linkage
+- timeline TypeScript types
+- supplied/mock measured duration input model
+- scene timing recalculation helper
+- caption timing blocks
+- source package/video/scene linkage
 - lightweight validation helper
 - focused TypeScript/ESLint/runtime sample check
 
@@ -69,7 +70,7 @@ Task ID:
 
 - ElevenLabs live call
 - OpenAI/GPT/Gemini/Veo live call
-- audio generation 또는 duration 측정
+- audio generation 또는 실제 파일 duration 측정
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - API key/env/secret 변경
 - Supabase migration 적용
