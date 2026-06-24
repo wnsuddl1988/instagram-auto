@@ -2,52 +2,122 @@
 
 ## Task ID
 
-`ep003-s3-veo-preflight-checkpoint`
+`money-shorts-os-fact-card-to-blueprint-v1`
+
+## Current State
+
+Previous video production routes are retired.
+
+The product core is source-based finance/economy shorts production:
+
+- Main product: source-based finance/economy shorts production OS.
+- Supporting layer: Money-OS CTA/conversion only when relevant.
+- Content mix: source-based finance/economy shorts 70%, Money-OS-linked money-management shorts 30%.
+
+Current status:
+
+- **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
+- Local checkpoint complete: `acbaba9 feat(source): add fact card types and validation`
+- Existing source/fact-card module: `lib/source-facts/`
+
+Active product/spec sources:
+
+- `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`
+- `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`
+- `_ai/MONEY_SHORTS_OS_PRD_V1.md`
+- `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`
+- `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`
+- `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md`
+- `_ai/PRODUCTION_PIPELINE_RESET_V1.md`
 
 ## Goal
 
-S3 Boss-Free Veo preflight 동기화 완료분을 안전한 local checkpoint commit으로 확정한다.
+Create the first local Video Blueprint model and generator skeleton from an existing Fact Card.
 
-## Accepted Evidence
+This task is only local TypeScript types/schema helpers and deterministic mock generation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
 
-- S3 ref: `s3_bossfree_kf_try6.png`, hash `aea43e2b`
-- S3 prompt hash: `bd88af5b`
-- G1 S3 preflight: `PREFLIGHT_PASS`
-- generate dry-run: PASS
-- TOTAL=0, VEO=0, 외부 제출 0회
-- preflight와 runner의 prompt/ref hash 일치
+## Approved Scope
 
-## Commit Scope
+Allowed:
 
-포함:
+- Inspect `lib/source-facts/` and existing project TypeScript conventions.
+- Add a small local blueprint module, preferably `lib/blueprints/`, if no better local pattern exists.
+- Define local TypeScript types for Video Blueprint root fields and scene fields based on `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`.
+- Generate a mock/deterministic Video Blueprint from a `FactCard`.
+- Preserve Fact Card linkage through `factCardIds`, `sourceCitationIds`, `sourceSummary`, and per-scene source notes where useful.
+- Include 15/30/60 target duration support as types or lightweight helper logic if it stays small.
+- Add validation helpers if useful, focused on missing Fact Card/source links, empty scenes, unsafe CTA policy, and required title/topic/core message.
+- Add focused tests only if the existing repo has an obvious lightweight setup; otherwise run targeted TypeScript/ESLint checks.
+- Keep code small, reusable, and local.
 
-- `_ai/HANDOFF_NOW.md`
-- `_ai/PROJECT_STATE.md`
-- `scripts/_ep003-jdm-veo-preflight.mjs`
-- `scripts/_ep003-jdm-veo-generate.mjs`
+Required model concepts:
 
-제외:
+- `VideoBlueprint`
+- `VideoBlueprintScene`
+- `VideoBlueprintContentType`
+- `VideoBlueprintTemplateMode`
+- `VideoBlueprintTemplateKey`
+- `VideoBlueprintTargetAudience`
+- `VideoBlueprintSceneRole`
+- `VideoBlueprintVisualType`
+- `VideoBlueprintMotionType`
+- `VideoBlueprintValidationResult`
 
-- `output/**`
-- env/secret
-- dependency/lockfile
-- deploy 설정
-- 그 외 모든 파일
+Minimum generated blueprint fields:
 
-## Commit Message
-
-`feat(ep003): S3 boss-free Veo preflight 동기화`
+- schema version
+- video id
+- title
+- topic
+- target duration seconds
+- estimated duration seconds
+- core message
+- content type
+- template mode
+- template key
+- Fact Card ids
+- source citation ids
+- source summary
+- CTA policy
+- tone
+- target audience
+- risk level
+- source references
+- voice profile id
+- ordered scenes
 
 ## Forbidden
 
-- push 금지
-- Veo 실제 제출 금지
-- S4 Veo/TTS/ChatGPT 이미지 실행 금지
-- 추가 코드·문서 수정 금지
+- No ECOS/KOSIS/OpenDART/FRED live API calls.
+- No GPT/Gemini/Veo/ElevenLabs live calls.
+- No API key/env/secret changes.
+- No Supabase migration or production DB changes.
+- No dependency or lockfile changes.
+- No payment integration.
+- No video rendering.
+- No ffmpeg pipeline implementation or execution.
+- No upload/post.
+- No git push.
+- Do not implement the full Money-OS product.
+- Do not implement script generation as a separate product yet; only include scene text needed to prove the Blueprint shape.
+- Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
 
-## Done
+## Definition of Done
 
-- staged 파일이 포함 목록과 정확히 일치
-- local commit 성공
-- commit 후 git status 보고
-- 한국어 Codex 인수인계 후 즉시 중단
+- Video Blueprint types are available from a clear local module.
+- A deterministic helper can create a mock Video Blueprint from a valid `FactCard`.
+- The generated Blueprint keeps source links and citation ids from the Fact Card.
+- The generated Blueprint has ordered scenes and no imagined numeric facts beyond the Fact Card.
+- Validation catches missing title/topic/core message, missing Fact Card linkage, missing scenes, and invalid source citation linkage.
+- No external service integration is added.
+- Focused type/check/test command passes, or a clear reason is reported if no check applies.
+- Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
+
+## Checkpoint Policy
+
+- Do not commit unless Codex explicitly authorizes a safe local checkpoint commit.
+- Do not push.
+
+## CLAUDE_REPORT Policy
+
+- Update `_ai/CLAUDE_REPORT.md` only if reusable implementation evidence should be preserved.
