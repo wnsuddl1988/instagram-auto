@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 61% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card 로컬 모듈이 안정화됐다. 다음 단계는 Fact Card/Blueprint 기반 image prompt package 모델이다.
+**전체프로젝트 진행률:** 약 64% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package 로컬 모듈이 안정화됐다. 다음 단계는 로컬 voice profile/TTS script formatter 모델이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -49,6 +49,7 @@
 - Commit: `35ca73c` — `feat(blueprints): add fact card video blueprint generator`
 - Commit: `902e632` — `feat(scripts): add source-linked script package generator`
 - Commit: `79faa5b` — `feat(risk): add financial expression scanner`
+- Commit: `fa6b5a1` — `feat(chart-cards): add source-linked card props model`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -58,27 +59,26 @@
 
 Task:
 
-- `money-shorts-os-chart-card-model-v1`
+- `money-shorts-os-image-prompt-generator-v1`
 
 구현:
 
-- `lib/chart-cards/types.ts`
-- `lib/chart-cards/generator.ts`
-- `lib/chart-cards/validation.ts`
-- `lib/chart-cards/fixtures.ts`
-- `lib/chart-cards/index.ts`
+- `lib/image-prompts/types.ts`
+- `lib/image-prompts/generator.ts`
+- `lib/image-prompts/validation.ts`
+- `lib/image-prompts/fixtures.ts`
+- `lib/image-prompts/index.ts`
 
 검증:
 
-- Chart-card module ESLint PASS
+- Image prompt module ESLint PASS
 - Source-first module-only TypeScript diagnostics: 0
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
+- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
 - Codex runtime verification PASS:
-  - number card value/source linkage PASS
-  - blueprint null package PASS
-  - CTA conditional inclusion PASS
+  - generated prompt 금지 패턴 0개 PASS
+  - CTA scene safe fallback PASS
   - valid package validation PASS
-  - broken package and unsupported card type detection PASS
+  - manually injected CTA/card-label prompt validation fail PASS
 
 주의:
 
@@ -105,21 +105,21 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — source-backed image prompt package model**
+- **MVP 1 — local voice profile and TTS script formatter model**
 
 구현 대상:
 
-- image prompt TypeScript types
-- scene-level image prompt package
-- Video Blueprint scene linkage
-- Fact Card / citation linkage where available
+- voice profile TypeScript types
+- local provider/settings model
+- default Money Architect voice profile fixture
+- GeneratedScriptPackage 또는 VideoBlueprint 기반 TTS script package helper
+- scene/package linkage
 - deterministic helper
-- no-text/no-number generated image negative rules
 - lightweight validation helper
 - no external AI/API
 - no DB migration
 - no video render
-- no TTS
+- no ElevenLabs/TTS live call
 - no ffmpeg
 - no payment/deploy/upload/post/push
 

@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Chart-card checkpoint 준비 완료
+## 2026-06-25 현재 — Image prompt checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -19,17 +19,18 @@ Owner 결정:
 - `35ca73c feat(blueprints): add fact card video blueprint generator`
 - `902e632 feat(scripts): add source-linked script package generator`
 - `79faa5b feat(risk): add financial expression scanner`
+- `fa6b5a1 feat(chart-cards): add source-linked card props model`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-chart-card-model-v1`
-- review-fix: `lib/chart-cards/generator.ts`의 optional CTA card push 타입 오류 수정 (`AnyCardProps[]`)
-- `lib/chart-cards/` 로컬 9:16 chart/number-card model 구현
+- `money-shorts-os-image-prompt-generator-v1`
+- review-fix: `number_card`/`chart_card`/`cta_card` prompt가 카드 표면/CTA/숫자/라벨을 만들지 않도록 safe fallback 처리
+- `lib/image-prompts/` 로컬 image prompt package model 구현
 - Codex verification:
   - source-first module-only TypeScript diagnostics: 0
-  - ESLint `lib/chart-cards`: PASS
-  - runtime sample: number/source linkage, blueprint null, CTA 조건부 포함, validation broken/unsupported cases PASS
+  - ESLint `lib/image-prompts`: PASS
+  - runtime sample: generated prompt 금지 패턴 0개, valid package PASS, manually injected `Money-OS CTA 카드`/`현재값 숫자 카드` validation fail PASS
 
 Source of truth:
 
@@ -43,39 +44,38 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — source-backed image prompt package model**
+**MVP 1 — local voice profile and TTS script formatter model**
 
 Task ID:
 
-`money-shorts-os-image-prompt-generator-v1`
+`money-shorts-os-voice-profile-spec-v1`
 
 목표:
 
-- Fact Card/Video Blueprint/scene 정보를 기반으로 GPT 이미지 생성용 프롬프트 패키지를 로컬에서 만든다.
-- 실제 이미지 생성 호출 없이 prompt text, negative rules, scene/source linkage, validation만 만든다.
+- ElevenLabs 호출 없이 로컬 voice profile 타입/설정과 TTS-ready script formatter를 만든다.
+- 기존 Blueprint/Script narration만 사용하고 새 사실이나 문장을 임의 생성하지 않는다.
 
 포함:
 
-- image prompt TypeScript types
-- scene-level prompt package
-- VideoBlueprint scene linkage
-- FactCard/citation linkage where available
-- deterministic helper
-- negative rules for no text/no numbers/no logos/no labels inside generated images
+- voice profile TypeScript types
+- local provider/settings model
+- default Money Architect voice profile fixture
+- GeneratedScriptPackage 또는 VideoBlueprint 기반 TTS script package helper
+- scene/package linkage
 - lightweight validation helper
 - focused TypeScript/ESLint/runtime sample check
 
 금지:
 
-- GPT/OpenAI/Gemini/Veo live call
-- canvas/SVG/PNG/image render 생성
+- ElevenLabs live call
+- OpenAI/GPT/Gemini/Veo live call
+- audio generation 또는 duration 측정
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - API key/env/secret 변경
 - Supabase migration 적용
 - dependency/lockfile 변경
 - video render
 - ffmpeg 실행 파이프라인 구현
-- ElevenLabs/TTS
 - payment/deploy/upload/post/push
 - Money-OS 전체 기능 구현
 - 이전 영상 후보 개선

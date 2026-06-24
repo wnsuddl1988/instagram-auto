@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-image-prompt-generator-v1`
+`money-shorts-os-voice-profile-spec-v1`
 
 ## Current State
 
@@ -12,14 +12,11 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Local checkpoints already completed:
-  - `909098b feat(source): establish clean source-first baseline`
-  - `35ca73c feat(blueprints): add fact card video blueprint generator`
-  - `902e632 feat(scripts): add source-linked script package generator`
-  - `79faa5b feat(risk): add financial expression scanner`
-- Chart-card module is complete and ready for local checkpoint:
-  - `lib/chart-cards/`
-  - review-fix corrected `AnyCardProps[]` typing for optional CTA cards
+- Latest completed local checkpoint before image-prompts:
+  - `fa6b5a1 feat(chart-cards): add source-linked card props model`
+- Image prompt module is complete and checkpoint-ready:
+  - `lib/image-prompts/`
+  - review-fix prevents CTA/card labels/numeric card surfaces from entering generated image prompt text
 
 Active local modules:
 
@@ -28,6 +25,7 @@ Active local modules:
 - `lib/scripts/`
 - `lib/risk-review/`
 - `lib/chart-cards/`
+- `lib/image-prompts/`
 
 Active product/spec sources:
 
@@ -41,38 +39,42 @@ Active product/spec sources:
 
 ## Goal
 
-Create a local deterministic image-prompt package module for source-backed finance shorts.
+Create a local deterministic voice profile and TTS script formatting module for Money Shorts OS.
 
-This task only derives prompt text and prompt metadata from existing `FactCard`, `VideoBlueprint`, and/or script scene fields. It must not submit prompts to GPT, Gemini, Veo, OpenAI, or any external service.
+This task only models voice profile settings and formats existing script/blueprint narration into provider-ready text blocks. It must not call ElevenLabs, OpenAI, or any external TTS/audio service.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/source-facts/`, `lib/blueprints/`, `lib/scripts/`, `lib/chart-cards/`, and specs listed above.
-- Add a small local module, preferably `lib/image-prompts/`, if no better local pattern exists.
-- Define TypeScript types for image prompt packages and scene-level prompts.
-- Generate deterministic prompt objects from `VideoBlueprint` scenes and source-backed fields.
-- Preserve linkage to `videoId`, `sceneId`, `factCardId`, and `sourceCitationIds` where available.
-- Include global negative rules:
-  - no text inside generated image
-  - no numbers inside generated image
-  - no labels/UI/logos/card numbers
-  - no subtitles/CTA/source text inside generated image
-  - no fantasy/game/cartoon/chibi/mascot style
-  - no investment advice or performance promises
-- Keep text/numbers/source display responsibility assigned to chart cards or later overlay layers, not the generated image itself.
+- Inspect `lib/blueprints/`, `lib/scripts/`, and specs listed above.
+- Add a small local module, preferably `lib/voice-profiles/`, if no better local pattern exists.
+- Define TypeScript types for voice profiles, voice settings, and formatted TTS script packages.
+- Create deterministic helpers that derive TTS-ready text from existing `GeneratedScriptPackage` and/or `VideoBlueprint` narration fields.
+- Preserve linkage to package/video/scene ids where available.
+- Include a default local voice profile matching the spec:
+  - Korean
+  - male
+  - calm
+  - confident
+  - trustworthy
+  - warm but not soft
+  - clear pronunciation
+  - not too slow
+  - not ad-like
+  - not news-anchor-like
 - Add lightweight validation helpers if useful.
-- Add mock fixtures from existing blueprints.
+- Add fixtures from existing script/blueprint fixtures.
 
 ## Forbidden
 
-- No GPT/OpenAI image generation call.
-- No Gemini/Veo call.
+- No ElevenLabs call.
+- No OpenAI/GPT/Gemini/Veo call.
+- No audio generation.
+- No audio duration measurement.
 - No external API calls.
-- No image, canvas, SVG, PNG, or video rendering.
 - No ffmpeg pipeline implementation or execution.
-- No ElevenLabs/TTS.
+- No image/video rendering.
 - No API key/env/secret changes.
 - No Supabase migration or production DB changes.
 - No dependency or lockfile changes.
@@ -85,11 +87,11 @@ Allowed:
 
 ## Definition of Done
 
-- Image prompt model types are available from a clear local module.
-- A deterministic helper can derive scene-level image prompts from existing mock `VideoBlueprint` data.
-- Prompt package preserves source/scene linkage.
-- Prompt text does not place factual numbers, captions, CTA text, source text, or labels inside the generated image.
-- Validation catches empty prompt text, missing scene linkage, missing negative rules, unsupported provider/asset type, and text/numbers-in-image rule violations where practical.
+- Voice profile model types are available from a clear local module.
+- A deterministic helper can build TTS-ready script text from existing mock script/blueprint data.
+- Scene/package linkage is preserved.
+- Formatter does not invent narration beyond existing script/blueprint narration fields.
+- Validation catches missing profile id/name/provider, empty TTS text, missing scene linkage, and unsupported provider/locale where practical.
 - No external service integration is added.
 - Focused type/check/sample command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.

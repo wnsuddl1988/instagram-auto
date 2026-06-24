@@ -84,16 +84,39 @@ Validation evidence (2026-06-25, review-fix 후):
   - T5: broken package (empty packageId/factCardId/citations/cards) → ok=false, 4 errors 탐지 ✅
   - T6: unsupported card type (pie_chart) → ok=false, unsupported_card_type 코드 탐지 ✅
 
+## Implemented Image Prompt module (`money-shorts-os-image-prompt-generator-v1`):
+
+- `lib/image-prompts/types.ts` — `IMAGE_PROMPT_SCHEMA_VERSION`, `ImagePromptProvider` (5종), `ImageAssetType` (5종), `ImageNegativeRules`, `REQUIRED_NEGATIVE_RULES`, `ImagePromptSourceLink`, `SceneImagePrompt`, `ImagePromptPackage`, `ImagePromptValidationResult`
+- `lib/image-prompts/generator.ts` — `makeSceneImagePrompt`, `generateImagePromptPackage`; Blueprint scene visualDescription/imagePrompt에서 sanitize → 숫자/%, 출처, CTA 제거; fallback prompt per sceneRole; 결정론적, new Date() 없음
+- `lib/image-prompts/validation.ts` — `validateImagePromptPackage`; empty promptText, text_in_image_violation (%, 출처:, 구독 등), missing_negative_rule (4개 규칙), unsupported_provider, unsupported_asset_type, missing scene/video/citation linkage 탐지
+- `lib/image-prompts/fixtures.ts` — inflationImagePromptPackage (30s), exchangeRateImagePromptPackage (15s), dartDisclosureImagePromptPackage (60s+CTA), MOCK_IMAGE_PROMPT_PACKAGES
+- `lib/image-prompts/index.ts` — re-export
+
+Validation evidence (2026-06-25, review-fix 후):
+
+- TypeScript strict check (lib/image-prompts/): 0 errors ✅
+- ESLint (lib/image-prompts/): 0 warnings ✅
+- review-fix 핵심 수정:
+  - `generator.ts`: `CARD_SURFACE_VISUAL_TYPES = {chart_card, number_card, cta_card}` — 이 타입은 visualDescription/imagePrompt 무시, 항상 sceneRole별 safe fallback 사용
+  - `validation.ts`: `TEXT_IN_IMAGE_PATTERNS`에 CTA 카드/Money-OS/카드 라벨/숫자 카드 용어 패턴 4개 추가
+- Runtime sample (6 tests, node .cjs, 삭제 완료):
+  - T1: cta_card → "clean abstract gradient background..." (Money-OS/CTA 카드 없음) ✅
+  - T2: 생성된 패키지 validation.ok=true, 0 errors ✅
+  - T3: static_background는 여전히 visualDescription 사용 (policy 대상 아님) ✅
+  - T4: manually injected "Money-OS CTA 카드" → text_in_image_violation 탐지 ✅
+  - T5: card scene 3개 전체 위반 없음 ✅
+  - T6: "현재값 숫자 카드" → text_in_image_violation 탐지 ✅
+
 ## Active Next Task
 
 Task ID:
 
-`money-shorts-os-image-prompt-generator-v1`
+`money-shorts-os-voice-profile-spec-v1`
 
 Goal:
 
-- Create local deterministic image prompt package types/generator/validation from Fact Card/Video Blueprint scene data.
-- No GPT/OpenAI/Gemini/Veo live call, no image render, no video render, no TTS, no ffmpeg, no DB/env/dependency changes, no upload/deploy/push.
+- Create local voice profile types/settings and deterministic TTS script formatting helpers from existing Script/Blueprint narration.
+- No ElevenLabs call, no audio generation, no duration measurement, no external API, no DB/env/dependency changes, no render, no upload/deploy/push.
 
 ## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):
 
