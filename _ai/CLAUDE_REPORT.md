@@ -50,12 +50,28 @@ Validation evidence (2026-06-25, review fix):
 
 Task ID:
 
-- `money-shorts-os-fact-card-script-generator-v1` (Implementation Order Step 5)
+- `money-shorts-os-risk-review-v1` (Implementation Order Step 6)
 
 Goal:
 
-- Generate scripts/captions/storyboard from Fact Card values only.
+- Financial expression scanner for generated scripts, captions, and CTA.
 - No external API, AI generation, TTS, video render, ffmpeg, DB, payment, upload, deploy, or push.
+
+## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):
+
+- `lib/scripts/types.ts` — GeneratedScriptPackage, DurationScript, ScriptScene, ScriptPackageValidationResult, 2개 union type (ScriptSceneGoal, ScriptSceneVisualType)
+- `lib/scripts/generator.ts` — generateScriptPackage(blueprint, options); new Date() 없음 — options.createdAt 주입 방식; SNS copy (youtubeTitle/instagramCaption/description/hashtags) 전부 Blueprint 필드에서만 파생; allDurations 옵션 제거(review-fix: 계약-구현 불일치 수정)
+- `lib/scripts/validation.ts` — validateScriptPackage; narration/caption 빈값, source linkage 누락(factCardIds/sourceCitationIds/sourceNote), storyboard 빈값 검증
+- `lib/scripts/fixtures.ts` — inflationScriptPackage30, exchangeRateScriptPackage15, dartDisclosureScriptPackage60, MOCK_SCRIPT_PACKAGES
+- `lib/scripts/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/scripts/): 0 errors ✅
+- ESLint (lib/scripts/): 0 warnings ✅
+- Runtime sample — 3 fixtures (15s/30s/60s+CTA): all validation.ok=true, scene_sum==target ✅
+- Source linkage preserved: factCardIds, sourceCitationIds, per-scene factCardId + sourceNote ✅
+- Broken package (empty factCardIds + empty narration): validation.ok=false, expected codes ✅
 
 ## Active Source Of Truth
 

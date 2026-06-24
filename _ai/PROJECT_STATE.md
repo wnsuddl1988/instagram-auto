@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 52% — 제품 중심축을 출처 기반 금융·경제 쇼츠 제작 OS로 정정했고, source/fact-card foundation과 Fact Card -> Video Blueprint 로컬 모델/생성/검증 구조가 checkpoint 준비 상태다. 다음 단계는 Fact Card/Blueprint 기반 대본·자막·스토리보드 생성 구조다.
+**전체프로젝트 진행률:** 약 55% — source/fact-card foundation, Fact Card -> Video Blueprint 로컬 모델, Fact Card/Blueprint -> script/caption/storyboard package 생성 구조가 checkpoint 준비 상태다. 다음 단계는 generated script package 금융표현 위험 검수다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -46,14 +46,9 @@
 ## 최근 checkpoint
 
 - Commit: `909098b` — `feat(source): establish clean source-first baseline`
+- Commit: `35ca73c` — `feat(blueprints): add fact card video blueprint generator`
 - Branch: `codex/source-first-blueprint-clean`
-- Remote: `origin/main` 대비 ahead 1
 - Push: 미실행
-
-포함:
-
-- source-first `_ai` docs
-- `lib/source-facts/`
 
 ---
 
@@ -61,25 +56,25 @@
 
 Task:
 
-- `money-shorts-os-fact-card-to-blueprint-v1`
+- `money-shorts-os-fact-card-script-generator-v1`
 
 구현:
 
-- `lib/blueprints/types.ts`
-- `lib/blueprints/generator.ts`
-- `lib/blueprints/validation.ts`
-- `lib/blueprints/fixtures.ts`
-- `lib/blueprints/index.ts`
+- `lib/scripts/types.ts`
+- `lib/scripts/generator.ts`
+- `lib/scripts/validation.ts`
+- `lib/scripts/fixtures.ts`
+- `lib/scripts/index.ts`
 
 검증:
 
-- Blueprint module ESLint PASS
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패하지만, 실패 위치는 `output/`이며 `lib/blueprints/` 이슈가 아니다.
+- Script module ESLint PASS
+- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패하지만, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
 - Codex runtime verification PASS:
-  - 15s/30s/60s fixtures: target, estimatedDurationSec, scene duration sum, max end all match
-  - 30s CTA and 60s no-CTA additional layouts also match
-  - broken duration sample fails validation with `scene_exceeds_target_duration` and `duration_mismatch`
-  - deterministic output confirmed; no implicit `createdAt`
+  - 15s/30s/60s script fixtures: validation.ok=true and scene duration sum matches target
+  - source linkage preserved for factCardIds/sourceCitationIds and non-CTA scene factCardId/sourceNote
+  - broken package fails validation with `required_non_empty`, `empty_narration`, and `unresolved_source_link`
+  - no `allDurations` public option remains in `lib/scripts/generator.ts`
 
 주의:
 
@@ -106,15 +101,15 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — Fact Card/Blueprint 기반 script/caption/storyboard generator**
+- **MVP 1 — Financial expression risk review**
 
 구현 대상:
 
-- generated script package TypeScript types
-- deterministic 15s/30s/60s script/caption/storyboard helper
-- Fact Card / Blueprint / citation linkage
-- source note preservation
-- lightweight validation helper
+- risk review TypeScript types
+- risky expression pattern list
+- generated script package scanner
+- finding/result model
+- safe/risky fixture samples
 - no external AI/API
 - no DB migration
 - no video render

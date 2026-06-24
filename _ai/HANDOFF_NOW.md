@@ -2,24 +2,25 @@
 
 ## Task ID
 
-`money-shorts-os-fact-card-script-generator-v1`
+`money-shorts-os-risk-review-v1`
 
 ## Current State
 
 Previous video production routes are retired.
 
-The product core is source-based finance/economy shorts production:
-
-- Main product: source-based finance/economy shorts production OS.
-- Supporting layer: Money-OS CTA/conversion only when relevant.
-- Content mix: source-based finance/economy shorts 70%, Money-OS-linked money-management shorts 30%.
-
 Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
-- Clean branch baseline: `909098b feat(source): establish clean source-first baseline`
-- Source/fact-card module exists: `lib/source-facts/`
-- Fact Card -> Video Blueprint module is checkpoint-ready: `lib/blueprints/`
+- Branch: `codex/source-first-blueprint-clean`
+- Clean source-first baseline: `909098b feat(source): establish clean source-first baseline`
+- Blueprint checkpoint: `35ca73c feat(blueprints): add fact card video blueprint generator`
+- Script generator is checkpoint-ready: `lib/scripts/`
+
+Active local modules:
+
+- `lib/source-facts/`
+- `lib/blueprints/`
+- `lib/scripts/`
 
 Active product/spec sources:
 
@@ -33,35 +34,35 @@ Active product/spec sources:
 
 ## Goal
 
-Create the first local script/caption/storyboard generation structure from a validated Fact Card and Video Blueprint.
+Create the first local financial expression risk review structure for generated scripts, captions, descriptions, hashtags, and CTA copy.
 
-This task is only local deterministic TypeScript generation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
+This task is only local deterministic TypeScript scanning/validation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/source-facts/` and `lib/blueprints/`.
-- Add a small local script module, preferably `lib/scripts/`, if no better local pattern exists.
-- Define local TypeScript types for generated script package outputs.
-- Generate deterministic 15s/30s/60s script/caption/storyboard text from a `FactCard` and/or `VideoBlueprint`.
-- Preserve source linkage through `factCardId`, `blueprintId` or `videoId`, and source/citation references.
-- Keep generated numeric facts strictly limited to values already present in the Fact Card/Blueprint.
-- Add lightweight validation helpers if useful.
+- Inspect `lib/source-facts/`, `lib/blueprints/`, and `lib/scripts/`.
+- Add a small local risk/compliance module, preferably `lib/risk-review/` or `lib/compliance/`, if no better local pattern exists.
+- Define local TypeScript types for risk review results and findings.
+- Scan generated script package fields for risky financial expressions.
+- Include initial blocked/high-risk patterns from `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`.
+- Return deterministic findings with target field, matched text, risk level, message, and suggested safer wording where practical.
 - Keep code small, reusable, and local.
 
-Required concepts:
+Required detection examples:
 
-- generated scripts
-- captions
-- storyboard scenes
-- source notes
-- risk-safe wording flags or placeholders
-- output durations 15 / 30 / 60
+- 매수하세요
+- 무조건 오릅니다
+- 수익 보장
+- 급등 확정
+- 지금 안 사면 늦습니다
+- 100% 돈 법니다
+- 이 종목 사면 됩니다
 
 ## Forbidden
 
-- No ECOS/KOSIS/OpenDART/FRED live API calls.
+- No external API calls.
 - No GPT/Gemini/Veo/ElevenLabs live calls.
 - No API key/env/secret changes.
 - No Supabase migration or production DB changes.
@@ -77,12 +78,11 @@ Required concepts:
 
 ## Definition of Done
 
-- Script/caption/storyboard types are available from a clear local module.
-- A deterministic helper can create script package output from a valid Fact Card/Video Blueprint.
-- Generated output preserves Fact Card and source/citation linkage.
-- Generated text uses only Fact Card/Blueprint facts and does not invent numbers.
-- Output includes 15s/30s/60s variants or a clear duration-specific structure.
-- Validation or a focused sample catches missing source linkage and empty narration/captions.
+- Risk review types are available from a clear local module.
+- A deterministic helper can scan a `GeneratedScriptPackage`.
+- Risky financial expressions are detected in narration, captions, title, description, hashtags, and CTA where applicable.
+- Safe fixture package passes with low or unchecked findings as designed.
+- Broken/risky sample package fails or returns high/blocked findings for the required examples.
 - No external service integration is added.
 - Focused type/check/test command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.

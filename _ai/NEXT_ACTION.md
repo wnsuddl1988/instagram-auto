@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Fact Card -> Video Blueprint checkpoint 준비 완료
+## 2026-06-25 현재 — Script package generator checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -16,17 +16,18 @@ Owner 결정:
 최신 checkpoint:
 
 - `909098b feat(source): establish clean source-first baseline`
-- 포함: source-first docs + `lib/source-facts/`
+- `35ca73c feat(blueprints): add fact card video blueprint generator`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-fact-card-to-blueprint-v1`
-- `lib/blueprints/` 로컬 타입/생성/검증 모듈 구현
-- review-fix에서 scene timing, deterministic output, template key spec alignment, validation timing invariants 수정 완료
+- `money-shorts-os-fact-card-script-generator-v1`
+- `lib/scripts/` 로컬 타입/생성/검증 모듈 구현
+- review-fix에서 미구현 public option `allDurations` 제거 완료
 - Codex runtime verification:
-  - 15s/30s/60s fixtures: target, estimatedDurationSec, scene duration sum, max end all match
-  - broken duration sample: validation fail with expected timing errors
+  - 15s/30s/60s script fixtures: validation.ok=true, scene duration sum matches target
+  - broken package: validation fails with expected source/narration errors
+  - `allDurations` no longer exists in generator public surface
 
 Source of truth:
 
@@ -54,24 +55,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Fact Card/Blueprint 기반 script/caption/storyboard generator**
+**MVP 1 — Financial expression risk review**
 
 Task ID:
 
-`money-shorts-os-fact-card-script-generator-v1`
+`money-shorts-os-risk-review-v1`
 
 목표:
 
-- 기존 `FactCard`와 `VideoBlueprint`를 입력으로 받아 외부 API 없이 deterministic script/caption/storyboard package를 만든다.
-- Fact Card/Blueprint 밖 숫자나 사실을 생성하지 않는다.
+- generated script package의 narration, captions, title, description, hashtags, CTA를 로컬 deterministic scanner로 검수한다.
+- 투자 권유/과장 표현을 초기 룰셋으로 잡고 안전한 대체 표현을 제안한다.
 
 포함:
 
-- generated script package TypeScript types
-- 15s/30s/60s script/caption/storyboard helper
-- Fact Card / Blueprint / citation linkage
-- source note preservation
-- lightweight validation helper
+- risk review TypeScript types
+- risky expression pattern list
+- GeneratedScriptPackage scanner
+- finding/result model
+- safe/risky fixtures or samples
 - focused TypeScript/ESLint/runtime sample check
 
 금지:
