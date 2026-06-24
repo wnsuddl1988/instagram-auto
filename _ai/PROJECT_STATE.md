@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 58% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review 로컬 모듈이 checkpoint 준비 상태다. 다음 단계는 Fact Card/Blueprint 기반 9:16 chart/number-card 데이터 모델이다.
+**전체프로젝트 진행률:** 약 61% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card 로컬 모듈이 안정화됐다. 다음 단계는 Fact Card/Blueprint 기반 image prompt package 모델이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -48,6 +48,7 @@
 - Commit: `909098b` — `feat(source): establish clean source-first baseline`
 - Commit: `35ca73c` — `feat(blueprints): add fact card video blueprint generator`
 - Commit: `902e632` — `feat(scripts): add source-linked script package generator`
+- Commit: `79faa5b` — `feat(risk): add financial expression scanner`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -57,25 +58,27 @@
 
 Task:
 
-- `money-shorts-os-risk-review-v1`
+- `money-shorts-os-chart-card-model-v1`
 
 구현:
 
-- `lib/risk-review/types.ts`
-- `lib/risk-review/patterns.ts`
-- `lib/risk-review/scanner.ts`
-- `lib/risk-review/fixtures.ts`
-- `lib/risk-review/index.ts`
+- `lib/chart-cards/types.ts`
+- `lib/chart-cards/generator.ts`
+- `lib/chart-cards/validation.ts`
+- `lib/chart-cards/fixtures.ts`
+- `lib/chart-cards/index.ts`
 
 검증:
 
-- Risk review module ESLint PASS
+- Chart-card module ESLint PASS
 - Source-first module-only TypeScript diagnostics: 0
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패하지만, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
+- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
 - Codex runtime verification PASS:
-  - safe fixture: `overallRiskLevel="low"`, `isBlocked=false`, findings 0
-  - risky blocked fixture: 필수 7개 위험 문구 모두 탐지, `overallRiskLevel="blocked"`, `isBlocked=true`
-  - risky high fixture: `overallRiskLevel="high"`, `isBlocked=false`
+  - number card value/source linkage PASS
+  - blueprint null package PASS
+  - CTA conditional inclusion PASS
+  - valid package validation PASS
+  - broken package and unsupported card type detection PASS
 
 주의:
 
@@ -102,14 +105,16 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — 9:16 chart/number-card source-backed model**
+- **MVP 1 — source-backed image prompt package model**
 
 구현 대상:
 
-- chart/card TypeScript types
-- number card / comparison card / source card props
-- Fact Card / Blueprint / citation linkage
+- image prompt TypeScript types
+- scene-level image prompt package
+- Video Blueprint scene linkage
+- Fact Card / citation linkage where available
 - deterministic helper
+- no-text/no-number generated image negative rules
 - lightweight validation helper
 - no external AI/API
 - no DB migration

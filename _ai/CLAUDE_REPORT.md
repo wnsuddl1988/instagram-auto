@@ -64,16 +64,36 @@ Validation evidence (2026-06-25):
   - 필수 탐지 예시 전부 검출: 매수하세요/무조건 오릅니다/수익 보장/급등 확정/지금 안 사면 늦습니다/100% 돈 법니다/이 종목 사면 됩니다 ✅
   - Required codes detected: investment_buy_recommendation, certain_surge, guaranteed_profit, fomo_pressure, sure_profit_claim ✅
 
+## Implemented Chart Card module (`money-shorts-os-chart-card-model-v1`):
+
+- `lib/chart-cards/types.ts` — `CHART_CARD_SCHEMA_VERSION`, `DEFAULT_CARD_DIMENSIONS` (1080×1920), `ChartCardType`, `CardSourceAttribution`, `NumberCardProps`, `ComparisonCardProps`, `SourceCardProps`, `CtaCardProps`, `AnyCardProps` (discriminated union), `ChartCardPackage`, `ChartCardValidationResult`
+- `lib/chart-cards/generator.ts` — `makeNumberCard`, `makeComparisonCard`, `makeSourceCard`, `makeCtaCard`, `generateChartCardPackage`; 결정론적, new Date() 없음; Fact Card 외 숫자 날조 없음; source/citation linkage 보존
+- `lib/chart-cards/validation.ts` — `validateChartCardPackage`; missing source linkage, empty title/value, unsupported card type, invalid dimensions 탐지
+- `lib/chart-cards/fixtures.ts` — `inflationChartCardPackage`, `exchangeRateChartCardPackage`, `dartDisclosureChartCardPackage`, `MOCK_CHART_CARD_PACKAGES`
+- `lib/chart-cards/index.ts` — re-export
+
+Validation evidence (2026-06-25, review-fix 후):
+
+- TypeScript strict check (lib/chart-cards/): 0 errors ✅ (review-fix: `cards` 배열에 `AnyCardProps[]` 명시 → CtaCardProps push 타입 오류 수정)
+- ESLint (lib/chart-cards/): 0 warnings ✅
+- Runtime sample (6 tests, node .cjs, 삭제 완료):
+  - T1: number card value/unit/direction/factCardId/citationId 정확 ✅
+  - T2: blueprint 없는 패키지 (blueprintVideoId=null), source linkage 보존 ✅
+  - T3: CTA card — blueprint.moneyOsCta 있을 때만 포함 ✅
+  - T4: valid package validation.ok=true, errors=0 ✅
+  - T5: broken package (empty packageId/factCardId/citations/cards) → ok=false, 4 errors 탐지 ✅
+  - T6: unsupported card type (pie_chart) → ok=false, unsupported_card_type 코드 탐지 ✅
+
 ## Active Next Task
 
 Task ID:
 
-- `money-shorts-os-chart-card-model-v1` (Implementation Order Step 7)
+`money-shorts-os-image-prompt-generator-v1`
 
 Goal:
 
-- Create source-backed 9:16 chart/number-card props models from Fact Card/Blueprint values only.
-- No external API, AI generation, TTS, video render, ffmpeg, DB, payment, upload, deploy, or push.
+- Create local deterministic image prompt package types/generator/validation from Fact Card/Video Blueprint scene data.
+- No GPT/OpenAI/Gemini/Veo live call, no image render, no video render, no TTS, no ffmpeg, no DB/env/dependency changes, no upload/deploy/push.
 
 ## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):
 

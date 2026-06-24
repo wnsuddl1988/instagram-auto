@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-chart-card-model-v1`
+`money-shorts-os-image-prompt-generator-v1`
 
 ## Current State
 
@@ -12,10 +12,14 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Clean source-first baseline: `909098b feat(source): establish clean source-first baseline`
-- Blueprint checkpoint: `35ca73c feat(blueprints): add fact card video blueprint generator`
-- Script checkpoint: `902e632 feat(scripts): add source-linked script package generator`
-- Risk review module is checkpoint-ready: `lib/risk-review/`
+- Local checkpoints already completed:
+  - `909098b feat(source): establish clean source-first baseline`
+  - `35ca73c feat(blueprints): add fact card video blueprint generator`
+  - `902e632 feat(scripts): add source-linked script package generator`
+  - `79faa5b feat(risk): add financial expression scanner`
+- Chart-card module is complete and ready for local checkpoint:
+  - `lib/chart-cards/`
+  - review-fix corrected `AnyCardProps[]` typing for optional CTA cards
 
 Active local modules:
 
@@ -23,6 +27,7 @@ Active local modules:
 - `lib/blueprints/`
 - `lib/scripts/`
 - `lib/risk-review/`
+- `lib/chart-cards/`
 
 Active product/spec sources:
 
@@ -36,30 +41,38 @@ Active product/spec sources:
 
 ## Goal
 
-Create the first local chart/number-card data model for 9:16 source-backed finance shorts cards.
+Create a local deterministic image-prompt package module for source-backed finance shorts.
 
-This task is only local deterministic TypeScript data modelling. It must not generate images, render video, call ffmpeg, or call external services.
+This task only derives prompt text and prompt metadata from existing `FactCard`, `VideoBlueprint`, and/or script scene fields. It must not submit prompts to GPT, Gemini, Veo, OpenAI, or any external service.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/source-facts/`, `lib/blueprints/`, `lib/scripts/`, and `lib/risk-review/`.
-- Add a small local chart/card module, preferably `lib/chart-cards/`, if no better local pattern exists.
-- Define TypeScript types for 9:16 chart/number card props.
-- Create deterministic helpers that derive card props from `FactCard` and/or `VideoBlueprint`.
-- Preserve source linkage: factCardId, source citation ids, source name/url, published date, data period.
-- Include model types for number card, comparison card, source card, and optional CTA card if it stays small.
+- Inspect `lib/source-facts/`, `lib/blueprints/`, `lib/scripts/`, `lib/chart-cards/`, and specs listed above.
+- Add a small local module, preferably `lib/image-prompts/`, if no better local pattern exists.
+- Define TypeScript types for image prompt packages and scene-level prompts.
+- Generate deterministic prompt objects from `VideoBlueprint` scenes and source-backed fields.
+- Preserve linkage to `videoId`, `sceneId`, `factCardId`, and `sourceCitationIds` where available.
+- Include global negative rules:
+  - no text inside generated image
+  - no numbers inside generated image
+  - no labels/UI/logos/card numbers
+  - no subtitles/CTA/source text inside generated image
+  - no fantasy/game/cartoon/chibi/mascot style
+  - no investment advice or performance promises
+- Keep text/numbers/source display responsibility assigned to chart cards or later overlay layers, not the generated image itself.
 - Add lightweight validation helpers if useful.
-- Keep code small, reusable, and local.
+- Add mock fixtures from existing blueprints.
 
 ## Forbidden
 
-- No chart rendering.
-- No canvas/SVG/PNG generation.
-- No ffmpeg pipeline implementation or execution.
+- No GPT/OpenAI image generation call.
+- No Gemini/Veo call.
 - No external API calls.
-- No GPT/Gemini/Veo/ElevenLabs live calls.
+- No image, canvas, SVG, PNG, or video rendering.
+- No ffmpeg pipeline implementation or execution.
+- No ElevenLabs/TTS.
 - No API key/env/secret changes.
 - No Supabase migration or production DB changes.
 - No dependency or lockfile changes.
@@ -67,18 +80,18 @@ Allowed:
 - No upload/post.
 - No git push.
 - Do not implement full Money-OS product.
-- Do not implement TTS/render/image pipelines yet.
+- Do not touch `output/`.
 - Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
 
 ## Definition of Done
 
-- Chart/card model types are available from a clear local module.
-- A deterministic helper can derive source-backed card props from a mock Fact Card/Blueprint.
-- Source/citation linkage is preserved.
-- No numeric facts are invented beyond Fact Card/Blueprint values.
-- Validation catches missing source linkage, empty title/value, invalid card dimensions or unsupported card type.
+- Image prompt model types are available from a clear local module.
+- A deterministic helper can derive scene-level image prompts from existing mock `VideoBlueprint` data.
+- Prompt package preserves source/scene linkage.
+- Prompt text does not place factual numbers, captions, CTA text, source text, or labels inside the generated image.
+- Validation catches empty prompt text, missing scene linkage, missing negative rules, unsupported provider/asset type, and text/numbers-in-image rule violations where practical.
 - No external service integration is added.
-- Focused type/check/test command passes, or a clear reason is reported if no check applies.
+- Focused type/check/sample command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
