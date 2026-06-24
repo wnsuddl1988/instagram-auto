@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-risk-review-v1`
+`money-shorts-os-chart-card-model-v1`
 
 ## Current State
 
@@ -14,13 +14,15 @@ Current status:
 - Branch: `codex/source-first-blueprint-clean`
 - Clean source-first baseline: `909098b feat(source): establish clean source-first baseline`
 - Blueprint checkpoint: `35ca73c feat(blueprints): add fact card video blueprint generator`
-- Script generator is checkpoint-ready: `lib/scripts/`
+- Script checkpoint: `902e632 feat(scripts): add source-linked script package generator`
+- Risk review module is checkpoint-ready: `lib/risk-review/`
 
 Active local modules:
 
 - `lib/source-facts/`
 - `lib/blueprints/`
 - `lib/scripts/`
+- `lib/risk-review/`
 
 Active product/spec sources:
 
@@ -34,55 +36,47 @@ Active product/spec sources:
 
 ## Goal
 
-Create the first local financial expression risk review structure for generated scripts, captions, descriptions, hashtags, and CTA copy.
+Create the first local chart/number-card data model for 9:16 source-backed finance shorts cards.
 
-This task is only local deterministic TypeScript scanning/validation. It must not call external data APIs, AI, TTS, video, DB, payment, deploy, upload, or ffmpeg services.
+This task is only local deterministic TypeScript data modelling. It must not generate images, render video, call ffmpeg, or call external services.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/source-facts/`, `lib/blueprints/`, and `lib/scripts/`.
-- Add a small local risk/compliance module, preferably `lib/risk-review/` or `lib/compliance/`, if no better local pattern exists.
-- Define local TypeScript types for risk review results and findings.
-- Scan generated script package fields for risky financial expressions.
-- Include initial blocked/high-risk patterns from `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`.
-- Return deterministic findings with target field, matched text, risk level, message, and suggested safer wording where practical.
+- Inspect `lib/source-facts/`, `lib/blueprints/`, `lib/scripts/`, and `lib/risk-review/`.
+- Add a small local chart/card module, preferably `lib/chart-cards/`, if no better local pattern exists.
+- Define TypeScript types for 9:16 chart/number card props.
+- Create deterministic helpers that derive card props from `FactCard` and/or `VideoBlueprint`.
+- Preserve source linkage: factCardId, source citation ids, source name/url, published date, data period.
+- Include model types for number card, comparison card, source card, and optional CTA card if it stays small.
+- Add lightweight validation helpers if useful.
 - Keep code small, reusable, and local.
-
-Required detection examples:
-
-- 매수하세요
-- 무조건 오릅니다
-- 수익 보장
-- 급등 확정
-- 지금 안 사면 늦습니다
-- 100% 돈 법니다
-- 이 종목 사면 됩니다
 
 ## Forbidden
 
+- No chart rendering.
+- No canvas/SVG/PNG generation.
+- No ffmpeg pipeline implementation or execution.
 - No external API calls.
 - No GPT/Gemini/Veo/ElevenLabs live calls.
 - No API key/env/secret changes.
 - No Supabase migration or production DB changes.
 - No dependency or lockfile changes.
 - No payment integration.
-- No video rendering.
-- No ffmpeg pipeline implementation or execution.
 - No upload/post.
 - No git push.
 - Do not implement full Money-OS product.
-- Do not implement chart/image/TTS/render pipelines yet.
+- Do not implement TTS/render/image pipelines yet.
 - Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
 
 ## Definition of Done
 
-- Risk review types are available from a clear local module.
-- A deterministic helper can scan a `GeneratedScriptPackage`.
-- Risky financial expressions are detected in narration, captions, title, description, hashtags, and CTA where applicable.
-- Safe fixture package passes with low or unchecked findings as designed.
-- Broken/risky sample package fails or returns high/blocked findings for the required examples.
+- Chart/card model types are available from a clear local module.
+- A deterministic helper can derive source-backed card props from a mock Fact Card/Blueprint.
+- Source/citation linkage is preserved.
+- No numeric facts are invented beyond Fact Card/Blueprint values.
+- Validation catches missing source linkage, empty title/value, invalid card dimensions or unsupported card type.
 - No external service integration is added.
 - Focused type/check/test command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.

@@ -46,15 +46,33 @@ Validation evidence (2026-06-25, review fix):
 - validation.ok for 3 mock fixtures: all true ✅
 - Broken blueprint (scene dur=99, sum mismatch): validation.ok=false, codes=[scene_exceeds_target_duration, duration_mismatch] ✅
 
+## Implemented Risk Review module (`money-shorts-os-risk-review-v1`):
+
+- `lib/risk-review/types.ts` — `RiskFinding`, `RiskReviewResult`, `RISK_REVIEW_SCHEMA_VERSION = "money_shorts_risk_review_v1"`; `RiskFindingField` template literal union; `isBlocked` flag
+- `lib/risk-review/patterns.ts` — `RISK_PATTERNS` (12 patterns: 6 blocked / 3 high / 3 medium); `maxRiskLevel` helper; HANDOFF 필수 탐지 예시 전부 포함
+- `lib/risk-review/scanner.ts` — `scanScriptPackage(pkg, options?)`: title/youtubeTitle/instagramCaption/description/coreMessage/moneyOsCta/hashtags/fullNarration/narrationText/captionText 전체 필드 검사; 결정론적, 외부 호출 없음
+- `lib/risk-review/fixtures.ts` — `SAFE_FIXTURE_PACKAGES` (3개 기존 스크립트 패키지 재사용), `RISKY_BLOCKED_PACKAGE` (7개 필수 탐지 예시 포함), `RISKY_HIGH_PACKAGE`; review-fix: `sourceAttributions` 필드를 `ScriptSourceAttribution` 타입에 맞게 수정 (`citationId/displayLabel/url` → `sourceName/sourceUrl/publishedDate`)
+- `lib/risk-review/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/risk-review/): 0 errors ✅
+- ESLint (lib/risk-review/): 0 warnings ✅
+- Runtime sample (node .cjs):
+  - Safe fixture (CPI 30s): overallRiskLevel="low", isBlocked=false, findings=0 ✅
+  - Risky blocked fixture: overallRiskLevel="blocked", isBlocked=true, findings=28 ✅
+  - 필수 탐지 예시 전부 검출: 매수하세요/무조건 오릅니다/수익 보장/급등 확정/지금 안 사면 늦습니다/100% 돈 법니다/이 종목 사면 됩니다 ✅
+  - Required codes detected: investment_buy_recommendation, certain_surge, guaranteed_profit, fomo_pressure, sure_profit_claim ✅
+
 ## Active Next Task
 
 Task ID:
 
-- `money-shorts-os-risk-review-v1` (Implementation Order Step 6)
+- `money-shorts-os-chart-card-model-v1` (Implementation Order Step 7)
 
 Goal:
 
-- Financial expression scanner for generated scripts, captions, and CTA.
+- Create source-backed 9:16 chart/number-card props models from Fact Card/Blueprint values only.
 - No external API, AI generation, TTS, video render, ffmpeg, DB, payment, upload, deploy, or push.
 
 ## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):

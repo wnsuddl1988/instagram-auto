@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Script package generator checkpoint 준비 완료
+## 2026-06-25 현재 — Risk review checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -17,17 +17,20 @@ Owner 결정:
 
 - `909098b feat(source): establish clean source-first baseline`
 - `35ca73c feat(blueprints): add fact card video blueprint generator`
+- `902e632 feat(scripts): add source-linked script package generator`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-fact-card-script-generator-v1`
-- `lib/scripts/` 로컬 타입/생성/검증 모듈 구현
-- review-fix에서 미구현 public option `allDurations` 제거 완료
-- Codex runtime verification:
-  - 15s/30s/60s script fixtures: validation.ok=true, scene duration sum matches target
-  - broken package: validation fails with expected source/narration errors
-  - `allDurations` no longer exists in generator public surface
+- `money-shorts-os-risk-review-v1`
+- `lib/risk-review/` 로컬 금융표현 위험 검수 모듈 구현
+- review-fix에서 risky fixtures의 `sourceAttributions` 타입 shape 수정 완료
+- Codex verification:
+  - source-first module-only TypeScript diagnostics: 0
+  - ESLint `lib/risk-review`: PASS
+  - safe fixture: `overallRiskLevel="low"`, `isBlocked=false`, findings 0
+  - risky blocked fixture: 필수 7개 위험 문구 모두 탐지, `overallRiskLevel="blocked"`
+  - risky high fixture: `overallRiskLevel="high"`, `isBlocked=false`
 
 Source of truth:
 
@@ -39,44 +42,31 @@ Source of truth:
 - `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md`
 - `_ai/PRODUCTION_PIPELINE_RESET_V1.md`
 
-핵심 생성 순서:
-
-1. 데이터 소스 선택
-2. 원본 데이터 또는 공시 수집
-3. 핵심 숫자 추출
-4. 전월/전년/이전 발표치 비교
-5. Fact Card 생성
-6. 출처 링크/출처명 저장
-7. 쇼츠 주제 생성
-8. Video Blueprint 생성
-9. 대본/자막/차트/이미지/음성/영상 패키지 생성
-10. 금융표현 위험 검수
-11. Money-OS CTA는 필요한 경우에만 삽입
-
 ## 다음 safe work unit
 
-**MVP 1 — Financial expression risk review**
+**MVP 1 — 9:16 chart/number-card source-backed model**
 
 Task ID:
 
-`money-shorts-os-risk-review-v1`
+`money-shorts-os-chart-card-model-v1`
 
 목표:
 
-- generated script package의 narration, captions, title, description, hashtags, CTA를 로컬 deterministic scanner로 검수한다.
-- 투자 권유/과장 표현을 초기 룰셋으로 잡고 안전한 대체 표현을 제안한다.
+- Fact Card/Blueprint 값을 기반으로 9:16 차트/숫자 카드 props 모델을 만든다.
+- 실제 렌더링, 이미지 생성, ffmpeg 실행 없이 데이터 모델과 validation만 만든다.
 
 포함:
 
-- risk review TypeScript types
-- risky expression pattern list
-- GeneratedScriptPackage scanner
-- finding/result model
-- safe/risky fixtures or samples
+- chart/card TypeScript types
+- number card / comparison card / source card props
+- Fact Card / Blueprint / citation linkage
+- deterministic helper
+- lightweight validation helper
 - focused TypeScript/ESLint/runtime sample check
 
 금지:
 
+- canvas/SVG/PNG/chart render 생성
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - GPT/Gemini/Veo/ElevenLabs live call
 - API key/env/secret 변경
