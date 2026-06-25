@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
+`money-shorts-os-manual-fact-card-form-v1`
 
 ## Current State
 
@@ -12,57 +12,52 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before manual UI: `4d264cb feat(package-ui): add local package library route`
-- Latest completed local UI: `/fact-cards/manual` Manual Fact Card authoring UI.
+- Latest completed checkpoint before package preview: `813a8f6 feat(fact-card-ui): add manual authoring screen`
+- Latest completed local UI: `/fact-cards/manual/package-preview` Manual Fact Card -> Package Preview UI.
 - Codex verification passed:
   - ESLint `app/fact-cards`: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search: PASS
-  - `/fact-cards/manual` HTTP 200
-  - Playwright PASS: valid/broken draft text, source/citation fields, validation errors, desktop/mobile no horizontal overflow
+  - `/fact-cards/manual/package-preview` HTTP 200
+  - core text rendered: `LOCAL PREVIEW ONLY`, `Package Preview`, `가계부채`, package id, mock approval notice
   - dev server stopped after verification
 
 ## Goal
 
-Create a local deterministic preview UI that shows how a valid manual Fact Card becomes a source-first content package.
+Create a local in-browser Manual Fact Card draft form UI.
 
-This is a read-only preview bridge from manual Fact Card authoring into the existing local pipeline. It must not persist data, call APIs, render media, or execute ffmpeg.
+This should let the Owner type or edit a source-backed manual Fact Card draft and immediately see validation results locally. It must not persist data, call APIs, write clipboard, render media, or execute ffmpeg.
 
 ## Approved Scope
 
 Allowed:
 
 - Add a local route, suggested:
-  - `app/fact-cards/manual/package-preview/page.tsx`
-- Use only existing local modules and fixtures:
-  - `lib/source-facts/manual-fixtures.ts`
-  - `lib/content-package/assembler.ts`
-  - `lib/review-packet/`
-  - `lib/owner-decision/`
-  - `lib/clipboard-payload/`
-  - `lib/package-view/`
-- Use the valid manual draft/result as input.
-- Show a compact, readable pipeline preview:
-  - Fact Card summary
-  - Blueprint id / duration / scene count
-  - Script package summary
-  - Risk review summary
-  - Final QA readiness
-  - Review packet / owner gate / clipboard readiness if generated locally
-  - package view-style status summary if useful
-- Use deterministic local options only, for example fixed `videoId`, `contentPackageId`, `createdAt`, and mock/measured audio duration.
-- Link back to `/fact-cards/manual` and `/packages`.
+  - `app/fact-cards/manual/new/page.tsx`
+  - optional route-local client component under `app/fact-cards/manual/new/`
+- Use existing local source fact helper:
+  - `lib/source-facts/manual.ts`
+  - optional initial values from `lib/source-facts/manual-fixtures.ts`
+- Render an editable local draft form for core manual fields.
+- Support at least one citation row in the form.
+- On local validation, show:
+  - `ok=true/false`
+  - validation errors with code/field/message
+  - generated FactCard summary when valid
+  - clear notice that no data is saved
+- Link to `/fact-cards/manual` and `/fact-cards/manual/package-preview`.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
-Do not build real generation, real media, upload, DB, or external source fetch.
+Do not build DB save, API routes, package generation from arbitrary form data, real media, upload, or external source fetch.
 
 ## Required Behavior
 
-- The preview must start from `validHouseholdDebtResult.factCard`.
-- If the valid manual FactCard is missing unexpectedly, render a clear local error state instead of inventing data.
-- All displayed facts/numbers/source fields must come from the FactCard or deterministic downstream local modules.
-- The screen must make source linkage visible.
-- The screen must distinguish "local preview only" from real publish/render.
+- The form must start from explicit local draft values, not hidden auto-fill.
+- Empty or invalid required fields must fail visibly.
+- `citations: []` must fail with `manual_citation_required` through `authorManualFactCard`.
+- The UI must not invent missing values.
+- Source URL/date/citation fields must be visible and editable.
+- The UI must distinguish "local validation only" from persistence or publishing.
 - No external call or persistence.
 - Mobile and desktop layout should not overlap or squeeze text.
 
@@ -97,12 +92,13 @@ Run focused checks:
   - `/api/`
   - ffmpeg/render/upload/post/deploy references
   - `output/`
-- If practical, run a local dev server and verify the route visually/with HTTP. Stop the server afterward.
+- If practical, run a local dev server and verify `/fact-cards/manual/new` with HTTP/core text. Stop the server afterward.
 
 ## Definition of Done
 
-- Manual valid Fact Card -> local package preview route renders.
-- Source/fact/package/QA/risk linkage is visible.
+- Manual Fact Card draft form route renders.
+- Local validation shows valid and invalid states.
+- Source/citation fields are visible and editable.
 - No external/clipboard/render/DB/API action occurs.
 - Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
@@ -114,4 +110,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise package preview UI evidence because this connects the Owner input surface to the source-first package workflow.
+- Update `_ai/CLAUDE_REPORT.md` with concise manual form UI evidence because this turns the Owner input surface from fixture display into a local draft validation tool.

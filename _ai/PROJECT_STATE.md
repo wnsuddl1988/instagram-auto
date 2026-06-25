@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 89% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI까지 안정화됐다. 다음 단계는 valid manual FactCard를 기존 로컬 package pipeline에 연결해 read-only package preview를 보여주는 것이다.
+**전체프로젝트 진행률:** 약 90% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, 그리고 Manual Fact Card -> Package Preview UI까지 안정화됐다. 다음 단계는 Owner가 브라우저에서 직접 manual Fact Card draft를 입력하고 로컬 검증하는 form UI다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -63,7 +63,8 @@
 - Commit: `07444ad` — `feat(clipboard-payload): add copy workflow payload builder`
 - Commit: `647f1be` — `feat(package-view): add package library view models`
 - Commit: `4d264cb` — `feat(package-ui): add local package library route`
-- Manual Fact Card UI checkpoint: current safe checkpoint after Codex review
+- Commit: `813a8f6` — `feat(fact-card-ui): add manual authoring screen`
+- Package Preview UI checkpoint: current safe checkpoint after Codex review
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -73,34 +74,31 @@
 
 Task:
 
-- `money-shorts-os-manual-fact-card-ui-v1`
+- `money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
 
 구현:
 
-- `app/fact-cards/manual/page.tsx`
+- `app/fact-cards/manual/package-preview/page.tsx`
 
 검증:
 
-- ESLint `app/fact-cards`: PASS
+- ESLint `app/fact-cards/manual/package-preview/page.tsx`: PASS
 - Targeted TypeScript diagnostics for `app/fact-cards`: 0 errors
 - Forbidden-pattern search PASS:
-  - no clipboard
+  - no OS clipboard write
   - no fetch/API route calls
   - no render/ffmpeg/output/upload/post/deploy calls
 - HTTP/dev verification:
-  - `/fact-cards/manual` HTTP 200
-- Playwright verification PASS:
-  - valid draft `ok=true`
-  - broken draft `ok=false`
-  - validation errors visible
-  - source URL/date/dataPeriod/currentValue/sourceName visible
-  - desktop/mobile no horizontal overflow
-- Full `pnpm build` compiles successfully first, then remains blocked at TypeScript stage only by pre-existing `output/` binary `.ts` files.
+  - `/fact-cards/manual/package-preview` HTTP 200
+  - core text rendered: `LOCAL PREVIEW ONLY`, `Package Preview`, `가계부채`, package id, mock approval notice
+- Dev server stopped after verification
+- Full `pnpm build` remains blocked at TypeScript stage only by pre-existing `output/` binary `.ts` files.
 
 주의:
 
 - 전체 `pnpm lint`/전체 `tsc`는 기존 app/archive/output 누적 오류가 있어 별도 정리 전까지 전체 통과 기준으로 보지 않는다.
 - `output/`은 commit 대상이 아니다.
+- Package preview의 Owner decision은 mock approval이며 실제 Owner 승인/배포가 아니다.
 
 ---
 
@@ -122,15 +120,15 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — Manual Fact Card -> Package Preview UI**
+- **MVP 1 — Manual Fact Card Draft Form UI**
 
 구현 대상:
 
-- `app/fact-cards/manual/package-preview/` route
-- valid manual FactCard 기반 local package assembly preview
-- source/fact/package/QA/risk linkage 표시
-- review/gate/clipboard/package-view summary 표시
-- `/fact-cards/manual` and `/packages` links
+- `app/fact-cards/manual/new/` route
+- `authorManualFactCard()` 기반 local validation
+- source/citation fields 입력 및 validation errors 표시
+- valid 상태의 FactCard summary 표시
+- `/fact-cards/manual` and `/fact-cards/manual/package-preview` links
 
 금지:
 

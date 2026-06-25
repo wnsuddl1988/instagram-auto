@@ -657,6 +657,52 @@ Validation evidence (2026-06-25):
   - broken draft 에러 코드: `manual_citation_required`, `invalid_url` 렌더 ✅
 - dev server 종료: 포트 3019 백그라운드 (자연 종료 예정)
 
+## Implemented Manual Fact Card → Package Preview UI (`money-shorts-os-manual-fact-card-to-package-preview-ui-v1`):
+
+- `app/fact-cards/manual/package-preview/page.tsx` — Server Component; `validHouseholdDebtResult.factCard` 기반 전체 source-first pipeline 로컬 미리보기; 외부 호출 없음, DB/clipboard/API/ffmpeg/render 없음
+
+UI 구성 (10개 섹션):
+- 상단 헤더: "LOCAL PREVIEW ONLY" 배지 + "Step 1→6 전체" 명시
+- `WorkflowSteps`: 1~5는 ✓ 완료, 6(복사·배포) active 상태 시각화
+- 출처 linkage 배너 + `/fact-cards/manual` / `/packages` 이동 링크
+- `① Fact Card`: indicatorName/currentValue/changeValue/changeRate/interpretation/cautionNote/isMock/isPublishable + 출처 citation 링크 + allowedClaims/blockedClaims
+- `② Video Blueprint`: blueprintVideoId/templateKey/targetDurationSec/sceneCount/factCardIds/sourceCitationIds + 씬별 역할·자막·duration 목록
+- `③ Script Package`: title/topic/coreMessage/youtubeTitle/instagramCaption/hashtags + 전체 narration + 씬별 자막
+- `④ Risk Review`: overallRiskLevel/isBlocked/findings 배지
+- `⑤ Timeline`: timelineId/targetDurationSec/measuredAudioDurationSec(mock)/sceneCount
+- `⑥ Final QA`: readyForRender/isRiskBlocked/total·passed·failed·blockersFailed + 실패 체크 목록
+- `⑦ Review Packet`: reviewPacketId/needsOwnerApproval/ownerDecision + 8개 ID linkage 그리드
+- `⑧ Owner Decision Gate`: gateResultId/ownerDecision/ownerNotes/canProceedToRender/blockerCodes + "mock 승인" 안내
+- `⑨ Clipboard Payload`: copyReady/blockerCodes/qaRiskWarning + 복사 가능 섹션(youtubeTitle/instagramCaption/hashtags/attributionLine) 미리보기
+- `⑩ Package View Summary`: gateStatus/canProceedToRender/copyReady/copyActionSummary/counts
+
+Deterministic mock 상수:
+- `MOCK_VIDEO_ID`: "video-manual-household-debt-preview-001"
+- `MOCK_CONTENT_PACKAGE_ID`: "cp-manual-household-debt-preview-001"
+- `MOCK_CREATED_AT`: "2026-06-25T09:00:00+09:00"
+- `MOCK_AUDIO_DURATION_SEC`: 42.0s (mock)
+- `MOCK_REVIEW_PACKET_ID`: "rp-manual-household-debt-preview-001"
+- `MOCK_GATE_RESULT_ID`: "gate-manual-household-debt-preview-001"
+- Owner decision: "approved" (mock) + "로컬 preview — mock 승인" notes
+
+Validation evidence (2026-06-25):
+- ESLint (app/fact-cards/manual/package-preview/page.tsx): 0 warnings ✅
+- TypeScript (full tsc → app/fact-cards/ 필터): 0 errors ✅
+- 금지 패턴 검색 (navigator.clipboard / OS clipboard write / fetch( / /api/ / ffmpeg / output/ / upload / deploy): 0건 ✅
+  - `clipboard` 히트는 `buildClipboardPayload` import/변수명만 — OS clipboard write API 없음
+- dev server HTTP 검증 (http://localhost:3000/fact-cards/manual/package-preview):
+  - HTTP 200, 서버 오류 없음 ✅
+  - accessibility tree 렌더 확인:
+    - "Money Shorts OS — Package Preview" ✅
+    - "LOCAL PREVIEW ONLY" ✅
+    - "Step 1→6 전체" ✅
+    - "파이프라인 상태 / contentPackageId: cp-manual-household-debt-preview-001" ✅
+    - "Fact Card / Blueprint / Script Package / Risk Review / QA Ready / Copy Ready" PASS 배지 6개 ✅
+    - "가계부채 잔액 / 2024년 4분기 / 1,896.2조 원 / +20.6조 원 / +1.1%" ✅
+    - "← Fact Card 작성 (Step 1)" / "패키지 라이브러리 →" 링크 ✅
+  - 스크린샷: 타임아웃 (preview 환경 제약) — accessibility tree로 충분히 검증
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

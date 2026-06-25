@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Manual Fact Card UI 완료, Package Preview Bridge 준비
+## 2026-06-25 현재 — Package Preview UI 완료, Manual Fact Card Form 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -32,23 +32,24 @@ Owner 결정:
 - `07444ad feat(clipboard-payload): add copy workflow payload builder`
 - `647f1be feat(package-view): add package library view models`
 - `4d264cb feat(package-ui): add local package library route`
-- Manual Fact Card UI checkpoint: current local safe checkpoint after Codex review
+- `813a8f6 feat(fact-card-ui): add manual authoring screen`
+- Package Preview UI checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-manual-fact-card-ui-v1`
-- `/fact-cards/manual` local Manual Fact Card authoring UI
-- valid manual draft -> `ok=true` + FactCard summary
-- broken manual draft -> `ok=false` + validation errors
-- source/citation URL/date/dataPeriod/currentValue visible
-- Fact Card first-step workflow visible
+- `money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
+- `/fact-cards/manual/package-preview` local Manual Fact Card -> Package Preview UI
+- valid manual FactCard -> assembled content package preview
+- review packet / owner gate / clipboard payload / package view summary visible
+- source/fact/package/QA/risk linkage visible
+- mock approval clearly labeled as local preview only
 - Codex verification:
-  - ESLint `app/fact-cards`: PASS
+  - ESLint `app/fact-cards/manual/package-preview/page.tsx`: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search PASS
-  - HTTP 200 for `/fact-cards/manual`
-  - Playwright PASS: valid/broken draft, validation errors, source/citation fields, desktop/mobile no horizontal overflow
+  - HTTP 200 for `/fact-cards/manual/package-preview`
+  - core text rendered: `LOCAL PREVIEW ONLY`, `Package Preview`, `가계부채`, package id, mock approval notice
   - dev server stopped
 
 Source of truth:
@@ -64,24 +65,26 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Manual Fact Card -> Package Preview UI**
+**MVP 1 — Manual Fact Card Draft Form UI**
 
 Task ID:
 
-`money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
+`money-shorts-os-manual-fact-card-form-v1`
 
 목표:
 
-- valid manual FactCard를 기존 로컬 source-first pipeline에 넣었을 때 어떤 content package가 나오는지 Owner가 볼 수 있는 read-only preview route를 만든다.
+- Owner가 브라우저에서 출처 기반 Fact Card draft를 직접 입력/수정하고, 로컬 validation 결과를 즉시 볼 수 있는 form UI를 만든다.
 - 아직 DB/API/clipboard/render/file export는 하지 않는다.
 
 포함:
 
-- `app/fact-cards/manual/package-preview/` route 추가
-- `validHouseholdDebtResult.factCard` 기반 local assemble preview
-- content package / review packet / owner gate / clipboard readiness / package view summary 중 유용한 상태 표시
-- source/fact/package/QA/risk linkage 표시
-- `/fact-cards/manual` 및 `/packages` 연결
+- `app/fact-cards/manual/new/` route 추가
+- `authorManualFactCard()` 기반 local validation
+- valid/invalid 상태 표시
+- validation error code/field/message 표시
+- source URL/date/citation 필드 표시 및 편집
+- valid 상태에서 FactCard summary 표시
+- `/fact-cards/manual` 및 `/fact-cards/manual/package-preview` 연결
 
 금지:
 
