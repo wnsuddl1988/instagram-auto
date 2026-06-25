@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-mvp1-local-ui-smoke-v1`
+`money-shorts-os-react-key-warning-isolation-v1`
 
 ## Current State
 
@@ -12,46 +12,49 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before hub entry links: `9d0e187 feat(money-shorts): add workflow hub route`
-- Latest completed local UI: hub backlinks from existing Money Shorts screens.
-- Codex verification passed:
-  - ESLint for changed route files: PASS
-  - targeted TypeScript diagnostics for changed routes: 0
-  - forbidden pattern search: PASS
-  - Claude HTTP verification: all touched screens include `/money-shorts` link and original content
+- Latest completed checkpoint before smoke pass: `70eeecb feat(money-shorts): link screens to workflow hub`
+- Latest completed verification: MVP1 local UI smoke pass for five routes.
+- Smoke result:
+  - `/money-shorts`: HTTP 200, workflow hub links visible
+  - `/fact-cards/manual`: HTTP 200, valid/broken draft visible
+  - `/fact-cards/manual/new`: HTTP 200, blank invalid state + sample controls visible
+  - `/fact-cards/manual/package-preview`: HTTP 200, local preview visible
+  - `/packages`: HTTP 200, package library states visible
+- Known non-blocking issue:
+  - React console warning: `Each child in a list should have a unique "key" prop`
+  - Smoke pass did not isolate the exact source.
+  - No server 5xx and no route blocker.
 
 ## Goal
 
-Run a focused local UI smoke pass for the Money Shorts OS MVP1 route set.
+Isolate and, if narrowly safe, fix the React unique key warning seen during MVP1 local UI smoke.
 
-This is a verification/stabilization task. Do not implement new features unless a clear blocker prevents the smoke pass from completing.
+This is a focused QA cleanup. Do not add features or refactor broadly.
 
 ## Approved Scope
 
 Allowed:
 
-- Verify these local routes:
+- Inspect the five MVP1 local routes:
   - `/money-shorts`
   - `/fact-cards/manual`
   - `/fact-cards/manual/new`
   - `/fact-cards/manual/package-preview`
   - `/packages`
-- Check core text/hrefs for each route.
-- Check that local-only/source-first warnings remain visible where expected.
-- Check that no route performs external/API/DB/clipboard/render/ffmpeg/output actions.
-- If a small blocker is found, fix only that blocker in the touched route file and report it clearly.
-- Update `_ai/CLAUDE_REPORT.md` with concise smoke evidence.
+- Inspect route component code and map/list rendering around those screens.
+- Use local dev server/browser console evidence if practical.
+- If the source is found and fix is small, add the missing stable `key` only.
+- Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 ## Required Behavior
 
-- All five routes should return HTTP 200.
-- `/money-shorts` should link to the four workflow routes.
-- The four workflow routes should link back to `/money-shorts`.
-- Existing route-specific content should remain visible:
-  - manual overview: valid and broken draft
-  - manual form: blank invalid state and sample controls
-  - package preview: local preview/package pipeline status
-  - packages: package library/list/detail shell
+- Identify which route/component emits the warning, or report that it remains not isolated with evidence.
+- If fixed:
+  - no behavior or layout changes beyond key stability
+  - no generated/random/time-based keys
+  - use existing stable ids or deterministic labels
+- If not fixed:
+  - report exact reproduction attempts and why source remains unclear
 - No external call or persistence.
 
 ## Forbidden
@@ -78,18 +81,21 @@ Allowed:
 Run focused checks:
 
 - `git status -sb`
-- ESLint for route files if any file changes are made.
-- TypeScript targeted check if any file changes are made.
-- Forbidden pattern search on relevant Money Shorts app routes.
-- Local dev server HTTP/core text check for all five routes.
-- Stop the dev server afterward.
+- If files change:
+  - ESLint targeted to changed files
+  - TypeScript targeted check for changed route files
+  - forbidden pattern search on changed files
+- If practical:
+  - run local dev server
+  - load routes individually
+  - capture console warning presence/absence per route
+  - stop dev server afterward
 
 ## Definition of Done
 
-- Smoke result for all five routes is reported.
-- Any blocker found is fixed or explicitly reported.
+- Warning source is isolated and fixed, or a clear non-fixed diagnosis is reported.
+- No broad refactor or unrelated UI change.
 - No external/clipboard/render/DB/API action occurs.
-- `_ai/CLAUDE_REPORT.md` has concise smoke evidence.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
@@ -99,4 +105,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise smoke evidence because this is a local MVP route acceptance pass.
+- Update `_ai/CLAUDE_REPORT.md` with concise warning isolation/fix evidence.

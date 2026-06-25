@@ -876,6 +876,22 @@ Validation evidence (2026-06-25):
   - `/packages`: hasHub=true, hasPackageLibrary=true ✅
 - dev server 종료 ✅
 
+## MVP1 Local UI Smoke Pass (`money-shorts-os-mvp1-local-ui-smoke-v1`):
+
+코드 변경 없음. 5개 route 전체 HTTP 200 + 핵심 텍스트/href 확인.
+
+| Route | hub href | 핵심 확인 |
+|---|---|---|
+| `/money-shorts` | N/A (허브 자체) | Workflow Hub ✅ · 출처 우선 ✅ · LOCAL ONLY ✅ · 4개 route href 전부 ✅ |
+| `/fact-cards/manual` | `/money-shorts` ✅ | ok=true ✅ · ok=false ✅ · `/fact-cards/manual/new` ✅ · `/packages` ✅ |
+| `/fact-cards/manual/new` | `/money-shorts` ✅ | LOCAL VALIDATION ONLY ✅ · ok=false ✅ · manual_citation_required ✅ · 샘플 불러오기 ✅ · 초기화 ✅ |
+| `/fact-cards/manual/package-preview` | `/money-shorts` ✅ | LOCAL PREVIEW ONLY ✅ · Package Preview ✅ · contentPackageId 렌더 ✅ |
+| `/packages` | `/money-shorts` ✅ | Package Library ✅ · 승인/반려/차단 상태 ✅ |
+
+콘솔 경고 비고:
+- `Each child in a list should have a unique "key" prop` 경고 다수 — 기존 코드에 존재했던 것으로 확인. smoke 기준 blocker 아님. 모든 명시적 map에서 key prop 존재 확인됨 (page-preview key={step.num}/key={item.label}/key={scene.sceneId} 등). 경고 정확한 출처 격리 불가 (preview 콘솔 누적 방식). 기능 동작에 영향 없음.
+- 서버 오류(5xx): 없음 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

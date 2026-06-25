@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 94% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, `/money-shorts` workflow hub, 그리고 hub backlinks까지 안정화됐다. 다음 단계는 MVP1 로컬 UI route 5개를 한 번에 smoke 검증하는 것이다.
+**전체프로젝트 진행률:** 약 94% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, `/money-shorts` workflow hub, hub backlinks, 그리고 MVP1 local UI route smoke pass까지 완료됐다. 다음 단계는 smoke 중 관찰된 React unique key warning의 출처를 격리하는 QA cleanup이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -69,7 +69,8 @@
 - Commit: `9e22a59` — `feat(fact-card-ui): add sample form controls`
 - Commit: `fca0b73` — `feat(fact-card-ui): add manual workflow navigation`
 - Commit: `9d0e187` — `feat(money-shorts): add workflow hub route`
-- Hub Entry Links checkpoint: current safe checkpoint after Codex review
+- Commit: `70eeecb` — `feat(money-shorts): link screens to workflow hub`
+- MVP1 route smoke evidence checkpoint: current safe checkpoint after Codex review
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -79,27 +80,27 @@
 
 Task:
 
-- `money-shorts-os-workflow-hub-entry-links-v1`
+- `money-shorts-os-mvp1-local-ui-smoke-v1`
 
 구현:
 
-- `app/fact-cards/manual/page.tsx`
-- `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
-- `app/fact-cards/manual/package-preview/page.tsx`
-- `app/packages/PackageLibraryClient.tsx`
+- 코드 변경 없음
+- `_ai/CLAUDE_REPORT.md` smoke evidence 추가
 
 검증:
 
-- ESLint changed route files: PASS
-- Targeted TypeScript diagnostics for changed routes: 0 errors
-- Forbidden-pattern search PASS:
-  - no OS clipboard write
-  - no fetch/API route calls
-  - no render/ffmpeg/output/upload/post/deploy calls
-- Claude HTTP verification:
-  - touched screens include `/money-shorts` link
-  - original content remains visible
-- Full `pnpm build` remains blocked at TypeScript stage only by pre-existing `output/` binary `.ts` files.
+- 5개 local route HTTP 200:
+  - `/money-shorts`
+  - `/fact-cards/manual`
+  - `/fact-cards/manual/new`
+  - `/fact-cards/manual/package-preview`
+  - `/packages`
+- hub route links and backlinks verified.
+- route-specific core content verified.
+- no server 5xx.
+- Known non-blocking console warning:
+  - `Each child in a list should have a unique "key" prop`
+  - exact source not isolated during smoke
 
 주의:
 
@@ -126,15 +127,13 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — Local UI Route Smoke Pass**
+- **MVP 1 QA — React Key Warning Isolation**
 
-검증 대상:
+대상:
 
-- `/money-shorts`
-- `/fact-cards/manual`
-- `/fact-cards/manual/new`
-- `/fact-cards/manual/package-preview`
-- `/packages`
+- route/component map/list rendering around the five MVP1 local routes
+- React console warning source isolation
+- small stable key fix only if exact source is found
 
 금지:
 

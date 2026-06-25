@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Hub Entry Links 완료, MVP1 Route Smoke 준비
+## 2026-06-25 현재 — MVP1 Route Smoke PASS, React Key Warning Isolation 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -38,23 +38,26 @@ Owner 결정:
 - `9e22a59 feat(fact-card-ui): add sample form controls`
 - `fca0b73 feat(fact-card-ui): add manual workflow navigation`
 - `9d0e187 feat(money-shorts): add workflow hub route`
-- Hub Entry Links checkpoint: current local safe checkpoint after Codex review
+- `70eeecb feat(money-shorts): link screens to workflow hub`
+- MVP1 route smoke evidence checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-workflow-hub-entry-links-v1`
-- Existing Money Shorts local screens now link back to `/money-shorts`:
+- `money-shorts-os-mvp1-local-ui-smoke-v1`
+- 5개 local route HTTP 200:
+  - `/money-shorts`
   - `/fact-cards/manual`
   - `/fact-cards/manual/new`
   - `/fact-cards/manual/package-preview`
   - `/packages`
-- Existing route content/behavior preserved.
-- Codex verification:
-  - ESLint changed route files: PASS
-  - targeted TypeScript diagnostics for changed routes: 0
-  - forbidden pattern search PASS
-  - Claude HTTP verification passed
+- hub route links and backlinks verified.
+- route-specific core content verified.
+- code changes: none
+- known non-blocking console warning:
+  - `Each child in a list should have a unique "key" prop`
+  - source not isolated during smoke
+  - no server 5xx and no smoke blocker
 
 Source of truth:
 
@@ -69,25 +72,22 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Local UI Route Smoke Pass**
+**MVP 1 QA — React Key Warning Isolation**
 
 Task ID:
 
-`money-shorts-os-mvp1-local-ui-smoke-v1`
+`money-shorts-os-react-key-warning-isolation-v1`
 
 목표:
 
-- Money Shorts OS MVP1 로컬 UI route 5개가 연결되고 핵심 화면이 유지되는지 smoke 검증한다.
+- MVP1 route smoke 중 관찰된 React unique key warning의 출처를 격리하고, 작고 안전하면 stable key만 보강한다.
 
 포함:
 
-- `/money-shorts`
-- `/fact-cards/manual`
-- `/fact-cards/manual/new`
-- `/fact-cards/manual/package-preview`
-- `/packages`
-- HTTP 200 / 핵심 텍스트 / 핵심 href 검증
-- 필요 시 작은 blocker fix만 허용
+- five route console warning isolation
+- route component map/list inspection
+- small stable key fix only if source is found
+- no broad refactor
 
 금지:
 
