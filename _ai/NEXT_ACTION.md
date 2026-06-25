@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Manual Fact Card Form 완료, Sample Controls 준비
+## 2026-06-25 현재 — Sample Controls 완료, Manual Route Navigation 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -34,25 +34,23 @@ Owner 결정:
 - `4d264cb feat(package-ui): add local package library route`
 - `813a8f6 feat(fact-card-ui): add manual authoring screen`
 - `eb03a26 feat(fact-card-ui): add package preview route`
-- Manual Fact Card Form UI checkpoint: current local safe checkpoint after Codex review
+- `08ff8f0 feat(fact-card-ui): add manual draft form`
+- Sample Controls checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-manual-fact-card-form-v1`
-- `money-shorts-os-manual-fact-card-form-v1-review-fix`
-- `/fact-cards/manual/new` local Manual Fact Card Draft Form UI
-- blank initial form -> `ok=false`
-- citation id is Owner/fixture supplied only, no UI-generated fallback
-- `manual_citation_required` visible when no valid citation id is present
-- generated FactCard summary visible when valid fields are supplied
+- `money-shorts-os-manual-fact-card-form-sample-controls-v1`
+- `/fact-cards/manual/new` explicit sample load/reset controls
+- initial blank state remains `ok=false`
+- `샘플 불러오기` -> `validHouseholdDebtDraft` -> `ok=true`
+- `초기화` -> blank invalid state -> `manual_citation_required`
+- citation id remains fixture/Owner supplied only
 - Codex verification:
-  - ESLint `app/fact-cards/manual/new`: PASS
+  - ESLint changed file: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search PASS
-  - HTTP 200 for `/fact-cards/manual/new`
-  - core text rendered: `LOCAL VALIDATION ONLY`, `ok = false`, `manual_citation_required`, id-owner-input warning, Package Preview link
-  - dev server stopped
+  - Claude browser verification passed for sample load/reset
 
 Source of truth:
 
@@ -67,24 +65,23 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Manual Fact Card Form Sample Controls**
+**MVP 1 — Manual Fact Card Route Navigation**
 
 Task ID:
 
-`money-shorts-os-manual-fact-card-form-sample-controls-v1`
+`money-shorts-os-manual-fact-card-route-nav-v1`
 
 목표:
 
-- Manual Fact Card form은 계속 빈 값으로 시작하되, Owner가 명시적으로 valid household debt fixture를 불러와 `ok=true` 상태를 확인할 수 있게 한다.
-- `초기화`로 다시 blank invalid 상태로 돌아갈 수 있게 한다.
+- `/fact-cards/manual` overview page에서 새 form route, package preview route, package library로 명확히 이동할 수 있게 한다.
 
 포함:
 
-- `app/fact-cards/manual/new/ManualFactCardFormClient.tsx` 수정
-- `validHouseholdDebtDraft` fixture 사용
-- `샘플 불러오기` / `초기화` 버튼
-- sample load -> `ok=true` + FactCard summary
-- reset -> `ok=false` + `manual_citation_required`
+- `app/fact-cards/manual/page.tsx` navigation polish
+- `/fact-cards/manual/new` 링크
+- `/fact-cards/manual/package-preview` 링크
+- `/packages` 링크 if useful
+- 기존 valid/broken fixture 표시 유지
 
 금지:
 

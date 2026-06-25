@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 91% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, 그리고 blank-start Manual Fact Card Form UI까지 안정화됐다. 다음 단계는 form에 명시적 sample load/reset controls를 붙여 invalid/valid 상태를 Owner가 빠르게 확인하게 하는 것이다.
+**전체프로젝트 진행률:** 약 92% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, blank-start Manual Fact Card Form UI, 그리고 explicit sample load/reset controls까지 안정화됐다. 다음 단계는 `/fact-cards/manual` entry 화면에서 form/preview/library로 이어지는 route navigation을 정리하는 것이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -65,7 +65,8 @@
 - Commit: `4d264cb` — `feat(package-ui): add local package library route`
 - Commit: `813a8f6` — `feat(fact-card-ui): add manual authoring screen`
 - Commit: `eb03a26` — `feat(fact-card-ui): add package preview route`
-- Manual Fact Card Form UI checkpoint: current safe checkpoint after Codex review
+- Commit: `08ff8f0` — `feat(fact-card-ui): add manual draft form`
+- Sample Controls checkpoint: current safe checkpoint after Codex review
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -75,34 +76,31 @@
 
 Task:
 
-- `money-shorts-os-manual-fact-card-form-v1`
-- `money-shorts-os-manual-fact-card-form-v1-review-fix`
+- `money-shorts-os-manual-fact-card-form-sample-controls-v1`
 
 구현:
 
-- `app/fact-cards/manual/new/page.tsx`
 - `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
 
 검증:
 
-- ESLint `app/fact-cards/manual/new`: PASS
+- ESLint `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`: PASS
 - Targeted TypeScript diagnostics for `app/fact-cards`: 0 errors
 - Forbidden-pattern search PASS:
   - no OS clipboard write
   - no fetch/API route calls
   - no render/ffmpeg/output/upload/post/deploy calls
   - no `Date.now`, `Math.random`, or `citation-unnamed` in route files
-- HTTP/dev verification:
-  - `/fact-cards/manual/new` HTTP 200
-  - core text rendered: `LOCAL VALIDATION ONLY`, `ok = false`, `manual_citation_required`, id-owner-input warning, Package Preview link
-- Dev server stopped after verification
+- Claude browser verification:
+  - initial blank state -> `ok=false`, `manual_citation_required`
+  - sample load -> `ok=true`, generated FactCard summary
+  - reset -> `ok=false`, `manual_citation_required`
 - Full `pnpm build` remains blocked at TypeScript stage only by pre-existing `output/` binary `.ts` files.
 
 주의:
 
 - 전체 `pnpm lint`/전체 `tsc`는 기존 app/archive/output 누적 오류가 있어 별도 정리 전까지 전체 통과 기준으로 보지 않는다.
 - `output/`은 commit 대상이 아니다.
-- Form UI는 blank-start가 원칙이며, 다음 task에서 명시적 sample load/reset controls만 추가한다.
 
 ---
 
@@ -124,15 +122,15 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — Manual Fact Card Form Sample Controls**
+- **MVP 1 — Manual Fact Card Route Navigation**
 
 구현 대상:
 
-- `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
-- `validHouseholdDebtDraft` explicit sample load
-- reset to blank invalid state
-- sample load -> `ok=true` + FactCard summary
-- reset -> `ok=false` + `manual_citation_required`
+- `app/fact-cards/manual/page.tsx`
+- `/fact-cards/manual/new` link
+- `/fact-cards/manual/package-preview` link
+- `/packages` link if useful
+- 기존 valid/broken fixture 표시 유지
 
 금지:
 

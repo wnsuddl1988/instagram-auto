@@ -5,6 +5,7 @@ import Link from "next/link";
 import { authorManualFactCard } from "@/lib/source-facts/manual";
 import type { ManualFactCardDraft } from "@/lib/source-facts/manual";
 import type { SourceCitation, FactCardValidationError, ComparisonType, ContentCategory } from "@/lib/source-facts/types";
+import { validHouseholdDebtDraft } from "@/lib/source-facts/manual-fixtures";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,41 @@ const INITIAL_STATE: FormState = {
   isMock: true,
   isPublishable: false,
 };
+
+// ── Sample fixture → FormState ────────────────────────────────────────────────
+
+function draftToFormState(d: ManualFactCardDraft): FormState {
+  return {
+    id: d.id,
+    primarySourceProviderId: d.primarySourceProviderId,
+    sourceName: d.sourceName,
+    sourceUrl: d.sourceUrl,
+    publishedDate: d.publishedDate,
+    dataPeriod: d.dataPeriod,
+    indicatorName: d.indicatorName,
+    currentValue: d.currentValue,
+    previousValue: d.previousValue,
+    changeValue: d.changeValue,
+    changeRate: d.changeRate,
+    unit: d.unit,
+    comparisonType: d.comparisonType,
+    interpretation: d.interpretation,
+    cautionNote: d.cautionNote,
+    allowedClaimsText: d.allowedClaims.join("\n"),
+    blockedClaimsText: d.blockedClaims.join("\n"),
+    contentCategory: d.contentCategory,
+    citations: d.citations.map((c) => ({
+      id: c.id,
+      sourceName: c.sourceName,
+      sourceUrl: c.sourceUrl,
+      publishedDate: c.publishedDate,
+      dataPeriod: c.dataPeriod ?? "",
+      citationLabel: c.citationLabel ?? "",
+    })),
+    isMock: d.isMock,
+    isPublishable: d.isPublishable,
+  };
+}
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -208,6 +244,14 @@ export default function ManualFactCardFormClient() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const loadSample = useCallback(() => {
+    setForm(draftToFormState(validHouseholdDebtDraft));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setForm(INITIAL_STATE);
+  }, []);
+
   // Citation helpers
   const updateCitation = useCallback((index: number, key: keyof CitationRow, value: string) => {
     setForm((prev) => {
@@ -298,6 +342,20 @@ export default function ManualFactCardFormClient() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={loadSample}
+              className="px-3 py-1.5 rounded-lg border border-indigo-600/60 bg-indigo-900/25 text-indigo-300 text-xs font-semibold hover:bg-indigo-900/50 transition-colors"
+            >
+              샘플 불러오기
+            </button>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-3 py-1.5 rounded-lg border border-slate-600/60 bg-slate-800/25 text-slate-400 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+            >
+              초기화
+            </button>
             <span className="px-2 py-1 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
               LOCAL VALIDATION ONLY
             </span>

@@ -778,6 +778,30 @@ Validation evidence (2026-06-25):
   - `hasPackagePreviewLink: true` ✅
 - dev server 종료 ✅
 
+## Manual Fact Card Form — 샘플 컨트롤 추가 (`money-shorts-os-manual-fact-card-form-sample-controls-v1`):
+
+수정 내용 (`app/fact-cards/manual/new/ManualFactCardFormClient.tsx` 1파일):
+
+1. `import { validHouseholdDebtDraft } from "@/lib/source-facts/manual-fixtures"` 추가
+2. `draftToFormState(d: ManualFactCardDraft): FormState` 변환 함수 추가 (draft 모든 필드 → FormState; citations 배열도 CitationRow[] 변환; id는 fixture값 그대로 사용)
+3. `loadSample` 콜백: `setForm(draftToFormState(validHouseholdDebtDraft))` — fixture 외 값 발명 없음
+4. `resetForm` 콜백: `setForm(INITIAL_STATE)` — 빈 초기 상태로 복귀
+5. 헤더 버튼 2개 추가: "샘플 불러오기" (indigo) / "초기화" (slate) — "LOCAL VALIDATION ONLY" 배지 좌측
+
+citation id 처리: `draftToFormState`에서 `c.id`를 fixture 그대로 사용 — UI 자동생성 없음 (review-fix 계약 유지)
+
+Validation evidence (2026-06-25):
+- ESLint (`app/fact-cards/manual/new/ManualFactCardFormClient.tsx`): 0 warnings ✅
+- TypeScript (full tsc, 0 errors): ✅
+- 금지 패턴 검색 (Date.now / Math.random / citation-unnamed / fetch / /api/ / clipboard / ffmpeg / render / output/ / upload / deploy): 0건 ✅
+- dev server HTTP 검증 (http://localhost:3000/fact-cards/manual/new):
+  - HTTP 200, 헤더 "샘플 불러오기" / "초기화" 버튼 렌더 ✅
+  - 초기 상태: `ok = false`, `manual_citation_required` 발생 ✅
+  - `샘플 불러오기` 클릭 → `indicatorValue="가계부채 잔액"`, `ok = true`, `manual_citation_required` 사라짐 ✅
+  - `초기화` 클릭 → `indicatorValue=""`, `ok = false`, `manual_citation_required` 재발생 ✅
+  - 콘솔 오류: 0건 ✅
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

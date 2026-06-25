@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-manual-fact-card-form-sample-controls-v1`
+`money-shorts-os-manual-fact-card-route-nav-v1`
 
 ## Current State
 
@@ -12,51 +12,42 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before form UI: `eb03a26 feat(fact-card-ui): add package preview route`
-- Latest completed local UI: `/fact-cards/manual/new` Manual Fact Card Draft Form UI.
+- Latest completed checkpoint before sample controls: `08ff8f0 feat(fact-card-ui): add manual draft form`
+- Latest completed local UI: `/fact-cards/manual/new` sample load/reset controls.
 - Codex verification passed:
-  - ESLint `app/fact-cards/manual/new`: PASS
+  - ESLint `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search: PASS
-  - `/fact-cards/manual/new` HTTP 200
-  - core text rendered: `LOCAL VALIDATION ONLY`, `ok = false`, `manual_citation_required`, id-owner-input warning, Package Preview link
-  - dev server stopped after verification
+  - Claude browser verification: sample load -> `ok=true`, reset -> `ok=false`
 
 ## Goal
 
-Add explicit local sample controls to the Manual Fact Card form.
+Add simple route navigation polish to the Manual Fact Card entry screen.
 
-The form should still start blank, but the Owner should be able to intentionally load the existing valid household debt fixture into the form and reset back to blank. This proves both invalid and valid validation states without hidden auto-fill.
+The existing `/fact-cards/manual` fixture/authoring overview should clearly link to the now-existing form route and package preview route so the Owner can move through the local Step 1 workflow without remembering URLs.
 
 ## Approved Scope
 
 Allowed:
 
 - Modify:
-  - `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
+  - `app/fact-cards/manual/page.tsx`
   - optional `_ai/CLAUDE_REPORT.md` evidence update
-- Use:
-  - `validHouseholdDebtDraft` or equivalent exported fixture from `lib/source-facts/manual-fixtures.ts`
-- Add explicit buttons, for example:
-  - `샘플 불러오기`
-  - `초기화`
-- When sample is loaded:
-  - form fields reflect the fixture values
-  - validation becomes `ok=true`
-  - generated FactCard summary is visible
-- When reset is clicked:
-  - form returns to blank local state
-  - validation returns to `ok=false`
-  - `manual_citation_required` is visible
-
-Do not auto-load the fixture on page load.
+- Add visible links/buttons to:
+  - `/fact-cards/manual/new`
+  - `/fact-cards/manual/package-preview`
+  - `/packages` if useful
+- Keep layout consistent with existing dark operational UI.
+- Keep the current valid/broken fixture display behavior unchanged.
 
 ## Required Behavior
 
-- Initial state remains blank/local validation only.
-- Sample loading is explicit Owner action.
-- No field is invented outside the fixture.
-- Citation id remains Owner/fixture-supplied only; no `Date.now`, random, sourceName fallback, or `citation-unnamed`.
+- `/fact-cards/manual` still renders the valid and broken draft cards.
+- New navigation makes the intended workflow clear:
+  - fixture overview
+  - direct manual input
+  - package preview
+  - package library
 - No external call or persistence.
 - Mobile and desktop layout should not overlap or squeeze text.
 
@@ -91,17 +82,12 @@ Run focused checks:
   - `/api/`
   - ffmpeg/render/upload/post/deploy references
   - `output/`
-  - `Date.now`
-  - `Math.random`
-  - `citation-unnamed`
-- If practical, run a local dev server and verify `/fact-cards/manual/new` with HTTP/core text. Stop the server afterward.
-- If practical, verify sample-load makes `ok=true` and reset returns to `ok=false`.
+- If practical, run a local dev server and verify `/fact-cards/manual` with HTTP/core text. Stop the server afterward.
 
 ## Definition of Done
 
-- Manual Fact Card form still starts blank with invalid state.
-- Explicit sample load produces valid state and FactCard summary.
-- Explicit reset returns to blank invalid state.
+- `/fact-cards/manual` has clear links to form, package preview, and package library.
+- Existing valid/broken draft content remains visible.
 - No external/clipboard/render/DB/API action occurs.
 - Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
