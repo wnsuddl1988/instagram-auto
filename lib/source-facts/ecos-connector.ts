@@ -106,6 +106,20 @@ export interface EcosTransport {
   execute(request: EcosStatSearchRequest): EcosConnectorResult;
 }
 
+/**
+ * Async transport interface for connectors that perform I/O (e.g. live HTTP).
+ *
+ * Separate from the synchronous EcosTransport so the existing mock scaffold and
+ * its module-level candidate constants stay synchronous (never Promise-polluted).
+ *
+ * Implementors:
+ * - EcosLiveTransport: calls the real ECOS API via fetch() (requires Owner approval)
+ */
+export interface EcosAsyncTransport {
+  readonly transportId: string;
+  executeAsync(request: EcosStatSearchRequest): Promise<EcosConnectorResult>;
+}
+
 // ── Base-rate request constant ─────────────────────────────────────────────────
 
 /**
@@ -123,6 +137,44 @@ export const ECOS_BASE_RATE_REQUEST_JAN2025: EcosStatSearchRequest = {
   sourcePageUrl: "https://ecos.bok.or.kr/#/Short/722Y001",
   sourceName: "한국은행 ECOS — 기준금리",
 };
+
+/**
+ * Two-period base-rate request (Dec 2024 → Jan 2025) for the live check.
+ *
+ * normalizeEcosBaseRateRows() needs two rows (current + previous) to derive
+ * the change value, so the live request spans both periods. ECOS returns rows
+ * in ascending TIME order; use orderEcosRowsCurrentFirst() before normalizing.
+ * EcosLiveTransport.executeAsync() applies this ordering automatically so the
+ * runEcosConnectorAsync(..., normalizeEcosBaseRateRows) primary path is safe.
+ */
+export const ECOS_BASE_RATE_REQUEST_2P: EcosStatSearchRequest = {
+  statCode: "722Y001",
+  cycle: "M",
+  startDate: "202412",
+  endDate: "202501",
+  itemCode1: "0101000",
+  description: "한국은행 기준금리 (ECOS 722Y001, 2024년 12월~2025년 1월)",
+  publishedDate: "2025-01-16",
+  sourcePageUrl: "https://ecos.bok.or.kr/#/Short/722Y001",
+  sourceName: "한국은행 ECOS — 기준금리",
+};
+
+// ── Row ordering ─────────────────────────────────────────────────────────────
+
+/**
+ * Returns rows sorted current-first (descending by TIME string).
+ *
+ * ECOS StatisticSearch returns rows in ascending TIME order. The normalizer
+ * expects rows[0] = current period, rows[1] = previous period, so any live or
+ * test caller must order them before normalizing.
+ *
+ * Does not mutate the input array.
+ */
+export function orderEcosRowsCurrentFirst(
+  rows: readonly EcosStatRow[],
+): readonly EcosStatRow[] {
+  return [...rows].sort((a, b) => b.TIME.localeCompare(a.TIME));
+}
 
 // ── Mock transport factory ────────────────────────────────────────────────────
 
@@ -172,6 +224,30 @@ export function runEcosConnector(
   ) => RawDataSnapshot | null,
 ): RawDataSnapshot | null {
   const result = transport.execute(request);
+  if (!result.ok) return null;
+  if (result.rows.length === 0) return null;
+  return normalize(result.rows, result.fetchedAt, request);
+}
+
+/**
+ * Async variant of runEcosConnector for transports that perform I/O.
+ *
+ * Awaits the async transport, then normalizes the rows the same way the
+ * synchronous helper does. The full request is passed to the normalizer so
+ * it can use publishedDate and sourcePageUrl without inventing values.
+ *
+ * Returns null when the transport reports an error or rows are empty.
+ */
+export async function runEcosConnectorAsync(
+  request: EcosStatSearchRequest,
+  transport: EcosAsyncTransport,
+  normalize: (
+    rows: readonly EcosStatRow[],
+    fetchedAt: string,
+    request: EcosStatSearchRequest,
+  ) => RawDataSnapshot | null,
+): Promise<RawDataSnapshot | null> {
+  const result = await transport.executeAsync(request);
   if (!result.ok) return null;
   if (result.rows.length === 0) return null;
   return normalize(result.rows, result.fetchedAt, request);

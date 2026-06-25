@@ -8,3 +8,4 @@ export * from "./candidates";
 export * from "./ecos-connector";
 export * from "./ecos-fixtures";
 export * from "./ecos-normalizer";
+export * from "./ecos-live-transport";

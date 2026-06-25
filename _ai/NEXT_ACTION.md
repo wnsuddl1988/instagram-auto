@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — ECOS Connector Scaffold 완료, checkpoint 대기
+## 2026-06-26 현재 — ECOS Live Connector review-fix 완료 (P1 ordering 수정), checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,8 +15,8 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `d85b616 feat(source-facts): add auto fact card candidate preview` ← **현재 HEAD**
-- (이전: `9978d61 test(money-shorts): record mvp1 rc smoke pass`)
+- `20ab76b feat(source-facts): add ecos connector scaffold with mock transport` ← **현재 HEAD**
+- (이전: `d85b616 feat(source-facts): add auto fact card candidate preview`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 
@@ -25,11 +25,23 @@ Owner 결정:
 - `money-shorts-os-auto-fact-card-candidate-v1` + review-fix: checkpoint `d85b616`
   - mock ECOS `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()` 경로
   - `/fact-cards/manual/package-preview?candidate=base-rate` preview
-- `money-shorts-os-ecos-connector-scaffold-v1`: **완료, 미커밋**
+- `money-shorts-os-ecos-connector-scaffold-v1`: checkpoint `20ab76b`
   - `ecos-connector.ts`: EcosTransport interface + mock transport factory + runEcosConnector()
   - `ecos-fixtures.ts`: 2-period mock rows (Jan2025 3.00% / Dec2024 3.25%)
   - `ecos-normalizer.ts`: normalizeEcosBaseRateRows() + scaffold end-to-end candidate
+- `money-shorts-os-ecos-connector-scaffold-v1` + review-fix: checkpoint `20ab76b`
   - scaffold path: request spec → mock transport → RawDataSnapshot → parser → Fact Card candidate
+  - publishedDate `2025-01-16`, human-facing ECOS source URL, `execute()` transport boundary
+- `money-shorts-os-ecos-live-connector-v1`: **구현 완료, 미커밋**
+  - `EcosAsyncTransport` interface + `runEcosConnectorAsync()` (기존 동기 경로 무손상)
+  - `ecos-live-transport.ts`: `createEcosLiveTransport()` (fetch + process.env key, secret-safe)
+  - `ECOS_BASE_RATE_REQUEST_2P` (2기간 request for normalizer)
+  - `scripts/_ecos-live-check.mjs` (read-only live check)
+  - live 검증: env key 부재로 **BLOCKED** (가짜 성공 없음) — env 주입 시 즉시 검증 가능
+- `money-shorts-os-ecos-live-connector-v1-review-fix`: **완료, 미커밋**
+  - P1 Fix: `orderEcosRowsCurrentFirst()` helper 추가 (`ecos-connector.ts`)
+  - `executeAsync` 성공 경로에서 current-first 정렬 적용 → primary library path 안전
+  - TS 0 errors, ESLint 0 warnings, live check BLOCKED (env 부재, 정상)
 
 Source of truth:
 
@@ -46,12 +58,13 @@ Source of truth:
 
 먼저:
 
-- `ecos-connector-scaffold-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
+- `ecos-live-connector-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
 
-그 다음 (live connector — Owner 명시 승인 후):
+그 다음 (Owner가 ECOS API key를 env에 주입한 뒤):
 
-- `EcosLiveTransport` 구현 (fetch() + ECOS API key 사용) — process.env 사용이므로 Owner 명시 승인 필요
-- ECOS live API call 첫 연결 검증 (소량 실제 데이터, paid API key 필요)
+- `node scripts/_ecos-live-check.mjs` 1회 실행 → `RESULT: LIVE_OK` 확인 (소량 실제 데이터)
+- live snapshot → `ecosBaseRateParser` → Fact Card candidate 정합성 확인
+- 정상 시 `/fact-cards/manual/package-preview`에 live candidate 연결 검토 (별도 slice)
 - 아직 GPT, 영상, ElevenLabs, ffmpeg/render로 가지 않는다.
 
 금지 (계속 유지):
@@ -61,7 +74,8 @@ Source of truth:
 - DB/Supabase read/write/migration
 - ffmpeg/render/output 생성
 - OpenAI/GPT/Gemini/Veo/ElevenLabs live call
-- ECOS/KOSIS/OpenDART/FRED live API 호출
+- KOSIS/OpenDART/FRED live API 호출
+- ECOS live API 호출은 이번 승인된 connector slice의 소량 검증 범위에서만 허용
 - API key/env/secret 변경
 - dependency/lockfile 변경
 - `output/` 변경

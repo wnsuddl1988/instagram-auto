@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-ecos-connector-scaffold-v1-review-fix`
+`money-shorts-os-ecos-live-connector-v1`
 
 ## Current State
 
@@ -12,89 +12,104 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `d85b616 feat(source-facts): add auto fact card candidate preview`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 28]`
+- Latest local checkpoint: `20ab76b feat(source-facts): add ecos connector scaffold with mock transport`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 29]`
 - Push: not run.
+- Working tree was clean before this handoff refresh.
+- Codex may have an uncommitted `_ai/HANDOFF_NOW.md` / `_ai/NEXT_ACTION.md` update for this new task scope; those docs-only changes are expected at task start.
 
-Uncommitted ECOS scaffold work exists:
+Recently completed:
 
-- `_ai/CLAUDE_REPORT.md`
-- `_ai/HANDOFF_NOW.md`
-- `_ai/NEXT_ACTION.md`
-- `lib/source-facts/index.ts`
-- `lib/source-facts/ecos-connector.ts`
-- `lib/source-facts/ecos-fixtures.ts`
-- `lib/source-facts/ecos-normalizer.ts`
+- Auto Fact Card candidate foundation:
+  - `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()`
+  - `/fact-cards/manual/package-preview?candidate=base-rate` preview
+- ECOS connector scaffold:
+  - `EcosStatSearchRequest`
+  - `EcosTransport.execute()`
+  - mock transport fixture
+  - `normalizeEcosBaseRateRows()`
+  - scaffold snapshot/candidate path
+- ECOS scaffold review-fix:
+  - known published date `2025-01-16` carried from request metadata
+  - human-facing source page URL preserved
+  - `fetch()` method naming avoided in scaffold transport boundary
 
-No commit yet.
+Owner approval:
 
-## Codex Review Findings
-
-Fix these before checkpoint:
-
-1. Published date data correctness
-   - File: `lib/source-facts/ecos-normalizer.ts`
-   - `ecosTimeToPublishedDate("202501")` returns a last-day fallback such as `2025-01-31`.
-   - The fixture/comment says the BOK announcement date is `2025-01-16`.
-   - The scaffold candidate can therefore propagate the wrong publishedDate into Fact Card/citation/allowed claim.
-   - Source-first rule: do not invent or fallback a user-facing published date when the known mock source date is available.
-   - Fix by passing an explicit source published date through the connector request/context/normalizer path.
-
-2. Transport method naming
-   - File: `lib/source-facts/ecos-connector.ts`
-   - `EcosTransport.fetch()` is mock-only today, but the name collides with the global `fetch()` concept and forbidden-pattern checks.
-   - Rename the interface method and calls to a neutral name such as `request()` or `execute()`.
-   - No live network transport implementation in this slice.
-
-3. Human-facing source URL
-   - Current normalized snapshot may use the API endpoint as the Fact Card-level `sourceUrl`.
-   - Prefer passing an explicit source/stat page URL through request/context so the generated Fact Card source URL is reviewable by Owner.
-   - It is okay to preserve the API endpoint separately in rawPayload if useful.
+- Owner approved the recommended next step: **ECOS live connector 승인 후 진행**.
+- This approval permits this slice to:
+  - implement `EcosLiveTransport`
+  - use global `fetch()` only inside the live transport
+  - read ECOS API key from `process.env`
+  - make a small ECOS live API call for validation
+- This approval does **not** permit DB writes, deploy, upload/post, push, dependency changes, env/secret edits, render/output generation, or any GPT/video/TTS calls.
 
 ## Goal
 
-Perform a narrow review-fix pass on the ECOS connector scaffold before checkpoint.
+Implement and verify the first ECOS live connector slice safely.
 
-Keep the successful scaffold path:
+Target path:
 
-`ECOS request spec -> mock transport response -> normalized RawDataSnapshot -> existing RawSnapshotParser -> Fact Card candidate`
+`EcosLiveTransport -> ECOS live response -> normalizeEcosBaseRateRows() -> RawDataSnapshot -> ecosBaseRateParser -> Fact Card candidate`
 
-Do not add live network behavior.
+The result should prove that the source-first automatic Fact Card candidate flow can run against one approved live ECOS request without moving into video/render/GPT.
 
 ## Approved Scope
 
 Allowed:
 
-- Extend `EcosStatSearchRequest` or equivalent connector context with explicit source metadata needed by the normalizer:
-  - publishedDate: `2025-01-16`
-  - human-facing source URL for the ECOS stat page
-  - source name / provider id if useful
-- Update `runEcosConnector()` and normalizer signature if needed so request/context reaches normalization.
-- Rename `EcosTransport.fetch()` to a neutral method name and update all usages.
-- Ensure the scaffold candidate generated from Jan 2025 base-rate mock data uses:
-  - `publishedDate: "2025-01-16"`
-  - a human-facing ECOS source URL where the Fact Card/source citation expects reviewable source URL
-  - source display strings such as `"3.00%"`, `"3.25%"`, `"-0.25%p"`
-- Update `_ai/CLAUDE_REPORT.md` with concise review-fix evidence.
-- Update `_ai/NEXT_ACTION.md` only if durable next action wording changes.
+- Add an `EcosLiveTransport` implementation under `lib/source-facts/`.
+- Use global `fetch()` only in the live transport implementation.
+- Read an ECOS API key from `process.env` only for the approved ECOS connector.
+- Keep the API key value secret:
+  - never print it
+  - never write it to docs
+  - never include it in errors
+  - never commit env files
+- Add a small helper that builds the ECOS StatisticSearch URL from `EcosStatSearchRequest`.
+- Parse ECOS live response into existing `EcosStatRow[]`.
+- Reuse existing `runEcosConnector()` / `normalizeEcosBaseRateRows()` / `generateCandidateFromSnapshot()` path.
+- Add a live-check script or exported helper if useful, but keep it local-only and read-only.
+- Update `_ai/CLAUDE_REPORT.md` with concise implementation/check evidence.
+- Update `_ai/NEXT_ACTION.md` if the next durable step changes.
 
-Default editable files:
+Expected code files may include:
 
+- new file under `lib/source-facts/`, for example:
+  - `ecos-live-transport.ts`
 - `lib/source-facts/ecos-connector.ts`
 - `lib/source-facts/ecos-normalizer.ts`
-- `lib/source-facts/ecos-fixtures.ts` only if needed
-- `_ai/CLAUDE_REPORT.md`
-- `_ai/HANDOFF_NOW.md` only if a small post-work pointer update is necessary
+- `lib/source-facts/index.ts`
+- optional script under `scripts/` only if it is narrowly scoped to this live check and does not write files
+
+UI changes are not required for this slice. Prefer library/live connector foundation first.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
-- Keep mock-only transport/normalizer scaffold.
-- Do not introduce network calls.
-- Do not introduce env/API key reads.
-- Do not invent dates; use explicit mock fixture/request metadata for known dates.
-- Keep deterministic constants only.
-- Keep the resulting snapshot flowing into existing `ecosBaseRateParser` / `generateCandidateFromSnapshot()`.
+- If only `_ai/HANDOFF_NOW.md` / `_ai/NEXT_ACTION.md` are modified at start, proceed; those are Codex's expected scope updates.
+- If any unexpected code file is modified at start, stop and report it.
+- Do not ask the Owner to paste or reveal the API key.
+- Check for an ECOS API key environment variable without printing the value.
+- If the key is missing:
+  - still implement the live transport boundary
+  - run static/unit checks
+  - report live verification blocked by missing env var
+  - do not fake live success
+- If the key exists:
+  - make only the minimum live request needed for the approved base-rate check
+  - do not loop or bulk fetch
+  - do not persist the response outside code/log evidence
+- Keep source/citation linkage and known published date/source URL behavior intact.
+
+## Suggested Env Var Names
+
+Use the first available, without printing values:
+
+- `ECOS_API_KEY`
+- `BOK_ECOS_API_KEY`
+
+If neither exists, report missing env var by name only.
 
 ## Forbidden
 
@@ -102,11 +117,10 @@ Default editable files:
 - No ffmpeg execution.
 - No video/audio/image rendering.
 - No actual media probing.
-- No ECOS/KOSIS/OpenDART/FRED live API calls.
-- No global `fetch()` / HTTP client implementation in this slice.
+- No KOSIS/OpenDART/FRED live API calls.
 - No DB/Supabase reads, writes, migrations, or production data changes.
-- No API route changes.
-- No API key/env/secret changes.
+- No API route changes unless Codex/Owner explicitly re-scopes.
+- No API key/env/secret changes or writes.
 - No dependency or lockfile changes.
 - No OS clipboard writes.
 - No upload/post/deploy.
@@ -122,31 +136,36 @@ Run focused checks:
 
 - `git status -sb`
 - targeted ESLint for changed code files
-- focused TypeScript check for changed `lib/source-facts/` files
-- forbidden pattern search on changed code files:
+- focused TypeScript check for changed `lib/source-facts/` / script files
+- forbidden pattern search on changed files:
   - `Date.now`
   - `Math.random`
-  - `fetch(`
-  - `process.env`
   - `navigator.clipboard`
   - `ffmpeg`
   - `output/`
   - `upload`
   - `deploy`
-- verify by static evidence or a tiny local script/TS check that `scaffoldEcosBaseRateCandidate` uses `publishedDate: "2025-01-16"` and no accidental `2025-01-31` for Jan 2025
+- secret safety search:
+  - ensure no API key value was written
+  - ensure no `.env` file was modified/staged
+- live check:
+  - if env key exists: one approved ECOS base-rate request, then normalize to snapshot and candidate
+  - if env key missing: report blocked live check, no fake pass
 - final `git status -sb`
 
 Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a known blocker.
 
 ## Definition of Done
 
-- Published date no longer falls back to an invented month-end date for the known Jan 2025 mock fixture.
-- Transport boundary no longer uses a method named `fetch`.
-- Human-facing source URL is carried through the normalized snapshot/candidate where reviewable source URL is expected.
-- Mock ECOS response still deterministically becomes a `RawDataSnapshot`.
-- Resulting snapshot still flows into existing Fact Card candidate parser/validation path.
-- No live API/network/env/dependency/render/upload/push/output action occurs.
-- Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
+- `EcosLiveTransport` exists and is isolated from mock transport.
+- Live transport uses `fetch()` and `process.env` only within the approved ECOS connector boundary.
+- ECOS API key is never printed, persisted, or committed.
+- Either:
+  - one live base-rate request succeeds and produces a normalized `RawDataSnapshot`/candidate, or
+  - implementation is complete and live verification is clearly blocked by missing env var.
+- Mock transport/scaffold remains working.
+- No DB/env writes/dependency/render/upload/push/output action occurs.
+- Final handoff reports changed files, checks/results, live verification result or blocker, secret-safety evidence, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -155,4 +174,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise review-fix evidence.
+- Update `_ai/CLAUDE_REPORT.md` with concise implementation and verification evidence because this is the first approved live connector boundary.

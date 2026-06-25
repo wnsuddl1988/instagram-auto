@@ -1120,6 +1120,94 @@ Fix 3 — Human-facing source URL (`ecos-connector.ts`, `ecos-normalizer.ts`):
 | `2025-01-31` fallback 잔존 | 0건 ✅ |
 | `sourceUrl` = human-facing stat page in snapshot | ✅ (ecos-normalizer.ts:85, request.sourcePageUrl) |
 
+## ECOS Live Connector (`money-shorts-os-ecos-live-connector-v1`)
+
+기준 commit: `20ab76b feat(source-facts): add ecos connector scaffold with mock transport`
+
+Owner 승인: ECOS live connector 진행 — `EcosLiveTransport` 구현, live transport 내부 `fetch()`, `process.env` ECOS API key 읽기, 소량 live 호출 허용.
+
+**구현 내용:**
+
+- `lib/source-facts/ecos-connector.ts` (수정)
+  - `EcosAsyncTransport` interface 추가 — `executeAsync(request): Promise<EcosConnectorResult>` (기존 동기 `EcosTransport`와 분리)
+  - `runEcosConnectorAsync()` helper 추가 — async transport await 후 normalize (동기 `runEcosConnector` 그대로 유지)
+  - `ECOS_BASE_RATE_REQUEST_2P` 추가 — 2기간(202412~202501) request, normalizer가 요구하는 current+previous 2 rows 확보용
+  - 기존 동기 mock scaffold / module-level candidate 상수 무손상 (Promise 오염 없음)
+
+- `lib/source-facts/ecos-live-transport.ts` (신규) — 라이브러리에서 유일하게 네트워크 I/O + env 읽는 모듈
+  - `resolveEcosApiKey()` — `ECOS_API_KEY` → `BOK_ECOS_API_KEY` 우선순위, **값 출력 없음**, null 반환 시 missing
+  - `hasEcosApiKey()` — 존재 여부만 boolean
+  - `buildEcosStatSearchUrl(apiKey, request)` — ECOS URL 빌더 (key는 path segment, secret-bearing)
+  - `parseEcosStatSearchRows(json)` — JSON → `EcosStatRow[]` (type guard, malformed null)
+  - `isEcosErrorEnvelope()` — ECOS `{RESULT:{CODE,MESSAGE}}` 에러 감지
+  - `createEcosLiveTransport(fetchedAt)` — `EcosAsyncTransport` 구현, executeAsync 1회 fetch, **에러에 key/URL 미포함**
+  - `console.*` 호출 0건 (라이브러리는 출력하지 않음)
+
+- `lib/source-facts/index.ts` (수정) — `ecos-live-transport` re-export 추가
+
+- `scripts/_ecos-live-check.mjs` (신규) — read-only live check, 파일 쓰기 없음
+  - `lib`의 live transport/normalizer와 **동일 알고리즘** (tsx/ts-node 부재 + dependency 추가 금지로 자체 포함)
+  - env key 없으면 `RESULT: BLOCKED` 보고, 가짜 성공 없음
+  - env key 있으면 1회 ECOS 호출 → normalize → snapshot 출력
+  - ECOS는 TIME 오름차순 반환 → current-first 정렬 후 normalize
+
+**검증:**
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (ecos-connector/ecos-live-transport/index.ts) | 0 warnings ✅ |
+| ESLint (`scripts/_ecos-live-check.mjs`) | 0 warnings ✅ |
+| `Date.now` / `Math.random` / `navigator.clipboard` / `ffmpeg` / `output/` / `upload` / `deploy` | 0건 ✅ (`Date.now` 매칭은 주석만) |
+| `fetch(` / `process.env` 실제 코드 사용 위치 | `ecos-live-transport.ts`에만 격리 ✅ (connector는 주석만) |
+
+**Secret safety evidence:**
+
+| 체크 | 결과 |
+|------|------|
+| API key 값 하드코딩 | 없음 ✅ |
+| `console.*` in `ecos-live-transport.ts` | 0건 ✅ (라이브러리 출력 없음) |
+| 스크립트가 apiKey/url 출력 | 없음 ✅ (에러 시 "URL withheld — contains key") |
+| `.env*` 파일 수정/스테이징 | 없음 ✅ (git status에 .env 없음) |
+| git diff에 secret-like 값 | 없음 ✅ |
+
+**Live verification result: BLOCKED (env var 부재)**
+- `node scripts/_ecos-live-check.mjs` 출력:
+  - `RESULT: BLOCKED`
+  - `reason: ECOS API key missing — set one of ECOS_API_KEY, BOK_ECOS_API_KEY`
+  - `note: live verification not run; no fake success.`
+- 구현은 완료, env key 주입 시 즉시 live 검증 가능. 가짜 성공 만들지 않음.
+
+**async path:**
+```
+ECOS_BASE_RATE_REQUEST_2P
+  → createEcosLiveTransport(fetchedAt)          [EcosAsyncTransport]
+  → runEcosConnectorAsync(req, transport, normalizeEcosBaseRateRows)
+  → (fetch ECOS live API, process.env key)
+  → RawDataSnapshot
+  → generateCandidateFromSnapshot(ecosBaseRateParser, snapshot)
+  → Fact Card candidate
+```
+
+**[review-fix: money-shorts-os-ecos-live-connector-v1-review-fix — 2026-06-26]**
+
+P1 Fix — current/previous ordering in primary library path:
+- `ecos-connector.ts`: `orderEcosRowsCurrentFirst(rows)` helper 추가 — `[...rows].sort((a,b) => b.TIME.localeCompare(a.TIME))`, 원본 mutate 없음
+- `ecos-live-transport.ts`: import 추가 + `executeAsync` 성공 경로에서 `rows: orderEcosRowsCurrentFirst(rows)` 적용
+- 이제 `runEcosConnectorAsync(..., normalizeEcosBaseRateRows)` primary path가 자동으로 current-first rows를 받음 — Dec2024가 current로 잘못 해석되는 버그 해소
+- `ECOS_BASE_RATE_REQUEST_2P` 주석: "caller must order them current-first" → "EcosLiveTransport.executeAsync() applies this ordering automatically"
+- `scripts/_ecos-live-check.mjs` 주석: "mirrors orderEcosRowsCurrentFirst in ecos-connector.ts, which the live transport also applies automatically"
+
+검증:
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (ecos-connector/ecos-live-transport/_ecos-live-check.mjs) | 0 warnings ✅ |
+| `console.*` in `ecos-live-transport.ts` | 0건 ✅ |
+| `fetch(` / `process.env` 격리 (`ecos-connector.ts` 실코드) | 주석만, 코드 없음 ✅ |
+| API key 값 하드코딩 | 없음 ✅ |
+| `node scripts/_ecos-live-check.mjs` | `RESULT: BLOCKED` (env key 부재, 가짜 성공 없음) ✅ |
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
