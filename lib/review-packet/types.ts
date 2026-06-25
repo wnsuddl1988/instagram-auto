@@ -77,6 +77,9 @@ export interface ReviewSocialCopy {
   coreMessage: string;
   youtubeTitle: string;
   instagramCaption: string;
+  /** Hashtag strings verbatim from script package (e.g. ["#물가", "#CPI"]). */
+  hashtags: string[];
+  /** Convenience count — always equals hashtags.length. */
   hashtagCount: number;
   moneyOsCta: string | null;
 }

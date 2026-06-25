@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Owner Decision Gate 완료, Clipboard Payload 준비
+## 2026-06-25 현재 — Clipboard Payload 완료, Package View Model 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -28,18 +28,19 @@ Owner 결정:
 - `bfaf5b9 feat(content-package): assemble source-first package chain`
 - `ca3bd36 feat(source-facts): add manual fact card authoring`
 - `538d0d1 feat(review-packet): add owner review packet generator`
+- `9a6428e feat(owner-decision): add review packet approval gate`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-owner-decision-gate-v1`
-- `money-shorts-os-owner-decision-gate-v1-review-fix`
-- `money-shorts-os-owner-decision-gate-v1-review-fix-2`
-- `lib/owner-decision/` 로컬 Owner decision gate 구현
+- `money-shorts-os-clipboard-payload-v1`
+- `money-shorts-os-clipboard-payload-v1-review-fix`
+- `lib/clipboard-payload/` 로컬 clipboard payload 구현
+- `lib/review-packet/` review-fix: `ReviewSocialCopy.hashtags` 보존 추가
 - Codex verification:
-  - ESLint `lib/owner-decision`: PASS
-  - targeted TypeScript diagnostics for `lib/owner-decision`: 0
-  - runtime sample PASS: approved valid gate PASS, pending/revision/rejected FAIL, mismatch FAIL, packet-based default gateResultId PASS, explicit id override PASS, malformed decision FAIL with `unsupported_decision`, QA/risk blocked FAIL, output not created
+  - ESLint `lib/review-packet` + `lib/clipboard-payload`: PASS
+  - targeted TypeScript diagnostics: 0
+  - runtime sample PASS: approved copyReady true, actual hashtags preserved from script package to review packet to clipboard payload, placeholder removed, pending/blocked/mismatch not ready, source/script/caption verbatim preserved, no OS clipboard call, output not created
 
 Source of truth:
 
@@ -54,28 +55,29 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local clipboard payload**
+**MVP 1 — local package view model**
 
 Task ID:
 
-`money-shorts-os-clipboard-payload-v1`
+`money-shorts-os-package-view-model-v1`
 
 목표:
 
-- approved Review Packet + Owner Decision Gate Result를 기반으로 MVP1 UI/clipboard copy workflow가 사용할 copyable payload를 만든다.
-- 실제 OS clipboard 접근, 파일 export, render, upload 없이 데이터 구조만 만든다.
+- future Package Library / Package Detail UI가 사용할 list/detail view model을 로컬 결정론적 모듈로 만든다.
+- 아직 React UI, DB, clipboard, file export, render는 하지 않는다.
 
 포함:
 
-- clipboard payload TypeScript types
-- deterministic review-packet/gate-to-copy-payload helper
-- script narration/caption/social copy/source attribution sections
-- `copyReady` gate
-- blocked/mismatched fixtures
+- package list item / package detail view model TypeScript types
+- deterministic package/review/gate/clipboard-to-view-model helper
+- approved and blocked fixtures
+- source/fact/citation/package id 보존
+- risk/QA/owner decision/copyReady status summary
 - runtime samples
 
 금지:
 
+- Next.js page/component 구현
 - OS clipboard write
 - ffmpeg 실행
 - video/audio/image render

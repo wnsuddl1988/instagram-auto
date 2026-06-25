@@ -71,6 +71,7 @@ export function generateReviewPacket(
     coreMessage: scriptPackage.coreMessage,
     youtubeTitle: scriptPackage.youtubeTitle,
     instagramCaption: scriptPackage.instagramCaption,
+    hashtags: scriptPackage.hashtags,
     hashtagCount: scriptPackage.hashtags.length,
     moneyOsCta: scriptPackage.moneyOsCta,
   };

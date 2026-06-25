@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 84% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet, Owner decision gate 로컬 모듈이 안정화됐다. 다음 단계는 MVP1 clipboard payload다.
+**전체프로젝트 진행률:** 약 85% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet, Owner decision gate, clipboard payload 로컬 모듈이 안정화됐다. 다음 단계는 Package Library / Detail을 위한 local package view model이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -59,6 +59,7 @@
 - Commit: `bfaf5b9` — `feat(content-package): assemble source-first package chain`
 - Commit: `ca3bd36` — `feat(source-facts): add manual fact card authoring`
 - Commit: `538d0d1` — `feat(review-packet): add owner review packet generator`
+- Commit: `9a6428e` — `feat(owner-decision): add review packet approval gate`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -68,29 +69,29 @@
 
 Task:
 
-- `money-shorts-os-owner-decision-gate-v1`
-- `money-shorts-os-owner-decision-gate-v1-review-fix`
-- `money-shorts-os-owner-decision-gate-v1-review-fix-2`
+- `money-shorts-os-clipboard-payload-v1`
+- `money-shorts-os-clipboard-payload-v1-review-fix`
 
 구현:
 
-- `lib/owner-decision/types.ts`
-- `lib/owner-decision/gate.ts`
-- `lib/owner-decision/fixtures.ts`
-- `lib/owner-decision/index.ts`
+- `lib/clipboard-payload/types.ts`
+- `lib/clipboard-payload/builder.ts`
+- `lib/clipboard-payload/fixtures.ts`
+- `lib/clipboard-payload/index.ts`
+- `lib/review-packet/types.ts` review-fix
+- `lib/review-packet/generator.ts` review-fix
 
 검증:
 
-- Owner decision gate ESLint PASS
-- Targeted TypeScript diagnostics: 0 owner-decision errors
+- Clipboard payload + review packet ESLint PASS
+- Targeted TypeScript diagnostics: 0 errors
 - Codex runtime verification PASS:
-  - approved valid review packet -> `canProceedToRender=true` PASS
-  - pending/revision/rejected decisions block PASS
-  - mismatched reviewPacketId blocks PASS
-  - default gateResultId uses packet reviewPacketId PASS
-  - explicit gateResultId override PASS
-  - malformed decision blocks with `unsupported_decision` PASS
-  - QA not ready and risk blocked cases block PASS
+  - approved review packet + owner gate -> `copyReady=true` PASS
+  - actual hashtags preserved from script package to review packet to clipboard payload PASS
+  - placeholder removed PASS
+  - pending/blocked/mismatched payloads not ready PASS
+  - source attribution and script/caption verbatim PASS
+  - no OS clipboard call PASS
   - output file not created PASS
 
 주의:
@@ -118,16 +119,17 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local clipboard payload**
+- **MVP 1 — local package view model**
 
 구현 대상:
 
-- clipboard payload TypeScript types
-- deterministic review-packet/gate-to-copy-payload helper
-- script narration/caption/social copy/source attribution sections
-- `copyReady` gate
-- blocked/mismatched fixtures
+- package list item / package detail view model TypeScript types
+- deterministic package/review/gate/clipboard-to-view-model helper
+- approved and blocked fixtures
+- source/fact/citation/package id 보존
+- risk/QA/owner decision/copyReady status summary
 - runtime samples
+- no React UI
 - no external AI/API
 - no DB migration
 - no video render

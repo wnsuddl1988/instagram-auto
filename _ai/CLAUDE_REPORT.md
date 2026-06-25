@@ -410,6 +410,53 @@ Validation evidence (2026-06-25):
     - T10~T11: approved but QA/risk fail → false ✅
     - T12: output/ 미생성 ✅
 
+## Implemented Clipboard Payload (`money-shorts-os-clipboard-payload-v1`):
+
+- `lib/clipboard-payload/types.ts` — `CLIPBOARD_PAYLOAD_SCHEMA_VERSION`, `CopyBlockerCode` (3종: gate_not_approved/review_packet_id_mismatch/content_package_id_mismatch), `CopyScriptSection`, `CopySourceRef`, `CopyQaRiskWarning`, `ClipboardCopySections`, `ClipboardPayload`, `ClipboardPayloadOptions`
+- `lib/clipboard-payload/builder.ts` — `buildClipboardPayload(packet, gate, options?)`: ReviewPacket + OwnerDecisionGateResult → ClipboardPayload; copyReady=true는 gate.canProceedToRender=true AND reviewPacketId/contentPackageId 모두 일치 시에만; sections=null when not ready; qaRiskWarning 항상 노출; OS clipboard 접근 없음, 외부 호출 없음
+- `lib/clipboard-payload/fixtures.ts` — `approvedClipboardPayload` (copyReady=true), `pendingClipboardPayload` (gate_not_approved), `blockedClipboardPayload` (qa/risk blocked)
+- `lib/clipboard-payload/index.ts` — re-export
+
+**[review-fix: money-shorts-os-clipboard-payload-v1-review-fix — 2026-06-25]**
+- `ReviewSocialCopy`에 `hashtags: string[]` 추가 (`hashtagCount` 유지, hashtags.length와 일치)
+- `generator.ts`: `socialCopy.hashtags = scriptPackage.hashtags` (verbatim)
+- `builder.ts`: `hashtagsText = packet.socialCopy.hashtags.join(" ")` — placeholder 제거
+- `clipboard-payload/types.ts`: hashtagsText 주석 업데이트
+
+Review-fix validation evidence (2026-06-25):
+- TypeScript strict check (lib/review-packet/ + lib/clipboard-payload/): 0 errors ✅
+- ESLint (양 모듈): 0 warnings ✅
+- Runtime sample 14 assertions PASS:
+  - approved gate → copyReady=true ✅
+  - hashtags verbatim (mockHashtags === socialCopy.hashtags) ✅
+  - hashtagCount === hashtags.length ✅
+  - hashtagsText === hashtags.join(" ") = "#소비자물가상승률 #금융쇼츠 #경제지표 #머니쇼츠OS #재테크 #경제공부" ✅
+  - "원본 패키지에서 확인" placeholder 없음 ✅
+  - pending/mismatch → copyReady=false 유지 ✅
+  - sections=null when not ready 유지 ✅
+  - qaRiskWarning always surfaced 유지 ✅
+  - attributionLine format 유지 ✅
+  - OS clipboard 호출 없음 ✅
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/clipboard-payload/): 0 errors ✅
+- ESLint (lib/clipboard-payload/ 4파일): 0 warnings ✅
+- Runtime sample (13 cases, node .cjs, 삭제 완료):
+  - T1: approved gate + valid packet → copyReady=true, sections non-null ✅
+  - T2: pending gate → copyReady=false, gate_not_approved, sections=null ✅
+  - T3: blocked gate (QA/risk fail) → copyReady=false ✅
+  - T4: reviewPacketId mismatch → review_packet_id_mismatch ✅
+  - T5: contentPackageId mismatch → content_package_id_mismatch ✅
+  - T6: title/topic/coreMessage/youtubeTitle/instagramCaption verbatim ✅
+  - T7: script narration/captionTexts verbatim ✅
+  - T8: source attribution citationId/sourceUrl 보존, attributionLine 정확 ✅
+  - T9: 전체 linkage ids (factCardIds/sourceCitationIds/blueprintVideoId/scriptPackageId/gateResultId) 보존 ✅
+  - T10: qaRiskWarning always surfaced (copyReady=true에서도, blocked에서도) ✅
+  - T11: default clipboardPayloadId = "cp-payload-{reviewPacketId}" ✅
+  - T12: no OS clipboard call (navigator.clipboard 없음) ✅
+  - T13: output/ 미생성 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

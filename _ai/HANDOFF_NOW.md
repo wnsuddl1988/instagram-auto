@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-clipboard-payload-v1`
+`money-shorts-os-package-view-model-v1`
 
 ## Current State
 
@@ -12,9 +12,9 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint: `538d0d1 feat(review-packet): add owner review packet generator`
-- Latest completed local module: `lib/owner-decision/`
-- Owner Decision Gate v1 passed Codex review after review-fix and review-fix-2.
+- Latest completed checkpoint: `9a6428e feat(owner-decision): add review packet approval gate`
+- Latest completed local module: `lib/clipboard-payload/`
+- Clipboard Payload v1 passed Codex review after hashtag preservation review-fix.
 
 Active local modules:
 
@@ -31,53 +31,60 @@ Active local modules:
 - `lib/content-package/`
 - `lib/review-packet/`
 - `lib/owner-decision/`
+- `lib/clipboard-payload/`
 
 ## Goal
 
-Create a local deterministic clipboard payload module for MVP1 copy workflows.
+Create a local deterministic Package Library / Package Detail view-model module.
 
-MVP1 is clipboard-centered and file export is later. This module must prepare copyable text sections from an approved `ReviewPacket` + `OwnerDecisionGateResult` without touching the OS clipboard, writing files, rendering, exporting, or calling external services.
+This should prepare UI-friendly data from existing source-first package objects without building React UI yet, without DB writes, without file export, and without external calls. It is a bridge between the completed local package pipeline and future MVP1 screens.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/clipboard-payload/`.
-- Define clipboard payload types.
-- Implement deterministic helper(s) that accept a `ReviewPacket` and `OwnerDecisionGateResult`.
-- Preserve reviewPacketId/contentPackageId/factCardIds/sourceCitationIds/package ids.
-- Expose copy sections for:
-  - title/topic/core message
-  - script narration by duration
-  - caption text by duration
-  - YouTube title
-  - Instagram caption
-  - hashtags
-  - Money-OS CTA when present
-  - source/citation attribution block
-  - QA/risk warning summary for Owner visibility
-- Return `copyReady=true` only when:
-  - `gate.canProceedToRender=true`
-  - `gate.reviewPacketId === packet.reviewPacketId`
-  - `gate.contentPackageId === packet.contentPackageId`
-- Return `copyReady=false` with blocker codes/reasons when the gate is not approved or linkage mismatches.
-- Add valid approved and blocked fixtures using existing review packet and owner decision gate fixtures.
+- Add a new local module under `lib/package-view/`.
+- Define view-model types for:
+  - package list item
+  - package detail model
+  - package workflow/status summary
+  - copy/action availability summary
+- Implement deterministic helper(s) that accept existing local objects such as:
+  - `AssembledContentPackage`
+  - `ReviewPacket`
+  - `OwnerDecisionGateResult`
+  - `ClipboardPayload`
+- Preserve ids and source linkage.
+- Surface key fields for future UI:
+  - package/content ids
+  - topic/title/coreMessage
+  - source name/url/date
+  - factCard indicator/currentValue/dataPeriod
+  - risk level and blocked flag
+  - final QA readiness
+  - owner decision and gate status
+  - copyReady and clipboard payload id
+  - render manifest id and timeline id
+  - compact counts: scenes, scripts, sources, hashtags
+- Add approved and blocked/not-ready fixtures using existing package/review/gate/clipboard fixtures.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/clipboard-payload/types.ts`
-- `lib/clipboard-payload/builder.ts`
-- `lib/clipboard-payload/fixtures.ts`
-- `lib/clipboard-payload/index.ts`
+- `lib/package-view/types.ts`
+- `lib/package-view/builder.ts`
+- `lib/package-view/fixtures.ts`
+- `lib/package-view/index.ts`
 
 Optional only if useful:
 
-- `lib/clipboard-payload/validation.ts`
+- `lib/package-view/validation.ts`
 
 ## Required Behavior
 
 - Deterministic: no `new Date()` unless `createdAt` is injected by options.
+- No React/UI implementation yet.
+- No DB reads/writes.
 - No OS clipboard access.
 - No file export/write.
 - No render.
@@ -85,12 +92,12 @@ Optional only if useful:
 - No external calls.
 - No AI generation.
 - No new facts, numbers, claims, citations, narration, captions, hashtags, or CTA text.
-- All copy text must come from `ReviewPacket` fields verbatim, except for simple section labels/metadata.
-- Broken/not-approved gate must not produce `copyReady=true`.
-- Linkage mismatch between packet and gate must block copy readiness.
+- All display text must come from existing package/review/clipboard fields verbatim, except for simple status labels/codes.
+- Blocked/not-approved packages must be clearly surfaced as not copy/render ready.
 
 ## Forbidden
 
+- No Next.js page/component implementation in this task.
 - No `navigator.clipboard`, clipboardy, PowerShell clipboard, pbcopy, clip.exe, or OS clipboard writes.
 - No ffmpeg execution.
 - No video/audio/image rendering.
@@ -112,24 +119,21 @@ Optional only if useful:
 
 Run focused checks only:
 
-- ESLint for `lib/clipboard-payload/`
-- TypeScript check targeted to `lib/clipboard-payload/` or source-first modules
+- ESLint for `lib/package-view/`
+- TypeScript check targeted to `lib/package-view/` or source-first modules
 - Runtime/sample check that verifies:
-  - approved gate + valid review packet returns `copyReady=true`
-  - pending/rejected/revision/not-ready gate returns `copyReady=false`
-  - malformed/unsupported gate blocker remains surfaced if present
-  - reviewPacketId mismatch returns `copyReady=false`
-  - contentPackageId mismatch returns `copyReady=false`
-  - all copy text comes from the review packet verbatim
-  - source attribution block preserves source URL/citation id
-  - no OS clipboard call is made
-  - no output file is created
+  - approved package produces list item and detail model
+  - blocked/not-ready package surfaces non-ready status
+  - source/fact/citation/package ids are preserved
+  - copyReady mirrors `ClipboardPayload.copyReady`
+  - owner decision/gate blockers are surfaced
+  - hashtags count/text source is preserved from clipboard/review data
+  - no React/UI, DB, clipboard, file export, render, or output action occurs
 
 ## Definition of Done
 
-- Clipboard payload module exports clear local types and deterministic helper(s).
-- Approved review packet produces copyable sections for MVP1 copy workflows.
-- Blocked/mismatched packets fail readiness clearly.
+- Package view-model module exports clear local types and deterministic helper(s).
+- Approved and blocked fixtures produce expected UI-ready models.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -140,4 +144,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise clipboard payload evidence because this creates the MVP1 copy workflow layer.
+- Update `_ai/CLAUDE_REPORT.md` with concise package view-model evidence because this prepares the future MVP1 package library/detail UI.
