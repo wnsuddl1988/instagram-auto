@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-content-package-assembler-v1`
+`money-shorts-os-manual-fact-card-authoring-v1`
 
 ## Current State
 
@@ -12,8 +12,8 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local module: `lib/final-qa/`
-- Final QA review-fix-2 passed Codex verification and is ready for local checkpoint commit.
+- Latest completed local module: `lib/content-package/`
+- Content Package Assembler review-fix-2 passed Codex verification and is ready for local checkpoint commit.
 
 Active local modules:
 
@@ -27,75 +27,58 @@ Active local modules:
 - `lib/timeline/`
 - `lib/render-plan/`
 - `lib/final-qa/`
+- `lib/content-package/`
 
 ## Goal
 
-Create a local deterministic content package assembler that wires the existing source-first modules into one package object for a single mock short.
+Create a local manual Fact Card authoring helper so an Owner-provided source/fact draft can be converted into a validated `FactCard` without external APIs.
 
-This is a local orchestration/data module only. It should not call external APIs, generate new facts, execute render commands, create media files, or touch `output/`.
-
-The assembler should answer: "Given an existing valid Fact Card and local options, can we build a linked package chain from Fact Card through Final QA using existing local modules?"
+This is the safe local input layer before future DB/UI work. It should not fetch sources, call AI, scrape webpages, or infer missing facts.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/content-package/`.
-- Define package/result types that group the existing module outputs:
-  - Fact Card
-  - Video Blueprint
-  - Script Package
-  - Risk Review
-  - Chart Card Package
-  - Image Prompt Package
-  - Voice/TTS Package
-  - Recalculated Timeline
-  - Render Manifest
-  - Final QA Result
-- Implement deterministic helper(s) that call existing local generators/validators.
-- Use mock/measured audio duration passed in by options or fixture data; do not measure files.
-- Add fixtures using existing mock Fact Cards.
-- Add validation/helper output that preserves source/fact/citation linkage.
+- Extend `lib/source-facts/` with a small local authoring/draft helper.
+- Define a manual draft/input type if useful.
+- Implement deterministic helper(s) that convert explicit Owner-provided fields into a `FactCard`.
+- Add validation that catches missing source/citation/current value/data period/allowed claims/caution note.
+- Add fixtures showing one valid manual draft and one broken draft.
+- Update `lib/source-facts/index.ts` exports.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/content-package/types.ts`
-- `lib/content-package/assembler.ts`
-- `lib/content-package/fixtures.ts`
-- `lib/content-package/index.ts`
+- `lib/source-facts/manual.ts`
+- `lib/source-facts/manual-fixtures.ts`
 
 Optional only if useful:
 
-- `lib/content-package/validation.ts`
+- small additions to `lib/source-facts/types.ts`
+- small additions to `lib/source-facts/validation.ts`
 
 ## Required Behavior
 
 - Deterministic: no `new Date()` unless `createdAt` is injected by options.
 - No external calls.
 - No AI generation.
-- No media file probing.
-- No ffmpeg execution.
-- No render.
-- No output file creation.
+- No source scraping.
+- No URL fetching.
+- No DB writes.
 - No dependency changes.
-- No new facts, numbers, captions, narration, or source references beyond existing local module outputs.
-- Final QA should be run on the assembled package.
+- Do not invent missing numbers, dates, source names, source URLs, claims, or citations.
+- The helper should refuse or validation-fail incomplete input rather than filling facts creatively.
 
-At minimum, the assembled package should expose:
+At minimum, helper output should preserve:
 
-- stable package id
-- source Fact Card id(s)
-- source citation id(s)
-- blueprint id
-- script package id
-- risk review result
-- chart card package id
-- image prompt package id
-- tts package id
-- timeline id
-- render manifest id
-- final QA result
+- fact card id
+- source provider/name/url
+- published date and data period
+- indicator name/category
+- current/previous/change values exactly as provided
+- citations
+- allowed claims and blocked claims
+- caution note and interpretation
 
 ## Forbidden
 
@@ -119,19 +102,21 @@ At minimum, the assembled package should expose:
 
 Run focused checks only:
 
-- ESLint for `lib/content-package/`
-- TypeScript check targeted to `lib/content-package/` or source-first modules
+- ESLint for touched `lib/source-facts/` files
+- TypeScript check targeted to `lib/source-facts/` or source-first modules
 - Runtime/sample check that verifies:
-  - a valid mock Fact Card assembles into a package with `finalQa.readyForRender=true`
-  - source/fact/citation ids are preserved across package summary fields
-  - risk-blocked package or broken linkage causes final QA failure if such fixture is included
+  - valid manual draft becomes a valid `FactCard`
+  - missing citation/source/current value fails validation
+  - no generated value is invented for missing fields
+  - resulting manual Fact Card can be passed into `assembleContentPackage` with mock measured duration and returns `finalQa.readyForRender=true`
   - no command is executed and no files are created
 
 ## Definition of Done
 
-- Content package module exports clear local types and deterministic assembler helper(s).
-- Valid existing mock package chain can be assembled end-to-end through Final QA.
-- Linkage ids are preserved and exposed in the package summary.
+- Manual Fact Card authoring helper is exported from `lib/source-facts/`.
+- Valid manual draft produces a valid source-linked Fact Card.
+- Broken manual draft fails with useful codes/messages.
+- The generated Fact Card can flow into the existing content package assembler.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -142,4 +127,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise content-package implementation evidence because this crosses multiple local module contracts.
+- Update `_ai/CLAUDE_REPORT.md` with concise manual Fact Card authoring evidence because this creates the local input layer for the source-first pipeline.

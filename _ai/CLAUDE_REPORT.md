@@ -255,6 +255,50 @@ Validation evidence (2026-06-25):
     - Case 8: renderManifestTimelineId="wrong-timeline" → render_timeline_id_mismatch, readyForRender=false ✅
     - Case 9: blocked risk → readyForRender=false, isRiskBlocked=true ✅
 
+## Implemented Content Package Assembler (`money-shorts-os-content-package-assembler-v1`):
+
+- `lib/content-package/types.ts` — `CONTENT_PACKAGE_SCHEMA_VERSION`, `ContentPackageSummary` (전체 linkage id 노출), `AssembledContentPackage` (Fact Card → Final QA 전체 모듈 연결), `AssemblerOptions` (measuredAudioDurationSec 주입 필수)
+- `lib/content-package/assembler.ts` — `assembleContentPackage(factCard, blueprintOptions, options)`: 10단계 결정론적 orchestration; Blueprint → Script → Risk → ChartCard → ImagePrompt → VoiceProfile → TTS → Timeline → RenderManifest → FinalQA; 외부 호출 없음, 미디어 생성 없음
+- `lib/content-package/fixtures.ts` — `inflationContentPackage30` (inflation Fact Card 기반, measuredAudioDurationSec=28.4 mock 주입)
+- `lib/content-package/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/content-package/): 0 errors ✅
+- ESLint (lib/content-package/): 0 warnings ✅
+- Runtime sample (5 cases, node .cjs, 삭제 완료):
+  - T1: valid assembled package → readyForRender=true ✅
+  - T2: 전체 linkage id (factCardId/citationId/blueprintId/scriptPackageId/timelineId/renderManifestId/ttsPackageId/chartCardPackageId/imagePromptPackageId/voiceProfileId) summary에 보존 ✅
+  - T3: scriptPackageId 불일치 → script_package_id_mismatch, readyForRender=false ✅
+  - T4: renderManifestSourceId 불일치 → render_source_id_mismatch, readyForRender=false ✅
+  - T5: output file 미생성 확인 ✅
+- **[review-fix]** `assembler.ts`: `generateChartCardPackage(blueprint, scriptPackage, ...)` → `generateChartCardPackage(factCard, blueprint, ...)` 수정 (TS2345 blocker 해소)
+  - TypeScript strict check: 0 errors ✅
+  - ESLint: 0 warnings ✅
+  - Runtime sample (6 cases, node .cjs, 삭제 완료):
+    - T1: chartCardPackage.factCardId === factCard.id ("fact-card-mock-inflation-cpi") ✅
+    - T2: valid assembled package → readyForRender=true ✅
+    - T3: 전체 linkage id summary에 보존 ✅
+    - T4: scriptPackageId mismatch → script_package_id_mismatch, readyForRender=false ✅
+    - T5: renderManifestSourceId mismatch → render_source_id_mismatch, readyForRender=false ✅
+    - T6: output/ 미생성 확인 ✅
+- **[review-fix-2]** `assembler.ts`: blueprint 먼저 생성 후 `idBase = blueprint.videoId` 기반으로 모든 downstream id 파생 — `blueprintOptions.videoId` 생략 시 `"*-undefined"` 방지
+  - 수정 범위: `contentPackageId`, `scriptPackageId`, `chartCardPackageId`, `imagePromptPackageId`, `ttsPackageId`, `timelineId`, `renderManifestId` 전부 `idBase` 사용으로 통일
+  - TypeScript strict check: 0 errors ✅
+  - ESLint: 0 warnings ✅
+  - Runtime sample (11 cases, node .cjs, 삭제 완료):
+    - T1: explicit videoId → 기존 ids 불변 ("bp-mock-inflation-cp-30s" 기반) ✅
+    - T2: omitted videoId → 어떤 id에도 "undefined" 없음 ✅
+    - T3: omitted videoId → blueprintVideoId = "bp-fact-card-mock-inflation-cpi-30s" ✅
+    - T4: omitted videoId → contentPackageId = "cp-bp-fact-card-mock-inflation-cpi-30s" ✅
+    - T5: omitted videoId → 모든 downstream id가 blueprintVideoId 기반으로 일관 ✅
+    - T6: omitted videoId → QA readyForRender=true ✅
+    - T7: chartCardPackage.factCardId === factCard.id ✅
+    - T8: linkage ids preserved in summary ✅
+    - T9: scriptPackageId mismatch → readyForRender=false ✅
+    - T10: renderManifestSourceId mismatch → readyForRender=false ✅
+    - T11: output/ 미생성 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Final QA checkpoint 준비 완료
+## 2026-06-25 현재 — Content Package checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -24,19 +24,20 @@ Owner 결정:
 - `55f4a9b feat(voice-profiles): add local tts script formatter`
 - `14f3c53 feat(timeline): add local timeline recalculation`
 - `90fcaa6 feat(render-plan): add local ffmpeg manifest planner`
-- final-qa checkpoint: Codex-reviewed and ready for local commit
+- `4256173 feat(final-qa): add source-first package readiness checks`
+- content-package checkpoint: Codex-reviewed and ready for local commit
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-final-qa-model-v1`
-- `money-shorts-os-final-qa-model-v1-review-fix`
-- `money-shorts-os-final-qa-model-v1-review-fix-2`
-- `lib/final-qa/` 로컬 final QA model/checklist runner 구현
+- `money-shorts-os-content-package-assembler-v1`
+- `money-shorts-os-content-package-assembler-v1-review-fix`
+- `money-shorts-os-content-package-assembler-v1-review-fix-2`
+- `lib/content-package/` 로컬 content package assembler 구현
 - Codex verification:
-  - source-first final-qa TypeScript diagnostics: 0
-  - ESLint `lib/final-qa`: PASS
-  - runtime sample: valid chain PASS, source id mismatch FAIL, render source/fact/citation mismatch FAIL, timeline fact/citation mismatch FAIL, render timeline mismatch FAIL, blocked risk FAIL
+  - source-first content-package TypeScript diagnostics: 0
+  - ESLint `lib/content-package`: PASS
+  - runtime sample: explicit videoId package PASS, omitted videoId non-undefined ids PASS, chart Fact Card linkage PASS, summary linkage preserved PASS, Final QA mismatch failures PASS, output not created PASS
 
 Source of truth:
 
@@ -51,25 +52,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local content package assembler**
+**MVP 1 — local manual Fact Card authoring helper**
 
 Task ID:
 
-`money-shorts-os-content-package-assembler-v1`
+`money-shorts-os-manual-fact-card-authoring-v1`
 
 목표:
 
-- 기존 source-first 로컬 모듈을 하나의 package object로 묶는다.
-- 실제 렌더 없이 Fact Card부터 Final QA까지 연결된 mock package chain을 생성한다.
+- Owner가 수동으로 제공한 출처/숫자/해석 초안을 외부 호출 없이 validated `FactCard`로 변환한다.
+- 향후 DB/UI 전에 로컬 입력 계층을 만든다.
 
 포함:
 
-- content package TypeScript types
-- deterministic assembler helper
-- existing module generator/validator orchestration
-- source/fact/citation/package id summary
-- final QA result 포함
-- lightweight fixtures and runtime samples
+- manual Fact Card draft/input type
+- deterministic draft-to-FactCard helper
+- missing source/citation/value validation
+- valid/broken fixtures
+- existing content package assembler로 연결되는 runtime sample
 
 금지:
 
