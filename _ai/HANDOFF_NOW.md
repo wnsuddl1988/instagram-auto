@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-package-view-model-v1`
+`money-shorts-os-package-library-ui-v1`
 
 ## Current State
 
@@ -12,11 +12,12 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint: `9a6428e feat(owner-decision): add review packet approval gate`
-- Latest completed local module: `lib/clipboard-payload/`
-- Clipboard Payload v1 passed Codex review after hashtag preservation review-fix.
+- Latest completed checkpoint before package-view: `07444ad feat(clipboard-payload): add copy workflow payload builder`
+- Latest completed local module: `lib/package-view/`
+- Package View Model v1 and review-fix-2 passed Codex review.
+- Next work should start from local view models/fixtures only. No DB/API/render pipeline integration yet.
 
-Active local modules:
+Active local source-first modules:
 
 - `lib/source-facts/`
 - `lib/blueprints/`
@@ -32,72 +33,58 @@ Active local modules:
 - `lib/review-packet/`
 - `lib/owner-decision/`
 - `lib/clipboard-payload/`
+- `lib/package-view/`
 
 ## Goal
 
-Create a local deterministic Package Library / Package Detail view-model module.
+Build the first local Package Library / Package Detail UI for Money Shorts OS using only existing `lib/package-view/` fixtures and view models.
 
-This should prepare UI-friendly data from existing source-first package objects without building React UI yet, without DB writes, without file export, and without external calls. It is a bridge between the completed local package pipeline and future MVP1 screens.
+This is a local UI shell for Owner review and workflow inspection. It must not call APIs, DB, AI, render, clipboard, upload, or external services.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/package-view/`.
-- Define view-model types for:
-  - package list item
-  - package detail model
-  - package workflow/status summary
-  - copy/action availability summary
-- Implement deterministic helper(s) that accept existing local objects such as:
-  - `AssembledContentPackage`
-  - `ReviewPacket`
-  - `OwnerDecisionGateResult`
-  - `ClipboardPayload`
-- Preserve ids and source linkage.
-- Surface key fields for future UI:
-  - package/content ids
-  - topic/title/coreMessage
-  - source name/url/date
-  - factCard indicator/currentValue/dataPeriod
-  - risk level and blocked flag
-  - final QA readiness
-  - owner decision and gate status
-  - copyReady and clipboard payload id
-  - render manifest id and timeline id
-  - compact counts: scenes, scripts, sources, hashtags
-- Add approved and blocked/not-ready fixtures using existing package/review/gate/clipboard fixtures.
+- Inspect existing App Router UI conventions in `app/`, `components/`, and `app/globals.css`.
+- Add a new local route under `app/packages/`.
+- Add route-local components if useful, for example:
+  - `app/packages/page.tsx`
+  - `app/packages/PackageLibraryClient.tsx`
+- Use data from `lib/package-view/fixtures.ts` only.
+- Render a usable MVP1 UI with:
+  - package list items
+  - selected package detail
+  - workflow status
+  - risk and QA summaries
+  - source/fact card summary
+  - social copy preview
+  - copy action summary with blocker labels
+  - approved, pending/no-gate, rejected, and blocked fixture states
+- Use existing dependencies only, including `lucide-react` icons if helpful.
+- Keep styling consistent with the existing dark dashboard style, but make the screen practical and scan-friendly.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
-Suggested files:
-
-- `lib/package-view/types.ts`
-- `lib/package-view/builder.ts`
-- `lib/package-view/fixtures.ts`
-- `lib/package-view/index.ts`
-
-Optional only if useful:
-
-- `lib/package-view/validation.ts`
+Do not broaden beyond local fixture-driven UI.
 
 ## Required Behavior
 
-- Deterministic: no `new Date()` unless `createdAt` is injected by options.
-- No React/UI implementation yet.
-- No DB reads/writes.
-- No OS clipboard access.
-- No file export/write.
-- No render.
-- No output file creation.
-- No external calls.
-- No AI generation.
-- No new facts, numbers, claims, citations, narration, captions, hashtags, or CTA text.
-- All display text must come from existing package/review/clipboard fields verbatim, except for simple status labels/codes.
-- Blocked/not-approved packages must be clearly surfaced as not copy/render ready.
+- The UI must be reachable at `/packages`.
+- The first screen must be the actual package workflow UI, not a marketing landing page.
+- No server/API fetch is allowed. Import local fixtures directly.
+- No OS clipboard write is allowed. Copy buttons may be disabled, informational, or marked as not executed in this task.
+- Package status must clearly distinguish:
+  - approved/copy-ready
+  - pending/no-gate
+  - rejected
+  - approved-but-blocked
+- Blocker labels must be visible when copy/render is not ready.
+- Hashtags and social copy must come verbatim from package-view data.
+- Source URLs may be shown as text or links, but do not fetch them.
+- Text must fit on desktop and mobile without overlap.
+- Keep the UI dense and operational, not hero/marketing style.
 
 ## Forbidden
 
-- No Next.js page/component implementation in this task.
 - No `navigator.clipboard`, clipboardy, PowerShell clipboard, pbcopy, clip.exe, or OS clipboard writes.
 - No ffmpeg execution.
 - No video/audio/image rendering.
@@ -105,11 +92,12 @@ Optional only if useful:
 - No ElevenLabs call.
 - No OpenAI/GPT/Gemini/Veo call.
 - No external API calls.
+- No API route changes.
+- No DB/Supabase reads, writes, migrations, or production data changes.
 - No API key/env/secret changes.
-- No Supabase migration or production DB changes.
 - No dependency or lockfile changes.
 - No payment integration.
-- No upload/post.
+- No upload/post/deploy.
 - No git push.
 - No commit unless Codex explicitly authorizes it later.
 - Do not touch `output/`.
@@ -117,24 +105,23 @@ Optional only if useful:
 
 ## Required Checks
 
-Run focused checks only:
+Run focused checks:
 
-- ESLint for `lib/package-view/`
-- TypeScript check targeted to `lib/package-view/` or source-first modules
-- Runtime/sample check that verifies:
-  - approved package produces list item and detail model
-  - blocked/not-ready package surfaces non-ready status
-  - source/fact/citation/package ids are preserved
-  - copyReady mirrors `ClipboardPayload.copyReady`
-  - owner decision/gate blockers are surfaced
-  - hashtags count/text source is preserved from clipboard/review data
-  - no React/UI, DB, clipboard, file export, render, or output action occurs
+- ESLint for changed UI files and `lib/package-view/` if imported types are adjusted.
+- TypeScript check targeted to changed files, or full `pnpm exec tsc --noEmit --pretty false` with clear note if it only fails on pre-existing `output/` binary `.ts` files.
+- Search changed UI files for forbidden calls:
+  - clipboard APIs
+  - `fetch(`
+  - API route calls
+  - ffmpeg/render/upload/post/deploy references
+- If practical, run a local dev server and verify `/packages` visually with a browser/screenshot. Stop the server afterward and report the URL used.
 
 ## Definition of Done
 
-- Package view-model module exports clear local types and deterministic helper(s).
-- Approved and blocked fixtures produce expected UI-ready models.
-- Focused checks pass.
+- `/packages` route renders the local package workflow UI from fixtures.
+- Approved, pending/no-gate, rejected, and blocked states are visible and distinguishable.
+- No external/clipboard/render/DB/API action occurs.
+- Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
@@ -144,4 +131,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise package view-model evidence because this prepares the future MVP1 package library/detail UI.
+- Update `_ai/CLAUDE_REPORT.md` with concise package library UI evidence because this starts the Owner-facing MVP1 workflow surface.

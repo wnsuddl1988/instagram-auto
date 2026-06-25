@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 85% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet, Owner decision gate, clipboard payload 로컬 모듈이 안정화됐다. 다음 단계는 Package Library / Detail을 위한 local package view model이다.
+**전체프로젝트 진행률:** 약 87% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library / Detail view model까지 로컬 source-first workflow가 안정화됐다. 다음 단계는 이 view model을 Owner가 볼 수 있는 `/packages` 로컬 UI로 연결하는 것이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -60,6 +60,8 @@
 - Commit: `ca3bd36` — `feat(source-facts): add manual fact card authoring`
 - Commit: `538d0d1` — `feat(review-packet): add owner review packet generator`
 - Commit: `9a6428e` — `feat(owner-decision): add review packet approval gate`
+- Commit: `07444ad` — `feat(clipboard-payload): add copy workflow payload builder`
+- Package View Model checkpoint: current safe checkpoint after Codex review
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -69,30 +71,35 @@
 
 Task:
 
-- `money-shorts-os-clipboard-payload-v1`
-- `money-shorts-os-clipboard-payload-v1-review-fix`
+- `money-shorts-os-package-view-model-v1`
+- `money-shorts-os-package-view-model-v1-review-fix`
+- `money-shorts-os-package-view-model-v1-review-fix-2`
 
 구현:
 
-- `lib/clipboard-payload/types.ts`
-- `lib/clipboard-payload/builder.ts`
-- `lib/clipboard-payload/fixtures.ts`
-- `lib/clipboard-payload/index.ts`
-- `lib/review-packet/types.ts` review-fix
-- `lib/review-packet/generator.ts` review-fix
+- `lib/package-view/types.ts`
+- `lib/package-view/builder.ts`
+- `lib/package-view/fixtures.ts`
+- `lib/package-view/index.ts`
 
 검증:
 
-- Clipboard payload + review packet ESLint PASS
-- Targeted TypeScript diagnostics: 0 errors
-- Codex runtime verification PASS:
-  - approved review packet + owner gate -> `copyReady=true` PASS
-  - actual hashtags preserved from script package to review packet to clipboard payload PASS
-  - placeholder removed PASS
-  - pending/blocked/mismatched payloads not ready PASS
-  - source attribution and script/caption verbatim PASS
-  - no OS clipboard call PASS
-  - output file not created PASS
+- ESLint `lib/package-view/`: PASS
+- Targeted TypeScript diagnostics for `lib/package-view/`: 0 errors
+- Runtime verification PASS:
+  - approved copy action: `copyReady=true`, `blockerLabels=[]`
+  - pending gate result: `"결정 미완료"` blocker label
+  - rejected gate result: `"반려됨"` blocker label
+  - approved-but-blocked: `"QA 미통과"` and `"위험 항목 차단"` labels
+  - no-gate/no-clipboard initial state: synthetic `"결정 미완료"` label
+  - no-gate workflow/list item remains `gateStatus="pending"`
+  - hashtags text preserved from review/clipboard payload data
+  - `_verify.ts` absent
+- Forbidden-pattern search PASS:
+  - no OS clipboard
+  - no React UI in package-view
+  - no fetch/API/render/ffmpeg/output write
+- Full `pnpm exec tsc --noEmit --pretty false` remains blocked only by pre-existing `output/` binary `.ts` files.
 
 주의:
 
@@ -119,25 +126,17 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local package view model**
+- **MVP 1 — local Package Library / Detail UI**
 
 구현 대상:
 
-- package list item / package detail view model TypeScript types
-- deterministic package/review/gate/clipboard-to-view-model helper
-- approved and blocked fixtures
-- source/fact/citation/package id 보존
-- risk/QA/owner decision/copyReady status summary
-- runtime samples
-- no React UI
-- no external AI/API
-- no DB migration
-- no video render
-- no ElevenLabs/TTS live call or real audio measurement
-- no ffmpeg execution
-- no OS clipboard write
-- no file export
-- no payment/deploy/upload/post/push
+- `/packages` route
+- local package list/detail/workflow/copy action UI
+- `lib/package-view/fixtures.ts` 기반 approved, pending/no-gate, rejected, blocked states
+- source/fact/citation/package id 보존 표시
+- risk/QA/owner decision/copyReady status 표시
+- social copy/hashtags/source refs verbatim 표시
+- responsive dark dashboard layout
 
 금지:
 
@@ -146,3 +145,6 @@ Task:
 - Jun/준/시트콤/복사기/upload_002/ep003/3d_sitcom reference 사용
 - 생활꿀팁/EP001/old Money Architect 기존 주제 재개
 - upload/post/push/deploy/env/DB/dependency 변경
+- API route 변경
+- OS clipboard write
+- ffmpeg/render/output 변경

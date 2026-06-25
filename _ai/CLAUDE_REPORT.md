@@ -457,6 +457,64 @@ Validation evidence (2026-06-25):
   - T12: no OS clipboard call (navigator.clipboard 없음) ✅
   - T13: output/ 미생성 ✅
 
+## Implemented Package View Model (`money-shorts-os-package-view-model-v1`):
+
+- `lib/package-view/types.ts` — `PACKAGE_VIEW_SCHEMA_VERSION`, `PackageGateStatus` (5종: approved/pending/rejected/revision_requested/approved_but_blocked), `PackageViewRiskSummary`, `PackageViewQaSummary`, `PackageViewSourceRef`, `PackageViewFactCard`, `PackageViewCounts`, `PackageListItem` (라이브러리 행 view model), `PackageDetailModel` (상세 view model), `PackageWorkflowStatus`, `PackageCopyActionSummary`, `PackageViewInputs`, `PackageViewBuilderOptions`
+- `lib/package-view/builder.ts` — `buildPackageListItem`, `buildPackageDetailModel`, `buildPackageWorkflowStatus`, `buildPackageCopyActionSummary`: 모두 결정론적, `new Date()` 없음, OS clipboard 없음, 외부 호출 없음; 텍스트 필드는 기존 ReviewPacket/GateResult/ClipboardPayload 필드에서 verbatim 추출; `hashtagsText = hashtags.join(" ")` 형태로 결합
+- `lib/package-view/fixtures.ts` — 기존 모듈 fixture 조합: `approvedListItem`/`approvedDetailModel`/`approvedWorkflowStatus`/`approvedCopyActionSummary` (copy-ready), `pendingListItem`/`pendingDetailModel`/`pendingCopyActionSummary` (gate 미결정), `rejectedListItem`/`rejectedDetailModel`/`rejectedCopyActionSummary` (반려), `blockedListItem`/`blockedDetailModel`/`blockedCopyActionSummary` (QA/risk 차단)
+- `lib/package-view/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- ESLint (lib/package-view/): 0 warnings ✅
+- TypeScript targeted check (lib/package-view/ — full tsc, 0 errors in package-view files): ✅
+- Runtime verification (42/42 PASS, npx tsx):
+  - approved: gateStatus=approved, copyReady=true, qaReady=true, riskBlocked=false ✅
+  - contentPackageId/reviewPacketId 보존 ✅
+  - canProceedToRender=true, gateBlockerCodes=[], copyBlockerCodes=[] ✅
+  - hashtagsText non-empty, starts with "#" ✅
+  - counts.scenes/scripts/sources/hashtags > 0 ✅
+  - clipboardPayloadId/gateResultId non-null ✅
+  - factCardId/sourceRefs 보존 ✅
+  - copyReady mirrors ClipboardPayload ✅
+  - WorkflowStatus: hasClipboardPayload=true, hasGateResult=true, canProceedToRender=true ✅
+  - CopyActionSummary: approved copyReady=true, blockerLabels=[] ✅
+  - pending: gateStatus=pending, copyReady=false, canProceedToRender=false ✅
+  - rejected: gateStatus=rejected, copyReady=false, clipboardPayloadId=null ✅
+  - blocked: gateStatus=approved_but_blocked, riskBlocked=true, qa.readyForRender=false, risk.isBlocked=true, canProceedToRender=false ✅
+  - blocked CopyActionSummary: copyReady=false, blockerLabels non-empty ✅
+  - no navigator/OS clipboard reference, no new Date() in builder ✅
+
+**[review-fix: money-shorts-os-package-view-model-v1-review-fix — 2026-06-25]**
+
+- `builder.ts`: `buildPackageCopyActionSummary()` — `gateResult.blockerCodes` + `clipboardPayload.blockerCodes` 병합 후 Set de-duplicate; copyReady=true 시 blockerLabels=[] 유지; `unsupported_decision` 라벨 추가
+- `fixtures.ts`: `pendingCopyActionSummary`, `rejectedCopyActionSummary` 추가
+- `_verify.ts` 삭제 (임시 검증 파일, 비배포 — 런타임 증거는 CLAUDE_REPORT에 보존)
+
+Review-fix validation evidence (2026-06-25, 19/19 PASS, npx tsx):
+- approved CopyActionSummary: copyReady=true, blockerLabels=[] ✅
+- pending CopyActionSummary: copyReady=false, blockerLabels=["결정 미완료"] ✅
+- rejected CopyActionSummary: copyReady=false, blockerLabels=["반려됨"] ✅
+- blocked CopyActionSummary: copyReady=false, QA/risk 구체 라벨 포함("QA 미통과"/"위험 항목 차단") ✅
+- approved gateBlockerCodes=[], copyBlockerCodes=[] 유지 ✅
+- blocked gateBlockerCodes non-empty 유지 ✅
+- contentPackageId/copyReady/hashtagsText/counts 동작 유지 ✅
+- _verify.ts 파일 부재 확인 ✅
+
+**[review-fix-2: money-shorts-os-package-view-model-v1-review-fix-2 — 2026-06-25]**
+
+- `builder.ts`: `buildPackageCopyActionSummary()` — `gateResult === null && copyReady === false && allCodes.length === 0` 조건에서 `decision_pending` 합성하여 pending blocker 라벨 추가
+- `fixtures.ts`: `noGateInputs` (gateResult=null, clipboardPayload=null), `noGateListItem`, `noGateCopyActionSummary`, `noGateWorkflowStatus` 추가
+
+Review-fix-2 validation evidence (2026-06-25, 7/7 PASS, npx tsx):
+- approved CopyActionSummary: copyReady=true, blockerLabels=[] 유지 ✅
+- pending gate result CopyActionSummary: blockerLabels non-empty ✅
+- rejected CopyActionSummary: blockerLabels non-empty ✅
+- blocked CopyActionSummary: QA/risk 구체 라벨 포함 ✅
+- no-gate/no-clipboard CopyActionSummary: copyReady=false, blockerLabels=["결정 미완료"] (synthetic) ✅
+- no-gate WorkflowStatus: hasGateResult=false, gateStatus=pending ✅
+- no-gate ListItem: gateStatus=pending ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

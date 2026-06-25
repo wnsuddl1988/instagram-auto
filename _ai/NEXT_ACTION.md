@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Clipboard Payload 완료, Package View Model 준비
+## 2026-06-25 현재 — Package View Model 완료, Package Library UI 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -29,18 +29,24 @@ Owner 결정:
 - `ca3bd36 feat(source-facts): add manual fact card authoring`
 - `538d0d1 feat(review-packet): add owner review packet generator`
 - `9a6428e feat(owner-decision): add review packet approval gate`
+- `07444ad feat(clipboard-payload): add copy workflow payload builder`
+- Package View Model checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-clipboard-payload-v1`
-- `money-shorts-os-clipboard-payload-v1-review-fix`
-- `lib/clipboard-payload/` 로컬 clipboard payload 구현
-- `lib/review-packet/` review-fix: `ReviewSocialCopy.hashtags` 보존 추가
+- `money-shorts-os-package-view-model-v1`
+- `money-shorts-os-package-view-model-v1-review-fix`
+- `money-shorts-os-package-view-model-v1-review-fix-2`
+- `lib/package-view/` 로컬 package list/detail/workflow/copy-action view model 구현
+- no-gate 초기 상태에서 copy action blocker label 합성
+- 임시 `_verify.ts` 제거 확인
 - Codex verification:
-  - ESLint `lib/review-packet` + `lib/clipboard-payload`: PASS
-  - targeted TypeScript diagnostics: 0
-  - runtime sample PASS: approved copyReady true, actual hashtags preserved from script package to review packet to clipboard payload, placeholder removed, pending/blocked/mismatch not ready, source/script/caption verbatim preserved, no OS clipboard call, output not created
+  - ESLint `lib/package-view/`: PASS
+  - targeted TypeScript diagnostics for `lib/package-view/`: 0
+  - runtime sample PASS: approved, pending, rejected, blocked, no-gate copy action labels
+  - forbidden pattern search PASS: no clipboard, React UI, fetch, ffmpeg, output write
+  - full `pnpm exec tsc --noEmit --pretty false`는 기존 `output/` binary `.ts` 파일에서만 실패
 
 Source of truth:
 
@@ -55,30 +61,33 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local package view model**
+**MVP 1 — local Package Library / Detail UI**
 
 Task ID:
 
-`money-shorts-os-package-view-model-v1`
+`money-shorts-os-package-library-ui-v1`
 
 목표:
 
-- future Package Library / Package Detail UI가 사용할 list/detail view model을 로컬 결정론적 모듈로 만든다.
-- 아직 React UI, DB, clipboard, file export, render는 하지 않는다.
+- `lib/package-view/fixtures.ts`의 로컬 view model만 사용해 `/packages` UI를 만든다.
+- Owner가 패키지 목록, 상세, QA/risk, owner gate, copy readiness, source/fact/social copy를 한 화면에서 검토할 수 있게 한다.
+- 아직 DB/API/clipboard/render/file export는 하지 않는다.
 
 포함:
 
-- package list item / package detail view model TypeScript types
-- deterministic package/review/gate/clipboard-to-view-model helper
-- approved and blocked fixtures
-- source/fact/citation/package id 보존
-- risk/QA/owner decision/copyReady status summary
-- runtime samples
+- `app/packages/` route 추가
+- approved, pending/no-gate, rejected, blocked fixture states 표시
+- package list/detail/workflow/copy action summary UI
+- source/fact/citation/package id 보존 표시
+- social copy/hashtags/source refs verbatim 표시
+- blocker labels 표시
+- responsive dark dashboard layout
 
 금지:
 
-- Next.js page/component 구현
 - OS clipboard write
+- API route 호출 또는 변경
+- DB/Supabase read/write/migration
 - ffmpeg 실행
 - video/audio/image render
 - actual media probing 또는 real duration 측정
@@ -86,7 +95,6 @@ Task ID:
 - OpenAI/GPT/Gemini/Veo live call
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - API key/env/secret 변경
-- Supabase migration 적용
 - dependency/lockfile 변경
 - `output/` 변경
 - file export/write
