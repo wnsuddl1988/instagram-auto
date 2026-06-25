@@ -703,6 +703,81 @@ Validation evidence (2026-06-25):
   - 스크린샷: 타임아웃 (preview 환경 제약) — accessibility tree로 충분히 검증
 - dev server 종료 ✅
 
+## Implemented Manual Fact Card Form UI (`money-shorts-os-manual-fact-card-form-v1`):
+
+- `app/fact-cards/manual/new/page.tsx` — Server Component; `ManualFactCardFormClient` 렌더만 담당
+- `app/fact-cards/manual/new/ManualFactCardFormClient.tsx` — `"use client"` Client Component; 전체 form 로직
+
+UI 구성:
+- 상단 헤더: "LOCAL VALIDATION ONLY" 배지 + "Step 1" 명시
+- "로컬 validation 전용" 안내 배너 (DB 저장/publish/render 아님 명시)
+- 좌측 폼 (xl:grid-cols-2 반응형):
+  - 기본 정보: indicatorName(필수), contentCategory(select), comparisonType(select), dataPeriod
+  - 출처 정보: sourceName(필수), sourceUrl(필수, https://, mono), publishedDate, primarySourceProviderId
+  - 지표 수치: currentValue(필수), previousValue/changeValue/changeRate(초기 N/A), unit
+  - 해석/주의사항: interpretation, cautionNote (textarea)
+  - 허용/차단 Claim: 줄바꿈 구분 textarea → 배열 변환, 실시간 건수 표시
+  - Citations: 동적 추가/삭제 가능한 citation row (id/sourceName/sourceUrl/publishedDate/dataPeriod/citationLabel); citations=[] 시 `manual_citation_required` 경고 힌트 표시
+  - 플래그: isMock/isPublishable checkbox
+- 우측 validation 결과 (실시간):
+  - ok=true/false 상태 배너
+  - 실패 시 ValidationErrors (code/field/message 3열)
+  - 성공 시 Generated Fact Card Summary (전체 필드 + citations + allowedClaims)
+  - 실패 시 폼 상태 디버그 패널 (draft.citations.length, manual_citation_required 여부, error count)
+  - 다음 단계 힌트 (Package Preview 링크)
+- `/fact-cards/manual` ← 및 `/fact-cards/manual/package-preview` → 링크 (상단 + 하단)
+
+주요 구현 결정:
+- `authorManualFactCard(draft)` 를 render 시 동기 호출 — 실시간 validation
+- citation id handling: review-fix 후 UI 자동생성/fallback 없음. Owner가 직접 입력한 `c.id.trim()`이 있는 citation row만 draft에 포함.
+- 초기 상태: 모든 필드 빈 값 → 즉시 ok=false, 필수 필드 오류 노출
+- createdAt: 고정 mock 값 주입 ("2026-06-25T09:00:00+09:00")
+- 외부 API·DB·OS clipboard·fetch·ffmpeg·render·output/ 모두 없음
+
+Validation evidence (2026-06-25):
+- ESLint (app/fact-cards/manual/new/ 2파일): 0 warnings ✅
+- TypeScript (full tsc → `app/fact-cards/` 필터): 0 errors ✅
+- 금지 패턴 검색 (navigator.clipboard / OS clipboard write / fetch( / /api/ / ffmpeg / output/ / upload / deploy): 0건 ✅
+- dev server HTTP 검증 (http://localhost:3000/fact-cards/manual/new):
+  - HTTP 200, 서버 오류 없음 ✅
+  - accessibility tree 확인: 헤더/폼 섹션/citation row/validation 결과 전부 렌더 ✅
+  - JS eval 확인:
+    - `hasOkFalse: true` (초기 빈 폼 → ok=false) ✅
+    - `hasOkTrue: false` (초기엔 valid 아님) ✅
+    - `hasLocalValidationOnly: true` ✅
+    - `hasManualCitationHint: true` (citation 빈 힌트) ✅
+    - `hasPackagePreviewLink: true` ✅
+    - `hasStep1: true` ✅
+    - `hasFactCardInput: true` ✅
+- dev server 종료 ✅
+
+## review-fix: Manual Fact Card Form citation id 자동생성 제거 (`money-shorts-os-manual-fact-card-form-v1-review-fix`):
+
+수정 내용 (3곳, `ManualFactCardFormClient.tsx`):
+
+1. `INITIAL_STATE.citations`: `{ ...EMPTY_CITATION, id: "citation-new-001" }` → `{ ...EMPTY_CITATION }` (id prefill 제거)
+2. `addCitation()`: `id: \`citation-new-${Date.now()}\`` → 제거, `{ ...EMPTY_CITATION }` 빈 id로 추가
+3. draft 변환 citation 필터:
+   - 기존: `.filter(c => c.id.trim() !== "" || c.sourceName.trim() !== "")` + `id: c.id.trim() || c.sourceName.trim() || "citation-unnamed"` fallback
+   - 수정: `.filter(c => c.id.trim() !== "")` + `id: c.id.trim()` 만 사용
+   - id 없는 row는 draft.citations에 포함 안 함
+   - `citationRowsMissingId` 카운트 변수로 UI 안내
+4. UI 안내 추가: id 미입력 row 수 표시 + "id는 Owner가 직접 입력해야 합니다 — UI가 자동 생성하지 않습니다" amber 경고
+
+Validation evidence (2026-06-25):
+- ESLint (2파일): 0 warnings ✅
+- TypeScript (`app/fact-cards/` 필터): 0 errors ✅
+- 금지 패턴 검색 (Date.now / Math.random / citation-unnamed / navigator.clipboard / fetch / /api/ / ffmpeg / output/ / upload / deploy): 0건 ✅
+- dev server HTTP 200 (`/fact-cards/manual/new`) ✅
+- JS eval 검증:
+  - `citationIdInputValue: ""` (초기 id 필드 빈 값) ✅
+  - `hasOkFalse: true` ✅
+  - `hasManualCitationRequired: true` ✅
+  - `hasMissingIdWarning: true` (id 없는 row 경고 표시) ✅
+  - `hasLocalValidationOnly: true` ✅
+  - `hasPackagePreviewLink: true` ✅
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
