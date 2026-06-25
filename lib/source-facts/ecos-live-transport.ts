@@ -19,9 +19,9 @@ import { orderEcosRowsCurrentFirst } from "./ecos-connector";
 
 const ECOS_API_BASE = "https://ecos.bok.or.kr/api/StatisticSearch";
 
-/** Number of rows to request. Small constant — single base-rate window. */
-const ECOS_ROW_START = 1;
-const ECOS_ROW_END = 10;
+/** Default row range when the request does not specify rowStart/rowEnd. */
+const DEFAULT_ROW_START = 1;
+const DEFAULT_ROW_END = 10;
 
 /**
  * Env var names checked in priority order. The first defined non-empty value
@@ -66,13 +66,15 @@ export function buildEcosStatSearchUrl(
   apiKey: string,
   request: EcosStatSearchRequest,
 ): string {
+  const rowStart = request.rowStart ?? DEFAULT_ROW_START;
+  const rowEnd = request.rowEnd ?? DEFAULT_ROW_END;
   const segments = [
     ECOS_API_BASE,
     encodeURIComponent(apiKey),
     "json",
     "kr",
-    String(ECOS_ROW_START),
-    String(ECOS_ROW_END),
+    String(rowStart),
+    String(rowEnd),
     encodeURIComponent(request.statCode),
     encodeURIComponent(request.cycle),
     encodeURIComponent(request.startDate),

@@ -26,6 +26,8 @@ export interface EcosStatSearchRequest {
   /**
    * Official source published date (ISO date YYYY-MM-DD).
    * Must be supplied by caller from known fixture/reference — do not derive or fallback.
+   * Empty string ("") means "not yet verified"; the normalizer will refuse to
+   * produce a snapshot in that case to prevent empty-publishedDate snapshots.
    * Example: "2025-01-16" for the Jan 2025 BOK base-rate announcement.
    */
   readonly publishedDate: string;
@@ -40,6 +42,17 @@ export interface EcosStatSearchRequest {
    * Example: "한국은행 ECOS — 기준금리"
    */
   readonly sourceName: string;
+  /**
+   * First row index to request from ECOS (1-based, inclusive). Defaults to 1 when omitted.
+   * Callers that need more than the default 10-row cap (e.g. a 12-month latest-period
+   * window) must set rowEnd to cover the full window.
+   */
+  readonly rowStart?: number;
+  /**
+   * Last row index to request from ECOS (1-based, inclusive). Defaults to 10 when omitted.
+   * Set higher (e.g. 24) for latest-period window requests that span more than 10 months.
+   */
+  readonly rowEnd?: number;
 }
 
 // ── ECOS API response row ─────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — ECOS live check LIVE_OK, mock/live truth alignment 완료, checkpoint 대기
+## 2026-06-26 현재 — latest available period resolver 구현 완료 (LIVE_OK, blocked_pending_source_date), checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,7 +15,7 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `87caec6 feat(source-facts): add ecos live transport with async connector boundary` ← **현재 HEAD**
+- `43fe473 fix(source-facts): align ecos mock fixtures with live truth` ← **현재 HEAD**
 - (이전: `d85b616 feat(source-facts): add auto fact card candidate preview`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
@@ -44,10 +44,16 @@ Owner 결정:
 - `money-shorts-os-ecos-live-check-v1`: **LIVE_OK 확인**
   - `node --env-file=.env.local scripts/_ecos-live-check.mjs` 성공
   - Jan2025 3.0%, Dec2024 3.0%, change 0.0%p
-- `money-shorts-os-ecos-live-truth-alignment-v1`: **완료, 미커밋**
+- `money-shorts-os-ecos-live-truth-alignment-v1`: **완료, 커밋됨 (43fe473)**
   - `ecos-fixtures.ts`: `ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE` `"3.25"` → `"3.00"`
   - `candidates.ts`: mock snapshot previousValue/changeValue/Text live truth에 정렬
-  - 다음 단계: `/fact-cards/manual/package-preview`에 live 또는 aligned candidate 연결 검토
+  - Jan2025는 historical smoke fixture이며 production 최신 데이터 default가 아님을 명시
+- Owner 승인: `latest available period` 선택/검증 slice 진행
+- `money-shorts-os-ecos-latest-period-resolver-v1`: **완료, 미커밋**
+  - `ecos-latest-period.ts`: `buildEcosLatestWindowRequest()` (Date.now 없음) + `resolveLatestEcosBaseRatePeriod()` + `decideEcosLatestPeriodReadiness()` (3-state)
+  - `scripts/_ecos-latest-period-check.mjs`: read-only live check (end period 202606)
+  - live: latest `202605` 2.5%, previous `202604` 2.5% → `blocked_pending_source_date` (publishedDate 미검증, 발명 금지)
+  - Jan2025 smoke fallback 없음, publishable 금지
 
 Source of truth:
 
@@ -64,13 +70,14 @@ Source of truth:
 
 먼저:
 
-- `ecos-live-connector-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
+- `money-shorts-os-ecos-latest-period-resolver-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
 
-그 다음 (Owner가 ECOS API key를 env에 주입한 뒤):
+그 다음 (source date 검증 경로):
 
-- `node scripts/_ecos-live-check.mjs` 1회 실행 → `RESULT: LIVE_OK` 확인 (소량 실제 데이터)
-- live snapshot → `ecosBaseRateParser` → Fact Card candidate 정합성 확인
-- 정상 시 `/fact-cards/manual/package-preview`에 live candidate 연결 검토 (별도 slice)
+- latest period(`202605` 등)에 대한 **검증된 publishedDate(BOK 발표일) source 확보 방법** 설계.
+  - ECOS row payload에는 발표일이 없음 → 별도 source(통화정책방향 발표 일정 등)에서 verified date 확보 경로 필요.
+  - verified date가 확보되면 `decideEcosLatestPeriodReadiness(rows, fetchedAt, verifiedPublishedDate)` → `draft_ready` snapshot 생성.
+- draft_ready 안정화 후 `/fact-cards/manual/package-preview`에 live/latest candidate 연결 검토.
 - 아직 GPT, 영상, ElevenLabs, ffmpeg/render로 가지 않는다.
 
 금지 (계속 유지):

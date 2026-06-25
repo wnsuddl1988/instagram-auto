@@ -50,6 +50,11 @@ export function normalizeEcosBaseRateRows(
 ): RawDataSnapshot | null {
   if (rows.length < 2) return null;
 
+  // Refuse to produce a snapshot with an empty/unverified publishedDate.
+  // An empty string signals "not yet verified" (used by latest-window requests).
+  // Callers must supply a real, verified BOK announcement date before normalizing.
+  if (request.publishedDate.trim().length === 0) return null;
+
   const cur = rows[0];
   const prev = rows[1];
 
