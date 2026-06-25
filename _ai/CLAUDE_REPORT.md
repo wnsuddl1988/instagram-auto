@@ -299,6 +299,40 @@ Validation evidence (2026-06-25):
     - T10: renderManifestSourceId mismatch → readyForRender=false ✅
     - T11: output/ 미생성 ✅
 
+## Implemented Manual Fact Card Authoring (`money-shorts-os-manual-fact-card-authoring-v1`):
+
+- `lib/source-facts/manual.ts` — `ManualFactCardDraft` (Owner 제공 필드 전체 명시 필수), `ManualFactCardAuthoringResult`, `authorManualFactCard(draft)`: draft → FactCard 변환 + draft mode validation; 필드 미제공 시 발명 없이 validation 실패; new Date() 없음, 외부 호출 없음
+- `lib/source-facts/manual-fixtures.ts` — `validHouseholdDebtDraft` (가계부채 2024-Q4, 한국은행 출처), `validHouseholdDebtResult` (ok=true), `brokenMissingFieldsDraft` (sourceName/sourceUrl/currentValue/citations 누락), `brokenMissingFieldsResult` (ok=false)
+- `lib/source-facts/index.ts` — manual + manual-fixtures re-export 추가
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/source-facts/ 신규 파일): 0 errors ✅
+- ESLint (lib/source-facts/ 신규 파일): 0 warnings ✅
+- Runtime sample (9 cases, node .cjs, 삭제 완료):
+  - T1: valid draft → ok=true, factCard non-null ✅
+  - T2: factCard 모든 필드가 draft에서 그대로 보존 (inference 없음) ✅
+  - T3: broken draft (sourceName/url/currentValue/citations 누락) → ok=false, factCard=null ✅
+  - T4: 누락 필드별 에러 코드 (required, invalid_url) 정확히 탐지 ✅
+  - T5: 발명된 값 없음 — validation 실패 시 factCard=null ✅
+  - T6: manual FactCard → assembleContentPackage 시뮬레이션 → readyForRender=true ✅
+  - T7: factCard.id가 assembled package linkage에 보존 ✅
+  - T8: citation 수 보존 (1개) ✅
+  - T9: output/ 미생성 ✅
+- **[review-fix]** `manual.ts`: `authorManualFactCard` 내 `citations: []` 통과 버그 수정
+  - Codex 리뷰 발견: `validateFactCard(..., { mode: "draft" })` 는 빈 citations를 허용 → `citations: []`만 누락된 draft가 ok=true로 통과
+  - 수정: `authorManualFactCard` 함수 내 `validateFactCard` 호출 후 `extraErrors` 배열에 `manual_citation_required` 코드 추가 검사 — draft mode semantics를 건드리지 않는 narrowest safe fix
+  - TypeScript strict check (lib/source-facts/): 0 errors ✅
+  - ESLint (lib/source-facts/manual.ts, manual-fixtures.ts, index.ts): 0 warnings ✅
+  - Runtime sample (7 cases, node .cjs, 삭제 완료):
+    - T1: valid draft → ok=true, factCard non-null, errors=[] ✅
+    - T2: citations:[] only → ok=false, code=manual_citation_required, factCard=null ✅
+    - T3: missing sourceName + currentValue → ok=false (기존 codes 그대로) ✅
+    - T4: broken draft들 → factCard=null (invented value 없음) ✅
+    - T5: manual FactCard → assembler linkage simulation → factCardId 보존, citationCount=1 ✅
+    - T6: fully broken draft (sourceName+sourceUrl+currentValue+citations 모두 누락) → ok=false, errorCount=4 ✅
+    - T7: output/ 미생성 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

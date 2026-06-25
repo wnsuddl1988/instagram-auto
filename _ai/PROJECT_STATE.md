@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 78% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler 로컬 모듈이 안정화됐다. 다음 단계는 manual Fact Card authoring helper다.
+**전체프로젝트 진행률:** 약 80% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring 로컬 모듈이 안정화됐다. 다음 단계는 Owner review packet이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -55,7 +55,8 @@
 - Commit: `14f3c53` — `feat(timeline): add local timeline recalculation`
 - Commit: `90fcaa6` — `feat(render-plan): add local ffmpeg manifest planner`
 - Commit: `4256173` — `feat(final-qa): add source-first package readiness checks`
-- Content-package checkpoint — Codex-reviewed and ready for local commit
+- Commit: `bfaf5b9` — `feat(content-package): assemble source-first package chain`
+- Manual authoring checkpoint — Codex-reviewed and ready for local commit
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -65,28 +66,26 @@
 
 Task:
 
-- `money-shorts-os-content-package-assembler-v1`
-- `money-shorts-os-content-package-assembler-v1-review-fix`
-- `money-shorts-os-content-package-assembler-v1-review-fix-2`
+- `money-shorts-os-manual-fact-card-authoring-v1`
+- `money-shorts-os-manual-fact-card-authoring-v1-review-fix`
 
 구현:
 
-- `lib/content-package/types.ts`
-- `lib/content-package/assembler.ts`
-- `lib/content-package/fixtures.ts`
-- `lib/content-package/index.ts`
+- `lib/source-facts/manual.ts`
+- `lib/source-facts/manual-fixtures.ts`
+- `lib/source-facts/index.ts`
 
 검증:
 
-- Content-package module ESLint PASS
-- Source-first content-package TypeScript diagnostics: 0
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/content-package`, `lib/final-qa`, `lib/render-plan`, `lib/timeline`, `lib/voice-profiles`, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
+- Manual authoring source-facts ESLint PASS
+- Source-first manual authoring TypeScript diagnostics: 0
+- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/source-facts`, `lib/content-package`, `lib/final-qa`, `lib/render-plan`, `lib/timeline`, `lib/voice-profiles`, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints` 관련 오류는 없다.
 - Codex runtime verification PASS:
-  - explicit videoId package readyForRender PASS
-  - omitted videoId non-undefined id derivation PASS
-  - chart Fact Card linkage PASS
-  - summary fact/citation/package ids preserved PASS
-  - Final QA mismatch failures PASS
+  - valid manual draft PASS
+  - missing citation-only draft fail PASS
+  - missing current value fail PASS
+  - broken draft fail PASS
+  - manual Fact Card -> content package Final QA PASS
   - output file not created PASS
 
 주의:
@@ -114,15 +113,16 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local manual Fact Card authoring helper**
+- **MVP 1 — local Owner review packet**
 
 구현 대상:
 
-- manual Fact Card draft/input type
-- deterministic draft-to-FactCard helper
-- missing source/citation/value validation
-- valid/broken fixtures
-- content package assembler 연결 runtime sample
+- review packet TypeScript types
+- deterministic package-to-review-packet helper
+- source/fact/citation/package id summary
+- risk/final QA/render summary
+- owner decision placeholder fields
+- valid and broken/not-ready fixtures
 - no external AI/API
 - no DB migration
 - no video render

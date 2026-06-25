@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-manual-fact-card-authoring-v1`
+`money-shorts-os-review-packet-v1`
 
 ## Current State
 
@@ -12,8 +12,8 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local module: `lib/content-package/`
-- Content Package Assembler review-fix-2 passed Codex verification and is ready for local checkpoint commit.
+- Latest completed local module: `lib/source-facts/manual.ts` / `lib/source-facts/manual-fixtures.ts`
+- Manual Fact Card authoring review-fix passed Codex verification and is ready for local checkpoint commit.
 
 Active local modules:
 
@@ -31,54 +31,65 @@ Active local modules:
 
 ## Goal
 
-Create a local manual Fact Card authoring helper so an Owner-provided source/fact draft can be converted into a validated `FactCard` without external APIs.
+Create a local deterministic Owner review packet module from an assembled content package.
 
-This is the safe local input layer before future DB/UI work. It should not fetch sources, call AI, scrape webpages, or infer missing facts.
+This is a read-only review/approval layer before any future UI, DB, render, upload, or publishing work. It should summarize the already assembled package so the Owner can review source facts, citations, risk, script, QA, and planned render metadata without opening every module object.
 
 ## Approved Scope
 
 Allowed:
 
-- Extend `lib/source-facts/` with a small local authoring/draft helper.
-- Define a manual draft/input type if useful.
-- Implement deterministic helper(s) that convert explicit Owner-provided fields into a `FactCard`.
-- Add validation that catches missing source/citation/current value/data period/allowed claims/caution note.
-- Add fixtures showing one valid manual draft and one broken draft.
-- Update `lib/source-facts/index.ts` exports.
+- Add a new local module under `lib/review-packet/`.
+- Define review packet types.
+- Implement deterministic helper(s) that transform an `AssembledContentPackage` into a compact review packet.
+- Include only facts/ids/text already present in the content package.
+- Include sections such as:
+  - package summary ids
+  - Fact Card source/citation summary
+  - Blueprint summary
+  - Script narration/captions/SNS copy summary
+  - Risk review summary
+  - Chart/image/TTS/timeline/render manifest ids
+  - Final QA summary and failed checks
+  - Owner decision placeholders such as `needsOwnerApproval: true`
+- Add fixtures using existing `inflationContentPackage30` or manual authoring package.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/source-facts/manual.ts`
-- `lib/source-facts/manual-fixtures.ts`
+- `lib/review-packet/types.ts`
+- `lib/review-packet/generator.ts`
+- `lib/review-packet/fixtures.ts`
+- `lib/review-packet/index.ts`
 
 Optional only if useful:
 
-- small additions to `lib/source-facts/types.ts`
-- small additions to `lib/source-facts/validation.ts`
+- `lib/review-packet/validation.ts`
 
 ## Required Behavior
 
 - Deterministic: no `new Date()` unless `createdAt` is injected by options.
 - No external calls.
 - No AI generation.
-- No source scraping.
-- No URL fetching.
+- No source scraping or URL fetching.
 - No DB writes.
-- No dependency changes.
-- Do not invent missing numbers, dates, source names, source URLs, claims, or citations.
-- The helper should refuse or validation-fail incomplete input rather than filling facts creatively.
+- No file export/write.
+- No render.
+- No output file creation.
+- No new facts, numbers, claims, citations, narration, captions, or source references.
+- If the content package Final QA is not ready, the review packet must surface that clearly.
 
-At minimum, helper output should preserve:
+At minimum, the review packet should expose:
 
-- fact card id
-- source provider/name/url
-- published date and data period
-- indicator name/category
-- current/previous/change values exactly as provided
-- citations
-- allowed claims and blocked claims
-- caution note and interpretation
+- reviewPacketId
+- contentPackageId
+- source/fact/citation ids
+- source URL(s)
+- title/topic/core message
+- final QA readiness and failed check codes
+- risk level / blocked flag / finding count
+- planned duration and render manifest id
+- owner decision fields initialized to pending/null
 
 ## Forbidden
 
@@ -102,21 +113,20 @@ At minimum, helper output should preserve:
 
 Run focused checks only:
 
-- ESLint for touched `lib/source-facts/` files
-- TypeScript check targeted to `lib/source-facts/` or source-first modules
+- ESLint for `lib/review-packet/`
+- TypeScript check targeted to `lib/review-packet/` or source-first modules
 - Runtime/sample check that verifies:
-  - valid manual draft becomes a valid `FactCard`
-  - missing citation/source/current value fails validation
-  - no generated value is invented for missing fields
-  - resulting manual Fact Card can be passed into `assembleContentPackage` with mock measured duration and returns `finalQa.readyForRender=true`
+  - valid content package creates a review packet
+  - packet preserves package/fact/citation/source ids
+  - packet reports `finalQa.readyForRender=true` for valid package
+  - a broken/not-ready package surfaces failed QA codes
   - no command is executed and no files are created
 
 ## Definition of Done
 
-- Manual Fact Card authoring helper is exported from `lib/source-facts/`.
-- Valid manual draft produces a valid source-linked Fact Card.
-- Broken manual draft fails with useful codes/messages.
-- The generated Fact Card can flow into the existing content package assembler.
+- Review packet module exports clear local types and deterministic helper(s).
+- Valid content package produces a compact review packet with source linkage and QA/risk summaries.
+- Broken/not-ready package surfaces failed readiness clearly.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -127,4 +137,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise manual Fact Card authoring evidence because this creates the local input layer for the source-first pipeline.
+- Update `_ai/CLAUDE_REPORT.md` with concise review packet evidence because this creates the local Owner review layer.

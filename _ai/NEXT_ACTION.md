@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Content Package checkpoint 준비 완료
+## 2026-06-25 현재 — Manual Fact Card Authoring checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -25,19 +25,19 @@ Owner 결정:
 - `14f3c53 feat(timeline): add local timeline recalculation`
 - `90fcaa6 feat(render-plan): add local ffmpeg manifest planner`
 - `4256173 feat(final-qa): add source-first package readiness checks`
-- content-package checkpoint: Codex-reviewed and ready for local commit
+- `bfaf5b9 feat(content-package): assemble source-first package chain`
+- manual authoring checkpoint: Codex-reviewed and ready for local commit
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-content-package-assembler-v1`
-- `money-shorts-os-content-package-assembler-v1-review-fix`
-- `money-shorts-os-content-package-assembler-v1-review-fix-2`
-- `lib/content-package/` 로컬 content package assembler 구현
+- `money-shorts-os-manual-fact-card-authoring-v1`
+- `money-shorts-os-manual-fact-card-authoring-v1-review-fix`
+- `lib/source-facts/manual.ts` / `lib/source-facts/manual-fixtures.ts` 로컬 manual Fact Card authoring helper 구현
 - Codex verification:
-  - source-first content-package TypeScript diagnostics: 0
-  - ESLint `lib/content-package`: PASS
-  - runtime sample: explicit videoId package PASS, omitted videoId non-undefined ids PASS, chart Fact Card linkage PASS, summary linkage preserved PASS, Final QA mismatch failures PASS, output not created PASS
+  - source-first manual authoring TypeScript diagnostics: 0
+  - ESLint `lib/source-facts`: PASS
+  - runtime sample: valid manual draft PASS, missing citation only FAIL, missing current value FAIL, broken draft FAIL, manual Fact Card -> content package Final QA PASS, output not created PASS
 
 Source of truth:
 
@@ -52,24 +52,25 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local manual Fact Card authoring helper**
+**MVP 1 — local Owner review packet**
 
 Task ID:
 
-`money-shorts-os-manual-fact-card-authoring-v1`
+`money-shorts-os-review-packet-v1`
 
 목표:
 
-- Owner가 수동으로 제공한 출처/숫자/해석 초안을 외부 호출 없이 validated `FactCard`로 변환한다.
-- 향후 DB/UI 전에 로컬 입력 계층을 만든다.
+- assembled content package를 Owner 검토용 compact packet으로 변환한다.
+- 실제 UI/DB/render/upload 전에 source facts, citations, risk, script, final QA, planned render metadata를 한눈에 확인할 수 있게 한다.
 
 포함:
 
-- manual Fact Card draft/input type
-- deterministic draft-to-FactCard helper
-- missing source/citation/value validation
-- valid/broken fixtures
-- existing content package assembler로 연결되는 runtime sample
+- review packet TypeScript types
+- deterministic package-to-review-packet helper
+- source/fact/citation/package id summary
+- risk/final QA/render summary
+- owner decision placeholder fields
+- valid and broken/not-ready fixtures
 
 금지:
 
@@ -83,6 +84,7 @@ Task ID:
 - Supabase migration 적용
 - dependency/lockfile 변경
 - `output/` 변경
+- file export/write
 - payment/deploy/upload/post/push
 - Money-OS 전체 기능 구현
 - 이전 영상 후보 개선
