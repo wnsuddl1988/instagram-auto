@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-timeline-recalc-v1`
+`money-shorts-os-ffmpeg-render-plan-v1`
 
 ## Current State
 
@@ -12,12 +12,12 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local checkpoint before voice-profiles:
-  - `5bb99fd feat(image-prompts): add source-linked prompt package generator`
-- Voice profile module is complete and checkpoint-ready:
-  - `lib/voice-profiles/`
-  - default voice profile aligned to `provider: "elevenlabs"` with pending placeholder voice id only
-  - no live ElevenLabs/OpenAI/TTS/audio call
+- Latest completed local checkpoint before timeline:
+  - `55f4a9b feat(voice-profiles): add local tts script formatter`
+- Timeline recalculation module is complete and checkpoint-ready:
+  - `lib/timeline/`
+  - supplied/mock measured duration only
+  - no real audio file measurement, no ElevenLabs, no ffmpeg, no render
 
 Active local modules:
 
@@ -28,6 +28,7 @@ Active local modules:
 - `lib/chart-cards/`
 - `lib/image-prompts/`
 - `lib/voice-profiles/`
+- `lib/timeline/`
 
 Active product/spec sources:
 
@@ -41,33 +42,31 @@ Active product/spec sources:
 
 ## Goal
 
-Create a local deterministic timeline recalculation module for Money Shorts OS.
+Create a local deterministic render manifest and ffmpeg command plan model for Money Shorts OS.
 
-This task only recalculates scene and caption timings from existing Blueprint/Script/TTS package data plus mocked or manually supplied audio duration values. It must not generate audio, measure real audio files, call ElevenLabs, or render video.
+This task plans what a future render would need, but it must not execute ffmpeg, render video, create media files, probe media files, or touch `output/`.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect `lib/blueprints/`, `lib/scripts/`, `lib/voice-profiles/`, and specs listed above.
-- Add a small local module, preferably `lib/timeline/`, if no better local pattern exists.
-- Define TypeScript types for timeline calculation input/output.
-- Accept a provided/mock measured audio duration in seconds.
-- Recalculate scene start/end/duration values deterministically.
-- Derive simple caption timing blocks from script scenes or TTS scene blocks.
-- Preserve linkage to source package/video/scene ids.
+- Inspect `lib/blueprints/`, `lib/scripts/`, `lib/chart-cards/`, `lib/image-prompts/`, `lib/voice-profiles/`, `lib/timeline/`, and specs listed above.
+- Add a small local module, preferably `lib/render-plan/`, if no better local pattern exists.
+- Define TypeScript types for render manifest, planned inputs, overlays, captions, audio slots, and planned ffmpeg command fragments.
+- Create deterministic helpers that build a render plan from existing mock Blueprint/Script/Chart/Image/TTS/Timeline data.
+- Use placeholder asset paths/ids only; do not read or create media files.
+- Preserve linkage to source package/video/scene ids where available.
 - Add lightweight validation helpers if useful.
-- Add fixtures from existing blueprint/script/TTS fixtures.
+- Add fixtures from existing local modules.
 
 ## Forbidden
 
+- No ffmpeg execution.
+- No video/audio/image rendering.
+- No actual media file probing or duration measurement.
 - No ElevenLabs call.
 - No OpenAI/GPT/Gemini/Veo call.
-- No audio generation.
-- No actual audio duration measurement from files.
 - No external API calls.
-- No ffmpeg pipeline implementation or execution.
-- No image/video rendering.
 - No API key/env/secret changes.
 - No Supabase migration or production DB changes.
 - No dependency or lockfile changes.
@@ -80,12 +79,12 @@ Allowed:
 
 ## Definition of Done
 
-- Timeline model types are available from a clear local module.
-- A deterministic helper can recalculate timeline from existing mock Blueprint/Script/TTS data and a supplied measured duration.
-- Scene/package linkage is preserved.
-- Caption timing blocks are generated from existing caption/scene text without inventing new facts.
-- Validation catches missing source id, invalid duration, empty scenes, non-ordered scene times, and target/measured duration mismatches where practical.
-- No external service integration is added.
+- Render-plan model types are available from a clear local module.
+- A deterministic helper can build a render manifest/command plan from existing mock local package data.
+- The plan references planned inputs and overlays without requiring files to exist.
+- Captions, source overlays, chart/image prompt references, voice/TTS references, and timeline scene ids are linked.
+- Validation catches missing source id, missing timeline, empty scenes, invalid dimensions, missing caption/overlay linkage, and forbidden executable/render flags where practical.
+- No command is executed and no output file is created.
 - Focused type/check/sample command passes, or a clear reason is reported if no check applies.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 

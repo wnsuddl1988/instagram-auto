@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Voice profile checkpoint 준비 완료
+## 2026-06-25 현재 — Timeline checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -21,17 +21,17 @@ Owner 결정:
 - `79faa5b feat(risk): add financial expression scanner`
 - `fa6b5a1 feat(chart-cards): add source-linked card props model`
 - `5bb99fd feat(image-prompts): add source-linked prompt package generator`
+- `55f4a9b feat(voice-profiles): add local tts script formatter`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-voice-profile-spec-v1`
-- review-fix: `ScriptScene.sceneId` 접근 제거, default profile provider를 ElevenLabs-first placeholder로 정렬
-- `lib/voice-profiles/` 로컬 voice profile/TTS script formatter model 구현
+- `money-shorts-os-timeline-recalc-v1`
+- `lib/timeline/` 로컬 timeline recalculation model 구현
 - Codex verification:
   - source-first module-only TypeScript diagnostics: 0
-  - ESLint `lib/voice-profiles`: PASS
-  - runtime sample: provider=elevenlabs, validation PASS, script fallback scene ids `scene-1..`, blueprint scene ids `s1/s2` 보존, terminal punctuation PASS
+  - ESLint `lib/timeline`: PASS
+  - runtime sample: timeline sum exact, caption timing mirrors scene timing, script scene ids `scene-1..`, measured>target PASS, invalid duration/non-ordered scenes fail PASS
 
 Source of truth:
 
@@ -45,38 +45,39 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local timeline recalculation model**
+**MVP 1 — local render manifest and ffmpeg command plan model**
 
 Task ID:
 
-`money-shorts-os-timeline-recalc-v1`
+`money-shorts-os-ffmpeg-render-plan-v1`
 
 목표:
 
-- 실제 오디오 파일 측정 없이, 제공된/mock measured audio duration을 바탕으로 scene/caption timing을 재계산한다.
-- 기존 Blueprint/Script/TTS text와 linkage만 사용하고 새 사실이나 문장을 임의 생성하지 않는다.
+- 실제 ffmpeg 실행 없이, 미래 렌더에 필요한 manifest/command plan 데이터 구조를 만든다.
+- 기존 Blueprint/Script/Chart/Image/TTS/Timeline linkage만 사용한다.
 
 포함:
 
-- timeline TypeScript types
-- supplied/mock measured duration input model
-- scene timing recalculation helper
-- caption timing blocks
+- render manifest TypeScript types
+- planned input/overlay/caption/audio slots
+- planned ffmpeg command fragments as data
 - source package/video/scene linkage
+- placeholder asset paths/ids only
 - lightweight validation helper
 - focused TypeScript/ESLint/runtime sample check
 
 금지:
 
+- ffmpeg 실행
+- video/audio/image render
+- actual media probing 또는 real duration 측정
 - ElevenLabs live call
 - OpenAI/GPT/Gemini/Veo live call
-- audio generation 또는 실제 파일 duration 측정
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - API key/env/secret 변경
 - Supabase migration 적용
 - dependency/lockfile 변경
-- video render
-- ffmpeg 실행 파이프라인 구현
+- `output/` 변경
 - payment/deploy/upload/post/push
 - Money-OS 전체 기능 구현
 - 이전 영상 후보 개선

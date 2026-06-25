@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 67% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter 로컬 모듈이 안정화됐다. 다음 단계는 로컬 timeline recalculation 모델이다.
+**전체프로젝트 진행률:** 약 70% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation 로컬 모듈이 안정화됐다. 다음 단계는 render manifest/ffmpeg command plan 모델이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -51,6 +51,7 @@
 - Commit: `79faa5b` — `feat(risk): add financial expression scanner`
 - Commit: `fa6b5a1` — `feat(chart-cards): add source-linked card props model`
 - Commit: `5bb99fd` — `feat(image-prompts): add source-linked prompt package generator`
+- Commit: `55f4a9b` — `feat(voice-profiles): add local tts script formatter`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -60,28 +61,27 @@
 
 Task:
 
-- `money-shorts-os-voice-profile-spec-v1`
+- `money-shorts-os-timeline-recalc-v1`
 
 구현:
 
-- `lib/voice-profiles/types.ts`
-- `lib/voice-profiles/profiles.ts`
-- `lib/voice-profiles/formatter.ts`
-- `lib/voice-profiles/validation.ts`
-- `lib/voice-profiles/fixtures.ts`
-- `lib/voice-profiles/index.ts`
+- `lib/timeline/types.ts`
+- `lib/timeline/calculator.ts`
+- `lib/timeline/validation.ts`
+- `lib/timeline/fixtures.ts`
+- `lib/timeline/index.ts`
 
 검증:
 
-- Voice profile module ESLint PASS
+- Timeline module ESLint PASS
 - Source-first module-only TypeScript diagnostics: 0
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/voice-profiles`, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
+- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/timeline`, `lib/voice-profiles`, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints`, `lib/source-facts` 관련 오류는 없다.
 - Codex runtime verification PASS:
-  - default provider ElevenLabs placeholder PASS
-  - script package TTS fallback scene ids PASS
-  - blueprint TTS scene ids preserved PASS
-  - valid package validation PASS
-  - terminal punctuation PASS
+  - timeline scene sum exact PASS
+  - caption timing mirrors scene timing PASS
+  - source linkage preserved PASS
+  - measured > target accepted PASS
+  - invalid duration/non-ordered scene validation fail PASS
 
 주의:
 
@@ -108,22 +108,22 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local timeline recalculation model**
+- **MVP 1 — local render manifest and ffmpeg command plan model**
 
 구현 대상:
 
-- timeline TypeScript types
-- supplied/mock measured duration input model
-- scene timing recalculation helper
-- caption timing blocks
+- render manifest TypeScript types
+- planned input/overlay/caption/audio slots
+- planned ffmpeg command fragments as data
 - source package/video/scene linkage
+- placeholder asset paths/ids only
 - deterministic helper
 - lightweight validation helper
 - no external AI/API
 - no DB migration
 - no video render
 - no ElevenLabs/TTS live call or real audio measurement
-- no ffmpeg
+- no ffmpeg execution
 - no payment/deploy/upload/post/push
 
 금지:

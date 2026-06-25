@@ -143,16 +143,26 @@ review-fix 추가 검증 (2026-06-25, money-shorts-os-voice-profile-spec-v1-revi
   - T4: blueprint TTS → scene[0].sceneId="s1"(real), scene[1].sceneId="s2"(real), ttsScript 우선/narration fallback ✅
   - T5: TTS package provider = "elevenlabs" (script pkg + blueprint 모두) ✅
 
-## Active Next Task
+## Implemented Timeline Recalculation module (`money-shorts-os-timeline-recalc-v1`):
 
-Task ID:
+- `lib/timeline/types.ts` — `TIMELINE_SCHEMA_VERSION`, `MeasuredDurationSource`, `TimelineSceneSlot`, `CaptionTimingBlock`, `BlueprintTimelineInput`, `ScriptTimelineInput`, `TimelineInput` (union), `RecalculatedTimeline`, `TimelineValidationError`, `TimelineValidationResult`
+- `lib/timeline/calculator.ts` — `recalculateTimeline(input, opts?)`: proportional resize from estimatedDuration weights → measuredAudioDurationSec; last scene absorbs rounding remainder (exact total); `buildBlueprintTimelineInput`, `buildScriptTimelineInput` helpers; 결정론적, new Date() 없음
+- `lib/timeline/validation.ts` — `validateTimeline`: missing sourceId/factCardIds/citationIds, invalid_duration, duration_mismatch, empty_scenes, scene_sum_mismatch, scene_times_not_ordered, scene_gap, empty_caption_text, caption_times_not_ordered; `validateTimelineInput`: input pre-validation
+- `lib/timeline/fixtures.ts` — inflationBlueprintTimeline30(28.4s), exchangeRateBlueprintTimeline15(14.2s), dartDisclosureBlueprintTimeline60(55.0s), inflationScriptTimeline30(27.8s), exchangeRateScriptTimeline15(13.5s), MOCK_TIMELINES; 모두 mock measured duration
+- `lib/timeline/index.ts` — re-export
 
-`money-shorts-os-timeline-recalc-v1`
+Validation evidence (2026-06-25):
 
-Goal:
-
-- Create local deterministic timeline recalculation types/helpers/validation from existing Blueprint/Script/TTS data plus supplied/mock measured duration values.
-- No ElevenLabs call, no audio generation, no real audio duration measurement, no external API, no DB/env/dependency changes, no render, no upload/deploy/push.
+- TypeScript strict check (lib/timeline/): 0 errors ✅
+- ESLint (lib/timeline/): 0 warnings ✅
+- Runtime sample (7 tests, node .cjs, 삭제 완료):
+  - T1: blueprint 4-scene 30s → resize to 28.4s, sum=28.400, validation.ok=true ✅
+  - T2: script package → sceneId=scene-1/2/3/4 (deterministic), sum=27.800 ✅
+  - T3: measured > target (63.2s for 60s estimate) → sum=63.200, validation.ok=true ✅
+  - T4: measuredAudioDurationSec=0 → ok=false, codes=[invalid_duration, scene_sum_mismatch] ✅
+  - T5: non-ordered scene startSec → ok=false, codes=[scene_sum_mismatch, scene_gap] ✅
+  - T6: caption timing mirrors scene slot (showAt=startSec, hideAt=endSec) ✅
+  - T7: sourceId/factCardIds/sourceCitationIds/sourceType 모두 보존 ✅
 
 ## Implemented Script Generator module (`money-shorts-os-fact-card-script-generator-v1`):
 
@@ -169,6 +179,17 @@ Validation evidence (2026-06-25):
 - Runtime sample — 3 fixtures (15s/30s/60s+CTA): all validation.ok=true, scene_sum==target ✅
 - Source linkage preserved: factCardIds, sourceCitationIds, per-scene factCardId + sourceNote ✅
 - Broken package (empty factCardIds + empty narration): validation.ok=false, expected codes ✅
+
+## Active Next Task
+
+Task ID:
+
+`money-shorts-os-ffmpeg-render-plan-v1`
+
+Goal:
+
+- Create local deterministic render manifest and ffmpeg command plan types/helpers/validation from existing local package data.
+- No ffmpeg execution, no render, no media probing, no output file creation, no external API, no DB/env/dependency changes, no upload/deploy/push.
 
 ## Active Source Of Truth
 
