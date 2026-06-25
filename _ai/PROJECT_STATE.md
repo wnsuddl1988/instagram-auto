@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 92% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, 그리고 manual overview route navigation까지 안정화됐다. 다음 단계는 Owner가 주요 로컬 workflow 화면으로 들어가는 `/money-shorts` hub route다.
+**전체프로젝트 진행률:** 약 93% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, 그리고 `/money-shorts` workflow hub까지 안정화됐다. 다음 단계는 기존 Money Shorts 화면들에서 hub로 돌아가는 entry links를 추가하는 것이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -67,7 +67,8 @@
 - Commit: `eb03a26` — `feat(fact-card-ui): add package preview route`
 - Commit: `08ff8f0` — `feat(fact-card-ui): add manual draft form`
 - Commit: `9e22a59` — `feat(fact-card-ui): add sample form controls`
-- Manual Route Navigation checkpoint: current safe checkpoint after Codex review
+- Commit: `fca0b73` — `feat(fact-card-ui): add manual workflow navigation`
+- Workflow Hub checkpoint: current safe checkpoint after Codex review
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -77,25 +78,25 @@
 
 Task:
 
-- `money-shorts-os-manual-fact-card-route-nav-v1`
+- `money-shorts-os-workflow-hub-ui-v1`
 
 구현:
 
-- `app/fact-cards/manual/page.tsx`
+- `app/money-shorts/page.tsx`
 
 검증:
 
-- ESLint `app/fact-cards/manual/page.tsx`: PASS
-- Targeted TypeScript diagnostics for `app/fact-cards`: 0 errors
-- Forbidden-pattern search PASS:
+- ESLint `app/money-shorts/page.tsx`: PASS
+- Targeted TypeScript diagnostics for `app/money-shorts`: 0 errors
+- Executable forbidden-pattern search PASS:
   - no OS clipboard write
   - no fetch/API route calls
   - no render/ffmpeg/output/upload/post/deploy calls
-- Claude HTTP verification:
-  - `/fact-cards/manual/new` href exists
-  - `/fact-cards/manual/package-preview` href exists
-  - `/packages` href exists
-  - valid/broken draft content remains visible
+- HTTP/dev verification:
+  - `/money-shorts` HTTP 200
+  - core text rendered: `Workflow Hub`, `출처 우선`, `LOCAL ONLY`
+  - hrefs rendered: `/fact-cards/manual`, `/fact-cards/manual/new`, `/fact-cards/manual/package-preview`, `/packages`
+- Dev server stopped after verification
 - Full `pnpm build` remains blocked at TypeScript stage only by pre-existing `output/` binary `.ts` files.
 
 주의:
@@ -123,13 +124,13 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — Money Shorts OS Workflow Hub**
+- **MVP 1 — Workflow Hub Entry Links**
 
 구현 대상:
 
-- `app/money-shorts/page.tsx`
-- local links to Fact Card overview, manual form, package preview, package library
-- source-first/local-only workflow explanation
+- existing Money Shorts local UI route files
+- visible `/money-shorts` links back to the hub
+- original content/behavior preserved
 
 금지:
 

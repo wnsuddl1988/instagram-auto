@@ -825,6 +825,34 @@ Validation evidence (2026-06-25):
   - 총 링크 6개 (헤더 3 + nav card 3) ✅
 - dev server 종료 ✅
 
+## Workflow Hub Route (`money-shorts-os-workflow-hub-ui-v1`):
+
+- `app/money-shorts/page.tsx` — 신규 생성 (Server Component, static)
+
+UI 구성:
+- 헤더: "Money Shorts OS — Workflow Hub" + SOURCE FIRST / LOCAL ONLY / MVP1 배지
+- 출처 우선 원칙 섹션 (amber): 4개 원칙 bullet
+- Workflow 순서 섹션: 4개 StepCard (sm:grid-cols-2 반응형)
+  1. Fact Card Overview → `/fact-cards/manual`
+  2. Manual Fact Card 입력 → `/fact-cards/manual/new`
+  3. Package Preview → `/fact-cards/manual/package-preview`
+  4. Package Library → `/packages`
+- 현재 상태 note (local workbench, 외부 전송 없음)
+
+Validation evidence (2026-06-25):
+- ESLint (`app/money-shorts/page.tsx`): 0 warnings ✅
+- TypeScript (full tsc → `app/money-shorts/` 필터): 0 errors ✅
+- 금지 패턴 검색 (clipboard/fetch//api//ffmpeg/output//upload/deploy): 0건 (UI 텍스트 내 단어만 — 실제 호출 없음) ✅
+- dev server HTTP 검증 (http://localhost:3000/money-shorts):
+  - `hasWorkflowHub=true` ✅
+  - `hasSourceFirst=true` (출처 우선 원칙 렌더) ✅
+  - `hasLocalOnly=true` (LOCAL ONLY 배지) ✅
+  - `/fact-cards/manual` href 존재 ✅
+  - `/fact-cards/manual/new` href 존재 ✅
+  - `/fact-cards/manual/package-preview` href 존재 ✅
+  - `/packages` href 존재 ✅
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

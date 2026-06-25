@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-workflow-hub-ui-v1`
+`money-shorts-os-workflow-hub-entry-links-v1`
 
 ## Current State
 
@@ -12,49 +12,40 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before route nav: `9e22a59 feat(fact-card-ui): add sample form controls`
-- Latest completed local UI: `/fact-cards/manual` route navigation polish.
+- Latest completed checkpoint before workflow hub: `fca0b73 feat(fact-card-ui): add manual workflow navigation`
+- Latest completed local UI: `/money-shorts` Workflow Hub route.
 - Codex verification passed:
-  - ESLint `app/fact-cards/manual/page.tsx`: PASS
-  - targeted TypeScript diagnostics for `app/fact-cards`: 0
-  - forbidden pattern search: PASS
-  - Claude HTTP verification: manual overview links to form, package preview, and package library
+  - ESLint `app/money-shorts/page.tsx`: PASS
+  - targeted TypeScript diagnostics for `app/money-shorts`: 0
+  - executable forbidden pattern search: PASS
+  - `/money-shorts` HTTP 200
+  - core text and all four route hrefs rendered
+  - dev server stopped after verification
 
 ## Goal
 
-Create a local Money Shorts OS workflow hub route.
+Add clear links back to the `/money-shorts` Workflow Hub from existing Money Shorts local UI screens.
 
-The Owner should have one local entry screen for the source-first MVP workflow, linking the Fact Card overview, direct form input, package preview, and package library. This is a navigation/workbench shell only, not a new backend workflow.
+The hub should become the obvious home/workbench entry point. This is navigation polish only.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a local route, suggested:
-  - `app/money-shorts/page.tsx`
-- Use static local UI and existing route links only.
-- Link to:
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/packages`
-- Show current source-first principle:
-  - Fact Card first
-  - no facts outside sources
-  - local preview only
-  - no publish/render/upload in this UI
-- Keep visual style consistent with existing dark operational UI.
+- Modify existing local UI route files as needed, likely:
+  - `app/fact-cards/manual/page.tsx`
+  - `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
+  - `app/fact-cards/manual/package-preview/page.tsx`
+  - `app/packages/PackageLibraryClient.tsx` or `app/packages/page.tsx`
+- Add visible links labeled like `Workflow Hub`, `Money Shorts Hub`, or `작업 허브` pointing to `/money-shorts`.
+- Keep existing behavior and route data unchanged.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 ## Required Behavior
 
-- `/money-shorts` renders a clear MVP workflow hub.
-- It must not call external services, APIs, DB, clipboard, render, or ffmpeg.
-- It should make the current workflow order obvious:
-  1. Fact Card overview
-  2. Manual input form
-  3. Package preview
-  4. Package library/review
+- Existing pages still render their original content.
+- Each touched screen has a clear route back to `/money-shorts`.
+- No external call or persistence.
 - Mobile and desktop layout should not overlap or squeeze text.
 
 ## Forbidden
@@ -88,13 +79,12 @@ Run focused checks:
   - `/api/`
   - ffmpeg/render/upload/post/deploy references
   - `output/`
-- If practical, run a local dev server and verify `/money-shorts` with HTTP/core text. Stop the server afterward.
+- If practical, run a local dev server and verify representative touched routes with HTTP/core text. Stop the server afterward.
 
 ## Definition of Done
 
-- `/money-shorts` hub route renders.
-- It links to all four local workflow routes.
-- It explains local/source-first status without marketing fluff.
+- Existing Money Shorts local UI screens have visible `/money-shorts` links.
+- Original route content remains visible.
 - No external/clipboard/render/DB/API action occurs.
 - Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
@@ -106,4 +96,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise workflow hub evidence because this creates the local MVP entry route.
+- Update `_ai/CLAUDE_REPORT.md` with concise evidence because this completes local navigation around the new hub.

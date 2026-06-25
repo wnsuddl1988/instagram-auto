@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Manual Route Navigation 완료, Workflow Hub 준비
+## 2026-06-25 현재 — Workflow Hub 완료, Hub Entry Links 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -36,22 +36,26 @@ Owner 결정:
 - `eb03a26 feat(fact-card-ui): add package preview route`
 - `08ff8f0 feat(fact-card-ui): add manual draft form`
 - `9e22a59 feat(fact-card-ui): add sample form controls`
-- Manual Route Navigation checkpoint: current local safe checkpoint after Codex review
+- `fca0b73 feat(fact-card-ui): add manual workflow navigation`
+- Workflow Hub checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-manual-fact-card-route-nav-v1`
-- `/fact-cards/manual` now links to:
+- `money-shorts-os-workflow-hub-ui-v1`
+- `/money-shorts` local workflow hub route
+- Links to:
+  - `/fact-cards/manual`
   - `/fact-cards/manual/new`
   - `/fact-cards/manual/package-preview`
   - `/packages`
-- Existing valid/broken draft cards remain visible.
 - Codex verification:
-  - ESLint `app/fact-cards/manual/page.tsx`: PASS
-  - targeted TypeScript diagnostics for `app/fact-cards`: 0
-  - forbidden pattern search PASS
-  - Claude HTTP verification passed: links and valid/broken content rendered
+  - ESLint `app/money-shorts/page.tsx`: PASS
+  - targeted TypeScript diagnostics for `app/money-shorts`: 0
+  - executable forbidden pattern search PASS
+  - HTTP 200 for `/money-shorts`
+  - all four hrefs rendered
+  - dev server stopped
 
 Source of truth:
 
@@ -66,24 +70,21 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Money Shorts OS Workflow Hub**
+**MVP 1 — Workflow Hub Entry Links**
 
 Task ID:
 
-`money-shorts-os-workflow-hub-ui-v1`
+`money-shorts-os-workflow-hub-entry-links-v1`
 
 목표:
 
-- Owner가 source-first MVP의 주요 로컬 화면으로 들어갈 수 있는 `/money-shorts` workflow hub route를 만든다.
+- 기존 Money Shorts 로컬 UI 화면들에서 `/money-shorts` hub로 돌아가는 링크를 추가한다.
 
 포함:
 
-- `app/money-shorts/page.tsx` route 추가
-- `/fact-cards/manual` 링크
-- `/fact-cards/manual/new` 링크
-- `/fact-cards/manual/package-preview` 링크
-- `/packages` 링크
-- Fact Card first / local preview only / no publish-render-upload 원칙 표시
+- 기존 route UI navigation polish
+- `/money-shorts` 링크 추가
+- 기존 화면 content/behavior 유지
 
 금지:
 
