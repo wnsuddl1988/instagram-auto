@@ -1323,6 +1323,83 @@ publishable: false
 | `.env*` 수정/스테이징 없음 | ✅ |
 | `piq_diag_out.txt` unstaged 유지 | ✅ |
 
+## ECOS Source-Date Resolver (`money-shorts-os-ecos-source-date-resolver-v1` — 2026-06-26)
+
+기준 commit: `63d9b10 feat(source-facts): add ecos latest-period resolver with source-date gate`
+
+목표: latest ECOS base-rate period(`202605`)를 공식 BOK 발표일과 연결해 `blocked_pending_source_date` → `draft_ready`로 전환 가능한지 검증. 단, 발표일을 공식 source에 자신 있게 연결 못 하면 blocked/unresolved 유지, 날짜 발명 금지.
+
+**핵심 데이터 정확성 통찰:**
+- ECOS 722Y001 기준금리는 월별 시계열 — 매월 "그 달에 유효한 금리"를 보고하며, 발표일/결정일이 아님.
+- latest period `202605`(2026년 5월)의 값 2.5%는 "2026년 5월에 새로 결정된 값"이 아니라 "마지막으로 2.5%로 변경된 결정이 계속 유지 중"인 상태.
+- 따라서 latest period의 정확한 publishedDate는 그 값이 마지막으로 **변경·결정된 공식 BOK 결정일**이어야 함. ECOS period(연월)에서 날짜를 유도하면 발명임.
+
+**구현 (값 매칭 방식, 날짜 발명 방지):**
+
+- `lib/source-facts/ecos-source-date.ts` (신규):
+  - `BokBaseRateDecision` interface (decisionDate ISO + value 숫자)
+  - `BOK_BASE_RATE_DECISIONS` — 공식 BOK 페이지에서 전사한 변경 이력(most-recent first): `2025-05-29=2.5`, `2025-02-25=2.75`, `2024-11-28=3.0`, `2024-10-11=3.25`, `2023-01-13=3.5`
+  - `BOK_BASE_RATE_DECISION_SOURCE_URL` / `_SOURCE_NAME` — 공식 source (통화정책방향 결정회의 페이지)
+  - `resolveEcosBaseRateSourceDate(latestRow, decisions?)` — latest ECOS **값**이 가장 최근 공식 결정 **값**과 일치할 때만 그 결정일을 verifiedPublishedDate로 반환. 불일치/미존재/파싱불가 시 4-code unresolved: `unparsable_latest_value` / `no_decision_history` / `value_not_in_official_history` / `latest_value_not_most_recent_decision`
+  - `process.env`/`fetch`/`Date.now` 미사용 — 순수 검증 로직
+- `lib/source-facts/index.ts`: re-export 추가
+- `scripts/_ecos-source-date-check.mjs` (신규): read-only live check, secret-safe. ECOS latest period 가져온 뒤 BOK 이력 값 매칭 → readiness 보고.
+
+**공식 source 확인 방식:**
+- BOK 공식 페이지 `통화정책방향 결정회의 일정 및 자료` (https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643) 에서 기준금리 변경 이력 표 확인.
+- 일반 웹검색이 아닌 공식 BOK 페이지 우선. 최신 변경: 2025년 5월 29일 2.50%, 직전 2025년 2월 25일 2.75%.
+
+**날짜 발명 방지 방식:**
+- resolver는 latest ECOS row의 **숫자 값**을 공식 이력의 **가장 최근 결정 값**과만 매칭.
+- 값이 일치할 때만 그 결정의 전사된 날짜를 반환 → 날짜는 항상 공식 전사 상수, ECOS period에서 유도 안 함.
+- latest 값이 가장 최근 결정과 불일치하면(이력이 stale일 수 있음) 더 오래된 결정일로 fallback하지 않고 차단.
+
+live verification (`node --env-file=.env.local scripts/_ecos-source-date-check.mjs`, 1회):
+```
+window: 202507~202606 (12 months)
+RESULT: LIVE_OK
+rows fetched: 11
+latestPeriod: 202605 (2026년 5월)
+previousPeriod: 202604 (2026년 4월)
+latestValue: 2.5연%
+indicatorName: 한국은행 기준금리
+--- source-date verification ---
+officialSource: 한국은행 통화정책방향 결정회의 — 기준금리 변경 이력
+verifiedPublishedDate: 2025-05-29 (matched value 2.5%)
+readinessStatus: draft_ready
+publishable: false
+```
+
+source-date/readiness 판정:
+- latest period: `202605` (2026년 5월), 값 2.5%
+- verifiedPublishedDate: **2025-05-29** (공식 BOK 결정일, ECOS period 아님)
+- official source evidence: BOK 통화정책방향 결정회의 페이지, 최신 변경 2025-05-29 2.50%
+- readiness: **draft_ready** (decideEcosLatestPeriodReadiness에 verified date 전달 시 도달)
+- publishable: **false** (downstream 결정, 이번 slice 미설정)
+
+offline unit check (임시 .mjs, 7/7 PASS 후 git clean으로 삭제):
+- T1 latest 2.5 → verified 2025-05-29 ✅
+- T2 "2.50" → verified 2025-05-29 ✅
+- T3 stale 값 3.0 → `latest_value_not_most_recent_decision` (오래된 날짜 발명 안 함) ✅
+- T4 미존재 값 1.75 → `value_not_in_official_history` ✅
+- T5 "N/A" → `unparsable_latest_value` ✅
+- T6 empty history → `no_decision_history` ✅
+- T7 verified date가 ECOS period(2026)가 아닌 공식 2025-05-29 ✅
+
+검증:
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (ecos-source-date.ts/index.ts/_ecos-source-date-check.mjs) | 0 warnings ✅ |
+| forbidden pattern (Date.now/Math.random/clipboard/ffmpeg/output/upload/deploy) | 주석만, 코드 없음 ✅ |
+| `process.env`/`fetch`/apiKey in ecos-source-date.ts | 없음 (순수 로직) ✅ |
+| API key 값 출력 | 없음 ✅ |
+| secret-bearing URL 출력 | 없음 ✅ (에러 시 "URL withheld") |
+| `.env*` 수정/스테이징 | 없음 ✅ |
+| `piq_diag_out.txt` 제외 유지 | 없음 (untracked) ✅ |
+
+Non-blocking note (Codex 검토용): `normalizeEcosBaseRateRows()`는 아직 `sourceProviderId: "provider-ecos-mock"`. 이번 slice는 source-date 검증/readiness 도달까지만으로 snapshot publish 안 함. live provider id 분리는 다음 draft 연결 slice 검토.
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

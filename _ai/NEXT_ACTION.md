@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — latest available period resolver 구현 완료 (LIVE_OK, blocked_pending_source_date), checkpoint 대기
+## 2026-06-26 현재 — source-date resolver 승인, Claude 실행 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,7 +15,7 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `43fe473 fix(source-facts): align ecos mock fixtures with live truth` ← **현재 HEAD**
+- `63d9b10 feat(source-facts): add ecos latest-period resolver with source-date gate` ← **현재 HEAD**
 - (이전: `d85b616 feat(source-facts): add auto fact card candidate preview`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
@@ -49,11 +49,19 @@ Owner 결정:
   - `candidates.ts`: mock snapshot previousValue/changeValue/Text live truth에 정렬
   - Jan2025는 historical smoke fixture이며 production 최신 데이터 default가 아님을 명시
 - Owner 승인: `latest available period` 선택/검증 slice 진행
-- `money-shorts-os-ecos-latest-period-resolver-v1`: **완료, 미커밋**
+- `money-shorts-os-ecos-latest-period-resolver-v1`: **완료, 커밋됨 (63d9b10)**
   - `ecos-latest-period.ts`: `buildEcosLatestWindowRequest()` (Date.now 없음) + `resolveLatestEcosBaseRatePeriod()` + `decideEcosLatestPeriodReadiness()` (3-state)
   - `scripts/_ecos-latest-period-check.mjs`: read-only live check (end period 202606)
   - live: latest `202605` 2.5%, previous `202604` 2.5% → `blocked_pending_source_date` (publishedDate 미검증, 발명 금지)
   - Jan2025 smoke fallback 없음, publishable 금지
+- Owner 승인: source-date 검증 경로 설계/구현 진행
+- `money-shorts-os-ecos-source-date-resolver-v1`: **완료, 미커밋**
+  - `ecos-source-date.ts`: `BOK_BASE_RATE_DECISIONS` (공식 BOK 전사 이력) + `resolveEcosBaseRateSourceDate()` (값 매칭 검증, 4-code unresolved, 날짜 발명 금지)
+  - `scripts/_ecos-source-date-check.mjs`: read-only live check
+  - live: latest `202605` 2.5% 값이 공식 최신 결정 `2025-05-29` 2.5%와 일치 → verifiedPublishedDate `2025-05-29`, `draft_ready`, `publishable=false`
+  - 핵심: latest period(2026-05)에서 날짜 유도 금지 — 발표일은 그 값이 마지막 변경된 공식 BOK 결정일(2025-05-29)
+  - 공식 source: BOK 통화정책방향 결정회의 페이지
+- 현재 untracked: `piq_diag_out.txt` (작업 무관, 건드리지 말고 계속 제외)
 
 Source of truth:
 
@@ -70,15 +78,17 @@ Source of truth:
 
 먼저:
 
-- `money-shorts-os-ecos-latest-period-resolver-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
+- `money-shorts-os-ecos-source-date-resolver-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
+  - source-date resolver는 완료: latest 값 ↔ 공식 BOK 최신 결정 값 매칭으로 `verifiedPublishedDate=2025-05-29` 검증, `draft_ready` 도달, 날짜 발명 없음.
 
-그 다음 (source date 검증 경로):
+그 다음 (live latest draft 연결):
 
-- latest period(`202605` 등)에 대한 **검증된 publishedDate(BOK 발표일) source 확보 방법** 설계.
-  - ECOS row payload에는 발표일이 없음 → 별도 source(통화정책방향 발표 일정 등)에서 verified date 확보 경로 필요.
-  - verified date가 확보되면 `decideEcosLatestPeriodReadiness(rows, fetchedAt, verifiedPublishedDate)` → `draft_ready` snapshot 생성.
+- 검증된 source-date를 latest-period resolver와 묶는 end-to-end helper 검토:
+  - `latest ECOS rows → resolveEcosBaseRateSourceDate() → decideEcosLatestPeriodReadiness(rows, fetchedAt, verifiedDate)` 단일 경로.
+  - `normalizeEcosBaseRateRows()`의 `sourceProviderId: "provider-ecos-mock"` → live provider id 분리 검토 (draft snapshot이 mock으로 표기되지 않도록).
 - draft_ready 안정화 후 `/fact-cards/manual/package-preview`에 live/latest candidate 연결 검토.
 - 아직 GPT, 영상, ElevenLabs, ffmpeg/render로 가지 않는다.
+- publishable=true는 아직 설정하지 않는다 (downstream Owner 결정).
 
 금지 (계속 유지):
 

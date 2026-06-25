@@ -10,3 +10,4 @@ export * from "./ecos-fixtures";
 export * from "./ecos-normalizer";
 export * from "./ecos-live-transport";
 export * from "./ecos-latest-period";
+export * from "./ecos-source-date";
