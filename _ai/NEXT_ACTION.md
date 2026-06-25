@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — latest live draft candidate 완료, checkpoint commit 대기
+## 2026-06-26 현재 — latest live draft candidate checkpoint 완료, package-preview live 연결 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,8 +13,7 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `4bc9f0a feat(source-facts): add bok base-rate source-date resolver` ← **현재 HEAD**
-- latest uncommitted milestone: `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix
+- `525e635 feat(source-facts): connect ecos resolvers into live draft candidate path` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
@@ -40,22 +39,33 @@ Owner 결정:
   - latest ECOS value `2.5%` matched official latest BOK decision `2025-05-29 2.50%`
   - verifiedPublishedDate `2025-05-29`
   - source date is official BOK decision date, not derived from ECOS period `202605`
-- `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix: **완료, checkpoint commit 대기**
+- `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix: checkpoint `525e635`
   - latest ECOS rows -> latest period -> BOK source-date -> normalized snapshot -> Fact Card draft candidate
   - `sourceProviderId=provider-ecos-live`, `isMock=false`, `isPublishable=false`
   - BOK source-date provenance를 rawPayload와 citation에 보존
   - candidate validation 실패 시 `draft_ready` 금지 (`blocked_candidate_validation_failed`)
 
+## 최근 완료 (2026-06-26 추가)
+
+`money-shorts-os-package-preview-live-latest-candidate-v1` + review-fix: uncommitted (checkpoint 대기)
+
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` live route 연결
+- default/mock route ECOS 호출 없이 기존 동작 유지
+- live provenance card 표시: `provider-ecos-live`, `isMock=false`, `isPublishable=false`, `publishedDate=2025-05-29`, `dataPeriod=2026년 5월`
+- BOK source-date citation 노출 (`bok.or.kr/portal/singl/baseRate`)
+- review-fix: `dataPeriod` `factCard.dataPeriod` 사용으로 보정, `async` 제거
+
 ## 다음 safe work unit
 
-먼저:
+**`dev-server-default-route-alignment-v1`** ← Owner 피드백 반영
 
-- `money-shorts-os-ecos-latest-live-draft-candidate-v1` 누적 diff를 safe checkpoint commit.
-
-그 다음:
-
-- `/fact-cards/manual/package-preview`에 local/dev-only live latest candidate selector 연결 검토.
-- Owner가 최신 Fact Card Draft를 보고 승인/수정하는 UX 연결.
+- 목표: 개발서버 기본 진입점/홈 라우트/내비게이션을 현재 Money Shorts OS 기준으로 정렬.
+- 문제: 개발서버 기본 진입점이 예전 프로젝트(AutoShorts) 기준으로 열림.
+- 작업 범위:
+  - 홈(`/`) 라우트를 Money Shorts OS 허브(`/money-shorts`)로 리디렉트하거나 Money Shorts OS 화면으로 교체.
+  - 상단 내비게이션 링크 정렬.
+  - 예전 프로젝트 화면이 기본으로 열리지 않게 정리.
+- 이번 task에서는 구현 안 함 — 다음 Codex 지시로 진행.
 
 아직 하지 않을 것:
 

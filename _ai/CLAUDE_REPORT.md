@@ -1510,6 +1510,73 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
 
+## Package Preview Prefetch Review-Fix (`money-shorts-os-package-preview-live-latest-candidate-v1-prefetch-review-fix` — 2026-06-26)
+
+live candidate selector `Link`에 `prefetch={false}` 추가 (line 547).
+- 대상: `href="/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606"`
+- 근거: Next.js Link viewport/hover prefetch가 live route server render + ECOS 호출을 유발할 수 있음
+- default/mock route 링크는 변경 없음
+- `createEcosLiveTransport` 실행 경로는 `if (candidateKey === "ecos-live-latest")` 분기 안에만 존재 (static grep 확인 ✅)
+- TS 0 errors, ESLint 0 warnings ✅
+
+## Package Preview Review-Fix (`money-shorts-os-package-preview-live-latest-candidate-v1-review-fix` — 2026-06-26)
+
+Fix 1: `liveProvenance.dataPeriod` → `liveAuthoringResult.factCard.dataPeriod` 사용. provenance card에서 `202605` raw period 대신 `2026년 5월` 표시. browser snapshot 확인 ✅
+Fix 2: `PackagePreviewContent`의 불필요한 `async` 제거. 동작 무변경.
+TS 0 errors, ESLint 0 warnings, console error 없음 ✅
+next action: `dev-server-default-route-alignment-v1` — 개발서버 기본 진입점 Money Shorts OS 기준 정렬 (이번 task 구현 안 함).
+
+## Package Preview Live Latest Candidate (`money-shorts-os-package-preview-live-latest-candidate-v1` — 2026-06-26)
+
+기준 checkpoint: `525e635 feat(source-facts): connect ecos resolvers into live draft candidate path`
+
+목표: `/fact-cards/manual/package-preview`에서 명시적 query(`?candidate=ecos-live-latest&endPeriod=202606`)로만 live ECOS draft candidate 확인. 기본/mock route 무호출 보장.
+
+**변경 파일:**
+- `app/fact-cards/manual/package-preview/page.tsx` (M): live 경로 분기 + LiveBlockedState 컴포넌트 + 조건부 notice + selector 옵션 추가 + provenance card
+
+**구현 요약:**
+- `PackagePreviewPage` (export default): `searchParams`에 `endPeriod` 추가. `candidateKey === "ecos-live-latest"` 분기에서만 `createEcosLiveTransport` → `transport.executeAsync` → `buildEcosLatestDraftCandidate` 실행. 그 외 모든 경로는 기존 registry-based 경로(mock/fixture) 그대로.
+- `PackagePreviewContent` (공유 렌더 컴포넌트): live/mock 양 경로가 동일한 렌더링 경로 공유. `isLive` prop으로 notice 문구 조건부 전환.
+- `LiveBlockedState` (신규): ECOS key 없음/네트워크 실패/candidate blocked 시 amber 차단 화면.
+- `LIVE_FETCHED_AT = "2026-06-26T00:00:00+09:00"`: Date.now() 사용 없는 결정론적 상수.
+- secret-bearing URL은 page.tsx에서 직접 참조 없음 — `ecos-live-transport.ts` 내부에서만 처리.
+
+**route smoke 결과 (browser preview):**
+
+| Route | 결과 |
+|-------|------|
+| default `/fact-cards/manual/package-preview` | ✅ 가계부채 fixture, "외부 API 없음", React key warning 없음 |
+| mock `?candidate=base-rate` | ✅ ECOS mock, isMock=true, "외부 API 없음", React key warning 없음 |
+| live `?candidate=ecos-live-latest&endPeriod=202606` | ✅ draft_ready, 모든 필드 확인 |
+
+**live route 필드 확인:**
+
+| 필드 | 값 |
+|------|-----|
+| sourceProviderId | provider-ecos-live |
+| isMock | false |
+| isPublishable | false |
+| publishedDate | 2025-05-29 |
+| dataPeriod | 2026년 5월 |
+| ECOS citation | citation-generated-raw-ecos-722Y001-0101000-202605 |
+| BOK provenance citation | citation-source-date-raw-ecos-722Y001-0101000-202605 (bok.or.kr/portal/singl/baseRate) |
+
+**source-date provenance note:**
+- publishedDate(2025-05-29) = 공식 BOK 결정일, ECOS period 202605에서 유도 안 함 ✅
+- BOK citation sourceUrl = `https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643` ✅
+
+**checks:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict (page.tsx + source-facts) | 0 errors ✅ |
+| ESLint (page.tsx) | 0 warnings ✅ |
+| forbidden pattern (Date.now/Math.random/clipboard/ffmpeg/output/upload/deploy) | 주석만 ✅ |
+| process.env 직접 참조 in page.tsx | 없음 ✅ |
+| secret-bearing URL in page.tsx | 없음 ✅ |
+| console error / React key warning | 없음 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

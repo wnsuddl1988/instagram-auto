@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-26
 
-**전체프로젝트 진행률:** 약 67% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음은 UI/dev preview 연결과 Owner acceptance 흐름이다.
+**전체프로젝트 진행률:** 약 70% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음은 개발서버 기본 진입점 Money Shorts OS 기준 정렬(`dev-server-default-route-alignment-v1`)이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -79,7 +79,7 @@
 - Commit: `43fe473` — `fix(source-facts): align ecos mock fixtures with live truth`
 - Commit: `63d9b10` — `feat(source-facts): add ecos latest-period resolver with source-date gate`
 - Commit: `4bc9f0a` — `feat(source-facts): add bok base-rate source-date resolver`
-- Latest uncommitted milestone: `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix — ready for safe checkpoint commit
+- Commit: `525e635` — `feat(source-facts): connect ecos resolvers into live draft candidate path`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -155,8 +155,8 @@ Task:
 
 현재 우선순위:
 
-- latest live draft candidate 누적 diff를 safe checkpoint commit.
-- 그 다음: `/fact-cards/manual/package-preview`에 local/dev-only live latest candidate selector 연결 검토.
+- `/fact-cards/manual/package-preview`에 local/dev-only live latest candidate selector 연결 검토.
+- default/mock route는 live call 없이 유지하고, live route는 명시적 query에서만 ECOS read-only call.
 - 이후: Owner가 최신 Fact Card Draft를 보고 승인/수정하는 UX 연결.
 - 실제 영상 제작/GPT/TTS/render/upload는 아직 금지이며 별도 Owner 승인 후 진행한다.
 

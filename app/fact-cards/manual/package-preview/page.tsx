@@ -10,6 +10,13 @@ import {
   buildPackageWorkflowStatus,
   buildPackageCopyActionSummary,
 } from "@/lib/package-view/builder";
+import {
+  buildEcosLatestWindowRequest,
+  isValidEcosMonthlyPeriod,
+} from "@/lib/source-facts/ecos-latest-period";
+import { createEcosLiveTransport } from "@/lib/source-facts/ecos-live-transport";
+import { buildEcosLatestDraftCandidate } from "@/lib/source-facts/ecos-latest-candidate";
+import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 
 // ── Deterministic constants ────────────────────────────────────────────────────
 const MOCK_VIDEO_ID = "video-manual-household-debt-preview-001";
@@ -19,6 +26,9 @@ const MOCK_AUDIO_DURATION_SEC = 42.0;
 const MOCK_REVIEW_PACKET_ID = "rp-manual-household-debt-preview-001";
 const MOCK_GATE_RESULT_ID = "gate-manual-household-debt-preview-001";
 const MOCK_DECIDED_AT = "2026-06-25T09:05:00+09:00";
+
+// fetchedAt for live ECOS requests — deterministic constant, never Date.now().
+const LIVE_FETCHED_AT = "2026-06-26T00:00:00+09:00";
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -201,6 +211,32 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
+// ── Live blocked state (ECOS key missing, network error, or candidate blocked) ──
+
+function LiveBlockedState({ status, reason }: { status: string; reason: string }) {
+  return (
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center p-8">
+      <div className="max-w-lg w-full rounded-xl border border-amber-700/50 bg-amber-900/10 px-6 py-6">
+        <div className="text-amber-300 font-bold text-base mb-2">ECOS live candidate 차단됨</div>
+        <div className="font-mono text-xs text-amber-400 mb-3 bg-amber-900/20 px-3 py-2 rounded">
+          status: {status}
+        </div>
+        <p className="text-sm text-amber-200 mb-4 break-all">{reason}</p>
+        <div className="text-xs text-slate-500 mb-4">
+          ECOS API key 환경변수가 없거나 live 요청이 실패한 경우입니다.
+          mock candidate를 사용하거나 .env.local 설정을 확인하세요.
+        </div>
+        <Link
+          href="/fact-cards/manual/package-preview?candidate=base-rate"
+          className="inline-block px-4 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm hover:bg-slate-800 transition-colors"
+        >
+          ← mock 후보로 돌아가기
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 // ── Candidate registry ─────────────────────────────────────────────────────────
@@ -219,17 +255,99 @@ const CANDIDATE_REGISTRY: Record<
 export default async function PackagePreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ candidate?: string }>;
+  searchParams: Promise<{ candidate?: string; endPeriod?: string }>;
 }) {
   const params = await searchParams;
   const candidateKey = params.candidate ?? null;
+  const endPeriod = params.endPeriod ?? null;
+
+  // ── Live ECOS latest candidate path (explicit query only) ──────────────────
+  // Activated only when ?candidate=ecos-live-latest is present.
+  // Default and mock routes never reach this block.
+  if (candidateKey === "ecos-live-latest") {
+    // Validate endPeriod
+    if (endPeriod === null || !isValidEcosMonthlyPeriod(endPeriod)) {
+      return (
+        <LiveBlockedState
+          status="blocked_invalid_end_period"
+          reason={`endPeriod 파라미터가 없거나 유효하지 않습니다 (받은 값: ${endPeriod ?? "없음"}). ?candidate=ecos-live-latest&endPeriod=202606 형식으로 요청하세요.`}
+        />
+      );
+    }
+
+    const windowRequest = buildEcosLatestWindowRequest(endPeriod);
+    if (windowRequest === null) {
+      return (
+        <LiveBlockedState
+          status="blocked_window_request_failed"
+          reason={`endPeriod=${endPeriod}로 window request를 만들 수 없습니다.`}
+        />
+      );
+    }
+
+    const transport = createEcosLiveTransport(LIVE_FETCHED_AT);
+    // buildEcosLatestDraftCandidate needs raw rows (it runs its own resolvers),
+    // so we call the transport directly instead of going through runEcosConnectorAsync.
+    const rawTransportResult = await transport.executeAsync(windowRequest);
+    if (!rawTransportResult.ok) {
+      return (
+        <LiveBlockedState
+          status="blocked_live_transport_failed"
+          reason={rawTransportResult.error}
+        />
+      );
+    }
+
+    const draftResult = buildEcosLatestDraftCandidate(
+      rawTransportResult.rows,
+      LIVE_FETCHED_AT,
+    );
+
+    if (draftResult.status !== "draft_ready" || draftResult.candidateResult === null) {
+      return (
+        <LiveBlockedState
+          status={draftResult.status}
+          reason={draftResult.reason}
+        />
+      );
+    }
+
+    const liveAuthoringResult: ManualFactCardAuthoringResult = draftResult.candidateResult;
+
+    if (!liveAuthoringResult.ok || !liveAuthoringResult.factCard) {
+      return (
+        <LiveBlockedState
+          status="blocked_candidate_validation_failed"
+          reason="candidateResult.ok=false 또는 factCard=null — validation 에러를 확인하세요."
+        />
+      );
+    }
+
+    return (
+      <PackagePreviewContent
+        authoringResult={liveAuthoringResult}
+        candidateKey={candidateKey}
+        candidateLabel={`기준금리 (ECOS live latest — ${endPeriod})`}
+        isLive={true}
+        liveProvenance={{
+          sourceProviderId: "provider-ecos-live",
+          isMock: false,
+          isPublishable: false,
+          publishedDate: draftResult.verifiedPublishedDate ?? "",
+          dataPeriod: liveAuthoringResult.factCard.dataPeriod,
+        }}
+      />
+    );
+  }
+
+  // ── Registry-based candidates (mock, fixture) ───────────────────────────────
   const candidateEntry = candidateKey ? (CANDIDATE_REGISTRY[candidateKey] ?? null) : null;
 
   // Unknown ?candidate= key → explicit error instead of silent fallback
   if (candidateKey !== null && candidateEntry === null) {
     return (
       <ErrorState
-        message={`?candidate=${candidateKey}는 등록된 후보가 없습니다. 등록된 키: ${Object.keys(CANDIDATE_REGISTRY).join(", ")}`}
+        message={`?candidate=${candidateKey}는 등록된 후보가 없습니다. 등록된 키: ${Object.keys(CANDIDATE_REGISTRY).join(", ")} 또는 ecos-live-latest`}
       />
     );
   }
@@ -248,7 +366,43 @@ export default async function PackagePreviewPage({
     );
   }
 
-  const factCard = authoringResult.factCard;
+  return (
+    <PackagePreviewContent
+      authoringResult={authoringResult}
+      candidateKey={candidateKey}
+      candidateLabel={candidateLabel}
+      isLive={false}
+      liveProvenance={null}
+    />
+  );
+}
+
+// ── Live provenance metadata ───────────────────────────────────────────────────
+
+interface LiveProvenance {
+  sourceProviderId: string;
+  isMock: boolean;
+  isPublishable: boolean;
+  publishedDate: string;
+  dataPeriod: string;
+}
+
+// ── Main content component (extracted so live/mock paths share rendering) ─────
+
+function PackagePreviewContent({
+  authoringResult,
+  candidateKey,
+  candidateLabel,
+  isLive,
+  liveProvenance,
+}: {
+  authoringResult: ManualFactCardAuthoringResult;
+  candidateKey: string | null;
+  candidateLabel: string | null;
+  isLive: boolean;
+  liveProvenance: LiveProvenance | null;
+}) {
+  const factCard = authoringResult.factCard!;
 
   // ── Assemble pipeline (all deterministic, no external calls) ────────────────
   const pkg = assembleContentPackage(
@@ -315,7 +469,10 @@ export default async function PackagePreviewPage({
                 Money Shorts OS — Package Preview
               </h1>
               <p className="text-xs text-slate-500">
-                Step 1→6 전체 · Manual Fact Card → Content Package 로컬 미리보기 · 외부 API 없음
+                Step 1→6 전체 · Manual Fact Card → Content Package 로컬 미리보기
+                {isLive
+                  ? " · ECOS live 읽기 (dev-only)"
+                  : " · 외부 API 없음"}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -343,12 +500,22 @@ export default async function PackagePreviewPage({
 
       {/* Local preview notice */}
       <div className="max-w-screen-xl mx-auto px-4 pt-4">
-        <div className="rounded-lg border border-amber-800/40 bg-amber-900/15 px-4 py-3 text-xs text-amber-200">
-          <span className="font-bold text-amber-300">로컬 미리보기 전용</span>
-          {" — "}
-          이 화면은 실제 publish·render·업로드를 수행하지 않습니다. 모든 id, 날짜, duration은
-          deterministic mock 값입니다. 외부 API·DB·OS 클립보드 호출 없음.
-        </div>
+        {isLive ? (
+          <div className="rounded-lg border border-blue-800/40 bg-blue-900/15 px-4 py-3 text-xs text-blue-200">
+            <span className="font-bold text-blue-300">ECOS live 읽기 (dev-only)</span>
+            {" — "}
+            이 화면은 한국은행 ECOS에서 최신 기준금리 데이터를 읽었습니다.{" "}
+            <span className="text-blue-300 font-semibold">draft-only</span> 상태이며 실제 publish·render·업로드를 수행하지 않습니다.
+            모든 패키지 id/duration은 mock 값입니다. DB·OS 클립보드 호출 없음.
+          </div>
+        ) : (
+          <div className="rounded-lg border border-amber-800/40 bg-amber-900/15 px-4 py-3 text-xs text-amber-200">
+            <span className="font-bold text-amber-300">로컬 미리보기 전용</span>
+            {" — "}
+            이 화면은 실제 publish·render·업로드를 수행하지 않습니다. 모든 id, 날짜, duration은
+            deterministic mock 값입니다. 외부 API·DB·OS 클립보드 호출 없음.
+          </div>
+        )}
       </div>
 
       {/* Candidate selector */}
@@ -374,6 +541,17 @@ export default async function PackagePreviewPage({
             }`}
           >
             기준금리 (ECOS mock generated)
+          </Link>
+          <Link
+            href="/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606"
+            prefetch={false}
+            className={`px-2.5 py-1 rounded border text-xs font-semibold transition-colors ${
+              candidateKey === "ecos-live-latest"
+                ? "border-blue-500 bg-blue-900/40 text-blue-200"
+                : "border-slate-700/40 bg-slate-800/20 text-slate-400 hover:bg-slate-800/40"
+            }`}
+          >
+            기준금리 (ECOS live latest)
           </Link>
           {candidateLabel && (
             <span className="ml-auto text-indigo-300 font-mono">
@@ -419,10 +597,35 @@ export default async function PackagePreviewPage({
           </div>
         </SectionCard>
 
+        {/* Live provenance card — only shown for ecos-live-latest */}
+        {isLive && liveProvenance && (
+          <SectionCard
+            title="ECOS Live Draft Candidate — Source-Date Provenance"
+            subtitle="provider-ecos-live · isMock=false · isPublishable=false"
+            color="indigo"
+          >
+            <FieldRow label="sourceProviderId" value={liveProvenance.sourceProviderId} mono />
+            <FieldRow label="isMock" value={String(liveProvenance.isMock)} mono />
+            <FieldRow label="isPublishable" value={String(liveProvenance.isPublishable)} mono />
+            <FieldRow label="publishedDate" value={liveProvenance.publishedDate} mono />
+            <FieldRow label="dataPeriod" value={liveProvenance.dataPeriod} mono />
+            <div className="mt-2 text-xs text-blue-300 border border-blue-800/30 bg-blue-900/10 rounded px-3 py-2">
+              publishedDate는 ECOS period에서 유도된 날짜가 아닙니다.
+              공식 BOK 통화정책방향 결정회의 이력에서 value matching으로 검증된 결정일입니다.
+            </div>
+          </SectionCard>
+        )}
+
         {/* ② Fact Card summary + source linkage */}
         <SectionCard
           title="① Fact Card — 출처 기반 수치"
-          subtitle="validHouseholdDebtResult.factCard (manual fixture)"
+          subtitle={
+            isLive
+              ? `ECOS live latest (provider-ecos-live) — draft-only`
+              : candidateKey === "base-rate"
+                ? "generatedBaseRateResult.factCard (ECOS mock)"
+                : "validHouseholdDebtResult.factCard (manual fixture)"
+          }
           color="emerald"
         >
           <FieldRow label="indicatorName" value={factCard.indicatorName} />
