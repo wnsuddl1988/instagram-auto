@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Timeline checkpoint 준비 완료
+## 2026-06-25 현재 — Render-plan checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -22,19 +22,24 @@ Owner 결정:
 - `fa6b5a1 feat(chart-cards): add source-linked card props model`
 - `5bb99fd feat(image-prompts): add source-linked prompt package generator`
 - `55f4a9b feat(voice-profiles): add local tts script formatter`
+- `14f3c53 feat(timeline): add local timeline recalculation`
+- render-plan checkpoint: Codex-reviewed and ready for local commit
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-timeline-recalc-v1`
-- `lib/timeline/` 로컬 timeline recalculation model 구현
+- `money-shorts-os-ffmpeg-render-plan-v1`
+- `money-shorts-os-ffmpeg-render-plan-v1-review-fix`
+- `lib/render-plan/` 로컬 render manifest + ffmpeg command plan model 구현
 - Codex verification:
-  - source-first module-only TypeScript diagnostics: 0
-  - ESLint `lib/timeline`: PASS
-  - runtime sample: timeline sum exact, caption timing mirrors scene timing, script scene ids `scene-1..`, measured>target PASS, invalid duration/non-ordered scenes fail PASS
+  - source-first render-plan TypeScript diagnostics: 0
+  - ESLint `lib/render-plan`: PASS
+  - runtime sample: image prompt package linkage PASS, placeholder fallback PASS, missing timeline id fails PASS, forbidden command injection fails PASS
+  - planned output file was not created
 
 Source of truth:
 
+- `_ai/HANDOFF_NOW.md`
 - `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`
 - `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`
 - `_ai/MONEY_SHORTS_OS_PRD_V1.md`
@@ -45,26 +50,26 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local render manifest and ffmpeg command plan model**
+**MVP 1 — local final QA model/checklist runner**
 
 Task ID:
 
-`money-shorts-os-ffmpeg-render-plan-v1`
+`money-shorts-os-final-qa-model-v1`
 
 목표:
 
-- 실제 ffmpeg 실행 없이, 미래 렌더에 필요한 manifest/command plan 데이터 구조를 만든다.
-- 기존 Blueprint/Script/Chart/Image/TTS/Timeline linkage만 사용한다.
+- 실제 영상 렌더 없이, 기존 로컬 패키지 체인이 미래 렌더 단계로 넘어갈 수 있는지 구조적으로 검수한다.
+- 기존 Blueprint/Script/Risk/Chart/Image/TTS/Timeline/Render Manifest linkage만 사용한다.
 
 포함:
 
-- render manifest TypeScript types
-- planned input/overlay/caption/audio slots
-- planned ffmpeg command fragments as data
-- source package/video/scene linkage
-- placeholder asset paths/ids only
-- lightweight validation helper
-- focused TypeScript/ESLint/runtime sample check
+- final QA result/checklist TypeScript types
+- deterministic checker helper
+- source/fact/citation linkage checks
+- validation aggregation from existing local modules
+- timeline/render duration consistency checks
+- risk blocked 상태 탐지
+- lightweight fixtures and runtime samples
 
 금지:
 

@@ -180,16 +180,26 @@ Validation evidence (2026-06-25):
 - Source linkage preserved: factCardIds, sourceCitationIds, per-scene factCardId + sourceNote ✅
 - Broken package (empty factCardIds + empty narration): validation.ok=false, expected codes ✅
 
-## Active Next Task
+## Implemented Render Plan module (`money-shorts-os-ffmpeg-render-plan-v1`):
 
-Task ID:
+- `lib/render-plan/types.ts` — `RENDER_PLAN_SCHEMA_VERSION`, `DEFAULT_RENDER_DIMENSIONS` (1080×1920), `RenderOutputSpec`, `PlannedImageInput`, `PlannedAudioInput`, `PlannedCaptionOverlay`, `PlannedSourceOverlay`, `PlannedFfmpegFragment`, `PlannedFfmpegCommand`, `RenderManifest`, `RenderPlanValidationError`, `RenderPlanValidationResult`
+- `lib/render-plan/builder.ts` — `buildRenderManifest(params, opts?)`: timeline+TTS+imagePrompt+chartCard+sourceRefs → RenderManifest; placeholder asset paths (not read/created); captionText from timeline.captions only (no new text); ffmpegPlan.fullCommand as data string (never executed); 결정론적, new Date() 없음
+- `lib/render-plan/validation.ts` — `validateRenderManifest`: missing sourceId/timelineId/ttsPackageId/factCardIds/citationIds, invalid_dimensions, empty_image_inputs, empty_caption_overlays, empty_caption_text, caption_scene_not_in_image_inputs, forbidden_exec_pattern (10개 패턴: exec/spawn/child_process/shell=true/&&rm/;rm/|sh/|bash/backtick/$(...)), absolute_output_path_forbidden
+- `lib/render-plan/fixtures.ts` — inflationRenderPlan30(28.4s), inflationRenderPlan30WithImagePrompts(imagePromptPackage 포함), exchangeRateRenderPlan15(14.2s), MOCK_RENDER_PLANS; blueprint timeline + TTS + image prompt package linkage 사용
+- `lib/render-plan/index.ts` — re-export (inflationRenderPlan30WithImagePrompts 추가)
 
-`money-shorts-os-ffmpeg-render-plan-v1`
+Validation evidence (2026-06-25, review-fix 후):
 
-Goal:
-
-- Create local deterministic render manifest and ffmpeg command plan types/helpers/validation from existing local package data.
-- No ffmpeg execution, no render, no media probing, no output file creation, no external API, no DB/env/dependency changes, no upload/deploy/push.
+- TypeScript strict check (lib/render-plan/): 0 errors ✅
+- ESLint (lib/render-plan/): 0 warnings ✅
+- review-fix 핵심 수정: `builder.ts` — `imagePromptPackage.scenes` (존재하지 않음) → `imagePromptPackage.scenePrompts`; `p.sceneIndex` → `p.sourceLink.sceneIndex || p.sourceLink.sceneId`; `matchingPrompt.sceneImagePromptId` → `matchingPrompt.promptId`
+- Runtime sample (6 tests, node .cjs, 삭제 완료):
+  - T1: imagePromptPackage 제공 시 buildRenderManifest 성공, validation.ok=true, imagePromptPackageId 보존 ✅
+  - T2: 4개 씬 모두 assetSourceType="image_prompt_package", sceneImagePromptId=SceneImagePrompt.promptId 정확 ✅
+  - T3: imagePromptPackage 없을 때 assetSourceType="placeholder", imagePromptPackageId=null ✅
+  - T4: timelineId="" → ok=false, missing_timeline_id ✅
+  - T5: "| bash" 주입 → ok=false, forbidden_exec_pattern ✅
+  - T6: output file 미생성 확인(fs.existsSync=false), fullCommand은 string 데이터만 ✅
 
 ## Active Source Of Truth
 
