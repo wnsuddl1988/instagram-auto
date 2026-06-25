@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Manual Fact Card Authoring checkpoint 준비 완료
+## 2026-06-25 현재 — Review Packet 완료, Owner Decision Gate 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -26,18 +26,17 @@ Owner 결정:
 - `90fcaa6 feat(render-plan): add local ffmpeg manifest planner`
 - `4256173 feat(final-qa): add source-first package readiness checks`
 - `bfaf5b9 feat(content-package): assemble source-first package chain`
-- manual authoring checkpoint: Codex-reviewed and ready for local commit
+- `ca3bd36 feat(source-facts): add manual fact card authoring`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-manual-fact-card-authoring-v1`
-- `money-shorts-os-manual-fact-card-authoring-v1-review-fix`
-- `lib/source-facts/manual.ts` / `lib/source-facts/manual-fixtures.ts` 로컬 manual Fact Card authoring helper 구현
+- `money-shorts-os-review-packet-v1`
+- `lib/review-packet/` 로컬 Owner review packet generator 구현
 - Codex verification:
-  - source-first manual authoring TypeScript diagnostics: 0
-  - ESLint `lib/source-facts`: PASS
-  - runtime sample: valid manual draft PASS, missing citation only FAIL, missing current value FAIL, broken draft FAIL, manual Fact Card -> content package Final QA PASS, output not created PASS
+  - ESLint `lib/review-packet`: PASS
+  - targeted TypeScript diagnostics for `lib/review-packet`: 0
+  - runtime sample PASS: valid review packet ready, linkage/source refs/narration/captions verbatim 보존, broken packet not ready, `risk_blocked` surfaced, owner decision fields pending/null, output not created
 
 Source of truth:
 
@@ -52,25 +51,25 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local Owner review packet**
+**MVP 1 — local Owner decision gate**
 
 Task ID:
 
-`money-shorts-os-review-packet-v1`
+`money-shorts-os-owner-decision-gate-v1`
 
 목표:
 
-- assembled content package를 Owner 검토용 compact packet으로 변환한다.
-- 실제 UI/DB/render/upload 전에 source facts, citations, risk, script, final QA, planned render metadata를 한눈에 확인할 수 있게 한다.
+- review packet을 기반으로 Owner의 명시적 승인/수정요청/거절 결정을 로컬 gate result로 평가한다.
+- 실제 render/export/upload 전에 승인 상태, QA readiness, risk blocked 여부를 한 번 더 결정론적으로 막는다.
 
 포함:
 
-- review packet TypeScript types
-- deterministic package-to-review-packet helper
-- source/fact/citation/package id summary
-- risk/final QA/render summary
-- owner decision placeholder fields
-- valid and broken/not-ready fixtures
+- owner decision / gate result TypeScript types
+- deterministic review-packet-to-decision-gate helper
+- approved valid packet pass
+- pending/revision_requested/rejected/not-ready/risk-blocked packet fail
+- source/fact/citation/package id 보존
+- fixtures and runtime samples
 
 금지:
 

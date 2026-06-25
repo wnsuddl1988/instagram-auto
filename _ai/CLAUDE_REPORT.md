@@ -333,6 +333,29 @@ Validation evidence (2026-06-25):
     - T6: fully broken draft (sourceName+sourceUrl+currentValue+citations 모두 누락) → ok=false, errorCount=4 ✅
     - T7: output/ 미생성 ✅
 
+## Implemented Review Packet (`money-shorts-os-review-packet-v1`):
+
+- `lib/review-packet/types.ts` — `REVIEW_PACKET_SCHEMA_VERSION`, `OwnerDecision`, `ReviewSourceRef`, `ReviewFactCardSummary`, `ReviewBlueprintSummary`, `ReviewScriptSummary`, `ReviewRiskSummary`, `ReviewQaSummary`, `ReviewRenderSummary`, `ReviewSocialCopy`, `ReviewPacket`, `ReviewPacketOptions`
+- `lib/review-packet/generator.ts` — `generateReviewPacket(pkg, options?)`: `AssembledContentPackage` → `ReviewPacket` 변환; 모든 텍스트는 기존 package에서 verbatim 복사; 새 사실/숫자/claim/citation 생성 없음; new Date() 없음, 외부 호출 없음; ownerDecision=null로 초기화
+- `lib/review-packet/fixtures.ts` — `inflationReviewPacket` (valid, readyForRender=true), `brokenInflationReviewPacket` (risk blocked, readyForRender=false)
+- `lib/review-packet/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/review-packet/): 0 errors ✅
+- ESLint (lib/review-packet/ 4파일): 0 warnings ✅
+- Runtime sample (10 cases, node .cjs, 삭제 완료):
+  - T1: valid package → review packet 생성, schemaVersion/reviewPacketId/contentPackageId 정확 ✅
+  - T2: 모든 linkage ids (factCardId/citationId/blueprintVideoId/scriptPackageId/timelineId/renderManifestId/chartCardPackageId/imagePromptPackageId/ttsPackageId) 보존 ✅
+  - T3: sourceRefs에 citationId/sourceUrl verbatim 보존 ✅
+  - T4: valid package → qa.readyForRender=true, failedCheckCodes=[] ✅
+  - T5: broken package → qa.readyForRender=false, isRiskBlocked=true, failedCheckCodes=["risk_blocked","risk_level_elevated"], risk.findingCodes=["investment_buy_recommendation"] ✅
+  - T6: needsOwnerApproval=true, ownerDecision=null, ownerNotes=null (pending 초기화) ✅
+  - T7: factCard summary verbatim — currentValue="2.7", allowedClaimsCount/blockedClaimsCount 정확 ✅
+  - T8: render summary (timelineId, renderManifestId, measuredAudioDurationSec) 보존 ✅
+  - T9: reviewPacketId 미지정 시 "rp-{contentPackageId}" 자동 설정 ✅
+  - T10: output/ 미생성 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

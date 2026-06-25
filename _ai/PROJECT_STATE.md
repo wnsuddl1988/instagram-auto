@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 80% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring 로컬 모듈이 안정화됐다. 다음 단계는 Owner review packet이다.
+**전체프로젝트 진행률:** 약 82% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet 로컬 모듈이 안정화됐다. 다음 단계는 Owner decision gate다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -56,7 +56,7 @@
 - Commit: `90fcaa6` — `feat(render-plan): add local ffmpeg manifest planner`
 - Commit: `4256173` — `feat(final-qa): add source-first package readiness checks`
 - Commit: `bfaf5b9` — `feat(content-package): assemble source-first package chain`
-- Manual authoring checkpoint — Codex-reviewed and ready for local commit
+- Commit: `ca3bd36` — `feat(source-facts): add manual fact card authoring`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -66,26 +66,26 @@
 
 Task:
 
-- `money-shorts-os-manual-fact-card-authoring-v1`
-- `money-shorts-os-manual-fact-card-authoring-v1-review-fix`
+- `money-shorts-os-review-packet-v1`
 
 구현:
 
-- `lib/source-facts/manual.ts`
-- `lib/source-facts/manual-fixtures.ts`
-- `lib/source-facts/index.ts`
+- `lib/review-packet/types.ts`
+- `lib/review-packet/generator.ts`
+- `lib/review-packet/fixtures.ts`
+- `lib/review-packet/index.ts`
 
 검증:
 
-- Manual authoring source-facts ESLint PASS
-- Source-first manual authoring TypeScript diagnostics: 0
-- Full TypeScript check는 기존 `output/` binary `.ts` 오염으로 실패할 수 있지만, `lib/source-facts`, `lib/content-package`, `lib/final-qa`, `lib/render-plan`, `lib/timeline`, `lib/voice-profiles`, `lib/image-prompts`, `lib/chart-cards`, `lib/risk-review`, `lib/scripts`, `lib/blueprints` 관련 오류는 없다.
+- Review packet ESLint PASS
+- Targeted TypeScript diagnostics: 0 review-packet errors
 - Codex runtime verification PASS:
-  - valid manual draft PASS
-  - missing citation-only draft fail PASS
-  - missing current value fail PASS
-  - broken draft fail PASS
-  - manual Fact Card -> content package Final QA PASS
+  - valid content package -> review packet 생성 PASS
+  - package/fact/citation/source ids 보존 PASS
+  - narration/caption/source refs verbatim 보존 PASS
+  - valid QA ready PASS
+  - broken risk-blocked packet not ready PASS
+  - owner decision fields pending/null PASS
   - output file not created PASS
 
 주의:
@@ -113,16 +113,16 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local Owner review packet**
+- **MVP 1 — local Owner decision gate**
 
 구현 대상:
 
-- review packet TypeScript types
-- deterministic package-to-review-packet helper
-- source/fact/citation/package id summary
-- risk/final QA/render summary
-- owner decision placeholder fields
-- valid and broken/not-ready fixtures
+- owner decision / gate result TypeScript types
+- deterministic review-packet-to-decision-gate helper
+- approved valid packet pass
+- pending/revision_requested/rejected/not-ready/risk-blocked packet fail
+- source/fact/citation/package id 보존
+- fixtures and runtime samples
 - no external AI/API
 - no DB migration
 - no video render

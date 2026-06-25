@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-review-packet-v1`
+`money-shorts-os-owner-decision-gate-v1`
 
 ## Current State
 
@@ -12,8 +12,8 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local module: `lib/source-facts/manual.ts` / `lib/source-facts/manual-fixtures.ts`
-- Manual Fact Card authoring review-fix passed Codex verification and is ready for local checkpoint commit.
+- Latest completed local module: `lib/review-packet/`
+- Review Packet v1 has been Codex-reviewed with focused ESLint, targeted TypeScript, and runtime verification.
 
 Active local modules:
 
@@ -28,47 +28,45 @@ Active local modules:
 - `lib/render-plan/`
 - `lib/final-qa/`
 - `lib/content-package/`
+- `lib/review-packet/`
 
 ## Goal
 
-Create a local deterministic Owner review packet module from an assembled content package.
+Create a local deterministic Owner decision gate module for review packets.
 
-This is a read-only review/approval layer before any future UI, DB, render, upload, or publishing work. It should summarize the already assembled package so the Owner can review source facts, citations, risk, script, QA, and planned render metadata without opening every module object.
+This is the explicit approval layer between `ReviewPacket` and any future render/export/upload work. It should record/evaluate an Owner decision using only the existing review packet plus explicit decision input. It must not render, export, write files, call APIs, or mutate production state.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/review-packet/`.
-- Define review packet types.
-- Implement deterministic helper(s) that transform an `AssembledContentPackage` into a compact review packet.
-- Include only facts/ids/text already present in the content package.
-- Include sections such as:
-  - package summary ids
-  - Fact Card source/citation summary
-  - Blueprint summary
-  - Script narration/captions/SNS copy summary
-  - Risk review summary
-  - Chart/image/TTS/timeline/render manifest ids
-  - Final QA summary and failed checks
-  - Owner decision placeholders such as `needsOwnerApproval: true`
-- Add fixtures using existing `inflationContentPackage30` or manual authoring package.
+- Add a new local module under `lib/owner-decision/`.
+- Define decision/gate result types.
+- Implement deterministic helper(s) that accept a `ReviewPacket` and explicit Owner decision input.
+- Preserve reviewPacketId/contentPackageId/factCardIds/sourceCitationIds/package ids from the review packet.
+- Return a gate result such as `canProceedToRender`.
+- Treat `approved` as render-eligible only when:
+  - the review packet QA is `readyForRender=true`
+  - risk is not blocked
+  - the explicit Owner decision is approved
+- Treat `rejected`, `revision_requested`, missing/pending decision, risk blocked, or QA not ready as `canProceedToRender=false`.
+- Include valid and blocked/not-ready fixtures.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/review-packet/types.ts`
-- `lib/review-packet/generator.ts`
-- `lib/review-packet/fixtures.ts`
-- `lib/review-packet/index.ts`
+- `lib/owner-decision/types.ts`
+- `lib/owner-decision/gate.ts`
+- `lib/owner-decision/fixtures.ts`
+- `lib/owner-decision/index.ts`
 
 Optional only if useful:
 
-- `lib/review-packet/validation.ts`
+- `lib/owner-decision/validation.ts`
 
 ## Required Behavior
 
-- Deterministic: no `new Date()` unless `createdAt` is injected by options.
+- Deterministic: no `new Date()` unless `decidedAt` or `createdAt` is injected by options/input.
 - No external calls.
 - No AI generation.
 - No source scraping or URL fetching.
@@ -77,19 +75,20 @@ Optional only if useful:
 - No render.
 - No output file creation.
 - No new facts, numbers, claims, citations, narration, captions, or source references.
-- If the content package Final QA is not ready, the review packet must surface that clearly.
+- Owner notes/revision notes, if supported, must be copied verbatim from explicit input only.
+- Do not mutate the incoming `ReviewPacket` object unless the helper name and type make that behavior explicit.
 
-At minimum, the review packet should expose:
+At minimum, the gate result should expose:
 
+- decisionRecordId or gateResultId
 - reviewPacketId
 - contentPackageId
+- ownerDecision
+- canProceedToRender
+- blocker codes/reasons when false
 - source/fact/citation ids
-- source URL(s)
-- title/topic/core message
-- final QA readiness and failed check codes
-- risk level / blocked flag / finding count
-- planned duration and render manifest id
-- owner decision fields initialized to pending/null
+- qa.readyForRender
+- risk.isBlocked
 
 ## Forbidden
 
@@ -105,6 +104,7 @@ At minimum, the review packet should expose:
 - No payment integration.
 - No upload/post.
 - No git push.
+- No commit unless Codex explicitly authorizes it later.
 - Do not implement full Money-OS product.
 - Do not touch `output/`.
 - Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
@@ -113,20 +113,23 @@ At minimum, the review packet should expose:
 
 Run focused checks only:
 
-- ESLint for `lib/review-packet/`
-- TypeScript check targeted to `lib/review-packet/` or source-first modules
+- ESLint for `lib/owner-decision/`
+- TypeScript check targeted to `lib/owner-decision/` or source-first modules
 - Runtime/sample check that verifies:
-  - valid content package creates a review packet
-  - packet preserves package/fact/citation/source ids
-  - packet reports `finalQa.readyForRender=true` for valid package
-  - a broken/not-ready package surfaces failed QA codes
+  - approved valid review packet returns `canProceedToRender=true`
+  - pending/missing decision returns `canProceedToRender=false`
+  - revision requested returns `canProceedToRender=false`
+  - rejected returns `canProceedToRender=false`
+  - approved but QA not ready returns `canProceedToRender=false`
+  - approved but risk blocked returns `canProceedToRender=false`
+  - linkage ids are preserved
   - no command is executed and no files are created
 
 ## Definition of Done
 
-- Review packet module exports clear local types and deterministic helper(s).
-- Valid content package produces a compact review packet with source linkage and QA/risk summaries.
-- Broken/not-ready package surfaces failed readiness clearly.
+- Owner decision gate module exports clear local types and deterministic helper(s).
+- Valid approved review packet can pass the local gate.
+- Not-ready, blocked, rejected, revision-requested, or pending packets fail the gate clearly.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -137,4 +140,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise review packet evidence because this creates the local Owner review layer.
+- Update `_ai/CLAUDE_REPORT.md` with concise owner decision gate evidence because this creates the explicit Owner approval layer.
