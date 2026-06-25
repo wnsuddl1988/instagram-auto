@@ -953,6 +953,22 @@ React 19에서는 `<div>` 내에 **static JSX + dynamic `.map()` 결과**가 혼
 - `scene.role` 잔존: 0건 ✅
 - `git diff --stat`: 3 files changed, +74/-32
 
+## MVP1 RC Smoke (`money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`)
+
+기준 commit: `de96040 fix(ui): clear package preview key warnings`
+
+**5개 route RC smoke 결과 (fresh server, 2026-06-25):**
+
+| Route | load | key warning | 핵심 확인 |
+|-------|------|------------|----------|
+| `/money-shorts` | ✅ | 0회 | Workflow Hub 헤딩, 4개 workflow 링크(overview/입력/pipeline/라이브러리) |
+| `/fact-cards/manual` | ✅ | 0회 | Manual Fact Card 헤딩, hub backlink + 3개 forward link |
+| `/fact-cards/manual/new` | ✅ | 0회 | Manual Fact Card 입력 헤딩, hub backlink + form links |
+| `/fact-cards/manual/package-preview` | ✅ | 0회 | Package Preview 헤딩 (핵심 fix 유지) |
+| `/packages` | ✅ | 0회 | Package Library 헤딩 |
+
+server 5xx: 없음 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

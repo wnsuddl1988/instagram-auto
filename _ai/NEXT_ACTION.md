@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — MVP1 Route Smoke PASS, React Key Warning Isolation 준비
+## 2026-06-25 현재 — MVP1 RC Smoke PASS, React Key Warning 0회 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,49 +15,19 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `909098b feat(source): establish clean source-first baseline`
-- `35ca73c feat(blueprints): add fact card video blueprint generator`
-- `902e632 feat(scripts): add source-linked script package generator`
-- `79faa5b feat(risk): add financial expression scanner`
-- `fa6b5a1 feat(chart-cards): add source-linked card props model`
-- `5bb99fd feat(image-prompts): add source-linked prompt package generator`
-- `55f4a9b feat(voice-profiles): add local tts script formatter`
-- `14f3c53 feat(timeline): add local timeline recalculation`
-- `90fcaa6 feat(render-plan): add local ffmpeg manifest planner`
-- `4256173 feat(final-qa): add source-first package readiness checks`
-- `bfaf5b9 feat(content-package): assemble source-first package chain`
-- `ca3bd36 feat(source-facts): add manual fact card authoring`
-- `538d0d1 feat(review-packet): add owner review packet generator`
-- `9a6428e feat(owner-decision): add review packet approval gate`
-- `07444ad feat(clipboard-payload): add copy workflow payload builder`
-- `647f1be feat(package-view): add package library view models`
-- `4d264cb feat(package-ui): add local package library route`
-- `813a8f6 feat(fact-card-ui): add manual authoring screen`
-- `eb03a26 feat(fact-card-ui): add package preview route`
-- `08ff8f0 feat(fact-card-ui): add manual draft form`
-- `9e22a59 feat(fact-card-ui): add sample form controls`
-- `fca0b73 feat(fact-card-ui): add manual workflow navigation`
-- `9d0e187 feat(money-shorts): add workflow hub route`
-- `70eeecb feat(money-shorts): link screens to workflow hub`
-- MVP1 route smoke evidence checkpoint: current local safe checkpoint after Codex review
+- `de96040 fix(ui): clear package preview key warnings` ← **현재 HEAD**
+- (이전: `c66073f test(money-shorts): record mvp1 route smoke pass`)
+- (이전: `70eeecb feat(money-shorts): link screens to workflow hub`)
+- branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-mvp1-local-ui-smoke-v1`
-- 5개 local route HTTP 200:
-  - `/money-shorts`
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/packages`
-- hub route links and backlinks verified.
-- route-specific core content verified.
-- code changes: none
-- known non-blocking console warning:
-  - `Each child in a list should have a unique "key" prop`
-  - source not isolated during smoke
-  - no server 5xx and no smoke blocker
+- `money-shorts-os-react-key-warning-isolation-v1` + review-fix + type-cleanup: React key warning 0회 달성
+  - root cause: `primaryScript.scenes.map()` `key={sc.sceneId}` — `sceneId` 필드 없음 → `key={undefined}`
+  - fix: `key={String(sc.sceneIndex)}`, `sc.durationSec`, `scene.sceneRole`
+- `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`: 5개 route RC smoke PASS
+  - `/money-shorts`, `/fact-cards/manual`, `/fact-cards/manual/new`, `/fact-cards/manual/package-preview`, `/packages` — key warning 0회, 링크/텍스트 확인
 
 Source of truth:
 
@@ -72,38 +42,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 QA — React Key Warning Isolation**
+MVP1 RC smoke PASS. React key warning 0회. 다음 슬라이스는 Owner가 결정한다.
 
-Task ID:
+후보:
 
-`money-shorts-os-react-key-warning-isolation-v1`
+- **A. MVP1 실사용 검증**: Owner가 실제 Fact Card 수치를 `/fact-cards/manual/new`에 입력하고 `/fact-cards/manual/package-preview`에서 전체 pipeline 결과를 수동 확인
+- **B. 추가 fixture / 실데이터 연동**: ECOS/KOSIS 실데이터를 `lib/source-facts/`에 연동하는 Fact Card 슬라이스
+- **C. origin push**: Owner 명시 승인 시 `codex/source-first-blueprint-clean` → origin push
 
-목표:
-
-- MVP1 route smoke 중 관찰된 React unique key warning의 출처를 격리하고, 작고 안전하면 stable key만 보강한다.
-
-포함:
-
-- five route console warning isolation
-- route component map/list inspection
-- small stable key fix only if source is found
-- no broad refactor
-
-금지:
+금지 (계속 유지):
 
 - OS clipboard write
 - API route 호출 또는 변경
 - DB/Supabase read/write/migration
-- ffmpeg 실행
-- video/audio/image render
-- actual media probing 또는 real duration 측정
-- ElevenLabs live call
-- OpenAI/GPT/Gemini/Veo live call
+- ffmpeg/render/output 생성
+- OpenAI/GPT/Gemini/Veo/ElevenLabs live call
 - ECOS/KOSIS/OpenDART/FRED live API 호출
 - API key/env/secret 변경
 - dependency/lockfile 변경
 - `output/` 변경
-- file export/write
-- payment/deploy/upload/post/push
-- Money-OS 전체 기능 구현
+- payment/deploy/upload/post/push (Owner 명시 승인 없이)
 - 이전 영상 후보 개선

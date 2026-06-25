@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 94% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, `/money-shorts` workflow hub, hub backlinks, 그리고 MVP1 local UI route smoke pass까지 완료됐다. 다음 단계는 smoke 중 관찰된 React unique key warning의 출처를 격리하는 QA cleanup이다.
+**전체프로젝트 진행률:** 약 94% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, `/money-shorts` workflow hub, hub backlinks, MVP1 local UI route smoke pass, 그리고 React key warning isolation/fix(ScriptScene key mismatch + VideoBlueprintScene type 정렬)까지 완료됐다. 5개 MVP1 route RC smoke 모두 key warning 0회 확인. 다음 단계는 Owner가 결정하는 MVP1 다음 기능 슬라이스다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -70,7 +70,8 @@
 - Commit: `fca0b73` — `feat(fact-card-ui): add manual workflow navigation`
 - Commit: `9d0e187` — `feat(money-shorts): add workflow hub route`
 - Commit: `70eeecb` — `feat(money-shorts): link screens to workflow hub`
-- MVP1 route smoke evidence checkpoint: current safe checkpoint after Codex review
+- Commit: `c66073f` — `test(money-shorts): record mvp1 route smoke pass`
+- Commit: `de96040` — `fix(ui): clear package preview key warnings`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -80,27 +81,28 @@
 
 Task:
 
-- `money-shorts-os-mvp1-local-ui-smoke-v1`
+- `money-shorts-os-mvp1-local-ui-smoke-v1` → `money-shorts-os-react-key-warning-isolation-v1` → `money-shorts-os-react-key-warning-isolation-v1-review-fix` → `money-shorts-os-package-preview-type-cleanup-v1` → `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`
 
 구현:
 
-- 코드 변경 없음
-- `_ai/CLAUDE_REPORT.md` smoke evidence 추가
+- `primaryScript.scenes.map()` key fix: `sc.sceneId`(undefined) → `String(sc.sceneIndex)`
+- `VideoBlueprintScene` type 정렬: `scene.role` → `scene.sceneRole`
+- `ScriptScene` field 정렬: `sc.estimatedDurationSec` → `sc.durationSec`
+- `{primaryScript && <Fragment>}` → `{primaryScript && <div>}` (Fragment 교체로 hydration 안정화)
+- `WorkflowSteps` / `WorkflowStatusBar` separator `&&` conditional → always-render with `invisible` class
+- Clipboard static divs deterministic keys 추가
+- `pipelineStatusItems` inline array → const 분리
 
-검증:
+검증 (RC smoke — de96040 기준):
 
-- 5개 local route HTTP 200:
-  - `/money-shorts`
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/packages`
-- hub route links and backlinks verified.
-- route-specific core content verified.
+- 5개 local route key warning **0회** ✅:
+  - `/money-shorts` — workflow hub 링크 4개 확인
+  - `/fact-cards/manual` — backlink + forward 3개 링크 확인
+  - `/fact-cards/manual/new` — 폼 링크 확인
+  - `/fact-cards/manual/package-preview` — key warning 0회 (핵심 fix 확인)
+  - `/packages` — Package Library 헤딩 확인
 - no server 5xx.
-- Known non-blocking console warning:
-  - `Each child in a list should have a unique "key" prop`
-  - exact source not isolated during smoke
+- ESLint targeted: 0 errors
 
 주의:
 
@@ -125,15 +127,12 @@ Task:
 
 ## 다음 단계
 
-다음 safe work unit:
+MVP1 RC smoke PASS (`de96040`). React key warning 0회 달성. 다음 safe work unit은 Owner가 결정한다.
 
-- **MVP 1 QA — React Key Warning Isolation**
-
-대상:
-
-- route/component map/list rendering around the five MVP1 local routes
-- React console warning source isolation
-- small stable key fix only if exact source is found
+후보:
+- MVP1 실제 Fact Card 입력 → package preview 전체 흐름 E2E 수동 검증
+- 추가 Fact Card fixture 또는 실데이터 연동 슬라이스
+- MVP1 push to origin (별도 Owner 승인 필요)
 
 금지:
 
