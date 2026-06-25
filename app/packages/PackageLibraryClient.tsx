@@ -190,9 +190,7 @@ function WorkflowStatusBar({ ws }: { ws: PackageWorkflowStatus }) {
           >
             {step.done ? "✓" : "○"} {step.label}
           </span>
-          {i < steps.length - 1 && (
-            <span className="text-slate-700 text-xs">›</span>
-          )}
+          <span className={i < steps.length - 1 ? "text-slate-700 text-xs" : "invisible text-xs"}>›</span>
         </div>
       ))}
     </div>

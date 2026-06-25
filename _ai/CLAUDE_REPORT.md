@@ -892,6 +892,67 @@ Validation evidence (2026-06-25):
 - `Each child in a list should have a unique "key" prop` 경고 다수 — 기존 코드에 존재했던 것으로 확인. smoke 기준 blocker 아님. 모든 명시적 map에서 key prop 존재 확인됨 (page-preview key={step.num}/key={item.label}/key={scene.sceneId} 등). 경고 정확한 출처 격리 불가 (preview 콘솔 누적 방식). 기능 동작에 영향 없음.
 - 서버 오류(5xx): 없음 ✅
 
+## React Key Warning Isolation (`money-shorts-os-react-key-warning-isolation-v1`):
+
+환경: React 19.2.4 + Next.js 16.2.6. Server Component hydration 시 발생하는 React 19 key 경고 격리 및 부분 수정.
+
+**격리 결과:**
+- `/money-shorts`, `/fact-cards/manual`, `/fact-cards/manual/new` → 경고 없음 ✅
+- `/packages` → 경고 없음 ✅ (이전 누적 로그가 혼동 유발했으나 fresh 서버에서 0회 확인)
+- `/fact-cards/manual/package-preview` → 경고 발생 (격리 완료)
+
+**원인 분석 (React 19 동작):**
+React 19에서는 `<div>` 내에 **static JSX + dynamic `.map()` 결과**가 혼재할 때, `.map()` 결과 배열에 key가 있어도 parent context에서 key 경고를 발생시킨다.
+특히 이하 두 패턴이 트리거:
+1. `<div className="space-y-2">` 내 3개 static div + `sourceRefs.map()` 결과 혼재
+2. `SectionCard children`에서 `{primaryScript && <>...</>}` Fragment 조건부 표현식이 내부에 `scenes.map()`을 포함 (Fragment unfold 시 parent `<div>` 내 dynamic 위치 발생)
+
+**수정 완료:**
+
+`app/fact-cards/manual/package-preview/page.tsx`:
+- Clipboard sections `<div className="space-y-2">` 내 3개 static div에 deterministic key 추가 (`key="clipboard-youtube"`, `key="clipboard-instagram"`, `key="clipboard-hashtags"`)
+- `{primaryScript && (<>...</>)}` → `{primaryScript && (<div>...</div>)}` 로 Fragment를 단일 `<div>` wrapper로 교체 (layout 변화 없음)
+- `WorkflowSteps` separator `{i < steps.length - 1 && <span>›</span>}` → `<span className={...visible/invisible...}>›</span>` (항상 렌더)
+- `pipelineStatusItems` 인라인 배열 리터럴 → 페이지 함수 내 const로 분리
+- `key={step.num}` → `key={String(step.num)}`
+
+`app/packages/PackageLibraryClient.tsx`:
+- `WorkflowStatusBar` separator 동일 패턴 수정: `{i < steps.length - 1 && (<span>›</span>)}` → `<span className={...}>›</span>`
+
+**검증 결과 (최종 - `money-shorts-os-react-key-warning-isolation-v1-review-fix` 완료):**
+- `/fact-cards/manual/package-preview`: 경고 **0회** ✅
+- `/packages`: 경고 **0회** ✅
+- 이진 탐색으로 `primaryScript.scenes.map()`이 직접 원인 확정
+- 루트 원인: `ScriptScene` 타입에 `sceneId` 필드 없음 → `key={sc.sceneId}` = `key={undefined}` → 모든 map 아이템 key 중복
+- 수정: `key={sc.sceneId}` → `key={String(sc.sceneIndex)}`, `sc.estimatedDurationSec` → `sc.durationSec` (타입 정렬)
+- 금지 패턴 (Date.now/Math.random/clipboard OS API/fetch/api/ffmpeg/output/sceneId 잔존): blueprint.scenes.map의 `scene.sceneId`는 `VideoBlueprintScene` 타입에 존재하는 유효한 필드 — 정상 ✅
+
+**변경 파일 (누적 git diff):**
+- `app/fact-cards/manual/package-preview/page.tsx` (+36/-33)
+- `app/packages/PackageLibraryClient.tsx` (+2/-4)
+- `_ai/CLAUDE_REPORT.md` (evidence 갱신)
+
+## Type Cleanup (`money-shorts-os-package-preview-type-cleanup-v1`)
+
+`app/fact-cards/manual/package-preview/page.tsx` 타입 오류 정리 및 diff 최소화.
+
+**수정 내용:**
+- `scene.role` → `scene.sceneRole` (`VideoBlueprintScene` 실제 필드)
+- `scriptPackage.moneyOsCta ? (...) : null` → `scriptPackage.moneyOsCta && (...)` 원복 (경고 비원인)
+- `primaryScript ? (...) : null` → `primaryScript && (...)` 원복 (경고 비원인, `<div>` wrapper는 유지)
+
+**유지된 수정:**
+- `key={String(sc.sceneIndex)}` (key warning fix 핵심)
+- `sc.durationSec` (ScriptScene 실제 필드)
+- `primaryScript &&` 내부 `<div>` wrapper (Fragment → div 교체 유지)
+
+**검증:**
+- `/fact-cards/manual/package-preview` 경고 **0회** ✅ (fresh 서버)
+- `/packages` 경고 **0회** ✅ (fresh 서버)
+- ESLint: 0 errors ✅
+- `scene.role` 잔존: 0건 ✅
+- `git diff --stat`: 3 files changed, +74/-32
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

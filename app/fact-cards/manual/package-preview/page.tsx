@@ -98,7 +98,7 @@ function WorkflowSteps({ activeStep }: { activeStep: number }) {
   return (
     <div className="flex items-center gap-1 flex-wrap px-4 py-3 border-b border-slate-800/50 bg-slate-900/40">
       {steps.map((step, i) => (
-        <div key={step.num} className="flex items-center gap-1">
+        <div key={String(step.num)} className="flex items-center gap-1">
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${
               step.num === activeStep
@@ -121,7 +121,7 @@ function WorkflowSteps({ activeStep }: { activeStep: number }) {
             </span>
             {step.label}
           </div>
-          {i < steps.length - 1 && <span className="text-slate-700 text-xs">›</span>}
+          <span className={i < steps.length - 1 ? "text-slate-700 text-xs" : "invisible text-xs"}>›</span>
         </div>
       ))}
     </div>
@@ -257,6 +257,15 @@ export default function PackagePreviewPage() {
   const { blueprint, scriptPackage, riskReview, finalQa, timeline } = pkg;
   const primaryScript = scriptPackage.scripts[0];
 
+  const pipelineStatusItems = [
+    { label: "Fact Card", ok: true },
+    { label: "Blueprint", ok: true },
+    { label: "Script Package", ok: true },
+    { label: "Risk Review", ok: !riskReview.isBlocked },
+    { label: "QA Ready", ok: finalQa.readyForRender },
+    { label: "Copy Ready", ok: workflowStatus.copyReady },
+  ];
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
@@ -328,14 +337,7 @@ export default function PackagePreviewPage() {
           color="indigo"
         >
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {[
-              { label: "Fact Card", ok: true },
-              { label: "Blueprint", ok: true },
-              { label: "Script Package", ok: true },
-              { label: "Risk Review", ok: !riskReview.isBlocked },
-              { label: "QA Ready", ok: finalQa.readyForRender },
-              { label: "Copy Ready", ok: workflowStatus.copyReady },
-            ].map((item) => (
+            {pipelineStatusItems.map((item) => (
               <div
                 key={item.label}
                 className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-800/50 bg-slate-900/40 px-2 py-3 text-center"
@@ -364,17 +366,19 @@ export default function PackagePreviewPage() {
           <FieldRow label="isPublishable" value={String(factCard.isPublishable)} mono />
 
           <SectionLabel>출처 / Citation 링크</SectionLabel>
-          {reviewPacket.sourceRefs.map((ref) => (
-            <div
-              key={ref.citationId}
-              className="rounded-lg border border-indigo-800/30 bg-indigo-900/10 px-3 py-2.5 mb-2 last:mb-0"
-            >
-              <div className="text-xs font-bold text-indigo-300 mb-1">{ref.sourceName}</div>
-              <FieldRow label="citationId" value={ref.citationId} mono />
-              <FieldRow label="sourceUrl" value={ref.sourceUrl} mono />
-              <FieldRow label="publishedDate" value={ref.publishedDate} mono />
-            </div>
-          ))}
+          <div>
+            {reviewPacket.sourceRefs.map((ref) => (
+              <div
+                key={ref.citationId}
+                className="rounded-lg border border-indigo-800/30 bg-indigo-900/10 px-3 py-2.5 mb-2 last:mb-0"
+              >
+                <div className="text-xs font-bold text-indigo-300 mb-1">{ref.sourceName}</div>
+                <FieldRow label="citationId" value={ref.citationId} mono />
+                <FieldRow label="sourceUrl" value={ref.sourceUrl} mono />
+                <FieldRow label="publishedDate" value={ref.publishedDate} mono />
+              </div>
+            ))}
+          </div>
 
           <SectionLabel>허용 Claim ({factCard.allowedClaims.length}건)</SectionLabel>
           <ul className="space-y-1">
@@ -421,7 +425,7 @@ export default function PackagePreviewPage() {
                 <span className="font-mono text-xs text-slate-600 w-5 shrink-0 pt-0.5">
                   {scene.sceneIndex}
                 </span>
-                <span className="font-mono text-xs text-indigo-400 w-28 shrink-0">{scene.role}</span>
+                <span className="font-mono text-xs text-indigo-400 w-28 shrink-0">{scene.sceneRole}</span>
                 <span className="text-xs text-slate-300 min-w-0 break-all">{scene.caption}</span>
                 <span className="font-mono text-xs text-slate-600 shrink-0 ml-auto">
                   {scene.estimatedDuration}s
@@ -459,7 +463,7 @@ export default function PackagePreviewPage() {
           )}
 
           {primaryScript && (
-            <>
+            <div>
               <SectionLabel>대본 ({primaryScript.targetDurationSec}s · {primaryScript.scenes.length}씬)</SectionLabel>
               <div className="rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-all">
                 {primaryScript.fullNarration}
@@ -468,16 +472,16 @@ export default function PackagePreviewPage() {
               <div className="space-y-1">
                 {primaryScript.scenes.map((sc) => (
                   <div
-                    key={sc.sceneId}
+                    key={String(sc.sceneIndex)}
                     className="flex gap-3 py-1.5 border-b border-slate-800/30 last:border-0 items-start"
                   >
                     <span className="font-mono text-xs text-slate-600 w-5 shrink-0">{sc.sceneIndex}</span>
                     <span className="text-xs text-slate-300 min-w-0 break-all">{sc.captionText}</span>
-                    <span className="font-mono text-xs text-slate-600 shrink-0 ml-auto">{sc.estimatedDurationSec}s</span>
+                    <span className="font-mono text-xs text-slate-600 shrink-0 ml-auto">{sc.durationSec}s</span>
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
         </SectionCard>
 
@@ -657,17 +661,17 @@ export default function PackagePreviewPage() {
             <>
               <SectionLabel>복사 가능 섹션 미리보기</SectionLabel>
               <div className="space-y-2">
-                <div className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
+                <div key="clipboard-youtube" className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
                   <div className="text-slate-500 mb-1">youtubeTitle</div>
                   <div className="text-slate-200">{clipboardPayload.sections.youtubeTitle}</div>
                 </div>
-                <div className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
+                <div key="clipboard-instagram" className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
                   <div className="text-slate-500 mb-1">instagramCaption</div>
                   <div className="text-slate-200 whitespace-pre-wrap break-all">
                     {clipboardPayload.sections.instagramCaption}
                   </div>
                 </div>
-                <div className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
+                <div key="clipboard-hashtags" className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-xs">
                   <div className="text-slate-500 mb-1">hashtags</div>
                   <div className="text-slate-200">{clipboardPayload.sections.hashtagsText}</div>
                 </div>
