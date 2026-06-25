@@ -342,6 +342,12 @@ export default function ManualFactCardFormClient() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/money-shorts"
+              className="px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-800/30 text-slate-400 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+            >
+              ← Workflow Hub
+            </Link>
             <button
               type="button"
               onClick={loadSample}

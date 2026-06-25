@@ -272,6 +272,12 @@ export default function PackagePreviewPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href="/money-shorts"
+                className="px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-800/30 text-slate-400 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+              >
+                ← Workflow Hub
+              </Link>
               <span className="px-2 py-1 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
                 LOCAL PREVIEW ONLY
               </span>

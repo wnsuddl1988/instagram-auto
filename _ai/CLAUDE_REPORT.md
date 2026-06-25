@@ -853,6 +853,29 @@ Validation evidence (2026-06-25):
   - `/packages` href 존재 ✅
 - dev server 종료 ✅
 
+## Workflow Hub Entry Links (`money-shorts-os-workflow-hub-entry-links-v1`):
+
+4개 기존 Money Shorts UI 화면 헤더에 `← Workflow Hub` → `/money-shorts` 링크 추가.
+
+수정 파일:
+- `app/fact-cards/manual/page.tsx` — 헤더 버튼 그룹 맨 앞에 추가
+- `app/fact-cards/manual/new/ManualFactCardFormClient.tsx` — 헤더 버튼 그룹 맨 앞에 추가 (샘플/초기화 버튼 앞)
+- `app/fact-cards/manual/package-preview/page.tsx` — 헤더 배지 그룹 앞에 추가
+- `app/packages/PackageLibraryClient.tsx` — 헤더 우측 MVP1 배지 앞에 추가
+
+기존 동작 모두 유지: valid/broken fixture, 샘플 불러오기/초기화, pipeline preview, package list/detail.
+
+Validation evidence (2026-06-25):
+- ESLint (4파일): 0 warnings ✅
+- TypeScript (full tsc → app/fact-cards/ + app/packages/ 필터): 0 errors ✅
+- 금지 패턴 (clipboard 실제 API / fetch( / /api/ / ffmpeg / output/ / upload / deploy): 0건 ✅
+- dev server HTTP 검증:
+  - `/fact-cards/manual`: hasHub=true, hasValidDraft=true ✅
+  - `/fact-cards/manual/new`: hasHub=true, hasSampleBtn=true ✅
+  - `/fact-cards/manual/package-preview`: hasHub=true, hasLocalPreview=true ✅
+  - `/packages`: hasHub=true, hasPackageLibrary=true ✅
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

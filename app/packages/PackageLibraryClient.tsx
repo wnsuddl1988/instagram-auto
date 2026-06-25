@@ -447,8 +447,14 @@ export default function PackageLibraryView({
               로컬 fixture 기반 · 외부 API 없음 · {packages.length}개 패키지
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href="/money-shorts"
+              className="px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-800/30 text-slate-400 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+            >
+              ← Workflow Hub
+            </Link>
+            <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-slate-500 text-xs">
               MVP1
             </span>
           </div>

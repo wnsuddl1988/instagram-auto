@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-workflow-hub-entry-links-v1`
+`money-shorts-os-mvp1-local-ui-smoke-v1`
 
 ## Current State
 
@@ -12,41 +12,47 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before workflow hub: `fca0b73 feat(fact-card-ui): add manual workflow navigation`
-- Latest completed local UI: `/money-shorts` Workflow Hub route.
+- Latest completed checkpoint before hub entry links: `9d0e187 feat(money-shorts): add workflow hub route`
+- Latest completed local UI: hub backlinks from existing Money Shorts screens.
 - Codex verification passed:
-  - ESLint `app/money-shorts/page.tsx`: PASS
-  - targeted TypeScript diagnostics for `app/money-shorts`: 0
-  - executable forbidden pattern search: PASS
-  - `/money-shorts` HTTP 200
-  - core text and all four route hrefs rendered
-  - dev server stopped after verification
+  - ESLint for changed route files: PASS
+  - targeted TypeScript diagnostics for changed routes: 0
+  - forbidden pattern search: PASS
+  - Claude HTTP verification: all touched screens include `/money-shorts` link and original content
 
 ## Goal
 
-Add clear links back to the `/money-shorts` Workflow Hub from existing Money Shorts local UI screens.
+Run a focused local UI smoke pass for the Money Shorts OS MVP1 route set.
 
-The hub should become the obvious home/workbench entry point. This is navigation polish only.
+This is a verification/stabilization task. Do not implement new features unless a clear blocker prevents the smoke pass from completing.
 
 ## Approved Scope
 
 Allowed:
 
-- Modify existing local UI route files as needed, likely:
-  - `app/fact-cards/manual/page.tsx`
-  - `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`
-  - `app/fact-cards/manual/package-preview/page.tsx`
-  - `app/packages/PackageLibraryClient.tsx` or `app/packages/page.tsx`
-- Add visible links labeled like `Workflow Hub`, `Money Shorts Hub`, or `작업 허브` pointing to `/money-shorts`.
-- Keep existing behavior and route data unchanged.
-- Update `_ai/CLAUDE_REPORT.md` with concise evidence.
+- Verify these local routes:
+  - `/money-shorts`
+  - `/fact-cards/manual`
+  - `/fact-cards/manual/new`
+  - `/fact-cards/manual/package-preview`
+  - `/packages`
+- Check core text/hrefs for each route.
+- Check that local-only/source-first warnings remain visible where expected.
+- Check that no route performs external/API/DB/clipboard/render/ffmpeg/output actions.
+- If a small blocker is found, fix only that blocker in the touched route file and report it clearly.
+- Update `_ai/CLAUDE_REPORT.md` with concise smoke evidence.
 
 ## Required Behavior
 
-- Existing pages still render their original content.
-- Each touched screen has a clear route back to `/money-shorts`.
+- All five routes should return HTTP 200.
+- `/money-shorts` should link to the four workflow routes.
+- The four workflow routes should link back to `/money-shorts`.
+- Existing route-specific content should remain visible:
+  - manual overview: valid and broken draft
+  - manual form: blank invalid state and sample controls
+  - package preview: local preview/package pipeline status
+  - packages: package library/list/detail shell
 - No external call or persistence.
-- Mobile and desktop layout should not overlap or squeeze text.
 
 ## Forbidden
 
@@ -71,22 +77,19 @@ Allowed:
 
 Run focused checks:
 
-- ESLint for changed route files.
-- TypeScript check targeted to changed files, or full `pnpm exec tsc --noEmit --pretty false` with clear note if it only fails on pre-existing `output/` binary `.ts` files.
-- Search changed files for forbidden calls:
-  - clipboard APIs
-  - `fetch(`
-  - `/api/`
-  - ffmpeg/render/upload/post/deploy references
-  - `output/`
-- If practical, run a local dev server and verify representative touched routes with HTTP/core text. Stop the server afterward.
+- `git status -sb`
+- ESLint for route files if any file changes are made.
+- TypeScript targeted check if any file changes are made.
+- Forbidden pattern search on relevant Money Shorts app routes.
+- Local dev server HTTP/core text check for all five routes.
+- Stop the dev server afterward.
 
 ## Definition of Done
 
-- Existing Money Shorts local UI screens have visible `/money-shorts` links.
-- Original route content remains visible.
+- Smoke result for all five routes is reported.
+- Any blocker found is fixed or explicitly reported.
 - No external/clipboard/render/DB/API action occurs.
-- Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
+- `_ai/CLAUDE_REPORT.md` has concise smoke evidence.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
@@ -96,4 +99,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise evidence because this completes local navigation around the new hub.
+- Update `_ai/CLAUDE_REPORT.md` with concise smoke evidence because this is a local MVP route acceptance pass.

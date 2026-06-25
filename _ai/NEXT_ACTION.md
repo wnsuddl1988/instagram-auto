@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Workflow Hub 완료, Hub Entry Links 준비
+## 2026-06-25 현재 — Hub Entry Links 완료, MVP1 Route Smoke 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -37,25 +37,24 @@ Owner 결정:
 - `08ff8f0 feat(fact-card-ui): add manual draft form`
 - `9e22a59 feat(fact-card-ui): add sample form controls`
 - `fca0b73 feat(fact-card-ui): add manual workflow navigation`
-- Workflow Hub checkpoint: current local safe checkpoint after Codex review
+- `9d0e187 feat(money-shorts): add workflow hub route`
+- Hub Entry Links checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-workflow-hub-ui-v1`
-- `/money-shorts` local workflow hub route
-- Links to:
+- `money-shorts-os-workflow-hub-entry-links-v1`
+- Existing Money Shorts local screens now link back to `/money-shorts`:
   - `/fact-cards/manual`
   - `/fact-cards/manual/new`
   - `/fact-cards/manual/package-preview`
   - `/packages`
+- Existing route content/behavior preserved.
 - Codex verification:
-  - ESLint `app/money-shorts/page.tsx`: PASS
-  - targeted TypeScript diagnostics for `app/money-shorts`: 0
-  - executable forbidden pattern search PASS
-  - HTTP 200 for `/money-shorts`
-  - all four hrefs rendered
-  - dev server stopped
+  - ESLint changed route files: PASS
+  - targeted TypeScript diagnostics for changed routes: 0
+  - forbidden pattern search PASS
+  - Claude HTTP verification passed
 
 Source of truth:
 
@@ -70,21 +69,25 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Workflow Hub Entry Links**
+**MVP 1 — Local UI Route Smoke Pass**
 
 Task ID:
 
-`money-shorts-os-workflow-hub-entry-links-v1`
+`money-shorts-os-mvp1-local-ui-smoke-v1`
 
 목표:
 
-- 기존 Money Shorts 로컬 UI 화면들에서 `/money-shorts` hub로 돌아가는 링크를 추가한다.
+- Money Shorts OS MVP1 로컬 UI route 5개가 연결되고 핵심 화면이 유지되는지 smoke 검증한다.
 
 포함:
 
-- 기존 route UI navigation polish
-- `/money-shorts` 링크 추가
-- 기존 화면 content/behavior 유지
+- `/money-shorts`
+- `/fact-cards/manual`
+- `/fact-cards/manual/new`
+- `/fact-cards/manual/package-preview`
+- `/packages`
+- HTTP 200 / 핵심 텍스트 / 핵심 href 검증
+- 필요 시 작은 blocker fix만 허용
 
 금지:
 
