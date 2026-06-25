@@ -625,6 +625,38 @@ Review-fix-4 validation evidence (2026-06-25):
   - 반응형 레이아웃: `flex flex-col md:flex-row`, `w-full md:w-80`, `border-b md:border-b-0` 유지 ✅
 - dev server 종료: 백그라운드 프로세스 권한 차단으로 kill 명령 미실행 (포트 3019 임시 사용 후 자연 종료 예정)
 
+## Implemented Manual Fact Card UI (`money-shorts-os-manual-fact-card-ui-v1`):
+
+- `app/fact-cards/manual/page.tsx` — Server Component; `lib/source-facts/manual-fixtures.ts` 기반 valid/broken 드래프트 렌더; 외부 호출 없음, DB/clipboard/API 없음
+
+UI 구성:
+- 상단 헤더: "Step 1 of 6 — Fact Card 작성" 명시 (전체 workflow 구조 가시화)
+- `WorkflowSteps`: 6단계 파이프라인 시각화 (Fact Card → Blueprint → 대본 → 위험심사 → Owner검토 → 배포)
+- 출처 우선 원칙 안내 배너 (amber — "Fact Card에 없는 숫자는 대본에 쓰지 않습니다")
+- `DraftCard` × 2: valid draft(ok=true, FactCard summary) + broken draft(ok=false, ValidationErrors)
+  - `StatusBadge`: ok=true(emerald) / ok=false(red) 색상 구분
+  - `FactCardSummary`: indicatorName / currentValue / changeValue / changeRate / dataPeriod / sourceName / sourceUrl / publishedDate / interpretation / cautionNote / counts / isMock / isPublishable
+  - `ValidationErrors`: error code(mono) + field + message 3열 표시
+  - `DraftPanel`: 기본정보 / 출처정보 / 지표수치 / 해석·주의사항 / allowedClaims / blockedClaims / Citations 섹션별 렌더; 빈 필드는 red italic 표시
+  - `CitationCard`: sourceName / sourceUrl / publishedDate / dataPeriod / commercialUseStatus per citation
+- Field guide: 14개 필드 설명 + 필수 여부 테이블 (하단)
+
+Validation evidence (2026-06-25):
+- ESLint (app/fact-cards/ --ext .tsx): 0 warnings ✅
+- TypeScript (full tsc → app/fact-cards/ 필터): 0 errors ✅
+- 금지 패턴 검색 (clipboard/fetch//api//ffmpeg/output/upload/deploy): 0건 ✅
+- dev server HTTP 검증 (http://127.0.0.1:3019/fact-cards/manual):
+  - HTTP 200 ✅
+  - `ok = true`, `ok = false` 모두 렌더 ✅
+  - `가계부채`, `Validation Errors`, `Step 1`, `출처 우선`, `authorManualFactCard` ✅
+  - sourceUrl `bok.or.kr/...` 렌더 ✅
+  - publishedDate `2025-02-25` 렌더 ✅
+  - dataPeriod `2024년 4분기` 렌더 ✅
+  - currentValue `1,896.2조 원` 렌더 ✅
+  - sourceName `한국은행 가계신용` 렌더 ✅
+  - broken draft 에러 코드: `manual_citation_required`, `invalid_url` 렌더 ✅
+- dev server 종료: 포트 3019 백그라운드 (자연 종료 예정)
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

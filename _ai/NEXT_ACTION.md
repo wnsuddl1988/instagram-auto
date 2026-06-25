@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Package Library UI 완료, Manual Fact Card UI 준비
+## 2026-06-25 현재 — Manual Fact Card UI 완료, Package Preview Bridge 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -31,25 +31,24 @@ Owner 결정:
 - `9a6428e feat(owner-decision): add review packet approval gate`
 - `07444ad feat(clipboard-payload): add copy workflow payload builder`
 - `647f1be feat(package-view): add package library view models`
-- Package Library UI checkpoint: current local safe checkpoint after Codex review
+- `4d264cb feat(package-ui): add local package library route`
+- Manual Fact Card UI checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-package-library-ui-v1`
-- `money-shorts-os-package-library-ui-v1-review-fix`
-- `money-shorts-os-package-library-ui-v1-review-fix-2`
-- `money-shorts-os-package-library-ui-v1-review-fix-3`
-- `money-shorts-os-package-library-ui-v1-review-fix-4`
-- `/packages` local Package Library / Detail UI
-- URL/searchParams-selected package rows, no client hydration dependency
-- approved, pending, rejected, approved_but_blocked, no-gate states visible
-- blocked workflow `hasClipboardPayload=true`, rejected workflow `hasClipboardPayload=false`
+- `money-shorts-os-manual-fact-card-ui-v1`
+- `/fact-cards/manual` local Manual Fact Card authoring UI
+- valid manual draft -> `ok=true` + FactCard summary
+- broken manual draft -> `ok=false` + validation errors
+- source/citation URL/date/dataPeriod/currentValue visible
+- Fact Card first-step workflow visible
 - Codex verification:
-  - ESLint `app/packages`: PASS
-  - targeted TypeScript diagnostics for `app/packages`: 0
+  - ESLint `app/fact-cards`: PASS
+  - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search PASS
-  - Playwright PASS: `/packages`, `/packages?selected=2`, `/packages?selected=3`, row link navigation, desktop/mobile no horizontal overflow
+  - HTTP 200 for `/fact-cards/manual`
+  - Playwright PASS: valid/broken draft, validation errors, source/citation fields, desktop/mobile no horizontal overflow
   - dev server stopped
 
 Source of truth:
@@ -65,25 +64,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Manual Fact Card authoring UI**
+**MVP 1 — Manual Fact Card -> Package Preview UI**
 
 Task ID:
 
-`money-shorts-os-manual-fact-card-ui-v1`
+`money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
 
 목표:
 
-- Owner가 출처 기반 Fact Card draft와 validation 결과를 화면에서 확인할 수 있는 로컬 UI를 만든다.
+- valid manual FactCard를 기존 로컬 source-first pipeline에 넣었을 때 어떤 content package가 나오는지 Owner가 볼 수 있는 read-only preview route를 만든다.
 - 아직 DB/API/clipboard/render/file export는 하지 않는다.
 
 포함:
 
-- `app/fact-cards/manual/` route 추가
-- `lib/source-facts/manual.ts`와 `manual-fixtures.ts` 사용
-- valid draft -> `ok=true` + FactCard summary 표시
-- broken draft -> `ok=false` + validation errors 표시
-- citation/source URL/date 표시
-- Fact Card가 전체 workflow의 첫 단계라는 화면 구조
+- `app/fact-cards/manual/package-preview/` route 추가
+- `validHouseholdDebtResult.factCard` 기반 local assemble preview
+- content package / review packet / owner gate / clipboard readiness / package view summary 중 유용한 상태 표시
+- source/fact/package/QA/risk linkage 표시
+- `/fact-cards/manual` 및 `/packages` 연결
 
 금지:
 

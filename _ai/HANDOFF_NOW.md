@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-manual-fact-card-ui-v1`
+`money-shorts-os-manual-fact-card-to-package-preview-ui-v1`
 
 ## Current State
 
@@ -12,73 +12,57 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before package UI: `647f1be feat(package-view): add package library view models`
-- Latest completed local UI: `/packages` Package Library / Detail UI shell.
-- Package Library UI is URL/searchParams-selected and does not depend on client hydration for row selection.
-- Codex browser verification passed:
-  - `/packages` default shows approved detail.
-  - `/packages?selected=2` shows rejected detail.
-  - `/packages?selected=3` shows approved-but-blocked detail.
-  - Clicking row 2 navigates to rejected.
-  - Clicking row 3 navigates to approved-but-blocked.
-  - Desktop/mobile viewport had no horizontal overflow.
-- `.claude/launch.json` exists but is ignored by git and must not be committed.
-
-Active local source-first modules:
-
-- `lib/source-facts/`
-- `lib/blueprints/`
-- `lib/scripts/`
-- `lib/risk-review/`
-- `lib/chart-cards/`
-- `lib/image-prompts/`
-- `lib/voice-profiles/`
-- `lib/timeline/`
-- `lib/render-plan/`
-- `lib/final-qa/`
-- `lib/content-package/`
-- `lib/review-packet/`
-- `lib/owner-decision/`
-- `lib/clipboard-payload/`
-- `lib/package-view/`
+- Latest completed checkpoint before manual UI: `4d264cb feat(package-ui): add local package library route`
+- Latest completed local UI: `/fact-cards/manual` Manual Fact Card authoring UI.
+- Codex verification passed:
+  - ESLint `app/fact-cards`: PASS
+  - targeted TypeScript diagnostics for `app/fact-cards`: 0
+  - forbidden pattern search: PASS
+  - `/fact-cards/manual` HTTP 200
+  - Playwright PASS: valid/broken draft text, source/citation fields, validation errors, desktop/mobile no horizontal overflow
+  - dev server stopped after verification
 
 ## Goal
 
-Create the first local Manual Fact Card authoring UI for Money Shorts OS.
+Create a local deterministic preview UI that shows how a valid manual Fact Card becomes a source-first content package.
 
-This should let the Owner inspect/manual-author a source-backed Fact Card draft using existing local helpers. It must not persist data, call APIs, or generate scripts/videos.
+This is a read-only preview bridge from manual Fact Card authoring into the existing local pipeline. It must not persist data, call APIs, render media, or execute ffmpeg.
 
 ## Approved Scope
 
 Allowed:
 
-- Inspect existing `/packages` UI patterns.
-- Add a new local route, suggested:
-  - `app/fact-cards/manual/page.tsx`
-  - optional route-local component file under `app/fact-cards/manual/`
-- Use existing local source facts helpers:
-  - `lib/source-facts/manual.ts`
+- Add a local route, suggested:
+  - `app/fact-cards/manual/package-preview/page.tsx`
+- Use only existing local modules and fixtures:
   - `lib/source-facts/manual-fixtures.ts`
-  - `lib/source-facts/validation.ts`
-- Render:
-  - a valid manual draft example
-  - validation result
-  - resulting FactCard summary when valid
-  - broken draft validation errors
-  - citation/source fields clearly
-- A simple local form is allowed only if it stays self-contained and does not write to DB, file, clipboard, or API. Prefer progressive/server-rendered behavior over fragile client-only state.
-- Keep the UI dense, operational, and consistent with `/packages`.
+  - `lib/content-package/assembler.ts`
+  - `lib/review-packet/`
+  - `lib/owner-decision/`
+  - `lib/clipboard-payload/`
+  - `lib/package-view/`
+- Use the valid manual draft/result as input.
+- Show a compact, readable pipeline preview:
+  - Fact Card summary
+  - Blueprint id / duration / scene count
+  - Script package summary
+  - Risk review summary
+  - Final QA readiness
+  - Review packet / owner gate / clipboard readiness if generated locally
+  - package view-style status summary if useful
+- Use deterministic local options only, for example fixed `videoId`, `contentPackageId`, `createdAt`, and mock/measured audio duration.
+- Link back to `/fact-cards/manual` and `/packages`.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
-Do not build the full package assembler workflow in this task.
+Do not build real generation, real media, upload, DB, or external source fetch.
 
 ## Required Behavior
 
-- The screen must make it clear that Fact Card is the required first step.
-- The valid fixture should show `ok=true` and a FactCard summary.
-- The broken fixture should show `ok=false` and validation errors.
-- No field should be invented or auto-filled beyond the provided draft data.
-- Citations/source URL/date must be visible.
+- The preview must start from `validHouseholdDebtResult.factCard`.
+- If the valid manual FactCard is missing unexpectedly, render a clear local error state instead of inventing data.
+- All displayed facts/numbers/source fields must come from the FactCard or deterministic downstream local modules.
+- The screen must make source linkage visible.
+- The screen must distinguish "local preview only" from real publish/render.
 - No external call or persistence.
 - Mobile and desktop layout should not overlap or squeeze text.
 
@@ -117,8 +101,8 @@ Run focused checks:
 
 ## Definition of Done
 
-- Manual Fact Card authoring route renders local draft validation and FactCard summary.
-- Valid and broken fixtures are both visible.
+- Manual valid Fact Card -> local package preview route renders.
+- Source/fact/package/QA/risk linkage is visible.
 - No external/clipboard/render/DB/API action occurs.
 - Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
@@ -130,4 +114,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise Manual Fact Card UI evidence because this starts the Owner-facing input surface for source-first content.
+- Update `_ai/CLAUDE_REPORT.md` with concise package preview UI evidence because this connects the Owner input surface to the source-first package workflow.
