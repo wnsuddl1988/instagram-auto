@@ -356,6 +356,60 @@ Validation evidence (2026-06-25):
   - T9: reviewPacketId 미지정 시 "rp-{contentPackageId}" 자동 설정 ✅
   - T10: output/ 미생성 ✅
 
+## Implemented Owner Decision Gate (`money-shorts-os-owner-decision-gate-v1`):
+
+- `lib/owner-decision/types.ts` — `OWNER_DECISION_GATE_SCHEMA_VERSION`, `OwnerDecisionInput`, `GateBlockerCode` (7종: decision_pending/rejected/revision_requested/unsupported_decision/qa_not_ready/risk_blocked/review_packet_id_mismatch), `OwnerDecisionGateResult`, `OwnerDecisionGateOptions`
+- `lib/owner-decision/gate.ts` — `evaluateOwnerDecision(packet, input, options?)`: ReviewPacket + OwnerDecisionInput → OwnerDecisionGateResult; canProceedToRender=true는 decision=approved AND qa.readyForRender=true AND risk.isBlocked=false 모두 충족 시에만; ReviewPacket 불변 보장; new Date() 없음, 외부 호출 없음
+- `lib/owner-decision/fixtures.ts` — `approvedGateResult` (valid, canProceedToRender=true), `rejectedGateResult`, `revisionRequestedGateResult`, `pendingGateResult`, `approvedButBlockedGateResult` (risk blocked, canProceedToRender=false)
+- `lib/owner-decision/index.ts` — re-export
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/owner-decision/): 0 errors ✅
+- ESLint (lib/owner-decision/ 4파일): 0 warnings ✅
+- Runtime sample (11 cases, node .cjs, 삭제 완료):
+  - T1: approved valid → canProceedToRender=true, blockerCodes=[] ✅
+  - T2: pending (null) → canProceedToRender=false, code=decision_pending ✅
+  - T3: revision_requested → canProceedToRender=false, code=decision_revision_requested ✅
+  - T4: rejected → canProceedToRender=false, code=decision_rejected ✅
+  - T5: approved but QA not ready + risk blocked → canProceedToRender=false, codes=[qa_not_ready, risk_blocked] ✅
+  - T6: approved but risk blocked only (qa ok) → canProceedToRender=false, code=risk_blocked 단독 ✅
+  - T7: 전체 linkage ids (12개) 보존 ✅
+  - T8: reviewPacketId mismatch → code=review_packet_id_mismatch ✅
+  - T9: default gateResultId = "gate-{reviewPacketId}" ✅
+  - T10: schemaVersion 정확 ✅
+  - T11: output/ 미생성 ✅
+- **[review-fix]** `gate.ts`: 기본 `gateResultId` 파생을 `input.reviewPacketId` → `packet.reviewPacketId`로 변경
+  - Codex 리뷰 발견: mismatched input.reviewPacketId 시 기본 gateResultId가 신뢰할 수 없는 입력값을 따르고 있음
+  - 수정: `const gateResultId = options.gateResultId ?? \`gate-${packet.reviewPacketId}\`` (line 24)
+  - 동작: mismatch input도 여전히 `review_packet_id_mismatch` 반환; explicit `options.gateResultId` override는 유지
+  - TypeScript strict check (lib/owner-decision/): 0 errors ✅
+  - ESLint (gate.ts): 0 warnings ✅
+  - Runtime sample (10 cases, node .cjs, 삭제 완료):
+    - T1: approved valid → canProceedToRender=true ✅
+    - T2~T4: pending/revision/rejected → false ✅
+    - T5: mismatched reviewPacketId → review_packet_id_mismatch ✅
+    - T6: mismatched input default gateResultId = "gate-rp-mock-inflation-30s" (packet 기반) ✅
+    - T7: explicit options.gateResultId override 유지 ✅
+    - T8~T9: approved but QA/risk fail → false ✅
+    - T10: output/ 미생성 ✅
+- **[review-fix-2]** `types.ts` + `gate.ts`: malformed/unsupported decision 차단 추가
+  - Codex 리뷰 발견: `"malformed_decision_value"` 같은 비표준 입력이 `canProceedToRender=true`로 통과
+  - `types.ts`: `GateBlockerCode`에 `"unsupported_decision"` 추가
+  - `gate.ts`: decision branch를 "approved" 명시 허용 + else 절에 `unsupported_decision` 추가
+  - TypeScript strict check (lib/owner-decision/): 0 errors ✅
+  - ESLint (lib/owner-decision/ 전체): 0 warnings ✅
+  - Runtime sample (12 cases, node .cjs, 삭제 완료):
+    - T1: approved valid → canProceedToRender=true ✅
+    - T2~T4: pending/revision/rejected → false (기존 코드 유지) ✅
+    - T5: mismatch → review_packet_id_mismatch ✅
+    - T6: mismatch default gateResultId = packet 기반 (review-fix 유지) ✅
+    - T7: explicit gateResultId override 유지 ✅
+    - T8: malformed decision → canProceedToRender=false ✅
+    - T9: malformed decision → unsupported_decision 코드 포함 ✅
+    - T10~T11: approved but QA/risk fail → false ✅
+    - T12: output/ 미생성 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

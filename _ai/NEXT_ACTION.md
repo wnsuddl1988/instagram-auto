@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Review Packet 완료, Owner Decision Gate 준비
+## 2026-06-25 현재 — Owner Decision Gate 완료, Clipboard Payload 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -27,16 +27,19 @@ Owner 결정:
 - `4256173 feat(final-qa): add source-first package readiness checks`
 - `bfaf5b9 feat(content-package): assemble source-first package chain`
 - `ca3bd36 feat(source-facts): add manual fact card authoring`
+- `538d0d1 feat(review-packet): add owner review packet generator`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-review-packet-v1`
-- `lib/review-packet/` 로컬 Owner review packet generator 구현
+- `money-shorts-os-owner-decision-gate-v1`
+- `money-shorts-os-owner-decision-gate-v1-review-fix`
+- `money-shorts-os-owner-decision-gate-v1-review-fix-2`
+- `lib/owner-decision/` 로컬 Owner decision gate 구현
 - Codex verification:
-  - ESLint `lib/review-packet`: PASS
-  - targeted TypeScript diagnostics for `lib/review-packet`: 0
-  - runtime sample PASS: valid review packet ready, linkage/source refs/narration/captions verbatim 보존, broken packet not ready, `risk_blocked` surfaced, owner decision fields pending/null, output not created
+  - ESLint `lib/owner-decision`: PASS
+  - targeted TypeScript diagnostics for `lib/owner-decision`: 0
+  - runtime sample PASS: approved valid gate PASS, pending/revision/rejected FAIL, mismatch FAIL, packet-based default gateResultId PASS, explicit id override PASS, malformed decision FAIL with `unsupported_decision`, QA/risk blocked FAIL, output not created
 
 Source of truth:
 
@@ -51,28 +54,29 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local Owner decision gate**
+**MVP 1 — local clipboard payload**
 
 Task ID:
 
-`money-shorts-os-owner-decision-gate-v1`
+`money-shorts-os-clipboard-payload-v1`
 
 목표:
 
-- review packet을 기반으로 Owner의 명시적 승인/수정요청/거절 결정을 로컬 gate result로 평가한다.
-- 실제 render/export/upload 전에 승인 상태, QA readiness, risk blocked 여부를 한 번 더 결정론적으로 막는다.
+- approved Review Packet + Owner Decision Gate Result를 기반으로 MVP1 UI/clipboard copy workflow가 사용할 copyable payload를 만든다.
+- 실제 OS clipboard 접근, 파일 export, render, upload 없이 데이터 구조만 만든다.
 
 포함:
 
-- owner decision / gate result TypeScript types
-- deterministic review-packet-to-decision-gate helper
-- approved valid packet pass
-- pending/revision_requested/rejected/not-ready/risk-blocked packet fail
-- source/fact/citation/package id 보존
-- fixtures and runtime samples
+- clipboard payload TypeScript types
+- deterministic review-packet/gate-to-copy-payload helper
+- script narration/caption/social copy/source attribution sections
+- `copyReady` gate
+- blocked/mismatched fixtures
+- runtime samples
 
 금지:
 
+- OS clipboard write
 - ffmpeg 실행
 - video/audio/image render
 - actual media probing 또는 real duration 측정

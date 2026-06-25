@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-owner-decision-gate-v1`
+`money-shorts-os-clipboard-payload-v1`
 
 ## Current State
 
@@ -12,8 +12,9 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local module: `lib/review-packet/`
-- Review Packet v1 has been Codex-reviewed with focused ESLint, targeted TypeScript, and runtime verification.
+- Latest completed checkpoint: `538d0d1 feat(review-packet): add owner review packet generator`
+- Latest completed local module: `lib/owner-decision/`
+- Owner Decision Gate v1 passed Codex review after review-fix and review-fix-2.
 
 Active local modules:
 
@@ -29,69 +30,68 @@ Active local modules:
 - `lib/final-qa/`
 - `lib/content-package/`
 - `lib/review-packet/`
+- `lib/owner-decision/`
 
 ## Goal
 
-Create a local deterministic Owner decision gate module for review packets.
+Create a local deterministic clipboard payload module for MVP1 copy workflows.
 
-This is the explicit approval layer between `ReviewPacket` and any future render/export/upload work. It should record/evaluate an Owner decision using only the existing review packet plus explicit decision input. It must not render, export, write files, call APIs, or mutate production state.
+MVP1 is clipboard-centered and file export is later. This module must prepare copyable text sections from an approved `ReviewPacket` + `OwnerDecisionGateResult` without touching the OS clipboard, writing files, rendering, exporting, or calling external services.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/owner-decision/`.
-- Define decision/gate result types.
-- Implement deterministic helper(s) that accept a `ReviewPacket` and explicit Owner decision input.
-- Preserve reviewPacketId/contentPackageId/factCardIds/sourceCitationIds/package ids from the review packet.
-- Return a gate result such as `canProceedToRender`.
-- Treat `approved` as render-eligible only when:
-  - the review packet QA is `readyForRender=true`
-  - risk is not blocked
-  - the explicit Owner decision is approved
-- Treat `rejected`, `revision_requested`, missing/pending decision, risk blocked, or QA not ready as `canProceedToRender=false`.
-- Include valid and blocked/not-ready fixtures.
+- Add a new local module under `lib/clipboard-payload/`.
+- Define clipboard payload types.
+- Implement deterministic helper(s) that accept a `ReviewPacket` and `OwnerDecisionGateResult`.
+- Preserve reviewPacketId/contentPackageId/factCardIds/sourceCitationIds/package ids.
+- Expose copy sections for:
+  - title/topic/core message
+  - script narration by duration
+  - caption text by duration
+  - YouTube title
+  - Instagram caption
+  - hashtags
+  - Money-OS CTA when present
+  - source/citation attribution block
+  - QA/risk warning summary for Owner visibility
+- Return `copyReady=true` only when:
+  - `gate.canProceedToRender=true`
+  - `gate.reviewPacketId === packet.reviewPacketId`
+  - `gate.contentPackageId === packet.contentPackageId`
+- Return `copyReady=false` with blocker codes/reasons when the gate is not approved or linkage mismatches.
+- Add valid approved and blocked fixtures using existing review packet and owner decision gate fixtures.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/owner-decision/types.ts`
-- `lib/owner-decision/gate.ts`
-- `lib/owner-decision/fixtures.ts`
-- `lib/owner-decision/index.ts`
+- `lib/clipboard-payload/types.ts`
+- `lib/clipboard-payload/builder.ts`
+- `lib/clipboard-payload/fixtures.ts`
+- `lib/clipboard-payload/index.ts`
 
 Optional only if useful:
 
-- `lib/owner-decision/validation.ts`
+- `lib/clipboard-payload/validation.ts`
 
 ## Required Behavior
 
-- Deterministic: no `new Date()` unless `decidedAt` or `createdAt` is injected by options/input.
-- No external calls.
-- No AI generation.
-- No source scraping or URL fetching.
-- No DB writes.
+- Deterministic: no `new Date()` unless `createdAt` is injected by options.
+- No OS clipboard access.
 - No file export/write.
 - No render.
 - No output file creation.
-- No new facts, numbers, claims, citations, narration, captions, or source references.
-- Owner notes/revision notes, if supported, must be copied verbatim from explicit input only.
-- Do not mutate the incoming `ReviewPacket` object unless the helper name and type make that behavior explicit.
-
-At minimum, the gate result should expose:
-
-- decisionRecordId or gateResultId
-- reviewPacketId
-- contentPackageId
-- ownerDecision
-- canProceedToRender
-- blocker codes/reasons when false
-- source/fact/citation ids
-- qa.readyForRender
-- risk.isBlocked
+- No external calls.
+- No AI generation.
+- No new facts, numbers, claims, citations, narration, captions, hashtags, or CTA text.
+- All copy text must come from `ReviewPacket` fields verbatim, except for simple section labels/metadata.
+- Broken/not-approved gate must not produce `copyReady=true`.
+- Linkage mismatch between packet and gate must block copy readiness.
 
 ## Forbidden
 
+- No `navigator.clipboard`, clipboardy, PowerShell clipboard, pbcopy, clip.exe, or OS clipboard writes.
 - No ffmpeg execution.
 - No video/audio/image rendering.
 - No actual media file probing or duration measurement.
@@ -105,7 +105,6 @@ At minimum, the gate result should expose:
 - No upload/post.
 - No git push.
 - No commit unless Codex explicitly authorizes it later.
-- Do not implement full Money-OS product.
 - Do not touch `output/`.
 - Do not reuse retired Candidate10/Jun/static slideshow/old Money Architect routes, assets, prompts, or references.
 
@@ -113,23 +112,24 @@ At minimum, the gate result should expose:
 
 Run focused checks only:
 
-- ESLint for `lib/owner-decision/`
-- TypeScript check targeted to `lib/owner-decision/` or source-first modules
+- ESLint for `lib/clipboard-payload/`
+- TypeScript check targeted to `lib/clipboard-payload/` or source-first modules
 - Runtime/sample check that verifies:
-  - approved valid review packet returns `canProceedToRender=true`
-  - pending/missing decision returns `canProceedToRender=false`
-  - revision requested returns `canProceedToRender=false`
-  - rejected returns `canProceedToRender=false`
-  - approved but QA not ready returns `canProceedToRender=false`
-  - approved but risk blocked returns `canProceedToRender=false`
-  - linkage ids are preserved
-  - no command is executed and no files are created
+  - approved gate + valid review packet returns `copyReady=true`
+  - pending/rejected/revision/not-ready gate returns `copyReady=false`
+  - malformed/unsupported gate blocker remains surfaced if present
+  - reviewPacketId mismatch returns `copyReady=false`
+  - contentPackageId mismatch returns `copyReady=false`
+  - all copy text comes from the review packet verbatim
+  - source attribution block preserves source URL/citation id
+  - no OS clipboard call is made
+  - no output file is created
 
 ## Definition of Done
 
-- Owner decision gate module exports clear local types and deterministic helper(s).
-- Valid approved review packet can pass the local gate.
-- Not-ready, blocked, rejected, revision-requested, or pending packets fail the gate clearly.
+- Clipboard payload module exports clear local types and deterministic helper(s).
+- Approved review packet produces copyable sections for MVP1 copy workflows.
+- Blocked/mismatched packets fail readiness clearly.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -140,4 +140,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise owner decision gate evidence because this creates the explicit Owner approval layer.
+- Update `_ai/CLAUDE_REPORT.md` with concise clipboard payload evidence because this creates the MVP1 copy workflow layer.

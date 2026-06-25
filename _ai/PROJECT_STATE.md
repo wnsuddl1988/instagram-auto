@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 82% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet 로컬 모듈이 안정화됐다. 다음 단계는 Owner decision gate다.
+**전체프로젝트 진행률:** 약 84% — source/fact-card foundation, Video Blueprint, script package, 금융표현 risk review, 9:16 chart/number-card, image prompt package, voice profile/TTS script formatter, timeline recalculation, render manifest/ffmpeg command plan, final QA, content package assembler, manual Fact Card authoring, Owner review packet, Owner decision gate 로컬 모듈이 안정화됐다. 다음 단계는 MVP1 clipboard payload다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -29,6 +29,7 @@
 - 핵심 카테고리: 금리, 환율, 물가, 고용, 소비, 경기지표, ECOS/KOSIS/금융공공데이터/OpenDART/FRED, 기업 공시/실적/재무정보.
 - Fact Card 없이 대본 생성 금지.
 - Money-OS CTA는 개인 돈관리와 자연스럽게 연결되는 경우에만 삽입.
+- MVP1은 완성 영상 자동 생성기가 아니라, Owner가 매일 쓸 수 있는 출처 기반 콘텐츠 패키지/검토/복사 workflow다.
 - 생성 안정화 기준: `데이터 소스 -> 원본/공시 -> 핵심 숫자 -> 비교값 -> Fact Card -> Video Blueprint -> 대본/차트/영상`.
 
 상세 기준:
@@ -57,6 +58,7 @@
 - Commit: `4256173` — `feat(final-qa): add source-first package readiness checks`
 - Commit: `bfaf5b9` — `feat(content-package): assemble source-first package chain`
 - Commit: `ca3bd36` — `feat(source-facts): add manual fact card authoring`
+- Commit: `538d0d1` — `feat(review-packet): add owner review packet generator`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -66,26 +68,29 @@
 
 Task:
 
-- `money-shorts-os-review-packet-v1`
+- `money-shorts-os-owner-decision-gate-v1`
+- `money-shorts-os-owner-decision-gate-v1-review-fix`
+- `money-shorts-os-owner-decision-gate-v1-review-fix-2`
 
 구현:
 
-- `lib/review-packet/types.ts`
-- `lib/review-packet/generator.ts`
-- `lib/review-packet/fixtures.ts`
-- `lib/review-packet/index.ts`
+- `lib/owner-decision/types.ts`
+- `lib/owner-decision/gate.ts`
+- `lib/owner-decision/fixtures.ts`
+- `lib/owner-decision/index.ts`
 
 검증:
 
-- Review packet ESLint PASS
-- Targeted TypeScript diagnostics: 0 review-packet errors
+- Owner decision gate ESLint PASS
+- Targeted TypeScript diagnostics: 0 owner-decision errors
 - Codex runtime verification PASS:
-  - valid content package -> review packet 생성 PASS
-  - package/fact/citation/source ids 보존 PASS
-  - narration/caption/source refs verbatim 보존 PASS
-  - valid QA ready PASS
-  - broken risk-blocked packet not ready PASS
-  - owner decision fields pending/null PASS
+  - approved valid review packet -> `canProceedToRender=true` PASS
+  - pending/revision/rejected decisions block PASS
+  - mismatched reviewPacketId blocks PASS
+  - default gateResultId uses packet reviewPacketId PASS
+  - explicit gateResultId override PASS
+  - malformed decision blocks with `unsupported_decision` PASS
+  - QA not ready and risk blocked cases block PASS
   - output file not created PASS
 
 주의:
@@ -113,21 +118,23 @@ Task:
 
 다음 safe work unit:
 
-- **MVP 1 — local Owner decision gate**
+- **MVP 1 — local clipboard payload**
 
 구현 대상:
 
-- owner decision / gate result TypeScript types
-- deterministic review-packet-to-decision-gate helper
-- approved valid packet pass
-- pending/revision_requested/rejected/not-ready/risk-blocked packet fail
-- source/fact/citation/package id 보존
-- fixtures and runtime samples
+- clipboard payload TypeScript types
+- deterministic review-packet/gate-to-copy-payload helper
+- script narration/caption/social copy/source attribution sections
+- `copyReady` gate
+- blocked/mismatched fixtures
+- runtime samples
 - no external AI/API
 - no DB migration
 - no video render
 - no ElevenLabs/TTS live call or real audio measurement
 - no ffmpeg execution
+- no OS clipboard write
+- no file export
 - no payment/deploy/upload/post/push
 
 금지:
