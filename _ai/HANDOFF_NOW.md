@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-final-qa-model-v1`
+`money-shorts-os-content-package-assembler-v1`
 
 ## Current State
 
@@ -12,8 +12,8 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed local module: `lib/render-plan/`
-- Render-plan checkpoint is Codex-reviewed and ready to be committed locally with no push.
+- Latest completed local module: `lib/final-qa/`
+- Final QA review-fix-2 passed Codex verification and is ready for local checkpoint commit.
 
 Active local modules:
 
@@ -26,49 +26,52 @@ Active local modules:
 - `lib/voice-profiles/`
 - `lib/timeline/`
 - `lib/render-plan/`
+- `lib/final-qa/`
 
 ## Goal
 
-Create a local deterministic final QA model/checklist runner for the source-first Money Shorts OS package chain.
+Create a local deterministic content package assembler that wires the existing source-first modules into one package object for a single mock short.
 
-This is not real rendered-video QA yet. It should validate the linked local package data we already have:
+This is a local orchestration/data module only. It should not call external APIs, generate new facts, execute render commands, create media files, or touch `output/`.
 
-- Fact Card linkage
-- Video Blueprint
-- Script Package
-- Risk Review result
-- Chart Card Package
-- Image Prompt Package
-- Voice/TTS Package
-- Recalculated Timeline
-- Render Manifest
-
-The module should answer: "Is this local content package structurally ready to move toward a future render step?"
+The assembler should answer: "Given an existing valid Fact Card and local options, can we build a linked package chain from Fact Card through Final QA using existing local modules?"
 
 ## Approved Scope
 
 Allowed:
 
-- Add a new local module under `lib/final-qa/`.
-- Define QA result/checklist types.
-- Implement deterministic helper(s) that aggregate existing validation results and cross-package invariants.
-- Add fixtures that reuse existing mock packages from source-first modules.
-- Add lightweight validation for required package ids, factCardIds, citation ids, duration/timeline/render linkage, risk status, and source attribution presence.
+- Add a new local module under `lib/content-package/`.
+- Define package/result types that group the existing module outputs:
+  - Fact Card
+  - Video Blueprint
+  - Script Package
+  - Risk Review
+  - Chart Card Package
+  - Image Prompt Package
+  - Voice/TTS Package
+  - Recalculated Timeline
+  - Render Manifest
+  - Final QA Result
+- Implement deterministic helper(s) that call existing local generators/validators.
+- Use mock/measured audio duration passed in by options or fixture data; do not measure files.
+- Add fixtures using existing mock Fact Cards.
+- Add validation/helper output that preserves source/fact/citation linkage.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 Suggested files:
 
-- `lib/final-qa/types.ts`
-- `lib/final-qa/checker.ts`
-- `lib/final-qa/fixtures.ts`
-- `lib/final-qa/index.ts`
+- `lib/content-package/types.ts`
+- `lib/content-package/assembler.ts`
+- `lib/content-package/fixtures.ts`
+- `lib/content-package/index.ts`
 
 Optional only if useful:
 
-- `lib/final-qa/validation.ts`
+- `lib/content-package/validation.ts`
 
 ## Required Behavior
 
+- Deterministic: no `new Date()` unless `createdAt` is injected by options.
 - No external calls.
 - No AI generation.
 - No media file probing.
@@ -76,22 +79,23 @@ Optional only if useful:
 - No render.
 - No output file creation.
 - No dependency changes.
-- No new facts, numbers, captions, or narration.
-- Use existing local package fields only.
+- No new facts, numbers, captions, narration, or source references beyond existing local module outputs.
+- Final QA should be run on the assembled package.
 
-At minimum, QA should check:
+At minimum, the assembled package should expose:
 
-- Package ids are non-empty.
-- Fact Card ids and source citation ids are non-empty and preserved across Blueprint/Script/Timeline/Render Manifest where available.
-- Script validation is OK for the provided package.
-- Risk review is not blocked.
-- Chart card validation is OK when chart package is provided.
-- Image prompt validation is OK when image prompt package is provided.
-- Voice profile/TTS validation is OK.
-- Timeline validation is OK and duration matches render plan duration.
-- Render manifest validation is OK.
-- Render manifest uses relative placeholder output paths only.
-- Captions/render overlays have non-empty text and scene linkage.
+- stable package id
+- source Fact Card id(s)
+- source citation id(s)
+- blueprint id
+- script package id
+- risk review result
+- chart card package id
+- image prompt package id
+- tts package id
+- timeline id
+- render manifest id
+- final QA result
 
 ## Forbidden
 
@@ -115,20 +119,19 @@ At minimum, QA should check:
 
 Run focused checks only:
 
-- ESLint for `lib/final-qa/`
-- TypeScript check targeted to `lib/final-qa/` or source-first modules
+- ESLint for `lib/content-package/`
+- TypeScript check targeted to `lib/content-package/` or source-first modules
 - Runtime/sample check that verifies:
-  - a valid local mock package returns QA ok
-  - blocked/high-risk package behavior is reported clearly
-  - broken linkage or broken render/timeline duration fails
+  - a valid mock Fact Card assembles into a package with `finalQa.readyForRender=true`
+  - source/fact/citation ids are preserved across package summary fields
+  - risk-blocked package or broken linkage causes final QA failure if such fixture is included
   - no command is executed and no files are created
 
 ## Definition of Done
 
-- Final QA module exports clear local types and deterministic checker helper(s).
-- Valid existing mock package chain passes.
-- Broken mock cases fail with useful codes/messages.
-- Source linkage and duration invariants are checked across modules.
+- Content package module exports clear local types and deterministic assembler helper(s).
+- Valid existing mock package chain can be assembled end-to-end through Final QA.
+- Linkage ids are preserved and exposed in the package summary.
 - Focused checks pass.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
@@ -139,4 +142,4 @@ Run focused checks only:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise final-qa implementation evidence because this crosses multiple local module contracts.
+- Update `_ai/CLAUDE_REPORT.md` with concise content-package implementation evidence because this crosses multiple local module contracts.

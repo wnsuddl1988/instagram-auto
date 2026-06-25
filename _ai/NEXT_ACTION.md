@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Render-plan checkpoint 준비 완료
+## 2026-06-25 현재 — Final QA checkpoint 준비 완료
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -23,19 +23,20 @@ Owner 결정:
 - `5bb99fd feat(image-prompts): add source-linked prompt package generator`
 - `55f4a9b feat(voice-profiles): add local tts script formatter`
 - `14f3c53 feat(timeline): add local timeline recalculation`
-- render-plan checkpoint: Codex-reviewed and ready for local commit
+- `90fcaa6 feat(render-plan): add local ffmpeg manifest planner`
+- final-qa checkpoint: Codex-reviewed and ready for local commit
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-ffmpeg-render-plan-v1`
-- `money-shorts-os-ffmpeg-render-plan-v1-review-fix`
-- `lib/render-plan/` 로컬 render manifest + ffmpeg command plan model 구현
+- `money-shorts-os-final-qa-model-v1`
+- `money-shorts-os-final-qa-model-v1-review-fix`
+- `money-shorts-os-final-qa-model-v1-review-fix-2`
+- `lib/final-qa/` 로컬 final QA model/checklist runner 구현
 - Codex verification:
-  - source-first render-plan TypeScript diagnostics: 0
-  - ESLint `lib/render-plan`: PASS
-  - runtime sample: image prompt package linkage PASS, placeholder fallback PASS, missing timeline id fails PASS, forbidden command injection fails PASS
-  - planned output file was not created
+  - source-first final-qa TypeScript diagnostics: 0
+  - ESLint `lib/final-qa`: PASS
+  - runtime sample: valid chain PASS, source id mismatch FAIL, render source/fact/citation mismatch FAIL, timeline fact/citation mismatch FAIL, render timeline mismatch FAIL, blocked risk FAIL
 
 Source of truth:
 
@@ -50,25 +51,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local final QA model/checklist runner**
+**MVP 1 — local content package assembler**
 
 Task ID:
 
-`money-shorts-os-final-qa-model-v1`
+`money-shorts-os-content-package-assembler-v1`
 
 목표:
 
-- 실제 영상 렌더 없이, 기존 로컬 패키지 체인이 미래 렌더 단계로 넘어갈 수 있는지 구조적으로 검수한다.
-- 기존 Blueprint/Script/Risk/Chart/Image/TTS/Timeline/Render Manifest linkage만 사용한다.
+- 기존 source-first 로컬 모듈을 하나의 package object로 묶는다.
+- 실제 렌더 없이 Fact Card부터 Final QA까지 연결된 mock package chain을 생성한다.
 
 포함:
 
-- final QA result/checklist TypeScript types
-- deterministic checker helper
-- source/fact/citation linkage checks
-- validation aggregation from existing local modules
-- timeline/render duration consistency checks
-- risk blocked 상태 탐지
+- content package TypeScript types
+- deterministic assembler helper
+- existing module generator/validator orchestration
+- source/fact/citation/package id summary
+- final QA result 포함
 - lightweight fixtures and runtime samples
 
 금지:

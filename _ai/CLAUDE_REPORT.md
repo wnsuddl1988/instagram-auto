@@ -201,6 +201,60 @@ Validation evidence (2026-06-25, review-fix 후):
   - T5: "| bash" 주입 → ok=false, forbidden_exec_pattern ✅
   - T6: output file 미생성 확인(fs.existsSync=false), fullCommand은 string 데이터만 ✅
 
+## Implemented Final QA module (`money-shorts-os-final-qa-model-v1`):
+
+- `lib/final-qa/types.ts` — `FINAL_QA_SCHEMA_VERSION`, `QaCheckResult`, `QaSeverity`, `QaCheckSpec`, `FinalQaResult`, `FinalQaInput`
+- `lib/final-qa/checker.ts` — `runFinalQa(input, opts?)`: 23개 체크 포인트 집계; blocker checkIds 집합으로 readyForRender/blockersFailed 결정; isRiskBlocked는 riskReview.isBlocked 또는 risk_blocked 코드로 파생; 결정론적, 외부 호출 없음
+- `lib/final-qa/fixtures.ts` — inflationQaInput(전체 체인 valid), inflationQaResult, blockedQaInput(risk blocked), blockedQaResult; 기존 모든 모듈 validation 함수 실제 호출 연결
+- `lib/final-qa/index.ts` — re-export
+
+체크 목록 (23개):
+- core-source-id, core-fact-card-ids, core-citation-ids (Fact Card 링키지)
+- risk-not-blocked, risk-level-acceptable (Risk Review)
+- script-validation, chart-card-validation, image-prompt-validation, voice-profile-validation, tts-validation (각 모듈 validation)
+- timeline-validation (Timeline)
+- render-manifest-validation, render-output-relative (Render Manifest)
+- duration-cross-check (Timeline ↔ Render 교차 검증, ≤0.1s 허용)
+- render-captions-present (Caption 비어있지 않음)
+- **[review-fix 추가]** linkage-timeline-source-id, linkage-timeline-fact-card-ids, linkage-timeline-citation-ids, linkage-render-timeline-id (cross-package 링키지 검증)
+- **[review-fix-2 추가]** linkage-core-script-package-id, linkage-render-source-id, linkage-render-fact-card-ids, linkage-render-citation-ids (core/render 링키지 검증)
+
+Validation evidence (2026-06-25):
+
+- TypeScript strict check (lib/final-qa/): 0 errors ✅
+- ESLint (lib/final-qa/): 0 warnings ✅
+- Runtime sample (7 tests, node .cjs, 삭제 완료 — 최초):
+  - T1: valid chain → readyForRender=true, total=15, passed=15, failed=0 ✅
+  - T2: blocked risk → readyForRender=false, isRiskBlocked=true, code=risk_blocked ✅
+  - T3: broken linkage (empty factCardIds + duration mismatch + absolute path + empty captions) → blockersFailed=4 ✅
+  - T4: missing riskReview → code=risk_review_not_provided, readyForRender=false ✅
+  - T5: script_validation_failed → readyForRender=false, blocker ✅
+  - T6: output file 미생성(fs.existsSync=false), schemaVersion 확인 ✅
+  - T7: sourceId/sourceType 보존 ✅
+- **[review-fix]** Runtime sample (6 tests, node .cjs, 삭제 완료 — cross-linkage):
+  - Case 1: valid chain (blueprintVideoId+timelineId+factCardIds+citationIds 전부 일치) → readyForRender=true ✅
+  - Case 2: sourceId="unrelated-source-id" (blueprintVideoId 없음) → timeline_source_id_mismatch, readyForRender=false ✅
+  - Case 3: timelineFactCardIds=["fact-card-DIFFERENT"] → timeline_fact_card_ids_mismatch, readyForRender=false ✅
+  - Case 4: timelineSourceCitationIds=["citation-DIFFERENT"] → timeline_citation_ids_mismatch, readyForRender=false ✅
+  - Case 5: renderManifestTimelineId="tl-WRONG-id" → render_timeline_id_mismatch, readyForRender=false ✅
+  - Case 6: blocked risk → readyForRender=false, isRiskBlocked=true ✅
+- **[review-fix-2]** 추가 체크 4개 (체크 총 23개): linkage-core-script-package-id, linkage-render-source-id, linkage-render-fact-card-ids, linkage-render-citation-ids
+  - types.ts: `scriptPackageId?` 필드 추가
+  - checker.ts: 섹션 17~20 (renderManifest source/fact/citation + core scriptPackageId 비교), blockerCheckIds에 4개 추가
+  - fixtures.ts: `scriptPackageId: inflationScriptPackage30.packageId` 추가
+  - TypeScript strict check: 0 errors ✅
+  - ESLint: 0 warnings ✅
+  - Runtime sample (9 cases, node .cjs, 삭제 완료):
+    - Case 1: valid full chain → readyForRender=true ✅
+    - Case 2: sourceId="unrelated-source-id" (blueprintVideoId 유지) → script_package_id_mismatch, readyForRender=false ✅
+    - Case 3: renderManifestSourceId="wrong-render-source" → render_source_id_mismatch, readyForRender=false ✅
+    - Case 4: renderManifestFactCardIds=["wrong-fact"] → render_fact_card_ids_mismatch, readyForRender=false ✅
+    - Case 5: renderManifestSourceCitationIds=["wrong-citation"] → render_citation_ids_mismatch, readyForRender=false ✅
+    - Case 6: timelineFactCardIds=["wrong-fact"] → timeline_fact_card_ids_mismatch, readyForRender=false ✅ (fix-1 회귀 없음)
+    - Case 7: timelineSourceCitationIds=["wrong-citation"] → timeline_citation_ids_mismatch, readyForRender=false ✅
+    - Case 8: renderManifestTimelineId="wrong-timeline" → render_timeline_id_mismatch, readyForRender=false ✅
+    - Case 9: blocked risk → readyForRender=false, isRiskBlocked=true ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
