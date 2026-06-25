@@ -1027,6 +1027,99 @@ Fix 3 — `page.tsx` unknown candidate fallback:
 | `ManualFactCardDraft from "./types"` pattern | 0건 ✅ (완전 제거됨) |
 | unknown candidate silent fallback line 잔존 | 위 guard 통과 후 도달 시 candidateEntry 확실히 non-null |
 
+## ECOS Connector Scaffold (`money-shorts-os-ecos-connector-scaffold-v1`)
+
+기준 commit: `d85b616 feat(source-facts): add auto fact card candidate preview`
+
+**구현 내용:**
+
+- `lib/source-facts/ecos-connector.ts` (신규)
+  - `EcosStatSearchRequest` — ECOS API request spec 타입 (cycle, statCode, itemCode1, startDate, endDate)
+  - `EcosStatRow` — ECOS API response row 타입 (STAT_CODE, ITEM_NAME1, TIME, DATA_VALUE, UNIT_NAME 등)
+  - `EcosApiResponse` — 전체 응답 envelope 타입
+  - `EcosConnectorResult` — transport 결과 discriminated union (ok/error)
+  - `EcosTransport` interface — mock/live 교체 가능한 transport boundary
+  - `ECOS_BASE_RATE_REQUEST_JAN2025` — 기준금리 request spec 상수
+  - `createEcosMockTransport()` — rows+fetchedAt 상수를 받아 mock transport 반환
+  - `runEcosConnector()` — transport.fetch + normalizer 연결 helper
+
+- `lib/source-facts/ecos-fixtures.ts` (신규)
+  - `ECOS_BASE_RATE_ROW_JAN2025` — 2025년 1월 기준금리 row (DATA_VALUE: "3.00")
+  - `ECOS_BASE_RATE_ROW_DEC2024` — 2024년 12월 직전 row (DATA_VALUE: "3.25")
+  - `ECOS_BASE_RATE_ROWS_JAN2025` — 2-period row pair (current, previous)
+  - `ECOS_BASE_RATE_MOCK_RESPONSE` — full API response envelope
+
+- `lib/source-facts/ecos-normalizer.ts` (신규)
+  - `ecosTimeToDataPeriod()` — ECOS TIME "202501" → "2025년 1월"
+  - `ecosTimeToPublishedDate()` — ECOS TIME → ISO date (last day of month fallback)
+  - `normalizeEcosBaseRateRows()` — 2-period EcosStatRow[] → RawDataSnapshot (현재값/이전값/변화량/display string 계산, decimal precision 보존)
+  - `scaffoldEcosBaseRateSnapshot` — 전체 scaffold 경로 실행 결과 snapshot
+  - `scaffoldEcosBaseRateCandidate` — snapshot → `ecosBaseRateParser` → `generateCandidateFromSnapshot()` 결과
+  - `existingBaseRateResult` — 기존 `generatedBaseRateResult` re-export (비교용)
+
+- `lib/source-facts/index.ts` — 3개 신규 파일 re-export 추가
+
+**검증:**
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (4개 변경 파일, --max-warnings=0) | 0 warnings ✅ |
+| `Date.now` / `Math.random` / `fetch(` (HTTP) / `process.env` / `navigator.clipboard` / `ffmpeg` / `output/` / `upload` / `deploy` | 0건 ✅ (`fetch` 매칭은 interface 메서드 선언만, HTTP client 없음) |
+| live network call | 없음 (모든 값 상수) ✅ |
+| `scaffoldEcosBaseRateSnapshot` | `normalizeEcosBaseRateRows` 경로 실행, non-null expected ✅ |
+| `scaffoldEcosBaseRateCandidate` | `ecosBaseRateParser` → `generateCandidateFromSnapshot` 경로 연결 ✅ |
+| final `git status -sb` | 3 untracked, 2 modified (_ai/HANDOFF_NOW + index.ts) ✅ |
+
+**scaffold path:**
+```
+ECOS_BASE_RATE_REQUEST_JAN2025
+  → createEcosMockTransport(ECOS_BASE_RATE_ROWS_JAN2025, fetchedAt)
+  → runEcosConnector(request, transport, normalizeEcosBaseRateRows)
+  → RawDataSnapshot (scaffoldEcosBaseRateSnapshot)
+  → generateCandidateFromSnapshot(ecosBaseRateParser, snapshot)
+  → ManualFactCardAuthoringResult (scaffoldEcosBaseRateCandidate)
+```
+
+**live transport으로 전환 시 필요한 작업 (다음 slice):**
+- `EcosTransport` interface를 구현하는 `EcosLiveTransport` 추가 (`execute()` 구현, API key 사용)
+- `runEcosConnector()` 호출 시 `createEcosMockTransport` 대신 live transport 주입
+- process.env / API key 사용 — Owner 명시 승인 필요
+
+**[review-fix: money-shorts-os-ecos-connector-scaffold-v1-review-fix — 2026-06-25]**
+
+Fix 1 — Published date correctness (`ecos-connector.ts`, `ecos-normalizer.ts`):
+- `EcosStatSearchRequest`에 `publishedDate: string`와 `sourcePageUrl: string` 필드 추가
+- `ECOS_BASE_RATE_REQUEST_JAN2025`에 `publishedDate: "2025-01-16"`, `sourcePageUrl: "https://ecos.bok.or.kr/#/Short/722Y001"` 설정
+- `runEcosConnector()` signature: normalizer에 request 전달 `(rows, fetchedAt, request)`
+- `normalizeEcosBaseRateRows()` 3번째 인자 `request: EcosStatSearchRequest` 추가
+- normalizer 내 `publishedDate = request.publishedDate` — `ecosTimeToPublishedDate()` 호출 완전 제거
+- `scaffoldEcosBaseRateCandidate.factCard.publishedDate` = `"2025-01-16"` (static 확인)
+- `2025-01-31` fallback 제거됨 — `ecosTimeToPublishedDate`가 normalizer에서 호출되지 않음
+
+Fix 2 — Transport method naming (`ecos-connector.ts`):
+- `EcosTransport.fetch()` → `EcosTransport.execute()` (global `fetch()` 충돌 방지)
+- `createEcosMockTransport` 내 구현부 `fetch()` → `execute()`
+- `runEcosConnector` 내 `transport.fetch()` → `transport.execute()`
+- forbidden pattern `fetch(` 검색 시 코드 실행부 0건 — 주석만 매칭
+
+Fix 3 — Human-facing source URL (`ecos-connector.ts`, `ecos-normalizer.ts`):
+- `EcosStatSearchRequest.sourcePageUrl` 필드 추가 (Owner 검토 가능한 ECOS stat page URL)
+- `normalizeEcosBaseRateRows` 내 `sourceUrl: request.sourcePageUrl` (stat page)
+- API endpoint는 `rawPayload.apiEndpointUrl`에 별도 보존
+- `EcosStatSearchRequest.sourceName` 필드 추가 → snapshot `sourceName: request.sourceName`
+
+검증:
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (2개 변경 파일, --max-warnings=0) | 0 warnings ✅ |
+| `Date.now` / `Math.random` / `fetch(` (코드) / `process.env` / `navigator.clipboard` / `ffmpeg` / `output/` / `upload` / `deploy` | 0건 ✅ |
+| `publishedDate: "2025-01-16"` in request constant | ✅ (ecos-connector.ts:122) |
+| `ecosTimeToPublishedDate` 호출 in normalizer | 0건 ✅ (완전 제거) |
+| `2025-01-31` fallback 잔존 | 0건 ✅ |
+| `sourceUrl` = human-facing stat page in snapshot | ✅ (ecos-normalizer.ts:85, request.sourcePageUrl) |
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

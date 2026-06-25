@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Auto Fact Card Candidate v1 Review-Fix 완료, checkpoint 대기
+## 2026-06-25 현재 — ECOS Connector Scaffold 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,23 +15,21 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `9978d61 test(money-shorts): record mvp1 rc smoke pass` ← **현재 HEAD**
-- (이전: `de96040 fix(ui): clear package preview key warnings`)
-- (이전: `c66073f test(money-shorts): record mvp1 route smoke pass`)
+- `d85b616 feat(source-facts): add auto fact card candidate preview` ← **현재 HEAD**
+- (이전: `9978d61 test(money-shorts): record mvp1 rc smoke pass`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-react-key-warning-isolation-v1` + review-fix + type-cleanup: React key warning 0회 달성
-  - root cause: `primaryScript.scenes.map()` `key={sc.sceneId}` — `sceneId` 필드 없음 → `key={undefined}`
-  - fix: `key={String(sc.sceneIndex)}`, `sc.durationSec`, `scene.sceneRole`
-- `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`: 5개 route RC smoke PASS
-  - `/money-shorts`, `/fact-cards/manual`, `/fact-cards/manual/new`, `/fact-cards/manual/package-preview`, `/packages` — key warning 0회, 링크/텍스트 확인
-- `money-shorts-os-auto-fact-card-candidate-v1` + review-fix:
-  - mock ECOS `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()` 경로 구현
-  - `/fact-cards/manual/package-preview?candidate=base-rate` generated candidate preview 추가
-  - `ManualFactCardDraft` import blocker 수정, `"3.0%"` display string 보존, unknown candidate fallback 방지
+- `money-shorts-os-auto-fact-card-candidate-v1` + review-fix: checkpoint `d85b616`
+  - mock ECOS `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()` 경로
+  - `/fact-cards/manual/package-preview?candidate=base-rate` preview
+- `money-shorts-os-ecos-connector-scaffold-v1`: **완료, 미커밋**
+  - `ecos-connector.ts`: EcosTransport interface + mock transport factory + runEcosConnector()
+  - `ecos-fixtures.ts`: 2-period mock rows (Jan2025 3.00% / Dec2024 3.25%)
+  - `ecos-normalizer.ts`: normalizeEcosBaseRateRows() + scaffold end-to-end candidate
+  - scaffold path: request spec → mock transport → RawDataSnapshot → parser → Fact Card candidate
 
 Source of truth:
 
@@ -48,12 +46,12 @@ Source of truth:
 
 먼저:
 
-- `auto-fact-card-candidate-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
+- `ecos-connector-scaffold-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
 
-그 다음:
+그 다음 (live connector — Owner 명시 승인 후):
 
-- ECOS live connector 준비/구현을 첫 실제 API 연결 후보로 진행한다.
-- 단, live API 호출, 네트워크 사용, env/API key 변경은 Owner 명시 승인 후 진행한다.
+- `EcosLiveTransport` 구현 (fetch() + ECOS API key 사용) — process.env 사용이므로 Owner 명시 승인 필요
+- ECOS live API call 첫 연결 검증 (소량 실제 데이터, paid API key 필요)
 - 아직 GPT, 영상, ElevenLabs, ffmpeg/render로 가지 않는다.
 
 금지 (계속 유지):

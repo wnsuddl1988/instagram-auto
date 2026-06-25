@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 55% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix까지 완료됐다. 다만 Owner가 방향을 재확인하면서 “매번 수동 입력”이 최종 구조가 아님이 명확해졌고, 자동 Fact Card 후보 생성/실데이터 connector/Owner 승인 workflow가 남아 있어 전체 진행률을 보수적으로 재산정한다. 현재는 mock raw data 기반 자동 Fact Card 후보 생성 v1이 구현·review-fix 완료됐고 checkpoint 전 Codex review 중이다.
+**전체프로젝트 진행률:** 약 60% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, 그리고 ECOS connector scaffold/mock transport/normalizer까지 완료됐다. 다만 실제 live connector, Owner 승인 workflow, 운영용 데이터 소스 연결, 그리고 후속 패키지 자동화가 남아 있어 전체 진행률을 보수적으로 재산정한다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -73,6 +73,7 @@
 - Commit: `c66073f` — `test(money-shorts): record mvp1 route smoke pass`
 - Commit: `de96040` — `fix(ui): clear package preview key warnings`
 - Commit: `9978d61` — `test(money-shorts): record mvp1 rc smoke pass`
+- Commit: `d85b616` — `feat(source-facts): add auto fact card candidate preview`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -86,6 +87,8 @@ Task:
 - `money-shorts-os-mvp1-owner-acceptance-prep-v1`
 - `money-shorts-os-auto-fact-card-candidate-v1`
 - `money-shorts-os-auto-fact-card-candidate-v1-review-fix`
+- `money-shorts-os-ecos-connector-scaffold-v1`
+- `money-shorts-os-ecos-connector-scaffold-v1-review-fix`
 
 구현/확인:
 
@@ -95,13 +98,16 @@ Task:
 - `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard() -> package preview` 경로를 mock ECOS 기준금리 후보로 구현.
 - `/fact-cards/manual/package-preview?candidate=base-rate`에서 generated mock candidate를 preview할 수 있게 함.
 - review-fix: `ManualFactCardDraft` import 위치 수정, `"3.0%"` source display string 보존, unknown `?candidate=` silent fallback 방지.
+- ECOS request spec, mock transport boundary, ECOS-like response fixtures, normalizer를 추가.
+- `ECOS request spec -> mock transport response -> normalized RawDataSnapshot -> existing parser -> Fact Card candidate` scaffold 경로를 구현.
+- review-fix: known mock 발표일 `2025-01-16`을 request metadata로 명시 전달, human-facing source URL 보존, transport method를 `fetch()`에서 `execute()`로 변경.
 
 검증:
 
 - targeted ESLint: 통과.
 - focused TypeScript source check: 통과.
 - full `tsc --project`/`pnpm build`는 기존 `output/` binary `.ts` 오염으로 전체 기준에서 제외.
-- forbidden live call/render/output/deploy 패턴: 실제 호출 없음.
+- forbidden live call/render/output/deploy 패턴: 실제 호출 없음. `fetch`/`process.env`/`Date.now`는 설명 주석에서만 언급.
 
 주의:
 
@@ -128,8 +134,8 @@ Task:
 
 현재 우선순위:
 
-- `auto-fact-card-candidate-v1` + review-fix 누적 diff를 checkpoint review 후 safe local commit.
-- 그 다음 safe work unit은 ECOS live connector 준비/구현이다.
+- `ecos-connector-scaffold-v1` + review-fix 누적 diff를 checkpoint review 후 safe local commit.
+- 그 다음 safe work unit은 ECOS live connector 승인/구현 여부 결정이다.
 - 실제 ECOS/KOSIS/OpenDART/FRED live API 호출, env/API key, 외부 네트워크 사용은 별도 Owner 승인 후 진행한다.
 
 금지:
