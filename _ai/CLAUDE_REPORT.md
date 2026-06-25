@@ -969,6 +969,64 @@ React 19에서는 `<div>` 내에 **static JSX + dynamic `.map()` 결과**가 혼
 
 server 5xx: 없음 ✅
 
+## Owner Acceptance Prep (`money-shorts-os-mvp1-owner-acceptance-prep-v1`)
+
+기준 commit: `9978d61 test(money-shorts): record mvp1 rc smoke pass`
+
+**Route Readiness (fresh server, 2026-06-25):**
+
+| Route | load | key warning | 준비 상태 |
+|-------|------|------------|----------|
+| `/fact-cards/manual/new` | ✅ | 0회 | 입력 필드 25개, 버튼(샘플/초기화/삭제/Citation추가), backlink/forward link 정상 |
+| `/fact-cards/manual/package-preview` | ✅ | 0회 | 10개 section(파이프라인 상태~⑨ Clipboard), workflow steps 표시, backlink/forward link 정상 |
+
+구현 코드 변경 없음. 문서만 업데이트.
+
+## Auto Fact Card Candidate (`money-shorts-os-auto-fact-card-candidate-v1`)
+
+기준 commit: `9978d61 test(money-shorts): record mvp1 rc smoke pass`
+
+**구현 내용:**
+
+- `lib/source-facts/raw-snapshot-parser.ts` — `RawSnapshotParser` interface + `generateCandidateFromSnapshot()` helper
+- `lib/source-facts/candidates.ts` — `mockEcosBaseRateSnapshot` (mock ECOS 기준금리) + `ecosBaseRateParser` + `generatedBaseRateResult`
+- `lib/source-facts/index.ts` — 신규 파일 re-export 추가
+- `app/fact-cards/manual/package-preview/page.tsx` — `searchParams` 기반 candidate 선택 (async page), CANDIDATE_REGISTRY, candidate selector UI
+
+**검증:**
+
+| 체크 | 결과 |
+|------|------|
+| ESLint (4개 파일) | 0 errors ✅ |
+| forbidden pattern (fetch/Date.now/Math.random/clipboard/ffmpeg/output/deploy) | 0건 ✅ (`/api/` 매칭은 URL string 상수, fetch() 없음) |
+| `/fact-cards/manual/package-preview` default (가계부채) | key warning 0, 기존 fixture 정상 ✅ |
+| `/fact-cards/manual/package-preview?candidate=base-rate` | key warning 0, 기준금리 pipeline 렌더 ✅ |
+| 기준금리 파생값 | indicatorName/ECOS/allowedClaims/interpretation 모두 표시 확인 ✅ |
+| live network call | 없음 (모두 mock 상수) ✅ |
+
+**[review-fix: money-shorts-os-auto-fact-card-candidate-v1-review-fix — 2026-06-25]**
+
+Fix 1 — `raw-snapshot-parser.ts` import 수정:
+- `import type { RawDataSnapshot, ManualFactCardDraft } from "./types"` → split
+- `ManualFactCardDraft`는 `"./types"`에 없고 `"./manual"`에 있음 → `import type { ManualFactCardDraft } from "./manual"` 분리
+
+Fix 2 — `candidates.ts` display precision:
+- `rawPayload`에 `currentValueText: "3.0%"`, `previousValueText: "3.25%"`, `changeValueText: "-0.25%p"` 추가
+- `EcosBaseRatePayload` interface + `isEcosBaseRatePayload` type guard에 3개 string 필드 추가
+- `parse()` 내 `currentValue/previousValue/changeValue/interpretation/allowedClaims` 필드를 `\`${cur}%\`` 방식 → `p.currentValueText` 등 명시적 display 문자열 사용으로 교체
+
+Fix 3 — `page.tsx` unknown candidate fallback:
+- `candidateKey !== null && candidateEntry === null` 조건에서 `<ErrorState message=... />` 반환 (등록된 키 목록 포함)
+- 기존 silent `?? validHouseholdDebtResult` fallback은 `candidateKey === null` (쿼리스트링 없음) 케이스에만 도달하도록 guard 추가
+
+검증:
+| 체크 | 결과 |
+|------|------|
+| TS import check (output/ 제외) | 0 errors ✅ |
+| ESLint (3개 변경 파일) | 0 warnings ✅ |
+| `ManualFactCardDraft from "./types"` pattern | 0건 ✅ (완전 제거됨) |
+| unknown candidate silent fallback line 잔존 | 위 guard 통과 후 도달 시 candidateEntry 확실히 non-null |
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

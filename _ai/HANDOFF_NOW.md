@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`
+`money-shorts-os-auto-fact-card-candidate-v1-review-fix`
 
 ## Current State
 
@@ -12,84 +12,84 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `de96040 fix(ui): clear package preview key warnings`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 26]`
-- Push: not run
-- Working tree was clean before this handoff refresh.
+- Latest local checkpoint: `9978d61 test(money-shorts): record mvp1 rc smoke pass`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 27]`
+- Push: not run.
 
-Recently completed:
+Uncommitted work from `money-shorts-os-auto-fact-card-candidate-v1` exists:
 
-- MVP1 local UI routes exist and were smoke-tested:
-  - `/money-shorts`
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/packages`
-- React key warning isolation/fix completed.
-- Final root cause:
-  - `primaryScript.scenes.map()` used `key={sc.sceneId}` where `ScriptScene` has no `sceneId`.
-  - Fix used `key={String(sc.sceneIndex)}`, `sc.durationSec`, and `scene.sceneRole`.
-- Fresh verification after the fix showed:
-  - `/fact-cards/manual/package-preview`: React key warning 0
-  - `/packages`: React key warning 0
-  - targeted ESLint: pass
+- `_ai/CLAUDE_REPORT.md`
+- `_ai/HANDOFF_NOW.md`
+- `_ai/NEXT_ACTION.md`
+- `app/fact-cards/manual/package-preview/page.tsx`
+- `lib/source-facts/index.ts`
+- `lib/source-facts/candidates.ts`
+- `lib/source-facts/raw-snapshot-parser.ts`
 
-Known environment caveat:
+No commit yet.
 
-- Full `tsc` / `pnpm build` is polluted by pre-existing binary `.ts` files under `output/`.
-- That is not a blocker for this UI QA slice unless new evidence shows a route regression.
+## Codex Review Findings
+
+Fix these before checkpoint:
+
+1. TypeScript import blocker
+   - File: `lib/source-facts/raw-snapshot-parser.ts`
+   - Current code imports `ManualFactCardDraft` from `./types`.
+   - Actual type is exported from `./manual`.
+   - Fix import so targeted TypeScript does not fail on `TS2305`.
+
+2. Source display precision
+   - File: `lib/source-facts/candidates.ts`
+   - Current parser uses numeric interpolation like `${cur}%`.
+   - For mock raw source value `3.0`, JavaScript displays `"3%"`.
+   - Source-first behavior should preserve the source display string for user-facing Fact Card fields and claims.
+   - Prefer adding explicit raw payload display strings such as `currentValueText`, `previousValueText`, and `changeValueText`, while keeping numeric fields for calculations.
+   - Use display strings for `currentValue`, `previousValue`, `changeValue`, `interpretation`, and `allowedClaims`.
+
+3. Unknown candidate selector should not silently fall back
+   - File: `app/fact-cards/manual/package-preview/page.tsx`
+   - Current behavior falls back to the default fixture when `?candidate=<unknown>` is provided.
+   - If a candidate query param exists but is not in `CANDIDATE_REGISTRY`, show a local error state instead of rendering the default fixture.
+   - No API calls or routing changes.
 
 ## Goal
 
-Run an MVP1 release-candidate local smoke pass after `de96040`, confirm the five active routes still behave as expected, confirm React key warnings remain at 0, and minimally sync project state docs to the latest checkpoint and next step.
+Perform a narrow review-fix pass on the existing auto Fact Card candidate slice.
 
-This is a QA + state-sync slice, not a feature implementation slice.
+Keep the successful design:
+
+`RawDataSnapshot -> SourceProvider parser -> ManualFactCardDraft candidate -> authorManualFactCard / validation -> local preview visibility`
+
+Do not expand scope beyond the review findings.
 
 ## Approved Scope
 
 Allowed:
 
-- Run local-only smoke checks for:
-  - `/money-shorts`
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/packages`
-- Confirm:
-  - route loads / HTTP 200
-  - expected route-level text, links, and status badges still render
-  - hub links and backlinks still exist
-  - React unique key warning count is 0 on all five routes
-  - no server 5xx
-- Use local dev server/browser automation if practical.
-- Update only concise reusable evidence/state docs:
-  - `_ai/CLAUDE_REPORT.md`
-  - `_ai/PROJECT_STATE.md`
-  - `_ai/NEXT_ACTION.md`
-  - `_ai/HANDOFF_NOW.md` only if it needs a small post-smoke pointer update
-- Keep docs updates minimal and aligned with `de96040`.
+- Fix the incorrect type import.
+- Preserve source display strings for the mock ECOS base-rate candidate.
+- Prevent unknown `?candidate=` values from silently rendering the default fixture.
+- Update `_ai/CLAUDE_REPORT.md` with concise review-fix evidence.
+- Update `_ai/NEXT_ACTION.md` only if the durable next action wording changes.
 
 Default editable files:
 
+- `lib/source-facts/raw-snapshot-parser.ts`
+- `lib/source-facts/candidates.ts`
+- `app/fact-cards/manual/package-preview/page.tsx`
 - `_ai/CLAUDE_REPORT.md`
-- `_ai/PROJECT_STATE.md`
-- `_ai/NEXT_ACTION.md`
-
-Only edit application code if Codex/Owner explicitly re-scopes after this smoke finds a real regression. For this handoff, finding a regression means report it, do not start a fix.
+- `_ai/HANDOFF_NOW.md` only if a small post-work pointer update is necessary
 
 ## Required Behavior
 
 - Start with `git status -sb`.
-- If working tree is not clean at start, stop and report the unexpected diff.
-- Use existing project commands and `pnpm` only.
-- Prefer targeted smoke verification over broad build/test loops.
-- Keep evidence concise: routes checked, key warning count, core text/link checks, server status, and final git status.
-- If dev server is started, stop it before final handoff when practical.
-- If a route fails or a key warning returns:
-  - capture exact route and symptom
-  - do not implement a fix under this handoff
-  - update docs only with the blocker evidence if useful
-  - report the recommended next fix slice to Codex
+- Keep all existing auto candidate functionality.
+- Default package preview without query param must still use the existing household debt fixture.
+- `?candidate=base-rate` must still render the generated mock candidate.
+- `?candidate=unknown` should show a clear local error state.
+- Do not use live APIs or external calls.
+- Do not invent financial facts outside explicit mock raw fixtures.
+- Keep candidate ids/timestamps deterministic.
 
 ## Forbidden
 
@@ -103,7 +103,6 @@ Only edit application code if Codex/Owner explicitly re-scopes after this smoke 
 - No API key/env/secret changes.
 - No dependency or lockfile changes.
 - No OS clipboard writes.
-- No file export/write outside the approved `_ai` docs.
 - No upload/post/deploy.
 - No git push.
 - No commit unless Codex explicitly authorizes it later.
@@ -116,32 +115,42 @@ Only edit application code if Codex/Owner explicitly re-scopes after this smoke 
 Run focused checks:
 
 - `git status -sb`
-- local route smoke for the five MVP1 routes
-- React console warning check for `Each child in a list should have a unique "key" prop`
-- verify core route text/link/status badge expectations
+- targeted ESLint for changed code files
+- practical TypeScript check focused on changed source/UI files
+  - full `tsc --project` is known to be polluted by existing `output/` binary `.ts`; do not treat that as this slice's blocker.
+  - However, verify the `ManualFactCardDraft` import blocker is gone.
+- forbidden pattern search on changed files:
+  - `Date.now`
+  - `Math.random`
+  - `fetch(`
+  - `navigator.clipboard`
+  - `ffmpeg`
+  - `output/`
+  - `upload`
+  - `deploy`
+- local route readiness:
+  - `/fact-cards/manual/package-preview`
+  - `/fact-cards/manual/package-preview?candidate=base-rate`
+  - `/fact-cards/manual/package-preview?candidate=unknown`
 - final `git status -sb`
 
-Optional only if directly useful and cheap:
-
-- targeted ESLint for files touched during state sync is not required for markdown-only docs.
-- do not run full `pnpm build` because of the known pre-existing `output/` binary `.ts` pollution.
+Do not run full `pnpm build`.
 
 ## Definition of Done
 
-- All five MVP1 routes are freshly smoke-checked after `de96040`.
-- React unique key warning remains 0 across the five routes, or any regression is precisely reported.
-- Core links/text/status badges are verified or any regression is precisely reported.
-- `_ai/PROJECT_STATE.md` and `_ai/NEXT_ACTION.md` no longer present React key warning isolation as the next work if the smoke passes.
-- `_ai/CLAUDE_REPORT.md` records concise RC smoke evidence.
-- No implementation code, external calls, render/output work, DB/env/dependency/deploy/push actions occur.
-- Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
+- Type import blocker is fixed.
+- Base-rate candidate preserves display value `"3.0%"` or another explicit source display string, not accidental `"3%"`.
+- Unknown candidate query param does not silently render the default fixture.
+- Default fixture preview remains stable.
+- Generated base-rate preview remains stable.
+- No live external source, DB, env, dependency, render, upload, push, or output action occurs.
+- Final handoff reports changed files, checks/results, route evidence, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
 - Do not commit unless Codex explicitly authorizes a safe local checkpoint commit.
 - Do not push.
-- If smoke passes and docs are synced, recommend whether this is ready for a safe local checkpoint review.
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise MVP1 RC smoke evidence because this evidence should be reusable.
+- Update `_ai/CLAUDE_REPORT.md` with concise review-fix evidence.

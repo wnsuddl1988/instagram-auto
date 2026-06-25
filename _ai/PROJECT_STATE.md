@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-25
 
-**전체프로젝트 진행률:** 약 94% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, Package Library UI, Manual Fact Card authoring UI, Package Preview UI, Manual Fact Card Form UI, sample controls, manual overview navigation, `/money-shorts` workflow hub, hub backlinks, MVP1 local UI route smoke pass, 그리고 React key warning isolation/fix(ScriptScene key mismatch + VideoBlueprintScene type 정렬)까지 완료됐다. 5개 MVP1 route RC smoke 모두 key warning 0회 확인. 다음 단계는 Owner가 결정하는 MVP1 다음 기능 슬라이스다.
+**전체프로젝트 진행률:** 약 55% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix까지 완료됐다. 다만 Owner가 방향을 재확인하면서 “매번 수동 입력”이 최종 구조가 아님이 명확해졌고, 자동 Fact Card 후보 생성/실데이터 connector/Owner 승인 workflow가 남아 있어 전체 진행률을 보수적으로 재산정한다. 현재는 mock raw data 기반 자동 Fact Card 후보 생성 v1이 구현·review-fix 완료됐고 checkpoint 전 Codex review 중이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -72,6 +72,7 @@
 - Commit: `70eeecb` — `feat(money-shorts): link screens to workflow hub`
 - Commit: `c66073f` — `test(money-shorts): record mvp1 route smoke pass`
 - Commit: `de96040` — `fix(ui): clear package preview key warnings`
+- Commit: `9978d61` — `test(money-shorts): record mvp1 rc smoke pass`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -81,28 +82,26 @@
 
 Task:
 
-- `money-shorts-os-mvp1-local-ui-smoke-v1` → `money-shorts-os-react-key-warning-isolation-v1` → `money-shorts-os-react-key-warning-isolation-v1-review-fix` → `money-shorts-os-package-preview-type-cleanup-v1` → `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`
+- `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`
+- `money-shorts-os-mvp1-owner-acceptance-prep-v1`
+- `money-shorts-os-auto-fact-card-candidate-v1`
+- `money-shorts-os-auto-fact-card-candidate-v1-review-fix`
 
-구현:
+구현/확인:
 
-- `primaryScript.scenes.map()` key fix: `sc.sceneId`(undefined) → `String(sc.sceneIndex)`
-- `VideoBlueprintScene` type 정렬: `scene.role` → `scene.sceneRole`
-- `ScriptScene` field 정렬: `sc.estimatedDurationSec` → `sc.durationSec`
-- `{primaryScript && <Fragment>}` → `{primaryScript && <div>}` (Fragment 교체로 hydration 안정화)
-- `WorkflowSteps` / `WorkflowStatusBar` separator `&&` conditional → always-render with `invisible` class
-- Clipboard static divs deterministic keys 추가
-- `pipelineStatusItems` inline array → const 분리
+- MVP1 5개 local route RC smoke PASS, React key warning 0회 확인.
+- Owner acceptance prep에서 `/fact-cards/manual/package-preview`가 `validHouseholdDebtResult` fixture 기반이며 manual input이 preview로 자동 반영되지 않는 구조임을 확인.
+- Owner 결정: 수동 검증을 길게 끌지 않고 자동 Fact Card 후보 생성 구조로 전환.
+- `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard() -> package preview` 경로를 mock ECOS 기준금리 후보로 구현.
+- `/fact-cards/manual/package-preview?candidate=base-rate`에서 generated mock candidate를 preview할 수 있게 함.
+- review-fix: `ManualFactCardDraft` import 위치 수정, `"3.0%"` source display string 보존, unknown `?candidate=` silent fallback 방지.
 
-검증 (RC smoke — de96040 기준):
+검증:
 
-- 5개 local route key warning **0회** ✅:
-  - `/money-shorts` — workflow hub 링크 4개 확인
-  - `/fact-cards/manual` — backlink + forward 3개 링크 확인
-  - `/fact-cards/manual/new` — 폼 링크 확인
-  - `/fact-cards/manual/package-preview` — key warning 0회 (핵심 fix 확인)
-  - `/packages` — Package Library 헤딩 확인
-- no server 5xx.
-- ESLint targeted: 0 errors
+- targeted ESLint: 통과.
+- focused TypeScript source check: 통과.
+- full `tsc --project`/`pnpm build`는 기존 `output/` binary `.ts` 오염으로 전체 기준에서 제외.
+- forbidden live call/render/output/deploy 패턴: 실제 호출 없음.
 
 주의:
 
@@ -127,12 +126,11 @@ Task:
 
 ## 다음 단계
 
-MVP1 RC smoke PASS (`de96040`). React key warning 0회 달성. 다음 safe work unit은 Owner가 결정한다.
+현재 우선순위:
 
-후보:
-- MVP1 실제 Fact Card 입력 → package preview 전체 흐름 E2E 수동 검증
-- 추가 Fact Card fixture 또는 실데이터 연동 슬라이스
-- MVP1 push to origin (별도 Owner 승인 필요)
+- `auto-fact-card-candidate-v1` + review-fix 누적 diff를 checkpoint review 후 safe local commit.
+- 그 다음 safe work unit은 ECOS live connector 준비/구현이다.
+- 실제 ECOS/KOSIS/OpenDART/FRED live API 호출, env/API key, 외부 네트워크 사용은 별도 Owner 승인 후 진행한다.
 
 금지:
 

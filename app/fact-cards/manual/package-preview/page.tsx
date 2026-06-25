@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { validHouseholdDebtResult } from "@/lib/source-facts/manual-fixtures";
+import { generatedBaseRateResult } from "@/lib/source-facts/candidates";
 import { assembleContentPackage } from "@/lib/content-package/assembler";
 import { generateReviewPacket } from "@/lib/review-packet/generator";
 import { evaluateOwnerDecision } from "@/lib/owner-decision/gate";
@@ -202,15 +203,52 @@ function ErrorState({ message }: { message: string }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function PackagePreviewPage() {
-  // Guard: valid FactCard must exist
-  if (!validHouseholdDebtResult.ok || !validHouseholdDebtResult.factCard) {
+// ── Candidate registry ─────────────────────────────────────────────────────────
+// Maps ?candidate= query param to authoring results.
+// Add new generated candidates here as they are implemented.
+const CANDIDATE_REGISTRY: Record<
+  string,
+  { label: string; result: typeof validHouseholdDebtResult }
+> = {
+  "base-rate": {
+    label: "기준금리 (ECOS mock)",
+    result: generatedBaseRateResult,
+  },
+};
+
+export default async function PackagePreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ candidate?: string }>;
+}) {
+  const params = await searchParams;
+  const candidateKey = params.candidate ?? null;
+  const candidateEntry = candidateKey ? (CANDIDATE_REGISTRY[candidateKey] ?? null) : null;
+
+  // Unknown ?candidate= key → explicit error instead of silent fallback
+  if (candidateKey !== null && candidateEntry === null) {
     return (
-      <ErrorState message="validHouseholdDebtResult.factCard가 없습니다. manual-fixtures.ts를 확인하세요." />
+      <ErrorState
+        message={`?candidate=${candidateKey}는 등록된 후보가 없습니다. 등록된 키: ${Object.keys(CANDIDATE_REGISTRY).join(", ")}`}
+      />
     );
   }
 
-  const factCard = validHouseholdDebtResult.factCard;
+  // Resolve which authoring result to use
+  const authoringResult = candidateEntry?.result ?? validHouseholdDebtResult;
+  const candidateLabel = candidateEntry?.label ?? null;
+
+  // Guard: valid FactCard must exist
+  if (!authoringResult.ok || !authoringResult.factCard) {
+    const source = candidateKey
+      ? `?candidate=${candidateKey} 후보`
+      : "validHouseholdDebtResult";
+    return (
+      <ErrorState message={`${source}의 factCard가 없습니다. validation 에러를 확인하세요.`} />
+    );
+  }
+
+  const factCard = authoringResult.factCard;
 
   // ── Assemble pipeline (all deterministic, no external calls) ────────────────
   const pkg = assembleContentPackage(
@@ -310,6 +348,38 @@ export default function PackagePreviewPage() {
           {" — "}
           이 화면은 실제 publish·render·업로드를 수행하지 않습니다. 모든 id, 날짜, duration은
           deterministic mock 값입니다. 외부 API·DB·OS 클립보드 호출 없음.
+        </div>
+      </div>
+
+      {/* Candidate selector */}
+      <div className="max-w-screen-xl mx-auto px-4 pt-2">
+        <div className="rounded-lg border border-indigo-800/40 bg-indigo-900/10 px-4 py-2.5 flex items-center gap-3 flex-wrap text-xs">
+          <span className="text-indigo-400 font-semibold shrink-0">Fact Card 후보 선택</span>
+          <Link
+            href="/fact-cards/manual/package-preview"
+            className={`px-2.5 py-1 rounded border text-xs font-semibold transition-colors ${
+              candidateLabel === null
+                ? "border-slate-500 bg-slate-700/50 text-slate-200"
+                : "border-slate-700/40 bg-slate-800/20 text-slate-400 hover:bg-slate-800/40"
+            }`}
+          >
+            가계부채 (manual fixture)
+          </Link>
+          <Link
+            href="/fact-cards/manual/package-preview?candidate=base-rate"
+            className={`px-2.5 py-1 rounded border text-xs font-semibold transition-colors ${
+              candidateKey === "base-rate"
+                ? "border-indigo-500 bg-indigo-900/40 text-indigo-200"
+                : "border-slate-700/40 bg-slate-800/20 text-slate-400 hover:bg-slate-800/40"
+            }`}
+          >
+            기준금리 (ECOS mock generated)
+          </Link>
+          {candidateLabel && (
+            <span className="ml-auto text-indigo-300 font-mono">
+              ← {candidateLabel}
+            </span>
+          )}
         </div>
       </div>
 

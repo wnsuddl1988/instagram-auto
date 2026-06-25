@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — MVP1 RC Smoke PASS, React Key Warning 0회 완료
+## 2026-06-25 현재 — Auto Fact Card Candidate v1 Review-Fix 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,9 +15,9 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `de96040 fix(ui): clear package preview key warnings` ← **현재 HEAD**
+- `9978d61 test(money-shorts): record mvp1 rc smoke pass` ← **현재 HEAD**
+- (이전: `de96040 fix(ui): clear package preview key warnings`)
 - (이전: `c66073f test(money-shorts): record mvp1 route smoke pass`)
-- (이전: `70eeecb feat(money-shorts): link screens to workflow hub`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 
@@ -28,6 +28,10 @@ Owner 결정:
   - fix: `key={String(sc.sceneIndex)}`, `sc.durationSec`, `scene.sceneRole`
 - `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`: 5개 route RC smoke PASS
   - `/money-shorts`, `/fact-cards/manual`, `/fact-cards/manual/new`, `/fact-cards/manual/package-preview`, `/packages` — key warning 0회, 링크/텍스트 확인
+- `money-shorts-os-auto-fact-card-candidate-v1` + review-fix:
+  - mock ECOS `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()` 경로 구현
+  - `/fact-cards/manual/package-preview?candidate=base-rate` generated candidate preview 추가
+  - `ManualFactCardDraft` import blocker 수정, `"3.0%"` display string 보존, unknown candidate fallback 방지
 
 Source of truth:
 
@@ -42,13 +46,15 @@ Source of truth:
 
 ## 다음 safe work unit
 
-MVP1 RC smoke PASS. React key warning 0회. 다음 슬라이스는 Owner가 결정한다.
+먼저:
 
-후보:
+- `auto-fact-card-candidate-v1` 누적 diff를 Codex review 후 safe local checkpoint commit.
 
-- **A. MVP1 실사용 검증**: Owner가 실제 Fact Card 수치를 `/fact-cards/manual/new`에 입력하고 `/fact-cards/manual/package-preview`에서 전체 pipeline 결과를 수동 확인
-- **B. 추가 fixture / 실데이터 연동**: ECOS/KOSIS 실데이터를 `lib/source-facts/`에 연동하는 Fact Card 슬라이스
-- **C. origin push**: Owner 명시 승인 시 `codex/source-first-blueprint-clean` → origin push
+그 다음:
+
+- ECOS live connector 준비/구현을 첫 실제 API 연결 후보로 진행한다.
+- 단, live API 호출, 네트워크 사용, env/API key 변경은 Owner 명시 승인 후 진행한다.
+- 아직 GPT, 영상, ElevenLabs, ffmpeg/render로 가지 않는다.
 
 금지 (계속 유지):
 
