@@ -53,6 +53,11 @@ interface EcosBaseRatePayload {
   publishedDate: string;
   sourceUrl: string;
   citationLabel: string;
+  // Source-date provenance (live path only — absent in mock snapshots).
+  // Present when resolveEcosBaseRateSourceDate() verified publishedDate by value match.
+  sourceDateSourceName?: string;
+  sourceDateSourceUrl?: string;
+  sourceDateMatchedValue?: number;
 }
 
 function isEcosBaseRatePayload(raw: unknown): raw is EcosBaseRatePayload {
@@ -74,6 +79,9 @@ function isEcosBaseRatePayload(raw: unknown): raw is EcosBaseRatePayload {
     typeof r.citationLabel === "string"
   );
 }
+
+/** Source provider ID for snapshots produced by the live ECOS transport. */
+export const ECOS_LIVE_PROVIDER_ID = "provider-ecos-live";
 
 export const ecosBaseRateParser: RawSnapshotParser = {
   sourceProviderId: "provider-ecos-mock",
@@ -138,6 +146,104 @@ export const ecosBaseRateParser: RawSnapshotParser = {
         },
       ],
       isMock: true,
+      isPublishable: false,
+    };
+  },
+};
+
+/**
+ * Parser for live/latest ECOS base-rate snapshots (provider-ecos-live).
+ *
+ * Accepts only snapshots stamped with ECOS_LIVE_PROVIDER_ID so a live draft
+ * candidate is never accidentally labeled as mock data.
+ *
+ * - isMock: false — snapshot came from a live ECOS fetch, not a fixture.
+ * - isPublishable: false — draft-only; publishable decision is downstream.
+ *
+ * Source-date provenance is preserved verbatim from the snapshot:
+ * publishedDate = official BOK decision date (from resolveEcosBaseRateSourceDate),
+ * not the ECOS period.
+ */
+export const ecosBaseRateLiveParser: RawSnapshotParser = {
+  sourceProviderId: ECOS_LIVE_PROVIDER_ID,
+  parserName: "EcosBaseRateLiveParser",
+
+  parse(snapshot: RawDataSnapshot): ManualFactCardDraft | null {
+    if (snapshot.sourceProviderId !== this.sourceProviderId) return null;
+    if (!isEcosBaseRatePayload(snapshot.rawPayload)) return null;
+
+    const p = snapshot.rawPayload;
+    const cur = p.currentValue;
+    const prev = p.previousValue;
+    const chg = p.changeValue;
+    const chgRate = prev !== 0 ? chg / prev : 0;
+
+    const changeRateSign = chgRate > 0 ? "+" : "";
+
+    return {
+      id: `fact-card-generated-${snapshot.id}`,
+      primarySourceProviderId: snapshot.sourceProviderId,
+      sourceName: snapshot.sourceName,
+      sourceUrl: snapshot.sourceUrl,
+      publishedDate: snapshot.publishedDate,
+      dataPeriod: p.dataPeriod,
+      indicatorName: p.indicatorName,
+      currentValue: p.currentValueText,
+      previousValue: p.previousValueText,
+      changeValue: p.changeValueText,
+      changeRate: `${changeRateSign}${(chgRate * 100).toFixed(2)}%`,
+      unit: p.unit,
+      currentNumericValue: cur,
+      previousNumericValue: prev,
+      changeNumericValue: chg,
+      changeRateNumericValue: parseFloat((chgRate * 100).toFixed(4)),
+      comparisonType: "previous_release",
+      interpretation: `한국은행이 ${p.dataPeriod} 기준금리를 ${p.previousValueText}에서 ${p.currentValueText}로 ${p.changeValueText} 조정했다.`,
+      cautionNote: "기준금리 변경은 발표 시점 기준이며, 향후 추가 변동 가능성은 이 수치에 반영되어 있지 않다.",
+      allowedClaims: [
+        `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
+        `직전 기준금리 대비 ${p.changeValueText} 변경됐다.`,
+        `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
+      ],
+      blockedClaims: [
+        "금리 급등락",
+        "폭등",
+        "폭락",
+        "지금 대출",
+        "지금 투자",
+        "금리 전망",
+      ],
+      contentCategory: "source_based_finance",
+      citations: [
+        {
+          id: `citation-generated-${snapshot.id}`,
+          sourceProviderId: snapshot.sourceProviderId,
+          sourceName: snapshot.sourceName,
+          sourceUrl: p.sourceUrl,
+          publishedDate: snapshot.publishedDate,
+          dataPeriod: p.dataPeriod,
+          citationLabel: p.citationLabel,
+          commercialUseStatus: "allowed",
+        },
+        // Source-date provenance citation: added only when the snapshot carries
+        // BOK decision-history provenance (i.e. live path via resolveEcosBaseRateSourceDate).
+        // This citation proves that publishedDate is the official BOK decision date,
+        // not a date derived from the ECOS period.
+        ...(p.sourceDateSourceName !== undefined && p.sourceDateSourceUrl !== undefined
+          ? [
+              {
+                id: `citation-source-date-${snapshot.id}`,
+                sourceName: p.sourceDateSourceName,
+                sourceUrl: p.sourceDateSourceUrl,
+                publishedDate: snapshot.publishedDate,
+                citationLabel: `${p.sourceDateSourceName} — 발표일 근거 (매칭값: ${p.sourceDateMatchedValue}%)`,
+                licenseNote: "공식 한국은행 통화정책방향 결정회의 이력 페이지에서 확인",
+                commercialUseStatus: "allowed" as const,
+              },
+            ]
+          : []),
+      ],
+      isMock: false,
       isPublishable: false,
     };
   },

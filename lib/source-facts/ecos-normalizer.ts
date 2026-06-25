@@ -81,10 +81,13 @@ export function normalizeEcosBaseRateRows(
   // publishedDate and sourcePageUrl are explicit from the request — never derived.
   const publishedDate = request.publishedDate;
   const snapshotId = `raw-ecos-${cur.STAT_CODE}-${cur.ITEM_CODE1}-${cur.TIME}`;
+  // Provider id comes from the request so mock and live paths stamp different ids.
+  // Falls back to "provider-ecos-mock" to preserve all existing mock snapshot behavior.
+  const sourceProviderId = request.sourceProviderId ?? "provider-ecos-mock";
 
   return {
     id: snapshotId,
-    sourceProviderId: "provider-ecos-mock",
+    sourceProviderId,
     sourceName: request.sourceName,
     // Human-facing stat page URL — reviewable by Owner.
     sourceUrl: request.sourcePageUrl,
@@ -110,6 +113,14 @@ export function normalizeEcosBaseRateRows(
       sourceUrl: request.sourcePageUrl,
       citationLabel: `${request.sourceName} ${dataPeriod}`,
       changeRateNumericValue: parseFloat((chgRate * 100).toFixed(4)),
+      // Source-date provenance: present only when the caller verified publishedDate
+      // via resolveEcosBaseRateSourceDate() and forwarded the resolver fields.
+      // Proves the date was matched against an official BOK decision, not invented.
+      ...(request.sourceDateSourceName !== undefined && {
+        sourceDateSourceName: request.sourceDateSourceName,
+        sourceDateSourceUrl: request.sourceDateSourceUrl,
+        sourceDateMatchedValue: request.sourceDateMatchedValue,
+      }),
     },
   };
 }

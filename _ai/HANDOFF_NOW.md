@@ -2,136 +2,126 @@
 
 ## Task ID
 
-`money-shorts-os-ecos-source-date-resolver-v1`
+`money-shorts-os-ecos-latest-live-draft-candidate-v1`
 
 ## Current State
-
-Previous video production routes are retired.
 
 Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `63d9b10 feat(source-facts): add ecos latest-period resolver with source-date gate`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 32]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `4bc9f0a feat(source-facts): add bok base-rate source-date resolver`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 33]` plus untracked `piq_diag_out.txt`
 - Push: not run.
-- `piq_diag_out.txt` is an unrelated untracked file. Do not read, modify, delete, stage, or commit it.
-- Working tree was clean for tracked files before this handoff refresh.
-- Codex may have uncommitted `_ai/HANDOFF_NOW.md` / `_ai/NEXT_ACTION.md` updates for this new task scope; those docs-only changes are expected at task start.
+- `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
 - Auto Fact Card candidate foundation:
   - `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()`
-  - `/fact-cards/manual/package-preview?candidate=base-rate` preview
+  - `/fact-cards/manual/package-preview?candidate=base-rate` preview for a deterministic ECOS mock candidate
 - ECOS connector scaffold and live transport:
   - sync mock path and async live path
   - `createEcosLiveTransport()`
   - `runEcosConnectorAsync()`
   - `orderEcosRowsCurrentFirst()`
   - `normalizeEcosBaseRateRows()` refuses empty/unverified `publishedDate`
-- Historical smoke ECOS check:
+- Historical smoke ECOS fixture:
   - Jan2025/Dec2024 `3.0% -> 3.0%`, change `0.0%p`
-  - mock fixture/candidate aligned to live smoke truth
+  - Jan2025 is only a historical smoke fixture, not a production default
 - Latest-period resolver:
   - `buildEcosLatestWindowRequest()`
   - `resolveLatestEcosBaseRatePeriod()`
   - `decideEcosLatestPeriodReadiness()`
   - live check found latest `202605`, previous `202604`, both `2.5연%`
-  - result correctly stayed `blocked_pending_source_date` because ECOS rows do not contain BOK announcement date
+  - unresolved source date correctly stayed `blocked_pending_source_date`
+- Source-date resolver:
+  - `resolveEcosBaseRateSourceDate()` ties the latest ECOS value to official BOK base-rate decision history
+  - latest value `2.5%` matches official latest BOK decision `2025-05-29 2.50%`
+  - `verifiedPublishedDate=2025-05-29`
+  - source-date is official BOK decision date, not derived from ECOS period `202605`
 
 Important distinction:
 
-- Jan2025 is a historical smoke fixture, not a production default.
-- Actual video-production Fact Cards must use the latest available source period.
-- If source period or source date cannot be resolved, do not fall back to Jan2025; return a blocked / needs source refresh state.
+- Production Fact Cards must use the latest available source period.
+- If latest period or verified source date cannot be resolved, block instead of falling back to Jan2025.
 - `publishedDate` must not be invented. ECOS row payload does not include the BOK announcement date.
-- A source-date resolver must only return a date when it can tie the date to an official BOK source. Otherwise it must report blocked / unresolved.
-
-Owner approval:
-
-- Owner approved the recommended next step: **source-date 검증 경로 설계/구현 진행**.
-- This approval permits this slice to:
-  - make small official BOK/ECOS live source checks needed to verify a base-rate announcement date
-  - use project-local `.env.local` for ECOS if needed
-  - implement a bounded source-date resolver/checker for the ECOS base-rate latest period
-- This approval does **not** permit DB writes, deploy, upload/post, push, dependency changes, env/secret edits, render/output generation, or any GPT/video/TTS calls.
+- Source-date evidence should remain visible in the draft/citation path when a published date comes from the BOK decision table.
 
 ## Goal
 
-Implement and verify a narrow official-source date resolver so the latest ECOS base-rate period can move from `blocked_pending_source_date` toward `draft_ready` only when an official BOK announcement date is verified.
+Implement a bounded latest-live ECOS base-rate draft candidate path:
 
-Target path:
+`latest ECOS rows -> resolve latest period -> verify BOK source date -> normalize snapshot -> generate Fact Card draft candidate`
 
-`latest ECOS period -> official BOK source-date resolver -> verifiedPublishedDate or blocked -> decideEcosLatestPeriodReadiness()`
-
-The result should prove whether the latest base-rate period can be paired with a verified BOK source date without inventing dates.
+This slice should produce a validated draft candidate for the latest available ECOS base-rate period only when the BOK source date is verified.
 
 ## Approved Scope
 
 Allowed:
 
-- Add a small resolver/helper under `lib/source-facts/` for BOK base-rate source-date verification.
-- Add a small read-only script under `scripts/` for live verification.
-- Reuse:
+- Add a small helper under `lib/source-facts/`, for example `ecos-latest-candidate.ts`.
+- Reuse existing helpers:
   - `buildEcosLatestWindowRequest()`
-  - `createEcosLiveTransport()`
   - `resolveLatestEcosBaseRatePeriod()`
+  - `resolveEcosBaseRateSourceDate()`
   - `decideEcosLatestPeriodReadiness()`
-- Make a bounded official-source check against BOK/ECOS only.
-- Prefer official BOK pages/endpoints over general web search.
-- Use only source evidence that can be tied to the base-rate decision period/date.
-- If no verified date can be extracted confidently, return blocked/unresolved.
-- If a verified date is found, demonstrate that `decideEcosLatestPeriodReadiness(rows, fetchedAt, verifiedPublishedDate)` reaches `draft_ready` with `publishable=false`.
+  - `normalizeEcosBaseRateRows()`
+  - `generateCandidateFromSnapshot()`
+  - `ecosBaseRateParser`
+- Fix the provider-id contract so a live/latest draft is not labeled as `provider-ecos-mock`.
+  - Preserve the existing mock path.
+  - Prefer a minimal explicit provider-id split such as `provider-ecos-mock` vs `provider-ecos-live`.
+  - The parser may support both mock and live ECOS base-rate snapshots if that is the smallest safe change.
+- Preserve source-date provenance in the draft path.
+  - If the published date comes from the BOK decision table, keep BOK source name/URL available in raw payload and/or citations.
+  - Do not make the ECOS period look like the announcement date.
+- Add or update a small read-only check script only if useful, for example `scripts/_ecos-latest-draft-candidate-check.mjs`.
+- Use project-local `.env.local` for the one ECOS live verification command if needed.
 - Update `_ai/CLAUDE_REPORT.md` with concise evidence.
-- Update `_ai/NEXT_ACTION.md` if durable next action changes.
-- Update `_ai/PROJECT_STATE.md` only if the durable state/progress changes materially.
+- Update `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` only if durable state changed.
 
-Expected code files may include:
+Not required in this slice:
 
-- new file under `lib/source-facts/`, for example:
-  - `ecos-source-date.ts`
-  - or `bok-base-rate-source-date.ts`
-- `lib/source-facts/index.ts`
-- optional script under `scripts/`, for example:
-  - `_ecos-source-date-check.mjs`
-
-UI changes are not required for this slice.
+- UI route integration.
+- `/fact-cards/manual/package-preview` live candidate selector.
+- GPT/script/video/render/package generation.
+- Marking any Fact Card as publishable.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
-- If only `_ai/HANDOFF_NOW.md` / `_ai/NEXT_ACTION.md` are modified at start, and `piq_diag_out.txt` is untracked, proceed; those are expected.
-- If any unexpected code file is modified at start, stop and report it.
+- Expected at start:
+  - `_ai/HANDOFF_NOW.md` may be modified by Codex for this scope.
+  - `_ai/NEXT_ACTION.md` may be modified by Codex state sync.
+  - `piq_diag_out.txt` remains untracked.
+- If unexpected implementation files are modified before work starts, stop and report.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Load project env from `.env.local` only if ECOS is needed, without printing secret values.
-- Do not ask the Owner to paste or reveal any key.
-- Make only the minimum BOK/ECOS live calls needed for this resolver check.
-- Do not crawl broadly.
-- Do not persist raw live API/HTML responses to files.
-- Do not generate scripts/video/packages from the result.
-- Do not mark anything publishable in this slice.
-- Do not invent `publishedDate`. Block if unresolved.
+- Do not ask the Owner for ECOS key. Use `.env.local` if a live check is needed.
+- Do not print secret values or secret-bearing URLs.
+- No module-level live network calls. Live calls must only happen inside explicit scripts or transport execution.
+- If source date cannot be verified, return a blocked result with no candidate.
+- If source date is verified, candidate must remain draft-only:
+  - `isMock=false` for live/latest candidate
+  - `isPublishable=false`
+  - no upload/render/deploy implication
 
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
 - No ffmpeg execution.
 - No video/audio/image rendering.
-- No actual media probing.
-- No KOSIS/OpenDART/FRED live API calls.
-- No DB/Supabase reads, writes, migrations, or production data changes.
+- No OS clipboard writes.
+- No DB/Supabase reads, writes, migrations, or production changes.
 - No API route changes unless Codex/Owner explicitly re-scopes.
 - No API key/env/secret changes or writes.
 - No dependency or lockfile changes.
-- No OS clipboard writes.
+- No `output/` changes.
 - No upload/post/deploy.
 - No git push.
 - No commit unless Codex explicitly authorizes it later.
-- Do not touch `output/`.
 - Do not touch `piq_diag_out.txt`.
-- Do not resume retired Candidate10 / Money Architect static plate / 3D character / code-GFX / old video render loops.
-- Do not resume 생활꿀팁, EP001 돈 방어, Jun/준/시트콤/복사기/upload_002/ep003/3d_sitcom lines.
+- Do not resume retired video routes or old render loops.
 
 ## Required Checks
 
@@ -152,9 +142,9 @@ Run focused checks:
   - ensure no API key value was written
   - ensure no `.env` file was modified/staged
   - ensure secret-bearing ECOS URL is not printed
-- live check:
-  - run the source-date checker once
-  - report latest period, official-source status, verified date if found, and readiness status
+- live/latest draft check:
+  - run at most one ECOS live check via `.env.local`
+  - report latest period, previous period, verified published date, candidate status, provider id, `isMock`, `isPublishable`, key Fact Card values
 - untracked safety:
   - prove `piq_diag_out.txt` remains untracked and unstaged
 - final `git status -sb`
@@ -163,15 +153,16 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- A bounded BOK/ECOS source-date resolver/check exists.
-- It either finds a verified official BOK date for the latest base-rate period or clearly returns blocked/unresolved.
-- It does not invent `publishedDate`.
-- If verified date is found, latest rows can reach `draft_ready` via `decideEcosLatestPeriodReadiness(..., verifiedDate)` while `publishable=false`.
-- If no verified date is found, status remains blocked/unresolved with a clear reason.
+- A deterministic library path exists for latest ECOS base-rate rows to become a draft Fact Card candidate when source date is verified.
+- The path blocks cleanly when source date is unresolved.
+- Live/latest candidate is not labeled `provider-ecos-mock`.
+- Mock candidate behavior remains intact.
+- Source-date provenance is not lost.
+- Candidate remains draft-only: `isMock=false`, `isPublishable=false`.
+- No date is invented from `202605` or any ECOS period.
 - ECOS API key is never printed, persisted, or committed.
 - `piq_diag_out.txt` remains untouched/untracked.
-- No DB/env writes/dependency/render/upload/push/output action occurs.
-- Final handoff reports changed files, checks/results, live verification result, source-date/readiness status, final `git status -sb`, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, live verification result, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -180,4 +171,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` with concise implementation and verification evidence because this is a production-data-boundary source-date resolver.
+- Update `_ai/CLAUDE_REPORT.md` because this slice changes the reusable source-first data boundary.

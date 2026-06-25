@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-26
 
-**전체프로젝트 진행률:** 약 62% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary 구현, live check LIVE_OK까지 완료됐다. 단, 검증된 live request는 Jan2025 historical smoke request이며 production 최신 데이터 연결은 아직 미완료다. 실제 영상 제작용 Fact Card는 최신 available source period를 별도 조회/선택해야 한다.
+**전체프로젝트 진행률:** 약 67% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음은 UI/dev preview 연결과 Owner acceptance 흐름이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -75,7 +75,11 @@
 - Commit: `9978d61` — `test(money-shorts): record mvp1 rc smoke pass`
 - Commit: `d85b616` — `feat(source-facts): add auto fact card candidate preview`
 - Commit: `20ab76b` — `feat(source-facts): add ecos connector scaffold with mock transport`
-- Commit: `87caec6` — `feat(source-facts): add ecos live transport with async connector boundary` ← **현재 HEAD**
+- Commit: `87caec6` — `feat(source-facts): add ecos live transport with async connector boundary`
+- Commit: `43fe473` — `fix(source-facts): align ecos mock fixtures with live truth`
+- Commit: `63d9b10` — `feat(source-facts): add ecos latest-period resolver with source-date gate`
+- Commit: `4bc9f0a` — `feat(source-facts): add bok base-rate source-date resolver`
+- Latest uncommitted milestone: `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix — ready for safe checkpoint commit
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -94,6 +98,9 @@ Task:
 - `money-shorts-os-ecos-live-connector-v1` + review-fix
 - `money-shorts-os-ecos-live-check-v1`
 - `money-shorts-os-ecos-live-truth-alignment-v1` + review-fix
+- `money-shorts-os-ecos-latest-period-resolver-v1`
+- `money-shorts-os-ecos-source-date-resolver-v1`
+- `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix
 
 구현/확인:
 
@@ -110,6 +117,11 @@ Task:
 - `node --env-file=.env.local scripts/_ecos-live-check.mjs` 1회 `LIVE_OK`. historical smoke request `202412~202501`: Jan2025 `3.0%`, Dec2024 `3.0%`, change `0.0%p`.
 - ⚠️ Jan2025 live check는 historical smoke/fixture 검증용이며 production 최신 데이터 default가 아님. 실제 영상 제작용 Fact Card는 최신 available period를 별도 조회/선택해야 하며, 최신 period를 못 찾으면 old fixture fallback이 아니라 blocked/source refresh 상태로 가야 함.
 - mock fixture/candidate를 live ECOS truth에 맞춰 정렬 (`ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE: "3.25" → "3.00"`).
+- latest available ECOS 기준금리 period resolver 구현: live check 기준 latest `202605`, previous `202604`, both `2.5연%`.
+- BOK 공식 기준금리 변경 이력 resolver 구현: latest ECOS 값 `2.5%`를 공식 최신 BOK 결정 `2025-05-29 2.50%`에 value matching.
+- latest live draft candidate 경로 구현: latest rows -> latest period -> BOK source-date -> normalized snapshot -> Fact Card draft candidate.
+- live/latest candidate는 `provider-ecos-live`, `isMock=false`, `isPublishable=false`.
+- BOK source-date provenance를 rawPayload와 citation에 보존. `publishedDate=2025-05-29`는 ECOS period `202605`에서 유도하지 않음.
 
 검증:
 
@@ -143,10 +155,10 @@ Task:
 
 현재 우선순위:
 
-- uncommitted diff (`ecos-fixtures.ts`, `candidates.ts`, `_ai/` 3파일)를 checkpoint commit.
-- 그 다음: `latest available period` 선택/검증 slice — production 최신 ECOS 데이터를 조회하고 Fact Card 후보를 생성하는 경로 구현.
-- 이후: `/fact-cards/manual/package-preview`에 live/aligned candidate 연결 검토.
-- 실제 ECOS/KOSIS/OpenDART/FRED live API 추가 호출은 별도 Owner 승인 후 진행한다.
+- latest live draft candidate 누적 diff를 safe checkpoint commit.
+- 그 다음: `/fact-cards/manual/package-preview`에 local/dev-only live latest candidate selector 연결 검토.
+- 이후: Owner가 최신 Fact Card Draft를 보고 승인/수정하는 UX 연결.
+- 실제 영상 제작/GPT/TTS/render/upload는 아직 금지이며 별도 Owner 승인 후 진행한다.
 
 금지:
 

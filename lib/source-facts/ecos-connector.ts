@@ -53,6 +53,33 @@ export interface EcosStatSearchRequest {
    * Set higher (e.g. 24) for latest-period window requests that span more than 10 months.
    */
   readonly rowEnd?: number;
+  /**
+   * Source provider ID to stamp on the normalized snapshot.
+   * Defaults to "provider-ecos-mock" when omitted (preserves existing mock path).
+   * Use "provider-ecos-live" for live/latest production requests so candidates
+   * are not labeled as mock data.
+   */
+  readonly sourceProviderId?: string;
+  /**
+   * Display name of the authoritative source for the verified publishedDate.
+   * Set by callers that run resolveEcosBaseRateSourceDate() before normalizing.
+   * Example: "한국은행 통화정책방향 결정회의 — 기준금리 변경 이력"
+   * When omitted the normalizer omits this provenance from rawPayload.
+   */
+  readonly sourceDateSourceName?: string;
+  /**
+   * Human-facing URL of the authoritative source for the verified publishedDate.
+   * Set by callers that run resolveEcosBaseRateSourceDate() before normalizing.
+   * Example: "https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643"
+   * When omitted the normalizer omits this provenance from rawPayload.
+   */
+  readonly sourceDateSourceUrl?: string;
+  /**
+   * The ECOS numeric rate value that was matched against the official BOK decision.
+   * Preserved in rawPayload for traceability (proves the date was not invented).
+   * When omitted the normalizer omits this provenance from rawPayload.
+   */
+  readonly sourceDateMatchedValue?: number;
 }
 
 // ── ECOS API response row ─────────────────────────────────────────────────────

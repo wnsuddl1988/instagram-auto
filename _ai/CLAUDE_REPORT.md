@@ -1400,6 +1400,116 @@ offline unit check (임시 .mjs, 7/7 PASS 후 git clean으로 삭제):
 
 Non-blocking note (Codex 검토용): `normalizeEcosBaseRateRows()`는 아직 `sourceProviderId: "provider-ecos-mock"`. 이번 slice는 source-date 검증/readiness 도달까지만으로 snapshot publish 안 함. live provider id 분리는 다음 draft 연결 slice 검토.
 
+## Latest Live Draft Candidate (`money-shorts-os-ecos-latest-live-draft-candidate-v1` — 2026-06-26)
+
+기준 checkpoint: `4bc9f0a feat(source-facts): add bok base-rate source-date resolver`
+
+목표: latest ECOS rows + BOK source-date 검증을 연결해 draft-only Fact Card candidate 경로 구현. `provider-ecos-mock` 라벨 제거, source-date provenance 유지.
+
+**구현 내용:**
+
+- `lib/source-facts/ecos-connector.ts` (M): `EcosStatSearchRequest`에 optional `sourceProviderId?: string` 추가. 기존 필수 필드 무변경. caller가 live request 시 `"provider-ecos-live"` 지정 가능.
+- `lib/source-facts/ecos-normalizer.ts` (M): `normalizeEcosBaseRateRows()` 내 `sourceProviderId` 하드코딩 제거. `request.sourceProviderId ?? "provider-ecos-mock"` 사용 — 기존 mock 경로 완전 유지.
+- `lib/source-facts/candidates.ts` (M):
+  - `ECOS_LIVE_PROVIDER_ID = "provider-ecos-live"` export 추가.
+  - `ecosBaseRateLiveParser` (신규): `sourceProviderId: ECOS_LIVE_PROVIDER_ID` 전용 parser. `isMock: false`, `isPublishable: false`. source-date provenance(publishedDate = BOK 결정일) 그대로 보존.
+  - 기존 `ecosBaseRateParser` (mock, `isMock: true`) 무손상.
+- `lib/source-facts/ecos-latest-candidate.ts` (신규): end-to-end 4-step live draft 경로:
+  1. `resolveLatestEcosBaseRatePeriod(rows)` — latest + previous row 선택
+  2. `resolveEcosBaseRateSourceDate(latestRow)` — 값 매칭으로 BOK 결정일 검증
+  3. `normalizeEcosBaseRateRows(…, {sourceProviderId: ECOS_LIVE_PROVIDER_ID})` — snapshot 생성
+  4. `generateCandidateFromSnapshot(ecosBaseRateLiveParser, snapshot)` — draft candidate
+  - 각 단계 차단 시: `blocked_insufficient_rows` / `blocked_source_date_unresolved` / `blocked_normalize_failed`
+  - `Date.now()` 미사용 — `fetchedAt`은 caller 공급
+  - module-level live call 없음 — 완전 결정론적
+- `lib/source-facts/index.ts` (M): `ecos-latest-candidate` re-export 추가
+- `scripts/_ecos-latest-draft-candidate-check.mjs` (신규): read-only live check, 4-step 미러, secret-safe
+
+**live verification (`node --env-file=.env.local scripts/_ecos-latest-draft-candidate-check.mjs`, 1회):**
+```
+env key: present (value not shown)
+window: 202507~202606 (12 months)
+latestPeriod: 202605 (2026년 5월)
+previousPeriod: 202604 (2026년 4월)
+latestValue: 2.5연%
+previousValue: 2.5연%
+verifiedPublishedDate: 2025-05-29 (official BOK decision date, not ECOS period)
+---
+RESULT: draft_ready
+snapshotId: raw-ecos-722Y001-0101000-202605
+sourceProviderId: provider-ecos-live
+isMock: false
+isPublishable: false
+publishedDate: 2025-05-29
+dataPeriod: 2026년 5월
+indicatorName: 한국은행 기준금리
+currentValueText: 2.5%
+previousValueText: 2.5%
+changeValueText: 0.0%p
+sourceName: 한국은행 ECOS — 기준금리
+sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
+```
+
+**provider-id/source-date provenance 확인:**
+- `sourceProviderId: provider-ecos-live` ✅ (mock 아님)
+- `publishedDate: 2025-05-29` = 공식 BOK 결정일 ✅ (ECOS period 202605에서 유도 안 함)
+- `isMock: false`, `isPublishable: false` ✅ (draft-only)
+- 기존 mock 경로(`ecosBaseRateParser`, `provider-ecos-mock`, `isMock: true`) 무손상 ✅
+
+검증:
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (6개 변경 파일) | 0 warnings ✅ |
+| forbidden pattern (Date.now/Math.random/clipboard/ffmpeg/output/upload/deploy) | 주석만, 코드 없음 ✅ |
+| live draft candidate check 1회 | LIVE_OK, draft_ready ✅ |
+| sourceProviderId provider-ecos-live | ✅ |
+| isMock=false, isPublishable=false | ✅ |
+| publishedDate = official BOK decision date | ✅ |
+
+## Review-Fix: source-date provenance 보존 + validation guard (`money-shorts-os-ecos-latest-live-draft-candidate-v1-review-fix` — 2026-06-26)
+
+기준: 위 `latest-live-draft-candidate-v1` 작업 결과물 (uncommitted). 직전 checkpoint `4bc9f0a`.
+
+### Fix 1 — BOK source-date provenance를 draft/citation 경로에 보존
+
+**문제:** `buildEcosLatestDraftCandidate()`가 `sourceDateResolution.verifiedPublishedDate`만 사용하고 `sourceUrl/sourceName/matchedValue`를 버려 candidate citation에서 "왜 2025-05-29인가"를 증명할 수 없었다.
+
+**수정 내용:**
+- `EcosStatSearchRequest` (ecos-connector.ts): optional `sourceDateSourceName?`, `sourceDateSourceUrl?`, `sourceDateMatchedValue?` 추가
+- `buildEcosLatestDraftCandidate()` (ecos-latest-candidate.ts): resolver 결과 3 필드를 draftRequest에 세팅
+- `normalizeEcosBaseRateRows()` (ecos-normalizer.ts): `sourceDateSourceName`이 있으면 rawPayload에 3 필드 보존 (spread conditional)
+- `EcosBaseRatePayload` (candidates.ts): optional 3 필드 추가
+- `ecosBaseRateLiveParser` (candidates.ts): `sourceDateSourceName/Url`이 있으면 BOK 결정 이력 citation 추가 (`citation-source-date-{snapshotId}`)
+- mock path (`ecosBaseRateParser`, `ECOS_BASE_RATE_REQUEST_JAN2025` 등): 완전 무손상
+
+### Fix 2 — candidate validation 실패 시 `draft_ready` 금지
+
+**문제:** Step 4의 `generateCandidateFromSnapshot()` 결과를 검사하지 않고 무조건 `draft_ready` 반환 가능.
+
+**수정 내용:**
+- `EcosLatestDraftCandidateStatus` (ecos-latest-candidate.ts): `blocked_candidate_validation_failed` 추가
+- Step 4 직후 `candidateResult.ok === false || candidateResult.factCard === null` 시 blocked 반환
+  - reason에 `field=X code=Y` 형태로 첫 번째 validation error 포함
+  - `candidateResult`는 실패 결과를 담아 검토 가능하게 유지
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict (source-facts 관련) | 0 errors ✅ |
+| ESLint (5개 파일) | 0 warnings ✅ |
+| forbidden pattern (코드 내) | 없음 ✅ (주석만) |
+| live check (1회) | draft_ready, sourceProviderId=provider-ecos-live, isMock=false, publishedDate=2025-05-29 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+| secret 출력 | 없음 ✅ |
+
+**provenance 필드 흐름 확인 (grep):**
+- `ecos-connector.ts:69/76/82` → 타입 선언
+- `ecos-latest-candidate.ts:126-128` → resolver에서 request에 세팅
+- `ecos-normalizer.ts:119-122` → rawPayload에 보존
+- `candidates.ts:58-60` → payload 타입 선언
+- `candidates.ts:232-239` → live parser에서 BOK citation 생성
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
