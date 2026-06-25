@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   validHouseholdDebtDraft,
   validHouseholdDebtResult,
@@ -314,7 +315,25 @@ export default function ManualFactCardPage() {
                 Step 1 of 6 · 출처 기반 수치를 입력하고 Fact Card를 검증합니다 · 외부 API 없음
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href="/fact-cards/manual/new"
+                className="px-3 py-1.5 rounded-lg border border-indigo-600/60 bg-indigo-900/25 text-indigo-300 text-xs font-semibold hover:bg-indigo-900/50 transition-colors"
+              >
+                직접 입력하기
+              </Link>
+              <Link
+                href="/fact-cards/manual/package-preview"
+                className="px-3 py-1.5 rounded-lg border border-slate-600/60 bg-slate-800/25 text-slate-300 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+              >
+                Package Preview
+              </Link>
+              <Link
+                href="/packages"
+                className="px-3 py-1.5 rounded-lg border border-slate-600/60 bg-slate-800/25 text-slate-400 text-xs font-semibold hover:bg-slate-800/60 transition-colors"
+              >
+                패키지 라이브러리
+              </Link>
               <span className="px-2 py-1 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-xs font-semibold">
                 Step 1
               </span>
@@ -360,6 +379,39 @@ export default function ManualFactCardPage() {
             draft={brokenMissingFieldsDraft}
             result={brokenMissingFieldsResult}
           />
+        </div>
+
+        {/* Workflow nav card */}
+        <div className="mt-6 rounded-xl border border-indigo-800/40 bg-indigo-900/10 px-5 py-4">
+          <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-3">
+            다음 단계로 이동
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/fact-cards/manual/new"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-600/60 bg-indigo-900/25 text-indigo-200 text-sm font-semibold hover:bg-indigo-900/50 transition-colors"
+            >
+              <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold shrink-0">1</span>
+              직접 입력하기
+              <span className="text-indigo-400 text-xs font-normal">Fact Card 직접 작성</span>
+            </Link>
+            <Link
+              href="/fact-cards/manual/package-preview"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700/60 bg-slate-800/25 text-slate-200 text-sm font-semibold hover:bg-slate-800/60 transition-colors"
+            >
+              <span className="w-5 h-5 rounded-full bg-slate-600 text-white text-xs flex items-center justify-center font-bold shrink-0">→</span>
+              Package Preview
+              <span className="text-slate-400 text-xs font-normal">pipeline 전체 미리보기</span>
+            </Link>
+            <Link
+              href="/packages"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700/60 bg-slate-800/25 text-slate-300 text-sm font-semibold hover:bg-slate-800/60 transition-colors"
+            >
+              <span className="w-5 h-5 rounded-full bg-slate-600 text-white text-xs flex items-center justify-center font-bold shrink-0">↗</span>
+              패키지 라이브러리
+              <span className="text-slate-400 text-xs font-normal">승인된 콘텐츠 목록</span>
+            </Link>
+          </div>
         </div>
 
         {/* Field guide */}

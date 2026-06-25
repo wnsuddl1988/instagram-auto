@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-manual-fact-card-route-nav-v1`
+`money-shorts-os-workflow-hub-ui-v1`
 
 ## Current State
 
@@ -12,43 +12,49 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest completed checkpoint before sample controls: `08ff8f0 feat(fact-card-ui): add manual draft form`
-- Latest completed local UI: `/fact-cards/manual/new` sample load/reset controls.
+- Latest completed checkpoint before route nav: `9e22a59 feat(fact-card-ui): add sample form controls`
+- Latest completed local UI: `/fact-cards/manual` route navigation polish.
 - Codex verification passed:
-  - ESLint `app/fact-cards/manual/new/ManualFactCardFormClient.tsx`: PASS
+  - ESLint `app/fact-cards/manual/page.tsx`: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search: PASS
-  - Claude browser verification: sample load -> `ok=true`, reset -> `ok=false`
+  - Claude HTTP verification: manual overview links to form, package preview, and package library
 
 ## Goal
 
-Add simple route navigation polish to the Manual Fact Card entry screen.
+Create a local Money Shorts OS workflow hub route.
 
-The existing `/fact-cards/manual` fixture/authoring overview should clearly link to the now-existing form route and package preview route so the Owner can move through the local Step 1 workflow without remembering URLs.
+The Owner should have one local entry screen for the source-first MVP workflow, linking the Fact Card overview, direct form input, package preview, and package library. This is a navigation/workbench shell only, not a new backend workflow.
 
 ## Approved Scope
 
 Allowed:
 
-- Modify:
-  - `app/fact-cards/manual/page.tsx`
-  - optional `_ai/CLAUDE_REPORT.md` evidence update
-- Add visible links/buttons to:
+- Add a local route, suggested:
+  - `app/money-shorts/page.tsx`
+- Use static local UI and existing route links only.
+- Link to:
+  - `/fact-cards/manual`
   - `/fact-cards/manual/new`
   - `/fact-cards/manual/package-preview`
-  - `/packages` if useful
-- Keep layout consistent with existing dark operational UI.
-- Keep the current valid/broken fixture display behavior unchanged.
+  - `/packages`
+- Show current source-first principle:
+  - Fact Card first
+  - no facts outside sources
+  - local preview only
+  - no publish/render/upload in this UI
+- Keep visual style consistent with existing dark operational UI.
+- Update `_ai/CLAUDE_REPORT.md` with concise evidence.
 
 ## Required Behavior
 
-- `/fact-cards/manual` still renders the valid and broken draft cards.
-- New navigation makes the intended workflow clear:
-  - fixture overview
-  - direct manual input
-  - package preview
-  - package library
-- No external call or persistence.
+- `/money-shorts` renders a clear MVP workflow hub.
+- It must not call external services, APIs, DB, clipboard, render, or ffmpeg.
+- It should make the current workflow order obvious:
+  1. Fact Card overview
+  2. Manual input form
+  3. Package preview
+  4. Package library/review
 - Mobile and desktop layout should not overlap or squeeze text.
 
 ## Forbidden
@@ -82,12 +88,13 @@ Run focused checks:
   - `/api/`
   - ffmpeg/render/upload/post/deploy references
   - `output/`
-- If practical, run a local dev server and verify `/fact-cards/manual` with HTTP/core text. Stop the server afterward.
+- If practical, run a local dev server and verify `/money-shorts` with HTTP/core text. Stop the server afterward.
 
 ## Definition of Done
 
-- `/fact-cards/manual` has clear links to form, package preview, and package library.
-- Existing valid/broken draft content remains visible.
+- `/money-shorts` hub route renders.
+- It links to all four local workflow routes.
+- It explains local/source-first status without marketing fluff.
 - No external/clipboard/render/DB/API action occurs.
 - Focused checks pass, or any pre-existing unrelated failure is clearly isolated.
 - Final handoff reports changed files, checks/results, deviations/blockers, final `git status -sb`, and checkpoint recommendation.
@@ -99,4 +106,4 @@ Run focused checks:
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` only with concise evidence if behavior or validation evidence materially changes.
+- Update `_ai/CLAUDE_REPORT.md` with concise workflow hub evidence because this creates the local MVP entry route.

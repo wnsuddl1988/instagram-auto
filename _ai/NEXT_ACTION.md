@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Sample Controls 완료, Manual Route Navigation 준비
+## 2026-06-25 현재 — Manual Route Navigation 완료, Workflow Hub 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -35,22 +35,23 @@ Owner 결정:
 - `813a8f6 feat(fact-card-ui): add manual authoring screen`
 - `eb03a26 feat(fact-card-ui): add package preview route`
 - `08ff8f0 feat(fact-card-ui): add manual draft form`
-- Sample Controls checkpoint: current local safe checkpoint after Codex review
+- `9e22a59 feat(fact-card-ui): add sample form controls`
+- Manual Route Navigation checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-manual-fact-card-form-sample-controls-v1`
-- `/fact-cards/manual/new` explicit sample load/reset controls
-- initial blank state remains `ok=false`
-- `샘플 불러오기` -> `validHouseholdDebtDraft` -> `ok=true`
-- `초기화` -> blank invalid state -> `manual_citation_required`
-- citation id remains fixture/Owner supplied only
+- `money-shorts-os-manual-fact-card-route-nav-v1`
+- `/fact-cards/manual` now links to:
+  - `/fact-cards/manual/new`
+  - `/fact-cards/manual/package-preview`
+  - `/packages`
+- Existing valid/broken draft cards remain visible.
 - Codex verification:
-  - ESLint changed file: PASS
+  - ESLint `app/fact-cards/manual/page.tsx`: PASS
   - targeted TypeScript diagnostics for `app/fact-cards`: 0
   - forbidden pattern search PASS
-  - Claude browser verification passed for sample load/reset
+  - Claude HTTP verification passed: links and valid/broken content rendered
 
 Source of truth:
 
@@ -65,23 +66,24 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — Manual Fact Card Route Navigation**
+**MVP 1 — Money Shorts OS Workflow Hub**
 
 Task ID:
 
-`money-shorts-os-manual-fact-card-route-nav-v1`
+`money-shorts-os-workflow-hub-ui-v1`
 
 목표:
 
-- `/fact-cards/manual` overview page에서 새 form route, package preview route, package library로 명확히 이동할 수 있게 한다.
+- Owner가 source-first MVP의 주요 로컬 화면으로 들어갈 수 있는 `/money-shorts` workflow hub route를 만든다.
 
 포함:
 
-- `app/fact-cards/manual/page.tsx` navigation polish
+- `app/money-shorts/page.tsx` route 추가
+- `/fact-cards/manual` 링크
 - `/fact-cards/manual/new` 링크
 - `/fact-cards/manual/package-preview` 링크
-- `/packages` 링크 if useful
-- 기존 valid/broken fixture 표시 유지
+- `/packages` 링크
+- Fact Card first / local preview only / no publish-render-upload 원칙 표시
 
 금지:
 

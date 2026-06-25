@@ -802,6 +802,29 @@ Validation evidence (2026-06-25):
   - 콘솔 오류: 0건 ✅
 - dev server 종료 ✅
 
+## Manual Fact Card Overview Nav Polish (`money-shorts-os-manual-fact-card-route-nav-v1`):
+
+수정 내용 (`app/fact-cards/manual/page.tsx` 1파일):
+
+1. `import Link from "next/link"` 추가
+2. 헤더 우측: "직접 입력하기" → `/fact-cards/manual/new`, "Package Preview" → `/fact-cards/manual/package-preview`, "패키지 라이브러리" → `/packages` 링크 3개 추가 (Step 1 / MVP1 배지 좌측)
+3. 메인 내 "다음 단계로 이동" 워크플로우 nav 카드 추가 (Field guide 위) — 동일 3개 링크, 설명 문구 포함
+4. 기존 valid/broken DraftCard display, WorkflowSteps, 출처 우선 배너 모두 유지
+
+Validation evidence (2026-06-25):
+- ESLint (`app/fact-cards/manual/page.tsx`): 0 warnings ✅
+- TypeScript (full tsc → `app/fact-cards/` 필터): 0 errors ✅
+- 금지 패턴 검색 (clipboard/fetch//api//ffmpeg/render/output//upload/deploy): 0건 ✅
+- dev server HTTP 검증 (http://localhost:3000/fact-cards/manual):
+  - `hasNew=true` (`/fact-cards/manual/new` href 존재) ✅
+  - `hasPreview=true` (`/fact-cards/manual/package-preview` href 존재) ✅
+  - `hasPackages=true` (`/packages` href 존재) ✅
+  - `hasValidDraft=true` (ok = true 렌더) ✅
+  - `hasBrokenDraft=true` (ok = false 렌더) ✅
+  - `hasStep1=true` ✅
+  - 총 링크 6개 (헤더 3 + nav card 3) ✅
+- dev server 종료 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
