@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`dev-server-default-route-alignment-v1`
+`dev-server-default-route-runtime-smoke-and-state-sync-v1`
 
 ## Current State
 
@@ -10,90 +10,79 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `b11ebb0 feat(package-preview): expose ecos live latest draft candidate via explicit query`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 35]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `7d28921 fix(app): route root to money shorts os hub`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 36]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
-Problem to fix:
-
-- Opening the dev server root (`/`) still shows the old AutoShorts AI / category-based reels UI.
-- Current active project is Money Shorts OS, a source-first finance/economy shorts workflow.
-- The default dev-server entry point should no longer present the old project as the main app.
-
 Recently completed:
 
-- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` is connected as an explicit dev-only live ECOS preview route.
-- Default and mock package-preview routes remain deterministic and do not call ECOS live.
-- Live preview remains draft-only:
-  - `sourceProviderId=provider-ecos-live`
-  - `isMock=false`
-  - `isPublishable=false`
-  - `publishedDate=2025-05-29`
-  - `dataPeriod=2026년 5월`
+- Root route `/` was changed from the old AutoShorts AI UI to a server `redirect("/money-shorts")`.
+- `app/layout.tsx` metadata now uses Money Shorts OS wording.
+- `/money-shorts` copy now says external API is absent except explicit live routes.
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` remains the explicit dev-only live ECOS preview route with `prefetch={false}`.
+
+Important nuance:
+
+- `git status -sb` is not fully clean because `piq_diag_out.txt` remains untracked.
+- Treat the working tree as clean only for tracked project changes.
 
 ## Goal
 
-Make the development server default entry point match the current Money Shorts OS project.
+Verify at runtime that the development server default entrypoint now opens Money Shorts OS instead of the old AutoShorts AI screen, then minimally sync durable `_ai` state to checkpoint `7d28921`.
 
 Primary target:
 
-- Root route `/` should open the current Money Shorts OS workflow, not the old AutoShorts AI app.
-
-Recommended minimal implementation:
-
-- Replace `app/page.tsx` with a server redirect to `/money-shorts`, or an equivalent minimal root page that immediately points to Money Shorts OS.
-- Update `app/layout.tsx` metadata from old AutoShorts AI wording to Money Shorts OS wording.
-- Update stale Money Shorts hub copy if it falsely says all package-preview paths have no external API. Default/mock remain local-only, but explicit live preview can read ECOS.
+- Dev server root `/` should redirect to or display `/money-shorts`.
+- The old AutoShorts AI category/reels UI must not be the default first screen.
 
 ## Approved Scope
 
 Allowed:
 
-- Modify:
-  - `app/page.tsx`
-  - `app/layout.tsx`
-  - `app/money-shorts/page.tsx` only for copy/link alignment if needed
+- Start or reuse a local Next.js dev server.
+- Runtime smoke only these routes:
+  - `/`
+  - `/money-shorts`
+  - `/fact-cards/manual/package-preview`
+  - `/fact-cards/manual/package-preview?candidate=base-rate`
+- Static-check, but do not navigate to, the live route link:
+  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+  - Verify `prefetch={false}` remains present.
+- Update only if reusable state changed:
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Use Next.js App Router built-ins such as `redirect()` from `next/navigation`.
-- Keep old legacy components/files untouched unless the root import cleanup naturally removes their active use.
-- Add a link from the workflow hub to the live latest package preview only if it stays clearly dev-only and does not auto-call ECOS unless clicked.
-  - If adding this link, set `prefetch={false}`.
+- If a runtime issue is found and the fix is clearly limited to the prior dev-server alignment files, a minimal fix is allowed in:
+  - `app/page.tsx`
+  - `app/layout.tsx`
+  - `app/money-shorts/page.tsx`
 
 Not required:
 
-- No deletion of legacy components/routes.
+- No live ECOS route navigation.
+- No GPT/script/video/render/package generation.
+- No full build.
+- No legacy component deletion.
 - No broad cleanup of old AutoShorts code.
-- No API route changes.
-- No render/GPT/TTS/upload logic.
-- No dependency changes.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - `piq_diag_out.txt` remains untracked.
-- If unexpected implementation files are dirty before work starts, stop and report.
+  - branch ahead `36`
+  - untracked `piq_diag_out.txt`
+  - no tracked dirty files except this handoff doc if Codex has just updated it.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- `/` should no longer render the old AutoShorts AI category/reels UI.
-- `/money-shorts` should remain the active workflow hub.
-- Existing MVP1 routes must still load:
-  - `/money-shorts`
-  - `/fact-cards/manual`
-  - `/fact-cards/manual/new`
-  - `/fact-cards/manual/package-preview`
-  - `/fact-cards/manual/package-preview?candidate=base-rate`
-  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
-  - `/packages`
-- Any link to the live latest preview must have prefetch disabled.
-- Do not trigger ECOS live calls except when explicitly smoking the live latest route.
-- No secret values or secret-bearing ECOS URLs may appear in UI, logs, docs, or error messages.
+- Use `.env.local` only as the app naturally loads it; never print secret values.
+- Prefer a local-only route smoke that does not hit external APIs.
+- If a dev server is already running, reuse it when practical.
+- If starting a dev server, stop only the process you started.
 
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
+- No ECOS live navigation or script execution for this task.
 - No ffmpeg execution.
 - No video/audio/image rendering.
 - No OS clipboard writes.
@@ -113,25 +102,23 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted ESLint for changed app files
-- focused TypeScript check for changed app files
-- forbidden pattern search on changed files:
-  - `Date.now`
-  - `Math.random`
-  - `navigator.clipboard`
-  - `ffmpeg`
-  - `output/`
-  - `upload`
-  - `deploy`
+- route smoke:
+  - `/` redirects to or displays Money Shorts OS
+  - `/money-shorts` loads Money Shorts OS Workflow Hub
+  - default package preview loads without ECOS live call
+  - `?candidate=base-rate` mock package preview loads without ECOS live call
+- React/runtime smoke:
+  - no obvious console error
+  - no React unique key warning on smoked routes
+- static live-link safety:
+  - `ecos-live-latest` link still has `prefetch={false}`
+  - `createEcosLiveTransport` is only on the explicit live candidate branch
+- targeted ESLint only if code changed
+- focused TypeScript only if code changed
 - secret safety:
-  - no API key value written
+  - no API key value printed
   - no `.env*` modified/staged
   - no secret-bearing ECOS URL printed or rendered
-- route smoke:
-  - root `/` redirects to or displays Money Shorts OS
-  - `/money-shorts` loads
-  - package-preview default/mock routes still load
-  - live route loads or clear blocked state; no React key warning
 - untracked safety:
   - prove `piq_diag_out.txt` remains untracked and unstaged
 - final `git status -sb`
@@ -140,10 +127,11 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Dev server root no longer opens old AutoShorts AI UI.
-- Metadata/default title reflect Money Shorts OS.
-- Money Shorts OS hub remains the clear entry point.
-- Live preview links, if present, do not prefetch.
+- Runtime confirms dev server root no longer opens the old AutoShorts AI UI.
+- Runtime confirms Money Shorts OS hub is the default entrypoint.
+- Default/mock package-preview routes still behave as local-only previews.
+- Live route remains explicit and non-prefetched.
+- `_ai` state no longer says the latest checkpoint is `b11ebb0` or that dev-server alignment is uncommitted.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -155,4 +143,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this changes the project default entry behavior.
+- Update `_ai/CLAUDE_REPORT.md` only with concise runtime smoke evidence.

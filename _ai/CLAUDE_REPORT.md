@@ -1510,6 +1510,26 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
 
+## Dev Server Runtime Smoke (`dev-server-default-route-runtime-smoke-and-state-sync-v1` — 2026-06-26)
+
+Runtime smoke against checkpoint `7d28921` (local dev server):
+
+| Route | 결과 |
+|-------|------|
+| `/` | `307 redirect → /money-shorts` ✅ |
+| `/money-shorts` | `200` ✅ |
+| `/fact-cards/manual/package-preview` | `200` ✅ |
+| `/fact-cards/manual/package-preview?candidate=base-rate` | `200` ✅ |
+| live route (`ecos-live-latest`) | 미탐색 (static safety만 확인) |
+
+Static safety:
+- `prefetch={false}` live candidate Link (page.tsx:547) ✅
+- `createEcosLiveTransport` 호출이 `if (candidateKey === "ecos-live-latest")` 분기 내부(line 288)에만 존재 ✅
+
+State sync:
+- `_ai/NEXT_ACTION.md`: "uncommitted" → checkpoint `7d28921` 보정 ✅
+- `_ai/PROJECT_STATE.md`: `7d28921` commit 항목 추가 ✅
+
 ## Dev Server Default Route Alignment (`dev-server-default-route-alignment-v1` — 2026-06-26)
 
 - `app/page.tsx`: old AutoShorts AI "use client" 컴포넌트 전체를 server redirect `redirect("/money-shorts")`로 교체.

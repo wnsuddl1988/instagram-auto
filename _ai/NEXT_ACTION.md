@@ -57,7 +57,7 @@ Owner 결정:
 
 ## 최근 완료 (2026-06-26 추가 — dev-server-default-route-alignment-v1)
 
-`dev-server-default-route-alignment-v1`: uncommitted (Codex checkpoint 승인 대기)
+`dev-server-default-route-alignment-v1`: checkpoint `7d28921`
 
 - `app/page.tsx`: old AutoShorts AI "use client" UI → server `redirect("/money-shorts")` 교체
 - `app/layout.tsx`: metadata title/description → Money Shorts OS 기준으로 변경
