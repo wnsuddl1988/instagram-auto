@@ -47,7 +47,7 @@ Owner 결정:
 
 ## 최근 완료 (2026-06-26 추가)
 
-`money-shorts-os-package-preview-live-latest-candidate-v1` + review-fix: uncommitted (checkpoint 대기)
+`money-shorts-os-package-preview-live-latest-candidate-v1` + review-fix: checkpoint `b11ebb0`
 
 - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` live route 연결
 - default/mock route ECOS 호출 없이 기존 동작 유지
@@ -55,17 +55,17 @@ Owner 결정:
 - BOK source-date citation 노출 (`bok.or.kr/portal/singl/baseRate`)
 - review-fix: `dataPeriod` `factCard.dataPeriod` 사용으로 보정, `async` 제거
 
+## 최근 완료 (2026-06-26 추가 — dev-server-default-route-alignment-v1)
+
+`dev-server-default-route-alignment-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `app/page.tsx`: old AutoShorts AI "use client" UI → server `redirect("/money-shorts")` 교체
+- `app/layout.tsx`: metadata title/description → Money Shorts OS 기준으로 변경
+- `app/money-shorts/page.tsx`: 헤더 subline "외부 API 없음" → "외부 API 없음 (live 경로 제외)" 최소 보정
+
 ## 다음 safe work unit
 
-**`dev-server-default-route-alignment-v1`** ← Owner 피드백 반영
-
-- 목표: 개발서버 기본 진입점/홈 라우트/내비게이션을 현재 Money Shorts OS 기준으로 정렬.
-- 문제: 개발서버 기본 진입점이 예전 프로젝트(AutoShorts) 기준으로 열림.
-- 작업 범위:
-  - 홈(`/`) 라우트를 Money Shorts OS 허브(`/money-shorts`)로 리디렉트하거나 Money Shorts OS 화면으로 교체.
-  - 상단 내비게이션 링크 정렬.
-  - 예전 프로젝트 화면이 기본으로 열리지 않게 정리.
-- 이번 task에서는 구현 안 함 — 다음 Codex 지시로 진행.
+Codex 지시 대기. 현재 활성 task 없음.
 
 아직 하지 않을 것:
 

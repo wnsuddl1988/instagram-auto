@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AutoShorts AI | 쇼츠 자동화 생성",
-  description: "AI가 카테고리 선택만으로 인스타그램 릴스 & 유튜브 쇼츠를 자동 생성합니다",
+  title: "Money Shorts OS | 출처 기반 금융·경제 쇼츠 제작",
+  description: "출처 기반 Fact Card → 대본 → 쇼츠 제작 워크플로우. Source-first MVP local workbench.",
 };
 
 export default function RootLayout({

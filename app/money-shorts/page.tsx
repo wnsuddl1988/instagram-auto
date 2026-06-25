@@ -102,7 +102,7 @@ export default function MoneyShortsDashboardPage() {
               Money Shorts OS — Workflow Hub
             </h1>
             <p className="text-xs text-slate-500">
-              Source-first MVP · local preview 전용 · 외부 API 없음
+              Source-first MVP · local preview 전용 · 외부 API 없음 (live 경로 제외)
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

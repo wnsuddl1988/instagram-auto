@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-26
 
-**전체프로젝트 진행률:** 약 70% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음은 개발서버 기본 진입점 Money Shorts OS 기준 정렬(`dev-server-default-route-alignment-v1`)이다.
+**전체프로젝트 진행률:** 약 72% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결, 개발서버 기본 진입점 Money Shorts OS 기준 정렬까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음 task는 Codex 지시 대기 중이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -80,6 +80,7 @@
 - Commit: `63d9b10` — `feat(source-facts): add ecos latest-period resolver with source-date gate`
 - Commit: `4bc9f0a` — `feat(source-facts): add bok base-rate source-date resolver`
 - Commit: `525e635` — `feat(source-facts): connect ecos resolvers into live draft candidate path`
+- Commit: `b11ebb0` — `feat(package-preview): expose ecos live latest draft candidate via explicit query`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -155,8 +156,7 @@ Task:
 
 현재 우선순위:
 
-- `/fact-cards/manual/package-preview`에 local/dev-only live latest candidate selector 연결 검토.
-- default/mock route는 live call 없이 유지하고, live route는 명시적 query에서만 ECOS read-only call.
+- `dev-server-default-route-alignment-v1`: 개발서버 기본 진입점/홈 라우트/metadata/허브 링크를 Money Shorts OS 기준으로 정렬.
 - 이후: Owner가 최신 Fact Card Draft를 보고 승인/수정하는 UX 연결.
 - 실제 영상 제작/GPT/TTS/render/upload는 아직 금지이며 별도 Owner 승인 후 진행한다.
 

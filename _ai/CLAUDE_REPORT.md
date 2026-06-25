@@ -1,6 +1,6 @@
 # CLAUDE_REPORT — Source-First Money Shorts OS
 
-**갱신:** 2026-06-25
+**갱신:** 2026-06-26
 
 ## Current Direction
 
@@ -1509,6 +1509,21 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `ecos-normalizer.ts:119-122` → rawPayload에 보존
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
+
+## Dev Server Default Route Alignment (`dev-server-default-route-alignment-v1` — 2026-06-26)
+
+- `app/page.tsx`: old AutoShorts AI "use client" 컴포넌트 전체를 server redirect `redirect("/money-shorts")`로 교체.
+- `app/layout.tsx`: metadata title/description을 `Money Shorts OS | 출처 기반 금융·경제 쇼츠 제작`으로 변경.
+- `app/money-shorts/page.tsx`: 헤더 subline "외부 API 없음" → "외부 API 없음 (live 경로 제외)"로 최소 보정 — live preview 예외 명시.
+
+Route evidence (static):
+- `/` → `redirect("/money-shorts")` ✅ (old AutoShorts AI UI 제거)
+- `/money-shorts` → Money Shorts OS Workflow Hub 유지 ✅
+- `/fact-cards/manual/package-preview` → 기존 household debt fixture 경로 유지 ✅
+- `/fact-cards/manual/package-preview?candidate=base-rate` → 기존 mock generated candidate 유지 ✅
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` → 명시적 live route 유지, prefetch={false} 유지 ✅
+
+TS 0 errors, ESLint 0 warnings, forbidden patterns: page.tsx/layout.tsx에 없음, money-shorts/page.tsx는 UI 텍스트 정적 문자열만 해당 ✅
 
 ## Package Preview Prefetch Review-Fix (`money-shorts-os-package-preview-live-latest-candidate-v1-prefetch-review-fix` — 2026-06-26)
 

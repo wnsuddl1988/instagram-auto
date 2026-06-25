@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-package-preview-live-latest-candidate-v1`
+`dev-server-default-route-alignment-v1`
 
 ## Current State
 
@@ -10,91 +10,85 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `525e635 feat(source-facts): connect ecos resolvers into live draft candidate path`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 34]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `b11ebb0 feat(package-preview): expose ecos live latest draft candidate via explicit query`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 35]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
+Problem to fix:
+
+- Opening the dev server root (`/`) still shows the old AutoShorts AI / category-based reels UI.
+- Current active project is Money Shorts OS, a source-first finance/economy shorts workflow.
+- The default dev-server entry point should no longer present the old project as the main app.
+
 Recently completed:
 
-- Source-first MVP1 local workflow routes and package preview.
-- ECOS mock candidate preview: `/fact-cards/manual/package-preview?candidate=base-rate`.
-- ECOS live transport, latest-period resolver, BOK source-date resolver.
-- Latest live draft candidate path:
-  - `latest ECOS rows -> resolve latest period -> verify BOK source date -> normalize snapshot -> generate Fact Card draft candidate`
-  - checkpoint `525e635`
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` is connected as an explicit dev-only live ECOS preview route.
+- Default and mock package-preview routes remain deterministic and do not call ECOS live.
+- Live preview remains draft-only:
   - `sourceProviderId=provider-ecos-live`
   - `isMock=false`
   - `isPublishable=false`
-  - BOK source-date provenance preserved in rawPayload and citation
-  - no date invention from ECOS period `202605`
-
-Important distinction:
-
-- Default package preview routes must remain deterministic and must not call live APIs.
-- A live/latest preview may call ECOS only when the Owner explicitly selects a live candidate query.
-- The preview remains local/dev-only and must not imply publish/render/upload approval.
-- `publishedDate` remains official BOK decision date, not ECOS period.
+  - `publishedDate=2025-05-29`
+  - `dataPeriod=2026년 5월`
 
 ## Goal
 
-Expose the latest live ECOS base-rate draft candidate in the local package-preview UI, behind an explicit dev-only query path:
+Make the development server default entry point match the current Money Shorts OS project.
 
-`/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+Primary target:
 
-The default page and existing mock candidate must continue to work without live network calls.
+- Root route `/` should open the current Money Shorts OS workflow, not the old AutoShorts AI app.
+
+Recommended minimal implementation:
+
+- Replace `app/page.tsx` with a server redirect to `/money-shorts`, or an equivalent minimal root page that immediately points to Money Shorts OS.
+- Update `app/layout.tsx` metadata from old AutoShorts AI wording to Money Shorts OS wording.
+- Update stale Money Shorts hub copy if it falsely says all package-preview paths have no external API. Default/mock remain local-only, but explicit live preview can read ECOS.
 
 ## Approved Scope
 
 Allowed:
 
-- Modify `app/fact-cards/manual/package-preview/page.tsx`.
-- Add a small server-side helper under `lib/source-facts/` only if it keeps the page clean.
-- Reuse:
-  - `buildEcosLatestWindowRequest()`
-  - `createEcosLiveTransport()`
-  - `buildEcosLatestDraftCandidate()`
-  - existing package assembly/review/gate/clipboard builders
-- Add a dev-only live candidate option to the selector.
-- Use an explicit `endPeriod` query param.
-  - Default link may use `endPeriod=202606` for current local smoke.
-  - Do not use `Date.now()` or infer current period from the clock.
-- If live candidate is selected and ECOS key is missing or live request fails, show a local blocked/error state. Do not silently fall back to mock or Jan2025.
-- Adjust on-page wording so the UI does not falsely claim "외부 API 없음" when the live candidate is selected.
-- Update `_ai/CLAUDE_REPORT.md` with concise route evidence.
-- Update `_ai/NEXT_ACTION.md` / `_ai/PROJECT_STATE.md` only if durable state changed.
+- Modify:
+  - `app/page.tsx`
+  - `app/layout.tsx`
+  - `app/money-shorts/page.tsx` only for copy/link alignment if needed
+  - `_ai/CLAUDE_REPORT.md`
+  - `_ai/NEXT_ACTION.md`
+  - `_ai/PROJECT_STATE.md`
+- Use Next.js App Router built-ins such as `redirect()` from `next/navigation`.
+- Keep old legacy components/files untouched unless the root import cleanup naturally removes their active use.
+- Add a link from the workflow hub to the live latest package preview only if it stays clearly dev-only and does not auto-call ECOS unless clicked.
+  - If adding this link, set `prefetch={false}`.
 
 Not required:
 
-- No new API route.
-- No DB/Supabase integration.
-- No package persistence.
-- No Owner approval persistence.
-- No GPT/script/video/render/TTS/upload.
-- No publishable=true.
+- No deletion of legacy components/routes.
+- No broad cleanup of old AutoShorts code.
+- No API route changes.
+- No render/GPT/TTS/upload logic.
+- No dependency changes.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
   - `piq_diag_out.txt` remains untracked.
-  - `_ai/HANDOFF_NOW.md` / `_ai/NEXT_ACTION.md` may be modified by Codex for this scope.
 - If unexpected implementation files are dirty before work starts, stop and report.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Default route behavior:
-  - `/fact-cards/manual/package-preview` uses existing household debt fixture.
-  - no ECOS live call.
-- Existing mock route behavior:
-  - `/fact-cards/manual/package-preview?candidate=base-rate` uses existing mock generated base-rate candidate.
-  - no ECOS live call.
-- New live route behavior:
-  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` performs a read-only ECOS live call server-side.
-  - builds latest live draft candidate via `buildEcosLatestDraftCandidate()`.
-  - requires `status === "draft_ready"` and a valid `candidateResult.factCard`.
-  - displays/propagates `sourceProviderId=provider-ecos-live`, `isMock=false`, `isPublishable=false`, `publishedDate=2025-05-29`, `dataPeriod=2026년 5월`.
-  - retains BOK source-date citation in the source/citation section.
-- Unknown `candidate` keys must still error instead of silently falling back.
-- Invalid `endPeriod` must show a local error/blocked state.
+- `/` should no longer render the old AutoShorts AI category/reels UI.
+- `/money-shorts` should remain the active workflow hub.
+- Existing MVP1 routes must still load:
+  - `/money-shorts`
+  - `/fact-cards/manual`
+  - `/fact-cards/manual/new`
+  - `/fact-cards/manual/package-preview`
+  - `/fact-cards/manual/package-preview?candidate=base-rate`
+  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+  - `/packages`
+- Any link to the live latest preview must have prefetch disabled.
+- Do not trigger ECOS live calls except when explicitly smoking the live latest route.
 - No secret values or secret-bearing ECOS URLs may appear in UI, logs, docs, or error messages.
 
 ## Forbidden
@@ -104,7 +98,7 @@ Not required:
 - No video/audio/image rendering.
 - No OS clipboard writes.
 - No DB/Supabase reads, writes, migrations, or production changes.
-- No new API routes.
+- No API route changes.
 - No API key/env/secret changes or writes.
 - No dependency or lockfile changes.
 - No `output/` changes.
@@ -119,8 +113,8 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted ESLint for changed code files
-- focused TypeScript check for changed source/UI files
+- targeted ESLint for changed app files
+- focused TypeScript check for changed app files
 - forbidden pattern search on changed files:
   - `Date.now`
   - `Math.random`
@@ -134,10 +128,10 @@ Run focused checks:
   - no `.env*` modified/staged
   - no secret-bearing ECOS URL printed or rendered
 - route smoke:
-  - default `/fact-cards/manual/package-preview`: load OK, no React key warning
-  - mock `/fact-cards/manual/package-preview?candidate=base-rate`: load OK, no React key warning
-  - live `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`: load OK or clear blocked state, no React key warning
-  - if live OK, verify visible fields: `provider-ecos-live`, `isMock=false`, `isPublishable=false`, `publishedDate=2025-05-29`, `dataPeriod=2026년 5월`, BOK citation present
+  - root `/` redirects to or displays Money Shorts OS
+  - `/money-shorts` loads
+  - package-preview default/mock routes still load
+  - live route loads or clear blocked state; no React key warning
 - untracked safety:
   - prove `piq_diag_out.txt` remains untracked and unstaged
 - final `git status -sb`
@@ -146,12 +140,10 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Existing default and mock package-preview routes remain intact.
-- New live latest candidate preview is reachable only via explicit query.
-- Default/mock routes do not call ECOS live.
-- Live route uses latest live draft candidate path and does not fall back to stale fixture.
-- Live candidate remains draft-only: `isMock=false`, `isPublishable=false`.
-- BOK source-date citation/provenance is visible or inspectable in the preview output.
+- Dev server root no longer opens old AutoShorts AI UI.
+- Metadata/default title reflect Money Shorts OS.
+- Money Shorts OS hub remains the clear entry point.
+- Live preview links, if present, do not prefetch.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -163,4 +155,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this slice changes owner-facing local preview behavior and live source visibility.
+- Update `_ai/CLAUDE_REPORT.md` because this changes the project default entry behavior.
