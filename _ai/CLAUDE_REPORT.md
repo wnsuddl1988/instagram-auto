@@ -1208,6 +1208,34 @@ P1 Fix — current/previous ordering in primary library path:
 | API key 값 하드코딩 | 없음 ✅ |
 | `node scripts/_ecos-live-check.mjs` | `RESULT: BLOCKED` (env key 부재, 가짜 성공 없음) ✅ |
 
+**[live-check: money-shorts-os-ecos-live-check-v1 — 2026-06-26]**
+
+`node --env-file=.env.local scripts/_ecos-live-check.mjs` 1회 실행 결과:
+
+```
+RESULT: LIVE_OK
+rows fetched: 2
+snapshot.id: raw-ecos-722Y001-0101000-202501
+indicatorName: 한국은행 기준금리
+dataPeriod: 2025년 1월
+publishedDate: 2025-01-16
+sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
+currentValueText: 3.0%
+previousValueText: 3.0%
+changeValueText: 0.0%p
+```
+
+Secret safety: API key 값 출력 없음 ✅, secret-bearing URL 출력 없음 ✅
+
+**Mock expectation mismatch resolved (`money-shorts-os-ecos-live-truth-alignment-v1`):**
+- rows 2개 정상 수신, `LIVE_OK`
+- live ECOS truth: Jan2025 `3.0%`, Dec2024 `3.0%`, change `0.0%p`
+- 기존 mock expectation `Dec2024 = 3.25%`, `change = -0.25%p`는 wrong assumption이었음
+  (ECOS 722Y001/0101000 monthly series에서 Dec2024도 `3.00`으로 기록됨)
+- `lib/source-facts/ecos-fixtures.ts`: `ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE` `"3.25"` → `"3.00"` 정정
+- `lib/source-facts/candidates.ts`: `mockEcosBaseRateSnapshot.rawPayload` previousValue/changeValue/Text 정정
+- mock/candidate가 live ECOS result semantics와 일치함 ✅
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`

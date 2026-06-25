@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — ECOS Live Connector review-fix 완료 (P1 ordering 수정), checkpoint 대기
+## 2026-06-26 현재 — ECOS live check LIVE_OK, mock/live truth alignment 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -15,7 +15,7 @@ Owner 결정:
 
 최신 checkpoint:
 
-- `20ab76b feat(source-facts): add ecos connector scaffold with mock transport` ← **현재 HEAD**
+- `87caec6 feat(source-facts): add ecos live transport with async connector boundary` ← **현재 HEAD**
 - (이전: `d85b616 feat(source-facts): add auto fact card candidate preview`)
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
@@ -27,7 +27,7 @@ Owner 결정:
   - `/fact-cards/manual/package-preview?candidate=base-rate` preview
 - `money-shorts-os-ecos-connector-scaffold-v1`: checkpoint `20ab76b`
   - `ecos-connector.ts`: EcosTransport interface + mock transport factory + runEcosConnector()
-  - `ecos-fixtures.ts`: 2-period mock rows (Jan2025 3.00% / Dec2024 3.25%)
+  - `ecos-fixtures.ts`: 2-period mock rows (Jan2025 3.00% / Dec2024 3.00% — live truth aligned)
   - `ecos-normalizer.ts`: normalizeEcosBaseRateRows() + scaffold end-to-end candidate
 - `money-shorts-os-ecos-connector-scaffold-v1` + review-fix: checkpoint `20ab76b`
   - scaffold path: request spec → mock transport → RawDataSnapshot → parser → Fact Card candidate
@@ -38,10 +38,16 @@ Owner 결정:
   - `ECOS_BASE_RATE_REQUEST_2P` (2기간 request for normalizer)
   - `scripts/_ecos-live-check.mjs` (read-only live check)
   - live 검증: env key 부재로 **BLOCKED** (가짜 성공 없음) — env 주입 시 즉시 검증 가능
-- `money-shorts-os-ecos-live-connector-v1-review-fix`: **완료, 미커밋**
+- `money-shorts-os-ecos-live-connector-v1-review-fix`: **완료, 커밋됨 (87caec6)**
   - P1 Fix: `orderEcosRowsCurrentFirst()` helper 추가 (`ecos-connector.ts`)
   - `executeAsync` 성공 경로에서 current-first 정렬 적용 → primary library path 안전
-  - TS 0 errors, ESLint 0 warnings, live check BLOCKED (env 부재, 정상)
+- `money-shorts-os-ecos-live-check-v1`: **LIVE_OK 확인**
+  - `node --env-file=.env.local scripts/_ecos-live-check.mjs` 성공
+  - Jan2025 3.0%, Dec2024 3.0%, change 0.0%p
+- `money-shorts-os-ecos-live-truth-alignment-v1`: **완료, 미커밋**
+  - `ecos-fixtures.ts`: `ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE` `"3.25"` → `"3.00"`
+  - `candidates.ts`: mock snapshot previousValue/changeValue/Text live truth에 정렬
+  - 다음 단계: `/fact-cards/manual/package-preview`에 live 또는 aligned candidate 연결 검토
 
 Source of truth:
 

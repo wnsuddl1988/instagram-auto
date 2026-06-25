@@ -1,8 +1,8 @@
 # PROJECT_STATE — AutoShorts MVP
 
-**갱신:** 2026-06-25
+**갱신:** 2026-06-26
 
-**전체프로젝트 진행률:** 약 60% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, 그리고 ECOS connector scaffold/mock transport/normalizer까지 완료됐다. 다만 실제 live connector, Owner 승인 workflow, 운영용 데이터 소스 연결, 그리고 후속 패키지 자동화가 남아 있어 전체 진행률을 보수적으로 재산정한다.
+**전체프로젝트 진행률:** 약 62% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary 구현, live check LIVE_OK까지 완료됐다. 단, 검증된 live request는 Jan2025 historical smoke request이며 production 최신 데이터 연결은 아직 미완료다. 실제 영상 제작용 Fact Card는 최신 available source period를 별도 조회/선택해야 한다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -74,6 +74,8 @@
 - Commit: `de96040` — `fix(ui): clear package preview key warnings`
 - Commit: `9978d61` — `test(money-shorts): record mvp1 rc smoke pass`
 - Commit: `d85b616` — `feat(source-facts): add auto fact card candidate preview`
+- Commit: `20ab76b` — `feat(source-facts): add ecos connector scaffold with mock transport`
+- Commit: `87caec6` — `feat(source-facts): add ecos live transport with async connector boundary` ← **현재 HEAD**
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 
@@ -89,6 +91,9 @@ Task:
 - `money-shorts-os-auto-fact-card-candidate-v1-review-fix`
 - `money-shorts-os-ecos-connector-scaffold-v1`
 - `money-shorts-os-ecos-connector-scaffold-v1-review-fix`
+- `money-shorts-os-ecos-live-connector-v1` + review-fix
+- `money-shorts-os-ecos-live-check-v1`
+- `money-shorts-os-ecos-live-truth-alignment-v1` + review-fix
 
 구현/확인:
 
@@ -101,6 +106,10 @@ Task:
 - ECOS request spec, mock transport boundary, ECOS-like response fixtures, normalizer를 추가.
 - `ECOS request spec -> mock transport response -> normalized RawDataSnapshot -> existing parser -> Fact Card candidate` scaffold 경로를 구현.
 - review-fix: known mock 발표일 `2025-01-16`을 request metadata로 명시 전달, human-facing source URL 보존, transport method를 `fetch()`에서 `execute()`로 변경.
+- ECOS live transport async boundary 구현 (`EcosAsyncTransport` / `runEcosConnectorAsync` / `createEcosLiveTransport`). fetch + process.env key 격리. secret-safe.
+- `node --env-file=.env.local scripts/_ecos-live-check.mjs` 1회 `LIVE_OK`. historical smoke request `202412~202501`: Jan2025 `3.0%`, Dec2024 `3.0%`, change `0.0%p`.
+- ⚠️ Jan2025 live check는 historical smoke/fixture 검증용이며 production 최신 데이터 default가 아님. 실제 영상 제작용 Fact Card는 최신 available period를 별도 조회/선택해야 하며, 최신 period를 못 찾으면 old fixture fallback이 아니라 blocked/source refresh 상태로 가야 함.
+- mock fixture/candidate를 live ECOS truth에 맞춰 정렬 (`ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE: "3.25" → "3.00"`).
 
 검증:
 
@@ -134,9 +143,10 @@ Task:
 
 현재 우선순위:
 
-- `ecos-connector-scaffold-v1` + review-fix 누적 diff를 checkpoint review 후 safe local commit.
-- 그 다음 safe work unit은 ECOS live connector 승인/구현 여부 결정이다.
-- 실제 ECOS/KOSIS/OpenDART/FRED live API 호출, env/API key, 외부 네트워크 사용은 별도 Owner 승인 후 진행한다.
+- uncommitted diff (`ecos-fixtures.ts`, `candidates.ts`, `_ai/` 3파일)를 checkpoint commit.
+- 그 다음: `latest available period` 선택/검증 slice — production 최신 ECOS 데이터를 조회하고 Fact Card 후보를 생성하는 경로 구현.
+- 이후: `/fact-cards/manual/package-preview`에 live/aligned candidate 연결 검토.
+- 실제 ECOS/KOSIS/OpenDART/FRED live API 추가 호출은 별도 Owner 승인 후 진행한다.
 
 금지:
 
