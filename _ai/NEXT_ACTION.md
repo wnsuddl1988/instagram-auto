@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-25 현재 — Package View Model 완료, Package Library UI 준비
+## 2026-06-25 현재 — Package Library UI 완료, Manual Fact Card UI 준비
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -30,23 +30,27 @@ Owner 결정:
 - `538d0d1 feat(review-packet): add owner review packet generator`
 - `9a6428e feat(owner-decision): add review packet approval gate`
 - `07444ad feat(clipboard-payload): add copy workflow payload builder`
-- Package View Model checkpoint: current local safe checkpoint after Codex review
+- `647f1be feat(package-view): add package library view models`
+- Package Library UI checkpoint: current local safe checkpoint after Codex review
 - push: 미실행
 
 최근 완료:
 
-- `money-shorts-os-package-view-model-v1`
-- `money-shorts-os-package-view-model-v1-review-fix`
-- `money-shorts-os-package-view-model-v1-review-fix-2`
-- `lib/package-view/` 로컬 package list/detail/workflow/copy-action view model 구현
-- no-gate 초기 상태에서 copy action blocker label 합성
-- 임시 `_verify.ts` 제거 확인
+- `money-shorts-os-package-library-ui-v1`
+- `money-shorts-os-package-library-ui-v1-review-fix`
+- `money-shorts-os-package-library-ui-v1-review-fix-2`
+- `money-shorts-os-package-library-ui-v1-review-fix-3`
+- `money-shorts-os-package-library-ui-v1-review-fix-4`
+- `/packages` local Package Library / Detail UI
+- URL/searchParams-selected package rows, no client hydration dependency
+- approved, pending, rejected, approved_but_blocked, no-gate states visible
+- blocked workflow `hasClipboardPayload=true`, rejected workflow `hasClipboardPayload=false`
 - Codex verification:
-  - ESLint `lib/package-view/`: PASS
-  - targeted TypeScript diagnostics for `lib/package-view/`: 0
-  - runtime sample PASS: approved, pending, rejected, blocked, no-gate copy action labels
-  - forbidden pattern search PASS: no clipboard, React UI, fetch, ffmpeg, output write
-  - full `pnpm exec tsc --noEmit --pretty false`는 기존 `output/` binary `.ts` 파일에서만 실패
+  - ESLint `app/packages`: PASS
+  - targeted TypeScript diagnostics for `app/packages`: 0
+  - forbidden pattern search PASS
+  - Playwright PASS: `/packages`, `/packages?selected=2`, `/packages?selected=3`, row link navigation, desktop/mobile no horizontal overflow
+  - dev server stopped
 
 Source of truth:
 
@@ -61,27 +65,25 @@ Source of truth:
 
 ## 다음 safe work unit
 
-**MVP 1 — local Package Library / Detail UI**
+**MVP 1 — Manual Fact Card authoring UI**
 
 Task ID:
 
-`money-shorts-os-package-library-ui-v1`
+`money-shorts-os-manual-fact-card-ui-v1`
 
 목표:
 
-- `lib/package-view/fixtures.ts`의 로컬 view model만 사용해 `/packages` UI를 만든다.
-- Owner가 패키지 목록, 상세, QA/risk, owner gate, copy readiness, source/fact/social copy를 한 화면에서 검토할 수 있게 한다.
+- Owner가 출처 기반 Fact Card draft와 validation 결과를 화면에서 확인할 수 있는 로컬 UI를 만든다.
 - 아직 DB/API/clipboard/render/file export는 하지 않는다.
 
 포함:
 
-- `app/packages/` route 추가
-- approved, pending/no-gate, rejected, blocked fixture states 표시
-- package list/detail/workflow/copy action summary UI
-- source/fact/citation/package id 보존 표시
-- social copy/hashtags/source refs verbatim 표시
-- blocker labels 표시
-- responsive dark dashboard layout
+- `app/fact-cards/manual/` route 추가
+- `lib/source-facts/manual.ts`와 `manual-fixtures.ts` 사용
+- valid draft -> `ok=true` + FactCard summary 표시
+- broken draft -> `ok=false` + validation errors 표시
+- citation/source URL/date 표시
+- Fact Card가 전체 workflow의 첫 단계라는 화면 구조
 
 금지:
 

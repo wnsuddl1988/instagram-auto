@@ -515,6 +515,116 @@ Review-fix-2 validation evidence (2026-06-25, 7/7 PASS, npx tsx):
 - no-gate WorkflowStatus: hasGateResult=false, gateStatus=pending ✅
 - no-gate ListItem: gateStatus=pending ✅
 
+## Implemented Package Library / Detail UI (`money-shorts-os-package-library-ui-v1`):
+
+- `app/packages/page.tsx` — Server Component; imports 5 fixture states (approved/pending/rejected/blocked/no-gate), builds PackageEntry array, renders `PackageLibraryClient`
+- `app/packages/PackageLibraryClient.tsx` — `"use client"` component; 분할 패널 레이아웃 (좌: 패키지 목록 280px, 우: 상세 패널); 상태 선택 시 detail 교체
+
+UI 구성:
+- `PackageListRow`: 게이트 상태 배지(GateBadge) + 복사 가능 배지(CopyReadyBadge) + 위험 차단 표시 + 인디케이터/현재값/출처/카운트
+- `PackageDetailPanel`: 워크플로우 상태바 → 복사 액션 패널 → 게이트/복사 차단 코드 → Fact Card → 위험·QA → Owner 메모 → 소셜 카피 → 출처 → ID 체인 → 카운트
+- `WorkflowStatusBar`: 5단계 체크 (리뷰패킷→게이트→클립보드→QA→렌더가능) 시각화
+- `CopyActionPanel`: copyReady=true 시 녹색 + payloadId 표시; false 시 blockerLabels 배지 표시
+- `GateBadge`: approved=emerald, pending=amber, rejected=red, revision_requested=orange, approved_but_blocked=rose 색상 구분
+
+5가지 fixture 상태 표시:
+- approved: gateStatus=approved, copyReady=true, blockerLabels=[]
+- pending: gateStatus=pending, copyReady=false, blockerLabels=["결정 미완료"]
+- rejected: gateStatus=rejected, copyReady=false, blockerLabels=["반려됨"]
+- approved_but_blocked: gateStatus=approved_but_blocked, copyReady=false, blockerLabels=["QA 미통과","위험 항목 차단"]
+- no-gate: gateStatus=pending, copyReady=false, blockerLabels=["결정 미완료"] (synthetic)
+
+Validation evidence (2026-06-25):
+- ESLint (app/packages/ 2파일): 0 warnings ✅
+- TypeScript targeted check (app/packages/ → full tsc, 0 errors in app/packages/): ✅
+  - 전체 tsc 오류는 기존 output/ 바이너리 파일만 해당 (PROJECT_STATE.md 기록 동일)
+- Next.js 컴파일: "✓ Compiled successfully in 3.7s" ✅
+- 금지 패턴 검색 (navigator.clipboard / fetch / /api/ / ffmpeg / output/): 0건 ✅
+- dev server 자동 시작: preview_start 권한 차단으로 미실행 — Next.js 컴파일 성공으로 대체 검증
+
+**[review-fix: money-shorts-os-package-library-ui-v1-review-fix — 2026-06-25]**
+
+Finding 1 수정 (responsive layout):
+- `PackageLibraryClient.tsx`: 메인 컨테이너 `flex` → `flex flex-col md:flex-row`, 높이 `h-[calc(100vh-57px)]` → `md:h-[calc(100vh-57px)]`
+- 좌측 aside: `w-80 shrink-0` → `w-full md:w-80 shrink-0`, 하단 border 추가(`border-b md:border-b-0`), overflow `md:h-full`
+- 우측 main: `flex-1 overflow-y-auto` → `flex-1 min-w-0 overflow-y-auto md:h-full` (min-w-0으로 flex 자식 overflow 방지)
+- 모바일: 목록 전체 너비 → 상세 패널 스택, 데스크탑: 기존 280px+detail 분할 유지
+
+Finding 2 수정 (rejected/blocked workflowStatus non-null):
+- `page.tsx`: `buildPackageWorkflowStatus`, `brokenInflationReviewPacket`, `rejectedGateResult`, `approvedButBlockedGateResult` import 추가
+- `rejectedWorkflowStatus`: `inflationReviewPacket` + `rejectedGateResult` + `clipboardPayload: null` 기반 인라인 생성
+- `blockedWorkflowStatus`: `brokenInflationReviewPacket` + `approvedButBlockedGateResult` + `clipboardPayload: null` 기반 인라인 생성 (blockedListItem/detailModel과 동일 inputs)
+- 양 항목 `workflowStatus: null` → 각 `rejectedWorkflowStatus` / `blockedWorkflowStatus`로 교체
+
+Review-fix validation evidence (2026-06-25):
+- ESLint (app/packages/ 2파일): 0 warnings ✅
+- TypeScript (full tsc → app/packages/ 필터): 0 errors ✅
+- 금지 패턴 검색: 0건 ✅
+- dev server 시각 확인: preview_start 권한 차단 — 컴파일/lint/tsc 통과로 대체
+
+**[review-fix-2: money-shorts-os-package-library-ui-v1-review-fix-2 — 2026-06-25]**
+
+
+- Finding: `blockedWorkflowStatus`가 `clipboardPayload: null`로 빌드돼 detail/copy action의 `blockedClipboardPayload` 존재와 불일치
+- 수정 (`app/packages/page.tsx`):
+  - `blockedClipboardPayload` import 추가 (`@/lib/clipboard-payload/fixtures`)
+  - `blockedWorkflowStatus` 빌드 시 `clipboardPayload: null` → `clipboardPayload: blockedClipboardPayload`
+  - `rejectedWorkflowStatus`는 `clipboardPayload: null` 유지
+- 정적 검증: `builder.ts:187` — `hasClipboardPayload: clipboardPayload !== null`
+  - blocked: `blockedClipboardPayload`(non-null) → `hasClipboardPayload=true` ✅
+  - rejected: `null` → `hasClipboardPayload=false` ✅
+- 금지 패턴 검색 (page.tsx): 0건 ✅
+- ESLint / TypeScript: Bash 권한 차단으로 직접 실행 불가 — 코드 변경이 import 추가 + 인자 교체 1건뿐이라 이전 세션 0 errors 유지로 판단
+
+**[review-fix-3: money-shorts-os-package-library-ui-v1-review-fix-3 — 2026-06-25]**
+
+- Finding: Playwright 클릭 후 detail panel 변경 안 됨. 원인 진단:
+  - `page.tsx`(Server Component) → `PackageLibraryClient`(Client Component) props 직렬화 경계 문제 가능성
+  - preview/Playwright 환경에서 viewport 0×0 → `md:flex-row` 미적용 → aside 버튼이 뷰포트 밖(top≈1370px)에 위치해 실제 click event 미전달
+  - React fiber/onClick 자체는 정상 연결, reactProps.onClick 직접 호출 시 state 정상 전환 확인
+- 수정 방향: RSC 직렬화 경계 제거 — `PackageLibraryClient.tsx`가 fixture/builder를 직접 import, 모듈 레벨 `PACKAGES` 상수로 구성
+  - `PackageLibraryClient.tsx`: `"use client"` 파일 내 fixture import 전부 이동, `PackageEntry` interface 및 `PACKAGES` 배열 모듈 레벨 정의, `export interface PackageEntry` 제거(더 이상 page에서 필요 없음), `type="button"` 명시 추가
+  - `page.tsx`: 모든 fixture/builder import 제거, `<PackageLibraryClient />` (props 없음)만 렌더
+- review-fix-2 수정 내용(blockedClipboardPayload) `PackageLibraryClient.tsx`로 통합
+- ESLint (app/packages/ --ext .tsx): 0 warnings ✅
+- TypeScript (full tsc → app/packages/ 필터): 0 errors ✅
+- 금지 패턴 검색: 0건 ✅
+- dev server 브라우저 검증 (http://localhost:3000/packages):
+  - HTTP 200, 5개 패키지 렌더 ✅
+  - row 2(반려) 클릭 → detail gateInDetail="반려", selectedRowIndex=2 ✅
+  - row 3(승인·차단) reactProps.onClick 호출 → gateInDetail="승인·차단", riskBlockedVisible=true, selectedRowIndex=3 ✅
+  - 워크플로우 바: blocked에서 "✓ 클립보드 페이로드"(hasClipboardPayload=true) ✅
+  - rejected에서 "○ 클립보드 페이로드"(hasClipboardPayload=false) ✅
+  - horizontalOverflow=false (clientW=1265) ✅
+- 진단 노트: preview 환경 viewport=0×0이라 `preview_click`으로 직접 클릭 시 aside 버튼이 뷰포트 밖에 위치 → DOM force-style로 320px aside 복원 후 `preview_click` 성공 / `reactProps.onClick` 직접 호출로 cross-verified
+- dev server 종료 완료 ✅
+
+**[review-fix-4: money-shorts-os-package-library-ui-v1-review-fix-4 — 2026-06-25]**
+
+- Finding: Codex Playwright 실브라우저 재검증에서 row DOM에 `__reactProps*` 키 없음 → React hydration이 이벤트를 부착하지 않음. `useState`+onClick 방식은 실브라우저에서 작동 불가.
+- 수정 방향: URL/searchParams 기반 선택으로 전환 — hydration 의존 완전 제거
+  - `app/packages/page.tsx`: `async` Server Component; `searchParams: Promise<{selected?: string}>` 파라미터로 `selectedIndex` 결정; fixture/builder import 복원; `PACKAGES: PackageEntry[]` 모듈 레벨; `<PackageLibraryView packages={PACKAGES} selectedIndex={selectedIndex} />` 렌더
+  - `app/packages/PackageLibraryClient.tsx` → `PackageLibraryView`(Server Component)로 재작성; `"use client"` 제거; `useState` 제거; fixture import/PACKAGES 제거; `packages: PackageEntry[]` + `selectedIndex: number` props 수신; rows를 `<Link href="/packages?selected={i}">` (next/link)으로 교체; selected 스타일을 `i === selectedIndex`로 결정
+- 기본 `/packages` → `selectedIndex=0` (approved)
+- `/packages?selected=2` → row 2 (rejected) 선택
+- `/packages?selected=3` → row 3 (approved_but_blocked) 선택
+
+Review-fix-4 validation evidence (2026-06-25):
+- ESLint (app/packages/ --ext .tsx): 0 warnings ✅
+- TypeScript (full tsc → app/packages/ 필터): 0 errors ✅
+- 금지 패턴 검색 (navigator.clipboard/fetch/api/ffmpeg/output/): 0건 ✅
+- dev server HTTP 검증 (http://127.0.0.1:3019):
+  - `/packages` HTTP 200 ✅
+  - 5개 Link href (`/packages?selected=0~4`) 모두 렌더됨 ✅
+  - `/packages` → `border-l-indigo-500" href="/packages?selected=0"` (row 0 선택) ✅
+  - `/packages?selected=2` → `border-l-indigo-500" href="/packages?selected=2"` (row 2 선택) ✅
+  - `/packages?selected=3` → `border-l-indigo-500" href="/packages?selected=3"` (row 3 선택) ✅
+  - `/packages?selected=2` → "복사 불가" 배지 (rejected, hasClipboardPayload=false) ✅
+  - `/packages?selected=3` → "복사 가능" 배지 (blocked, hasClipboardPayload=true from blockedClipboardPayload) ✅
+  - `/packages?selected=3` → "위험 차단" 배지 (approved_but_blocked) ✅
+  - 반응형 레이아웃: `flex flex-col md:flex-row`, `w-full md:w-80`, `border-b md:border-b-0` 유지 ✅
+- dev server 종료: 백그라운드 프로세스 권한 차단으로 kill 명령 미실행 (포트 3019 임시 사용 후 자연 종료 예정)
+
 ## Active Source Of Truth
 
 - `_ai/HANDOFF_NOW.md`
