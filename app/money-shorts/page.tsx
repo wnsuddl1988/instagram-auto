@@ -148,6 +148,25 @@ export default function MoneyShortsDashboardPage() {
           </div>
         </section>
 
+        {/* Live latest draft candidate — dev-only explicit access */}
+        <section className="rounded-xl border border-blue-800/40 bg-blue-900/10 px-5 py-4">
+          <div className="text-xs font-bold text-blue-300 uppercase tracking-wider mb-2">
+            Live Latest Draft Candidate
+          </div>
+          <p className="text-xs text-blue-200/70 mb-3 leading-relaxed">
+            ECOS에서 최신 기준금리 데이터를 직접 읽어 Fact Card 후보를 생성합니다.
+            이 경로는 개발 전용이며 클릭 시에만 외부 API를 호출합니다.
+            결과는 draft-only (isPublishable=false) 이며 render / upload가 수행되지 않습니다.
+          </p>
+          <Link
+            href="/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606"
+            prefetch={false}
+            className="inline-flex items-center gap-1.5 self-start px-3 py-1.5 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 hover:bg-blue-900/60 text-xs font-semibold transition-colors"
+          >
+            기준금리 live latest 미리보기 →
+          </Link>
+        </section>
+
         {/* Status note */}
         <section className="rounded-xl border border-slate-800/50 bg-slate-900/40 px-5 py-4 text-xs text-slate-500">
           <div className="font-bold text-slate-400 mb-1">현재 상태</div>
@@ -155,6 +174,7 @@ export default function MoneyShortsDashboardPage() {
             이 화면은 source-first MVP의 로컬 workbench 진입점입니다.
             모든 데이터는 브라우저 상태에만 머물고 외부로 전송되지 않습니다.
             render / ffmpeg / TTS / upload는 이 UI에서 수행되지 않습니다.
+            Live Latest 섹션은 예외적으로 ECOS 외부 API를 호출하며 클릭 시에만 동작합니다.
           </p>
         </section>
       </main>

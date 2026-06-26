@@ -1510,6 +1510,29 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
 
+## Money Shorts Hub Live Latest Entrypoint (`money-shorts-hub-live-latest-entrypoint-v1` — 2026-06-26)
+
+`app/money-shorts/page.tsx`에 "Live Latest Draft Candidate" 섹션 추가.
+
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` link 추가
+- `prefetch={false}` 적용 (page.tsx:163)
+- draft-only 안내 문구 포함 (isPublishable=false, render/upload 없음)
+- 기존 workflow steps와 status note 유지
+- status note에 live latest 섹션 외부 API 예외 문구 추가
+
+Route evidence:
+- `/money-shorts` `200` ✅
+- `candidate=ecos-live-latest&endPeriod=202606` href 렌더 확인 ✅
+- `candidate=base-rate` href (package-preview page에서 유지) ✅
+- `package-preview` default href 유지 ✅
+
+Static safety:
+- `prefetch={false}` hub link (money-shorts/page.tsx:163) ✅
+- `prefetch={false}` package-preview selector (package-preview/page.tsx:547) ✅
+- `createEcosLiveTransport` import/call 없음 (money-shorts/page.tsx) ✅
+- TS 0 errors, ESLint 0 warnings ✅
+- forbidden patterns: 정적 UI 텍스트만, 실제 호출 없음 ✅
+
 ## Dev Server Runtime Smoke (`dev-server-default-route-runtime-smoke-and-state-sync-v1` — 2026-06-26)
 
 Runtime smoke against checkpoint `7d28921` (local dev server):

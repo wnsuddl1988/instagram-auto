@@ -82,6 +82,7 @@
 - Commit: `525e635` — `feat(source-facts): connect ecos resolvers into live draft candidate path`
 - Commit: `b11ebb0` — `feat(package-preview): expose ecos live latest draft candidate via explicit query`
 - Commit: `7d28921` — `fix(app): route root to money shorts os hub`
+- Commit: `13ba98b` — `test(app): record dev server root smoke pass`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 

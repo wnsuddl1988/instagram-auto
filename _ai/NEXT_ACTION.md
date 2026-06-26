@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — latest live draft candidate checkpoint 완료, package-preview live 연결 대기
+## 2026-06-26 현재 — dev server root alignment + runtime smoke + hub live latest entrypoint (구현 완료, checkpoint 대기)
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -11,12 +11,16 @@ Owner 결정:
 - 각 쇼츠는 반드시 Fact Card를 먼저 만든 뒤 Video Blueprint와 대본으로 넘어간다.
 - AI는 Fact Card에 없는 숫자나 사실을 상상해서 대본을 쓰면 안 된다.
 
-최신 checkpoint:
+최신 committed checkpoint:
 
-- `525e635 feat(source-facts): connect ecos resolvers into live draft candidate path` ← **현재 HEAD**
+- `13ba98b test(app): record dev server root smoke pass` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
+
+현재 uncommitted slice:
+
+- `money-shorts-hub-live-latest-entrypoint-v1`: hub live latest link 추가 완료 (checkpoint 대기). root redirect/runtime smoke는 `7d28921`/`13ba98b`로 committed.
 
 최근 완료:
 
@@ -62,6 +66,13 @@ Owner 결정:
 - `app/page.tsx`: old AutoShorts AI "use client" UI → server `redirect("/money-shorts")` 교체
 - `app/layout.tsx`: metadata title/description → Money Shorts OS 기준으로 변경
 - `app/money-shorts/page.tsx`: 헤더 subline "외부 API 없음" → "외부 API 없음 (live 경로 제외)" 최소 보정
+
+## 최근 완료 (2026-06-26 추가 — money-shorts-hub-live-latest-entrypoint-v1)
+
+`money-shorts-hub-live-latest-entrypoint-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
+- live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
 
 ## 다음 safe work unit
 
