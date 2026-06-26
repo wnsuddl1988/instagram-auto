@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — owner publishability local approval + overlay + TS fix committed
+## 2026-06-26 현재 — state-sync post-commit
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -11,11 +11,15 @@ Owner 결정:
 - 각 쇼츠는 반드시 Fact Card를 먼저 만든 뒤 Video Blueprint와 대본으로 넘어간다.
 - AI는 Fact Card에 없는 숫자나 사실을 상상해서 대본을 쓰면 안 된다.
 
-최신 committed checkpoint:
+최신 HEAD (doc checkpoint):
 
-- `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId` ← **현재 HEAD**
+- `8a8642b docs(state): update checkpoint state after ledger overlay and riskReview fix` ← **현재 HEAD**
+
+최신 code checkpoint:
+
+- `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
 - `abe3d36 feat(package-preview): add ledger-approved overlay with current fact card revalidation` (이전)
-- branch: `codex/source-first-blueprint-clean` (ahead 54)
+- branch: `codex/source-first-blueprint-clean` (ahead 55)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
@@ -63,24 +67,6 @@ Owner 결정:
   - `sourceProviderId=provider-ecos-live`, `isMock=false`, `isPublishable=false`
   - BOK source-date provenance를 rawPayload와 citation에 보존
   - candidate validation 실패 시 `draft_ready` 금지 (`blocked_candidate_validation_failed`)
-
-### 최신 committed 5개 작업 (2026-06-26, ecos-base-rate-wording ~ owner-decision-gate-qa)
-
-- `92f545b fix(source-facts): improve unchanged base-rate wording`
-- `a69e497 feat(package-preview): show chart card props in package preview`
-- `5368566 feat(package-preview): add css chart card visual previews`
-- `41f4c25 fix(package-preview): stabilize chart card visual preview width`
-- `101c22e feat(money-shorts): add live latest draft entrypoint to hub`
-
-## 최근 완료 (2026-06-26 추가 — owner-decision-publishability-gate-v1)
-
-`owner-decision-publishability-gate-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `lib/review-packet/types.ts`: `ReviewFactCardSummary.isPublishable: boolean` 추가
-- `lib/review-packet/generator.ts`: `isPublishable: factCard.isPublishable` 전파
-- `lib/owner-decision/types.ts`: `GateBlockerCode`에 `"fact_card_not_publishable"` 추가
-- `lib/owner-decision/gate.ts`: reviewPacketId 검사 직후 publishability 체크 → decision 검사 이전에 차단
-- `app/fact-cards/manual/package-preview/page.tsx`: `fact_card_not_publishable` blocker red note 표시, non-live mock note 갱신
 
 ## 다음 safe work unit
 

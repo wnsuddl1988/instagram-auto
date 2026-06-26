@@ -21,6 +21,11 @@ import { createEcosLiveTransport } from "@/lib/source-facts/ecos-live-transport"
 import { buildEcosLatestDraftCandidate } from "@/lib/source-facts/ecos-latest-candidate";
 import { getLocalPublishabilityApproval } from "@/lib/owner-decision/local-approval-ledger";
 import type { LocalApprovalRecord, RecordApprovalResult } from "@/lib/owner-decision/local-approval-ledger";
+import {
+  evaluateLedgerOverlay,
+  LEDGER_OVERLAY_INACTIVE_MESSAGES,
+} from "./ledger-overlay";
+import type { LedgerOverlayResult } from "./ledger-overlay";
 import { recordApproval } from "./actions";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 import type {
@@ -702,101 +707,23 @@ function PackagePreviewContent({
 
   // ── Ledger-approved overlay ──────────────────────────────────────────────────
   // Activated only when a valid local approval ledger record exists for this Fact Card.
-  // Uses a memory-only clone — never mutates factCard, never persists isPublishable=true.
+  // Guard/projection logic extracted to ./ledger-overlay.ts for static QA.
   const OVERLAY_CONTENT_PACKAGE_ID = `cp-ledger-overlay-${factCard.id}`;
   const OVERLAY_REVIEW_PACKET_ID = `rp-ledger-overlay-${factCard.id}`;
   const OVERLAY_GATE_RESULT_ID = `gate-ledger-overlay-${factCard.id}`;
 
-  type LedgerOverlayInactiveReason =
-    | "no_record"
-    | "ledger_stale_or_ineligible"
-    | "mock_blocked";
-
-  type LedgerOverlayResult =
-    | { active: false; reason: LedgerOverlayInactiveReason }
-    | {
-        active: true;
-        overlayGate: ReturnType<typeof evaluateOwnerDecision>;
-        overlayClipboard: ReturnType<typeof buildClipboardPayload>;
-        approvalId: string;
-      };
-
-  const ledgerOverlayResult: LedgerOverlayResult = (() => {
-    // Guard 1 — no ledger record at all
-    if (!initialLedgerRecord) return { active: false, reason: "no_record" };
-
-    // Guard 2 — current server-side Fact Card must be non-mock
-    if (factCard.isMock) return { active: false, reason: "mock_blocked" };
-
-    // Guard 3 — ledger record must reference the current Fact Card exactly
-    const rec = initialLedgerRecord;
-    const auditMismatch =
-      rec.factCardId !== factCard.id ||
-      rec.decisionResult.factCardId !== factCard.id ||
-      rec.decisionResult.ownerDecision !== "approved" ||
-      !rec.decisionResult.canMarkPublishable ||
-      rec.audit.isMock !== factCard.isMock ||
-      rec.audit.sourceName !== factCard.sourceName ||
-      rec.audit.sourceUrl !== factCard.sourceUrl ||
-      rec.audit.primarySourceProviderId !== factCard.primarySourceProviderId ||
-      rec.audit.citationCount !== factCard.citations.length ||
-      rec.audit.publishedDate !== factCard.publishedDate ||
-      rec.audit.dataPeriod !== factCard.dataPeriod;
-    if (auditMismatch) return { active: false, reason: "ledger_stale_or_ineligible" };
-
-    // Guard 4 — re-run evaluatePublishabilityDecision against current Fact Card
-    // with approved decision; overlay only opens when this passes now.
-    const currentEligibility = evaluatePublishabilityDecision(
-      factCard,
-      {
-        factCardId: factCard.id,
-        decision: "approved",
-        notes: `re-validation at overlay open — ledger approvalId: ${rec.approvalId}`,
-      },
-      {
-        decisionResultId: `pub-overlay-revalidate-${factCard.id}`,
-        createdAt: MOCK_CREATED_AT,
-      },
-    );
-    if (!currentEligibility.canMarkPublishable) {
-      return { active: false, reason: "ledger_stale_or_ineligible" };
-    }
-
-    // All guards passed — build memory-only publishable clone. Original factCard is NOT mutated.
-    const overlayFactCard = { ...factCard, isPublishable: true };
-    const overlayPkg = assembleContentPackage(
-      overlayFactCard,
-      { videoId: MOCK_VIDEO_ID, createdAt: MOCK_CREATED_AT },
-      {
-        contentPackageId: OVERLAY_CONTENT_PACKAGE_ID,
-        createdAt: MOCK_CREATED_AT,
-        measuredAudioDurationSec: MOCK_AUDIO_DURATION_SEC,
-      },
-    );
-    const overlayReview = generateReviewPacket(overlayPkg, {
-      reviewPacketId: OVERLAY_REVIEW_PACKET_ID,
-      createdAt: MOCK_CREATED_AT,
-    });
-    const overlayGate = evaluateOwnerDecision(
-      overlayReview,
-      {
-        reviewPacketId: OVERLAY_REVIEW_PACKET_ID,
-        decision: "approved",
-        notes: `로컬 승인 ledger — approvalId: ${initialLedgerRecord.approvalId}`,
-        decidedAt: initialLedgerRecord.recordedAt,
-      },
-      { gateResultId: OVERLAY_GATE_RESULT_ID, createdAt: MOCK_CREATED_AT },
-    );
-    const overlayClipboard = buildClipboardPayload(overlayReview, overlayGate, {
-      createdAt: MOCK_CREATED_AT,
-    });
-    return {
-      active: true,
-      overlayGate,
-      overlayClipboard,
-      approvalId: initialLedgerRecord.approvalId,
-    };
-  })();
+  const ledgerOverlayResult: LedgerOverlayResult = evaluateLedgerOverlay(
+    factCard,
+    initialLedgerRecord,
+    {
+      overlayContentPackageId: OVERLAY_CONTENT_PACKAGE_ID,
+      overlayReviewPacketId: OVERLAY_REVIEW_PACKET_ID,
+      overlayGateResultId: OVERLAY_GATE_RESULT_ID,
+      mockVideoId: MOCK_VIDEO_ID,
+      mockCreatedAt: MOCK_CREATED_AT,
+      mockAudioDurationSec: MOCK_AUDIO_DURATION_SEC,
+    },
+  );
 
   // Publishability decision contract — read-only evaluation with decision=null (pending).
   // Never passes "approved" or sets isPublishable=true; only reports current eligibility.
@@ -1574,15 +1501,7 @@ function PackagePreviewContent({
             </div>
           ) : (
             <div className="rounded border border-slate-700/40 bg-slate-800/20 px-3 py-2 text-xs text-slate-500">
-              {ledgerOverlayResult.reason === "no_record" && (
-                "Ledger 기록 없음 — 로컬 승인 기록 후 reload하면 overlay가 활성화됩니다."
-              )}
-              {ledgerOverlayResult.reason === "mock_blocked" && (
-                "Mock Fact Card — overlay 비활성화 (isMock=true Fact Card는 승인 불가)."
-              )}
-              {ledgerOverlayResult.reason === "ledger_stale_or_ineligible" && (
-                "Ledger 기록이 있지만 현재 Fact Card와 불일치하거나 재검증 실패 — overlay 비활성화 (stale/hand-edited ledger 또는 현재 Fact Card eligibility 실패)."
-              )}
+              {LEDGER_OVERLAY_INACTIVE_MESSAGES[ledgerOverlayResult.reason]}
             </div>
           )}
         </SectionCard>
