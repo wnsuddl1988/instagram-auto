@@ -1942,3 +1942,40 @@ Do not resume:
 - 3D character static plate route
 - 생활꿀팁 / EP001 돈 방어 / old Money Architect topic flow
 - Jun/준/시트콤/자동문 면접/ep003/upload_002/복사기/3d_sitcom assets or references
+
+## Publishability Decision Contract UI Wiring (`package-preview-publishability-decision-readonly-v1` — 2026-06-26)
+
+`evaluatePublishabilityDecision`을 `/fact-cards/manual/package-preview` 읽기 전용 패널로 연결.
+
+**변경 파일:**
+- `app/fact-cards/manual/package-preview/page.tsx` — import 추가, publishabilityDecision 변수 계산, ⑧ 섹션 내부 "Publishability Decision Contract (읽기 전용)" subsection JSX 추가
+
+**구현 내용:**
+- `evaluatePublishabilityDecision(factCard, { factCardId: factCard.id, decision: null, notes: null }, { decisionResultId: \`pub-decision-preview-${factCard.id}\`, createdAt: MOCK_CREATED_AT })` — 항상 `decision: null` 전달, "approved" 전달 없음
+- 표시 필드: decisionResultId / ownerDecision(null→"null (pending)") / canMarkPublishable(NOT ELIGIBLE) / contract blockerCodes / isMock / citationCount / sourceUrl https:// 준비 여부 / isAlreadyPublishable
+- 경고 배너: "contract evaluation only — approve · mutate · persist · render · export · clipboard write 없음"
+- 기존 gate/readiness/chart-card/clipboardPayload 로직 무변경
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (page.tsx) | 0 errors ✅ |
+| ESLint (page.tsx) | 0 warnings ✅ |
+| `/fact-cards/manual/package-preview` 로드 | ✅ |
+| `/fact-cards/manual/package-preview?candidate=base-rate` 로드 | ✅ |
+| contract evaluation only 배너 렌더 | ✅ |
+| ownerDecision null (pending) 표시 | ✅ |
+| canMarkPublishable NOT ELIGIBLE | ✅ |
+| contract blockerCodes(decision_pending) 표시 | ✅ |
+| isMock 표시 | ✅ |
+| "Publishability Decision Contract" H3 DOM 렌더 | ✅ |
+| Chart Card 섹션 유지 | ✅ |
+| fact_card_not_publishable gate blocker 유지 | ✅ |
+| prefetch={false} 유지 (line 724) | ✅ |
+| console error/warning | 0건 ✅ |
+| forbidden pattern (Date.now/Math.random/navigator.clipboard/ffmpeg/output/upload/deploy) | 주석 문구만, 실제 호출 0건 ✅ |
+| "approved" → evaluatePublishabilityDecision 전달 | 없음 ✅ |
+| isPublishable=true 설정 | 없음 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+
+**diff stat:** `app/fact-cards/manual/package-preview/page.tsx` +80 lines (subsection JSX + import)

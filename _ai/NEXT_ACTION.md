@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — owner-publishability-decision-contract-v1 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-publishability-decision-readonly-v1 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,15 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `d3e0a79 feat(package-preview): add publishability readiness panel` ← **현재 HEAD**
+- `c7009ee feat(owner-decision): add publishability decision contract` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `owner-publishability-decision-contract-v1`: `lib/owner-decision/publishability.ts` 신규, `evaluatePublishabilityDecision` helper, 9/9 cases PASS
+- `package-preview-publishability-decision-readonly-v1`: `app/fact-cards/manual/package-preview/page.tsx`에 decision contract 읽기 전용 subsection 연결 완료
+- `owner-publishability-decision-contract-v1` (committed c7009ee): `lib/owner-decision/publishability.ts`, `evaluatePublishabilityDecision` helper, 9/9 cases PASS
 
 최근 완료 (committed):
 

@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`owner-publishability-decision-contract-v1`
+`package-preview-publishability-decision-readonly-v1`
 
 ## Current State
 
@@ -10,44 +10,46 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `d3e0a79 feat(package-preview): add publishability readiness panel`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 45]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `c7009ee feat(owner-decision): add publishability decision contract`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 46]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- Package preview has `⑧ Publishability Readiness`.
-- Owner Decision Gate blocks `fact_card_not_publishable` when `FactCard.isPublishable=false`.
-- Clipboard readiness remains false whenever the gate is blocked.
-- No approval UI, render/export, clipboard write, DB, API route, or persistence has been added.
+- `evaluatePublishabilityDecision(factCard, input, options?)` exists in `lib/owner-decision/publishability.ts`.
+- The helper is deterministic and does not mutate Fact Cards.
+- It only reports whether a real Owner decision would allow marking a Fact Card publishable.
+- Package preview already has `⑧ Publishability Readiness`.
 
 Important next-step nuance:
 
-- Do **not** add UI that flips `isPublishable=true` yet.
-- First define a deterministic Owner publishability decision contract in `lib/owner-decision`.
-- The contract should say whether an Owner decision would be allowed to mark a Fact Card publishable.
-- It should not mutate the Fact Card, write to storage, or change current package-preview behavior.
+- Do **not** create a fake `"approved"` Owner decision in UI.
+- Do **not** set or persist `FactCard.isPublishable=true`.
+- Do **not** add an interactive approval button yet.
+- This slice should only wire the new contract into package preview as a read-only current-state evaluation and condition checklist.
 
 State-doc nuance:
 
-- `_ai/NEXT_ACTION.md` may still say `c37426e` is current HEAD or that the readiness panel is uncommitted.
-- Sync stale state to checkpoint `d3e0a79` as part of this implementation slice.
+- `_ai/NEXT_ACTION.md` may still say `d3e0a79` is current HEAD or that the publishability decision contract is uncommitted.
+- Sync stale state to checkpoint `c7009ee` as part of this implementation slice.
 
 ## Goal
 
-Add a pure, deterministic publishability decision contract for Fact Cards.
+Expose the publishability decision contract in `/fact-cards/manual/package-preview` as read-only evidence.
 
-This prepares a later Owner approval UI while keeping all current UI and data draft-only.
+The Owner should be able to see:
+
+- current publishability decision state is pending/null
+- which contract blockers are currently active
+- which factual prerequisites are satisfied
+- why this screen still does not mark the Fact Card publishable
 
 ## Approved Scope
 
-Allowed implementation files:
+Allowed implementation file:
 
-- `lib/owner-decision/publishability.ts` (new)
-- `lib/owner-decision/index.ts`
-- `lib/owner-decision/fixtures.ts` only if useful for static/example coverage
-- `lib/owner-decision/types.ts` only if sharing a type there is clearly cleaner
+- `app/fact-cards/manual/package-preview/page.tsx`
 
 Allowed docs/state files:
 
@@ -58,55 +60,45 @@ Allowed docs/state files:
 
 Expected implementation direction:
 
-1. Create a deterministic helper for Owner publishability decisions, for example:
-   - `evaluatePublishabilityDecision(factCard, input, options)`
-2. Suggested input shape:
-   - `factCardId`
-   - `decision`: `"approved" | "rejected" | "revision_requested" | null`
-   - `notes: string | null`
-   - optional `decidedAt`
-3. Suggested output shape:
-   - schema/version string
-   - decision result id
-   - factCardId
-   - ownerDecision / ownerNotes
-   - `canMarkPublishable: boolean`
-   - blocker codes
+1. Import `evaluatePublishabilityDecision` from `@/lib/owner-decision/publishability`.
+2. In `PackagePreviewContent`, create a deterministic read-only result with:
+   - `decision: null`
+   - `factCardId: factCard.id`
+   - `notes: null`
+   - stable `decisionResultId` derived from `factCard.id`
+   - stable `createdAt` using existing deterministic constants, not `Date.now()`
+3. Add a compact read-only subsection inside or immediately after `⑧ Publishability Readiness`.
+4. Display:
+   - `decisionResultId`
+   - `ownerDecision=null`
+   - `canMarkPublishable=false`
+   - blocker codes from `publishabilityDecision.blockerCodes`
    - `isMock`
-   - citation count
-   - source summary fields needed for audit
-4. Suggested blocker codes:
-   - `decision_pending`
-   - `decision_rejected`
-   - `decision_revision_requested`
-   - `fact_card_id_mismatch`
-   - `mock_fact_card`
-   - `missing_citations`
-   - `source_url_missing`
-   - `already_publishable`
-5. Suggested pass condition:
-   - decision is approved
-   - factCardId matches
-   - factCard is not mock
-   - factCard has at least one citation
-   - sourceUrl exists and starts with `https://`
-   - factCard is not already publishable
-6. Export the helper through `lib/owner-decision/index.ts`.
-7. Add lightweight fixture/example results only if useful, but do not create large test scaffolding.
+   - `citationCount`
+   - `sourceUrl` / `https://` readiness
+   - `isAlreadyPublishable`
+5. Add a short warning/notice:
+   - This is contract evaluation only.
+   - It does not approve, mutate, persist, render, export, or write to clipboard.
+   - A real Owner approval UI must supply the Owner decision later.
+6. Keep current gate/readiness behavior unchanged.
+7. Keep section numbering stable unless a new top-level section is truly needed. Prefer a subsection to avoid renumber churn.
 
 Not required:
 
-- No package-preview UI changes.
-- No `isPublishable=true` mutation.
-- No Fact Card cloning or persistence.
 - No approval controls.
+- No query param for fake approval.
+- No `"approved"` simulation.
+- No `isPublishable=true` path.
+- No Fact Card cloning or persistence.
 - No DB/API route/localStorage.
+- No render/export/clipboard action.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `45`
+  - branch ahead `46`
   - untracked `piq_diag_out.txt`
   - tracked dirty `_ai/HANDOFF_NOW.md` from this Codex handoff update
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
@@ -116,7 +108,7 @@ Not required:
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
-- No ECOS live call.
+- No ECOS live call unless explicitly needed for optional manual smoke; default checks should use non-live routes.
 - No ffmpeg execution.
 - No video/audio/image rendering or repository artifacts.
 - No OS clipboard writes.
@@ -131,6 +123,7 @@ Not required:
 - Do not touch `piq_diag_out.txt`.
 - Do not set or persist `FactCard.isPublishable=true`.
 - Do not add Owner approval UI.
+- Do not create a fake approved Owner decision path.
 - Do not resume retired video routes or old render loops.
 
 ## Required Checks
@@ -139,12 +132,25 @@ Run focused checks:
 
 - `git status -sb`
 - targeted TypeScript/source check for changed files or existing focused no-output pattern
-- targeted ESLint for changed implementation files
-- if fixtures/examples are added:
-  - static verify at least one blocked mock case
-  - static verify pending/rejected/revision cases block
-  - static verify approved live-shaped non-mock case can return `canMarkPublishable=true`
-- forbidden pattern search on changed implementation files:
+- targeted ESLint for `app/fact-cards/manual/package-preview/page.tsx`
+- route/static smoke:
+  - `/fact-cards/manual/package-preview` loads
+  - `/fact-cards/manual/package-preview?candidate=base-rate` loads
+  - Publishability Readiness panel still appears
+  - read-only publishability decision result appears
+  - `ownerDecision=null`
+  - `canMarkPublishable=false`
+  - mock/default routes show appropriate blockers such as `decision_pending` and/or `mock_fact_card`
+  - existing `fact_card_not_publishable` gate blocker remains visible
+  - Chart Card visual preview still appears
+  - no React unique key warning
+  - no obvious console error
+- static safety:
+  - no `"approved"` input passed to `evaluatePublishabilityDecision` in `page.tsx`
+  - no `isPublishable=true` assignment in `page.tsx`
+  - package-preview live selector still has `prefetch={false}`
+  - money-shorts hub live link still has `prefetch={false}`
+- forbidden pattern search on changed implementation file:
   - `Date.now`
   - `Math.random`
   - `navigator.clipboard`
@@ -163,16 +169,14 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- A pure publishability decision helper exists under `lib/owner-decision`.
-- Helper never mutates the input Fact Card.
-- Helper does not set or persist `isPublishable=true`; it only reports whether that would be allowed.
-- Mock Fact Cards are blocked.
-- Pending/rejected/revision decisions are blocked.
-- Approved non-mock source-backed Fact Card can be marked eligible by the contract.
-- `_ai` state is minimally synced to checkpoint `d3e0a79`.
+- Package preview shows the publishability decision contract as read-only current-state evidence.
+- The UI does not simulate approved Owner decision.
+- The UI does not set or persist `isPublishable=true`.
+- Existing gate/readiness/chart-card behavior remains intact.
+- `_ai` state is minimally synced to checkpoint `c7009ee`.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
-- Final handoff reports changed files, checks/results, deviations/risks, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -181,4 +185,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this contract is a reusable safety boundary before approval UI.
+- Update `_ai/CLAUDE_REPORT.md` because this connects the publishability contract into the Owner review workflow.

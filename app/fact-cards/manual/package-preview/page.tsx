@@ -4,6 +4,7 @@ import { generatedBaseRateResult } from "@/lib/source-facts/candidates";
 import { assembleContentPackage } from "@/lib/content-package/assembler";
 import { generateReviewPacket } from "@/lib/review-packet/generator";
 import { evaluateOwnerDecision } from "@/lib/owner-decision/gate";
+import { evaluatePublishabilityDecision } from "@/lib/owner-decision/publishability";
 import { buildClipboardPayload } from "@/lib/clipboard-payload/builder";
 import {
   buildPackageDetailModel,
@@ -602,6 +603,21 @@ function PackagePreviewContent({
     createdAt: MOCK_CREATED_AT,
   });
 
+  // Publishability decision contract — read-only evaluation with decision=null (pending).
+  // Never passes "approved" or sets isPublishable=true; only reports current eligibility.
+  const publishabilityDecision = evaluatePublishabilityDecision(
+    factCard,
+    {
+      factCardId: factCard.id,
+      decision: null,
+      notes: null,
+    },
+    {
+      decisionResultId: `pub-decision-preview-${factCard.id}`,
+      createdAt: MOCK_CREATED_AT,
+    },
+  );
+
   const viewInputs = { reviewPacket, gateResult, clipboardPayload };
   const detailModel = buildPackageDetailModel(viewInputs, { createdAt: MOCK_CREATED_AT });
   const workflowStatus = buildPackageWorkflowStatus(viewInputs);
@@ -1152,6 +1168,70 @@ function PackagePreviewContent({
                 {reason && <span className="text-red-300/80 text-xs ml-auto text-right">{reason}</span>}
               </div>
             ))}
+          </div>
+
+          {/* Publishability Decision Contract — 읽기 전용 */}
+          <SectionLabel>Publishability Decision Contract (읽기 전용)</SectionLabel>
+          <div className="rounded border border-slate-700/30 bg-slate-950/50 px-3 py-3 text-xs space-y-0">
+            <div className="mb-2 rounded border border-amber-800/30 bg-amber-900/10 px-2.5 py-2 text-amber-200/80">
+              <span className="font-semibold text-amber-300">contract evaluation only</span>
+              {" — "}
+              approve · mutate · persist · render · export · clipboard write 없음. Owner 실제 승인 UI는 미구현입니다.
+            </div>
+            <FieldRow label="decisionResultId" value={publishabilityDecision.decisionResultId} mono />
+            <FieldRow
+              label="ownerDecision"
+              value={<span className="font-mono text-xs text-amber-300">{publishabilityDecision.ownerDecision ?? "null (pending)"}</span>}
+            />
+            <FieldRow
+              label="canMarkPublishable"
+              value={<StatusPill ok={publishabilityDecision.canMarkPublishable} trueLabel="ELIGIBLE" falseLabel="NOT ELIGIBLE" />}
+            />
+            <FieldRow
+              label="contract blockerCodes"
+              value={
+                publishabilityDecision.blockerCodes.length === 0
+                  ? <span className="text-emerald-400 text-xs">없음</span>
+                  : publishabilityDecision.blockerCodes.map((c) => (
+                      <span
+                        key={c}
+                        className="inline-block mr-1 px-1.5 py-0.5 rounded font-mono text-xs bg-amber-900/20 text-amber-300 border border-amber-700/30"
+                      >
+                        {c}
+                      </span>
+                    ))
+              }
+            />
+            <FieldRow
+              label="isMock"
+              value={<StatusPill ok={!publishabilityDecision.isMock} trueLabel="실데이터" falseLabel="MOCK" />}
+            />
+            <FieldRow
+              label="citationCount"
+              value={
+                <span className={`font-mono text-xs ${publishabilityDecision.citationCount > 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  {publishabilityDecision.citationCount}건
+                </span>
+              }
+            />
+            <FieldRow
+              label="sourceUrl https://"
+              value={
+                <StatusPill
+                  ok={publishabilityDecision.sourceUrl.startsWith("https://")}
+                  trueLabel="OK"
+                  falseLabel="MISSING"
+                />
+              }
+            />
+            <FieldRow
+              label="isAlreadyPublishable"
+              value={
+                <span className={`font-mono text-xs ${publishabilityDecision.isAlreadyPublishable ? "text-emerald-300" : "text-slate-400"}`}>
+                  {String(publishabilityDecision.isAlreadyPublishable)}
+                </span>
+              }
+            />
           </div>
         </SectionCard>
 
