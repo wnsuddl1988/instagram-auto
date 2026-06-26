@@ -13,13 +13,13 @@ Owner 결정:
 
 최신 HEAD:
 
-- `71f3a9b refactor(package-preview): extract ledger overlay evaluator` ← **현재 HEAD**
+- `c29f4d9 test(package-preview): add ledger overlay static guard` ← **현재 HEAD**
 
 최신 code checkpoint:
 
 - `71f3a9b refactor(package-preview): extract ledger overlay evaluator`
 - `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId` (이전)
-- branch: `codex/source-first-blueprint-clean` (ahead 56)
+- branch: `codex/source-first-blueprint-clean` (ahead 57)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 

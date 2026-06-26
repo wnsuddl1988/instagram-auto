@@ -1,5 +1,5 @@
 /**
- * Static guard check for ledger-overlay.ts safety invariants.
+ * Static guard check for ledger-overlay.ts safety invariants and page.tsx integration.
  * No dependencies, no network, no fs writes, no ledger data access.
  * Exit 0 = all PASS. Exit 1 = at least one FAIL.
  */
@@ -9,10 +9,13 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const TARGET = resolve(__dirname, "../app/fact-cards/manual/package-preview/ledger-overlay.ts");
+const HELPER_PATH = resolve(__dirname, "../app/fact-cards/manual/package-preview/ledger-overlay.ts");
+const PAGE_PATH   = resolve(__dirname, "../app/fact-cards/manual/package-preview/page.tsx");
 
-const src = readFileSync(TARGET, "utf-8");
+const src = readFileSync(HELPER_PATH, "utf-8");
 const lines = src.split("\n");
+
+const pageSrc = readFileSync(PAGE_PATH, "utf-8");
 
 let passed = 0;
 let failed = 0;
@@ -27,7 +30,7 @@ function check(label, condition) {
   }
 }
 
-console.log(`\nStatic guard check: ledger-overlay.ts\n`);
+console.log(`\nStatic guard check: ledger-overlay.ts + page.tsx integration\n`);
 
 // ── Forbidden usage ────────────────────────────────────────────────────────────
 // Exclude comment lines for pattern checks that might appear in doc comments
@@ -95,12 +98,34 @@ check("Guard 2 before Guard 3",  g2 >= 0 && g3 >= 0 && g2 < g3);
 check("Guard 3 before Guard 4",  g3 >= 0 && g4 >= 0 && g3 < g4);
 check("Guard 4 before clone",    g4 >= 0 && clone >= 0 && g4 < clone);
 
+// ── Page integration checks ────────────────────────────────────────────────────
+console.log("\n[ page.tsx integration contract ]");
+// Must import/reference helper symbols
+check("page.tsx references evaluateLedgerOverlay",
+  pageSrc.includes("evaluateLedgerOverlay"));
+check("page.tsx references LEDGER_OVERLAY_INACTIVE_MESSAGES",
+  pageSrc.includes("LEDGER_OVERLAY_INACTIVE_MESSAGES"));
+// Must call the helper function (not inline IIFE)
+check("page.tsx calls evaluateLedgerOverlay(",
+  pageSrc.includes("evaluateLedgerOverlay("));
+// Must use typed message map (not inline string literals per reason)
+check("page.tsx uses LEDGER_OVERLAY_INACTIVE_MESSAGES[ledgerOverlayResult.reason]",
+  pageSrc.includes("LEDGER_OVERLAY_INACTIVE_MESSAGES[ledgerOverlayResult.reason]"));
+// Must NOT have inline type declarations (they moved to ledger-overlay.ts)
+check("page.tsx has no inline 'type LedgerOverlayInactiveReason' declaration",
+  !pageSrc.includes("type LedgerOverlayInactiveReason ="));
+check("page.tsx has no inline 'type LedgerOverlayResult' declaration",
+  !pageSrc.includes("type LedgerOverlayResult ="));
+// Must NOT have old inline IIFE pattern
+check("page.tsx has no inline IIFE for ledgerOverlayResult",
+  !pageSrc.includes("const ledgerOverlayResult: LedgerOverlayResult = (() => {"));
+
 // ── Summary ────────────────────────────────────────────────────────────────────
 console.log(`\n──────────────────────────────────────`);
 console.log(`Result: ${passed} passed, ${failed} failed`);
 
 if (failed > 0) {
-  console.error(`\nFAIL — ${failed} invariant(s) violated in ledger-overlay.ts`);
+  console.error(`\nFAIL — ${failed} invariant(s) violated`);
   process.exit(1);
 } else {
   console.log(`\nPASS — all invariants satisfied`);

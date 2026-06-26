@@ -98,8 +98,9 @@
 - Commit: `abe3d36` — `feat(package-preview): add ledger-approved overlay with current fact card revalidation`
 - Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
 - Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
-- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator` ← **현재 HEAD**
-- Branch: `codex/source-first-blueprint-clean` (ahead 56)
+- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
+- Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard` ← **현재 HEAD**
+- Branch: `codex/source-first-blueprint-clean` (ahead 57)
 - Push: 미실행
 
 ---
