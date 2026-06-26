@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — owner-decision-publishability-gate-v1 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-publishability-readiness-panel-v1 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,15 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `41f4c25 fix(package-preview): stabilize chart card visual preview width` ← **현재 HEAD**
+- `c37426e fix(owner-decision): block non-publishable fact cards at gate` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `owner-decision-publishability-gate-v1`: FactCard.isPublishable=false → gate 차단 보장, TS/ESLint PASS, browser smoke PASS (default + base-rate)
+- `package-preview-publishability-readiness-panel-v1`: ⑧ Publishability Readiness 패널 추가, 기존 섹션 ⑨~⑬ re-number, browser smoke PASS (default + base-rate)
+- `owner-decision-publishability-gate-v1`: FactCard.isPublishable=false → gate 차단 보장 (committed at c37426e)
 
 최근 완료 (committed):
 

@@ -1000,9 +1000,164 @@ function PackagePreviewContent({
           )}
         </SectionCard>
 
-        {/* ⑧ Review Packet */}
+        {/* ⑧ Publishability Readiness */}
         <SectionCard
-          title="⑦ Review Packet"
+          title="⑧ Publishability Readiness"
+          subtitle="draft-only 상태 및 render/copy 차단 원인 요약"
+          color={
+            !factCard.isPublishable || gateResult.blockerCodes.includes("fact_card_not_publishable")
+              ? "red"
+              : gateResult.canProceedToRender && clipboardPayload.copyReady
+                ? "emerald"
+                : "amber"
+          }
+        >
+          {/* 상단 요약 배너 */}
+          {!factCard.isPublishable && (
+            <div className="mb-3 rounded border border-red-700/50 bg-red-900/15 px-3 py-2.5 text-xs text-red-200">
+              <div className="font-bold text-red-300 mb-1">이 패키지는 현재 draft-only 상태입니다</div>
+              <ul className="space-y-0.5 text-red-200/80">
+                <li>• <span className="font-semibold text-red-300">isPublishable=false</span> — Fact Card가 publishable 상태가 아닙니다.</li>
+                <li>• Owner 승인만으로는 render/copy 경로가 열리지 않습니다.</li>
+                <li>• <span className="font-mono text-red-300">fact_card_not_publishable</span> blocker가 해제되어야만 다음 단계로 진행할 수 있습니다.</li>
+                <li>• 이 화면에서 isPublishable 전환, render, export, 클립보드 복사를 수행하지 않습니다.</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Fact Card 발행 가능 여부 */}
+          <SectionLabel>Fact Card 발행 가능 여부</SectionLabel>
+          <FieldRow
+            label="factCard.isMock"
+            value={<StatusPill ok={!factCard.isMock} trueLabel="실데이터" falseLabel="MOCK" />}
+          />
+          <FieldRow
+            label="factCard.isPublishable"
+            value={<StatusPill ok={factCard.isPublishable} trueLabel="PUBLISHABLE" falseLabel="NOT PUBLISHABLE" />}
+          />
+          <FieldRow
+            label="reviewPacket.factCard.isPublishable"
+            value={<StatusPill ok={reviewPacket.factCard.isPublishable} trueLabel="PUBLISHABLE" falseLabel="NOT PUBLISHABLE" />}
+          />
+
+          {/* 출처 현황 */}
+          <SectionLabel>출처 / Citation 현황</SectionLabel>
+          <FieldRow
+            label="citation 수"
+            value={
+              <span className={`font-mono text-xs ${reviewPacket.sourceRefs.length > 0 ? "text-emerald-300" : "text-red-300"}`}>
+                {reviewPacket.sourceRefs.length}건
+              </span>
+            }
+          />
+          <FieldRow
+            label="citationIds"
+            value={
+              reviewPacket.sourceRefs.length === 0
+                ? <span className="text-red-400 text-xs">없음</span>
+                : reviewPacket.sourceRefs.map((ref) => (
+                    <span
+                      key={ref.citationId}
+                      className="inline-block mr-1 px-1.5 py-0.5 rounded font-mono text-xs bg-indigo-900/20 text-indigo-300 border border-indigo-700/30"
+                    >
+                      {ref.citationId}
+                    </span>
+                  ))
+            }
+          />
+
+          {/* Gate 차단 현황 */}
+          <SectionLabel>Owner Decision Gate 차단 현황</SectionLabel>
+          <FieldRow
+            label="gateResult.blockerCodes"
+            value={
+              gateResult.blockerCodes.length === 0
+                ? <span className="text-emerald-400 text-xs">없음</span>
+                : gateResult.blockerCodes.map((c) => (
+                    <span
+                      key={c}
+                      className="inline-block mr-1 px-1.5 py-0.5 rounded font-mono text-xs bg-red-900/20 text-red-300 border border-red-700/30"
+                    >
+                      {c}
+                    </span>
+                  ))
+            }
+          />
+          <FieldRow
+            label="gateResult.canProceedToRender"
+            value={
+              <StatusPill
+                ok={gateResult.canProceedToRender}
+                trueLabel="CAN PROCEED"
+                falseLabel="BLOCKED"
+              />
+            }
+          />
+
+          {/* Clipboard / Copy 준비 상태 */}
+          <SectionLabel>Clipboard / Copy 준비 상태</SectionLabel>
+          <FieldRow
+            label="clipboardPayload.copyReady"
+            value={<StatusPill ok={clipboardPayload.copyReady} trueLabel="READY" falseLabel="NOT READY" />}
+          />
+
+          {/* QA / Render 준비 상태 */}
+          <SectionLabel>QA / Render 준비 상태</SectionLabel>
+          <FieldRow
+            label="finalQa.readyForRender"
+            value={<StatusPill ok={finalQa.readyForRender} trueLabel="READY" falseLabel="NOT READY" />}
+          />
+          <FieldRow
+            label="riskReview.isBlocked"
+            value={<StatusPill ok={!riskReview.isBlocked} trueLabel="NOT BLOCKED" falseLabel="BLOCKED" />}
+          />
+
+          {/* 종합 readiness 판정 */}
+          <SectionLabel>종합 Readiness 판정</SectionLabel>
+          <div className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-2.5 text-xs space-y-1.5">
+            {[
+              {
+                label: "isPublishable",
+                ok: factCard.isPublishable,
+                reason: factCard.isPublishable ? null : "Fact Card isPublishable=false — 발행 불가",
+              },
+              {
+                label: "canProceedToRender",
+                ok: gateResult.canProceedToRender,
+                reason: gateResult.canProceedToRender
+                  ? null
+                  : `blockerCodes: [${gateResult.blockerCodes.join(", ")}]`,
+              },
+              {
+                label: "copyReady",
+                ok: clipboardPayload.copyReady,
+                reason: clipboardPayload.copyReady
+                  ? null
+                  : `gate 차단 상태 — copyReady=false`,
+              },
+              {
+                label: "readyForRender",
+                ok: finalQa.readyForRender,
+                reason: finalQa.readyForRender ? null : "QA readyForRender=false",
+              },
+              {
+                label: "riskNotBlocked",
+                ok: !riskReview.isBlocked,
+                reason: riskReview.isBlocked ? "Risk Review isBlocked=true" : null,
+              },
+            ].map(({ label, ok, reason }) => (
+              <div key={label} className="flex items-start gap-2">
+                <StatusPill ok={ok} trueLabel="OK" falseLabel="BLOCKED" />
+                <span className="font-mono text-slate-400">{label}</span>
+                {reason && <span className="text-red-300/80 text-xs ml-auto text-right">{reason}</span>}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* ⑨ Review Packet */}
+        <SectionCard
+          title="⑨ Review Packet"
           subtitle={`reviewPacketId: ${reviewPacket.reviewPacketId}`}
           color="indigo"
         >
@@ -1024,9 +1179,9 @@ function PackagePreviewContent({
           </div>
         </SectionCard>
 
-        {/* ⑨ Owner Gate */}
+        {/* ⑩ Owner Gate */}
         <SectionCard
-          title="⑧ Owner Decision Gate"
+          title="⑩ Owner Decision Gate"
           subtitle={`gateResultId: ${gateResult.gateResultId}`}
           color={gateResult.canProceedToRender ? "emerald" : "red"}
         >
@@ -1074,9 +1229,9 @@ function PackagePreviewContent({
           )}
         </SectionCard>
 
-        {/* ⑩ Clipboard payload */}
+        {/* ⑪ Clipboard payload */}
         <SectionCard
-          title="⑨ Clipboard Payload 준비 상태"
+          title="⑪ Clipboard Payload 준비 상태"
           subtitle={`clipboardPayloadId: ${clipboardPayload.clipboardPayloadId}`}
           color={clipboardPayload.copyReady ? "emerald" : "amber"}
         >
@@ -1134,9 +1289,9 @@ function PackagePreviewContent({
           )}
         </SectionCard>
 
-        {/* ⑩ Chart Card Package */}
+        {/* ⑫ Chart Card Package */}
         <SectionCard
-          title="⑩ Chart Card Package"
+          title="⑫ Chart Card Package"
           subtitle={`packageId: ${pkg.chartCardPackage.packageId}`}
           color="indigo"
         >
@@ -1231,9 +1386,9 @@ function PackagePreviewContent({
           </div>
         </SectionCard>
 
-        {/* ⑪ Package view summary */}
+        {/* ⑬ Package view summary */}
         <SectionCard
-          title="⑪ Package View Summary"
+          title="⑬ Package View Summary"
           subtitle="buildPackageDetailModel 출력 요약"
           color="slate"
         >

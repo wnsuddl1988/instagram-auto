@@ -1826,6 +1826,68 @@ QA 결과 + layout fix 1건.
 | forbidden pattern (fetch/Date.now/Math.random/clipboard/ffmpeg/output/deploy) | 없음 ✅ |
 | piq_diag_out.txt | untracked 유지 ✅ |
 
+## Publishability Readiness Panel (`package-preview-publishability-readiness-panel-v1` — 2026-06-26)
+
+`app/fact-cards/manual/package-preview/page.tsx`에 "⑧ Publishability Readiness" 패널 추가.
+
+**변경 내용:**
+- 기존 ⑧~⑪ 섹션을 ⑨~⑬으로 re-number (title prefix + JSX comment 동기화, review-fix 완료)
+- 새 ⑧ 패널 (⑦ Review Packet 다음, ⑨ Owner Decision Gate 앞에 삽입):
+  - 상단 draft-only 요약 배너 (isPublishable=false 시 항상 표시)
+  - Fact Card 발행 가능 여부: `factCard.isMock`, `factCard.isPublishable`, `reviewPacket.factCard.isPublishable`
+  - 출처 / Citation 현황: citation 수 + citationId 배지 목록
+  - Owner Decision Gate 차단 현황: `gateResult.blockerCodes`, `gateResult.canProceedToRender`
+  - Clipboard / Copy 준비 상태: `clipboardPayload.copyReady`
+  - QA / Render 준비 상태: `finalQa.readyForRender`, `riskReview.isBlocked`
+  - 종합 Readiness 판정 테이블 (5개 항목: isPublishable / canProceedToRender / copyReady / readyForRender / riskNotBlocked)
+- 패널 color: isPublishable=false 또는 fact_card_not_publishable blocker 시 red; 모두 통과 시 emerald; 그 외 amber
+
+**브라우저 smoke 결과 (JS eval):**
+| Check | default (가계부채) | ?candidate=base-rate |
+|-------|-------------------|----------------------|
+| ⑧ Publishability Readiness 패널 | ✅ | ✅ |
+| isPublishable=false (NOT PUBLISHABLE) | ✅ | ✅ |
+| fact_card_not_publishable blocker | ✅ | ✅ |
+| canProceedToRender=BLOCKED | ✅ | ✅ |
+| copyReady=NOT READY | ✅ | ✅ |
+| Chart Card Package (⑫) 유지 | ✅ | ✅ |
+| 섹션 번호 ⑧~⑬ 연속 | ✅ | ✅ |
+| React key warning | 0건 ✅ | 0건 ✅ |
+| console error | 없음 ✅ | 없음 ✅ |
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TS: `tsc --noEmit` (output/ 필터링) | 0 errors ✅ |
+| ESLint (page.tsx) | 0 warnings ✅ |
+| forbidden pattern (Date.now/Math.random/navigator.clipboard/ffmpeg/output//upload/deploy) | 없음 ✅ |
+| prefetch={false} package-preview:708, money-shorts:163 | 유지 ✅ |
+| createEcosLiveTransport 신규 경로 | 없음 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+
+**[review-fix: package-preview-publishability-readiness-panel-v1-review-fix — 2026-06-26]**
+
+Fix: Codex 체크로 발견된 JSX comment + SectionCard title 번호 중복 수정.
+
+원인: 섹션 추가 후 re-number 과정에서 일부 번호 미수정.
+
+수정:
+- Line 1182: `{/* ⑨ Owner Gate */}` → `{/* ⑩ Owner Gate */}`
+- Line 1184: `title="⑨ Owner Decision Gate"` → `title="⑩ Owner Decision Gate"`
+- Line 1232: `{/* ⑩ Clipboard payload */}` → `{/* ⑪ Clipboard payload */}`
+- Line 1234: `title="⑩ Clipboard Payload 준비 상태"` → `title="⑪ Clipboard Payload 준비 상태"`
+- Line 1292: `{/* ⑪ Chart Card Package */}` → `{/* ⑫ Chart Card Package */}`
+- Line 1294: `title="⑪ Chart Card Package"` → `title="⑫ Chart Card Package"`
+- Line 1389: `{/* ⑪ Package view summary */}` → `{/* ⑬ Package view summary */}`
+- Line 1391: `title="⑫ Package View Summary"` → `title="⑬ Package View Summary"`
+
+최종 연속성: ⑧~⑬ (6개 섹션) ✅
+
+검증:
+- grep 섹션 번호: 중복 없음 ✅
+- ESLint: 0 warnings ✅
+- 패널 로직/gate 로직/route behavior/data contract: 변경 없음 ✅
+
 Do not resume:
 
 - Candidate10 / old Money Architect video improvement
