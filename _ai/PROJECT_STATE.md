@@ -97,8 +97,9 @@
 - Commit: `91f08a1` — `feat(owner-decision): add local publishability approval ledger`
 - Commit: `abe3d36` — `feat(package-preview): add ledger-approved overlay with current fact card revalidation`
 - Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
-- Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix` ← **현재 HEAD**
-- Branch: `codex/source-first-blueprint-clean` (ahead 55)
+- Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
+- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator` ← **현재 HEAD**
+- Branch: `codex/source-first-blueprint-clean` (ahead 56)
 - Push: 미실행
 
 ---

@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — state-sync post-commit
+## 2026-06-27 현재 — static guard check + overlay evaluator refactor
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -11,15 +11,15 @@ Owner 결정:
 - 각 쇼츠는 반드시 Fact Card를 먼저 만든 뒤 Video Blueprint와 대본으로 넘어간다.
 - AI는 Fact Card에 없는 숫자나 사실을 상상해서 대본을 쓰면 안 된다.
 
-최신 HEAD (doc checkpoint):
+최신 HEAD:
 
-- `8a8642b docs(state): update checkpoint state after ledger overlay and riskReview fix` ← **현재 HEAD**
+- `71f3a9b refactor(package-preview): extract ledger overlay evaluator` ← **현재 HEAD**
 
 최신 code checkpoint:
 
-- `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
-- `abe3d36 feat(package-preview): add ledger-approved overlay with current fact card revalidation` (이전)
-- branch: `codex/source-first-blueprint-clean` (ahead 55)
+- `71f3a9b refactor(package-preview): extract ledger overlay evaluator`
+- `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId` (이전)
+- branch: `codex/source-first-blueprint-clean` (ahead 56)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 

@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-ledger-overlay-evaluator-qa-v1`
+`package-preview-ledger-overlay-static-guard-check-v1-review-fix`
 
 ## Project
 
@@ -11,52 +11,37 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `8a8642b docs(state): update checkpoint state after ledger overlay and riskReview fix`
-- Recent code checkpoint: `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
-- Current pre-handoff `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 55]` plus modified `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, and unrelated `?? piq_diag_out.txt`
-- The modified `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` are the accepted docs-only state cleanup from the previous handoff; do not revert them.
+- Latest HEAD: `71f3a9b refactor(package-preview): extract ledger overlay evaluator`
+- Current pre-handoff `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 56]` plus modified `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, untracked `scripts/check-ledger-overlay-static.mjs`, and unrelated `?? piq_diag_out.txt`
+- The uncommitted static guard slice is accepted except for one review-fix below.
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
-## Goal
+## Review Finding To Fix
 
-Make the package-preview ledger-approved overlay easier to QA without touching the local ledger file by extracting the in-page guard/projection logic into a small pure server-side helper and using a typed inactive-message map for UI copy.
+`scripts/check-ledger-overlay-static.mjs` currently checks `ledger-overlay.ts` for `from "fs"` and `from "path"` only. That misses ESM built-in imports such as `from "node:fs"` or `from "node:path"`, so a future helper edit could add filesystem/path access while the static guard still passes.
 
-This is a QA/readiness slice. It must not introduce real `isPublishable=true` persistence or change the underlying safety behavior.
+Fix this by expanding the forbidden import checks to catch both bare and `node:` built-in imports for fs/path.
 
 ## Approved Scope
 
-1. Extract the existing `ledgerOverlayResult` guard/projection logic from `app/fact-cards/manual/package-preview/page.tsx` into a local route helper module, preferably:
-   - `app/fact-cards/manual/package-preview/ledger-overlay.ts`
-2. The helper should:
-   - accept a `FactCard`, `LocalApprovalRecord | null`, and deterministic options/IDs already used by the page
-   - return a discriminated union equivalent to the current `LedgerOverlayResult`
-   - preserve the four safety guards:
-     - no record -> inactive `no_record`
-     - current `factCard.isMock` -> inactive `mock_blocked`
-     - stale/mismatched audit fields or decision result -> inactive `ledger_stale_or_ineligible`
-     - re-run `evaluatePublishabilityDecision(... approved ...)`; if it fails -> inactive `ledger_stale_or_ineligible`
-   - build a memory-only `{ ...factCard, isPublishable: true }` clone only after all guards pass
-   - never mutate the original Fact Card
-   - never read/write `.money-shorts-local/`, `output/`, DB, env, clipboard, or any external API
-3. Move the inactive UI copy into an exhaustive typed map, for example:
-   - `LEDGER_OVERLAY_INACTIVE_MESSAGES: Record<LedgerOverlayInactiveReason, string>`
-   - use that map in `page.tsx` so all inactive reasons have visible copy and TypeScript enforces coverage
-4. Keep visible UI behavior equivalent unless a tiny wording clarification is needed.
-5. Update `_ai/CLAUDE_REPORT.md` only if useful to preserve concise QA evidence. If updated, keep it short.
-6. Update `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` only if reusable state changes; otherwise leave the previous docs cleanup intact.
+1. Update only `scripts/check-ledger-overlay-static.mjs` to catch:
+   - `from "fs"` / `from 'fs'`
+   - `from "node:fs"` / `from 'node:fs'`
+   - `from "path"` / `from 'path'`
+   - `from "node:path"` / `from 'node:path'`
+2. Keep the script no-dependency and deterministic.
+3. Do not edit `ledger-overlay.ts`, `page.tsx`, or other `app/`/`lib/` implementation files.
+4. Preserve the existing PASS/FAIL style.
+5. State docs from the previous slice (`_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`) may remain as-is unless this fix requires a tiny final note.
 
 ## Approved Editable Files
 
-- `app/fact-cards/manual/package-preview/page.tsx`
-- `app/fact-cards/manual/package-preview/ledger-overlay.ts` (new)
-- `_ai/CLAUDE_REPORT.md` only if useful
-- `_ai/NEXT_ACTION.md` only if reusable next-action state changes
-- `_ai/PROJECT_STATE.md` only if reusable project state changes
-- `_ai/HANDOFF_NOW.md` only for final status if needed
+- `scripts/check-ledger-overlay-static.mjs`
+- `_ai/HANDOFF_NOW.md` only if final status needs a tiny update
 
-Do not edit unrelated implementation files.
+Do not edit other files.
 
 ## Forbidden
 
@@ -65,6 +50,7 @@ Do not edit unrelated implementation files.
 - Do not run browser/dev-server route smoke for package-preview if it would read `.money-shorts-local/`.
 - Do not stage/commit/push.
 - Do not add dependencies or edit lockfiles.
+- Do not edit `package.json`.
 - Do not edit `.env*`, secrets, deployment config, DB/Supabase schema, migrations, or API credentials.
 - Do not call OpenAI/GPT, Gemini, Veo, ElevenLabs, KOSIS, OpenDART, FRED, ECOS live, or any live API.
 - Do not run ffmpeg, render, export, upload, post, deploy, or write to `output/`.
@@ -77,39 +63,29 @@ Run focused checks:
 
 1. `git status -sb`
 2. `git diff --stat`
-3. Focused diff review of changed implementation files
-4. `pnpm exec eslint app/fact-cards/manual/package-preview/page.tsx app/fact-cards/manual/package-preview/ledger-overlay.ts --max-warnings=0`
-5. Focused TypeScript check:
-   - run the existing project TypeScript check approach if practical, and report whether there are 0 errors in the changed package-preview files
-   - if full project check reports known unrelated `output/` or archive errors, explicitly filter/report only changed-file errors
-6. Static scenario matrix in the final report:
-   - `no_record`
-   - `mock_blocked`
-   - `ledger_stale_or_ineligible`
-   - active overlay path
-7. Confirm no implementation changed outside approved files.
-8. Confirm `piq_diag_out.txt` remains untracked and untouched.
+3. `node scripts/check-ledger-overlay-static.mjs`
+4. ESLint for the script:
+   - if `pnpm exec eslint scripts/check-ledger-overlay-static.mjs --max-warnings=0` hits the known non-TTY module purge issue, use `.\node_modules\.bin\eslint.cmd scripts/check-ledger-overlay-static.mjs --max-warnings=0`
+5. Static review that only approved files changed.
+6. Confirm `piq_diag_out.txt` remains untracked and untouched.
 
-No browser, live API, render, ffmpeg, output, DB, or clipboard checks are approved for this slice.
+No TypeScript, browser, live API, render, ffmpeg, output, DB, or clipboard checks are approved for this review-fix.
 
 ## Definition of Done
 
-- `page.tsx` uses the extracted helper instead of carrying the full inline overlay guard/projection block.
-- The helper preserves the existing safety behavior and memory-only clone invariant.
-- Inactive reason UI copy is covered by an exhaustive typed map.
-- Focused ESLint passes for changed implementation files.
-- Focused TypeScript evidence shows no errors in changed package-preview files.
-- No local ledger file/data is read or written during the task.
+- Static guard now catches `node:fs` and `node:path` imports in `ledger-overlay.ts`.
+- Static guard script still passes.
+- ESLint passes for the script.
+- No implementation files are changed.
 - No forbidden files or systems are touched.
-- Report whether this should be checkpoint committed after Codex review or bundled with one more related QA slice.
+- Report whether this small QA slice is ready for Codex checkpoint review.
 
 ## Final Report Format
 
 Report back to Codex in Korean with:
 
 - changed files
-- behavior preserved/changed
-- static scenario matrix
+- exact review-fix made
 - checks/results
 - deviations/blockers
 - final `git status -sb`
