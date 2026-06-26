@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-owner-publishability-controls-runtime-smoke-v1`
+`package-preview-live-publishability-controls-smoke-v1`
 
 ## Current State
 
@@ -10,42 +10,57 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `984ce2a feat(package-preview): add local publishability decision controls`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 48]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `fdd451b test(package-preview): record publishability controls runtime smoke`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 49]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
+Owner approval for this slice:
+
+- Owner selected **A. live non-mock publishability controls smoke 진행**.
+- ECOS live read-only route smoke is approved for this task only.
+- No persistence, approval, render, upload, DB, or clipboard write is approved.
+
 Recently completed:
 
-- Package preview has local-only `PublishabilityDecisionControls`.
-- The controls use browser local React state only.
-- The controls call `evaluatePublishabilityDecision()` to display eligibility.
-- No persistence, server action, API route, DB, render/export, upload, clipboard write, or `isPublishable=true` mutation has been added.
+- Local publishability decision controls passed runtime smoke on default/mock routes.
+- Mock routes remain NOT ELIGIBLE after approved click because `isMock=true`.
+- Server gate/copy readiness stayed unchanged by client controls.
 
 Important nuance:
 
-- This is a runtime smoke / state-sync slice.
-- Do not implement real Owner approval or persistence.
-- Do not add new controls beyond tiny usability/readability fixes if a smoke issue is found.
-- The goal is to prove the client sandbox cannot affect server gate/copy readiness.
+- This is a live route QA / state-sync slice, not an implementation slice.
+- The goal is to verify the `isMock=false` live candidate path:
+  - local controls approved -> `canMarkPublishable=ELIGIBLE` if all contract prerequisites pass
+  - server gate still blocked by `fact_card_not_publishable`
+  - server clipboard still not ready
+- Do not set `isPublishable=true`.
+- Do not persist anything.
 
 State-doc nuance:
 
-- `_ai/NEXT_ACTION.md` may still say `dcde9d5` is current HEAD or that the local controls are uncommitted.
-- Sync stale state to checkpoint `984ce2a` as part of this QA slice.
+- `_ai/NEXT_ACTION.md` may still say `984ce2a` is current HEAD or that previous smoke is uncommitted.
+- Sync stale state to checkpoint `fdd451b` as part of this QA slice.
 
 ## Goal
 
-Run focused runtime smoke for `/fact-cards/manual/package-preview` local publishability decision controls and sync `_ai` state to checkpoint `984ce2a`.
+Run read-only live route smoke for:
+
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+Validate local Owner publishability controls on a non-mock live Fact Card while proving server gate/copy remain draft-only.
 
 ## Approved Scope
 
-Allowed QA targets:
+Allowed QA target:
 
-- `/fact-cards/manual/package-preview`
-- `/fact-cards/manual/package-preview?candidate=base-rate`
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
 
-Allowed implementation file only if a small smoke bug is found:
+Allowed live external action:
+
+- ECOS read-only live route call triggered by the explicit route above.
+
+Allowed implementation file only if a tiny smoke bug is found:
 
 - `app/fact-cards/manual/package-preview/PublishabilityDecisionControls.tsx`
 - `app/fact-cards/manual/package-preview/page.tsx`
@@ -59,40 +74,46 @@ Allowed docs/state files:
 
 Expected QA:
 
-1. Start/reuse local dev server.
-2. Load default package preview.
-3. Confirm local Owner decision sandbox is visible.
-4. Confirm initial decision is pending/null and result is NOT ELIGIBLE.
-5. Click `approved`.
-6. Confirm result updates locally but does not make server gate/copy ready:
-   - local contract result may change based on fixture blockers
-   - server Owner Gate still shows `fact_card_not_publishable`
-   - server Clipboard Payload remains `copyReady=false`
-7. Repeat lightly on `?candidate=base-rate`.
+1. Start/reuse local dev server with `.env.local` available.
+2. Load `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`.
+3. Confirm live route renders a non-mock Fact Card:
+   - `sourceProviderId=provider-ecos-live`
+   - `isMock=false`
+   - `isPublishable=false`
+   - `dataPeriod=2026년 5월`
+   - `publishedDate=2025-05-29`
+4. Confirm local Owner decision sandbox initial state:
+   - pending/null
+   - NOT ELIGIBLE
+   - blocker includes `decision_pending`
+5. Click/select `approved`.
+6. Confirm local contract result:
+   - `canMarkPublishable=ELIGIBLE`
+   - no blocker codes
+   - `isMock=false`
+   - citationCount > 0
+   - sourceUrl https readiness OK
+7. Confirm server state remains unchanged:
+   - Owner Gate still shows `fact_card_not_publishable`
+   - Clipboard Payload remains `copyReady=false` / NOT READY
+   - package remains draft-only; no render/copy/publish action.
 8. Confirm no console errors or React key warnings.
-9. Confirm no storage/clipboard/network/render side effects.
-
-Expected current behavior:
-
-- default/manual fixture is `isMock=true`, so `approved` remains NOT ELIGIBLE with `mock_fact_card`.
-- base-rate mock is also `isMock=true`, so `approved` remains NOT ELIGIBLE with `mock_fact_card`.
-- live route is not required for this task.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `48`
+  - branch ahead `49`
   - untracked `piq_diag_out.txt`
   - tracked dirty `_ai/HANDOFF_NOW.md` from this Codex handoff update
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep server behavior deterministic.
-- No secret values or secret-bearing ECOS URLs printed.
+- Use `.env.local` only by normal app/dev-server loading. Do not print secret values.
+- Do not print secret-bearing ECOS API URLs.
 
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
-- No ECOS live call.
+- No ECOS calls beyond the explicit live route smoke above.
 - No ffmpeg execution.
 - No video/audio/image rendering or repository artifacts.
 - No OS clipboard writes.
@@ -115,13 +136,14 @@ Expected current behavior:
 Run focused checks:
 
 - `git status -sb`
-- runtime smoke:
-  - default route loads
-  - base-rate route loads
+- live route smoke:
+  - live route loads
   - local sandbox controls visible
-  - pending/null initial state visible
-  - approved click updates local result
-  - `mock_fact_card` blocker visible after approved on mock/default routes
+  - initial pending/null -> NOT ELIGIBLE with `decision_pending`
+  - approved click -> ELIGIBLE with no blocker codes
+  - live fact card is `isMock=false`
+  - citationCount > 0
+  - sourceUrl https readiness OK
   - server gate still has `fact_card_not_publishable`
   - server clipboard remains not ready
   - no React unique key warning
@@ -136,18 +158,10 @@ Run focused checks:
 - if code changed:
   - targeted TypeScript/source check for changed files
   - targeted ESLint for changed implementation files
-  - forbidden pattern search on changed implementation files:
-    - `Date.now`
-    - `Math.random`
-    - `navigator.clipboard`
-    - `localStorage`
-    - `sessionStorage`
-    - `ffmpeg`
-    - `output/`
-    - `upload`
-    - `deploy`
+  - forbidden pattern search on changed implementation files
 - secret safety:
   - no API key value printed
+  - no secret-bearing ECOS URL printed/rendered
   - no `.env*` modified/staged
 - untracked safety:
   - prove `piq_diag_out.txt` remains untracked and unstaged
@@ -157,9 +171,9 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Runtime smoke proves local sandbox controls work.
-- Runtime smoke proves client controls do not affect server gate/copy readiness.
-- `_ai` state is minimally synced to checkpoint `984ce2a`.
+- Live `isMock=false` route smoke confirms local approved decision can be ELIGIBLE.
+- Server gate/copy remains blocked/not ready.
+- `_ai` state is minimally synced to checkpoint `fdd451b`.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -171,4 +185,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this is reusable evidence before any real approval/persistence work.
+- Update `_ai/CLAUDE_REPORT.md` because this is reusable live non-mock acceptance evidence before real approval/persistence work.

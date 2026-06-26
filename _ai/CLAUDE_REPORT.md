@@ -2034,3 +2034,50 @@ QA-only slice. 코드 변경 없음.
 | piq_diag_out.txt untracked 유지 | ✅ |
 
 **결론:** local sandbox controls는 server gate/clipboard를 변경하지 않음 — 안전 경계 확인 완료.
+
+## Live Non-Mock Route Smoke (`package-preview-live-publishability-controls-smoke-v1` — 2026-06-26)
+
+QA-only slice. 코드 변경 없음.  
+`isMock=false` live ECOS Fact Card에서 approved 선택 시 ELIGIBLE 달성 확인.
+
+**live route:** `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+**Fact Card 확인:**
+| 항목 | 값 |
+|------|------|
+| sourceProviderId | provider-ecos-live ✅ |
+| isMock | false ✅ |
+| isPublishable | false ✅ |
+| dataPeriod | 2026년 5월 ✅ |
+| publishedDate | 2025-05-29 ✅ |
+
+**Local sandbox — pending(초기):**
+| 항목 | 값 |
+|------|------|
+| canMarkPublishable | NOT ELIGIBLE ✅ |
+| blockerCodes | decision_pending ✅ |
+
+**Local sandbox — approved 클릭 후:**
+| 항목 | 값 |
+|------|------|
+| canMarkPublishable | ELIGIBLE ✅ |
+| ownerDecision | approved ✅ |
+| blockerCodes | 없음 ✅ |
+| isMock | false ✅ |
+| citationCount | 2건 ✅ |
+| sourceUrl https:// | OK ✅ |
+
+**Server 불변성 (client controls 영향 없음):**
+| 항목 | 결과 |
+|------|------|
+| Owner Gate fact_card_not_publishable | 유지 ✅ |
+| Clipboard copyReady NOT READY | 유지 ✅ |
+
+**기타:**
+| 체크 | 결과 |
+|------|------|
+| console error/warning | 0건 ✅ |
+| API key/secret 미출력 | ✅ |
+| piq_diag_out.txt untracked 유지 | ✅ |
+
+**결론:** live `isMock=false` Fact Card에서 approved 선택 시 `canMarkPublishable=ELIGIBLE` 달성. 서버 gate/clipboard 불변 확인. 이 경로에서 실제 Owner approval/persistence 구현 준비 완료.
