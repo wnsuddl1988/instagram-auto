@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — package-preview-risk-review-subtitle-ts-fix-v1 진행 중
+## 2026-06-26 현재 — owner publishability local approval + overlay + TS fix committed
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,28 +13,29 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `abe3d36 feat(package-preview): add ledger-approved overlay with current fact card revalidation` ← **마지막 committed**
-- branch: `codex/source-first-blueprint-clean`
+- `6d5425d fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId` ← **현재 HEAD**
+- `abe3d36 feat(package-preview): add ledger-approved overlay with current fact card revalidation` (이전)
+- branch: `codex/source-first-blueprint-clean` (ahead 54)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
-현재 진행 중 (uncommitted):
-- `package-preview-risk-review-subtitle-ts-fix-v1`: TS 오류 `riskReview.riskReviewId` 제거
-  - `app/fact-cards/manual/package-preview/page.tsx` line 1136: `riskReviewId` → `riskReview.packageId` 교체
-  - TS check 통과 (riskReviewId 오류 해제)
-  - ESLint 0 warnings
-  - grep: `riskReview.riskReviewId` 0건, fake field 없음
+최근 완료 (committed):
 
-최근 완료 (uncommitted — checkpoint 대기):
-
-- `owner-publishability-local-approval-ledger-v1`: file-backed local approval ledger 구현
+- `6d5425d`: package-preview riskReview.packageId TS fix
+  - `app/fact-cards/manual/package-preview/page.tsx` line 1136: `riskReviewId` → `riskReview.packageId`
+  - RiskReviewResult 실제 타입 계약 사용, fake field 없음
+  - TS check 통과, ESLint 0 warnings
+- `abe3d36`: ledger-approved overlay + 4-guard revalidation
+  - current server-side Fact Card 재검증 (isMock, factCardId, audit fields, currentEligibility)
+  - 3-way inactive reason 구분 (no_record / mock_blocked / ledger_stale_or_ineligible)
+  - memory-only clone 생성 (original gateResult/clipboardPayload 불변)
+- `91f08a1`: owner publishability local approval ledger
   - `.gitignore` → `/.money-shorts-local/` 추가
   - `lib/owner-decision/local-approval-ledger.ts` (신규) — server-only fs 기반 ledger, atomic write
   - `lib/owner-decision/index.ts` — local-approval-ledger export 추가
   - `app/fact-cards/manual/package-preview/actions.ts` (신규) — Server Action recordApproval/getLedgerRecord
   - `app/fact-cards/manual/package-preview/LedgerStatusPanel.tsx` (신규) — Client Component
   - `app/fact-cards/manual/package-preview/page.tsx` — import 추가, 섹션 ⑧ LedgerStatusPanel 연결
-  - browser smoke: mock=비활성화, live=POST 200 + 파일 저장 + UI 반영 ✅
 
 최근 완료 (committed):
 
