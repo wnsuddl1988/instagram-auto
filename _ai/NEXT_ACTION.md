@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — package-preview-live-publishability-controls-smoke-v1 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-local-publishable-projection-v1-review-fix 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,15 +13,16 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `fdd451b test(package-preview): record publishability controls runtime smoke` ← **현재 HEAD**
+- `6e95cca test(package-preview): record live publishability controls smoke` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `package-preview-live-publishability-controls-smoke-v1`: QA-only, 코드 변경 없음. live isMock=false 경로에서 approved → ELIGIBLE 확인, server gate/clipboard 불변 증명
-- `package-preview-owner-publishability-controls-runtime-smoke-v1` (committed fdd451b): mock routes QA evidence
+- `package-preview-local-publishable-projection-v1-review-fix`: 3개 review-fix — projection 전용 ID, non-null assertion 제거(discriminated union), dry-run 링크 endPeriod 동적 전달
+- `package-preview-local-publishable-projection-v1`: page.tsx에 dry-run projection 패널 추가 (base implementation)
+- `package-preview-live-publishability-controls-smoke-v1` (committed 6e95cca): live isMock=false QA evidence
 
 최근 완료 (committed):
 

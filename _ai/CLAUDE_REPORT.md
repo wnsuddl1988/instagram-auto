@@ -2081,3 +2081,64 @@ QA-only slice. 코드 변경 없음.
 | piq_diag_out.txt untracked 유지 | ✅ |
 
 **결론:** live `isMock=false` Fact Card에서 approved 선택 시 `canMarkPublishable=ELIGIBLE` 달성. 서버 gate/clipboard 불변 확인. 이 경로에서 실제 Owner approval/persistence 구현 준비 완료.
+
+## Publishable Projection Dry-run (`package-preview-local-publishable-projection-v1` — 2026-06-26)
+
+`?publishabilityProjection=approved-dry-run` query flag로 memory-only projection 패널 추가.
+
+**변경 파일:**
+- `app/fact-cards/manual/package-preview/page.tsx` — searchParams 타입 확장, publishabilityProjection prop 추가, dry-run 로직 + 패널 JSX 추가
+
+**구현 요약:**
+- `isDryRunProjection = publishabilityProjection === "approved-dry-run"` — exact match만 활성화
+- `evaluatePublishabilityDecision(factCard, { decision: "approved", ... })` — eligibility 확인
+- `canMarkPublishable=true` 시 `const projectedFactCard = { ...factCard, isPublishable: true }` — memory-only clone (원본 불변)
+- projected clone으로 별도 pkg/review/gate/clipboard 계산
+- 패널: "dry-run only — not persisted", 원본 `isPublishable=false` 표시, projected 결과 표시
+- live 정상 경로에서 dry-run 링크 힌트 표시 (prefetch={false})
+- dry-run flag 없는 정상 경로는 기존 draft-only 유지
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check | 0 errors ✅ |
+| ESLint | 0 warnings ✅ |
+| 정상 live route — dry-run 패널 없음 | ✅ |
+| 정상 live route — server gate 차단 유지 | ✅ |
+| 정상 live route — dry-run 링크 힌트 표시 | ✅ |
+| dry-run route — 패널 "dry-run only — not persisted" | ✅ |
+| dry-run route — 원본 isPublishable=false 표시 | ✅ |
+| dry-run route — projectionEnabled=true | ✅ |
+| dry-run route — canMarkPublishable ELIGIBLE | ✅ |
+| dry-run route — projected isPublishable=true (memory-only clone) | ✅ |
+| dry-run route — projected canProceedToRender OPEN | ✅ |
+| dry-run route — projected copyReady READY | ✅ |
+| dry-run route — projected gate blockerCodes 없음 | ✅ |
+| dry-run route — server gate fact_card_not_publishable 유지 | ✅ |
+| console error/warning | 0건 ✅ |
+| factCard.isPublishable=true mutation (직접 대입) | 없음 ✅ |
+| localStorage/sessionStorage/navigator.clipboard | 없음 ✅ |
+| piq_diag_out.txt untracked 유지 | ✅ |
+
+**결론:** memory-only projection으로 gate/copy opening path 증명 완료. 원본 Fact Card 불변 확인.
+
+**[review-fix: package-preview-local-publishable-projection-v1-review-fix — 2026-06-26]**
+
+3개 review-fix 적용:
+1. dry-run projection 전용 ID 도입: `DRYRUN_CONTENT_PACKAGE_ID = cp-dryrun-{id}`, `DRYRUN_REVIEW_PACKET_ID = rp-dryrun-{id}`, `DRYRUN_GATE_RESULT_ID = gate-dryrun-{id}` — 정상 pipeline 아티팩트와 혼동 불가
+2. discriminated union `DryRunResult` 타입 도입으로 `projectedGate!` / `projectedClipboard!` non-null assertion 제거 — JSX에서 `dryRunProjectionResult.eligible` narrow 후 안전 접근
+3. dry-run 링크 `endPeriod` 하드코딩 제거 — `liveEndPeriod` prop으로 현재 route endPeriod 전달, `liveEndPeriod` 없으면 링크 미표시
+
+**검증 (review-fix):**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check | 0 errors ✅ |
+| ESLint | 0 warnings ✅ |
+| `projectedGate!` / `projectedClipboard!` grep | 0건 ✅ |
+| `factCard.isPublishable = true` mutation grep | 0건 ✅ |
+| dry-run 블록 MOCK_CONTENT/REVIEW_PACKET_ID 재사용 | 0건 ✅ |
+| prefetch={false} 유지 (line 793, 1376) | ✅ |
+| normal live route — dry-run 패널 없음, gate 차단 | ✅ |
+| normal live route — dry-run 링크 endPeriod=202606 동적 전달 | ✅ |
+| dry-run route — OPEN/READY/없음, server gate 차단 유지 | ✅ |
+| console error/warning | 0건 ✅ |

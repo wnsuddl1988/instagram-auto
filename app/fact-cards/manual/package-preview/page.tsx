@@ -403,11 +403,12 @@ const CANDIDATE_REGISTRY: Record<
 export default async function PackagePreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ candidate?: string; endPeriod?: string }>;
+  searchParams: Promise<{ candidate?: string; endPeriod?: string; publishabilityProjection?: string }>;
 }) {
   const params = await searchParams;
   const candidateKey = params.candidate ?? null;
   const endPeriod = params.endPeriod ?? null;
+  const publishabilityProjection = params.publishabilityProjection ?? null;
 
   // ── Live ECOS latest candidate path (explicit query only) ──────────────────
   // Activated only when ?candidate=ecos-live-latest is present.
@@ -484,6 +485,8 @@ export default async function PackagePreviewPage({
           publishedDate: draftResult.verifiedPublishedDate ?? "",
           dataPeriod: liveAuthoringResult.factCard.dataPeriod,
         }}
+        publishabilityProjection={publishabilityProjection}
+        liveEndPeriod={endPeriod}
       />
     );
   }
@@ -521,6 +524,8 @@ export default async function PackagePreviewPage({
       candidateLabel={candidateLabel}
       isLive={false}
       liveProvenance={null}
+      publishabilityProjection={publishabilityProjection}
+      liveEndPeriod={null}
     />
   );
 }
@@ -543,12 +548,16 @@ function PackagePreviewContent({
   candidateLabel,
   isLive,
   liveProvenance,
+  publishabilityProjection,
+  liveEndPeriod,
 }: {
   authoringResult: ManualFactCardAuthoringResult;
   candidateKey: string | null;
   candidateLabel: string | null;
   isLive: boolean;
   liveProvenance: LiveProvenance | null;
+  publishabilityProjection: string | null;
+  liveEndPeriod: string | null;
 }) {
   const factCard = authoringResult.factCard!;
 
@@ -603,6 +612,65 @@ function PackagePreviewContent({
   const clipboardPayload = buildClipboardPayload(reviewPacket, gateResult, {
     createdAt: MOCK_CREATED_AT,
   });
+
+  // ── Publishable projection dry-run (approved-dry-run flag only) ─────────────
+  // Only activated when ?publishabilityProjection=approved-dry-run is explicitly present.
+  // Creates a memory-only projected clone — never mutates the original factCard.
+  const isDryRunProjection = publishabilityProjection === "approved-dry-run";
+
+  // Fix 1: projection-specific IDs to avoid audit confusion with normal pipeline artifacts.
+  const DRYRUN_CONTENT_PACKAGE_ID = `cp-dryrun-${factCard.id}`;
+  const DRYRUN_REVIEW_PACKET_ID = `rp-dryrun-${factCard.id}`;
+  const DRYRUN_GATE_RESULT_ID = `gate-dryrun-${factCard.id}`;
+
+  // Fix 2: discriminated union — no non-null assertions needed in JSX.
+  type DryRunResult =
+    | { eligible: false; eligibilityCheck: ReturnType<typeof evaluatePublishabilityDecision> }
+    | {
+        eligible: true;
+        eligibilityCheck: ReturnType<typeof evaluatePublishabilityDecision>;
+        projectedGate: ReturnType<typeof evaluateOwnerDecision>;
+        projectedClipboard: ReturnType<typeof buildClipboardPayload>;
+      };
+
+  const dryRunProjectionResult: DryRunResult | null = isDryRunProjection
+    ? (() => {
+        // Check contract eligibility first — decision:"approved" on the real factCard.
+        const eligibilityCheck = evaluatePublishabilityDecision(
+          factCard,
+          { factCardId: factCard.id, decision: "approved", notes: "dry-run projection" },
+          { decisionResultId: `pub-decision-dryrun-${factCard.id}`, createdAt: MOCK_CREATED_AT },
+        );
+        if (!eligibilityCheck.canMarkPublishable) {
+          return { eligible: false, eligibilityCheck } satisfies DryRunResult;
+        }
+        // Memory-only projected clone — original factCard is not mutated.
+        const projectedFactCard = { ...factCard, isPublishable: true };
+        const projectedPkg = assembleContentPackage(
+          projectedFactCard,
+          { videoId: MOCK_VIDEO_ID, createdAt: MOCK_CREATED_AT },
+          { contentPackageId: DRYRUN_CONTENT_PACKAGE_ID, createdAt: MOCK_CREATED_AT, measuredAudioDurationSec: MOCK_AUDIO_DURATION_SEC },
+        );
+        const projectedReview = generateReviewPacket(projectedPkg, {
+          reviewPacketId: DRYRUN_REVIEW_PACKET_ID,
+          createdAt: MOCK_CREATED_AT,
+        });
+        const projectedGate = evaluateOwnerDecision(
+          projectedReview,
+          {
+            reviewPacketId: DRYRUN_REVIEW_PACKET_ID,
+            decision: "approved",
+            notes: "dry-run projection — Owner 실제 승인 없음",
+            decidedAt: MOCK_DECIDED_AT,
+          },
+          { gateResultId: DRYRUN_GATE_RESULT_ID, createdAt: MOCK_CREATED_AT },
+        );
+        const projectedClipboard = buildClipboardPayload(projectedReview, projectedGate, {
+          createdAt: MOCK_CREATED_AT,
+        });
+        return { eligible: true, eligibilityCheck, projectedGate, projectedClipboard } satisfies DryRunResult;
+      })()
+    : null;
 
   // Publishability decision contract — read-only evaluation with decision=null (pending).
   // Never passes "approved" or sets isPublishable=true; only reports current eligibility.
@@ -1238,6 +1306,80 @@ function PackagePreviewContent({
           {/* Local Owner Decision Sandbox */}
           <SectionLabel>Owner Decision 로컬 샌드박스</SectionLabel>
           <PublishabilityDecisionControls factCard={factCard} />
+
+          {/* Publishable Projection Dry-run — activated by ?publishabilityProjection=approved-dry-run only */}
+          {isDryRunProjection && dryRunProjectionResult && (
+            <>
+              <SectionLabel>Publishable Projection Dry-run</SectionLabel>
+              <div className="rounded border border-violet-700/40 bg-violet-950/30 px-3 py-3 text-xs space-y-2">
+                <div className="rounded border border-violet-700/30 bg-violet-900/20 px-2.5 py-2 text-violet-200/80 leading-relaxed">
+                  <span className="font-semibold text-violet-300">dry-run only — not persisted</span>
+                  {" — "}
+                  원본 Fact Card는 <span className="font-mono text-violet-300">isPublishable=false</span> 유지.
+                  render · export · upload · clipboard write 없음.
+                </div>
+                {!dryRunProjectionResult.eligible ? (
+                  <div className="space-y-0">
+                    <div className="text-red-300 font-medium mb-1">projection 불가 — contract blockerCodes:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {dryRunProjectionResult.eligibilityCheck.blockerCodes.map((c) => (
+                        <span key={c} className="inline-block px-1.5 py-0.5 rounded font-mono text-xs bg-red-900/20 text-red-300 border border-red-700/30">{c}</span>
+                      ))}
+                    </div>
+                  </div>
+                ) : dryRunProjectionResult.eligible ? (
+                  <div className="space-y-0">
+                    <div className="flex items-center gap-2 py-0.5 border-b border-violet-800/30">
+                      <span className="text-slate-500 w-44 shrink-0">projectionEnabled</span>
+                      <span className="font-mono text-violet-300">true</span>
+                    </div>
+                    <div className="flex items-center gap-2 py-0.5 border-b border-violet-800/30">
+                      <span className="text-slate-500 w-44 shrink-0">canMarkPublishable</span>
+                      <StatusPill ok={dryRunProjectionResult.eligibilityCheck.canMarkPublishable} trueLabel="ELIGIBLE" falseLabel="NOT ELIGIBLE" />
+                    </div>
+                    <div className="flex items-center gap-2 py-0.5 border-b border-violet-800/30">
+                      <span className="text-slate-500 w-44 shrink-0">projected isPublishable</span>
+                      <span className="font-mono text-emerald-300">true</span>
+                      <span className="text-slate-600 text-xs ml-1">(memory-only clone)</span>
+                    </div>
+                    <div className="flex items-center gap-2 py-0.5 border-b border-violet-800/30">
+                      <span className="text-slate-500 w-44 shrink-0">projected canProceedToRender</span>
+                      <StatusPill ok={dryRunProjectionResult.projectedGate.canProceedToRender} trueLabel="OPEN" falseLabel="BLOCKED" />
+                    </div>
+                    <div className="flex items-center gap-2 py-0.5 border-b border-violet-800/30">
+                      <span className="text-slate-500 w-44 shrink-0">projected copyReady</span>
+                      <StatusPill ok={dryRunProjectionResult.projectedClipboard.copyReady} trueLabel="READY" falseLabel="NOT READY" />
+                    </div>
+                    <div className="flex items-start gap-2 py-0.5">
+                      <span className="text-slate-500 w-44 shrink-0 pt-0.5">projected gate blockerCodes</span>
+                      <span className="flex flex-wrap gap-1">
+                        {dryRunProjectionResult.projectedGate.blockerCodes.length === 0
+                          ? <span className="text-emerald-400">없음</span>
+                          : dryRunProjectionResult.projectedGate.blockerCodes.map((c) => (
+                              <span key={c} className="inline-block px-1.5 py-0.5 rounded font-mono text-xs bg-violet-900/20 text-violet-300 border border-violet-700/30">{c}</span>
+                            ))
+                        }
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          )}
+
+          {/* Dry-run link hint — only when live route with a known endPeriod and no dry-run active */}
+          {isLive && !isDryRunProjection && candidateKey && liveEndPeriod && (
+            <div className="mt-2 text-xs text-slate-500">
+              projection 미리보기:{" "}
+              <Link
+                href={`/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=${liveEndPeriod}&publishabilityProjection=approved-dry-run`}
+                prefetch={false}
+                className="text-violet-400 hover:text-violet-300 underline"
+              >
+                ?publishabilityProjection=approved-dry-run
+              </Link>
+            </div>
+          )}
         </SectionCard>
 
         {/* ⑨ Review Packet */}
