@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-chart-card-visual-preview-v1`
+`package-preview-chart-card-visual-preview-qa-v1`
 
 ## Current State
 
@@ -10,93 +10,77 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `a69e497 feat(package-preview): show chart card props in package preview`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 41]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `5368566 feat(package-preview): add css chart card visual previews`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 42]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- ECOS base-rate unchanged wording now uses "동결/변동 없음" style copy for `changeValue === 0`.
-- Package preview now exposes existing `pkg.chartCardPackage` data-only props:
-  - package ids
-  - card count
-  - number/comparison/source/cta card props
-  - dimensions
-- No canvas, ffmpeg, image, video, or output files were generated.
-- Current package-preview section is still mostly raw data rows, not a visual 9:16 preview.
+- Package preview now shows CSS-only 9:16 visual previews for chart-card props.
+- It added local preview components for:
+  - number card
+  - comparison card
+  - source card
+  - CTA card
+- Existing raw chart-card props remain visible.
+- No canvas, ffmpeg, image/video/audio rendering, output files, or external AI calls were introduced.
+- Browser/curl smoke passed, but visual screenshot check was not fully completed because screenshot tooling timed out.
 
 Important nuance:
 
-- This task is still not video rendering.
-- The goal is a browser UI preview of deterministic card props, using CSS/HTML only.
-- Do not create image files, canvas exports, screenshots as repo artifacts, mp4s, or output files.
-- `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` may still describe `a69e497` as pending or omit it; sync state in this slice if touched.
+- This is a QA/state-sync slice, not a new feature slice.
+- The goal is to verify the visual preview does not look broken on desktop/mobile widths.
+- Browser screenshots are allowed only as transient QA evidence; do not save screenshots or generated images into the repo.
+- `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` may still describe `5368566` as pending or omit it; sync state in this slice if touched.
 
 ## Goal
 
-Add a CSS-only 9:16 visual preview for existing chart-card props inside `/fact-cards/manual/package-preview`, so Owner can inspect what the number/comparison/source cards would look like before any render pipeline exists.
+Run focused visual QA for the CSS-only chart-card preview surfaces and minimally sync `_ai` state to checkpoint `5368566`.
 
 Primary target:
 
-- The preview should be clearly labeled as **visual preview only**.
-- It should use existing `pkg.chartCardPackage.cards`.
-- It should not generate media or files.
-- It should help validate layout/readability for shorts-style vertical cards.
+- Verify `/fact-cards/manual/package-preview?candidate=base-rate` renders:
+  - Chart Card Package section
+  - CSS-only visual previews
+  - improved "동결" copy
+  - no obvious overlap or overflow on desktop and mobile/narrow widths
+- Verify default package preview still renders.
 
 ## Approved Scope
 
 Allowed:
 
-- Modify:
-  - `app/fact-cards/manual/package-preview/page.tsx`
+- Start or reuse a local Next.js dev server.
+- Browser/DOM/screenshot QA for:
+  - `/fact-cards/manual/package-preview`
+  - `/fact-cards/manual/package-preview?candidate=base-rate`
+- Use desktop and mobile/narrow viewports if tooling supports it.
+- Use transient screenshots or browser snapshots for inspection only.
+- Update if useful:
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Add small local display components/helpers inside the page file:
-  - `ChartCardVisualPreview`
-  - `NumberCardVisual`
-  - `ComparisonCardVisual`
-  - `SourceCardVisual`
-  - `CtaCardVisual`
-  - or equivalent names
-- Use CSS/HTML only.
-- Use stable 9:16 aspect ratio for preview surfaces.
-- Make text readable and prevent overlap:
-  - constrained heights
-  - wrapping
-  - conservative font sizes
-  - no viewport-width font scaling
-- Use existing card props only:
-  - no invented values
-  - no forecast/advice copy
-  - no new source strings beyond already available props
-- Preserve existing raw props section.
-- Preserve default/mock/live route behavior.
-- Preserve live route draft-only gate behavior.
-- State sync:
-  - record latest checkpoint `a69e497`
-  - mark chart-card props section as checkpointed
-  - record this visual preview slice as uncommitted until checkpointed.
+- If a concrete visual bug is found and the fix is tightly scoped, modify:
+  - `app/fact-cards/manual/package-preview/page.tsx`
+- Keep fixes minimal and related only to layout/readability/overflow.
 
 Not required:
 
-- Do not create a separate route.
+- Do not inspect or navigate the live ECOS route unless needed for a narrowly scoped regression check.
+- Do not add new components beyond small layout fixes.
+- Do not implement actual rendering/export.
 - Do not add dependencies.
-- Do not use canvas/SVG export/image generation.
-- Do not implement screenshot saving.
-- Do not implement actual Remotion/ffmpeg/video templates.
-- Do not change chart-card generator semantics.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `41`
+  - branch ahead `42`
   - untracked `piq_diag_out.txt`
   - no tracked dirty files except this handoff doc if Codex has just updated it.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep displayed cards source-first:
+- Keep visual preview source-first:
   - no invented values
   - no forecast/advice
   - no render/publish claim
@@ -106,7 +90,7 @@ Not required:
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
 - No ffmpeg execution.
-- No video/audio/image rendering.
+- No video/audio/image rendering or repository artifacts.
 - No OS clipboard writes.
 - No DB/Supabase reads, writes, migrations, or production changes.
 - No API route changes.
@@ -125,35 +109,35 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted ESLint for changed app file(s)
-- focused TypeScript check for changed app file(s)
-- route/browser smoke:
+- route/browser QA:
   - `/fact-cards/manual/package-preview` loads
   - `/fact-cards/manual/package-preview?candidate=base-rate` loads
-  - Chart Card Package section still shows raw props
-  - new visual preview surfaces render for number/comparison/source cards
-  - base-rate number visual includes improved "동결" wording or equivalent
+  - Chart Card Package section visible
+  - visual preview surfaces visible for number/comparison/source cards
+  - base-rate number visual includes `동결`
   - no React unique key warning
-  - no obvious text overlap on desktop width
-- mobile/narrow smoke if practical:
-  - preview surfaces remain within container
-  - text does not overflow outside card bounds
+  - no obvious console error
+  - desktop width: no obvious text overlap or card overflow
+  - mobile/narrow width: preview surfaces stay within container and text remains clipped/wrapped professionally
 - static safety:
-  - no new `createEcosLiveTransport` path outside explicit live branch
   - package-preview live selector still has `prefetch={false}`
   - money-shorts hub live link still has `prefetch={false}`
+  - no new `createEcosLiveTransport` path outside explicit live branch
+- if code changed:
+  - targeted ESLint
+  - focused TypeScript check
+  - forbidden pattern search on changed app file(s):
+    - `Date.now`
+    - `Math.random`
+    - `navigator.clipboard`
+    - `ffmpeg`
+    - `output/`
+    - `upload`
+    - `deploy`
 - secret safety:
   - no API key value printed
   - no `.env*` modified/staged
   - no secret-bearing ECOS URL printed or rendered
-- forbidden pattern search on changed app file(s):
-  - `Date.now`
-  - `Math.random`
-  - `navigator.clipboard`
-  - `ffmpeg`
-  - `output/`
-  - `upload`
-  - `deploy`
 - untracked safety:
   - prove `piq_diag_out.txt` remains untracked and unstaged
 - final `git status -sb`
@@ -162,16 +146,12 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Package preview has CSS-only 9:16 visual previews for chart-card props.
-- Raw chart-card props remain inspectable.
-- Base-rate unchanged case shows improved "동결/변동 없음" wording in visual/card text.
-- No media files, images, video, ffmpeg, output, or external AI calls are created.
-- Default/mock/live route behavior does not regress.
-- Live route remains draft-only and gate-pending.
-- `_ai` state no longer says latest checkpoint is older than `a69e497` or that chart-card props section is uncommitted.
+- Visual QA evidence confirms chart-card CSS previews are usable on desktop and mobile/narrow widths, or records exact blockers.
+- If a small layout fix was needed, it is scoped and verified.
+- `_ai` state no longer says latest checkpoint is older than `5368566` or that visual preview is uncommitted.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
-- Final handoff reports changed files, checks/results, route evidence, visual-preview evidence, deviations/risks, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, route evidence, visual QA evidence, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -180,4 +160,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this adds the first visual preview surface for chart-card props.
+- Update `_ai/CLAUDE_REPORT.md` because visual QA evidence is reusable for the next template/render decision.

@@ -13,7 +13,7 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `a69e497 feat(package-preview): show chart card props in package preview` ← **현재 HEAD**
+- `5368566 feat(package-preview): add css chart card visual previews` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
@@ -73,6 +73,14 @@ Owner 결정:
 
 - `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
 - live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-visual-preview-qa-v1)
+
+`package-preview-chart-card-visual-preview-qa-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `CardShell` fixed width 160px 추가 — flex shrink 버그 수정
+- desktop/mobile QA PASS: 카드 160×284px, overflow 없음
+- TS/ESLint/console 경고 없음
 
 ## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-visual-preview-v1)
 

@@ -1782,6 +1782,21 @@ next action: `dev-server-default-route-alignment-v1` — 개발서버 기본 진
 
 ## Retired Active Routes
 
+## Package Preview Chart Card Visual Preview QA (`package-preview-chart-card-visual-preview-qa-v1` — 2026-06-26)
+
+QA 결과 + layout fix 1건.
+
+**발견된 문제**: `CardShell` (`w-full` + `maxWidth: 180px`)가 flex 부모에서 59-81px으로 수축됨 — 부모 flex-col 컨테이너가 내용 너비로 줄어들어 `w-full`이 의도한 180px 대신 부모 너비를 따랐음.
+
+**Fix**: `style={{ aspectRatio: "9/16", width: "160px", minWidth: "160px", maxWidth: "180px" }}`로 명시적 fixed width 추가.
+
+브라우저 QA 결과:
+- desktop (1280px): 카드 3장 160×284px ✅, overflow 없음 ✅
+- mobile (375px): 카드 3장 160×284px, right=193 < 375 ✅, container 안에 유지 ✅
+- `?candidate=base-rate`: "동결" 문구 visual card에 표시 ✅
+- React/console warning: 0 ✅
+- TS 0 errors, ESLint 0 warnings ✅
+
 Do not resume:
 
 - Candidate10 / old Money Architect video improvement

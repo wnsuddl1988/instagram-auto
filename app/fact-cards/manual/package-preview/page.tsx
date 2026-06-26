@@ -209,7 +209,7 @@ function CardShell({ children, accentClass }: { children: React.ReactNode; accen
   return (
     <div
       className={`relative w-full overflow-hidden rounded-lg border ${accentClass} bg-slate-950`}
-      style={{ aspectRatio: "9/16", maxWidth: "180px" }}
+      style={{ aspectRatio: "9/16", width: "160px", minWidth: "160px", maxWidth: "180px" }}
     >
       <div className="absolute inset-0 flex flex-col p-3 text-white overflow-hidden">
         {children}
