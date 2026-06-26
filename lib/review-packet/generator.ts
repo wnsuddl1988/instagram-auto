@@ -46,6 +46,7 @@ export function generateReviewPacket(
     cautionNote: factCard.cautionNote,
     allowedClaimsCount: factCard.allowedClaims.length,
     blockedClaimsCount: factCard.blockedClaims.length,
+    isPublishable: factCard.isPublishable,
   };
 
   // Blueprint summary

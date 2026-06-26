@@ -25,7 +25,8 @@ export type GateBlockerCode =
   | "decision_revision_requested"
   | "qa_not_ready"
   | "risk_blocked"
-  | "review_packet_id_mismatch";
+  | "review_packet_id_mismatch"
+  | "fact_card_not_publishable";
 
 /** The result of evaluating an Owner decision against a review packet. */
 export interface OwnerDecisionGateResult {

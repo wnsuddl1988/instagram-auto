@@ -30,6 +30,13 @@ export function evaluateOwnerDecision(
     blockerCodes.push("review_packet_id_mismatch");
   }
 
+  // Fact Card publishability — must be true before any render/copy path is allowed.
+  // This fires regardless of Owner decision so draft-only Fact Cards can never
+  // accidentally become render-ready when an approval decision is supplied.
+  if (packet.factCard.isPublishable !== true) {
+    blockerCodes.push("fact_card_not_publishable");
+  }
+
   // Decision check — only "approved" passes; all other values block.
   if (input.decision === "approved") {
     // no decision blocker

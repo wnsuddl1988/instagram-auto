@@ -1797,6 +1797,35 @@ QA 결과 + layout fix 1건.
 - React/console warning: 0 ✅
 - TS 0 errors, ESLint 0 warnings ✅
 
+## Owner Decision Publishability Gate (`owner-decision-publishability-gate-v1` — 2026-06-26)
+
+`FactCard.isPublishable === false`인 경우 Owner 승인 여부와 무관하게 `canProceedToRender=false`를 강제하는 safety gate 추가.
+
+**변경 파일:**
+- `lib/review-packet/types.ts`: `ReviewFactCardSummary`에 `isPublishable: boolean` 필드 추가 (JSDoc 포함)
+- `lib/review-packet/generator.ts`: `factCardSummary` 빌드 시 `isPublishable: factCard.isPublishable` 추가
+- `lib/owner-decision/types.ts`: `GateBlockerCode` union에 `"fact_card_not_publishable"` 추가
+- `lib/owner-decision/gate.ts`: `evaluateOwnerDecision()` 내 reviewPacketId 검사 직후, decision 검사 이전에 publishability 체크 추가 — `packet.factCard.isPublishable !== true` → `blockerCodes.push("fact_card_not_publishable")`
+- `app/fact-cards/manual/package-preview/page.tsx`: `fact_card_not_publishable` blocker 시 red warning note 표시, non-live mock note 문구 갱신
+
+**브라우저 smoke 결과:**
+| Route | fact_card_not_publishable | canProceedToRender | copyReady |
+|-------|--------------------------|-------------------|-----------|
+| default (가계부채) | ✅ 표시 | BLOCKED ✅ | false ✅ |
+| `?candidate=base-rate` | ✅ 표시 | BLOCKED ✅ | false ✅ |
+
+- React key warning: 0건 ✅
+- console error: 없음 ✅
+- `buildClipboardPayload` → `copyReady=false` 자연 전파 (gate.canProceedToRender=false) ✅
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TS: `tsc -p tsconfig.json --noEmit` (review-packet/owner-decision/package-preview 필터) | 0 errors ✅ |
+| ESLint (4개 lib 파일 + page.tsx) | 0 warnings ✅ |
+| forbidden pattern (fetch/Date.now/Math.random/clipboard/ffmpeg/output/deploy) | 없음 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+
 Do not resume:
 
 - Candidate10 / old Money Architect video improvement

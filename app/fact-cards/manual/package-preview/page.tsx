@@ -1058,13 +1058,18 @@ function PackagePreviewContent({
                   ))
             }
           />
+          {gateResult.blockerCodes.includes("fact_card_not_publishable") && (
+            <div className="mt-2 text-xs text-red-300 border border-red-800/30 bg-red-900/10 rounded px-3 py-2">
+              <span className="font-semibold">fact_card_not_publishable</span> — Fact Card의 isPublishable=false입니다. Owner 승인과 무관하게 render/copy 경로가 차단됩니다. Fact Card를 publishable 상태로 전환해야 이 blocker가 해제됩니다.
+            </div>
+          )}
           {isLive ? (
             <div className="mt-2 text-xs text-blue-300 border border-blue-800/30 bg-blue-900/10 rounded px-3 py-2">
               draft-only 후보 — decision=null (pending). isPublishable=false이므로 Owner 결정 전까지 gate가 차단됩니다. 실제 승인 UI가 없습니다.
             </div>
           ) : (
             <div className="mt-2 text-xs text-amber-300 border border-amber-800/30 bg-amber-900/10 rounded px-3 py-2">
-              로컬 preview: decision=&quot;approved&quot; mock 값 사용 — 실제 Owner 승인이 아닙니다.
+              로컬 preview: decision=&quot;approved&quot; mock 값 사용 — 실제 Owner 승인이 아닙니다. Fact Card isPublishable=false이므로 gate는 계속 차단 상태입니다.
             </div>
           )}
         </SectionCard>

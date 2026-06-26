@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — chart card visual preview 완료, checkpoint 대기
+## 2026-06-26 현재 — owner-decision-publishability-gate-v1 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,16 +13,16 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `5368566 feat(package-preview): add css chart card visual previews` ← **현재 HEAD**
+- `41f4c25 fix(package-preview): stabilize chart card visual preview width` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `package-preview-chart-card-visual-preview-v1`: CSS-only 9:16 visual preview 추가, TS/ESLint PASS, smoke PASS
+- `owner-decision-publishability-gate-v1`: FactCard.isPublishable=false → gate 차단 보장, TS/ESLint PASS, browser smoke PASS (default + base-rate)
 
-최근 완료:
+최근 완료 (committed):
 
 - `money-shorts-os-auto-fact-card-candidate-v1`: checkpoint `d85b616`
   - mock ECOS `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard()` 경로
@@ -49,65 +49,23 @@ Owner 결정:
   - BOK source-date provenance를 rawPayload와 citation에 보존
   - candidate validation 실패 시 `draft_ready` 금지 (`blocked_candidate_validation_failed`)
 
-## 최근 완료 (2026-06-26 추가)
+### 최신 committed 5개 작업 (2026-06-26, ecos-base-rate-wording ~ owner-decision-gate-qa)
 
-`money-shorts-os-package-preview-live-latest-candidate-v1` + review-fix: checkpoint `b11ebb0`
+- `92f545b fix(source-facts): improve unchanged base-rate wording`
+- `a69e497 feat(package-preview): show chart card props in package preview`
+- `5368566 feat(package-preview): add css chart card visual previews`
+- `41f4c25 fix(package-preview): stabilize chart card visual preview width`
+- `101c22e feat(money-shorts): add live latest draft entrypoint to hub`
 
-- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` live route 연결
-- default/mock route ECOS 호출 없이 기존 동작 유지
-- live provenance card 표시: `provider-ecos-live`, `isMock=false`, `isPublishable=false`, `publishedDate=2025-05-29`, `dataPeriod=2026년 5월`
-- BOK source-date citation 노출 (`bok.or.kr/portal/singl/baseRate`)
-- review-fix: `dataPeriod` `factCard.dataPeriod` 사용으로 보정, `async` 제거
+## 최근 완료 (2026-06-26 추가 — owner-decision-publishability-gate-v1)
 
-## 최근 완료 (2026-06-26 추가 — dev-server-default-route-alignment-v1)
+`owner-decision-publishability-gate-v1`: uncommitted (Codex checkpoint 승인 대기)
 
-`dev-server-default-route-alignment-v1`: checkpoint `7d28921`
-
-- `app/page.tsx`: old AutoShorts AI "use client" UI → server `redirect("/money-shorts")` 교체
-- `app/layout.tsx`: metadata title/description → Money Shorts OS 기준으로 변경
-- `app/money-shorts/page.tsx`: 헤더 subline "외부 API 없음" → "외부 API 없음 (live 경로 제외)" 최소 보정
-
-## 최근 완료 (2026-06-26 추가 — money-shorts-hub-live-latest-entrypoint-v1)
-
-`money-shorts-hub-live-latest-entrypoint-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
-- live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
-
-## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-visual-preview-qa-v1)
-
-`package-preview-chart-card-visual-preview-qa-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `CardShell` fixed width 160px 추가 — flex shrink 버그 수정
-- desktop/mobile QA PASS: 카드 160×284px, overflow 없음
-- TS/ESLint/console 경고 없음
-
-## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-visual-preview-v1)
-
-`package-preview-chart-card-visual-preview-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `app/fact-cards/manual/package-preview/page.tsx`: CSS-only 9:16 visual preview 추가
-- `CardShell`/`NumberCardVisual`/`ComparisonCardVisual`/`SourceCardVisual`/`CtaCardVisual` 컴포넌트 추가
-- base-rate에서 "동결" 문구 visual card에 표시 확인
-- canvas/ffmpeg/output 없음, TS/ESLint/console 경고 없음
-
-## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-props-section-v1)
-
-`package-preview-chart-card-props-section-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `app/fact-cards/manual/package-preview/page.tsx`: "⑩ Chart Card Package" 섹션 추가
-- `pkg.chartCardPackage` 전체 data-only 표시 (number/comparison/source/cta card)
-- `?candidate=base-rate`에서 interpretationNote "동결" 문구 확인
-- TS/ESLint/console 경고 없음
-
-## 최근 완료 (2026-06-26 추가 — ecos-base-rate-unchanged-copy-quality-v1)
-
-`ecos-base-rate-unchanged-copy-quality-v1`: uncommitted (Codex checkpoint 승인 대기)
-
-- `lib/source-facts/candidates.ts`: `ecosBaseRateParser` + `ecosBaseRateLiveParser` 모두 `chg === 0` 분기 추가
-- `changeValue === 0`일 때 interpretation: "...동결했다. 직전 발표 대비 변동은 ..." 사용
-- `changeValue !== 0`일 때: 기존 "조정했다" 문구 유지
-- TS/ESLint 통과
+- `lib/review-packet/types.ts`: `ReviewFactCardSummary.isPublishable: boolean` 추가
+- `lib/review-packet/generator.ts`: `isPublishable: factCard.isPublishable` 전파
+- `lib/owner-decision/types.ts`: `GateBlockerCode`에 `"fact_card_not_publishable"` 추가
+- `lib/owner-decision/gate.ts`: reviewPacketId 검사 직후 publishability 체크 → decision 검사 이전에 차단
+- `app/fact-cards/manual/package-preview/page.tsx`: `fact_card_not_publishable` blocker red note 표시, non-live mock note 갱신
 
 ## 다음 safe work unit
 

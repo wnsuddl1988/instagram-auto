@@ -21,6 +21,8 @@ export interface ReviewFactCardSummary {
   cautionNote: string;
   allowedClaimsCount: number;
   blockedClaimsCount: number;
+  /** Propagated directly from FactCard.isPublishable. False for all draft candidates. */
+  isPublishable: boolean;
 }
 
 /** Compact blueprint summary. */
