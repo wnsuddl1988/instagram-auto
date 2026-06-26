@@ -1133,7 +1133,7 @@ function PackagePreviewContent({
         {/* ⑤ Risk Review */}
         <SectionCard
           title="④ Risk Review"
-          subtitle={`riskReviewId: ${riskReview.riskReviewId ?? "—"}`}
+          subtitle={`riskPackageId: ${riskReview.packageId}`}
           color={riskReview.isBlocked ? "red" : "emerald"}
         >
           <FieldRow

@@ -2325,3 +2325,21 @@ QA-only slice. 코드 변경 없음.
 | console error | 0건 ✅ |
 | `fact_card_not_publishable` 원본 gate 유지 | ✅ |
 | `piq_diag_out.txt` | untracked 유지 ✅ |
+
+## Risk Review Subtitle TS Fix (`package-preview-risk-review-subtitle-ts-fix-v1` — 2026-06-26)
+
+**변경 파일:**
+- `app/fact-cards/manual/package-preview/page.tsx` line 1136
+
+**수정 내용:**
+- `subtitle={`riskReviewId: ${riskReview.riskReviewId ?? "—"}`}` → `subtitle={`riskPackageId: ${riskReview.packageId}`}`
+- `RiskReviewResult` 실제 계약 필드 `packageId` 사용 (없는 `riskReviewId` 제거)
+- fake `riskReviewId` 필드 추가 없음
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (riskReviewId 오류) | 0건 ✅ |
+| ESLint (page.tsx) | 0 warnings ✅ |
+| `riskReview.riskReviewId` 잔존 grep | 0건 ✅ |
+| risk-review type에 fake field | 없음 ✅ |

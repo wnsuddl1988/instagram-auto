@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — package-preview-ledger-approved-overlay-v1 구현 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-risk-review-subtitle-ts-fix-v1 진행 중
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,17 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `91f08a1 feat(owner-decision): add local publishability approval ledger` ← **마지막 committed**
+- `abe3d36 feat(package-preview): add ledger-approved overlay with current fact card revalidation` ← **마지막 committed**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
-현재 uncommitted 변경:
-- `app/fact-cards/manual/package-preview/page.tsx` — ledger-approved overlay 패널 + review-fix (4단계 guard 강화) (+168 lines from HEAD)
-- `_ai/CLAUDE_REPORT.md`, `_ai/NEXT_ACTION.md` — evidence 갱신
+현재 진행 중 (uncommitted):
+- `package-preview-risk-review-subtitle-ts-fix-v1`: TS 오류 `riskReview.riskReviewId` 제거
+  - `app/fact-cards/manual/package-preview/page.tsx` line 1136: `riskReviewId` → `riskReview.packageId` 교체
+  - TS check 통과 (riskReviewId 오류 해제)
+  - ESLint 0 warnings
+  - grep: `riskReview.riskReviewId` 0건, fake field 없음
 
 최근 완료 (uncommitted — checkpoint 대기):
 
