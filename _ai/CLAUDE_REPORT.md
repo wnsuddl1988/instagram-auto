@@ -2223,3 +2223,105 @@ QA-only slice. 코드 변경 없음.
 | live — "✓ 로컬 승인 기록 존재" UI 표시 | ✅ |
 | mock — "Mock Fact Card — 기록 불가" 비활성화 | ✅ |
 | console error | 0건 ✅ |
+
+## Ledger-Approved Overlay (`package-preview-ledger-approved-overlay-v1` — 2026-06-26)
+
+### 구현 내용
+
+`app/fact-cards/manual/package-preview/page.tsx` — 섹션 ⑧ Publishability Readiness 하단에 "로컬 승인 Overlay (Ledger 기반)" 패널 추가.
+
+**Overlay 활성 조건:**
+- `initialLedgerRecord !== null`
+- `initialLedgerRecord.decisionResult.canMarkPublishable === true`
+- `initialLedgerRecord.audit.isMock === false`
+
+**Overlay 비활성 조건 (셋 중 하나라도):**
+- 레저 기록 없음 → "Ledger 기록 없음 — 로컬 승인 기록 후 reload하면 overlay가 활성화됩니다."
+- `canMarkPublishable=false` 또는 `isMock=true` → eligible 조건 미충족 안내 표시
+
+**Overlay 활성 시 표시 내용:**
+- `approvalId` (ledger record 연결)
+- `overlayContentPackageId = cp-ledger-overlay-{factCard.id}` (MOCK_*, DRYRUN_* ID와 구분)
+- `overlayReviewPacketId = rp-ledger-overlay-{factCard.id}`
+- `overlayGateResultId = gate-ledger-overlay-{factCard.id}`
+- `overlay projected isPublishable: true` (memory-only clone 명시)
+- `overlay canProceedToRender: OPEN`
+- `overlay blockerCodes: []`
+- `overlay copyReady: READY`
+- 원본 server gate `fact_card_not_publishable` 유지 안내 (표시 전용 overlay임을 명시)
+
+**Safety invariants:**
+- `overlayFactCard = { ...factCard, isPublishable: true }` — memory-only clone, 원본 `factCard` 불변
+- overlay 변수(`overlayGate`, `overlayClipboard`)는 원본 `gateResult`, `clipboardPayload`를 절대 대체하지 않음
+- `LedgerOverlayResult` discriminated union 타입 — `active: false | { active: true, overlayGate, overlayClipboard, approvalId }`
+- `Date.now()` / `new Date()` / `Math.random()` 없음
+- `navigator.clipboard` / `localStorage` / `sessionStorage` 없음
+- `isMock=true` ledger record는 overlay 활성화 불가 (mock safety guard)
+
+### 검증 결과
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 필터) | 0 errors ✅ |
+| ESLint (page.tsx, --max-warnings=0) | 0 warnings ✅ |
+| `isPublishable = true` (mutation) grep | 0건 ✅ (overlayFactCard 클론 내부만) |
+| `Date.now` / `new Date(` / `Math.random` | 0건 ✅ |
+| `navigator.clipboard` / `localStorage` / `sessionStorage` | 0건 ✅ |
+| OVERLAY_* ID 정의 및 JSX 참조 일치 | ✅ |
+| 원본 `gateResult` / `clipboardPayload` 불변 | ✅ |
+| pre-existing TS error (riskReviewId) | 이번 변경 전부터 존재 — 관련 없음 ✅ |
+| `piq_diag_out.txt` | untracked 유지 ✅ |
+
+**diff stat:** `app/fact-cards/manual/package-preview/page.tsx` +123 lines (overlay logic + JSX)
+
+**[review-fix: package-preview-ledger-approved-overlay-v1-review-fix — 2026-06-26]**
+
+### Fix 1 — Revalidate current Fact Card before opening ledger overlay
+
+`app/fact-cards/manual/package-preview/page.tsx` overlay IIFE 강화:
+
+**추가된 guard 순서 (4단계):**
+
+1. **no_record**: `initialLedgerRecord` 없음 → inactive
+2. **mock_blocked**: `factCard.isMock === true` → inactive (현재 server-side Fact Card가 mock이면 차단)
+3. **ledger_stale_or_ineligible**: ledger record와 현재 Fact Card 7개 audit 필드 대조
+   - `rec.factCardId !== factCard.id`
+   - `rec.decisionResult.factCardId !== factCard.id`
+   - `rec.decisionResult.ownerDecision !== "approved"`
+   - `!rec.decisionResult.canMarkPublishable`
+   - `rec.audit.isMock !== factCard.isMock`
+   - `rec.audit.sourceName !== factCard.sourceName`
+   - `rec.audit.sourceUrl !== factCard.sourceUrl`
+   - `rec.audit.primarySourceProviderId !== factCard.primarySourceProviderId`
+   - `rec.audit.citationCount !== factCard.citations.length`
+   - `rec.audit.publishedDate !== factCard.publishedDate`
+   - `rec.audit.dataPeriod !== factCard.dataPeriod`
+4. **currentEligibility re-check**: `evaluatePublishabilityDecision(factCard, { decision: "approved" })` 재실행 → `canMarkPublishable=false`이면 inactive
+
+모든 guard 통과 후에만 `{ ...factCard, isPublishable: true }` memory-only clone 생성.
+
+**inactive UI copy 개선 (3가지 reason 구분):**
+- `no_record` → "Ledger 기록 없음 — 로컬 승인 기록 후 reload하면 overlay가 활성화됩니다."
+- `mock_blocked` → "Mock Fact Card — overlay 비활성화 (isMock=true Fact Card는 승인 불가)."
+- `ledger_stale_or_ineligible` → "Ledger 기록이 있지만 현재 Fact Card와 불일치하거나 재검증 실패 — overlay 비활성화 (stale/hand-edited ledger 또는 현재 Fact Card eligibility 실패)."
+
+**LedgerOverlayInactiveReason** discriminated union 타입 추가로 JSX에서 타입 안전하게 narrowing.
+
+### 검증 (review-fix)
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 필터) | 0 errors ✅ |
+| ESLint (page.tsx, --max-warnings=0) | 0 warnings ✅ |
+| `factCard.isMock` guard 위치 | page.tsx:729 ✅ |
+| `factCardId !== factCard.id` 체크 | page.tsx:734-735 ✅ |
+| audit 필드 7개 대조 | page.tsx:738-744 ✅ |
+| `currentEligibility` re-check | page.tsx:749-761 ✅ |
+| `isPublishable = true` mutation | 0건 ✅ (클론 내부만) |
+| `Date.now` / `new Date(` / `Math.random` | 0건 ✅ |
+| `navigator.clipboard` / `localStorage` / `sessionStorage` | 0건 ✅ |
+| 브라우저 smoke (default route) | "로컬 승인 Overlay" DOM 렌더 ✅, `no_record` inactive 메시지 ✅ |
+| 브라우저 smoke (base-rate route) | `no_record` inactive (ledger 파일 없음, Guard 1 정상) ✅ |
+| console error | 0건 ✅ |
+| `fact_card_not_publishable` 원본 gate 유지 | ✅ |
+| `piq_diag_out.txt` | untracked 유지 ✅ |

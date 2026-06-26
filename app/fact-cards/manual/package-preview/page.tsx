@@ -700,6 +700,104 @@ function PackagePreviewContent({
       })()
     : null;
 
+  // ── Ledger-approved overlay ──────────────────────────────────────────────────
+  // Activated only when a valid local approval ledger record exists for this Fact Card.
+  // Uses a memory-only clone — never mutates factCard, never persists isPublishable=true.
+  const OVERLAY_CONTENT_PACKAGE_ID = `cp-ledger-overlay-${factCard.id}`;
+  const OVERLAY_REVIEW_PACKET_ID = `rp-ledger-overlay-${factCard.id}`;
+  const OVERLAY_GATE_RESULT_ID = `gate-ledger-overlay-${factCard.id}`;
+
+  type LedgerOverlayInactiveReason =
+    | "no_record"
+    | "ledger_stale_or_ineligible"
+    | "mock_blocked";
+
+  type LedgerOverlayResult =
+    | { active: false; reason: LedgerOverlayInactiveReason }
+    | {
+        active: true;
+        overlayGate: ReturnType<typeof evaluateOwnerDecision>;
+        overlayClipboard: ReturnType<typeof buildClipboardPayload>;
+        approvalId: string;
+      };
+
+  const ledgerOverlayResult: LedgerOverlayResult = (() => {
+    // Guard 1 — no ledger record at all
+    if (!initialLedgerRecord) return { active: false, reason: "no_record" };
+
+    // Guard 2 — current server-side Fact Card must be non-mock
+    if (factCard.isMock) return { active: false, reason: "mock_blocked" };
+
+    // Guard 3 — ledger record must reference the current Fact Card exactly
+    const rec = initialLedgerRecord;
+    const auditMismatch =
+      rec.factCardId !== factCard.id ||
+      rec.decisionResult.factCardId !== factCard.id ||
+      rec.decisionResult.ownerDecision !== "approved" ||
+      !rec.decisionResult.canMarkPublishable ||
+      rec.audit.isMock !== factCard.isMock ||
+      rec.audit.sourceName !== factCard.sourceName ||
+      rec.audit.sourceUrl !== factCard.sourceUrl ||
+      rec.audit.primarySourceProviderId !== factCard.primarySourceProviderId ||
+      rec.audit.citationCount !== factCard.citations.length ||
+      rec.audit.publishedDate !== factCard.publishedDate ||
+      rec.audit.dataPeriod !== factCard.dataPeriod;
+    if (auditMismatch) return { active: false, reason: "ledger_stale_or_ineligible" };
+
+    // Guard 4 — re-run evaluatePublishabilityDecision against current Fact Card
+    // with approved decision; overlay only opens when this passes now.
+    const currentEligibility = evaluatePublishabilityDecision(
+      factCard,
+      {
+        factCardId: factCard.id,
+        decision: "approved",
+        notes: `re-validation at overlay open — ledger approvalId: ${rec.approvalId}`,
+      },
+      {
+        decisionResultId: `pub-overlay-revalidate-${factCard.id}`,
+        createdAt: MOCK_CREATED_AT,
+      },
+    );
+    if (!currentEligibility.canMarkPublishable) {
+      return { active: false, reason: "ledger_stale_or_ineligible" };
+    }
+
+    // All guards passed — build memory-only publishable clone. Original factCard is NOT mutated.
+    const overlayFactCard = { ...factCard, isPublishable: true };
+    const overlayPkg = assembleContentPackage(
+      overlayFactCard,
+      { videoId: MOCK_VIDEO_ID, createdAt: MOCK_CREATED_AT },
+      {
+        contentPackageId: OVERLAY_CONTENT_PACKAGE_ID,
+        createdAt: MOCK_CREATED_AT,
+        measuredAudioDurationSec: MOCK_AUDIO_DURATION_SEC,
+      },
+    );
+    const overlayReview = generateReviewPacket(overlayPkg, {
+      reviewPacketId: OVERLAY_REVIEW_PACKET_ID,
+      createdAt: MOCK_CREATED_AT,
+    });
+    const overlayGate = evaluateOwnerDecision(
+      overlayReview,
+      {
+        reviewPacketId: OVERLAY_REVIEW_PACKET_ID,
+        decision: "approved",
+        notes: `로컬 승인 ledger — approvalId: ${initialLedgerRecord.approvalId}`,
+        decidedAt: initialLedgerRecord.recordedAt,
+      },
+      { gateResultId: OVERLAY_GATE_RESULT_ID, createdAt: MOCK_CREATED_AT },
+    );
+    const overlayClipboard = buildClipboardPayload(overlayReview, overlayGate, {
+      createdAt: MOCK_CREATED_AT,
+    });
+    return {
+      active: true,
+      overlayGate,
+      overlayClipboard,
+      approvalId: initialLedgerRecord.approvalId,
+    };
+  })();
+
   // Publishability decision contract — read-only evaluation with decision=null (pending).
   // Never passes "approved" or sets isPublishable=true; only reports current eligibility.
   const publishabilityDecision = evaluatePublishabilityDecision(
@@ -1417,6 +1515,76 @@ function PackagePreviewContent({
             recordApprovalAction={recordApprovalAction}
             initialRecord={initialLedgerRecord}
           />
+
+          {/* Ledger-Approved Overlay — memory-only projection from local ledger record */}
+          <SectionLabel>로컬 승인 Overlay (Ledger 기반)</SectionLabel>
+          {ledgerOverlayResult.active ? (
+            <div className="rounded border border-emerald-700/40 bg-emerald-950/30 px-3 py-3 text-xs space-y-2">
+              <div className="text-emerald-300 font-bold mb-1">
+                ✓ 로컬 승인 기록 기반 — memory-only overlay (원본 Fact Card 불변)
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">approvalId (ledger)</span>
+                <span className="font-mono text-emerald-300 break-all">{ledgerOverlayResult.approvalId}</span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlayContentPackageId</span>
+                <span className="font-mono text-slate-400 text-xs break-all">{OVERLAY_CONTENT_PACKAGE_ID}</span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlayReviewPacketId</span>
+                <span className="font-mono text-slate-400 text-xs break-all">{OVERLAY_REVIEW_PACKET_ID}</span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlayGateResultId</span>
+                <span className="font-mono text-slate-400 text-xs break-all">{OVERLAY_GATE_RESULT_ID}</span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlay projected isPublishable</span>
+                <span className="font-mono text-emerald-300">true</span>
+                <span className="text-slate-600 text-xs ml-1">(memory-only clone)</span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlay canProceedToRender</span>
+                <StatusPill ok={ledgerOverlayResult.overlayGate.canProceedToRender} trueLabel="OPEN" falseLabel="BLOCKED" />
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlay blockerCodes</span>
+                <span className={`font-mono text-xs ${ledgerOverlayResult.overlayGate.blockerCodes.length === 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  {ledgerOverlayResult.overlayGate.blockerCodes.length === 0
+                    ? "[]"
+                    : ledgerOverlayResult.overlayGate.blockerCodes.join(", ")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlay copyReady</span>
+                <StatusPill ok={ledgerOverlayResult.overlayClipboard.copyReady} trueLabel="READY" falseLabel="NOT READY" />
+              </div>
+              <div className="flex items-center gap-2 py-0.5 border-b border-emerald-800/30">
+                <span className="text-slate-500 w-44 shrink-0">overlay copyBlockerCodes</span>
+                <span className={`font-mono text-xs ${ledgerOverlayResult.overlayClipboard.blockerCodes.length === 0 ? "text-emerald-300" : "text-red-300"}`}>
+                  {ledgerOverlayResult.overlayClipboard.blockerCodes.length === 0
+                    ? "[]"
+                    : ledgerOverlayResult.overlayClipboard.blockerCodes.join(", ")}
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-slate-600">
+                원본 server gate: <span className="text-red-400 font-mono">fact_card_not_publishable</span> 유지 — 이 overlay는 표시 전용입니다.
+              </div>
+            </div>
+          ) : (
+            <div className="rounded border border-slate-700/40 bg-slate-800/20 px-3 py-2 text-xs text-slate-500">
+              {ledgerOverlayResult.reason === "no_record" && (
+                "Ledger 기록 없음 — 로컬 승인 기록 후 reload하면 overlay가 활성화됩니다."
+              )}
+              {ledgerOverlayResult.reason === "mock_blocked" && (
+                "Mock Fact Card — overlay 비활성화 (isMock=true Fact Card는 승인 불가)."
+              )}
+              {ledgerOverlayResult.reason === "ledger_stale_or_ineligible" && (
+                "Ledger 기록이 있지만 현재 Fact Card와 불일치하거나 재검증 실패 — overlay 비활성화 (stale/hand-edited ledger 또는 현재 Fact Card eligibility 실패)."
+              )}
+            </div>
+          )}
         </SectionCard>
 
         {/* ⑨ Review Packet */}

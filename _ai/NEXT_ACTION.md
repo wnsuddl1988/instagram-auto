@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — package-preview-local-publishable-projection-v1-review-fix 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-ledger-approved-overlay-v1 구현 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,10 +13,14 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `ce987ee feat(package-preview): add local publishable projection dry run` ← **현재 HEAD (committed)**
+- `91f08a1 feat(owner-decision): add local publishability approval ledger` ← **마지막 committed**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
+
+현재 uncommitted 변경:
+- `app/fact-cards/manual/package-preview/page.tsx` — ledger-approved overlay 패널 + review-fix (4단계 guard 강화) (+168 lines from HEAD)
+- `_ai/CLAUDE_REPORT.md`, `_ai/NEXT_ACTION.md` — evidence 갱신
 
 최근 완료 (uncommitted — checkpoint 대기):
 
