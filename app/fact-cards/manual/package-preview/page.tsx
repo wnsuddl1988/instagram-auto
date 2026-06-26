@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublishabilityDecisionControls } from "./PublishabilityDecisionControls";
 import { validHouseholdDebtResult } from "@/lib/source-facts/manual-fixtures";
 import { generatedBaseRateResult } from "@/lib/source-facts/candidates";
 import { assembleContentPackage } from "@/lib/content-package/assembler";
@@ -1233,6 +1234,10 @@ function PackagePreviewContent({
               }
             />
           </div>
+
+          {/* Local Owner Decision Sandbox */}
+          <SectionLabel>Owner Decision 로컬 샌드박스</SectionLabel>
+          <PublishabilityDecisionControls factCard={factCard} />
         </SectionCard>
 
         {/* ⑨ Review Packet */}

@@ -1979,3 +1979,36 @@ Do not resume:
 | piq_diag_out.txt | untracked 유지 ✅ |
 
 **diff stat:** `app/fact-cards/manual/package-preview/page.tsx` +80 lines (subsection JSX + import)
+
+## Owner Decision 로컬 샌드박스 (`package-preview-owner-publishability-decision-controls-v1` — 2026-06-26)
+
+local-only Owner publishability decision controls 추가.
+
+**변경/신규 파일:**
+- `app/fact-cards/manual/package-preview/PublishabilityDecisionControls.tsx` (신규 client component)
+- `app/fact-cards/manual/package-preview/page.tsx` — import + `<PublishabilityDecisionControls factCard={factCard} />` 삽입
+
+**구현 내용:**
+- `"use client"` — local React state only (`useState` for decision + notes)
+- decision 선택: pending(null) / approved / rejected / revision_requested — segmented buttons
+- optional notes input
+- `evaluatePublishabilityDecision()` 실시간 결과 표시: canMarkPublishable / ownerDecision / blockerCodes / isMock / citationCount / sourceUrl https:// readiness
+- safety banner: "local sandbox only — 저장·발행·렌더·복사·DB 변경 없음"
+- server gateResult / clipboardPayload 영향 없음 (서버 컴포넌트 측 데이터 불변)
+- `Date.now()` / `Math.random()` / `localStorage` / `sessionStorage` / `navigator.clipboard` / `isPublishable=true` 없음
+- `STATIC_CREATED_AT = "2026-06-26T00:00:00+09:00"` — 결정론적 상수
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check | 0 errors ✅ |
+| ESLint (page.tsx + controls) | 0 warnings ✅ |
+| `/fact-cards/manual/package-preview` 로드 | ✅ |
+| 로컬 샌드박스 controls 렌더 | ✅ |
+| pending/approved/rejected/revision_requested 버튼 | ✅ |
+| approved 클릭 → mock_fact_card 블로커 → NOT ELIGIBLE | ✅ (mock fixture 계약 정확) |
+| 서버 gate fact_card_not_publishable 유지 | ✅ |
+| console error/warning 0건 | ✅ |
+| forbidden pattern 0건 (localStorage/sessionStorage/clipboard/ffmpeg/output/upload/deploy/Date.now/Math.random) | ✅ |
+| isPublishable=true 설정 없음 | ✅ |
+| piq_diag_out.txt untracked 유지 | ✅ |

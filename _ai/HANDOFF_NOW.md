@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-publishability-decision-readonly-v1`
+`package-preview-owner-publishability-decision-controls-v1`
 
 ## Current State
 
@@ -10,46 +10,44 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `c7009ee feat(owner-decision): add publishability decision contract`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 46]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `dcde9d5 feat(package-preview): show publishability decision contract`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 47]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- `evaluatePublishabilityDecision(factCard, input, options?)` exists in `lib/owner-decision/publishability.ts`.
-- The helper is deterministic and does not mutate Fact Cards.
-- It only reports whether a real Owner decision would allow marking a Fact Card publishable.
-- Package preview already has `⑧ Publishability Readiness`.
+- `evaluatePublishabilityDecision()` exists as the source-of-truth contract for whether an Owner decision would allow marking a Fact Card publishable.
+- Package preview shows the contract as read-only current-state evidence with `decision=null`.
+- No real approval UI, persistence, render/export, clipboard write, DB, or API route has been added.
 
 Important next-step nuance:
 
-- Do **not** create a fake `"approved"` Owner decision in UI.
-- Do **not** set or persist `FactCard.isPublishable=true`.
-- Do **not** add an interactive approval button yet.
-- This slice should only wire the new contract into package preview as a read-only current-state evaluation and condition checklist.
+- This slice may add **local-only Owner decision controls** so the Owner can inspect contract outcomes in the browser.
+- The controls must not persist anything.
+- The controls must not mutate the Fact Card or set `isPublishable=true`.
+- The controls must not update the server-side gate, clipboard payload, or render readiness.
+- The controls must not upload/render/copy/write.
 
 State-doc nuance:
 
-- `_ai/NEXT_ACTION.md` may still say `d3e0a79` is current HEAD or that the publishability decision contract is uncommitted.
-- Sync stale state to checkpoint `c7009ee` as part of this implementation slice.
+- `_ai/NEXT_ACTION.md` may still say `c7009ee` is current HEAD or that the read-only contract UI is uncommitted.
+- Sync stale state to checkpoint `dcde9d5` as part of this implementation slice.
 
 ## Goal
 
-Expose the publishability decision contract in `/fact-cards/manual/package-preview` as read-only evidence.
+Add a local-only Owner publishability decision control to `/fact-cards/manual/package-preview`.
 
-The Owner should be able to see:
+The Owner should be able to select a decision locally (`pending`, `approved`, `rejected`, `revision_requested`) and see what `evaluatePublishabilityDecision()` would return, without changing any package state.
 
-- current publishability decision state is pending/null
-- which contract blockers are currently active
-- which factual prerequisites are satisfied
-- why this screen still does not mark the Fact Card publishable
+This is an inspection/sandbox control, not a publish action.
 
 ## Approved Scope
 
-Allowed implementation file:
+Allowed implementation files:
 
 - `app/fact-cards/manual/package-preview/page.tsx`
+- `app/fact-cards/manual/package-preview/PublishabilityDecisionControls.tsx` (new client component, if useful)
 
 Allowed docs/state files:
 
@@ -60,49 +58,50 @@ Allowed docs/state files:
 
 Expected implementation direction:
 
-1. Import `evaluatePublishabilityDecision` from `@/lib/owner-decision/publishability`.
-2. In `PackagePreviewContent`, create a deterministic read-only result with:
-   - `decision: null`
-   - `factCardId: factCard.id`
-   - `notes: null`
-   - stable `decisionResultId` derived from `factCard.id`
-   - stable `createdAt` using existing deterministic constants, not `Date.now()`
-3. Add a compact read-only subsection inside or immediately after `⑧ Publishability Readiness`.
-4. Display:
-   - `decisionResultId`
-   - `ownerDecision=null`
-   - `canMarkPublishable=false`
-   - blocker codes from `publishabilityDecision.blockerCodes`
+1. Prefer adding a small client component for local controls:
+   - `"use client"`
+   - receives the serializable `factCard`
+   - uses local React state only
+   - imports/uses `evaluatePublishabilityDecision()`
+2. Controls:
+   - segmented buttons or select for decision: pending/null, approved, rejected, revision_requested
+   - optional local notes textarea/input if simple
+3. Display result:
+   - `canMarkPublishable`
+   - blocker codes
+   - `ownerDecision`
    - `isMock`
    - `citationCount`
-   - `sourceUrl` / `https://` readiness
-   - `isAlreadyPublishable`
-5. Add a short warning/notice:
-   - This is contract evaluation only.
-   - It does not approve, mutate, persist, render, export, or write to clipboard.
-   - A real Owner approval UI must supply the Owner decision later.
-6. Keep current gate/readiness behavior unchanged.
-7. Keep section numbering stable unless a new top-level section is truly needed. Prefer a subsection to avoid renumber churn.
+   - `sourceUrl` readiness
+4. Make the safety boundary explicit in UI:
+   - local preview only
+   - no mutation
+   - no persistence
+   - no render/export/upload/clipboard write
+5. Keep server-rendered `Publishability Decision Contract (읽기 전용)` subsection intact.
+6. Add the local controls next to/under that subsection in `⑧ Publishability Readiness`.
+7. Do not renumber top-level sections.
 
 Not required:
 
-- No approval controls.
-- No query param for fake approval.
-- No `"approved"` simulation.
-- No `isPublishable=true` path.
-- No Fact Card cloning or persistence.
-- No DB/API route/localStorage.
-- No render/export/clipboard action.
+- No actual publishable Fact Card creation.
+- No `isPublishable=true` mutation.
+- No server action.
+- No API route.
+- No localStorage/sessionStorage.
+- No DB/Supabase.
+- No clipboard write.
+- No render/export/upload.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `46`
+  - branch ahead `47`
   - untracked `piq_diag_out.txt`
   - tracked dirty `_ai/HANDOFF_NOW.md` from this Codex handoff update
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep all behavior deterministic. No `Date.now()`/`Math.random()`.
+- Keep deterministic server behavior. Client local state is allowed only for UI inspection.
 - No secret values or secret-bearing ECOS URLs printed.
 
 ## Forbidden
@@ -122,8 +121,8 @@ Not required:
 - No commit unless Codex explicitly authorizes it later.
 - Do not touch `piq_diag_out.txt`.
 - Do not set or persist `FactCard.isPublishable=true`.
-- Do not add Owner approval UI.
-- Do not create a fake approved Owner decision path.
+- Do not modify server `gateResult` or `clipboardPayload` based on client controls.
+- Do not create a fake server-side approved Owner decision path.
 - Do not resume retired video routes or old render loops.
 
 ## Required Checks
@@ -132,28 +131,31 @@ Run focused checks:
 
 - `git status -sb`
 - targeted TypeScript/source check for changed files or existing focused no-output pattern
-- targeted ESLint for `app/fact-cards/manual/package-preview/page.tsx`
+- targeted ESLint for changed implementation files
 - route/static smoke:
   - `/fact-cards/manual/package-preview` loads
   - `/fact-cards/manual/package-preview?candidate=base-rate` loads
   - Publishability Readiness panel still appears
-  - read-only publishability decision result appears
-  - `ownerDecision=null`
-  - `canMarkPublishable=false`
-  - mock/default routes show appropriate blockers such as `decision_pending` and/or `mock_fact_card`
-  - existing `fact_card_not_publishable` gate blocker remains visible
-  - Chart Card visual preview still appears
+  - read-only contract subsection still appears
+  - local Owner decision controls appear
+  - selecting `approved` updates only the local contract result display
+  - server gate still shows `fact_card_not_publishable`
+  - server clipboard payload remains not ready
   - no React unique key warning
   - no obvious console error
 - static safety:
-  - no `"approved"` input passed to `evaluatePublishabilityDecision` in `page.tsx`
-  - no `isPublishable=true` assignment in `page.tsx`
+  - no server-side `"approved"` input passed to `evaluatePublishabilityDecision` in `page.tsx`
+  - no `isPublishable=true` assignment in changed files
+  - no localStorage/sessionStorage
+  - no server action/API route
   - package-preview live selector still has `prefetch={false}`
   - money-shorts hub live link still has `prefetch={false}`
-- forbidden pattern search on changed implementation file:
+- forbidden pattern search on changed implementation files:
   - `Date.now`
   - `Math.random`
   - `navigator.clipboard`
+  - `localStorage`
+  - `sessionStorage`
   - `ffmpeg`
   - `output/`
   - `upload`
@@ -169,11 +171,11 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Package preview shows the publishability decision contract as read-only current-state evidence.
-- The UI does not simulate approved Owner decision.
-- The UI does not set or persist `isPublishable=true`.
-- Existing gate/readiness/chart-card behavior remains intact.
-- `_ai` state is minimally synced to checkpoint `c7009ee`.
+- Package preview includes local-only Owner publishability decision controls.
+- Controls use `evaluatePublishabilityDecision()` and local state only.
+- Controls do not mutate/persist/approve/render/export/upload/copy.
+- Server gate and clipboard payload remain unchanged by client controls.
+- `_ai` state is minimally synced to checkpoint `dcde9d5`.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -185,4 +187,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this connects the publishability contract into the Owner review workflow.
+- Update `_ai/CLAUDE_REPORT.md` because this is the first local Owner decision control before real approval/persistence.
