@@ -1510,6 +1510,45 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
 
+## Live Latest Draft Owner Acceptance Smoke (`live-latest-draft-owner-acceptance-smoke-v1` — 2026-06-26)
+
+**Acceptance Verdict: PASS (with noted quality gap)**
+
+Route smoke:
+- `/money-shorts` → `200` ✅
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` → `200` ✅
+
+Source-first field evidence (렌더된 HTML 기준):
+| 항목 | 값 | 결과 |
+|------|-----|------|
+| sourceProviderId | `provider-ecos-live` | ✅ |
+| isMock | `false` | ✅ |
+| isPublishable | `false` | ✅ |
+| dataPeriod | `2026년 5월` | ✅ |
+| publishedDate | `2025-05-29` | ✅ |
+| ECOS citation | `citation-generated-raw-ecos-722Y001-0101000-202605` | ✅ |
+| BOK source-date citation | `citation-source-date-raw-ecos-722Y001-0101000-202605`, `bok.or.kr/portal/singl/baseRate` | ✅ |
+| publishedDate 안내 | "ECOS period에서 유도된 날짜가 아닙니다. BOK value matching으로 검증" | ✅ |
+
+Gate/Copy readiness:
+| 항목 | 값 | 결과 |
+|------|-----|------|
+| ownerDecision | `null (pending)` | ✅ |
+| decision_pending blocker | 1회 출현 | ✅ |
+| gateResultId | `gate-ecos-live-draft-pending-001` | ✅ |
+| canProceedToRender | BLOCKED (8회) | ✅ |
+| copyReady | NOT READY (4회) | ✅ |
+
+Script/Package quality observation:
+- Fact Card: `indicatorName=한국은행 기준금리`, `currentValue=2.5%`, `changeValue=0.0%p`, `dataPeriod=2026년 5월`
+- interpretation: "한국은행이 2026년 5월 기준금리를 2.5%에서 2.5%로 0.0%p 조정했다."
+- **⚠️ 품질 갭**: currentValue/previousValue가 모두 `2.5%`이므로 `"2.5%에서 2.5%로"` 문구가 반복됨 — 동결(무변동) 케이스의 interpretation/script 품질 개선이 향후 필요.
+- 숫자 발명 없음 — Fact Card 값만 사용됨 ✅
+
+Static safety:
+- `prefetch={false}`: package-preview:565, money-shorts:163 ✅
+- 코드 변경 없음 — TypeScript/ESLint skip
+
 ## Package Preview Live Draft Gate Alignment (`package-preview-live-draft-gate-alignment-v1` — 2026-06-26)
 
 `app/fact-cards/manual/package-preview/page.tsx`에서 live draft candidate의 gate/clipboard readiness를 draft-only 계약에 맞게 정렬.
@@ -1669,6 +1708,26 @@ next action: `dev-server-default-route-alignment-v1` — 개발서버 기본 진
 - `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`
 - `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md`
 - `_ai/PRODUCTION_PIPELINE_RESET_V1.md`
+
+## ECOS Base Rate Unchanged Copy Quality Fix (`ecos-base-rate-unchanged-copy-quality-v1` — 2026-06-26)
+
+`lib/source-facts/candidates.ts` — `ecosBaseRateParser` (mock) 및 `ecosBaseRateLiveParser` (live) 모두 `changeValue === 0` 분기 추가.
+
+변경 내용:
+- 두 parser에서 `chg === 0` 조건 분기:
+  - `interpretation`: `"한국은행이 ${p.dataPeriod} 기준금리를 ${p.currentValueText}로 동결했다. 직전 발표 대비 변동은 ${p.changeValueText}다."` 사용
+  - `allowedClaims[1]`: `"직전 기준금리 대비 변동은 ${p.changeValueText}다."` (기존 "변경됐다" → "변동은")
+  - 비영변동(`chg !== 0`) 케이스: 기존 "조정했다" 문구 유지
+- 수치 필드(`currentValue`, `previousValue`, `changeValue`, `changeRate`) 변경 없음
+- `isMock`, `isPublishable`, `citations`, `blockedClaims` 변경 없음
+
+결과 (changeValue=0 case):
+- Before: `"한국은행이 2026년 5월 기준금리를 2.5%에서 2.5%로 0.0%p 조정했다."`
+- After: `"한국은행이 2026년 5월 기준금리를 2.5%로 동결했다. 직전 발표 대비 변동은 0.0%p다."`
+
+검증:
+- TS 0 errors (tsc --noEmit --strict false) ✅
+- ESLint 0 warnings ✅
 
 ## Retired Active Routes
 

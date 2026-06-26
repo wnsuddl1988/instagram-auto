@@ -117,13 +117,23 @@ export const ecosBaseRateParser: RawSnapshotParser = {
       changeNumericValue: chg,
       changeRateNumericValue: parseFloat((chgRate * 100).toFixed(4)),
       comparisonType: "previous_release",
-      interpretation: `한국은행이 ${p.dataPeriod} 기준금리를 ${p.previousValueText}에서 ${p.currentValueText}로 ${p.changeValueText} 조정했다.`,
+      interpretation:
+        chg === 0
+          ? `한국은행이 ${p.dataPeriod} 기준금리를 ${p.currentValueText}로 동결했다. 직전 발표 대비 변동은 ${p.changeValueText}다.`
+          : `한국은행이 ${p.dataPeriod} 기준금리를 ${p.previousValueText}에서 ${p.currentValueText}로 ${p.changeValueText} 조정했다.`,
       cautionNote: "기준금리 변경은 발표 시점 기준이며, 향후 추가 변동 가능성은 이 수치에 반영되어 있지 않다.",
-      allowedClaims: [
-        `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
-        `직전 기준금리 대비 ${p.changeValueText} 변경됐다.`,
-        `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
-      ],
+      allowedClaims:
+        chg === 0
+          ? [
+              `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
+              `직전 기준금리 대비 변동은 ${p.changeValueText}다.`,
+              `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
+            ]
+          : [
+              `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
+              `직전 기준금리 대비 ${p.changeValueText} 변경됐다.`,
+              `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
+            ],
       blockedClaims: [
         "금리 급등락",
         "폭등",
@@ -198,13 +208,23 @@ export const ecosBaseRateLiveParser: RawSnapshotParser = {
       changeNumericValue: chg,
       changeRateNumericValue: parseFloat((chgRate * 100).toFixed(4)),
       comparisonType: "previous_release",
-      interpretation: `한국은행이 ${p.dataPeriod} 기준금리를 ${p.previousValueText}에서 ${p.currentValueText}로 ${p.changeValueText} 조정했다.`,
+      interpretation:
+        chg === 0
+          ? `한국은행이 ${p.dataPeriod} 기준금리를 ${p.currentValueText}로 동결했다. 직전 발표 대비 변동은 ${p.changeValueText}다.`
+          : `한국은행이 ${p.dataPeriod} 기준금리를 ${p.previousValueText}에서 ${p.currentValueText}로 ${p.changeValueText} 조정했다.`,
       cautionNote: "기준금리 변경은 발표 시점 기준이며, 향후 추가 변동 가능성은 이 수치에 반영되어 있지 않다.",
-      allowedClaims: [
-        `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
-        `직전 기준금리 대비 ${p.changeValueText} 변경됐다.`,
-        `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
-      ],
+      allowedClaims:
+        chg === 0
+          ? [
+              `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
+              `직전 기준금리 대비 변동은 ${p.changeValueText}다.`,
+              `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
+            ]
+          : [
+              `${p.dataPeriod} 기준금리는 ${p.currentValueText}다.`,
+              `직전 기준금리 대비 ${p.changeValueText} 변경됐다.`,
+              `한국은행이 ${p.publishedDate} 기준금리를 결정했다.`,
+            ],
       blockedClaims: [
         "금리 급등락",
         "폭등",

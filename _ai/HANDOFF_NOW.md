@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-live-draft-gate-alignment-v1`
+`ecos-base-rate-unchanged-copy-quality-v1`
 
 ## Current State
 
@@ -10,90 +10,96 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `101c22e feat(money-shorts): add live latest draft entrypoint to hub`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 38]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `f5db4c5 fix(package-preview): keep live draft gate pending`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 39]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- Root route `/` redirects to `/money-shorts`.
-- Dev server root runtime smoke passed and is checkpointed.
-- `/money-shorts` hub has an explicit dev-only live latest draft candidate link:
-  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
-  - `prefetch={false}`
-- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` is an explicit ECOS live draft candidate route.
-- The live draft candidate remains:
+- Live latest draft Owner acceptance smoke passed with a non-blocking quality gap.
+- Live route evidence:
   - `sourceProviderId=provider-ecos-live`
   - `isMock=false`
   - `isPublishable=false`
-  - `publishedDate=2025-05-29`
   - `dataPeriod=2026년 5월`
+  - `publishedDate=2025-05-29`
+  - BOK source-date citation present
+  - `decision_pending`
+  - `canProceedToRender=false`
+  - `copyReady=false`
+- Quality gap found:
+  - For unchanged base rate (`currentValue=2.5%`, `previousValue=2.5%`, `changeValue=0.0%p`), generated interpretation says:
+    - "2.5%에서 2.5%로 0.0%p 조정했다."
+  - This is source-accurate but low-quality. It should say the rate was held/frozen/unchanged.
 
 Important nuance:
 
-- The live route is draft-only and must not appear Owner-approved or ready for render/upload.
-- Current package preview code uses a local mock `decision: "approved"` gate for all candidates, including live draft candidates.
-- This can make the live draft route look too final, even though it says `isPublishable=false`.
-- `_ai/NEXT_ACTION.md` may still describe the just-committed hub entrypoint as uncommitted; sync it in this slice if touched.
+- This task must improve wording only for the ECOS base-rate Fact Card candidate.
+- Do not invent facts or forecasts.
+- Do not set `isPublishable=true`.
+- Keep live route draft-only.
+- `_ai` docs currently contain acceptance smoke evidence; this implementation should preserve and extend that evidence.
 
 ## Goal
 
-Align package preview gate/clipboard behavior with the live draft-only contract.
+Improve ECOS base-rate candidate wording for unchanged (`changeValue === 0`) cases so live/latest and mock candidates say "동결/변동 없음" instead of "2.5%에서 2.5%로 0.0%p 조정".
 
 Primary target:
 
-- Default fixture and mock candidate previews may keep the existing local preview approved-gate behavior.
-- Live latest draft candidate preview must not show as actually Owner-approved or copy/render-ready.
-- Live route should clearly show a pending/draft gate state until a downstream Owner decision process exists.
+- `lib/source-facts/candidates.ts`
+  - Both `ecosBaseRateParser` and `ecosBaseRateLiveParser` should produce better `interpretation` and `allowedClaims` when `changeValue === 0`.
+  - Non-zero change behavior should remain unchanged.
 
 ## Approved Scope
 
 Allowed:
 
 - Modify:
-  - `app/fact-cards/manual/package-preview/page.tsx`
+  - `lib/source-facts/candidates.ts`
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Use existing owner decision model:
-  - For live draft route, call `evaluateOwnerDecision()` with `decision: null` or another blocking decision that best matches "pending Owner decision".
-  - Prefer `decision: null` so blocker is `decision_pending`.
-- Make UI text honest:
-  - For live route, explain that Owner Decision Gate is intentionally pending because candidate is draft-only.
-  - Clipboard payload should show `copyReady=false` for live draft route.
-  - Avoid language implying render/upload/publish is available.
-- Preserve existing behavior for:
-  - `/fact-cards/manual/package-preview`
-  - `/fact-cards/manual/package-preview?candidate=base-rate`
-- Keep live route explicit and non-prefetched.
-- State sync:
-  - record latest checkpoint `101c22e`
-  - mark hub live latest entrypoint as checkpointed
-  - record this slice as uncommitted until checkpointed.
+- Add a small local helper in `candidates.ts` if it reduces duplication between mock and live parser.
+- Suggested behavior:
+  - If `p.changeValue === 0`:
+    - interpretation: `한국은행이 ${p.dataPeriod} 기준금리를 ${p.currentValueText}로 동결했다. 직전 발표 대비 변동은 ${p.changeValueText}다.`
+    - allowed claim: `직전 기준금리 대비 변동은 ${p.changeValueText}다.`
+    - or equivalent clear Korean wording using only Fact Card fields.
+  - If `p.changeValue !== 0`:
+    - keep existing adjustment wording.
+- Keep existing numeric fields unchanged:
+  - `currentValue`
+  - `previousValue`
+  - `changeValue`
+  - `changeRate`
+  - numeric values
+  - citations
+  - `isMock`
+  - `isPublishable`
 
 Not required:
 
-- Do not add a real Owner approval UI.
-- Do not set `isPublishable=true`.
-- Do not add persistence, DB, or publish flow.
-- Do not run live ECOS more than a single focused route smoke if needed.
-- Do not implement GPT/script/video/render/TTS/upload.
+- Do not change normalizer math.
+- Do not change ECOS/BOK connector logic.
+- Do not change package preview gate logic.
+- Do not alter script generator globally unless a direct test proves it is necessary.
+- Do not add tests with new dependencies.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `38`
+  - branch ahead `39`
+  - dirty `_ai` docs from acceptance smoke
   - untracked `piq_diag_out.txt`
-  - no tracked dirty files except this handoff doc if Codex has just updated it.
+  - no app/lib dirty files except this task's changes.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- The live package preview must remain source-first:
-  - `isPublishable=false`
-  - draft-only
-  - Owner gate pending/blocked
-  - Clipboard not copy-ready
-- Default/mock preview should not regress.
+- Keep all wording source-first and conservative:
+  - no forecast
+  - no advice
+  - no invented policy motive
+  - no "인하/인상" unless sign actually indicates it.
 - Do not print secret values or secret-bearing ECOS URLs.
 
 ## Forbidden
@@ -111,6 +117,7 @@ Not required:
 - No git push.
 - No commit unless Codex explicitly authorizes it later.
 - Do not touch `piq_diag_out.txt`.
+- Do not set `isPublishable=true`.
 - Do not resume retired video routes or old render loops.
 
 ## Required Checks
@@ -118,26 +125,21 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted ESLint for changed app file(s)
-- focused TypeScript check for changed app file(s)
-- route/static smoke:
-  - `/fact-cards/manual/package-preview` still loads and keeps existing local preview behavior
-  - `/fact-cards/manual/package-preview?candidate=base-rate` still loads and keeps existing mock preview behavior
-  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` loads or clearly blocks if env/network unavailable
-  - if live route loads, verify:
-    - `isPublishable=false`
-    - Owner decision pending or blocked, not approved
-    - `canProceedToRender=false`
-    - `copyReady=false`
-    - no React unique key warning
-- static safety:
-  - package-preview live selector still has `prefetch={false}`
-  - money-shorts hub live link still has `prefetch={false}`
+- targeted ESLint for changed source file(s)
+- focused TypeScript check for changed source file(s)
+- static/content verification:
+  - generated mock base-rate candidate interpretation no longer contains `3.0%에서 3.0%로 0.0%p 조정`
+  - live parser path for unchanged `2.5% -> 2.5%` would produce "동결" or equivalent unchanged wording
+  - non-zero change wording remains "조정" style
+  - no numeric field changes
+- route smoke if practical:
+  - `/fact-cards/manual/package-preview?candidate=base-rate` shows improved unchanged wording
+  - optional live route smoke only if already available and safe; otherwise static verification is acceptable
 - secret safety:
   - no API key value printed
   - no `.env*` modified/staged
   - no secret-bearing ECOS URL printed or rendered
-- forbidden pattern search on changed app file(s):
+- forbidden pattern search on changed source/app file(s):
   - `Date.now`
   - `Math.random`
   - `navigator.clipboard`
@@ -153,14 +155,14 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Live latest draft package preview no longer appears Owner-approved.
-- Live latest draft package preview cannot be copy/render-ready.
-- Default and mock package previews keep their existing local preview behavior.
-- Live links remain non-prefetched.
-- `_ai` state no longer says latest checkpoint is older than `101c22e` or that hub entrypoint is uncommitted.
+- Unchanged base-rate cases use clear "동결/변동 없음" wording.
+- No facts/numbers are invented.
+- Non-zero base-rate change wording remains intact.
+- Live route remains draft-only and gate-pending.
+- Acceptance smoke docs and current checkpoint state remain synchronized.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
-- Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, wording evidence, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -169,4 +171,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this changes gate/copy readiness semantics for the live draft route.
+- Update `_ai/CLAUDE_REPORT.md` because this closes the quality gap found during acceptance smoke.

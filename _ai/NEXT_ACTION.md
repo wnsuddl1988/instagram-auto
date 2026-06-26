@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — live draft gate alignment (구현 완료, checkpoint 대기)
+## 2026-06-26 현재 — acceptance smoke + unchanged copy quality fix 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,16 +13,14 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `101c22e feat(money-shorts): add live latest draft entrypoint to hub` ← **현재 HEAD**
+- `f5db4c5 fix(package-preview): keep live draft gate pending` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
-현재 uncommitted slice:
+최근 완료 (uncommitted):
 
-- `package-preview-live-draft-gate-alignment-v1`: live draft gate/clipboard readiness 정렬 (checkpoint 대기).
-  - live route: `decision=null` → `blockerCodes=["decision_pending"]`, `canProceedToRender=false`, `copyReady=false`
-  - default/mock: 기존 `decision="approved"` 동작 유지
+- `live-latest-draft-owner-acceptance-smoke-v1`: acceptance smoke PASS (코드 변경 없음, docs only)
 
 최근 완료:
 
@@ -75,6 +73,15 @@ Owner 결정:
 
 - `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
 - live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+## 최근 완료 (2026-06-26 추가 — ecos-base-rate-unchanged-copy-quality-v1)
+
+`ecos-base-rate-unchanged-copy-quality-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `lib/source-facts/candidates.ts`: `ecosBaseRateParser` + `ecosBaseRateLiveParser` 모두 `chg === 0` 분기 추가
+- `changeValue === 0`일 때 interpretation: "...동결했다. 직전 발표 대비 변동은 ..." 사용
+- `changeValue !== 0`일 때: 기존 "조정했다" 문구 유지
+- TS/ESLint 통과
 
 ## 다음 safe work unit
 
