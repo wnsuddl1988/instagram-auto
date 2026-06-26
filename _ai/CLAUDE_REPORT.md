@@ -2012,3 +2012,25 @@ local-only Owner publishability decision controls 추가.
 | forbidden pattern 0건 (localStorage/sessionStorage/clipboard/ffmpeg/output/upload/deploy/Date.now/Math.random) | ✅ |
 | isPublishable=true 설정 없음 | ✅ |
 | piq_diag_out.txt untracked 유지 | ✅ |
+
+## Runtime Smoke (`package-preview-owner-publishability-controls-runtime-smoke-v1` — 2026-06-26)
+
+QA-only slice. 코드 변경 없음.
+
+**검증 (default + ?candidate=base-rate 양쪽):**
+| 체크 | 결과 |
+|------|------|
+| default route 로드 | ✅ |
+| base-rate route 로드 | ✅ |
+| local sandbox controls 렌더 (pending/approved/rejected/revision_requested) | ✅ |
+| 초기 상태: decision_pending, NOT ELIGIBLE | ✅ |
+| approved 클릭 → mock_fact_card 블로커 → NOT ELIGIBLE 유지 | ✅ |
+| 서버 Gate fact_card_not_publishable 유지 | ✅ (client 영향 없음) |
+| 서버 Clipboard copyReady NOT READY 유지 | ✅ (client 영향 없음) |
+| console error/warning | 0건 ✅ |
+| isPublishable=true 설정 없음 | ✅ |
+| localStorage/sessionStorage/navigator.clipboard 없음 | ✅ |
+| prefetch={false} 유지 (page.tsx line 725) | ✅ |
+| piq_diag_out.txt untracked 유지 | ✅ |
+
+**결론:** local sandbox controls는 server gate/clipboard를 변경하지 않음 — 안전 경계 확인 완료.

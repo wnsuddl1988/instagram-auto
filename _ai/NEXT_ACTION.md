@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — package-preview-owner-publishability-decision-controls-v1 완료, checkpoint 대기
+## 2026-06-26 현재 — package-preview-owner-publishability-controls-runtime-smoke-v1 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,15 +13,15 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `dcde9d5 feat(package-preview): show publishability decision contract` ← **현재 HEAD**
+- `984ce2a feat(package-preview): add local publishability decision controls` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `package-preview-owner-publishability-decision-controls-v1`: `PublishabilityDecisionControls.tsx` client component 신규 + page.tsx 연결. local state 전용, 서버 영향 없음
-- `package-preview-publishability-decision-readonly-v1` (committed dcde9d5): page.tsx 읽기 전용 contract subsection
+- `package-preview-owner-publishability-controls-runtime-smoke-v1`: QA-only, 코드 변경 없음. local sandbox controls 런타임 동작 확인 — server gate/clipboard 불변 증명
+- `package-preview-owner-publishability-decision-controls-v1` (committed 984ce2a): PublishabilityDecisionControls.tsx 신규, local state 전용
 
 최근 완료 (committed):
 

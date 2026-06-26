@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-owner-publishability-decision-controls-v1`
+`package-preview-owner-publishability-controls-runtime-smoke-v1`
 
 ## Current State
 
@@ -10,44 +10,45 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `dcde9d5 feat(package-preview): show publishability decision contract`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 47]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `984ce2a feat(package-preview): add local publishability decision controls`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 48]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- `evaluatePublishabilityDecision()` exists as the source-of-truth contract for whether an Owner decision would allow marking a Fact Card publishable.
-- Package preview shows the contract as read-only current-state evidence with `decision=null`.
-- No real approval UI, persistence, render/export, clipboard write, DB, or API route has been added.
+- Package preview has local-only `PublishabilityDecisionControls`.
+- The controls use browser local React state only.
+- The controls call `evaluatePublishabilityDecision()` to display eligibility.
+- No persistence, server action, API route, DB, render/export, upload, clipboard write, or `isPublishable=true` mutation has been added.
 
-Important next-step nuance:
+Important nuance:
 
-- This slice may add **local-only Owner decision controls** so the Owner can inspect contract outcomes in the browser.
-- The controls must not persist anything.
-- The controls must not mutate the Fact Card or set `isPublishable=true`.
-- The controls must not update the server-side gate, clipboard payload, or render readiness.
-- The controls must not upload/render/copy/write.
+- This is a runtime smoke / state-sync slice.
+- Do not implement real Owner approval or persistence.
+- Do not add new controls beyond tiny usability/readability fixes if a smoke issue is found.
+- The goal is to prove the client sandbox cannot affect server gate/copy readiness.
 
 State-doc nuance:
 
-- `_ai/NEXT_ACTION.md` may still say `c7009ee` is current HEAD or that the read-only contract UI is uncommitted.
-- Sync stale state to checkpoint `dcde9d5` as part of this implementation slice.
+- `_ai/NEXT_ACTION.md` may still say `dcde9d5` is current HEAD or that the local controls are uncommitted.
+- Sync stale state to checkpoint `984ce2a` as part of this QA slice.
 
 ## Goal
 
-Add a local-only Owner publishability decision control to `/fact-cards/manual/package-preview`.
-
-The Owner should be able to select a decision locally (`pending`, `approved`, `rejected`, `revision_requested`) and see what `evaluatePublishabilityDecision()` would return, without changing any package state.
-
-This is an inspection/sandbox control, not a publish action.
+Run focused runtime smoke for `/fact-cards/manual/package-preview` local publishability decision controls and sync `_ai` state to checkpoint `984ce2a`.
 
 ## Approved Scope
 
-Allowed implementation files:
+Allowed QA targets:
 
+- `/fact-cards/manual/package-preview`
+- `/fact-cards/manual/package-preview?candidate=base-rate`
+
+Allowed implementation file only if a small smoke bug is found:
+
+- `app/fact-cards/manual/package-preview/PublishabilityDecisionControls.tsx`
 - `app/fact-cards/manual/package-preview/page.tsx`
-- `app/fact-cards/manual/package-preview/PublishabilityDecisionControls.tsx` (new client component, if useful)
 
 Allowed docs/state files:
 
@@ -56,58 +57,42 @@ Allowed docs/state files:
 - `_ai/PROJECT_STATE.md`
 - `_ai/HANDOFF_NOW.md` only if final scope/status needs tiny correction.
 
-Expected implementation direction:
+Expected QA:
 
-1. Prefer adding a small client component for local controls:
-   - `"use client"`
-   - receives the serializable `factCard`
-   - uses local React state only
-   - imports/uses `evaluatePublishabilityDecision()`
-2. Controls:
-   - segmented buttons or select for decision: pending/null, approved, rejected, revision_requested
-   - optional local notes textarea/input if simple
-3. Display result:
-   - `canMarkPublishable`
-   - blocker codes
-   - `ownerDecision`
-   - `isMock`
-   - `citationCount`
-   - `sourceUrl` readiness
-4. Make the safety boundary explicit in UI:
-   - local preview only
-   - no mutation
-   - no persistence
-   - no render/export/upload/clipboard write
-5. Keep server-rendered `Publishability Decision Contract (읽기 전용)` subsection intact.
-6. Add the local controls next to/under that subsection in `⑧ Publishability Readiness`.
-7. Do not renumber top-level sections.
+1. Start/reuse local dev server.
+2. Load default package preview.
+3. Confirm local Owner decision sandbox is visible.
+4. Confirm initial decision is pending/null and result is NOT ELIGIBLE.
+5. Click `approved`.
+6. Confirm result updates locally but does not make server gate/copy ready:
+   - local contract result may change based on fixture blockers
+   - server Owner Gate still shows `fact_card_not_publishable`
+   - server Clipboard Payload remains `copyReady=false`
+7. Repeat lightly on `?candidate=base-rate`.
+8. Confirm no console errors or React key warnings.
+9. Confirm no storage/clipboard/network/render side effects.
 
-Not required:
+Expected current behavior:
 
-- No actual publishable Fact Card creation.
-- No `isPublishable=true` mutation.
-- No server action.
-- No API route.
-- No localStorage/sessionStorage.
-- No DB/Supabase.
-- No clipboard write.
-- No render/export/upload.
+- default/manual fixture is `isMock=true`, so `approved` remains NOT ELIGIBLE with `mock_fact_card`.
+- base-rate mock is also `isMock=true`, so `approved` remains NOT ELIGIBLE with `mock_fact_card`.
+- live route is not required for this task.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `47`
+  - branch ahead `48`
   - untracked `piq_diag_out.txt`
   - tracked dirty `_ai/HANDOFF_NOW.md` from this Codex handoff update
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep deterministic server behavior. Client local state is allowed only for UI inspection.
+- Keep server behavior deterministic.
 - No secret values or secret-bearing ECOS URLs printed.
 
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
-- No ECOS live call unless explicitly needed for optional manual smoke; default checks should use non-live routes.
+- No ECOS live call.
 - No ffmpeg execution.
 - No video/audio/image rendering or repository artifacts.
 - No OS clipboard writes.
@@ -130,36 +115,37 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted TypeScript/source check for changed files or existing focused no-output pattern
-- targeted ESLint for changed implementation files
-- route/static smoke:
-  - `/fact-cards/manual/package-preview` loads
-  - `/fact-cards/manual/package-preview?candidate=base-rate` loads
-  - Publishability Readiness panel still appears
-  - read-only contract subsection still appears
-  - local Owner decision controls appear
-  - selecting `approved` updates only the local contract result display
-  - server gate still shows `fact_card_not_publishable`
-  - server clipboard payload remains not ready
+- runtime smoke:
+  - default route loads
+  - base-rate route loads
+  - local sandbox controls visible
+  - pending/null initial state visible
+  - approved click updates local result
+  - `mock_fact_card` blocker visible after approved on mock/default routes
+  - server gate still has `fact_card_not_publishable`
+  - server clipboard remains not ready
   - no React unique key warning
   - no obvious console error
 - static safety:
-  - no server-side `"approved"` input passed to `evaluatePublishabilityDecision` in `page.tsx`
   - no `isPublishable=true` assignment in changed files
   - no localStorage/sessionStorage
+  - no navigator.clipboard
   - no server action/API route
   - package-preview live selector still has `prefetch={false}`
   - money-shorts hub live link still has `prefetch={false}`
-- forbidden pattern search on changed implementation files:
-  - `Date.now`
-  - `Math.random`
-  - `navigator.clipboard`
-  - `localStorage`
-  - `sessionStorage`
-  - `ffmpeg`
-  - `output/`
-  - `upload`
-  - `deploy`
+- if code changed:
+  - targeted TypeScript/source check for changed files
+  - targeted ESLint for changed implementation files
+  - forbidden pattern search on changed implementation files:
+    - `Date.now`
+    - `Math.random`
+    - `navigator.clipboard`
+    - `localStorage`
+    - `sessionStorage`
+    - `ffmpeg`
+    - `output/`
+    - `upload`
+    - `deploy`
 - secret safety:
   - no API key value printed
   - no `.env*` modified/staged
@@ -171,11 +157,9 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Package preview includes local-only Owner publishability decision controls.
-- Controls use `evaluatePublishabilityDecision()` and local state only.
-- Controls do not mutate/persist/approve/render/export/upload/copy.
-- Server gate and clipboard payload remain unchanged by client controls.
-- `_ai` state is minimally synced to checkpoint `dcde9d5`.
+- Runtime smoke proves local sandbox controls work.
+- Runtime smoke proves client controls do not affect server gate/copy readiness.
+- `_ai` state is minimally synced to checkpoint `984ce2a`.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -187,4 +171,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this is the first local Owner decision control before real approval/persistence.
+- Update `_ai/CLAUDE_REPORT.md` because this is reusable evidence before any real approval/persistence work.
