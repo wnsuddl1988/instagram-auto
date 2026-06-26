@@ -83,6 +83,7 @@
 - Commit: `b11ebb0` — `feat(package-preview): expose ecos live latest draft candidate via explicit query`
 - Commit: `7d28921` — `fix(app): route root to money shorts os hub`
 - Commit: `13ba98b` — `test(app): record dev server root smoke pass`
+- Commit: `101c22e` — `feat(money-shorts): add live latest draft entrypoint to hub`
 - Branch: `codex/source-first-blueprint-clean`
 - Push: 미실행
 

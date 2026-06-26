@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-hub-live-latest-entrypoint-v1`
+`package-preview-live-draft-gate-alignment-v1`
 
 ## Current State
 
@@ -10,87 +10,95 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `13ba98b test(app): record dev server root smoke pass`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 37]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `101c22e feat(money-shorts): add live latest draft entrypoint to hub`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 38]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- Root route `/` now redirects to `/money-shorts`.
-- Runtime smoke confirmed:
-  - `/` -> `307 redirect -> /money-shorts`
-  - `/money-shorts` -> `200`
-  - `/fact-cards/manual/package-preview` -> `200`
-  - `/fact-cards/manual/package-preview?candidate=base-rate` -> `200`
-- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` is connected as an explicit dev-only live ECOS draft candidate route.
-- The live route remains draft-only:
+- Root route `/` redirects to `/money-shorts`.
+- Dev server root runtime smoke passed and is checkpointed.
+- `/money-shorts` hub has an explicit dev-only live latest draft candidate link:
+  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+  - `prefetch={false}`
+- `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` is an explicit ECOS live draft candidate route.
+- The live draft candidate remains:
   - `sourceProviderId=provider-ecos-live`
   - `isMock=false`
   - `isPublishable=false`
   - `publishedDate=2025-05-29`
   - `dataPeriod=2026년 5월`
-- The live candidate link inside package preview has `prefetch={false}`.
 
 Important nuance:
 
-- `git status -sb` is not fully clean because `piq_diag_out.txt` remains untracked.
-- Treat the working tree as clean only for tracked project changes.
-- `_ai/NEXT_ACTION.md` may still describe older checkpoints; sync it in this slice if touched.
+- The live route is draft-only and must not appear Owner-approved or ready for render/upload.
+- Current package preview code uses a local mock `decision: "approved"` gate for all candidates, including live draft candidates.
+- This can make the live draft route look too final, even though it says `isPublishable=false`.
+- `_ai/NEXT_ACTION.md` may still describe the just-committed hub entrypoint as uncommitted; sync it in this slice if touched.
 
 ## Goal
 
-Make the Money Shorts OS Workflow Hub reflect the current source-first workbench more directly by exposing the explicit ECOS live latest draft candidate path from the hub, without making live ECOS the default route and without accidental prefetch.
+Align package preview gate/clipboard behavior with the live draft-only contract.
 
 Primary target:
 
-- `/money-shorts` should still be the local Workflow Hub.
-- The hub should make it easy to open the current live latest draft candidate preview.
-- The live latest entry must be clearly explicit/dev-only and must not prefetch.
+- Default fixture and mock candidate previews may keep the existing local preview approved-gate behavior.
+- Live latest draft candidate preview must not show as actually Owner-approved or copy/render-ready.
+- Live route should clearly show a pending/draft gate state until a downstream Owner decision process exists.
 
 ## Approved Scope
 
 Allowed:
 
 - Modify:
-  - `app/money-shorts/page.tsx`
+  - `app/fact-cards/manual/package-preview/page.tsx`
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Add a hub link/card/button to:
-  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
-- The live link must set `prefetch={false}`.
-- Keep default package preview and mock candidate links unchanged.
-- Minimal copy updates to avoid false "all local/no external API" claims.
+- Use existing owner decision model:
+  - For live draft route, call `evaluateOwnerDecision()` with `decision: null` or another blocking decision that best matches "pending Owner decision".
+  - Prefer `decision: null` so blocker is `decision_pending`.
+- Make UI text honest:
+  - For live route, explain that Owner Decision Gate is intentionally pending because candidate is draft-only.
+  - Clipboard payload should show `copyReady=false` for live draft route.
+  - Avoid language implying render/upload/publish is available.
+- Preserve existing behavior for:
+  - `/fact-cards/manual/package-preview`
+  - `/fact-cards/manual/package-preview?candidate=base-rate`
+- Keep live route explicit and non-prefetched.
 - State sync:
-  - record latest checkpoint `13ba98b`
-  - note that dev server root runtime smoke passed
-  - set the next safe work unit after this slice to Codex decision pending unless a clear next implementation emerges from the work.
+  - record latest checkpoint `101c22e`
+  - mark hub live latest entrypoint as checkpointed
+  - record this slice as uncommitted until checkpointed.
 
 Not required:
 
-- Do not navigate to the live ECOS route unless a focused smoke is explicitly needed after adding the link.
-- Do not add dynamic date/current-month logic.
-- Do not implement daily scheduler, video rendering, GPT scripts, TTS, uploads, or DB persistence.
-- Do not delete legacy components.
+- Do not add a real Owner approval UI.
+- Do not set `isPublishable=true`.
+- Do not add persistence, DB, or publish flow.
+- Do not run live ECOS more than a single focused route smoke if needed.
+- Do not implement GPT/script/video/render/TTS/upload.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `37`
+  - branch ahead `38`
   - untracked `piq_diag_out.txt`
   - no tracked dirty files except this handoff doc if Codex has just updated it.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- The new hub live link must not fire ECOS unless clicked/navigated.
-- Use `.env.local` only as the app naturally loads it; never print secret values.
-- Avoid visible copy that implies production-ready auto-rendering or publishability.
-- Keep the user-facing state honest: live latest Fact Card candidate is draft-only, not publishable, not render/upload.
+- The live package preview must remain source-first:
+  - `isPublishable=false`
+  - draft-only
+  - Owner gate pending/blocked
+  - Clipboard not copy-ready
+- Default/mock preview should not regress.
+- Do not print secret values or secret-bearing ECOS URLs.
 
 ## Forbidden
 
 - No GPT/Gemini/Veo/OpenAI/ElevenLabs calls.
-- No ECOS live script execution.
 - No ffmpeg execution.
 - No video/audio/image rendering.
 - No OS clipboard writes.
@@ -112,14 +120,19 @@ Run focused checks:
 - `git status -sb`
 - targeted ESLint for changed app file(s)
 - focused TypeScript check for changed app file(s)
+- route/static smoke:
+  - `/fact-cards/manual/package-preview` still loads and keeps existing local preview behavior
+  - `/fact-cards/manual/package-preview?candidate=base-rate` still loads and keeps existing mock preview behavior
+  - `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606` loads or clearly blocks if env/network unavailable
+  - if live route loads, verify:
+    - `isPublishable=false`
+    - Owner decision pending or blocked, not approved
+    - `canProceedToRender=false`
+    - `copyReady=false`
+    - no React unique key warning
 - static safety:
-  - new hub live link has `prefetch={false}`
-  - existing package-preview live link still has `prefetch={false}`
-  - no `createEcosLiveTransport` import/call added to `app/money-shorts/page.tsx`
-- route smoke:
-  - `/money-shorts` loads
-  - link hrefs for default preview, mock preview, and live latest preview are present
-  - no React unique key warning on `/money-shorts`
+  - package-preview live selector still has `prefetch={false}`
+  - money-shorts hub live link still has `prefetch={false}`
 - secret safety:
   - no API key value printed
   - no `.env*` modified/staged
@@ -140,11 +153,11 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- `/money-shorts` clearly exposes the current live latest draft candidate route as an explicit dev-only action.
-- Live link has `prefetch={false}`.
-- Default/mock routes remain available and local-only.
-- Hub still does not claim render/upload/publish is active.
-- `_ai` state no longer says the latest checkpoint is older than `13ba98b`.
+- Live latest draft package preview no longer appears Owner-approved.
+- Live latest draft package preview cannot be copy/render-ready.
+- Default and mock package previews keep their existing local preview behavior.
+- Live links remain non-prefetched.
+- `_ai` state no longer says latest checkpoint is older than `101c22e` or that hub entrypoint is uncommitted.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
 - Final handoff reports changed files, checks/results, route evidence, deviations/risks, and checkpoint recommendation.
@@ -156,4 +169,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this changes the primary workflow hub.
+- Update `_ai/CLAUDE_REPORT.md` because this changes gate/copy readiness semantics for the live draft route.

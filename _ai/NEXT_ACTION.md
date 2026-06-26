@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — dev server root alignment + runtime smoke + hub live latest entrypoint (구현 완료, checkpoint 대기)
+## 2026-06-26 현재 — live draft gate alignment (구현 완료, checkpoint 대기)
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,16 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `13ba98b test(app): record dev server root smoke pass` ← **현재 HEAD**
+- `101c22e feat(money-shorts): add live latest draft entrypoint to hub` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 현재 uncommitted slice:
 
-- `money-shorts-hub-live-latest-entrypoint-v1`: hub live latest link 추가 완료 (checkpoint 대기). root redirect/runtime smoke는 `7d28921`/`13ba98b`로 committed.
+- `package-preview-live-draft-gate-alignment-v1`: live draft gate/clipboard readiness 정렬 (checkpoint 대기).
+  - live route: `decision=null` → `blockerCodes=["decision_pending"]`, `canProceedToRender=false`, `copyReady=false`
+  - default/mock: 기존 `decision="approved"` 동작 유지
 
 최근 완료:
 

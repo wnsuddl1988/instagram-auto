@@ -1510,6 +1510,28 @@ sourceUrl: https://ecos.bok.or.kr/#/Short/722Y001
 - `candidates.ts:58-60` → payload 타입 선언
 - `candidates.ts:232-239` → live parser에서 BOK citation 생성
 
+## Package Preview Live Draft Gate Alignment (`package-preview-live-draft-gate-alignment-v1` — 2026-06-26)
+
+`app/fact-cards/manual/package-preview/page.tsx`에서 live draft candidate의 gate/clipboard readiness를 draft-only 계약에 맞게 정렬.
+
+변경 사항:
+- `LIVE_GATE_RESULT_ID = "gate-ecos-live-draft-pending-001"` 상수 추가
+- `PackagePreviewContent`의 `gateResult` 계산을 `isLive` 분기로 분리:
+  - `isLive=true`: `decision: null` → `blockerCodes: ["decision_pending"]`, `canProceedToRender: false`, `copyReady: false`
+  - `isLive=false`: `decision: "approved"` (기존 local preview 동작 유지)
+- Owner Gate SectionCard note: live일 때 "draft-only — decision=null (pending)" 표시, mock일 때 기존 "mock 승인" 유지
+
+Gate logic source (`lib/owner-decision/gate.ts`):
+- `decision === null` → `blockerCodes.push("decision_pending")`
+- `canProceedToRender = blockerCodes.length === 0` → false
+- `buildClipboardPayload` → `copyReady: false` (gateResult.canProceedToRender=false 전파)
+
+Static verification:
+- TS 0 errors, ESLint 0 warnings ✅
+- default/mock route: `200` ✅
+- `prefetch={false}`: package-preview:565, money-shorts:163 ✅
+- forbidden patterns: 주석에만 존재 ✅
+
 ## Money Shorts Hub Live Latest Entrypoint (`money-shorts-hub-live-latest-entrypoint-v1` — 2026-06-26)
 
 `app/money-shorts/page.tsx`에 "Live Latest Draft Candidate" 섹션 추가.

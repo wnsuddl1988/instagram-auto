@@ -27,6 +27,9 @@ const MOCK_REVIEW_PACKET_ID = "rp-manual-household-debt-preview-001";
 const MOCK_GATE_RESULT_ID = "gate-manual-household-debt-preview-001";
 const MOCK_DECIDED_AT = "2026-06-25T09:05:00+09:00";
 
+// live draft candidate uses a separate gate ID and decision=null (pending)
+const LIVE_GATE_RESULT_ID = "gate-ecos-live-draft-pending-001";
+
 // fetchedAt for live ECOS requests — deterministic constant, never Date.now().
 const LIVE_FETCHED_AT = "2026-06-26T00:00:00+09:00";
 
@@ -423,19 +426,34 @@ function PackagePreviewContent({
     createdAt: MOCK_CREATED_AT,
   });
 
-  const gateResult = evaluateOwnerDecision(
-    reviewPacket,
-    {
-      reviewPacketId: MOCK_REVIEW_PACKET_ID,
-      decision: "approved",
-      notes: "로컬 preview — mock 승인",
-      decidedAt: MOCK_DECIDED_AT,
-    },
-    {
-      gateResultId: MOCK_GATE_RESULT_ID,
-      createdAt: MOCK_CREATED_AT,
-    },
-  );
+  // live draft candidate: decision=null → blockerCodes=["decision_pending"], canProceedToRender=false
+  // default/mock: decision="approved" → local preview approved-gate (existing behavior)
+  const gateResult = isLive
+    ? evaluateOwnerDecision(
+        reviewPacket,
+        {
+          reviewPacketId: MOCK_REVIEW_PACKET_ID,
+          decision: null,
+          notes: "draft-only — Owner 결정 대기 중 (isPublishable=false)",
+        },
+        {
+          gateResultId: LIVE_GATE_RESULT_ID,
+          createdAt: MOCK_CREATED_AT,
+        },
+      )
+    : evaluateOwnerDecision(
+        reviewPacket,
+        {
+          reviewPacketId: MOCK_REVIEW_PACKET_ID,
+          decision: "approved",
+          notes: "로컬 preview — mock 승인",
+          decidedAt: MOCK_DECIDED_AT,
+        },
+        {
+          gateResultId: MOCK_GATE_RESULT_ID,
+          createdAt: MOCK_CREATED_AT,
+        },
+      );
 
   const clipboardPayload = buildClipboardPayload(reviewPacket, gateResult, {
     createdAt: MOCK_CREATED_AT,
@@ -897,9 +915,15 @@ function PackagePreviewContent({
                   ))
             }
           />
-          <div className="mt-2 text-xs text-amber-300 border border-amber-800/30 bg-amber-900/10 rounded px-3 py-2">
-            로컬 preview: decision=&quot;approved&quot; mock 값 사용 — 실제 Owner 승인이 아닙니다.
-          </div>
+          {isLive ? (
+            <div className="mt-2 text-xs text-blue-300 border border-blue-800/30 bg-blue-900/10 rounded px-3 py-2">
+              draft-only 후보 — decision=null (pending). isPublishable=false이므로 Owner 결정 전까지 gate가 차단됩니다. 실제 승인 UI가 없습니다.
+            </div>
+          ) : (
+            <div className="mt-2 text-xs text-amber-300 border border-amber-800/30 bg-amber-900/10 rounded px-3 py-2">
+              로컬 preview: decision=&quot;approved&quot; mock 값 사용 — 실제 Owner 승인이 아닙니다.
+            </div>
+          )}
         </SectionCard>
 
         {/* ⑩ Clipboard payload */}
