@@ -61,3 +61,6 @@ __pycache__/
 
 *.log
 .DS_Store
+
+# Money Shorts OS — local owner state (never commit approval data)
+/.money-shorts-local/

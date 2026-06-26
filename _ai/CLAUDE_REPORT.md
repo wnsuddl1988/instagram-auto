@@ -2142,3 +2142,84 @@ QA-only slice. 코드 변경 없음.
 | normal live route — dry-run 링크 endPeriod=202606 동적 전달 | ✅ |
 | dry-run route — OPEN/READY/없음, server gate 차단 유지 | ✅ |
 | console error/warning | 0건 ✅ |
+
+---
+
+## owner-publishability-local-approval-ledger-v1 (2026-06-26)
+
+### 구현 내용
+
+**1. `.gitignore` 추가**
+- `/.money-shorts-local/` gitignore — 실제 승인 데이터 절대 commit 불가
+
+**2. `lib/owner-decision/local-approval-ledger.ts` (신규)**
+- server-only Node `fs`/`path` 기반 파일 ledger
+- `readLocalPublishabilityApprovalLedger()` — 파일 없으면 `{ok:false, reason:"missing"}`, JSON 오류 시 `{ok:false, reason:"invalid_json"}` (silent treat-as-ok 없음)
+- `getLocalPublishabilityApproval(factCardId)` — null-safe 단건 조회
+- `recordLocalPublishabilityApproval()` — `evaluatePublishabilityDecision()` 호출 후 `canMarkPublishable=true`일 때만 write. atomic-ish: `.tmp` 파일 write 후 rename. FactCard 불변, `isPublishable=true` 미설정.
+- `Date.now()` / `new Date()` 없음 — `recordedAt`은 caller 주입 필수
+
+**3. `lib/owner-decision/index.ts` 수정**
+- `export * from "./local-approval-ledger"` 추가
+
+**4. `app/fact-cards/manual/package-preview/actions.ts` (신규, Server Action)**
+- `"use server"` — server-only
+- `recordApproval(factCard, notes)` — factCard는 Server Component bound, client 신뢰 안 함. `recordedAt` 정적 상수 주입.
+- `getLedgerRecord(factCardId)` — read-only 조회
+
+**5. `app/fact-cards/manual/package-preview/LedgerStatusPanel.tsx` (신규, Client Component)**
+- `"use client"` — `useState` + `useTransition` 기반
+- 버튼 클릭 → `recordApproval()` Server Action 호출 → state 반영
+- `isMock=true` Fact Card는 버튼 비활성화
+
+**6. `app/fact-cards/manual/package-preview/page.tsx` 수정**
+- `LedgerStatusPanel`, `getLocalPublishabilityApproval`, `LocalApprovalRecord` import 추가
+- 양쪽 경로에서 `getLocalPublishabilityApproval(factCard.id)` 호출 후 prop 전달
+- 섹션 ⑧ 끝에 "로컬 승인 Ledger (파일 저장)" SectionLabel + `<LedgerStatusPanel>` 추가
+
+### 검증 결과
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (신규 파일) | 0 errors ✅ |
+| ESLint (신규 파일 + page.tsx) | 0 warnings ✅ |
+| `Date.now` / `new Date(` / `Math.random` (실코드) | 0건 ✅ |
+| `localStorage` / `sessionStorage` / `navigator.clipboard` | 0건 ✅ |
+| `.money-shorts-local/` gitignore | `.gitignore:66` 확인 ✅ |
+| `git status -sb` — `.money-shorts-local/` 미출현 | ✅ |
+| mock 경로 — "Mock Fact Card — 기록 불가" 비활성화 | ✅ |
+| live 경로 — 버튼 클릭 → POST 200, recordApproval 25ms | ✅ |
+| live 경로 — UI "✓ 로컬 승인 기록 존재" + 상세 표시 | ✅ |
+| `.money-shorts-local/publishability-approvals.json` 생성 | ✅ |
+| JSON: `canMarkPublishable: true`, `isMock: false` | ✅ |
+| 원본 gateResult / clipboardPayload 불변 | ✅ |
+| `piq_diag_out.txt` untracked 유지 | ✅ |
+
+**[review-fix: owner-publishability-local-approval-ledger-v1-review-fix — 2026-06-26]**
+
+4개 review-fix 적용:
+
+1. **Fix 1 — Server Action trust boundary**: `LedgerStatusPanel`에서 `FactCard` 타입 import와 `recordApproval` direct import 제거. props를 `{ factCardId, isMock, recordApprovalAction, initialRecord }`로 축소. `page.tsx`에서 `recordApproval.bind(null, factCard)` bound action 생성 후 전달. client는 `notes`만 전달.
+
+2. **Fix 2 — invalid JSON write 차단**: `recordLocalPublishabilityApproval()` 내에서 `readLocalPublishabilityApprovalLedgerRaw()` 호출 후 `reason === "invalid_json"` 시 즉시 `write_failed` 반환. 손상 파일 보존.
+
+3. **Fix 3 — missing ledger read contract 정리**: `readLocalPublishabilityApprovalLedgerRaw()` (raw, missing=ok:false) 와 `readLocalPublishabilityApprovalLedger()` (public, missing=empty ok:true) 분리. `ReadLedgerResult` 타입에서 `"missing"` 제거.
+
+4. **Fix 4 — barrel export 제거**: `lib/owner-decision/index.ts`에서 `export * from "./local-approval-ledger"` 제거. server files는 direct import 유지.
+
+**검증 (review-fix):**
+
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (변경 파일) | 0 errors ✅ |
+| ESLint (변경 파일) | 0 warnings ✅ |
+| Client에서 `recordApproval(factCard,...)` 직접 호출 | 0건 ✅ |
+| Client에서 `FactCard` 타입 import | 0건 ✅ |
+| `index.ts` barrel ledger export | 0건 ✅ |
+| invalid JSON → write 차단 코드 | `local-approval-ledger.ts:196` ✅ |
+| `Date.now` / `new Date(` / `Math.random` (실코드) | 0건 ✅ |
+| `localStorage` / `sessionStorage` / `navigator.clipboard` | 0건 ✅ |
+| live — bind action POST 200, 18ms | ✅ |
+| live — "✓ 로컬 승인 기록 존재" UI 표시 | ✅ |
+| mock — "Mock Fact Card — 기록 불가" 비활성화 | ✅ |
+| console error | 0건 ✅ |

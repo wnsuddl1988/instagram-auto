@@ -13,16 +13,21 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `6e95cca test(package-preview): record live publishability controls smoke` ← **현재 HEAD**
+- `ce987ee feat(package-preview): add local publishable projection dry run` ← **현재 HEAD (committed)**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
-최근 완료 (uncommitted):
+최근 완료 (uncommitted — checkpoint 대기):
 
-- `package-preview-local-publishable-projection-v1-review-fix`: 3개 review-fix — projection 전용 ID, non-null assertion 제거(discriminated union), dry-run 링크 endPeriod 동적 전달
-- `package-preview-local-publishable-projection-v1`: page.tsx에 dry-run projection 패널 추가 (base implementation)
-- `package-preview-live-publishability-controls-smoke-v1` (committed 6e95cca): live isMock=false QA evidence
+- `owner-publishability-local-approval-ledger-v1`: file-backed local approval ledger 구현
+  - `.gitignore` → `/.money-shorts-local/` 추가
+  - `lib/owner-decision/local-approval-ledger.ts` (신규) — server-only fs 기반 ledger, atomic write
+  - `lib/owner-decision/index.ts` — local-approval-ledger export 추가
+  - `app/fact-cards/manual/package-preview/actions.ts` (신규) — Server Action recordApproval/getLedgerRecord
+  - `app/fact-cards/manual/package-preview/LedgerStatusPanel.tsx` (신규) — Client Component
+  - `app/fact-cards/manual/package-preview/page.tsx` — import 추가, 섹션 ⑧ LedgerStatusPanel 연결
+  - browser smoke: mock=비활성화, live=POST 200 + 파일 저장 + UI 반영 ✅
 
 최근 완료 (committed):
 

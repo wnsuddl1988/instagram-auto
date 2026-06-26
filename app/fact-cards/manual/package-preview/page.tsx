@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PublishabilityDecisionControls } from "./PublishabilityDecisionControls";
+import { LedgerStatusPanel } from "./LedgerStatusPanel";
 import { validHouseholdDebtResult } from "@/lib/source-facts/manual-fixtures";
 import { generatedBaseRateResult } from "@/lib/source-facts/candidates";
 import { assembleContentPackage } from "@/lib/content-package/assembler";
@@ -18,6 +19,9 @@ import {
 } from "@/lib/source-facts/ecos-latest-period";
 import { createEcosLiveTransport } from "@/lib/source-facts/ecos-live-transport";
 import { buildEcosLatestDraftCandidate } from "@/lib/source-facts/ecos-latest-candidate";
+import { getLocalPublishabilityApproval } from "@/lib/owner-decision/local-approval-ledger";
+import type { LocalApprovalRecord, RecordApprovalResult } from "@/lib/owner-decision/local-approval-ledger";
+import { recordApproval } from "./actions";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 import type {
   AnyCardProps,
@@ -472,6 +476,14 @@ export default async function PackagePreviewPage({
       );
     }
 
+    const liveLedgerRecord = getLocalPublishabilityApproval(
+      liveAuthoringResult.factCard.id,
+    );
+    const liveRecordApprovalAction = recordApproval.bind(
+      null,
+      liveAuthoringResult.factCard,
+    );
+
     return (
       <PackagePreviewContent
         authoringResult={liveAuthoringResult}
@@ -487,6 +499,8 @@ export default async function PackagePreviewPage({
         }}
         publishabilityProjection={publishabilityProjection}
         liveEndPeriod={endPeriod}
+        initialLedgerRecord={liveLedgerRecord}
+        recordApprovalAction={liveRecordApprovalAction}
       />
     );
   }
@@ -517,6 +531,14 @@ export default async function PackagePreviewPage({
     );
   }
 
+  const mockLedgerRecord = getLocalPublishabilityApproval(
+    authoringResult.factCard.id,
+  );
+  const mockRecordApprovalAction = recordApproval.bind(
+    null,
+    authoringResult.factCard,
+  );
+
   return (
     <PackagePreviewContent
       authoringResult={authoringResult}
@@ -526,6 +548,8 @@ export default async function PackagePreviewPage({
       liveProvenance={null}
       publishabilityProjection={publishabilityProjection}
       liveEndPeriod={null}
+      initialLedgerRecord={mockLedgerRecord}
+      recordApprovalAction={mockRecordApprovalAction}
     />
   );
 }
@@ -550,6 +574,8 @@ function PackagePreviewContent({
   liveProvenance,
   publishabilityProjection,
   liveEndPeriod,
+  initialLedgerRecord,
+  recordApprovalAction,
 }: {
   authoringResult: ManualFactCardAuthoringResult;
   candidateKey: string | null;
@@ -558,6 +584,8 @@ function PackagePreviewContent({
   liveProvenance: LiveProvenance | null;
   publishabilityProjection: string | null;
   liveEndPeriod: string | null;
+  initialLedgerRecord: LocalApprovalRecord | null;
+  recordApprovalAction: (notes: string | null) => Promise<RecordApprovalResult>;
 }) {
   const factCard = authoringResult.factCard!;
 
@@ -1380,6 +1408,15 @@ function PackagePreviewContent({
               </Link>
             </div>
           )}
+
+          {/* Local Approval Ledger — file-backed, gitignored, server-bound */}
+          <SectionLabel>로컬 승인 Ledger (파일 저장)</SectionLabel>
+          <LedgerStatusPanel
+            factCardId={factCard.id}
+            isMock={factCard.isMock}
+            recordApprovalAction={recordApprovalAction}
+            initialRecord={initialLedgerRecord}
+          />
         </SectionCard>
 
         {/* ⑨ Review Packet */}
