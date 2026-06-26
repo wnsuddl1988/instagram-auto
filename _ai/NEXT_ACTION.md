@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — acceptance smoke + unchanged copy quality fix 완료, checkpoint 대기
+## 2026-06-26 현재 — chart card props section 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,14 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `f5db4c5 fix(package-preview): keep live draft gate pending` ← **현재 HEAD**
+- `92f545b fix(source-facts): improve unchanged base-rate wording` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `live-latest-draft-owner-acceptance-smoke-v1`: acceptance smoke PASS (코드 변경 없음, docs only)
+- `package-preview-chart-card-props-section-v1`: Chart Card Package 섹션 추가, TS/ESLint PASS, smoke PASS
 
 최근 완료:
 
@@ -73,6 +73,15 @@ Owner 결정:
 
 - `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
 - live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-props-section-v1)
+
+`package-preview-chart-card-props-section-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `app/fact-cards/manual/package-preview/page.tsx`: "⑩ Chart Card Package" 섹션 추가
+- `pkg.chartCardPackage` 전체 data-only 표시 (number/comparison/source/cta card)
+- `?candidate=base-rate`에서 interpretationNote "동결" 문구 확인
+- TS/ESLint/console 경고 없음
 
 ## 최근 완료 (2026-06-26 추가 — ecos-base-rate-unchanged-copy-quality-v1)
 

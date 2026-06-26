@@ -986,9 +986,93 @@ function PackagePreviewContent({
           )}
         </SectionCard>
 
+        {/* ⑩ Chart Card Package */}
+        <SectionCard
+          title="⑩ Chart Card Package"
+          subtitle={`packageId: ${pkg.chartCardPackage.packageId}`}
+          color="indigo"
+        >
+          <FieldRow label="packageId" value={pkg.chartCardPackage.packageId} mono />
+          <FieldRow label="factCardId" value={pkg.chartCardPackage.factCardId} mono />
+          <FieldRow label="blueprintVideoId" value={pkg.chartCardPackage.blueprintVideoId ?? "null"} mono />
+          <FieldRow label="riskLevel" value={pkg.chartCardPackage.riskLevel} mono />
+          <FieldRow label="card count" value={`${pkg.chartCardPackage.cards.length}장`} mono />
+          <FieldRow
+            label="sourceCitationIds"
+            value={
+              <span className="text-xs text-slate-400 font-mono break-all">
+                {pkg.chartCardPackage.sourceCitationIds.join(", ")}
+              </span>
+            }
+          />
+          <SectionLabel>카드 상세</SectionLabel>
+          <div className="space-y-3">
+            {pkg.chartCardPackage.cards.map((card) => (
+              <div
+                key={card.cardId}
+                className="rounded border border-slate-700/40 bg-slate-900/50 px-3 py-3 text-xs space-y-1"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-1.5 py-0.5 rounded bg-indigo-900/40 border border-indigo-700/40 text-indigo-300 font-mono text-xs font-semibold">
+                    {card.cardType}
+                  </span>
+                  <span className="text-slate-500 font-mono">{card.cardId}</span>
+                  <span className="text-slate-600 font-mono ml-auto">
+                    {card.dimensions.widthPx}×{card.dimensions.heightPx}
+                  </span>
+                </div>
+                {card.cardType === "number_card" && (
+                  <>
+                    <FieldRow label="title" value={card.title} />
+                    <FieldRow label="value" value={card.value} mono />
+                    <FieldRow label="unit" value={card.unit} mono />
+                    <FieldRow label="previousValue" value={card.previousValue ?? "—"} mono />
+                    <FieldRow label="changeValue" value={card.changeValue ?? "—"} mono />
+                    <FieldRow label="changeRate" value={card.changeRate ?? "—"} mono />
+                    <FieldRow label="interpretationNote" value={card.interpretationNote} />
+                    <FieldRow label="riskLevel" value={card.riskLevel} mono />
+                  </>
+                )}
+                {card.cardType === "comparison_card" && (
+                  <>
+                    <FieldRow label="title" value={card.title} />
+                    <FieldRow label="labelLeft / valueLeft" value={`${card.labelLeft} / ${card.valueLeft}`} mono />
+                    <FieldRow label="labelRight / valueRight" value={`${card.labelRight} / ${card.valueRight}`} mono />
+                    <FieldRow label="direction" value={card.direction ?? "null"} mono />
+                    <FieldRow label="changeLabel" value={card.changeLabel} mono />
+                    <FieldRow label="unit" value={card.unit} mono />
+                  </>
+                )}
+                {card.cardType === "source_card" && (
+                  <>
+                    <FieldRow label="sourceName" value={card.sourceName} />
+                    <FieldRow label="publishedDate" value={card.publishedDate} mono />
+                    <FieldRow label="dataPeriod" value={card.dataPeriod ?? "—"} mono />
+                    <FieldRow label="factCardId" value={card.factCardId} mono />
+                    <FieldRow
+                      label="sourceCitationIds"
+                      value={
+                        <span className="text-xs text-slate-400 font-mono break-all">
+                          {card.sourceCitationIds.join(", ")}
+                        </span>
+                      }
+                    />
+                  </>
+                )}
+                {card.cardType === "cta_card" && (
+                  <>
+                    <FieldRow label="ctaText" value={card.ctaText} />
+                    <FieldRow label="subText" value={card.subText ?? "—"} />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+
         {/* ⑪ Package view summary */}
         <SectionCard
-          title="⑩ Package View Summary"
+          title="⑪ Package View Summary"
           subtitle="buildPackageDetailModel 출력 요약"
           color="slate"
         >

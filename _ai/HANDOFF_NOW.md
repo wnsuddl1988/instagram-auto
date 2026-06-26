@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`ecos-base-rate-unchanged-copy-quality-v1`
+`package-preview-chart-card-props-section-v1`
 
 ## Current State
 
@@ -10,96 +10,92 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `f5db4c5 fix(package-preview): keep live draft gate pending`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 39]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `92f545b fix(source-facts): improve unchanged base-rate wording`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 40]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- Live latest draft Owner acceptance smoke passed with a non-blocking quality gap.
-- Live route evidence:
-  - `sourceProviderId=provider-ecos-live`
-  - `isMock=false`
+- Live latest draft Owner acceptance smoke passed.
+- ECOS base-rate unchanged copy quality fixed:
+  - `changeValue === 0` now says base rate was held/frozen/unchanged.
+  - No numeric fields, citations, `isMock`, or `isPublishable` were changed.
+- Live route remains draft-only and gate-pending:
   - `isPublishable=false`
-  - `dataPeriod=2026년 5월`
-  - `publishedDate=2025-05-29`
-  - BOK source-date citation present
-  - `decision_pending`
+  - `decision=null`
   - `canProceedToRender=false`
   - `copyReady=false`
-- Quality gap found:
-  - For unchanged base rate (`currentValue=2.5%`, `previousValue=2.5%`, `changeValue=0.0%p`), generated interpretation says:
-    - "2.5%에서 2.5%로 0.0%p 조정했다."
-  - This is source-accurate but low-quality. It should say the rate was held/frozen/unchanged.
+- `assembleContentPackage()` already generates a `chartCardPackage` from the Fact Card and Blueprint.
+- Package preview currently shows ids such as `chartCardPackageId`, but does not visibly inspect the chart/number card props.
 
 Important nuance:
 
-- This task must improve wording only for the ECOS base-rate Fact Card candidate.
-- Do not invent facts or forecasts.
-- Do not set `isPublishable=true`.
-- Keep live route draft-only.
-- `_ai` docs currently contain acceptance smoke evidence; this implementation should preserve and extend that evidence.
+- This task is not visual rendering. It exposes deterministic 9:16 chart-card props for review.
+- Do not generate image/video/audio files.
+- Do not run ffmpeg.
+- Do not change the chart-card model unless a tight display bug requires it.
+- `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` may still describe `92f545b` as pending or omit it; sync state in this slice if touched.
 
 ## Goal
 
-Improve ECOS base-rate candidate wording for unchanged (`changeValue === 0`) cases so live/latest and mock candidates say "동결/변동 없음" instead of "2.5%에서 2.5%로 0.0%p 조정".
+Expose the existing `chartCardPackage` inside `/fact-cards/manual/package-preview` so Owner can inspect the 9:16 number/comparison/source card props before any real rendering work.
 
 Primary target:
 
-- `lib/source-facts/candidates.ts`
-  - Both `ecosBaseRateParser` and `ecosBaseRateLiveParser` should produce better `interpretation` and `allowedClaims` when `changeValue === 0`.
-  - Non-zero change behavior should remain unchanged.
+- Package preview should include a clear section for `Chart Card Package`.
+- It should show data-only card props derived from the Fact Card:
+  - package id
+  - card count
+  - dimensions (`1080x1920`)
+  - card type
+  - number card value/change/interpretation
+  - comparison card direction/change label
+  - source card attribution/published date/data period
+- Live latest route should show the improved unchanged wording in the chart card interpretation note.
 
 ## Approved Scope
 
 Allowed:
 
 - Modify:
-  - `lib/source-facts/candidates.ts`
+  - `app/fact-cards/manual/package-preview/page.tsx`
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Add a small local helper in `candidates.ts` if it reduces duplication between mock and live parser.
-- Suggested behavior:
-  - If `p.changeValue === 0`:
-    - interpretation: `한국은행이 ${p.dataPeriod} 기준금리를 ${p.currentValueText}로 동결했다. 직전 발표 대비 변동은 ${p.changeValueText}다.`
-    - allowed claim: `직전 기준금리 대비 변동은 ${p.changeValueText}다.`
-    - or equivalent clear Korean wording using only Fact Card fields.
-  - If `p.changeValue !== 0`:
-    - keep existing adjustment wording.
-- Keep existing numeric fields unchanged:
-  - `currentValue`
-  - `previousValue`
-  - `changeValue`
-  - `changeRate`
-  - numeric values
-  - citations
-  - `isMock`
-  - `isPublishable`
+- Use existing `pkg.chartCardPackage`.
+- Add small local display helpers/types in the page file if needed.
+- Keep the section data-only:
+  - no canvas rendering
+  - no image generation
+  - no file output
+  - no ffmpeg
+- Preserve existing default/mock/live routes.
+- Preserve live route draft-only gate behavior.
+- State sync:
+  - record latest checkpoint `92f545b`
+  - mark acceptance smoke + unchanged copy fix as checkpointed
+  - record this chart-card preview slice as uncommitted until checkpointed.
 
 Not required:
 
-- Do not change normalizer math.
-- Do not change ECOS/BOK connector logic.
-- Do not change package preview gate logic.
-- Do not alter script generator globally unless a direct test proves it is necessary.
-- Do not add tests with new dependencies.
+- Do not create a separate `/charts` route.
+- Do not add chart rendering libraries.
+- Do not change chart card generator semantics unless a very small obvious display issue appears.
+- Do not implement actual video templates or render manifests beyond existing data display.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `39`
-  - dirty `_ai` docs from acceptance smoke
+  - branch ahead `40`
   - untracked `piq_diag_out.txt`
-  - no app/lib dirty files except this task's changes.
+  - no tracked dirty files except this handoff doc if Codex has just updated it.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep all wording source-first and conservative:
-  - no forecast
-  - no advice
-  - no invented policy motive
-  - no "인하/인상" unless sign actually indicates it.
+- Keep all displayed chart-card values source-first:
+  - no invented values
+  - no forecast/advice
+  - no render/publish claim
 - Do not print secret values or secret-bearing ECOS URLs.
 
 ## Forbidden
@@ -125,21 +121,22 @@ Not required:
 Run focused checks:
 
 - `git status -sb`
-- targeted ESLint for changed source file(s)
-- focused TypeScript check for changed source file(s)
-- static/content verification:
-  - generated mock base-rate candidate interpretation no longer contains `3.0%에서 3.0%로 0.0%p 조정`
-  - live parser path for unchanged `2.5% -> 2.5%` would produce "동결" or equivalent unchanged wording
-  - non-zero change wording remains "조정" style
-  - no numeric field changes
-- route smoke if practical:
-  - `/fact-cards/manual/package-preview?candidate=base-rate` shows improved unchanged wording
-  - optional live route smoke only if already available and safe; otherwise static verification is acceptable
+- targeted ESLint for changed app file(s)
+- focused TypeScript check for changed app file(s)
+- route/static smoke:
+  - `/fact-cards/manual/package-preview` loads and shows Chart Card Package section
+  - `/fact-cards/manual/package-preview?candidate=base-rate` loads and shows unchanged wording (`동결` or equivalent) in number card interpretation
+  - live route optional if safe/available; if loaded, verify chart card section preserves draft-only gate and source provenance
+  - no React unique key warning on smoked routes
+- static safety:
+  - no new `createEcosLiveTransport` path outside explicit live branch
+  - package-preview live selector still has `prefetch={false}`
+  - money-shorts hub live link still has `prefetch={false}`
 - secret safety:
   - no API key value printed
   - no `.env*` modified/staged
   - no secret-bearing ECOS URL printed or rendered
-- forbidden pattern search on changed source/app file(s):
+- forbidden pattern search on changed app file(s):
   - `Date.now`
   - `Math.random`
   - `navigator.clipboard`
@@ -155,14 +152,15 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Unchanged base-rate cases use clear "동결/변동 없음" wording.
-- No facts/numbers are invented.
-- Non-zero base-rate change wording remains intact.
+- Package preview has a readable Chart Card Package section.
+- Existing generated chart-card props can be inspected without media rendering.
+- Base-rate unchanged case uses improved "동결/변동 없음" wording in relevant card text.
+- Default/mock/live route behavior does not regress.
 - Live route remains draft-only and gate-pending.
-- Acceptance smoke docs and current checkpoint state remain synchronized.
+- `_ai` state no longer says latest checkpoint is older than `92f545b` or that unchanged copy fix is uncommitted.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
-- Final handoff reports changed files, checks/results, wording evidence, deviations/risks, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, route evidence, chart-card evidence, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -171,4 +169,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this closes the quality gap found during acceptance smoke.
+- Update `_ai/CLAUDE_REPORT.md` because this exposes the next video-template-adjacent data surface.

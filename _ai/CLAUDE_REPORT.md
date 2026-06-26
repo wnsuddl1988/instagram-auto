@@ -1729,6 +1729,31 @@ next action: `dev-server-default-route-alignment-v1` — 개발서버 기본 진
 - TS 0 errors (tsc --noEmit --strict false) ✅
 - ESLint 0 warnings ✅
 
+## Package Preview Chart Card Props Section (`package-preview-chart-card-props-section-v1` — 2026-06-26)
+
+`app/fact-cards/manual/package-preview/page.tsx`에 "⑩ Chart Card Package" 섹션 추가.
+
+변경 내용:
+- `pkg.chartCardPackage` 전체를 data-only로 표시:
+  - packageId, factCardId, blueprintVideoId, riskLevel, card count, sourceCitationIds
+  - 카드 상세: `number_card`(title/value/changeValue/interpretationNote/riskLevel), `comparison_card`(labelLeft/valueLeft/direction/changeLabel), `source_card`(sourceName/publishedDate/dataPeriod/factCardId), `cta_card`(ctaText/subText)
+  - 카드별 dimensions(1080×1920) 표시
+- 기존 섹션 번호 ⑩→⑪ 보정 (Package View Summary)
+- canvas/ffmpeg/이미지 생성 없음
+- 기존 default/mock/live 경로 동작 무변경
+
+브라우저 smoke 결과:
+- default route: Chart Card Package 섹션 ✅, number_card/comparison_card/source_card 모두 표시 ✅
+- `?candidate=base-rate`: `동결` 문구 interpretationNote에 표시 ✅
+  - "한국은행이 2025년 1월 기준금리를 3.0%로 동결했다. 직전 발표 대비 변동은 0.0%p다."
+- React key warning: 0 ✅
+
+검증:
+- tsc -p tsconfig.json --noEmit (package-preview 관련 오류): 0 ✅
+- ESLint page.tsx: 0 warnings ✅
+- `prefetch={false}` package-preview:565, money-shorts:163 유지 ✅
+- forbidden patterns (Date.now/Math.random/navigator.clipboard/ffmpeg/output//upload/deploy): 없음 ✅
+
 ## Retired Active Routes
 
 Do not resume:
