@@ -26,6 +26,7 @@ import {
   LEDGER_OVERLAY_INACTIVE_MESSAGES,
 } from "./ledger-overlay";
 import type { LedgerOverlayResult } from "./ledger-overlay";
+import { OwnerReviewGuidancePanel } from "./OwnerReviewGuidancePanel";
 import { recordApproval } from "./actions";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 import type {
@@ -877,6 +878,16 @@ function PackagePreviewContent({
       </div>
 
       <main className="max-w-screen-xl mx-auto px-4 py-5 space-y-5">
+        {/* ⓪ Owner review guidance — display-only, no side effects */}
+        <OwnerReviewGuidancePanel
+          isMock={factCard.isMock}
+          isPublishable={factCard.isPublishable}
+          blockerCodes={gateResult.blockerCodes}
+          ledgerOverlayResult={ledgerOverlayResult}
+          primarySourceName={reviewPacket.sourceRefs[0]?.sourceName ?? null}
+          primaryPublishedDate={reviewPacket.sourceRefs[0]?.publishedDate ?? null}
+        />
+
         {/* ① Workflow status bar */}
         <SectionCard
           title="파이프라인 상태"

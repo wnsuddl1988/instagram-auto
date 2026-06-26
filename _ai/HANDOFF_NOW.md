@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-ledger-overlay-page-integration-static-check-v1`
+`package-preview-owner-review-guidance-panel-v1-review-fix`
 
 ## Project
 
@@ -11,57 +11,48 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `c29f4d9 test(package-preview): add ledger overlay static guard`
-- Current pre-handoff `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 57]` plus unrelated `?? piq_diag_out.txt`
-- This handoff update may make `_ai/HANDOFF_NOW.md` modified before Claude starts; that is expected.
+- Latest HEAD: `bd4e745 test(package-preview): guard ledger overlay page integration`
+- Current working tree includes the accepted in-progress UI slice:
+  - modified `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`
+  - modified `app/fact-cards/manual/package-preview/page.tsx`
+  - untracked `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx`
+  - unrelated untracked `piq_diag_out.txt`
+- The `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` edits are accepted docs sync to `bd4e745` / ahead 58. Do not revert them.
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
+## Review Finding To Fix
+
+Codex review accepted the component shape and `resolveState` priority:
+
+1. `ledgerOverlayResult.active` first is correct because active overlay already passed the 4-guard revalidation and is the intended display-only approved projection.
+2. Nullable `primarySourceName` / `primaryPublishedDate` props are acceptable for this local display component.
+3. The panel placement before the existing workflow status section is acceptable.
+
+One UI wording mismatch must be fixed before checkpoint:
+
+- In `OwnerReviewGuidancePanel.tsx`, the ledger-approved text says `Overlay 섹션(⑨)`, but current `page.tsx` uses `⑨ Review Packet`. The ledger overlay is a subsection inside `⑧ Publishability Readiness`.
+- The pending approval next-action text says `⑧ Owner Decision Controls`, while the visible label is `Owner Decision 로컬 샌드박스` inside `⑧ Publishability Readiness`.
+
 ## Goal
 
-Extend the existing no-dependency ledger overlay static guard so it also verifies the page integration contract: `page.tsx` must keep using the extracted `ledger-overlay.ts` helper and typed inactive message map instead of drifting back to inline overlay guard/UI reason logic.
-
-Also sync `_ai` state docs to the latest checkpoint `c29f4d9` / ahead 57.
-
-This is a QA/readiness slice. Do not change runtime behavior.
+Fix only the section-reference wording in the new Owner review guidance panel so it matches the current UI section labels and does not imply that section ⑨ is the ledger overlay.
 
 ## Approved Scope
 
-1. Update `scripts/check-ledger-overlay-static.mjs` to read:
-   - `app/fact-cards/manual/package-preview/ledger-overlay.ts`
-   - `app/fact-cards/manual/package-preview/page.tsx`
-2. Preserve all existing `ledger-overlay.ts` checks.
-3. Add concise page integration checks, for example:
-   - `page.tsx` imports or references `evaluateLedgerOverlay`
-   - `page.tsx` imports or references `LEDGER_OVERLAY_INACTIVE_MESSAGES`
-   - `page.tsx` calls `evaluateLedgerOverlay(`
-   - `page.tsx` uses `LEDGER_OVERLAY_INACTIVE_MESSAGES[ledgerOverlayResult.reason]`
-   - `page.tsx` no longer declares inline `type LedgerOverlayInactiveReason`
-   - `page.tsx` no longer declares inline `type LedgerOverlayResult`
-   - `page.tsx` no longer contains the old inline IIFE pattern for `const ledgerOverlayResult`
-4. Keep the script no-dependency and deterministic:
-   - built-in Node modules only
-   - no writes, no network, no env/secret access, no ledger data access
-   - concise PASS/FAIL evidence and non-zero exit on failed invariant
-5. Update `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` minimally so they reflect:
-   - latest HEAD `c29f4d9`
-   - branch ahead 57
-   - latest QA/test checkpoint includes `c29f4d9`
-   - latest code checkpoint remains `71f3a9b`
-   - push not run
-   - `piq_diag_out.txt` remains unrelated untracked and excluded
-6. Update `_ai/CLAUDE_REPORT.md` only if useful to preserve concise QA evidence. If updated, keep it short.
+1. Edit `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx` only for display copy.
+2. Replace the wrong `Overlay 섹션(⑨)` reference with copy that points to `⑧ Publishability Readiness` / `로컬 승인 Overlay (Ledger 기반)` or avoids numbering ambiguity.
+3. Replace `⑧ Owner Decision Controls` with copy that matches the visible `⑧ Publishability Readiness` / `Owner Decision 로컬 샌드박스` wording.
+4. Do not change `resolveState`, props, imports, page insertion, ledger logic, gate logic, clipboard logic, or any behavior.
+5. Do not update `_ai/NEXT_ACTION.md` or `_ai/PROJECT_STATE.md` unless a check result materially changes reusable state. Default: no docs change besides this handoff file if already modified.
 
 ## Approved Editable Files
 
-- `scripts/check-ledger-overlay-static.mjs`
-- `_ai/NEXT_ACTION.md`
-- `_ai/PROJECT_STATE.md`
-- `_ai/CLAUDE_REPORT.md` only if useful
-- `_ai/HANDOFF_NOW.md` only for final status if needed
+- `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx`
+- `_ai/HANDOFF_NOW.md` only if final status needs a tiny update
 
-Do not edit `app/` or `lib/` implementation files.
+Do not edit unrelated implementation files.
 
 ## Forbidden
 
@@ -71,7 +62,6 @@ Do not edit `app/` or `lib/` implementation files.
 - Do not stage/commit/push.
 - Do not add dependencies or edit lockfiles.
 - Do not edit `package.json`.
-- Do not edit `app/` or `lib/` implementation files.
 - Do not edit `.env*`, secrets, deployment config, DB/Supabase schema, migrations, or API credentials.
 - Do not call OpenAI/GPT, Gemini, Veo, ElevenLabs, KOSIS, OpenDART, FRED, ECOS live, or any live API.
 - Do not run ffmpeg, render, export, upload, post, deploy, or write to `output/`.
@@ -84,30 +74,36 @@ Run focused checks:
 
 1. `git status -sb`
 2. `git diff --stat`
-3. `node scripts/check-ledger-overlay-static.mjs`
-4. ESLint for the script:
-   - prefer `pnpm exec eslint scripts/check-ledger-overlay-static.mjs --max-warnings=0`
-   - if `pnpm exec` hits the known non-TTY module purge issue, use `.\node_modules\.bin\eslint.cmd scripts/check-ledger-overlay-static.mjs --max-warnings=0`
-5. Static review that only approved files changed.
-6. Confirm `piq_diag_out.txt` remains untracked and untouched.
+3. Focused diff review of `OwnerReviewGuidancePanel.tsx`
+4. `node scripts/check-ledger-overlay-static.mjs`
+5. ESLint:
+   - `pnpm exec eslint app/fact-cards/manual/package-preview/page.tsx app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx --max-warnings=0`
+   - if `pnpm exec` hits the known non-TTY module purge issue, use `.\node_modules\.bin\eslint.cmd ... --max-warnings=0`
+6. TypeScript evidence:
+   - run the existing project TypeScript check approach if practical, and report whether changed package-preview files have 0 errors
+   - if full project check reports known unrelated `output/` binary `.ts` errors, explicitly report that changed package-preview files have no related errors
+7. Confirm no files outside approved scope changed by this review-fix.
+8. Confirm `piq_diag_out.txt` remains untracked and untouched.
 
-No TypeScript, browser, live API, render, ffmpeg, output, DB, or clipboard checks are approved for this slice.
+No browser, live API, render, ffmpeg, output, DB, env, clipboard, or `.money-shorts-local/` checks are approved for this slice.
 
 ## Definition of Done
 
-- Static guard still passes for `ledger-overlay.ts` helper safety invariants.
-- Static guard also verifies `page.tsx` integration with the helper/message map.
-- State docs reflect latest HEAD `c29f4d9` and ahead 57.
-- No runtime implementation files are changed.
+- Owner guidance panel copy no longer points the ledger overlay to section ⑨.
+- Pending approval next-action copy matches the visible Owner decision area.
+- No behavior or logic changed.
+- Static guard and focused ESLint pass.
+- Focused TypeScript evidence shows no changed-file errors.
 - No forbidden files or systems are touched.
-- Report whether this small QA/docs slice should be checkpoint committed after Codex review or bundled with a later substantive task.
+- Report whether the combined UI slice + docs sync should now be checkpoint committed.
 
 ## Final Report Format
 
 Report back to Codex in Korean with:
 
 - changed files
-- integration/static guard invariants covered
+- exact wording fix made
+- behavior preserved
 - checks/results
 - deviations/blockers
 - final `git status -sb`

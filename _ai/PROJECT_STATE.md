@@ -1,8 +1,8 @@
 # PROJECT_STATE — AutoShorts MVP
 
-**갱신:** 2026-06-26
+**갱신:** 2026-06-27
 
-**전체프로젝트 진행률:** 약 82% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결, 개발서버 기본 진입점 Money Shorts OS 기준 정렬, chart card props/visual preview, owner-decision publishability gate, publishability readiness panel(⑧ 섹션), publishability decision contract(evaluatePublishabilityDecision), package-preview decision contract 읽기 전용 UI 연결, Owner decision 로컬 샌드박스 controls(PublishabilityDecisionControls), publishable projection dry-run(?publishabilityProjection=approved-dry-run — memory-only clone, gate OPEN, copyReady READY 증명), **local file-backed approval ledger(`.money-shorts-local/publishability-approvals.json`, gitignored, Server Action, LedgerStatusPanel, atomic write)**, **ledger-approved overlay with 4-guard current Fact Card revalidation**, **riskReview.packageId TS fix** 까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음 task는 Codex 지시 대기 중이다.
+**전체프로젝트 진행률:** 약 83% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결, 개발서버 기본 진입점 Money Shorts OS 기준 정렬, chart card props/visual preview, owner-decision publishability gate, publishability readiness panel(⑧ 섹션), publishability decision contract(evaluatePublishabilityDecision), package-preview decision contract 읽기 전용 UI 연결, Owner decision 로컬 샌드박스 controls(PublishabilityDecisionControls), publishable projection dry-run(?publishabilityProjection=approved-dry-run — memory-only clone, gate OPEN, copyReady READY 증명), **local file-backed approval ledger(`.money-shorts-local/publishability-approvals.json`, gitignored, Server Action, LedgerStatusPanel, atomic write)**, **ledger-approved overlay with 4-guard current Fact Card revalidation**, **riskReview.packageId TS fix**, **ledger overlay helper 분리 + typed message map**, **static guard script (ledger-overlay.ts safety invariant 26개 + page.tsx integration invariant 7개)** 까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음 task는 Codex 지시 대기 중이다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
 
@@ -99,8 +99,9 @@
 - Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
 - Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
 - Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
-- Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard` ← **현재 HEAD**
-- Branch: `codex/source-first-blueprint-clean` (ahead 57)
+- Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard`
+- Commit: `bd4e745` — `test(package-preview): guard ledger overlay page integration` ← **현재 HEAD**
+- Branch: `codex/source-first-blueprint-clean` (ahead 58)
 - Push: 미실행
 
 ---
