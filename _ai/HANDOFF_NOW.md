@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-chart-card-props-section-v1`
+`package-preview-chart-card-visual-preview-v1`
 
 ## Current State
 
@@ -10,49 +10,39 @@ Current status:
 
 - **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 - Branch: `codex/source-first-blueprint-clean`
-- Latest local checkpoint: `92f545b fix(source-facts): improve unchanged base-rate wording`
-- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 40]` plus untracked `piq_diag_out.txt`
+- Latest local checkpoint: `a69e497 feat(package-preview): show chart card props in package preview`
+- Latest known `git status -sb`: `## codex/source-first-blueprint-clean...origin/main [ahead 41]` plus untracked `piq_diag_out.txt`
 - Push: not run.
 - `piq_diag_out.txt` is unrelated untracked output. Do not read, modify, delete, stage, or commit it.
 
 Recently completed:
 
-- Live latest draft Owner acceptance smoke passed.
-- ECOS base-rate unchanged copy quality fixed:
-  - `changeValue === 0` now says base rate was held/frozen/unchanged.
-  - No numeric fields, citations, `isMock`, or `isPublishable` were changed.
-- Live route remains draft-only and gate-pending:
-  - `isPublishable=false`
-  - `decision=null`
-  - `canProceedToRender=false`
-  - `copyReady=false`
-- `assembleContentPackage()` already generates a `chartCardPackage` from the Fact Card and Blueprint.
-- Package preview currently shows ids such as `chartCardPackageId`, but does not visibly inspect the chart/number card props.
+- ECOS base-rate unchanged wording now uses "동결/변동 없음" style copy for `changeValue === 0`.
+- Package preview now exposes existing `pkg.chartCardPackage` data-only props:
+  - package ids
+  - card count
+  - number/comparison/source/cta card props
+  - dimensions
+- No canvas, ffmpeg, image, video, or output files were generated.
+- Current package-preview section is still mostly raw data rows, not a visual 9:16 preview.
 
 Important nuance:
 
-- This task is not visual rendering. It exposes deterministic 9:16 chart-card props for review.
-- Do not generate image/video/audio files.
-- Do not run ffmpeg.
-- Do not change the chart-card model unless a tight display bug requires it.
-- `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` may still describe `92f545b` as pending or omit it; sync state in this slice if touched.
+- This task is still not video rendering.
+- The goal is a browser UI preview of deterministic card props, using CSS/HTML only.
+- Do not create image files, canvas exports, screenshots as repo artifacts, mp4s, or output files.
+- `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` may still describe `a69e497` as pending or omit it; sync state in this slice if touched.
 
 ## Goal
 
-Expose the existing `chartCardPackage` inside `/fact-cards/manual/package-preview` so Owner can inspect the 9:16 number/comparison/source card props before any real rendering work.
+Add a CSS-only 9:16 visual preview for existing chart-card props inside `/fact-cards/manual/package-preview`, so Owner can inspect what the number/comparison/source cards would look like before any render pipeline exists.
 
 Primary target:
 
-- Package preview should include a clear section for `Chart Card Package`.
-- It should show data-only card props derived from the Fact Card:
-  - package id
-  - card count
-  - dimensions (`1080x1920`)
-  - card type
-  - number card value/change/interpretation
-  - comparison card direction/change label
-  - source card attribution/published date/data period
-- Live latest route should show the improved unchanged wording in the chart card interpretation note.
+- The preview should be clearly labeled as **visual preview only**.
+- It should use existing `pkg.chartCardPackage.cards`.
+- It should not generate media or files.
+- It should help validate layout/readability for shorts-style vertical cards.
 
 ## Approved Scope
 
@@ -63,36 +53,50 @@ Allowed:
   - `_ai/CLAUDE_REPORT.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
-- Use existing `pkg.chartCardPackage`.
-- Add small local display helpers/types in the page file if needed.
-- Keep the section data-only:
-  - no canvas rendering
-  - no image generation
-  - no file output
-  - no ffmpeg
-- Preserve existing default/mock/live routes.
+- Add small local display components/helpers inside the page file:
+  - `ChartCardVisualPreview`
+  - `NumberCardVisual`
+  - `ComparisonCardVisual`
+  - `SourceCardVisual`
+  - `CtaCardVisual`
+  - or equivalent names
+- Use CSS/HTML only.
+- Use stable 9:16 aspect ratio for preview surfaces.
+- Make text readable and prevent overlap:
+  - constrained heights
+  - wrapping
+  - conservative font sizes
+  - no viewport-width font scaling
+- Use existing card props only:
+  - no invented values
+  - no forecast/advice copy
+  - no new source strings beyond already available props
+- Preserve existing raw props section.
+- Preserve default/mock/live route behavior.
 - Preserve live route draft-only gate behavior.
 - State sync:
-  - record latest checkpoint `92f545b`
-  - mark acceptance smoke + unchanged copy fix as checkpointed
-  - record this chart-card preview slice as uncommitted until checkpointed.
+  - record latest checkpoint `a69e497`
+  - mark chart-card props section as checkpointed
+  - record this visual preview slice as uncommitted until checkpointed.
 
 Not required:
 
-- Do not create a separate `/charts` route.
-- Do not add chart rendering libraries.
-- Do not change chart card generator semantics unless a very small obvious display issue appears.
-- Do not implement actual video templates or render manifests beyond existing data display.
+- Do not create a separate route.
+- Do not add dependencies.
+- Do not use canvas/SVG export/image generation.
+- Do not implement screenshot saving.
+- Do not implement actual Remotion/ffmpeg/video templates.
+- Do not change chart-card generator semantics.
 
 ## Required Behavior
 
 - Start with `git status -sb`.
 - Expected at start:
-  - branch ahead `40`
+  - branch ahead `41`
   - untracked `piq_diag_out.txt`
   - no tracked dirty files except this handoff doc if Codex has just updated it.
 - Do not read, modify, delete, stage, or commit `piq_diag_out.txt`.
-- Keep all displayed chart-card values source-first:
+- Keep displayed cards source-first:
   - no invented values
   - no forecast/advice
   - no render/publish claim
@@ -123,11 +127,17 @@ Run focused checks:
 - `git status -sb`
 - targeted ESLint for changed app file(s)
 - focused TypeScript check for changed app file(s)
-- route/static smoke:
-  - `/fact-cards/manual/package-preview` loads and shows Chart Card Package section
-  - `/fact-cards/manual/package-preview?candidate=base-rate` loads and shows unchanged wording (`동결` or equivalent) in number card interpretation
-  - live route optional if safe/available; if loaded, verify chart card section preserves draft-only gate and source provenance
-  - no React unique key warning on smoked routes
+- route/browser smoke:
+  - `/fact-cards/manual/package-preview` loads
+  - `/fact-cards/manual/package-preview?candidate=base-rate` loads
+  - Chart Card Package section still shows raw props
+  - new visual preview surfaces render for number/comparison/source cards
+  - base-rate number visual includes improved "동결" wording or equivalent
+  - no React unique key warning
+  - no obvious text overlap on desktop width
+- mobile/narrow smoke if practical:
+  - preview surfaces remain within container
+  - text does not overflow outside card bounds
 - static safety:
   - no new `createEcosLiveTransport` path outside explicit live branch
   - package-preview live selector still has `prefetch={false}`
@@ -152,15 +162,16 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## Definition of Done
 
-- Package preview has a readable Chart Card Package section.
-- Existing generated chart-card props can be inspected without media rendering.
-- Base-rate unchanged case uses improved "동결/변동 없음" wording in relevant card text.
+- Package preview has CSS-only 9:16 visual previews for chart-card props.
+- Raw chart-card props remain inspectable.
+- Base-rate unchanged case shows improved "동결/변동 없음" wording in visual/card text.
+- No media files, images, video, ffmpeg, output, or external AI calls are created.
 - Default/mock/live route behavior does not regress.
 - Live route remains draft-only and gate-pending.
-- `_ai` state no longer says latest checkpoint is older than `92f545b` or that unchanged copy fix is uncommitted.
+- `_ai` state no longer says latest checkpoint is older than `a69e497` or that chart-card props section is uncommitted.
 - No secret leakage.
 - No DB/render/GPT/upload/push/dependency/output changes.
-- Final handoff reports changed files, checks/results, route evidence, chart-card evidence, deviations/risks, and checkpoint recommendation.
+- Final handoff reports changed files, checks/results, route evidence, visual-preview evidence, deviations/risks, and checkpoint recommendation.
 
 ## Checkpoint Policy
 
@@ -169,4 +180,4 @@ Do not run full `pnpm build`; existing `output/` binary `.ts` pollution is a kno
 
 ## CLAUDE_REPORT Policy
 
-- Update `_ai/CLAUDE_REPORT.md` because this exposes the next video-template-adjacent data surface.
+- Update `_ai/CLAUDE_REPORT.md` because this adds the first visual preview surface for chart-card props.

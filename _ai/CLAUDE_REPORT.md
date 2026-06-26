@@ -1754,6 +1754,32 @@ next action: `dev-server-default-route-alignment-v1` — 개발서버 기본 진
 - `prefetch={false}` package-preview:565, money-shorts:163 유지 ✅
 - forbidden patterns (Date.now/Math.random/navigator.clipboard/ffmpeg/output//upload/deploy): 없음 ✅
 
+## Package Preview Chart Card Visual Preview (`package-preview-chart-card-visual-preview-v1` — 2026-06-26)
+
+`app/fact-cards/manual/package-preview/page.tsx`에 CSS-only 9:16 visual preview 추가.
+
+변경 내용:
+- 5개 local 컴포넌트 추가: `CardShell`, `NumberCardVisual`, `ComparisonCardVisual`, `SourceCardVisual`, `CtaCardVisual`, `ChartCardVisualPreview`
+- Chart Card Package 섹션 안에 "9:16 VISUAL PREVIEW — CSS ONLY" 레이블 + 카드 미리보기 그리드 추가
+- `style={{ aspectRatio: "9/16", maxWidth: "180px" }}` — 9:16 비율 고정, 180px 최대 너비
+- 텍스트 오버플로 방지: `truncate`, `line-clamp-*`, `overflow-hidden`
+- card type별 accent color: number=indigo, comparison=slate, source=amber, cta=emerald
+- `AnyCardProps` / `NumberCardProps` 등 타입 import 추가
+- "실제 영상이 아닙니다 · canvas/ffmpeg 없음 · props 시각화 전용" 안내 문구 추가
+- 기존 raw props 표 (카드 상세) 유지
+
+브라우저 smoke 결과 (curl HTTP 응답):
+- default route: "Chart Card Package", "Visual Preview", "canvas/ffmpeg", "number_card" 출현 ✅
+- `?candidate=base-rate`: 위 4개 + "동결" 출현 ✅
+  - base-rate number card visual에 동결 문구 표시 확인
+- React key warning: 0 ✅ (console warn 없음)
+
+검증:
+- tsc -p tsconfig.json --noEmit (package-preview 관련): 0 ✅
+- ESLint 0 warnings ✅
+- forbidden patterns: 없음 (주석 제외) ✅
+- `prefetch={false}` package-preview:708, money-shorts:163 유지 ✅
+
 ## Retired Active Routes
 
 Do not resume:

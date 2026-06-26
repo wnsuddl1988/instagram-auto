@@ -1,6 +1,6 @@
 # Next Action
 
-## 2026-06-26 현재 — chart card props section 완료, checkpoint 대기
+## 2026-06-26 현재 — chart card visual preview 완료, checkpoint 대기
 
 상태: **MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED**
 
@@ -13,14 +13,14 @@ Owner 결정:
 
 최신 committed checkpoint:
 
-- `92f545b fix(source-facts): improve unchanged base-rate wording` ← **현재 HEAD**
+- `a69e497 feat(package-preview): show chart card props in package preview` ← **현재 HEAD**
 - branch: `codex/source-first-blueprint-clean`
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 최근 완료 (uncommitted):
 
-- `package-preview-chart-card-props-section-v1`: Chart Card Package 섹션 추가, TS/ESLint PASS, smoke PASS
+- `package-preview-chart-card-visual-preview-v1`: CSS-only 9:16 visual preview 추가, TS/ESLint PASS, smoke PASS
 
 최근 완료:
 
@@ -73,6 +73,15 @@ Owner 결정:
 
 - `app/money-shorts/page.tsx`: Live Latest Draft Candidate 섹션 추가 (prefetch={false} link, draft-only 안내)
 - live link href: `/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606`
+
+## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-visual-preview-v1)
+
+`package-preview-chart-card-visual-preview-v1`: uncommitted (Codex checkpoint 승인 대기)
+
+- `app/fact-cards/manual/package-preview/page.tsx`: CSS-only 9:16 visual preview 추가
+- `CardShell`/`NumberCardVisual`/`ComparisonCardVisual`/`SourceCardVisual`/`CtaCardVisual` 컴포넌트 추가
+- base-rate에서 "동결" 문구 visual card에 표시 확인
+- canvas/ffmpeg/output 없음, TS/ESLint/console 경고 없음
 
 ## 최근 완료 (2026-06-26 추가 — package-preview-chart-card-props-section-v1)
 

@@ -17,6 +17,13 @@ import {
 import { createEcosLiveTransport } from "@/lib/source-facts/ecos-live-transport";
 import { buildEcosLatestDraftCandidate } from "@/lib/source-facts/ecos-latest-candidate";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
+import type {
+  AnyCardProps,
+  NumberCardProps,
+  ComparisonCardProps,
+  SourceCardProps,
+  CtaCardProps,
+} from "@/lib/chart-cards/types";
 
 // ── Deterministic constants ────────────────────────────────────────────────────
 const MOCK_VIDEO_ID = "video-manual-household-debt-preview-001";
@@ -193,6 +200,142 @@ function IdChip({ label, value }: { label: string; value: string }) {
       <span className="font-mono text-xs text-slate-400 break-all">{value}</span>
     </div>
   );
+}
+
+// ── Chart Card visual preview components ─────────────────────────────────────
+// CSS-only 9:16 preview. No canvas, no image output, no ffmpeg.
+
+function CardShell({ children, accentClass }: { children: React.ReactNode; accentClass: string }) {
+  return (
+    <div
+      className={`relative w-full overflow-hidden rounded-lg border ${accentClass} bg-slate-950`}
+      style={{ aspectRatio: "9/16", maxWidth: "180px" }}
+    >
+      <div className="absolute inset-0 flex flex-col p-3 text-white overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function NumberCardVisual({ card }: { card: NumberCardProps }) {
+  const changePositive = card.changeValue && card.changeValue.startsWith("+");
+  const changeNegative = card.changeValue && card.changeValue.startsWith("-");
+  const changeColor = changePositive
+    ? "text-emerald-400"
+    : changeNegative
+      ? "text-red-400"
+      : "text-slate-400";
+
+  return (
+    <CardShell accentClass="border-indigo-700/60">
+      <div className="text-[9px] text-indigo-300 uppercase tracking-widest font-semibold mb-1 shrink-0 truncate">
+        {card.title}
+      </div>
+      <div className="text-2xl font-black leading-none my-auto text-center truncate">
+        {card.value}
+      </div>
+      <div className="text-[8px] text-slate-400 text-center truncate">{card.unit}</div>
+      {(card.changeValue || card.changeRate) && (
+        <div className={`text-[9px] font-semibold text-center mt-1 truncate ${changeColor}`}>
+          {card.changeValue}{card.changeRate ? ` (${card.changeRate})` : ""}
+        </div>
+      )}
+      <div className="mt-auto pt-2 border-t border-slate-800/60">
+        <p className="text-[8px] text-slate-300 leading-tight line-clamp-3">
+          {card.interpretationNote}
+        </p>
+      </div>
+      <div className="text-[7px] text-slate-600 mt-1 truncate">
+        {card.source.sourceName} · {card.source.publishedDate}
+      </div>
+    </CardShell>
+  );
+}
+
+function ComparisonCardVisual({ card }: { card: ComparisonCardProps }) {
+  const directionArrow =
+    card.direction === "up" ? "↑" : card.direction === "down" ? "↓" : "→";
+  const arrowColor =
+    card.direction === "up"
+      ? "text-emerald-400"
+      : card.direction === "down"
+        ? "text-red-400"
+        : "text-slate-400";
+
+  return (
+    <CardShell accentClass="border-slate-600/60">
+      <div className="text-[9px] text-slate-300 uppercase tracking-widest font-semibold mb-1 shrink-0 truncate">
+        {card.title}
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-1">
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex flex-col items-center flex-1 min-w-0">
+            <div className="text-[8px] text-slate-500 truncate w-full text-center">{card.labelLeft}</div>
+            <div className="text-sm font-bold truncate w-full text-center">{card.valueLeft}</div>
+          </div>
+          <div className={`text-xl font-black shrink-0 ${arrowColor}`}>{directionArrow}</div>
+          <div className="flex flex-col items-center flex-1 min-w-0">
+            <div className="text-[8px] text-slate-500 truncate w-full text-center">{card.labelRight}</div>
+            <div className="text-sm font-bold truncate w-full text-center">{card.valueRight}</div>
+          </div>
+        </div>
+        <div className="text-[8px] text-slate-400 text-center truncate">{card.unit}</div>
+      </div>
+      <div className="mt-auto pt-2 border-t border-slate-800/60">
+        <div className="text-[8px] text-slate-400 text-center truncate">{card.changeLabel}</div>
+      </div>
+    </CardShell>
+  );
+}
+
+function SourceCardVisual({ card }: { card: SourceCardProps }) {
+  return (
+    <CardShell accentClass="border-amber-700/50">
+      <div className="text-[9px] text-amber-300 uppercase tracking-widest font-semibold mb-1 shrink-0">
+        출처
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-2">
+        <div className="text-[10px] font-semibold text-slate-200 text-center leading-tight line-clamp-2">
+          {card.sourceName}
+        </div>
+        {card.dataPeriod && (
+          <div className="text-[8px] text-slate-400 text-center">{card.dataPeriod}</div>
+        )}
+        <div className="text-[8px] text-slate-500 text-center">{card.publishedDate}</div>
+      </div>
+      <div className="mt-auto pt-2 border-t border-slate-800/60">
+        <p className="text-[7px] text-slate-600 leading-tight line-clamp-2">
+          {card.cautionNote}
+        </p>
+      </div>
+    </CardShell>
+  );
+}
+
+function CtaCardVisual({ card }: { card: CtaCardProps }) {
+  return (
+    <CardShell accentClass="border-emerald-700/50">
+      <div className="flex-1 flex flex-col justify-center gap-2">
+        <div className="text-[11px] font-black text-emerald-300 text-center leading-tight">
+          {card.ctaText}
+        </div>
+        {card.subText && (
+          <div className="text-[8px] text-slate-400 text-center leading-tight line-clamp-2">
+            {card.subText}
+          </div>
+        )}
+      </div>
+    </CardShell>
+  );
+}
+
+function ChartCardVisualPreview({ card }: { card: AnyCardProps }) {
+  if (card.cardType === "number_card") return <NumberCardVisual card={card} />;
+  if (card.cardType === "comparison_card") return <ComparisonCardVisual card={card} />;
+  if (card.cardType === "source_card") return <SourceCardVisual card={card} />;
+  if (card.cardType === "cta_card") return <CtaCardVisual card={card} />;
+  return null;
 }
 
 // ── Error state ────────────────────────────────────────────────────────────────
@@ -1005,6 +1148,19 @@ function PackagePreviewContent({
               </span>
             }
           />
+          <SectionLabel>9:16 Visual Preview — CSS only</SectionLabel>
+          <div className="mb-1 text-[10px] text-slate-600 italic">
+            실제 영상이 아닙니다 · canvas/ffmpeg 없음 · props 시각화 전용
+          </div>
+          <div className="flex flex-wrap gap-3 pb-2">
+            {pkg.chartCardPackage.cards.map((card) => (
+              <div key={`visual-${card.cardId}`} className="flex flex-col items-center gap-1">
+                <ChartCardVisualPreview card={card} />
+                <span className="text-[9px] text-slate-600 font-mono">{card.cardType}</span>
+              </div>
+            ))}
+          </div>
+
           <SectionLabel>카드 상세</SectionLabel>
           <div className="space-y-3">
             {pkg.chartCardPackage.cards.map((card) => (
