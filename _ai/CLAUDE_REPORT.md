@@ -1888,6 +1888,51 @@ Fix: Codex 체크로 발견된 JSX comment + SectionCard title 번호 중복 수
 - ESLint: 0 warnings ✅
 - 패널 로직/gate 로직/route behavior/data contract: 변경 없음 ✅
 
+## Owner Publishability Decision Contract (`owner-publishability-decision-contract-v1` — 2026-06-26)
+
+순수 결정론적 publishability decision contract 추가.
+
+**신규 파일:**
+- `lib/owner-decision/publishability.ts` — `evaluatePublishabilityDecision(factCard, input, options?)` helper
+- `lib/owner-decision/index.ts` — `export * from "./publishability"` 추가
+
+**타입 정의:**
+- `PublishabilityDecisionInput` — `factCardId`, `decision`, `notes`, `decidedAt?`
+- `PublishabilityBlockerCode` — 8종: `decision_pending / decision_rejected / decision_revision_requested / fact_card_id_mismatch / mock_fact_card / missing_citations / source_url_missing / already_publishable`
+- `PublishabilityDecisionResult` — `canMarkPublishable: boolean`, `blockerCodes[]`, 감사 요약(isMock/citationCount/sourceName/sourceUrl)
+- `PUBLISHABILITY_DECISION_SCHEMA_VERSION = "money_shorts_publishability_decision_v1"`
+
+**Pass 조건 (모두 충족 시 canMarkPublishable=true):**
+1. decision === "approved"
+2. factCardId 일치
+3. factCard.isMock === false
+4. factCard.citations.length > 0
+5. factCard.sourceUrl가 "https://"로 시작
+6. factCard.isPublishable === false (아직 publishable 아님)
+
+**핵심 설계 원칙:**
+- FactCard 불변 보장 — isPublishable=true 설정/저장 없음
+- 결정론적 — new Date() / Math.random() / 외부 호출 없음
+- output/ / DB / API route / UI 변경 없음
+
+**검증:**
+| 체크 | 결과 |
+|------|------|
+| TypeScript strict check (output/ 제외) | 0 errors ✅ |
+| ESLint (publishability.ts + index.ts) | 0 warnings ✅ |
+| static verification 9 cases (npx tsx) | 9/9 PASS ✅ |
+| mock card → blocked [mock_fact_card] | ✅ |
+| pending → blocked [decision_pending] | ✅ |
+| rejected → blocked [decision_rejected] | ✅ |
+| revision_requested → blocked | ✅ |
+| id mismatch → blocked [fact_card_id_mismatch] | ✅ |
+| already publishable → blocked [already_publishable] | ✅ |
+| no citations → blocked [missing_citations] | ✅ |
+| http sourceUrl → blocked [source_url_missing] | ✅ |
+| approved live source-backed → canMarkPublishable=true | ✅ |
+| forbidden pattern (Date.now/Math.random/clipboard/ffmpeg/output/upload/deploy) | 주석 문구만, 실제 호출 0건 ✅ |
+| piq_diag_out.txt | untracked 유지 ✅ |
+
 Do not resume:
 
 - Candidate10 / old Money Architect video improvement
