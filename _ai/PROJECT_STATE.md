@@ -1,10 +1,10 @@
-# PROJECT_STATE — AutoShorts MVP
+# PROJECT_STATE — AutoShorts / Money Shorts OS
 
 **갱신:** 2026-06-27
 
-**전체프로젝트 진행률:** 약 83% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, RC smoke, React key warning fix, mock raw data 기반 자동 Fact Card 후보 생성, ECOS connector scaffold/mock transport/normalizer, ECOS live transport async boundary, latest available period resolver, BOK source-date resolver, latest live draft Fact Card candidate 경로, package-preview live latest candidate UI 연결, 개발서버 기본 진입점 Money Shorts OS 기준 정렬, chart card props/visual preview, owner-decision publishability gate, publishability readiness panel(⑧ 섹션), publishability decision contract(evaluatePublishabilityDecision), package-preview decision contract 읽기 전용 UI 연결, Owner decision 로컬 샌드박스 controls(PublishabilityDecisionControls), publishable projection dry-run(?publishabilityProjection=approved-dry-run — memory-only clone, gate OPEN, copyReady READY 증명), **local file-backed approval ledger(`.money-shorts-local/publishability-approvals.json`, gitignored, Server Action, LedgerStatusPanel, atomic write)**, **ledger-approved overlay with 4-guard current Fact Card revalidation**, **riskReview.packageId TS fix**, **ledger overlay helper 분리 + typed message map**, **static guard script (ledger-overlay.ts safety invariant 26개 + page.tsx integration invariant 7개)** 까지 완료됐다. 실제 영상 제작은 아직 금지이며, 다음 task는 Codex 지시 대기 중이다.
+**전체프로젝트 진행률:** 약 83% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, **Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation**까지 완료됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
-> **현재 품질 게이트:** `MONEY_SHORTS_OS_SOURCE_FIRST_CORE_LOCKED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_PRODUCT_DIRECTION_V1.md`, `_ai/MONEY_SHORTS_OS_PRD_V1.md`, `_ai/MONEY_SHORTS_OS_MVP1_CONTENT_PACKAGE_SPEC.md`, `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`, `_ai/MONEY_SHORTS_OS_IMPLEMENTATION_ORDER_V1.md` 기준으로 진행한다.
+> **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
 ---
 
@@ -14,23 +14,61 @@
 
 - **Money Shorts OS**
 
+브랜드/톤:
+
+- 브랜드 방향: **경제번역소**
+- 콘텐츠 톤: **생활경제탐정**
+- 생활경제탐정은 실제 캐릭터가 아니라 경제 신호의 단서를 찾아 생활 영향으로 번역하는 해석 방식과 연출 문법이다.
+
 제품 정의:
 
-- 한국 경제·금융 콘텐츠를 출처 기반으로 기획한다.
-- 쇼츠 대본·차트·썸네일·자막·게시문구를 생성한다.
-- Fact Card 기반으로 쇼츠 대본·차트·썸네일·게시문구를 생성한다.
-- 단순 AI 영상 생성기나 돈관리 쇼츠 생성기가 아니라 출처 기반 금융·경제 쇼츠 제작 OS다.
-- 초기에는 Owner가 매일 쓸 내부 쇼츠 제작 도구로 완성하고, 검증 후 크리에이터용 SaaS로 확장한다.
-- Money-OS는 메인 콘텐츠 주제가 아니라 필요한 경우에만 붙는 CTA/전환 레이어다.
+- Money Shorts OS는 단순 경제지표 설명기가 아니다.
+- 경제 신호를 출처 기반으로 가져와, 사람들이 궁금해할 만한 후킹으로 열고, 현재 상황과 주요 원인 후보를 팩트 기반으로 설명한다.
+- 전문가적 시선으로 지금 무엇을 봐야 하는지 해석한 뒤, 그 신호가 생활비·대출·소비·저축·투자 판단·환전·카드값·여행비·장바구니·고정비/변동비에 어떤 영향을 줄 수 있는지 연결한다.
+- 마지막에는 개인이 지금 할 수 있는 점검 행동을 제시한다.
+- Money-OS는 메인 콘텐츠 주제가 아니라 필요한 경우에만 붙는 CTA/전환 레이어와 생활 돈관리 행동 연결 장치다.
 
-최신 제품 기준:
+확정 파이프라인:
 
-- 콘텐츠 비중: 출처 기반 금융·경제 쇼츠 70%, Money-OS 연결형 돈관리 쇼츠 30%.
-- 핵심 카테고리: 금리, 환율, 물가, 고용, 소비, 경기지표, ECOS/KOSIS/금융공공데이터/OpenDART/FRED, 기업 공시/실적/재무정보.
-- Fact Card 없이 대본 생성 금지.
-- Money-OS CTA는 개인 돈관리와 자연스럽게 연결되는 경우에만 삽입.
-- MVP1은 완성 영상 자동 생성기가 아니라, Owner가 매일 쓸 수 있는 출처 기반 콘텐츠 패키지/검토/복사 workflow다.
-- 생성 안정화 기준: `데이터 소스 -> 원본/공시 -> 핵심 숫자 -> 비교값 -> Fact Card -> Video Blueprint -> 대본/차트/영상`.
+`Fact Card`
+→ `Signal Translation Brief`
+→ `6 Scene Cards`
+→ `script / caption / image prompt / voice / screen text`
+→ `risk review / final QA / owner gate`
+
+Layer responsibility:
+
+- **Fact Card**: 사실, 수치, 출처, 기간, citation, `allowedClaims`, `blockedClaims`의 근거. 생활 해석과 표현을 과도하게 넣지 않는다.
+- **Signal Translation Brief**: 경제 신호를 생활 돈관리 문제로 번역한다. `keyReasons`, `expertInterpretation`, `affectedMoneyAreas`, `lifeImpact`, `volatilityWatch`, `scenarioBasedOutlook`, `recommendedActions`, `actionBoundaries`, `viewerTakeaway`를 담당한다.
+- **Scene Card**: 각 장면의 단일 명세서. narration, captionBlocks, image prompt, screen text, voiceTiming, sourceCitationIds, imageTextPolicy, layoutSafeZone, risk notes를 함께 담는다.
+
+확정 6장면:
+
+1. Hook
+2. Signal
+3. Why + Expert Interpretation
+4. Life Impact
+5. Watch / Scenario Outlook
+6. Action + Closing Line
+
+Caption System V1:
+
+- 1080x1920 vertical.
+- Hook Title: `x 90~990`, `y 300~620`, 2줄 이하, `74~88px`.
+- Scene Label: `x 80~420`, `y 180~250`, `30~38px`.
+- Spoken Caption: `x 90~880`, `y 1180~1480`, `52~64px`, 1~2줄.
+- Source Note: `x 90~760`, `y 1500~1560`, `24~30px`.
+- Avoid: `y 0~150`, `y 1600~1920`, `x 900~1080`.
+- Font: Pretendard 또는 Noto Sans KR.
+- Accent: amber/warm yellow 1개 중심.
+
+Image Style V1:
+
+- 에디토리얼 생활경제 리포트 스타일.
+- 생활 오브젝트 + 경제 신호 카드 + 탐정식 단서 연출.
+- 실제 탐정 캐릭터가 아니라 단서 카드, 연결선, 체크 표시, 신호 카드, 생활 오브젝트 배치로 해석 느낌을 준다.
+- 색감: off-white, light gray, charcoal navy, dark navy/charcoal, amber/warm yellow.
+- 금지: 매번 다른 화풍, 과한 프리미엄 금융 광고풍, 과한 골드, 공포 분위기, 투자 수익 암시, 대본과 무관한 추상 그래프 배경, 이미지 안 검증되지 않은 숫자/문구 삽입.
 
 상세 기준:
 
@@ -46,147 +84,96 @@
 
 ## 최근 checkpoint
 
-- Commit: `909098b` — `feat(source): establish clean source-first baseline`
-- Commit: `35ca73c` — `feat(blueprints): add fact card video blueprint generator`
-- Commit: `902e632` — `feat(scripts): add source-linked script package generator`
-- Commit: `79faa5b` — `feat(risk): add financial expression scanner`
-- Commit: `fa6b5a1` — `feat(chart-cards): add source-linked card props model`
-- Commit: `5bb99fd` — `feat(image-prompts): add source-linked prompt package generator`
-- Commit: `55f4a9b` — `feat(voice-profiles): add local tts script formatter`
-- Commit: `14f3c53` — `feat(timeline): add local timeline recalculation`
-- Commit: `90fcaa6` — `feat(render-plan): add local ffmpeg manifest planner`
-- Commit: `4256173` — `feat(final-qa): add source-first package readiness checks`
-- Commit: `bfaf5b9` — `feat(content-package): assemble source-first package chain`
-- Commit: `ca3bd36` — `feat(source-facts): add manual fact card authoring`
-- Commit: `538d0d1` — `feat(review-packet): add owner review packet generator`
-- Commit: `9a6428e` — `feat(owner-decision): add review packet approval gate`
-- Commit: `07444ad` — `feat(clipboard-payload): add copy workflow payload builder`
-- Commit: `647f1be` — `feat(package-view): add package library view models`
-- Commit: `4d264cb` — `feat(package-ui): add local package library route`
-- Commit: `813a8f6` — `feat(fact-card-ui): add manual authoring screen`
-- Commit: `eb03a26` — `feat(fact-card-ui): add package preview route`
-- Commit: `08ff8f0` — `feat(fact-card-ui): add manual draft form`
-- Commit: `9e22a59` — `feat(fact-card-ui): add sample form controls`
-- Commit: `fca0b73` — `feat(fact-card-ui): add manual workflow navigation`
-- Commit: `9d0e187` — `feat(money-shorts): add workflow hub route`
-- Commit: `70eeecb` — `feat(money-shorts): link screens to workflow hub`
-- Commit: `c66073f` — `test(money-shorts): record mvp1 route smoke pass`
-- Commit: `de96040` — `fix(ui): clear package preview key warnings`
-- Commit: `9978d61` — `test(money-shorts): record mvp1 rc smoke pass`
-- Commit: `d85b616` — `feat(source-facts): add auto fact card candidate preview`
-- Commit: `20ab76b` — `feat(source-facts): add ecos connector scaffold with mock transport`
-- Commit: `87caec6` — `feat(source-facts): add ecos live transport with async connector boundary`
-- Commit: `43fe473` — `fix(source-facts): align ecos mock fixtures with live truth`
-- Commit: `63d9b10` — `feat(source-facts): add ecos latest-period resolver with source-date gate`
-- Commit: `4bc9f0a` — `feat(source-facts): add bok base-rate source-date resolver`
-- Commit: `525e635` — `feat(source-facts): connect ecos resolvers into live draft candidate path`
-- Commit: `b11ebb0` — `feat(package-preview): expose ecos live latest draft candidate via explicit query`
-- Commit: `7d28921` — `fix(app): route root to money shorts os hub`
-- Commit: `13ba98b` — `test(app): record dev server root smoke pass`
-- Commit: `101c22e` — `feat(money-shorts): add live latest draft entrypoint to hub`
-- Commit: `f5db4c5` — `fix(package-preview): keep live draft gate pending`
-- Commit: `92f545b` — `fix(source-facts): improve unchanged base-rate wording`
-- Commit: `a69e497` — `feat(package-preview): show chart card props in package preview`
-- Commit: `5368566` — `feat(package-preview): add css chart card visual previews`
-- Commit: `41f4c25` — `fix(package-preview): stabilize chart card visual preview width`
-- Commit: `c37426e` — `fix(owner-decision): block non-publishable fact cards at gate`
-- Commit: `d3e0a79` — `feat(package-preview): add publishability readiness panel`
-- Commit: `c7009ee` — `feat(owner-decision): add publishability decision contract`
-- Commit: `dcde9d5` — `feat(package-preview): show publishability decision contract`
-- Commit: `984ce2a` — `feat(package-preview): add local publishability decision controls`
-- Commit: `91f08a1` — `feat(owner-decision): add local publishability approval ledger`
-- Commit: `abe3d36` — `feat(package-preview): add ledger-approved overlay with current fact card revalidation`
-- Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
-- Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
-- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
+- Commit: `24ef219` — `feat(package-preview): add owner review guidance panel` ← **현재 HEAD**
+- Commit: `bd4e745` — `test(package-preview): guard ledger overlay page integration`
 - Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard`
-- Commit: `bd4e745` — `test(package-preview): guard ledger overlay page integration` ← **현재 HEAD**
-- Branch: `codex/source-first-blueprint-clean` (ahead 58)
+- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
+- Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
+- Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
+- Commit: `abe3d36` — `feat(package-preview): add ledger-approved overlay with current fact card revalidation`
+- Commit: `91f08a1` — `feat(owner-decision): add local publishability approval ledger`
+- Branch: `codex/source-first-blueprint-clean` (ahead 59)
 - Push: 미실행
+- Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 ---
 
 ## 최근 완료
 
-Task:
+Code/UI:
 
-- `money-shorts-os-mvp1-rc-smoke-and-state-sync-v1`
-- `money-shorts-os-mvp1-owner-acceptance-prep-v1`
-- `money-shorts-os-auto-fact-card-candidate-v1`
-- `money-shorts-os-auto-fact-card-candidate-v1-review-fix`
-- `money-shorts-os-ecos-connector-scaffold-v1`
-- `money-shorts-os-ecos-connector-scaffold-v1-review-fix`
-- `money-shorts-os-ecos-live-connector-v1` + review-fix
-- `money-shorts-os-ecos-live-check-v1`
-- `money-shorts-os-ecos-live-truth-alignment-v1` + review-fix
-- `money-shorts-os-ecos-latest-period-resolver-v1`
-- `money-shorts-os-ecos-source-date-resolver-v1`
-- `money-shorts-os-ecos-latest-live-draft-candidate-v1` + review-fix
+- source-first Fact Card 기반 package assembly chain.
+- package preview route and package library route.
+- ECOS live/latest draft candidate path with BOK source-date resolver.
+- publishability decision contract, local sandbox controls, local approval ledger.
+- ledger-approved overlay with current Fact Card 4-guard revalidation.
+- ledger overlay evaluator extraction and static guard scripts.
+- Owner review guidance panel.
 
-구현/확인:
+Docs/current alignment:
 
-- MVP1 5개 local route RC smoke PASS, React key warning 0회 확인.
-- Owner acceptance prep에서 `/fact-cards/manual/package-preview`가 `validHouseholdDebtResult` fixture 기반이며 manual input이 preview로 자동 반영되지 않는 구조임을 확인.
-- Owner 결정: 수동 검증을 길게 끌지 않고 자동 Fact Card 후보 생성 구조로 전환.
-- `RawDataSnapshot -> RawSnapshotParser -> ManualFactCardDraft -> authorManualFactCard() -> package preview` 경로를 mock ECOS 기준금리 후보로 구현.
-- `/fact-cards/manual/package-preview?candidate=base-rate`에서 generated mock candidate를 preview할 수 있게 함.
-- review-fix: `ManualFactCardDraft` import 위치 수정, `"3.0%"` source display string 보존, unknown `?candidate=` silent fallback 방지.
-- ECOS request spec, mock transport boundary, ECOS-like response fixtures, normalizer를 추가.
-- `ECOS request spec -> mock transport response -> normalized RawDataSnapshot -> existing parser -> Fact Card candidate` scaffold 경로를 구현.
-- review-fix: known mock 발표일 `2025-01-16`을 request metadata로 명시 전달, human-facing source URL 보존, transport method를 `fetch()`에서 `execute()`로 변경.
-- ECOS live transport async boundary 구현 (`EcosAsyncTransport` / `runEcosConnectorAsync` / `createEcosLiveTransport`). fetch + process.env key 격리. secret-safe.
-- `node --env-file=.env.local scripts/_ecos-live-check.mjs` 1회 `LIVE_OK`. historical smoke request `202412~202501`: Jan2025 `3.0%`, Dec2024 `3.0%`, change `0.0%p`.
-- ⚠️ Jan2025 live check는 historical smoke/fixture 검증용이며 production 최신 데이터 default가 아님. 실제 영상 제작용 Fact Card는 최신 available period를 별도 조회/선택해야 하며, 최신 period를 못 찾으면 old fixture fallback이 아니라 blocked/source refresh 상태로 가야 함.
-- mock fixture/candidate를 live ECOS truth에 맞춰 정렬 (`ECOS_BASE_RATE_ROW_DEC2024.DATA_VALUE: "3.25" → "3.00"`).
-- latest available ECOS 기준금리 period resolver 구현: live check 기준 latest `202605`, previous `202604`, both `2.5연%`.
-- BOK 공식 기준금리 변경 이력 resolver 구현: latest ECOS 값 `2.5%`를 공식 최신 BOK 결정 `2025-05-29 2.50%`에 value matching.
-- latest live draft candidate 경로 구현: latest rows -> latest period -> BOK source-date -> normalized snapshot -> Fact Card draft candidate.
-- live/latest candidate는 `provider-ecos-live`, `isMock=false`, `isPublishable=false`.
-- BOK source-date provenance를 rawPayload와 citation에 보존. `publishedDate=2025-05-29`는 ECOS period `202605`에서 유도하지 않음.
+- `Money Shorts OS Final Direction & Multimodal Consistency Proposal v1.1` 최종 승인.
+- `Money Shorts OS Direction Alignment Docs v1` 문서-only 반영 중.
+- `Money Shorts OS Voice / Narration Style Patch v1` 반영.
+- source-first / Fact Card first 원칙은 유지.
+- Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 정렬.
 
-검증:
+Code/current slice:
 
-- targeted ESLint: 통과.
-- focused TypeScript source check: 통과.
-- full `tsc --project`/`pnpm build`는 기존 `output/` binary `.ts` 오염으로 전체 기준에서 제외.
-- forbidden live call/render/output/deploy 패턴: 실제 호출 없음. `fetch`/`process.env`/`Date.now`는 설명 주석에서만 언급.
-
-주의:
-
-- 전체 `pnpm lint`/전체 `tsc`는 기존 app/archive/output 누적 오류가 있어 별도 정리 전까지 전체 통과 기준으로 보지 않는다.
-- `output/`은 commit 대상이 아니다.
+- `money-shorts-os-signal-translation-scene-card-types-v1` 완료.
+- `money-shorts-os-scene-card-validation-review-fix-v1` 완료.
+- `money-shorts-os-brief-scene-card-generator-v1` 완료.
+- `money-shorts-os-brief-scene-card-generator-second-fixture-v1` 완료.
+- 신규 타입 모듈: `lib/source-facts/signal-translation.ts`.
+- 신규 generator 모듈: `lib/source-facts/signal-translation-generator.ts`.
+- 신규 fixture 모듈: `lib/source-facts/signal-translation-fixtures.ts`.
+- `lib/source-facts/fixtures.ts`에 mock ECOS provider와 mock 기준금리 Fact Card 추가.
+- export 연결: `lib/source-facts/index.ts`.
+- `validateFixedSixSceneCards()`는 sequence/count 전용으로 유지.
+- `validateSceneCardsForGeneration()`으로 필수 문자열과 absolute-timeline captionBlocks timing을 검증.
+- `validateSignalTranslationCitationIds()`으로 brief/scene citation id subset을 검증.
+- `createMoneyShortsScenePackageFromFactCard()`로 deterministic `{ brief, sceneCards, sceneCardValidation, citationValidation }` 패키지를 생성.
+- 환율 계열은 `exchange_rate_life_economy_v1`, 금리 계열은 `interest_rate_life_economy_v1`, 그 외는 `generic_indicator_life_economy_v1` fallback.
+- 환율/금리 generated package 모두 scene/citation validation 통과.
+- 기존 `FactCard` 타입과 기존 Fact Card fixture 값은 변경하지 않음.
 
 ---
 
-## 폐기된 active route
+## Legacy / Reference Only
 
-- Candidate10 / old Money Architect 후속 개선
-- 정적 이미지 8장 + 자막 + 내레이션 조립 방식
-- code-GFX 최종 후보 루프
-- GPT visual plate만으로 끝나는 영상 방식
-- 3D character static plate 방식
-- 생활꿀팁/EP001 돈 방어/old Money Architect 기존 주제 흐름
-- Jun/준/시트콤/자동문 면접/ep003/upload_002/복사기 계열
+아래는 삭제하지 않고 역사/참고로 보존한다. Active MVP path로 사용하지 않는다.
 
-과거 output/git history는 역사/증거로만 보존한다.
+- `docs/PLAN.md`
+- `docs/LOG.md`
+- 3D sitcom 관련 문서
+- living tips 관련 문서
+- old render/upload/generate API surface
+- `/review` 중심 old QA flow
+- Candidate10 / static slideshow / Jun / upload_002 / ep003 / old Money Architect route
 
 ---
 
 ## 다음 단계
 
-현재 우선순위:
+권장 다음 task:
 
-- `dev-server-default-route-alignment-v1`: 개발서버 기본 진입점/홈 라우트/metadata/허브 링크를 Money Shorts OS 기준으로 정렬.
-- 이후: Owner가 최신 Fact Card Draft를 보고 승인/수정하는 UX 연결.
-- 실제 영상 제작/GPT/TTS/render/upload는 아직 금지이며 별도 Owner 승인 후 진행한다.
+- `money-shorts-os-package-preview-signal-translation-panel-v1`
+
+권장 범위:
+
+- package-preview에서 generated Signal Translation Brief와 6 Scene Cards를 display-only로 확인하는 작은 패널을 추가한다.
+- 기존 gate/ledger/clipboard 동작은 변경하지 않는다.
+- 누적 diff가 커졌으므로 panel 전 Codex checkpoint review도 권장한다.
 
 금지:
 
 - 이전 영상 후보 추가 개선
 - 이전 산출물 기반 prompt 재사용
-- Jun/준/시트콤/복사기/upload_002/ep003/3d_sitcom reference 사용
+- Jun/준/시트콤/복사기/upload_002/ep003/3d_sitcom reference를 active path로 사용
 - 생활꿀팁/EP001/old Money Architect 기존 주제 재개
 - upload/post/push/deploy/env/DB/dependency 변경
 - API route 변경
 - OS clipboard write
 - ffmpeg/render/output 변경
+- `piq_diag_out.txt` 접근
+- `.money-shorts-local/` 접근

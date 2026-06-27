@@ -1,5 +1,7 @@
 # AutoShorts AI — 이미지 Provider 운영 전략
 
+> Status: **LEGACY / FUTURE REFERENCE ONLY** (2026-06-27). Active image direction is now Scene Card-derived editorial life-economy report style. Do not treat old provider strategies as active implementation approval.
+
 > 최종 업데이트: 2026-05-24 (QA-27 실패 사례 반영)
 
 ---

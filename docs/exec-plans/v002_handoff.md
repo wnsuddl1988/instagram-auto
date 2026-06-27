@@ -1,5 +1,7 @@
 # v002 — AI 3D Character Continuity Pilot · Codex 인계
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This handoff preserves older 3D continuity work and is not active Money Shorts OS execution scope.
+
 작성: 2026-06-14 / 실행: Claude Code
 
 ## 1. 생성·수정 파일

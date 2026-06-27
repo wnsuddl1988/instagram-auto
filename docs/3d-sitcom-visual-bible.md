@@ -1,5 +1,7 @@
 # 3D 시트콤 Visual Bible & 첫 에피소드 기획 (v004)
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). 3D sitcom/Jun/character-continuity work is not the active Money Shorts OS MVP path. Use only as historical reference unless Owner explicitly re-approves it.
+
 작성: 2026-06-14 / 작성자: Claude Code (Brain AI 관점 기획안) / 검토·확정: Codex + Owner
 
 > 이 문서는 **기획·기준 문서**입니다. 새 이미지/영상 생성, Veo/GPT/TTS 호출, 렌더, 업로드는 포함하지 않습니다.

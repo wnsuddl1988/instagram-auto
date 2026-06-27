@@ -1,8 +1,8 @@
 # Money Shorts OS Video Pipeline Spec V1
 
-Status: **ACTIVE PIPELINE SPEC**
+Status: **ACTIVE PIPELINE SPEC — DIRECTION ALIGNMENT V1.1**
 
-Updated: 2026-06-25
+Updated: 2026-06-27
 
 ## 0. Core Principle
 
@@ -10,11 +10,11 @@ Money Shorts OS는 AI에게 영상을 통째로 만들게 하지 않는다.
 
 AI에게 원본 데이터 없이 대본을 상상하게 하지 않는다.
 
-먼저 **Fact Card**를 만들고, 그 Fact Card를 바탕으로 **Video Blueprint**를 만들게 한다. 최종 영상은 고정 템플릿, GPT 이미지, 차트/숫자 카드, ElevenLabs 음성, 자막, ffmpeg 조립, QA로 안정화한다.
+먼저 **Fact Card**를 만들고, 그 Fact Card를 바탕으로 **Signal Translation Brief**와 **6 Scene Cards**를 만들게 한다. 최종 영상은 Scene Card에서 파생된 대본, 자막, 이미지 프롬프트, 음성 타이밍, 화면 텍스트, 출처 표기, 안전영역, 리스크 노트로 안정화한다.
 
 핵심 순서:
 
-`Data Source` → `Raw Data / Disclosure` → `Fact Card` → `Video Blueprint` → `대본/자막/화면 설계` → `이미지/영상 생성` → `ElevenLabs 음성` → `음성 길이 측정` → `타임라인 재계산` → `ffmpeg 조립` → `QA`
+`Data Source` → `Raw Data / Disclosure` → `Fact Card` → `Signal Translation Brief` → `6 Scene Cards` → `script / caption / image prompt / voice / screen text` → `asset generation` → `voice timing` → `timeline recalculation` → `assembly` → `multimodal consistency QA`
 
 ## 1. 영상 생성 전체 파이프라인
 
@@ -26,17 +26,14 @@ AI에게 원본 데이터 없이 대본을 상상하게 하지 않는다.
 4. 전월/전년/이전 발표치 비교
 5. Fact Card 생성
 6. 출처 링크/출처명 저장
-7. 쇼츠 주제 생성
-8. Video Blueprint 생성
-9. 15초/30초/60초 대본 생성
-10. 자막 생성
-11. 9:16 차트/숫자 카드 생성
-12. GPT 이미지 생성
-13. ElevenLabs 음성 생성
-14. 음성 길이에 맞춰 타임라인 재계산
-15. ffmpeg로 영상 조립
-16. 금융표현/과장표현 최종 QA
-17. Money-OS CTA는 필요한 경우에만 삽입
+7. Signal Translation Brief 생성
+8. 6 Scene Cards 생성
+9. Scene Card에서 15/30/60초 대본, 자막, 이미지 프롬프트, 음성 타이밍, 화면 텍스트 파생
+10. 9:16 차트/숫자 카드 또는 이미지 브리프 생성
+11. 음성 길이에 맞춰 타임라인 재계산
+12. 조립 계획 또는 렌더 계획 생성
+13. 금융표현/과장표현/멀티모달 일관성 최종 QA
+14. Money-OS CTA는 필요한 경우에만 삽입
 
 MVP 적용 원칙:
 
@@ -57,7 +54,9 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
   "target_duration_sec": 30,
   "estimated_duration_sec": 30,
   "final_duration_sec": null,
-  "core_message": "돈이 안 모이는 이유는 의지가 아니라 구조 부재일 수 있다.",
+  "core_message": "기준금리 신호는 대출자와 예금자에게 다른 점검 포인트를 만든다.",
+  "signal_translation_brief_id": "uuid",
+  "viewer_takeaway": "금리 신호는 방향 예측보다 내 이자 조건을 점검하는 단서로 봐야 한다.",
   "content_type": "economic_indicator",
   "template_mode": "data_shorts",
   "template_key": "indicator_summary",
@@ -77,7 +76,7 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
   "target_audience": "beginner",
   "risk_level": "unchecked",
   "source_references": [],
-  "voice_profile_id": "money_architect_voice",
+  "voice_profile_id": "life_economy_explainer_voice",
   "scenes": []
 }
 ```
@@ -92,6 +91,8 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 - `estimated_duration_sec`: pre-TTS estimated duration.
 - `final_duration_sec`: post-TTS measured final duration.
 - `core_message`: one-sentence idea.
+- `signal_translation_brief_id`: economic-signal-to-life-impact translation layer.
+- `viewer_takeaway`: final one-line conclusion for viewers.
 - `content_type`: content category.
 - `template_mode`: `viral` / `trust`.
 - `template_key`: initial template key.
@@ -124,7 +125,7 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 - `money_leak`
 - `money_os_solution`
 
-### Scene Schema
+### Scene Card Schema
 
 ```json
 {
@@ -132,19 +133,43 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
   "scene_index": 1,
   "scene_role": "hook",
   "estimated_start_time": 0,
-  "estimated_duration": 2,
+  "estimated_duration": 4,
   "actual_start_time": null,
   "actual_duration": null,
-  "narration": "월급이 부족해서 돈이 안 모이는 게 아닐 수 있습니다.",
-  "tts_script": "월급이 부족해서\n돈이 안 모이는 게 아닐 수 있습니다.",
-  "caption": "월급 문제가 아닙니다",
-  "visual_description": "월급 입금 숫자 카드와 돈이 여러 방향으로 흩어질 준비를 하는 장면",
-  "visual_type": "number_card",
-  "image_prompt": null,
+  "narration": "금리 동결, 정말 좋은 소식일까요?",
+  "tts_script": "금리 동결,\n정말 좋은 소식일까요?",
+  "caption": "금리 동결, 좋은 소식일까?",
+  "captionBlocks": [
+    {
+      "startSec": 0,
+      "endSec": 3.5,
+      "text": "금리 동결, 좋은 소식일까?",
+      "emphasisWords": ["금리 동결"]
+    }
+  ],
+  "hookTitle": "금리 동결, 좋은 소식일까?",
+  "sceneLabel": "후킹",
+  "visual_description": "생활비 영수증, 대출 서류, 기준금리 신호 카드가 함께 놓인 에디토리얼 생활경제 리포트 스타일 장면",
+  "visualTemplateId": "signal_card",
+  "image_prompt": "Vertical 9:16 editorial life-economy report style...",
   "video_prompt": null,
   "motion_type": "card_slide",
-  "caption_style": "bold_short_center_lower",
-  "audio_emphasis": "strong_hook",
+  "caption_style": "caption_system_v1_hook_title",
+  "voiceTiming": {
+    "pace": "fast",
+    "emphasisWords": ["금리 동결"],
+    "pauses": ["금리 동결"]
+  },
+  "layoutSafeZone": {
+    "hookTitle": "x 90-990, y 300-620",
+    "spokenCaption": "x 90-880, y 1180-1480",
+    "sourceNote": "x 90-760, y 1500-1560"
+  },
+  "imageTextPolicy": {
+    "allowedText": [],
+    "forbiddenText": ["unverified numbers", "investment return claims", "extra subtitles"]
+  },
+  "sourceCitationIds": [],
   "fact_card_id": null,
   "source_name": null,
   "source_url": null,
@@ -160,7 +185,9 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
   "qa_rules": [
     "caption_max_two_lines",
     "no_investment_advice",
-    "no_text_inside_generated_image"
+    "caption_safe_zone",
+    "no_unverified_text_inside_generated_image",
+    "scene_message_single_focus"
   ]
 }
 ```
@@ -168,12 +195,11 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 ### Scene Roles
 
 - `hook`
-- `problem`
-- `reason`
-- `structure`
-- `solution`
-- `example`
-- `money_os_cta`
+- `signal`
+- `why_expert_interpretation`
+- `life_impact`
+- `watch_scenario_outlook`
+- `action_closing`
 
 ### Visual Types
 
@@ -183,6 +209,10 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 - `veo_clip`
 - `static_background`
 - `cta_card`
+- `signal_card`
+- `life_object`
+- `clue_cards`
+- `action_checklist`
 
 ### Motion Types
 
@@ -200,25 +230,37 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 
 | Scene | Time | Role | Goal | Default Visual |
 |---|---:|---|---|---|
-| 1 | 0-2s | hook | 멈추게 만들기 | 큰 숫자/강한 문제 카드 |
-| 2 | 2-6s | problem | 공감 만들기 | 돈이 흩어지는 장면 |
-| 3 | 6-12s | reason | 원인 이해 | 뒤섞인 카드/현금/영수증 |
-| 4 | 12-19s | structure | 구조적 해결 | 소비/비상금/투자 분리 구조 |
-| 5 | 19-25s | example | 실제 적용 | Money Architect 시그니처 컷 |
-| 6 | 25-30s | money_os_cta | 무료 진단 클릭 | Money-OS CTA 카드 |
+| 1 | 0-4s | Hook | 궁금증 유발, 첫 장면 제목/썸네일 | 생활 오브젝트 + 신호 카드 |
+| 2 | 4-9s | Signal | 출처 기반 신호, 핵심 수치/기간/출처 | `signal_card` |
+| 3 | 9-15s | Why + Expert Interpretation | 원인 후보와 지금 봐야 할 포인트 | `clue_cards` |
+| 4 | 15-21s | Life Impact | 생활비/대출/소비/저축/환전/카드값 연결 | `life_object` |
+| 5 | 21-25s | Watch / Scenario Outlook | 시나리오 기반 관찰 포인트 | `clue_cards` |
+| 6 | 25-30s | Action + Closing Line | 지금 할 수 있는 점검 행동과 마지막 결론 | `action_checklist` |
 
 예시 주제:
 
-`월급이 들어와도 돈이 안 모이는 이유`
+`기준금리 동결이 내 대출과 저축에 주는 신호`
 
 | Scene | Caption | Narration | Visual |
 |---|---|---|---|
-| 1 | 월급 문제가 아닙니다 | 월급이 부족해서 돈이 안 모이는 게 아닐 수 있습니다. | 월급 입금 숫자 카드 |
-| 2 | 돈이 바로 흩어집니다 | 진짜 문제는 돈이 들어오자마자 어디론가 흩어진다는 겁니다. | 돈이 카드값/소비/이체 방향으로 갈라짐 |
-| 3 | 구조가 없기 때문입니다 | 소비, 카드값, 비상금, 투자금이 한 공간에 섞이면 돈은 남기 어렵습니다. | 뒤섞인 카드, 영수증, 현금 |
-| 4 | 먼저 자리를 나눠야 합니다 | 그래서 먼저 소비, 비상금, 투자금을 분리해야 합니다. | 소비/비상금/투자 트레이 |
-| 5 | 의지가 아니라 설계입니다 | 돈 관리는 의지가 아니라 구조를 만드는 일입니다. | Money Architect가 돈을 정리하는 컷 |
-| 6 | Money-OS 무료 진단 | 내 돈이 어디서 새고 있는지 궁금하다면 Money-OS 무료 진단을 받아보세요. | CTA 카드 |
+| 1 | 금리 동결, 좋은 소식일까? | 금리 동결, 정말 좋은 소식일까요? | 생활비 영수증 + 기준금리 신호 카드 |
+| 2 | 기준금리는 그대로입니다 | 이번 신호는 금리가 유지됐다는 출처 기반 데이터에서 시작합니다. | 기준금리 숫자 카드 |
+| 3 | 방향보다 조건을 봐야 합니다 | 지금은 금리가 어디로 갈지 단정하기보다 다음 물가와 경기 신호를 봐야 합니다. | 원인 후보 단서 카드 |
+| 4 | 대출자와 예금자는 다르게 반응합니다 | 대출이 있다면 이자 조건을, 저축 중이라면 예금 금리 변화를 확인해야 합니다. | 대출 서류 + 통장 앱 |
+| 5 | 다음 신호가 중요합니다 | 물가와 환율이 다시 흔들리면 금리 경로도 달라질 수 있습니다. | 관찰 포인트 카드 |
+| 6 | 오늘은 조건을 확인하세요 | 오늘 할 일은 예측이 아니라 내 대출금리와 예금 조건을 확인하는 겁니다. | 점검 체크리스트 |
+
+## 3.1 Caption System V1
+
+1080x1920 vertical:
+
+- Hook Title: `x 90~990`, `y 300~620`, max 2 lines, `74~88px`, question/reversal/life-connection style.
+- Scene Label: `x 80~420`, `y 180~250`, `30~38px`.
+- Spoken Caption: `x 90~880`, `y 1180~1480`, `52~64px`, 1-2 lines, derived from narration.
+- Source Note: `x 90~760`, `y 1500~1560`, `24~30px`.
+- Avoid: `y 0~150`, `y 1600~1920`, `x 900~1080`.
+- Font: Pretendard or Noto Sans KR.
+- Accent: amber/warm yellow only; max 1-2 emphasized words per screen.
 
 ## 4. 60초 쇼츠 기본 템플릿
 
@@ -244,19 +286,19 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 
 ## 5. ElevenLabs 보이스 프로필 설계
 
-초기 MVP는 Main Voice 1개만 사용해도 된다.
+초기 MVP는 Main Voice 1개만 사용한다. 다만 최종 목소리는 아직 확정하지 않고, 아래 후보를 같은 테스트 대본으로 ElevenLabs에서 생성한 뒤 Owner가 직접 청감 비교하여 확정한다.
 
-### Main Voice: Money Architect Voice
+### Main Voice: Life Economy Explainer Voice
 
 한 줄 정의:
 
-차분하지만 지루하지 않은 30-40대 남성 금융 설계자 목소리.
+차분하지만 지루하지 않은 30대 남성 중저음 생활경제 해설자 목소리.
 
 권장 특성:
 
 - Korean
 - male
-- late 30s to early 40s feeling
+- 30s feeling
 - medium-low tone
 - calm
 - confident
@@ -266,8 +308,57 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
 - not too slow
 - not ad-like
 - not news-anchor-like
+- natural Korean pronunciation
+- minimal AI-like intonation
+- sentence endings must not cut off mechanically
+- not exaggerated YouTuber tone
+- not sales/advertising tone
+- first sentence can be slightly curious and faster
+- middle section should sound analytical and grounded
+- closing action should sound calm and practical
 
-ElevenLabs Voice Library 검색 키워드:
+### ElevenLabs 우선 테스트 후보
+
+1. **Hojin Lim**
+   - 메인 내레이터 1순위 후보.
+   - 자연스럽고 신뢰감 있는 생활경제 해설자 톤에 가장 적합한지 테스트한다.
+2. **Yohan Koo**
+   - 2순위 후보.
+   - 조금 더 전문적이고 권위 있는 경제 해석 톤이 필요한 경우의 백업 후보.
+3. **Gihong**
+   - 3순위 후보.
+   - 쇼츠 브리핑감과 속도감이 필요한 경우의 비교 후보.
+
+최종 확정 방식:
+
+- 특정 목소리를 아직 최종 확정하지 않는다.
+- 위 3개 후보를 같은 테스트 대본으로 생성한다.
+- Owner가 직접 청감 비교해 최종 voice를 확정한다.
+- 비교 기준은 자연스러운 한국어 발음, 억양, 강약조절, AI티 여부, 후킹감, 신뢰감, 30초 쇼츠 지속 청취감이다.
+
+### Voice Test Script V1
+
+```text
+환율이 오르면 해외여행만 비싸질까요?
+
+사실 더 먼저 흔들리는 건 장바구니와 카드값입니다.
+
+달러가 비싸지면 수입식품, 기름값, 해외결제 비용이 같이 움직일 수 있습니다.
+
+그래서 지금 봐야 할 건 환율 숫자 하나가 아니라, 높은 수준이 얼마나 오래 이어지는지입니다.
+
+이번 달은 해외결제와 변동비를 먼저 점검해보세요.
+```
+
+### ElevenLabs 기본 테스트 설정 가이드
+
+- Model: Eleven Multilingual v2 우선.
+- Stability: 45~60 범위에서 테스트.
+- Similarity: 70~85 범위에서 테스트.
+- Style / Exaggeration: 낮게 또는 0~20.
+- Speaker Boost: ON 권장.
+
+### ElevenLabs Voice Library 검색 키워드
 
 - Korean male narrator
 - calm
@@ -300,39 +391,71 @@ ElevenLabs Voice Library 검색 키워드:
 
 초기 MVP에서는 보류 가능.
 
-## 6. GPT 이미지 프롬프트 생성 규칙
+### Voice Generation QA
 
-GPT 이미지는 핵심 비주얼 컷에 사용한다.
+음성 후보는 아래 기준으로 검수한다.
 
-사용 장면:
+- 음성이 자막보다 너무 빠르지 않은가?
+- 문장 끝 억양이 부자연스럽지 않은가?
+- Hook 문장이 충분히 궁금증을 유발하는가?
+- 경제 해석 부분이 너무 딱딱하지 않은가?
+- Action 문장이 투자 권유처럼 들리지 않는가?
+- AI 음성 특유의 부자연스러운 호흡/강세가 있는가?
+- 30초 쇼츠 전체를 끝까지 듣기에 피로하지 않은가?
+- source-first 생활경제 해설자 톤과 맞는가?
 
-- 돈이 새는 장면
-- 돈이 구조화되는 장면
-- 월급이 분리되는 장면
-- 카드값이 쌓이는 장면
-- 비상금 봉투/트레이 장면
-- Money Architect 세계관 장면
-- 썸네일 이미지
-- 엔딩 CTA 배경
+## 6. Image Prompt Generation Rules
+
+이미지는 Scene Card의 장면 목적에서 파생한다. 이미지 프롬프트는 대본, 자막, 화면 텍스트와 같은 메시지를 보여야 하며, 별도 아이디어로 생성하지 않는다.
+
+Main style:
+
+- editorial life-economy report style
+- everyday objects + economic signal card + clue-like interpretation staging
+- 생활경제탐정은 실제 탐정 캐릭터가 아니라 단서 카드, 연결선, 체크 표시, 신호 카드, 생활 오브젝트 배치로 표현한다.
+
+Visual template IDs:
+
+- `signal_card`
+- `clue_cards`
+- `life_object`
+- `action_checklist`
+
+사용 장면 예:
+
+- 장바구니 / 생활비
+- 카드 명세서 / 카드값
+- 대출 서류 / 이자 부담
+- 월급 명세서 / 고정비
+- 환전 앱 / 여행비
+- 자동이체 체크리스트
+- 경제 신호 카드 + 생활 영향 연결 장면
 
 공통 규칙:
 
 - 9:16 vertical.
-- balanced premium finance shorts tone.
-- navy / charcoal / restrained gold accents.
-- not all scenes dark or slow.
-- premium finance desk, wallet, card, cash, envelope, tray.
-- money flows, leaks, separates, or becomes structured.
+- editorial life-economy report tone.
+- off-white / light gray / charcoal navy base.
+- dark navy / charcoal text cards.
+- amber or warm yellow as one primary accent.
+- blue-gray only as secondary support.
+- stable repeatable template layout.
 - no cheap AI look.
-- no fantasy/game/cartoon/chibi/mascot style.
-- no text inside image.
-- no numbers inside image.
+- no changing style every time.
+- no excessive premium finance ad mood.
+- no excessive gold.
+- no fear mood.
+- no implied investment profit.
+- no unrelated abstract graph backgrounds.
+- no unverified text inside image.
+- no unverified numbers inside image.
 - no labels, UI, logos, card numbers, source text, subtitles, or CTA inside image.
 
 텍스트 처리:
 
-- 이미지 안에는 글자를 넣지 않는다.
-- 자막, 숫자, 출처, CTA는 ffmpeg 또는 Remotion 단계에서 오버레이한다.
+- 이미지 안에는 검증되지 않은 글자/숫자를 넣지 않는다.
+- 자막, 핵심 숫자, 출처, CTA는 Scene Card와 Caption System V1 기준으로 오버레이한다.
+- `imageTextPolicy.allowedText`에 명시되지 않은 텍스트는 이미지 안에 넣지 않는다.
 
 Prompt output structure:
 
@@ -341,12 +464,14 @@ Prompt output structure:
   "scene_id": "s3",
   "image_prompt": "Vertical 9:16 premium finance scene...",
   "negative_rules": [
-    "no text",
+    "no unverified text",
     "no logos",
     "no labels",
-    "no numbers",
+    "no unverified numbers",
     "no cartoon",
-    "no fantasy"
+    "no fantasy",
+    "no fear mood",
+    "no investment profit implication"
   ]
 }
 ```
@@ -431,24 +556,40 @@ ffmpeg must not:
 - Money-OS CTA가 자연스러운가?
 - 투자 권유성 표현이 있는가?
 - 과장 표현이 있는가?
+- 원인 단정이 있는가?
+- 예측 단정이 있는가?
+- 생활 영향이 과장되었는가?
+- 행동 지침이 투자 추천처럼 보이는가?
+- 출처 밖 주장이 있는가?
 - 한 문장이 너무 길지 않은가?
 - 자막이 너무 길지 않은가?
 - 일반 사용자가 이해할 수 있는가?
+- 마지막 viewer takeaway가 명확한가?
 
 ### 2차 QA: 이미지/영상 QA
 
 - 9:16 세로형인가?
 - 이미지 안에 깨진 글자가 없는가?
-- 텍스트가 이미지 자체에 들어가 있지 않은가?
+- 이미지 안 텍스트와 자막이 충돌하지 않는가?
+- 이미지 안에 검증되지 않은 숫자/문구가 들어가 있지 않은가?
 - 브랜드 톤이 유지되는가?
 - 너무 어둡거나 너무 가볍지 않은가?
 - 캐릭터/소품/색감이 영상마다 심하게 바뀌지 않는가?
-- 금융 데스크, 현금, 카드, 봉투, 트레이가 자연스러운가?
+- 생활 오브젝트와 경제 신호 카드가 장면 목적에 맞는가?
+- 이미지와 자막이 같은 장면 목적을 보여주는가?
+- 대본과 이미지가 같은 메시지를 말하는가?
 
 ### 3차 QA: 최종 영상 QA
 
 - 음성과 자막 싱크가 맞는가?
+- 내레이션과 자막이 같은 메시지를 말하는가?
 - 자막이 화면 밖으로 나가지 않는가?
+- Caption safe zone을 지키는가?
+- Hook Title이 2줄 이하인가?
+- Spoken Caption이 너무 길지 않은가?
+- Scene Label이 장면 역할과 일치하는가?
+- Source Note가 방해되지 않는가?
+- 강조색이 과도하지 않은가?
 - 자막이 너무 작지 않은가?
 - BGM이 음성을 덮지 않는가?
 - 영상 길이가 목표 길이에 맞는가?

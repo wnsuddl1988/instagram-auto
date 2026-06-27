@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`package-preview-owner-review-guidance-panel-v1-review-fix`
+`money-shorts-os-brief-scene-card-generator-second-fixture-v1`
 
 ## Project
 
@@ -11,101 +11,96 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `bd4e745 test(package-preview): guard ledger overlay page integration`
-- Current working tree includes the accepted in-progress UI slice:
-  - modified `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`
-  - modified `app/fact-cards/manual/package-preview/page.tsx`
-  - untracked `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx`
-  - unrelated untracked `piq_diag_out.txt`
-- The `_ai/NEXT_ACTION.md` and `_ai/PROJECT_STATE.md` edits are accepted docs sync to `bd4e745` / ahead 58. Do not revert them.
+- Latest HEAD: `24ef219 feat(package-preview): add owner review guidance panel`
+- Current expected status before commit: branch ahead 59, accumulated docs alignment files modified, new source-facts type slice files, unrelated `?? piq_diag_out.txt`
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
-## Review Finding To Fix
+## Current Result
 
-Codex review accepted the component shape and `resolveState` priority:
+Completed first implementation slices after final direction alignment, including the second generator fixture:
 
-1. `ledgerOverlayResult.active` first is correct because active overlay already passed the 4-guard revalidation and is the intended display-only approved projection.
-2. Nullable `primarySourceName` / `primaryPublishedDate` props are acceptable for this local display component.
-3. The panel placement before the existing workflow status section is acceptable.
+- Added `lib/source-facts/signal-translation.ts`
+  - Signal Translation Brief types.
+  - Fixed 6 Scene Card role union.
+  - Caption System V1 layout types/constants.
+  - voice timing, image text policy, layout safe zone, visual template types.
+  - `validateFixedSixSceneCards()` sequence/count helper.
+  - `validateSceneCardsForGeneration()` detail helper for required text fields and absolute-timeline caption timing.
+  - `validateSignalTranslationCitationIds()` helper for Fact Card citation id subset checks.
+- Added `lib/source-facts/signal-translation-generator.ts`
+  - `createSignalTranslationBriefFromFactCard()` deterministic brief helper.
+  - `createFixedSixSceneCardsFromSignalTranslationBrief()` deterministic fixed 6 Scene Card helper.
+  - `createMoneyShortsScenePackageFromFactCard()` package helper returning brief, scene cards, scene validation, and citation validation.
+  - Exchange-rate template, interest-rate template, plus safe generic indicator fallback.
+- Added `lib/source-facts/signal-translation-fixtures.ts`
+  - Mock exchange-rate Signal Translation Brief.
+  - 6 Scene Cards derived from the existing exchange-rate Fact Card fixture.
+  - Sequence validation fixture.
+  - Generation validation and citation subset validation fixtures.
+  - Generated exchange-rate Signal Translation package fixture.
+  - Generated interest-rate Signal Translation package fixture.
+- Updated `lib/source-facts/fixtures.ts`
+  - Added mock ECOS source provider.
+  - Added mock base-rate Fact Card fixture.
+- Updated `lib/source-facts/index.ts`
+  - exports new type, generator, and fixture modules.
 
-One UI wording mismatch must be fixed before checkpoint:
+Important invariant:
 
-- In `OwnerReviewGuidancePanel.tsx`, the ledger-approved text says `Overlay 섹션(⑨)`, but current `page.tsx` uses `⑨ Review Packet`. The ledger overlay is a subsection inside `⑧ Publishability Readiness`.
-- The pending approval next-action text says `⑧ Owner Decision Controls`, while the visible label is `Owner Decision 로컬 샌드박스` inside `⑧ Publishability Readiness`.
+- Existing `FactCard` type was not modified.
+- Existing Fact Card fixture values were not modified; one new mock base-rate Fact Card was added.
+- Signal Translation Brief remains a separate interpretation layer.
+- Scene Card remains the multimodal scene-level spec.
+- Existing `validateFixedSixSceneCards()` remains sequence/count focused; generation readiness checks are separated into `validateSceneCardsForGeneration()`.
+- Generator is deterministic and does not call AI, TTS, image, render, upload, DB, env, or live APIs.
 
-## Goal
+## Still In Accumulated Diff
 
-Fix only the section-reference wording in the new Owner review guidance panel so it matches the current UI section labels and does not imply that section ⑨ is the ledger overlay.
+This working tree also includes the previous uncommitted documentation alignment:
 
-## Approved Scope
+- `Money Shorts OS Direction Alignment Docs v1`
+- `Money Shorts OS Voice / Narration Style Patch v1`
+- legacy/reference-only doc markers
 
-1. Edit `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx` only for display copy.
-2. Replace the wrong `Overlay 섹션(⑨)` reference with copy that points to `⑧ Publishability Readiness` / `로컬 승인 Overlay (Ledger 기반)` or avoids numbering ambiguity.
-3. Replace `⑧ Owner Decision Controls` with copy that matches the visible `⑧ Publishability Readiness` / `Owner Decision 로컬 샌드박스` wording.
-4. Do not change `resolveState`, props, imports, page insertion, ledger logic, gate logic, clipboard logic, or any behavior.
-5. Do not update `_ai/NEXT_ACTION.md` or `_ai/PROJECT_STATE.md` unless a check result materially changes reusable state. Default: no docs change besides this handoff file if already modified.
+## Recommended Next Task
 
-## Approved Editable Files
+`money-shorts-os-package-preview-signal-translation-panel-v1`
 
-- `app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx`
-- `_ai/HANDOFF_NOW.md` only if final status needs a tiny update
+Recommended scope:
 
-Do not edit unrelated implementation files.
+- Add a small display-only package-preview panel for Signal Translation Brief and 6 Scene Cards.
+- Use generated package data only; do not add persistence or live generation.
+- Keep existing Fact Card contract unchanged.
+- Do not touch render, upload, DB, env, dependency, live API, or legacy `/review` flow.
+
+## Verification Evidence
+
+Passed:
+
+- `.\\node_modules\\.bin\\eslint.cmd lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-fixtures.ts lib\\source-facts\\index.ts --max-warnings=0`
+- `.\\node_modules\\.bin\\eslint.cmd lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-generator.ts lib\\source-facts\\signal-translation-fixtures.ts lib\\source-facts\\index.ts --max-warnings=0`
+- `.\\node_modules\\.bin\\eslint.cmd lib\\source-facts\\fixtures.ts lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-generator.ts lib\\source-facts\\signal-translation-fixtures.ts lib\\source-facts\\index.ts --max-warnings=0`
+- `.\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false --strict --target ES2017 --module esnext --moduleResolution bundler --esModuleInterop --skipLibCheck lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-fixtures.ts`
+- `.\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false --strict --target ES2017 --module esnext --moduleResolution bundler --esModuleInterop --skipLibCheck lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-generator.ts lib\\source-facts\\signal-translation-fixtures.ts`
+- `.\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false --strict --target ES2017 --module esnext --moduleResolution bundler --esModuleInterop --skipLibCheck lib\\source-facts\\fixtures.ts lib\\source-facts\\signal-translation.ts lib\\source-facts\\signal-translation-generator.ts lib\\source-facts\\signal-translation-fixtures.ts`
+- `.\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false --strict --target ES2017 --module esnext --moduleResolution bundler --esModuleInterop --skipLibCheck lib\\source-facts\\index.ts`
+- `node -e` in-memory TypeScript transpile check confirmed `exchangeRateGeneratedSignalTranslationPackage` has `sceneValid=true`, `citationValid=true`, `sceneCount=6`, `templateId=exchange_rate_life_economy_v1`.
+- `node -e` in-memory TypeScript transpile check confirmed both generated packages have `sceneValid=true`, `citationValid=true`, `sceneCount=6`; templates are `exchange_rate_life_economy_v1` and `interest_rate_life_economy_v1`.
+- `git diff --check` returned only LF-to-CRLF warnings, no whitespace errors.
+
+Not run:
+
+- Full project `tsc` / full build. This repo has known broad historical output/archive issues and this slice was intentionally targeted.
 
 ## Forbidden
 
 - Do not touch `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `.money-shorts-local/` data.
-- Do not run browser/dev-server route smoke for package-preview if it would read `.money-shorts-local/`.
-- Do not stage/commit/push.
+- Do not stage/commit/push unless explicitly approved later.
 - Do not add dependencies or edit lockfiles.
-- Do not edit `package.json`.
 - Do not edit `.env*`, secrets, deployment config, DB/Supabase schema, migrations, or API credentials.
 - Do not call OpenAI/GPT, Gemini, Veo, ElevenLabs, KOSIS, OpenDART, FRED, ECOS live, or any live API.
 - Do not run ffmpeg, render, export, upload, post, deploy, or write to `output/`.
 - Do not write to OS clipboard, `localStorage`, or `sessionStorage`.
-- Do not implement real persisted `isPublishable=true`.
-
-## Required Checks
-
-Run focused checks:
-
-1. `git status -sb`
-2. `git diff --stat`
-3. Focused diff review of `OwnerReviewGuidancePanel.tsx`
-4. `node scripts/check-ledger-overlay-static.mjs`
-5. ESLint:
-   - `pnpm exec eslint app/fact-cards/manual/package-preview/page.tsx app/fact-cards/manual/package-preview/OwnerReviewGuidancePanel.tsx --max-warnings=0`
-   - if `pnpm exec` hits the known non-TTY module purge issue, use `.\node_modules\.bin\eslint.cmd ... --max-warnings=0`
-6. TypeScript evidence:
-   - run the existing project TypeScript check approach if practical, and report whether changed package-preview files have 0 errors
-   - if full project check reports known unrelated `output/` binary `.ts` errors, explicitly report that changed package-preview files have no related errors
-7. Confirm no files outside approved scope changed by this review-fix.
-8. Confirm `piq_diag_out.txt` remains untracked and untouched.
-
-No browser, live API, render, ffmpeg, output, DB, env, clipboard, or `.money-shorts-local/` checks are approved for this slice.
-
-## Definition of Done
-
-- Owner guidance panel copy no longer points the ledger overlay to section ⑨.
-- Pending approval next-action copy matches the visible Owner decision area.
-- No behavior or logic changed.
-- Static guard and focused ESLint pass.
-- Focused TypeScript evidence shows no changed-file errors.
-- No forbidden files or systems are touched.
-- Report whether the combined UI slice + docs sync should now be checkpoint committed.
-
-## Final Report Format
-
-Report back to Codex in Korean with:
-
-- changed files
-- exact wording fix made
-- behavior preserved
-- checks/results
-- deviations/blockers
-- final `git status -sb`
-- checkpoint recommendation
-- `전체프로젝트 진행률 : 약 83%`

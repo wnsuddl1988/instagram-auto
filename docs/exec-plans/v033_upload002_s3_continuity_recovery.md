@@ -1,5 +1,7 @@
 # v033 - Upload 002 S3 Continuity Recovery
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). Upload/continuity recovery work is not active Money Shorts OS MVP direction and must not be executed without explicit Owner approval.
+
 ## 1. Goal
 
 Recover the Upload 002 S3 keyframe so it preserves the accepted S3 action while matching the S1/S2 copy-room and copier continuity.

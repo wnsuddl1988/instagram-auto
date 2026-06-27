@@ -1,4 +1,7 @@
 # Final API Integration Readiness
+
+> Status: **LEGACY / FUTURE REFERENCE ONLY** (2026-06-27). This old integration readiness note is not approval to use live APIs, env/secrets, render, upload, or provider calls. Active MVP remains document/type/local package work until Owner explicitly approves integration.
+
 > 작성일: 2026-05-30 | QA-LH-10 세션 이후 OpenAI 중심 루프 재정렬 사전 조사
 
 ---

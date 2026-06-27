@@ -1,5 +1,7 @@
 # v002 - AI 3D Character Continuity Pilot
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). AI 3D character continuity work is not active Money Shorts OS MVP direction. Use only as historical reference unless Owner explicitly re-approves it.
+
 ## 1. Goal
 
 Use the user's existing AI accounts and automation to test whether one original stylized 3D character can remain visually consistent across three connected vertical Veo clips. This is a continuity test, not a finished episode.

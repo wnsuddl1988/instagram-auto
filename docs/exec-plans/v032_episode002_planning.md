@@ -1,5 +1,7 @@
 # v032 — Episode 001 제작 규칙 고정 + Episode 002 기획
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). 3D sitcom episode planning is not active Money Shorts OS MVP direction.
+
 작성: 2026-06-15 · 생성 호출 0회(이미지/Veo/TTS/편집 없음)
 
 ## A. Episode 001 완료 기록 (고정)

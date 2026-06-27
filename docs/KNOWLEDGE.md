@@ -1,5 +1,7 @@
 # AutoShorts AI — 장기 운영 지식
 
+> Status: **MIXED LEGACY / REFERENCE ONLY** (2026-06-27). This file contains useful operational history, but older 3D sitcom, living_tips, render/upload, and provider-call sections are not active Money Shorts OS MVP direction. Current source of truth is `_ai/` Money Shorts OS v1.1 docs.
+
 ## Claude API 비용 정책 (2026-06-13 확정)
 
 **규칙:** 모든 Claude API 호출 전 모델, 최대 비용, 호출 횟수를 보고하고 사용자 승인을 받는다.

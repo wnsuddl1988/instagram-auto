@@ -1,5 +1,7 @@
 # v003 - Recover Scene 3 And Final Continuity QA
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This old continuity QA plan is not active Money Shorts OS MVP direction.
+
 ## 1. Goal
 
 Complete the v002 continuity pilot by generating Scene 3 exactly once, then perform final three-scene continuity QA. This task does not create a finished episode.

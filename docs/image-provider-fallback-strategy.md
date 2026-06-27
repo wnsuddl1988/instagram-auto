@@ -1,5 +1,7 @@
 # AutoShorts AI — 이미지 Provider Fallback 전략
 
+> Status: **LEGACY / FUTURE REFERENCE ONLY** (2026-06-27). Old render-v2/image-provider fallback work is not active MVP direction. Current work must use Scene Card/imageTextPolicy specs and avoid live provider calls without approval.
+
 > 최초 작성: 2026-05-24 (Pollinations 402 차단 대응)
 > 관련 파일: `app/api/render-v2/route.ts`, `lib/pexels.ts`, `lib/assetDownloader.ts`
 

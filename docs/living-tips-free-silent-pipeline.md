@@ -1,5 +1,7 @@
 # AutoShorts AI — 생활꿀팁 무료 무음 샘플 파이프라인
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This old living_tips render pipeline is not active MVP direction. Do not run render/output/API flows from this document without explicit Owner approval.
+
 > 최초 작성: 2026-05-24  
 > 검증된 루프: QA-LH-7 (laundry-clothing, 95/pass, accept_silent_sample)  
 > 관련 문서: `docs/living-tips-qa-strategy.md`, `docs/image-provider-fallback-strategy.md`

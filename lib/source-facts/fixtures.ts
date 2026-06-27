@@ -22,6 +22,16 @@ export const MOCK_SOURCE_PROVIDERS: SourceProvider[] = [
     isActive: true,
   },
   {
+    id: "provider-ecos-mock",
+    name: "한국은행/ECOS 예시",
+    providerType: "ecos",
+    baseUrl: "https://ecos.bok.or.kr",
+    licenseNote: "Mock fixture only. Verify official ECOS terms before commercial use.",
+    commercialUseStatus: "needs_review",
+    requiresApiKey: true,
+    isActive: true,
+  },
+  {
     id: "provider-opendart-mock",
     name: "OpenDART 예시",
     providerType: "opendart",
@@ -78,6 +88,55 @@ export const inflationFactCard: FactCard = {
   blockedClaims: [
     "물가가 확실히 잡혔다고 단정하지 않는다.",
     "투자 매수/매도 판단으로 연결하지 않는다.",
+  ],
+  contentCategory: "source_based_finance",
+};
+
+export const interestRateFactCard: FactCard = {
+  id: "fact-card-mock-base-rate",
+  isMock: true,
+  isPublishable: false,
+  primarySourceProviderId: "provider-ecos-mock",
+  citations: [
+    {
+      id: "citation-mock-base-rate-ecos",
+      sourceProviderId: "provider-ecos-mock",
+      sourceName: "한국은행/ECOS 예시",
+      sourceUrl: "https://ecos.bok.or.kr",
+      publishedDate: "2026-06-13",
+      dataPeriod: "2026-06",
+      citationLabel: "한국은행 기준금리 예시",
+      licenseNote: "Mock citation. Verify official ECOS terms before use.",
+      commercialUseStatus: "needs_review",
+    },
+  ],
+  sourceName: "한국은행/ECOS 예시",
+  sourceUrl: "https://ecos.bok.or.kr",
+  publishedDate: "2026-06-13",
+  dataPeriod: "2026-06",
+  retrievedAt: "2026-06-25T00:00:00+09:00",
+  indicatorName: "기준금리",
+  currentValue: "3.50",
+  previousValue: "3.50",
+  changeValue: "0.00",
+  changeRate: "0.0%",
+  unit: "%",
+  currentNumericValue: 3.5,
+  previousNumericValue: 3.5,
+  changeNumericValue: 0,
+  changeRateNumericValue: 0,
+  comparisonType: "previous_release",
+  interpretation:
+    "기준금리가 이전 발표와 같은 수준으로 유지된 예시 상황으로, 대출 이자 부담과 예금 조건을 함께 점검해야 한다.",
+  cautionNote:
+    "Mock fixture 예시값이며 실제 발행용이 아님. 공식 한국은행 원자료 확인 전 콘텐츠에 사용하지 말 것.",
+  allowedClaims: [
+    "기준금리가 이전 발표와 같은 수준으로 유지된 예시 Fact Card다.",
+    "금리 신호는 대출 이자 부담과 예금 조건 점검에 연결될 수 있다.",
+  ],
+  blockedClaims: [
+    "다음 금리 방향을 확정적으로 예측하지 않는다.",
+    "특정 투자 상품 가입이나 매수/매도 권유로 연결하지 않는다.",
   ],
   contentCategory: "source_based_finance",
 };
@@ -180,6 +239,7 @@ export const dartDisclosureFactCard: FactCard = {
 
 export const MOCK_FACT_CARDS: FactCard[] = [
   inflationFactCard,
+  interestRateFactCard,
   exchangeRateFactCard,
   dartDisclosureFactCard,
 ];

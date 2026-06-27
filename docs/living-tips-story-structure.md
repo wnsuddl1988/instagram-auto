@@ -1,5 +1,7 @@
 # living_tips 스토리형 구조 재설계
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). living_tips is not the active Money Shorts OS MVP category. Story/hook lessons may be reused only as pattern inspiration for source-first life-economy shorts after Owner approval.
+
 > 작성일: 2026-05-24  
 > 배경: QA-LH-8 (냉장고 문칸 금지 식재료 TOP 5) TTS 완성본에 대한 사용자 피드백 반영
 

@@ -1,8 +1,8 @@
 # Money Shorts OS Source-First Data Spec V1
 
-Status: **ACTIVE SOURCE-FIRST CORE SPEC**
+Status: **ACTIVE SOURCE-FIRST CORE SPEC — DIRECTION ALIGNMENT V1.1**
 
-Updated: 2026-06-25
+Updated: 2026-06-27
 
 ## 1. Product Identity Correction
 
@@ -10,7 +10,7 @@ Money Shorts OS의 본체는 돈관리 쇼츠 생성기가 아니다.
 
 최종 제품 정의:
 
-출처 기반 금융·경제 데이터를 수집하고, 핵심 사실을 추출하고, 쇼츠 대본·자막·차트·이미지·음성·영상으로 변환하며, 금융표현 위험 검수까지 수행하는 **금융·경제 쇼츠 제작 OS**다.
+경제 신호를 출처 기반으로 수집하고, 핵심 사실을 Fact Card로 고정한 뒤, Signal Translation Brief와 Scene Card를 통해 생활비·대출·소비·저축·투자 판단·환전·카드값·여행비·장바구니·고정비/변동비에 미치는 의미와 대응 행동까지 번역하는 **source-first 생활경제 쇼츠 제작 OS**다.
 
 Money-OS는 이 쇼츠 제작 OS의 보조 수익화/전환 레이어다.
 
@@ -63,23 +63,21 @@ Money-OS는 이 쇼츠 제작 OS의 보조 수익화/전환 레이어다.
 4. 전월/전년/이전 발표치 비교
 5. Fact Card 생성
 6. 출처 링크/출처명 저장
-7. 쇼츠 주제 생성
-8. Video Blueprint 생성
-9. 15초/30초/60초 대본 생성
-10. 자막 생성
-11. 9:16 차트/숫자 카드 생성
-12. GPT 이미지 생성
-13. ElevenLabs 음성 생성
-14. 음성 길이에 맞춰 타임라인 재계산
-15. ffmpeg로 영상 조립
-16. 금융표현/과장표현 최종 QA
-17. Money-OS CTA는 필요한 경우에만 삽입
+7. Signal Translation Brief 생성
+8. 6 Scene Cards 생성
+9. Scene Card에서 script / caption / image prompt / voice / screen text 파생
+10. 9:16 차트/숫자 카드 또는 이미지 브리프 생성
+11. 금융표현/과장표현/멀티모달 일관성 QA
+12. Owner gate
+13. Money-OS CTA는 필요한 경우에만 삽입
 
 핵심 원칙:
 
 - AI는 원본 데이터를 상상해서 대본을 쓰면 안 된다.
 - AI는 반드시 Fact Card에 있는 내용만 기반으로 대본을 작성한다.
 - 금융·경제 쇼츠에서 중요한 것은 그럴듯한 설명이 아니라 **출처 있는 사실**이다.
+- 생활 영향과 행동 지침은 Fact Card 자체를 오염시키지 않고 Signal Translation Brief에서 다룬다.
+- 자막, 이미지, 음성, 화면 텍스트는 따로 생성하지 않고 Scene Card 기준으로 함께 파생한다.
 
 ## 5. Source Providers
 
@@ -102,6 +100,12 @@ Money-OS는 이 쇼츠 제작 OS의 보조 수익화/전환 레이어다.
 ## 6. Fact Card Schema
 
 Fact Card는 대본 생성의 근거가 되는 최소 사실 단위다.
+
+Fact Card 책임:
+
+- 사실, 수치, 출처, 기간, citation, `allowedClaims`, `blockedClaims`의 근거.
+- 생활경제 해석과 창작 표현을 과도하게 넣지 않는다.
+- 개인 행동 지침, 전망 시나리오, 후킹 문구는 Fact Card가 아니라 Signal Translation Brief 또는 Scene Card에서 다룬다.
 
 필수 필드:
 
@@ -140,17 +144,65 @@ Fact Card는 대본 생성의 근거가 되는 최소 사실 단위다.
 }
 ```
 
-## 7. Video Blueprint Source Fields
+## 6.1 Signal Translation Brief
+
+Signal Translation Brief는 경제 신호를 생활 돈관리 문제로 번역하는 중간 layer다.
+
+권장 필드:
+
+- `signalSummary`: 이 신호가 무엇인지.
+- `keyReasons`: 주요 원인 후보. 단정 원인이 아니라 후보/맥락으로 표현한다.
+- `expertInterpretation`: 전문가적 해석. 과도한 예측이나 투자 판단으로 가지 않는다.
+- `affectedMoneyAreas`: 생활비, 대출, 소비, 저축, 투자 판단, 환전, 카드값, 여행비, 장바구니, 고정비/변동비 등.
+- `lifeImpact`: 시청자의 생활 돈 문제와 어떻게 연결되는지.
+- `volatilityWatch`: 앞으로 지켜볼 변동성 포인트.
+- `scenarioBasedOutlook`: 상승/하락/유지 등 시나리오 기반 전망. deterministic forecast 금지.
+- `recommendedActions`: 개인이 지금 할 수 있는 점검 행동.
+- `actionUrgency`: 지금/이번 달/다음 발표 전 등 행동 우선순위.
+- `audienceSituation`: 대출자, 환전 예정자, 카드값 부담층, 장바구니 물가 민감층 등.
+- `actionBoundaries`: 직접 투자 조언, 수익 보장, 매수/매도 권유를 피하기 위한 경계.
+- `viewerTakeaway`: 마지막에 남길 한 줄 결론.
+
+원칙:
+
+- Fact Card의 숫자와 출처를 확장하지 않는다.
+- 생활 영향은 과장하지 않는다.
+- recommendedActions는 생활 점검 행동이어야 하며 투자 추천이 아니어야 한다.
+
+## 6.2 Scene Card Data Boundary
+
+Scene Card는 장면별 단일 명세서다.
+
+Scene Card에서 함께 파생되는 항목:
+
+- narration
+- spoken caption
+- captionBlocks
+- image prompt
+- visualTemplateId
+- screen text
+- voiceTiming
+- sourceCitationIds
+- source note
+- imageTextPolicy
+- layoutSafeZone
+- risk notes
+
+Scene Card는 대본/자막/이미지/음성을 따로 생성해서 맞추는 방식이 아니라, 장면 목적 하나에서 모든 multimodal output을 함께 만든다.
+
+## 7. Video Blueprint / Scene Card Source Fields
 
 Video Blueprint와 각 scene은 source/fact 정보를 반드시 참조한다.
 
 Root-level required fields:
 
 - `fact_card_ids`
+- `signal_translation_brief_id`
 - `source_citation_ids`
 - `data_confidence`
 - `source_summary`
 - `cta_policy`
+- `viewer_takeaway`
 
 Scene or fact-linked fields:
 
@@ -164,6 +216,11 @@ Scene or fact-linked fields:
 - `change_rate`
 - `interpretation`
 - `caution_note`
+- `affected_money_areas`
+- `recommended_actions`
+- `scenario_based_outlook`
+- `source_citation_ids`
+- `image_text_policy`
 
 ## 8. Money-OS CTA Policy
 

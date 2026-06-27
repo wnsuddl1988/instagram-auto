@@ -1,14 +1,16 @@
 # Money Shorts OS MVP1 Content Package Spec
 
-Status: **ACTIVE MVP1 SPEC**
+Status: **ACTIVE MVP1 SPEC — DIRECTION ALIGNMENT V1.1**
 
-Updated: 2026-06-25
+Updated: 2026-06-27
 
 ## 1. Goal
 
 MVP1은 완성 영상 자동 생성기가 아니다.
 
-목표는 Owner가 매일 쇼츠 제작에 바로 사용할 수 있는 **출처 기반 금융·경제 쇼츠 콘텐츠 패키지 생성기**를 만드는 것이다.
+목표는 Owner가 매일 쇼츠 제작에 바로 사용할 수 있는 **출처 기반 생활경제 쇼츠 콘텐츠 패키지 생성기**를 만드는 것이다.
+
+MVP1의 핵심 산출물은 단순 script/storyboard 묶음이 아니라, Fact Card에서 출발해 Signal Translation Brief와 6 Scene Cards를 거친 **Scene Card 기반 multimodal package**다.
 
 Money-OS는 본체가 아니라 보조 전환 레이어다. 초기 Money-OS 연결은 다음까지만 포함한다:
 
@@ -24,10 +26,12 @@ Owner 지시는 모두 참고하되, 충돌 시 최신 지시를 우선한다.
 
 - 내부 제작 도구 먼저, SaaS 확장은 이후.
 - 쇼츠 자동 영상 렌더보다 콘텐츠 패키지 품질 검증 먼저.
-- 콘텐츠 중심축은 돈관리가 아니라 출처 기반 금융·경제 데이터다.
+- 콘텐츠 중심축은 출처 기반 경제 신호를 생활 돈관리 문제와 대응 행동으로 번역하는 것이다.
 - 각 쇼츠는 Fact Card를 먼저 만든 뒤 대본을 생성한다.
+- Fact Card는 사실/수치/출처 근거에 집중하고, 생활 해석과 행동 지침은 Signal Translation Brief에서 다룬다.
+- script, caption, image prompt, voice, screen text는 Scene Card에서 함께 파생한다.
 - 앱 UI는 프리미엄 금융 SaaS 톤.
-- 쇼츠 출력물은 “균형형 프리미엄 금융 쇼츠” 톤.
+- 쇼츠 출력물은 “경제번역소 / 생활경제탐정” 톤.
 - Data Shorts Mode가 기본값이고, Money-OS 연결형 돈관리는 보조 카테고리다.
 - 대본보다 먼저 Video Blueprint를 생성한다.
 - 영상 파이프라인 세부 기준은 `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`를 따른다.
@@ -76,14 +80,17 @@ Owner 지시는 모두 참고하되, 충돌 시 최신 지시를 우선한다.
 
 - Fact Card
 - source citations
+- Signal Translation Brief
 - Video Blueprint
+- 6 Scene Cards
 - 쇼츠 주제
 - 핵심 메시지
 - 15초 대본
 - 30초 대본
 - 60초 대본
-- 장면별 스토리보드
-- 자막 문장
+- 장면별 narration / caption / image prompt / voice timing / screen text
+- captionBlocks
+- Caption System V1 layout guidance
 - 9:16 차트/이미지 브리프 또는 경량 카드 결과
 - 썸네일 문구
 - YouTube 제목
@@ -93,7 +100,36 @@ Owner 지시는 모두 참고하되, 충돌 시 최신 지시를 우선한다.
 - Money-OS CTA
 - 금융표현 위험 검수 결과
 
-## 5. Script Structure
+## 5. MVP Fixed 6-Scene Format
+
+MVP 운영 안정화를 위해 자유 포맷보다 6장면 고정 포맷을 우선한다. 기존 15초/30초/60초 변형은 이 6장면을 압축하거나 확장하는 방식으로만 허용한다.
+
+1. **Hook**
+   - 궁금증 유발.
+   - 첫 장면 큰 제목/썸네일 역할.
+   - 질문형/반전형/생활 연결형.
+2. **Signal**
+   - 출처 기반 경제 신호 제시.
+   - 핵심 수치, 기간, 출처 요약.
+   - 숫자는 Fact Card 범위 안에서만 사용.
+3. **Why + Expert Interpretation**
+   - 주요 원인 후보.
+   - 현재 상황에 대한 전문가적 해석.
+   - 단정 원인 금지.
+   - 지금 무엇을 봐야 하는가 제시.
+4. **Life Impact**
+   - 생활비, 대출, 소비, 저축, 투자 판단, 환전, 카드값, 여행비, 장바구니, 고정비/변동비와 연결.
+   - 새 방향의 중심 장면.
+5. **Watch / Scenario Outlook**
+   - deterministic forecast 금지.
+   - 상승/하락/유지 시나리오 또는 관찰 포인트.
+   - 변동성 대비 관점.
+6. **Action + Closing Line**
+   - 개인이 지금 할 수 있는 점검 행동.
+   - 투자 추천 금지.
+   - 마지막 한 줄 결론 포함.
+
+## 5.1 Legacy Script Structure Reference
 
 ### 15초
 
@@ -119,19 +155,83 @@ Owner 지시는 모두 참고하되, 충돌 시 최신 지시를 우선한다.
 - 45-54s: 요약
 - 54-60s: Money-OS CTA
 
-## 6. Storyboard Scene Model
+## 6. Scene Card Model
 
 각 scene은 아래 필드를 가진다:
 
 - `scene_index`
 - `duration_sec`
+- `scene_role`: `hook` | `signal` | `why_expert_interpretation` | `life_impact` | `watch_scenario_outlook` | `action_closing`
 - `scene_goal`
-- `visual_type`: `number_card` | `chart` | `money_leak` | `money_structure` | `cta_card`
-- `visual_brief`
-- `caption_text`
 - `narration_text`
+- `caption_text`
+- `captionBlocks`: `{ startSec, endSec, text, emphasisWords }[]`
+- `visualTemplateId`: `signal_card` | `life_object` | `clue_cards` | `action_checklist`
+- `visual_brief`
+- `image_prompt`
+- `screen_text`
+- `sourceCitationIds`
 - `source_note`
+- `imageTextPolicy`: 이미지 안에 넣어도 되는 텍스트 / 넣으면 안 되는 텍스트
+- `voiceTiming`: 빠르게 / 보통 / 천천히, 강조 단어, pause 지점
+- `narrationDirection`: hook / interpretation / action close의 톤 지시
+- `voiceCandidateNotes`: ElevenLabs 후보 테스트 시 참고할 장면별 청감 메모
+- `layoutSafeZone`: Hook Title / Spoken Caption / Source Note 위치
 - `risk_note`
+
+Scene Card 원칙:
+
+- 자막은 별도 창작물이 아니라 내레이션의 축약/파생본이다.
+- 이미지 프롬프트는 장면 목적, 자막, 내레이션과 같은 메시지를 보여야 한다.
+- 이미지 안에는 검증되지 않은 숫자/문구를 넣지 않는다.
+- 각 장면은 핵심 메시지 1개만 전달한다.
+- 내레이션은 30대 남성 중저음 생활경제 해설자 톤을 기본으로 한다.
+- Hook 장면은 궁금증을 유발하되 과장하지 않는다.
+- Why/Expert 장면은 전문가식 해석처럼 차분하고 신뢰감 있게 읽는다.
+- Action/Closing 장면은 투자 권유가 아니라 생활 점검 행동처럼 부드럽고 단정하게 마무리한다.
+
+## 6.0.1 Voice / Narration Style V1
+
+기본 음성 컨셉:
+
+- 30대 남성 중저음.
+- 자연스러운 한국어 발음.
+- AI티가 최소화된 억양.
+- 문장 끝이 기계적으로 끊기지 않아야 함.
+- 차분하지만 지루하지 않은 생활경제 해설자 톤.
+- 뉴스 앵커처럼 딱딱하지 않음.
+- 과장된 유튜버 톤이나 광고/판매 느낌 금지.
+
+Scene Card 연결:
+
+- `voiceTiming.pace`: Hook은 약간 빠르게, 해석은 보통, Action은 보통 또는 천천히.
+- `voiceTiming.emphasisWords`: Fact Card/Signal Translation Brief에서 허용된 핵심 단어만 강조.
+- `voiceTiming.pauses`: 숫자, 생활 영향, 행동 지침 전후에 짧게 둔다.
+- `narrationDirection`: 첫 문장 호기심, 중간 전문가식 해석, 마지막 행동 지침으로 구분한다.
+
+ElevenLabs 후보는 아직 최종 확정하지 않는다. `Hojin Lim`, `Yohan Koo`, `Gihong`을 같은 테스트 대본으로 생성한 뒤 Owner가 직접 청감 비교한다.
+
+## 6.1 Caption System V1
+
+1080x1920 세로 영상 기준:
+
+- Hook Title: `x 90~990`, `y 300~620`, 2줄 이하, `74~88px`, 질문형/반전형/생활 연결형.
+- Scene Label: `x 80~420`, `y 180~250`, `30~38px`, 예: 신호 / 원인 / 생활영향 / 관찰 / 대응.
+- Spoken Caption: `x 90~880`, `y 1180~1480`, `52~64px`, 1~2줄, 내레이션의 축약/파생본.
+- Source Note: `x 90~760`, `y 1500~1560`, `24~30px`, 작고 방해되지 않게.
+- 피해야 할 영역: `y 0~150`, `y 1600~1920`, `x 900~1080` 오른쪽 UI 영역.
+- 폰트: Pretendard 또는 Noto Sans KR 계열.
+- Hook Title은 Bold/ExtraBold, Spoken Caption은 SemiBold/Medium, Source Note는 Regular.
+- 강조색은 amber/warm yellow 1개 중심, 한 화면 강조 단어는 1~2개 이하.
+
+## 6.2 Image Style V1
+
+- 에디토리얼 생활경제 리포트 스타일.
+- 생활 오브젝트 + 경제 신호 카드 + 탐정식 단서 연출.
+- 실제 탐정 캐릭터가 아니라 단서 카드, 연결선, 체크 표시, 신호 카드, 생활 오브젝트 배치로 해석 느낌을 준다.
+- 색감: off-white, light gray, charcoal navy, dark navy/charcoal, amber/warm yellow.
+- visual templates: `signal_card`, `clue_cards`, `life_object`, `action_checklist`.
+- 금지: 매번 다른 화풍, 과한 프리미엄 금융 광고풍, 과한 골드, 공포 분위기, 투자 수익 암시, 대본과 무관한 추상 그래프 배경, 이미지 안 검증되지 않은 숫자/문구 삽입.
 
 Data Shorts Mode scene 원칙:
 
@@ -227,10 +327,30 @@ Trust Mode scene 원칙:
 - hook
 - scripts
 - captions
+- Scene Cards
+- image prompts
+- screen text
 - title
 - description
 - CTA
 - hashtags
+
+추가 QA:
+
+- 원인 단정 여부
+- 예측 단정 여부
+- 투자 조언 위험도
+- 생활 영향 과장 여부
+- 행동 지침 적절성
+- 공포 조장 여부
+- 출처 밖 주장 여부
+- 자막/음성 일치도
+- 자막/이미지 일치도
+- 대본/이미지 일치도
+- Caption safe zone 준수 여부
+- Hook Title 2줄 이하 여부
+- 이미지 안 텍스트와 자막 충돌 여부
+- 마지막 viewer takeaway 명확성
 
 위험도:
 

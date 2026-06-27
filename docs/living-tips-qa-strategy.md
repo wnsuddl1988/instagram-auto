@@ -1,5 +1,7 @@
 # AutoShorts AI — 생활꿀팁 QA 전략
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). living_tips QA is not the active MVP path. Active QA now centers on source-first claims, life-impact/action safety, Caption System V1, and Scene Card multimodal consistency.
+
 > 최종 업데이트: 2026-05-24 (QA-27 감동사연 분리 후 신규 작성)
 > 관련 파일: `lib/reelCategories.ts`, `lib/openai.ts`, `app/api/generate-v2/route.ts`
 

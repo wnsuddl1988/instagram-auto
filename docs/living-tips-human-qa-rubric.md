@@ -1,4 +1,7 @@
 # Living Tips Human QA Rubric
+
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This rubric is historical living_tips evidence. Active Money Shorts OS QA must use source-first, life-economy, Caption System V1, and multimodal consistency criteria.
+
 ## 사람이 체감하는 품질 기준 — Visual Relevance + Caption Hook
 
 > 작성일: 2026-05-24  

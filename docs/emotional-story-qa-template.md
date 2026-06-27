@@ -1,5 +1,7 @@
 # 감동사연 릴스 QA 평가 템플릿
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). Emotional-story QA is not active Money Shorts OS direction. Keep as historical rubric reference only.
+
 > **버전**: 1.0.0  
 > **대상**: `referenceStyle = emotional_story`  
 > **총점**: 100점 · 합격 기준 70점 · 권장 80점 이상

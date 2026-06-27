@@ -1,5 +1,7 @@
 # AutoShorts AI — Current Plan
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). Active MVP direction is now Money Shorts OS: source-first life-economy shorts via Fact Card → Signal Translation Brief → 6 Scene Cards. Do not treat this plan as the current implementation path unless Owner explicitly re-approves it.
+
 _Last updated: 2026-06-15_
 
 ## 프로젝트 현황

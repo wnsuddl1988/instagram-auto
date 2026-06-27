@@ -1,5 +1,7 @@
 # AutoShorts AI — 작업 로그
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This log preserves older production history. Active MVP direction is Money Shorts OS source-first life-economy shorts, not the old 3D sitcom/render/upload flow.
+
 ## 2026-06-15 S5 키프레임 — continuity_pass (편집 특례 1회)
 
 ### S5 1차 시도 기록 (content_fail — 보존)

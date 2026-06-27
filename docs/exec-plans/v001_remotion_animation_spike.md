@@ -1,5 +1,7 @@
 # v001 - Remotion Animation Spike
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). This old execution plan is not active Money Shorts OS MVP direction. Do not run render/template work from it without explicit Owner approval.
+
 ## 1. Goal
 
 Build a local, reusable 2D animation proof of concept for an adult-relatable animated sitcom. Render one polished 15-20 second vertical MP4 without paid APIs.

@@ -1,5 +1,7 @@
 # living_tips 소재/후킹 강화 전략
 
+> Status: **LEGACY / REFERENCE ONLY** (2026-06-27). Hook patterns may inform Money Shorts OS, but this living_tips category and old prompt path are not active MVP direction.
+
 > 작성일: 2026-05-24  
 > 배경: LH-7 (흰 옷 황변 없애는 방법) TTS 최종본 QA 완료 후, 사용자 피드백 "사람들의 흥미를 끌 소재와 후킹요소가 부족하다" 반영
 
