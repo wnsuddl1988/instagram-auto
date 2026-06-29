@@ -34,6 +34,7 @@ import {
   inflationGeneratedSignalTranslationPackage,
   interestRateGeneratedSignalTranslationPackage,
 } from "@/lib/source-facts/signal-translation-fixtures";
+import { providerCandidateGeneratedSignalTranslationPackage } from "@/lib/source-facts/provider-candidates";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 import type {
   AnyCardProps,
@@ -900,6 +901,7 @@ function PackagePreviewContent({
             exchangeRateGeneratedSignalTranslationPackage,
             interestRateGeneratedSignalTranslationPackage,
             inflationGeneratedSignalTranslationPackage,
+            providerCandidateGeneratedSignalTranslationPackage,
           ]}
         />
 

@@ -375,6 +375,27 @@ check(
   fixturesSrc.includes("export const inflationGeneratedSignalTranslationPackageQaReport"),
 );
 
+// ── provider-driven preview connection ────────────────────────────────────────
+console.log("\n[ provider-candidates.ts → page.tsx preview wire ]");
+check(
+  "page.tsx imports providerCandidateGeneratedSignalTranslationPackage",
+  pageSrc.includes("providerCandidateGeneratedSignalTranslationPackage"),
+);
+check(
+  "page.tsx imports from provider-candidates",
+  pageSrc.includes("provider-candidates"),
+);
+check(
+  "page.tsx passes providerCandidateGeneratedSignalTranslationPackage to SignalTranslationPreviewPanel",
+  (() => {
+    const panelStart = pageSrc.indexOf("<SignalTranslationPreviewPanel");
+    const panelEnd = pageSrc.indexOf("/>", panelStart);
+    if (panelStart < 0 || panelEnd < 0) return false;
+    const panelBlock = pageSrc.slice(panelStart, panelEnd);
+    return panelBlock.includes("providerCandidateGeneratedSignalTranslationPackage");
+  })(),
+);
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log(`\n──────────────────────────────────────`);
 console.log(`Result: ${passed} passed, ${failed} failed`);

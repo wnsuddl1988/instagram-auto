@@ -17,3 +17,4 @@ export * from "./ecos-live-transport";
 export * from "./ecos-latest-period";
 export * from "./ecos-source-date";
 export * from "./ecos-latest-candidate";
+export * from "./provider-candidates";
