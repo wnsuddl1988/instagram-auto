@@ -27,7 +27,12 @@ import {
 } from "./ledger-overlay";
 import type { LedgerOverlayResult } from "./ledger-overlay";
 import { OwnerReviewGuidancePanel } from "./OwnerReviewGuidancePanel";
+import { SignalTranslationPreviewPanel } from "./SignalTranslationPreviewPanel";
 import { recordApproval } from "./actions";
+import {
+  exchangeRateGeneratedSignalTranslationPackage,
+  interestRateGeneratedSignalTranslationPackage,
+} from "@/lib/source-facts/signal-translation-fixtures";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
 import type {
   AnyCardProps,
@@ -888,6 +893,14 @@ function PackagePreviewContent({
           primaryPublishedDate={reviewPacket.sourceRefs[0]?.publishedDate ?? null}
         />
 
+        {/* ⓪-1 Signal Translation / Scene Card preview — display-only fixtures */}
+        <SignalTranslationPreviewPanel
+          packages={[
+            exchangeRateGeneratedSignalTranslationPackage,
+            interestRateGeneratedSignalTranslationPackage,
+          ]}
+        />
+
         {/* ① Workflow status bar */}
         <SectionCard
           title="파이프라인 상태"
@@ -1141,7 +1154,7 @@ function PackagePreviewContent({
                       <span className="font-mono text-red-400 shrink-0 bg-red-900/20 px-1.5 py-0.5 rounded">
                         {c.code ?? "?"}
                       </span>
-                      <span className="text-slate-400">{c.description}</span>
+                      <span className="text-slate-400">{c.detail ?? c.label}</span>
                     </div>
                   ))}
               </div>

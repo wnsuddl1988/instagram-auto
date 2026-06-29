@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-27
 
-**전체프로젝트 진행률:** 약 83% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, **Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation**까지 완료됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
+**전체프로젝트 진행률:** 약 84% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, **Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
@@ -84,7 +84,8 @@ Image Style V1:
 
 ## 최근 checkpoint
 
-- Commit: `24ef219` — `feat(package-preview): add owner review guidance panel` ← **현재 HEAD**
+- Commit: `f05625f` — `feat: add signal translation scene card foundation` ← **현재 HEAD**
+- Commit: `24ef219` — `feat(package-preview): add owner review guidance panel`
 - Commit: `bd4e745` — `test(package-preview): guard ledger overlay page integration`
 - Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard`
 - Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
@@ -92,7 +93,7 @@ Image Style V1:
 - Commit: `6d5425d` — `fix(package-preview): use riskReview.packageId instead of non-existent riskReviewId`
 - Commit: `abe3d36` — `feat(package-preview): add ledger-approved overlay with current fact card revalidation`
 - Commit: `91f08a1` — `feat(owner-decision): add local publishability approval ledger`
-- Branch: `codex/source-first-blueprint-clean` (ahead 59)
+- Branch: `codex/source-first-blueprint-clean` (ahead 60)
 - Push: 미실행
 - Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
@@ -120,10 +121,10 @@ Docs/current alignment:
 
 Code/current slice:
 
-- `money-shorts-os-signal-translation-scene-card-types-v1` 완료.
-- `money-shorts-os-scene-card-validation-review-fix-v1` 완료.
-- `money-shorts-os-brief-scene-card-generator-v1` 완료.
-- `money-shorts-os-brief-scene-card-generator-second-fixture-v1` 완료.
+- `money-shorts-os-signal-translation-scene-card-types-v1` 완료 및 checkpoint `f05625f`에 포함.
+- `money-shorts-os-scene-card-validation-review-fix-v1` 완료 및 checkpoint `f05625f`에 포함.
+- `money-shorts-os-brief-scene-card-generator-v1` 완료 및 checkpoint `f05625f`에 포함.
+- `money-shorts-os-brief-scene-card-generator-second-fixture-v1` 완료 및 checkpoint `f05625f`에 포함.
 - 신규 타입 모듈: `lib/source-facts/signal-translation.ts`.
 - 신규 generator 모듈: `lib/source-facts/signal-translation-generator.ts`.
 - 신규 fixture 모듈: `lib/source-facts/signal-translation-fixtures.ts`.
@@ -136,6 +137,14 @@ Code/current slice:
 - 환율 계열은 `exchange_rate_life_economy_v1`, 금리 계열은 `interest_rate_life_economy_v1`, 그 외는 `generic_indicator_life_economy_v1` fallback.
 - 환율/금리 generated package 모두 scene/citation validation 통과.
 - 기존 `FactCard` 타입과 기존 Fact Card fixture 값은 변경하지 않음.
+
+Current UI slice:
+
+- `money-shorts-os-package-preview-signal-translation-panel-v1` 진행.
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` 신규.
+- package-preview에 환율/금리 generated package의 Signal Translation Brief와 fixed 6 Scene Cards를 display-only로 표시.
+- validation summary, viewer takeaway, recommended actions, action boundaries, captionBlocks, voiceTiming, layoutSafeZone, imagePrompt spec를 Owner inspection용으로 노출.
+- 기존 gate/ledger/clipboard/publishability/render 흐름은 변경하지 않음.
 
 ---
 
@@ -157,13 +166,12 @@ Code/current slice:
 
 권장 다음 task:
 
-- `money-shorts-os-package-preview-signal-translation-panel-v1`
+- `money-shorts-os-package-preview-caption-scene-qa-v1`
 
 권장 범위:
 
-- package-preview에서 generated Signal Translation Brief와 6 Scene Cards를 display-only로 확인하는 작은 패널을 추가한다.
+- package-preview에서 Scene Card / Caption / ImagePrompt / VoiceTiming 일치성 QA를 display-only로 더 명확히 표시한다.
 - 기존 gate/ledger/clipboard 동작은 변경하지 않는다.
-- 누적 diff가 커졌으므로 panel 전 Codex checkpoint review도 권장한다.
 
 금지:
 
