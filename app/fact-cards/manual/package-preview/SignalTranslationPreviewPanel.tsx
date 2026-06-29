@@ -6,6 +6,68 @@ import type {
   SignalTranslationBrief,
 } from "@/lib/source-facts/signal-translation";
 
+// ── QA helpers (structural/coverage inspection only — no semantic AI judgment) ──
+
+interface SceneQaRow {
+  sceneNumber: number;
+  sceneRole: string;
+  hasNarration: boolean;
+  hasSpokenCaption: boolean;
+  captionBlockCount: number;
+  hasImagePrompt: boolean;
+  hasVoiceTiming: boolean;
+  hasLayoutSafeZone: boolean;
+  sourceCitationCount: number;
+  hasSourceNote: boolean;
+  riskNoteCount: number;
+}
+
+function buildSceneQaRows(scenes: SceneCard[]): SceneQaRow[] {
+  return scenes.map((s) => ({
+    sceneNumber: s.sceneNumber,
+    sceneRole: s.sceneRole,
+    hasNarration: s.narration.trim().length > 0,
+    hasSpokenCaption: s.spokenCaption.trim().length > 0,
+    captionBlockCount: s.captionBlocks.length,
+    hasImagePrompt: s.imagePrompt.trim().length > 0,
+    hasVoiceTiming: true, // always present by type (required field)
+    hasLayoutSafeZone: true, // always present by type (required field)
+    sourceCitationCount: s.sourceCitationIds.length,
+    hasSourceNote: typeof s.sourceNote === "string" && s.sourceNote.trim().length > 0,
+    riskNoteCount: s.riskNotes.length,
+  }));
+}
+
+interface PackageQaSummary {
+  sceneCount: number;
+  sceneValidationOk: boolean;
+  citationValidationOk: boolean;
+  captionBlocksCoverage: number; // scenes with ≥1 captionBlock
+  imagePromptCoverage: number;  // scenes with non-empty imagePrompt
+  voiceTimingCoverage: number;  // always = sceneCount (required field)
+  layoutSafeZoneCoverage: number; // always = sceneCount (required field)
+  sourceCitationCoverage: number; // scenes with ≥1 sourceCitationId
+  sourceNoteCoverage: number;   // scenes with non-empty sourceNote
+  riskNotesCoverage: number;    // scenes with ≥1 riskNote
+}
+
+function buildPackageQaSummary(pkg: MoneyShortsScenePackage): PackageQaSummary {
+  const scenes = pkg.sceneCards;
+  const n = scenes.length;
+  return {
+    sceneCount: n,
+    sceneValidationOk: pkg.sceneCardValidation.isValid,
+    citationValidationOk: pkg.citationValidation.isValid,
+    captionBlocksCoverage: scenes.filter((s) => s.captionBlocks.length > 0).length,
+    imagePromptCoverage: scenes.filter((s) => s.imagePrompt.trim().length > 0).length,
+    voiceTimingCoverage: n,
+    layoutSafeZoneCoverage: n,
+    sourceCitationCoverage: scenes.filter((s) => s.sourceCitationIds.length > 0).length,
+    sourceNoteCoverage: scenes.filter((s) => typeof s.sourceNote === "string" && s.sourceNote.trim().length > 0).length,
+    riskNotesCoverage: scenes.filter((s) => s.riskNotes.length > 0).length,
+  };
+}
+
 interface SignalTranslationPreviewPanelProps {
   packages: MoneyShortsScenePackage[];
 }
@@ -75,8 +137,8 @@ function ChipList({ items, tone = "slate" }: { items: readonly string[]; tone?: 
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {items.map((item) => (
-        <span key={item} className={`rounded border px-2 py-0.5 text-[11px] ${toneClass}`}>
+      {items.map((item, i) => (
+        <span key={`${i}-${item}`} className={`rounded border px-2 py-0.5 text-[11px] ${toneClass}`}>
           {item}
         </span>
       ))}
@@ -91,13 +153,133 @@ function BulletList({ items }: { items: readonly string[] }) {
 
   return (
     <ul className="space-y-1">
-      {items.map((item) => (
-        <li key={item} className="flex gap-2">
+      {items.map((item, i) => (
+        <li key={`${i}-${item}`} className="flex gap-2">
           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-500" />
           <span>{item}</span>
         </li>
       ))}
     </ul>
+  );
+}
+
+function CoverageBar({
+  label,
+  count,
+  total,
+}: {
+  label: string;
+  count: number;
+  total: number;
+}) {
+  const full = count === total;
+  return (
+    <div className="flex items-center justify-between gap-2 rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+      <span className="min-w-0 truncate text-[11px] text-slate-400">{label}</span>
+      <span
+        className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-bold ${
+          full
+            ? "bg-emerald-900/30 text-emerald-300"
+            : count === 0
+              ? "bg-red-900/30 text-red-300"
+              : "bg-amber-900/30 text-amber-300"
+        }`}
+      >
+        {count}/{total}
+      </span>
+    </div>
+  );
+}
+
+function PackageQaSummaryPanel({ pkg }: { pkg: MoneyShortsScenePackage }) {
+  const qa = buildPackageQaSummary(pkg);
+  const rows = buildSceneQaRows(pkg.sceneCards);
+
+  return (
+    <details className="rounded-lg border border-slate-700/50 bg-slate-950/30">
+      <summary className="cursor-pointer px-4 py-3">
+        <span className="inline-flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-200">
+            Caption / Scene QA Coverage
+          </span>
+          <span className="rounded border border-slate-700/40 bg-slate-800/30 px-2 py-0.5 text-[11px] text-slate-400">
+            display-only · structural inspection
+          </span>
+          <StatusBadge
+            ok={
+              qa.sceneValidationOk &&
+              qa.citationValidationOk &&
+              qa.captionBlocksCoverage === qa.sceneCount &&
+              qa.imagePromptCoverage === qa.sceneCount &&
+              qa.sourceCitationCoverage === qa.sceneCount
+            }
+            passLabel="FULL"
+            failLabel="CHECK"
+          />
+        </span>
+      </summary>
+
+      <div className="border-t border-slate-800/60 px-4 pb-4 pt-3 space-y-4">
+        {/* Package-level coverage */}
+        <div>
+          <MiniLabel>Package Coverage</MiniLabel>
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            <CoverageBar label="scenes" count={qa.sceneCount} total={6} />
+            <CoverageBar label="captionBlocks" count={qa.captionBlocksCoverage} total={qa.sceneCount} />
+            <CoverageBar label="imagePrompt spec" count={qa.imagePromptCoverage} total={qa.sceneCount} />
+            <CoverageBar label="voiceTiming spec" count={qa.voiceTimingCoverage} total={qa.sceneCount} />
+            <CoverageBar label="layoutSafeZone" count={qa.layoutSafeZoneCoverage} total={qa.sceneCount} />
+            <CoverageBar label="sourceCitationIds" count={qa.sourceCitationCoverage} total={qa.sceneCount} />
+            <CoverageBar label="sourceNote" count={qa.sourceNoteCoverage} total={qa.sceneCount} />
+            <CoverageBar label="riskNotes" count={qa.riskNotesCoverage} total={qa.sceneCount} />
+          </div>
+        </div>
+
+        {/* Scene-level table */}
+        <div>
+          <MiniLabel>Per-Scene Checklist</MiniLabel>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-800/70">
+                  <th className="py-1.5 pr-2 text-left font-bold text-slate-500">Scene</th>
+                  <th className="py-1.5 pr-2 text-left font-bold text-slate-500">Role</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">Narr</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">Caption</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">CaptBlocks</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">ImgSpec</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">Voice</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">Layout</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">CitIds</th>
+                  <th className="py-1.5 pr-2 text-center font-bold text-slate-500">SrcNote</th>
+                  <th className="py-1.5 text-center font-bold text-slate-500">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.sceneNumber} className="border-b border-slate-800/40 last:border-0">
+                    <td className="py-1.5 pr-2 font-mono text-slate-300">{row.sceneNumber}</td>
+                    <td className="py-1.5 pr-2 text-slate-500">{row.sceneRole}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasNarration ? "✓" : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasSpokenCaption ? "✓" : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-1.5 pr-2 text-center font-mono text-slate-300">{row.captionBlockCount}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasImagePrompt ? "✓" : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasVoiceTiming ? "✓" : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasLayoutSafeZone ? "✓" : <span className="text-red-400">✗</span>}</td>
+                    <td className="py-1.5 pr-2 text-center font-mono text-slate-300">{row.sourceCitationCount}</td>
+                    <td className="py-1.5 pr-2 text-center">{row.hasSourceNote ? "✓" : <span className="text-slate-600">—</span>}</td>
+                    <td className="py-1.5 text-center font-mono text-slate-300">{row.riskNoteCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-600">
+            voiceTiming / layoutSafeZone은 타입상 required 필드. coverage 100%는 타입 보장에 의한 것이다.
+          </p>
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -197,36 +379,40 @@ function VoiceTimingSummary({ scene }: { scene: SceneCard }) {
 
 function BriefSummary({ brief }: { brief: SignalTranslationBrief }) {
   return (
-    <div className="rounded-lg border border-slate-800/70 bg-slate-950/35 p-4">
-      <MiniLabel>Signal Translation Brief Summary</MiniLabel>
-      <ValueRow label="signalSummary" value={brief.signalSummary} />
-      <ValueRow label="keyReasons" value={<BulletList items={brief.keyReasons} />} />
-      <ValueRow label="expertInterpretation" value={brief.expertInterpretation} />
-      <ValueRow label="affectedMoneyAreas" value={<ChipList items={brief.affectedMoneyAreas} />} />
-      <ValueRow label="lifeImpact" value={brief.lifeImpact} />
-      <ValueRow label="volatilityWatch" value={<BulletList items={brief.volatilityWatch} />} />
-      <ValueRow
-        label="scenarioBasedOutlook"
-        value={
-          <div className="space-y-1">
-            {brief.scenarioBasedOutlook.map((scenario) => (
-              <div key={`${scenario.direction}-${scenario.condition}`} className="rounded border border-slate-800/60 bg-slate-900/30 px-2 py-1.5">
-                <span className="font-mono text-amber-300">{scenario.direction}</span>
-                <span className="text-slate-500"> · {scenario.condition}</span>
-                <div className="text-slate-300">{scenario.viewerMeaning}</div>
-              </div>
-            ))}
-          </div>
-        }
-      />
-      <ValueRow label="recommendedActions" value={<BulletList items={brief.recommendedActions} />} />
-      <ValueRow label="actionUrgency" value={brief.actionUrgency} mono />
-      <ValueRow label="audienceSituation" value={brief.audienceSituation} />
-      <ValueRow label="actionBoundaries" value={<BulletList items={brief.actionBoundaries} />} />
-      <ValueRow label="viewerTakeaway" value={brief.viewerTakeaway} />
-      <ValueRow label="sourceCitationIds" value={<ChipList items={brief.sourceCitationIds} />} mono />
-      <ValueRow label="riskNotes" value={<BulletList items={brief.riskNotes} />} />
-    </div>
+    <details className="rounded-lg border border-slate-800/70 bg-slate-950/35">
+      <summary className="cursor-pointer px-4 py-3">
+        <span className="text-xs font-bold text-slate-300">Signal Translation Brief Summary</span>
+      </summary>
+      <div className="border-t border-slate-800/60 px-4 pb-4 pt-2">
+        <ValueRow label="signalSummary" value={brief.signalSummary} />
+        <ValueRow label="keyReasons" value={<BulletList items={brief.keyReasons} />} />
+        <ValueRow label="expertInterpretation" value={brief.expertInterpretation} />
+        <ValueRow label="affectedMoneyAreas" value={<ChipList items={brief.affectedMoneyAreas} />} />
+        <ValueRow label="lifeImpact" value={brief.lifeImpact} />
+        <ValueRow label="volatilityWatch" value={<BulletList items={brief.volatilityWatch} />} />
+        <ValueRow
+          label="scenarioBasedOutlook"
+          value={
+            <div className="space-y-1">
+              {brief.scenarioBasedOutlook.map((scenario) => (
+                <div key={`${scenario.direction}-${scenario.condition}`} className="rounded border border-slate-800/60 bg-slate-900/30 px-2 py-1.5">
+                  <span className="font-mono text-amber-300">{scenario.direction}</span>
+                  <span className="text-slate-500"> · {scenario.condition}</span>
+                  <div className="text-slate-300">{scenario.viewerMeaning}</div>
+                </div>
+              ))}
+            </div>
+          }
+        />
+        <ValueRow label="recommendedActions" value={<BulletList items={brief.recommendedActions} />} />
+        <ValueRow label="actionUrgency" value={brief.actionUrgency} mono />
+        <ValueRow label="audienceSituation" value={brief.audienceSituation} />
+        <ValueRow label="actionBoundaries" value={<BulletList items={brief.actionBoundaries} />} />
+        <ValueRow label="viewerTakeaway" value={brief.viewerTakeaway} />
+        <ValueRow label="sourceCitationIds" value={<ChipList items={brief.sourceCitationIds} />} mono />
+        <ValueRow label="riskNotes" value={<BulletList items={brief.riskNotes} />} />
+      </div>
+    </details>
   );
 }
 
@@ -387,6 +573,7 @@ export function SignalTranslationPreviewPanel({ packages }: SignalTranslationPre
                 </div>
               </div>
 
+              <PackageQaSummaryPanel pkg={scenePackage} />
               <OwnerFocus brief={scenePackage.brief} />
               <BriefSummary brief={scenePackage.brief} />
               <SceneCardsPreviewList scenes={scenePackage.sceneCards} />
