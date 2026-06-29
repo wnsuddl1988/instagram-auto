@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "money_shorts_upload_metadata_v1",
+  "metadataId": "upload-metadata-provider-candidate-ecos-base-rate-local-mock",
+  "sourceManifestId": "rp-provider-candidate-ecos-base-rate",
+  "mode": "local_mock",
+  "ownerApprovalRequired": true,
+  "notUploaded": true,
+  "platforms": ["youtube_shorts", "instagram_reels"],
+  "youtube_shorts": {
+    "title": "금리 동결, 진짜 좋은 소식일까? #기준금리 #경제신호 #생활경제",
+    "description": "한국은행 기준금리 신호, 대출자와 예금자가 다르게 봐야 하는 이유를 생활경제 관점에서 정리했습니다.\n\n출처: 한국은행 ECOS — 기준금리 통계 2025.01\n\n주의: 이 영상은 투자 권고가 아닙니다. 경제 신호를 생활 지출 점검의 단서로 활용하세요.\n\n#기준금리 #금리동결 #생활경제 #경제신호 #대출 #예금 #현금흐름 #돈관리 #경제뉴스 #Shorts",
+    "hashtags": ["기준금리", "금리동결", "생활경제", "경제신호", "대출", "예금", "현금흐름", "돈관리", "경제뉴스"],
+    "visibilityPlan": "owner_review_first",
+    "categoryId": "22",
+    "defaultLanguage": "ko",
+    "madeForKids": false
+  },
+  "instagram_reels": {
+    "caption": "금리 동결, 진짜 좋은 소식일까? 🤔\n\n기준금리 신호가 대출자·예금자·소비자에게 다르게 작용하는 이유, 생활경제 관점으로 정리했어요.\n\n출처: 한국은행 ECOS 기준금리 2025.01\n투자 권고 아님 — 내 지출 구조 점검용 정보입니다.\n\n#기준금리 #금리동결 #생활경제 #경제신호 #대출 #예금 #현금흐름 #돈관리 #경제뉴스 #인스타릴스",
+    "hashtags": ["기준금리", "금리동결", "생활경제", "경제신호", "대출", "예금", "현금흐름", "돈관리", "경제뉴스", "인스타릴스"],
+    "visibilityPlan": "owner_review_first"
+  },
+  "riskNotes": [
+    "local_mock: no real account, channel, token, or credential used.",
+    "ownerApprovalRequired=true — Owner must review and approve before any actual upload.",
+    "notUploaded=true — this is a data-only payload. No upload has occurred.",
+    "TTS audio is local_mock (pink noise placeholder). ElevenLabs final-pass required before public upload.",
+    "Title/description/caption are draft suggestions. Owner should review for accuracy and compliance.",
+    "YouTube categoryId=22 (Howto & Style) is a placeholder — Owner should confirm appropriate category.",
+    "No OAuth, accessToken, refreshToken, or API credentials are present in this fixture."
+  ]
+}
