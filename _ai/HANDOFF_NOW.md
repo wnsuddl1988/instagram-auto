@@ -11,8 +11,8 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `f05625f feat: add signal translation scene card foundation`
-- Current local status: ahead 60, uncommitted package-preview UI slice, unrelated `?? piq_diag_out.txt`
+- Latest HEAD: `19ec7d6 feat(package-preview): add caption scene QA coverage`
+- Current local status: ahead 62, uncommitted copy-payload slice + docs sync
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.

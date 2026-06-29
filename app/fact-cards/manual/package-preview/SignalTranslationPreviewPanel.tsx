@@ -1,3 +1,7 @@
+import {
+  buildMoneyShortsGeneratedCopyPayload,
+  stringifyMoneyShortsGeneratedCopyPayload,
+} from "@/lib/source-facts/signal-translation-copy-payload";
 import type { MoneyShortsScenePackage } from "@/lib/source-facts/signal-translation-generator";
 import type {
   CaptionSafeZone,
@@ -377,6 +381,98 @@ function VoiceTimingSummary({ scene }: { scene: SceneCard }) {
   );
 }
 
+function GeneratedCopyPayloadPreview({ pkg }: { pkg: MoneyShortsScenePackage }) {
+  const payload = buildMoneyShortsGeneratedCopyPayload(pkg);
+  const jsonText = stringifyMoneyShortsGeneratedCopyPayload(payload);
+  const charCount = jsonText.length;
+  const lineCount = jsonText.split("\n").length;
+
+  return (
+    <details className="rounded-lg border border-slate-700/50 bg-slate-950/30">
+      <summary className="cursor-pointer px-4 py-3">
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-200">
+            Generated Copy Payload Preview
+          </span>
+          <span className="rounded border border-slate-700/40 bg-slate-800/30 px-2 py-0.5 text-[11px] text-slate-400">
+            display-only · no clipboard write
+          </span>
+          <StatusBadge
+            ok={payload.validation.sceneCardValid && payload.validation.citationValid}
+            passLabel="VALID"
+            failLabel="CHECK"
+          />
+        </span>
+      </summary>
+
+      <div className="border-t border-slate-800/60 px-4 pb-4 pt-3 space-y-3">
+        <div className="rounded-lg border border-amber-700/30 bg-amber-900/10 px-3 py-2 text-[11px] leading-relaxed text-amber-200/80">
+          Display-only payload preview. Clipboard write is not performed. 이 패널은 payload 구조를 눈으로 검토하기 위한 것입니다.
+        </div>
+
+        {/* Payload metadata */}
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 text-[11px]">
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">schemaVersion</span>
+            <div className="font-mono text-slate-300 mt-0.5 break-all">{payload.schemaVersion}</div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">templateId</span>
+            <div className="font-mono text-slate-300 mt-0.5 break-all">{payload.templateId}</div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">scenes</span>
+            <div className="font-mono text-slate-300 mt-0.5">{payload.scenes.length}</div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">sceneErrors / warnings</span>
+            <div className="font-mono text-slate-300 mt-0.5">
+              {payload.validation.sceneErrors} / {payload.validation.sceneWarnings}
+            </div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">citationErrors / warnings</span>
+            <div className="font-mono text-slate-300 mt-0.5">
+              {payload.validation.citationErrors} / {payload.validation.citationWarnings}
+            </div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">payload size</span>
+            <div className="font-mono text-slate-300 mt-0.5">{charCount.toLocaleString()} chars · {lineCount} lines</div>
+          </div>
+        </div>
+
+        {/* packageId / factCardId */}
+        <div className="space-y-1 text-[11px]">
+          <div>
+            <span className="text-slate-500">packageId: </span>
+            <span className="font-mono text-slate-300">{payload.packageId}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">factCardId: </span>
+            <span className="font-mono text-slate-300">{payload.factCardId}</span>
+          </div>
+        </div>
+
+        {/* JSON preview (read-only textarea for selection/inspection) */}
+        <div>
+          <MiniLabel>JSON Payload (read-only inspection)</MiniLabel>
+          <textarea
+            readOnly
+            value={jsonText}
+            rows={12}
+            className="w-full resize-y rounded border border-slate-800/70 bg-slate-950/60 p-2 font-mono text-[11px] leading-relaxed text-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-700"
+            aria-label="Generated copy payload JSON — read-only display"
+          />
+          <p className="mt-1 text-[10px] text-slate-600">
+            read-only textarea. 텍스트 선택 가능. clipboard.writeText 호출 없음.
+          </p>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function BriefSummary({ brief }: { brief: SignalTranslationBrief }) {
   return (
     <details className="rounded-lg border border-slate-800/70 bg-slate-950/35">
@@ -577,6 +673,7 @@ export function SignalTranslationPreviewPanel({ packages }: SignalTranslationPre
               <OwnerFocus brief={scenePackage.brief} />
               <BriefSummary brief={scenePackage.brief} />
               <SceneCardsPreviewList scenes={scenePackage.sceneCards} />
+              <GeneratedCopyPayloadPreview pkg={scenePackage} />
             </div>
           </article>
         ))}

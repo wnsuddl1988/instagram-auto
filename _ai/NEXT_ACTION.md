@@ -1,46 +1,59 @@
 # Next Action
 
-## 2026-06-27 현재 — package preview signal translation panel v1
+## 2026-06-29 현재 — package preview signal translation + caption scene QA
 
-상태: **MONEY_SHORTS_OS_SIGNAL_TRANSLATION_PREVIEW_PANEL_ADDED**
+상태: **MONEY_SHORTS_OS_CAPTION_SCENE_QA_COVERAGE_ADDED**
 
 최신 HEAD:
 
-- `f05625f feat: add signal translation scene card foundation` ← 현재 committed checkpoint
-- branch: `codex/source-first-blueprint-clean` (ahead 60)
+- `19ec7d6 feat(package-preview): add caption scene QA coverage` ← 최신 checkpoint
+- `c34ef6f feat(package-preview): add signal translation preview panel` ← 이전 checkpoint
+- branch: `codex/source-first-blueprint-clean` (ahead 62)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
+완료된 slice:
+
+1. **`money-shorts-os-package-preview-signal-translation-panel-v1`** (c34ef6f)
+   - package-preview 화면에 display-only Signal Translation Brief / fixed 6 Scene Cards inspection panel 추가.
+   - 연결 fixture: `exchangeRateGeneratedSignalTranslationPackage`, `interestRateGeneratedSignalTranslationPackage`
+   - display-only 원칙 유지, 기존 gate/ledger/risk review/final QA/clipboard/publishability 흐름 무변경.
+
+2. **`money-shorts-os-package-preview-caption-scene-qa-v1`** (19ec7d6)
+   - SignalTranslationPreviewPanel에 display-only Caption / Scene QA Coverage 패널 추가.
+   - Package 단위 coverage (captionBlocks, imagePrompt, voiceTiming, layoutSafeZone, sourceCitationIds, riskNotes).
+   - Per-scene checklist 테이블 (narration, caption, blocks count, imagePrompt, voice, layout, citIds, sourceNote, risk count).
+   - sourceNote coverage review-fix 포함.
+   - BulletList/ChipList key 안정성 보강 (index 포함 key로 중복 우려 제거).
+   - BriefSummary를 `<details>` collapse로 변경해 패널 길이 완화.
+
+현재 상태:
+
+- display-only 원칙 유지 (mutation/persistence/external API/asset generation/clipboard write 없음).
+- 기존 gate/ledger/risk review/final QA/clipboard/publishability 흐름 변경 없음.
+- ESLint/TypeScript 검증 passed.
+
+미실행 검증:
+
+- route smoke: 미실행. `.money-shorts-local/` 접근 Owner 미허용 때문에 hydration/key warning 런타임 확인 불가.
+
 현재 uncommitted slice:
 
-- `money-shorts-os-package-preview-signal-translation-panel-v1`
-- package-preview 화면에 display-only Signal Translation Brief / fixed 6 Scene Cards inspection panel 추가.
-- 연결 fixture:
-  - `exchangeRateGeneratedSignalTranslationPackage`
-  - `interestRateGeneratedSignalTranslationPackage`
-- 기존 Owner gate, risk review, final QA, ledger overlay, clipboard 흐름은 변경하지 않음.
-- 신규 패널은 fixture inspection layer이며 편집, 저장, DB/persistence, AI 생성, image generation, ElevenLabs, render/upload를 수행하지 않음.
-
-검증 상태:
-
-- targeted ESLint: passed
-- targeted TypeScript compiler API check: passed
-- `git diff --check`: whitespace error 없음. LF→CRLF working-copy warning만 표시됨.
-- full project `tsc --project tsconfig.json`: 기존 `output/.../qa/seg_B*.ts` binary-like generated files 때문에 실패. 이번 UI slice 오류는 아님.
-- route smoke: 미실행. package-preview route는 local approval ledger 접근 경로가 있어 `.money-shorts-local/` 접근 금지 조건과 충돌 가능성이 있음.
+- `money-shorts-os-generated-package-copy-payload-v1`
+- `lib/source-facts/signal-translation-copy-payload.ts` (신규) — pure deterministic helper, no clipboard/DB/API.
+- `lib/source-facts/index.ts` (수정) — export 추가.
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` (수정) — GeneratedCopyPayloadPreview 컴포넌트 추가. read-only textarea + "no clipboard write" 명시.
+- display-only 원칙 유지 (clipboard write 없음, copy button 없음, Server Action 없음).
+- ESLint/TypeScript 검증 passed.
 
 다음 safe work unit 후보:
 
-1. `money-shorts-os-package-preview-caption-scene-qa-v1`
-   - Scene Card / Caption / ImagePrompt / VoiceTiming 일치성 QA를 preview에 더 명확히 표시.
-   - 현재 패널 위에 read-only QA visibility를 더하는 자연스러운 다음 slice.
-
-2. `money-shorts-os-generated-package-copy-payload-v1`
-   - Scene Cards 기반 복사용 package payload를 생성.
-   - clipboard write 없이 화면 표시/텍스트 payload 생성까지만 허용.
-
-3. `money-shorts-os-brief-scene-card-third-fixture-v1`
+1. `money-shorts-os-brief-scene-card-third-fixture-v1`
    - 물가 fixture를 추가해 generator coverage를 검증.
+
+2. **route smoke verification** (선택사항)
+   - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
+   - hydration/key warning 런타임 확인, layout 렌더링 QA.
 
 금지 유지:
 
