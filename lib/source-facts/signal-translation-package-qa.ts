@@ -6,10 +6,11 @@
  * No AI judgment, no external API, no DB, no clipboard.
  */
 import {
+  CAPTION_SYSTEM_V1,
   MONEY_SHORTS_SCENE_ROLES,
   validateSceneCardsForGeneration,
 } from "./signal-translation";
-import type { MoneyShortsSceneRole, SceneCard } from "./signal-translation";
+import type { CaptionSafeZone, MoneyShortsSceneRole, SceneCard } from "./signal-translation";
 import type { MoneyShortsScenePackage } from "./signal-translation-generator";
 
 // ── Risk keyword scan lists ───────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export interface MoneyShortsScenePackageQaReport {
     layoutSafeZoneSceneCount: number;
     sourceCitationSceneCount: number;
     riskNotesSceneCount: number;
+    captionSafeZoneWarningCount: number;
   };
 }
 
@@ -79,6 +81,50 @@ function makeIssue(
   const issue: MoneyShortsScenePackageQaIssue = { scope, field, code, message };
   if (sceneNumber !== undefined) issue.sceneNumber = sceneNumber;
   return issue;
+}
+
+// ── Caption System V1 safe-zone checks ───────────────────────────────────────
+// Structural/spec check only — no render, no image, no AI judgment.
+// Returns warning messages when a scene's layoutSafeZone diverges from CAPTION_SYSTEM_V1 policy.
+
+function checkSafeZoneAgainstPolicy(
+  zone: CaptionSafeZone,
+  policy: CaptionSafeZone,
+  fieldLabel: string,
+): string[] {
+  const msgs: string[] = [];
+  if (zone.xMin < policy.xMin || zone.xMax > policy.xMax) {
+    msgs.push(
+      `${fieldLabel} x range [${zone.xMin},${zone.xMax}] exceeds policy [${policy.xMin},${policy.xMax}].`,
+    );
+  }
+  if (zone.yMin < policy.yMin || zone.yMax > policy.yMax) {
+    msgs.push(
+      `${fieldLabel} y range [${zone.yMin},${zone.yMax}] exceeds policy [${policy.yMin},${policy.yMax}].`,
+    );
+  }
+  if (policy.maxLines !== undefined) {
+    if (zone.maxLines === undefined) {
+      msgs.push(`${fieldLabel} is missing policy-required maxLines (policy: ${policy.maxLines}).`);
+    } else if (zone.maxLines > policy.maxLines) {
+      msgs.push(`${fieldLabel} maxLines ${zone.maxLines} exceeds policy max ${policy.maxLines}.`);
+    }
+  }
+  if (policy.fontPxMin !== undefined) {
+    if (zone.fontPxMin === undefined) {
+      msgs.push(`${fieldLabel} is missing policy-required fontPxMin (policy: ${policy.fontPxMin}).`);
+    } else if (zone.fontPxMin < policy.fontPxMin) {
+      msgs.push(`${fieldLabel} fontPxMin ${zone.fontPxMin} is below policy minimum ${policy.fontPxMin}.`);
+    }
+  }
+  if (policy.fontPxMax !== undefined) {
+    if (zone.fontPxMax === undefined) {
+      msgs.push(`${fieldLabel} is missing policy-required fontPxMax (policy: ${policy.fontPxMax}).`);
+    } else if (zone.fontPxMax > policy.fontPxMax) {
+      msgs.push(`${fieldLabel} fontPxMax ${zone.fontPxMax} exceeds policy maximum ${policy.fontPxMax}.`);
+    }
+  }
+  return msgs;
 }
 
 function scanRiskKeywords(text: string): string[] {
@@ -199,6 +245,7 @@ export function buildMoneyShortsScenePackageQaReport(
   let imagePromptSceneCount = 0;
   let sourceCitationSceneCount = 0;
   let riskNotesSceneCount = 0;
+  let captionSafeZoneWarningCount = 0;
 
   sceneCards.forEach((scene) => {
     const n = scene.sceneNumber;
@@ -294,6 +341,101 @@ export function buildMoneyShortsScenePackageQaReport(
       );
     }
 
+    // ── Caption System V1 safe-zone spec checks (structural/spec only) ────────
+    // Warn when declared layoutSafeZone values fall outside CAPTION_SYSTEM_V1 bounds.
+    // These are advisory: publication gate is not affected.
+    {
+      let sceneCaptionSzWarnings = 0;
+
+      // spokenCaption safe-zone
+      if (lsz.spokenCaption) {
+        const msgs = checkSafeZoneAgainstPolicy(
+          lsz.spokenCaption,
+          CAPTION_SYSTEM_V1.spokenCaption,
+          "layoutSafeZone.spokenCaption",
+        );
+        msgs.forEach((msg) => {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.layoutSafeZone.spokenCaption`,
+              "caption_system_v1_spoken_caption_out_of_range",
+              msg,
+              n,
+            ),
+          );
+          sceneCaptionSzWarnings++;
+        });
+      }
+
+      // hookTitle safe-zone (hook scene only)
+      if (scene.sceneRole === "hook" && lsz.hookTitle) {
+        const msgs = checkSafeZoneAgainstPolicy(
+          lsz.hookTitle,
+          CAPTION_SYSTEM_V1.hookTitle,
+          "layoutSafeZone.hookTitle",
+        );
+        msgs.forEach((msg) => {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.layoutSafeZone.hookTitle`,
+              "caption_system_v1_hook_title_out_of_range",
+              msg,
+              n,
+            ),
+          );
+          sceneCaptionSzWarnings++;
+        });
+      } else if (scene.sceneRole === "hook" && scene.hookTitle && !lsz.hookTitle) {
+        // hookTitle text present but no safe-zone declared
+        warnings.push(
+          makeIssue(
+            "scene",
+            `scenes.${n - 1}.layoutSafeZone.hookTitle`,
+            "caption_system_v1_hook_title_safe_zone_missing",
+            "Scene has hookTitle text but layoutSafeZone.hookTitle is not declared.",
+            n,
+          ),
+        );
+        sceneCaptionSzWarnings++;
+      }
+
+      // sourceNote safe-zone
+      if (scene.sourceNote && scene.sourceNote.trim() && lsz.sourceNote) {
+        const msgs = checkSafeZoneAgainstPolicy(
+          lsz.sourceNote,
+          CAPTION_SYSTEM_V1.sourceNote,
+          "layoutSafeZone.sourceNote",
+        );
+        msgs.forEach((msg) => {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.layoutSafeZone.sourceNote`,
+              "caption_system_v1_source_note_out_of_range",
+              msg,
+              n,
+            ),
+          );
+          sceneCaptionSzWarnings++;
+        });
+      } else if (scene.sourceNote && scene.sourceNote.trim() && !lsz.sourceNote) {
+        warnings.push(
+          makeIssue(
+            "scene",
+            `scenes.${n - 1}.layoutSafeZone.sourceNote`,
+            "caption_system_v1_source_note_safe_zone_missing",
+            "Scene has sourceNote text but layoutSafeZone.sourceNote is not declared.",
+            n,
+          ),
+        );
+        sceneCaptionSzWarnings++;
+      }
+
+      captionSafeZoneWarningCount += sceneCaptionSzWarnings;
+    }
+
     // sourceNote check
     if (!scene.sourceNote || !scene.sourceNote.trim()) {
       warnings.push(
@@ -347,6 +489,7 @@ export function buildMoneyShortsScenePackageQaReport(
     layoutSafeZoneSceneCount: sceneCards.length, // always present by type
     sourceCitationSceneCount,
     riskNotesSceneCount,
+    captionSafeZoneWarningCount,
   };
 
   return {

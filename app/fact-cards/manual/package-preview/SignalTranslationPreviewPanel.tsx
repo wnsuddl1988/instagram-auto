@@ -424,6 +424,19 @@ function ScenePackageQaReportPanel({ report }: { report: MoneyShortsScenePackage
             <ValueRow label="layoutSafeZone" value={`${summary.layoutSafeZoneSceneCount}/${summary.sceneCount}`} />
             <ValueRow label="riskNotes" value={`${summary.riskNotesSceneCount}/${summary.sceneCount}`} />
             <ValueRow label="errors" value={String(errors.length)} />
+            <ValueRow
+              label="captionSafeZone warns"
+              value={
+                <span className={summary.captionSafeZoneWarningCount > 0 ? "text-amber-300" : "text-emerald-400"}>
+                  {summary.captionSafeZoneWarningCount === 0
+                    ? "0 — within V1 spec"
+                    : `${summary.captionSafeZoneWarningCount} (see warnings)`}
+                </span>
+              }
+            />
+          </div>
+          <div className="mt-1.5 rounded border border-slate-700/30 bg-slate-900/30 px-2 py-1 text-[10px] text-slate-500">
+            captionSafeZone: structural spec check against CAPTION_SYSTEM_V1 · not a publication gate
           </div>
         </div>
 

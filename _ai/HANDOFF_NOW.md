@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`post-route-smoke-state-doc-cleanup-v1-review-fix`
+`money-shorts-os-caption-system-safe-zone-qa-v1-review-fix`
 
 ## Project
 
@@ -11,17 +11,28 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `2b1db95 docs(state): record package preview route smoke pass` ← **현재 HEAD**
-- Current local status: ahead 70, _ai docs cleanup only
+- Latest HEAD: `361de7b docs(state): clean route smoke checkpoint state` ← **현재 HEAD**
+- Current local status: ahead 71, caption system V1 safe-zone QA layer uncommitted
 - Push: Owner가 명시적으로 `push까지`라고 할 때만.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
-`_ai` docs cleanup review-fix — duplicate slice 8 제거, stale wording 정리.
+`money-shorts-os-caption-system-safe-zone-qa-v1` — Caption System V1 safe-zone QA layer 추가 (uncommitted).
 
-Route smoke verification PASS (checkpoint `2b1db95`):
+변경 파일:
+- `lib/source-facts/signal-translation-package-qa.ts` — CAPTION_SYSTEM_V1 import, checkSafeZoneAgainstPolicy helper (missing metadata warning 포함), captionSafeZoneWarningCount summary field, per-scene safe-zone check 3종 (spokenCaption/hookTitle/sourceNote)
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` — ScenePackageQaReportPanel summary에 captionSafeZone warns 셀 추가
+- `scripts/check-signal-translation-preview-static.mjs` — 9 new checks 추가 → 59/59 PASS (6 V1 safe-zone + 3 missing metadata)
+
+검증:
+- `node scripts/check-signal-translation-preview-static.mjs` → 59/59 PASS
+- TypeScript (project tsconfig.json): 변경 파일 에러 없음
+- ESLint: 에러 없음
+- `git diff --check`: whitespace error 없음 (LF→CRLF 경고는 Windows 기존 설정, 무해)
+
+Route smoke verification PASS (checkpoint `2b1db95`, 이후 확인됨 `361de7b`):
 - `GET /fact-cards/manual/package-preview 200` — 성공
 - server error / 500 / runtime exception: 없음
 - browser console error: 없음
@@ -47,9 +58,8 @@ display-only 원칙:
 
 ## Recommended Next Task
 
-1. **다음 content/QA slice** (Codex 결정 대기)
-   - Signal Translation preview/QA/copy payload/route smoke foundation 완료.
-   - Next substantive work은 Codex 결정 필요.
+1. **checkpoint commit** — 이번 safe-zone QA slice commit 후 다음 slice 결정
+2. **다음 content/QA slice** (Codex 결정 대기)
 
 ## Forbidden
 

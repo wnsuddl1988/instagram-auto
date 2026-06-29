@@ -206,6 +206,46 @@ check(
   qaHelperSrc.includes("export interface MoneyShortsScenePackageQaIssue"),
 );
 
+console.log("\n[ signal-translation-package-qa.ts — Caption System V1 safe-zone QA ]");
+check(
+  "qa helper imports CAPTION_SYSTEM_V1",
+  qaHelperSrc.includes("CAPTION_SYSTEM_V1"),
+);
+check(
+  "qa helper defines checkSafeZoneAgainstPolicy",
+  qaHelperSrc.includes("checkSafeZoneAgainstPolicy"),
+);
+check(
+  "qa helper summary includes captionSafeZoneWarningCount",
+  qaHelperSrc.includes("captionSafeZoneWarningCount"),
+);
+check(
+  "qa helper checks caption_system_v1_spoken_caption_out_of_range code",
+  qaHelperSrc.includes("caption_system_v1_spoken_caption_out_of_range"),
+);
+check(
+  "qa helper warns on missing policy-required maxLines",
+  qaHelperSrc.includes("missing policy-required maxLines"),
+);
+check(
+  "qa helper warns on missing policy-required fontPxMin",
+  qaHelperSrc.includes("missing policy-required fontPxMin"),
+);
+check(
+  "qa helper warns on missing policy-required fontPxMax",
+  qaHelperSrc.includes("missing policy-required fontPxMax"),
+);
+
+console.log("\n[ SignalTranslationPreviewPanel — captionSafeZone summary display ]");
+check(
+  "panel renders captionSafeZone warns summary row",
+  panelSrc.includes("captionSafeZoneWarningCount"),
+);
+check(
+  "panel references CAPTION_SYSTEM_V1 in spec note",
+  panelSrc.includes("CAPTION_SYSTEM_V1"),
+);
+
 console.log("\n[ signal-translation-fixtures.ts — QA report fixture exports ]");
 check(
   "fixtures exports exchangeRateGeneratedSignalTranslationPackageQaReport",

@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Route Smoke Checkpoint 완료
+## 2026-06-29 현재 — Caption System V1 Safe-Zone QA 추가 (uncommitted)
 
-상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_ROUTE_SMOKE_COMMITTED**
+상태: **MONEY_SHORTS_OS_CAPTION_SYSTEM_SAFE_ZONE_QA_READY**
 
 최신 HEAD:
 
-- `2b1db95 docs(state): record package preview route smoke pass` ← **현재 HEAD**
+- `361de7b docs(state): clean route smoke checkpoint state` ← **현재 HEAD**
+- `2b1db95 docs(state): record package preview route smoke pass`
 - `b2dadee feat(source-facts): include QA report in generated copy payload`
-- `eac702c feat(package-preview): add scene package QA report panel`
-- branch: `codex/source-first-blueprint-clean` (ahead 70)
-- working tree: clean except `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 71)
+- working tree: 3 files modified, `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -93,14 +93,22 @@
     - `.money-shorts-local/`: 앱 read-only 접근, write 없음.
     - checkpoint commit `2b1db95 docs(state): record package preview route smoke pass` 완료.
 
+11. **`money-shorts-os-caption-system-safe-zone-qa-v1`** (uncommitted)
+    - `signal-translation-package-qa.ts`: CAPTION_SYSTEM_V1 import, `checkSafeZoneAgainstPolicy()` helper, `captionSafeZoneWarningCount` summary field.
+    - per-scene safe-zone check 3종 (spokenCaption/hookTitle/sourceNote vs CAPTION_SYSTEM_V1 bounds).
+    - `isValid` 의미 유지 — safe-zone 문제는 warning-only, gate 변경 없음.
+    - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 captionSafeZone warns 셀 추가 (display-only, "not a publication gate" 유지).
+    - `scripts/check-signal-translation-preview-static.mjs`: 9 new checks → 59/59 PASS (6 V1 safe-zone + 3 missing metadata).
+    - TypeScript/ESLint/git diff --check: 에러 없음.
+    - checkpoint commit 대기 (Codex 승인 필요).
+
 현재 상태:
 
-- route smoke checkpoint 완료됨.
-- 다음 task는 Codex 결정 필요.
+- caption system V1 safe-zone QA layer 추가, uncommitted.
+- static guard 59/59 PASS (기존 50 + 9 new: 6 V1 safe-zone + 3 missing metadata).
 - push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
-1. **다음 content/QA slice** (Codex 결정 대기)
-   - Signal Translation preview/QA/copy payload/route smoke foundation 완료.
-   - Next substantive work은 Codex 결정 필요.
+1. **checkpoint commit** — `feat(source-facts): add caption system v1 safe-zone qa` (Codex 승인 필요)
+2. **다음 content/QA slice** (Codex 결정 대기)
