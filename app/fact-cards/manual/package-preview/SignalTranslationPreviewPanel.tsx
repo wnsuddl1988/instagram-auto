@@ -456,7 +456,7 @@ function ScenePackageQaReportPanel({ report }: { report: MoneyShortsScenePackage
             />
           </div>
           <div className="mt-1.5 rounded border border-slate-700/30 bg-slate-900/30 px-2 py-1 text-[10px] text-slate-500">
-            captionSafeZone / voiceNarration: structural spec checks · not a publication gate
+            captionSafeZone / voiceNarration / imagePolicy: structural spec checks · not a publication gate
           </div>
         </div>
 

@@ -284,6 +284,10 @@ check(
   "panel references CAPTION_SYSTEM_V1 in spec note or import",
   panelSrc.includes("CAPTION_SYSTEM_V1") || panelSrc.includes("captionSafeZone / voiceNarration"),
 );
+check(
+  "panel spec note includes imagePolicy",
+  panelSrc.includes("imagePolicy") && panelSrc.includes("structural spec checks"),
+);
 
 console.log("\n[ signal-translation-package-qa.ts — Voice/Narration QA ]");
 check(

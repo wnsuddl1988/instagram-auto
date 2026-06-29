@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Image Prompt / Text Policy QA Layer 미커밋 완료
+## 2026-06-29 현재 — Image Prompt / Text Policy QA Layer Checkpoint 완료
 
-상태: **MONEY_SHORTS_OS_IMAGE_PROMPT_TEXT_POLICY_QA_UNCOMMITTED**
+상태: **MONEY_SHORTS_OS_IMAGE_PROMPT_TEXT_POLICY_QA_COMMITTED**
 
 최신 HEAD:
 
-- `34eb070 feat(source-facts): add voice narration structural qa` ← **현재 HEAD**
+- `a16bb80 feat(source-facts): add image prompt text policy structural qa` ← **현재 HEAD**
+- `34eb070 feat(source-facts): add voice narration structural qa`
 - `b0acacf docs(state): sync spec docs after scene label safe-zone contract`
-- `67bfd89 feat(source-facts): add scene label safe-zone contract`
-- branch: `codex/source-first-blueprint-clean` (ahead 75)
-- working tree: 6 files modified (code 3 + _ai docs 3, 미커밋 image/policy QA slice), `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 76)
+- working tree: clean except `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -130,7 +130,7 @@
     - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 72/72 PASS.
     - checkpoint commit `34eb070 feat(source-facts): add voice narration structural qa` 완료.
 
-15. **`money-shorts-os-image-prompt-text-policy-qa-v1`** ← **현재 미커밋 slice**
+15. **`money-shorts-os-image-prompt-text-policy-qa-v1`** (a16bb80)
     - `signal-translation-package-qa.ts`: `imagePromptPolicyWarningCount` summary 필드 추가, 6종 Image Prompt / Text Policy warning check 추가.
       - `image_prompt_lacks_style_anchor`: styleAnchor keyword 2개 미만 경고 (editorial, life-economy, report, signal card, clue, connection lines, off-white, charcoal, warm yellow)
       - `image_prompt_forbidden_style_keyword`: 금지 스타일 키워드 감지 경고
@@ -141,14 +141,13 @@
     - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 imagePolicy warns 셀 추가.
     - `scripts/check-signal-translation-preview-static.mjs`: 8 new checks 추가 → **80/80 PASS**.
     - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 80/80 PASS.
-    - **미커밋 상태** — checkpoint commit은 Codex 검토 후 결정.
+    - checkpoint commit `a16bb80 feat(source-facts): add image prompt text policy structural qa` 완료.
 
 현재 상태:
 
-- image prompt / text policy QA layer 코드 완료, static guard 80/80 PASS. **미커밋** (ahead 75).
-- push는 Owner가 명시적으로 `push까지`라고 할 때만.
+- image prompt / text policy QA layer checkpoint `a16bb80` 완료. working tree clean (ahead 76).
+- push는 미실행.
 
 다음 safe work unit 후보:
 
-1. **`money-shorts-os-image-prompt-text-policy-qa-v1` checkpoint commit** (Codex 승인 대기)
-2. **다음 content/QA slice** (Codex 결정 대기)
+1. **다음 content/QA slice** (Codex 결정 대기)
