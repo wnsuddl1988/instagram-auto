@@ -1,4 +1,4 @@
-import { exchangeRateFactCard, interestRateFactCard } from "./fixtures";
+import { exchangeRateFactCard, inflationFactCard, interestRateFactCard } from "./fixtures";
 import { createMoneyShortsScenePackageFromFactCard } from "./signal-translation-generator";
 import {
   CAPTION_SYSTEM_V1,
@@ -333,14 +333,19 @@ export const exchangeRateGeneratedSignalTranslationPackage =
 export const interestRateGeneratedSignalTranslationPackage =
   createMoneyShortsScenePackageFromFactCard(interestRateFactCard);
 
+export const inflationGeneratedSignalTranslationPackage =
+  createMoneyShortsScenePackageFromFactCard(inflationFactCard);
+
 export const MOCK_SIGNAL_TRANSLATION_BRIEFS: SignalTranslationBrief[] = [
   exchangeRateSignalTranslationBrief,
   exchangeRateGeneratedSignalTranslationPackage.brief,
   interestRateGeneratedSignalTranslationPackage.brief,
+  inflationGeneratedSignalTranslationPackage.brief,
 ];
 
 export const MOCK_SCENE_CARD_SETS: SceneCard[][] = [
   exchangeRateSceneCards30,
   exchangeRateGeneratedSignalTranslationPackage.sceneCards,
   interestRateGeneratedSignalTranslationPackage.sceneCards,
+  inflationGeneratedSignalTranslationPackage.sceneCards,
 ];

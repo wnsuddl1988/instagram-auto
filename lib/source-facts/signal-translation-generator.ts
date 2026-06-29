@@ -16,6 +16,7 @@ import type {
 export type SignalTranslationTemplateId =
   | "exchange_rate_life_economy_v1"
   | "interest_rate_life_economy_v1"
+  | "inflation_life_economy_v1"
   | "generic_indicator_life_economy_v1";
 
 export type SignalTranslationCitationValidationResult =
@@ -176,6 +177,25 @@ function isInterestRateFactCard(factCard: FactCard): boolean {
   );
 }
 
+function isInflationFactCard(factCard: FactCard): boolean {
+  const haystack = [
+    factCard.indicatorName,
+    factCard.sourceName,
+    factCard.primarySourceProviderId,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    haystack.includes("물가") ||
+    haystack.includes("소비자물가") ||
+    haystack.includes("cpi") ||
+    haystack.includes("inflation") ||
+    haystack.includes("consumer price") ||
+    haystack.includes("price index")
+  );
+}
+
 export function resolveSignalTranslationTemplateId(
   factCard: FactCard,
   options: Pick<MoneyShortsScenePackageGeneratorOptions, "templateId"> = {},
@@ -190,6 +210,10 @@ export function resolveSignalTranslationTemplateId(
 
   if (isInterestRateFactCard(factCard)) {
     return "interest_rate_life_economy_v1";
+  }
+
+  if (isInflationFactCard(factCard)) {
+    return "inflation_life_economy_v1";
   }
 
   return "generic_indicator_life_economy_v1";
@@ -268,6 +292,86 @@ function createExchangeRateBrief(
     sourceCitationIds: citationIds,
     riskNotes: [
       "환율 전망 단정 금지.",
+      "투자 권유 금지.",
+      factCard.cautionNote,
+    ],
+  };
+}
+
+function createInflationBrief(
+  factCard: FactCard,
+  briefId: string,
+): SignalTranslationBrief {
+  const direction = getChangeDirection(factCard);
+  const citationIds = getCitationIds(factCard);
+
+  return {
+    id: briefId,
+    factCardId: factCard.id,
+    signalSummary:
+      `${factCard.indicatorName}이 ${formatChangeSummary(factCard)} ${direction.adjective} 출처 기반 물가 신호다.`,
+    keyReasons: [
+      "물가 상승률 숫자 하나보다 식품, 에너지, 서비스 가격이 각각 어떻게 움직이는지 봐야 한다.",
+      "환율, 유가, 공급망 압력과 기저효과가 물가 방향에 복합적으로 작용할 수 있다.",
+      factCard.interpretation,
+    ],
+    expertInterpretation:
+      "물가 방향을 단정하기보다 장바구니, 외식비, 에너지비 같은 생활 체감 항목이 어떻게 움직이는지를 봐야 한다.",
+    affectedMoneyAreas: [
+      "groceries",
+      "living_costs",
+      "variable_expenses",
+      "fixed_expenses",
+      "savings",
+      "spending",
+    ],
+    lifeImpact:
+      "물가 신호는 장바구니, 외식비, 교통비, 구독/고정비, 저축 여력 같은 가계 지출 전반에 걸쳐 체감으로 이어질 수 있다.",
+    volatilityWatch: [
+      `${factCard.indicatorName} 흐름이 다음 발표에서도 같은 방향으로 이어지는지`,
+      "식품과 에너지 가격이 서비스 물가와 같이 움직이는지",
+      "가계 변동비 지출이 실제로 줄거나 늘어나는지",
+    ],
+    scenarioBasedOutlook: [
+      {
+        direction: "rising",
+        condition: "물가 상승이 다시 가팔라지거나 둔화가 오래가지 않을 때",
+        viewerMeaning: "장바구니와 변동비 예산을 더 보수적으로 점검해야 한다.",
+      },
+      {
+        direction: "stable",
+        condition: "물가 상승률이 현재 수준에서 유지될 때",
+        viewerMeaning: "체감 부담이 낮아지기까지 시간이 필요할 수 있으니 지출 구조를 함께 확인한다.",
+      },
+      {
+        direction: "falling",
+        condition: "물가 상승률이 지속적으로 낮아질 때",
+        viewerMeaning: "실제 장바구니 가격이 내려가는지 직접 확인하는 것이 필요하다.",
+      },
+    ],
+    recommendedActions: [
+      "이번 달 장바구니, 외식비, 교통비 지출을 따로 확인한다.",
+      "구독비와 고정비 항목이 조정 없이 올라간 것이 있는지 점검한다.",
+      "저축 여력에 변화가 생겼는지 가계 예산을 확인한다.",
+    ],
+    actionUrgency: "this_month",
+    audienceSituation:
+      "식비, 외식비, 교통비, 고정비 부담과 저축 여력에 민감한 시청자",
+    actionBoundaries: [
+      "물가 방향을 확정적으로 예측하지 않는다.",
+      "투자 매수/매도 판단으로 연결하지 않는다.",
+      "생활비 체감은 개인 상황과 품목에 따라 다를 수 있다.",
+    ],
+    doNotOverclaimActions: [
+      "물가가 확실히 잡혔다고 단정하지 않는다.",
+      "장바구니 가격이 바로 내릴 것이라고 말하지 않는다.",
+      "특정 상품 구매 시점을 조언하지 않는다.",
+    ],
+    viewerTakeaway:
+      "물가 신호는 예측보다 장바구니, 변동비, 가계 예산을 다시 점검하라는 생활경제 단서다.",
+    sourceCitationIds: citationIds,
+    riskNotes: [
+      "물가 전망 단정 금지.",
       "투자 권유 금지.",
       factCard.cautionNote,
     ],
@@ -447,6 +551,10 @@ export function createSignalTranslationBriefFromFactCard(
 
   if (templateId === "interest_rate_life_economy_v1") {
     return createInterestRateBrief(factCard, briefId);
+  }
+
+  if (templateId === "inflation_life_economy_v1") {
+    return createInflationBrief(factCard, briefId);
   }
 
   return createGenericIndicatorBrief(factCard, briefId);
@@ -665,6 +773,171 @@ function createExchangeRateSceneCards(
       durationSec: SCENE_DURATIONS_30[5],
       sourceNote,
       riskNotes: ["Action must remain a spending check, not investment advice."],
+    }),
+  ];
+}
+
+function createInflationSceneCards(
+  factCard: FactCard,
+  brief: SignalTranslationBrief,
+): SceneCard[] {
+  const sourceNote = createSourceNote(factCard);
+  const direction = getChangeDirection(factCard);
+  const sourceCitationIds = brief.sourceCitationIds;
+
+  return [
+    createSceneCard({
+      sceneNumber: 1,
+      sceneRole: "hook",
+      sceneGoal: "물가 둔화 신호를 생활 체감 질문으로 열기.",
+      narration: "물가 상승률이 낮아졌다고 장바구니 가격도 바로 내릴까요?",
+      spokenCaption: "물가 낮아졌는데 왜 체감은 그대로일까?",
+      hookTitle: "물가 낮아졌는데\n체감이 그대로인 이유",
+      sceneLabel: SCENE_LABEL_BY_ROLE.hook,
+      screenText: ["물가", "장바구니", "생활비"],
+      captionText: "물가 낮아졌는데 왜 체감은 그대로일까?",
+      emphasisWords: ["물가", "체감"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, grocery basket with receipt, household expense note, CPI signal card, off-white and charcoal navy palette, warm yellow accent, clue-like composition with connection lines, clean space for Korean hook title overlay, no text or numbers inside image.",
+      visualTemplateId: "signal_card",
+      visualObjects: ["grocery basket", "household expense note", "CPI signal card"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "fast",
+        emphasisWords: ["물가", "장바구니", "체감"],
+        pauses: ["물가 상승률이 낮아졌다고"],
+      },
+      durationSec: SCENE_DURATIONS_30[0],
+      sourceNote,
+      riskNotes: ["Hook must not imply guaranteed price decreases."],
+    }),
+    createSceneCard({
+      sceneNumber: 2,
+      sceneRole: "signal",
+      sceneGoal: "Fact Card 범위 안에서 소비자물가 신호와 출처를 제시하기.",
+      narration:
+        `이번 신호는 ${factCard.sourceName}의 ${factCard.indicatorName}이 ${formatChangeSummary(factCard)} ${direction.verb} 출처 기반 데이터에서 시작합니다.`,
+      spokenCaption: `${factCard.indicatorName} ${direction.signalNoun}입니다`,
+      sceneLabel: SCENE_LABEL_BY_ROLE.signal,
+      screenText: [
+        factCard.indicatorName,
+        formatValueWithUnit(factCard.currentValue, factCard.unit),
+      ],
+      captionText: `${factCard.indicatorName} ${direction.signalNoun}입니다`,
+      emphasisWords: ["소비자물가"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, clean economic signal card, CPI source evidence card placeholder without readable text, light gray background, charcoal navy card, warm yellow accent, no readable text or numbers inside image.",
+      visualTemplateId: "signal_card",
+      visualObjects: ["CPI signal card", "source evidence card"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "normal",
+        emphasisWords: [factCard.indicatorName, "출처"],
+        pauses: ["이번 신호는"],
+      },
+      durationSec: SCENE_DURATIONS_30[1],
+      sourceNote,
+      riskNotes: ["Use only Fact Card-backed CPI values."],
+    }),
+    createSceneCard({
+      sceneNumber: 3,
+      sceneRole: "why_expert_interpretation",
+      sceneGoal: "식품/에너지/서비스 가격과 환율·기저효과를 원인 후보로만 제시하고 단정하지 않기.",
+      narration:
+        "물가는 식품, 에너지, 서비스 가격이 각각 다르게 움직이고, 환율과 기저효과도 영향을 줄 수 있습니다.",
+      spokenCaption: "식품·에너지·서비스 가격이 각각 다릅니다",
+      sceneLabel: SCENE_LABEL_BY_ROLE.why_expert_interpretation,
+      screenText: ["식품", "에너지", "서비스 물가"],
+      captionText: "식품·에너지·서비스 가격이 각각 다릅니다",
+      emphasisWords: ["식품", "에너지"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, clue cards for food prices, energy prices, service costs, thin connection lines, charcoal navy and light gray, warm yellow check marks, no text or numbers inside image.",
+      visualTemplateId: "clue_cards",
+      visualObjects: ["food price clue card", "energy clue card", "service cost clue card"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "normal",
+        emphasisWords: ["식품", "에너지", "서비스"],
+        pauses: ["물가는"],
+      },
+      durationSec: SCENE_DURATIONS_30[2],
+      sourceNote,
+      riskNotes: ["No single-cause inflation claim."],
+    }),
+    createSceneCard({
+      sceneNumber: 4,
+      sceneRole: "life_impact",
+      sceneGoal: "물가 신호를 장바구니, 외식비, 교통비, 고정비/변동비, 저축 여력과 연결하기.",
+      narration:
+        "장바구니, 외식비, 교통비가 먼저 체감으로 이어지고, 구독비와 고정비도 같이 확인해야 합니다.",
+      spokenCaption: "장바구니와 고정비도 같이 봐야 합니다",
+      sceneLabel: SCENE_LABEL_BY_ROLE.life_impact,
+      screenText: ["장바구니", "외식비", "고정비"],
+      captionText: "장바구니와 고정비도 같이 봐야 합니다",
+      emphasisWords: ["장바구니", "고정비"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, grocery receipt, restaurant bill, subscription expense note, household budget checklist, off-white background, charcoal navy cards, warm yellow accent, no text or numbers inside image.",
+      visualTemplateId: "life_object",
+      visualObjects: ["grocery receipt", "restaurant bill", "subscription expense note"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "normal",
+        emphasisWords: ["장바구니", "외식비", "고정비"],
+        pauses: ["장바구니", "교통비가"],
+      },
+      durationSec: SCENE_DURATIONS_30[3],
+      sourceNote,
+      riskNotes: ["Life impact must remain conditional and individual-situation-aware."],
+    }),
+    createSceneCard({
+      sceneNumber: 5,
+      sceneRole: "watch_scenario_outlook",
+      sceneGoal: "확정 전망 대신 다음 발표와 식품·에너지·서비스 물가 관찰 포인트 제시하기.",
+      narration:
+        "다음에는 식품과 에너지 가격이 같이 낮아지는지, 아니면 서비스 물가가 버티는지를 봐야 합니다.",
+      spokenCaption: "식품과 서비스 물가 흐름을 확인하세요",
+      sceneLabel: SCENE_LABEL_BY_ROLE.watch_scenario_outlook,
+      screenText: ["식품 물가", "서비스 물가", "다음 발표"],
+      captionText: "식품과 서비스 물가 흐름을 확인하세요",
+      emphasisWords: ["식품", "서비스 물가"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, scenario cards, calendar watch card, food and service price clue cards, blue-gray support color, charcoal navy card space, warm yellow accent, no text or numbers inside image.",
+      visualTemplateId: "clue_cards",
+      visualObjects: ["scenario cards", "calendar watch card", "food price clue card"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "normal",
+        emphasisWords: ["식품", "서비스 물가"],
+        pauses: ["다음에는"],
+      },
+      durationSec: SCENE_DURATIONS_30[4],
+      sourceNote,
+      riskNotes: ["Scenario outlook must not become a deterministic inflation forecast."],
+    }),
+    createSceneCard({
+      sceneNumber: 6,
+      sceneRole: "action_closing",
+      sceneGoal: "투자 권유 없이 장바구니·변동비·가계 예산 점검 행동으로 마무리하기.",
+      narration:
+        "이번 달은 장바구니, 외식비, 구독비를 나눠 가계 예산부터 점검해보세요.",
+      spokenCaption: "이번 달은 가계 예산부터 점검하세요",
+      sceneLabel: SCENE_LABEL_BY_ROLE.action_closing,
+      screenText: ["장바구니", "구독비", "가계 예산"],
+      captionText: "이번 달은 가계 예산부터 점검하세요",
+      emphasisWords: ["가계 예산"],
+      imagePrompt:
+        "Vertical 9:16 editorial life-economy report style, action checklist, grocery list, subscription list, household budget note, calm practical closing scene, off-white and charcoal navy, warm yellow check marks, no text or numbers inside image.",
+      visualTemplateId: "action_checklist",
+      visualObjects: ["action checklist", "grocery list", "subscription list"],
+      sourceCitationIds,
+      voiceTiming: {
+        pace: "slow",
+        emphasisWords: ["장바구니", "구독비", "가계 예산"],
+        pauses: ["이번 달은"],
+      },
+      durationSec: SCENE_DURATIONS_30[5],
+      sourceNote,
+      riskNotes: ["Action must remain a household budget check, not investment advice."],
     }),
   ];
 }
@@ -1013,6 +1286,10 @@ export function createFixedSixSceneCardsFromSignalTranslationBrief(
     return createInterestRateSceneCards(factCard, brief);
   }
 
+  if (templateId === "inflation_life_economy_v1") {
+    return createInflationSceneCards(factCard, brief);
+  }
+
   return createGenericIndicatorSceneCards(factCard, brief);
 }
 
@@ -1049,7 +1326,7 @@ export function createMoneyShortsScenePackageFromFactCard(
     citationValidation,
     warnings:
       templateId === "generic_indicator_life_economy_v1"
-        ? ["Generic indicator fallback requires Owner review before publication."]
+        ? ["Generic indicator fallback. Owner review required before publication."]
         : [],
   };
 }

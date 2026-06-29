@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-29
 
-**전체프로젝트 진행률:** 약 84% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, **Caption / Scene QA Coverage panel (structural inspection)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
+**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), **inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
@@ -84,15 +84,14 @@ Image Style V1:
 
 ## 최근 checkpoint
 
-- Commit: `19ec7d6` — `feat(package-preview): add caption scene QA coverage` ← **현재 HEAD**
+- HEAD: `af84985` — `feat(package-preview): add generated copy payload preview` ← **최신 checkpoint** (uncommitted: `signal-translation-generator.ts`, `signal-translation-fixtures.ts`)
+- Commit: `19ec7d6` — `feat(package-preview): add caption scene QA coverage`
 - Commit: `c34ef6f` — `feat(package-preview): add signal translation preview panel`
 - Commit: `f05625f` — `feat: add signal translation scene card foundation`
 - Commit: `24ef219` — `feat(package-preview): add owner review guidance panel`
 - Commit: `bd4e745` — `test(package-preview): guard ledger overlay page integration`
 - Commit: `c29f4d9` — `test(package-preview): add ledger overlay static guard`
-- Commit: `71f3a9b` — `refactor(package-preview): extract ledger overlay evaluator`
-- Commit: `8a8642b` — `docs(state): update checkpoint state after ledger overlay and riskReview fix`
-- Branch: `codex/source-first-blueprint-clean` (ahead 62)
+- Branch: `codex/source-first-blueprint-clean` (ahead 63)
 - Push: 미실행
 - Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
@@ -165,11 +164,11 @@ Current UI slice:
 
 권장 다음 task:
 
-- `money-shorts-os-package-preview-caption-scene-qa-v1`
+- `money-shorts-os-package-preview-third-fixture-panel-v1`
 
 권장 범위:
 
-- package-preview에서 Scene Card / Caption / ImagePrompt / VoiceTiming 일치성 QA를 display-only로 더 명확히 표시한다.
+- `inflationGeneratedSignalTranslationPackage`를 `SignalTranslationPreviewPanel`에 추가해 Owner가 환율/금리/물가 세 generated package를 나란히 inspection 가능하게 한다.
 - 기존 gate/ledger/clipboard 동작은 변경하지 않는다.
 
 금지:
