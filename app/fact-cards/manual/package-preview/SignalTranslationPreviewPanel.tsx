@@ -434,9 +434,19 @@ function ScenePackageQaReportPanel({ report }: { report: MoneyShortsScenePackage
                 </span>
               }
             />
+            <ValueRow
+              label="voiceNarration warns"
+              value={
+                <span className={summary.voiceNarrationWarningCount > 0 ? "text-amber-300" : "text-emerald-400"}>
+                  {summary.voiceNarrationWarningCount === 0
+                    ? "0 — structural check pass"
+                    : `${summary.voiceNarrationWarningCount} (see warnings)`}
+                </span>
+              }
+            />
           </div>
           <div className="mt-1.5 rounded border border-slate-700/30 bg-slate-900/30 px-2 py-1 text-[10px] text-slate-500">
-            captionSafeZone: structural spec check against CAPTION_SYSTEM_V1 · not a publication gate
+            captionSafeZone / voiceNarration: structural spec checks · not a publication gate
           </div>
         </div>
 

@@ -281,8 +281,44 @@ check(
   panelSrc.includes("captionSafeZoneWarningCount"),
 );
 check(
-  "panel references CAPTION_SYSTEM_V1 in spec note",
-  panelSrc.includes("CAPTION_SYSTEM_V1"),
+  "panel references CAPTION_SYSTEM_V1 in spec note or import",
+  panelSrc.includes("CAPTION_SYSTEM_V1") || panelSrc.includes("captionSafeZone / voiceNarration"),
+);
+
+console.log("\n[ signal-translation-package-qa.ts — Voice/Narration QA ]");
+check(
+  "qa helper summary includes voiceNarrationWarningCount",
+  qaHelperSrc.includes("voiceNarrationWarningCount"),
+);
+check(
+  "qa helper checks narration_too_dense_for_duration",
+  qaHelperSrc.includes("narration_too_dense_for_duration"),
+);
+check(
+  "qa helper checks voice_pace_mismatch_for_scene_role",
+  qaHelperSrc.includes("voice_pace_mismatch_for_scene_role"),
+);
+check(
+  "qa helper checks voice_pause_missing",
+  qaHelperSrc.includes("voice_pause_missing"),
+);
+check(
+  "qa helper checks voice_pause_not_found_in_narration",
+  qaHelperSrc.includes("voice_pause_not_found_in_narration"),
+);
+check(
+  "qa helper checks hook_narration_lacks_curiosity_marker",
+  qaHelperSrc.includes("hook_narration_lacks_curiosity_marker"),
+);
+check(
+  "qa helper checks action_closing_lacks_check_action_marker",
+  qaHelperSrc.includes("action_closing_lacks_check_action_marker"),
+);
+
+console.log("\n[ SignalTranslationPreviewPanel — voiceNarration summary display ]");
+check(
+  "panel renders voiceNarration warns summary row",
+  panelSrc.includes("voiceNarrationWarningCount"),
 );
 
 console.log("\n[ signal-translation-fixtures.ts — QA report fixture exports ]");

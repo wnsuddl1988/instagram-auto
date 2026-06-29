@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`post-scene-label-safe-zone-contract-doc-sync-v1`
+`money-shorts-os-voice-narration-qa-v1`
 
 ## Project
 
@@ -11,36 +11,37 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `67bfd89 feat(source-facts): add scene label safe-zone contract` ← **현재 HEAD**
-- Current local status: ahead 73, clean except `?? piq_diag_out.txt`
+- Latest HEAD: `b0acacf docs(state): sync spec docs after scene label safe-zone contract` ← **현재 HEAD**
+- Current local status: ahead 74, 6 files modified (code 3 + _ai docs 3, 미커밋 voice/narration QA slice), `?? piq_diag_out.txt`
 - Push: Owner가 명시적으로 `push까지`라고 할 때만.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
+`money-shorts-os-voice-narration-qa-v1` — 코드 변경 및 검증 완료, 미커밋 상태.
+
+변경된 코드 파일 3개 + `_ai` docs 3개:
+- `lib/source-facts/signal-translation-package-qa.ts`: `voiceNarrationWarningCount` summary 필드 추가, 6종 Voice/Narration warning check 추가 (narration_too_dense_for_duration / voice_pace_mismatch_for_scene_role / voice_pause_missing / voice_pause_not_found_in_narration / hook_narration_lacks_curiosity_marker / action_closing_lacks_check_action_marker)
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 voiceNarration warns 셀 추가, spec note 업데이트
+- `scripts/check-signal-translation-preview-static.mjs`: 8 new checks 추가 → 72/72 PASS
+
+검증 결과:
+- `node scripts/check-signal-translation-preview-static.mjs` → **72/72 PASS**
+- TypeScript (`npx tsc --noEmit`) → 오류 없음
+- ESLint (변경 3파일) → 오류 없음
+- `git diff --check` → whitespace 오류 없음 (LF→CRLF 경고는 Windows 기존 설정, 실제 오류 아님)
+
+## Previous Checkpoints
+
+`post-scene-label-safe-zone-contract-doc-sync-v1` — checkpoint `b0acacf` 완료.
 `money-shorts-os-scene-label-safe-zone-contract-v1` — checkpoint `67bfd89` 완료.
-
-포함된 변경:
-- `LayoutSafeZone`에 `sceneLabel: CaptionSafeZone` required 필드 추가
-- generator/fixture/copy payload/QA helper/preview panel 전체 계약 반영
-- static guard 64/64 PASS
-
 `money-shorts-os-caption-system-safe-zone-qa-v1` — checkpoint `fe6437f` 완료.
-
-포함된 변경:
-- CAPTION_SYSTEM_V1 bounds check + missing metadata warning
-- captionSafeZoneWarningCount summary, ScenePackageQaReportPanel 표시 보강
-- static guard 59/59 PASS
-
-Route smoke verification PASS (checkpoint `2b1db95`, 이후 `361de7b` 확인):
-- `GET /fact-cards/manual/package-preview 200` — 성공
-- server/console/hydration/key errors: 없음
-- display-only / no clipboard write: PASS
 
 ## Recommended Next Task
 
-1. **다음 content/QA slice** (Codex 결정 대기)
+1. Codex가 `money-shorts-os-voice-narration-qa-v1` 완료 확인 후 checkpoint commit 여부 결정
+2. **다음 content/QA slice** (Codex 결정 대기)
 
 ## Forbidden
 

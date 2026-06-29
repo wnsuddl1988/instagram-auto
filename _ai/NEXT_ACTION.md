@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — SceneLabel Safe-Zone Contract Checkpoint 완료
+## 2026-06-29 현재 — Voice/Narration QA Layer 미커밋 완료
 
-상태: **MONEY_SHORTS_OS_SCENE_LABEL_SAFE_ZONE_CONTRACT_COMMITTED**
+상태: **MONEY_SHORTS_OS_VOICE_NARRATION_QA_UNCOMMITTED**
 
 최신 HEAD:
 
-- `67bfd89 feat(source-facts): add scene label safe-zone contract` ← **현재 HEAD**
+- `b0acacf docs(state): sync spec docs after scene label safe-zone contract` ← **현재 HEAD**
+- `67bfd89 feat(source-facts): add scene label safe-zone contract`
 - `fe6437f feat(source-facts): add caption system v1 safe-zone qa`
-- `361de7b docs(state): clean route smoke checkpoint state`
-- branch: `codex/source-first-blueprint-clean` (ahead 73)
-- working tree: clean except `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 74)
+- working tree: 6 files modified (code 3 + _ai docs 3, 미커밋 voice/narration QA slice), `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -111,12 +111,31 @@
     - static guard 64/64 PASS (59 + 5 new).
     - checkpoint commit `67bfd89 feat(source-facts): add scene label safe-zone contract` 완료.
 
+13. **`post-scene-label-safe-zone-contract-doc-sync-v1`** (b0acacf)
+    - `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md` → `67bfd89`/ahead 73 기준으로 정정.
+    - `_ai/MONEY_SHORTS_OS_SOURCE_FIRST_DATA_SPEC_V1.md`: layoutSafeZone 설명에 Scene Label 항목 추가.
+    - `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`: Scene Card Data Boundary에 sceneLabel 추가.
+    - checkpoint commit `b0acacf docs(state): sync spec docs after scene label safe-zone contract` 완료.
+
+14. **`money-shorts-os-voice-narration-qa-v1`** ← **현재 미커밋 slice**
+    - `signal-translation-package-qa.ts`: `voiceNarrationWarningCount` summary 필드 추가, 6종 Voice/Narration warning check 추가.
+      - `narration_too_dense_for_duration`: narration.length > durationSec × 18
+      - `voice_pace_mismatch_for_scene_role`: 신호/해석/생활영향/전망/행동 씬에서 pace="fast" 경고
+      - `voice_pause_missing`: voiceTiming.pauses.length === 0 경고
+      - `voice_pause_not_found_in_narration`: pause text가 narration에 없을 때 경고
+      - `hook_narration_lacks_curiosity_marker`: hook씬 narration에 ?, 까요, 일까요, 무슨, 왜, 진짜 없을 때 경고
+      - `action_closing_lacks_check_action_marker`: action_closing씬 narration에 점검, 확인, 살펴, 체크, 정리 없을 때 경고
+    - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 voiceNarration warns 셀 추가, spec note 업데이트.
+    - `scripts/check-signal-translation-preview-static.mjs`: 8 new checks 추가 → **72/72 PASS**.
+    - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 72/72 PASS.
+    - **미커밋 상태** — checkpoint commit은 Codex 검토 후 결정.
+
 현재 상태:
 
-- sceneLabel safe-zone contract checkpoint 완료. working tree clean.
-- static guard 64/64 PASS.
+- voice/narration QA layer 코드 완료, static guard 72/72 PASS. **미커밋** (ahead 74).
 - push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
-1. **다음 content/QA slice** (Codex 결정 대기)
+1. **`money-shorts-os-voice-narration-qa-v1` checkpoint commit** (Codex 승인 대기)
+2. **다음 content/QA slice** (Codex 결정 대기)

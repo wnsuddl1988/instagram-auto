@@ -66,6 +66,7 @@ export interface MoneyShortsScenePackageQaReport {
     sourceCitationSceneCount: number;
     riskNotesSceneCount: number;
     captionSafeZoneWarningCount: number;
+    voiceNarrationWarningCount: number;
   };
 }
 
@@ -246,6 +247,7 @@ export function buildMoneyShortsScenePackageQaReport(
   let sourceCitationSceneCount = 0;
   let riskNotesSceneCount = 0;
   let captionSafeZoneWarningCount = 0;
+  let voiceNarrationWarningCount = 0;
 
   sceneCards.forEach((scene) => {
     const n = scene.sceneNumber;
@@ -483,6 +485,126 @@ export function buildMoneyShortsScenePackageQaReport(
       );
     }
 
+    // ── Voice / Narration structural QA (warning-only, no AI/ElevenLabs) ──────
+    {
+      let sceneVnWarnings = 0;
+
+      // 1. Narration density: characters per second
+      const maxCharsForDuration = scene.durationSec * 18;
+      if (scene.narration.length > maxCharsForDuration) {
+        warnings.push(
+          makeIssue(
+            "scene",
+            `scenes.${n - 1}.narration`,
+            "narration_too_dense_for_duration",
+            `narration length ${scene.narration.length} exceeds ${maxCharsForDuration} (durationSec ${scene.durationSec} × 18).`,
+            n,
+          ),
+        );
+        sceneVnWarnings++;
+      }
+
+      // 2. Voice pace by scene role
+      const pace = scene.voiceTiming.pace;
+      if (scene.sceneRole === "signal" || scene.sceneRole === "why_expert_interpretation" ||
+          scene.sceneRole === "life_impact" || scene.sceneRole === "watch_scenario_outlook") {
+        if (pace === "fast") {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.voiceTiming.pace`,
+              "voice_pace_mismatch_for_scene_role",
+              `Scene role "${scene.sceneRole}" expects "normal" or "slow" pace; got "${pace}".`,
+              n,
+            ),
+          );
+          sceneVnWarnings++;
+        }
+      } else if (scene.sceneRole === "action_closing") {
+        if (pace === "fast") {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.voiceTiming.pace`,
+              "voice_pace_mismatch_for_scene_role",
+              `Scene role "action_closing" expects "normal" or "slow" pace; got "${pace}".`,
+              n,
+            ),
+          );
+          sceneVnWarnings++;
+        }
+      }
+
+      // 3. Pause consistency
+      if (scene.voiceTiming.pauses.length === 0) {
+        warnings.push(
+          makeIssue(
+            "scene",
+            `scenes.${n - 1}.voiceTiming.pauses`,
+            "voice_pause_missing",
+            "voiceTiming.pauses is empty — no pause markers declared.",
+            n,
+          ),
+        );
+        sceneVnWarnings++;
+      } else {
+        const missingPauses = scene.voiceTiming.pauses.filter(
+          (p) => !scene.narration.includes(p),
+        );
+        if (missingPauses.length > 0) {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.voiceTiming.pauses`,
+              "voice_pause_not_found_in_narration",
+              `Pause marker(s) not found in narration: ${missingPauses.map((p) => `"${p}"`).join(", ")}.`,
+              n,
+            ),
+          );
+          sceneVnWarnings++;
+        }
+      }
+
+      // 4. Hook narration curiosity marker
+      if (scene.sceneRole === "hook") {
+        const curiosityMarkers = ["?", "까요", "일까요", "무슨", "왜", "진짜"];
+        const hasMarker = curiosityMarkers.some((m) => scene.narration.includes(m));
+        if (!hasMarker) {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.narration`,
+              "hook_narration_lacks_curiosity_marker",
+              "Hook narration has no curiosity marker (?, 까요, 일까요, 무슨, 왜, 진짜).",
+              n,
+            ),
+          );
+          sceneVnWarnings++;
+        }
+      }
+
+      // 5. Action closing check-action marker
+      if (scene.sceneRole === "action_closing") {
+        const checkMarkers = ["점검", "확인", "살펴", "체크", "정리"];
+        const combined = scene.narration + scene.spokenCaption;
+        const hasMarker = checkMarkers.some((m) => combined.includes(m));
+        if (!hasMarker) {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.narration`,
+              "action_closing_lacks_check_action_marker",
+              `action_closing has no life-check marker (점검, 확인, 살펴, 체크, 정리) in narration/spokenCaption.`,
+              n,
+            ),
+          );
+          sceneVnWarnings++;
+        }
+      }
+
+      voiceNarrationWarningCount += sceneVnWarnings;
+    }
+
     // Per-scene risk keyword scan
     const sceneTexts = collectSceneTextsForRiskScan(scene);
     sceneTexts.forEach((text) => {
@@ -511,6 +633,7 @@ export function buildMoneyShortsScenePackageQaReport(
     sourceCitationSceneCount,
     riskNotesSceneCount,
     captionSafeZoneWarningCount,
+    voiceNarrationWarningCount,
   };
 
   return {
