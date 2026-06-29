@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-brief-scene-card-third-fixture-v1`
+`money-shorts-os-package-preview-third-fixture-panel-v1`
 
 ## Project
 
@@ -11,59 +11,44 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `af84985 feat(package-preview): add generated copy payload preview`
-- Current local status: ahead 63, 2 files uncommitted (`lib/source-facts/signal-translation-generator.ts`, `lib/source-facts/signal-translation-fixtures.ts`). `_ai/` docs modified (state sync only).
+- Latest HEAD: `012a25c feat(source-facts): add inflation life economy scene fixture`
+- Current local status: ahead 64, uncommitted: `app/fact-cards/manual/package-preview/page.tsx` (inflation package added to panel). `_ai/` docs modified (state sync).
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
-Added `inflation_life_economy_v1` template to the deterministic generator and a third fixture to validate generator coverage:
+Added `inflationGeneratedSignalTranslationPackage` to `SignalTranslationPreviewPanel` in `page.tsx`:
 
-- Updated `lib/source-facts/signal-translation-generator.ts`
-  - Added `"inflation_life_economy_v1"` to `SignalTranslationTemplateId` union.
-  - Added `isInflationFactCard()` detection (물가/소비자물가/cpi/inflation/consumer price/price index).
-  - Added `createInflationBrief()` — 물가 계열 SignalTranslationBrief (장바구니/외식비/교통비/고정비/변동비/저축여력, no investment advice).
-  - Added `createInflationSceneCards()` — fixed 6 SceneCards (hook/signal/why/life_impact/watch/action_closing), absolute-timeline captionBlocks, SCENE_DURATIONS_30 aligned.
-  - Wired inflation template into `resolveSignalTranslationTemplateId()`, `createSignalTranslationBriefFromFactCard()`, `createFixedSixSceneCardsFromSignalTranslationBrief()`.
-- Updated `lib/source-facts/signal-translation-fixtures.ts`
-  - Added `inflationGeneratedSignalTranslationPackage` export using existing `inflationFactCard` from `fixtures.ts`.
-  - Added the new package to `MOCK_SIGNAL_TRANSLATION_BRIEFS` and `MOCK_SCENE_CARD_SETS`.
+- Updated `app/fact-cards/manual/package-preview/page.tsx`
+  - Added `inflationGeneratedSignalTranslationPackage` to the import from `@/lib/source-facts/signal-translation-fixtures`.
+  - Added `inflationGeneratedSignalTranslationPackage` as the third element of the `packages` array prop passed to `SignalTranslationPreviewPanel`.
+  - Panel now renders Sample 1 (환율), Sample 2 (금리), Sample 3 (물가/소비자물가) side-by-side.
 
 Important invariant:
 
-- `inflationFactCard` in `fixtures.ts` was reused without modification.
-- Existing `FactCard` type was not modified.
-- No UI, route, gate, ledger, clipboard, render, or API surface was changed.
+- `SignalTranslationPreviewPanel` component was not modified.
+- Existing gate/ledger/risk review/final QA/clipboard/publishability logic was not changed.
+- No `'use client'`, Server Action, clipboard write, render, upload, or DB change.
 
 ## Verification Evidence
 
 Passed:
 
-- ESLint `--max-warnings=0` for both changed TS files.
-- Targeted TypeScript compiler API check — no errors.
-- Runtime structural validation (inline logic): sequence/count, required fields, absolute captionBlock timeline, citation id subset — ALL PASSED.
-- `git diff --check` — LF-to-CRLF warnings only (expected on Windows).
+- ESLint `--max-warnings=0` for `page.tsx`.
+- Targeted TypeScript compiler API check for `page.tsx` — no errors.
+- `git diff --check` — no whitespace errors.
 
 Not run:
 
 - Full project `tsc --project tsconfig.json` (fails on pre-existing binary output files unrelated to this slice).
-- Browser/route smoke (`.money-shorts-local/` access not permitted).
+- Browser/route smoke (`.money-shorts-local/` access not permitted by Owner).
 
 ## Recommended Next Task
 
-Recommended:
-
-- `money-shorts-os-package-preview-third-fixture-panel-v1`
-
-Reason:
-
-- `inflationGeneratedSignalTranslationPackage` is now available. The next natural step is to add it to `SignalTranslationPreviewPanel` in `page.tsx` so the Owner can inspect all three generated packages side-by-side.
-
-Alternative safe tasks:
-
-- Route smoke verification (only when Owner explicitly permits `.money-shorts-local/` access).
+- checkpoint commit for this slice (only `page.tsx` + `_ai/` docs)
+- Or route smoke verification when Owner explicitly permits `.money-shorts-local/` access.
 
 ## Forbidden
 

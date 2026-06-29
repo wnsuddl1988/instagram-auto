@@ -31,6 +31,7 @@ import { SignalTranslationPreviewPanel } from "./SignalTranslationPreviewPanel";
 import { recordApproval } from "./actions";
 import {
   exchangeRateGeneratedSignalTranslationPackage,
+  inflationGeneratedSignalTranslationPackage,
   interestRateGeneratedSignalTranslationPackage,
 } from "@/lib/source-facts/signal-translation-fixtures";
 import type { ManualFactCardAuthoringResult } from "@/lib/source-facts/manual";
@@ -898,6 +899,7 @@ function PackagePreviewContent({
           packages={[
             exchangeRateGeneratedSignalTranslationPackage,
             interestRateGeneratedSignalTranslationPackage,
+            inflationGeneratedSignalTranslationPackage,
           ]}
         />
 

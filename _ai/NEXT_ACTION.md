@@ -1,18 +1,18 @@
 # Next Action
 
-## 2026-06-29 현재 — inflation fixture + template 추가
+## 2026-06-29 현재 — package preview 세 번째 fixture 패널 추가
 
-상태: **MONEY_SHORTS_OS_INFLATION_FIXTURE_ADDED**
+상태: **MONEY_SHORTS_OS_THIRD_FIXTURE_PANEL_ADDED**
 
 최신 HEAD:
 
-- `af84985 feat(package-preview): add generated copy payload preview` ← 최신 checkpoint
+- `012a25c feat(source-facts): add inflation life economy scene fixture` ← 최신 checkpoint
+- `af84985 feat(package-preview): add generated copy payload preview`
 - `19ec7d6 feat(package-preview): add caption scene QA coverage`
-- `c34ef6f feat(package-preview): add signal translation preview panel`
-- branch: `codex/source-first-blueprint-clean` (ahead 63)
+- branch: `codex/source-first-blueprint-clean` (ahead 64)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- uncommitted: `lib/source-facts/signal-translation-generator.ts`, `lib/source-facts/signal-translation-fixtures.ts`
+- uncommitted: `app/fact-cards/manual/package-preview/page.tsx`, `_ai/` docs
 
 완료된 slice:
 
@@ -39,7 +39,7 @@
    - read-only `<textarea>` JSON preview 표시 (copy button 없음, clipboard write 없음).
    - 기존 gate/ledger/risk review/final QA/clipboard/publishability 흐름 무변경.
 
-4. **`money-shorts-os-brief-scene-card-third-fixture-v1`** (uncommitted)
+4. **`money-shorts-os-brief-scene-card-third-fixture-v1`** (012a25c)
    - `inflation_life_economy_v1` template id 추가 (`SignalTranslationTemplateId` 유니온 확장).
    - `isInflationFactCard()` 감지 함수 추가 (물가/소비자물가/cpi/inflation/consumer price/price index).
    - `createInflationBrief()` — 물가 계열 SignalTranslationBrief.
@@ -47,6 +47,12 @@
    - `inflationGeneratedSignalTranslationPackage` export 추가 (기존 `inflationFactCard` 재사용).
    - `MOCK_SIGNAL_TRANSLATION_BRIEFS`, `MOCK_SCENE_CARD_SETS` 업데이트.
    - ESLint/TypeScript/runtime validation ALL PASSED.
+
+5. **`money-shorts-os-package-preview-third-fixture-panel-v1`** (uncommitted)
+   - `page.tsx`에 `inflationGeneratedSignalTranslationPackage` import 추가.
+   - `packages` 배열에 세 번째 element로 추가 → Sample 1(환율)/Sample 2(금리)/Sample 3(물가) 나란히 표시.
+   - `SignalTranslationPreviewPanel` 컴포넌트 무변경.
+   - ESLint/TypeScript 검증 PASSED.
 
 현재 상태:
 
@@ -60,13 +66,14 @@
 
 다음 safe work unit 후보:
 
-1. **`money-shorts-os-package-preview-third-fixture-panel-v1`** (추천)
-   - `inflationGeneratedSignalTranslationPackage`를 `SignalTranslationPreviewPanel`에 추가.
-   - Owner가 환율/금리/물가 세 generated package를 나란히 inspection 가능하게 함.
+1. **checkpoint commit** (추천 — 현재 uncommitted slice)
+   - `app/fact-cards/manual/package-preview/page.tsx` + `_ai/` docs 3개 commit.
 
 2. **route smoke verification** (선택사항)
    - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
    - hydration/key warning 런타임 확인, layout 렌더링 QA.
+
+3. **다음 content slice** — Codex 결정 대기.
 
 금지 유지:
 
