@@ -16,6 +16,10 @@ import type {
   MoneyShortsScenePackage,
   SignalTranslationTemplateId,
 } from "./signal-translation-generator";
+import {
+  buildMoneyShortsScenePackageQaReport,
+} from "./signal-translation-package-qa";
+import type { MoneyShortsScenePackageQaReport } from "./signal-translation-package-qa";
 
 export const MONEY_SHORTS_GENERATED_COPY_PAYLOAD_SCHEMA_VERSION =
   "money_shorts_generated_copy_payload_v1" as const;
@@ -58,6 +62,7 @@ export interface MoneyShortsGeneratedCopyPayload {
     citationErrors: number;
     citationWarnings: number;
   };
+  scenePackageQaReport: MoneyShortsScenePackageQaReport;
   scenes: MoneyShortsGeneratedCopyPayloadScene[];
   warnings: string[];
 }
@@ -66,6 +71,7 @@ export function buildMoneyShortsGeneratedCopyPayload(
   scenePackage: MoneyShortsScenePackage,
 ): MoneyShortsGeneratedCopyPayload {
   const { brief, sceneCardValidation, citationValidation } = scenePackage;
+  const scenePackageQaReport = buildMoneyShortsScenePackageQaReport(scenePackage);
 
   const scenes: MoneyShortsGeneratedCopyPayloadScene[] = scenePackage.sceneCards.map((s) => ({
     sceneNumber: s.sceneNumber,
@@ -121,6 +127,7 @@ export function buildMoneyShortsGeneratedCopyPayload(
       citationErrors: citationValidation.errors.length,
       citationWarnings: citationValidation.warnings.length,
     },
+    scenePackageQaReport,
     scenes,
     warnings: [...scenePackage.warnings],
   };

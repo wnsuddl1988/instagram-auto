@@ -1,15 +1,15 @@
 # Next Action
 
-## 2026-06-29 현재 — QA Report Panel 구현 완료 (미commit)
+## 2026-06-29 현재 — Copy Payload QA Report 구현 완료 (미commit)
 
-상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_QA_REPORT_PANEL_IMPLEMENTED**
+상태: **MONEY_SHORTS_OS_GENERATED_COPY_PAYLOAD_QA_REPORT_IMPLEMENTED**
 
 최신 HEAD:
 
-- `92fdef3 feat(source-facts): add scene package QA helper` ← 마지막 checkpoint (uncommitted work above)
+- `eac702c feat(package-preview): add scene package QA report panel` ← **현재 HEAD**
+- `92fdef3 feat(source-facts): add scene package QA helper`
 - `1a268ba test(package-preview): add signal translation display-only static guard`
-- `f288969 feat(package-preview): add inflation package to signal translation panel`
-- branch: `codex/source-first-blueprint-clean` (ahead 67)
+- branch: `codex/source-first-blueprint-clean` (ahead 68)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 - working tree: clean except untracked
@@ -72,21 +72,42 @@
    - `lib/source-facts/index.ts`: `signal-translation-package-qa` export 추가.
    - checkpoint commit `92fdef3 feat(source-facts): add scene package QA helper` 완료.
 
+8. **`money-shorts-os-package-preview-qa-report-panel-v1`** (eac702c)
+   - `SignalTranslationPreviewPanel`에 `ScenePackageQaReportPanel` display-only component 추가.
+   - `buildMoneyShortsScenePackageQaReport(scenePackage)` 인라인 호출 후 렌더.
+   - `<details>` default closed, summary rows, errors/warnings lists 표시.
+   - "not a publication gate" 명시 문구 포함.
+   - `scripts/check-signal-translation-preview-static.mjs`: 13 new checks 추가 → 48/48 PASS.
+   - checkpoint commit `eac702c feat(package-preview): add scene package QA report panel` 완료.
+
 현재 상태:
 
 - display-only 원칙 유지 (mutation/persistence/external API/asset generation/clipboard write 없음).
 - 기존 gate/ledger/risk review/final QA/clipboard/publishability 흐름 변경 없음.
-- ESLint/TypeScript 검증 passed.
+- ESLint/TypeScript/static guard 검증 passed.
+- branch ahead 68, clean except `?? piq_diag_out.txt`.
 
 미실행 검증:
 
 - route smoke: 미실행. `.money-shorts-local/` 접근 Owner 미허용 때문에 hydration/key warning 런타임 확인 불가.
 
+8. **`money-shorts-os-package-preview-qa-report-panel-v1`** (eac702c)
+   - `SignalTranslationPreviewPanel`에 `ScenePackageQaReportPanel` display-only component 추가.
+   - `buildMoneyShortsScenePackageQaReport(scenePackage)` 인라인 호출 후 렌더.
+   - `scripts/check-signal-translation-preview-static.mjs`: 13 new checks 추가 → 48/48 PASS.
+   - checkpoint commit `eac702c feat(package-preview): add scene package QA report panel` 완료.
+
+9. **`money-shorts-os-generated-copy-payload-qa-report-v1`** (미commit)
+   - `signal-translation-copy-payload.ts`: `scenePackageQaReport` 필드 추가 (additive, schema version 유지).
+   - `GeneratedCopyPayloadPreview` metadata grid에 QA valid/errors/warnings 칸 2개 추가 (display-only).
+   - static guard 50/50 PASS (기존 48 + 2 new).
+   - 미commit.
+
 다음 safe work unit 후보:
 
 1. **checkpoint commit** (권장)
    - `safe checkpoint commit authorized` 포함 Codex handoff 필요.
-   - 포함 파일: `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`, `scripts/check-signal-translation-preview-static.mjs`.
+   - 포함 파일: `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, `lib/source-facts/signal-translation-copy-payload.ts`, `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`, `scripts/check-signal-translation-preview-static.mjs`.
 
 2. **route smoke verification** (선택사항)
    - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.

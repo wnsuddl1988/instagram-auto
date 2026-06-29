@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-package-preview-qa-report-panel-v1`
+`money-shorts-os-generated-copy-payload-qa-report-v1`
 
 ## Project
 
@@ -11,25 +11,29 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `92fdef3 feat(source-facts): add scene package QA helper` (uncommitted work above)
-- Current local status: ahead 67 + uncommitted changes in 2 files
+- Latest HEAD: `eac702c feat(package-preview): add scene package QA report panel` (uncommitted work above)
+- Current local status: ahead 68, 3 code files + 3 _ai docs modified
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
-`money-shorts-os-package-preview-qa-report-panel-v1` 구현 완료 (미commit).
+`money-shorts-os-generated-copy-payload-qa-report-v1` 구현 완료 (미commit).
 
 Changed files:
-- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`
+- `lib/source-facts/signal-translation-copy-payload.ts`
   - import: `buildMoneyShortsScenePackageQaReport`, `MoneyShortsScenePackageQaReport` from `signal-translation-package-qa`
-  - `ScenePackageQaReportPanel` 컴포넌트 추가 (display-only, `<details>` default closed)
-  - `buildMoneyShortsScenePackageQaReport(scenePackage)` 인라인 호출 — `PackageQaSummaryPanel` 바로 아래에 삽입
+  - `MoneyShortsGeneratedCopyPayload` 인터페이스에 `scenePackageQaReport: MoneyShortsScenePackageQaReport` 필드 추가
+  - `buildMoneyShortsGeneratedCopyPayload()` 내부에서 `buildMoneyShortsScenePackageQaReport(scenePackage)` 호출 및 반환
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`
+  - `GeneratedCopyPayloadPreview` metadata grid에 `qaReport.isValid` / `qaReport errors/warnings` 칸 2개 추가
+  - 기존 `ScenePackageQaReportPanel`, display-only 원칙 무변경
 - `scripts/check-signal-translation-preview-static.mjs`
-  - `signal-translation-package-qa.ts` 파일 로드 추가
-  - 3개 블록 13 checks 추가 (ScenePackageQaReportPanel integration, qa helper exports, QA report fixture exports)
-  - 기존 35 checks 유지 → 총 48 checks
+  - 2 new checks: copy payload imports QA helper + scenePackageQaReport field
+  - 기존 48 PASS → 50 checks
+
+Schema version: `money_shorts_generated_copy_payload_v1` 유지 (additive field, downstream contract 없음).
 
 Important invariant:
 
@@ -41,8 +45,8 @@ Important invariant:
 
 Passed:
 
-- `node scripts/check-signal-translation-preview-static.mjs` — 48/48 PASS.
-- `npx tsc --noEmit --skipLibCheck` — no errors in changed files (output/ binary pre-existing errors excluded).
+- `node scripts/check-signal-translation-preview-static.mjs` — 50/50 PASS.
+- `npx tsc --noEmit --skipLibCheck` — no errors in changed files.
 - `npx eslint ... --max-warnings=0` — PASS on changed files.
 - `git diff --check` — no whitespace errors (line ending warnings only, pre-existing).
 

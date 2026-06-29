@@ -542,6 +542,18 @@ function GeneratedCopyPayloadPreview({ pkg }: { pkg: MoneyShortsScenePackage }) 
             <span className="text-slate-500">payload size</span>
             <div className="font-mono text-slate-300 mt-0.5">{charCount.toLocaleString()} chars · {lineCount} lines</div>
           </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">qaReport.isValid</span>
+            <div className={`font-mono mt-0.5 ${payload.scenePackageQaReport.isValid ? "text-emerald-400" : "text-red-400"}`}>
+              {payload.scenePackageQaReport.isValid ? "true" : "false"}
+            </div>
+          </div>
+          <div className="rounded border border-slate-800/60 bg-slate-900/40 px-2 py-1.5">
+            <span className="text-slate-500">qaReport errors / warnings</span>
+            <div className="font-mono text-slate-300 mt-0.5">
+              {payload.scenePackageQaReport.errors.length} / {payload.scenePackageQaReport.warnings.length}
+            </div>
+          </div>
         </div>
 
         {/* packageId / factCardId */}

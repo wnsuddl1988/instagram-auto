@@ -139,6 +139,14 @@ check(
 );
 check("imageTextPolicy referenced",  payloadSrc.includes("imageTextPolicy"));
 check("layoutSafeZone referenced",   payloadSrc.includes("layoutSafeZone"));
+check(
+  "copy payload imports buildMoneyShortsScenePackageQaReport",
+  payloadSrc.includes("buildMoneyShortsScenePackageQaReport"),
+);
+check(
+  "copy payload includes scenePackageQaReport field",
+  payloadSrc.includes("scenePackageQaReport"),
+);
 
 console.log("\n[ signal-translation-copy-payload.ts — forbidden patterns (non-comment lines) ]");
 check("no navigator.clipboard",  !payloadSrc.includes("navigator.clipboard"));
