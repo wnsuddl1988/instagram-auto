@@ -236,6 +236,45 @@ check(
   qaHelperSrc.includes("missing policy-required fontPxMax"),
 );
 
+console.log("\n[ sceneLabel safe-zone contract ]");
+check(
+  "LayoutSafeZone interface includes sceneLabel field",
+  (() => {
+    const signalSrc = readFileSync(
+      resolve(__dirname, "../lib/source-facts/signal-translation.ts"),
+      "utf-8",
+    );
+    const lszStart = signalSrc.indexOf("interface LayoutSafeZone");
+    const lszEnd   = signalSrc.indexOf("}", lszStart);
+    return lszStart >= 0 && signalSrc.slice(lszStart, lszEnd).includes("sceneLabel");
+  })(),
+);
+check(
+  "generator createLayoutSafeZone includes CAPTION_SYSTEM_V1.sceneLabel",
+  (() => {
+    const genSrc = readFileSync(
+      resolve(__dirname, "../lib/source-facts/signal-translation-generator.ts"),
+      "utf-8",
+    );
+    const fnStart = genSrc.indexOf("function createLayoutSafeZone");
+    // find closing brace: look for the pattern `\n}` after the function open
+    const fnEnd = genSrc.indexOf("\n}", fnStart);
+    return fnStart >= 0 && genSrc.slice(fnStart, fnEnd + 2).includes("CAPTION_SYSTEM_V1.sceneLabel");
+  })(),
+);
+check(
+  "copy payload clones layoutSafeZone.sceneLabel",
+  payloadSrc.includes("sceneLabel: { ...s.layoutSafeZone.sceneLabel }"),
+);
+check(
+  "qa helper checks caption_system_v1_scene_label_out_of_range",
+  qaHelperSrc.includes("caption_system_v1_scene_label_out_of_range"),
+);
+check(
+  "panel displays sceneLabel safe-zone line",
+  panelSrc.includes('label="sceneLabel"') && panelSrc.includes("scene.layoutSafeZone.sceneLabel"),
+);
+
 console.log("\n[ SignalTranslationPreviewPanel — captionSafeZone summary display ]");
 check(
   "panel renders captionSafeZone warns summary row",

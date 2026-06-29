@@ -433,6 +433,27 @@ export function buildMoneyShortsScenePackageQaReport(
         sceneCaptionSzWarnings++;
       }
 
+      // sceneLabel safe-zone (required on every scene)
+      {
+        const msgs = checkSafeZoneAgainstPolicy(
+          lsz.sceneLabel,
+          CAPTION_SYSTEM_V1.sceneLabel,
+          "layoutSafeZone.sceneLabel",
+        );
+        msgs.forEach((msg) => {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.layoutSafeZone.sceneLabel`,
+              "caption_system_v1_scene_label_out_of_range",
+              msg,
+              n,
+            ),
+          );
+          sceneCaptionSzWarnings++;
+        });
+      }
+
       captionSafeZoneWarningCount += sceneCaptionSzWarnings;
     }
 

@@ -99,6 +99,7 @@ export function buildMoneyShortsGeneratedCopyPayload(
     layoutSafeZone: {
       ...(s.layoutSafeZone.hookTitle ? { hookTitle: { ...s.layoutSafeZone.hookTitle } } : {}),
       spokenCaption: { ...s.layoutSafeZone.spokenCaption },
+      sceneLabel: { ...s.layoutSafeZone.sceneLabel },
       ...(s.layoutSafeZone.sourceNote ? { sourceNote: { ...s.layoutSafeZone.sourceNote } } : {}),
     },
     imageTextPolicy: {

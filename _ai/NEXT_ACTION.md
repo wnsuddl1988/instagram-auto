@@ -2,15 +2,15 @@
 
 ## 2026-06-29 현재 — Caption System V1 Safe-Zone QA 추가 (uncommitted)
 
-상태: **MONEY_SHORTS_OS_CAPTION_SYSTEM_SAFE_ZONE_QA_READY**
+상태: **MONEY_SHORTS_OS_SCENE_LABEL_SAFE_ZONE_CONTRACT_READY**
 
 최신 HEAD:
 
-- `361de7b docs(state): clean route smoke checkpoint state` ← **현재 HEAD**
+- `fe6437f feat(source-facts): add caption system v1 safe-zone qa` ← **현재 HEAD**
+- `361de7b docs(state): clean route smoke checkpoint state`
 - `2b1db95 docs(state): record package preview route smoke pass`
-- `b2dadee feat(source-facts): include QA report in generated copy payload`
-- branch: `codex/source-first-blueprint-clean` (ahead 71)
-- working tree: 3 files modified, `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 72)
+- working tree: 7 files modified, `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -102,13 +102,24 @@
     - TypeScript/ESLint/git diff --check: 에러 없음.
     - checkpoint commit 대기 (Codex 승인 필요).
 
+12. **`money-shorts-os-scene-label-safe-zone-contract-v1`** (uncommitted)
+    - `signal-translation.ts`: LayoutSafeZone에 `sceneLabel: CaptionSafeZone` 추가 (required).
+    - `signal-translation-generator.ts`: createLayoutSafeZone에 `sceneLabel: CAPTION_SYSTEM_V1.sceneLabel` 추가.
+    - `signal-translation-fixtures.ts`: 6개 layoutSafeZone에 `sceneLabel: CAPTION_SYSTEM_V1.sceneLabel` 추가.
+    - `signal-translation-copy-payload.ts`: layoutSafeZone clone에 `sceneLabel: { ...s.layoutSafeZone.sceneLabel }` 추가.
+    - `signal-translation-package-qa.ts`: per-scene sceneLabel safe-zone check 추가 (warning-only, caption_system_v1_scene_label_out_of_range).
+    - `SignalTranslationPreviewPanel.tsx`: layoutSafeZone 표시에 sceneLabel 행 추가.
+    - `scripts/check-signal-translation-preview-static.mjs`: 5 new checks → 64/64 PASS.
+    - TypeScript/ESLint/git diff --check: 에러 없음.
+    - checkpoint commit 대기 (Codex 승인 필요).
+
 현재 상태:
 
-- caption system V1 safe-zone QA layer 추가, uncommitted.
-- static guard 59/59 PASS (기존 50 + 9 new: 6 V1 safe-zone + 3 missing metadata).
+- sceneLabel safe-zone contract slice 추가, uncommitted (7 code files).
+- static guard 64/64 PASS (기존 59 + 5 new).
 - push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
-1. **checkpoint commit** — `feat(source-facts): add caption system v1 safe-zone qa` (Codex 승인 필요)
+1. **checkpoint commit** — `feat(source-facts): add scene label safe-zone contract` (Codex 승인 필요)
 2. **다음 content/QA slice** (Codex 결정 대기)

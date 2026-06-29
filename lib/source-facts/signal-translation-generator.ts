@@ -568,6 +568,7 @@ function createLayoutSafeZone(includeHookTitle: boolean): SceneCard["layoutSafeZ
   return {
     ...(includeHookTitle ? { hookTitle: CAPTION_SYSTEM_V1.hookTitle } : {}),
     spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+    sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
     sourceNote: CAPTION_SYSTEM_V1.sourceNote,
   };
 }

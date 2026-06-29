@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-caption-system-safe-zone-qa-v1-review-fix`
+`money-shorts-os-scene-label-safe-zone-contract-v1`
 
 ## Project
 
@@ -11,8 +11,8 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `361de7b docs(state): clean route smoke checkpoint state` ← **현재 HEAD**
-- Current local status: ahead 71, caption system V1 safe-zone QA layer uncommitted
+- Latest HEAD: `fe6437f feat(source-facts): add caption system v1 safe-zone qa` ← **현재 HEAD**
+- Current local status: ahead 72, sceneLabel safe-zone contract slice uncommitted (7 files)
 - Push: Owner가 명시적으로 `push까지`라고 할 때만.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
@@ -22,12 +22,16 @@
 `money-shorts-os-caption-system-safe-zone-qa-v1` — Caption System V1 safe-zone QA layer 추가 (uncommitted).
 
 변경 파일:
-- `lib/source-facts/signal-translation-package-qa.ts` — CAPTION_SYSTEM_V1 import, checkSafeZoneAgainstPolicy helper (missing metadata warning 포함), captionSafeZoneWarningCount summary field, per-scene safe-zone check 3종 (spokenCaption/hookTitle/sourceNote)
-- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` — ScenePackageQaReportPanel summary에 captionSafeZone warns 셀 추가
-- `scripts/check-signal-translation-preview-static.mjs` — 9 new checks 추가 → 59/59 PASS (6 V1 safe-zone + 3 missing metadata)
+- `lib/source-facts/signal-translation.ts` — LayoutSafeZone에 `sceneLabel: CaptionSafeZone` 추가
+- `lib/source-facts/signal-translation-generator.ts` — createLayoutSafeZone에 `CAPTION_SYSTEM_V1.sceneLabel` 추가
+- `lib/source-facts/signal-translation-fixtures.ts` — 6개 layoutSafeZone에 `sceneLabel` 추가
+- `lib/source-facts/signal-translation-copy-payload.ts` — layoutSafeZone clone에 `sceneLabel: { ...s.layoutSafeZone.sceneLabel }` 추가
+- `lib/source-facts/signal-translation-package-qa.ts` — per-scene sceneLabel safe-zone check 추가 (caption_system_v1_scene_label_out_of_range)
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` — layoutSafeZone 표시에 `sceneLabel` 행 추가
+- `scripts/check-signal-translation-preview-static.mjs` — 5 new checks → 64/64 PASS
 
 검증:
-- `node scripts/check-signal-translation-preview-static.mjs` → 59/59 PASS
+- `node scripts/check-signal-translation-preview-static.mjs` → 64/64 PASS
 - TypeScript (project tsconfig.json): 변경 파일 에러 없음
 - ESLint: 에러 없음
 - `git diff --check`: whitespace error 없음 (LF→CRLF 경고는 Windows 기존 설정, 무해)
@@ -58,7 +62,7 @@ display-only 원칙:
 
 ## Recommended Next Task
 
-1. **checkpoint commit** — 이번 safe-zone QA slice commit 후 다음 slice 결정
+1. **checkpoint commit** — sceneLabel safe-zone contract slice commit (7 code files + _ai docs)
 2. **다음 content/QA slice** (Codex 결정 대기)
 
 ## Forbidden

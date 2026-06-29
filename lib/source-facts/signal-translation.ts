@@ -99,6 +99,7 @@ export interface CaptionSafeZone {
 export interface LayoutSafeZone {
   hookTitle?: CaptionSafeZone;
   spokenCaption: CaptionSafeZone;
+  sceneLabel: CaptionSafeZone;
   sourceNote?: CaptionSafeZone;
 }
 

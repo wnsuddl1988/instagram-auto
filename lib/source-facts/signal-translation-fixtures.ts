@@ -128,6 +128,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     layoutSafeZone: {
       hookTitle: CAPTION_SYSTEM_V1.hookTitle,
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 4,
@@ -164,6 +165,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     },
     layoutSafeZone: {
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 5,
@@ -200,6 +202,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     },
     layoutSafeZone: {
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 6,
@@ -236,6 +239,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     },
     layoutSafeZone: {
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 6,
@@ -272,6 +276,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     },
     layoutSafeZone: {
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 4,
@@ -307,6 +312,7 @@ export const exchangeRateSceneCards30: SceneCard[] = [
     },
     layoutSafeZone: {
       spokenCaption: CAPTION_SYSTEM_V1.spokenCaption,
+      sceneLabel: CAPTION_SYSTEM_V1.sceneLabel,
       sourceNote: CAPTION_SYSTEM_V1.sourceNote,
     },
     durationSec: 5,

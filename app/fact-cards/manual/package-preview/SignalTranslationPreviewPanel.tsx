@@ -707,6 +707,7 @@ function SceneCardPreviewItem({ scene }: { scene: SceneCard }) {
             <div className="space-y-0.5">
               <SafeZoneLine label="hookTitle" zone={scene.layoutSafeZone.hookTitle} />
               <SafeZoneLine label="spokenCaption" zone={scene.layoutSafeZone.spokenCaption} />
+              <SafeZoneLine label="sceneLabel" zone={scene.layoutSafeZone.sceneLabel} />
               <SafeZoneLine label="sourceNote" zone={scene.layoutSafeZone.sourceNote} />
             </div>
           }
