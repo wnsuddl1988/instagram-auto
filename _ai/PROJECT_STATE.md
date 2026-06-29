@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-29
 
-**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), Signal Translation display-only integration static guard script (35/35 PASS, checkpoint 1a268ba 완료), Scene Package QA helper (deterministic report layer, owner/QA warnings, 13-keyword risk scan, checkpoint 92fdef3 완료), ScenePackageQaReportPanel (display-only QA report panel, buildMoneyShortsScenePackageQaReport 인라인 호출, static guard 48/48, checkpoint eac702c 완료), **Generated Copy Payload에 scenePackageQaReport 필드 추가 (additive, schema version 유지, GeneratedCopyPayloadPreview QA 메타 표시 추가, static guard 50/50, 미commit)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
+**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), Signal Translation display-only integration static guard script (35/35 PASS, checkpoint 1a268ba 완료), Scene Package QA helper (deterministic report layer, owner/QA warnings, 13-keyword risk scan, checkpoint 92fdef3 완료), ScenePackageQaReportPanel (display-only QA report panel, buildMoneyShortsScenePackageQaReport 인라인 호출, static guard 48/48, checkpoint eac702c 완료), Generated Copy Payload에 scenePackageQaReport 필드 추가 (additive, schema version 유지, GeneratedCopyPayloadPreview QA 메타 표시 추가, static guard 50/50, checkpoint b2dadee 완료), **package-preview route smoke PASS (HTTP 200, console/hydration/key errors 없음, 30 details panels 모두 확인, display-only 원칙 유지 확인)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
@@ -84,8 +84,8 @@ Image Style V1:
 
 ## 최근 checkpoint
 
-- Uncommitted: `money-shorts-os-generated-copy-payload-qa-report-v1` (copy payload + preview + static guard) ← **현재 작업**
-- Commit: `eac702c` — `feat(package-preview): add scene package QA report panel` ← **마지막 checkpoint**
+- Commit: `b2dadee` — `feat(source-facts): include QA report in generated copy payload` ← **현재 HEAD**
+- Commit: `eac702c` — `feat(package-preview): add scene package QA report panel`
 - Commit: `92fdef3` — `feat(source-facts): add scene package QA helper`
 - Commit: `1a268ba` — `test(package-preview): add signal translation display-only static guard`
 - Commit: `f288969` — `feat(package-preview): add inflation package to signal translation panel`
@@ -93,7 +93,7 @@ Image Style V1:
 - Commit: `af84985` — `feat(package-preview): add generated copy payload preview`
 - Commit: `19ec7d6` — `feat(package-preview): add caption scene QA coverage`
 - Commit: `c34ef6f` — `feat(package-preview): add signal translation preview panel`
-- Branch: `codex/source-first-blueprint-clean` (ahead 68)
+- Branch: `codex/source-first-blueprint-clean` (ahead 69)
 - Push: 미실행
 - Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
@@ -166,18 +166,15 @@ Current UI slice:
 
 권장 다음 task:
 
-1. **checkpoint commit** (권장)
-   - `safe checkpoint commit authorized` 포함 Codex handoff 필요.
-   - 포함: `_ai` 3개 + `lib/source-facts/signal-translation-copy-payload.ts` + `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx` + `scripts/check-signal-translation-preview-static.mjs`.
-
-2. **route smoke verification** (선택사항)
-   - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
+1. **다음 content/QA slice** (Codex 결정 대기)
+   - Signal Translation preview/QA/copy payload/route smoke foundation 완료.
+   - Next substantive work은 Codex 결정 필요.
 
 세션 건강 메모:
 
-- Signal Translation preview/QA foundation이 여러 checkpoint로 완료됐고, 다음 독립 task 전 Claude Code `/clear` 또는 새 실행 세션 선택 가능.
+- Signal Translation preview/QA/copy payload foundation이 여러 checkpoint로 완료됐고, 다음 독립 task 전 Claude Code `/clear` 또는 새 실행 세션 선택 가능.
 - 단, `_ai` 문서가 최신화되었으므로 현재 세션에서 이어도 문제없음.
-- HEAD는 `eac702c`, ahead 68, clean working tree (untracked `piq_diag_out.txt` 제외).
+- HEAD는 `b2dadee`, ahead 69, clean working tree (untracked `piq_diag_out.txt` 제외).
 
 금지:
 

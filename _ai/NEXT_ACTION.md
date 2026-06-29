@@ -1,15 +1,15 @@
 # Next Action
 
-## 2026-06-29 현재 — Copy Payload QA Report 구현 완료 (미commit)
+## 2026-06-29 현재 — Route Smoke PASS
 
-상태: **MONEY_SHORTS_OS_GENERATED_COPY_PAYLOAD_QA_REPORT_IMPLEMENTED**
+상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_ROUTE_SMOKE_PASSED**
 
 최신 HEAD:
 
-- `eac702c feat(package-preview): add scene package QA report panel` ← **현재 HEAD**
+- `b2dadee feat(source-facts): include QA report in generated copy payload` ← **현재 HEAD**
+- `eac702c feat(package-preview): add scene package QA report panel`
 - `92fdef3 feat(source-facts): add scene package QA helper`
-- `1a268ba test(package-preview): add signal translation display-only static guard`
-- branch: `codex/source-first-blueprint-clean` (ahead 68)
+- branch: `codex/source-first-blueprint-clean` (ahead 69)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 - working tree: clean except untracked
@@ -97,20 +97,25 @@
    - `scripts/check-signal-translation-preview-static.mjs`: 13 new checks 추가 → 48/48 PASS.
    - checkpoint commit `eac702c feat(package-preview): add scene package QA report panel` 완료.
 
-9. **`money-shorts-os-generated-copy-payload-qa-report-v1`** (미commit)
+9. **`money-shorts-os-generated-copy-payload-qa-report-v1`** (b2dadee)
    - `signal-translation-copy-payload.ts`: `scenePackageQaReport` 필드 추가 (additive, schema version 유지).
    - `GeneratedCopyPayloadPreview` metadata grid에 QA valid/errors/warnings 칸 2개 추가 (display-only).
    - static guard 50/50 PASS (기존 48 + 2 new).
-   - 미commit.
+   - checkpoint commit `b2dadee feat(source-facts): include QA report in generated copy payload` 완료.
+
+10. **`money-shorts-os-package-preview-route-smoke-v1`** (미commit, verification-only)
+    - `/fact-cards/manual/package-preview` HTTP 200 PASS.
+    - server/console/hydration/key errors: 없음.
+    - 30 details panels (3 packages × 10), `qaReport.isValid` HTML 포함 확인.
+    - display-only 원칙 유지 (clipboard button 없음, 3 readOnly textarea + 1 기존 ledger textarea).
+    - 기존 gate/ledger/publishability 흐름 화면 무변경 확인.
+    - `.money-shorts-local/`: 앱 read-only 접근, write 없음.
 
 다음 safe work unit 후보:
 
-1. **checkpoint commit** (권장)
-   - `safe checkpoint commit authorized` 포함 Codex handoff 필요.
-   - 포함 파일: `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, `lib/source-facts/signal-translation-copy-payload.ts`, `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`, `scripts/check-signal-translation-preview-static.mjs`.
-
-2. **route smoke verification** (선택사항)
-   - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
+1. **다음 content/QA slice** (Codex 결정 대기)
+   - Signal Translation preview/QA/copy payload/route smoke foundation 완료.
+   - Next substantive work은 Codex 결정 필요.
 
 금지 유지:
 
