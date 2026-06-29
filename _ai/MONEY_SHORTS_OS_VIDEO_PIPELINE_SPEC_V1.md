@@ -162,6 +162,7 @@ Video Blueprint는 Fact Card를 영상 구조로 변환한 쇼츠 1편의 전체
   },
   "layoutSafeZone": {
     "hookTitle": "x 90-990, y 300-620",
+    "sceneLabel": "x 80-420, y 180-250",
     "spokenCaption": "x 90-880, y 1180-1480",
     "sourceNote": "x 90-760, y 1500-1560"
   },

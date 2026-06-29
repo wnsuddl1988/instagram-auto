@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Caption System V1 Safe-Zone QA 추가 (uncommitted)
+## 2026-06-29 현재 — SceneLabel Safe-Zone Contract Checkpoint 완료
 
-상태: **MONEY_SHORTS_OS_SCENE_LABEL_SAFE_ZONE_CONTRACT_READY**
+상태: **MONEY_SHORTS_OS_SCENE_LABEL_SAFE_ZONE_CONTRACT_COMMITTED**
 
 최신 HEAD:
 
-- `fe6437f feat(source-facts): add caption system v1 safe-zone qa` ← **현재 HEAD**
+- `67bfd89 feat(source-facts): add scene label safe-zone contract` ← **현재 HEAD**
+- `fe6437f feat(source-facts): add caption system v1 safe-zone qa`
 - `361de7b docs(state): clean route smoke checkpoint state`
-- `2b1db95 docs(state): record package preview route smoke pass`
-- branch: `codex/source-first-blueprint-clean` (ahead 72)
-- working tree: 7 files modified, `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 73)
+- working tree: clean except `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -93,33 +93,30 @@
     - `.money-shorts-local/`: 앱 read-only 접근, write 없음.
     - checkpoint commit `2b1db95 docs(state): record package preview route smoke pass` 완료.
 
-11. **`money-shorts-os-caption-system-safe-zone-qa-v1`** (uncommitted)
-    - `signal-translation-package-qa.ts`: CAPTION_SYSTEM_V1 import, `checkSafeZoneAgainstPolicy()` helper, `captionSafeZoneWarningCount` summary field.
+11. **`money-shorts-os-caption-system-safe-zone-qa-v1`** (fe6437f)
+    - `signal-translation-package-qa.ts`: CAPTION_SYSTEM_V1 import, `checkSafeZoneAgainstPolicy()` helper (missing metadata warning 포함), `captionSafeZoneWarningCount` summary field.
     - per-scene safe-zone check 3종 (spokenCaption/hookTitle/sourceNote vs CAPTION_SYSTEM_V1 bounds).
     - `isValid` 의미 유지 — safe-zone 문제는 warning-only, gate 변경 없음.
-    - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 captionSafeZone warns 셀 추가 (display-only, "not a publication gate" 유지).
-    - `scripts/check-signal-translation-preview-static.mjs`: 9 new checks → 59/59 PASS (6 V1 safe-zone + 3 missing metadata).
-    - TypeScript/ESLint/git diff --check: 에러 없음.
-    - checkpoint commit 대기 (Codex 승인 필요).
+    - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 captionSafeZone warns 셀 추가 (display-only).
+    - static guard 59/59 PASS (50 + 9 new).
+    - checkpoint commit `fe6437f feat(source-facts): add caption system v1 safe-zone qa` 완료.
 
-12. **`money-shorts-os-scene-label-safe-zone-contract-v1`** (uncommitted)
-    - `signal-translation.ts`: LayoutSafeZone에 `sceneLabel: CaptionSafeZone` 추가 (required).
+12. **`money-shorts-os-scene-label-safe-zone-contract-v1`** (67bfd89)
+    - `signal-translation.ts`: LayoutSafeZone에 `sceneLabel: CaptionSafeZone` required 필드 추가.
     - `signal-translation-generator.ts`: createLayoutSafeZone에 `sceneLabel: CAPTION_SYSTEM_V1.sceneLabel` 추가.
     - `signal-translation-fixtures.ts`: 6개 layoutSafeZone에 `sceneLabel: CAPTION_SYSTEM_V1.sceneLabel` 추가.
     - `signal-translation-copy-payload.ts`: layoutSafeZone clone에 `sceneLabel: { ...s.layoutSafeZone.sceneLabel }` 추가.
     - `signal-translation-package-qa.ts`: per-scene sceneLabel safe-zone check 추가 (warning-only, caption_system_v1_scene_label_out_of_range).
     - `SignalTranslationPreviewPanel.tsx`: layoutSafeZone 표시에 sceneLabel 행 추가.
-    - `scripts/check-signal-translation-preview-static.mjs`: 5 new checks → 64/64 PASS.
-    - TypeScript/ESLint/git diff --check: 에러 없음.
-    - checkpoint commit 대기 (Codex 승인 필요).
+    - static guard 64/64 PASS (59 + 5 new).
+    - checkpoint commit `67bfd89 feat(source-facts): add scene label safe-zone contract` 완료.
 
 현재 상태:
 
-- sceneLabel safe-zone contract slice 추가, uncommitted (7 code files).
-- static guard 64/64 PASS (기존 59 + 5 new).
+- sceneLabel safe-zone contract checkpoint 완료. working tree clean.
+- static guard 64/64 PASS.
 - push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
-1. **checkpoint commit** — `feat(source-facts): add scene label safe-zone contract` (Codex 승인 필요)
-2. **다음 content/QA slice** (Codex 결정 대기)
+1. **다음 content/QA slice** (Codex 결정 대기)

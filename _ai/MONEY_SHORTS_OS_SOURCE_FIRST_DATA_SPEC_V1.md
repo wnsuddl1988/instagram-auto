@@ -185,7 +185,7 @@ Scene Card에서 함께 파생되는 항목:
 - sourceCitationIds
 - source note
 - imageTextPolicy
-- layoutSafeZone
+- layoutSafeZone (Hook Title / Scene Label / Spoken Caption / Source Note)
 - risk notes
 
 Scene Card는 대본/자막/이미지/음성을 따로 생성해서 맞추는 방식이 아니라, 장면 목적 하나에서 모든 multimodal output을 함께 만든다.
