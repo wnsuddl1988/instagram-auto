@@ -19,6 +19,12 @@ export type {
 export { buildRenderManifest } from "./builder";
 export type { RenderPlanBuilderOptions } from "./builder";
 
+export { buildRenderManifestFromScenePackage } from "./scene-package-adapter";
+export type {
+  ScenePackageAdapterOptions,
+  ScenePackageRenderManifestResult,
+} from "./scene-package-adapter";
+
 export { validateRenderManifest } from "./validation";
 
 export {
@@ -26,4 +32,6 @@ export {
   inflationRenderPlan30WithImagePrompts,
   exchangeRateRenderPlan15,
   MOCK_RENDER_PLANS,
+  providerCandidateRenderManifestResult,
+  providerCandidateRenderManifest,
 } from "./fixtures";
