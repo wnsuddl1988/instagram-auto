@@ -1,18 +1,18 @@
 # Next Action
 
-## 2026-06-29 현재 — Scene Package QA helper review-fix 완료 (미commit)
+## 2026-06-29 현재 — QA Report Panel 구현 완료 (미commit)
 
-상태: **MONEY_SHORTS_OS_SCENE_PACKAGE_QA_HELPER_REVIEW_FIXED**
+상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_QA_REPORT_PANEL_IMPLEMENTED**
 
 최신 HEAD:
 
-- `1a268ba test(package-preview): add signal translation display-only static guard` ← 최신 checkpoint
+- `92fdef3 feat(source-facts): add scene package QA helper` ← 마지막 checkpoint (uncommitted work above)
+- `1a268ba test(package-preview): add signal translation display-only static guard`
 - `f288969 feat(package-preview): add inflation package to signal translation panel`
-- `012a25c feat(source-facts): add inflation life economy scene fixture`
-- branch: `codex/source-first-blueprint-clean` (ahead 66)
+- branch: `codex/source-first-blueprint-clean` (ahead 67)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- working tree: uncommitted (`_ai/` docs + QA helper slice)
+- working tree: clean except untracked
 
 완료된 slice:
 
@@ -61,16 +61,16 @@
    - `node scripts/check-signal-translation-preview-static.mjs` → 35/35 PASS.
    - checkpoint commit `1a268ba test(package-preview): add signal translation display-only static guard` 완료.
 
-7. **`money-shorts-os-scene-package-qa-helper-v1-review-fix`** (미commit)
+7. **`money-shorts-os-scene-package-qa-helper-v1`** (92fdef3)
    - `lib/source-facts/signal-translation-package-qa.ts` 신규 추가.
    - `MoneyShortsScenePackageQaIssue`, `MoneyShortsScenePackageQaReport`, `buildMoneyShortsScenePackageQaReport()` export.
    - 기존 `validateSceneCardsForGeneration()` 재사용 (scene validation).
-   - **review-fix**: citation validation은 `scenePackage.citationValidation`(generator가 FactCard 기준으로 계산한 source-of-truth) 재사용. `validateSignalTranslationCitationIds` 직접 호출 제거.
+   - citation validation: `scenePackage.citationValidation`(generator 계산 source-of-truth) 재사용.
    - Owner/QA 레이어 warning: hookTitle lines / spokenCaption length / imagePrompt / imageTextPolicy / voiceTiming emphasisWords / layoutSafeZone / sourceNote / riskNotes / brief 4개 필드.
    - risk keyword scan (structural): 13 keywords, warning-only, gate 변경 없음.
    - `lib/source-facts/signal-translation-fixtures.ts`: 3개 QA report fixture export 추가.
    - `lib/source-facts/index.ts`: `signal-translation-package-qa` export 추가.
-   - TypeScript / ESLint `--max-warnings=0` PASS.
+   - checkpoint commit `92fdef3 feat(source-facts): add scene package QA helper` 완료.
 
 현재 상태:
 
@@ -85,15 +85,10 @@
 다음 safe work unit 후보:
 
 1. **checkpoint commit** (권장)
-   - 포함 파일: `lib/source-facts/signal-translation-package-qa.ts`, `lib/source-facts/signal-translation-fixtures.ts`, `lib/source-facts/index.ts`, `_ai/` docs 3개.
-   - 제외: `piq_diag_out.txt`, UI/route 파일.
-   - `safe checkpoint commit authorized` 문구와 포함/제외 파일 명시 필요.
+   - `safe checkpoint commit authorized` 포함 Codex handoff 필요.
+   - 포함 파일: `_ai/HANDOFF_NOW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`, `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`, `scripts/check-signal-translation-preview-static.mjs`.
 
-2. **package-preview QA report panel 연결** (선택사항)
-   - `SignalTranslationPreviewPanel`에 `MoneyShortsScenePackageQaReport` display-only 패널 추가.
-   - display-only 원칙 유지, Codex 결정 대기.
-
-3. **route smoke verification** (선택사항)
+2. **route smoke verification** (선택사항)
    - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
 
 금지 유지:

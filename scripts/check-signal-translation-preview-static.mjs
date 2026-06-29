@@ -14,11 +14,13 @@ const PAGE_PATH    = resolve(__dirname, "../app/fact-cards/manual/package-previe
 const PANEL_PATH   = resolve(__dirname, "../app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx");
 const FIXTURES_PATH = resolve(__dirname, "../lib/source-facts/signal-translation-fixtures.ts");
 const PAYLOAD_PATH  = resolve(__dirname, "../lib/source-facts/signal-translation-copy-payload.ts");
+const QA_HELPER_PATH = resolve(__dirname, "../lib/source-facts/signal-translation-package-qa.ts");
 
 const pageSrc    = readFileSync(PAGE_PATH, "utf-8");
 const panelSrc   = readFileSync(PANEL_PATH, "utf-8");
 const fixturesSrc = readFileSync(FIXTURES_PATH, "utf-8");
 const payloadSrc  = readFileSync(PAYLOAD_PATH, "utf-8");
+const qaHelperSrc = readFileSync(QA_HELPER_PATH, "utf-8");
 
 // Non-comment lines helper (strip lines that start with optional whitespace + // or *)
 function nonCommentLines(src) {
@@ -143,6 +145,72 @@ check("no navigator.clipboard",  !payloadSrc.includes("navigator.clipboard"));
 check("no fetch( call",          !payloadNonComment.includes("fetch("));
 check("no localStorage",         !payloadSrc.includes("localStorage"));
 check("no sessionStorage",       !payloadSrc.includes("sessionStorage"));
+
+// ── QA report panel integration checks ───────────────────────────────────────
+console.log("\n[ SignalTranslationPreviewPanel — ScenePackageQaReportPanel integration ]");
+check(
+  "panel defines ScenePackageQaReportPanel component",
+  panelSrc.includes("ScenePackageQaReportPanel"),
+);
+check(
+  "panel imports buildMoneyShortsScenePackageQaReport",
+  panelSrc.includes("buildMoneyShortsScenePackageQaReport"),
+);
+check(
+  "panel imports MoneyShortsScenePackageQaReport type",
+  panelSrc.includes("MoneyShortsScenePackageQaReport"),
+);
+check(
+  "panel renders ScenePackageQaReportPanel with report prop",
+  panelSrc.includes("<ScenePackageQaReportPanel") && panelSrc.includes("report="),
+);
+check(
+  "panel calls buildMoneyShortsScenePackageQaReport inline",
+  panelSrc.includes("buildMoneyShortsScenePackageQaReport(scenePackage)"),
+);
+check(
+  "ScenePackageQaReportPanel uses <details> (default closed)",
+  (() => {
+    const start = panelSrc.indexOf("function ScenePackageQaReportPanel");
+    if (start < 0) return false;
+    // find the next function definition after ScenePackageQaReportPanel to bound the search
+    const nextFn = panelSrc.indexOf("\nfunction ", start + 1);
+    const block = nextFn > 0 ? panelSrc.slice(start, nextFn) : panelSrc.slice(start);
+    return block.includes("<details");
+  })(),
+);
+check(
+  "ScenePackageQaReportPanel references 'not a publication gate'",
+  panelSrc.includes("not a publication gate"),
+);
+
+console.log("\n[ signal-translation-package-qa.ts — required exports ]");
+check(
+  "qa helper exports buildMoneyShortsScenePackageQaReport",
+  qaHelperSrc.includes("export function buildMoneyShortsScenePackageQaReport"),
+);
+check(
+  "qa helper exports MoneyShortsScenePackageQaReport interface",
+  qaHelperSrc.includes("export interface MoneyShortsScenePackageQaReport"),
+);
+check(
+  "qa helper exports MoneyShortsScenePackageQaIssue interface",
+  qaHelperSrc.includes("export interface MoneyShortsScenePackageQaIssue"),
+);
+
+console.log("\n[ signal-translation-fixtures.ts — QA report fixture exports ]");
+check(
+  "fixtures exports exchangeRateGeneratedSignalTranslationPackageQaReport",
+  fixturesSrc.includes("export const exchangeRateGeneratedSignalTranslationPackageQaReport"),
+);
+check(
+  "fixtures exports interestRateGeneratedSignalTranslationPackageQaReport",
+  fixturesSrc.includes("export const interestRateGeneratedSignalTranslationPackageQaReport"),
+);
+check(
+  "fixtures exports inflationGeneratedSignalTranslationPackageQaReport",
+  fixturesSrc.includes("export const inflationGeneratedSignalTranslationPackageQaReport"),
+);
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log(`\n──────────────────────────────────────`);

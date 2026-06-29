@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-scene-package-qa-helper-v1-review-fix`
+`money-shorts-os-package-preview-qa-report-panel-v1`
 
 ## Project
 
@@ -11,53 +11,49 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `1a268ba test(package-preview): add signal translation display-only static guard`
-- Current local status: ahead 66, uncommitted changes (QA helper slice + `_ai/` docs sync)
+- Latest HEAD: `92fdef3 feat(source-facts): add scene package QA helper` (uncommitted work above)
+- Current local status: ahead 67 + uncommitted changes in 2 files
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
-Added pure deterministic QA helper for Money Shorts Scene Packages:
+`money-shorts-os-package-preview-qa-report-panel-v1` 구현 완료 (미commit).
 
-- Added `lib/source-facts/signal-translation-package-qa.ts`
-  - `MoneyShortsScenePackageQaIssue` — per-issue type with `scope/field/code/message/sceneNumber`.
-  - `MoneyShortsScenePackageQaReport` — `isValid/errors/warnings/summary` structure.
-  - `buildMoneyShortsScenePackageQaReport(scenePackage)` — core builder.
-  - Reuses `validateSceneCardsForGeneration()` for scene base validation.
-  - **review-fix**: citation validation은 `scenePackage.citationValidation`(generator가 FactCard 기준으로 계산한 source-of-truth)을 재사용. `validateSignalTranslationCitationIds` import 제거.
-  - Adds Owner/QA-layer warnings: hookTitle lines, spokenCaption length, imagePrompt, imageTextPolicy, voiceTiming emphasisWords, layoutSafeZone.spokenCaption, sourceNote, riskNotes, viewerTakeaway, recommendedActions, actionBoundaries, doNotOverclaimActions.
-  - Risk keyword scan (structural only): 13 keywords across 3 categories (deterministic forecast / investment advice / fear hype). Warning-only, no gate change.
-- Updated `lib/source-facts/signal-translation-fixtures.ts`
-  - Added `buildMoneyShortsScenePackageQaReport` import.
-  - Added 3 QA report exports: `exchangeRateGeneratedSignalTranslationPackageQaReport`, `interestRateGeneratedSignalTranslationPackageQaReport`, `inflationGeneratedSignalTranslationPackageQaReport`.
-- Updated `lib/source-facts/index.ts`
-  - Added `export * from "./signal-translation-package-qa"`.
+Changed files:
+- `app/fact-cards/manual/package-preview/SignalTranslationPreviewPanel.tsx`
+  - import: `buildMoneyShortsScenePackageQaReport`, `MoneyShortsScenePackageQaReport` from `signal-translation-package-qa`
+  - `ScenePackageQaReportPanel` 컴포넌트 추가 (display-only, `<details>` default closed)
+  - `buildMoneyShortsScenePackageQaReport(scenePackage)` 인라인 호출 — `PackageQaSummaryPanel` 바로 아래에 삽입
+- `scripts/check-signal-translation-preview-static.mjs`
+  - `signal-translation-package-qa.ts` 파일 로드 추가
+  - 3개 블록 13 checks 추가 (ScenePackageQaReportPanel integration, qa helper exports, QA report fixture exports)
+  - 기존 35 checks 유지 → 총 48 checks
 
 Important invariant:
 
-- No UI/route/component/generator/publishability/gate logic changed.
-- FactCard type not modified.
-- No clipboard write, render, upload, or DB change.
+- No 'use client', no useState/useEffect, no clipboard write, no fetch, no localStorage/sessionStorage.
+- FactCard type / gate / ledger / generator / publishability flow 무변경.
+- `signal-translation-package-qa.ts` source-facts logic 무변경.
 
 ## Verification Evidence
 
 Passed:
 
-- `npx tsc --noEmit --project tsconfig.json` — no errors in changed files.
-- `npx eslint` targeted on changed files — `--max-warnings=0` PASS.
-- `git diff --check` — no whitespace errors.
+- `node scripts/check-signal-translation-preview-static.mjs` — 48/48 PASS.
+- `npx tsc --noEmit --skipLibCheck` — no errors in changed files (output/ binary pre-existing errors excluded).
+- `npx eslint ... --max-warnings=0` — PASS on changed files.
+- `git diff --check` — no whitespace errors (line ending warnings only, pre-existing).
 
 Not run:
 
-- Runtime `isValid` check — `@/` alias not resolvable via Node.js directly; TypeScript check is the validated equivalent.
 - Browser/route smoke (`.money-shorts-local/` access not permitted by Owner).
 
 ## Recommended Next Task
 
-- checkpoint commit for this slice (`lib/source-facts/signal-translation-package-qa.ts` + fixture/index updates + `_ai/` docs)
-- Or connect QA report to package-preview panel (display-only, Codex decision).
+- Checkpoint commit for this slice (safe checkpoint commit authorized 필요).
+- Or route smoke verification when Owner explicitly permits `.money-shorts-local/` access.
 
 ## Forbidden
 
