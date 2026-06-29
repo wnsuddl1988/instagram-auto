@@ -1,0 +1,366 @@
+/**
+ * Local mock TTS audio mux: generates placeholder audio and muxes into a visual-only mp4.
+ *
+ * Usage:
+ *   node scripts/mux-local-tts-audio-into-visual-mp4.mjs \
+ *     --video  <visual-only mp4 path> \
+ *     --script <tts script JSON path> \
+ *     --out-dir <output directory (must be outside repo)>
+ *
+ * Security constraints:
+ * - No shell: true. All processes via spawnSync args array only.
+ * - No exec/execSync. No shell string command.
+ * - No network/fetch/API calls (OpenAI, ElevenLabs, Google, Azure, etc.).
+ * - out-dir must be outside repo root.
+ * - No .money-shorts-local/ access.
+ * - No output artifacts inside repo.
+ * - piq_diag_out.txt never touched.
+ *
+ * TTS mode: local_mock — ffmpeg lavfi anoisesrc placeholder audio (not real speech).
+ * Final voice quality must be validated with ElevenLabs in a separate task.
+ */
+
+import { spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { resolve, dirname, join, basename } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "..");
+
+// ── CLI args ────────────────────────────────────────────────────────────────────
+const args = process.argv.slice(2);
+function getArg(name) {
+  const idx = args.indexOf(name);
+  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
+  return null;
+}
+
+const videoPath = getArg("--video");
+const scriptPath = getArg("--script");
+const outDir = getArg("--out-dir");
+
+if (!videoPath || !scriptPath || !outDir) {
+  console.error("Usage: node mux-local-tts-audio-into-visual-mp4.mjs --video <path> --script <path> --out-dir <path>");
+  process.exit(1);
+}
+
+const videoAbsPath = resolve(videoPath);
+const scriptAbsPath = resolve(REPO_ROOT, scriptPath);
+const outDirAbs = resolve(outDir);
+
+// Safety: out-dir must not be inside repo root
+if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+  console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+  process.exit(1);
+}
+
+// Safety: .money-shorts-local forbidden
+if ([videoAbsPath, scriptAbsPath, outDirAbs].some((p) => p.includes(".money-shorts-local"))) {
+  console.error("ABORT: .money-shorts-local access forbidden.");
+  process.exit(1);
+}
+
+console.log(`\n[mux-local-tts] video:   ${videoAbsPath}`);
+console.log(`[mux-local-tts] script:  ${scriptAbsPath}`);
+console.log(`[mux-local-tts] out-dir: ${outDirAbs}\n`);
+
+// ── Load TTS script ─────────────────────────────────────────────────────────────
+let ttsScript;
+try {
+  ttsScript = JSON.parse(readFileSync(scriptAbsPath, "utf-8"));
+} catch (e) {
+  console.error(`ABORT: Cannot read TTS script: ${e.message}`);
+  process.exit(1);
+}
+
+if (ttsScript.ttsMode !== "local_mock") {
+  console.error(`ABORT: Only ttsMode=local_mock is supported in this renderer. Got: ${ttsScript.ttsMode}`);
+  process.exit(1);
+}
+
+const { scriptId, manifestId, scenes, targetDurationSec } = ttsScript;
+const totalSceneDurationSec = scenes.reduce((s, sc) => s + sc.durationSec, 0);
+
+console.log(`  scriptId:        ${scriptId}`);
+console.log(`  manifestId:      ${manifestId}`);
+console.log(`  ttsMode:         ${ttsScript.ttsMode}`);
+console.log(`  scenes:          ${scenes.length}`);
+console.log(`  targetDuration:  ${targetDurationSec}s`);
+console.log(`  sceneTotal:      ${totalSceneDurationSec}s`);
+console.log();
+
+// ── Prepare output dir ──────────────────────────────────────────────────────────
+mkdirSync(outDirAbs, { recursive: true });
+
+// ── Step 1: Get video duration via ffprobe ──────────────────────────────────────
+console.log("[step 1/4] Probing source video...");
+const probeVideoArgs = [
+  "-v", "quiet",
+  "-print_format", "json",
+  "-show_format",
+  "-show_streams",
+  videoAbsPath,
+];
+
+const probeVideoResult = spawnSync("ffprobe", probeVideoArgs, {
+  encoding: "utf-8",
+  maxBuffer: 2 * 1024 * 1024,
+});
+
+if (probeVideoResult.status !== 0) {
+  console.error(`ABORT: ffprobe failed on source video (exit ${probeVideoResult.status})`);
+  if (probeVideoResult.stderr) console.error(probeVideoResult.stderr.slice(-300));
+  process.exit(1);
+}
+
+let videoProbe;
+try {
+  videoProbe = JSON.parse(probeVideoResult.stdout);
+} catch {
+  console.error("ABORT: Cannot parse ffprobe output for source video.");
+  process.exit(1);
+}
+
+const videoFmt = videoProbe.format;
+const videoStreams = videoProbe.streams ?? [];
+const videoStream = videoStreams.find((s) => s.codec_type === "video");
+const videoDurationSec = parseFloat(videoFmt?.duration ?? "0");
+const videoWidthPx = videoStream?.width ?? 0;
+const videoHeightPx = videoStream?.height ?? 0;
+const videoCodec = videoStream?.codec_name ?? "unknown";
+
+console.log(`  source video duration: ${videoDurationSec}s`);
+console.log(`  source resolution:     ${videoWidthPx}x${videoHeightPx}`);
+console.log(`  source codec:          ${videoCodec}`);
+console.log();
+
+// ── Step 2: Generate local mock TTS audio via ffmpeg lavfi ─────────────────────
+// local_mock: ffmpeg lavfi anoisesrc (pink noise) at low amplitude for duration.
+// This is NOT real speech — it is a pipeline validation placeholder.
+// Real narration text is stored in the script fixture for ElevenLabs final-pass.
+console.log("[step 2/4] Generating local mock TTS audio (lavfi placeholder)...");
+
+const mockAudioPath = join(outDirAbs, `${scriptId}-mock-audio.wav`);
+
+// Generate silence-dominant audio with faint pink noise as a placeholder.
+// anoisesrc: pink noise, colour=pink, amplitude=0.03 (barely audible),
+// duration = totalSceneDurationSec
+const mockAudioArgs = [
+  "-y",
+  "-f", "lavfi",
+  "-i", `anoisesrc=colour=pink:amplitude=0.03:duration=${totalSceneDurationSec}`,
+  "-ar", "44100",
+  "-ac", "1",
+  mockAudioPath,
+];
+
+const mockAudioResult = spawnSync("ffmpeg", mockAudioArgs, {
+  encoding: "utf-8",
+  maxBuffer: 4 * 1024 * 1024,
+});
+
+if (mockAudioResult.status !== 0) {
+  console.error(`ABORT: ffmpeg mock audio generation failed (exit ${mockAudioResult.status})`);
+  if (mockAudioResult.stderr) console.error(mockAudioResult.stderr.slice(-500));
+  process.exit(1);
+}
+console.log(`  mock audio: ${mockAudioPath}`);
+
+// Probe raw audio duration
+const probeAudioArgs = [
+  "-v", "quiet",
+  "-print_format", "json",
+  "-show_format",
+  mockAudioPath,
+];
+const probeAudioResult = spawnSync("ffprobe", probeAudioArgs, {
+  encoding: "utf-8",
+  maxBuffer: 1 * 1024 * 1024,
+});
+
+let rawAudioDurationSec = totalSceneDurationSec;
+if (probeAudioResult.status === 0) {
+  try {
+    const audioProbe = JSON.parse(probeAudioResult.stdout);
+    rawAudioDurationSec = parseFloat(audioProbe.format?.duration ?? String(totalSceneDurationSec));
+  } catch {
+    // keep fallback
+  }
+}
+console.log(`  raw audio duration: ${rawAudioDurationSec}s`);
+console.log();
+
+// ── Step 3: Mux video + audio into final mp4 ───────────────────────────────────
+// Duration policy: final mp4 is locked to video duration (videoDurationSec).
+// -t videoDurationSec prevents audio from extending the output.
+console.log("[step 3/4] Muxing video + audio...");
+
+const outputBaseName = basename(videoAbsPath, ".mp4").replace(/-visual-only$/, "") + "-tts-mux.mp4";
+const outputMp4Path = join(outDirAbs, outputBaseName);
+
+const muxArgs = [
+  "-y",
+  // Input 1: visual-only video
+  "-i", videoAbsPath,
+  // Input 2: mock audio
+  "-i", mockAudioPath,
+  // Map video from input 0, audio from input 1
+  "-map", "0:v:0",
+  "-map", "1:a:0",
+  // Video: stream copy (no re-encode needed)
+  "-c:v", "copy",
+  // Audio: encode to aac
+  "-c:a", "aac",
+  "-b:a", "128k",
+  // Lock duration to video (prevents audio from extending output)
+  "-t", String(videoDurationSec),
+  "-shortest",
+  outputMp4Path,
+];
+
+console.log(`  output: ${outputMp4Path}`);
+console.log(`  ffmpeg args: ${muxArgs.join(" ")}\n`);
+
+const muxResult = spawnSync("ffmpeg", muxArgs, {
+  encoding: "utf-8",
+  maxBuffer: 10 * 1024 * 1024,
+});
+
+const ffmpegExitCode = muxResult.status ?? -1;
+
+if (ffmpegExitCode !== 0) {
+  console.error(`\nFFMPEG MUX FAILED (exit ${ffmpegExitCode})`);
+  if (muxResult.stderr) {
+    const lines = muxResult.stderr.split("\n");
+    console.error(lines.slice(-30).join("\n"));
+  }
+  process.exit(1);
+}
+
+if (muxResult.stderr) {
+  const lines = muxResult.stderr.split("\n").filter((l) => l.trim());
+  console.log("  ffmpeg output (tail):");
+  lines.slice(-6).forEach((l) => console.log("    " + l));
+}
+console.log();
+
+// ── Step 4: Verify muxed mp4 with ffprobe ─────────────────────────────────────
+console.log("[step 4/4] Verifying muxed mp4 with ffprobe...");
+const probeMuxArgs = [
+  "-v", "quiet",
+  "-print_format", "json",
+  "-show_format",
+  "-show_streams",
+  outputMp4Path,
+];
+
+const probeMuxResult = spawnSync("ffprobe", probeMuxArgs, {
+  encoding: "utf-8",
+  maxBuffer: 2 * 1024 * 1024,
+});
+
+const ffprobeExitCode = probeMuxResult.status ?? -1;
+
+if (ffprobeExitCode !== 0) {
+  console.error("ABORT: ffprobe verification FAILED — cannot validate muxed output.");
+  if (probeMuxResult.stderr) console.error(probeMuxResult.stderr.slice(-300));
+  process.exit(1);
+}
+
+let muxProbe;
+try {
+  muxProbe = JSON.parse(probeMuxResult.stdout);
+} catch {
+  console.error("ABORT: Cannot parse ffprobe output for muxed mp4.");
+  process.exit(1);
+}
+
+const muxFmt = muxProbe.format;
+const muxStreams = muxProbe.streams ?? [];
+const muxVideoStream = muxStreams.find((s) => s.codec_type === "video");
+const muxAudioStreams = muxStreams.filter((s) => s.codec_type === "audio");
+const muxedDurationSec = parseFloat(muxFmt?.duration ?? "0");
+const muxFileSizeBytes = parseInt(muxFmt?.size ?? "0", 10);
+const muxedVideoCodec = muxVideoStream?.codec_name ?? "unknown";
+const muxedAudioCodec = muxAudioStreams[0]?.codec_name ?? "none";
+
+console.log(`  format:        ${muxFmt?.format_name}`);
+console.log(`  duration:      ${muxedDurationSec}s  (video: ${videoDurationSec}s, target: ${targetDurationSec}s)`);
+console.log(`  size:          ${Math.round(muxFileSizeBytes / 1024)}KB`);
+console.log(`  video codec:   ${muxedVideoCodec}`);
+console.log(`  resolution:    ${muxVideoStream?.width}x${muxVideoStream?.height}`);
+console.log(`  audio streams: ${muxAudioStreams.length}`);
+console.log(`  audio codec:   ${muxedAudioCodec}`);
+
+// Duration tolerance: ± 0.5s from targetDurationSec
+const durationLo = targetDurationSec - 0.5;
+const durationHi = targetDurationSec + 0.5;
+const durationDeltaSec = parseFloat((rawAudioDurationSec - videoDurationSec).toFixed(4));
+
+const checks = [
+  ["format is mp4", muxFmt?.format_name?.includes("mp4")],
+  ["video codec h264", muxedVideoCodec === "h264"],
+  ["width 1080", muxVideoStream?.width === 1080],
+  ["height 1920", muxVideoStream?.height === 1920],
+  [`duration ${targetDurationSec}s ± 0.5s`, muxedDurationSec >= durationLo && muxedDurationSec <= durationHi],
+  ["audio stream count >= 1", muxAudioStreams.length >= 1],
+  ["audio codec aac", muxedAudioCodec === "aac"],
+];
+
+console.log();
+let allPass = true;
+for (const [label, ok] of checks) {
+  console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}`);
+  if (!ok) allPass = false;
+}
+
+if (!allPass) {
+  console.error("\nSome validation checks FAILED.");
+  process.exit(1);
+}
+
+// ── Build risk notes ───────────────────────────────────────────────────────────
+const riskNotes = [...(ttsScript.riskNotes ?? [])];
+
+const audioDelta = rawAudioDurationSec - videoDurationSec;
+if (audioDelta < -1.0) {
+  riskNotes.push(`audio padded: raw audio (${rawAudioDurationSec.toFixed(3)}s) is ${Math.abs(audioDelta).toFixed(3)}s shorter than video (${videoDurationSec.toFixed(3)}s). Silence padding applied.`);
+} else if (audioDelta > 1.0) {
+  riskNotes.push(`audio trimmed: raw audio (${rawAudioDurationSec.toFixed(3)}s) is ${audioDelta.toFixed(3)}s longer than video (${videoDurationSec.toFixed(3)}s). Narration tail may be cut.`);
+}
+
+// ── Write tts-mux-summary.json ─────────────────────────────────────────────────
+const summaryPath = join(outDirAbs, "tts-mux-summary.json");
+const summary = {
+  schemaVersion: "money_shorts_tts_mux_summary_v1",
+  mode: "local_mock",
+  scriptId,
+  manifestId,
+  sourceVideoPath: videoAbsPath,
+  mockAudioPath,
+  outputMp4Path,
+  ttsScriptPath: scriptAbsPath,
+  targetDurationSec,
+  videoDurationSec,
+  rawAudioDurationSec,
+  muxedDurationSec,
+  durationDeltaSec,
+  widthPx: muxVideoStream?.width ?? 0,
+  heightPx: muxVideoStream?.height ?? 0,
+  videoCodec: muxedVideoCodec,
+  audioCodec: muxedAudioCodec,
+  audioStreamCount: muxAudioStreams.length,
+  fileSizeBytes: muxFileSizeBytes,
+  ffmpegExitCode,
+  ffprobeExitCode,
+  renderedAt: new Date().toISOString(),
+  riskNotes,
+  status: "success",
+};
+
+writeFileSync(summaryPath, JSON.stringify(summary, null, 2), "utf-8");
+
+console.log(`\n[done] tts-mux-summary.json: ${summaryPath}`);
+console.log(`[done] Output mp4: ${outputMp4Path}`);
+console.log(`[done] ALL PASS\n`);
