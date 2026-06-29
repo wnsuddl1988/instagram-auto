@@ -1,18 +1,18 @@
 # Next Action
 
-## 2026-06-29 현재 — package preview 세 번째 fixture 패널 추가
+## 2026-06-29 현재 — Signal Translation display-only integration static guard 추가 완료
 
-상태: **MONEY_SHORTS_OS_THIRD_FIXTURE_PANEL_ADDED**
+상태: **MONEY_SHORTS_OS_SIGNAL_TRANSLATION_STATIC_GUARD_ADDED**
 
 최신 HEAD:
 
-- `012a25c feat(source-facts): add inflation life economy scene fixture` ← 최신 checkpoint
+- `f288969 feat(package-preview): add inflation package to signal translation panel` ← 최신 checkpoint
+- `012a25c feat(source-facts): add inflation life economy scene fixture`
 - `af84985 feat(package-preview): add generated copy payload preview`
-- `19ec7d6 feat(package-preview): add caption scene QA coverage`
-- branch: `codex/source-first-blueprint-clean` (ahead 64)
+- branch: `codex/source-first-blueprint-clean` (ahead 65)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- uncommitted: `app/fact-cards/manual/package-preview/page.tsx`, `_ai/` docs
+- working tree: uncommitted (`_ai/` docs sync + `scripts/check-signal-translation-preview-static.mjs` 신규)
 
 완료된 slice:
 
@@ -48,11 +48,17 @@
    - `MOCK_SIGNAL_TRANSLATION_BRIEFS`, `MOCK_SCENE_CARD_SETS` 업데이트.
    - ESLint/TypeScript/runtime validation ALL PASSED.
 
-5. **`money-shorts-os-package-preview-third-fixture-panel-v1`** (uncommitted)
+5. **`money-shorts-os-package-preview-third-fixture-panel-v1`** (f288969)
    - `page.tsx`에 `inflationGeneratedSignalTranslationPackage` import 추가.
    - `packages` 배열에 세 번째 element로 추가 → Sample 1(환율)/Sample 2(금리)/Sample 3(물가) 나란히 표시.
    - `SignalTranslationPreviewPanel` 컴포넌트 무변경.
    - ESLint/TypeScript 검증 PASSED.
+
+6. **`money-shorts-os-signal-translation-preview-static-guard-v1`** (미commit)
+   - `scripts/check-signal-translation-preview-static.mjs` 신규 추가.
+   - 검증 대상 4파일: `page.tsx`, `SignalTranslationPreviewPanel.tsx`, `signal-translation-fixtures.ts`, `signal-translation-copy-payload.ts`.
+   - 35 checks: page.tsx integration / panel display-only forbidden+required / fixtures exports / copy payload symbols+forbidden.
+   - `node scripts/check-signal-translation-preview-static.mjs` → 35/35 PASS.
 
 현재 상태:
 
@@ -66,14 +72,15 @@
 
 다음 safe work unit 후보:
 
-1. **checkpoint commit** (추천 — 현재 uncommitted slice)
-   - `app/fact-cards/manual/package-preview/page.tsx` + `_ai/` docs 3개 commit.
+1. **checkpoint commit** (권장)
+   - 포함 파일: `scripts/check-signal-translation-preview-static.mjs` + `_ai/` docs 3개.
+   - `safe checkpoint commit authorized` 문구와 포함/제외 파일 명시 필요.
 
 2. **route smoke verification** (선택사항)
    - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
    - hydration/key warning 런타임 확인, layout 렌더링 QA.
 
-3. **다음 content slice** — Codex 결정 대기.
+3. **다음 content/QA slice** — Codex 결정 대기.
 
 금지 유지:
 

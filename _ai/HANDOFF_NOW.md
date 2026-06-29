@@ -2,7 +2,7 @@
 
 ## Task ID
 
-`money-shorts-os-package-preview-third-fixture-panel-v1`
+`money-shorts-os-signal-translation-preview-static-guard-v1`
 
 ## Project
 
@@ -11,43 +11,44 @@
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `012a25c feat(source-facts): add inflation life economy scene fixture`
-- Current local status: ahead 64, uncommitted: `app/fact-cards/manual/package-preview/page.tsx` (inflation package added to panel). `_ai/` docs modified (state sync).
+- Latest HEAD: `f288969 feat(package-preview): add inflation package to signal translation panel`
+- Current local status: ahead 65, clean (no uncommitted changes)
 - Push: do not push.
 - Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
 - Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
 
 ## Current Result
 
-Added `inflationGeneratedSignalTranslationPackage` to `SignalTranslationPreviewPanel` in `page.tsx`:
+Added static guard script for Signal Translation display-only integration:
 
-- Updated `app/fact-cards/manual/package-preview/page.tsx`
-  - Added `inflationGeneratedSignalTranslationPackage` to the import from `@/lib/source-facts/signal-translation-fixtures`.
-  - Added `inflationGeneratedSignalTranslationPackage` as the third element of the `packages` array prop passed to `SignalTranslationPreviewPanel`.
-  - Panel now renders Sample 1 (환율), Sample 2 (금리), Sample 3 (물가/소비자물가) side-by-side.
+- Added `scripts/check-signal-translation-preview-static.mjs`
+  - 35 checks across 4 files (page.tsx, SignalTranslationPreviewPanel.tsx, signal-translation-fixtures.ts, signal-translation-copy-payload.ts).
+  - page.tsx integration: all 3 fixture packages present and wired to SignalTranslationPreviewPanel.
+  - Panel display-only: 10 forbidden patterns absent, 7 required indicators present.
+  - Fixtures: all 3 generated package exports confirmed.
+  - Copy payload: all 5 required symbols confirmed, 4 forbidden patterns absent.
+  - Result: 35 passed, 0 failed.
 
 Important invariant:
 
-- `SignalTranslationPreviewPanel` component was not modified.
-- Existing gate/ledger/risk review/final QA/clipboard/publishability logic was not changed.
+- No UI/route/component/generator/fixture logic changed.
+- `scripts/check-signal-translation-preview-static.mjs` is a read-only static analysis script.
 - No `'use client'`, Server Action, clipboard write, render, upload, or DB change.
 
 ## Verification Evidence
 
 Passed:
 
-- ESLint `--max-warnings=0` for `page.tsx`.
-- Targeted TypeScript compiler API check for `page.tsx` — no errors.
-- `git diff --check` — no whitespace errors.
+- `node scripts/check-signal-translation-preview-static.mjs` — 35/35 PASS.
+- `git diff --check` — no whitespace errors (LF→CRLF warning is git config noise, not a content issue).
 
 Not run:
 
-- Full project `tsc --project tsconfig.json` (fails on pre-existing binary output files unrelated to this slice).
 - Browser/route smoke (`.money-shorts-local/` access not permitted by Owner).
 
 ## Recommended Next Task
 
-- checkpoint commit for this slice (only `page.tsx` + `_ai/` docs)
+- checkpoint commit for this slice (`scripts/check-signal-translation-preview-static.mjs` + `_ai/` docs)
 - Or route smoke verification when Owner explicitly permits `.money-shorts-local/` access.
 
 ## Forbidden
