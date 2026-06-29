@@ -1,18 +1,18 @@
 # Next Action
 
-## 2026-06-29 현재 — Signal Translation display-only integration static guard 추가 완료
+## 2026-06-29 현재 — Scene Package QA helper review-fix 완료 (미commit)
 
-상태: **MONEY_SHORTS_OS_SIGNAL_TRANSLATION_STATIC_GUARD_ADDED**
+상태: **MONEY_SHORTS_OS_SCENE_PACKAGE_QA_HELPER_REVIEW_FIXED**
 
 최신 HEAD:
 
-- `f288969 feat(package-preview): add inflation package to signal translation panel` ← 최신 checkpoint
+- `1a268ba test(package-preview): add signal translation display-only static guard` ← 최신 checkpoint
+- `f288969 feat(package-preview): add inflation package to signal translation panel`
 - `012a25c feat(source-facts): add inflation life economy scene fixture`
-- `af84985 feat(package-preview): add generated copy payload preview`
-- branch: `codex/source-first-blueprint-clean` (ahead 65)
+- branch: `codex/source-first-blueprint-clean` (ahead 66)
 - push: 미실행
 - known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- working tree: uncommitted (`_ai/` docs sync + `scripts/check-signal-translation-preview-static.mjs` 신규)
+- working tree: uncommitted (`_ai/` docs + QA helper slice)
 
 완료된 slice:
 
@@ -54,11 +54,23 @@
    - `SignalTranslationPreviewPanel` 컴포넌트 무변경.
    - ESLint/TypeScript 검증 PASSED.
 
-6. **`money-shorts-os-signal-translation-preview-static-guard-v1`** (미commit)
+6. **`money-shorts-os-signal-translation-preview-static-guard-v1`** (1a268ba)
    - `scripts/check-signal-translation-preview-static.mjs` 신규 추가.
    - 검증 대상 4파일: `page.tsx`, `SignalTranslationPreviewPanel.tsx`, `signal-translation-fixtures.ts`, `signal-translation-copy-payload.ts`.
    - 35 checks: page.tsx integration / panel display-only forbidden+required / fixtures exports / copy payload symbols+forbidden.
    - `node scripts/check-signal-translation-preview-static.mjs` → 35/35 PASS.
+   - checkpoint commit `1a268ba test(package-preview): add signal translation display-only static guard` 완료.
+
+7. **`money-shorts-os-scene-package-qa-helper-v1-review-fix`** (미commit)
+   - `lib/source-facts/signal-translation-package-qa.ts` 신규 추가.
+   - `MoneyShortsScenePackageQaIssue`, `MoneyShortsScenePackageQaReport`, `buildMoneyShortsScenePackageQaReport()` export.
+   - 기존 `validateSceneCardsForGeneration()` 재사용 (scene validation).
+   - **review-fix**: citation validation은 `scenePackage.citationValidation`(generator가 FactCard 기준으로 계산한 source-of-truth) 재사용. `validateSignalTranslationCitationIds` 직접 호출 제거.
+   - Owner/QA 레이어 warning: hookTitle lines / spokenCaption length / imagePrompt / imageTextPolicy / voiceTiming emphasisWords / layoutSafeZone / sourceNote / riskNotes / brief 4개 필드.
+   - risk keyword scan (structural): 13 keywords, warning-only, gate 변경 없음.
+   - `lib/source-facts/signal-translation-fixtures.ts`: 3개 QA report fixture export 추가.
+   - `lib/source-facts/index.ts`: `signal-translation-package-qa` export 추가.
+   - TypeScript / ESLint `--max-warnings=0` PASS.
 
 현재 상태:
 
@@ -73,14 +85,16 @@
 다음 safe work unit 후보:
 
 1. **checkpoint commit** (권장)
-   - 포함 파일: `scripts/check-signal-translation-preview-static.mjs` + `_ai/` docs 3개.
+   - 포함 파일: `lib/source-facts/signal-translation-package-qa.ts`, `lib/source-facts/signal-translation-fixtures.ts`, `lib/source-facts/index.ts`, `_ai/` docs 3개.
+   - 제외: `piq_diag_out.txt`, UI/route 파일.
    - `safe checkpoint commit authorized` 문구와 포함/제외 파일 명시 필요.
 
-2. **route smoke verification** (선택사항)
-   - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
-   - hydration/key warning 런타임 확인, layout 렌더링 QA.
+2. **package-preview QA report panel 연결** (선택사항)
+   - `SignalTranslationPreviewPanel`에 `MoneyShortsScenePackageQaReport` display-only 패널 추가.
+   - display-only 원칙 유지, Codex 결정 대기.
 
-3. **다음 content/QA slice** — Codex 결정 대기.
+3. **route smoke verification** (선택사항)
+   - Owner가 `.money-shorts-local/` 접근을 명시적으로 허용할 때만 진행.
 
 금지 유지:
 

@@ -3,6 +3,7 @@ export * from "./signal-translation";
 export * from "./signal-translation-generator";
 export * from "./signal-translation-fixtures";
 export * from "./signal-translation-copy-payload";
+export * from "./signal-translation-package-qa";
 export * from "./fixtures";
 export * from "./validation";
 export * from "./manual";

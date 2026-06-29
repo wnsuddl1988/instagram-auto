@@ -2,7 +2,7 @@
 
 **갱신:** 2026-06-29
 
-**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), **Signal Translation display-only integration static guard script (35/35 PASS)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
+**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), **Signal Translation display-only integration static guard script (35/35 PASS, checkpoint 1a268ba 완료)**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
@@ -84,15 +84,15 @@ Image Style V1:
 
 ## 최근 checkpoint
 
-- Commit: `f288969` — `feat(package-preview): add inflation package to signal translation panel` ← **현재 HEAD**
+- Commit: `1a268ba` — `test(package-preview): add signal translation display-only static guard` ← **현재 HEAD**
+- Commit: `f288969` — `feat(package-preview): add inflation package to signal translation panel`
 - Commit: `012a25c` — `feat(source-facts): add inflation life economy scene fixture`
 - Commit: `af84985` — `feat(package-preview): add generated copy payload preview`
 - Commit: `19ec7d6` — `feat(package-preview): add caption scene QA coverage`
 - Commit: `c34ef6f` — `feat(package-preview): add signal translation preview panel`
-- Branch: `codex/source-first-blueprint-clean` (ahead 65)
+- Branch: `codex/source-first-blueprint-clean` (ahead 66)
 - Push: 미실행
 - Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- Uncommitted: `scripts/check-signal-translation-preview-static.mjs` 신규 + `_ai/` docs sync
 
 ---
 
@@ -163,9 +163,8 @@ Current UI slice:
 
 권장 다음 task:
 
-- checkpoint commit (`money-shorts-os-package-preview-third-fixture-panel-v1` slice: `page.tsx` + `_ai/` docs)
-- static guard checkpoint commit (`scripts/check-signal-translation-preview-static.mjs` + `_ai/` docs)
-- 이후 Codex 결정: 다음 content slice 또는 route smoke verification (`.money-shorts-local/` 접근 필요)
+- route smoke verification (`.money-shorts-local/` 접근 Owner 명시 허용 필요)
+- 또는 다음 content/QA slice (Codex 결정 대기)
 
 금지:
 
