@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "money_shorts_render_plan_v1",
+  "manifestId": "rp-provider-candidate-ecos-base-rate",
+  "sourceId": "money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+  "sourceType": "script_package",
+  "factCardIds": ["fact-card-candidate-raw-ecos-base-rate-candidate-2025-01"],
+  "sourceCitationIds": ["citation-candidate-raw-ecos-base-rate-candidate-2025-01"],
+  "timelineId": "timeline-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+  "ttsPackageId": "tts-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+  "imagePromptPackageId": null,
+  "chartCardPackageId": null,
+  "riskLevel": "unchecked",
+  "createdAt": "2026-06-25T00:00:00+09:00",
+  "outputSpec": {
+    "codec": "h264",
+    "audioCodec": "aac",
+    "container": "mp4",
+    "crf": 23,
+    "audioBitrateKbps": 128,
+    "fps": 30,
+    "dimensions": {
+      "widthPx": 1080,
+      "heightPx": 1920
+    },
+    "plannedOutputPath": "output/planned/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01.mp4"
+  },
+  "imageInputs": [
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-1",
+      "sceneIndex": 1,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-1.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 4,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-2",
+      "sceneIndex": 2,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-2.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 5,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-3",
+      "sceneIndex": 3,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-3.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 6,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-4",
+      "sceneIndex": 4,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-4.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 6,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-5",
+      "sceneIndex": 5,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-5.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 4,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-6",
+      "sceneIndex": 6,
+      "assetPath": "assets/images/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01/scene-6.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 5,
+      "motionType": "card_slide"
+    }
+  ],
+  "audioInput": {
+    "ttsPackageId": "tts-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+    "voiceProfileId": "voice-nova-0.92",
+    "provider": "openai_tts",
+    "assetPath": "assets/audio/tts-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01.mp3",
+    "plannedDurationSec": 30
+  },
+  "captionOverlays": [
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-1",
+      "sceneIndex": 1,
+      "captionText": "금리 동결, 진짜 좋은 소식일까?",
+      "showAtSec": 0,
+      "hideAtSec": 4,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-2",
+      "sceneIndex": 2,
+      "captionText": "기준금리 하락 신호입니다",
+      "showAtSec": 4,
+      "hideAtSec": 9,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-3",
+      "sceneIndex": 3,
+      "captionText": "방향보다 물가와 경기를 봐야 합니다",
+      "showAtSec": 9,
+      "hideAtSec": 15,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-4",
+      "sceneIndex": 4,
+      "captionText": "대출자와 예금자는 다르게 봐야 합니다",
+      "showAtSec": 15,
+      "hideAtSec": 21,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-5",
+      "sceneIndex": 5,
+      "captionText": "다음은 물가와 대출금리를 보세요",
+      "showAtSec": 21,
+      "hideAtSec": 25,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01-6",
+      "sceneIndex": 6,
+      "captionText": "이번 달은 현금흐름부터 점검하세요",
+      "showAtSec": 25,
+      "hideAtSec": 30,
+      "captionStyle": "bold_short_center_lower"
+    }
+  ],
+  "sourceOverlays": [
+    {
+      "sourceName": "signal-translation-brief-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+      "sourceUrl": "https://placeholder.source/fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+      "publishedDate": "placeholder",
+      "showAtSec": 27,
+      "hideAtSec": 30
+    }
+  ],
+  "ffmpegPlan": {
+    "fullCommand": "ffmpeg (data-only placeholder — not executed from JSON)",
+    "fragments": [],
+    "plannedOutputPath": "output/planned/money-shorts-scene-package-fact-card-candidate-raw-ecos-base-rate-candidate-2025-01.mp4",
+    "estimatedDurationSec": 30
+  }
+}
