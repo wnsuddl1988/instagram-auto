@@ -1,18 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Route Smoke PASS
+## 2026-06-29 현재 — Route Smoke Checkpoint 완료
 
-상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_ROUTE_SMOKE_PASSED**
+상태: **MONEY_SHORTS_OS_PACKAGE_PREVIEW_ROUTE_SMOKE_COMMITTED**
 
 최신 HEAD:
 
-- `b2dadee feat(source-facts): include QA report in generated copy payload` ← **현재 HEAD**
+- `2b1db95 docs(state): record package preview route smoke pass` ← **현재 HEAD**
+- `b2dadee feat(source-facts): include QA report in generated copy payload`
 - `eac702c feat(package-preview): add scene package QA report panel`
-- `92fdef3 feat(source-facts): add scene package QA helper`
-- branch: `codex/source-first-blueprint-clean` (ahead 69)
-- push: 미실행
-- known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
-- working tree: clean except untracked
+- branch: `codex/source-first-blueprint-clean` (ahead 70)
+- working tree: clean except `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -80,49 +78,29 @@
    - `scripts/check-signal-translation-preview-static.mjs`: 13 new checks 추가 → 48/48 PASS.
    - checkpoint commit `eac702c feat(package-preview): add scene package QA report panel` 완료.
 
-현재 상태:
-
-- display-only 원칙 유지 (mutation/persistence/external API/asset generation/clipboard write 없음).
-- 기존 gate/ledger/risk review/final QA/clipboard/publishability 흐름 변경 없음.
-- ESLint/TypeScript/static guard 검증 passed.
-- branch ahead 68, clean except `?? piq_diag_out.txt`.
-
-미실행 검증:
-
-- route smoke: 미실행. `.money-shorts-local/` 접근 Owner 미허용 때문에 hydration/key warning 런타임 확인 불가.
-
-8. **`money-shorts-os-package-preview-qa-report-panel-v1`** (eac702c)
-   - `SignalTranslationPreviewPanel`에 `ScenePackageQaReportPanel` display-only component 추가.
-   - `buildMoneyShortsScenePackageQaReport(scenePackage)` 인라인 호출 후 렌더.
-   - `scripts/check-signal-translation-preview-static.mjs`: 13 new checks 추가 → 48/48 PASS.
-   - checkpoint commit `eac702c feat(package-preview): add scene package QA report panel` 완료.
-
 9. **`money-shorts-os-generated-copy-payload-qa-report-v1`** (b2dadee)
    - `signal-translation-copy-payload.ts`: `scenePackageQaReport` 필드 추가 (additive, schema version 유지).
    - `GeneratedCopyPayloadPreview` metadata grid에 QA valid/errors/warnings 칸 2개 추가 (display-only).
    - static guard 50/50 PASS (기존 48 + 2 new).
    - checkpoint commit `b2dadee feat(source-facts): include QA report in generated copy payload` 완료.
 
-10. **`money-shorts-os-package-preview-route-smoke-v1`** (미commit, verification-only)
+10. **`money-shorts-os-package-preview-route-smoke-v1`** (2b1db95)
     - `/fact-cards/manual/package-preview` HTTP 200 PASS.
     - server/console/hydration/key errors: 없음.
-    - 30 details panels (3 packages × 10), `qaReport.isValid` HTML 포함 확인.
+    - 30 details panels (3 packages × 10), `qaReport.isValid` HTML 포함.
     - display-only 원칙 유지 (clipboard button 없음, 3 readOnly textarea + 1 기존 ledger textarea).
-    - 기존 gate/ledger/publishability 흐름 화면 무변경 확인.
+    - 기존 gate/ledger/publishability 흐름 무변경 확인.
     - `.money-shorts-local/`: 앱 read-only 접근, write 없음.
+    - checkpoint commit `2b1db95 docs(state): record package preview route smoke pass` 완료.
+
+현재 상태:
+
+- route smoke checkpoint 완료됨.
+- 다음 task는 Codex 결정 필요.
+- push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
 1. **다음 content/QA slice** (Codex 결정 대기)
    - Signal Translation preview/QA/copy payload/route smoke foundation 완료.
    - Next substantive work은 Codex 결정 필요.
-
-금지 유지:
-
-- `piq_diag_out.txt` 접근
-- `.money-shorts-local/` 접근
-- push/deploy/env/secret/dependency/DB 변경
-- render/output/ffmpeg/upload 실행
-- GPT/Gemini/Veo/ElevenLabs/image generation/live API 호출
-- OS clipboard write
-- legacy `/review`, render/upload/generate API surface 변경
