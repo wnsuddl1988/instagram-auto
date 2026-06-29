@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Voice/Narration QA Layer 미커밋 완료
+## 2026-06-29 현재 — Image Prompt / Text Policy QA Layer 미커밋 완료
 
-상태: **MONEY_SHORTS_OS_VOICE_NARRATION_QA_UNCOMMITTED**
+상태: **MONEY_SHORTS_OS_IMAGE_PROMPT_TEXT_POLICY_QA_UNCOMMITTED**
 
 최신 HEAD:
 
-- `b0acacf docs(state): sync spec docs after scene label safe-zone contract` ← **현재 HEAD**
+- `34eb070 feat(source-facts): add voice narration structural qa` ← **현재 HEAD**
+- `b0acacf docs(state): sync spec docs after scene label safe-zone contract`
 - `67bfd89 feat(source-facts): add scene label safe-zone contract`
-- `fe6437f feat(source-facts): add caption system v1 safe-zone qa`
-- branch: `codex/source-first-blueprint-clean` (ahead 74)
-- working tree: 6 files modified (code 3 + _ai docs 3, 미커밋 voice/narration QA slice), `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 75)
+- working tree: 6 files modified (code 3 + _ai docs 3, 미커밋 image/policy QA slice), `?? piq_diag_out.txt`
 
 완료된 slice:
 
@@ -117,7 +117,7 @@
     - `_ai/MONEY_SHORTS_OS_VIDEO_PIPELINE_SPEC_V1.md`: Scene Card Data Boundary에 sceneLabel 추가.
     - checkpoint commit `b0acacf docs(state): sync spec docs after scene label safe-zone contract` 완료.
 
-14. **`money-shorts-os-voice-narration-qa-v1`** ← **현재 미커밋 slice**
+14. **`money-shorts-os-voice-narration-qa-v1`** (34eb070)
     - `signal-translation-package-qa.ts`: `voiceNarrationWarningCount` summary 필드 추가, 6종 Voice/Narration warning check 추가.
       - `narration_too_dense_for_duration`: narration.length > durationSec × 18
       - `voice_pace_mismatch_for_scene_role`: 신호/해석/생활영향/전망/행동 씬에서 pace="fast" 경고
@@ -128,14 +128,27 @@
     - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 voiceNarration warns 셀 추가, spec note 업데이트.
     - `scripts/check-signal-translation-preview-static.mjs`: 8 new checks 추가 → **72/72 PASS**.
     - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 72/72 PASS.
+    - checkpoint commit `34eb070 feat(source-facts): add voice narration structural qa` 완료.
+
+15. **`money-shorts-os-image-prompt-text-policy-qa-v1`** ← **현재 미커밋 slice**
+    - `signal-translation-package-qa.ts`: `imagePromptPolicyWarningCount` summary 필드 추가, 6종 Image Prompt / Text Policy warning check 추가.
+      - `image_prompt_lacks_style_anchor`: styleAnchor keyword 2개 미만 경고 (editorial, life-economy, report, signal card, clue, connection lines, off-white, charcoal, warm yellow)
+      - `image_prompt_forbidden_style_keyword`: 금지 스타일 키워드 감지 경고
+      - `image_text_policy_missing_required_forbidden_text`: forbiddenText에 required 카테고리 누락 경고 (unverified numbers, investment return claims, extra subtitles, source text not backed by citation)
+      - `image_prompt_text_policy_not_reflected`: allowedText 비어있는데 prompt에 text restriction 힌트 없을 때 경고
+      - `visual_objects_missing`: visualObjects 배열 비어있을 때 경고
+      - `visual_template_not_reflected_in_prompt`: visualTemplateId에 맞는 keyword가 imagePrompt에 없을 때 경고
+    - `SignalTranslationPreviewPanel.tsx`: ScenePackageQaReportPanel summary에 imagePolicy warns 셀 추가.
+    - `scripts/check-signal-translation-preview-static.mjs`: 8 new checks 추가 → **80/80 PASS**.
+    - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 80/80 PASS.
     - **미커밋 상태** — checkpoint commit은 Codex 검토 후 결정.
 
 현재 상태:
 
-- voice/narration QA layer 코드 완료, static guard 72/72 PASS. **미커밋** (ahead 74).
+- image prompt / text policy QA layer 코드 완료, static guard 80/80 PASS. **미커밋** (ahead 75).
 - push는 Owner가 명시적으로 `push까지`라고 할 때만.
 
 다음 safe work unit 후보:
 
-1. **`money-shorts-os-voice-narration-qa-v1` checkpoint commit** (Codex 승인 대기)
+1. **`money-shorts-os-image-prompt-text-policy-qa-v1` checkpoint commit** (Codex 승인 대기)
 2. **다음 content/QA slice** (Codex 결정 대기)

@@ -13,6 +13,55 @@ import {
 import type { CaptionSafeZone, MoneyShortsSceneRole, SceneCard } from "./signal-translation";
 import type { MoneyShortsScenePackage } from "./signal-translation-generator";
 
+// ── Image prompt / text policy QA lists ──────────────────────────────────────
+// Structural scan only — no AI semantic judgment.
+
+// Anchor keywords that confirm editorial life-economy report style is declared.
+const IMAGE_STYLE_ANCHOR_KEYWORDS = [
+  "editorial",
+  "life-economy",
+  "report",
+  "signal card",
+  "clue",
+  "connection lines",
+  "off-white",
+  "charcoal",
+  "warm yellow",
+] as const;
+
+// Keywords that indicate disallowed visual styles (premium-finance-ad, fear, etc.).
+const IMAGE_FORBIDDEN_STYLE_KEYWORDS = [
+  "premium finance ad",
+  "luxury gold",
+  "horror",
+  "fear",
+  "profit",
+  "investment return",
+  "abstract graph",
+  "wealth",
+  "rich",
+] as const;
+
+// Required semantic categories in imageTextPolicy.forbiddenText.
+// Each entry is a minimum keyword that must appear somewhere in the array.
+const IMAGE_TEXT_POLICY_REQUIRED_FORBIDDEN_CATEGORIES: Array<{
+  keyword: string;
+  label: string;
+}> = [
+  { keyword: "unverified", label: "unverified numbers" },
+  { keyword: "investment return", label: "investment return claims" },
+  { keyword: "subtitle", label: "extra subtitles" },
+  { keyword: "source", label: "source text not backed by citation" },
+];
+
+// Visual template ids that require matching keywords in imagePrompt.
+const VISUAL_TEMPLATE_PROMPT_KEYWORDS: Record<string, string[]> = {
+  life_object: ["object", "item", "household", "product", "everyday", "오브젝트", "생활"],
+  signal_card: ["card", "chart", "signal", "indicator", "카드", "신호"],
+  clue_cards: ["clue", "detective", "단서", "card", "note", "카드"],
+  action_checklist: ["checklist", "list", "action", "check", "체크리스트", "점검"],
+};
+
 // ── Risk keyword scan lists ───────────────────────────────────────────────────
 // Structural scan only — no AI semantic judgment.
 // These lists target expression patterns that are out of scope for a
@@ -67,6 +116,7 @@ export interface MoneyShortsScenePackageQaReport {
     riskNotesSceneCount: number;
     captionSafeZoneWarningCount: number;
     voiceNarrationWarningCount: number;
+    imagePromptPolicyWarningCount: number;
   };
 }
 
@@ -248,6 +298,7 @@ export function buildMoneyShortsScenePackageQaReport(
   let riskNotesSceneCount = 0;
   let captionSafeZoneWarningCount = 0;
   let voiceNarrationWarningCount = 0;
+  let imagePromptPolicyWarningCount = 0;
 
   sceneCards.forEach((scene) => {
     const n = scene.sceneNumber;
@@ -605,6 +656,130 @@ export function buildMoneyShortsScenePackageQaReport(
       voiceNarrationWarningCount += sceneVnWarnings;
     }
 
+    // ── Image Prompt / Image Text Policy structural QA (warning-only) ──────────
+    {
+      let sceneIpWarnings = 0;
+
+      // 1. Style anchor check — at least 2 anchor keywords expected in imagePrompt
+      if (scene.imagePrompt.trim()) {
+        const promptLower = scene.imagePrompt.toLowerCase();
+        const foundAnchors = IMAGE_STYLE_ANCHOR_KEYWORDS.filter((kw) =>
+          promptLower.includes(kw.toLowerCase()),
+        );
+        if (foundAnchors.length < 2) {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.imagePrompt`,
+              "image_prompt_lacks_style_anchor",
+              `imagePrompt has only ${foundAnchors.length} style anchor(s) (need ≥2 from: ${IMAGE_STYLE_ANCHOR_KEYWORDS.join(", ")}).`,
+              n,
+            ),
+          );
+          sceneIpWarnings++;
+        }
+      }
+
+      // 2. Forbidden style keyword scan
+      if (scene.imagePrompt.trim()) {
+        const promptLower = scene.imagePrompt.toLowerCase();
+        const hits = IMAGE_FORBIDDEN_STYLE_KEYWORDS.filter((kw) =>
+          promptLower.includes(kw.toLowerCase()),
+        );
+        hits.forEach((kw) => {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.imagePrompt`,
+              "image_prompt_forbidden_style_keyword",
+              `imagePrompt contains forbidden style keyword: "${kw}".`,
+              n,
+            ),
+          );
+          sceneIpWarnings++;
+        });
+      }
+
+      // 3. imageTextPolicy.forbiddenText minimum required categories
+      {
+        const forbiddenJoined = scene.imageTextPolicy.forbiddenText
+          .map((t) => t.toLowerCase())
+          .join(" ");
+        IMAGE_TEXT_POLICY_REQUIRED_FORBIDDEN_CATEGORIES.forEach(({ keyword, label }) => {
+          if (!forbiddenJoined.includes(keyword.toLowerCase())) {
+            warnings.push(
+              makeIssue(
+                "scene",
+                `scenes.${n - 1}.imageTextPolicy.forbiddenText`,
+                "image_text_policy_missing_required_forbidden_text",
+                `imageTextPolicy.forbiddenText is missing required category "${label}" (keyword: "${keyword}").`,
+                n,
+              ),
+            );
+            sceneIpWarnings++;
+          }
+        });
+      }
+
+      // 4. imagePrompt vs imageTextPolicy consistency
+      // If allowedText is empty the prompt should mention no-text/no-numbers intent.
+      if (scene.imageTextPolicy.allowedText.length === 0) {
+        const promptLower = scene.imagePrompt.toLowerCase();
+        const hasTextRestrictionHint = ["no text", "no numbers", "no subtitle", "no label", "text-free"].some(
+          (hint) => promptLower.includes(hint),
+        );
+        if (!hasTextRestrictionHint) {
+          warnings.push(
+            makeIssue(
+              "scene",
+              `scenes.${n - 1}.imagePrompt`,
+              "image_prompt_text_policy_not_reflected",
+              "imageTextPolicy.allowedText is empty but imagePrompt does not mention text restriction (no text/no numbers/no subtitle).",
+              n,
+            ),
+          );
+          sceneIpWarnings++;
+        }
+      }
+
+      // 5. Visual object coverage
+      if (scene.visualObjects.length === 0) {
+        warnings.push(
+          makeIssue(
+            "scene",
+            `scenes.${n - 1}.visualObjects`,
+            "visual_objects_missing",
+            "visualObjects is empty — no visual elements declared for this scene.",
+            n,
+          ),
+        );
+        sceneIpWarnings++;
+      }
+
+      // 6. visualTemplateId reflection in imagePrompt
+      {
+        const templateKeywords = VISUAL_TEMPLATE_PROMPT_KEYWORDS[scene.visualTemplateId];
+        if (templateKeywords && scene.imagePrompt.trim()) {
+          const promptLower = scene.imagePrompt.toLowerCase();
+          const hasKeyword = templateKeywords.some((kw) => promptLower.includes(kw.toLowerCase()));
+          if (!hasKeyword) {
+            warnings.push(
+              makeIssue(
+                "scene",
+                `scenes.${n - 1}.imagePrompt`,
+                "visual_template_not_reflected_in_prompt",
+                `visualTemplateId "${scene.visualTemplateId}" not reflected in imagePrompt (expected one of: ${templateKeywords.join(", ")}).`,
+                n,
+              ),
+            );
+            sceneIpWarnings++;
+          }
+        }
+      }
+
+      imagePromptPolicyWarningCount += sceneIpWarnings;
+    }
+
     // Per-scene risk keyword scan
     const sceneTexts = collectSceneTextsForRiskScan(scene);
     sceneTexts.forEach((text) => {
@@ -634,6 +809,7 @@ export function buildMoneyShortsScenePackageQaReport(
     riskNotesSceneCount,
     captionSafeZoneWarningCount,
     voiceNarrationWarningCount,
+    imagePromptPolicyWarningCount,
   };
 
   return {

@@ -321,6 +321,42 @@ check(
   panelSrc.includes("voiceNarrationWarningCount"),
 );
 
+console.log("\n[ signal-translation-package-qa.ts — Image Prompt / Text Policy QA ]");
+check(
+  "qa helper summary includes imagePromptPolicyWarningCount",
+  qaHelperSrc.includes("imagePromptPolicyWarningCount"),
+);
+check(
+  "qa helper checks image_prompt_lacks_style_anchor",
+  qaHelperSrc.includes("image_prompt_lacks_style_anchor"),
+);
+check(
+  "qa helper checks image_prompt_forbidden_style_keyword",
+  qaHelperSrc.includes("image_prompt_forbidden_style_keyword"),
+);
+check(
+  "qa helper checks image_text_policy_missing_required_forbidden_text",
+  qaHelperSrc.includes("image_text_policy_missing_required_forbidden_text"),
+);
+check(
+  "qa helper checks image_prompt_text_policy_not_reflected",
+  qaHelperSrc.includes("image_prompt_text_policy_not_reflected"),
+);
+check(
+  "qa helper checks visual_objects_missing",
+  qaHelperSrc.includes("visual_objects_missing"),
+);
+check(
+  "qa helper checks visual_template_not_reflected_in_prompt",
+  qaHelperSrc.includes("visual_template_not_reflected_in_prompt"),
+);
+
+console.log("\n[ SignalTranslationPreviewPanel — imagePolicy summary display ]");
+check(
+  "panel renders imagePolicy warns summary row",
+  panelSrc.includes("imagePromptPolicyWarningCount"),
+);
+
 console.log("\n[ signal-translation-fixtures.ts — QA report fixture exports ]");
 check(
   "fixtures exports exchangeRateGeneratedSignalTranslationPackageQaReport",

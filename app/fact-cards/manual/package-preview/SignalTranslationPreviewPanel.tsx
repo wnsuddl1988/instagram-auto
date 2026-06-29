@@ -444,6 +444,16 @@ function ScenePackageQaReportPanel({ report }: { report: MoneyShortsScenePackage
                 </span>
               }
             />
+            <ValueRow
+              label="imagePolicy warns"
+              value={
+                <span className={summary.imagePromptPolicyWarningCount > 0 ? "text-amber-300" : "text-emerald-400"}>
+                  {summary.imagePromptPolicyWarningCount === 0
+                    ? "0 — structural check pass"
+                    : `${summary.imagePromptPolicyWarningCount} (see warnings)`}
+                </span>
+              }
+            />
           </div>
           <div className="mt-1.5 rounded border border-slate-700/30 bg-slate-900/30 px-2 py-1 text-[10px] text-slate-500">
             captionSafeZone / voiceNarration: structural spec checks · not a publication gate
