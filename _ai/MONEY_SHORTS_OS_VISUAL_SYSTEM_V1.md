@@ -1,7 +1,7 @@
 # Money Shorts OS — Visual System V1
 
-> Status: **calibration draft** (샘플 생성 준비 전 단계)
-> Owner-approved default Visual Profile: **D 혼합형 — 생활경제 리얼리즘 기반 + 오브젝트 중심 안정화**
+> Status: **calibration draft** (Scene 1/2 anchor v2 검증 단계)
+> Owner-approved default Visual Profile: **프리미엄 에디토리얼 생활경제 실사풍 + 고정 금융 그래픽 레이어**
 
 ---
 
@@ -18,25 +18,46 @@
 
 ## 2. Default Visual Profile
 
-- **이름 (EN):** `life-economy realism with object-stabilized composition`
-- **한국어명:** `생활경제 리얼리즘 기반 + 오브젝트 중심 안정화`
+- **이름 (EN):** `premium editorial life-economy realism with fixed financial graphic layer`
+- **한국어명:** `프리미엄 에디토리얼 생활경제 실사풍 + 고정 금융 그래픽 레이어`
 
 **한 줄 정의:**
 
-> “경제 신호가 내 생활에 닿는 순간을, 얼굴보다 손·사물·공간 중심의 현실적인 이미지로 보여주는 프리미엄 생활경제 쇼츠 스타일.”
+> “현실감 있는 생활경제 장면 위에 고정된 금융 그래픽 레이어를 얹어, 경제 신호가 내 생활에 닿는 순간을 브랜드 일관성 있게 보여주는 프리미엄 쇼츠 비주얼 스타일.”
 
 ### 메인 톤
-- 생활경제 리얼리즘 (life-economy realism)
-- 경제 신호 → 내 일상에 닿는 접점을 사실적으로 묘사
+- 프리미엄 에디토리얼 생활경제 실사풍 (premium editorial life-economy realism)
+- 경제 신호 → 내 일상에 닿는 접점을 현실감 있게 묘사
 - premium but not luxury — 고급스럽되 과시적이지 않음
+- 실사 생활경제 장면 **위에 고정된 금융 그래픽 레이어**를 얹어 브랜드 일관성 확보
 
 ### 표현 방식
 - 얼굴보다 **손 / 사물 / 공간** 중심 (face-minimized composition)
 - 핵심 오브젝트를 통해 경제 상황을 은유/구체화
 - 핵심 오브젝트 풀: 스마트폰, 은행앱, 영수증, 카드, 장바구니, 대출 문자, 통장, 계약서, 가계부, 식탁, 출근길, 카페 테이블, 사무실 책상
+- 실사 이미지 위에 **고정 금융 그래픽 레이어**(은은한 반투명 패널, 소스 라벨 chip, 라인 액센트, 큰 숫자 자리/숫자 UI placeholder, 체크포인트 카드)를 보조로 통합
+- 이 그래픽 레이어는 **이미지를 지배하지 않고 보조**하는 브랜드 일관성 장치다.
+
+### 절대 지켜야 할 비주얼 경계
+- 순수 실사 사진만 나열하지 않는다. (그래픽 레이어 없는 단순 실사 = 실패)
+- 스톡사진 느낌 금지.
+- 3D 캐릭터/애니메이션 금지.
+- 얼굴 중심 금지 (손/사물/공간/스마트폰/은행앱/영수증/카드/장바구니 중심).
+- ChatGPT 이미지 생성이 기본 엔진이다.
+- Gemini Veo는 Hook/흐름 장면의 보조 후보일 뿐, 이번 calibration 작업에서는 **사용 금지**.
+- 데이터카드는 전체 화면 메인이 아니라 실사 이미지 위의 **금융 그래픽 레이어 / 보조 정보 블록**으로만 사용한다.
+- Scene 2/5/6에서는 큰 숫자 자리, 출처 라벨 자리, 체크포인트 카드 자리가 **보조 레이어**로 들어갈 수 있다.
+
+### 이미지 내부 텍스트/숫자 신뢰 경계 (중요)
+- 정확한 숫자/출처/발표일/기간은 **후속 deterministic overlay 단계에서만 확정**한다.
+- ChatGPT 이미지 내부의 더미 텍스트/숫자는 **source of truth가 아니다.**
+- Scene 2 등에서는 정확한 “2.5%”를 이미지 안에 신뢰값으로 넣지 않고, **숫자 자리(placeholder numeric cue) / data chip 자리**만 만든다.
+- `dataPeriod`(ECOS 월별 데이터 관측 기간, 예: 202605)와 `lastPolicyDecisionDate`(기준금리가 2.5%로 마지막 변경된 정책 결정일, 예: 2025-05-29)는 **서로 다른 개념**이다. 정책 결정일을 이미지 안에 직접 넣지 않는다.
+- `verifiedPublishedDate`처럼 두 개념을 뭉뚱그리는 애매한 표현은 사용하지 않는다.
 
 ### 금지되는 방향 (요약 — 상세는 §9)
-- data-card/chart-card를 6장면 전체 메인 스타일로 사용 금지
+- data-card/chart-card를 6장면 전체 메인 스타일로 사용 금지 (보조 레이어만 허용)
+- 그래픽 레이어가 화면 전체를 덮는 data-card 메인화 금지
 - 뉴스룸/금융 브리핑 다큐를 메인 톤으로 사용 금지 (신뢰감 보강용 톤 참고로만)
 - 부자/명품/현금다발/투자수익 과장 금지
 - 공포/폭락/패닉 유도 금지
@@ -80,16 +101,18 @@
 
 6 scene 고정 구조. 각 scene별 권장 비주얼 소재 / 금지사항 / data-card 허용 여부.
 
-| Scene | 역할 | 권장 비주얼 소재 | 금지 | data-card |
-|-------|------|------------------|------|-----------|
-| **1** | Hook | 손에 든 스마트폰·은행앱 알림, 영수증, 대출 문자 등 "내 생활 접점" 오브젝트 | 얼굴 클로즈업, 차트 단독, 패닉 연출 | ❌ (메인은 리얼 이미지) |
-| **2** | 핵심 신호/수치 | 핵심 오브젝트 + 수치 강조 구도, 은행앱 화면 | 과장된 부 표현 | ✅ 보조 허용 (핵심 수치 카드) |
+| Scene | 역할 | 권장 비주얼 소재 | 금지 | 금융 그래픽 레이어 |
+|-------|------|------------------|------|--------------------|
+| **1** | Hook | 손에 든 스마트폰·은행앱 알림, 영수증, 대출 문자 등 "내 생활 접점" 오브젝트 + 은은한 그래픽 레이어 | 얼굴 클로즈업, 차트 단독, 패닉 연출, 순수 스톡사진 | 은은한 보조 레이어 허용 (큰 숫자 금지) |
+| **2** | 핵심 신호/수치 | 핵심 오브젝트 + 은행앱 화면 + 숫자 자리/출처 라벨 자리/data chip 보조 레이어 | 과장된 부 표현, 데이터카드 전체화면화, 정확한 숫자를 신뢰값으로 삽입 | ✅ 보조 레이어 (숫자 placeholder + 소스 라벨 자리) |
 | **3** | 원인/맥락 | 책상·계약서·가계부 위 흐름 묘사, 공간 중심 | 뉴스룸 브리핑 톤 메인화 | △ 필요 시 보조만 |
-| **4** | 생활 영향 | 식탁·장바구니·카페 테이블·출근길 등 일상 공간 | 명품/현금다발 | ❌ 권장 (리얼 생활 장면 우선) |
-| **5** | 체크/관찰 포인트 | 손으로 짚는 동작, 체크리스트 오브젝트 | 공포 유도 | ✅ 보조 허용 (체크포인트 카드) |
-| **6** | 액션/정리/CTA | 통장·가계부 정리, 차분한 마무리 구도 | 투자수익 약속 | ✅ 보조 허용 (정리/CTA 카드) |
+| **4** | 생활 영향 | 식탁·장바구니·카페 테이블·출근길 등 일상 공간 | 명품/현금다발 | △ 최소 보조 (리얼 생활 장면 우선) |
+| **5** | 체크/관찰 포인트 | 손으로 짚는 동작, 체크리스트 오브젝트 | 공포 유도 | ✅ 보조 레이어 (체크포인트 카드 자리) |
+| **6** | 액션/정리/CTA | 통장·가계부 정리, 차분한 마무리 구도 | 투자수익 약속 | ✅ 보조 레이어 (정리/CTA 카드 자리) |
 
-- data-card 허용 scene(2/5/6)에서도 **메인은 리얼 이미지, 카드는 보조**라는 위계를 지킨다.
+- 그래픽 레이어 허용 scene(2/5/6)에서도 **메인은 리얼 이미지, 그래픽 레이어는 보조**라는 위계를 지킨다.
+- 그래픽 레이어가 화면 전체를 덮는 data-card 메인이 되면 실패다.
+- 그래픽 레이어 안의 숫자/출처/날짜 텍스트는 **source of truth가 아니며**, 정확한 값은 후속 deterministic overlay에서 확정한다.
 
 ---
 
@@ -100,12 +123,14 @@
 
 ### 공통 고정 요소 (≈80%)
 - vertical 9:16 composition
-- realistic Korean everyday finance context
+- premium editorial realistic Korean everyday finance context (not stock photo, not 3D, not animation)
 - face-minimized composition (hands / objects / spaces 중심)
 - premium but not luxury
-- no exaggerated wealth, no fearmongering, no investment promise
+- consistent **premium financial graphic layer** integrated into the scene (반투명 패널 / 소스 라벨 chip 자리 / 라인 액센트 / 숫자 UI placeholder) — 보조이며 이미지를 지배하지 않음
+- no exaggerated wealth, no fearmongering, no investment promise, no full-screen data card
 - subtitle-safe lower area (하단 자막 안전영역 비움)
 - consistent lighting / color grade (anchor 기준)
+- 이미지 내부 숫자/출처/날짜 텍스트는 source of truth 아님 — 정확값은 후속 deterministic overlay에서 확정
 
 ### 변수 요소 (≈20%)
 - economic signal (예: 기준금리 유지/확인 포인트)
@@ -180,15 +205,16 @@ overlay: <value/source overlay needed? yes/no>.
 현재 기준금리 에피소드(ECOS 722Y001, 2026-05 기준)에 이 Visual Profile을 적용하는 방향만 설명한다. **새 이미지 프롬프트를 실제 실행하지 않는다.**
 
 - **방향:** "기준금리 2.5% 유지 / 확인 포인트" — 인상/인하 단정 금지.
-- **Scene 1 (Hook):** 손에 든 스마트폰 은행앱 알림 또는 대출 문자 (리얼 이미지). 차트 단독 금지.
-- **Scene 2 (수치):** 은행앱 금리 화면 + "현재 기준금리 2.5%" 보조 data-card. 메인은 리얼 오브젝트.
+- **Scene 1 (Hook):** 손에 든 스마트폰 은행앱 알림 또는 대출 문자 (실사) + 은은한 금융 그래픽 레이어. 차트 단독·순수 스톡사진 금지.
+- **Scene 2 (수치):** 은행앱 금리 화면 실사 + 숫자 자리(placeholder numeric cue) / 출처 라벨 자리 / data chip 보조 레이어. 메인은 리얼 오브젝트. 정확한 "2.5%"는 이미지 안에 신뢰값으로 넣지 않고 후속 deterministic overlay로 확정.
 - **Scene 3 (맥락):** 책상 위 가계부/계약서 — "직전월 대비 유지" 흐름을 공간으로 표현.
 - **Scene 4 (생활 영향):** 식탁/장바구니/카페 테이블 — 대출자·예금자 일상 접점.
-- **Scene 5 (체크):** 손으로 짚는 체크리스트 + 체크포인트 보조 카드 (물가/실제 대출금리 확인).
-- **Scene 6 (정리/CTA):** 통장·가계부 정리 구도 + 정리/CTA 보조 카드 (고정비·대출 조건 점검).
-- 모든 scene: face-minimized, subtitle-safe lower area, premium-not-luxury 유지.
-- 수치/출처 표기: ECOS 722Y001, 결정일 2025-05-29 — 작고 명확하게.
+- **Scene 5 (체크):** 손으로 짚는 체크리스트 + 체크포인트 보조 카드 자리 (물가/실제 대출금리 확인).
+- **Scene 6 (정리/CTA):** 통장·가계부 정리 구도 + 정리/CTA 보조 카드 자리 (고정비·대출 조건 점검).
+- 모든 scene: face-minimized, subtitle-safe lower area, premium-not-luxury, 고정 금융 그래픽 레이어(보조) 유지.
+- **사실 기준 분리:** `dataPeriod=202605`(ECOS 월별 데이터 관측 기간)와 `lastPolicyDecisionDate=2025-05-29`(기준금리 2.5% 마지막 변경 정책 결정일)는 서로 다른 개념. 정책 결정일을 이미지 안에 직접 넣지 않는다. `verifiedPublishedDate` 표현 사용 금지.
+- 정확한 발표일/기간/수치는 후속 Fact Card / deterministic overlay 단계에서만 확정한다.
 
 ---
 
-_이 문서는 calibration draft다. Owner 승인 및 1~2 scene 샘플 검증 후 V2로 갱신될 수 있다._
+_이 문서는 calibration draft다. 기본 Visual Profile은 "프리미엄 에디토리얼 생활경제 실사풍 + 고정 금융 그래픽 레이어"로 보정되었으며, Scene 1/2 anchor v2 샘플 Owner 승인 후 확정본(V2)으로 checkpoint된다._
