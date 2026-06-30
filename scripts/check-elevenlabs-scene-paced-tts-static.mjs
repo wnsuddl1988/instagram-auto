@@ -352,6 +352,63 @@ check(
   builderSrc.includes("durationTextBudgetWarning") && builderSrc.includes("riskNotes.push"),
 );
 
+// ── Voice candidate contract ────────────────────────────────────────────────────
+console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — voice candidate contract ]");
+
+check(
+  "--voice-candidate CLI option supported",
+  builderSrc.includes('"--voice-candidate"') || builderSrc.includes("voiceCandidateArg"),
+);
+check(
+  "hojin_lim candidate id defined",
+  builderSrc.includes("hojin_lim"),
+);
+check(
+  "Hojin Lim candidate label defined",
+  builderSrc.includes('"Hojin Lim"'),
+);
+check(
+  "ELEVENLABS_HOJIN_LIM_VOICE_ID env key present",
+  builderSrc.includes("ELEVENLABS_HOJIN_LIM_VOICE_ID"),
+);
+check(
+  "ELEVENLABS_VOICE_ID_HOJIN_LIM env key present",
+  builderSrc.includes("ELEVENLABS_VOICE_ID_HOJIN_LIM"),
+);
+check(
+  "HOJIN_LIM_ELEVENLABS_VOICE_ID env key present",
+  builderSrc.includes("HOJIN_LIM_ELEVENLABS_VOICE_ID"),
+);
+check(
+  "default VOICE_ID fallback allowed only when VOICE_LABEL === Hojin Lim",
+  builderSrc.includes("ELEVENLABS_VOICE_LABEL") && builderSrc.includes("Hojin Lim"),
+);
+check(
+  "candidate missing: readiness failure before API call",
+  builderSrc.includes("voiceCandidateResult") && builderSrc.includes("readinessFailure: true"),
+);
+check(
+  "voiceCandidateResolved field in summary",
+  builderSrc.includes("voiceCandidateResolved"),
+);
+check(
+  "voiceCandidateSource field in summary",
+  builderSrc.includes("voiceCandidateSource"),
+);
+check(
+  "voiceCandidateId field in summary",
+  builderSrc.includes("voiceCandidateId"),
+);
+check(
+  "voiceCandidateLabel field in summary",
+  builderSrc.includes("voiceCandidateLabel"),
+);
+check(
+  "raw voice ID not logged in candidate resolution (masked only)",
+  !codeLines(builderSrc).match(/console\.(log|error)\s*\(\s*[^)]*voiceId[^M]/) ||
+    builderSrc.includes("voiceIdMasked"),
+);
+
 // ── Fixture ttsText quality checks ─────────────────────────────────────────────
 const FIXTURE_PATH = resolve(__dirname, "fixtures/provider-candidate-tts-script.local-mock.json");
 if (!existsSync(FIXTURE_PATH)) {

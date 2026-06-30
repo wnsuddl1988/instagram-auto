@@ -73,10 +73,11 @@ function getArg(name) {
 
 const ttsScriptArg = getArg("--tts-script");
 const outDir = getArg("--out-dir");
+const voiceCandidateArg = getArg("--voice-candidate");
 
 if (!ttsScriptArg || !outDir) {
   console.error(
-    "Usage: node build-elevenlabs-scene-paced-tts-from-script.mjs --tts-script <path> --out-dir <path>",
+    "Usage: node build-elevenlabs-scene-paced-tts-from-script.mjs --tts-script <path> --out-dir <path> [--voice-candidate <id>]",
   );
   process.exit(1);
 }
@@ -126,32 +127,92 @@ console.log();
 
 mkdirSync(outDirAbs, { recursive: true });
 
+// ── Voice candidate resolution ───────────────────────────────────────────────────
+// Supported candidates: hojin_lim
+// When --voice-candidate hojin_lim is specified, look for Hojin Lim-specific env keys only.
+// Fallback to ELEVENLABS_VOICE_ID is allowed only when ELEVENLABS_VOICE_LABEL === "Hojin Lim".
+const HOJIN_LIM_CANDIDATE_ID = "hojin_lim";
+const HOJIN_LIM_CANDIDATE_LABEL = "Hojin Lim";
+const HOJIN_LIM_ENV_KEYS = [
+  "ELEVENLABS_HOJIN_LIM_VOICE_ID",
+  "ELEVENLABS_VOICE_ID_HOJIN_LIM",
+  "HOJIN_LIM_ELEVENLABS_VOICE_ID",
+];
+
+function resolveVoiceCandidate(candidateId, envLocal) {
+  if (candidateId !== HOJIN_LIM_CANDIDATE_ID) {
+    return { resolved: false, candidateId, voiceId: null, source: "unknown_candidate", missingKeys: [] };
+  }
+  for (const key of HOJIN_LIM_ENV_KEYS) {
+    const val = resolveEnv(key, envLocal);
+    if (val && val.trim().length > 0) {
+      const src = process.env[key] ? "process.env" : ".env.local";
+      return { resolved: true, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: val.trim(), source: `${key} (${src})`, missingKeys: [] };
+    }
+  }
+  // Fallback: ELEVENLABS_VOICE_ID only when VOICE_LABEL === "Hojin Lim"
+  const voiceLabel = resolveEnv("ELEVENLABS_VOICE_LABEL", envLocal);
+  if (voiceLabel && voiceLabel.trim() === HOJIN_LIM_CANDIDATE_LABEL) {
+    const fallbackId = resolveEnv("ELEVENLABS_VOICE_ID", envLocal);
+    if (fallbackId && fallbackId.trim().length > 0) {
+      const src = process.env.ELEVENLABS_VOICE_ID ? "process.env" : ".env.local";
+      return { resolved: true, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: fallbackId.trim(), source: `ELEVENLABS_VOICE_ID via VOICE_LABEL=Hojin Lim (${src})`, missingKeys: [] };
+    }
+  }
+  return { resolved: false, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: null, source: "missing", missingKeys: [...HOJIN_LIM_ENV_KEYS, "ELEVENLABS_VOICE_LABEL=Hojin Lim + ELEVENLABS_VOICE_ID"] };
+}
+
 // ── Env readiness ────────────────────────────────────────────────────────────────
 console.log("[step 1/5] Checking ElevenLabs env readiness...");
 console.log(`  .env.local present: ${envLocalLoaded}`);
+if (voiceCandidateArg) console.log(`  --voice-candidate:  ${voiceCandidateArg}`);
 
 const apiKey = resolveEnv("ELEVENLABS_API_KEY", envLocal);
-const voiceId = resolveEnv("ELEVENLABS_VOICE_ID", envLocal);
 const modelId = resolveEnv("ELEVENLABS_MODEL_ID", envLocal) ?? "eleven_multilingual_v2";
 const voiceLabel = resolveEnv("ELEVENLABS_VOICE_LABEL", envLocal) ?? null;
+
+// Resolve voice ID: candidate-first or default
+let voiceId;
+let voiceCandidateResult = null;
+if (voiceCandidateArg) {
+  voiceCandidateResult = resolveVoiceCandidate(voiceCandidateArg, envLocal);
+  voiceId = voiceCandidateResult.resolved ? voiceCandidateResult.voiceId : null;
+} else {
+  voiceId = resolveEnv("ELEVENLABS_VOICE_ID", envLocal);
+}
 
 const apiKeyConfigured = !!(apiKey && apiKey.trim().length > 0);
 const voiceIdConfigured = !!(voiceId && voiceId.trim().length > 0);
 
 const apiKeySource = process.env.ELEVENLABS_API_KEY ? "process.env" : (envLocal.ELEVENLABS_API_KEY ? ".env.local" : "missing");
-const voiceIdSource = process.env.ELEVENLABS_VOICE_ID ? "process.env" : (envLocal.ELEVENLABS_VOICE_ID ? ".env.local" : "missing");
-const allSources = new Set([apiKeySource, voiceIdSource].filter((s) => s !== "missing"));
+const voiceIdSource = voiceCandidateResult
+  ? (voiceCandidateResult.resolved ? voiceCandidateResult.source : "missing")
+  : (process.env.ELEVENLABS_VOICE_ID ? "process.env" : (envLocal.ELEVENLABS_VOICE_ID ? ".env.local" : "missing"));
+const allSources = new Set([apiKeySource, voiceIdConfigured ? voiceIdSource : "missing"].filter((s) => s !== "missing"));
 const envSource = allSources.size === 0 ? "missing" : allSources.size === 2 && apiKeySource !== voiceIdSource ? "mixed" : [...allSources][0];
 
 console.log(`  ELEVENLABS_API_KEY configured:  ${apiKeyConfigured} (source: ${apiKeySource})`);
-console.log(`  ELEVENLABS_VOICE_ID configured: ${voiceIdConfigured} (source: ${voiceIdSource})`);
+if (voiceCandidateResult) {
+  console.log(`  Voice candidate [${voiceCandidateArg}] resolved: ${voiceCandidateResult.resolved} (source: ${voiceCandidateResult.source})`);
+  if (!voiceCandidateResult.resolved) {
+    console.log(`  Missing candidate env keys: ${voiceCandidateResult.missingKeys.join(", ")}`);
+  }
+} else {
+  console.log(`  ELEVENLABS_VOICE_ID configured: ${voiceIdConfigured} (source: ${voiceIdSource})`);
+}
 console.log(`  ELEVENLABS_MODEL_ID:            ${modelId}`);
 console.log();
 
 if (!apiKeyConfigured || !voiceIdConfigured) {
   const missing = [];
   if (!apiKeyConfigured) missing.push("ELEVENLABS_API_KEY");
-  if (!voiceIdConfigured) missing.push("ELEVENLABS_VOICE_ID");
+  if (!voiceIdConfigured) {
+    if (voiceCandidateResult && !voiceCandidateResult.resolved) {
+      missing.push(...voiceCandidateResult.missingKeys);
+    } else {
+      missing.push("ELEVENLABS_VOICE_ID");
+    }
+  }
   console.error(`READINESS FAILURE: Missing env: ${missing.join(", ")}`);
   console.error("No ElevenLabs API call was made.");
 
@@ -172,13 +233,19 @@ if (!apiKeyConfigured || !voiceIdConfigured) {
     timelineAudioCodec: null,
     qualityAccepted: false,
     ownerListeningRequired: true,
-    apiKeyConfigured: false,
+    apiKeyConfigured,
     voiceIdConfigured: false,
     voiceIdMasked: null,
+    voiceCandidateId: voiceCandidateArg ?? null,
+    voiceCandidateLabel: voiceCandidateResult?.candidateLabel ?? null,
+    voiceCandidateResolved: voiceCandidateResult ? false : null,
+    voiceCandidateSource: voiceCandidateResult?.source ?? null,
     scenes: [],
     riskNotes: [
       "readiness_failure: missing required env — no API call was made.",
-      "Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID in .env.local or process env to proceed.",
+      voiceCandidateResult
+        ? `Voice candidate '${voiceCandidateArg}' not resolved. Set one of: ${voiceCandidateResult.missingKeys.join(", ")}`
+        : "Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID in .env.local or process env to proceed.",
     ],
   };
 
@@ -512,6 +579,10 @@ const summary = {
   voiceIdConfigured: true,
   voiceIdMasked,
   voiceLabel: voiceLabel ?? null,
+  voiceCandidateId: voiceCandidateArg ?? null,
+  voiceCandidateLabel: voiceCandidateResult?.candidateLabel ?? null,
+  voiceCandidateResolved: voiceCandidateResult ? true : null,
+  voiceCandidateSource: voiceCandidateResult?.source ?? null,
   envSource,
   modelId,
   generatedAt: new Date().toISOString(),
