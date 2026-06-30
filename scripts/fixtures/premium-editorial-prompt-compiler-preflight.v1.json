@@ -1,0 +1,347 @@
+{
+  "schemaVersion": "money_shorts_prompt_compiler_preflight_v1",
+  "title": "Money Shorts OS — Prompt Compiler Preflight Fixture v1",
+  "status": "preflight_only",
+  "purpose": "Prompt Compiler가 Rule Contract v1을 소비(consume)할 수 있는지 검증하기 위한 data-only preflight fixture. 실제 Prompt Compiler 구현 아님. finalPrompt 생성 아님. 이미지 생성 아님. ChatGPT/Playwright 실행 아님. 이 fixture는 계약 소비 구조를 검증하는 static preflight 전용이다.",
+  "isPromptCompilerImplementation": false,
+  "isImageGenerationRunner": false,
+  "containsFinalPrompt": false,
+
+  "ruleContractRef": {
+    "path": "scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json",
+    "schemaVersion": "money_shorts_visual_system_rule_contract_v1",
+    "visualProfileId": "premium_editorial_life_economy_realism_v2"
+  },
+
+  "approvedAnchorRef": {
+    "description": "승인된 anchor는 파일 접근 없이 identifier/reference 수준으로만 연결한다.",
+    "anchors": [
+      {
+        "id": "scene1_hook_anchor_fix_v1",
+        "sceneRole": "scene_1_hook",
+        "status": "owner_approved",
+        "referenceOnly": true
+      },
+      {
+        "id": "scene2_signal_anchor_v2",
+        "sceneRole": "scene_2_signal",
+        "status": "owner_approved",
+        "referenceOnly": true
+      }
+    ],
+    "deprecatedGenerationTargets": [
+      {
+        "id": "scenes_3_6_v1_failure",
+        "sceneSetId": "ecos-live-yohan-koo-premium-editorial-scenes-3-6-v1",
+        "isActiveGenerationTarget": false,
+        "reason": "Scene 3~6 v1 failure: 우드테이블/손/스마트폰/노트/커피 조합 수렴. deprecated."
+      }
+    ]
+  },
+
+  "sourceOfTruthPolicyRef": {
+    "policy": "deterministic_overlay",
+    "description": "정확한 숫자/날짜/출처 텍스트는 이미지 안에 넣지 않는다. 후속 deterministic overlay 단계에서만 확정한다.",
+    "exactValuesInImage": false,
+    "deterministicOverlayOwnsExactValues": true
+  },
+
+  "scenes": [
+    {
+      "order": 1,
+      "sceneRole": "scene_1_hook",
+      "selectedVisualCategory": "banking_notification_moment",
+      "selectedObjectFamilies": ["banking_objects"],
+      "spaceType": "indoor_personal",
+      "cameraDistance": "close_up",
+      "compositionProfile": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": ["hand_holding_phone", "notification_glow", "warm_neutral_light"],
+        "forbidden_combo_tags": []
+      },
+      "graphicLayerMode": "subtle_supporting_only",
+      "graphicLayerNotes": "은은한 보조 레이어만 허용. 큰 숫자 금지. 전체화면 data-card 금지.",
+      "forbiddenObjects": ["full_face_closeup", "luxury_items", "cash_pile", "panic_imagery"],
+      "forbiddenCompositions": ["fullscreen_data_card", "news_briefing_dominance"],
+      "previousSceneVisualHistoryInput": null,
+      "qaExpectationIds": [
+        "role_differentiation",
+        "realistic_not_stock",
+        "not_face_centered",
+        "subtitle_safe_zone",
+        "graphic_layer_not_dominant"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "anchorConsistencyRef": "scene1_hook_anchor_fix_v1",
+      "notes": "Hook scene. banking_notification_moment는 scene_1_hook에 usefulForRoles 포함. smartphone-centered count: 1."
+    },
+    {
+      "order": 2,
+      "sceneRole": "scene_2_signal",
+      "selectedVisualCategory": "institutional_data_macro_signal",
+      "selectedObjectFamilies": ["data_objects"],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "compositionProfile": {
+        "primaryFocus": "objects_and_space",
+        "faceFocus": "minimized",
+        "tags": ["source_chip_area", "numeric_placeholder", "warm_neutral_light"],
+        "forbidden_combo_tags": ["wood_table_notebook_coffee_hand"]
+      },
+      "graphicLayerMode": "supporting_with_placeholder",
+      "graphicLayerNotes": "숫자 placeholder + 소스 라벨 chip 자리 보조 레이어 허용. 전체화면 data-card 금지.",
+      "forbiddenObjects": ["exact_numbers_as_truth", "investment_promise"],
+      "forbiddenCompositions": ["fullscreen_data_card", "chart_only_scene"],
+      "previousSceneVisualHistoryInput": {
+        "scene_1": {
+          "spaceType": "indoor_personal",
+          "cameraDistance": "close_up",
+          "objectFamilies": ["banking_objects"],
+          "visualCategory": "banking_notification_moment"
+        }
+      },
+      "qaExpectationIds": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "source_of_truth_overlay"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "anchorConsistencyRef": "scene2_signal_anchor_v2",
+      "notes": "Signal scene. institutional_data_macro_signal은 scene_2_signal에 usefulForRoles 포함. spaceType 변화: indoor_personal → indoor_desk. cameraDistance 변화: close_up → medium."
+    },
+    {
+      "order": 3,
+      "sceneRole": "scene_3_context",
+      "selectedVisualCategory": "household_cost_moment",
+      "selectedObjectFamilies": ["household_objects"],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "compositionProfile": {
+        "primaryFocus": "objects_and_space",
+        "faceFocus": "minimized",
+        "tags": ["daily_expense_papers", "kitchen_table_area", "soft_natural_light"],
+        "forbidden_combo_tags": ["wood_table_notebook_coffee_hand"]
+      },
+      "graphicLayerMode": "minimal_auxiliary_only",
+      "graphicLayerNotes": "필요 시 최소 보조만. 전체화면 data-card 금지.",
+      "forbiddenObjects": ["news_briefing_set", "luxury_items"],
+      "forbiddenCompositions": ["fullscreen_data_card", "news_briefing_dominance"],
+      "previousSceneVisualHistoryInput": {
+        "scene_1": {
+          "spaceType": "indoor_personal",
+          "cameraDistance": "close_up",
+          "objectFamilies": ["banking_objects"],
+          "visualCategory": "banking_notification_moment"
+        },
+        "scene_2": {
+          "spaceType": "indoor_desk",
+          "cameraDistance": "medium",
+          "objectFamilies": ["data_objects"],
+          "visualCategory": "institutional_data_macro_signal"
+        }
+      },
+      "qaExpectationIds": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "realistic_not_stock",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "notes": "Context/Why scene. household_cost_moment는 scene_3_context에 usefulForRoles 포함. objectFamily 변화(banking→household_objects). spaceType 변화: indoor_desk → indoor_living."
+    },
+    {
+      "order": 4,
+      "sceneRole": "scene_4_life_impact",
+      "selectedVisualCategory": "city_commute_public_economy",
+      "selectedObjectFamilies": ["city_economy_objects"],
+      "spaceType": "outdoor_urban",
+      "cameraDistance": "wide",
+      "compositionProfile": {
+        "primaryFocus": "space_and_context",
+        "faceFocus": "background_only_crowd",
+        "tags": ["commute_scene", "public_space", "morning_light"],
+        "forbidden_combo_tags": ["wood_table_notebook_coffee_hand"]
+      },
+      "graphicLayerMode": "minimal_auxiliary_only",
+      "graphicLayerNotes": "최소 보조 (리얼 생활 장면 우선). 전체화면 data-card 금지.",
+      "forbiddenObjects": ["luxury_items", "cash_pile"],
+      "forbiddenCompositions": ["fullscreen_data_card", "closeup_face"],
+      "previousSceneVisualHistoryInput": {
+        "scene_1": {
+          "spaceType": "indoor_personal",
+          "cameraDistance": "close_up",
+          "objectFamilies": ["banking_objects"],
+          "visualCategory": "banking_notification_moment"
+        },
+        "scene_2": {
+          "spaceType": "indoor_desk",
+          "cameraDistance": "medium",
+          "objectFamilies": ["data_objects"],
+          "visualCategory": "institutional_data_macro_signal"
+        },
+        "scene_3": {
+          "spaceType": "indoor_living",
+          "cameraDistance": "medium",
+          "objectFamilies": ["household_objects"],
+          "visualCategory": "household_cost_moment"
+        }
+      },
+      "qaExpectationIds": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "not_face_centered",
+        "realistic_not_stock"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "notes": "Life Impact scene. city_commute_public_economy는 scene_4_life_impact에 usefulForRoles 포함. spaceType 큰 변화: indoor → outdoor_urban. cameraDistance: medium → wide. smartphone-centered count: 1 (누적, 한도 2 이하 유지)."
+    },
+    {
+      "order": 5,
+      "sceneRole": "scene_5_watch_point",
+      "selectedVisualCategory": "checklist_decision_moment",
+      "selectedObjectFamilies": ["planning_objects"],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "compositionProfile": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": ["checklist_action", "pen_and_notebook", "focused_light"],
+        "forbidden_combo_tags": []
+      },
+      "graphicLayerMode": "supporting_checkpoint_card",
+      "graphicLayerNotes": "체크포인트 카드 자리 보조 레이어 허용 (텍스트 없는 placeholder만). 전체화면 data-card 금지.",
+      "forbiddenObjects": ["panic_imagery", "exact_numbers_as_truth"],
+      "forbiddenCompositions": ["fullscreen_data_card", "news_briefing_dominance"],
+      "previousSceneVisualHistoryInput": {
+        "scene_1": {
+          "spaceType": "indoor_personal",
+          "cameraDistance": "close_up",
+          "objectFamilies": ["banking_objects"],
+          "visualCategory": "banking_notification_moment"
+        },
+        "scene_2": {
+          "spaceType": "indoor_desk",
+          "cameraDistance": "medium",
+          "objectFamilies": ["data_objects"],
+          "visualCategory": "institutional_data_macro_signal"
+        },
+        "scene_3": {
+          "spaceType": "indoor_living",
+          "cameraDistance": "medium",
+          "objectFamilies": ["household_objects"],
+          "visualCategory": "household_cost_moment"
+        },
+        "scene_4": {
+          "spaceType": "outdoor_urban",
+          "cameraDistance": "wide",
+          "objectFamilies": ["city_economy_objects"],
+          "visualCategory": "city_commute_public_economy"
+        }
+      },
+      "qaExpectationIds": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "smartphone_notebook_coffee_table_repeat",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "notes": "Watch Point scene. checklist_decision_moment는 scene_5_watch_point에 usefulForRoles 포함. spaceType 재진입: indoor_desk (scene_2와 동일 spaceType이나 연속 아님 — 사이에 indoor_living/outdoor_urban 있음). planning_objects 첫 등장."
+    },
+    {
+      "order": 6,
+      "sceneRole": "scene_6_action_closing",
+      "selectedVisualCategory": "closing_action_cue",
+      "selectedObjectFamilies": ["planning_objects"],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "compositionProfile": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": ["organized_wrap_up", "bankbook_or_budget_notebook", "calm_warm_light"],
+        "forbidden_combo_tags": ["wood_table_notebook_coffee_hand"]
+      },
+      "graphicLayerMode": "supporting_cta_card",
+      "graphicLayerNotes": "정리/CTA 카드 자리 보조 레이어 허용 (placeholder only). 전체화면 data-card 금지.",
+      "forbiddenObjects": ["investment_promise", "cash_pile", "panic_imagery"],
+      "forbiddenCompositions": ["fullscreen_data_card", "luxury_display"],
+      "previousSceneVisualHistoryInput": {
+        "scene_1": {
+          "spaceType": "indoor_personal",
+          "cameraDistance": "close_up",
+          "objectFamilies": ["banking_objects"],
+          "visualCategory": "banking_notification_moment"
+        },
+        "scene_2": {
+          "spaceType": "indoor_desk",
+          "cameraDistance": "medium",
+          "objectFamilies": ["data_objects"],
+          "visualCategory": "institutional_data_macro_signal"
+        },
+        "scene_3": {
+          "spaceType": "indoor_living",
+          "cameraDistance": "medium",
+          "objectFamilies": ["household_objects"],
+          "visualCategory": "household_cost_moment"
+        },
+        "scene_4": {
+          "spaceType": "outdoor_urban",
+          "cameraDistance": "wide",
+          "objectFamilies": ["city_economy_objects"],
+          "visualCategory": "city_commute_public_economy"
+        },
+        "scene_5": {
+          "spaceType": "indoor_desk",
+          "cameraDistance": "medium",
+          "objectFamilies": ["planning_objects"],
+          "visualCategory": "checklist_decision_moment"
+        }
+      },
+      "qaExpectationIds": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "no_uniform_hand_object_pattern",
+        "source_of_truth_overlay",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "notes": "Action/Closing scene. closing_action_cue는 scene_6_action_closing에 usefulForRoles 포함. spaceType 재진입: indoor_living (scene_3과 동일 spaceType이나 연속 아님). planning_objects 2회 등장(scene5/6) — notebook+pen 조합 최대 2 scene 한도 내. payment_objects 제거 — closing_action_cue와 미연결(usefulForCategories 기준). smartphone-centered: 누적 1회, 한도 2 이하."
+    }
+  ],
+
+  "diversityAudit": {
+    "description": "Prompt Compiler가 Rule Contract diversityRules를 소비했을 때 이 preflight가 통과해야 할 항목들. static guard가 이를 검증한다.",
+    "smartphoneCenteredSceneCount": 1,
+    "smartphoneCenteredLimit": 2,
+    "planningObjectsSceneCount": 2,
+    "planningObjectsLimit": 2,
+    "spaceTypeSequence": ["indoor_personal", "indoor_desk", "indoor_living", "outdoor_urban", "indoor_desk", "indoor_living"],
+    "cameraDistanceSequence": ["close_up", "medium", "medium", "wide", "medium", "medium"],
+    "objectFamilySequence": [
+      ["banking_objects"],
+      ["data_objects"],
+      ["household_objects"],
+      ["city_economy_objects"],
+      ["planning_objects"],
+      ["planning_objects"]
+    ],
+    "visualCategorySequence": [
+      "banking_notification_moment",
+      "institutional_data_macro_signal",
+      "household_cost_moment",
+      "city_commute_public_economy",
+      "checklist_decision_moment",
+      "closing_action_cue"
+    ],
+    "woodTableNotebookCoffeeHandComboDetected": false,
+    "fullscreenDataCardDetected": false
+  }
+}
