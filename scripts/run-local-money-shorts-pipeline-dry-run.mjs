@@ -81,6 +81,7 @@ if (inputPaths.some((p) => p.includes(".money-shorts-local"))) {
 
 // ── Step output directories ─────────────────────────────────────────────────────
 const visualOnlyDir = join(outRootAbs, "visual-only");
+const ttsAudioSourceDir = join(outRootAbs, "tts-audio-source");
 const ttsAudioMuxDir = join(outRootAbs, "tts-audio-mux");
 const uploadPayloadDir = join(outRootAbs, "upload-payload");
 const ownerApprovedUploadFlowDir = join(outRootAbs, "owner-approved-upload-flow");
@@ -159,10 +160,26 @@ if (!visualOnlyMp4Path || !existsSync(visualOnlyMp4Path)) {
 
 console.log(`\n[pipeline] visual-only mp4: ${visualOnlyMp4Path}`);
 
-// ── Step 2: TTS audio mux ───────────────────────────────────────────────────────
+// ── Step 2: local_mock TTS audio source ────────────────────────────────────────
+runStep("local_mock_tts_audio", "scripts/build-local-mock-tts-audio-from-script.mjs", [
+  "--tts-script", ttsScriptPath,
+  "--out-dir", ttsAudioSourceDir,
+]);
+
+// ── Resolve TTS audio summary path ─────────────────────────────────────────────
+const ttsAudioSummaryPath = join(ttsAudioSourceDir, "local-mock-tts-audio-summary.json");
+if (!existsSync(ttsAudioSummaryPath)) {
+  console.error(`ABORT: local-mock-tts-audio-summary.json not found at: ${ttsAudioSummaryPath}`);
+  process.exit(1);
+}
+
+console.log(`\n[pipeline] tts audio summary: ${ttsAudioSummaryPath}`);
+
+// ── Step 3: TTS audio mux ───────────────────────────────────────────────────────
 runStep("tts_audio_mux", "scripts/mux-local-tts-audio-into-visual-mp4.mjs", [
   "--video", visualOnlyMp4Path,
   "--script", ttsScriptPath,
+  "--audio-summary", ttsAudioSummaryPath,
   "--out-dir", ttsAudioMuxDir,
 ]);
 
@@ -184,7 +201,7 @@ try {
 
 console.log(`\n[pipeline] tts-mux mp4: ${ttsMuxMp4Path}`);
 
-// ── Step 3: upload payload ──────────────────────────────────────────────────────
+// ── Step 4: upload payload ──────────────────────────────────────────────────────
 runStep("upload_payload", "scripts/build-upload-payload-from-tts-mux-summary.mjs", [
   "--summary", ttsMuxSummaryPath,
   "--metadata", uploadMetadataPath,
@@ -200,7 +217,7 @@ if (!existsSync(uploadPayloadJsonPath)) {
 
 console.log(`\n[pipeline] upload payload: ${uploadPayloadJsonPath}`);
 
-// ── Step 4: owner-approved upload flow dry-run ──────────────────────────────────
+// ── Step 5: owner-approved upload flow dry-run ──────────────────────────────────
 runStep("owner_approved_upload_flow", "scripts/build-owner-approved-upload-flow-dry-run.mjs", [
   "--payload", uploadPayloadJsonPath,
   "--approval", ownerApprovalPath,
@@ -245,6 +262,7 @@ function writeSummary(flowStatus, steps, artifacts) {
 
 const artifacts = {
   visualOnlyMp4: visualOnlyMp4Path ?? null,
+  ttsAudioSource: ttsAudioSummaryPath,
   ttsMuxMp4: ttsMuxMp4Path ?? null,
   uploadPayload: uploadPayloadJsonPath,
   uploadReadyPacket: uploadReadyPacketPath,
@@ -254,7 +272,7 @@ const artifacts = {
 writeSummary("completed_dry_run", stepResults, artifacts);
 
 console.log(`\n${"═".repeat(64)}`);
-console.log("  PIPELINE COMPLETE — all 4 steps PASS");
+console.log("  PIPELINE COMPLETE — all 5 steps PASS");
 console.log(`  flowStatus:           completed_dry_run`);
 console.log(`  actualUploadAllowed:  false`);
 console.log(`  actualUploadPerformed:false`);

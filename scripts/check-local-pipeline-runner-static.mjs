@@ -218,6 +218,30 @@ check(
   runnerSrc.includes("stepResults.push"),
 );
 
+// ── Runner: 5-step structure ──────────────────────────────────────────────────
+console.log("\n[ run-local-money-shorts-pipeline-dry-run.mjs — 5-step structure ]");
+
+check(
+  "local_mock_tts_audio step present",
+  runnerSrc.includes("local_mock_tts_audio"),
+);
+check(
+  "tts-audio-source step dir present",
+  runnerSrc.includes("tts-audio-source"),
+);
+check(
+  "build-local-mock-tts-audio-from-script.mjs called",
+  runnerSrc.includes("build-local-mock-tts-audio-from-script.mjs"),
+);
+check(
+  "--audio-summary passed to mux step",
+  runnerSrc.includes("--audio-summary"),
+);
+check(
+  "all 5 steps PASS message",
+  runnerSrc.includes("all 5 steps PASS"),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {
