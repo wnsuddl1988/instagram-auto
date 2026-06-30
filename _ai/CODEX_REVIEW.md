@@ -1,5 +1,18 @@
 # Codex Review
 
+## 2026-06-30 — `b58ca20 feat(visual-system): add prompt compiler preflight contract v1`
+
+**Verdict: accepted.**
+
+- Prompt Compiler Preflight Contract v1 수용.
+- Rule Contract consumer 6-scene data-only preflight fixture + static guard.
+- per-family usefulForCategories 직접 연결 검증 + diversityAudit.objectFamilySequence consistency 검증.
+- static guard 76/76 (Rule Contract) + 110/110 (Preflight) PASS, GUARD OK.
+- checkpoint local only, no push.
+- Prompt Compiler 구현 없음, finalPrompt 없음, 이미지 생성 없음.
+
+---
+
 ## 2026-06-30 — `1c94e44 feat(visual-system): add rule contract v1 and static guard`
 
 **Verdict: accepted.**

@@ -1,15 +1,15 @@
 # Next Action
 
-## 2026-06-30 현재 — Visual System Rule Contract V1 Checkpoint 완료
+## 2026-06-30 현재 — Prompt Compiler Preflight Contract V1 Checkpoint 완료
 
-상태: **MONEY_SHORTS_OS_VISUAL_SYSTEM_RULE_CONTRACT_V1_COMMITTED**
+상태: **MONEY_SHORTS_OS_PROMPT_COMPILER_PREFLIGHT_CONTRACT_V1_COMMITTED**
 
 최신 HEAD:
 
-- `1c94e44 feat(visual-system): add rule contract v1 and static guard` ← **현재 HEAD**
+- `b58ca20 feat(visual-system): add prompt compiler preflight contract v1` ← **현재 HEAD**
+- `1c94e44 feat(visual-system): add rule contract v1 and static guard`
 - `a16bb80 feat(source-facts): add image prompt text policy structural qa`
-- `34eb070 feat(source-facts): add voice narration structural qa`
-- branch: `codex/source-first-blueprint-clean` (ahead 106)
+- branch: `codex/source-first-blueprint-clean` (ahead 108)
 - working tree: tracked clean. untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt` 제외
 
 완료된 slice:
@@ -153,13 +153,21 @@
     - Codex review fix: category pinning 체크 강화(usefulForRoles >= 2), `market_shopping_moment` + `closing_action_cue` role 보완.
     - checkpoint commit `1c94e44 feat(visual-system): add rule contract v1 and static guard` 완료.
 
+17. **`money-shorts-os-prompt-compiler-preflight-contract-v1`** (b58ca20)
+    - Rule Contract consumer 6-scene data-only preflight fixture 생성.
+    - `scripts/fixtures/premium-editorial-prompt-compiler-preflight.v1.json` 신규: 6 scenes(sceneRole/selectedVisualCategory/selectedObjectFamilies/spaceType/cameraDistance/compositionProfile/graphicLayerMode/forbiddenObjects/forbiddenCompositions/previousSceneVisualHistoryInput/qaExpectationIds), diversityAudit.
+    - `scripts/check-premium-editorial-prompt-compiler-preflight-static.mjs` 신규: 110 checks — per-family usefulForCategories 직접 연결, diversityAudit.objectFamilySequence consistency, non-empty arrays, self-guard, 금지 필드(finalPrompt/promptText/generatedPrompt/chatgptPrompt) 없음 확인.
+    - Prompt Compiler 구현 없음. finalPrompt 없음. 이미지 생성 없음. ChatGPT/Playwright 실행 없음.
+    - Review fix 3회 포함: self-guard regex 교체, family-category mismatch 수정(4 scenes secondary family 제거), notes/audit 일관성 정리.
+    - checkpoint commit `b58ca20 feat(visual-system): add prompt compiler preflight contract v1` 완료.
+
 현재 상태:
 
-- Visual System Rule Contract v1 checkpoint `1c94e44` 완료. tracked clean (ahead 106).
+- Prompt Compiler Preflight Contract v1 checkpoint `b58ca20` 완료. tracked clean (ahead 108).
 - push는 미실행.
 
 다음 safe work unit 후보:
 
-1. **후보 A**: Prompt Compiler v1 data-contract consumer preflight/static fixture 설계 (이미지 생성 없음).
+1. **후보 A**: Prompt Compiler v1 implementation boundary/design handoff 준비 (이미지 생성 없음, finalPrompt 생성 전 단계).
 2. **후보 B**: Owner-approved Scene 1/2 anchor 기준으로 Scene 3~6 재생성 전 visual QA sampling plan 준비.
    - ⚠️ 이미지 생성 / ChatGPT / Playwright 실행은 Owner 명시 승인 전 금지.
