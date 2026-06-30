@@ -213,20 +213,30 @@ function resolveSceneTtsText(scene) {
   return null;
 }
 
-// Korean TTS conservative char budget: 10 chars/sec target, 14 chars/sec hard warning
+// Korean TTS char budget constants: 6 chars/sec min (padding risk), 10 target, 14 hard warning (trim risk)
+const TTS_CHARS_PER_SEC_MIN = 6;
 const TTS_CHARS_PER_SEC_TARGET = 10;
 const TTS_CHARS_PER_SEC_WARN = 14;
 
 function calcDurationTextBudget(durationSec, charCount) {
+  const minChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_MIN);
   const maxChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_TARGET);
   const warnChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_WARN);
-  const status = charCount <= maxChars ? "within_budget" : "over_budget";
-  const warning = charCount > warnChars
-    ? `over hard limit: ${charCount} chars > ${warnChars} (${TTS_CHARS_PER_SEC_WARN}chars/s × ${durationSec}s)`
-    : charCount > maxChars
-      ? `over target: ${charCount} chars > ${maxChars} (${TTS_CHARS_PER_SEC_TARGET}chars/s × ${durationSec}s)`
-      : null;
-  return { durationTextBudgetMaxChars: maxChars, durationTextBudgetStatus: status, durationTextBudgetWarning: warning };
+  let status;
+  let warning = null;
+  if (charCount < minChars) {
+    status = "under_budget";
+    warning = `under minimum: ${charCount} chars < ${minChars} (${TTS_CHARS_PER_SEC_MIN}chars/s × ${durationSec}s) — silence padding likely`;
+  } else if (charCount > warnChars) {
+    status = "over_budget";
+    warning = `over hard limit: ${charCount} chars > ${warnChars} (${TTS_CHARS_PER_SEC_WARN}chars/s × ${durationSec}s) — tail trim risk`;
+  } else if (charCount > maxChars) {
+    status = "over_budget";
+    warning = `over target: ${charCount} chars > ${maxChars} (${TTS_CHARS_PER_SEC_TARGET}chars/s × ${durationSec}s) — trim possible`;
+  } else {
+    status = "within_budget";
+  }
+  return { durationTextBudgetMinChars: minChars, durationTextBudgetMaxChars: maxChars, durationTextBudgetStatus: status, durationTextBudgetWarning: warning };
 }
 
 const voiceIdMasked = maskVoiceId(voiceId);
@@ -376,6 +386,7 @@ for (const scene of sortedScenes) {
     textSource,
     sourceTextCharCount,
     sentTextCharCount,
+    durationTextBudgetMinChars: budget.durationTextBudgetMinChars,
     durationTextBudgetMaxChars: budget.durationTextBudgetMaxChars,
     durationTextBudgetStatus: budget.durationTextBudgetStatus,
     durationTextBudgetWarning: budget.durationTextBudgetWarning ?? null,

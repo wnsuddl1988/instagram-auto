@@ -304,27 +304,84 @@ check(
   builderSrc.includes("calcDurationTextBudget"),
 );
 check(
+  "TTS_CHARS_PER_SEC_MIN constant defined (padding lower bound)",
+  builderSrc.includes("TTS_CHARS_PER_SEC_MIN"),
+);
+check(
+  "TTS_CHARS_PER_SEC_TARGET constant defined",
+  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET"),
+);
+check(
+  "TTS_CHARS_PER_SEC_WARN constant defined",
+  builderSrc.includes("TTS_CHARS_PER_SEC_WARN"),
+);
+check(
+  "durationTextBudgetMinChars field in scene summary",
+  builderSrc.includes("durationTextBudgetMinChars"),
+);
+check(
   "durationTextBudgetMaxChars field in scene summary",
   builderSrc.includes("durationTextBudgetMaxChars"),
 );
 check(
-  "durationTextBudgetStatus field in scene summary (within_budget/over_budget)",
-  builderSrc.includes("durationTextBudgetStatus") &&
-    builderSrc.includes('"within_budget"') &&
-    builderSrc.includes('"over_budget"'),
+  "durationTextBudgetStatus: under_budget present",
+  builderSrc.includes('"under_budget"'),
+);
+check(
+  "durationTextBudgetStatus: within_budget present",
+  builderSrc.includes('"within_budget"'),
+);
+check(
+  "durationTextBudgetStatus: over_budget present",
+  builderSrc.includes('"over_budget"'),
+);
+check(
+  "under_budget warning text present (silence padding likely)",
+  builderSrc.includes("silence padding likely"),
+);
+check(
+  "over_budget warning text present (trim risk)",
+  builderSrc.includes("trim"),
 );
 check(
   "durationTextBudgetWarning field in scene summary",
   builderSrc.includes("durationTextBudgetWarning"),
 );
 check(
-  "over_budget warning propagated to riskNotes",
+  "budget warning propagated to riskNotes (under and over)",
   builderSrc.includes("durationTextBudgetWarning") && builderSrc.includes("riskNotes.push"),
 );
-check(
-  "Korean TTS chars/sec constants defined",
-  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET") || builderSrc.includes("TTS_CHARS_PER_SEC_WARN"),
-);
+
+// ── Fixture ttsText quality checks ─────────────────────────────────────────────
+const FIXTURE_PATH = resolve(__dirname, "fixtures/provider-candidate-tts-script.local-mock.json");
+if (!existsSync(FIXTURE_PATH)) {
+  console.error("\nFATAL: Fixture file not found. Skipping fixture checks.\n");
+} else {
+  const fixture = JSON.parse(readFileSync(FIXTURE_PATH, "utf-8"));
+  const scenes = fixture.scenes ?? [];
+
+  console.log("\n[ provider-candidate-tts-script.local-mock.json — ttsText quality ]");
+
+  check(
+    "fixture has 6 scenes with ttsText",
+    scenes.length === 6 && scenes.every((s) => typeof s.ttsText === "string" && s.ttsText.trim().length > 0),
+  );
+
+  const MIN_RATE = 6;
+  const MAX_RATE = 10;
+  check(
+    "all ttsText within_budget (6–10 chars/sec)",
+    scenes.every((s) => {
+      const len = s.ttsText.trim().length;
+      return len >= Math.floor(s.durationSec * MIN_RATE) && len <= Math.floor(s.durationSec * MAX_RATE);
+    }),
+  );
+
+  check(
+    "at least one ttsText differs from its captionText (not caption-only regression)",
+    scenes.some((s) => s.ttsText && s.captionText && s.ttsText.trim() !== s.captionText.trim()),
+  );
+}
 
 // ── Mux scene-paced support ─────────────────────────────────────────────────────
 if (!existsSync(MUX_PATH)) {
