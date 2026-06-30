@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "money_shorts_tts_script_v1",
+  "scriptId": "tts-script-provider-candidate-ecos-base-rate-yohan-koo",
+  "manifestId": "rp-provider-candidate-ecos-base-rate",
+  "factCardId": "fact-card-candidate-raw-ecos-base-rate-candidate-2025-01",
+  "ttsProvider": "elevenlabs",
+  "ttsMode": "elevenlabs_scene_paced",
+  "voiceProfile": "yohan_koo",
+  "targetDurationSec": 30,
+  "riskNotes": [
+    "Yohan Koo tuning fixture: neutralizes rate-direction wording until live ECOS/BOK source validation is completed.",
+    "Tone target: keep scene 02's clear briefing cadence while reducing scene-to-scene energy jumps.",
+    "This fixture is for Owner listening review only; qualityAccepted remains false until Owner accepts.",
+    "No new economic fact is introduced; ttsText only expands existing caption/narration meaning."
+  ],
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "sceneRole": "hook",
+      "durationSec": 4,
+      "startSec": 0,
+      "endSec": 4,
+      "ttsText": "오늘은 기준금리 변화 신호부터 차분히 보겠습니다.",
+      "narration": "금리 동결, 진짜 좋은 소식일까요?",
+      "captionText": "금리 동결, 진짜 좋은 소식일까?"
+    },
+    {
+      "sceneNumber": 2,
+      "sceneRole": "signal",
+      "durationSec": 5,
+      "startSec": 4,
+      "endSec": 9,
+      "ttsText": "한국은행 데이터에서 기준금리 변화 신호가 나왔습니다.",
+      "narration": "이번 신호는 한국은행 ECOS — 기준금리의 기준금리이 3.0% 수준에서 내린 데이터에서 시작합니다.",
+      "captionText": "기준금리 하락 신호입니다"
+    },
+    {
+      "sceneNumber": 3,
+      "sceneRole": "why_expert_interpretation",
+      "durationSec": 6,
+      "startSec": 9,
+      "endSec": 15,
+      "ttsText": "여기서 방향을 단정하지 말고 물가와 경기 흐름을 함께 보겠습니다.",
+      "narration": "지금 봐야 할 건 다음 금리 방향 단정이 아니라, 물가와 경기 신호가 어떻게 바뀌는지입니다.",
+      "captionText": "방향보다 물가와 경기를 봐야 합니다"
+    },
+    {
+      "sceneNumber": 4,
+      "sceneRole": "life_impact",
+      "durationSec": 6,
+      "startSec": 15,
+      "endSec": 21,
+      "ttsText": "대출자는 이자 부담을, 저축자는 예금 조건을 따로 보겠습니다.",
+      "narration": "대출자는 이자 부담을, 저축자는 예금 조건을, 소비자는 현금흐름을 다르게 봐야 합니다.",
+      "captionText": "대출자와 예금자는 다르게 봐야 합니다"
+    },
+    {
+      "sceneNumber": 5,
+      "sceneRole": "watch_scenario_outlook",
+      "durationSec": 4,
+      "startSec": 21,
+      "endSec": 25,
+      "ttsText": "다음은 물가와 실제 대출금리 흐름입니다.",
+      "narration": "다음에는 금리 자체보다 물가, 경기지표, 실제 대출금리가 같이 움직이는지를 봐야 합니다.",
+      "captionText": "다음은 물가와 대출금리를 보세요"
+    },
+    {
+      "sceneNumber": 6,
+      "sceneRole": "action_closing",
+      "durationSec": 5,
+      "startSec": 25,
+      "endSec": 30,
+      "ttsText": "마지막은 고정비와 변동비를 나눠 현금흐름을 정리합니다.",
+      "narration": "이번 달은 대출 조건과 고정비, 변동비를 나눠 현금흐름부터 점검해보세요.",
+      "captionText": "이번 달은 현금흐름부터 점검하세요"
+    }
+  ]
+}
