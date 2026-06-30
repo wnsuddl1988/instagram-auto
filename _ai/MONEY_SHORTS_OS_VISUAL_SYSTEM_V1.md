@@ -1,7 +1,10 @@
 # Money Shorts OS — Visual System V1
 
-> Status: **calibration draft** (Scene 1/2 anchor v2 검증 단계)
+> Status: **calibration draft** (Scene 1/2 anchor 승인 유지 · Rule Contract v1 반영)
 > Owner-approved default Visual Profile: **프리미엄 에디토리얼 생활경제 실사풍 + 고정 금융 그래픽 레이어**
+> Visual Matrix 규칙 계약: `scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json` (§5-A)
+> 승인 anchor: Scene 1 fixed (`scene-01-hook-anchor-fix-v1.png`) + Scene 2 v2 (`scene-02-signal-anchor-v2.png`) — 유지/삭제 금지
+> ⚠️ Visual Matrix는 **고정 오브젝트표가 아니라 규칙 시스템(Rule Contract)** 이다. 최근 Scene 3~6 v1 수렴 실패는 **메인 기준으로 사용하지 않는다.**
 
 ---
 
@@ -113,6 +116,52 @@
 - 그래픽 레이어 허용 scene(2/5/6)에서도 **메인은 리얼 이미지, 그래픽 레이어는 보조**라는 위계를 지킨다.
 - 그래픽 레이어가 화면 전체를 덮는 data-card 메인이 되면 실패다.
 - 그래픽 레이어 안의 숫자/출처/날짜 텍스트는 **source of truth가 아니며**, 정확한 값은 후속 deterministic overlay에서 확정한다.
+
+> ⚠️ **중요 — 이 표는 "권장 소재 예시"이지 "고정 오브젝트표"가 아니다.**
+> 위 "권장 비주얼 소재" 칸을 `Scene 1 = 스마트폰 / Scene 3 = 노트북`처럼 **scene별 고정 오브젝트 매핑으로 읽으면 안 된다.** scene은 **고정 오브젝트가 아니라 전달 역할(role)** 을 가지며, 실제 오브젝트는 §5-A의 Rule Contract(Visual Category Pool / Object Family Pool / Diversity Rules)에서 **다양하게 선택**한다. 자세한 규칙은 **§5-A**와 data-only 계약 파일 `scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json`를 따른다.
+
+---
+
+## 5-A. Rule Contract 기반 Visual Matrix (고정 오브젝트표 금지)
+
+> source of truth(data-only): `scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json`
+> structure guard: `scripts/check-premium-editorial-visual-system-static.mjs`
+
+### 왜 이 섹션이 추가되었나 (Scene 3~6 v1 실패)
+- 최근 Scene 3~6 이미지가 **우드 테이블 / 손 / 스마트폰 / 노트 / 커피 조합으로 수렴**해 6장면이 거의 같은 구도로 보이는 실패가 있었다.
+- 원인은 Visual Matrix를 **scene별 고정 오브젝트표**처럼 다뤄, 매 scene이 같은 사물·공간·구도로 굳었기 때문이다.
+- 따라서 Visual Matrix를 **고정 오브젝트표가 아니라 반복 생산 가능한 규칙 시스템(Rule Contract)** 으로 재정의한다.
+- **최근 Scene 3~6 v1 이미지는 메인 기준(main baseline)으로 사용하지 않는다.** 폐기 대상은 그 실패 방향과 helper의 실패 분기뿐이며, **승인된 Scene 1 fixed + Scene 2 v2 anchor 기준은 유지**한다.
+
+### 나쁜 방식 (금지)
+```
+Scene 1 = 스마트폰   Scene 2 = 책상   Scene 3 = 노트북
+Scene 4 = 장바구니   Scene 5 = 체크리스트   Scene 6 = CTA 카드
+```
+- scene을 특정 오브젝트에 영구 고정하는 표는 금지된다.
+
+### 올바른 방식 (Rule Contract)
+Visual Matrix는 아래 구성요소로 정의한다 (상세 값은 JSON 계약 참조):
+1. **Scene Role Contract** — 각 scene은 고정 오브젝트가 아니라 전달 역할을 가진다.
+   - Scene 1 = Hook / Scene 2 = Signal / Scene 3 = Context·Why / Scene 4 = Life Impact / Scene 5 = Watch Point / Scene 6 = Action·Closing
+   - 각 role은 "항상 무엇을 보여줄지"가 아니라 "무엇을 전달해야 하는지"를 정의한다.
+2. **Visual Category Pool** — `personal_finance_moment`, `household_cost_moment`, `institutional_data_macro_signal`, `checklist_decision_moment`, `closing_action_cue` 등 12개 category. 각 category는 `usefulForRoles / avoidWhen / overuseRisk / visualExamples`를 가지며 **특정 scene에 영구 고정하지 않는다.**
+3. **Object Family Pool** — 개별 물건이 아니라 family 단위(`payment_objects / household_objects / banking_objects / data_objects / planning_objects / city_economy_objects / document_objects`). family마다 `members / usefulForCategories / repeatLimitGuidance / overuseRisk`.
+4. **Diversity Rules** — 같은 공간/카메라 거리/object family 반복 제한, smartphone-centered scene ≤2, wood-table+notebook+coffee+hand 조합 반복 금지, 전체화면 data-card 금지, 6장면 손/테이블/스마트폰 수렴 금지, scene별 category 구분, **이전 scene 사용 이력(previousSceneVisualHistory)을 Prompt Compiler 입력으로 사용.**
+5. **Prompt Compiler Contract** — (이번 작업은 구현이 아니라 **계약만 정의**) 입력: Visual Bible / Scene Role Contract / Category Pool / Family Pool / Diversity Rules / 경제 신호 / 생활경제 해석 변수 / previousSceneVisualHistory / forbiddenObjects / forbiddenCompositions / subtitleSafeZone / graphicLayerPolicy. 출력: sceneRole / selectedVisualCategory / selectedObjectFamilies / spaceType / cameraDistance / compositionNotes / graphicLayerPlan / forbiddenRepetitionNotes / promptFixedPart / promptVariablePart / finalPrompt / qaExpectations. **고정 80 / 변수 20** 원칙 유지.
+6. **Visual QA Contract** — (실제 이미지 품질 판정기가 아니라 **구조 검증 + 향후 검수 항목**) role 구분 / 인접 scene 유사 / 스마트폰·노트·커피·테이블 반복 / 실사이지만 스톡 아님 / 그래픽 레이어 존재 & 비지배 / 자막 안전영역 / 3D·애니 아님 / 얼굴 중심 아님 / source-of-truth(overlay).
+7. **Failure / Regeneration Routing** — `regenerate_same_role_with_new_category` / `regenerate_with_object_family_ban` / `owner_review_required` / `accept_with_overlay_fix` / `reject_as_visual_system_failure`.
+
+### ChatGPT / Veo / data-card 기준 (재확인)
+- **ChatGPT 이미지가 기본(main) 엔진.**
+- **Veo는 Hook/흐름/전환 등 motion이 꼭 필요한 장면에만 보조 후보** (Owner 승인 전 적용 금지).
+- **data-card는 메인 비주얼 아님** — Scene 2/5/6에서 **보조 그래픽 레이어로만** 허용. 전체 화면 지배 시 실패.
+- 정확한 숫자/날짜/출처는 이미지 안에 넣지 않고 **deterministic overlay에서만** 확정.
+
+### Static guard 성격 (중요)
+- `scripts/check-premium-editorial-visual-system-static.mjs`는 **생성 이미지 품질 판정기가 아니다.**
+- 이 guard는 **Rule Contract가 하드코딩/고정 오브젝트표/반복 수렴 실패를 막을 구조를 갖췄는지** 검증하는 **계약 구조 검증기**다.
+- 실제 이미지 품질 검수는 다음 샘플 생성 단계에서 별도로 한다.
 
 ---
 
