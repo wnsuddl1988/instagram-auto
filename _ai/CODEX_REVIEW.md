@@ -1,5 +1,16 @@
 # Codex Review
 
+## 2026-06-30 — `1c94e44 feat(visual-system): add rule contract v1 and static guard`
+
+**Verdict: accepted.**
+
+- Rule Contract v1 + category pinning review fix 수용.
+- static guard 76/76 PASS, GUARD OK.
+- checkpoint local only, no push.
+- 실패 Scene 3~6 v1 helper 분기 폐기, 승인 anchor(Scene 1 fix + Scene 2 v2) 유지.
+
+---
+
 ## Review target
 
 Diff 정리 감사 + Quality Gate 전환

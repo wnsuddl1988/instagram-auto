@@ -1,8 +1,8 @@
 # PROJECT_STATE — AutoShorts / Money Shorts OS
 
-**갱신:** 2026-06-29
+**갱신:** 2026-06-30
 
-**전체프로젝트 진행률:** 약 85% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), Signal Translation display-only integration static guard script (35/35 PASS, checkpoint 1a268ba 완료), Scene Package QA helper (deterministic report layer, owner/QA warnings, 13-keyword risk scan, checkpoint 92fdef3 완료), ScenePackageQaReportPanel (display-only QA report panel, buildMoneyShortsScenePackageQaReport 인라인 호출, static guard 48/48, checkpoint eac702c 완료), Generated Copy Payload에 scenePackageQaReport 필드 추가 (additive, schema version 유지, GeneratedCopyPayloadPreview QA 메타 표시 추가, static guard 50/50, checkpoint b2dadee 완료), package-preview route smoke PASS (HTTP 200, console/hydration/key errors 없음, 30 details panels 모두 확인, display-only 원칙 유지 확인, `.money-shorts-local/` read-only 접근, checkpoint 2b1db95 완료), Caption System V1 safe-zone QA layer 추가 (CAPTION_SYSTEM_V1 bounds check + missing metadata warning, captionSafeZoneWarningCount summary, ScenePackageQaReportPanel 표시 보강, static guard 59/59 PASS, checkpoint fe6437f 완료), sceneLabel safe-zone contract 추가 (LayoutSafeZone sceneLabel required 필드, generator/fixture/copy payload/QA helper/preview panel 일관 반영, static guard 64/64 PASS, checkpoint 67bfd89 완료), spec docs sync (b0acacf 완료), Voice/Narration QA layer 추가 (voiceNarrationWarningCount summary, 6종 structural warning check, ScenePackageQaReportPanel voiceNarration warns 셀, static guard 72/72 PASS, checkpoint 34eb070 완료), Image Prompt / Text Policy QA layer 추가 (imagePromptPolicyWarningCount summary, 6종 structural warning check — style anchor / forbidden style / text policy categories / text policy consistency / visual objects / visual template reflection, ScenePackageQaReportPanel imagePolicy warns 셀, static guard 80/80 PASS, checkpoint a16bb80 완료).**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
+**전체프로젝트 진행률:** 약 96% — source/fact-card foundation부터 package assembly, review/gate/clipboard payload, MVP1 local UI routes, ECOS live/latest draft candidate path, package-preview live latest candidate UI, chart card props/visual preview, owner-decision publishability gate, local publishability controls, local approval ledger, ledger-approved overlay, overlay evaluator extraction, static guard scripts, Owner review guidance panel, v1.1 final direction docs alignment, Voice/Narration Style patch, Signal Translation Brief + fixed 6 Scene Card 타입/fixture/export, Scene Card validation review-fix, deterministic brief/scene card generator, 환율/금리 two-signal fixture validation, package-preview Signal Translation / 6 Scene Cards display-only inspection panel, Caption / Scene QA Coverage panel (structural inspection), Generated Copy Payload Preview (display-only, deterministic helper, no clipboard), inflation_life_economy_v1 template + 물가 fixture (3번째 generator coverage 검증), package-preview에 환율/금리/물가 세 generated package 나란히 표시 (display-only inspection), Signal Translation display-only integration static guard script (35/35 PASS, checkpoint 1a268ba 완료), Scene Package QA helper (deterministic report layer, owner/QA warnings, 13-keyword risk scan, checkpoint 92fdef3 완료), ScenePackageQaReportPanel (display-only QA report panel, buildMoneyShortsScenePackageQaReport 인라인 호출, static guard 48/48, checkpoint eac702c 완료), Generated Copy Payload에 scenePackageQaReport 필드 추가 (additive, schema version 유지, GeneratedCopyPayloadPreview QA 메타 표시 추가, static guard 50/50, checkpoint b2dadee 완료), package-preview route smoke PASS (HTTP 200, console/hydration/key errors 없음, 30 details panels 모두 확인, display-only 원칙 유지 확인, `.money-shorts-local/` read-only 접근, checkpoint 2b1db95 완료), Caption System V1 safe-zone QA layer 추가 (CAPTION_SYSTEM_V1 bounds check + missing metadata warning, captionSafeZoneWarningCount summary, ScenePackageQaReportPanel 표시 보강, static guard 59/59 PASS, checkpoint fe6437f 완료), sceneLabel safe-zone contract 추가 (LayoutSafeZone sceneLabel required 필드, generator/fixture/copy payload/QA helper/preview panel 일관 반영, static guard 64/64 PASS, checkpoint 67bfd89 완료), spec docs sync (b0acacf 완료), Voice/Narration QA layer 추가 (voiceNarrationWarningCount summary, 6종 structural warning check, ScenePackageQaReportPanel voiceNarration warns 셀, static guard 72/72 PASS, checkpoint 34eb070 완료), Image Prompt / Text Policy QA layer 추가 (imagePromptPolicyWarningCount summary, 6종 structural warning check — style anchor / forbidden style / text policy categories / text policy consistency / visual objects / visual template reflection, ScenePackageQaReportPanel imagePolicy warns 셀, static guard 80/80 PASS, checkpoint a16bb80 완료), Visual Matrix Rule Contract v1 기반 설계 (Scene Role Contract / Visual Category Pool / Object Family Pool / Diversity Rules / Prompt Compiler Contract(입출력 계약) / Visual QA Contract, data-only JSON fixture, static guard 76/76 PASS, checkpoint 1c94e44 완료).**까지 진행됐다. 실제 영상 제작/render/upload/DB/persistence는 아직 금지다.
 
 > **현재 품질 게이트:** `MONEY_SHORTS_OS_FINAL_DIRECTION_ALIGNED`. 이전 영상 제작 방식은 active direction이 아니다. 새 작업은 source-first / Fact Card first 원칙을 유지하면서 Signal Translation Brief와 Scene Card 기반 multimodal consistency layer를 추가하는 방향으로 진행한다.
 
@@ -84,14 +84,12 @@ Image Style V1:
 
 ## 최근 checkpoint
 
-- HEAD: `a16bb80` — `feat(source-facts): add image prompt text policy structural qa` ← **현재 HEAD**
+- HEAD: `1c94e44` — `feat(visual-system): add rule contract v1 and static guard` ← **현재 HEAD**
+- Commit: `a16bb80` — `feat(source-facts): add image prompt text policy structural qa`
 - Commit: `34eb070` — `feat(source-facts): add voice narration structural qa`
-- Commit: `b0acacf` — `docs(state): sync spec docs after scene label safe-zone contract`
-- Commit: `67bfd89` — `feat(source-facts): add scene label safe-zone contract`
-- Branch: `codex/source-first-blueprint-clean` (ahead 76)
-- Working tree: clean except `?? piq_diag_out.txt`
+- Branch: `codex/source-first-blueprint-clean` (ahead 106)
+- Working tree: tracked clean. untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt` 제외 유지
 - Push: 미실행
-- Known local extra: `piq_diag_out.txt` untracked, 작업 무관, 제외 유지
 
 ---
 
@@ -99,6 +97,7 @@ Image Style V1:
 
 Code/UI:
 
+- **`money-shorts-os-visual-system-rule-contract-v1`** (1c94e44): Visual Matrix를 고정 오브젝트표가 아닌 Rule Contract로 재정의. `scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json` + `scripts/check-premium-editorial-visual-system-static.mjs` (76/76 PASS). 실패 Scene 3~6 helper 분기 폐기, 승인 Scene 1 fixed + Scene 2 v2 anchor 유지.
 - source-first Fact Card 기반 package assembly chain.
 - package preview route and package library route.
 - ECOS live/latest draft candidate path with BOK source-date resolver.
@@ -162,19 +161,17 @@ Current UI slice:
 
 권장 다음 task:
 
-1. **다음 content/QA slice** (Codex 결정 대기)
-   - Signal Translation preview/QA/copy payload/route smoke foundation 완료 (checkpoint 2b1db95).
-   - Next substantive work은 Codex 결정 필요.
+1. **후보 A**: Prompt Compiler v1 data-contract consumer preflight/static fixture 설계 (이미지 생성 없음, contract 구현 전 단계).
+2. **후보 B**: Owner-approved Scene 1/2 anchor 기준으로 Scene 3~6 재생성 전 visual QA sampling plan 준비.
+   - ⚠️ 이미지 생성 / ChatGPT / Playwright 실행은 Owner 명시 승인 전 금지.
 
 Push:
    - Owner가 명시적으로 `push까지`라고 할 때만 실행.
 
 세션 건강 메모:
 
-- Signal Translation preview/QA/copy payload/route smoke foundation이 checkpoint로 완료됨.
-- 다음 독립 task 전 Claude Code `/clear` 또는 새 실행 세션 선택 가능.
-- `_ai` 문서가 최신화되었으므로 현재 세션에서 이어도 문제없음.
-- HEAD는 `a16bb80`, ahead 76, clean working tree (untracked `piq_diag_out.txt` 제외).
+- Visual System Rule Contract v1 checkpoint `1c94e44` 완료, ahead 106, tracked clean.
+- 다음 독립 task 전 Claude Code `/clear` 권장.
 
 금지:
 

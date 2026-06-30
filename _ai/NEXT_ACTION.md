@@ -1,16 +1,16 @@
 # Next Action
 
-## 2026-06-29 현재 — Image Prompt / Text Policy QA Layer Checkpoint 완료
+## 2026-06-30 현재 — Visual System Rule Contract V1 Checkpoint 완료
 
-상태: **MONEY_SHORTS_OS_IMAGE_PROMPT_TEXT_POLICY_QA_COMMITTED**
+상태: **MONEY_SHORTS_OS_VISUAL_SYSTEM_RULE_CONTRACT_V1_COMMITTED**
 
 최신 HEAD:
 
-- `a16bb80 feat(source-facts): add image prompt text policy structural qa` ← **현재 HEAD**
+- `1c94e44 feat(visual-system): add rule contract v1 and static guard` ← **현재 HEAD**
+- `a16bb80 feat(source-facts): add image prompt text policy structural qa`
 - `34eb070 feat(source-facts): add voice narration structural qa`
-- `b0acacf docs(state): sync spec docs after scene label safe-zone contract`
-- branch: `codex/source-first-blueprint-clean` (ahead 76)
-- working tree: clean except `?? piq_diag_out.txt`
+- branch: `codex/source-first-blueprint-clean` (ahead 106)
+- working tree: tracked clean. untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt` 제외
 
 완료된 slice:
 
@@ -143,11 +143,23 @@
     - 검증: TypeScript 오류 없음, ESLint 오류 없음, static guard 80/80 PASS.
     - checkpoint commit `a16bb80 feat(source-facts): add image prompt text policy structural qa` 완료.
 
+16. **`money-shorts-os-visual-system-rule-contract-v1`** (1c94e44)
+    - Visual Matrix를 고정 오브젝트표가 아닌 Rule Contract 기반 규칙 시스템으로 재정의.
+    - `scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json` 신규: schemaVersion / sceneRoleContract(6 roles) / visualCategoryPool(12) / objectFamilyPool(7) / diversityRules(9) / promptCompilerContract(입출력 계약만, isImplementation=false) / visualQaContract / failureRouting / chatgptVeoDataCardPolicy / imageTextSourceOfTruthPolicy.
+    - `scripts/check-premium-editorial-visual-system-static.mjs` 신규: 76 checks, GUARD OK.
+    - `_ai/MONEY_SHORTS_OS_VISUAL_SYSTEM_V1.md` 보강: 헤더 status + §5 경고 + §5-A Rule Contract 섹션 추가.
+    - 실패 Scene 3~6 v1 helper 분기(`ecos-live-yohan-koo-premium-editorial-scenes-3-6-v1`) 폐기 (git restore).
+    - 승인 Scene 1 fixed + Scene 2 v2 anchor 유지.
+    - Codex review fix: category pinning 체크 강화(usefulForRoles >= 2), `market_shopping_moment` + `closing_action_cue` role 보완.
+    - checkpoint commit `1c94e44 feat(visual-system): add rule contract v1 and static guard` 완료.
+
 현재 상태:
 
-- image prompt / text policy QA layer checkpoint `a16bb80` 완료. working tree clean (ahead 76).
+- Visual System Rule Contract v1 checkpoint `1c94e44` 완료. tracked clean (ahead 106).
 - push는 미실행.
 
 다음 safe work unit 후보:
 
-1. **다음 content/QA slice** (Codex 결정 대기)
+1. **후보 A**: Prompt Compiler v1 data-contract consumer preflight/static fixture 설계 (이미지 생성 없음).
+2. **후보 B**: Owner-approved Scene 1/2 anchor 기준으로 Scene 3~6 재생성 전 visual QA sampling plan 준비.
+   - ⚠️ 이미지 생성 / ChatGPT / Playwright 실행은 Owner 명시 승인 전 금지.
