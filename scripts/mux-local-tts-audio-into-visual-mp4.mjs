@@ -88,10 +88,8 @@ try {
   process.exit(1);
 }
 
-if (ttsScript.ttsMode !== "local_mock") {
-  console.error(`ABORT: Only ttsMode=local_mock is supported in this renderer. Got: ${ttsScript.ttsMode}`);
-  process.exit(1);
-}
+// ttsMode=local_mock enforced for inline mock generation only.
+// When --audio-summary supplies an ElevenLabs live smoke summary, ttsMode check is deferred to summary validation below.
 
 const { scriptId, manifestId, scenes, targetDurationSec } = ttsScript;
 const totalSceneDurationSec = scenes.reduce((s, sc) => s + sc.durationSec, 0);
@@ -165,20 +163,60 @@ if (audioSummaryAbsPath) {
     process.exit(1);
   }
 
-  if (audioSummary.schemaVersion !== "money_shorts_local_mock_tts_audio_summary_v1") {
+  const ALLOWED_SCHEMAS = [
+    "money_shorts_local_mock_tts_audio_summary_v1",
+    "money_shorts_elevenlabs_tts_live_smoke_summary_v1",
+  ];
+  if (!ALLOWED_SCHEMAS.includes(audioSummary.schemaVersion)) {
     console.error(
-      `ABORT: audio summary schemaVersion must be "money_shorts_local_mock_tts_audio_summary_v1". Got: ${audioSummary.schemaVersion}`,
+      `ABORT: audio summary schemaVersion not allowed. Got: ${audioSummary.schemaVersion}. Allowed: ${ALLOWED_SCHEMAS.join(", ")}`,
     );
     process.exit(1);
   }
-  if (audioSummary.mode !== "local_mock") {
-    console.error(`ABORT: audio summary mode must be "local_mock". Got: ${audioSummary.mode}`);
-    process.exit(1);
+
+  // Schema-specific validation
+  if (audioSummary.schemaVersion === "money_shorts_local_mock_tts_audio_summary_v1") {
+    if (audioSummary.mode !== "local_mock") {
+      console.error(`ABORT: local_mock summary mode must be "local_mock". Got: ${audioSummary.mode}`);
+      process.exit(1);
+    }
+    if (audioSummary.notRealSpeech !== true) {
+      console.error("ABORT: local_mock summary notRealSpeech must be true.");
+      process.exit(1);
+    }
+    if (!ttsScript.ttsMode || ttsScript.ttsMode !== "local_mock") {
+      console.error(`ABORT: TTS script ttsMode must be local_mock when using local_mock audio summary. Got: ${ttsScript.ttsMode}`);
+      process.exit(1);
+    }
+  } else if (audioSummary.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1") {
+    if (audioSummary.mode !== "elevenlabs_live_smoke") {
+      console.error(`ABORT: ElevenLabs summary mode must be "elevenlabs_live_smoke". Got: ${audioSummary.mode}`);
+      process.exit(1);
+    }
+    if (audioSummary.provider !== "elevenlabs") {
+      console.error(`ABORT: ElevenLabs summary provider must be "elevenlabs". Got: ${audioSummary.provider}`);
+      process.exit(1);
+    }
+    if (audioSummary.liveApiCallPerformed !== true) {
+      console.error("ABORT: ElevenLabs summary liveApiCallPerformed must be true (readiness failure summaries not supported for mux).");
+      process.exit(1);
+    }
+    if (audioSummary.qualityAccepted !== false) {
+      console.error("ABORT: ElevenLabs summary qualityAccepted must be false (only unaccepted smoke audio is expected at this stage).");
+      process.exit(1);
+    }
+    if (audioSummary.ownerListeningRequired !== true) {
+      console.error("ABORT: ElevenLabs summary ownerListeningRequired must be true.");
+      process.exit(1);
+    }
+    const audioStreamCount = audioSummary.audioStreamCount;
+    if (typeof audioStreamCount === "number" && audioStreamCount < 1) {
+      console.error(`ABORT: ElevenLabs summary audioStreamCount must be >= 1. Got: ${audioStreamCount}`);
+      process.exit(1);
+    }
+    console.log("  [WARN] ElevenLabs live smoke audio: quality not yet accepted. Owner listening review required before upload.");
   }
-  if (audioSummary.notRealSpeech !== true) {
-    console.error("ABORT: audio summary notRealSpeech must be true.");
-    process.exit(1);
-  }
+
   if (!audioSummary.audioPath) {
     console.error("ABORT: audio summary missing audioPath field.");
     process.exit(1);
@@ -396,6 +434,23 @@ if (!allPass) {
 // ── Build risk notes ───────────────────────────────────────────────────────────
 const riskNotes = [...(ttsScript.riskNotes ?? [])];
 
+// ElevenLabs live smoke specific risks
+let audioSummaryForRisk = null;
+if (audioSummaryAbsPath) {
+  try {
+    audioSummaryForRisk = JSON.parse(readFileSync(audioSummaryAbsPath, "utf-8"));
+  } catch {
+    // already validated above; ignore re-read failure
+  }
+}
+if (audioSummaryForRisk?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1") {
+  riskNotes.push("ElevenLabs live smoke audio is not quality accepted yet.");
+  riskNotes.push("Owner listening review required.");
+  if (audioSummaryForRisk.voiceIdMasked) {
+    riskNotes.push(`voiceIdMasked: ${audioSummaryForRisk.voiceIdMasked}`);
+  }
+}
+
 const audioDelta = rawAudioDurationSec - videoDurationSec;
 if (audioDelta < -1.0) {
   riskNotes.push(`audio padded: raw audio (${rawAudioDurationSec.toFixed(3)}s) is ${Math.abs(audioDelta).toFixed(3)}s shorter than video (${videoDurationSec.toFixed(3)}s). Silence padding applied.`);
@@ -405,9 +460,13 @@ if (audioDelta < -1.0) {
 
 // ── Write tts-mux-summary.json ─────────────────────────────────────────────────
 const summaryPath = join(outDirAbs, "tts-mux-summary.json");
+const muxMode = audioSummaryForRisk?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1"
+  ? "elevenlabs_live_smoke"
+  : "local_mock";
+
 const summary = {
   schemaVersion: "money_shorts_tts_mux_summary_v1",
-  mode: "local_mock",
+  mode: muxMode,
   scriptId,
   manifestId,
   sourceVideoPath: videoAbsPath,

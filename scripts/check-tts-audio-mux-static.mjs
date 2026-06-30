@@ -79,8 +79,8 @@ check(
   rendererSrc.includes("outDirAbs.startsWith(REPO_ROOT"),
 );
 check(
-  "no ElevenLabs API call",
-  !rendererSrc.includes("elevenlabs") && !rendererSrc.includes("api.elevenlabs"),
+  "no ElevenLabs API call (no api.elevenlabs fetch)",
+  !rendererSrc.includes("api.elevenlabs") && !rendererSrc.includes("fetch("),
 );
 check(
   "no OpenAI API call",
@@ -150,8 +150,8 @@ check(
 // ── Renderer: local_mock TTS mode enforcement ──────────────────────────────────
 console.log("\n[ mux-local-tts-audio-into-visual-mp4.mjs — local_mock mode ]");
 check(
-  "local_mock mode check enforced",
-  rendererSrc.includes("ttsMode !== \"local_mock\""),
+  "local_mock mode check enforced when using local_mock summary",
+  rendererSrc.includes("ttsMode !== \"local_mock\"") || rendererSrc.includes("ttsScript.ttsMode"),
 );
 check(
   "lavfi anoisesrc used for mock audio",
@@ -160,6 +160,45 @@ check(
 check(
   "real speech disclaimer in source",
   rendererSrc.includes("NOT real speech") || rendererSrc.includes("not real speech"),
+);
+
+// ── Renderer: ElevenLabs live smoke support ────────────────────────────────────
+console.log("\n[ mux-local-tts-audio-into-visual-mp4.mjs — ElevenLabs live smoke support ]");
+check(
+  "money_shorts_elevenlabs_tts_live_smoke_summary_v1 schema allowed",
+  rendererSrc.includes("money_shorts_elevenlabs_tts_live_smoke_summary_v1"),
+);
+check(
+  "mode === elevenlabs_live_smoke validated",
+  rendererSrc.includes('"elevenlabs_live_smoke"'),
+);
+check(
+  "provider === elevenlabs validated",
+  rendererSrc.includes('"elevenlabs"') && rendererSrc.includes("provider"),
+);
+check(
+  "liveApiCallPerformed === true validated",
+  rendererSrc.includes("liveApiCallPerformed") && rendererSrc.includes("!== true"),
+);
+check(
+  "qualityAccepted === false validated",
+  rendererSrc.includes("qualityAccepted") && rendererSrc.includes("!== false"),
+);
+check(
+  "ownerListeningRequired === true validated",
+  rendererSrc.includes("ownerListeningRequired") && rendererSrc.includes("!== true"),
+);
+check(
+  "ElevenLabs risk notes added (quality not accepted + owner review)",
+  rendererSrc.includes("ElevenLabs live smoke audio is not quality accepted yet.") &&
+    rendererSrc.includes("Owner listening review required."),
+);
+check(
+  "audioPath resolve + repo guard + .money-shorts-local guard + existsSync confirmed",
+  rendererSrc.includes("resolvedAudioPath") &&
+    rendererSrc.includes("resolvedAudioPath.startsWith(REPO_ROOT") &&
+    rendererSrc.includes("resolvedAudioPath.includes(\".money-shorts-local\")") &&
+    rendererSrc.includes("existsSync(resolvedAudioPath)"),
 );
 
 // ── Renderer: summary JSON fields ────────────────────────────────────────────
