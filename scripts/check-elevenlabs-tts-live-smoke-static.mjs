@@ -254,6 +254,38 @@ check(
   builderSrc.includes("outDirAbs") && !builderSrc.match(/join\s*\(\s*REPO_ROOT.*elevenlabs/),
 );
 
+// ── .env.local read-only loader ─────────────────────────────────────────────────
+console.log("\n[ build-elevenlabs-tts-audio-from-script.mjs — .env.local read-only loader ]");
+
+check(
+  ".env.local is read via readFileSync (read-only access)",
+  builderSrc.includes("readFileSync(envLocalPath") || builderSrc.includes("readFileSync(join(REPO_ROOT"),
+);
+check(
+  "no writeFileSync to .env.local (read-only, never modified)",
+  !codeLines(builderSrc).match(/writeFileSync\s*\(\s*[^)]*\.env\.local/),
+);
+check(
+  "env loader uses no external dependencies (no dotenv import)",
+  !codeLines(builderSrc).includes("dotenv") && !codeLines(builderSrc).includes("require(\"dotenv")  && !codeLines(builderSrc).includes("from \"dotenv"),
+);
+check(
+  "resolveEnv helper: process.env first, then .env.local fallback",
+  builderSrc.includes("resolveEnv") &&
+    builderSrc.includes("process.env[key]") &&
+    builderSrc.includes("envLocal[key]"),
+);
+check(
+  "envSource field in summary (process.env / .env.local / mixed / missing)",
+  builderSrc.includes("envSource") &&
+    builderSrc.includes(".env.local") &&
+    builderSrc.includes("process.env"),
+);
+check(
+  "voiceLabel value not directly printed (configured boolean only)",
+  !codeLines(builderSrc).match(/console\.log\s*\(`[^`]*\$\{voiceLabel\}/),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {

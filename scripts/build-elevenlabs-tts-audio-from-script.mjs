@@ -31,12 +31,46 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
+
+// ── .env.local read-only loader ─────────────────────────────────────────────────
+// Parses KEY=value / KEY="value" / KEY='value'. No dependencies.
+function loadEnvLocal() {
+  const envLocalPath = join(REPO_ROOT, ".env.local");
+  if (!existsSync(envLocalPath)) return {};
+  let content;
+  try {
+    content = readFileSync(envLocalPath, "utf-8");
+  } catch {
+    return {};
+  }
+  const result = {};
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    if (key) result[key] = val;
+  }
+  return result;
+}
+
+function resolveEnv(key, envLocal) {
+  return process.env[key] ?? envLocal[key] ?? undefined;
+}
+
+const envLocal = loadEnvLocal();
+const envLocalLoaded = existsSync(join(REPO_ROOT, ".env.local"));
 
 // ── CLI args ────────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -115,20 +149,27 @@ mkdirSync(outDirAbs, { recursive: true });
 
 // ── Step 1: Check env readiness ─────────────────────────────────────────────────
 console.log("[step 1/4] Checking ElevenLabs env readiness...");
+console.log(`  .env.local present:               ${envLocalLoaded}`);
 
-const apiKey = process.env.ELEVENLABS_API_KEY;
-const voiceId = process.env.ELEVENLABS_VOICE_ID;
-const modelId = process.env.ELEVENLABS_MODEL_ID ?? "eleven_multilingual_v2";
-const voiceLabel = process.env.ELEVENLABS_VOICE_LABEL ?? null;
+const apiKey = resolveEnv("ELEVENLABS_API_KEY", envLocal);
+const voiceId = resolveEnv("ELEVENLABS_VOICE_ID", envLocal);
+const modelId = resolveEnv("ELEVENLABS_MODEL_ID", envLocal) ?? "eleven_multilingual_v2";
+const voiceLabel = resolveEnv("ELEVENLABS_VOICE_LABEL", envLocal) ?? null;
 
 const apiKeyConfigured = !!(apiKey && apiKey.trim().length > 0);
 const voiceIdConfigured = !!(voiceId && voiceId.trim().length > 0);
 
-console.log(`  ELEVENLABS_API_KEY configured:    ${apiKeyConfigured}`);
-console.log(`  ELEVENLABS_VOICE_ID configured:   ${voiceIdConfigured}`);
+// Determine source of each credential (boolean only, never value)
+const apiKeySource = process.env.ELEVENLABS_API_KEY ? "process.env" : (envLocal.ELEVENLABS_API_KEY ? ".env.local" : "missing");
+const voiceIdSource = process.env.ELEVENLABS_VOICE_ID ? "process.env" : (envLocal.ELEVENLABS_VOICE_ID ? ".env.local" : "missing");
+const allSources = new Set([apiKeySource, voiceIdSource].filter((s) => s !== "missing"));
+const envSource = allSources.size === 0 ? "missing" : allSources.size === 2 && apiKeySource !== voiceIdSource ? "mixed" : [...allSources][0];
+
+console.log(`  ELEVENLABS_API_KEY configured:    ${apiKeyConfigured} (source: ${apiKeySource})`);
+console.log(`  ELEVENLABS_VOICE_ID configured:   ${voiceIdConfigured} (source: ${voiceIdSource})`);
 console.log(`  ELEVENLABS_MODEL_ID:              ${modelId}`);
 if (voiceLabel) {
-  console.log(`  ELEVENLABS_VOICE_LABEL:           ${voiceLabel}`);
+  console.log(`  ELEVENLABS_VOICE_LABEL:           configured`);
 }
 console.log();
 
@@ -147,6 +188,7 @@ if (!apiKeyConfigured || !voiceIdConfigured) {
     liveApiCallPerformed: false,
     readinessFailure: true,
     missingEnv: missing,
+    envSource: "missing",
     sourceScriptPath: ttsScriptAbsPath,
     audioPath: null,
     textCharCount: combinedText.length,
@@ -167,9 +209,10 @@ if (!apiKeyConfigured || !voiceIdConfigured) {
     ownerListeningRequired: true,
     riskNotes: [
       "readiness_failure: missing required env — no API call was made.",
-      "Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID to proceed.",
+      "Set ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID in .env.local or process env to proceed.",
       "No audio generated. No upload performed.",
       "audio generated outside repo (if it had succeeded)",
+      ".env.local is never committed — it is in .gitignore",
     ],
   };
 
@@ -320,6 +363,7 @@ const summary = {
   provider: "elevenlabs",
   liveApiCallPerformed: true,
   readinessFailure: false,
+  envSource,
   sourceScriptPath: ttsScriptAbsPath,
   audioPath,
   textCharCount: combinedText.length,
@@ -346,6 +390,7 @@ const summary = {
     "pronunciation/intonation/speed not yet accepted by Owner.",
     "no upload performed — audio is smoke artifact only.",
     "audio generated outside repo (C:\\tmp\\...)",
+    ".env.local is never committed — it is in .gitignore",
     `durationDelta: ${durationDeltaSec > 0 ? "+" : ""}${durationDeltaSec}s vs target ${targetDurationSec}s — Owner review required.`,
   ],
 };
