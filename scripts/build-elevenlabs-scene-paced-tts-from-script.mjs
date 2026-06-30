@@ -128,38 +128,61 @@ console.log();
 mkdirSync(outDirAbs, { recursive: true });
 
 // ── Voice candidate resolution ───────────────────────────────────────────────────
-// Supported candidates: hojin_lim
-// When --voice-candidate hojin_lim is specified, look for Hojin Lim-specific env keys only.
-// Fallback to ELEVENLABS_VOICE_ID is allowed only when ELEVENLABS_VOICE_LABEL === "Hojin Lim".
-const HOJIN_LIM_CANDIDATE_ID = "hojin_lim";
-const HOJIN_LIM_CANDIDATE_LABEL = "Hojin Lim";
-const HOJIN_LIM_ENV_KEYS = [
-  "ELEVENLABS_HOJIN_LIM_VOICE_ID",
-  "ELEVENLABS_VOICE_ID_HOJIN_LIM",
-  "HOJIN_LIM_ELEVENLABS_VOICE_ID",
-];
+// Supported candidates: hojin_lim, yohan_koo, gihong
+// When --voice-candidate <id> is specified, look for candidate-specific env keys only.
+// Fallback to ELEVENLABS_VOICE_ID is allowed only when ELEVENLABS_VOICE_LABEL exactly matches the candidate label.
+const VOICE_CANDIDATES = {
+  hojin_lim: {
+    id: "hojin_lim",
+    label: "Hojin Lim",
+    envKeys: [
+      "ELEVENLABS_HOJIN_LIM_VOICE_ID",
+      "ELEVENLABS_VOICE_ID_HOJIN_LIM",
+      "HOJIN_LIM_ELEVENLABS_VOICE_ID",
+    ],
+  },
+  yohan_koo: {
+    id: "yohan_koo",
+    label: "Yohan Koo",
+    envKeys: [
+      "ELEVENLABS_YOHAN_KOO_VOICE_ID",
+      "ELEVENLABS_VOICE_ID_YOHAN_KOO",
+      "YOHAN_KOO_ELEVENLABS_VOICE_ID",
+    ],
+  },
+  gihong: {
+    id: "gihong",
+    label: "Gihong",
+    envKeys: [
+      "ELEVENLABS_GIHONG_VOICE_ID",
+      "ELEVENLABS_VOICE_ID_GIHONG",
+      "GIHONG_ELEVENLABS_VOICE_ID",
+    ],
+  },
+};
 
 function resolveVoiceCandidate(candidateId, envLocal) {
-  if (candidateId !== HOJIN_LIM_CANDIDATE_ID) {
+  const candidate = VOICE_CANDIDATES[candidateId];
+  if (!candidate) {
     return { resolved: false, candidateId, voiceId: null, source: "unknown_candidate", missingKeys: [] };
   }
-  for (const key of HOJIN_LIM_ENV_KEYS) {
+  for (const key of candidate.envKeys) {
     const val = resolveEnv(key, envLocal);
     if (val && val.trim().length > 0) {
       const src = process.env[key] ? "process.env" : ".env.local";
-      return { resolved: true, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: val.trim(), source: `${key} (${src})`, missingKeys: [] };
+      return { resolved: true, candidateId, candidateLabel: candidate.label, voiceId: val.trim(), source: `${key} (${src})`, missingKeys: [] };
     }
   }
-  // Fallback: ELEVENLABS_VOICE_ID only when VOICE_LABEL === "Hojin Lim"
+  // Fallback: ELEVENLABS_VOICE_ID only when VOICE_LABEL exactly matches this candidate's label
   const voiceLabel = resolveEnv("ELEVENLABS_VOICE_LABEL", envLocal);
-  if (voiceLabel && voiceLabel.trim() === HOJIN_LIM_CANDIDATE_LABEL) {
+  if (voiceLabel && voiceLabel.trim() === candidate.label) {
     const fallbackId = resolveEnv("ELEVENLABS_VOICE_ID", envLocal);
     if (fallbackId && fallbackId.trim().length > 0) {
       const src = process.env.ELEVENLABS_VOICE_ID ? "process.env" : ".env.local";
-      return { resolved: true, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: fallbackId.trim(), source: `ELEVENLABS_VOICE_ID via VOICE_LABEL=Hojin Lim (${src})`, missingKeys: [] };
+      return { resolved: true, candidateId, candidateLabel: candidate.label, voiceId: fallbackId.trim(), source: `ELEVENLABS_VOICE_ID via VOICE_LABEL=${candidate.label} (${src})`, missingKeys: [] };
     }
   }
-  return { resolved: false, candidateId, candidateLabel: HOJIN_LIM_CANDIDATE_LABEL, voiceId: null, source: "missing", missingKeys: [...HOJIN_LIM_ENV_KEYS, "ELEVENLABS_VOICE_LABEL=Hojin Lim + ELEVENLABS_VOICE_ID"] };
+  return { resolved: false, candidateId, candidateLabel: candidate.label, voiceId: null, source: "missing", missingKeys: [...candidate.envKeys, `ELEVENLABS_VOICE_LABEL=${candidate.label} + ELEVENLABS_VOICE_ID`] };
 }
 
 // ── Env readiness ────────────────────────────────────────────────────────────────

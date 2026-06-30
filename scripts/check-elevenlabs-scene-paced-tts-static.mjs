@@ -360,6 +360,11 @@ check(
   builderSrc.includes('"--voice-candidate"') || builderSrc.includes("voiceCandidateArg"),
 );
 check(
+  "VOICE_CANDIDATES registry object present",
+  builderSrc.includes("VOICE_CANDIDATES"),
+);
+// hojin_lim
+check(
   "hojin_lim candidate id defined",
   builderSrc.includes("hojin_lim"),
 );
@@ -378,6 +383,57 @@ check(
 check(
   "HOJIN_LIM_ELEVENLABS_VOICE_ID env key present",
   builderSrc.includes("HOJIN_LIM_ELEVENLABS_VOICE_ID"),
+);
+// yohan_koo
+check(
+  "yohan_koo candidate id defined",
+  builderSrc.includes("yohan_koo"),
+);
+check(
+  "Yohan Koo candidate label defined",
+  builderSrc.includes('"Yohan Koo"'),
+);
+check(
+  "ELEVENLABS_YOHAN_KOO_VOICE_ID env key present",
+  builderSrc.includes("ELEVENLABS_YOHAN_KOO_VOICE_ID"),
+);
+check(
+  "ELEVENLABS_VOICE_ID_YOHAN_KOO env key present",
+  builderSrc.includes("ELEVENLABS_VOICE_ID_YOHAN_KOO"),
+);
+check(
+  "YOHAN_KOO_ELEVENLABS_VOICE_ID env key present",
+  builderSrc.includes("YOHAN_KOO_ELEVENLABS_VOICE_ID"),
+);
+// gihong
+check(
+  "gihong candidate id defined",
+  builderSrc.includes('"gihong"') || builderSrc.includes("gihong:"),
+);
+check(
+  "Gihong candidate label defined",
+  builderSrc.includes('"Gihong"'),
+);
+check(
+  "ELEVENLABS_GIHONG_VOICE_ID env key present",
+  builderSrc.includes("ELEVENLABS_GIHONG_VOICE_ID"),
+);
+check(
+  "ELEVENLABS_VOICE_ID_GIHONG env key present",
+  builderSrc.includes("ELEVENLABS_VOICE_ID_GIHONG"),
+);
+check(
+  "GIHONG_ELEVENLABS_VOICE_ID env key present",
+  builderSrc.includes("GIHONG_ELEVENLABS_VOICE_ID"),
+);
+// resolution logic
+check(
+  "VOICE_LABEL fallback uses candidate.label (not hardcoded Hojin Lim only)",
+  builderSrc.includes("candidate.label") && builderSrc.includes("ELEVENLABS_VOICE_LABEL"),
+);
+check(
+  "unknown candidate → unknown_candidate source (not crash)",
+  builderSrc.includes("unknown_candidate"),
 );
 check(
   "default VOICE_ID fallback allowed only when VOICE_LABEL === Hojin Lim",
