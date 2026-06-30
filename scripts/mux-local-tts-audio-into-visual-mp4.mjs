@@ -168,6 +168,7 @@ if (audioSummaryAbsPath) {
   const ALLOWED_SCHEMAS = [
     "money_shorts_local_mock_tts_audio_summary_v1",
     "money_shorts_elevenlabs_tts_live_smoke_summary_v1",
+    "money_shorts_elevenlabs_scene_paced_tts_summary_v1",
   ];
   if (!ALLOWED_SCHEMAS.includes(audioSummary.schemaVersion)) {
     console.error(
@@ -221,14 +222,42 @@ if (audioSummaryAbsPath) {
       process.exit(1);
     }
     console.log("  [WARN] ElevenLabs live smoke audio: quality not yet accepted. Owner listening review required before upload.");
+  } else if (audioSummary.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1") {
+    if (audioSummary.provider !== "elevenlabs") {
+      console.error(`ABORT: scene-paced summary provider must be "elevenlabs". Got: ${audioSummary.provider}`);
+      process.exit(1);
+    }
+    if (audioSummary.liveApiCallPerformed !== true) {
+      console.error("ABORT: scene-paced summary liveApiCallPerformed must be true.");
+      process.exit(1);
+    }
+    if (audioSummary.qualityAccepted !== false) {
+      console.error("ABORT: scene-paced summary qualityAccepted must be false.");
+      process.exit(1);
+    }
+    if (audioSummary.ownerListeningRequired !== true) {
+      console.error("ABORT: scene-paced summary ownerListeningRequired must be true.");
+      process.exit(1);
+    }
+    if (!audioSummary.timelineAudioPath) {
+      console.error("ABORT: scene-paced summary missing timelineAudioPath field.");
+      process.exit(1);
+    }
+    console.log("  [WARN] ElevenLabs scene-paced audio: quality not yet accepted. Owner listening review required before upload.");
   }
 
-  if (!audioSummary.audioPath) {
-    console.error("ABORT: audio summary missing audioPath field.");
+  // Resolve audio path: scene-paced uses timelineAudioPath, others use audioPath
+  const rawAudioPathField =
+    audioSummary.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1"
+      ? audioSummary.timelineAudioPath
+      : audioSummary.audioPath;
+
+  if (!rawAudioPathField) {
+    console.error("ABORT: audio summary missing audioPath (or timelineAudioPath for scene-paced) field.");
     process.exit(1);
   }
 
-  const resolvedAudioPath = resolve(audioSummary.audioPath);
+  const resolvedAudioPath = resolve(rawAudioPathField);
 
   if (resolvedAudioPath.includes(".money-shorts-local")) {
     console.error("ABORT: audio summary audioPath contains .money-shorts-local — forbidden.");
@@ -245,7 +274,11 @@ if (audioSummaryAbsPath) {
     process.exit(1);
   }
 
-  const summaryRawDuration = audioSummary.rawAudioDurationSec;
+  // scene-paced TTS uses timelineDurationSec; single-file schemas use rawAudioDurationSec
+  const summaryRawDuration =
+    audioSummary.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1"
+      ? audioSummary.timelineDurationSec
+      : audioSummary.rawAudioDurationSec;
   if (!Number.isFinite(summaryRawDuration) || summaryRawDuration <= 0) {
     console.error(
       `ABORT: audio summary rawAudioDurationSec is not a finite positive number: ${summaryRawDuration}`,
@@ -463,12 +496,19 @@ if (!allPass) {
 // ── Build risk notes ───────────────────────────────────────────────────────────
 const riskNotes = [...(ttsScript.riskNotes ?? [])];
 
-// ElevenLabs live smoke specific risks — use already-validated summary (no re-read).
-if (validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1") {
+// ElevenLabs risks — use already-validated summary (no re-read).
+const isElevenLabsSchema =
+  validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1" ||
+  validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1";
+
+if (isElevenLabsSchema) {
   riskNotes.push("ElevenLabs live smoke audio is not quality accepted yet.");
   riskNotes.push("Owner listening review required.");
   if (validatedAudioSummary.voiceIdMasked) {
     riskNotes.push(`voiceIdMasked: ${validatedAudioSummary.voiceIdMasked}`);
+  }
+  if (validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1") {
+    riskNotes.push(`scene-paced TTS: ${validatedAudioSummary.apiCallCount} API calls, ${validatedAudioSummary.sceneCount} scenes.`);
   }
 }
 
@@ -481,9 +521,12 @@ if (audioDelta < -1.0) {
 
 // ── Write tts-mux-summary.json ─────────────────────────────────────────────────
 const summaryPath = join(outDirAbs, "tts-mux-summary.json");
-const muxMode = validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1"
-  ? "elevenlabs_live_smoke"
-  : "local_mock";
+const muxMode =
+  validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_scene_paced_tts_summary_v1"
+    ? "elevenlabs_scene_paced"
+    : validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1"
+      ? "elevenlabs_live_smoke"
+      : "local_mock";
 
 const summary = {
   schemaVersion: "money_shorts_tts_mux_summary_v1",

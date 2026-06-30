@@ -173,9 +173,10 @@ check(
     muxSrc.includes("!== true"),
 );
 check(
-  "resolvedAudioPath used (resolve applied to audioPath)",
+  "resolvedAudioPath used (resolve applied to selected audio path)",
   muxSrc.includes("resolvedAudioPath") &&
-    muxSrc.includes("resolve(audioSummary.audioPath)"),
+    (muxSrc.includes("resolve(audioSummary.audioPath)") ||
+      muxSrc.includes("resolve(rawAudioPathField)")),
 );
 check(
   ".money-shorts-local guard on resolvedAudioPath",
