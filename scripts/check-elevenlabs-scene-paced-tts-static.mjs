@@ -304,16 +304,16 @@ check(
   builderSrc.includes("calcDurationTextBudget"),
 );
 check(
-  "TTS_CHARS_PER_SEC_MIN constant defined (padding lower bound)",
-  builderSrc.includes("TTS_CHARS_PER_SEC_MIN"),
+  "TTS_CHARS_PER_SEC_MIN = 5 (calibrated lower bound)",
+  builderSrc.includes("TTS_CHARS_PER_SEC_MIN") && builderSrc.includes("TTS_CHARS_PER_SEC_MIN = 5"),
 );
 check(
-  "TTS_CHARS_PER_SEC_TARGET constant defined",
-  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET"),
+  "TTS_CHARS_PER_SEC_TARGET = 7 (calibrated conservative max)",
+  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET") && builderSrc.includes("TTS_CHARS_PER_SEC_TARGET = 7"),
 );
 check(
-  "TTS_CHARS_PER_SEC_WARN constant defined",
-  builderSrc.includes("TTS_CHARS_PER_SEC_WARN"),
+  "TTS_CHARS_PER_SEC_WARN = 9 (calibrated hard trim risk)",
+  builderSrc.includes("TTS_CHARS_PER_SEC_WARN") && builderSrc.includes("TTS_CHARS_PER_SEC_WARN = 9"),
 );
 check(
   "durationTextBudgetMinChars field in scene summary",
@@ -367,14 +367,27 @@ if (!existsSync(FIXTURE_PATH)) {
     scenes.length === 6 && scenes.every((s) => typeof s.ttsText === "string" && s.ttsText.trim().length > 0),
   );
 
-  const MIN_RATE = 6;
-  const MAX_RATE = 10;
+  // Calibrated from live ElevenLabs run: observed ~7–8 chars/sec for Korean eleven_multilingual_v2
+  const MIN_RATE = 5;
+  const MAX_RATE = 7;
   check(
-    "all ttsText within_budget (6–10 chars/sec)",
+    "all ttsText within_budget (5–7 chars/sec, calibrated from live run)",
     scenes.every((s) => {
       const len = s.ttsText.trim().length;
       return len >= Math.floor(s.durationSec * MIN_RATE) && len <= Math.floor(s.durationSec * MAX_RATE);
     }),
+  );
+
+  const scene05 = scenes.find((s) => s.sceneNumber === 5);
+  check(
+    "scene 05 ttsText <= 28 chars (4s scene trim-risk guard)",
+    scene05 ? scene05.ttsText.trim().length <= 28 : false,
+  );
+
+  const scene06 = scenes.find((s) => s.sceneNumber === 6);
+  check(
+    "scene 06 ttsText <= 35 chars (5s scene trim-risk guard)",
+    scene06 ? scene06.ttsText.trim().length <= 35 : false,
   );
 
   check(

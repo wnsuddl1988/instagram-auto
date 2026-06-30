@@ -213,10 +213,14 @@ function resolveSceneTtsText(scene) {
   return null;
 }
 
-// Korean TTS char budget constants: 6 chars/sec min (padding risk), 10 target, 14 hard warning (trim risk)
-const TTS_CHARS_PER_SEC_MIN = 6;
-const TTS_CHARS_PER_SEC_TARGET = 10;
-const TTS_CHARS_PER_SEC_WARN = 14;
+// Korean TTS char budget constants calibrated from live ElevenLabs run results.
+// Live data (6 scenes, eleven_multilingual_v2): observed ~7–8 chars/sec actual speaking rate.
+// MIN=5: below this, silence padding becomes audibly long.
+// TARGET=7: conservative upper bound matching observed speaking rate — above this, tail trim is likely.
+// WARN=9: hard trim risk; text will almost certainly be cut off.
+const TTS_CHARS_PER_SEC_MIN = 5;
+const TTS_CHARS_PER_SEC_TARGET = 7;
+const TTS_CHARS_PER_SEC_WARN = 9;
 
 function calcDurationTextBudget(durationSec, charCount) {
   const minChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_MIN);
