@@ -82,10 +82,17 @@ function getArg(name) {
 
 const ttsScriptArg = getArg("--tts-script");
 const outDir = getArg("--out-dir");
+const durationMode = getArg("--duration-mode") ?? "full_narration";
+
+const ALLOWED_DURATION_MODES = ["full_narration", "compact_30s"];
+if (!ALLOWED_DURATION_MODES.includes(durationMode)) {
+  console.error(`ABORT: --duration-mode must be one of: ${ALLOWED_DURATION_MODES.join(", ")}. Got: ${durationMode}`);
+  process.exit(1);
+}
 
 if (!ttsScriptArg || !outDir) {
   console.error(
-    "Usage: node build-elevenlabs-tts-audio-from-script.mjs --tts-script <path> --out-dir <path>",
+    "Usage: node build-elevenlabs-tts-audio-from-script.mjs --tts-script <path> --out-dir <path> [--duration-mode full_narration|compact_30s]",
   );
   process.exit(1);
 }
@@ -126,12 +133,25 @@ if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
   process.exit(1);
 }
 
-// Combine all narration texts into a single script text
-const combinedText = scenes
-  .sort((a, b) => a.sceneNumber - b.sceneNumber)
-  .map((sc) => sc.narration)
-  .filter(Boolean)
-  .join(" ");
+const sortedScenes = [...scenes].sort((a, b) => a.sceneNumber - b.sceneNumber);
+
+// compact_30s: use captionText if present, else first sentence of narration (deterministic, no LLM)
+function extractCompactText(scene) {
+  if (scene.spokenCaption && String(scene.spokenCaption).trim()) return String(scene.spokenCaption).trim();
+  if (scene.captionText && String(scene.captionText).trim()) return String(scene.captionText).trim();
+  const narration = String(scene.narration ?? "").trim();
+  const firstSentenceMatch = narration.match(/^[^.!?。]+[.!?。]?/);
+  return firstSentenceMatch ? firstSentenceMatch[0].trim() : narration;
+}
+
+// full_narration: use full narration text
+const fullNarrationText = sortedScenes.map((sc) => sc.narration).filter(Boolean).join(" ");
+const compactText = sortedScenes.map(extractCompactText).filter(Boolean).join(" ");
+
+const textMode = durationMode === "compact_30s" ? "compact_30s" : "full_narration";
+const combinedText = textMode === "compact_30s" ? compactText : fullNarrationText;
+const sourceTextCharCount = fullNarrationText.length;
+const sentTextCharCount = combinedText.length;
 
 if (!combinedText.trim()) {
   console.error("ABORT: Combined narration text is empty.");
@@ -142,7 +162,9 @@ console.log(`  scriptId:         ${scriptId}`);
 console.log(`  manifestId:       ${manifestId}`);
 console.log(`  scenes:           ${scenes.length}`);
 console.log(`  targetDuration:   ${targetDurationSec}s`);
-console.log(`  textCharCount:    ${combinedText.length}`);
+console.log(`  textMode:         ${textMode}`);
+console.log(`  sourceTextChars:  ${sourceTextCharCount}`);
+console.log(`  sentTextChars:    ${sentTextCharCount}`);
 console.log();
 
 mkdirSync(outDirAbs, { recursive: true });
@@ -189,9 +211,14 @@ if (!apiKeyConfigured || !voiceIdConfigured) {
     readinessFailure: true,
     missingEnv: missing,
     envSource: "missing",
+    textMode,
+    sourceTextCharCount,
+    sentTextCharCount,
+    durationControlTargetSec: 30,
+    durationControlReason: textMode === "compact_30s" ? "compact_30s: captionText/first-sentence used to reduce TTS duration" : "full_narration: no duration control applied",
     sourceScriptPath: ttsScriptAbsPath,
     audioPath: null,
-    textCharCount: combinedText.length,
+    textCharCount: sentTextCharCount,
     sceneCount: scenes.length,
     targetDurationSec,
     rawAudioDurationSec: null,
@@ -364,9 +391,14 @@ const summary = {
   liveApiCallPerformed: true,
   readinessFailure: false,
   envSource,
+  textMode,
+  sourceTextCharCount,
+  sentTextCharCount,
+  durationControlTargetSec: 30,
+  durationControlReason: textMode === "compact_30s" ? "compact_30s: captionText/first-sentence used to reduce TTS duration" : "full_narration: no duration control applied",
   sourceScriptPath: ttsScriptAbsPath,
   audioPath,
-  textCharCount: combinedText.length,
+  textCharCount: sentTextCharCount,
   sceneCount: scenes.length,
   targetDurationSec,
   rawAudioDurationSec,
@@ -392,6 +424,7 @@ const summary = {
     "audio generated outside repo (C:\\tmp\\...)",
     ".env.local is never committed — it is in .gitignore",
     `durationDelta: ${durationDeltaSec > 0 ? "+" : ""}${durationDeltaSec}s vs target ${targetDurationSec}s — Owner review required.`,
+    `textMode: ${textMode}, sentTextCharCount: ${sentTextCharCount} (sourceTextCharCount: ${sourceTextCharCount})`,
   ],
 };
 

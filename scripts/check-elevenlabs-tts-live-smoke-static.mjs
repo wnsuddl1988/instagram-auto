@@ -286,6 +286,54 @@ check(
   !codeLines(builderSrc).match(/console\.log\s*\(`[^`]*\$\{voiceLabel\}/),
 );
 
+// ── Duration mode / compact_30s ────────────────────────────────────────────────
+console.log("\n[ build-elevenlabs-tts-audio-from-script.mjs — duration mode / compact_30s ]");
+
+check(
+  "--duration-mode CLI option present",
+  builderSrc.includes('"--duration-mode"'),
+);
+check(
+  "compact_30s mode supported",
+  builderSrc.includes("compact_30s"),
+);
+check(
+  "full_narration mode supported",
+  builderSrc.includes("full_narration"),
+);
+check(
+  "textMode summary field present",
+  builderSrc.includes("textMode"),
+);
+check(
+  "sourceTextCharCount summary field present",
+  builderSrc.includes("sourceTextCharCount"),
+);
+check(
+  "sentTextCharCount summary field present",
+  builderSrc.includes("sentTextCharCount"),
+);
+check(
+  "durationControlTargetSec summary field present",
+  builderSrc.includes("durationControlTargetSec"),
+);
+check(
+  "durationControlReason summary field present",
+  builderSrc.includes("durationControlReason"),
+);
+check(
+  "compact mode uses captionText/spokenCaption first (deterministic, no LLM)",
+  builderSrc.includes("captionText") && builderSrc.includes("spokenCaption"),
+);
+check(
+  "compact mode fallback: first sentence of narration",
+  builderSrc.includes("firstSentenceMatch"),
+);
+check(
+  "API call count unchanged: 1 call regardless of textMode",
+  builderSrc.includes("step 2/4") && !builderSrc.match(/fetch\([^)]+\)[\s\S]*?fetch\(/),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {
