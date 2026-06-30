@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "money_shorts_tts_script_v1",
+  "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605",
+  "manifestId": "rp-provider-ecos-live-base-rate-202605",
+  "factCardId": "fact-card-ecos-live-base-rate-draft-raw-ecos-722Y001-0101000-202605",
+  "ttsProvider": "elevenlabs",
+  "ttsMode": "elevenlabs_scene_paced",
+  "voiceProfile": "yohan_koo",
+  "targetDurationSec": 30,
+  "sourceFact": {
+    "sourceProviderId": "provider-ecos-live",
+    "isMock": false,
+    "isPublishable": false,
+    "indicatorName": "한국은행 기준금리",
+    "latestPeriod": "202605",
+    "dataPeriod": "2026년 5월",
+    "currentValueText": "2.5%",
+    "previousPeriod": "202604",
+    "previousValueText": "2.5%",
+    "changeValueText": "0.0%p",
+    "changeDirection": "unchanged_month_over_month",
+    "verifiedPublishedDate": "2025-05-29",
+    "sourceName": "한국은행 ECOS — 기준금리",
+    "sourceUrl": "https://ecos.bok.or.kr/#/Short/722Y001",
+    "officialDecisionSourceName": "한국은행 통화정책방향 결정회의 — 기준금리 변경 이력",
+    "officialDecisionSourceUrl": "https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643"
+  },
+  "riskNotes": [
+    "official source validated: ECOS live (722Y001/0101000) latest period 202605 = 2.5%; previous 202604 = 2.5% (month-over-month unchanged); BOK publishedDate 2025-05-29 verified by value matching, not derived from ECOS period.",
+    "Direction is reported as 'current level + watch points' only. No rate hike/cut is asserted: ECOS latest data is 2026-05 at 2.5% and the last official BOK change is 2025-05-29; any '2026 July hike' is NOT in the verified official history and must not be stated as fact.",
+    "isMock=false, isPublishable=false — draft only; publishable flag is never set true here.",
+    "not yet Owner voice-approved for final publish; qualityAccepted remains false until Owner accepts the Yohan Koo listening review.",
+    "no upload performed.",
+    "ttsText is calibrated to the scene-paced chars/sec budget (4s 20-28, 5s 25-35, 6s 30-42)."
+  ],
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "sceneRole": "hook",
+      "durationSec": 4,
+      "startSec": 0,
+      "endSec": 4,
+      "ttsText": "기준금리, 지금 어느 수준인지부터 보겠습니다.",
+      "narration": "기준금리, 지금 어느 수준에 있는지부터 차분히 확인해 보겠습니다.",
+      "captionText": "기준금리, 지금 어느 수준일까?"
+    },
+    {
+      "sceneNumber": 2,
+      "sceneRole": "signal",
+      "durationSec": 5,
+      "startSec": 4,
+      "endSec": 9,
+      "ttsText": "한국은행 자료 기준 현재 기준금리는 2.5%입니다.",
+      "narration": "한국은행 ECOS 자료 기준으로, 현재 기준금리는 연 2.5% 수준입니다.",
+      "captionText": "현재 기준금리 2.5% (한국은행 ECOS)"
+    },
+    {
+      "sceneNumber": 3,
+      "sceneRole": "why_expert_interpretation",
+      "durationSec": 6,
+      "startSec": 9,
+      "endSec": 15,
+      "ttsText": "최근 월별 자료에서는 이 수준이 그대로 유지되고 있습니다.",
+      "narration": "최근 월별 자료에서는 직전 달과 비교해도 이 수준이 그대로 유지되고 있습니다.",
+      "captionText": "최근 월별 자료에선 같은 수준 유지"
+    },
+    {
+      "sceneNumber": 4,
+      "sceneRole": "life_impact",
+      "durationSec": 6,
+      "startSec": 15,
+      "endSec": 21,
+      "ttsText": "그래서 대출자와 예금자는 지금 조건을 각각 점검해야 합니다.",
+      "narration": "그래서 대출자는 이자 부담을, 예금자는 예금 조건을 지금 기준으로 각각 점검해야 합니다.",
+      "captionText": "대출자·예금자, 지금 조건 점검"
+    },
+    {
+      "sceneNumber": 5,
+      "sceneRole": "watch_scenario_outlook",
+      "durationSec": 4,
+      "startSec": 21,
+      "endSec": 25,
+      "ttsText": "앞으로는 물가와 실제 대출금리를 같이 보세요.",
+      "narration": "앞으로는 기준금리 자체보다 물가와 실제 대출금리가 같이 움직이는지를 보세요.",
+      "captionText": "물가와 실제 대출금리를 함께 보기"
+    },
+    {
+      "sceneNumber": 6,
+      "sceneRole": "action_closing",
+      "durationSec": 5,
+      "startSec": 25,
+      "endSec": 30,
+      "ttsText": "오늘은 내 고정비와 대출 조건부터 정리해보세요.",
+      "narration": "오늘은 내 고정비와 대출 조건부터 한 번 정리해 보면서 현금흐름을 점검해 보세요.",
+      "captionText": "오늘은 고정비·대출 조건부터 정리"
+    }
+  ]
+}
