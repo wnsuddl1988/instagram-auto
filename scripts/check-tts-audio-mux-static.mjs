@@ -200,6 +200,21 @@ check(
     rendererSrc.includes("resolvedAudioPath.includes(\".money-shorts-local\")") &&
     rendererSrc.includes("existsSync(resolvedAudioPath)"),
 );
+check(
+  "audioStreamCount non-number causes abort (typeof !== number)",
+  rendererSrc.includes('typeof audioStreamCount !== "number"') &&
+    rendererSrc.includes("process.exit(1)"),
+);
+check(
+  "audioStreamCount < 1 causes abort (separate branch)",
+  rendererSrc.includes("audioStreamCount < 1") &&
+    rendererSrc.includes("process.exit(1)"),
+);
+check(
+  "validated summary reused for risk notes (no re-read of audioSummaryAbsPath)",
+  rendererSrc.includes("validatedAudioSummary") &&
+    !rendererSrc.includes("audioSummaryForRisk"),
+);
 
 // ── Renderer: summary JSON fields ────────────────────────────────────────────
 console.log("\n[ mux-local-tts-audio-into-visual-mp4.mjs — summary JSON fields ]");

@@ -152,6 +152,8 @@ console.log();
 // Otherwise: generate local mock audio inline via ffmpeg lavfi (backward-compatible).
 let mockAudioPath;
 let rawAudioDurationSec = totalSceneDurationSec;
+/** Validated audio summary — set when --audio-summary is provided, null otherwise. */
+let validatedAudioSummary = null;
 
 if (audioSummaryAbsPath) {
   console.log("[step 2/4] Loading audio from --audio-summary...");
@@ -210,7 +212,11 @@ if (audioSummaryAbsPath) {
       process.exit(1);
     }
     const audioStreamCount = audioSummary.audioStreamCount;
-    if (typeof audioStreamCount === "number" && audioStreamCount < 1) {
+    if (typeof audioStreamCount !== "number") {
+      console.error(`ABORT: ElevenLabs summary audioStreamCount must be a number. Got: ${typeof audioStreamCount}`);
+      process.exit(1);
+    }
+    if (audioStreamCount < 1) {
       console.error(`ABORT: ElevenLabs summary audioStreamCount must be >= 1. Got: ${audioStreamCount}`);
       process.exit(1);
     }
@@ -249,6 +255,7 @@ if (audioSummaryAbsPath) {
 
   mockAudioPath = resolvedAudioPath;
   rawAudioDurationSec = summaryRawDuration;
+  validatedAudioSummary = audioSummary;
   console.log(`  external audio: ${mockAudioPath}`);
   console.log(`  raw audio duration: ${rawAudioDurationSec}s`);
   console.log();
@@ -310,25 +317,47 @@ console.log("[step 3/4] Muxing video + audio...");
 const outputBaseName = basename(videoAbsPath, ".mp4").replace(/-visual-only$/, "") + "-tts-mux.mp4";
 const outputMp4Path = join(outDirAbs, outputBaseName);
 
-const muxArgs = [
-  "-y",
-  // Input 1: visual-only video
-  "-i", videoAbsPath,
-  // Input 2: mock audio
-  "-i", mockAudioPath,
-  // Map video from input 0, audio from input 1
-  "-map", "0:v:0",
-  "-map", "1:a:0",
-  // Video: stream copy (no re-encode needed)
-  "-c:v", "copy",
-  // Audio: encode to aac
-  "-c:a", "aac",
-  "-b:a", "128k",
-  // Lock duration to video (prevents audio from extending output)
-  "-t", String(videoDurationSec),
-  "-shortest",
-  outputMp4Path,
-];
+// When audio is shorter than video, pad with silence to reach video duration.
+// When audio is longer than video, -t + -shortest trims the audio.
+const audioIsShorter = rawAudioDurationSec < videoDurationSec - 0.1;
+
+let muxArgs;
+if (audioIsShorter) {
+  // Use apad filter to pad audio with silence up to video duration
+  muxArgs = [
+    "-y",
+    "-i", videoAbsPath,
+    "-i", mockAudioPath,
+    "-filter_complex", `[1:a]apad=pad_dur=${videoDurationSec}[aout]`,
+    "-map", "0:v:0",
+    "-map", "[aout]",
+    "-c:v", "copy",
+    "-c:a", "aac",
+    "-b:a", "128k",
+    "-t", String(videoDurationSec),
+    outputMp4Path,
+  ];
+} else {
+  muxArgs = [
+    "-y",
+    // Input 1: visual-only video
+    "-i", videoAbsPath,
+    // Input 2: mock audio
+    "-i", mockAudioPath,
+    // Map video from input 0, audio from input 1
+    "-map", "0:v:0",
+    "-map", "1:a:0",
+    // Video: stream copy (no re-encode needed)
+    "-c:v", "copy",
+    // Audio: encode to aac
+    "-c:a", "aac",
+    "-b:a", "128k",
+    // Lock duration to video (prevents audio from extending output)
+    "-t", String(videoDurationSec),
+    "-shortest",
+    outputMp4Path,
+  ];
+}
 
 console.log(`  output: ${outputMp4Path}`);
 console.log(`  ffmpeg args: ${muxArgs.join(" ")}\n`);
@@ -434,20 +463,12 @@ if (!allPass) {
 // ── Build risk notes ───────────────────────────────────────────────────────────
 const riskNotes = [...(ttsScript.riskNotes ?? [])];
 
-// ElevenLabs live smoke specific risks
-let audioSummaryForRisk = null;
-if (audioSummaryAbsPath) {
-  try {
-    audioSummaryForRisk = JSON.parse(readFileSync(audioSummaryAbsPath, "utf-8"));
-  } catch {
-    // already validated above; ignore re-read failure
-  }
-}
-if (audioSummaryForRisk?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1") {
+// ElevenLabs live smoke specific risks — use already-validated summary (no re-read).
+if (validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1") {
   riskNotes.push("ElevenLabs live smoke audio is not quality accepted yet.");
   riskNotes.push("Owner listening review required.");
-  if (audioSummaryForRisk.voiceIdMasked) {
-    riskNotes.push(`voiceIdMasked: ${audioSummaryForRisk.voiceIdMasked}`);
+  if (validatedAudioSummary.voiceIdMasked) {
+    riskNotes.push(`voiceIdMasked: ${validatedAudioSummary.voiceIdMasked}`);
   }
 }
 
@@ -460,7 +481,7 @@ if (audioDelta < -1.0) {
 
 // ── Write tts-mux-summary.json ─────────────────────────────────────────────────
 const summaryPath = join(outDirAbs, "tts-mux-summary.json");
-const muxMode = audioSummaryForRisk?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1"
+const muxMode = validatedAudioSummary?.schemaVersion === "money_shorts_elevenlabs_tts_live_smoke_summary_v1"
   ? "elevenlabs_live_smoke"
   : "local_mock";
 
