@@ -20,6 +20,7 @@
       "durationSec": 4,
       "startSec": 0,
       "endSec": 4,
+      "ttsText": "금리 동결, 진짜 좋은 소식일까?",
       "narration": "금리 동결, 진짜 좋은 소식일까요?",
       "captionText": "금리 동결, 진짜 좋은 소식일까?"
     },
@@ -29,6 +30,7 @@
       "durationSec": 5,
       "startSec": 4,
       "endSec": 9,
+      "ttsText": "기준금리 하락 신호입니다",
       "narration": "이번 신호는 한국은행 ECOS — 기준금리의 기준금리이 3.0% 수준에서 내린 데이터에서 시작합니다.",
       "captionText": "기준금리 하락 신호입니다"
     },
@@ -38,6 +40,7 @@
       "durationSec": 6,
       "startSec": 9,
       "endSec": 15,
+      "ttsText": "방향보다 물가와 경기를 봐야 합니다",
       "narration": "지금 봐야 할 건 다음 금리 방향 단정이 아니라, 물가와 경기 신호가 어떻게 바뀌는지입니다.",
       "captionText": "방향보다 물가와 경기를 봐야 합니다"
     },
@@ -47,6 +50,7 @@
       "durationSec": 6,
       "startSec": 15,
       "endSec": 21,
+      "ttsText": "대출자와 예금자는 다르게 봐야 합니다",
       "narration": "대출자는 이자 부담을, 저축자는 예금 조건을, 소비자는 현금흐름을 다르게 봐야 합니다.",
       "captionText": "대출자와 예금자는 다르게 봐야 합니다"
     },
@@ -56,6 +60,7 @@
       "durationSec": 4,
       "startSec": 21,
       "endSec": 25,
+      "ttsText": "다음은 물가와 대출금리를 보세요",
       "narration": "다음에는 금리 자체보다 물가, 경기지표, 실제 대출금리가 같이 움직이는지를 봐야 합니다.",
       "captionText": "다음은 물가와 대출금리를 보세요"
     },
@@ -65,6 +70,7 @@
       "durationSec": 5,
       "startSec": 25,
       "endSec": 30,
+      "ttsText": "이번 달은 현금흐름부터 점검하세요",
       "narration": "이번 달은 대출 조건과 고정비, 변동비를 나눠 현금흐름부터 점검해보세요.",
       "captionText": "이번 달은 현금흐름부터 점검하세요"
     }

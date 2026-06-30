@@ -256,6 +256,76 @@ check(
     builderSrc.includes("process.env"),
 );
 
+// ── Text selection contract ─────────────────────────────────────────────────────
+console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — text selection contract ]");
+
+check(
+  "resolveSceneTtsText helper present",
+  builderSrc.includes("resolveSceneTtsText"),
+);
+check(
+  "ttsText priority: first candidate",
+  builderSrc.includes('"ttsText"') && builderSrc.includes("scene.ttsText"),
+);
+check(
+  "spokenCaption fallback present",
+  builderSrc.includes('"spokenCaption"') && builderSrc.includes("scene.spokenCaption"),
+);
+check(
+  "captionText fallback present",
+  builderSrc.includes('"captionText"') && builderSrc.includes("scene.captionText"),
+);
+check(
+  "narration fallback present (final fallback)",
+  builderSrc.includes('"narration"') && builderSrc.includes("scene.narration"),
+);
+check(
+  "textSource returned from resolveSceneTtsText",
+  builderSrc.includes("textSource"),
+);
+check(
+  "sentTextCharCount returned from resolveSceneTtsText",
+  builderSrc.includes("sentTextCharCount"),
+);
+check(
+  "sourceTextCharCount returned from resolveSceneTtsText",
+  builderSrc.includes("sourceTextCharCount"),
+);
+check(
+  "abort when no TTS text found (all sources empty)",
+  builderSrc.includes("no usable TTS text") && builderSrc.includes("process.exit(1)"),
+);
+
+// ── Duration budget contract ────────────────────────────────────────────────────
+console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — duration budget contract ]");
+
+check(
+  "calcDurationTextBudget helper present",
+  builderSrc.includes("calcDurationTextBudget"),
+);
+check(
+  "durationTextBudgetMaxChars field in scene summary",
+  builderSrc.includes("durationTextBudgetMaxChars"),
+);
+check(
+  "durationTextBudgetStatus field in scene summary (within_budget/over_budget)",
+  builderSrc.includes("durationTextBudgetStatus") &&
+    builderSrc.includes('"within_budget"') &&
+    builderSrc.includes('"over_budget"'),
+);
+check(
+  "durationTextBudgetWarning field in scene summary",
+  builderSrc.includes("durationTextBudgetWarning"),
+);
+check(
+  "over_budget warning propagated to riskNotes",
+  builderSrc.includes("durationTextBudgetWarning") && builderSrc.includes("riskNotes.push"),
+);
+check(
+  "Korean TTS chars/sec constants defined",
+  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET") || builderSrc.includes("TTS_CHARS_PER_SEC_WARN"),
+);
+
 // ── Mux scene-paced support ─────────────────────────────────────────────────────
 if (!existsSync(MUX_PATH)) {
   console.error("\nFATAL: Mux file not found. Skipping mux checks.\n");

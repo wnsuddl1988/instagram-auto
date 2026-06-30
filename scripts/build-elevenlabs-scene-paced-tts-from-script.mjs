@@ -195,6 +195,40 @@ function maskVoiceId(id) {
   return id.slice(0, 3) + "***" + id.slice(-3);
 }
 
+// ── Scene TTS text selection ─────────────────────────────────────────────────────
+// Priority: ttsText → spokenCaption → captionText → narration
+function resolveSceneTtsText(scene) {
+  const candidates = [
+    { key: "ttsText", value: scene.ttsText },
+    { key: "spokenCaption", value: scene.spokenCaption },
+    { key: "captionText", value: scene.captionText },
+    { key: "narration", value: scene.narration },
+  ];
+  for (const { key, value } of candidates) {
+    if (value && String(value).trim()) {
+      const text = String(value).trim();
+      return { text, textSource: key, sourceTextCharCount: text.length, sentTextCharCount: text.length };
+    }
+  }
+  return null;
+}
+
+// Korean TTS conservative char budget: 10 chars/sec target, 14 chars/sec hard warning
+const TTS_CHARS_PER_SEC_TARGET = 10;
+const TTS_CHARS_PER_SEC_WARN = 14;
+
+function calcDurationTextBudget(durationSec, charCount) {
+  const maxChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_TARGET);
+  const warnChars = Math.floor(durationSec * TTS_CHARS_PER_SEC_WARN);
+  const status = charCount <= maxChars ? "within_budget" : "over_budget";
+  const warning = charCount > warnChars
+    ? `over hard limit: ${charCount} chars > ${warnChars} (${TTS_CHARS_PER_SEC_WARN}chars/s × ${durationSec}s)`
+    : charCount > maxChars
+      ? `over target: ${charCount} chars > ${maxChars} (${TTS_CHARS_PER_SEC_TARGET}chars/s × ${durationSec}s)`
+      : null;
+  return { durationTextBudgetMaxChars: maxChars, durationTextBudgetStatus: status, durationTextBudgetWarning: warning };
+}
+
 const voiceIdMasked = maskVoiceId(voiceId);
 console.log(`  voiceIdMasked: ${voiceIdMasked}`);
 console.log();
@@ -212,11 +246,17 @@ const sceneResults = [];
 for (const scene of sortedScenes) {
   const sceneNum = scene.sceneNumber;
   const sceneNumStr = String(sceneNum).padStart(2, "0");
-  const text = scene.narration ?? "";
 
-  if (!text.trim()) {
-    console.error(`ABORT: Scene ${sceneNum} has empty narration.`);
+  const resolved = resolveSceneTtsText(scene);
+  if (!resolved) {
+    console.error(`ABORT: Scene ${sceneNum} has no usable TTS text (ttsText/spokenCaption/captionText/narration all empty).`);
     process.exit(1);
+  }
+  const { text, textSource, sourceTextCharCount, sentTextCharCount } = resolved;
+
+  const budget = calcDurationTextBudget(scene.durationSec, sentTextCharCount);
+  if (budget.durationTextBudgetWarning) {
+    console.warn(`  [WARN] scene ${sceneNumStr} text budget: ${budget.durationTextBudgetWarning}`);
   }
 
   if (apiCallCount >= API_CALL_BUDGET_MAX) {
@@ -224,7 +264,7 @@ for (const scene of sortedScenes) {
     process.exit(1);
   }
 
-  console.log(`  [scene ${sceneNumStr}] role: ${scene.sceneRole}, target: ${scene.durationSec}s, chars: ${text.length}`);
+  console.log(`  [scene ${sceneNumStr}] role: ${scene.sceneRole}, target: ${scene.durationSec}s, textSource: ${textSource}, chars: ${sentTextCharCount}, budget: ${budget.durationTextBudgetStatus}`);
 
   let httpStatus = null;
   let audioBuffer = null;
@@ -333,6 +373,12 @@ for (const scene of sortedScenes) {
     sceneNumber: sceneNum,
     sceneRole: scene.sceneRole ?? "unknown",
     targetDurationSec: targetSceneDurationSec,
+    textSource,
+    sourceTextCharCount,
+    sentTextCharCount,
+    durationTextBudgetMaxChars: budget.durationTextBudgetMaxChars,
+    durationTextBudgetStatus: budget.durationTextBudgetStatus,
+    durationTextBudgetWarning: budget.durationTextBudgetWarning ?? null,
     rawAudioDurationSec,
     normalizedDurationSec: targetSceneDurationSec,
     audioPath: rawAudioPath,
@@ -425,6 +471,7 @@ const riskNotes = [
 
 for (const sc of sceneResults) {
   for (const rn of sc.riskNotes) riskNotes.push(rn);
+  if (sc.durationTextBudgetWarning) riskNotes.push(`scene ${sc.sceneNumber} budget: ${sc.durationTextBudgetWarning}`);
 }
 
 if (!timelineDurationOk) {
