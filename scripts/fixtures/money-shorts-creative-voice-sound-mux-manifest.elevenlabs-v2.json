@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "money_shorts_creative_voice_sound_mux_manifest_elevenlabs_v2",
+  "status": "data_only_elevenlabs_voice_sound_mux_manifest",
+  "audioMode": "elevenlabs_real_tts",
+  "notRealSpeech": false,
+  "realTtsExecuted": false,
+  "ownerAcceptanceRequired": true,
+  "uploadReady": false,
+  "uploadQueueReadinessGenerated": false,
+  "isFinalUploadReadyVideo": false,
+  "realTtsProvider": "elevenlabs",
+  "sourceRefs": {
+    "v1MuxManifest": "scripts/fixtures/money-shorts-creative-voice-sound-mux-manifest.v1.json",
+    "visualRenderReport": "C:\\tmp\\money-shorts-os\\creative-final-visual-render-v1\\creative-final-visual-render-report.json",
+    "visualMp4": "C:\\tmp\\money-shorts-os\\creative-final-visual-render-v1\\money-shorts-creative-final-visual-youtube-safe-frame-v1.mp4"
+  },
+  "selectedTopicId": "base-rate-hold-202605",
+  "selectedCandidateId": "base-rate-hold-202605-cand-1",
+  "qualityScorerDecision": "render",
+  "hardFailReasonCount": 0,
+  "targetDurationSec": 30,
+  "canvas": {
+    "widthPx": 1080,
+    "heightPx": 1920
+  },
+  "fps": 30,
+  "ttsScript": {
+    "schemaVersion": "money_shorts_creative_tts_script_elevenlabs_v2",
+    "scriptId": "tts-script-creative-base-rate-hold-202605-elevenlabs-v2",
+    "manifestId": "base-rate-hold-202605-cand-1",
+    "ttsMode": "elevenlabs_real_tts",
+    "audioMode": "elevenlabs_real_tts",
+    "notRealSpeech": false,
+    "provider": "elevenlabs",
+    "targetDurationSec": 30,
+    "fullVoiceover": "금리 동결, 내 이자 신호. 동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요. 첫째, 동결은 대출자에게 당장 이득이 되지 않습니다. 둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요. 셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요. 가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다. 지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+    "voiceCandidateId": "yohan_koo",
+    "voicePreset": "confident_v3",
+    "scenes": [
+      {
+        "sceneNumber": 1,
+        "sceneRole": "hook",
+        "sourceImage": "image_01",
+        "ttsText": "금리 동결, 내 이자 신호.",
+        "durationSec": 5
+      },
+      {
+        "sceneNumber": 2,
+        "sceneRole": "problem",
+        "sourceImage": "image_02",
+        "ttsText": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+        "durationSec": 4
+      },
+      {
+        "sceneNumber": 3,
+        "sceneRole": "point_1",
+        "sourceImage": "image_03",
+        "ttsText": "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+        "durationSec": 5
+      },
+      {
+        "sceneNumber": 4,
+        "sceneRole": "point_2",
+        "sourceImage": "image_04",
+        "ttsText": "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+        "durationSec": 5
+      },
+      {
+        "sceneNumber": 5,
+        "sceneRole": "point_3",
+        "sourceImage": "image_05",
+        "ttsText": "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요.",
+        "durationSec": 4
+      },
+      {
+        "sceneNumber": 6,
+        "sceneRole": "twist_and_action",
+        "sourceImage": "image_06",
+        "ttsText": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다. 지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+        "durationSec": 7
+      }
+    ],
+    "sceneTotalDurationSec": 30,
+    "riskNotes": [
+      "real ElevenLabs TTS: scene별 1회 호출(max 6), 자동 재시도 금지, voice list endpoint 금지.",
+      "TTS text is derived from the Creative Layer selected candidate full_voiceover — 문구 자동 수정/압축 루프 금지.",
+      "normalize는 atempo(tail-preserving)만 사용; raw>target 시 -t hard trim 금지."
+    ]
+  },
+  "audioTimelinePolicy": {
+    "fitStrategy": "scene_paced_to_planner_windows",
+    "targetDurationSec": 30,
+    "sceneTotalDurationSec": 30,
+    "normalizeMethod": "atempo",
+    "tailHardTrimForbidden": true,
+    "excessiveSilenceForbidden": true,
+    "atempoRatioAbortThreshold": 1.25,
+    "note": "scene별 raw>target이면 atempo=ratio(=raw/target)로 tail-preserving normalize. ratio가 1.25 초과면 abort/warning으로 보고하고 멈춘다. raw<target이면 apad로 무음 패딩."
+  },
+  "soundPolicy": {
+    "sfxPlanned": true,
+    "sfxPlannedCount": 8,
+    "sfxRendered": false,
+    "sfxRenderDeferredReason": "v2 real-TTS first run has no approved local SFX asset library; fabricating or downloading SFX is forbidden. SFX render deferred to a later approved step. Voice mux proceeds without SFX.",
+    "fabricatedSfxForbidden": true,
+    "externalSfxDownloadForbidden": true
+  },
+  "muxExpectations": {
+    "container": "mp4",
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "fps": 30,
+    "durationToleranceSec": 0.5,
+    "maxAvGapSec": 0.2,
+    "audioPresent": true
+  },
+  "elevenlabsPolicy": {
+    "apiCallBudgetMax": 6,
+    "perSceneMaxCalls": 1,
+    "autoRetryForbidden": true,
+    "voiceListEndpointForbidden": true,
+    "voiceExperimentForbidden": true,
+    "scriptRewriteLoopForbidden": true,
+    "allowedEnvKeys": [
+      "ELEVENLABS_API_KEY",
+      "ELEVENLABS_YOHAN_KOO_VOICE_ID",
+      "ELEVENLABS_VOICE_ID"
+    ],
+    "secretRawOutputForbidden": true
+  },
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run",
+    "ttsScriptJson": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\creative-tts-script.elevenlabs-v2.json",
+    "ttsSummaryJson": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\elevenlabs-scene-paced-tts-summary.json",
+    "muxedMp4": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\money-shorts-creative-final-visual-youtube-safe-frame-v1-tts-mux.mp4",
+    "muxReport": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\creative-voice-sound-mux-elevenlabs-v2-report.json"
+  },
+  "reuseHelpers": {
+    "ttsBuilder": "scripts/build-money-shorts-creative-voice-sound-mux-elevenlabs-v2-tts.mjs",
+    "muxRunner": "scripts/mux-local-tts-audio-into-visual-mp4.mjs",
+    "note": "v2 atempo TTS builder(신규)로 real TTS timeline 생성 후, 기존 검증된 mux helper를 read-only 재사용해 mux한다. mux helper는 money_shorts_elevenlabs_scene_paced_tts_summary_v1 스키마를 이미 지원한다."
+  },
+  "boundary": {
+    "audioMode": "elevenlabs_real_tts",
+    "notRealSpeech": false,
+    "realTts": true,
+    "noAutoRetry": true,
+    "noVoiceExperiment": true,
+    "noVoiceListEndpoint": true,
+    "noScriptRewriteLoop": true,
+    "noTailHardTrim": true,
+    "noUploadOrPublish": true,
+    "noDeploy": true,
+    "noUploadQueueReadiness": true,
+    "noExistingFinalVideoOverwrite": true,
+    "noSecretRawOutput": true,
+    "dataOnlyManifest": true
+  },
+  "riskNotes": [
+    "real ElevenLabs TTS (유료). scene별 1회, max 6 calls, 자동 재시도 금지.",
+    "notRealSpeech=false, realTtsExecuted는 runner가 실제 호출 후 true로 확정.",
+    "ownerAcceptanceRequired=true, uploadReady=false, uploadQueueReadinessGenerated=false — Owner 청취/시청 전 최종 확정 아님.",
+    "normalize는 atempo tail-preserving만; ratio>1.25면 abort/warning.",
+    "SFX 미렌더(sfxRendered=false); 가짜 SFX/외부 다운로드 금지.",
+    "기존 accepted final mux mp4 / YouTube / Instagram 게시물 미변경. secret 원문 출력 금지."
+  ]
+}
