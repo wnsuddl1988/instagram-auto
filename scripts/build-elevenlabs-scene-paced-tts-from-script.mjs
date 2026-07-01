@@ -74,6 +74,7 @@ function getArg(name) {
 const ttsScriptArg = getArg("--tts-script");
 const outDir = getArg("--out-dir");
 const voiceCandidateArg = getArg("--voice-candidate");
+const voicePresetArg = getArg("--voice-preset");
 
 if (!ttsScriptArg || !outDir) {
   console.error(
@@ -343,7 +344,21 @@ const API_CALL_BUDGET_MAX = 6;
 let apiCallCount = 0;
 
 const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
-const voiceSettings = { stability: 0.52, similarity_boost: 0.78, style: 0.1, use_speaker_boost: true };
+
+// Voice setting presets. default = 기존 동작 보존. confident_v2 = 더 안정적/자신감 있는 톤
+// (속삭임/말끝 흐림 완화 목적: stability↑, similarity_boost↑, style↓).
+const VOICE_PRESETS = {
+  default: { stability: 0.52, similarity_boost: 0.78, style: 0.1, use_speaker_boost: true },
+  confident_v2: { stability: 0.8, similarity_boost: 0.88, style: 0.03, use_speaker_boost: true },
+};
+// preset 우선순위: --voice-preset CLI > tts script voicePreset 필드 > default
+const requestedPreset = voicePresetArg ?? ttsScript.voicePreset ?? "default";
+const voicePresetId = VOICE_PRESETS[requestedPreset] ? requestedPreset : "default";
+if (!VOICE_PRESETS[requestedPreset]) {
+  console.warn(`  [WARN] unknown voice preset '${requestedPreset}', falling back to 'default'`);
+}
+const voiceSettings = VOICE_PRESETS[voicePresetId];
+console.log(`  voicePreset: ${voicePresetId} (stability=${voiceSettings.stability}, similarity_boost=${voiceSettings.similarity_boost}, style=${voiceSettings.style}, use_speaker_boost=${voiceSettings.use_speaker_boost})`);
 
 const sceneResults = [];
 
@@ -606,6 +621,8 @@ const summary = {
   voiceCandidateLabel: voiceCandidateResult?.candidateLabel ?? null,
   voiceCandidateResolved: voiceCandidateResult ? true : null,
   voiceCandidateSource: voiceCandidateResult?.source ?? null,
+  voicePresetId,
+  voiceSettingsSanitized: { ...voiceSettings },
   envSource,
   modelId,
   generatedAt: new Date().toISOString(),

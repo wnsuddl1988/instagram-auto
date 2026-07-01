@@ -81,6 +81,8 @@ const { outputSpec, imageInputs, captionOverlays } = manifest;
 const { widthPx, heightPx } = outputSpec.dimensions;
 const fps = outputSpec.fps ?? 30;
 const crf = outputSpec.crf ?? 23;
+// caption font size: manifest outputSpec.captionFontSize 우선, 없으면 기존 default 72.
+const captionFontSize = Number.isFinite(outputSpec.captionFontSize) ? outputSpec.captionFontSize : 72;
 
 const targetDurationSec = imageInputs.reduce((s, i) => s + i.durationSec, 0);
 
@@ -127,13 +129,18 @@ const assLines = [
   "",
   "[V4+ Styles]",
   "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-  "Style: Caption,Arial,72,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,2,2,60,60,120,1",
+  `Style: Caption,Arial,${captionFontSize},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,2,2,60,60,120,1`,
   "",
   "[Events]",
   "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
 ];
 
 for (const cap of captionOverlays) {
+  // one-line caption 강제: 실제 개행 또는 ASS 강제 줄바꿈(\N, \n)이 있으면 ABORT.
+  if (/[\r\n]/.test(cap.captionText) || /\\N|\\n/.test(cap.captionText)) {
+    console.error(`ABORT: caption for scene ${cap.sceneIndex} contains a forced line break (newline or \\N). Captions must be single-line.`);
+    process.exit(1);
+  }
   const start = secToAssTime(cap.showAtSec);
   const end = secToAssTime(cap.hideAtSec);
   const text = cap.captionText.replace(/\\/g, "\\\\").replace(/\{/g, "\\{").replace(/\}/g, "\\}");
@@ -145,7 +152,7 @@ const assPath = join(outDirAbs, "captions.ass");
 writeFileSync(assPath, assContent, "utf-8");
 
 console.log(`[step 2/3] ASS subtitle file written: ${assPath}`);
-console.log(`  ${captionOverlays.length} caption events`);
+console.log(`  ${captionOverlays.length} caption events, fontSize=${captionFontSize}, one-line enforced`);
 console.log();
 
 // ── Concatenation list file (actual selected image PNGs) ───────────────────
