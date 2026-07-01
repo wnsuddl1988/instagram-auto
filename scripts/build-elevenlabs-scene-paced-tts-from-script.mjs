@@ -350,6 +350,9 @@ const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURICompone
 const VOICE_PRESETS = {
   default: { stability: 0.52, similarity_boost: 0.78, style: 0.1, use_speaker_boost: true },
   confident_v2: { stability: 0.8, similarity_boost: 0.88, style: 0.03, use_speaker_boost: true },
+  // confident_v3: v2가 지나치게 flat/속삭임이라 style을 올려 문장 종결을 단단하게, stability는 낮춰
+  // 단조로움을 완화. speaker identity 유지를 위해 similarity_boost는 높게.
+  confident_v3: { stability: 0.68, similarity_boost: 0.9, style: 0.22, use_speaker_boost: true },
 };
 // preset 우선순위: --voice-preset CLI > tts script voicePreset 필드 > default
 const requestedPreset = voicePresetArg ?? ttsScript.voicePreset ?? "default";

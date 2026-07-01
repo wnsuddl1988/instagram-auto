@@ -83,6 +83,10 @@ const fps = outputSpec.fps ?? 30;
 const crf = outputSpec.crf ?? 23;
 // caption font size: manifest outputSpec.captionFontSize 우선, 없으면 기존 default 72.
 const captionFontSize = Number.isFinite(outputSpec.captionFontSize) ? outputSpec.captionFontSize : 72;
+// caption outline/shadow/marginV: manifest 우선, 없으면 기존 default(4/2/120).
+const captionOutline = Number.isFinite(outputSpec.captionOutline) ? outputSpec.captionOutline : 4;
+const captionShadow = Number.isFinite(outputSpec.captionShadow) ? outputSpec.captionShadow : 2;
+const captionMarginV = Number.isFinite(outputSpec.captionMarginV) ? outputSpec.captionMarginV : 120;
 
 const targetDurationSec = imageInputs.reduce((s, i) => s + i.durationSec, 0);
 
@@ -129,7 +133,7 @@ const assLines = [
   "",
   "[V4+ Styles]",
   "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-  `Style: Caption,Arial,${captionFontSize},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,2,2,60,60,120,1`,
+  `Style: Caption,Arial,${captionFontSize},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${captionOutline},${captionShadow},2,60,60,${captionMarginV},1`,
   "",
   "[Events]",
   "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -152,7 +156,7 @@ const assPath = join(outDirAbs, "captions.ass");
 writeFileSync(assPath, assContent, "utf-8");
 
 console.log(`[step 2/3] ASS subtitle file written: ${assPath}`);
-console.log(`  ${captionOverlays.length} caption events, fontSize=${captionFontSize}, one-line enforced`);
+console.log(`  ${captionOverlays.length} caption events, fontSize=${captionFontSize}, outline=${captionOutline}, shadow=${captionShadow}, marginV=${captionMarginV}, one-line enforced`);
 console.log();
 
 // ── Concatenation list file (actual selected image PNGs) ───────────────────
