@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "money_shorts_automation_job_v1",
+  "jobId": "money-shorts-automation-base-rate-202605-v1",
+  "category": "money_shorts",
+  "status": "data_only_automation_job_manifest",
+  "title": "Money Shorts OS — Automation Job (Base Rate 202605)",
+  "purpose": "이미 YouTube Shorts + Instagram Reels 실게시까지 완료된 base-rate-202605 영상을 대상으로, 다음 영상부터 반복 가능한 자동화 파이프라인의 상태를 한 job 단위로 점검하기 위한 data-only manifest다. 이 manifest는 이미지/TTS/렌더/업로드/deploy를 실행하지 않는다. Automation Orchestrator v1(run-money-shorts-automation-orchestrator-v1.mjs)이 소비해 status/preflight 상태만 판정한다.",
+
+  "sourceFactRef": {
+    "sourceManifestId": "rp-provider-ecos-live-base-rate-202605",
+    "series": "ECOS 722Y001/0101000",
+    "latestPeriod": "202605",
+    "currentValueText": "2.5%",
+    "changeDirection": "unchanged_month_over_month",
+    "publishedDate": "2025-05-29",
+    "note": "official source: ECOS live (722Y001/0101000) latest 202605 = 2.5%, previous 202604 = 2.5% (month-over-month unchanged). No rate hike/cut asserted."
+  },
+
+  "acceptedFinalVideoPath": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4",
+  "acceptedVariant": "voice_caption_v3_1_tailfit",
+
+  "publicVideoUrl": "https://www.buildgongjakso.com/videos/money-shorts/base-rate-202605-final.mp4",
+  "youtubeShortsUrl": "https://www.youtube.com/shorts/eX622q9dNOI",
+  "instagramReelsUrl": "https://www.instagram.com/reel/17910778836241106/",
+
+  "selectedImageSetManifest": {
+    "path": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+    "schemaVersion": "money_shorts_scene_selected_image_set_v1",
+    "sceneCount": 6
+  },
+  "finalVideoAcceptanceManifest": {
+    "path": "scripts/fixtures/premium-editorial-final-video-acceptance.v1.json",
+    "schemaVersion": "money_shorts_final_video_acceptance_v1"
+  },
+  "uploadReadinessManifest": {
+    "path": "scripts/fixtures/premium-editorial-upload-readiness.v1.json",
+    "schemaVersion": "money_shorts_upload_readiness_v1"
+  },
+  "platformRenderProfilesManifest": {
+    "path": "scripts/fixtures/premium-editorial-platform-render-profiles.v1.json",
+    "schemaVersion": "money_shorts_platform_render_profiles_v1"
+  },
+  "uploadMetadataManifest": {
+    "path": "scripts/fixtures/provider-candidate-upload-metadata.local-mock.json",
+    "schemaVersion": "money_shorts_upload_metadata_v1",
+    "mode": "local_mock",
+    "note": "실제 업로드된 title/description/caption의 소스. 이 manifest에는 token/credential이 없다(local_mock)."
+  },
+
+  "publishRecords": {
+    "youtube_shorts": {
+      "recordPath": "C:\\tmp\\money-shorts-os\\live-upload-first-run-youtube-only-v1\\live-upload-first-run-record.json",
+      "expectedVideoId": "eX622q9dNOI",
+      "expectedUrl": "https://www.youtube.com/shorts/eX622q9dNOI"
+    },
+    "instagram_reels": {
+      "recordPath": "C:\\tmp\\money-shorts-os\\live-upload-first-run-instagram-retry-direct-account-v1\\live-upload-first-run-record.json",
+      "expectedMediaId": "17910778836241106",
+      "expectedUrl": "https://www.instagram.com/reel/17910778836241106/"
+    },
+    "note": "publish record는 repo 밖 C:\\tmp에 있는 live-upload-first-run runner 산출물이다. 이 job manifest는 경로만 참조하며 record를 수정하지 않는다. record에는 masked identifier만 있고 raw token은 없다."
+  },
+
+  "requiredStaticGuards": [
+    "scripts/check-premium-editorial-platform-render-profiles-static.mjs",
+    "scripts/check-premium-editorial-final-video-acceptance-static.mjs",
+    "scripts/check-premium-editorial-live-upload-first-run-static.mjs",
+    "scripts/check-upload-payload-static.mjs",
+    "scripts/check-money-shorts-automation-orchestrator-static.mjs"
+  ],
+
+  "pipelineStages": [
+    {
+      "stage": "source_facts",
+      "displayName": "Source facts (ECOS base rate)",
+      "readyCriterion": "sourceFactRef present with latestPeriod/currentValueText/changeDirection",
+      "completed": true
+    },
+    {
+      "stage": "visual_set",
+      "displayName": "Selected scene image set",
+      "readyCriterion": "selectedImageSetManifest fixture present with sceneCount >= 1",
+      "completed": true
+    },
+    {
+      "stage": "platform_render_profiles",
+      "displayName": "Platform render profiles (IG Reels / YT Shorts safe-frame)",
+      "readyCriterion": "platformRenderProfilesManifest fixture present with both platform profiles",
+      "completed": true
+    },
+    {
+      "stage": "final_video_accepted",
+      "displayName": "Final video accepted by Owner",
+      "readyCriterion": "finalVideoAcceptanceManifest.acceptedByOwner === true AND acceptedFinalVideoPath exists",
+      "completed": true
+    },
+    {
+      "stage": "public_bridge",
+      "displayName": "Public mp4 bridge (buildgongjakso.com)",
+      "readyCriterion": "publicVideoUrl reachable (checked in preflight only)",
+      "completed": true
+    },
+    {
+      "stage": "youtube_published",
+      "displayName": "YouTube Shorts published",
+      "readyCriterion": "youtube publish record videoId matches youtubeShortsUrl",
+      "completed": true
+    },
+    {
+      "stage": "instagram_published",
+      "displayName": "Instagram Reels published",
+      "readyCriterion": "instagram publish record mediaId matches instagramReelsUrl AND publishExecuted === true",
+      "completed": true
+    }
+  ],
+
+  "sideEffectPolicy": {
+    "mode": "no_live",
+    "liveImageGenerationAllowed": false,
+    "liveTtsAllowed": false,
+    "liveRenderMuxAllowed": false,
+    "liveUploadAllowed": false,
+    "liveDeployAllowed": false,
+    "liveSourceRequeryAllowed": false,
+    "orchestratorMayRunStaticGuardsReadOnly": true,
+    "orchestratorMayReadRecordsReadOnly": true,
+    "orchestratorMayCheckPublicUrlInPreflightOnly": true,
+    "note": "Automation Orchestrator v1은 no-live 전용이다. status/preflight만 지원하고 image/TTS/render/upload/deploy를 실행하지 않는다. --arm/--publish/--upload/--deploy 입력은 ABORT 처리된다."
+  },
+
+  "platformPublishPolicy": {
+    "youtube_shorts": {
+      "renderProfileId": "youtube_shorts_safe_frame_v1",
+      "requiredRenderProfileId": "youtube_shorts_safe_frame_v1",
+      "categoryId": "27",
+      "published": true,
+      "note": "future render 단계에서 YouTube Shorts는 반드시 youtube_shorts_safe_frame_v1 render profile을 선택해야 한다(상단 150px/하단 320px safe-frame)."
+    },
+    "instagram_reels": {
+      "renderProfileId": "instagram_reels_full_vertical_v1",
+      "requiredRenderProfileId": "instagram_reels_full_vertical_v1",
+      "published": true,
+      "requiresPublicHttpsVideoUrl": true,
+      "note": "future render 단계에서 Instagram Reels는 반드시 instagram_reels_full_vertical_v1 render profile을 선택해야 한다. Instagram publish는 public https video_url이 필요하다."
+    },
+    "futureRenderMustSelectPlatformProfile": true,
+    "note": "다음 영상부터 render/upload 이전에 대상 플랫폼 render profile 선택이 필수다. platform profile 선택 없이 render/upload로 진행하지 않는다."
+  },
+
+  "ownerApprovalState": {
+    "finalVideoAcceptedByOwner": true,
+    "uploadFirstRunApprovedByOwner": true,
+    "nextJobAutomationApprovedByOwner": false,
+    "note": "이번 base-rate-202605 영상의 final acceptance와 first-run upload는 Owner 승인 완료. 그러나 '다음 콘텐츠 자동 생성/자동 게시'는 아직 Owner 승인 대상이 아니며, 이 v1은 자동화 골격만 구축한다."
+  },
+
+  "boundary": {
+    "noImageGeneration": true,
+    "noTtsGeneration": true,
+    "noRenderMuxFfmpeg": true,
+    "noUploadOrPublish": true,
+    "noDeploy": true,
+    "noSourceRequery": true,
+    "noEnvOrSecretAccess": true,
+    "dataOnly": true
+  },
+
+  "riskNotes": [
+    "data-only automation job manifest — 어떤 외부 서비스도 호출하지 않고, 이미 완료된 영상 산출물/게시물을 수정하지 않는다.",
+    "publishRecords/acceptedFinalVideoPath는 repo 밖 C:\\tmp 산출물을 경로로만 참조한다. 재실행 시 값이 달라질 수 있어 preflight에서 존재/정합성만 확인한다.",
+    "이 fixture에는 env/secret/token/credential/OAuth code가 포함되지 않는다. 실제 published record에도 masked identifier만 있다.",
+    "public URL 접근성은 status에서 검사하지 않고 preflight에서만 검사한다. 네트워크 실패는 environment/network failure로 분류하며 upload/deploy로 확장하지 않는다.",
+    "다음 콘텐츠 자동화(자동 생성/자동 게시)는 별도 Owner 승인이 필요하다 — 이 v1은 상태 점검/골격만 제공한다."
+  ]
+}
