@@ -78,8 +78,19 @@ const outDir = getArg("--out-dir");
 const publicVideoUrl = getArg("--public-video-url");
 const armed = args.includes("--arm");
 
+// 플랫폼 필터: 실수로 YouTube가 중복 업로드되는 것을 구조적으로 방지한다.
+// 허용값: youtube_shorts | instagram_reels | all. default는 기존 동작 보존을 위해 all.
+const onlyPlatform = getArg("--only-platform") ?? "all";
+const VALID_ONLY_PLATFORMS = ["youtube_shorts", "instagram_reels", "all"];
+if (!VALID_ONLY_PLATFORMS.includes(onlyPlatform)) {
+  console.error(`ABORT: --only-platform must be one of ${VALID_ONLY_PLATFORMS.join(", ")} (got: ${onlyPlatform})`);
+  process.exit(1);
+}
+const youtubeAllowedByFilter = onlyPlatform === "all" || onlyPlatform === "youtube_shorts";
+const instagramAllowedByFilter = onlyPlatform === "all" || onlyPlatform === "instagram_reels";
+
 if (!videoArg || !metadataArg || !outDir) {
-  console.error("Usage: node run-premium-editorial-live-upload-first-run-v1.mjs --video <path> --metadata <path> --out-dir <path> [--public-video-url <url>] [--arm]");
+  console.error("Usage: node run-premium-editorial-live-upload-first-run-v1.mjs --video <path> --metadata <path> --out-dir <path> [--public-video-url <url>] [--only-platform youtube_shorts|instagram_reels|all] [--arm]");
   process.exit(1);
 }
 
@@ -102,7 +113,8 @@ mkdirSync(outDirAbs, { recursive: true });
 console.log(`\n[live-upload-first-run] video:    ${videoAbs}`);
 console.log(`[live-upload-first-run] metadata: ${metadataAbs}`);
 console.log(`[live-upload-first-run] out-dir:  ${outDirAbs}`);
-console.log(`[live-upload-first-run] armed:    ${armed ? "YES (실제 업로드 시도 활성화)" : "NO (preflight-only, 업로드 안 함)"}\n`);
+console.log(`[live-upload-first-run] armed:    ${armed ? "YES (실제 업로드 시도 활성화)" : "NO (preflight-only, 업로드 안 함)"}`);
+console.log(`[live-upload-first-run] only-platform: ${onlyPlatform} (youtube=${youtubeAllowedByFilter ? "allowed" : "SKIPPED"}, instagram=${instagramAllowedByFilter ? "allowed" : "SKIPPED"})\n`);
 
 // ── PREFLIGHT ──────────────────────────────────────────────────────────────────
 const preflight = { checks: [], allPass: true };
@@ -195,8 +207,11 @@ const results = {
   instagram: { platform: "instagram_reels", status: "pending", mediaId: null, url: null, blocker: null },
 };
 
-// YouTube 결정
-if (!baseReady) {
+// YouTube 결정 — 플랫폼 필터가 최우선. 필터로 제외되면 ready_to_attempt에 절대 도달하지 않는다.
+if (!youtubeAllowedByFilter) {
+  results.youtube.status = "skipped_platform_filter";
+  results.youtube.blocker = `--only-platform=${onlyPlatform}: youtube_shorts excluded; videos.insert not entered`;
+} else if (!baseReady) {
   results.youtube.status = "blocked";
   results.youtube.blocker = "base_preflight_failed";
 } else if (!ytReady) {
@@ -209,8 +224,11 @@ if (!baseReady) {
   results.youtube.status = "ready_to_attempt";
 }
 
-// Instagram 결정
-if (!baseReady) {
+// Instagram 결정 — 플랫폼 필터가 최우선.
+if (!instagramAllowedByFilter) {
+  results.instagram.status = "skipped_platform_filter";
+  results.instagram.blocker = `--only-platform=${onlyPlatform}: instagram_reels excluded; media/publish not entered`;
+} else if (!baseReady) {
   results.instagram.status = "blocked";
   results.instagram.blocker = "base_preflight_failed";
 } else if (!igCredReady) {
@@ -229,7 +247,8 @@ if (!baseReady) {
 // ── 실제 업로드 실행 (armed + ready인 플랫폼만, 각 1회) ─────────────────────────
 let anyUploadExecuted = false;
 
-if (results.youtube.status === "ready_to_attempt") {
+// 이중 안전장치: 필터가 YouTube를 허용하지 않으면 status와 무관하게 insert 경로에 진입하지 않는다.
+if (youtubeAllowedByFilter && results.youtube.status === "ready_to_attempt") {
   console.log("\n[upload] YouTube Shorts 실제 업로드 시도 (1회)...");
   try {
     anyUploadExecuted = true;
@@ -271,7 +290,8 @@ if (results.youtube.status === "ready_to_attempt") {
   }
 }
 
-if (results.instagram.status === "ready_to_attempt") {
+// 이중 안전장치: 필터가 Instagram을 허용하지 않으면 status와 무관하게 media/publish 경로에 진입하지 않는다.
+if (instagramAllowedByFilter && results.instagram.status === "ready_to_attempt") {
   console.log("\n[upload] Instagram Reels 실제 업로드 시도 (1회)...");
   try {
     anyUploadExecuted = true;
@@ -319,6 +339,8 @@ const record = {
   schemaVersion: "money_shorts_live_upload_first_run_v1",
   status: anyUploadExecuted ? "live_upload_attempted" : "preflight_only_no_upload",
   armed,
+  onlyPlatform,
+  platformFilter: { youtubeAllowedByFilter, instagramAllowedByFilter },
   acceptedVideoPath: videoAbs,
   mediaProbe,
   preflightAllPass: preflight.allPass,
@@ -333,13 +355,14 @@ const record = {
     "no auto-retry, no auto metadata/credential mutation loop.",
     "Instagram requires a public https video_url; local C:\\tmp mp4 is not accepted by Graph API.",
     armed ? "runner was armed: upload attempted for platforms that passed preflight." : "runner was NOT armed: preflight-only, no upload attempted.",
+    `--only-platform=${onlyPlatform}: youtube ${youtubeAllowedByFilter ? "allowed" : "SKIPPED (videos.insert never entered)"}, instagram ${instagramAllowedByFilter ? "allowed" : "SKIPPED (media/publish never entered)"}.`,
   ],
 };
 const recordPath = join(outDirAbs, "live-upload-first-run-record.json");
 writeFileSync(recordPath, JSON.stringify(record, null, 2), "utf-8");
 
 console.log("\n── SUMMARY ─────────────────────────────────────────────");
-console.log(`  armed: ${armed}`);
+console.log(`  armed: ${armed} | only-platform: ${onlyPlatform}`);
 console.log(`  YouTube:   ${results.youtube.status}${results.youtube.videoId ? ` (${results.youtube.videoId})` : ""}${results.youtube.blocker ? ` — ${results.youtube.blocker}` : ""}`);
 console.log(`  Instagram: ${results.instagram.status}${results.instagram.mediaId ? ` (${results.instagram.mediaId})` : ""}${results.instagram.blocker ? ` — ${results.instagram.blocker}` : ""}`);
 console.log(`  uploadExecuted: ${anyUploadExecuted}, publishExecuted: ${record.publishExecuted}`);

@@ -42,6 +42,22 @@ check("A-02: upload attempts gated on status === 'ready_to_attempt'", /results\.
 check("A-03: not-armed path yields skipped_not_armed (no upload)", /skipped_not_armed/.test(runnerText));
 check("A-04: base preflight failure blocks upload", /base_preflight_failed/.test(runnerText));
 
+// ── § A2. platform filter (--only-platform), prevents accidental YouTube re-upload ─
+check("A2-01: runner recognizes --only-platform flag", /getArg\(["']--only-platform["']\)/.test(runnerText));
+check("A2-02: --only-platform validated against youtube_shorts|instagram_reels|all",
+  /VALID_ONLY_PLATFORMS/.test(runnerText) && /instagram_reels/.test(runnerText) && /youtube_shorts/.test(runnerText));
+check("A2-03: youtubeAllowedByFilter / instagramAllowedByFilter derived from filter",
+  /youtubeAllowedByFilter\s*=/.test(runnerText) && /instagramAllowedByFilter\s*=/.test(runnerText));
+check("A2-04: filter-excluded platform yields skipped_platform_filter status", /skipped_platform_filter/.test(runnerText));
+check("A2-05: YouTube decision checks filter FIRST (before ready_to_attempt)",
+  /if \(!youtubeAllowedByFilter\)[\s\S]{0,200}skipped_platform_filter/.test(runnerText));
+check("A2-06: YouTube upload path double-guarded by youtubeAllowedByFilter && ready_to_attempt",
+  /youtubeAllowedByFilter && results\.youtube\.status === ["']ready_to_attempt["']/.test(runnerText));
+check("A2-07: Instagram upload path double-guarded by instagramAllowedByFilter && ready_to_attempt",
+  /instagramAllowedByFilter && results\.instagram\.status === ["']ready_to_attempt["']/.test(runnerText));
+check("A2-08: record captures onlyPlatform so Instagram-only run is auditable", /onlyPlatform,/.test(runnerText) || /onlyPlatform:/.test(runnerText));
+check("A2-09: default --only-platform is 'all' (preserves prior behavior)", /getArg\(["']--only-platform["']\)\s*\?\?\s*["']all["']/.test(runnerText));
+
 // ── § B. credential safety (masked only, no raw tokens in record) ─────────────
 check("B-01: maskSecret helper present", /function maskSecret/.test(runnerText));
 check("B-02: record uses masked token fields (accessTokenMasked)", /accessTokenMasked/.test(runnerText));
