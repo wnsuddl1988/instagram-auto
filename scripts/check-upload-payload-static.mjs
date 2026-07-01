@@ -304,6 +304,18 @@ check(
   (metadata.instagram_reels?.caption ?? "").includes("한국은행 ECOS"),
 );
 
+// ── Metadata fixture: YouTube category (Owner-confirmed 27 Education) ─────────
+console.log("\n[ provider-candidate-upload-metadata.local-mock.json — YouTube category ]");
+
+check(
+  "youtube_shorts.categoryId === '27' (Education, Owner-confirmed)",
+  metadata.youtube_shorts?.categoryId === "27",
+);
+check(
+  "no stale 'categoryId=22' placeholder wording in metadata",
+  !metadataFullText.includes("categoryId=22"),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {

@@ -83,7 +83,10 @@ check("C-05: upload readiness uploadBoundary.publishExecuted === false", uploadR
 check("C-06: upload readiness uploadBoundary.requiresOwnerUploadApproval === true", uploadReadiness.uploadBoundary?.requiresOwnerUploadApproval === true);
 check("C-07: upload readiness uploadBoundary.noOAuthNoApiCredentials === true", uploadReadiness.uploadBoundary?.noOAuthNoApiCredentials === true);
 check("C-08: upload readiness uploadBoundary.noYoutubeInstagramApiCallsMade === true", uploadReadiness.uploadBoundary?.noYoutubeInstagramApiCallsMade === true);
-check("C-09: readinessChecklist.ownerApprovalObtainedForUpload === false (아직 업로드 미승인)", uploadReadiness.readinessChecklist?.ownerApprovalObtainedForUpload === false);
+// C-09: Owner가 upload first-run을 승인해도 이 readiness fixture 수준에서는 실제 업로드가
+// 실행되지 않아야 한다(안전 불변식). 실제 실행/BLOCKED 결과는 별도 live-upload-first-run record가 소유한다.
+check("C-09: upload readiness records NO executed upload at fixture level (uploadExecuted=false & publishExecuted=false)",
+  uploadReadiness.uploadBoundary?.uploadExecuted === false && uploadReadiness.uploadBoundary?.publishExecuted === false);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § D. noFurtherChangesPolicy

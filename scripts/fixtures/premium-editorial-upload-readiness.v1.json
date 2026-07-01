@@ -34,17 +34,18 @@
     "mediaProbePassed": true,
     "uploadPayloadDryRunBuilt": true,
     "metadataSourceFactAligned": true,
-    "ownerApprovalObtainedForUpload": false,
-    "note": "video/media 검증과 metadata sourceFact 정합성 정정이 모두 완료됨. 업로드 준비 완료 상태이나, 실제 업로드 실행을 위한 별도 Owner 승인은 아직 없음. 이 fixture는 준비 상태만 기록한다."
+    "youtubeCategoryConfirmed": true,
+    "ownerUploadFirstRunApproved": true,
+    "ownerApprovalObtainedForUpload": true,
+    "note": "video/media 검증, metadata sourceFact 정합성 정정, YouTube category 27(Education) 확정, Owner upload first-run 승인이 모두 완료됨. 단, live preflight에서 credential/public-video-url 조건이 충족되지 않으면 실제 업로드는 실행하지 않고 BLOCKED로 기록한다(자세한 것은 live-upload-first-run record 참조)."
   },
 
   "riskNotes": [
-    "no upload/publish performed — dry-run payload only, generated via existing unmodified builder script.",
     "RESOLVED: metadata fixture(provider-candidate-upload-metadata.local-mock.json)의 stale '2025.01' 표기를 제거하고 sourceManifestId를 rp-provider-ecos-live-base-rate-202605로, description/caption을 2026년 5월·연 2.5%·한국은행 ECOS 기준으로 정정함.",
-    "youtube categoryId=22는 placeholder — Owner 확인 필요.",
+    "RESOLVED: YouTube categoryId를 27(Education)으로 Owner 확정 반영함. 이전 categoryId=22 placeholder 리스크 해소.",
     "RESOLVED: metadata riskNotes의 pink-noise/ElevenLabs final-pass placeholder 문구를 제거하고, accepted candidate가 실제 ElevenLabs 음성(v3.1 tailfit, Owner listening-approved)임을 반영함.",
     "no rate hike/cut is asserted in metadata — sourceFact.changeDirection is unchanged_month_over_month only.",
     "이 fixture는 data-only 기록이며 향후 재실행 시 값이 달라질 수 있는 산출물(C:\\tmp)을 참조만 한다.",
-    "실제 업로드 실행은 여전히 별도 Owner 승인 필요 — 이 fixture는 준비 완료 상태만 기록하며 업로드를 트리거하지 않는다."
+    "live upload first-run은 Owner 승인 완료. 단 실제 업로드 실행 여부는 live preflight(credential presence + Instagram public video URL)에 따라 결정되며, 조건 미충족 시 실제 업로드 없이 BLOCKED record를 남긴다."
   ]
 }

@@ -11,7 +11,7 @@
     "description": "한국은행 기준금리 신호, 대출자와 예금자가 다르게 봐야 하는 이유를 생활경제 관점에서 정리했습니다.\n\n출처: 한국은행 ECOS — 기준금리 통계 2026년 5월 기준 (연 2.5%)\n\n주의: 이 영상은 투자 권고가 아닙니다. 경제 신호를 생활 지출 점검의 단서로 활용하세요.\n\n#기준금리 #금리동결 #생활경제 #경제신호 #대출 #예금 #현금흐름 #돈관리 #경제뉴스 #Shorts",
     "hashtags": ["기준금리", "금리동결", "생활경제", "경제신호", "대출", "예금", "현금흐름", "돈관리", "경제뉴스"],
     "visibilityPlan": "owner_review_first",
-    "categoryId": "22",
+    "categoryId": "27",
     "defaultLanguage": "ko",
     "madeForKids": false
   },
@@ -26,7 +26,7 @@
     "notUploaded=true — this is a data-only payload. No upload has occurred.",
     "TTS audio is real ElevenLabs voice (voice_caption_v3_1_tailfit, Owner listening-approved). No pink-noise placeholder remains in the accepted candidate.",
     "Title/description/caption are draft suggestions aligned to sourceFact (ECOS latestPeriod 202605 = 2026년 5월, currentValueText 2.5%). Owner should review for accuracy and compliance before upload.",
-    "YouTube categoryId=22 (Howto & Style) is a placeholder — Owner should confirm appropriate category.",
+    "YouTube categoryId=27 (Education) — Owner-confirmed.",
     "No rate hike/cut is asserted — sourceFact.changeDirection is unchanged_month_over_month only.",
     "No OAuth, accessToken, refreshToken, or API credentials are present in this fixture."
   ]
