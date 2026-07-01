@@ -11,7 +11,8 @@
     "builderScriptModified": false,
     "summaryInput": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
     "metadataInput": "scripts/fixtures/provider-candidate-upload-metadata.local-mock.json",
-    "outputPath": "C:\\tmp\\money-shorts-os\\final-video-acceptance-upload-payload-v1\\provider-candidate-upload-payload.local-mock.json",
+    "metadataSourceFactAligned": true,
+    "outputPath": "C:\\tmp\\money-shorts-os\\final-video-upload-payload-sourcefact-aligned-v1\\provider-candidate-upload-payload.local-mock.json",
     "uploadPayloadId": "upload-payload-rp-provider-ecos-live-base-rate-202605-local-mock",
     "sourceManifestId": "rp-provider-ecos-live-base-rate-202605",
     "mode": "local_mock",
@@ -32,15 +33,18 @@
     "finalVideoAccepted": true,
     "mediaProbePassed": true,
     "uploadPayloadDryRunBuilt": true,
+    "metadataSourceFactAligned": true,
     "ownerApprovalObtainedForUpload": false,
-    "note": "video/media 검증은 완료됐으나 실제 업로드 실행을 위한 별도 Owner 승인은 아직 없음. 이 fixture는 준비 상태만 기록한다."
+    "note": "video/media 검증과 metadata sourceFact 정합성 정정이 모두 완료됨. 업로드 준비 완료 상태이나, 실제 업로드 실행을 위한 별도 Owner 승인은 아직 없음. 이 fixture는 준비 상태만 기록한다."
   },
 
   "riskNotes": [
     "no upload/publish performed — dry-run payload only, generated via existing unmodified builder script.",
-    "metadata fixture(provider-candidate-upload-metadata.local-mock.json)는 이전 candidate 작성 시점의 문구로, description/caption 내 '2025.01' 표기가 실제 sourceFact latestPeriod(202605=2026년 5월)와 다르다. 실제 업로드 전 Owner가 title/description/caption 텍스트를 재검토해야 한다.",
+    "RESOLVED: metadata fixture(provider-candidate-upload-metadata.local-mock.json)의 stale '2025.01' 표기를 제거하고 sourceManifestId를 rp-provider-ecos-live-base-rate-202605로, description/caption을 2026년 5월·연 2.5%·한국은행 ECOS 기준으로 정정함.",
     "youtube categoryId=22는 placeholder — Owner 확인 필요.",
-    "TTS는 local_mock이 아닌 실제 ElevenLabs 음성(v3.1 tailfit)이나, metadata fixture의 riskNotes 문구는 예전 pink-noise placeholder 문맥을 그대로 담고 있어 이번 accepted candidate 상황과 일부 불일치 — 업로드 전 metadata fixture 자체 갱신 필요 여부는 별도 논의 대상.",
-    "이 fixture는 data-only 기록이며 향후 재실행 시 값이 달라질 수 있는 산출물(C:\\tmp)을 참조만 한다."
+    "RESOLVED: metadata riskNotes의 pink-noise/ElevenLabs final-pass placeholder 문구를 제거하고, accepted candidate가 실제 ElevenLabs 음성(v3.1 tailfit, Owner listening-approved)임을 반영함.",
+    "no rate hike/cut is asserted in metadata — sourceFact.changeDirection is unchanged_month_over_month only.",
+    "이 fixture는 data-only 기록이며 향후 재실행 시 값이 달라질 수 있는 산출물(C:\\tmp)을 참조만 한다.",
+    "실제 업로드 실행은 여전히 별도 Owner 승인 필요 — 이 fixture는 준비 완료 상태만 기록하며 업로드를 트리거하지 않는다."
   ]
 }

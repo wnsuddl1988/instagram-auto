@@ -203,8 +203,8 @@ check(
   Array.isArray(metadata.platforms) && metadata.platforms.includes("instagram_reels"),
 );
 check(
-  "sourceManifestId matches provider-candidate",
-  metadata.sourceManifestId === "rp-provider-candidate-ecos-base-rate",
+  "sourceManifestId matches accepted candidate (rp-provider-ecos-live-base-rate-202605)",
+  metadata.sourceManifestId === "rp-provider-ecos-live-base-rate-202605",
 );
 check(
   "no accessToken or refreshToken value in fixture (riskNotes mentions allowed)",
@@ -256,6 +256,52 @@ check(
   "instagram_reels.hashtags is non-empty array",
   Array.isArray(metadata.instagram_reels?.hashtags) &&
     metadata.instagram_reels.hashtags.length > 0,
+);
+
+// ── Metadata fixture: sourceFact alignment (accepted candidate 기준) ──────────
+console.log("\n[ provider-candidate-upload-metadata.local-mock.json — sourceFact alignment ]");
+
+const metadataFullText = JSON.stringify(metadata);
+
+check(
+  "no stale '2025.01' date reference",
+  !metadataFullText.includes("2025.01"),
+);
+check(
+  "no stale 'pink noise' placeholder wording",
+  !metadataFullText.toLowerCase().includes("pink noise"),
+);
+check(
+  "no stale 'ElevenLabs final-pass required' wording",
+  !metadataFullText.includes("ElevenLabs final-pass required"),
+);
+check(
+  "no unverified rate hike/cut assertion (인상/인하)",
+  !/인상|인하/.test(metadataFullText),
+);
+check(
+  "youtube_shorts.description contains 2026년 5월",
+  (metadata.youtube_shorts?.description ?? "").includes("2026년 5월"),
+);
+check(
+  "youtube_shorts.description contains 2.5%",
+  (metadata.youtube_shorts?.description ?? "").includes("2.5%"),
+);
+check(
+  "youtube_shorts.description contains 한국은행 ECOS",
+  (metadata.youtube_shorts?.description ?? "").includes("한국은행 ECOS"),
+);
+check(
+  "instagram_reels.caption contains 2026년 5월",
+  (metadata.instagram_reels?.caption ?? "").includes("2026년 5월"),
+);
+check(
+  "instagram_reels.caption contains 2.5%",
+  (metadata.instagram_reels?.caption ?? "").includes("2.5%"),
+);
+check(
+  "instagram_reels.caption contains 한국은행 ECOS",
+  (metadata.instagram_reels?.caption ?? "").includes("한국은행 ECOS"),
 );
 
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
