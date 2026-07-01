@@ -1,0 +1,261 @@
+{
+  "schemaVersion": "money_shorts_quality_scorer_output_v1",
+  "status": "data_only_rule_based_dry_run",
+  "sourceContractRef": "scripts/fixtures/money-shorts-creative-quality-contract.v1.json",
+  "sourceContractSchemaVersion": "money_shorts_creative_quality_contract_v1",
+  "sourceScriptCompilerOutputRef": "scripts/fixtures/money-shorts-retention-script-compiler.output.v1.json",
+  "sourceScriptCompilerSchemaVersion": "money_shorts_retention_script_compiler_output_v1",
+  "sourceSceneEventPlannerOutputRef": "scripts/fixtures/money-shorts-scene-event-planner.output.v1.json",
+  "sourceSceneEventPlannerSchemaVersion": "money_shorts_scene_event_planner_output_v1",
+  "scorerMode": "rule_based_v1",
+  "ruleBasedComponents": [
+    "RuleBasedQualityScorer",
+    "RuleBasedCandidateSelector",
+    "HardFailPolicyEvaluator",
+    "SoftFailPolicyEvaluator"
+  ],
+  "futureLlmSlots": [
+    "LLMEnhancedQualityScorer"
+  ],
+  "isLlmEnhancedScoring": false,
+  "externalApiExecuted": false,
+  "renderExecuted": false,
+  "ttsExecuted": false,
+  "imageGenerationExecuted": false,
+  "thresholdsUsed": {
+    "hook_score": 75,
+    "retention_score": 75,
+    "visual_event_count": 24,
+    "first_5s_event_count": 4,
+    "max_static_duration": 2.2,
+    "motion_variety_score": 70,
+    "script_clarity_score": 75,
+    "channel_fit_score": 80,
+    "originality_variation_score": 70
+  },
+  "thresholdDirection": {
+    "max_static_duration": "lte",
+    "default": "gte"
+  },
+  "finalDecisionEnum": [
+    "render",
+    "regenerate_script",
+    "regenerate_scene_plan",
+    "regenerate_all",
+    "render_best_candidate",
+    "skip_topic"
+  ],
+  "artifactFileMapping": {
+    "quality_report.json": "per-topic qualityReport (contract schema-compatible)",
+    "selected_candidate.json": "per-topic selectedCandidate + selectionDecision",
+    "note": "Phase 4 산출물. Creative Quality Contract의 requiredFinalArtifacts에 존재하는 quality_report.json / selected_candidate.json에 대응한다."
+  },
+  "phase4Outputs": [
+    "quality_report.json",
+    "selected_candidate.json"
+  ],
+  "topics": [
+    {
+      "topicId": "base-rate-hold-202605",
+      "contentPillar": "money_flow",
+      "candidateEvaluations": [
+        {
+          "candidateId": "base-rate-hold-202605-cand-1",
+          "hasScenePlan": true,
+          "topic": "base-rate-hold-202605",
+          "content_pillar": "money_flow",
+          "hook_score": 83,
+          "retention_score": 95,
+          "visual_event_count": 24,
+          "first_5s_event_count": 4,
+          "avg_event_interval": 1.25,
+          "max_static_duration": 1.75,
+          "subtitle_density": 100,
+          "motion_variety_score": 100,
+          "sfx_count": 8,
+          "sound_design_score": 100,
+          "script_clarity_score": 100,
+          "channel_fit_score": 85,
+          "originality_variation_score": 82,
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": [],
+          "overall_score": 92,
+          "final_decision": "render",
+          "passesAllThresholds": true,
+          "sourceGate": {
+            "sourceRequired": true,
+            "ok": true,
+            "missingFields": [],
+            "hardFail": false
+          }
+        }
+      ],
+      "qualityReport": {
+        "topic": "base-rate-hold-202605",
+        "content_pillar": "money_flow",
+        "hook_score": 83,
+        "retention_score": 95,
+        "visual_event_count": 24,
+        "first_5s_event_count": 4,
+        "avg_event_interval": 1.25,
+        "max_static_duration": 1.75,
+        "subtitle_density": 100,
+        "motion_variety_score": 100,
+        "sfx_count": 8,
+        "sound_design_score": 100,
+        "script_clarity_score": 100,
+        "channel_fit_score": 85,
+        "originality_variation_score": 82,
+        "hard_fail_reasons": [],
+        "soft_fail_reasons": [],
+        "final_decision": "render",
+        "reasons": [
+          "passing_candidate_highest_overall"
+        ]
+      },
+      "selectedCandidate": {
+        "candidateId": "base-rate-hold-202605-cand-1",
+        "overall_score": 92,
+        "final_decision": "render"
+      },
+      "selectionDecision": {
+        "final_decision": "render",
+        "selectedCandidateId": "base-rate-hold-202605-cand-1",
+        "renderBestCandidateAllowed": true,
+        "hardFailPresent": false,
+        "reasons": [
+          "passing_candidate_highest_overall"
+        ]
+      },
+      "phase4Readiness": {
+        "hasQualityReport": true,
+        "hasSelectedCandidate": true,
+        "renderDecisionMade": true,
+        "nextRenderDecisionReady": true,
+        "nextPreviewRendererReady": true,
+        "finalDecisionHint": "selected_candidate_ready_for_render"
+      }
+    },
+    {
+      "topicId": "execution-gap-psychology-v1",
+      "contentPillar": "success_psychology",
+      "candidateEvaluations": [
+        {
+          "candidateId": "execution-gap-psychology-v1-cand-1",
+          "hasScenePlan": true,
+          "topic": "execution-gap-psychology-v1",
+          "content_pillar": "success_psychology",
+          "hook_score": 84,
+          "retention_score": 95,
+          "visual_event_count": 24,
+          "first_5s_event_count": 4,
+          "avg_event_interval": 1.25,
+          "max_static_duration": 1.75,
+          "subtitle_density": 100,
+          "motion_variety_score": 100,
+          "sfx_count": 8,
+          "sound_design_score": 100,
+          "script_clarity_score": 100,
+          "channel_fit_score": 85,
+          "originality_variation_score": 82,
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": [],
+          "overall_score": 92,
+          "final_decision": "render",
+          "passesAllThresholds": true,
+          "sourceGate": {
+            "sourceRequired": false,
+            "ok": true,
+            "missingFields": [],
+            "hardFail": false
+          }
+        }
+      ],
+      "qualityReport": {
+        "topic": "execution-gap-psychology-v1",
+        "content_pillar": "success_psychology",
+        "hook_score": 84,
+        "retention_score": 95,
+        "visual_event_count": 24,
+        "first_5s_event_count": 4,
+        "avg_event_interval": 1.25,
+        "max_static_duration": 1.75,
+        "subtitle_density": 100,
+        "motion_variety_score": 100,
+        "sfx_count": 8,
+        "sound_design_score": 100,
+        "script_clarity_score": 100,
+        "channel_fit_score": 85,
+        "originality_variation_score": 82,
+        "hard_fail_reasons": [],
+        "soft_fail_reasons": [],
+        "final_decision": "render",
+        "reasons": [
+          "passing_candidate_highest_overall"
+        ]
+      },
+      "selectedCandidate": {
+        "candidateId": "execution-gap-psychology-v1-cand-1",
+        "overall_score": 92,
+        "final_decision": "render"
+      },
+      "selectionDecision": {
+        "final_decision": "render",
+        "selectedCandidateId": "execution-gap-psychology-v1-cand-1",
+        "renderBestCandidateAllowed": true,
+        "hardFailPresent": false,
+        "reasons": [
+          "passing_candidate_highest_overall"
+        ]
+      },
+      "phase4Readiness": {
+        "hasQualityReport": true,
+        "hasSelectedCandidate": true,
+        "renderDecisionMade": true,
+        "nextRenderDecisionReady": true,
+        "nextPreviewRendererReady": true,
+        "finalDecisionHint": "selected_candidate_ready_for_render"
+      }
+    }
+  ],
+  "policySimulationCases": [
+    {
+      "caseId": "passing_candidate_case",
+      "description": "hardFail 없음 + 모든 threshold 통과 → render",
+      "hardFailPresent": false,
+      "softFailPresent": false,
+      "expectedDecision": "render",
+      "actualDecision": "render",
+      "pass": true
+    },
+    {
+      "caseId": "soft_fail_best_candidate_case",
+      "description": "hardFail 없음 + softFail 있음 + 모든 후보 일부 미달 → render_best_candidate",
+      "hardFailPresent": false,
+      "softFailPresent": true,
+      "expectedDecision": "render_best_candidate",
+      "actualDecision": "render_best_candidate",
+      "pass": true
+    },
+    {
+      "caseId": "hard_fail_blocks_render_best_candidate_case",
+      "description": "hardFail 있음 → render_best_candidate 금지, skip_topic 또는 regenerate_all",
+      "hardFailPresent": true,
+      "softFailPresent": false,
+      "renderBestCandidateAllowed": false,
+      "expectedDecision": "skip_topic_or_regenerate_all",
+      "actualDecision": "skip_topic",
+      "pass": true
+    }
+  ],
+  "boundary": {
+    "noLlmCall": true,
+    "noExternalApiCall": true,
+    "noRenderMuxFfmpeg": true,
+    "noTtsGeneration": true,
+    "noImageGeneration": true,
+    "noUploadOrPublish": true,
+    "noEnvOrSecretAccess": true,
+    "dataOnly": true
+  }
+}
