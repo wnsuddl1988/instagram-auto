@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "money_shorts_final_video_acceptance_v1",
+  "status": "data_only_final_acceptance_record",
+  "title": "Money Shorts OS — Final Video Acceptance (Voice+Caption v3.1 Tailfit)",
+  "purpose": "Owner가 승인한 tailfit v3.1 mp4를 최종 accepted candidate로 고정하는 data-only record. 렌더/이미지/TTS/자막을 재생성하지 않으며, 업로드도 수행하지 않는다.",
+  "acceptedCandidatePath": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4",
+  "acceptedByOwner": true,
+  "acceptedVariant": "voice_caption_v3_1_tailfit",
+  "acceptedAt": "2026-07-01T03:11:06.003Z",
+  "sourceCommitRefs": {
+    "ttsCaptionV3TailfitPatch": "866db10",
+    "ttsVoiceCaptionV2": "728ed25",
+    "visualRenderSelectedImage": "42abaf6",
+    "selectedSceneImageSetManifest": "73ed8a0"
+  },
+  "mediaProbe": {
+    "containerFormat": "mov,mp4,m4a,3gp,3g2,mj2",
+    "videoCodec": "h264",
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "fps": 30,
+    "audioCodec": "aac",
+    "audioSampleRateHz": 44100,
+    "audioChannels": 1,
+    "audioStreamCount": 1,
+    "durationSec": 30,
+    "videoDurationSec": 30,
+    "audioDurationSec": 30,
+    "avGapSec": 0,
+    "fileSizeBytes": 1896270
+  },
+  "noFurtherChangesPolicy": {
+    "imageRegenerationAllowed": false,
+    "ttsRegenerationAllowed": false,
+    "captionRestylingAllowed": false,
+    "renderRebuildAllowed": false,
+    "renderRebuildAllowedNote": "Owner가 명시적으로 품질 재검토를 재개하지 않는 한 렌더 재실행 금지."
+  },
+  "uploadBoundary": {
+    "uploadExecuted": false,
+    "publishExecuted": false,
+    "requiresOwnerUploadApproval": true
+  },
+  "assetProvenance": {
+    "selectedImageSet": {
+      "path": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+      "schemaVersion": "money_shorts_scene_selected_image_set_v1",
+      "sceneCount": 6
+    },
+    "captionV3": {
+      "path": "scripts/fixtures/premium-editorial-selected-image-render-manifest.caption-v3.json",
+      "schemaVersion": "money_shorts_selected_image_render_manifest_v1",
+      "captionFontSize": 104,
+      "captionOutline": 6,
+      "captionShadow": 3
+    },
+    "ttsV31Tailfit": {
+      "summaryPath": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-scene-paced-tts-voice-v3-1-tailfit\\elevenlabs-scene-paced-tts-summary.json",
+      "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605-voice-v3-1",
+      "mode": "elevenlabs_scene_paced_patch_v3_1_tailfit_no_live",
+      "apiCallCountThisRun": 0,
+      "noLiveTailPreservingRun": true,
+      "note": "이번(tailfit) run의 실제 ElevenLabs 호출 수는 0. Scene 4/6 raw audio는 이전 승인된 v3.1 live ElevenLabs 생성물을 재사용해 atempo tempo-fit만 적용."
+    },
+    "muxSummary": {
+      "path": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
+      "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605-voice-v3-1",
+      "manifestId": "rp-provider-ecos-live-base-rate-202605",
+      "mode": "elevenlabs_scene_paced"
+    }
+  },
+  "qualityAcceptance": {
+    "ownerListeningReviewCompleted": true,
+    "ownerVisualReviewCompleted": true,
+    "qualityAcceptedForFinalCandidate": true,
+    "note": "Owner가 tailfit v3.1 mp4를 청취/시청 후 최종 후보로 승인함 (voice_caption_v3_1_review_required 상태 해제)."
+  },
+  "riskNotes": [
+    "official source validated: ECOS live (722Y001/0101000) latest period 202605 = 2.5%; previous 202604 = 2.5% (month-over-month unchanged); BOK publishedDate 2025-05-29 verified by value matching, not derived from ECOS period.",
+    "Direction is reported as 'current level + watch points' only. No rate hike/cut is asserted.",
+    "isMock=false, isPublishable=false — draft only; publishable flag is never set true here.",
+    "not yet Owner voice-approved for final publish; qualityAccepted remains false until Owner accepts the Yohan Koo listening review.",
+    "no upload performed.",
+    "voice-v3.1 patch: Scene 4/6만 ElevenLabs 재호출(budget max 2). Scene 1/2/3/5는 v3 normalized audio 재사용.",
+    "Scene 4: 문장 확장(43→49자)으로 raw duration 여백 축소 목표. Scene 6: 직접 CTA 없는 고정형 soft ending 도입(반복 사용 템플릿 후보).",
+    "ElevenLabs live smoke audio is not quality accepted yet.",
+    "Owner listening review required.",
+    "voiceIdMasked: 4JJ***7n7",
+    "scene-paced TTS: 0 API calls, 6 scenes.",
+    "no upload/publish performed by this manifest — data-only acceptance record.",
+    "final render rebuild disallowed unless Owner explicitly reopens quality review."
+  ]
+}

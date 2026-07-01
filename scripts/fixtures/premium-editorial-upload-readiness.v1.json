@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "money_shorts_upload_readiness_v1",
+  "status": "data_only_upload_readiness_record",
+  "title": "Money Shorts OS — Upload Readiness (Voice+Caption v3.1 Tailfit, Dry-Run Only)",
+  "purpose": "accepted candidate(voice_caption_v3_1_tailfit)의 upload payload dry-run 결과를 참조하는 data-only readiness 기록. 실제 업로드/게시는 수행하지 않는다.",
+
+  "acceptanceManifestRef": "scripts/fixtures/premium-editorial-final-video-acceptance.v1.json",
+
+  "dryRunPayload": {
+    "builderScript": "scripts/build-upload-payload-from-tts-mux-summary.mjs",
+    "builderScriptModified": false,
+    "summaryInput": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
+    "metadataInput": "scripts/fixtures/provider-candidate-upload-metadata.local-mock.json",
+    "outputPath": "C:\\tmp\\money-shorts-os\\final-video-acceptance-upload-payload-v1\\provider-candidate-upload-payload.local-mock.json",
+    "uploadPayloadId": "upload-payload-rp-provider-ecos-live-base-rate-202605-local-mock",
+    "sourceManifestId": "rp-provider-ecos-live-base-rate-202605",
+    "mode": "local_mock",
+    "ffprobeVerified": true,
+    "allProbeChecksPassed": true,
+    "platforms": ["youtube_shorts", "instagram_reels"]
+  },
+
+  "uploadBoundary": {
+    "uploadExecuted": false,
+    "publishExecuted": false,
+    "requiresOwnerUploadApproval": true,
+    "noOAuthNoApiCredentials": true,
+    "noYoutubeInstagramApiCallsMade": true
+  },
+
+  "readinessChecklist": {
+    "finalVideoAccepted": true,
+    "mediaProbePassed": true,
+    "uploadPayloadDryRunBuilt": true,
+    "ownerApprovalObtainedForUpload": false,
+    "note": "video/media 검증은 완료됐으나 실제 업로드 실행을 위한 별도 Owner 승인은 아직 없음. 이 fixture는 준비 상태만 기록한다."
+  },
+
+  "riskNotes": [
+    "no upload/publish performed — dry-run payload only, generated via existing unmodified builder script.",
+    "metadata fixture(provider-candidate-upload-metadata.local-mock.json)는 이전 candidate 작성 시점의 문구로, description/caption 내 '2025.01' 표기가 실제 sourceFact latestPeriod(202605=2026년 5월)와 다르다. 실제 업로드 전 Owner가 title/description/caption 텍스트를 재검토해야 한다.",
+    "youtube categoryId=22는 placeholder — Owner 확인 필요.",
+    "TTS는 local_mock이 아닌 실제 ElevenLabs 음성(v3.1 tailfit)이나, metadata fixture의 riskNotes 문구는 예전 pink-noise placeholder 문맥을 그대로 담고 있어 이번 accepted candidate 상황과 일부 불일치 — 업로드 전 metadata fixture 자체 갱신 필요 여부는 별도 논의 대상.",
+    "이 fixture는 data-only 기록이며 향후 재실행 시 값이 달라질 수 있는 산출물(C:\\tmp)을 참조만 한다."
+  ]
+}
