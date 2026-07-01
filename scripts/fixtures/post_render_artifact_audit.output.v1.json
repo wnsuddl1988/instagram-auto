@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "money_shorts_post_render_artifact_audit_output_v1",
+  "status": "audit_complete",
+  "auditsRealMp4NotJsonPlan": true,
+  "ffprobePassIsNotQualityPass": true,
+  "topic": {
+    "topicId": "base-rate-hold-202605",
+    "label": "금리 동결"
+  },
+  "thresholds": {
+    "maxFirstFiveSecondSilenceSec": 0.8,
+    "maxTotalSilenceRatio": 0.18,
+    "minSpeechActiveRatio": 0.72,
+    "minPerceptualEventCount": 12,
+    "minCardPresenceRatio": 0.7,
+    "maxFullScreenImageDominanceRatio": 0.25,
+    "requireFirstTwoSecondHookCard": true
+  },
+  "silenceDetect": {
+    "noiseDb": -40,
+    "minSilenceSec": 0.4
+  },
+  "samplesRef": "scripts/fixtures/post_render_artifact_audit.samples.v1.json",
+  "results": [
+    {
+      "sampleId": "accepted_baseline",
+      "role": "reference_baseline",
+      "expectedVerdict": "reference",
+      "mp4": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4",
+      "mp4Exists": true,
+      "ttsStrategy": "full_narration_one_shot",
+      "metrics": {
+        "durationSec": 30,
+        "hasAudio": true,
+        "firstFiveSecondSilenceSec": 0.4,
+        "totalSilenceSec": 3.317,
+        "totalSilenceRatio": 0.1106,
+        "speechActiveRatio": 0.8894,
+        "silenceIntervalCount": 5,
+        "perceptual": null
+      },
+      "failReasons": [],
+      "perceptualKnownLimit": [
+        "no_perceptual_event_report_card_and_perceptual_gates_not_evaluated"
+      ],
+      "auditVerdict": "reference_pass_with_known_limits",
+      "ffprobeValidButNotQualityPass": true
+    },
+    {
+      "sampleId": "rejected_creative_v2",
+      "role": "rejected_sample",
+      "expectedVerdict": "reject",
+      "mp4": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\money-shorts-creative-final-visual-youtube-safe-frame-v1-tts-mux.mp4",
+      "mp4Exists": true,
+      "ttsStrategy": "six_scene_level_tts_calls",
+      "metrics": {
+        "durationSec": 30.267,
+        "hasAudio": true,
+        "firstFiveSecondSilenceSec": 3.444,
+        "totalSilenceSec": 9.142,
+        "totalSilenceRatio": 0.302,
+        "speechActiveRatio": 0.698,
+        "silenceIntervalCount": 6,
+        "perceptual": null
+      },
+      "failReasons": [
+        "first_5s_silence_3.44s_exceeds_0.8s",
+        "total_silence_ratio_0.302_exceeds_0.18",
+        "speech_active_ratio_0.698_below_0.72"
+      ],
+      "perceptualKnownLimit": [
+        "no_perceptual_event_report_card_and_perceptual_gates_not_evaluated"
+      ],
+      "auditVerdict": "REJECT_confirmed",
+      "ffprobeValidButNotQualityPass": true
+    },
+    {
+      "sampleId": "golden_sample_rate_freeze",
+      "role": "new_golden_sample",
+      "expectedVerdict": "pass_candidate",
+      "mp4": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\golden_sample_rate_freeze_tts_mux.mp4",
+      "mp4Exists": false,
+      "auditVerdict": "BLOCKED_mp4_not_rendered",
+      "blocker": {
+        "code": "mp4_not_present",
+        "message": "Golden Sample mp4 not rendered: image quality gate (1080x1920) failed for the selected image set. Regenerate images (Owner-approved live ChatGPT path) then render + mux. No placeholder mp4 was created."
+      },
+      "failReasons": [],
+      "metrics": null
+    }
+  ],
+  "evidence": {
+    "rejectedV2FailsAudit": true,
+    "rejectedV2Verdict": "REJECT_confirmed",
+    "baselineIsReference": true,
+    "baselineVerdict": "reference_pass_with_known_limits",
+    "goldenSampleVerdict": "BLOCKED_mp4_not_rendered",
+    "goldenSampleBlockerReported": true
+  },
+  "boundary": {
+    "noRender": true,
+    "noTts": true,
+    "noMux": true,
+    "noImageGeneration": true,
+    "noUpload": true,
+    "readOnlyProbeExceptOutputJson": true
+  }
+}

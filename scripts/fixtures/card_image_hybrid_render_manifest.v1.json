@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "money_shorts_card_image_hybrid_render_manifest_v1",
+  "status": "manifest_locked_render_ready_pending_image_gate",
+  "rendererMode": "card_image_hybrid_v1",
+  "title": "Money Shorts OS — Card-Image Hybrid Render Manifest v1 (rate freeze)",
+  "purpose": "card_image_hybrid_v1 렌더러가 소비하는 manifest. selected 고품질 LLM 이미지를 dim/blur/crop 배경으로 쓰고 카드를 주요 정보 표면으로 렌더한다. 기존 render-money-shorts-creative-final-visual-v1.mjs는 삭제하지 않는다.",
+  "topic": { "topicId": "base-rate-hold-202605", "label": "금리 동결" },
+  "fullDurationSec": 30,
+  "canvas": { "widthPx": 1080, "heightPx": 1920, "fps": 30 },
+  "perceptualEventPlanRef": {
+    "source": "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json#perceptualEventPlan",
+    "plannedPerceptualEventCount": 18,
+    "minPerceptualEventCountForPass": 12,
+    "note": "cardTimeline[].perceptualEvents는 blueprint phases[].perceptualEvents와 1:1 동일해야 한다(single source of truth). dim_blur_background는 정적 배경 처리라 카운트하지 않는다."
+  },
+  "sourceRefs": {
+    "blueprint": "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json",
+    "imageGenerationContract": "scripts/fixtures/image_generation_contract.json",
+    "ttsFirstTimelineContract": "scripts/fixtures/tts_first_timeline_contract.v1.json",
+    "visualDirectorPrompts": "scripts/fixtures/visual_director_prompts.rate_freeze.v1.json",
+    "selectedImageSet": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json"
+  },
+  "imageQualityGate": {
+    "minWidthPx": 1080,
+    "minHeightPx": 1920,
+    "orientation": "vertical_9_16",
+    "abortIfBelowGate": true,
+    "allowUpscaleForFinal": false,
+    "allowPlaceholder": false,
+    "note": "렌더러는 모든 selected 이미지의 실제 해상도를 먼저 검사한다. 하나라도 1080x1920 미달이면 ABORT하고 정확한 blocker를 보고한다. upscale/placeholder로 우회하지 않는다."
+  },
+  "actualImageInputs": [
+    { "sourceImageKey": "image_01", "imageSceneId": "scene_1", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png" },
+    { "sourceImageKey": "image_02", "imageSceneId": "scene_2", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png" },
+    { "sourceImageKey": "image_03", "imageSceneId": "scene_3", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png" },
+    { "sourceImageKey": "image_04", "imageSceneId": "scene_4", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-04-scene_4_life_impact.png" },
+    { "sourceImageKey": "image_05", "imageSceneId": "scene_5", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-05-scene_5_watch_point.png" },
+    { "sourceImageKey": "image_06", "imageSceneId": "scene_6", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-06-scene_6_action_closing.png" }
+  ],
+  "cardTimeline": [
+    { "cardId": "card_hook", "phaseId": "hook", "timeStartSec": 0.0, "timeEndSec": 2.0, "imageSceneId": "scene_1", "backgroundTemplate": "dim_blur_background", "cardTemplate": "big_hook_card", "cardMotion": "card_punch_zoom", "screenText": "아직 안심 금지", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["big_hook_card", "card_punch_zoom"] },
+    { "cardId": "card_curiosity", "phaseId": "curiosity", "timeStartSec": 2.0, "timeEndSec": 5.0, "imageSceneId": "scene_2", "backgroundTemplate": "dim_blur_background", "cardTemplate": "curiosity_contrast_card", "cardMotion": "card_slide_in", "screenText": "내 이자는 다릅니다", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["curiosity_contrast_card", "card_slide_in"] },
+    { "cardId": "card_point_1", "phaseId": "point_1", "timeStartSec": 5.0, "timeEndSec": 10.0, "imageSceneId": "scene_3", "backgroundTemplate": "dim_blur_background", "cardTemplate": "checklist_card_1", "cardMotion": "checklist_pop", "screenText": "변동금리: 반영 시점", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["checklist_card_1", "checklist_pop", "hard_cut"] },
+    { "cardId": "card_point_2", "phaseId": "point_2", "timeStartSec": 10.0, "timeEndSec": 15.0, "imageSceneId": "scene_4", "backgroundTemplate": "dim_blur_background", "cardTemplate": "checklist_card_2", "cardMotion": "checklist_pop", "screenText": "예금: 만기·손실 확인", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["checklist_card_2", "checklist_pop", "hard_cut"] },
+    { "cardId": "card_point_3", "phaseId": "point_3", "timeStartSec": 15.0, "timeEndSec": 20.0, "imageSceneId": "scene_5", "backgroundTemplate": "dim_blur_background", "cardTemplate": "checklist_card_3", "cardMotion": "checklist_pop", "screenText": "대출: 월 납입액", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["checklist_card_3", "checklist_pop", "hard_cut"] },
+    { "cardId": "card_twist", "phaseId": "twist", "timeStartSec": 20.0, "timeEndSec": 26.0, "imageSceneId": "scene_6", "backgroundTemplate": "dim_blur_background", "cardTemplate": "twist_single_sentence_card", "cardMotion": "freeze_punch", "screenText": "내 지갑은 현금흐름", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["twist_single_sentence_card", "freeze_punch", "background_dim_transition"] },
+    { "cardId": "card_action", "phaseId": "action", "timeStartSec": 26.0, "timeEndSec": 30.0, "imageSceneId": "scene_6", "backgroundTemplate": "dim_blur_background", "cardTemplate": "final_action_card", "cardMotion": "card_slide_in", "screenText": "오늘 할 일: 고정비 확인", "textLayout": "safe_frame_text_layout", "perceptualEvents": ["final_action_card", "card_slide_in"] }
+  ],
+  "requiredTemplates": [
+    "big_hook_card", "curiosity_contrast_card", "checklist_card_1", "checklist_card_2",
+    "checklist_card_3", "twist_single_sentence_card", "final_action_card",
+    "dim_blur_background", "card_slide_in", "card_punch_zoom", "checklist_pop",
+    "safe_frame_text_layout"
+  ],
+  "safeFrameTextLayout": {
+    "hookTitle": { "xMin": 90, "xMax": 990, "yMin": 300, "yMax": 620, "fontSizePxMin": 74, "fontSizePxMax": 88, "maxLines": 2 },
+    "checklistBody": { "xMin": 90, "xMax": 880, "yMin": 700, "yMax": 1180, "fontSizePxMin": 52, "fontSizePxMax": 64 },
+    "avoidZones": [{ "yMin": 0, "yMax": 150 }, { "yMin": 1600, "yMax": 1920 }, { "xMin": 900, "xMax": 1080 }]
+  },
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1",
+    "visualOnlyMp4": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\golden_sample_rate_freeze_visual_only.mp4",
+    "renderManifestOut": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\render_manifest.json",
+    "actualCardTimeline": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\actual_card_timeline.json",
+    "perceptualEventReport": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\perceptual_event_report.json"
+  },
+  "boundary": {
+    "existingRendererPreserved": true,
+    "noImageGeneration": true,
+    "noTts": true,
+    "noUpload": true,
+    "uploadReady": false,
+    "localFfmpegRenderOnly": true
+  }
+}

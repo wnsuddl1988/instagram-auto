@@ -2343,3 +2343,84 @@ QA-only slice. 코드 변경 없음.
 | ESLint (page.tsx) | 0 warnings ✅ |
 | `riskReview.riskReviewId` 잔존 grep | 0건 ✅ |
 | risk-review type에 fake field | 없음 ✅ |
+
+
+## Creative v2 Rate-Freeze Golden Sample Recovery (`creative-v2-rate-freeze-golden-sample-recovery-v1` — 2026-07-02)
+
+**목표:** audit-only가 아님. 금리 동결 Golden Sample 구조를 파이프라인 계약으로 고정하고, rejected Creative v2를 실측 audit으로 reject, accepted final을 reference로 유지. LLM 이미지 생성 경로 유지, card-first(고품질 이미지 + 정보 카드 + 모션그래픽), TTS-first(padding 금지).
+
+**핵심 실행 결정 (Owner 승인):**
+- selected image set 6장이 owner 시각 QA(renderReadyCandidate=true) 통과했으나 실측 해상도 941x1672 < 1080x1920 gate 미달.
+- Owner 결정: **blocker로 멈춤 — 이미지 재생성 필요.** placeholder/upscale/stock fallback로 우회하지 않음. 계약/blueprint/renderer/audit 코드는 render-ready 상태로 고정.
+
+**신규 산출물 (repo, 모두 untracked):**
+- `scripts/fixtures/creative-v2-stop-state.v1.json` — v2=rejected, baseline=reference, uploadReady=false, 이미지 blocker 명시.
+- `scripts/fixtures/image_generation_contract.json` — LLM path 필수, placeholder/mock/stock 금지, 1080x1920 gate.
+- `scripts/build-money-shorts-visual-director-prompt-v1.mjs` + `scripts/fixtures/visual_director_prompts.rate_freeze.v1.json` — 6 editorial financial 프롬프트, on-image text/watermark/fake chart/generic office 금지.
+- `scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json` — 30s 7-phase single source of truth (script/timeline/image map/tts phrase map/perceptual event/card-image hybrid).
+- `scripts/fixtures/tts_first_timeline_contract.v1.json` — full_narration_one_shot 우선, apad=whole_dur 금지, 6-scene tts 기본값 금지.
+- `scripts/render-money-shorts-card-image-hybrid-v1.mjs` + `scripts/fixtures/card_image_hybrid_render_manifest.v1.json` — card_image_hybrid_v1 모드(기존 렌더러 보존). image gate 미달 시 exit 10 blocker, upscale/placeholder 금지.
+- `scripts/audit-money-shorts-post-render-artifact-v1.mjs` + samples/output fixture — 실제 mp4 silencedetect audit(ffprobe pass != quality pass).
+- `scripts/fixtures/golden_sample_recovery_report.v1.json` — 3-sample 비교 + findings + 권고.
+- `scripts/check-money-shorts-golden-sample-recovery-static.mjs` — 통합 static guard.
+
+**검증 (실측 증거):**
+| 체크 | 결과 |
+|------|------|
+| static guard | 109/109 PASS |
+| 신규 JSON 유효성 | 9/9 valid |
+| image quality gate (card-image hybrid, --gate-only) | 6/6 이미지 941x1672 gate 미달 → exit 10 IMAGE_GATE_BLOCKED |
+| post-render audit: rejected v2 | REJECT_confirmed (first5s silence 3.44s>0.8, silence ratio 0.302>0.18, speech 0.698<0.72) |
+| post-render audit: accepted baseline | reference_pass_with_known_limits (first5s 0.4s, ratio 0.111, speech 0.889) |
+| post-render audit: golden sample | BLOCKED_mp4_not_rendered (image gate, placeholder mp4 없음) |
+| 기존 렌더러 보존 | render-money-shorts-creative-final-visual-v1.mjs 무수정 |
+| 보호 파일 | _ai/CONTEXT_TRANSFER_CODEX.md, piq_diag_out.txt 미접근 |
+| uploadReady / upload queue readiness | false / 미생성 |
+
+**범위 이탈/blocker:**
+- Golden Sample final mp4(visual_only + tts_mux)는 image gate 미달로 **미생성** — Owner 승인 하 이미지 재생성 후 진행.
+- `pnpm build`: TypeScript compile 통과, type-check 단계에서 pre-existing legacy 바이너리 `output/money-architect-candidate10-gpt-visual-plates-v1/qa/seg_B1.ts`(2026-06-24, 2.9MB FFmpeg segment, untracked, 내 변경과 무관)가 "File appears to be binary"로 실패. 이번 slice 변경(scripts/*.mjs + fixtures/*.json)과 무관한 pre-existing 실패. 승인 범위 밖으로 미수정.
+
+
+## Golden Sample Recovery Review-Fix (`creative-v2-rate-freeze-golden-sample-recovery-v1-review-fix` — 2026-07-02)
+
+**목표:** Codex review에서 발견된 checkpoint 전 review-fix 2건 수정. live 생성/render/tts/mux/upload/commit/push 없음.
+
+**1) Perceptual event count single-source 정합성**
+- 문제: blueprint(`plannedPerceptualEventCount: 17`, phases 배열엔 `dim_blur_background`를 매 phase 정적 이벤트로 포함) vs recovery report(`14`) vs renderer(카드당 `cardTemplate`+`cardMotion` 2개 하드코딩, hard_cut/background_dim_transition 미반영) — 3곳이 서로 다른 기준/값.
+- 근본 원인: `dim_blur_background`는 모든 phase에 정적으로 적용되는 배경 처리 방식이지 전환이 아닌데 이벤트로 카운트되고 있었음(HANDOFF의 "slow pan/zoom/decorative overlay는 이벤트 아님" 원칙 위반).
+- 수정: `dim_blur_background`를 `countedEventTypes`에서 제거하고 `notCountedAsPerceptualEvent`에 명시. blueprint phases[].perceptualEvents 재계산 → 합계 **18**(hook 2 + curiosity 2 + point1~3 각 3 + twist 3 + action 2). `plannedPerceptualEventCount: 18`로 정정(single source of truth로 명시).
+- `card_image_hybrid_render_manifest.v1.json`: cardTimeline 각 카드에 blueprint phases와 1:1 동일한 `perceptualEvents` 배열 추가 + `perceptualEventPlanRef`(count=18, minForPass=12) 추가.
+- `render-money-shorts-card-image-hybrid-v1.mjs`: 하드코딩 2-per-card push 로직 제거 → manifest `cardTimeline[].perceptualEvents`를 그대로 소비. `plannedPerceptualEventCount`/`actualMatchesPlanned`/`passesMinThreshold` 필드를 perceptual_event_report에 추가.
+- `golden_sample_recovery_report.v1.json`: `plannedPerceptualEventCount: 14` → `18`로 정정(threeSampleComparison + findingsRequestedByHandoff 양쪽).
+- `check-money-shorts-golden-sample-recovery-static.mjs`: single-source 정합성 체크 17개 신규 추가 — blueprint plannedCount == phases 배열 합계, dim_blur_background 미카운트, manifest cardTimeline == blueprint phases 1:1, renderer가 manifest를 소비(하드코딩 아님), recovery report 값 일치, **minPerceptualEventCountForPass는 12 미만으로 완화 불가** 강제.
+- pass threshold 12는 그대로 유지(완화 없음). pan/zoom/미세 이동/dim-blur 정적 배경은 여전히 비카운트.
+
+**2) Build gate 오염 제거**
+- `tsconfig.json`: `"exclude": ["node_modules"]` → `"exclude": ["node_modules", "output"]`. 1줄 수정.
+- `output/`는 이미 `.gitignore`의 `/output/` 대상(gitignored generated artifact 폴더). `output/money-architect-candidate10-gpt-visual-plates-v1/qa/seg_B1.ts` 등 legacy 바이너리 FFmpeg segment가 `.ts` 확장자를 가져 TypeScript type-check에 "File appears to be binary"로 걸리던 문제 해결.
+- `output/` 내부 파일은 읽기(존재 확인 `find`)만 수행, 수정/삭제/stage 없음. reported legacy binary `.ts` 미접근.
+- 기존 source include(`**/*.ts`, `**/*.tsx` 등) 원칙 유지, exclude만 추가.
+
+**검증 결과:**
+| 체크 | 결과 |
+|------|------|
+| `node scripts\check-money-shorts-golden-sample-recovery-static.mjs` | 126/126 PASS (기존 109 + 신규 17) |
+| `node scripts\render-money-shorts-card-image-hybrid-v1.mjs --gate-only` | exit 10, IMAGE_GATE_BLOCKED 유지(941x1672, 변화 없음 — 예상대로) |
+| renderer perceptual 로직 dry-run(순수 계산, ffmpeg 미실행) | actual=18, planned=18, matches=true, minForPass=12 pass=true |
+| `node scripts\audit-money-shorts-post-render-artifact-v1.mjs` | rejected v2 REJECT_confirmed(first5s 3.44s, ratio 0.302, speech 0.698) / baseline reference_pass_with_known_limits / golden BLOCKED_mp4_not_rendered — 전부 예상대로 |
+| `pnpm build` | **완전 성공** — TypeScript 통과(12.3s), 22 페이지 정적 생성, legacy 바이너리 오염 0건, 다른 pre-existing 실패 없음 |
+
+**변경 파일:**
+- `scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json` (perceptualEventPlan + phases[].perceptualEvents 정정)
+- `scripts/fixtures/card_image_hybrid_render_manifest.v1.json` (cardTimeline[].perceptualEvents + perceptualEventPlanRef 추가)
+- `scripts/render-money-shorts-card-image-hybrid-v1.mjs` (manifest 소비 로직으로 교체)
+- `scripts/fixtures/golden_sample_recovery_report.v1.json` (plannedPerceptualEventCount 14→18 정정)
+- `scripts/check-money-shorts-golden-sample-recovery-static.mjs` (17개 정합성 체크 추가)
+- `tsconfig.json` (output exclude 추가, 1줄)
+
+**범위 이탈:** 없음. live 이미지 생성/render/TTS/mux/upload/commit/push 전부 미실행. protected files(`_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`) 미접근. `output/` 내부 파일 읽기(존재 확인)만, 수정/삭제 없음.
+
+**남은 blocker:** 변화 없음 — Golden Sample final mp4는 여전히 image quality gate(941x1672 < 1080x1920) 미달로 미생성. 이미지 재생성(live ChatGPT+Playwright+CDP, Owner 승인) 후 render 진행 필요.
+
+**checkpoint 권장:** 예 — review-fix 2건 모두 완료 + 전 검증 통과. 변경 파일 6개(fixture 3, script 2, tsconfig 1), 논리적으로 하나의 review-fix slice. commit/push는 미실행(승인 없음, Owner 명시 승인 대기).

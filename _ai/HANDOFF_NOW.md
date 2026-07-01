@@ -2,63 +2,307 @@
 
 ## Task ID
 
-Latest completed: `money-shorts-os-provider-candidate-to-scene-package-foundation-v1-review-fix-preview-wire`
+`creative-v2-rate-freeze-golden-sample-recovery-v1`
 
 ## Project
 
 `C:\Users\PC\jjy\instagram-auto`
 
+## Owner Directive Lock
+
+This handoff locks the Owner's latest quality directive as the current absolute execution scope.
+
+Do not reinterpret this recovery as "make an audit tool first." The purpose is to recover the broken Creative v2 direction and produce one good `rate freeze / 금리 동결` Golden Sample mp4, then lock the improved structure into the automation pipeline.
+
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `9338645 fix(package-preview): add imagePolicy to qa panel spec note` ← **현재 HEAD**
-- Current local status: ahead 77, 5 files modified (미커밋: lib/source-facts/provider-candidates.ts 신규 + lib/source-facts/index.ts 수정 + scripts/check-provider-candidate-scene-package-static.mjs 신규 + app/fact-cards/manual/package-preview/page.tsx 수정 + scripts/check-signal-translation-preview-static.mjs 수정), `?? piq_diag_out.txt`
-- Push: 미실행
-- Known unrelated untracked file: `piq_diag_out.txt` -- do not read, modify, delete, stage, or commit.
-- Local approval data under `.money-shorts-local/` is gitignored local data and must not be read, modified, staged, or committed.
+- Latest HEAD: `e684653 feat(automation): add elevenlabs voice sound mux v2`
+- Approx status when this handoff was prepared: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
+- Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
+- Push: not approved.
 
-## Latest Completed Work
+## Fixed Samples
 
-`money-shorts-os-provider-candidate-to-scene-package-foundation-v1-review-fix-preview-wire` — 미커밋, 검증 완료.
+Accepted baseline mp4:
 
-목표 달성: mock 경제 신호 후보 1개(ecosBaseRateTopicCandidate)가 FactCard → ScenePackage로 변환되어 기존 `SignalTranslationPreviewPanel` packages 배열의 4번째 샘플로 연결됨. 코드/fixture/static guard로 증명.
+`C:\tmp\money-shorts-os\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4`
 
+Rejected Creative v2 mp4:
+
+`C:\tmp\money-shorts-os\creative-voice-sound-mux-elevenlabs-v2-first-run\money-shorts-creative-final-visual-youtube-safe-frame-v1-tts-mux.mp4`
+
+Rejected v2 report:
+
+`C:\tmp\money-shorts-os\creative-voice-sound-mux-elevenlabs-v2-first-run\creative-voice-sound-mux-elevenlabs-v2-report.json`
+
+Rejected v2 TTS summary:
+
+`C:\tmp\money-shorts-os\creative-voice-sound-mux-elevenlabs-v2-first-run\elevenlabs-scene-paced-tts-summary.json`
+
+## Problem Definition
+
+Creative v2 is officially rejected. `ffprobe` passing is only media validity, not quality.
+
+Failure causes to address together:
+
+- Script: hook sounds like a title, first 2 seconds do not stop the viewer, information is too abstract, action point is weak.
+- TTS: scene-level raw durations were shorter than target durations; padding stretched the video; scene-by-scene TTS likely broke rhythm and consistency; speech density was too low for a 30s short.
+- Visual: planned event count was not perceptual event count; the mp4 felt like 6 slow-moving images; full-screen image plus bottom caption remained dominant.
+- Image: generic images did not explain rate freeze, loans, deposits, or cash flow.
+- Scorer: pre-render JSON scoring did not inspect actual mp4 silence, voice rhythm, visual rhythm, image quality, card impact, or readability.
+
+## Absolute Goal
+
+Maintain the automated topic-to-upload pipeline direction:
+
+`topic list -> candidate video generation -> quality scorer/audit best candidate selection -> final render -> platform metadata -> upload queue readiness`
+
+But for this recovery slice, do not expand to bulk generation or upload. First produce one good `금리 동결` Golden Sample and make the structure enforceable.
+
+## Execution Order
+
+Follow this order. Do not skip ahead to audit-only work.
+
+1. Stop State Lock
+   - Record Creative v2 as the rejected sample.
+   - Keep accepted final as the baseline/reference.
+   - Verify upload/SFX/new-topic expansion guards.
+   - Keep `uploadReady=false`.
+
+2. Image Generation Contract
+   - Require the existing ChatGPT/LLM-based image generation path.
+   - Require visual director prompts.
+   - Require selected image set and image quality gate.
+   - Forbid placeholder/local mock/stock-like fallback final images.
+   - If good images are unavailable, regenerate image prompt/image or skip topic; never render final with low-quality fallback.
+
+3. Visual Director Prompt v1
+   - Add `build-money-shorts-visual-director-prompt-v1.mjs` or the closest repo-consistent equivalent.
+   - Generate six `금리 동결` image prompts.
+   - Style: premium editorial financial explainer, cinematic, realistic, high detail, vertical 9:16.
+   - Forbid readable text inside image, watermark, distorted hands, generic smiling office worker, fake unreadable charts, low-quality stock feel.
+
+4. Golden Sample Blueprint v1
+   - Create one single source of truth for the 30s `금리 동결` sample.
+   - Include script, scene/card timeline, image prompt mapping, TTS phrase mapping, perceptual event plan, and card-image hybrid design.
+
+5. TTS-first Timeline Contract
+   - Preferred TTS strategy: full narration one-shot.
+   - Second choice: hook/body/closing three-block TTS.
+   - Do not use six short scene-level TTS calls as the default.
+   - Measure actual audio duration and speech active duration before final visual timing.
+   - Reflow scene/timeline from real TTS timing.
+   - Do not pad short TTS with silence or `apad=whole_dur`.
+
+6. Card-Image Hybrid Renderer v1
+   - Add a new renderer mode such as `card_image_hybrid_v1`; do not delete the existing renderer.
+   - Use selected high-quality LLM-generated images as dim/blur/crop/parallax background.
+   - Make cards the primary information surface.
+   - Required templates: `big_hook_card`, `curiosity_contrast_card`, `checklist_card_1`, `checklist_card_2`, `checklist_card_3`, `twist_single_sentence_card`, `final_action_card`, `dim_blur_background`, `card_slide_in`, `card_punch_zoom`, `checklist_pop`, `safe_frame_text_layout`.
+   - Output: `visual_only.mp4`, `render_manifest.json`, `actual_card_timeline.json`, `perceptual_event_report.json`.
+
+7. Post-Render Artifact Audit v1
+   - Audit actual mp4 artifacts, not only JSON plans.
+   - Rejected v2 must fail.
+   - Accepted baseline may be `reference/pass_with_known_limits`.
+   - New Golden Sample should be evaluated as the pass candidate.
+
+8. Golden Sample Render
+   - Topic: `금리 동결`.
+   - Produce full 30s final candidate, not only preview.
+   - Keep `uploadReady=false`.
+   - Produce Owner-reviewable before/after artifacts.
+
+9. Report
+   - Compare accepted baseline vs rejected v2 vs new Golden Sample.
+   - Report image generation path validity, TTS padding removal, card presence ratio, perceptual event count, first 2s hook card presence/impact, and final recommendation.
+
+## Golden Sample Structure
+
+Use this 30s structure as the shared source for script, captions, visual events, image prompts, TTS timeline, and renderer.
+
+- `0.0~2.0s Hook`
+  - Voice: `금리 동결? 아직 안심하면 안 됩니다.`
+  - Text: `아직 안심 금지`
+  - Visual: dim/blur high-quality financial background plus central big hook card and impact motion.
+- `2.0~5.0s Curiosity`
+  - Voice: `금리는 멈췄지만, 내 이자는 바로 안 멈출 수 있습니다.`
+  - Text: `내 이자는 다릅니다`
+  - Visual: rate-news card contrasted with wallet/loan card.
+- `5.0~10.0s Point 1`
+  - Voice: `첫째, 변동금리는 반영 시점을 확인해야 합니다.`
+  - Text: `변동금리: 반영 시점`
+  - Visual: checklist card for variable rate / reflection timing / next payment date.
+- `10.0~15.0s Point 2`
+  - Voice: `둘째, 예금은 갈아타기 전에 만기와 손실을 봐야 합니다.`
+  - Text: `예금: 만기·손실 확인`
+  - Visual: checklist card for deposit switch / maturity / early withdrawal loss.
+- `15.0~20.0s Point 3`
+  - Voice: `셋째, 대출자는 월 납입액을 다시 계산해야 합니다.`
+  - Text: `대출: 월 납입액`
+  - Visual: checklist card for loan / monthly payment / fixed costs.
+- `20.0~26.0s Twist`
+  - Voice: `뉴스는 금리를 말하지만, 내 지갑은 현금흐름이 결정합니다.`
+  - Text: `내 지갑은 현금흐름`
+  - Visual: single-sentence big card, short pause before impact.
+- `26.0~30.0s Action`
+  - Voice: `오늘은 금리보다 고정비부터 확인하세요.`
+  - Text: `오늘 할 일: 고정비 확인`
+  - Visual: final action checklist card.
+
+## Image Generation Policy
+
+Add/enforce an equivalent contract:
+
+```json
+{
+  "image_generation_policy": {
+    "required_provider_path": "chatgpt_or_llm_image_generation",
+    "allow_placeholder": false,
+    "allow_local_mock_for_final": false,
+    "allow_stock_like_fallback": false,
+    "require_visual_director_prompt": true,
+    "require_selected_image_set": true,
+    "require_image_quality_score": true,
+    "on_image_generation_failure": "regenerate_image_or_skip_topic"
+  }
+}
 ```
-ecosBaseRateTopicCandidate → FactCard → ScenePackage → SignalTranslationPreviewPanel packages[3]
+
+Image quality gate must enforce:
+
+- `min_resolution`: `1080x1920`
+- `orientation`: vertical 9:16
+- subject relevance required
+- generic stock feel forbidden
+- text inside image forbidden
+- watermark forbidden
+- blurred/low-detail output forbidden
+- final render requires selected image set
+
+## TTS-first Metadata
+
+Add/enforce an equivalent contract:
+
+```json
+{
+  "tts_strategy": "full_narration_one_shot | three_block",
+  "actual_audio_duration": 0.0,
+  "speech_active_duration": 0.0,
+  "silence_ratio": 0.0,
+  "phrase_alignment": [
+    {
+      "phrase_id": "hook",
+      "text": "",
+      "audio_start": 0.0,
+      "audio_end": 0.0,
+      "visual_start": 0.0,
+      "visual_end": 0.0
+    }
+  ],
+  "padding_used": false,
+  "requires_script_rewrite": false,
+  "requires_timeline_reflow": false
+}
 ```
 
-포함된 변경:
-- `lib/source-facts/provider-candidates.ts` 신규 — SourceProviderCatalogEntry, ProviderReadinessStatus, TopicCandidate, TopicCandidatePipelineResult 타입 + 3개 mock provider catalog + 3개 mock snapshot + 3개 mock TopicCandidate + resolveProviderReadiness() + createFactCardDraftFromTopicCandidate() + runTopicCandidatePipeline() + MOCK_TOPIC_CANDIDATE_PIPELINE_RESULTS + `providerCandidateGeneratedSignalTranslationPackage` (preview fixture)
-- `lib/source-facts/index.ts` — `./provider-candidates` re-export 추가
-- `app/fact-cards/manual/package-preview/page.tsx` — import 추가 + packages 배열에 4번째 패키지 추가
-- `scripts/check-provider-candidate-scene-package-static.mjs` 신규 — 39 checks
-- `scripts/check-signal-translation-preview-static.mjs` — provider-driven preview wire 체크 3개 추가 → 84 checks
+## Perceptual Event Policy
 
-검증 결과:
-- TypeScript (`npx tsc --noEmit`, output/ 제외) → 오류 없음
-- ESLint (변경 2개 ts/tsx 파일) → 오류 없음
-- `node scripts/check-provider-candidate-scene-package-static.mjs` → 39/39 PASS
-- `node scripts/check-signal-translation-preview-static.mjs` → 84/84 PASS
+Separate `planned_event_count` from `perceptual_event_count`.
 
-## Recent Checkpoints
+Only count perceptual events such as:
 
-- `9338645` — `fix(package-preview): add imagePolicy to qa panel spec note`
-- `a16bb80` — `feat(source-facts): add image prompt text policy structural qa`
-- `34eb070` — `feat(source-facts): add voice narration structural qa`
-- `b0acacf` — `docs(state): sync spec docs after scene label safe-zone contract`
+- 15%+ visible area change
+- new information card
+- big hook card
+- number/checklist/arrow/warning card
+- background dim/blur transition
+- layout change
+- split screen
+- freeze punch
+- hard cut
+- card stack transition
+- meaningful caption/card change
 
-## Recommended Next Task
+Do not count:
 
-1. **checkpoint commit** — `money-shorts-os-provider-candidate-to-scene-package-foundation-v1` 내용 포함 (3 files)
-2. **다음 content slice** — Codex 결정 대기
+- slow pan of the same image
+- slow zoom of the same image
+- tiny icon appearance
+- bottom subtitle swap only
+- decorative overlay
+- barely visible micro movement
+
+Quality gates must use `perceptual_event_count`, not decorative planned event count.
+
+## Mandatory Outputs
+
+Produce these artifacts, with repo-consistent locations and names if exact paths differ:
+
+1. `image_generation_contract.json`
+2. `visual_director_prompts.rate_freeze.v1.json`
+3. `golden_sample_blueprint.rate_freeze.v1.json`
+4. `tts_first_timeline_contract.v1.json`
+5. `card_image_hybrid_render_manifest.v1.json`
+6. `post_render_artifact_audit.samples.v1.json`
+7. `post_render_artifact_audit.output.v1.json`
+8. `golden_sample_rate_freeze_visual_only.mp4`
+9. `golden_sample_rate_freeze_tts_mux.mp4`
+10. `golden_sample_recovery_report.v1.json`
+
+## Hard Fails
+
+- Final render uses placeholder image.
+- ChatGPT/LLM image generation path is bypassed.
+- Selected image set is missing.
+- First 2s hook card is missing.
+- First 5s contains long silence.
+- Scene length is filled by padding.
+- `apad=whole_dur` or equivalent silence stretching is used to fake duration.
+- `perceptual_event_count` is insufficient.
+- Full-screen image dominance is too high.
+- Card presence ratio is low.
+- `uploadReady=true` appears before post-render audit pass.
+- The work ends after making audit only.
 
 ## Forbidden
 
-- Do not touch `piq_diag_out.txt`.
-- Do not read, modify, delete, stage, or commit `.money-shorts-local/` data.
-- Do not stage/commit/push unless explicitly approved later.
-- Do not add dependencies or edit lockfiles.
-- Do not edit `.env*`, secrets, deployment config, DB/Supabase schema, migrations, or API credentials.
-- Do not call OpenAI/GPT, Gemini, Veo, ElevenLabs, KOSIS, OpenDART, FRED, ECOS live, or any live API.
-- Do not run ffmpeg, render, export, upload, post, deploy, or write to `output/`.
-- Do not write to OS clipboard, `localStorage`, or `sessionStorage`.
+- Do not make an audit-only slice and stop.
+- Do not do SFX-only work.
+- Do not only tune thresholds.
+- Do not expand to new topics.
+- Do not start bulk candidate generation.
+- Do not create upload queue readiness.
+- Do not upload, post, deploy, push, or change DB/env/secrets.
+- Do not add dependencies or edit lockfiles without explicit Owner approval.
+- Do not replace LLM image generation with placeholder, plain color, local mock final, or stock-like fallback.
+- Do not lower image quality because this is card-first.
+- Do not render final if good selected images are unavailable.
+- Do not use six scene-by-scene short TTS calls as the default.
+- Do not pad short audio to target scene duration.
+- Do not treat `ffprobe` pass as quality pass.
+- Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
+
+## External/API Safety
+
+The Owner directive requires preserving the ChatGPT/LLM image generation path and real TTS-first recovery. Use only already-approved, existing project paths and credentials. If a live API call, paid external action, missing credential, or permission boundary blocks execution, stop and report the exact blocker. Do not silently substitute placeholder/local mock final assets.
+
+## Required Checks
+
+Choose focused checks that match changed files, plus real artifact checks for produced mp4s.
+
+At minimum:
+
+- Static/contract checks for newly added JSON/contracts/scripts.
+- Media validity for generated mp4s.
+- Post-render artifact audit over accepted baseline, rejected v2, and new Golden Sample.
+- Evidence that rejected v2 fails and new Golden Sample is a pass candidate or a clearly reported blocker.
+
+## CLAUDE_REPORT Policy
+
+Update `_ai/CLAUDE_REPORT.md` because this is a high-impact recovery slice with reusable evidence. Include changed files, produced artifacts, checks/results, deviations/blockers, and checkpoint recommendation.
+
+## Checkpoint Policy
+
+Do not commit or push. Stop after final handoff to Codex.

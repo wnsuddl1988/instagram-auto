@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "money_shorts_golden_sample_recovery_report_v1",
+  "status": "recovery_slice_complete_with_image_gate_blocker",
+  "title": "Money Shorts OS — Golden Sample Recovery Report v1 (rate freeze / 금리 동결)",
+  "taskId": "creative-v2-rate-freeze-golden-sample-recovery-v1",
+  "generatedAt": "2026-07-02",
+  "purpose": "accepted baseline vs rejected Creative v2 vs new Golden Sample 구조를 비교한다. image generation path 유효성, TTS padding 제거, card presence, perceptual event, 첫 2s hook card, 그리고 최종 권고를 담는다. 이 slice는 audit-only가 아니라 Golden Sample 구조를 파이프라인 계약으로 고정하고 실측 audit으로 판정을 증명한다.",
+  "topic": { "topicId": "base-rate-hold-202605", "label": "금리 동결" },
+  "producedArtifacts": {
+    "stopState": "scripts/fixtures/creative-v2-stop-state.v1.json",
+    "imageGenerationContract": "scripts/fixtures/image_generation_contract.json",
+    "visualDirectorPrompts": "scripts/fixtures/visual_director_prompts.rate_freeze.v1.json",
+    "goldenSampleBlueprint": "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json",
+    "ttsFirstTimelineContract": "scripts/fixtures/tts_first_timeline_contract.v1.json",
+    "cardImageHybridRenderManifest": "scripts/fixtures/card_image_hybrid_render_manifest.v1.json",
+    "cardImageHybridRenderer": "scripts/render-money-shorts-card-image-hybrid-v1.mjs",
+    "postRenderAuditSamples": "scripts/fixtures/post_render_artifact_audit.samples.v1.json",
+    "postRenderAuditOutput": "scripts/fixtures/post_render_artifact_audit.output.v1.json",
+    "postRenderAuditScript": "scripts/audit-money-shorts-post-render-artifact-v1.mjs",
+    "visualDirectorPromptBuilder": "scripts/build-money-shorts-visual-director-prompt-v1.mjs",
+    "staticGuard": "scripts/check-money-shorts-golden-sample-recovery-static.mjs",
+    "imageGateReport": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\image_gate_report.json"
+  },
+  "notProducedBecauseBlocked": {
+    "goldenSampleVisualOnlyMp4": "golden_sample_rate_freeze_visual_only.mp4 — image quality gate 미달로 미생성",
+    "goldenSampleTtsMuxMp4": "golden_sample_rate_freeze_tts_mux.mp4 — image quality gate 미달로 미생성",
+    "reason": "selected image set 6장이 실측 941x1672로 1080x1920 gate 미달. Owner 결정: blocker로 멈춤(이미지 재생성 필요). placeholder/upscale로 우회하지 않음."
+  },
+  "threeSampleComparison": {
+    "acceptedBaseline": {
+      "role": "reference_baseline",
+      "ttsStrategy": "full_narration_one_shot",
+      "measured": { "durationSec": 30.0, "firstFiveSecondSilenceSec": 0.4, "totalSilenceRatio": 0.1106, "speechActiveRatio": 0.8894 },
+      "auditVerdict": "reference_pass_with_known_limits",
+      "imageGenerationPath": "premium-editorial selected image (LLM ChatGPT path)",
+      "cardFirst": false,
+      "note": "full-screen image + bottom caption 방식. TTS-first rhythm은 검증됨. card-first는 아님(reference로만 유지, upload 자격 부여 안 함)."
+    },
+    "rejectedCreativeV2": {
+      "role": "rejected_sample",
+      "ttsStrategy": "six_scene_level_tts_calls",
+      "measured": { "durationSec": 30.267, "firstFiveSecondSilenceSec": 3.444, "totalSilenceRatio": 0.302, "speechActiveRatio": 0.698 },
+      "auditVerdict": "REJECT_confirmed",
+      "failReasons": [
+        "first_5s_silence_3.44s_exceeds_0.8s",
+        "total_silence_ratio_0.302_exceeds_0.18",
+        "speech_active_ratio_0.698_below_0.72"
+      ],
+      "ttsPadding": "6개 씬 모두 apad=whole_dur padding",
+      "cardFirst": false,
+      "note": "scene 1 hook raw 1.81s → 5s padding으로 첫 5초 무음 3.44s. 6개 씬별 TTS가 rhythm을 깨고 padding을 유발. ffprobe는 통과하지만 quality는 fail."
+    },
+    "newGoldenSample": {
+      "role": "new_golden_sample",
+      "ttsStrategy": "full_narration_one_shot",
+      "blueprint": "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json",
+      "cardFirst": true,
+      "plannedPerceptualEventCount": 18,
+      "plannedPerceptualEventCountSource": "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json#perceptualEventPlan (single source of truth, mirrored verbatim in card_image_hybrid_render_manifest.v1.json#cardTimeline[].perceptualEvents)",
+      "cardPresenceRatioTarget": 0.9,
+      "fullScreenImageDominanceMaxRatio": 0.25,
+      "firstTwoSecondHookCard": true,
+      "auditVerdict": "BLOCKED_mp4_not_rendered",
+      "blocker": "image quality gate (1080x1920) 미달. 이미지 재생성 후 render 필요.",
+      "note": "구조는 card_image_hybrid_v1로 고정됨: 7 phase, big hook card 첫 2s, checklist card 3개, twist single-sentence card, final action card, dim/blur 배경. TTS는 full narration one-shot(padding 금지). render는 image gate 통과 후."
+    }
+  },
+  "findingsRequestedByHandoff": {
+    "imageGenerationPathValid": {
+      "answer": "yes_but_resolution_below_gate",
+      "detail": "LLM(ChatGPT + Playwright + Chrome CDP, reference-free) 이미지 생성 경로는 실제로 작동했고 6장 PNG가 존재하며 owner 시각 QA(keep 4 / keep_candidate 2, renderReadyCandidate=true)를 통과했다. 그러나 실측 해상도 941x1672가 1080x1920 gate 미달이라 final render 자격 미달."
+    },
+    "ttsPaddingRemoval": {
+      "answer": "enforced_by_contract",
+      "detail": "tts_first_timeline_contract v1이 full_narration_one_shot 우선, apad=whole_dur 및 무음 padding 금지, 짧은 TTS는 script/timeline 문제로 처리하도록 계약화. rejected v2(6-scene padding)는 계약 위반으로 표시됨."
+    },
+    "cardPresenceRatio": { "baseline": 0.0, "rejectedV2": 0.0, "goldenSampleTarget": 0.9, "detail": "baseline/v2는 full-screen image + bottom caption로 card presence 없음. Golden Sample은 매 구간 카드 존재(target 0.9)로 설계." },
+    "perceptualEventCount": { "baselineOrV2": "planned event != perceptual event (6 slow images 체감)", "goldenSamplePlanned": 18, "minForPass": 12, "detail": "perceptual_event_count로만 게이트. 새 카드/hook카드/체크리스트/hard cut/freeze punch/twist 배경 전환(1회)만 카운트. dim/blur 배경 자체(모든 phase 정적 적용)와 pan/zoom/미세 이동은 카운트하지 않는다. blueprint/manifest/renderer actual report가 동일 18개 이벤트 목록을 single source로 공유한다." },
+    "firstTwoSecondHookCard": { "baseline": "no", "rejectedV2": "no (첫 2s 무음+정적 이미지)", "goldenSample": "yes (big_hook_card + card_punch_zoom, dim/blur 배경)", "impact": "첫 2초에 시청 정지 카드 존재로 hook 강화." },
+    "finalRecommendation": {
+      "recommendation": "regenerate_images_then_render_golden_sample",
+      "steps": [
+        "1) Owner 승인 + ALLOW_CHATGPT_IMAGE로 visual_director_prompts.rate_freeze.v1.json 6개 프롬프트를 1080x1920 이상으로 재생성(live ChatGPT path).",
+        "2) 재생성 이미지가 image_quality_gate 통과하면 render-money-shorts-card-image-hybrid-v1.mjs로 golden_sample_rate_freeze_visual_only.mp4 렌더.",
+        "3) full_narration_one_shot TTS(padding 금지) 생성 후 mux → golden_sample_rate_freeze_tts_mux.mp4.",
+        "4) audit-money-shorts-post-render-artifact-v1.mjs로 재audit. golden sample이 PASS_CANDIDATE인지 확인.",
+        "5) Post-Render Audit 통과 전까지 uploadReady=true 금지."
+      ],
+      "doNot": [
+        "941x1672 이미지를 upscale해서 final로 사용",
+        "placeholder/plain color/stock fallback 이미지 사용",
+        "TTS 짧으면 apad 무음 padding으로 길이 맞추기",
+        "6개 씬별 짧은 TTS를 기본값으로 사용",
+        "ffprobe pass를 quality pass로 간주",
+        "audit 통과 전 upload queue readiness 생성"
+      ]
+    }
+  },
+  "evidenceSummary": {
+    "rejectedV2FailsAudit": true,
+    "rejectedV2Verdict": "REJECT_confirmed",
+    "baselineIsReference": true,
+    "baselineVerdict": "reference_pass_with_known_limits",
+    "goldenSampleVerdict": "BLOCKED_mp4_not_rendered",
+    "imageGateVerdict": "IMAGE_GATE_BLOCKED",
+    "staticGuard": "109/109 PASS",
+    "auditRunOnRealMp4": true
+  },
+  "guards": { "uploadReady": false, "uploadQueueReadinessGenerated": false, "auditOnlySlice": false, "sfxOnlyWork": false, "thresholdOnlyTuning": false, "newTopicExpansion": false, "bulkCandidateGeneration": false, "placeholderFinalImage": false, "sixSceneShortTtsDefault": false, "silencePadding": false },
+  "boundary": { "noImageGeneration": true, "noRenderExecuted": true, "noTts": true, "noUpload": true, "noCommitPushDeploy": true }
+}

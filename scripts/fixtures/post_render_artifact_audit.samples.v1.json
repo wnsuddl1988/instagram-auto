@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "money_shorts_post_render_artifact_audit_samples_v1",
+  "status": "samples_locked",
+  "title": "Money Shorts OS — Post-Render Artifact Audit Samples v1",
+  "purpose": "Post-Render Artifact Audit v1이 실제 mp4 아티팩트를 audit할 대상 목록. JSON plan이 아니라 실제 mp4의 무음/perceptual/card ratio를 검사한다. ffprobe pass는 quality pass가 아니다.",
+  "topic": { "topicId": "base-rate-hold-202605", "label": "금리 동결" },
+  "silenceDetect": { "noiseDb": -40, "minSilenceSec": 0.4 },
+  "thresholds": {
+    "maxFirstFiveSecondSilenceSec": 0.8,
+    "maxTotalSilenceRatio": 0.18,
+    "minSpeechActiveRatio": 0.72,
+    "minPerceptualEventCount": 12,
+    "minCardPresenceRatio": 0.7,
+    "maxFullScreenImageDominanceRatio": 0.25,
+    "requireFirstTwoSecondHookCard": true
+  },
+  "samples": [
+    {
+      "sampleId": "accepted_baseline",
+      "expectedVerdict": "reference",
+      "role": "reference_baseline",
+      "mp4": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4",
+      "muxSummary": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
+      "ttsStrategy": "full_narration_one_shot",
+      "perceptualEventReport": null,
+      "note": "full narration one-shot. reference/pass_with_known_limits로만 평가. audit은 무음/speech 지표만 실측한다. card/perceptual 지표는 이 sample에 render_manifest가 없어 known-limit로 표시."
+    },
+    {
+      "sampleId": "rejected_creative_v2",
+      "expectedVerdict": "reject",
+      "role": "rejected_sample",
+      "mp4": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\money-shorts-creative-final-visual-youtube-safe-frame-v1-tts-mux.mp4",
+      "muxSummary": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\elevenlabs-scene-paced-tts-summary.json",
+      "ttsStrategy": "six_scene_level_tts_calls",
+      "perceptualEventReport": null,
+      "note": "6개 씬별 TTS + apad padding. audit에서 반드시 fail이 나와야 한다(첫 5초 긴 무음 + 총 무음 비율 초과)."
+    },
+    {
+      "sampleId": "golden_sample_rate_freeze",
+      "expectedVerdict": "pass_candidate",
+      "role": "new_golden_sample",
+      "mp4": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\golden_sample_rate_freeze_tts_mux.mp4",
+      "muxSummary": null,
+      "ttsStrategy": "full_narration_one_shot",
+      "perceptualEventReport": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\perceptual_event_report.json",
+      "note": "새 Golden Sample. image quality gate 미달(941x1672)로 아직 render되지 않았다. audit은 mp4 부재를 blocker로 정확히 보고한다(placeholder mp4를 만들지 않는다)."
+    }
+  ],
+  "boundary": { "dataOnly": true, "noRender": true, "noTts": true }
+}

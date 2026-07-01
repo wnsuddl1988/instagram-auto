@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "money_shorts_image_generation_contract_v1",
+  "status": "contract_locked",
+  "title": "Money Shorts OS — Image Generation Contract v1",
+  "purpose": "최종 render에 들어가는 이미지는 반드시 기존 ChatGPT/LLM 기반 image generation path로 만들어진 것이어야 한다. placeholder/local mock/stock-like fallback final image를 금지하고, image quality gate를 강제한다. card-first는 이미지를 버리는 것이 아니라 고품질 이미지 + 정보 카드 + 모션그래픽 결합이다.",
+  "image_generation_policy": {
+    "required_provider_path": "chatgpt_or_llm_image_generation",
+    "allow_placeholder": false,
+    "allow_local_mock_for_final": false,
+    "allow_stock_like_fallback": false,
+    "require_visual_director_prompt": true,
+    "require_selected_image_set": true,
+    "require_image_quality_score": true,
+    "on_image_generation_failure": "regenerate_image_or_skip_topic"
+  },
+  "known_provider_path": {
+    "runner": "scripts/run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs",
+    "core": "scripts/_chatgpt-image-core.mjs",
+    "method": "live ChatGPT image flow via Playwright + Chrome CDP (reference-free). estuary fetch + page.route intercept+reload. 화면 자동화 없음.",
+    "readinessGate": "ALLOW_CHATGPT_IMAGE + Owner 명시 승인. OPENAI_API_KEY 불필요(브라우저 로그인).",
+    "requestPack": "scripts/fixtures/premium-editorial-scene-image-request-pack.v2.json",
+    "note": "이 경로를 placeholder/plain color/local mock/stock fallback로 대체하지 않는다. live 실행이 막히면 정확한 blocker를 보고하고 멈춘다."
+  },
+  "image_quality_gate": {
+    "min_width_px": 1080,
+    "min_height_px": 1920,
+    "orientation": "vertical_9_16",
+    "aspect_ratio_target": 0.5625,
+    "aspect_ratio_tolerance": 0.01,
+    "subject_relevance_required": true,
+    "generic_stock_feel_forbidden": true,
+    "text_inside_image_forbidden": true,
+    "watermark_forbidden": true,
+    "blurred_or_low_detail_forbidden": true,
+    "final_render_requires_selected_image_set": true
+  },
+  "selected_image_set_contract": {
+    "source_of_truth": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+    "must_be_owner_reviewed": true,
+    "each_scene_verdict_enum": ["keep", "keep_candidate", "reject"],
+    "render_blocked_if_any_verdict_reject": true,
+    "render_blocked_if_any_resolution_below_gate": true
+  },
+  "current_selected_image_set_status": {
+    "setRef": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+    "imageDir": "output/money-shorts/scene-1-6-fullset-first-run-v1/",
+    "sceneCount": 6,
+    "ownerReviewed": true,
+    "renderReadyCandidate": true,
+    "measuredResolution": "941x1672",
+    "meetsResolutionGate": false,
+    "aspectRatioOk": true,
+    "gateVerdict": "BLOCKED_resolution_below_min",
+    "note": "6장 모두 owner 시각 QA(keep 4 / keep_candidate 2)를 통과했으나 실측 해상도 941x1672 < 1080x1920. image_quality_gate 미달로 final render를 차단한다. 재생성 필요(Owner 승인 후 live ChatGPT path)."
+  },
+  "on_gate_fail_actions": {
+    "regenerate_image": "동일 finalPrompt로 더 큰 해상도 재생성 (live ChatGPT path, Owner 승인).",
+    "skip_topic": "재생성 불가 시 topic skip.",
+    "never_do": [
+      "upscale 후 final로 사용",
+      "placeholder/plain color card만으로 대체",
+      "stock-like fallback 이미지 사용",
+      "low-quality 이미지로 그냥 render 진행"
+    ]
+  },
+  "boundary": {
+    "noImageGeneration": true,
+    "noNetwork": true,
+    "noRender": true,
+    "dataOnly": true
+  }
+}
