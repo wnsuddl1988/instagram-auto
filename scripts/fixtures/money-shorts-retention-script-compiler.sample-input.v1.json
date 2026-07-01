@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "money_shorts_retention_script_compiler_input_v1",
+  "status": "data_only_sample_input",
+  "note": "Retention Script Compiler v1의 rule-based dry-run 입력 샘플. money_flow(출처 필수, 9필드 완비) + success_psychology(출처 불필요, 돈/기회/실행 연결) 2개 topic.",
+  "topics": [
+    {
+      "topicId": "base-rate-hold-202605",
+      "contentPillar": "money_flow",
+      "title": "기준금리 동결이 내 지갑에 주는 신호",
+      "angle": "금리 동결은 좋은 소식이 아니라 '지금 내 돈 흐름을 점검하라'는 신호다",
+      "keyIdeas": ["기준금리 동결", "대출 이자 흐름", "예금 금리 선택"],
+      "curiosity": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+      "points": [
+        "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+        "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+        "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요."
+      ],
+      "twist": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+      "action": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+      "emphasisWords": ["기준금리", "동결", "대출", "예금", "현금흐름"],
+      "hookSeeds": {
+        "wallet_impact": "금리 동결, 내 이자 신호.",
+        "twist": "금리 동결, 사실 반대일 수 있습니다."
+      },
+      "sourceMetadata": {
+        "source_urls": ["https://ecos.bok.or.kr/"],
+        "source_titles": ["한국은행 ECOS — 기준금리 통계 (722Y001/0101000)"],
+        "checked_at": "2026-07-01",
+        "published_date": "2025-05-29",
+        "policy_date": "2026-05",
+        "key_numbers": ["연 2.5%", "전월 대비 동결"],
+        "deadline_date": "none",
+        "target_condition": "대출자/예금자/변동금리 보유자",
+        "uncertainty_note": "기준금리 방향은 향후 통화정책회의 결과에 따라 달라질 수 있으며 투자 권고가 아님."
+      }
+    },
+    {
+      "topicId": "execution-gap-psychology-v1",
+      "contentPillar": "success_psychology",
+      "title": "기회를 놓치는 진짜 이유는 정보가 아니라 실행입니다",
+      "angle": "성공하는 사람은 의지가 강한 게 아니라 시작하기 쉬운 환경을 만들어 행동으로 옮긴다",
+      "keyIdeas": ["실행을 미루는 습관", "시작하기 쉬운 환경", "작은 행동 하나"],
+      "curiosity": "왜 다 알면서도 아무도 실행하지 않을까요?",
+      "points": [
+        "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+        "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+        "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요."
+      ],
+      "twist": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+      "action": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+      "emphasisWords": ["기회", "실행", "환경", "선택", "행동"],
+      "hookSeeds": {
+        "psychology": "기회는 실행이 전부예요.",
+        "twist": "성공은 의지가 아니라 환경."
+      }
+    }
+  ]
+}

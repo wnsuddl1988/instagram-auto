@@ -1,0 +1,1512 @@
+{
+  "schemaVersion": "money_shorts_retention_script_compiler_output_v1",
+  "status": "data_only_rule_based_dry_run",
+  "sourceContractRef": "scripts/fixtures/money-shorts-creative-quality-contract.v1.json",
+  "sourceContractSchemaVersion": "money_shorts_creative_quality_contract_v1",
+  "inputRef": "scripts/fixtures/money-shorts-retention-script-compiler.sample-input.v1.json",
+  "compilerMode": "rule_based_v1",
+  "ruleBasedComponents": [
+    "RuleBasedTopicClassifier",
+    "RuleBasedHookGenerator",
+    "RuleBasedScriptCompiler",
+    "RuleBasedCaptionPlanner"
+  ],
+  "futureLlmSlots": [
+    "LLMHookGenerator",
+    "LLMScriptCompiler"
+  ],
+  "isLlmGeneration": false,
+  "externalApiExecuted": false,
+  "renderExecuted": false,
+  "ttsExecuted": false,
+  "imageGenerationExecuted": false,
+  "artifactFileMapping": {
+    "hook_candidates.json": "per-candidate hook_candidates array",
+    "script.json": "per-candidate script object (retention 5-part structure)",
+    "caption_plan.json": "per-candidate caption_plan (single-line, safe-frame)",
+    "voiceover_timing_metadata.json": "per-candidate voiceover timing + duration guard",
+    "note": "Phase 2 산출물. Creative Quality Contract의 requiredFinalArtifacts와 충돌하지 않으며, 최종 production plan의 동일 파일명(script.json/hook_candidates.json/caption_plan.json)에 대응하는 Phase 2 컴파일 결과다."
+  },
+  "phase2Outputs": [
+    "hook_candidates.json",
+    "script.json",
+    "caption_plan.json",
+    "voiceover_timing_metadata.json"
+  ],
+  "topics": [
+    {
+      "topicId": "base-rate-hold-202605",
+      "contentPillar": "money_flow",
+      "sourceGateResult": {
+        "sourceRequired": true,
+        "ok": true,
+        "missingFields": [],
+        "hardFail": false
+      },
+      "channelFit": {
+        "connected": [
+          "돈",
+          "선택"
+        ],
+        "isConnected": true
+      },
+      "candidates": [
+        {
+          "candidateId": "base-rate-hold-202605-cand-1",
+          "hook_candidates": [
+            {
+              "text": "기준금리 동결, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "기준금리 동결 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "금리 동결, 사실 반대일 수 있습니다.",
+              "type": "twist",
+              "score": 80,
+              "reason": "type=twist, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "기준금리 동결, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "기준금리 동결, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "기준금리 동결를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "금리 동결, 내 이자 신호.",
+              "type": "wallet_impact",
+              "score": 83,
+              "reason": "type=wallet_impact, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "기준금리 동결 앞에서 사람들은 실행을 미룹니다.",
+              "type": "psychology",
+              "score": 76,
+              "reason": "type=psychology, estDur=3.9s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.9
+            },
+            {
+              "text": "기준금리 동결, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "기준금리 동결, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            }
+          ],
+          "selectedHookText": "금리 동결, 내 이자 신호.",
+          "selectedHookScore": 83,
+          "script": {
+            "topic": "기준금리 동결이 내 지갑에 주는 신호",
+            "content_pillar": "money_flow",
+            "angle": "금리 동결은 좋은 소식이 아니라 '지금 내 돈 흐름을 점검하라'는 신호다",
+            "hook": "금리 동결, 내 이자 신호.",
+            "curiosity": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+            "points": [
+              "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+              "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요."
+            ],
+            "twist_or_reframe": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "full_voiceover": "금리 동결, 내 이자 신호. 동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요. 첫째, 동결은 대출자에게 당장 이득이 되지 않습니다. 둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요. 셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요. 가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다. 지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "caption_lines": [
+              "금리 동결, 내 이자 신호.",
+              "동결인데 왜 내 대출 이자는 그대로일까요…",
+              "첫째, 동결은 대출자에게 당장 이득이 되…",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+              "셋째, 변동금리라면 지금 상환 계획을 다…",
+              "가만두면 금리가 그대로여도 현금흐름은 새…",
+              "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요."
+            ],
+            "emphasis_words": [
+              "기준금리",
+              "동결",
+              "대출",
+              "예금",
+              "현금흐름"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "금리 동결, 내 이자 신호.",
+                "char_count": 11,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "char_count": 17,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "char_count": 19,
+                "compressed": true
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "char_count": 22,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.23,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "금리 동결, 내 이자 신호.",
+                "estimated_duration": 2.23,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+                "estimated_duration": 4.57,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 83,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        },
+        {
+          "candidateId": "base-rate-hold-202605-cand-2",
+          "hook_candidates": [
+            {
+              "text": "대출 이자 흐름, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "대출 이자 흐름 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "금리 동결, 사실 반대일 수 있습니다.",
+              "type": "twist",
+              "score": 80,
+              "reason": "type=twist, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "대출 이자 흐름, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "대출 이자 흐름, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "대출 이자 흐름를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "금리 동결, 내 이자 신호.",
+              "type": "wallet_impact",
+              "score": 83,
+              "reason": "type=wallet_impact, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "대출 이자 흐름 앞에서 사람들은 실행을 미룹니다.",
+              "type": "psychology",
+              "score": 76,
+              "reason": "type=psychology, estDur=3.9s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.9
+            },
+            {
+              "text": "대출 이자 흐름, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "대출 이자 흐름, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            }
+          ],
+          "selectedHookText": "금리 동결, 내 이자 신호.",
+          "selectedHookScore": 83,
+          "script": {
+            "topic": "기준금리 동결이 내 지갑에 주는 신호",
+            "content_pillar": "money_flow",
+            "angle": "금리 동결은 좋은 소식이 아니라 '지금 내 돈 흐름을 점검하라'는 신호다",
+            "hook": "금리 동결, 내 이자 신호.",
+            "curiosity": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+            "points": [
+              "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+              "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요."
+            ],
+            "twist_or_reframe": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "full_voiceover": "금리 동결, 내 이자 신호. 동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요. 첫째, 동결은 대출자에게 당장 이득이 되지 않습니다. 둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요. 셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요. 가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다. 지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "caption_lines": [
+              "금리 동결, 내 이자 신호.",
+              "동결인데 왜 내 대출 이자는 그대로일까요…",
+              "첫째, 동결은 대출자에게 당장 이득이 되…",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+              "셋째, 변동금리라면 지금 상환 계획을 다…",
+              "가만두면 금리가 그대로여도 현금흐름은 새…",
+              "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요."
+            ],
+            "emphasis_words": [
+              "기준금리",
+              "동결",
+              "대출",
+              "예금",
+              "현금흐름"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "금리 동결, 내 이자 신호.",
+                "char_count": 11,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "char_count": 17,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "char_count": 19,
+                "compressed": true
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "char_count": 22,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.23,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "금리 동결, 내 이자 신호.",
+                "estimated_duration": 2.23,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+                "estimated_duration": 4.57,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 83,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        },
+        {
+          "candidateId": "base-rate-hold-202605-cand-3",
+          "hook_candidates": [
+            {
+              "text": "예금 금리 선택, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "예금 금리 선택 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "금리 동결, 사실 반대일 수 있습니다.",
+              "type": "twist",
+              "score": 80,
+              "reason": "type=twist, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "예금 금리 선택, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "예금 금리 선택, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "예금 금리 선택를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "금리 동결, 내 이자 신호.",
+              "type": "wallet_impact",
+              "score": 83,
+              "reason": "type=wallet_impact, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "예금 금리 선택 앞에서 사람들은 실행을 미룹니다.",
+              "type": "psychology",
+              "score": 76,
+              "reason": "type=psychology, estDur=3.9s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.9
+            },
+            {
+              "text": "예금 금리 선택, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "예금 금리 선택, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            }
+          ],
+          "selectedHookText": "금리 동결, 내 이자 신호.",
+          "selectedHookScore": 83,
+          "script": {
+            "topic": "기준금리 동결이 내 지갑에 주는 신호",
+            "content_pillar": "money_flow",
+            "angle": "금리 동결은 좋은 소식이 아니라 '지금 내 돈 흐름을 점검하라'는 신호다",
+            "hook": "금리 동결, 내 이자 신호.",
+            "curiosity": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+            "points": [
+              "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+              "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요."
+            ],
+            "twist_or_reframe": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "full_voiceover": "금리 동결, 내 이자 신호. 동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요. 첫째, 동결은 대출자에게 당장 이득이 되지 않습니다. 둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요. 셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요. 가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다. 지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+            "caption_lines": [
+              "금리 동결, 내 이자 신호.",
+              "동결인데 왜 내 대출 이자는 그대로일까요…",
+              "첫째, 동결은 대출자에게 당장 이득이 되…",
+              "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+              "셋째, 변동금리라면 지금 상환 계획을 다…",
+              "가만두면 금리가 그대로여도 현금흐름은 새…",
+              "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요."
+            ],
+            "emphasis_words": [
+              "기준금리",
+              "동결",
+              "대출",
+              "예금",
+              "현금흐름"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "금리 동결, 내 이자 신호.",
+                "char_count": 11,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "char_count": 17,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "char_count": 19,
+                "compressed": true
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "char_count": 22,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 28.3,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.23,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "금리 동결, 내 이자 신호.",
+                "estimated_duration": 2.23,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "동결인데 왜 내 대출 이자는 그대로일까요, 이유가 있어요.",
+                "estimated_duration": 4.57,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 동결은 대출자에게 당장 이득이 되지 않습니다.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 예금자는 더 나은 금리로 갈아탈 곳을 확인하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 변동금리라면 지금 상환 계획을 다시 점검하세요.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "가만두면 금리가 그대로여도 현금흐름은 새어 나갑니다.",
+                "estimated_duration": 4.4,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 83,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        }
+      ],
+      "selectedCandidateId": "base-rate-hold-202605-cand-1",
+      "phase2Readiness": {
+        "classified": true,
+        "sourceGatePassed": true,
+        "channelFitConnected": true,
+        "hasSelectableCandidate": true,
+        "finalDecisionHint": "render_candidate_ready_for_scene_planner"
+      }
+    },
+    {
+      "topicId": "execution-gap-psychology-v1",
+      "contentPillar": "success_psychology",
+      "sourceGateResult": {
+        "sourceRequired": false,
+        "ok": true,
+        "missingFields": [],
+        "hardFail": false
+      },
+      "channelFit": {
+        "connected": [
+          "기회",
+          "행동"
+        ],
+        "isConnected": true
+      },
+      "candidates": [
+        {
+          "candidateId": "execution-gap-psychology-v1-cand-1",
+          "hook_candidates": [
+            {
+              "text": "실행을 미루는 습관, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "실행을 미루는 습관 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "성공은 의지가 아니라 환경.",
+              "type": "twist",
+              "score": 84,
+              "reason": "type=twist, estDur=2.4s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.4
+            },
+            {
+              "text": "실행을 미루는 습관, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "실행을 미루는 습관, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "실행을 미루는 습관를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "실행을 미루는 습관가 내 돈에 바로 영향을 줍니다.",
+              "type": "wallet_impact",
+              "score": 79,
+              "reason": "type=wallet_impact, estDur=3.9s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.9
+            },
+            {
+              "text": "기회는 실행이 전부예요.",
+              "type": "psychology",
+              "score": 80,
+              "reason": "type=psychology, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "실행을 미루는 습관, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=4.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 4.07
+            },
+            {
+              "text": "실행을 미루는 습관, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=4.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 4.07
+            }
+          ],
+          "selectedHookText": "성공은 의지가 아니라 환경.",
+          "selectedHookScore": 84,
+          "script": {
+            "topic": "기회를 놓치는 진짜 이유는 정보가 아니라 실행입니다",
+            "content_pillar": "success_psychology",
+            "angle": "성공하는 사람은 의지가 강한 게 아니라 시작하기 쉬운 환경을 만들어 행동으로 옮긴다",
+            "hook": "성공은 의지가 아니라 환경.",
+            "curiosity": "왜 다 알면서도 아무도 실행하지 않을까요?",
+            "points": [
+              "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+              "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요."
+            ],
+            "twist_or_reframe": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "full_voiceover": "성공은 의지가 아니라 환경. 왜 다 알면서도 아무도 실행하지 않을까요? 첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다. 둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다. 셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요. 돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다. 지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "caption_lines": [
+              "성공은 의지가 아니라 환경.",
+              "왜 다 알면서도 아무도 실행하지 않을까요?",
+              "첫째, 기회는 정보가 없어서가 아니라 실…",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+              "셋째, 오늘 할 수 있는 가장 작은 행동…",
+              "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+              "지금 저장하고 오늘 실행할 행동 하나만 정하세요."
+            ],
+            "emphasis_words": [
+              "기회",
+              "실행",
+              "환경",
+              "선택",
+              "행동"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "성공은 의지가 아니라 환경.",
+                "char_count": 12,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "char_count": 18,
+                "compressed": false
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "char_count": 16,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "char_count": 22,
+                "compressed": false
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "char_count": 21,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.4,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "성공은 의지가 아니라 환경.",
+                "estimated_duration": 2.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "estimated_duration": 3.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+                "estimated_duration": 4.9,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+                "estimated_duration": 4.73,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "estimated_duration": 3.9,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 84,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        },
+        {
+          "candidateId": "execution-gap-psychology-v1-cand-2",
+          "hook_candidates": [
+            {
+              "text": "시작하기 쉬운 환경, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "시작하기 쉬운 환경 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "성공은 의지가 아니라 환경.",
+              "type": "twist",
+              "score": 84,
+              "reason": "type=twist, estDur=2.4s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.4
+            },
+            {
+              "text": "시작하기 쉬운 환경, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "시작하기 쉬운 환경, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "시작하기 쉬운 환경를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "시작하기 쉬운 환경가 내 돈에 바로 영향을 줍니다.",
+              "type": "wallet_impact",
+              "score": 79,
+              "reason": "type=wallet_impact, estDur=3.9s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.9
+            },
+            {
+              "text": "기회는 실행이 전부예요.",
+              "type": "psychology",
+              "score": 80,
+              "reason": "type=psychology, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "시작하기 쉬운 환경, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=4.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 4.07
+            },
+            {
+              "text": "시작하기 쉬운 환경, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=4.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 4.07
+            }
+          ],
+          "selectedHookText": "성공은 의지가 아니라 환경.",
+          "selectedHookScore": 84,
+          "script": {
+            "topic": "기회를 놓치는 진짜 이유는 정보가 아니라 실행입니다",
+            "content_pillar": "success_psychology",
+            "angle": "성공하는 사람은 의지가 강한 게 아니라 시작하기 쉬운 환경을 만들어 행동으로 옮긴다",
+            "hook": "성공은 의지가 아니라 환경.",
+            "curiosity": "왜 다 알면서도 아무도 실행하지 않을까요?",
+            "points": [
+              "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+              "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요."
+            ],
+            "twist_or_reframe": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "full_voiceover": "성공은 의지가 아니라 환경. 왜 다 알면서도 아무도 실행하지 않을까요? 첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다. 둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다. 셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요. 돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다. 지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "caption_lines": [
+              "성공은 의지가 아니라 환경.",
+              "왜 다 알면서도 아무도 실행하지 않을까요?",
+              "첫째, 기회는 정보가 없어서가 아니라 실…",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+              "셋째, 오늘 할 수 있는 가장 작은 행동…",
+              "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+              "지금 저장하고 오늘 실행할 행동 하나만 정하세요."
+            ],
+            "emphasis_words": [
+              "기회",
+              "실행",
+              "환경",
+              "선택",
+              "행동"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "성공은 의지가 아니라 환경.",
+                "char_count": 12,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "char_count": 18,
+                "compressed": false
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "char_count": 16,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "char_count": 22,
+                "compressed": false
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "char_count": 21,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.4,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "성공은 의지가 아니라 환경.",
+                "estimated_duration": 2.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "estimated_duration": 3.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+                "estimated_duration": 4.9,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+                "estimated_duration": 4.73,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "estimated_duration": 3.9,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 84,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        },
+        {
+          "candidateId": "execution-gap-psychology-v1-cand-3",
+          "hook_candidates": [
+            {
+              "text": "작은 행동 하나, 모르면 그냥 손해입니다.",
+              "type": "loss",
+              "score": 78,
+              "reason": "type=loss, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "작은 행동 하나 하나로 지갑이 달라집니다.",
+              "type": "gain",
+              "score": 76,
+              "reason": "type=gain, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "성공은 의지가 아니라 환경.",
+              "type": "twist",
+              "score": 84,
+              "reason": "type=twist, estDur=2.4s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.4
+            },
+            {
+              "text": "작은 행동 하나, 왜 지금 봐야 할까요?",
+              "type": "question",
+              "score": 74,
+              "reason": "type=question, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "작은 행동 하나, 딱 3가지만 기억하세요.",
+              "type": "number",
+              "score": 75,
+              "reason": "type=number, estDur=3.4s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.4
+            },
+            {
+              "text": "작은 행동 하나를 놓치면 위험합니다.",
+              "type": "risk",
+              "score": 77,
+              "reason": "type=risk, estDur=3.07s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.07
+            },
+            {
+              "text": "작은 행동 하나가 내 돈에 바로 영향을 줍니다.",
+              "type": "wallet_impact",
+              "score": 79,
+              "reason": "type=wallet_impact, estDur=3.57s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.57
+            },
+            {
+              "text": "기회는 실행이 전부예요.",
+              "type": "psychology",
+              "score": 80,
+              "reason": "type=psychology, estDur=2.23s, hookWindow=true, forbidden=0",
+              "estimated_duration": 2.23
+            },
+            {
+              "text": "작은 행동 하나, 지금 안 챙기면 나만 놓칩니다.",
+              "type": "loss",
+              "score": 73,
+              "reason": "type=loss, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            },
+            {
+              "text": "작은 행동 하나, 다들 아는데 아무도 안 합니다.",
+              "type": "twist",
+              "score": 72,
+              "reason": "type=twist, estDur=3.73s, hookWindow=false, forbidden=0",
+              "estimated_duration": 3.73
+            }
+          ],
+          "selectedHookText": "성공은 의지가 아니라 환경.",
+          "selectedHookScore": 84,
+          "script": {
+            "topic": "기회를 놓치는 진짜 이유는 정보가 아니라 실행입니다",
+            "content_pillar": "success_psychology",
+            "angle": "성공하는 사람은 의지가 강한 게 아니라 시작하기 쉬운 환경을 만들어 행동으로 옮긴다",
+            "hook": "성공은 의지가 아니라 환경.",
+            "curiosity": "왜 다 알면서도 아무도 실행하지 않을까요?",
+            "points": [
+              "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+              "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요."
+            ],
+            "twist_or_reframe": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+            "action_or_save_reason": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "full_voiceover": "성공은 의지가 아니라 환경. 왜 다 알면서도 아무도 실행하지 않을까요? 첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다. 둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다. 셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요. 돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다. 지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+            "caption_lines": [
+              "성공은 의지가 아니라 환경.",
+              "왜 다 알면서도 아무도 실행하지 않을까요?",
+              "첫째, 기회는 정보가 없어서가 아니라 실…",
+              "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+              "셋째, 오늘 할 수 있는 가장 작은 행동…",
+              "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+              "지금 저장하고 오늘 실행할 행동 하나만 정하세요."
+            ],
+            "emphasis_words": [
+              "기회",
+              "실행",
+              "환경",
+              "선택",
+              "행동"
+            ],
+            "risk_flags": [],
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false
+          },
+          "caption_plan": {
+            "captionSafeReference": "youtube_shorts_safe_frame_v1",
+            "style": "single_line_bold_bottom_safe",
+            "lines": [
+              {
+                "index": 0,
+                "script_part": "hook",
+                "caption": "성공은 의지가 아니라 환경.",
+                "char_count": 12,
+                "compressed": false
+              },
+              {
+                "index": 1,
+                "script_part": "curiosity",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "char_count": 18,
+                "compressed": false
+              },
+              {
+                "index": 2,
+                "script_part": "point_1",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 3,
+                "script_part": "point_2",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "char_count": 18,
+                "compressed": true
+              },
+              {
+                "index": 4,
+                "script_part": "point_3",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "char_count": 16,
+                "compressed": true
+              },
+              {
+                "index": 5,
+                "script_part": "twist_reframe",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "char_count": 22,
+                "compressed": false
+              },
+              {
+                "index": 6,
+                "script_part": "action_save_reason",
+                "caption": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "char_count": 21,
+                "compressed": false
+              }
+            ],
+            "maxCaptionCharCount": 22,
+            "densityOk": true
+          },
+          "voiceover_timing_metadata": {
+            "estimated_voiceover_duration": 27.63,
+            "target_duration": 30,
+            "needs_compression": false,
+            "hook_duration": 2.4,
+            "hook_within_window": true,
+            "per_sentence": [
+              {
+                "index": 0,
+                "text": "성공은 의지가 아니라 환경.",
+                "estimated_duration": 2.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 1,
+                "text": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "estimated_duration": 3.4,
+                "within_preferred": true,
+                "acceptable": true
+              },
+              {
+                "index": 2,
+                "text": "첫째, 기회는 정보가 없어서가 아니라 실행을 미뤄서 놓칩니다.",
+                "estimated_duration": 4.9,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 3,
+                "text": "둘째, 성공은 의지가 아니라 쉬운 환경을 먼저 만드는 겁니다.",
+                "estimated_duration": 4.73,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 4,
+                "text": "셋째, 오늘 할 수 있는 가장 작은 행동 하나를 정하세요.",
+                "estimated_duration": 4.23,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 5,
+                "text": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "estimated_duration": 4.07,
+                "within_preferred": false,
+                "acceptable": true
+              },
+              {
+                "index": 6,
+                "text": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "estimated_duration": 3.9,
+                "within_preferred": false,
+                "acceptable": true
+              }
+            ]
+          },
+          "risk_flags": [],
+          "scores": {
+            "hook_score": 84,
+            "script_clarity_score": 100,
+            "channel_fit": true
+          },
+          "hard_fail_reasons": [],
+          "soft_fail_reasons": []
+        }
+      ],
+      "selectedCandidateId": "execution-gap-psychology-v1-cand-1",
+      "phase2Readiness": {
+        "classified": true,
+        "sourceGatePassed": true,
+        "channelFitConnected": true,
+        "hasSelectableCandidate": true,
+        "finalDecisionHint": "render_candidate_ready_for_scene_planner"
+      }
+    }
+  ],
+  "boundary": {
+    "noLlmCall": true,
+    "noExternalApiCall": true,
+    "noRenderMuxFfmpeg": true,
+    "noTtsGeneration": true,
+    "noImageGeneration": true,
+    "noUploadOrPublish": true,
+    "noEnvOrSecretAccess": true,
+    "dataOnly": true
+  }
+}
