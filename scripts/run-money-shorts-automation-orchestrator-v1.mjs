@@ -289,6 +289,104 @@ record(
   `mode=${job.sideEffectPolicy?.mode}`
 );
 
+// ── CREATIVE LAYER (Phase 1~5) — no-live stage status, only if job.creativeLayer present ──
+// Read-only consumption of Phase 1~5 fixtures. Never renders/uploads. Preview stays dev-only.
+const cl = job.creativeLayer ?? null;
+let creativeRollup = null;
+if (cl) {
+  function clFixture(key) {
+    const p = cl.phases?.[key]?.path ? repoPath(cl.phases[key].path) : null;
+    if (!p || !fileExists(p)) return { ok: false, data: null };
+    const r = readJsonSafe(p);
+    return { ok: r.ok, data: r.ok ? r.data : null };
+  }
+  // Phase 1: Creative Quality Contract
+  const contractF = clFixture("creativeQualityContract");
+  const contractOk = contractF.ok && contractF.data?.schemaVersion === "money_shorts_creative_quality_contract_v1";
+  record("creative_quality_contract", "Creative Quality Contract v1", contractOk ? "ready" : "not_ready",
+    contractOk ? `schema ${contractF.data.schemaVersion}` : "contract fixture missing/mismatch");
+
+  // requiredFinalArtifacts (9 file names) present in contract
+  const finalArtifacts = contractF.data?.productionGoal?.requiredFinalArtifacts ?? [];
+  const EXPECTED_ARTIFACTS = ["script.json", "hook_candidates.json", "scene_plan.json", "caption_plan.json", "sound_plan.json", "quality_report.json", "selected_candidate.json", "platform_metadata.json", "final_video.mp4"];
+  const artifactsOk = EXPECTED_ARTIFACTS.every((a) => finalArtifacts.includes(a)) && finalArtifacts.length === 9;
+  record("creative_final_artifacts", "Creative required final artifacts (9 files)", artifactsOk ? "ready" : "not_ready",
+    artifactsOk ? "9 artifact names match contract" : "artifact names mismatch");
+
+  // Phase 2: Retention Script Compiler
+  const scriptF = clFixture("retentionScriptCompilerOutput");
+  const scriptOk = scriptF.ok && scriptF.data?.schemaVersion === "money_shorts_retention_script_compiler_output_v1";
+  record("retention_script_compiler", "Retention Script Compiler v1", scriptOk ? "ready" : "not_ready",
+    scriptOk ? `topics ${scriptF.data.topics?.length ?? 0}` : "script compiler output missing/mismatch");
+
+  // Phase 3: Scene/Event Planner (24+ events)
+  const plannerF = clFixture("sceneEventPlannerOutput");
+  const plannerTopic = plannerF.data?.topics?.find((t) => t.topicId === cl.creativeSelectedTopicId) ?? plannerF.data?.topics?.[0];
+  const plannerEvents = plannerTopic?.scenePlan?.totalVisualEvents ?? 0;
+  const plannerUnsupported = plannerTopic?.templateRegistryAudit?.unsupportedTemplateUsedCount ?? 1;
+  const plannerOk = plannerF.ok && plannerF.data?.schemaVersion === "money_shorts_scene_event_planner_output_v1" && plannerEvents >= 24 && plannerUnsupported === 0;
+  record("scene_event_planner", "Scene/Event Planner v1 (24+ events, registry ok)", plannerOk ? "ready" : "not_ready",
+    `events=${plannerEvents}, unsupportedTemplates=${plannerUnsupported}`);
+
+  // Phase 4: Quality Scorer (render decision + selected candidate)
+  const scorerF = clFixture("qualityScorerOutput");
+  const scorerTopic = scorerF.data?.topics?.find((t) => t.topicId === cl.creativeSelectedTopicId) ?? scorerF.data?.topics?.[0];
+  const decision = scorerTopic?.qualityReport?.final_decision;
+  const hardFailCount = scorerTopic?.qualityReport?.hard_fail_reasons?.length ?? 1;
+  const scorerSelectedId = scorerTopic?.selectedCandidate?.candidateId ?? null;
+  const scorerOk = scorerF.ok && scorerF.data?.schemaVersion === "money_shorts_quality_scorer_output_v1";
+  record("quality_scorer", "Quality Scorer v1", scorerOk ? "ready" : "not_ready",
+    scorerOk ? `decision=${decision}, hardFail=${hardFailCount}` : "quality scorer output missing/mismatch");
+
+  // selected creative candidate ready only when decision ∈ {render, render_best_candidate} AND no hard fail
+  const decisionAllowsRender = decision === "render" || decision === "render_best_candidate";
+  const selectedCandidateReady = scorerOk && decisionAllowsRender && hardFailCount === 0 && scorerSelectedId === cl.creativeSelectedCandidateId;
+  record("selected_creative_candidate", "Selected creative candidate ready", selectedCandidateReady ? "ready" : "not_ready",
+    `decision=${decision}, hardFail=${hardFailCount}, selected=${scorerSelectedId}`);
+
+  // render decision ready (render → preview render can proceed in a later live phase)
+  const renderDecisionReady = scorerOk && decisionAllowsRender && hardFailCount === 0;
+  record("render_decision", "Render decision ready (render / render_best_candidate)", renderDecisionReady ? "ready" : "not_ready",
+    `decision=${decision}`);
+
+  // Phase 5: Creative Preview (dev-only, NOT operational gate)
+  const previewF = clFixture("creativePreviewRenderManifest");
+  const previewDevOnly = previewF.data?.previewIsDevelopmentOnly === true && previewF.data?.operationalRequiredReview === false;
+  const previewSchemaOk = previewF.ok && previewF.data?.schemaVersion === "money_shorts_creative_preview_render_manifest_v1";
+  record("creative_preview_dev_only", "Creative Preview Renderer v1 (dev-only, not operational gate)", previewSchemaOk && previewDevOnly ? "ready" : "not_ready",
+    `devOnly=${previewDevOnly}, operationalRequiredReview=${previewF.data?.operationalRequiredReview}`);
+
+  // youtube safe-frame profile reference preserved across creative layer
+  const previewYtRef = previewF.data?.targetPlatformProfile === "youtube_shorts_safe_frame_v1";
+  record("creative_youtube_safe_frame", "Creative preview targets YT safe-frame profile", previewYtRef ? "ready" : "not_ready",
+    `targetPlatformProfile=${previewF.data?.targetPlatformProfile}`);
+
+  // analytics feedback loop is roadmap-only (Phase 8), NOT an active stage
+  const analyticsRoadmapOnly = cl.analyticsFeedbackLoop?.status === "roadmap_not_implemented_v1";
+  record("analytics_feedback_loop_roadmap_only", "Analytics feedback loop (Phase 8, roadmap only)", analyticsRoadmapOnly ? "ready" : "not_ready",
+    `status=${cl.analyticsFeedbackLoop?.status}`);
+
+  const creativeStageIds = ["creative_quality_contract", "creative_final_artifacts", "retention_script_compiler", "scene_event_planner", "quality_scorer", "creative_preview_dev_only", "creative_youtube_safe_frame"];
+  const creativeLayerReady = creativeStageIds.every((id) => (findings.find((f) => f.id === id)?.state) === "ready");
+
+  creativeRollup = {
+    creativeQualityContractReady: contractOk,
+    retentionScriptCompilerReady: scriptOk,
+    sceneEventPlannerReady: plannerOk,
+    qualityScorerReady: scorerOk,
+    creativePreviewDevOnlyReady: previewSchemaOk && previewDevOnly,
+    creativePreviewIsOperationalGate: previewF.data?.operationalRequiredReview === true, // must be false
+    creativeLayerReady,
+    selectedCreativeCandidateReady: selectedCandidateReady,
+    renderDecisionReady,
+    creativeSelectedCandidateId: scorerSelectedId,
+    creativeRenderDecision: decision,
+    rendererUnsupportedTemplateCount: plannerUnsupported,
+    analyticsFeedbackLoopRoadmapOnly: analyticsRoadmapOnly,
+    isPartOfProductionPipeline: cl.isPartOfProductionPipeline === true,
+  };
+}
+
 // ── ROLLUP: derived status decisions ─────────────────────────────────────────
 function stateOf(id) {
   return findings.find((f) => f.id === id)?.state ?? "missing";
@@ -359,6 +457,7 @@ const output = {
   findings,
   guardResults: mode === "preflight" ? guardResults : undefined,
   rollup,
+  creativeLayer: creativeRollup, // null when job has no creativeLayer block (backward compatible)
 };
 
 // optional record write (only into out-dir, must be outside repo root)
@@ -405,6 +504,19 @@ if (asJson) {
   console.log(`  rerunRequired           : ${rollup.rerunRequired}`);
   console.log(`  envOrNetworkFailure     : ${rollup.envOrNetworkFailure}`);
   if (mode === "preflight") console.log(`  guardsAllPass           : ${rollup.guardsAllPass}`);
+  if (creativeRollup) {
+    console.log(`──────────────────────────────────────────────────────────`);
+    console.log(`  CREATIVE LAYER (Phase 1~5, no-live)`);
+    console.log(`  creativeQualityContractReady : ${creativeRollup.creativeQualityContractReady}`);
+    console.log(`  retentionScriptCompilerReady : ${creativeRollup.retentionScriptCompilerReady}`);
+    console.log(`  sceneEventPlannerReady       : ${creativeRollup.sceneEventPlannerReady}`);
+    console.log(`  qualityScorerReady           : ${creativeRollup.qualityScorerReady}`);
+    console.log(`  creativePreviewDevOnlyReady  : ${creativeRollup.creativePreviewDevOnlyReady}  (operationalGate=${creativeRollup.creativePreviewIsOperationalGate})`);
+    console.log(`  creativeLayerReady           : ${creativeRollup.creativeLayerReady}`);
+    console.log(`  selectedCreativeCandidateReady: ${creativeRollup.selectedCreativeCandidateReady}  (${creativeRollup.creativeSelectedCandidateId})`);
+    console.log(`  renderDecisionReady          : ${creativeRollup.renderDecisionReady}  (decision=${creativeRollup.creativeRenderDecision})`);
+    console.log(`  analyticsFeedbackLoopRoadmapOnly: ${creativeRollup.analyticsFeedbackLoopRoadmapOnly}`);
+  }
   if (recordWritten) console.log(`  record written          : ${recordWritten}`);
   console.log(`══════════════════════════════════════════════════════════\n`);
 }
