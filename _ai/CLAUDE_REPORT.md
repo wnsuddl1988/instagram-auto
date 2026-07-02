@@ -2878,3 +2878,18 @@ QA-only slice. 코드 변경 없음.
 - 검증: 신규 JSON 2종 parse PASS, 필수 문구 grep 전 항목 확인, secret/API 패턴 0, 원문 절대규칙 git blob `31c2243a` 불변 확인.
 - 금지 미수행: 이미지 생성/외부 API/TTS/render/mux/upload 0건, env/dependency 무변경, output·C:\tmp 무변경, 보호 파일 미접근, commit/push 없음.
 - 다음 Owner 승인 필요: ① 이미지 provider(FLUX.2 재사용 vs gpt-image-2) ② 장수/비용 상한(제안 12장/$3) ③ ALLOW_* 플래그 ④ narration draft p1~p5 문안 확정.
+
+
+## Golden Sample v2 FLUX2 이미지 후보 생성 (`creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1` — 2026-07-02)
+
+**v2 blueprint 기준 FLUX.2 [pro] 12장(6 scenes × 2) 생성 완료 — 전장 1088x1936 native PASS, 비용 추정 약 $0.76(상한 $3), selected 6/6 조건부 완성. 핵심 실측 발견: 지폐 액면 숫자 readable 리스크.**
+
+- 신규: `scripts/fixtures/golden_sample_v2_flux2_image_candidate_prompts.salary_3days.v1.json` — blueprint scene 6개의 visual evidence를 A/B 구도 차이(스타일 아님)로 번역한 12 prompt. 기존 FLUX2 교훈(object-whitelist 서술, blank matte 봉투 패치) + 신규 지폐 텍스트 방어(generic fictional/abstract engraving/unreadable) 반영.
+- 신규: `scripts/run-golden-sample-v2-flux2-image-candidates-v1.mjs` — 단일 endpoint/size(1088x1936)/create hard cap 12/retry 금지/poll 분리 집계/BFL_API_KEY만 로드(값 미출력)/create HTTP 오류 시 전체 중단. 실행: createCalls 12/12, pollCalls 79, generated 12/12, halted=no.
+- Output: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/` (이미지 12장 + summary + qa-report).
+- Vision QA (12장 전수): selected = **s1_B(부감 결핍 맥락)/s2_A(방사형 유출·90)/s3_A(섞인 더미·near-clean·88)/s4_A(3분할 완벽·92)/s5_B(나누는 동작·88)/s6_B(전경 지갑+배경 3봉투·85)** — 인과 체인(문제→원인→착시→해결→행동→결과) 시각 완주, s3↔s4 대비·s1↔s6 반전 성립. visual_subject_relevance provisional 86(≥80).
+- Hard reject 3장: s1_A(브랜드 각인+'20/100' 대형), s4_B(깨진 글자 'NEL/HL'), s6_A(봉투가 접힌 카드 4패널로 생성+인장).
+- **구조적 발견**: 12장 전부 지폐 액면 숫자('100/1000/500/5' 등)가 정도 차이로 readable — 프롬프트 지시가 FLUX2 지폐 습성을 완전히 못 이김. HARD_VIOLATION(깨진 글자/브랜드/인장)과 SOFT_RISK(액면 숫자)로 등급 분리 기록. s3_A만 near-clean.
+- Selected 조건: SOFT_RISK 5장은 dim/blur+카드 오버레이 실제 렌더 프레임에서 가독 완화 재검증 필요. 미완화 scene은 프롬프트 패치(지폐 뒷면/가림/접힘 구도) 재생성 옵션(scene당 ~$0.07) — Owner/Codex 판단 대기.
+- 검증: node --check PASS, fixture/summary/qa-report JSON parse PASS, createCalls≤12 확인, secret 값 스캔 0건, 보호 파일 미접근, 941x1672 재사용/placeholder/upscale 0.
+- 금지 미수행: OpenAI/ChatGPT/Gemini/Midjourney 0, render/TTS/mux/upload 0, env/dependency 무변경, commit/push 없음.

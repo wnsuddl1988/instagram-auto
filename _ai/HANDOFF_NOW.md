@@ -17,42 +17,61 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-story-causality-visual-evidence-reset-v1` (직전 ID `creative-v2-golden-sample-story-visual-reset-v1`의 구체화판)
-- **완료 (2026-07-02)**: reject lock + Owner 피드백 addendum + Story-Causality First 설계까지 산출. 신규 산출물:
+- Task ID: `creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1`
+- **완료 (2026-07-02)**: Owner 승인 범위 내 FLUX.2 [pro] 12장(6 scenes × 2 candidates) 생성 + scene별 visual evidence QA 완료. 결과는 `selected 6/6 조건부`이며, 아직 selected image set lock은 아니다.
+- Owner 승인 원문: `승인: Golden Sample v2 FLUX2 image candidate generation — Story-Causality First + Visual Evidence Second blueprint(salary_3days.v2)를 기준으로 FLUX.2 [pro] 최대 12장(6 scenes × 2 candidates), 비용 $3 상한, BFL_API_KEY 사용 허용. money-like objects 적극 허용, no readable AI-generated text 엄격 유지. OpenAI/ChatGPT/Gemini/Midjourney 추가 호출 금지. render/TTS/mux/upload 없이 이미지 생성 + scene별 visual evidence QA + selected 후보 보고 후 중단.`
+- 실행 결과:
+  - create calls 12/12, poll 79, retry 0, endpoint/size/provider fallback 0, HTTP 오류 0.
+  - 12/12 생성 성공, 전장 1088x1936 `PASS_1080x1920_NATIVE`.
+  - 비용 추정 약 $0.76, Owner 상한 $3 준수(정확 금액은 BFL dashboard 확인 필요).
+  - Output: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/`.
+  - 신규 파일: `scripts/fixtures/golden_sample_v2_flux2_image_candidate_prompts.salary_3days.v1.json`, `scripts/run-golden-sample-v2-flux2-image-candidates-v1.mjs`, `_ai/CLAUDE_REPORT.md` append.
+- QA 결론:
+  - 후보 selected: `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B`, `s6_B`.
+  - 인과 체인(문제→원인→착시→해결→행동→결과)은 시각적으로 완주한다. 이전 80점 후보의 가장 큰 문제였던 이미지-주제 직관성은 크게 개선됐다.
+  - 단, 12장 전부에서 정도 차이는 있지만 지폐 액면 숫자 readable 리스크가 확인됐다. `s3_A`만 near-clean이며, 나머지 selected 5장은 `SOFT_RISK_DENOMINATION`.
+  - 깨진 글자/브랜드/인장 등 hard violation 후보(`s1_A`, `s4_B`, `s6_A`)는 reject.
+- 현재 상태:
+  - `selected 6/6 조건부 완성`이지 `selected image set lock`이 아니다.
+  - no-readable AI-generated text 엄격 기준과 money-like objects 허용 사이의 실제 처리 방침이 다음 decision이다.
+  - Codex 기본 판단: source lock 직행 금지. 다음은 (A) visual-only render가 아니라 **denomination readability mitigation/decision**을 먼저 확정하거나, (B) Owner가 소프트 리스크 수용을 명시해야 한다.
+- 다음 Owner/Codex 결정 후보:
+  1. 비용 0 검증: selected 6장으로 renderer frame probe만 만들어 실제 card/dim/crop에서 액면 숫자가 읽히는지 확인(아직 render 승인 필요).
+  2. 유료 소량 패치: 숫자 노출이 큰 scene만 `back side / overlapped / folded / partially hidden bills` 프롬프트로 재생성(별도 비용/장수 승인 필요).
+  3. 소프트 리스크 수용: 액면 숫자를 money-like object 자연성으로 수용하고 selected lock 진행(Owner 명시 승인 필요).
+- 기준 source of truth:
+  - `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md` (원문 verbatim 보호)
   - `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`
-  - `scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json` (프로세스 계약 + Story QA contract)
-  - `scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json` (v2 blueprint — `문제 → 원인 → 착시 → 해결책 → 행동` + 돈의 자리 3분할 해결책 + scene별 visual evidence + narration draft 32~45s + visual director prompt 초안 + next production plan)
-  - 24ea7d3 후보는 `REJECT_AS_GOLDEN_SAMPLE / evidence_only` 고정, 산출물 무변경.
-  - 다음 실행(이미지 생성/TTS)은 blueprint의 `nextProductionPlan` — Owner provider/비용/플래그 승인 대기.
-- Owner 최신 결정: `현재 TTS mux 후보는 100점 만점에 약 80점. 화면/모션/대본/음성/자막은 나쁘지 않지만, Golden Sample 품질규격으로 픽스할 수 없다. 새로 다시 만들어야 한다.`
-- 현재 후보 상태:
-  - `C:\tmp\money-shorts-os\golden-sample-tts-first-mux-audit-v1\golden_sample_t2_salary_3days_tts_mux.mp4`는 업로드 가능한 후보 evidence일 수 있으나 Golden Sample baseline으로 채택하지 않는다.
-  - `24ea7d3 feat(automation): add golden sample tts mux audit`는 보존하되, 산출물의 verdict는 `REJECT_AS_GOLDEN_SAMPLE / evidence_only`로 다룬다.
-- 핵심 reject 원인:
-  - 이미지가 `월급이 3일 만에 사라지는 이유`와 직관적으로 연결되지 않는다. 카드/표/자막이 보완해서 겨우 설득되는 구조다.
-  - 사진만 봤을 때 월급/고정비/현금흐름/3일 소진의 상황이 바로 떠오르지 않는다.
-  - `문제는 금액이 아니라 순서입니다`가 앞뒤 설명 없이 갑자기 나와서 맥락이 끊긴다.
-  - 해결책/대안/효율적인 월급 사용 흐름이 부족하다. 훅은 좋지만 중간 진단에서 행동 제안으로 넘어가는 다리가 없다.
-  - 짧은 caption flash는 좋지만 일부는 너무 짧다.
-  - 길이는 반드시 30초일 필요가 없다. 주제와 스토리에 따라 길거나 짧아질 수 있다.
-- 다음 책임 있는 작업:
-  - 원문 절대규칙 파일 `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md`는 verbatim 보호이므로 수정하지 않는다.
-  - 이번 Owner 피드백을 같은 우선순위의 addendum으로 신규 문서/fixture에 고정한다.
-  - audit-only가 아니라 새 Golden Sample 제작을 위한 `Story-Causality First + Visual Evidence Second` 설계를 만든다.
-  - 먼저 스토리 인과를 고정하고, 그 다음 각 장면이 증명해야 하는 시각 증거를 정의하고, 그 증거에 맞는 ChatGPT/LLM 이미지 프롬프트를 만든 뒤, 마지막으로 renderer가 카드/자막/모션을 얹는다.
-  - 이미지는 먼저가 아니라 스토리의 증거로 따라와야 한다.
-  - 새 설계는 `문제 -> 원인 -> 착시 -> 해결책 -> 행동` 인과가 끊기지 않아야 한다.
-  - 이미지 프롬프트는 카드 없이도 주제 연관성이 보이도록 재설계해야 하며, 글자 리스크는 막되 돈처럼 보이는 오브젝트는 적극 허용한다.
-  - 폰트/자막 방향은 레퍼런스 기반 정보 브리핑형: 두꺼운 검정 외곽선 + 강한 강조색 + 쇼츠형 정보 자막.
-  - Story QA fields: `story_causality_score`, `problem_solution_bridge_score`, `solution_specificity_score`, `visual_subject_relevance_score`, `caption_readability_score`, `hook_self_relevance_score`.
-  - Threshold: story/problem-solution/solution/caption/hook 각 85 이상, visual subject relevance 80 이상.
-  - Hard fail: 문제 제기와 해결책 사이에 다리가 없으면 reject; 해결책이 추상어로 끝나면 reject; 이미지가 주제와 직관적으로 연결되지 않으면 reject; `순서`, `관리`, `정리` 같은 추상어를 설명 없이 쓰면 reject; 3개를 정하라고 말하면서 그 3개가 무엇인지 안 보여주면 reject.
-- 이번 slice 금지: 이미지 생성/API 호출/TTS/mux/render/upload 금지. 먼저 reject lock + story/visual rebuild blueprint까지.
-- 충돌 처리: 아래 남아 있는 과거 `rate-freeze/금리동결` 구조와 이전 PASS_CANDIDATE 문구는 historical context다. 이번 Current Approved Slice와 Owner 최신 피드백이 우선한다.
+  - `scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json`
+  - `scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json`
+- 목표: `Story-Causality First + Visual Evidence Second` 기준으로 v2 이미지 후보를 생성하고, scene별 visual evidence QA 후 selected 후보를 보고한다. 이미지는 먼저가 아니라 스토리의 증거다.
+- 허용:
+  - FLUX.2 [pro] 공식 endpoint(`https://api.bfl.ai/v1/flux-2-pro`) 사용.
+  - `BFL_API_KEY` 사용 및 `.env.local` read-only 로드. 값 출력/문서화 금지.
+  - 최대 create call 12회(6 scenes × 2 candidates), 비용 상한 $3.
+  - output 경로 아래 이미지/summary/QA report 생성.
+  - 신규 fixture/runner 추가, `_ai/CLAUDE_REPORT.md` append.
+- 이미지 정책:
+  - money-like objects 적극 허용: 현금 다발, 월급 봉투, 지갑, 고정비 봉투 더미, 3칸 분할 현금/봉투, 돈이 빠져나가는 흐름.
+  - no readable AI-generated text 엄격 유지: 브랜드/워터마크/깨진 글자/가짜 UI/가짜 기사/읽히는 척하는 차트·신문·계산기·달력 텍스트 금지.
+  - 중요한 숫자/문구는 이미지 내부가 아니라 renderer 카드/타이포 담당.
+  - 이미지 단독으로도 월급, 빠져나가는 돈, 고정비, 빈 지갑, 분리/배분의 느낌이 보여야 한다. 카드/표/자막이 보완해서 겨우 설득되면 reject.
+- QA:
+  - scene별 `what_story_claim_this_scene_proves`, `required_visual_evidence`, `must_show`, `must_not_show`, `why_this_image_delivers_topic_without_caption`, `renderer_card_support_role` 기준으로 전수 판정.
+  - Story QA fields 기록: `story_causality_score`, `problem_solution_bridge_score`, `solution_specificity_score`, `visual_subject_relevance_score`, `caption_readability_score`, `hook_self_relevance_score`.
+  - 이번 slice의 핵심은 image candidate QA이므로 caption/story 점수는 blueprint expectation 기준으로 provisional 기록하되, `visual_subject_relevance_score`와 scene evidence pass/fail은 엄격 판정한다.
+  - Hard fail: 이미지가 주제와 직관적으로 연결되지 않음, 해결책 3개가 무엇인지 이미지/후속 카드 설계와 연결 안 됨, readable generated text, placeholder/stock-like/upscale-as-fix.
+- 금지:
+  - OpenAI/ChatGPT/Playwright/Gemini/Midjourney 호출.
+  - render/TTS/mux/upload.
+  - env/secret 수정, dependency 변경, push/commit.
+  - `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt` 읽기/수정/스테이징.
+  - 기존 `941x1672` 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- 충돌 처리: 아래 남아 있는 과거 `rate-freeze`, visual-only, TTS/mux, PASS_CANDIDATE, selected image set lock 관련 문구는 historical context다. 이번 `Current Approved Slice`가 최우선이다.
 
 ## Task ID
 
-`creative-v2-golden-sample-story-causality-visual-evidence-reset-v1`
+`creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1`
 
 ## Project
 
@@ -67,7 +86,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `25e8aed feat(automation): add golden sample visual typography revision`
+- Latest HEAD: `0ac2c07 docs(automation): add story causality visual reset`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
