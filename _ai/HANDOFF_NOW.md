@@ -17,32 +17,44 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1`
-- Status: completed by Claude Code, verdict `PASS_BY_CARD_OCCLUSION_PROBE`.
+- Task ID: `creative-v2-golden-sample-v2-selected-image-set-lock-v1`
+- Status: completed by Claude Code, status `LOCKED_AS_RENDER_INPUT_CANDIDATE`.
 - Prior evidence:
+  - `29c7569 test(automation): add golden sample v2 flux2 candidates` generated the v2 FLUX2 candidates.
   - `3d6122d test(automation): add denomination render probe` found `s6_B` still had a clearly readable `5` in viewer frame.
   - `65527d9 test(automation): add s6 denomination patch evidence` generated two FLUX2 patch candidates and confirmed prompt-only suppression failed.
+  - `fdc9187 test(automation): add s6 card occlusion reprobe` confirmed `s6_P_A` can pass viewer-frame denomination risk only with shiftV1 card occlusion.
   - `s6_P_A`: native 1088x1936, story evidence PASS, visible `2` remains around `x430~700, y1100~1230`; verdict `PATCH_STILL_NEEDED`.
-  - `s6_P_B`: native 1088x1936, hard text/garbled letterforms; verdict `REJECT_FOR_HARD_TEXT`.
+  - `s6_P_A` shiftV1: `x200~880, y1080~1250`, `COVERED_NOT_READABLE`, recommended render condition.
 - Result evidence:
-  - Output folder: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/`.
-  - QA report: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/qa-report-golden-sample-v2-s6-card-occlusion-reprobe.json`.
-  - Run summary: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/reprobe-run-summary-golden-sample-v2-s6-card-occlusion.json`.
-  - Baseline reproduced the risk: `NOT_COVERED`, visible `2`.
-  - `shiftV1`: `x200~880, y1080~1250`, `COVERED_NOT_READABLE`, recommended variant.
-  - `shiftV2`: also covers but has smaller safety margin/sliver risk.
+  - Canonical fixture: `scripts/fixtures/golden_sample_v2_selected_image_set_lock.salary_3days.v1.json`.
+  - Owner/Codex note: `_ai/GOLDEN_SAMPLE_V2_SELECTED_IMAGE_SET_LOCK_V1.md`.
+  - The lock fixed these six image inputs:
+    - s1: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s1_problem_empty_wallet-s1_B.jpg`
+    - s2: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s2_cause_outflow-s2_A.jpg`
+    - s3: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s3_illusion_mixed_pile-s3_A.jpg`
+    - s4: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s4_solution_three_slots-s4_A.jpg`
+    - s5: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s5_action_hands_dividing-s5_B.jpg`
+    - s6: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/gsv2-s6_result_clear_after-s6_P_A.jpg`
+  - 6/6 native 1088x1936, path/bytes/MD5 rechecked.
+  - The lock records s4 and s6 render dependencies:
+    - s4: 3-slot card must enter immediately after stage cut/background-only exposure must stay <=0.3s.
+    - s6: final/save card must use shiftV1 coordinates `x200~880, y1080~1250`; no vertical slide entry; fixed-position fade/scale-in or equivalent.
+  - s6 is explicitly not clean as a raw image; it is selected only with the shiftV1 card-occlusion condition.
 - Codex review judgment:
-  - Accept `shiftV1` as the s6 render condition.
-  - s6 final image source should be `s6_P_A`, not old `s6_B`.
-  - s6 next render manifest must use shiftV1 card coordinates and avoid vertical slide entry; use fixed-position fade/scale-in or equivalent to prevent the `2` from appearing during animation.
-  - Selected image set lock is now the next responsible step, but it must explicitly record the s6 card-occlusion dependency; this is not a free pass to use s6_P_A without the card condition.
+  - Accept the selected image set lock.
+  - Do not render until this lock is checkpointed and Owner approves the visual render slice.
+  - Next visual render must start with the lock fixture integrity gate and abort on mismatch.
 - Still forbidden until next approval/slice:
-  - Additional image/API calls, other providers, s1~s5 generation/modification, full visual render, TTS, mux, upload, dependency/env/secret changes, push.
+  - Any external API call, image generation, render, TTS, mux, upload, browser automation, dependency/env/secret changes.
+  - OpenAI/ChatGPT/Playwright/Gemini/Midjourney/FLUX2 calls.
+  - Editing source images or copying them into the repo.
+  - `renderReady=true`, `uploadReady=true`.
   - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 
 ## Task ID
 
-`creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1`
+`creative-v2-golden-sample-v2-selected-image-set-lock-v1`
 
 ## Project
 
@@ -57,8 +69,8 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `65527d9 test(automation): add s6 denomination patch evidence`
-- Approx status when this handoff was refreshed: branch ahead 154 of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
+- Latest HEAD: `fdc9187 test(automation): add s6 card occlusion reprobe`
+- Approx status when this handoff was refreshed: branch ahead 155 of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
 
@@ -76,23 +88,17 @@ Owner corrected Codex on 2026-07-02:
 
 Current decision:
 
-- Treat the v2 selected candidates as ready for selected image set lock only if the lock records the s6 shiftV1 card-occlusion condition.
-- `s6_P_A` is the s6 salvage candidate with `PASS_BY_CARD_OCCLUSION_PROBE`. `s6_B` and `s6_P_B` remain rejected for viewer-frame readable denomination/text risk.
+- v2 selected image set is locked as render input candidate only with the s4/s6 render dependencies recorded.
+- `s6_P_A` is the s6 salvage candidate with `PASS_BY_CARD_OCCLUSION_PROBE` only under shiftV1 card occlusion. `s6_B` and `s6_P_B` remain rejected for viewer-frame readable denomination/text risk.
 - Keep placeholder/local mock/stock fallback forbidden.
 - Keep simple upscale/crop-as-fix forbidden.
-- Do not proceed to visual-only render, TTS, mux, or upload until selected image set lock is written and checked.
+- Do not proceed to visual-only render, TTS, mux, or upload until Owner approves the next render slice.
 
 Next responsible action:
 
-- Run a selected image set lock slice for Golden Sample v2:
-  - s1: `s1_B`
-  - s2: `s2_A`
-  - s3: `s3_A`
-  - s4: `s4_A` with existing fast card-entry condition from denomination probe
-  - s5: `s5_B`
-  - s6: `s6_P_A` with mandatory shiftV1 card condition (`x200~880, y1080~1250`, no vertical slide entry)
-- Do not call APIs or generate images.
-- Do not render yet. Lock/QA manifest first, then Codex/Owner decides render slice.
+- First checkpoint this selected image set lock.
+- Then Owner decision/approval is needed for Golden Sample v2 visual-only render based on this lock.
+- Any render prompt must require MD5 integrity gate, s4 fast 3-slot card entry, and s6 shiftV1 no-slide card occlusion.
 
 ## Fixed Samples
 

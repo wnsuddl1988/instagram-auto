@@ -2943,3 +2943,15 @@ QA-only slice. 코드 변경 없음.
 - selected image set lock: 미실행 (범위 외 — PASS 확인 후 lock은 Codex/Owner 다음 판단). renderReady/uploadReady false.
 - 검증: node --check PASS, manifest/run-summary/qa-report JSON parse PASS, 프레임 7장 확인, forbidden pattern 스캔 0건, 원본 read-only(MD5 일치), 보호 파일 미접근.
 - 금지 미수행: 외부 API/이미지 생성/TTS/mux/render 0, s1~s5 접근 0, env/secret 0, lock 0, commit/push 없음.
+
+
+## Golden Sample v2 selected image set lock (`creative-v2-golden-sample-v2-selected-image-set-lock-v1` — 2026-07-02)
+
+**salary_3days 6장 selected image set을 MD5 무결성 lock manifest + Owner/Codex 문서로 고정 — 문서/fixture만, 비용 0, 외부 호출/이미지 생성/render 없음. renderReady/uploadReady false 유지.**
+
+- 신규: `scripts/fixtures/golden_sample_v2_selected_image_set_lock.salary_3days.v1.json` — 6장 실측(path/1088x1936/bytes/MD5) + scene별 sourceRun/selectedReason/riskNote/storyEvidenceRole/renderConditions + rejected alternatives + evidenceReports 4건 + lock contract(다음 render slice는 MD5 재검증, mismatch면 abort).
+- 신규: `_ai/GOLDEN_SAMPLE_V2_SELECTED_IMAGE_SET_LOCK_V1.md` — Owner/Codex-readable lock note (무결성 규칙/6장 표/s4·s6 조건/reject 사유/evidence chain 29c7569→3d6122d→65527d9→fdc9187).
+- 조건부 lock 명시: **s4_A** = 3-slot 카드 stage cut 직후 즉시 진입 + background-only ≤0.3s. **s6_P_A** = raw clean 아님(visible '2' x430~700/y1100~1230 잔존, raw verdict PATCH_STILL_NEEDED) — shiftV1 카드(x200~880, y1080~1250) 가림 조건에서만 채택, 세로 slide entry 금지, 고정 위치 fade/scale-in만, cut 직후 진입 ≤0.3s + 마지막 hold 유지.
+- rejected 기록: 구 s6_B('5' 선명 가독), s6_P_B(hard text/깨진 유사문자), s1_A/s4_B/s6_A(후보 QA hard reject).
+- 검증: fixture JSON parse PASS, 6장 실측 재대조(path/dims/bytes/MD5) 6/6 일치, s4/s6 조건 fixture+MD 양쪽 존재 grep 확인, forbidden pattern 스캔 0건, 원본 read-only(수정/이동/복사 없음), 보호 파일 미접근.
+- 금지 미수행: 외부 API/이미지 생성/render/TTS/mux/upload 0, env/secret 0, dependency 무변경, renderReady/uploadReady true 없음, commit/push 없음.
