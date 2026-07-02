@@ -2817,3 +2817,17 @@ QA-only slice. 코드 변경 없음.
 - 렌더 중 발견·수정 4건: libass 음수좌표 drawing offset(패널 절대좌표+clip 확장으로 교체) / t=0 hook 미표시(fade 제거) / 26.0s 카드 경계 공백(twist·action 경계 25.85s 이동) / 프레임 추출 input-seek ~1s 오차(output-seek 교체, mp4 자체 정상).
 - Owner 시각 QA 필요점: Malgun Gothic 기본체 타이포 톤, 패널 투명도/dim 강도, caption 리듬(provisional) — reference Reel 감성 대비 판단.
 - `_ai/HANDOFF_NOW.md`는 Codex 갱신분 그대로(scope 일치, 미수정).
+
+
+## Golden Sample T2 Visual-Only v1.1 Typography Revision (`creative-v2-golden-sample-visual-only-typography-caption-revision-v1` — 2026-07-02)
+
+**Owner 피드백 반영 — 동일 이미지/스토리/카드 구조 유지, typography/caption visibility만 보강한 v1.1 후보 생성. 외부 API/이미지 생성/TTS/mux/upload 0건.**
+
+- 신규: `scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1_1_typography.json` — v1 기반, 타이밍/모션/이벤트/이미지 lock 전부 동일. 변경: caption fs 60→72(c04 66) + 강조 amber+fs+10(2속성, contract 준수), 카드 텍스트 +8~11%(hook 96/118, contrast 80, checklist 68/64, number ctx 62, graph 66, twist 78/110, action 68/90) + 겹침 방지 y 미세조정, Cap outline 5/shadow 2.2. output은 신규 폴더 `...render-v1-1`.
+- 수정: `scripts/render-golden-sample-visual-only-v1.mjs` — 좁은 수정 5건: (1) `--manifest <path>` 옵션(기본값 v1 manifest, --gate-only로 v1 기본 경로 무변경 실증), (2) manifest-driven Cap outline/shadow(미지정 시 v1 기본값), (3) caption 강조 fs boost(기본 0), (4) runs 기반 caption 폭 계산(clip/QA rect가 boost 반영, boost 0이면 기존과 동일), (5) storyScriptPreview 키 있을 때만 story preview md 출력 + sourceManifest 실제 경로 기록.
+- 산출물: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1-1\golden_sample_t2_salary_3days_visual_only_v1_1.mp4` + story_script_preview.md(provisional 7 phrase 대본) + 각종 report + 프레임 8장 + capdiag 4장. 전부 저장소 외부, git stage 금지 유지.
+- ffprobe: 1080x1920, h264, 30/1fps, 30.0s(900f), audio stream 0 — PASS. 이미지 gate MD5 6/6 일치.
+- 머신 QA: coreEvents 28, maxGap 3.0s, cardPresenceRatio 1.0, caption 기하(overlap 0/safe 0/하단15% 0/dwell 0/5어절 초과 0) 전항 PASS.
+- vision QA(프레임 12장): v1 대비 caption/카드 텍스트 가시성 개선 확인 — 강조 단어(월급/3일째/저장) 즉시 식별, 줄 겹침/패널 넘침 없음, 카드-caption 지배권 침해 없음, 주제 오브젝트 가림 없음. 상세 `visual_qa_report.json#claudeVisionQa`.
+- 검증: node --check PASS, 신규 JSON parse PASS, 금지 패턴(fetch/env/secret/API) 0건, 기본 v1 경로 gate-only PASS.
+- Owner 판단 필요점: 서체 자체(Malgun Gothic) 교체는 범위 밖, 강조 fs boost 톤, caption 리듬(provisional — TTS-first에서 재동기).

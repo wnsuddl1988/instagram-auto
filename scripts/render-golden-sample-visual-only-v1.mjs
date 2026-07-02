@@ -22,7 +22,8 @@
 // 절대 하지 않는 것: 외부 API/이미지 생성/TTS/mux/upload/env/secret/원본 이미지 수정.
 // ffmpeg/ffprobe는 spawnSync(args array, shell:false)로만. C:\tmp 아래에만 write.
 //
-// 사용: node scripts/render-golden-sample-visual-only-v1.mjs [--gate-only]
+// 사용: node scripts/render-golden-sample-visual-only-v1.mjs [--gate-only] [--manifest <path>]
+//   --manifest 미지정 시 기본 v1 manifest 사용 (v1 동작 불변).
 // ──────────────────────────────────────────────────────────────────────────
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "node:fs";
@@ -33,10 +34,13 @@ import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
-const MANIFEST_PATH = join(__dirname, "fixtures", "golden_sample_visual_only_render_manifest.t2.v1.json");
 
 const argv = process.argv.slice(2);
 const GATE_ONLY = argv.includes("--gate-only");
+const manifestArgIdx = argv.indexOf("--manifest");
+const MANIFEST_PATH = manifestArgIdx >= 0 && argv[manifestArgIdx + 1]
+  ? resolve(argv[manifestArgIdx + 1])
+  : join(__dirname, "fixtures", "golden_sample_visual_only_render_manifest.t2.v1.json");
 
 const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
 const W = manifest.canvas.widthPx;
@@ -191,6 +195,9 @@ const PANEL_ALPHA = "&H3C&";   // ~76% opacity
 const ROW_ALPHA = "&H55&";     // item rows slightly lighter
 const BAR_ALPHA = "&H30&";
 const FONT = manifest.typography.font;
+// manifest-driven caption typography — 미지정 시 v1 기본값 유지 (하위호환)
+const CAP_STYLE = { outline: 4, shadow: 1.6, ...(manifest.typography.capStyle || {}) };
+const EMPH_FS_BOOST = manifest.typography.captionEmphasis?.fsBoost ?? 0;
 
 const ts = (sec) => {
   const s = Math.max(0, sec);
@@ -373,21 +380,30 @@ function captionRuns(cap) {
   const idx = cap.text.indexOf(cap.emphasis);
   const runs = [];
   if (idx > 0) runs.push({ t: cap.text.slice(0, idx), c: "white" });
-  runs.push({ t: cap.emphasis, c: "amber" });
+  // 강조 단어: amber + (manifest 지정 시) fs boost — 최대 2속성 (caption contract)
+  runs.push({ t: cap.emphasis, c: "amber", ...(EMPH_FS_BOOST ? { fs: cap.fs + EMPH_FS_BOOST } : {}) });
   if (idx + cap.emphasis.length < cap.text.length) runs.push({ t: cap.text.slice(idx + cap.emphasis.length), c: "white" });
   return runs;
 }
+const charW = (ch, fs) => (/[가-힣]/.test(ch) ? fs : fs * 0.55);
 function capWidthPx(text, fs) {
   let w = 0;
-  for (const ch of text) w += /[가-힣]/.test(ch) ? fs : fs * 0.55;
+  for (const ch of text) w += charW(ch, fs);
   return Math.round(w);
 }
+// runs 기반 폭 — 강조 fs boost가 있어도 clip/QA rect가 실제 폭을 반영 (boost 0이면 capWidthPx와 동일)
+function capRunsWidthPx(runs, baseFs) {
+  let w = 0;
+  for (const r of runs) for (const ch of r.t) w += charW(ch, r.fs ?? baseFs);
+  return Math.round(w);
+}
+const capMaxFs = (runs, baseFs) => Math.max(baseFs, ...runs.map((r) => r.fs ?? baseFs));
 for (const cap of manifest.captionTimeline) {
   const runs = captionRuns(cap);
   let tag;
   if (cap.motion === "reveal") {
-    const w = capWidthPx(cap.text, cap.fs);
-    tag = clipRevealH(cap.posX - w / 2 - 12, cap.posY - 10, cap.posX + w / 2 + 12, cap.posY + cap.fs * 1.4, 220, true, 0.6) + "\\fad(40,90)";
+    const w = capRunsWidthPx(runs, cap.fs);
+    tag = clipRevealH(cap.posX - w / 2 - 12, cap.posY - 10, cap.posX + w / 2 + 12, cap.posY + capMaxFs(runs, cap.fs) * 1.4, 220, true, 0.6) + "\\fad(40,90)";
   } else {
     tag = `\\fscx78\\fscy78\\t(0,180,0.5,\\fscx100\\fscy100)\\fad(60,90)`;
   }
@@ -401,7 +417,7 @@ const assHeader = [
   "[V4+ Styles]",
   "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
   `Style: Txt,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,0,0,5,60,60,60,1`,
-  `Style: Cap,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,4,1.6,8,60,60,60,1`,
+  `Style: Cap,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,${CAP_STYLE.outline},${CAP_STYLE.shadow},8,60,60,60,1`,
   `Style: Drw,${FONT},20,${COLOR.white},&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1`,
   "", "[Events]",
   "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -458,6 +474,28 @@ writeFileSync(join(outAbs, manifest.outputPaths.dynamicCaptionTimeline), JSON.st
   captions: manifest.captionTimeline,
 }, null, 2) + "\n", "utf8");
 
+// story script preview (사람이 읽는 provisional 대본 — manifest에 키가 있을 때만, output 전용/git stage 금지)
+if (manifest.outputPaths.storyScriptPreview) {
+  const md = [
+    `# Story Script Preview — ${manifest.topic.label}`,
+    "",
+    `- topicId: ${manifest.topic.topicId}`,
+    `- 상태: provisional_visual_only — 아직 TTS 없음. 아래 문장은 시각 타임라인에 가배치된 예정 내레이션이며, TTS-first 단계에서 실제 발화 타이밍으로 재배열된다.`,
+    `- 전체 길이: ${manifest.fullDurationSec}s`,
+    "",
+    "| 구간 | phrase | 예정 내레이션 |",
+    "|------|--------|----------------|",
+    ...manifest.provisionalNarration.map((p) =>
+      `| ${p.visualStartSec.toFixed(1)}–${p.visualEndSec.toFixed(1)}s | ${p.phraseId} | ${p.text} |`),
+    "",
+    "## 흐름 요약",
+    "",
+    ...manifest.provisionalNarration.map((p) => `${p.visualStartSec.toFixed(1)}s ~ ${p.visualEndSec.toFixed(1)}s — ${p.text}`),
+    "",
+  ].join("\n");
+  writeFileSync(join(outAbs, manifest.outputPaths.storyScriptPreview), md + "\n", "utf8");
+}
+
 // ── machine QA ──────────────────────────────────────────────────────────────
 function cardRectsAt(tSec) {
   const rects = [];
@@ -475,8 +513,9 @@ const intersects = (a, b) => a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 <
 
 const SAFE = manifest.safeFrame;
 const capChecks = manifest.captionTimeline.map((cap) => {
-  const w = capWidthPx(cap.text, cap.fs);
-  const rectC = { x1: cap.posX - w / 2, y1: cap.posY, x2: cap.posX + w / 2, y2: cap.posY + Math.round(cap.fs * 1.35) };
+  const qRuns = captionRuns(cap);
+  const w = capRunsWidthPx(qRuns, cap.fs);
+  const rectC = { x1: cap.posX - w / 2, y1: cap.posY, x2: cap.posX + w / 2, y2: cap.posY + Math.round(capMaxFs(qRuns, cap.fs) * 1.35) };
   const overlaps = [];
   for (const t of [cap.startSec + 0.01, (cap.startSec + cap.endSec) / 2, cap.endSec - 0.01]) {
     for (const cr of cardRectsAt(t)) if (intersects(rectC, cr)) overlaps.push(cr.id);
@@ -567,7 +606,7 @@ writeFileSync(join(outAbs, manifest.outputPaths.visualQaReport), JSON.stringify(
 writeFileSync(join(outAbs, manifest.outputPaths.renderManifestOut), JSON.stringify({
   schemaVersion: "golden_sample_visual_only_render_manifest_out_v1",
   rendererMode: manifest.rendererMode,
-  sourceManifest: "scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1.json",
+  sourceManifest: MANIFEST_PATH,
   imageSourceLock: manifest.imageSource.lockFixture,
   md5GatePassed: true,
   visualOnly: true, uploadReady: false, renderReady: false,
