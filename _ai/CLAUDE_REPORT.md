@@ -2775,3 +2775,18 @@ QA-only slice. 코드 변경 없음.
 - 다음 추천(별도 승인 필요): A안 scene 1 v2.3 1장 재생성(~$0.07, 플랩 재질 명시 강화 'plain matte white paper, not glassine, no watermark') / B안 플랩 마크 조건부 수용 판단(hook 첫 2초 노출이라 비권장) / C안 5/6으로 다음 단계 병행.
 - 산출: `output/money-shorts/flux2-selected-image-set-completion-v1/` — 이미지 2장 + summary + qa-report (parse OK, createCalls 2/2, scenes [1,6], 해상도 실측, secret 노출 0건).
 - renderReady=false / uploadReady=false 유지 (Owner 시각 QA + selected set lock 전 render 금지), commit/push 없음.
+
+
+## FLUX2 Scene 1 v2.3 Single Validation (`creative-v2-flux2-scene1-v2-3-single-validation` — 2026-07-02)
+
+**Owner 승인 범위 내 실행: FLUX.2 [pro] create call 정확히 1회(scene 1 only), 비용 ~$0.07 추정(상한 $0.25 내), scene 2/3/4/5/6 생성 금지 준수, render/TTS/mux/upload 없음.**
+
+- 신규: `scripts/fixtures/golden_sample_flux2_scene1_v2_3_single_validation_prompt.json` — v2.2 유일 위반(봉투 플랩 glassine 워터마크 마크)의 2중 인과 차단: (1) 재질 — ENVELOPE RULE 블록 신설(thick opaque plain matte white paper / not glassine / not translucent / no watermark / no security pattern / no letterform / no stamp / no emboss / no printed·impressed·raised·recessed mark), head 직후+인라인+tail 3중 배치. (2) 구도 — 'flap folded back low at a relaxed shallow angle, never standing up toward the camera' (같은 봉투가 플랩 낮았던 v2/v2.1에서 2연속 클린이었던 실측 근거). 지갑 제거+hook 코어는 v2.2 유지.
+- 신규: `scripts/run-flux2-scene1-v2-3-single-validation.mjs` — hard cap 1, scene 2~6 코드 차단, 단일 endpoint/size 고정, BFL_API_KEY만 파싱(값 미출력), poll 분리 집계(7회).
+- 결과: 1/1 생성, native 1088x1936 gate PASS.
+- **육안 QA (엄격, 표면별 2-pass): scene 1 v2.3 PASS — 위반 0건.** 플랩이 지시대로 낮게 접혀 불투명 무광 백지로 렌더(재질+구도 패치 모두 반영), 지갑/가죽 0건, hook 전달력 성립(역광 슬립 글로우가 3회 시도 중 최고). 배경 흐린 서랍 손잡이는 non-text-prone warning(scene 3 램프 갓과 동일 처리).
+- **clean 후보 풀 완성: scene 1(v2.3)+2(v1)+3(v2)+4(v2)+5(v2.1)+6(set-v1) = 6/6 — selected image set 후보 풀 완성 (Owner 시각 QA + set lock 대기).**
+- scene 1 최종 교훈: 4회 궤적(치명 다수→지갑 각인→플랩 마크→클린) — 위반은 '카메라를 향한 가장 두드러진 제조품 표면'의 stochastic prior이며, 해법은 문구+구도 병행 통제. 자동화 확장 시에도 per-shot QA gate + regenerate/skip 정책 필수 유지.
+- 다음 추천: Owner 시각 QA로 6씬 lock 결정 → lock 후 Golden Sample 다음 단계(renderer/TTS) 별도 승인.
+- 산출: `output/money-shorts/flux2-scene1-v2-3-single-validation/` — 이미지 1장 + summary + qa-report (parse OK, createCalls 1/1, scene 1 only, 해상도 실측, secret 노출 0건).
+- renderReady=false / uploadReady=false 유지 (Owner 시각 QA + selected set lock 전 render 금지), commit/push 없음.

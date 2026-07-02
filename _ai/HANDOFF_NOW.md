@@ -15,16 +15,16 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-flux2-selected-image-set-completion-v1`
-- Owner 최신 승인: `FLUX2 selected image set 완성용 2장 검증 승인 — FLUX.2 [pro] 최대 2장(scene 1, 6), 비용 $0.50 상한, BFL_API_KEY 사용 허용, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단`
-- 범위: FLUX2 object-whitelist selected image set 완성을 위해 scene 1과 scene 6만 대상으로 최대 2장을 생성/검증한다. scene 2(v1 PASS), scene 3/4(v2 PASS), scene 5(v2.1 PASS)는 재생성하지 않는다.
-- 목적: 현재 clean 후보 풀(scene 2/3/4/5)에 scene 1 hook과 scene 6 reset/action 후보를 추가해 6-scene selected image set 완성 가능성을 검증한다.
-- 허용: 기존 계약/fixture/output summary 읽기, scene 1/6 전용 prompt patch fixture/runner/summary/QA report 작성, `.env.local`에서 `BFL_API_KEY` 값만 읽어 API header에 사용(값 출력 금지), FLUX.2 [pro] 최대 2회 호출, output 이미지/summary/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
-- 금지: OpenAI 호출, ChatGPT/Playwright 생성, Gemini/Midjourney 사용, FLUX2 3장 이상 생성, scene 2/3/4/5 생성, 비용 $0.50 초과 위험이 있는 추가 호출, render, TTS 생성, mux, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- Task ID: `creative-v2-flux2-scene1-v2-3-single-validation`
+- Owner 최신 승인: `승인: FLUX2 scene 1 v2.3 단일 재검증 — FLUX.2 [pro] 최대 1장(scene 1 only), 비용 $0.25 상한, BFL_API_KEY 사용 허용, 봉투 플랩을 plain matte white paper / not glassine / not translucent / no watermark / no security pattern로 강화, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단`
+- 범위: FLUX2 selected image set의 마지막 미해결 hook 씬(scene 1)만 최대 1장 생성/검증한다. scene 2(v1 PASS), scene 3/4(v2 PASS), scene 5(v2.1 PASS), scene 6(set-v1 PASS)는 재생성하지 않는다.
+- 목적: scene 1 v2.2에서 지갑/가죽 각인 클래스는 소멸했으나 봉투 플랩에 letterform 마크 1건이 생긴 문제를, 봉투 플랩 재질/표면을 plain matte white paper로 강화해 최종 clean hook 후보를 확보할 수 있는지 확인한다.
+- 허용: 기존 계약/fixture/output summary 읽기, scene 1 v2.3 전용 prompt patch fixture/runner/summary/QA report 작성, `.env.local`에서 `BFL_API_KEY` 값만 읽어 API header에 사용(값 출력 금지), FLUX.2 [pro] 최대 1회 호출, output 이미지/summary/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
+- 금지: OpenAI 호출, ChatGPT/Playwright 생성, Gemini/Midjourney 사용, FLUX2 2장 이상 생성, scene 2/3/4/5/6 생성, 비용 $0.25 초과 위험이 있는 추가 호출, render, TTS 생성, mux, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
 
 ## Task ID
 
-`creative-v2-flux2-selected-image-set-completion-v1`
+`creative-v2-flux2-scene1-v2-3-single-validation`
 
 ## Project
 
@@ -39,7 +39,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `3fe417d test(automation): add flux2 wallet emboss patch validation`
+- Latest HEAD: `3b129d1 test(automation): add flux2 selected image completion validation`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
@@ -66,10 +66,11 @@ Current decision:
 
 Next responsible action:
 
-- Run the separately approved FLUX2 selected image set completion validation only.
-- Generate at most 2 FLUX.2 [pro] images for scene 1 and scene 6 only.
-- Scene 1 must fix the confirmed root cause: do not expose the wallet's external front panel. Preserve the hook core with a plain opened salary envelope, blank slips, bare hand, and morning light; if a wallet is used at all, show only internal/edge/partial out-of-frame surfaces with no exterior panel visible.
-- Scene 6 must validate the reset/action ending with blank cards/paper tabs ordered by bare hands; labels/instructions belong to renderer cards, not the image.
+- Run the separately approved FLUX2 scene 1 v2.3 single validation only.
+- Generate at most 1 FLUX.2 [pro] image for scene 1 only.
+- Scene 1 must preserve the v2.2 hook core: plain opened salary envelope, blank slips, bare hand, morning light, no wallet/leather goods.
+- Strengthen the exact v2.2 failure point: the envelope flap inner surface must be plain matte white paper, not glassine, not translucent, no watermark, no security pattern, no letterform, no stamp, no emboss.
+- If this image passes strict no-text/mark QA, selected image clean candidate pool becomes 6/6. Still do not render/TTS/mux/upload before Owner visual QA and selected set lock.
 - Stop after image QA report. Do not render/TTS/mux/upload.
 
 ## Fixed Samples

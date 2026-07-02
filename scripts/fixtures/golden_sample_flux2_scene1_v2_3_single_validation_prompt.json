@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "money_shorts_flux2_scene1_v2_3_single_validation_prompt",
+  "taskId": "creative-v2-flux2-scene1-v2-3-single-validation",
+  "status": "data_only_prompt_fixture",
+  "createdAt": "2026-07-02",
+  "baseFixture": "scripts/fixtures/golden_sample_flux2_selected_image_set_completion_prompts.v1.json (scene 1 v2.2)",
+  "evidenceRef": "output/money-shorts/flux2-selected-image-set-completion-v1/qa-report-flux2-selected-image-set-completion-v1.json",
+  "ownerApproval": "승인: FLUX2 scene 1 v2.3 단일 재검증 — FLUX.2 [pro] 최대 1장(scene 1 only), 비용 $0.25 상한, BFL_API_KEY 사용 허용, 봉투 플랩을 plain matte white paper / not glassine / not translucent / no watermark / no security pattern로 강화, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단",
+
+  "patchRationale": {
+    "v2_2Finding": "지갑/가죽 제거 성공(각인 클래스 소멸), hook 전달력 역대 최고. 유일 위반 = 봉투 플랩이 반투명 glassine 재질로 렌더되며 세워진 안쪽 면에 워터마크/letterform 유사 마크 1건",
+    "causalAnalysis": [
+      "재질 인과: 'plain unmarked envelope'만으로는 재질 미지정 — FLUX2가 glassine(보안 창봉투 계열)으로 렌더하며 해당 재질의 realism prior(워터마크/보안 패턴)를 함께 가져옴",
+      "구도 인과: v2.2에서 플랩이 카메라 정면으로 높이 서서 앰버 역광을 받음 — 반투명성과 마크가 함께 노출됨. 동일 봉투가 플랩이 낮았던 v2/v2.1에서는 2연속 클린이었음 (플랩의 카메라 정면 히어로화가 위험 증폭 조건)",
+      "대응: 재질(thick opaque matte white paper) + 구도(flap folded back low, shallow angle) 2중 차단. ENVELOPE RULE 블록은 WALLET RULE에서 검증된 head 직후+inline+tail 3중 배치 패턴 승계"
+    ],
+    "unchangedByDesign": "v2.2에서 성공한 전부 유지 — 지갑/가죽 완전 제거('NO wallets, NO leather goods' banned 유지), hook 코어(개봉 봉투+blank slips+bare hand+앰버 아침광), whitelist head/style anchor/blank tail 구조"
+  },
+
+  "apiParams": { "width": 1088, "height": 1936, "endpoint": "https://api.bfl.ai/v1/flux-2-pro", "fallback": "none" },
+
+  "scene": {
+    "order": 1,
+    "sceneRole": "scene_01_salary_arrival_hook",
+    "version": "v2.3",
+    "changes": [
+      "ENVELOPE RULE 블록 신설 (whitelist head 직후): thick opaque plain matte white paper / not glassine / not translucent / no watermark / no security pattern / no letterform / no stamp / no emboss / no printed·impressed·raised·recessed mark anywhere",
+      "구도 재지시: 플랩을 카메라 정면 히어로 표면에서 제외 — 'its flap folded back low at a relaxed shallow angle' (v2/v2.1 클린 구도로 회귀)",
+      "인라인 봉투 서술을 'just-opened envelope of thick opaque matte white paper'로 교체",
+      "tail에 'including the envelope flap and all its inner surfaces' 명시 추가"
+    ],
+    "objectsUsed": ["plain unmarked envelope of thick opaque matte white paper (just opened, flap folded back low)", "fresh blank white paper slips", "warm wooden kitchen table", "morning window light with one amber beam", "one bare hand"],
+    "subjectDeliveryCheck": "봉투에서 새 돈(빈 슬립)이 방금 나왔다는 '도착+안도' hook이 이미지만으로 읽힌다 — v2.2에서 PASS 실증된 코어 유지",
+    "envelopeFlapCheck": "플랩 안쪽 면 별도 판정 — 불투명 무광 백지 여부 + 워터마크/보안패턴/letterform/스탬프/엠보스/인쇄·임프레스·양각·음각 마크 0건",
+    "walletLeatherCheck": "지갑/가죽 소품 등장 0건이어야 함 — 등장 시 whitelist 위반 fail",
+    "finalPrompt": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: one plain unmarked paper envelope, fresh blank white paper slips, a warm wooden kitchen table, morning window light, one bare hand. Every visible man-made object must come from this list; do not add any other object. Strictly NO wallets, NO leather goods, NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. ENVELOPE RULE, EQUAL PRIORITY: the envelope is made entirely of thick opaque plain matte white paper — not glassine, not translucent, not shiny; every surface of the envelope, including its flap and all inner surfaces, is completely blank matte white paper with no watermark, no security pattern, no letterform, no stamp, no emboss, and no printed, impressed, raised or recessed mark anywhere on it. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning window light. A bare hand lifts a small sheaf of crisp, fresh blank white paper slips out of a just-opened envelope of thick opaque matte white paper, its flap folded back low at a relaxed shallow angle so it lies almost flat — the flap is plainly visible as simple blank matte paper, never standing up toward the camera; a single warm amber beam of morning light falls on the clean edges of the fresh slips so they glow softly — money that has just arrived. The glowing fresh slips in the hand are the single hero of the frame, holding the sharp focal plane, surrounded by generous calm negative space of warm wood grain and soft morning light. Mood: one short breath of relief on payday morning, quiet and hopeful. Shallow depth of field, warm window light, strong paper and wood textures. ALL SURFACES BLANK: every paper and slip is completely blank; the envelope — including its flap and all its inner surfaces — is completely blank thick opaque matte white paper with no watermark and no security pattern; the hand is bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no watermarks, no security patterns, no embossed or impressed marks, no printed lines — anywhere in the frame."
+  },
+
+  "qaGate": {
+    "inherits": "qaGateV2 전 항목 — 해상도(native 1088x1936, upscale 금지)/no-text/whitelist compliance/subject delivery/safe-area/hand-object",
+    "envelopeFlapQa": "플랩 안쪽 면 확대 판정 — 재질(불투명 무광 백지) + 마크 8종 0건. 1건이라도 발견 시 fail",
+    "walletLeatherQa": "지갑/가죽 등장 자체가 fail",
+    "verdictSet": ["PASS", "REGENERATE_NEEDED", "REJECT", "FAIL_GATE"],
+    "onPass": "clean 후보 풀 6/6 가능 상태로 보고. 단 renderReady=false / uploadReady=false 유지 — Owner 시각 QA와 selected set lock 전 render 금지"
+  },
+
+  "forbidden": ["scene 2/3/4/5/6 생성", "2장 이상 생성", "OpenAI/ChatGPT/Gemini/Midjourney 호출", "render/TTS/mux/upload", "941x1672 재사용", "placeholder/stock/upscale/crop-as-fix", "endpoint/size/provider fallback"],
+  "renderReadinessNote": "이 fixture는 프롬프트 데이터다. renderReady=false / uploadReady=false 상태를 변경하지 않는다.",
+  "boundary": { "dataOnly": true, "noRender": true }
+}
