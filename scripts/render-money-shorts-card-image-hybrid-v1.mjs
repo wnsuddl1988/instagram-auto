@@ -12,8 +12,10 @@
 //   1) IMAGE QUALITY GATE FIRST. manifest의 모든 selected 이미지 실제 해상도를 ffprobe로 검사한다.
 //      하나라도 1080x1920 미달이면 즉시 ABORT하고 정확한 blocker를 보고한다.
 //      upscale 후 final로 쓰지 않는다. placeholder/plain color/stock fallback로 대체하지 않는다.
+//      "배경 전용" 명목의 gate 완화는 폐기된 방향이다 — 재도입 금지.
 //   2) card-first: 배경은 dim/blur, 카드가 주요 정보 표면. full-screen 이미지 지배 금지.
-//   3) 게이트 통과 시에만 실제 카드+배경+모션 렌더.
+//      cards/text/motion은 1080x1920 canvas에서 렌더 (ASS PlayResX/Y = canvas).
+//   3) 게이트 통과 시에만 실제 카드+배경+모션 렌더. 좋은 이미지 없으면 render 금지.
 //
 // 이 render는 visual-only다: audio/TTS/SFX 없음. TTS/mux 이후에야 upload 판단. uploadReady=false.
 //
@@ -136,10 +138,10 @@ const gateReport = {
         code: "image_resolution_below_gate",
         message:
           `${failingImages.length} selected image(s) below the ${GATE.minWidthPx}x${GATE.minHeightPx} quality gate. ` +
-          `Final render is refused. Regenerate images via the LLM image path (Owner approval) — ` +
-          `do NOT upscale, placeholder, or stock-fallback the final render.`,
+          `Final render is refused — do NOT upscale, placeholder, or stock-fallback the final render, ` +
+          `and do NOT relax the gate for background-only use (rejected direction).`,
         failing: failingImages.map((f) => ({ imageSceneId: f.imageSceneId, resolution: `${f.width}x${f.height}`, reasons: f.failReasons })),
-        regeneratePath: "run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs (live ChatGPT, Owner approval + ALLOW_CHATGPT_IMAGE)",
+        regeneratePath: "새 이미지/비주얼 source는 Owner 결정 필요 — _ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md 참조",
       },
 };
 writeFileSync(join(outAbs, "image_gate_report.json"), JSON.stringify(gateReport, null, 2) + "\n", "utf8");
@@ -155,8 +157,8 @@ console.log(`  gate report: ${join(outAbs, "image_gate_report.json")}`);
 if (!allImagesPassGate) {
   console.error(
     `\nBLOCKER: image quality gate failed for ${failingImages.length} image(s). ` +
-      `Refusing to render final (no upscale, no placeholder, no stock fallback). ` +
-      `Regenerate images (Owner-approved live ChatGPT path) then re-run.`
+      `Refusing to render final (no upscale, no placeholder, no stock fallback, no background-only relaxation). ` +
+      `New image/visual source requires an Owner decision — see the quality stabilization decision packet.`
   );
   // exit 10 = deterministic "image gate blocker" signal (distinct from usage/other errors)
   process.exit(10);
@@ -171,7 +173,7 @@ if (GATE_ONLY) {
 // STEP 2 — CARD-IMAGE HYBRID RENDER (only reached if gate passed)
 // ══════════════════════════════════════════════════════════════════════════════
 function runFfmpeg(args, label) {
-  const r = spawnSync("ffmpeg", args, { shell: false, encoding: "utf8", timeout: 180000 });
+  const r = spawnSync("ffmpeg", args, { shell: false, encoding: "utf8", timeout: 300000 });
   if (r.status !== 0) {
     console.error(`ffmpeg ${label} failed (exit ${r.status}):\n${(r.stderr || "").slice(-1200)}`);
     process.exit(4);

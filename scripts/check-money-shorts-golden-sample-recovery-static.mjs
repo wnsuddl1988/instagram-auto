@@ -59,6 +59,11 @@ check("igc gate min 1920", igc?.image_quality_gate?.min_height_px === 1920);
 check("igc gate text-in-image forbidden", igc?.image_quality_gate?.text_inside_image_forbidden === true);
 check("igc current set gate BLOCKED", igc?.current_selected_image_set_status?.gateVerdict === "BLOCKED_resolution_below_min");
 check("igc current set not meets gate", igc?.current_selected_image_set_status?.meetsResolutionGate === false);
+check("igc current set evidence-only (not render-ready)", igc?.current_selected_image_set_status?.renderReadyCandidate === false && igc?.current_selected_image_set_status?.evidenceOnly === true);
+// ── 폐기된 방향 재발 방지 (rejected background-only relaxation must NOT reappear) ──
+check("igc has NO background_only_image_gate (폐기된 방향)", igc?.background_only_image_gate === undefined);
+check("igc current set has NO meetsBackgroundOnlyGate field (폐기된 방향)", igc?.current_selected_image_set_status?.meetsBackgroundOnlyGate === undefined);
+check("igc current set verdict is NOT background-only pass (폐기된 방향)", igc?.current_selected_image_set_status?.gateVerdict !== "PASS_background_only_use");
 
 // ── 3. Visual Director Prompts ────────────────────────────────────────────────
 const vdp = readJson(join(FX, "visual_director_prompts.rate_freeze.v1.json"));
@@ -128,6 +133,14 @@ check("render manifest schema", rm?.schemaVersion === "money_shorts_card_image_h
 check("render manifest mode card_image_hybrid_v1", rm?.rendererMode === "card_image_hybrid_v1");
 check("render manifest gate abort below", rm?.imageQualityGate?.abortIfBelowGate === true);
 check("render manifest no upscale final", rm?.imageQualityGate?.allowUpscaleForFinal === false);
+check("render manifest gate min 1080", rm?.imageQualityGate?.minWidthPx === 1080);
+check("render manifest gate min 1920", rm?.imageQualityGate?.minHeightPx === 1920);
+// ── 폐기된 방향 재발 방지 ──
+check("render manifest gate has NO background-only gateClass (폐기된 방향)", rm?.imageQualityGate?.gateClass === undefined);
+check("render manifest gate has NO backgroundScaleToCoverAllowed field (폐기된 방향)", rm?.imageQualityGate?.backgroundScaleToCoverAllowed === undefined);
+// 보존 구조: 모든 카드 배경은 dim_blur_background, canvas는 1080x1920 유지
+check("render manifest all backgrounds are dim_blur_background", (rm?.cardTimeline || []).every((c) => c.backgroundTemplate === "dim_blur_background"));
+check("render manifest canvas stays 1080x1920", rm?.canvas?.widthPx === 1080 && rm?.canvas?.heightPx === 1920);
 check("render manifest 7 cards", (rm?.cardTimeline || []).length === 7);
 check("render manifest 6 image inputs", (rm?.actualImageInputs || []).length === 6);
 check("render manifest existing renderer preserved", rm?.boundary?.existingRendererPreserved === true);
@@ -148,6 +161,8 @@ check("hybrid renderer checks resolution gate", /minWidthPx|width >= GATE\.minWi
 // renderer must consume manifest cardTimeline[].perceptualEvents verbatim, not re-invent its own count
 check("hybrid renderer consumes manifest perceptualEvents (no hardcoded 2-per-card count)", /c\.perceptualEvents/.test(hybridSrc));
 check("hybrid renderer does not hardcode cardTemplate+cardMotion as the only counted events", !/perceptualEvents\.push\(\{[^}]*c\.cardTemplate[^}]*\}\);\s*\n\s*perceptualEvents\.push\(\{[^}]*c\.cardMotion/.test(hybridSrc));
+// 폐기된 방향 재발 방지: renderer 소스에 background-only gate 식별자가 다시 나타나면 FAIL
+check("hybrid renderer source has NO background-only gate identifiers (폐기된 방향)", !/background_only_image_gate|backgroundScaleToCover|meetsBackgroundOnlyGate/.test(hybridSrc));
 
 // single-source integrity: manifest cardTimeline[].perceptualEvents must equal blueprint phases[].perceptualEvents 1:1 (by phaseId)
 const manifestPerceptualByPhase = Object.fromEntries((rm?.cardTimeline || []).map((c) => [c.phaseId, c.perceptualEvents || []]));
@@ -197,8 +212,9 @@ check("blueprint refs image gen contract", bp?.sourceRefs?.imageGenerationContra
 check("blueprint refs visual director prompts", bp?.sourceRefs?.visualDirectorPrompts === "scripts/fixtures/visual_director_prompts.rate_freeze.v1.json");
 check("blueprint refs tts contract", bp?.sourceRefs?.ttsFirstTimelineContract === "scripts/fixtures/tts_first_timeline_contract.v1.json");
 check("render manifest refs blueprint", rm?.sourceRefs?.blueprint === "scripts/fixtures/golden_sample_blueprint.rate_freeze.v1.json");
-// image gate blocker is consistent across contracts
-check("consistent blocker: igc + blueprint + manifest agree resolution blocked",
+// foreground 1080x1920 gate 미달 사실은 igc/blueprint가 일관되게 유지해야 한다
+// (Owner A안은 background-only 예외일 뿐 foreground gate를 완화하지 않는다)
+check("consistent: igc + blueprint agree images below foreground 1080x1920 gate",
   igc?.current_selected_image_set_status?.meetsResolutionGate === false &&
   bp?.renderReadinessGate?.meetsResolutionGate === false);
 

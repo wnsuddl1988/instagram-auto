@@ -1,5 +1,14 @@
 # HANDOFF_NOW
 
+## Absolute Rules Pointer (최우선)
+
+- 현재 Creative v2 / Golden Sample recovery의 **최우선 source of truth**는 `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md` (Owner 절대규칙 원문 verbatim, 2026-07-02 고정)이다.
+- 다른 문서/핸드오프/요약과 충돌하면 항상 이 파일의 원문이 우선한다. 작업 시작 전에 먼저 읽어라.
+
+## Decision Packet Pointer
+
+- 다음 방향 판단 자료: `_ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md` (2026-07-02) — 자동화 전 Golden Sample 품질 안정화 재정렬, 살릴 것/버릴 것, 이미지/비주얼 source 복구 선택지 4개와 선택지별 승인/위험/검증 기준. Owner 결정 전 render 금지.
+
 ## Task ID
 
 `creative-v2-rate-freeze-golden-sample-recovery-v1`
@@ -17,10 +26,36 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `e684653 feat(automation): add elevenlabs voice sound mux v2`
-- Approx status when this handoff was prepared: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
+- Latest HEAD: `307b425 feat(automation): add rate freeze golden sample recovery gates`
+- Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
+
+## Owner Correction / Current Block
+
+Owner corrected Codex on 2026-07-02:
+
+- Golden Sample is for stabilizing the quality engine before automation, not for locking the product to one `금리 동결` topic forever.
+- `금리 동결` is a current test/sample topic only. The quality grammar must later support a mix of economy, money, psychology, success, life judgment, cash-flow, and growth-story topics.
+- Do not optimize for "somehow finishing rate-freeze"; optimize for reusable high-quality Shorts grammar: strong hook, strong image/visual source, TTS rhythm, card-first explainer, perceptual motion, and post-render audit.
+- The earlier A안 / background-only reuse recommendation is rejected.
+- Do not use the existing selected image set as the Golden Sample final background set.
+- The original recovery directive identified an image-quality failure, not only a resolution failure: the images were generic and weak at explaining rate freeze, loans, deposits, and cash flow.
+- Reusing the existing `941x1672` set as dim/blur backgrounds would violate the recovery goal, even if cards/text render at 1080x1920.
+
+Current decision:
+
+- Treat the existing selected image set as evidence/reference only, not final render input.
+- Treat the one-scene live probe image as evidence only, not final render input.
+- Keep placeholder/local mock/stock fallback forbidden.
+- Keep simple upscale/crop-as-fix forbidden.
+- Do not proceed to visual-only render until a genuinely stronger image source/path is approved and produces a new high-quality selected image set.
+
+Next responsible action:
+
+- Prepare an Owner decision on image-source recovery, not a render handoff.
+- Candidate direction B: add/use a provider path that can create genuinely stronger vertical images at `1080x1920+` or otherwise materially better source quality, with explicit Owner approval for any paid API, dependency, credential, browser workflow, or external service.
+- Candidate direction C: skip topic, but this conflicts with the Golden Sample recovery goal.
 
 ## Fixed Samples
 

@@ -60,15 +60,24 @@
       "cardPresenceRatioTarget": 0.9,
       "fullScreenImageDominanceMaxRatio": 0.25,
       "firstTwoSecondHookCard": true,
+      "structureVerificationEvidence": {
+        "visualOnlyMp4": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\golden_sample_rate_freeze_visual_only.mp4",
+        "status": "evidence_only_not_quality_pass",
+        "probe": { "width": 1080, "height": 1920, "codec": "h264", "fps": 30, "durationSec": 30.0, "audioStream": false },
+        "measured": { "perceptualEventCount": 18, "actualMatchesPlanned": true, "cardPresenceRatio": 1.0, "fullScreenImageDominanceRatio": 0.0, "firstTwoSecondHookCardPresent": true },
+        "note": "이 mp4는 이후 폐기된 background-only 완화 하에서 렌더된 것으로, 렌더러의 카드/텍스트/모션/perceptual 지표 구조 검증 evidence로만 보존한다. Golden Sample 품질 통과물이 아니며 배경 이미지 세트는 final 입력 자격이 없다."
+      },
+      "imageGateVerdict": "IMAGE_GATE_BLOCKED (6/6 941x1672 < 1080x1920 — 배경 전용 완화는 폐기됨)",
       "auditVerdict": "BLOCKED_mp4_not_rendered",
-      "blocker": "image quality gate (1080x1920) 미달. 이미지 재생성 후 render 필요.",
-      "note": "구조는 card_image_hybrid_v1로 고정됨: 7 phase, big hook card 첫 2s, checklist card 3개, twist single-sentence card, final action card, dim/blur 배경. TTS는 full narration one-shot(padding 금지). render는 image gate 통과 후."
+      "auditVerdictScope": "post-render artifact audit 대상은 golden_sample_rate_freeze_tts_mux.mp4이며 부재.",
+      "blocker": "이미지/비주얼 source 미확정 — 기존 selected set과 probe image는 evidence only이며 final render 입력 금지. 941x1672은 ChatGPT native 9:16 상한으로 실측 확정. 좋은 이미지 없으면 render 금지. 다음 결정은 _ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md 참조.",
+      "note": "구조는 card_image_hybrid_v1로 고정됨: 7 phase, big hook card 첫 2s, checklist card 3개, twist single-sentence card, final action card, dim/blur 배경. cards/text/motion은 1080x1920 canvas 렌더. TTS는 full narration one-shot(padding 금지)."
     }
   },
   "findingsRequestedByHandoff": {
     "imageGenerationPathValid": {
-      "answer": "yes_but_resolution_below_gate",
-      "detail": "LLM(ChatGPT + Playwright + Chrome CDP, reference-free) 이미지 생성 경로는 실제로 작동했고 6장 PNG가 존재하며 owner 시각 QA(keep 4 / keep_candidate 2, renderReadyCandidate=true)를 통과했다. 그러나 실측 해상도 941x1672가 1080x1920 gate 미달이라 final render 자격 미달."
+      "answer": "path_works_but_below_gate_and_weak_subject_delivery",
+      "detail": "LLM(ChatGPT + Playwright + Chrome CDP, reference-free) 이미지 생성 경로는 실제로 작동했고 6장 PNG가 존재한다. 그러나 (a) 941x1672은 live probe(2026-07-02)로 ChatGPT native 9:16 상한임이 확정되어(고정 픽셀 예산 ~1.57MP의 9:16 재배분, 명시적 해상도 지시로도 동일) 1080x1920 gate를 이 경로 단독으로 충족할 수 없고, (b) 원 지시의 실패 진단대로 이미지가 generic해 금리/대출/예금/현금흐름의 주제 전달력이 약하다. 배경 전용 완화로 우회하는 방향은 폐기됐다. 새 이미지/비주얼 source는 Owner 결정 필요."
     },
     "ttsPaddingRemoval": {
       "answer": "enforced_by_contract",
@@ -78,17 +87,23 @@
     "perceptualEventCount": { "baselineOrV2": "planned event != perceptual event (6 slow images 체감)", "goldenSamplePlanned": 18, "minForPass": 12, "detail": "perceptual_event_count로만 게이트. 새 카드/hook카드/체크리스트/hard cut/freeze punch/twist 배경 전환(1회)만 카운트. dim/blur 배경 자체(모든 phase 정적 적용)와 pan/zoom/미세 이동은 카운트하지 않는다. blueprint/manifest/renderer actual report가 동일 18개 이벤트 목록을 single source로 공유한다." },
     "firstTwoSecondHookCard": { "baseline": "no", "rejectedV2": "no (첫 2s 무음+정적 이미지)", "goldenSample": "yes (big_hook_card + card_punch_zoom, dim/blur 배경)", "impact": "첫 2초에 시청 정지 카드 존재로 hook 강화." },
     "finalRecommendation": {
-      "recommendation": "regenerate_images_then_render_golden_sample",
+      "recommendation": "secure_stronger_image_visual_source_before_any_render",
+      "establishedEvidence": [
+        "live probe로 ChatGPT native 9:16 상한 941x1672 실측 확정 (2026-07-02).",
+        "카드/텍스트/모션/perceptual 지표/report 체계는 구조 검증 완료 (visual-only evidence: 1080x1920 canvas, perceptual 18/18, cardPresence 1.0, dominance 0.0, first 2s hook card ✓) — 단 품질 통과물 아님.",
+        "배경 전용 gate 완화(구 A안)는 폐기됨 — 기존 selected set/probe image는 final render 입력 금지."
+      ],
       "steps": [
-        "1) Owner 승인 + ALLOW_CHATGPT_IMAGE로 visual_director_prompts.rate_freeze.v1.json 6개 프롬프트를 1080x1920 이상으로 재생성(live ChatGPT path).",
-        "2) 재생성 이미지가 image_quality_gate 통과하면 render-money-shorts-card-image-hybrid-v1.mjs로 golden_sample_rate_freeze_visual_only.mp4 렌더.",
-        "3) full_narration_one_shot TTS(padding 금지) 생성 후 mux → golden_sample_rate_freeze_tts_mux.mp4.",
-        "4) audit-money-shorts-post-render-artifact-v1.mjs로 재audit. golden sample이 PASS_CANDIDATE인지 확인.",
-        "5) Post-Render Audit 통과 전까지 uploadReady=true 금지."
+        "1) Owner가 이미지/비주얼 source를 결정한다 — _ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md의 선택지(기존 path+visual direction 강화 / 1080x1920+ provider 추가 / 주제 교체 / skip) 참조.",
+        "2) 새 selected image set이 1080x1920+ / 9:16 / 주제 전달력 owner 시각 QA를 통과한 뒤에만 visual render slice 진행.",
+        "3) 이후 full_narration_one_shot TTS(padding 금지) mux → post-render audit → 통과 전까지 uploadReady=true 금지."
       ],
       "doNot": [
+        "기존 selected image set / probe image를 final render 입력으로 사용",
         "941x1672 이미지를 upscale해서 final로 사용",
+        "배경 전용 명목의 gate 완화 재도입",
         "placeholder/plain color/stock fallback 이미지 사용",
+        "좋은 이미지 없이 render 진행",
         "TTS 짧으면 apad 무음 padding으로 길이 맞추기",
         "6개 씬별 짧은 TTS를 기본값으로 사용",
         "ffprobe pass를 quality pass로 간주",
@@ -101,11 +116,11 @@
     "rejectedV2Verdict": "REJECT_confirmed",
     "baselineIsReference": true,
     "baselineVerdict": "reference_pass_with_known_limits",
-    "goldenSampleVerdict": "BLOCKED_mp4_not_rendered",
-    "imageGateVerdict": "IMAGE_GATE_BLOCKED",
-    "staticGuard": "109/109 PASS",
+    "goldenSampleVerdict": "BLOCKED_image_source_not_ready (기존 set/probe는 evidence only, 좋은 이미지 없으면 render 금지)",
+    "structureVerificationEvidenceOnly": "visual-only mp4는 렌더러 구조/지표 검증 evidence로만 보존 — 품질 통과물 아님",
+    "imageGateVerdict": "IMAGE_GATE_BLOCKED (6/6 941x1672 < 1080x1920)",
     "auditRunOnRealMp4": true
   },
   "guards": { "uploadReady": false, "uploadQueueReadinessGenerated": false, "auditOnlySlice": false, "sfxOnlyWork": false, "thresholdOnlyTuning": false, "newTopicExpansion": false, "bulkCandidateGeneration": false, "placeholderFinalImage": false, "sixSceneShortTtsDefault": false, "silencePadding": false },
-  "boundary": { "noImageGeneration": true, "noRenderExecuted": true, "noTts": true, "noUpload": true, "noCommitPushDeploy": true }
+  "boundary": { "imageGenerationExecutedThisSlice": false, "noTts": true, "noUpload": true, "noCommitPushDeploy": true, "renderForbiddenUntilImageSourceDecision": true }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "money_shorts_card_image_hybrid_render_manifest_v1",
-  "status": "manifest_locked_render_ready_pending_image_gate",
+  "status": "manifest_locked_render_blocked_pending_image_source_decision",
   "rendererMode": "card_image_hybrid_v1",
   "title": "Money Shorts OS — Card-Image Hybrid Render Manifest v1 (rate freeze)",
   "purpose": "card_image_hybrid_v1 렌더러가 소비하는 manifest. selected 고품질 LLM 이미지를 dim/blur/crop 배경으로 쓰고 카드를 주요 정보 표면으로 렌더한다. 기존 render-money-shorts-creative-final-visual-v1.mjs는 삭제하지 않는다.",
@@ -27,7 +27,7 @@
     "abortIfBelowGate": true,
     "allowUpscaleForFinal": false,
     "allowPlaceholder": false,
-    "note": "렌더러는 모든 selected 이미지의 실제 해상도를 먼저 검사한다. 하나라도 1080x1920 미달이면 ABORT하고 정확한 blocker를 보고한다. upscale/placeholder로 우회하지 않는다."
+    "note": "렌더러는 모든 selected 이미지의 실제 해상도를 먼저 검사한다. 하나라도 1080x1920 미달이면 ABORT하고 정확한 blocker를 보고한다. upscale/placeholder로 우회하지 않는다. 배경 전용이라는 이유로 gate를 완화하지 않는다(해당 방향 폐기). 현재 actualImageInputs(941x1672)는 evidence 전용이며 이 gate를 통과하지 못한다 — 새 이미지 source 확정 전 render 금지."
   },
   "actualImageInputs": [
     { "sourceImageKey": "image_01", "imageSceneId": "scene_1", "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png" },

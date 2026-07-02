@@ -46,18 +46,20 @@
     "imageDir": "output/money-shorts/scene-1-6-fullset-first-run-v1/",
     "sceneCount": 6,
     "ownerReviewed": true,
-    "renderReadyCandidate": true,
+    "renderReadyCandidate": false,
     "measuredResolution": "941x1672",
     "meetsResolutionGate": false,
     "aspectRatioOk": true,
     "gateVerdict": "BLOCKED_resolution_below_min",
-    "note": "6장 모두 owner 시각 QA(keep 4 / keep_candidate 2)를 통과했으나 실측 해상도 941x1672 < 1080x1920. image_quality_gate 미달로 final render를 차단한다. 재생성 필요(Owner 승인 후 live ChatGPT path)."
+    "evidenceOnly": true,
+    "note": "기존 6장은 evidence/reference 전용이며 final render 입력으로 사용하지 않는다. 실측 941x1672 < 1080x1920 gate 미달이고, 원 지시의 실패 진단은 해상도만이 아니라 주제 전달력(generic) 문제를 포함한다. 941x1672은 live probe(2026-07-02)로 ChatGPT native 9:16 상한임이 확정됨 — 이 경로 단독 재생성으로는 gate 해소 불가. 배경 전용 완화 방향은 폐기됐다. 새 이미지/비주얼 source가 Owner 결정으로 확정되고 새 selected image set이 gate를 통과하기 전에는 render 금지 (_ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md 참조)."
   },
   "on_gate_fail_actions": {
-    "regenerate_image": "동일 finalPrompt로 더 큰 해상도 재생성 (live ChatGPT path, Owner 승인).",
-    "skip_topic": "재생성 불가 시 topic skip.",
+    "regenerate_image": "동일 finalPrompt로 더 큰 해상도 재생성 (live ChatGPT path, Owner 승인). 단 ChatGPT native 9:16 상한은 941x1672로 실측 확정됨 — 1080x1920 gate 충족에는 이미지/비주얼 source 결정(Owner)이 선행되어야 한다.",
+    "skip_topic": "재생성 불가 시 topic skip (단 Golden Sample 품질 안정화 목표와 충돌).",
     "never_do": [
       "upscale 후 final로 사용",
+      "배경 전용이라는 이유로 gate 미달 이미지를 render에 사용",
       "placeholder/plain color card만으로 대체",
       "stock-like fallback 이미지 사용",
       "low-quality 이미지로 그냥 render 진행"

@@ -2424,3 +2424,132 @@ QA-only slice. 코드 변경 없음.
 **남은 blocker:** 변화 없음 — Golden Sample final mp4는 여전히 image quality gate(941x1672 < 1080x1920) 미달로 미생성. 이미지 재생성(live ChatGPT+Playwright+CDP, Owner 승인) 후 render 진행 필요.
 
 **checkpoint 권장:** 예 — review-fix 2건 모두 완료 + 전 검증 통과. 변경 파일 6개(fixture 3, script 2, tsconfig 1), 논리적으로 하나의 review-fix slice. commit/push는 미실행(승인 없음, Owner 명시 승인 대기).
+
+
+## Rate Freeze Live Image Regeneration (`creative-v2-rate-freeze-live-image-regeneration-v1` — 2026-07-02)
+
+**결론: BLOCKED — 승인된 ChatGPT live path는 1080x1920 이상을 생성할 수 없음 (모델 네이티브 캔버스 상한 실측 확정). fallback/upscale 없이 중단.**
+
+**실행 경로 (모두 승인된 path):**
+- 신규 runner `scripts/run-money-shorts-rate-freeze-image-regeneration-v1.mjs` 작성 — `_chatgpt-image-core.mjs` 무수정 재사용, `visual_director_prompts.rate_freeze.v1.json` 소비, `ALLOW_CHATGPT_IMAGE=1` gate, --inspect-existing / --preflight-only / --probe-one / --from-scene 모드.
+- 1단계 read-only 정찰 (전송 0회): composer에 해상도/비율 UI 옵션 없음 확정("매우 높음"은 GPT-5.5 사고 수준 선택기). srcset/대형 변형 없음. estuary는 네이티브 원본을 그대로 서빙.
+- 2단계 probe 1회 생성: scene_1(hook)을 신규 프롬프트 + 명시적 "minimum 1080x1920 canvas" 지시로 생성 → **941x1672** (gate FAIL). 첫 미달 확인 즉시 남은 5회 생성 중단 (quota 보존).
+
+**Blocker 증거 사슬 (5중):**
+1. 기존 7장(6 scene + retry, 프롬프트 6종 상이) 전부 정확히 941x1672.
+2. 941×1672 = 1,573,352px ≈ 1024×1536 = 1,572,864px (오차 0.03%) — 모델이 고정 픽셀 예산(~1.57MP)을 9:16으로 재배분한 네이티브 크기.
+3. composer 크기/해상도/비율 옵션 부재 (recon-v2 실측).
+4. estuary asset은 단일 src 원본(1.77MB PNG) — srcset/download 대형 변형 없음, intercept로 원본 그대로 확보.
+5. 오늘자 신규 생성 + 명시적 해상도 지시로도 941x1672 → 프롬프트 텍스트로 캔버스 크기 제어 불가.
+
+**검증 결과:**
+| 체크 | 결과 |
+|------|------|
+| probe 생성 (`--probe-one`) | 941x1672 png, gate FAIL, exit 2 (blocker evidence) |
+| `node scripts\render-money-shorts-card-image-hybrid-v1.mjs --gate-only` | exit 10 IMAGE_GATE_BLOCKED 유지 (6/6 941x1672, 변화 없음) |
+| `node scripts\check-money-shorts-golden-sample-recovery-static.mjs` | 126/126 PASS (fixture 무변경) |
+| 정찰 전송 횟수 | 0회 (read-only) / 총 프롬프트 전송 1회 (probe) |
+
+**생성/갱신 파일:**
+- `scripts/run-money-shorts-rate-freeze-image-regeneration-v1.mjs` (신규, 재사용 가능 runner)
+- `output/money-shorts/rate-freeze-golden-sample-regen-v1/` — scene-01-hook.png(941x1672 probe 증거), probe-one-summary.json, recon-existing-assets.v1.json, recon-v2.json (전부 gitignored output)
+- gate/contract fixture는 **무변경** (blocked 상태가 여전히 사실이므로)
+
+**범위 이탈:** 없음. upscale/crop/placeholder/stock fallback 미사용. gate 완화 없음. final render/TTS/mux/upload 없음. commit/push 없음. 보호 파일 미접근. scene 2~6 생성은 의도적 미실행 — 캔버스 상한은 프롬프트 내용과 무관함이 7장+probe로 입증되어, 확정 미달 이미지 5장에 quota를 소모하지 않음.
+
+**Codex/Owner 결정 필요 (3안):**
+- A안(권장): card_image_hybrid에서 이미지는 100% dim/blur 배경 전용이므로 "배경 용도 이미지 gate"를 941x1672(모델 네이티브 9:16 최대)로 재정의하고, 렌더러가 배경 한정 스케일을 명시 허용 (카드/텍스트/모션은 1080x1920 벡터 렌더 유지 — blur 배경의 스케일은 지각 손실 사실상 없음). 단 현행 contract의 no-upscale 조항 변경이므로 Owner 승인 필수.
+- B안: 네이티브 ≥1080x1920 지원 provider path 추가 (유료 API size 파라미터 등) — 신규 의존성/비용/승인 필요.
+- C안: topic skip (contract on_gate_fail_actions 옵션) — golden sample 회복 목표와 상충.
+
+
+## Background-Only Gate + Visual Render (`creative-v2-rate-freeze-background-gate-visual-render-v1` — 2026-07-02)
+
+**결론: ✅ Owner A안 반영 완료 + `golden_sample_rate_freeze_visual_only.mp4` 실제 렌더 성공 (1080x1920 h264 30.0s video-only).**
+
+**Gate 재정의 (Owner A안 2026-07-02):**
+- `image_generation_contract.json`: 기존 `image_quality_gate`를 foreground/final 전용(1080x1920+ 원칙 유지)으로 명시하고, `background_only_image_gate` 신설 — 최소 native source 941x1672(ChatGPT native 9:16 최대, live probe 실측 근거), vertical 9:16(0.5625±0.01), 필수 조건(selected set/owner reviewed/LLM source/no placeholder/no stock/no watermark/no readable on-image text), `card_image_hybrid_v1`의 `dim_blur_background` 전용, scale-to-cover는 이 모드 한정 명시 허용, foreground 일반화 금지.
+- `current_selected_image_set_status`: `meetsResolutionGate: false`(foreground 사실 유지) + `meetsBackgroundOnlyGate: true` + `gateVerdict: PASS_background_only_use`.
+- `card_image_hybrid_render_manifest.v1.json`: imageQualityGate를 `gateClass: background_only_image_gate`(941x1672, abortIfBelowGate 유지, allowUpscaleForFinal false 유지, backgroundScaleToCoverAllowed true)로 교체.
+- `render-money-shorts-card-image-hybrid-v1.mjs`: gate report에 gateClass/scale-to-cover 필드, blocker 문구 background gate 기준, render_manifest.json out에 imageGateClass/backgroundScaleToCoverUsed/imagesUsedAsBackgroundOnly/cardsAndTextRenderedAtCanvas 추가, ffmpeg timeout 180s→300s. 배경 필터는 기존 그대로 scale-to-cover+dim+blur, 카드/텍스트는 ASS PlayResX/Y=1080x1920 캔버스 렌더 (A안 구조 그대로).
+- `check-money-shorts-golden-sample-recovery-static.mjs`: background-only gate 계약 검증 24개 신규 (조건 7종/스코프/941/1672/일반화 금지/manifest-contract 값 일치/전 카드 dim_blur_background/canvas 1080x1920 유지). foreground 미달 사실 일관성 체크 유지. perceptual threshold 완화 없음.
+
+**렌더 및 검증 결과:**
+| 체크 | 결과 |
+|------|------|
+| static guard | **150/150 PASS** (기존 126 + 신규 24) |
+| `--gate-only` | **exit 0 IMAGE_GATE_PASS** (6/6 941x1672, aspect 0.5628 OK) |
+| visual-only render | ✅ `C:\tmp\money-shorts-os\card-image-hybrid-render-v1\golden_sample_rate_freeze_visual_only.mp4` |
+| ffprobe | 1080x1920, h264, 30fps, **정확히 30.000s**, video 스트림 단독(오디오 없음 = 기대값), 2.1MB valid |
+| perceptual_event_report | actual **18 = planned 18** (single-source 일치), minForPass 12 통과 |
+| card presence ratio | **1.0** (목표 0.9, audit 최소 0.7 통과) |
+| full-screen image dominance | **0.0** (한도 0.25 이내) |
+| first 2s hook card | **true** (big_hook_card + card_punch_zoom 0.0~2.0s) |
+| uploadReady | **false** (render_manifest.json + report 유지, requiresTtsSoundMuxBeforeUpload true) |
+| actual_card_timeline | 7 cards, hook 0-2s ~ action 26-30s 타임라인 일치 |
+
+**생성된 C:\tmp 아티팩트:** golden_sample_rate_freeze_visual_only.mp4, image_gate_report.json(IMAGE_GATE_PASS), render_manifest.json, actual_card_timeline.json, perceptual_event_report.json, hybrid_clip/bg/ass 중간 파일들.
+
+**변경 파일:** image_generation_contract.json / card_image_hybrid_render_manifest.v1.json / render-money-shorts-card-image-hybrid-v1.mjs / check-money-shorts-golden-sample-recovery-static.mjs / golden_sample_recovery_report.v1.json(실측 증거 반영) / post_render_artifact_audit.samples.v1.json(golden note 갱신) / _ai/CLAUDE_REPORT.md.
+
+**범위 이탈:** 없음. image generation 재실행 없음(기존 6장 재사용), 941x1672 foreground 일반 허용 없음, perceptual threshold 완화 없음, TTS/mux/upload 없음, commit/push 없음, 보호 파일 미접근.
+
+**알려진 문서 불일치 (Codex 확인 필요, 다음 slice에서 정리 권장):**
+1. `golden_sample_blueprint.rate_freeze.v1.json`의 `renderReadinessGate`(finalRenderAllowed=false, BLOCKED_image_resolution_below_1080x1920)는 A안 이전 상태 — 수정 범위 밖이라 미수정. visual-only 렌더는 "final(tts mux 완성본) render"가 아니므로 모순은 아니나, TTS mux slice에서 blueprint 갱신 권장.
+2. `audit-money-shorts-post-render-artifact-v1.mjs`의 golden blocker 하드코딩 문구("image quality gate (1080x1920) failed")가 stale — audit script는 수정 범위 밖. 다음 audit slice에서 tts_mux_pending 기준으로 갱신 필요.
+3. `creative-v2-stop-state.v1.json`의 imageQualityBlocker.blockerActive=true는 stop 시점 기록(historical lock) — 유지.
+
+**다음 추천:** TTS-first full narration one-shot mux(→ golden_sample_rate_freeze_tts_mux.mp4) + post-render artifact audit slice (audit script golden 문구 갱신 포함). uploadReady는 audit 통과 전까지 false.
+
+
+## Quality Stabilization Decision Packet (`creative-v2-golden-sample-quality-stabilization-decision-pack-v1` — 2026-07-02)
+
+**성격: 문서 작업만 — 구현/render/live generation/TTS/mux/upload 없음.**
+
+**산출물:**
+- `_ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md` (신규) — 자동화 전 Golden Sample 품질 안정화 재정렬 결정 패킷.
+- `_ai/HANDOFF_NOW.md` — Decision Packet Pointer 섹션(5줄) 추가.
+
+**패킷 핵심 내용:**
+- 목표 재정의: 자동화 전 "좋은 쇼츠가 나오는 생성 구조/품질 문법(이미지/대본/TTS/카드/모션/리듬/audit)" 안정화. 금리동결은 고정 주제가 아님(테스트 주제).
+- 살릴 것: 카드/텍스트/모션 레이어, perceptual event 구조(18/18 검증), first 2s hook card 검증, card presence/dominance 지표, render_manifest/actual_card_timeline/perceptual_event_report 체계, ChatGPT path 941x1672 상한 evidence. 기존 visual-only mp4는 구조 검증 evidence로만(품질 통과물 아님).
+- 버릴 것: 기존 selected image set final 사용 금지, probe image final 사용 금지, background-only gate 완화 폐기(구 A안), audit-only/threshold-only/SFX-only/upload queue 선행 금지, 금리동결 좁은 최적화 금지. "좋은 이미지 없으면 render 금지" 유지.
+- Owner 선택지 4개 (각각 승인/위험/금지/검증 기준 포함): ①기존 ChatGPT path + visual direction 강화(단독으로는 941x1672 상한 때문에 final render 불가 명시), ②1080x1920+ 강한 provider 추가 승인(해상도+품질 동시 해결 가능한 유일 선택지, 유료 API/의존성/credential 승인 필요), ③시각적으로 강한 주제로 교체(해상도 해법 없이는 단독 완결 불가 명시), ④skip_topic(안정화 목표와 충돌 명시).
+- 최종 추천: **좋은 이미지/비주얼 source 확보 결정이 먼저, render 직행 금지** — ② 주 결정 + ① 결합 + ③ 병행 판단, 공통 게이트(6/6 1080x1920+/9:16/owner 시각 QA/no-text/no-watermark) 확정 전 render 금지.
+- 부수 결정 필요: 미커밋 A안 잔재(contract/manifest/renderer/guard/report/samples의 background gate 변경) revert vs 재작업 — Codex 판단 필요.
+
+**검증:** 필수 문구 7종 grep 확인(Golden Sample 품질 안정화/자동화 전/금리동결은 고정 주제가 아님/기존 selected image set final 사용 금지/좋은 이미지 없으면 render 금지/background-only gate 완화 폐기/이미지·대본·TTS·카드·모션·리듬·audit) — 전부 포함. 절대규칙 파일 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 무변화(무수정 확인).
+
+**금지 작업 미수행:** 절대규칙 원문 무수정, 구현 코드 무변경, 이미지 생성/live API/Playwright/render/TTS/mux/upload 미실행, dependency/env/DB 무변경, commit/push 없음, 보호 파일 미접근, 이미지 재사용/background-only 완화를 승인된 방향으로 기술하지 않음(폐기로 명시).
+
+
+## Rejected Background-Gate Cleanup (`creative-v2-golden-sample-rejected-background-gate-cleanup-v1` — 2026-07-02)
+
+**성격: 폐기된 A안/background-only gate 잔재를 working tree에서 제거하는 cleanup slice. 구현 확장/render/live 실행 없음.**
+
+**제거한 것:**
+- `image_generation_contract.json`: `background_only_image_gate` 섹션 전체, `background_only_exception_ref`, `background_only_exception_note`, `meetsBackgroundOnlyGate`/`PASS_background_only_use`/A안 승인 문구 — 전부 제거. current set은 `BLOCKED_resolution_below_min` + `renderReadyCandidate: false` + `evidenceOnly: true`로 복원/강화.
+- `card_image_hybrid_render_manifest.v1.json`: gate를 pre-A(1080x1920)로 복원, `gateClass`/`backgroundScaleToCoverAllowed`/A안 참조 제거. status = `manifest_locked_render_blocked_pending_image_source_decision`.
+- `render-money-shorts-card-image-hybrid-v1.mjs`: background-only gate 문구/필드(imageGateClass, backgroundScaleToCoverUsed, imagesUsedAsBackgroundOnly 등) 제거, blocker 메시지에 "no background-only relaxation (rejected direction)" + decision packet 안내 명시.
+- `check-money-shorts-golden-sample-recovery-static.mjs`: A안 보증 체크 24개 제거 → **재발 방지 체크로 교체** (igc/manifest에 폐기 필드가 다시 나타나면 FAIL, renderer 소스에 background-only 식별자가 다시 나타나면 FAIL, current set evidence-only 확인).
+- `golden_sample_recovery_report.v1.json` / `post_render_artifact_audit.samples.v1.json`: "A안 승인/IMAGE_GATE_PASS/background-only 허용" 문구 전부 제거 → "폐기된 방향 / evidence only / 좋은 이미지 없으면 render 금지 / decision packet 참조"로 재작성. finalRecommendation = `secure_stronger_image_visual_source_before_any_render`.
+
+**보존한 것:** 카드/텍스트/모션 레이어(ASS 1080x1920 canvas), perceptual event single-source 구조(blueprint→manifest→renderer, planned 18), first 2s hook card 체크, card presence/dominance 지표, render_manifest/actual_card_timeline/perceptual_event_report 체계, ChatGPT path 941x1672 상한 evidence, visual-only mp4(구조 검증 evidence only로 명시). ffmpeg timeout 300s(중립적 견고성) 유지.
+
+**검증 결과:**
+| 체크 | 결과 |
+|------|------|
+| 절대규칙 MD5 | `adf4f45542fb3959ce5ca44fde3a98f2` = 기대값 일치 (무수정) |
+| static guard | **137/137 PASS** (150→137: A안 보증 24개 제거, 방지/복원 체크 11개 추가 = 순감 13) |
+| `--gate-only` | **exit 10 IMAGE_GATE_BLOCKED** — 6/6 941x1672 < 1080x1920 (941x1672를 pass로 만들지 않음) |
+| stale 문구 rg | scripts/ 내 4개 식별자(background_only_image_gate 등)는 static guard의 재발 방지(부재 단언) 체크에만 존재. contract/manifest/renderer operational 사용 0건. HANDOFF_NOW는 Codex의 "rejected" 서술 1건뿐 → 무수정 |
+| git diff --stat | 이번 slice: guard/manifest/report/contract/samples/renderer 6개 파일 (+CLAUDE_REPORT) |
+| pnpm build | 생략 — scripts/fixtures만 수정, TS/Next/build config 무변경 |
+
+**제외 파일:** `scripts/run-money-shorts-rate-freeze-image-regeneration-v1.mjs` — 지시대로 무수정(excluded), 이전 blocker evidence runner로 보존.
+
+**참고(인프라):** 작업 중 Bash 권한 분류기(claude-opus-4-8) 일시 장애로 실행 검증이 약 10여 회 지연됨 — 우회 없이 대기/재시도로 완료. 장애 중 read-only 검증(grep/read/md5sum)으로 육안 정합성 선확인.
+
+**남은 위험/결정 필요:** (1) 이미지/비주얼 source 선택 — decision packet의 선택지 ①②③④ Owner 결정 대기. (2) blueprint의 renderReadinessGate는 BLOCKED 상태 그대로(사실과 일치, 무수정). (3) audit script의 golden blocker 하드코딩 문구는 다음 audit slice에서 갱신 권장.
+
+**checkpoint:** 가능 — cleanup으로 working tree가 절대규칙/decision packet과 정합됨. 누적 diff(이전 slice 포함 6파일 +234/-41 + 신규 문서 3종 + runner 1종)는 Codex 리뷰 후 checkpoint commit 권장. commit/push 미실행.

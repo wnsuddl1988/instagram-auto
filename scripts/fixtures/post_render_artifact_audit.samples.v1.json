@@ -43,7 +43,7 @@
       "muxSummary": null,
       "ttsStrategy": "full_narration_one_shot",
       "perceptualEventReport": "C:\\tmp\\money-shorts-os\\card-image-hybrid-render-v1\\perceptual_event_report.json",
-      "note": "새 Golden Sample. image quality gate 미달(941x1672)로 아직 render되지 않았다. audit은 mp4 부재를 blocker로 정확히 보고한다(placeholder mp4를 만들지 않는다)."
+      "note": "새 Golden Sample. audit 대상인 tts_mux mp4는 부재하며, audit은 그 부재를 blocker로 정확히 보고한다(placeholder mp4를 만들지 않는다). 기존 visual-only mp4는 폐기된 배경 전용 완화 하에 렌더된 구조 검증 evidence일 뿐 품질 통과물이 아니다. 새 이미지/비주얼 source가 Owner 결정으로 확정되고 새 selected image set이 1080x1920 gate를 통과하기 전에는 render/TTS/mux를 진행하지 않는다."
     }
   ],
   "boundary": { "dataOnly": true, "noRender": true, "noTts": true }
