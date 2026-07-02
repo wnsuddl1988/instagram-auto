@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "bold_info_shorts_font_contract_v1",
+  "taskId": "golden-sample-direction-reset-money-economy-psychology-v1",
+  "createdAt": "2026-07-03",
+  "purpose": "Owner가 reject한 '기본 Malgun Gothic 느낌'을 차단하고, 굵은 정보형 쇼츠 자막/카드 타이포 기준을 고정한다.",
+
+  "contract": {
+    "malgun_gothic_default_forbidden": true,
+    "required_weight": "extra_bold_or_black",
+    "stroke_required": true,
+    "stroke_width_px_min": 8,
+    "primary_text_color": "white",
+    "emphasis_colors": ["yellow", "orange", "red", "blue"],
+    "font_size_min_hook": 86,
+    "font_size_min_body": 58,
+    "caption_max_lines": 2,
+    "caption_max_chars_per_line": 12,
+    "bottom_subtitle_only_forbidden": true,
+    "font_fallback_silent_forbidden": true
+  },
+  "contract_notes": {
+    "weight": "Regular/Medium/단순 Bold(700) 합성 굵기는 승인 weight가 아니다. 진짜 ExtraBold(800)/Black(900) glyph만 인정.",
+    "fallback": "지정 폰트를 찾지 못하면 조용히 다른 폰트로 대체하지 말고 실패로 처리하고 보고한다. Malgun Gothic으로의 fallback은 어떤 경우에도 금지.",
+    "bottom_subtitle": "하단 고정 받아쓰기 자막 단독 구조 금지 — dynamic caption 계약(phrase/keyword 단위) 유지, 타이포만 더 강하게."
+  },
+
+  "font_detection": {
+    "detectedAt": "2026-07-03",
+    "method": "Windows 폰트 디렉토리(read-only 파일 목록) — C:/Windows/Fonts + 사용자 폰트 폴더. 레지스트리 조회는 세션 권한 거부로 미수행(파일 존재 확인으로 갈음). .env/secret/API key 접근 없음.",
+    "results": {
+      "pretendard_black": "not_found",
+      "pretendard_extrabold": "not_found",
+      "noto_sans_kr_black_static": "not_found",
+      "noto_sans_kr_extrabold_static": "not_found",
+      "suit_heavy": "not_found",
+      "gmarket_sans_bold": "not_found",
+      "noto_sans_kr_vf": "FOUND — C:/Windows/Fonts/NotoSansKR-VF.ttf (가변 폰트, named instances: Thin/Light/DemiLight/Regular/Medium/Bold/Black — ExtraBold instance 없음)",
+      "noto_sans_kr_medium_static": "FOUND — C:/Windows/Fonts/notosanskr-medium.ttf (weight 500, 승인 weight 아님 — 사용 금지)"
+    }
+  },
+
+  "render_path_findings": {
+    "ffmpeg_drawtext": "fontvariations 옵션 없음 (ffmpeg 8.1.1 essentials 실측) — VF에서 Black weight 선택 불가",
+    "ffmpeg_libass": "'Noto Sans KR Black' named instance 미해석 — 기본 weight로 silent fallback 실측 (증거: typography_mock_frames/font_weight_probe.png, 900/800/기본 굵기 동일)",
+    "pillow": "Pillow 10.3.0 set_variation_by_name('Black') 정상 동작 — 이름 불일치 시 예외가 발생하는 구조라 silent fallback 자체가 불가능 (증거: font_weight_probe_pillow_black/regular/medium.png — Black이 확연히 무거움)"
+  },
+
+  "mock_generation": {
+    "status": "GENERATED_4_FRAMES",
+    "selected_font": "Noto Sans KR Black — NotoSansKR-VF.ttf의 named instance를 Pillow variation으로 선택 (static 미설치 상태의 유일한 진짜 Black 경로)",
+    "renderer": "scripts/render-golden-sample-typography-mock-frames-v1.mjs (--probe로 weight 실측 후 --frames --variation Black)",
+    "frames": [
+      "output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_01_hook.png",
+      "output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_02_fact_card.png",
+      "output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_03_mechanism.png",
+      "output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_04_action.png"
+    ],
+    "mock_spec_compliance": "hook 122~128px(>=86) / body 58~116px(>=58) / stroke 9~11px(>=8) / 흰색 기본 + 4강조색 / 줄당 <=12자 / 블록 <=2줄 / 하단 고정 자막 없음 / placeholder 숫자(00%)로 가짜 팩트 차단"
+  },
+
+  "production_risk": {
+    "renderer_gap": "현재 영상 renderer 체인(ffmpeg/libass)은 Black weight를 재현하지 못한다 (위 실측). 목업은 Pillow 경로라 가능했지만, 본 렌더 전에는 반드시 해결 필요.",
+    "resolution_options": [
+      "옵션 A (권장): Owner 승인/실행으로 Pretendard Black 등 승인 static 폰트 설치 → libass가 이름으로 해석 가능해짐 (설치는 시스템 변경이라 이번 slice에서 하지 않음, 외부 다운로드도 하지 않음)",
+      "옵션 B: renderer의 caption/card 텍스트 레이어를 Pillow 사전 렌더 PNG 오버레이 방식으로 개편 (코드 변경 필요, Codex 설계 판단)"
+    ],
+    "hard_rule": "이 gap이 해소되기 전 Golden Sample 본 렌더 진행 금지 — Malgun/기본 weight로 렌더하면 Owner reject 사유 재발"
+  },
+
+  "boundary": { "data_only_contract": true, "cost_usd": 0, "render_ready": false, "upload_ready": false }
+}

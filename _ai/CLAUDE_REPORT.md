@@ -2955,3 +2955,37 @@ QA-only slice. 코드 변경 없음.
 - rejected 기록: 구 s6_B('5' 선명 가독), s6_P_B(hard text/깨진 유사문자), s1_A/s4_B/s6_A(후보 QA hard reject).
 - 검증: fixture JSON parse PASS, 6장 실측 재대조(path/dims/bytes/MD5) 6/6 일치, s4/s6 조건 fixture+MD 양쪽 존재 grep 확인, forbidden pattern 스캔 0건, 원본 read-only(수정/이동/복사 없음), 보호 파일 미접근.
 - 금지 미수행: 외부 API/이미지 생성/render/TTS/mux/upload 0, env/secret 0, dependency 무변경, renderReady/uploadReady true 없음, commit/push 없음.
+
+
+## Golden Sample v2 visual-only render (`creative-v2-golden-sample-v2-visual-only-render-v1` — 2026-07-03)
+
+**locked 6장 기반 salary_3days visual-only mp4 후보 render + QA 완료 — 최종 verdict: `PASS_PROVISIONAL_VISUAL_ONLY` (story QA 6필드 전 threshold 충족, hard fail 0). 비용 0, 외부 API/이미지 생성/TTS/mux/upload 없음.**
+
+- 수정: `scripts/render-golden-sample-visual-only-v1.mjs` — 좁은 하위호환 확장 6건 (v2 lock scenes[] 어댑터+width/height 정확일치 gate, extraColors, caption emphasisColor, Txt outline 파라미터화, gate report 파일명 manifest화, QA 5s 창 40s 대응) + 신규 카드 템플릿 2종(three_slot_card: 고정 위치 fade-in+라벨 순차 pop / save_cta_card: shiftV1 고정 fade/scale-in 전용). v1 manifest 미지정 시 전부 기존 기본값 — 기존 동작 불변.
+- 신규: `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json` — 40.0s(32~45s 허용 내)/6씬/8카드/10캡션/37 perceptual events, denomination probe 검증 카드 좌표 승계, s4/s6 conditionalRenderLock 명문화, 배경 체인 probe 동일(eq dim+gblur 2.5+drift 1.02~1.10).
+- Output: `C:\tmp\money-shorts-os\golden-sample-v2-visual-only-render-v1\golden_sample_v2_salary_3days_visual_only.mp4` + render_manifest/image_integrity_gate_report/actual_card_timeline/dynamic_caption_timeline/visual_qa_report/story_script_preview + 프레임 16장 + occlusion zoom 4장.
+- integrity gate: 6/6 PASS (path/1088x1936 정확일치/bytes/MD5) — lock manifest 재검증 후 render.
+- ffprobe: 1080x1920 h264 30fps 40.0s(1200f) audio stream 0 — PASS.
+- s4 조건 충족: 21.8s(컷+0.3s) 프레임에 slot 패널 3개 존재(fade 200ms), 고정비/생활비/저축 라벨 24.9s 확인 (hard fail #5 해소). 잔존 '10'/'100' 파편은 흐릿+라벨 지배 (probe MINOR_RISK 재현).
+- s6 조건 충족: shiftV1(x200~880, y1080~1250) 고정 fade/scale-in(220ms), 세로 slide 없음, 35.4s 진입 확인, 39.8s hold 확인, 2x zoom에서 '2' 식별 불가 (COVERED_NOT_READABLE 재현).
+- 기계 QA: caption overlap 0 / safe-frame 위반 0 / bottom15 0 / dwell 0.7~1.6s / 이벤트 37(min 19)/maxGap 1.9s/전 5s 창 >=2 / bottom-fixed subtitle 없음 / cardPresenceRatio 0.851.
+- story QA (provisional): causality 90 / bridge 88 / specificity 90 / visual_relevance 87 / caption_readability 90 / hook_self_relevance 88 — 전 threshold(85/85/85/80/85/85) 충족, hard fail 0.
+- 잔여 위험: 타이밍 전체 provisional(TTS 재앵커 필수), s4 카드 7.9s 계약 상한 초과(조건부 lock 우선 의도적 예외), s2/s5 잔존 액면 문양 수준(자연성 범위), contrast 하단 라인 스크린샷 미확보(권한 거부 — ASS 타임라인/기계 QA로 검증), s2/s3 지폐 엔화/달러풍.
+- renderReady=false / uploadReady=false 유지. 검증: node --check PASS, JSON parse 전건 PASS, forbidden pattern 0건, 원본 read-only.
+
+
+## Golden Sample 방향 reset (`golden-sample-direction-reset-money-economy-psychology-v1` — 2026-07-03)
+
+**영상 제작이 아닌 방향 reset — Owner 오해 교정 문서/fixture/타이포 목업 완료. 기존 v2 mp4는 `REJECT_AS_GOLDEN_SAMPLE / TECHNICAL_EVIDENCE_ONLY`로 확정 기록 (PASS_PROVISIONAL 표현 폐기). 주제 미확정 — Owner 선택 대기. 비용 0, 외부 호출/이미지 생성/TTS/render 없음.**
+
+- 신규: `_ai/owner_intent_interpretation.v1.md` — 레퍼런스=제작 문법(주제 복사 아님), 채널 라인(돈+경제+심리+성공패턴) 고정, 주제 확정은 Owner 승인 전 금지, 기존 산출물 reject 지위 명문화.
+- 신규: `scripts/fixtures/topic_candidate_report.v1.json` — 4개 축 내 후보 5개(전 schema 필드 포함) + 추천 2개(t1 라이프스타일 인플레이션 / t4 72의 법칙) + requires_owner_approval=true. 실시간 시황/KOSPI 제외, salary_3days 계속 밀지 않음.
+- 신규: `scripts/fixtures/reference_mechanics_contract.v1.json` — hook/story/fact_density/typography/visual_rhythm/CTA 6개 문법 축 + exact clone·로고/문장/디자인 복사 금지 + "Reference is not a topic. Reference is a production grammar."
+- 신규: `scripts/fixtures/bold_info_shorts_font_contract.v1.json` — 요구 계약 키 전항(malgun 금지/ExtraBold·Black/외곽선 8px+/흰색+4강조색/hook 86/body 58/2줄·12자/하단 고정 금지/silent fallback 금지) + 폰트 탐색 실측 + 렌더 경로 실측 + 프로덕션 gap 기록.
+- 신규: `scripts/render-golden-sample-typography-mock-frames-v1.mjs` — 로컬 전용(도형/텍스트만). 폰트 gate→probe→vision 확정→frames 2단계 구조, Malgun fallback 경로 자체 없음(비승인 weight는 exit 12).
+- 신규: `_ai/owner_review_questions.md` — Q1 주제 선택 / Q2 폰트·자막 승인+static 폰트 설치 결정 / Q3 이미지 방향 승인 / Q4 이미지 생성 장수·비용·실패·중단 조건 승인.
+- 폰트 탐색 실측: 승인 6종 static 전부 미설치. NotoSansKR-VF.ttf 존재(named instance Black 포함, ExtraBold 없음) + notosanskr-medium(비승인). 레지스트리 조회는 권한 거부 → 파일 목록으로 갈음.
+- 렌더 경로 실측: ffmpeg drawtext fontvariations 미지원 + libass named instance 미해석(silent fallback 증거 font_weight_probe.png) → **Pillow 10.3.0 set_variation_by_name('Black')로 진짜 Black 확보** (probe 대조 PNG 3장으로 vision 검증 후 생성).
+- 목업 4장 생성: typography_mock_frames/mock_frame_01_hook·02_fact_card·03_mechanism·04_action.png — Black+외곽선 9~11px+4강조색, placeholder 숫자(00%)로 가짜 팩트 차단, 하단 고정 자막 없음.
+- 프로덕션 위험 기록: 현 영상 renderer(ffmpeg/libass)는 Black 재현 불가 — static 폰트 설치(Owner) 또는 renderer 개편 전 본 렌더 금지.
+- 검증: 신규 JSON 3종 parse PASS, mock PNG 4장 존재, forbidden 패턴 0건, env/secret 접근 0, 원본/보호 파일 미접근, commit/push 없음.
