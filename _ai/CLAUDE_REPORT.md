@@ -2831,3 +2831,36 @@ QA-only slice. 코드 변경 없음.
 - vision QA(프레임 12장): v1 대비 caption/카드 텍스트 가시성 개선 확인 — 강조 단어(월급/3일째/저장) 즉시 식별, 줄 겹침/패널 넘침 없음, 카드-caption 지배권 침해 없음, 주제 오브젝트 가림 없음. 상세 `visual_qa_report.json#claudeVisionQa`.
 - 검증: node --check PASS, 신규 JSON parse PASS, 금지 패턴(fetch/env/secret/API) 0건, 기본 v1 경로 gate-only PASS.
 - Owner 판단 필요점: 서체 자체(Malgun Gothic) 교체는 범위 밖, 강조 fs boost 톤, caption 리듬(provisional — TTS-first에서 재동기).
+
+
+## Golden Sample T2 TTS-First + Mux + Audit v1 (`creative-v2-golden-sample-tts-first-mux-audit-v1` — 2026-07-02)
+
+**첫 TTS-first 완성 후보 — ElevenLabs one-shot narration의 실제 word alignment로 전체 timeline reflow → 재render → mux → post-render audit 전 게이트 PASS_CANDIDATE.**
+
+- 신규: `scripts/fixtures/golden_sample_tts_first_mux_manifest.t2.v1.json` — TTS/reflow/audit 설정 (voice confident_v3, with-timestamps, budget 2회, narration 구두점 미세조정본 포함, audio gate 수치).
+- 신규: `scripts/run-golden-sample-tts-first-mux-audit-v1.mjs` — 통합 runner: env read-only resolve(masked만 출력) → with-timestamps 1회 호출 → character alignment에서 word/phrase timing 파생 → v1.2 manifest reflow(23개 word anchor) → 기존 renderer --manifest 재사용 render → mux(-c:v copy, padding/atempo/trim 0) → silencedetect/caption/frame audit. 기존 audio 존재 시 API 스킵(예산 보호).
+- 생성(자동): `scripts/fixtures/golden_sample_visual_render_manifest.t2.v1_2_tts_anchored.json` — 실측 timing 반영 manifest. ttsTimingSource=elevenlabs_character_alignment_word_timing_v1.
+- 수정: `scripts/render-golden-sample-visual-only-v1.mjs` — manifest-gated 확장 2건(hook line keywordPulse / action ctaRePulse). 미지정 시 v1/v1.1 동작 불변(--gate-only 실증).
+- TTS: ElevenLabs eleven_multilingual_v2, confident_v3, one-shot 178자, **API 총 2회**(1차 실측 → pause 과다로 구두점 미세조정 재생성 1회, attempt1 증거 보존). scene별 6-call/padding/atempo/hard-trim 0.
+- 실측: audio 29.16s, 발화 28.51s 종료, tail hold 0.62s, 영상 29.17s. word timing 실측 확보(character alignment) — caption 9개 전부 word_start 앵커 delta 0ms.
+- Audit (mux 기준): 1080x1920/h264/30fps/audio 1 ✓, first5s silence 0.80s(≤0.8), silence ratio 0.1326(≤0.18), speech active 0.867(≥0.72), 카드/caption overlap 0·safe-frame 0·bottom15 0, 이미지 gate MD5 6/6, perceptual events 30(min 14, maxGap≤3.0, 전 window≥2) → **verdict PASS_CANDIDATE** (ffprobe 단독 아님), uploadReady=false.
+- 게이트 실패→수정 이력: (1) 구두점 pause로 first5s 0.87/ratio 0.225 → 대본 미세조정(의미 불변), (2) hook 0~3.32s 무이벤트 → '3일' 발화 pulse 추가, (3) p2 후반 3.06s gap → divider를 '빠져나가요' 발화 앵커로, (4) 마지막 window 1개 → CTA '시작하세요' 재강조 추가. 전부 word-anchored 실제 모션.
+- 자막 굵기(Owner 메모): outline 5→6/shadow 2.2→2.6 채택 — 프레임 전후 비교로 판단, bar/box 없이 가독 개선.
+- Owner 시청 확인 권장점: number 카드 카운트 대기 구간(13.79→15.96), c05 dwell 0.49s, 실제 음성 톤/리듬.
+- Output: `C:\tmp\money-shorts-os\golden-sample-tts-first-mux-audit-v1\golden_sample_t2_salary_3days_tts_mux.mp4` + narration mp3/alignment/timing summary/caption timeline(anchor evidence)/audit/story preview/프레임 17장. secret 누출 스캔 0건, ALLOW_ELEVENLABS=false 플래그는 미수정(호출 근거는 Owner 현재 승인) — Codex 확인 요청.
+
+
+## Golden Sample TTS Live Guard 보정 (`creative-v2-golden-sample-tts-live-guard-review-fix-v1` — 2026-07-02)
+
+**checkpoint 전 안전 보정 — live ElevenLabs 호출 경로에 명시 승인 guard 추가. API/render/mux/audit 재실행 0건, PASS_CANDIDATE 산출물 무변경.**
+
+- 수정: `scripts/run-golden-sample-tts-first-mux-audit-v1.mjs` — CLI `--allow-live-tts` 파싱 + `liveTtsAllowed()` 헬퍼 + `stageTts()`의 신규 호출 경로(재사용 분기 return 이후, env 조회·fetch 이전)에 guard 추가. env `ALLOW_ELEVENLABS`(1/true) 또는 CLI flag 중 하나 없으면 `ABORT: live ElevenLabs TTS requires ALLOW_ELEVENLABS=1 or --allow-live-tts`로 exit 20(고유 코드). 기존 audio+alignment 재사용 경로는 guard 이전에 return하므로 무영향.
+- 수정: `scripts/fixtures/golden_sample_tts_first_mux_manifest.t2.v1.json` — tts에 `requireLiveTtsGuard:true`, `allowEnvKey:"ALLOW_ELEVENLABS"`, `allowCliFlag:"--allow-live-tts"`, 설명 note 추가. guard는 config 우선(미지정 시 기본값 fallback), `requireLiveTtsGuard!==false`일 때만 활성.
+- 검증:
+  - node --check runner/renderer 통과, config/v1.2 manifest JSON parse 통과.
+  - static: fetch/ElevenLabs endpoint는 파일 전체 단 1개(stageTts 내부), 소스상 guard(L115) 뒤 fetch(L139) — 다른 진입 경로 없음.
+  - guard 판정 진리표 8케이스 전부 통과(env false/0/미설정=차단, 1/true/TRUE=허용, --flag=허용).
+  - 격리 E2E(runner 사본+빈 out-dir+fetch 차단 스텁): 승인없음→exit 20·fetch 미도달, --allow-live-tts→guard 통과, ALLOW_ELEVENLABS=1→guard 통과. 실제 API/산출물 무영향.
+  - secret 스캔: 변경 파일에 key/token 값 0(env 참조/masked만).
+  - PASS_CANDIDATE 산출물 6종(mux mp4/narration mp3/alignment/timing/audit/caption) 전부 보존, 재생성 0.
+- API 호출/TTS 생성/render/mux/audit 재실행: 0건. env/secret/dependency 무변경. commit/push 없음.

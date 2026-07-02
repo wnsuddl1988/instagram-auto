@@ -16,16 +16,23 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-visual-only-render-v1`
-- Owner 최신 승인: `승인: Golden Sample visual-only render 후보 생성 — lock된 FLUX2 6-scene selected image set과 Reels-style dynamic caption contract를 적용해 card-image hybrid visual-only mp4를 생성/QA한다. 추가 이미지 생성/API 호출/TTS/mux/upload는 금지하고, render 산출물·프레임 스크린샷 QA·caption/card overlap QA 보고 후 중단.`
-- 범위: lock된 FLUX2 6장과 Reels-style dynamic caption contract를 사용해 T2 Golden Sample visual-only mp4 후보를 생성하고, 프레임 스크린샷/카드-자막 overlap QA를 보고한다.
-- 목적: TTS/mux 전, 이미지+카드+모션+동적 자막의 화면 품질을 실제 mp4 기준으로 확인한다. 기존 rate-freeze 렌더 manifest를 그대로 재사용하지 말고 T2 lock manifest 전용으로 연결한다.
-- 허용: 기존 renderer/manifest/contract 읽기, T2 visual-only render manifest/runner 작성 또는 기존 renderer 최소 확장, ffmpeg/ffprobe 기반 local render, `C:\tmp` 또는 gitignored output 아래 산출물/스크린샷/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
-- 금지: 추가 이미지 생성, OpenAI/FLUX2/ChatGPT/Playwright/Gemini/Midjourney 호출, Instagram/외부 브라우저 자동화, TTS 생성, mux, upload, dependency 추가/변경, env/secret 접근/수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- Task ID: `creative-v2-golden-sample-tts-first-mux-audit-v1`
+- Owner 최신 승인: `승인 — 기존 ElevenLabs 경로를 사용해 30초 TTS-first narration을 생성하고, 실제 phrase/word timing에 dynamic caption을 재앵커한 뒤 visual+audio mux 및 post-render audit까지 진행한다. 추가 이미지 생성/API, upload는 금지한다.`
+- Owner visual-only 결정: `PASS_WITH_NOTES` — `v1.1`을 visual-only 기준으로 채택한다. 다음 slice에서 TTS-first narration + mux + post-render artifact audit로 진행한다. 단 caption timing은 실제 TTS word/phrase timestamp에 재앵커한다.
+- 추가 Owner 메모: 자막 폰트가 조금 더 진하게 강조되었으면 좋겠다는 의견은 이번 TTS/mux slice에서 품질 판단 후 반영 여부를 결정한다. 반영한다면 자막 weight/outline/shadow를 과하지 않게 보강하고, bottom-fixed subtitle bar는 계속 금지한다.
+- 기준 visual-only 입력:
+  - Manifest: `scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1_1_typography.json`
+  - Renderer: `scripts/render-golden-sample-visual-only-v1.mjs`
+  - Visual-only mp4: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1-1\golden_sample_t2_salary_3days_visual_only_v1_1.mp4`
+  - Story preview: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1-1\story_script_preview.md`
+- 범위: 기존 ElevenLabs TTS 경로/env를 사용해 T2 30초 Golden Sample narration을 생성하고, 실제 TTS timing으로 card/caption timeline을 재앵커한 뒤 visual+audio mux mp4를 만든다. 이후 실제 mp4 기준 post-render artifact audit(silence/speech/caption sync/media validity/visual readiness)을 수행하고 보고 후 중단한다.
+- 허용: 기존 ElevenLabs 관련 스크립트/fixture/summary 읽기, 새 TTS-first manifest/runner/audit fixture 추가, ElevenLabs TTS API 소량 호출, ffmpeg/ffprobe 기반 mux/audit, `C:\tmp` 아래 산출물/스크린샷/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
+- 금지: 추가 이미지 생성, OpenAI/FLUX2/ChatGPT/Playwright/Gemini/Midjourney 호출, Instagram/외부 브라우저 자동화, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- 충돌 처리: 아래 남아 있는 과거 `rate-freeze/금리동결` Golden Sample 구조와 이전 visual-only 대기 문구는 historical context다. 이번 slice에서는 이 Current Approved Slice, selected FLUX2 image set lock, dynamic caption contract, v1.1 typography manifest가 우선한다.
 
 ## Task ID
 
-`creative-v2-golden-sample-visual-only-render-v1`
+`creative-v2-golden-sample-tts-first-mux-audit-v1`
 
 ## Project
 
@@ -40,7 +47,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `e9e3923 docs(automation): lock flux2 selected image set captions`
+- Latest HEAD: `25e8aed feat(automation): add golden sample visual typography revision`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.

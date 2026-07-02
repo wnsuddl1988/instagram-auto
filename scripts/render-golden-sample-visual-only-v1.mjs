@@ -265,7 +265,15 @@ for (const card of manifest.cardTimeline) {
     panelAbs(p.x1, p.y1, p.x2, p.y2, s, e, panelEntry);
     if (p.accentBarLeft) accentBar(p.x1 + 26, p.y1, p.y2, s, e, isHook ? "" : "\\fad(120,0)");
     for (const line of card.lines || []) {
-      EV(2, s, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}${textEntry}}${runsToAss(line.runs, line.fs)}`);
+      if (line.keywordPulse) {
+        // 발화 word-anchored 키워드 pulse (manifest에 있을 때만 — v1/v1.1 미지정 시 기존 동작)
+        const kp = line.keywordPulse;
+        EV(2, s, kp.atSec, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}${textEntry}}${runsToAss(line.runs, line.fs)}`);
+        const pulsedRuns = line.runs.map((r, i) => (i === kp.runIndex ? { ...r, c: kp.toColor } : r));
+        EV(2, kp.atSec, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\fscx108\\fscy108\\t(0,170,0.6,\\fscx100\\fscy100)}${runsToAss(pulsedRuns, line.fs)}`);
+      } else {
+        EV(2, s, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}${textEntry}}${runsToAss(line.runs, line.fs)}`);
+      }
     }
     if (card.cardTemplate === "number_drop_card") {
       const nz = card.numberZone;
@@ -363,7 +371,11 @@ for (const card of manifest.cardTimeline) {
         const kp = line.keywordPulse;
         EV(2, s, kp.atSec, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1${reveal}}${runsToAss(line.runs, line.fs)}`);
         const pulsedRuns = line.runs.map((r, i) => (i === kp.runIndex ? { ...r, c: kp.toColor } : r));
-        EV(2, kp.atSec, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1\\fscx106\\fscy106\\t(0,180,0.6,\\fscx100\\fscy100)}${runsToAss(pulsedRuns, line.fs)}`);
+        // ctaRePulse(manifest 지정 시): CTA 발화 순간 라인 재강조 — 미지정 시 기존 단일 pulse 동작
+        const rp = card.ctaRePulse;
+        const seg2End = rp ? rp.atSec : e;
+        EV(2, kp.atSec, seg2End, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1\\fscx106\\fscy106\\t(0,180,0.6,\\fscx100\\fscy100)}${runsToAss(pulsedRuns, line.fs)}`);
+        if (rp) EV(2, rp.atSec, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1\\fscx107\\fscy107\\t(0,190,0.6,\\fscx100\\fscy100)}${runsToAss(pulsedRuns, line.fs)}`);
       } else {
         EV(2, s, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}${reveal}}${runsToAss(line.runs, line.fs)}`);
       }
