@@ -8,132 +8,217 @@
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-direction-reset-money-economy-psychology-v1`
-- Status: approved for no-cost direction reset only.
-- Owner directive: 기존 실패 산출물을 기준으로 계속 제작하지 말고, Codex/Claude가 잘못 이해한 Golden Sample 방향을 명확히 개선한다.
-- This slice is not video production. It is a reset/decision package before any further image generation or render.
+- Task ID: `golden-sample-chatgpt-playwright-visual-only-revision-v2`
+- Status: approved for visual-only revision based on Owner feedback.
+- Owner feedback:
+  - ChatGPT+Playwright output looks better than FLUX2 overall.
+  - The third image feels awkward.
+  - Current visual-only candidate uses 4 images over 40s, so each image stays too long.
+  - If using ChatGPT+Playwright, image generation burden is low enough that regeneration is acceptable when quality misses.
+  - Image count may increase if that improves video quality.
+  - Claude Code waited too long after ChatGPT had already generated images; add clear generation-speed rules.
 
-## Latest Owner Rejection Lock
+## Current Candidate Status
 
-- `golden_sample_v2_salary_3days_visual_only.mp4` is `REJECT_AS_GOLDEN_SAMPLE / TECHNICAL_EVIDENCE_ONLY`.
-- Do not keep or describe the previous `PASS_PROVISIONAL_VISUAL_ONLY` as a Golden Sample pass.
-- The current rejected candidate may be referenced only as evidence of what failed:
-  - caption/font did not change enough and still felt default/Malgun-Gothic-like.
-  - images looked old, foreign, and disconnected from Korean money/paycheck context.
-  - foreign/unknown currency feeling is a hard fail for Korean money/economy topics.
-  - topic continuation happened without re-confirming Owner's topic choice.
-  - technical PASS is not Golden Sample PASS.
+- Existing visual-only candidate:
+  `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v1\golden_sample_t1_lifestyle_inflation_visual_only.mp4`
+- Current verdict: `PASS_CANDIDATE_FOR_OWNER_REVIEW`, but needs revision before next decision.
+- Strength:
+  - Better than FLUX2 on Owner-visible criteria: modern Korean everyday-finance feel, less foreign/old-money feel, no readable fake text.
+  - Pillow overlay typography is much closer to desired bold info-shorts style.
+- Weakness:
+  - `img-03-img_03_illusion_scattered_spending.png` / third image feels awkward.
+  - 4 images / 40s makes image dwell too long.
+  - Need 6~7 visual beats and shorter runtime around 30~34s.
 
-## Golden Sample Production Criteria Lock
+## Scope
 
-1. Owner가 주제 확정 전에는 이미지 생성/API/render 금지.
-2. 유료 호출 전에는 비용 상한, 장수, 실패 조건, 중단 조건, 기대 이미지 기준을 Owner가 명시 승인해야 한다.
-3. 돈/경제 주제는 한국 시청자 기준의 즉시성 필수:
-   - 한국 돈/통장/월급/생활비/이체/카드/봉투 맥락.
-   - 외국 지폐 느낌, 오래된 경제 자료 느낌, 정체불명 화폐 느낌은 hard fail.
-4. AI 이미지 안의 글자/숫자는 원칙적으로 믿지 않는다.
-   - 정확한 정보/팩트/라벨은 renderer 카드와 자막이 담당.
-   - 이미지 속 가짜 문자, 깨진 숫자, 외국 화폐 액면은 reject.
-5. 자막/폰트는 별도 품질 기준:
-   - 기본 Malgun Gothic 느낌 금지.
-   - 굵은 정보형 쇼츠 폰트.
-   - 두꺼운 검정 외곽선.
-   - 강한 강조색.
-   - 레퍼런스형 짧은 정보 자막.
-6. Story-Causality First:
-   - 문제 → 원인 → 착시 → 해결책 → 행동 → 결과.
-   - 이 흐름을 Owner가 먼저 납득해야 이미지/렌더 진행 가능.
-7. Visual Evidence Second:
-   - 이미지는 예쁜 배경이 아니라 각 장면의 증거.
-   - 카드가 설명해야 겨우 이해되는 이미지는 reject.
-8. 기술 PASS는 Golden Sample PASS가 아님.
-   - ffprobe, MD5, overlap QA는 기본 조건.
-   - 최종 기준은 Owner 시청 QA.
-9. Owner가 PASS 전에는 TTS/mux/upload/자동화 확장 금지.
-10. 비용 발생 작업은 “승인된 장수 안에서 실패하면 즉시 중단”이 원칙.
+- Use the same test topic:
+  `t1_lifestyle_inflation` / `월급이 올라도 통장이 그대로인 이유`.
+- This remains a Golden Sample test topic, not final channel-wide topic lock.
+- Build a revised visual-only mp4 candidate.
+- TTS/mux/upload remain forbidden.
 
-## Direction Reset
+## Image Generation Policy For This Revision
 
-- Reference video means production grammar inspiration only. It is not a topic copy request and not a command to switch to KOSPI/live macro news.
-- Channel direction: money + economy + psychology + success patterns.
-- Topic is not fixed. `월급이 3일 만에 사라지는 이유` can be one candidate, but Claude/Codex must not finalize it without Owner approval.
-- New priority order:
-  1. Story-Causality First.
-  2. Visual Evidence Second.
-  3. Image prompt/provider only after Owner approves topic and expected visual standard.
-  4. Renderer/card/caption/motion after story and visual evidence are approved.
+- Allowed path: ChatGPT+Playwright via existing Chrome CDP path.
+- Must require `ALLOW_CHATGPT_IMAGE=1`.
+- Cost cap: `$0`.
+- Additional ChatGPT image submissions for this revision: max 8.
+- Stop early when enough acceptable images exist for a 6~7 beat visual-only candidate.
+- Regeneration is allowed within the max-8 cap when an image fails quality.
+- Do not use OpenAI API, FLUX2/BFL, Gemini, Midjourney, or any paid API.
+- Do not reuse old `salary_3days` image set.
 
-## Required Outputs For This Slice
+## Required Visual Revision Goals
 
-Create these files without external calls:
+1. Replace or avoid the awkward third image.
+2. Increase source image count used in the video from 4 to 6~7 beats.
+3. Reduce final visual-only runtime from 40s to around 30~34s.
+4. Keep Pillow overlay bold typography.
+5. Keep Korean modern finance context.
+6. Keep no readable fake text/numerals inside images.
+7. Keep story causality:
+   - 월급은 올랐는데 통장이 그대로
+   - 오른 월급을 고정비/카드값/구독료/생활비가 흡수
+   - 인상액만 기억하고 늘어난 지출은 흩어져 안 보임
+   - 체감은 잔액이 아니라 돈의 자리에서 생김
+   - 받는 날 먼저 나누기: 고정비 증가분 / 생활비 상한 / 남길 돈
 
-1. `_ai/owner_intent_interpretation.v1.md`
-   - Explain Owner intent for the reference: production grammar, not topic copy.
-   - Lock the channel line: money/economy/psychology/success patterns.
-   - Explicitly state that topic finalization requires Owner approval.
+## ChatGPT+Playwright Speed Rules
 
-2. `scripts/fixtures/topic_candidate_report.v1.json`
-   - 5 candidates inside the approved channel line.
-   - Score each candidate.
-   - Recommend 1-2 candidates.
-   - Include `requires_owner_approval: true`.
+Claude Code must not wait 3~5 minutes after the image is already visible.
 
-3. `scripts/fixtures/reference_mechanics_contract.v1.json`
-   - Reference-inspired production mechanics: hook, story, fact density, typography, visual rhythm, CTA.
-   - Do not claim exact cloning of the Instagram reference.
+Rules:
 
-4. `scripts/fixtures/bold_info_shorts_font_contract.v1.json`
-   - Font/caption criteria.
-   - Malgun Gothic fallback forbidden.
-   - Include installed font detection results for: Pretendard Black/ExtraBold, Noto Sans KR Black/ExtraBold, SUIT Heavy, Gmarket Sans Bold.
-   - If none are available, fail/report and do not silently use Malgun Gothic.
+1. After submitting a prompt, start active detection after 25~30 seconds.
+2. Poll page-wide image candidates every 1.5~2.0 seconds.
+3. Current ChatGPT UI may render generated images outside assistant-role message containers; use page-wide estuary/oaiusercontent/blob collection, excluding user attachments.
+4. If a new generated image is detected and stable for 3 consecutive polls, save immediately.
+5. Expected generation window: usually 60~110 seconds.
+6. If no image is detected by 150 seconds:
+   - capture diagnostic screenshot/DOM summary.
+   - do one recover-current-page attempt.
+   - do not scan unrelated sidebar conversations.
+7. If no recoverable image by 180 seconds, mark that prompt `TIMEOUT_BLOCKED` and move to next prompt or stop if quality target cannot be met.
+8. Do not open unrelated old conversations or inspect sidebar history except an explicit `--recover-latest` mode for the same current generation session.
+9. Log timestamps:
+   - prompt submitted at
+   - first candidate detected at
+   - saved at
+   - detection latency
+10. Report any case where detection latency after visible generation exceeds 30 seconds.
 
-5. Typography mock frames:
-   - `output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_01_hook.png`
-   - `output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_02_fact_card.png`
-   - `output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_03_mechanism.png`
-   - `output/money-shorts/golden-sample-direction-reset-money-economy-psychology-v1/typography_mock_frames/mock_frame_04_action.png`
-   - Local shapes/text only. No paid image/API. Not a full video render.
+## Preferred Revised Beat Plan
 
-6. `_ai/owner_review_questions.md`
-   - Ask for topic candidate selection.
-   - Ask for font/caption approval.
-   - Ask for image direction approval.
-   - Ask for next image generation count/cost approval.
+Target: 30~34s, 6~7 visual beats.
 
-## Forbidden In This Slice
+Suggested beats:
 
-- paid API calls.
-- image generation.
+1. Hook: 월급은 올랐는데 통장은 그대로
+   - existing img1 may be reused if still strong.
+2. Problem: 더 벌었는데 월말 잔액은 안 늘어남
+   - can reuse img1 or generate a stronger bank/wallet image.
+3. Cause: 고정비/카드값/구독료/생활비가 먼저 빠짐
+   - existing img2 may be reused.
+4. Illusion replacement: 인상액은 한 덩어리로 기억되지만 늘어난 지출은 흩어져 안 보임
+   - generate new image; do not use awkward current img3 unless Owner-visible quality improves.
+5. Reframe: 돈이 안 모이는 게 아니라 오른 돈의 자리가 없었음
+   - may be card-heavy with image as support.
+6. Action: 받는 날 3칸으로 나누기
+   - existing img4 is strong; reuse or regenerate if better.
+7. Result: 다음 월급날부터 체감이 달라지는 정돈된 생활금융 장면
+   - generate if needed.
+
+## Required Outputs
+
+Create/update repo-consistent names:
+
+1. Update or add prompt fixture for revision:
+   - suggested: `scripts/fixtures/chatgpt_playwright_image_prompts.t1_lifestyle_inflation.v2.json`
+   - include reason for each prompt and target beat.
+
+2. Update or add story/render manifest:
+   - suggested: `scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v2.json`
+   - include 6~7 beat timing and image selection notes.
+
+3. Update or add runner if needed:
+   - existing `scripts/run-chatgpt-playwright-image-method-revalidation-v1.mjs` may be revised or a v2 runner may be added.
+   - Must implement the speed rules above.
+   - Must keep submission hard cap for revision at 8 additional submissions.
+
+4. Update or add visual-only renderer:
+   - existing `scripts/render-golden-sample-chatgpt-playwright-visual-only-v1.mjs` may be revised or a v2 renderer may be added.
+   - Must keep Pillow overlay typography.
+   - Must output revised visual-only mp4.
+
+5. Output:
+   - suggested folder: `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v2\`
+   - include mp4, manifest, QA report, frame screenshots.
+
+6. `_ai/CLAUDE_REPORT.md` append.
+
+## QA Fields
+
+At minimum:
+
+- `native_resolution_score`
+- `viewer_frame_quality_score`
+- `image_dwell_score`
+- `korean_money_context_score`
+- `modern_lifestyle_relevance_score`
+- `story_evidence_score`
+- `font_typography_score`
+- `caption_readability_score`
+- `story_causality_score`
+- `third_image_replacement_verdict`
+- `fake_text_or_numeral_risk`
+- `foreign_currency_or_old_money_risk`
+- `chatgpt_generation_latency_report`
+- `chatgpt_vs_flux2_observation`
+- `recommendation`
+
+## Forbidden
+
+- OpenAI API calls.
+- FLUX2/BFL API calls.
+- Gemini calls.
+- Midjourney calls.
+- Any paid API call.
+- More than 8 additional ChatGPT image submissions in this revision.
+- Automatic retry that exceeds the cap.
 - TTS.
 - mux.
-- full video render.
-- upload queue.
-- reusing the `salary_3days` locked image set as a new direction.
-- preserving current `PASS_PROVISIONAL_VISUAL_ONLY` as a Golden Sample pass.
-- switching to KOSPI/live economy news without Owner approval.
-- finalizing any topic without Owner approval.
-- env/secret/dependency/DB/deploy changes.
-- reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
+- upload.
+- Treating `t1_lifestyle_inflation` as final channel-wide Golden Sample topic beyond this test.
+- Reusing old `salary_3days` locked image set.
+- Env/secret/dependency/DB/deploy changes.
+- Reading `.env.local`, `.money-shorts-local`, secret files.
+- Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
+- Touching rejected salary_3days visual-only render diff unless explicitly needed only to avoid conflict. In particular do not modify/stage:
+  - `scripts/render-golden-sample-visual-only-v1.mjs`
+  - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+
+## Current Git Context
+
+- Latest checkpoint: `42afe2f docs(automation): reset golden sample direction`.
+- Existing uncommitted files include current ChatGPT v1 visual-only candidate files and excluded/rejected files.
+- Do not stage/commit/push.
 
 ## Required Checks
 
-- JSON parse all new JSON fixtures.
-- Confirm mock frame PNG files exist if an approved font is found.
-- Confirm no external-call code or commands were used.
-- Confirm no secret/env values are read or printed.
-- Confirm no `renderReady:true` or `uploadReady:true` is introduced.
-- Confirm `git status -sb` and changed files.
+- JSON parse all new/updated JSON fixtures/reports.
+- `node --check` for changed/new scripts.
+- Verify additional ChatGPT submission count <= 8.
+- Verify total selected images in revised video: 6~7 visual beats or justify otherwise.
+- Verify visual-only mp4 exists.
+- ffprobe: 1080x1920, no audio stream, duration about 30~34s.
+- Frame screenshots at key moments.
+- Verify no readable fake text/numerals in selected images.
+- Verify typography is Pillow overlay / bold style.
+- Verify generation latency log exists.
+- Verify no forbidden paid/API provider calls.
+- Verify no secret values are printed.
+- `git status -sb`.
 
 ## Final Handoff Format
 
 Report:
 
 - changed files.
-- generated mock frame paths, or explain why mock generation was blocked by missing approved fonts.
-- font detection result.
-- recommended 1-2 topic candidates.
+- generated additional image count and paths.
+- selected image set used in revised video.
+- actual measured image dimensions.
+- revised visual-only mp4 path.
+- duration and ffprobe result.
+- frame screenshot paths.
+- third image replacement verdict.
+- image dwell/pacing QA.
+- typography QA.
+- ChatGPT generation latency report.
+- ChatGPT vs FLUX2 quality observation.
+- whether the revised visual-only candidate is suitable for Owner viewing.
 - checks/results.
 - forbidden actions not performed.
 - checkpoint recommendation.
-- 전체프로젝트 진행률: keep around `약 91%` unless new evidence justifies a conservative change.
+- 전체프로젝트 진행률 : 약 91%.

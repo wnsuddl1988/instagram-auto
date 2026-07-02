@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "golden_sample_story_blueprint_v2",
+  "taskId": "golden-sample-chatgpt-playwright-visual-only-revision-v2",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "title": "월급이 올라도 통장이 그대로인 이유",
+  "topic_status": "테스트 주제 유지 — 채널 전체 영구 확정 아님 (Owner 통제)",
+  "revision_goals": "v1(4장/40s) 대비: 7 visual beats / 31.5s로 dwell 단축, awkward img_03 교체(img_06), problem/result 전용 이미지 추가",
+
+  "duration": {
+    "fullDurationSec": 31.5,
+    "allowedRangeSec": [30, 34],
+    "timing_status": "provisional_visual_only — TTS phrase alignment 전 임시 타이밍",
+    "padding_used": false
+  },
+
+  "selected_image_set": [
+    { "imageId": "img_01_hook_raise_no_change", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v1/img-01-img_01_hook_raise_no_change.png", "md5": "73c98793606212e59375103f4b8a6f9d", "origin": "v1 재사용" },
+    { "imageId": "img_05_problem_month_end", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v2/img-05-img_05_problem_month_end.png", "md5": "b6cba43a600f2d1a205e2f0d55dc5477", "origin": "v2 신규" },
+    { "imageId": "img_02_cause_absorbed_outflow", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v1/img-02-img_02_cause_absorbed_outflow.png", "md5": "7028714cf6341198aa7ab731b4baa718", "origin": "v1 재사용" },
+    { "imageId": "img_06_illusion_bundle_vs_scattered", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v2/img-06-img_06_illusion_bundle_vs_scattered.png", "md5": "da1107377788ee96ec6d654fa06445fa", "origin": "v2 신규 — img_03 교체" },
+    { "imageId": "img_04_action_divide_on_payday", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v1/img-04-img_04_action_divide_on_payday.png", "md5": "4134baf1b950612024ed7465af413967", "origin": "v1 재사용" },
+    { "imageId": "img_07_result_settled_morning", "path": "output/money-shorts/chatgpt-playwright-image-method-revalidation-v2/img-07-img_07_result_settled_morning.png", "md5": "9d222a03c108eb21c9c4bb7dce774f08", "origin": "v2 신규" }
+  ],
+  "excluded_images": [
+    { "imageId": "img_03_illusion_scattered_spending", "reason": "Owner 피드백 awkward — 지폐가 무지 봉투처럼 보임. img_06으로 교체, v2에서 사용 안 함." }
+  ],
+
+  "story_chain": [
+    {
+      "beat": "hook", "sceneId": "s1", "timeStartSec": 0.0, "timeEndSec": 4.0,
+      "message": "월급은 올랐는데 통장이 그대로인 느낌 — 내 얘기다",
+      "bridge_to_next": "느낌이 아니라 월말 잔액이라는 사실 확인으로 진입",
+      "image": "img_01_hook_raise_no_change",
+      "visual_evidence": "두툼한 월급 봉투(인상) vs 얇은 지갑(체감 없음) 대비"
+    },
+    {
+      "beat": "problem", "sceneId": "s2", "timeStartSec": 4.0, "timeEndSec": 8.5,
+      "message": "분명 더 버는데 월말 잔액은 늘지 않는다",
+      "bridge_to_next": "빠져나갈 곳이 이미 예약되어 있기 때문 (원인으로 연결)",
+      "image": "img_05_problem_month_end",
+      "visual_evidence": "월말 밤, 거의 빈 지갑을 들여다보는 지친 직장인 — 잔액 실망의 감정 증거 (신규 이미지로 dwell 단조 해소)"
+    },
+    {
+      "beat": "cause", "sceneId": "s3", "timeStartSec": 8.5, "timeEndSec": 13.5,
+      "message": "고정비/카드값/구독료/생활비가 오른 월급을 먼저 흡수한다",
+      "bridge_to_next": "다 빠져나가는 걸 왜 못 느끼는가 — 착시로 연결",
+      "image": "img_02_cause_absorbed_outflow",
+      "visual_evidence": "봉투에서 여러 갈래로 퍼져나가는 지폐 흐름"
+    },
+    {
+      "beat": "illusion", "sceneId": "s4", "timeStartSec": 13.5, "timeEndSec": 18.5,
+      "message": "인상액은 한 덩어리로 기억되지만, 늘어난 지출은 흩어져 있어 안 보인다",
+      "bridge_to_next": "그래서 진짜 문제는 돈이 아니라 '자리'라는 재해석으로 연결",
+      "image": "img_06_illusion_bundle_vs_scattered",
+      "visual_evidence": "선명한 지폐 다발 한 덩어리(스포트라이트) vs 어둠 속 흩어진 동전/영수증/카드 — 심도·조명 대비가 착시를 시각화 (img_03 교체본)"
+    },
+    {
+      "beat": "reframe", "sceneId": "s5", "timeStartSec": 18.5, "timeEndSec": 23.0,
+      "message": "돈이 안 모이는 게 아니라, 오른 월급의 자리가 먼저 정해지지 않은 것",
+      "bridge_to_next": "자리가 없었다면 받는 날 만들면 된다 — 행동으로 연결",
+      "image": "img_06_illusion_bundle_vs_scattered",
+      "visual_evidence": "같은 착시 이미지를 강한 dim+blur로 배경화 — 화면 중심은 재해석 한 문장 (card-heavy 허용 beat)"
+    },
+    {
+      "beat": "action", "sceneId": "s6", "timeStartSec": 23.0, "timeEndSec": 28.0,
+      "message": "오른 금액을 받는 날 먼저 나눠놓기 — 고정비 증가분 / 생활비 상한 / 남길 돈",
+      "bridge_to_next": "세 자리가 생기면 체감이 어디서 오는지 결과로 연결",
+      "image": "img_04_action_divide_on_payday",
+      "visual_evidence": "지폐를 3개의 무지 봉투로 나누는 손 — 3개 이름은 카드가 명시 (hard fail #5 대응)"
+    },
+    {
+      "beat": "result", "sceneId": "s7", "timeStartSec": 28.0, "timeEndSec": 31.5,
+      "message": "월급 인상 체감은 잔액이 아니라 돈의 자리에서 생긴다",
+      "bridge_to_next": null,
+      "image": "img_07_result_settled_morning",
+      "visual_evidence": "아침 데스크 정리함에 나눠 담긴 3봉투 + 남산타워 서울 스카이라인 — '자리가 잡힌 다음 달'의 결과 증거"
+    }
+  ],
+
+  "abstract_word_guard": {
+    "rule": "'관리/정리/순서' 추상어 무근거 결론 금지",
+    "solution_naming": "고정비 증가분 / 생활비 상한 / 남길 돈 — 3개 구체 이름 화면 표시"
+  },
+  "story_qa_thresholds": {
+    "story_causality_score": 85, "problem_solution_bridge_score": 85, "solution_specificity_score": 85,
+    "visual_subject_relevance_score": 80, "caption_readability_score": 85, "hook_self_relevance_score": 85
+  },
+  "hard_fails": ["bridge 부재", "해결책 추상어 종결", "이미지-주제 단절", "추상어 무설명", "3개 미표시"],
+  "typography_contract_ref": "scripts/fixtures/bold_info_shorts_font_contract.v1.json (Pillow overlay, Noto Sans KR Black VF)",
+  "tts_note": "TTS timing 없음 — visual-only. TTS/mux/upload 금지 유지.",
+  "boundary": { "cost_usd": 0, "render_ready": false, "upload_ready": false }
+}

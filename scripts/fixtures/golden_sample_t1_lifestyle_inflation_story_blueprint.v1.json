@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "golden_sample_story_blueprint_v1",
+  "taskId": "golden-sample-chatgpt-playwright-visual-only-candidate-v1",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "title": "월급이 올라도 통장이 그대로인 이유",
+  "topic_status": "이번 slice 테스트 주제로만 선택됨 — 채널 전체 Golden Sample 주제 정책 영구 확정 아님 (Owner 통제)",
+  "principle": "Story-Causality First + Visual Evidence Second — 이미지는 각 beat의 증거로 따라오며, 정확한 라벨/숫자는 카드/자막이 담당한다",
+
+  "duration": {
+    "fullDurationSec": 40.0,
+    "allowedRangeSec": [28, 42],
+    "timing_status": "provisional_visual_only — TTS phrase alignment 전 임시 타이밍, 다음 단계에서 실제 내레이션 기준 재배치 필수",
+    "padding_used": false
+  },
+
+  "story_chain": [
+    {
+      "beat": "hook",
+      "sceneId": "s1",
+      "timeStartSec": 0.0,
+      "timeEndSec": 5.5,
+      "message": "월급은 올랐는데 통장이 그대로인 느낌 — 내 얘기다",
+      "bridge_to_next": "느낌이 아니라 실제로 잔액이 안 늘어난다는 사실 확인으로 진입",
+      "image": "img_01_hook_raise_no_change",
+      "visual_evidence": "두툼한 월급 봉투(인상) 옆의 얇은 지갑(체감 없음) 대비 — 캡션 없이도 '들어온 돈은 커졌는데 내 손은 그대로'가 보인다",
+      "cards": ["hook 대형 타이포 2줄 (월급은 올랐는데 / 통장은 그대로) + 자기관련성 캡션"]
+    },
+    {
+      "beat": "problem",
+      "sceneId": "s2",
+      "timeStartSec": 5.5,
+      "timeEndSec": 11.0,
+      "message": "분명 더 버는데 월말 잔액은 늘지 않는다",
+      "bridge_to_next": "잔액이 안 느는 이유 — 빠져나갈 곳이 이미 예약되어 있기 때문 (원인으로 연결)",
+      "image": "img_01_hook_raise_no_change",
+      "visual_evidence": "같은 증거 이미지의 다른 크롭/줌 — 얇은 지갑 중심으로 조여서 '남는 게 없음'을 물리적으로 재강조",
+      "cards": ["problem 패널 (분명 더 버는데 / 월말 잔액 그대로)", "bridge 캡션 (이미 예약된 지출)"]
+    },
+    {
+      "beat": "cause",
+      "sceneId": "s3",
+      "timeStartSec": 11.0,
+      "timeEndSec": 18.5,
+      "message": "고정비/카드값/구독료/생활비가 오른 월급을 먼저 흡수한다",
+      "bridge_to_next": "다 빠져나가는 걸 왜 못 느끼는가 — 착시로 연결",
+      "image": "img_02_cause_absorbed_outflow",
+      "visual_evidence": "봉투에서 여러 갈래(영수증 더미/카드/고지서/폰)로 퍼져나가는 지폐 흐름 — 캡션 없이도 '돈이 자동으로 여러 곳으로 흩어진다'가 보인다",
+      "cards": ["cause 타이틀 칩 (먼저 나가는 돈)", "체크리스트 4항목 순차 팝 (고정비↑/카드값↑/구독료↑/생활비↑)", "하단 결론 (오른 월급부터 흡수)"]
+    },
+    {
+      "beat": "illusion",
+      "sceneId": "s4",
+      "timeStartSec": 18.5,
+      "timeEndSec": 25.0,
+      "message": "사람은 월급 인상액 한 줄만 기억하고, 늘어난 지출은 흩어져 있어서 못 본다",
+      "bridge_to_next": "그래서 진짜 문제는 돈이 아니라 '자리'라는 재해석으로 연결",
+      "image": "img_03_illusion_scattered_spending",
+      "visual_evidence": "선명한 지폐 한 장(기억되는 인상액) vs 어둠 속 흐릿하게 흩어진 영수증/카드/동전(안 보이는 지출) — 심도 대비가 착시 자체를 시각화",
+      "cards": ["illusion 대비 패널 2개 (기억나는 건 인상액 한 줄 / 늘어난 지출은 흩어져 안 보임)"]
+    },
+    {
+      "beat": "reframe",
+      "sceneId": "s5",
+      "timeStartSec": 25.0,
+      "timeEndSec": 30.5,
+      "message": "돈이 안 모이는 게 아니라, 오른 월급의 자리가 먼저 정해지지 않은 것",
+      "bridge_to_next": "자리가 없었다면 자리를 만들면 된다 — 받는 날 행동으로 연결",
+      "image": "img_03_illusion_scattered_spending",
+      "visual_evidence": "같은 착시 이미지를 더 어둡게/흐리게 눌러 배경화 — 화면 중심은 재해석 한 문장 카드 (single sentence twist)",
+      "cards": ["reframe 대형 한 문장 (안 모이는 게 아니라 / 돈의 자리가 없던 것)"]
+    },
+    {
+      "beat": "action",
+      "sceneId": "s6",
+      "timeStartSec": 30.5,
+      "timeEndSec": 36.5,
+      "message": "오른 금액을 받는 날 먼저 나눠놓기 — 고정비 증가분 / 생활비 상한 / 남길 돈",
+      "bridge_to_next": "이 세 자리가 만들어지면 인상 체감이 어디서 생기는지 결과로 연결",
+      "image": "img_04_action_divide_on_payday",
+      "visual_evidence": "밝은 아침 톤, 지폐를 3개의 무지 봉투로 나누는 손 — 캡션 없이도 '받자마자 세 자리로 나눈다'가 보인다. 3개의 이름은 카드가 정확히 명시 (hard fail #5 대응)",
+      "cards": ["action 타이틀 (받는 날, 먼저 나누기)", "3-슬롯 라벨 순차 팝 (고정비 증가분 / 생활비 상한 / 남길 돈)"]
+    },
+    {
+      "beat": "result",
+      "sceneId": "s7",
+      "timeStartSec": 36.5,
+      "timeEndSec": 40.0,
+      "message": "월급 인상 체감은 잔액이 아니라 돈의 자리에서 생긴다",
+      "bridge_to_next": null,
+      "image": "img_04_action_divide_on_payday",
+      "visual_evidence": "같은 행동 이미지의 밝은 줌아웃 — 정돈된 세 봉투가 '자리가 생긴 상태'의 결과 증거",
+      "cards": ["result 패널 (체감은 잔액이 아니라 / 돈의 자리에서 생겨요)", "CTA (저장하고 월급날 실행)"]
+    }
+  ],
+
+  "image_map": {
+    "img_01_hook_raise_no_change": ["s1", "s2"],
+    "img_02_cause_absorbed_outflow": ["s3"],
+    "img_03_illusion_scattered_spending": ["s4", "s5"],
+    "img_04_action_divide_on_payday": ["s6", "s7"]
+  },
+  "image_reuse_policy": "4장 상한 내에서 인접 beat가 같은 증거를 공유할 때만 재사용하며, 재사용 시 크롭/줌/톤(dim·blur)을 바꿔 hard cut의 perceptual 변화를 유지한다",
+
+  "abstract_word_guard": {
+    "rule": "'관리/정리/순서' 같은 추상어를 근거 없는 결론으로 쓰지 않는다",
+    "solution_naming": "해결책은 반드시 3개의 구체 이름으로 화면에 표시: 고정비 증가분 / 생활비 상한 / 남길 돈"
+  },
+
+  "story_qa_thresholds": {
+    "story_causality_score": 85,
+    "problem_solution_bridge_score": 85,
+    "solution_specificity_score": 85,
+    "visual_subject_relevance_score": 80,
+    "caption_readability_score": 85,
+    "hook_self_relevance_score": 85
+  },
+  "hard_fails": [
+    "문제-해결 사이 bridge 부재",
+    "해결책 추상어 종결",
+    "이미지-주제 직관 연결 실패",
+    "추상어 무설명 사용",
+    "3개를 정하라며 3개를 안 보여줌"
+  ],
+
+  "typography_contract_ref": "scripts/fixtures/bold_info_shorts_font_contract.v1.json (Pillow overlay, Noto Sans KR Black VF, Malgun/기본 weight fallback 금지)",
+  "tts_note": "TTS timing 없음 — visual-only 후보. TTS/mux/upload 금지 유지.",
+  "boundary": { "cost_usd": 0, "render_ready": false, "upload_ready": false }
+}

@@ -2989,3 +2989,31 @@ QA-only slice. 코드 변경 없음.
 - 목업 4장 생성: typography_mock_frames/mock_frame_01_hook·02_fact_card·03_mechanism·04_action.png — Black+외곽선 9~11px+4강조색, placeholder 숫자(00%)로 가짜 팩트 차단, 하단 고정 자막 없음.
 - 프로덕션 위험 기록: 현 영상 renderer(ffmpeg/libass)는 Black 재현 불가 — static 폰트 설치(Owner) 또는 renderer 개편 전 본 렌더 금지.
 - 검증: 신규 JSON 3종 parse PASS, mock PNG 4장 존재, forbidden 패턴 0건, env/secret 접근 0, 원본/보호 파일 미접근, commit/push 없음.
+
+
+## ChatGPT+Playwright visual-only 후보 v1 (`golden-sample-chatgpt-playwright-visual-only-candidate-v1` — 2026-07-03)
+
+**t1_lifestyle_inflation(월급이 올라도 통장이 그대로인 이유) visual-only mp4 후보 1개 완성 — PASS_CANDIDATE_FOR_OWNER_REVIEW. ChatGPT 이미지 4장(제출 4/4 하드캡 정확 준수, $0) + Pillow 오버레이 Black 타이포 실영상 반영. 이 주제는 테스트 선정이며 채널 영구 확정 아님.**
+
+- 신규 fixture: chatgpt_playwright_image_generation_contract.v1.json / chatgpt_playwright_image_prompts.t1_lifestyle_inflation.v1.json / golden_sample_t1_lifestyle_inflation_story_blueprint.v1.json (인과 7 beat + bridge + scene별 visual evidence 선정의)
+- 신규 runner: run-chatgpt-playwright-image-method-revalidation-v1.mjs — core 재사용, ALLOW_CHATGPT_IMAGE=1 gate, 제출 하드캡 4/자동 retry 없음/기존 파일 skip. **현행 ChatGPT UI 실측 진단으로 감지 로직 수정: 생성 이미지가 assistant role 요소 밖에 렌더링됨 → page-wide estuary 수집기로 교체** (기존 assistant-scope 셀렉터가 감지 실패 원인). 1.5s 폴링 + 진단 로그.
+- 이미지 4장: 전부 941x1672 png 실측(알려진 픽셀 예산 특성 정직 기록), md5 기록. 내용: 읽히는 글자/숫자 0, 외국 화폐/낡은 자료 느낌 0, 현대 한국 생활금융 맥락(월급봉투/얇은 지갑/영수증·카드 유출 흐름/3봉투 분할/한국 아파트 스카이라인).
+- 신규 renderer: render-golden-sample-chatgpt-playwright-visual-only-v1.mjs — md5 gate → Pillow RGBA 오버레이 24장(Noto Sans KR Black VF, 외곽선 9~11px, silent fallback 불가 구조) → ffmpeg 2-pass(zoompan drift 배경 + fade/slide 합성).
+- 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v1\golden_sample_t1_lifestyle_inflation_visual_only.mp4 — **1080x1920 h264 30fps 40.0s, audio stream 0** ✅, perceptual event 31(maxGap 2.9s), 프레임 20장 + render_manifest + visual_qa_report.
+- QA: native 70(941 실측 감점) / viewer_frame 90(업스케일 비인지) / korean_context 90 / modern_lifestyle 92 / story_evidence 88(img3 지폐 소프트닝 감점) / typography 93 / readability 90 / causality 88, hard fail 0. ChatGPT vs FLUX2: 한국 즉시성·fake text 통제 우세, native 해상도만 열세(viewer-frame 비인지).
+- 과정 이슈 기록: 초기 감지 실패로 order1 timeout + 회수 과정에서 사이드바 대화 스캔 수행(잘못 — Owner 지적, 이후 정상 흐름은 새 채팅만 사용), 진단 후 근본 수정. 총 제출 4회 유지(order1은 재제출 없이 회수).
+- 금지 미수행: OpenAI/FLUX2·BFL/Gemini/Midjourney/유료 API 0, TTS/mux/upload 0, salary_3days set 재사용 0, 보호 파일 미접근, commit/push 없음.
+
+
+## ChatGPT+Playwright visual-only revision v2 (`golden-sample-chatgpt-playwright-visual-only-revision-v2` — 2026-07-03)
+
+**Owner 피드백 3건(3번 이미지 어색/dwell 과다/저장 지연) 전부 반영한 revised 후보 완성 — PASS_CANDIDATE_FOR_OWNER_REVIEW. 7 beats/31.5s, 추가 제출 3/8 (stop early), $0.**
+
+- 신규: chatgpt_playwright_image_prompts...v2.json (신규 3장 프롬프트) / golden_sample_t1_lifestyle_inflation_story_blueprint.v2.json (7 beat + selected_image_set 6장 md5 + img_03 excluded 기록)
+- 신규: run-chatgpt-playwright-image-method-revalidation-v2.mjs — **감지/저장 속도 규칙 구현**: 제출 후 25s passive → 1.5~2s page-wide poll → 신규 후보 3회 연속 stable 시 즉시 저장(idle 대기 안 함) → 150s 진단+current-page recover(사이드바 스캔 금지) → 180s TIMEOUT_BLOCKED. latency 로그 필수화.
+- **latency 실측: 3장 전부 제출→저장 50~54초, 감지→저장 9~10초** (v1의 3~5분 지연 해소, delayed>30s 0건) — generation-latency-report.v1.json
+- 신규 이미지 3장 (941x1672, md5 기록): img_05 problem(빈 지갑 보는 지친 직장인), **img_06 illusion 교체(지폐 다발 vs 흩어진 지출 — REPLACED_AND_IMPROVED)**, img_07 result(정리함 3봉투 + 남산타워 스카이라인). 전부 읽히는 글자/외국 화폐감 0.
+- 신규: render-golden-sample-chatgpt-playwright-visual-only-v2.mjs — blueprint v2 md5 gate, 7 scene/24 overlay, Pillow Black 타이포 유지. 초기 렌더에서 s4/s7 하단 요소 y1632+ 침범 발견 → 상향 교정 후 재렌더 (전 텍스트 y<=1580).
+- 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v2\golden_sample_t1_lifestyle_inflation_visual_only_v2.mp4 — **1080x1920 h264 30fps 31.5s(30~34 내), audio 0** ✅, 이벤트 31(maxGap 2.2s), dwell 단일 look 최장 5.0s(v1 11~12s), 프레임 20장 + manifest + QA report v2.
+- QA: dwell 92 / viewer_frame 90 / korean_context 92 / story_evidence 91 / typography 93 / causality 90, hard fail 0. 구 img_03 미사용(excluded 기록).
+- 금지 미수행: 유료 API/추가 제출 8 초과/TTS/mux/upload/salary_3days 재사용/보호 파일 접근/commit/push 전부 0.
