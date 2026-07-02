@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "golden_sample_visual_only_render_manifest_t2_v1",
+  "taskId": "creative-v2-golden-sample-visual-only-render-v1",
+  "status": "approved_visual_only_render_candidate",
+  "rendererMode": "golden_sample_card_image_hybrid_visual_only_v1",
+  "createdAt": "2026-07-02",
+  "ownerApproval": "승인: Golden Sample visual-only render 후보 생성 — lock된 FLUX2 6-scene selected image set과 Reels-style dynamic caption contract를 적용해 card-image hybrid visual-only mp4를 생성/QA한다. 추가 이미지 생성/API 호출/TTS/mux/upload는 금지하고, render 산출물·프레임 스크린샷 QA·caption/card overlap QA 보고 후 중단.",
+  "topic": { "topicId": "t2-salary-gone-in-3-days", "label": "월급이 3일 만에 사라지는 이유" },
+  "fullDurationSec": 30.0,
+  "canvas": { "widthPx": 1080, "heightPx": 1920, "fps": 30 },
+
+  "ttsTimingSource": "provisional_visual_only",
+  "ttsTimingNote": "이 render는 TTS 이전 visual-only 후보다. 모든 card/caption 타이밍은 provisional visual phrase timing이며, 후속 TTS-first 단계에서 실제 word/phrase 타임스탬프로 반드시 교체(reflow)해야 한다. ttsSyncRules의 무발화 노출 규칙은 TTS mux 단계에서 재검증한다.",
+  "renderReady": false,
+  "uploadReady": false,
+  "visualOnly": true,
+
+  "contractRefs": {
+    "selectedImageSetLock": "scripts/fixtures/golden_sample_flux2_selected_image_set_lock.v1.json",
+    "dynamicCaptionContract": "scripts/fixtures/golden_sample_reels_dynamic_caption_contract.v1.json",
+    "cardMotionContract": "scripts/fixtures/golden_sample_card_motion_contract.v1.json",
+    "absoluteRules": "_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md"
+  },
+
+  "imageSource": {
+    "lockFixture": "scripts/fixtures/golden_sample_flux2_selected_image_set_lock.v1.json",
+    "verifyMd5BeforeRender": true,
+    "abortOnMd5Mismatch": true,
+    "note": "source 이미지는 lock manifest의 lockedImages 6장만 사용한다. render 전 MD5 대조, 불일치 시 즉시 abort. 941x1672 ChatGPT set/placeholder/stock/mock/upscale-as-fix 금지 유지."
+  },
+  "imageQualityGate": { "minWidthPx": 1080, "minHeightPx": 1920, "orientation": "vertical_9_16", "abortIfBelowGate": true, "allowUpscaleForFinal": false, "allowPlaceholder": false },
+
+  "provisionalNarration": [
+    { "phraseId": "p1_hook", "visualStartSec": 0.0, "visualEndSec": 3.0, "text": "월급이 들어왔는데, 3일이면 사라져요." },
+    { "phraseId": "p2_contrast", "visualStartSec": 3.0, "visualEndSec": 7.0, "text": "들어올 땐 한 번인데, 나갈 땐 순서대로 빠져나가요. 통장은 스쳐갈 뿐이죠." },
+    { "phraseId": "p3_fixed_costs", "visualStartSec": 7.0, "visualEndSec": 13.0, "text": "먼저 고정비. 월세, 통신비, 보험료와 할부가 제일 먼저 빠집니다." },
+    { "phraseId": "p4_number", "visualStartSec": 13.0, "visualEndSec": 17.5, "text": "그래서 월급의 체감 수명은, 하루, 이틀, 딱 3일이에요." },
+    { "phraseId": "p5_graph", "visualStartSec": 17.5, "visualEndSec": 22.0, "text": "잔액은 하루하루 이렇게 줄어들죠. 그리고 3일째…" },
+    { "phraseId": "p6_twist", "visualStartSec": 22.0, "visualEndSec": 26.0, "text": "문제는 금액이 아니라 순서입니다." },
+    { "phraseId": "p7_action", "visualStartSec": 26.0, "visualEndSec": 30.0, "text": "월급날, 나가는 순서 3개만 먼저 정하세요. 오늘요. 저장해두고 시작하세요." }
+  ],
+
+  "backgroundTreatment": {
+    "template": "dim_blur_background",
+    "dim": "eq=brightness=-0.12:contrast=0.94:saturation=1.02",
+    "blur": "gblur=sigma=2.5",
+    "note": "절대규칙의 dim/blur 배경 처리 + '질감이 살아 있어야 함'을 함께 만족: 강한 dim 대신 중간 dim + 저강도 blur. 가독성은 카드 자체의 translucent panel이 담당. 배경은 항상 살아있는 slow drift(≤3%/s) — perceptual event로 계산하지 않음."
+  },
+
+  "scenes": [
+    { "order": 1, "sceneRole": "scene_01_salary_arrival_hook", "startSec": 0.0, "endSec": 3.0, "motion": { "type": "punch_in", "zFrom": 1.0, "zPunch": 1.06, "punchFrames": 9, "zTo": 1.1 }, "safeAreaNote": "하단 1/3 봉투(주제), 상단 strip 블러 clean" },
+    { "order": 2, "sceneRole": "scene_02_money_leak_order", "startSec": 3.0, "endSec": 7.0, "motion": { "type": "zoom_in", "zFrom": 1.0, "zTo": 1.07 }, "safeAreaNote": "하단 1/3 어두운 테이블 clean" },
+    { "order": 3, "sceneRole": "scene_03_fixed_cost_stack", "startSec": 7.0, "endSec": 13.0, "motion": { "type": "zoom_out", "zFrom": 1.08, "zTo": 1.02 }, "safeAreaNote": "하단 1/3 지갑(주제)" },
+    { "order": 4, "sceneRole": "scene_04_subscriptions_auto_pay", "startSec": 13.0, "endSec": 17.5, "motion": { "type": "pan_left", "zConst": 1.05, "panPx": 120 }, "safeAreaNote": "탭 행렬 하단 1/3 통과(주제), 상단 strip clean" },
+    { "order": 5, "sceneRole": "scene_05_day3_empty_wallet", "startSec": 17.5, "endSec": 22.0, "motion": { "type": "zoom_in", "zFrom": 1.02, "zTo": 1.08 }, "safeAreaNote": "지갑 하단 중앙(주제), 상단 strip clean" },
+    { "order": 6, "sceneRole": "scene_06_cashflow_reset_action", "startSec": 22.0, "endSec": 30.0, "motion": { "type": "zoom_out", "zFrom": 1.1, "zTo": 1.02 }, "safeAreaNote": "하단 1/3 목재 clean, 상단 흐린 몸통 저대비" }
+  ],
+
+  "cardTimeline": [
+    {
+      "cardId": "card_hook", "cardTemplate": "hook_card", "phraseId": "p1_hook",
+      "timeStartSec": 0.0, "timeEndSec": 3.0, "sceneOrder": 1,
+      "entryMotion": "punch_zoom", "entryMs": 300,
+      "panel": { "x1": 90, "y1": 330, "x2": 990, "y2": 690, "accentBarLeft": true },
+      "lines": [
+        { "y": 392, "fs": 88, "runs": [ { "t": "월급이 ", "c": "white" }, { "t": "3일", "c": "amber", "fs": 108 }, { "t": " 만에", "c": "white" } ] },
+        { "y": 528, "fs": 88, "runs": [ { "t": "사라지는 이유", "c": "white" } ] }
+      ]
+    },
+    {
+      "cardId": "card_contrast", "cardTemplate": "contrast_card", "phraseId": "p2_contrast",
+      "timeStartSec": 3.0, "timeEndSec": 7.0, "sceneOrder": 2,
+      "entryMotion": "reveal_split", "entryMs": 320,
+      "splitPanels": [
+        { "x1": 140, "y1": 560, "x2": 940, "y2": 800, "revealFrom": "left", "revealAtSec": 3.05,
+          "line": { "y": 636, "fs": 72, "runs": [ { "t": "들어올 땐 ", "c": "white" }, { "t": "한 번", "c": "white", "bold": true } ] } },
+        { "x1": 140, "y1": 840, "x2": 940, "y2": 1080, "revealFrom": "right", "revealAtSec": 3.3,
+          "line": { "y": 916, "fs": 72, "runs": [ { "t": "나갈 땐 ", "c": "white" }, { "t": "순서대로", "c": "white" } ], "emphasisSwitch": { "atSec": 5.4, "runIndex": 1, "toColor": "amber", "pulse": true } } }
+      ],
+      "divider": { "x1": 240, "y1": 812, "x2": 840, "y2": 820, "sweepAtSec": 3.6, "sweepMs": 360 }
+    },
+    {
+      "cardId": "card_checklist", "cardTemplate": "checklist_card", "phraseId": "p3_fixed_costs",
+      "timeStartSec": 7.0, "timeEndSec": 13.0, "sceneOrder": 3,
+      "entryMotion": "header_pop", "entryMs": 260,
+      "header": { "x1": 150, "y1": 550, "x2": 930, "y2": 670, "line": { "y": 578, "fs": 62, "runs": [ { "t": "먼저 빠지는 ", "c": "white" }, { "t": "고정비", "c": "amber" } ] } },
+      "items": [
+        { "popAtSec": 8.0, "checkAtSec": 8.55, "row": { "x1": 150, "y1": 730, "x2": 930, "y2": 850 }, "text": "월세", "fs": 58 },
+        { "popAtSec": 9.7, "checkAtSec": 10.25, "row": { "x1": 150, "y1": 890, "x2": 930, "y2": 1010 }, "text": "통신비", "fs": 58 },
+        { "popAtSec": 11.4, "checkAtSec": 11.95, "row": { "x1": 150, "y1": 1050, "x2": 930, "y2": 1170 }, "text": "보험료·할부", "fs": 58 }
+      ]
+    },
+    {
+      "cardId": "card_number", "cardTemplate": "number_drop_card", "phraseId": "p4_number",
+      "timeStartSec": 13.0, "timeEndSec": 17.5, "sceneOrder": 4,
+      "entryMotion": "punch_zoom", "entryMs": 280,
+      "panel": { "x1": 190, "y1": 560, "x2": 890, "y2": 1030, "accentBarLeft": false },
+      "numberZone": { "cx": 540, "cy": 790, "fs": 200 },
+      "counts": [
+        { "atSec": 13.6, "text": "1일", "c": "dim" },
+        { "atSec": 14.4, "text": "2일", "c": "dim" },
+        { "atSec": 15.2, "text": "3일", "c": "amber", "finalPulse": true }
+      ],
+      "contextLine": { "y": 930, "fs": 56, "runs": [ { "t": "월급 체감 수명", "c": "white" } ] }
+    },
+    {
+      "cardId": "card_graph", "cardTemplate": "mini_graph_card", "phraseId": "p5_graph",
+      "timeStartSec": 17.5, "timeEndSec": 22.0, "sceneOrder": 5,
+      "entryMotion": "reveal_left", "entryMs": 320,
+      "panel": { "x1": 150, "y1": 560, "x2": 930, "y2": 1150, "accentBarLeft": false },
+      "title": { "y": 600, "fs": 60, "runs": [ { "t": "3일", "c": "amber" }, { "t": "이면 바닥", "c": "white" } ] },
+      "graph": {
+        "baselineY": 1060,
+        "bars": [
+          { "label": "1일", "cx": 375, "w": 150, "h": 300, "fillAtSec": 18.2, "c": "barWhite" },
+          { "label": "2일", "cx": 540, "w": 150, "h": 140, "fillAtSec": 18.9, "c": "barWhite" },
+          { "label": "3일", "cx": 705, "w": 150, "h": 34, "fillAtSec": 19.6, "c": "amber" }
+        ],
+        "labelY": 1072, "labelFs": 54, "fillMs": 500
+      }
+    },
+    {
+      "cardId": "card_twist", "cardTemplate": "twist_card", "phraseId": "p6_twist",
+      "timeStartSec": 22.0, "timeEndSec": 25.85, "sceneOrder": 6,
+      "entryMotion": "freeze_punch", "entryMs": 150,
+      "pauseBeforeImpact": { "fromSec": 21.6, "toSec": 22.0, "rule": "이 구간에는 caption/card 신규 모션 금지 (pause_before_impact)" },
+      "panel": { "x1": 120, "y1": 480, "x2": 960, "y2": 900, "accentBarLeft": false },
+      "lines": [
+        { "y": 556, "fs": 72, "runs": [ { "t": "문제는 금액이 아니라", "c": "white" } ] },
+        { "y": 676, "fs": 100, "runs": [ { "t": "순서입니다", "c": "white" } ], "emphasisSwitch": { "atSec": 23.5, "toColor": "amber", "pulse": true } }
+      ]
+    },
+    {
+      "cardId": "card_action", "cardTemplate": "final_action_card", "phraseId": "p7_action",
+      "timeStartSec": 25.85, "timeEndSec": 30.0, "sceneOrder": 6,
+      "entryMotion": "rise_reveal", "entryMs": 300,
+      "panel": { "x1": 120, "y1": 460, "x2": 960, "y2": 900, "accentBarLeft": true },
+      "lines": [
+        { "y": 540, "fs": 62, "runs": [ { "t": "월급날, 나가는 순서", "c": "white" } ] },
+        { "y": 656, "fs": 82, "runs": [ { "t": "3개만", "c": "white" }, { "t": " 먼저 정하기", "c": "white" } ], "keywordPulse": { "atSec": 28.6, "runIndex": 0, "toColor": "amber" } }
+      ],
+      "underline": { "x1": 330, "y1": 796, "x2": 750, "y2": 810, "sweepAtSec": 26.7, "sweepMs": 480 }
+    }
+  ],
+
+  "captionTimeline": [
+    { "captionId": "c01", "phraseId": "p1_hook", "text": "월급 들어왔다!", "emphasis": "월급", "startSec": 0.55, "endSec": 1.9, "posX": 540, "posY": 1150, "fs": 60, "motion": "pop" },
+    { "captionId": "c02", "phraseId": "p1_hook", "text": "근데 3일 뒤엔?", "emphasis": "3일", "startSec": 2.15, "endSec": 2.85, "posX": 540, "posY": 1150, "fs": 60, "motion": "pop" },
+    { "captionId": "c03", "phraseId": "p2_contrast", "text": "통장은 스쳐갈 뿐", "emphasis": null, "startSec": 4.9, "endSec": 6.2, "posX": 540, "posY": 1400, "fs": 60, "motion": "reveal" },
+    { "captionId": "c04", "phraseId": "p3_fixed_costs", "text": "이게 시작이에요", "emphasis": null, "startSec": 12.05, "endSec": 12.7, "posX": 540, "posY": 1205, "fs": 56, "motion": "pop" },
+    { "captionId": "c05", "phraseId": "p4_number", "text": "느낌 오시죠?", "emphasis": null, "startSec": 16.0, "endSec": 17.2, "posX": 540, "posY": 360, "fs": 60, "motion": "pop" },
+    { "captionId": "c06", "phraseId": "p5_graph", "text": "하루하루 순삭", "emphasis": "순삭", "startSec": 18.1, "endSec": 19.4, "posX": 540, "posY": 360, "fs": 60, "motion": "reveal" },
+    { "captionId": "c07", "phraseId": "p5_graph", "text": "그리고 3일째…", "emphasis": "3일째", "startSec": 20.9, "endSec": 21.6, "posX": 540, "posY": 360, "fs": 60, "motion": "pop" },
+    { "captionId": "c08", "phraseId": "p7_action", "text": "오늘, 지금요", "emphasis": null, "startSec": 27.0, "endSec": 28.2, "posX": 540, "posY": 1430, "fs": 60, "motion": "pop" },
+    { "captionId": "c09", "phraseId": "p7_action", "text": "저장하고 시작!", "emphasis": "저장", "startSec": 28.6, "endSec": 29.7, "posX": 540, "posY": 1430, "fs": 60, "motion": "pop" }
+  ],
+
+  "captionRules": {
+    "contract": "scripts/fixtures/golden_sample_reels_dynamic_caption_contract.v1.json",
+    "bottomFixedSubtitleBar": "금지",
+    "maxWordsPerBlock": 5,
+    "maxDwellSecRecommended": 1.6,
+    "noNewCaptionWithinCardImpactSec": 0.3,
+    "checklistException": "8.0~13.0s 체크리스트 pop 구간은 항목 텍스트가 caption 역할 겸임 — 동일 내용 중복 caption 없음",
+    "provisionalNote": "caption 타이밍은 provisional. TTS-first 단계에서 word timestamp로 재앵커 (진입 ±120ms, 강조 ±80ms)"
+  },
+
+  "perceptualEventPlan": {
+    "minPerceptualEventCountForPass": 14,
+    "maxInterEventGapSec": 3.0,
+    "minEventsPer5sWindow": 2,
+    "countingRule": "core events만 계산 (카드 진입/hard cut/체크 pop/숫자 변화/그래프 bar/강조 전환/underline sweep). caption pop과 배경 slow drift는 계산하지 않음(보수적).",
+    "coreEvents": [
+      { "atSec": 0.0, "type": "hook_card_entry" },
+      { "atSec": 0.0, "type": "bg_punch_zoom_impact" },
+      { "atSec": 3.0, "type": "hard_cut_scene2" },
+      { "atSec": 3.05, "type": "contrast_card_split_reveal_1" },
+      { "atSec": 3.3, "type": "contrast_card_split_reveal_2" },
+      { "atSec": 3.6, "type": "contrast_divider_sweep" },
+      { "atSec": 5.4, "type": "contrast_emphasis_switch" },
+      { "atSec": 7.0, "type": "hard_cut_scene3" },
+      { "atSec": 7.05, "type": "checklist_card_entry" },
+      { "atSec": 8.0, "type": "checklist_pop_1" },
+      { "atSec": 9.7, "type": "checklist_pop_2" },
+      { "atSec": 11.4, "type": "checklist_pop_3" },
+      { "atSec": 13.0, "type": "hard_cut_scene4" },
+      { "atSec": 13.0, "type": "number_card_entry" },
+      { "atSec": 13.6, "type": "number_count_1" },
+      { "atSec": 14.4, "type": "number_count_2" },
+      { "atSec": 15.2, "type": "number_count_final_pulse" },
+      { "atSec": 17.5, "type": "hard_cut_scene5" },
+      { "atSec": 17.55, "type": "graph_card_entry" },
+      { "atSec": 18.2, "type": "graph_bar_fill_1" },
+      { "atSec": 18.9, "type": "graph_bar_fill_2" },
+      { "atSec": 19.6, "type": "graph_bar_fill_3" },
+      { "atSec": 22.0, "type": "hard_cut_scene6" },
+      { "atSec": 22.0, "type": "twist_card_freeze_punch_entry" },
+      { "atSec": 23.5, "type": "twist_emphasis_switch" },
+      { "atSec": 25.85, "type": "action_card_entry" },
+      { "atSec": 26.7, "type": "action_underline_sweep" },
+      { "atSec": 28.6, "type": "action_keyword_pulse" }
+    ]
+  },
+
+  "typography": { "font": "Malgun Gothic", "minBodyFs": 54, "maxEmphasisWordsPerCard": 2, "checkMarkStrategy": "폰트 글리프 의존 없는 ASS vector polygon check mark (tofu 방지)" },
+  "safeFrame": { "xMin": 60, "xMax": 1020, "yMinCoreText": 180, "yMaxCoreText": 1580, "bottom15PermanentFailY": 1632 },
+
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\golden-sample-visual-only-render-v1",
+    "visualOnlyMp4": "golden_sample_t2_salary_3days_visual_only.mp4",
+    "renderManifestOut": "render_manifest.json",
+    "actualCardTimeline": "actual_card_timeline.json",
+    "dynamicCaptionTimeline": "dynamic_caption_timeline.json",
+    "visualQaReport": "visual_qa_report.json",
+    "frameTimesSec": [0, 2, 5, 10, 15, 20, 26, 29.9]
+  },
+
+  "boundary": {
+    "existingRendererPreserved": true,
+    "noImageGeneration": true,
+    "noExternalApi": true,
+    "noTts": true,
+    "noMux": true,
+    "noUpload": true,
+    "localFfmpegRenderOnly": true,
+    "sourceImagesReadOnly": true
+  }
+}

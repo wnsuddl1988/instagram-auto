@@ -2802,3 +2802,18 @@ QA-only slice. 코드 변경 없음.
 - `golden_sample_card_motion_contract.v1.json` 검사 결과: bottom-fixed subtitle 가정 없음(카드 레이어 전용) → 지시대로 무수정 유지. 새 caption 계약이 관계/우선순위 규칙으로 참조.
 - HANDOFF_NOW pointer 1줄 추가 (허용 범위 내).
 - 검증: 신규 JSON 2종 parse OK / lockedImages 6개 경로 실존+scene 1~6 정확 / MD5 실측 기록 / renderReady·uploadReady false / 금지 패턴(renderReady:true·uploadReady:true·ALLOW_·fetch(·하단 고정 허용 문구) 0건 / secret 노출 0건.
+
+
+## Golden Sample T2 Visual-Only Render v1 (`creative-v2-golden-sample-visual-only-render-v1` — 2026-07-02)
+
+**첫 실제 render milestone — lock된 FLUX2 6장 + card-image hybrid + Reels dynamic caption을 실 mp4로 검증. 외부 API/이미지 생성/TTS/mux/upload 0건.**
+
+- 신규: `scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1.json` — T2 30s 타임라인: 카드 7단계(hook/contrast/checklist/number/graph/twist/action, card motion contract 템플릿 준수) + dynamic caption 9개(phrase 단위 1~4어절, 하단 고정 없음) + provisional narration 7 phrase + core perceptual events 28개 명시. `ttsTimingSource: "provisional_visual_only"` — TTS-first 단계에서 word timing으로 교체 필수. renderReady=false/uploadReady=false/visualOnly=true.
+- 신규: `scripts/render-golden-sample-visual-only-v1.mjs` — 기존 renderer 무수정 보존, 신규 runner: (1) lock manifest MD5/크기/해상도 gate 선행(불일치 exit 11), (2) zoompan 배경 6 세그먼트(dim+저강도 blur, 질감 유지, hard cut), (3) ASS 벡터 패널/체크마크/clip 애니메이션 카드+caption 54 events, (4) ffprobe/프레임/타임라인/QA report 산출. C:\tmp 외부 write 금지 guard.
+- 산출물: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1\golden_sample_t2_salary_3days_visual_only.mp4` (6.63MB) + render_manifest/actual_card_timeline/dynamic_caption_timeline/visual_qa_report/image_gate_report + 프레임 8장(+진단 14장).
+- ffprobe: 1080x1920, h264, 30/1fps, 30.0s, audio stream 0 — PASS.
+- 머신 QA: coreEvents 28(min 14), maxGap 3.0s(≤3.0), 전 5s window ≥2, cardPresenceRatio 1.0, caption 기하 검사(카드 overlap 0/safe-frame 위반 0/하단 15% 점유 0/dwell>1.6s 0/5어절 초과 0) 전항 PASS.
+- Claude vision QA (프레임 18장): 7 카드 전 구간 PASS — 3일 amber 강조, 순서대로/순서입니다 emphasis switch 실측, 3-bar 그래프+amber, vector check tofu 없음, caption 전부 phrase 단위 가변 배치. 상세 `visual_qa_report.json#claudeVisionQa`.
+- 렌더 중 발견·수정 4건: libass 음수좌표 drawing offset(패널 절대좌표+clip 확장으로 교체) / t=0 hook 미표시(fade 제거) / 26.0s 카드 경계 공백(twist·action 경계 25.85s 이동) / 프레임 추출 input-seek ~1s 오차(output-seek 교체, mp4 자체 정상).
+- Owner 시각 QA 필요점: Malgun Gothic 기본체 타이포 톤, 패널 투명도/dim 강도, caption 리듬(provisional) — reference Reel 감성 대비 판단.
+- `_ai/HANDOFF_NOW.md`는 Codex 갱신분 그대로(scope 일치, 미수정).
