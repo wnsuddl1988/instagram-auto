@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "money_shorts_card_motion_contract_v1",
+  "taskId": "creative-v2-visual-quality-and-card-motion-contract-v1",
+  "status": "data_only_contract",
+  "createdAt": "2026-07-02",
+  "principle": "카드/모션은 이미지 부족을 메우는 땜빵이 아니라 영상의 주연 정보 레이어다. 이미지 = 감정/맥락 무대, 카드 = 정보 전달 주연, 모션 = TTS 리듬의 시각화. 셋 중 하나라도 싸구려면 전체가 싸구려로 보인다.",
+  "cardTemplates": [
+    {
+      "id": "hook_card",
+      "purpose": "첫 2초 시선 정지 — 시청자가 스크롤을 멈추게 하는 한 문장",
+      "layout": "화면 상중단 대형 1~2줄, 배경 이미지 위 dim scrim, 강조 단어 앰버",
+      "entry": "punch_zoom_in (이미지와 카드 동시 임팩트)",
+      "maxTextLines": 2,
+      "maxDurationSec": 2.5
+    },
+    {
+      "id": "contrast_card",
+      "purpose": "통념 vs 현실, before vs after 대비 제시",
+      "layout": "상/하 또는 좌/우 2분할, 대비 항목 각 1줄, 구분선 1개",
+      "entry": "slide_in_split (두 반쪽이 반대 방향에서 진입)",
+      "maxTextLines": 2,
+      "maxDurationSec": 4.0
+    },
+    {
+      "id": "checklist_card",
+      "purpose": "항목 나열 — 고정비/순서/할 일",
+      "layout": "좌측 체크박스 + 우측 짧은 항목명, 최대 4항목, 한 번에 전부 노출 금지",
+      "entry": "checklist_pop (TTS 항목 발화에 맞춰 1개씩 pop)",
+      "maxTextLines": 4,
+      "maxDurationSec": 6.0,
+      "note": "maxTextLines는 항목 수 상한. 항목당 1줄."
+    },
+    {
+      "id": "number_drop_card",
+      "purpose": "핵심 숫자 임팩트 (금액/일수/퍼센트)",
+      "layout": "초대형 숫자 중앙 + 단위/맥락 1줄 하단",
+      "entry": "number_count (count-down/up 후 최종값에서 정지 + micro-shake)",
+      "maxTextLines": 2,
+      "maxDurationSec": 3.0
+    },
+    {
+      "id": "mini_graph_card",
+      "purpose": "추세/비율의 시각 증거 — 막대 2~4개 또는 단일 곡선",
+      "layout": "카드 내 미니 차트 + 제목 1줄, 축 라벨 최소화(단어 1~2개)",
+      "entry": "graph_bar_fill (TTS 수치 언급에 맞춰 bar/line 성장)",
+      "maxTextLines": 2,
+      "maxDurationSec": 4.5,
+      "note": "가짜 정밀도 금지 — 실제 스크립트 수치와 일치하는 상대 비율만"
+    },
+    {
+      "id": "twist_card",
+      "purpose": "반전 제시 — '진짜 원인은 따로 있다'",
+      "layout": "직전 카드 시각 요소를 뒤집거나 가로지르는 1문장, 색 반전 허용",
+      "entry": "pause_before_impact (0.25~0.4s 정적 후 hard cut 진입)",
+      "maxTextLines": 2,
+      "maxDurationSec": 3.0
+    },
+    {
+      "id": "final_action_card",
+      "purpose": "마지막 행동 지시 1개 — 저장/실행 유도",
+      "layout": "중앙 대형 행동 문장 1줄 + 보조 1줄, 배경 이미지 slow zoom out",
+      "entry": "slide_in_bottom + 앰버 underline sweep",
+      "maxTextLines": 2,
+      "maxDurationSec": 4.0
+    }
+  ],
+  "typographyRules": {
+    "oneCardOneIdea": "1 card = 1 idea. 두 개의 주장/정보를 한 카드에 넣지 않는다.",
+    "maxTextLinesPerCard": 2,
+    "checklistException": "checklist_card만 항목 4줄까지 — 단 항목당 1줄, 순차 pop 필수",
+    "lineLength": "한국어 기준 1줄 6~14자 권장, 16자 초과 금지",
+    "emphasisWordCount": "카드당 강조 단어 1~2개 (색/굵기/크기 중 최대 2속성). 전부 강조 = 아무것도 강조 안 됨.",
+    "lineBreakRule": "의미 단위(구/절)로만 줄바꿈. 조사·어미에서 끊지 않는다.",
+    "fontDiscipline": "서체 최대 2종(본문/강조), 굵기 최대 3단계. 카드마다 다른 폰트 금지.",
+    "scaleHierarchy": "강조 텍스트는 본문 대비 1.4배 이상, 숫자 카드의 숫자는 본문 대비 2.5배 이상"
+  },
+  "motionRules": {
+    "vocabulary": {
+      "punch_zoom": "이미지+카드 동시 4~8% 스케일 임팩트, 0.25~0.35s, ease-out",
+      "slide_in": "카드가 한 방향에서 진입, 0.3~0.45s, cubic ease-out, 오버슈트 최대 2%",
+      "checklist_pop": "체크 항목 스케일 0.9→1.0 + 체크마크 스트로크, 항목당 0.2~0.3s",
+      "number_count": "count-down/up 0.6~1.2s 후 최종값 고정 + micro-shake 1회",
+      "graph_bar_fill": "bar/line이 0에서 목표값까지 0.5~0.9s 성장, TTS 수치 발화에 종료점 싱크",
+      "pause_before_impact": "임팩트 직전 0.25~0.4s 모든 모션 정지 — 반전/숫자 직전 필수"
+    },
+    "singleDominantMotion": "동시에 지배적 모션은 1개만. 카드 진입 중 배경 zoom 등 보조 모션은 저강도(≤2%/s)로 제한.",
+    "easingStandard": "모든 진입/강조는 ease-out 계열, 퇴장은 ease-in 계열. linear 이동 금지.",
+    "varietyRule": "같은 진입 모션을 3회 연속 사용 금지 — 인접 카드는 다른 vocabulary 사용.",
+    "backgroundLayer": "배경 이미지는 항상 살아있게 (slow zoom/pan ≤3%/s) — 단 이것은 perceptual event로 계산하지 않는다."
+  },
+  "ttsSyncRules": {
+    "entryAnchor": "카드 진입은 해당 phrase의 TTS 발화 시작에 ±120ms 이내로 앵커",
+    "emphasisAnchor": "강조 단어의 시각 강조(색/스케일)는 해당 단어 발화 순간에 싱크",
+    "exitRule": "카드 퇴장은 다음 phrase 시작 전 완료 — 다음 정보와 겹쳐 남지 않는다",
+    "silenceRule": "발화 없는 카드 단독 노출 1.5s 초과 금지 (pause_before_impact 예외, 0.4s 상한)",
+    "timelineSource": "TTS-first: 실제 오디오 duration/단어 타임스탬프가 카드 타임라인을 결정한다. 카드에 맞춰 오디오를 패딩하지 않는다."
+  },
+  "checklistTimingRules": {
+    "sequentialPop": "체크 항목은 TTS에서 해당 항목을 발화하는 순간에 1개씩 pop — 전 항목 동시 노출 금지",
+    "checkMarkMoment": "체크마크는 항목 발화 종료 직후 0~200ms에 스트로크",
+    "pacing": "항목 간 최소 간격 0.5s — TTS가 빠르면 항목 수를 줄인다(스크립트 조정), 모션을 뭉개지 않는다",
+    "eachPopIsEvent": "각 pop은 perceptual event 1건으로 계산"
+  },
+  "graphMotionRules": {
+    "fillSync": "bar/line 성장 종료점을 TTS 수치 발화 순간에 싱크",
+    "honestScale": "축/비율은 스크립트 수치와 일치하는 상대값만 — 과장 스케일/절단 축 금지",
+    "labelMinimal": "라벨은 단어 1~2개 + 숫자만. 문장 라벨 금지",
+    "noFakeCharts": "실측/스크립트 근거 없는 장식용 차트 금지 (absolute rules의 fake chart 금지와 동일선)"
+  },
+  "perceptualEventRules": {
+    "definition": "시청자가 '화면이 바뀌었다'고 지각하는 변화만 event로 계산한다.",
+    "counted": ["새 카드 진입", "체크 항목 pop 1건", "숫자 값 변화(count 종료 포함)", "그래프 bar/line 변화", "강조 전환(색/스케일 스위치)", "배경 이미지 교체/hard cut", "카드 퇴장과 동시에 드러나는 새 시각 정보"],
+    "notCounted": ["pan/zoom 단독", "배경 slow motion 지속", "동일 카드의 미세 떨림/luminance 변화"],
+    "minEventsPer30s": 14,
+    "minEventsNote": "기존 min 12에서 강화. 카드 7장 × (진입+강조/퇴장) + 체크 pop + 숫자/그래프 변화로 자연 달성 가능한 수준.",
+    "maxInterEventGapSec": 3.0,
+    "distributionRule": "이벤트가 앞부분에 몰리고 뒤가 비는 배치 금지 — 모든 5s 구간에 최소 2 events",
+    "sourceOfTruth": "blueprint.phases[].perceptualEvents가 canonical, manifest.cardTimeline[]에 미러, renderer는 소비만 (재계산 금지) — 기존 단일 소스 규칙 유지"
+  },
+  "firstTwoSecondsHookRules": {
+    "mandatory": ["big hook card (hook_card 템플릿)", "image context 동시 노출 (배경 이미지가 보이는 상태)", "impact motion (punch_zoom 또는 동급)"],
+    "minEventsInFirst2s": 2,
+    "forbidden": ["로고/인트로/타이틀 빌드업", "빈 배경 위 텍스트만", "2초 내 무변화 정지 화면"],
+    "goal": "0.5s 안에 '무슨 이야기인지'가 보이고, 2s 안에 '왜 계속 봐야 하는지'가 걸린다"
+  },
+  "readabilityGate": {
+    "canvas": "1080x1920",
+    "mobileSafeArea": "상단 180px(플랫폼 UI)·하단 340px(캡션/버튼)·좌우 각 60px 내 핵심 텍스트 배치 금지",
+    "minFontPx": { "body": 54, "emphasis": 90, "numberDropNumber": 160 },
+    "contrast": "텍스트 대비비 4.5:1 이상 — 배경 이미지가 밝거나 복잡한 영역에는 dim/blur backing plate 필수",
+    "noOverlap": "카드 텍스트가 이미지의 주제 오브젝트(지갑/손/폰 글로우)를 가리지 않는다 — benchmark 이미지의 safe-area 활용",
+    "cardCoverage": "카드가 화면의 60% 초과 점유 금지 — 배경 이미지 맥락이 항상 보여야 함"
+  },
+  "postRenderFrameAuditPlan": {
+    "captureTimesSec": [0, 2, 5, 10, 15, 20, 26, 30],
+    "perFrameChecks": [
+      "텍스트 가독성 (크기/대비/잘림)",
+      "mobile safe-area 침범 여부",
+      "카드-이미지 겹침/주제 오브젝트 가림",
+      "해당 시점 기대 카드/체크/숫자 상태가 blueprint와 일치하는지",
+      "배경 이미지 품질 열화(스케일 아티팩트) 여부"
+    ],
+    "audioChecks": ["silencedetect로 의도치 않은 무음 구간", "audio/video duration gap", "TTS 앵커 대비 카드 타이밍 오차 표본 확인"],
+    "gate": "프레임 audit fail 1건 이상 = 해당 render 후보 reject — ffprobe 통과는 품질 증거가 아니다"
+  },
+  "antiCheapPptRules": [
+    "기본 fade/wipe/dissolve 트랜지션 금지 — vocabulary에 정의된 모션만 사용",
+    "클립아트/이모지 나열/무지개 그라데이션/워드아트 금지",
+    "화면 전체를 덮는 텍스트 벽 금지 (카드 점유 60% 상한)",
+    "같은 진입 모션 3연속 금지, linear easing 금지",
+    "폰트 2종·강조 1~2단어·팔레트(warm-neutral+앰버) 고정 — 카드마다 스타일 변주 금지",
+    "정지 화면 + 자막만 3s 이상 지속 금지 (max inter-event gap 3.0s)",
+    "모든 모션은 TTS 앵커에 근거 — 오디오와 무관한 장식 모션 금지",
+    "그림자/외곽선 남용 금지 — backing plate는 dim/blur 스타일 1종으로 통일"
+  ],
+  "renderReadinessNote": "이 계약은 설계 문서다. renderReady=false / uploadReady=false 상태를 변경하지 않으며, render/TTS/mux/upload는 별도 Owner 승인 전 금지 유지.",
+  "boundary": { "dataOnly": true, "noGeneration": true, "noRender": true }
+}

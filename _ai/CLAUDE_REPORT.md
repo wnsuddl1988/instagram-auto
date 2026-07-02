@@ -2685,3 +2685,15 @@ QA-only slice. 코드 변경 없음.
 - renderReady=false (reason: selected_set_not_complete_without_explicit_reuse_or_coverage_approval), uploadReady=false 유지.
 - nextDecision(Owner/Codex): A. 5장 3-scene prototype 진행 / B. missing scene 재사용 명시 승인 / C. 이미지 source 재오픈.
 - 검증: pack·source summary·qa-report JSON parse 정상 / 후보 5장 파일 존재 + 디스크 이미지 5장 그대로 / secret 패턴 0건(신규 2파일) / 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / git status·diff --stat 확인.
+
+
+## Visual Quality & Card Motion Contract (`creative-v2-visual-quality-and-card-motion-contract-v1` — 2026-07-02)
+
+**성격: 계약 문서/fixture 작성만 — provider 호출·이미지 생성·render/TTS/mux/upload·.env.local 접근·commit/push 0건.**
+
+- 순서 고정: 1) OpenAI 3장 benchmark → 2) FLUX2 contract → 3) card/motion contract → 4) Owner 승인 후에만 FLUX2 소량 validation.
+- 신규: `scripts/fixtures/golden_sample_visual_quality_benchmark.v1.json` — benchmark 3장(scene-01A/02A/03A, traits 분해) + positive/negative signals + FLUX2 운영 후보(장점: native 4/4·질감·~20s·최저가 / 실패: no-text 반복 위반) + 강화 prompt 요건 6항(화면 기기 최소화, 오브젝트별 blank, 통화 묘사 금지, 1088x1936 고정) + gate/regenerate-or-skip 정책 + "자동 보장 아님 — gate+QA+regenerate/skip으로 균일성 강제" 명시.
+- 신규: `scripts/fixtures/golden_sample_card_motion_contract.v1.json` — 카드 템플릿 7종(hook/contrast/checklist/number_drop/mini_graph/twist/final_action), 타이포(1 card 1 idea, 최대 2줄, 강조 1~2단어), 모션 vocabulary 6종+easing 표준, TTS 싱크(진입 ±120ms/강조 단어 싱크/오디오가 타임라인 주인), perceptual event 강화(**min 14/30s** — 기존 12 강화, pan/zoom 단독 미계산, max gap 3.0s, 5s 구간당 2+), 첫 2s hook 필수 3요소, readability gate(safe-area/폰트/대비/점유 60% 상한), 프레임 audit(0/2/5/10/15/20/26/30s), anti-cheap-PPT 8항.
+- 신규: `_ai/GOLDEN_SAMPLE_VISUAL_QUALITY_AND_CARD_MOTION_CONTRACT_V1.md` (Owner/Codex 판단용) + HANDOFF_NOW pointer 1줄.
+- renderReady=false / uploadReady=false 무변경.
+- 검증: 신규 JSON 2종 parse 정상 / benchmark 이미지 3장 실존 / source summary·qa-report 4종 parse 정상 / 절대규칙 MD5 유지 / secret 값 노출 0건(MD 문서에 key 이름 1회 언급은 승인 항목 설명, 값 아님) / renderReady:true·ALLOW_*·fetch( 패턴 0건.

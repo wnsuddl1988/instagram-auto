@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "money_shorts_visual_quality_benchmark_v1",
+  "taskId": "creative-v2-visual-quality-and-card-motion-contract-v1",
+  "status": "data_only_contract",
+  "createdAt": "2026-07-02",
+  "ownerDirectiveSummary": "OpenAI 추가 결제 없음. Midjourney 제외(자동화 적용성 낮음). 운영 provider는 FLUX2 방향. 단 FLUX2를 바로 돌리지 않고, 먼저 OpenAI recommended 3장을 기준으로 이미지 품질 기준을 확정한다.",
+  "executionOrderLock": [
+    "1. Visual Quality Benchmark 고정 (이 파일)",
+    "2. FLUX2 Image Contract 고정 (이 파일 flux2 섹션)",
+    "3. Card-First Motion Design Contract 고정 (golden_sample_card_motion_contract.v1.json)",
+    "4. Next Step Gate — Owner 계약 검토/승인 후에만 FLUX2 소량 validation. render/TTS/mux/upload는 계속 금지."
+  ],
+  "benchmarkImages": [
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01A-salary_arrival_hook.png",
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "width": 1088, "height": 1936, "gate": "PASS_1080x1920_NATIVE",
+      "benchmarkTraits": "폰 화면 = 순수 추상 앰버 글로우(글리프 0), 손 해부학 정상, 하단 1/3 빈 목재 테이블(overlay 최상), 아침 주방 생활감, '방금 들어온 월급' 즉시 전달"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02A-money_leak_order.png",
+      "sceneRole": "scene_02_money_leak_order",
+      "width": 1088, "height": 1936, "gate": "PASS_1080x1920_NATIVE",
+      "benchmarkTraits": "지갑→빈 슬립 대각 흐름→무지 봉투 3개로 '정해진 순서로 새는 돈' 은유, 앰버 광선이 시선 경로 유도, 전 오브젝트 무문자"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-03A-fixed_cost_stack.png",
+      "sceneRole": "scene_03_fixed_cost_stack",
+      "width": 1088, "height": 1936, "gate": "PASS_1080x1920_NATIVE",
+      "benchmarkTraits": "백지 더미의 물리적 무게감 = 고정비, 무번호 카드(칩만), display off·무라벨 키 계산기, 야간 램프 톤"
+    }
+  ],
+  "positiveQualitySignals": [
+    "native 1088x1936 (1080x1920 gate를 업스케일/크롭 없이 통과)",
+    "no readable text/numbers/logos/watermark/UI chrome — 종이·화면·카드·계산기·달력 전부 blank/abstract",
+    "생활 금융 오브젝트의 현실감 — 지갑/슬립/봉투/계산기의 물성(가죽·종이 질감)과 조명 정합",
+    "주제 전달력 — 씬 역할별 시각 은유가 자막 없이 이미지만으로 읽힘",
+    "overlay safe-area — 하단 1/3과 상단 스트립이 카드/자막용으로 비교적 clean",
+    "따뜻한 editorial tone — warm-neutral 그레이드 + 단일 앰버 액센트, 스톡사진/광고 느낌 없음",
+    "손/오브젝트 왜곡 없음 — 손가락 수/형태 정상, 오브젝트 구조 붕괴 없음"
+  ],
+  "negativeFailureSignals": [
+    "가독 텍스트/숫자/로고/브랜드/워터마크/UI chrome 등장 (FLUX2 1차 테스트 실패 유형: 폰 화면 한글 유사 텍스트, '500' 지폐 숫자, 영수증 문자열, 봉투 인쇄+우표)",
+    "941x1672 등 gate 미달 해상도, 업스케일/크롭으로 보정한 흔적",
+    "generic 스톡사진 느낌, 웃는 직장인, 과포화 조명",
+    "손 왜곡/여분 손가락, 오브젝트 붕괴, 가짜 차트/그래프",
+    "중앙·하단 과밀로 overlay safe-area 침범",
+    "공포/절망 연출, luxury-flex 광고 톤"
+  ],
+  "uniformityEnforcementStatement": "이 benchmark는 앞으로 모든 이미지 품질을 자동 보장하지 않는다. 균일성은 gate(해상도/비율 자동 판정) + 인간/AI QA(무문자·전달력·safe-area 육안 판정) + regenerate/skip 정책으로 강제한다. gate·QA를 통과하지 못한 이미지는 절대 final로 넘기지 않는다.",
+  "flux2OperationalCandidate": {
+    "position": "운영(양산) 이미지 provider 후보 — Owner 방향 지시. 이 계약 검토/승인 전에는 호출 금지.",
+    "evidenceStrengths": [
+      "native 1088x1936 4/4 gate PASS (2026-07-02 소량 테스트 실측)",
+      "질감/사실감 최상급 (스팀·가죽·지폐 물성)",
+      "속도 ~20s/장 (OpenAI ~110s 대비 최속)",
+      "비용 MP-based from $0.03 — 추정 ~$0.06/장 수준으로 최저가 후보"
+    ],
+    "evidenceFailures": [
+      "no-text 지시 반복 위반: scene1 폰 화면 한글 유사 텍스트+UI chrome, scene3 '500' 지폐 숫자·영수증 문자열·봉투 인쇄+우표",
+      "요청 프롬프트에 no-text 금지가 있었음에도 위반 — OpenAI 대비 텍스트 억제 순응도가 낮음이 확인됨"
+    ],
+    "sourceEvidence": {
+      "fluxSummary": "output/money-shorts/golden-sample-image-source-test-v1/summary-flux.json",
+      "openaiFullSummary": "output/money-shorts/openai-full-selected-image-candidates-v1/summary-openai-full-candidates.json",
+      "openaiQaReport": "output/money-shorts/openai-full-selected-image-candidates-v1/qa-report-openai-full-candidates.v1.json",
+      "chatgptControlSummary": "output/money-shorts/golden-sample-image-source-test-v1/summary-chatgpt.json"
+    }
+  },
+  "flux2PromptRequirements": [
+    "OpenAI benchmark 3장의 positiveQualitySignals를 기준 스타일 앵커로 사용한다 (warm-neutral editorial + 단일 앰버 액센트 + 생활 금융 오브젝트 + face-minimized).",
+    "ABSOLUTE NO-TEXT RULE을 OpenAI full-candidates fixture보다 더 강하게 반복 배치한다: 프롬프트 서두와 말미 이중 명시 + 오브젝트별 개별 명시(폰 화면='pure abstract glow only, zero glyphs', 종이='completely blank', 지폐 금지→'plain blank paper slips'로 대체, 계산기='display switched off, unlabeled keys', 달력='empty grid, no numerals', 봉투='plain unmarked').",
+    "화면이 있는 기기(폰/태블릿)는 가능하면 등장을 줄이고, 등장 시 반드시 'dark screen with a single soft abstract glow' 형태로 제한한다 — FLUX2 위반이 화면·인쇄물에서 집중 발생했기 때문.",
+    "실제 통화(지폐/동전 각인) 묘사 금지 — blank slips/plain coins로 대체.",
+    "overlay safe-area 지시(lower third + top strip clean) 유지.",
+    "width=1088, height=1936 고정. 다른 해상도/비율 fallback 금지."
+  ],
+  "imageGate": {
+    "resolution": "width>=1080 AND height>=1920, native only (upscale/crop-as-fix 금지)",
+    "aspect": "|w/h - 0.5625| <= 0.01",
+    "noTextQa": "가독 텍스트/숫자/로고/워터마크/UI chrome 0건 — 자동 판정이 아니라 육안/AI QA 항목. 1건이라도 발견 시 해당 이미지 fail.",
+    "subjectDeliveryQa": "씬 역할 은유가 이미지만으로 읽히는지 육안/AI QA.",
+    "safeAreaQa": "하단 1/3·상단 스트립 과밀 여부 육안/AI QA.",
+    "handObjectQa": "손/오브젝트 왜곡 0건."
+  },
+  "regenerateOrSkipPolicy": "gate 또는 QA fail 이미지가 나오면: (1) 같은 씬 프롬프트를 no-text/구도 지시 강화로 수정해 재생성(승인된 장수 상한 내), (2) 상한 소진 또는 반복 fail 시 해당 소재를 skip하고 다음 소재로 이동. 어떤 경우에도 placeholder/stock/941x1672 재사용/업스케일로 메우지 않는다.",
+  "noGuaranteeStatement": "이 문서의 어떤 항목도 provider가 앞으로 생성할 이미지의 품질을 자동 보장한다고 해석할 수 없다. 보장 수단은 오직 gate + QA + regenerate/skip 정책의 반복 적용이다.",
+  "nextValidationGate": {
+    "next": "Owner가 이 계약(benchmark + FLUX2 contract + card/motion contract)을 검토·승인한 뒤에만 FLUX2 소량 validation(장수/비용 상한 별도 승인) 진행.",
+    "forbiddenUntilSeparateApproval": ["FLUX2 호출", "OpenAI 호출", "ChatGPT/Playwright 재생성", "render", "TTS", "mux", "upload"],
+    "renderReadinessNote": "renderReady=false, uploadReady=false 상태를 변경하지 않는다."
+  },
+  "boundary": { "dataOnly": true, "noGeneration": true, "noRender": true }
+}
