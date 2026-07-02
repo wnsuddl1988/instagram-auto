@@ -2727,3 +2727,21 @@ QA-only slice. 코드 변경 없음.
 - 신규: `_ai/GOLDEN_SAMPLE_FLUX2_OBJECT_WHITELIST_CONTRACT_V2.md` (Owner/Codex 판단용) + HANDOFF_NOW pointer/current slice 갱신.
 - 다음 검증 추천(승인 아님): 최대 4장/$1 이하 — scene 1+3+5+4. scene 2 제외(PASS 이미지 보유), scene 6 후순위. 성공 기준 no-text+whitelist 4/4 목표(최소 3/4+전달력).
 - 검증: contract v2 parse+구조 체크 OK(필수 키 9/9, 신규 프롬프트 5/5 whitelist-head-first+banned 8종+tail) / 절대규칙 MD5 유지 / secret 값·renderReady:true·uploadReady:true·ALLOW_*·fetch( 패턴 0건 / renderReady=false·uploadReady=false 유지.
+
+
+## FLUX2 Object-Whitelist Validation v2 (`creative-v2-flux2-object-whitelist-validation-v2` — 2026-07-02)
+
+**Owner 승인 범위 내 실행: FLUX.2 [pro] create call 정확히 4회(scene 1/3/4/5), 비용 ~$0.25 추정(상한 $1 내), scene 2 미생성(v1 PASS 보유), render/TTS/mux/upload 없음.**
+
+- 신규: `scripts/run-flux2-object-whitelist-validation-v2.mjs` — contract v2 fixture의 finalPromptV2를 source of truth로 소비(null이면 사전 abort), FLUX2-only 단일 endpoint, create hard cap 4, endpoint/size/provider fallback 전무, poll 분리 집계(28회), BFL_API_KEY만 파싱(값 미출력).
+- 결과: 4/4 생성, 4/4 native 1088x1936 gate PASS (~17-22s/장).
+- **육안 QA (엄격 적용): banned 오브젝트 등장 0건, v1 위반 클래스(시계/계산기/달력/동전/머그) 재발 0건 — whitelist 전략 실증 성공.**
+  - scene 1 REGENERATE_NEEDED(minor) — 봉투→slips 월급 도착 은유 성립, 지갑 각인 1건만 잔존
+  - scene 3 **PASS** — 끈으로 묶인 blank 다발 탑 vs 납작 지갑, 4장 중 최고 전달력 (램프 갓 프레임 진입은 non-text-prone warning)
+  - scene 4 **PASS** — 화면 없이 blank 탭 등간격 행렬로 반복 유출 은유 성립 (특정성은 카드 담당, 설계 의도대로)
+  - scene 5 REGENERATE_NEEDED(minor) — 달력/동전 제거 성공·빈 슬롯 개선, 지갑 emboss 2건 + 지폐칸 공허 강조 약함
+- v1 대비: 치명 위반 ≈9건 → minor 각인 3건(지갑 단일 클래스, contract v2 residualRisks 사전 예고 항목)으로 수렴. strict clean 1/4→2/4. 추상화 우려는 미발생(전달력 PASS 3 + PARTIAL 1).
+- clean 후보 풀: scene 2(v1 PASS)+3+4 = 6씬 중 3씬 확보.
+- 성공 기준 대비 정직 평가: 목표 4/4·최소선 3/4 엄격 미달(2/4). 단 잔여 위반이 좁은 수정 가능 클래스라 **채택 판단은 v2.1 지갑-emboss 패치 재검증(권장 scene 1/5 2장, ~$0.13, 별도 승인) 결과로 내리는 것을 권장**.
+- 산출: `output/money-shorts/flux2-object-whitelist-validation-v2/` — 이미지 4장 + summary + qa-report (검증: parse OK, createCalls 4/4, 해상도 실측, secret 노출 0건).
+- renderReady=false / uploadReady=false 유지, commit/push 없음.
