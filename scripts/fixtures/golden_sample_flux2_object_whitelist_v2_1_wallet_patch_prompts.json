@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "money_shorts_flux2_object_whitelist_v2_1_wallet_patch_prompts",
+  "taskId": "creative-v2-flux2-object-whitelist-v2-1-wallet-emboss-validation",
+  "status": "data_only_prompt_patch",
+  "createdAt": "2026-07-02",
+  "baseContract": "scripts/fixtures/golden_sample_flux2_object_whitelist_contract.v2.json",
+  "evidenceRef": "output/money-shorts/flux2-object-whitelist-validation-v2/qa-report-flux2-object-whitelist-validation-v2.json",
+  "ownerApproval": "FLUX2 object-whitelist v2.1 지갑 emboss 패치 재검증 승인 — FLUX.2 [pro] 최대 2장, 비용 $0.50 상한, BFL_API_KEY 사용 허용, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단",
+
+  "patchRationale": {
+    "v2ResidualProblem": "v2 검증에서 banned 오브젝트 0건·v1 위반 클래스 재발 0건 달성. 잔여 위반은 지갑 가죽 각인/스탬프 단일 클래스 3건 (scene 1 상단 각인 1건, scene 5 플랩 모서리 + 슬롯 가장자리 2건)",
+    "causalFindings": [
+      "scene 5 v2 프롬프트의 'Worn leather grain' 문구가 가죽 표면 디테일(마모/각인)을 초대한 혐의 — v2.1에서 제거하고 'smooth matte featureless leather with no surface detail'로 교체",
+      "v2의 'smooth unstamped' 인라인 언급만으로는 부족 — v2.1은 전용 WALLET RULE 블록을 whitelist head 직후에 신설하고 인라인+tail 3중 배치",
+      "scene 5 v2에서 지갑이 책처럼 서 있어 지폐칸 공허가 정면으로 안 보임 — 'tilted up strongly toward the camera, viewed from slightly above' + 'hollow empty interior is the single subject' 재지시",
+      "scene 1 지갑은 원래 조연 — soft-focus 프레임 가장자리로 강등해 각인 렌더 확률 자체를 낮춤 (defocus 영역에는 미세 디테일이 렌더되지 않는 경향)"
+    ],
+    "unchangedByDesign": "no-text 성공 요인(whitelist head/banned 내장/blank tail 구조)과 scene 1 hook 코어(봉투 개봉+slips+아침광), scene 5 앰버 탭 3개는 v2 검증 성공분 그대로 유지 — 최소 diff로 인과 귀속을 명확히 함"
+  },
+
+  "walletRuleBlock": "WALLET RULE, EQUAL PRIORITY: the wallet is completely plain featureless matte leather on every visible surface, inside and outside — absolutely no embossing, no stamped maker's mark, no seam text, no decorative mark, no tiny leather stamp, no impressed symbol, no logo, no monogram; every leather panel, flap corner, slot edge and lining is a perfectly anonymous blank surface.",
+
+  "apiParams": { "width": 1088, "height": 1936, "endpoint": "https://api.bfl.ai/v1/flux-2-pro", "fallback": "none" },
+
+  "scenePatches": [
+    {
+      "order": 1,
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "v2Findings": "hook 전달력 PASS (봉투→slips 월급 도착 은유 성립). 유일 위반 = 지갑 상단 가죽면 희미한 각인 1건 (minor)",
+      "patchChanges": [
+        "WALLET RULE 블록을 whitelist head 직후 삽입",
+        "지갑을 sharp focus 조연에서 soft-defocus 프레임 가장자리 소품으로 강등 — 봉투/slips가 명시적 hero",
+        "인라인 지갑 서술을 'completely plain featureless matte leather'로 교체",
+        "tail에 'no embossed or impressed marks' 추가"
+      ],
+      "mustKeep": "open envelope + fresh blank slips + empty plain wallet 구성 유지 (handoff 요구). hook 전달력(월급 도착 안도) 유지 필수",
+      "finalPromptV2_1": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: one plain unmarked paper envelope, fresh blank white paper slips, one thin open leather wallet, a warm wooden kitchen table, morning window light, one bare hand. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. WALLET RULE, EQUAL PRIORITY: the wallet is completely plain featureless matte leather on every visible surface — absolutely no embossing, no stamped maker's mark, no seam text, no decorative mark, no tiny leather stamp, no impressed symbol, no logo, no monogram; a perfectly anonymous blank leather surface. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning window light. A bare hand lifts a small sheaf of crisp, fresh blank white paper slips out of a just-opened plain unmarked envelope, its flap still raised; a single warm amber beam of morning light catches the clean edges of the fresh slips so they glow softly — money that has just arrived. The just-opened envelope and the glowing fresh slips are the heroes of the frame, holding the sharp focal plane. A thin open wallet of completely plain featureless matte leather, its interior clearly empty, rests further away near the edge of the frame in soft defocus, quietly waiting to receive them — small, secondary and outside the sharp focal plane. Mood: one short breath of relief on payday morning, quiet and hopeful. Shallow depth of field, warm window light, strong paper and wood textures. ALL SURFACES BLANK: every paper, slip and envelope is completely blank; the wallet is completely plain featureless matte leather with absolutely no embossing, no stamped maker's mark, no tiny leather stamp and no impressed symbol anywhere on it; the hand is bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no embossed or impressed marks, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 5,
+      "sceneRole": "scene_05_day3_empty_wallet",
+      "v2Findings": "달력/동전 제거 성공, 빈 카드슬롯 개선. 위반 = 플랩 하단 모서리 소형 각인 + 내부 슬롯 가장자리 스탬프 유사 마크 2건. 지갑이 책처럼 서 있어 지폐칸 공허 정면 강조 약함 (delivery PARTIAL_PASS)",
+      "patchChanges": [
+        "WALLET RULE 블록 삽입 — v2 각인 실측 위치(flap corner, slot edge, lining)를 명시적으로 열거 금지",
+        "v2의 마크 초대 혐의 문구 'Worn leather grain' 제거 → 'smooth matte featureless leather with no surface detail' 교체",
+        "'tilted up strongly toward the camera, viewed from slightly above' + 'hollow bill compartment clearly visible' + 'the hollow empty interior is the single subject' 재지시",
+        "tail에 inside-and-outside 각인 금지 + 내부 완전 공허 재확인 추가"
+      ],
+      "mustKeep": "three amber tabs(=3일) + empty wallet interior 구성 유지. 달력/동전/숫자 금지 유지",
+      "finalPromptV2_1": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: three small plain amber paper tabs, one open leather wallet, a warm wood desk. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. WALLET RULE, EQUAL PRIORITY: the wallet is completely plain featureless matte leather on every visible surface, inside and outside — absolutely no embossing, no stamped maker's mark, no seam text, no decorative mark, no tiny leather stamp, no impressed symbol, no logo, no monogram; every leather panel, flap corner, slot edge and lining is a perfectly anonymous blank surface. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: objects and space only. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A quiet desk corner in soft daylight. Three small plain amber paper tabs lie in one neat, deliberate row on the warm wood — three simple unmarked markers, reading purely as three days passed. Below them, the open wallet of completely plain featureless matte leather is tilted up strongly toward the camera, viewed from slightly above, so the viewer looks straight down into its interior: the bill compartment gapes wide open and completely hollow — nothing but empty dark space inside it — and the card slots hang slack and visibly empty. The hollow empty interior of the wallet is the single subject of this image; that gaping emptiness fills the sharp focal plane in the lower-middle of the frame. The contrast between the three amber tabs above and the hollow wallet below tells the whole story without a single word. Smooth matte leather with no surface detail, soft paper texture, warm-neutral grade, gentle daylight. No despair melodrama, no horror lighting. ALL SURFACES BLANK: every tab is completely blank plain amber paper; the wallet is completely plain featureless matte leather with absolutely no embossing, no stamped maker's mark, no tiny leather stamp and no impressed symbol anywhere, outside or inside, and there is nothing inside it at all. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no embossed or impressed marks, no printed lines — anywhere in the frame."
+    }
+  ],
+
+  "qaGateV2_1": {
+    "inherits": "qaGateV2 전 항목 (contract v2) — 해상도/no-text/whitelist compliance/subject delivery/safe-area/hand-object",
+    "walletEmbossQa": "지갑 전 표면(외부 패널·플랩 모서리·슬롯 가장자리·안감) 확대 확인 — 각인/스탬프/임프레스 마크 1건이라도 발견 시 해당 이미지 fail",
+    "scene1SuccessCriteria": "no-text + no-emboss + whitelist PASS + hook 전달력(월급 도착 안도) 유지 — hook 필수 씬이라 PASS 강하게 요구",
+    "scene5SuccessCriteria": "no-emboss PASS + 빈 지갑 내부 공허 subject delivery 최소 PARTIAL_PASS 이상 — no-text만 잡고 전달력이 죽으면 실패로 기록"
+  },
+
+  "forbidden": ["scene 2/3/4/6 생성", "3장 이상 생성", "OpenAI/ChatGPT/Gemini/Midjourney 호출", "render/TTS/mux/upload", "941x1672 재사용", "placeholder/stock/upscale/crop-as-fix", "endpoint/size/provider fallback"],
+  "renderReadinessNote": "이 fixture는 프롬프트 패치 데이터다. renderReady=false / uploadReady=false 상태를 변경하지 않는다.",
+  "boundary": { "dataOnly": true, "noRender": true }
+}

@@ -2745,3 +2745,18 @@ QA-only slice. 코드 변경 없음.
 - 성공 기준 대비 정직 평가: 목표 4/4·최소선 3/4 엄격 미달(2/4). 단 잔여 위반이 좁은 수정 가능 클래스라 **채택 판단은 v2.1 지갑-emboss 패치 재검증(권장 scene 1/5 2장, ~$0.13, 별도 승인) 결과로 내리는 것을 권장**.
 - 산출: `output/money-shorts/flux2-object-whitelist-validation-v2/` — 이미지 4장 + summary + qa-report (검증: parse OK, createCalls 4/4, 해상도 실측, secret 노출 0건).
 - renderReady=false / uploadReady=false 유지, commit/push 없음.
+
+
+## FLUX2 Object-Whitelist v2.1 Wallet-Emboss Patch Validation (`creative-v2-flux2-object-whitelist-v2-1-wallet-emboss-validation` — 2026-07-02)
+
+**Owner 승인 범위 내 실행: FLUX.2 [pro] create call 정확히 2회(scene 1/5), 비용 ~$0.13 추정(상한 $0.50 내), scene 2/3/4/6 생성 금지 준수, render/TTS/mux/upload 없음.**
+
+- 신규: `scripts/fixtures/golden_sample_flux2_object_whitelist_v2_1_wallet_patch_prompts.json` — v2 실측 기반 인과 패치: WALLET RULE 블록 신설(7종 금지 문구, head 직후+inline+tail 3중 배치), scene 5의 마크 초대 혐의 문구 'Worn leather grain' 제거, scene 5 카메라 틸트/공허 정면 재지시, scene 1 지갑 soft-focus 강등. no-text 성공 요인과 hook 코어는 v2 검증분 유지(최소 diff 인과 귀속).
+- 신규: `scripts/run-flux2-object-whitelist-v2-1-wallet-patch-validation.mjs` — hard cap 2, scene 2/3/4/6 코드 수준 차단, 단일 endpoint/size 고정, BFL_API_KEY만 파싱(값 미출력), poll 분리 집계(17회).
+- 결과: 2/2 생성, 2/2 native 1088x1936 gate PASS.
+- **육안 QA (엄격): scene 5 PASS — v2 각인 2건 완전 소멸 + delivery PARTIAL→PASS (지폐칸 공허 정면 성립). scene 1 REGENERATE_NEEDED — defocus 지갑 전면에 판독 불가 임프레션 1건 잔존 (v2 대비 심각도 완화, 클래스 소멸 실패).**
+- **핵심 인과 확정: 지갑 '외부 전면 패널'이 보이면 각인 발생(실측 3/3), '내부만 보이는' 구도면 클린(1/1) — 브랜드 스탬프는 문구로 못 지우고 해당 표면을 프레임에서 빼야 함 (surface-whitelist 세분화).**
+- clean 후보 풀: scene 2(v1)+3(v2)+4(v2)+**5(v2.1 신규)** = 6씬 중 4씬. 잔여: scene 1(구도 변경 재시도), scene 6(후순위).
+- 다음 추천(별도 승인 필요): A안 scene 1 v2.2 구도 변경 1장 재검증(~$0.07, 내부 시점/부분 프레임) / B안 지갑 제거(구성 변경 Owner 확인) / C안 현 4씬으로 진행 + scene 1 조건부 수용 판단.
+- 산출: `output/money-shorts/flux2-object-whitelist-v2-1-wallet-patch-validation/` — 이미지 2장 + summary + qa-report (parse OK, createCalls 2/2, 해상도 실측, secret 노출 0건).
+- renderReady=false / uploadReady=false 유지, commit/push 없음.
