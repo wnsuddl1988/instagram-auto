@@ -2926,3 +2926,20 @@ QA-only slice. 코드 변경 없음.
 - selected image set lock: 미실행 (범위 외 + BLOCKED이므로 보류 일치). renderReady/uploadReady false.
 - 검증: node --check PASS, fixture/summary/qa-report JSON parse PASS, createCalls≤2 확인, 생성물 1088x1936 gate PASS, 프레임 6장 확인, secret 값/타 provider 문자열 스캔 0건, 보호 파일 미접근, git status 신규 2파일+output만.
 - 금지 미수행: s1~s5 접근 0, 타 provider 호출 0, render/TTS/mux/upload 0, env/secret 수정 0, lock 문서 0, commit/push 없음.
+
+
+## Golden Sample v2 s6 card occlusion reprobe (`creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1` — 2026-07-02)
+
+**s6_P_A의 visible '2'를 save 카드 재배치로 가리는 비용 0 reprobe — 최종 verdict: `PASS_BY_CARD_OCCLUSION_PROBE` (권장 variant: shiftV1). 외부 API/이미지 생성/secret 접근 0.**
+
+- 신규: `scripts/fixtures/golden_sample_v2_s6_card_occlusion_reprobe_manifest.v1.json` — s6_P_A 무결성 기준(bytes/MD5) + 직전 probe 동일 배경 체인 + 카드 3 variant(baseline y1320~1480 / shiftV1 y1080~1250 / shiftV2 y1096~1236) + occlusion zoom 존.
+- 신규: `scripts/run-golden-sample-v2-s6-card-occlusion-reprobe-v1.mjs` — read-only 무결성 게이트(MD5까지, 불일치 exit 10) + 체인 parity 사전 검증 + 프레임 7장(background 1 + overlay 3 + zoom 3). 네트워크/env/secret 코드 자체 없음.
+- Output: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/` (프레임 7 + ass 3 + run-summary + qa-report).
+- QA 결과:
+  - baseline = NOT_COVERED — 직전 PATCH_STILL_NEEDED 상태 동일 조건 재현 (대조군 성립).
+  - **shiftV1 = COVERED_NOT_READABLE** — 패널(76% 불투명)+카드 텍스트 이중 가림, 2x zoom에서도 숫자 식별 불가, sliver 없음. story evidence(3봉투/지갑+접힌 다발/밝은 톤) 유지, 카드 점유 약 8%로 이미지 주연 원칙 훼손 아님.
+  - shiftV2 = COVERED_NOT_READABLE — 단 상단 마진 4px로 entry 애니메이션/좌표 오차 시 sliver 위험 → 비권장.
+- render 조건 기록 (qa-report): shiftV1 좌표 render manifest 반영, s6 카드 stage cut 직후 즉시 진입(≤0.3s), 세로 이동 entry 금지(fade/scale-in 권장), 마지막 hold 유지.
+- selected image set lock: 미실행 (범위 외 — PASS 확인 후 lock은 Codex/Owner 다음 판단). renderReady/uploadReady false.
+- 검증: node --check PASS, manifest/run-summary/qa-report JSON parse PASS, 프레임 7장 확인, forbidden pattern 스캔 0건, 원본 read-only(MD5 일치), 보호 파일 미접근.
+- 금지 미수행: 외부 API/이미지 생성/TTS/mux/render 0, s1~s5 접근 0, env/secret 0, lock 0, commit/push 없음.

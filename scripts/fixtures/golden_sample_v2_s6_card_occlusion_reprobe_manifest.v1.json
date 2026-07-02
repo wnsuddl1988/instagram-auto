@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "golden_sample_v2_s6_card_occlusion_reprobe_manifest_v1",
+  "taskId": "creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1",
+  "createdAt": "2026-07-02",
+  "purpose": "s6_P_A(PATCH_STILL_NEEDED)의 visible '2' 영역(x430~700, y1100~1230)을 final/save 카드 재배치로 가릴 수 있는지 비용 0으로 재probe한다. 외부 API/이미지 생성/secret 없음. selected image set lock/full render 없음.",
+  "canvas": { "widthPx": 1080, "heightPx": 1920 },
+
+  "sourceIntegrity": {
+    "readOnlyRule": "원본 이미지는 ffmpeg 입력으로만 사용. 수정/이동/복사 금지. 실존/해상도/파일크기/MD5 불일치 시 abort(exit 10).",
+    "expected": {
+      "sceneId": "s6_result_clear_after",
+      "candidateId": "s6_P_A",
+      "image": "output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/gsv2-s6_result_clear_after-s6_P_A.jpg",
+      "width": 1088,
+      "height": 1936,
+      "fileSizeBytes": 515012,
+      "md5": "A5B5A602828E1F9C9829AC6A8F5A1A83"
+    }
+  },
+
+  "denominationRiskZone": {
+    "note": "직전 patch QA 실측 — 접힌 최상단 지폐 면의 장식체 '2'(자주색) + 주황 로제트. 숫자 글리프는 좌측(x430~560 부근), 로제트는 우측(문양이라 위험 아님). Codex 승인 커버 대상 zone은 아래 전체.",
+    "x1": 430, "y1": 1100, "x2": 700, "y2": 1230
+  },
+
+  "backgroundTreatment": {
+    "note": "직전 denomination probe와 동일 체인 — 비교성 유지",
+    "scaleCrop": "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+    "dim": "eq=brightness=-0.12:contrast=0.94:saturation=1.02",
+    "blur": "gblur=sigma=2.5",
+    "driftZoomMid": 1.06,
+    "expectedChain": "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,eq=brightness=-0.12:contrast=0.94:saturation=1.02,gblur=sigma=2.5,scale=1144:2036,crop=1080:1920,format=rgb24"
+  },
+
+  "overlayStyle": {
+    "font": "Malgun Gothic",
+    "captionOutline": 6,
+    "captionShadow": 2.6,
+    "cardTextOutline": 4,
+    "panelFillAssBgr": "&H0F1417",
+    "panelAlpha": "&H3C&",
+    "colorsAssBgr": { "white": "&H00E8EFF2", "red": "&H002B2BE8", "yellow": "&H0033C5FF", "green": "&H0059C734", "amber": "&H0033AEFF" }
+  },
+
+  "caption": {
+    "note": "직전 probe와 동일 유지 (비교성)",
+    "text": "쓸 수 있는 돈이 보입니다", "emphasis": "정확히", "emphasisColor": "green", "posX": 540, "posY": 290, "fs": 66
+  },
+
+  "cardVariants": [
+    {
+      "variantId": "baseline",
+      "role": "대조군 — 직전 probe 원위치 (PATCH_STILL_NEEDED 상태 재현)",
+      "panel": { "x1": 200, "y1": 1320, "x2": 880, "y2": 1480 },
+      "line": { "y": 1362, "fs": 56, "runs": [ { "t": "저장", "c": "green" }, { "t": "해두고 월급날 그대로", "c": "white" } ] },
+      "coversRiskZone": false
+    },
+    {
+      "variantId": "shiftV1",
+      "role": "card-shift 후보 1 — 안전 마진 커버 (risk zone 상하 20px 여유)",
+      "panel": { "x1": 200, "y1": 1080, "x2": 880, "y2": 1250 },
+      "line": { "y": 1122, "fs": 56, "runs": [ { "t": "저장", "c": "green" }, { "t": "해두고 월급날 그대로", "c": "white" } ] },
+      "coversRiskZone": true,
+      "tradeoffNote": "카드가 접힌 다발 상단 면(가장 '현금'답게 읽히는 부분)을 덮음 — 다발 하단 접힌 모서리들 + 지갑 + 3봉투는 노출 유지"
+    },
+    {
+      "variantId": "shiftV2",
+      "role": "card-shift 후보 2 — 최소 높이 밀착 커버 (이미지 노출 최대화, 마진 상4px/하6px)",
+      "panel": { "x1": 200, "y1": 1096, "x2": 880, "y2": 1236 },
+      "line": { "y": 1136, "fs": 52, "runs": [ { "t": "저장", "c": "green" }, { "t": "해두고 월급날 그대로", "c": "white" } ] },
+      "coversRiskZone": true,
+      "tradeoffNote": "마진이 타이트해 '2' 경계 추정 오차/카드 entry 애니메이션 시 sliver 노출 위험 — 프레임 실측으로 판정"
+    }
+  ],
+
+  "occlusionZoomCrop": {
+    "note": "evidence 전용 — overlay 프레임에서 risk zone 주변을 2x 확대해 카드 가림 여부를 근접 검증. viewer 판정은 overlay 전체 프레임으로 한다.",
+    "x": 380, "y": 1040, "w": 400, "h": 260, "scale": 2
+  },
+
+  "outputs": {
+    "outDir": "output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1",
+    "framePlan": [
+      "probe-s6_P_A-background.png (카드 없음 — '2' 잔존 기준 상태)",
+      "probe-s6_P_A-overlay-baseline.png / -shiftV1.png / -shiftV2.png (viewer 판정용)",
+      "zoom-baseline.png / zoom-shiftV1.png / zoom-shiftV2.png (occlusion 근접 evidence)"
+    ],
+    "minTotalFrames": 7,
+    "runSummary": "reprobe-run-summary-golden-sample-v2-s6-card-occlusion.json",
+    "qaReport": "qa-report-golden-sample-v2-s6-card-occlusion-reprobe.json"
+  },
+
+  "verdictScale": {
+    "perVariant": ["COVERED_NOT_READABLE", "SLIVER_REMAINS", "NOT_COVERED"],
+    "storyEvidenceCheck": ["지갑/현금 스토리 유지", "3봉투 노출 유지", "밝은 해소 톤 유지", "이미지 주연 역할 잠식 정도"],
+    "final": ["PASS_BY_CARD_OCCLUSION_PROBE", "PATCH_STILL_NEEDED", "REJECT_STORY_EVIDENCE_LOST"],
+    "finalRule": "카드가 '2'를 viewer frame에서 비가독화하고 s6 story evidence(열린 지갑+적당한 현금+3봉투+밝은 해소 톤)가 유지되면 PASS_BY_CARD_OCCLUSION_PROBE. 가림 실패/sliver 잔존이면 PATCH_STILL_NEEDED. 가림은 되나 스토리 증거가 죽으면 REJECT_STORY_EVIDENCE_LOST."
+  },
+
+  "boundary": {
+    "costUsd": 0,
+    "noImageGeneration": true,
+    "noExternalCalls": true,
+    "noTtsMuxUploadRender": true,
+    "noEnvOrSecretRead": true,
+    "noSelectedImageSetLock": true,
+    "s1ToS5Untouched": true,
+    "renderReady": false,
+    "uploadReady": false
+  }
+}

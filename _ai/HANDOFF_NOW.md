@@ -17,31 +17,32 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1`
-- Status: completed by Claude Code, verdict `BLOCKED_S6_PATCH_FAILED`.
-- Latest checkpoint before this slice: `3d6122d test(automation): add denomination render probe` (branch ahead 153 before this uncommitted slice).
-- Owner approved scope was exactly: FLUX.2 [pro] max 2 images for `s6_result_clear_after` only, cost ceiling $0.50, `BFL_API_KEY` allowed, keep successful composition intent (foreground open wallet + three background envelopes + bright morning tone), force `banknote back side / folded notes / denomination side facing down / no visible numeral`, no OpenAI/ChatGPT/Gemini/Midjourney, no render/TTS/mux/upload, stop after image generation + denomination re-probe QA.
+- Task ID: `creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1`
+- Status: completed by Claude Code, verdict `PASS_BY_CARD_OCCLUSION_PROBE`.
+- Prior evidence:
+  - `3d6122d test(automation): add denomination render probe` found `s6_B` still had a clearly readable `5` in viewer frame.
+  - `65527d9 test(automation): add s6 denomination patch evidence` generated two FLUX2 patch candidates and confirmed prompt-only suppression failed.
+  - `s6_P_A`: native 1088x1936, story evidence PASS, visible `2` remains around `x430~700, y1100~1230`; verdict `PATCH_STILL_NEEDED`.
+  - `s6_P_B`: native 1088x1936, hard text/garbled letterforms; verdict `REJECT_FOR_HARD_TEXT`.
 - Result evidence:
-  - Output folder: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/`.
-  - Summary: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/summary-golden-sample-v2-s6-flux2-denomination-patch.json`.
-  - QA report: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/qa-report-golden-sample-v2-s6-flux2-denomination-patch.json`.
-  - Create calls: 2/2, poll calls 16, cost estimate about $0.13, endpoint/size/provider fallback 0.
-  - `s6_P_A`: native 1088x1936, story evidence PASS, but folded bill still has a visible `2` in the viewer frame; verdict `PATCH_STILL_NEEDED`.
-  - `s6_P_B`: native 1088x1936, but readable hard text/garbled letterforms and clear denomination remain; verdict `REJECT_FOR_HARD_TEXT`.
+  - Output folder: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/`.
+  - QA report: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/qa-report-golden-sample-v2-s6-card-occlusion-reprobe.json`.
+  - Run summary: `output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/reprobe-run-summary-golden-sample-v2-s6-card-occlusion.json`.
+  - Baseline reproduced the risk: `NOT_COVERED`, visible `2`.
+  - `shiftV1`: `x200~880, y1080~1250`, `COVERED_NOT_READABLE`, recommended variant.
+  - `shiftV2`: also covers but has smaller safety margin/sliver risk.
 - Codex review judgment:
-  - Accept the slice as useful evidence and keep it as a checkpoint.
-  - Do not spend more FLUX2 calls on s6 prompt-only denomination suppression without a new explicit Owner decision; the evidence now shows cash-hero closeups keep regenerating readable denomination/text risk.
-  - Selected image set lock remains blocked; `renderReady=false`, `uploadReady=false`.
-- Recommended next substantive slice after checkpoint:
-  - Cost 0 option first: use `s6_P_A` as a probe candidate and reposition the final/save card over the visible `2` area, then run a no-API denomination re-probe only.
-  - Do not lock the selected image set unless that re-probe clears the viewer-frame readable denomination risk.
-- Still forbidden:
+  - Accept `shiftV1` as the s6 render condition.
+  - s6 final image source should be `s6_P_A`, not old `s6_B`.
+  - s6 next render manifest must use shiftV1 card coordinates and avoid vertical slide entry; use fixed-position fade/scale-in or equivalent to prevent the `2` from appearing during animation.
+  - Selected image set lock is now the next responsible step, but it must explicitly record the s6 card-occlusion dependency; this is not a free pass to use s6_P_A without the card condition.
+- Still forbidden until next approval/slice:
   - Additional image/API calls, other providers, s1~s5 generation/modification, full visual render, TTS, mux, upload, dependency/env/secret changes, push.
   - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 
 ## Task ID
 
-`creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1`
+`creative-v2-golden-sample-v2-s6-card-occlusion-reprobe-v1`
 
 ## Project
 
@@ -56,8 +57,8 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `3d6122d test(automation): add denomination render probe`
-- Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
+- Latest HEAD: `65527d9 test(automation): add s6 denomination patch evidence`
+- Approx status when this handoff was refreshed: branch ahead 154 of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
 
@@ -75,20 +76,23 @@ Owner corrected Codex on 2026-07-02:
 
 Current decision:
 
-- Treat the existing selected image set as evidence/reference only, not final render input.
-- Treat the one-scene live probe image as evidence only, not final render input.
+- Treat the v2 selected candidates as ready for selected image set lock only if the lock records the s6 shiftV1 card-occlusion condition.
+- `s6_P_A` is the s6 salvage candidate with `PASS_BY_CARD_OCCLUSION_PROBE`. `s6_B` and `s6_P_B` remain rejected for viewer-frame readable denomination/text risk.
 - Keep placeholder/local mock/stock fallback forbidden.
 - Keep simple upscale/crop-as-fix forbidden.
-- Do not proceed to visual-only render until a genuinely stronger image source/path is approved and produces a new high-quality selected image set.
+- Do not proceed to visual-only render, TTS, mux, or upload until selected image set lock is written and checked.
 
 Next responsible action:
 
-- Run the separately approved Golden Sample visual-only render slice only.
-- Use `scripts/fixtures/golden_sample_flux2_selected_image_set_lock.v1.json` as the canonical image source; verify MD5 before render and abort on mismatch.
-- Use `scripts/fixtures/golden_sample_reels_dynamic_caption_contract.v1.json`; bottom-fixed subtitles are forbidden. Since TTS has not been generated yet, captions may use provisional visual phrase timing for this visual-only candidate, but must be marked as `ttsTimingSource=provisional_visual_only` and later replaced by actual TTS word/phrase timing.
-- Render one visual-only 1080x1920 mp4 candidate with card-image hybrid layout, motion, and dynamic captions. Audio stream must be absent.
-- Produce frame screenshots at 0/2/5/10/15/20/26/30s and QA report for card/caption overlap, readability, safe-area, bottom 15% permanent caption occupancy, and first 2s hook caption.
-- Stop after visual-only render QA. Do not TTS/mux/upload.
+- Run a selected image set lock slice for Golden Sample v2:
+  - s1: `s1_B`
+  - s2: `s2_A`
+  - s3: `s3_A`
+  - s4: `s4_A` with existing fast card-entry condition from denomination probe
+  - s5: `s5_B`
+  - s6: `s6_P_A` with mandatory shiftV1 card condition (`x200~880, y1080~1250`, no vertical slide entry)
+- Do not call APIs or generate images.
+- Do not render yet. Lock/QA manifest first, then Codex/Owner decides render slice.
 
 ## Fixed Samples
 
