@@ -13,16 +13,16 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-image-source-small-provider-test-v1-review-fix`
-- 범위: Codex review 후 checkpoint 전 안전 보정. 이미지 생성 결과는 유지하되 live/API 재호출 없이 runner 안전성만 고친다.
-- 필수 보정 1: `scripts/run-golden-sample-image-source-test-v1.mjs`에서 BFL endpoint fallback `api.bfl.ml` 경로를 제거하고 공식 문서 기준 `https://api.bfl.ai/v1/flux-2-pro`만 사용하게 한다.
-- 필수 보정 2: `.env.local` 파싱은 `OPENAI_API_KEY`, `BFL_API_KEY` 두 key만 메모리에 보관하도록 최소화한다. 다른 env/secret key를 object에 담지 않는다.
-- 필수 보정 3: `_ai/CLAUDE_REPORT.md`에 보정 결과와 검증만 append한다.
-- 금지: API 호출, live/browser generation, 이미지 재생성, credential/env/secret 변경, dependency 추가/변경, render, TTS, mux, upload, commit, push.
+- Task ID: `creative-v2-openai-current-candidates-quality-pack-v1`
+- Owner 최신 지시: `아니 open ai쪽은 지금 생성된거만으로 품질후보로 진행해`
+- 범위: 이미 생성된 OpenAI 5장만 품질후보 source로 사용한다. 잔여 7장 생성 대기/재실행은 하지 않는다.
+- 목적: 현재 OpenAI 5장을 selected-image quality candidate pack으로 정리하고, 3장 recommended 후보(scene 1A/2A/3A)와 2장 backup 후보(scene 1B/2B)를 명확히 분리한다. full render 전에는 subject-delivery와 scene coverage risk를 문서화한다.
+- 허용: existing output 이미지와 summary/QA report 읽기, candidate pack fixture/report 작성, `_ai/CLAUDE_REPORT.md` append.
+- 금지: OpenAI 추가 호출, ChatGPT 재생성, FLUX 재생성, Gemini/Midjourney 사용, render, TTS, mux, upload, credential/env/secret 변경, dependency 추가/변경, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
 
 ## Task ID
 
-`creative-v2-image-source-small-provider-test-v1-review-fix`
+`creative-v2-openai-current-candidates-quality-pack-v1`
 
 ## Project
 
@@ -37,7 +37,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `69c6e52 fix(automation): align golden sample gates with quality rules`
+- Latest HEAD: `1a14ae7 test(automation): add golden sample image source test`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
@@ -64,9 +64,9 @@ Current decision:
 
 Next responsible action:
 
-- Apply the Codex review-fix only, then stop.
-- Do not rerun provider generation. Preserve the existing output evidence.
-- After the fix, checkpoint can be reconsidered.
+- Promote the existing OpenAI 5 images into a quality candidate pack without any further image generation.
+- Document which candidates are recommended, backup, and not enough for full 6-scene render without explicit reuse/coverage approval.
+- Stop before render/TTS/mux/upload/commit/push.
 
 ## Fixed Samples
 

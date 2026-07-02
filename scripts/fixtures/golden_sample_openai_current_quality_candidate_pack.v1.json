@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "money_shorts_openai_current_quality_candidate_pack_v1",
+  "taskId": "creative-v2-openai-current-candidates-quality-pack-v1",
+  "status": "data_only_candidate_pack",
+  "createdAt": "2026-07-02",
+  "sourceOutputDir": "output/money-shorts/openai-full-selected-image-candidates-v1",
+  "sourceSummaryPath": "output/money-shorts/openai-full-selected-image-candidates-v1/summary-openai-full-candidates.json",
+  "sourceQaReportPath": "output/money-shorts/openai-full-selected-image-candidates-v1/qa-report-openai-full-candidates.v1.json",
+  "ownerDirective": "아니 open ai쪽은 지금 생성된거만으로 품질후보로 진행해 — OpenAI 추가 생성 없이 현재 생성된 5장만 품질후보 source로 공식 진행. 잔여 7장 billing 재실행 대기 방향은 이 slice에서 사용하지 않음.",
+  "topic": { "topicId": "salary-vanishes-3days-test", "label": "월급이 3일 만에 사라지는 이유", "role": "quality_grammar_test_topic_not_final" },
+  "imageSourcePolicy": {
+    "provider": "openai_gpt_image_2",
+    "existingGeneratedOnly": true,
+    "allowFurtherGenerationInThisSlice": false,
+    "allow941x1672Reuse": false,
+    "allowPlaceholder": false,
+    "allowUpscaleAsFix": false
+  },
+  "sourceImprovementNote": "OpenAI 5장(1088x1936 native, quality high)은 기존 941x1672 ChatGPT selected set 대비 확실히 개선된 source다: (1) 해상도 — 1080x1920 gate를 native로 통과(업스케일/크롭 없음), (2) no-text 준수 — 5/5 위반 0건(순수 추상 글로우, 빈 슬립/무지 봉투, 무번호 카드, display off·무라벨 키 계산기)으로 기존 세트의 generic·가독 텍스트 위험 제거, (3) 주제 전달 — T2 씬 역할별 시각 은유(입금 순간/새는 순서/고정비 무게)가 이미지만으로 읽힘. 941x1672 기존 세트는 evidence-only 지위 유지, final 재사용 금지 유지.",
+  "qualityCandidates": [
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01A-salary_arrival_hook.png",
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "variant": "A",
+      "width": 1088,
+      "height": 1936,
+      "gate": "PASS_1080x1920_NATIVE",
+      "classification": "recommended",
+      "reason": "no-text 완벽(순수 앰버 글로우), 손 자연, 하단 1/3 거의 빈 목재 테이블로 overlay 안전영역 최상, '방금 들어온 월급' 전달 명확"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01B-salary_arrival_hook.png",
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "variant": "B",
+      "width": 1088,
+      "height": 1936,
+      "gate": "PASS_1080x1920_NATIVE",
+      "classification": "backup",
+      "reason": "no-text 완벽·오버숄더 무얼굴 구도·봉투 맥락 추가는 좋으나, 좌하단 어깨 유입과 상단 주방 디테일로 overlay 여백이 1A보다 불리"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02A-money_leak_order.png",
+      "sceneRole": "scene_02_money_leak_order",
+      "variant": "A",
+      "width": 1088,
+      "height": 1936,
+      "gate": "PASS_1080x1920_NATIVE",
+      "classification": "recommended",
+      "reason": "지갑→빈 슬립 대각 흐름→무지 봉투 3개(고정 목적지)로 '정해진 순서로 새는 돈' 은유 최상, 앰버 광선이 경로 추적, 생활감 유지"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02B-money_leak_order.png",
+      "sceneRole": "scene_02_money_leak_order",
+      "variant": "B",
+      "width": 1088,
+      "height": 1936,
+      "gate": "PASS_1080x1920_NATIVE",
+      "classification": "backup",
+      "reason": "탑다운 '지갑→슬립→동전→봉투' 순서 큐가 인포그래픽처럼 명확하고 하단 여백 최상이나, 정물감이 강해 생활감은 2A 대비 낮음"
+    },
+    {
+      "imagePath": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-03A-fixed_cost_stack.png",
+      "sceneRole": "scene_03_fixed_cost_stack",
+      "variant": "A",
+      "width": 1088,
+      "height": 1936,
+      "gate": "PASS_1080x1920_NATIVE",
+      "classification": "recommended",
+      "reason": "백지 더미 무게감 + 무번호 카드(칩만) + display off 계산기로 '고정비가 먼저 쌓임' 전달, no-text 완벽. scene 3의 유일 후보(3B 미생성)"
+    }
+  ],
+  "sceneCoverage": {
+    "scene_01_salary_arrival_hook": { "covered": true, "candidates": 2 },
+    "scene_02_money_leak_order": { "covered": true, "candidates": 2 },
+    "scene_03_fixed_cost_stack": { "covered": true, "candidates": 1, "note": "backup 없음 — 3B 미생성" },
+    "scene_04_subscriptions_auto_pay": { "covered": false, "missingExactCoverage": true },
+    "scene_05_day3_empty_wallet": { "covered": false, "missingExactCoverage": true },
+    "scene_06_cashflow_reset_action": { "covered": false, "missingExactCoverage": true }
+  },
+  "recommendedPartialSet": [
+    "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01A-salary_arrival_hook.png",
+    "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02A-money_leak_order.png",
+    "output/money-shorts/openai-full-selected-image-candidates-v1/scene-03A-fixed_cost_stack.png"
+  ],
+  "backupPool": [
+    "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01B-salary_arrival_hook.png",
+    "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02B-money_leak_order.png"
+  ],
+  "missingSceneReusePolicy": {
+    "autoReuseApproved": false,
+    "statement": "scene 4~6 결손을 recommended/backup 이미지 재사용으로 메울지는 별도 scene coverage 판단이다. reuse requires Owner/render-scope approval — 이 pack은 재사용을 자동 승인하지 않는다."
+  },
+  "renderReadiness": {
+    "renderReady": false,
+    "reason": "selected_set_not_complete_without_explicit_reuse_or_coverage_approval",
+    "uploadReady": false
+  },
+  "nextDecision": {
+    "decisionOwner": "Owner/Codex",
+    "options": [
+      "A. 현재 5장(3-scene coverage)으로 quality grammar prototype 진행 — 씬 구조를 3-scene 또는 재사용 구조로 재설계할지 판단 필요",
+      "B. missing scene(4~6)에 recommended/backup 이미지 재사용 승인 — 어떤 이미지를 어떤 씬에 매핑할지 명시 승인 필요",
+      "C. 후속 이미지 source 재오픈 — billing 정산 후 잔여 7장 재실행 또는 다른 provider 소량 테스트"
+    ],
+    "note": "이 pack은 옵션을 결정하지 않는다. render/TTS/mux/upload는 어떤 옵션에서도 별도 승인 전 금지."
+  },
+  "boundary": { "dataOnly": true, "noGeneration": true, "noRender": true }
+}

@@ -2657,3 +2657,31 @@ QA-only slice. 코드 변경 없음.
   1) BFL endpoint fallback(`api.bfl.ml`, endpointFallbackUsed 분기/상태) 전부 제거 — 공식 `https://api.bfl.ai/v1/flux-2-pro` 단일 endpoint만 사용(poll URL fallback 문자열도 api.bfl.ai로 고정). size fallback 1회만 유지.
   2) .env.local 파싱 secret 최소화 — WANTED set(`OPENAI_API_KEY`, `BFL_API_KEY`)만 메모리 보관, 다른 env/secret은 파싱 즉시 폐기. key 값 출력 없음(헤더 전용).
 - 검증: rg fallback 패턴 0건 / rg key 패턴 — 2종만·값 무출력 확인 / fixture JSON valid / `node --check` runner 문법 통과(실행 아님) / 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / git status·diff --stat 확인.
+
+
+## OpenAI Full Selected Image Candidates (`creative-v2-openai-full-selected-image-candidates-v1` — 2026-07-02)
+
+**결과: 부분완료 — 5/12 생성 후 OpenAI 계정 Billing hard limit 도달로 잔여 7장 외부 BLOCKED.**
+
+- Owner 승인: 12장 상한/$5 상한/QA 보고 후 중단 — 준수. render/TTS/mux/upload/commit/push 0건, secret 노출 0건.
+- 생성: scene 1A/1B/2A/2B/3A = **5/5 gate PASS (1088x1936 native)**. 잔여 3B/4A/4B/5A/5B/6A/6B는 `http_400: Billing hard limit has been reached`(7 call, usage 미반환 → 과금 없음 추정). fallback/재시도 없이 기록만.
+- **no-text 강화 프롬프트 완전 작동: 5/5 위반 0건** — 폰 순수 추상 글로우, 빈 슬립/무지 봉투, 무번호 카드(칩만), display off·무라벨 키 계산기.
+- scene별 QA: 1A 추천(하단 여백 최상)/1B 백업, 2A 추천(대각 흐름+생활감 최상)/2B 백업(탑다운 큐, overlay 여백 최상), 3A 단독 후보.
+- 부분 추천 세트(3/6): `scene-01A`, `scene-02A`, `scene-03A` — **6-scene set 미완성이므로 render 불가 유지**.
+- 비용 evidence: API usage 실측 26,610 output image tokens(5장), ≈ $0.9±0.3 추정 — $5 상한 내. 정확치는 OpenAI 대시보드 확인 필요.
+- 신규 파일: `scripts/fixtures/golden_sample_openai_full_selected_image_prompts.v1.json`(6-scene × A/B), `scripts/run-openai-full-selected-image-candidates-v1.mjs`(OpenAI-only, 12 call 하드캡, fallback 금지). output: `output/money-shorts/openai-full-selected-image-candidates-v1/`(이미지 5장 + summary + qa-report, gitignored).
+- 검증: node --check 통과 / fixture·summary·qa-report JSON parse / 5장 실측 전부 1088x1936 / secret 패턴 scan 0건 / 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지.
+- **Owner 필요 조치: OpenAI billing limit 상향(또는 정산) → 잔여 7장(3B/4A/4B/5A/5B/6A/6B) 재실행 승인.** fixture/runner 그대로 재사용 가능.
+
+
+## OpenAI Current Quality Candidate Pack (`creative-v2-openai-current-candidates-quality-pack-v1` — 2026-07-02)
+
+**성격: docs-only 공식화 — OpenAI 추가 호출 0건, .env.local 미접근, output 이미지/summary/qa-report 무수정, render/TTS/mux/upload/commit/push 0건.**
+
+- Owner 지시("지금 생성된거만으로 품질후보로 진행") 반영: OpenAI 5장(1088x1936 native, 5/5 gate PASS, no-text 위반 0건)을 공식 품질후보 source로 고정. "잔여 7장 billing 재실행 대기"는 전제에서 제외(후속 옵션 C로만 존재).
+- 신규 파일: `scripts/fixtures/golden_sample_openai_current_quality_candidate_pack.v1.json` (imageSourcePolicy: existingGeneratedOnly=true, allow941x1672Reuse=false, allowPlaceholder=false, allowUpscaleAsFix=false) + `_ai/GOLDEN_SAMPLE_OPENAI_CURRENT_QUALITY_CANDIDATE_PACK_V1.md` (Owner/Codex 판단용).
+- 분류: recommended 3장(scene-01A/02A/03A), backup 2장(scene-01B/02B). missing exact coverage: scene 4~6 — **재사용 자동 승인 안 함(reuse requires Owner/render-scope approval)**.
+- 941x1672 대비 개선 근거 기록: native 해상도 gate 통과 / no-text 5/5 / 씬 역할별 시각 은유 전달.
+- renderReady=false (reason: selected_set_not_complete_without_explicit_reuse_or_coverage_approval), uploadReady=false 유지.
+- nextDecision(Owner/Codex): A. 5장 3-scene prototype 진행 / B. missing scene 재사용 명시 승인 / C. 이미지 source 재오픈.
+- 검증: pack·source summary·qa-report JSON parse 정상 / 후보 5장 파일 존재 + 디스크 이미지 5장 그대로 / secret 패턴 0건(신규 2파일) / 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / git status·diff --stat 확인.
