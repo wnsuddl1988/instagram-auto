@@ -2893,3 +2893,18 @@ QA-only slice. 코드 변경 없음.
 - Selected 조건: SOFT_RISK 5장은 dim/blur+카드 오버레이 실제 렌더 프레임에서 가독 완화 재검증 필요. 미완화 scene은 프롬프트 패치(지폐 뒷면/가림/접힘 구도) 재생성 옵션(scene당 ~$0.07) — Owner/Codex 판단 대기.
 - 검증: node --check PASS, fixture/summary/qa-report JSON parse PASS, createCalls≤12 확인, secret 값 스캔 0건, 보호 파일 미접근, 941x1672 재사용/placeholder/upscale 0.
 - 금지 미수행: OpenAI/ChatGPT/Gemini/Midjourney 0, render/TTS/mux/upload 0, env/dependency 무변경, commit/push 없음.
+
+
+## Golden Sample v2 denomination render probe (`creative-v2-golden-sample-v2-denomination-render-probe-v1` — 2026-07-02)
+
+**selected 6장을 실제 시청 프레임(1080x1920 + renderer 동일 dim/blur/crop + card/caption overlay)으로 probe — 최종 verdict: `PATCH_NEEDED` (s6_B '5' 액면 still_visible 단독 사유, 나머지 5장 PASS 계열). 비용 0, 로컬 ffmpeg만.**
+
+- 신규: `scripts/fixtures/golden_sample_v2_denomination_render_probe_manifest.v1.json` — selected 6장 무결성 기준 + renderer 채택 배경 체인(dim eq/gblur 2.5/drift zoom 1.06) + blueprint 문안 기반 scene별 card/caption ASS 스펙 + evidence zoom 존.
+- 신규: `scripts/run-golden-sample-v2-denomination-render-probe-v1.mjs` — 외부 호출/secret 경로 없음(내장 모듈만), 원본 read-only + 실존/1088x1936/bytes 게이트(불일치 abort exit 10), scene별 background/overlay/zoom 3프레임 산출. 실행: 18프레임(viewer 12 + evidence 6), 무결성 6/6 PASS.
+- Output: `output/money-shorts/golden-sample-v2-denomination-render-probe-v1/` (프레임 18 + ass 6 + run-summary + qa-report).
+- Vision QA 결과: **s3_A PASS(완전 비가독)** / s1_B·s2_A·s5_B PASS_WITH_MINOR_RISK(dim/blur+card로 문양~흐릿 수준 완화) / s4_A PASS_WITH_MINOR_RISK(단 밝은 배경이라 완화 약함 — 렌더 조건: 3-slot 카드 stage cut 직후 즉시 진입) / **s6_B PATCH_NEEDED('5' 액면이 dim/blur/card 무엇으로도 완화 안 됨, still_visible)**.
+- s6 패치 옵션: A(권장) s6만 프롬프트 패치 재생성 1~2장(~$0.07~0.14, 검증된 구도 유지 + 지폐 뒷면/접힘 지시) / B(비용 0) save 카드를 '5' 위로 재배치 — 결말 이미지 주연 역할 잠식 트레이드오프, Owner 판단.
+- 경계 해석 기록: 흐릿한 액면 잔존=money-like 자연성 범위, 선명한 액면=no-readable-text 위반으로 구분 판정 — 이 기준에 대한 Owner 동의가 lock 확정 조건.
+- selected image set lock: 미실행 (범위 외 + PATCH_NEEDED이므로 보류가 일치).
+- 검증: node --check PASS, manifest/run-summary/qa-report JSON parse PASS, viewer 프레임 12장(≥12 충족), 금지 패턴(외부 호출/secret/허용 플래그 문자열) 소스 스캔 0건, 원본 6장 무결성 PASS, git status 신규 2파일+CLAUDE_REPORT만.
+- 금지 미수행: 이미지 생성/외부 API/TTS/mux/upload 0, env/secret 읽기 0, lock 문서 0, renderReady/uploadReady false, commit/push 없음.

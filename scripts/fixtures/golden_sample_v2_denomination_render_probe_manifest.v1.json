@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "golden_sample_v2_denomination_render_probe_manifest_v1",
+  "taskId": "creative-v2-golden-sample-v2-denomination-render-probe-v1",
+  "createdAt": "2026-07-02",
+  "purpose": "selected 6장(SOFT_RISK_DENOMINATION)을 실제 시청 프레임에 준하는 dim/blur/crop/card 상태로 probe하여 지폐 액면 숫자가 viewer frame에서 읽히는지 판정한다. 비용 0, 로컬 ffmpeg만. selected image set lock은 이 slice에서 하지 않는다.",
+  "canvas": { "widthPx": 1080, "heightPx": 1920 },
+
+  "sourceIntegrity": {
+    "summarySource": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/summary-golden-sample-v2-flux2-image-candidates.json",
+    "readOnlyRule": "원본 이미지는 ffmpeg 입력으로만 사용한다. 수정/이동/복사 금지. 실존/해상도/파일크기 불일치 시 abort.",
+    "expected": [
+      { "sceneId": "s1_problem_empty_wallet", "candidateId": "s1_B", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s1_problem_empty_wallet-s1_B.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 604622 },
+      { "sceneId": "s2_cause_outflow", "candidateId": "s2_A", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s2_cause_outflow-s2_A.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 935655 },
+      { "sceneId": "s3_illusion_mixed_pile", "candidateId": "s3_A", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s3_illusion_mixed_pile-s3_A.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 1069163 },
+      { "sceneId": "s4_solution_three_slots", "candidateId": "s4_A", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s4_solution_three_slots-s4_A.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 945779 },
+      { "sceneId": "s5_action_hands_dividing", "candidateId": "s5_B", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s5_action_hands_dividing-s5_B.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 580863 },
+      { "sceneId": "s6_result_clear_after", "candidateId": "s6_B", "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s6_result_clear_after-s6_B.jpg", "width": 1088, "height": 1936, "fileSizeBytes": 537614 }
+    ]
+  },
+
+  "backgroundTreatment": {
+    "note": "직전 채택 renderer(render-golden-sample-visual-only-v1.mjs + manifest.t2.v1/v1.1)의 backgroundTreatment와 동일 체인. drift zoom은 렌더에서 1.02~1.12 범위이므로 중간값 1.06을 정지 프레임에 반영한다.",
+    "scaleCrop": "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+    "dim": "eq=brightness=-0.12:contrast=0.94:saturation=1.02",
+    "blur": "gblur=sigma=2.5",
+    "driftZoomMid": 1.06,
+    "chainOrderNote": "scale→crop→dim→blur→zoom-crop 순서는 renderer STEP 2와 동일 (blur가 zoom 전에 적용됨)"
+  },
+
+  "overlayStyle": {
+    "font": "Malgun Gothic",
+    "direction": "정보 브리핑형 — 두꺼운 검정 외곽선 + 강한 강조색. 하단 고정 자막 바 금지. 이번 probe는 미학이 아니라 denomination readability QA 목적.",
+    "captionOutline": 6,
+    "captionShadow": 2.6,
+    "cardTextOutline": 4,
+    "panelFillAssBgr": "&H0F1417",
+    "panelAlpha": "&H3C&",
+    "colorsAssBgr": { "white": "&H00E8EFF2", "red": "&H002B2BE8", "yellow": "&H0033C5FF", "green": "&H0059C734", "amber": "&H0033AEFF" },
+    "safeFrame": { "xMin": 60, "xMax": 1020, "yMinCoreText": 180, "yMaxCoreText": 1580, "bottom15PermanentFailY": 1632 }
+  },
+
+  "scenes": [
+    {
+      "sceneId": "s1_problem_empty_wallet",
+      "candidateId": "s1_B",
+      "rawRiskFromCandidateQa": "SOFT_RISK — 액면 '500'/'100' readable (2~3곳), 지갑 각인 흐릿",
+      "caption": { "text": "당신이 헤픈 게 아닙니다", "emphasis": "헤픈 게 아닙니다", "emphasisColor": "yellow", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "hook_problem_card", "role": "big_hook_card",
+        "panel": { "x1": 140, "y1": 700, "x2": 940, "y2": 1090 },
+        "lines": [
+          { "y": 770, "fs": 86, "runs": [ { "t": "월급 들어온 지 ", "c": "white" }, { "t": "3일", "c": "red" } ] },
+          { "y": 920, "fs": 86, "runs": [ { "t": "통장 보기 무섭죠?", "c": "white" } ] }
+        ]
+      },
+      "denominationZoomCrop": { "x": 230, "y": 520, "w": 630, "h": 580, "scale": 2, "targets": "지갑 주변 지폐의 '500'/'100' 액면부" }
+    },
+    {
+      "sceneId": "s2_cause_outflow",
+      "candidateId": "s2_A",
+      "rawRiskFromCandidateQa": "SOFT_RISK — 엔화풍 '10000'/'1000' 산재 readable",
+      "caption": { "text": "자동이체로 한 번에", "emphasis": "자동이체", "emphasisColor": "yellow", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "cause_fixed_costs_card", "role": "checklist_card",
+        "panel": { "x1": 140, "y1": 560, "x2": 940, "y2": 720 },
+        "lines": [ { "y": 600, "fs": 64, "runs": [ { "t": "먼저 빠지는 돈", "c": "white" } ] } ],
+        "subPanel": {
+          "x1": 140, "y1": 740, "x2": 940, "y2": 900,
+          "lines": [ { "y": 785, "fs": 54, "runs": [ { "t": "월세 / 카드값 / 통신비 / 보험료", "c": "yellow" } ] } ]
+        }
+      },
+      "denominationZoomCrop": { "x": 60, "y": 1080, "w": 560, "h": 360, "scale": 2, "targets": "좌하단 지폐 클러스터의 '1000'/'10000' 액면부" }
+    },
+    {
+      "sceneId": "s3_illusion_mixed_pile",
+      "candidateId": "s3_A",
+      "rawRiskFromCandidateQa": "NEAR_CLEAN — 워시드 톤으로 액면 거의 unreadable (12장 중 최고 클린)",
+      "caption": { "text": "진짜 문제는 이겁니다", "emphasis": "진짜 문제", "emphasisColor": "red", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "illusion_card", "role": "twist_single_sentence_card",
+        "panel": { "x1": 110, "y1": 780, "x2": 970, "y2": 1140 },
+        "lines": [
+          { "y": 848, "fs": 78, "runs": [ { "t": "한 통장에 섞이면", "c": "white" } ] },
+          { "y": 990, "fs": 78, "runs": [ { "t": "전부 '", "c": "white" }, { "t": "쓸 돈", "c": "red" }, { "t": "'처럼 보인다", "c": "white" } ] }
+        ]
+      },
+      "denominationZoomCrop": { "x": 230, "y": 580, "w": 630, "h": 640, "scale": 2, "targets": "중앙 더미 지폐 문양부 (near-clean 확인용)" }
+    },
+    {
+      "sceneId": "s4_solution_three_slots",
+      "candidateId": "s4_A",
+      "rawRiskFromCandidateQa": "SOFT_RISK — 각 봉투 지폐 상단 '100' 부분 readable",
+      "caption": { "text": "절약이 아니라 분리", "emphasis": "분리", "emphasisColor": "green", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "solution_three_slots_card", "role": "three_slot_card",
+        "note": "blueprint hard fail #5 대응 — 3분할 이름을 renderer 카드가 정확히 담당. 각 봉투 상단(지폐 노출부) 위에 얹어 card_occlusion 효과를 함께 검증한다.",
+        "slotPanels": [
+          { "x1": 95, "y1": 570, "x2": 375, "y2": 745, "line": { "y": 615, "fs": 64, "runs": [ { "t": "고정비", "c": "green" } ] } },
+          { "x1": 400, "y1": 570, "x2": 680, "y2": 745, "line": { "y": 615, "fs": 64, "runs": [ { "t": "생활비", "c": "green" } ] } },
+          { "x1": 705, "y1": 570, "x2": 985, "y2": 745, "line": { "y": 615, "fs": 64, "runs": [ { "t": "저축", "c": "green" } ] } }
+        ]
+      },
+      "denominationZoomCrop": { "x": 60, "y": 530, "w": 960, "h": 340, "scale": 2, "targets": "3봉투 지폐 노출부 '100' 액면 라인" }
+    },
+    {
+      "sceneId": "s5_action_hands_dividing",
+      "candidateId": "s5_B",
+      "rawRiskFromCandidateQa": "SOFT_RISK — 앞쪽 지폐 무더기 '1000' 등 readable 다수",
+      "caption": { "text": "쓰기 전에 나누세요", "emphasis": "쓰기 전에", "emphasisColor": "yellow", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "action_card", "role": "final_action_card",
+        "panel": { "x1": 130, "y1": 1200, "x2": 950, "y2": 1560 },
+        "lines": [
+          { "y": 1268, "fs": 76, "runs": [ { "t": "다음 월급날", "c": "white" } ] },
+          { "y": 1408, "fs": 76, "runs": [ { "t": "쓰기 전에", "c": "yellow" }, { "t": " 나누기", "c": "white" } ] }
+        ]
+      },
+      "denominationZoomCrop": { "x": 40, "y": 1150, "w": 620, "h": 420, "scale": 2, "targets": "전경 좌하단 지폐 무더기 '1000' 액면부" }
+    },
+    {
+      "sceneId": "s6_result_clear_after",
+      "candidateId": "s6_B",
+      "rawRiskFromCandidateQa": "SOFT_RISK — 최상단 지폐 '5' 액면 + 흐린 문자열 일부 (소프트포커스로 완화)",
+      "caption": { "text": "쓸 수 있는 돈이 보입니다", "emphasis": "정확히", "emphasisColor": "green", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "save_cta_card", "role": "save_cta",
+        "panel": { "x1": 200, "y1": 1320, "x2": 880, "y2": 1480 },
+        "lines": [ { "y": 1362, "fs": 56, "runs": [ { "t": "저장", "c": "green" }, { "t": "해두고 월급날 그대로", "c": "white" } ] } ]
+      },
+      "denominationZoomCrop": { "x": 380, "y": 1020, "w": 380, "h": 240, "scale": 2, "targets": "지갑 위 다발 최상단 '5' 액면부" }
+    }
+  ],
+
+  "outputs": {
+    "outDir": "output/money-shorts/golden-sample-v2-denomination-render-probe-v1",
+    "framesPerScene": [
+      { "kind": "background_probe", "role": "viewer frame 판정용 — 실제 render에 준하는 crop/scale + dim/blur (카드 없음: blur/dim 단독 완화 판정)" },
+      { "kind": "overlay_probe", "role": "viewer frame 판정용 — 동일 frame + card/caption overlay (card_occlusion 완화 판정)" },
+      { "kind": "denomination_zoom_crop", "role": "evidence 전용 — viewer frame 판정에 사용하지 않는다. dim/blur 후 액면부 2x 확대 검증 근거" }
+    ],
+    "minTotalFrames": 12,
+    "runSummary": "probe-run-summary-golden-sample-v2-denomination-render-probe.json",
+    "qaReport": "qa-report-golden-sample-v2-denomination-render-probe.json"
+  },
+
+  "verdictScale": {
+    "perFrameRisk": ["READABLE_CLEAR", "READABLE_FAINT", "NOT_READABLE"],
+    "mitigationType": ["blur_dim", "crop", "card_occlusion", "still_visible", "not_needed"],
+    "sceneVerdict": ["PASS_DENOMINATION_NOT_READABLE", "PASS_WITH_MINOR_RISK", "PATCH_NEEDED", "REJECT_FOR_HARD_TEXT"],
+    "finalVerdict": ["LOCK_READY", "PATCH_NEEDED", "OWNER_DECISION_NEEDED"],
+    "finalRule": "LOCK_READY = 6/6 PASS 계열이고 viewer frame에서 액면이 읽히지 않거나 주제 자연성 수준일 때만. 1개라도 viewer frame에서 선명히 읽히면 PATCH_NEEDED. 기술적으로 minor이나 기준상 애매하면 OWNER_DECISION_NEEDED."
+  },
+
+  "boundary": {
+    "costUsd": 0,
+    "noImageGeneration": true,
+    "noExternalCalls": true,
+    "noTtsMuxUpload": true,
+    "noEnvOrSecretRead": true,
+    "noSelectedImageSetLock": true,
+    "renderReady": false,
+    "uploadReady": false
+  }
+}

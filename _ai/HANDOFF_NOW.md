@@ -17,28 +17,30 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1`
-- **완료 (2026-07-02)**: Owner 승인 범위 내 FLUX.2 [pro] 12장(6 scenes × 2 candidates) 생성 + scene별 visual evidence QA 완료. 결과는 `selected 6/6 조건부`이며, 아직 selected image set lock은 아니다.
-- Owner 승인 원문: `승인: Golden Sample v2 FLUX2 image candidate generation — Story-Causality First + Visual Evidence Second blueprint(salary_3days.v2)를 기준으로 FLUX.2 [pro] 최대 12장(6 scenes × 2 candidates), 비용 $3 상한, BFL_API_KEY 사용 허용. money-like objects 적극 허용, no readable AI-generated text 엄격 유지. OpenAI/ChatGPT/Gemini/Midjourney 추가 호출 금지. render/TTS/mux/upload 없이 이미지 생성 + scene별 visual evidence QA + selected 후보 보고 후 중단.`
+- Task ID: `creative-v2-golden-sample-v2-denomination-render-probe-v1`
+- **완료 (2026-07-02)**: 비용 0 no-readable-denomination render probe 완료. 최종 verdict는 `PATCH_NEEDED` — selected image set lock은 아직 아니다.
+- Owner 승인 원문: `승인: Golden Sample v2 FLUX2 selected 후보 6장으로 no-readable-denomination render probe를 만든다. 추가 이미지 생성/API/TTS/mux/upload 없이, selected 6장(s1_B/s2_A/s3_A/s4_A/s5_B/s6_B)을 임시 visual-only frame probe에 적용해 dim/blur/card/crop 상태에서 지폐 액면 숫자가 실제 시청 프레임에서 읽히는지 QA한다. selected image set lock은 QA 후 별도 결정한다.`
+- 입력 evidence:
+  - 직전 checkpoint: `29c7569 test(automation): add golden sample v2 flux2 candidates`.
+  - 후보 output: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/`.
+  - QA report: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/qa-report-golden-sample-v2-flux2-image-candidates.json`.
+  - Summary: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/summary-golden-sample-v2-flux2-image-candidates.json`.
+  - selected 후보: `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B`, `s6_B`.
 - 실행 결과:
-  - create calls 12/12, poll 79, retry 0, endpoint/size/provider fallback 0, HTTP 오류 0.
-  - 12/12 생성 성공, 전장 1088x1936 `PASS_1080x1920_NATIVE`.
-  - 비용 추정 약 $0.76, Owner 상한 $3 준수(정확 금액은 BFL dashboard 확인 필요).
-  - Output: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/`.
-  - 신규 파일: `scripts/fixtures/golden_sample_v2_flux2_image_candidate_prompts.salary_3days.v1.json`, `scripts/run-golden-sample-v2-flux2-image-candidates-v1.mjs`, `_ai/CLAUDE_REPORT.md` append.
-- QA 결론:
-  - 후보 selected: `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B`, `s6_B`.
-  - 인과 체인(문제→원인→착시→해결→행동→결과)은 시각적으로 완주한다. 이전 80점 후보의 가장 큰 문제였던 이미지-주제 직관성은 크게 개선됐다.
-  - 단, 12장 전부에서 정도 차이는 있지만 지폐 액면 숫자 readable 리스크가 확인됐다. `s3_A`만 near-clean이며, 나머지 selected 5장은 `SOFT_RISK_DENOMINATION`.
-  - 깨진 글자/브랜드/인장 등 hard violation 후보(`s1_A`, `s4_B`, `s6_A`)는 reject.
-- 현재 상태:
-  - `selected 6/6 조건부 완성`이지 `selected image set lock`이 아니다.
-  - no-readable AI-generated text 엄격 기준과 money-like objects 허용 사이의 실제 처리 방침이 다음 decision이다.
-  - Codex 기본 판단: source lock 직행 금지. 다음은 (A) visual-only render가 아니라 **denomination readability mitigation/decision**을 먼저 확정하거나, (B) Owner가 소프트 리스크 수용을 명시해야 한다.
-- 다음 Owner/Codex 결정 후보:
-  1. 비용 0 검증: selected 6장으로 renderer frame probe만 만들어 실제 card/dim/crop에서 액면 숫자가 읽히는지 확인(아직 render 승인 필요).
-  2. 유료 소량 패치: 숫자 노출이 큰 scene만 `back side / overlapped / folded / partially hidden bills` 프롬프트로 재생성(별도 비용/장수 승인 필요).
-  3. 소프트 리스크 수용: 액면 숫자를 money-like object 자연성으로 수용하고 selected lock 진행(Owner 명시 승인 필요).
+  - 신규 manifest: `scripts/fixtures/golden_sample_v2_denomination_render_probe_manifest.v1.json`.
+  - 신규 runner: `scripts/run-golden-sample-v2-denomination-render-probe-v1.mjs`.
+  - Output: `output/money-shorts/golden-sample-v2-denomination-render-probe-v1/`.
+  - 1080x1920 probe frame 18장 생성(viewer 12 + evidence zoom 6), original selected 6장 read-only + MD5 기록.
+  - 외부 API/이미지 생성/TTS/mux/upload/env/secret 접근 0.
+- Probe QA 결론:
+  - `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B` = PASS 계열. `s3_A`는 무조건 PASS, 나머지는 minor risk.
+  - `s4_A`는 조건부: 실제 렌더에서 3-slot 카드가 stage cut 직후 즉시 진입해야 한다(background-only ≤0.3s 권장).
+  - `s6_B` = `PATCH_NEEDED`. dim/blur/card overlay 후에도 지폐 상단의 `5`가 viewer frame 중앙에서 선명하게 읽힌다.
+  - 최종 verdict: `PATCH_NEEDED`.
+- Codex 판단:
+  - 비용 0 카드 재배치(B안)는 s6 결말 이미지 주연 역할을 망칠 위험이 크다.
+  - 권장 다음 단계는 s6 단일 FLUX2 패치 재생성(A안): 기존 성공 구도(전경 열린 지갑+배경 3봉투+밝은 아침 톤)는 유지하되, `banknote back side / folded notes / denomination side facing down / no visible numeral`을 강제한다.
+  - s6 패치 전 selected image set lock, visual-only render, TTS/mux 진행 금지.
 - 기준 source of truth:
   - `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md` (원문 verbatim 보호)
   - `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`
@@ -71,7 +73,7 @@
 
 ## Task ID
 
-`creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1`
+`creative-v2-golden-sample-v2-denomination-render-probe-v1`
 
 ## Project
 
@@ -86,7 +88,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `0ac2c07 docs(automation): add story causality visual reset`
+- Latest HEAD: `29c7569 test(automation): add golden sample v2 flux2 candidates`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
