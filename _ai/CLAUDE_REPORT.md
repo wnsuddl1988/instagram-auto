@@ -2760,3 +2760,18 @@ QA-only slice. 코드 변경 없음.
 - 다음 추천(별도 승인 필요): A안 scene 1 v2.2 구도 변경 1장 재검증(~$0.07, 내부 시점/부분 프레임) / B안 지갑 제거(구성 변경 Owner 확인) / C안 현 4씬으로 진행 + scene 1 조건부 수용 판단.
 - 산출: `output/money-shorts/flux2-object-whitelist-v2-1-wallet-patch-validation/` — 이미지 2장 + summary + qa-report (parse OK, createCalls 2/2, 해상도 실측, secret 노출 0건).
 - renderReady=false / uploadReady=false 유지, commit/push 없음.
+
+
+## FLUX2 Selected Image Set Completion Validation v1 (`creative-v2-flux2-selected-image-set-completion-v1` — 2026-07-02)
+
+**Owner 승인 범위 내 실행: FLUX.2 [pro] create call 정확히 2회(scene 1 v2.2 / scene 6 v1), 비용 ~$0.13 추정(상한 $0.50 내), scene 2/3/4/5 생성 금지 준수, render/TTS/mux/upload 없음.**
+
+- 신규: `scripts/fixtures/golden_sample_flux2_selected_image_set_completion_prompts.v1.json` — scene 1 v2.2: 지갑 완전 제거(확정 인과: 외부 전면 노출 3/3 각인) + banned에 'NO wallets, NO leather goods' 추가, hook 코어 유지. scene 6 v1: contract v2 승계하되 closed wallet 소품 제거(닫힌 지갑=외부 전면 노출 구도), 두 손+blank 카드 3장 정렬 코어 유지.
+- 신규: `scripts/run-flux2-selected-image-set-completion-v1.mjs` — hard cap 2, scene 2/3/4/5 코드 차단, 단일 endpoint/size 고정, BFL_API_KEY만 파싱(값 미출력), poll 분리 집계(17회).
+- 결과: 2/2 생성, 2/2 native 1088x1936 gate PASS.
+- **육안 QA (엄격): scene 6 PASS — 첫 시도 클린(no-text 0건, reset/action 전달력 성립, 손 무결성 정상). scene 1 REGENERATE_NEEDED — 지갑/가죽 등장 0건으로 각인 클래스 완전 소멸 성공, 단 봉투 플랩(glassine 렌더) 안쪽에 워터마크 유사 letterform 마크 1건 신규 발생.**
+- **잔여 위험 모델 재정의: 위반이 지갑(v2)→지갑(v2.1)→봉투 플랩(set-v1)으로 이동 — 특정 오브젝트가 아니라 '카메라를 향한 가장 두드러진 제조품 표면'에 확률적으로 마크가 붙는 stochastic prior. 동일 봉투가 v2/v2.1에서 2연속 클린이었으므로 결정론 아님.**
+- clean 후보 풀: scene 2(v1)+3(v2)+4(v2)+5(v2.1)+**6(set-v1 신규)** = **6씬 중 5씬**. 잔여: scene 1 hook 단 1씬.
+- 다음 추천(별도 승인 필요): A안 scene 1 v2.3 1장 재생성(~$0.07, 플랩 재질 명시 강화 'plain matte white paper, not glassine, no watermark') / B안 플랩 마크 조건부 수용 판단(hook 첫 2초 노출이라 비권장) / C안 5/6으로 다음 단계 병행.
+- 산출: `output/money-shorts/flux2-selected-image-set-completion-v1/` — 이미지 2장 + summary + qa-report (parse OK, createCalls 2/2, scenes [1,6], 해상도 실측, secret 노출 0건).
+- renderReady=false / uploadReady=false 유지 (Owner 시각 QA + selected set lock 전 render 금지), commit/push 없음.
