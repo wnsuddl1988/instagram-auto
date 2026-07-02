@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "money_shorts_flux2_object_whitelist_contract_v2",
+  "taskId": "creative-v2-flux2-object-whitelist-contract-v2",
+  "status": "data_only_contract",
+  "createdAt": "2026-07-02",
+  "supersedes": "scripts/fixtures/golden_sample_flux2_validation_prompts.v1.json (negative-강화 전략) — v1의 scene 2 프롬프트만 proven으로 승계",
+  "benchmarkRef": "scripts/fixtures/golden_sample_visual_quality_benchmark.v1.json",
+  "evidenceRef": "output/money-shorts/flux2-small-validation-v1/qa-report-flux2-small-validation.v1.json",
+
+  "strategyShift": {
+    "from": "negative prompt 이중 강화 (head+tail no-text + 오브젝트별 blank 명시)",
+    "to": "object-whitelist 구도 재번역 — 텍스트가 원래 있는 오브젝트를 구도에서 원천 배제하고, 무문자-natural 오브젝트만으로 씬 은유를 다시 짓는다",
+    "evidence": [
+      "FLUX2 소량 검증(4장): negative 이중 강화에도 no-text clean 1/4. 'unlabeled blank buttons'(계산기)·'no numbers'(달력) 같은 명시 지시를 realism prior가 이김",
+      "위반 전수는 text-natural 오브젝트 표면에서만 발생: 폰 시계 08:15, 머그 'morning' 인쇄, 계산기 키패드 숫자, 카드 각인, 달력 날짜/요일, 동전 각인, 지갑 브랜드 스탬프",
+      "반면 오브젝트 '구성' 지시는 4/4 충실 — 요청한 사물이 요청한 배치로 등장. 통제 가능한 축은 표면이 아니라 구성",
+      "scene 2가 유일 PASS인 이유 = 구도에 text-natural 오브젝트 0개 (빈 종이/무지 봉투/민무늬 가죽/목재만). 화이트리스트 전략의 실증 근거"
+    ],
+    "lessonsHardened": [
+      "머그 교훈(scene 1): 프롬프트가 초대한 비열거 오브젝트(커피잔)에 텍스트가 생김 → 모든 가시 오브젝트는 화이트리스트에서 열거하고, 열거 외 오브젝트 등장 자체를 금지한다",
+      "지갑 교훈(scene 5): 지갑 각인 + 카드 무단 추가 → 가죽은 'smooth unstamped', 내부 상태(비었음/닫힘)를 명시한다",
+      "배경 교훈: 흐린 배경에서도 가전/포스터/라벨류가 잠재 텍스트 위험 → 배경은 '무인식 플레인 블러'로 제한한다"
+    ]
+  },
+
+  "allowedObjects": [
+    { "object": "blank white paper slips / sheets", "note": "완전 무지. 지폐 대체물이자 '돈' 기본 은유" },
+    { "object": "plain unmarked envelopes", "note": "우표/주소/창/인쇄 금지. 월급봉투·지출처 은유" },
+    { "object": "plain leather wallet", "note": "반드시 'smooth unstamped leather, no embossed marks'. 내부 상태(empty/closed) 명시 필수" },
+    { "object": "wood table / fabric / glass / soft shadow", "note": "무대 재질. 나뭇결·직물 질감은 FLUX2 강점" },
+    { "object": "abstract amber light / reflection / glow / light streak", "note": "단일 앰버 액센트. 시선 유도와 강조는 사물이 아니라 빛으로" },
+    { "object": "blank cards with chip only", "note": "조건부 — 카드가 구도 중심이 아니고 각인 위험을 감수할 때만. v1 검증에서 카드 인쇄 위반 실측 → 기본값은 미사용, 대체재는 blank paper cards" },
+    { "object": "smooth unmarked geometric blocks / paper tabs / ribbons / plain string / plain folders", "note": "숫자·날짜·목록의 무문자 대체 어휘: 개수(3개=3일), 반복(등간격 탭), 묶음(끈으로 묶은 다발)" },
+    { "object": "hands (bare)", "note": "필요할 때만. 시계·반지 각인·소매 프린트 금지 — 'bare hands, no watch, no jewelry, plain sleeve'" }
+  ],
+
+  "bannedTextProneObjects": [
+    "phones / tablets / screens / status bars / notifications (추상 글로우 지시로도 시계 08:15 위반 실측)",
+    "calculators / keypads (unlabeled 지시 정면 위반 실측)",
+    "calendars / date grids / month·day labels (no numbers 지시 정면 위반 실측)",
+    "real coins / currency / banknotes (각인·초상 위반 실측)",
+    "receipts / bills / statements (1차 테스트 문자열 위반 실측)",
+    "mugs / cups (plain 포함 전면 금지 — 비열거 상태에서 'morning' 인쇄 실측, 초대 자체가 위험)",
+    "keyboards",
+    "cards with numbers / brand / embossing",
+    "stamps / address labels / envelope print",
+    "clocks / watches (손목 포함)",
+    "charts with labels/axes — 차트·그래프는 이미지 생성 금지, renderer의 vector mini_graph_card로만 (card motion contract 준수)"
+  ],
+
+  "compositionRules": [
+    "모든 가시 man-made 오브젝트는 씬별 objectsUsed 목록에서 열거된 것만 — 열거 외 오브젝트 등장 금지(머그 교훈)",
+    "배경은 'softly blurred plain domestic surfaces only, no recognizable appliances, no posters, no labels' — 무인식 플레인 블러",
+    "가죽/직물 표면은 smooth·unstamped·plain 명시(지갑 각인 교훈), 지갑 내부 상태(empty/closed) 명시(카드 무단 추가 교훈)",
+    "숫자·순서·시간 경과는 사물 개수/등간격/빛 자국으로 은유 — 글리프가 필요한 정보는 renderer 카드가 얹는다(card-first 원칙)",
+    "overlay safe-area 유지: lower third + top strip clean",
+    "width=1088, height=1936 native 고정 — size/endpoint/provider fallback, upscale, crop-as-fix, stock, placeholder 전면 금지"
+  ],
+
+  "promptTemplateV2": {
+    "order": ["1_compositionWhitelistHead", "2_styleAnchor", "3_sceneSubject", "4_blankSurfaceTail"],
+    "principle": "negative 문장보다 composition whitelist가 먼저 온다. 'Use ONLY these objects' 형식으로 구성 자체를 제한하고, banned 목록은 whitelist head 안에 내장한다. no-text tail은 3중 안전망으로 유지한다.",
+    "compositionWhitelistHead": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: {sceneObjectList}. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels.",
+    "styleAnchor": "Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards.",
+    "blankSurfaceTail": "ALL SURFACES BLANK: every paper, slip, envelope, tab and card is completely blank; the wallet is smooth unstamped leather with no embossed marks; hands are bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame.",
+    "apiParams": { "width": 1088, "height": 1936, "endpoint": "https://api.bfl.ai/v1/flux-2-pro", "fallback": "none" }
+  },
+
+  "sceneRewritesForT2": [
+    {
+      "order": 1,
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "coreIdea": "월급 입금 순간의 짧은 안도",
+      "v1Risk": "폰 잠금화면 시계 08:15 + 머그 'morning' 위반 (REGENERATE_NEEDED)",
+      "whitelistTranslation": "폰 알림 → '방금 뜯은 월급봉투'. 빛나는 새 blank slips를 무지 봉투에서 꺼내는 손 + 기다리는 얇은 지갑. 도착의 신호는 화면이 아니라 봉투 개봉과 앰버 아침광",
+      "objectsUsed": ["plain unmarked envelope (just opened, flap raised)", "fresh blank white paper slips", "thin open leather wallet (smooth unstamped, visibly empty inside)", "warm wooden kitchen table", "morning window light with one amber beam", "one bare hand"],
+      "subjectDeliveryCheck": "봉투에서 새 돈(빈 슬립)이 방금 나왔다는 '도착+안도'가 이미지만으로 읽힌다",
+      "finalPromptV2": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: one plain unmarked paper envelope, fresh blank white paper slips, one thin open leather wallet, a warm wooden kitchen table, morning window light, one bare hand. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning window light. A bare hand lifts a small sheaf of crisp, fresh blank white paper slips out of a just-opened plain unmarked envelope, its flap still raised; a single warm amber beam of morning light catches the clean edges of the fresh slips so they glow softly — money that has just arrived. A visibly thin open leather wallet, smooth unstamped leather with its interior clearly empty, waits beside the envelope ready to receive them. Mood: one short breath of relief on payday morning, quiet and hopeful. Shallow depth of field, warm window light, strong paper and wood textures. ALL SURFACES BLANK: every paper, slip and envelope is completely blank; the wallet is smooth unstamped leather with no embossed marks; the hand is bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 2,
+      "sceneRole": "scene_02_money_leak_order",
+      "coreIdea": "돈이 들어오자마자 정해진 순서대로 새는 느낌",
+      "v1Risk": "없음 — v1 검증 유일 PASS (위반 0건, benchmark scene-02A 동급)",
+      "whitelistTranslation": "재번역 불필요 — proven 구도 그대로 승계. 이 씬이 화이트리스트 전략의 원형",
+      "objectsUsed": ["open leather wallet", "blank white paper slips (diagonal trail)", "three plain unmarked envelopes (standing row)", "dark wooden table", "one amber light accent", "bare hands (resting)"],
+      "subjectDeliveryCheck": "지갑→슬립 대각 흐름→봉투 3개로 '정해진 순서로 새는 돈' 방향성이 보인다",
+      "promptPolicy": "PROVEN_V1_VERBATIM — golden_sample_flux2_validation_prompts.v1.json order 2의 finalPrompt를 무수정 재사용 (PASS 실측 프롬프트 변경 금지). 재검증 불필요 — 기존 PASS 이미지가 후보",
+      "finalPromptV2": null
+    },
+    {
+      "order": 3,
+      "sceneRole": "scene_03_fixed_cost_stack",
+      "coreIdea": "고정비가 먼저 쌓여 월급을 압박",
+      "v1Risk": "계산기 키패드 숫자 전체 + 카드 각인 위반 (REGENERATE_NEEDED)",
+      "whitelistTranslation": "계산기·칩카드 제거. '높이 vs 납작함' 순수 물성 대비로 재번역 — 끈으로 묶인 blank 종이 다발 탑 vs 납작하게 누운 얇은 빈 지갑. 램프 기구 대신 프레임 밖 광원",
+      "objectsUsed": ["tall stack of blank white papers (bundles tied with plain undyed string)", "one plain unmarked envelope (leaning)", "thin flat open leather wallet (smooth unstamped, visibly almost empty)", "dark wood desk", "warm lamp glow from outside the frame", "amber accent on stack top edge"],
+      "subjectDeliveryCheck": "종이 탑의 무게/높이 vs 지갑의 납작함 대비로 '고정비가 먼저 쌓여 누른다'가 읽힌다",
+      "finalPromptV2": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: a tall stack of blank white papers with some bundles tied in plain undyed string, one plain unmarked paper envelope, one thin open leather wallet, a dark wood desk. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: objects and space only. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A home desk at night, lit by a warm lamp glow coming from outside the frame. A tall, heavy, slightly uneven tower of completely blank white papers dominates the middle band, several of its bundles tied with plain undyed string like bills waiting in line; one plain unmarked envelope leans against the tower. Beside this tower, a visibly thin leather wallet of smooth unstamped leather lies completely flat and open, its interior almost empty — the height and weight of the paper tower against the flatness of the wallet tells the story: fixed costs pile up first and press down on the salary. One amber accent runs along the top edge of the stack; strong paper grain and dark wood textures, shallow depth of field. ALL SURFACES BLANK: every paper, bundle and envelope is completely blank; the wallet is smooth unstamped leather with no embossed marks. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 4,
+      "sceneRole": "scene_04_subscriptions_auto_pay",
+      "coreIdea": "작은 자동결제/구독이 조용히 반복해서 빠져나감",
+      "v1Risk": "v1 검증에서 제외됨(화면 타일 구도가 screen 최소화 계약과 충돌). v2에서 화면 없이 재번역",
+      "whitelistTranslation": "화면 타일 → '완전 등간격으로 어둠 속으로 행진하는 작은 blank 탭 행렬'. 자동성=기계적 등간격, 반복성=동일 크기, 은밀함=어둠으로 페이드",
+      "objectsUsed": ["many small identical blank white paper tabs (perfectly even row)", "open thin leather wallet (source of the row)", "dark wood table", "soft shadow at frame edge", "faint amber glow fading along the row", "no hands"],
+      "subjectDeliveryCheck": "작고 똑같은 지출이 규칙적으로 계속 빠져나가는 중이라는 자동 반복성이 보인다",
+      "finalPromptV2": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: many small identical blank white paper tabs, one open thin leather wallet, a dark wood table. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: objects and space only, no hands in this scene. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A dim, quiet evening table of dark wood. From an open thin leather wallet of smooth unstamped leather at one side of the middle band, a long, perfectly even row of small identical blank white paper tabs leads away across the wood toward the shadowed edge of the frame — every tab the same size, the same spacing, mechanical and regular, like small payments leaving on a fixed schedule without being noticed. A faint warm amber glow touches the first tabs and fades tab by tab along the row until the last ones dissolve into soft darkness. Mood: quiet, automatic repetition in the dark — not horror, just unnoticed dimness. Strong wood grain texture, shallow depth of field. ALL SURFACES BLANK: every tab is completely blank; the wallet is smooth unstamped leather with no embossed marks. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 5,
+      "sceneRole": "scene_05_day3_empty_wallet",
+      "coreIdea": "3일 뒤 빈 지갑",
+      "v1Risk": "달력 날짜 숫자+요일 문자, 동전 각인, 지갑 카드 무단 추가로 '빈 지갑' 은유 실패 (REGENERATE_NEEDED)",
+      "whitelistTranslation": "달력 → '무문자 앰버 페이퍼 탭 3개 정렬'(3일 경과), 동전 제거, 지갑은 카메라 쪽으로 기울여 '텅 빈 내부 공간' 자체를 주제로. 빈 카드슬롯·공허한 지폐칸 명시",
+      "objectsUsed": ["three small plain amber paper tabs (neat row = three days)", "open leather wallet tilted toward camera (interior visibly hollow and empty, card slots slack and empty)", "warm wood desk", "soft daylight", "no coins, no calendar, no hands or one bare hand only"],
+      "subjectDeliveryCheck": "탭 3개(시간 경과)와 지갑 내부의 실제 빈 공간이 '3일 만에 비었다'로 읽힌다",
+      "finalPromptV2": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: three small plain amber paper tabs, one open leather wallet, a warm wood desk. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: objects and space only. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A quiet desk corner in soft daylight. Three small plain amber paper tabs lie in one neat, deliberate row on the warm wood — three simple unmarked markers, reading purely as three days passed. Directly below them in sharp focus, an open leather wallet of smooth unstamped leather is tilted up toward the camera so its interior is clearly visible: the bill compartment gapes completely hollow and empty, the card slots hang slack and visibly empty, nothing inside at all — the empty space itself is the subject. The contrast between the three amber tabs above and the hollow wallet below tells the whole story without a single word. Worn leather grain and soft paper texture, warm-neutral grade, gentle daylight. No despair melodrama, no horror lighting. ALL SURFACES BLANK: every tab is completely blank plain amber paper; the wallet is smooth unstamped leather with no embossed marks and nothing inside. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 6,
+      "sceneRole": "scene_06_cashflow_reset_action",
+      "coreIdea": "해결 행동 — 월급날 돈 빠지는 순서를 다시 정리",
+      "v1Risk": "v1 검증에서 제외됨. OpenAI 6A 구도에 있던 달력·펜 제거 필요",
+      "whitelistTranslation": "달력·펜 제거. 두 손이 blank 종이 카드 3장을 '의도적 순서'로 정렬하는 행위만 남김 — 첫 카드를 반 발짝 앞세워 우선순위 표현",
+      "objectsUsed": ["three blank white paper cards (deliberate ordered row, first card set slightly ahead)", "closed slim leather wallet (smooth unstamped)", "clean light-wood desk", "fresh morning light", "two bare hands"],
+      "subjectDeliveryCheck": "돈 나가는 순서를 스스로 다시 정하는 차분한 통제 행동이 읽힌다",
+      "finalPromptV2": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: three blank white paper cards, one closed slim leather wallet, a clean light-wood desk, two bare hands. Every visible man-made object must come from this list; do not add any other object. Strictly NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO pens, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A clean, tidy light-wood desk in fresh morning light. Two bare hands calmly place three completely blank white paper cards into one deliberate horizontal row across the middle band, the first card set slightly ahead of the other two as the clear priority — the quiet act of re-deciding the order in which money leaves on payday. A neatly closed slim wallet of smooth unstamped leather rests to one side. Generous clean negative space above and below the row of cards. Mood: calm control and a fresh start, not stress. One warm amber accent on the edge of the first card; soft shadows, fine paper and wood textures. ALL SURFACES BLANK: every card is completely blank; the wallet is smooth unstamped leather with no embossed marks; hands are bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no printed lines — anywhere in the frame."
+    }
+  ],
+
+  "qaGateV2": {
+    "resolutionGate": "width>=1080 AND height>=1920 AND |w/h - 0.5625|<=0.01, native only — upscale/crop-as-fix 금지",
+    "noTextQa": "가독 텍스트/숫자/로고/워터마크/UI/각인/스탬프 0건 — 육안/AI QA, 1건이라도 발견 시 해당 이미지 fail",
+    "objectWhitelistComplianceQa": "banned 오브젝트가 등장하면 표면이 blank여도 fail (잠재 텍스트 위험 + 프롬프트 불순응 신호). objectsUsed 외 man-made 오브젝트 등장은 text-prone이면 fail, 아니면 warning",
+    "subjectDeliveryQa": "화이트리스트 재번역 후에도 씬 은유가 이미지 단독으로 읽히는지 — v2의 핵심 검증 항목 (추상화로 전달력이 죽으면 재번역 실패)",
+    "safeAreaQa": "하단 1/3 + 상단 스트립 과밀 여부",
+    "handObjectQa": "손 왜곡/여분 손가락 0건 + 손목 시계·보석 없음, 오브젝트 구조 붕괴 없음",
+    "benchmarkComparisonQa": "OpenAI benchmark 3장의 positiveQualitySignals 대비 동급 여부 기록",
+    "regenerateOrSkipPolicy": "fail 시: 해당 씬 1회 한도 내 구도-지시 강화 재생성(승인 장수 상한 내) → 재실패 시 씬 skip. placeholder/stock/941x1672 재사용/업스케일로 메우기 절대 금지"
+  },
+
+  "residualRisks": [
+    "지갑 각인: 'smooth unstamped' 명시로 완화했으나 가죽 브랜드 스탬프 잔여 위험 — QA에서 지갑 표면 확대 확인 필수",
+    "배경 블러 존: 무인식 블러 지시에도 흐린 배경에 라벨류 잔상 가능 — QA에서 배경 스캔 필수",
+    "추상화 대가: 화이트리스트 재번역은 은유가 더 추상적 — subject delivery가 v2 검증의 진짜 시험대. 특히 scene 4(등간격 탭=자동결제)와 scene 5(탭 3개=3일)가 읽히는지",
+    "이 계약도 품질 자동 보장이 아님 — 균일성은 gate + QA + regenerate/skip 반복 적용으로만 강제 (benchmark v1 원칙 승계)"
+  ],
+
+  "nextValidationPlan": {
+    "approvalStatus": "NOT_APPROVED — 이 문서는 실행 승인이 아니다. FLUX2 호출은 별도 Owner 승인 필요",
+    "recommendedScope": "최대 4장, 비용 $1 이하 (추정 ~$0.25): scene 1(hook 최중요) + scene 3(계산기 제거 검증) + scene 5(최다 위반 씬 재설계 검증) + scene 4(신규 은유 전달력 검증)",
+    "excluded": "scene 2 — v1 PASS 이미지가 이미 후보(재지출 불필요), scene 6 — scene 2와 동일 오브젝트 계열로 최저 위험(후순위)",
+    "successCriteria": "no-text clean + whitelist compliance 4/4 목표, 최소 3/4 + subject delivery 유지 시 FLUX2 운영 채택 재판단 가능",
+    "forbiddenRegardless": ["render", "TTS", "mux", "upload", "OpenAI/ChatGPT/Gemini/Midjourney 호출", "941x1672 재사용", "placeholder/stock/upscale"]
+  },
+
+  "renderReadinessNote": "이 계약은 설계 문서다. renderReady=false / uploadReady=false 상태를 변경하지 않는다.",
+  "boundary": { "dataOnly": true, "noGeneration": true, "noRender": true }
+}

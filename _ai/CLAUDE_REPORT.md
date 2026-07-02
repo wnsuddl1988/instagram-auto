@@ -2715,3 +2715,15 @@ QA-only slice. 코드 변경 없음.
 - QA report: `output/money-shorts/flux2-small-validation-v1/qa-report-flux2-small-validation.v1.json` (이미지별 gate/위반/은유/safe-area/왜곡/benchmark 비교 + 결론), summary: `summary-flux2-small-validation.json`.
 - 다음 옵션: A(권장) object-whitelist prompt contract v2 + 소량 재검증(별도 승인) / B 하이브리드(무문자 씬만 FLUX2) / C FLUX2 제외 재결정.
 - 검증: runner syntax OK / fixture·summary·qa-report parse OK / 이미지 4/4 실측 1088x1936 / secret 값 노출 0건 / renderReady=false·uploadReady=false 유지 / commit·push 없음.
+
+
+## FLUX2 Object-Whitelist Contract v2 (`creative-v2-flux2-object-whitelist-contract-v2` — 2026-07-02)
+
+**성격: 계약 문서/fixture 작성만 — 외부 호출·이미지 생성·render/TTS/mux/upload·.env.local 접근·commit/push 0건.**
+
+- 전략 전환(실측 인과 기반): FLUX2는 오브젝트 '구성' 지시는 4/4 충실, '표면' 텍스트 지시는 negative 이중 강화로도 실패 재현 → 통제 지점을 표면(negative)에서 구성(object-whitelist)으로 이동. scene 2 PASS(무문자-natural 오브젝트만)가 실증 근거.
+- 신규: `scripts/fixtures/golden_sample_flux2_object_whitelist_contract.v2.json` — allowedObjects 8종(용법 주석 포함)/bannedTextProneObjects 11종(실측 위반 증거 병기)/compositionRules 6항(머그·지갑·배경 교훈 규칙화)/promptTemplateV2(whitelist-head-first, banned 내장, blank tail 3중 안전망)/T2 scene 1~6 재번역(scene 2는 PROVEN_V1_VERBATIM 승계, 나머지 5씬 완성 프롬프트 수록)/qaGateV2(object-whitelist compliance 신설: banned 오브젝트 등장 시 blank여도 fail)/residualRisks(추상화 전달력이 진짜 시험대)/nextValidationPlan(NOT_APPROVED 명시).
+- scene 재번역 핵심: 1 폰→월급봉투 개봉 / 3 계산기·카드 제거→종이 다발 탑 vs 납작 지갑 / 4 화면 타일→등간격 blank 탭 행렬 / 5 달력·동전→앰버 탭 3개+지갑 빈 내부 공간 / 6 달력·펜 제거→카드 3장 순서 정렬.
+- 신규: `_ai/GOLDEN_SAMPLE_FLUX2_OBJECT_WHITELIST_CONTRACT_V2.md` (Owner/Codex 판단용) + HANDOFF_NOW pointer/current slice 갱신.
+- 다음 검증 추천(승인 아님): 최대 4장/$1 이하 — scene 1+3+5+4. scene 2 제외(PASS 이미지 보유), scene 6 후순위. 성공 기준 no-text+whitelist 4/4 목표(최소 3/4+전달력).
+- 검증: contract v2 parse+구조 체크 OK(필수 키 9/9, 신규 프롬프트 5/5 whitelist-head-first+banned 8종+tail) / 절대규칙 MD5 유지 / secret 값·renderReady:true·uploadReady:true·ALLOW_*·fetch( 패턴 0건 / renderReady=false·uploadReady=false 유지.
