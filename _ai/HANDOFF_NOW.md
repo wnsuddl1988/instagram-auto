@@ -11,20 +11,22 @@
 - 이미지 source 복구 결정 자료: `_ai/GOLDEN_SAMPLE_IMAGE_SOURCE_RECOVERY_DECISION_PACKET_V1.md` (2026-07-02) — 1080x1920+ provider 후보 비교(A: Imagen 4 상위/B: OpenAI/C: FLUX/D: 참고), visual director 재설계 요건, Golden Sample 주제 후보 T1/T2/T3 비교(추천 T2), 필요 승인 범주와 승인 문구 템플릿. 실행 승인 아님 — Owner 결정 대기.
 - 품질/모션 계약: `_ai/GOLDEN_SAMPLE_VISUAL_QUALITY_AND_CARD_MOTION_CONTRACT_V1.md` (2026-07-02) — OpenAI 3장 benchmark 고정 + FLUX2 운영 후보 prompt/gate 계약 + 카드/모션/타이포/TTS 싱크 계약(min 14 events/30s, 첫 2s hook, anti-cheap-PPT). fixture 2종: `golden_sample_visual_quality_benchmark.v1.json`, `golden_sample_card_motion_contract.v1.json`.
 - FLUX2 object-whitelist 계약: `_ai/GOLDEN_SAMPLE_FLUX2_OBJECT_WHITELIST_CONTRACT_V2.md` (2026-07-02) — 소량 검증(no-text clean 1/4) 실측 기반 전략 전환: negative 강화 → object-whitelist 구도 재번역. fixture: `golden_sample_flux2_object_whitelist_contract.v2.json` (T2 scene 1~6 재번역 프롬프트 + qaGateV2 + 다음 검증 추천 4장/$1 이하).
+- Selected image set lock + 자막 계약: `_ai/GOLDEN_SAMPLE_FLUX2_SELECTED_IMAGE_SET_LOCK_V1.md` (2026-07-02, T2 6-scene FLUX2 이미지 고정 + MD5 무결성) + `_ai/GOLDEN_SAMPLE_REELS_DYNAMIC_CAPTION_CONTRACT_V1.md` (하단 고정 자막 금지, TTS 동기 dynamic caption — 다음 render 시 필수 적용). fixture 2종: `golden_sample_flux2_selected_image_set_lock.v1.json`, `golden_sample_reels_dynamic_caption_contract.v1.json`.
 - provider 공식 문서 확인 결과: `_ai/PROVIDER_OFFICIAL_DOC_VERIFICATION_REPORT_V1.md` (2026-07-02, 보정 v1.1) — Imagen 4는 2026-08-17 shutdown(비추천), 1순위 B: OpenAI gpt-image-2(임의 WIDTHxHEIGHT 16배수 + 공식 가격 체계 확인, custom size 정확 비용만 산정 필요), 2순위 A′: gemini-3.1-flash-image 2K($0.101/장, 정확 픽셀 실측 필요), 3순위 C: FLUX.2(width/height 파라미터·flexible aspect ratios 공식 확인, 최대 픽셀/acceptance 추가 확인 필요 + 신규 credential — 허용 시 강한 후보). 소량 테스트 B+A′ 병행 8장/상한 $3 제안 + Owner 승인 문구 초안 포함.
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-flux2-scene1-v2-3-single-validation`
-- Owner 최신 승인: `승인: FLUX2 scene 1 v2.3 단일 재검증 — FLUX.2 [pro] 최대 1장(scene 1 only), 비용 $0.25 상한, BFL_API_KEY 사용 허용, 봉투 플랩을 plain matte white paper / not glassine / not translucent / no watermark / no security pattern로 강화, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단`
-- 범위: FLUX2 selected image set의 마지막 미해결 hook 씬(scene 1)만 최대 1장 생성/검증한다. scene 2(v1 PASS), scene 3/4(v2 PASS), scene 5(v2.1 PASS), scene 6(set-v1 PASS)는 재생성하지 않는다.
-- 목적: scene 1 v2.2에서 지갑/가죽 각인 클래스는 소멸했으나 봉투 플랩에 letterform 마크 1건이 생긴 문제를, 봉투 플랩 재질/표면을 plain matte white paper로 강화해 최종 clean hook 후보를 확보할 수 있는지 확인한다.
-- 허용: 기존 계약/fixture/output summary 읽기, scene 1 v2.3 전용 prompt patch fixture/runner/summary/QA report 작성, `.env.local`에서 `BFL_API_KEY` 값만 읽어 API header에 사용(값 출력 금지), FLUX.2 [pro] 최대 1회 호출, output 이미지/summary/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
-- 금지: OpenAI 호출, ChatGPT/Playwright 생성, Gemini/Midjourney 사용, FLUX2 2장 이상 생성, scene 2/3/4/5/6 생성, 비용 $0.25 초과 위험이 있는 추가 호출, render, TTS 생성, mux, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- Task ID: `creative-v2-flux2-selected-image-set-lock-and-caption-contract-v1`
+- Owner 최신 승인: `승인: FLUX2 6-scene selected image set lock — scene 1(v2.3), scene 2(v1), scene 3(v2), scene 4(v2), scene 5(v2.1), scene 6(set-v1)을 Golden Sample image source로 고정. 추가 이미지 생성/API 호출 없이 selected image set manifest/QA lock 문서화까지 진행하고, render/TTS/mux/upload는 별도 승인 전 금지.`
+- Owner 추가 요청: `요즘은 자막을 밑에 고정시키고 사용하지 않고 아래 Instagram Reel 링크의 영상처럼 사용한다. 이 방식으로 자막을 나오게 해줘. https://www.instagram.com/reel/DaRa298Smpy/?igsh=MTFrZXpyazg3YWdsbA==`
+- 범위: FLUX2 6-scene selected image set을 Golden Sample image source로 manifest/QA lock 문서화하고, 다음 render/TTS 단계에 적용할 Reels-style dynamic caption 계약을 문서/fixture로 고정한다.
+- 목적: image source 6/6 clean 후보를 더 이상 재생성하지 않고 고정하며, 향후 영상 렌더 시 bottom-fixed subtitle이 아닌 dynamic phrase/keyword caption 방식이 필수임을 계약화한다.
+- 허용: 기존 output summary/QA report 읽기, selected image set lock fixture/QA 문서 작성, dynamic caption style contract fixture/문서 작성, `_ai/HANDOFF_NOW.md` pointer 갱신, `_ai/CLAUDE_REPORT.md` append.
+- 금지: 추가 이미지 생성, OpenAI/FLUX2/ChatGPT/Playwright/Gemini/Midjourney 호출, Instagram/외부 브라우저 자동화, render, TTS 생성, mux, upload, dependency 추가/변경, env/secret 접근/수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
 
 ## Task ID
 
-`creative-v2-flux2-scene1-v2-3-single-validation`
+`creative-v2-flux2-selected-image-set-lock-and-caption-contract-v1`
 
 ## Project
 
@@ -39,7 +41,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `3b129d1 test(automation): add flux2 selected image completion validation`
+- Latest HEAD: `d03e3f1 test(automation): add flux2 scene1 v2.3 validation`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
@@ -66,12 +68,16 @@ Current decision:
 
 Next responsible action:
 
-- Run the separately approved FLUX2 scene 1 v2.3 single validation only.
-- Generate at most 1 FLUX.2 [pro] image for scene 1 only.
-- Scene 1 must preserve the v2.2 hook core: plain opened salary envelope, blank slips, bare hand, morning light, no wallet/leather goods.
-- Strengthen the exact v2.2 failure point: the envelope flap inner surface must be plain matte white paper, not glassine, not translucent, no watermark, no security pattern, no letterform, no stamp, no emboss.
-- If this image passes strict no-text/mark QA, selected image clean candidate pool becomes 6/6. Still do not render/TTS/mux/upload before Owner visual QA and selected set lock.
-- Stop after image QA report. Do not render/TTS/mux/upload.
+- Run the separately approved selected image set lock and caption contract documentation slice only.
+- Lock the exact 6 image files as Golden Sample selected image source:
+  - scene 1(v2.3): `output/money-shorts/flux2-scene1-v2-3-single-validation/flux2s1v23-scene-01-scene_01_salary_arrival_hook.jpg`
+  - scene 2(v1): `output/money-shorts/flux2-small-validation-v1/flux2-scene-02-scene_02_money_leak_order.jpg`
+  - scene 3(v2): `output/money-shorts/flux2-object-whitelist-validation-v2/flux2wl-scene-03-scene_03_fixed_cost_stack.jpg`
+  - scene 4(v2): `output/money-shorts/flux2-object-whitelist-validation-v2/flux2wl-scene-04-scene_04_subscriptions_auto_pay.jpg`
+  - scene 5(v2.1): `output/money-shorts/flux2-object-whitelist-v2-1-wallet-patch-validation/flux2wl21-scene-05-scene_05_day3_empty_wallet.jpg`
+  - scene 6(set-v1): `output/money-shorts/flux2-selected-image-set-completion-v1/flux2set-scene-06-scene_06_cashflow_reset_action.jpg`
+- Add dynamic caption contract: bottom-fixed subtitle bars are forbidden; captions must be phrase/keyword-level, voice-synced, appearing near the active visual focus or lower-middle safe zone, with short pop/slide/scale motion and emphasized key words. Do not claim exact visual cloning of the Instagram reference unless directly verified; record the URL as Owner reference.
+- Stop after docs/fixtures/QA lock report. Do not render/TTS/mux/upload.
 
 ## Fixed Samples
 

@@ -2790,3 +2790,15 @@ QA-only slice. 코드 변경 없음.
 - 다음 추천: Owner 시각 QA로 6씬 lock 결정 → lock 후 Golden Sample 다음 단계(renderer/TTS) 별도 승인.
 - 산출: `output/money-shorts/flux2-scene1-v2-3-single-validation/` — 이미지 1장 + summary + qa-report (parse OK, createCalls 1/1, scene 1 only, 해상도 실측, secret 노출 0건).
 - renderReady=false / uploadReady=false 유지 (Owner 시각 QA + selected set lock 전 render 금지), commit/push 없음.
+
+
+## FLUX2 Selected Image Set Lock + Reels Dynamic Caption Contract v1 (`creative-v2-flux2-selected-image-set-lock-and-caption-contract-v1` — 2026-07-02)
+
+**성격: 문서/fixture 전용 slice — 이미지 생성/외부 API/브라우저 자동화/render/TTS/mux/upload 0건.**
+
+- 신규: `scripts/fixtures/golden_sample_flux2_selected_image_set_lock.v1.json` — T2 6-scene FLUX2 이미지 lock manifest: scene 1(v2.3)/2(v1)/3(v2)/4(v2)/5(v2.1)/6(set-v1), 각 이미지 path+MD5+크기+해상도+gate/QA verdict+safe-area note+prompt fixture/QA report 출처 기록. lock 근거(6/6 native, 6/6 no-text strict PASS, 서사 전 구간 커버, 총 13 create calls ~$0.83) + imageSourcePolicy(941x1672 final 금지/placeholder·stock·upscale 금지/per-shot QA gate 유지/render 시 MD5 대조) 포함. renderReady=false·uploadReady=false·requiresOwnerVisualQaBeforeRender=true·noFurtherImageGenerationApproved=false.
+- 신규: `scripts/fixtures/golden_sample_reels_dynamic_caption_contract.v1.json` — Owner reference(Instagram Reel 링크, 원문 verbatim 기록·브라우저 자동화 미수행·clone 아님 명시) 기반 dynamic caption 계약: bottom-fixed bar/full-width box/karaoke 고정/2줄 상시/무발화 유지 금지, phrase·keyword 단위 1~5단어, TTS 진입 ±120ms·강조 ±80ms, active focus/lower-middle 배치, 주제 오브젝트·활성 카드 가림 금지, 카드-자막 동시 지배 금지, audit(0~30s 프레임 QA, 대비 4.5:1+, 하단 15% 상시 점유 fail, dwell 1.6s 권장/2.2s 초과 사유 필요, 첫 2s hook caption 필수).
+- 신규 문서: `_ai/GOLDEN_SAMPLE_FLUX2_SELECTED_IMAGE_SET_LOCK_V1.md` + `_ai/GOLDEN_SAMPLE_REELS_DYNAMIC_CAPTION_CONTRACT_V1.md` (Owner/Codex 판단용).
+- `golden_sample_card_motion_contract.v1.json` 검사 결과: bottom-fixed subtitle 가정 없음(카드 레이어 전용) → 지시대로 무수정 유지. 새 caption 계약이 관계/우선순위 규칙으로 참조.
+- HANDOFF_NOW pointer 1줄 추가 (허용 범위 내).
+- 검증: 신규 JSON 2종 parse OK / lockedImages 6개 경로 실존+scene 1~6 정확 / MD5 실측 기록 / renderReady·uploadReady false / 금지 패턴(renderReady:true·uploadReady:true·ALLOW_·fetch(·하단 고정 허용 문구) 0건 / secret 노출 0건.
