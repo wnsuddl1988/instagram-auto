@@ -9,21 +9,21 @@
 
 - 다음 방향 판단 자료: `_ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md` (2026-07-02) — 자동화 전 Golden Sample 품질 안정화 재정렬, 살릴 것/버릴 것, 이미지/비주얼 source 복구 선택지 4개와 선택지별 승인/위험/검증 기준. Owner 결정 전 render 금지.
 - 이미지 source 복구 결정 자료: `_ai/GOLDEN_SAMPLE_IMAGE_SOURCE_RECOVERY_DECISION_PACKET_V1.md` (2026-07-02) — 1080x1920+ provider 후보 비교(A: Imagen 4 상위/B: OpenAI/C: FLUX/D: 참고), visual director 재설계 요건, Golden Sample 주제 후보 T1/T2/T3 비교(추천 T2), 필요 승인 범주와 승인 문구 템플릿. 실행 승인 아님 — Owner 결정 대기.
-- 품질/모션 계약: `_ai/GOLDEN_SAMPLE_VISUAL_QUALITY_AND_CARD_MOTION_CONTRACT_V1.md` (2026-07-02) — OpenAI 3장 benchmark 고정 + FLUX2 운영 후보 prompt/gate 계약 + 카드/모션/타이포/TTS 싱크 계약(min 14 events/30s, 첫 2s hook, anti-cheap-PPT). fixture 2종: `golden_sample_visual_quality_benchmark.v1.json`, `golden_sample_card_motion_contract.v1.json`. FLUX2 validation은 Owner 계약 승인 후 별도 승인 필요 — render/TTS/mux/upload 계속 금지.
+- 품질/모션 계약: `_ai/GOLDEN_SAMPLE_VISUAL_QUALITY_AND_CARD_MOTION_CONTRACT_V1.md` (2026-07-02) — OpenAI 3장 benchmark 고정 + FLUX2 운영 후보 prompt/gate 계약 + 카드/모션/타이포/TTS 싱크 계약(min 14 events/30s, 첫 2s hook, anti-cheap-PPT). fixture 2종: `golden_sample_visual_quality_benchmark.v1.json`, `golden_sample_card_motion_contract.v1.json`.
 - provider 공식 문서 확인 결과: `_ai/PROVIDER_OFFICIAL_DOC_VERIFICATION_REPORT_V1.md` (2026-07-02, 보정 v1.1) — Imagen 4는 2026-08-17 shutdown(비추천), 1순위 B: OpenAI gpt-image-2(임의 WIDTHxHEIGHT 16배수 + 공식 가격 체계 확인, custom size 정확 비용만 산정 필요), 2순위 A′: gemini-3.1-flash-image 2K($0.101/장, 정확 픽셀 실측 필요), 3순위 C: FLUX.2(width/height 파라미터·flexible aspect ratios 공식 확인, 최대 픽셀/acceptance 추가 확인 필요 + 신규 credential — 허용 시 강한 후보). 소량 테스트 B+A′ 병행 8장/상한 $3 제안 + Owner 승인 문구 초안 포함.
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-visual-quality-and-card-motion-contract-v1`
-- Owner 최신 지시: OpenAI API 추가 결제 없음. OpenAI 3장 품질후보를 기준 샘플로 삼되, 운영 이미지 provider는 FLUX2 방향으로 본다. 먼저 이미지 품질 균일화 기준과 카드/모션/타이포/TTS 싱크 기준을 확실히 잡는다.
-- 범위: 추가 이미지 생성 없이 OpenAI recommended 3장(scene 1A/2A/3A)을 visual quality benchmark로 고정하고, FLUX2가 따라야 할 no-text/subject-delivery/overlay-safe 기준과 card-first motion design contract를 작성한다.
-- 목적: 앞으로 생성할 모든 이미지의 품질을 "보장"한다고 말하지 않고, 자동화가 실패 이미지를 걸러내고 재생성/skip하게 만드는 enforceable gate를 정의한다. 카드/모션은 비용 절감용 땜빵이 아니라 영상의 주연 레이어로 계약화한다.
-- 허용: 기존 OpenAI/FLUX/ChatGPT output summary와 QA report 읽기, 신규 contract/fixture/report 작성, `_ai/CLAUDE_REPORT.md` append.
-- 금지: OpenAI/FLUX/ChatGPT/Gemini/Midjourney 호출, 이미지 생성/재생성, render, TTS 생성, mux, upload, credential/env/secret 읽기/변경, dependency 추가/변경, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
+- Task ID: `creative-v2-flux2-small-validation-v1`
+- Owner 최신 승인: `FLUX2 소량 validation 승인 — FLUX.2 [pro] 최대 4장, 비용 $1 상한, BFL_API_KEY 사용 허용, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단`
+- 범위: OpenAI 3장 benchmark와 visual/card-motion contract를 기준으로 FLUX.2 [pro] 소량 validation 이미지를 최대 4장 생성하고, 실측 해상도·no-text 위반·subject delivery·overlay safe-area·손/오브젝트 왜곡을 QA한다.
+- 목적: OpenAI 추가 결제 없이, 운영 후보인 FLUX2가 강화 no-text/blank-object/1088x1936/native gate 계약을 실제로 따라올 수 있는지 확인한다. 이 결과로 FLUX2를 Golden Sample image source로 계속 밀지, prompt를 한 번 더 강화할지, 다른 source 결정을 다시 열지 판단한다.
+- 허용: 기존 계약/fixture/output summary 읽기, FLUX2 validation prompt fixture/runner 작성 또는 기존 runner의 안전한 재사용/확장, `.env.local`에서 `BFL_API_KEY` 값만 읽어 API header에 사용(값 출력 금지), FLUX.2 [pro] 최대 4회 호출, output 이미지/summary/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
+- 금지: OpenAI 호출, ChatGPT/Playwright 생성, Gemini/Midjourney 사용, FLUX2 5장 이상 생성, 비용 $1 초과 위험이 있는 추가 호출, render, TTS 생성, mux, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
 
 ## Task ID
 
-`creative-v2-visual-quality-and-card-motion-contract-v1`
+`creative-v2-flux2-small-validation-v1`
 
 ## Project
 
@@ -38,7 +38,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `17a7bd9 test(automation): add openai quality candidate pack`
+- Latest HEAD: `e16acd7 docs(automation): add visual quality motion contract`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
@@ -65,9 +65,9 @@ Current decision:
 
 Next responsible action:
 
-- Lock the exact order: (1) visual quality benchmark from OpenAI 3 recommended images, (2) FLUX2 prompt/gate contract to match that benchmark, (3) card-first motion/typography/checklist/TTS-sync contract, (4) only after that, a separately approved FLUX2 validation test.
-- Do not call any provider or render in this slice.
-- Stop after contract/report evidence.
+- Run the separately approved FLUX2 small validation only.
+- Generate at most 4 FLUX.2 [pro] images using the strengthened benchmark-derived no-text prompt contract.
+- Stop after image QA report. Do not render/TTS/mux/upload.
 
 ## Fixed Samples
 

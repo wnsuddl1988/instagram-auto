@@ -2697,3 +2697,21 @@ QA-only slice. 코드 변경 없음.
 - 신규: `_ai/GOLDEN_SAMPLE_VISUAL_QUALITY_AND_CARD_MOTION_CONTRACT_V1.md` (Owner/Codex 판단용) + HANDOFF_NOW pointer 1줄.
 - renderReady=false / uploadReady=false 무변경.
 - 검증: 신규 JSON 2종 parse 정상 / benchmark 이미지 3장 실존 / source summary·qa-report 4종 parse 정상 / 절대규칙 MD5 유지 / secret 값 노출 0건(MD 문서에 key 이름 1회 언급은 승인 항목 설명, 값 아님) / renderReady:true·ALLOW_*·fetch( 패턴 0건.
+
+
+## FLUX2 Small Validation (`creative-v2-flux2-small-validation-v1` — 2026-07-02)
+
+**Owner 승인 범위 내 실행: FLUX.2 [pro] create call 정확히 4회, 비용 ~$0.25 추정(상한 $1 내), render/TTS/mux/upload 없음.**
+
+- 신규: `scripts/fixtures/golden_sample_flux2_validation_prompts.v1.json` — scene 1/2/3(benchmark 직접 비교)+scene 5(missing coverage, 달력/동전 약점 정면 검증). head+tail 이중 no-text + 오브젝트별 blank 명시. scene 4는 화면 타일 중심이라 'screen 최소화' 계약과 충돌해 제외.
+- 신규: `scripts/run-flux2-golden-sample-validation-v1.mjs` — FLUX2-only, 단일 endpoint(api.bfl.ai/v1/flux-2-pro), create hard cap 4, endpoint/size/provider fallback 전무, retry로 추가 생성 없음, poll 분리 집계(37회), BFL_API_KEY만 파싱(값 미출력).
+- 결과: 4/4 생성, 4/4 native 1088x1936 gate PASS (~20-30s/장).
+- **육안 QA (전수 판독): no-text clean 1/4.**
+  - scene 1 REGENERATE_NEEDED — 폰 시계 '08:15' + 머그 'morning' 인쇄 (구도/질감은 benchmark급)
+  - scene 2 **PASS** — 위반 0건, benchmark scene-02A 동급 후보 (유일)
+  - scene 3 REGENERATE_NEEDED — 계산기 키패드 숫자 전체+디스플레이+카드 인쇄 ('unlabeled blank buttons' 명시 지시 정면 위반)
+  - scene 5 REGENERATE_NEEDED — 달력 날짜 숫자 다수+요일 문자 ('no numbers' 정면 위반) + 동전 각인 + '빈 지갑' 은유 실패(카드 가득)
+- **핵심 발견: FLUX2는 negative 지시를 이중 강화해도 '현실에서 텍스트가 원래 있는 오브젝트'(시계/계산기/달력/동전/머그)에서 realism prior가 이김. scene 2가 유일 PASS인 이유 = text-natural 오브젝트 0개 구도. → 통제 전략은 negative 강화가 아니라 object-whitelist(텍스트 위험 오브젝트 원천 배제) 재계약이어야 함이 실측 확인.**
+- QA report: `output/money-shorts/flux2-small-validation-v1/qa-report-flux2-small-validation.v1.json` (이미지별 gate/위반/은유/safe-area/왜곡/benchmark 비교 + 결론), summary: `summary-flux2-small-validation.json`.
+- 다음 옵션: A(권장) object-whitelist prompt contract v2 + 소량 재검증(별도 승인) / B 하이브리드(무문자 씬만 FLUX2) / C FLUX2 제외 재결정.
+- 검증: runner syntax OK / fixture·summary·qa-report parse OK / 이미지 4/4 실측 1088x1936 / secret 값 노출 0건 / renderReady=false·uploadReady=false 유지 / commit·push 없음.
