@@ -8,10 +8,21 @@
 ## Decision Packet Pointer
 
 - 다음 방향 판단 자료: `_ai/GOLDEN_SAMPLE_QUALITY_STABILIZATION_DECISION_PACKET_V1.md` (2026-07-02) — 자동화 전 Golden Sample 품질 안정화 재정렬, 살릴 것/버릴 것, 이미지/비주얼 source 복구 선택지 4개와 선택지별 승인/위험/검증 기준. Owner 결정 전 render 금지.
+- 이미지 source 복구 결정 자료: `_ai/GOLDEN_SAMPLE_IMAGE_SOURCE_RECOVERY_DECISION_PACKET_V1.md` (2026-07-02) — 1080x1920+ provider 후보 비교(A: Imagen 4 상위/B: OpenAI/C: FLUX/D: 참고), visual director 재설계 요건, Golden Sample 주제 후보 T1/T2/T3 비교(추천 T2), 필요 승인 범주와 승인 문구 템플릿. 실행 승인 아님 — Owner 결정 대기.
+- provider 공식 문서 확인 결과: `_ai/PROVIDER_OFFICIAL_DOC_VERIFICATION_REPORT_V1.md` (2026-07-02, 보정 v1.1) — Imagen 4는 2026-08-17 shutdown(비추천), 1순위 B: OpenAI gpt-image-2(임의 WIDTHxHEIGHT 16배수 + 공식 가격 체계 확인, custom size 정확 비용만 산정 필요), 2순위 A′: gemini-3.1-flash-image 2K($0.101/장, 정확 픽셀 실측 필요), 3순위 C: FLUX.2(width/height 파라미터·flexible aspect ratios 공식 확인, 최대 픽셀/acceptance 추가 확인 필요 + 신규 credential — 허용 시 강한 후보). 소량 테스트 B+A′ 병행 8장/상한 $3 제안 + Owner 승인 문구 초안 포함.
+
+## Current Approved Slice (2026-07-02)
+
+- Task ID: `creative-v2-image-source-small-provider-test-v1-review-fix`
+- 범위: Codex review 후 checkpoint 전 안전 보정. 이미지 생성 결과는 유지하되 live/API 재호출 없이 runner 안전성만 고친다.
+- 필수 보정 1: `scripts/run-golden-sample-image-source-test-v1.mjs`에서 BFL endpoint fallback `api.bfl.ml` 경로를 제거하고 공식 문서 기준 `https://api.bfl.ai/v1/flux-2-pro`만 사용하게 한다.
+- 필수 보정 2: `.env.local` 파싱은 `OPENAI_API_KEY`, `BFL_API_KEY` 두 key만 메모리에 보관하도록 최소화한다. 다른 env/secret key를 object에 담지 않는다.
+- 필수 보정 3: `_ai/CLAUDE_REPORT.md`에 보정 결과와 검증만 append한다.
+- 금지: API 호출, live/browser generation, 이미지 재생성, credential/env/secret 변경, dependency 추가/변경, render, TTS, mux, upload, commit, push.
 
 ## Task ID
 
-`creative-v2-rate-freeze-golden-sample-recovery-v1`
+`creative-v2-image-source-small-provider-test-v1-review-fix`
 
 ## Project
 
@@ -21,12 +32,12 @@
 
 This handoff locks the Owner's latest quality directive as the current absolute execution scope.
 
-Do not reinterpret this recovery as "make an audit tool first." The purpose is to recover the broken Creative v2 direction and produce one good `rate freeze / 금리 동결` Golden Sample mp4, then lock the improved structure into the automation pipeline.
+Do not reinterpret this recovery as "make an audit tool first." The purpose is to recover the broken Creative v2 direction and produce one good Golden Sample mp4 quality grammar, then lock the improved structure into the automation pipeline. `rate freeze / 금리 동결` is a test/sample topic, not a permanent topic lock.
 
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `307b425 feat(automation): add rate freeze golden sample recovery gates`
+- Latest HEAD: `69c6e52 fix(automation): align golden sample gates with quality rules`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.
@@ -53,9 +64,9 @@ Current decision:
 
 Next responsible action:
 
-- Prepare an Owner decision on image-source recovery, not a render handoff.
-- Candidate direction B: add/use a provider path that can create genuinely stronger vertical images at `1080x1920+` or otherwise materially better source quality, with explicit Owner approval for any paid API, dependency, credential, browser workflow, or external service.
-- Candidate direction C: skip topic, but this conflicts with the Golden Sample recovery goal.
+- Apply the Codex review-fix only, then stop.
+- Do not rerun provider generation. Preserve the existing output evidence.
+- After the fix, checkpoint can be reconsidered.
 
 ## Fixed Samples
 

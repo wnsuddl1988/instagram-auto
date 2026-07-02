@@ -2553,3 +2553,107 @@ QA-only slice. 코드 변경 없음.
 **남은 위험/결정 필요:** (1) 이미지/비주얼 source 선택 — decision packet의 선택지 ①②③④ Owner 결정 대기. (2) blueprint의 renderReadinessGate는 BLOCKED 상태 그대로(사실과 일치, 무수정). (3) audit script의 golden blocker 하드코딩 문구는 다음 audit slice에서 갱신 권장.
 
 **checkpoint:** 가능 — cleanup으로 working tree가 절대규칙/decision packet과 정합됨. 누적 diff(이전 slice 포함 6파일 +234/-41 + 신규 문서 3종 + runner 1종)는 Codex 리뷰 후 checkpoint commit 권장. commit/push 미실행.
+
+
+## Image-Source Recovery Decision Packet (`creative-v2-golden-sample-image-source-recovery-decision-pack-v1` — 2026-07-02)
+
+**성격: 조사/설계/결정 패킷만 — live 생성/API/render/TTS/mux/upload/credential·dependency 변경 없음. 외부 서비스 호출 0건 (provider 사양은 로컬 repo 증거 + 지식 기반, 불확실 항목은 "⚠️ 공식 문서 확인 필요" 표시).**
+
+**산출물:**
+- `_ai/GOLDEN_SAMPLE_IMAGE_SOURCE_RECOVERY_DECISION_PACKET_V1.md` (신규) — 6개 섹션: blocker 요약 / provider 후보 비교 / visual director 재설계 / 주제 후보 비교 / Owner decision / 금지·폐기 재확인.
+- `_ai/HANDOFF_NOW.md` — Decision Packet Pointer에 새 packet 1줄 추가.
+
+**Provider 후보 비교 핵심 (repo 증거 기반):**
+- A: **Imagen 4 상위 옵션** — `lib/imagen.ts`가 이미 imagen-4.0-fast + aspectRatio 9:16 통합 보유(실측 근거). 상위 모델/2K 옵션의 9:16 픽셀이 gate를 넘는지 ⚠️공식 문서 확인 필요. plan_required/quota 이력 리스크. **통합 비용 최소 → 소량 테스트 1순위 후보.**
+- B: OpenAI gpt-image — 알려진 상한 1024x1536(2:3), ChatGPT probe와 동일 픽셀 예산 계열 → gate 미달 가능성 높음. 문서 확인만 권고.
+- C: **FLUX 공식 API** — 유연한 해상도로 1080x1920+ 네이티브 가능성 최고(⚠️확인 필요). 신규 credential/비용 필요. A 미충족 시 대안 또는 병행.
+- D: Midjourney — 공식 API 부재(알려진 바) → 자동화 부적합, 참고만.
+- 권고 순서: (1) 호출 없이 A/C 사양·단가 공식 문서 확인 → (2) 승인 후 후보당 4장 소량 테스트(hook+checklist 프롬프트) → (3) QA 통과 시에만 full 6장 → 그 후 render slice.
+
+**Visual director 재설계:** scene별 must_show/must_avoid/objectDensity(2~4)/visualMetaphor/subjectDeliveryCheck/cameraAndLight 필수화, 카드 안전 영역과 주연 교대 구도 기준, dim/blur 내성, 새 selected set QA 표(6/6 ≥1080x1920 네이티브 + 9:16 + 주제 전달력 owner QA + no-text/watermark + 세트 리듬).
+
+**주제 후보:** T1 금리동결(기준점, blueprint 재사용) / **T2 "월급이 3일 만에 사라지는 이유"(현금흐름×심리) — 추천 1순위** (시각 은유 가장 구체적, hook 보편성 최고, evergreen, 기존 카드/TTS 구조 1:1 매핑, 시리즈 확장 축) / T3 구독료 함정(2호 후보). 최종 결정은 Owner.
+
+**검증:** 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지(무수정) / packet 필수 문구 30건 grep 확인 / 요구 6개 섹션 구조 확인 / git status·diff --stat 확인 (HEAD 69c6e52 유지, commit/push 없음).
+
+**금지 작업 미수행:** live 이미지 생성·API·paid service 호출 0건, browser/Playwright/CDP 미실행, credential/env/dependency 무변경, render/TTS/mux/upload 없음, implementation code 무수정, 절대규칙 무수정, 보호 파일 미접근, 폐기 방향(941x1672 재사용/background-only 완화) 재승인 문구 없음.
+
+
+## Provider Official Doc Verification (`creative-v2-provider-official-doc-verification-v1` — 2026-07-02)
+
+**성격: read-only 공식 문서 확인만 — API 호출/이미지 생성/browser/credential·env·dependency 변경/render/TTS/mux/upload/commit/push 0건.**
+
+**산출물:** `_ai/PROVIDER_OFFICIAL_DOC_VERIFICATION_REPORT_V1.md` (신규, 공식 URL 11건 + 확인일 기록, 미확인 항목 명시) + `_ai/HANDOFF_NOW.md` 포인터 1줄.
+
+**핵심 발견 (공식 문서 기준, 2026-07-02 확인):**
+1. **Imagen 4 계열은 deprecated — 2026-08-17 shutdown** (Google 공식). 기존 lib/imagen.ts 모델 상향안(A 원안)은 비추천. 승계: Gemini 이미지 모델(nano banana 계열).
+2. **OpenAI gpt-image-2 / gpt-image-2-2026-04-21: 임의 WIDTHxHEIGHT(16배수) 지원 공식 확인** (공식 SDK 레포) → 1088x1920/1088x1936 네이티브 지정 가능 = 1080x1920+ 요건을 파라미터로 직접 충족하는 유일 후보. 가격은 공식 페이지 2곳 403 → 미확인.
+3. **gemini-3.1-flash-image**: 9:16 확인, 512px/1K/2K/4K, 2K $0.101/장(standard). 9:16 정확 픽셀은 문서 미기재 → 실측 필요. 기존 클라이언트는 :predict 방식이라 generateContent로 수정 필요.
+4. **FLUX(BFL)**: FLUX.2 [pro] from $0.03(MP-based)/FLUX1.1 Ultra $0.06(4MP). 단 9:16 지원·정확 해상도 파라미터는 문서에서 미확인 → 3순위/보류. fal.ai/Replicate wrapper는 이번 범위 외로 구분 기록.
+
+**추천:** 1순위 B(OpenAI gpt-image-2, 기존 OPENAI_API_KEY 재사용) / 2순위 A′(gemini-3.1-flash-image 2K) / 3순위 C(FLUX, 추가 확인 후). 소량 테스트 B+A′ 병행 후보당 4장(hook 2+checklist 2, T2 프롬프트) 총 8장, 비용 상한 $3 제안(B 단가 확인 후 장당 $0.5 초과 시 실행 전 재보고). Owner 승인 문구 초안 report §6 포함.
+
+**검증:** 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / report에 공식 URL 11건·미확인 20건 표기 확인 / git status·diff --stat 확인 (HEAD 69c6e52 유지, commit/push 없음).
+
+
+## Provider Doc Report Correction (`creative-v2-provider-official-doc-verification-report-correction-v1` — 2026-07-02)
+
+**성격: 문서 보정만 — 실행/생성/호출/credential/dependency/render/TTS/mux/upload/commit/push 0건.**
+
+**보정 내역 (Codex 제공 공식 근거 반영):**
+- OpenAI §4: "가격 403 미확인" 제거 → 공식 guide(platform.openai.com/docs/guides/image-generation)의 Cost and latency 가격표(1024x1024/1024x1536/1536x1024 × Low/Med/High, 1024x1536 High ≈ $0.165) 확인됨 + "thousands of valid resolutions" 명시 반영. custom size(1088x1920/1088x1936) 정확 비용은 calculator/산정 필요로 유지. 1순위 근거(기존 key 재사용/dependency 0/임의 해상도) 유지.
+- FLUX §5: "width/height 미확인" 제거 → FLUX.2 [pro] API Reference의 `width`/`height` 파라미터 공식 존재(x >= 64) + flexible aspect ratios 공식 명시 반영. 최대 픽셀/1088x1920 acceptance는 테스트/추가 확인 필요로 유지. 뉘앙스 보정: 신규 credential 허용 시 강한 후보, credential 없는 즉시 테스트는 OpenAI 우선.
+- Gemini §3: aspect_ratio/image_size:"2K"/response_format 파라미터 확인 추가. 2K $0.101·9:16 확인 유지, 정확 픽셀 실측 필요 유지.
+- §2 출처 목록: 공식 URL 5종 추가/갱신, 403 단정 행 제거(봇 차단 사실은 주석으로만). §7 미확인 표 갱신. §6 비용 상한 $3 유지(근거: 기준 사이즈 $0.165 수준 + A′ ≈ $0.41 → 8장에 보수적 여유). 승인 문구 초안 갱신.
+- `_ai/HANDOFF_NOW.md` 포인터: "가격만 403 미확인"/"FLUX(9:16 미확인)" → 보정 v1.1 표현으로 교체.
+
+**검증:** 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / report 내 stale 패턴(403·가격 미확인·width/height 미확인) 0건 / HANDOFF_NOW 잔여 1건은 Codex 작성 보정 지시문 원문(단정 아님, Codex 관리 섹션) / 요구 공식 URL 5종 포함 확인 / git status·diff --stat 확인 (HEAD 69c6e52 유지).
+
+**최신 추천 순위 (변경 없음, 근거 강화):** 1순위 B: OpenAI gpt-image-2 / 2순위 A′: gemini-3.1-flash-image 2K / 3순위(조건부 강한 후보) C: FLUX.2 [pro]. 소량 테스트 B+A′ 병행 8장, 상한 $3 유지.
+
+
+## Image Source Small Provider Test (`creative-v2-image-source-small-provider-test-v1` — 2026-07-02)
+
+**성격: Owner 승인 하의 소량 실측 테스트 — 자동화 구현 아님. render/TTS/mux/upload/commit/push 0건. secret 값 노출 0건(.env.local 무수정, 존재 boolean만 확인).**
+
+**테스트 설계:** T2("월급이 3일 만에 사라지는 이유") 공통 프롬프트 4종(hook_salary_arrival/cashflow_leak/fixed_cost_stack/day3_empty_wallet, visual director v2 요건 반영)을 3개 provider에 동일 적용. size 1088x1936 우선, 거부 시 1088x1920 1회 fallback 설계(실제로는 fallback 불필요).
+
+**결과표:**
+| Provider | attempted | generated | gate PASS | 실측 해상도 | 비고 |
+|---|---|---|---|---|---|
+| OpenAI gpt-image-2 (quality high) | 4 | 4 | **4/4 PASS_1080x1920_NATIVE** | 1088x1936 png (2.2~2.7MB) | 첫 시도 수락, fallback 불필요, ~110s/장 |
+| FLUX.2 [pro] (BFL 공식 API) | 4 | 4 | **4/4 PASS_1080x1920_NATIVE** | 1088x1936 jpeg (~0.55MB) | api.bfl.ai/v1/flux-2-pro 정상, ~20s/장 최속 |
+| ChatGPT+Playwright (control, 무료) | 4 | 3 | **0/3** (3× FAIL_RESOLUTION) + 1× 저장 실패 | 941x1672 | 기존 상한 재확인. 4/4 완료감지 timeout→intercept 의존, 1건 intercept 0개 |
+
+**주제 전달력 관찰 메모 (scene 1·3 육안, Owner QA 대체 아님):**
+- OpenAI: no-readable-text 지시 준수 높음(알림 글로우/앱 타일 전부 비가독), 손 정상, 에디토리얼 톤·카드 안전영역 양호, 주제 전달 명확.
+- FLUX: 질감/사실감 최상급(스팀·가죽·지폐 물성)이나 **no-readable-text 반복 위반** — scene1 폰 화면 한글 유사 텍스트+UI chrome, scene3 "500" 지폐 숫자·영수증 문자열·봉투 인쇄+우표. 채택 시 negative 강화(빈 화면/빈 종이 강제) 재검증 필요.
+- ChatGPT: 해상도에서 gate 탈락이라 품질 평가 생략(파일 보존).
+
+**비용 evidence (구분 명시):**
+- OpenAI: **API usage 응답 실측** — 5,322 output image tokens/장 × 4장 (+ input ~250 text tokens/장). 정확 달러 환산은 gpt-image-2 공식 토큰 단가 기준 산정 필요 — 공식 guide 기준사이즈 High $0.165 수준과 유사 범위로 총 **~$0.7±0.2 추정**.
+- FLUX: API 응답에 비용 없음 — **공식 MP-based 단가(from $0.03) 기반 추정** 1088x1936=2.11MP → ~$0.06/장 × 4 = **~$0.25 추정** (정확치는 BFL 대시보드 크레딧 확인 필요).
+- 합계 추정 ~$1.0 안팎 — **상한 $3 준수**. paid 총 8장 준수.
+
+**Owner 열람용 best 후보 (절대경로):**
+- `C:\Users\PC\jjy\instagram-auto\output\money-shorts\golden-sample-image-source-test-v1\openai-scene-01-hook_salary_arrival.png`
+- `C:\Users\PC\jjy\instagram-auto\output\money-shorts\golden-sample-image-source-test-v1\openai-scene-03-fixed_cost_stack.png`
+- `C:\Users\PC\jjy\instagram-auto\output\money-shorts\golden-sample-image-source-test-v1\flux-scene-01-hook_salary_arrival.jpg` (텍스트 위반 확인용 포함)
+- `C:\Users\PC\jjy\instagram-auto\output\money-shorts\golden-sample-image-source-test-v1\flux-scene-03-fixed_cost_stack.jpg` (텍스트 위반 확인용 포함)
+
+**변경/신규 파일:** `scripts/fixtures/golden_sample_image_source_test_prompts.v1.json`, `scripts/run-golden-sample-image-source-test-v1.mjs` (신규, 재사용 가능), output 산출물 11장+summary 3종(gitignored), 본 report append.
+
+**추천 (render로 넘어가지 않고 정지):**
+1. 다음 slice의 selected image set 후보 provider = **OpenAI gpt-image-2 1순위** (gate 4/4 + no-text 준수 + 기존 credential/의존성 0).
+2. FLUX.2 [pro] = 강한 백업 (gate 4/4 + 최고 질감·최속·최저가 추정 — 단 no-text 위반을 negative 강화로 재검증 후).
+3. ChatGPT path = Golden Sample final 입력에서 제외 확정(941x1672 상한 + 신뢰성 이슈 control 재확인). 무료 프롬프트 실험용으로만 유지.
+4. 다음 결정: Owner가 provider·주제 확정 → 6-scene full set 생성 승인 → owner 시각 QA → selected set 확정 → 그 후에야 render slice.
+
+
+## Provider Test Runner Review-Fix (`creative-v2-image-source-small-provider-test-v1-review-fix` — 2026-07-02)
+
+- 외부 호출 0건 / 이미지 재생성 0건 / output·summary 파일 무수정 / .env.local 무수정.
+- `scripts/run-golden-sample-image-source-test-v1.mjs` 보정 2건:
+  1) BFL endpoint fallback(`api.bfl.ml`, endpointFallbackUsed 분기/상태) 전부 제거 — 공식 `https://api.bfl.ai/v1/flux-2-pro` 단일 endpoint만 사용(poll URL fallback 문자열도 api.bfl.ai로 고정). size fallback 1회만 유지.
+  2) .env.local 파싱 secret 최소화 — WANTED set(`OPENAI_API_KEY`, `BFL_API_KEY`)만 메모리 보관, 다른 env/secret은 파싱 즉시 폐기. key 값 출력 없음(헤더 전용).
+- 검증: rg fallback 패턴 0건 / rg key 패턴 — 2종만·값 무출력 확인 / fixture JSON valid / `node --check` runner 문법 통과(실행 아님) / 절대규칙 MD5 `adf4f45542fb3959ce5ca44fde3a98f2` 유지 / git status·diff --stat 확인.
