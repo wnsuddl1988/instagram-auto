@@ -17,63 +17,31 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-v2-denomination-render-probe-v1`
-- **완료 (2026-07-02)**: 비용 0 no-readable-denomination render probe 완료. 최종 verdict는 `PATCH_NEEDED` — selected image set lock은 아직 아니다.
-- Owner 승인 원문: `승인: Golden Sample v2 FLUX2 selected 후보 6장으로 no-readable-denomination render probe를 만든다. 추가 이미지 생성/API/TTS/mux/upload 없이, selected 6장(s1_B/s2_A/s3_A/s4_A/s5_B/s6_B)을 임시 visual-only frame probe에 적용해 dim/blur/card/crop 상태에서 지폐 액면 숫자가 실제 시청 프레임에서 읽히는지 QA한다. selected image set lock은 QA 후 별도 결정한다.`
-- 입력 evidence:
-  - 직전 checkpoint: `29c7569 test(automation): add golden sample v2 flux2 candidates`.
-  - 후보 output: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/`.
-  - QA report: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/qa-report-golden-sample-v2-flux2-image-candidates.json`.
-  - Summary: `output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/summary-golden-sample-v2-flux2-image-candidates.json`.
-  - selected 후보: `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B`, `s6_B`.
-- 실행 결과:
-  - 신규 manifest: `scripts/fixtures/golden_sample_v2_denomination_render_probe_manifest.v1.json`.
-  - 신규 runner: `scripts/run-golden-sample-v2-denomination-render-probe-v1.mjs`.
-  - Output: `output/money-shorts/golden-sample-v2-denomination-render-probe-v1/`.
-  - 1080x1920 probe frame 18장 생성(viewer 12 + evidence zoom 6), original selected 6장 read-only + MD5 기록.
-  - 외부 API/이미지 생성/TTS/mux/upload/env/secret 접근 0.
-- Probe QA 결론:
-  - `s1_B`, `s2_A`, `s3_A`, `s4_A`, `s5_B` = PASS 계열. `s3_A`는 무조건 PASS, 나머지는 minor risk.
-  - `s4_A`는 조건부: 실제 렌더에서 3-slot 카드가 stage cut 직후 즉시 진입해야 한다(background-only ≤0.3s 권장).
-  - `s6_B` = `PATCH_NEEDED`. dim/blur/card overlay 후에도 지폐 상단의 `5`가 viewer frame 중앙에서 선명하게 읽힌다.
-  - 최종 verdict: `PATCH_NEEDED`.
-- Codex 판단:
-  - 비용 0 카드 재배치(B안)는 s6 결말 이미지 주연 역할을 망칠 위험이 크다.
-  - 권장 다음 단계는 s6 단일 FLUX2 패치 재생성(A안): 기존 성공 구도(전경 열린 지갑+배경 3봉투+밝은 아침 톤)는 유지하되, `banknote back side / folded notes / denomination side facing down / no visible numeral`을 강제한다.
-  - s6 패치 전 selected image set lock, visual-only render, TTS/mux 진행 금지.
-- 기준 source of truth:
-  - `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md` (원문 verbatim 보호)
-  - `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`
-  - `scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json`
-  - `scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json`
-- 목표: `Story-Causality First + Visual Evidence Second` 기준으로 v2 이미지 후보를 생성하고, scene별 visual evidence QA 후 selected 후보를 보고한다. 이미지는 먼저가 아니라 스토리의 증거다.
-- 허용:
-  - FLUX.2 [pro] 공식 endpoint(`https://api.bfl.ai/v1/flux-2-pro`) 사용.
-  - `BFL_API_KEY` 사용 및 `.env.local` read-only 로드. 값 출력/문서화 금지.
-  - 최대 create call 12회(6 scenes × 2 candidates), 비용 상한 $3.
-  - output 경로 아래 이미지/summary/QA report 생성.
-  - 신규 fixture/runner 추가, `_ai/CLAUDE_REPORT.md` append.
-- 이미지 정책:
-  - money-like objects 적극 허용: 현금 다발, 월급 봉투, 지갑, 고정비 봉투 더미, 3칸 분할 현금/봉투, 돈이 빠져나가는 흐름.
-  - no readable AI-generated text 엄격 유지: 브랜드/워터마크/깨진 글자/가짜 UI/가짜 기사/읽히는 척하는 차트·신문·계산기·달력 텍스트 금지.
-  - 중요한 숫자/문구는 이미지 내부가 아니라 renderer 카드/타이포 담당.
-  - 이미지 단독으로도 월급, 빠져나가는 돈, 고정비, 빈 지갑, 분리/배분의 느낌이 보여야 한다. 카드/표/자막이 보완해서 겨우 설득되면 reject.
-- QA:
-  - scene별 `what_story_claim_this_scene_proves`, `required_visual_evidence`, `must_show`, `must_not_show`, `why_this_image_delivers_topic_without_caption`, `renderer_card_support_role` 기준으로 전수 판정.
-  - Story QA fields 기록: `story_causality_score`, `problem_solution_bridge_score`, `solution_specificity_score`, `visual_subject_relevance_score`, `caption_readability_score`, `hook_self_relevance_score`.
-  - 이번 slice의 핵심은 image candidate QA이므로 caption/story 점수는 blueprint expectation 기준으로 provisional 기록하되, `visual_subject_relevance_score`와 scene evidence pass/fail은 엄격 판정한다.
-  - Hard fail: 이미지가 주제와 직관적으로 연결되지 않음, 해결책 3개가 무엇인지 이미지/후속 카드 설계와 연결 안 됨, readable generated text, placeholder/stock-like/upscale-as-fix.
-- 금지:
-  - OpenAI/ChatGPT/Playwright/Gemini/Midjourney 호출.
-  - render/TTS/mux/upload.
-  - env/secret 수정, dependency 변경, push/commit.
-  - `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt` 읽기/수정/스테이징.
-  - 기존 `941x1672` 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
-- 충돌 처리: 아래 남아 있는 과거 `rate-freeze`, visual-only, TTS/mux, PASS_CANDIDATE, selected image set lock 관련 문구는 historical context다. 이번 `Current Approved Slice`가 최우선이다.
+- Task ID: `creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1`
+- Status: completed by Claude Code, verdict `BLOCKED_S6_PATCH_FAILED`.
+- Latest checkpoint before this slice: `3d6122d test(automation): add denomination render probe` (branch ahead 153 before this uncommitted slice).
+- Owner approved scope was exactly: FLUX.2 [pro] max 2 images for `s6_result_clear_after` only, cost ceiling $0.50, `BFL_API_KEY` allowed, keep successful composition intent (foreground open wallet + three background envelopes + bright morning tone), force `banknote back side / folded notes / denomination side facing down / no visible numeral`, no OpenAI/ChatGPT/Gemini/Midjourney, no render/TTS/mux/upload, stop after image generation + denomination re-probe QA.
+- Result evidence:
+  - Output folder: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/`.
+  - Summary: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/summary-golden-sample-v2-s6-flux2-denomination-patch.json`.
+  - QA report: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/qa-report-golden-sample-v2-s6-flux2-denomination-patch.json`.
+  - Create calls: 2/2, poll calls 16, cost estimate about $0.13, endpoint/size/provider fallback 0.
+  - `s6_P_A`: native 1088x1936, story evidence PASS, but folded bill still has a visible `2` in the viewer frame; verdict `PATCH_STILL_NEEDED`.
+  - `s6_P_B`: native 1088x1936, but readable hard text/garbled letterforms and clear denomination remain; verdict `REJECT_FOR_HARD_TEXT`.
+- Codex review judgment:
+  - Accept the slice as useful evidence and keep it as a checkpoint.
+  - Do not spend more FLUX2 calls on s6 prompt-only denomination suppression without a new explicit Owner decision; the evidence now shows cash-hero closeups keep regenerating readable denomination/text risk.
+  - Selected image set lock remains blocked; `renderReady=false`, `uploadReady=false`.
+- Recommended next substantive slice after checkpoint:
+  - Cost 0 option first: use `s6_P_A` as a probe candidate and reposition the final/save card over the visible `2` area, then run a no-API denomination re-probe only.
+  - Do not lock the selected image set unless that re-probe clears the viewer-frame readable denomination risk.
+- Still forbidden:
+  - Additional image/API calls, other providers, s1~s5 generation/modification, full visual render, TTS, mux, upload, dependency/env/secret changes, push.
+  - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 
 ## Task ID
 
-`creative-v2-golden-sample-v2-denomination-render-probe-v1`
+`creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1`
 
 ## Project
 
@@ -88,7 +56,7 @@ Do not reinterpret this recovery as "make an audit tool first." The purpose is t
 ## Current Checkpoint
 
 - Branch: `codex/source-first-blueprint-clean`
-- Latest HEAD: `29c7569 test(automation): add golden sample v2 flux2 candidates`
+- Latest HEAD: `3d6122d test(automation): add denomination render probe`
 - Approx status when this handoff was refreshed: branch ahead of `origin/main`; pre-existing modified `_ai/CODEX_REVIEW.md`, `_ai/NEXT_ACTION.md`, `_ai/PROJECT_STATE.md`; untracked `_ai/CONTEXT_TRANSFER_CODEX.md`, `piq_diag_out.txt`.
 - Do not read, modify, delete, stage, or commit `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Push: not approved.

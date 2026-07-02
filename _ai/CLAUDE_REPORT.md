@@ -2908,3 +2908,21 @@ QA-only slice. 코드 변경 없음.
 - selected image set lock: 미실행 (범위 외 + PATCH_NEEDED이므로 보류가 일치).
 - 검증: node --check PASS, manifest/run-summary/qa-report JSON parse PASS, viewer 프레임 12장(≥12 충족), 금지 패턴(외부 호출/secret/허용 플래그 문자열) 소스 스캔 0건, 원본 6장 무결성 PASS, git status 신규 2파일+CLAUDE_REPORT만.
 - 금지 미수행: 이미지 생성/외부 API/TTS/mux/upload 0, env/secret 읽기 0, lock 문서 0, renderReady/uploadReady false, commit/push 없음.
+
+
+## Golden Sample v2 s6 FLUX2 denomination patch (`creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1` — 2026-07-02)
+
+**s6_B('5' still_visible PATCH_NEEDED) 대체 후보를 FLUX.2 [pro]로 2장 생성 + 직전과 동일 조건 재probe — 최종 verdict: `BLOCKED_S6_PATCH_FAILED` (2장 모두 실패, 규칙대로 추가 호출 없이 중단). create 2/2 hard cap 준수, 비용 ≈$0.13 (상한 $0.50 이내).**
+
+- 신규: `scripts/fixtures/golden_sample_v2_s6_flux2_denomination_patch_prompts.v1.json` — s6 전용 2 candidates (A: 접힌 지폐 뒷면/액면부 아래, B: 다발 각도 변경) + 직전 probe와 동일한 배경 체인/overlay 스펙 (비교성 유지).
+- 신규: `scripts/run-golden-sample-v2-s6-flux2-denomination-patch-v1.mjs` — 생성+재probe 일체형. hard cap 2, retry 금지, create HTTP 오류 시 중단, BFL_API_KEY만 메모리 보관(값 미출력), 재실행 중복 생성 가드(exit 11) + `--probe-only` 모드(네트워크/key 접근 없음), 배경 체인 parity 사전 검증(불일치 abort).
+- 실행: createCalls 2/2, pollCalls 16, 생성 2/2 (둘 다 1088x1936 native PASS), probe 프레임 6장(viewer 4 + evidence zoom 2).
+- Output: `output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/` (이미지 2 + 프레임 6 + ass 2 + summary + qa-report).
+- QA 결과:
+  - **s6_P_A = PATCH_STILL_NEEDED (경계 사례)** — 스토리 증거(3봉투/지갑/아침광) 전부 PASS. 접힘 구도로 s6_B 대비 실질 개선(액면 크기/굵기/대비/즉시성 완화)이나, 접힌 면의 장식체 '2'(약 x430~700, y1100~1230)가 dim/blur 후에도 완형 숫자로 식별되고 save 카드(y1320~1480)가 가리지 못함.
+  - **s6_P_B = REJECT_FOR_HARD_TEXT** — '액면면 카메라 반대편' 지시를 FLUX2가 무시, 달러 유사 앞면 + 깨진 유사문자열('ЗЕН1Q'류) + 모서리 액면 노출. addendum 명시 금지(깨진 글자) 위반.
+- 실측 결론 기록: FLUX2는 '현금 주연 클로즈업'에서 기하학/언어 지시로 액면 제거를 보장하지 못함 (이번 2회 + 직전 12장 모두 액면 렌더).
+- Codex/Owner 결정 옵션 (qa-report 기록): A(권장, 비용 0) save 카드를 y~1080~1250으로 재배치해 '2' 가림 — s6_P_A는 접힌 모서리/지갑/봉투가 카드 밖에 남아 s6_B 때보다 트레이드오프 유리 / B(비용 0) Owner 경계 해석으로 s6_P_A 수용('2'가 '5'보다 작고 얇고 저대비) / C(~$0.07~0.13, 신규 승인) 구도 강제 재생성 — 단 2회 연속 지시 무시 실측으로 성공 보장 없음.
+- selected image set lock: 미실행 (범위 외 + BLOCKED이므로 보류 일치). renderReady/uploadReady false.
+- 검증: node --check PASS, fixture/summary/qa-report JSON parse PASS, createCalls≤2 확인, 생성물 1088x1936 gate PASS, 프레임 6장 확인, secret 값/타 provider 문자열 스캔 0건, 보호 파일 미접근, git status 신규 2파일+output만.
+- 금지 미수행: s1~s5 접근 0, 타 provider 호출 0, render/TTS/mux/upload 0, env/secret 수정 0, lock 문서 0, commit/push 없음.
