@@ -3,6 +3,7 @@
 ## Absolute Rules Pointer (최우선)
 
 - 현재 Creative v2 / Golden Sample recovery의 **최우선 source of truth**는 `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md` (Owner 절대규칙 원문 verbatim, 2026-07-02 고정)이다.
+- **같은 우선순위 addendum**: `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md` (2026-07-02) — Owner 80점 reject 피드백 고정: `Story-Causality First + Visual Evidence Second` 원칙 전환, 새 Story QA fields/threshold/hard fail, money-like objects 허용 이미지 정책, 30초 고정 금지(32~45초), caption dwell ≥0.7s. 원문과 충돌 시 addendum의 최신 Owner 결정 우선.
 - 다른 문서/핸드오프/요약과 충돌하면 항상 이 파일의 원문이 우선한다. 작업 시작 전에 먼저 읽어라.
 
 ## Decision Packet Pointer
@@ -16,23 +17,42 @@
 
 ## Current Approved Slice (2026-07-02)
 
-- Task ID: `creative-v2-golden-sample-tts-first-mux-audit-v1`
-- Owner 최신 승인: `승인 — 기존 ElevenLabs 경로를 사용해 30초 TTS-first narration을 생성하고, 실제 phrase/word timing에 dynamic caption을 재앵커한 뒤 visual+audio mux 및 post-render audit까지 진행한다. 추가 이미지 생성/API, upload는 금지한다.`
-- Owner visual-only 결정: `PASS_WITH_NOTES` — `v1.1`을 visual-only 기준으로 채택한다. 다음 slice에서 TTS-first narration + mux + post-render artifact audit로 진행한다. 단 caption timing은 실제 TTS word/phrase timestamp에 재앵커한다.
-- 추가 Owner 메모: 자막 폰트가 조금 더 진하게 강조되었으면 좋겠다는 의견은 이번 TTS/mux slice에서 품질 판단 후 반영 여부를 결정한다. 반영한다면 자막 weight/outline/shadow를 과하지 않게 보강하고, bottom-fixed subtitle bar는 계속 금지한다.
-- 기준 visual-only 입력:
-  - Manifest: `scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1_1_typography.json`
-  - Renderer: `scripts/render-golden-sample-visual-only-v1.mjs`
-  - Visual-only mp4: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1-1\golden_sample_t2_salary_3days_visual_only_v1_1.mp4`
-  - Story preview: `C:\tmp\money-shorts-os\golden-sample-visual-only-render-v1-1\story_script_preview.md`
-- 범위: 기존 ElevenLabs TTS 경로/env를 사용해 T2 30초 Golden Sample narration을 생성하고, 실제 TTS timing으로 card/caption timeline을 재앵커한 뒤 visual+audio mux mp4를 만든다. 이후 실제 mp4 기준 post-render artifact audit(silence/speech/caption sync/media validity/visual readiness)을 수행하고 보고 후 중단한다.
-- 허용: 기존 ElevenLabs 관련 스크립트/fixture/summary 읽기, 새 TTS-first manifest/runner/audit fixture 추가, ElevenLabs TTS API 소량 호출, ffmpeg/ffprobe 기반 mux/audit, `C:\tmp` 아래 산출물/스크린샷/QA report 생성, `_ai/CLAUDE_REPORT.md` append.
-- 금지: 추가 이미지 생성, OpenAI/FLUX2/ChatGPT/Playwright/Gemini/Midjourney 호출, Instagram/외부 브라우저 자동화, upload, dependency 추가/변경, env/secret 수정, key 값 로그/문서 노출, commit, push, 기존 941x1672 이미지 final 재사용, placeholder/local mock/stock fallback, 단순 upscale/crop-as-fix.
-- 충돌 처리: 아래 남아 있는 과거 `rate-freeze/금리동결` Golden Sample 구조와 이전 visual-only 대기 문구는 historical context다. 이번 slice에서는 이 Current Approved Slice, selected FLUX2 image set lock, dynamic caption contract, v1.1 typography manifest가 우선한다.
+- Task ID: `creative-v2-golden-sample-story-causality-visual-evidence-reset-v1` (직전 ID `creative-v2-golden-sample-story-visual-reset-v1`의 구체화판)
+- **완료 (2026-07-02)**: reject lock + Owner 피드백 addendum + Story-Causality First 설계까지 산출. 신규 산출물:
+  - `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`
+  - `scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json` (프로세스 계약 + Story QA contract)
+  - `scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json` (v2 blueprint — `문제 → 원인 → 착시 → 해결책 → 행동` + 돈의 자리 3분할 해결책 + scene별 visual evidence + narration draft 32~45s + visual director prompt 초안 + next production plan)
+  - 24ea7d3 후보는 `REJECT_AS_GOLDEN_SAMPLE / evidence_only` 고정, 산출물 무변경.
+  - 다음 실행(이미지 생성/TTS)은 blueprint의 `nextProductionPlan` — Owner provider/비용/플래그 승인 대기.
+- Owner 최신 결정: `현재 TTS mux 후보는 100점 만점에 약 80점. 화면/모션/대본/음성/자막은 나쁘지 않지만, Golden Sample 품질규격으로 픽스할 수 없다. 새로 다시 만들어야 한다.`
+- 현재 후보 상태:
+  - `C:\tmp\money-shorts-os\golden-sample-tts-first-mux-audit-v1\golden_sample_t2_salary_3days_tts_mux.mp4`는 업로드 가능한 후보 evidence일 수 있으나 Golden Sample baseline으로 채택하지 않는다.
+  - `24ea7d3 feat(automation): add golden sample tts mux audit`는 보존하되, 산출물의 verdict는 `REJECT_AS_GOLDEN_SAMPLE / evidence_only`로 다룬다.
+- 핵심 reject 원인:
+  - 이미지가 `월급이 3일 만에 사라지는 이유`와 직관적으로 연결되지 않는다. 카드/표/자막이 보완해서 겨우 설득되는 구조다.
+  - 사진만 봤을 때 월급/고정비/현금흐름/3일 소진의 상황이 바로 떠오르지 않는다.
+  - `문제는 금액이 아니라 순서입니다`가 앞뒤 설명 없이 갑자기 나와서 맥락이 끊긴다.
+  - 해결책/대안/효율적인 월급 사용 흐름이 부족하다. 훅은 좋지만 중간 진단에서 행동 제안으로 넘어가는 다리가 없다.
+  - 짧은 caption flash는 좋지만 일부는 너무 짧다.
+  - 길이는 반드시 30초일 필요가 없다. 주제와 스토리에 따라 길거나 짧아질 수 있다.
+- 다음 책임 있는 작업:
+  - 원문 절대규칙 파일 `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md`는 verbatim 보호이므로 수정하지 않는다.
+  - 이번 Owner 피드백을 같은 우선순위의 addendum으로 신규 문서/fixture에 고정한다.
+  - audit-only가 아니라 새 Golden Sample 제작을 위한 `Story-Causality First + Visual Evidence Second` 설계를 만든다.
+  - 먼저 스토리 인과를 고정하고, 그 다음 각 장면이 증명해야 하는 시각 증거를 정의하고, 그 증거에 맞는 ChatGPT/LLM 이미지 프롬프트를 만든 뒤, 마지막으로 renderer가 카드/자막/모션을 얹는다.
+  - 이미지는 먼저가 아니라 스토리의 증거로 따라와야 한다.
+  - 새 설계는 `문제 -> 원인 -> 착시 -> 해결책 -> 행동` 인과가 끊기지 않아야 한다.
+  - 이미지 프롬프트는 카드 없이도 주제 연관성이 보이도록 재설계해야 하며, 글자 리스크는 막되 돈처럼 보이는 오브젝트는 적극 허용한다.
+  - 폰트/자막 방향은 레퍼런스 기반 정보 브리핑형: 두꺼운 검정 외곽선 + 강한 강조색 + 쇼츠형 정보 자막.
+  - Story QA fields: `story_causality_score`, `problem_solution_bridge_score`, `solution_specificity_score`, `visual_subject_relevance_score`, `caption_readability_score`, `hook_self_relevance_score`.
+  - Threshold: story/problem-solution/solution/caption/hook 각 85 이상, visual subject relevance 80 이상.
+  - Hard fail: 문제 제기와 해결책 사이에 다리가 없으면 reject; 해결책이 추상어로 끝나면 reject; 이미지가 주제와 직관적으로 연결되지 않으면 reject; `순서`, `관리`, `정리` 같은 추상어를 설명 없이 쓰면 reject; 3개를 정하라고 말하면서 그 3개가 무엇인지 안 보여주면 reject.
+- 이번 slice 금지: 이미지 생성/API 호출/TTS/mux/render/upload 금지. 먼저 reject lock + story/visual rebuild blueprint까지.
+- 충돌 처리: 아래 남아 있는 과거 `rate-freeze/금리동결` 구조와 이전 PASS_CANDIDATE 문구는 historical context다. 이번 Current Approved Slice와 Owner 최신 피드백이 우선한다.
 
 ## Task ID
 
-`creative-v2-golden-sample-tts-first-mux-audit-v1`
+`creative-v2-golden-sample-story-causality-visual-evidence-reset-v1`
 
 ## Project
 

@@ -1,0 +1,326 @@
+{
+  "schemaVersion": "golden_sample_blueprint_salary_3days_v2",
+  "taskId": "creative-v2-golden-sample-story-causality-visual-evidence-reset-v1",
+  "createdAt": "2026-07-02",
+  "status": "story_causality_design_locked_pending_owner_review",
+  "topic": "월급이 3일 만에 사라지는 이유",
+  "designPrinciple": "Story-Causality First + Visual Evidence Second — 이미지는 먼저가 아니다. 이미지는 스토리의 증거로 따라와야 한다.",
+  "processContract": "scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json",
+  "ownerFeedbackAddendum": "_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md",
+
+  "rejectLock": {
+    "previousCandidate": {
+      "file": "C:\\tmp\\money-shorts-os\\golden-sample-tts-first-mux-audit-v1\\golden_sample_t2_salary_3days_tts_mux.mp4",
+      "commit": "24ea7d3",
+      "ownerScore": "약 80/100",
+      "verdict": "REJECT_AS_GOLDEN_SAMPLE",
+      "retention": "evidence_only",
+      "doNotModifyDeleteRegenerate": true
+    },
+    "whyRejected": [
+      "이미지가 주제와 직관적으로 연결되지 않음 — 카드/표/자막이 보완해서 겨우 설득되는 구조",
+      "'문제는 금액이 아니라 순서입니다'가 앞뒤 설명 없이 등장 — 착시 단계 부재로 인과 단절",
+      "'3개만 먼저 정하세요'라면서 그 3개가 무엇인지 없음 — 해결책 추상어 종결",
+      "일부 caption flash가 너무 짧음 (0.49s)",
+      "30초 고정이 스토리를 압축시킴 — 30초 고정 금지, 32~45초 허용"
+    ]
+  },
+
+  "storyCausalityFirst": {
+    "requiredChain": "문제 → 원인 → 착시 → 해결책 → 행동",
+    "chainNote": "이 인과가 끊기지 않는 것이 이번 영상에서 진짜 고쳐야 할 것이다. 각 단계는 bridge로 다음 단계를 필연으로 만든다.",
+    "stages": [
+      {
+        "stageId": "problem",
+        "claim": "월급이 들어와도 3일이면 잔액 보기가 무서워진다 — 그리고 그것은 당신이 헤퍼서가 아니다.",
+        "bridgeToNext": "내가 헤픈 게 아니라면, 돈을 가져간 것은 누구인가? → 원인 탐색이 필연이 된다.",
+        "viewerFeeling": "내 얘기인데? (hook_self_relevance)"
+      },
+      {
+        "stageId": "cause",
+        "claim": "월급날 직후 월세·카드값·통신비·보험료가 자동이체로 한꺼번에 빠져나간다. 내가 쓴 돈이 아니라 이미 정해져 있던 돈이다.",
+        "bridgeToNext": "이미 정해진 돈이었는데 왜 나는 '내가 쓸 수 있는 돈'이라고 느꼈을까? → 착시의 정체를 물을 수밖에 없다.",
+        "viewerFeeling": "맞아, 자동이체 날짜가 월급날 바로 뒤지."
+      },
+      {
+        "stageId": "illusion",
+        "claim": "나갈 돈까지 전부 한 통장에 섞여 있으니, 전부 쓸 수 있는 돈처럼 보였다. 사라진 게 아니라 처음부터 내 돈이 아니었다.",
+        "bridgeToNext": "착시의 원인이 '섞임'이라면 해결은 절약이 아니라 '분리'다 — 해결책이 논리적으로 도출된다.",
+        "viewerFeeling": "아, 문제는 씀씀이가 아니라 구조였구나."
+      },
+      {
+        "stageId": "solution",
+        "claim": "월급이 들어오면 돈의 자리를 먼저 나눈다 — 고정비 자리, 생활비 자리, 저축 자리. 이 세 자리가 그 '3개'다.",
+        "solutionSpecificity": {
+          "structureName": "돈의 자리/흐름을 먼저 나누는 구조",
+          "slot1": "고정비 자리 — 월세/카드값/통신비/보험료가 자동이체로 나가는 곳. 월급날 가장 먼저 채운다.",
+          "slot2": "생활비 자리 — 이번 달 실제로 쓸 돈. 체크카드가 연결된 곳.",
+          "slot3": "저축 자리 — 남기는 돈. 건드리지 않는 곳으로 먼저 보낸다.",
+          "antiAbstractionNote": "'순서/관리/정리' 같은 추상어 단독 사용 금지 — 반드시 세 자리의 이름과 역할을 화면과 대본에 함께 보여준다 (hard fail #4, #5 대응)"
+        },
+        "bridgeToNext": "구조를 알았으니 남은 것은 시점과 첫 동작 — '언제, 무엇부터'가 행동 단계로 이어진다.",
+        "viewerFeeling": "이건 나도 당장 할 수 있겠다."
+      },
+      {
+        "stageId": "action",
+        "claim": "다음 월급날, 쓰기 전에 나눈다. 그러면 3일이 지나도 진짜 쓸 수 있는 돈이 정확히 보인다.",
+        "bridgeToNext": null,
+        "closesLoop": "hook의 공포(통장 보기 무섭다)가 '정확히 보인다'로 해소된다 — 문제 상태의 반전으로 종결",
+        "viewerFeeling": "저장해두고 월급날 해봐야지. (save CTA)"
+      }
+    ]
+  },
+
+  "fullNarrationDraft": {
+    "durationPolicy": "30초 고정 금지 — 32~45초 허용. TTS-first이므로 실측 길이에 timeline을 reflow하고 padding/atempo/hard-trim은 금지 유지.",
+    "estimatedDurationSec": [41, 45],
+    "estimateBasis": "직전 T2 실측 발화속도 약 6.25자/초 (178자→28.5초) 기준, 약 267자 → 약 42.7초 + 구두점 pause",
+    "toneReference": "정보 브리핑형/팩트 전달형 — '오늘 봐야 하는 이유'를 초반에 강하게, 시청자가 '내 얘기인데?'라고 느끼는 hook",
+    "phrases": [
+      { "phraseId": "p1_problem_hook", "stage": "problem", "text": "월급 들어온 지 3일, 통장 보기 무섭죠. 당신이 헤픈 게 아닙니다." },
+      { "phraseId": "p2_cause", "stage": "cause", "text": "월급날 다음 날, 월세, 카드값, 통신비, 보험료가 자동이체로 한 번에 빠져나가요. 내가 쓴 게 아니라 이미 정해진 돈이죠." },
+      { "phraseId": "p3_illusion", "stage": "illusion", "text": "진짜 문제는 이겁니다. 나갈 돈까지 한 통장에 섞여 있으니 전부 쓸 돈처럼 보였던 거예요." },
+      { "phraseId": "p4_solution", "stage": "solution", "text": "그래서 할 일은 절약이 아니라 분리입니다. 월급이 들어오면 고정비, 생활비, 저축, 세 자리로 먼저 나누세요." },
+      { "phraseId": "p5_action", "stage": "action", "text": "다음 월급날, 쓰기 전에 나누세요. 3일이 지나도 쓸 수 있는 돈이 정확히 보입니다. 저장해두고 그대로 해보세요." }
+    ],
+    "overrunRule": "실측이 45초를 초과하면 의미 불변 압축 재생성 1회 (우선 압축 대상: p2 고정비 나열 축소, p5 마지막 문장 단축). 45초 이내면 실측 그대로 reflow."
+  },
+
+  "visualEvidenceSecond": {
+    "principle": "각 scene은 스토리 주장(claim)의 시각 증거다. 이미지 단독으로도 월급/빠져나가는 돈/고정비/빈 지갑/분리·배분의 느낌이 보여야 한다.",
+    "scenes": [
+      {
+        "sceneId": "s1_problem_empty_wallet",
+        "stage": "problem",
+        "phraseId": "p1_problem_hook",
+        "what_story_claim_this_scene_proves": "월급 들어온 지 3일 만에 쓸 수 있는 돈이 바닥처럼 느껴진다",
+        "required_visual_evidence": "거의 비어 있는 지갑과 몇 장 남지 않은 지폐 — 잔액 공포의 물리적 형태",
+        "must_show": ["열려 있는 거의 빈 지갑", "지폐 두세 장만 남은 상태", "저녁 식탁/책상 등 일상 공간", "긴장감 있는 어두운 조명"],
+        "must_not_show": ["읽히는 글자/숫자", "브랜드 로고/워터마크", "웃는 스톡 인물", "가짜 은행 앱 UI"],
+        "why_this_image_delivers_topic_without_caption": "빈 지갑 + 소수의 지폐는 '돈이 이미 빠져나간 상태'를 자막 없이 즉시 전달하는 보편 기호다",
+        "renderer_card_support_role": "hook card가 '월급 들어온 지 3일'과 '당신이 헤픈 게 아니다'를 텍스트로 고정 — 이미지의 감정에 정보를 얹는다"
+      },
+      {
+        "sceneId": "s2_cause_outflow",
+        "stage": "cause",
+        "phraseId": "p2_cause",
+        "what_story_claim_this_scene_proves": "월급이 여러 개의 고정비로 자동으로 갈라져 나간다",
+        "required_visual_evidence": "월급 봉투(현금 다발)에서 여러 청구서 봉투 더미로 지폐가 흩어져 나가는 방향성 있는 흐름",
+        "must_show": ["두툼한 월급 봉투 또는 현금 다발 (출발점)", "청구서/고지서 느낌의 봉투 더미 여러 개 (도착점)", "지폐가 갈라져 이동하는 흐름/방향성", "부감 또는 사선 구도"],
+        "must_not_show": ["봉투 위 읽히는 글자", "가짜 고지서 본문 텍스트", "사람 얼굴", "달력/계산기의 읽히는 숫자"],
+        "why_this_image_delivers_topic_without_caption": "한 뭉치에서 여러 봉투로 갈라지는 돈의 흐름은 '내 의지와 무관하게 빠져나가는 고정비'를 시각 문법으로 직접 보여준다",
+        "renderer_card_support_role": "고정비 checklist card (월세/카드값/통신비/보험료)가 흐름의 도착점 이름을 pop으로 명시 — 숫자/항목명은 카드가 담당"
+      },
+      {
+        "sceneId": "s3_illusion_mixed_pile",
+        "stage": "illusion",
+        "phraseId": "p3_illusion",
+        "what_story_claim_this_scene_proves": "나갈 돈과 쓸 돈이 한 곳에 섞여 있어 전부 내 돈처럼 보인다",
+        "required_visual_evidence": "구분선 없이 한 덩어리로 섞여 쌓인 현금 더미 — '한 통장'의 물리적 은유",
+        "must_show": ["경계 없이 섞인 지폐 한 무더기", "위에서 내려다보는 구도", "일부 지폐는 청구서 봉투에 반쯤 걸쳐 있어 '이미 나갈 돈'임을 암시"],
+        "must_not_show": ["읽히는 글자", "통장/앱 화면의 가짜 숫자", "정리된 칸막이 (착시 단계에서는 분리가 없어야 함)"],
+        "why_this_image_delivers_topic_without_caption": "섞인 돈 더미는 '구분이 안 되는 상태'를 그대로 보여준다 — 다음 scene의 3분할과 시각적 대비를 만드는 전제 장면",
+        "renderer_card_support_role": "착시 카드가 '전부 쓸 돈처럼 보였다'를 강조색으로 고정하고, '이미 나갈 돈' 키워드에 word-anchor 강조"
+      },
+      {
+        "sceneId": "s4_solution_three_slots",
+        "stage": "solution",
+        "phraseId": "p4_solution",
+        "what_story_claim_this_scene_proves": "해결책은 돈의 자리를 3개로 나누는 구조다 — 그리고 그 3개는 고정비/생활비/저축이다",
+        "required_visual_evidence": "현금/봉투가 명확히 3칸으로 나뉜 구도 — 3분할이 이미지 단독으로 읽혀야 한다",
+        "must_show": ["3개의 봉투 또는 3칸 트레이/클립으로 명확히 분리된 현금", "각 칸의 시각적 등가성 (3이라는 숫자가 구도로 보임)", "정돈된 밝은 톤 (착시 scene과 대비)"],
+        "must_not_show": ["봉투 위 읽히는 라벨 글자 (이름은 renderer 카드가 얹음)", "4칸 이상 또는 2칸 (반드시 3분할)", "어수선한 배경"],
+        "why_this_image_delivers_topic_without_caption": "3칸으로 나뉜 돈은 '분리 구조'라는 해결책 자체의 형태다 — s3의 섞인 더미와 나란히 보면 자막 없이도 before/after가 성립한다",
+        "renderer_card_support_role": "3-slot 카드가 각 칸 위에 '고정비 | 생활비 | 저축' 이름을 정확히 얹는다 — hard fail #5('3개가 무엇인지') 대응의 핵심 카드"
+      },
+      {
+        "sceneId": "s5_action_hands_dividing",
+        "stage": "action",
+        "phraseId": "p5_action",
+        "what_story_claim_this_scene_proves": "월급날 가장 먼저 하는 행동은 소비가 아니라 나누기다",
+        "required_visual_evidence": "손이 현금을 3개의 봉투에 나눠 넣는 진행 중인 동작",
+        "must_show": ["지폐를 봉투에 넣는 손 (동작 진행형)", "3개의 봉투가 나란히", "생활 테이블 위 자연광/따뜻한 톤"],
+        "must_not_show": ["읽히는 글자", "얼굴", "돈을 세며 웃는 스톡 연출"],
+        "why_this_image_delivers_topic_without_caption": "'넣는 손'은 시청자가 따라 할 신체 동작을 그대로 시연한다 — 행동 단계는 상태가 아니라 동작으로 증명한다",
+        "renderer_card_support_role": "action 카드가 '다음 월급날: 쓰기 전에 나누기'와 세 자리 이름 재확인 + 저장 CTA를 얹는다"
+      },
+      {
+        "sceneId": "s6_result_clear_after",
+        "stage": "action_result",
+        "phraseId": "p5_action",
+        "what_story_claim_this_scene_proves": "나눈 뒤에는 3일이 지나도 쓸 수 있는 돈이 정확히 보인다 — hook의 공포가 해소된 상태",
+        "required_visual_evidence": "정돈되어 나란히 선 3개의 봉투와 그 옆의 열린 지갑 — s1의 빈 지갑과 반전 대비",
+        "must_show": ["가지런한 3개의 봉투", "적당한 현금이 보이는 열린 지갑", "밝고 안정된 톤 (s1 어두운 톤과 대비)"],
+        "must_not_show": ["읽히는 글자", "과도한 부/사치 연출 (현실감 유지)"],
+        "why_this_image_delivers_topic_without_caption": "s1(어두운 빈 지갑)→s6(밝은 정돈된 자리)의 톤/상태 반전이 스토리의 결말을 이미지만으로 완결한다",
+        "renderer_card_support_role": "마무리 카드가 저장 CTA를 짧게 고정 — 이미지가 주연, 카드는 종결 신호"
+      }
+    ]
+  },
+
+  "sceneCardCaptionDraft": {
+    "captionContract": "dynamic caption 유지 — 하단 고정 자막 금지, phrase/keyword 단위, TTS word-anchor(entry ±120ms, emphasis ±80ms)",
+    "captionDwellMinimumSec": 0.7,
+    "dwellNote": "80점 후보의 0.49s flash reject 반영 — phrase 경계 클램프로 0.7s 미만이 되면 해당 caption은 병합하거나 제거한다",
+    "typography": {
+      "direction": "두꺼운 검정 외곽선 + 강한 강조색 + 쇼츠형 정보 자막 (레퍼런스 기반, exact clone 금지)",
+      "outline": "검정 외곽선 두께 상향 — 직전 채택값 outline 6/shadow 2.6에서 시작해 8 내외까지 후보 비교",
+      "emphasisColors": ["빨강 (경고/문제)", "노랑 (핵심 키워드)", "초록 (해결/안정)", "파랑 (정보/수치)"],
+      "colorSemantics": "problem/illusion 단계는 빨강·노랑 계열, solution/action 단계는 초록·노랑 계열로 인과 단계 전환을 색으로도 표시",
+      "headerZone": "상단 헤더(주제 라벨) 정보 브리핑 구조 참고 가능 — 단 하단 15% 상시 점유 금지 유지"
+    },
+    "cards": [
+      { "cardId": "hook_problem_card", "sceneId": "s1_problem_empty_wallet", "role": "big_hook_card", "textDraft": ["월급 들어온 지 3일", "통장 보기 무섭죠?"], "emphasis": "3일 (빨강)", "motion": "impact entry + keyword pulse" },
+      { "cardId": "cause_fixed_costs_card", "sceneId": "s2_cause_outflow", "role": "checklist_card", "textDraft": ["먼저 빠지는 돈", "월세 / 카드값 / 통신비 / 보험료"], "emphasis": "자동이체 (노랑)", "motion": "checklist pop (word-anchored)" },
+      { "cardId": "illusion_card", "sceneId": "s3_illusion_mixed_pile", "role": "twist_single_sentence_card", "textDraft": ["한 통장에 섞이면", "전부 '쓸 돈'처럼 보인다"], "emphasis": "쓸 돈 (빨강, 따옴표 강조)", "motion": "hard cut + punch" },
+      { "cardId": "solution_three_slots_card", "sceneId": "s4_solution_three_slots", "role": "three_slot_card", "textDraft": ["고정비", "생활비", "저축"], "emphasis": "세 슬롯 순차 pop (초록) — 각 슬롯 이름이 반드시 화면에 보여야 함 (hard fail #5 대응)", "motion": "slot-by-slot pop (word-anchored: 고정비/생활비/저축 발화 순간)" },
+      { "cardId": "action_card", "sceneId": "s5_action_hands_dividing", "role": "final_action_card", "textDraft": ["다음 월급날", "쓰기 전에 나누기"], "emphasis": "쓰기 전에 (노랑)", "motion": "underline sweep + CTA pulse" },
+      { "cardId": "save_cta_card", "sceneId": "s6_result_clear_after", "role": "save_cta", "textDraft": ["저장해두고 월급날 그대로"], "emphasis": "저장 (초록)", "motion": "gentle entry, 마지막 hold" }
+    ],
+    "perceptualEventPlan": {
+      "rule": "perceptual event만 인정 (planned ≠ perceptual) — 기존 절대규칙 기준 유지",
+      "minEventsScaled": "30초당 14개 비율 유지 — 42초 기준 약 20개",
+      "maxGapSec": 3.0,
+      "per5sWindowMin": 2,
+      "first2sHookCard": true,
+      "stageTransitionRule": "인과 단계 전환(문제→원인→착시→해결책→행동)은 각각 hard cut 또는 배경 톤 전환으로 지각 가능해야 한다"
+    }
+  },
+
+  "visualDirectorPromptDraft": {
+    "executionNote": "이 프롬프트는 ChatGPT/LLM 이미지 생성용 초안이며 이번 slice에서 실행하지 않는다. 실행은 next production plan의 Owner 승인 후 별도 slice에서 한다.",
+    "visualStyle": "premium editorial financial explainer, cinematic, realistic, high detail, vertical 9:16, warm-dark domestic lighting",
+    "moneyLikeObjectsPolicy": "money-like objects allowed and encouraged — cash stacks, salary envelopes, bill envelopes, wallets, three-way divided cash. 글자 리스크만 차단한다.",
+    "negativePromptRules": [
+      "no readable text of any kind inside image",
+      "no AI-generated brand names or watermarks",
+      "no broken/garbled letterforms",
+      "no fake UI text, no fake news article body",
+      "no pretend-readable charts, newspapers, calculators, or calendar text",
+      "no distorted hands, no extra fingers",
+      "no generic smiling stock-photo office worker",
+      "no low quality stock photo feel"
+    ],
+    "scenePrompts": [
+      {
+        "imageId": "v2_img_01",
+        "sceneId": "s1_problem_empty_wallet",
+        "prompt": "A nearly empty open leather wallet on a small dining table at night, only two or three banknotes left inside, moody dim warm lamp light, shallow depth of field, tense quiet atmosphere, premium editorial photography, vertical 9:16",
+        "must_show": ["open wallet", "two or three banknotes only", "domestic table", "dim tense lighting"],
+        "must_avoid": ["readable text", "logos", "faces", "phone screens with UI"]
+      },
+      {
+        "imageId": "v2_img_02",
+        "sceneId": "s2_cause_outflow",
+        "prompt": "Overhead view of a thick salary envelope with cash fanning out toward several plain bill envelopes arranged around it, banknotes visually flowing from the single envelope to the many, dramatic directional light, dark wooden desk, premium editorial financial photography, vertical 9:16",
+        "must_show": ["one thick cash envelope as source", "multiple plain bill envelopes as destinations", "directional flow of banknotes", "overhead or diagonal composition"],
+        "must_avoid": ["readable labels on envelopes", "fake invoice text", "faces", "calendar or calculator digits"]
+      },
+      {
+        "imageId": "v2_img_03",
+        "sceneId": "s3_illusion_mixed_pile",
+        "prompt": "One single undivided messy pile of banknotes seen from directly above on a dark table, some notes half-tucked into plain bill envelopes at the edge of the pile, no separation or dividers, cinematic contrast lighting, premium editorial financial photography, vertical 9:16",
+        "must_show": ["single mixed cash pile", "no dividers", "a few notes half-inside plain envelopes", "top-down view"],
+        "must_avoid": ["readable text", "bank app screens", "any tray or divider (must look unseparated)"]
+      },
+      {
+        "imageId": "v2_img_04",
+        "sceneId": "s4_solution_three_slots",
+        "prompt": "Cash cleanly divided into exactly three equal groups, each group in its own plain envelope or tray slot, arranged side by side in a precise row, bright clean organized lighting, calm and orderly mood contrasting a chaotic pile, premium editorial financial photography, vertical 9:16",
+        "must_show": ["exactly three separated groups of cash", "three plain envelopes or a three-slot tray", "clean bright orderly composition"],
+        "must_avoid": ["readable labels", "two or four groups (must be exactly three)", "clutter"]
+      },
+      {
+        "imageId": "v2_img_05",
+        "sceneId": "s5_action_hands_dividing",
+        "prompt": "Close-up of hands placing banknotes into the second of three plain envelopes lying side by side on a warm wooden table, action in progress, natural daylight from a window, hopeful practical mood, premium editorial financial photography, vertical 9:16",
+        "must_show": ["hands mid-action inserting cash", "three envelopes side by side", "warm natural light"],
+        "must_avoid": ["readable text", "faces", "staged stock-photo smiling"]
+      },
+      {
+        "imageId": "v2_img_06",
+        "sceneId": "s6_result_clear_after",
+        "prompt": "Three neat plain envelopes standing in a row next to an open wallet holding a comfortable amount of cash, tidy bright morning light on a clean table, calm resolved atmosphere, subtle visual echo of order and control, premium editorial financial photography, vertical 9:16",
+        "must_show": ["three tidy envelopes", "open wallet with visible cash", "bright stable tone"],
+        "must_avoid": ["readable text", "luxury excess (keep realistic)", "faces"]
+      }
+    ]
+  },
+
+  "storyQaContract": {
+    "philosophy": "Golden Sample은 영상이 예쁜지만 보지 않는다. 스토리 인과를 평가한다. 기술 게이트(ffprobe/silence/geometry) 통과는 전제조건일 뿐이다.",
+    "fields": {
+      "story_causality_score": 0,
+      "problem_solution_bridge_score": 0,
+      "solution_specificity_score": 0,
+      "visual_subject_relevance_score": 0,
+      "caption_readability_score": 0,
+      "hook_self_relevance_score": 0
+    },
+    "thresholds": {
+      "story_causality_score": 85,
+      "problem_solution_bridge_score": 85,
+      "solution_specificity_score": 85,
+      "visual_subject_relevance_score": 80,
+      "caption_readability_score": 85,
+      "hook_self_relevance_score": 85
+    },
+    "hardFail": [
+      "문제 제기와 해결책 사이에 다리가 없으면 reject",
+      "해결책이 추상어로 끝나면 reject",
+      "이미지가 주제와 직관적으로 연결되지 않으면 reject",
+      "'순서', '관리', '정리' 같은 추상어를 설명 없이 쓰면 reject",
+      "3개를 정하라고 말하면서 그 3개가 무엇인지 안 보여주면 reject"
+    ],
+    "causalityPassFailExamples": {
+      "fail_example_from_80pt_candidate": {
+        "evidence": "'문제는 금액이 아니라 순서입니다' (twist) → '3개만 먼저 정하세요' (action)",
+        "verdict": "FAIL",
+        "why": "원인→착시 단계가 없어 twist가 갑자기 등장(인과 단절), '순서'가 무엇을 하라는 것인지 미설명(추상어), 정하라는 3개의 정체가 화면/대본 어디에도 없음"
+      },
+      "pass_example_v2": {
+        "evidence": "자동이체 고정비가 먼저 나간다(원인) → 한 통장에 섞여 전부 쓸 돈처럼 보였다(착시, 원인의 귀결) → 그래서 절약이 아니라 분리다(해결책, 착시의 반전) → 고정비/생활비/저축 세 자리(3개 명시) → 다음 월급날 쓰기 전에 나눈다(행동, 시점+순서 지정)",
+        "verdict": "PASS",
+        "why": "각 단계가 이전 단계에서 필연적으로 도출되고, 해결책이 구조 이름+3슬롯 명칭까지 구체화되며, 행동이 실행 가능한 시점을 갖는다"
+      }
+    },
+    "evaluationMethod": "생성 단계: 대본/blueprint 자체 평가(LLM/사람) → 렌더 후: 프레임+자막+음성 통합 vision QA에서 동일 6필드 재평가. 두 시점 모두 threshold 미달 시 진행 중단."
+  },
+
+  "nextProductionPlan": {
+    "note": "아래는 제안이며 이번 slice에서 실행하지 않는다. 실행에는 Owner의 provider/비용/플래그 명시 승인이 필요하다.",
+    "sliceA_imageGeneration": {
+      "provider_primary": "FLUX.2 (기존 credential 보유, object-whitelist 계약 v2 실증 있음 — money-like objects 허용으로 whitelist 확장 필요)",
+      "provider_alternative": "OpenAI gpt-image-2 (provider 검증 리포트 1순위 — 신규 승인 필요 시)",
+      "imageCount": "6 scenes × 2 후보 = 12장",
+      "estimatedCostCap": "$3 이하 (FLUX.2 기준)",
+      "forbidden": ["readable text/브랜드/워터마크가 있는 이미지 채택", "숫자/라벨을 이미지 내부에 생성", "placeholder/stock fallback"],
+      "gate": "scene별 must_show/must_not_show 체크 + money-like object 존재 + no-readable-text 검수 → selected image set lock (MD5)"
+    },
+    "sliceB_ttsAndMux": {
+      "path": "기존 scripts/run-golden-sample-tts-first-mux-audit-v1.mjs 계열 재사용 (one-shot with-timestamps → reflow → render → mux → audit)",
+      "guard": "live TTS는 ALLOW_ELEVENLABS=1 또는 --allow-live-tts 필요 (이미 구현됨)",
+      "budget": "ElevenLabs 1~2회",
+      "durationTarget": "32~45초 — 30초 고정 금지"
+    },
+    "sliceC_storyQa": {
+      "method": "렌더 후 storyQaContract 6필드 통합 평가 (frame + caption + narration cross-check)",
+      "acceptCondition": "전 threshold 충족 + hard fail 0 + Owner 시청 승인"
+    },
+    "ownerApprovalNeededBefore": [
+      "이미지 provider 선택 (FLUX.2 재사용 vs gpt-image-2 신규)",
+      "장수/비용 상한 (제안: 12장/$3)",
+      "해당 provider ALLOW_* 플래그 승인",
+      "narration draft 문안 확정 (blueprint의 p1~p5)"
+    ]
+  },
+
+  "boundary": {
+    "thisSliceExecuted": "design_only",
+    "noImageGeneration": true,
+    "noExternalApiCalls": true,
+    "noTtsRenderMuxUpload": true,
+    "uploadReady": false,
+    "absoluteRulesOriginalUntouched": "_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md (git blob 31c2243afa879d1cc796d5d8ea143f1b72d9244f)"
+  }
+}

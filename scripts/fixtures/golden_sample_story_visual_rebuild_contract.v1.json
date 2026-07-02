@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "golden_sample_story_visual_rebuild_contract_v1",
+  "taskId": "creative-v2-golden-sample-story-causality-visual-evidence-reset-v1",
+  "createdAt": "2026-07-02",
+  "status": "approved_process_contract",
+  "scope": "주제 독립적인 Golden Sample 재제작 프로세스 계약. 개별 주제의 실제 설계값은 blueprint fixture가 갖는다.",
+
+  "supersedes": {
+    "oldPrinciple": "story-first + visual-source-first",
+    "newPrinciple": "Story-Causality First + Visual Evidence Second",
+    "reason": "80점 reject 원인 — 기술 게이트는 전부 PASS였지만 스토리 인과(문제→해결 다리, 해결책 구체성)와 이미지-주제 직관 연결이 평가되지 않았다."
+  },
+
+  "rejectLock": {
+    "target": "C:\\tmp\\money-shorts-os\\golden-sample-tts-first-mux-audit-v1\\golden_sample_t2_salary_3days_tts_mux.mp4",
+    "commit": "24ea7d3",
+    "ownerScore": "약 80/100",
+    "verdict": "REJECT_AS_GOLDEN_SAMPLE",
+    "retention": "evidence_only",
+    "doNotModifyDeleteRegenerate": true,
+    "whatItStillProves": "TTS-first reflow, ElevenLabs word alignment 기반 caption 재앵커, mux 무패딩, post-render artifact audit 파이프라인은 기술적으로 유효 — v2 제작에서 재사용"
+  },
+
+  "processOrder": [
+    {
+      "step": 1,
+      "name": "fix_story_causality",
+      "rule": "먼저 스토리 인과를 고정한다. 필수 체인: 문제 → 원인 → 착시 → 해결책 → 행동. 각 단계 사이 bridge 문장(왜 다음 단계로 넘어가는가)이 없으면 다음 step 진행 금지."
+    },
+    {
+      "step": 2,
+      "name": "define_visual_evidence",
+      "rule": "각 장면이 증명해야 하는 시각 증거를 정의한다. scene마다 requiredSceneFields를 전부 채운다. 이미지는 스토리의 증거다 — 스토리 주장 없이 이미지를 먼저 고르는 것을 금지한다."
+    },
+    {
+      "step": 3,
+      "name": "write_image_prompts",
+      "rule": "그 증거에 맞는 ChatGPT/LLM 이미지 프롬프트를 만든다. imagePolicy를 따른다. 이 계약 단계에서는 프롬프트 작성까지만이며 생성 실행은 별도 Owner 승인 slice에서 한다."
+    },
+    {
+      "step": 4,
+      "name": "renderer_overlay",
+      "rule": "마지막으로 renderer가 카드/자막/모션을 얹는다. 중요한 숫자/문구는 이미지 내부가 아니라 renderer 카드/타이포로 정확히 얹는다."
+    }
+  ],
+
+  "requiredSceneFields": [
+    "what_story_claim_this_scene_proves",
+    "required_visual_evidence",
+    "must_show",
+    "must_not_show",
+    "why_this_image_delivers_topic_without_caption",
+    "renderer_card_support_role"
+  ],
+
+  "storyQaContract": {
+    "philosophy": "Golden Sample은 이제 영상이 예쁜지만 보지 않는다. 스토리 인과를 평가한다.",
+    "fields": {
+      "story_causality_score": 0,
+      "problem_solution_bridge_score": 0,
+      "solution_specificity_score": 0,
+      "visual_subject_relevance_score": 0,
+      "caption_readability_score": 0,
+      "hook_self_relevance_score": 0
+    },
+    "thresholds": {
+      "story_causality_score": 85,
+      "problem_solution_bridge_score": 85,
+      "solution_specificity_score": 85,
+      "visual_subject_relevance_score": 80,
+      "caption_readability_score": 85,
+      "hook_self_relevance_score": 85
+    },
+    "hardFail": [
+      "문제 제기와 해결책 사이에 다리가 없으면 reject",
+      "해결책이 추상어로 끝나면 reject",
+      "이미지가 주제와 직관적으로 연결되지 않으면 reject",
+      "'순서', '관리', '정리' 같은 추상어를 설명 없이 쓰면 reject",
+      "3개를 정하라고 말하면서 그 3개가 무엇인지 안 보여주면 reject"
+    ],
+    "passFailExamples": {
+      "fail_80pt_candidate": {
+        "line": "문제는 금액이 아니라 순서입니다",
+        "why_fail": "'순서'가 구체적으로 무엇을 하라는 것인지 설명이 없고(추상어 hard fail), 진단에서 행동으로 넘어가는 bridge가 없으며, '3개만 먼저 정하세요'에서 그 3개가 무엇인지 화면/대본 어디에도 없다(hard fail).",
+        "violates": ["problem_solution_bridge_score", "solution_specificity_score", "hardFail#2", "hardFail#4", "hardFail#5"]
+      },
+      "pass_v2_direction": {
+        "line": "나갈 돈까지 한 통장에 섞여 있으니 전부 쓸 수 있는 돈처럼 보였던 것(착시) → 그래서 월급이 들어오면 고정비, 생활비, 저축, 세 자리로 먼저 나눈다(해결책, 3개 명시) → 다음 월급날 쓰기 전에 나눈다(행동)",
+        "why_pass": "착시가 해결책의 필요성을 직접 설명하고(bridge 존재), 해결책이 '돈의 자리 3개'라는 구체 구조이며, 3개가 고정비/생활비/저축으로 명시되고, 행동이 시점(다음 월급날)과 순서(쓰기 전)까지 지정된다."
+      }
+    }
+  },
+
+  "imagePolicy": {
+    "principle": "이미지는 스토리의 증거다. 글자 리스크는 막되, 돈처럼 보이는 오브젝트는 적극 허용한다.",
+    "noReadableAiGeneratedText": {
+      "keep": true,
+      "forbidden": [
+        "AI가 임의 생성한 브랜드명/워터마크",
+        "깨진 글자",
+        "가짜 UI 텍스트",
+        "가짜 기사 본문",
+        "읽히는 척하는 차트/신문/계산기/달력 텍스트"
+      ]
+    },
+    "moneyLikeObjectsAllowed": {
+      "note": "money-like objects는 금지가 아니라 적극 허용이다",
+      "allowed": [
+        "현금 다발",
+        "돈 봉투",
+        "월급 봉투",
+        "지갑",
+        "카드값/고정비를 상징하는 봉투 더미",
+        "3칸으로 나뉜 현금/봉투/카드",
+        "돈이 빠져나가는 흐름을 보여주는 오브젝트"
+      ]
+    },
+    "numbersAndTextRule": "중요한 숫자/문구는 이미지 내부가 아니라 renderer 카드/타이포로 정확히 얹는다",
+    "standaloneTest": "이미지 단독으로도 월급, 빠져나가는 돈, 고정비, 자동이체, 빈 지갑, 분리/배분의 느낌이 보여야 한다. 카드/표/자막이 보완해서 겨우 설득되면 reject."
+  },
+
+  "captionTypographyDirection": {
+    "reference": "정보 브리핑형/팩트 전달형 쇼츠 (exact clone 금지)",
+    "fontDirection": "두꺼운 검정 외곽선 + 강한 강조색(빨강/파랑/초록/노랑) + 쇼츠형 정보 자막",
+    "headerZone": "상단 헤더/날짜/채널 느낌의 정보 브리핑 구조 참고 가능",
+    "dynamicCaptionContractKept": "하단 고정 자막 금지, phrase/keyword 단위, TTS word-anchor 유지 — 폰트/강조만 강화",
+    "captionDwellMinimumSec": 0.7,
+    "dwellNote": "80점 후보의 0.49s flash가 reject 사유 — 0.45s 하한을 0.7s로 상향 제안"
+  },
+
+  "durationPolicy": {
+    "rule": "30초 고정 금지",
+    "allowedRangeSec": [32, 45],
+    "principle": "길이는 스토리 인과가 결정한다. TTS-first — 실제 narration 길이에 timeline을 reflow하며 padding/atempo/hard-trim 금지 유지."
+  },
+
+  "reusedTechnicalContracts": [
+    "TTS-first one-shot full narration + character alignment word timing (scripts/run-golden-sample-tts-first-mux-audit-v1.mjs 경로 재사용 가능)",
+    "live TTS guard: ALLOW_ELEVENLABS=1 또는 --allow-live-tts 없으면 fetch 전 abort",
+    "perceptual event 기준 (min events, maxGap, 5s window)",
+    "post-render artifact audit (media/silence/caption geometry)",
+    "dynamic caption word-anchor 계약 (±120ms/±80ms)"
+  ],
+
+  "boundary": {
+    "thisSliceIsDesignOnly": true,
+    "noImageGeneration": true,
+    "noExternalApiCalls": true,
+    "noTts": true,
+    "noRenderMuxUpload": true,
+    "uploadReady": false
+  }
+}

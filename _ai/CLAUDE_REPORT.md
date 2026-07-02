@@ -2864,3 +2864,17 @@ QA-only slice. 코드 변경 없음.
   - secret 스캔: 변경 파일에 key/token 값 0(env 참조/masked만).
   - PASS_CANDIDATE 산출물 6종(mux mp4/narration mp3/alignment/timing/audit/caption) 전부 보존, 재생성 0.
 - API 호출/TTS 생성/render/mux/audit 재실행: 0건. env/secret/dependency 무변경. commit/push 없음.
+
+
+## Golden Sample v2 기준 재설정 (`creative-v2-golden-sample-story-causality-visual-evidence-reset-v1` — 2026-07-02)
+
+**Owner 80점 reject를 계기로 Golden Sample 판단 기준을 스토리 인과 중심으로 재정의 — `Story-Causality First + Visual Evidence Second` 원칙과 salary_3days v2 blueprint 고정. design-only slice, 외부 호출 0.**
+
+- Reject lock: 24ea7d3 TTS mux 후보(`golden_sample_t2_salary_3days_tts_mux.mp4`)를 `REJECT_AS_GOLDEN_SAMPLE / evidence_only`로 강등·보존(무수정). 기술 게이트 전부 PASS였으나 스토리 인과 QA 부재가 원인 — 교훈을 계약에 고정.
+- 신규: `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md` — 원문 절대규칙과 같은 우선순위 addendum. Owner reject 사유 verbatim 보존, 원칙 전환, Story QA 6필드/threshold(85/85/85/80/85/85)/hard fail 5종, 이미지 정책(no readable AI-generated text 유지 + money-like objects 적극 허용 구분), 폰트 방향(두꺼운 검정 외곽선+강한 강조색), 30초 고정 금지(32~45s), caption dwell ≥0.7s.
+- 신규: `scripts/fixtures/golden_sample_story_visual_rebuild_contract.v1.json` — 주제 독립 프로세스 계약: 4-step(인과 고정→시각 증거 정의→이미지 프롬프트→renderer overlay), scene당 필수 6필드, Story QA contract(80점 후보의 '순서입니다' FAIL 예시 + v2 PASS 예시 포함), 재사용 기술 계약 목록.
+- 신규: `scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json` — v2 blueprint: `문제 → 원인 → 착시 → 해결책 → 행동` 5단계 + 단계별 bridge 문장, 해결책을 '돈의 자리 3분할(고정비/생활비/저축)'로 구체화(hard fail #4/#5 대응), narration draft 5 phrase 약 267자(실측 6.25자/s 기준 약 42.7s, 45s 초과 시 압축 재생성 1회 규칙), scene 6개 각각 visual evidence 6필드(빈 지갑→월급봉투 유출→섞인 더미→3칸 분할→나누는 손→정돈된 after), 카드/타이포/색상 의미론(문제=빨강·해결=초록), perceptual event plan(42s 기준 약 20 events), visual director prompt 6개 초안(실행 안 함, money-like objects 허용/글자 금지), next production plan(FLUX.2 12장/$3 제안 + Owner 승인 항목).
+- `_ai/HANDOFF_NOW.md` — addendum pointer + Current Approved Slice 완료 반영만.
+- 검증: 신규 JSON 2종 parse PASS, 필수 문구 grep 전 항목 확인, secret/API 패턴 0, 원문 절대규칙 git blob `31c2243a` 불변 확인.
+- 금지 미수행: 이미지 생성/외부 API/TTS/render/mux/upload 0건, env/dependency 무변경, output·C:\tmp 무변경, 보호 파일 미접근, commit/push 없음.
+- 다음 Owner 승인 필요: ① 이미지 provider(FLUX.2 재사용 vs gpt-image-2) ② 장수/비용 상한(제안 12장/$3) ③ ALLOW_* 플래그 ④ narration draft p1~p5 문안 확정.
