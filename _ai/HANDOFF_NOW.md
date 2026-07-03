@@ -4,225 +4,169 @@
 
 - 최우선 source of truth: `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md`.
 - 같은 우선순위 addendum: `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`.
-- Golden Sample v3.2 lock/standard 문서:
+- Golden Sample v3.2 lock/standard/gap 문서:
   - `_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md`
   - `_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md`
   - `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`
+  - `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
   - `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json`
   - `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
+  - `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-automation-implementation-gap-analysis-v1`
-- Status: approved by Owner after production standard checkpoint.
-- Slice status: **COMPLETED 2026-07-03** — read-only gap analysis 완료 (`_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`, `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`). 구현 코드 무변경, 생성/API/TTS/render/mux/upload 0. uploadReady=false / automationExpansionReady=false / implementationApproved=false.
+- Task ID: `golden-sample-v3-2-upload-hard-block-safety-guard-v1`
+- Status: approved by Owner after gap analysis checkpoint.
+- Slice status: **COMPLETED 2026-07-03** — `POST /api/upload` fail-closed hard block 적용 (`lib/upload-hard-block.ts` + guard 선행 403, static check 28항목 ALL PASS, tsc 무오류, 읽기 전용 adversarial 리뷰 2종 SAFE). 실제 업로드/외부 API 호출 0. uploadReady=false / automationExpansionReady=false 유지.
 - Owner decision:
-  - 다음 slice는 v3.2 production standard를 기존 자동화 파이프라인에 적용하기 위한 implementation gap analysis로 진행한다.
-- This slice is **read-only investigation + docs/fixture planning only**.
-- This slice is **not implementation** and **not upload preparation**.
+  - `Slice 0 — upload hard block safety guard`를 먼저 진행한다.
+- Purpose:
+  - Upload implementation is **not** approved.
+  - The goal is to make forbidden upload state structurally enforced in code.
+  - Current `uploadReady=false` / `automationExpansionReady=false` must become fail-closed behavior at upload entrypoints.
 
 ## Accepted Golden Sample Basis
 
-- Latest checkpoint: `2900bc8 docs(golden-sample): add v3.2 production standard contract`.
+- Latest checkpoint: `c226a98 docs(golden-sample): add v3.2 automation gap analysis`.
 - Golden Sample candidate status: `ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE`.
 - Readiness flags remain:
   - `uploadReady=false`
   - `automationExpansionReady=false`
-- Final candidate mux:
-  `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
+- Gap analysis finding:
+  - `app/api/upload/route.ts` currently has no auth/gate and can call `uploadInstagramReel()` from one POST if credentials exist.
+  - `automationExpansionReady` is not enforced in code.
+  - Therefore upload must be hard-blocked before any further implementation.
 
 ## Goal
 
-Map the gap between the existing automation codebase and the v3.2 production standard before any implementation.
+Add a minimal fail-closed safety guard so live upload entrypoints cannot proceed unless a future Owner-approved upload-readiness contract explicitly enables it.
 
-The output should answer:
-
-- Which existing modules/scripts already match v3.2?
-- Which modules/scripts must be replaced, refactored, or bypassed?
-- Where should each v3.2 standard gate live in the future pipeline?
-- What should the first implementation slice be?
-- What must remain blocked until explicit Owner approval?
+This slice must **block** upload; it must not make upload easier.
 
 ## Scope
 
-Allowed:
+Allowed implementation files:
 
-- Read existing code/scripts/fixtures/docs needed to map the pipeline.
-- Use `rg`, `rg --files`, `git status -sb`, and focused reads.
-- Create one Owner/Codex-readable gap analysis document.
-- Create one machine-readable implementation plan fixture.
-- Append concise result to `_ai/CLAUDE_REPORT.md`.
-- Optionally mark this slice completed in `_ai/HANDOFF_NOW.md`.
+1. `app/api/upload/route.ts`
+   - Add hard-block guard before any Instagram/YouTube/upload side effect.
 
-Suggested files:
+2. Optional new pure helper:
+   - `lib/upload-hard-block.ts` or similar.
+   - Must be deterministic, side-effect free, no env reads, no network, no credentials.
 
-1. `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
-   - human-readable mapping and recommended implementation slices.
+3. Optional static check script:
+   - `scripts/check-golden-sample-upload-hard-block-static.mjs`
+   - Must not call the route over HTTP.
+   - Must not call Instagram/YouTube APIs.
+   - Should inspect source/helper behavior and assert fail-closed defaults.
 
-2. `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
-   - machine-readable map of standards -> existing files -> gap -> recommended action -> risk -> first slice.
+4. Optional fixture:
+   - `scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json`
+   - Machine-readable policy: uploadReady=false, automationExpansionReady=false, uploadBlocked=true.
 
-3. `_ai/CLAUDE_REPORT.md`
-   - append concise result.
+5. `_ai/CLAUDE_REPORT.md`
+   - Append concise evidence.
 
-4. `_ai/HANDOFF_NOW.md`
-   - minimal status update only if needed.
+6. `_ai/HANDOFF_NOW.md`
+   - Minimal completed status update only if needed.
 
-Do **not** modify implementation code.
+Do not touch other implementation files unless the route import requires a tiny helper barrel/export.
 
-## Investigation Targets
+## Required Behavior
 
-Investigate only as much as needed. Prefer focused `rg`/file reads.
+### Fail-closed server behavior
 
-### Story / Topic / Script
+- `POST /api/upload` must return a non-2xx response before any live upload call when:
+  - no server-side upload approval contract exists, or
+  - `uploadReady !== true`, or
+  - explicit Owner live-upload approval is absent, or
+  - automation/upload expansion is not approved.
 
-Find current modules/scripts for:
+- Current expected behavior for this project state:
+  - always blocked.
+  - recommended HTTP status: `403`.
+  - response JSON should be explicit and machine-readable, e.g.
+    - `success: false`
+    - `error: "UPLOAD_BLOCKED_BY_GOLDEN_SAMPLE_GUARD"`
+    - `uploadReady: false`
+    - `automationExpansionReady: false`
+    - `blockerCodes: [...]`
 
-- topic selection.
-- script generation / retention compiler / narrative blueprint.
-- story scoring / quality scoring.
-- any existing Creative v2 or Golden Sample story contracts.
+### Do not trust client body
 
-Gap questions:
+- The guard must not allow upload merely because the request body contains:
+  - `uploadReady: true`
+  - `automationExpansionReady: true`
+  - `ownerApproved: true`
+  - any similar client-provided flag.
 
-- Is Owner topic confirmation enforced before generation?
-- Is Story-Causality First represented as a hard gate?
-- Is Script Impact Gate implemented or only in v3.2 runner?
-- Where should the story gate be added?
+- Client body may be used only for diagnostics/log context, not authorization.
 
-### Visual Evidence / Image Generation
+### No live side effects
 
-Find current modules/scripts for:
+- In blocked state, the code must not call:
+  - `uploadInstagramReel`
+  - any YouTube upload helper
+  - `updateGenerationStatus(..., "uploaded", ...)`
 
-- ChatGPT+Playwright image generation.
-- image prompt building.
-- image QA / selected image set / md5 lock.
-- provider selection or fallback logic.
+### Preserve future extension point
 
-Gap questions:
+- Leave a clear TODO/typed contract for a future server-side upload readiness fixture/ledger, but keep it disabled now.
+- Do not implement real approval loading from env/DB in this slice.
+- Do not add auth/dependency/DB schema in this slice.
 
-- Does current generator use page-wide image collection and 1-2s polling?
-- Does it prevent sidebar scan / stale conversation reuse?
-- Does it enforce generation hard cap and detect-to-save timing?
-- Does it support per-image `claim/must_show/must_not_show/no-card understanding/card role/reject reasons`?
-- Does it distinguish 941x1672 technical risk from viewer-frame Owner QA?
+## Suggested Design
 
-### Renderer / Typography / Captions
+Preferred:
 
-Find current modules/scripts for:
+- Add a pure helper:
+  - `evaluateGoldenSampleUploadHardBlock(input?: unknown): UploadHardBlockResult`
+  - returns `allowed: false` by default.
+  - includes blocker codes such as:
+    - `upload_not_owner_approved`
+    - `upload_ready_false`
+    - `automation_expansion_not_approved`
+    - `server_side_upload_contract_missing`
+  - has no external dependencies.
 
-- visual-only render.
-- Pillow typography render.
-- dynamic caption generation.
-- card/caption overlap QA.
+- In `app/api/upload/route.ts`:
+  - parse body as today.
+  - immediately evaluate guard.
+  - if `allowed !== true`, return `NextResponse.json(..., { status: 403 })`.
+  - only after guard passes may upload code be reachable.
 
-Gap questions:
+Because no live upload is approved, the helper should not have any currently reachable allowed path unless a future server-side contract is added in a separately approved slice.
 
-- Is Pillow/Noto Sans KR Black the production renderer path or only a Golden Sample runner?
-- Are bottom-fixed subtitles blocked?
-- Are caption/card events anchored to real TTS word/phrase timing?
-- Does renderer preserve bold info-shorts style consistently?
+## Required Checks
 
-### TTS / Audio / Mux / Audit
-
-Find current modules/scripts for:
-
-- ElevenLabs one-shot TTS.
-- live guard.
-- word/phrase alignment extraction.
-- mux.
-- post-render artifact audit.
-
-Gap questions:
-
-- Is one-shot TTS enforced?
-- Is scene-by-scene TTS blocked?
-- Does the pipeline abort before live TTS if Script Impact Gate fails?
-- Are padding/hard-trim/fixed-duration targets blocked?
-
-### Orchestration / Upload Readiness
-
-Find current modules/scripts for:
-
-- orchestrator or end-to-end automation.
-- upload queue/readiness flags.
-- Instagram/YouTube upload integration.
-
-Gap questions:
-
-- Where is `uploadReady` set?
-- Is Owner QA required before upload?
-- Is automation expansion blocked until separate approval?
-- What must be changed before any upload queue is generated?
-
-## Required Output Structure
-
-The human-readable document must include:
-
-1. Executive summary:
-   - current pipeline is not yet v3.2-compliant.
-   - implementation should proceed by gates, not by immediately uploading.
-
-2. Existing assets to reuse:
-   - v3.2 ChatGPT+Playwright runners/lessons.
-   - Pillow renderer lessons.
-   - TTS-first mux/audit runner lessons.
-   - v3.2 lock/standard fixtures.
-
-3. Gap table:
-   - standard area.
-   - existing files found.
-   - current status: `reuse`, `partial`, `missing`, `replace`, or `block`.
-   - required action.
-   - risk.
-
-4. Recommended implementation slices:
-   - Slice 1 must be low-risk and foundation-oriented.
-   - Do not recommend starting with upload.
-   - Suggested order should likely be:
-     1. Story/visual evidence contract + static guard.
-     2. ChatGPT+Playwright generation runner hardening.
-     3. Pillow renderer productionization.
-     4. TTS-first timing/audit integration.
-     5. End-to-end dry-run.
-     6. Upload readiness only after Owner QA.
-
-5. Explicit forbidden next steps:
-   - no upload.
-   - no live generation/API until Owner approves a concrete slice.
-   - no automation queue creation.
-
-The JSON fixture must include:
-
-- `status: "IMPLEMENTATION_GAP_ANALYSIS_ONLY"`
-- `uploadReady: false`
-- `automationExpansionReady: false`
-- `implementationApproved: false`
-- `recommendedFirstImplementationSlice`
-- `gapMap[]`
-- `blockedActions[]`
-- `nextOwnerDecisionNeeded[]`
-
-## Verification
-
-Required checks:
+Minimum:
 
 - `git status -sb`
-- JSON parse for new fixture.
-- Scan new files for:
-  - `uploadReady:true`
-  - `automationExpansionReady:true`
-  - `implementationApproved:true`
-  - `renderReady:true`
-  - secret/env/API key values.
-- Confirm implementation code files were not modified by this slice.
+- `node --check` for any new/changed `.mjs` check script.
+- JSON parse for any new fixture.
+- Targeted static check proving:
+  - route imports/calls guard before `uploadInstagramReel`.
+  - blocked result contains `UPLOAD_BLOCKED_BY_GOLDEN_SAMPLE_GUARD`.
+  - no new file contains `uploadReady:true`, `automationExpansionReady:true`, `implementationApproved:true`, or secret/API key values.
 
-Do not run full build unless a JSON or syntax issue requires a targeted check. This is docs/fixture only.
+If feasible without live network/upload:
+
+- Run the pure helper through a small local assertion script.
+
+Do **not** make a live HTTP POST to `/api/upload` if there is any chance it can call external upload APIs. Prefer pure helper/static source checks.
+
+Do not run full `pnpm build` unless a TypeScript/import issue requires it. If run, it must not trigger upload/API calls.
 
 ## Forbidden
 
-- Implementation code edits.
+- Real upload.
+- Any Instagram/YouTube API call.
+- Calling `/api/upload` in a way that could upload.
+- Upload queue creation.
+- Upload readiness true.
+- automationExpansionReady true.
+- implementationApproved true.
 - Image generation.
 - ChatGPT/Playwright generation.
 - OpenAI API calls.
@@ -231,9 +175,6 @@ Do not run full build unless a JSON or syntax issue requires a targeted check. T
 - Midjourney calls.
 - ElevenLabs live TTS calls.
 - Render/mux regeneration.
-- Upload.
-- Upload queue creation.
-- Automation implementation.
 - Env/secret/dependency/DB/deploy changes.
 - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Touching rejected salary_3days visual-only render diff:
@@ -243,8 +184,8 @@ Do not run full build unless a JSON or syntax issue requires a targeted check. T
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 162 before this slice.
-- Latest checkpoint: `2900bc8 docs(golden-sample): add v3.2 production standard contract`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 163 before this slice.
+- Latest checkpoint: `c226a98 docs(golden-sample): add v3.2 automation gap analysis`.
 - Excluded/rejected/admin files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`

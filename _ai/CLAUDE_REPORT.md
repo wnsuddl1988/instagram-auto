@@ -3101,3 +3101,15 @@ QA-only slice. 코드 변경 없음.
 - 권장 Slice 1 (low-risk foundation): blueprint 스키마 v2(표준 6필드+reject_reasons+owner_topic_confirmation) + 정적 검증기(no-LLM/no-API/no-write: 인과 사슬·bridge·6필드·safe-frame 기하·금지 상태). upload로 시작 금지 명문화.
 - 검사: 신규 JSON parse PASS / 금지 상태(uploadReady·automationExpansionReady·implementationApproved·renderReady의 true) 신규 파일 0건 / secret 0건 / 구현 코드 변경 0건 (`git status` diff는 _ai 문서 2 + fixture 1 + report append만).
 - 금지 미수행: 구현 코드 수정 0 · 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · render/mux 0 · upload 0 · queue 생성 0 · env 변경 0 · 보호 파일(CONTEXT_TRANSFER_CODEX/piq_diag/salary_3days 2종) 무접촉 · commit/push 없음.
+
+
+## v3.2 Slice 0 — upload hard block safety guard (`golden-sample-v3-2-upload-hard-block-safety-guard-v1` — 2026-07-03)
+
+**무가드였던 `POST /api/upload`를 fail-closed로 차단 완료 — 업로드 기능 구현이 아니라 금지 상태의 코드 강제. 실제 업로드/Instagram/YouTube/외부 API 호출 0.**
+
+- 신규: `lib/upload-hard-block.ts` (pure helper `evaluateGoldenSampleUploadHardBlock` — allowed 항상 false, blockerCodes 4종, import·env·network·credential 접근 0, 입력 미참조로 클라이언트 플래그 무력화, 미래 서버측 readiness contract TODO만 유지) / `scripts/check-golden-sample-upload-hard-block-static.mjs` (28항목 정적+행동 검증, no-HTTP) / `scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json` (uploadBlocked=true 클레임 범위 + out-of-scope live 경로 2건 명시).
+- 수정: `app/api/upload/route.ts` — body parse를 `.catch(()=>null)`로 감싸 **파싱 불가 body 포함 모든 POST가** guard 평가 후 403 (`success:false, error:"UPLOAD_BLOCKED_BY_GOLDEN_SAMPLE_GUARD", uploadReady/automationExpansionReady false, blockerCodes[4]`). 기존 업로드 코드는 guard 뒤로만 reachable — guard가 fail-closed인 동안 `uploadInstagramReel`/`updateGenerationStatus("uploaded")` 도달 불가.
+- 검증: ① static check **28/28 ALL PASS** (guard-선행 순서/403/응답 형태/클라이언트 플래그 불신(직접+구조분해)/helper 순수성/금지 패턴/fixture parse + 적대적 입력 6종 행동 assertion — import 실패 시 FAIL 처리로 강화) ② `pnpm exec tsc --noEmit` 무오류 ③ 읽기 전용 adversarial 리뷰 2종(bypass/spec) **모두 SAFE** — `/api/upload`에서 업로드 코드 도달 경로 없음, POST 외 메서드 405, shadowing 불가, 응답 계약 HANDOFF 요구와 정확 일치 ④ 부모 grep: `uploadInstagramReel` 호출 지점은 guarded route 단 1곳, `uploadYouTubeShorts` 호출 지점 0.
+- 리뷰 지적 반영: static check 강화 3건(주석 제거 후 순서 검사+guard 전 await 금지, body 구조분해 우회 감지, 파라미터명 동적 추출, 행동 assertion 필수화) + fixture에 uploadBlocked 범위 한정과 out-of-scope 경로(--arm CLI runner는 자체 게이트·수동 전용, lib/youtube dead code) 문서화.
+- 범위 이탈 없음: 허용 6파일만 변경. n8n/UploadPanel은 /api/upload 경유이므로 이 slice로 403 차단됨(코드 무변경). live HTTP POST 테스트/서버 기동 없음(preview 미사용 — 금지 사항 준수).
+- 금지 미수행: 실업로드 0 · Instagram/YouTube API 0 · queue 생성 0 · 이미지/TTS/render/mux 0 · env/DB/dependency 변경 0 · 보호 파일 무접촉 · commit/push 없음.

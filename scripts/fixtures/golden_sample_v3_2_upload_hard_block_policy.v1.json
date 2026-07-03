@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "golden_sample_upload_hard_block_policy_v1",
+  "taskId": "golden-sample-v3-2-upload-hard-block-safety-guard-v1",
+  "status": "UPLOAD_HARD_BLOCK_ENFORCED",
+  "uploadReady": false,
+  "automationExpansionReady": false,
+  "uploadBlocked": true,
+  "createdAt": "2026-07-03",
+  "nature": "Slice 0 안전 가드 — 업로드 기능 구현이 아니라 금지 상태의 코드 강제. 이 fixture의 존재가 업로드/자동화 승인을 의미하지 않음.",
+
+  "guardedEntrypoints": [
+    {
+      "route": "app/api/upload/route.ts",
+      "method": "POST",
+      "guard": "evaluateGoldenSampleUploadHardBlock (lib/upload-hard-block.ts)",
+      "behavior": "body parse 직후(파싱 불가 body 포함) guard 평가 — allowed !== true면 업로드 side effect 전에 403 반환",
+      "responseStatus": 403,
+      "responseShape": {
+        "success": false,
+        "error": "UPLOAD_BLOCKED_BY_GOLDEN_SAMPLE_GUARD",
+        "uploadReadyField": "항상 false",
+        "automationExpansionReadyField": "항상 false",
+        "blockerCodes": [
+          "upload_not_owner_approved",
+          "upload_ready_false",
+          "automation_expansion_not_approved",
+          "server_side_upload_contract_missing"
+        ]
+      }
+    }
+  ],
+
+  "guardInvariants": [
+    "pure/deterministic — env·network·credential·DB·파일 접근 0, import 0",
+    "클라이언트 body 플래그(uploadReady/automationExpansionReady/ownerApproved 등)로 allowed가 될 수 없음 — 입력은 인가에 미사용",
+    "allowed:true를 만들 수 있는 코드 경로가 이 slice에 존재하지 않음 (fail-closed)"
+  ],
+
+  "mustNotCallWhileBlocked": [
+    "uploadInstagramReel (lib/instagram.ts)",
+    "uploadYouTubeShorts (lib/youtube.ts)",
+    "updateGenerationStatus(..., \"uploaded\", ...) (lib/supabase.ts)"
+  ],
+
+  "uploadBlockedScope": "이 fixture의 uploadBlocked=true는 HTTP 업로드 진입점(app/api/upload POST)에 대한 클레임이다. 아래 knownOutOfScopeLivePaths는 이 slice 범위 밖이며 자체 게이트로만 보호된다.",
+
+  "knownOutOfScopeLivePaths": [
+    {
+      "path": "scripts/run-premium-editorial-live-upload-first-run-v1.mjs",
+      "nature": "수동 CLI live 업로드 runner — 이 guard를 경유하지 않음",
+      "existingGates": "--arm 플래그 필수 + preflight + 자격증명 존재 + (Instagram) --public-video-url; 호출하는 스크립트/오케스트레이터 없음(수동 실행 전용)",
+      "recommendation": "미래 upload-readiness slice에서 armed 분기 전에 동일 hard-block contract를 소비하도록 이식"
+    },
+    {
+      "path": "lib/youtube.ts uploadYouTubeShorts",
+      "nature": "live-capable dead code — 레포 전체에 호출 지점 0 (현재 도달 불가)",
+      "existingGates": "없음 (미사용이므로 실행 경로 자체가 없음)",
+      "recommendation": "미래 slice에서 제거하거나 hard-block 평가를 side-effect 레이어(uploadInstagramReel/uploadYouTubeShorts 내부)로 이식"
+    }
+  ],
+
+  "unblockCondition": "미래 Owner 승인 slice에서만: 서버측 upload readiness contract(fixture/ledger, money_shorts_owner_upload_approval_v1 확장 + v3.2 pre-upload 6게이트 + owner_qa_pass) 추가 + 명시적 live upload 승인",
+
+  "staticCheck": "scripts/check-golden-sample-upload-hard-block-static.mjs",
+
+  "basedOn": {
+    "gapAnalysisFixture": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "gapFindingIds": ["H1", "H2"],
+    "standardFixture": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "checkpoint": "c226a98 docs(golden-sample): add v3.2 automation gap analysis"
+  }
+}
