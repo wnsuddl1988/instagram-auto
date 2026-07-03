@@ -3017,3 +3017,29 @@ QA-only slice. 코드 변경 없음.
 - 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v2\golden_sample_t1_lifestyle_inflation_visual_only_v2.mp4 — **1080x1920 h264 30fps 31.5s(30~34 내), audio 0** ✅, 이벤트 31(maxGap 2.2s), dwell 단일 look 최장 5.0s(v1 11~12s), 프레임 20장 + manifest + QA report v2.
 - QA: dwell 92 / viewer_frame 90 / korean_context 92 / story_evidence 91 / typography 93 / causality 90, hard fail 0. 구 img_03 미사용(excluded 기록).
 - 금지 미수행: 유료 API/추가 제출 8 초과/TTS/mux/upload/salary_3days 재사용/보호 파일 접근/commit/push 전부 0.
+
+
+## ChatGPT+Playwright fresh image set visual-only v3 (`golden-sample-chatgpt-playwright-fresh-image-set-visual-only-v3` — 2026-07-03)
+
+**완전 신규 9장 세트로 9 beats/41.4s(자연 길이) visual-only v3 후보 완성 — PASS_CANDIDATE_FOR_OWNER_REVIEW, comparison verdict: V3_STRONGER (v2는 baseline 보존). 제출 11/12 (재생성 2 포함, stop early), $0.**
+
+- 신규: chatgpt_playwright_image_prompts...v3.json (9 fresh prompts — 유리병 3개 모티프 서사 + 리본 색↔카드 슬롯 색 매칭 설계) / golden_sample_t1_lifestyle_inflation_story_blueprint.v3.json (9 beat, cause A/B·action A/B 분해, 41.4s 자연 길이 근거 명시)
+- 신규: run-chatgpt-playwright-fresh-image-set-v3.mjs (v2 실증 속도 규칙 그대로, 캡 12) / render-golden-sample-chatgpt-playwright-visual-only-v3.mjs (9 scene/29 overlay, safe frame 설계 단계 준수)
+- 이미지 9장 (941x1672, md5): hook 봉투vs빈병 모순 한 프레임 / problem 지갑 확인 여성 / causeA 정렬 선차감 탑다운 / causeB 분산 소비 거실 / illusion 지폐 한 장 vs 영수증 벽 / reframe 빈 병 3개 / actionA 나눠 담기 / actionB 파랑·주황·노랑 리본 3병 / result 스카이라인 아침. **재생성 2회**: 구 img_38(꽃무늬 지폐 — 정체불명 화폐 위험), 구 img_39(리본 색 불일치) → 둘 다 교정 확인, rejected 사유 blueprint 기록.
+- latency 실측: 11회 전부 제출→저장 42~64초, **감지→저장 7~10초** (30초 기준 위반 0, TIMEOUT 0, 무관 대화 스캔 0) — generation-latency-report.v3.json
+- 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v3\golden_sample_t1_lifestyle_inflation_visual_only_v3.mp4 — **1080x1920 h264 30fps 41.400s, audio 0** ✅, 이벤트 38(maxGap 2.3s), 단일 이미지 dwell ≤5.2s, 프레임 25장 + manifest + QA report v3.
+- QA: dwell 95 / story_evidence 94 / korean_context 93 / typography 93 / causality 92 / viewer_frame 91 / hard fail 0. 위험 기록: img_33 지폐 타원 워터마크 여백의 미미한 외화 연상 가능성(LOW, 판독 불가) — Owner 확인 포인트.
+- vs v2: 이미지 전용 증거/병 모티프 서사/색 코딩/원인 2단 분해/dwell에서 v3 우세, v2 우위는 짧은 길이뿐(41.4s는 자연 도출). 30초 고정 목표 미적용.
+- 금지 미수행: 유료 API 0 · 제출 12 초과 0 · TTS/mux/upload 0 · salary_3days 재사용 0 · 주제 영구 확정 없음 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## Korean banknote clarity patch v3.1 (`golden-sample-chatgpt-playwright-korean-banknote-clarity-patch-v3-1` — 2026-07-03)
+
+**v3의 돈 모자이크/빈종이 문제를 money-dominant 5컷 패치로 해소 — PASS_CANDIDATE_FOR_OWNER_REVIEW, comparison: V3_1_STRONGER. 제출 6/6 정확 도달, $0. 구조/타이밍/카드 v3 완전 유지.**
+
+- 신규: chatgpt_playwright_image_prompts...v3_1_banknote_patch.json (선명 원화풍 지폐 규칙 — 질감/색 계열/기요셰 문양 + 겹침·접힘·손가림·반삽입 가림) / golden_sample_...blueprint.v3_1_banknote_patch.json (패치 5+유지 4, patch_summary 기록) / run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs (v3 runner 파생, 캡 6) / render-...-visual-only-v3-1.mjs (v3 renderer 파생, s1 텍스트만 재배치)
+- 패치 5장 (941x1672, md5): hook 부채꼴(노랑+초록), causeA 반삽입, illusion 풍죽도 계열 문양(빈종이감 최악 컷 반전), actionA 3권종 혼합, actionB 리본 3병+매화/산수 문양. **v3의 외화 연상 위험 컷(타원 워터마크)도 교체로 제거.**
+- order 1 이슈: ChatGPT 서버측 생성 실패("이미지를 만들지 못했어요" 확인) → TIMEOUT_BLOCKED → 자체 대화 회수 시도(미생성 확인, 무관 대화 스캔 0) → 재제출 성공. 저장 5건 전부 감지→저장 8~10초.
+- 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\golden_sample_t1_lifestyle_inflation_visual_only_v3_1.mp4 — **1080x1920 h264 30fps 41.400s, audio 0** ✅, 이벤트 38(maxGap 2.3s), 프레임 25장 + manifest + QA report + latency report.
+- QA: **korean_banknote_clarity 93 / mosaic_or_blank RESOLVED** / story_evidence 95 / typography 93 / causality 92 / hard fail 0. 잔여 위험: s9 유지 컷의 무지 지폐(예산 소진) — s8과 미세 질감 차이, Owner 확인 포인트.
+- 금지 미수행: 유료 API 0 · 제출 6 초과 0 · TTS/mux/upload 0 · 30초 고정 목표 미적용 · salary_3days 재사용 0 · 보호 파일 무접촉 · commit/push 없음.
