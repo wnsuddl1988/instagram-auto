@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "golden_sample_pillow_renderer_plan_v1",
+  "taskId": "golden-sample-v3-2-pillow-renderer-productionization-v1",
+  "status": "NO_LIVE_SAMPLE_PLAN_V1",
+  "createdAt": "2026-07-03",
+  "nature": "예시 plan fixture — 렌더 승인이 아니다. accepted Golden Sample v3.2(t1_lifestyle_inflation)의 overlay-spec/typography/safe-frame 규범을 표준 plan 스키마로 정규화한 no-live 예시이며, 이 fixture의 존재가 프레임/영상 렌더·Pillow/PY 런타임·동영상 합성 도구 실행을 승인하지 않는다.",
+  "contractRef": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveRenderApproved": false
+  },
+
+  "manifestRefs": {
+    "visualRenderManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+    "acceptanceLock": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "productionStandard": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "storyVisualEvidenceSample": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json",
+    "note": "integration.failIfMissing — v3.2 manifest 또는 acceptance-lock 참조가 없으면 harness/guard 모두 fail"
+  },
+
+  "ownerTopicApproval": {
+    "topicId": "t1_lifestyle_inflation",
+    "title": "월급이 올라도 통장이 그대로인 이유",
+    "approved": true,
+    "approvedScope": "Golden Sample v3.2 제작/검증 범위 한정 — 테스트 주제. 이 plan은 해당 승인 범위의 정규화 표현일 뿐 신규 렌더 승인이 아니다.",
+    "approvalSourceNote": "acceptance lock ownerVerdict(v3.2 잠정 채택) + Slice 1 accepted sample owner_topic_confirmation",
+    "permanentChannelWideTopicLock": false
+  },
+
+  "fontPolicy": {
+    "font": "Noto Sans KR Black (VF)",
+    "fontFileHint": "NotoSansKR-VF.ttf",
+    "variation": "Black",
+    "silentDefaultFontFallback": false,
+    "malgunUsed": false,
+    "forbiddenFontsAvoided": ["Malgun Gothic", "Arial", "Black Han Sans", "Do Hyeon"],
+    "note": "폰트 vendoring은 Owner 결정 #6 미결 — 이 plan은 폰트 파일/의존성을 추가하지 않는다"
+  },
+
+  "typography": {
+    "engine": "pillow_overlay",
+    "bottomFixedSubtitle": false,
+    "karaokeFixedLowerLine": false,
+    "strokeMinPx": 9,
+    "sourceNote": "acceptance lock boldInfoShortsTypography(engine Pillow Noto Sans KR Black VF + stroke, bottomFixedSubtitleBar=false) + v3.2 manifest typography(elementsChanged=false)"
+  },
+
+  "safeFrame": {
+    "canvas": { "width": 1080, "height": 1920 },
+    "textMaxY": 1580,
+    "graphicMaxY": 1632,
+    "maxKoreanCharsPerCaptionLine": 12,
+    "geometryEvidenceNote": "아래 overlaySpecSample은 v3.1 renderer(scripts/render-golden-sample-chatgpt-playwright-visual-only-v3-1.mjs) 소스에서 verbatim 정규화한 대표 element set이다. accepted t1 overlay_spec.v3_1.json 원본(C:\\tmp, 레포 외부·이 slice 읽기 금지)의 픽셀 verbatim 대조는 미래 slice(원본을 레포로 승격한 뒤)로 남긴다 — 침묵 skip 아님."
+  },
+
+  "overlaySpecSample": {
+    "note": "safe-frame geometry gate가 실제로 동작함을 증명하는 대표 element 샘플 — v3.1 renderer verbatim, 전부 safe-frame 통과 값. 전체 29 overlay가 아니라 element type(text/runs/rect/rrect/poly)과 경계값을 대표하는 subset이다.",
+    "fontFile": "NotoSansKR-VF.ttf",
+    "variation": "Black",
+    "overlays": [
+      {
+        "id": "ov01_hook_l1",
+        "start": 0.15,
+        "end": 4.2,
+        "sceneId": "s1",
+        "elements": [
+          { "type": "text", "x": 540, "y": 290, "fs": 98, "fill": "#FFFFFF", "stroke": 11, "anchor": "mm", "text": "월급은 올랐는데" }
+        ]
+      },
+      {
+        "id": "ov02_hook_l2",
+        "start": 0.8,
+        "end": 4.2,
+        "sceneId": "s1",
+        "elements": [
+          { "type": "text", "x": 540, "y": 440, "fs": 112, "fill": "#FFD400", "stroke": 11, "anchor": "mm", "text": "통장은 그대로" },
+          { "type": "rect", "x1": 345, "y1": 516, "x2": 735, "y2": 532, "fill": "#FFD400" }
+        ]
+      },
+      {
+        "id": "ov03_hook_cap",
+        "start": 2.5,
+        "end": 4.2,
+        "sceneId": "s1",
+        "elements": [
+          { "type": "text", "x": 540, "y": 1560, "fs": 62, "fill": "#FFFFFF", "stroke": 9, "anchor": "mm", "text": "느낌이 아니라 사실" }
+        ]
+      },
+      {
+        "id": "ov05_prob_l2",
+        "start": 5.2,
+        "end": 8.8,
+        "sceneId": "s2",
+        "elements": [
+          { "type": "runs", "cx": 540, "y": 1330, "fs": 80, "stroke": 10, "runs": [
+            { "t": "월말 잔액은 ", "fill": "#FFFFFF" },
+            { "t": "제자리", "fill": "#FF7A00" }
+          ] }
+        ]
+      },
+      {
+        "id": "ov08_ca_r1",
+        "start": 9.7,
+        "end": 13.4,
+        "sceneId": "s3",
+        "elements": [
+          { "type": "rrect", "x1": 140, "y1": 1180, "x2": 940, "y2": 1312, "r": 24, "fill": [13, 17, 23, 190] },
+          { "type": "text", "x": 430, "y": 1246, "fs": 72, "fill": "#FFFFFF", "stroke": 10, "anchor": "mm", "text": "고정비" },
+          { "type": "poly", "pts": [[820, 1272], [864, 1272], [842, 1220]], "fill": "#E82B2B" }
+        ]
+      },
+      {
+        "id": "ov17b_ill_ul",
+        "start": 22.4,
+        "end": 23.6,
+        "sceneId": "s5",
+        "elements": [
+          { "type": "rect", "x1": 600, "y1": 1596, "x2": 850, "y2": 1610, "fill": "#E82B2B" }
+        ]
+      },
+      {
+        "id": "ov27_cta",
+        "start": 39.2,
+        "end": 41.4,
+        "sceneId": "s9",
+        "elements": [
+          { "type": "rrect", "x1": 250, "y1": 1496, "x2": 830, "y2": 1632, "r": 26, "fill": "#3B82F6" },
+          { "type": "text", "x": 540, "y": 1564, "fs": 60, "fill": "#FFFFFF", "stroke": 9, "anchor": "mm", "text": "저장하고 월급날 실행" }
+        ]
+      }
+    ]
+  },
+
+  "captionRegistryFromManifest": {
+    "note": "v3.2 tts-anchored manifest overlays/anchor evidence 요약 — 동등성 정합 검사용 (frame 렌더 없음)",
+    "overlayCount": 29,
+    "wordAnchored": 27,
+    "sceneEntry": 2,
+    "maxEntryDeltaMs": 50,
+    "toleranceMs": 120,
+    "minDwellSec": 0.99,
+    "source": "acceptance lock wordPhraseAnchoredCaptions"
+  },
+
+  "equivalenceReference": {
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "expectedFfprobe": { "width": 1080, "height": 1920, "fps": "30/1", "videoDurationSec": 53.966667 },
+    "regenerationNote": "TTS 비결정성으로 mux md5는 재생성 시 달라짐 — 동등성은 overlay-spec/typography/geometry 수준에서 정의. frame/ffprobe 재실행은 이 plan에서 금지.",
+    "requiredEquivalenceChecksForFutureSlice": [
+      "overlay-spec element set이 accepted v3.1 overlay_spec 구조와 스키마 동형",
+      "typography engine=pillow_overlay, font=Noto Sans KR Black VF, bottomFixedSubtitle=false 유지",
+      "safe-frame geometry gate 전 element 통과 (textMaxY 1580 / graphicMaxY 1632)",
+      "overlayCount 29 / wordAnchored 27 / maxEntryDeltaMs 50 정합",
+      "frame 시각 대조는 Owner/Claude vision QA 단계로 유지"
+    ]
+  },
+
+  "executionMode": {
+    "approvedNow": "dry_run_static_validation_only",
+    "liveRenderApprovedNow": false,
+    "liveRenderRequires": "별도 Owner 승인 slice + contract 준수 + overlay-spec 원본 레포 승격 후 verbatim 동등성 대조"
+  }
+}

@@ -12,17 +12,19 @@
   - `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json`
   - `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
   - `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
-- Latest safety checkpoint: `b4b4b2d feat(safety): add fail-closed upload hard block guard`.
+- Latest safety checkpoints:
+  - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
+  - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
+  - `aeaaf94 feat(golden-sample): add chatgpt runner standard guard`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-story-visual-evidence-static-guard-v1`
-- Status: **approved by Owner 2026-07-03**.
-- Slice status: **COMPLETED 2026-07-03** — contract/sample/static guard 3파일 신설. guard ALL PASS(68 checks), 변조 샘플 8종 전부 fail-closed 차단, adversarial 리뷰 major 1건(money_dominant 자기신고 우회) 즉시 수정 반영. live 호출/기존 구현 코드 수정 0. uploadReady=false / automationExpansionReady=false / implementationApproved=false 유지.
+- Task ID: `golden-sample-v3-2-pillow-renderer-productionization-v1`
+- Status: **approved by Owner 2026-07-03 KST**.
 - Owner decision:
-  - `승인: Slice 1 — Golden Sample v3.2 production standard를 기준으로 Story-Causality First + Visual Evidence Second blueprint schema/fixture와 no-live static guard를 만든다. 이미지 생성, ChatGPT/Playwright 실행, 유료 API, TTS, render, mux, upload, env/dependency 변경은 금지한다. 목적은 자동화 구현 전 story gate/visual evidence gate를 코드로 검증 가능하게 만드는 것이다.`
-- Slice type: contract + no-live static validation only.
+  - `승인: Slice 3 — golden-sample-v3-2-pillow-renderer-productionization-v1를 no-live 범위로 진행. 금지 항목 유지.`
+- Slice type: no-live Pillow renderer/overlay-spec productionization contract + static guard only.
 - Readiness flags remain:
   - `uploadReady=false`
   - `automationExpansionReady=false`
@@ -30,189 +32,183 @@
 
 ## Purpose
 
-Turn the v3.2 Golden Sample production standard into a machine-checkable foundation before any automation implementation proceeds.
+Create a reusable, no-live standard boundary for the Golden Sample v3.2 Pillow typography/overlay renderer.
 
-This slice must prove that future generation work cannot skip:
+This slice should convert lessons from v3/v3.1/v3.2 inline renderer lineage into fixture-driven renderer contracts and static guards:
 
-1. Owner-confirmed topic.
-2. Story-Causality First.
-3. Visual Evidence Second.
-4. Story Impact Gate score/provenance.
-5. Beat = phrase = scene alignment.
-6. Per-scene visual evidence reject rules.
+1. Overlay-spec JSON is the module boundary.
+2. Pillow bold typography remains the approved visual grammar, but this slice must not render frames.
+3. Noto Sans KR Black VF / approved bold Korean font policy is recorded; font vendoring remains Owner decision #6 unless already explicitly approved.
+4. Malgun Gothic / Arial / BlackHanSans / DoHyeon fallback routes are not v3.2-compliant for this standard path.
+5. Bottom-fixed subtitle bar, karaoke ASS, and drawtext lower-bar routes are forbidden for v3.2 standard output.
+6. Safe-frame static geometry gate must be machine-readable: text `y2 <= 1580`, graphics `y2 <= 1632` on a 1080x1920 canvas, plus readable line-length constraints.
+7. v3.2 acceptance lock must be referenced for future equivalence checks, but no frame comparison/render regeneration is approved now.
+8. Existing accepted evidence runners/renderers should be treated as lineage sources, not edited live paths.
 
-No media generation or external service call is part of this slice.
+No render, mux, ffmpeg, Pillow/Python execution, browser automation, image generation, TTS, upload, env/dependency, DB, or deploy action is approved in this slice.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
 1. `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`
-2. `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
-3. `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
-4. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json`
-5. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json`
-6. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json`
+2. `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
+3. `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
+4. `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json`
+5. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json`
+6. Existing v3/v3.1/v3.2 renderer lineage, targeted only:
+   - `scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs`
+   - `scripts/run-golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit.mjs`
+   - `scripts/render-golden-sample-chatgpt-playwright-visual-only-v3.mjs`
+   - `scripts/render-golden-sample-chatgpt-playwright-visual-only-v3-1.mjs`
+   - `scripts/render-golden-sample-chatgpt-playwright-visual-only-v2.mjs` only if needed to identify deprecated behavior.
+7. Slice 1 and Slice 2 contracts only when needed for integration references:
+   - `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json`
+   - `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
 
 Do not read protected files:
 
 - `_ai/CONTEXT_TRANSFER_CODEX.md`
 - `piq_diag_out.txt`
+- `scripts/render-golden-sample-visual-only-v1.mjs`
+- `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
 
 ## Scope
 
 Allowed files:
 
-1. New contract/schema fixture:
-   - Recommended: `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json`
-   - Must define required blueprint fields, story gate thresholds, hard fail list, visual evidence required fields, score provenance requirements, and no-live policy.
+1. New standard renderer contract fixture:
+   - Recommended: `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
+   - Must define no-live policy, overlay-spec boundary, font policy, safe-frame geometry, caption/typography rules, forbidden legacy render paths, future equivalence-check requirements, and unresolved Owner decisions.
 
-2. New normalized validation fixture:
-   - Recommended: `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json`
-   - It should normalize the accepted v3.2 Golden Sample into the new schema without changing existing accepted artifacts.
-   - It is a validation/sample fixture, not a new video or new topic approval.
+2. New sample overlay/spec plan fixture:
+   - Recommended: `scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json`
+   - It should reference the accepted v3.2 visual render manifest and acceptance lock.
+   - It must be a plan/contract fixture only, not an approval to render.
 
-3. New static guard:
-   - Recommended: `scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs`
-   - Must be no-live, no-network, no-env, no-secret, no-write.
-   - It should read the contract fixture + sample fixture + production standard JSON and assert compliance.
+3. New no-live renderer standard harness/module:
+   - Recommended: `scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
+   - In this slice it must support dry-run/static validation only.
+   - It must not spawn Python, import/run Pillow, invoke ffmpeg, render images, write files, or inspect env/secrets.
+   - It should encode reusable pure logic surfaces for overlay-spec validation, safe-frame geometry, font policy validation, forbidden-render-route checks, and future equivalence-plan validation.
+   - Future live/render slice must import this standard surface instead of creating another inline Pillow clone.
 
-4. `_ai/CLAUDE_REPORT.md`
+4. New static guard:
+   - Recommended: `scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+   - Must be no-live, no-network, no-env, no-secret, no-browser, no-render, no-write.
+   - It should assert contract/plan/harness compliance and cross-check key v3.2 standard facts.
+
+5. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
 
-5. `_ai/HANDOFF_NOW.md`
+6. `_ai/HANDOFF_NOW.md`
    - Update slice status only if needed.
 
-Do not modify existing generation/render/TTS/upload implementation code in this slice.
+Do not modify existing generation/render/TTS/upload implementation code unless a tiny pure helper is absolutely necessary and clearly justified. Prefer new files to avoid contaminating accepted v3/v3.1/v3.2 evidence runners.
 
 ## Required Contract Semantics
 
-The contract/static guard must enforce these v3.2 production standard rules:
+### No-live policy
 
-### Story Gate
+- This slice does not approve rendering or frame generation.
+- Default execution must be dry-run/static validation only.
+- Any live/render-like CLI flag must fail closed with a non-zero exit.
+- No Python/Pillow import, `child_process`, `ffmpeg`, file writes, network, env, or secret access in the default path.
 
-Required scores and thresholds:
+### Overlay/spec boundary
 
-- `hook_self_relevance >= 90`
-- `story_causality >= 90`
-- `problem_solution_bridge >= 90`
-- `solution_specificity >= 90`
-- `save_worthiness >= 88`
-- `spoken_naturalness >= 88`
+- Overlay-spec JSON is the module boundary for future renderer code.
+- The sample plan must reference:
+  - v3.2 visual render manifest
+  - v3.2 acceptance lock
+  - production standard fixture
+- The standard harness/static guard should fail if the plan has no v3.2 manifest/acceptance-lock reference.
 
-Required score provenance:
+### Typography and font policy
 
-- A score must not be anonymous.
-- Include a field such as `scoreProvenance` with scorer identity/source, date, method, and notes.
-- The guard must fail if scores exist without provenance.
+- Pillow bold info-shorts typography remains the standard until an explicitly approved replacement exists.
+- Font policy must require Noto Sans KR Black VF or another approved bold Korean font.
+- Malgun Gothic, Arial, BlackHanSans, DoHyeon, silent default-font fallback, and unapproved fallback chains must be forbidden for the v3.2 standard path.
+- Font vendoring/system-font dependency remains unresolved Owner decision #6; do not add font files or dependencies.
 
-Required hard fails:
+### Safe-frame geometry
 
-- generic hook
-- missing problem-solution bridge
-- abstract-only solution
-- saying "3개/세 가지" without naming/showing them
-- invented statistic/fact
-- topic change without Owner approval
+- Canvas must be 1080x1920.
+- Text safe-frame limit: `y2 <= 1580`.
+- Graphic safe-frame limit: `y2 <= 1632`.
+- Include line-length / readable text constraints and fail-closed behavior for missing bbox data.
+- Safe-frame gate should validate overlay/spec geometry without rendering frames.
 
-### Story-Causality Chain
+### Forbidden legacy render routes
 
-The sample fixture must represent a complete chain:
+- Bottom-fixed subtitle bar is forbidden.
+- Karaoke ASS lower-line behavior is forbidden.
+- ASS/drawtext lower-bar routes are forbidden for this v3.2 standard path.
+- `render_v2.py` style char-weight scene sync, silent fallback fonts, and 30s fixed assumptions must not be adopted.
 
-`problem -> cause -> illusion -> reframe/solution -> action -> result`
+### Equivalence plan
 
-Guard requirements:
-
-- required phases appear in order.
-- each beat has a `bridge_to_next` except final result.
-- beat count, phrase count, and scene count match.
-- no placeholder beat, phrase, or scene.
-
-### Visual Evidence
-
-Each scene/image must include exactly the standard six evidence fields, using stable names:
-
-1. `claim`
-2. `must_show`
-3. `must_not_show`
-4. `no_card_understanding`
-5. `card_caption_role`
-6. `reject_reasons`
-
-Guard requirements:
-
-- every scene has all six fields.
-- `must_show` and `reject_reasons` are non-empty arrays.
-- if the scene depends entirely on card/caption to be understood, fail.
-- Korean money/economy hard-fail terms are represented in reject reasons:
-  - foreign currency look
-  - old archive look
-  - unknown currency
-  - fake readable text/number
-  - broken glyph
-  - mosaic/blurred money in money-dominant shot
-  - blank paper pretending to be money
-
-### Owner Topic Confirmation
-
-The sample fixture must include a machine-readable `owner_topic_confirmation` block:
-
-- topic id/title
-- approved scope
-- approval source note
-- not a permanent channel-wide topic lock
-
-Guard must fail if topic confirmation is missing or not approved for the current sample.
-
-### Safe Frame / Overlay Geometry
-
-Use the existing v3.2 visual render manifest if feasible.
-
-Guard should check, at minimum:
-
-- text overlay y bottom <= 1580
-- graphic/card y bottom <= 1632
-- no bottom-fixed subtitle/bar mode
-
-If existing manifest structure is not directly compatible, document the exact limitation in the contract fixture and add a TODO field, but do not silently skip the check.
+- Future production renderer must define how to compare against v3.2 lock artifacts.
+- This slice should define machine-readable equivalence requirements, not run render/frame comparison.
+- Do not read from or write to `C:\tmp` or `output/`.
 
 ## Required Checks
 
 Minimum:
 
 1. `git status -sb`
-2. `node --check scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs`
-3. JSON parse for every new fixture.
-4. Run the new static guard:
-   - `node scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs`
+2. `node --check` for every new `.mjs`
+3. JSON parse for every new fixture
+4. Run new dry-run harness:
+   - `node scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
+5. Run new static guard:
+   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
 
 The static guard must print a clear PASS count and fail non-zero on violation.
 
-Also scan new/changed files for forbidden patterns:
+Also scan new/changed files for forbidden live/render patterns:
 
-- `fetch(`
-- `ALLOW_`
+- `child_process`
+- `spawn(`
+- `exec(`
+- `execFile(`
+- `python`
+- `PIL`
+- `ImageDraw`
+- `ffmpeg`
+- `writeFile`
+- `appendFile`
+- `mkdir`
+- `rmSync`
+- `unlink`
+- `rename`
 - `process.env`
-- `OPENAI_API_KEY`
-- `BFL_API_KEY`
-- `ELEVENLABS_API_KEY`
+- `fetch(`
+- `chromium.launch`
+- `page.goto`
+- `browser.newPage`
 - `uploadReady: true`
 - `automationExpansionReady: true`
 - `implementationApproved: true`
+- `liveRenderApproved: true`
 
-Allowed exception: if the scanner script itself contains these strings as denylist patterns, report that explicitly.
+Allowed exception: denylist strings inside the static guard must be split or explicitly reported as scanner denylist text, not executable behavior.
 
 Do not run full build unless a syntax/import issue requires it.
 
 ## Forbidden
 
-- Image generation.
+- Rendering frames or video.
+- Pillow/Python execution.
+- ffmpeg execution.
+- render/mux regeneration.
 - ChatGPT/Playwright execution.
+- Browser/Chrome/CDP launch.
+- Image generation.
 - OpenAI API.
 - FLUX2/BFL API.
 - Gemini/Midjourney.
 - ElevenLabs live TTS.
-- render/mux regeneration.
 - upload or upload queue.
 - live HTTP POST to `/api/upload`.
 - env/secret reads or writes.
@@ -227,18 +223,25 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- New contract fixture exists and encodes the v3.2 story/visual evidence standard.
-- New sample fixture exists and normalizes accepted v3.2 sample into the contract.
-- Static guard validates the sample and fails closed for missing required fields/provenance.
+- Pillow renderer standard is machine-readable as a contract fixture.
+- A sample no-live plan references the v3.2 visual render manifest and acceptance lock.
+- A no-live standard harness/module exists without rendering, Python/Pillow, ffmpeg, env, network, or writes.
+- Static guard validates contract/plan/harness and blocks live/render/env/API/write behavior.
+- Safe-frame geometry gate is defined and tested against fixture/sample data.
+- Forbidden legacy typography/render routes are explicitly blocked.
+- Future equivalence-check requirements are defined without running render/frame comparison.
 - All required checks pass.
-- `_ai/CLAUDE_REPORT.md` has a concise evidence append.
+- `_ai/CLAUDE_REPORT.md` has concise evidence append.
 - No forbidden action or side effect occurred.
 - Final handoff reports changed files, checks/results, deviations/risks, checkpoint recommendation, and progress.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 164 before this slice.
-- Latest checkpoint: `b4b4b2d feat(safety): add fail-closed upload hard block guard`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 166 after checkpoint `aeaaf94`.
+- Latest checkpoints:
+  - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
+  - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
+  - `aeaaf94 feat(golden-sample): add chatgpt runner standard guard`
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`

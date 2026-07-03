@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "golden_sample_pillow_renderer_contract_v1",
+  "taskId": "golden-sample-v3-2-pillow-renderer-productionization-v1",
+  "status": "PILLOW_RENDERER_STANDARD_CONTRACT_V1",
+  "createdAt": "2026-07-03",
+  "nature": "계약/표준 — 렌더 승인이 아니다. 이 계약의 존재가 프레임/영상 렌더, Pillow/PY 런타임 실행, 동영상 합성 도구 실행, render/mux 재생성, 이미지 생성, 유료 API, live TTS, upload, 자동화 확장 승인을 의미하지 않는다.",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveRenderApproved": false
+  },
+
+  "basedOn": {
+    "productionStandardDoc": "_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md",
+    "productionStandardFixture": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "gapAnalysisFixture": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "gapAnalysisSlice": "Slice 3 — Pillow 렌더러 production화 (inline PY 7곳 → overlay-spec JSON 경계, safe-frame 정적 gate, 폰트 vendoring 결정, 동등성 검증 방법 정의)",
+    "acceptanceLockFixture": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "acceptanceLockDoc": "_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md",
+    "visualRenderManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "sliceOneContract": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+    "sliceTwoContract": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+    "verifiedRendererLineage": [
+      "scripts/render-golden-sample-chatgpt-playwright-visual-only-v3.mjs",
+      "scripts/render-golden-sample-chatgpt-playwright-visual-only-v3-1.mjs",
+      "scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs"
+    ],
+    "lineageNote": "v3/v3.1 renderer는 Pillow overlay-spec JSON을 inline PY(각 ~445줄)로 생성/소비한다. gap analysis는 이 inline PY가 7곳 중복이며 overlay-spec JSON이 자연스러운 모듈 경계(v3.2가 v3.1 spec을 무변경 소비한 실적)라고 판정했다. 이 계약은 그 경계를 고정하되 프레임을 렌더하지 않는다.",
+    "ownerApproval": "approved by Owner 2026-07-03 KST — no-live Pillow renderer/overlay-spec productionization contract + static guard only"
+  },
+
+  "noLivePolicy": {
+    "noFrameOrVideoRender": true,
+    "noPillowOrPythonExecution": true,
+    "noFfmpegExecution": true,
+    "noRenderOrMuxRegeneration": true,
+    "noChatgptPlaywrightExecution": true,
+    "noBrowserOrCdpLaunch": true,
+    "noImageGeneration": true,
+    "noPaidApiCalls": true,
+    "noLiveTts": true,
+    "noUpload": true,
+    "noUploadQueue": true,
+    "noEnvOrSecretAccess": true,
+    "noNetwork": true,
+    "noWrite": true,
+    "standardHarnessMode": "dry_run_static_validation_only",
+    "standardHarness": "scripts/run-golden-sample-pillow-renderer-standard-v1.mjs",
+    "harnessImportRule": "이 slice의 standard harness는 node:fs / node:path / node:url 외의 import를 금지한다 (read-only). 자식 프로세스 / crypto / Pillow / 동영상 합성 도구 / network 모듈 import 금지. live/render류 CLI flag는 즉시 abort한다 (fail-closed).",
+    "guardScript": "scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs"
+  },
+
+  "overlaySpecBoundary": {
+    "role": "overlay-spec JSON은 미래 렌더러 코드의 모듈 경계다 — 렌더러(Pillow)는 이 spec을 소비만 하고, 카드/캡션 지오메트리·타이포·색상은 전부 spec에 표현된다",
+    "provenance": "v3/v3.1/v3.2 renderer가 생성/소비한 overlay_spec.v3_1.json 구조에서 추출 (v3.2가 v3.1 spec을 elementsChanged=false로 무변경 소비)",
+    "specShape": {
+      "requiredTopFields": ["fontFile", "variation", "overlays"],
+      "overlayShape": {
+        "requiredFields": ["id", "start", "end", "elements"],
+        "idRule": "non-empty unique string (예: ov01_hook_l1)",
+        "timingRule": "start/end는 finite number, 0 <= start < end",
+        "elementsRule": "non-empty array — 각 element는 elementTypes 중 하나"
+      },
+      "elementTypes": {
+        "text": {
+          "requiredFields": ["type", "x", "y", "fs", "fill", "text"],
+          "optionalFields": ["stroke", "anchor"],
+          "anchorDefault": "mm",
+          "geometryModel": "v3.1 renderer 관례: text의 y는 anchor 위치(기본 'mm'=세로 중심)이며 safe-frame은 이 anchor y를 textMaxY(1580) 기준으로 검사한다 (렌더러 주석 '텍스트 y<=1580'과 일치). anchor 't*'(상단)이면 텍스트가 아래로 확장되므로 y + fs를 기준으로 검사한다."
+        },
+        "runs": {
+          "requiredFields": ["type", "cx", "y", "fs", "runs"],
+          "optionalFields": ["stroke"],
+          "runsItemFields": ["t", "fill"],
+          "geometryModel": "runs는 중심 정렬 라인 — anchor 'lm' 기준이므로 y(세로 중심)를 textMaxY(1580) 기준으로 검사한다"
+        },
+        "rect": {
+          "requiredFields": ["type", "x1", "y1", "x2", "y2", "fill"],
+          "geometryModel": "명시적 사각형 — y2가 하단, graphicMaxY 기준으로 검사"
+        },
+        "rrect": {
+          "requiredFields": ["type", "x1", "y1", "x2", "y2", "fill"],
+          "optionalFields": ["r"],
+          "geometryModel": "둥근 사각형 — y2가 하단, graphicMaxY 기준으로 검사"
+        },
+        "poly": {
+          "requiredFields": ["type", "pts", "fill"],
+          "geometryModel": "삼각형/다각형 마커 — pts는 [x,y] 좌표 배열, y2 = pts의 max y, graphicMaxY 기준으로 검사 (v3.1 renderer causeRow 화살표 마커 선례)"
+        }
+      },
+      "elementClassification": {
+        "textLike": ["text", "runs"],
+        "graphicLike": ["rect", "rrect", "poly"],
+        "note": "textLike는 textMaxY(1580) 기준, graphicLike는 graphicMaxY(1632) 기준으로 safe-frame 검사한다"
+      }
+    },
+    "todoFromSliceOne": "Slice 1 계약 safeFrame.todo가 지정한 항목 — overlay-spec JSON을 레포 내 계약 산출물로 승격하고 bbox 기하 gate를 정적 검사로 연결한다. 이 계약이 그 스키마/gate를 정의한다. 단 accepted t1 overlay_spec.v3_1.json 원본은 C:\\tmp(레포 외부·이 slice 읽기 금지)에 있어, 이 slice는 스키마/gate 로직과 대표 sample element set만 검증하고 accepted 원본 bbox verbatim 대조는 미래 slice(원본을 레포로 승격한 뒤)로 남긴다."
+  },
+
+  "fontPolicy": {
+    "approvedFonts": ["Noto Sans KR Black (VF)"],
+    "approvedFontFileHint": "NotoSansKR-VF.ttf (Black named instance)",
+    "requireBoldKoreanFont": true,
+    "forbiddenFonts": ["Malgun Gothic", "맑은 고딕", "Arial", "Black Han Sans", "BlackHanSans", "Do Hyeon", "DoHyeon"],
+    "forbiddenLook": "Malgun Gothic 계열 룩",
+    "silentDefaultFontFallback": "금지 — 승인 폰트 미존재 시 렌더러는 fail-fast해야 한다 (v3.1 renderer 선례: NotoSansKR-VF.ttf 미존재 시 exit 12, Malgun fallback 금지)",
+    "unapprovedFallbackChain": "금지",
+    "stroke": "두꺼운 검은 stroke 유지 (v3.1 실측 strokeMinPx 9~11)",
+    "emphasisColor": "강한 강조색 (옐로우 #FFD400 등)",
+    "fontVendoringDecision": {
+      "status": "unresolved_owner_decision_6",
+      "note": "Noto Sans KR Black VF는 현재 시스템 폰트 의존(C:/Windows/Fonts, 레포 미포함). vendoring/시스템 폰트 의존 제거 여부는 gap analysis Owner 결정 #6로 미결. 이 slice는 폰트 파일 추가·의존성 변경을 하지 않는다.",
+      "forbidInThisSlice": ["폰트 파일 추가", "의존성/lockfile 변경", "시스템 폰트 경로 하드코딩 실행"]
+    }
+  },
+
+  "safeFrameGeometry": {
+    "canvas": { "width": 1080, "height": 1920 },
+    "textMaxY": 1580,
+    "graphicMaxY": 1632,
+    "thresholdSource": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json#typographyCaptionStandard.safeFrame — guard가 일치 검증 (드리프트 방지)",
+    "geometryModel": {
+      "textLikeCheckY": "anchor가 중심(기본 'mm'/'lm'/'rm')이면 anchor y를 textMaxY 기준으로 검사 (v3.1 renderer 관례 — 렌더러 주석 '텍스트 y<=1580'과 일치); anchor 상단('t*')이면 y + fs를 기준으로 검사",
+      "graphicLikeY2": "rect/rrect는 element.y2; poly는 pts의 max y — graphicMaxY 기준",
+      "xBounds": "모든 x/cx/x1/x2/pts.x는 0..1080 범위 내 (runs element는 x가 없고 cx만 가지므로 cx도 반드시 검사 대상)",
+      "yTopBounds": "모든 y/y1/pts.y는 0 이상"
+    },
+    "readableLineLength": {
+      "maxKoreanCharsPerCaptionLine": 12,
+      "note": "짧은 phrase/keyword 중심 — 문장 낭독 자막 금지. 단일 text element 문자열은 12자 상한(v3.1 renderer capLenGuard verbatim: t.length > 12 시 exit 12). runs element는 run 문자열 합계 기준. 초과 시 fail.",
+      "source": "v3.1 renderer capLenGuard(scripts/render-golden-sample-chatgpt-playwright-visual-only-v3-1.mjs) + production standard typographyCaptionStandard.captionStyle"
+    },
+    "failClosedOnMissingBbox": "element에 필요한 지오메트리 필드(text: y/fs, graphic: y2)가 없으면 침묵 skip하지 않고 fail한다 — Slice 1 계약 geometryCheckLimitation의 침묵 skip 금지 원칙 계승",
+    "limitation": "이 slice는 overlay-spec element geometry를 스키마/모델 기준으로 검사한다. accepted t1 overlay_spec.v3_1.json 원본 픽셀 좌표와의 verbatim 대조는 원본이 C:\\tmp(레포 외부·읽기 금지)라 불가 — 미래 slice에서 원본을 레포로 승격한 뒤 연결한다. 침묵 skip 아님(이 필드로 한계 명시)."
+  },
+
+  "typographyCaptionRules": {
+    "renderer": "Pillow bold info-shorts typography — 동등성 검증 전 대체 금지",
+    "engine": "pillow_overlay (RGBA overlay PNG → 동영상 합성 도구로 합성, v3.1 실측 파이프라인)",
+    "captionStyle": "짧은 phrase/keyword 중심 — 문장 낭독 자막 금지",
+    "bottomFixedSubtitleBar": false,
+    "karaokeFixedLowerLine": false,
+    "thresholdSource": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json#typographyCaptionStandard"
+  },
+
+  "forbiddenLegacyRenderRoutes": {
+    "bottomFixedSubtitleBar": "금지",
+    "karaokeAssLowerLine": "금지",
+    "assDrawtextLowerBar": "금지 — .ass karaoke(Alignment 2, 현재 단어 옐로우)·drawtext y=h-120 하단 바 경로는 v3.2 표준 경로에서 사용 금지",
+    "renderV2PyCharWeightSceneSync": "금지 — render_v2.py 방식 char-weight 씬 동기화 채택 금지",
+    "silentFallbackFonts": "금지 — silent default-font fallback 채택 금지",
+    "fixed30sAssumption": "금지 — 30/40/60s 고정 길이 가정 채택 금지 (자연 발화 길이 우선)",
+    "forbiddenRouteTokens": {
+      "note": "미래 렌더러 소스가 아래 legacy 경로 토큰을 도입하면 static guard가 차단한다. 토큰은 guard 내부에서 split-concatenated로만 보유한다.",
+      "conceptualTokens": ["ASS karaoke Alignment 2", "drawtext bottom bar", "char-weight scene duration sync", "silent font fallback", "fixed 30s target"]
+    }
+  },
+
+  "equivalencePlan": {
+    "purpose": "미래 production 렌더러가 v3.2 lock 아티팩트와 어떻게 동등성을 비교할지 정의한다 — 이 slice는 요구사항만 기계판독으로 고정하고 render/frame 비교를 실행하지 않는다.",
+    "lockReference": {
+      "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+      "acceptanceLock": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+      "expectedFfprobe": { "width": 1080, "height": 1920, "fps": "30/1", "videoDurationSec": 53.966667 },
+      "regenerationNote": "TTS 비결정성으로 mux md5는 재생성 시 달라짐 — mux md5 대조는 재현 불가. 동등성은 overlay-spec/typography/geometry 수준에서 정의한다."
+    },
+    "requiredEquivalenceChecksForFutureSlice": [
+      "overlay-spec element set이 accepted v3.1 overlay_spec 구조와 스키마 동형 (type/좌표/폰트 필드 존재)",
+      "typography engine=pillow_overlay, font=Noto Sans KR Black VF, bottomFixedSubtitle=false 유지",
+      "safe-frame geometry gate 전 element 통과 (textMaxY 1580 / graphicMaxY 1632)",
+      "overlay 개수·word-anchor 개수·maxEntryDeltaMs가 acceptance lock wordPhraseAnchoredCaptions와 정합 (overlayCount 29, wordAnchored 27, maxEntryDeltaMs 50, toleranceMs 120)",
+      "frame 시각 대조는 Owner/Claude vision QA 단계로 유지 (자동 PASS가 vision QA를 대체하지 않음)"
+    ],
+    "forbiddenNow": ["frame 렌더", "frame 시각 비교", "mux md5 재생성 대조", "ffprobe 재실행", "C:\\tmp / output/ 읽기·쓰기"]
+  },
+
+  "integration": {
+    "sliceOne": {
+      "planMustReferenceStoryVisualEvidence": true,
+      "note": "overlay/card는 Slice 1 visual evidence의 card_caption_role을 시각적으로 실현한다 — sample plan은 Slice 1 sample을 참조해야 한다"
+    },
+    "sliceTwo": {
+      "note": "이미지 md5 lock은 Slice 2 runner 표준의 selected_image_set과 동일 소스 — overlay는 잠긴 이미지 위에 얹힌다"
+    },
+    "manifestRefRequired": ["v3.2 visual render manifest", "v3.2 acceptance lock", "production standard fixture"],
+    "failIfMissing": "plan에 v3.2 manifest 또는 acceptance-lock 참조가 없으면 standard harness와 static guard 모두 fail한다"
+  },
+
+  "forbiddenBehavior": [
+    "프레임/영상 렌더",
+    "Pillow/PY 런타임/동영상 합성 도구 실행",
+    "render/mux 재생성",
+    "inline Pillow PY 8번째 클론 생성 — overlay-spec 경계 + 공유 모듈만 허용",
+    "Malgun Gothic / Arial / BlackHanSans / DoHyeon / silent default-font fallback",
+    "bottom-fixed subtitle bar / karaoke ASS lower-line / ASS·drawtext 하단 바",
+    "render_v2.py char-weight scene sync 채택",
+    "30/40/60s 고정 길이 가정",
+    "폰트 파일/의존성 추가",
+    "C:\\tmp 또는 output/ 읽기·쓰기",
+    "safe-frame bbox 누락 시 침묵 skip",
+    "v3.2 manifest/acceptance-lock 참조 없는 plan 실행"
+  ],
+
+  "changeControl": {
+    "modification": "Owner 승인 slice로만 수정 가능",
+    "versioning": "새 Golden Sample이 더 나은 기준을 세우면 v2 계약으로 승격 — 이 v1을 소급 수정하지 않는다"
+  }
+}
