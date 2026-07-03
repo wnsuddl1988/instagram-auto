@@ -3078,3 +3078,14 @@ QA-only slice. 코드 변경 없음.
 - Read-only 재검증: mux 존재 ✓, ffprobe **1080x1920 h264 30/1 + AAC 1 stream, 53.966667s** ✓, mux md5 `9f5ad22c02cb4f4f813a1ed16fd658b0`(20,294,549 bytes)·narration md5 `127555a5b8e3f1192554377f6556e988`로 lock 대상 고정.
 - 신규 파일 검사: JSON parse PASS, 금지 상태(uploadReady/automationExpansionReady/renderReady의 true 설정) 0건, secret/env/key 값 노출 0건.
 - 금지 미수행: 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · 렌더/mux 재생성 0 · upload 0 · 자동화 확장 0 · 보호 파일(CONTEXT_TRANSFER_CODEX/piq_diag/salary_3days 2종) 무접촉 · commit/push 없음.
+
+
+## v3.2 production standard contract v1 (`golden-sample-v3-2-production-standard-contract-v1` — 2026-07-03)
+
+**v3.2 Golden Sample의 검증 기준을 자동화 구현용 production standard로 추출 완료 — 문서/fixture only, 구현 코드 무변경, 생성/API/TTS/render 0.**
+
+- 신규: `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md` (사람용 표준 — 8섹션 + 변경 통제) / `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json` (기계용 계약 — 구현 시 기준). `_ai/HANDOFF_NOW.md` Slice status 1줄 추가.
+- 8섹션 전부 반영: ① Pipeline Order 11단계 (Owner 주제 확정→causality→visual evidence→생성→md5 lock→Pillow→TTS-first→anchor→audit→Owner QA→별도 upload/자동화 승인) ② Story Gate 6기준(90/90/90/90/88/88) + hard fail 6종 ③ Visual Evidence 6필드/이미지 + "카드는 강화지 구조가 아니다" ④ ChatGPT+Playwright 표준 (941x1672 리스크 기록+viewer-frame QA 기준, story-driven 개수, hard cap 사전 승인, 유료 fallback 별도 승인, 30~90s/110s 밴드, 1~2s poll, detect-to-save 30s 목표, 방치·sidebar scan·구대화 재사용 금지, page-wide collection) ⑤ 한국 화폐 표준 (hard fail 7종 + accepted 4종 + 텍스트는 renderer 책임) ⑥ 타이포 표준 (Pillow/Noto Black/stroke/Malgun 금지/bottom bar·karaoke 금지/safe frame) ⑦ TTS-first 표준 (gate 선행 강제, one-shot, padding·고정길이·hard trim 금지, ±120ms anchor, 오디오 게이트 기준치, guard convention, 구두점 설계 교훈) ⑧ QA/Readiness (pre-upload 6게이트, 두 flag false 규칙, technical pass ≠ Golden Sample pass).
+- v3.2 실측 근거 연결: lock fixture(md5 9f5ad2…)·checkpoint 062eb02·referenceImplementation 5파일. 변경 통제: Owner 승인 slice로만 수정, 새 기준은 v2 승격(소급 수정 금지).
+- 검사: 신규 JSON parse PASS / 금지 상태(uploadReady·automationExpansionReady·renderReady의 true 설정) 신규 파일 0건 / secret 값 노출 0건 / 구현 코드 변경 0건 (`git status` diff는 _ai 문서+fixture만).
+- 금지 미수행: 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · render/mux 재생성 0 · upload 0 · 자동화 구현/upload queue 생성 0 · 보호 파일 무접촉 · commit/push 없음.
