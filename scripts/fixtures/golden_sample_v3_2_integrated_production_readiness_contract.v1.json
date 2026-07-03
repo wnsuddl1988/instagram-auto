@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "golden_sample_integrated_production_readiness_contract_v1",
+  "taskId": "golden-sample-v3-2-integrated-production-readiness-standardization-v1",
+  "status": "STANDARDIZED_NO_LIVE_READY",
+  "createdAt": "2026-07-04",
+  "nature": "no-live integrated production-readiness contract — Slice 0~4 표준을 하나의 fail-closed readiness 계약으로 합성. 실행/승인 계약이 아니라 '표준화가 완료됐고 아직 live/upload는 금지'를 기계가 읽을 수 있게 고정.",
+
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveRenderApproved": false,
+    "liveImageGenerationApproved": false,
+    "chatgptPlaywrightApproved": false,
+    "liveAudioAnalysisApproved": false,
+    "ownerQaPassed": false,
+    "productionReady": false
+  },
+
+  "basedOn": {
+    "productionStandard": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "acceptanceLock": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "gapAnalysis": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "acceptedTopicId": "t1_lifestyle_inflation",
+    "note": "이 계약은 Slice 0~4 산출물을 참조만 한다 — 원본을 복제하거나 수정하지 않는다. 각 산출물의 threshold/게이트 로직은 해당 slice의 계약/harness가 단일 소스."
+  },
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "meaning": "Slice 0~4 표준이 계약/harness/guard로 고정됐고 no-live 정적 검증을 통과하는 상태. 실제 live TTS/render/mux/image generation/upload/automation은 승인되지 않았다.",
+    "isNot": [
+      "upload_ready",
+      "production_live_ready",
+      "automation_ready",
+      "render_ready",
+      "tts_live_ready",
+      "owner_final_approved"
+    ],
+    "technicalPassIsNotOwnerApproval": "정적/기술 readiness는 Owner의 직접 시청/청취/업로드 승인을 대체하지 못한다 (v3.1 선례).",
+    "allowedNextVerdictOnly": "STANDARDIZED_NO_LIVE_READY 유지 — 상위 readiness로의 승격은 이 slice 범위 밖이며 명시적 Owner 승인 + 미결 결정 해소 후에만 가능."
+  },
+
+  "mandatorySlices": [
+    {
+      "slice": 0,
+      "id": "upload-hard-block",
+      "role": "업로드를 기본 차단 — 어떤 미래 확장도 이 하드 블록을 우회할 수 없다.",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+      "guardPath": "scripts/check-golden-sample-upload-hard-block-static.mjs",
+      "implPath": "lib/upload-hard-block.ts",
+      "checkpoint": "b4b4b2d",
+      "requiredBeforeFutureAction": "always_active_prerequisite_for_upload",
+      "invariant": "uploadBlocked=true, uploadReady=false, automationExpansionReady=false 유지. POST /api/upload는 guard가 allowed!==true면 side effect 전 403."
+    },
+    {
+      "slice": 1,
+      "id": "story-visual-evidence",
+      "role": "story causality gate + visual evidence 기준 — image generation 확장의 선행 게이트.",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json",
+      "guardPath": "scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs",
+      "checkpoint": "fd4b618",
+      "requiredBeforeFutureAction": "image_generation_expansion"
+    },
+    {
+      "slice": 2,
+      "id": "chatgpt-playwright-runner",
+      "role": "ChatGPT+Playwright 이미지 runner 표준 — 미래 live 이미지 runner slice의 선행 게이트.",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs",
+      "harnessSchema": "golden_sample_chatgpt_playwright_runner_contract_v1",
+      "checkpoint": "aeaaf94",
+      "requiredBeforeFutureAction": "live_image_runner_slice"
+    },
+    {
+      "slice": 3,
+      "id": "pillow-renderer",
+      "role": "Pillow typography renderer 표준 (overlay-spec 경계/safe-frame/폰트 정책) — 미래 render slice의 선행 게이트.",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-pillow-renderer-standard-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs",
+      "harnessSchema": "golden_sample_pillow_renderer_contract_v1",
+      "checkpoint": "701e1ed",
+      "requiredBeforeFutureAction": "live_render_slice"
+    },
+    {
+      "slice": 4,
+      "id": "tts-audio-audit",
+      "role": "TTS-first/audio gate/mux policy/4-gate artifact audit 표준 — 미래 live TTS/audio/mux/audit slice의 선행 게이트.",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs",
+      "harnessSchema": "golden_sample_tts_audio_audit_contract_v1",
+      "checkpoint": "98913d4",
+      "requiredBeforeFutureAction": "live_tts_audio_mux_audit_slice"
+    }
+  ],
+
+  "requiredGuardComposition": [
+    "scripts/check-golden-sample-upload-hard-block-static.mjs",
+    "scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs",
+    "scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs",
+    "scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs",
+    "scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs"
+  ],
+
+  "unresolvedOwnerDecisions": [
+    {
+      "id": 1,
+      "key": "script_impact_gate_score_authority",
+      "summary": "Script Impact Gate 점수 생산 주체 (self-assessment fixture / LLM-judge / Codex 판정) + provenance 필드 의무화 여부",
+      "blocks": ["live_tts_audio_mux_audit_slice"],
+      "status": "PENDING"
+    },
+    {
+      "id": 2,
+      "key": "legacy_line_scope",
+      "summary": "legacy 라인 적용 범위 — living_tips(generate-v2/render-v2)와 tail-trim·sceneTts 지침을 표준 밖 별도 라인으로 분리/문서 개정할지",
+      "status": "PENDING"
+    },
+    {
+      "id": 3,
+      "key": "upload_endpoint_disposition",
+      "summary": "app/api/upload + UploadPanel + n8n workflow 처분 — 하드닝(인증+readiness gate) vs 폐기",
+      "blocks": ["upload_slice"],
+      "status": "PENDING"
+    },
+    {
+      "id": 4,
+      "key": "blueprint_schema_unification",
+      "summary": "blueprint 스키마 통일 — salary_3days.v2 필드명→표준 6필드명 매핑 확정, lib/blueprints VideoBlueprint 관계",
+      "status": "PENDING"
+    },
+    {
+      "id": 5,
+      "key": "md5_locked_image_durability",
+      "summary": "md5-locked 원본 이미지 내구성/백업 정책 (output/·C:\\tmp 휘발성)",
+      "status": "PENDING"
+    },
+    {
+      "id": 6,
+      "key": "font_vendoring",
+      "summary": "Noto Sans KR Black VF vendoring 여부 (시스템 폰트 의존 제거, BlackHanSans 지위 포함)",
+      "blocks": ["live_render_slice"],
+      "status": "PENDING"
+    },
+    {
+      "id": 7,
+      "key": "contract_duality_resolution",
+      "summary": "계약 이원화 해소 — money-shorts creative contract v2 승계 vs v3.2 standard JSON 단일 계약",
+      "status": "PENDING"
+    },
+    {
+      "id": 8,
+      "key": "image_script_allow_guard",
+      "summary": "FLUX2/OpenAI-image 스크립트 ALLOW_* 가드 추가 여부 (현재 키 존재=실행)",
+      "blocks": ["live_image_runner_slice"],
+      "status": "PENDING"
+    },
+    {
+      "id": 9,
+      "key": "poll_25s_passive_window",
+      "summary": "poll 해석 확정 — 25s passive window(v3.2 실동작) 인정 vs 제출 즉시 1-2s poll",
+      "blocks": ["live_image_runner_slice"],
+      "status": "PENDING"
+    },
+    {
+      "id": "owner_qa",
+      "key": "owner_viewing_listening_qa",
+      "summary": "Owner 직접 시청/청취 QA — 최종 acceptance는 기술 게이트 전부 통과해도 Owner 체감 QA에서 reject 가능. 자동화로 대체 불가.",
+      "blocks": ["upload_slice", "automation_expansion"],
+      "status": "PENDING"
+    }
+  ],
+
+  "prohibitedReadinessFlags": [
+    "uploadReady",
+    "automationExpansionReady",
+    "implementationApproved",
+    "liveTtsApproved",
+    "liveMuxApproved",
+    "liveRenderApproved",
+    "liveImageGenerationApproved",
+    "chatgptPlaywrightApproved",
+    "ownerQaPassed",
+    "productionReady"
+  ],
+
+  "readinessFlagPolicy": {
+    "rule": "위 flag 중 하나라도 명시적 미래 Owner 승인 없이 true가 되면 contract/plan/harness는 fail-closed.",
+    "ambiguousFlagRule": "다르게 명명된 동등 flag(예: liveGenerationApproved, uploadEnabled, readyForProduction 등)도 신중히 취급 — 애매하면 not-ready/pending 기본값.",
+    "sliceFlagAliases": {
+      "liveImageGenerationApproved": ["liveGenerationApproved", "chatgptPlaywrightApproved"],
+      "liveRenderApproved": ["liveRenderApproved"],
+      "liveTtsApproved": ["liveTtsApproved"],
+      "liveMuxApproved": ["liveMuxApproved"],
+      "liveAudioAnalysisApproved": ["liveAudioAnalysisApproved"]
+    }
+  },
+
+  "noLivePolicy": {
+    "noLiveTts": true,
+    "noPaidOrFreeTtsApiCall": true,
+    "noAudioVideoImageFileRead": true,
+    "noFfmpegOrProbeExecution": true,
+    "noSilenceDetectExecution": true,
+    "noRenderOrMuxRegeneration": true,
+    "noImageGeneration": true,
+    "noChatgptPlaywrightExecution": true,
+    "noBrowserOrCdpLaunch": true,
+    "noOtherExternalApi": true,
+    "noUpload": true,
+    "noUploadQueue": true,
+    "noEnvOrSecretAccess": true,
+    "noNetwork": true,
+    "noChildProcess": true,
+    "noWrite": true,
+    "standardHarnessMode": "dry_run_static_validation_only",
+    "harnessImportRule": "통합 harness는 node:fs / node:path / node:url read-only 표면만 import. dynamic import·subprocess·network·browser 금지.",
+    "liveFlagRule": "live/render/mux/tts/upload/browser/image-generation/audio-analysis CLI flag는 non-zero exit로 fail-closed."
+  },
+
+  "futureExpansionGates": {
+    "note": "미래 확장의 게이트 순서만 기술 — 어떤 실행도 승인하지 않는다.",
+    "order": [
+      "1. Owner decision이 pending blocker(위 unresolvedOwnerDecisions)를 해소한다.",
+      "2. Script Impact Gate provenance(#1)가 확정/수용된다.",
+      "3. call/cost cap + stop 조건을 담은 live-call plan fixture가 존재한다.",
+      "4. 해당 Slice 1~4 표준 harness를 import한다(임의 클론 금지).",
+      "5. 산출물이 acceptance lock / production standard 대비 audit된다.",
+      "6. Owner 직접 시청/청취 QA가 기술 pass와 별도로 유지된다.",
+      "7. upload는 명시적 upload 승인 전까지 계속 차단된다."
+    ]
+  },
+
+  "forbiddenBehavior": [
+    "live TTS 또는 유료/무료 TTS API 호출",
+    "env/secret 읽기/쓰기",
+    "audio/video/image 파일 분석 read",
+    "동영상 합성/probe/무음탐지 도구 실행",
+    "render/mux 재생성",
+    "audio/video/image 생성",
+    "ChatGPT/Playwright 실행",
+    "browser/Chrome/CDP launch",
+    "OpenAI/FLUX2/BFL/Gemini/Midjourney/ElevenLabs API",
+    "upload 또는 upload queue 또는 /api/upload live POST",
+    "dependency/lockfile 변경",
+    "DB/schema/deploy 변경",
+    "production generation/render/TTS/upload 코드 수정",
+    "prior Slice 0~4 산출물 수정",
+    "readiness flag를 승인 없이 true로 승격",
+    "통합 harness에 두 번째 orchestration 클론 생성(각 slice harness import 대신 로직 복제)"
+  ],
+
+  "integration": {
+    "mandatorySliceCount": 5,
+    "failIfMissing": "mandatorySlices의 contractPath/guardPath/harnessPath 중 하나라도 레포에 없으면 통합 readiness는 fail-closed (참조가 prose가 아니라 실재해야 함).",
+    "harnessImportProof": "static guard는 이 통합 harness + 최소한 Slice 2/3/4 harness의 schema export를 import해 참조가 실재함을 증명한다(live 경로 실행 없이)."
+  }
+}
