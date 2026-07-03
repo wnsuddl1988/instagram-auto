@@ -4,213 +4,205 @@
 
 - 최우선 source of truth: `_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md`.
 - 같은 우선순위 addendum: `_ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md`.
-- Golden Sample v3.2 lock 문서:
+- Golden Sample v3.2 lock/standard 문서:
   - `_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md`
   - `_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md`
+  - `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`
   - `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json`
+  - `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-production-standard-contract-v1`
-- Status: approved by Owner after v3.2 acceptance lock checkpoint.
-- Slice status: **COMPLETED 2026-07-03** — production standard 문서/계약 작성 완료 (`_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`, `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`). uploadReady=false / automationExpansionReady=false 유지, 구현 코드 무변경.
+- Task ID: `golden-sample-v3-2-automation-implementation-gap-analysis-v1`
+- Status: approved by Owner after production standard checkpoint.
+- Slice status: **COMPLETED 2026-07-03** — read-only gap analysis 완료 (`_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`, `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`). 구현 코드 무변경, 생성/API/TTS/render/mux/upload 0. uploadReady=false / automationExpansionReady=false / implementationApproved=false.
 - Owner decision:
-  - 업로드는 아직 하지 않는다.
-  - 다음 slice에서 v3.2 Golden Sample 기준을 자동화 구현용 production standard로 정리한다.
-- This slice is not upload preparation and not automation implementation.
+  - 다음 slice는 v3.2 production standard를 기존 자동화 파이프라인에 적용하기 위한 implementation gap analysis로 진행한다.
+- This slice is **read-only investigation + docs/fixture planning only**.
+- This slice is **not implementation** and **not upload preparation**.
 
 ## Accepted Golden Sample Basis
 
-- Latest checkpoint: `062eb02 docs(golden-sample): lock v3.2 acceptance qa`.
-- Candidate: `Golden Sample v3.2 / t1_lifestyle_inflation`
-- Topic used for sample: `월급이 올라도 통장이 그대로인 이유`.
-- Final candidate mux:
-  `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-- Status:
-  - `ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE`
+- Latest checkpoint: `2900bc8 docs(golden-sample): add v3.2 production standard contract`.
+- Golden Sample candidate status: `ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE`.
+- Readiness flags remain:
   - `uploadReady=false`
   - `automationExpansionReady=false`
+- Final candidate mux:
+  `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
 
 ## Goal
 
-Extract the reusable production standard from v3.2 so future automation work can implement the same quality grammar without guessing.
+Map the gap between the existing automation codebase and the v3.2 production standard before any implementation.
 
 The output should answer:
 
-- What must happen before image generation?
-- What makes a story pass/fail?
-- What must each image prove?
-- How should ChatGPT+Playwright image generation run fast and safely?
-- What is the Korean money/economy visual standard?
-- What typography/caption system must renderer implementation reproduce?
-- What TTS-first timing rules are mandatory?
-- What QA gates must pass before any upload or automation expansion?
+- Which existing modules/scripts already match v3.2?
+- Which modules/scripts must be replaced, refactored, or bypassed?
+- Where should each v3.2 standard gate live in the future pipeline?
+- What should the first implementation slice be?
+- What must remain blocked until explicit Owner approval?
 
 ## Scope
 
-Documentation/fixture only.
-
 Allowed:
 
-- Read existing v3.2 lock/QA packet and committed fixtures.
-- Create production standard docs/fixtures.
+- Read existing code/scripts/fixtures/docs needed to map the pipeline.
+- Use `rg`, `rg --files`, `git status -sb`, and focused reads.
+- Create one Owner/Codex-readable gap analysis document.
+- Create one machine-readable implementation plan fixture.
 - Append concise result to `_ai/CLAUDE_REPORT.md`.
 - Optionally mark this slice completed in `_ai/HANDOFF_NOW.md`.
 
 Suggested files:
 
-1. `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`
-   - Owner/Codex/Claude readable standard.
-   - Concise but complete enough to guide implementation.
+1. `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
+   - human-readable mapping and recommended implementation slices.
 
-2. `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
-   - Machine-readable contract for future automation implementation.
+2. `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
+   - machine-readable map of standards -> existing files -> gap -> recommended action -> risk -> first slice.
 
 3. `_ai/CLAUDE_REPORT.md`
-   - Append concise result.
+   - append concise result.
 
 4. `_ai/HANDOFF_NOW.md`
-   - Minimal status update only if needed.
+   - minimal status update only if needed.
 
-Do not modify implementation code.
+Do **not** modify implementation code.
 
-## Required Standard Sections
+## Investigation Targets
 
-The production standard must include these sections.
+Investigate only as much as needed. Prefer focused `rg`/file reads.
 
-### 1. Pipeline Order
+### Story / Topic / Script
 
-Mandatory order:
+Find current modules/scripts for:
 
-1. Owner confirms topic.
-2. Story-Causality First:
-   - problem -> cause -> illusion -> reframe/solution -> action -> result.
-3. Visual Evidence Second:
-   - each image is evidence, not a pretty background.
-4. Image generation.
-5. Image QA and md5 lock.
-6. Pillow bold typography render.
-7. TTS-first one-shot narration.
-8. Word/phrase anchored dynamic captions.
-9. Artifact audit.
-10. Owner viewing/listening QA.
-11. Only then can upload or automation expansion be separately approved.
+- topic selection.
+- script generation / retention compiler / narrative blueprint.
+- story scoring / quality scoring.
+- any existing Creative v2 or Golden Sample story contracts.
 
-### 2. Story Gate
+Gap questions:
 
-Include the v3.2 threshold family:
+- Is Owner topic confirmation enforced before generation?
+- Is Story-Causality First represented as a hard gate?
+- Is Script Impact Gate implemented or only in v3.2 runner?
+- Where should the story gate be added?
 
-- hook_self_relevance >= 90
-- story_causality >= 90
-- problem_solution_bridge >= 90
-- solution_specificity >= 90
-- save_worthiness >= 88
-- spoken_naturalness >= 88
+### Visual Evidence / Image Generation
 
-Hard fail examples:
+Find current modules/scripts for:
 
-- hook is generic.
-- problem and solution do not bridge.
-- solution is abstract only.
-- "3 things" or equivalent is mentioned but not shown/named.
-- invented statistics or fake facts.
-- topic changed without Owner approval.
+- ChatGPT+Playwright image generation.
+- image prompt building.
+- image QA / selected image set / md5 lock.
+- provider selection or fallback logic.
 
-### 3. Visual Evidence Standard
+Gap questions:
 
-Each scene/image must specify:
+- Does current generator use page-wide image collection and 1-2s polling?
+- Does it prevent sidebar scan / stale conversation reuse?
+- Does it enforce generation hard cap and detect-to-save timing?
+- Does it support per-image `claim/must_show/must_not_show/no-card understanding/card role/reject reasons`?
+- Does it distinguish 941x1672 technical risk from viewer-frame Owner QA?
 
-- claim it proves.
-- must_show.
-- must_not_show.
-- why a viewer can understand it without the card.
-- what card/caption adds.
-- reject reasons.
+### Renderer / Typography / Captions
 
-Card should strengthen the image, not rescue an unrelated image.
+Find current modules/scripts for:
 
-### 4. ChatGPT+Playwright Image Generation Standard
+- visual-only render.
+- Pillow typography render.
+- dynamic caption generation.
+- card/caption overlap QA.
 
-Use v3/v3.1 lessons:
+Gap questions:
 
-- ChatGPT+Playwright is accepted as the preferred Golden Sample image path for this quality grammar.
-- 941x1672 native is a known technical risk, but viewer-frame quality can pass if Owner QA accepts it.
-- Image count is story-driven, not fixed at 4/6/9. Avoid long single-image dwell.
-- Regenerate when the image fails visual evidence, Korean context, or money clarity.
-- Hard cap per slice must be approved before generation.
-- No paid provider fallback without separate approval.
+- Is Pillow/Noto Sans KR Black the production renderer path or only a Golden Sample runner?
+- Are bottom-fixed subtitles blocked?
+- Are caption/card events anchored to real TTS word/phrase timing?
+- Does renderer preserve bold info-shorts style consistently?
 
-Speed/operation rules:
+### TTS / Audio / Mux / Audit
 
-- Expected generation completion: usually 30-90s, slow upper band around 110s.
-- Poll page-wide image candidates frequently after submit, roughly every 1-2s.
-- When the image appears, save within 30s target.
-- Detect-to-save over 30s requires immediate diagnosis in the report.
-- Do not wait 3-5 minutes after the image is visibly completed.
-- Do not scan unrelated sidebar conversations.
-- Do not reuse old conversations unless explicitly recovering a known current image from the same approved run.
-- Use page-wide estuary/image collection because current ChatGPT UI may render generated images outside assistant-role scoped DOM.
+Find current modules/scripts for:
 
-### 5. Korean Money/Economy Visual Standard
+- ElevenLabs one-shot TTS.
+- live guard.
+- word/phrase alignment extraction.
+- mux.
+- post-render artifact audit.
 
-Hard fail:
+Gap questions:
 
-- foreign-currency feel.
-- old archival/dated finance texture.
-- unknown money.
-- fake readable text/numbers.
-- broken glyphs.
-- mosaic/blurred money when money should be clear.
-- blank paper pretending to be money.
+- Is one-shot TTS enforced?
+- Is scene-by-scene TTS blocked?
+- Does the pipeline abort before live TTS if Script Impact Gate fails?
+- Are padding/hard-trim/fixed-duration targets blocked?
 
-Accepted:
+### Orchestration / Upload Readiness
 
-- Korean-won-like color, guilloche texture, modern Korean living-finance context.
-- clear money feel without exact counterfeit-like facsimile.
-- exact labels/facts/numbers are renderer responsibility, not image text.
+Find current modules/scripts for:
 
-### 6. Typography / Caption Standard
+- orchestrator or end-to-end automation.
+- upload queue/readiness flags.
+- Instagram/YouTube upload integration.
 
-Mandatory:
+Gap questions:
 
-- Pillow renderer for bold info-shorts typography unless equivalent verified.
-- No Malgun Gothic look.
-- Noto Sans KR Black or approved bold Korean font.
-- thick black stroke.
-- strong emphasis color.
-- short phrase/keyword captions.
-- no bottom-fixed subtitle bar.
-- no karaoke fixed lower line.
-- max readable line lengths and safe frame.
+- Where is `uploadReady` set?
+- Is Owner QA required before upload?
+- Is automation expansion blocked until separate approval?
+- What must be changed before any upload queue is generated?
 
-### 7. TTS-First Standard
+## Required Output Structure
 
-- Script Impact Gate before live TTS.
-- one-shot TTS.
-- no scene-by-scene TTS.
-- no padding to force duration.
-- no fixed 30/40/60s target.
-- natural length determined by script.
-- word/phrase timestamp re-anchor required.
-- captions/cards enter at actual spoken timing.
+The human-readable document must include:
 
-### 8. QA / Readiness Flags
+1. Executive summary:
+   - current pipeline is not yet v3.2-compliant.
+   - implementation should proceed by gates, not by immediately uploading.
 
-Before upload:
+2. Existing assets to reuse:
+   - v3.2 ChatGPT+Playwright runners/lessons.
+   - Pillow renderer lessons.
+   - TTS-first mux/audit runner lessons.
+   - v3.2 lock/standard fixtures.
 
-- media audit pass.
-- story gate pass.
-- visual evidence pass.
-- typography/caption pass.
-- TTS/audio artifact pass.
-- Owner viewing/listening PASS.
+3. Gap table:
+   - standard area.
+   - existing files found.
+   - current status: `reuse`, `partial`, `missing`, `replace`, or `block`.
+   - required action.
+   - risk.
 
-Flags:
+4. Recommended implementation slices:
+   - Slice 1 must be low-risk and foundation-oriented.
+   - Do not recommend starting with upload.
+   - Suggested order should likely be:
+     1. Story/visual evidence contract + static guard.
+     2. ChatGPT+Playwright generation runner hardening.
+     3. Pillow renderer productionization.
+     4. TTS-first timing/audit integration.
+     5. End-to-end dry-run.
+     6. Upload readiness only after Owner QA.
 
-- `uploadReady=false` until explicit Owner upload approval.
-- `automationExpansionReady=false` until separate automation implementation approval.
-- Technical pass never equals Golden Sample pass.
+5. Explicit forbidden next steps:
+   - no upload.
+   - no live generation/API until Owner approves a concrete slice.
+   - no automation queue creation.
+
+The JSON fixture must include:
+
+- `status: "IMPLEMENTATION_GAP_ANALYSIS_ONLY"`
+- `uploadReady: false`
+- `automationExpansionReady: false`
+- `implementationApproved: false`
+- `recommendedFirstImplementationSlice`
+- `gapMap[]`
+- `blockedActions[]`
+- `nextOwnerDecisionNeeded[]`
 
 ## Verification
 
@@ -221,12 +213,16 @@ Required checks:
 - Scan new files for:
   - `uploadReady:true`
   - `automationExpansionReady:true`
+  - `implementationApproved:true`
   - `renderReady:true`
   - secret/env/API key values.
-- Confirm no implementation code files changed.
+- Confirm implementation code files were not modified by this slice.
+
+Do not run full build unless a JSON or syntax issue requires a targeted check. This is docs/fixture only.
 
 ## Forbidden
 
+- Implementation code edits.
 - Image generation.
 - ChatGPT/Playwright generation.
 - OpenAI API calls.
@@ -236,7 +232,8 @@ Required checks:
 - ElevenLabs live TTS calls.
 - Render/mux regeneration.
 - Upload.
-- Automation implementation or upload queue creation.
+- Upload queue creation.
+- Automation implementation.
 - Env/secret/dependency/DB/deploy changes.
 - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Touching rejected salary_3days visual-only render diff:
@@ -246,8 +243,8 @@ Required checks:
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 161 before this slice.
-- Latest checkpoint: `062eb02 docs(golden-sample): lock v3.2 acceptance qa`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 162 before this slice.
+- Latest checkpoint: `2900bc8 docs(golden-sample): add v3.2 production standard contract`.
 - Excluded/rejected/admin files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`

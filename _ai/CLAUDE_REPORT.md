@@ -3089,3 +3089,15 @@ QA-only slice. 코드 변경 없음.
 - v3.2 실측 근거 연결: lock fixture(md5 9f5ad2…)·checkpoint 062eb02·referenceImplementation 5파일. 변경 통제: Owner 승인 slice로만 수정, 새 기준은 v2 승격(소급 수정 금지).
 - 검사: 신규 JSON parse PASS / 금지 상태(uploadReady·automationExpansionReady·renderReady의 true 설정) 신규 파일 0건 / secret 값 노출 0건 / 구현 코드 변경 0건 (`git status` diff는 _ai 문서+fixture만).
 - 금지 미수행: 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · render/mux 재생성 0 · upload 0 · 자동화 구현/upload queue 생성 0 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## v3.2 automation implementation gap analysis (`golden-sample-v3-2-automation-implementation-gap-analysis-v1` — 2026-07-03)
+
+**v3.2 production standard 대비 기존 자동화 파이프라인 gap analysis 완료 — read-only 조사 + 문서/fixture planning only. 구현 코드 무변경, 생성/API/TTS/render/mux/upload 0.**
+
+- 신규: `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md` (Executive summary + 재사용 자산 15종 + 8영역 gap table + 구현 슬라이스 6단계 + 금지 액션 + Owner 결정 9건) / `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json` (status IMPLEMENTATION_GAP_ANALYSIS_ONLY, gapMap 30건, recommendedFirstImplementationSlice, blockedActions 10, nextOwnerDecisionNeeded 9). `_ai/HANDOFF_NOW.md` Slice status 1줄 추가.
+- 조사 방법: 5개 영역(story/image/renderer/tts/orchestration) 병렬 read-only 조사 + 부모 세션 직접 재검증 (auto/upload route, paidApiGuard, sceneTts 기본값, automationExpansionReady 코드 0곳, 30s preflight 하드코딩 직접 확인).
+- 핵심 결론: ① 파이프라인은 아직 v3.2-compliant 아님 — 준수 메커니즘은 전부 단일 주제 runner 내장 (Pillow inline ×7 중복, gate 1곳, v3.1 클론엔 gate 없음) ② 자동화 확장은 정책 차단일 뿐 구조 차단 아님 — `app/api/upload`는 무인증·무게이트 live 엔드포인트, `app/api/auto`는 랜덤 주제 free-running, automationExpansionReady는 코드 0곳 ③ 업로드 preflight 2곳 30s±0.5 하드코딩 → v3.2 합격작(53.97s)이 FAIL하는 모순 ④ Script Impact Gate 점수는 fixture self-assessment(계산 아님) — 점수 생산 주체 미정 ⑤ CLAUDE.md/living-tips 문서의 tail-trim·sceneTts 지침이 표준과 정면 충돌.
+- 권장 Slice 1 (low-risk foundation): blueprint 스키마 v2(표준 6필드+reject_reasons+owner_topic_confirmation) + 정적 검증기(no-LLM/no-API/no-write: 인과 사슬·bridge·6필드·safe-frame 기하·금지 상태). upload로 시작 금지 명문화.
+- 검사: 신규 JSON parse PASS / 금지 상태(uploadReady·automationExpansionReady·implementationApproved·renderReady의 true) 신규 파일 0건 / secret 0건 / 구현 코드 변경 0건 (`git status` diff는 _ai 문서 2 + fixture 1 + report append만).
+- 금지 미수행: 구현 코드 수정 0 · 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · render/mux 0 · upload 0 · queue 생성 0 · env 변경 0 · 보호 파일(CONTEXT_TRANSFER_CODEX/piq_diag/salary_3days 2종) 무접촉 · commit/push 없음.
