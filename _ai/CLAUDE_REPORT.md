@@ -3068,3 +3068,13 @@ QA-only slice. 코드 변경 없음.
 - mux: `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4` — **1080x1920 h264 30fps 53.97s audio 1 stream** ✅ frames 19장 + gate report + manifest + audit + caption timeline + script preview.
 - vs v3.1 mux: 논리 동일 + 개인 자극/면죄 반전/반복 프레임/선명 CTA 추가, 무음 비율도 개선(0.0996→0.0682). 길이 45.9→53.97s (자연 길이, 대본 정보량 증가분).
 - 금지 미수행: gate 전 TTS 0 · 이미지 생성 0 · 타 API 0 · scene별 TTS 0 · padding/trim 0 · upload 0 · Golden Sample PASS 선언 없음 · env/secret 무변경 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## v3.2 acceptance lock / final QA packet (`golden-sample-chatgpt-playwright-v3-2-acceptance-lock-final-qa-packet` — 2026-07-03)
+
+**Owner 잠정 채택된 v3.2를 `ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE`로 lock 문서화 완료 — 문서/fixture only, 렌더/TTS/API 재실행 0. uploadReady=false / automationExpansionReady=false 유지.**
+
+- 신규: `_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md` (Owner용 lock — mux exact path/md5/사양/채택 사유 6개/known limits/업로드 전 요건) / `_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md` (8개 섹션: causality·visual·한국 맥락·타이포·TTS 타이밍·audit·limits·재사용 표준) / `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json` (기계용 lock — md5/ffprobe facts/게이트 점수/금지 액션/파이프라인 표준). `_ai/HANDOFF_NOW.md`에 Slice status COMPLETED 1줄 추가.
+- Read-only 재검증: mux 존재 ✓, ffprobe **1080x1920 h264 30/1 + AAC 1 stream, 53.966667s** ✓, mux md5 `9f5ad22c02cb4f4f813a1ed16fd658b0`(20,294,549 bytes)·narration md5 `127555a5b8e3f1192554377f6556e988`로 lock 대상 고정.
+- 신규 파일 검사: JSON parse PASS, 금지 상태(uploadReady/automationExpansionReady/renderReady의 true 설정) 0건, secret/env/key 값 노출 0건.
+- 금지 미수행: 이미지 생성 0 · ChatGPT/Playwright 0 · OpenAI/FLUX2/Gemini/Midjourney 0 · ElevenLabs live 0 · 렌더/mux 재생성 0 · upload 0 · 자동화 확장 0 · 보호 파일(CONTEXT_TRANSFER_CODEX/piq_diag/salary_3days 2종) 무접촉 · commit/push 없음.

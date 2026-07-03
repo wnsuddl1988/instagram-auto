@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "golden_sample_acceptance_lock_v1",
+  "taskId": "golden-sample-chatgpt-playwright-v3-2-acceptance-lock-final-qa-packet",
+  "status": "ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE",
+  "uploadReady": false,
+  "automationExpansionReady": false,
+  "lockedAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "topic": "월급이 올라도 통장이 그대로인 이유",
+  "candidateLabel": "Golden Sample v3.2 / t1_lifestyle_inflation",
+  "sourceMethod": "ChatGPT+Playwright image generation + Pillow bold typography + TTS-first one-shot narration (ElevenLabs)",
+
+  "ownerVerdict": {
+    "feedback": "처음 버전보다는 개선한 버전이 훨씬 이해하기 쉽고 좋아",
+    "decision": "v3.2를 Golden Sample 최종 후보로 잠정 채택. upload/자동화 확장은 별도 승인 전 금지.",
+    "meaning": "품질 기준 후보 lock — 배포 승인 아님"
+  },
+
+  "lockedArtifacts": {
+    "muxMp4": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "muxSizeBytes": 20294549,
+    "narrationMp3": "narration_v3_2_elevenlabs.mp3",
+    "narrationMd5": "127555a5b8e3f1192554377f6556e988",
+    "evidenceDir": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit",
+    "evidenceFiles": [
+      "script_impact_gate_report.v3_2.json",
+      "elevenlabs_tts_timing_summary.v3_2.json",
+      "elevenlabs_alignment_raw.v3_2.json",
+      "dynamic_caption_timeline_tts_anchored.v3_2.json",
+      "post_render_artifact_audit_tts_mux.v3_2.json",
+      "story_script_preview.v3_2.json",
+      "frames (19 jpg)"
+    ],
+    "comparisonReference": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_1.mp4",
+    "acceptedVisualBaseline": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\\golden_sample_t1_lifestyle_inflation_visual_only_v3_1.mp4",
+    "regenerationNote": "재생성 시 TTS 비결정성으로 md5가 달라짐 — 위 md5의 파일만 lock 대상, 재생성본은 재QA 필요"
+  },
+
+  "expectedFfprobe": {
+    "width": 1080,
+    "height": 1920,
+    "videoCodec": "h264",
+    "rFrameRate": "30/1",
+    "audioCodec": "aac",
+    "audioStreamCount": 1,
+    "videoDurationSec": 53.966667,
+    "audioDurationSec": 53.359002,
+    "reverifiedAt": "2026-07-03 (read-only, 이 slice에서 재실행 아님)"
+  },
+
+  "acceptanceCriteria": {
+    "storyCausalityFirst": {
+      "chain": "hook → problem → cause_a(인상 한 번 vs 고정비 매달 반복) → cause_b(소액 분산) → illusion(기억 비대칭) → reframe(자리 상실 면죄 반전) → action_a → action_b(3-slot) → result(CTA)",
+      "scriptImpactGate": {
+        "verdict": "PASS",
+        "evaluatedBeforeTts": true,
+        "scores": {
+          "hook_self_relevance_score": 91,
+          "story_causality_score": 92,
+          "problem_solution_bridge_score": 91,
+          "solution_specificity_score": 92,
+          "save_worthiness_score": 89,
+          "spoken_naturalness_score": 90
+        },
+        "hardFails": 0
+      },
+      "threeSlotGate": { "word": "세 개", "spokenAtSec": 44.93, "slotEntriesSec": [39.66, 41.18, 42.74], "threeVisibleWhenSpoken": true }
+    },
+    "koreanEverydayMoneyContext": { "objects": "월급 봉투/유리병/영수증 벽/원화풍 지폐", "inventedStats": 0 },
+    "koreanWonVisualClarity": { "imageSet": "v3.1 banknote patch 9장 md5 고정", "blueprint": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json", "rerenderDamage": false },
+    "boldInfoShortsTypography": { "engine": "Pillow (Noto Sans KR Black VF + stroke)", "bottomFixedSubtitleBar": false, "elementsChangedFromAcceptedV31": false },
+    "wordPhraseAnchoredCaptions": { "overlayCount": 29, "wordAnchored": 27, "sceneEntry": 2, "maxEntryDeltaMs": 50, "toleranceMs": 120, "minDwellSec": 0.99 },
+    "naturalDuration": { "finalSec": 53.97, "fixedTargetUsed": false, "paddingUsed": false, "atempoUsed": false, "hardTrimUsed": false, "tailHoldSec": 0.61 },
+    "audioQuality": { "beginningSilenceSec": 0, "first5sSilenceSec": 0.35, "totalSilenceRatio": 0.0682, "speechActiveRatio": 0.932, "clippedTail": false, "liveTtsCalls": 1, "liveTtsCap": 2 },
+    "artifactAudit": { "report": "post_render_artifact_audit_tts_mux.v3_2.json", "gates": { "media": true, "audio": true, "captionCard": true, "story": true }, "claudeVisionQa": "PASS (6 frames reviewed)" }
+  },
+
+  "repoEvidence": {
+    "checkpoint": "a34d703 test(automation): add chatgpt playwright v3 tts candidates",
+    "branch": "codex/source-first-blueprint-clean",
+    "files": [
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json",
+      "scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs",
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json"
+    ]
+  },
+
+  "knownLimits": [
+    "Owner 최종 업로드 승인 전 upload 금지",
+    "자동화 확장 금지 — 이 lock은 샘플 1건의 품질 기준 후보 확정일 뿐",
+    "기술 게이트 통과가 향후 영상의 체감 품질을 자동 보장하지 않음 (v3.1 선례)",
+    "C:\\tmp 산출물 유실 시 재생성본은 md5 상이 — 재QA 필요"
+  ],
+
+  "forbiddenNextActions": [
+    "upload",
+    "automation expansion",
+    "image generation",
+    "ChatGPT/Playwright generation",
+    "OpenAI/FLUX2/BFL/Gemini/Midjourney API",
+    "ElevenLabs live TTS (재생성 포함)",
+    "render/mux regeneration without new approved slice",
+    "env/secret/dependency/DB/deploy changes"
+  ],
+
+  "requiredBeforeUpload": [
+    "Owner 명시적 최종 업로드 승인 (별도 slice)",
+    "업로드 플랫폼/계정/캡션/해시태그 결정",
+    "자동화 확장은 업로드 승인 이후 별도 판단"
+  ],
+
+  "reusableStandards": {
+    "pipelineOrder": [
+      "1. 주제 Owner 확정",
+      "2. story causality 설계 (beat=phrase=scene 1:1)",
+      "3. visual evidence 설계",
+      "4. image generation + md5 lock",
+      "5. Pillow typography render",
+      "6. TTS-first timing (Script Impact Gate → one-shot TTS → word anchor reflow → mux → artifact audit)",
+      "7. Owner QA → acceptance lock"
+    ],
+    "gateBaselineConfig": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json"
+  },
+
+  "docs": {
+    "acceptanceLock": "_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md",
+    "finalQaPacket": "_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md"
+  }
+}
