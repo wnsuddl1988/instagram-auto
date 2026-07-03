@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "golden_sample_chatgpt_playwright_runner_plan_v1",
+  "taskId": "golden-sample-v3-2-chatgpt-playwright-runner-standardization-v1",
+  "status": "NO_LIVE_SAMPLE_PLAN_V1",
+  "createdAt": "2026-07-03",
+  "nature": "예시 plan fixture — 생성 승인이 아니다. accepted Golden Sample v3.2(t1_lifestyle_inflation) 이미지 세트를 만든 lineage를 표준 plan 스키마로 정규화한 no-live 예시이며, 이 fixture의 존재가 ChatGPT/Playwright 실행·브라우저 실행·이미지 생성·live run을 승인하지 않는다.",
+  "contractRef": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveGenerationApproved": false
+  },
+
+  "ownerTopicApproval": {
+    "topicId": "t1_lifestyle_inflation",
+    "title": "월급이 올라도 통장이 그대로인 이유",
+    "approved": true,
+    "approvedScope": "Golden Sample v3.2 제작/검증 범위 한정 — 테스트 주제. 이 plan은 해당 승인 범위의 정규화 표현일 뿐 신규 생성 승인이 아니다.",
+    "approvalSourceNote": "blueprint topic_status '테스트 주제 유지 — 채널 전체 영구 확정 아님 (Owner 통제)' + v3.2 acceptance lock checkpoint 062eb02 + Slice 1 accepted sample owner_topic_confirmation",
+    "permanentChannelWideTopicLock": false
+  },
+
+  "storyVisualEvidenceRef": {
+    "contract": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+    "sample": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json",
+    "note": "Slice 1 integration — 이 reference가 없으면 standard runner 검증과 static guard가 모두 fail한다"
+  },
+
+  "promptSet": {
+    "primary": {
+      "path": "scripts/fixtures/chatgpt_playwright_image_prompts.t1_lifestyle_inflation.v3.json",
+      "schemaVersion": "chatgpt_playwright_image_prompts_v3",
+      "promptCount": 9,
+      "note": "9 beat 완전 신규 세트 — v3 fresh-image-set run의 입력"
+    },
+    "patchRunLineage": {
+      "path": "scripts/fixtures/chatgpt_playwright_image_prompts.t1_lifestyle_inflation.v3_1_banknote_patch.json",
+      "schemaVersion": "chatgpt_playwright_image_prompts_v3_1_banknote_patch",
+      "promptCount": 5,
+      "historicalHardCap": 6,
+      "note": "한국 화폐 clarity patch run 기록 — 별도 승인 run이었으며 이 plan의 submission budget에 포함되지 않는 lineage 증거"
+    }
+  },
+
+  "submissionHardCap": {
+    "value": 12,
+    "sourceType": "plan_fixture",
+    "forbidRunnerConstants": true,
+    "approvalSourceNote": "v3 fresh-image-set run에서 Owner 승인된 hard cap 12의 예시 정규화 — 새 live run은 생성 시작 전 새 Owner 승인 hard cap이 필수"
+  },
+  "costCapUsd": 0,
+
+  "stopConditions": [
+    "submissionHardCap 도달 — 신규 제출 즉시 중단 (existing-file skip 재실행만 허용)",
+    "prompt별 180s hard timeout — TIMEOUT_BLOCKED 기록 후 다음 prompt 진행, 자동 재시도 금지",
+    "login/composer/stop 등 fatal 오류 — 자동 재시도 없이 중단하고 summary에 기록 후 보고",
+    "detect-to-save 30s 초과 반복 등 비정상 지연 — 원인 진단 기록 후 Owner/Codex 보고",
+    "Owner 중단 지시 — 즉시 중단"
+  ],
+
+  "expectedImageQuality": {
+    "storyVisualEvidenceRule": "각 이미지는 Slice 1 sample의 per-scene visual evidence(claim/must_show/must_not_show/no_card_understanding/card_caption_role/reject_reasons)를 충족해야 한다",
+    "rejectCodesBase": ["visual_evidence_mismatch", "korean_context_break"],
+    "moneyDominantRejectCodes": [
+      "foreign_currency_feel",
+      "old_archive_or_dated_finance_texture",
+      "unknown_money",
+      "fake_readable_text_or_numbers",
+      "broken_glyphs",
+      "mosaic_or_blurred_money_when_money_should_be_clear",
+      "blank_paper_pretending_to_be_money",
+      "money_clarity_fail"
+    ],
+    "nativeResolutionRisk": "941x1672 — 기술 리스크로 기록만, 자동 reject 금지, viewer-frame 기준 Owner QA가 최종 판정",
+    "acceptedSetMd5Lock": [
+      { "imageId": "img_41_hook_envelope_vs_empty_jar_krw", "md5": "25291145457eaf4e5bfdbb133de97d3c" },
+      { "imageId": "img_32_problem_wallet_check_night", "md5": "8953f340162d56d27ea78d925545d6a9" },
+      { "imageId": "img_43_causeA_orderly_fixed_outflow_krw", "md5": "67b55fb2793c297f320aa1b1f3837d4e" },
+      { "imageId": "img_34_causeB_scattered_lifestyle_spend", "md5": "9e197e342098dc4e86356200d8811692" },
+      { "imageId": "img_45_illusion_one_bill_vs_receipt_wall_krw", "md5": "c0a11bf91e52a313574bc2232f4c3b3c" },
+      { "imageId": "img_36_reframe_three_empty_jars", "md5": "f0f2ff998462126ef66ac395b3e37b2f" },
+      { "imageId": "img_47_actionA_dividing_into_jars_krw", "md5": "29551d1c4777b6e61774940092b97f20" },
+      { "imageId": "img_48_actionB_three_jars_color_ribbons_krw", "md5": "d33974aa3c8e4b866e6bbffe8996803c" },
+      { "imageId": "img_39_result_settled_morning_shelf", "md5": "93f665f652170a2a3101b8da611f5701" }
+    ],
+    "md5LockSource": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json#selected_image_set"
+  },
+
+  "executionMode": {
+    "approvedNow": "dry_run_validation_only",
+    "liveGenerationApprovedNow": false,
+    "liveGenerationRequires": "별도 Owner 승인 slice + contract approvalModel.futureGenerationRequires 전부 충족"
+  }
+}

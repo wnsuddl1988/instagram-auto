@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "golden_sample_chatgpt_playwright_runner_contract_v1",
+  "taskId": "golden-sample-v3-2-chatgpt-playwright-runner-standardization-v1",
+  "status": "CHATGPT_PLAYWRIGHT_RUNNER_STANDARD_CONTRACT_V1",
+  "createdAt": "2026-07-03",
+  "nature": "계약/표준 — 자동화 구현·생성 승인이 아니다. 이 계약의 존재가 ChatGPT/Playwright 실행, 브라우저/CDP 실행, 이미지 생성, 유료 API, live TTS, render/mux, upload, 자동화 확장 승인을 의미하지 않는다.",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveGenerationApproved": false
+  },
+
+  "basedOn": {
+    "productionStandardDoc": "_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md",
+    "productionStandardFixture": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "gapAnalysisFixture": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "gapAnalysisSlice": "Slice 2 — ChatGPT+Playwright 생성 runner 하드닝 (fixture-driven 단일 표준 경로)",
+    "sliceOneContract": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+    "goldenSample": "Golden Sample v3.2 / t1_lifestyle_inflation (mux md5 9f5ad22c02cb4f4f813a1ed16fd658b0)",
+    "verifiedRunnerLineage": [
+      "scripts/run-chatgpt-playwright-image-method-revalidation-v2.mjs",
+      "scripts/run-chatgpt-playwright-fresh-image-set-v3.mjs",
+      "scripts/run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs"
+    ],
+    "lineageNote": "세 runner는 prompts fixture 경로/hard cap/라벨만 다른 ~445줄 클론 — 이 계약은 그 검증된 로직 표면을 단일 표준으로 고정하고 4번째 클론 생성을 금지한다",
+    "ownerApproval": "approved by Owner 2026-07-03 21:30 KST — no-live runner standardization + static guard only"
+  },
+
+  "noLivePolicy": {
+    "noChatgptPlaywrightExecution": true,
+    "noBrowserOrCdpLaunch": true,
+    "noImageGeneration": true,
+    "noPaidApiCalls": true,
+    "noLiveTts": true,
+    "noRenderOrMux": true,
+    "noUpload": true,
+    "noUploadQueue": true,
+    "noEnvOrSecretAccess": true,
+    "noNetwork": true,
+    "noWrite": true,
+    "standardRunnerMode": "dry_run_validation_only",
+    "standardRunner": "scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs",
+    "runnerImportRule": "이 slice의 standard runner는 Playwright/browser/CDP 모듈 import 자체가 없어야 하며, node:fs / node:path / node:url 외의 import를 금지한다 (read-only). live류 CLI flag는 즉시 abort한다 (fail-closed)",
+    "guardScript": "scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs"
+  },
+
+  "approvalModel": {
+    "liveGenerationApprovedNow": false,
+    "futureGenerationRequires": [
+      "Owner-approved generation plan fixture (아래 planInputSchema 준수)",
+      "해당 live slice에 대한 Owner 명시 승인",
+      "v3 lineage와 동일한 env readiness flag convention (아래 liveGuardConvention) + plan fixture 이중 gate"
+    ],
+    "planInputSchema": {
+      "schemaVersion": "golden_sample_chatgpt_playwright_runner_plan_v1",
+      "requiredBlocks": [
+        "ownerTopicApproval",
+        "storyVisualEvidenceRef",
+        "promptSet",
+        "submissionHardCap",
+        "costCapUsd",
+        "stopConditions",
+        "expectedImageQuality",
+        "executionMode"
+      ],
+      "blockRules": {
+        "ownerTopicApproval": "topicId/title/approvedScope/approvalSourceNote non-empty + approved === true + permanentChannelWideTopicLock === false",
+        "storyVisualEvidenceRef": "Slice 1 story/visual evidence contract와 accepted sample 참조 필수 — reference가 없으면 standard runner와 static guard 모두 fail",
+        "promptSet": "primary prompt fixture 경로 + schemaVersion + promptCount가 실제 파일과 일치해야 하며 topicId가 ownerTopicApproval과 같아야 한다",
+        "submissionHardCap": "positive integer, plan fixture가 단일 소스 — runner 상수/hidden constant 금지. primary promptCount <= hardCap",
+        "costCapUsd": "ChatGPT+Playwright 경로는 0 고정 — 변경은 별도 Owner 승인 필요",
+        "stopConditions": "non-empty string array — cap 도달 / hard timeout / fatal error / Owner 중단 포함",
+        "expectedImageQuality": "Slice 1 계약의 reject 코드 세트와 정확히 일치 + accepted md5 lock + 941x1672 취급 규칙 명시",
+        "executionMode": "approvedNow === dry_run_validation_only, liveGenerationApprovedNow === false (이 slice 기준)"
+      }
+    },
+    "hardCapRule": {
+      "sourceType": "plan_fixture",
+      "forbidRunnerConstants": true,
+      "historicalPrecedent": { "v2": 8, "v3": 12, "v3_1": 6 },
+      "enforcement": "existing-file skip + submission ledger — cap 도달 시 신규 제출 즉시 abort, 자동 retry 루프 금지",
+      "regenerationPolicy": "품질 미달 이미지는 기존 파일을 `<이름>.rejected-rN.png`로 이름을 바꾼 뒤 재실행하면 해당 order만 재제출된다 (existing-file skip이 최종 파일명 기준). cap은 절대 초과 불가"
+    },
+    "liveGuardConvention": {
+      "reference": "scripts/run-chatgpt-playwright-fresh-image-set-v3.mjs 상단의 env readiness flag gate (v3 lineage 공통)",
+      "literalWithheld": true,
+      "note": "flag 이름 literal은 이 no-live slice의 forbidden-pattern scan을 깨끗하게 유지하기 위해 이 fixture에 기재하지 않는다. 미래 live slice는 v3 lineage convention과 Owner 승인 plan fixture의 이중 gate를 모두 통과해야 한다"
+    },
+    "paidProviderFallback": {
+      "allowed": false,
+      "rule": "FLUX2/BFL/OpenAI/Gemini/Midjourney 등 유료 provider fallback은 별도 Owner 승인 필수 — 자동 fallback 금지 (production standard imageGenerationStandard.paidProviderFallback과 동일)"
+    }
+  },
+
+  "collectionStandard": {
+    "method": "page_wide_generated_image_collection",
+    "reason": "현 ChatGPT UI는 생성 이미지를 assistant-role scoped DOM 밖에 렌더할 수 있음 — assistant-scope 단독 신뢰 금지",
+    "generatedUrlMarkers": ["backend-api/estuary/content", "backend-api/files", "oaiusercontent", "blob:"],
+    "excludeUserAttachments": true,
+    "userAttachmentSelector": "[data-message-author-role=\"user\"]",
+    "excludeStaleImages": true,
+    "staleExclusionMechanism": "제출 직전 page-wide baseline cid snapshot을 잡고 이후 poll에서 baseline cid를 제외한다 — fresh 후보만 인정",
+    "minCandidateWidthPx": 200,
+    "minFreshWidthPx": 400,
+    "assistantScopedHelperStatus": "deprecated_for_golden_sample — collectLastAssistantImages류 assistant-scoped helper는 신규 표준 경로에서 사용 금지",
+    "delayedDetectionDiagnostics": "이미지 감지가 지연되면 이유/증거를 diagnostics에 저장한다 (latencyDiagnostics 참조)"
+  },
+
+  "timingStandard": {
+    "expectedCompletionSec": { "typicalMin": 30, "typicalMax": 90, "slowUpperBand": 110 },
+    "pollIntervalSecBounds": { "min": 1, "max": 2 },
+    "operationalProfile": {
+      "passiveWindowMs": 25000,
+      "pollIntervalMs": 1800,
+      "stablePollsToSave": 3,
+      "diagnosticAtMs": 150000,
+      "hardTimeoutMs": 180000,
+      "provenance": "v2 runner에서 실증 → v3/v3.1이 그대로 재사용해 v3.2 accepted 이미지 세트를 만든 실동작 값"
+    },
+    "passiveWindowInterpretation": {
+      "openOwnerDecision": "gap analysis Owner 결정 #9 — 25s passive window(v3.2를 만든 실동작) 인정 vs 제출 즉시 1~2s poll. 확정 전까지 이 계약은 검증된 25s passive + 1.8s active poll profile을 표준 기록으로 유지한다"
+    },
+    "detectToSaveTargetSec": 30,
+    "overTargetAction": "detect-to-save 30s 초과 시 원인 진단(이유+타이밍)을 report에 즉시 기록한다 — 침묵 pass 금지",
+    "stableSaveRule": "신규 후보가 3회 연속 stable(같은 key+크기)이면 idle 대기 없이 즉시 저장한다",
+    "idleProhibition": "완성 이미지 3~5분 방치 금지",
+    "timeoutPolicy": {
+      "diagnosticAtSec": 150,
+      "hardTimeoutSec": 180,
+      "onDiagnostic": "diagnostic screenshot + DOM summary 자동 캡처 + current-page recover 1회",
+      "onHardTimeout": "TIMEOUT_BLOCKED 기록 후 다음 prompt 진행 — 자동 재시도 금지"
+    }
+  },
+
+  "conversationHygiene": {
+    "sidebarScanProhibited": true,
+    "freshContextRule": "새 run은 fresh/current generation context에서 시작한다",
+    "oldConversationReusePolicy": "forbidden_except_same_run_current_image_recovery",
+    "sameRunRecovery": {
+      "allowedSource": "current_page_only",
+      "requiresSameRun": true,
+      "requiresKnownCurrentImage": true,
+      "mechanism": "current-page intercept recover — sidebar/old conversation 탐색 없이 현재 페이지 재적재로만 회수한다"
+    }
+  },
+
+  "latencyDiagnostics": {
+    "requiredMetricsPerPrompt": ["submittedAtIso", "firstCandidateSec", "savedSec", "detectionLatencySec", "delayedSaveOver30s", "result"],
+    "derivedMetrics": {
+      "submitToFirstImageSec": "firstCandidateSec",
+      "submitToSaveSec": "savedSec",
+      "detectToSaveSec": "savedSec - firstCandidateSec"
+    },
+    "reportArtifacts": ["image-generation-summary", "generation-latency-report"],
+    "reportMustInclude": ["submissionCount", "submissionHardCap", "autoRetryPerformed=false", "upscaleUsed=false", "placeholderUsed=false", "costUsd"]
+  },
+
+  "outputFacts": {
+    "requiredPerImage": ["order", "imageId", "beat", "width", "height", "format", "bytes", "md5", "saveMethod", "promptHash", "submitted"],
+    "nativeResolutionRisk": {
+      "value": "941x1672",
+      "handling": "record_only",
+      "autoRejectForbidden": true,
+      "finalJudgment": "viewer-frame 기준 Owner QA가 나중에 판정한다 (production standard nativeResolution.acceptanceRule)"
+    },
+    "upscalingAsFixForbidden": true,
+    "md5Lock": "QA 통과 이미지는 md5 lock — 이후 단계는 md5 일치를 검증한다 (blueprint selected_image_set 선례)"
+  },
+
+  "sliceOneIntegration": {
+    "planMustReferenceStoryVisualEvidence": true,
+    "failIfMissing": "plan에 story/visual evidence reference가 없으면 standard runner 검증과 static guard 모두 fail한다",
+    "sliceOneContract": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+    "sliceOneSample": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json",
+    "sliceOneGuard": "scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs"
+  },
+
+  "forbiddenBehavior": [
+    "4번째 runner 클론 생성 — fixture-driven 단일 표준 runner만 허용",
+    "hard cap의 runner 상수화 (plan fixture 단일 소스 위반)",
+    "assistant-role scoped DOM 단독 수집",
+    "sidebar/old conversation scan",
+    "같은 run known current image 회수 이외의 이전 대화 재사용",
+    "자동 retry 루프",
+    "941x1672 자동 reject",
+    "upscaling을 수정 수단으로 사용",
+    "유료 provider 자동 fallback",
+    "완성 이미지 3~5분 방치",
+    "story/visual evidence reference 없는 plan 실행"
+  ],
+
+  "changeControl": {
+    "modification": "Owner 승인 slice로만 수정 가능",
+    "versioning": "새 Golden Sample이 더 나은 기준을 세우면 v2 계약으로 승격 — 이 v1을 소급 수정하지 않는다"
+  }
+}
