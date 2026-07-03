@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "golden_sample_tts_audio_audit_contract_v1",
+  "taskId": "golden-sample-v3-2-tts-audio-audit-standardization-v1",
+  "status": "TTS_AUDIO_AUDIT_STANDARD_CONTRACT_V1",
+  "createdAt": "2026-07-03",
+  "nature": "계약/표준 — TTS/audio/mux/audit 실행 승인이 아니다. 이 계약의 존재가 live TTS 호출, audio/video 파일 읽기, 동영상 합성 도구/probe/무음탐지 실행, render/mux 재생성, audio 생성, 유료 API, upload, 자동화 확장 승인을 의미하지 않는다. Script Impact Gate 선행 조건·audio gate threshold·mux policy·artifact audit readiness를 기계판독으로 고정할 뿐이다.",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveAudioAnalysisApproved": false
+  },
+
+  "basedOn": {
+    "productionStandardDoc": "_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md",
+    "productionStandardFixture": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "productionStandardSections": ["ttsFirstStandard", "qaReadiness"],
+    "gapAnalysisFixture": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "acceptanceLockFixture": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "acceptanceLockDoc": "_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md",
+    "ttsFirstMuxManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json",
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "sliceOneContract": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+    "sliceTwoContract": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+    "sliceThreeContract": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json",
+    "verifiedAuditLineage": [
+      "scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs",
+      "scripts/run-golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit.mjs"
+    ],
+    "lineageNote": "v3.1/v3.2 audit runner는 Script Impact Gate → one-shot TTS(with timestamps) → word/phrase re-anchor → mux → 4-gate artifact audit(media/audio/captionCard/story) → Owner vision QA 순서를 inline으로 구현한다. 이 계약은 그 게이트 threshold·순서·live 경계를 고정하되 어떤 audio/mux/probe도 실행하지 않는다.",
+    "ownerApproval": "approved by Owner 2026-07-03 KST — no-live TTS/audio/audit standardization contract + static guard only"
+  },
+
+  "noLivePolicy": {
+    "noLiveTts": true,
+    "noPaidOrFreeTtsApiCall": true,
+    "noAudioOrVideoFileRead": true,
+    "noFfmpegOrProbeExecution": true,
+    "noSilenceDetectExecution": true,
+    "noRenderOrMuxRegeneration": true,
+    "noAudioOrVideoGeneration": true,
+    "noChatgptPlaywrightExecution": true,
+    "noBrowserOrCdpLaunch": true,
+    "noImageGeneration": true,
+    "noOtherExternalApi": true,
+    "noUpload": true,
+    "noUploadQueue": true,
+    "noEnvOrSecretAccess": true,
+    "noNetwork": true,
+    "noWrite": true,
+    "standardHarnessMode": "dry_run_static_validation_only",
+    "standardHarness": "scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs",
+    "harnessImportRule": "이 slice의 standard harness는 node:fs / node:path / node:url 외의 import를 금지한다 (read-only). 자식 프로세스 / crypto / 동영상 합성·probe·무음탐지 도구 / TTS SDK / network 모듈 import 금지. live/tts/mux/audio류 CLI flag는 즉시 abort한다 (fail-closed).",
+    "guardScript": "scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs"
+  },
+
+  "scriptImpactGateStandard": {
+    "role": "live TTS 이전 선행 gate — 모든 required 점수 충족 + hard fail 0이어야 TTS stage 진입. 실패 시 runner는 TTS 호출 전 abort(fail-closed).",
+    "evaluatedBeforeLiveTts": true,
+    "requiredScores": {
+      "hook_self_relevance_score": 90,
+      "story_causality_score": 90,
+      "problem_solution_bridge_score": 90,
+      "solution_specificity_score": 90,
+      "save_worthiness_score": 88,
+      "spoken_naturalness_score": 88
+    },
+    "requiredScoresSource": "ttsFirstMuxManifest.scriptImpactGate.required — guard가 verbatim 정합 검증(drift 방지)",
+    "v32AcceptedScores": {
+      "hook_self_relevance_score": 91,
+      "story_causality_score": 92,
+      "problem_solution_bridge_score": 91,
+      "solution_specificity_score": 92,
+      "save_worthiness_score": 89,
+      "spoken_naturalness_score": 90
+    },
+    "hardFailKeys": [
+      "generic_hook",
+      "explains_but_does_not_sting",
+      "weak_problem_solution_bridge",
+      "abstract_solution_ending",
+      "three_things_unnamed",
+      "invented_stats_or_facts",
+      "topic_changed_from_accepted_visual"
+    ],
+    "hardFailRule": "위 7개 key 전부 false여야 PASS. 하나라도 true면 gate FAIL → TTS 진입 금지.",
+    "scoreProducerNote": "점수 생산 주체(자체 평가 vs 외부 모델)는 Owner 결정 #1로 미결 — 이 계약은 threshold와 게이트 순서만 고정하고 점수 생산을 실행하지 않는다.",
+    "gateOrderRule": "Script Impact Gate PASS 없이는 live TTS 호출 0회 — apiCallBudget는 gate PASS 이후에만 소비된다."
+  },
+
+  "ttsStandard": {
+    "strategy": "full_narration_one_shot",
+    "sceneBySceneTts": "금지 — one-shot full narration만 (scene 단위 짧은 TTS 채택 금지)",
+    "endpointKind": "text_to_speech_with_timestamps",
+    "provider": "elevenlabs",
+    "apiCallBudgetMax": 2,
+    "apiCallBudgetRule": "1차 primary + (명확한 artifact / severe pause / timing audit block일 때만) 2차 = 상한 2회. Script Impact Gate PASS 전에는 0회.",
+    "secondCallCondition": "명확한 artifact / severe pause / timing audit block일 때만 — 임의 재호출 금지",
+    "retry": false,
+    "reuseExistingAudioIfPresent": true,
+    "requireLiveTtsGuard": true,
+    "liveGuardConvention": {
+      "note": "live TTS는 CLI flag 또는 env allow-key가 있을 때만 시도 가능 — 이 계약/harness는 그 실행 경로를 구현하지 않는다. env 파일 수정 금지, secret 값 출력/저장 금지.",
+      "cliFlagWithheld": true,
+      "envKeyWithheld": true,
+      "withholdReason": "flag/env literal은 scan 청결을 위해 계약에 원문 보관하지 않는다 — 원본은 ttsFirstMuxManifest.tts.allowCliFlag / allowEnvKey 참조"
+    },
+    "keyValueInLogsOrFiles": "금지 — voice id / api key / secret 값을 로그·파일·fixture에 출력 금지",
+    "thresholdSource": "ttsFirstMuxManifest.tts — guard가 strategy/budget/oneShot 정합 검증"
+  },
+
+  "wordPhraseReAnchorStandard": {
+    "mandatory": true,
+    "principle": "TTS-first — scene 경계=phrase 발화 시작, overlay 진입=word 시작 앵커(±tolerance). padding/atempo/hard-trim/고정 길이 목표 금지.",
+    "entryToleranceMs": 120,
+    "v32MeasuredMaxDeltaMs": 50,
+    "earlyEntryAllowed": "entry가 tolerance 밖이어도 음수(단어보다 먼저 뜸)면 허용 — 늦게 뜨는 것만 fail (v3.2 audit 관례)",
+    "minDwellSec": 0.9,
+    "minDwellShortException": 0.6,
+    "auditMinDwellFloor": 0.58,
+    "overlayCount": 29,
+    "wordAnchoredCount": 27,
+    "sceneEntryCount": 2,
+    "frameGridFps": 30,
+    "thresholdSource": "productionStandard.ttsFirstStandard.wordPhraseReAnchor + acceptanceLock.wordPhraseAnchoredCaptions — guard가 tolerance 120 / maxDelta 50 / overlayCount 29 정합"
+  },
+
+  "audioQualityGateStandard": {
+    "role": "mux 후 audio gate — 아래 6개 서브체크 전부 PASS여야 audio gate PASS (AND). 실측이 아니라 threshold 고정만 한다.",
+    "beginningSilenceMaxSec": 0.6,
+    "first5sSilenceMaxSec": 0.8,
+    "totalSilenceRatioMax": 0.18,
+    "speechActiveRatioMin": 0.72,
+    "clippedTail": "금지 — audioFileDurationSec < speechEndSec - 0.02면 clipped fail",
+    "tailHoldSecRange": [0.3, 0.8],
+    "silencedetectNoiseDb": -35,
+    "silencedetectMinSilenceSec": 0.35,
+    "ratioMeasurementNote": "ratio는 발화 구간(0~speechEnd) 기준. punch pause는 임팩트 지점에만 — ratio 초과 시 2차에서 비-punch 구두점만 수술",
+    "punctuationDesignNote": "과도한 구두점은 pause 폭증으로 ratio fail (v3.1 attempt1 선례 ratio 0.2667)",
+    "subCheckKeys": ["beginningPass", "first5sPass", "ratioPass", "speechActivePass", "tailHoldPass", "notClippedTail"],
+    "v32MeasuredValues": {
+      "beginningSilenceSec": 0,
+      "first5sSilenceSec": 0.35,
+      "totalSilenceRatio": 0.0682,
+      "speechActiveRatio": 0.932,
+      "clippedTail": false,
+      "tailHoldSec": 0.61
+    },
+    "thresholdSource": "productionStandard.ttsFirstStandard.audioQualityGates + ttsFirstMuxManifest.audioQualityGates — guard가 6개 threshold verbatim 정합"
+  },
+
+  "muxPolicyStandard": {
+    "naturalDurationRule": "최종 길이는 대본의 자연 발화가 결정 (v3.2 = 53.97s) — 고정 길이 목표(30/40/60s) 금지.",
+    "paddingUsed": "금지",
+    "atempoUsed": "금지",
+    "hardTrimUsed": "금지",
+    "fixedDurationTarget": "금지",
+    "holdAfterSpeechSec": 0.6,
+    "holdAfterSpeechMaxSec": 0.8,
+    "expectedFfprobe": {
+      "width": 1080,
+      "height": 1920,
+      "videoCodec": "h264",
+      "rFrameRate": "30/1",
+      "audioCodec": "aac",
+      "audioStreamCount": 1,
+      "videoDurationSec": 53.966667,
+      "audioDurationSec": 53.359002
+    },
+    "mediaGateRule": "media gate = 1080x1920 && h264 && 30/1 && audioStreamCount 1 && |muxDur - videoEnd| <= 0.25. media validity일 뿐 quality pass 아님.",
+    "regenerationNote": "TTS 비결정성으로 mux md5는 재생성 시 달라짐 — md5 대조는 재현 불가. 동등성은 threshold·게이트 수준에서 정의. probe/frame 재실행은 이 slice에서 금지.",
+    "thresholdSource": "productionStandard.ttsFirstStandard + acceptanceLock.expectedFfprobe/naturalDuration"
+  },
+
+  "artifactAuditStandard": {
+    "role": "mux 후 4-gate artifact audit — media/audio/captionCard/story 전부 PASS여야 candidate. 이 slice는 게이트 구조·판정 규칙만 고정하고 어떤 audit도 실행하지 않는다.",
+    "gates": ["media", "audio", "captionCard", "story"],
+    "gateRules": {
+      "media": "probe 기준 1080x1920 h264 30/1 audio 1 + duration 정합",
+      "audio": "audioQualityGateStandard 6개 서브체크 AND",
+      "captionCard": "minDwell >= 0.58 && 모든 anchorWord entry tolerance 이내(또는 early) && bottomFixedSubtitleBar=false",
+      "story": "threeVisibleWhenSpoken && textMatches (phrase=beat=scene 1:1)"
+    },
+    "verdictRule": "media && audio && captionCard && story → PASS_CANDIDATE_PENDING_VISION_QA. 하나라도 FAIL이면 verdict FAIL.",
+    "visionQaSeparation": "Claude vision QA(6 frames)는 audit gate와 별개 단계 — 자동 4-gate PASS가 vision QA를 대체하지 않는다. audit report의 claudeVisionQa는 PENDING로 시작한다.",
+    "storyGateAnchor": {
+      "word": "세 개",
+      "rule": "'세 개' 발화 시각에 slot 3개(ov22/ov23/ov24)가 전부 화면에 있어야 함 (threeVisibleWhenSpoken)"
+    },
+    "thresholdSource": "v3.2 audit runner 4-gate 로직 + acceptanceLock.artifactAudit"
+  },
+
+  "qaReadinessSeparation": {
+    "role": "technical pass ≠ Golden Sample pass — 기술 게이트 전부 통과해도 Owner 체감 QA에서 reject 가능 (v3.1 선례).",
+    "preUploadGates": [
+      "media_audit_pass",
+      "story_gate_pass",
+      "visual_evidence_pass",
+      "typography_caption_pass",
+      "tts_audio_artifact_pass",
+      "owner_viewing_listening_pass"
+    ],
+    "ownerViewingListeningPass": "마지막 gate는 Owner의 직접 시청/청취 — 자동화로 대체 불가",
+    "uploadReadyRule": "Owner의 명시적 업로드 승인 전까지 uploadReady=false 유지",
+    "automationExpansionReadyRule": "별도 자동화 구현 승인 전까지 automationExpansionReady=false 유지",
+    "thresholdSource": "productionStandard.qaReadiness — guard가 6개 preUploadGate + owner_viewing_listening_pass 분리 정합"
+  },
+
+  "pipelineOrder": [
+    "1. Script Impact Gate (required 6점수 + hardFail 0) — PASS 전 live TTS 0회",
+    "2. one-shot full narration TTS (with timestamps, apiCallBudget <= 2)",
+    "3. word/phrase re-anchor (entry tolerance 120ms, no padding/atempo/hard-trim)",
+    "4. mux (natural duration, hold 0.6~0.8s)",
+    "5. audio quality gate (6 서브체크 AND)",
+    "6. 4-gate artifact audit (media/audio/captionCard/story)",
+    "7. Claude vision QA (별개 단계) → Owner viewing/listening QA → acceptance lock"
+  ],
+
+  "integration": {
+    "sliceOneToThree": {
+      "note": "Script Impact Gate는 Slice 1 story causality를 점수화하고, re-anchor는 Slice 3 overlay-spec를 TTS 시각에 매핑한다 — sample plan은 상위 slice 산출물을 참조해야 한다"
+    },
+    "manifestRefRequired": ["v3.2 tts-first mux manifest", "v3.2 acceptance lock", "production standard fixture"],
+    "failIfMissing": "plan에 v3.2 mux manifest 또는 acceptance-lock 참조가 없으면 standard harness와 static guard 모두 fail한다"
+  },
+
+  "forbiddenBehavior": [
+    "live TTS 또는 유료/무료 TTS API 호출",
+    "audio/video 파일 읽기·분석",
+    "동영상 합성 도구 / probe / 무음탐지 실행",
+    "render/mux 재생성",
+    "audio/video 생성",
+    "ChatGPT/Playwright/browser 실행",
+    "이미지 생성",
+    "OpenAI/FLUX2/BFL/Gemini/Midjourney/ElevenLabs live 호출",
+    "upload 또는 upload queue",
+    "env/secret 읽기·쓰기, voice id/api key 출력·저장",
+    "Script Impact Gate PASS 없이 TTS budget 소비",
+    "apiCallBudget 상한(2회) 초과",
+    "padding/atempo/hard-trim/고정 길이 목표 채택",
+    "audio gate threshold drift (6개 서브체크 완화)",
+    "vision QA 또는 Owner viewing/listening QA 자동 대체",
+    "audit 8번째 inline 클론 생성 — 공유 threshold 계약만 허용",
+    "v3.2 mux manifest/acceptance-lock 참조 없는 plan 실행"
+  ],
+
+  "changeControl": {
+    "modification": "Owner 승인 slice로만 수정 가능",
+    "versioning": "새 Golden Sample이 더 나은 기준을 세우면 v2 계약으로 승격 — 이 v1을 소급 수정하지 않는다"
+  }
+}

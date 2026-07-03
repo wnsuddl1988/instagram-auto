@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "golden_sample_tts_audio_audit_plan_v1",
+  "taskId": "golden-sample-v3-2-tts-audio-audit-standardization-v1",
+  "status": "NO_LIVE_SAMPLE_PLAN_V1",
+  "createdAt": "2026-07-03",
+  "nature": "예시 plan fixture — TTS/audio/mux/audit 실행 승인이 아니다. accepted Golden Sample v3.2(t1_lifestyle_inflation)의 Script Impact Gate·TTS·re-anchor·audio gate·mux·artifact audit 실측을 표준 plan 스키마로 정규화한 no-live 예시이며, 이 fixture의 존재가 live TTS·audio 분석·mux 재생성을 승인하지 않는다.",
+  "contractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveAudioAnalysisApproved": false
+  },
+
+  "manifestRefs": {
+    "ttsFirstMuxManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json",
+    "acceptanceLock": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "productionStandard": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "visualRenderManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+    "note": "integration.failIfMissing — v3.2 mux manifest 또는 acceptance-lock 참조가 없으면 harness/guard 모두 fail"
+  },
+
+  "ownerTopicApproval": {
+    "topicId": "t1_lifestyle_inflation",
+    "title": "월급이 올라도 통장이 그대로인 이유",
+    "approved": true,
+    "approvedScope": "Golden Sample v3.2 제작/검증 범위 한정 — 테스트 주제. 이 plan은 해당 승인 범위의 정규화 표현일 뿐 신규 TTS/mux 승인이 아니다.",
+    "approvalSourceNote": "acceptance lock ownerVerdict(v3.2 잠정 채택) + mux manifest ownerApproval",
+    "permanentChannelWideTopicLock": false
+  },
+
+  "scriptImpactGate": {
+    "evaluatedBeforeLiveTts": true,
+    "verdict": "PASS",
+    "hardFails": 0,
+    "scores": {
+      "hook_self_relevance_score": 91,
+      "story_causality_score": 92,
+      "problem_solution_bridge_score": 91,
+      "solution_specificity_score": 92,
+      "save_worthiness_score": 89,
+      "spoken_naturalness_score": 90
+    },
+    "requiredScores": {
+      "hook_self_relevance_score": 90,
+      "story_causality_score": 90,
+      "problem_solution_bridge_score": 90,
+      "solution_specificity_score": 90,
+      "save_worthiness_score": 88,
+      "spoken_naturalness_score": 88
+    },
+    "hardFailChecks": {
+      "generic_hook": false,
+      "explains_but_does_not_sting": false,
+      "weak_problem_solution_bridge": false,
+      "abstract_solution_ending": false,
+      "three_things_unnamed": false,
+      "invented_stats_or_facts": false,
+      "topic_changed_from_accepted_visual": false
+    },
+    "sourceNote": "mux manifest scriptImpactGate.selfAssessment/required/hardFailCheck 정규화 — 점수 생산 주체는 Owner 결정 #1 미결"
+  },
+
+  "tts": {
+    "strategy": "full_narration_one_shot",
+    "sceneBySceneTts": false,
+    "endpointKind": "text_to_speech_with_timestamps",
+    "provider": "elevenlabs",
+    "apiCallBudgetMax": 2,
+    "liveTtsCalls": 1,
+    "requireLiveTtsGuard": true,
+    "retry": false,
+    "reuseExistingAudioIfPresent": true,
+    "keyValueLeaked": false,
+    "sourceNote": "mux manifest tts + acceptance lock audioQuality.liveTtsCalls(1)/liveTtsCap(2) — voice id/api key 미포함(secret 출력 금지)"
+  },
+
+  "wordPhraseReAnchor": {
+    "mandatory": true,
+    "entryToleranceMs": 120,
+    "measuredMaxDeltaMs": 50,
+    "minDwellSec": 0.99,
+    "overlayCount": 29,
+    "wordAnchoredCount": 27,
+    "sceneEntryCount": 2,
+    "paddingUsed": false,
+    "atempoUsed": false,
+    "hardTrimUsed": false,
+    "sourceNote": "acceptance lock wordPhraseAnchoredCaptions(overlayCount 29/wordAnchored 27/maxEntryDeltaMs 50/toleranceMs 120/minDwellSec 0.99)"
+  },
+
+  "audioQualityGate": {
+    "beginningSilenceSec": 0,
+    "first5sSilenceSec": 0.35,
+    "totalSilenceRatio": 0.0682,
+    "speechActiveRatio": 0.932,
+    "clippedTail": false,
+    "tailHoldSec": 0.61,
+    "thresholds": {
+      "beginningSilenceMaxSec": 0.6,
+      "first5sSilenceMaxSec": 0.8,
+      "totalSilenceRatioMax": 0.18,
+      "speechActiveRatioMin": 0.72,
+      "tailHoldSecRange": [0.3, 0.8]
+    },
+    "subChecksPass": {
+      "beginningPass": true,
+      "first5sPass": true,
+      "ratioPass": true,
+      "speechActivePass": true,
+      "tailHoldPass": true,
+      "notClippedTail": true
+    },
+    "sourceNote": "acceptance lock audioQuality 실측 + production standard/mux manifest audioQualityGates threshold — 6개 서브체크 전부 PASS"
+  },
+
+  "muxPolicy": {
+    "naturalDurationSec": 53.97,
+    "fixedTargetUsed": false,
+    "paddingUsed": false,
+    "atempoUsed": false,
+    "hardTrimUsed": false,
+    "tailHoldSec": 0.61,
+    "probeExpected": {
+      "width": 1080,
+      "height": 1920,
+      "videoCodec": "h264",
+      "rFrameRate": "30/1",
+      "audioCodec": "aac",
+      "audioStreamCount": 1,
+      "videoDurationSec": 53.966667,
+      "audioDurationSec": 53.359002
+    },
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "sourceNote": "acceptance lock naturalDuration + expectedFfprobe + lockedArtifacts.muxMd5 (재생성 시 md5 상이 — 재현 대조 아님)"
+  },
+
+  "artifactAudit": {
+    "gates": {
+      "media": true,
+      "audio": true,
+      "captionCard": true,
+      "story": true
+    },
+    "verdict": "PASS_CANDIDATE_PENDING_VISION_QA",
+    "claudeVisionQa": "PASS (6 frames reviewed)",
+    "claudeVisionQaSeparateStage": true,
+    "storyGateAnchor": {
+      "word": "세 개",
+      "spokenAtSec": 44.93,
+      "slotEntriesSec": [39.66, 41.18, 42.74],
+      "threeVisibleWhenSpoken": true
+    },
+    "sourceNote": "acceptance lock artifactAudit(4-gate + claudeVisionQa PASS) + threeSlotGate. 자동 4-gate PASS는 vision QA/Owner QA를 대체하지 않는다."
+  },
+
+  "qaReadiness": {
+    "preUploadGatesPassed": [
+      "media_audit_pass",
+      "story_gate_pass",
+      "visual_evidence_pass",
+      "typography_caption_pass",
+      "tts_audio_artifact_pass"
+    ],
+    "ownerViewingListeningPass": "PENDING — Owner 직접 시청/청취 대기 (자동 대체 불가)",
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "sourceNote": "production standard qaReadiness.preUploadGates — owner_viewing_listening_pass는 미완(자동화 대체 금지)"
+  },
+
+  "executionMode": {
+    "approvedNow": "dry_run_static_validation_only",
+    "liveTtsApprovedNow": false,
+    "liveMuxApprovedNow": false,
+    "liveAudioAnalysisApprovedNow": false,
+    "liveRequires": "별도 Owner 승인 slice + contract 준수 + Script Impact Gate PASS + live guard flag/env"
+  }
+}
