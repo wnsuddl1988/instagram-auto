@@ -3113,3 +3113,17 @@ QA-only slice. 코드 변경 없음.
 - 리뷰 지적 반영: static check 강화 3건(주석 제거 후 순서 검사+guard 전 await 금지, body 구조분해 우회 감지, 파라미터명 동적 추출, 행동 assertion 필수화) + fixture에 uploadBlocked 범위 한정과 out-of-scope 경로(--arm CLI runner는 자체 게이트·수동 전용, lib/youtube dead code) 문서화.
 - 범위 이탈 없음: 허용 6파일만 변경. n8n/UploadPanel은 /api/upload 경유이므로 이 slice로 403 차단됨(코드 무변경). live HTTP POST 테스트/서버 기동 없음(preview 미사용 — 금지 사항 준수).
 - 금지 미수행: 실업로드 0 · Instagram/YouTube API 0 · queue 생성 0 · 이미지/TTS/render/mux 0 · env/DB/dependency 변경 0 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## v3.2 Slice 1 — story/visual evidence contract + static guard (`golden-sample-v3-2-story-visual-evidence-static-guard-v1` — 2026-07-03)
+
+**v3.2 production standard의 story gate / visual evidence gate를 기계 검증 가능한 계약 + no-live 정적 가드로 고정 완료. 이미지 생성/API/TTS/render/upload 호출 0, 기존 구현 코드 수정 0.**
+
+- 신규 3파일:
+  - `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json` — storyGate 6점수 임계(90×4/88×2, standard JSON과 guard가 일치 검증)+hard fail 6코드+scoreProvenance 5필드 의무, 인과 체인(phase 순서/bridge/1:1:1/placeholder 금지), visual evidence stable 6필드(claim/must_show/must_not_show/no_card_understanding/card_caption_role/reject_reasons — standard 필드명 매핑 문서화), 화폐 hard-fail 7코드+money_dominant 규칙, owner_topic_confirmation 스키마, safeFrame(1580/1632, bbox 한계 명시+Slice 3 TODO — 침묵 skip 아님), noLivePolicy.
+  - `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json` — accepted v3.2 샘플의 정규화(신규 승인 아님). 9 beat=phrase=scene 체인을 blueprint/tts-anchored manifest에서 verbatim 이전(message/bridge/imageId/md5/narration/timing), 6필드 evidence는 blueprint prose의 구조화, 점수/hardFail은 mux manifest 값 무변경(키 매핑 normalizationNotes로 문서화), money_dominant는 patch_summary ground truth와 일치.
+  - `scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs` — no-live/no-network/no-env/no-write 정적 가드. 레포 fixture 5개(계약/샘플/standard/blueprint/manifest)만 읽어 **68 checks ALL PASS**, 위반 시 exit 1, `--sample <path>`로 음성 테스트 지원(값 누락 시 exit 2).
+- guard 검증 축: 임계값 standard 일치(드리프트 방지)·계약 리스트 literal 고정(공허화 방지)·점수 provenance(익명 점수 fail, placeholder 'TBD' 차단, 점수 유한+≤100)·hard fail 6코드 전부 false·phase 순서/bridge/beat=phrase=scene·placeholder(zero-width 위장 포함)·6필드 정확 존재+non-empty·카드 의존 scene fail·화폐 7코드+money_clarity_fail(money_dominant scene)·**money_dominant를 blueprint patch_summary ground truth와 교차 강제**·정규화 fidelity(blueprint/manifest verbatim 교차)·mediaFacts(53.97s/tailHold 0.61 표준 범위)·bottomFixedSubtitle=false·금지 패턴 스캔(스캐너는 분할-연결 토큰만 보유, NOTE로 예외 명시 보고).
+- 검증: ① `node --check` PASS ② JSON parse 전부 PASS(가드 내 checks 포함) ③ guard **ALL PASS 68/68** ④ fail-closed 음성 테스트: scratchpad 변조 8종(provenance 누락/6필드 누락/카드 의존/bridge 누락/임계 미달/미승인 주제/**돈 주연 위장**/placeholder provenance) **전부 non-zero exit** ⑤ 금지 패턴 9종 스캔 신규 3파일 0건 ⑥ 읽기 전용 adversarial 리뷰 2종: spec 렌즈 SAFE(HANDOFF 계약 의미 전 항목+정규화 fidelity 9/9 확인), bypass 렌즈가 지적한 major 1건(money_dominant 자기신고)+minor 3건(계약 리스트 ?? [] 공허화/provenance placeholder·점수 상한/--sample fallback footgun)+info 하드닝(zero-width isStr/reject 중복/presence 분리) **전부 수정 반영 후 재검증 완료**.
+- 범위 이탈 없음: 허용 파일만 생성/변경(신규 3 + HANDOFF status 1줄 + 본 append). 기존 generation/render/TTS/upload 코드 무접촉, 보호 파일 무접촉, commit/push 없음.
+- 남은 한계(계약에 명시): per-element pixel bbox 기하 gate는 overlay_spec이 레포 외부(C:\tmp)라 이 slice에서 불가 — Slice 3 TODO. 정규화 fidelity 검사(§6-7)는 t1 고정이므로 미래 생성 샘플에는 스키마 검사부만 재사용(bypass 리뷰 info 지적, 후속 slice에서 분리 필요). 점수 생산 주체 공인은 Owner 결정 #1로 미결.

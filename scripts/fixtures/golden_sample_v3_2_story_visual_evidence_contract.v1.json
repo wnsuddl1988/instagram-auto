@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "golden_sample_story_visual_evidence_contract_v1",
+  "taskId": "golden-sample-v3-2-story-visual-evidence-static-guard-v1",
+  "status": "STORY_VISUAL_EVIDENCE_CONTRACT_V1",
+  "createdAt": "2026-07-03",
+  "nature": "계약/스키마 — 자동화 구현 아님. 이 계약의 존재가 이미지 생성/ChatGPT+Playwright 실행/유료 API/TTS/render/mux/upload/자동화 확장 승인을 의미하지 않음.",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false
+  },
+
+  "basedOn": {
+    "productionStandardDoc": "_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md",
+    "productionStandardFixture": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+    "gapAnalysisFixture": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "gapAnalysisSlice": "Slice 1 — Story/Visual-Evidence 계약 + 정적 가드 (low-risk foundation)",
+    "goldenSample": "Golden Sample v3.2 / t1_lifestyle_inflation (mux md5 9f5ad22c02cb4f4f813a1ed16fd658b0)",
+    "safetyCheckpoint": "b4b4b2d feat(safety): add fail-closed upload hard block guard"
+  },
+
+  "purpose": "자동화 구현 전에 v3.2 production standard의 story gate / visual evidence gate를 기계 검증 가능한 계약으로 고정한다. 미래 generation 작업은 (1) Owner 주제 확정, (2) Story-Causality First, (3) Visual Evidence Second, (4) Story Impact Gate 점수+provenance, (5) beat=phrase=scene 정렬, (6) per-scene visual evidence reject 규칙을 건너뛸 수 없다.",
+
+  "storyGate": {
+    "appliesBefore": "live TTS 호출 전 — runner가 코드로 강제한다 (v3.2 선례: 미통과 시 TTS fetch 전 abort, exit 30)",
+    "requiredScores": {
+      "hook_self_relevance": 90,
+      "story_causality": 90,
+      "problem_solution_bridge": 90,
+      "solution_specificity": 90,
+      "save_worthiness": 88,
+      "spoken_naturalness": 88
+    },
+    "thresholdSource": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json#storyGate.requiredScores — static guard가 로드해 이 계약과의 완전 일치를 검증한다 (이중 관리 드리프트 방지)",
+    "hardFailCodes": [
+      "generic_hook",
+      "weak_problem_solution_bridge",
+      "abstract_only_solution",
+      "three_things_mentioned_but_not_named_or_shown",
+      "invented_statistics_or_facts",
+      "topic_changed_without_owner_approval"
+    ],
+    "hardFailRule": "hardFailCodes 중 하나라도 true면 즉시 재작성 대상 — TTS 진입 금지",
+    "scoreProvenance": {
+      "required": true,
+      "requiredFields": ["scorer", "source", "date", "method", "notes"],
+      "rule": "점수는 익명일 수 없다 — 점수가 존재하는데 scoreProvenance가 없거나 필수 필드가 비어 있으면 guard fail",
+      "openOwnerDecision": "점수 생산 주체 공인(self-assessment / LLM-judge / Codex 판정)은 gap analysis Owner 결정 #1로 미결 — 이 계약은 provenance 기록을 강제할 뿐 주체를 확정하지 않는다"
+    }
+  },
+
+  "storyCausalityChain": {
+    "canonicalPhaseOrder": ["hook", "problem", "cause", "illusion", "reframe", "action", "result"],
+    "requiredPhases": ["problem", "cause", "illusion", "reframe", "action", "result"],
+    "hookRule": "hook phase는 체인 최선두에 필수 — Story Gate의 hook_self_relevance 점수와 generic_hook hard fail의 대상이다",
+    "beatPhaseMap": {
+      "hook": "hook",
+      "problem": "problem",
+      "cause_a": "cause",
+      "cause_b": "cause",
+      "illusion": "illusion",
+      "reframe": "reframe",
+      "action_a": "action",
+      "action_b": "action",
+      "result": "result"
+    },
+    "orderRule": "phase는 canonicalPhaseOrder를 따라 비내림차순으로만 진행하고 requiredPhases가 전부 최소 1회 등장해야 한다",
+    "bridgeRule": "마지막 result beat를 제외한 모든 beat는 non-empty string bridge_to_next 필수 — 마지막 beat는 null",
+    "alignmentRule": "beat 수 = phrase 수 = scene 수 (1:1:1). sceneId/phraseId 중복 금지, 같은 beat 라벨 중복 금지",
+    "countPolicy": "이미지/scene 개수는 story-driven — 고정 개수(4/6/9) 강제 금지. guard는 개수 자체가 아니라 1:1:1 정렬과 accepted 아티팩트와의 일치를 검증한다",
+    "placeholderRule": "message/narration/bridge 텍스트에 placeholder 및 빈 문자열 금지",
+    "placeholderPatterns": ["TBD", "TODO", "PLACEHOLDER", "LOREM", "XXX", "???", "미정", "채워넣기"]
+  },
+
+  "visualEvidence": {
+    "requiredFields": ["claim", "must_show", "must_not_show", "no_card_understanding", "card_caption_role", "reject_reasons"],
+    "exactlySixFields": true,
+    "fieldNameMappingToProductionStandard": {
+      "claim": "claim",
+      "must_show": "must_show",
+      "must_not_show": "must_not_show",
+      "no_card_understanding": "understandable_without_card",
+      "card_caption_role": "card_caption_adds",
+      "reject_reasons": "reject_reasons"
+    },
+    "fieldRules": {
+      "claim": "non-empty string — 이 이미지가 증명하는 주장",
+      "must_show": "non-empty string array — 반드시 보여야 하는 것",
+      "must_not_show": "non-empty string array — 나오면 안 되는 것",
+      "no_card_understanding": "object { understandable_without_card: 반드시 true, reason: non-empty string } — false거나 누락이면 해당 scene은 카드/캡션 없이는 이해 불가한 scene으로 간주하고 fail",
+      "card_caption_role": "non-empty string — 카드/caption이 이미지에 무엇을 더하는지",
+      "reject_reasons": "non-empty string array — 재생성 트리거 코드"
+    },
+    "cardRule": "카드는 이미지를 강화한다 — 무관한 이미지를 구조하지 않는다. 카드를 지웠을 때 이미지가 스토리와 무관해 보이면 그 scene은 fail",
+    "baseRejectCodes": ["visual_evidence_mismatch", "korean_context_break"],
+    "moneyDominantExtraRejectCodes": ["money_clarity_fail"],
+    "koreanMoneyHardFailCodes": [
+      "foreign_currency_feel",
+      "old_archive_or_dated_finance_texture",
+      "unknown_money",
+      "fake_readable_text_or_numbers",
+      "broken_glyphs",
+      "mosaic_or_blurred_money_when_money_should_be_clear",
+      "blank_paper_pretending_to_be_money"
+    ],
+    "moneyDominantRule": "각 scene의 image는 money_dominant boolean 필수. money_dominant=true인 scene의 reject_reasons는 koreanMoneyHardFailCodes 7개 + moneyDominantExtraRejectCodes를 전부 포함해야 한다. 모든 scene은 baseRejectCodes를 포함해야 한다.",
+    "rejectCodeSource": "production standard v1 koreanMoneyVisualStandard.hardFails(7코드, guard가 set 일치 검증) + imageGenerationStandard.regenerationTriggers('visual evidence 불충족'→visual_evidence_mismatch, '한국 맥락 이탈'→korean_context_break, 'money clarity fail'→money_clarity_fail)"
+  },
+
+  "ownerTopicConfirmation": {
+    "requiredBlock": "owner_topic_confirmation",
+    "requiredFields": ["topicId", "title", "approved", "approvedScope", "approvalSourceNote", "permanentChannelWideTopicLock"],
+    "rules": [
+      "approved === true가 아니면 fail — 현재 sample에 대한 승인이 기계 판독으로 존재해야 한다",
+      "permanentChannelWideTopicLock === false 필수 — 주제 확정은 채널 전체 영구 lock이 아니다 (Owner 통제)",
+      "topicId / title / approvedScope / approvalSourceNote는 non-empty string"
+    ]
+  },
+
+  "safeFrame": {
+    "canvas": "1080x1920",
+    "textMaxY": 1580,
+    "graphicMaxY": 1632,
+    "bottomFixedSubtitleBar": false,
+    "karaokeFixedLowerLine": false,
+    "thresholdSource": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json#typographyCaptionStandard.safeFrame — guard가 일치 검증",
+    "checkableNow": [
+      "계약 임계값(1580/1632)이 production standard safeFrame과 일치",
+      "v3.2 tts-anchored render manifest의 typography.bottomFixedSubtitle === false",
+      "sample mediaFacts.bottomFixedSubtitle === false"
+    ],
+    "geometryCheckLimitation": "v3.2 visual render manifest(레포 내)는 overlay id/타이밍/scene 매핑만 담고 per-element pixel bbox(x/y/폰트 크기)를 담지 않는다. bbox는 overlay_spec.v3_1.json(C:\\tmp\\money-shorts-os\\... — 레포 외부·휘발 경로)에만 있어, 이 slice의 정적 guard는 text y2<=1580 / graphic y2<=1632를 픽셀 단위로 직접 검사할 수 없다. 침묵 skip이 아니라 이 필드로 한계를 명시하고 검사 가능한 항목(checkableNow)은 전부 검사한다.",
+    "todo": "Slice 3(Pillow renderer production화)에서 overlay-spec JSON을 레포 내 계약 산출물로 승격하고 bbox 기하 gate(text y2<=1580, graphic y2<=1632, 읽기 가능한 줄 길이, card 겹침)를 정적 검사로 연결한다"
+  },
+
+  "noLivePolicy": {
+    "noImageGeneration": true,
+    "noChatgptPlaywrightExecution": true,
+    "noPaidApiCalls": true,
+    "noLiveTts": true,
+    "noRenderOrMux": true,
+    "noUpload": true,
+    "noUploadQueue": true,
+    "noEnvOrSecretAccess": true,
+    "noNetwork": true,
+    "noWrite": true,
+    "guardScript": "scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs"
+  },
+
+  "changeControl": {
+    "modification": "Owner 승인 slice로만 수정 가능",
+    "versioning": "새 Golden Sample이 더 나은 기준을 세우면 v2 계약으로 승격 — 이 v1을 소급 수정하지 않는다"
+  }
+}

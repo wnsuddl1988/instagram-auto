@@ -1,0 +1,473 @@
+{
+  "schemaVersion": "golden_sample_story_visual_evidence_sample_v1",
+  "taskId": "golden-sample-v3-2-story-visual-evidence-static-guard-v1",
+  "contractRef": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+  "createdAt": "2026-07-03",
+  "nature": "accepted v3.2 Golden Sample(t1_lifestyle_inflation)을 새 계약 스키마로 정규화한 검증용 sample fixture — 새 영상/새 주제 승인이 아니며 기존 accepted 아티팩트를 변경하지 않는다. visual_evidence 6필드는 blueprint의 visual_evidence prose/patch 근거를 구조화한 것이다.",
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false
+  },
+
+  "normalizedFrom": {
+    "storyBlueprint": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json",
+    "ttsFirstMuxManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json",
+    "ttsAnchoredRenderManifest": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+    "acceptanceLockFixture": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0"
+  },
+
+  "normalizationNotes": {
+    "scoreKeyMapping": "mux manifest scriptImpactGate.selfAssessment의 *_score 접미사를 production standard 키명에 맞춰 제거 — 값 무변경 (91/92/91/92/89/90)",
+    "hardFailKeyMapping": {
+      "abstract_solution_ending": "abstract_only_solution",
+      "three_things_unnamed": "three_things_mentioned_but_not_named_or_shown",
+      "invented_stats_or_facts": "invented_statistics_or_facts",
+      "topic_changed_from_accepted_visual": "topic_changed_without_owner_approval"
+    },
+    "droppedMuxOnlyCheck": "explains_but_does_not_sting=false — production standard hardFails 목록 밖의 mux 전용 체크라 정규화 대상에서 제외 (원 값은 mux manifest fixture에 보존)",
+    "moneyDominantSource": "blueprint patch_summary — patched(_krw 신규 5컷: hook/cause_a/illusion/action_a/action_b)=money_dominant true, retained(4컷)=false. guard가 이 ground truth와의 일치를 강제한다."
+  },
+
+  "owner_topic_confirmation": {
+    "topicId": "t1_lifestyle_inflation",
+    "title": "월급이 올라도 통장이 그대로인 이유",
+    "approved": true,
+    "approvedScope": "Golden Sample v3.2 제작/검증 범위 한정 — 테스트 주제. 이 sample fixture는 해당 승인 범위의 정규화 표현일 뿐 신규 생성 승인이 아니다.",
+    "approvalSourceNote": "blueprint topic_status '테스트 주제 유지 — 채널 전체 영구 확정 아님 (Owner 통제)' + v3.2 mux manifest ownerApproval(script impact rework 승인) + acceptance lock checkpoint 062eb02",
+    "permanentChannelWideTopicLock": false
+  },
+
+  "storyGate": {
+    "scores": {
+      "hook_self_relevance": 91,
+      "story_causality": 92,
+      "problem_solution_bridge": 91,
+      "solution_specificity": 92,
+      "save_worthiness": 89,
+      "spoken_naturalness": 90
+    },
+    "scoreProvenance": {
+      "scorer": "claude_code_action_ai_self_assessment (v3.2 script impact rework 세션)",
+      "source": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.selfAssessment (+ rationale 6항목)",
+      "date": "2026-07-03",
+      "method": "수동 self-assessment(항목별 rationale 포함)를 v3.2 runner가 임계값 비교 + hardFailCheck로 코드 강제 — 미통과 시 TTS fetch 전 abort(exit 30). 점수 생산 주체의 공인은 미결(gap analysis Owner 결정 #1).",
+      "notes": "gap analysis 경고 계승: self-assessment 숫자는 '도장 찍기' 위험이 있으므로 자동화 확장 전 점수 생산 주체(self/LLM-judge/Codex) 결정이 선행돼야 한다. 이 provenance는 v3.2 당시 사실의 기록이다."
+    },
+    "hardFailChecks": {
+      "generic_hook": false,
+      "weak_problem_solution_bridge": false,
+      "abstract_only_solution": false,
+      "three_things_mentioned_but_not_named_or_shown": false,
+      "invented_statistics_or_facts": false,
+      "topic_changed_without_owner_approval": false
+    },
+    "verdict": "PASS",
+    "enforcementEvidence": "v3.2 runner가 Script Impact Gate를 TTS fetch 전에 코드로 강제 (mux manifest scriptImpactGate.rule + verdict PASS)"
+  },
+
+  "chain": [
+    {
+      "beat": "hook",
+      "phase": "hook",
+      "sceneId": "s1",
+      "phraseId": "p1_hook",
+      "message": "월급은 올랐는데 통장은 그대로 — 느낌이 아니라 사실",
+      "bridge_to_next": "그 사실을 월말 잔액 확인 장면으로 이어 확인",
+      "narrationText": "월급은 올랐는데 통장은 왜 그대로일까요. 느낌이 아니라 사실입니다.",
+      "timing": { "sceneStartSec": 0, "sceneEndSec": 4.81, "audioStartSec": 0, "audioEndSec": 4.63 },
+      "image": {
+        "imageId": "img_41_hook_envelope_vs_empty_jar_krw",
+        "md5": "25291145457eaf4e5bfdbb133de97d3c",
+        "money_dominant": true,
+        "visual_evidence": {
+          "claim": "월급(들어오는 돈)은 늘었는데 통장(쌓이는 돈)은 비어 있다 — 모순이 한 프레임에 실재한다",
+          "must_show": [
+            "선명한 원화풍 지폐 부채꼴이 든 월급봉투",
+            "동전 2개뿐인 거의 빈 유리병",
+            "봉투(인상) vs 빈 병(안 쌓임)의 한 프레임 대비 구도"
+          ],
+          "must_not_show": [
+            "외화 느낌 지폐",
+            "읽히는 척하는 가짜 텍스트/숫자",
+            "블러/모자이크 처리된 돈",
+            "무지/빈종이 느낌 지폐"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "가득 찬 봉투와 거의 빈 병의 대비만으로 '들어오는데 안 쌓인다'는 모순이 카드 없이 전달된다 — 병 모티프의 시작점"
+          },
+          "card_caption_role": "'월급은 올랐는데 / 통장은 그대로' 훅 문구가 모순을 언어로 고정하고, '느낌이 아니라 사실' 캡션이 시청자 자신의 통장을 소환한다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break",
+            "money_clarity_fail",
+            "foreign_currency_feel",
+            "old_archive_or_dated_finance_texture",
+            "unknown_money",
+            "fake_readable_text_or_numbers",
+            "broken_glyphs",
+            "mosaic_or_blurred_money_when_money_should_be_clear",
+            "blank_paper_pretending_to_be_money"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "problem",
+      "phase": "problem",
+      "sceneId": "s2",
+      "phraseId": "p2_problem",
+      "message": "분명 더 버는데 월말 잔액은 제자리",
+      "bridge_to_next": "돈은 어디로 갔을까 — 원인 추적으로 진입",
+      "narrationText": "분명 더 버는데 월말 잔액은 늘 제자리, 나만 이런가 싶죠.",
+      "timing": { "sceneStartSec": 4.81, "sceneEndSec": 9.32, "audioStartSec": 4.81, "audioEndSec": 8.88 },
+      "image": {
+        "imageId": "img_32_problem_wallet_check_night",
+        "md5": "8953f340162d56d27ea78d925545d6a9",
+        "money_dominant": false,
+        "visual_evidence": {
+          "claim": "더 버는데도 월말 잔액이 제자리인 실망은 실제 감정으로 존재한다",
+          "must_show": [
+            "월말 밤 주방의 생활 맥락",
+            "얇은 지갑을 확인하는 30대 여성",
+            "허탈한 표정/자세 (잔액 실망의 감정 증거)"
+          ],
+          "must_not_show": [
+            "선명한 지폐가 주연이 되는 구도 (돈 비노출 인물 감정 컷)",
+            "과장된 우울/절망 연출",
+            "비한국적 주거/주방 맥락"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "지갑을 열어 확인하고 허탈해하는 인물의 표정과 밤 시간대만으로 '기대보다 남은 게 없다'는 상황이 카드 없이 전달된다"
+          },
+          "card_caption_role": "'분명 더 버는데 / 월말 잔액 제자리' 패널이 감정의 원인을 수치적 상황으로 특정하고 '나만 이런가' 공감 브릿지를 붙인다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "cause_a",
+      "phase": "cause",
+      "sceneId": "s3",
+      "phraseId": "p3_causeA",
+      "message": "고정비/자동이체가 오른 만큼을 먼저 흡수한다",
+      "bridge_to_next": "정렬된 선차감 다음, 흩어져 빠지는 소비로 연결",
+      "narrationText": "이유가 있어요. 월급 인상은 한 번인데 오른 고정비는 자동이체로 매달 반복해서 빠져나가거든요.",
+      "timing": { "sceneStartSec": 9.32, "sceneEndSec": 15.8, "audioStartSec": 9.32, "audioEndSec": 15.48 },
+      "image": {
+        "imageId": "img_43_causeA_orderly_fixed_outflow_krw",
+        "md5": "67b55fb2793c297f320aa1b1f3837d4e",
+        "money_dominant": true,
+        "visual_evidence": {
+          "claim": "오른 고정비/자동이체가 인상분을 정해진 곳으로 기계적으로 먼저 가져간다",
+          "must_show": [
+            "탑다운 구도의 월급봉투",
+            "4개 고지서 봉투에 반씩 꽂힌 선명한 원화풍 지폐 (봉투 반삽입 가림)",
+            "정렬된(기계적) 배치 — 자동이체의 규칙성"
+          ],
+          "must_not_show": [
+            "외화 연상 워터마크/타원 문양",
+            "블러 지폐",
+            "무질서하게 흩어진 배치 (s4 분산 소비 컷과 혼동 금지)",
+            "읽히는 척하는 가짜 텍스트/숫자"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "월급봉투에서 고지서 봉투들로 지폐가 반씩 꽂혀 나뉘는 정렬 구도만으로 '정해진 곳으로 먼저 빠져나간다'가 카드 없이 전달된다"
+          },
+          "card_caption_role": "'고정비 / 자동이체 / 매달' 라벨 칩이 각 봉투의 정체와 반복 주기를 특정한다 — 정확한 명칭은 renderer 카드 책임",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break",
+            "money_clarity_fail",
+            "foreign_currency_feel",
+            "old_archive_or_dated_finance_texture",
+            "unknown_money",
+            "fake_readable_text_or_numbers",
+            "broken_glyphs",
+            "mosaic_or_blurred_money_when_money_should_be_clear",
+            "blank_paper_pretending_to_be_money"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "cause_b",
+      "phase": "cause",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "message": "카드값/구독료/생활비가 조금씩 여러 곳에서 빠진다",
+      "bridge_to_next": "다 빠져나가는데 왜 못 느끼는가 — 착시로 연결",
+      "narrationText": "남은 돈도 카드값과 구독료와 생활비로 조금씩 새는데 하나하나는 작아서 티가 안 나요.",
+      "timing": { "sceneStartSec": 15.8, "sceneEndSec": 22.09, "audioStartSec": 15.8, "audioEndSec": 21.65 },
+      "image": {
+        "imageId": "img_34_causeB_scattered_lifestyle_spend",
+        "md5": "9e197e342098dc4e86356200d8811692",
+        "money_dominant": false,
+        "visual_evidence": {
+          "claim": "생활 소비가 여러 곳에서 조금씩 새고 있다 — 분산 유출의 물증",
+          "must_show": [
+            "밤 거실 테이블",
+            "엎어진 카드들 / 구겨진 영수증 / 테이크아웃 컵 (카드·영수증이 주연)",
+            "흩어진(무질서한) 배치 — s3의 정렬과 대조"
+          ],
+          "must_not_show": [
+            "지폐가 주연이 되는 구도 (지폐는 구석 소품)",
+            "정렬된 배치 (s3 고정비 컷과 혼동 금지)",
+            "비한국적 소품/맥락"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "카드·영수증·테이크아웃 컵이 어지럽게 흩어진 물증만으로 '조금씩 여러 곳에서 샌다'가 카드 없이 전달된다"
+          },
+          "card_caption_role": "'카드값 / 구독료 / 생활비' 라벨이 유출 항목의 이름을 특정하고 '조금씩' 라인이 무자각 소액 유출을 강조한다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "illusion",
+      "phase": "illusion",
+      "sceneId": "s5",
+      "phraseId": "p5_illusion",
+      "message": "기억나는 건 인상액 하나, 늘어난 지출은 안 보인다",
+      "bridge_to_next": "안 보이는 이유는 돈이 아니라 자리의 문제 — 재해석으로 연결",
+      "narrationText": "머릿속엔 오른 월급 하나만 선명하게 남고, 조용히 올라간 생활 기준은 안 보이거든요.",
+      "timing": { "sceneStartSec": 22.09, "sceneEndSec": 27.24, "audioStartSec": 22.09, "audioEndSec": 27.03 },
+      "image": {
+        "imageId": "img_45_illusion_one_bill_vs_receipt_wall_krw",
+        "md5": "c0a11bf91e52a313574bc2232f4c3b3c",
+        "money_dominant": true,
+        "visual_evidence": {
+          "claim": "기억에는 인상액 한 장만 선명하고 늘어난 지출(영수증 벽)은 흐릿하다 — 착시의 구도화",
+          "must_show": [
+            "눈앞의 선명한 오만원권풍 지폐 한 장 (풍죽도 계열 문양 + 색 밴드, 손가림/접힘으로 디테일 차단)",
+            "뒤편 벽의 흐릿한 영수증 수십 장",
+            "선명(지폐) vs 흐림(영수증)의 깊이 대비"
+          ],
+          "must_not_show": [
+            "지폐 자체가 블러/모자이크 처리됨 (착시 구도에서 흐려도 되는 것은 배경 영수증뿐)",
+            "빈종이/추상 종이 느낌 지폐",
+            "외화 느낌 지폐",
+            "읽히는 척하는 가짜 텍스트/숫자"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "한 장만 선명하고 나머지 전부가 흐린 깊이 대비가 '하나만 기억난다'는 착시를 시각 문법으로 직접 전달한다"
+          },
+          "card_caption_role": "'머릿속엔 오른 월급만 / 조용히 오른 기준은 안 보임' 문구가 착시의 의미를 확정하고 밑줄 강조가 '안 보이거든요' 발화 순간에 진입한다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break",
+            "money_clarity_fail",
+            "foreign_currency_feel",
+            "old_archive_or_dated_finance_texture",
+            "unknown_money",
+            "fake_readable_text_or_numbers",
+            "broken_glyphs",
+            "mosaic_or_blurred_money_when_money_should_be_clear",
+            "blank_paper_pretending_to_be_money"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "reframe",
+      "phase": "reframe",
+      "sceneId": "s6",
+      "phraseId": "p6_reframe",
+      "message": "안 모이는 게 아니라 돈의 자리가 없던 것",
+      "bridge_to_next": "자리가 없었다면 받는 날 만들면 된다 — 행동으로 연결",
+      "narrationText": "그러니까 내가 헤퍼진 게 아니에요. 오른 돈이 들어오자마자 자리를 잃었을 뿐이죠.",
+      "timing": { "sceneStartSec": 27.24, "sceneEndSec": 32.61, "audioStartSec": 27.24, "audioEndSec": 32.29 },
+      "image": {
+        "imageId": "img_36_reframe_three_empty_jars",
+        "md5": "f0f2ff998462126ef66ac395b3e37b2f",
+        "money_dominant": false,
+        "visual_evidence": {
+          "claim": "돈이 안 모인 이유는 '자리'가 비어 있었기 때문 — 자리 부재의 문자 그대로의 시각화",
+          "must_show": [
+            "아침 창가의 차분한 톤 (조용한 전환점)",
+            "빈 유리병 3개가 나란히 놓인 구도",
+            "돈 없음 — 병이 비어 있다는 사실 자체가 증거"
+          ],
+          "must_not_show": [
+            "지폐 등장 (아직 해결 행동 전 단계)",
+            "어두운/우울한 톤 (전환점의 면죄 정서 훼손)",
+            "3개가 아닌 병 개수"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "빈 병 3개가 나란히 놓인 구도만으로 '채워질 자리는 있는데 비어 있다'가 카드 없이 전달된다 — s1 병 모티프의 회수"
+          },
+          "card_caption_role": "'헤퍼진 게 아니라 / 자리를 잃었을 뿐' 문구가 자책 프레임을 구조 문제로 전환하는 면죄 반전을 언어로 고정한다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "action_a",
+      "phase": "action",
+      "sceneId": "s7",
+      "phraseId": "p7_actionA",
+      "message": "받는 날, 쓰기 전에 세 자리로 먼저 나눈다",
+      "bridge_to_next": "세 자리 각각의 구체적 이름으로 연결",
+      "narrationText": "해결은 절약 다짐이 아니라 월급날 돈의 자리부터 만드는 겁니다. 쓰기 전에 딱 세 자리면 돼요.",
+      "timing": { "sceneStartSec": 32.61, "sceneEndSec": 39.61, "audioStartSec": 32.61, "audioEndSec": 39.23 },
+      "image": {
+        "imageId": "img_47_actionA_dividing_into_jars_krw",
+        "md5": "29551d1c4777b6e61774940092b97f20",
+        "money_dominant": true,
+        "visual_evidence": {
+          "claim": "월급날 쓰기 전에 돈을 세 자리로 먼저 나누는 행동이 실제로 가능하다 — 월급날 행동의 증거",
+          "must_show": [
+            "3개 유리병",
+            "노랑/초록/파랑 3권종 혼합의 선명한 원화풍 지폐",
+            "지폐를 병에 나눠 넣는 진행형 손동작"
+          ],
+          "must_not_show": [
+            "완료된 정지 컷 (행동은 진행형이어야 함)",
+            "반무지/빈종이 느낌 지폐",
+            "외화 느낌 지폐",
+            "블러/모자이크 처리된 돈"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "지폐를 세 병에 나눠 넣는 진행형 손동작만으로 '쓰기 전에 먼저 나눈다'는 행동이 카드 없이 전달된다"
+          },
+          "card_caption_role": "'월급날' 칩과 '쓰기 전에' 라인이 행동의 시점과 순서를 특정한다 — 절약 다짐이 아닌 구조 행동임을 언어로 보강",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break",
+            "money_clarity_fail",
+            "foreign_currency_feel",
+            "old_archive_or_dated_finance_texture",
+            "unknown_money",
+            "fake_readable_text_or_numbers",
+            "broken_glyphs",
+            "mosaic_or_blurred_money_when_money_should_be_clear",
+            "blank_paper_pretending_to_be_money"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "action_b",
+      "phase": "action",
+      "sceneId": "s8",
+      "phraseId": "p8_actionB",
+      "message": "고정비 증가분 / 생활비 상한 / 남길 돈 — 받는 날 바로 분리",
+      "bridge_to_next": "세 자리가 생긴 다음 달의 체감으로 연결",
+      "narrationText": "고정비 증가분, 생활비 상한, 남길 돈. 받는 날 이 세 개부터 나누는 거예요.",
+      "timing": { "sceneStartSec": 39.61, "sceneEndSec": 46.1, "audioStartSec": 39.61, "audioEndSec": 46.08 },
+      "image": {
+        "imageId": "img_48_actionB_three_jars_color_ribbons_krw",
+        "md5": "d33974aa3c8e4b866e6bbffe8996803c",
+        "money_dominant": true,
+        "visual_evidence": {
+          "claim": "세 자리의 구체적 이름 — 고정비 증가분/생활비 상한/남길 돈 — 이 화면에 실물(리본 3병)로 존재한다",
+          "must_show": [
+            "파랑/주황/노랑 리본이 달린 3개 병",
+            "매화/산수 판화풍 문양의 선명한 원화풍 지폐",
+            "리본 색과 카드 슬롯 색의 1:1 매칭"
+          ],
+          "must_not_show": [
+            "리본 색과 슬롯 카드 색의 불일치",
+            "무지 지폐 (빈종이 돈)",
+            "외화 느낌 지폐",
+            "읽히는 척하는 가짜 텍스트/숫자"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "리본 색으로 구분된 3개의 채워지는 병만으로 '세 가지로 나눈다'가 카드 없이 전달된다 — 각 자리의 정확한 이름은 카드가 강화(구조가 아닌 보강)"
+          },
+          "card_caption_role": "슬롯 카드 3개가 '고정비 증가분 / 생활비 상한 / 남길 돈' 이름을 표시해 three_things hard fail(이름 미표시)을 직접 해소한다 — '세 개' 발화 시각에 3슬롯 전원 표시(storyGateAnchor: ov22/ov23/ov24)",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break",
+            "money_clarity_fail",
+            "foreign_currency_feel",
+            "old_archive_or_dated_finance_texture",
+            "unknown_money",
+            "fake_readable_text_or_numbers",
+            "broken_glyphs",
+            "mosaic_or_blurred_money_when_money_should_be_clear",
+            "blank_paper_pretending_to_be_money"
+          ]
+        }
+      }
+    },
+    {
+      "beat": "result",
+      "phase": "result",
+      "sceneId": "s9",
+      "phraseId": "p9_result",
+      "message": "체감은 잔액이 아니라 돈의 자리에서 생긴다",
+      "bridge_to_next": null,
+      "narrationText": "다음 달부터 체감이 달라질 거예요, 돈의 자리가 생겼으니까요. 저장해 두고 다음 월급날 이 순서대로 해보세요.",
+      "timing": { "sceneStartSec": 46.1, "sceneEndSec": 53.97, "audioStartSec": 46.1, "audioEndSec": 53.36 },
+      "image": {
+        "imageId": "img_39_result_settled_morning_shelf",
+        "md5": "93f665f652170a2a3101b8da611f5701",
+        "money_dominant": false,
+        "knownLimitations": [
+          "s8 신규 KRW 패치 지폐와의 미세한 질감 차이 — 이미지 예산 소진(6/6)으로 유지, blueprint에 알려진 한계로 기록됨"
+        ],
+        "visual_evidence": {
+          "claim": "자리가 잡힌 다음 달의 안정 — 체감은 잔액 숫자가 아니라 돈의 자리에서 생긴다",
+          "must_show": [
+            "같은 색 리본의 채워진 3병 (s6 빈 병의 해소)",
+            "커피와 아침 창가의 평온한 톤",
+            "한국 아파트 스카이라인 (지폐는 소형 소품)"
+          ],
+          "must_not_show": [
+            "과장된 부(富)/성공 연출",
+            "빈 병 (결과 부정)",
+            "비한국적 스카이라인/주거 맥락"
+          ],
+          "no_card_understanding": {
+            "understandable_without_card": true,
+            "reason": "채워진 리본 3병과 평온한 아침 풍경이 s6(빈 병)의 시각적 해소로 읽힌다 — 병 모티프의 완결"
+          },
+          "card_caption_role": "'체감이 달라진다' 결과 문구와 '저장' CTA가 결과의 의미와 다음 행동(다음 월급날 이 순서대로)을 고정한다",
+          "reject_reasons": [
+            "visual_evidence_mismatch",
+            "korean_context_break"
+          ]
+        }
+      }
+    }
+  ],
+
+  "mediaFacts": {
+    "fullDurationSec": 53.97,
+    "speechEndSec": 53.36,
+    "tailHoldSec": 0.61,
+    "paddingUsed": false,
+    "atempoUsed": false,
+    "hardTrimUsed": false,
+    "bottomFixedSubtitle": false,
+    "sceneTtsUsed": false,
+    "oneShotNarration": true
+  },
+
+  "safeFrame": {
+    "textMaxY": 1580,
+    "graphicMaxY": 1632,
+    "bottomFixedSubtitleBar": false,
+    "karaokeFixedLowerLine": false,
+    "geometryEvidenceNote": "per-element pixel bbox는 overlay_spec.v3_1.json(C:\\tmp — 레포 외부·휘발)에만 존재 — 계약 safeFrame.geometryCheckLimitation/todo 참조. 검사 가능한 항목(bottomFixedSubtitle=false, 임계값 일치)은 guard가 검사한다."
+  }
+}
