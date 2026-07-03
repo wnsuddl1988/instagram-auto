@@ -19,46 +19,70 @@
   - `701e1ed feat(golden-sample): add pillow renderer standard guard`
   - `98913d4 feat(golden-sample): add tts audio audit standard guard`
   - `3494d79 feat(golden-sample): add integrated readiness standard guard`
+  - `37fda6d feat(golden-sample): add owner decision packet guard`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-owner-decision-resolution-packet-v1`
+- Task ID: `golden-sample-v3-2-owner-decisions-now-resolution-state-v1`
 - Status: **approved by Owner 2026-07-04 KST**.
-- Owner decision:
-  - `승인: Slice 6 — golden-sample-v3-2-owner-decision-resolution-packet-v1를 no-live 범위로 진행. 금지 항목 유지.`
-- Slice type: no-live Owner decision packet + machine-readable decision matrix + static guard only.
-- This slice prepares decisions. It must not mark decisions resolved unless the Owner has explicitly chosen them in this conversation.
+- Owner decision source:
+  - Codex asked whether to confirm four `decideNow=true` decisions from Slice 6.
+  - Owner replied: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
+- Interpretation:
+  - Resolve the four recommended `decideNow=true` policy decisions listed below.
+  - Continue no-live preparation slices without asking after every small slice.
+  - Still stop for explicit approval before any live/API/cost/render/mux/upload/env/dependency/DB/deploy action.
+- Slice type: no-live decision-resolution state fixture + static guard + packet doc update only.
+
+## Resolved Decisions To Record
+
+Record exactly these four decisions as Owner-resolved policy choices:
+
+1. `script_impact_gate_score_authority = codex_judge_with_mandatory_provenance`
+   - Scope: scoring authority/provenance policy only.
+   - Not approval for live TTS/audio/mux.
+2. `font_vendoring = vendor_noto_black_vf_remove_system_dependency`
+   - Scope: font policy only.
+   - Not approval to add font files, change dependencies, render, or mux.
+3. `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`
+   - Scope: guard policy only.
+   - Not approval to call image APIs, run ChatGPT/Playwright/browser, or generate images.
+4. `poll_25s_passive_window = accept_25s_passive_window_as_v3_2_behavior`
+   - Scope: timing interpretation only.
+   - Not approval to run ChatGPT/Playwright/browser/CDP.
+
+All other Owner decisions remain pending:
+
+- `legacy_line_scope`
+- `upload_endpoint_disposition`
+- `blueprint_schema_unification`
+- `md5_locked_image_durability`
+- `contract_duality_resolution`
+- `owner_viewing_listening_qa`
+
+Current readiness remains `STANDARDIZED_NO_LIVE_READY`. No live execution is approved.
 
 ## Purpose
 
-Create a concise, decision-ready packet for the 10 unresolved Owner decisions preserved by Slice 5 integrated readiness.
+Persist the Owner's four policy decisions in a machine-readable state so future no-live and live-prep slices can consume the decision state without re-asking.
 
-The packet should help the Owner choose future lanes without accidentally approving live execution:
+This slice must:
 
-1. Normalize each unresolved decision into key, source, current status, blocked future lanes, recommended default, alternatives, impact, risk, and exact Owner approval phrase.
-2. Separate decisions that can be chosen now from decisions that must remain pending until artifacts or live plans exist.
-3. Make clear that the current project verdict remains `STANDARDIZED_NO_LIVE_READY`.
-4. Preserve hard prohibitions: no live TTS, render, mux, image generation, ChatGPT/Playwright, browser/CDP, upload, env/secret, dependency, DB, or deploy changes.
-5. Provide a static guard so the packet cannot silently flip a decision to resolved, owner QA passed, upload ready, or production ready.
-
-No live execution or production change is approved in this slice.
+1. Preserve Slice 6 decision packet as the recommendation source.
+2. Add a current decision state fixture that marks exactly four decisions resolved by Owner and six still pending.
+3. Update the human-readable decision packet with a short current-state section.
+4. Add a static guard that prevents accidental readiness escalation or over-interpreting the decisions as live approval.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
-1. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
-2. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
-3. `scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
-4. `_ai/GOLDEN_SAMPLE_V3_2_AUTOMATION_IMPLEMENTATION_GAP_ANALYSIS.md`
-5. `_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md`
-6. `_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md` only if needed for Owner QA wording.
-7. Prior Slice contracts only as path/reference checks if needed:
-   - `scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json`
-   - `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
-   - `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
-   - `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
+1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
+2. `_ai/GOLDEN_SAMPLE_V3_2_OWNER_DECISION_PACKET.md`
+3. `scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
+4. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
+5. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 
 Do not read protected/excluded files:
 
@@ -73,80 +97,58 @@ Do not read protected/excluded files:
 
 Allowed files:
 
-1. New machine-readable Owner decision packet fixture:
-   - Recommended: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
-   - Must be derived from Slice 5 `unresolvedOwnerDecisions`.
-   - Must keep all decisions `PENDING` by default unless explicitly chosen by Owner.
-   - Must include per-decision recommendation, allowed choices, blocked lanes, safety default, future approval phrase, and whether Codex recommends deciding now.
+1. New decision state fixture:
+   - Recommended: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
+   - Must reference the Slice 6 decision packet and this Owner approval source.
+   - Must include exactly four resolved decisions with chosen values above.
+   - Must include exactly six pending decisions.
+   - Must keep all readiness/live/upload/automation flags false.
 
-2. New human-readable Owner decision packet:
-   - Recommended: `_ai/GOLDEN_SAMPLE_V3_2_OWNER_DECISION_PACKET.md`
-   - Must be concise enough for Owner review.
-   - Must group decisions into practical buckets:
-     - decide-before-live-TTS/audio/mux
-     - decide-before-live-image-runner
-     - decide-before-render
-     - decide-before-upload/automation
-     - documentation/schema cleanup decisions
-   - Must include a recommended next decision path and exact copy-ready approval snippets.
-   - Must explicitly say it is **not** live approval.
+2. New no-live static guard:
+   - Recommended: `scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
+   - Must parse the state fixture, Slice 6 decision packet, and Slice 5 integrated readiness contract.
+   - Must assert resolved values equal the packet's recommendedDefault for the four decideNow decisions.
+   - Must assert all six non-decideNow decisions remain pending.
+   - Must assert no live/upload/render/TTS/image/browser/env/dependency/DB/deploy approval is implied.
+   - Must include mutant checks for:
+     - resolving a fifth decision,
+     - changing one of the four chosen values,
+     - setting ownerQaPassed/uploadReady/productionReady/live flags true,
+     - treating font vendoring as font file commit approval,
+     - treating image guard decision as API execution approval.
 
-3. New no-live packet validator/static guard:
-   - Recommended: `scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
-   - Must parse the decision packet fixture and the Slice 5 integrated readiness contract.
-   - Must assert the packet covers all 10 unresolved decisions from Slice 5 by key.
-   - Must assert no decision is silently resolved, upload ready, production ready, owner QA passed, or live approved.
-   - Must assert the human-readable packet references the same decision keys and contains no live approval wording.
-   - Must fail non-zero on missing decision, status mutation, live-readiness escalation, or Owner QA auto-pass.
+3. Update human-readable decision packet:
+   - `_ai/GOLDEN_SAMPLE_V3_2_OWNER_DECISION_PACKET.md`
+   - Add a short "Current Owner decisions" section near the top.
+   - Preserve the warning that this is not live execution approval.
 
-4. Optional read-only preview harness/module only if useful:
-   - Recommended only if needed: `scripts/run-golden-sample-owner-decision-packet-preview-v1.mjs`
-   - Must be read-only, no-live, no-env, no-network, no-write.
-   - If omitted, the static guard must provide enough validation.
-
-5. `_ai/CLAUDE_REPORT.md`
+4. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
 
-6. `_ai/HANDOFF_NOW.md`
+5. `_ai/HANDOFF_NOW.md`
    - Update status only if needed.
 
-Do not modify existing generation/render/TTS/upload implementation code. Do not modify Slice 0~5 artifacts unless a critical contradiction blocks this decision packet; if so, stop and report before editing.
-
-## Required Decision Packet Content
-
-The packet must include all Slice 5 unresolved decisions:
-
-1. `script_impact_gate_score_authority`
-2. `legacy_line_scope`
-3. `upload_endpoint_disposition`
-4. `blueprint_schema_unification`
-5. `md5_locked_image_durability`
-6. `font_vendoring`
-7. `contract_duality_resolution`
-8. `image_script_allow_guard`
-9. `poll_25s_passive_window`
-10. `owner_viewing_listening_qa`
-
-For each decision include:
-
-- `status`: must remain `PENDING` unless Owner explicitly chooses in this conversation.
-- `source`: Slice 5 integrated readiness contract or gap analysis.
-- `blocks`: future lanes blocked by the decision.
-- `recommendedDefault`: conservative Codex recommendation.
-- `allowedChoices`: 2-4 choices with tradeoffs.
-- `decideNow`: boolean.
-- `minimumEvidenceBeforeDecision`: what must exist before deciding if not now.
-- `safeApprovalSnippet`: exact Owner wording that would authorize only that decision, not live execution.
-- `nonApprovalWarning`: phrase preventing accidental live/upload/render/TTS approval.
+Prefer not to modify the original Slice 6 packet fixture. Treat it as the recommendation packet. Use the new state fixture as the current decision-state source.
 
 ## Required Safety Semantics
 
 - Current verdict remains `STANDARDIZED_NO_LIVE_READY`.
-- The packet must not approve live TTS, render, mux, image generation, ChatGPT/Playwright, upload, automation expansion, env/secret access, dependency changes, DB/deploy, or production code modification.
-- Owner QA must remain direct viewing/listening and cannot be automated or treated as PASS.
-- `uploadReady`, `automationExpansionReady`, `implementationApproved`, `liveTtsApproved`, `liveMuxApproved`, `liveRenderApproved`, `liveImageGenerationApproved`, `chatgptPlaywrightApproved`, `ownerQaPassed`, and `productionReady` must not become true.
-- A recommended choice is not an approval.
-- Copy-ready snippets must be scoped to decision resolution only unless explicitly labeled as a future separate live slice approval.
+- The four resolved decisions are policy choices only.
+- The state fixture must not set:
+  - `uploadReady`
+  - `automationExpansionReady`
+  - `implementationApproved`
+  - `liveTtsApproved`
+  - `liveMuxApproved`
+  - `liveRenderApproved`
+  - `liveImageGenerationApproved`
+  - `chatgptPlaywrightApproved`
+  - `ownerQaPassed`
+  - `productionReady`
+- Owner QA remains pending and manual.
+- Font vendoring decision does not add font files or dependencies.
+- Image allow-guard decision does not run APIs or generate images.
+- Poll timing decision does not run ChatGPT/Playwright/browser.
 
 ## Required Checks
 
@@ -155,11 +157,10 @@ Minimum:
 1. `git status -sb`
 2. `node --check` for every new `.mjs`
 3. JSON parse for every new fixture
-4. Run new static guard:
+4. Run new state guard:
+   - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
+5. Regression sanity:
    - `node scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
-5. If an optional preview harness is created:
-   - `node scripts/run-golden-sample-owner-decision-packet-preview-v1.mjs`
-6. Cheap integration sanity:
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 
 Do not run full build unless a syntax/import issue requires it.
@@ -183,8 +184,10 @@ Do not run full build unless a syntax/import issue requires it.
 - dependency/lockfile changes.
 - DB/schema/deploy changes.
 - Modifying production generation/render/TTS/upload code.
-- Modifying prior Slice 0~5 artifacts without stopping first for Codex/Owner review.
-- Marking decisions `RESOLVED`, `APPROVED`, `PASS`, or equivalent without explicit Owner choice.
+- Adding font files or changing dependencies.
+- Modifying prior Slice 0~6 artifacts except the human-readable decision packet doc noted above.
+- Marking the six pending decisions as resolved.
+- Marking Owner QA as passed.
 - Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
 - Touching rejected salary_3days diff:
   - `scripts/render-golden-sample-visual-only-v1.mjs`
@@ -194,18 +197,18 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- Owner decision packet fixture covers all 10 Slice 5 unresolved decisions by exact key.
-- Human-readable packet gives practical choices and recommended defaults without approving live execution.
-- Static guard validates fixture/doc consistency and blocks silent resolution or readiness escalation.
-- Current readiness remains `STANDARDIZED_NO_LIVE_READY`.
-- No forbidden action or side effect occurred.
+- Decision state fixture records the four Owner-resolved policy decisions exactly.
+- Six other decisions remain pending.
+- Human decision packet clearly shows current chosen state and still says no live approval.
+- Static guard validates packet/state/integrated contract consistency and fail-closed mutants.
 - Required checks pass.
 - `_ai/CLAUDE_REPORT.md` has concise evidence append.
+- No forbidden action or side effect occurred.
 - Final handoff reports changed files, checks/results, deviations/risks, checkpoint recommendation, and progress.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 169 after checkpoint `3494d79`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 170 after checkpoint `37fda6d`.
 - Latest checkpoints:
   - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
   - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
@@ -213,6 +216,7 @@ Do not run full build unless a syntax/import issue requires it.
   - `701e1ed feat(golden-sample): add pillow renderer standard guard`
   - `98913d4 feat(golden-sample): add tts audio audit standard guard`
   - `3494d79 feat(golden-sample): add integrated readiness standard guard`
+  - `37fda6d feat(golden-sample): add owner decision packet guard`
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`

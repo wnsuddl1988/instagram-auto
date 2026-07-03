@@ -5,10 +5,31 @@
 > 아래 결정을 고르는 것은 **그 결정의 해소만** 의미하며, live TTS/render/mux/이미지 생성/ChatGPT·Playwright/browser/upload/자동화 확장/env·secret/dependency/DB/deploy를 실행하는 승인이 **아니다**. 각 실행은 별도 명시 승인 + 별도 live slice가 있어야 한다.
 > 권장안(recommendedDefault)은 Codex 추천일 뿐 **선택도 승인도 아니다**. Owner가 아래 snippet을 직접 붙여넣어야 해당 결정만 확정된다.
 
-- machine-readable 소스: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
+- machine-readable 소스: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json` (recommendation packet, 원본 유지)
+- 현재 결정 상태 소스: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json` (실제 확정/보류 상태)
 - 결정 목록 단일 소스: `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json` (`unresolvedOwnerDecisions` 10개)
 - 근거: `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
-- 총 10개 결정, 전부 `PENDING`.
+- 총 10개 결정 중 **4개 정책 결정 확정, 6개 계속 PENDING**.
+
+---
+
+## Current Owner Decisions (2026-07-04 확정)
+
+> **아래 4개 확정도 live 실행 승인이 아니다.** Owner가 "그래 진행해 다 구현되고 나면 또 얘기해보자"로 이 4개 정책 결정만 확정했다. live TTS/render/mux/이미지 생성/ChatGPT·Playwright/browser/upload/env/secret/dependency/DB/deploy 실행은 여전히 각각 별도 명시 승인이 필요하다.
+
+**확정 4개 (정책 결정만, 실행 아님):**
+
+| # | key | 확정 값 |
+|---|-----|---------|
+| 1 | script_impact_gate_score_authority | `codex_judge_with_mandatory_provenance` |
+| 6 | font_vendoring | `vendor_noto_black_vf_remove_system_dependency` (폰트 파일 추가·dependency 변경 승인 아님) |
+| 8 | image_script_allow_guard | `add_allow_guard_to_all_paid_image_scripts` (image API 호출·ChatGPT/Playwright/browser 실행 승인 아님) |
+| 9 | poll_25s_passive_window | `accept_25s_passive_window_as_v3_2_behavior` (browser/CDP 실행 승인 아님) |
+
+**계속 PENDING 6개:** `legacy_line_scope`, `upload_endpoint_disposition`, `blueprint_schema_unification`, `md5_locked_image_durability`, `contract_duality_resolution`, `owner_viewing_listening_qa` (Owner 직접 시청/청취 QA — 자동 대체 여전히 불가).
+
+- machine-readable 확정 기록: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
+- verdict는 계속 `STANDARDIZED_NO_LIVE_READY`.
 
 ---
 
