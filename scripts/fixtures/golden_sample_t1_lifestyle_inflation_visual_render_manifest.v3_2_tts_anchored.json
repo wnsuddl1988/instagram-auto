@@ -1,0 +1,723 @@
+{
+  "schemaVersion": "golden_sample_visual_render_manifest_t1_v3_2_tts_anchored",
+  "taskId": "golden-sample-chatgpt-playwright-v3-2-script-voice-impact-rework",
+  "status": "tts_anchored_render_candidate",
+  "basedOnBlueprint": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json",
+  "basedOnVisualOnly": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\\golden_sample_t1_lifestyle_inflation_visual_only_v3_1.mp4",
+  "createdAt": "2026-07-03",
+  "fullDurationSec": 53.97,
+  "ttsTimingSource": "elevenlabs_character_alignment_word_timing_v1",
+  "ttsTimingNote": "scene 경계=phrase 발화 시작, overlay 진입=word 시작 앵커(±120ms). 무음 padding/atempo/hard-trim 없음. tail hold 0.61s.",
+  "ttsEvidence": {
+    "narrationAudio": "narration_v3_2_elevenlabs.mp3",
+    "alignmentRaw": "elevenlabs_alignment_raw.v3_2.json",
+    "timingSummary": "elevenlabs_tts_timing_summary.v3_2.json",
+    "speechEndSec": 53.36,
+    "audioFileDurationSec": 53.36,
+    "tailHoldSec": 0.61,
+    "wordTimingAvailable": true
+  },
+  "narration": [
+    {
+      "phraseId": "p1_hook",
+      "beat": "hook",
+      "audioStartSec": 0,
+      "audioEndSec": 4.63,
+      "text": "월급은 올랐는데 통장은 왜 그대로일까요. 느낌이 아니라 사실입니다."
+    },
+    {
+      "phraseId": "p2_problem",
+      "beat": "problem",
+      "audioStartSec": 4.81,
+      "audioEndSec": 8.88,
+      "text": "분명 더 버는데 월말 잔액은 늘 제자리, 나만 이런가 싶죠."
+    },
+    {
+      "phraseId": "p3_causeA",
+      "beat": "cause_a",
+      "audioStartSec": 9.32,
+      "audioEndSec": 15.48,
+      "text": "이유가 있어요. 월급 인상은 한 번인데 오른 고정비는 자동이체로 매달 반복해서 빠져나가거든요."
+    },
+    {
+      "phraseId": "p4_causeB",
+      "beat": "cause_b",
+      "audioStartSec": 15.8,
+      "audioEndSec": 21.65,
+      "text": "남은 돈도 카드값과 구독료와 생활비로 조금씩 새는데 하나하나는 작아서 티가 안 나요."
+    },
+    {
+      "phraseId": "p5_illusion",
+      "beat": "illusion",
+      "audioStartSec": 22.09,
+      "audioEndSec": 27.03,
+      "text": "머릿속엔 오른 월급 하나만 선명하게 남고, 조용히 올라간 생활 기준은 안 보이거든요."
+    },
+    {
+      "phraseId": "p6_reframe",
+      "beat": "reframe",
+      "audioStartSec": 27.24,
+      "audioEndSec": 32.29,
+      "text": "그러니까 내가 헤퍼진 게 아니에요. 오른 돈이 들어오자마자 자리를 잃었을 뿐이죠."
+    },
+    {
+      "phraseId": "p7_actionA",
+      "beat": "action_a",
+      "audioStartSec": 32.61,
+      "audioEndSec": 39.23,
+      "text": "해결은 절약 다짐이 아니라 월급날 돈의 자리부터 만드는 겁니다. 쓰기 전에 딱 세 자리면 돼요."
+    },
+    {
+      "phraseId": "p8_actionB",
+      "beat": "action_b",
+      "audioStartSec": 39.61,
+      "audioEndSec": 46.08,
+      "text": "고정비 증가분, 생활비 상한, 남길 돈. 받는 날 이 세 개부터 나누는 거예요."
+    },
+    {
+      "phraseId": "p9_result",
+      "beat": "result",
+      "audioStartSec": 46.1,
+      "audioEndSec": 53.36,
+      "text": "다음 달부터 체감이 달라질 거예요, 돈의 자리가 생겼으니까요. 저장해 두고 다음 월급날 이 순서대로 해보세요."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "s1",
+      "img": "img_41_hook_envelope_vs_empty_jar_krw",
+      "beat": "hook",
+      "phraseId": "p1_hook",
+      "startSec": 0,
+      "endSec": 4.81,
+      "zs": 1.02,
+      "ze": 1.08,
+      "eq": "brightness=-0.04:contrast=1.0:saturation=1.04"
+    },
+    {
+      "id": "s2",
+      "img": "img_32_problem_wallet_check_night",
+      "beat": "problem",
+      "phraseId": "p2_problem",
+      "startSec": 4.81,
+      "endSec": 9.32,
+      "zs": 1.03,
+      "ze": 1.08,
+      "eq": "brightness=-0.06:contrast=1.0:saturation=1.02"
+    },
+    {
+      "id": "s3",
+      "img": "img_43_causeA_orderly_fixed_outflow_krw",
+      "beat": "cause_a",
+      "phraseId": "p3_causeA",
+      "startSec": 9.32,
+      "endSec": 15.8,
+      "zs": 1.02,
+      "ze": 1.08,
+      "eq": "brightness=-0.04:contrast=1.01:saturation=1.02"
+    },
+    {
+      "id": "s4",
+      "img": "img_34_causeB_scattered_lifestyle_spend",
+      "beat": "cause_b",
+      "phraseId": "p4_causeB",
+      "startSec": 15.8,
+      "endSec": 22.09,
+      "zs": 1.03,
+      "ze": 1.09,
+      "eq": "brightness=-0.06:contrast=1.0:saturation=1.02"
+    },
+    {
+      "id": "s5",
+      "img": "img_45_illusion_one_bill_vs_receipt_wall_krw",
+      "beat": "illusion",
+      "phraseId": "p5_illusion",
+      "startSec": 22.09,
+      "endSec": 27.24,
+      "zs": 1.02,
+      "ze": 1.07,
+      "eq": "brightness=-0.05:contrast=1.02:saturation=1.0"
+    },
+    {
+      "id": "s6",
+      "img": "img_36_reframe_three_empty_jars",
+      "beat": "reframe",
+      "phraseId": "p6_reframe",
+      "startSec": 27.24,
+      "endSec": 32.61,
+      "zs": 1.06,
+      "ze": 1.02,
+      "eq": "brightness=0.02:contrast=1.0:saturation=1.03"
+    },
+    {
+      "id": "s7",
+      "img": "img_47_actionA_dividing_into_jars_krw",
+      "beat": "action_a",
+      "phraseId": "p7_actionA",
+      "startSec": 32.61,
+      "endSec": 39.61,
+      "zs": 1.03,
+      "ze": 1.08,
+      "eq": "brightness=0.0:contrast=1.0:saturation=1.04"
+    },
+    {
+      "id": "s8",
+      "img": "img_48_actionB_three_jars_color_ribbons_krw",
+      "beat": "action_b",
+      "phraseId": "p8_actionB",
+      "startSec": 39.61,
+      "endSec": 46.1,
+      "zs": 1.02,
+      "ze": 1.07,
+      "eq": "brightness=0.0:contrast=1.0:saturation=1.05"
+    },
+    {
+      "id": "s9",
+      "img": "img_39_result_settled_morning_shelf",
+      "beat": "result",
+      "phraseId": "p9_result",
+      "startSec": 46.1,
+      "endSec": 53.97,
+      "zs": 1.06,
+      "ze": 1.02,
+      "eq": "brightness=0.03:contrast=1.0:saturation=1.05"
+    }
+  ],
+  "overlays": [
+    {
+      "id": "ov01_hook_l1",
+      "start": 0.05,
+      "end": 4.81,
+      "sceneId": "s1"
+    },
+    {
+      "id": "ov02_hook_l2",
+      "start": 1.54,
+      "end": 4.81,
+      "sceneId": "s1"
+    },
+    {
+      "id": "ov03_hook_cap",
+      "start": 3.38,
+      "end": 4.81,
+      "sceneId": "s1"
+    },
+    {
+      "id": "ov04_prob_panel",
+      "start": 4.86,
+      "end": 9.32,
+      "sceneId": "s2"
+    },
+    {
+      "id": "ov05_prob_l2",
+      "start": 6.11,
+      "end": 9.32,
+      "sceneId": "s2"
+    },
+    {
+      "id": "ov06_bridge_cap",
+      "start": 7.8,
+      "end": 9.32,
+      "sceneId": "s2"
+    },
+    {
+      "id": "ov07_ca_chip",
+      "start": 9.42,
+      "end": 15.8,
+      "sceneId": "s3"
+    },
+    {
+      "id": "ov08_ca_r1",
+      "start": 12.5,
+      "end": 15.8,
+      "sceneId": "s3"
+    },
+    {
+      "id": "ov09_ca_r2",
+      "start": 13.05,
+      "end": 15.8,
+      "sceneId": "s3"
+    },
+    {
+      "id": "ov10_ca_line",
+      "start": 13.7,
+      "end": 15.8,
+      "sceneId": "s3"
+    },
+    {
+      "id": "ov11_cb_chip",
+      "start": 15.9,
+      "end": 22.09,
+      "sceneId": "s4"
+    },
+    {
+      "id": "ov12_cb_r1",
+      "start": 16.64,
+      "end": 22.09,
+      "sceneId": "s4"
+    },
+    {
+      "id": "ov13_cb_r2",
+      "start": 17.5,
+      "end": 22.09,
+      "sceneId": "s4"
+    },
+    {
+      "id": "ov14_cb_r3",
+      "start": 18.15,
+      "end": 22.09,
+      "sceneId": "s4"
+    },
+    {
+      "id": "ov15_cb_line",
+      "start": 18.65,
+      "end": 22.09,
+      "sceneId": "s4"
+    },
+    {
+      "id": "ov16_ill_p1",
+      "start": 22.14,
+      "end": 27.24,
+      "sceneId": "s5"
+    },
+    {
+      "id": "ov17_ill_p2",
+      "start": 24.71,
+      "end": 27.24,
+      "sceneId": "s5"
+    },
+    {
+      "id": "ov17b_ill_ul",
+      "start": 26.25,
+      "end": 27.24,
+      "sceneId": "s5"
+    },
+    {
+      "id": "ov18_ref_l1",
+      "start": 28.41,
+      "end": 32.61,
+      "sceneId": "s6"
+    },
+    {
+      "id": "ov19_ref_l2",
+      "start": 30.98,
+      "end": 32.61,
+      "sceneId": "s6"
+    },
+    {
+      "id": "ov19b_ref_ul",
+      "start": 31.39,
+      "end": 32.61,
+      "sceneId": "s6"
+    },
+    {
+      "id": "ov20_aa_chip",
+      "start": 34.71,
+      "end": 39.61,
+      "sceneId": "s7"
+    },
+    {
+      "id": "ov21_aa_line",
+      "start": 37.11,
+      "end": 39.61,
+      "sceneId": "s7"
+    },
+    {
+      "id": "ov22_ab_slot1",
+      "start": 39.66,
+      "end": 46.1,
+      "sceneId": "s8"
+    },
+    {
+      "id": "ov23_ab_slot2",
+      "start": 41.18,
+      "end": 46.1,
+      "sceneId": "s8"
+    },
+    {
+      "id": "ov24_ab_slot3",
+      "start": 42.74,
+      "end": 46.1,
+      "sceneId": "s8"
+    },
+    {
+      "id": "ov25_ab_line",
+      "start": 43.82,
+      "end": 46.1,
+      "sceneId": "s8"
+    },
+    {
+      "id": "ov26_result",
+      "start": 46.84,
+      "end": 53.97,
+      "sceneId": "s9"
+    },
+    {
+      "id": "ov27_cta",
+      "start": 49.48,
+      "end": 53.97,
+      "sceneId": "s9"
+    }
+  ],
+  "overlayAnchorEvidence": [
+    {
+      "overlayId": "ov01_hook_l1",
+      "sceneId": "s1",
+      "phraseId": "p1_hook",
+      "entrySec": 0.05,
+      "endSec": 4.81,
+      "dwellSec": 4.76,
+      "anchorWord": "월급은",
+      "wordStartSec": 0,
+      "wordEndSec": 0.46,
+      "entryDeltaMs": 50
+    },
+    {
+      "overlayId": "ov02_hook_l2",
+      "sceneId": "s1",
+      "phraseId": "p1_hook",
+      "entrySec": 1.54,
+      "endSec": 4.81,
+      "dwellSec": 3.27,
+      "anchorWord": "통장은",
+      "wordStartSec": 1.54,
+      "wordEndSec": 2.04,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov03_hook_cap",
+      "sceneId": "s1",
+      "phraseId": "p1_hook",
+      "entrySec": 3.38,
+      "endSec": 4.81,
+      "dwellSec": 1.43,
+      "anchorWord": "느낌이",
+      "wordStartSec": 3.38,
+      "wordEndSec": 3.7,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov04_prob_panel",
+      "sceneId": "s2",
+      "phraseId": "p2_problem",
+      "entrySec": 4.86,
+      "endSec": 9.32,
+      "dwellSec": 4.46,
+      "anchorWord": "분명",
+      "wordStartSec": 4.81,
+      "wordEndSec": 5.18,
+      "entryDeltaMs": 50
+    },
+    {
+      "overlayId": "ov05_prob_l2",
+      "sceneId": "s2",
+      "phraseId": "p2_problem",
+      "entrySec": 6.11,
+      "endSec": 9.32,
+      "dwellSec": 3.21,
+      "anchorWord": "월말",
+      "wordStartSec": 6.11,
+      "wordEndSec": 6.48,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov06_bridge_cap",
+      "sceneId": "s2",
+      "phraseId": "p2_problem",
+      "entrySec": 7.8,
+      "endSec": 9.32,
+      "dwellSec": 1.52,
+      "anchorWord": "나만",
+      "wordStartSec": 7.8,
+      "wordEndSec": 8.08,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov07_ca_chip",
+      "sceneId": "s3",
+      "phraseId": "p3_causeA",
+      "entrySec": 9.42,
+      "endSec": 15.8,
+      "dwellSec": 6.38,
+      "anchorWord": null,
+      "anchorType": "scene_entry_offset",
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov08_ca_r1",
+      "sceneId": "s3",
+      "phraseId": "p3_causeA",
+      "entrySec": 12.5,
+      "endSec": 15.8,
+      "dwellSec": 3.3,
+      "anchorWord": "고정비",
+      "wordStartSec": 12.5,
+      "wordEndSec": 12.91,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov09_ca_r2",
+      "sceneId": "s3",
+      "phraseId": "p3_causeA",
+      "entrySec": 13.05,
+      "endSec": 15.8,
+      "dwellSec": 2.75,
+      "anchorWord": "자동이체",
+      "wordStartSec": 13.05,
+      "wordEndSec": 13.55,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov10_ca_line",
+      "sceneId": "s3",
+      "phraseId": "p3_causeA",
+      "entrySec": 13.7,
+      "endSec": 15.8,
+      "dwellSec": 2.1,
+      "anchorWord": "매달",
+      "wordStartSec": 13.7,
+      "wordEndSec": 13.93,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov11_cb_chip",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "entrySec": 15.9,
+      "endSec": 22.09,
+      "dwellSec": 6.19,
+      "anchorWord": null,
+      "anchorType": "scene_entry_offset",
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov12_cb_r1",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "entrySec": 16.64,
+      "endSec": 22.09,
+      "dwellSec": 5.45,
+      "anchorWord": "카드값",
+      "wordStartSec": 16.64,
+      "wordEndSec": 17.18,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov13_cb_r2",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "entrySec": 17.5,
+      "endSec": 22.09,
+      "dwellSec": 4.59,
+      "anchorWord": "구독료",
+      "wordStartSec": 17.5,
+      "wordEndSec": 17.97,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov14_cb_r3",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "entrySec": 18.15,
+      "endSec": 22.09,
+      "dwellSec": 3.94,
+      "anchorWord": "생활비",
+      "wordStartSec": 18.15,
+      "wordEndSec": 18.52,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov15_cb_line",
+      "sceneId": "s4",
+      "phraseId": "p4_causeB",
+      "entrySec": 18.65,
+      "endSec": 22.09,
+      "dwellSec": 3.44,
+      "anchorWord": "조금씩",
+      "wordStartSec": 18.65,
+      "wordEndSec": 19.02,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov16_ill_p1",
+      "sceneId": "s5",
+      "phraseId": "p5_illusion",
+      "entrySec": 22.14,
+      "endSec": 27.24,
+      "dwellSec": 5.1,
+      "anchorWord": "머릿속엔",
+      "wordStartSec": 22.09,
+      "wordEndSec": 22.52,
+      "entryDeltaMs": 50
+    },
+    {
+      "overlayId": "ov17_ill_p2",
+      "sceneId": "s5",
+      "phraseId": "p5_illusion",
+      "entrySec": 24.71,
+      "endSec": 27.24,
+      "dwellSec": 2.53,
+      "anchorWord": "조용히",
+      "wordStartSec": 24.71,
+      "wordEndSec": 25.07,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov17b_ill_ul",
+      "sceneId": "s5",
+      "phraseId": "p5_illusion",
+      "entrySec": 26.25,
+      "endSec": 27.24,
+      "dwellSec": 0.99,
+      "anchorWord": "안 보이거든요",
+      "wordStartSec": 26.25,
+      "wordEndSec": 26.96,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov18_ref_l1",
+      "sceneId": "s6",
+      "phraseId": "p6_reframe",
+      "entrySec": 28.41,
+      "endSec": 32.61,
+      "dwellSec": 4.2,
+      "anchorWord": "헤퍼진",
+      "wordStartSec": 28.41,
+      "wordEndSec": 28.81,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov19_ref_l2",
+      "sceneId": "s6",
+      "phraseId": "p6_reframe",
+      "entrySec": 30.98,
+      "endSec": 32.61,
+      "dwellSec": 1.63,
+      "anchorWord": "자리를",
+      "wordStartSec": 30.98,
+      "wordEndSec": 31.34,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov19b_ref_ul",
+      "sceneId": "s6",
+      "phraseId": "p6_reframe",
+      "entrySec": 31.39,
+      "endSec": 32.61,
+      "dwellSec": 1.22,
+      "anchorWord": "잃었을",
+      "wordStartSec": 31.39,
+      "wordEndSec": 31.73,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov20_aa_chip",
+      "sceneId": "s7",
+      "phraseId": "p7_actionA",
+      "entrySec": 34.71,
+      "endSec": 39.61,
+      "dwellSec": 4.9,
+      "anchorWord": "월급날",
+      "wordStartSec": 34.71,
+      "wordEndSec": 35.3,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov21_aa_line",
+      "sceneId": "s7",
+      "phraseId": "p7_actionA",
+      "entrySec": 37.11,
+      "endSec": 39.61,
+      "dwellSec": 2.5,
+      "anchorWord": "쓰기",
+      "wordStartSec": 37.11,
+      "wordEndSec": 37.37,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov22_ab_slot1",
+      "sceneId": "s8",
+      "phraseId": "p8_actionB",
+      "entrySec": 39.66,
+      "endSec": 46.1,
+      "dwellSec": 6.44,
+      "anchorWord": "고정비 증가분",
+      "wordStartSec": 39.61,
+      "wordEndSec": 40.94,
+      "entryDeltaMs": 50
+    },
+    {
+      "overlayId": "ov23_ab_slot2",
+      "sceneId": "s8",
+      "phraseId": "p8_actionB",
+      "entrySec": 41.18,
+      "endSec": 46.1,
+      "dwellSec": 4.92,
+      "anchorWord": "생활비 상한",
+      "wordStartSec": 41.18,
+      "wordEndSec": 42.41,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov24_ab_slot3",
+      "sceneId": "s8",
+      "phraseId": "p8_actionB",
+      "entrySec": 42.74,
+      "endSec": 46.1,
+      "dwellSec": 3.36,
+      "anchorWord": "남길 돈",
+      "wordStartSec": 42.74,
+      "wordEndSec": 43.46,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov25_ab_line",
+      "sceneId": "s8",
+      "phraseId": "p8_actionB",
+      "entrySec": 43.82,
+      "endSec": 46.1,
+      "dwellSec": 2.28,
+      "anchorWord": "받는 날",
+      "wordStartSec": 43.82,
+      "wordEndSec": 44.43,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov26_result",
+      "sceneId": "s9",
+      "phraseId": "p9_result",
+      "entrySec": 46.84,
+      "endSec": 53.97,
+      "dwellSec": 7.13,
+      "anchorWord": "체감이",
+      "wordStartSec": 46.84,
+      "wordEndSec": 47.15,
+      "entryDeltaMs": 0
+    },
+    {
+      "overlayId": "ov27_cta",
+      "sceneId": "s9",
+      "phraseId": "p9_result",
+      "entrySec": 49.48,
+      "endSec": 53.97,
+      "dwellSec": 4.49,
+      "anchorWord": "저장해",
+      "wordStartSec": 49.48,
+      "wordEndSec": 49.9,
+      "entryDeltaMs": 0
+    }
+  ],
+  "typography": {
+    "engine": "pillow_overlay",
+    "font": "Noto Sans KR Black (VF)",
+    "elementsSource": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\\overlay_spec.v3_1.json",
+    "elementsChanged": false,
+    "bottomFixedSubtitle": false
+  },
+  "boundary": {
+    "paddingUsed": false,
+    "atempoUsed": false,
+    "hardTrimUsed": false,
+    "uploadReady": false
+  }
+}

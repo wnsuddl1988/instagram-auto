@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "golden_sample_tts_first_mux_manifest_t1_v3_2",
+  "taskId": "golden-sample-chatgpt-playwright-v3-2-script-voice-impact-rework",
+  "status": "script_impact_rework_config",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "ownerApproval": "v3.1 TTS mux가 기술 통과했지만 체감 임팩트 약함 — 대본/음성 리듬을 Golden Sample 기준으로 재작업. Script Impact Gate 통과 전 live TTS 금지. 통과 후 TTS-first mux/audit. upload 금지.",
+
+  "baseBlueprint": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json",
+  "acceptedVisualOnlyMp4": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\\golden_sample_t1_lifestyle_inflation_visual_only_v3_1.mp4",
+  "overlaySpecSource": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\\overlay_spec.v3_1.json",
+  "overlaySpecNote": "accepted v3.1 Pillow overlay elements 내용 무변경 재사용 — 타이밍만 v3.2 TTS 앵커로 재계산.",
+  "previousCandidate": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_1.mp4",
+
+  "narration": {
+    "principle": "one-shot full narration. 논리 유지 + 임팩트 강화: 질문형 hook, 개인 자극, '한 번 vs 매달 반복' 프레임, 기억 비대칭, '헤퍼진 게 아니라 자리 상실' 면죄 반전, 선명한 실행 CTA. 과장/강의체/추상 종결/통계 invent 금지. phrase = beat = scene 1:1.",
+    "v31Weakness": "v3.1 대본은 인과는 맞지만 평서형 나열로 mild — 시청자를 직접 찌르는 순간과 '아하' 반전의 발화 punch가 부족했음. v3.2는 전략적 마침표(punch pause)를 임팩트 지점에만 배치하고 나머지는 흘려 말해 ratio 게이트와 리듬을 동시에 만족.",
+    "phrases": [
+      { "phraseId": "p1_hook",    "beat": "hook",     "text": "월급은 올랐는데 통장은 왜 그대로일까요. 느낌이 아니라 사실입니다." },
+      { "phraseId": "p2_problem", "beat": "problem",  "text": "분명 더 버는데 월말 잔액은 늘 제자리, 나만 이런가 싶죠." },
+      { "phraseId": "p3_causeA",  "beat": "cause_a",  "text": "이유가 있어요. 월급 인상은 한 번인데 오른 고정비는 자동이체로 매달 반복해서 빠져나가거든요." },
+      { "phraseId": "p4_causeB",  "beat": "cause_b",  "text": "남은 돈도 카드값과 구독료와 생활비로 조금씩 새는데 하나하나는 작아서 티가 안 나요." },
+      { "phraseId": "p5_illusion","beat": "illusion", "text": "머릿속엔 오른 월급 하나만 선명하게 남고, 조용히 올라간 생활 기준은 안 보이거든요." },
+      { "phraseId": "p6_reframe", "beat": "reframe",  "text": "그러니까 내가 헤퍼진 게 아니에요. 오른 돈이 들어오자마자 자리를 잃었을 뿐이죠." },
+      { "phraseId": "p7_actionA", "beat": "action_a", "text": "해결은 절약 다짐이 아니라 월급날 돈의 자리부터 만드는 겁니다. 쓰기 전에 딱 세 자리면 돼요." },
+      { "phraseId": "p8_actionB", "beat": "action_b", "text": "고정비 증가분, 생활비 상한, 남길 돈. 받는 날 이 세 개부터 나누는 거예요." },
+      { "phraseId": "p9_result",  "beat": "result",   "text": "다음 달부터 체감이 달라질 거예요, 돈의 자리가 생겼으니까요. 저장해 두고 다음 월급날 이 순서대로 해보세요." }
+    ]
+  },
+
+  "scriptImpactGate": {
+    "rule": "모든 required 점수 충족 + hard fail 0이어야 TTS stage 진입. 실패 시 runner가 TTS 호출 전 abort.",
+    "required": {
+      "hook_self_relevance_score": 90,
+      "story_causality_score": 90,
+      "problem_solution_bridge_score": 90,
+      "solution_specificity_score": 90,
+      "save_worthiness_score": 88,
+      "spoken_naturalness_score": 88
+    },
+    "selfAssessment": {
+      "hook_self_relevance_score": 91,
+      "story_causality_score": 92,
+      "problem_solution_bridge_score": 91,
+      "solution_specificity_score": 92,
+      "save_worthiness_score": 89,
+      "spoken_naturalness_score": 90
+    },
+    "rationale": {
+      "hook_self_relevance": "91 — 평서 나열(v3.1) 대신 시청자 본인에게 던지는 질문형('왜 그대로일까요') + 즉시 '느낌이 아니라 사실' 확정. 월급 오른 직장인 누구나 자기 통장을 떠올리게 됨. p2 '나만 이런가 싶죠'가 개인 자극을 이어받음.",
+      "story_causality": "92 — 문제(제자리)→원인A(인상 한 번 vs 고정비 매달 반복)→원인B(소액 분산이라 티 안 남)→착시(오른 월급만 기억, 조용한 기준 상승은 안 보임)→재해석(헤퍼진 게 아니라 자리 상실)→행동(월급날 세 자리)→결과(체감). 모든 연결에 명시 접속('이유가 있어요/그러니까/해결은').",
+      "problem_solution_bridge": "91 — p6 면죄 반전('내가 헤퍼진 게 아니에요')이 자책 프레임을 구조 문제로 전환하고, '자리를 잃었을 뿐'이 곧바로 p7 '자리부터 만드는 겁니다'로 이어짐 — 문제 언어와 해결 언어가 같은 단어(자리)로 연결.",
+      "solution_specificity": "92 — 추상어 종결 없음. 3개 이름(고정비 증가분/생활비 상한/남길 돈) 명시 + 시점(받는 날/쓰기 전) + 순서('이 세 개부터') + 화면 카드 3개와 1:1.",
+      "save_worthiness": "89 — 3개 이름은 다시 볼 체크리스트 가치가 있고 CTA가 '저장해 두고 다음 월급날 이 순서대로 해보세요'로 저장→실행 시점→순서를 명시. 숫자 공식까지는 없어 만점은 아님(통계 invent 금지 준수).",
+      "spoken_naturalness": "90 — 일까요/싶죠/거든요/뿐이죠/돼요/해보세요 구어 종결, 강의체 없음. punch 지점(p1/p3/p6/p7/p8)에만 마침표 pause를 배치하고 나머지는 연결해 rushed/dragged 회피."
+    },
+    "hardFailCheck": {
+      "generic_hook": false,
+      "explains_but_does_not_sting": false,
+      "weak_problem_solution_bridge": false,
+      "abstract_solution_ending": false,
+      "three_things_unnamed": false,
+      "invented_stats_or_facts": false,
+      "topic_changed_from_accepted_visual": false
+    },
+    "verdict": "PASS"
+  },
+
+  "overlayAnchorPlan": {
+    "note": "entry = word 시작(±120ms) 또는 scene 진입 offset. end = scene 종료(v3.1 카드 지속 설계). 카드 텍스트는 accepted v3.1 그대로 — 앵커 단어는 v3.2 대본에서 같은 의미 순간에 매핑.",
+    "minDwellSec": 0.9,
+    "anchors": [
+      { "id": "ov01_hook_l1",    "phraseId": "p1_hook",    "word": "월급은" },
+      { "id": "ov02_hook_l2",    "phraseId": "p1_hook",    "word": "통장은" },
+      { "id": "ov03_hook_cap",   "phraseId": "p1_hook",    "word": "느낌이" },
+      { "id": "ov04_prob_panel", "phraseId": "p2_problem", "word": "분명" },
+      { "id": "ov05_prob_l2",    "phraseId": "p2_problem", "word": "월말" },
+      { "id": "ov06_bridge_cap", "phraseId": "p2_problem", "word": "나만" },
+      { "id": "ov07_ca_chip",    "phraseId": "p3_causeA",  "sceneEntryOffsetSec": 0.1 },
+      { "id": "ov08_ca_r1",      "phraseId": "p3_causeA",  "word": "고정비" },
+      { "id": "ov09_ca_r2",      "phraseId": "p3_causeA",  "word": "자동이체" },
+      { "id": "ov10_ca_line",    "phraseId": "p3_causeA",  "word": "매달" },
+      { "id": "ov11_cb_chip",    "phraseId": "p4_causeB",  "sceneEntryOffsetSec": 0.1 },
+      { "id": "ov12_cb_r1",      "phraseId": "p4_causeB",  "word": "카드값" },
+      { "id": "ov13_cb_r2",      "phraseId": "p4_causeB",  "word": "구독료" },
+      { "id": "ov14_cb_r3",      "phraseId": "p4_causeB",  "word": "생활비" },
+      { "id": "ov15_cb_line",    "phraseId": "p4_causeB",  "word": "조금씩" },
+      { "id": "ov16_ill_p1",     "phraseId": "p5_illusion","word": "머릿속엔" },
+      { "id": "ov17_ill_p2",     "phraseId": "p5_illusion","word": "조용히" },
+      { "id": "ov17b_ill_ul",    "phraseId": "p5_illusion","word": "안 보이거든요", "minDwellSec": 0.6 },
+      { "id": "ov18_ref_l1",     "phraseId": "p6_reframe", "word": "헤퍼진" },
+      { "id": "ov19_ref_l2",     "phraseId": "p6_reframe", "word": "자리를" },
+      { "id": "ov19b_ref_ul",    "phraseId": "p6_reframe", "word": "잃었을", "minDwellSec": 0.6 },
+      { "id": "ov20_aa_chip",    "phraseId": "p7_actionA", "word": "월급날" },
+      { "id": "ov21_aa_line",    "phraseId": "p7_actionA", "word": "쓰기" },
+      { "id": "ov22_ab_slot1",   "phraseId": "p8_actionB", "word": "고정비 증가분" },
+      { "id": "ov23_ab_slot2",   "phraseId": "p8_actionB", "word": "생활비 상한" },
+      { "id": "ov24_ab_slot3",   "phraseId": "p8_actionB", "word": "남길 돈" },
+      { "id": "ov25_ab_line",    "phraseId": "p8_actionB", "word": "받는 날" },
+      { "id": "ov26_result",     "phraseId": "p9_result",  "word": "체감이" },
+      { "id": "ov27_cta",        "phraseId": "p9_result",  "word": "저장해" }
+    ],
+    "storyGateAnchor": { "word": "세 개", "phraseId": "p8_actionB", "rule": "'세 개' 발화 시각에 slot 3개(ov22/23/24)가 전부 화면에 있어야 함" }
+  },
+
+  "tts": {
+    "provider": "elevenlabs",
+    "strategy": "full_narration_one_shot",
+    "endpointKind": "text_to_speech_with_timestamps",
+    "outputFormat": "mp3_44100_128",
+    "modelIdEnvKey": "ELEVENLABS_MODEL_ID",
+    "modelIdDefault": "eleven_multilingual_v2",
+    "voiceResolutionOrder": [
+      "ELEVENLABS_YOHAN_KOO_VOICE_ID",
+      "ELEVENLABS_VOICE_ID_YOHAN_KOO",
+      "YOHAN_KOO_ELEVENLABS_VOICE_ID",
+      "ELEVENLABS_VOICE_ID"
+    ],
+    "voicePresetId": "confident_v3",
+    "voiceSettings": { "stability": 0.68, "similarity_boost": 0.9, "style": 0.22, "use_speaker_boost": true },
+    "apiCallBudgetMax": 2,
+    "apiCallBudgetNote": "1차 primary + (명확한 artifact/severe pause/timing audit block일 때만) 2차 = 상한 2회. Script Impact Gate PASS 전에는 0회.",
+    "retry": false,
+    "reuseExistingAudioIfPresent": true,
+    "sceneLevelShortTts": "금지 — one-shot full narration만",
+    "requireLiveTtsGuard": true,
+    "allowEnvKey": "ALLOW_ELEVENLABS",
+    "allowCliFlag": "--allow-live-tts"
+  },
+
+  "reflow": {
+    "principle": "TTS-first — scene 경계=phrase 발화 시작, overlay 진입=word 시작 앵커. padding/atempo/hard-trim/고정 길이 목표 금지. 최종 길이는 revised narration의 자연 길이.",
+    "holdAfterSpeechSec": 0.6,
+    "holdAfterSpeechMaxSec": 0.8,
+    "captionEntryToleranceMs": 120,
+    "frameGridFps": 30
+  },
+
+  "audioQualityGates": {
+    "beginningSilenceMaxSec": 0.6,
+    "first5sSilenceMaxSec": 0.8,
+    "totalSilenceRatioMax": 0.18,
+    "speechActiveRatioMin": 0.72,
+    "silencedetectNoiseDb": -35,
+    "silencedetectMinSilenceSec": 0.35,
+    "measurementNote": "ratio는 발화 구간(0~speechEnd) 기준. punch pause는 임팩트 지점에만 — ratio 초과 시 2차에서 비-punch 구두점만 수술"
+  },
+
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit",
+    "narrationAudio": "narration_v3_2_elevenlabs.mp3",
+    "alignmentRaw": "elevenlabs_alignment_raw.v3_2.json",
+    "timingSummary": "elevenlabs_tts_timing_summary.v3_2.json",
+    "ttsAnchoredManifestFixture": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+    "visualMp4": "golden_sample_t1_lifestyle_inflation_visual_tts_anchored_v3_2.mp4",
+    "muxMp4": "golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "captionTimeline": "dynamic_caption_timeline_tts_anchored.v3_2.json",
+    "auditReport": "post_render_artifact_audit_tts_mux.v3_2.json",
+    "scriptPreview": "story_script_preview.v3_2.json",
+    "scriptImpactGateReport": "script_impact_gate_report.v3_2.json"
+  },
+
+  "boundary": {
+    "noImageGeneration": true,
+    "noOtherExternalApi": true,
+    "elevenLabsCallsMax": 2,
+    "noLiveTtsBeforeScriptGate": true,
+    "noUpload": true,
+    "noEnvSecretModification": true,
+    "noKeyValueInLogsOrFiles": true,
+    "sourceImagesReadOnly": true,
+    "acceptedV31VisualElementsPreserved": true,
+    "uploadReady": false
+  }
+}

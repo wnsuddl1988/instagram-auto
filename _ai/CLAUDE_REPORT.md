@@ -3043,3 +3043,28 @@ QA-only slice. 코드 변경 없음.
 - 산출: C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-visual-only-v3-1-banknote-patch\golden_sample_t1_lifestyle_inflation_visual_only_v3_1.mp4 — **1080x1920 h264 30fps 41.400s, audio 0** ✅, 이벤트 38(maxGap 2.3s), 프레임 25장 + manifest + QA report + latency report.
 - QA: **korean_banknote_clarity 93 / mosaic_or_blank RESOLVED** / story_evidence 95 / typography 93 / causality 92 / hard fail 0. 잔여 위험: s9 유지 컷의 무지 지폐(예산 소진) — s8과 미세 질감 차이, Owner 확인 포인트.
 - 금지 미수행: 유료 API 0 · 제출 6 초과 0 · TTS/mux/upload 0 · 30초 고정 목표 미적용 · salary_3days 재사용 0 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## v3.1 TTS-first mux audit (`golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit-v1` — 2026-07-03)
+
+**v3.1 visual 기반 TTS-first mux 완성 — PASS_CANDIDATE_FOR_OWNER_REVIEW (Owner 청취/시청 QA 대기). ElevenLabs live 2/2 (상한 정확 도달), 45.9s 자연 길이, padding/atempo/hard-trim 0.**
+
+- 신규: golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_1.json (9 phrase 대본 + 27 word-anchor 계획 + 게이트) / run-golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit.mjs (TTS→타이밍→reflow→재렌더→mux→audit 일체형, 기존 live guard 규약 준수) / golden_sample_..._visual_render_manifest.v3_1_tts_anchored.json (생성물)
+- TTS: one-shot with-timestamps, confident_v3 preset, 376자. **attempt1 실측 FAIL**(ratio 0.2667/first5s 1.39s — 구두점 pause 28개 윈도우) → t2 선례대로 의미 불변 구두점 수술 → **attempt2 PASS**: ratio 0.0996 / first5s 0.47s / speechActive 0.90 / 발화 45.28s / tail hold 0.62s / 시작 무음 0s / clipped tail 없음. attempt1 증거 보존(.attempt1.*).
+- Reflow: scene 경계=phrase 온셋 9개, overlay 27개 word-anchor(delta 전부 0~50ms ≤120ms 허용치), 2개 scene-entry. minDwell 1.15s. story gate: '세 개' 발화 38.24s 전에 슬롯 3개(34.03/35.14/36.20) 완성 ✓. accepted v3.1 overlay elements 무변경 재사용(Pillow), 배경 파이프라인 동일 — 지폐 선명도 보존.
+- mux: `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-1-tts-first-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_1.mp4` — **1080x1920 h264 30fps 45.9s audio 1 stream** ✅
+- audit: media/audio/caption/story 4게이트 + vision QA(프레임 6장) 전부 PASS → PASS_CANDIDATE_FOR_OWNER_REVIEW. bottom-fixed bar 0, uploadReady=false 고정. 기술 PASS ≠ Golden Sample PASS — Owner 청취/시청 QA 대기.
+- 금지 미수행: 이미지 생성 0 · 타 API 0 · scene별 TTS 0 · padding/trim 0 · upload 0 · env/secret 무변경 · 보호 파일 무접촉 · commit/push 없음.
+
+
+## v3.2 script/voice impact rework (`golden-sample-chatgpt-playwright-v3-2-script-voice-impact-rework` — 2026-07-03)
+
+**Script Impact Gate PASS(6/6, hard fail 0) 후 live TTS 1/2회로 mux 완성 — PASS_CANDIDATE_FOR_OWNER_REVIEW (Owner 청취/시청 QA 대기). 53.97s 자연 길이, padding/trim 0.**
+
+- 신규: golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json (revised narration + gate 자체평가 + 앵커 계획) / run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs (v3-1 runner 파생 + **gate 미통과 시 TTS fetch 전 abort 블록** 추가) / golden_sample_..._visual_render_manifest.v3_2_tts_anchored.json (생성물)
+- 대본 강화(427자): 질문형 hook("통장은 왜 그대로일까요") / "나만 이런가 싶죠" 개인 자극 / 아하#1 "인상은 한 번인데 오른 고정비는 매달 반복" / 아하#2 "오른 월급 하나만 선명하게, 조용히 올라간 생활 기준은 안 보임" / 아하#3 면죄 반전 "내가 헤퍼진 게 아니에요, 자리를 잃었을 뿐" / CTA "저장해 두고 다음 월급날 이 순서대로 해보세요". gate 점수: hook 91 / causality 92 / bridge 91 / specificity 92 / save 89 / naturalness 90 — script_impact_gate_report.v3_2.json 기록.
+- TTS 1회차 즉시 전 게이트 PASS: **ratio 0.0682 / first5s 0.35s / speechActive 0.932** / 시작 무음 0s / tail 0.61s / clipped 없음 — punch 마침표를 임팩트 지점(p1/p3/p6/p7/p8)에만 배치한 구두점 설계가 적중, 2회차 불필요.
+- Reflow: overlay 29개 전부 delta ≤50ms, minDwell 0.99s, story gate '세 개' 발화 44.93s > slot3 42.74s ✓. accepted v3.1 elements 무변경, 지폐 선명도 보존 (vision 프레임 확인).
+- mux: `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4` — **1080x1920 h264 30fps 53.97s audio 1 stream** ✅ frames 19장 + gate report + manifest + audit + caption timeline + script preview.
+- vs v3.1 mux: 논리 동일 + 개인 자극/면죄 반전/반복 프레임/선명 CTA 추가, 무음 비율도 개선(0.0996→0.0682). 길이 45.9→53.97s (자연 길이, 대본 정보량 증가분).
+- 금지 미수행: gate 전 TTS 0 · 이미지 생성 0 · 타 API 0 · scene별 TTS 0 · padding/trim 0 · upload 0 · Golden Sample PASS 선언 없음 · env/secret 무변경 · 보호 파일 무접촉 · commit/push 없음.
