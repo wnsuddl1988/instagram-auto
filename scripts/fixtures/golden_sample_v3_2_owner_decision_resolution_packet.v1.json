@@ -1,0 +1,290 @@
+{
+  "schemaVersion": "golden_sample_owner_decision_resolution_packet_v1",
+  "taskId": "golden-sample-v3-2-owner-decision-resolution-packet-v1",
+  "status": "DECISION_PREPARATION_NO_LIVE",
+  "createdAt": "2026-07-04",
+  "nature": "no-live Owner decision packet — Slice 5 integrated readiness contract의 unresolvedOwnerDecisions 10개를 Owner가 고르기 쉽게 정규화. 어떤 결정도 여기서 RESOLVED/APPROVED/PASS로 바뀌지 않는다. recommendedDefault·safeApprovalSnippet은 '결정 준비'일 뿐 live 실행 승인이 아니다.",
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "unchangedBy": "이 packet은 verdict를 승격하지 않는다. 결정을 정리만 한다.",
+    "isNot": ["upload_ready", "production_live_ready", "automation_ready", "render_ready", "tts_live_ready", "owner_final_approved"]
+  },
+
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveRenderApproved": false,
+    "liveImageGenerationApproved": false,
+    "chatgptPlaywrightApproved": false,
+    "liveAudioAnalysisApproved": false,
+    "ownerQaPassed": false,
+    "productionReady": false
+  },
+
+  "basedOn": {
+    "integratedReadinessContract": "scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json",
+    "gapAnalysis": "scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json",
+    "note": "결정 목록/키/blocks는 Slice 5 integrated readiness contract의 unresolvedOwnerDecisions가 단일 소스. 이 packet은 그것을 참조·정규화만 한다."
+  },
+
+  "decisionBuckets": {
+    "before_live_tts_audio_mux": ["script_impact_gate_score_authority"],
+    "before_live_image_runner": ["image_script_allow_guard", "poll_25s_passive_window"],
+    "before_render": ["font_vendoring"],
+    "before_upload_automation": ["upload_endpoint_disposition", "owner_viewing_listening_qa"],
+    "docs_schema_cleanup": ["legacy_line_scope", "blueprint_schema_unification", "md5_locked_image_durability", "contract_duality_resolution"]
+  },
+
+  "globalNonApprovalWarning": "어떤 decision을 고르더라도 그 선택은 해당 결정의 해소만 의미한다. live TTS/render/mux/image generation/ChatGPT/Playwright/browser/upload/automation expansion/env/secret/dependency/DB/deploy는 각각 별도 명시 Owner 승인 + 별도 live slice가 있어야 실행된다. 결정 해소는 실행 승인이 아니다.",
+
+  "decisions": [
+    {
+      "id": 1,
+      "key": "script_impact_gate_score_authority",
+      "bucket": "before_live_tts_audio_mux",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#1] / gapAnalysis B1,G3",
+      "summary": "Script Impact Gate 점수를 누가 생산하는가 (self-assessment fixture / LLM-judge / Codex 판정) + provenance 필드 의무화 여부.",
+      "blocks": ["live_tts_audio_mux_audit_slice"],
+      "recommendedDefault": "codex_judge_with_mandatory_provenance",
+      "recommendedDefaultRationale": "fixture self-assessment(손으로 쓴 숫자)만으로는 gate가 장부 검사로 전락(gapAnalysis B1 risk). provenance 필드 의무화로 점수 출처를 감사 가능하게 두는 것이 가장 보수적.",
+      "allowedChoices": [
+        { "choice": "self_assessment_fixture_with_provenance", "tradeoff": "가장 단순·저비용. provenance 없으면 위조 가능 — provenance 필드 필수 전제." },
+        { "choice": "codex_judge_with_mandatory_provenance", "tradeoff": "감사 가능·일관성 높음. 판정 단계 1회 추가 오버헤드." },
+        { "choice": "llm_judge_scored", "tradeoff": "자동화 확장에 유리하나 no-live 원칙과 비용·비결정성 리스크 — 별도 live 승인 필요." }
+      ],
+      "decideNow": true,
+      "decideNowRationale": "live TTS/audio/mux slice의 선행 blocker이며, 점수 생산 주체 결정은 코드 실행 없이 정책만으로 확정 가능.",
+      "minimumEvidenceBeforeDecision": "이미 충분 — gapAnalysis B1/G3와 Slice 5 contract가 선택지를 정의. 추가 artifact 불필요.",
+      "safeApprovalSnippet": "결정 #1 script_impact_gate_score_authority = codex_judge_with_mandatory_provenance 로 확정. provenance 필드 의무화. 이는 정책 결정일 뿐 live TTS/audio/mux 실행 승인이 아니다.",
+      "nonApprovalWarning": "이 결정은 점수 생산 정책만 정한다. live TTS/audio/mux 실행은 별도 live slice + 별도 Owner 승인 필요."
+    },
+    {
+      "id": 2,
+      "key": "legacy_line_scope",
+      "bucket": "docs_schema_cleanup",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#2] / gapAnalysis B3,G2",
+      "summary": "legacy 라인(living_tips generate-v2/render-v2 + CLAUDE.md tail-trim·sceneTts 지침)을 표준 밖 별도 라인으로 분리/문서 개정할지.",
+      "blocks": [],
+      "recommendedDefault": "isolate_as_pre_v3_2_legacy_documented",
+      "recommendedDefaultRationale": "CLAUDE.md 지시 준수가 곧 v3.2 표준 위반이 되는 문서-코드 충돌(gapAnalysis G2 risk). legacy로 명시 격리하면 충돌 해소하면서 기존 자산 보존.",
+      "allowedChoices": [
+        { "choice": "isolate_as_pre_v3_2_legacy_documented", "tradeoff": "충돌 해소·기존 자산 보존. 문서 2계보 유지 부담." },
+        { "choice": "deprecate_legacy_line", "tradeoff": "단일 표준으로 단순화. living_tips 기존 산출물/문서 폐기 리스크." },
+        { "choice": "defer", "tradeoff": "당장 blocker 아님. 그러나 문서-코드 충돌이 자동화 시 재발." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "어떤 live lane도 직접 막지 않음(blocks 비어 있음). 다만 문서 정합을 위해 조기 결정 권장.",
+      "minimumEvidenceBeforeDecision": "living_tips 라인의 향후 사용 계획(유지 vs 폐기) 확정. Owner의 living_tips 지속 의사.",
+      "safeApprovalSnippet": "결정 #2 legacy_line_scope = isolate_as_pre_v3_2_legacy_documented 로 확정. 문서만 개정하며 코드 실행/수정 승인은 아니다.",
+      "nonApprovalWarning": "이 결정은 문서 라인 분류만 정한다. render/TTS 코드 수정·실행 승인이 아니다."
+    },
+    {
+      "id": 3,
+      "key": "upload_endpoint_disposition",
+      "bucket": "before_upload_automation",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#3] / gapAnalysis H2",
+      "summary": "app/api/upload + UploadPanel + n8n workflow 처분 — 하드닝(인증+readiness gate) vs 폐기.",
+      "blocks": ["upload_slice"],
+      "recommendedDefault": "keep_hard_blocked_until_upload_slice",
+      "recommendedDefaultRationale": "/api/upload는 무인증·무게이트 live 엔드포인트(gapAnalysis H2). Slice 0 upload hard block이 이미 차단 중. 처분 방향(하드닝 vs 폐기)은 upload slice에서 결정하되, 그전까지 하드 블록 유지가 유일한 안전값.",
+      "allowedChoices": [
+        { "choice": "keep_hard_blocked_until_upload_slice", "tradeoff": "가장 안전. 처분 결정을 upload slice로 연기." },
+        { "choice": "harden_with_auth_and_readiness_gate", "tradeoff": "미래 업로드 경로 확보. 인증+gate 구현 필요·high risk." },
+        { "choice": "delete_upload_endpoint_and_panel", "tradeoff": "공격면 제거. 향후 업로드 재구축 비용." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "실제 처분은 upload slice(order 6, high risk)에서 집행. 지금은 하드 블록 유지가 기본값이므로 조기 확정 불필요.",
+      "minimumEvidenceBeforeDecision": "Owner QA(#owner_qa) 통과 + 업로드 큐/인증 설계 존재 + upload slice 착수 승인.",
+      "safeApprovalSnippet": "결정 #3 upload_endpoint_disposition = keep_hard_blocked_until_upload_slice 로 확정. 업로드는 계속 차단이며 어떤 upload 실행/엔드포인트 활성화 승인도 아니다.",
+      "nonApprovalWarning": "이 결정은 처분 방향만 정한다. upload 실행·엔드포인트 활성화·인증 우회 승인이 절대 아니다. Slice 0 hard block 유지."
+    },
+    {
+      "id": 4,
+      "key": "blueprint_schema_unification",
+      "bucket": "docs_schema_cleanup",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#4] / gapAnalysis C1",
+      "summary": "blueprint 스키마 통일 — salary_3days.v2 필드명→표준 6필드명 매핑 확정, lib/blueprints VideoBlueprint 관계.",
+      "blocks": [],
+      "recommendedDefault": "adopt_standard_six_field_names_map_v2",
+      "recommendedDefaultRationale": "salary_3days.v2가 5/6 필드 구현(gapAnalysis C1). 표준 6필드명(claim/must_show/must_not_show/understandable_without_card/card_caption_adds/reject_reasons)으로 개명하면 §3 기계검사 가능.",
+      "allowedChoices": [
+        { "choice": "adopt_standard_six_field_names_map_v2", "tradeoff": "기계검사 가능·story-visual guard 정합. 필드 개명 매핑 문서 필요." },
+        { "choice": "keep_v2_field_names_add_alias_layer", "tradeoff": "기존 fixture 무변경. alias 레이어 유지 복잡도." },
+        { "choice": "defer", "tradeoff": "blocker 아님. 스키마 이원화가 자동 blueprint 생성 시 재검토 부담." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "live lane 직접 blocker 아님. Slice 1 story-visual-evidence 계약이 이미 필드 기준을 고정했으므로 정합 정리 차원.",
+      "minimumEvidenceBeforeDecision": "lib/blueprints VideoBlueprint 타입과 v2 fixture 필드 diff 매핑표.",
+      "safeApprovalSnippet": "결정 #4 blueprint_schema_unification = adopt_standard_six_field_names_map_v2 로 확정. 스키마/문서 정의만이며 코드 마이그레이션 실행 승인은 아니다.",
+      "nonApprovalWarning": "이 결정은 필드명 표준만 정한다. 코드 마이그레이션 실행·기존 route 수정 승인이 아니다."
+    },
+    {
+      "id": 5,
+      "key": "md5_locked_image_durability",
+      "bucket": "docs_schema_cleanup",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#5] / gapAnalysis D5",
+      "summary": "md5-locked 원본 이미지 내구성/백업 정책 (output/·C:\\tmp 휘발성).",
+      "blocks": [],
+      "recommendedDefault": "define_durable_backup_location_policy",
+      "recommendedDefaultRationale": "잠긴 원본이 output/·C:\\tmp(휘발)에 있어 유실 시 md5 상이 → 전면 재QA(gapAnalysis D5 risk). 내구성 있는 백업 위치 정책 정의가 보수적.",
+      "allowedChoices": [
+        { "choice": "define_durable_backup_location_policy", "tradeoff": "재QA 리스크 제거. 백업 위치/절차 문서화 필요." },
+        { "choice": "accept_volatility_document_recovery_procedure", "tradeoff": "저비용. 유실 시 재생성 비용·md5 재lock 필요." },
+        { "choice": "defer", "tradeoff": "blocker 아님. 그러나 휘발성 자산 유실 위험 상존." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "live lane 직접 blocker 아님. 다만 lock 아티팩트 보존은 향후 재QA 비용에 직접 영향.",
+      "minimumEvidenceBeforeDecision": "현재 lock 원본의 실제 저장 경로 목록 + 백업 대상 용량 추정.",
+      "safeApprovalSnippet": "결정 #5 md5_locked_image_durability = define_durable_backup_location_policy 로 확정. 정책 정의만이며 파일 이동/복사 실행 승인은 아니다.",
+      "nonApprovalWarning": "이 결정은 백업 정책만 정한다. output/·C:\\tmp read/write 실행 승인이 아니다."
+    },
+    {
+      "id": 6,
+      "key": "font_vendoring",
+      "bucket": "before_render",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#6] / gapAnalysis F1,E2",
+      "summary": "Noto Sans KR Black VF vendoring 여부 (시스템 폰트 의존 제거, BlackHanSans 지위 포함).",
+      "blocks": ["live_render_slice"],
+      "recommendedDefault": "vendor_noto_black_vf_remove_system_dependency",
+      "recommendedDefaultRationale": "render_v2.py가 BlackHanSans+silent default-font fallback, Noto VF는 시스템 폰트 의존(gapAnalysis F1). vendoring해야 render 자동화가 폰트부터 준수.",
+      "allowedChoices": [
+        { "choice": "vendor_noto_black_vf_remove_system_dependency", "tradeoff": "재현성·준수 확보. 폰트 파일 저장소 편입(라이선스 확인 필요)." },
+        { "choice": "keep_blackhansans_as_approved", "tradeoff": "기존 자산 유지. Noto Black 룩 기준과 불일치 가능." },
+        { "choice": "defer_until_render_slice", "tradeoff": "render slice에서 결정. 그전 render 착수 불가." }
+      ],
+      "decideNow": true,
+      "decideNowRationale": "live render slice의 선행 blocker이며, vendoring 여부는 파일 실행 없이 정책·라이선스 확인만으로 확정 가능.",
+      "minimumEvidenceBeforeDecision": "Noto Sans KR Black VF 라이선스 재배포 가능 여부 확인. BlackHanSans 현행 사용처.",
+      "safeApprovalSnippet": "결정 #6 font_vendoring = vendor_noto_black_vf_remove_system_dependency 로 확정. 폰트 정책 결정일 뿐 render/mux 실행 승인이 아니며 폰트 파일 추가는 별도 승인 slice에서 집행한다.",
+      "nonApprovalWarning": "이 결정은 폰트 정책만 정한다. render/mux 실행·폰트 파일 커밋·dependency 변경 승인이 아니다."
+    },
+    {
+      "id": 7,
+      "key": "contract_duality_resolution",
+      "bucket": "docs_schema_cleanup",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#7] / gapAnalysis B4",
+      "summary": "계약 이원화 해소 — money-shorts creative contract v2 승계 vs v3.2 standard JSON 단일 계약.",
+      "blocks": [],
+      "recommendedDefault": "single_v3_2_standard_json_contract",
+      "recommendedDefaultRationale": "creative contract v2는 30s 고정+3-point listicle 하드코딩(gapAnalysis B4 risk). v3.2 standard JSON 단일 계약으로 수렴하되 재사용부(금지어 스캔·source gate)만 이식이 충돌 최소.",
+      "allowedChoices": [
+        { "choice": "single_v3_2_standard_json_contract", "tradeoff": "단일 소스·충돌 제거. compiler 재구축 필요." },
+        { "choice": "inherit_creative_contract_v2_axes", "tradeoff": "자연 길이·인과 beat 축 승계. v2 listicle 잔재 정리 부담." },
+        { "choice": "defer", "tradeoff": "blocker 아님. 이원화가 compiler 작업 시 재검토." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "live lane 직접 blocker 아님. compiler 재구축 slice 전 정책 정리 차원.",
+      "minimumEvidenceBeforeDecision": "creative contract v2 축과 v3.2 standard JSON 필드 겹침/차이 매핑.",
+      "safeApprovalSnippet": "결정 #7 contract_duality_resolution = single_v3_2_standard_json_contract 로 확정. 계약 소스 정의만이며 compiler 재구축 실행 승인은 아니다.",
+      "nonApprovalWarning": "이 결정은 계약 소스만 정한다. compiler 코드 재구축·기존 스크립트 수정 실행 승인이 아니다."
+    },
+    {
+      "id": 8,
+      "key": "image_script_allow_guard",
+      "bucket": "before_live_image_runner",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#8] / gapAnalysis D6",
+      "summary": "FLUX2/OpenAI-image 스크립트 ALLOW_* 가드 추가 여부 (현재 키 존재=실행).",
+      "blocks": ["live_image_runner_slice"],
+      "recommendedDefault": "add_allow_guard_to_all_paid_image_scripts",
+      "recommendedDefaultRationale": "현재 API 키 존재=실행 가능, PAID_API_ENABLED=true 시 미설정 세부 플래그 전부 허용 → 조용한 과금(gapAnalysis D6 risk). ALLOW_* 가드 추가가 유일한 fail-closed.",
+      "allowedChoices": [
+        { "choice": "add_allow_guard_to_all_paid_image_scripts", "tradeoff": "조용한 과금 차단. 각 스크립트 가드 추가 작업." },
+        { "choice": "centralize_via_paid_api_guard_only", "tradeoff": "단일 가드 모듈. 값 해석 통일 선행 필요." },
+        { "choice": "defer_until_image_runner_slice", "tradeoff": "image runner slice에서 결정. 그전 과금 리스크 상존." }
+      ],
+      "decideNow": true,
+      "decideNowRationale": "live image runner slice의 선행 blocker이자 조용한 과금 방지 안전장치. 가드 추가 방침은 정책만으로 확정 가능(실제 코드 추가는 별도 slice).",
+      "minimumEvidenceBeforeDecision": "이미 충분 — gapAnalysis D6/G3가 리스크와 선택지 정의. lib/paidApiGuard.ts 값 해석 현황.",
+      "safeApprovalSnippet": "결정 #8 image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts 로 확정. 가드 추가 방침 결정일 뿐 image generation/live runner 실행 승인이 아니며 가드 코드 추가는 별도 승인 slice에서 집행한다.",
+      "nonApprovalWarning": "이 결정은 가드 방침만 정한다. image generation·FLUX2/OpenAI-image API 호출·live runner 실행 승인이 아니다."
+    },
+    {
+      "id": 9,
+      "key": "poll_25s_passive_window",
+      "bucket": "before_live_image_runner",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#9] / gapAnalysis D2",
+      "summary": "poll 해석 확정 — 25s passive window(v3.2 실동작) 인정 vs 제출 즉시 1-2s poll.",
+      "blocks": ["live_image_runner_slice"],
+      "recommendedDefault": "accept_25s_passive_window_as_v3_2_behavior",
+      "recommendedDefaultRationale": "25s passive window가 v3.2 실동작(gapAnalysis D2, risk 낮음). 실측 동작을 표준으로 인정하는 것이 재현성 측면에서 보수적.",
+      "allowedChoices": [
+        { "choice": "accept_25s_passive_window_as_v3_2_behavior", "tradeoff": "실측 동작과 일치. 제출 직후 poll보다 지연." },
+        { "choice": "switch_to_immediate_1_2s_poll", "tradeoff": "표준 문구와 일치. v3.2 실동작과 차이·재검증 필요." },
+        { "choice": "defer_until_image_runner_slice", "tradeoff": "image runner slice에서 결정. 타이밍 계약 미확정." }
+      ],
+      "decideNow": true,
+      "decideNowRationale": "live image runner slice의 선행 blocker이며, poll 해석은 실행 없이 실측 로그 기준으로 정책 확정 가능.",
+      "minimumEvidenceBeforeDecision": "이미 충분 — gapAnalysis D2가 25s passive window를 v3.2 실동작으로 기록. 추가 실행 불필요.",
+      "safeApprovalSnippet": "결정 #9 poll_25s_passive_window = accept_25s_passive_window_as_v3_2_behavior 로 확정. 타이밍 해석 결정일 뿐 ChatGPT/Playwright/browser 실행 승인이 아니다.",
+      "nonApprovalWarning": "이 결정은 poll 타이밍 해석만 정한다. ChatGPT/Playwright/browser/CDP 실행·live image 생성 승인이 아니다."
+    },
+    {
+      "id": "owner_qa",
+      "key": "owner_viewing_listening_qa",
+      "bucket": "before_upload_automation",
+      "status": "PENDING",
+      "source": "Slice 5 integratedReadinessContract.unresolvedOwnerDecisions[#owner_qa] / gapAnalysis G6,H3",
+      "summary": "Owner 직접 시청/청취 QA — 최종 acceptance는 기술 게이트 전부 통과해도 Owner 체감 QA에서 reject 가능. 자동화로 대체 불가.",
+      "blocks": ["upload_slice", "automation_expansion"],
+      "recommendedDefault": "keep_manual_owner_qa_mandatory_non_automatable",
+      "recommendedDefaultRationale": "PASS_CANDIDATE_PENDING_VISION_QA를 종결 PASS로 오인 금지(gapAnalysis G6). Owner 체감 QA는 수동 단계 — fire-and-forget cron 불가(H3). 자동 대체 불허가 유일한 안전값.",
+      "allowedChoices": [
+        { "choice": "keep_manual_owner_qa_mandatory_non_automatable", "tradeoff": "체감 품질 보장. Owner 수동 시청/청취 단계 상시 필요." },
+        { "choice": "queue_plus_owner_approval_model", "tradeoff": "큐+승인으로 반자동화. 스키마 신설 필요·여전히 수동 승인 유지." }
+      ],
+      "decideNow": false,
+      "decideNowRationale": "upload/automation slice의 선행 blocker. 결정 방향은 명확(수동 유지)이나 큐 모델 설계는 upload slice에서 구체화.",
+      "minimumEvidenceBeforeDecision": "업로드 큐 스키마 설계 + owner_qa_pass 운반 필드 정의.",
+      "safeApprovalSnippet": "결정 #owner_qa owner_viewing_listening_qa = keep_manual_owner_qa_mandatory_non_automatable 로 확정. Owner 직접 시청/청취 QA는 자동 대체 불가·필수 유지. ownerQaPassed는 이 결정으로 true가 되지 않으며 실제 통과는 Owner의 직접 확인으로만 기록된다.",
+      "nonApprovalWarning": "이 결정은 Owner QA를 수동·필수로 고정한다. 어떤 자동/기술 pass도 ownerQaPassed=true 또는 Owner QA PASS로 처리될 수 없다. 이 결정 확정이 곧 QA 통과가 아니다."
+    }
+  ],
+
+  "coverage": {
+    "requiredDecisionKeys": [
+      "script_impact_gate_score_authority",
+      "legacy_line_scope",
+      "upload_endpoint_disposition",
+      "blueprint_schema_unification",
+      "md5_locked_image_durability",
+      "font_vendoring",
+      "contract_duality_resolution",
+      "image_script_allow_guard",
+      "poll_25s_passive_window",
+      "owner_viewing_listening_qa"
+    ],
+    "totalDecisions": 10,
+    "allPending": true,
+    "note": "requiredDecisionKeys는 Slice 5 integrated readiness contract의 unresolvedOwnerDecisions 10개 key와 정확히 일치해야 한다. static guard가 교차검증한다."
+  },
+
+  "prohibitedEscalation": {
+    "rule": "이 packet 또는 그 소비자가 아래 flag를 명시 Owner 승인 없이 true로 만들거나, 어떤 decision을 RESOLVED/APPROVED/PASS로 표시하면 fail-closed.",
+    "flags": ["uploadReady", "automationExpansionReady", "implementationApproved", "liveTtsApproved", "liveMuxApproved", "liveRenderApproved", "liveImageGenerationApproved", "chatgptPlaywrightApproved", "ownerQaPassed", "productionReady"],
+    "forbiddenStatusValues": ["RESOLVED", "APPROVED", "PASS", "DONE", "COMPLETE", "OWNER_APPROVED"],
+    "ownerQaRule": "owner_viewing_listening_qa는 어떤 자동/기술 경로로도 PASS가 될 수 없다."
+  },
+
+  "forbiddenBehavior": [
+    "decision status를 PENDING 외 값(RESOLVED/APPROVED/PASS 등)으로 자동 변경",
+    "recommendedDefault를 실제 선택/승인으로 해석",
+    "safeApprovalSnippet 존재를 live 실행 승인으로 해석",
+    "readiness flag를 승인 없이 true로 승격",
+    "ownerQaPassed를 자동/기술 pass로 true 처리",
+    "live TTS/render/mux/image generation/ChatGPT/Playwright/browser/upload/env/secret/dependency/DB/deploy 실행",
+    "prior Slice 0~5 artifact 수정"
+  ]
+}
