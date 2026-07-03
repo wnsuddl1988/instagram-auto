@@ -1,7 +1,7 @@
 /**
  * ep003 S3 Boss-Free 키프레임 생성 (1회 단독 실행)
  *
- * 승인: ALLOW_CHATGPT_IMAGE=true
+ * 승인: ALLOW_CHATGPT_IMAGE=1 (fail-closed 표준화 — 구 =true 표기는 폐기)
  * 상한: 1회 / $0.05 이하
  * ref: output/v2/ep003_jdm/qa/s3_bossfree/jun_identity_reference.png  ← v5 변경
  *      (S1/S2 얼굴+복장 crop, 배경·문 제외 — identity-only)
@@ -18,7 +18,7 @@
  * v5 출력: s3_bossfree_kf_try5.png
  *
  * 실행:
- *   ALLOW_CHATGPT_IMAGE=true node scripts/_ep003-jdm-s3-bossfree-kf.mjs
+ *   ALLOW_CHATGPT_IMAGE=1 node scripts/_ep003-jdm-s3-bossfree-kf.mjs
  */
 
 import { chromium } from "playwright";
@@ -39,14 +39,16 @@ const ROOT      = path.resolve(__dirname, "..");
 const KF_DIR    = path.join(ROOT, "output/v2/ep003_jdm/keyframes");
 const QA_DIR    = path.join(ROOT, "output/v2/ep003_jdm/qa/s3_bossfree");
 
+// ── fail-closed ChatGPT image allow guard: output write/browser·CDP 전에 반드시 통과 ──
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+// 이 guard 통과가 이미지 생성 실행 승인을 의미하지 않는다 (no-live 기본).
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — browser/CDP/output write 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(KF_DIR, { recursive: true });
 fs.mkdirSync(QA_DIR, { recursive: true });
-
-// ── 안전장치 ──────────────────────────────────────────────────────────────────
-if (!process.env.ALLOW_CHATGPT_IMAGE) {
-  console.error("ABORT: ALLOW_CHATGPT_IMAGE 환경변수 없음. 승인 없이 실행 금지.");
-  process.exit(1);
-}
 
 // ── 상한 카운터 (절대 1회 초과 금지) ─────────────────────────────────────────
 let TOTAL_SEND = 0;

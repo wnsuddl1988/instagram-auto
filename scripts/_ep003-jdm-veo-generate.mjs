@@ -58,6 +58,14 @@ const USER_DATA_ROOTS = {
 const CDP_PORT  = PROFILE_PORT[PROFILE_NUM];
 const USER_DATA = USER_DATA_ROOTS[PROFILE_NUM];
 
+// ── fail-closed Gemini/Veo video allow guard: browser/CDP/network/output 전에 반드시 통과 ──
+// ALLOW_GEMINI_VEO=1은 local fail-closed 스위치일 뿐, Gemini/Veo 실행 승인이 아니다 (no-live 기본).
+// 기존 deep-path ALLOW_VEO 게이트(제출 직전)는 그대로 유지된다 (이중 차단).
+if (process.env.ALLOW_GEMINI_VEO !== "1") {
+  console.error("ABORT: Gemini/Veo video 경로 차단 (fail-closed). 필요한 env: ALLOW_GEMINI_VEO=1 — browser/CDP/network/output 전에 중단.");
+  process.exit(2);
+}
+
 // ── 경로 ─────────────────────────────────────────────────────────────────────────
 const KF_DIR       = path.join(ROOT, "output/v2/ep003_jdm/keyframes");
 const VEO_DIR      = path.join(ROOT, "output/v2/ep003_jdm/veo");

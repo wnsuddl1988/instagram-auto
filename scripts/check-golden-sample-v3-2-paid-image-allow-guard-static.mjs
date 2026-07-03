@@ -2,8 +2,8 @@
 /**
  * check-golden-sample-v3-2-paid-image-allow-guard-static.mjs
  *
- * Golden Sample v3.2 — paid image allow-guard 하드닝 정적 가드 (2차 review-fix 포함).
- * task: golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1
+ * Golden Sample v3.2 — paid image allow-guard 하드닝 정적 가드 (3차 gap-closure 포함).
+ * task: golden-sample-v3-2-browser-generation-runner-allow-guard-gap-closure-v1
  *
  * - no-live / no-network / no-image-gen / no-browser / no-secret-read:
  *   레포 내 소스/fixture만 읽어 검증. 실제 이미지 생성/API/browser/.env.local read 없음.
@@ -13,20 +13,25 @@
  *   2) 이미지 provider(imagen/openai-image/bfl-flux2)가 union + env key 매핑에 존재
  *   3) fail-closed semantics를 JS로 재현해 mocked in-memory env로 진리표 검증
  *      (master-only 차단, provider flag 미설정/false 차단, 둘 다 true만 허용)
- *   4) active paid image script 13개(지정 3 + 1차 review-fix 6 + 2차 review-fix 4)가
+ *   3b) **policy 주도 browser runner 순서 스캔**: hardenedImageScripts의
+ *      chatgpt-playwright / gemini-veo 항목 전부에 대해 provider flag 인라인 guard가
+ *      존재하고 첫 mkdirSync 발생과 browser/CDP 실행 호출보다 앞서는지 검증
+ *   4) active paid image/browser generation script 36개(최초 3 + 1차 6 + 2차 4 + 3차 23)가
  *      secret read / output write / browser·CDP 전에 allow guard를 두는지 소스 순서 스캔
  *   5) decision state fixture에 image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts
  *   6) **BFL inventory 스캔**: scripts/ 하위(archive 제외, check-*-static.mjs 제외) 모든 .mjs 중
  *      BFL_API_KEY/BFL endpoint 관련 문자열을 가진 runner가 top-level allow guard 호출
  *      없이 남아있으면 FAIL.
- *   7) **ChatGPT/Playwright inventory 스캔**: scripts/ 하위 non-archive .mjs 중
+ *   7) **browser/CDP generation inventory 스캔**: scripts/ 하위 non-archive .mjs 중
  *      브라우저 자동화 라이브러리 import / CDP 연결 호출 / Chrome 준비 helper /
- *      공용 이미지 core 모듈 import 등 browser/CDP 이미지 실행 신호를 가진 runner가
- *      `ALLOW_CHATGPT_IMAGE` 체크 없이
- *      남아있으면 FAIL — knownGaps로 은닉된 채 남는 것을 금지(이 태스크 이후 knownGaps는
- *      빈 배열이어야 하며, 비어있지 않으면 그 자체로 FAIL).
+ *      공용 core 모듈 import 등 browser/CDP generation 신호를 가진 파일은
+ *      (a) hardenedImageScripts 등재 + provider flag guard 보유, 또는
+ *      (b) policy.browserRunnerClassification.helperModules의 evidence-classified helper
+ *      둘 중 하나여야 하며, "known gap 목록 등재"만으로는 절대 통과할 수 없다.
+ *      helper는 내부 guard(spawn/launch 전) 또는 caller 전원 hardened임을 소스로 재검증.
+ *      3차 gap-closure 24개 파일 전부가 hardened 또는 helper로 해소됐는지 개별 확인.
  *   8) mutant: master-only, provider missing/false, guard-after-secret,
- *      browser-before-guard 등 fail 확인
+ *      browser-before-guard, gemini-veo guard 부재 등 fail 확인
  * - 전부 통과 시 exit 0 + PASS 카운트, 위반 시 exit 1.
  */
 import { readFileSync, existsSync, readdirSync } from "node:fs";
@@ -111,6 +116,15 @@ function reproCheckAllowed(env, masterKey, providerKey) {
     /getPerProviderFlag\(provider\)/.test(guardSrc));
 }
 
+// browser/CDP "실행 호출" 전용 패턴 — 브라우저 라이브러리 import 선언은
+// 실행이 아니므로 제외하고, 실제 CDP 연결/Chrome 준비/launch 호출 시점만 잡는다.
+// (섹션 3/3b/7 공용 — 스캔 토큰은 분할 보관해 self-scan과 충돌하지 않게 한다)
+const CDP_EXEC_RE = new RegExp(
+  ["\\." + "connectOver" + "CDP" + "\\(", "\\b" + "ensure" + "Chrome" + "\\(", "chromium\\." + "launch"].join("|")
+);
+// helper 모듈의 browser launch 지점(자식 프로세스 spawn 호출) — 토큰 분할 보관
+const SPAWN_CALL_RE = new RegExp("\\b" + "spawn" + "\\s*\\(");
+
 // ── 3. active paid image script 소스 순서 스캔 ─────────────────────────────
 // guard(allow flag 확인 abort)가 secret read / output write / browser 전에 와야 한다.
 function scanScriptOrder(rel, opts) {
@@ -179,12 +193,6 @@ function scanScriptOrder(rel, opts) {
       /paid image 경로 차단|경로 차단 \(fail-closed\)/.test(src) && /process\.exit\(/.test(src));
   }
 
-  // browser/CDP "실행 호출" 전용 패턴 — 브라우저 라이브러리 import 선언은
-  // 실행이 아니므로 제외하고, 실제 CDP 연결/Chrome 준비/launch 호출 시점만 잡는다.
-  const CDP_EXEC_RE = new RegExp(
-    ["\\." + "connectOver" + "CDP" + "\\(", "\\b" + "ensure" + "Chrome" + "\\(", "chromium\\." + "launch"].join("|")
-  );
-
   // image-source-test: chatgpt browser/CDP 실행 전에 ALLOW_CHATGPT_IMAGE 확인
   const imgTestSrc = readFileSync(path.join(ROOT, "scripts", "run-golden-sample-image-source-test-v1.mjs"), "utf8");
   const chatgptGuardIdx = imgTestSrc.search(/ALLOW_CHATGPT_IMAGE/);
@@ -233,6 +241,43 @@ function scanScriptOrder(rel, opts) {
   });
 }
 
+// ── 3b. policy 주도 browser generation runner 일반 순서 스캔 ────────────────
+// hardenedImageScripts의 chatgpt-playwright / gemini-veo 항목 전부에 대해:
+//   (a) provider flag 인라인 guard(`FLAG !== "1"`)가 존재하고
+//   (b) 첫 mkdirSync 발생(있다면)과 browser/CDP 실행 호출(있다면)보다 앞서며
+//   (c) guard 직후에 fail-closed abort(process.exit)가 있는지 검증.
+// 개별 파일을 하드코딩하지 않고 policy를 단일 소스로 사용 — 새 runner 등재 시 자동 검증.
+{
+  const FLAG_BY_PROVIDER = {
+    "chatgpt-playwright": "ALLOW_CHATGPT_IMAGE",
+    "gemini-veo": "ALLOW_GEMINI_VEO",
+  };
+  const browserEntries = (policy.hardenedImageScripts ?? []).filter((s) => FLAG_BY_PROVIDER[s.provider]);
+  check(`3b: policy 내 browser runner 항목 존재 (${browserEntries.length}건 — chatgpt-playwright/gemini-veo)`,
+    browserEntries.length >= 27);
+  for (const entry of browserEntries) {
+    const flag = FLAG_BY_PROVIDER[entry.provider];
+    const abs = path.join(ROOT, entry.path);
+    const base = path.basename(entry.path);
+    if (!existsSync(abs)) { check(`3b ${base}: 파일 실재`, false, "파일 없음"); continue; }
+    const src = readFileSync(abs, "utf8");
+    const guardRe = new RegExp(flag + "\\s*!==\\s*[\"']1[\"']");
+    const gIdx = src.search(guardRe);
+    check(`3b ${base}: ${flag}!=="1" 인라인 guard 존재`, gIdx !== -1);
+    if (gIdx === -1) continue;
+    const mkIdx = src.indexOf("mkdirSync(");
+    if (mkIdx !== -1) {
+      check(`3b ${base}: guard가 첫 mkdirSync 전에 위치`, gIdx < mkIdx, `guard@${gIdx} mkdir@${mkIdx}`);
+    }
+    const cdpIdx = src.search(CDP_EXEC_RE);
+    if (cdpIdx !== -1) {
+      check(`3b ${base}: guard가 browser/CDP 실행 호출 전에 위치`, gIdx < cdpIdx, `guard@${gIdx} cdp@${cdpIdx}`);
+    }
+    const after = src.slice(gIdx, gIdx + 400);
+    check(`3b ${base}: guard 직후 fail-closed abort (process.exit)`, /process\.exit\(/.test(after));
+  }
+}
+
 // ── 4. policy fixture 검증 ─────────────────────────────────────────────────
 {
   check("policy schemaVersion + status",
@@ -243,13 +288,27 @@ function scanScriptOrder(rel, opts) {
   const imageProviders = (policy.providers ?? []).filter((p) => p.image === true).map((p) => p.provider);
   check("policy providers: 이미지 provider imagen/openai-image/bfl-flux2 등재",
     ["imagen", "openai-image", "bfl-flux2"].every((p) => imageProviders.includes(p)));
-  check("policy hardenedImageScripts 13개(지정 3 + 1차 review-fix 6 + 2차 review-fix 4) + 전부 guardBeforeSecretRead=true + 실재",
-    Array.isArray(policy.hardenedImageScripts) && policy.hardenedImageScripts.length === 13 &&
+  check("policy hardenedImageScripts 36개(최초 3 + 1차 6 + 2차 4 + 3차 gap-closure 23) + 전부 guardBeforeSecretRead=true + 실재",
+    Array.isArray(policy.hardenedImageScripts) && policy.hardenedImageScripts.length === 36 &&
     policy.hardenedImageScripts.every((s) => s.guardBeforeSecretRead === true && existsSync(path.join(ROOT, s.path))));
-  check("policy knownGapsOutOfReviewFixScope: 이번 태스크 이후 빈 배열 (은닉 gap 금지)",
+  check("policy knownGapsOutOfReviewFixScope: 빈 배열 (은닉 gap 금지)",
     Array.isArray(policy.knownGapsOutOfReviewFixScope) && policy.knownGapsOutOfReviewFixScope.length === 0);
+  check("policy knownGapsOutOfCurrentReviewFixScope: 3차 gap-closure 이후 두 목록 모두 빈 배열 (해소 완료)",
+    Array.isArray(policy.knownGapsOutOfCurrentReviewFixScope?.guardedButUnregistered) &&
+    policy.knownGapsOutOfCurrentReviewFixScope.guardedButUnregistered.length === 0 &&
+    Array.isArray(policy.knownGapsOutOfCurrentReviewFixScope?.noGuardDetected) &&
+    policy.knownGapsOutOfCurrentReviewFixScope.noGuardDetected.length === 0);
   check("policy chatgptImagePolicy.flag/expectedValue 유지 (ALLOW_CHATGPT_IMAGE=1)",
     policy.chatgptImagePolicy?.flag === "ALLOW_CHATGPT_IMAGE" && policy.chatgptImagePolicy?.expectedValue === "1");
+  check("policy geminiVeoPolicy: ALLOW_GEMINI_VEO=1 no-live fail-closed 스위치 정의",
+    policy.geminiVeoPolicy?.flag === "ALLOW_GEMINI_VEO" && policy.geminiVeoPolicy?.expectedValue === "1" &&
+    /실행 승인이 아니다|no-live/.test(policy.geminiVeoPolicy?.note ?? ""));
+  check("policy browserRunnerClassification: 24개 gap 분류 counts (23 hardened + 1 helper + 0 non-generation)",
+    policy.browserRunnerClassification?.counts?.executableHardened === 23 &&
+    policy.browserRunnerClassification?.counts?.helperOnly === 1 &&
+    policy.browserRunnerClassification?.counts?.nonGeneration === 0 &&
+    Array.isArray(policy.browserRunnerClassification?.helperModules) &&
+    policy.browserRunnerClassification.helperModules.length === 2);
   check("policy enforcementScope: archive 제외 명시",
     Array.isArray(policy.enforcementScope?.excluded) &&
     policy.enforcementScope.excluded.some((e) => /archive/.test(e)));
@@ -306,14 +365,13 @@ function scanScriptOrder(rel, opts) {
     unguarded.length === 0, unguarded.join("; "));
 }
 
-// ── 7. inventory 스캔: ChatGPT/Playwright image runner unguarded 탐지 ───────
+// ── 7. inventory 스캔: browser/CDP generation runner unguarded 탐지 ─────────
 // non-archive .mjs 중 브라우저 라이브러리/CDP 연결 호출/Chrome 준비 helper/
-// 공용 이미지 core 모듈 import 등 browser/CDP 이미지 실행 신호를 가진 파일은 top-level에
-// `ALLOW_CHATGPT_IMAGE !== "1"`(또는 동등 helper 체크) 인라인 guard가 반드시 있어야 한다.
-// 이번 태스크가 승인한 4개 gap 파일은 knownGapsOutOfReviewFixScope(빈 배열, 섹션 4에서 검증)로
-// 은닉이 완전히 금지된다 — 4개는 무조건 hardenedImageScripts로 실재해야 한다.
-// 그 4개 밖에서 추가로 발견되는 unguarded 파일은 policy.knownGapsOutOfCurrentReviewFixScope에
-// 명시적으로 기록된 경우에만 "문서화된 범위 밖 gap"으로 통과하고, 미기록이면 FAIL한다.
+// 공용 core 모듈 import 등 browser/CDP generation 신호를 가진 파일은
+//   (a) hardenedImageScripts 등재 + provider flag 인라인 guard 보유, 또는
+//   (b) policy.browserRunnerClassification.helperModules의 evidence-classified helper
+// 둘 중 하나여야 한다. "known gap 목록 등재"만으로는 절대 통과할 수 없다 (3차 gap-closure로
+// pass-through 제거). helper는 내부 guard 위치 또는 caller 전원 hardened임을 소스로 재검증.
 {
   const scriptsDir = path.join(ROOT, "scripts");
   const entries = readdirSync(scriptsDir, { withFileTypes: true })
@@ -321,51 +379,108 @@ function scanScriptOrder(rel, opts) {
     .map((e) => e.name);
 
   const CHATGPT_SIGNAL_RE = new RegExp(
-    ["chrom" + "ium", "connectOver" + "CDP", "ensure" + "Chrome", "_chatgpt-image-core\\.mjs", "collectLastAssistantImages", "typePrompt"].join("|")
+    ["chrom" + "ium", "connectOver" + "CDP", "ensure" + "Chrome", "_chatgpt-image-core\\.mjs", "_gemini-veo-core\\.mjs", "collectLastAssistantImages", "typePrompt"].join("|")
   );
+  const FLAG_BY_PROVIDER = {
+    "chatgpt-playwright": "ALLOW_CHATGPT_IMAGE",
+    "gemini-veo": "ALLOW_GEMINI_VEO",
+  };
   const hardenedNames = new Set((policy.hardenedImageScripts ?? []).map((s) => path.basename(s.path)));
-  const THIS_TASK_REQUIRED_HARDENED = [
+  const providerByName = new Map((policy.hardenedImageScripts ?? []).map((s) => [path.basename(s.path), s.provider]));
+  const helperModules = policy.browserRunnerClassification?.helperModules ?? [];
+  const helperNames = new Set(helperModules.map((h) => path.basename(h.path)));
+
+  // 2차 review-fix 승인 4개 실재 (회귀 방지)
+  const PREV_TASK_REQUIRED_HARDENED = [
     "run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs",
     "_upload002-s5-kf-generate.mjs",
     "_chatgpt-image-preflight.mjs",
     "_chatgpt-image-anchor-generate.mjs",
   ];
-  check("이번 태스크 승인 4개 gap 파일 전부 hardenedImageScripts에 실재 (knownGaps 은닉 금지 확인)",
-    THIS_TASK_REQUIRED_HARDENED.every((n) => hardenedNames.has(n)),
-    THIS_TASK_REQUIRED_HARDENED.filter((n) => !hardenedNames.has(n)).join(", "));
+  check("2차 review-fix 승인 4개 파일 전부 hardenedImageScripts에 실재 (회귀 방지)",
+    PREV_TASK_REQUIRED_HARDENED.every((n) => hardenedNames.has(n)),
+    PREV_TASK_REQUIRED_HARDENED.filter((n) => !hardenedNames.has(n)).join(", "));
 
-  const documentedGapNames = new Set([
-    ...((policy.knownGapsOutOfCurrentReviewFixScope?.guardedButUnregistered) ?? []),
-    ...((policy.knownGapsOutOfCurrentReviewFixScope?.noGuardDetected) ?? []),
-  ]);
-  // 승인된 4개는 문서화된 gap 목록에 있으면 안 된다 (이미 hardened되어 gap이 아니어야 함).
-  check("이번 태스크 승인 4개 gap 파일이 knownGapsOutOfCurrentReviewFixScope에 재등장하지 않음",
-    THIS_TASK_REQUIRED_HARDENED.every((n) => !documentedGapNames.has(n)),
-    THIS_TASK_REQUIRED_HARDENED.filter((n) => documentedGapNames.has(n)).join(", "));
+  // 3차 gap-closure 24개 전부 hardened 또는 evidence-classified helper (은닉/pass-through 금지)
+  const GAP_CLOSURE_24 = [
+    "run-chatgpt-playwright-fresh-image-set-v3.mjs",
+    "run-chatgpt-playwright-image-method-revalidation-v1.mjs",
+    "run-chatgpt-playwright-image-method-revalidation-v2.mjs",
+    "run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs",
+    "run-money-shorts-rate-freeze-image-regeneration-v1.mjs",
+    "_ep003-jdm-keyframe-generate.mjs",
+    "_ep003-jdm-s3-bossfree-kf-v6.mjs",
+    "_ep003-jdm-s3-bossfree-kf.mjs",
+    "_ep003-jdm-veo-generate.mjs",
+    "_ep003-jdm-veo-preflight.mjs",
+    "_gemini-veo-core.mjs",
+    "_gemini-veo-preflight.mjs",
+    "_upload002-kf-generate.mjs",
+    "_upload002-s1-veo-generate.mjs",
+    "_upload002-s2-continuity-fix.mjs",
+    "_upload002-s2-recover.mjs",
+    "_upload002-s2-veo-generate.mjs",
+    "_upload002-s3-veo-generate.mjs",
+    "_upload002-s4-kf-generate.mjs",
+    "_upload002-s4-veo-generate.mjs",
+    "_upload002-s5-edit-from-s4.mjs",
+    "_upload002-s5-final.mjs",
+    "_upload002-s5-veo-generate.mjs",
+    "_upload002-s5-veo-regen.mjs",
+  ];
+  check("3차 gap-closure 24개 파일 전부 hardened 또는 helper-classified (은닉 gap 0)",
+    GAP_CLOSURE_24.every((n) => hardenedNames.has(n) || helperNames.has(n)),
+    GAP_CLOSURE_24.filter((n) => !hardenedNames.has(n) && !helperNames.has(n)).join(", "));
+
+  // helper 모듈 소스 재검증 (분류 주장만으로 통과 금지)
+  for (const h of helperModules) {
+    const base = path.basename(h.path);
+    const abs = path.join(ROOT, h.path);
+    if (!existsSync(abs)) { check(`helper ${base}: 파일 실재`, false, "파일 없음"); continue; }
+    const src = readFileSync(abs, "utf8");
+    if (h.internalGuardFlag) {
+      const gIdx = src.search(new RegExp(h.internalGuardFlag + "\\s*!==\\s*[\"']1[\"']"));
+      const sIdx = src.search(SPAWN_CALL_RE);
+      check(`helper ${base}: 내부 guard(${h.internalGuardFlag})가 존재하고 browser launch(spawn) 호출 전에 위치`,
+        gIdx !== -1 && (sIdx === -1 || gIdx < sIdx), `guard@${gIdx} spawn@${sIdx}`);
+    } else {
+      // caller-level 커버: 이 helper를 참조하는 non-archive .mjs 전원이 hardened / helper / 정적 가드 자신
+      const importers = entries.filter((n) =>
+        n !== base && readFileSync(path.join(scriptsDir, n), "utf8").includes(base));
+      const bad = importers.filter((n) =>
+        !hardenedNames.has(n) && !helperNames.has(n) &&
+        n !== path.basename(SELF) &&
+        !n.startsWith("check-golden-sample") && !n.startsWith("check-premium-editorial"));
+      check(`helper ${base}: caller-level 커버 — 모든 non-archive importer(${importers.length}건)가 hardened/guard`,
+        bad.length === 0, bad.join(", "));
+    }
+  }
 
   const candidates = entries.filter((name) => {
     if (name.startsWith("check-golden-sample") || name.startsWith("check-premium-editorial")) return false;
-    if (name === "_chatgpt-image-core.mjs") return false; // 공용 helper 모듈 자체 — entrypoint 아님
     if (name === path.basename(SELF)) return false;
     const src = readFileSync(path.join(scriptsDir, name), "utf8");
     return CHATGPT_SIGNAL_RE.test(src);
   });
 
-  check(`inventory: scripts/ 하위 ChatGPT/Playwright browser 신호 보유 non-archive .mjs 탐지 (${candidates.length}건)`, true);
+  check(`inventory: scripts/ 하위 browser/CDP generation 신호 보유 non-archive .mjs 탐지 (${candidates.length}건)`, true);
 
-  const unguardedChatgpt = [];
+  const unguarded = [];
   for (const name of candidates) {
+    if (helperNames.has(name)) continue; // evidence-classified helper — 위에서 소스 재검증됨
     const src = readFileSync(path.join(scriptsDir, name), "utf8");
-    const hasInlineGuard = /ALLOW_CHATGPT_IMAGE\s*!==\s*["']1["']/.test(src);
-    const hasHelperGuard = /assertProviderAllowed\(/.test(src) && /ALLOW_CHATGPT_IMAGE/.test(src);
-    const isGuarded = hasInlineGuard || hasHelperGuard;
-    if (hardenedNames.has(name)) continue; // 정책 등재 + guard 보유 — PASS
-    if (documentedGapNames.has(name)) continue; // 이번 태스크 범위 밖, 명시 문서화됨 — FAIL 아님
-    if (!isGuarded) { unguardedChatgpt.push(`${name} (ALLOW_CHATGPT_IMAGE guard 없음, 미문서화)`); continue; }
-    unguardedChatgpt.push(`${name} (guard는 있으나 policy 미등재 + 미문서화)`);
+    if (!hardenedNames.has(name)) { unguarded.push(`${name} (policy 미등재)`); continue; }
+    const flag = FLAG_BY_PROVIDER[providerByName.get(name)];
+    if (flag) {
+      if (!new RegExp(flag + "\\s*!==\\s*[\"']1[\"']").test(src)) {
+        unguarded.push(`${name} (${flag} 인라인 guard 없음)`);
+      }
+    } else if (!/assert(PaidImageAllowed|ProviderAllowed)\(/.test(src)) {
+      unguarded.push(`${name} (allow guard 호출 없음)`);
+    }
   }
-  check("inventory: ChatGPT/Playwright image runner 전부 hardened 또는 명시 문서화된 gap (미기록 unguarded 없음)",
-    unguardedChatgpt.length === 0, unguardedChatgpt.join("; "));
+  check("inventory: browser/CDP generation runner 전부 hardened(guard 보유) 또는 evidence-classified helper — known-gap 등재만으로 통과 불가",
+    unguarded.length === 0, unguarded.join("; "));
 }
 
 // ── 8. guard self + policy fixture forbidden 실행 패턴 스캔 ─────────────────
@@ -429,6 +544,29 @@ function scanScriptOrder(rel, opts) {
   const fakeNoChatgptGuard = "const x = X." + CDP_CALL_PLACEHOLDER + ");";
   check("mutant: ALLOW_CHATGPT_IMAGE guard 완전 부재 스크립트는 guard-존재 검사에서 -1 → fail 처리",
     fakeNoChatgptGuard.search(/ALLOW_CHATGPT_IMAGE\s*!==\s*["']1["']/) === -1);
+
+  // ── Gemini/Veo guard mutants (placeholder 기반 순수 로직 검증) ──
+  const GEMINI_GUARD_RE = new RegExp("ALLOW_GEMINI_VEO" + "\\s*!==\\s*[\"']1[\"']");
+  // guard 부재 mutant: veo runner에 gemini guard가 없으면 -1 → fail 처리
+  const fakeVeoNoGuard = "const b = await X." + CDP_CALL_PLACEHOLDER + "url);";
+  check("mutant: ALLOW_GEMINI_VEO guard 완전 부재 veo runner는 guard-존재 검사에서 -1 → fail 처리",
+    fakeVeoNoGuard.search(GEMINI_GUARD_RE) === -1);
+  // truthy 체크 mutant: `!process.env.ALLOW_GEMINI_VEO` 같은 truthy 검사는 !=="1" 표준 검사로 인정되지 않음
+  const fakeVeoTruthyGuard = 'if (!process.env.ALLOW_GEMINI_VEO) { process.exit(1); }';
+  check("mutant: truthy 체크(!env.FLAG)는 fail-closed !==\"1\" 표준 guard로 오인되지 않음",
+    fakeVeoTruthyGuard.search(GEMINI_GUARD_RE) === -1);
+  // guard가 browser 실행 placeholder 뒤에 오는 mutant → 순서 검사 fail
+  const fakeVeoGuardAfterBrowser = "const b = await X." + CDP_CALL_PLACEHOLDER + "url);\n" +
+    'if (process.env.ALLOW_GEMINI_VEO !== "1") { process.exit(2); }';
+  const vgIdx = fakeVeoGuardAfterBrowser.search(GEMINI_GUARD_RE);
+  const vbIdx = fakeVeoGuardAfterBrowser.indexOf(CDP_CALL_PLACEHOLDER);
+  check("mutant: browser 실행 호출이 ALLOW_GEMINI_VEO guard보다 먼저 오면 순서 검사 fail",
+    vgIdx !== -1 && vbIdx !== -1 && !(vgIdx < vbIdx));
+  // helper 내부 guard 부재 mutant: spawn placeholder만 있고 guard가 없으면 helper 검증 fail 로직 확인
+  const SPAWN_PLACEHOLDER = "__SPAWN_CALL__(";
+  const fakeHelperNoGuard = "export async function launchX() { const p = Y." + SPAWN_PLACEHOLDER + "exe); }";
+  check("mutant: helper 내부 guard 부재(spawn만 존재) 시 guard-존재 검사에서 -1 → fail 처리",
+    fakeHelperNoGuard.search(GEMINI_GUARD_RE) === -1 && fakeHelperNoGuard.indexOf(SPAWN_PLACEHOLDER) !== -1);
 }
 
 console.log(failures === 0

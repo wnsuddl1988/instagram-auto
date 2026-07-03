@@ -1,7 +1,7 @@
 /**
  * 자동문 면접 (ep003) 4씬 키프레임 이미지 생성
  *
- * 승인: ALLOW_CHATGPT_IMAGE=true
+ * 승인: ALLOW_CHATGPT_IMAGE=1 (fail-closed 표준화 — 구 =true 표기는 폐기)
  * 상한: 씬당 2회 / 총 8회 / $0.40
  * 금지: 자동 재시도, Boss 얼굴/전신/어깨 등장 즉시 ABORT
  *
@@ -12,7 +12,7 @@
  *   - 이미지 수집: intercept 우선 (gen 필터 의존 제거)
  *
  * 실행:
- *   ALLOW_CHATGPT_IMAGE=true node scripts/_ep003-jdm-keyframe-generate.mjs
+ *   ALLOW_CHATGPT_IMAGE=1 node scripts/_ep003-jdm-keyframe-generate.mjs
  */
 
 import { chromium }  from "playwright";
@@ -33,14 +33,16 @@ const ROOT      = path.resolve(__dirname, "..");
 const KF_DIR    = path.join(ROOT, "output/v2/ep003_jdm/keyframes");
 const QA_DIR    = path.join(ROOT, "output/v2/ep003_jdm/qa");
 
+// ── fail-closed ChatGPT image allow guard: output write/browser·CDP 전에 반드시 통과 ──
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+// 이 guard 통과가 이미지 생성 실행 승인을 의미하지 않는다 (no-live 기본).
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — browser/CDP/output write 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(KF_DIR, { recursive: true });
 fs.mkdirSync(QA_DIR, { recursive: true });
-
-// ── 안전장치 ──────────────────────────────────────────────────────────────────
-if (!process.env.ALLOW_CHATGPT_IMAGE) {
-  console.error("ABORT: ALLOW_CHATGPT_IMAGE 환경변수 없음. 승인 없이 실행 금지.");
-  process.exit(1);
-}
 
 // ── 카운터 (절대 상한 초과 금지) ─────────────────────────────────────────────
 let TOTAL_SEND    = 0;

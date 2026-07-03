@@ -30,6 +30,13 @@ const VEO_DIR = path.join(ROOT, "output/v2/3d_sitcom_prod_v1/upload_002_copier/v
 const REF_IMG = path.join(KF_DIR, "kf_s1_wide_copier_error.png");
 const OUT_MP4 = path.join(VEO_DIR, "s1_veo_raw.mp4");
 
+// ── fail-closed Gemini/Veo video allow guard: browser/CDP/network/output 전에 반드시 통과 ──
+// ALLOW_GEMINI_VEO=1은 local fail-closed 스위치일 뿐, Gemini/Veo 실행 승인이 아니다 (no-live 기본).
+if (process.env.ALLOW_GEMINI_VEO !== "1") {
+  console.error("ABORT: Gemini/Veo video 경로 차단 (fail-closed). 필요한 env: ALLOW_GEMINI_VEO=1 — browser/CDP/network/output 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(VEO_DIR, { recursive: true });
 
 const DRY         = process.argv.includes("--dry-run");

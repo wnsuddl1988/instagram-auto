@@ -46,6 +46,13 @@ const REF_IMG = path.join(KF_DIR, "kf_s5_boss_hand_finale.png");
 const OUT_MP4 = path.join(VEO_DIR, "s5_veo_regen.mp4");
 const ORIG_MP4 = path.join(VEO_DIR, "s5_veo_raw.mp4");
 
+// ── fail-closed Gemini/Veo video allow guard: browser/CDP/network/output 전에 반드시 통과 ──
+// ALLOW_GEMINI_VEO=1은 local fail-closed 스위치일 뿐, Gemini/Veo 실행 승인이 아니다 (no-live 기본).
+if (process.env.ALLOW_GEMINI_VEO !== "1") {
+  console.error("ABORT: Gemini/Veo video 경로 차단 (fail-closed). 필요한 env: ALLOW_GEMINI_VEO=1 — browser/CDP/network/output 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(VEO_DIR, { recursive: true });
 
 const DRY         = process.argv.includes("--dry-run");

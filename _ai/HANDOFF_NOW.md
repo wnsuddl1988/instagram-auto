@@ -21,37 +21,64 @@
   - `3494d79 feat(golden-sample): add integrated readiness standard guard`
   - `37fda6d feat(golden-sample): add owner decision packet guard`
   - `9607eab feat(golden-sample): record owner decision state guard`
+  - `c80b024 feat(golden-sample): harden paid image allow guards`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1`
+- Task ID: `golden-sample-v3-2-browser-generation-runner-allow-guard-gap-closure-v1`
 - Status: **approved by Owner 2026-07-04 KST as no-live continuation**.
 - Owner basis:
   - Owner approved continuing required no-live implementation sequentially: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
   - Decision state fixture has resolved:
     - `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`
-- Slice type: no-live ChatGPT/Playwright image allow-guard review-fix + static guard update only.
+- Slice type: no-live browser/CDP generation runner allow-guard gap closure + static guard update only.
 
-### Review-Fix Addendum
+### Post-Checkpoint Gap Closure Addendum
 
-Prior work in this slice hardened `lib/paidApiGuard.ts`, OpenAI image scripts, and BFL/FLUX2 image scripts. Codex review accepted that direction but found remaining non-archive ChatGPT/Playwright image runner gaps that still need the same fail-closed treatment before checkpoint.
+Checkpoint `c80b024` hardened `lib/paidApiGuard.ts`, OpenAI image scripts, BFL/FLUX2 image scripts, and 4 ChatGPT/Playwright image runner gaps. Its strengthened static inventory then found 24 additional non-archive browser/CDP generation runner signals outside that checkpoint's approved edit set.
 
-Known remaining gap files:
+This slice closes or evidence-classifies those 24 gaps without running any browser/API/generation path.
 
-- `scripts/run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs`
-- `scripts/_upload002-s5-kf-generate.mjs`
-- `scripts/_chatgpt-image-preflight.mjs`
-- `scripts/_chatgpt-image-anchor-generate.mjs`
+Policy source list:
 
-Required fix for this review-fix:
+Already guarded but not registered in policy (verify, then register or explain):
 
-- Each listed file must require `ALLOW_CHATGPT_IMAGE=1` before any browser/Chrome/CDP action, message/image submission, image collection, network recovery/fetch, output write, or other visible side effect.
-- Prefer checking before top-level output directory creation or file writes. Pure argument parsing and constant setup may remain before the guard.
-- `--preflight-only` still launches browser/CDP, so it must be guarded.
-- A genuinely non-browser dry-run path may stay lightweight only if it performs no browser/CDP/network/image/output side effects before exit; otherwise guard it too.
-- Update `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json` so these files are no longer listed as unresolved known gaps once hardened.
-- Strengthen `scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs` so non-archive ChatGPT/Playwright image runners with `chromium`, `ensureChrome`, or `connectOverCDP` must either be policy-hardened with `ALLOW_CHATGPT_IMAGE` or explicitly classified as non-executable/non-image with evidence. Do not allow silent `knownGaps` pass-through for these four files after this task.
+- `scripts/run-chatgpt-playwright-fresh-image-set-v3.mjs`
+- `scripts/run-chatgpt-playwright-image-method-revalidation-v1.mjs`
+- `scripts/run-chatgpt-playwright-image-method-revalidation-v2.mjs`
+- `scripts/run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs`
+- `scripts/run-money-shorts-rate-freeze-image-regeneration-v1.mjs`
+
+No `ALLOW_CHATGPT_IMAGE` guard detected by current inventory (classify and harden if executable generation/preflight path):
+
+- `scripts/_ep003-jdm-keyframe-generate.mjs`
+- `scripts/_ep003-jdm-s3-bossfree-kf-v6.mjs`
+- `scripts/_ep003-jdm-s3-bossfree-kf.mjs`
+- `scripts/_ep003-jdm-veo-generate.mjs`
+- `scripts/_ep003-jdm-veo-preflight.mjs`
+- `scripts/_gemini-veo-core.mjs`
+- `scripts/_gemini-veo-preflight.mjs`
+- `scripts/_upload002-kf-generate.mjs`
+- `scripts/_upload002-s1-veo-generate.mjs`
+- `scripts/_upload002-s2-continuity-fix.mjs`
+- `scripts/_upload002-s2-recover.mjs`
+- `scripts/_upload002-s2-veo-generate.mjs`
+- `scripts/_upload002-s3-veo-generate.mjs`
+- `scripts/_upload002-s4-kf-generate.mjs`
+- `scripts/_upload002-s4-veo-generate.mjs`
+- `scripts/_upload002-s5-edit-from-s4.mjs`
+- `scripts/_upload002-s5-final.mjs`
+- `scripts/_upload002-s5-veo-generate.mjs`
+- `scripts/_upload002-s5-veo-regen.mjs`
+
+Required fix/classification:
+
+- For ChatGPT/Playwright image/keyframe runners, require `ALLOW_CHATGPT_IMAGE=1` before any browser/Chrome/CDP action, message/image submission, image collection, network recovery/fetch, output write, or other visible side effect.
+- For Gemini/Veo/video browser runners, do not invent live approval. Add or verify an explicit fail-closed local allow guard before browser/CDP/network/output side effects. Prefer a clearly named no-live guard such as `ALLOW_GEMINI_VEO=1` only for Veo/Gemini video-generation paths, and document that this is not approval to execute those paths.
+- If a file is a helper module and not directly executable, classify it as helper-only only with source evidence. Helper classification must still ensure exported functions cannot launch browser/CDP/network without caller-level guard or an internal guard.
+- Update `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json` so the 24 current gaps are either hardened/registered or evidence-classified; do not leave unexplained `knownGapsOutOfCurrentReviewFixScope` entries.
+- Strengthen `scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs` so non-archive browser/CDP generation runners cannot pass by merely being listed as a known gap. The guard may allow evidence-backed helper-only or non-generation classifications, but must fail on unguarded executable paths.
 
 ## Purpose
 
@@ -63,7 +90,7 @@ Current known risk:
 - This conflicts with the resolved decision `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`.
 - Some standalone image scripts read `OPENAI_API_KEY` or `BFL_API_KEY` and can proceed without a dedicated allow flag.
 
-This slice must harden the guard semantics and active paid image script entrypoints **without running any paid/image/API/browser path**.
+This slice must harden or evidence-classify browser/CDP generation entrypoints **without running any paid/image/video/API/browser path**.
 
 ## Source Contracts To Read
 
@@ -72,14 +99,15 @@ Read only the minimum needed:
 1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
 2. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
 3. `lib/paidApiGuard.ts`
-4. Active image generation / paid image provider entrypoints, targeted by search:
+4. Active image/video generation browser/CDP or paid provider entrypoints, targeted by search:
    - `lib/imagen.ts`
    - `app/api/render-v2/route.ts`
    - `app/api/generate-v2/route.ts`
    - `scripts/run-openai-full-selected-image-candidates-v1.mjs`
    - `scripts/run-golden-sample-image-source-test-v1.mjs`
    - `scripts/run-flux2-selected-image-set-completion-v1.mjs`
-   - other non-archive scripts under `scripts/` that directly use `OPENAI_API_KEY`, `BFL_API_KEY`, `GEMINI_API_KEY`, FLUX/BFL endpoints, OpenAI image endpoint, or Imagen for image generation.
+   - the 24 files listed in the Post-Checkpoint Gap Closure Addendum.
+   - other non-archive scripts under `scripts/` that directly use `OPENAI_API_KEY`, `BFL_API_KEY`, `GEMINI_API_KEY`, FLUX/BFL endpoints, OpenAI image endpoint, Imagen, ChatGPT/Playwright browser/CDP, or Gemini/Veo generation.
 
 Do not read protected/excluded files:
 
@@ -102,13 +130,14 @@ Allowed files:
    - Add paid image providers if needed, for example `openai-image` and `bfl-flux2`, with clear env names.
    - Preserve existing TTS/generate callers by requiring their explicit flags as already documented.
 
-2. Active paid image scripts/helpers that need explicit allow guards.
+2. Active paid image/browser/video generation scripts/helpers that need explicit allow guards.
    - Add fail-closed allow guard checks before any `.env.local` secret read, API key read, network endpoint construction, browser/CDP launch, output directory write, or fetch.
    - For script-level guards, require provider-specific flags such as:
      - OpenAI image: `PAID_API_ENABLED=true` + `ALLOW_OPENAI_IMAGE=true`
      - BFL/FLUX2: `PAID_API_ENABLED=true` + `ALLOW_BFL_FLUX2=true`
      - ChatGPT/Playwright image: existing `ALLOW_CHATGPT_IMAGE=1` is acceptable, but ensure it is checked before browser/CDP/network.
      - Imagen: `PAID_API_ENABLED=true` + `ALLOW_IMAGEN=true`
+     - Gemini/Veo video browser/API path: explicit local guard such as `ALLOW_GEMINI_VEO=1` before browser/CDP/network/output side effects, if classified as executable.
    - Do not execute these scripts.
    - Do not modify archived scripts unless the static inventory proves they are active entrypoints; prefer excluding `scripts/archive/**` from enforcement and documenting that exclusion.
 
@@ -178,6 +207,7 @@ Do not run any image/TTS/render/upload script.
 - Audio/video/image generation.
 - ChatGPT/Playwright execution.
 - Browser/Chrome/CDP launch.
+- Gemini/Veo execution.
 - OpenAI API.
 - FLUX2/BFL API.
 - Gemini/Midjourney.

@@ -106,6 +106,12 @@ export async function isCDPOpen(port) {
 }
 
 export async function ensureChrome(port, userDataDir, logFn = console.log) {
+  // ── fail-closed 내부 guard: Gemini/Veo browser 경로는 ALLOW_GEMINI_VEO=1 없이는 실행 불가 ──
+  // caller(top-level guard 보유 runner)와 무관하게 helper 단에서 이중 차단한다.
+  // ALLOW_GEMINI_VEO=1은 local fail-closed 스위치일 뿐, Gemini/Veo 실행 승인이 아니다 (no-live 기본).
+  if (process.env.ALLOW_GEMINI_VEO !== "1") {
+    throw new Error("ABORT: Gemini/Veo 경로 차단 (fail-closed). 필요한 env: ALLOW_GEMINI_VEO=1 — Chrome launch/CDP probe 전에 중단.");
+  }
   if (await isCDPOpen(port)) {
     logFn(`Chrome CDP already open on port ${port}`);
     return;

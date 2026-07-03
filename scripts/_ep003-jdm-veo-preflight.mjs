@@ -29,6 +29,14 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT      = path.resolve(__dirname, "..");
 
+// ── fail-closed Gemini/Veo video allow guard: browser/CDP/network/output 전에 반드시 통과 ──
+// ALLOW_GEMINI_VEO=1은 local fail-closed 스위치일 뿐, Gemini/Veo 실행 승인이 아니다 (no-live 기본).
+// preflight도 browser/CDP 실행 + output write이므로 guard 대상이다.
+if (process.env.ALLOW_GEMINI_VEO !== "1") {
+  console.error("ABORT: Gemini/Veo video 경로 차단 (fail-closed). 필요한 env: ALLOW_GEMINI_VEO=1 — browser/CDP/network/output 전에 중단.");
+  process.exit(2);
+}
+
 // ── 출력 디렉토리 ────────────────────────────────────────────────────────────────
 const QA_DIR = path.join(ROOT, "output/v2/ep003_jdm/qa/preflight_veo");
 fs.mkdirSync(QA_DIR, { recursive: true });

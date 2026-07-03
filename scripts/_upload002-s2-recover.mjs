@@ -25,6 +25,14 @@ const DEST_FILE = "kf_s2_jammed_paper_continuity_fix_recovered.png";
 const DEST_PATH = path.join(KF_DIR, DEST_FILE);
 const LOG_PATH  = path.join(KF_DIR, "recovery_log.json");
 
+// ── fail-closed ChatGPT image allow guard: output write/browser·CDP/image 수집 전에 반드시 통과 ──
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+// recovery(기존 탭 이미지 수집)도 browser/CDP + output write side effect이므로 guard 대상이다.
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — browser/CDP/output write 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(REC_DIR, { recursive: true });
 
 function log(m)  { console.log(`[${new Date().toISOString().slice(11,19)}] ${m}`); }
