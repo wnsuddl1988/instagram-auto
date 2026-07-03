@@ -77,6 +77,14 @@ if (OUT_DIR_ABS.includes(".money-shorts-local")) {
   process.exit(1);
 }
 
+// ── fail-closed ChatGPT image allow guard (output write / browser·CDP 전에 반드시 통과) ──
+// --preflight-only도 browser/CDP를 실행하므로 예외 없이 guard 대상.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — output write/browser/CDP 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(OUT_DIR_ABS, { recursive: true });
 
 function ts() { return new Date().toISOString().slice(11, 19); }

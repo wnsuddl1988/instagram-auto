@@ -38,6 +38,23 @@ function ts() { return new Date().toISOString().slice(11, 19); }
 function log(m) { console.log(`[${ts()}][openai-full-candidates] ${m}`); }
 function warn(m) { console.warn(`[WARN][openai-full-candidates] ${m}`); }
 
+// ── fail-closed paid image allow guard (secret read / API 호출 전에 반드시 통과) ──
+// PAID_API_ENABLED=true 하나만으로는 열리지 않는다. provider allow flag도 명시 true여야 한다.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+function assertPaidImageAllowed(providerFlagKey) {
+  const isTrue = (k) => String(process.env[k] ?? "").toLowerCase() === "true";
+  const master = isTrue("PAID_API_ENABLED");
+  const provider = isTrue(providerFlagKey);
+  if (!master || !provider) {
+    const need = [];
+    if (!master) need.push("PAID_API_ENABLED=true");
+    if (!provider) need.push(`${providerFlagKey}=true`);
+    console.error(`ABORT: paid image 경로 차단 (fail-closed). 필요한 env: ${need.join(", ")} — secret/API 호출 전에 중단.`);
+    process.exit(2);
+  }
+}
+assertPaidImageAllowed("ALLOW_OPENAI_IMAGE");
+
 // ── .env.local 로드 (값 미출력, 수정 없음, secret 최소화: OPENAI_API_KEY만) ──
 function loadOpenAIKeyFromEnvLocal() {
   const envPath = path.join(REPO_ROOT, ".env.local");

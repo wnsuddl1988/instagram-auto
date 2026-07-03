@@ -93,6 +93,14 @@ if (JSON.stringify(orders) !== JSON.stringify([1, 2, 3, 4, 5, 6])) {
   process.exit(1);
 }
 
+// ── fail-closed ChatGPT image allow guard (output write / browser·CDP 전에 반드시 통과) ──
+// --preflight-only도 browser/CDP를 실행하므로 예외 없이 guard 대상.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — output write/browser/CDP 전에 중단.");
+  process.exit(2);
+}
+
 // 실제 생성 대상 결정:
 //   --only-scene N이 있으면 그 scene만 단독 생성 (다른 scene 절대 안 건드림).
 //   없으면 FROM_SCENE부터 (이전 scene 이미지 보존).

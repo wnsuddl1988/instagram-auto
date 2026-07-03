@@ -1,25 +1,35 @@
 /**
- * paidApiGuard.ts — 유료 API 비용 가드레일
+ * paidApiGuard.ts — 유료 API 비용 가드레일 (fail-closed)
  *
- * 기본값은 "전부 차단". 아래 환경변수로 명시적으로 허용해야만 유료 호출이 발생한다.
+ * 기본값은 "전부 차단". 마스터 스위치와 provider별 세부 플래그가 **둘 다** true여야만
+ * 유료 호출이 발생한다. 마스터 스위치 하나만으로는 어떤 provider도 열리지 않는다.
  *
  * 환경변수 설정 방법 (.env.local):
- *   PAID_API_ENABLED=true          # 전체 허용 마스터 스위치
+ *   PAID_API_ENABLED=true          # 전체 허용 마스터 스위치 (단독으로는 불충분)
  *   ALLOW_OPENAI_GENERATE=true     # GPT 콘티 생성 (generate-v2)
  *   ALLOW_OPENAI_TTS=true          # OpenAI TTS (render-v2, voice-test)
  *   ALLOW_IMAGEN=true              # Google Imagen 이미지 생성 (render-v2)
+ *   ALLOW_OPENAI_IMAGE=true        # OpenAI gpt-image 이미지 생성 (paid image script)
+ *   ALLOW_BFL_FLUX2=true           # BFL FLUX.2 이미지 생성 (paid image script)
  *   ALLOW_ELEVENLABS=true          # ElevenLabs TTS (render-v2, voice-test)
  *
- * 우선순위 규칙:
+ * 우선순위 규칙 (fail-closed, 2026-07-04 하드닝):
  *   1. PAID_API_ENABLED=false (또는 미설정) → 세부 플래그와 무관하게 전부 차단
- *   2. PAID_API_ENABLED=true + 세부 플래그 없음 → 전부 허용
- *   3. PAID_API_ENABLED=true + 세부 플래그 false → 해당 API만 차단
+ *   2. PAID_API_ENABLED=true + 세부 플래그 미설정(undefined) → **차단** (fail-closed)
+ *   3. PAID_API_ENABLED=true + 세부 플래그 false → 해당 API 차단
+ *   4. PAID_API_ENABLED=true + 세부 플래그 true → 해당 API만 허용
+ *
+ * Owner decision (golden-sample-v3-2, image_script_allow_guard =
+ *   add_allow_guard_to_all_paid_image_scripts): 이미지 provider는 반드시 명시
+ *   provider allow flag가 있어야 하며 마스터 스위치만으로 열려선 안 된다.
  */
 
 export type PaidApiProvider =
   | "openai-generate"
   | "openai-tts"
   | "imagen"
+  | "openai-image"
+  | "bfl-flux2"
   | "elevenlabs";
 
 export interface GuardResult {
@@ -61,7 +71,7 @@ export function checkPaidApi(
     return buildBlocked(provider, operation, false);
   }
 
-  // 세부 플래그 확인 (미설정이면 마스터 허용에 따름 → true)
+  // 세부 플래그 확인 (fail-closed: 미설정/false 모두 차단, true만 허용)
   const perProviderAllowed = getPerProviderFlag(provider);
   if (!perProviderAllowed) {
     return buildBlocked(provider, operation, true);
@@ -73,8 +83,9 @@ export function checkPaidApi(
 function getPerProviderFlag(provider: PaidApiProvider): boolean {
   const flagKey = providerToEnvKey(provider);
   const flag = envFlag(flagKey);
-  // 세부 플래그 미설정 → 마스터가 true이므로 허용
-  return flag !== false;
+  // fail-closed: 세부 플래그가 명시적으로 true일 때만 허용.
+  // 미설정(undefined)이나 false는 마스터가 켜져 있어도 차단한다.
+  return flag === true;
 }
 
 function providerToEnvKey(provider: PaidApiProvider): string {
@@ -82,6 +93,8 @@ function providerToEnvKey(provider: PaidApiProvider): string {
     case "openai-generate": return "ALLOW_OPENAI_GENERATE";
     case "openai-tts":      return "ALLOW_OPENAI_TTS";
     case "imagen":          return "ALLOW_IMAGEN";
+    case "openai-image":    return "ALLOW_OPENAI_IMAGE";
+    case "bfl-flux2":       return "ALLOW_BFL_FLUX2";
     case "elevenlabs":      return "ALLOW_ELEVENLABS";
   }
 }
@@ -122,6 +135,8 @@ export function getPaidApiStatus(): {
     "openai-generate": masterEnabled && getPerProviderFlag("openai-generate"),
     "openai-tts":      masterEnabled && getPerProviderFlag("openai-tts"),
     "imagen":          masterEnabled && getPerProviderFlag("imagen"),
+    "openai-image":    masterEnabled && getPerProviderFlag("openai-image"),
+    "bfl-flux2":       masterEnabled && getPerProviderFlag("bfl-flux2"),
     "elevenlabs":      masterEnabled && getPerProviderFlag("elevenlabs"),
   };
   return { masterEnabled, providers };

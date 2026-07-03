@@ -48,6 +48,33 @@ function ts() { return new Date().toISOString().slice(11, 19); }
 function log(m) { console.log(`[${ts()}][img-src-test:${PROVIDER}] ${m}`); }
 function warn(m) { console.warn(`[WARN][img-src-test:${PROVIDER}] ${m}`); }
 
+// ── fail-closed paid image allow guard (secret read / browser / API 호출 전에 통과) ──
+// PAID_API_ENABLED=true 하나만으로는 열리지 않는다. provider allow flag도 명시 true여야 한다.
+// chatgpt는 별도로 browser/CDP 직전에 ALLOW_CHATGPT_IMAGE=1도 재확인한다.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+function assertProviderAllowed(provider) {
+  const isTrue = (k) => String(process.env[k] ?? "").toLowerCase() === "true";
+  if (provider === "chatgpt") {
+    // ChatGPT/Playwright 경로는 유료 API가 아니라 browser 자동화. 전용 flag만 요구.
+    if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+      console.error("ABORT: chatgpt 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — browser/CDP 실행 전에 중단.");
+      process.exit(2);
+    }
+    return;
+  }
+  const providerFlagKey = provider === "openai" ? "ALLOW_OPENAI_IMAGE" : "ALLOW_BFL_FLUX2";
+  const master = isTrue("PAID_API_ENABLED");
+  const providerAllowed = isTrue(providerFlagKey);
+  if (!master || !providerAllowed) {
+    const need = [];
+    if (!master) need.push("PAID_API_ENABLED=true");
+    if (!providerAllowed) need.push(`${providerFlagKey}=true`);
+    console.error(`ABORT: paid image 경로 차단 (fail-closed). 필요한 env: ${need.join(", ")} — secret/API 호출 전에 중단.`);
+    process.exit(2);
+  }
+}
+assertProviderAllowed(PROVIDER);
+
 // ── .env.local 로드 (값 미출력, 수정 없음, secret 최소화) ────────────────────
 // 이 runner가 필요한 두 key만 메모리에 보관한다. 다른 env/secret은 파싱 즉시 버린다.
 function loadEnvLocal() {

@@ -20,69 +20,66 @@
   - `98913d4 feat(golden-sample): add tts audio audit standard guard`
   - `3494d79 feat(golden-sample): add integrated readiness standard guard`
   - `37fda6d feat(golden-sample): add owner decision packet guard`
+  - `9607eab feat(golden-sample): record owner decision state guard`
 - 최신 Owner 기준이 이전 문서/핸드오프/렌더 보고와 충돌하면 최신 Owner 기준이 우선이다.
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-owner-decisions-now-resolution-state-v1`
-- Status: **approved by Owner 2026-07-04 KST**.
-- Owner decision source:
-  - Codex asked whether to confirm four `decideNow=true` decisions from Slice 6.
-  - Owner replied: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
-- Interpretation:
-  - Resolve the four recommended `decideNow=true` policy decisions listed below.
-  - Continue no-live preparation slices without asking after every small slice.
-  - Still stop for explicit approval before any live/API/cost/render/mux/upload/env/dependency/DB/deploy action.
-- Slice type: no-live decision-resolution state fixture + static guard + packet doc update only.
+- Task ID: `golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1`
+- Status: **approved by Owner 2026-07-04 KST as no-live continuation**.
+- Owner basis:
+  - Owner approved continuing required no-live implementation sequentially: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
+  - Decision state fixture has resolved:
+    - `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`
+- Slice type: no-live ChatGPT/Playwright image allow-guard review-fix + static guard update only.
 
-## Resolved Decisions To Record
+### Review-Fix Addendum
 
-Record exactly these four decisions as Owner-resolved policy choices:
+Prior work in this slice hardened `lib/paidApiGuard.ts`, OpenAI image scripts, and BFL/FLUX2 image scripts. Codex review accepted that direction but found remaining non-archive ChatGPT/Playwright image runner gaps that still need the same fail-closed treatment before checkpoint.
 
-1. `script_impact_gate_score_authority = codex_judge_with_mandatory_provenance`
-   - Scope: scoring authority/provenance policy only.
-   - Not approval for live TTS/audio/mux.
-2. `font_vendoring = vendor_noto_black_vf_remove_system_dependency`
-   - Scope: font policy only.
-   - Not approval to add font files, change dependencies, render, or mux.
-3. `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`
-   - Scope: guard policy only.
-   - Not approval to call image APIs, run ChatGPT/Playwright/browser, or generate images.
-4. `poll_25s_passive_window = accept_25s_passive_window_as_v3_2_behavior`
-   - Scope: timing interpretation only.
-   - Not approval to run ChatGPT/Playwright/browser/CDP.
+Known remaining gap files:
 
-All other Owner decisions remain pending:
+- `scripts/run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs`
+- `scripts/_upload002-s5-kf-generate.mjs`
+- `scripts/_chatgpt-image-preflight.mjs`
+- `scripts/_chatgpt-image-anchor-generate.mjs`
 
-- `legacy_line_scope`
-- `upload_endpoint_disposition`
-- `blueprint_schema_unification`
-- `md5_locked_image_durability`
-- `contract_duality_resolution`
-- `owner_viewing_listening_qa`
+Required fix for this review-fix:
 
-Current readiness remains `STANDARDIZED_NO_LIVE_READY`. No live execution is approved.
+- Each listed file must require `ALLOW_CHATGPT_IMAGE=1` before any browser/Chrome/CDP action, message/image submission, image collection, network recovery/fetch, output write, or other visible side effect.
+- Prefer checking before top-level output directory creation or file writes. Pure argument parsing and constant setup may remain before the guard.
+- `--preflight-only` still launches browser/CDP, so it must be guarded.
+- A genuinely non-browser dry-run path may stay lightweight only if it performs no browser/CDP/network/image/output side effects before exit; otherwise guard it too.
+- Update `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json` so these files are no longer listed as unresolved known gaps once hardened.
+- Strengthen `scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs` so non-archive ChatGPT/Playwright image runners with `chromium`, `ensureChrome`, or `connectOverCDP` must either be policy-hardened with `ALLOW_CHATGPT_IMAGE` or explicitly classified as non-executable/non-image with evidence. Do not allow silent `knownGaps` pass-through for these four files after this task.
 
 ## Purpose
 
-Persist the Owner's four policy decisions in a machine-readable state so future no-live and live-prep slices can consume the decision state without re-asking.
+Make paid/external image generation paths fail closed unless both a master paid-API switch and an explicit provider/action allow flag are present.
 
-This slice must:
+Current known risk:
 
-1. Preserve Slice 6 decision packet as the recommendation source.
-2. Add a current decision state fixture that marks exactly four decisions resolved by Owner and six still pending.
-3. Update the human-readable decision packet with a short current-state section.
-4. Add a static guard that prevents accidental readiness escalation or over-interpreting the decisions as live approval.
+- `lib/paidApiGuard.ts` currently documents and implements: `PAID_API_ENABLED=true + 세부 플래그 없음 → 전부 허용`.
+- This conflicts with the resolved decision `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`.
+- Some standalone image scripts read `OPENAI_API_KEY` or `BFL_API_KEY` and can proceed without a dedicated allow flag.
+
+This slice must harden the guard semantics and active paid image script entrypoints **without running any paid/image/API/browser path**.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
-1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
-2. `_ai/GOLDEN_SAMPLE_V3_2_OWNER_DECISION_PACKET.md`
-3. `scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
-4. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
-5. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
+1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
+2. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
+3. `lib/paidApiGuard.ts`
+4. Active image generation / paid image provider entrypoints, targeted by search:
+   - `lib/imagen.ts`
+   - `app/api/render-v2/route.ts`
+   - `app/api/generate-v2/route.ts`
+   - `scripts/run-openai-full-selected-image-candidates-v1.mjs`
+   - `scripts/run-golden-sample-image-source-test-v1.mjs`
+   - `scripts/run-flux2-selected-image-set-completion-v1.mjs`
+   - other non-archive scripts under `scripts/` that directly use `OPENAI_API_KEY`, `BFL_API_KEY`, `GEMINI_API_KEY`, FLUX/BFL endpoints, OpenAI image endpoint, or Imagen for image generation.
 
 Do not read protected/excluded files:
 
@@ -97,78 +94,84 @@ Do not read protected/excluded files:
 
 Allowed files:
 
-1. New decision state fixture:
-   - Recommended: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
-   - Must reference the Slice 6 decision packet and this Owner approval source.
-   - Must include exactly four resolved decisions with chosen values above.
-   - Must include exactly six pending decisions.
-   - Must keep all readiness/live/upload/automation flags false.
+1. `lib/paidApiGuard.ts`
+   - Change semantics to strict per-provider allow:
+     - `PAID_API_ENABLED=true` alone is not enough.
+     - Provider/action-specific `ALLOW_* = true` is required.
+   - Update comments/docs to remove the old permissive rule.
+   - Add paid image providers if needed, for example `openai-image` and `bfl-flux2`, with clear env names.
+   - Preserve existing TTS/generate callers by requiring their explicit flags as already documented.
 
-2. New no-live static guard:
-   - Recommended: `scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
-   - Must parse the state fixture, Slice 6 decision packet, and Slice 5 integrated readiness contract.
-   - Must assert resolved values equal the packet's recommendedDefault for the four decideNow decisions.
-   - Must assert all six non-decideNow decisions remain pending.
-   - Must assert no live/upload/render/TTS/image/browser/env/dependency/DB/deploy approval is implied.
-   - Must include mutant checks for:
-     - resolving a fifth decision,
-     - changing one of the four chosen values,
-     - setting ownerQaPassed/uploadReady/productionReady/live flags true,
-     - treating font vendoring as font file commit approval,
-     - treating image guard decision as API execution approval.
+2. Active paid image scripts/helpers that need explicit allow guards.
+   - Add fail-closed allow guard checks before any `.env.local` secret read, API key read, network endpoint construction, browser/CDP launch, output directory write, or fetch.
+   - For script-level guards, require provider-specific flags such as:
+     - OpenAI image: `PAID_API_ENABLED=true` + `ALLOW_OPENAI_IMAGE=true`
+     - BFL/FLUX2: `PAID_API_ENABLED=true` + `ALLOW_BFL_FLUX2=true`
+     - ChatGPT/Playwright image: existing `ALLOW_CHATGPT_IMAGE=1` is acceptable, but ensure it is checked before browser/CDP/network.
+     - Imagen: `PAID_API_ENABLED=true` + `ALLOW_IMAGEN=true`
+   - Do not execute these scripts.
+   - Do not modify archived scripts unless the static inventory proves they are active entrypoints; prefer excluding `scripts/archive/**` from enforcement and documenting that exclusion.
 
-3. Update human-readable decision packet:
-   - `_ai/GOLDEN_SAMPLE_V3_2_OWNER_DECISION_PACKET.md`
-   - Add a short "Current Owner decisions" section near the top.
-   - Preserve the warning that this is not live execution approval.
+3. New static guard:
+   - Recommended: `scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs`
+   - Must verify strict `paidApiGuard` semantics with mocked/in-memory env only.
+   - Must verify old behavior is gone: `PAID_API_ENABLED=true` + missing provider flag must be blocked.
+   - Must scan active paid image scripts for explicit allow gate before secret/API/fetch/output side effects.
+   - Must verify decision state includes `image_script_allow_guard` resolved to `add_allow_guard_to_all_paid_image_scripts`.
+   - Must fail on mutants:
+     - master-only allow,
+     - provider flag missing,
+     - provider flag false,
+     - script reads `OPENAI_API_KEY`/`BFL_API_KEY` before allow guard,
+     - script writes output before allow guard,
+     - ChatGPT image script launches browser/CDP before `ALLOW_CHATGPT_IMAGE`.
 
-4. `_ai/CLAUDE_REPORT.md`
+4. Optional fixture if useful:
+   - Recommended if needed: `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json`
+   - Can list active paid image providers/scripts, required env flags, and exclusions.
+
+5. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
 
-5. `_ai/HANDOFF_NOW.md`
+6. `_ai/HANDOFF_NOW.md`
    - Update status only if needed.
 
-Prefer not to modify the original Slice 6 packet fixture. Treat it as the recommendation packet. Use the new state fixture as the current decision-state source.
+Do not modify upload, DB, deploy, dependency, lockfile, env files, or output assets.
 
 ## Required Safety Semantics
 
-- Current verdict remains `STANDARDIZED_NO_LIVE_READY`.
-- The four resolved decisions are policy choices only.
-- The state fixture must not set:
-  - `uploadReady`
-  - `automationExpansionReady`
-  - `implementationApproved`
-  - `liveTtsApproved`
-  - `liveMuxApproved`
-  - `liveRenderApproved`
-  - `liveImageGenerationApproved`
-  - `chatgptPlaywrightApproved`
-  - `ownerQaPassed`
-  - `productionReady`
-- Owner QA remains pending and manual.
-- Font vendoring decision does not add font files or dependencies.
-- Image allow-guard decision does not run APIs or generate images.
-- Poll timing decision does not run ChatGPT/Playwright/browser.
+- No paid or external call is made.
+- No real env/secret value is read or printed during validation.
+- Static/unit checks may set temporary in-process dummy `process.env` values and restore them.
+- `.env.local` must not be read by tests.
+- Any script that can generate paid/external images must abort before secret read and before side effects unless the exact allow flags are present.
+- `PAID_API_ENABLED=true` is a master switch only, never sufficient alone.
+- `image_script_allow_guard` decision does not approve image generation.
+- Current readiness remains `STANDARDIZED_NO_LIVE_READY`.
 
 ## Required Checks
 
 Minimum:
 
 1. `git status -sb`
-2. `node --check` for every new `.mjs`
-3. JSON parse for every new fixture
-4. Run new state guard:
-   - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
+2. `node --check` for every changed/new `.mjs`
+3. TypeScript syntax/type sanity for changed `.ts` if practical:
+   - Prefer focused guard script checks.
+   - Run full `pnpm typecheck` only if the TypeScript change cannot be reasonably validated otherwise.
+4. Run new static guard:
+   - `node scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs`
 5. Regression sanity:
-   - `node scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 
 Do not run full build unless a syntax/import issue requires it.
+Do not run any image/TTS/render/upload script.
 
 ## Forbidden
 
 - Live TTS or paid/free TTS API call.
-- Env/secret reads or writes.
+- Env/secret reads or writes during validation.
+- Reading `.env.local` during validation.
 - Audio/video/image file read for analysis.
 - ffmpeg/ffprobe/silencedetect execution.
 - render/mux regeneration.
@@ -183,24 +186,23 @@ Do not run full build unless a syntax/import issue requires it.
 - live HTTP POST to `/api/upload`.
 - dependency/lockfile changes.
 - DB/schema/deploy changes.
-- Modifying production generation/render/TTS/upload code.
-- Adding font files or changing dependencies.
-- Modifying prior Slice 0~6 artifacts except the human-readable decision packet doc noted above.
-- Marking the six pending decisions as resolved.
-- Marking Owner QA as passed.
-- Reading/modifying/staging `_ai/CONTEXT_TRANSFER_CODEX.md` or `piq_diag_out.txt`.
-- Touching rejected salary_3days diff:
+- Adding font files.
+- Running or modifying protected/excluded files:
+  - `_ai/CONTEXT_TRANSFER_CODEX.md`
+  - `piq_diag_out.txt`
   - `scripts/render-golden-sample-visual-only-v1.mjs`
   - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-- Reading/writing `output/` or `C:\tmp`.
+  - `output/`
+  - `C:\tmp`
 - Commit/push.
 
 ## Definition Of Done
 
-- Decision state fixture records the four Owner-resolved policy decisions exactly.
-- Six other decisions remain pending.
-- Human decision packet clearly shows current chosen state and still says no live approval.
-- Static guard validates packet/state/integrated contract consistency and fail-closed mutants.
+- `PAID_API_ENABLED=true` alone no longer allows any paid provider.
+- Image providers have explicit allow flags and are blocked unless both master and provider/action flag are true.
+- Active paid image scripts abort before secret/API/network/browser/output side effects unless their explicit allow guard passes.
+- Static guard proves the behavior and fails on key mutants.
+- Decision state remains unchanged except as read-only reference.
 - Required checks pass.
 - `_ai/CLAUDE_REPORT.md` has concise evidence append.
 - No forbidden action or side effect occurred.
@@ -208,7 +210,7 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 170 after checkpoint `37fda6d`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 171 after checkpoint `9607eab`.
 - Latest checkpoints:
   - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
   - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
@@ -217,6 +219,7 @@ Do not run full build unless a syntax/import issue requires it.
   - `98913d4 feat(golden-sample): add tts audio audit standard guard`
   - `3494d79 feat(golden-sample): add integrated readiness standard guard`
   - `37fda6d feat(golden-sample): add owner decision packet guard`
+  - `9607eab feat(golden-sample): record owner decision state guard`
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`

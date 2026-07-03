@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "golden_sample_paid_image_allow_guard_policy_v1",
+  "taskId": "golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1",
+  "status": "PAID_IMAGE_ALLOW_GUARD_HARDENED_NO_LIVE",
+  "createdAt": "2026-07-04",
+  "reviewFixNote": "2단계 review-fix 이력. (1) golden-sample-v3-2-paid-image-allow-guard-review-fix-v1: 최초 hardening이 지정 3개 script만 다뤄 FLUX2/BFL 6개 non-archive runner가 미하드닝 상태였음 → 6개 추가 하드닝, hardenedImageScripts 3→9, static guard에 BFL inventory 스캔 추가. (2) golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1(현재): 남은 ChatGPT/Playwright image runner 4개(run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run/​_upload002-s5-kf-generate/​_chatgpt-image-preflight/​_chatgpt-image-anchor-generate)가 ALLOW_CHATGPT_IMAGE 가드 없이 browser/CDP/output write로 진행 가능했던 gap을 하드닝 → hardenedImageScripts 9→13, knownGapsOutOfReviewFixScope 전부 해소(빈 배열), static guard에 ChatGPT/Playwright inventory 스캔 추가.",
+  "nature": "no-live 정책 fixture — paid/external image 생성 경로의 fail-closed allow-guard 표준을 기계판독으로 고정. 이 fixture 존재가 어떤 이미지 생성/API 호출/browser 실행도 승인하지 않는다.",
+
+  "resolvedDecisionRef": {
+    "stateFixture": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "key": "image_script_allow_guard",
+    "resolvedValue": "add_allow_guard_to_all_paid_image_scripts",
+    "note": "이 정책은 위 Owner 결정의 집행이다. 결정/정책 확정일 뿐 실행 승인이 아니다."
+  },
+
+  "guardSemantics": {
+    "module": "lib/paidApiGuard.ts",
+    "failClosed": true,
+    "masterSwitch": "PAID_API_ENABLED",
+    "masterAloneSufficient": false,
+    "rule": "checkPaidApi(provider,op)는 PAID_API_ENABLED=true AND provider별 ALLOW_* === true 일 때만 allowed. 세부 플래그 미설정(undefined)이나 false는 마스터가 켜져 있어도 차단.",
+    "removedPermissiveRule": "구 규칙 'PAID_API_ENABLED=true + 세부 플래그 없음 → 전부 허용'은 제거됨."
+  },
+
+  "providers": [
+    { "provider": "openai-generate", "envFlag": "ALLOW_OPENAI_GENERATE", "category": "generate", "image": false },
+    { "provider": "openai-tts", "envFlag": "ALLOW_OPENAI_TTS", "category": "tts", "image": false },
+    { "provider": "elevenlabs", "envFlag": "ALLOW_ELEVENLABS", "category": "tts", "image": false },
+    { "provider": "imagen", "envFlag": "ALLOW_IMAGEN", "category": "image", "image": true },
+    { "provider": "openai-image", "envFlag": "ALLOW_OPENAI_IMAGE", "category": "image", "image": true },
+    { "provider": "bfl-flux2", "envFlag": "ALLOW_BFL_FLUX2", "category": "image", "image": true }
+  ],
+
+  "hardenedImageScripts": [
+    {
+      "path": "scripts/run-openai-full-selected-image-candidates-v1.mjs",
+      "provider": "openai-image",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_OPENAI_IMAGE=true"],
+      "secretRead": "OPENAI_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "assertPaidImageAllowed('ALLOW_OPENAI_IMAGE')가 OPENAI_API_KEY .env.local read 전에 실행."
+    },
+    {
+      "path": "scripts/run-flux2-selected-image-set-completion-v1.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-golden-sample-image-source-test-v1.mjs",
+      "provider": "multi (openai|flux|chatgpt)",
+      "requiredEnv": {
+        "openai": ["PAID_API_ENABLED=true", "ALLOW_OPENAI_IMAGE=true"],
+        "flux": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+        "chatgpt": ["ALLOW_CHATGPT_IMAGE=1"]
+      },
+      "secretRead": "OPENAI_API_KEY, BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "assertProviderAllowed(PROVIDER)가 loadEnvLocal() secret read 전에 실행. chatgpt는 browser/CDP 직전 ALLOW_CHATGPT_IMAGE=1도 재확인(line 306)."
+    },
+    {
+      "path": "scripts/run-flux2-golden-sample-validation-v1.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-flux2-object-whitelist-v2-1-wallet-patch-validation.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-flux2-object-whitelist-validation-v2.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-flux2-scene1-v2-3-single-validation.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-golden-sample-v2-flux2-image-candidates-v1.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-golden-sample-v2-s6-flux2-denomination-patch-v1.mjs",
+      "provider": "bfl-flux2",
+      "requiredEnv": ["PAID_API_ENABLED=true", "ALLOW_BFL_FLUX2=true"],
+      "secretRead": "BFL_API_KEY",
+      "guardBeforeSecretRead": true,
+      "note": "review-fix로 추가. --probe-only 모드는 secret read가 없으므로 guard 밖. assertPaidImageAllowed('ALLOW_BFL_FLUX2')가 !PROBE_ONLY 블록 안 BFL_API_KEY read 전에 실행."
+    },
+    {
+      "path": "scripts/run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs",
+      "provider": "chatgpt-playwright",
+      "requiredEnv": ["ALLOW_CHATGPT_IMAGE=1"],
+      "secretRead": "none (browser/CDP + output write)",
+      "guardBeforeSecretRead": true,
+      "note": "2차 review-fix로 추가. ALLOW_CHATGPT_IMAGE!==\"1\" 체크가 v2 pack validation 직후, fs.mkdirSync(OUT_DIR_ABS)와 ensureChrome/connectOverCDP 전에 실행. --preflight-only도 이 guard를 거친다."
+    },
+    {
+      "path": "scripts/_upload002-s5-kf-generate.mjs",
+      "provider": "chatgpt-playwright",
+      "requiredEnv": ["ALLOW_CHATGPT_IMAGE=1"],
+      "secretRead": "none (browser/CDP + output write)",
+      "guardBeforeSecretRead": true,
+      "note": "2차 review-fix로 추가. ALLOW_CHATGPT_IMAGE!==\"1\" 체크가 DRY 상수 정의 후, fs.mkdirSync(KF_DIR/CAND_DIR)와 ensureChrome/connectOverCDP 전에 실행. --dry-run도 이 guard를 거친다."
+    },
+    {
+      "path": "scripts/_chatgpt-image-preflight.mjs",
+      "provider": "chatgpt-playwright",
+      "requiredEnv": ["ALLOW_CHATGPT_IMAGE=1"],
+      "secretRead": "none (browser/CDP + output write)",
+      "guardBeforeSecretRead": true,
+      "note": "2차 review-fix로 추가. ALLOW_CHATGPT_IMAGE!==\"1\" 체크가 ROOT 정의 후, fs.mkdirSync(QA_DIR)와 ensureChrome/connectOverCDP 전에 실행. 이 파일 자체가 preflight이며 메시지 전송은 0회 유지되나 browser/CDP 실행 자체를 guard 대상으로 함."
+    },
+    {
+      "path": "scripts/_chatgpt-image-anchor-generate.mjs",
+      "provider": "chatgpt-playwright",
+      "requiredEnv": ["ALLOW_CHATGPT_IMAGE=1"],
+      "secretRead": "none (browser/CDP + output write)",
+      "guardBeforeSecretRead": true,
+      "note": "2차 review-fix로 추가. ALLOW_CHATGPT_IMAGE!==\"1\" 체크가 repo-root/.money-shorts-local 안전 가드 이후, fs.mkdirSync(OUT_DIR_ABS)와 ensureChrome/connectOverCDP 전에 실행. --preflight-only도 이 guard를 거친다."
+    }
+  ],
+
+  "chatgptImagePolicy": {
+    "flag": "ALLOW_CHATGPT_IMAGE",
+    "expectedValue": "1",
+    "rule": "ChatGPT/Playwright 이미지 경로는 유료 API가 아니라 browser 자동화. browser/CDP launch 전에 ALLOW_CHATGPT_IMAGE=1 확인 필수.",
+    "note": "이 경로는 paidApiGuard가 아니라 스크립트 자체 flag로 관리."
+  },
+
+  "knownGapsOutOfCurrentReviewFixScope": {
+    "note": "golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1은 정확히 4개 지정 gap 파일만 승인 범위였다(run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs / _upload002-s5-kf-generate.mjs / _chatgpt-image-preflight.mjs / _chatgpt-image-anchor-generate.mjs — 전부 hardenedImageScripts로 이동 완료). 강화된 static guard의 inventory 스캔이 그 범위 밖에서 추가로 24개 browser/CDP 이미지 실행 신호 보유 파일을 발견했다. 이 4개는 knownGaps에서 완전히 제외됐으나, 아래 24개는 이번 review-fix 승인 범위 밖이라 은닉하지 않고 명시 기록만 한다 — 후속 review-fix에서 Owner 승인 후 처리 필요.",
+    "guardedButUnregistered": [
+      "run-chatgpt-playwright-fresh-image-set-v3.mjs",
+      "run-chatgpt-playwright-image-method-revalidation-v1.mjs",
+      "run-chatgpt-playwright-image-method-revalidation-v2.mjs",
+      "run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs",
+      "run-money-shorts-rate-freeze-image-regeneration-v1.mjs"
+    ],
+    "guardedButUnregisteredNote": "이 5개는 ALLOW_CHATGPT_IMAGE 인라인 체크가 이미 소스에 있음(이전 대화에서 확인됨) — policy.hardenedImageScripts 미등재 상태일 뿐 실제 하드닝 여부는 재확인 필요.",
+    "noGuardDetected": [
+      "_ep003-jdm-keyframe-generate.mjs",
+      "_ep003-jdm-s3-bossfree-kf-v6.mjs",
+      "_ep003-jdm-s3-bossfree-kf.mjs",
+      "_ep003-jdm-veo-generate.mjs",
+      "_ep003-jdm-veo-preflight.mjs",
+      "_gemini-veo-core.mjs",
+      "_gemini-veo-preflight.mjs",
+      "_upload002-kf-generate.mjs",
+      "_upload002-s1-veo-generate.mjs",
+      "_upload002-s2-continuity-fix.mjs",
+      "_upload002-s2-recover.mjs",
+      "_upload002-s2-veo-generate.mjs",
+      "_upload002-s3-veo-generate.mjs",
+      "_upload002-s4-kf-generate.mjs",
+      "_upload002-s4-veo-generate.mjs",
+      "_upload002-s5-edit-from-s4.mjs",
+      "_upload002-s5-final.mjs",
+      "_upload002-s5-veo-generate.mjs",
+      "_upload002-s5-veo-regen.mjs"
+    ],
+    "noGuardDetectedNote": "이 19개는 inventory 정적 스캔에서 ALLOW_CHATGPT_IMAGE 가드 문자열이 검출되지 않음. '_ep003-*-keyframe/*-kf-*'는 ChatGPT image 신호(ensureChrome 등)로 탐지됐고, '_gemini-veo-*'/'*-veo-*'는 이름상 Gemini/Veo 비디오 provider로 별도 Chrome helper(ensureChrome 자체 구현)를 갖고 있어 ChatGPT 이미지와 provider 경계가 다를 수 있음 — 실제 provider/guard 필요 여부는 파일별 재확인 필요."
+  },
+
+  "enforcementScope": {
+    "included": "scripts/ 하위 non-archive active paid image entrypoints — BFL/OpenAI image key·endpoint 또는 ChatGPT/Playwright browser/CDP 이미지 경로를 직접 사용하는 13개 script (hardenedImageScripts 전체)",
+    "excluded": [
+      "scripts/archive/** (active entrypoint 아님)",
+      "env-safe.mjs (env 관리 도구 — API key 존재 여부만 체크, 이미지 생성/호출 없음)",
+      "scripts/check-golden-sample-v3-2-*-static.mjs, scripts/check-premium-editorial-visual-system-static.mjs (정적 가드 자체 — 텍스트 스캔만, 실행/이미지 생성 없음)",
+      "_lh9-tts-final.mjs, _lh10-generate-plan.mjs (OpenAI key 사용하나 TTS/콘티-generate provider — paidApiGuard openai-tts/openai-generate 영역, 이미지 아님)",
+      "_chatgpt-image-core.mjs (ChatGPT image 공용 helper 모듈 — 자체 entrypoint 아님, ensureChrome/typePrompt 등을 export만 함. 이를 import하는 모든 실행 가능 entrypoint는 hardenedImageScripts에 등재됨)"
+    ],
+    "note": "archive/도구/가드/비-이미지-provider/공용-helper-모듈 스크립트는 이 정책의 정적 집행 대상에서 제외. 추가 active image runner 발견 시 이 정책에 등재 후 하드닝."
+  },
+
+  "knownGapsOutOfReviewFixScope": [],
+  "knownGapsResolvedAt": "2026-07-04",
+  "knownGapsResolutionNote": "이전 review-fix에서 발견된 4개 gap(run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs, _upload002-s5-kf-generate.mjs, _chatgpt-image-preflight.mjs, _chatgpt-image-anchor-generate.mjs)은 이번 golden-sample-v3-2-chatgpt-playwright-image-allow-guard-review-fix-v1에서 전부 하드닝되어 hardenedImageScripts로 이동. knownGaps는 더 이상 남아있지 않다.",
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "unchangedBy": "이 하드닝은 보안 경계를 강화할 뿐 verdict를 승격하지 않는다.",
+    "note": "guard 통과는 유료 이미지 생성 실행을 자동 승인하지 않는다. 실제 실행은 별도 명시 Owner 승인 + live slice 필요."
+  },
+
+  "forbiddenBehavior": [
+    "PAID_API_ENABLED=true 하나만으로 이미지 provider 허용",
+    "provider allow flag 미설정/false인데 secret read 또는 API 호출",
+    "allow guard 전에 secret read / output write / browser·CDP launch / fetch",
+    "이 정책 fixture 존재를 이미지 생성 실행 승인으로 해석"
+  ]
+}

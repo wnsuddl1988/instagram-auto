@@ -55,6 +55,23 @@ function ts() { return new Date().toISOString().slice(11, 19); }
 function log(m) { console.log(`[${ts()}][s6-patch] ${m}`); }
 function warn(m) { console.warn(`[WARN][s6-patch] ${m}`); }
 
+// ── fail-closed paid image allow guard (secret read / API 호출 전에 반드시 통과) ──
+// PAID_API_ENABLED=true 하나만으로는 열리지 않는다. provider allow flag도 명시 true여야 한다.
+// --probe-only 모드는 secret/API 호출이 없으므로 이 guard를 거치지 않는다(호출부에서 !PROBE_ONLY일 때만 호출).
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+function assertPaidImageAllowed(providerFlagKey) {
+  const isTrue = (k) => String(process.env[k] ?? "").toLowerCase() === "true";
+  const master = isTrue("PAID_API_ENABLED");
+  const provider = isTrue(providerFlagKey);
+  if (!master || !provider) {
+    const need = [];
+    if (!master) need.push("PAID_API_ENABLED=true");
+    if (!provider) need.push(`${providerFlagKey}=true`);
+    console.error(`ABORT: paid image 경로 차단 (fail-closed). 필요한 env: ${need.join(", ")} — secret/API 호출 전에 중단.`);
+    process.exit(2);
+  }
+}
+
 // ── .env.local 로드 (BFL_API_KEY만, 값 미출력, 수정 없음) ────────────────────
 function loadBflKey() {
   const envPath = path.join(REPO_ROOT, ".env.local");
@@ -284,6 +301,7 @@ async function main() {
       console.error(`ABORT(11): 생성 이미지가 이미 존재 — create 재호출 금지. 재probe만 필요하면 --probe-only 사용.\n${dup.join("\n")}`);
       process.exit(11);
     }
+    assertPaidImageAllowed("ALLOW_BFL_FLUX2");
     const BFL_KEY = loadBflKey();
     if (!BFL_KEY) {
       console.error("ABORT: BFL_API_KEY 없음 (존재 여부 boolean만 판정, 값 미출력)");

@@ -29,6 +29,14 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT      = path.resolve(__dirname, "..");
 
+// ── fail-closed ChatGPT image allow guard (output write / browser·CDP 전에 반드시 통과) ──
+// 이 preflight 자체가 browser/CDP를 실행하므로 예외 없이 guard 대상.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — output write/browser/CDP 전에 중단.");
+  process.exit(2);
+}
+
 const QA_DIR = path.join(ROOT, "output/v2/3d_sitcom_prod_v1/upload_002_copier/qa/chatgpt_preflight");
 fs.mkdirSync(QA_DIR, { recursive: true });
 

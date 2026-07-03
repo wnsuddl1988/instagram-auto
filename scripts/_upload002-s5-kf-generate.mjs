@@ -48,6 +48,14 @@ const DEST_PATH  = path.join(KF_DIR, DEST_FILE);
 
 const DRY        = process.argv.includes("--dry-run");
 
+// ── fail-closed ChatGPT image allow guard (output write / browser·CDP 전에 반드시 통과) ──
+// --dry-run도 browser/CDP까지 진행하므로 예외 없이 guard 대상.
+// Owner decision: image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts.
+if (process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  console.error("ABORT: ChatGPT image 경로 차단 (fail-closed). 필요한 env: ALLOW_CHATGPT_IMAGE=1 — output write/browser/CDP 전에 중단.");
+  process.exit(2);
+}
+
 fs.mkdirSync(KF_DIR,   { recursive: true });
 fs.mkdirSync(CAND_DIR, { recursive: true });
 
