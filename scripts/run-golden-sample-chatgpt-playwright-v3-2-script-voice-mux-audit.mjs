@@ -28,6 +28,20 @@ const CONFIG_PATH = join(__dirname, "fixtures", "golden_sample_t1_lifestyle_infl
 const argv = process.argv.slice(2);
 const ALLOW_LIVE_TTS_FLAG = argv.includes("--allow-live-tts");
 
+// ── stage 경계 (Owner 승인 slice: golden-sample-v3-2-live-tts-audio-elevenlabs-run-v1) ──
+// --stage tts-audio-only: Script Impact Gate → TTS(기존 audio 재사용 우선) → timing/
+// alignment/reflow/timing summary + audio-only artifact audit까지만 수행.
+// renderVisual/Pillow/mux/frame 추출은 render/mux 승인 slice 전까지 실행 금지.
+const stageArgIdx = argv.indexOf("--stage");
+const STAGE = stageArgIdx === -1 ? "full" : (argv[stageArgIdx + 1] ?? "");
+if (STAGE !== "full" && STAGE !== "tts-audio-only") {
+  console.error("ABORT: unknown --stage value — 지원: tts-audio-only"); process.exit(2);
+}
+const TTS_AUDIO_ONLY = STAGE === "tts-audio-only";
+// TTS-only 승인 경로 env/secret allowlist — 아래 3개 외 어떤 env/secret 값도 읽지 않는다.
+// (ELEVENLABS_MODEL_ID·후보별 voice env key 조회 금지 — manifest default/단일 키 사용)
+const TTS_ONLY_ENV_ALLOWLIST = ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "ALLOW_ELEVENLABS"];
+
 const cfg = JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
 const blueprint = JSON.parse(readFileSync(join(REPO_ROOT, cfg.baseBlueprint), "utf8"));
 if (blueprint.schemaVersion !== "golden_sample_story_blueprint_v3_1_banknote_patch") {
@@ -38,8 +52,11 @@ const r2 = (v) => Math.round(v * 100) / 100;
 
 const outAbs = resolve(cfg.outputPaths.outDir);
 if (!/^C:\\+tmp\\+/i.test(cfg.outputPaths.outDir)) { console.error("ABORT: out-dir must be under C:\\tmp"); process.exit(2); }
-mkdirSync(join(outAbs, "overlays"), { recursive: true });
-mkdirSync(join(outAbs, "frames"), { recursive: true });
+mkdirSync(outAbs, { recursive: true });
+if (!TTS_AUDIO_ONLY) {
+  mkdirSync(join(outAbs, "overlays"), { recursive: true });
+  mkdirSync(join(outAbs, "frames"), { recursive: true });
+}
 const P = (name) => join(outAbs, cfg.outputPaths[name]);
 
 function fail(msg, code = 1) { console.error("ABORT: " + msg); process.exit(code); }
@@ -79,10 +96,21 @@ function loadEnvLocal() {
     if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
     result[t.slice(0, i).trim()] = v;
   }
+  if (TTS_AUDIO_ONLY) {
+    // 승인된 allowlist 외 secret 값은 메모리에도 보관하지 않는다 (fail-closed 축소)
+    const filtered = {};
+    for (const k of TTS_ONLY_ENV_ALLOWLIST) if (k in result) filtered[k] = result[k];
+    return filtered;
+  }
   return result;
 }
 const envLocal = loadEnvLocal();
-const env = (k) => process.env[k] ?? envLocal[k] ?? undefined;
+const env = (k) => {
+  if (TTS_AUDIO_ONLY && !TTS_ONLY_ENV_ALLOWLIST.includes(k)) {
+    fail(`env key '${k}' is not in the approved TTS-only allowlist — 승인 외 env/secret read 차단`, 21);
+  }
+  return process.env[k] ?? envLocal[k] ?? undefined;
+};
 const mask = (id) => (!id || id.length <= 6 ? "***" : id.slice(0, 3) + "***" + id.slice(-3));
 
 // ── narration ────────────────────────────────────────────────────────────────
@@ -111,11 +139,14 @@ async function stageTts() {
   console.log(`── live TTS guard 통과 (${cfg.tts.allowCliFlag} / ${cfg.tts.allowEnvKey}) ──`);
   const apiKey = env("ELEVENLABS_API_KEY");
   let voiceId = null, voiceSource = null;
-  for (const k of cfg.tts.voiceResolutionOrder) {
+  // TTS-only 승인 경로: ELEVENLABS_VOICE_ID 단일 키만 (후보별 voice env key 조회 금지)
+  const voiceResolutionKeys = TTS_AUDIO_ONLY ? ["ELEVENLABS_VOICE_ID"] : cfg.tts.voiceResolutionOrder;
+  for (const k of voiceResolutionKeys) {
     const v = env(k);
     if (v && v.trim()) { voiceId = v.trim(); voiceSource = k; break; }
   }
-  const modelId = env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault;
+  // TTS-only 승인 경로: model id env read 금지 — manifest default 고정
+  const modelId = TTS_AUDIO_ONLY ? cfg.tts.modelIdDefault : (env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault);
   console.log("── STAGE TTS: ElevenLabs one-shot full narration (with-timestamps) ──");
   console.log(`  apiKey configured: ${!!apiKey}  voice: ${voiceId ? mask(voiceId) : "(missing)"} (source: ${voiceSource ?? "none"})`);
   console.log(`  model: ${modelId}  preset: ${cfg.tts.voicePresetId}  chars: ${[...narrationText].length}`);
@@ -413,6 +444,27 @@ const R = buildReflow(T);
 console.log(`\n── REFLOW ── videoEnd=${R.videoEnd}s tailHold=${R.tailHold}s threeVisibleWhenSpoken=${R.threeVisibleWhenSpoken}`);
 console.log(`  scenes: ${R.scenes.map((s) => `${s.id}@${s.t0}-${s.t1}`).join(" ")}`);
 
+// ── TTS-only audio artifact audit (mux 없이 narration 오디오 자체 기준 판정) ──
+let ttsOnlyAudioAudit = null;
+if (TTS_AUDIO_ONLY) {
+  const G = cfg.audioQualityGates;
+  const clipped = T.audioFileDurationSec < T.speechEndSec - 0.02;
+  ttsOnlyAudioAudit = {
+    schemaVersion: "tts_audio_only_artifact_audit_v3_2",
+    note: "TTS-only 승인 slice의 audio artifact audit — narration 오디오 자체 기준 5개 서브체크 + textMatch. tailHold 판정은 mux 단계 속성으로 이연(DEFERRED_TO_MUX_SLICE).",
+    beginningSilenceSec: T.speechStartSec, beginningPass: T.speechStartSec <= G.beginningSilenceMaxSec,
+    first5sSilenceSec: T.silence.first5sSilenceSec, first5sPass: T.silence.first5sSilenceSec <= G.first5sSilenceMaxSec,
+    totalSilenceRatio: T.silence.totalSilenceRatio, ratioPass: T.silence.totalSilenceRatio <= G.totalSilenceRatioMax,
+    speechActiveRatio: T.silence.speechActiveRatio, speechActivePass: T.silence.speechActiveRatio >= G.speechActiveRatioMin,
+    clippedTail: clipped, notClippedTailPass: !clipped,
+    alignmentTextMatchesSentText: T.textMatches,
+    tailHoldSec: R.tailHold, tailHoldJudgement: "DEFERRED_TO_MUX_SLICE",
+  };
+  ttsOnlyAudioAudit.verdict =
+    ttsOnlyAudioAudit.beginningPass && ttsOnlyAudioAudit.first5sPass && ttsOnlyAudioAudit.ratioPass &&
+    ttsOnlyAudioAudit.speechActivePass && ttsOnlyAudioAudit.notClippedTailPass && T.textMatches ? "PASS" : "FAIL";
+}
+
 // render manifest fixture (repo)
 const manifest = {
   schemaVersion: "golden_sample_visual_render_manifest_t1_v3_2_tts_anchored",
@@ -444,7 +496,7 @@ writeFileSync(P("timingSummary"), JSON.stringify({
   taskId: cfg.taskId, provider: "elevenlabs", ttsStrategy: cfg.tts.strategy, endpointKind: cfg.tts.endpointKind,
   liveApiCallPerformedThisRun: !ttsResult.reused, httpStatus: ttsResult.httpStatus,
   apiCallBudgetMax: cfg.tts.apiCallBudgetMax,
-  modelId: env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault, voicePresetId: cfg.tts.voicePresetId,
+  modelId: TTS_AUDIO_ONLY ? cfg.tts.modelIdDefault : (env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault), voicePresetId: cfg.tts.voicePresetId,
   voiceSettingsSanitized: cfg.tts.voiceSettings,
   generatedText: narrationText, generatedTextCharCount: [...narrationText].length,
   alignmentTextMatchesSentText: T.textMatches,
@@ -455,6 +507,7 @@ writeFileSync(P("timingSummary"), JSON.stringify({
   paddingUsed: false, atempoUsed: false, hardTrimUsed: false,
   noSecretEvidence: "API key/voice id 원문은 어떤 로그/파일에도 기록하지 않음",
   uploadReady: false,
+  ...(TTS_AUDIO_ONLY ? { stage: "tts-audio-only", audioArtifactAuditTtsOnly: ttsOnlyAudioAudit } : {}),
 }, null, 2) + "\n", "utf8");
 
 writeFileSync(P("scriptPreview"), JSON.stringify({
@@ -477,6 +530,19 @@ writeFileSync(P("captionTimeline"), JSON.stringify({
   anchorEvidence: R.evidence,
   storyGate: { word: "세 개", spokenAtSec: R.threeSpokenAtSec, slotEntriesSec: R.slotEntries, threeVisibleWhenSpoken: R.threeVisibleWhenSpoken },
 }, null, 2) + "\n", "utf8");
+
+// ── TTS_AUDIO_ONLY_STOP_BEFORE_RENDER_MUX ──
+// 승인 경계: tts-audio-only stage는 여기서 종료한다 — renderVisual/Pillow/2-pass 합성/
+// mux/frame 추출/mux audit는 render/mux 승인 slice 전까지 실행 금지.
+if (TTS_AUDIO_ONLY) {
+  console.log(`\n── TTS-AUDIO-ONLY DONE (render/mux/frames 미실행) ──`);
+  console.log(`  liveApiCallPerformedThisRun=${!ttsResult.reused} httpStatus=${ttsResult.httpStatus ?? "n/a(reused)"} apiCallBudgetMax=${cfg.tts.apiCallBudgetMax}`);
+  console.log(`  audio audit: begin=${ttsOnlyAudioAudit.beginningSilenceSec}s first5s=${ttsOnlyAudioAudit.first5sSilenceSec}s ratio=${ttsOnlyAudioAudit.totalSilenceRatio} active=${ttsOnlyAudioAudit.speechActiveRatio} clipped=${ttsOnlyAudioAudit.clippedTail} textMatch=${ttsOnlyAudioAudit.alignmentTextMatchesSentText} → ${ttsOnlyAudioAudit.verdict}`);
+  if (ttsOnlyAudioAudit.verdict !== "PASS") {
+    fail("audio artifact audit FAIL — stop condition. 자동 재시도/2차 TTS 호출 금지, Codex 보고 필요.", 31);
+  }
+  process.exit(0);
+}
 
 // ── RENDER + MUX ──
 const visualMp4 = renderVisual(R);
