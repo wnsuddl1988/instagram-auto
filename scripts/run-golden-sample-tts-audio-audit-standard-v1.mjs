@@ -16,7 +16,8 @@
  *   - import는 node:fs / node:path / node:url 만 허용된다 (계약 harnessImportRule).
  *
  * v3.1/v3.2 audit runner lineage에서 검증된 게이트 로직을 재사용 가능한 pure function으로 노출한다:
- *   Script Impact Gate 판정, audio quality gate(6 서브체크) 판정, re-anchor entry 판정,
+ *   Script Impact Gate 판정, Script Impact Gate provenance 검증(Owner 결정 #1 =
+ *   codex_judge_with_mandatory_provenance), audio quality gate(6 서브체크) 판정, re-anchor entry 판정,
  *   mux media gate 판정, 4-gate artifact audit 판정, QA readiness 분리 검증.
  * 미래 live/tts/mux slice는 이 모듈을 import해 동일 threshold를 사용해야 하며,
  * inline audit 8번째 클론 생성은 계약(forbiddenBehavior)상 금지다.
@@ -56,6 +57,16 @@ export const AUDIO_SUBCHECK_KEYS = [
   "beginningPass", "first5sPass", "ratioPass", "speechActivePass", "tailHoldPass", "notClippedTail",
 ];
 export const AUDIT_GATE_KEYS = ["media", "audio", "captionCard", "story"];
+
+// Owner 결정 #1 = codex_judge_with_mandatory_provenance. provenance authority는 codex_judge만 허용,
+// 나머지(self_assessment / llm_judge / 익명 / 미상)는 fail-closed 거부.
+export const PROVENANCE_REQUIRED_AUTHORITY = "codex_judge";
+export const PROVENANCE_REJECTED_AUTHORITIES = [
+  "self_assessment_fixture_with_provenance", "llm_judge_scored", "anonymous", "unknown", "self_assessment",
+];
+export const PROVENANCE_PLACEHOLDER_TOKENS = [
+  "TBD", "TODO", "PENDING", "FIXME", "미결", "미정", "placeholder", "XXX", "???",
+];
 
 const isStr = (v) => typeof v === "string" && v.trim().length > 0;
 const isStrArr = (v) => Array.isArray(v) && v.length > 0 && v.every(isStr);
@@ -172,6 +183,96 @@ export function evaluateArtifactAudit(gates) {
   return { pass, verdict: pass ? "PASS_CANDIDATE_PENDING_VISION_QA" : "FAIL", issues };
 }
 
+// ── Script Impact Gate provenance 검증 (pure) ───────────────────────────────
+
+// placeholder 토큰(TBD/TODO/미결 등)이 들어있는지 검사 — 있으면 fail-closed.
+export function hasPlaceholder(text) {
+  if (!isStr(text)) return false;
+  const upper = text.toUpperCase();
+  return PROVENANCE_PLACEHOLDER_TOKENS.some((tok) => {
+    // 한글 토큰은 대소문자 무의미 — 원문에서, 영문 토큰은 대문자화 후 비교
+    if (/[가-힣]/.test(tok)) return text.includes(tok);
+    return upper.includes(tok.toUpperCase());
+  });
+}
+
+// 개별 provenance 항목(점수 또는 hard-fail) 하나를 검증한다.
+// keyField: "scoreKey" | "checkKey", expectedKey: 이 항목이 커버해야 하는 키, expectedValue: 대조할 값.
+function validateProvenanceEntry(entry, keyField, expectedKey, expectedValue, label) {
+  const issues = [];
+  const e = entry ?? {};
+  if (e[keyField] !== expectedKey) issues.push(`${label} ${keyField}(${e[keyField]}) != ${expectedKey}`);
+  // value 정합 — provenance 숫자/불리언이 실제 gate 값과 어긋나면 위조 가능성.
+  if (expectedValue !== undefined && e.value !== expectedValue) {
+    issues.push(`${label}[${expectedKey}] provenance value(${JSON.stringify(e.value)}) != 실제(${JSON.stringify(expectedValue)})`);
+  }
+  if (e.authority !== PROVENANCE_REQUIRED_AUTHORITY) {
+    issues.push(`${label}[${expectedKey}] authority(${e.authority}) != ${PROVENANCE_REQUIRED_AUTHORITY} (fail-closed)`);
+  }
+  if (PROVENANCE_REJECTED_AUTHORITIES.includes(e.authority)) {
+    issues.push(`${label}[${expectedKey}] authority가 거부 목록(${e.authority})`);
+  }
+  if (!isStr(e.judgeType)) issues.push(`${label}[${expectedKey}] judgeType 누락`);
+  if (!isStrArr(e.sourceRefs)) issues.push(`${label}[${expectedKey}] sourceRefs 누락/빈 배열 (근거 없는 숫자 금지)`);
+  if (!isStr(e.rationale)) issues.push(`${label}[${expectedKey}] rationale 누락`);
+  if (hasPlaceholder(e.rationale)) issues.push(`${label}[${expectedKey}] rationale에 placeholder 존재`);
+  if (Array.isArray(e.sourceRefs) && e.sourceRefs.some((r) => hasPlaceholder(r))) {
+    issues.push(`${label}[${expectedKey}] sourceRefs에 placeholder 존재`);
+  }
+  return issues;
+}
+
+// plan.scriptImpactGate.provenance 전체를 계약 provenanceStandard 기준으로 fail-closed 검증한다.
+// 6개 점수 + 7개 hard-fail 전부 codex_judge authority + sourceRefs + rationale(placeholder 없음)를 요구.
+export function validateScriptImpactGateProvenance(sig, contractStd) {
+  const issues = [];
+  const push = (m) => issues.push(`provenance: ${m}`);
+  const prov = sig?.provenance;
+  if (!prov || typeof prov !== "object") { push("scriptImpactGate.provenance 누락 (Owner 결정 #1 = mandatory provenance)"); return issues; }
+
+  // plan이 확정된 authority 정책을 선언하는지
+  if (sig.scoreAuthority !== "codex_judge_with_mandatory_provenance") {
+    push(`scriptImpactGate.scoreAuthority(${sig.scoreAuthority}) != codex_judge_with_mandatory_provenance`);
+  }
+  if (prov.authority !== PROVENANCE_REQUIRED_AUTHORITY) push(`provenance.authority(${prov.authority}) != ${PROVENANCE_REQUIRED_AUTHORITY}`);
+  // provenance가 live 승인을 함의하면 fail-closed
+  if (prov.notLiveApproval !== true) push("provenance.notLiveApproval !== true (gate PASS는 live 승인 아님을 명시해야 함)");
+  for (const [k, v] of Object.entries(prov)) {
+    if (typeof v === "boolean" && /live|upload|ownerQa|mux/i.test(k) && k !== "notLiveApproval" && v === true) {
+      push(`provenance.${k} === true (live/upload/QA 승인 함의 금지)`);
+    }
+  }
+
+  const scoreKeys = contractStd?.scoreKeysCovered ?? REQUIRED_SCORE_KEYS;
+  const hardFailKeys = contractStd?.hardFailKeysCovered ?? HARD_FAIL_KEYS;
+
+  // 점수 provenance: 배열 + 키 집합이 6개 점수와 정확히 일치 + 각 항목 검증
+  const provScores = Array.isArray(prov.scores) ? prov.scores : [];
+  const provScoreKeys = provScores.map((s) => s?.scoreKey);
+  if (!setEq(provScoreKeys, scoreKeys)) {
+    push(`provenance.scores 키 집합이 6개 점수와 불일치 — got=[${provScoreKeys.join(",")}]`);
+  }
+  for (const k of scoreKeys) {
+    const entry = provScores.find((s) => s?.scoreKey === k);
+    if (!entry) { push(`점수 provenance 누락 — ${k}`); continue; }
+    issues.push(...validateProvenanceEntry(entry, "scoreKey", k, sig?.scores?.[k], "score").map((m) => `provenance: ${m}`));
+  }
+
+  // hard-fail provenance: 배열 + 키 집합이 7개 hard-fail과 정확히 일치 + 각 항목 검증
+  const provHf = Array.isArray(prov.hardFailChecks) ? prov.hardFailChecks : [];
+  const provHfKeys = provHf.map((h) => h?.checkKey);
+  if (!setEq(provHfKeys, hardFailKeys)) {
+    push(`provenance.hardFailChecks 키 집합이 7개 hard-fail과 불일치 — got=[${provHfKeys.join(",")}]`);
+  }
+  for (const k of hardFailKeys) {
+    const entry = provHf.find((h) => h?.checkKey === k);
+    if (!entry) { push(`hard-fail provenance 누락 — ${k}`); continue; }
+    issues.push(...validateProvenanceEntry(entry, "checkKey", k, sig?.hardFailChecks?.[k], "hardFail").map((m) => `provenance: ${m}`));
+  }
+
+  return issues;
+}
+
 // ── fixture 로딩 (read-only) ────────────────────────────────────────────────
 
 export function defaultIo() {
@@ -211,6 +312,30 @@ export function validateContract(contract) {
   }
   if (!setEq(sig.hardFailKeys, HARD_FAIL_KEYS)) push("scriptImpactGateStandard.hardFailKeys 불일치(7키)");
   if (!isStr(sig.gateOrderRule)) push("scriptImpactGateStandard.gateOrderRule 문서 누락");
+
+  // ── Owner 결정 #1 provenance 표준 (codex_judge_with_mandatory_provenance) ──
+  if (sig.scoreAuthority !== "codex_judge_with_mandatory_provenance") {
+    push(`scriptImpactGateStandard.scoreAuthority(${sig.scoreAuthority}) != codex_judge_with_mandatory_provenance`);
+  }
+  if (sig.provenanceRequired !== true) push("scriptImpactGateStandard.provenanceRequired !== true");
+  if (sig.resolvedDecisionRef?.decisionId !== 1 || sig.resolvedDecisionRef?.resolvedValue !== "codex_judge_with_mandatory_provenance") {
+    push("scriptImpactGateStandard.resolvedDecisionRef가 결정 #1 = codex_judge_with_mandatory_provenance를 가리키지 않음");
+  }
+  // 옛 pending 문구가 남아있으면 fail (drift 방지)
+  if (isStr(sig.scoreProducerNote) && (sig.scoreProducerNote.includes("미결") || sig.scoreProducerNote.includes("pending"))) {
+    push("scriptImpactGateStandard.scoreProducerNote에 옛 pending/미결 문구 잔존 — resolved로 갱신 필요");
+  }
+  const ps = sig.provenanceStandard ?? {};
+  if (ps.requiredAuthority !== PROVENANCE_REQUIRED_AUTHORITY) push(`provenanceStandard.requiredAuthority(${ps.requiredAuthority}) != ${PROVENANCE_REQUIRED_AUTHORITY}`);
+  if (!setEq(ps.scoreKeysCovered, REQUIRED_SCORE_KEYS)) push("provenanceStandard.scoreKeysCovered 6개 점수 불일치");
+  if (!setEq(ps.hardFailKeysCovered, HARD_FAIL_KEYS)) push("provenanceStandard.hardFailKeysCovered 7개 hard-fail 불일치");
+  if (ps.requiredScoreProvenanceCount !== 6) push("provenanceStandard.requiredScoreProvenanceCount !== 6");
+  if (ps.requiredHardFailProvenanceCount !== 7) push("provenanceStandard.requiredHardFailProvenanceCount !== 7");
+  if (!isStrArr(ps.placeholderForbidden)) push("provenanceStandard.placeholderForbidden 누락");
+  if (!isStr(ps.notLiveApprovalRule) || !ps.notLiveApprovalRule.includes("fail-closed")) push("provenanceStandard.notLiveApprovalRule 누락(live 승인 아님 명시)");
+  if (!Array.isArray(ps.rejectedAuthorities) || !ps.rejectedAuthorities.includes("self_assessment_fixture_with_provenance") || !ps.rejectedAuthorities.includes("llm_judge_scored")) {
+    push("provenanceStandard.rejectedAuthorities가 채택 안 된 대안(self_assessment/llm_judge)을 거부 목록에 포함해야 함");
+  }
 
   const tts = contract?.ttsStandard ?? {};
   const forbids = (v) => isStr(v) && v.startsWith("금지");
@@ -309,6 +434,9 @@ export function validatePlanAgainstContract(plan, contract, io = defaultIo()) {
   if (sig.evaluatedBeforeLiveTts !== true) push("scriptImpactGate.evaluatedBeforeLiveTts !== true");
   if (sig.hardFails !== 0) push("scriptImpactGate.hardFails !== 0");
 
+  // ── Owner 결정 #1: provenance 의무 (codex_judge + sourceRefs + no placeholder + not live approval) ──
+  issues.push(...validateScriptImpactGateProvenance(sig, contract?.scriptImpactGateStandard?.provenanceStandard));
+
   // ── TTS 정책 ──
   issues.push(...detectForbiddenTtsRoutes(plan?.tts ?? {}).map((m) => `plan tts: ${m}`));
 
@@ -406,6 +534,8 @@ export function runDryRunValidation({ contractPath = DEFAULT_CONTRACT_PATH, plan
       mode: "dry_run_static_validation_only",
       topicId: plan.ownerTopicApproval.topicId,
       scriptImpactGate: gateRes.pass ? "PASS" : "FAIL",
+      scoreAuthority: sig.scoreAuthority ?? "(누락)",
+      provenanceCovered: `${Array.isArray(sig.provenance?.scores) ? sig.provenance.scores.length : 0}점수/${Array.isArray(sig.provenance?.hardFailChecks) ? sig.provenance.hardFailChecks.length : 0}hardFail`,
       minScoreMargin: Math.min(...REQUIRED_SCORE_KEYS.map((k) => sig.scores[k] - sig.requiredScores[k])),
       ttsStrategy: plan.tts.strategy,
       ttsCalls: `${plan.tts.liveTtsCalls}/${plan.tts.apiCallBudgetMax}`,
@@ -463,6 +593,7 @@ function main() {
   const s = res.summary;
   console.log(`[tts-audio-audit-standard-v1] topic: ${s.topicId}`);
   console.log(`[tts-audio-audit-standard-v1] Script Impact Gate: ${s.scriptImpactGate} (최소 점수 마진 +${s.minScoreMargin})`);
+  console.log(`[tts-audio-audit-standard-v1] score authority: ${s.scoreAuthority} · provenance ${s.provenanceCovered} (codex_judge, live 승인 아님)`);
   console.log(`[tts-audio-audit-standard-v1] TTS: ${s.ttsStrategy} · calls ${s.ttsCalls} (live 호출 없음, 정책 검증만)`);
   console.log(`[tts-audio-audit-standard-v1] audio gate: ${s.audioGate} (${s.audioSubChecks} 서브체크)`);
   console.log(`[tts-audio-audit-standard-v1] mux: natural ${s.naturalDurationSec}s (no padding/atempo/hard-trim)`);

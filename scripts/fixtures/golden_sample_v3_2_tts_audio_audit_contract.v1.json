@@ -86,7 +86,39 @@
       "topic_changed_from_accepted_visual"
     ],
     "hardFailRule": "위 7개 key 전부 false여야 PASS. 하나라도 true면 gate FAIL → TTS 진입 금지.",
-    "scoreProducerNote": "점수 생산 주체(자체 평가 vs 외부 모델)는 Owner 결정 #1로 미결 — 이 계약은 threshold와 게이트 순서만 고정하고 점수 생산을 실행하지 않는다.",
+    "scoreAuthority": "codex_judge_with_mandatory_provenance",
+    "provenanceRequired": true,
+    "resolvedDecisionRef": {
+      "decisionStateFixture": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+      "decisionId": 1,
+      "decisionKey": "script_impact_gate_score_authority",
+      "resolvedValue": "codex_judge_with_mandatory_provenance",
+      "resolvedAt": "2026-07-04",
+      "packetRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json"
+    },
+    "scoreProducerNote": "Owner 결정 #1 확정 — Script Impact Gate 6개 점수와 7개 hard-fail check는 Codex 판정(codex_judge)이 생산하며 machine-readable provenance가 의무다. 익명 fixture self-assessment 숫자는 gate를 장부 검사로 전락시키므로 금지 — 모든 점수/판정은 authority=codex_judge, judgeType/sourceRefs/rationale를 포함한 provenance로 감사 가능해야 한다. 이 계약은 threshold·게이트 순서·provenance 스키마만 고정하고 점수 생산을 실행하지 않는다.",
+    "provenanceStandard": {
+      "requiredAuthority": "codex_judge",
+      "rejectedAuthorities": ["self_assessment_fixture_with_provenance", "llm_judge_scored", "anonymous", "unknown"],
+      "rejectedAuthorityNote": "결정 #1이 codex_judge_with_mandatory_provenance로 확정됐으므로 self_assessment / llm_judge / 익명 / 미상 authority는 fail-closed 거부. self_assessment_fixture_with_provenance와 llm_judge_scored는 packet의 allowedChoices였으나 채택되지 않은 대안이다.",
+      "scoreProvenanceKeys": ["scoreKey", "value", "authority", "judgeType", "sourceRefs", "rationale"],
+      "hardFailProvenanceKeys": ["checkKey", "value", "authority", "judgeType", "sourceRefs", "rationale"],
+      "requiredScoreProvenanceCount": 6,
+      "requiredHardFailProvenanceCount": 7,
+      "scoreKeysCovered": [
+        "hook_self_relevance_score", "story_causality_score", "problem_solution_bridge_score",
+        "solution_specificity_score", "save_worthiness_score", "spoken_naturalness_score"
+      ],
+      "hardFailKeysCovered": [
+        "generic_hook", "explains_but_does_not_sting", "weak_problem_solution_bridge",
+        "abstract_solution_ending", "three_things_unnamed", "invented_stats_or_facts",
+        "topic_changed_from_accepted_visual"
+      ],
+      "placeholderForbidden": ["TBD", "TODO", "PENDING", "FIXME", "미결", "미정", "placeholder", "XXX", "???"],
+      "placeholderRule": "provenance의 sourceRefs/rationale에 위 placeholder 토큰이 있으면 fail-closed — 확정된 근거만 허용.",
+      "sourceRefsRule": "각 provenance는 최소 1개 이상의 non-empty sourceRefs(계약/lock/manifest/gapAnalysis 참조)를 가져야 한다 — 근거 없는 숫자 금지.",
+      "notLiveApprovalRule": "provenance 완비 + Script Impact Gate PASS는 기술적 gate 통과일 뿐이다. live TTS/mux/upload 승인도, Owner viewing/listening QA 승인도 아니다. provenance가 liveTts/mux/upload/ownerQa approval을 함의하면 fail-closed."
+    },
     "gateOrderRule": "Script Impact Gate PASS 없이는 live TTS 호출 0회 — apiCallBudget는 gate PASS 이후에만 소비된다."
   },
 
@@ -243,7 +275,11 @@
     "audio gate threshold drift (6개 서브체크 완화)",
     "vision QA 또는 Owner viewing/listening QA 자동 대체",
     "audit 8번째 inline 클론 생성 — 공유 threshold 계약만 허용",
-    "v3.2 mux manifest/acceptance-lock 참조 없는 plan 실행"
+    "v3.2 mux manifest/acceptance-lock 참조 없는 plan 실행",
+    "Script Impact Gate 점수/hard-fail을 provenance 없이 익명 fixture self-assessment로 사용",
+    "provenance authority를 codex_judge 외 값(self_assessment/llm_judge/익명/미상)으로 사용",
+    "provenance sourceRefs/rationale에 placeholder(TBD/TODO/PENDING/미결 등) 사용",
+    "provenance 완비 또는 Script Impact Gate PASS를 live TTS/mux/upload/Owner QA 승인으로 해석"
   ],
 
   "changeControl": {

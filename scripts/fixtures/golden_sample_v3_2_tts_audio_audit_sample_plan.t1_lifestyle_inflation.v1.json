@@ -60,7 +60,150 @@
       "invented_stats_or_facts": false,
       "topic_changed_from_accepted_visual": false
     },
-    "sourceNote": "mux manifest scriptImpactGate.selfAssessment/required/hardFailCheck 정규화 — 점수 생산 주체는 Owner 결정 #1 미결"
+    "scoreAuthority": "codex_judge_with_mandatory_provenance",
+    "resolvedDecisionRef": {
+      "decisionStateFixture": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+      "decisionId": 1,
+      "resolvedValue": "codex_judge_with_mandatory_provenance"
+    },
+    "provenance": {
+      "authority": "codex_judge",
+      "notLiveApproval": true,
+      "notLiveApprovalNote": "이 provenance는 Script Impact Gate 점수/판정 출처를 감사 가능하게 만들 뿐이다. gate PASS는 live TTS/mux/upload/Owner viewing·listening QA 승인이 아니다.",
+      "scores": [
+        {
+          "scoreKey": "hook_self_relevance_score",
+          "value": 91,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.hook_self_relevance_score",
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate"
+          ],
+          "rationale": "hook이 시청자 자신의 통장 상황을 직접 지목 — '월급 올라도 통장 그대로' 자기관련성 강함. required 90 대비 +1 마진."
+        },
+        {
+          "scoreKey": "story_causality_score",
+          "value": 92,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.story_causality_score",
+            "golden_sample_v3_2_story_visual_evidence_contract.v1.json#storyCausalityChain"
+          ],
+          "rationale": "생활비 인플레이션 → 지출 자동 증가 → 저축 잠식 인과 사슬이 beat 단위로 연결 — Slice 1 story causality 점수화. required 90 대비 +2 마진."
+        },
+        {
+          "scoreKey": "problem_solution_bridge_score",
+          "value": 91,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.problem_solution_bridge_score",
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate"
+          ],
+          "rationale": "문제(라이프스타일 인플레이션) → 해결(세 개 고정지출 점검) 전환이 매끄럽게 연결 — 단절 없음. required 90 대비 +1 마진."
+        },
+        {
+          "scoreKey": "solution_specificity_score",
+          "value": 92,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.solution_specificity_score",
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate"
+          ],
+          "rationale": "해결책이 '세 개'의 명명된 고정지출 항목으로 구체화 — 추상적 마무리 아님(abstract_solution_ending false와 정합). required 90 대비 +2 마진."
+        },
+        {
+          "scoreKey": "save_worthiness_score",
+          "value": 89,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.save_worthiness_score",
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate"
+          ],
+          "rationale": "'세 개 고정지출 점검' 실행 리스트가 저장 유인을 제공 — 재시청/저장 가치. required 88 대비 +1 마진(최저 마진 항목)."
+        },
+        {
+          "scoreKey": "spoken_naturalness_score",
+          "value": 90,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.scriptImpactGate.scores.spoken_naturalness_score",
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#tts"
+          ],
+          "rationale": "one-shot full narration 발화 시 구어체 자연스러움 — 문어체 나열 아님. TTS-first 원칙과 정합. required 88 대비 +2 마진."
+        }
+      ],
+      "hardFailChecks": [
+        {
+          "checkKey": "generic_hook",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": ["golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.generic_hook"],
+          "rationale": "hook이 통장 잔액이라는 구체적 시청자 상황 지목 — 일반론적 훅 아님."
+        },
+        {
+          "checkKey": "explains_but_does_not_sting",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": ["golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.explains_but_does_not_sting"],
+          "rationale": "설명에 그치지 않고 '왜 내 저축이 안 느는가'로 찔러 체감 유발."
+        },
+        {
+          "checkKey": "weak_problem_solution_bridge",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": ["golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.weak_problem_solution_bridge"],
+          "rationale": "problem_solution_bridge_score 91과 정합 — 문제→해결 연결이 약하지 않음."
+        },
+        {
+          "checkKey": "abstract_solution_ending",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": ["golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.abstract_solution_ending"],
+          "rationale": "해결책이 '세 개' 명명 항목으로 구체 마무리 — 추상적 종결 아님(solution_specificity 92와 정합)."
+        },
+        {
+          "checkKey": "three_things_unnamed",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.three_things_unnamed",
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#acceptanceCriteria.storyCausalityFirst.threeSlotGate"
+          ],
+          "rationale": "'세 개' 고정지출이 slot 3개(ov22/ov23/ov24)로 명명·시각화 — 이름 없는 세 가지 아님. story gate threeVisibleWhenSpoken true와 정합."
+        },
+        {
+          "checkKey": "invented_stats_or_facts",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": ["golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.invented_stats_or_facts"],
+          "rationale": "구체 수치/통계를 지어내지 않고 개념적 인과만 서술 — 조작 통계 없음."
+        },
+        {
+          "checkKey": "topic_changed_from_accepted_visual",
+          "value": false,
+          "authority": "codex_judge",
+          "judgeType": "codex_structured_review",
+          "sourceRefs": [
+            "golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json#scriptImpactGate.hardFailCheck.topic_changed_from_accepted_visual",
+            "golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json#topicId"
+          ],
+          "rationale": "topicId t1_lifestyle_inflation과 accepted visual 주제 일치 — 대본이 승인 비주얼에서 주제 이탈하지 않음."
+        }
+      ]
+    },
+    "sourceNote": "mux manifest scriptImpactGate.selfAssessment/required/hardFailCheck 정규화. 점수 생산 주체는 Owner 결정 #1 확정 = codex_judge_with_mandatory_provenance — 6개 점수 + 7개 hard-fail 전부 provenance(authority/judgeType/sourceRefs/rationale) 의무. gate PASS는 live TTS/mux/upload/Owner QA 승인이 아니다."
   },
 
   "tts": {

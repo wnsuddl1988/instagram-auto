@@ -11,6 +11,8 @@
  *   1) tts/audio/audit contract ↔ production standard(ttsFirstStandard/qaReadiness) + mux manifest 정합
  *   2) sample plan — v3.2 mux manifest/acceptance-lock 참조 필수, gate/threshold 교차
  *   3) Script Impact Gate + audio gate + mux media gate + 4-gate audit 판정 로직 동작 (fail-closed mutant)
+ *      + Owner 결정 #1 provenance 의무화(codex_judge_with_mandatory_provenance) — 6점수/7hardFail provenance,
+ *        authority/sourceRefs/rationale/no-placeholder/not-live-approval fail-closed mutant
  *   4) harness 소스 — 금지 live-tts/audio/probe/mux/env/network/write 패턴 + import allowlist
  *   5) harness 동작 — import해 dry-run PASS + fail-closed mutant + pure gate helper 검증
  * - 전부 통과 시 exit 0 + PASS 카운트 출력, 위반 시 exit 1.
@@ -81,6 +83,10 @@ const plan = planF.parsed;
 const standard = standardF.parsed;
 const lock = lockF.parsed;
 const muxManifest = muxManifestF.parsed;
+
+// harness를 조기 import — 섹션 3의 provenance placeholder 검사(harness.hasPlaceholder)와
+// 섹션 5의 동작 검증에서 공용 사용. no-live: import는 상수/pure function만 로드하며 실행 side effect 없음.
+const harness = await import(pathToFileURL(HARNESS_PATH).href);
 
 // ── 1. 계약 ↔ production standard + mux manifest 정합 (threshold drift 방지) ──
 {
@@ -164,8 +170,34 @@ const muxManifest = muxManifestF.parsed;
   const sig = contract.scriptImpactGateStandard ?? {};
   check("contract Script Impact Gate: evaluatedBeforeLiveTts + gateOrderRule (PASS 전 TTS 0회)",
     sig.evaluatedBeforeLiveTts === true && isStr(sig.gateOrderRule) && sig.gateOrderRule.includes("PASS"));
-  check("contract Script Impact Gate: score producer는 Owner 결정 #1 미결로 명시",
-    isStr(sig.scoreProducerNote) && sig.scoreProducerNote.includes("Owner"));
+  check("contract Script Impact Gate: score authority = codex_judge_with_mandatory_provenance (Owner 결정 #1 확정)",
+    sig.scoreAuthority === "codex_judge_with_mandatory_provenance" && sig.provenanceRequired === true &&
+    isStr(sig.scoreProducerNote) && sig.scoreProducerNote.includes("codex_judge") &&
+    !sig.scoreProducerNote.includes("미결"));
+  check("contract Script Impact Gate: resolvedDecisionRef가 결정 #1 = codex_judge_with_mandatory_provenance",
+    sig.resolvedDecisionRef?.decisionId === 1 &&
+    sig.resolvedDecisionRef?.resolvedValue === "codex_judge_with_mandatory_provenance" &&
+    isStr(sig.resolvedDecisionRef?.decisionStateFixture) &&
+    sig.resolvedDecisionRef.decisionStateFixture.endsWith("golden_sample_v3_2_owner_decision_resolution_state.v1.json"));
+  const ps = sig.provenanceStandard ?? {};
+  check("contract provenanceStandard: requiredAuthority codex_judge + 6점수/7hardFail 커버 + count",
+    ps.requiredAuthority === "codex_judge" &&
+    setEq(ps.scoreKeysCovered, ["hook_self_relevance_score", "story_causality_score", "problem_solution_bridge_score",
+      "solution_specificity_score", "save_worthiness_score", "spoken_naturalness_score"]) &&
+    setEq(ps.hardFailKeysCovered, Object.keys(muxManifest.scriptImpactGate?.hardFailCheck ?? {})) &&
+    ps.requiredScoreProvenanceCount === 6 && ps.requiredHardFailProvenanceCount === 7);
+  check("contract provenanceStandard: 채택 안 된 대안(self_assessment/llm_judge) 거부 + placeholder 금지 + not-live 규칙",
+    Array.isArray(ps.rejectedAuthorities) &&
+    ps.rejectedAuthorities.includes("self_assessment_fixture_with_provenance") &&
+    ps.rejectedAuthorities.includes("llm_judge_scored") &&
+    isStrArr(ps.placeholderForbidden) && ps.placeholderForbidden.includes("TBD") &&
+    isStr(ps.notLiveApprovalRule) && ps.notLiveApprovalRule.includes("fail-closed") &&
+    isStr(ps.sourceRefsRule));
+  check("contract forbiddenBehavior: provenance 위조/authority/placeholder/live-승인-함의 금지 포함",
+    contract.forbiddenBehavior.some((s) => s.includes("provenance 없이")) &&
+    contract.forbiddenBehavior.some((s) => s.includes("codex_judge 외")) &&
+    contract.forbiddenBehavior.some((s) => s.includes("placeholder")) &&
+    contract.forbiddenBehavior.some((s) => s.includes("live TTS/mux/upload/Owner QA 승인으로 해석")));
 
   const tts = contract.ttsStandard ?? {};
   check("contract tts: one-shot only + live guard required + retry false + budget 2",
@@ -232,6 +264,28 @@ const muxManifest = muxManifestF.parsed;
     sig.scores?.hook_self_relevance_score === 91 && sig.hardFails === 0);
   check("plan Script Impact Gate evaluatedBeforeLiveTts=true + verdict PASS",
     sig.evaluatedBeforeLiveTts === true && sig.verdict === "PASS");
+
+  // Script Impact Gate provenance (Owner 결정 #1)
+  const prov = sig.provenance ?? {};
+  const provScoreKeys = Array.isArray(prov.scores) ? prov.scores.map((s) => s.scoreKey) : [];
+  const provHfKeys = Array.isArray(prov.hardFailChecks) ? prov.hardFailChecks.map((h) => h.checkKey) : [];
+  check("plan provenance: scoreAuthority codex_judge_with_mandatory_provenance + provenance.authority codex_judge + notLiveApproval",
+    sig.scoreAuthority === "codex_judge_with_mandatory_provenance" &&
+    prov.authority === "codex_judge" && prov.notLiveApproval === true);
+  check("plan provenance: 6개 점수 키 정확히 커버 + 전부 codex_judge authority + sourceRefs + rationale",
+    setEq(provScoreKeys, ["hook_self_relevance_score", "story_causality_score", "problem_solution_bridge_score",
+      "solution_specificity_score", "save_worthiness_score", "spoken_naturalness_score"]) &&
+    prov.scores.every((s) => s.authority === "codex_judge" && isStr(s.judgeType) &&
+      isStrArr(s.sourceRefs) && isStr(s.rationale) && s.value === sig.scores?.[s.scoreKey]),
+    `got=[${provScoreKeys.join(",")}]`);
+  check("plan provenance: 7개 hard-fail 키 정확히 커버 + 전부 codex_judge authority + sourceRefs + value=false",
+    setEq(provHfKeys, Object.keys(muxManifest.scriptImpactGate?.hardFailCheck ?? {})) &&
+    prov.hardFailChecks.every((h) => h.authority === "codex_judge" && isStr(h.judgeType) &&
+      isStrArr(h.sourceRefs) && isStr(h.rationale) && h.value === sig.hardFailChecks?.[h.checkKey]),
+    `got=[${provHfKeys.join(",")}]`);
+  check("plan provenance: sourceRefs/rationale에 placeholder(TBD/TODO/미결 등) 없음",
+    [...(prov.scores ?? []), ...(prov.hardFailChecks ?? [])].every((e) =>
+      !harness.hasPlaceholder(e.rationale) && !(e.sourceRefs ?? []).some((r) => harness.hasPlaceholder(r))));
 
   // TTS 정책
   const tts = plan.tts ?? {};
@@ -354,10 +408,11 @@ const harnessSrc = readFileSync(HARNESS_PATH, "utf8");
 }
 
 // ── 5. harness 동작 검증 (import + in-memory, no-live) ───────────────────────
-const harness = await import(pathToFileURL(HARNESS_PATH).href);
+// harness는 위(fixture 파싱 직후)에서 이미 import됨 — 재사용.
 {
   const fns = ["evaluateScriptImpactGate", "evaluateAudioGate", "isAnchorEntryOk", "evaluateMediaGate",
     "detectForbiddenMuxRoutes", "detectForbiddenTtsRoutes", "evaluateArtifactAudit",
+    "validateScriptImpactGateProvenance", "hasPlaceholder",
     "validateContract", "validatePlanAgainstContract", "runDryRunValidation", "defaultIo"];
   check("harness exports all reusable gate logic surfaces", fns.every((f) => typeof harness[f] === "function"),
     `missing=${fns.filter((f) => typeof harness[f] !== "function").join(",")}`);
@@ -374,6 +429,9 @@ const harness = await import(pathToFileURL(HARNESS_PATH).href);
   check("harness dry-run summary: gates PASS + Owner QA pending",
     dry.summary && dry.summary.scriptImpactGate === "PASS" && dry.summary.audioGate === "PASS" &&
     dry.summary.artifactAudit === "PASS_CANDIDATE_PENDING_VISION_QA" && dry.summary.ownerQaPending.includes("PENDING"));
+  check("harness dry-run summary: score authority codex_judge + provenance 6점수/7hardFail 커버",
+    dry.summary && dry.summary.scoreAuthority === "codex_judge_with_mandatory_provenance" &&
+    dry.summary.provenanceCovered === "6점수/7hardFail");
 
   // ── Script Impact Gate 직접 검증 (pure) ──
   const req = { hook_self_relevance_score: 90, story_causality_score: 90, problem_solution_bridge_score: 90, solution_specificity_score: 90, save_worthiness_score: 88, spoken_naturalness_score: 88 };
@@ -484,6 +542,54 @@ const harness = await import(pathToFileURL(HARNESS_PATH).href);
   const m15 = mutate((m) => { delete m.muxPolicy.fixedTargetUsed; });
   check("mutant(review-fix): muxPolicy.fixedTargetUsed 삭제 → fail (누락도 fail-closed)",
     m15.some((i) => i.includes("fixedTargetUsed")));
+
+  // ── Owner 결정 #1 provenance mutants (fail-closed) ──
+  const pm1 = mutate((m) => { delete m.scriptImpactGate.provenance; });
+  check("mutant(provenance): provenance 전체 삭제 → fail (mandatory provenance)",
+    pm1.some((i) => i.includes("provenance")));
+  const pm2 = mutate((m) => { m.scriptImpactGate.provenance.scores[0].authority = "self_assessment_fixture_with_provenance"; });
+  check("mutant(provenance): score authority self_assessment → fail (codex_judge 아님)",
+    pm2.some((i) => i.includes("authority")));
+  const pm3 = mutate((m) => { m.scriptImpactGate.provenance.scores[0].authority = "llm_judge_scored"; });
+  check("mutant(provenance): score authority llm_judge_scored → fail",
+    pm3.some((i) => i.includes("authority")));
+  const pm4 = mutate((m) => { m.scriptImpactGate.provenance.scores[1].sourceRefs = []; });
+  check("mutant(provenance): sourceRefs 빈 배열 → fail (근거 없는 숫자 금지)",
+    pm4.some((i) => i.includes("sourceRefs")));
+  const pm5 = mutate((m) => { m.scriptImpactGate.provenance.scores[2].rationale = "TBD"; });
+  check("mutant(provenance): rationale placeholder(TBD) → fail",
+    pm5.some((i) => i.includes("placeholder")));
+  const pm6 = mutate((m) => { m.scriptImpactGate.provenance.scores.pop(); });
+  check("mutant(provenance): 점수 6개 중 1개 제거 → fail (키 집합 불일치/누락)",
+    pm6.some((i) => i.includes("provenance")));
+  const pm7 = mutate((m) => { m.scriptImpactGate.provenance.hardFailChecks.pop(); });
+  check("mutant(provenance): hard-fail 7개 중 1개 제거 → fail",
+    pm7.some((i) => i.includes("provenance")));
+  const pm8 = mutate((m) => { m.scriptImpactGate.provenance.scores[0].value = 50; });
+  check("mutant(provenance): provenance value(50)가 실제 점수(91)와 불일치 → fail (위조 방지)",
+    pm8.some((i) => i.includes("provenance") && i.includes("value")));
+  const pm9 = mutate((m) => { m.scriptImpactGate.provenance.notLiveApproval = false; });
+  check("mutant(provenance): notLiveApproval false → fail (gate PASS는 live 승인 아님 명시 필수)",
+    pm9.some((i) => i.includes("notLiveApproval")));
+  const pm10 = mutate((m) => { m.scriptImpactGate.scoreAuthority = "self_assessment_fixture_with_provenance"; });
+  check("mutant(provenance): plan scoreAuthority self_assessment → fail",
+    pm10.some((i) => i.includes("scoreAuthority")));
+
+  // provenance pure helper 직접 검증
+  check("hasPlaceholder: 'TBD' → true", harness.hasPlaceholder("TBD 근거") === true);
+  check("hasPlaceholder: '미결' → true", harness.hasPlaceholder("Owner 결정 미결") === true);
+  check("hasPlaceholder: 확정 문구 → false", harness.hasPlaceholder("acceptance lock 91점 정합") === false);
+
+  // contract provenance mutants
+  const cpMut1 = clone(contract); cpMut1.scriptImpactGateStandard.scoreAuthority = "self_assessment_fixture_with_provenance";
+  check("mutant: contract scoreAuthority self_assessment → contract fail",
+    harness.validateContract(cpMut1).some((i) => i.includes("scoreAuthority")));
+  const cpMut2 = clone(contract); cpMut2.scriptImpactGateStandard.scoreProducerNote = "점수 생산 주체는 Owner 결정 #1로 미결";
+  check("mutant: contract scoreProducerNote에 '미결' 잔존 → contract fail (drift 방지)",
+    harness.validateContract(cpMut2).some((i) => i.includes("scoreProducerNote")));
+  const cpMut3 = clone(contract); cpMut3.scriptImpactGateStandard.provenanceRequired = false;
+  check("mutant: contract provenanceRequired false → contract fail",
+    harness.validateContract(cpMut3).some((i) => i.includes("provenanceRequired")));
 
   // contract mutants
   const cMut1 = clone(contract); cMut1.audioQualityGateStandard.totalSilenceRatioMax = 0.3;
