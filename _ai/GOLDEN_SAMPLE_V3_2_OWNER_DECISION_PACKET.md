@@ -9,27 +9,33 @@
 - 현재 결정 상태 소스: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json` (실제 확정/보류 상태)
 - 결정 목록 단일 소스: `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json` (`unresolvedOwnerDecisions` 10개)
 - 근거: `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
-- 총 10개 결정 중 **4개 정책 결정 확정, 6개 계속 PENDING**.
+- 총 10개 결정 **전부 정책 결정 확정 (resolved 10 / pending 0)**. 단 실제 Owner 직접 시청/청취 QA는 여전히 통과 전.
 
 ---
 
-## Current Owner Decisions (2026-07-04 확정)
+## Current Owner Decisions (2026-07-06 최종 확정: 10개 resolved / 0 pending)
 
-> **아래 4개 확정도 live 실행 승인이 아니다.** Owner가 "그래 진행해 다 구현되고 나면 또 얘기해보자"로 이 4개 정책 결정만 확정했다. live TTS/render/mux/이미지 생성/ChatGPT·Playwright/browser/upload/env/secret/dependency/DB/deploy 실행은 여전히 각각 별도 명시 승인이 필요하다.
+> **아래 10개 확정 전부 live 실행 승인이 아니다.** Owner가 먼저 "그래 진행해 다 구현되고 나면 또 얘기해보자"로 4개(#1/#6/#8/#9)를 확정했고, 이후 "남은 pending 6개를 safe default로 정책 확정한다. 단, 이는 no-live 정책 결정일 뿐 upload/render/mux/image/TTS/browser/API/env/dependency/DB/deploy 실행 승인이 아니다"로 나머지 6개를 확정했다. live TTS/render/mux/이미지 생성/ChatGPT·Playwright/browser/upload/env/secret/dependency/DB/deploy 실행은 여전히 각각 별도 명시 승인 + 별도 live slice가 필요하다.
 
-**확정 4개 (정책 결정만, 실행 아님):**
+**확정 10개 (정책 결정만, 실행 아님):**
 
-| # | key | 확정 값 |
-|---|-----|---------|
-| 1 | script_impact_gate_score_authority | `codex_judge_with_mandatory_provenance` |
-| 6 | font_vendoring | `vendor_noto_black_vf_remove_system_dependency` (폰트 파일 추가·dependency 변경 승인 아님) |
-| 8 | image_script_allow_guard | `add_allow_guard_to_all_paid_image_scripts` (image API 호출·ChatGPT/Playwright/browser 실행 승인 아님) |
-| 9 | poll_25s_passive_window | `accept_25s_passive_window_as_v3_2_behavior` (browser/CDP 실행 승인 아님) |
+| # | key | 확정 값 | 비승인 범위 |
+|---|-----|---------|-------------|
+| 1 | script_impact_gate_score_authority | `codex_judge_with_mandatory_provenance` | live TTS/audio/mux 실행 승인 아님 |
+| 2 | legacy_line_scope | `isolate_as_pre_v3_2_legacy_documented` | 문서 격리만 — render/TTS 코드 수정·실행 승인 아님 |
+| 3 | upload_endpoint_disposition | `keep_hard_blocked_until_upload_slice` | 하드 블록 유지 — upload 실행·엔드포인트 활성화 승인 아님 |
+| 4 | blueprint_schema_unification | `adopt_standard_six_field_names_map_v2` | 스키마 정의만 — 코드 마이그레이션 실행 승인 아님 |
+| 5 | md5_locked_image_durability | `define_durable_backup_location_policy` | 백업 정책만 — 파일 이동/복사 실행 승인 아님 |
+| 6 | font_vendoring | `vendor_noto_black_vf_remove_system_dependency` | 폰트 파일 추가·dependency 변경·render/mux 승인 아님 |
+| 7 | contract_duality_resolution | `single_v3_2_standard_json_contract` | 계약 소스 정의만 — compiler 재구축 실행 승인 아님 |
+| 8 | image_script_allow_guard | `add_allow_guard_to_all_paid_image_scripts` | image API 호출·ChatGPT/Playwright/browser 실행 승인 아님 |
+| 9 | poll_25s_passive_window | `accept_25s_passive_window_as_v3_2_behavior` | browser/CDP 실행 승인 아님 |
+| owner_qa | owner_viewing_listening_qa | `keep_manual_owner_qa_mandatory_non_automatable` | **정책만 resolved — 실제 Owner QA 통과 아님** |
 
-**계속 PENDING 6개:** `legacy_line_scope`, `upload_endpoint_disposition`, `blueprint_schema_unification`, `md5_locked_image_durability`, `contract_duality_resolution`, `owner_viewing_listening_qa` (Owner 직접 시청/청취 QA — 자동 대체 여전히 불가).
+**실제 Owner viewing/listening QA는 아직 통과하지 않았다.** `owner_viewing_listening_qa` 정책은 "수동·필수·자동 대체 불가"로 resolved됐지만, 이는 정책 방향 확정일 뿐이다. 실제 QA 통과는 Owner가 최종 아티팩트를 직접 시청/청취한 뒤에만 기록되며, `ownerQaPassed`는 이 정책 확정으로 `true`가 되지 않는다. 실제 상태는 `ownerViewingListeningActualStatus = PENDING_DIRECT_OWNER_REVIEW`로 별도 추적된다.
 
-- machine-readable 확정 기록: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
-- verdict는 계속 `STANDARDIZED_NO_LIVE_READY`.
+- machine-readable 확정 기록: `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json` (`resolvedCount=10`, `pendingCount=0`, `ownerViewingListeningActualStatus=PENDING_DIRECT_OWNER_REVIEW`)
+- verdict는 계속 `STANDARDIZED_NO_LIVE_READY`. upload hard block 계속 유지. 모든 readiness/live flag false.
 
 ---
 

@@ -150,10 +150,26 @@ function detectOwnerQaAutoPass(decisions, flags) {
   check("packet decision key coverage = 필수 10개 정확 일치",
     validateKeyCoverage(decisions, REQUIRED_KEYS).length === 0, validateKeyCoverage(decisions, REQUIRED_KEYS).join("; "));
 
-  // Slice 5 contract의 unresolvedOwnerDecisions key와 정확 일치
-  const contractKeys = (contract.unresolvedOwnerDecisions ?? []).map((d) => d.key);
-  check("packet key set == Slice 5 integrated contract unresolvedOwnerDecisions key set",
+  // Slice 5 contract는 이제 10개 결정 전부를 ownerDecisionState.resolvedKeys/resolvedDecisions로 보유
+  // (safe-default final resolution: unresolvedOwnerDecisions는 빈 배열, pending 0).
+  const ods = contract.ownerDecisionState ?? {};
+  const contractKeys = ods.resolvedKeys ?? [];
+  check("packet key set == Slice 5 integrated contract ownerDecisionState.resolvedKeys (10개)",
     setEq(decisions.map((d) => d.key), contractKeys), `contract=${contractKeys.length} packet=${decisions.length}`);
+  // resolved value가 packet recommendedDefault와 일치 (정합 확인)
+  const rdMiss = (ods.resolvedDecisions ?? []).filter((rd) => {
+    const pd = decisions.find((d) => d.key === rd.key);
+    return !pd || pd.recommendedDefault !== rd.resolvedValue;
+  }).map((rd) => rd.key);
+  check("contract ownerDecisionState.resolvedDecisions 값 == packet recommendedDefault (10개 정합)",
+    (ods.resolvedDecisions ?? []).length === 10 && rdMiss.length === 0, `mismatch=${rdMiss.join(",")}`);
+  // pending은 전부 해소됨 (빈 배열 / 0)
+  check("contract ownerDecisionState pendingKeys=[] + pendingCount=0 (전부 resolved)",
+    Array.isArray(ods.pendingKeys) && ods.pendingKeys.length === 0 && ods.pendingCount === 0 &&
+    Array.isArray(contract.unresolvedOwnerDecisions) && contract.unresolvedOwnerDecisions.length === 0);
+  // readiness는 여전히 STANDARDIZED_NO_LIVE_READY이고 ownerQaPassed는 false (정책 resolved ≠ 실제 QA pass)
+  check("contract readiness STANDARDIZED_NO_LIVE_READY + ownerQaPassed=false (owner_qa 정책 resolved ≠ 실제 pass)",
+    contract.readinessVerdict?.current === "STANDARDIZED_NO_LIVE_READY" && contract.flags?.ownerQaPassed === false);
 
   // packet.coverage.requiredDecisionKeys도 동일해야
   check("packet.coverage.requiredDecisionKeys == 필수 10개",

@@ -84,28 +84,22 @@
   "ownerDecisionStateAcknowledged": {
     "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
     "contractSection": "ownerDecisionState",
-    "resolvedCount": 4,
-    "pendingCount": 6,
-    "resolvedKeys": ["script_impact_gate_score_authority", "font_vendoring", "image_script_allow_guard", "poll_25s_passive_window"],
-    "pendingKeys": ["legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa"],
-    "note": "#1/#6/#8/#9 정책 확정은 각 표준 slice에서 소비됐고, 이 통합 plan에서 pending blocker로 재취급하지 않는다. 정책 확정은 live TTS/render/mux/image/upload/browser/Owner QA/production 승인이 아니다 — readiness는 STANDARDIZED_NO_LIVE_READY 불변."
+    "resolvedCount": 10,
+    "pendingCount": 0,
+    "resolvedKeys": ["script_impact_gate_score_authority", "legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "font_vendoring", "contract_duality_resolution", "image_script_allow_guard", "poll_25s_passive_window", "owner_viewing_listening_qa"],
+    "pendingKeys": [],
+    "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+    "note": "10개 정책 결정 전부 safe default로 확정됐고 이 통합 plan에서 pending blocker로 재취급하지 않는다. 정책 확정은 live TTS/render/mux/image/upload/browser/Owner QA/production 승인이 아니다 — readiness는 STANDARDIZED_NO_LIVE_READY 불변, upload hard block 유지. owner_viewing_listening_qa는 정책만 resolved이고 실제 QA 통과는 ownerViewingListeningActualStatus로 별도 추적된다 (ownerQaPassed 계속 false)."
   },
 
-  "unresolvedOwnerDecisionsAcknowledged": [
-    { "id": 2, "key": "legacy_line_scope", "status": "PENDING" },
-    { "id": 3, "key": "upload_endpoint_disposition", "status": "PENDING" },
-    { "id": 4, "key": "blueprint_schema_unification", "status": "PENDING" },
-    { "id": 5, "key": "md5_locked_image_durability", "status": "PENDING" },
-    { "id": 7, "key": "contract_duality_resolution", "status": "PENDING" },
-    { "id": "owner_qa", "key": "owner_viewing_listening_qa", "status": "PENDING" }
-  ],
+  "unresolvedOwnerDecisionsAcknowledged": [],
 
   "qaReadiness": {
     "uploadReady": false,
     "automationExpansionReady": false,
-    "ownerViewingListeningPass": "PENDING — Owner 직접 시청/청취 대기 (자동/기술 pass로 대체 불가)",
+    "ownerViewingListeningPass": "PENDING — Owner 직접 시청/청취 대기 (정책은 수동 필수로 resolved됐으나 실제 QA는 자동/기술 pass로 대체 불가)",
     "technicalNoLivePass": "PASS — Slice 0~4 no-live 정적 검증 통과",
-    "note": "technicalNoLivePass는 STANDARDIZED_NO_LIVE_READY의 근거일 뿐, upload/production/Owner-final approval이 아니다."
+    "note": "technicalNoLivePass는 STANDARDIZED_NO_LIVE_READY의 근거일 뿐, upload/production/Owner-final approval이 아니다. owner_viewing_listening_qa 정책 resolved ≠ 실제 QA pass."
   },
 
   "executionMode": {

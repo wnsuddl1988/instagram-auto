@@ -112,32 +112,66 @@
 
   "ownerDecisionState": {
     "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
-    "note": "현재 Owner 결정 상태의 단일 소스는 decisionStateRef. Slice 6 packet의 decideNow=true 4건이 정책으로 확정됐고, 나머지 6건은 계속 PENDING. 이 통합 계약은 그 상태를 반영만 하며, 정책 확정을 live TTS/render/mux/image/upload/browser/Owner QA/production 승인으로 승격하지 않는다.",
+    "note": "현재 Owner 결정 상태의 단일 소스는 decisionStateRef. Slice 6 packet의 10개 결정 전부가 packet recommendedDefault(safe default)로 정책 확정됐다 (resolved 10 / pending 0). 이 통합 계약은 그 상태를 반영만 하며, 정책 확정을 live TTS/render/mux/image/upload/browser/Owner QA/production 승인으로 승격하지 않는다. owner_viewing_listening_qa는 정책만 resolved이고 실제 QA 통과는 ownerViewingListeningActualStatus로 별도 추적된다.",
     "totalDecisions": 10,
-    "resolvedCount": 4,
-    "pendingCount": 6,
+    "resolvedCount": 10,
+    "pendingCount": 0,
+    "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+    "ownerViewingListeningActualStatusNote": "owner_viewing_listening_qa 정책 resolved는 실제 Owner 직접 시청/청취 QA 통과가 아니다. ownerQaPassed는 계속 false이며 실제 통과는 Owner 직접 확인으로만 기록된다.",
     "resolvedDecisions": [
       {
         "id": 1,
         "key": "script_impact_gate_score_authority",
         "resolvedValue": "codex_judge_with_mandatory_provenance",
-        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
         "scope": "scoring authority/provenance policy only",
         "isNotLiveApproval": "live TTS/audio/mux 실행 승인이 아니다 — live_tts_audio_mux_audit_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": 2,
+        "key": "legacy_line_scope",
+        "resolvedValue": "isolate_as_pre_v3_2_legacy_documented",
+        "scope": "documentation line classification only",
+        "isNotLiveApproval": "render/TTS 코드 수정/실행 승인이 아니다 — 문서 격리만"
+      },
+      {
+        "id": 3,
+        "key": "upload_endpoint_disposition",
+        "resolvedValue": "keep_hard_blocked_until_upload_slice",
+        "scope": "upload disposition direction only",
+        "isNotLiveApproval": "upload 실행/엔드포인트 활성화 승인이 아니다 — Slice 0 upload hard block 계속 유지"
+      },
+      {
+        "id": 4,
+        "key": "blueprint_schema_unification",
+        "resolvedValue": "adopt_standard_six_field_names_map_v2",
+        "scope": "schema/field-name standard definition only",
+        "isNotLiveApproval": "코드 마이그레이션 실행/route 수정 승인이 아니다 — 스키마 정의만"
+      },
+      {
+        "id": 5,
+        "key": "md5_locked_image_durability",
+        "resolvedValue": "define_durable_backup_location_policy",
+        "scope": "backup location policy definition only",
+        "isNotLiveApproval": "output/·C:\\tmp 파일 이동/복사 실행 승인이 아니다 — 백업 정책만"
       },
       {
         "id": 6,
         "key": "font_vendoring",
         "resolvedValue": "vendor_noto_black_vf_remove_system_dependency",
-        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
         "scope": "font policy only",
         "isNotLiveApproval": "폰트 파일 커밋/dependency 변경/render 실행 승인이 아니다 — live_render_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": 7,
+        "key": "contract_duality_resolution",
+        "resolvedValue": "single_v3_2_standard_json_contract",
+        "scope": "contract source definition only",
+        "isNotLiveApproval": "compiler 재구축/스크립트 수정 실행 승인이 아니다 — 계약 소스 정의만"
       },
       {
         "id": 8,
         "key": "image_script_allow_guard",
         "resolvedValue": "add_allow_guard_to_all_paid_image_scripts",
-        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
         "scope": "guard policy only",
         "isNotLiveApproval": "image API 호출/ChatGPT/Playwright/browser/이미지 생성 승인이 아니다 — live_image_runner_slice는 여전히 별도 승인 필요"
       },
@@ -145,56 +179,24 @@
         "id": 9,
         "key": "poll_25s_passive_window",
         "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior",
-        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
         "scope": "timing interpretation only",
         "isNotLiveApproval": "ChatGPT/Playwright/browser/CDP 실행 승인이 아니다 — live_image_runner_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": "owner_qa",
+        "key": "owner_viewing_listening_qa",
+        "resolvedValue": "keep_manual_owner_qa_mandatory_non_automatable",
+        "scope": "owner QA policy direction only (NOT actual QA pass)",
+        "policyResolvedButActualQaPending": true,
+        "isNotLiveApproval": "정책만 resolved — 실제 Owner QA 통과가 아니다. ownerQaPassed는 계속 false이고 실제 통과는 Owner 직접 확인으로만 기록된다."
       }
     ],
-    "resolvedKeys": ["script_impact_gate_score_authority", "font_vendoring", "image_script_allow_guard", "poll_25s_passive_window"],
-    "pendingKeys": ["legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa"],
-    "resolvedIsNotReadinessEscalation": "resolved 4건 존재는 uploadReady/automationExpansionReady/productionReady/ownerQaPassed 승격 근거가 아니다. readinessVerdict는 STANDARDIZED_NO_LIVE_READY로 불변."
+    "resolvedKeys": ["script_impact_gate_score_authority", "legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "font_vendoring", "contract_duality_resolution", "image_script_allow_guard", "poll_25s_passive_window", "owner_viewing_listening_qa"],
+    "pendingKeys": [],
+    "resolvedIsNotReadinessEscalation": "resolved 10건 존재는 uploadReady/automationExpansionReady/productionReady/ownerQaPassed 승격 근거가 아니다. readinessVerdict는 STANDARDIZED_NO_LIVE_READY로 불변이고 upload hard block 계속 유지."
   },
 
-  "unresolvedOwnerDecisions": [
-    {
-      "id": 2,
-      "key": "legacy_line_scope",
-      "summary": "legacy 라인 적용 범위 — living_tips(generate-v2/render-v2)와 tail-trim·sceneTts 지침을 표준 밖 별도 라인으로 분리/문서 개정할지",
-      "status": "PENDING"
-    },
-    {
-      "id": 3,
-      "key": "upload_endpoint_disposition",
-      "summary": "app/api/upload + UploadPanel + n8n workflow 처분 — 하드닝(인증+readiness gate) vs 폐기",
-      "blocks": ["upload_slice"],
-      "status": "PENDING"
-    },
-    {
-      "id": 4,
-      "key": "blueprint_schema_unification",
-      "summary": "blueprint 스키마 통일 — salary_3days.v2 필드명→표준 6필드명 매핑 확정, lib/blueprints VideoBlueprint 관계",
-      "status": "PENDING"
-    },
-    {
-      "id": 5,
-      "key": "md5_locked_image_durability",
-      "summary": "md5-locked 원본 이미지 내구성/백업 정책 (output/·C:\\tmp 휘발성)",
-      "status": "PENDING"
-    },
-    {
-      "id": 7,
-      "key": "contract_duality_resolution",
-      "summary": "계약 이원화 해소 — money-shorts creative contract v2 승계 vs v3.2 standard JSON 단일 계약",
-      "status": "PENDING"
-    },
-    {
-      "id": "owner_qa",
-      "key": "owner_viewing_listening_qa",
-      "summary": "Owner 직접 시청/청취 QA — 최종 acceptance는 기술 게이트 전부 통과해도 Owner 체감 QA에서 reject 가능. 자동화로 대체 불가.",
-      "blocks": ["upload_slice", "automation_expansion"],
-      "status": "PENDING"
-    }
-  ],
+  "unresolvedOwnerDecisions": [],
 
   "prohibitedReadinessFlags": [
     "uploadReady",

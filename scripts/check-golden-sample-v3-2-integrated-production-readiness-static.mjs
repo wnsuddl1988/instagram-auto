@@ -167,53 +167,54 @@ const gap = gapF.parsed;
     rgc.length === 5 && rgc.every((g) => existsSync(path.join(ROOT, g))));
 }
 
-// ── 3. Owner decision resolution state 정합 (resolved 4 + pending 6) ─────────
+// ── 3. Owner decision resolution state 정합 (resolved 10 + pending 0) ────────
 const EXPECTED_RESOLVED = {
   script_impact_gate_score_authority: "codex_judge_with_mandatory_provenance",
+  legacy_line_scope: "isolate_as_pre_v3_2_legacy_documented",
+  upload_endpoint_disposition: "keep_hard_blocked_until_upload_slice",
+  blueprint_schema_unification: "adopt_standard_six_field_names_map_v2",
+  md5_locked_image_durability: "define_durable_backup_location_policy",
   font_vendoring: "vendor_noto_black_vf_remove_system_dependency",
+  contract_duality_resolution: "single_v3_2_standard_json_contract",
   image_script_allow_guard: "add_allow_guard_to_all_paid_image_scripts",
   poll_25s_passive_window: "accept_25s_passive_window_as_v3_2_behavior",
+  owner_viewing_listening_qa: "keep_manual_owner_qa_mandatory_non_automatable",
 };
 const EXPECTED_RESOLVED_KEYS = Object.keys(EXPECTED_RESOLVED);
-const EXPECTED_PENDING_KEYS = ["legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification",
-  "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa"];
+const EXPECTED_PENDING_KEYS = [];
 {
   const ud = contract.unresolvedOwnerDecisions ?? [];
-  check("contract unresolvedOwnerDecisions 전부 status=PENDING (임의 해소 금지)",
-    Array.isArray(ud) && ud.every((d) => d.status === "PENDING"));
-  const udKeys = ud.map((d) => d.key);
-  check("contract unresolvedOwnerDecisions = 정확히 pending 6개 (resolved #1/#6/#8/#9 재도입 금지)",
-    setEq(udKeys, EXPECTED_PENDING_KEYS), `keys=${udKeys.join(",")}`);
-  check("contract unresolvedOwnerDecisions에 owner_viewing_listening_qa 보존 (Owner QA 자동 대체 불가)",
-    udKeys.includes("owner_viewing_listening_qa"));
-  check("contract unresolvedOwnerDecisions에 resolved key 미포함 (stale pending blocker 회귀 차단)",
-    EXPECTED_RESOLVED_KEYS.every((rk) => !udKeys.includes(rk)));
+  check("contract unresolvedOwnerDecisions = 빈 배열 (전부 resolved, pending 0)",
+    Array.isArray(ud) && ud.length === 0, `keys=${ud.map((d) => d.key).join(",")}`);
 
   const ods = contract.ownerDecisionState ?? {};
   check("contract ownerDecisionState references decision resolution state fixture",
     isStr(ods.decisionStateRef) && ods.decisionStateRef.includes("owner_decision_resolution_state"));
-  check("contract ownerDecisionState: total 10 / resolved 4 / pending 6",
-    ods.totalDecisions === 10 && ods.resolvedCount === 4 && ods.pendingCount === 6);
-  check("contract ownerDecisionState.resolvedKeys = 정확한 4개 resolved set",
+  check("contract ownerDecisionState: total 10 / resolved 10 / pending 0",
+    ods.totalDecisions === 10 && ods.resolvedCount === 10 && ods.pendingCount === 0);
+  check("contract ownerDecisionState.resolvedKeys = 정확한 10개 resolved set",
     setEq(ods.resolvedKeys, EXPECTED_RESOLVED_KEYS), `keys=${(ods.resolvedKeys ?? []).join(",")}`);
-  check("contract ownerDecisionState.pendingKeys = 정확한 6개 pending set",
-    setEq(ods.pendingKeys, EXPECTED_PENDING_KEYS), `keys=${(ods.pendingKeys ?? []).join(",")}`);
+  check("contract ownerDecisionState.pendingKeys = 빈 배열",
+    Array.isArray(ods.pendingKeys) && ods.pendingKeys.length === 0, `keys=${(ods.pendingKeys ?? []).join(",")}`);
   const rd = ods.resolvedDecisions ?? [];
-  check("contract ownerDecisionState.resolvedDecisions 4개 + resolvedValue 정확 + isNotLiveApproval 명시",
-    Array.isArray(rd) && rd.length === 4 &&
+  check("contract ownerDecisionState.resolvedDecisions 10개 + resolvedValue 정확 + isNotLiveApproval 명시",
+    Array.isArray(rd) && rd.length === 10 &&
     EXPECTED_RESOLVED_KEYS.every((k) => {
       const d = rd.find((x) => x.key === k);
       return d && d.resolvedValue === EXPECTED_RESOLVED[k] && isStr(d.isNotLiveApproval);
     }),
     `resolved=${rd.map((d) => `${d.key}=${d.resolvedValue}`).join(";")}`);
+  check("contract ownerDecisionState: owner_viewing_listening_qa policyResolvedButActualQaPending + actual status PENDING",
+    rd.find((d) => d.key === "owner_viewing_listening_qa")?.policyResolvedButActualQaPending === true &&
+    ods.ownerViewingListeningActualStatus === "PENDING_DIRECT_OWNER_REVIEW");
   check("contract ownerDecisionState: resolved ≠ readiness escalation 명시",
     isStr(ods.resolvedIsNotReadinessEscalation));
 
-  // gap analysis 9개 결정과 정합: resolved 4(numeric) + pending 5(numeric, owner_qa 제외) = 9
+  // gap analysis 9개 결정과 정합: resolved numeric 9 + owner_qa 1 = 10, pending 0
   const gapDecisions = gap.nextOwnerDecisionNeeded ?? [];
-  const numericPending = ud.filter((d) => typeof d.id === "number").length;
-  check("resolved 4 + pending numeric 5 = gap analysis 9개 결정과 정합 (owner_qa 추가분 제외)",
-    gapDecisions.length === 9 && rd.length === 4 && numericPending === 5);
+  const numericResolved = rd.filter((d) => typeof d.id === "number").length;
+  check("resolved numeric 9 + owner_qa 1 = 10, gap analysis 9개 결정 정합, pending 0",
+    gapDecisions.length === 9 && rd.length === 10 && numericResolved === 9 && ud.length === 0);
 }
 
 // ── 4. sample plan 검증 ─────────────────────────────────────────────────────
@@ -258,17 +259,19 @@ const EXPECTED_PENDING_KEYS = ["legacy_line_scope", "upload_endpoint_disposition
     em.liveImageGenerationApprovedNow === false && em.chatgptPlaywrightApprovedNow === false &&
     em.uploadApprovedNow === false && em.automationExpansionApprovedNow === false);
 
-  // plan owner decision state 정합 (resolved 4 + pending 6)
+  // plan owner decision state 정합 (resolved 10 + pending 0)
   const pud = plan.unresolvedOwnerDecisionsAcknowledged ?? [];
   const pudKeys = pud.map((d) => d.key);
-  check("plan unresolvedOwnerDecisionsAcknowledged = 정확히 pending 6개 + 전부 PENDING (resolved 재도입 금지)",
-    setEq(pudKeys, EXPECTED_PENDING_KEYS) && pud.every((d) => d.status === "PENDING") &&
+  check("plan unresolvedOwnerDecisionsAcknowledged = 빈 배열 (전부 resolved, resolved 재도입 금지)",
+    Array.isArray(pud) && pud.length === 0 &&
     EXPECTED_RESOLVED_KEYS.every((rk) => !pudKeys.includes(rk)), `keys=${pudKeys.join(",")}`);
   const pods = plan.ownerDecisionStateAcknowledged ?? {};
-  check("plan ownerDecisionStateAcknowledged: decisionStateRef + resolved 4 / pending 6 + 정확한 key set",
+  check("plan ownerDecisionStateAcknowledged: decisionStateRef + resolved 10 / pending 0 + 정확한 key set + actual QA PENDING",
     isStr(pods.decisionStateRef) && pods.decisionStateRef.includes("owner_decision_resolution_state") &&
-    pods.resolvedCount === 4 && pods.pendingCount === 6 &&
-    setEq(pods.resolvedKeys, EXPECTED_RESOLVED_KEYS) && setEq(pods.pendingKeys, EXPECTED_PENDING_KEYS));
+    pods.resolvedCount === 10 && pods.pendingCount === 0 &&
+    setEq(pods.resolvedKeys, EXPECTED_RESOLVED_KEYS) &&
+    Array.isArray(pods.pendingKeys) && pods.pendingKeys.length === 0 &&
+    pods.ownerViewingListeningActualStatus === "PENDING_DIRECT_OWNER_REVIEW");
 }
 
 // ── 5. harness 소스 정적 스캔 (live/env/network/write/browser/subprocess 차단) ──
@@ -346,10 +349,11 @@ const s4 = await import(pathToFileURL(S4_HARNESS).href);
   const dry = harness.runDryRunValidation({ contractPath: CONTRACT_PATH, planPath: PLAN_PATH });
   check("harness dry-run readiness PASS on contract + sample plan (0 issues)",
     dry.ok === true && dry.issues.length === 0, dry.issues.slice(0, 3).join(" | "));
-  check("harness dry-run summary: STANDARDIZED_NO_LIVE_READY + 5 slices + resolved 4/pending 6 + Owner QA pending",
+  check("harness dry-run summary: STANDARDIZED_NO_LIVE_READY + 5 slices + resolved 10/pending 0 + Owner QA actual PENDING",
     dry.summary && dry.summary.readinessVerdict === "STANDARDIZED_NO_LIVE_READY" &&
-    dry.summary.mandatorySlices === 5 && dry.summary.resolvedDecisions === 4 &&
-    dry.summary.pendingDecisions === 6 && dry.summary.ownerQaPending.includes("PENDING"));
+    dry.summary.mandatorySlices === 5 && dry.summary.resolvedDecisions === 10 &&
+    dry.summary.pendingDecisions === 0 && dry.summary.ownerQaPending.includes("PENDING") &&
+    dry.summary.ownerViewingListeningActualStatus === "PENDING_DIRECT_OWNER_REVIEW");
 
   // ── pure helper 직접 검증 ──
   check("evaluateReadinessLevel: STANDARDIZED_NO_LIVE_READY → PASS",
@@ -409,46 +413,56 @@ const s4 = await import(pathToFileURL(S4_HARNESS).href);
   check("mutant: plan upload-hard-block status DISABLED → fail", m7.some((i) => i.includes("ACTIVE_BLOCKING")));
   const m8 = mutateP((m) => { m.unresolvedOwnerDecisionsAcknowledged.push({ id: 1, key: "script_impact_gate_score_authority", status: "PENDING" }); });
   check("mutant: plan에 resolved script_impact를 pending으로 재도입 → fail",
-    m8.some((i) => i.includes("script_impact_gate_score_authority") || i.includes("pending 6개")));
-  const m9 = mutateP((m) => { m.unresolvedOwnerDecisionsAcknowledged = m.unresolvedOwnerDecisionsAcknowledged.filter((d) => d.key !== "owner_viewing_listening_qa"); });
-  check("mutant: plan에서 pending owner_viewing_listening_qa 제거 → fail",
-    m9.some((i) => i.includes("owner_viewing_listening_qa") || i.includes("pending 6개")));
+    m8.some((i) => i.includes("script_impact_gate_score_authority") || i.includes("빈 배열")));
+  const m9 = mutateP((m) => { m.ownerDecisionStateAcknowledged.pendingKeys = ["owner_viewing_listening_qa"]; m.ownerDecisionStateAcknowledged.pendingCount = 1; });
+  check("mutant: plan ownerDecisionStateAcknowledged pending key 재도입 → fail",
+    m9.some((i) => i.includes("pendingKeys") || i.includes("pendingCount")));
   const m10 = mutateP((m) => { m.ownerDecisionStateAcknowledged.resolvedCount = 5; });
   check("mutant: plan ownerDecisionStateAcknowledged.resolvedCount 5 → fail", m10.some((i) => i.includes("resolvedCount")));
+  const m11 = mutateP((m) => { m.ownerDecisionStateAcknowledged.ownerViewingListeningActualStatus = "PASS"; });
+  check("mutant: plan owner QA actual status PASS로 위장 → fail (실제 확인 없이 PASS 금지)",
+    m11.some((i) => i.includes("ownerViewingListeningActualStatus")));
 
   const c1 = mutateC((m) => { m.status = "PRODUCTION_LIVE_READY"; });
   check("mutant: contract status PRODUCTION_LIVE_READY → fail", c1.some((i) => i.includes("status")));
   const c2 = mutateC((m) => { m.flags.implementationApproved = 1 === 1; });
   check("mutant: contract implementationApproved true → fail", c2.some((i) => i.includes("implementationApproved")));
-  const c3 = mutateC((m) => { m.unresolvedOwnerDecisions = m.unresolvedOwnerDecisions.filter((d) => d.key !== "owner_viewing_listening_qa"); });
-  check("mutant: contract에서 pending owner_viewing_listening_qa 제거 → fail (pending key 사라짐 금지)",
-    c3.some((i) => i.includes("owner_viewing_listening_qa") || i.includes("pending 6개")));
-  const c4 = mutateC((m) => { m.unresolvedOwnerDecisions[0].status = "RESOLVED"; });
-  check("mutant: contract pending decision RESOLVED로 위장 → fail", c4.some((i) => i.includes("PENDING")));
+  const c3 = mutateC((m) => { m.unresolvedOwnerDecisions.push({ id: "owner_qa", key: "owner_viewing_listening_qa", status: "PENDING" }); });
+  check("mutant: contract unresolvedOwnerDecisions에 pending 재도입 → fail (빈 배열이어야 함)",
+    c3.some((i) => i.includes("빈 배열") || i.includes("owner_viewing_listening_qa")));
+  const c4 = mutateC((m) => { m.ownerDecisionState.ownerViewingListeningActualStatus = "PASS"; });
+  check("mutant: contract owner QA actual status PASS로 위장 → fail (실제 확인 없이 PASS 금지)",
+    c4.some((i) => i.includes("ownerViewingListeningActualStatus")));
 
-  // ── Owner decision resolution state mutants (resolved 4 + pending 6) ──
+  // ── Owner decision resolution state mutants (resolved 10 + pending 0) ──
   const odsOk = harness.validateOwnerDecisionState(contract.ownerDecisionState);
   check("validateOwnerDecisionState: unmutated contract → 0 issues", odsOk.length === 0, odsOk.join(" | "));
   const c8 = mutateC((m) => { m.ownerDecisionState.resolvedDecisions.find((d) => d.key === "font_vendoring").resolvedValue = "keep_system_font_dependency"; });
   check("mutant: resolved value 변조(font_vendoring) → fail", c8.some((i) => i.includes("resolvedValue") || i.includes("font_vendoring")));
+  const c8b = mutateC((m) => { m.ownerDecisionState.resolvedDecisions.find((d) => d.key === "upload_endpoint_disposition").resolvedValue = "harden_with_auth_and_readiness_gate"; });
+  check("mutant: 신규 resolved value 변조(upload_endpoint_disposition) → fail",
+    c8b.some((i) => i.includes("resolvedValue") || i.includes("upload_endpoint_disposition")));
   const c9 = mutateC((m) => {
     m.ownerDecisionState.resolvedKeys = m.ownerDecisionState.resolvedKeys.filter((k) => k !== "poll_25s_passive_window");
     m.ownerDecisionState.resolvedDecisions = m.ownerDecisionState.resolvedDecisions.filter((d) => d.key !== "poll_25s_passive_window");
-    m.ownerDecisionState.resolvedCount = 3;
+    m.ownerDecisionState.resolvedCount = 9;
   });
   check("mutant: resolved key 제거(poll_25s) → fail", c9.some((i) => i.includes("resolvedKeys") || i.includes("resolvedCount") || i.includes("poll_25s")));
-  const c10 = mutateC((m) => { m.ownerDecisionState.resolvedKeys.push("legacy_line_scope"); m.ownerDecisionState.resolvedCount = 5; });
-  check("mutant: resolved key 추가(legacy_line_scope) → fail", c10.some((i) => i.includes("resolvedKeys") || i.includes("resolvedCount")));
-  const c11 = mutateC((m) => { m.ownerDecisionState.pendingKeys = m.ownerDecisionState.pendingKeys.filter((k) => k !== "owner_viewing_listening_qa"); m.ownerDecisionState.pendingCount = 5; });
-  check("mutant: pending key 제거(owner_viewing_listening_qa) → fail", c11.some((i) => i.includes("pendingKeys") || i.includes("pendingCount")));
+  const c10 = mutateC((m) => { m.ownerDecisionState.resolvedKeys.push("extra_decision"); m.ownerDecisionState.resolvedCount = 11; });
+  check("mutant: resolved key 추가(11개) → fail", c10.some((i) => i.includes("resolvedKeys") || i.includes("resolvedCount")));
+  const c11 = mutateC((m) => { m.ownerDecisionState.pendingKeys = ["legacy_line_scope"]; m.ownerDecisionState.pendingCount = 1; });
+  check("mutant: pending key 재도입(빈 배열이어야 함) → fail", c11.some((i) => i.includes("pendingKeys") || i.includes("pendingCount")));
   const c12 = mutateC((m) => { m.ownerDecisionState.resolvedDecisions.find((d) => d.key === "font_vendoring").isNotLiveApproval = undefined; });
   check("mutant: resolved decision isNotLiveApproval 제거 → fail (정책 확정 ≠ live 승인 의미 손실)",
     c12.some((i) => i.includes("isNotLiveApproval")));
+  const c12b = mutateC((m) => { delete m.ownerDecisionState.resolvedDecisions.find((d) => d.key === "owner_viewing_listening_qa").policyResolvedButActualQaPending; });
+  check("mutant: owner_qa policyResolvedButActualQaPending 제거 → fail (정책 resolved ≠ 실제 QA pass 의미 손실)",
+    c12b.some((i) => i.includes("policyResolvedButActualQaPending") || i.includes("owner_viewing_listening_qa")));
   const c13 = mutateC((m) => {
     m.unresolvedOwnerDecisions.push({ id: 6, key: "font_vendoring", summary: "재도입", status: "PENDING" });
   });
   check("mutant: resolved font_vendoring를 pending blocker로 재도입 → fail (stale 회귀)",
-    c13.some((i) => i.includes("font_vendoring") || i.includes("pending 6개")));
+    c13.some((i) => i.includes("font_vendoring") || i.includes("빈 배열")));
   const c5 = mutateC((m) => { m.mandatorySlices = m.mandatorySlices.filter((s) => s.id !== "upload-hard-block"); });
   check("mutant: contract에서 upload-hard-block slice 제거 → fail", c5.some((i) => i.includes("upload-hard-block")));
   const c6 = mutateC((m) => { m.mandatorySlices.find((s) => s.id === "pillow-renderer").guardPath = "scripts/nope-xyz.mjs"; });
