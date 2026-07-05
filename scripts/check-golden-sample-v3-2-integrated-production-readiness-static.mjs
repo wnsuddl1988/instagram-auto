@@ -123,6 +123,10 @@ const gap = gapF.parsed;
   const feg = contract.futureExpansionGates ?? {};
   check("contract futureExpansionGates.order 7단계 (실행 승인 아님)",
     Array.isArray(feg.order) && feg.order.length === 7 && feg.order[6].includes("upload"));
+  check("contract futureExpansionGates: future execution plan gate 참조 required + 실재 (no-live)",
+    feg.futureExecutionPlanGateRequired === true &&
+    isStr(feg.futureExecutionPlanGateRef) && feg.futureExecutionPlanGateRef.includes("future_execution_plan_gate") &&
+    existsSync(FX("golden_sample_v3_2_future_execution_plan_gate.v1.json")));
   check("contract forbiddenBehavior >=12 (orchestration 클론 금지 포함)",
     isStrArr(contract.forbiddenBehavior) && contract.forbiddenBehavior.length >= 12 &&
     contract.forbiddenBehavior.some((s) => s.includes("클론")));
@@ -272,6 +276,11 @@ const EXPECTED_PENDING_KEYS = [];
     setEq(pods.resolvedKeys, EXPECTED_RESOLVED_KEYS) &&
     Array.isArray(pods.pendingKeys) && pods.pendingKeys.length === 0 &&
     pods.ownerViewingListeningActualStatus === "PENDING_DIRECT_OWNER_REVIEW");
+  const pfeg = plan.futureExecutionPlanGateAcknowledged ?? {};
+  check("plan futureExecutionPlanGateAcknowledged: gateRef 실재 + gateStatus no-live",
+    isStr(pfeg.gateRef) && pfeg.gateRef.includes("future_execution_plan_gate") &&
+    existsSync(path.join(ROOT, pfeg.gateRef)) &&
+    pfeg.gateStatus === "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE");
 }
 
 // ── 5. harness 소스 정적 스캔 (live/env/network/write/browser/subprocess 차단) ──
@@ -354,6 +363,35 @@ const s4 = await import(pathToFileURL(S4_HARNESS).href);
     dry.summary.mandatorySlices === 5 && dry.summary.resolvedDecisions === 10 &&
     dry.summary.pendingDecisions === 0 && dry.summary.ownerQaPending.includes("PENDING") &&
     dry.summary.ownerViewingListeningActualStatus === "PENDING_DIRECT_OWNER_REVIEW");
+  check("harness dry-run summary: future execution plan gate 참조 + required=true (no-live)",
+    dry.summary && isStr(dry.summary.futureExecutionPlanGate) &&
+    dry.summary.futureExecutionPlanGate.includes("future_execution_plan_gate") &&
+    dry.summary.futureExecutionPlanGateRequired === true);
+
+  // ── future execution plan gate: harness helper 재사용 + no-live 정합 ──
+  const GATE_PATH = FX("golden_sample_v3_2_future_execution_plan_gate.v1.json");
+  const gate = JSON.parse(readFileSync(GATE_PATH, "utf8"));
+  check("future execution plan gate: harness.validateFutureExecutionPlanGate 0 issues",
+    harness.validateFutureExecutionPlanGate(gate).length === 0,
+    harness.validateFutureExecutionPlanGate(gate).slice(0, 3).join(" | "));
+  const mGateExec = clone(gate); mGateExec.currentApprovalFlags.executionApprovedNow = 1 === 1;
+  check("mutant: gate executionApprovedNow true → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGateExec).some((i) => i.includes("executionApprovedNow")));
+  const mGateUpload = clone(gate); mGateUpload.uploadHardBlock.active = false;
+  check("mutant: gate uploadHardBlock.active false → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGateUpload).some((i) => i.includes("uploadHardBlock")));
+  const mGateQa = clone(gate); mGateQa.ownerDecisionState.ownerViewingListeningActualStatus = "PASS";
+  check("mutant: gate owner QA actual PASS → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGateQa).some((i) => i.includes("ownerViewingListeningActualStatus")));
+  const mGatePending = clone(gate); mGatePending.ownerDecisionState.pendingCount = 2;
+  check("mutant: gate ownerDecisionState pending 재도입 → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGatePending).some((i) => i.includes("pendingCount")));
+  const mGateCap = clone(gate); mGateCap.capAndStopRequirements.callCapRequiredBeforeAnyLive = false;
+  check("mutant: gate call cap 요건 제거 → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGateCap).some((i) => i.includes("callCapRequiredBeforeAnyLive")));
+  const mGatePlanning = clone(gate); mGatePlanning.isPlanningArtifactOnly = false;
+  check("mutant: gate isPlanningArtifactOnly false → harness helper fail",
+    harness.validateFutureExecutionPlanGate(mGatePlanning).some((i) => i.includes("isPlanningArtifactOnly")));
 
   // ── pure helper 직접 검증 ──
   check("evaluateReadinessLevel: STANDARDIZED_NO_LIVE_READY → PASS",

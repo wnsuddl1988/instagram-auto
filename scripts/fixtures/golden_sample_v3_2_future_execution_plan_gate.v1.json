@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "golden_sample_future_execution_plan_gate_v1",
+  "taskId": "golden-sample-v3-2-future-execution-plan-gate-standardization-v1",
+  "status": "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "no-live 계획 게이트 fixture — 미래 어떤 live/action slice가 실제 실행 승인을 받으려면 반드시 갖춰야 할 계획 요건을 기계판독으로 고정한다. 이 fixture의 존재/통과는 어떤 실행도 승인하지 않는다. 모든 *ApprovedNow flag는 false이며, 실제 실행 승인은 별도 명시 Owner 승인 + 별도 live slice에서만 발생한다. 이 gate는 '무엇이 필요한가'만 정의하고 '지금 해도 된다'를 절대 의미하지 않는다.",
+
+  "isPlanningArtifactOnly": true,
+  "currentApprovalIsZeroLiveExecution": true,
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "unchangedBy": "이 gate는 verdict를 승격하지 않는다. 미래 실행 요건만 기술한다.",
+    "isNot": ["upload_ready", "production_live_ready", "automation_ready", "render_ready", "tts_live_ready", "image_generation_ready", "browser_ready", "owner_final_approved"]
+  },
+
+  "currentApprovalFlags": {
+    "executionApprovedNow": false,
+    "liveActionApprovedNow": false,
+    "uploadApprovedNow": false,
+    "renderApprovedNow": false,
+    "muxApprovedNow": false,
+    "imageGenerationApprovedNow": false,
+    "ttsApprovedNow": false,
+    "browserApprovedNow": false,
+    "envSecretAccessApprovedNow": false
+  },
+
+  "prohibitedReadinessFlags": {
+    "note": "아래 flag 중 하나라도 이 gate 또는 그 소비자가 명시 Owner 승인 없이 true로 만들면 fail-closed.",
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveRenderApproved": false,
+    "liveImageGenerationApproved": false,
+    "chatgptPlaywrightApproved": false,
+    "ownerQaPassed": false,
+    "productionReady": false
+  },
+
+  "ownerDecisionState": {
+    "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "resolvedCount": 10,
+    "pendingCount": 0,
+    "note": "Owner policy decision 10개 전부 resolved / 0 pending. 그러나 정책 확정은 실행 승인이 아니며, 특히 owner_viewing_listening_qa 정책 resolved는 실제 Owner 직접 시청/청취 QA 통과가 아니다.",
+    "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+    "ownerViewingListeningActualStatusNote": "실제 Owner QA는 아직 통과하지 않았다. ownerQaPassed는 계속 false이며 실제 통과는 Owner 직접 확인으로만 기록된다."
+  },
+
+  "uploadHardBlock": {
+    "active": true,
+    "policyRef": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "note": "Slice 0 upload hard block은 계속 active. 이 gate는 upload를 활성화하지 않으며, upload 실행은 별도 upload slice + 별도 명시 Owner 승인 전까지 계속 차단된다."
+  },
+
+  "futureApprovalRequirements": {
+    "note": "미래 어떤 live/action slice가 실행 승인 후보가 되려면 아래 요건을 전부 갖춘 별도 fixture/plan을 제출하고 Owner가 명시 승인해야 한다. 아래 요건 존재 자체는 승인이 아니다.",
+    "requiredFields": [
+      "explicitOwnerLiveApproval — 해당 도메인 실행에 대한 Owner의 명시 live 승인 문구 (정책 확정과 구분)",
+      "callCountCapMax — 해당 slice가 호출할 수 있는 최대 API/browser 호출 수 (nonzero 상한)",
+      "costCapUsdMax — 해당 slice의 최대 비용 상한 (nonzero USD 상한)",
+      "providerAllowGuardRef — 사용할 provider별 fail-closed allow guard 참조 (ALLOW_* flag)",
+      "stopConditions — 실패/초과/이상 시 즉시 중단하는 조건 목록 (비어 있으면 안 됨)",
+      "artifactAuditPlan — 산출물을 acceptance lock / production standard 대비 audit하는 계획",
+      "ownerQaSeparation — 기술 pass와 Owner 직접 QA를 분리 유지하는 명시",
+      "sliceHarnessImport — 임의 orchestration 클론 금지, 해당 표준 harness import 명시"
+    ],
+    "requiredFieldsMustBeNonzeroOnlyInFutureSlice": "callCountCapMax / costCapUsdMax / stopConditions는 미래 승인된 slice에서만 nonzero/non-empty가 된다. 이 gate에서는 요건의 존재만 정의하며 현재 값은 계획 요구사항일 뿐 실행 예산이 아니다.",
+    "explicitOwnerApprovalRequired": true,
+    "planFieldsNonzeroOnlyInFutureSlice": true
+  },
+
+  "capAndStopRequirements": {
+    "callCapRequiredBeforeAnyLive": true,
+    "costCapRequiredBeforeAnyLive": true,
+    "stopConditionRequiredBeforeAnyLive": true,
+    "artifactAuditRequiredBeforeAnyLive": true,
+    "note": "어떤 미래 live 실행도 call/cost cap과 stop 조건과 artifact audit 계획 없이는 승인 후보가 될 수 없다. 이 요건들이 누락되면 fail-closed."
+  },
+
+  "perDomainFuturePlan": {
+    "note": "각 도메인의 미래 실행 계획 요건. 모든 currentStatus는 blocked/not_approved이며, 각 도메인은 자신의 provider allow guard 참조와 cap/stop 요건을 명시한다. 어떤 도메인도 지금 실행 승인되지 않았다.",
+    "imageBrowser": {
+      "domain": "image_generation_and_chatgpt_browser",
+      "currentStatus": "blocked_not_approved",
+      "providerAllowGuardRef": "scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json",
+      "chatgptRunnerContractRef": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+      "providerAllowFlags": ["ALLOW_OPENAI_IMAGE", "ALLOW_BFL_FLUX2", "ALLOW_IMAGEN", "ALLOW_GEMINI_VEO", "ALLOW_CHATGPT_IMAGE"],
+      "masterSwitch": "PAID_API_ENABLED",
+      "callCapRequired": true,
+      "costCapRequired": true,
+      "stopConditionRequired": true,
+      "artifactAuditRequired": true,
+      "note": "ChatGPT/Playwright/browser/CDP 및 OpenAI/BFL-FLUX2/Imagen/Gemini-Veo 이미지·영상 생성 경로. 지금 실행 승인 아님. 실제 실행은 provider별 ALLOW_* fail-closed guard + Owner 명시 승인 + live slice 필요."
+    },
+    "ttsAudio": {
+      "domain": "tts_and_audio",
+      "currentStatus": "blocked_not_approved",
+      "providerAllowGuardRef": "scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json",
+      "ttsAuditContractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+      "providerAllowFlags": ["ALLOW_OPENAI_TTS", "ALLOW_ELEVENLABS"],
+      "masterSwitch": "PAID_API_ENABLED",
+      "callCapRequired": true,
+      "costCapRequired": true,
+      "stopConditionRequired": true,
+      "artifactAuditRequired": true,
+      "note": "OpenAI TTS / ElevenLabs live TTS 및 audio 분석 경로. 지금 실행 승인 아님. script impact gate provenance(#1)와 audio quality gate가 tts audit contract에 이미 표준화됨."
+    },
+    "pillowRender": {
+      "domain": "pillow_frame_render",
+      "currentStatus": "blocked_not_approved",
+      "renderContractRef": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json",
+      "fontVendoringDecisionRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json#resolvedDecisions[key=font_vendoring]",
+      "callCapRequired": true,
+      "costCapRequired": true,
+      "stopConditionRequired": true,
+      "artifactAuditRequired": true,
+      "note": "Pillow overlay 프레임 렌더 경로. 지금 실행 승인 아님. font vendoring 정책은 resolved(vendor_noto_black_vf_remove_system_dependency)이나 폰트 파일 커밋/dependency 변경/render 실행 승인이 아니다."
+    },
+    "muxAudit": {
+      "domain": "mux_and_artifact_audit",
+      "currentStatus": "blocked_not_approved",
+      "muxAuditContractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+      "acceptanceLockRef": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+      "productionStandardRef": "scripts/fixtures/golden_sample_v3_2_production_standard.v1.json",
+      "callCapRequired": true,
+      "costCapRequired": true,
+      "stopConditionRequired": true,
+      "artifactAuditRequired": true,
+      "note": "동영상 합성(mux)/probe 도구 및 산출물 audit 경로. 지금 실행 승인 아님. mux md5는 TTS 비결정성으로 재생성 시 달라지므로 동등성은 overlay-spec/typography/geometry 수준에서 audit."
+    },
+    "upload": {
+      "domain": "upload_publish",
+      "currentStatus": "blocked_hard_block_active",
+      "uploadHardBlockRef": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+      "uploadEndpointDecisionRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json#resolvedDecisions[key=upload_endpoint_disposition]",
+      "callCapRequired": true,
+      "costCapRequired": true,
+      "stopConditionRequired": true,
+      "artifactAuditRequired": true,
+      "note": "/api/upload + UploadPanel + n8n 업로드 경로. upload hard block 계속 active. upload_endpoint_disposition 정책은 keep_hard_blocked_until_upload_slice로 resolved — 업로드는 계속 차단이며 엔드포인트 활성화 승인이 아니다. 실제 upload는 별도 upload slice + Owner 명시 승인 필요."
+    },
+    "ownerQa": {
+      "domain": "owner_viewing_listening_qa",
+      "currentStatus": "pending_manual_owner_review",
+      "ownerQaDecisionRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json#resolvedDecisions[key=owner_viewing_listening_qa]",
+      "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+      "ownerQaPassed": false,
+      "isAutomatable": false,
+      "note": "Owner 직접 시청/청취 QA. 정책은 keep_manual_owner_qa_mandatory_non_automatable로 resolved됐으나 실제 QA 통과가 아니다. 어떤 자동/기술 pass도 ownerQaPassed=true로 처리될 수 없다. 실제 통과는 Owner 직접 확인으로만 기록된다."
+    }
+  },
+
+  "prohibitedInterpretations": [
+    "이 gate 존재/통과를 현재 live 실행 승인으로 해석",
+    "*ApprovedNow flag를 명시 Owner 승인 없이 true로 승격",
+    "futureApprovalRequirements 필드 존재를 실행 예산/승인으로 해석",
+    "perDomainFuturePlan의 provider allow guard 참조를 provider 실행 승인으로 해석",
+    "owner_viewing_listening_qa 정책 resolved를 실제 Owner QA 통과 또는 ownerQaPassed=true로 해석",
+    "upload_endpoint_disposition 정책 resolved를 upload 엔드포인트 활성화 승인으로 해석",
+    "readinessVerdict를 STANDARDIZED_NO_LIVE_READY 위로 승격",
+    "call/cost cap 또는 stop 조건 없이 미래 live 실행을 승인 후보로 취급"
+  ],
+
+  "forbiddenBehavior": [
+    "currentApprovalFlags 중 하나라도 true로 설정",
+    "prohibitedReadinessFlags 중 하나라도 true로 승격",
+    "ownerQaPassed를 true로 설정 또는 ownerViewingListeningActualStatus를 실제 확인 없이 PASS로 설정",
+    "ownerDecisionState pending 재도입 또는 resolved 결정 되돌림",
+    "upload hard block 비활성화",
+    "call/cost cap 또는 stop condition 또는 artifact audit 요건 제거",
+    "provider allow guard 참조 제거",
+    "이 gate를 근거로 live TTS/render/mux/image generation/ChatGPT/Playwright/browser/upload/env/secret/dependency/DB/deploy 실행",
+    "prior Slice 0~6 산출물 수정"
+  ],
+
+  "basedOn": {
+    "integratedReadinessContract": "scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json",
+    "decisionState": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "note": "이 gate는 통합 readiness 계약과 decision state를 참조·정규화만 한다. readiness verdict를 승격하지 않으며 결정 상태를 변경하지 않는다."
+  }
+}

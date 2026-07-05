@@ -215,6 +215,41 @@ export function validateOwnerDecisionState(state) {
   return issues;
 }
 
+// ── future execution plan gate 검증 (pure, fail-closed) ─────────────────────
+// no-live 계획 게이트가 어떤 현재 실행도 승인하지 않고, readiness를 승격하지 않으며,
+// owner decision 10/0 + actual Owner QA PENDING + upload hard block active를 유지하는지 확인.
+// 이 harness는 dry-run 정합 수준만 검증한다 (상세 mutant는 전용 static guard가 담당).
+export const GATE_CURRENT_APPROVAL_FLAGS = [
+  "executionApprovedNow", "liveActionApprovedNow", "uploadApprovedNow", "renderApprovedNow",
+  "muxApprovedNow", "imageGenerationApprovedNow", "ttsApprovedNow", "browserApprovedNow",
+  "envSecretAccessApprovedNow",
+];
+export function validateFutureExecutionPlanGate(gate) {
+  const issues = [];
+  if (!gate || typeof gate !== "object") { issues.push("gate fixture 누락/비객체"); return issues; }
+  if (gate.status !== "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE") issues.push(`gate.status "${gate.status}" != FUTURE_EXECUTION_PLAN_GATE_NO_LIVE`);
+  if (gate.isPlanningArtifactOnly !== true) issues.push("gate.isPlanningArtifactOnly !== true (planning artifact only 여야 함)");
+  if (gate.currentApprovalIsZeroLiveExecution !== true) issues.push("gate.currentApprovalIsZeroLiveExecution !== true");
+  if (gate.readinessVerdict?.current !== ALLOWED_READINESS_VERDICT) {
+    issues.push(`gate.readinessVerdict.current "${gate.readinessVerdict?.current}" != ${ALLOWED_READINESS_VERDICT} (승격 금지)`);
+  }
+  const caf = gate.currentApprovalFlags ?? {};
+  for (const k of GATE_CURRENT_APPROVAL_FLAGS) if (caf[k] !== false) issues.push(`gate.currentApprovalFlags.${k}=${caf[k]} (false 아님)`);
+  const ods = gate.ownerDecisionState ?? {};
+  if (ods.resolvedCount !== 10) issues.push(`gate.ownerDecisionState.resolvedCount "${ods.resolvedCount}" != 10`);
+  if (ods.pendingCount !== 0) issues.push(`gate.ownerDecisionState.pendingCount "${ods.pendingCount}" != 0`);
+  if (ods.ownerViewingListeningActualStatus !== "PENDING_DIRECT_OWNER_REVIEW") {
+    issues.push(`gate.ownerDecisionState.ownerViewingListeningActualStatus "${ods.ownerViewingListeningActualStatus}" != PENDING_DIRECT_OWNER_REVIEW`);
+  }
+  if (gate.uploadHardBlock?.active !== true) issues.push("gate.uploadHardBlock.active !== true (upload hard block 유지 필수)");
+  if (gate.prohibitedReadinessFlags?.ownerQaPassed !== false) issues.push("gate.prohibitedReadinessFlags.ownerQaPassed !== false");
+  if (gate.prohibitedReadinessFlags?.productionReady !== false) issues.push("gate.prohibitedReadinessFlags.productionReady !== false");
+  if (gate.capAndStopRequirements?.callCapRequiredBeforeAnyLive !== true) issues.push("gate.capAndStopRequirements.callCapRequiredBeforeAnyLive !== true");
+  if (gate.capAndStopRequirements?.stopConditionRequiredBeforeAnyLive !== true) issues.push("gate.capAndStopRequirements.stopConditionRequiredBeforeAnyLive !== true");
+  if (gate.futureApprovalRequirements?.explicitOwnerApprovalRequired !== true) issues.push("gate.futureApprovalRequirements.explicitOwnerApprovalRequired !== true");
+  return issues;
+}
+
 // ── mandatory Slice 0~4 참조 실재 검증 (pure + IO) ──────────────────────────
 
 // mandatorySlices의 contractPath/guardPath/harnessPath/implPath가 레포에 실재하는지 확인.
@@ -336,6 +371,15 @@ export function validateContract(contract, io = defaultIo()) {
   // future expansion gates
   const feg = contract?.futureExpansionGates ?? {};
   if (!Array.isArray(feg.order) || feg.order.length !== 7) push("futureExpansionGates.order 7단계 아님");
+  // future execution plan gate 참조 — 실재 + no-live plan gate 검증 (readiness 승격 없이)
+  if (feg.futureExecutionPlanGateRequired !== true) push("futureExpansionGates.futureExecutionPlanGateRequired !== true");
+  if (!isStr(feg.futureExecutionPlanGateRef) || !feg.futureExecutionPlanGateRef.includes("future_execution_plan_gate")) {
+    push("futureExpansionGates.futureExecutionPlanGateRef가 future execution plan gate fixture 참조 아님");
+  } else if (!io.exists(feg.futureExecutionPlanGateRef)) {
+    push(`futureExpansionGates.futureExecutionPlanGateRef 파일 없음 — ${feg.futureExecutionPlanGateRef}`);
+  } else {
+    issues.push(...validateFutureExecutionPlanGate(io.load(feg.futureExecutionPlanGateRef)).map((m) => `future execution plan gate: ${m}`));
+  }
 
   if (!isStrArr(contract?.forbiddenBehavior) || contract.forbiddenBehavior.length < 12) push("forbiddenBehavior 부족(>=12)");
   if (contract?.integration?.mandatorySliceCount !== 5) push("integration.mandatorySliceCount !== 5");
@@ -416,6 +460,15 @@ export function validatePlanAgainstContract(plan, contract, io = defaultIo()) {
   // executionMode: live 실행 승인 없음
   issues.push(...detectLiveActionApprovals(plan?.executionMode).map((m) => `plan ${m}`));
 
+  // future execution plan gate 인지 — 참조 실재 + no-live status
+  const feg = plan?.futureExecutionPlanGateAcknowledged ?? {};
+  if (!isStr(feg.gateRef) || !feg.gateRef.includes("future_execution_plan_gate")) {
+    push("futureExecutionPlanGateAcknowledged.gateRef가 future execution plan gate fixture 참조 아님");
+  } else if (!io.exists(feg.gateRef)) {
+    push(`futureExecutionPlanGateAcknowledged.gateRef 파일 없음 — ${feg.gateRef}`);
+  }
+  if (feg.gateStatus !== "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE") push(`futureExecutionPlanGateAcknowledged.gateStatus "${feg.gateStatus}" != FUTURE_EXECUTION_PLAN_GATE_NO_LIVE`);
+
   return issues;
 }
 
@@ -443,6 +496,8 @@ export function runDryRunValidation({ contractPath = DEFAULT_CONTRACT_PATH, plan
       pendingDecisions: contract.unresolvedOwnerDecisions.length,
       ownerViewingListeningActualStatus: contract.ownerDecisionState.ownerViewingListeningActualStatus,
       prohibitedFlagsLocked: contract.prohibitedReadinessFlags.length,
+      futureExecutionPlanGate: contract.futureExpansionGates?.futureExecutionPlanGateRef ?? null,
+      futureExecutionPlanGateRequired: contract.futureExpansionGates?.futureExecutionPlanGateRequired === true,
       topicId: plan.topicId,
       ownerQaPending: plan.qaReadiness.ownerViewingListeningPass,
     };
@@ -496,6 +551,7 @@ function main() {
   console.log(`[integrated-readiness-standard-v1] mandatory slices: ${s.mandatorySlices}/5 (checkpoints: ${s.checkpoints.map((c) => c.checkpoint).join(", ")})`);
   console.log(`[integrated-readiness-standard-v1] owner decisions: ${s.resolvedDecisions} resolved (policy only, not live approval) + ${s.pendingDecisions} pending — owner QA actual status: ${s.ownerViewingListeningActualStatus} (정책 resolved ≠ 실제 QA pass)`);
   console.log(`[integrated-readiness-standard-v1] prohibited readiness flags locked: ${s.prohibitedFlagsLocked}`);
+  console.log(`[integrated-readiness-standard-v1] future execution plan gate: ${s.futureExecutionPlanGate ?? "(none)"} (required=${s.futureExecutionPlanGateRequired}, no-live planning only — not execution approval)`);
   console.log(`[integrated-readiness-standard-v1] topic: ${s.topicId}`);
   console.log(`[integrated-readiness-standard-v1] Owner QA: ${s.ownerQaPending}`);
   console.log(`\nREADINESS RESULT: PASS (0 issues) — STANDARDIZED_NO_LIVE_READY, no-live dry-run만 수행됨`);

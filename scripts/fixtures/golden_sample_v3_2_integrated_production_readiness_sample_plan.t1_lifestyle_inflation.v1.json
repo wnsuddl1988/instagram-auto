@@ -111,5 +111,11 @@
     "chatgptPlaywrightApprovedNow": false,
     "uploadApprovedNow": false,
     "automationExpansionApprovedNow": false
+  },
+
+  "futureExecutionPlanGateAcknowledged": {
+    "gateRef": "scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json",
+    "gateStatus": "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE",
+    "note": "미래 어떤 live/action 실행도 이 no-live plan gate 요건(명시 Owner 승인 + call/cost cap + stop 조건 + provider allow guard + artifact audit + Owner QA 분리)을 충족한 별도 승인 slice 전까지 승인되지 않는다. 이 plan은 gate를 참조·인지만 하며 readiness를 승격하지 않는다. 모든 executionMode approvedNow flag는 false, upload hard block 유지, Owner QA actual PENDING."
   }
 }

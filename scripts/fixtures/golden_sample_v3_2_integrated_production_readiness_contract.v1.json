@@ -246,14 +246,17 @@
   },
 
   "futureExpansionGates": {
-    "note": "미래 확장의 게이트 순서만 기술 — 어떤 실행도 승인하지 않는다.",
+    "note": "미래 확장의 게이트 순서만 기술 — 어떤 실행도 승인하지 않는다. Owner policy decision은 이제 10 resolved / 0 pending이지만, 정책 확정은 실행 승인이 아니다. 미래 어떤 live/action slice든 아래 future execution plan gate 요건을 충족한 별도 fixture/plan + Owner 명시 승인이 있어야 실행 후보가 된다.",
+    "futureExecutionPlanGateRef": "scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json",
+    "futureExecutionPlanGateRequired": true,
+    "futureExecutionPlanGateNote": "이 no-live plan gate는 미래 live/action 실행 전 반드시 갖춰야 할 계획 요건(명시 Owner 승인·call/cost cap·stop 조건·provider allow guard·artifact audit·Owner QA 분리)을 기계판독으로 고정한다. gate 존재/통과는 실행 승인이 아니며 readiness를 승격하지 않는다.",
     "order": [
-      "1. Owner decision이 pending blocker(위 unresolvedOwnerDecisions)를 해소한다.",
+      "1. Owner decision이 10 resolved / 0 pending으로 확정됐다(정책 확정일 뿐 실행 승인 아님).",
       "2. Script Impact Gate provenance(#1)가 확정/수용된다.",
-      "3. call/cost cap + stop 조건을 담은 live-call plan fixture가 존재한다.",
+      "3. future execution plan gate 요건(call/cost cap + stop 조건 + provider allow guard + artifact audit)을 담은 live-call plan fixture가 존재하고 Owner가 명시 승인한다.",
       "4. 해당 Slice 1~4 표준 harness를 import한다(임의 클론 금지).",
       "5. 산출물이 acceptance lock / production standard 대비 audit된다.",
-      "6. Owner 직접 시청/청취 QA가 기술 pass와 별도로 유지된다.",
+      "6. Owner 직접 시청/청취 QA가 기술 pass와 별도로 유지된다(정책 resolved ≠ 실제 QA pass).",
       "7. upload는 명시적 upload 승인 전까지 계속 차단된다."
     ]
   },
