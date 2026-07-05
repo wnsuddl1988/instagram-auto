@@ -139,9 +139,27 @@ const manifest = manifestF.parsed;
     setEq(os.elementClassification?.graphicLike, ["rect", "rrect", "poly"]));
 
   const fp = contract.fontPolicy ?? {};
-  check("contract font: requireBoldKoreanFont + silent fallback forbidden + vendoring unresolved(#6)",
+  check("contract font: requireBoldKoreanFont + silent fallback forbidden + vendoring RESOLVED(#6)",
     fp.requireBoldKoreanFont === true && isStr(fp.silentDefaultFontFallback) &&
-    fp.fontVendoringDecision?.status === "unresolved_owner_decision_6");
+    fp.silentDefaultFontFallback.startsWith("금지") &&
+    fp.fontVendoringDecision?.status === "resolved_owner_decision_6");
+  check("contract fontVendoring resolved = vendor_noto_black_vf_remove_system_dependency + policyResolved true",
+    fp.fontVendoringDecision?.resolvedValue === "vendor_noto_black_vf_remove_system_dependency" &&
+    fp.fontVendoringDecision?.fontVendoringPolicyResolved === true &&
+    isStr(fp.fontVendoringDecision?.resolvedDecisionRef) &&
+    fp.fontVendoringDecision.resolvedDecisionRef.includes("owner_decision_resolution_state"));
+  check("contract fontVendoring: system font dependency is NOT final standard + not file/dep/render/mux approval",
+    fp.fontVendoringDecision?.systemFontDependencyIsFinalStandard === false &&
+    fp.fontVendoringDecision?.notFontFileApproval === true &&
+    fp.fontVendoringDecision?.notDependencyApproval === true &&
+    fp.fontVendoringDecision?.notRenderApproval === true &&
+    fp.fontVendoringDecision?.notMuxApproval === true);
+  check("contract fontVendoring resolved policy text has no pending/미결 wording (회귀 차단)",
+    ![fp.fontVendoringDecision?.note, fp.fontVendoringDecision?.policyDirection]
+      .filter((s) => typeof s === "string").join(" ").toLowerCase()
+      .match(/unresolved|pending|미결|tbd/));
+  check("contract approvedFontFileHint = NotoSansKR-VF.ttf (hint drift 차단)",
+    isStr(fp.approvedFontFileHint) && fp.approvedFontFileHint.includes("NotoSansKR-VF.ttf"));
   check("contract forbiddenFonts include Malgun/Arial/BlackHanSans/DoHyeon",
     ["Malgun Gothic", "Arial", "BlackHanSans", "DoHyeon"].every((f) => (fp.forbiddenFonts ?? []).includes(f)));
 
@@ -199,6 +217,13 @@ const manifest = manifestF.parsed;
   const fp = plan.fontPolicy ?? {};
   check("plan font: Noto Sans KR Black VF + no silent fallback + no Malgun",
     fp.font === "Noto Sans KR Black (VF)" && fp.silentDefaultFontFallback === false && fp.malgunUsed === false);
+  check("plan font vendoring: resolved=true + value vendor_noto_black_vf_remove_system_dependency + decision ref",
+    fp.fontVendoringResolved === true &&
+    fp.fontVendoringResolvedValue === "vendor_noto_black_vf_remove_system_dependency" &&
+    isStr(fp.fontVendoringDecisionRef) && fp.fontVendoringDecisionRef.includes("owner_decision_resolution_state"));
+  check("plan font: fontFileHint NotoSansKR-VF.ttf + note has no pending/미결 wording (회귀 차단)",
+    isStr(fp.fontFileHint) && fp.fontFileHint.includes("NotoSansKR-VF.ttf") &&
+    !String(fp.note ?? "").toLowerCase().match(/unresolved|미결|pending|tbd/));
 
   const ty = plan.typography ?? {};
   check("plan typography: engine=pillow_overlay + bottomFixedSubtitle=false + karaoke=false",
@@ -308,8 +333,8 @@ const harnessSrc = readFileSync(HARNESS_PATH, "utf8");
 const harness = await import(pathToFileURL(HARNESS_PATH).href);
 {
   const fns = ["textLikeCheckY", "graphicLikeY2", "checkElementSafeFrame", "captionLength", "validateOverlaySpec",
-    "validateFontPolicy", "detectForbiddenRenderRoutes", "validateContract", "validatePlanAgainstContract",
-    "runDryRunValidation", "defaultIo"];
+    "validateFontPolicy", "validateFontVendoringResolution", "detectForbiddenRenderRoutes", "validateContract",
+    "validatePlanAgainstContract", "runDryRunValidation", "defaultIo"];
   check("harness exports all reusable logic surfaces", fns.every((f) => typeof harness[f] === "function"),
     `missing=${fns.filter((f) => typeof harness[f] !== "function").join(",")}`);
   check("harness refuses live/render-mode flags (fail-closed list)",
@@ -420,6 +445,39 @@ const harness = await import(pathToFileURL(HARNESS_PATH).href);
   const cMut2 = clone(contract); cMut2.forbiddenLegacyRenderRoutes.bottomFixedSubtitleBar = "허용";
   check("mutant: contract bottomFixedSubtitleBar 허용 → fail",
     harness.validateContract(cMut2).some((i) => i.includes("bottomFixedSubtitleBar")));
+
+  // ── font vendoring 결정 #6 resolution mutants (fail-closed) ──
+  const fvOk = harness.validateFontVendoringResolution(contract.fontPolicy);
+  check("validateFontVendoringResolution: unmutated contract fontPolicy → 0 issues",
+    Array.isArray(fvOk) && fvOk.length === 0, fvOk.join(" | "));
+  const fvMut = (fn) => { const c = clone(contract); fn(c.fontPolicy.fontVendoringDecision); return harness.validateFontVendoringResolution(c.fontPolicy); };
+  check("mutant: fontVendoringDecision 제거 → fail (결정 #6 참조 없음)",
+    harness.validateFontVendoringResolution({ ...clone(contract.fontPolicy), fontVendoringDecision: undefined }).some((i) => i.includes("결정 #6")));
+  check("mutant: resolvedValue 변조 → fail",
+    fvMut((d) => { d.resolvedValue = "keep_system_font_dependency"; }).some((i) => i.includes("resolvedValue")));
+  check("mutant: status pending 재도입(unresolved_owner_decision_6) → fail",
+    fvMut((d) => { d.status = "unresolved_owner_decision_6"; }).some((i) => i.includes("status")));
+  check("mutant: policy 텍스트에 미결 wording 재도입 → fail",
+    fvMut((d) => { d.note = "vendoring 여부는 아직 미결 상태"; }).some((i) => i.includes("pending/미결")));
+  check("mutant: systemFontDependencyIsFinalStandard true → fail (system font 최종 표준화 회귀)",
+    fvMut((d) => { d.systemFontDependencyIsFinalStandard = true; }).some((i) => i.includes("systemFontDependencyIsFinalStandard")));
+  check("mutant: notFontFileApproval false → fail (파일 승인 오해 방지 의미 손실)",
+    fvMut((d) => { d.notFontFileApproval = false; }).some((i) => i.includes("notFontFileApproval")));
+  check("mutant: renderApproved=true 오버클레임 → fail",
+    fvMut((d) => { d.renderApproved = true; }).some((i) => i.includes("renderApproved")));
+  check("mutant: dependencyApproved=true 오버클레임 → fail",
+    fvMut((d) => { d.dependencyApproved = true; }).some((i) => i.includes("dependencyApproved")));
+
+  // ── plan-level font vendoring resolution mutants ──
+  const pMutFv = (fn) => { const m = clone(plan); fn(m); return harness.validatePlanAgainstContract(m, contract, harness.defaultIo()); };
+  check("mutant: plan fontVendoringResolved 제거 → fail",
+    pMutFv((m) => { delete m.fontPolicy.fontVendoringResolved; }).some((i) => i.includes("fontVendoringResolved")));
+  check("mutant: plan fontVendoringResolvedValue 변조 → fail",
+    pMutFv((m) => { m.fontPolicy.fontVendoringResolvedValue = "keep_system_font_dependency"; }).some((i) => i.includes("fontVendoringResolvedValue")));
+  check("mutant: plan fontPolicy.note 미결 wording 재도입 → fail",
+    pMutFv((m) => { m.fontPolicy.note = "폰트 vendoring은 Owner 결정 #6 미결"; }).some((i) => i.includes("pending/미결")));
+  check("mutant: plan silent fallback true → fail (silent fallback 허용 금지)",
+    pMutFv((m) => { m.fontPolicy.silentDefaultFontFallback = true; }).some((i) => i.toLowerCase().includes("silentdefaultfontfallback")));
 }
 
 console.log(failures === 0

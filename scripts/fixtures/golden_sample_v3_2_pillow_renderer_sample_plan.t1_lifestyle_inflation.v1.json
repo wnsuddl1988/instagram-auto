@@ -36,7 +36,10 @@
     "silentDefaultFontFallback": false,
     "malgunUsed": false,
     "forbiddenFontsAvoided": ["Malgun Gothic", "Arial", "Black Han Sans", "Do Hyeon"],
-    "note": "폰트 vendoring은 Owner 결정 #6 미결 — 이 plan은 폰트 파일/의존성을 추가하지 않는다"
+    "fontVendoringResolved": true,
+    "fontVendoringResolvedValue": "vendor_noto_black_vf_remove_system_dependency",
+    "fontVendoringDecisionRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json#resolvedDecisions[id=6]",
+    "note": "폰트 vendoring은 Owner 결정 #6로 vendor_noto_black_vf_remove_system_dependency 확정 — 이 plan은 폰트 정책 방향만 참조하며, 폰트 파일/의존성을 추가하지 않고, render/mux를 실행하지 않는다 (정책 확정 ≠ 파일 커밋/dependency/render 승인)."
   },
 
   "typography": {

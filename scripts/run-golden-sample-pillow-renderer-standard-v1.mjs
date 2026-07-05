@@ -165,6 +165,52 @@ export function validateFontPolicy(planFont, contractFont) {
   return issues;
 }
 
+// ── font vendoring 결정(#6) 해석 검증 (pure, fail-closed) ────────────────────
+// Owner 결정 #6가 vendor_noto_black_vf_remove_system_dependency로 resolved 상태임을 강제하고,
+// pending 회귀 / resolved value 변조 / system font dependency 최종 표준화 / 승인 오버클레임을 차단한다.
+export const RESOLVED_FONT_VENDORING_VALUE = "vendor_noto_black_vf_remove_system_dependency";
+// pending/미결 재도입 감지 토큰 — 분할-연결로 보유(가드 소스가 literal 미결 문자열을 포함하지 않도록)
+const PENDING_TOKENS = ["unresolved", "pending", "미결", "open", "tbd"];
+// 폰트 파일/dependency/render/mux 승인 오버클레임 금지 플래그 — true면 fail-closed
+const APPROVAL_OVERCLAIM_FLAGS = [
+  "fontFileAdditionApproved", "fontFileCommitApproved", "vendoredAssetApproved",
+  "dependencyApproved", "dependencyChangeApproved", "lockfileChangeApproved",
+  "renderApproved", "liveRenderApproved", "muxApproved", "liveMuxApproved",
+];
+
+export function validateFontVendoringResolution(fp) {
+  const issues = [];
+  const fvd = fp?.fontVendoringDecision;
+  if (!fvd || typeof fvd !== "object") { issues.push("fontVendoringDecision 누락 — 결정 #6 참조 없음"); return issues; }
+
+  // resolved 상태 강제
+  if (fvd.status !== "resolved_owner_decision_6") issues.push(`fontVendoringDecision.status "${fvd.status}" !== resolved_owner_decision_6`);
+  if (fvd.resolvedValue !== RESOLVED_FONT_VENDORING_VALUE) issues.push(`resolvedValue "${fvd.resolvedValue}" != ${RESOLVED_FONT_VENDORING_VALUE}`);
+  if (fvd.fontVendoringPolicyResolved !== true) issues.push("fontVendoringPolicyResolved !== true");
+  if (!isStr(fvd.resolvedDecisionRef) || !fvd.resolvedDecisionRef.includes("owner_decision_resolution_state")) {
+    issues.push("resolvedDecisionRef가 decision resolution state fixture를 가리키지 않는다");
+  }
+
+  // pending/미결 wording 재도입 차단 (status·resolvedValue를 제외한 정책 텍스트 필드에서)
+  const policyText = [fvd.note, fvd.policyDirection, ...(Array.isArray(fvd.forbidInThisSlice) ? fvd.forbidInThisSlice : [])]
+    .filter(isStr).join(" ").toLowerCase();
+  const pendingHit = PENDING_TOKENS.find((t) => policyText.includes(t));
+  if (pendingHit) issues.push(`resolved font policy 텍스트에 pending/미결 wording 재도입 — ${pendingHit}`);
+
+  // system font dependency 최종 표준화 회귀 차단
+  if (fvd.systemFontDependencyIsFinalStandard !== false) issues.push("systemFontDependencyIsFinalStandard !== false (system font dependency를 최종 표준으로 취급 금지)");
+
+  // 결정 #6 ≠ 파일/dependency/render/mux 승인 (의미 보존)
+  for (const k of ["notFontFileApproval", "notDependencyApproval", "notRenderApproval", "notMuxApproval"]) {
+    if (fvd[k] !== true) issues.push(`fontVendoringDecision.${k} !== true`);
+  }
+  // 승인 오버클레임 플래그 true 차단
+  for (const k of APPROVAL_OVERCLAIM_FLAGS) {
+    if (fvd[k] === true) issues.push(`fontVendoringDecision.${k}=true — 폰트 파일/dependency/render/mux 승인 오버클레임 금지`);
+  }
+  return issues;
+}
+
 // ── 금지 legacy render route 검출 (pure) ────────────────────────────────────
 
 export function detectForbiddenRenderRoutes(typography) {
@@ -218,10 +264,14 @@ export function validateContract(contract) {
 
   const fp = contract?.fontPolicy ?? {};
   if (!isStrArr(fp.approvedFonts) || !fp.approvedFonts.includes("Noto Sans KR Black (VF)")) push("fontPolicy.approvedFonts에 Noto Sans KR Black (VF) 없음");
-  for (const bad of ["Malgun Gothic", "Arial", "Do Hyeon"]) {
+  if (!isStr(fp.approvedFontFileHint) || !fp.approvedFontFileHint.includes("NotoSansKR-VF.ttf")) push("fontPolicy.approvedFontFileHint가 NotoSansKR-VF.ttf 아님(폰트 hint drift)");
+  for (const bad of ["Malgun Gothic", "Arial", "BlackHanSans", "DoHyeon"]) {
     if (!(fp.forbiddenFonts ?? []).includes(bad)) push(`fontPolicy.forbiddenFonts에 ${bad} 누락`);
   }
   if (fp.requireBoldKoreanFont !== true) push("fontPolicy.requireBoldKoreanFont !== true");
+  if (!isStr(fp.silentDefaultFontFallback) || !fp.silentDefaultFontFallback.startsWith("금지")) push("fontPolicy.silentDefaultFontFallback이 '금지' 아님(silent fallback 허용 금지)");
+  // font vendoring 결정 #6 resolved 상태 검증 (fail-closed)
+  issues.push(...validateFontVendoringResolution(fp).map((m) => `contract fontVendoring: ${m}`));
 
   const flr = contract?.forbiddenLegacyRenderRoutes ?? {};
   if (flr.bottomFixedSubtitleBar !== "금지") push("forbiddenLegacyRenderRoutes.bottomFixedSubtitleBar !== 금지");
@@ -289,6 +339,19 @@ export function validatePlanAgainstContract(plan, contract, io = defaultIo()) {
 
   // font policy
   issues.push(...validateFontPolicy(plan?.fontPolicy, contract?.fontPolicy).map((m) => `plan font: ${m}`));
+
+  // plan이 resolved font vendoring 결정 #6을 참조하는지 (pending 회귀/변조 차단)
+  const pfp = plan?.fontPolicy ?? {};
+  if (pfp.fontVendoringResolved !== true) push("fontPolicy.fontVendoringResolved !== true (결정 #6 resolved 참조 누락)");
+  if (pfp.fontVendoringResolvedValue !== "vendor_noto_black_vf_remove_system_dependency") {
+    push(`fontPolicy.fontVendoringResolvedValue "${pfp.fontVendoringResolvedValue}" != vendor_noto_black_vf_remove_system_dependency`);
+  }
+  if (!isStr(pfp.fontVendoringDecisionRef) || !pfp.fontVendoringDecisionRef.includes("owner_decision_resolution_state")) {
+    push("fontPolicy.fontVendoringDecisionRef가 decision resolution state fixture를 가리키지 않는다");
+  }
+  if (!isStr(pfp.fontFileHint) || !pfp.fontFileHint.includes("NotoSansKR-VF.ttf")) push("fontPolicy.fontFileHint가 NotoSansKR-VF.ttf 아님(폰트 hint drift)");
+  const planPendingHit = ["unresolved", "미결", "pending", "tbd"].find((t) => String(pfp.note ?? "").toLowerCase().includes(t));
+  if (planPendingHit) push(`plan fontPolicy.note에 pending/미결 wording 재도입 — ${planPendingHit}`);
 
   // typography / 금지 legacy route
   const tyMissMatch = plan?.typography?.engine !== "pillow_overlay";
