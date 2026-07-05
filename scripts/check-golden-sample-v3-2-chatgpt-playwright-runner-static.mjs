@@ -10,6 +10,8 @@
  * - 검증 대상:
  *   1) runner contract fixture ↔ production standard v1 정합 (임계값 이중 관리 드리프트 방지)
  *   2) contract operationalProfile ↔ v2/v3/v3.1 lineage runner 실측 상수 verbatim 정합
+ *      + Owner 결정 #9 passive-window resolution(accept_25s_passive_window_as_v3_2_behavior) —
+ *        resolved value/decision ref/profile 값/pending 재도입/immediate-poll 주장 fail-closed mutant
  *   3) sample plan fixture — Slice 1 story/visual evidence 참조 필수, reject 코드/md5 lock 교차
  *   4) standard runner 소스 — 금지 live/browser/env/network/write 패턴 + import allowlist
  *   5) standard runner 동작 — import해 dry-run PASS + fail-closed mutant 검증 (in-memory)
@@ -155,6 +157,24 @@ const promptsV31 = promptsV31F.parsed;
     contract.timingStandard?.timeoutPolicy?.diagnosticAtSec === 150 &&
     contract.timingStandard?.timeoutPolicy?.hardTimeoutSec === 180 &&
     op.diagnosticAtMs === 150000 && op.hardTimeoutMs === 180000);
+
+  // Owner 결정 #9 — passive-window resolution (resolved, not pending)
+  const pw = contract.timingStandard?.passiveWindowInterpretation ?? {};
+  check("contract passive-window resolved = accept_25s_passive_window_as_v3_2_behavior (Owner 결정 #9)",
+    pw.resolvedValue === "accept_25s_passive_window_as_v3_2_behavior" &&
+    pw.passiveWindowIsStandardV32Behavior === true && pw.notLiveApproval === true);
+  check("contract passive-window resolvedDecisionRef가 decision #9 = accept_25s + decision state fixture",
+    pw.resolvedDecisionRef?.decisionId === 9 &&
+    pw.resolvedDecisionRef?.resolvedValue === "accept_25s_passive_window_as_v3_2_behavior" &&
+    isStr(pw.resolvedDecisionRef?.decisionStateFixture) &&
+    pw.resolvedDecisionRef.decisionStateFixture.endsWith("golden_sample_v3_2_owner_decision_resolution_state.v1.json"));
+  check("contract passive-window 섹션에 pending/open/TBD/미결 문구 없음 (openOwnerDecision 제거 확인)",
+    pw.openOwnerDecision === undefined &&
+    !/openOwnerDecision|pending|미결|확정 전까지|\bTBD\b/i.test(JSON.stringify({ ...pw, rejectedAlternative: undefined, rejectedAlternativeNote: undefined })));
+  check("contract forbiddenBehavior: passive-window pending 재도입/immediate-poll 표준 주장/profile 변조 금지 포함",
+    contract.forbiddenBehavior.some((s) => s.includes("resolved decision(#9)")) &&
+    contract.forbiddenBehavior.some((s) => s.includes("immediate 1~2s poll-only")) &&
+    contract.forbiddenBehavior.some((s) => s.includes("resolved profile 값 변조")));
 }
 
 // ── 3. 계약 핵심 의미 고정 (hard cap 소스 / no-live / 수집 / 위생 / 진단) ──
@@ -289,6 +309,20 @@ const promptsV31 = promptsV31F.parsed;
   check("plan executionMode: dry_run_validation_only + liveGenerationApprovedNow=false",
     plan.executionMode?.approvedNow === "dry_run_validation_only" &&
     plan.executionMode?.liveGenerationApprovedNow === false);
+
+  // Owner 결정 #9 — plan timingInterpretation (resolved + profile verbatim)
+  const ti = plan.timingInterpretation ?? {};
+  const op = contract.timingStandard?.operationalProfile ?? {};
+  check("plan timingInterpretation resolved = accept_25s_passive_window_as_v3_2_behavior + notLiveApproval",
+    ti.resolvedValue === "accept_25s_passive_window_as_v3_2_behavior" &&
+    ti.passiveWindowIsStandardV32Behavior === true && ti.notLiveApproval === true &&
+    ti.resolvedDecisionRef?.decisionId === 9);
+  check("plan timingInterpretation.profile verbatim-matches contract operationalProfile (25000/1800/3/150000/180000)",
+    ti.profile?.passiveWindowMs === op.passiveWindowMs && ti.profile?.passiveWindowMs === 25000 &&
+    ti.profile?.pollIntervalMs === op.pollIntervalMs && ti.profile?.pollIntervalMs === 1800 &&
+    ti.profile?.stablePollsToSave === op.stablePollsToSave && ti.profile?.stablePollsToSave === 3 &&
+    ti.profile?.diagnosticAtMs === op.diagnosticAtMs && ti.profile?.hardTimeoutMs === op.hardTimeoutMs,
+    `plan=${ti.profile?.passiveWindowMs}/${ti.profile?.pollIntervalMs}`);
 }
 
 // ── 5. runner 소스 정적 스캔 (live/browser/env/network/write 차단) ──────────
@@ -366,6 +400,7 @@ const runner = await import(pathToFileURL(RUNNER_PATH).href);
 {
   const fns = ["imageFileNameFor", "isGeneratedImageCandidate", "filterFreshCandidates", "stableCandidateKey",
     "updateStableState", "createSubmissionLedger", "evaluateLatency", "evaluateRecoveryRequest",
+    "validatePassiveWindowResolution", "hasPassiveWindowPendingWording",
     "validateContract", "validatePlanAgainstContract", "buildExecutionPlan", "runDryRunValidation", "defaultIo"];
   check("runner exports all reusable logic surfaces", fns.every((f) => typeof runner[f] === "function"),
     `missing=${fns.filter((f) => typeof runner[f] !== "function").join(",")}`);
@@ -387,6 +422,10 @@ const runner = await import(pathToFileURL(RUNNER_PATH).href);
   check("runner dry-run entries carry beat + target file name (img-01-… 규약)",
     dry.executionPlan?.entries?.[0]?.targetFileName === "img-01-img_31_hook_envelope_vs_empty_jar.png" &&
     dry.executionPlan?.entries?.every((e) => isStr(e.beat) && /^img-\d{2}-/.test(e.targetFileName)));
+  check("runner dry-run timingPolicy carries resolved passive-window value (Owner 결정 #9)",
+    dry.executionPlan?.timingPolicy?.passiveWindowResolvedValue === "accept_25s_passive_window_as_v3_2_behavior" &&
+    dry.executionPlan?.timingPolicy?.passiveWindowMs === 25000 &&
+    dry.executionPlan?.timingPolicy?.pollIntervalMs === 1800);
 
   // fail-closed mutants (in-memory only — 파일 쓰기 없음)
   const io = runner.defaultIo();
@@ -404,6 +443,57 @@ const runner = await import(pathToFileURL(RUNNER_PATH).href);
   check("mutant: md5 lock 변조 → fail (verbatim 교차)", m5.some((i) => i.includes("acceptedSetMd5Lock")));
   const m6 = mutate((m) => { m.promptSet.primary.promptCount = 4; });
   check("mutant: promptCount 불일치 → fail", m6.some((i) => i.includes("promptCount")));
+
+  // ── Owner 결정 #9 passive-window plan mutants (fail-closed) ──
+  const pw1 = mutate((m) => { delete m.timingInterpretation; });
+  check("mutant(#9): plan timingInterpretation 제거 → fail (resolution 필수)",
+    pw1.some((i) => i.includes("timingInterpretation")));
+  const pw2 = mutate((m) => { m.timingInterpretation.resolvedValue = "switch_to_immediate_1_2s_poll"; });
+  check("mutant(#9): plan resolvedValue를 immediate-poll 대안으로 변조 → fail",
+    pw2.some((i) => i.includes("resolvedValue")));
+  const pw3 = mutate((m) => { delete m.timingInterpretation.resolvedDecisionRef; });
+  check("mutant(#9): plan resolvedDecisionRef 제거 → fail",
+    pw3.some((i) => i.includes("resolvedDecisionRef") || i.includes("decisionId")));
+  const pw4 = mutate((m) => { m.timingInterpretation.profile.passiveWindowMs = 5000; });
+  check("mutant(#9): plan profile passiveWindowMs 5000(≠25000) → fail",
+    pw4.some((i) => i.includes("passiveWindowMs")));
+  const pw5 = mutate((m) => { m.timingInterpretation.profile.pollIntervalMs = 1200; });
+  check("mutant(#9): plan profile pollIntervalMs 1200(≠1800) → fail",
+    pw5.some((i) => i.includes("pollIntervalMs")));
+  const pw6 = mutate((m) => { m.timingInterpretation.notLiveApproval = false; });
+  check("mutant(#9): plan notLiveApproval false → fail (live/생성 승인 아님 명시 필수)",
+    pw6.some((i) => i.includes("notLiveApproval")));
+  const pw7 = mutate((m) => { m.timingInterpretation.sourceNote = "openOwnerDecision pending 미결"; });
+  check("mutant(#9): plan 섹션에 pending/미결 문구 재도입 → fail",
+    pw7.some((i) => i.includes("pending") || i.includes("timingInterpretation")));
+
+  // contract passive-window mutants
+  const cpw1 = clone(contract); cpw1.timingStandard.passiveWindowInterpretation.resolvedValue = "switch_to_immediate_1_2s_poll";
+  check("mutant(#9): contract resolvedValue immediate-poll 대안 → contract fail",
+    runner.validateContract(cpw1).some((i) => i.includes("resolvedValue")));
+  const cpw2 = clone(contract);
+  delete cpw2.timingStandard.passiveWindowInterpretation.resolvedValue;
+  cpw2.timingStandard.passiveWindowInterpretation.openOwnerDecision = "gap analysis Owner 결정 #9 pending";
+  check("mutant(#9): contract pending 문구(openOwnerDecision) 재도입 → contract fail",
+    runner.validateContract(cpw2).some((i) => i.includes("passiveWindow")));
+  const cpw3 = clone(contract); cpw3.timingStandard.operationalProfile.passiveWindowMs = 10000;
+  check("mutant(#9): contract operationalProfile passiveWindowMs 10000(≠25000) → contract fail",
+    runner.validateContract(cpw3).some((i) => i.includes("passiveWindowMs")));
+
+  // passive-window pure helper 직접 검증
+  check("hasPassiveWindowPendingWording: openOwnerDecision 포함 → true",
+    runner.hasPassiveWindowPendingWording({ openOwnerDecision: "x" }) === true);
+  check("hasPassiveWindowPendingWording: resolved 섹션(대안 이름은 audit 필드) → false",
+    runner.hasPassiveWindowPendingWording({
+      resolvedValue: "accept_25s_passive_window_as_v3_2_behavior",
+      rejectedAlternative: "switch_to_immediate_1_2s_poll",
+    }) === false);
+  check("validatePassiveWindowResolution: 정상 resolved 섹션 → 0 issues",
+    runner.validatePassiveWindowResolution(
+      contract.timingStandard.passiveWindowInterpretation,
+      contract.timingStandard.operationalProfile).length === 0);
+  check("validatePassiveWindowResolution: 섹션 누락 → fail-closed",
+    runner.validatePassiveWindowResolution(undefined, contract.timingStandard.operationalProfile).length > 0);
 
   const cMut1 = clone(contract); cMut1.conversationHygiene.sidebarScanProhibited = false;
   check("mutant: contract sidebarScanProhibited=false → runner contract validation fail",

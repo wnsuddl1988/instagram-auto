@@ -15,7 +15,8 @@
  * v3/v3.1 lineage에서 검증된 로직 표면을 재사용 가능한 pure function으로 노출한다:
  *   page-wide 수집 필터(user 첨부 제외, baseline cid 제외), stable×3 저장 판정,
  *   hard cap ledger(plan fixture 단일 소스), latency 진단(detect-to-save 30s target),
- *   same-run current-page recovery 판정(sidebar/old conversation 금지).
+ *   same-run current-page recovery 판정(sidebar/old conversation 금지),
+ *   passive-window resolution 검증(Owner 결정 #9 = accept_25s_passive_window_as_v3_2_behavior).
  * 미래 live slice는 이 모듈을 import해 동일 표면을 사용해야 하며,
  * 4번째 runner 클론 생성은 계약(forbiddenBehavior)상 금지다.
  *
@@ -38,8 +39,22 @@ export const DEFAULT_PLAN_PATH = path.join(
 // live류 flag는 이 slice에 존재하지 않는 기능 — 발견 즉시 거부 (fail-closed)
 export const REFUSED_LIVE_FLAGS = ["--live", "--generate", "--submit", "--arm", "--allow-live", "--browser"];
 
+// Owner 결정 #9 = accept_25s_passive_window_as_v3_2_behavior. resolved timing 해석 표준.
+export const PASSIVE_WINDOW_RESOLVED_VALUE = "accept_25s_passive_window_as_v3_2_behavior";
+export const PASSIVE_WINDOW_PROFILE = { passiveWindowMs: 25000, pollIntervalMs: 1800 };
+// resolved timing 섹션에 남아있으면 안 되는 미결/pending 문구 (pending 재도입 방지).
+// 주: 대안 이름 자체(switch_to_immediate_1_2s_poll)는 감사 기록용으로 rejectedAlternative* 필드에
+// 담길 수 있으므로 pending 토큰에 넣지 않는다 — immediate-poll-only가 표준이라는 "주장"은
+// resolvedValue가 잘못된 값일 때 별도로 잡힌다.
+export const PASSIVE_WINDOW_PENDING_TOKENS = [
+  "openOwnerDecision", "pending", "TBD", "TODO", "미결", "미정", "확정 전까지",
+];
+// pending 스캔에서 제외하는 감사-기록 전용 필드 (대안 이름을 의도적으로 담는 곳)
+const PASSIVE_WINDOW_AUDIT_ONLY_FIELDS = ["rejectedAlternative", "rejectedAlternativeNote"];
+
 const isStr = (v) => typeof v === "string" && v.trim().length > 0;
 const isStrArr = (v) => Array.isArray(v) && v.length > 0 && v.every(isStr);
+const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const setEq = (a, b) =>
   Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
   [...a].sort().join("|") === [...b].sort().join("|");
@@ -128,6 +143,77 @@ export function evaluateRecoveryRequest({ source, sameRun, knownCurrentImage } =
   return { allowed: true, reason: "same-run current-page recovery 허용" };
 }
 
+// ── passive-window resolution 검증 (pure, Owner 결정 #9) ────────────────────
+
+// resolved timing 섹션에 미결/pending 문구가 남아있으면 true (pending 재도입 방지).
+// 감사-기록 전용 필드(rejectedAlternative*)는 대안 이름을 의도적으로 담으므로 스캔에서 제외한다.
+export function hasPassiveWindowPendingWording(sectionJson) {
+  let scanTarget = sectionJson;
+  if (sectionJson && typeof sectionJson === "object") {
+    scanTarget = {};
+    for (const [k, v] of Object.entries(sectionJson)) {
+      if (!PASSIVE_WINDOW_AUDIT_ONLY_FIELDS.includes(k)) scanTarget[k] = v;
+    }
+  }
+  const text = typeof scanTarget === "string" ? scanTarget : JSON.stringify(scanTarget ?? {});
+  return PASSIVE_WINDOW_PENDING_TOKENS.some((tok) => {
+    if (/[가-힣]/.test(tok)) return text.includes(tok);
+    return text.toLowerCase().includes(tok.toLowerCase());
+  });
+}
+
+// contract 또는 plan의 passive-window resolution 섹션 하나를 fail-closed 검증한다.
+// section: contract.timingStandard.passiveWindowInterpretation 또는 plan.timingInterpretation.
+// operationalProfile: contract.timingStandard.operationalProfile (profile 값 대조용).
+export function validatePassiveWindowResolution(section, operationalProfile, label = "passiveWindow") {
+  const issues = [];
+  const push = (m) => issues.push(`${label}: ${m}`);
+  if (!section || typeof section !== "object") { push("resolution 섹션 누락 (Owner 결정 #9 = resolved 필수)"); return issues; }
+
+  if (section.resolvedValue !== PASSIVE_WINDOW_RESOLVED_VALUE) {
+    push(`resolvedValue(${section.resolvedValue}) != ${PASSIVE_WINDOW_RESOLVED_VALUE}`);
+  }
+  if (section.passiveWindowIsStandardV32Behavior !== true) push("passiveWindowIsStandardV32Behavior !== true");
+  if (section.notLiveApproval !== true) push("notLiveApproval !== true (타이밍 해석은 live/생성 승인 아님 명시 필수)");
+
+  const ref = section.resolvedDecisionRef ?? {};
+  if (ref.decisionId !== 9) push("resolvedDecisionRef.decisionId !== 9");
+  if (ref.resolvedValue !== PASSIVE_WINDOW_RESOLVED_VALUE) push(`resolvedDecisionRef.resolvedValue != ${PASSIVE_WINDOW_RESOLVED_VALUE}`);
+  if (!isStr(ref.decisionStateFixture) || !ref.decisionStateFixture.endsWith("golden_sample_v3_2_owner_decision_resolution_state.v1.json")) {
+    push("resolvedDecisionRef.decisionStateFixture가 decision state fixture를 가리키지 않음");
+  }
+
+  // pending/open/TBD/immediate-poll-only 문구 재도입 금지
+  if (hasPassiveWindowPendingWording(section)) push("resolved 섹션에 pending/open/TBD/대안(immediate-poll) 문구 잔존");
+
+  // profile 값 대조 — resolved 값이 operationalProfile과 어긋나면 fail (변조 방지)
+  const op = operationalProfile ?? {};
+  // section이 자체 profile 블록을 가지면(plan) 그것도 대조, 아니면 operationalProfile만.
+  const secProfile = section.profile ?? null;
+  if (isNum(op.passiveWindowMs) && op.passiveWindowMs !== PASSIVE_WINDOW_PROFILE.passiveWindowMs) {
+    push(`operationalProfile.passiveWindowMs(${op.passiveWindowMs}) != ${PASSIVE_WINDOW_PROFILE.passiveWindowMs}`);
+  }
+  if (isNum(op.pollIntervalMs) && op.pollIntervalMs !== PASSIVE_WINDOW_PROFILE.pollIntervalMs) {
+    push(`operationalProfile.pollIntervalMs(${op.pollIntervalMs}) != ${PASSIVE_WINDOW_PROFILE.pollIntervalMs}`);
+  }
+  if (secProfile) {
+    if (secProfile.passiveWindowMs !== PASSIVE_WINDOW_PROFILE.passiveWindowMs) {
+      push(`profile.passiveWindowMs(${secProfile.passiveWindowMs}) != ${PASSIVE_WINDOW_PROFILE.passiveWindowMs}`);
+    }
+    if (secProfile.pollIntervalMs !== PASSIVE_WINDOW_PROFILE.pollIntervalMs) {
+      push(`profile.pollIntervalMs(${secProfile.pollIntervalMs}) != ${PASSIVE_WINDOW_PROFILE.pollIntervalMs}`);
+    }
+    // plan profile이 contract operationalProfile과도 일치해야 함 (drift 방지)
+    if (isNum(op.passiveWindowMs) && secProfile.passiveWindowMs !== op.passiveWindowMs) {
+      push(`profile.passiveWindowMs가 contract operationalProfile(${op.passiveWindowMs})과 불일치`);
+    }
+    if (isNum(op.pollIntervalMs) && secProfile.pollIntervalMs !== op.pollIntervalMs) {
+      push(`profile.pollIntervalMs가 contract operationalProfile(${op.pollIntervalMs})과 불일치`);
+    }
+  }
+  return issues;
+}
+
 // ── fixture 로딩 (read-only) ────────────────────────────────────────────────
 
 export function defaultIo() {
@@ -176,6 +262,9 @@ export function validateContract(contract) {
     push("passiveWindowMs < diagnosticAtMs < hardTimeoutMs 순서 위반");
   }
   if (!(Number.isInteger(op.stablePollsToSave) && op.stablePollsToSave >= 1)) push("stablePollsToSave 불량");
+
+  // Owner 결정 #9 — passive-window resolution (resolved, not pending)
+  issues.push(...validatePassiveWindowResolution(t.passiveWindowInterpretation, op, "contract passiveWindow"));
 
   const ch = contract?.conversationHygiene ?? {};
   if (ch.sidebarScanProhibited !== true) push("conversationHygiene.sidebarScanProhibited !== true");
@@ -340,6 +429,10 @@ export function validatePlanAgainstContract(plan, contract, io = defaultIo()) {
     }
   }
 
+  // Owner 결정 #9 — plan의 passive-window 타이밍 해석이 resolved이고 contract profile과 일치
+  issues.push(...validatePassiveWindowResolution(
+    plan?.timingInterpretation, contract?.timingStandard?.operationalProfile, "plan timingInterpretation"));
+
   const em = plan?.executionMode ?? {};
   if (em.approvedNow !== "dry_run_validation_only") push("executionMode.approvedNow !== dry_run_validation_only");
   if (em.liveGenerationApprovedNow !== false) push("executionMode.liveGenerationApprovedNow !== false");
@@ -380,6 +473,7 @@ export function buildExecutionPlan(plan, contract, io = defaultIo()) {
       diagnosticAtMs: op.diagnosticAtMs,
       hardTimeoutMs: op.hardTimeoutMs,
       detectToSaveTargetSec: contract?.timingStandard?.detectToSaveTargetSec,
+      passiveWindowResolvedValue: contract?.timingStandard?.passiveWindowInterpretation?.resolvedValue ?? "(누락)",
     },
     hygiene: {
       sidebarScanProhibited: contract?.conversationHygiene?.sidebarScanProhibited === true,
@@ -452,6 +546,7 @@ function main() {
   console.log(`[standard-runner-v1] topic: ${res.plan.ownerTopicApproval.topicId} — ${res.plan.ownerTopicApproval.title}`);
   console.log(`[standard-runner-v1] hard cap(plan fixture): ${ep.submissionHardCap} · 시뮬레이션 제출 ${ep.simulatedSubmissions} · 잔여 ${ep.remainingBudget}`);
   console.log(`[standard-runner-v1] timing: passive ${ep.timingPolicy.passiveWindowMs}ms → poll ${ep.timingPolicy.pollIntervalMs}ms, stable×${ep.timingPolicy.stablePollsToSave}, diag ${ep.timingPolicy.diagnosticAtMs}ms, hard timeout ${ep.timingPolicy.hardTimeoutMs}ms, detect-to-save target ${ep.timingPolicy.detectToSaveTargetSec}s`);
+  console.log(`[standard-runner-v1] passive-window 해석(Owner 결정 #9): ${ep.timingPolicy.passiveWindowResolvedValue} (v3.2 표준 동작, live/생성 승인 아님)`);
   console.log(`[standard-runner-v1] hygiene: sidebarScanProhibited=${ep.hygiene.sidebarScanProhibited}, oldConversationReuse=${ep.hygiene.oldConversationReusePolicy}`);
   for (const e of ep.entries) {
     console.log(`  order ${String(e.order).padStart(2, " ")} [${e.beat}] → ${e.targetFileName} (budget ${e.submissionBudget})`);

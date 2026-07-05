@@ -87,6 +87,27 @@
     "md5LockSource": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json#selected_image_set"
   },
 
+  "timingInterpretation": {
+    "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior",
+    "passiveWindowIsStandardV32Behavior": true,
+    "notLiveApproval": true,
+    "resolvedDecisionRef": {
+      "decisionStateFixture": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+      "decisionId": 9,
+      "decisionKey": "poll_25s_passive_window",
+      "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior"
+    },
+    "profile": {
+      "passiveWindowMs": 25000,
+      "pollIntervalMs": 1800,
+      "stablePollsToSave": 3,
+      "diagnosticAtMs": 150000,
+      "hardTimeoutMs": 180000
+    },
+    "profileSourceNote": "contract.timingStandard.operationalProfile와 verbatim 일치 — v2 실증 → v3/v3.1 재사용해 v3.2 accepted 이미지 세트를 만든 실동작 값.",
+    "sourceNote": "Owner 결정 #9 확정 = accept_25s_passive_window_as_v3_2_behavior. 25s passive window가 v3.2 표준 동작. immediate 1~2s poll-only는 채택 안 된 대안. 이 타이밍 해석은 ChatGPT/Playwright/browser/CDP 실행 또는 이미지 생성 승인이 아니다."
+  },
+
   "executionMode": {
     "approvedNow": "dry_run_validation_only",
     "liveGenerationApprovedNow": false,

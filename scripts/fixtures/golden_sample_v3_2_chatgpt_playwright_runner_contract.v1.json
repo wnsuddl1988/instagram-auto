@@ -119,7 +119,21 @@
       "provenance": "v2 runner에서 실증 → v3/v3.1이 그대로 재사용해 v3.2 accepted 이미지 세트를 만든 실동작 값"
     },
     "passiveWindowInterpretation": {
-      "openOwnerDecision": "gap analysis Owner 결정 #9 — 25s passive window(v3.2를 만든 실동작) 인정 vs 제출 즉시 1~2s poll. 확정 전까지 이 계약은 검증된 25s passive + 1.8s active poll profile을 표준 기록으로 유지한다"
+      "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior",
+      "passiveWindowIsStandardV32Behavior": true,
+      "notLiveApproval": true,
+      "resolvedDecisionRef": {
+        "decisionStateFixture": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+        "decisionId": 9,
+        "decisionKey": "poll_25s_passive_window",
+        "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior",
+        "resolvedAt": "2026-07-04",
+        "packetRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json"
+      },
+      "resolvedNote": "Owner 결정 #9 확정 — 25s passive window + 1.8s active poll는 v3.2 accepted 이미지 세트를 만든 실동작이며, 이를 v3.2 표준 동작으로 인정한다. 즉시 짧은 poll-only 대안은 채택되지 않았으므로 그것이 v3.2 표준이라는 주장은 fail-closed로 거부한다.",
+      "notLiveApprovalNote": "이 타이밍 해석 확정은 재현성 표준일 뿐이다. ChatGPT/Playwright/browser/CDP 실행 승인도, 이미지 생성 승인도 아니다 (no-live 유지).",
+      "rejectedAlternative": "switch_to_immediate_1_2s_poll",
+      "rejectedAlternativeNote": "packet allowedChoices의 대안 — 채택되지 않음. 이 키는 감사 기록용이며, resolved 섹션의 pending-문구 스캔은 이 키/값을 대안-이름 예외로 처리한다."
     },
     "detectToSaveTargetSec": 30,
     "overTargetAction": "detect-to-save 30s 초과 시 원인 진단(이유+타이밍)을 report에 즉시 기록한다 — 침묵 pass 금지",
@@ -187,7 +201,11 @@
     "upscaling을 수정 수단으로 사용",
     "유료 provider 자동 fallback",
     "완성 이미지 3~5분 방치",
-    "story/visual evidence reference 없는 plan 실행"
+    "story/visual evidence reference 없는 plan 실행",
+    "25s passive window resolved decision(#9) 제거 또는 pending/open/TBD 문구 재도입",
+    "immediate 1~2s poll-only가 v3.2 표준이라는 주장 (채택 안 된 대안)",
+    "passiveWindowMs(25000)/pollIntervalMs(1800) resolved profile 값 변조",
+    "타이밍 해석 확정을 ChatGPT/Playwright/browser/CDP 실행 또는 이미지 생성 승인으로 해석"
   ],
 
   "changeControl": {

@@ -22,27 +22,34 @@
   - `9607eab feat(golden-sample): record owner decision state guard`
   - `c80b024 feat(golden-sample): harden paid image allow guards`
   - `85865ba feat(golden-sample): close browser runner guard gaps`
+  - `9fe6f77 feat(golden-sample): standardize script impact provenance`
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-script-impact-gate-provenance-standardization-v1`
-- Status: **approved by Owner 2026-07-04 KST as no-live continuation**.
+- Task ID: `golden-sample-v3-2-chatgpt-runner-25s-passive-window-resolution-v1`
+- Status: **approved by Owner as no-live continuation**.
 - Owner basis:
   - Owner approved continuing required no-live implementation sequentially: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
   - Decision state fixture has resolved:
-    - `script_impact_gate_score_authority = codex_judge_with_mandatory_provenance`
-- Slice type: no-live Script Impact Gate provenance standardization + harness/static guard update.
+    - `poll_25s_passive_window = accept_25s_passive_window_as_v3_2_behavior`
+- Slice type: no-live ChatGPT/Playwright runner timing interpretation standardization + harness/static guard update.
 
 ## Purpose
 
-The TTS/audio audit standard already blocks live TTS until Script Impact Gate PASS, but its contract/sample plan still preserve the older wording that the score producer is Owner decision #1 pending. This slice consumes the resolved Owner decision and makes provenance mandatory so future live TTS preparation cannot rely on anonymous fixture self-assessment numbers.
+The ChatGPT+Playwright image runner contract already records the v3.2 operational timing profile including a 25s passive window, but it still labels the 25s passive-window interpretation as Owner decision #9 pending. This slice consumes the resolved Owner decision and makes the 25s passive window the explicit v3.2 standard behavior.
 
 This slice must:
 
-1. Keep all TTS/audio/mux/upload/image/browser/API paths no-live and fail-closed.
-2. Update the TTS/audio audit standard so Script Impact Gate authority is `codex_judge_with_mandatory_provenance`.
-3. Require machine-checkable provenance for all six Script Impact Gate scores and hard-fail checks.
-4. Preserve the distinction: technical Script Impact Gate PASS is **not** live TTS, mux, upload, or Owner QA approval.
+1. Keep all ChatGPT/Playwright/browser/CDP/image/API paths no-live and fail-closed.
+2. Update the ChatGPT runner standard so decision #9 is resolved as `accept_25s_passive_window_as_v3_2_behavior`.
+3. Preserve the measured profile values already standardized for v3.2:
+   - passive wait: `25000ms`
+   - active poll: `1800ms`
+   - stable confirmations: `3`
+   - max generation wait: `150000ms`
+   - max total wait: `180000ms`
+4. Make the contract/sample plan/harness/static guard fail closed if future edits remove the resolved decision, revert to pending wording, or imply immediate 1-2s polling is the v3.2 standard.
+5. Preserve the distinction: timing interpretation is **not** ChatGPT/Playwright/browser/CDP execution approval and not image generation approval.
 
 ## Source Contracts To Read
 
@@ -50,10 +57,10 @@ Read only the minimum needed:
 
 1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
 2. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
-3. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
-4. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json`
-5. `scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs`
-6. `scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
+3. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
+4. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_sample_plan.t1_lifestyle_inflation.v1.json`
+5. `scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs`
+6. `scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -71,63 +78,62 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed files:
 
-1. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
-   - Update `scriptImpactGateStandard.scoreProducerNote` from pending wording to resolved Owner decision #1 wording.
-   - Add fields such as:
-     - `scoreAuthority: "codex_judge_with_mandatory_provenance"`
-     - `provenanceRequired: true`
+1. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
+   - Update `passiveWindowInterpretation` or equivalent section from pending/open wording to resolved Owner decision #9 wording.
+   - Add explicit fields if useful:
      - `resolvedDecisionRef`
-     - `provenanceSchema` for six score keys and hard fail checks.
-   - Keep thresholds/hardFailKeys/gate order unchanged.
-   - Keep all no-live/read-only flags unchanged.
+     - `resolvedValue: "accept_25s_passive_window_as_v3_2_behavior"`
+     - `passiveWindowIsStandardV32Behavior: true`
+     - `notLiveApproval: true`
+   - Keep timing numbers unchanged.
+   - Keep no-live/read-only flags unchanged.
 
-2. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json`
-   - Add `scriptImpactGate.provenance` or equivalent machine-readable evidence.
-   - Provenance must cover all six score keys and hardFail checks.
-   - Each score provenance should include score key, value, authority, judge identity/type, source refs, concise rationale, and no placeholder/TBD.
-   - Update old `Owner decision #1 미결` wording to resolved no-live wording.
+2. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_sample_plan.t1_lifestyle_inflation.v1.json`
+   - Add or update timing interpretation evidence so the sample plan references the resolved decision #9.
+   - Preserve `executionMode: dry_run_validation_only`, `costCapUsd: 0`, hard cap, Slice 1 evidence references, and no-live policy.
+   - Do not add generation approval.
 
-3. `scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs`
-   - Add pure validation helpers for Script Impact Gate provenance.
-   - `validatePlanAgainstContract()` must fail closed when provenance is missing, wrong authority, score keys mismatch, hard-fail provenance missing, source refs missing, placeholder text exists, or the plan claims live approval.
+3. `scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs`
+   - Add pure validation helper(s) for passive-window decision resolution if not already present.
+   - The validator must fail closed when:
+     - decision #9 is absent,
+     - resolved value differs from `accept_25s_passive_window_as_v3_2_behavior`,
+     - passive wait differs from `25000ms`,
+     - active poll differs from `1800ms`,
+     - pending/open/TBD wording remains in resolved timing section,
+     - the plan claims ChatGPT/Playwright/browser/CDP/image generation approval.
    - Keep imports restricted to `node:fs`, `node:path`, `node:url`.
-   - Do not add network/env/secret/audio/video/render/mux/browser surfaces.
+   - Do not add network/env/secret/browser/CDP/image/API surfaces.
 
-4. `scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
-   - Update contract checks from pending #1 wording to resolved `codex_judge_with_mandatory_provenance`.
+4. `scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
+   - Update contract checks from pending #9 wording to resolved `accept_25s_passive_window_as_v3_2_behavior`.
    - Add static and harness-import mutants for:
-     - missing provenance,
-     - wrong authority (`self_assessment_fixture_with_provenance`, `llm_judge_scored`, or unknown),
-     - missing source refs,
-     - placeholder/TBD rationale,
-     - six score keys not matching provenance keys,
-     - hard-fail checks missing provenance,
-     - provenance implying live TTS/mux/upload/Owner QA approval.
+     - deleting the resolved decision ref,
+     - changing resolved value,
+     - changing passive wait from 25000ms,
+     - changing active poll from 1800ms,
+     - reintroducing pending/open/TBD wording,
+     - implying immediate-poll-only standard,
+     - setting any live/image/browser approval flag true.
 
-5. Optional, only if it reduces complexity:
-   - New fixture under `scripts/fixtures/` for a reusable provenance contract/sample.
-   - New static guard only if the existing TTS/audio audit static guard would become too large.
-
-6. `_ai/CLAUDE_REPORT.md`
+5. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
 
-7. `_ai/HANDOFF_NOW.md`
+6. `_ai/HANDOFF_NOW.md`
    - Update status only if needed.
 
-Do not modify Slice 5 integrated readiness contract in this slice. Treat it as historical baseline; the resolved decision state fixture is the current source for decision #1.
+Do not modify Slice 5 integrated readiness contract in this slice. Treat it as historical baseline; the resolved decision state fixture is the current source for decision #9.
 
 ## Required Safety Semantics
 
-- No live TTS/API call.
+- No ChatGPT/Playwright/browser/Chrome/CDP execution.
+- No image generation.
+- No paid/free API call.
 - No audio/video/image file read.
-- No ffmpeg/ffprobe/silencedetect.
-- No render/mux regeneration.
-- No browser/Chrome/CDP.
-- No image/video generation.
-- No upload or upload queue.
+- No render/mux/upload.
 - No env/secret access.
 - No dependency/lockfile/DB/deploy change.
-- Provenance PASS is not live approval, not Owner QA, and not upload readiness.
+- Timing interpretation PASS is not live approval and not image generation readiness.
 - Current readiness remains `STANDARDIZED_NO_LIVE_READY`.
 
 ## Required Checks
@@ -138,9 +144,9 @@ Minimum:
 2. `node --check` for every changed/new `.mjs`
 3. JSON parse for every changed/new fixture
 4. Harness dry-run:
-   - `node scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs`
-5. Updated TTS/audio audit static guard:
-   - `node scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
+   - `node scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs`
+5. Updated ChatGPT runner static guard:
+   - `node scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
 6. Regression sanity:
    - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
@@ -149,10 +155,9 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Forbidden
 
-- Running live TTS, free/paid TTS, OpenAI, ElevenLabs, Gemini, Veo, BFL, ChatGPT, Playwright, browser, Chrome, CDP, render, mux, upload, or image/video generation.
+- Running ChatGPT, Playwright, browser, Chrome, CDP, OpenAI, Gemini, Veo, BFL, image generation, live TTS, render, mux, upload, or external API.
 - Reading `.env.local` or any actual env/secret value.
 - Reading/analyzing audio/video/image files.
-- Running ffmpeg/ffprobe/silencedetect.
 - Adding dependencies, changing lockfiles, DB/schema/deploy config, or `pnpm-workspace.yaml`.
 - Modifying protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
@@ -168,18 +173,18 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- TTS/audio audit contract records decision #1 as `codex_judge_with_mandatory_provenance`.
-- Sample plan includes complete Script Impact Gate provenance for scores and hard-fail checks.
-- Harness validates provenance fail-closed.
+- ChatGPT runner contract records decision #9 as resolved: `accept_25s_passive_window_as_v3_2_behavior`.
+- Sample plan references the resolved passive-window decision and remains no-live.
+- Harness validates passive-window resolution fail-closed.
 - Static guard proves the behavior and fails on key mutants.
-- Existing TTS/audio thresholds, order, no-live policy, and Owner QA separation remain intact.
+- Existing runner timing, hard cap, no-live policy, and Slice 1 evidence references remain intact.
 - Required checks pass.
 - `_ai/CLAUDE_REPORT.md` has concise evidence append.
 - No forbidden action or side effect occurred.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 173 after checkpoint `85865ba`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 174 after checkpoint `9fe6f77`.
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
