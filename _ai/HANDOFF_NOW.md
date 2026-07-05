@@ -27,18 +27,20 @@
   - `3222cba feat(golden-sample): resolve pillow font vendoring policy`
   - `07a5f4e feat(golden-sample): reconcile integrated readiness decisions`
   - `81d2c5d feat(golden-sample): resolve owner decisions safe defaults`
+  - `e2014e1 feat(golden-sample): add future execution plan gate`
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-future-execution-plan-gate-standardization-v1`
-- Status: **approved as no-live planning/standardization only** under the Owner's instruction to proceed with necessary sequential parts.
-- Slice type: future execution plan gate fixture + static guard, with integrated readiness reference.
-- This slice does **not** approve or run upload/render/mux/image/TTS/browser/API/env/dependency/DB/deploy.
+- Task ID: `golden-sample-v3-2-live-action-approval-packet-standardization-v1`
+- Status: **approved as no-live planning/approval-packet standardization only** under the Owner's instruction to proceed with necessary sequential parts.
+- Slice type: no-live future live/action approval packet + static guard.
+- This slice must not approve, run, or prepare actual execution side effects. It only creates a machine-readable and human-readable packet for a future explicit Owner live/action decision.
 
 ## Current State
 
-- Owner policy decisions are now fully resolved: 10 resolved / 0 pending.
+- Owner policy decisions are fully resolved: 10 resolved / 0 pending.
 - Decision state status: `ALL_POLICY_DECISIONS_RESOLVED_NO_LIVE`.
+- Future execution plan gate exists: `scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json`.
 - Integrated readiness remains `STANDARDIZED_NO_LIVE_READY`.
 - `ownerViewingListeningActualStatus` remains `PENDING_DIRECT_OWNER_REVIEW`.
 - `ownerQaPassed`, `uploadReady`, `productionReady`, render/image/TTS/browser/live flags remain false.
@@ -46,24 +48,30 @@
 
 ## Purpose
 
-The integrated readiness contract still describes future expansion gates. Gates related to Owner policy decisions and prior standards are now resolved, but the project still needs a **machine-readable no-live future execution plan gate** before any future live/action slice can be considered.
+The future execution plan gate requires any future live/action slice to have explicit Owner approval, call/cost caps, stop conditions, provider allow guards, artifact audit, and Owner QA separation. This slice creates a **no-live approval packet** that makes those future approvals copy-ready and machine-checkable, without granting any approval now.
 
-This slice creates a fail-closed plan gate that records what a future live/action request must contain before execution can be separately approved. It must make clear that this is only a planning artifact and that current approval is zero live execution.
+The packet must prevent ambiguity between:
+
+- policy decisions already resolved,
+- no-live readiness/plan gates passing,
+- a future explicit live/action approval,
+- actual Owner direct viewing/listening QA,
+- upload approval.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
-1. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
-2. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
-3. `scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
-4. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
-5. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
-6. `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json`
-7. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
-8. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_sample_plan.t1_lifestyle_inflation.v1.json`
-9. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
-10. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
+1. `scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json`
+2. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
+3. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
+4. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
+5. `scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json`
+6. `scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json`
+7. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
+8. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
+9. `scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
+10. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -81,77 +89,87 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed files:
 
-1. `scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json` (new)
-   - Machine-readable no-live plan gate.
+1. `scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json` (new)
+   - Machine-readable no-live approval packet.
    - Must include:
-     - `executionApprovedNow: false`
-     - `liveActionApprovedNow: false`
-     - `uploadApprovedNow: false`
-     - `renderApprovedNow: false`
-     - `muxApprovedNow: false`
-     - `imageGenerationApprovedNow: false`
-     - `ttsApprovedNow: false`
-     - `browserApprovedNow: false`
-     - `envSecretAccessApprovedNow: false`
-     - owner decision state ref with resolved 10 / pending 0.
-     - actual Owner QA status still pending.
-     - upload hard block active.
-     - required future-approval fields for any future action slice.
-     - call/cost cap requirements, provider allow-guard requirements, stop-condition requirements, and artifact audit requirements.
-     - per-domain future plan sections for image/browser, TTS/audio, Pillow/render, mux/audit, upload, and owner QA, all with current status blocked/not approved.
-   - Must not contain real secrets, env values, file copies, or live endpoints as actionable commands.
+     - `status: LIVE_ACTION_APPROVAL_PACKET_DRAFT_NO_LIVE`
+     - `isApprovalRequestOnly: true`
+     - `approvalGrantedNow: false`
+     - all current approval/readiness flags false.
+     - references to future execution plan gate, integrated readiness, decision state, provider allow policy, and slice contracts.
+     - decision state 10 resolved / 0 pending.
+     - actual Owner QA pending and upload hard block active.
+     - domain approval request templates for:
+       - image/browser generation,
+       - TTS/audio,
+       - Pillow/render,
+       - mux/audit,
+       - Owner direct QA,
+       - upload.
+     - each domain must have:
+       - current status blocked/not approved,
+       - required explicit Owner approval wording,
+       - suggested cap fields marked `effectiveNow: false`,
+       - required stop conditions,
+       - required artifact audit plan,
+       - required provider allow guard refs where applicable,
+       - no upload implication except the upload domain, which remains hard-blocked.
+     - upload approval template must require actual Owner QA pass first and keep upload hard block active until a separate upload slice.
+   - Must not contain real secrets, env values, executable commands, or active budgets.
 
-2. `scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs` (new)
+2. `_ai/GOLDEN_SAMPLE_V3_2_LIVE_ACTION_APPROVAL_PACKET.md` (new)
+   - Human-readable Owner packet.
+   - Must start with clear wording: this is not live approval.
+   - Must explain exactly what remains blocked.
+   - Must provide copy-ready Owner approval snippets for future use, but each snippet must be clearly labeled "future use only / not approved now".
+   - Must separate:
+     - image/browser live approval,
+     - TTS/audio live approval,
+     - render/mux approval,
+     - Owner direct viewing/listening QA result,
+     - upload approval.
+   - Must state that upload approval is last and requires Owner QA actual pass.
+
+3. `scripts/check-golden-sample-v3-2-live-action-approval-packet-static.mjs` (new)
    - Dependency-free static guard.
    - Import allowlist: `node:fs`, `node:path`, `node:url` only.
-   - Validate fixture fail-closed:
-     - all current approval flags false.
-     - owner decisions resolved 10 / pending 0.
-     - owner actual QA pending and `ownerQaPassed` not true.
-     - upload hard block active.
-     - future approval requires explicit Owner approval and nonzero plan fields only in a future slice.
-     - call/cost caps and stop conditions are required before any future live execution.
-     - provider allow guards are referenced for ChatGPT/browser, OpenAI image, BFL/FLUX2, Gemini/Veo, TTS, render/mux/upload as applicable.
-     - no live/browser/network/subprocess/env/read/write execution surfaces in the guard.
+   - Validate fixture and markdown fail-closed semantics:
+     - approval packet status is draft/no-live.
+     - no approval granted now.
+     - all flags false.
+     - decision state 10/0, Owner QA actual pending, upload hard block active.
+     - packet references future execution plan gate and required source contracts.
+     - domain templates exist and all current statuses are blocked/not approved.
+     - suggested caps are marked inactive/effectiveNow=false.
+     - stop conditions and artifact audit required.
+     - provider allow guard refs exist for image/browser and TTS/audio where applicable.
+     - markdown snippets are labeled future-only and do not claim approval now.
+     - upload snippet requires Owner QA actual pass and separate upload approval.
+     - guard source and fixture/markdown have no forbidden live/env/write execution patterns.
    - Include mutants for:
-     - any approval flag true.
-     - owner QA actual status PASS.
-     - owner decisions pending reintroduced.
-     - upload hard block inactive.
-     - missing cap/cost/stop condition.
-     - missing provider allow guard.
-     - future plan interpreted as current approval.
+     - approvalGrantedNow true,
+     - any readiness/approval flag true,
+     - Owner QA actual status PASS,
+     - ownerQaPassed true,
+     - upload hard block inactive,
+     - active/effective caps now,
+     - missing stop conditions,
+     - missing provider allow guard,
+     - upload snippet not requiring Owner QA pass,
+     - markdown claiming live approval now.
 
-3. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
-   - Update future expansion gates to acknowledge owner decisions are resolved 10/0.
-   - Keep readiness `STANDARDIZED_NO_LIVE_READY`.
-   - Reference the new future execution plan gate as a prerequisite for any future action slice.
-   - Preserve upload hard block and Owner QA actual-pass separation.
-
-4. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
-   - Reference the new future execution plan gate.
-   - Keep all current readiness/live/upload/render/image/TTS/browser/Owner QA flags false.
-
-5. `scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
-   - If needed, add read-only validation that the future execution plan gate exists and is no-live.
-   - Keep imports restricted to `node:fs`, `node:path`, `node:url`.
-   - No network/env/secret/browser/render/mux/upload surfaces.
-
-6. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
-   - If integrated contract/runner references the new gate, validate the reference and no-live semantics.
-   - Keep existing 10/0 decision-state checks intact.
-
-7. `_ai/CLAUDE_REPORT.md`
+4. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
 
-8. `_ai/HANDOFF_NOW.md`
+5. `_ai/HANDOFF_NOW.md`
    - Status update only if needed.
 
-Do not modify upload implementation, renderers, media files, env, dependencies, DB/deploy, protected/excluded files, or generated artifacts.
+Do not modify production code, upload implementation, runners, renderers, media files, env, dependencies, DB/deploy, protected/excluded files, or generated artifacts.
 
 ## Required Safety Semantics
 
-- This slice is a no-live planning gate only.
+- This slice is a no-live approval-packet draft only.
+- No approval is granted now.
 - No upload endpoint activation.
 - No live TTS/API call.
 - No ChatGPT/Playwright/browser/Chrome/CDP execution.
@@ -170,19 +188,14 @@ Minimum:
 1. `git status -sb`
 2. `node --check` for every changed/new `.mjs`
 3. JSON parse for every changed/new fixture
-4. New future execution plan gate guard:
+4. New approval packet guard:
+   - `node scripts/check-golden-sample-v3-2-live-action-approval-packet-static.mjs`
+5. Regression sanity:
    - `node scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
-5. Integrated harness dry-run:
-   - `node scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
-6. Integrated static guard:
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
-7. Regression sanity:
+   - `node scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
    - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-owner-decision-packet-static.mjs`
    - `node scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
 
 Do not run full build unless a syntax/import issue requires it.
 
@@ -207,9 +220,10 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- New future execution plan gate fixture exists and is explicitly no-live.
-- New static guard validates fail-closed plan-gate semantics and mutants.
-- Integrated readiness references the gate without upgrading readiness.
+- New no-live live/action approval packet fixture exists.
+- New human-readable Owner approval packet exists.
+- New static guard validates fail-closed approval-packet semantics and mutants.
+- Packet references the future execution plan gate and source contracts.
 - Readiness remains `STANDARDIZED_NO_LIVE_READY`.
 - Upload hard block remains active.
 - Actual Owner viewing/listening QA remains pending.
@@ -220,7 +234,7 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 178 after checkpoint `81d2c5d`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 179 after checkpoint `e2014e1`.
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
