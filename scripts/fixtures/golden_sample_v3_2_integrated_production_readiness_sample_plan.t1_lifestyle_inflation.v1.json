@@ -81,10 +81,22 @@
     "interpretationGuard": "이 lineage 참조는 live 실행 승인으로 해석되어서는 안 된다."
   },
 
+  "ownerDecisionStateAcknowledged": {
+    "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "contractSection": "ownerDecisionState",
+    "resolvedCount": 4,
+    "pendingCount": 6,
+    "resolvedKeys": ["script_impact_gate_score_authority", "font_vendoring", "image_script_allow_guard", "poll_25s_passive_window"],
+    "pendingKeys": ["legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa"],
+    "note": "#1/#6/#8/#9 정책 확정은 각 표준 slice에서 소비됐고, 이 통합 plan에서 pending blocker로 재취급하지 않는다. 정책 확정은 live TTS/render/mux/image/upload/browser/Owner QA/production 승인이 아니다 — readiness는 STANDARDIZED_NO_LIVE_READY 불변."
+  },
+
   "unresolvedOwnerDecisionsAcknowledged": [
-    { "id": 1, "key": "script_impact_gate_score_authority", "status": "PENDING" },
-    { "id": 6, "key": "font_vendoring", "status": "PENDING" },
-    { "id": 9, "key": "poll_25s_passive_window", "status": "PENDING" },
+    { "id": 2, "key": "legacy_line_scope", "status": "PENDING" },
+    { "id": 3, "key": "upload_endpoint_disposition", "status": "PENDING" },
+    { "id": 4, "key": "blueprint_schema_unification", "status": "PENDING" },
+    { "id": 5, "key": "md5_locked_image_durability", "status": "PENDING" },
+    { "id": 7, "key": "contract_duality_resolution", "status": "PENDING" },
     { "id": "owner_qa", "key": "owner_viewing_listening_qa", "status": "PENDING" }
   ],
 

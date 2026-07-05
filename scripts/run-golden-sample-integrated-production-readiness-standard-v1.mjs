@@ -67,6 +67,21 @@ export const REQUIRED_SLICE_IDS = [
   "pillow-renderer", "tts-audio-audit",
 ];
 
+// ── Owner decision resolution state (decision state fixture와 정합) ──────────
+// resolved 정책 결정 4건 (Slice 6 packet decideNow=true) — 값까지 고정.
+export const EXPECTED_RESOLVED_DECISIONS = Object.freeze({
+  script_impact_gate_score_authority: "codex_judge_with_mandatory_provenance",
+  font_vendoring: "vendor_noto_black_vf_remove_system_dependency",
+  image_script_allow_guard: "add_allow_guard_to_all_paid_image_scripts",
+  poll_25s_passive_window: "accept_25s_passive_window_as_v3_2_behavior",
+});
+export const EXPECTED_RESOLVED_KEYS = Object.keys(EXPECTED_RESOLVED_DECISIONS);
+// pending으로 남는 결정 6건 (decideNow=false).
+export const EXPECTED_PENDING_KEYS = [
+  "legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification",
+  "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa",
+];
+
 const isStr = (v) => typeof v === "string" && v.trim().length > 0;
 const isStrArr = (v) => Array.isArray(v) && v.length > 0 && v.every(isStr);
 const isBool = (v) => typeof v === "boolean";
@@ -139,6 +154,52 @@ export function detectUnresolvedOwnerDecisions(decisions, requiredKeys = []) {
     }
   }
   return { count: list.length, issues };
+}
+
+// ── Owner decision resolution state 검증 (pure, fail-closed) ─────────────────
+// decision state fixture와 정합: resolved 4 (값까지) + pending 6, 정확한 key set,
+// resolved가 live/upload/render/mux/Owner QA 승인으로 오해되지 않음.
+export function validateOwnerDecisionState(state) {
+  const issues = [];
+  if (!state || typeof state !== "object") { issues.push("ownerDecisionState 섹션 누락"); return issues; }
+  if (!isStr(state.decisionStateRef) || !state.decisionStateRef.includes("owner_decision_resolution_state")) {
+    issues.push("ownerDecisionState.decisionStateRef가 decision resolution state fixture를 가리키지 않는다");
+  }
+  if (state.totalDecisions !== 10) issues.push(`ownerDecisionState.totalDecisions "${state.totalDecisions}" !== 10`);
+  if (state.resolvedCount !== 4) issues.push(`ownerDecisionState.resolvedCount "${state.resolvedCount}" !== 4`);
+  if (state.pendingCount !== 6) issues.push(`ownerDecisionState.pendingCount "${state.pendingCount}" !== 6`);
+
+  // resolved key set 정확히 4개 (제거/추가 fail-closed)
+  if (!setEq(state.resolvedKeys, EXPECTED_RESOLVED_KEYS)) {
+    issues.push(`ownerDecisionState.resolvedKeys가 정확한 4개 resolved set과 불일치 — ${JSON.stringify(state.resolvedKeys)}`);
+  }
+  // pending key set 정확히 6개 (제거/추가 fail-closed)
+  if (!setEq(state.pendingKeys, EXPECTED_PENDING_KEYS)) {
+    issues.push(`ownerDecisionState.pendingKeys가 정확한 6개 pending set과 불일치 — ${JSON.stringify(state.pendingKeys)}`);
+  }
+  // resolvedDecisions 항목의 값이 기대값과 일치 (값 변조 fail-closed)
+  const rd = Array.isArray(state.resolvedDecisions) ? state.resolvedDecisions : [];
+  if (rd.length !== 4) issues.push(`ownerDecisionState.resolvedDecisions 4개 아님 — ${rd.length}`);
+  const seenKeys = new Set();
+  for (const d of rd) {
+    if (!isStr(d?.key)) { issues.push("resolvedDecision.key 누락"); continue; }
+    seenKeys.add(d.key);
+    const expected = EXPECTED_RESOLVED_DECISIONS[d.key];
+    if (expected === undefined) { issues.push(`resolvedDecision "${d.key}"는 resolved set에 없는 key`); continue; }
+    if (d.resolvedValue !== expected) {
+      issues.push(`resolvedDecision "${d.key}" resolvedValue "${d.resolvedValue}" != ${expected} (값 변조 금지)`);
+    }
+    // resolved가 live 승인으로 오해되지 않도록 isNotLiveApproval 명시 필수
+    if (!isStr(d.isNotLiveApproval)) issues.push(`resolvedDecision "${d.key}" isNotLiveApproval 문구 누락 (정책 확정 ≠ live 승인)`);
+  }
+  for (const k of EXPECTED_RESOLVED_KEYS) {
+    if (!seenKeys.has(k)) issues.push(`resolvedDecisions에 필수 resolved key 누락 — ${k}`);
+  }
+  // resolved가 readiness escalation 근거가 아님을 명시
+  if (!isStr(state.resolvedIsNotReadinessEscalation)) {
+    issues.push("ownerDecisionState.resolvedIsNotReadinessEscalation 문구 누락 (resolved ≠ readiness 승격)");
+  }
+  return issues;
 }
 
 // ── mandatory Slice 0~4 참조 실재 검증 (pure + IO) ──────────────────────────
@@ -231,10 +292,19 @@ export function validateContract(contract, io = defaultIo()) {
   if (rgc.length !== 5) push("requiredGuardComposition 5개 아님");
   for (const g of rgc) { if (isStr(g) && !io.exists(g)) push(`requiredGuardComposition 파일 없음 — ${g}`); }
 
-  // 미결 Owner decision — 최소 #1/#6/#9/owner_qa 보존
-  const dRes = detectUnresolvedOwnerDecisions(contract?.unresolvedOwnerDecisions,
-    ["script_impact_gate_score_authority", "font_vendoring", "poll_25s_passive_window", "owner_viewing_listening_qa"]);
+  // 미결 Owner decision — 정확히 pending 6개(#2/#3/#4/#5/#7/owner_qa)만 남고 전부 PENDING.
+  // resolved #1/#6/#8/#9는 ownerDecisionState.resolvedDecisions로 이동(pending blocker로 재취급 금지).
+  const dRes = detectUnresolvedOwnerDecisions(contract?.unresolvedOwnerDecisions, EXPECTED_PENDING_KEYS);
   issues.push(...dRes.issues.map((m) => `contract owner-decision: ${m}`));
+  const udKeys = (contract?.unresolvedOwnerDecisions ?? []).map((d) => d?.key);
+  if (!setEq(udKeys, EXPECTED_PENDING_KEYS)) push(`unresolvedOwnerDecisions key set이 정확한 pending 6개와 불일치 — ${JSON.stringify(udKeys)}`);
+  // resolved decision이 pending blocker로 재도입되면 fail (stale 회귀 차단)
+  for (const rk of EXPECTED_RESOLVED_KEYS) {
+    if (udKeys.includes(rk)) push(`resolved 결정 "${rk}"가 unresolvedOwnerDecisions에 pending blocker로 재도입됨 (금지)`);
+  }
+
+  // Owner decision resolution state 섹션 검증 (resolved 4 + pending 6, 값·set·live-approval-오해)
+  issues.push(...validateOwnerDecisionState(contract?.ownerDecisionState).map((m) => `contract ownerDecisionState: ${m}`));
 
   // prohibitedReadinessFlags 10종 명시
   if (!setEq(contract?.prohibitedReadinessFlags, PROHIBITED_READINESS_FLAGS)) push("prohibitedReadinessFlags 10종 불일치");
@@ -295,9 +365,24 @@ export function validatePlanAgainstContract(plan, contract, io = defaultIo()) {
   if (isStr(al.acceptanceLock) && !io.exists(al.acceptanceLock)) push(`acceptedLineage.acceptanceLock 파일 없음 — ${al.acceptanceLock}`);
   if (!isStr(al.interpretationGuard)) push("acceptedLineage.interpretationGuard 누락 (lineage=live 승인 오해 방지)");
 
-  // 미결 Owner decision 인지 — 전부 PENDING
-  const dRes = detectUnresolvedOwnerDecisions(plan?.unresolvedOwnerDecisionsAcknowledged);
+  // 미결 Owner decision 인지 — 정확히 pending 6개이고 전부 PENDING
+  const dRes = detectUnresolvedOwnerDecisions(plan?.unresolvedOwnerDecisionsAcknowledged, EXPECTED_PENDING_KEYS);
   issues.push(...dRes.issues.map((m) => `plan owner-decision: ${m}`));
+  const planUdKeys = (plan?.unresolvedOwnerDecisionsAcknowledged ?? []).map((d) => d?.key);
+  if (!setEq(planUdKeys, EXPECTED_PENDING_KEYS)) push(`unresolvedOwnerDecisionsAcknowledged key set이 정확한 pending 6개와 불일치 — ${JSON.stringify(planUdKeys)}`);
+  for (const rk of EXPECTED_RESOLVED_KEYS) {
+    if (planUdKeys.includes(rk)) push(`resolved 결정 "${rk}"가 plan pending blocker로 재도입됨 (금지)`);
+  }
+
+  // plan ownerDecisionStateAcknowledged — resolved 4 + pending 6 정합
+  const ods = plan?.ownerDecisionStateAcknowledged ?? {};
+  if (!isStr(ods.decisionStateRef) || !ods.decisionStateRef.includes("owner_decision_resolution_state")) {
+    push("ownerDecisionStateAcknowledged.decisionStateRef가 decision resolution state fixture를 가리키지 않는다");
+  }
+  if (ods.resolvedCount !== 4) push(`ownerDecisionStateAcknowledged.resolvedCount "${ods.resolvedCount}" !== 4`);
+  if (ods.pendingCount !== 6) push(`ownerDecisionStateAcknowledged.pendingCount "${ods.pendingCount}" !== 6`);
+  if (!setEq(ods.resolvedKeys, EXPECTED_RESOLVED_KEYS)) push(`ownerDecisionStateAcknowledged.resolvedKeys 불일치 — ${JSON.stringify(ods.resolvedKeys)}`);
+  if (!setEq(ods.pendingKeys, EXPECTED_PENDING_KEYS)) push(`ownerDecisionStateAcknowledged.pendingKeys 불일치 — ${JSON.stringify(ods.pendingKeys)}`);
 
   // QA readiness: uploadReady/automationExpansionReady false + owner viewing PENDING
   const qa = plan?.qaReadiness ?? {};
@@ -333,7 +418,8 @@ export function runDryRunValidation({ contractPath = DEFAULT_CONTRACT_PATH, plan
       readinessVerdict: contract.readinessVerdict.current,
       mandatorySlices: contract.mandatorySlices.length,
       checkpoints: buildCheckpointSummary(contract.mandatorySlices),
-      unresolvedOwnerDecisions: contract.unresolvedOwnerDecisions.length,
+      resolvedDecisions: contract.ownerDecisionState.resolvedCount,
+      pendingDecisions: contract.unresolvedOwnerDecisions.length,
       prohibitedFlagsLocked: contract.prohibitedReadinessFlags.length,
       topicId: plan.topicId,
       ownerQaPending: plan.qaReadiness.ownerViewingListeningPass,
@@ -386,7 +472,7 @@ function main() {
   const s = res.summary;
   console.log(`[integrated-readiness-standard-v1] readiness verdict: ${s.readinessVerdict} (no-live only, not upload/production/live)`);
   console.log(`[integrated-readiness-standard-v1] mandatory slices: ${s.mandatorySlices}/5 (checkpoints: ${s.checkpoints.map((c) => c.checkpoint).join(", ")})`);
-  console.log(`[integrated-readiness-standard-v1] unresolved Owner decisions preserved: ${s.unresolvedOwnerDecisions}`);
+  console.log(`[integrated-readiness-standard-v1] owner decisions: ${s.resolvedDecisions} resolved (policy only, not live approval) + ${s.pendingDecisions} pending preserved`);
   console.log(`[integrated-readiness-standard-v1] prohibited readiness flags locked: ${s.prohibitedFlagsLocked}`);
   console.log(`[integrated-readiness-standard-v1] topic: ${s.topicId}`);
   console.log(`[integrated-readiness-standard-v1] Owner QA: ${s.ownerQaPending}`);

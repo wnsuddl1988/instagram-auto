@@ -73,7 +73,7 @@
       "harnessPath": "scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs",
       "guardPath": "scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs",
       "harnessSchema": "golden_sample_chatgpt_playwright_runner_contract_v1",
-      "checkpoint": "aeaaf94",
+      "checkpoint": "bb1fb59",
       "requiredBeforeFutureAction": "live_image_runner_slice"
     },
     {
@@ -85,7 +85,7 @@
       "harnessPath": "scripts/run-golden-sample-pillow-renderer-standard-v1.mjs",
       "guardPath": "scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs",
       "harnessSchema": "golden_sample_pillow_renderer_contract_v1",
-      "checkpoint": "701e1ed",
+      "checkpoint": "3222cba",
       "requiredBeforeFutureAction": "live_render_slice"
     },
     {
@@ -110,14 +110,52 @@
     "scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs"
   ],
 
+  "ownerDecisionState": {
+    "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "note": "현재 Owner 결정 상태의 단일 소스는 decisionStateRef. Slice 6 packet의 decideNow=true 4건이 정책으로 확정됐고, 나머지 6건은 계속 PENDING. 이 통합 계약은 그 상태를 반영만 하며, 정책 확정을 live TTS/render/mux/image/upload/browser/Owner QA/production 승인으로 승격하지 않는다.",
+    "totalDecisions": 10,
+    "resolvedCount": 4,
+    "pendingCount": 6,
+    "resolvedDecisions": [
+      {
+        "id": 1,
+        "key": "script_impact_gate_score_authority",
+        "resolvedValue": "codex_judge_with_mandatory_provenance",
+        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
+        "scope": "scoring authority/provenance policy only",
+        "isNotLiveApproval": "live TTS/audio/mux 실행 승인이 아니다 — live_tts_audio_mux_audit_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": 6,
+        "key": "font_vendoring",
+        "resolvedValue": "vendor_noto_black_vf_remove_system_dependency",
+        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
+        "scope": "font policy only",
+        "isNotLiveApproval": "폰트 파일 커밋/dependency 변경/render 실행 승인이 아니다 — live_render_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": 8,
+        "key": "image_script_allow_guard",
+        "resolvedValue": "add_allow_guard_to_all_paid_image_scripts",
+        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
+        "scope": "guard policy only",
+        "isNotLiveApproval": "image API 호출/ChatGPT/Playwright/browser/이미지 생성 승인이 아니다 — live_image_runner_slice는 여전히 별도 승인 필요"
+      },
+      {
+        "id": 9,
+        "key": "poll_25s_passive_window",
+        "resolvedValue": "accept_25s_passive_window_as_v3_2_behavior",
+        "supersedesPendingBlockerIn": "integrated readiness (formerly modeled as pending)",
+        "scope": "timing interpretation only",
+        "isNotLiveApproval": "ChatGPT/Playwright/browser/CDP 실행 승인이 아니다 — live_image_runner_slice는 여전히 별도 승인 필요"
+      }
+    ],
+    "resolvedKeys": ["script_impact_gate_score_authority", "font_vendoring", "image_script_allow_guard", "poll_25s_passive_window"],
+    "pendingKeys": ["legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "contract_duality_resolution", "owner_viewing_listening_qa"],
+    "resolvedIsNotReadinessEscalation": "resolved 4건 존재는 uploadReady/automationExpansionReady/productionReady/ownerQaPassed 승격 근거가 아니다. readinessVerdict는 STANDARDIZED_NO_LIVE_READY로 불변."
+  },
+
   "unresolvedOwnerDecisions": [
-    {
-      "id": 1,
-      "key": "script_impact_gate_score_authority",
-      "summary": "Script Impact Gate 점수 생산 주체 (self-assessment fixture / LLM-judge / Codex 판정) + provenance 필드 의무화 여부",
-      "blocks": ["live_tts_audio_mux_audit_slice"],
-      "status": "PENDING"
-    },
     {
       "id": 2,
       "key": "legacy_line_scope",
@@ -144,30 +182,9 @@
       "status": "PENDING"
     },
     {
-      "id": 6,
-      "key": "font_vendoring",
-      "summary": "Noto Sans KR Black VF vendoring 여부 (시스템 폰트 의존 제거, BlackHanSans 지위 포함)",
-      "blocks": ["live_render_slice"],
-      "status": "PENDING"
-    },
-    {
       "id": 7,
       "key": "contract_duality_resolution",
       "summary": "계약 이원화 해소 — money-shorts creative contract v2 승계 vs v3.2 standard JSON 단일 계약",
-      "status": "PENDING"
-    },
-    {
-      "id": 8,
-      "key": "image_script_allow_guard",
-      "summary": "FLUX2/OpenAI-image 스크립트 ALLOW_* 가드 추가 여부 (현재 키 존재=실행)",
-      "blocks": ["live_image_runner_slice"],
-      "status": "PENDING"
-    },
-    {
-      "id": 9,
-      "key": "poll_25s_passive_window",
-      "summary": "poll 해석 확정 — 25s passive window(v3.2 실동작) 인정 vs 제출 즉시 1-2s poll",
-      "blocks": ["live_image_runner_slice"],
       "status": "PENDING"
     },
     {

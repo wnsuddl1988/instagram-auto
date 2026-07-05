@@ -14,42 +14,43 @@
 - Latest safety/standard checkpoints:
   - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
   - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
-  - `aeaaf94 feat(golden-sample): add chatgpt runner standard guard`
-  - `701e1ed feat(golden-sample): add pillow renderer standard guard`
-  - `98913d4 feat(golden-sample): add tts audio audit standard guard`
-  - `3494d79 feat(golden-sample): add integrated readiness standard guard`
-  - `37fda6d feat(golden-sample): add owner decision packet guard`
-  - `9607eab feat(golden-sample): record owner decision state guard`
   - `c80b024 feat(golden-sample): harden paid image allow guards`
   - `85865ba feat(golden-sample): close browser runner guard gaps`
   - `9fe6f77 feat(golden-sample): standardize script impact provenance`
   - `bb1fb59 feat(golden-sample): resolve chatgpt runner passive window`
+  - `3222cba feat(golden-sample): resolve pillow font vendoring policy`
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-pillow-renderer-font-vendoring-policy-resolution-v1`
+- Task ID: `golden-sample-v3-2-integrated-readiness-resolved-decision-reconciliation-v1`
 - Status: **approved by Owner as no-live continuation**.
 - Owner basis:
   - Owner approved continuing required no-live implementation sequentially: `그래 진행해 다 구현되고 나면 또 얘기해보자`.
-  - Decision state fixture has resolved:
+  - Decision state fixture has resolved 4 policy decisions:
+    - `script_impact_gate_score_authority = codex_judge_with_mandatory_provenance`
     - `font_vendoring = vendor_noto_black_vf_remove_system_dependency`
-- Slice type: no-live Pillow renderer font-policy resolution + harness/static guard update.
+    - `image_script_allow_guard = add_allow_guard_to_all_paid_image_scripts`
+    - `poll_25s_passive_window = accept_25s_passive_window_as_v3_2_behavior`
+  - The remaining 6 decisions stay `PENDING`.
+- Slice type: no-live integrated readiness reconciliation + harness/static guard update.
 
 ## Purpose
 
-The Pillow renderer standard already requires Noto Sans KR Black VF and forbids silent fallback/Malgun/Arial/BlackHanSans/DoHyeon, but its contract/sample plan still labels font vendoring as Owner decision #6 pending. This slice consumes the resolved Owner decision and records the policy direction as `vendor_noto_black_vf_remove_system_dependency`.
+Slice 5 integrated readiness was created before the Owner decision resolution packet and still models #1/#6/#9 as pending blockers. Since the individual standards now consume resolved decisions #1, #6, #8, and #9, integrated readiness must be updated to reference the current decision state fixture: exactly 4 resolved policy decisions and exactly 6 pending decisions.
 
 This slice must:
 
-1. Keep all render/mux/video/audio/font-file/dependency paths no-live and fail-closed.
-2. Update the Pillow renderer standard so decision #6 is resolved as `vendor_noto_black_vf_remove_system_dependency`.
-3. Preserve current approved typography semantics:
-   - font family: `Noto Sans KR Black (VF)`
-   - font file hint: `NotoSansKR-VF.ttf`
-   - silent default-font fallback forbidden
-   - Malgun/Arial/BlackHanSans/DoHyeon forbidden
-4. Make contract/sample plan/harness/static guard fail closed if future edits remove the resolved decision, revert to pending wording, allow system font dependency as standard, allow silent fallback, or imply render/mux/font-file addition approval.
-5. Preserve the distinction: font vendoring policy resolution is **not** font file commit approval, dependency approval, render approval, or mux approval.
+1. Keep readiness at `STANDARDIZED_NO_LIVE_READY`.
+2. Reconcile integrated contract/sample plan/harness/static guard with `golden_sample_v3_2_owner_decision_resolution_state.v1.json`.
+3. Stop treating resolved #1/#6/#8/#9 as pending blockers inside integrated readiness.
+4. Keep the remaining 6 decisions pending:
+   - `legacy_line_scope`
+   - `upload_endpoint_disposition`
+   - `blueprint_schema_unification`
+   - `md5_locked_image_durability`
+   - `contract_duality_resolution`
+   - `owner_viewing_listening_qa`
+5. Preserve the distinction: resolved policy decisions are **not** live TTS/render/mux/image/upload/Owner QA/production approval.
 
 ## Source Contracts To Read
 
@@ -57,10 +58,18 @@ Read only the minimum needed:
 
 1. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`
 2. `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_packet.v1.json`
-3. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
-4. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json`
-5. `scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
-6. `scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+3. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
+4. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
+5. `scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
+6. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
+
+Targeted reference only if needed for checkpoint/path validation:
+
+- `scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
+- `scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs`
+- `scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
+- `scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+- `scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -78,47 +87,47 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed files:
 
-1. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
-   - Update `fontPolicy` or equivalent section from pending Owner decision #6 wording to resolved policy wording.
-   - Add explicit machine-readable fields if useful:
-     - `resolvedDecisionRef`
-     - `resolvedValue: "vendor_noto_black_vf_remove_system_dependency"`
-     - `fontVendoringPolicyResolved: true`
-     - `notFontFileApproval: true`
-     - `notDependencyApproval: true`
-     - `notRenderApproval: true`
-   - Keep approved font, font hint, forbidden fallback/fonts, safe-frame, overlay-spec, and equivalence policy unchanged.
-   - Keep no-live/read-only flags unchanged.
+1. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json`
+   - Add/replace current decision-state section so it references `scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json`.
+   - Record exact resolved 4 and pending 6 key sets.
+   - Remove or clearly supersede stale wording that says #1/#6/#8/#9 are still unresolved blockers.
+   - Keep `readinessVerdict.current = STANDARDIZED_NO_LIVE_READY`.
+   - Keep all readiness flags false.
+   - If checkpoint references are maintained, update latest relevant no-live standard checkpoints:
+     - script impact provenance: `9fe6f77`
+     - ChatGPT passive window: `bb1fb59`
+     - Pillow font policy: `3222cba`
+     - paid/browser image allow guard: `c80b024` / `85865ba`
 
-2. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json`
-   - Add or update font vendoring interpretation evidence so the sample plan references resolved decision #6.
-   - Preserve overlay spec sample, safe-frame boundary cases, caption registry, executionMode, and no-live policy.
-   - Do not add font file, dependency, render, mux, or asset approval.
+2. `scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_sample_plan.t1_lifestyle_inflation.v1.json`
+   - Replace stale `unresolvedOwnerDecisionsAcknowledged` style entries for #1/#6/#9 with current decision-state acknowledgement.
+   - Include exact resolved 4 + pending 6, or reference the contract section that contains them.
+   - Preserve uploadReady/automationExpansionReady/live flags false and Owner QA pending.
+   - Do not mark production/live/upload/render/image/TTS ready.
 
-3. `scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
-   - Add pure validation helper(s) for font vendoring decision resolution if not already present.
-   - The validator must fail closed when:
-     - decision #6 is absent,
-     - resolved value differs from `vendor_noto_black_vf_remove_system_dependency`,
-     - pending/open/TBD/미결 wording remains in resolved font policy section,
-     - approved font/hint drift from Noto Sans KR Black VF / `NotoSansKR-VF.ttf`,
-     - system font dependency is treated as the final standard,
-     - silent default-font fallback is allowed,
-     - Malgun/Arial/BlackHanSans/DoHyeon is allowed,
-     - the plan/contract claims font-file commit, dependency, render, or mux approval.
+3. `scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
+   - Add pure helper(s) to validate owner decision resolution state:
+     - exact resolved keys set,
+     - exact pending keys set,
+     - resolved values match the state fixture,
+     - pending decisions remain PENDING,
+     - resolved decisions do not imply live/render/mux/upload/Owner QA approval.
+   - Update contract and plan validators to use current decision-state semantics instead of requiring #1/#6/#9 as unresolved.
    - Keep imports restricted to `node:fs`, `node:path`, `node:url`.
-   - Do not add Pillow/Python/subprocess/render/mux/env/secret/file-write surfaces.
+   - Do not add network/env/secret/browser/render/mux/upload surfaces.
 
-4. `scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
-   - Update contract checks from pending #6 wording to resolved `vendor_noto_black_vf_remove_system_dependency`.
-   - Add static and harness-import mutants for:
-     - deleting the resolved decision ref,
-     - changing resolved value,
-     - reintroducing pending/open/TBD/미결 wording,
-     - allowing silent fallback,
-     - allowing Malgun/Arial/BlackHanSans/DoHyeon,
-     - treating system font dependency as final standard,
-     - setting any font-file/dependency/render/mux approval flag true.
+4. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
+   - Update static checks from stale unresolved #1/#6/#9 expectations to current resolved 4 + pending 6 expectations.
+   - Add mutants for:
+     - resolved key removed,
+     - extra resolved key added,
+     - resolved value changed,
+     - pending key removed,
+     - pending decision marked RESOLVED/PASS,
+     - Owner QA marked PASS,
+     - any readiness/live/upload/render/image/TTS flag true,
+     - resolved #1/#6/#8/#9 reintroduced as pending blocker,
+     - policy resolution used as production/live readiness.
 
 5. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
@@ -126,21 +135,18 @@ Allowed files:
 6. `_ai/HANDOFF_NOW.md`
    - Update status only if needed.
 
-Do not add font files in this slice. Do not modify Slice 5 integrated readiness contract in this slice. Treat it as historical baseline; the resolved decision state fixture is the current source for decision #6.
+Do not modify the owner decision state fixture in this slice unless an actual contradiction is found. It is the source of truth.
 
 ## Required Safety Semantics
 
-- No frame/video render.
-- No Pillow/Python/ffmpeg/ffprobe/subprocess execution.
-- No audio/video/image file read.
-- No font file addition or vendored asset commit.
-- No dependency/lockfile change.
-- No render/mux/upload.
+- No live TTS/API call.
 - No ChatGPT/Playwright/browser/Chrome/CDP execution.
-- No image generation.
+- No image/video/audio generation or read.
+- No frame/video render, Pillow/Python/ffmpeg/ffprobe, mux, upload.
 - No env/secret access.
-- Font vendoring policy PASS is not render approval and not production readiness.
+- No dependency/lockfile/font file/DB/deploy change.
 - Current readiness remains `STANDARDIZED_NO_LIVE_READY`.
+- Resolved policy decisions do not equal Owner viewing/listening QA pass.
 
 ## Required Checks
 
@@ -149,22 +155,25 @@ Minimum:
 1. `git status -sb`
 2. `node --check` for every changed/new `.mjs`
 3. JSON parse for every changed/new fixture
-4. Harness dry-run:
-   - `node scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
-5. Updated Pillow renderer static guard:
-   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+4. Integrated harness dry-run:
+   - `node scripts/run-golden-sample-integrated-production-readiness-standard-v1.mjs`
+5. Updated integrated static guard:
+   - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 6. Regression sanity:
    - `node scripts/check-golden-sample-v3-2-owner-decision-resolution-state-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-paid-image-allow-guard-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
 
 Do not run full build unless a syntax/import issue requires it.
 
 ## Forbidden
 
-- Running Pillow, Python render scripts, ffmpeg, ffprobe, frame/video render, mux, upload, ChatGPT, Playwright, browser, Chrome, CDP, image generation, live TTS, or external API.
+- Running live TTS, paid/free APIs, ChatGPT, Playwright, browser, Chrome, CDP, image/video/audio generation, render, mux, upload, Pillow/Python/ffmpeg/ffprobe, or external network.
 - Reading `.env.local` or any actual env/secret value.
 - Reading/analyzing audio/video/image files.
-- Adding font files, vendored assets, dependencies, lockfile changes, DB/schema/deploy config, or `pnpm-workspace.yaml`.
+- Adding dependencies, changing lockfiles, adding font files, DB/schema/deploy config, or `pnpm-workspace.yaml`.
 - Modifying protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -179,18 +188,19 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- Pillow renderer contract records decision #6 as resolved: `vendor_noto_black_vf_remove_system_dependency`.
-- Sample plan references the resolved font vendoring policy and remains no-live.
-- Harness validates font vendoring resolution fail-closed.
-- Static guard proves the behavior and fails on key mutants.
-- Existing font family/hint, forbidden fallback/fonts, safe-frame, overlay-spec, no-live policy, and acceptance-lock references remain intact.
+- Integrated readiness contract and plan reference current owner decision state.
+- Resolved decision set is exactly #1/#6/#8/#9 with expected values.
+- Pending decision set is exactly the remaining 6 keys, including `owner_viewing_listening_qa`.
+- Integrated harness validates this fail-closed.
+- Integrated static guard proves the behavior and fails on key mutants.
+- Readiness remains `STANDARDIZED_NO_LIVE_READY`; all live/upload/render/image/TTS/Owner QA flags remain false.
 - Required checks pass.
 - `_ai/CLAUDE_REPORT.md` has concise evidence append.
 - No forbidden action or side effect occurred.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 175 after checkpoint `bb1fb59`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 176 after checkpoint `3222cba`.
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
