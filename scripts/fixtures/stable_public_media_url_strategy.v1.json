@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "stable_public_media_url_strategy_v1",
+  "taskId": "stable-public-media-url-layer-v1",
+  "status": "STRATEGY_FIXED_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "지속(sustained) 사용에 안정적인 public mp4 URL 경로를 프로젝트에 고정하는 기계판독 계약. 기본 전략은 media.buildgongjakso.com 전용 media origin + object storage/CDN이며, repo public/ static mp4 + deploy는 one-off/manual fallback으로만 남긴다. 이 fixture는 설계 고정(no-live)이며, storage 프로비저닝/DNS/deploy/env 설정/live liveness check/Instagram --arm 업로드를 승인하지 않는다.",
+  "docsRef": "docs/public-media-url-strategy.md",
+
+  "sustainedDefault": {
+    "strategy": "dedicated_media_origin",
+    "mediaOriginHost": "media.buildgongjakso.com",
+    "originUrlBase": "https://media.buildgongjakso.com/",
+    "backing": "object_storage_cdn",
+    "httpsOnly": true,
+    "commitGeneratedMp4ToGit": false,
+    "couplesEveryPublicationToDeploy": false,
+    "note": "매 영상 발행이 git commit/deploy에 결합되지 않고 repo가 mp4로 비대해지지 않는다."
+  },
+
+  "fallback": {
+    "strategy": "repo_public_static_plus_deploy",
+    "role": "manual_one_off_only",
+    "isSustainedDefault": false,
+    "fallbackHost": "www.buildgongjakso.com",
+    "repoStaticPathPrefix": "public/",
+    "couplesEveryPublicationToDeploy": true,
+    "note": "긴급/수동 샘플 복구에 한함. 매 발행마다 사용하지 않는다. 이 방식은 매 발행을 git/deploy에 결합시키고 repo를 비대하게 만든다."
+  },
+
+  "deterministicKeyScheme": {
+    "pattern": "media/<schemaGroup>/<version>/<topicId>/<artifact>.mp4",
+    "stableAcrossRuns": true,
+    "noRandomSuffix": true,
+    "exampleSustainedUrl": "https://media.buildgongjakso.com/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "exampleFallbackRepoPath": "public/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4"
+  },
+
+  "providerNeutral": {
+    "vendorLock": false,
+    "candidateProviders": ["vercel_blob", "cloudflare_r2", "s3_compatible", "other_approved_object_store"],
+    "requirements": [
+      "object별 direct HTTPS URL 제공",
+      "무인증(public read) 접근 가능한 direct object URL",
+      "Content-Type video/mp4 또는 video/* 응답",
+      "HTTP 2xx 또는 range 요청 시 206",
+      "HTML 랜딩/로그인 리다이렉트로 대체되지 않는 direct object 응답",
+      "결정론적 key로 안정적 URL 제공"
+    ]
+  },
+
+  "allowedHosts": ["media.buildgongjakso.com", "www.buildgongjakso.com", "buildgongjakso.com"],
+  "sustainedDefaultHost": "media.buildgongjakso.com",
+  "fallbackHosts": ["www.buildgongjakso.com", "buildgongjakso.com"],
+
+  "uploadVerifierGates": {
+    "requireHttps": true,
+    "requireAllowedHost": true,
+    "requireHttp2xxOr206": true,
+    "requireVideoContentType": true,
+    "acceptedContentTypePrefixes": ["video/"],
+    "rejectTextHtml": true,
+    "requireUnauthenticatedAccess": true,
+    "rejectLoginOrHtmlRedirect": true,
+    "uploadOnlyWithVerifiedUrl": true,
+    "note": "Instagram video_url로 넘기기 전에 모든 gate를 통과해야 한다. 하나라도 실패하면 fail-closed로 업로드를 중단한다. default origin과 fallback origin 양쪽에 동일 적용."
+  },
+
+  "runnerContract": {
+    "runnerRef": "scripts/run-golden-sample-v3-2-instagram-upload-once.mjs",
+    "staticGuardRef": "scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs",
+    "consumesVerifiedUrlOnly": true,
+    "preservesFailClosedGates": true,
+    "preservedGates": ["cap=1", "Instagram-only", "credential allowlist", "ledger 선기록", "secret 보호"],
+    "noAdHocUrlGuessing": true,
+    "note": "runner는 이미 GATE_6에서 verifier gate를 fail-closed로 강제한다. 이 계약은 runner가 검증된 public mp4 URL만 소비하도록 명문화하며, 이 slice에서는 runner의 live URL check/env read/upload를 수행하지 않는다."
+  },
+
+  "externalOwnerApprovalRequired": [
+    "DNS/custom domain (media.buildgongjakso.com 서브도메인 설정/연결)",
+    "storage provider provisioning (object store 계정/버킷 생성, provider 선택)",
+    "env/secret configuration",
+    "deployment (Vercel deploy 등)",
+    "live URL liveness check (실제 public URL 네트워크 요청)",
+    "Instagram --arm upload (실제 1회 업로드 실행)"
+  ],
+
+  "forbiddenBehavior": [
+    "live upload without verified URL",
+    "broad .env.local parsing (allowlist 외 env read)",
+    "credential/env read in this slice",
+    "public URL network/liveness check in this slice",
+    "storage provisioning or object upload in this slice",
+    "DNS/custom domain change in this slice",
+    "deploy/Vercel deploy in this slice",
+    "YouTube side effects in this slice",
+    "Supabase/DB side effects in this slice",
+    "render/mux/TTS/image/browser side effects in this slice",
+    "committing generated mp4s to git as the sustained default path",
+    "secret logging or storing secret values in docs/fixtures/reports",
+    "dependency/lockfile/font change",
+    "commit/push in this slice"
+  ],
+
+  "prohibitedSustainedDefaultDrift": {
+    "note": "아래 상태는 지속 default 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "sustainedDefaultHost가 media.buildgongjakso.com에서 벗어남",
+      "fallback(repo public/ static)이 sustained default로 승격됨",
+      "commitGeneratedMp4ToGit가 true",
+      "uploadVerifierGates.rejectTextHtml가 false",
+      "uploadVerifierGates.requireHttps가 false",
+      "uploadVerifierGates.uploadOnlyWithVerifiedUrl가 false",
+      "externalOwnerApprovalRequired에서 DNS/storage/env/deploy/live upload 항목 제거"
+    ]
+  }
+}

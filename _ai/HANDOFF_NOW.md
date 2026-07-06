@@ -8,62 +8,85 @@
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-live-instagram-upload-with-buildgongjakso-public-url-v1`
-- Status: **Owner approved Instagram upload and clarified Codex/Claude must derive a valid public mp4 URL under `buildgongjakso.com` instead of asking Owner again.**
-- Exact Owner approvals:
-  - `APPROVE_UPLOAD: t1_lifestyle_inflation — upload target=C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4, upload cap=1, platforms=Instagram, no regeneration, no render/mux/TTS/image/browser, allow upload endpoint/credentials only for Instagram, stop on upload hard-block mismatch/credential missing/platform error/cap exceeded/unexpected response/final pre-upload audit fail`
-  - `APPROVE_UPLOAD_PUBLIC_URL: t1_lifestyle_inflation — public video_url=<https://www.buildgongjakso.com/>, use this URL only for Instagram upload cap=1 under the previous APPROVE_UPLOAD scope, no hosting/upload generation, no regeneration, no render/mux/TTS/image/browser`
-  - Owner clarification after Codex found `/` is HTML, not mp4: `그 도메인에 게시가능한걸 너가 자등으로 url 설정하는게 네 임무야 자꾸 물어보지말고`
-- Approved interpretation:
-  - Do **not** ask Owner for another public URL.
-  - Use `https://www.buildgongjakso.com/` as the approved domain/root, but derive a direct HTTPS mp4 URL under that domain that passes final pre-upload audit.
-  - If the current repo/domain can expose static files through `public/`, prefer a deterministic static path:
-    - repo file candidate: `public/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-    - public URL candidate: `https://www.buildgongjakso.com/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-  - The mp4 may be copied from the approved local mux output into the approved repo static-public path **only if** doing so is the minimal way to materialize the approved public URL for Instagram. This is not image/TTS/render/mux regeneration.
-  - No deploy/push is approved. If the public URL is not live after local file placement, record `BLOCKED_PUBLIC_URL_NOT_DEPLOYED` and stop before Instagram upload.
+- Task ID: `stable-public-media-url-layer-v1`
+- Status: **Owner asked Codex to choose and set the most stable path for sustained use, solving the public mp4 URL problem step by step instead of deferring it.**
+- Owner intent captured from chat:
+  - `지속적인 사용에 제일 안정적인 경로로 너가 설정해줘`
+  - `되는걸 문제해결을 나중에 하려하지말고 하나씩 풀어가면서 완성하는게 더 완성도 있고 속도도 빠르지 않을까?`
+
+## Strategic Direction
+
+For sustained use, do **not** make repo `public/` static mp4 + site redeploy the default path.
+
+Set the durable default architecture to:
+
+1. A dedicated public media origin under the product domain, preferably `https://media.buildgongjakso.com/...`.
+2. Object storage/CDN for generated mp4 files.
+3. A deterministic media key/path scheme per generated short.
+4. A pre-upload verifier that requires:
+   - HTTPS URL,
+   - allowed media host,
+   - HTTP 2xx or 206,
+   - `Content-Type` starts with `video/` or exact accepted mp4 type,
+   - not `text/html`,
+   - unauthenticated access,
+   - stable direct URL suitable for Instagram `video_url`.
+5. Instagram upload runner must consume only a verified public mp4 URL from this media layer.
+
+The previous one-off fallback remains valid only for emergency/manual sample work:
+
+- Copy mp4 into repo `public/`.
+- Deploy site.
+- Validate direct mp4 URL.
+
+But that fallback is **not** the sustained operating path because it couples every video publication to git/deploy and can bloat the repo.
 
 ## Current State
 
-- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `056ee51 feat(golden-sample): prepare upload approval packet`, ahead 185, not pushed.
-- Existing 9 images accepted and checkpointed: `ff1847f`.
-- Existing ElevenLabs narration/alignment/timing accepted/reused and checkpointed: `c02ed21`.
-- Local render/mux candidate created and checkpointed: `adbcb4b`.
-- Owner actual QA pass + upload approval packet checkpointed: `056ee51`.
-- Approved local upload target:
-  - `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-- Owner direct QA actual pass exists:
-  - `scripts/fixtures/golden_sample_v3_2_owner_qa_actual_pass.t1_lifestyle_inflation.v1.json`
-- Upload approval packet exists:
-  - `scripts/fixtures/golden_sample_v3_2_upload_approval_packet.t1_lifestyle_inflation.v1.json`
+- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `4b0faf7 feat(golden-sample): prepare live instagram upload runner`, ahead 186, not pushed.
+- Live Instagram upload runner/plan/static guard exists and is checkpointed.
+- Latest live upload attempt status:
+  - upload executed: 0
+  - Instagram API calls: 0
+  - credential/env reads: 0
+  - external network requests by Claude: 0
+  - blocker: `BLOCKED_AUTO_MODE_PERMISSION_LIVE_CHAIN`
+- Existing direct upload runner currently expects a verified public mp4 URL and remains fail-closed.
+- Known protected/excluded dirty files must remain untouched unless explicitly in scope:
+  - `_ai/CODEX_REVIEW.md`
+  - `_ai/NEXT_ACTION.md`
+  - `_ai/PROJECT_STATE.md`
+  - `_ai/CONTEXT_TRANSFER_CODEX.md`
+  - `piq_diag_out.txt`
+  - `scripts/render-golden-sample-visual-only-v1.mjs`
+  - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+  - unrelated `output/`
+  - unrelated `C:\tmp`
 
 ## Purpose
 
-Prepare and, only if every gate passes, execute **one Instagram upload** for `t1_lifestyle_inflation` using the approved mux mp4 and a valid direct mp4 URL under `buildgongjakso.com`.
+Create the stable public media URL layer needed for repeated Instagram uploads, without performing live upload, deployment, DNS changes, storage provisioning, or secret reads in this slice.
 
-This slice must:
+This slice must solve the architectural blocker by making the repo express:
 
-1. Create a machine-readable live upload run plan capturing the exact Owner approvals and Codex clarification.
-2. Materialize or derive a direct public mp4 URL under `https://www.buildgongjakso.com/` without asking Owner again.
-3. Run final pre-upload audit before any Instagram API action.
-4. Use Instagram-only credential/env access if and only if all non-secret gates pass.
-5. Execute at most one Instagram upload attempt if public URL + credentials + final audit pass.
-6. If any gate fails, stop without upload and record a blocked result.
+1. which public media URL strategy is the default,
+2. which fallback is allowed for one-off samples,
+3. what exact gates must pass before Instagram upload,
+4. how later external setup should plug in without broad secret reads or platform drift,
+5. how the existing live Instagram upload runner should depend on a verified media URL instead of ad hoc public URL guessing.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
-1. `scripts/fixtures/golden_sample_v3_2_upload_approval_packet.t1_lifestyle_inflation.v1.json`
-2. `scripts/fixtures/golden_sample_v3_2_owner_qa_actual_pass.t1_lifestyle_inflation.v1.json`
-3. `scripts/fixtures/golden_sample_v3_2_live_render_mux_run_plan.t1_lifestyle_inflation.v1.json`
-4. `scripts/check-golden-sample-v3-2-upload-approval-packet-static.mjs`
-5. `scripts/check-golden-sample-upload-hard-block-static.mjs`
-6. `lib/instagram.ts`
-7. `app/api/upload/route.ts`
-8. `lib/upload-hard-block.ts`
-9. Existing upload scripts only as reference, especially:
-   - `scripts/run-premium-editorial-live-upload-first-run-v1.mjs`
+1. `AGENTS.md`
+2. this file
+3. `scripts/fixtures/golden_sample_v3_2_live_instagram_upload_run_plan.t1_lifestyle_inflation.v1.json`
+4. `scripts/run-golden-sample-v3-2-instagram-upload-once.mjs`
+5. `scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
+6. Existing package/config files only if needed to avoid dependency or module-style mistakes:
+   - `package.json`
+   - `tsconfig.json` or existing script style references
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -74,121 +97,123 @@ Do not read protected/excluded files unless unavoidable:
 - `piq_diag_out.txt`
 - `scripts/render-golden-sample-visual-only-v1.mjs`
 - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-- unrelated `output/` subtrees
-- unrelated `C:\tmp` subtrees
+- unrelated `output/`
+- unrelated `C:\tmp`
 
 ## Scope
 
 Allowed repo files:
 
-1. `scripts/fixtures/golden_sample_v3_2_live_instagram_upload_run_plan.t1_lifestyle_inflation.v1.json` (new)
-   - Must record exact Owner approvals.
-   - Must set platform exactly `Instagram`.
-   - Must set upload cap exactly 1.
-   - Must set no regeneration/no render/mux/TTS/image/browser.
-   - Must record public URL derivation policy under `buildgongjakso.com`.
-   - Must record final pre-upload audit requirements.
+1. `docs/public-media-url-strategy.md` (new)
+   - Define the chosen sustained strategy:
+     - default: dedicated media origin `media.buildgongjakso.com` backed by object storage/CDN,
+     - fallback: repo `public/` static mp4 + deploy only for one-off/manual sample recovery,
+     - not default: committing every generated mp4 to repo.
+   - Include provider-neutral requirements so the project can use Vercel Blob, Cloudflare R2, S3-compatible storage, or another approved object store later.
+   - Document exact gates before Instagram upload.
+   - Document external actions requiring Owner approval:
+     - DNS/custom domain,
+     - storage provider provisioning,
+     - env/secret configuration,
+     - deployment,
+     - live URL liveness check,
+     - Instagram `--arm` upload.
+   - Do not include secret values.
 
-2. `scripts/run-golden-sample-v3-2-instagram-upload-once.mjs` (new, preferred) or a minimal patch to an existing upload runner only if safer
-   - Instagram-only.
-   - Cap exactly 1.
-   - Must not import/use YouTube clients or read YouTube credentials.
-   - Must not call render/mux/TTS/image/browser.
-   - Must not read `.env.local` broadly. If env loading is necessary, parse only allowlisted Instagram keys.
-   - Allowed credential/env keys only:
-     - `INSTAGRAM_ACCESS_TOKEN`
-     - `INSTAGRAM_BUSINESS_ACCOUNT_ID` or `INSTAGRAM_USER_ID` only if existing `lib/instagram.ts` requires it; use the exact existing project naming after inspection.
-   - Must never log secret values.
-   - Must validate public URL via HEAD/fetch metadata before upload:
-     - HTTPS URL under `www.buildgongjakso.com` or `buildgongjakso.com`
-     - HTTP 2xx
-     - `Content-Type` starts with `video/` or is otherwise platform-acceptable for mp4
-     - not `text/html`
-     - accessible without auth
-   - Must stop with a clear blocked result before Instagram API if URL is not a direct mp4.
-   - Must write a result/audit JSON under a controlled path without secrets.
+2. `scripts/fixtures/stable_public_media_url_strategy.v1.json` (new)
+   - Machine-readable strategy contract.
+   - Must set default media host to `media.buildgongjakso.com`.
+   - Must keep `www.buildgongjakso.com` static `public/` fallback marked as fallback/manual, not sustained default.
+   - Must require video URL verifier gates:
+     - HTTPS,
+     - allowed host,
+     - 2xx or 206,
+     - video/mp4 or `video/*`,
+     - reject `text/html`,
+     - unauthenticated access,
+     - no redirect to HTML/login.
+   - Must record forbidden behavior:
+     - live upload without verified URL,
+     - broad env read,
+     - YouTube/Supabase/DB/deploy side effects in this slice,
+     - storing generated mp4s in git as the sustained path,
+     - secret logging.
 
-3. `scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs` (new)
+3. `scripts/check-stable-public-media-url-strategy-static.mjs` (new)
    - Dependency-free static guard.
-   - Import allowlist: `node:fs`, `node:path`, `node:url`, and other `node:` builtins only if justified.
-   - Validate run plan, runner source, public URL policy, cap=1, Instagram-only credential allowlist, no YouTube/env broad read, no regeneration/render/mux/TTS/image/browser, no secret logging, no upload if pre-upload audit fails.
+   - Import only `node:fs`, `node:path`, `node:url` unless a `node:` builtin is truly justified.
+   - Validate the docs/fixture contract.
    - Include fail-closed mutants for:
-     - platform drift to YouTube/both,
-     - cap > 1,
-     - public URL not under buildgongjakso.com,
-     - URL content-type HTML accepted,
-     - broad `.env.local` parsing,
-     - YouTube credential read,
-     - secret logging,
-     - render/mux/TTS/image/browser invocation,
-     - upload attempt before final pre-upload audit,
-     - public URL gate disabled,
-     - upload hard-block mismatch ignored.
+     - default host drift away from `media.buildgongjakso.com`,
+     - making repo `public/` static mp4 the sustained default,
+     - allowing `text/html`,
+     - allowing non-HTTPS URL,
+     - allowing upload without verified URL,
+     - allowing broad `.env.local` parsing,
+     - allowing YouTube/Supabase/DB/deploy side effects in this slice,
+     - allowing secret logging,
+     - removing Owner approval requirements for DNS/storage/env/deploy/live upload.
 
-4. Optional static asset path under `public/golden-sample/v3-2/t1_lifestyle_inflation/`
-   - Only the approved mux mp4 may be copied here if required to materialize the direct public URL.
-   - Do not modify or regenerate the mp4.
-   - Do not stage generated output from `C:\tmp`.
+4. Optional minimal patch to `scripts/run-golden-sample-v3-2-instagram-upload-once.mjs`
+   - Only if needed to reference the stable media strategy fixture or make future URL sourcing clearer.
+   - Must preserve all current fail-closed upload gates, cap=1, Instagram-only behavior, and secret protections.
+   - Must not run live URL checks, read env, or upload.
 
-5. `_ai/CLAUDE_REPORT.md`
-   - Append concise reusable evidence, including whether upload executed or blocked and why.
+5. Optional minimal patch to `scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
+   - Only if runner changes require static guard alignment.
 
-6. `_ai/HANDOFF_NOW.md`
-   - Status update only if needed.
+6. `_ai/CLAUDE_REPORT.md`
+   - Append concise reusable evidence.
 
 Avoid modifying:
 
-- Existing upload route/hard-block policy unless absolutely required and explicitly justified.
+- `app/api/upload/route.ts`
+- `lib/upload-hard-block.ts`
+- `lib/instagram.ts` unless a read-only discovery reveals a tiny reference-only change is truly necessary; default is no modification.
 - DB/Supabase generation status code.
 - YouTube upload code.
-- Existing render/mux/TTS/image/browser runners.
+- render/mux/TTS/image/browser runners.
+- dependency/lockfiles.
 
 ## Required Execution Order
 
 1. `git status -sb`.
-2. Inspect existing Instagram upload client/env names and the existing upload route hard block.
-3. Create upload run plan fixture.
-4. Create Instagram-only runner and static guard.
-5. If materializing the public URL requires static placement, copy the approved local mux mp4 to the deterministic `public/golden-sample/...` path. Do not alter media content.
-6. Run static/syntax checks before any env/credential/network/upload action.
-7. Final pre-upload audit:
-   - local target exists and matches approved path,
-   - public URL candidate is direct mp4 and not HTML,
-   - Owner QA actual pass fixture present,
-   - upload cap ledger 0/1 before attempt,
-   - no regeneration/render/mux/TTS/image/browser.
-8. Only after all gates pass, read Instagram credentials allowlist-only and attempt one Instagram upload.
-9. Record result JSON with no secrets.
-10. Append `_ai/CLAUDE_REPORT.md`.
-11. Stop. No commit/push.
+2. Inspect the existing live Instagram runner/guard enough to preserve its fail-closed contract.
+3. Create the docs strategy contract.
+4. Create the machine-readable strategy fixture.
+5. Create the static guard with fail-closed mutants.
+6. Optionally make a minimal runner/guard reference patch only if it improves future integration without adding live side effects.
+7. Run required checks.
+8. Append `_ai/CLAUDE_REPORT.md`.
+9. Stop. No commit/push.
 
 ## Required Checks
 
-Minimum before any live upload attempt:
-
 1. `git status -sb`
-2. `node --check scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
-3. `node --check scripts/run-golden-sample-v3-2-instagram-upload-once.mjs`
-4. JSON parse for every changed/new fixture
-5. `node scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
-6. Regression:
-   - `node scripts/check-golden-sample-v3-2-upload-approval-packet-static.mjs`
-   - `node scripts/check-golden-sample-upload-hard-block-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-live-render-mux-run-plan-static.mjs`
+2. `node --check scripts/check-stable-public-media-url-strategy-static.mjs`
+3. JSON parse for `scripts/fixtures/stable_public_media_url_strategy.v1.json`
+4. `node scripts/check-stable-public-media-url-strategy-static.mjs`
+5. Regression:
+   - `node scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
 
 Do not run full build unless syntax/import issues require it.
 
 ## Forbidden
 
-- Asking Owner for another public URL for this domain; derive and test it.
-- Upload to any platform except Instagram.
-- More than one upload attempt.
-- Any YouTube credential read/client/import.
-- Broad `.env.local` secret loading.
-- Secret logging or writing tokens/account IDs to reports unless masked and non-sensitive.
-- Image generation/regeneration, TTS generation/regeneration, render/mux rerun, browser/CDP.
-- DB status update, Supabase upload/hosting, deploy, Vercel deploy, git push.
+- Live Instagram upload.
+- Instagram credential/env read.
+- Broad `.env.local` parsing.
+- Public URL network/liveness checks.
+- Storage provisioning or object upload.
+- DNS/custom domain changes.
+- Deploy/Vercel deploy.
+- Supabase hosting/upload generation.
+- DB status update.
+- YouTube client/import/credential.
+- render/mux/TTS/image/browser regeneration.
 - Dependency/lockfile/font changes.
+- Commit/push.
+- Secret logging or storing secret values in docs/fixtures/reports.
 - Modifying protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -197,36 +222,27 @@ Do not run full build unless syntax/import issues require it.
   - `piq_diag_out.txt`
   - `scripts/render-golden-sample-visual-only-v1.mjs`
   - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-  - unrelated `output/` subtrees
-  - unrelated `C:\tmp` subtrees
-- Commit/push.
+  - unrelated `output/`
+  - unrelated `C:\tmp`
 
 ## Stop Conditions
 
-Stop before Instagram API if any of these occur:
+Stop and report without editing further if:
 
-- public URL is not a direct mp4/video response,
-- public URL still serves `text/html`,
-- static placement was made but URL is not deployed/live,
-- Instagram credential missing,
-- upload hard-block/readiness mismatch cannot be reconciled safely,
-- final pre-upload audit fail,
-- cap would exceed 1,
-- unexpected route/client behavior,
-- any need for deploy/hosting/Supabase/upload generation not already approved.
-
-If stopped, record a blocked result and do not attempt upload.
+- implementing this requires choosing a real paid/external storage provider account,
+- DNS or Vercel project configuration must be changed now,
+- secrets/env values must be read or written,
+- dependency installation is required,
+- live network checks are needed to validate the slice,
+- protected dirty files must be modified to proceed.
 
 ## Definition Of Done
 
-- Run plan fixture exists and captures exact upload approval + public URL derivation.
-- Static guard exists and passes.
-- Instagram-only runner exists or existing runner is safely narrowed.
-- Direct mp4 URL under `buildgongjakso.com` is tested.
-- If URL and credentials pass, at most one Instagram upload attempt is executed and result recorded.
-- If URL/credentials/gates fail, no upload occurs and blocked result is recorded.
-- `_ai/CLAUDE_REPORT.md` records concise evidence.
-- No unapproved regeneration/render/mux/TTS/image/browser/YouTube/DB/deploy/dependency/push occurred.
-- No commit/push.
+- Durable default public media strategy is documented.
+- Machine-readable strategy fixture exists.
+- Static guard exists and passes with fail-closed mutants.
+- Existing live Instagram runner remains fail-closed and regression guard passes.
+- No external live action, secret read, deploy, DNS, storage upload, DB/Supabase, YouTube, render/mux/TTS/image/browser, dependency, commit, or push occurred.
+- `_ai/CLAUDE_REPORT.md` records concise evidence and recommended next slice.
 
 전체프로젝트 진행률 : 약 92%
