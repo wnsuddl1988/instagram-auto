@@ -3706,3 +3706,30 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. 실제 ffmpeg 변환 실행은 별도 승인(`APPROVE_PLATFORM_VARIANT_RENDER_TEST`) 대상으로 유보.
 - checkpoint recommendation: 신규 4파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 193, 이번 slice uncommitted.
 
+---
+
+## youtube-shorts-letterbox-variant-render-test-v1 (2026-07-06)
+
+- **수행**: Owner 승인 `APPROVE_PLATFORM_VARIANT_RENDER_TEST` 범위에서, 기존 로컬 Instagram/full-frame mp4 1개를 입력으로 YouTube Shorts letterbox mp4를 **ffmpeg 정확히 1회 변환**으로 생성/검증. one-shot runner + 결과 증거(docs/fixture/guard) 신규 작성. 기존 dry-run planner 계약(`create-youtube-shorts-letterbox-variant.mjs` 등)은 무수정.
+- **신규 파일 4개**:
+  - `scripts/run-youtube-shorts-letterbox-render-test-once.mjs` — 승인 토큰(`--approval APPROVE_PLATFORM_VARIANT_RENDER_TEST`) 필수, source path/size(20294549 bytes) fail-closed 검증, output이 `output/youtube-shorts-letterbox-render-test-v1/` 밖이면 abort, 기존 output mp4 있으면 재실행 거부(2차 변환 방지). ffprobe(읽기 전용) 2회(소스/출력) + ffmpeg 변환 1회만 수행.
+  - `docs/youtube-shorts-letterbox-render-test-result.md` — 입출력 표, 변환 필터, margin 계산(top/bottom 192px·side 108px), 7개 검증 결과, 하지 않은 것(upload/API/OAuth/Blob 등), 다음 승인 게이트.
+  - `scripts/fixtures/youtube_shorts_letterbox_render_test_result.v1.json` — 승인 소스/출력 경로 제약, ffmpegConversionCount=1, profile/outputVerified, Blob/upload/API 미사용 플래그, forbiddenBehaviorConfirmedAbsent/prohibitedDrift.
+  - `scripts/check-youtube-shorts-letterbox-render-test-result-static.mjs` — fixture 불변식 + docs 검증 + **실제 `output/.../render-test-result.json`과의 정합성 검증**(ffmpegConversionCount==1, sourceSizeBytes==20294549, allChecksPass==true, Blob/upload 미사용, 해상도) + self-scan + mutant 10종 → **28/28 PASS**
+- **실행 결과 (ffmpeg 정확히 1회)**:
+  - 명령: `ffmpeg -y -i <source> -vf scale=w=864:h=1536:force_original_aspect_ratio=decrease,pad=w=1080:h=1920:x=(ow-iw)/2:y=(oh-ih)/2:color=black -c:v h264 -pix_fmt yuv420p -movflags +faststart -c:a aac -map 0:v:0 -map 0:a:0 <output>`
+  - 출력: `output/youtube-shorts-letterbox-render-test-v1/golden_sample_t1_lifestyle_inflation_youtube_letterbox_v1.mp4` (7,349,425 bytes)
+  - 소스 ffprobe: 1080x1920, h264/yuv420p, 53.966667s, AAC mono 44.1kHz
+  - 출력 ffprobe: 1080x1920, h264/yuv420p, 53.966667s(delta 0.0s), AAC 보존
+  - 7개 체크 전부 PASS (width/height/codec/pixfmt/duration/audio/conversion-count==1)
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉 확인)
+  - 소스 파일 크기 20294549 bytes 일치 확인 ✓
+  - `node --check` (runner + guard) ✓, JSON parse (fixture) ✓
+  - 기존 planner regression: `check-youtube-shorts-letterbox-variant-renderer-static.mjs` → 36/36 PASS (무수정 확인)
+  - `node scripts/check-youtube-shorts-letterbox-render-test-result-static.mjs` → **ALL PASS 28/28**
+  - targeted regression: `check-dual-platform-variant-publish-architecture-static.mjs` 32/32, `check-stable-public-media-url-strategy-static.mjs` 31/31, `check-media-provider-decision-packet-static.mjs` 38/38 — 전부 ALL PASS
+- **side effects 확인**: ffmpeg 변환 정확히 1회(추가 실행 0), ffprobe 읽기 전용 2회만, upload 0, YouTube API/OAuth 0, Instagram API/`--arm` 0, Vercel Blob provisioning/token/env 0, `.env.local` 0, deploy/DNS/Cloudflare/R2/wrangler 0, dependency/lockfile/font 0, commit/push 0. 출력은 `output/youtube-shorts-letterbox-render-test-v1/`에만 기록(gitignore 대상이라 git status에 미표시), `C:\tmp`는 읽기 전용으로만 사용, 기존 dry-run planner 3파일 무수정.
+- deviations/risks: 범위 이탈 없음. 소스가 이미 1080x1920(9:16)이라 side gutter는 실질적으로 0에 가깝고 top/bottom 검은 여백만 생성됨(docs에 명시).
+- checkpoint recommendation: 신규 4파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 194, 이번 slice uncommitted. output/ 산출물은 gitignore 대상이라 커밋 대상 아님.
+
