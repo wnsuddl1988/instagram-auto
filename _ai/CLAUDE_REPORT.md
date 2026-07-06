@@ -3686,3 +3686,23 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. R2 관련 세부 리스크(R1~R4)와 custom domain 공식문서 근거는 historical evidence로 fixture/docs에 보존되어 향후 재검토 가능.
 - checkpoint recommendation: 기존 6파일 수정 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 192, 이번 slice uncommitted.
 
+---
+
+## youtube-shorts-letterbox-variant-renderer-dryrun-v1 (2026-07-06)
+
+- **수행**: YouTube Shorts letterbox variant용 dry-run/no-write command planner + 렌더 프로필 fixture + static guard + docs 신규 작성. 실제 ffmpeg 실행/mp4 생성 없음.
+- **신규 파일 4개**:
+  - `scripts/create-youtube-shorts-letterbox-variant.mjs` — `--input`/`--output`/`--example`/`--dry-run`/`--run` CLI. 기본 dry-run/no-write. `--example`은 실제 mp4 없이 deterministic ffmpeg plan/command 출력. `--run`은 이 slice에서 즉시 abort(exit 1, 실행 안 됨). subprocess/네트워크/env/파일쓰기 전혀 없음(코드에 spawn/exec/writeFileSync 등 식별자 자체가 없음).
+  - `scripts/fixtures/youtube_shorts_letterbox_render_profile.v1.json` — canvas 1080×1920 black, contentBox 864×1536 centered, margin top/bottom 192px·side 108px, codec h264/yuv420p/faststart/aac, `requiresPublicBlobUrl:false`, `conflatesWithInstagramVariant:false`, cliContract dry-run default 명문화.
+  - `scripts/check-youtube-shorts-letterbox-variant-renderer-static.mjs` — fixture 불변식 + renderer script self-scan(env/network/subprocess/write 패턴 없음, import 제한, --run 거부 로직 확인) + docs 검증 + mutant 12종(canvas/black/centered/margin/dry-run default/YouTube Blob 라우팅/env·network 허용/Instagram conflation/contentBox 소멸/--run 실행 허용/spawn·exec 식별자 혼입/파일쓰기 식별자 혼입) → **36/36 PASS**
+  - `docs/youtube-shorts-letterbox-variant-renderer.md` — 별도 변형 이유, 검정 canvas 스케일링 이유, stretch 금지/gutter 허용, 로컬 후처리(YouTube 업로드 아님) 명시, CLI 사용법, 프로필 표, Instagram 비-conflation, 금지 항목, 다음 승인 게이트(`APPROVE_YOUTUBE_VARIANT_RENDER_SPEC`) 참조.
+- **dry-run example 결과**: `node scripts/create-youtube-shorts-letterbox-variant.mjs --example --dry-run` → deterministic ffmpeg plan 출력(scale+pad filter, 1080x1920/864x1536/black/h264/yuv420p/faststart/aac), 파일 쓰기 없음, "ALL PASS (plan only)". `--example --run` → "ABORT: --run is not executable in this slice" (exit 1, 실행 안 됨) 확인.
+- **checks/results**:
+  - syntax: `node --check` 스크립트/가드 2개 ✓
+  - JSON parse: fixture ✓
+  - `node scripts/check-youtube-shorts-letterbox-variant-renderer-static.mjs` → **ALL PASS 36/36**
+  - regression: `check-dual-platform-variant-publish-architecture-static.mjs` 32/32, `check-stable-public-media-url-strategy-static.mjs` 31/31, `check-media-provider-decision-packet-static.mjs` 38/38 — 전부 ALL PASS
+- **live/media side effects: none** — ffmpeg 실행 0, mp4 생성 0, render/mux/TTS/image/browser 0, upload 0, YouTube API/OAuth 0, Instagram API/`--arm` 0, Vercel Blob provisioning/token/env 0, `.env.local` 접근 0, deploy/DNS 0, Cloudflare/R2/wrangler 0, dependency/lockfile/font 0, commit/push 0. `git status -sb` 기준 신규 4파일만 untracked로 추가, 보호 파일(`scripts/render-golden-sample-visual-only-v1.mjs` 등) 무접촉.
+- deviations/risks: 범위 이탈 없음. 실제 ffmpeg 변환 실행은 별도 승인(`APPROVE_PLATFORM_VARIANT_RENDER_TEST`) 대상으로 유보.
+- checkpoint recommendation: 신규 4파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 193, 이번 slice uncommitted.
+
