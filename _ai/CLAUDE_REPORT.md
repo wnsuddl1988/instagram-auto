@@ -3827,3 +3827,40 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: (1) store 연결 BLOCKED — 다음 단계는 Dashboard 수동 connect(→ 토큰 자동 생성) 또는 기존 store 폐기 후 create-store --environment 재생성(별도 승인), 또는 vercel connect[beta] 지원 여부 Codex 확인. (2) `vercel env run`이 기존 `.env.local`을 자동 로드하는 부수효과 관찰(파일 미변경, 내가 접근/수정 안 함).
 - checkpoint recommendation: 신규 4파일 + report. 외부 mutation 0(연결/env write 없음)이라 순수 evidence. checkpoint commit은 evidence 고정 목적으로만 권장(Owner 승인 필요). 이번 slice uncommitted.
 
+## dual-platform-final-publish-orchestrator-no-live-v1 (2026-07-07)
+
+- **목적**: Instagram(media_id `17916511431199303`) + YouTube(videoId `r9jhckdpC9w`) live upload 성공 이후, 최종 자동화의 "게시 단계"를 no-live/dry-run publish orchestrator로 고정. 카테고리 선택 → 영상 생성 → Instagram/YouTube variant → 2개 플랫폼 게시 흐름에 연결 가능한 기반만 마련하고 이번 slice에서 실제 업로드는 0회.
+- **신규 파일 3개**:
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — no-live dry-run runner. 콘텐츠 unit 1개 → Instagram job(variant `instagram_reels_full_frame_1080x1920`/provider `vercel_blob`) + YouTube job(variant `youtube_shorts_letterbox_1080x1920`/provider `youtube_data_api`) 2개 생성. `process.env`/`.env.local`/Blob `put()`/live API 호출 코드 경로 없음. YouTube job에 live test 재사용 metadata(title/tags/categoryId/ko/public) 기본 포함. in-memory 중복 게시 방지 판정(`checkDuplicatePublishGuard`, key `{contentId}/{platform}/{version}`) 포함 — ledger read/write 없음, live mode(`liveMode:false` 고정)에서만 의미 갖도록 설계.
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — 계약 고정: expectedPublishJobs 2개(variant/provider/deliveryMode), youtubeDefaultMetadata, duplicatePublishGuard 규칙, sideEffectCounters 전부 0, liveUploadEvidence(secret 없는 media_id/videoId만), forbiddenBehavior/prohibitedOrchestratorDrift.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — fixture 불변식 + runner 소스 정적 검사(live API 호출/`.env.local`/`process.env`/Blob mutation 패턴 없음) + runner 실제 child_process 실행(`--dry-run`) 결과 검증 + docs 검증 + mutant 5종 → **99/99 PASS**
+  - `docs/dual-platform-final-publish-orchestrator.md` — 구성/dry-run 동작/YouTube metadata/중복 게시 방지 계약/live evidence/금지사항/향후 승인 순서 문서화.
+- **dry-run 결과 요약**: `node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run` → jobs 2개 정상 생성(instagram_job: provider vercel_blob/variant full_frame/liveApiCallPerformed false/blobUploadPerformed false; youtube_job: provider youtube_data_api/variant letterbox/requiresPublicBlobUrl false/metadata 포함), sideEffectCounters 전부 0, duplicatePublishGuard 판정(`alreadyPublished:true, blockedThisRun:false` — dry-run이라 미차단이나 판정 로직 정상 작동), `liveMode:false`, `mode:"dry_run"`.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run` → 정상 출력
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **99 PASS / 0 FAIL**
+  - targeted regression: `check-dual-platform-variant-publish-architecture-static.mjs` 32/32, `check-vercel-blob-dependency-code-integration-static.mjs` 45/45, `check-youtube-shorts-letterbox-render-test-result-static.mjs` 28/28 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete 0, env/secret read/write 0, `.env.local` 직접 접근 0, 새 영상 생성 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. 이번 slice는 순수 no-live 기반 구축이며 지정된 3개 targeted regression 외 추가 변경 없음.
+- checkpoint recommendation: 신규 3파일(+report)로 diff 소규모, 외부 mutation 0. Owner 승인 시 checkpoint commit 가능한 상태이나 이번 turn에서는 commit 지시 없음.
+
+## dual-platform-final-publish-orchestrator-metadata-and-version-fix-v1 (2026-07-07)
+
+- **목적**: 직전 slice의 Codex review finding 2건 보정. (1) publish duplicate key version이 실제 live evidence(v3_2 source artifact)와 불일치하던 `v1`을 `v3_2`로 정합화. (2) Instagram job에 metadata(caption/hashtags/CTA)가 없어 "영상만 업로드 금지, 플랫폼별 metadata optimization 필수" Owner 규칙을 계약/guard에 반영.
+- **수정 파일 4개**:
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — `DEFAULT_CONTENT_UNIT.version` `v1`→`v3_2`, `EXISTING_PUBLISHED_KEYS` 2개 키 `v3_2`로 정합(YouTube letterbox 파일명의 `_v1`은 render artifact 버전이라 혼동 아님을 주석 명시). `INSTAGRAM_DEFAULT_METADATA`(captionFirstLineHook/caption/hashtags 10개/callToAction/forbiddenUnrelatedTrendTags) 신설, Instagram job에 `metadata` 포함. `checkInstagramMetadataGate`/`checkYoutubeMetadataGate` 신설 — hashtag 8~12개, 첫줄 훅, CTA, 무관 유행 태그 검사. `buildDualPlatformPublishPlan`에서 양쪽 job에 `metadataOptimizationGate:{ok,reasons}` 계산 후 첨부(판정만, 발행 차단은 no-live라 미발생).
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `defaultContentUnit.version`→`v3_2`+versionNote(v1 render artifact 버전과 구분 명시), `existingPublishedKeysExample`→v3_2 2건, `instagramDefaultMetadata` 신설, `publishMetadataOptimizationGate` 계약(rule/requiredFields/hashtag min·max 8·12/forbiddenUnrelatedTrendTags) 신설, forbiddenBehavior/prohibitedOrchestratorDrift에 metadata/version 회귀 케이스 추가.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — fixture 검증에 version v3_2/existingPublishedKeys v3_2/instagramDefaultMetadata(hashtag 8~12·CTA·훅)/publishMetadataOptimizationGate 체크 추가. runner 소스 검증에 v3_2 상수/INSTAGRAM_DEFAULT_METADATA/hashtags/callToAction/metadataOptimizationGate 로직 존재 확인 추가. runner 실행 결과 검증에 instagram_job.metadata(훅/CTA/hashtag 개수)/metadataOptimizationGate.ok===true/duplicatePublishGuard.key가 v3_2 사용/plan.version===v3_2 체크 추가. docs 검증에 v3_2·metadata optimization 언급 확인 추가. mutant 5종 신규 추가(version v1 회귀, existingKeys v1 불일치, CTA 누락, hashtag 7개 미달, hashtag 13개 초과) → **132/132 PASS**.
+  - `docs/dual-platform-final-publish-orchestrator.md` — "version 정합화(v3_2)" 섹션 신설(letterbox render `_v1`과 콘텐츠 version `v3_2` 혼동 금지 명시), "Instagram 기본 metadata" 섹션 신설, "Publish metadata optimization gate(영상만 업로드 금지)" 섹션 신설(Owner 확정 규칙 + 필수 필드 + hashtag 범위 + gate 판정 로직 설명), 중복 게시 방지 섹션의 예시 키 v3_2로 갱신.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run` → version v3_2, Instagram/YouTube 양쪽 metadataOptimizationGate.ok:true, duplicatePublishGuard.key가 v3_2로 정상 매치
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **132 PASS / 0 FAIL**
+  - targeted regression: dual-platform-variant-publish-architecture 32/32, vercel-blob-dependency-code-integration 45/45, youtube-shorts-letterbox-render-test-result 28/28 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete 0, env/secret read/write 0, `.env.local` 직접 접근 0, 새 영상 생성 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. Codex review finding 2건만 정확히 보정했고 지정된 4개 파일 외 추가 변경 없음. metadata gate는 이번 slice에서 판정만 계산하고 실제 발행 차단 로직은 다음 live wiring 승인 슬라이스 몫으로 남김(문서에 명시).
+- checkpoint recommendation: 이번 보정 포함 총 신규 3파일(runner/fixture/guard)+docs 1파일+report가 여전히 uncommitted. Owner 승인 시 이전 no-live slice와 함께 하나의 checkpoint로 묶어 commit 가능한 상태.
+
