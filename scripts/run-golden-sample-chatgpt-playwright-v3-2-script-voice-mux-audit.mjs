@@ -34,10 +34,23 @@ const ALLOW_LIVE_TTS_FLAG = argv.includes("--allow-live-tts");
 // renderVisual/Pillow/mux/frame 추출은 render/mux 승인 slice 전까지 실행 금지.
 const stageArgIdx = argv.indexOf("--stage");
 const STAGE = stageArgIdx === -1 ? "full" : (argv[stageArgIdx + 1] ?? "");
-if (STAGE !== "full" && STAGE !== "tts-audio-only") {
-  console.error("ABORT: unknown --stage value — 지원: tts-audio-only"); process.exit(2);
+if (STAGE !== "full" && STAGE !== "tts-audio-only" && STAGE !== "render-mux-only") {
+  console.error("ABORT: unknown --stage value — 지원: tts-audio-only, render-mux-only"); process.exit(2);
 }
 const TTS_AUDIO_ONLY = STAGE === "tts-audio-only";
+// ── stage 경계 (Owner 승인 slice: golden-sample-v3-2-live-render-mux-run-v1) ──
+// --stage render-mux-only: 기존 accepted narration+alignment 재사용(stageTts 진입 금지) +
+// Pillow/frame render 1회 + 로컬 mux/artifact audit 1회만 수행. env/secret/.env.local read,
+// 외부 API/provider 호출, image/browser/upload 경로 진입 전면 금지 (fail-closed).
+// 명시 승인 CLI gate --allow-render-mux 없이는 실행 불가.
+const RENDER_MUX_ONLY = STAGE === "render-mux-only";
+const ALLOW_RENDER_MUX_FLAG = argv.includes("--allow-render-mux");
+if (RENDER_MUX_ONLY && !ALLOW_RENDER_MUX_FLAG) {
+  console.error("ABORT: --stage render-mux-only requires explicit --allow-render-mux approval flag"); process.exit(2);
+}
+if (RENDER_MUX_ONLY && ALLOW_LIVE_TTS_FLAG) {
+  console.error("ABORT: --allow-live-tts must not be combined with render-mux-only (이 stage는 TTS 금지)"); process.exit(2);
+}
 // TTS-only 승인 경로 env/secret allowlist — 아래 3개 외 어떤 env/secret 값도 읽지 않는다.
 // (ELEVENLABS_MODEL_ID·후보별 voice env key 조회 금지 — manifest default/단일 키 사용)
 const TTS_ONLY_ENV_ALLOWLIST = ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "ALLOW_ELEVENLABS"];
@@ -104,8 +117,13 @@ function loadEnvLocal() {
   }
   return result;
 }
-const envLocal = loadEnvLocal();
+// render-mux-only 승인 경로(RENDER_MUX_NO_ENV_READ): .env.local 파싱 자체를 생략하고
+// env() 접근을 전면 fail-closed 차단한다 — 이 stage에서 필요한 env/secret은 0개다.
+const envLocal = RENDER_MUX_ONLY ? {} : loadEnvLocal();
 const env = (k) => {
+  if (RENDER_MUX_ONLY) {
+    fail(`env key '${k}' read blocked — render-mux-only stage는 어떤 env/secret 값도 읽지 않는다`, 21);
+  }
   if (TTS_AUDIO_ONLY && !TTS_ONLY_ENV_ALLOWLIST.includes(k)) {
     fail(`env key '${k}' is not in the approved TTS-only allowlist — 승인 외 env/secret read 차단`, 21);
   }
@@ -317,6 +335,40 @@ function renderVisual(R) {
   const byId = Object.fromEntries(spec.overlays.map((o) => [o.id, o]));
   for (const o of R.overlays) if (!byId[o.id]) fail(`overlay spec에 ${o.id} 없음`, 15);
 
+  // ── RENDER_MUX_PRE_OUTPUT_GATES: font vendoring + safe-frame — 출력물 생성 전 중단 ──
+  // 기준: pillow renderer contract (canvas 1080x1920, textMaxY 1580, graphicMaxY 1632,
+  // 승인 폰트 NotoSansKR-VF.ttf/Black, silent fallback 금지, bbox 누락 침묵 skip 금지)
+  if (RENDER_MUX_ONLY) {
+    const fontOk = typeof spec.fontFile === "string" && /NotoSansKR-VF\.ttf$/i.test(spec.fontFile)
+      && existsSync(spec.fontFile) && spec.variation === "Black";
+    if (!fontOk) fail("font vendoring fail: 승인 폰트(NotoSansKR-VF.ttf / Black) 미충족 — silent fallback 금지, render 출력 전 중단", 33);
+    const sfViolations = [];
+    for (const o of R.overlays) {
+      for (const el of byId[o.id].elements) {
+        const t = el.type;
+        if (t === "text") {
+          if (typeof el.y !== "number" || typeof el.fs !== "number" || typeof el.x !== "number") { sfViolations.push(`${o.id}:text geometry 누락`); continue; }
+          const yCheck = (el.anchor ?? "mm").startsWith("t") ? el.y + el.fs : el.y;
+          if (yCheck > 1580 || el.y < 0 || el.x < 0 || el.x > 1080) sfViolations.push(`${o.id}:text yCheck=${yCheck} x=${el.x}`);
+        } else if (t === "runs") {
+          if (typeof el.y !== "number" || typeof el.cx !== "number") { sfViolations.push(`${o.id}:runs geometry 누락`); continue; }
+          if (el.y > 1580 || el.y < 0 || el.cx < 0 || el.cx > 1080) sfViolations.push(`${o.id}:runs y=${el.y} cx=${el.cx}`);
+        } else if (t === "rect" || t === "rrect") {
+          if (typeof el.y2 !== "number" || typeof el.y1 !== "number") { sfViolations.push(`${o.id}:${t} geometry 누락`); continue; }
+          if (el.y2 > 1632 || el.y1 < 0 || el.x1 < 0 || el.x2 > 1080) sfViolations.push(`${o.id}:${t} y2=${el.y2}`);
+        } else if (t === "poly") {
+          const ys = (el.pts ?? []).map((p) => p[1]), xs = (el.pts ?? []).map((p) => p[0]);
+          if (!ys.length) { sfViolations.push(`${o.id}:poly pts 누락`); continue; }
+          if (Math.max(...ys) > 1632 || Math.min(...ys) < 0 || Math.min(...xs) < 0 || Math.max(...xs) > 1080) sfViolations.push(`${o.id}:poly maxY=${Math.max(...ys)}`);
+        } else {
+          sfViolations.push(`${o.id}: 미지원 element type '${t}' — 침묵 skip 금지`);
+        }
+      }
+    }
+    if (sfViolations.length) fail(`safe-frame fail (${sfViolations.length}건) — render 출력 전 중단:\n  ` + sfViolations.join("\n  "), 34);
+    console.log("── render pre-output gates: font vendoring OK + safe-frame OK (text<=1580 / graphic<=1632 / x 0..1080) ──");
+  }
+
   // Pillow 재렌더 (elements 내용 무변경 — 신규 outdir로만)
   const newSpec = { ...spec, outDir: join(outAbs, "overlays").replace(/\\/g, "/"), overlays: R.overlays.map((o) => ({ ...byId[o.id] })) };
   const specPath = join(outAbs, "overlay_spec.v3_1_tts.json");
@@ -434,7 +486,16 @@ print("OVERLAYS", len(spec["overlays"]))
   console.log("── Script Impact Gate PASS (6/6 required, hard fail 0) — TTS stage 진입 허용 ──");
 }
 
-const ttsResult = await stageTts();
+// render-mux-only: stageTts() 진입 금지 — 기존 accepted narration/alignment 실재만 검증 (fail-closed).
+// TTS 재생성/API 호출/env read 없이 재사용만 허용. 파일이 없으면 즉시 중단 (재생성 승인 없음).
+function renderMuxAudioReuseGate() {
+  if (!existsSync(audioPath) || !existsSync(alignPath)) {
+    fail("render-mux-only requires existing accepted narration+alignment — TTS 재생성 승인 없음, 즉시 중단", 22);
+  }
+  console.log("── STAGE AUDIO(reuse-only): 기존 accepted narration + alignment 사용 (TTS/API/env 미접근) ──");
+  return { reused: true, httpStatus: null };
+}
+const ttsResult = RENDER_MUX_ONLY ? renderMuxAudioReuseGate() : await stageTts();
 const T = buildTiming();
 console.log(`\n── TIMING ── textMatch=${T.textMatches} speechStart=${T.speechStartSec}s speechEnd=${T.speechEndSec}s audioFile=${T.audioFileDurationSec}s`);
 console.log(`  phrases: ${T.phrases.map((p) => `${p.phraseId}@${p.audioStartSec}-${p.audioEndSec}`).join(" ")}`);
@@ -496,7 +557,7 @@ writeFileSync(P("timingSummary"), JSON.stringify({
   taskId: cfg.taskId, provider: "elevenlabs", ttsStrategy: cfg.tts.strategy, endpointKind: cfg.tts.endpointKind,
   liveApiCallPerformedThisRun: !ttsResult.reused, httpStatus: ttsResult.httpStatus,
   apiCallBudgetMax: cfg.tts.apiCallBudgetMax,
-  modelId: TTS_AUDIO_ONLY ? cfg.tts.modelIdDefault : (env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault), voicePresetId: cfg.tts.voicePresetId,
+  modelId: (TTS_AUDIO_ONLY || RENDER_MUX_ONLY) ? cfg.tts.modelIdDefault : (env(cfg.tts.modelIdEnvKey) ?? cfg.tts.modelIdDefault), voicePresetId: cfg.tts.voicePresetId,
   voiceSettingsSanitized: cfg.tts.voiceSettings,
   generatedText: narrationText, generatedTextCharCount: [...narrationText].length,
   alignmentTextMatchesSentText: T.textMatches,
@@ -508,6 +569,7 @@ writeFileSync(P("timingSummary"), JSON.stringify({
   noSecretEvidence: "API key/voice id 원문은 어떤 로그/파일에도 기록하지 않음",
   uploadReady: false,
   ...(TTS_AUDIO_ONLY ? { stage: "tts-audio-only", audioArtifactAuditTtsOnly: ttsOnlyAudioAudit } : {}),
+  ...(RENDER_MUX_ONLY ? { stage: "render-mux-only", audioSource: "reused_existing_accepted_narration", liveTtsCallsThisRun: 0 } : {}),
 }, null, 2) + "\n", "utf8");
 
 writeFileSync(P("scriptPreview"), JSON.stringify({
@@ -617,6 +679,15 @@ const audit = {
   verdict: mediaPass && audioPass && capPass && storyPass ? "PASS_CANDIDATE_PENDING_VISION_QA" : "FAIL",
   uploadReady: false,
   boundary: { noUpload: true, noImageGeneration: true, liveApiCallsThisRun: ttsResult.reused ? 0 : 1, paddingUsed: false },
+  ...(RENDER_MUX_ONLY ? {
+    stage: "render-mux-only",
+    renderMuxRunEvidence: {
+      renderPerformedThisRun: 1, renderCapMax: 1, muxPerformedThisRun: 1, muxCapMax: 1,
+      costUsd: 0, liveApiCallsThisRun: 0, envSecretReadsThisRun: 0,
+      ttsRegenerationPerformed: false, imageRegenerationPerformed: false,
+      audioSource: "reused_existing_accepted_narration",
+    },
+  } : {}),
 };
 writeFileSync(P("auditReport"), JSON.stringify(audit, null, 2) + "\n", "utf8");
 
@@ -626,3 +697,11 @@ console.log(`  probe: ${vS.width}x${vS.height} ${vS.codec_name} ${vS.r_frame_rat
 console.log(`  audio: begin=${audioGates.beginningSilenceSec}s first5s=${audioGates.first5sSilenceSec}s ratio=${audioGates.totalSilenceRatio} active=${audioGates.speechActiveRatio} tail=${audioGates.tailHoldSec}s clipped=${audioGates.clippedTail} → ${audioPass ? "PASS" : "FAIL"}`);
 console.log(`  caption: minDwell=${dwellMin}s wordAnchored=${audit.captionCard.wordAnchoredCount} → ${capPass ? "PASS" : "FAIL"}   story(3개 gate): ${storyPass ? "PASS" : "FAIL"}`);
 console.log(`  verdict: ${audit.verdict}`);
+
+// ── RENDER_MUX_ONLY_AUDIT_FAIL_CLOSED: 게이트 FAIL이면 비정상 종료 (stop condition) ──
+if (RENDER_MUX_ONLY) {
+  console.log(`  render-mux-only: render 1/1 mux 1/1 cost $0 liveApiCalls 0 envSecretReads 0`);
+  if (audit.verdict !== "PASS_CANDIDATE_PENDING_VISION_QA") {
+    fail("post-render artifact audit FAIL — stop condition (media probe/audio/caption-card/story gate 중 실패). 자동 재시도/2차 render·mux 금지, Codex 보고 필요.", 32);
+  }
+}

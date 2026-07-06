@@ -11,7 +11,7 @@
   - `scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json`
   - `scripts/fixtures/golden_sample_v3_2_production_standard.v1.json`
   - `scripts/fixtures/golden_sample_v3_2_automation_implementation_gap_analysis.v1.json`
-- Latest safety/standard checkpoints:
+- Latest safety/standard/live checkpoints:
   - `b4b4b2d feat(safety): add fail-closed upload hard block guard`
   - `fd4b618 feat(golden-sample): add v3.2 story visual evidence guard`
   - `aeaaf94 feat(golden-sample): add chatgpt runner standard guard`
@@ -31,83 +31,81 @@
   - `b170b39 feat(golden-sample): add live action approval packet`
   - `ff1847f feat(golden-sample): record live image browser run`
   - `d1c3ae2 feat(golden-sample): prepare live tts audio approval packet`
+  - `c02ed21 feat(golden-sample): record live tts audio run`
 
 ## Current Approved Slice
 
-- Task ID: `golden-sample-v3-2-live-tts-audio-elevenlabs-run-v1`
-- Status: **Owner explicitly approved one live TTS/audio slice**.
+- Task ID: `golden-sample-v3-2-live-render-mux-run-v1`
+- Status: **Owner explicitly approved one local render + mux slice**.
 - Exact Owner approval:
-  - `APPROVE_LIVE_TTS_AUDIO: t1_lifestyle_inflation — provider=ALLOW_ELEVENLABS, call cap=2, cost cap=$1, allow selected provider env/secret read only for ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID with no secret logging, stop on provider error/cap exceeded/cost cap exceeded/script impact gate fail/provenance mismatch/audio artifact audit fail`
-- Approved domain: **TTS/audio only** via ElevenLabs.
-- Approved provider flag: `ALLOW_ELEVENLABS`.
-- Approved API call cap: `2` total, with v3.2 standard preference = one-shot primary call only; second call only if the existing v3.2 contract permits it for a clear artifact/severe pause/timing audit block.
-- Approved cost cap: `$1`.
-- Approved env/secret read:
-  - `ELEVENLABS_API_KEY`
-  - `ELEVENLABS_VOICE_ID`
-  - no other secret/env values may be read from process env or `.env.local` for this live slice, except the non-secret allow flag `ALLOW_ELEVENLABS`.
-  - secret values must not be logged, written to files, committed, or included in summaries; masked voice id is allowed.
+  - `APPROVE_RENDER + APPROVE_MUX: t1_lifestyle_inflation — render cap=1, mux cap=1, cost cap=$0, use existing accepted 9 images and existing accepted ElevenLabs narration/alignment/timing only, no image regeneration, no TTS regeneration, allow Pillow/frame render + ffmpeg/ffprobe mux/artifact audit only, stop on font vendoring fail/safe-frame fail/overlay-spec fail/audio artifact audit fail/media probe fail/caption-card gate fail/story gate fail/render or mux error`
+- Approved domain: **local Pillow/frame render + local ffmpeg/ffprobe mux/artifact audit only**.
+- Approved render cap: `1`.
+- Approved mux cap: `1`.
+- Approved cost cap: `$0`.
+- Approved inputs:
+  - existing accepted 9 images only,
+  - existing accepted ElevenLabs narration only,
+  - existing accepted ElevenLabs alignment/timing only.
 - Approved output side effects:
-  - TTS/audio artifacts only in the approved v3.2 output directory under `C:\tmp`.
-  - TTS timing/alignment summaries needed for audio artifact audit and future render/mux may be written.
-  - Existing repo manifest `scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json` may be updated only if produced by the TTS-first alignment/reflow step and no frame render/mux occurs.
+  - render/mux/audit artifacts only under `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\`.
+  - frame extraction is allowed only as artifact audit evidence for this mux.
+  - repo fixture updates are allowed only when produced by deterministic manifest/timing/audit evidence and must keep `uploadReady:false`.
 
 ## Still Not Approved
 
-- Render/frame generation is not approved.
-- mux/video render is not approved.
-- Upload is not approved.
+- Image generation or image regeneration is not approved.
+- TTS generation or TTS regeneration is not approved.
+- Any external API/provider call is not approved.
+- ChatGPT/Playwright/browser/Chrome/CDP is not approved.
+- Env/secret read is not approved, including `.env.local`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, image provider keys, or upload credentials.
+- Upload, upload queue, or `/api/upload` POST is not approved.
 - Owner direct viewing/listening QA actual pass is not approved.
-- ChatGPT/Playwright/browser/CDP/image generation is not approved.
-- OpenAI TTS, OpenAI Image API, BFL/FLUX2, Imagen, Gemini/Veo, Midjourney, or any provider except ElevenLabs TTS is not approved.
 - Dependency/lockfile/font file, DB/deploy, env/secret modification, or broad production refactor is not approved.
 
 ## Current State
 
-- Existing 9-image set accepted by Owner and checkpointed.
-- Existing 9-image acceptance + TTS/audio future-use-only packet checkpoint: `d1c3ae2`.
-- v3.2 TTS standard:
-  - provider lineage: ElevenLabs.
-  - strategy: `full_narration_one_shot`.
-  - endpoint kind: `text_to_speech_with_timestamps`.
-  - Script Impact Gate must pass before any TTS API call.
-  - no scene-by-scene TTS.
-  - no retry.
-  - api call budget max 2.
+- Existing 9-image set is accepted by Owner and checkpointed in `ff1847f`.
+- Existing ElevenLabs narration/alignment/timing is accepted/reused by the live TTS/audio slice and checkpointed in `c02ed21`.
+- The TTS/audio run performed **0 API calls** because accepted narration/alignment already existed.
+- Script Impact Gate passed in the live TTS/audio slice.
+- Audio artifact audit passed in the live TTS/audio slice; tailHold was deferred to mux.
 - Integrated readiness remains `STANDARDIZED_NO_LIVE_READY`.
 - `ownerViewingListeningActualStatus` remains `PENDING_DIRECT_OWNER_REVIEW`.
-- `ownerQaPassed`, `uploadReady`, `productionReady`, render/mux/upload flags remain false.
+- `ownerQaPassed`, `uploadReady`, `productionReady`, upload flags remain false.
 - Upload hard block remains active.
 
 ## Purpose
 
-Execute exactly one approved live TTS/audio slice for `t1_lifestyle_inflation`, using ElevenLabs only, while preserving the boundary that render/mux/upload/Owner QA are still blocked.
+Execute exactly one approved local render/mux slice for `t1_lifestyle_inflation`, using only the already accepted images and already accepted ElevenLabs narration/alignment/timing.
 
 This slice must:
 
-1. Record the exact Owner TTS/audio approval as a machine-readable live run plan.
-2. Harden the v3.2 live TTS runner if needed so the approved command can run TTS/audio only without render/mux.
-3. Narrow env/secret access to `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` only.
-4. Run static/preflight checks before any live API call.
-5. Execute the live ElevenLabs TTS/audio path only if Script Impact Gate and provenance checks pass.
-6. Enforce call cap 2, no retry, and stop conditions.
-7. Inspect/report generated TTS/audio timing/audit evidence only.
+1. Record the exact Owner render/mux approval as a machine-readable live run plan.
+2. Harden the v3.2 runner if needed so the approved command can run **render/mux only** without TTS, env/secret, image/browser, or upload paths.
+3. Enforce render cap 1 and mux cap 1.
+4. Use existing accepted artifacts only.
+5. Run static/preflight checks before any render/mux execution.
+6. Execute local Pillow/frame render and ffmpeg/ffprobe mux/artifact audit only if all stop gates pass.
+7. Report render/mux/audit evidence and leave upload/Owner QA blocked.
 
 ## Source Contracts To Read
 
 Read only the minimum needed:
 
-1. `scripts/fixtures/golden_sample_v3_2_live_tts_audio_approval_packet.t1_lifestyle_inflation.v1.json`
-2. `_ai/GOLDEN_SAMPLE_V3_2_LIVE_TTS_AUDIO_APPROVAL_PACKET.md`
-3. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
-4. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json`
-5. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json`
-6. `scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs`
-7. `scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs`
-8. `scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
-9. `scripts/check-golden-sample-v3-2-live-tts-audio-approval-packet-static.mjs`
-10. `scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
-11. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
+1. `scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs`
+2. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json`
+3. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json`
+4. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json`
+5. `scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json`
+6. `scripts/run-golden-sample-pillow-renderer-standard-v1.mjs`
+7. `scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
+8. `scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json`
+9. `scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
+10. `scripts/fixtures/golden_sample_v3_2_live_tts_audio_run_plan.t1_lifestyle_inflation.v1.json`
+11. `scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs`
+12. `scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
+13. `scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -125,48 +123,50 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed repo files:
 
-1. `scripts/fixtures/golden_sample_v3_2_live_tts_audio_run_plan.t1_lifestyle_inflation.v1.json` (new)
+1. `scripts/fixtures/golden_sample_v3_2_live_render_mux_run_plan.t1_lifestyle_inflation.v1.json` (new)
    - Must record the exact Owner approval text.
    - Must set:
-     - `provider: "ALLOW_ELEVENLABS"`
      - `topicId: "t1_lifestyle_inflation"`
-     - `callCapMax: 2`
-     - `costCapUsdMax: 1`
-     - `approvedDomain: "tts_audio_generation"`
-     - `selectedProviderSecretKeysAllowed: ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"]`
-     - `secretLoggingAllowed: false`
+     - `approvedDomain: "local_render_mux_artifact_audit"`
+     - `renderCapMax: 1`
+     - `muxCapMax: 1`
+     - `costCapUsdMax: 0`
+     - `imageRegenerationApprovedNow: false`
+     - `ttsRegenerationApprovedNow: false`
+     - `externalApiApprovedNow: false`
+     - `envSecretReadApprovedNow: false`
      - `uploadApprovedNow: false`
-     - `renderApprovedNow: false`
-     - `muxApprovedNow: false`
-     - `imageBrowserApprovedNow: false`
      - `ownerQaPassed: false`
-   - Must document that provider cost telemetry may be unavailable; cost cap is controlled by hard API call cap and immediate stop on provider/cost signal if one appears.
-   - Must reference TTS approval packet, TTS/audio audit contract/sample plan, v3.2 mux manifest, future gate, integrated readiness, and the live runner.
+   - Must reference accepted live image run plan, accepted live TTS/audio run plan, Pillow renderer contract, TTS/audio audit contract, future gate, integrated readiness, and the live runner.
+   - Must define stop conditions for font vendoring, safe-frame, overlay-spec, audio artifact audit, media probe, caption-card gate, story gate, render error, and mux error.
 
-2. `scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs` (new)
+2. `scripts/check-golden-sample-v3-2-live-render-mux-run-plan-static.mjs` (new)
    - Dependency-free static/preflight guard.
    - Import allowlist: `node:fs`, `node:path`, `node:url` only.
-   - Validate exact Owner approval, provider, caps, stop conditions, secret allowlist, false flags, references, runner safety, and output policy.
-   - Validate runner has a TTS/audio-only path that exits before render/mux.
-   - Validate runner does not read broad env/secret values in the approved TTS-only path.
-   - Validate live runner enforces `ALLOW_ELEVENLABS`/`--allow-live-tts`, Script Impact Gate before API fetch, no retry, call cap <= 2, no scene-by-scene TTS, no upload.
-   - Include fail-closed mutants for wrong provider, cap > 2, cost > 1, extra secret key, secret logging, render/mux/upload true, missing Script Impact Gate, and missing TTS-only stop before render/mux.
+   - Validate exact Owner approval, caps, zero cost, false flags, accepted inputs, references, runner safety, and output policy.
+   - Validate runner has a render/mux-only path that does not call TTS, fetch, image/browser, upload, or env/secret code.
+   - Validate runner enforces an explicit render/mux approval CLI gate, e.g. `--allow-render-mux`.
+   - Validate render/mux path uses existing audio/alignment/timing and accepted 9 images only.
+   - Validate render/mux audit fails closed for media probe, audio, caption-card, story, and uploadReady false.
+   - Include fail-closed mutants for cap drift, cost drift, env/secret approval, image/TTS regeneration approval, upload true, missing stop condition, missing render/mux-only stage, missing explicit approval flag, and audit gate weakening.
 
 3. `scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs`
    - Existing v3.2 runner.
-   - Patch only if needed.
+   - Patch only as needed.
    - Required if currently missing:
-     - Add a TTS/audio-only stage flag, e.g. `--stage tts-audio-only`.
-     - In TTS-only mode, stop after Script Impact Gate + live TTS + timing/alignment/reflow/timing summaries.
-     - Do not call `renderVisual`, `ffmpeg` mux, mux audit, or frame extraction in TTS-only mode.
-     - Add allowlisted `.env.local`/process env secret resolution for this live slice: only `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` plus non-secret `ALLOW_ELEVENLABS`.
-     - Do not read `ELEVENLABS_MODEL_ID`, candidate-specific voice env keys, or any other env/secret in this approved TTS-only path. Use manifest default model/settings.
-     - Enforce no secret logging; masked voice id only.
-     - Preserve existing full pipeline behavior for future render/mux slices unless this conflicts with the TTS-only safety gate.
+     - Add a render/mux-only stage flag, e.g. `--stage render-mux-only`.
+     - Add explicit CLI approval gate, e.g. `--allow-render-mux`.
+     - In render/mux-only mode, do not call `stageTts()`.
+     - In render/mux-only mode, do not call `loadEnvLocal()` and do not read any process env/secret values.
+     - In render/mux-only mode, do not call fetch or any external API.
+     - In render/mux-only mode, do not run ChatGPT/Playwright/browser/CDP/image generation.
+     - In render/mux-only mode, use existing `narration_v3_2_elevenlabs.mp3`, `elevenlabs_alignment_raw.v3_2.json`, existing timing/reflow inputs, and accepted image md5 gate only.
+     - Preserve existing `tts-audio-only` behavior from checkpoint `c02ed21`.
+     - Preserve existing full pipeline behavior for future full approval unless it conflicts with the new explicit render/mux safety gate.
 
 4. `scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json`
-   - May be updated only if the TTS-only reflow step writes it as timing evidence.
-   - This update is not render approval and must keep `uploadReady:false`.
+   - May be updated only if the render/mux-only path deterministically rewrites the same accepted timing/render manifest.
+   - Must keep `uploadReady:false`.
 
 5. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
@@ -177,63 +177,71 @@ Allowed repo files:
 Allowed generated/output path:
 
 - `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\`
-  - Allowed only for TTS/audio outputs and timing/alignment/audit summaries from the approved runner:
-    - `narration_v3_2_elevenlabs.mp3`
-    - `elevenlabs_alignment_raw.v3_2.json`
-    - `elevenlabs_tts_timing_summary.v3_2.json`
-    - `story_script_preview.v3_2.json`
-    - `dynamic_caption_timeline_tts_anchored.v3_2.json`
-    - `script_impact_gate_report.v3_2.json`
-  - Do not generate visual mp4, mux mp4, frames, or rendered overlays in this slice.
+  - Allowed only for render/mux/audit outputs from the approved runner:
+    - overlay/frame artifacts needed for Pillow render and artifact audit,
+    - visual mp4,
+    - mux mp4,
+    - post-render artifact audit JSON,
+    - timing/caption/story/audit summaries deterministically required by this path.
   - Do not stage `C:\tmp` outputs.
+  - Do not touch unrelated `C:\tmp` subtrees.
 
-Allowed external side effect:
+Allowed external/local side effects:
 
-- ElevenLabs TTS API only, via approved provider `ALLOW_ELEVENLABS`, with at most 2 calls.
-- Prefer one primary call. Do not use second call unless a clear artifact/severe pause/timing audit block occurs and the reason is recorded before the second call.
-- No retry loop.
+- Local Pillow/frame render exactly once.
+- Local ffmpeg mux exactly once.
+- Local ffprobe/media probe and artifact audit.
+- No network/API/env/secret side effects.
 
 ## Required Execution Order
 
 1. `git status -sb`.
-2. Create/update the live TTS/audio run plan fixture and static guard.
-3. Patch the v3.2 runner only if needed for TTS-only and env allowlist safety.
+2. Create/update the live render/mux run plan fixture and static guard.
+3. Patch the v3.2 runner only if needed for render/mux-only, explicit approval flag, and env-free reuse path.
 4. Run static/preflight checks:
-   - `node --check scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs`
+   - `node --check scripts/check-golden-sample-v3-2-live-render-mux-run-plan-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-live-render-mux-run-plan-static.mjs`
    - `node scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs`
-   - `node scripts/check-golden-sample-v3-2-live-tts-audio-approval-packet-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
    - `node scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
    - `node scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
 5. `node --check` every changed/new `.mjs`, including the live runner if patched.
 6. JSON parse every changed/new fixture.
-7. If and only if all checks pass, run the approved live command with transient provider flag:
-   - PowerShell pattern:
-     - `$env:ALLOW_ELEVENLABS='1'; node scripts\run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs --stage tts-audio-only --allow-live-tts`
-   - If the implemented stage flag differs, use the exact documented equivalent and report the mismatch.
-   - Do not set any other provider flag.
-   - Do not modify `.env.local`.
-8. After live run, inspect only generated TTS/audio/timing summary files in the approved `C:\tmp` output directory.
+7. If and only if all checks pass, run the approved local render/mux command:
+   - Suggested command:
+     - `node scripts\run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs --stage render-mux-only --allow-render-mux`
+   - If the implemented stage/flag differs, use the exact documented equivalent and report the mismatch.
+   - Do not set provider flags.
+   - Do not modify or read `.env.local`.
+8. After render/mux run, inspect only generated render/mux/audit summary files in the approved `C:\tmp` output directory.
 9. Append `_ai/CLAUDE_REPORT.md` with:
    - exact command,
-   - API call count vs cap 2,
-   - cost cap handling / measured provider cost if available, otherwise explicit `costTelemetryUnavailable` note,
-   - generated audio/timing output paths,
-   - Script Impact Gate result,
+   - render count vs cap 1,
+   - mux count vs cap 1,
+   - cost cap $0 result,
+   - source artifacts reused,
+   - output paths,
+   - media probe result,
    - audio artifact audit result,
+   - caption-card gate result,
+   - story gate result,
    - any stop condition hit,
-   - confirmation of no render/mux/upload/image/browser/DB/deploy/dependency.
+   - confirmation of no image regeneration, no TTS regeneration, no env/secret read, no upload, no external API, no dependency/DB/deploy.
 
 ## Required Safety Semantics
 
-- Only `ALLOW_ELEVENLABS` provider is approved.
-- Only `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` secret values may be read.
-- Secret values must never be logged or written. Masked voice id is allowed.
-- Script Impact Gate PASS is required before API call.
-- Provenance mismatch stops before API call.
-- API call cap is 2. Never exceed it.
-- Cost cap is $1. If provider cost telemetry is unavailable, enforce the call cap as the hard cost-control proxy and report that cost telemetry was unavailable.
-- No render/mux/upload/image/browser execution.
+- Render/mux approval is one-run only for `t1_lifestyle_inflation`.
+- Existing accepted 9 images must pass md5 gate before render.
+- Existing accepted ElevenLabs audio/alignment/timing must be reused.
+- No TTS stage, no live TTS guard, no `ELEVENLABS_API_KEY`, no `ELEVENLABS_VOICE_ID`, no `.env.local`.
+- No image/browser generation.
+- Render cap is 1.
+- Mux cap is 1.
+- Cost cap is $0.
+- Stop before output if font vendoring, safe-frame, or overlay-spec fails.
+- Stop/fail if audio artifact audit, media probe, caption-card gate, story gate, render, or mux fails.
+- `uploadReady` must remain false.
 - Owner QA actual pass remains PENDING.
 - Upload hard block remains active.
 
@@ -244,29 +252,30 @@ Minimum:
 1. `git status -sb`
 2. `node --check` for every changed/new `.mjs`
 3. JSON parse for every changed/new fixture
-4. New live TTS/audio run plan guard:
-   - `node scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs`
+4. New live render/mux run plan guard:
+   - `node scripts/check-golden-sample-v3-2-live-render-mux-run-plan-static.mjs`
 5. Regression/preflight:
-   - `node scripts/check-golden-sample-v3-2-live-tts-audio-approval-packet-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-live-tts-audio-run-plan-static.mjs`
+   - `node scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs`
    - `node scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs`
    - `node scripts/check-golden-sample-v3-2-future-execution-plan-gate-static.mjs`
    - `node scripts/check-golden-sample-v3-2-integrated-production-readiness-static.mjs`
-6. Live command, only after checks pass:
-   - `$env:ALLOW_ELEVENLABS='1'; node scripts\run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs --stage tts-audio-only --allow-live-tts`
+6. Local render/mux command, only after checks pass:
+   - `node scripts\run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs --stage render-mux-only --allow-render-mux`
 
 Do not run full build unless a syntax/import issue requires it.
 
 ## Forbidden
 
-- Any provider except ElevenLabs TTS with `ALLOW_ELEVENLABS`.
-- OpenAI TTS, OpenAI Image API, BFL/FLUX2, Imagen, Gemini/Veo, Midjourney, ChatGPT/Playwright/browser/CDP.
-- Reading env/secret keys other than `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` for this live slice.
+- Any network/API/provider call.
+- OpenAI TTS/Image API, ElevenLabs API, BFL/FLUX2, Imagen, Gemini/Veo, Midjourney, ChatGPT/Playwright/browser/CDP.
+- Reading any env/secret value or `.env.local`.
 - Logging/writing secret values.
 - Upload or upload queue or `/api/upload` POST.
-- Render/mux/Pillow/frame/video generation, generated frame extraction, or visual mp4/mux mp4 creation.
 - Image generation or image regeneration.
+- TTS generation or TTS regeneration.
 - Adding dependencies, changing lockfiles, font files, DB/schema/deploy config, or `pnpm-workspace.yaml`.
-- Creating a new live TTS runner clone.
+- Creating a new render/mux runner clone.
 - Modifying protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -281,21 +290,22 @@ Do not run full build unless a syntax/import issue requires it.
 
 ## Definition Of Done
 
-- Live TTS/audio run plan fixture exists and matches Owner approval exactly.
+- Live render/mux run plan fixture exists and matches Owner approval exactly.
 - Static/preflight guard exists and fails closed for approval drift.
-- v3.2 runner has safe TTS-only execution path and env/secret allowlist.
-- Required checks pass before live call.
-- Approved live ElevenLabs TTS/audio command is run once, unless a preflight stop condition blocks it.
-- API call count never exceeds 2.
-- Cost cap handling is recorded.
-- TTS/audio evidence is in the approved `C:\tmp` output directory.
+- v3.2 runner has safe render/mux-only execution path and explicit approval flag.
+- Required checks pass before render/mux execution.
+- Approved local render/mux command is run once, unless a preflight stop condition blocks it.
+- Render count never exceeds 1.
+- Mux count never exceeds 1.
+- Cost remains $0.
+- Render/mux/audit evidence is in the approved `C:\tmp` output directory.
 - `_ai/CLAUDE_REPORT.md` records concise evidence and any stop condition.
-- No render/mux/upload/image/browser/env modification/dependency/DB/deploy occurred.
+- No image regeneration/TTS regeneration/API/env/secret/upload/dependency/DB/deploy occurred.
 - No commit/push.
 
 ## Current Git Context
 
-- Branch: `codex/source-first-blueprint-clean`, ahead 182 after checkpoint `d1c3ae2`.
+- Branch: `codex/source-first-blueprint-clean`, ahead 183 after checkpoint `c02ed21`.
 - Existing unstaged/untracked excluded files must remain unstaged:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
