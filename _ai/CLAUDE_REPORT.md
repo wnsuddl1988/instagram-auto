@@ -3733,3 +3733,23 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. 소스가 이미 1080x1920(9:16)이라 side gutter는 실질적으로 0에 가깝고 top/bottom 검은 여백만 생성됨(docs에 명시).
 - checkpoint recommendation: 신규 4파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 194, 이번 slice uncommitted. output/ 산출물은 gitignore 대상이라 커밋 대상 아님.
 
+---
+
+## vercel-blob-instagram-integration-packet-v1 (2026-07-06)
+
+- **수행**: Owner 승인 `APPROVE_VERCEL_BLOB_PREPARE_INTEGRATION_PACKET` 범위에서, Instagram public `video_url`을 Vercel Blob public direct URL로 공급하기 위한 no-secret/no-provisioning/no-upload/no-live integration approval packet(docs + fixture + guard)을 작성. 실제 store/token/env/dependency/upload/live/arm은 전부 future gate로 분리.
+- **신규 파일 3개 (+report)**:
+  - `docs/vercel-blob-instagram-integration-packet.md` — Instagram=Blob/YouTube=no-Blob 이유, public store 필요성(access mode 생성 시 불변), Function body 4.5MB 회피 + local/worker SDK 업로드, deterministic immutable key, retention/cleanup, cost/free-tier guard, future approval sequence(7게이트) + rollback, 금지 항목, 공식 문서 근거 3 URL.
+  - `scripts/fixtures/vercel_blob_instagram_integration_packet.v1.json` — provider=vercel_blob_public_direct_url, platform=instagram_only, youtube{usesBlobUrl:false, direct upload}, blobStore{accessMode:public, immutableAtCreation}, envNamesOnly.writeToken=BLOB_READ_WRITE_TOKEN(secretValueRecorded:false), dependencyStatus{sdk 미설치, dependencyChangeApprovedNow:false}, uploadPathDesign{routeThroughVercelFunctionBody:false, local/worker SDK}, objectKeyContract{deterministic/immutable, allowOverwrite:false, addRandomSuffix:false}, uploadVerifierGates(상속: HTTPS/2xx|206/video/reject html/unauth/verified-only), retentionPolicy(1-7일, 성공 후 삭제, cleanup 별도 승인), sizeCostGuard(cap 35MB, fail-closed, Hobby 한도), futureApprovalGates(store/dependency/env/upload/liveness/arm/cleanup 7종), forbiddenBehavior, prohibitedDrift(10 cases).
+  - `scripts/check-vercel-blob-instagram-integration-packet-static.mjs` — fixture 불변식 + docs 검증 + self-scan + mutant 16종(Blob→YouTube 라우팅/platform drift/private store/secret 값 삽입/토큰 이름 오류/dependency 승인됨/allowOverwrite/addRandomSuffix/rejectTextHtml false/verified-only false/retention 제거/cost 제거/Function body route/arm 게이트 제거/store 게이트 제거/provider R2 drift) → **36/36 PASS**
+- **official-doc basis (Codex 확인, live lookup 없음)**: vercel.com/docs/vercel-blob, /server-upload, /usage-and-pricing. 핵심 사실(public store=URL 아는 누구나 read/쓰기 토큰 필요, access mode 생성 시 불변, BLOB_READ_WRITE_TOKEN, Function body 4.5MB 한계, Hobby 한도 초과 시 access 중단)을 HANDOFF에 정리된 근거로 인용.
+- **proposed defaults**: store name `instagram-auto-instagram-media`, access public, key `instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4`, Instagram variant `instagram_reels_full_frame_1080x1920`, target 20-30MB / cap 35MB, retention 1-7일.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (guard) ✓, JSON parse (fixture) ✓
+  - `node scripts/check-vercel-blob-instagram-integration-packet-static.mjs` → **ALL PASS 36/36**
+  - targeted regression: dual-platform 32/32, media-provider-decision 38/38, stable-public-media-url 31/31, youtube-letterbox-render-test 28/28 — 전부 ALL PASS
+- **side effects: none** — Blob store provisioning 0, token/env/secret r/w 0, `.env.local`/`vercel env pull` 0, @vercel/blob 설치/dependency/lockfile 0, object upload 0, live URL check 0, Instagram API/`--arm` 0, YouTube API/OAuth/upload 0, deploy/DNS/domain 0, render/mux/TTS/image/browser/ffmpeg 0, commit/push 0. 문서/fixture/guard 텍스트만. secret/token 값 미기록(guard가 secret-like 리터럴 부재 검증).
+- deviations/risks: 범위 이탈 없음. store access mode 불변 특성상 방향 전환 시 새 store 생성 필요 — docs rollback 절에 명시.
+- checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 195, 이번 slice uncommitted.
+

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "vercel_blob_instagram_integration_packet_v1",
+  "taskId": "vercel-blob-instagram-integration-packet-v1",
+  "status": "INTEGRATION_PACKET_NO_SECRET_NO_PROVISIONING_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "approvalToken": "APPROVE_VERCEL_BLOB_PREPARE_INTEGRATION_PACKET",
+  "docsRef": "docs/vercel-blob-instagram-integration-packet.md",
+  "activeArchitectureRef": "scripts/fixtures/dual_platform_variant_publish_architecture.v1.json",
+  "strategyRef": "scripts/fixtures/stable_public_media_url_strategy.v1.json",
+  "providerDecisionRef": "scripts/fixtures/media_provider_decision_packet.v1.json",
+  "instagramRunnerRef": "scripts/run-golden-sample-v3-2-instagram-upload-once.mjs",
+  "nature": "Instagram public video_url을 Vercel Blob public direct URL로 공급하기 위한 no-secret/no-provisioning/no-upload/no-live integration approval packet. Instagram만 Blob public URL을 사용하고 YouTube는 Blob을 쓰지 않는다(YouTube Data API direct file upload). 이 패킷은 Blob store 생성/token/env write/dependency install/object upload/live URL check/Instagram --arm/deploy를 승인하거나 수행하지 않는다. 실제 실행은 각 future approval gate 별도 승인 이후에만 진행한다.",
+
+  "provider": "vercel_blob_public_direct_url",
+  "platform": "instagram_only",
+  "instagramVariantId": "instagram_reels_full_frame_1080x1920",
+
+  "youtube": {
+    "usesBlobUrl": false,
+    "usesPublicUrlLayer": false,
+    "uploadMode": "youtube_data_api_direct_file_upload",
+    "note": "YouTube는 Blob/public URL을 쓰지 않는다. youtube_shorts_letterbox_1080x1920 변형은 direct file upload로 발행되므로 이 패킷의 Blob 경로 대상이 아니다."
+  },
+
+  "blobStore": {
+    "proposedName": "instagram-auto-instagram-media",
+    "accessMode": "public",
+    "accessModeImmutableAtCreation": true,
+    "readAccess": "anyone_with_url_direct_blob_url",
+    "writeAccessRequiresToken": true,
+    "note": "Blob store access mode는 생성 시점에 결정되고 이후 변경 불가하다. Instagram은 public unauthenticated video_url이 필요하므로 store는 반드시 public이어야 하며 private store는 부적합하다."
+  },
+
+  "envNamesOnly": {
+    "writeToken": "BLOB_READ_WRITE_TOKEN",
+    "secretValueRecorded": false,
+    "note": "Vercel이 연결된 프로젝트에 생성하는 공식 env 이름만 기록한다. 실제 토큰/secret 값은 이 패킷 어디에도 기록하지 않는다."
+  },
+
+  "dependencyStatus": {
+    "vercelBlobSdkInstalled": false,
+    "sdkPackageName": "@vercel/blob",
+    "dependencyChangeApprovedNow": false,
+    "note": "현재 package.json에 @vercel/blob이 없다. future code integration에서 @vercel/blob 설치는 dependency/lockfile 변경 별도 승인(APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION)이 필요하다. 이 slice에서 dependency 변경은 승인/수행되지 않는다."
+  },
+
+  "uploadPathDesign": {
+    "mode": "local_or_worker_side_sdk_upload",
+    "routeThroughVercelFunctionBody": false,
+    "vercelFunctionBodyLimitMb": 4.5,
+    "targetObjectSizeMb": "20-30",
+    "sdkCallShape": "put(pathname, body, { access: 'public', addRandomSuffix: false, allowOverwrite: false })",
+    "note": "20-30MB mp4는 Vercel Function request body 한계(4.5MB)를 초과하므로 Next.js upload endpoint의 body로 라우팅하지 않는다. future uploader는 렌더 산출 mp4 경로에서 로컬/워커 측 SDK로 직접 업로드한다."
+  },
+
+  "objectKeyContract": {
+    "pattern": "instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4",
+    "deterministic": true,
+    "immutable": true,
+    "allowOverwrite": false,
+    "addRandomSuffix": false,
+    "randomOnlyUrlForbidden": true,
+    "note": "결정론적 immutable object key. 같은 contentId/variantId/version/sha256_12는 항상 같은 URL로 매핑된다. overwrite 금지, random-only suffix URL 금지. sha256_12는 mp4 콘텐츠 해시 앞 12자로 무결성/중복 방지에 사용된다."
+  },
+
+  "uploadVerifierGates": {
+    "inheritedFrom": "scripts/fixtures/stable_public_media_url_strategy.v1.json#uploadVerifierGates",
+    "requireHttps": true,
+    "requireHttp2xxOr206": true,
+    "requireVideoContentType": true,
+    "acceptedContentTypePrefixes": ["video/"],
+    "rejectTextHtml": true,
+    "requireUnauthenticatedAccess": true,
+    "rejectLoginOrHtmlRedirect": true,
+    "uploadOnlyWithVerifiedUrl": true,
+    "note": "Instagram video_url로 넘기기 전에 Blob public URL도 모든 gate를 통과해야 한다. HTTPS 전용, 2xx|206, video/* content-type, text/html 거부, 무인증 접근, 로그인/HTML 리다이렉트 거부, 검증된 URL만 업로드(fail-closed). 하나라도 실패하면 업로드를 중단한다."
+  },
+
+  "retentionPolicy": {
+    "keepLongEnoughForMetaFetchRetry": true,
+    "defaultTargetDays": "1-7",
+    "deleteOnlyAfterPublishSuccess": true,
+    "deleteAfterSafeDelay": true,
+    "cleanupRequiresSeparateApproval": true,
+    "longTermArchiveInBlobForbidden": true,
+    "note": "Meta fetch/retry에 충분한 기간(기본 1-7일) 동안 Blob object를 유지하고, publish 성공 확인 + 안전 지연 이후에만 별도 승인된 cleanup 경로에서 삭제한다. 발행 실패 시 조기 삭제 금지."
+  },
+
+  "sizeCostGuard": {
+    "targetObjectSizeMb": "20-30",
+    "proposedCapMb": 35,
+    "failClosedAboveCap": true,
+    "longTermVideoArchiveForbidden": true,
+    "hobbyIncluded": {
+      "storagePerMonthGb": 1,
+      "simpleOperations": 10000,
+      "advancedOperations": 2000,
+      "blobDataTransferGb": 10,
+      "note": "Hobby 무료 한도. 한도 초과 시 Blob access가 중단되므로(무제한/보장 무료 아님) usage guard가 필수다."
+    },
+    "note": "Instagram Blob object는 20-30MB 목표, 제안 상한 35MB. 상한 초과 시 fail-closed. 기본적으로 Blob에 장기 영상 아카이브를 두지 않는다."
+  },
+
+  "futureApprovalGates": [
+    { "gate": "APPROVE_VERCEL_BLOB_STORE_PROVISIONING", "detail": "public Blob store 생성" },
+    { "gate": "APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION", "detail": "@vercel/blob 설치(dependency/lockfile) + uploader 코드 통합" },
+    { "gate": "APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL", "detail": "BLOB_READ_WRITE_TOKEN env/secret 설정 또는 pull" },
+    { "gate": "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "detail": "결정론적 key로 실제 object 1회 업로드 테스트" },
+    { "gate": "APPROVE_VERCEL_BLOB_PUBLIC_URL_LIVENESS", "detail": "public URL verifier gate live check" },
+    { "gate": "APPROVE_INSTAGRAM_ARM", "detail": "검증된 Blob URL로 Instagram 실제 1회 발행" },
+    { "gate": "APPROVE_VERCEL_BLOB_CLEANUP_RETENTION_JOB", "detail": "발행 성공 후 안전 지연 뒤 cleanup/retention job" }
+  ],
+
+  "forbiddenBehavior": [
+    "Vercel Blob store 생성/provisioning",
+    "token/env/secret read/write",
+    ".env.local access",
+    "vercel env pull",
+    "@vercel/blob 설치 또는 dependency/lockfile 변경",
+    "object upload",
+    "public URL liveness/network check",
+    "Instagram API/--arm",
+    "YouTube API/OAuth/upload",
+    "deploy/DNS/domain change",
+    "render/mux/TTS/image/browser/ffmpeg/media generation",
+    "commit/push",
+    "routing Blob/public URL to YouTube",
+    "recording secret/token values in docs/fixtures/reports"
+  ],
+
+  "prohibitedDrift": {
+    "note": "아래 상태는 이 integration packet 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "provider가 vercel_blob_public_direct_url가 아님",
+      "platform이 instagram_only가 아니거나 YouTube가 Blob/public URL을 쓰게 됨",
+      "blobStore.accessMode가 public이 아님(private drift)",
+      "envNamesOnly.writeToken이 BLOB_READ_WRITE_TOKEN이 아니거나 secret 값 형태가 섞임",
+      "dependencyStatus.dependencyChangeApprovedNow가 true(이 slice에서 dependency 변경 승인됨으로 오독)",
+      "objectKeyContract.allowOverwrite가 true 또는 addRandomSuffix가 true(결정론적 immutable 위반)",
+      "uploadVerifierGates에서 requireHttps/rejectTextHtml/requireUnauthenticatedAccess/uploadOnlyWithVerifiedUrl 중 하나라도 false",
+      "retentionPolicy 또는 sizeCostGuard 누락",
+      "futureApprovalGates에서 store/dependency/env/upload/liveness/arm/cleanup 게이트 누락",
+      "forbiddenBehavior에서 provisioning/upload/env/dependency/arm 항목 제거"
+    ]
+  }
+}
