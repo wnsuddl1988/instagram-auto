@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "golden_sample_live_instagram_upload_run_plan_v1",
+  "taskId": "golden-sample-v3-2-live-instagram-upload-with-buildgongjakso-public-url-v1",
+  "status": "APPROVED_LIVE_PLAN_FAIL_CLOSED_CAP_1",
+  "createdAt": "2026-07-06",
+  "topicId": "t1_lifestyle_inflation",
+  "nature": "Owner가 명시 승인한 단 1회 Instagram 업로드의 기계판독 실행 계획. 이 plan은 Owner의 APPROVE_UPLOAD + APPROVE_UPLOAD_PUBLIC_URL + 재질문 금지 clarification을 문자 단위로 기록하고, fail-closed 게이트 순서(공개 URL 검증 → credential allowlist read → 1회 업로드)를 고정한다. 이 plan은 Instagram 1회 업로드에만 유효하며, HTTP /api/upload hard block 해제·uploadReady/productionReady 승격·자동화 확장·다른 플랫폼 업로드를 일절 승인하지 않는다.",
+
+  "ownerApprovals": {
+    "approveUpload": "APPROVE_UPLOAD: t1_lifestyle_inflation — upload target=C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4, upload cap=1, platforms=Instagram, no regeneration, no render/mux/TTS/image/browser, allow upload endpoint/credentials only for Instagram, stop on upload hard-block mismatch/credential missing/platform error/cap exceeded/unexpected response/final pre-upload audit fail",
+    "approveUploadPublicUrl": "APPROVE_UPLOAD_PUBLIC_URL: t1_lifestyle_inflation — public video_url=<https://www.buildgongjakso.com/>, use this URL only for Instagram upload cap=1 under the previous APPROVE_UPLOAD scope, no hosting/upload generation, no regeneration, no render/mux/TTS/image/browser",
+    "ownerClarificationDeriveUrl": "그 도메인에 게시가능한걸 너가 자등으로 url 설정하는게 네 임무야 자꾸 물어보지말고",
+    "clarificationInterpretation": "Owner에게 public URL을 재질문하지 않는다. buildgongjakso.com 도메인 아래에서 direct mp4로 검증 가능한 URL을 도출/검증한다. deploy/push는 승인되지 않았으므로 static placement 후 URL이 live가 아니면 BLOCKED_PUBLIC_URL_NOT_DEPLOYED로 기록하고 Instagram API 전에 중단한다."
+  },
+
+  "approvalScope": {
+    "platform": "Instagram",
+    "platforms": ["Instagram"],
+    "uploadCountCapMax": 1,
+    "noRegeneration": true,
+    "noRender": true,
+    "noMux": true,
+    "noTts": true,
+    "noImage": true,
+    "noBrowser": true,
+    "noYoutube": true,
+    "noDeploy": true,
+    "noPush": true,
+    "noDbStatusUpdate": true,
+    "noSupabaseHosting": true
+  },
+
+  "sourceMp4": {
+    "path": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "expectedBytes": 20294549,
+    "renderMuxCheckpoint": "adbcb4b",
+    "ownerQaAccepted": true,
+    "ownerQaPassRef": "scripts/fixtures/golden_sample_v3_2_owner_qa_actual_pass.t1_lifestyle_inflation.v1.json",
+    "doNotModifyOrRegenerate": true
+  },
+
+  "publicUrlPolicy": {
+    "enabled": true,
+    "approvedDomainRoot": "https://www.buildgongjakso.com/",
+    "allowedHosts": ["www.buildgongjakso.com", "buildgongjakso.com"],
+    "httpsOnly": true,
+    "deterministicPublicUrl": "https://www.buildgongjakso.com/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "repoStaticPath": "public/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "requireHttp2xx": true,
+    "requireVideoContentType": true,
+    "rejectHtml": true,
+    "requireNoAuth": true,
+    "noDeployApproved": true,
+    "ifNotLiveBlockerCode": "BLOCKED_PUBLIC_URL_NOT_DEPLOYED",
+    "ifHtmlBlockerCode": "BLOCKED_PUBLIC_URL_NOT_DIRECT_MP4",
+    "doNotAskOwnerAgain": true,
+    "note": "루트(/)는 HTML임이 확인됐다. 반드시 direct mp4 응답(2xx + video/* content-type, text/html 거부)을 검증한 뒤에만 Instagram API로 진행한다. mp4의 repo public/ 복사는 이 URL materialization 목적일 때만 허용되며 미디어 내용 변경/재생성이 아니다."
+  },
+
+  "credentialPolicy": {
+    "allowedEnvKeys": ["INSTAGRAM_ACCESS_TOKEN", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
+    "allowedEnvKeysSource": "lib/instagram.ts가 요구하는 정확한 기존 naming (INSTAGRAM_BUSINESS_ACCOUNT_ID + INSTAGRAM_ACCESS_TOKEN)",
+    "forbiddenEnvKeyPatterns": ["YOUTUBE_", "GOOGLE_", "SUPABASE_", "OPENAI_", "ELEVENLABS_"],
+    "broadEnvParseForbidden": true,
+    "envLocalTargetedExtractionOnly": true,
+    "secretLoggingForbidden": true,
+    "secretValuesNeverInResultJson": true,
+    "accountIdMaskedPresenceOnly": true,
+    "readOnlyAfterAllNonSecretGates": true,
+    "missingBlockerCode": "BLOCKED_INSTAGRAM_CREDENTIALS_MISSING"
+  },
+
+  "instagram": {
+    "graphApiBase": "https://graph.facebook.com/v19.0",
+    "mediaType": "REELS",
+    "shareToFeed": true,
+    "caption": "월급이 올라도 통장이 그대로인 이유 💸 라이프스타일 인플레이션, 오늘부터 점검해보세요. #재테크 #돈관리 #라이프스타일인플레이션 #월급관리 #절약",
+    "captionSource": "golden_sample_v3_2_acceptance_lock topic('월급이 올라도 통장이 그대로인 이유') 기반. armed run 전 Owner/Codex 수정 가능.",
+    "pollMaxAttempts": 24,
+    "pollIntervalMs": 5000,
+    "publishOnlyIfFinished": true,
+    "noRetry": true,
+    "notFinishedBlockerCode": "UPLOAD_FAILED_CONTAINER_NOT_FINISHED"
+  },
+
+  "oneShotLedger": {
+    "resultJsonPath": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\instagram_upload_run_result.t1_lifestyle_inflation.v3_2.json",
+    "armedLedgerWriteBeforeContainerCall": true,
+    "blockerIfAlreadyAttempted": "BLOCKED_ALREADY_ATTEMPTED",
+    "note": "armed 상태에서 container 생성 API 호출 직전에 uploadAttempted:true ledger를 먼저 기록해 crash/재실행 시에도 2회 시도가 구조적으로 불가능하게 한다."
+  },
+
+  "httpEndpointStillBlocked": true,
+  "hardBlock": {
+    "httpEndpointActive": true,
+    "policyRef": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "note": "POST /api/upload의 hard block(403)은 이 plan과 무관하게 계속 active다. 이 runner는 Owner APPROVE_UPLOAD로 별도 승인된 direct one-shot lane이며, HTTP hard block을 해제하지 않고 uploadReady/productionReady를 승격하지 않는다. runner는 실행 전 policy fixture의 uploadBlocked:true를 재확인하고 불일치 시 BLOCKED_HARD_BLOCK_MISMATCH로 중단한다.",
+    "mismatchBlockerCode": "BLOCKED_HARD_BLOCK_MISMATCH"
+  },
+
+  "finalPreUploadAudit": {
+    "requirements": [
+      "local target mp4가 승인 경로에 존재하고 expectedBytes(20294549)와 일치",
+      "public URL이 buildgongjakso.com 아래 direct mp4 (2xx + video/*, text/html 거부, 무인증 접근)",
+      "Owner QA actual pass fixture 존재 + ownerQaPassed:true",
+      "upload cap ledger 0/1 (기존 uploadAttempted:true 결과 없음)",
+      "no regeneration/render/mux/TTS/image/browser (runner에 해당 코드 경로 없음)"
+    ],
+    "failBlockerCode": "BLOCKED_FINAL_PRE_UPLOAD_AUDIT_FAIL",
+    "mustPassBeforeAnyCredentialRead": true,
+    "mustPassBeforeAnyInstagramApiCall": true
+  },
+
+  "gateOrder": [
+    "GATE_1_PLAN",
+    "GATE_2_LEDGER",
+    "GATE_3_SOURCE_MP4",
+    "GATE_4_OWNER_QA_PASS",
+    "GATE_5_HARD_BLOCK_RECONCILE",
+    "GATE_6_PUBLIC_URL",
+    "GATE_7_CREDENTIALS_ARMED_ONLY",
+    "GATE_8_UPLOAD_ONCE_ARMED_ONLY"
+  ],
+
+  "blockerCodes": [
+    "BLOCKED_PLAN_GATE_FAILED",
+    "BLOCKED_ALREADY_ATTEMPTED",
+    "BLOCKED_SOURCE_MP4_MISSING",
+    "BLOCKED_SOURCE_MP4_SIZE_MISMATCH",
+    "BLOCKED_OWNER_QA_PASS_MISSING",
+    "BLOCKED_HARD_BLOCK_MISMATCH",
+    "BLOCKED_PUBLIC_URL_NOT_DEPLOYED",
+    "BLOCKED_PUBLIC_URL_NOT_DIRECT_MP4",
+    "BLOCKED_INSTAGRAM_CREDENTIALS_MISSING",
+    "BLOCKED_FINAL_PRE_UPLOAD_AUDIT_FAIL",
+    "UPLOAD_FAILED_CONTAINER_CREATE",
+    "UPLOAD_FAILED_CONTAINER_NOT_FINISHED",
+    "UPLOAD_FAILED_PUBLISH"
+  ],
+
+  "stopConditions": [
+    "public URL이 direct mp4/video 응답이 아님",
+    "public URL이 text/html을 반환",
+    "static placement 후에도 URL 미배포/미라이브",
+    "Instagram credential 누락",
+    "upload hard-block/readiness 불일치를 안전하게 조정 불가",
+    "final pre-upload audit 실패",
+    "cap 1 초과 위험",
+    "예상치 못한 route/client 동작",
+    "미승인 deploy/hosting/Supabase/upload generation 필요 상황"
+  ],
+
+  "executionPreconditionNotes": [
+    "2026-07-06 이 plan 작성 세션에서 auto-mode 권한 분류기가 public URL liveness 사전 점검(curl)을 거부함 — 사유: 공개 표면 생성 + live upload 체인은 Owner의 세션 내 직접 검토/승인 필요. 따라서 URL 검증/mp4 public 복사/credential read/upload는 이 세션에서 실행되지 않았다.",
+    "runner 실행(특히 --arm)은 Owner가 직접 검토 가능한 권한 모드에서 수행해야 한다.",
+    "deploy/push 미승인 상태에서는 deterministic URL이 live가 될 수 없으므로, Owner가 별도로 배포하지 않는 한 GATE_6에서 BLOCKED_PUBLIC_URL_NOT_DEPLOYED로 중단되는 것이 정상 동작이다."
+  ],
+
+  "references": {
+    "ownerQaActualPass": "scripts/fixtures/golden_sample_v3_2_owner_qa_actual_pass.t1_lifestyle_inflation.v1.json",
+    "uploadApprovalPacket": "scripts/fixtures/golden_sample_v3_2_upload_approval_packet.t1_lifestyle_inflation.v1.json",
+    "uploadHardBlockPolicy": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "renderMuxRunPlan": "scripts/fixtures/golden_sample_v3_2_live_render_mux_run_plan.t1_lifestyle_inflation.v1.json",
+    "runner": "scripts/run-golden-sample-v3-2-instagram-upload-once.mjs",
+    "staticGuard": "scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs",
+    "approvedScope": "_ai/HANDOFF_NOW.md (Task ID: golden-sample-v3-2-live-instagram-upload-with-buildgongjakso-public-url-v1)"
+  },
+
+  "prohibited": [
+    "Instagram 외 플랫폼 업로드 (YouTube 포함 전면 금지)",
+    "upload attempt 2회 이상",
+    "YouTube client/import/credential read",
+    "broad .env.local parsing (allowlist 2개 key 외 추출 금지)",
+    "secret/token/account ID 원문 logging 또는 result JSON 기록",
+    "image/TTS/render/mux/browser/CDP 실행 또는 재생성",
+    "DB status update, Supabase hosting, deploy, Vercel deploy, git push",
+    "dependency/lockfile/font 변경",
+    "HTTP /api/upload hard block 해제 또는 uploadReady/productionReady 승격",
+    "Owner에게 public URL 재질문"
+  ]
+}
