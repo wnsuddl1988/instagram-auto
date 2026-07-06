@@ -8,18 +8,22 @@
 
 ## Current Approved Slice
 
-- Task ID: `media-provider-discovery-decision-packet-v1`
-- Status: **Owner approved no-secret/no-provisioning discovery to choose the best provider path for the sustained public media origin.**
+- Task ID: `r2-primary-provisioning-approval-packet-v1`
+- Status: **Owner accepted checkpoint `54b1a3a` and confirmed Cloudflare R2 as the primary sustained media provider. This slice prepares the provisioning approval packet only.**
 - Exact Owner approval:
-  - `APPROVE_MEDIA_PROVIDER_DISCOVERY: sustained default는 media.buildgongjakso.com + object storage/CDN로 유지한다. Codex/Claude는 no-secret/no-provisioning 범위에서 현재 프로젝트와 계정 상태를 조사해 Vercel Blob, Cloudflare R2, S3-compatible 중 최적 provider와 DNS/env/deploy 순서를 결정하는 decision packet을 준비하라. storage provisioning, DNS 변경, env/secret write, deploy, upload, Instagram --arm 실행은 아직 금지.`
+  - `APPROVE_R2_PRIMARY_PREPARE_PROVISIONING_PACKET: checkpoint 54b1a3a accepted. Cloudflare R2를 media.buildgongjakso.com sustained provider primary로 확정한다. Codex/Claude는 no-secret/no-provisioning 범위에서 R2 bucket, custom domain, token/env 이름, DNS, rollback, 검증 순서를 담은 provisioning approval packet을 준비하라. 실제 bucket/token/DNS/env/deploy/object upload/live check/Instagram --arm은 아직 금지.`
 
 ## Current State
 
-- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `44a60da feat(media): define stable public media url strategy`, ahead 187, not pushed.
+- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `54b1a3a feat(media): choose r2 public media provider path`, ahead 188, not pushed.
 - Stable media strategy is checkpointed:
   - sustained default: `https://media.buildgongjakso.com/...`
   - backing: object storage/CDN
   - fallback only: repo `public/` mp4 + deploy under `www.buildgongjakso.com`
+- Provider decision is checkpointed:
+  - primary: Cloudflare R2
+  - fallback: Vercel Blob
+  - tertiary: S3-compatible
 - Live Instagram upload remains not executed:
   - upload 0
   - Instagram API 0
@@ -38,24 +42,40 @@
 
 ## Purpose
 
-Prepare a no-live provider decision packet that chooses the most stable implementation path among:
+Prepare a no-secret/no-provisioning R2 provisioning approval packet that tells the Owner exactly what must be approved next to make `https://media.buildgongjakso.com/...` a real direct mp4 origin.
 
-1. Vercel Blob,
-2. Cloudflare R2,
-3. S3-compatible object storage.
+This packet must define:
 
-The packet must recommend the provider/order for this project and define the future DNS/env/deploy sequence, while performing **no provisioning, no secret writes, no deploy, no storage upload, no live URL check, and no Instagram upload**.
+1. the proposed R2 bucket naming and object key policy,
+2. the custom domain plan for `media.buildgongjakso.com`,
+3. token/env variable names needed later, names only, no values,
+4. DNS/zone prerequisites and unknowns,
+5. rollback/disable plan,
+6. verification order before any Instagram upload,
+7. exact future Owner approval wording for the real provisioning slice.
 
-## Discovery Rules
+This slice must perform **no bucket creation, no token creation, no DNS change, no env/secret write, no deploy, no object upload, no live URL check, and no Instagram upload**.
 
-- Prefer official documentation and current local project evidence.
-- If using web or CLI account/project reads, keep them read-only.
-- Do not expose, print, copy, or write secret values.
-- Do not install dependencies.
-- Do not create provider accounts, buckets, tokens, DNS records, projects, or deployments.
-- If a CLI requests login, token, browser auth, provisioning, paid plan confirmation, or mutation, stop that path and record it as unavailable in no-secret discovery.
-- It is allowed to inspect non-secret project configuration such as package/config files and read-only CLI listings if already authenticated and non-mutating.
-- It is allowed to record provider-specific env var names that will be needed later, but not values.
+## Official Source Pointers
+
+Use only official docs or already-committed project evidence. Relevant official docs:
+
+- Cloudflare R2 public buckets/custom domains:
+  - `https://developers.cloudflare.com/r2/buckets/public-buckets/`
+  - Key points from docs already verified by Codex:
+    - public buckets expose R2 bucket contents to the Internet only with explicit user permission,
+    - custom domain under the Owner's control is a supported public bucket path,
+    - `r2.dev` is for non-production use,
+    - domain must be added as a Cloudflare zone in the same account as the R2 bucket,
+    - if the domain is not managed by Cloudflare, partial CNAME setup may be required,
+    - custom domain connection adds/reviews a DNS record and then becomes active after status transition.
+- Cloudflare R2 API/authentication/token docs:
+  - `https://developers.cloudflare.com/r2/api/tokens/`
+- Existing project evidence:
+  - `docs/public-media-url-strategy.md`
+  - `docs/media-provider-decision-packet.md`
+  - `scripts/fixtures/stable_public_media_url_strategy.v1.json`
+  - `scripts/fixtures/media_provider_decision_packet.v1.json`
 
 ## Source Contracts To Read
 
@@ -64,19 +84,16 @@ Read only the minimum needed:
 1. `AGENTS.md`
 2. this file
 3. `docs/public-media-url-strategy.md`
-4. `scripts/fixtures/stable_public_media_url_strategy.v1.json`
-5. `scripts/check-stable-public-media-url-strategy-static.mjs`
-6. `package.json`
-7. Project deployment/config hints if present:
+4. `docs/media-provider-decision-packet.md`
+5. `scripts/fixtures/stable_public_media_url_strategy.v1.json`
+6. `scripts/fixtures/media_provider_decision_packet.v1.json`
+7. `scripts/check-stable-public-media-url-strategy-static.mjs`
+8. `scripts/check-media-provider-decision-packet-static.mjs`
+9. `package.json`
+10. Project deployment/config hints if needed:
    - `vercel.json`
    - `next.config.*`
    - `.gitignore`
-   - relevant `app/`, `lib/`, or `scripts/` files only if needed to assess integration shape
-
-Optional read-only account/project state checks:
-
-- `vercel ls` or equivalent read-only Vercel project listing if available and already authenticated.
-- Read-only local git remote/config only if needed to understand deployment target.
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -94,58 +111,85 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed repo files:
 
-1. `docs/media-provider-decision-packet.md` (new)
-   - Compare Vercel Blob, Cloudflare R2, and S3-compatible storage for this project.
-   - Use official-doc evidence where available.
-   - Include current local project/account read-only evidence.
-   - Recommend one primary provider and one fallback provider.
-   - Define the exact future sequence:
-     1. Owner selects provider.
-     2. Provider provisioning approval.
-     3. DNS/custom domain approval for `media.buildgongjakso.com`.
-     4. Env/secret configuration approval.
-     5. Code integration slice.
-     6. Deploy approval.
-     7. Live URL liveness approval.
-     8. Instagram `--arm` approval.
-   - Include risk notes and rollback path.
-   - Do not include secret values.
+1. `docs/r2-provisioning-approval-packet.md` (new)
+   - Must be a no-live Owner approval packet.
+   - Must recommend concrete, stable names:
+     - proposed bucket name, e.g. `buildgongjakso-media` or similarly conservative,
+     - custom domain: `media.buildgongjakso.com`,
+     - deterministic object key prefix inherited from media strategy.
+   - Must document R2 setup steps at approval-packet level:
+     1. Cloudflare account/zone prerequisite check,
+     2. bucket creation,
+     3. public bucket custom domain connection,
+     4. R2 API token creation with least necessary scope,
+     5. env/secret configuration by names only,
+     6. code integration slice,
+     7. deploy,
+     8. controlled object upload test,
+     9. public URL verifier check,
+     10. Instagram `--arm` approval.
+   - Must record unknowns that require Owner/Cloudflare dashboard confirmation:
+     - whether `buildgongjakso.com` is already a Cloudflare zone,
+     - whether partial CNAME setup is needed,
+     - final Cloudflare account ID,
+     - final bucket name if Owner prefers a different one.
+   - Must include rollback:
+     - disable domain access,
+     - remove custom domain connection,
+     - revoke token,
+     - remove env values,
+     - stop uploader path,
+     - fallback to one-off repo `public/` path only if explicitly approved.
+   - Must include exact future approval snippets:
+     - provisioning approval,
+     - DNS/custom domain approval,
+     - env/secret write approval,
+     - code integration approval,
+     - deploy approval,
+     - object upload/live liveness approval,
+     - Instagram `--arm` approval.
+   - Must not include secret values.
 
-2. `scripts/fixtures/media_provider_decision_packet.v1.json` (new)
-   - Machine-readable decision packet.
-   - Must preserve sustained default `media.buildgongjakso.com`.
-   - Must include candidates: `vercel_blob`, `cloudflare_r2`, `s3_compatible`.
-   - Must include chosen recommendation and rationale.
-   - Must include future action sequence and approval gates.
-   - Must include forbidden behavior for this slice:
-     - storage provisioning,
-     - DNS changes,
-     - env/secret write,
-     - deploy,
-     - object upload,
-     - public URL liveness network check,
-     - Instagram upload,
-     - YouTube/Supabase/DB/render/mux/TTS/image/browser side effects,
-     - dependency/lockfile changes,
-     - secret logging.
+2. `scripts/fixtures/r2_provisioning_approval_packet.v1.json` (new)
+   - Machine-readable approval packet.
+   - Must preserve:
+     - provider: `cloudflare_r2`,
+     - sustained host: `media.buildgongjakso.com`,
+     - no-live status for this slice.
+   - Must include:
+     - proposed bucket name,
+     - custom domain,
+     - object key prefix/pattern,
+     - required env names only:
+       - `R2_ACCOUNT_ID`
+       - `R2_ACCESS_KEY_ID`
+       - `R2_SECRET_ACCESS_KEY`
+       - `R2_BUCKET`
+       - `R2_ENDPOINT`
+       - `PUBLIC_MEDIA_BASE_URL`
+     - approval gates for provisioning/DNS/env/code/deploy/object upload/liveness/Instagram arm,
+     - rollback steps,
+     - forbidden behavior,
+     - official docs refs.
 
-3. `scripts/check-media-provider-decision-packet-static.mjs` (new)
+3. `scripts/check-r2-provisioning-approval-packet-static.mjs` (new)
    - Dependency-free static guard.
    - Import only `node:fs`, `node:path`, `node:url` unless a `node:` builtin is truly justified.
    - Validate docs/fixture contract and no-live boundary.
    - Include fail-closed mutants for:
+     - provider drift away from `cloudflare_r2`,
      - sustained host drift away from `media.buildgongjakso.com`,
-     - missing candidate provider,
-     - missing chosen recommendation,
-     - missing approval gate for DNS,
-     - missing approval gate for env/secret,
-     - allowing provisioning in this slice,
-     - allowing deploy in this slice,
-     - allowing object upload in this slice,
-     - allowing live URL check in this slice,
-     - allowing Instagram upload in this slice,
-     - allowing secret logging,
-     - allowing dependency/lockfile changes.
+     - missing bucket proposal,
+     - missing custom domain,
+     - env names missing or containing values,
+     - missing provisioning approval gate,
+     - missing DNS approval gate,
+     - missing env/secret approval gate,
+     - missing object upload/live liveness approval gate,
+     - missing Instagram arm approval gate,
+     - allowing bucket/token/DNS/env/deploy/upload/liveness/Instagram in this slice,
+     - missing rollback steps,
+     - secret logging allowed.
 
 4. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
@@ -156,7 +200,8 @@ Allowed repo files:
 Avoid modifying:
 
 - Existing upload runner/guard.
-- Stable media strategy docs/fixture/guard unless a tiny typo or reference patch is necessary.
+- Stable media strategy docs/fixture/guard.
+- Provider decision docs/fixture/guard unless a tiny reference patch is necessary.
 - App runtime code.
 - DB/Supabase generation status code.
 - YouTube upload code.
@@ -167,29 +212,31 @@ Avoid modifying:
 
 1. `git status -sb`.
 2. Read source contracts.
-3. Gather no-secret/no-provisioning evidence from local config and official docs.
-4. Optionally run read-only account/project listing if already authenticated and non-mutating; stop if it asks for auth/provisioning.
-5. Create decision packet markdown.
-6. Create machine-readable decision fixture.
-7. Create static guard with fail-closed mutants.
-8. Run required checks.
-9. Append `_ai/CLAUDE_REPORT.md`.
-10. Stop. No commit/push.
+3. Use official Cloudflare docs only as reference; do not log in or mutate Cloudflare.
+4. Create R2 provisioning approval packet markdown.
+5. Create machine-readable R2 provisioning fixture.
+6. Create static guard with fail-closed mutants.
+7. Run required checks.
+8. Append `_ai/CLAUDE_REPORT.md`.
+9. Stop. No commit/push.
 
 ## Required Checks
 
 1. `git status -sb`
-2. `node --check scripts/check-media-provider-decision-packet-static.mjs`
-3. JSON parse for `scripts/fixtures/media_provider_decision_packet.v1.json`
-4. `node scripts/check-media-provider-decision-packet-static.mjs`
+2. `node --check scripts/check-r2-provisioning-approval-packet-static.mjs`
+3. JSON parse for `scripts/fixtures/r2_provisioning_approval_packet.v1.json`
+4. `node scripts/check-r2-provisioning-approval-packet-static.mjs`
 5. Regression:
+   - `node scripts/check-media-provider-decision-packet-static.mjs`
    - `node scripts/check-stable-public-media-url-strategy-static.mjs`
 
 Do not run full build unless syntax/import issues require it.
 
 ## Forbidden
 
-- Storage provisioning, bucket creation, token creation, account creation, provider mutation.
+- Cloudflare login, account mutation, provider provisioning.
+- R2 bucket creation.
+- R2 token creation.
 - DNS/custom domain changes.
 - Env/secret write.
 - Reading or printing secret values.
@@ -220,21 +267,21 @@ Do not run full build unless syntax/import issues require it.
 
 Stop and report if:
 
-- provider comparison cannot be made without secret values,
-- a read-only CLI attempts to mutate or prompts for login/provisioning,
-- official docs cannot be checked and there is no reliable local evidence,
+- official Cloudflare docs conflict with the packet assumptions,
+- a real Cloudflare account/bucket/token/DNS state must be queried to continue,
+- secret/env values must be read or written,
 - dependency installation is required,
 - protected dirty files must be modified to proceed,
-- decision packet would require actually choosing or paying for a provider account now.
+- preparing the packet would require actually provisioning or paying now.
 
 ## Definition Of Done
 
-- Provider decision packet markdown exists.
-- Machine-readable decision fixture exists.
+- R2 provisioning approval packet markdown exists.
+- Machine-readable R2 provisioning fixture exists.
 - Static guard exists and passes with fail-closed mutants.
-- Stable public media strategy regression guard passes.
-- Recommendation is clear: primary provider, fallback provider, future approval sequence, risks, rollback.
-- No provisioning, DNS, env/secret write, deploy, object upload, live URL check, Instagram upload, YouTube/Supabase/DB, render/mux/TTS/image/browser, dependency, commit, or push occurred.
+- Provider decision and stable public media strategy regression guards pass.
+- Future approval snippets are clear and separated.
+- No Cloudflare login, provisioning, bucket/token creation, DNS, env/secret write, deploy, object upload, live URL check, Instagram upload, YouTube/Supabase/DB, render/mux/TTS/image/browser, dependency, commit, or push occurred.
 - `_ai/CLAUDE_REPORT.md` records concise evidence and recommended next slice.
 
 전체프로젝트 진행률 : 약 92%
