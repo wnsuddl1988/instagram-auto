@@ -1,24 +1,37 @@
-# Public Media URL Strategy (Sustained)
+# Public Media URL Strategy (Sustained) — Historical / Superseded for Current Execution
 
-Task: `stable-public-media-url-layer-v1`
-Status: 지속 사용에 안정적인 public mp4 URL 경로를 프로젝트에 고정하는 아키텍처 계약.
+Task: `stable-public-media-url-layer-v1` (superseded by `dual-platform-variant-publish-architecture-no-live-v1`)
+Status: 지속 사용에 안정적인 public mp4 URL 경로를 프로젝트에 고정했던 아키텍처 계약. **현재 실행 경로의 active 계약은 [`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md)다.**
 Scope note: 이 문서는 **설계 고정(no-live)** 이다. 실제 storage 프로비저닝/DNS/deploy/env 설정/live liveness check/Instagram `--arm` 업로드는 별도 Owner 승인이 필요하다.
 
 ---
 
-## 1. 결정: 지속 default 경로
+## 0. 현재 Active 경로 (dual-platform 아키텍처로 supersede됨)
 
-생성되는 모든 short mp4의 **지속(sustained) 기본 public URL 경로**는 다음으로 고정한다.
+이 문서의 `media.buildgongjakso.com` custom media origin 요구는 **현재 실행에서 필수가 아니다.** Owner가 dual-platform 아키텍처로 전환한 이후 active 경로는 다음과 같다.
 
-- **Default (sustained):** 전용 public media origin
+- **Instagram public URL 경로**: `media.buildgongjakso.com`이 아니라 **Vercel Blob public direct URL**을 사용한다. `video_url`은 Blob이 발급하는 object별 direct HTTPS URL이며, 이 문서의 §4 verifier gate(HTTPS/video content-type/reject html/unauth/verified-only)는 Blob URL에도 그대로 적용된다.
+- **YouTube**: 이 public URL layer를 **쓰지 않는다.** YouTube Data API direct file upload로 발행하므로 public 호스팅 URL이 필요 없다.
+- **repo `public/` fallback**: 여전히 one-off/manual fallback으로만 유지한다(sustained default 아님, 변경 없음).
+
+아래 §1~§8은 `media.buildgongjakso.com` custom media origin을 sustained default로 두던 **historical 계약**이며, R2/custom domain 관련 세부는 현재 execution path에서 요구되지 않는다.
+
+---
+
+## 1. (Historical) 지속 default 경로 — 현재 execution에서 미요구
+
+생성되는 모든 short mp4의 **지속(sustained) 기본 public URL 경로**로 아래를 고정했었다(historical).
+
+- **Default (historical sustained):** 전용 public media origin
   - Origin: `https://media.buildgongjakso.com/...`
   - Backing: object storage/CDN (Vercel Blob, Cloudflare R2, S3-compatible 등 승인된 object store)
   - 이유: 매 영상 발행이 git commit/deploy에 결합되지 않고, repo가 mp4로 비대해지지 않으며, 안정적인 direct URL을 제공한다.
+  - **현재는 이 custom origin host를 요구하지 않는다.** Instagram은 Vercel Blob이 발급하는 direct URL을 그대로 사용한다(별도 custom domain 불필요).
 
 - **Fallback (manual / one-off only):** repo `public/` static mp4 + site deploy
   - URL: `https://www.buildgongjakso.com/...` (repo `public/` 하위 static mp4)
   - 용도: 긴급/수동 샘플 복구에 한함.
-  - **지속 운영 경로가 아니다.** 매 영상 발행마다 이 방식을 쓰지 않는다. 이 방식은 매 발행을 git/deploy에 결합시키고 repo를 비대하게 만든다.
+  - **지속 운영 경로가 아니다.** 매 영상 발행마다 이 방식을 쓰지 않는다. 이 방식은 매 발행을 git/deploy에 결합시키고 repo를 비대하게 만든다. **현재도 변경 없이 one-off/manual only.**
 
 - **명시적 non-default:** 생성된 모든 mp4를 git repo에 커밋하는 것을 지속 경로로 삼지 않는다.
 
@@ -50,9 +63,9 @@ media/<schemaGroup>/<version>/<topicId>/<artifact>.mp4
 
 ---
 
-## 3. Provider-neutral 요건
+## 3. Provider-neutral 요건 (historical 설계 원칙, 현재도 유효)
 
-이 프로젝트는 특정 storage 벤더에 종속되지 않는다. 아래 요건을 만족하면 Vercel Blob / Cloudflare R2 / S3-compatible / 기타 승인된 object store 중 하나를 나중에 선택할 수 있다.
+이 프로젝트는 특정 storage 벤더에 종속되지 않는다는 원칙 자체는 지금도 유효하다. dual-platform 아키텍처에서 Instagram은 **Vercel Blob**을 채택했고 Cloudflare R2는 suspended다. 아래 요건은 Blob URL 검증에도 그대로 적용된다.
 
 - object별 direct HTTPS URL 제공
 - 무인증(public read) 접근 가능한 direct object URL
@@ -95,14 +108,15 @@ Instagram `video_url`로 넘기기 전에 **모든** gate를 통과해야 한다
 
 ## 6. 외부 Owner 승인이 필요한 항목
 
-아래는 **현재 세션 밖에서 Owner의 명시 승인**이 있어야만 수행한다. 이 slice(no-live 준비)에서는 어느 것도 실행하지 않는다.
+아래는 **현재 세션 밖에서 Owner의 명시 승인**이 있어야만 수행한다. 이 slice(no-live 준비)에서는 어느 것도 실행하지 않는다. dual-platform 아키텍처 채택 이후 실제 승인 게이트 이름은 [`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md)의 `APPROVE_VERCEL_BLOB_STORE_PROVISIONING` 등을 따른다.
 
-- **DNS / custom domain** — `media.buildgongjakso.com` 서브도메인 설정/연결
-- **storage provider provisioning** — object store 계정/버킷 생성, provider 선택
-- **env/secret configuration** — storage/CDN/Instagram credential 등 env 설정
+- **DNS / custom domain** — (historical) `media.buildgongjakso.com` 서브도메인 설정/연결. **현재 execution에서는 Instagram Blob URL 경로에 불필요.**
+- **storage provider provisioning** — object store(Vercel Blob) 계정/store 생성
+- **env/secret configuration** — storage(Blob token)/Instagram credential 등 env 설정
 - **deployment** — Vercel deploy 등 사이트 배포
 - **live URL liveness check** — 실제 public URL에 대한 네트워크 요청
 - **Instagram `--arm` upload** — 실제 1회 업로드 실행
+- **YouTube OAuth/API 승인** — YouTube는 이 public URL layer를 쓰지 않으며 별도 direct upload 승인 계열([`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md) 참고)을 따른다.
 
 ---
 

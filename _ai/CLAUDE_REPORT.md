@@ -3662,3 +3662,27 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. YouTube letterbox 실제 렌더 스펙 구현 + Vercel Blob 실제 store/env + YouTube OAuth는 각각 이후 별도 승인 게이트.
 - checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 191, 이번 slice uncommitted.
 
+---
+
+## provider-strategy-supersession-for-dual-platform-v1 (2026-07-06)
+
+- **수행**: 오래된 R2-primary provider/media strategy 계약(6개 기존 파일)을 새 dual-platform 아키텍처로 supersede. historical evidence는 보존하되 active recommendation은 Instagram=Vercel Blob / YouTube=direct upload / R2=suspended로 갱신.
+- **수정 파일 (기존 6, 신규 없음)**:
+  - `docs/media-provider-decision-packet.md` — §0 Active Decision 신설(IG=Blob/YT=direct/R2=suspended), §1을 "(Historical/Superseded) 이전 권장 결정"으로 재명명, §4 승인 시퀀스에 historical 표시 + dual-platform 시퀀스 참조 추가
+  - `scripts/fixtures/media_provider_decision_packet.v1.json` — `status`→`PROVIDER_DECISION_SUPERSEDED_BY_DUAL_PLATFORM`, `supersededBy`/`activeArchitectureRef` 추가, `activeDecision`(현재 active) 신규 필드, `chosen`에 `historicalOnly`/`supersededByActiveDecision` 플래그 추가(R2 primary 기록은 보존하되 active 아님을 명확화), `futureSequenceHistoricalNote` 추가
+  - `scripts/check-media-provider-decision-packet-static.mjs` — `activeDecision` 검증(Instagram=vercel_blob_public_direct_url/YouTube=direct upload/R2 suspended·not-primary) 추가, docs §0 검증 추가, mutant 6종 신규(historicalOnly 제거/R2 재승격/YouTube Blob 라우팅/Instagram provider drift/status 회귀/activeArchitectureRef 누락) — 총 38/38 PASS
+  - `docs/public-media-url-strategy.md` — 제목에 "Historical/Superseded" 명시, §0 현재 Active 경로 신설(Instagram=Blob, YouTube 이 layer 미사용, repo public/ fallback 역할 불변), §1~§8은 historical로 재구성
+  - `scripts/fixtures/stable_public_media_url_strategy.v1.json` — `status`→`STRATEGY_SUPERSEDED_BY_DUAL_PLATFORM_FOR_CURRENT_EXECUTION`, `activeExecutionPath`(Instagram=Blob/mediaOriginHost 불필요/YouTube 이 layer 미사용) 신규 필드, `sustainedDefault.historicalOnly=true` 추가
+  - `scripts/check-stable-public-media-url-strategy-static.mjs` — `activeExecutionPath` 검증 추가, docs §0 검증 추가, mutant 5종 신규(media origin 재필수화/YouTube layer 재사용/Instagram provider drift/historical 표시 제거) — 총 31/31 PASS
+- **핵심 결과**: 두 guard 모두 이제 "R2가 다시 active/current primary로 승격되면 fail" + "YouTube가 Blob/media origin URL 경로로 라우팅되면 fail"을 강제. historical 근거(R2 custom domain 공식문서 등)는 fixture/docs에 그대로 보존.
+- **checks/results**:
+  - syntax: 두 guard `node --check` ✓
+  - JSON parse: 두 fixture ✓
+  - `node scripts/check-media-provider-decision-packet-static.mjs` → **ALL PASS 38/38**
+  - `node scripts/check-stable-public-media-url-strategy-static.mjs` → **ALL PASS 31/31**
+  - regression: `check-dual-platform-variant-publish-architecture-static.mjs` **32/32**, `check-r2-bucket-provisioning-result-static.mjs` **27/27** ALL PASS
+- **live side effects: none** — Cloudflare/R2/wrangler 0, Vercel Blob provisioning 0, token/env/secret r/w 0, .env.local 0, deploy/domain/DNS 0, object upload 0, liveness 0, Instagram --arm 0, YouTube upload/API/OAuth 0, render/mux/TTS/image/browser 0, dependency/lockfile/font 0, commit/push 0. 문서/fixture/guard 텍스트 수정만.
+- **보존 확인**: 보호/제외 파일 무접촉. 6개 대상 외 다른 파일(r2 관련 3종, dual-platform 3종) 무수정(regression 확인).
+- deviations/risks: 범위 이탈 없음. R2 관련 세부 리스크(R1~R4)와 custom domain 공식문서 근거는 historical evidence로 fixture/docs에 보존되어 향후 재검토 가능.
+- checkpoint recommendation: 기존 6파일 수정 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 192, 이번 slice uncommitted.
+

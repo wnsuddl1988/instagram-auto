@@ -9,14 +9,19 @@
  * (network/env/secret/upload/subprocess/write 없음)
  *
  * 검증:
- *  1) fixture: sustained default = media.buildgongjakso.com + object storage/CDN,
- *     fallback(repo public/ static)은 manual/one-off이며 sustained default 아님,
+ *  1) fixture: sustained default(historical) = media.buildgongjakso.com + object storage/CDN,
+ *     activeExecutionPath(현재 active): Instagram=vercel_blob_public_direct_url,
+ *     mediaOriginHostRequiredForCurrentExecution=false, YouTube가 이 public URL layer를
+ *     쓰지 않음(youtubeUsesThisPublicUrlLayer=false)+direct file upload,
+ *     fallback(repo public/ static)은 manual/one-off이며 sustained default 아님(변경 없음),
  *     결정론적 key scheme, provider-neutral 요건, verifier gate(HTTPS/allowed host/
- *     2xx|206/video/reject html/unauth/reject redirect/verified-url-only),
+ *     2xx|206/video/reject html/unauth/reject redirect/verified-url-only, Blob URL에도 적용),
  *     runner 계약(verified URL만 소비, fail-closed 유지), 외부 승인 항목,
  *     forbidden behavior
- *  2) docs: 지속 default/ fallback/ verifier gate/ 외부 승인 항목 명문화
- *  3) mutant 9종(HANDOFF 요구) → 전부 fail
+ *  2) docs: §0 active 경로(Instagram=Blob/YouTube=direct/불필요) + historical 지속 default/
+ *     fallback/ verifier gate/ 외부 승인 항목 명문화
+ *  3) mutant → 전부 fail (repo public/ fallback이 sustained default로 승격되거나
+ *     YouTube가 이 public URL layer를 다시 쓰게 되면 fail 포함)
  */
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -77,6 +82,23 @@ function detectFixtureIssues(p) {
   let dhost = null;
   try { dhost = new URL(d.originUrlBase).hostname; } catch { /* below */ }
   if (dhost !== SUSTAINED_DEFAULT_HOST) issues.push(`sustainedDefault.originUrlBase host=${dhost} (media.buildgongjakso.com 아님)`);
+
+  // activeExecutionPath: 현재 active 경로 — Instagram=Blob, YouTube=이 layer 미사용
+  const aep = p.activeExecutionPath ?? {};
+  if (aep.instagramPublicUrlProvider !== "vercel_blob_public_direct_url")
+    issues.push(`activeExecutionPath.instagramPublicUrlProvider=${aep.instagramPublicUrlProvider} (vercel_blob_public_direct_url 아님)`);
+  if (aep.mediaOriginHostRequiredForCurrentExecution !== false)
+    issues.push("activeExecutionPath.mediaOriginHostRequiredForCurrentExecution != false (media.buildgongjakso.com이 현재도 필수로 남음)");
+  if (aep.youtubeUsesThisPublicUrlLayer !== false)
+    issues.push("activeExecutionPath.youtubeUsesThisPublicUrlLayer != false (YouTube가 이 public URL layer를 쓰게 됨)");
+  if (aep.youtubeUploadMode !== "youtube_data_api_direct_file_upload")
+    issues.push(`activeExecutionPath.youtubeUploadMode=${aep.youtubeUploadMode} (direct file upload 아님)`);
+  if (aep.repoPublicFallbackRoleUnchanged !== "manual_one_off_only")
+    issues.push("activeExecutionPath.repoPublicFallbackRoleUnchanged != manual_one_off_only");
+  if (p.status !== "STRATEGY_SUPERSEDED_BY_DUAL_PLATFORM_FOR_CURRENT_EXECUTION")
+    issues.push(`status=${p.status} (STRATEGY_SUPERSEDED_BY_DUAL_PLATFORM_FOR_CURRENT_EXECUTION 아님)`);
+  if (!isStr(p.activeArchitectureRef)) issues.push("activeArchitectureRef 누락 (dual-platform fixture 참조 없음)");
+  if (p.sustainedDefault?.historicalOnly !== true) issues.push("sustainedDefault.historicalOnly != true (historical 표시 누락)");
 
   // fallback = repo public/ static, sustained default 아님
   const f = p.fallback ?? {};
@@ -142,15 +164,16 @@ function detectFixtureIssues(p) {
 
 // ── 1. fixture 검증 ──────────────────────────────────────────────────────────
 {
-  check("fixture schemaVersion + taskId + status",
+  check("fixture schemaVersion + taskId + status(superseded)",
     fx.schemaVersion === "stable_public_media_url_strategy_v1" &&
     fx.taskId === "stable-public-media-url-layer-v1" &&
-    fx.status === "STRATEGY_FIXED_NO_LIVE");
+    fx.status === "STRATEGY_SUPERSEDED_BY_DUAL_PLATFORM_FOR_CURRENT_EXECUTION");
   const issues = detectFixtureIssues(fx);
-  check("fixture invariants: sustained default(media origin)/fallback(manual)/key scheme/provider-neutral/verifier gates/runner 계약/외부 승인/forbidden",
+  check("fixture invariants: sustained default(historical, media origin)/activeExecutionPath(Blob/YouTube 미사용)/fallback(manual)/key scheme/provider-neutral/verifier gates/runner 계약/외부 승인/forbidden",
     issues.length === 0, issues.join("; "));
-  check("fixture docsRef가 실재하는 docs 파일",
-    isStr(fx.docsRef) && existsSync(path.join(ROOT, fx.docsRef)));
+  check("fixture docsRef + activeArchitectureRef가 실재하는 파일",
+    isStr(fx.docsRef) && existsSync(path.join(ROOT, fx.docsRef)) &&
+    isStr(fx.activeArchitectureRef) && existsSync(path.join(ROOT, fx.activeArchitectureRef)));
   check("fixture runnerContract 참조 파일 실재",
     existsSync(path.join(ROOT, fx.runnerContract?.runnerRef ?? "")) &&
     existsSync(path.join(ROOT, fx.runnerContract?.staticGuardRef ?? "")));
@@ -160,9 +183,17 @@ function detectFixtureIssues(p) {
 
 // ── 2. docs 검증 ─────────────────────────────────────────────────────────────
 {
-  check("docs: sustained default = media.buildgongjakso.com 명시",
+  check("docs: sustained default = media.buildgongjakso.com 명시(historical)",
     docs.includes("media.buildgongjakso.com") && docs.includes("sustained"));
-  check("docs: fallback = repo public/ static + one-off 명시",
+  check("docs: §0 active 경로 — Instagram=Vercel Blob / YouTube=이 layer 미사용 명시",
+    docs.includes("Active") && docs.includes("Vercel Blob public direct URL") &&
+    docs.includes("쓰지 않는다") && docs.includes("YouTube"));
+  check("docs: media.buildgongjakso.com이 historical/superseded로 명시",
+    (docs.includes("historical") || docs.includes("Historical")) &&
+    (docs.includes("superseded") || docs.includes("supersede")));
+  check("docs: dual-platform-variant-publish-architecture 문서 참조 명시",
+    docs.includes("dual-platform-variant-publish-architecture.md"));
+  check("docs: fallback = repo public/ static + one-off 명시(변경 없음)",
     docs.includes("public/") && (docs.includes("one-off") || docs.includes("one_off") || docs.includes("긴급") || docs.includes("수동")));
   check("docs: verifier gate(HTTPS/host/2xx|206/video/reject html/unauth/redirect) 명문화",
     docs.includes("HTTPS") && docs.includes("text/html") && docs.includes("video/") &&
@@ -220,6 +251,18 @@ function detectFixtureIssues(p) {
   const m10 = clone(fx); m10.sustainedDefault.commitGeneratedMp4ToGit = true;
   check("mutant 10: 생성 mp4 git 커밋을 sustained default로 → fail",
     detectFixtureIssues(m10).some((i) => i.includes("commitGeneratedMp4ToGit")));
+  const m11 = clone(fx); m11.activeExecutionPath.mediaOriginHostRequiredForCurrentExecution = true;
+  check("mutant 11: media.buildgongjakso.com이 현재도 필수로 되돌아감 → fail",
+    detectFixtureIssues(m11).some((i) => i.includes("mediaOriginHostRequiredForCurrentExecution")));
+  const m12 = clone(fx); m12.activeExecutionPath.youtubeUsesThisPublicUrlLayer = true;
+  check("mutant 12: YouTube가 이 public URL layer(Blob/media origin)를 다시 씀 → fail",
+    detectFixtureIssues(m12).some((i) => i.includes("youtubeUsesThisPublicUrlLayer")));
+  const m13 = clone(fx); m13.activeExecutionPath.instagramPublicUrlProvider = "cloudflare_r2";
+  check("mutant 13: Instagram active provider가 R2로 drift → fail",
+    detectFixtureIssues(m13).some((i) => i.includes("instagramPublicUrlProvider")));
+  const m14 = clone(fx); delete m14.sustainedDefault.historicalOnly;
+  check("mutant 14: sustainedDefault historical 표시 제거 → fail",
+    detectFixtureIssues(m14).some((i) => i.includes("historicalOnly")));
 }
 
 console.log(failures === 0

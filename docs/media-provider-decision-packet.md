@@ -1,22 +1,34 @@
 # Media Provider Decision Packet (No-Live)
 
-Task: `media-provider-discovery-decision-packet-v1`
-Status: no-secret / no-provisioning discovery. sustained default = `media.buildgongjakso.com` + object storage/CDN 유지.
+Task: `media-provider-discovery-decision-packet-v1` (superseded by `dual-platform-variant-publish-architecture-no-live-v1`)
+Status: no-secret / no-provisioning discovery. **Active current contract는 이제 [`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md)다.**
 Scope note: 이 문서는 **provider 선택 결정 패킷(no-live)** 이다. 실제 provider 생성/연결/bucket/token/DNS/env 설정/deploy/object upload/live liveness check/Instagram `--arm` 업로드는 **전부 이후 별도 Owner 승인** 항목이며 이 slice에서 수행하지 않는다.
 
-관련 계약: [`docs/public-media-url-strategy.md`](./public-media-url-strategy.md) — sustained default vs fallback 아키텍처.
+관련 계약: [`docs/public-media-url-strategy.md`](./public-media-url-strategy.md) — sustained default vs fallback 아키텍처(현재 superseded). [`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md) — **현재 active architecture**.
 
 ---
 
-## 1. 권장 결정
+## 0. Active Decision (현재 유효, dual-platform architecture로 supersede됨)
 
-**결정 기준: sustained default가 strict custom media origin `media.buildgongjakso.com`인 이상, custom domain 직접 연결 근거가 공식문서에 있는 provider를 primary로 둔다.**
+| 역할 | 대상 | 상태 |
+|------|------|------|
+| Instagram public URL provider | **Vercel Blob public direct URL** | **active** |
+| YouTube upload mode | **YouTube Data API direct file upload** (Blob 불필요) | **active** |
+| Cloudflare / R2 | suspended | **Owner preference로 suspended, 기술 실패 아님** |
 
-| 역할 | Provider | 요약 근거 |
-|------|----------|-----------|
-| **Primary (권장)** | **Cloudflare R2** | R2 public buckets 공식문서가 bucket contents를 "내가 제어하는 custom domain"으로 인터넷 노출할 수 있고 production use에 custom domain을 권장 → `media.buildgongjakso.com` **직접 연결 근거가 공식문서에 존재**. S3-compatible API + egress 무료. 단 Cloudflare zone/partial(CNAME) setup + DNS 승인이 필요한 리스크가 있음. |
-| **Fallback (대안)** | **Vercel Blob** | 빠른 Vercel 1st-party 통합(이 repo가 이미 Vercel 프로젝트 `instagram-auto`로 링크됨) + object별 public direct blob URL 제공. **단, Vercel Blob 공식문서에서 blob 자체를 custom domain(`media.buildgongjakso.com`)으로 직접 연결하는 근거는 확인되지 않음** → strict media origin 요구를 만족하려면 별도 redirect/proxy/도메인 전략 검증이 필요하므로 primary 아님. |
-| 3순위 | S3-compatible (AWS S3 / MinIO 등) | 가장 범용이나 이 프로젝트엔 계정·IAM·CDN(CloudFront)+ACM custom domain 설정 오버헤드가 커서 후순위. |
+> 아래 §1의 "R2 primary" 권장은 **historical/superseded**다. `media.buildgongjakso.com` strict custom media origin을 sustained default로 두던 이전 가정 아래서의 결정이며, Owner가 dual-platform 아키텍처(Instagram=Blob / YouTube=direct upload)로 방향을 바꾼 이후에는 current recommendation이 아니다. 근거/리스크 분석은 historical evidence로 보존한다.
+
+---
+
+## 1. (Historical/Superseded) 이전 권장 결정
+
+**당시 결정 기준: sustained default가 strict custom media origin `media.buildgongjakso.com`인 이상, custom domain 직접 연결 근거가 공식문서에 있는 provider를 primary로 둔다.** — 이 기준 자체가 dual-platform 아키텍처 채택 이후 더 이상 active execution path가 아니다.
+
+| 역할(당시) | Provider | 요약 근거(historical) |
+|------------|----------|-----------------------|
+| Primary (historical) | **Cloudflare R2** | R2 public buckets 공식문서가 bucket contents를 "내가 제어하는 custom domain"으로 인터넷 노출할 수 있고 production use에 custom domain을 권장 → `media.buildgongjakso.com` **직접 연결 근거가 공식문서에 존재**. S3-compatible API + egress 무료. 단 Cloudflare zone/partial(CNAME) setup + DNS 승인이 필요한 리스크가 있음. **현재는 Owner preference로 suspended.** |
+| Fallback (historical, 현재 active) | **Vercel Blob** | 빠른 Vercel 1st-party 통합(이 repo가 이미 Vercel 프로젝트 `instagram-auto`로 링크됨) + object별 public direct blob URL 제공. 당시엔 blob 자체의 custom domain 직접 연결 근거가 미확인이라 fallback이었으나, **dual-platform 아키텍처는 media.buildgongjakso.com strict origin을 요구하지 않으므로 이 제약이 더 이상 적용되지 않는다. 현재 Instagram의 active provider.** |
+| 3순위 (historical) | S3-compatible (AWS S3 / MinIO 등) | 가장 범용이나 이 프로젝트엔 계정·IAM·CDN(CloudFront)+ACM custom domain 설정 오버헤드가 커서 후순위. 현재도 채택 안 함. |
 
 ---
 
@@ -54,18 +66,20 @@ Scope note: 이 문서는 **provider 선택 결정 패킷(no-live)** 이다. 실
 
 ---
 
-## 4. 이후 실행 시퀀스 (각 게이트 = 별도 Owner 승인)
+## 4. (Historical) 이후 실행 시퀀스 — R2 경로 기준, 현재 미사용
 
-1. **Owner selects provider** — Cloudflare R2(권장, custom domain 직접 연결 근거) 또는 Vercel Blob(fallback, 별도 도메인 전략 검증 후) 확정.
+> 이 시퀀스는 R2 primary 가정 아래에서의 historical 기록이다. **현재 active 승인 시퀀스는 [`docs/dual-platform-variant-publish-architecture.md`](./dual-platform-variant-publish-architecture.md) §6의 `APPROVE_DUAL_PLATFORM_ARCHITECTURE` ~ `APPROVE_DUAL_PLATFORM_ARM` 10단계를 따른다.**
+
+1. **Owner selects provider** — Cloudflare R2(historical 권장) 또는 Vercel Blob(현재 active) 확정.
 2. **Provider provisioning approval** — 계정/버킷/토큰 생성 승인 (R2: bucket + API token).
-3. **DNS/custom domain approval** — `media.buildgongjakso.com` 연결 승인 (R2: public bucket custom domain, Cloudflare zone/partial setup 필요).
+3. **DNS/custom domain approval** — `media.buildgongjakso.com` 연결 승인 (R2: public bucket custom domain, Cloudflare zone/partial setup 필요). **dual-platform 아키텍처에서는 Instagram Blob 경로에 이 단계가 불필요.**
 4. **Env/secret configuration approval** — provider env(§2 이름) 값 설정 승인.
 5. **Code integration slice** — 렌더 산출물을 결정론적 key로 object store에 업로드하는 경로 구현(별도 slice).
 6. **Deploy approval** — Vercel deploy 승인.
 7. **Live URL liveness approval** — 실제 public mp4 URL 네트워크 검증 승인.
 8. **Instagram `--arm` approval** — 실제 1회 업로드 실행 승인.
 
-각 단계는 이전 단계 완료 + Owner의 명시 승인 없이는 진행하지 않는다. verifier gate(HTTPS/allowed host/2xx|206/video content-type/reject text-html/unauth/reject redirect)는 §stable-strategy 계약을 그대로 상속한다.
+각 단계는 이전 단계 완료 + Owner의 명시 승인 없이는 진행하지 않는다. verifier gate(HTTPS/allowed host/2xx|206/video content-type/reject text-html/unauth/reject redirect)는 §stable-strategy 계약을 그대로 상속하며, dual-platform 아키텍처의 Instagram Blob URL 경로에도 동일하게 적용된다.
 
 ---
 

@@ -1,10 +1,21 @@
 {
   "schemaVersion": "stable_public_media_url_strategy_v1",
   "taskId": "stable-public-media-url-layer-v1",
-  "status": "STRATEGY_FIXED_NO_LIVE",
+  "status": "STRATEGY_SUPERSEDED_BY_DUAL_PLATFORM_FOR_CURRENT_EXECUTION",
   "createdAt": "2026-07-06",
-  "nature": "지속(sustained) 사용에 안정적인 public mp4 URL 경로를 프로젝트에 고정하는 기계판독 계약. 기본 전략은 media.buildgongjakso.com 전용 media origin + object storage/CDN이며, repo public/ static mp4 + deploy는 one-off/manual fallback으로만 남긴다. 이 fixture는 설계 고정(no-live)이며, storage 프로비저닝/DNS/deploy/env 설정/live liveness check/Instagram --arm 업로드를 승인하지 않는다.",
+  "supersededBy": "dual-platform-variant-publish-architecture-no-live-v1",
+  "activeArchitectureRef": "scripts/fixtures/dual_platform_variant_publish_architecture.v1.json",
+  "nature": "지속(sustained) 사용에 안정적인 public mp4 URL 경로를 프로젝트에 고정했던 기계판독 계약(historical). 당시 기본 전략은 media.buildgongjakso.com 전용 media origin + object storage/CDN이었으나, Owner가 dual-platform 아키텍처(Instagram=Vercel Blob public direct URL, YouTube=direct file upload, R2=suspended)로 전환하면서 media.buildgongjakso.com custom origin host는 현재 execution에서 요구되지 않는다. repo public/ static mp4 + deploy는 여전히 one-off/manual fallback으로만 남긴다(변경 없음). verifier gate(§uploadVerifierGates)는 Instagram Blob URL에도 그대로 적용된다. 이 fixture는 설계 고정(no-live)이며, storage 프로비저닝/DNS/deploy/env 설정/live liveness check/Instagram --arm 업로드를 승인하지 않는다.",
   "docsRef": "docs/public-media-url-strategy.md",
+
+  "activeExecutionPath": {
+    "instagramPublicUrlProvider": "vercel_blob_public_direct_url",
+    "mediaOriginHostRequiredForCurrentExecution": false,
+    "youtubeUsesThisPublicUrlLayer": false,
+    "youtubeUploadMode": "youtube_data_api_direct_file_upload",
+    "repoPublicFallbackRoleUnchanged": "manual_one_off_only",
+    "note": "현재 execution에서 Instagram은 media.buildgongjakso.com custom origin이 아니라 Vercel Blob이 발급하는 public direct URL을 그대로 사용한다. YouTube는 이 public URL layer를 쓰지 않는다(direct file upload). repo public/ fallback 역할은 변경되지 않았다."
+  },
 
   "sustainedDefault": {
     "strategy": "dedicated_media_origin",
@@ -14,7 +25,9 @@
     "httpsOnly": true,
     "commitGeneratedMp4ToGit": false,
     "couplesEveryPublicationToDeploy": false,
-    "note": "매 영상 발행이 git commit/deploy에 결합되지 않고 repo가 mp4로 비대해지지 않는다."
+    "historicalOnly": true,
+    "requiredForCurrentExecution": false,
+    "note": "(historical) 매 영상 발행이 git commit/deploy에 결합되지 않고 repo가 mp4로 비대해지지 않는다는 설계 원칙은 유지되나, media.buildgongjakso.com custom origin host 자체는 현재 execution에서 요구되지 않는다(activeExecutionPath 참조)."
   },
 
   "fallback": {
