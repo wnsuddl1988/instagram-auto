@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "golden_sample_owner_qa_actual_pass_v1",
+  "taskId": "golden-sample-v3-2-owner-qa-pass-upload-approval-packet-prep-v1",
+  "status": "OWNER_QA_ACTUAL_PASS_RECORDED_UPLOAD_STILL_BLOCKED",
+  "createdAt": "2026-07-06",
+  "nature": "Owner가 최신 mux 후보를 직접 시청/청취하여 실제 QA 통과를 확인한 사실을 기계판독으로 기록한다. 이 통과는 자동/기술 pass가 아니라 Owner 직접 확인이므로 ownerQaPassed를 true로 기록할 수 있는 유일한 근거다. 그러나 이 QA 통과는 upload 실행 승인이 아니다 — upload는 별도 명시 APPROVE_UPLOAD + 별도 upload slice에서만 발생하며, upload hard block은 계속 active다. 이 fixture는 approvalSequenceRule 4단계(Owner QA actual pass)를 충족하는 기록이며, 5단계(upload approval)를 승인하지 않는다.",
+
+  "ownerQaActualPass": {
+    "exactText": "OWNER_QA_ACTUAL_PASS: t1_lifestyle_inflation — latest mux mp4 watched/listened directly by Owner, visual/caption/story/audio accepted, proceed to prepare upload approval packet only; no upload execution yet",
+    "topicId": "t1_lifestyle_inflation",
+    "passSource": "OWNER_DIRECT_VIEWING_LISTENING",
+    "isAutomatedOrTechnicalPass": false,
+    "acceptedDimensions": ["visual", "caption", "story", "audio"],
+    "passScope": "이 통과는 최신 mux 후보의 Owner 직접 시청/청취 수용에만 유효하다. upload 실행/공개/자동화 확장으로 확장 해석 금지.",
+    "explicitInstruction": "proceed to prepare upload approval packet only; no upload execution yet"
+  },
+
+  "ownerQaPassed": true,
+  "ownerViewingListeningActualStatus": "PASS_DIRECT_OWNER_REVIEW_COMPLETED",
+  "ownerViewingListeningActualStatusNote": "정책 resolved(keep_manual_owner_qa_mandatory_non_automatable)와 별개로, Owner가 실제로 직접 시청/청취하여 통과를 확인했다. 이 필드가 PASS인 유일한 근거는 Owner 직접 확인이며, 어떤 자동/기술 audit도 이를 대체하지 않는다.",
+
+  "qaTarget": {
+    "latestMuxMp4": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "renderMuxRunPlan": "scripts/fixtures/golden_sample_v3_2_live_render_mux_run_plan.t1_lifestyle_inflation.v1.json",
+    "renderMuxCheckpoint": "adbcb4b",
+    "renderMuxCheckpointNote": "feat(golden-sample): record live render mux run — 최신 mux 후보를 생성/기록한 checkpoint",
+    "artifactAuditJson": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\post_render_artifact_audit_tts_mux.v3_2.json",
+    "automaticAuditVerdictBeforeOwnerReview": "PASS_CANDIDATE_PENDING_VISION_QA",
+    "automaticAuditGates": { "media": true, "audio": true, "captionCard": true, "story": true },
+    "automaticAuditNote": "자동 audit는 media/audio/caption-card/story 4-gate PASS로 PASS_CANDIDATE_PENDING_VISION_QA까지였다. Owner 직접 시청/청취가 이 후보를 실제 수용함으로써 vision QA pending이 해소됐다. 자동 audit는 upload 승인이 아니며, Owner QA actual pass도 upload 승인이 아니다."
+  },
+
+  "uploadApprovedNow": false,
+  "uploadExecutionApprovedNow": false,
+  "uploadReady": false,
+  "productionReady": false,
+  "uploadHardBlockActive": true,
+
+  "prerequisiteRole": {
+    "isUploadApproval": false,
+    "isPrerequisiteForUploadApproval": true,
+    "approvalSequenceRuleStageSatisfied": 4,
+    "approvalSequenceRuleStageSatisfiedNote": "live action approval packet의 approvalSequenceRule 4단계(Owner direct viewing/listening QA actual pass)를 충족한다. 5단계(upload approval)는 여전히 별도 명시 APPROVE_UPLOAD + 별도 upload slice를 요구한다.",
+    "nextStageStillBlocked": "upload approval (approvalSequenceRule 5단계) — APPROVE_UPLOAD 미발화, upload hard block active",
+    "statement": "이 Owner QA actual pass는 upload 승인의 선행 조건일 뿐 upload 승인 자체가 아니다."
+  },
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "unchangedBy": "이 QA pass 기록은 readiness verdict를 승격하지 않는다. Owner QA 단계 충족만 기록하며, upload/production readiness는 별도 upload slice에서만 변경된다.",
+    "isNot": ["upload_ready", "production_live_ready", "automation_ready", "owner_final_upload_approved"]
+  },
+
+  "uploadHardBlock": {
+    "active": true,
+    "policyRef": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "note": "upload hard block은 계속 active. 이 QA pass는 upload를 활성화하지 않으며, upload 실행은 별도 upload slice + 별도 명시 APPROVE_UPLOAD 전까지 계속 차단된다."
+  },
+
+  "references": {
+    "renderMuxRunPlan": "scripts/fixtures/golden_sample_v3_2_live_render_mux_run_plan.t1_lifestyle_inflation.v1.json",
+    "liveActionApprovalPacket": "scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json",
+    "futureExecutionPlanGate": "scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json",
+    "integratedReadinessContract": "scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json",
+    "uploadHardBlockPolicy": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "ownerDecisionState": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "note": "이 fixture는 위 계약/게이트/정책을 historical prerequisite로 참조한다. 참조 자체는 upload 실행 승인이 아니다. 이 fixture는 참조 대상 계약을 수정하지 않는다."
+  },
+
+  "prohibitedInterpretations": [
+    "이 Owner QA actual pass를 upload 실행 승인으로 해석",
+    "이 pass를 근거로 uploadApprovedNow/uploadReady/productionReady를 true로 승격",
+    "upload hard block을 비활성화",
+    "Owner QA pass를 /api/upload/platform client/upload queue/n8n upload 실행 근거로 사용",
+    "readinessVerdict를 STANDARDIZED_NO_LIVE_READY 위로 승격",
+    "이 pass를 image/TTS/render/mux 재생성 또는 env/secret 접근 승인으로 해석"
+  ],
+
+  "forbiddenBehavior": [
+    "uploadApprovedNow/uploadExecutionApprovedNow/uploadReady/productionReady 중 하나라도 true로 설정",
+    "uploadHardBlockActive를 false로 설정 또는 upload hard block 비활성화",
+    "이 pass를 근거로 upload/API/platform/env/secret/DB/deploy 실행",
+    "image/TTS/render/mux/browser/CDP 실행 또는 재생성",
+    "참조 대상 prior 계약(live action packet/future gate/integrated readiness/upload hard block) 수정",
+    "commit/push"
+  ],
+
+  "basedOn": {
+    "renderMuxCheckpoint": "adbcb4b feat(golden-sample): record live render mux run",
+    "liveActionApprovalPacket": "scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json",
+    "note": "이 fixture는 approvalSequenceRule 4단계 Owner QA actual pass를 기록한다. 5단계 upload approval은 별도 fixture(upload approval packet)가 준비물로만 정의하며, 실제 승인은 Owner의 명시 APPROVE_UPLOAD로만 발생한다."
+  }
+}
