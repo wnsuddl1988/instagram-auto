@@ -3616,3 +3616,27 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. 남은 unknown U-A(Owner Cloudflare 계정)·U-B(partial 연결 시 Cloudflare 발급 CNAME 대상)·U-C(gabia DNS 접근)·U-D(account ID)는 Cloudflare 미접속 read-only 특성상 대시보드/Owner 확인 필요.
 - checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 189, 이번 slice uncommitted.
 
+---
+
+## r2-bucket-provisioning-only-v1 (2026-07-06)
+
+- **수행**: Owner가 R2 bucket `buildgongjakso-media` 생성 1건만 승인(`APPROVE_R2_BUCKET_PROVISIONING_ONLY`). 실행 전제("안전하게 이미 인증된 Cloudflare 인터페이스가 있을 때만")를 read-only로 확인.
+- **결과: `BLOCKED_CLOUDFLARE_TOOL_UNAVAILABLE`** — Cloudflare 외부 변경 없음(bucket 미생성).
+  - `wrangler --version`(전역) → command not found
+  - `node_modules/.bin/wrangler`(로컬) → No such file
+  - `package.json` wrangler/cloudflare 의존성 → no match
+  - `~/.wrangler` 인증 저장소 → No such directory (존재 여부만 확인, secret 미열람)
+  - 안전하게 이미 인증된 Cloudflare UI/API/CLI 경로 부재. 우회는 모두 별도 금지: npx 설치=dependency 변경+로그인 필요, API 직접 호출=secret read 필요, 브라우저=computer-use 금지. → 우회 없이 BLOCKED 기록.
+- **생성 파일 (신규 3 + report append)**:
+  - `docs/r2-bucket-provisioning-result.md` — BLOCKED 결과 + 증거표 + 우회 안 함 근거 + 다음 Owner 액션(a/b/c)
+  - `scripts/fixtures/r2_bucket_provisioning_result.v1.json` — 기계판독(approval/provider/bucketName/status(8종 allowlist)/blockerCode/externalMutationOccurred=false/forbiddenExternalMutations/secretHandling 전부 false/nextApprovalRequired)
+  - `scripts/check-r2-bucket-provisioning-result-static.mjs` — dependency-free guard, mutant 13종 fail-closed(bucket 이름/status 확장/blocker 누락/mutation 주장/금지 제거/secret 취급/checkpoint/approval/allowedMutation 확장)
+- **checks/results**:
+  - `node --check` ✓ / JSON parse ✓
+  - `node scripts/check-r2-bucket-provisioning-result-static.mjs` → **ALL PASS 27/27**
+  - regression: dns-zone-preflight **26/26**, provisioning-approval-packet **31/31**, media-provider-decision **32/32**, stable-public-media-url-strategy **24/24** ALL PASS
+- **credential/env/secret handling**: secretsRead/Written/Printed/envLocalAccessed/cloudflareApiTokenAccessed **전부 false**. 인증 저장소는 디렉터리 존재 여부만 `ls`로 확인, 어떤 secret/token 값도 열람·복사·기록 안 함. fixture에 secret-형태 리터럴 없음.
+- **금지 미수행**: DNS/custom domain/gabia/zone 0, R2 token/access key/policy 0, env/secret r/w 0, deploy/Vercel 0, object upload 0, liveness 0, Instagram --arm 0, YouTube/Supabase/DB/render/mux/TTS/image/browser 0, dependency/lockfile/font 0, commit/push 0. 보호/제외 파일 무접촉.
+- deviations/risks: 범위 이탈 없음. bucket 생성은 이 환경에서 안전 경로 부재로 불가 → Owner가 인증된 wrangler CLI 제공 또는 대시보드 직접 생성 필요. 이후 DNS/token/env/deploy/upload/liveness/Instagram은 여전히 각각 별도 게이트.
+- checkpoint recommendation: 신규 3파일 + report append(BLOCKED 결과 증거) — checkpoint commit 권장(Owner 승인 필요). branch ahead 190, 이번 slice uncommitted.
+
