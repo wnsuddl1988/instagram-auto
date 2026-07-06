@@ -3864,3 +3864,44 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. Codex review finding 2건만 정확히 보정했고 지정된 4개 파일 외 추가 변경 없음. metadata gate는 이번 slice에서 판정만 계산하고 실제 발행 차단 로직은 다음 live wiring 승인 슬라이스 몫으로 남김(문서에 명시).
 - checkpoint recommendation: 이번 보정 포함 총 신규 3파일(runner/fixture/guard)+docs 1파일+report가 여전히 uncommitted. Owner 승인 시 이전 no-live slice와 함께 하나의 checkpoint로 묶어 commit 가능한 상태.
 
+## automation-orchestrator-dual-platform-publish-plan-bridge-no-live-v1 (2026-07-07)
+
+- **목적**: 기존 `run-money-shorts-automation-orchestrator-v1.mjs`(base-rate-202605 job 대상)가 새 dual-platform final publish orchestrator dry-run 계약(v3_2, `checkpoint 212a357`)을 읽기 전용으로 참조해, "게시 단계는 dual-platform publish plan + metadata optimization gate + duplicate publish guard를 통과해야 함"을 automation status/preflight에 반영. `creativeLayer` optional block과 동일한 패턴(존재 시에만 계산, 없으면 backward-compatible null)으로 통합.
+- **수정 파일 3개**:
+  - `scripts/fixtures/money-shorts-automation-job.base-rate-202605.v1.json` — `dualPlatformPublishPlanManifest` optional block 신설(path/schemaVersion/runnerPath/staticGuardPath/runnerAllowedFlags=["--dry-run"] + base-rate-202605 자체의 publishRecords/publish URL은 그대로 유지하며 대체하지 않는다는 note 명시). `requiredStaticGuards`에는 중복 추가하지 않음(dual-platform guard는 전용 필드로만 참조해 이중 spawn 방지).
+  - `scripts/run-money-shorts-automation-orchestrator-v1.mjs` — `job.dualPlatformPublishPlanManifest` 존재 시 read-only로 fixture를 파싱해 5개 findings 기록(fixture 존재/스키마/noLive, Instagram+YouTube job 2개, metadataOptimizationGate 계약 존재, duplicatePublishGuard가 v3_2 사용, liveUploadEvidence가 실제 media_id `17916511431199303`/videoId `r9jhckdpC9w`와 일치). preflight 모드에서만 dual-platform 자체 static guard를 기존 guard들과 동일한 read-only spawn(`shell:false`, no install)으로 1회 실행. `dualPlatformPublishPlanRollup`을 `output.dualPlatformPublishPlan`으로 노출(job에 block 없으면 `null`, 하위호환). publish runner 스크립트 자체를 직접 spawn하지 않음(fixture/guard만 참조) — live 호출 경로 추가 없음.
+  - `scripts/check-money-shorts-automation-orchestrator-static.mjs` — §L 섹션(L-01~L-17) 신설: manifest 필드 정합(path/schemaVersion/runnerPath/staticGuardPath/runnerAllowedFlags가 정확히 `["--dry-run"]`), `requiredStaticGuards`에 dual-platform guard 중복 미포함(이중 spawn 방지 회귀 확인), runner 소스가 noLiveThisSlice/instagram_job·youtube_job/publishMetadataOptimizationGate/duplicatePublishGuard+v3_2/live evidence(media_id·videoId)를 검사하는지, output에 `dualPlatformPublishPlan` 키로 노출하는지, publish runner 스크립트를 직접 spawn하지 않는지, guard spawn이 preflight 전용+shell:false인지 확인 → 기존 123 + 신규 17 = **140/140 PASS**.
+- **bridge/stage 요약**: `--mode status --json` → `dualPlatformPublishPlan.dualPlatformPublishPlanReady:true`(5개 세부 필드 전부 true), 기존 `rollup.thisJobComplete:true`/`rerunRequired:false` 불변. `--mode preflight --json` → dual-platform static guard가 6번째 guard로 read-only 실행되어 `guardResults`에 `132 PASS / 0 FAIL` 반영, `rollup.guardsAllPass:true` 유지, 중복 spawn 없음(guardResults 6건, 이전 시도에서 발견된 7건 중복 버그를 fixture에서 `requiredStaticGuards` 중복 제거로 수정).
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/check-money-shorts-automation-orchestrator-static.mjs` → **140 PASS / 0 FAIL**
+  - `node scripts/run-money-shorts-automation-orchestrator-v1.mjs --job scripts/fixtures/money-shorts-automation-job.base-rate-202605.v1.json --mode status --json` → 정상, `dualPlatformPublishPlanReady:true`, `liveExecuted:false`
+  - targeted regression: `check-dual-platform-final-publish-orchestrator-static.mjs` 132/132, `check-dual-platform-variant-publish-architecture-static.mjs` 32/32 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete 0, env/secret read/write 0, `.env.local` 직접 접근 0, 새 영상 생성 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. 다만 base-rate-202605 job과 t1_lifestyle_inflation(dual-platform publish plan) 콘텐츠는 서로 다른 콘텐츠 unit임 — fixture note에 명시했듯 이 bridge는 base-rate-202605의 게시 완료 판정을 대체하지 않고 향후 job들이 공통으로 준수할 게시 계약의 "위치/준비 상태"만 참조한다.
+- checkpoint recommendation: 신규 파일 없음(기존 3파일 in-place 수정 + report append)로 diff 소규모. 외부 mutation 0. Owner 승인 시 checkpoint commit 가능한 상태.
+
+## automation-orchestrator-dual-platform-contract-bridge-refine-v1 (2026-07-07)
+
+- **목적**: 직전 slice의 Codex review finding 2건 보정. cross-content 혼동 제거 — `base-rate-202605` job이 `t1_lifestyle_inflation`의 publish plan을 "자기 job의 plan"처럼 들고 있던 구조를 job-agnostic shared contract/reference로 명확히 분리.
+- **수정 파일 3개**:
+  - `scripts/fixtures/money-shorts-automation-job.base-rate-202605.v1.json` — `dualPlatformPublishPlanManifest` → `dualPlatformPublishContractManifest`로 리네이밍 + `isJobAgnosticSharedContract:true` 필드 추가. t1 live evidence(mediaId `17916511431199303`/videoId `r9jhckdpC9w`)를 `contractReferenceEvidence` 하위 객체로 명확히 분리(contentId `t1_lifestyle_inflation`/version `v3_2` 명시). note를 "job-agnostic 공유 계약"임을 강조하고 base-rate job의 publishRecords/publish URL을 대체·덮어쓰지 않는다고 재강조.
+  - `scripts/run-money-shorts-automation-orchestrator-v1.mjs` — 변수/필드명 전면 리네이밍(`dppm`→`dpcm`, `dualPlatformPublishPlanRollup`→`dualPlatformPublishContractRollup`, finding id `dual_platform_publish_plan_*`→`dual_platform_publish_contract_*`, output key `dualPlatformPublishPlan`→`dualPlatformPublishContract`, rollup 필드 `dualPlatformPublishPlanReady`→`dualPlatformPublishContractReady`). `liveEvidenceMatches`를 `referenceEvidenceConsistent`로 의미 변경(contract fixture 자체의 reference evidence 내적 일관성만 검사, base-rate job의 completion과 무관함을 주석+rollup.note로 명시). base-rate job의 `youtubePublished`/`instagramPublished`(rollup 상단)는 기존 publishRecords(`eX622q9dNOI`/`17910778836241106`)만으로 판정되도록 완전히 분리 유지 — 코드 경로상 두 판정이 섞이지 않음을 확인.
+  - `scripts/check-money-shorts-automation-orchestrator-static.mjs` — §L 섹션 전면 재작성: 옛 필드명(`dualPlatformPublishPlanManifest`)/옛 output명(`dualPlatformPublishPlan:`)이 job fixture·runner 어디에도 남아있지 않은지 회귀 확인(L-00a~d), `isJobAgnosticSharedContract===true` 확인(L-07a), cross-content 분리 확인 — `contractReferenceEvidence.instagramMediaId`/`youtubeVideoId`가 이 job 자체의 `expectedMediaId`/`expectedVideoId`와 다른 값임을 검증(L-07b~d, 서로 다른 콘텐츠라는 사실 자체를 코드로 확인), manifest note가 "대체/덮어쓰지" 문구로 명시하는지 확인(L-07e), 새 필드명이 runner에서 일관되게 쓰이는지, rollup 필드명이 `dualPlatformPublishContractReady`로 정확히 명명됐는지(L-14a), 주석/rollup이 "shared contract"/"job-agnostic" + "대체하지 않는다" 문구로 의미를 명확히 하는지(L-14b) 확인 → 기존 123 + 신규 §L 30개 = **151/151 PASS**.
+- **naming/meaning 보정 요약**:
+  - `dualPlatformPublishPlanManifest` → `dualPlatformPublishContractManifest` (job 소유의 "plan"이 아니라 job-agnostic "shared contract"로 의미 전환)
+  - output `dualPlatformPublishPlan` → `dualPlatformPublishContract`, rollup 필드 `dualPlatformPublishPlanReady` → `dualPlatformPublishContractReady`
+  - `liveEvidenceMatches`(t1 evidence가 base-rate job에 매치된다는 오해 소지) → `referenceEvidenceConsistent`(contract fixture 자체의 내적 일관성만 의미)
+  - base-rate job의 게시 완료 판정(`youtubePublished`/`instagramPublished`)은 오직 자체 publishRecords로만 계산되도록 코드 경로 분리 유지 — contract readiness가 job completion에 영향을 주지 않음을 static guard로 회귀 방지
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/check-money-shorts-automation-orchestrator-static.mjs` → **151 PASS / 0 FAIL**
+  - `--mode status --json` → `dualPlatformPublishContractReady:true`, `rollup.thisJobComplete:true`(자체 publishRecords 기반 불변), `liveExecuted:false`
+  - `--mode preflight --json` → guardResults 6건(중복 없음), `guardsAllPass:true`(최초 리네이밍 직후 guard 자체가 옛 필드명을 검사해 일시적으로 exit 1이 났던 것을 §L 재작성으로 수정 완료, 재검증 통과)
+  - targeted regression: `check-dual-platform-final-publish-orchestrator-static.mjs` 132/132, `check-dual-platform-variant-publish-architecture-static.mjs` 32/32 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete 0, env/secret read/write 0, `.env.local` 직접 접근 0, 새 영상 생성 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. Codex review finding 2건만 정확히 보정, 지정된 3개 파일 외 추가 변경 없음. 새 docs 생성하지 않음(지시대로 기존 범위 내 보정만).
+- checkpoint recommendation: 신규 파일 없음(기존 3파일 in-place 수정 + report append). 이전 slice와 합쳐 diff는 여전히 소규모. 외부 mutation 0. Owner 승인 시 checkpoint commit 가능한 상태.
+

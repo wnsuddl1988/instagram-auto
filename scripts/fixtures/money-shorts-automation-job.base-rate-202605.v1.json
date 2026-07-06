@@ -69,6 +69,23 @@
     "scripts/check-money-shorts-automation-orchestrator-static.mjs"
   ],
 
+  "dualPlatformPublishContractManifest": {
+    "isJobAgnosticSharedContract": true,
+    "path": "scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json",
+    "schemaVersion": "dual_platform_final_publish_orchestrator_v1",
+    "runnerPath": "scripts/run-dual-platform-final-publish-orchestrator.mjs",
+    "staticGuardPath": "scripts/check-dual-platform-final-publish-orchestrator-static.mjs",
+    "runnerAllowedFlags": ["--dry-run"],
+    "contractReferenceEvidence": {
+      "note": "아래는 이 shared contract 자체의 검증에 쓰인 reference evidence(콘텐츠 t1_lifestyle_inflation, publish version v3_2)이며, base-rate-202605 job의 콘텐츠나 게시 상태와 무관하다. base-rate-202605 job의 완료 판정에는 절대 쓰이지 않는다.",
+      "contentId": "t1_lifestyle_inflation",
+      "version": "v3_2",
+      "instagramMediaId": "17916511431199303",
+      "youtubeVideoId": "r9jhckdpC9w"
+    },
+    "note": "이 필드는 job-agnostic 공유 계약(shared, job-agnostic contract)이다 — base-rate-202605 job 소유의 publish plan이 아니라, 모든 job이 게시 단계에서 공통으로 준수해야 할 dual-platform publish contract(metadata optimization gate + duplicate publish guard 포함)의 '위치와 준비 상태'만 orchestrator status/preflight에 알린다. base-rate-202605의 publishRecords/publish URL(eX622q9dNOI / 17910778836241106)을 대체하거나 덮어쓰지 않으며, 이 job의 게시 완료 상태는 여전히 오직 위 publishRecords로만 판정된다. contractReferenceEvidence의 t1_lifestyle_inflation identifier는 이 shared contract fixture 자체가 검증에 사용한 reference일 뿐, base-rate-202605 job의 completion을 올리거나 대체하는 데 절대 사용되지 않는다."
+  },
+
   "pipelineStages": [
     {
       "stage": "source_facts",
