@@ -3592,3 +3592,27 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. object key = URL path 정합은 R2 custom domain이 bucket root를 도메인 root에 매핑한다는 공식 동작 기반 설계 결정이며 guard가 예시 URL/key 일치를 강제. U1/U2/U5(Cloudflare zone·DNS provider) 미확정은 Cloudflare 미접속 slice 특성상 불가피, provisioning 승인 전 Owner 확인 필요로 명시. 실제 bucket/token/DNS/env/deploy/upload/liveness/--arm은 이후 별도 승인 게이트
 - checkpoint recommendation: 신규 3파일 + report append — R2 provisioning 승인 패킷 완성. **checkpoint commit 권장**(Owner 승인 필요). branch ahead 188, 이번 slice uncommitted
 
+---
+
+## r2-provisioning-preflight-dns-zone-check-v1 (2026-07-06)
+
+- **수행**: 실제 R2 provisioning 전 read-only DNS/zone preflight. public DNS(NS/A/CNAME) + local Vercel/config만 조회해 `buildgongjakso.com`이 Cloudflare zone인지·partial CNAME 필요 여부·DNS record 위치 판정.
+- **생성 파일 (신규 3)**:
+  - `docs/r2-dns-zone-preflight-report.md` — 판정 + 증거표 + Owner 4질문 답 + unknowns(U-A~U-D) + 다음 승인(APPROVE_R2_DNS_CUSTOM_DOMAIN)
+  - `scripts/fixtures/r2_dns_zone_preflight_report.v1.json` — 기계판독(domain/customDomain/dnsClassification/evidence/answers/nextGate/readOnlyBoundary/forbidden)
+  - `scripts/check-r2-dns-zone-preflight-report-static.mjs` — dependency-free guard, mutant 11종 fail-closed
+- **판정: `PARTIAL_CNAME_SETUP_LIKELY`**
+  - `buildgongjakso.com` NS = **gabia**(ns1.gabia.co.kr 등) → **Cloudflare zone 아님**
+  - apex A = `216.198.79.1`(Vercel), `www` CNAME = `36c1ec111c10a4f6.vercel-dns-017.com`(Vercel)
+  - `media.buildgongjakso.com` = **NXDOMAIN(미생성)**
+  - local: `.vercel/project.json` projectName=instagram-auto(식별자, secret 아님), `vercel.json` framework=nextjs
+- **Owner 4질문 답**: ①Cloudflare zone? → **아니오(gabia 위임)** ②partial CNAME? → **유력** ③DNS record 위치? → **gabia(현 authoritative), Cloudflare partial setup 방식** ④proceed? → **부분 조건부**(bucket 생성은 DNS 독립 진행 가능, custom domain 연결은 Owner Cloudflare 계정 U-A + gabia DNS 접근 U-C 확인 선행)
+- **checks/results**:
+  - `node --check` ✓ / JSON parse ✓
+  - `node scripts/check-r2-dns-zone-preflight-report-static.mjs` → **ALL PASS 26/26**
+  - regression: r2-provisioning-approval-packet **31/31**, media-provider-decision **32/32**, stable-public-media-url-strategy **24/24** ALL PASS
+- **live side effects: none** — Cloudflare login/auth-query/mutation 0, R2 bucket/token 0, DNS 변경 0, env/secret write 0, secret read 0, deploy 0, object upload 0, generated mp4 liveness 0, Instagram --arm 0. DNS 조회는 public read-only(nslookup NS/A/CNAME), local read는 non-secret 식별자/config만.
+- **보존 확인**: 보호/제외 파일(CODEX_REVIEW/NEXT_ACTION/PROJECT_STATE/CONTEXT_TRANSFER_CODEX/piq_diag_out.txt/render-golden-sample/salary_3days manifest/output·C:\tmp) 무접촉. approval packet/provider/stable 문서·fixture·guard 무수정(regression 확인).
+- deviations/risks: 범위 이탈 없음. 남은 unknown U-A(Owner Cloudflare 계정)·U-B(partial 연결 시 Cloudflare 발급 CNAME 대상)·U-C(gabia DNS 접근)·U-D(account ID)는 Cloudflare 미접속 read-only 특성상 대시보드/Owner 확인 필요.
+- checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 189, 이번 slice uncommitted.
+
