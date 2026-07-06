@@ -3777,3 +3777,27 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: link prompt가 예상보다 일찍 떴으나(생성 직후) 응답 거부로 안전. hang된 create-store 프로세스가 stdin 대기 중 남아있을 수 있으나 store 상태에 영향 없음(list-stores로 확인). PowerShell 프로세스 조회는 deny rule로 차단됨 — 핵심 사실(link 없음)은 CLI list로 이미 확인되어 비필수.
 - checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). 이번 slice uncommitted, 외부 mutation(store 생성) 발생했으므로 evidence 고정 위해 checkpoint 권장.
 
+---
+
+## vercel-blob-dependency-code-integration-no-upload-v1 (2026-07-06)
+
+- **수행**: Owner 승인 `APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION_NO_UPLOAD` 범위에서 `@vercel/blob` 설치 + Instagram Blob fail-closed code integration + no-upload planner + guard + docs/fixture 작성. 실제 upload/env/token/liveness/API/deploy 0.
+- **dependency**: `@vercel/blob 2.5.0` 설치. pnpm 11.7.0 바이너리(`C:\Users\PC\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd`) + base store-dir로 설치(시스템 pnpm 10.33.2는 v10 store 요구 → 기존 node_modules v11 링크와 충돌하여 우회). `pnpm add @vercel/blob --store-dir "C:\Users\PC\AppData\Local\pnpm\store"`. `package.json`에 `^2.5.0` 1줄, `pnpm-lock.yaml` additive(+183, 삭제 0). pnpm 11이 자동 추가한 `pnpm-workspace.yaml` allowBuilds 스텁(@vercel/blob 무관)은 `git checkout`으로 되돌림. config set/global config/full install/lockfile 손수 수정 없음.
+- **신규 파일 5개 (+report)**:
+  - `lib/instagram-blob-media.ts` — deterministic pathname builder + platform/variant/size(35MB cap)/extension/content-type guard + put 옵션 plan(access public/addRandomSuffix false/allowOverwrite false/multipart true/contentType video/mp4) + no-upload plan builder + `uploadInstagramBlob()` fail-closed(항상 uploaded:false, put 호출 경로 없음, APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST 필요). `@vercel/blob`는 `import type`만(값 import/put 호출 0 → credential resolution 미트리거).
+  - `scripts/plan-vercel-blob-instagram-upload-no-upload.mjs` — approved local mp4 read-only → size/sha256/pathname/put 옵션 plan. @vercel/blob 미참조, upload/network/env/file-write 0.
+  - `docs/vercel-blob-dependency-code-integration-no-upload.md`
+  - `scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json`
+  - `scripts/check-vercel-blob-dependency-code-integration-static.mjs` — fixture 불변식 + lib/planner 소스 정적 검증(주석/문자열 제거 후 put 미호출·@vercel/blob 값 미참조 확인) + docs + self-scan + mutant 17종 → **45/45 PASS**
+- **no-upload planner result**: input `golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`, sizeBytes 20294549(expected 일치), withinSizeCap true(20.3MB<35MB), sha256_12 `54957450ac10`, pathname `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`, status PLANNED_NO_UPLOAD, uploadPerformed false, sideEffects 전부 0.
+- **checks/results**:
+  - `git status -sb` ✓
+  - `node --check` (planner, guard) ✓, JSON parse (fixture) ✓
+  - **typecheck**: Claude 실행 환경에서는 `node node_modules/typescript/bin/tsc --noEmit --pretty false`가 0 errors였다고 보고. Codex review 환경에서는 동일 plain command가 implicit `@types/node`/`@types/react` resolution에서 TS6053을 냈으나, 타입 파일 존재 확인 후 `node node_modules/typescript/bin/tsc --noEmit --pretty false --incremental false --types node,react`로 재실행해 0 errors 확인. `pnpm exec tsc`는 pre-exec install 게이트가 ERR_PNPM_IGNORED_BUILDS로 막혀 직접 tsc 호출로 우회(새 integration 타입 오류 아님).
+  - `node scripts/check-vercel-blob-dependency-code-integration-static.mjs` → **ALL PASS 45/45**
+  - planner smoke(dry/no-upload) → PLANNED_NO_UPLOAD, sideEffects 0
+  - targeted regression: provisioning 34/34, integration-packet 36/36, dual-platform 32/32, stable-public-media-url 31/31 — 전부 ALL PASS
+- **side effects**: dependency = `@vercel/blob` 1개만(package.json +1줄, lockfile additive +183). Blob object upload 0, put() 호출 0, public URL liveness 0, env/secret/token read/write/print 0, .env.local 0, vercel env pull 0, Blob store project link 0, deploy 0, Instagram API/--arm 0, YouTube API/upload 0, render/media 0, commit/push 0. secret/token literal 미기록.
+- **deviations/risks**: (1) 시스템 pnpm/node_modules store 버전 불일치로 표준 `pnpm add` 실패 → codex-primary-runtime의 pnpm 11.7.0 바이너리로 우회(HANDOFF resume 지시 명령 사용). (2) pnpm 11 자동 생성 `pnpm-workspace.yaml` allowBuilds 스텁은 승인 범위 밖 churn이라 되돌림. (3) guard 초기 실행에서 주석/JSDoc의 `put(`·`@vercel/blob` 텍스트가 false positive → guard에 stripCommentsAndStrings 추가해 실제 코드만 검사하도록 수정 후 45/45 통과.
+- checkpoint recommendation: 신규 5파일 + dependency(package.json/pnpm-lock.yaml) + report. dependency/lockfile 변경 + reusable code 포함이라 evidence 고정 위해 checkpoint commit 권장(Owner 승인 필요). 이번 slice uncommitted.
+
