@@ -8,50 +8,23 @@
 
 ## Current Approved Slice
 
-- Task ID: `stable-public-media-url-layer-v1`
-- Status: **Owner asked Codex to choose and set the most stable path for sustained use, solving the public mp4 URL problem step by step instead of deferring it.**
-- Owner intent captured from chat:
-  - `지속적인 사용에 제일 안정적인 경로로 너가 설정해줘`
-  - `되는걸 문제해결을 나중에 하려하지말고 하나씩 풀어가면서 완성하는게 더 완성도 있고 속도도 빠르지 않을까?`
-
-## Strategic Direction
-
-For sustained use, do **not** make repo `public/` static mp4 + site redeploy the default path.
-
-Set the durable default architecture to:
-
-1. A dedicated public media origin under the product domain, preferably `https://media.buildgongjakso.com/...`.
-2. Object storage/CDN for generated mp4 files.
-3. A deterministic media key/path scheme per generated short.
-4. A pre-upload verifier that requires:
-   - HTTPS URL,
-   - allowed media host,
-   - HTTP 2xx or 206,
-   - `Content-Type` starts with `video/` or exact accepted mp4 type,
-   - not `text/html`,
-   - unauthenticated access,
-   - stable direct URL suitable for Instagram `video_url`.
-5. Instagram upload runner must consume only a verified public mp4 URL from this media layer.
-
-The previous one-off fallback remains valid only for emergency/manual sample work:
-
-- Copy mp4 into repo `public/`.
-- Deploy site.
-- Validate direct mp4 URL.
-
-But that fallback is **not** the sustained operating path because it couples every video publication to git/deploy and can bloat the repo.
+- Task ID: `media-provider-discovery-decision-packet-v1`
+- Status: **Owner approved no-secret/no-provisioning discovery to choose the best provider path for the sustained public media origin.**
+- Exact Owner approval:
+  - `APPROVE_MEDIA_PROVIDER_DISCOVERY: sustained default는 media.buildgongjakso.com + object storage/CDN로 유지한다. Codex/Claude는 no-secret/no-provisioning 범위에서 현재 프로젝트와 계정 상태를 조사해 Vercel Blob, Cloudflare R2, S3-compatible 중 최적 provider와 DNS/env/deploy 순서를 결정하는 decision packet을 준비하라. storage provisioning, DNS 변경, env/secret write, deploy, upload, Instagram --arm 실행은 아직 금지.`
 
 ## Current State
 
-- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `4b0faf7 feat(golden-sample): prepare live instagram upload runner`, ahead 186, not pushed.
-- Live Instagram upload runner/plan/static guard exists and is checkpointed.
-- Latest live upload attempt status:
-  - upload executed: 0
-  - Instagram API calls: 0
-  - credential/env reads: 0
-  - external network requests by Claude: 0
-  - blocker: `BLOCKED_AUTO_MODE_PERMISSION_LIVE_CHAIN`
-- Existing direct upload runner currently expects a verified public mp4 URL and remains fail-closed.
+- Branch: `codex/source-first-blueprint-clean`, latest checkpoint `44a60da feat(media): define stable public media url strategy`, ahead 187, not pushed.
+- Stable media strategy is checkpointed:
+  - sustained default: `https://media.buildgongjakso.com/...`
+  - backing: object storage/CDN
+  - fallback only: repo `public/` mp4 + deploy under `www.buildgongjakso.com`
+- Live Instagram upload remains not executed:
+  - upload 0
+  - Instagram API 0
+  - credential/env read 0
+  - public URL liveness 0
 - Known protected/excluded dirty files must remain untouched unless explicitly in scope:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -65,15 +38,24 @@ But that fallback is **not** the sustained operating path because it couples eve
 
 ## Purpose
 
-Create the stable public media URL layer needed for repeated Instagram uploads, without performing live upload, deployment, DNS changes, storage provisioning, or secret reads in this slice.
+Prepare a no-live provider decision packet that chooses the most stable implementation path among:
 
-This slice must solve the architectural blocker by making the repo express:
+1. Vercel Blob,
+2. Cloudflare R2,
+3. S3-compatible object storage.
 
-1. which public media URL strategy is the default,
-2. which fallback is allowed for one-off samples,
-3. what exact gates must pass before Instagram upload,
-4. how later external setup should plug in without broad secret reads or platform drift,
-5. how the existing live Instagram upload runner should depend on a verified media URL instead of ad hoc public URL guessing.
+The packet must recommend the provider/order for this project and define the future DNS/env/deploy sequence, while performing **no provisioning, no secret writes, no deploy, no storage upload, no live URL check, and no Instagram upload**.
+
+## Discovery Rules
+
+- Prefer official documentation and current local project evidence.
+- If using web or CLI account/project reads, keep them read-only.
+- Do not expose, print, copy, or write secret values.
+- Do not install dependencies.
+- Do not create provider accounts, buckets, tokens, DNS records, projects, or deployments.
+- If a CLI requests login, token, browser auth, provisioning, paid plan confirmation, or mutation, stop that path and record it as unavailable in no-secret discovery.
+- It is allowed to inspect non-secret project configuration such as package/config files and read-only CLI listings if already authenticated and non-mutating.
+- It is allowed to record provider-specific env var names that will be needed later, but not values.
 
 ## Source Contracts To Read
 
@@ -81,12 +63,20 @@ Read only the minimum needed:
 
 1. `AGENTS.md`
 2. this file
-3. `scripts/fixtures/golden_sample_v3_2_live_instagram_upload_run_plan.t1_lifestyle_inflation.v1.json`
-4. `scripts/run-golden-sample-v3-2-instagram-upload-once.mjs`
-5. `scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
-6. Existing package/config files only if needed to avoid dependency or module-style mistakes:
-   - `package.json`
-   - `tsconfig.json` or existing script style references
+3. `docs/public-media-url-strategy.md`
+4. `scripts/fixtures/stable_public_media_url_strategy.v1.json`
+5. `scripts/check-stable-public-media-url-strategy-static.mjs`
+6. `package.json`
+7. Project deployment/config hints if present:
+   - `vercel.json`
+   - `next.config.*`
+   - `.gitignore`
+   - relevant `app/`, `lib/`, or `scripts/` files only if needed to assess integration shape
+
+Optional read-only account/project state checks:
+
+- `vercel ls` or equivalent read-only Vercel project listing if available and already authenticated.
+- Read-only local git remote/config only if needed to understand deployment target.
 
 Do not read protected/excluded files unless unavoidable:
 
@@ -104,72 +94,70 @@ Do not read protected/excluded files unless unavoidable:
 
 Allowed repo files:
 
-1. `docs/public-media-url-strategy.md` (new)
-   - Define the chosen sustained strategy:
-     - default: dedicated media origin `media.buildgongjakso.com` backed by object storage/CDN,
-     - fallback: repo `public/` static mp4 + deploy only for one-off/manual sample recovery,
-     - not default: committing every generated mp4 to repo.
-   - Include provider-neutral requirements so the project can use Vercel Blob, Cloudflare R2, S3-compatible storage, or another approved object store later.
-   - Document exact gates before Instagram upload.
-   - Document external actions requiring Owner approval:
-     - DNS/custom domain,
-     - storage provider provisioning,
-     - env/secret configuration,
-     - deployment,
-     - live URL liveness check,
-     - Instagram `--arm` upload.
+1. `docs/media-provider-decision-packet.md` (new)
+   - Compare Vercel Blob, Cloudflare R2, and S3-compatible storage for this project.
+   - Use official-doc evidence where available.
+   - Include current local project/account read-only evidence.
+   - Recommend one primary provider and one fallback provider.
+   - Define the exact future sequence:
+     1. Owner selects provider.
+     2. Provider provisioning approval.
+     3. DNS/custom domain approval for `media.buildgongjakso.com`.
+     4. Env/secret configuration approval.
+     5. Code integration slice.
+     6. Deploy approval.
+     7. Live URL liveness approval.
+     8. Instagram `--arm` approval.
+   - Include risk notes and rollback path.
    - Do not include secret values.
 
-2. `scripts/fixtures/stable_public_media_url_strategy.v1.json` (new)
-   - Machine-readable strategy contract.
-   - Must set default media host to `media.buildgongjakso.com`.
-   - Must keep `www.buildgongjakso.com` static `public/` fallback marked as fallback/manual, not sustained default.
-   - Must require video URL verifier gates:
-     - HTTPS,
-     - allowed host,
-     - 2xx or 206,
-     - video/mp4 or `video/*`,
-     - reject `text/html`,
-     - unauthenticated access,
-     - no redirect to HTML/login.
-   - Must record forbidden behavior:
-     - live upload without verified URL,
-     - broad env read,
-     - YouTube/Supabase/DB/deploy side effects in this slice,
-     - storing generated mp4s in git as the sustained path,
+2. `scripts/fixtures/media_provider_decision_packet.v1.json` (new)
+   - Machine-readable decision packet.
+   - Must preserve sustained default `media.buildgongjakso.com`.
+   - Must include candidates: `vercel_blob`, `cloudflare_r2`, `s3_compatible`.
+   - Must include chosen recommendation and rationale.
+   - Must include future action sequence and approval gates.
+   - Must include forbidden behavior for this slice:
+     - storage provisioning,
+     - DNS changes,
+     - env/secret write,
+     - deploy,
+     - object upload,
+     - public URL liveness network check,
+     - Instagram upload,
+     - YouTube/Supabase/DB/render/mux/TTS/image/browser side effects,
+     - dependency/lockfile changes,
      - secret logging.
 
-3. `scripts/check-stable-public-media-url-strategy-static.mjs` (new)
+3. `scripts/check-media-provider-decision-packet-static.mjs` (new)
    - Dependency-free static guard.
    - Import only `node:fs`, `node:path`, `node:url` unless a `node:` builtin is truly justified.
-   - Validate the docs/fixture contract.
+   - Validate docs/fixture contract and no-live boundary.
    - Include fail-closed mutants for:
-     - default host drift away from `media.buildgongjakso.com`,
-     - making repo `public/` static mp4 the sustained default,
-     - allowing `text/html`,
-     - allowing non-HTTPS URL,
-     - allowing upload without verified URL,
-     - allowing broad `.env.local` parsing,
-     - allowing YouTube/Supabase/DB/deploy side effects in this slice,
+     - sustained host drift away from `media.buildgongjakso.com`,
+     - missing candidate provider,
+     - missing chosen recommendation,
+     - missing approval gate for DNS,
+     - missing approval gate for env/secret,
+     - allowing provisioning in this slice,
+     - allowing deploy in this slice,
+     - allowing object upload in this slice,
+     - allowing live URL check in this slice,
+     - allowing Instagram upload in this slice,
      - allowing secret logging,
-     - removing Owner approval requirements for DNS/storage/env/deploy/live upload.
+     - allowing dependency/lockfile changes.
 
-4. Optional minimal patch to `scripts/run-golden-sample-v3-2-instagram-upload-once.mjs`
-   - Only if needed to reference the stable media strategy fixture or make future URL sourcing clearer.
-   - Must preserve all current fail-closed upload gates, cap=1, Instagram-only behavior, and secret protections.
-   - Must not run live URL checks, read env, or upload.
-
-5. Optional minimal patch to `scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
-   - Only if runner changes require static guard alignment.
-
-6. `_ai/CLAUDE_REPORT.md`
+4. `_ai/CLAUDE_REPORT.md`
    - Append concise reusable evidence.
+
+5. `_ai/HANDOFF_NOW.md`
+   - Status update only if needed.
 
 Avoid modifying:
 
-- `app/api/upload/route.ts`
-- `lib/upload-hard-block.ts`
-- `lib/instagram.ts` unless a read-only discovery reveals a tiny reference-only change is truly necessary; default is no modification.
+- Existing upload runner/guard.
+- Stable media strategy docs/fixture/guard unless a tiny typo or reference patch is necessary.
+- App runtime code.
 - DB/Supabase generation status code.
 - YouTube upload code.
 - render/mux/TTS/image/browser runners.
@@ -178,42 +166,45 @@ Avoid modifying:
 ## Required Execution Order
 
 1. `git status -sb`.
-2. Inspect the existing live Instagram runner/guard enough to preserve its fail-closed contract.
-3. Create the docs strategy contract.
-4. Create the machine-readable strategy fixture.
-5. Create the static guard with fail-closed mutants.
-6. Optionally make a minimal runner/guard reference patch only if it improves future integration without adding live side effects.
-7. Run required checks.
-8. Append `_ai/CLAUDE_REPORT.md`.
-9. Stop. No commit/push.
+2. Read source contracts.
+3. Gather no-secret/no-provisioning evidence from local config and official docs.
+4. Optionally run read-only account/project listing if already authenticated and non-mutating; stop if it asks for auth/provisioning.
+5. Create decision packet markdown.
+6. Create machine-readable decision fixture.
+7. Create static guard with fail-closed mutants.
+8. Run required checks.
+9. Append `_ai/CLAUDE_REPORT.md`.
+10. Stop. No commit/push.
 
 ## Required Checks
 
 1. `git status -sb`
-2. `node --check scripts/check-stable-public-media-url-strategy-static.mjs`
-3. JSON parse for `scripts/fixtures/stable_public_media_url_strategy.v1.json`
-4. `node scripts/check-stable-public-media-url-strategy-static.mjs`
+2. `node --check scripts/check-media-provider-decision-packet-static.mjs`
+3. JSON parse for `scripts/fixtures/media_provider_decision_packet.v1.json`
+4. `node scripts/check-media-provider-decision-packet-static.mjs`
 5. Regression:
-   - `node scripts/check-golden-sample-v3-2-live-instagram-upload-run-static.mjs`
+   - `node scripts/check-stable-public-media-url-strategy-static.mjs`
 
 Do not run full build unless syntax/import issues require it.
 
 ## Forbidden
 
-- Live Instagram upload.
+- Storage provisioning, bucket creation, token creation, account creation, provider mutation.
+- DNS/custom domain changes.
+- Env/secret write.
+- Reading or printing secret values.
+- Deploy/Vercel deploy.
+- Object upload.
+- Public URL liveness network check against generated mp4 URLs.
+- Live Instagram upload or Instagram `--arm`.
 - Instagram credential/env read.
 - Broad `.env.local` parsing.
-- Public URL network/liveness checks.
-- Storage provisioning or object upload.
-- DNS/custom domain changes.
-- Deploy/Vercel deploy.
+- YouTube client/import/credential.
 - Supabase hosting/upload generation.
 - DB status update.
-- YouTube client/import/credential.
-- render/mux/TTS/image/browser regeneration.
+- render/mux/TTS/image/browser execution or regeneration.
 - Dependency/lockfile/font changes.
 - Commit/push.
-- Secret logging or storing secret values in docs/fixtures/reports.
 - Modifying protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -227,22 +218,23 @@ Do not run full build unless syntax/import issues require it.
 
 ## Stop Conditions
 
-Stop and report without editing further if:
+Stop and report if:
 
-- implementing this requires choosing a real paid/external storage provider account,
-- DNS or Vercel project configuration must be changed now,
-- secrets/env values must be read or written,
+- provider comparison cannot be made without secret values,
+- a read-only CLI attempts to mutate or prompts for login/provisioning,
+- official docs cannot be checked and there is no reliable local evidence,
 - dependency installation is required,
-- live network checks are needed to validate the slice,
-- protected dirty files must be modified to proceed.
+- protected dirty files must be modified to proceed,
+- decision packet would require actually choosing or paying for a provider account now.
 
 ## Definition Of Done
 
-- Durable default public media strategy is documented.
-- Machine-readable strategy fixture exists.
+- Provider decision packet markdown exists.
+- Machine-readable decision fixture exists.
 - Static guard exists and passes with fail-closed mutants.
-- Existing live Instagram runner remains fail-closed and regression guard passes.
-- No external live action, secret read, deploy, DNS, storage upload, DB/Supabase, YouTube, render/mux/TTS/image/browser, dependency, commit, or push occurred.
+- Stable public media strategy regression guard passes.
+- Recommendation is clear: primary provider, fallback provider, future approval sequence, risks, rollback.
+- No provisioning, DNS, env/secret write, deploy, object upload, live URL check, Instagram upload, YouTube/Supabase/DB, render/mux/TTS/image/browser, dependency, commit, or push occurred.
 - `_ai/CLAUDE_REPORT.md` records concise evidence and recommended next slice.
 
 전체프로젝트 진행률 : 약 92%

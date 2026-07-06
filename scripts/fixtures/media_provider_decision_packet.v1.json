@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "media_provider_decision_packet_v1",
+  "taskId": "media-provider-discovery-decision-packet-v1",
+  "status": "PROVIDER_DECISION_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "sustained public media origin(media.buildgongjakso.com + object storage/CDN)의 최적 provider 경로를 결정하는 no-secret/no-provisioning 결정 패킷. strict custom media origin 기준에서 custom domain 직접 연결 근거가 공식문서에 있는 Cloudflare R2를 primary로, Vercel Blob을 fallback(별도 도메인 전략 검증 필요), S3-compatible을 tertiary로 권장하고 이후 DNS/env/deploy/upload 승인 시퀀스를 고정한다. 이 패킷은 provider 생성/연결/DNS/env write/deploy/object upload/live liveness check/Instagram --arm을 승인하지 않는다.",
+  "docsRef": "docs/media-provider-decision-packet.md",
+  "strategyRef": "scripts/fixtures/stable_public_media_url_strategy.v1.json",
+
+  "sustainedDefaultHost": "media.buildgongjakso.com",
+  "sustainedDefaultPreserved": true,
+
+  "candidates": [
+    {
+      "id": "cloudflare_r2",
+      "role": "primary",
+      "s3Compatible": true,
+      "publicDirectUrl": true,
+      "customDomainSupported": true,
+      "requiredEnvNames": ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"],
+      "rationale": "sustained default가 strict custom media origin(media.buildgongjakso.com)인 이상, R2 public buckets 공식문서가 bucket contents를 '내가 제어하는 custom domain'으로 인터넷 노출할 수 있고 production use에는 custom domain을 권장한다 — 즉 media.buildgongjakso.com 직접 연결 근거가 공식문서에 존재. S3-compatible API + egress 무료. 단 Cloudflare zone/partial(CNAME) setup + DNS 승인 필요 리스크가 있음."
+    },
+    {
+      "id": "vercel_blob",
+      "role": "fallback",
+      "publicDirectUrl": true,
+      "customDomainSupported": false,
+      "requiredEnvNames": ["BLOB_READ_WRITE_TOKEN"],
+      "rationale": "빠른 Vercel 1st-party 통합(이 repo가 이미 Vercel 프로젝트로 링크됨) + object별 public direct blob URL 제공. 단, Vercel Blob 공식문서에서 blob 자체를 custom domain(media.buildgongjakso.com)으로 직접 연결하는 근거는 확인되지 않음 — strict media origin 요구를 만족하려면 별도 redirect/proxy/도메인 전략 검증이 필요하므로 primary 아님."
+    },
+    {
+      "id": "s3_compatible",
+      "role": "tertiary",
+      "s3Compatible": true,
+      "publicDirectUrl": true,
+      "customDomainSupported": true,
+      "requiredEnvNames": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "S3_BUCKET"],
+      "rationale": "가장 범용 표준 S3 API이나 계정/IAM/CDN(CloudFront)+ACM custom domain 설정 오버헤드가 커서 이 프로젝트에선 후순위."
+    }
+  ],
+
+  "chosen": {
+    "primary": "cloudflare_r2",
+    "fallback": "vercel_blob",
+    "tertiary": "s3_compatible",
+    "rationale": "strict sustained origin media.buildgongjakso.com 기준에서는 custom domain 직접 연결 근거가 공식문서에 있는 Cloudflare R2가 primary. Vercel Blob은 1st-party 통합·public direct URL 장점이 있으나 blob의 custom domain 직접 연결 근거가 미확인이라 별도 redirect/proxy/도메인 전략 검증 전에는 strict media origin을 보장할 수 없어 fallback. provider-neutral 계약 유지로 두 provider 간 URL host/경로만 바뀌고 결정론적 key 구조는 불변."
+  },
+
+  "localReadOnlyEvidence": {
+    "vercelLinked": true,
+    "vercelProjectName": "instagram-auto",
+    "domainSameVercelOrg": true,
+    "domainProject": "buildgongjakso-home",
+    "domainProductionUrl": "https://www.buildgongjakso.com",
+    "instagramAutoDeployExists": true,
+    "mp4Gitignored": true,
+    "mp4GitignoreLine": "*.mp4 (.gitignore) → repo public/ 커밋 fallback은 git add -f 필요 + bloat → object storage default 근거",
+    "vercelCliAuthenticated": true,
+    "secretValuesRead": false,
+    "note": "vercel whoami / vercel project ls read-only listing만 사용. 프로비저닝/토큰/로그인 프롬프트 없음. env/secret 값은 읽거나 기록하지 않음."
+  },
+
+  "officialDocEvidence": {
+    "cloudflare_r2": "R2 public buckets 공식문서: bucket contents를 '내가 제어하는 custom domain'으로 인터넷에 노출 가능하고 production use에는 custom domain 권장. S3-compatible API, egress 무료. 즉 media.buildgongjakso.com 직접 연결 근거가 공식문서에 존재. ref: https://developers.cloudflare.com/r2/buckets/public-buckets/",
+    "vercel_blob": "object별 public direct blob URL(anyone-with-URL read), Next.js/Vercel 1st-party 통합, 서버 SDK 업로드. 단 blob 자체를 custom domain으로 직접 연결하는 근거는 공식문서에서 미확인 → strict media.buildgongjakso.com origin 요구엔 별도 redirect/proxy/도메인 전략 검증 필요. env 이름: BLOB_READ_WRITE_TOKEN. ref: https://vercel.com/docs/vercel-blob",
+    "s3_compatible": "표준 S3 API, custom domain은 CloudFront+ACM 등 별도 CDN 설정 필요.",
+    "note": "provider 특성만 기록. 어떤 secret 값도 포함하지 않는다. custom domain 직접 연결 근거는 R2(확인)과 vercel_blob(미확인)의 primary/fallback 순서 판단 기준."
+  },
+
+  "futureSequence": [
+    { "step": 1, "gate": "owner_selects_provider", "ownerApprovalRequired": true, "detail": "Cloudflare R2(권장, custom domain 직접 연결 근거) 또는 Vercel Blob(fallback, 별도 도메인 전략 검증 후) 확정" },
+    { "step": 2, "gate": "provider_provisioning_approval", "ownerApprovalRequired": true, "detail": "계정/버킷/토큰 생성 (R2: bucket + API token)" },
+    { "step": 3, "gate": "dns_custom_domain_approval", "ownerApprovalRequired": true, "detail": "media.buildgongjakso.com 연결 (R2: public bucket custom domain, Cloudflare zone/partial setup 필요)" },
+    { "step": 4, "gate": "env_secret_configuration_approval", "ownerApprovalRequired": true, "detail": "provider env 값 설정" },
+    { "step": 5, "gate": "code_integration_slice", "ownerApprovalRequired": true, "detail": "렌더 산출물을 결정론적 key로 object store 업로드 배선" },
+    { "step": 6, "gate": "deploy_approval", "ownerApprovalRequired": true, "detail": "Vercel deploy" },
+    { "step": 7, "gate": "live_url_liveness_approval", "ownerApprovalRequired": true, "detail": "실제 public mp4 URL 네트워크 검증" },
+    { "step": 8, "gate": "instagram_arm_approval", "ownerApprovalRequired": true, "detail": "실제 1회 업로드 실행" }
+  ],
+
+  "approvalGates": {
+    "dns": true,
+    "envSecret": true,
+    "provisioning": true,
+    "deploy": true,
+    "objectUpload": true,
+    "liveUrlCheck": true,
+    "instagramArm": true,
+    "note": "각 게이트는 별도 Owner 명시 승인 없이는 진행하지 않는다. 이 slice는 어느 게이트도 실행하지 않는다."
+  },
+
+  "riskAndRollback": [
+    "R1 Cloudflare R2 zone/partial setup + DNS 승인 필요 → media.buildgongjakso.com custom domain 연결은 Cloudflare zone(full 또는 partial CNAME) 설정과 DNS 승인(gate 3)이 선행. 미완이면 live liveness check(gate 7)가 fail-closed로 차단. 롤백: 검증된 별도 도메인 전략이 준비되면 fallback(vercel_blob)로 전환 가능하나 strict media origin 보장 전엔 one-off fallback(repo public/ + deploy)으로 단발 발행",
+    "R2 DNS 전파 지연 → media.buildgongjakso.com 활성까지 시간 소요, live liveness check(gate 7)가 fail-closed로 잡음. 긴급 시 one-off fallback(repo public/ + deploy)",
+    "R3 env/secret 오설정 → credential presence + verifier gate로 fail-closed, 값은 report/fixture/log 미기록",
+    "R4 Vercel Blob custom domain 미확인 → fallback으로 vercel_blob 채택 시 blob의 custom domain 직접 연결 근거가 공식문서에 없어 strict media.buildgongjakso.com origin을 만족하려면 redirect/proxy(예: media 서브도메인 → blob URL) 또는 도메인 전략을 먼저 검증해야 함"
+  ],
+
+  "verifierGatesInheritedFromStrategy": {
+    "requireHttps": true,
+    "requireAllowedHost": true,
+    "requireHttp2xxOr206": true,
+    "requireVideoContentType": true,
+    "rejectTextHtml": true,
+    "requireUnauthenticatedAccess": true,
+    "rejectLoginOrHtmlRedirect": true,
+    "uploadOnlyWithVerifiedUrl": true
+  },
+
+  "forbiddenBehavior": [
+    "storage provisioning / bucket creation / token creation / account creation / provider mutation",
+    "DNS/custom domain change",
+    "env/secret write",
+    "secret value read/print/write",
+    "deploy / Vercel deploy",
+    "object upload",
+    "public URL liveness network check against generated mp4 URLs",
+    "Instagram upload or --arm",
+    "Instagram credential/env read",
+    "broad .env.local parsing",
+    "YouTube/Supabase/DB/render/mux/TTS/image/browser side effects",
+    "dependency/lockfile/font change",
+    "secret logging",
+    "commit/push in this slice"
+  ]
+}
