@@ -3753,3 +3753,27 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. store access mode 불변 특성상 방향 전환 시 새 store 생성 필요 — docs rollback 절에 명시.
 - checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 195, 이번 slice uncommitted.
 
+---
+
+## vercel-blob-store-provisioning-v1 (2026-07-06)
+
+- **수행**: Owner 승인 `APPROVE_VERCEL_BLOB_STORE_PROVISIONING` 범위에서 Vercel Blob **public** store `instagram-auto-instagram-media`를 정확히 1회 생성. status=**PROVISIONED**, externalMutation=store 1개 생성.
+- **store**: name `instagram-auto-instagram-media`, id `store_NyZYiaz51y6acaCQ`, access `public`, region `iad1`, Active, 0B/0 files.
+- **중요 — link prompt 미응답**: `vercel blob create-store ... --access public --non-interactive`가 store **생성**은 프롬프트 없이 완료했으나, 직후 `? Would you like to link this blob store to instagram-auto? (Y/n)` interactive prompt를 표시. link는 project connection + `BLOB_READ_WRITE_TOKEN` env write를 유발하므로 이 slice 금지 → **응답하지 않음**. 이후 `vercel blob list-stores --all`로 Projects 컬럼이 `–`(연결 없음)임을 독립 확인 → link/env write 미발생.
+- **Vercel CLI 명령**:
+  - read/check: `vercel --version`(54.5.0), `vercel whoami`(로그인 확인, 토큰 값 미접근), `vercel blob list-stores --all`(생성 전 `No blob stores found`), `vercel blob create-store --help`
+  - mutation(1회): `vercel blob create-store instagram-auto-instagram-media --access public --non-interactive` → `Success! Blob store created ... (store_NyZYiaz51y6acaCQ) in iad1, Access: public`
+  - forbidden flags 미사용: `--yes` / `--environment` / `--token` / `--rw-token` 전부 사용 안 함.
+- **신규 파일 3개 (+report)**:
+  - `docs/vercel-blob-store-provisioning-result.md`
+  - `scripts/fixtures/vercel_blob_store_provisioning_result.v1.json` (status=PROVISIONED, storeId, count 전부 0 제약, connectedToProject=false, secret/token 미기록, forbidden flags false, safety true, nextApprovalGates)
+  - `scripts/check-vercel-blob-store-provisioning-result-static.mjs` — fixture 불변식 + docs 검증 + self-scan + mutant 17종(private drift/storeName drift/invalid status/count>0/link drift/2회 생성/secret 기록/forbidden flags/mutation-status 불일치/secret literal) → **34/34 PASS**
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (guard) ✓, JSON parse (fixture) ✓
+  - `node scripts/check-vercel-blob-store-provisioning-result-static.mjs` → **ALL PASS 34/34**
+  - targeted regression: integration-packet 36/36, dual-platform 32/32, media-provider-decision 38/38, stable-public-media-url 31/31 — 전부 ALL PASS
+- **side effects**: external mutation = public Blob store 1개 생성(승인 범위). blobObjectUpload 0, publicUrlLivenessCheck 0, envSecretAccess(read/write/print) 0(`BLOB_READ_WRITE_TOKEN` 값 미접근), projectConnection/link 0, dependency/lockfile 0, deploy/DNS/domain 0, Instagram API/`--arm` 0, YouTube API/OAuth/upload 0, render/media 0, commit/push 0. secret/token literal 미기록.
+- **deviations/risks**: link prompt가 예상보다 일찍 떴으나(생성 직후) 응답 거부로 안전. hang된 create-store 프로세스가 stdin 대기 중 남아있을 수 있으나 store 상태에 영향 없음(list-stores로 확인). PowerShell 프로세스 조회는 deny rule로 차단됨 — 핵심 사실(link 없음)은 CLI list로 이미 확인되어 비필수.
+- checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). 이번 slice uncommitted, 외부 mutation(store 생성) 발생했으므로 evidence 고정 위해 checkpoint 권장.
+

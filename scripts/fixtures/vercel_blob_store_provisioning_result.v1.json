@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "vercel_blob_store_provisioning_result_v1",
+  "taskId": "vercel-blob-store-provisioning-v1",
+  "approvalToken": "APPROVE_VERCEL_BLOB_STORE_PROVISIONING",
+  "createdAt": "2026-07-06",
+  "docsRef": "docs/vercel-blob-store-provisioning-result.md",
+  "integrationPacketRef": "scripts/fixtures/vercel_blob_instagram_integration_packet.v1.json",
+  "integrationPacketDocsRef": "docs/vercel-blob-instagram-integration-packet.md",
+
+  "storeName": "instagram-auto-instagram-media",
+  "storeId": "store_NyZYiaz51y6acaCQ",
+  "accessMode": "public",
+  "region": "iad1",
+  "storeStatus": "Active",
+  "status": "PROVISIONED",
+
+  "externalMutationOccurred": true,
+  "storeCreationAttemptCount": 1,
+  "storeCreatedCount": 1,
+
+  "connectedToProject": false,
+  "projectLinkPromptShown": true,
+  "projectLinkPromptAnswered": false,
+  "projectLinkPromptNote": "create-store가 store 생성 후 'Would you like to link this blob store to instagram-auto? (Y/n)' interactive prompt를 표시했으나 응답하지 않았다. link는 project connection + BLOB_READ_WRITE_TOKEN env write를 유발하므로 이 slice에서 금지다. 이후 list-stores로 Projects 컬럼이 '–'(연결 없음)임을 확인했다.",
+
+  "blobObjectUploadCount": 0,
+  "publicUrlLivenessCheckCount": 0,
+  "envSecretAccessCount": 0,
+  "projectConnectionCount": 0,
+  "dependencyChangeCount": 0,
+  "deployCount": 0,
+  "instagramApiCallCount": 0,
+  "youtubeApiCallCount": 0,
+
+  "secretValueRecorded": false,
+  "tokenValueRecorded": false,
+
+  "cliVersion": "54.5.0",
+  "cliCommands": {
+    "readOnly": [
+      "vercel --version",
+      "vercel whoami",
+      "vercel blob list-stores --all",
+      "vercel blob create-store --help"
+    ],
+    "mutation": [
+      "vercel blob create-store instagram-auto-instagram-media --access public --non-interactive"
+    ],
+    "forbiddenFlagsUsed": {
+      "--yes": false,
+      "--environment": false,
+      "--token": false,
+      "--rw-token": false
+    }
+  },
+
+  "safetyBoundariesHonored": {
+    "noYesFlag": true,
+    "noEnvironmentFlag": true,
+    "noTokenFlag": true,
+    "noRwTokenFlag": true,
+    "noVercelEnvPull": true,
+    "noEnvLocalAccess": true,
+    "noBlobReadWriteTokenValueAccess": true,
+    "noShellEnvInspection": true,
+    "noPrivateStore": true,
+    "onlyOneStoreCreated": true,
+    "noProjectLink": true
+  },
+
+  "nextApprovalGates": [
+    "APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION",
+    "APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL",
+    "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+    "APPROVE_VERCEL_BLOB_PUBLIC_URL_LIVENESS",
+    "APPROVE_INSTAGRAM_ARM",
+    "APPROVE_VERCEL_BLOB_CLEANUP_RETENTION_JOB"
+  ]
+}
