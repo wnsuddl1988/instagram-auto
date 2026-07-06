@@ -3640,3 +3640,25 @@ QA-only slice. 코드 변경 없음.
 - deviations/risks: 범위 이탈 없음. bucket 생성은 이 환경에서 안전 경로 부재로 불가 → Owner가 인증된 wrangler CLI 제공 또는 대시보드 직접 생성 필요. 이후 DNS/token/env/deploy/upload/liveness/Instagram은 여전히 각각 별도 게이트.
 - checkpoint recommendation: 신규 3파일 + report append(BLOCKED 결과 증거) — checkpoint commit 권장(Owner 승인 필요). branch ahead 190, 이번 slice uncommitted.
 
+---
+
+## dual-platform-variant-publish-architecture-no-live-v1 (2026-07-06)
+
+- **수행**: Instagram(Vercel Blob public URL) + YouTube(Data API direct file upload) 이중 플랫폼 발행 아키텍처를 no-live로 고정. R2는 Owner preference로 suspended.
+- **생성 파일 (신규 3 + report append)**:
+  - `docs/dual-platform-variant-publish-architecture.md` — 결정 요약 + 콘텐츠→2변형→2job 모델 + daily 수식 + free-tier 답 + verifier 상속 + 승인순서 10 + 금지 + 공식 doc
+  - `scripts/fixtures/dual_platform_variant_publish_architecture.v1.json` — 기계판독(R2 suspended/IG=Blob/YT=direct/renderVariants 2/publishJobs 2/blobRequired=IG only/dailyCapacity/freeTier bounded/costGuards/승인10/verifier 상속/docRefs/forbidden/drift cases)
+  - `scripts/check-dual-platform-variant-publish-architecture-static.mjs` — dependency-free guard, mutant 15종 fail-closed
+- **recommendation**: R2 suspended(owner preference, 기술실패 아님). Instagram은 Vercel Blob public direct URL(free-first), YouTube는 YouTube Data API direct(resumable) file upload(Blob 불필요). 1 콘텐츠 = 2 렌더 변형(IG full-frame 1080x1920 + YT letterbox 1080x1920 검은여백/중앙) = 2 publish jobs. Blob storage pressure는 Instagram variant 뿐.
+- **platform render/publish model**: instagram_reels_full_frame_1080x1920 → instagram_job(Blob public URL, 1-7일 retention 후 삭제); youtube_shorts_letterbox_1080x1920(검은 배경+위/아래 여백+중앙) → youtube_job(direct file upload, 별도 OAuth 승인).
+- **free-tier answer**: 2 contents/day, IG object당 20-30MB, 1-7일 retention이면 Vercel Blob Hobby free-tier 운영 **plausible**. 단 **무제한/보장 무료 아님**(usage-based 과금) → cost/retention guard 필수.
+- **daily capacity**: 1 content/day = 2 publish jobs, 2 contents/day = 4 publish jobs (content당 2).
+- **checks/results**:
+  - `node --check` ✓ / JSON parse ✓
+  - `node scripts/check-dual-platform-variant-publish-architecture-static.mjs` → **ALL PASS 32/32**
+  - regression: stable-public-media-url-strategy **24/24**, media-provider-decision **32/32**, r2-bucket-provisioning-result **27/27** ALL PASS
+- **live side effects: none** — Cloudflare/R2/wrangler 0, Vercel Blob store 생성/provisioning 0, token/env/secret r/w 0, .env.local 접근 0, deploy/domain/DNS 0, object upload 0, public URL liveness 0, Instagram --arm 0, YouTube upload/API/OAuth 0, render/mux/TTS/image/browser 0, dependency/lockfile/font 0, commit/push 0. 텍스트 작성만 — 새 CLI/network 호출 없음(공식 doc URL은 Owner 제공 근거 재사용, live fetch 안 함).
+- **보존 확인**: 보호/제외 파일 무접촉. stable strategy/provider decision/r2 result 문서·fixture·guard 무수정(regression 확인).
+- deviations/risks: 범위 이탈 없음. YouTube letterbox 실제 렌더 스펙 구현 + Vercel Blob 실제 store/env + YouTube OAuth는 각각 이후 별도 승인 게이트.
+- checkpoint recommendation: 신규 3파일 + report append — checkpoint commit 권장(Owner 승인 필요). branch ahead 191, 이번 slice uncommitted.
+

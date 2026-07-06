@@ -4,77 +4,151 @@
 
 ## Current Task
 
-- Task ID: `r2-bucket-provisioning-only-v1`
-- Owner approval:
-  - `APPROVE_R2_BUCKET_PROVISIONING_ONLY`
-  - Checkpoint `8303c14` accepted.
-  - Approved external action: create only the Cloudflare R2 bucket named exactly `buildgongjakso-media`.
-- Purpose: provision the sustained media provider's empty R2 bucket only, while keeping DNS/custom domain/token/env/deploy/upload/live checks/Instagram fully blocked.
+- Task ID: `dual-platform-variant-publish-architecture-no-live-v1`
+- Owner decision:
+  - Cloudflare/R2 is not preferred and should remain suspended.
+  - Proceed with a Vercel Blob based Instagram public URL path.
+  - YouTube must be included as a first-class publish target, not deferred as an unrelated later system.
+  - One content item produces platform-specific render variants:
+    - Instagram Reels: current/full-frame vertical format.
+    - YouTube Shorts: separate 1080x1920 mp4 with black top/bottom background space and the main video centered.
+- Owner usage assumption:
+  - 1 content item/day means 2 publish jobs/day: Instagram + YouTube.
+  - 2 content items/day means 4 publish jobs/day: Instagram + YouTube for each content item.
+  - Expected mp4 size target: about 20-30 MB per rendered variant.
+  - Free-first media storage rule: use Vercel Blob only where a public URL is needed, keep retention short, and do not long-term archive mp4 files unless later approved.
 
 ## Current Baseline
 
-- Latest accepted checkpoint: `8303c14 feat(media): record r2 dns zone preflight`
-- Branch was reported ahead 190 after that checkpoint; no push approved.
-- DNS/zone preflight classification: `PARTIAL_CNAME_SETUP_LIKELY`
-  - `buildgongjakso.com` authoritative NS = gabia, not Cloudflare.
-  - apex and `www` are Vercel-backed.
-  - `media.buildgongjakso.com` was NXDOMAIN.
-- Sustained public media target remains:
-  - host: `media.buildgongjakso.com`
-  - provider primary: Cloudflare R2
-  - bucket: `buildgongjakso-media`
+- Latest checkpoint: `81f6b91 chore(media): record r2 bucket provisioning blocked result`
+- Branch reported ahead 191, not pushed.
+- Cloudflare/R2 status:
+  - No bucket was created.
+  - No DNS/custom domain/token/env/deploy/object upload/live check happened.
+  - R2 path is now suspended by Owner preference.
+- Existing public media strategy before this task:
+  - Sustained public media target was being explored under `media.buildgongjakso.com`.
+  - R2 had been primary due to custom-domain fit, but this is now suspended.
+  - Vercel Blob is now the preferred simple/free-first candidate for Instagram public URL needs.
 
 ## Approved Scope
 
-Claude Code may do only the following:
+Claude Code may do only no-live architecture documentation/fixture/guard work.
 
-1. Read the minimal current instructions and source-of-truth files:
-   - `AGENTS.md`
-   - `_ai/HANDOFF_NOW.md`
-   - `docs/r2-dns-zone-preflight-report.md`
-   - `scripts/fixtures/r2_dns_zone_preflight_report.v1.json`
-   - `docs/r2-provisioning-approval-packet.md`
-   - `scripts/fixtures/r2_provisioning_approval_packet.v1.json`
-2. Check the current git status/diff hygiene without altering protected files.
-3. If a safe, already-authenticated Cloudflare interface is available, create exactly one R2 bucket:
-   - bucket name: `buildgongjakso-media`
-   - no object upload
-   - no public access setting
-   - no custom domain
-   - no DNS record
-   - no API token
-   - no env/secret read/write
-4. If the bucket already exists in the active Owner Cloudflare account, do not mutate it; report `ALREADY_EXISTS_NO_MUTATION`.
-5. Record the result in no-secret local evidence files:
-   - `docs/r2-bucket-provisioning-result.md`
-   - `scripts/fixtures/r2_bucket_provisioning_result.v1.json`
-   - `scripts/check-r2-bucket-provisioning-result-static.mjs`
-   - append `_ai/CLAUDE_REPORT.md`
+Read minimal source of truth:
 
-## Hard Stop Conditions
+- `AGENTS.md`
+- `_ai/HANDOFF_NOW.md`
+- `docs/public-media-url-strategy.md`
+- `scripts/fixtures/stable_public_media_url_strategy.v1.json`
+- `docs/media-provider-decision-packet.md`
+- `scripts/fixtures/media_provider_decision_packet.v1.json`
+- `docs/r2-bucket-provisioning-result.md`
+- `scripts/fixtures/r2_bucket_provisioning_result.v1.json`
 
-Claude Code must stop immediately and report the matching blocker if any of these occur:
+Use official docs only for current platform/API facts:
 
-- `BLOCKED_CLOUDFLARE_AUTH_REQUIRED`: Cloudflare login, MFA, account selection uncertainty, or interactive auth is required.
-- `BLOCKED_CLOUDFLARE_TOOL_UNAVAILABLE`: no safe authenticated Cloudflare UI/API/CLI path is available.
-- `BLOCKED_SCOPE_EXPANSION_REQUIRED`: the interface requires custom domain, DNS, token, env, deploy, object upload, public access, or liveness work as part of bucket creation.
-- `BLOCKED_SECRET_OR_ENV_REQUIRED`: any secret/env value must be read, created, printed, copied, or written.
-- `BLOCKED_COST_OR_PLAN_CONFIRMATION_REQUIRED`: bucket creation requires a plan/payment/cost confirmation not explicitly covered by this approval.
-- `BLOCKED_ACCOUNT_IDENTITY_UNCLEAR`: Claude cannot confidently tell it is operating in the intended Owner Cloudflare account without exposing secrets.
+- Vercel Blob overview/pricing/public storage.
+- YouTube Data API `videos.insert` media upload behavior.
+- YouTube Shorts format/duration guidance.
+- Instagram facts only from existing project code/docs unless an official Meta doc check is truly needed; do not do live API calls.
 
-When blocked, do not attempt a workaround. Create a blocked result report/fixture if possible without external mutation or secret access.
+## Target Architecture To Capture
+
+The decision packet must define this operating model:
+
+1. Content unit:
+   - One generated content item owns the script, audio, captions, scene manifest, metadata, and publish plan.
+2. Render variants:
+   - `instagram_reels_full_frame_1080x1920`
+     - Existing/current visual style.
+     - Full-frame vertical mp4.
+     - Intended for Instagram Reels.
+   - `youtube_shorts_letterbox_1080x1920`
+     - Separate platform variant.
+     - Final file remains 1080x1920 vertical mp4.
+     - Background is black.
+     - Main video/content is centered with top/bottom black space.
+     - Preserve readability and avoid important text in YouTube UI risk zones.
+3. Publish jobs:
+   - Instagram job:
+     - Needs a public, unauthenticated HTTPS video URL.
+     - Use Vercel Blob public direct URL as the free-first path.
+     - Upload only the Instagram variant to Blob unless a later need says otherwise.
+     - Delete/expire Blob mp4 after successful ingestion or after a short retention window, preferably 1-7 days.
+   - YouTube job:
+     - Uses YouTube Data API file upload from the YouTube variant.
+     - Does not require the mp4 to be hosted on Vercel Blob.
+     - Needs separate future OAuth/API verification and credential approval.
+4. Daily capacity math:
+   - 1 content/day = 2 render variants + 2 publish jobs/day.
+   - 2 contents/day = 4 render variants + 4 publish jobs/day.
+   - Blob storage pressure is from Instagram public URL variants only under the recommended path.
+5. Free-first answer:
+   - For 2 contents/day, 20-30 MB per Instagram Blob object, and 1-7 day retention, Vercel Blob Hobby free-tier operation is plausible.
+   - This is not unlimited and must include hard cost/usage guards.
+
+## Output Files
+
+Create:
+
+- `docs/dual-platform-variant-publish-architecture.md`
+- `scripts/fixtures/dual_platform_variant_publish_architecture.v1.json`
+- `scripts/check-dual-platform-variant-publish-architecture-static.mjs`
+
+Append:
+
+- `_ai/CLAUDE_REPORT.md`
+
+Update only if needed:
+
+- `_ai/HANDOFF_NOW.md`
+
+## Required Decision Packet Content
+
+The docs/fixture must include:
+
+- `cloudflareR2Status`: suspended by Owner preference, no bucket created.
+- `primaryPublicUrlProviderForInstagram`: Vercel Blob direct public URL.
+- `youtubeUploadMode`: direct media/file upload, not Blob-hosted URL.
+- `contentToVariantToPublishJobModel`: one content item to two variants to two publish jobs.
+- `dailyCapacityBaseline`: 1 content/day -> 2 publishes; 2 contents/day -> 4 publishes.
+- `instagramVariantSpec`.
+- `youtubeVariantSpec`, including black top/bottom background space and centered content.
+- `freeTierFeasibility`, including 20-30 MB variant size and 1-7 day retention assumptions.
+- `costAndQuotaGuards`.
+- `futureApprovalSequence`.
+- `forbiddenBehavior`.
+- Official source URLs used.
+
+Future approval sequence must include, at minimum:
+
+1. `APPROVE_DUAL_PLATFORM_ARCHITECTURE`
+2. `APPROVE_YOUTUBE_VARIANT_RENDER_SPEC`
+3. `APPROVE_VERCEL_BLOB_STORE_PROVISIONING`
+4. `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE`
+5. `APPROVE_BLOB_INSTAGRAM_UPLOAD_CODE_INTEGRATION`
+6. `APPROVE_YOUTUBE_OAUTH_AND_UPLOAD_INTEGRATION`
+7. `APPROVE_PLATFORM_VARIANT_RENDER_TEST`
+8. `APPROVE_INSTAGRAM_BLOB_URL_LIVENESS`
+9. `APPROVE_YOUTUBE_UPLOAD_TEST`
+10. `APPROVE_DUAL_PLATFORM_ARM`
 
 ## Forbidden Actions
 
-- DNS changes, custom domain connection, partial CNAME setup, Cloudflare zone changes, gabia changes.
-- R2 API token creation, access key creation, policy creation, permission grants.
-- Env/secret reads or writes, including `.env.local` and hosting dashboard env values.
-- Deploy, Vercel changes, Supabase/DB changes, YouTube, Instagram upload/`--arm`.
-- Object upload, generated mp4 live liveness checks, curl/HEAD against generated media URLs.
-- Render/mux/TTS/image/browser regeneration.
-- Dependency, lockfile, font, broad config changes.
-- Commit or push.
-- Touching protected/excluded files unless explicitly required by this handoff:
+- Cloudflare/R2/wrangler action.
+- Vercel Blob store creation/provisioning.
+- token/env/secret read/write.
+- `.env.local` access or broad env parsing.
+- deploy/domain/DNS changes.
+- object upload.
+- public URL liveness check.
+- Instagram upload or `--arm`.
+- YouTube upload/API/OAuth execution.
+- render/mux/TTS/image/browser regeneration.
+- dependency/lockfile/font changes.
+- commit/push.
+- Protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
@@ -85,66 +159,60 @@ When blocked, do not attempt a workaround. Create a blocked result report/fixtur
   - unrelated `output/`
   - unrelated `C:\tmp`
 
-## Result Contract
+## Static Guard Requirements
 
-The result fixture must be dependency-free JSON and must not contain secrets. It should distinguish:
+The new guard must be dependency-free and fail closed if:
 
-- `CREATED_BUCKET`
-- `ALREADY_EXISTS_NO_MUTATION`
-- `BLOCKED_*`
-
-Minimum result fields:
-
-- `taskId`
-- `approval`
-- `provider`
-- `bucketName`
-- `allowedExternalMutation`
-- `forbiddenExternalMutations`
-- `status`
-- `blockerCode` when blocked
-- `evidenceSummary`
-- `secretHandling`
-- `nextApprovalRequired`
-
-The static guard must fail closed if:
-
-- the bucket name changes
-- status vocabulary is broadened unsafely
-- forbidden actions are missing
-- token/env/DNS/custom domain/upload/liveness/Instagram are allowed
-- result evidence includes secret-like values
-- the checkpoint/progress/current approval is missing
+- Cloudflare/R2 remains primary.
+- Vercel Blob is used for YouTube when direct file upload is the recommended path.
+- YouTube is missing as a first-class target.
+- one content -> two variants -> two publish jobs is missing.
+- 1 content/day -> 2 publish jobs or 2 contents/day -> 4 publish jobs math is missing.
+- YouTube variant black top/bottom background space or centered content is missing.
+- Instagram variant is not the only Blob-required variant under the recommended free-first path.
+- free-tier feasibility is stated as unlimited/guaranteed.
+- cost/retention guards are missing.
+- token/env/provision/deploy/upload/liveness/Instagram/YouTube live actions are allowed.
+- repo `public/` fallback is promoted to sustained default.
+- official Vercel/YouTube source URLs are missing.
 
 ## Required Checks
 
-Run only targeted, no-secret checks:
-
 1. `git status -sb`
-2. Syntax check for the new guard:
-   - `node --check scripts/check-r2-bucket-provisioning-result-static.mjs`
-3. JSON parse for:
-   - `scripts/fixtures/r2_bucket_provisioning_result.v1.json`
+2. `node --check scripts/check-dual-platform-variant-publish-architecture-static.mjs`
+3. JSON parse:
+   - `scripts/fixtures/dual_platform_variant_publish_architecture.v1.json`
 4. New guard:
-   - `node scripts/check-r2-bucket-provisioning-result-static.mjs`
+   - `node scripts/check-dual-platform-variant-publish-architecture-static.mjs`
 5. Regressions:
-   - `node scripts/check-r2-dns-zone-preflight-report-static.mjs`
-   - `node scripts/check-r2-provisioning-approval-packet-static.mjs`
-   - `node scripts/check-media-provider-decision-packet-static.mjs`
    - `node scripts/check-stable-public-media-url-strategy-static.mjs`
+   - `node scripts/check-media-provider-decision-packet-static.mjs`
+   - `node scripts/check-r2-bucket-provisioning-result-static.mjs`
 
-If Cloudflare provisioning is blocked before creating the new result guard, still write a minimal no-secret blocked report/fixture/guard when safe.
+Do not run full build unless a syntax/import problem requires it.
+
+## Definition Of Done
+
+- A no-live dual-platform architecture decision packet exists.
+- It clearly defines platform-specific render variants.
+- It clearly routes Instagram through Vercel Blob public URL and YouTube through direct file upload.
+- It answers the 1 content/day and 2 contents/day publish math.
+- It captures YouTube black top/bottom background/centered-video requirement.
+- It keeps all live/provisioning/secret/deploy/upload actions blocked.
+- Static guard and targeted regressions pass.
+- `_ai/CLAUDE_REPORT.md` has concise reusable evidence.
 
 ## Final Handoff Format
 
-Claude Code must stop after the final handoff. The handoff to Codex must include:
+Claude Code must stop after the final handoff. Include:
 
 - task id
-- bucket provisioning status: `CREATED_BUCKET`, `ALREADY_EXISTS_NO_MUTATION`, or `BLOCKED_*`
-- whether Cloudflare external mutation occurred, exactly what changed, and what stayed forbidden
+- recommendation summary
+- platform render/publish model
+- free-tier answer
 - changed files
 - checks/results
-- credential/env/secret handling
+- live side effects confirmation
 - deviations/risks
 - checkpoint recommendation
-- current progress line: `전체프로젝트 진행률 : 약 92%`
+- `전체프로젝트 진행률 : 약 92%`
