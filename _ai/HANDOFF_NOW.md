@@ -4,10 +4,10 @@
 
 ## Current Task
 
-- Task ID: `vercel-blob-dependency-code-integration-no-upload-v1`
-- Latest accepted checkpoint: `c8e8f8f chore(media): record vercel blob store provisioning`
-- Owner approval: `APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION_NO_UPLOAD`
-- Purpose: install `@vercel/blob` and add fail-closed Instagram Blob uploader code integration, without reading env/secrets or uploading any object.
+- Task ID: `vercel-blob-env-token-write-or-pull-v1`
+- Latest accepted checkpoint: `010ccec feat(media): add vercel blob instagram no-upload integration`
+- Owner approval: `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL`
+- Purpose: prepare/verify the Vercel Blob write credential path for future Instagram Blob object upload, without uploading any object or printing/recording secret values.
 
 ## Active Architecture
 
@@ -18,112 +18,106 @@
   - id: `store_NyZYiaz51y6acaCQ`
   - access: `public`
   - region: `iad1`
-  - connectedProjects: none/standalone
-- This task adds dependency and code only. It does not connect the store to a project, write env, upload an object, check a live URL, or publish.
+  - last known connectedProjects: none/standalone at checkpoint `c8e8f8f`
+- Blob no-upload code integration is committed at `010ccec`.
+- This task may prepare/verify credential availability only. It must not upload, check a live URL, deploy, or publish.
 
-## Official Vercel Blob SDK Facts Confirmed By Codex
+## Official / Local CLI Facts Confirmed By Codex
 
-Use these as current official-doc evidence. Do not do additional live/network lookups unless a command fails in a way that requires checking changed official behavior.
+Use these as current evidence unless the CLI reports different behavior.
 
-- Official SDK docs: `https://vercel.com/docs/vercel-blob/using-blob-sdk`
-- Official server upload docs: `https://vercel.com/docs/vercel-blob/server-upload`
-- Install command in docs: `pnpm i @vercel/blob`
-- SDK `put(pathname, body, options)` uploads a blob object.
-- Required `put` option: `access: 'private' | 'public'`.
-- Relevant optional `put` options:
-  - `addRandomSuffix`, default false.
-  - `allowOverwrite`, default false.
-  - `contentType`.
-  - `multipart` for large files.
-  - `token`, defaulting to credential resolution if not explicitly passed.
-  - `oidcToken` + `storeId` for OIDC.
-- SDK credential resolution order:
-  1. explicit `token`;
-  2. OIDC credentials with `VERCEL_OIDC_TOKEN` + `BLOB_STORE_ID`;
-  3. `process.env.BLOB_READ_WRITE_TOKEN`;
-  4. throw if none are available.
-- Therefore this slice must not call `put`, because calling it can trigger env/credential resolution.
+- Official Vercel Blob CLI docs: `https://vercel.com/docs/cli/blob`
+  - `vercel blob` supports list/put/get/del/copy/create-store/delete-store/get-store/list-stores/empty-store.
+  - Blob CLI auth reads `BLOB_READ_WRITE_TOKEN` from env, or can use `--rw-token`.
+  - `create-store --yes` auto-connects to the linked project; this was not used during store creation because env write was not approved then.
+  - Current CLI help for `vercel blob list-stores` supports `--all --json`.
+- Official Vercel env CLI docs: `https://vercel.com/docs/cli/env`
+  - `vercel env list` lists env vars by environment.
+  - `vercel env pull [file]` writes env values to a local file.
+  - `vercel env run -- <command>` runs a child command with project env without writing them to a file.
+  - Production/preview env vars default to sensitive/encrypted behavior; values must not be printed.
+- Local CLI path observed by Codex:
+  - `C:\Users\PC\AppData\Roaming\npm\vercel.cmd`
+  - version: `54.5.0`
+- Current CLI help does not expose a clear standalone "connect existing Blob store to project" subcommand. If Claude discovers one from live CLI help, it may use it only under the exact safe conditions below.
 
 ## Approved Scope
 
 Claude Code may:
 
-1. Install the SDK dependency:
-   - Use the same pnpm major version that created current `node_modules`, and point it at the base store path:
-     - `& 'C:\Users\PC\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd' add @vercel/blob --store-dir "C:\Users\PC\AppData\Local\pnpm\store"`
-   - Reason: current `node_modules/.modules.yaml` is linked with `packageManager: pnpm@11.7.0` and `storeDir: C:\Users\PC\AppData\Local\pnpm\store\v11`; `C:\Program Files\nodejs\pnpm.CMD` is pnpm 10.33.2 and repeatedly tried to use a v10 store. Passing the base store path to pnpm 11.7.0 should resolve to the existing `...\store\v11` store.
-   - `package.json` and `pnpm-lock.yaml` changes are approved for this exact dependency only.
-   - No other dependency/lockfile churn is allowed.
-   - Do not run `pnpm config set`, do not change global pnpm config, and do not run full `pnpm install` unless Owner gives a separate approval.
-   - If the bundled pnpm 11.7.0 path is unavailable, stop and record `BLOCKED_PNPM_11_BINARY_UNAVAILABLE`.
-   - If the exact command still fails with a store mismatch, stop and record `BLOCKED_PNPM_STORE_MISMATCH_UNRESOLVED`.
-
-2. Add fail-closed reusable code, preferably:
-   - `lib/instagram-blob-media.ts`
-   - Requirements:
-     - Build deterministic immutable Blob pathname:
-       - `instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4`
-     - Validate:
-       - platform is Instagram only;
-       - variant is `instagram_reels_full_frame_1080x1920`;
-       - extension/content type is mp4/video;
-       - file size is <= 35 MB;
-       - hash segment is 12 lowercase hex characters;
-       - `addRandomSuffix:false`;
-       - `allowOverwrite:false`;
-       - `access:"public"`;
-       - `multipart:true` for mp4 upload plan.
-     - Provide a no-upload plan builder that returns the pathname/options metadata.
-     - If an actual upload function is added, it must be impossible to call successfully without a future explicit approval token such as `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`.
-     - Actual upload function must not be executed in this slice.
-     - Do not read `process.env`, `.env.local`, `BLOB_READ_WRITE_TOKEN`, `VERCEL_OIDC_TOKEN`, or `BLOB_STORE_ID` in this slice.
-
-3. Add a no-upload planning/check script, preferably:
-   - `scripts/plan-vercel-blob-instagram-upload-no-upload.mjs`
-   - It may read the approved local Instagram full-frame mp4 path only to compute size/hash and build a deterministic planned pathname.
-   - It must not import or call `@vercel/blob`.
-   - It must not upload or call network.
-   - It must not read env/secrets.
-   - It must write only small JSON evidence if useful.
-
-4. Add/update durable evidence:
+1. Read only:
+   - `AGENTS.md`
+   - `_ai/HANDOFF_NOW.md`
+   - `docs/vercel-blob-store-provisioning-result.md`
    - `docs/vercel-blob-dependency-code-integration-no-upload.md`
+   - `scripts/fixtures/vercel_blob_store_provisioning_result.v1.json`
    - `scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json`
-   - `scripts/check-vercel-blob-dependency-code-integration-static.mjs`
+   - `.vercel/project.json` only for non-secret linked project/org metadata.
 
-5. Keep prior provisioning/integration packet history coherent:
-   - Existing packet/result docs may remain historical.
-   - If you touch them, do so only to add a short pointer to this new code-integration result.
-   - Do not weaken existing no-secret/no-upload guards.
+2. Run non-secret Vercel CLI inspection:
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' --version`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' whoami`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' blob list-stores --all --json`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' blob get-store store_NyZYiaz51y6acaCQ`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list production`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list preview`
+   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list development`
+   - CLI help commands as needed.
+   - Record only metadata: command name, exit code, store id/name/access/project names, whether `BLOB_READ_WRITE_TOKEN` appears by name. Do not record env values.
 
-6. Append `_ai/CLAUDE_REPORT.md` with concise evidence.
+3. Prepare a small redacted env presence checker:
+   - `scripts/check-vercel-blob-token-presence-redacted.mjs`
+   - It may read only `process.env.BLOB_READ_WRITE_TOKEN`.
+   - It must print only redacted metadata:
+     - `tokenPresent: true/false`
+     - `tokenValuePrinted: false`
+     - `allowedEnvKeysRead: ["BLOB_READ_WRITE_TOKEN"]`
+   - It must not print token length, prefix, suffix, hash, or derived value.
+   - It must not read `.env.local` or any other env key.
+   - It must not import/call `@vercel/blob`.
+   - It must not upload or call network.
+
+4. Verify token runtime availability without writing env files:
+   - Prefer `vercel env run` over `vercel env pull`.
+   - Approved command shape:
+     - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env run -e production -- node scripts/check-vercel-blob-token-presence-redacted.mjs`
+     - If production is unavailable, try preview, then development.
+   - This child script may read only the allowlisted key and must not print the value.
+
+5. Perform at most one approved external mutation if and only if the Vercel CLI presents an unambiguous safe path to connect the existing store:
+   - exact store: `instagram-auto-instagram-media` / `store_NyZYiaz51y6acaCQ`
+   - exact linked project: `instagram-auto`
+   - action: connect/link this existing public Blob store to the project so `BLOB_READ_WRITE_TOKEN` becomes available as a project env var.
+   - Do not create a new Blob store.
+   - Do not delete/empty/put/copy/get/list blobs.
+   - Do not use `--rw-token`, `--token`, or any secret literal.
+   - Do not answer any prompt unless it explicitly names the exact existing store and exact project. If ambiguous, stop.
+   - If the CLI has no safe connect path, stop and record `BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE`.
+
+6. Create durable result evidence:
+   - `docs/vercel-blob-env-token-write-or-pull-result.md`
+   - `scripts/fixtures/vercel_blob_env_token_write_or_pull_result.v1.json`
+   - `scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
+   - Append `_ai/CLAUDE_REPORT.md` concise evidence.
 
 7. Update `_ai/HANDOFF_NOW.md` only if execution reality differs materially from this handoff.
 
-## Approved Input For No-Upload Planning
-
-If a dry/no-upload planner needs a sample source, use the same approved Instagram/full-frame mp4:
-
-- `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-- expected bytes: `20294549`
-
-This path is read-only input. Do not modify `C:\tmp`.
-
 ## Forbidden Actions
 
-- Do not call `put()` or any SDK method that uploads, reads, lists, deletes, heads, or checks Blob objects.
-- Do not upload any object.
+- Do not upload any Blob object.
+- Do not call `put()`, `vercel blob put`, `copy`, `del`, `get` for object contents, `empty-store`, or `delete-store`.
 - Do not perform public URL liveness checks.
-- Do not read, write, print, or copy env/secret/token values.
-- Do not access `.env.local`.
-- Do not run `vercel env pull`.
-- Do not connect the Blob store to a project.
-- Do not use Vercel CLI for Blob mutation in this slice.
 - Do not call Instagram API/`--arm`.
 - Do not call YouTube API/OAuth/upload.
 - Do not deploy or change DNS/domain.
 - Do not run render/mux/TTS/image/browser/ffmpeg/media generation.
+- Do not install/change dependencies, lockfiles, fonts, or pnpm config.
 - Do not commit/push.
+- Do not read, print, hash, store, copy, or record secret/token values.
+- Do not access `.env.local`.
+- Do not run broad `vercel env pull` into `.env.local`.
+- Do not use `--rw-token` or `--token`.
+- Do not create another Blob store.
 - Do not modify protected/excluded files:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
@@ -137,73 +131,70 @@ This path is read-only input. Do not modify `C:\tmp`.
 
 ## Result Fixture Contract
 
-The new fixture must encode:
+The fixture must encode:
 
-- `taskId`: `vercel-blob-dependency-code-integration-no-upload-v1`
-- `approvalToken`: `APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION_NO_UPLOAD`
-- dependency:
-  - package `@vercel/blob` installed;
-  - only `package.json` and `pnpm-lock.yaml` changed for dependency;
-  - no other dependency added.
-- code integration:
-  - `lib/instagram-blob-media.ts` exists;
-  - provider `vercel_blob_public_direct_url`;
-  - platform `instagram_only`;
-  - YouTube uses Blob: false;
-  - store id/name/access recorded as non-secret metadata;
-  - deterministic key pattern;
-  - `access:"public"`, `addRandomSuffix:false`, `allowOverwrite:false`, `multipart:true`;
-  - size cap 35 MB fail-closed.
-- side effect counts all zero:
-  - `blobObjectUploadCount`
-  - `blobListHeadGetDeleteCount`
-  - `publicUrlLivenessCheckCount`
-  - `envSecretAccessCount`
-  - `projectConnectionCount`
-  - `deployCount`
-  - `instagramApiCallCount`
-  - `youtubeApiCallCount`
-  - `mediaGenerationCount`
-- no secret/token literal recorded.
+- `taskId`: `vercel-blob-env-token-write-or-pull-v1`
+- `approvalToken`: `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL`
+- store:
+  - `storeName`: `instagram-auto-instagram-media`
+  - `storeId`: `store_NyZYiaz51y6acaCQ`
+  - `access`: `public`
+- project:
+  - linked project name/id metadata if available, no secret values.
+- outcome status, one of:
+  - `ALREADY_CONFIGURED_TOKEN_AVAILABLE_REDACTED`
+  - `CONNECTED_TOKEN_AVAILABLE_REDACTED`
+  - `CONNECTED_TOKEN_NOT_RUNTIME_AVAILABLE`
+  - `BLOCKED_VERCEL_CLI_UNAVAILABLE`
+  - `BLOCKED_VERCEL_AUTH_OR_INTERACTIVE_REQUIRED`
+  - `BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE`
+  - `BLOCKED_AMBIGUOUS_STORE_OR_PROJECT`
+  - `BLOCKED_SECRET_VALUE_WOULD_BE_EXPOSED`
+- side effect counts:
+  - `storeProjectConnectionAttemptCount`: 0 or 1
+  - `storeProjectConnectionCreatedCount`: 0 or 1
+  - `blobObjectUploadCount`: 0
+  - `blobObjectReadListDeleteCount`: 0
+  - `publicUrlLivenessCheckCount`: 0
+  - `instagramApiCallCount`: 0
+  - `youtubeApiCallCount`: 0
+  - `deployCount`: 0
+  - `dependencyChangeCount`: 0
+- env/token safety:
+  - `allowedEnvKey`: `BLOB_READ_WRITE_TOKEN`
+  - `tokenValuePrinted`: false
+  - `tokenValueRecorded`: false
+  - `tokenHashRecorded`: false
+  - `envLocalAccessed`: false
+  - `broadEnvPullPerformed`: false
+  - `vercelEnvRunUsed`: true/false
 
 ## Required Checks
 
 1. `git status -sb`
-2. Dependency install:
-   - `& 'C:\Users\PC\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd' add @vercel/blob --store-dir "C:\Users\PC\AppData\Local\pnpm\store"`
-   - If the bundled pnpm 11.7.0 path is unavailable, stop and report `BLOCKED_PNPM_11_BINARY_UNAVAILABLE`.
-   - If it fails because of network/sandbox/registry access, stop and report `BLOCKED_DEPENDENCY_INSTALL_NETWORK_OR_REGISTRY`; do not hand-edit lockfile.
-   - If it fails because of store mismatch, stop and report `BLOCKED_PNPM_STORE_MISMATCH_UNRESOLVED`; do not run global config changes or full reinstall.
-3. Syntax:
-   - `node --check scripts/plan-vercel-blob-instagram-upload-no-upload.mjs`
-   - `node --check scripts/check-vercel-blob-dependency-code-integration-static.mjs`
-4. JSON parse:
-   - `scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json`
-5. Type check if a TypeScript lib file is added:
-   - prefer `pnpm exec tsc --noEmit --pretty false`
-   - if existing unrelated type errors appear, record them clearly and also run narrower syntax/static checks.
-6. No-upload planner smoke:
-   - run the planner in no-upload/dry mode only.
-   - confirm no upload/env/network occurs.
-7. Static guard:
+2. Syntax:
+   - `node --check scripts/check-vercel-blob-token-presence-redacted.mjs`
+   - `node --check scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
+3. JSON parse:
+   - `scripts/fixtures/vercel_blob_env_token_write_or_pull_result.v1.json`
+4. Static guard:
+   - `node scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
+5. Targeted regressions:
    - `node scripts/check-vercel-blob-dependency-code-integration-static.mjs`
-8. Targeted regressions:
    - `node scripts/check-vercel-blob-store-provisioning-result-static.mjs`
    - `node scripts/check-vercel-blob-instagram-integration-packet-static.mjs`
    - `node scripts/check-dual-platform-variant-publish-architecture-static.mjs`
-   - `node scripts/check-stable-public-media-url-strategy-static.mjs`
 
-Do not run full build unless type/import issues require it.
+Do not run full build unless required by a concrete syntax/import issue.
 
 ## Definition Of Done
 
-- `@vercel/blob` is installed via pnpm and only expected dependency/lockfile changes occur.
-- Fail-closed Instagram Blob media upload integration code exists.
-- Deterministic immutable key builder and no-upload planner exist.
-- No object upload, env/secret read/write, live URL check, API publish, deploy, or media generation occurs.
-- Static guard proves Blob is Instagram-only and cannot drift to YouTube.
-- Static guard proves no secret/token literal is recorded and side effect counts are zero.
-- Required checks pass, or any blocker is reported fail-closed.
+- The project either has redacted runtime availability for `BLOB_READ_WRITE_TOKEN`, or a fail-closed blocker explains why not.
+- If a store/project connection is created, it is exactly one connection for the existing store and linked project.
+- No secret/token value is printed, hashed, copied, stored, or recorded.
+- No Blob object upload/read/download/delete, liveness check, API publish, deploy, media generation, dependency change, commit, or push occurs.
+- Result docs + fixture + static guard capture the outcome.
+- Required checks pass, or the blocker is recorded fail-closed.
 - `_ai/CLAUDE_REPORT.md` records concise evidence.
 
 ## Final Handoff Format
@@ -211,10 +202,11 @@ Do not run full build unless type/import issues require it.
 Claude Code must stop after the final handoff. Include:
 
 - task id
-- dependency/code integration summary
+- outcome status
+- whether store/project connection was already configured, newly connected, or blocked
+- whether `BLOB_READ_WRITE_TOKEN` runtime availability was verified redacted
 - changed files
-- dependency version installed
-- no-upload planner result
+- Vercel CLI commands/results summary with no secret values
 - checks/results
 - side effects confirmation
 - deviations/risks

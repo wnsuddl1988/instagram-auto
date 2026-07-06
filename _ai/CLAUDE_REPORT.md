@@ -3801,3 +3801,29 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: (1) 시스템 pnpm/node_modules store 버전 불일치로 표준 `pnpm add` 실패 → codex-primary-runtime의 pnpm 11.7.0 바이너리로 우회(HANDOFF resume 지시 명령 사용). (2) pnpm 11 자동 생성 `pnpm-workspace.yaml` allowBuilds 스텁은 승인 범위 밖 churn이라 되돌림. (3) guard 초기 실행에서 주석/JSDoc의 `put(`·`@vercel/blob` 텍스트가 false positive → guard에 stripCommentsAndStrings 추가해 실제 코드만 검사하도록 수정 후 45/45 통과.
 - checkpoint recommendation: 신규 5파일 + dependency(package.json/pnpm-lock.yaml) + report. dependency/lockfile 변경 + reusable code 포함이라 evidence 고정 위해 checkpoint commit 권장(Owner 승인 필요). 이번 slice uncommitted.
 
+---
+
+## vercel-blob-env-token-write-or-pull-v1 (2026-07-06)
+
+- **수행**: Owner 승인 `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL` 범위에서 store→project 연결 경로 확인 + `BLOB_READ_WRITE_TOKEN` runtime presence를 redacted로 검증. allowlisted key만 presence 확인용으로 읽었고 secret/token 값 print/hash/copy/record 0.
+- **outcome**: store→project 연결 **BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE**. token presence redacted 검증 → **absent(present:false)**.
+- **핵심 발견**:
+  - project는 이미 link됨(`.vercel/project.json`, `instagram-auto`, orgId/projectId만 — secret 없음).
+  - store `store_NyZYiaz51y6acaCQ`는 Active/Public/iad1, Base URL `nyzyiaz51y6acacq.public.blob.vercel-storage.com`(public read endpoint, secret 아님), Blob Count 0.
+  - `vercel env ls`(값 Encrypted 표시): Supabase/Pexels/OpenAI만, **BLOB_READ_WRITE_TOKEN 없음** → store 미연결.
+  - Vercel CLI 54.5.0에 **기존 store를 기존 project에 연결하는 전용 subcommand 없음**. `vercel blob`는 list/put/get/del/copy/create-store/delete-store/get-store/list-stores/empty-store만; `create-store --environment`는 새 생성 시에만 connect; `vercel connect [beta]`는 용도 불명확+beta라 미사용. HANDOFF 지침 6에 따라 우회 없이 BLOCKED 기록.
+- **token presence redacted 검증**: `check-vercel-blob-token-presence-redacted.mjs`가 allowlisted `process.env.BLOB_READ_WRITE_TOKEN`만 presence 확인용으로 읽고 boolean presence만 출력(값/길이/prefix/suffix/hash 미출력/미기록). 로컬 → false, `vercel env run -e production -- node ...` → false. `vercel env run`은 env를 서브프로세스에만 주입(파일 write 없음); CLI가 기존 gitignored `.env.local`을 자동으로 읽어 로드했으나 내가 생성/수정한 것 아니고 git 추적 변화 없음.
+- **신규 파일 4개 (+report)**:
+  - `scripts/check-vercel-blob-token-presence-redacted.mjs` — redacted presence checker(값 미노출).
+  - `docs/vercel-blob-env-token-write-or-pull-result.md`
+  - `scripts/fixtures/vercel_blob_env_token_write_or_pull_result.v1.json` — BLOCKED+connected false+mutation 0, allowlisted key presence-only, token 값 print/hash/copy/record false, secret 미기록, env write/pull 0, upload/put/liveness/api/deploy 0, rw-token/token flag 미사용, blockerResolutionCandidates.
+  - `scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs` — fixture 불변식 + checker 소스 정적 검증(값 노출 패턴 없음) + docs + self-scan + mutant 18종 → **38/38 PASS**
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (checker, guard) ✓, JSON parse (fixture) ✓
+  - `node scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs` → **ALL PASS 38/38**
+  - targeted regression: dependency-integration 45/45, provisioning 34/34, integration-packet 36/36, dual-platform 32/32 — 전부 ALL PASS
+- **side effects**: store→project connection 0(BLOCKED), env/secret write 0, new store 생성 0, Blob upload/put/get/copy/del/empty/delete-store 0, public URL liveness 0, token 값 print/hash/copy/record 0(allowlisted key presence boolean만), `.env.local` 생성/수정 0(CLI가 기존 파일 읽기만), Instagram API/--arm 0, YouTube API/upload 0, deploy 0, dependency/lockfile/pnpm config 0, render/media 0, commit/push 0. `--rw-token`/`--token` 미사용. secret/token literal 미기록.
+- **deviations/risks**: (1) store 연결 BLOCKED — 다음 단계는 Dashboard 수동 connect(→ 토큰 자동 생성) 또는 기존 store 폐기 후 create-store --environment 재생성(별도 승인), 또는 vercel connect[beta] 지원 여부 Codex 확인. (2) `vercel env run`이 기존 `.env.local`을 자동 로드하는 부수효과 관찰(파일 미변경, 내가 접근/수정 안 함).
+- checkpoint recommendation: 신규 4파일 + report. 외부 mutation 0(연결/env write 없음)이라 순수 evidence. checkpoint commit은 evidence 고정 목적으로만 권장(Owner 승인 필요). 이번 slice uncommitted.
+
