@@ -20,18 +20,27 @@
  *                 duplicate publish guard가 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로
  *                 차단한다 — credential resolution(gate 5)/actual API call(gate 6) 미도달.
  *                 custom(non-default) content는 gate 1~4를 통과하면 credential resolution
- *                 stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로
- *                 fail-closed된다 — credential 값 미접근, actual API call(gate 6) 미도달.
- *                 실제 publish는 이 slice에서 비활성이다(credential resolution 미wiring).
+ *                 (gate 5)이 승인된 6개 runtime env key를 in-memory explicit credential 객체로
+ *                 조립한다(값은 로컬 객체에만 존재, 출력/문서/error에 미노출). 6개 key가 모두
+ *                 present면 gate 6 actual_api_call 구조에 도달해 value-free no-execute call plan을
+ *                 구성한 뒤 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다
+ *                 (actualApiCallReached:true, actualApiCallExecutionEnabledThisSlice:false,
+ *                 actualApiCallPerformed:false). key가 하나라도 비어 있으면 gate 5에서
+ *                 CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되며 gate 6에는
+ *                 도달하지 않는다(누락 key '이름'만 출력). 실제 Instagram/YouTube/Blob
+ *                 API 호출·업로드·OAuth·mutation은 이 slice에서 어느 경로든 비활성이다.
  *
  * 이 슬라이스에서 절대 하지 않는 것:
- * - Instagram/YouTube API 호출 (fetch/googleapis/axios 등 네트워크 호출 없음)
- * - Vercel Blob put()/list()/del() 등 object mutation
+ * - Instagram/YouTube API 호출 실행 (fetch/googleapis/axios 등 네트워크 호출 없음)
+ * - Vercel Blob put()/list()/del() 등 object mutation 실행
  * - .env.local 또는 다른 secret 파일 직접 read
- * - credential '값' read/출력/저장 및 값에서 파생된 정보(길이/prefix/suffix/hash) 노출.
- *   preflight는 key '이름'만 계약으로 출력하고 process.env를 읽지 않는다. credential-preflight는
- *   승인된 key 이름의 present boolean 판정에만 process.env를 접근하며 값은 노출하지 않는다.
- * - duplicate publish guard(gate 4) 통과 전 credential resolution/actual API call
+ * - credential '값'의 출력/저장/직렬화/문서화 및 값에서 파생된 정보(길이/prefix/suffix/hash/masked/
+ *   sample/token type) 노출. gate 5 live 실행 경로는 승인된 6개 key 값을 runtime env에서
+ *   in-memory 객체로 조립하지만(이는 허용됨), 그 값이 반환 JSON/gate trace/plan/문서/report/error에
+ *   나타나는 것은 금지다. preflight/credential-preflight는 key '이름' 또는 present boolean만
+ *   다루며 credential 값을 resolve하지 않는다.
+ * - duplicate publish guard(gate 4) 통과 전 credential resolution/actual API call 도달
+ * - gate 6 no-execute call plan을 실제 API 호출로 실행
  * - 새 영상 생성/렌더/ffmpeg/TTS/image/browser
  * - deploy/dependency/commit/push
  *
@@ -72,15 +81,22 @@ export const ACTUAL_API_CALL_NOT_ENABLED_ERROR = "ACTUAL_API_CALL_NOT_ENABLED_TH
 export const CREDENTIAL_KEYS_MISSING_ERROR = "CREDENTIAL_KEYS_MISSING_THIS_SLICE";
 
 /**
- * (deprecated as a live-halt) custom content live 차단 상태 문자열.
+ * (deprecated as a live-halt, historical) custom content live 차단 상태 문자열.
  * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
  *       → dual-platform-custom-content-live-credential-gate-no-execute-v1
+ *       → dual-platform-credential-resolution-wiring-no-execute-v1
+ *       → dual-platform-actual-api-call-wiring-no-execute-v1
  * 이전 slice에서는 custom(non-default) content의 --live/--arm이 gate 4와 gate 5 사이의
- * 무조건 halt(옛 gate 4.5)에서 이 상태로 멈췄다. 이제는 gate 1~4를 통과한 custom content가
- * credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
- * fail-closed된다(exit 4). 이 상수는 하위 호환/문서 참조용으로만 export되며, 실제 live 실행
- * 경로(executeArmedLiveRun)에서는 더 이상 halt 상태로 사용되지 않는다. custom content 실제
- * publish(API 실행)는 여전히 비활성이다 — credential resolution이 wiring되지 않았기 때문이다.
+ * 무조건 halt(옛 gate 4.5)에서 이 상태로 멈췄다. 그 뒤 credential resolution(gate 5)이
+ * wiring됐고, 지금은 gate 6 actual_api_call도 no-execute plan으로 wiring되어 있다.
+ * 현재 계약(active): gate 1~4를 통과한 custom content는 gate 5에서 승인 6개 env key를
+ * in-memory로 조립하고, 모두 present면 gate 6 no-execute plan에 도달해
+ * ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로, 일부 누락이면 gate 5에서
+ * CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed된다. 이 상수는 하위 호환/문서
+ * 참조용으로만 export되며, 실제 live 실행 경로(executeArmedLiveRun)에서는 더 이상 halt
+ * 상태로 사용되지 않는다. custom content의 실제 publish(actual API 실행)는 이 slice에서도
+ * 여전히 비활성이다 — gate 6이 no-execute plan까지만 wiring됐고 실제 호출 실행은 아직
+ * 활성화되지 않았기 때문이다.
  */
 export const CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR = "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE";
 
@@ -867,8 +883,10 @@ function buildPreflight(unit) {
   //       + dual-platform-credential-resolution-wiring-no-execute-v1
   // custom(non-default) content의 실제 live publish(API 실행)는 여전히 비활성이다. gate 1~4를 통과한
   // custom content의 --live/--arm은 credential resolution(gate 5)까지 도달해 승인 6개 env key를
-  // in-memory로 조립하지만, actual API 실행(gate 6)이 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로
-  // fail-closed된다(exit 4, actual API call 미도달; credential 값은 in-memory로만 다뤄지고 미노출).
+  // in-memory로 조립하고, 모두 present면 gate 6 actual_api_call 구조에 도달해 value-free no-execute
+  // call plan을 구성하지만(actualApiCallReached:true), 실제 API 실행은 비활성이라
+  // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4, actualApiCallExecutionEnabledThisSlice:false,
+  // actualApiCallPerformed:false; credential 값은 in-memory로만 다뤄지고 plan/출력에 미노출).
   const bothAlreadyPublished = igAlreadyPublished && ytAlreadyPublished;
   const contentUnit = {
     note:
@@ -1145,6 +1163,123 @@ function resolveExplicitCredentialsFromRuntimeEnv() {
   };
 }
 
+/**
+ * gate 6: actual_api_call — no-execute 실행 계획(dry call plan).
+ * task: dual-platform-actual-api-call-wiring-no-execute-v1
+ *
+ * gate 1~5를 통과한 custom content에 대해, 실제 Instagram Graph publish / YouTube direct upload /
+ * Vercel Blob upload 흐름을 "무엇을 어떤 함수로 어떤 입력으로 호출할지"의 value-free 구조로만 명문화한다.
+ * 이 함수는 실제 호출을 절대 수행하지 않으며(no-execute), 다음을 엄격히 지킨다:
+ *
+ * - credential 값을 인자로 받지 않는다. gate 5가 만든 값 없는 presence summary(platforms.*.allPresent,
+ *   missingCredentialKeyNames)만 사용한다 — 값/토큰/URL query token이 plan에 담길 원천을 제거한다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - 모든 call spec은 executionEnabled:false / executionDisabledReason 을 명시한 fail-closed 구조다.
+ *
+ * 반환은 순수 데이터(함수 참조 문자열, 입력 필드 이름, source/URL/metadata/credential presence boolean,
+ * 실행 비활성 사유)만 담는다. 호출부는 이 plan을 gate 6 no-execute 결과에 그대로 실어 fail-closed로 멈춘다.
+ *
+ * @param {object} unit           content unit(값 아님 — source 경로 존재 boolean 판정에만 사용)
+ * @param {object} igJob          instagram publish job(functionRef/inputContract 참조)
+ * @param {object} ytJob          youtube publish job(functionRef/inputContract 참조)
+ * @param {object} livenessGate   gate 3 결과(blob public URL evidence 형태 검증; 값 아님)
+ * @param {object} credPresence   gate 5 summary(platforms.*.allPresent, missingCredentialKeyNames — 값 없음)
+ */
+function buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credPresence) {
+  const disabledReason = "actual_api_call_execution_disabled_this_slice";
+  // source 파일 준비 여부는 존재 boolean만(read 아님). credential 준비는 gate 5 presence boolean만.
+  const instagramSourceReady = typeof unit.instagramSourcePath === "string" && existsSync(unit.instagramSourcePath);
+  const youtubeSourceReady = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
+  const blobPublicUrlPresent = livenessGate?.ok === true && typeof livenessGate?.url === "string" && livenessGate.url.length > 0;
+  const igCredentialsPresent = credPresence?.platforms?.instagram?.allPresent === true;
+  const ytCredentialsPresent = credPresence?.platforms?.youtube?.allPresent === true;
+  const blobCredentialsPresent = credPresence?.platforms?.vercelBlob?.allPresent === true;
+
+  // 각 call spec: 함수 참조 + 입력 readiness boolean + 실행 비활성 사유. 값/토큰 절대 없음.
+  return {
+    executionEnabledThisSlice: false,
+    executionDisabledReason: disabledReason,
+    note:
+      "gate 1~5를 통과한 content의 실제 API 호출 구조를 value-free로 명문화한 no-execute plan이다. " +
+      "credential 값은 이 plan에 담기지 않으며(gate 5 presence boolean만 사용), 실제 Instagram/YouTube/Blob " +
+      "호출·OAuth·mutation은 이 slice에서 수행되지 않는다. 실제 실행은 별도 승인 slice에서만 연결된다.",
+    calls: [
+      {
+        order: 1,
+        id: "vercel_blob_upload",
+        platform: "instagram_reels",
+        provider: "vercel_blob",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+        planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+        inputReadiness: {
+          sourceFileField: "instagramSourcePath",
+          sourceFileReady: instagramSourceReady,
+          blobPathnameTemplate: INSTAGRAM_BLOB_PATHNAME_TEMPLATE,
+          credentialsPresent: blobCredentialsPresent, // presence boolean(값 아님)
+          producesPublicVideoUrl: true,
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+      {
+        order: 2,
+        id: "instagram_graph_publish",
+        platform: "instagram_reels",
+        provider: "instagram_graph_api",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+        inputReadiness: {
+          videoUrlFrom: "vercel_blob_upload.instagram_public_video_url",
+          blobPublicUrlPresent, // gate 3 evidence 형태 통과 boolean
+          captionFields: ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
+          metadataOptimizationGateOk: igJob?.metadataOptimizationGate?.ok === true,
+          credentialsPresent: igCredentialsPresent, // presence boolean(값 아님)
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+      {
+        order: 3,
+        id: "youtube_direct_upload",
+        platform: "youtube_shorts",
+        provider: "youtube_data_api",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+        inputReadiness: {
+          videoPathField: "youtubeSourcePath",
+          sourceFileReady: youtubeSourceReady,
+          metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],
+          metadataOptimizationGateOk: ytJob?.metadataOptimizationGate?.ok === true,
+          shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+          credentialsPresent: ytCredentialsPresent, // presence boolean(값 아님)
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+    ],
+    // 실제 호출이 활성화됐다면 사용됐을 함수 참조(문자열). 이번 run 실제 호출 0.
+    functionRefs: {
+      instagram: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      youtube: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      instagramBlob: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+    },
+    // 실제 호출을 하려면 아직 활성화되지 않은 승인 토큰들이 필요함을 명시(fail-closed 근거).
+    requiredApprovalTokensToEnableExecution: [
+      "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+      "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+      "APPROVE_DUAL_PLATFORM_ARM",
+    ],
+    actualApiCallPerformedThisRun: false,
+  };
+}
+
 /** 이 run에서 전부 0이어야 하는 live side-effect counter 초기값(어떤 코드 경로도 증가시키지 않는다). */
 function zeroLiveSideEffectCounters() {
   return {
@@ -1371,8 +1506,26 @@ function executeArmedLiveRun(unit) {
     };
   }
 
-  // credential 모두 resolve됨 → 하지만 actual API 실행은 이 slice에서 비활성(no-execute).
-  gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "actual_api_call_not_enabled_this_slice" });
+  // ── gate 6: actual_api_call — credential resolve됨 → no-execute plan 구성 후 fail-closed ──
+  // task: dual-platform-actual-api-call-wiring-no-execute-v1
+  // credential이 모두 resolve됐으므로 gate 6 실행 구조에 "도달"한다. 단, 실제 API/upload/OAuth/Blob
+  // mutation은 이 slice에서 비활성이므로, 실제 호출 대신 value-free no-execute call plan을 구성하고
+  // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed한다.
+  //
+  // 중요: gate 6 plan은 credential 값(resolution.inMemory)을 받지 않고 gate 5의 값 없는 presence
+  // summary(credSummary.platforms.*.allPresent)만 사용한다 — 값이 plan에 담길 원천을 제거한다.
+  // 따라서 plan 구성 전에 in-memory 값 참조를 이미 끊어도 안전하다(위에서 resolution.inMemory=null 처리).
+  const actualApiCallPlan = buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credSummary);
+  // gate 6 plan은 no-execute다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
+  gateTrace.push({
+    order: 6,
+    gate: "actual_api_call",
+    evaluated: true,
+    reached: true,
+    executionEnabledThisSlice: false,
+    blockedBy: "actual_api_call_not_enabled_this_slice",
+    actualCallPerformed: false,
+  });
   return {
     exitCode: 4,
     result: {
@@ -1383,14 +1536,17 @@ function executeArmedLiveRun(unit) {
         note:
           "gate 1~4를 통과한 content가 credential resolution 단계에서 승인된 6개 env key를 in-memory explicit " +
           "credential 객체로 조립했다(값은 로컬 객체에만 존재하며 출력/문서/report/error에 노출되지 않는다). " +
-          "단, actual API 실행(gate 6)은 이 slice에서 비활성이므로 여기서 fail-closed로 멈춘다(실제 publish 비활성). " +
+          "gate 6 actual_api_call 구조에 도달해 value-free no-execute call plan을 구성했으나, actual API 실행은 " +
+          "이 slice에서 비활성이므로 여기서 fail-closed로 멈춘다(실제 publish/upload/OAuth/Blob mutation 0). " +
           "default evidence content는 gate 4 duplicate guard가 앞서 차단하므로 이 지점에 도달하지 않는다.",
         isDefaultContentUnit: isDefault,
         kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
         contentId: unit.contentId,
         version: unit.version,
         reachedCredentialGate: true,
+        reachedActualApiCallPlan: true,
         credentialResolutionWiredThisSlice: true,
+        actualApiCallExecutionEnabledThisSlice: false,
         haltedBeforeActualApiCall: true,
       },
       credentialResolution: {
@@ -1399,16 +1555,16 @@ function executeArmedLiveRun(unit) {
         platforms: credSummary.platforms,
         missingCredentialKeyNames: credSummary.missingCredentialKeyNames, // 모두 present면 빈 배열
       },
-      wouldCallFunctionRefsWhenApiEnabled: {
-        note: "credential이 resolve됐고 actual API 실행이 활성화됐다면 호출됐을 explicit credential injection 함수 참조(문자열). 이번 run 실제 호출 0.",
-        instagram: LIVE_PUBLISH_FUNCTION_REFS.instagram,
-        youtube: LIVE_PUBLISH_FUNCTION_REFS.youtube,
-      },
+      // gate 6 value-free no-execute call plan(함수 참조 + 입력 readiness boolean + 실행 비활성 사유).
+      // credential 값/토큰/URL query token은 담기지 않는다.
+      actualApiCallPlan,
       sideEffectCounters,
       credentialResolutionReached: true,
       credentialValuesAccessed: true,
       credentialValuesResolved: true,
-      actualApiCallReached: false,
+      actualApiCallReached: true,
+      actualApiCallExecutionEnabledThisSlice: false,
+      actualApiCallPerformed: false,
     },
   };
 }
@@ -1484,10 +1640,14 @@ function main() {
       process.exit(2);
       return;
     }
-    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다(exit 3, credential 미도달).
-    // custom(non-default) content는 gate 1~4 통과 시 credential resolution stub(gate 5)까지 도달한 뒤
-    // CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed(exit 4). 어느 경로든 credential 값 미접근,
-    // actual API call 미도달, 모든 side-effect counter 0. 실제 publish는 이 slice에서 비활성이다.
+    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다(exit 3, credential/gate6 미도달).
+    // custom(non-default) content는 gate 1~4 통과 시 credential resolution(gate 5)이 승인 6개 env key를
+    // in-memory로 조립한다(값은 로컬 객체에만, 출력에 미노출). 6개 key가 모두 present면 gate 6
+    // actual_api_call 구조에 도달해 value-free no-execute call plan을 구성한 뒤
+    // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed(exit 4, actualApiCallReached:true지만
+    // actualApiCallExecutionEnabledThisSlice:false/actualApiCallPerformed:false). key가 하나라도
+    // 비어 있으면 gate 5에서 CREDENTIAL_KEYS_MISSING_THIS_SLICE로 fail-closed되며 gate 6 미도달.
+    // 어느 경로든 실제 API/upload/OAuth/Blob mutation은 0, 모든 side-effect counter 0.
     const { result, exitCode } = executeArmedLiveRun(activeUnit);
     console.log(JSON.stringify(result, null, 2));
     process.exit(exitCode);

@@ -4,78 +4,50 @@
 
 ## Current Task
 
-- Task ID: `dual-platform-credential-resolution-wiring-no-execute-v1`
-- Owner approval: `APPROVE_DUAL_PLATFORM_CREDENTIAL_RESOLUTION_WIRING_NO_EXECUTE`
-- Purpose: wire the dual-platform orchestrator's credential gate so the six approved runtime env keys injected by the Owner local no-log wrapper can be assembled into explicit credential objects, while actual Instagram/YouTube/Blob API execution remains disabled and fail-closed.
+- Task ID: `dual-platform-actual-api-call-wiring-no-execute-v1`
+- Owner approval: `APPROVE_DUAL_PLATFORM_ACTUAL_API_CALL_WIRING_NO_EXECUTE`
+- Purpose: wire the dual-platform orchestrator's gate 6 `actual_api_call` structure to the already-import-safe explicit credential client functions, while keeping real Instagram/YouTube/Vercel Blob execution disabled and fail-closed.
 
 ## Current Evidence
 
-Checkpoint `5eed757 feat(operator): add no-log local env command wrapper` added:
+Checkpoint `63793a5 chore(media): wire credential resolution no-execute` completed gate 5:
 
-- `pnpm owner:credential-preflight:local`
-- `scripts/run-owner-command-with-local-env-no-log.mjs`
-- `scripts/check-owner-local-env-no-log-wrapper-static.mjs`
+- approved six runtime env keys can be resolved into in-memory explicit credential objects
+- default `t1_lifestyle_inflation/v3_2` still blocks at gate 4 duplicate guard before credential access
+- custom ready-probe with dummy env reaches gate 5 and resolves credentials
+- custom ready-probe without env fails closed with missing key names only
+- gate 6 remains disabled, no actual API/upload call
+- checks passed before checkpoint:
+  - orchestrator guard `433 PASS / 0 FAIL`
+  - owner entrypoint guard `230 PASS / 0 FAIL`
+  - owner local env wrapper guard `49 PASS / 0 FAIL`
+  - golden content readiness guard `64 PASS / 0 FAIL`
 
-Owner ran:
-
-```powershell
-cd C:\Users\PC\jjy\instagram-auto
-pnpm owner:credential-preflight:local
-```
-
-Redacted output showed all six required keys `present:true`:
-
-- `INSTAGRAM_BUSINESS_ACCOUNT_ID`
-- `INSTAGRAM_ACCESS_TOKEN`
-- `YOUTUBE_CLIENT_ID`
-- `YOUTUBE_CLIENT_SECRET`
-- `YOUTUBE_REFRESH_TOKEN`
-- `BLOB_READ_WRITE_TOKEN`
-
-The same output confirmed:
-
-- `allRequiredKeysPresent:true`
-- `readyForCredentialResolution:true`
-- `credentialResolutionWiredThisSlice:false`
-- no credential values printed
-
-So the next blocker is no longer key presence. It is wiring gate 5 so credentials can be resolved into in-memory explicit credential objects without enabling any real publish/upload.
+The next blocker is not credential presence or credential resolution. It is the gate 6 no-execute wiring plan: mapping resolved in-memory credentials + prepared job inputs to the explicit client call structure without actually invoking network/API/upload.
 
 ## Approved Scope
 
 Approved:
 
-- Wire credential gate in `scripts/run-dual-platform-final-publish-orchestrator.mjs`.
-- Use only these approved env key names:
-  - `INSTAGRAM_BUSINESS_ACCOUNT_ID`
-  - `INSTAGRAM_ACCESS_TOKEN`
-  - `YOUTUBE_CLIENT_ID`
-  - `YOUTUBE_CLIENT_SECRET`
-  - `YOUTUBE_REFRESH_TOKEN`
-  - `BLOB_READ_WRITE_TOKEN`
-- Read values only from runtime `process.env` injected by the Owner no-log wrapper or dummy test env.
-- Build explicit credential objects in memory only:
-  - Instagram credentials for `uploadInstagramReelWithCredentials`
-  - YouTube credentials for `uploadYouTubeShortsWithCredentials`
-  - Vercel Blob token object/plan for future Blob upload
-- Do not serialize, print, hash, measure, mask, sample, or log credential values.
-- Keep actual API/upload execution disabled:
-  - no Instagram publish
-  - no YouTube OAuth/upload
-  - no Blob upload/delete/overwrite/list/head/copy
-- Keep default already-published `t1_lifestyle_inflation/v3_2` duplicate guard behavior unchanged:
-  - default `--live` / `--arm` must still stop at gate 4 duplicate guard before credential resolution
-  - exit/status should remain `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` / exit 3
-- For custom/non-default ready content:
-  - gate 1 metadata, gate 2 source, gate 3 Blob liveness, gate 4 duplicate guard pass
-  - gate 5 should now resolve credentials when dummy env is provided
-  - gate 6 actual API call must remain disabled/fail-closed
-  - expected new halt should clearly mean "API execution not enabled", not "credential resolution not wired"
+- In `scripts/run-dual-platform-final-publish-orchestrator.mjs`, wire gate 6 `actual_api_call` as a no-execute execution plan.
+- Use explicit credential object shape already produced by gate 5, but do not pass real values into any real API client call.
+- Reference existing explicit-credential client functions only as no-execute call specs or dry call descriptors:
+  - `lib/instagram.ts#uploadInstagramReelWithCredentials`
+  - `lib/youtube.ts#uploadYouTubeShortsWithCredentials`
+  - `lib/instagram-blob-media.ts` explicit Blob upload helper/plan function if already safe and import-safe
+- Preserve default duplicate-block behavior:
+  - default `t1_lifestyle_inflation/v3_2` still blocks at gate 4 before credential resolution and before gate 6.
+- For custom ready-probe with dummy env:
+  - gate 1 metadata, gate 2 source, gate 3 Blob liveness, gate 4 duplicate guard, and gate 5 credential resolution can pass
+  - gate 6 should build an `actualApiCallPlan`/equivalent no-execute structure
+  - actual execution must remain disabled/fail-closed
+  - expected halt status should clearly indicate actual API execution is still disabled, for example `ACTUAL_API_CALL_EXECUTION_DISABLED_THIS_SLICE` or an existing equivalent if clearer
+  - output may include function names, platform job IDs, source paths, public URL presence booleans, and input readiness booleans
+  - output must not include credential values or value-derived data
 - For missing credentials:
-  - gate 5 should fail-closed before API call
-  - output may list missing key names only, not values or value-derived data.
-- Update fixture/docs/guards to reflect the new no-execute credential resolution contract.
-- Append concise evidence to `_ai/CLAUDE_REPORT.md`.
+  - gate 5 still blocks before gate 6 plan construction.
+- Update fixture/docs/guards to reflect the gate 6 no-execute actual API call wiring contract.
+- Append concise reusable evidence to `_ai/CLAUDE_REPORT.md`.
 
 Allowed files:
 
@@ -85,80 +57,87 @@ Allowed files:
 - `docs/dual-platform-final-publish-orchestrator.md`
 - `docs/owner-daily-automation-runbook.md`
 - `_ai/CLAUDE_REPORT.md`
-- If necessary, `scripts/run-owner-daily-automation-entrypoint.mjs` and/or `scripts/check-owner-daily-automation-entrypoint-static.mjs` only if owner-facing summaries or guards break from changed status names.
+- If owner-facing output or guard checks break from new status/field names:
+  - `scripts/run-owner-daily-automation-entrypoint.mjs`
+  - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
+  - `scripts/check-owner-local-env-no-log-wrapper-static.mjs`
 
 Only touch another file if a direct import/check break proves it is necessary, and report why.
 
 ## Required Behavior
 
-### Credential resolution helper
+### Gate 6 no-execute plan
 
-Add a narrowly scoped helper in the orchestrator, for example:
+Add a narrowly scoped gate 6 planner/executor stub, for example:
 
-- `resolveExplicitCredentialsFromRuntimeEnv()`
+- `buildActualApiCallPlanNoExecute(...)`
+- or `evaluateActualApiCallGateNoExecute(...)`
 
 It should:
 
-- read only the six approved `process.env[KEY]` values
-- treat empty string as missing
-- return booleans/key names suitable for JSON output:
-  - `credentialResolutionWiredThisSlice:true`
-  - `credentialValuesAccessed:true` only when gate 5 is actually reached
-  - `credentialValuesResolved:true/false`
-  - `missingCredentialKeyNames:[...]`
-  - platform-level `allPresent`
-- keep actual credential values in local in-memory objects only
-- never include credential values in returned JSON, docs, fixtures, reports, or thrown errors
-- never compute or output value length/hash/prefix/suffix/masked/token type.
+- accept job plan/context and the value-bearing in-memory credential object from gate 5 only inside local scope
+- derive a value-free call plan:
+  - Instagram publish call target/function ref
+  - YouTube direct upload call target/function ref
+  - Blob upload call target/function ref or Blob URL prerequisite status
+  - required source/public URL/metadata/readiness booleans
+  - execution disabled reason
+- never include credential values in returned JSON
+- never compute credential value length/hash/prefix/suffix/masked/sample/token type
+- never import or call live API/upload functions
+- never call `fetch`, `googleapis`, `youtube.videos.insert`, Graph API, Blob `put/list/head/del/copy`, OAuth token request, deploy, ffmpeg, or ffprobe
+- return a fail-closed status rather than executing calls
 
-### Live gate behavior
+### Default content
 
-Default already-published content:
+Default already-published content must remain unchanged:
 
-- `--live` / `--arm` remains duplicate-blocked at gate 4.
-- credential resolution gate is not reached.
+- `--live` / `--arm` exits `3`
+- status `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
+- gate 4 blocks before gate 5 and gate 6
 - `credentialValuesAccessed:false`
-- API call not reached.
-- counters remain 0.
+- `actualApiCallReached:false`
+- all live side-effect counters remain 0
 
-Custom ready-probe with dummy env:
+### Custom ready-probe with dummy env
 
-- reaches gate 5
-- resolves explicit credential objects in memory
-- reports `credentialValuesAccessed:true` and `credentialValuesResolved:true`
-- reports no values and no value-derived data
-- reaches gate 6 as "blocked because actual API execution is disabled this slice"
-- exits non-zero fail-closed, preferably exit 4, with a clear status such as `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE` or equivalent
-- all side-effect counters remain 0.
+For a custom content manifest that passes gates 1-5 with dummy env:
 
-Custom ready-probe without dummy env:
+- gate 6 is reached as a no-execute planning gate
+- gate 6 produces value-free call specs/function refs
+- actual API execution remains disabled
+- exit should be non-zero fail-closed
+- all real side-effect counters remain 0
+- dummy credential values must not appear in stdout/stderr/result JSON
+- no value-derived credential data appears
 
-- reaches gate 5
-- reports missing key names only
-- does not reach actual API call
-- exits non-zero fail-closed
-- all side-effect counters remain 0.
+### Missing credentials
 
-Credential preflight mode:
+For the same custom ready-probe without dummy env:
 
-- may continue to report presence booleans.
-- If status wording changes due to `credentialResolutionWiredThisSlice:true`, make sure it cannot be misunderstood as publish enabled.
+- gate 5 fails closed with missing key names only
+- gate 6 is not reached
+- no actual API plan using credentials is constructed
+- output contains no values or value-derived data
 
 ## Guard Requirements
 
 Update/add checks that prove:
 
-- default duplicate-blocked live path still stops before credential resolution
-- custom ready-probe with dummy env resolves credentials but does not call APIs
-- custom ready-probe without dummy env blocks at credential gate with missing key names only
-- output does not include dummy values
-- output does not include value length/hash/prefix/suffix/masked/sample/token type
-- runner does not use `.env`, `.env.local`, dotenv, `vercel env pull`, or secret files
-- runner env access is limited to the six approved `process.env[KEY]` reads inside the credential resolver and the existing redacted presence helper
-- duplicate guard remains before credential resolution
-- actual API call gate remains disabled
-- no `fetch`, `googleapis` execution, `@vercel/blob` mutation, `youtube.videos.insert`, Graph API, OAuth request, upload, deploy, ffmpeg, or ffprobe is introduced
-- no real `.env.local` is read in tests; use dummy env only.
+- default duplicate-blocked path still stops before credential resolution and gate 6
+- custom dummy-env ready-probe reaches gate 6 no-execute plan
+- custom dummy-env ready-probe output has no dummy value or value-derived fields
+- custom no-env ready-probe stops at gate 5 and does not reach gate 6
+- no actual API/upload/OAuth/Blob mutation function is imported or executed
+- live client function references are string refs/call specs only unless an import is proven import-safe and still no-execute
+- no `.env`, `.env.local`, dotenv, `vercel env pull`, secret file, broad env dump, or real Owner env wrapper is used in tests
+- `process.env` access remains limited to:
+  - existing redacted presence helper
+  - approved six-key credential resolver from gate 5
+- duplicate guard remains before credential resolver
+- credential resolver remains before gate 6
+- gate 6 remains disabled/fail-closed
+- no `fetch`, `googleapis`, `youtube.videos.insert`, Graph API URL execution, OAuth request, Blob `put/list/head/del/copy`, deploy, ffmpeg, or ffprobe is introduced
 
 ## Forbidden Actions
 
@@ -203,12 +182,13 @@ Do not run against real `.env.local`.
 
 All must be true:
 
-1. Gate 5 credential resolution is wired for dummy env/custom ready-probe.
-2. Default published content remains duplicate-blocked before credential access.
-3. Actual API/upload execution remains disabled and fail-closed.
-4. No credential values or value-derived data appear in output/docs/fixtures/report.
-5. `.env.local` and secret files are not read by Claude/Codex/tests.
-6. No dependency/lockfile/deploy/media/API side effect, commit, or push.
+1. Gate 6 no-execute actual API call plan is wired for custom dummy-env ready-probe.
+2. Default published content remains duplicate-blocked before credential access and gate 6.
+3. Missing credentials still block at gate 5 before gate 6.
+4. Actual Instagram/YouTube/Blob execution remains disabled and fail-closed.
+5. No credential values or value-derived data appear in output/docs/fixtures/report.
+6. `.env.local` and secret files are not read by Claude/Codex/tests.
+7. No dependency/lockfile/deploy/media/API side effect, commit, or push.
 
 ## Final Handoff Format
 
@@ -216,7 +196,7 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- credential resolution behavior summary
+- gate 6 no-execute wiring summary
 - default duplicate-block behavior summary
 - custom ready-probe with dummy env result
 - missing credential fail-closed result
@@ -226,4 +206,3 @@ Claude Code must stop after the final handoff. Include:
 - deviations/risks
 - checkpoint recommendation
 - `전체프로젝트 진행률 : 약 95%`
-

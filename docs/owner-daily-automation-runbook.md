@@ -197,9 +197,12 @@ node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run --conten
   liveness(gate 3)/duplicate(gate 4)를 모두 통과하면 credential resolution(gate 5)에 **도달**한다.
   이 단계는 이제 wiring됐다 — 승인된 6개 runtime env key만 읽어 in-memory explicit credential 객체를
   조립한다(`credentialResolutionReached:true`, `credentialValuesAccessed:true`; 값은 in-memory로만,
-  출력에 미노출). credential이 모두 present면 `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`(exit 4)로,
-  일부/전부 누락이면 `CREDENTIAL_KEYS_MISSING_THIS_SLICE`(exit 4, 누락 key '이름'만 출력)로 fail-closed된다.
-  어느 경우든 actual API call(gate 6)에는 도달하지 않는다.
+  출력에 미노출). credential이 모두 present면 **gate 6 `actual_api_call` 구조에 도달**해 value-free
+  no-execute call plan(`actualApiCallPlan` — Blob/Instagram/YouTube 3개 call spec, 함수 참조 + presence
+  boolean만)을 구성하지만, 실제 API 실행이 비활성이라 `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`(exit 4)로
+  fail-closed된다(`actualApiCallReached:true`, `actualApiCallExecutionEnabledThisSlice:false`,
+  `actualApiCallPerformed:false`). credential 일부/전부 누락이면 gate 6에 도달하지 않고 gate 5에서
+  `CREDENTIAL_KEYS_MISSING_THIS_SLICE`(exit 4, 누락 key '이름'만 출력)로 fail-closed된다.
 - **custom content, readiness 미충족**: gate 1~4 중 하나라도 실패하면 그 gate에서 credential
   **이전에** fail-closed된다 — source 미존재 → `BLOCKED_SOURCE_FILE_MISSING`(gate 2, exit 3),
   blob evidence 부재/부정확 → `BLOCKED_BLOB_LIVENESS_EVIDENCE`(gate 3, exit 3). 이 경우

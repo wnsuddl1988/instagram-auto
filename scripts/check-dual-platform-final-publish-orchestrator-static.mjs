@@ -238,6 +238,23 @@ check("runner 파일 존재", existsSync(RUNNER_PATH));
 const runnerRawSrc = existsSync(RUNNER_PATH) ? readFileSync(RUNNER_PATH, "utf8") : "";
 const runnerCode = stripCommentsAndStrings(runnerRawSrc);
 
+// task: dual-platform-actual-api-call-no-execute-stale-contract-fix-v1
+// 파일 최상단 mode 설명 JSDoc(첫 "/** ... */" 블록)에 옛 gate 5 stub 계약(CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE가
+// custom live의 현재 halt)이 active로 남으면 안 된다. gate 6이 wiring된 지금은 이 문자열이 헤더에 없어야 하고,
+// 대신 gate 6 no-execute plan 도달을 설명하는 최신 상태 이름이 있어야 한다.
+const fileHeaderEnd = runnerRawSrc.indexOf("*/");
+const fileHeaderSrc = fileHeaderEnd !== -1 ? runnerRawSrc.slice(0, fileHeaderEnd) : "";
+check(
+  "runner 파일 헤더 mode 설명에 옛 stub 상태(CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE) active 서술 없음",
+  fileHeaderSrc !== "" && !fileHeaderSrc.includes("CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE"),
+);
+check(
+  "runner 파일 헤더 mode 설명이 gate 6 no-execute plan 도달 + 최신 halt 상태(ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE / CREDENTIAL_KEYS_MISSING_THIS_SLICE)를 설명",
+  fileHeaderSrc.includes("ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE") &&
+    fileHeaderSrc.includes("CREDENTIAL_KEYS_MISSING_THIS_SLICE") &&
+    /gate\s*6/.test(fileHeaderSrc),
+);
+
 const liveApiPatterns = [
   /fetch\s*\(/,
   /axios\s*\./,
@@ -411,6 +428,26 @@ check("docs에 secret 값 할당 형태(accessToken:'값' 등) 없음(필드 이
 check("docs에 실제 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(docsRaw));
 check("docs에 v3_2 version 정합 설명 존재", docsRaw.includes("v3_2"));
 check("docs에 metadata optimization/영상만 업로드 금지 규칙 언급", /metadata.*optimization|영상만\s*업로드\s*금지/i.test(docsRaw));
+
+// task: dual-platform-actual-api-call-no-execute-stale-contract-fix-v1
+// docs mode table의 live 행에 stale 계약("어느 경로든 actual API call 미도달")이 남으면 안 된다 —
+// 지금은 custom ready + credential 전부 present가 gate 6 no-execute plan에 도달한다(actualApiCallReached:true).
+check(
+  "docs: mode table live 행에 stale 문구(\"어느 경로든 actual API call 미도달\") 없음",
+  !docsRaw.includes("어느 경로든 actual API call 미도달"),
+);
+// docs가 gate 6 no-execute plan 도달과 실제 실행 비활성을 3개 필드로 명확히 구분해 설명해야 한다.
+check(
+  "docs: mode table live 행이 actualApiCallReached/actualApiCallExecutionEnabledThisSlice/actualApiCallPerformed를 구분 설명",
+  docsRaw.includes("actualApiCallReached:true") &&
+    docsRaw.includes("actualApiCallExecutionEnabledThisSlice:false") &&
+    docsRaw.includes("actualApiCallPerformed:false"),
+);
+// docs에 옛 credential resolution stub 계약(CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE)이 active로 남으면 안 된다.
+check(
+  "docs에 옛 stub 상태(CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE) active 언급 없음",
+  !docsRaw.includes("CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE"),
+);
 
 // ── 5) mutant 검증 ────────────────────────────────────────────────────────
 
@@ -659,6 +696,20 @@ check(
   "runner 소스: executeArmedLiveRun에서 duplicate guard(gate 4)가 credential resolution(gate 5)보다 먼저 평가됨",
   armExecSrc.length > 0 && dupCallIdx !== -1 && credCallIdx !== -1 && dupCallIdx < credCallIdx,
   `dupIdx=${dupCallIdx}, credIdx=${credCallIdx}`
+);
+
+// task: dual-platform-actual-api-call-no-execute-stale-contract-fix-v1
+// executeArmedLiveRun 함수 본문(+ main()의 --live/--arm 진입 주석 직전까지)에는 옛 gate 5 stub 계약
+// (CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE가 custom live의 "현재 halt"인 것처럼 서술)이 active로
+// 남으면 안 된다. gate 6이 wiring된 지금은 이 문자열이 이 범위(active 실행 경로/진입 주석)에 없어야 한다.
+check(
+  "runner 소스: executeArmedLiveRun 실행 경로(및 --live/--arm 진입 주석)에 옛 stub 상태(CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE) active 서술 없음",
+  armExecSrc.length > 0 && !armExecSrc.includes("CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE"),
+);
+// gate 6이 wiring됐으므로 실행 경로 안에는 실제로 gate 6 plan builder 호출과 새 halt 상태가 있어야 한다.
+check(
+  "runner 소스: executeArmedLiveRun이 buildActualApiCallPlanNoExecute를 호출하고 ACTUAL_API_CALL_NOT_ENABLED_ERROR로 fail-closed",
+  armExecSrc.includes("buildActualApiCallPlanNoExecute(") && armExecSrc.includes("ACTUAL_API_CALL_NOT_ENABLED_ERROR"),
 );
 // blob liveness evidence gate(gate 3)도 duplicate guard(gate 4)보다 먼저 평가되어야 한다.
 const livenessCallIdx = armExecSrc.indexOf("evaluateBlobLivenessEvidenceGate(");
@@ -1178,6 +1229,49 @@ check(
   })(),
 );
 
+// task: dual-platform-actual-api-call-wiring-no-execute-v1
+// gate 6 actual_api_call은 no-execute plan builder(buildActualApiCallPlanNoExecute)로 wiring됐다.
+// 이 함수는 (a) 존재하고, (b) credential 값을 인자로 받지 않으며(gate 5 presence summary만), (c) process.env를
+// 읽지 않고, (d) 반환 plan에 credential 값 필드를 넣지 않으며, (e) live lib import/실제 호출/network를 하지 않는다.
+check("runner: buildActualApiCallPlanNoExecute 함수 존재", /function\s+buildActualApiCallPlanNoExecute\s*\(/.test(runnerRawSrc));
+{
+  const fnStart = runnerRawSrc.indexOf("function buildActualApiCallPlanNoExecute");
+  // 다음 최상위 함수(zeroLiveSideEffectCounters) 시작 전까지를 함수 본문으로 본다.
+  const fnEnd = runnerRawSrc.indexOf("function zeroLiveSideEffectCounters", fnStart);
+  const fnBody = fnStart !== -1 ? runnerRawSrc.slice(fnStart, fnEnd === -1 ? undefined : fnEnd) : "";
+  // 실행 코드만(주석/문자열 리터럴 잡음 최소화) — dropComment 계열이 이 파일에 있으면 그것을 쓰고, 없으면 원문 사용.
+  check(
+    "runner: buildActualApiCallPlanNoExecute가 process.env를 읽지 않음(credential 값 미접근)",
+    fnBody !== "" && !/process\.env/.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiCallPlanNoExecute 반환 plan에 credential 값 필드가 없음(accessToken/refreshToken 등)",
+    fnBody !== "" && !/accessToken|refreshToken|clientSecret|readWriteToken|businessAccountId|clientId/.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiCallPlanNoExecute가 live lib import/실제 호출/network를 하지 않음",
+    fnBody !== "" &&
+      !/\bimport\s*\(/.test(fnBody) &&
+      !/\bfetch\s*\(/.test(fnBody) &&
+      !/googleapis|youtube\.videos\.insert|graph\.facebook\.com/.test(fnBody) &&
+      !/@vercel\/blob|\bput\s*\(|\bhead\s*\(|\bdel\s*\(|\.list\s*\(|\.copy\s*\(/.test(fnBody) &&
+      !/oauth2|getToken|refreshAccessToken/i.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiCallPlanNoExecute가 executionEnabled:false + actualCallPerformed:false로 fail-closed",
+    fnBody !== "" &&
+      /executionEnabledThisSlice:\s*false/.test(fnBody) &&
+      /actualApiCallPerformedThisRun:\s*false/.test(fnBody) &&
+      /executionEnabled:\s*false/.test(fnBody) &&
+      /actualCallPerformed:\s*false/.test(fnBody),
+  );
+  // gate 6 plan은 credential 값 객체(resolution.inMemory)를 인자로 받지 않는다 — signature는 credSummary(값 없음)만.
+  check(
+    "runner: 실행 경로가 gate 6 plan에 credential 값 객체(inMemory)를 넘기지 않음(credSummary presence만)",
+    /buildActualApiCallPlanNoExecute\(unit,\s*igJob,\s*ytJob,\s*livenessGate,\s*credSummary\)/.test(runnerRawSrc),
+  );
+}
+
 // task: dual-platform-content-unit-manifest-block-reason-fix-v1
 //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
 //       + dual-platform-credential-resolution-wiring-no-execute-v1
@@ -1332,8 +1426,28 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     check("custom dummy-env ready-probe --live: credentialResolutionReached === true", readyLive?.credentialResolutionReached === true);
     check("custom dummy-env ready-probe --live: credentialValuesAccessed === true (gate 5 실제 도달)", readyLive?.credentialValuesAccessed === true);
     check("custom dummy-env ready-probe --live: credentialValuesResolved === true (dummy 6 key 모두 present)", readyLive?.credentialValuesResolved === true);
-    check("custom dummy-env ready-probe --live: actualApiCallReached === false (실제 API 미실행)", readyLive?.actualApiCallReached === false);
+    // task: dual-platform-actual-api-call-wiring-no-execute-v1
+    // gate 6이 no-execute planning gate로 wiring됐다: credential resolve 시 gate 6 plan에 "도달"하지만
+    // (actualApiCallReached === true) 실제 API 실행은 비활성(actualApiCallExecutionEnabledThisSlice === false,
+    // actualApiCallPerformed === false)이다.
+    check("custom dummy-env ready-probe --live: actualApiCallReached === true (gate 6 no-execute plan 도달)", readyLive?.actualApiCallReached === true);
+    check("custom dummy-env ready-probe --live: actualApiCallExecutionEnabledThisSlice === false (실제 실행 비활성)", readyLive?.actualApiCallExecutionEnabledThisSlice === false);
+    check("custom dummy-env ready-probe --live: actualApiCallPerformed === false (실제 호출 0)", readyLive?.actualApiCallPerformed === false);
     check("custom dummy-env ready-probe --live: credentialResolution.missingCredentialKeyNames === [] (누락 없음)", Array.isArray(readyLive?.credentialResolution?.missingCredentialKeyNames) && readyLive.credentialResolution.missingCredentialKeyNames.length === 0);
+    // gate 6 no-execute call plan 구조 검증: 3개 call spec + 실행 비활성 + 실제 호출 0 + credential 값 미포함.
+    const apiPlan = readyLive?.actualApiCallPlan;
+    check("custom dummy-env ready-probe --live: actualApiCallPlan 존재 + executionEnabledThisSlice === false", apiPlan != null && apiPlan.executionEnabledThisSlice === false && apiPlan.actualApiCallPerformedThisRun === false);
+    check("custom dummy-env ready-probe --live: actualApiCallPlan.calls가 3개(blob/instagram/youtube) 모두 executionEnabled false + actualCallPerformed false",
+      Array.isArray(apiPlan?.calls) && apiPlan.calls.length === 3 &&
+      apiPlan.calls.every((c) => c.executionEnabled === false && c.actualCallPerformed === false && typeof c.functionRef === "string"));
+    check("custom dummy-env ready-probe --live: actualApiCallPlan.calls가 explicit credential injection 함수 참조를 담음",
+      apiPlan?.calls?.some((c) => c.functionRef === "lib/instagram.ts#uploadInstagramReelWithCredentials") &&
+      apiPlan?.calls?.some((c) => c.functionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"));
+    check("custom dummy-env ready-probe --live: actualApiCallPlan.calls[*].inputReadiness.credentialsPresent가 presence boolean(값 아님)",
+      apiPlan?.calls?.every((c) => typeof c.inputReadiness?.credentialsPresent === "boolean"));
+    // 핵심: gate 6 plan에도 DUMMY credential 값이 절대 없다(값 미노출).
+    check("custom dummy-env ready-probe --live: actualApiCallPlan에 DUMMY credential 값 없음(값 미노출)",
+      apiPlan != null && !JSON.stringify(apiPlan).includes(PROBE_DUMMY_VALUE));
     // 핵심: DUMMY credential 값이 출력 어디에도 나타나지 않는다(값 미노출).
     check("custom dummy-env ready-probe --live: DUMMY credential 값이 출력에 없음(값 미노출)", readyRawOut !== "" && !readyRawOut.includes(PROBE_DUMMY_VALUE));
     // value length/hash/prefix/suffix/masked/token type 파생 필드가 출력에 없다.
@@ -1387,7 +1501,13 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
       const j = JSON.stringify(g5 ?? {});
       return !j.includes(PROBE_DUMMY_VALUE) && Array.isArray(g5?.missingCredentialKeyNames);
     })());
-    check("custom dummy-env ready-probe: gate 6 actual_api_call 미평가/미도달 (blockedBy actual_api_call_not_enabled_this_slice)", g6?.gate === "actual_api_call" && g6?.evaluated === false && g6?.reached === false && g6?.blockedBy === "actual_api_call_not_enabled_this_slice");
+    // task: dual-platform-actual-api-call-wiring-no-execute-v1
+    // gate 6은 이제 no-execute planning gate로 evaluated & reached true지만 실행은 비활성(executionEnabledThisSlice
+    // false, actualCallPerformed false)이고 blockedBy는 여전히 actual_api_call_not_enabled_this_slice다.
+    check("custom dummy-env ready-probe: gate 6 actual_api_call evaluated & reached (no-execute plan), 실행 비활성 & 실제 호출 0",
+      g6?.gate === "actual_api_call" && g6?.evaluated === true && g6?.reached === true &&
+      g6?.executionEnabledThisSlice === false && g6?.actualCallPerformed === false &&
+      g6?.blockedBy === "actual_api_call_not_enabled_this_slice");
     check("custom dummy-env ready-probe: stdout에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(readyLive)));
 
     // ── (B) missing-blob probe: source OK지만 blob evidence 부재 → gate 3에서 credential 이전 fail-closed ──
