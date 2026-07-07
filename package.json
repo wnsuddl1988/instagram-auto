@@ -14,6 +14,7 @@
     "owner:status": "node scripts/run-owner-daily-automation-entrypoint.mjs --status",
     "owner:dry-run": "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
     "owner:preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
+    "owner:credential-preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight",
     "owner:duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
     "owner:ready-preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json",
     "owner:ready-duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json"

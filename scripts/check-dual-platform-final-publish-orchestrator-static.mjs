@@ -87,6 +87,33 @@ function stripCommentsAndStrings(src) {
   return codeLines.join("\n");
 }
 
+// ── sanitized child env for credential-preflight present-probe ──────────────
+// task: dual-platform-credential-preflight-review-fix-v1 (Codex finding B)
+// present-probe는 parent env 전체를 복사하지 않는다(`{ ...process.env }` broad spread 금지 —
+// 우발적 secret 상속을 막는다). child node 실행에 필요한 최소 non-secret OS 변수만 명시적
+// 화이트리스트로 개별 상속하고, 그 위에 승인된 credential dummy key 6개만 얹는다.
+// `.env`/`.env.local`/dotenv/secret 파일은 읽지 않는다.
+const SAFE_CHILD_OS_ENV_KEYS = [
+  // Windows에서 node.exe가 로드/실행되려면 필요한 non-secret OS 변수(값은 secret 아님).
+  "SystemRoot", "windir", "SystemDrive", "PATH", "Path", "PATHEXT", "COMSPEC",
+  "TEMP", "TMP", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE",
+];
+/**
+ * present-probe용 sanitized child env를 만든다. parent env를 spread하지 않고, 화이트리스트된
+ * non-secret OS 변수만 개별 상속한 뒤 승인된 dummy credential key만 추가한다.
+ * @param {string[]} dummyKeyNames 승인된 credential env key 이름들
+ * @param {string} dummyValue 각 key에 넣을 non-secret dummy 값
+ */
+function buildSanitizedProbeEnv(dummyKeyNames, dummyValue) {
+  const env = Object.create(null);
+  for (const name of SAFE_CHILD_OS_ENV_KEYS) {
+    const v = process.env[name];
+    if (typeof v === "string") env[name] = v; // non-secret OS 변수만, 개별 상속(broad spread 아님)
+  }
+  for (const name of dummyKeyNames) env[name] = dummyValue;
+  return env;
+}
+
 // ── 1) fixture ──────────────────────────────────────────────────────────────
 
 check("fixture 파일 존재", existsSync(FIXTURE_PATH));
@@ -225,7 +252,18 @@ for (const pat of liveApiPatterns) {
 }
 
 check("runner 소스에 .env.local 직접 참조 없음", !/\.env\.local/.test(runnerCode));
-check("runner 소스에 process.env 직접 참조 없음(secret 미접근)", !/process\s*\.\s*env/.test(runnerCode));
+// task: dual-platform-credential-preflight-redacted-no-live-v1
+// process.env 접근은 오직 승인된 redacted presence helper의 Boolean(process.env[keyName]) 형태만
+// 허용된다(값 미바인딩, presence boolean만). 그 외 어떤 process.env 참조(값 read/할당/파생)도 금지.
+check(
+  "runner 소스에 process.env 참조가 승인된 Boolean(process.env[...]) presence 패턴 외에는 없음(secret 값 미접근)",
+  (() => {
+    const matches = runnerCode.match(/process\s*\.\s*env/g) ?? [];
+    // 승인된 형태: Boolean(process.env[ ... ]) — presence 판정 전용.
+    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    return matches.length === approved.length;
+  })(),
+);
 
 const blobMutationPatterns = [/\bput\s*\(/, /@vercel\/blob/, /\bdel\s*\(/, /\.list\s*\(/];
 for (const pat of blobMutationPatterns) {
@@ -606,8 +644,17 @@ check(
 );
 check("runner에 --preflight 모드 처리 존재", /--preflight/.test(runnerRawSrc) && /preflight/.test(runnerRawSrc));
 check("runner에 REQUIRED_ENV_KEY_NAMES (key 이름 계약) 존재", /REQUIRED_ENV_KEY_NAMES/.test(runnerRawSrc));
-// 가장 중요한 회귀: runner가 process.env 값을 읽지 않는다(코드 기준, 주석/문자열 제외).
-check("runner 코드에 process.env 참조 없음 (preflight가 env 값에 접근하지 않음)", !/process\s*\.\s*env/.test(runnerCode));
+// 가장 중요한 회귀: runner가 credential '값'을 읽지 않는다(코드 기준, 주석/문자열 제외).
+// process.env 접근은 오직 승인된 redacted presence helper의 Boolean(process.env[keyName])만 허용되며,
+// preflight/live/gate 등 어떤 다른 경로에서도 env 값 read/할당/파생이 없어야 한다.
+check(
+  "runner 코드에 process.env 값 접근 없음 — Boolean(process.env[...]) presence 판정만 허용(preflight/live는 env 값 미접근)",
+  (() => {
+    const matches = runnerCode.match(/process\s*\.\s*env/g) ?? [];
+    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    return matches.length === approved.length;
+  })(),
+);
 // live publish 함수를 이 runner가 실제로 import하지 않는다(참조는 문자열 상수로만).
 check("runner가 lib live publish 함수를 실제 import하지 않음", !/import\s+[^\n]*uploadInstagramReel/.test(runnerCode) && !/import\s+[^\n]*uploadYouTubeShorts/.test(runnerCode) && !/import\s+[^\n]*uploadInstagramBlob/.test(runnerCode));
 // no-execute live execution plan 빌더 존재 + lib import 없음.
@@ -1254,6 +1301,156 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
   // source 파일이 환경에 없으면 credential gate 런타임 도달은 검증 불가 — 소스 정적 계약으로만 커버함을 명시.
   check("custom --live credential-gate 런타임 검증 skip(default source 파일 미존재) — 소스 정적 계약(7a)로 커버", true, "환경상 default source mp4 부재");
 }
+
+// ── 8) redacted credential preflight (dual-platform-credential-preflight-redacted-no-live-v1) ──
+// key 이름 + present boolean만 보고하고 credential 값/길이/prefix/hash를 노출하지 않는 no-live mode.
+
+console.log("\n[ credential preflight: --credential-preflight (redacted presence, no values) ]");
+
+// 8a) runner 소스: mode 판정 + redacted presence helper 계약이 코드에 존재
+check("runner: resolveMode가 --credential-preflight를 credential_preflight로 판정", /--credential-preflight/.test(runnerRawSrc) && /"credential_preflight"/.test(runnerRawSrc));
+check("runner: buildCredentialPreflight 함수 존재", /function buildCredentialPreflight\(/.test(runnerRawSrc));
+check("runner: isEnvKeyPresentRedacted가 Boolean(process.env[...])로 presence만 판정(값 미바인딩)", /function isEnvKeyPresentRedacted\([\s\S]{0,120}Boolean\(process\.env\[/.test(runnerRawSrc));
+check(
+  "runner: credential preflight가 env 값에서 파생 정보를 추출하지 않음(process.env[...] 뒤 length/slice/substring 등 연산 없음, crypto/hash 없음)",
+  (() => {
+    // 실제 코드 연산만 검사한다(runnerCode = 주석/문자열 제거). 값 파생 접근 패턴이 없어야 한다.
+    // Boolean(process.env[...]) presence 판정만 허용되며, 값을 .length/.slice 등으로 파생하면 위반.
+    return !/process\.env\[[^\]]*\]\s*\.\s*(length|slice|substring|substr|charAt|indexOf|split|replace|match|toString|padStart|padEnd|normalize|codePointAt)/.test(runnerCode) &&
+      !/process\.env\.[A-Za-z_][A-Za-z0-9_]*\s*\.\s*(length|slice|substring)/.test(runnerCode) &&
+      !/createHash|createHmac|\.digest\s*\(/.test(runnerCode);
+  })(),
+);
+
+// 8b) 실행: default --credential-preflight → exit 0 + redacted 계약
+let cpDefault = null;
+let cpDefaultExit = null;
+try {
+  const out = execFileSync(process.execPath, [RUNNER_PATH, "--credential-preflight"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  cpDefaultExit = 0;
+  cpDefault = JSON.parse(out);
+} catch (e) {
+  cpDefaultExit = typeof e?.status === "number" ? e.status : null;
+  try { cpDefault = JSON.parse(e?.stdout || ""); } catch { cpDefault = null; }
+}
+check("credential-preflight default: exit 0 (status-style diagnostic)", cpDefaultExit === 0, `exit=${cpDefaultExit}`);
+check("credential-preflight default: mode === credential_preflight", cpDefault?.mode === "credential_preflight");
+check("credential-preflight default: isDefaultContentUnit === true", cpDefault?.isDefaultContentUnit === true);
+check("credential-preflight default: credentialValuesAccessed === false", cpDefault?.credentialValuesAccessed === false);
+check("credential-preflight default: credentialValuesResolved === false", cpDefault?.credentialValuesResolved === false);
+check("credential-preflight default: credentialValuesPrinted === false", cpDefault?.credentialValuesPrinted === false);
+check("credential-preflight default: dotEnvLocalDirectAccess === false", cpDefault?.dotEnvLocalDirectAccess === false);
+check("credential-preflight default: externalApiCallPerformed === false", cpDefault?.externalApiCallPerformed === false);
+check("credential-preflight default: credentialResolutionWiredThisSlice === false (presence여도 실제 publish 비활성)", cpDefault?.credentialResolutionWiredThisSlice === false);
+
+// requiredEnvKeyNames가 승인된 6개 key와 정확히 일치
+const cpKeyNames = cpDefault?.requiredEnvKeyNames ?? {};
+check(
+  "credential-preflight: requiredEnvKeyNames가 승인된 6개 key와 정확히 일치",
+  JSON.stringify(cpKeyNames.instagram) === JSON.stringify(["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"]) &&
+    JSON.stringify(cpKeyNames.youtube) === JSON.stringify(["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"]) &&
+    JSON.stringify(cpKeyNames.vercelBlob) === JSON.stringify(["BLOB_READ_WRITE_TOKEN"]),
+);
+
+// platforms.*.keys가 { name, present } 형태만 가짐(값/길이/hash 필드 없음)
+const cpAllKeyEntries = [
+  ...(cpDefault?.platforms?.instagram?.keys ?? []),
+  ...(cpDefault?.platforms?.youtube?.keys ?? []),
+  ...(cpDefault?.platforms?.vercelBlob?.keys ?? []),
+];
+check("credential-preflight: 각 key 엔트리는 name(string)+present(boolean) 필드만 가짐(값/길이/hash 필드 없음)",
+  cpAllKeyEntries.length === 6 &&
+    cpAllKeyEntries.every((k) => {
+      const fields = Object.keys(k).sort();
+      return JSON.stringify(fields) === JSON.stringify(["name", "present"]) &&
+        typeof k.name === "string" && typeof k.present === "boolean";
+    }),
+);
+check("credential-preflight default: env 미설정 시 present 전부 false + allRequiredKeysPresent false", cpAllKeyEntries.every((k) => k.present === false) && cpDefault?.allRequiredKeysPresent === false && cpDefault?.readyForCredentialResolution === false);
+
+// 출력 전체에 value length/hash/prefix/suffix/sample 파생 필드 이름이 없어야 함
+const cpDefaultStr = JSON.stringify(cpDefault ?? {});
+check("credential-preflight: 출력에 value length/hash/prefix/suffix/sample 필드 없음",
+  !/"(valueLength|length|hash|prefix|suffix|sample|charCount|byteLength|masked|redactedValue|firstChars|lastChars|tokenType)"\s*:/.test(cpDefaultStr));
+check("credential-preflight: 출력에 secret-shaped value 없음(EAA/ya29/vercel_blob_rw_)",
+  !/(EAA[A-Za-z0-9]{10}|ya29\.[A-Za-z0-9_-]{10}|vercel_blob_rw_[A-Za-z0-9]{6})/.test(cpDefaultStr));
+
+// 8c) 실행: 모든 6개 key를 더미값으로 설정 → present:true지만 값은 출력에 절대 나타나지 않음.
+// sanitized child env를 쓴다(parent env 전체 spread 금지 — 우발적 secret 상속 방지).
+const DUMMY = "guardprobe_dummy_value_zzz";
+const cpEnv = buildSanitizedProbeEnv(
+  [...(cpKeyNames.instagram ?? []), ...(cpKeyNames.youtube ?? []), ...(cpKeyNames.vercelBlob ?? [])],
+  DUMMY,
+);
+let cpPresent = null;
+let cpPresentExit = null;
+let cpPresentRaw = "";
+try {
+  cpPresentRaw = execFileSync(process.execPath, [RUNNER_PATH, "--credential-preflight"], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: cpEnv });
+  cpPresentExit = 0;
+  cpPresent = JSON.parse(cpPresentRaw);
+} catch (e) {
+  cpPresentExit = typeof e?.status === "number" ? e.status : null;
+  cpPresentRaw = e?.stdout || "";
+  try { cpPresent = JSON.parse(cpPresentRaw); } catch { cpPresent = null; }
+}
+check("credential-preflight present-probe: exit 0", cpPresentExit === 0, `exit=${cpPresentExit}`);
+check("credential-preflight present-probe: 모든 key present === true + allRequiredKeysPresent true + readyForCredentialResolution true",
+  (() => {
+    const all = [
+      ...(cpPresent?.platforms?.instagram?.keys ?? []),
+      ...(cpPresent?.platforms?.youtube?.keys ?? []),
+      ...(cpPresent?.platforms?.vercelBlob?.keys ?? []),
+    ];
+    return all.length === 6 && all.every((k) => k.present === true) &&
+      cpPresent?.allRequiredKeysPresent === true && cpPresent?.readyForCredentialResolution === true;
+  })(),
+);
+check("credential-preflight present-probe: 더미 credential 값이 출력에 절대 나타나지 않음(값 미노출)", cpPresentRaw !== "" && !cpPresentRaw.includes(DUMMY));
+check("credential-preflight present-probe: present:true여도 credentialResolutionWiredThisSlice === false(실제 publish 비활성)", cpPresent?.credentialResolutionWiredThisSlice === false);
+
+// 8d) runner 소스: credential-preflight 경로가 .env.local/secret 파일 read 또는 external live 호출을 추가하지 않음
+check("runner: 소스에 .env.local / .env 파일 read 실행 코드 없음(주석/문자열 제외)",
+  !/\.env\.local/.test(runnerCode) && !/readFileSync\([^)]*\.env/.test(runnerCode) && !/require\(["']dotenv["']\)|from ["']dotenv["']/.test(runnerRawSrc));
+check("runner: credential-preflight가 fetch/googleapis/@vercel\\/blob/ffmpeg/deploy 실행 패턴을 추가하지 않음",
+  !/\bfetch\s*\(/.test(runnerCode) && !/googleapis/.test(runnerCode) && !/@vercel\/blob/.test(runnerCode) &&
+    !/child_process|execSync|spawnSync/.test(runnerCode) && !/ffmpeg|ffprobe/.test(runnerCode));
+
+// 8e) live behavior 회귀: default --live 여전히 exit 3 (credential-preflight 추가가 live 동작을 바꾸지 않음)
+let liveRegExit = null;
+try {
+  execFileSync(process.execPath, [RUNNER_PATH, "--live"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  liveRegExit = 0;
+} catch (e) { liveRegExit = typeof e?.status === "number" ? e.status : null; }
+check("live behavior 불변: default --live 여전히 exit 3 (BLOCKED_DUPLICATE_ALREADY_PUBLISHED)", liveRegExit === 3, `exit=${liveRegExit}`);
+
+// 8f) self-regression: 두 guard 소스가 parent env 전체 spread(`{ ...process.env }`)를 쓰지 않음.
+// 실제 spread 문법(여는 괄호/중괄호/대괄호/콤마 뒤의 ...process.env)만 매치한다 — 주석/문자열/정규식
+// 리터럴 안의 단독 "...process.env" 텍스트는 매치하지 않으므로 이 검증 자신을 오탐하지 않는다.
+// (strip 함수는 정규식 리터럴을 처리하지 못하므로 strip에 의존하지 않고 spread 문법 자체를 좁혀 검사.)
+const OWNER_GUARD_PATH = path.join(ROOT, "scripts", "check-owner-daily-automation-entrypoint-static.mjs");
+// 주석 라인(//, *로 시작)만 제거한 뒤, 실제 spread 문법을 검사한다.
+const dropCommentLines = (s) => s.split("\n").filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join("\n");
+const spreadSyntaxRe = /[{[(,]\s*\.\.\.\s*process\s*\.\s*env\b/; // 실제 spread 표현식만
+{
+  const selfCode = dropCommentLines(existsSync(SELF) ? readFileSync(SELF, "utf8") : "");
+  const ownerCode = dropCommentLines(existsSync(OWNER_GUARD_PATH) ? readFileSync(OWNER_GUARD_PATH, "utf8") : "");
+  check("self-regression: orchestrator guard 소스에 parent env 전체 spread 표현식 없음(sanitized child env만 사용)", !spreadSyntaxRe.test(selfCode));
+  check("self-regression: owner guard 소스에 parent env 전체 spread 표현식 없음(sanitized child env만 사용)", ownerCode !== "" && !spreadSyntaxRe.test(ownerCode));
+  // present-probe helper가 승인된 non-secret OS whitelist + dummy key만 상속하는지(소스 계약).
+  check("self-regression: present-probe가 sanitized child env helper(buildSanitizedProbeEnv)를 사용", selfCode.includes("buildSanitizedProbeEnv"));
+  check("self-regression: sanitized child env가 화이트리스트(SAFE_CHILD_OS_ENV_KEYS) 기반", selfCode.includes("SAFE_CHILD_OS_ENV_KEYS"));
+}
+// approved runner presence 패턴은 Boolean(process.env[keyName]) presence-only임을 재확인(회귀 방지).
+check("self-regression: runner의 env 접근이 Boolean(process.env[...]) presence-only 패턴만 사용",
+  (() => {
+    const all = runnerCode.match(/process\s*\.\s*env/g) ?? [];
+    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    return all.length === approved.length;
+  })());
+// guard 자신이 secret-shaped value를 출력하지 않는지(수집된 stdout 검증 대상 전체).
+check("self-regression: guard가 다룬 출력에 secret-shaped value 없음(EAA/ya29/vercel_blob_rw_)",
+  [cpDefaultStr, cpPresentRaw ?? ""].every((s) => !/(EAA[A-Za-z0-9]{10}|ya29\.[A-Za-z0-9_-]{10}|vercel_blob_rw_[A-Za-z0-9]{6})/.test(s)));
 
 // ── 요약 ────────────────────────────────────────────────────────────────
 

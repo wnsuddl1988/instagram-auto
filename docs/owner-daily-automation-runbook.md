@@ -38,6 +38,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --su
 node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload --content-unit <manifest.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload --request <instagram-blob-upload-request.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --preflight
+node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight
 node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 ```
 
@@ -54,6 +55,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 | `--plan-instagram-blob-upload` | content unit manifest의 `instagramSourcePath`를 read-only로 읽어 SHA-256을 계산하고, deterministic Blob pathname + `put()` 옵션 plan을 `instagram-blob-upload-request.json`으로 기록 | `@vercel/blob` 호출 없음, 실제 업로드 없음, 네트워크/env 접근 없음, content unit manifest를 mutate하지 않음(읽기 전용). 실제 업로드는 별도 승인 토큰 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`가 있는 후속 단계에서만 가능 |
 | `--prepare-instagram-blob-upload` | `instagram-blob-upload-request.json`을 받아 source mp4가 여전히 request의 size + SHA-256 + deterministic pathname + `put()` 옵션 plan과 일치하는지 read-only로 재검증하고, no-execute `instagram-blob-upload-preflight.json`(모든 검증 통과 시에만 `readyForFutureApprovedUpload:true`)을 기록 | `@vercel/blob` 호출 없음, 실제 업로드 없음, public-URL liveness/HEAD 없음, 네트워크/env 접근 없음, request JSON/source mp4를 mutate하지 않음(읽기 전용). `--run`은 이 slice에서 request 검증/출력 이전에 fail-closed(`INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_THIS_SLICE`, 부작용 0). 실제 업로드는 별도 승인 slice 필요 |
 | `--preflight` | 기존 `run-dual-platform-final-publish-orchestrator.mjs --preflight`를 실행해 Instagram/YouTube 게시 준비 상태 + duplicate guard 판정을 요약 | 실제 API 호출/Blob 접근 없음 |
+| `--credential-preflight` | 실제 live publish 직전에 필요한 runtime env key **이름**이 이 프로세스 env에 present인지 **redacted boolean**으로만 확인. orchestrator `--credential-preflight`에 위임하며 platform별/전체 `allPresent`와 `readyForCredentialResolution`을 요약 | credential **값**을 읽거나 출력하지 않음(값/길이/prefix/suffix/hash 미노출). local secret 파일(`.env` 계열)을 읽지 않음, dotenv 미사용, Instagram/YouTube/Blob API 호출 없음. `present:true`/`readyForCredentialResolution:true`는 env key 이름 존재 신호일 뿐 실제 publish 활성화가 아님(이 slice에서 credential resolution/API 실행은 여전히 비활성). env key가 없어도 exit 0(status-style diagnostic) |
 | `--duplicate-guard-check` | preflight로 현재 콘텐츠가 duplicate guard에 의해 양쪽 플랫폼 모두 차단될 것을 **먼저 확인**한 뒤에만 `--live`를 1회 실행해 실제로 안전하게 차단되는지 확인 | duplicate block이 확정되지 않으면 `--live`를 아예 실행하지 않고 즉시 중단(fail-closed). exit 3(`BLOCKED_DUPLICATE_ALREADY_PUBLISHED`)을 게시 성공으로 취급하지 않음 |
 
 `--dry-run`에 `--manifest <path>` / `--out-root <path>`를 추가로 줄 수 있다.
@@ -185,10 +187,23 @@ node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --cont
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run --content-unit <manifest.json>
 ```
 
-**custom content의 live 실행은 이 slice에서 활성화되지 않았다.** custom(non-default)
-manifest로 `--live`/`--arm`을 시도하면 metadata/source/blob gate 판정 뒤,
-credential resolution/실제 API 호출에 도달하기 **전에**
-`CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`(exit 5)로 fail-closed된다. side effect는 0이다.
+**custom content의 실제 publish(API 실행)는 이 slice에서 여전히 비활성이다.** (옛
+무조건 custom halt `CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`(gate 4.5, exit 5)는
+제거됐다.) 현재 계약은 다음과 같다:
+
+- **default `t1_lifestyle_inflation/v3_2`**: gate 4 duplicate guard가
+  `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`(exit 3)로 차단한다 — credential gate 미도달.
+- **custom(non-default) content, gate 1~4 통과**: metadata(gate 1)/source(gate 2)/blob
+  liveness(gate 3)/duplicate(gate 4)를 모두 통과하면 credential resolution stub(gate 5)까지
+  **도달**한 뒤 `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`(exit 4)로 fail-closed된다.
+  `credentialResolutionReached:true`지만 credential 값은 읽지 않으며
+  (`credentialValuesAccessed:false`), actual API call(gate 6)에는 도달하지 않는다.
+- **custom content, readiness 미충족**: gate 1~4 중 하나라도 실패하면 그 gate에서 credential
+  **이전에** fail-closed된다 — source 미존재 → `BLOCKED_SOURCE_FILE_MISSING`(gate 2, exit 3),
+  blob evidence 부재/부정확 → `BLOCKED_BLOB_LIVENESS_EVIDENCE`(gate 3, exit 3).
+
+어느 경로든 credential 값 접근/실제 API 호출/side effect는 0이다. 실제 credential
+resolution/publish는 별도 승인 slice에서만 wiring된다.
 
 owner entrypoint의 `--duplicate-guard-check --content-unit <path>`는 custom manifest면
 `--live`를 **아예 호출하지 않는다**(fail-closed). 이 모드는 default evidence 콘텐츠의
@@ -197,10 +212,10 @@ duplicate block 확인 전용이다. 샘플 manifest는 source 파일이 아직 
 source 경로가 채워지면 ready로 바뀐다.
 
 **참고**: custom manifest의 `--preflight` 결과(`preflight.liveExecutionPlan`)에서 차단 사유는
-`custom_content_live_not_enabled_this_slice`로 표시된다 — default evidence 콘텐츠의
+`credential_resolution_not_wired_this_slice`로 표시된다 — default evidence 콘텐츠의
 `duplicate_publish_guard_blocks_current_content`와 다른 값이다. 새(비중복) 콘텐츠가
-"중복이라 막힌 것"이 아니라 "이 slice에서 아직 live 실행이 연결되지 않은 것"임을 이 값으로
-구분할 수 있다.
+"중복이라 막힌 것"이 아니라 "gate 1~4는 통과했지만 이 slice에서 아직 credential resolution이
+연결되지 않은 것"임을 이 값으로 구분할 수 있다.
 
 ## 왜 기존 영상이 재게시되지 않는가
 

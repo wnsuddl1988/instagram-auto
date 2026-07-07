@@ -59,6 +59,25 @@ function stripBlockCommentsAndStrings(code) {
     .replace(/`(?:[^`\\]|\\.)*`/g, "``");
 }
 
+// ── sanitized child env for credential-preflight present-probe ──────────────
+// task: dual-platform-credential-preflight-review-fix-v1 (Codex finding B)
+// present-probe는 parent env 전체를 복사하지 않는다(broad spread 금지 — 우발적 secret 상속 방지).
+// child node 실행에 필요한 최소 non-secret OS 변수만 화이트리스트로 개별 상속하고, 그 위에
+// 승인된 credential dummy key만 얹는다. .env/.env.local/dotenv/secret 파일은 읽지 않는다.
+const SAFE_CHILD_OS_ENV_KEYS = [
+  "SystemRoot", "windir", "SystemDrive", "PATH", "Path", "PATHEXT", "COMSPEC",
+  "TEMP", "TMP", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE",
+];
+function buildSanitizedProbeEnv(dummyKeyNames, dummyValue) {
+  const env = Object.create(null);
+  for (const name of SAFE_CHILD_OS_ENV_KEYS) {
+    const v = process.env[name];
+    if (typeof v === "string") env[name] = v; // non-secret OS 변수만, 개별 상속(broad spread 아님)
+  }
+  for (const name of dummyKeyNames) env[name] = dummyValue;
+  return env;
+}
+
 console.log("\nStatic guard check: owner daily automation entrypoint\n");
 
 check("entrypoint file exists", existsSync(ENTRYPOINT_PATH));
@@ -757,6 +776,70 @@ check("--duplicate-guard-check --content-unit <ready fixture>: treatedAsPublishS
 check("--duplicate-guard-check --content-unit <ready fixture>: sideEffectCountersAllZero === true", readyDgParsed?.sideEffectCountersAllZero === true);
 check("--duplicate-guard-check --content-unit <ready fixture>: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(readyDgOut));
 
+// ── required: --credential-preflight (redacted presence, no values) ──────────────
+// task: dual-platform-credential-preflight-redacted-no-live-v1
+console.log("\n[ required: --credential-preflight (redacted env key presence, no values) ]");
+check("--credential-preflight mode present in MODES", src.includes('"--credential-preflight"'));
+check("runCredentialPreflight handler present", src.includes("function runCredentialPreflight"));
+
+let cpOut = "";
+let cpExit = null;
+try {
+  cpOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--credential-preflight"], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  cpExit = 0;
+} catch (e) {
+  cpExit = typeof e?.status === "number" ? e.status : null;
+  cpOut = String(e?.stdout || e?.message || e);
+}
+check("--credential-preflight: exit 0 (status-style diagnostic)", cpExit === 0, `exit=${cpExit}`);
+const cpJsonMatch = cpOut.match(/\{[\s\S]*"readyForCredentialResolution"[\s\S]*?\n\}/);
+let cpParsed = null;
+if (cpJsonMatch) { try { cpParsed = JSON.parse(cpJsonMatch[0]); } catch { cpParsed = null; } }
+check("--credential-preflight: JSON summary parse", !!cpParsed);
+check("--credential-preflight: mode === credential_preflight", cpParsed?.mode === "credential_preflight");
+check("--credential-preflight: noLive === true", cpParsed?.noLive === true);
+check("--credential-preflight: credentialValuesAccessed === false", cpParsed?.credentialValuesAccessed === false);
+check("--credential-preflight: credentialValuesPrinted === false", cpParsed?.credentialValuesPrinted === false);
+check("--credential-preflight: dotEnvLocalDirectAccess === false", cpParsed?.dotEnvLocalDirectAccess === false);
+check("--credential-preflight: externalApiCallPerformed === false", cpParsed?.externalApiCallPerformed === false);
+check("--credential-preflight: credentialResolutionWiredThisSlice === false (presence여도 publish 비활성)", cpParsed?.credentialResolutionWiredThisSlice === false);
+// key 엔트리는 name+present 필드만 (값/길이/hash 필드 없음)
+const cpEntries = [
+  ...(cpParsed?.platforms?.instagram?.keys ?? []),
+  ...(cpParsed?.platforms?.youtube?.keys ?? []),
+  ...(cpParsed?.platforms?.vercelBlob?.keys ?? []),
+];
+check("--credential-preflight: 각 key 엔트리는 name+present 필드만(6개)", cpEntries.length === 6 && cpEntries.every((k) => JSON.stringify(Object.keys(k).sort()) === JSON.stringify(["name", "present"])));
+check("--credential-preflight: 출력에 value length/hash/prefix/suffix/sample 필드 없음", !/"(valueLength|length|hash|prefix|suffix|sample|masked|redactedValue|firstChars|lastChars|tokenType)"\s*:/.test(cpOut));
+check("--credential-preflight: 출력에 secret-shaped value 없음", !/(EAA[A-Za-z0-9]{10}|ya29\.[A-Za-z0-9_-]{10}|vercel_blob_rw_[A-Za-z0-9]{6})/.test(cpOut));
+
+// present-probe: env에 더미값 주입 → present:true지만 값은 절대 출력에 나타나지 않음.
+// sanitized child env를 쓴다(parent env 전체 spread 금지 — 우발적 secret 상속 방지).
+const OWNER_CP_DUMMY = "owner_guard_dummy_zzz";
+const ownerCpEnv = buildSanitizedProbeEnv(
+  ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN", "YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN", "BLOB_READ_WRITE_TOKEN"],
+  OWNER_CP_DUMMY,
+);
+let ownerCpPresentOut = "";
+let ownerCpPresentExit = null;
+try {
+  ownerCpPresentOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--credential-preflight"], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000, env: ownerCpEnv });
+  ownerCpPresentExit = 0;
+} catch (e) {
+  ownerCpPresentExit = typeof e?.status === "number" ? e.status : null;
+  ownerCpPresentOut = String(e?.stdout || e?.message || e);
+}
+check("--credential-preflight present-probe: exit 0", ownerCpPresentExit === 0, `exit=${ownerCpPresentExit}`);
+check("--credential-preflight present-probe: 더미 credential 값이 출력에 절대 나타나지 않음(값 미노출)", ownerCpPresentOut !== "" && !ownerCpPresentOut.includes(OWNER_CP_DUMMY));
+{
+  const m = ownerCpPresentOut.match(/\{[\s\S]*"readyForCredentialResolution"[\s\S]*?\n\}/);
+  let p = null; if (m) { try { p = JSON.parse(m[0]); } catch { p = null; } }
+  check("--credential-preflight present-probe: allRequiredKeysPresent === true + readyForCredentialResolution === true", p?.allRequiredKeysPresent === true && p?.readyForCredentialResolution === true);
+}
+
+// live behavior 회귀: default --duplicate-guard-check 여전히 exit 0 + liveExitCode 3 (credential-preflight 추가가 live 동작 불변)
+check("--credential-preflight: entrypoint 소스가 여전히 process.env를 직접 접근하지 않음(orchestrator에 위임)", !code.includes("process.env"));
+
 // ── required: runbook doc ───────────────────────────────────────────────────────
 console.log("\n[ required: owner runbook doc ]");
 check("runbook file exists", existsSync(RUNBOOK_PATH));
@@ -767,7 +850,23 @@ check("runbook references Instagram media_id 17916511431199303", runbookRaw.incl
 check("runbook references YouTube videoId r9jhckdpC9w", runbookRaw.includes("r9jhckdpC9w"));
 check("runbook explains .env.local is not read directly by this entrypoint", runbookRaw.includes(".env.local"));
 check("runbook explains --content-unit for future new videos", runbookRaw.includes("--content-unit") && runbookRaw.includes("dual_platform_content_unit_v1"));
-check("runbook explains custom content live is fail-closed this slice", /CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/.test(runbookRaw));
+// task: dual-platform-credential-preflight-review-fix-v1 (Codex finding A)
+// runbook은 옛 무조건 custom halt(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/exit 5)가 아니라
+// 현재 계약(gate 1~4 통과 시 credential stub 도달 → CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE/exit 4)을
+// 설명해야 한다. custom content 실제 halt 사유도 credential_resolution_not_wired_this_slice여야 한다.
+check("runbook explains custom content credential-gate fail-closed (CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE)", /CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE/.test(runbookRaw));
+check("runbook uses current custom block reason (credential_resolution_not_wired_this_slice)", /credential_resolution_not_wired_this_slice/.test(runbookRaw));
+check("runbook explains custom ready content reaches credential gate 5 stub (exit 4)", /exit 4/.test(runbookRaw) && /gate 5|credential (resolution )?stub/i.test(runbookRaw));
+// 옛 block reason(custom_content_live_not_enabled_this_slice)이 남으면 실패(active/historical 무관하게 이 소문자 토큰은 제거 대상).
+check("runbook does NOT keep stale block reason (no custom_content_live_not_enabled_this_slice)", !/custom_content_live_not_enabled_this_slice/.test(runbookRaw));
+// 옛 halt 상수(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE)는 "제거됐다"는 historical 문맥에서만 허용.
+// 남아 있다면 반드시 인근에 "제거"/"옛"/"더 이상" 같은 historical marker가 있어야 한다.
+check("runbook: any CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE mention is historical-only (removed)",
+  (() => {
+    if (!/CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/.test(runbookRaw)) return true; // 아예 없으면 OK
+    // 언급이 있으면 문서 전체에 "제거"/"옛"/"removed"/"no longer" historical marker가 함께 있어야 한다.
+    return /(제거|옛 |removed|no longer|더 이상)/i.test(runbookRaw);
+  })());
 check("runbook has no secret value shape", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(runbookRaw));
 check("runbook mentions pnpm owner:ready-preflight", runbookRaw.includes("pnpm owner:ready-preflight"));
 check("runbook mentions pnpm owner:ready-duplicate-guard-check", runbookRaw.includes("pnpm owner:ready-duplicate-guard-check"));
@@ -775,6 +874,25 @@ check(
   "runbook explains ready commands are no-live readiness / duplicate-safe block, not repost",
   /재게시가 아니|not.*repost|no-live/i.test(runbookRaw),
 );
+
+// ── self-regression: guard 소스에 parent env 전체 spread 없음 (Codex finding B) ──
+// 실제 spread 문법(여는 괄호/중괄호/대괄호/콤마 뒤의 ...process.env)만 매치한다 — 주석/문자열/정규식
+// 리터럴 안의 단독 "...process.env" 텍스트는 매치하지 않으므로 이 검증 자신을 오탐하지 않는다.
+console.log("\n[ self-regression: no parent env broad spread in guards ]");
+{
+  const OWNER_GUARD_SELF = fileURLToPath(import.meta.url);
+  const ORCH_GUARD_PATH = resolve(REPO_ROOT, "scripts/check-dual-platform-final-publish-orchestrator-static.mjs");
+  const dropCommentLines = (s) => s.split("\n").filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join("\n");
+  const spreadSyntaxRe = /[{[(,]\s*\.\.\.\s*process\s*\.\s*env\b/; // 실제 spread 표현식만
+  const ownerGuardCode = dropCommentLines(existsSync(OWNER_GUARD_SELF) ? readFileSync(OWNER_GUARD_SELF, "utf-8") : "");
+  const orchGuardCode = dropCommentLines(existsSync(ORCH_GUARD_PATH) ? readFileSync(ORCH_GUARD_PATH, "utf-8") : "");
+  check("owner guard 소스에 parent env 전체 spread 표현식 없음(sanitized child env만 사용)", !spreadSyntaxRe.test(ownerGuardCode));
+  check("orchestrator guard 소스에 parent env 전체 spread 표현식 없음(sanitized child env만 사용)", orchGuardCode !== "" && !spreadSyntaxRe.test(orchGuardCode));
+  check("owner guard present-probe가 sanitized child env helper(buildSanitizedProbeEnv) 사용", ownerGuardCode.includes("buildSanitizedProbeEnv"));
+  // guard가 다룬 credential-preflight 출력에 secret-shaped value 없음(수집한 stdout 전체).
+  check("owner guard: 수집한 credential-preflight 출력에 secret-shaped value 없음",
+    [cpOut ?? "", ownerCpPresentOut ?? ""].every((s) => !/(EAA[A-Za-z0-9]{10}|ya29\.[A-Za-z0-9_-]{10}|vercel_blob_rw_[A-Za-z0-9]{6})/.test(s)));
+}
 
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 

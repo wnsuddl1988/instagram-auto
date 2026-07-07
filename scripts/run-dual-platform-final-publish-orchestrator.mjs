@@ -7,10 +7,14 @@
  *  ← dual-platform-final-publish-orchestrator-no-live-v1)
  *
  * 하나의 콘텐츠 unit으로부터 Instagram job + YouTube job 2개의 publish plan을
- * 생성하는 runner다. 3가지 모드를 지원한다:
+ * 생성하는 runner다. 4가지 모드를 지원한다:
  *   --dry-run   : 기존 no-live 동작. publish plan + gate/guard 판정만 계산.
  *   --preflight : 준비 검증. publish plan + 파일경로 + metadata gate + duplicate guard +
  *                 Blob liveness evidence + arm 상태 + required env key NAME 계약(값 미접근).
+ *   --credential-preflight : redacted env key presence check(no-live). 승인된 runtime env key
+ *                 '이름'의 present boolean만 보고한다(값/길이/prefix/suffix/hash 미노출). status-style
+ *                 diagnostic이라 missing key가 있어도 exit 0. credential 값을 resolve하지 않고,
+ *                 .env.local/secret 파일을 읽지 않으며, API/upload/Blob 호출도 하지 않는다.
  *   --live/--arm: armed(APPROVE_DUAL_PLATFORM_ARM). LIVE_GATE_ORDER 순서로 fail-closed
  *                 평가하며, default content(t1_lifestyle_inflation/v3_2)는 gate 4
  *                 duplicate publish guard가 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로
@@ -24,12 +28,14 @@
  * - Instagram/YouTube API 호출 (fetch/googleapis/axios 등 네트워크 호출 없음)
  * - Vercel Blob put()/list()/del() 등 object mutation
  * - .env.local 또는 다른 secret 파일 직접 read
- * - process.env 값 read/출력 (preflight는 key '이름'만 계약으로 출력, 값은 미접근)
+ * - credential '값' read/출력/저장 및 값에서 파생된 정보(길이/prefix/suffix/hash) 노출.
+ *   preflight는 key '이름'만 계약으로 출력하고 process.env를 읽지 않는다. credential-preflight는
+ *   승인된 key 이름의 present boolean 판정에만 process.env를 접근하며 값은 노출하지 않는다.
  * - duplicate publish guard(gate 4) 통과 전 credential resolution/actual API call
  * - 새 영상 생성/렌더/ffmpeg/TTS/image/browser
  * - deploy/dependency/commit/push
  *
- * 실행 예: node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
+ * 실행 예: node scripts/run-dual-platform-final-publish-orchestrator.mjs --credential-preflight
  */
 import path from "node:path";
 import { existsSync, readFileSync } from "node:fs";
@@ -889,6 +895,78 @@ function buildPreflight(unit) {
   };
 }
 
+// ── redacted credential preflight (dual-platform-credential-preflight-redacted-no-live-v1) ──
+// Owner가 실제 live publish 직전에 "필요한 runtime env key '이름'이 present인지"만 값 없이 확인할 수
+// 있게 한다. 이 경로는 no-live이며 credential 값을 resolve하거나 API/upload를 실행하지 않는다.
+//
+// 보안 계약(엄격):
+// - process.env는 승인된 key 이름의 presence boolean 판정에만 접근한다.
+// - 값을 변수에 바인딩하거나, 출력하거나, 길이/prefix/suffix/hash/sample/token type을 계산/노출하지 않는다.
+// - `.env`/`.env.local`/secret 파일을 읽지 않는다(dotenv/파일 read 없음).
+// - Instagram/YouTube/Blob API, OAuth, upload, HEAD, ffmpeg, deploy를 호출하지 않는다.
+
+/**
+ * 승인된 env key 이름 하나의 presence를 boolean으로만 반환한다.
+ * Boolean(process.env[keyName])는 값을 지역 변수에 담지 않고 truthiness만 판정한다:
+ * 미설정(undefined)/빈 문자열("")은 false, 비어있지 않은 값은 true. 값 자체는 반환/저장/출력하지 않는다.
+ * 길이/prefix/suffix/hash 등 값에서 파생된 어떤 정보도 계산하지 않는다.
+ */
+function isEnvKeyPresentRedacted(keyName) {
+  return Boolean(process.env[keyName]);
+}
+
+/** 한 플랫폼의 승인된 key 이름 목록에 대해 { name, present } 배열 + allPresent를 만든다(값 미노출). */
+function buildPlatformKeyPresence(keyNames) {
+  const keys = keyNames.map((name) => ({ name, present: isEnvKeyPresentRedacted(name) }));
+  return { keys, allPresent: keys.every((k) => k.present === true) };
+}
+
+/**
+ * redacted credential preflight 결과를 만든다. key 이름 + present boolean + platform/전체 readiness만
+ * 포함한다. credential 값/길이/prefix/hash는 어디에도 담기지 않으며, API 호출/파일 read도 하지 않는다.
+ * content unit은 context 필드(contentId/version/isDefaultContentUnit)에만 쓰이고 env presence 로직에는
+ * 영향을 주지 않는다.
+ */
+function buildCredentialPreflight(unit, isDefault) {
+  const instagram = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.instagram);
+  const youtube = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.youtube);
+  const vercelBlob = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.vercelBlob);
+  const allRequiredKeysPresent =
+    instagram.allPresent === true && youtube.allPresent === true && vercelBlob.allPresent === true;
+  return {
+    schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+    mode: "credential_preflight",
+    note:
+      "redacted credential presence check(no-live). 승인된 runtime env key '이름'의 present boolean만 보고한다. " +
+      "credential 값/길이/prefix/suffix/hash는 읽거나 출력하지 않으며, .env.local/secret 파일을 읽지 않고, " +
+      "실제 credential resolution이나 Instagram/YouTube/Blob API 호출도 수행하지 않는다. present:true는 실제 " +
+      "publish 가능 상태가 아니라 '해당 env key 이름이 이 프로세스 env에 비어있지 않게 존재함'만을 의미한다.",
+    contentId: unit.contentId,
+    version: unit.version,
+    isDefaultContentUnit: isDefault === true,
+    // 안전 assertion 필드(모두 상수 false/true) — guard가 계약 위반을 fail-closed로 잡는다.
+    credentialValuesAccessed: false,
+    credentialValuesResolved: false,
+    credentialValuesPrinted: false,
+    dotEnvLocalDirectAccess: false,
+    externalApiCallPerformed: false,
+    presenceCheckMethod: "non_empty_env_key_presence_boolean_only",
+    requiredEnvKeyNames: {
+      instagram: REQUIRED_ENV_KEY_NAMES.instagram,
+      youtube: REQUIRED_ENV_KEY_NAMES.youtube,
+      vercelBlob: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+    },
+    platforms: { instagram, youtube, vercelBlob },
+    allRequiredKeysPresent,
+    // present여도 이 slice에서 실제 credential resolution/publish는 여전히 wiring되지 않았다.
+    // readyForCredentialResolution은 "env key 이름이 모두 present"라는 presence 신호일 뿐,
+    // live publish 활성화 신호가 아니다.
+    readyForCredentialResolution: allRequiredKeysPresent,
+    credentialResolutionWiredThisSlice: false,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+  };
+}
+
 const SELF = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(SELF), "..");
 const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(SELF);
@@ -896,6 +974,8 @@ const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.r
 /** CLI args에서 mode를 판정한다. --live/--arm은 armed gate 순서 평가 대상이다. */
 function resolveMode(argv) {
   if (argv.includes("--live") || argv.includes("--arm")) return "live_requested";
+  // --credential-preflight는 --preflight보다 먼저 판정한다(별도 redacted presence-only 모드).
+  if (argv.includes("--credential-preflight")) return "credential_preflight";
   if (argv.includes("--preflight")) return "preflight";
   return "dry_run";
 }
@@ -1228,6 +1308,16 @@ function main() {
     const { result, exitCode } = executeArmedLiveRun(activeUnit);
     console.log(JSON.stringify(result, null, 2));
     process.exit(exitCode);
+    return;
+  }
+
+  // ── credential-preflight: redacted env key presence check(no-live, 값 미노출) ──
+  // 승인된 runtime env key 이름의 present boolean만 보고한다. credential 값/길이/prefix/hash를
+  // 읽거나 출력하지 않고, .env.local/secret 파일을 읽지 않으며, API/upload/Blob 호출도 하지 않는다.
+  // status-style diagnostic이므로 missing key가 있어도 exit 0(정보는 JSON boolean으로 표현).
+  if (mode === "credential_preflight") {
+    const output = buildCredentialPreflight(activeUnit, resolved.isDefault);
+    console.log(JSON.stringify({ ...output, contentUnitManifestPath: resolved.manifestPath }, null, 2));
     return;
   }
 

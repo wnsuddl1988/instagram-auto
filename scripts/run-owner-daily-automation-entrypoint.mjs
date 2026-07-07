@@ -18,6 +18,9 @@
  *                               using safe default fixtures (unless --manifest/--out-root given).
  *   --preflight               : run scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
  *                               and summarize readiness + duplicate-guard status.
+ *   --credential-preflight    : run the orchestrator --credential-preflight and report ONLY redacted
+ *                               env key NAME presence booleans (no values, no lengths, no prefixes).
+ *                               no-live: does not read .env.local, resolve credentials, or call APIs.
  *   --duplicate-guard-check   : only if --preflight confirms BOTH platform keys will be
  *                               duplicate-blocked, run the orchestrator `--live` once and
  *                               report the blocked result as a safety confirmation — never
@@ -86,7 +89,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once", "--plan-instagram-blob-upload", "--prepare-instagram-blob-upload"];
+const MODES = ["--status", "--dry-run", "--preflight", "--credential-preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once", "--plan-instagram-blob-upload", "--prepare-instagram-blob-upload"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -98,6 +101,7 @@ function printUsage() {
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --status",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run [--manifest <path>] [--out-root <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight [--content-unit <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight [--content-unit <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit" +
         " (--summary <path> | --pipeline-summary <path>) --out-dir <path>" +
@@ -297,6 +301,10 @@ function runStatus() {
       prepareInstagramBlobUpload:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload --request <instagram-blob-upload-request.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
+      checkCredentialKeyPresence:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight " +
+        "(redacted: reports only whether required runtime env key NAMES are present as booleans; " +
+        "never reads local secret files, never prints values/lengths/prefixes, never calls APIs).",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit <manifest.json>",
@@ -787,6 +795,79 @@ function runPreflight() {
   return summary.ranSuccessfully && summary.preflightOk ? 0 : 1;
 }
 
+// ── mode: --credential-preflight ────────────────────────────────────────────────
+// task: dual-platform-credential-preflight-redacted-no-live-v1
+// orchestrator --credential-preflight로 위임한다. 이 entrypoint 자체는 process.env를 읽지 않고
+// (기존 보안 계약 유지), orchestrator가 계산한 redacted presence 결과(key 이름 + present boolean)만
+// 통과/요약한다. .env.local read 없음, credential 값/길이/prefix 출력 없음, API/upload/Blob 호출 없음.
+function runCredentialPreflight() {
+  const contentUnitPath = getArg("--content-unit");
+  if (contentUnitPath && !existsSync(contentUnitPath)) {
+    console.error(`ABORT: --content-unit manifest not found: ${contentUnitPath}`);
+    return 1;
+  }
+  console.log(
+    contentUnitPath
+      ? `[owner-entrypoint] running dual-platform publish orchestrator --credential-preflight --content-unit ${contentUnitPath}`
+      : `[owner-entrypoint] running dual-platform publish orchestrator --credential-preflight (default evidence content)`,
+  );
+  console.log("[owner-entrypoint] redacted presence check only — env key NAMES + present booleans, no values.");
+  console.log("");
+
+  const cpArgs = contentUnitPath
+    ? ["--credential-preflight", "--content-unit", contentUnitPath]
+    : ["--credential-preflight"];
+  const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, cpArgs, { captureOnly: true });
+  if (exitCode !== 0) {
+    console.error(`ABORT: orchestrator --credential-preflight exited ${exitCode}`);
+    return 1;
+  }
+  const parsed = parseJsonSafe(stdout);
+  if (!parsed.ok) {
+    console.error(`ABORT: --credential-preflight stdout parse failed: ${parsed.error}`);
+    return 1;
+  }
+  const cp = parsed.value ?? {};
+  const platforms = cp.platforms ?? {};
+
+  // secret-free owner summary. orchestrator가 보증한 redacted 필드를 그대로 통과한다.
+  const summary = {
+    schemaVersion: "owner_daily_automation_entrypoint_credential_preflight_summary_v1",
+    mode: "credential_preflight",
+    noLive: true,
+    // orchestrator가 보고한 안전 assertion(모두 상수). 값/길이/prefix/hash 미노출.
+    credentialValuesAccessed: cp.credentialValuesAccessed === true,
+    credentialValuesPrinted: cp.credentialValuesPrinted === true,
+    dotEnvLocalDirectAccess: cp.dotEnvLocalDirectAccess === true,
+    externalApiCallPerformed: cp.externalApiCallPerformed === true,
+    contentUnitManifestPath: cp.contentUnitManifestPath ?? null,
+    isDefaultContentUnit: cp.isDefaultContentUnit === true,
+    requiredEnvKeyNames: cp.requiredEnvKeyNames ?? null,
+    platforms: {
+      instagram: { allPresent: platforms.instagram?.allPresent === true, keys: platforms.instagram?.keys ?? [] },
+      youtube: { allPresent: platforms.youtube?.allPresent === true, keys: platforms.youtube?.keys ?? [] },
+      vercelBlob: { allPresent: platforms.vercelBlob?.allPresent === true, keys: platforms.vercelBlob?.keys ?? [] },
+    },
+    allRequiredKeysPresent: cp.allRequiredKeysPresent === true,
+    readyForCredentialResolution: cp.readyForCredentialResolution === true,
+    credentialResolutionWiredThisSlice: cp.credentialResolutionWiredThisSlice === true,
+  };
+
+  console.log(JSON.stringify(summary, null, 2));
+  console.log("");
+  console.log("── Owner credential presence (redacted, no values) ────────────");
+  const line = (label, obj) => console.log(`  ${label.padEnd(24)} allPresent=${obj.allPresent}  [${obj.keys.map((k) => `${k.name}:${k.present}`).join(", ")}]`);
+  line("instagram:", summary.platforms.instagram);
+  line("youtube:", summary.platforms.youtube);
+  line("vercelBlob:", summary.platforms.vercelBlob);
+  console.log(`  allRequiredKeysPresent:  ${summary.allRequiredKeysPresent}`);
+  console.log(`  readyForCredentialResolution: ${summary.readyForCredentialResolution}  (presence signal only — live publish still disabled)`);
+  console.log("");
+
+  // status-style diagnostic: env key가 없어도 실행 자체는 성공(exit 0). 정보는 위 boolean으로 표현.
+  return 0;
+}
+
 // ── mode: --duplicate-guard-check ───────────────────────────────────────────────
 function runDuplicateGuardCheck() {
   const contentUnitPath = getArg("--content-unit");
@@ -902,6 +983,9 @@ switch (requestedMode) {
     break;
   case "--preflight":
     exitCode = runPreflight();
+    break;
+  case "--credential-preflight":
+    exitCode = runCredentialPreflight();
     break;
   case "--duplicate-guard-check":
     exitCode = runDuplicateGuardCheck();
