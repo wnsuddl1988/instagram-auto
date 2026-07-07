@@ -168,7 +168,10 @@
         "youtube": ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
         "vercelBlob": ["BLOB_READ_WRITE_TOKEN"]
       },
-      "readinessSignalNote": "readyForCredentialResolution:true는 env key 이름이 모두 present라는 presence 신호일 뿐, 실제 live publish 활성화가 아니다. 이 slice에서 credential resolution/API 실행은 여전히 비활성(credentialResolutionWiredThisSlice:false)이다.",
+      "readinessSignalNote": "task: dual-platform-credential-resolution-wiring-no-execute-v1. readyForCredentialResolution:true는 env key 이름이 모두 present라는 presence 신호일 뿐, 실제 live publish 활성화가 아니다. credential resolution 코드 경로는 이 slice에서 wiring됐지만(credentialResolutionWiredThisSlice:true), 이 --credential-preflight 모드는 값 미접근(credentialValuesAccessedInThisMode:false)이고 actual API 실행(actualApiExecutionEnabledThisSlice:false)/live publish는 여전히 비활성이다 — credentialResolutionWiredThisSlice:true를 publish 활성화로 오인해서는 안 된다.",
+      "credentialResolutionWiredThisSlice": true,
+      "credentialValuesAccessedInThisMode": false,
+      "actualApiExecutionEnabledThisSlice": false,
       "ownerCommand": "node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight [--content-unit <path>]",
       "packageScript": "owner:credential-preflight"
     },
@@ -187,12 +190,16 @@
         "actualApiCallReached": false
       },
       "customContentExpected": {
-        "note": "task: dual-platform-custom-content-live-credential-gate-no-execute-v1. custom(non-default) content unit의 실제 publish(API 실행)는 이 slice에서 비활성이다. 옛 무조건 custom halt(gate 4.5)는 제거됐다: gate 1~4(metadata/source/blob/duplicate)를 모두 통과한 custom content는 credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로 fail-closed된다. credential 값은 읽지 않으며(process.env/secret 미접근), actual API call(gate 6)에도 도달하지 않는다. gate 1~4 중 하나라도 미충족이면 그 gate에서 credential 이전에 fail-closed된다(예: source 미존재 → BLOCKED_SOURCE_FILE_MISSING, blob evidence 부재 → BLOCKED_BLOB_LIVENESS_EVIDENCE).",
-        "readyContentStatus": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
-        "readyContentExitCode": 4,
+        "note": "task: dual-platform-credential-resolution-wiring-no-execute-v1. custom(non-default) content unit의 실제 publish(API 실행)는 이 slice에서 비활성이다. gate 1~4(metadata/source/blob/duplicate)를 모두 통과한 custom content는 credential resolution(gate 5)에 도달해 승인된 6개 runtime env key를 in-memory explicit credential 객체로 조립한다(값은 로컬 객체에만; 출력/문서/fixture/report/error에 미노출). credential이 모두 resolve되면 actual API 실행(gate 6)이 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다. credential key가 하나라도 비어 있으면 CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되며 출력에는 '누락 key 이름'만 담긴다. 어느 경로든 actual API call(gate 6)에는 도달하지 않는다. gate 1~4 중 하나라도 미충족이면 그 gate에서 credential 이전에 fail-closed된다(예: source 미존재 → BLOCKED_SOURCE_FILE_MISSING, blob evidence 부재 → BLOCKED_BLOB_LIVENESS_EVIDENCE).",
+        "readyContentWithCredentialsStatus": "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE",
+        "readyContentWithCredentialsExitCode": 4,
+        "readyContentMissingCredentialsStatus": "CREDENTIAL_KEYS_MISSING_THIS_SLICE",
+        "readyContentMissingCredentialsExitCode": 4,
         "credentialResolutionReached": true,
-        "credentialValuesAccessed": false,
-        "credentialValuesResolved": false,
+        "credentialResolutionWiredThisSlice": true,
+        "credentialValuesAccessedWhenReached": true,
+        "credentialValuesResolvedWhenAllKeysPresent": true,
+        "credentialValuesExposedInOutput": false,
         "actualApiCallReached": false,
         "gateHaltedAt": "credential_presence_resolution(gate 5, after duplicate guard gate 4, before actual_api_call gate 6)",
         "customContentLivePublishEnabledThisSlice": false,
@@ -202,22 +209,25 @@
   },
 
   "contentUnitManifest": {
-    "note": "task: dual-platform-content-unit-manifest-parameterization-no-live-v1 → dual-platform-custom-content-live-credential-gate-no-execute-v1. 미래 새 영상은 이 계약의 content unit manifest(JSON)로 표현되어 --content-unit <path>로 전달된다. --content-unit이 없으면 모든 모드는 default evidence content로 동작한다(하위 호환). custom content의 실제 publish(API 실행)는 이 slice에서 비활성이다: gate 1~4를 통과하면 credential resolution stub(gate 5)에서 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed된다.",
+    "note": "task: dual-platform-content-unit-manifest-parameterization-no-live-v1 → dual-platform-credential-resolution-wiring-no-execute-v1. 미래 새 영상은 이 계약의 content unit manifest(JSON)로 표현되어 --content-unit <path>로 전달된다. --content-unit이 없으면 모든 모드는 default evidence content로 동작한다(하위 호환). custom content의 실제 publish(API 실행)는 이 slice에서 비활성이다: gate 1~4를 통과하면 credential resolution(gate 5)에서 승인된 6개 env key를 in-memory로 조립한 뒤 actual API 실행(gate 6)이 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(credential key 누락 시 CREDENTIAL_KEYS_MISSING_THIS_SLICE). credential 값은 in-memory로만 다뤄지고 출력/문서/fixture/report/error에 미노출.",
     "schemaVersion": "dual_platform_content_unit_v1",
     "sampleFixture": "scripts/fixtures/dual_platform_content_unit.sample.v1.json",
     "requiredFields": ["schemaVersion", "contentId", "version", "instagramSourcePath", "youtubeSourcePath"],
     "optionalFields": ["instagramMetadata", "youtubeMetadata", "blobPublicUrlLivenessEvidence", "existingPublishedKeys"],
     "defaultContentIsUnchanged": true,
     "customContentLivePublishEnabledThisSlice": false,
-    "customContentLiveHaltError": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
+    "customContentCredentialResolutionWiredThisSlice": true,
+    "customContentLiveHaltError": "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE",
+    "customContentMissingCredentialsHaltError": "CREDENTIAL_KEYS_MISSING_THIS_SLICE",
     "customContentReachesCredentialGateWhenReady": true,
     "instagramReadinessRequiresBlobLivenessEvidence": true,
     "blobLivenessEvidenceNetworkRevalidation": false,
-    "envValuesAccessedForCustomContent": false,
+    "customContentEnvValuesAccessedInLiveGate5": true,
+    "customContentEnvValuesExposedInOutput": false,
     "liveExecutionPlanBlockedReasonByContentKind": {
-      "note": "task: dual-platform-content-unit-manifest-block-reason-fix-v1 → dual-platform-custom-content-live-credential-gate-no-execute-v1. liveExecutionPlan(및 각 step)의 willExecuteBlockedReason은 콘텐츠 종류에 따라 다르다. 아래 fixture 본문의 liveExecutionPlan 예시(steps[*].willExecuteBlockedReason = duplicate_publish_guard_blocks_current_content)는 default evidence content(v3_2) 전용 값이며, custom(non-default) content에는 적용되지 않는다. custom content의 실제 최종 halt는 옛 custom_content_live_not_enabled_this_slice가 아니라 credential_resolution_not_wired_this_slice다.",
+      "note": "task: dual-platform-content-unit-manifest-block-reason-fix-v1 → dual-platform-credential-resolution-wiring-no-execute-v1. liveExecutionPlan(및 각 step)의 willExecuteBlockedReason은 콘텐츠 종류에 따라 다르다. 아래 fixture 본문의 liveExecutionPlan 예시(steps[*].willExecuteBlockedReason = duplicate_publish_guard_blocks_current_content)는 default evidence content(v3_2) 전용 값이며, custom(non-default) content에는 적용되지 않는다. custom content의 실제 최종 halt는 credential resolution이 wiring되면서 actual_api_call_not_enabled_this_slice가 됐다(credential key 누락 시 credential_keys_missing_this_slice).",
       "defaultEvidenceContent": "duplicate_publish_guard_blocks_current_content",
-      "customNonDefaultContent": "credential_resolution_not_wired_this_slice"
+      "customNonDefaultContent": "actual_api_call_not_enabled_this_slice"
     }
   },
 
@@ -383,8 +393,8 @@
       "actual_api_call"
     ],
     "duplicateGuardEvaluatedBeforeCredentialResolution": true,
-    "credentialResolutionWiredThisSlice": false,
-    "credentialResolutionHaltError": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
+    "credentialResolutionWiredThisSlice": true,
+    "credentialResolutionHaltError": "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE",
     "currentContentDuplicateBlock": {
       "instagramKey": "t1_lifestyle_inflation/instagram_reels/v3_2",
       "youtubeKey": "t1_lifestyle_inflation/youtube_shorts/v3_2",
@@ -483,20 +493,21 @@
       "youtubeLiveUploadWiring.duplicatePublishGuard.key가 v3_2가 아니거나 actualUploadCallPerformed가 true로 오염됨",
       "runner 실행 코드(주석/문자열 제외)에 youtube.videos.insert 또는 googleapis live upload 실행 패턴이 들어감",
       "--content-unit 지정 시 default evidence content(t1_lifestyle_inflation/v3_2)의 dry-run/preflight/live 동작이 바뀜(하위 호환 깨짐)",
-      "custom(non-default) content unit의 --live/--arm이 gate 1~4를 통과했는데도 credential resolution stub(gate 5)에 도달하지 못하거나, 반대로 credential 값을 실제로 읽거나 actual API call(gate 6)로 진입함",
-      "gate 1~4를 통과한 custom content가 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4) 이외의 상태로 종료됨(예: 옛 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/exit 5로 회귀)",
-      "credential resolution stub(gate 5)이 duplicate publish guard(gate 4) 호출보다 먼저 평가되도록 순서가 바뀜",
-      "credentialPresenceResolutionGate가 process.env/secret/credential 값을 읽거나, credentialValuesAccessed/credentialValuesResolved가 true로 오염되거나, lib live publish 함수를 import/호출함",
-      "custom content가 gate 1~4 중 하나라도 미충족인데(source/blob/metadata 부재) credential resolution stub까지 진입함(fail-closed가 credential 이전에 발생하지 않음)",
+      "custom(non-default) content unit의 --live/--arm이 gate 1~4를 통과했는데도 credential resolution(gate 5)에 도달하지 못하거나, 반대로 actual API call(gate 6)로 진입해 실제 publish/upload를 수행함",
+      "gate 1~4를 통과하고 credential이 모두 present인 custom content가 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4) 이외의 상태로 종료됨, 또는 credential 일부 누락 시 CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4) 이외로 종료됨(예: 옛 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE/CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/exit 5로 회귀)",
+      "credential resolution(gate 5)이 duplicate publish guard(gate 4) 호출보다 먼저 평가되도록 순서가 바뀜",
+      "resolveExplicitCredentialsFromRuntimeEnv가 승인된 6개 key 외의 임의 process.env 값을 읽거나, credential 값/길이/prefix/suffix/hash/masked/token type을 반환 summary/gate trace/출력/error에 노출하거나, lib live publish 함수를 import/호출하거나, actual API/upload/blob mutation을 수행함",
+      "credential resolution(gate 5) 도달 시 credentialResolutionReached/credentialValuesAccessed가 true로 보고되지 않거나(wiring 회귀), 반대로 credential 미도달(gate 1~4 fail-closed / duplicate block) 경로에서 credentialValuesAccessed가 true로 오염됨",
+      "custom content가 gate 1~4 중 하나라도 미충족인데(source/blob/metadata 부재) credential resolution(gate 5)까지 진입함(fail-closed가 credential 이전에 발생하지 않음)",
       "loadContentUnitFromManifest가 schemaVersion/필수 필드 검증 없이 manifest를 수용함",
       "custom content의 blobPublicUrlLivenessEvidence 검증이 네트워크 HEAD/list/readback을 수행하거나, evidence 부재/부정확 시에도 Instagram readiness가 ready로 통과함",
       "content unit manifest 로드/평가 경로에서 process.env 또는 .env.local 값에 접근함",
-      "custom(non-default) content unit의 liveExecutionPlan/step willExecuteBlockedReason이 duplicate_publish_guard_blocks_current_content로 하드코딩되어 실제 사유(credential_resolution_not_wired_this_slice)를 오도함",
+      "custom(non-default) content unit의 liveExecutionPlan/step willExecuteBlockedReason이 duplicate_publish_guard_blocks_current_content로 하드코딩되어 실제 사유(actual_api_call_not_enabled_this_slice)를 오도함",
       "--credential-preflight 출력/코드에 credential 실제 값, 값 길이, prefix/suffix, hash, sample, masked value, token type inference가 나타남",
       "--credential-preflight가 process.env에서 Boolean(process.env[keyName]) presence 판정 외의 방식(값 read/할당, .length/.slice/.substring 등 파생, crypto/hash)으로 값에 접근함",
       "--credential-preflight 또는 그 경로가 .env/.env.local/secret 파일을 read하거나 dotenv를 사용함",
       "--credential-preflight가 Instagram/YouTube/Blob API, OAuth, upload, public HEAD, ffmpeg, deploy를 호출함",
-      "--credential-preflight의 readyForCredentialResolution/present:true가 실제 live publish 활성화 신호로 표현되거나, credentialResolutionWiredThisSlice가 true로 오염됨",
+      "--credential-preflight의 readyForCredentialResolution/present:true 또는 credentialResolutionWiredThisSlice:true가 실제 live publish 활성화 신호로 표현됨(credentialValuesAccessedInThisMode:false / actualApiExecutionEnabledThisSlice:false가 명시되지 않아 publish 활성화로 오인 가능), 또는 이 preflight 모드가 실제로 credential 값을 읽음",
       "owner entrypoint가 --credential-preflight를 위해 process.env를 직접 읽거나 orchestrator 위임 대신 자체적으로 credential 값을 다룸"
     ]
   }

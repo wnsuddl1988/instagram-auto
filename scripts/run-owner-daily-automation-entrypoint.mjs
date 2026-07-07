@@ -313,8 +313,11 @@ function runStatus() {
       note:
         "A future new video is expressed as a content unit manifest (schemaVersion dual_platform_content_unit_v1) " +
         "and passed via --content-unit. Without --content-unit, all modes operate on the default already-published " +
-        "evidence content. Custom (non-default) content live execution is NOT enabled in this slice: its --live path " +
-        "fail-closes before credential resolution / API call with CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE.",
+        "evidence content. Custom (non-default) content --live is NOT enabled for actual publish in this slice: " +
+        "gate 1-4 (metadata/source/blob/duplicate) fail-closed before credential resolution as usual; if gate 1-4 " +
+        "pass, gate 5 credential resolution runs (no-execute) and halts with ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE " +
+        "when all 6 required env keys are present, or CREDENTIAL_KEYS_MISSING_THIS_SLICE when any are missing. " +
+        "Gate 6 (actual API call) is never reached.",
       manifestSchemaVersion: "dual_platform_content_unit_v1",
       sampleManifest: "scripts/fixtures/dual_platform_content_unit.sample.v1.json",
       buildFromLocalPipelineOutput:
@@ -850,7 +853,12 @@ function runCredentialPreflight() {
     },
     allRequiredKeysPresent: cp.allRequiredKeysPresent === true,
     readyForCredentialResolution: cp.readyForCredentialResolution === true,
+    // task: dual-platform-credential-resolution-wiring-no-execute-v1
+    // credential resolution 코드 경로는 wiring됐지만(true), 이 preflight 모드는 값 미접근이고 actual API
+    // 실행/live publish는 비활성이다 — 아래 두 필드로 명시해 publish 활성화로 오인되지 않게 한다.
     credentialResolutionWiredThisSlice: cp.credentialResolutionWiredThisSlice === true,
+    credentialValuesAccessedInThisMode: cp.credentialValuesAccessedInThisMode === true,
+    actualApiExecutionEnabledThisSlice: cp.actualApiExecutionEnabledThisSlice === true,
   };
 
   console.log(JSON.stringify(summary, null, 2));
@@ -862,6 +870,7 @@ function runCredentialPreflight() {
   line("vercelBlob:", summary.platforms.vercelBlob);
   console.log(`  allRequiredKeysPresent:  ${summary.allRequiredKeysPresent}`);
   console.log(`  readyForCredentialResolution: ${summary.readyForCredentialResolution}  (presence signal only — live publish still disabled)`);
+  console.log(`  credentialResolutionWiredThisSlice: ${summary.credentialResolutionWiredThisSlice}  (code path wired; this mode does NOT access values; actual API execution disabled)`);
   console.log("");
 
   // status-style diagnostic: env key가 없어도 실행 자체는 성공(exit 0). 정보는 위 boolean으로 표현.

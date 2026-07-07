@@ -172,7 +172,12 @@ try {
   }
   check("fake-env run: allRequiredKeysPresent true", /"allRequiredKeysPresent":\s*true/.test(out));
   check("fake-env run: readyForCredentialResolution true", /"readyForCredentialResolution":\s*true/.test(out));
-  check("fake-env run: credentialResolutionWiredThisSlice false (live still disabled)", /"credentialResolutionWiredThisSlice":\s*false/.test(out));
+  // task: dual-platform-credential-resolution-wiring-no-execute-v1
+  // credential resolution 코드 경로는 wiring됐지만(true), 이 --credential-preflight 모드는 값 미접근이고
+  // actual API 실행/live publish는 비활성이다 — publish 활성화로 오인되면 안 된다.
+  check("fake-env run: credentialResolutionWiredThisSlice true (코드 경로 wiring됨)", /"credentialResolutionWiredThisSlice":\s*true/.test(out));
+  check("fake-env run: credentialValuesAccessedInThisMode false (preflight 값 미접근)", /"credentialValuesAccessedInThisMode":\s*false/.test(out));
+  check("fake-env run: actualApiExecutionEnabledThisSlice false (live still disabled)", /"actualApiExecutionEnabledThisSlice":\s*false/.test(out));
 
   // 핵심: dummy 값이 출력에 절대 나타나지 않음(값 미노출)
   check("fake-env run: dummy credential value never appears in output", out !== "" && !out.includes(DUMMY_VALUE));

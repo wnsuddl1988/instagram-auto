@@ -388,6 +388,33 @@ console.log("\n[ required: content unit manifest parameterization ]");
 check("entrypoint: --content-unit arg 지원", src.includes("--content-unit"));
 check("entrypoint: runPreflightSummary가 contentUnitPath 인자를 orchestrator에 전달", /runPreflightSummary\s*\(\s*contentUnitPath/.test(src) || src.includes('["--preflight", "--content-unit", contentUnitPath]'));
 check("entrypoint: --status가 미래 새 영상 content-unit 흐름을 안내", src.includes("futureNewVideoContentUnit") && src.includes("dual_platform_content_unit_v1"));
+
+// task: dual-platform-credential-resolution-owner-status-stale-text-fix-v1
+// Codex finding: runStatus()의 futureNewVideoContentUnit.note에 옛 계약(무조건 custom halt,
+// CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE)이 stale 문구로 남아있었다. active --status 출력은
+// 최신 credential-resolution no-execute 계약(gate 5 wiring, gate 6 fail-closed)을 설명해야 한다.
+check(
+  "entrypoint 소스: futureNewVideoContentUnit.note에 옛 stale token(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE) 없음",
+  !src.includes("CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE"),
+);
+check(
+  "entrypoint 소스: futureNewVideoContentUnit.note가 최신 상태 이름(ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE)을 명시",
+  src.includes("ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE"),
+);
+check(
+  "entrypoint 소스: futureNewVideoContentUnit.note가 최신 상태 이름(CREDENTIAL_KEYS_MISSING_THIS_SLICE)을 명시",
+  src.includes("CREDENTIAL_KEYS_MISSING_THIS_SLICE"),
+);
+check(
+  "--status active 출력에 stale token(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE) 없음",
+  !statusOut.includes("CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE"),
+);
+check(
+  "--status active 출력이 최신 custom credential gate 계약을 설명(gate 5/credential resolution + 새 상태 2종)",
+  /gate 5|credential resolution/i.test(statusOut) &&
+    statusOut.includes("ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE") &&
+    statusOut.includes("CREDENTIAL_KEYS_MISSING_THIS_SLICE"),
+);
 check("entrypoint: duplicate-guard-check가 custom(non-default) manifest에 --live를 호출하지 않음", src.includes("isDefaultContentUnit") && src.includes("never invokes --live for custom content"));
 check(
   "entrypoint: confirmed가 isDefault를 요구(custom content는 --live 미호출)",
@@ -413,11 +440,11 @@ if (cpfJsonMatch) { try { cpfParsed = JSON.parse(cpfJsonMatch[0]); } catch { cpf
 check("--preflight --content-unit: JSON parse", !!cpfParsed);
 check("--preflight --content-unit: isDefaultContentUnit === false", cpfParsed?.isDefaultContentUnit === false);
 check("--preflight --content-unit: contentUnitKind === custom_manifest_content", cpfParsed?.contentUnitKind === "custom_manifest_content");
-// task: dual-platform-custom-content-live-credential-gate-no-execute-v1
-// orchestrator 계약 변경: custom content의 halt error는 옛 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE가
-// 아니라 credential resolution stub(gate 5) 도달 후의 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE다.
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// orchestrator 계약 변경: credential resolution(gate 5)이 wiring되면서 custom content의 halt error는
+// credential이 resolve되면 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE다(옛 CREDENTIAL_RESOLUTION_NOT_WIRED가 아님).
 // owner entrypoint는 이 값을 orchestrator preflight 출력에서 그대로 surface한다(하드코딩 없음).
-check("--preflight --content-unit: customContentLiveHaltError === CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE", cpfParsed?.customContentLiveHaltError === "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE");
+check("--preflight --content-unit: customContentLiveHaltError === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", cpfParsed?.customContentLiveHaltError === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
 check("--preflight --content-unit: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(cpfOut));
 
 console.log("\n[ operator smoke: --duplicate-guard-check --content-unit <sample> ]");
@@ -802,7 +829,12 @@ check("--credential-preflight: credentialValuesAccessed === false", cpParsed?.cr
 check("--credential-preflight: credentialValuesPrinted === false", cpParsed?.credentialValuesPrinted === false);
 check("--credential-preflight: dotEnvLocalDirectAccess === false", cpParsed?.dotEnvLocalDirectAccess === false);
 check("--credential-preflight: externalApiCallPerformed === false", cpParsed?.externalApiCallPerformed === false);
-check("--credential-preflight: credentialResolutionWiredThisSlice === false (presence여도 publish 비활성)", cpParsed?.credentialResolutionWiredThisSlice === false);
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// credential resolution 코드 경로는 wiring됐지만(true), 이 preflight 모드는 값 미접근이고 actual API
+// 실행/live publish는 비활성이다 — publish 활성화로 오인되면 안 된다(아래 필드로 명시).
+check("--credential-preflight: credentialResolutionWiredThisSlice === true (코드 경로 wiring됨)", cpParsed?.credentialResolutionWiredThisSlice === true);
+check("--credential-preflight: credentialValuesAccessedInThisMode === false (preflight 값 미접근)", cpParsed?.credentialValuesAccessedInThisMode === false);
+check("--credential-preflight: actualApiExecutionEnabledThisSlice === false (실제 publish 비활성)", cpParsed?.actualApiExecutionEnabledThisSlice === false);
 // key 엔트리는 name+present 필드만 (값/길이/hash 필드 없음)
 const cpEntries = [
   ...(cpParsed?.platforms?.instagram?.keys ?? []),
@@ -850,13 +882,15 @@ check("runbook references Instagram media_id 17916511431199303", runbookRaw.incl
 check("runbook references YouTube videoId r9jhckdpC9w", runbookRaw.includes("r9jhckdpC9w"));
 check("runbook explains .env.local is not read directly by this entrypoint", runbookRaw.includes(".env.local"));
 check("runbook explains --content-unit for future new videos", runbookRaw.includes("--content-unit") && runbookRaw.includes("dual_platform_content_unit_v1"));
-// task: dual-platform-credential-preflight-review-fix-v1 (Codex finding A)
-// runbook은 옛 무조건 custom halt(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/exit 5)가 아니라
-// 현재 계약(gate 1~4 통과 시 credential stub 도달 → CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE/exit 4)을
-// 설명해야 한다. custom content 실제 halt 사유도 credential_resolution_not_wired_this_slice여야 한다.
-check("runbook explains custom content credential-gate fail-closed (CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE)", /CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE/.test(runbookRaw));
-check("runbook uses current custom block reason (credential_resolution_not_wired_this_slice)", /credential_resolution_not_wired_this_slice/.test(runbookRaw));
-check("runbook explains custom ready content reaches credential gate 5 stub (exit 4)", /exit 4/.test(runbookRaw) && /gate 5|credential (resolution )?stub/i.test(runbookRaw));
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// runbook은 credential resolution(gate 5)이 wiring된 현재 계약을 설명해야 한다: gate 1~4 통과 시
+// credential resolution에 도달해 승인 6 key를 in-memory로 조립한 뒤, credential 전부 present면
+// ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4), 일부 누락이면 CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로
+// fail-closed. custom content 실제 halt 사유도 actual_api_call_not_enabled_this_slice여야 한다.
+check("runbook explains custom content actual-API fail-closed (ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE)", /ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE/.test(runbookRaw));
+check("runbook explains missing-credential fail-closed (CREDENTIAL_KEYS_MISSING_THIS_SLICE)", /CREDENTIAL_KEYS_MISSING_THIS_SLICE/.test(runbookRaw));
+check("runbook uses current custom block reason (actual_api_call_not_enabled_this_slice)", /actual_api_call_not_enabled_this_slice/.test(runbookRaw));
+check("runbook explains custom ready content reaches credential gate 5 (exit 4)", /exit 4/.test(runbookRaw) && /gate 5|credential resolution/i.test(runbookRaw));
 // 옛 block reason(custom_content_live_not_enabled_this_slice)이 남으면 실패(active/historical 무관하게 이 소문자 토큰은 제거 대상).
 check("runbook does NOT keep stale block reason (no custom_content_live_not_enabled_this_slice)", !/custom_content_live_not_enabled_this_slice/.test(runbookRaw));
 // 옛 halt 상수(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE)는 "제거됐다"는 historical 문맥에서만 허용.

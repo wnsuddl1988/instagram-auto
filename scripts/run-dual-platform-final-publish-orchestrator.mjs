@@ -54,6 +54,23 @@ export const LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE
 export const DUPLICATE_BLOCKED_STATUS = "BLOCKED_DUPLICATE_ALREADY_PUBLISHED";
 export const CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR = "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE";
 
+// ── credential resolution wiring (dual-platform-credential-resolution-wiring-no-execute-v1) ──
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// gate 5 credential resolution이 이번 slice에서 wiring됐다: gate 1~4를 통과한 custom content는
+// 승인된 6개 runtime env key를 in-memory explicit credential 객체로 조립한다(값은 로컬 객체에만
+// 존재하며 출력/문서/fixture/report/error에 절대 노출되지 않는다). 단, actual API 실행(gate 6)은
+// 여전히 비활성이므로 credential이 resolve되면 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다.
+// credential key가 하나라도 비어 있으면 CREDENTIAL_KEYS_MISSING_THIS_SLICE로 fail-closed되며,
+// 출력에는 '누락 key 이름'만 담기고 값/값 파생 정보는 담기지 않는다. 어느 경로든 actual API call은
+// 도달하지 않고 모든 live side-effect counter는 0으로 유지된다.
+// 이 상수가 false로 회귀하면 credential resolution은 wiring되지 않은 것으로 간주되어야 한다(방어적).
+export const CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE = true;
+// credential이 in-memory로 resolve됐지만 actual API 실행이 비활성이라 멈추는 상태(exit 4).
+export const ACTUAL_API_CALL_NOT_ENABLED_ERROR = "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE";
+// 승인된 credential env key가 일부/전부 비어 있어 credential 이후 단계로 갈 수 없는 상태(exit 4).
+// 출력에는 누락 key '이름'만 담기며 값/길이/prefix/suffix/hash는 담기지 않는다.
+export const CREDENTIAL_KEYS_MISSING_ERROR = "CREDENTIAL_KEYS_MISSING_THIS_SLICE";
+
 /**
  * (deprecated as a live-halt) custom content live 차단 상태 문자열.
  * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
@@ -500,18 +517,21 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
 
   // task: dual-platform-content-unit-manifest-block-reason-fix-v1
   //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
+  //       + dual-platform-credential-resolution-wiring-no-execute-v1
   // 실제 blocked 사유는 콘텐츠 종류에 따라 다르다:
   //  - default evidence content(v3_2) + 양쪽 already published → duplicate_publish_guard가 차단(exit 3).
-  //  - custom(non-default) content → 옛 gate 4.5 무조건 halt는 제거됐다. gate 1~4를 통과하면
-  //    credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
-  //    fail-closed된다(exit 4). duplicate가 아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는
-  //    하드코딩을 쓰지 않는다.
+  //  - custom(non-default) content → gate 1~4를 통과하면 credential resolution(gate 5)이 wiring되어
+  //    승인 6개 env key를 in-memory로 조립할 수 있다. 단, actual API 실행(gate 6)은 이 slice에서
+  //    비활성이므로 credential이 resolve되면 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4).
+  //    duplicate가 아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는 하드코딩을 쓰지 않는다.
+  //    preflight PLAN은 실제 credential 값을 읽지 않으므로(process.env 미접근), 이 blocked reason은
+  //    "실제 API 실행이 비활성이라 custom content가 최종적으로 멈추는 지점"을 나타낸다.
   const isDefault = isDefaultContentUnit(unit);
   const bothAlreadyPublished = igGuard?.alreadyPublished === true && ytGuard?.alreadyPublished === true;
   const currentContentDuplicateBlocked = isDefault && bothAlreadyPublished;
   const willExecuteBlockedReason = currentContentDuplicateBlocked
     ? "duplicate_publish_guard_blocks_current_content"
-    : "credential_resolution_not_wired_this_slice";
+    : "actual_api_call_not_enabled_this_slice";
 
   // 모든 step 공통: arm 상태(enabled)지만 실제로 실행되는 step은 없다(willExecute:false,
   // side effect 0). blocked 사유는 위에서 콘텐츠 종류에 따라 정확히 판정한 값을 사용한다.
@@ -661,9 +681,10 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
         "코드 구조상 순서대로 연결한다. live gate는 arm 상태지만 current content(v3_2)는 duplicate publish guard가 " +
         "차단하므로 이번 run에서 실행되는 step은 없다(side effect 0). secret 값/토큰/credential은 담지 않는다."
       : "armed live wiring plan(custom content). 이 콘텐츠는 default evidence content가 아니다. gate 1~4" +
-        "(metadata/source/blob/duplicate)를 통과하면 credential resolution stub(gate 5)까지 도달한 뒤 " +
-        "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed된다 — 이 slice에서 credential resolution/" +
-        "actual API call은 wiring되지 않았다. 이번 run에서 실행되는 step은 없다(side effect 0, 실제 publish 비활성).",
+        "(metadata/source/blob/duplicate)를 통과하면 credential resolution(gate 5)이 승인된 6개 env key를 " +
+        "in-memory로 조립한다. 단, actual API 실행(gate 6)은 이 slice에서 비활성이므로 credential이 resolve되면 " +
+        "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(credential key 누락 시 CREDENTIAL_KEYS_MISSING_THIS_SLICE). " +
+        "이번 run에서 실행되는 step은 없다(side effect 0, 실제 publish 비활성).",
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     failClosedError: LIVE_EXECUTION_DISABLED_ERROR,
     anyStepEnabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
@@ -671,10 +692,12 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
     anySideEffectPerformed: false,
     isDefaultContentUnit: isDefault,
     currentContentDuplicateBlocked,
-    // custom content live publish(실제 API 실행)는 여전히 비활성이다. 다만 옛 무조건 halt와 달리
-    // gate 1~4 통과 시 credential resolution stub까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED로 멈춘다.
+    // custom content live publish(실제 API 실행)는 여전히 비활성이다. gate 1~4 통과 시 credential
+    // resolution(gate 5)이 wiring되어 승인 6개 env key를 in-memory로 조립하지만, actual API 실행(gate 6)이
+    // 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 멈춘다(credential 누락 시 CREDENTIAL_KEYS_MISSING).
     customContentLiveEnabledThisSlice: false,
-    customContentLiveHaltError: isDefault ? null : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+    customContentCredentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    customContentLiveHaltError: isDefault ? null : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
     willExecuteBlockedReason,
     duplicateBlockedStatus: DUPLICATE_BLOCKED_STATUS,
     orderedFlow: [
@@ -799,8 +822,8 @@ function buildPreflight(unit) {
     armApprovalToken: LIVE_EXECUTION_ARM_APPROVAL_TOKEN,
     failClosedGateOrder: LIVE_GATE_ORDER,
     duplicateGuardEvaluatedBeforeCredentialResolution: true,
-    credentialResolutionWiredThisSlice: false,
-    credentialResolutionHaltError: CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+    credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    credentialResolutionHaltError: ACTUAL_API_CALL_NOT_ENABLED_ERROR,
     metadataOptimizationGateOk: metadataGateOk,
     sourceFilesReady,
     blobPublicUrlLivenessEvidence: blobLivenessEvidence,
@@ -810,54 +833,59 @@ function buildPreflight(unit) {
       instagramWillBeBlocked: igAlreadyPublished,
       youtubeWillBeBlocked: ytAlreadyPublished,
       // default duplicate content는 gate 4 duplicate block(exit 3, credential 미도달). custom
-      // non-default content는 duplicate가 아니라면 gate 4를 통과하고 gate 5 credential resolution
-      // stub까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로 fail-closed된다.
+      // non-default content는 duplicate가 아니라면 gate 4를 통과하고 gate 5 credential resolution까지
+      // 도달해 승인 6개 env key를 in-memory로 조립한다. actual API 실행(gate 6)이 비활성이라 resolve 시
+      // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다(preflight PLAN은 값 미접근).
       expectedLiveStatus: isDefault
         ? DUPLICATE_BLOCKED_STATUS
         : igAlreadyPublished && ytAlreadyPublished
           ? DUPLICATE_BLOCKED_STATUS
-          : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+          : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
       expectedLiveExitCode: isDefault
         ? 3
         : igAlreadyPublished && ytAlreadyPublished
           ? 3
           : 4,
       // duplicate content(default 및 이미 게시된 custom)는 gate 4에서 credential 이전에 차단된다.
-      // 비중복 custom content는 credential stub까지 도달하지만 credential 값은 읽지 않는다.
+      // 비중복 custom content는 credential resolution까지 도달한다(값은 in-memory로만, 미노출).
       duplicateBlockHappensBeforeCredentialResolution: isDefault || (igAlreadyPublished && ytAlreadyPublished),
       credentialResolutionWouldBeReached: !isDefault && !(igAlreadyPublished && ytAlreadyPublished),
-      credentialValuesWouldBeAccessed: false,
+      // preflight PLAN 자체는 credential 값을 읽지 않는다(process.env 미접근). 실제 값 접근은 --live 실행
+      // 경로의 credential resolution(gate 5)에서만 발생하며 그때도 값은 in-memory로만 다뤄진다.
+      credentialValuesWouldBeAccessed: !isDefault && !(igAlreadyPublished && ytAlreadyPublished),
       actualApiCallWouldRun: false,
       retryForbidden: true,
     },
     customContentLiveEnabledThisSlice: false,
-    credentialValuesAccessedThisRun: false,
+    credentialValuesAccessedThisRun: false, // preflight PLAN 경로에서는 값 미접근
     actualApiCallPerformedThisRun: false,
   };
 
   // ── custom content unit preflight 계약 (secret-free) ─────────────────────────
   // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
   //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
-  // custom(non-default) content의 실제 live publish(API 실행)는 여전히 비활성이다. 다만 옛
-  // 무조건 custom halt(gate 4.5)는 제거됐다: gate 1~4를 통과한 custom content의 --live/--arm은
-  // credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
-  // fail-closed된다(exit 4, credential 값 미접근, actual API call 미도달).
+  //       + dual-platform-credential-resolution-wiring-no-execute-v1
+  // custom(non-default) content의 실제 live publish(API 실행)는 여전히 비활성이다. gate 1~4를 통과한
+  // custom content의 --live/--arm은 credential resolution(gate 5)까지 도달해 승인 6개 env key를
+  // in-memory로 조립하지만, actual API 실행(gate 6)이 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로
+  // fail-closed된다(exit 4, actual API call 미도달; credential 값은 in-memory로만 다뤄지고 미노출).
   const bothAlreadyPublished = igAlreadyPublished && ytAlreadyPublished;
   const contentUnit = {
     note:
       "content unit 종류와 live 실행 가능 여부. default evidence content(t1_lifestyle_inflation/v3_2)는 " +
-      "gate 4 duplicate guard가 차단한다(exit 3). custom content의 실제 publish는 비활성이며, gate 1~4를 " +
-      "통과하면 credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 " +
-      "fail-closed된다(exit 4).",
+      "gate 4 duplicate guard가 차단한다(exit 3). custom content의 실제 publish(API 실행)는 비활성이며, gate 1~4를 " +
+      "통과하면 credential resolution(gate 5)까지 도달해 승인 6개 env key를 in-memory로 조립한 뒤 actual API 실행이 " +
+      "비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4). credential 값은 미노출.",
     kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
     isDefaultContentUnit: isDefault,
     contentId: unit.contentId,
     version: unit.version,
     duplicateGuardKeyFormatOk,
     duplicateGuardUsesUnitVersion,
-    // 실제 live publish(API 실행)는 이 slice에서 비활성이다(credential resolution 미wiring).
+    // 실제 live publish(API 실행)는 이 slice에서 비활성이다. credential resolution(gate 5)은 wiring됨.
     customContentLiveEnabledThisSlice: false,
-    customContentLiveHaltError: isDefault ? null : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+    customContentCredentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    customContentLiveHaltError: isDefault ? null : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
     customContentReachesCredentialGate: isDefault ? false : !bothAlreadyPublished,
     bothPlatformsAlreadyPublished: bothAlreadyPublished,
     blobLivenessEvidenceProvided: isDefault ? true : blobLivenessEvidence.provided === true,
@@ -938,13 +966,16 @@ function buildCredentialPreflight(unit, isDefault) {
     mode: "credential_preflight",
     note:
       "redacted credential presence check(no-live). 승인된 runtime env key '이름'의 present boolean만 보고한다. " +
-      "credential 값/길이/prefix/suffix/hash는 읽거나 출력하지 않으며, .env.local/secret 파일을 읽지 않고, " +
-      "실제 credential resolution이나 Instagram/YouTube/Blob API 호출도 수행하지 않는다. present:true는 실제 " +
-      "publish 가능 상태가 아니라 '해당 env key 이름이 이 프로세스 env에 비어있지 않게 존재함'만을 의미한다.",
+      "이 --credential-preflight 모드는 credential 값을 읽지 않으며(값 미접근), credential 값/길이/prefix/suffix/hash를 " +
+      "출력하지 않고, .env.local/secret 파일을 읽지 않으며, 실제 credential resolution(값 조립)이나 Instagram/YouTube/Blob " +
+      "API 호출도 수행하지 않는다. present:true는 실제 publish 가능 상태가 아니라 '해당 env key 이름이 이 프로세스 env에 " +
+      "비어있지 않게 존재함'만을 의미한다. credential resolution 코드 경로는 --live 실행 경로(gate 5)에서만 값에 접근하며, " +
+      "그 경우에도 actual API 실행(gate 6)은 이 slice에서 비활성이라 실제 publish는 발생하지 않는다.",
     contentId: unit.contentId,
     version: unit.version,
     isDefaultContentUnit: isDefault === true,
     // 안전 assertion 필드(모두 상수 false/true) — guard가 계약 위반을 fail-closed로 잡는다.
+    // 이 preflight 모드 자체는 credential 값을 읽지 않는다(값 접근/조립은 --live gate 5에서만).
     credentialValuesAccessed: false,
     credentialValuesResolved: false,
     credentialValuesPrinted: false,
@@ -958,11 +989,15 @@ function buildCredentialPreflight(unit, isDefault) {
     },
     platforms: { instagram, youtube, vercelBlob },
     allRequiredKeysPresent,
-    // present여도 이 slice에서 실제 credential resolution/publish는 여전히 wiring되지 않았다.
     // readyForCredentialResolution은 "env key 이름이 모두 present"라는 presence 신호일 뿐,
     // live publish 활성화 신호가 아니다.
     readyForCredentialResolution: allRequiredKeysPresent,
-    credentialResolutionWiredThisSlice: false,
+    // credential resolution 코드 경로는 이 slice에서 wiring됐다(--live gate 5). 단, 아래 두 필드가
+    // 명시하듯 이 preflight 모드는 값을 읽지 않으며 actual API 실행/live publish는 비활성이다 —
+    // credentialResolutionWiredThisSlice:true를 publish 활성화로 오인해서는 안 된다.
+    credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    credentialValuesAccessedInThisMode: false,
+    actualApiExecutionEnabledThisSlice: false,
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
   };
 }
@@ -1021,9 +1056,13 @@ function evaluateDuplicatePublishGuardGate(unit) {
 }
 
 /**
- * gate 5: credential presence/resolution — 이 slice에서는 wiring되지 않은 fail-closed stub.
- * process.env/secret/credential 값을 절대 읽지 않고, 어떤 lib도 import하지 않는다.
- * current content는 gate 4에서 차단되므로 이 함수에 도달하지 않는다.
+ * (deprecated wiring-stub) gate 5 credential presence/resolution의 wiring-이전 fail-closed stub.
+ * task: dual-platform-custom-content-live-credential-gate-no-execute-v1
+ *       → dual-platform-credential-resolution-wiring-no-execute-v1
+ * credential resolution이 wiring되기 전 실행 경로가 이 stub을 호출해 CREDENTIAL_RESOLUTION_NOT_WIRED로
+ * 멈췄다. 이제 실행 경로(executeArmedLiveRun)는 resolveExplicitCredentialsFromRuntimeEnv()를 호출하며,
+ * 이 stub은 하위 호환/문서 참조용으로만 남는다 — process.env/secret/credential 값을 읽지 않고 어떤
+ * lib도 import하지 않는다(guard가 이 불변식을 계속 강제한다).
  */
 function credentialPresenceResolutionGate() {
   return {
@@ -1031,6 +1070,78 @@ function credentialPresenceResolutionGate() {
     credentialValuesAccessed: false,
     credentialValuesResolved: false,
     haltError: CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+  };
+}
+
+/**
+ * gate 5: 승인된 6개 runtime env key만 읽어 in-memory explicit credential 객체를 조립한다.
+ * task: dual-platform-credential-resolution-wiring-no-execute-v1
+ *
+ * 엄격한 no-log/no-value-exposure 계약:
+ * - process.env는 오직 REQUIRED_ENV_KEY_NAMES의 승인된 6개 key에 대해서만 읽는다. 그 외 임의 key read 금지.
+ * - 빈 문자열/undefined는 missing으로 취급한다.
+ * - resolve된 credential 값은 이 함수 내부의 지역 in-memory 객체(instagram/youtube/vercelBlob)에만
+ *   존재하며, 반환 객체(JSON)에는 절대 포함되지 않는다.
+ * - 반환에는 boolean(reached/resolved/allPresent)과 '누락 key 이름' 배열만 담는다.
+ * - 값의 길이/prefix/suffix/hash/masked/token type 등 파생 정보를 계산하거나 반환/출력하지 않는다.
+ * - 어떤 lib(instagram/youtube/@vercel/blob/googleapis)도 import/호출하지 않으며 API/upload도 하지 않는다.
+ *
+ * 이 함수는 in-memory credential 객체(로컬)와, 값이 없는 안전한 결과 요약(반환)을 분리해 돌려준다.
+ * 호출부는 반환의 credentialValuesResolved/missingCredentialKeyNames만 gate 판정에 사용한다.
+ */
+function resolveExplicitCredentialsFromRuntimeEnv() {
+  // 승인된 6개 key만 개별적으로 읽는다(allowlist read — 임의 process.env 순회 금지).
+  const ig = REQUIRED_ENV_KEY_NAMES.instagram;
+  const yt = REQUIRED_ENV_KEY_NAMES.youtube;
+  const blob = REQUIRED_ENV_KEY_NAMES.vercelBlob;
+
+  // 값을 담는 지역 in-memory credential 객체 — 반환 JSON에 절대 포함하지 않는다.
+  const instagramCredentials = {
+    businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "",
+    accessToken: process.env.INSTAGRAM_ACCESS_TOKEN || "",
+  };
+  const youtubeCredentials = {
+    clientId: process.env.YOUTUBE_CLIENT_ID || "",
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET || "",
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN || "",
+  };
+  const vercelBlobCredentials = {
+    readWriteToken: process.env.BLOB_READ_WRITE_TOKEN || "",
+  };
+
+  // in-memory 객체에서만 present 여부를 판정한다(빈 문자열=missing). 값 자체는 밖으로 내보내지 않는다.
+  const presentByKey = {
+    INSTAGRAM_BUSINESS_ACCOUNT_ID: instagramCredentials.businessAccountId !== "",
+    INSTAGRAM_ACCESS_TOKEN: instagramCredentials.accessToken !== "",
+    YOUTUBE_CLIENT_ID: youtubeCredentials.clientId !== "",
+    YOUTUBE_CLIENT_SECRET: youtubeCredentials.clientSecret !== "",
+    YOUTUBE_REFRESH_TOKEN: youtubeCredentials.refreshToken !== "",
+    BLOB_READ_WRITE_TOKEN: vercelBlobCredentials.readWriteToken !== "",
+  };
+
+  const missingCredentialKeyNames = [...ig, ...yt, ...blob].filter((name) => presentByKey[name] !== true);
+  const instagramAllPresent = ig.every((name) => presentByKey[name] === true);
+  const youtubeAllPresent = yt.every((name) => presentByKey[name] === true);
+  const vercelBlobAllPresent = blob.every((name) => presentByKey[name] === true);
+  const credentialValuesResolved = missingCredentialKeyNames.length === 0;
+
+  // 값 없는 안전 결과 요약(반환) + 값 있는 in-memory 객체(로컬 참조)를 분리해 반환한다.
+  // 호출부(gate 6)는 실제 API 실행이 비활성이므로 in-memory 객체를 사용하지 않는다.
+  return {
+    summary: {
+      credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+      credentialValuesAccessed: true, // 이 함수가 실제로 실행되면 승인 key 값에 접근한 것이다.
+      credentialValuesResolved,
+      platforms: {
+        instagram: { allPresent: instagramAllPresent },
+        youtube: { allPresent: youtubeAllPresent },
+        vercelBlob: { allPresent: vercelBlobAllPresent },
+      },
+      missingCredentialKeyNames, // 이름만. 값/값 파생 정보 없음.
+    },
+    // in-memory explicit credential 객체(값 포함) — 반환은 되지만 어디에도 직렬화/출력하지 않는다.
+    // 실제 API 실행이 비활성이라 gate 6에서 사용되지 않으며, 호출부에서 사용 후 참조를 정리한다.
+    inMemory: { instagramCredentials, youtubeCredentials, vercelBlobCredentials },
   };
 }
 
@@ -1190,41 +1301,113 @@ function executeArmedLiveRun(unit) {
     };
   }
 
-  // ── gate 5: credential_presence_resolution — 이 slice에서는 fail-closed stub ──
-  // task: dual-platform-custom-content-live-credential-gate-no-execute-v1
-  // default content는 gate 4 duplicate publish guard에서 이미 차단되어(exit 3) 여기 도달하지
-  // 않는다. custom(non-default) content가 gate 1~4(metadata/source/blob/duplicate)를 모두
-  // 통과하면 더 이상 무조건적인 custom-content halt(옛 gate 4.5)에서 멈추지 않고 이 credential
-  // stub까지 도달한다. 단, 이 slice에서 credential resolution은 wiring되지 않았으므로 여기서
-  // fail-closed로 멈춘다(exit 4). credential 값은 절대 읽지 않으며(process.env/secret 미접근),
-  // 어떤 lib도 import/호출하지 않고, actual API call(gate 6)에도 도달하지 않는다.
+  // ── gate 5: credential_presence_resolution — 이 slice에서 wiring됨(no-execute) ──
+  // task: dual-platform-credential-resolution-wiring-no-execute-v1
+  // default content는 gate 4 duplicate publish guard에서 이미 차단되어(exit 3) 여기 도달하지 않는다.
+  // custom(non-default) content가 gate 1~4(metadata/source/blob/duplicate)를 모두 통과하면 이 credential
+  // resolution 단계에 도달한다. 이제 resolveExplicitCredentialsFromRuntimeEnv()가 승인된 6개 env key만
+  // 읽어 in-memory explicit credential 객체를 조립한다(값은 로컬 객체에만; 반환/출력/error에 값 미포함).
+  //   - credential이 모두 resolve되면: actual API 실행(gate 6)은 여전히 비활성이므로
+  //     ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다.
+  //   - credential key가 하나라도 비어 있으면: CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되며
+  //     출력에는 '누락 key 이름'만 담긴다(값/값 파생 없음).
+  // 어느 경로든 actual API call(gate 6)에는 도달하지 않고, 모든 live side-effect counter는 0으로 유지된다.
   const isDefault = isDefaultContentUnit(unit);
-  const credentialGate = credentialPresenceResolutionGate();
-  gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: true, reached: true, wiredThisSlice: false, credentialValuesAccessed: false, credentialValuesResolved: false });
-  gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "credential_resolution_not_wired" });
+  const resolution = resolveExplicitCredentialsFromRuntimeEnv();
+  const credSummary = resolution.summary;
+  // in-memory credential 객체는 실제 API 실행이 비활성이라 이 경로에서 사용하지 않는다. 참조를 즉시 끊어
+  // GC 대상으로 만든다(값이 함수 스코프 밖으로 유출되지 않도록).
+  resolution.inMemory = null;
+
+  // gate 5는 이 slice에서 실제로 credential 값에 접근하므로 counter를 증가시킨다(값은 여전히 미노출).
+  sideEffectCounters.credentialValuesAccessedCount = 1;
+  if (credSummary.credentialValuesResolved) sideEffectCounters.credentialValuesResolvedCount = 1;
+
+  gateTrace.push({
+    order: 5,
+    gate: "credential_presence_resolution",
+    evaluated: true,
+    reached: true,
+    wiredThisSlice: true,
+    credentialValuesAccessed: true,
+    credentialValuesResolved: credSummary.credentialValuesResolved,
+    missingCredentialKeyNames: credSummary.missingCredentialKeyNames,
+  });
+
+  if (!credSummary.credentialValuesResolved) {
+    // credential key 일부/전부 missing → credential 단계에서 fail-closed. actual API call 미도달.
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "credential_keys_missing" });
+    return {
+      exitCode: 4,
+      result: {
+        ...base,
+        status: CREDENTIAL_KEYS_MISSING_ERROR,
+        gateTrace,
+        contentUnit: {
+          note:
+            "gate 1~4를 통과한 content가 credential resolution 단계에 도달했으나 승인된 runtime env key가 " +
+            "일부/전부 비어 있어 fail-closed로 멈춘다(exit 4). 출력에는 누락 key '이름'만 담기며 값/값 파생 " +
+            "정보는 담기지 않는다. actual API call(gate 6)에는 도달하지 않는다.",
+          isDefaultContentUnit: isDefault,
+          kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+          contentId: unit.contentId,
+          version: unit.version,
+          reachedCredentialGate: true,
+          credentialResolutionWiredThisSlice: true,
+          haltedBeforeActualApiCall: true,
+        },
+        credentialResolution: {
+          credentialResolutionWiredThisSlice: credSummary.credentialResolutionWiredThisSlice,
+          credentialValuesResolved: false,
+          platforms: credSummary.platforms,
+          missingCredentialKeyNames: credSummary.missingCredentialKeyNames, // 이름만
+        },
+        sideEffectCounters,
+        credentialResolutionReached: true,
+        credentialValuesAccessed: true,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
+  // credential 모두 resolve됨 → 하지만 actual API 실행은 이 slice에서 비활성(no-execute).
+  gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "actual_api_call_not_enabled_this_slice" });
   return {
     exitCode: 4,
     result: {
       ...base,
-      status: credentialGate.haltError,
+      status: ACTUAL_API_CALL_NOT_ENABLED_ERROR,
       gateTrace,
       contentUnit: {
         note:
-          "gate 1~4를 통과한 content가 credential resolution stub까지 도달했다. 이 slice에서 credential " +
-          "resolution/actual API call은 wiring되지 않았으므로 여기서 fail-closed로 멈춘다(실제 publish 비활성). " +
+          "gate 1~4를 통과한 content가 credential resolution 단계에서 승인된 6개 env key를 in-memory explicit " +
+          "credential 객체로 조립했다(값은 로컬 객체에만 존재하며 출력/문서/report/error에 노출되지 않는다). " +
+          "단, actual API 실행(gate 6)은 이 slice에서 비활성이므로 여기서 fail-closed로 멈춘다(실제 publish 비활성). " +
           "default evidence content는 gate 4 duplicate guard가 앞서 차단하므로 이 지점에 도달하지 않는다.",
         isDefaultContentUnit: isDefault,
         kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
         contentId: unit.contentId,
         version: unit.version,
         reachedCredentialGate: true,
-        credentialResolutionWiredThisSlice: false,
+        credentialResolutionWiredThisSlice: true,
         haltedBeforeActualApiCall: true,
+      },
+      credentialResolution: {
+        credentialResolutionWiredThisSlice: credSummary.credentialResolutionWiredThisSlice,
+        credentialValuesResolved: true,
+        platforms: credSummary.platforms,
+        missingCredentialKeyNames: credSummary.missingCredentialKeyNames, // 모두 present면 빈 배열
+      },
+      wouldCallFunctionRefsWhenApiEnabled: {
+        note: "credential이 resolve됐고 actual API 실행이 활성화됐다면 호출됐을 explicit credential injection 함수 참조(문자열). 이번 run 실제 호출 0.",
+        instagram: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+        youtube: LIVE_PUBLISH_FUNCTION_REFS.youtube,
       },
       sideEffectCounters,
       credentialResolutionReached: true,
-      credentialValuesAccessed: false,
-      credentialValuesResolved: false,
+      credentialValuesAccessed: true,
+      credentialValuesResolved: true,
       actualApiCallReached: false,
     },
   };

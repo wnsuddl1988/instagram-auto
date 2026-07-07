@@ -253,15 +253,37 @@ for (const pat of liveApiPatterns) {
 
 check("runner 소스에 .env.local 직접 참조 없음", !/\.env\.local/.test(runnerCode));
 // task: dual-platform-credential-preflight-redacted-no-live-v1
-// process.env 접근은 오직 승인된 redacted presence helper의 Boolean(process.env[keyName]) 형태만
-// 허용된다(값 미바인딩, presence boolean만). 그 외 어떤 process.env 참조(값 read/할당/파생)도 금지.
+//       + dual-platform-credential-resolution-wiring-no-execute-v1
+// process.env 접근은 오직 두 가지 승인된 형태만 허용된다:
+//   (a) Boolean(process.env[keyName]) — redacted presence 판정 전용(값 미바인딩).
+//   (b) resolveExplicitCredentialsFromRuntimeEnv() 내부의 승인된 6개 key 직접 read
+//       (process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID 등) — in-memory credential 조립 전용.
+// 그 외 어떤 process.env 참조(임의 key read/순회/할당/파생)도 금지한다.
+const APPROVED_CRED_ENV_KEYS = [
+  "INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN",
+  "YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN",
+  "BLOB_READ_WRITE_TOKEN",
+];
 check(
-  "runner 소스에 process.env 참조가 승인된 Boolean(process.env[...]) presence 패턴 외에는 없음(secret 값 미접근)",
+  "runner 소스에 process.env 참조가 승인된 형태만 존재((a) Boolean(process.env[...]) presence + (b) 승인 6 key 직접 read)",
   (() => {
     const matches = runnerCode.match(/process\s*\.\s*env/g) ?? [];
-    // 승인된 형태: Boolean(process.env[ ... ]) — presence 판정 전용.
-    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
-    return matches.length === approved.length;
+    const presence = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    // 승인된 6개 key 직접 read: process.env.<APPROVED_KEY> 형태만 카운트.
+    const directReadRe = new RegExp(`process\\.env\\.(?:${APPROVED_CRED_ENV_KEYS.join("|")})\\b`, "g");
+    const directReads = runnerCode.match(directReadRe) ?? [];
+    // 모든 process.env 참조 = presence 패턴 + 승인 key 직접 read 로만 구성되어야 한다.
+    return matches.length === presence.length + directReads.length;
+  })(),
+);
+// resolver가 승인되지 않은 임의 key를 읽지 않음: process.env[<변수>] 인덱스 접근은 Boolean() presence 판정
+// 안에서만 허용되며, 그 밖의 process.env[...] 동적 인덱스 read(값 바인딩)는 없어야 한다.
+check(
+  "runner 소스에 승인되지 않은 동적 process.env[...] 값 read 없음(Boolean presence 판정 외 인덱스 접근 금지)",
+  (() => {
+    // Boolean(process.env[...]) 를 지운 뒤 남은 process.env[ 인덱스 접근이 있으면 위반.
+    const withoutPresence = runnerCode.replace(/Boolean\(process\.env\[[^\]]*\]\)/g, "");
+    return !/process\.env\[/.test(withoutPresence);
   })(),
 );
 
@@ -630,7 +652,9 @@ const armExecStart = runnerRawSrc.indexOf("function executeArmedLiveRun");
 const armExecEnd = runnerRawSrc.indexOf("function main", armExecStart);
 const armExecSrc = armExecStart !== -1 && armExecEnd !== -1 ? runnerRawSrc.slice(armExecStart, armExecEnd) : "";
 const dupCallIdx = armExecSrc.indexOf("evaluateDuplicatePublishGuardGate(");
-const credCallIdx = armExecSrc.indexOf("credentialPresenceResolutionGate(");
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// 실행 경로의 gate 5는 이제 resolveExplicitCredentialsFromRuntimeEnv()를 호출한다(stub 아님).
+const credCallIdx = armExecSrc.indexOf("resolveExplicitCredentialsFromRuntimeEnv(");
 check(
   "runner 소스: executeArmedLiveRun에서 duplicate guard(gate 4)가 credential resolution(gate 5)보다 먼저 평가됨",
   armExecSrc.length > 0 && dupCallIdx !== -1 && credCallIdx !== -1 && dupCallIdx < credCallIdx,
@@ -644,15 +668,28 @@ check(
 );
 check("runner에 --preflight 모드 처리 존재", /--preflight/.test(runnerRawSrc) && /preflight/.test(runnerRawSrc));
 check("runner에 REQUIRED_ENV_KEY_NAMES (key 이름 계약) 존재", /REQUIRED_ENV_KEY_NAMES/.test(runnerRawSrc));
-// 가장 중요한 회귀: runner가 credential '값'을 읽지 않는다(코드 기준, 주석/문자열 제외).
-// process.env 접근은 오직 승인된 redacted presence helper의 Boolean(process.env[keyName])만 허용되며,
-// preflight/live/gate 등 어떤 다른 경로에서도 env 값 read/할당/파생이 없어야 한다.
+// 가장 중요한 회귀: runner가 credential '값'을 승인된 경로 밖에서 읽지 않는다(코드 기준, 주석/문자열 제외).
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// process.env 접근은 (a) Boolean(process.env[keyName]) presence 판정, 또는 (b) resolver의 승인된 6개 key
+// 직접 read(process.env.<APPROVED_KEY>)만 허용된다. preflight는 값 미접근(presence 전용)이고, 값 read는
+// credential resolution(gate 5) 경로의 승인 6 key로만 국한된다.
 check(
-  "runner 코드에 process.env 값 접근 없음 — Boolean(process.env[...]) presence 판정만 허용(preflight/live는 env 값 미접근)",
+  "runner 코드의 process.env 접근이 승인된 형태만((a) Boolean presence + (b) resolver 승인 6 key 직접 read)",
   (() => {
     const matches = runnerCode.match(/process\s*\.\s*env/g) ?? [];
-    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
-    return matches.length === approved.length;
+    const presence = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    const directReadRe = new RegExp(`process\\.env\\.(?:${APPROVED_CRED_ENV_KEYS.join("|")})\\b`, "g");
+    const directReads = runnerCode.match(directReadRe) ?? [];
+    return matches.length === presence.length + directReads.length;
+  })(),
+);
+// resolver의 승인 6 key 직접 read가 실제로 존재한다(wiring 됐다는 positive 확인).
+check(
+  "runner 코드에 resolveExplicitCredentialsFromRuntimeEnv의 승인 6 key 직접 read가 존재(credential resolution wiring됨)",
+  (() => {
+    const directReadRe = new RegExp(`process\\.env\\.(?:${APPROVED_CRED_ENV_KEYS.join("|")})\\b`, "g");
+    const directReads = runnerCode.match(directReadRe) ?? [];
+    return directReads.length === APPROVED_CRED_ENV_KEYS.length;
   })(),
 );
 // live publish 함수를 이 runner가 실제로 import하지 않는다(참조는 문자열 상수로만).
@@ -906,7 +943,8 @@ check(
     fArm.failClosedGateOrder.every((g, i) => g === EXPECTED_GATE_ORDER[i])
 );
 check("fixture.liveArm.duplicateGuardEvaluatedBeforeCredentialResolution === true", fArm.duplicateGuardEvaluatedBeforeCredentialResolution === true);
-check("fixture.liveArm.credentialResolutionWiredThisSlice === false (credential 단계는 fail-closed stub)", fArm.credentialResolutionWiredThisSlice === false);
+check("fixture.liveArm.credentialResolutionWiredThisSlice === true (credential resolution wiring됨)", fArm.credentialResolutionWiredThisSlice === true);
+check("fixture.liveArm.credentialResolutionHaltError === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", fArm.credentialResolutionHaltError === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
 const fArmBlock = fArm.currentContentDuplicateBlock || {};
 check(
   "fixture.liveArm.currentContentDuplicateBlock: 양 플랫폼 v3_2 키가 blocked + retryForbidden",
@@ -947,7 +985,8 @@ check(
     pArm.failClosedGateOrder.every((g, i) => g === EXPECTED_GATE_ORDER[i])
 );
 check("preflight liveArm.duplicateGuardEvaluatedBeforeCredentialResolution === true", pArm?.duplicateGuardEvaluatedBeforeCredentialResolution === true);
-check("preflight liveArm.credentialResolutionWiredThisSlice === false", pArm?.credentialResolutionWiredThisSlice === false);
+check("preflight liveArm.credentialResolutionWiredThisSlice === true (credential resolution wiring됨)", pArm?.credentialResolutionWiredThisSlice === true);
+check("preflight liveArm.credentialResolutionHaltError === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", pArm?.credentialResolutionHaltError === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
 check("preflight liveArm.metadataOptimizationGateOk === true", pArm?.metadataOptimizationGateOk === true);
 check("preflight liveArm.sourceFilesReady === true", pArm?.sourceFilesReady === true);
 const pArmEv = pArm?.blobPublicUrlLivenessEvidence || {};
@@ -1073,34 +1112,61 @@ if (dupBlockConfirmed) {
 check("runner: loadContentUnitFromManifest export 존재", /export function loadContentUnitFromManifest/.test(runnerRawSrc));
 check("runner: isDefaultContentUnit export 존재", /export function isDefaultContentUnit/.test(runnerRawSrc));
 check("runner: CONTENT_UNIT_MANIFEST_SCHEMA_VERSION = dual_platform_content_unit_v1", /CONTENT_UNIT_MANIFEST_SCHEMA_VERSION\s*=\s*"dual_platform_content_unit_v1"/.test(runnerRawSrc));
-check("runner: CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR 상수 존재", /CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR\s*=\s*"CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE"/.test(runnerRawSrc));
+check("runner: CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR 상수 존재(하위 호환 참조)", /CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR\s*=\s*"CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE"/.test(runnerRawSrc));
 check("runner: --content-unit CLI arg 파싱 존재", /--content-unit/.test(runnerRawSrc) && /resolveContentUnitArg|resolveActiveContentUnit/.test(runnerCode));
 
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// credential resolution(gate 5)이 wiring됐다: 새 상수 + resolver + 새 halt 상태가 존재해야 한다.
+check("runner: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE === true 상수 존재", /CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE\s*=\s*true/.test(runnerRawSrc));
+check("runner: ACTUAL_API_CALL_NOT_ENABLED_ERROR 상수 존재", /ACTUAL_API_CALL_NOT_ENABLED_ERROR\s*=\s*"ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE"/.test(runnerRawSrc));
+check("runner: CREDENTIAL_KEYS_MISSING_ERROR 상수 존재", /CREDENTIAL_KEYS_MISSING_ERROR\s*=\s*"CREDENTIAL_KEYS_MISSING_THIS_SLICE"/.test(runnerRawSrc));
+check("runner: resolveExplicitCredentialsFromRuntimeEnv 함수 존재", /function\s+resolveExplicitCredentialsFromRuntimeEnv\s*\(/.test(runnerRawSrc));
+
 // task: dual-platform-custom-content-live-credential-gate-no-execute-v1
-// 옛 gate 4.5 무조건 custom halt는 제거됐다. custom content는 gate 1~4를 통과하면 credential
-// resolution stub(gate 5)까지 도달한 뒤 exit 4로 fail-closed된다. 실행 경로(executeArmedLiveRun)에
-// 무조건 custom halt(exitCode:5, custom_content_live_not_enabled)가 남아 있으면 안 된다.
+// 옛 gate 4.5 무조건 custom halt는 제거됐다. 실행 경로(executeArmedLiveRun)에 무조건 custom halt
+// (exitCode:5, custom_content_live_not_enabled)가 남아 있으면 안 된다.
 check(
   "runner: executeArmedLiveRun에 옛 무조건 custom halt(exitCode:5)가 남아 있지 않음",
   !/exitCode:\s*5/.test(runnerCode) && !/blockedBy:\s*"custom_content_live_not_enabled"/.test(runnerRawSrc),
 );
+// custom ready content는 credential resolution(gate 5) 도달 후 exit 4로 fail-closed된다.
+// resolved면 ACTUAL_API_CALL_NOT_ENABLED, credential 누락이면 CREDENTIAL_KEYS_MISSING.
 check(
-  "runner: custom credential-gate fail-closed(exit 4, CREDENTIAL_RESOLUTION_NOT_WIRED) 존재",
+  "runner: custom credential-gate fail-closed(exit 4) + 새 halt 상태(ACTUAL_API_CALL_NOT_ENABLED / CREDENTIAL_KEYS_MISSING) 존재",
   /exitCode:\s*4/.test(runnerCode) &&
-    /status:\s*credentialGate\.haltError/.test(runnerCode),
+    /status:\s*ACTUAL_API_CALL_NOT_ENABLED_ERROR/.test(runnerCode) &&
+    /status:\s*CREDENTIAL_KEYS_MISSING_ERROR/.test(runnerCode),
 );
 check(
   "runner: 핵심 안전 순서 — duplicate publish guard(gate 4)가 credential resolution(gate 5) 호출 이전에 평가됨",
   (() => {
     // executeArmedLiveRun 내부에서 gate 4 duplicate block return(DUPLICATE_BLOCKED_STATUS)이
-    // gate 5 credential resolution 호출(credentialPresenceResolutionGate())보다 앞서야 한다.
+    // gate 5 credential resolution 호출(resolveExplicitCredentialsFromRuntimeEnv())보다 앞서야 한다.
     const dupGateCall = runnerRawSrc.indexOf("const duplicateGate = evaluateDuplicatePublishGuardGate(unit);");
-    const credCall = runnerRawSrc.indexOf("const credentialGate = credentialPresenceResolutionGate();");
+    const credCall = runnerRawSrc.indexOf("const resolution = resolveExplicitCredentialsFromRuntimeEnv();");
     return dupGateCall !== -1 && credCall !== -1 && dupGateCall < credCall;
   })(),
 );
+// resolver는 승인된 6개 key 값을 in-memory 지역 객체에만 담고, 반환/gate trace에 값을 넣지 않는다.
+// (값을 밖으로 내보내는 필드가 없어야 한다: accessToken/refreshToken/readWriteToken 등이 반환 summary에 없음.)
 check(
-  "runner: gate 5 credential stub은 process.env/secret/credential 값을 읽지 않고 어떤 lib도 import/호출하지 않음",
+  "runner: resolveExplicitCredentialsFromRuntimeEnv의 summary 반환에 credential 값 필드가 노출되지 않음",
+  (() => {
+    const fnStart = runnerRawSrc.indexOf("function resolveExplicitCredentialsFromRuntimeEnv");
+    const fnEnd = runnerRawSrc.indexOf("\n}\n", fnStart);
+    const fnBody = fnStart !== -1 ? runnerRawSrc.slice(fnStart, fnEnd === -1 ? undefined : fnEnd) : "";
+    if (fnBody === "") return false;
+    // summary 객체({ ... }) 안에 값 필드(accessToken/refreshToken/clientSecret/readWriteToken/businessAccountId/clientId)가
+    // 없어야 한다. inMemory 객체에는 있어도 되지만 summary/gate trace로는 새어나가면 안 된다.
+    const summaryStart = fnBody.indexOf("summary: {");
+    const summaryEnd = fnBody.indexOf("inMemory:", summaryStart);
+    const summarySrc = summaryStart !== -1 && summaryEnd !== -1 ? fnBody.slice(summaryStart, summaryEnd) : "";
+    return summarySrc !== "" &&
+      !/accessToken|refreshToken|clientSecret|readWriteToken|businessAccountId|clientId/.test(summarySrc);
+  })(),
+);
+check(
+  "runner: gate 5 credential stub(하위호환)은 여전히 process.env/credential 값을 읽지 않음",
   (() => {
     const fnStart = runnerRawSrc.indexOf("function credentialPresenceResolutionGate()");
     const fnEnd = runnerRawSrc.indexOf("\n}", fnStart);
@@ -1114,11 +1180,13 @@ check(
 
 // task: dual-platform-content-unit-manifest-block-reason-fix-v1
 //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
+//       + dual-platform-credential-resolution-wiring-no-execute-v1
 // buildLiveExecutionPlan의 blocked reason이 콘텐츠 종류에 따라 분기되어야 한다(하드코딩 금지).
-// custom content의 blocked reason은 이제 credential_resolution_not_wired_this_slice다.
+// credential resolution이 wiring되면서 custom content의 blocked reason은 이제
+// actual_api_call_not_enabled_this_slice다(더 이상 credential_resolution_not_wired가 아님).
 check(
   "runner: buildLiveExecutionPlan이 willExecuteBlockedReason을 콘텐츠 종류별로 분기(하드코딩 아님)",
-  runnerRawSrc.includes('"credential_resolution_not_wired_this_slice"') &&
+  runnerRawSrc.includes('"actual_api_call_not_enabled_this_slice"') &&
     /const\s+willExecuteBlockedReason\s*=\s*currentContentDuplicateBlocked/.test(runnerCode),
 );
 check(
@@ -1155,7 +1223,8 @@ if (cpf) {
   check("custom --preflight: isDefaultContentUnit === false", cpf.isDefaultContentUnit === false);
   check("custom --preflight: contentUnitManifestPath 설정됨", typeof cpf.contentUnitManifestPath === "string");
   check("custom --preflight: contentUnit.kind === custom_manifest_content", cpf.preflight?.contentUnit?.kind === "custom_manifest_content");
-  check("custom --preflight: customContentLiveHaltError === CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE", cpf.preflight?.contentUnit?.customContentLiveHaltError === "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE");
+  check("custom --preflight: customContentLiveHaltError === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", cpf.preflight?.contentUnit?.customContentLiveHaltError === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
+  check("custom --preflight: customContentCredentialResolutionWiredThisSlice === true (credential resolution wiring됨)", cpf.preflight?.contentUnit?.customContentCredentialResolutionWiredThisSlice === true);
   check("custom --preflight: customContentLiveEnabledThisSlice === false (실제 publish는 여전히 비활성)", cpf.preflight?.contentUnit?.customContentLiveEnabledThisSlice === false);
   check("custom --preflight: duplicateGuardUsesV3_2 === false(신규 version)", cpf.preflight?.duplicateGuardUsesV3_2 === false);
   check("custom --preflight: duplicateGuardKeyFormatOk === true(unit.version 정합)", cpf.preflight?.duplicateGuardKeyFormatOk === true);
@@ -1172,17 +1241,18 @@ if (cpf) {
   // 제거되면서 custom content의 실제 최종 halt는 credential_resolution_not_wired_this_slice가 됐다.
   const cLep = cpf.preflight?.liveExecutionPlan;
   check(
-    "custom --preflight: liveExecutionPlan.willExecuteBlockedReason === credential_resolution_not_wired_this_slice (duplicate 사유 아님)",
-    cLep?.willExecuteBlockedReason === "credential_resolution_not_wired_this_slice",
+    "custom --preflight: liveExecutionPlan.willExecuteBlockedReason === actual_api_call_not_enabled_this_slice (duplicate 사유 아님)",
+    cLep?.willExecuteBlockedReason === "actual_api_call_not_enabled_this_slice",
   );
   check(
-    "custom --preflight: 모든 step.willExecuteBlockedReason이 credential_resolution_not_wired_this_slice(duplicate 사유 없음)",
+    "custom --preflight: 모든 step.willExecuteBlockedReason이 actual_api_call_not_enabled_this_slice(duplicate 사유 없음)",
     Array.isArray(cLep?.steps) && cLep.steps.length > 0 &&
-      cLep.steps.every((s) => s.willExecuteBlockedReason === "credential_resolution_not_wired_this_slice"),
+      cLep.steps.every((s) => s.willExecuteBlockedReason === "actual_api_call_not_enabled_this_slice"),
   );
   check("custom --preflight: liveExecutionPlan.currentContentDuplicateBlocked === false(duplicate 아님)", cLep?.currentContentDuplicateBlocked === false);
   check("custom --preflight: liveExecutionPlan.isDefaultContentUnit === false", cLep?.isDefaultContentUnit === false);
-  check("custom --preflight: liveExecutionPlan.customContentLiveHaltError === CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE", cLep?.customContentLiveHaltError === "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE");
+  check("custom --preflight: liveExecutionPlan.customContentLiveHaltError === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", cLep?.customContentLiveHaltError === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
+  check("custom --preflight: liveExecutionPlan.customContentCredentialResolutionWiredThisSlice === true", cLep?.customContentCredentialResolutionWiredThisSlice === true);
 }
 
 // 7d) 실행: default 동작 불변(--preflight/--live 회귀 방지 재확인)
@@ -1196,19 +1266,35 @@ check("default --preflight: duplicateGuardUsesV3_2 === true 유지", defPf?.pref
 check("default --preflight: contentUnit.kind === default_evidence_content", defPf?.preflight?.contentUnit?.kind === "default_evidence_content");
 
 // 7e) 실행: custom content --live 시나리오.
-// task: dual-platform-custom-content-live-credential-gate-no-execute-v1
-// (A) ready-probe: gate 1~4를 모두 통과하는 custom content가 credential resolution stub(gate 5)까지
-//     도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로 fail-closed되는지 검증.
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// (A) dummy-env ready-probe: gate 1~4를 통과하는 custom content가 DUMMY env로 credential resolution(gate 5)에
+//     도달해 값을 in-memory로 조립(resolved=true)한 뒤, actual API 실행이 비활성이라
+//     ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed되는지 검증. DUMMY 값이 출력에 없어야 한다.
+// (A2) no-env ready-probe: 같은 content를 env 없이 실행하면 credential 누락으로
+//      CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되고 '누락 key 이름'만 출력되는지 검증.
 // (B) missing-blob probe: source는 있지만 blob evidence가 없는 custom content가 gate 3(blob)에서
 //     credential 이전에 fail-closed(exit 3)되는지 검증.
-// 두 probe manifest는 모두 OS temp 디렉터리에 만들었다가 검증 후 정리한다(레포 밖, secret 없음).
-// default content의 source 경로를 재사용해 gate 1~4를 실제로 통과시킨다(실제 존재하는 source가 있을 때만).
+// 모든 probe manifest는 OS temp에 만들었다가 검증 후 정리한다(레포 밖). 실제 .env.local은 절대 읽지 않고
+// DUMMY 값만 child env로 주입한다(값 노출 금지). default content source 경로를 재사용해 gate 1~4를 통과시킨다.
 const igSrc = defPf?.plan?.jobs?.find?.((j) => j.id === "instagram_job")?.sourcePath;
 const ytSrc = defPf?.plan?.jobs?.find?.((j) => j.id === "youtube_job")?.sourcePath;
+// DUMMY credential env(child로만 주입, 실제 .env.local 미read). 화이트리스트 OS 변수 + DUMMY 6 key.
+const PROBE_SAFE_OS_KEYS = ["SystemRoot","windir","SystemDrive","PATH","Path","PATHEXT","COMSPEC","TEMP","TMP","NUMBER_OF_PROCESSORS","PROCESSOR_ARCHITECTURE"];
+const PROBE_DUMMY_VALUE = "credwireguard_dummy_zzz";
+function buildProbeBaseEnv() {
+  const e = Object.create(null);
+  for (const k of PROBE_SAFE_OS_KEYS) if (typeof process.env[k] === "string") e[k] = process.env[k];
+  return e;
+}
+function buildProbeDummyCredEnv() {
+  const e = buildProbeBaseEnv();
+  for (const k of APPROVED_CRED_ENV_KEYS) e[k] = PROBE_DUMMY_VALUE;
+  return e;
+}
 if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) && existsSync(ytSrc) && sampleUnit) {
   const probeTmpDir = mkdtempSync(path.join(os.tmpdir(), "dual-platform-cred-gate-probe-"));
   try {
-    // ── (A) ready-probe: gate 1~4 통과 → credential stub(gate 5) 도달, exit 4 ──
+    // ── (A) dummy-env ready-probe: gate 1~4 통과 → credential resolution(gate 5) resolved, exit 4 ──
     const readyProbe = {
       schemaVersion: "dual_platform_content_unit_v1",
       contentId: "t_probe_credgate_ready_static",
@@ -1230,22 +1316,60 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     writeFileSync(readyProbePath, JSON.stringify(readyProbe, null, 2), "utf8");
     let readyLive = null;
     let readyExit = null;
+    let readyRawOut = "";
     try {
-      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", readyProbePath], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", readyProbePath], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: buildProbeDummyCredEnv() });
       readyExit = 0;
+      readyRawOut = out;
       readyLive = JSON.parse(out);
     } catch (e) {
       readyExit = typeof e?.status === "number" ? e.status : null;
+      readyRawOut = String(e?.stdout || "");
       try { readyLive = JSON.parse(e?.stdout || ""); } catch { readyLive = null; }
     }
-    check("custom ready-probe --live: exit 4 (credential resolution stub 도달 후 fail-closed)", readyExit === 4, `exit=${readyExit}`);
-    check("custom ready-probe --live: status === CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE", readyLive?.status === "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE");
-    check("custom ready-probe --live: credentialResolutionReached === true", readyLive?.credentialResolutionReached === true);
-    check("custom ready-probe --live: credentialValuesAccessed === false", readyLive?.credentialValuesAccessed === false);
-    check("custom ready-probe --live: credentialValuesResolved === false", readyLive?.credentialValuesResolved === false);
-    check("custom ready-probe --live: actualApiCallReached === false", readyLive?.actualApiCallReached === false);
+    check("custom dummy-env ready-probe --live: exit 4 (credential resolved → actual API not enabled)", readyExit === 4, `exit=${readyExit}`);
+    check("custom dummy-env ready-probe --live: status === ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", readyLive?.status === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE");
+    check("custom dummy-env ready-probe --live: credentialResolutionReached === true", readyLive?.credentialResolutionReached === true);
+    check("custom dummy-env ready-probe --live: credentialValuesAccessed === true (gate 5 실제 도달)", readyLive?.credentialValuesAccessed === true);
+    check("custom dummy-env ready-probe --live: credentialValuesResolved === true (dummy 6 key 모두 present)", readyLive?.credentialValuesResolved === true);
+    check("custom dummy-env ready-probe --live: actualApiCallReached === false (실제 API 미실행)", readyLive?.actualApiCallReached === false);
+    check("custom dummy-env ready-probe --live: credentialResolution.missingCredentialKeyNames === [] (누락 없음)", Array.isArray(readyLive?.credentialResolution?.missingCredentialKeyNames) && readyLive.credentialResolution.missingCredentialKeyNames.length === 0);
+    // 핵심: DUMMY credential 값이 출력 어디에도 나타나지 않는다(값 미노출).
+    check("custom dummy-env ready-probe --live: DUMMY credential 값이 출력에 없음(값 미노출)", readyRawOut !== "" && !readyRawOut.includes(PROBE_DUMMY_VALUE));
+    // value length/hash/prefix/suffix/masked/token type 파생 필드가 출력에 없다.
+    check("custom dummy-env ready-probe --live: value 파생 필드(length/hash/prefix/suffix/masked/tokenType) 없음",
+      !/"(valueLength|length|hash|prefix|suffix|sample|masked|redactedValue|firstChars|lastChars|tokenType)"\s*:/.test(readyRawOut));
     const rpc = readyLive?.sideEffectCounters ?? {};
-    check("custom ready-probe --live: 모든 side-effect counter 0", Object.keys(rpc).length > 0 && Object.values(rpc).every((v) => v === 0));
+    // credential access/resolve counter는 1일 수 있으나 API/upload/blob/ledger/video counter는 반드시 0.
+    check("custom dummy-env ready-probe --live: actual API/upload/blob/ledger/video counter 모두 0",
+      rpc.instagramApiCallCount === 0 && rpc.youtubeApiCallCount === 0 && rpc.youtubeOauthTokenRequestCount === 0 &&
+      rpc.youtubeUploadCallCount === 0 && rpc.blobMutationCount === 0 && rpc.ledgerMutationCount === 0 &&
+      rpc.newVideoGeneratedCount === 0 && rpc.dotEnvLocalDirectAccessCount === 0 && rpc.envSecretValuePrintCount === 0);
+    check("custom dummy-env ready-probe --live: credentialValuesAccessedCount === 1, credentialValuesResolvedCount === 1", rpc.credentialValuesAccessedCount === 1 && rpc.credentialValuesResolvedCount === 1);
+
+    // ── (A2) no-env ready-probe: credential 누락 → CREDENTIAL_KEYS_MISSING, 누락 이름만 ──
+    let missLive = null;
+    let missExit = null;
+    let missRawOut = "";
+    try {
+      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", readyProbePath], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: buildProbeBaseEnv() });
+      missExit = 0;
+      missRawOut = out;
+      missLive = JSON.parse(out);
+    } catch (e) {
+      missExit = typeof e?.status === "number" ? e.status : null;
+      missRawOut = String(e?.stdout || "");
+      try { missLive = JSON.parse(e?.stdout || ""); } catch { missLive = null; }
+    }
+    check("custom no-env ready-probe --live: exit 4 (credential 누락 fail-closed)", missExit === 4, `exit=${missExit}`);
+    check("custom no-env ready-probe --live: status === CREDENTIAL_KEYS_MISSING_THIS_SLICE", missLive?.status === "CREDENTIAL_KEYS_MISSING_THIS_SLICE");
+    check("custom no-env ready-probe --live: credentialResolutionReached === true", missLive?.credentialResolutionReached === true);
+    check("custom no-env ready-probe --live: credentialValuesResolved === false", missLive?.credentialValuesResolved === false);
+    check("custom no-env ready-probe --live: actualApiCallReached === false", missLive?.actualApiCallReached === false);
+    check("custom no-env ready-probe --live: missingCredentialKeyNames가 승인 6 key 이름을 담음(값 아님)",
+      Array.isArray(missLive?.credentialResolution?.missingCredentialKeyNames) &&
+      APPROVED_CRED_ENV_KEYS.every((k) => missLive.credentialResolution.missingCredentialKeyNames.includes(k)));
+    check("custom no-env ready-probe --live: 출력에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(missRawOut));
     // gate trace: 1(metadata) → 2(source) → 3(blob) → 4(duplicate, 미차단) → 5(credential 도달) → 6(actual api 미도달)
     const rpt = Array.isArray(readyLive?.gateTrace) ? readyLive.gateTrace : [];
     const g1 = rpt.find((g) => g.order === 1), g2 = rpt.find((g) => g.order === 2), g3 = rpt.find((g) => g.order === 3);
@@ -1258,9 +1382,13 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     })());
     check("custom ready-probe: gate 1 metadata / gate 2 source / gate 3 blob 모두 evaluated & ok", g1?.evaluated === true && g1?.ok === true && g2?.evaluated === true && g2?.ok === true && g3?.evaluated === true && g3?.ok === true);
     check("custom ready-probe: gate 4 duplicate guard가 credential 이전에 evaluated & 미차단", g4?.gate === "duplicate_publish_guard" && g4?.evaluated === true && g4?.blocked === false);
-    check("custom ready-probe: gate 5 credential_presence_resolution evaluated & reached (wiredThisSlice false)", g5?.gate === "credential_presence_resolution" && g5?.evaluated === true && g5?.reached === true && g5?.wiredThisSlice === false);
-    check("custom ready-probe: gate 6 actual_api_call 미평가/미도달 (blockedBy credential_resolution_not_wired)", g6?.gate === "actual_api_call" && g6?.evaluated === false && g6?.reached === false && g6?.blockedBy === "credential_resolution_not_wired");
-    check("custom ready-probe: stdout에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(readyLive)));
+    check("custom dummy-env ready-probe: gate 5 credential_presence_resolution evaluated & reached (wiredThisSlice true, resolved true)", g5?.gate === "credential_presence_resolution" && g5?.evaluated === true && g5?.reached === true && g5?.wiredThisSlice === true && g5?.credentialValuesResolved === true);
+    check("custom dummy-env ready-probe: gate 5 gate trace에 credential 값이 없음(missingCredentialKeyNames 이름만)", (() => {
+      const j = JSON.stringify(g5 ?? {});
+      return !j.includes(PROBE_DUMMY_VALUE) && Array.isArray(g5?.missingCredentialKeyNames);
+    })());
+    check("custom dummy-env ready-probe: gate 6 actual_api_call 미평가/미도달 (blockedBy actual_api_call_not_enabled_this_slice)", g6?.gate === "actual_api_call" && g6?.evaluated === false && g6?.reached === false && g6?.blockedBy === "actual_api_call_not_enabled_this_slice");
+    check("custom dummy-env ready-probe: stdout에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(readyLive)));
 
     // ── (B) missing-blob probe: source OK지만 blob evidence 부재 → gate 3에서 credential 이전 fail-closed ──
     const noBlobProbe = {
@@ -1279,7 +1407,8 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     let noBlobLive = null;
     let noBlobExit = null;
     try {
-      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", noBlobProbePath], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      // dummy credential env를 주입해도 gate 3(blob)에서 credential 이전에 막혀야 한다(순서 검증).
+      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", noBlobProbePath], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: buildProbeDummyCredEnv() });
       noBlobExit = 0;
       noBlobLive = JSON.parse(out);
     } catch (e) {
@@ -1289,11 +1418,12 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     check("custom missing-blob probe --live: exit 3 (gate 3 blob evidence fail-closed, credential 이전)", noBlobExit === 3, `exit=${noBlobExit}`);
     check("custom missing-blob probe --live: status === BLOCKED_BLOB_LIVENESS_EVIDENCE", noBlobLive?.status === "BLOCKED_BLOB_LIVENESS_EVIDENCE");
     check("custom missing-blob probe --live: credentialResolutionReached === false (credential 미도달)", noBlobLive?.credentialResolutionReached === false);
+    check("custom missing-blob probe --live: credentialValuesAccessed === false (gate 3 block이 credential 이전)", noBlobLive?.credentialValuesAccessed === false);
     check("custom missing-blob probe --live: actualApiCallReached === false", noBlobLive?.actualApiCallReached === false);
     const nbt = Array.isArray(noBlobLive?.gateTrace) ? noBlobLive.gateTrace : [];
     check("custom missing-blob probe: gate 5 credential이 gate trace에 없음(미도달)", !nbt.find((g) => g.order === 5));
     const nbc = noBlobLive?.sideEffectCounters ?? {};
-    check("custom missing-blob probe --live: 모든 side-effect counter 0", Object.keys(nbc).length > 0 && Object.values(nbc).every((v) => v === 0));
+    check("custom missing-blob probe --live: 모든 side-effect counter 0(credential access 포함)", Object.keys(nbc).length > 0 && Object.values(nbc).every((v) => v === 0));
   } finally {
     try { rmSync(probeTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }
@@ -1341,7 +1471,12 @@ check("credential-preflight default: credentialValuesResolved === false", cpDefa
 check("credential-preflight default: credentialValuesPrinted === false", cpDefault?.credentialValuesPrinted === false);
 check("credential-preflight default: dotEnvLocalDirectAccess === false", cpDefault?.dotEnvLocalDirectAccess === false);
 check("credential-preflight default: externalApiCallPerformed === false", cpDefault?.externalApiCallPerformed === false);
-check("credential-preflight default: credentialResolutionWiredThisSlice === false (presence여도 실제 publish 비활성)", cpDefault?.credentialResolutionWiredThisSlice === false);
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// credential resolution 코드 경로는 wiring됐지만(true), 이 preflight 모드는 값 미접근이고 actual API 실행/
+// live publish는 비활성이다 — publish 활성화로 오인되면 안 된다(아래 두 필드로 명시).
+check("credential-preflight default: credentialResolutionWiredThisSlice === true (코드 경로 wiring됨)", cpDefault?.credentialResolutionWiredThisSlice === true);
+check("credential-preflight default: credentialValuesAccessedInThisMode === false (preflight 모드는 값 미접근)", cpDefault?.credentialValuesAccessedInThisMode === false);
+check("credential-preflight default: actualApiExecutionEnabledThisSlice === false (실제 publish 비활성)", cpDefault?.actualApiExecutionEnabledThisSlice === false);
 
 // requiredEnvKeyNames가 승인된 6개 key와 정확히 일치
 const cpKeyNames = cpDefault?.requiredEnvKeyNames ?? {};
@@ -1407,7 +1542,12 @@ check("credential-preflight present-probe: 모든 key present === true + allRequ
   })(),
 );
 check("credential-preflight present-probe: 더미 credential 값이 출력에 절대 나타나지 않음(값 미노출)", cpPresentRaw !== "" && !cpPresentRaw.includes(DUMMY));
-check("credential-preflight present-probe: present:true여도 credentialResolutionWiredThisSlice === false(실제 publish 비활성)", cpPresent?.credentialResolutionWiredThisSlice === false);
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// present:true + credentialResolutionWiredThisSlice:true여도 이 preflight 모드는 값 미접근이고 actual API
+// 실행이 비활성이다 — publish 활성화로 오인되면 안 된다.
+check("credential-preflight present-probe: present:true & credentialResolutionWiredThisSlice === true (코드 경로 wiring됨)", cpPresent?.credentialResolutionWiredThisSlice === true);
+check("credential-preflight present-probe: present:true여도 credentialValuesAccessedInThisMode === false(preflight 값 미접근)", cpPresent?.credentialValuesAccessedInThisMode === false);
+check("credential-preflight present-probe: present:true여도 actualApiExecutionEnabledThisSlice === false(실제 publish 비활성)", cpPresent?.actualApiExecutionEnabledThisSlice === false);
 
 // 8d) runner 소스: credential-preflight 경로가 .env.local/secret 파일 read 또는 external live 호출을 추가하지 않음
 check("runner: 소스에 .env.local / .env 파일 read 실행 코드 없음(주석/문자열 제외)",
@@ -1441,12 +1581,16 @@ const spreadSyntaxRe = /[{[(,]\s*\.\.\.\s*process\s*\.\s*env\b/; // 실제 sprea
   check("self-regression: present-probe가 sanitized child env helper(buildSanitizedProbeEnv)를 사용", selfCode.includes("buildSanitizedProbeEnv"));
   check("self-regression: sanitized child env가 화이트리스트(SAFE_CHILD_OS_ENV_KEYS) 기반", selfCode.includes("SAFE_CHILD_OS_ENV_KEYS"));
 }
-// approved runner presence 패턴은 Boolean(process.env[keyName]) presence-only임을 재확인(회귀 방지).
-check("self-regression: runner의 env 접근이 Boolean(process.env[...]) presence-only 패턴만 사용",
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// approved runner env 접근은 (a) Boolean(process.env[keyName]) presence + (b) resolver의 승인 6 key
+// 직접 read(process.env.<APPROVED_KEY>)만임을 재확인(회귀 방지 — 임의 key read/순회 유입 차단).
+check("self-regression: runner의 env 접근이 승인된 두 형태((a) Boolean presence + (b) 승인 6 key 직접 read)만 사용",
   (() => {
     const all = runnerCode.match(/process\s*\.\s*env/g) ?? [];
-    const approved = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
-    return all.length === approved.length;
+    const presence = runnerCode.match(/Boolean\(process\.env\[/g) ?? [];
+    const directReadRe = new RegExp(`process\\.env\\.(?:${APPROVED_CRED_ENV_KEYS.join("|")})\\b`, "g");
+    const directReads = runnerCode.match(directReadRe) ?? [];
+    return all.length === presence.length + directReads.length;
   })());
 // guard 자신이 secret-shaped value를 출력하지 않는지(수집된 stdout 검증 대상 전체).
 check("self-regression: guard가 다룬 출력에 secret-shaped value 없음(EAA/ya29/vercel_blob_rw_)",
