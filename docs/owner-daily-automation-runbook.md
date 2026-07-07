@@ -114,15 +114,28 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
    네트워크/env 접근이 전혀 없고, request JSON/source mp4를 mutate하지 않는다. `--run`은 이 slice에서
    request 검증/출력 이전에 fail-closed(`INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_THIS_SLICE`, out-dir조차
    생성하지 않음). 이 단계는 실제 업로드 직전에 "request가 여전히 신뢰 가능한가"를 증명하는 게이트다.
-9. **Blob 실제 업로드 + liveness evidence 첨부** (승인 토큰 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`
-   필요): 위 preflight가 `readyForFutureApprovedUpload:true`이면, 별도 승인 slice에서 실제 업로드를
-   수행한 뒤 `--blob-liveness-result <json>`으로 manifest에 `blobPublicUrlLivenessEvidence`를 추가한다.
-   이 slice의 builder는 네트워크 HEAD/list/readback을 절대 수행하지 않는다 — evidence JSON을 그대로
-   읽어 shape만 검증한다.
+9. **Blob 실제 업로드 + liveness evidence 첨부** (Owner 승인 필요): 위 preflight가
+   `readyForFutureApprovedUpload:true`이면, approval-gated one-shot runner로 실제 업로드를 수행한다:
+   `node scripts/run-instagram-blob-upload-from-request-once.mjs --approval
+   APPROVE_INSTAGRAM_BLOB_UPLOAD_FROM_REQUEST_ONCE --request <instagram-blob-upload-request.json>
+   --out-dir <레포 밖 경로>`. runner는 동일한 no-execute preflight를 내부에서 재검증한 뒤에만
+   `put()`을 **정확히 최대 1회** 시도한다(`allowOverwrite:false` — 이미 존재하면
+   `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`로 안전 차단; 재시도/overwrite/delete/list/head 없음;
+   SDK 내부 재시도도 `VERCEL_BLOB_RETRIES=0`으로 차단; 같은 `--out-dir`에 이전 시도 result가 있으면
+   재실행 자체를 거부하는 one-shot 게이트 포함). `BLOB_READ_WRITE_TOKEN`은 runtime env에서 SDK가
+   직접 소비하며, runner는 값을 읽거나 출력하지 않는다(boolean presence만 확인, `.env.local` 접근
+   없음). token이 runtime env에 없으면 `BLOCKED_BLOB_TOKEN_ABSENT_NO_UPLOAD`(업로드 시도 0)로
+   종료하면서 gitignored `output/instagram-blob-upload-from-request-once-v1/run-upload-with-token-prompt.ps1`
+   (Read-Host SecureString no-log wrapper — token은 화면/로그/transcript에 남지 않고 child node
+   process에만 주입 후 finally에서 제거)를 생성한다. Owner가 그 wrapper 한 번 실행으로 업로드를
+   완료할 수 있다. 업로드 성공 후 `--blob-liveness-result <json>`으로 manifest에
+   `blobPublicUrlLivenessEvidence`를 추가한다. builder는 네트워크 HEAD/list/readback을 절대 수행하지
+   않는다 — evidence JSON을 그대로 읽어 shape만 검증한다.
 10. **`--preflight --content-unit <manifest>` 실행**: 전체 readiness gate 결과를 확인한다.
 
-이 slice에서는 1~4단계와 7~8단계(Blob upload 요청 계획 + no-execute upload preflight)만
-자동화되어 있으며, 실제 업로드/게시/새 외부 미디어 생성은 전혀 수행하지 않는다.
+이 slice에서는 1~4단계와 7~9단계(Blob upload 요청 계획 + no-execute upload preflight + approval-gated
+one-shot 업로드 runner)까지 자동화되어 있으며, 게시(Instagram/YouTube publish)와 새 외부 미디어
+생성은 여전히 수행하지 않는다.
 
 ## 새 영상(future new video)을 content unit manifest로 다루기
 

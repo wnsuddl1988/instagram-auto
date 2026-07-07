@@ -4285,3 +4285,29 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: `--render-youtube-letterbox-once`의 하위 runner(`run-youtube-letterbox-render-from-request-once.mjs`)는 이번 허용 파일 목록 밖이라 미수정 — 위에서 확인한 대로 파일-경로 결합 구조 덕분에 동일 취약점 클래스가 아니므로 정상. `docs/owner-daily-automation-runbook.md`는 이번 fix로 문구 변경이 불필요해 미수정.
 - checkpoint recommendation: 기존 2개 파일 보강(신규 파일 없음), 좁은 안전 guard 공통화. Codex 검토 후 Owner 승인 시 checkpoint commit 가능.
 
+## instagram-blob-upload-from-request-once-v1 (2026-07-07)
+
+- **목적**: 검증된 `instagram_blob_upload_request_v1` JSON을 소비해 Vercel Blob public store에 Instagram full-frame mp4를 **최대 1회** 업로드하는 approval-gated one-shot runner. Owner 승인 토큰 `APPROVE_INSTAGRAM_BLOB_UPLOAD_FROM_REQUEST_ONCE`.
+- **신규 파일**: `scripts/run-instagram-blob-upload-from-request-once.mjs`(one-shot runner), `scripts/check-instagram-blob-upload-from-request-once-static.mjs`(static guard, 모든 스모크를 token 제거 child env로 실행 — 스모크에서 실제 업로드 원천 불가). **변경**: `docs/owner-daily-automation-runbook.md`(9단계를 실제 runner 명령/no-log wrapper 흐름으로 갱신, 7~9단계 자동화로 문구 조정), `_ai/CLAUDE_REPORT.md` append. owner entrypoint 미변경.
+- **runner gate 순서(fail-closed)**: ①`--approval` 정확 일치 ②out-dir repo 밖(`isRepoRootOrInside` 재사용)+`.money-shorts-local` 금지 ③같은 out-dir에 이전 시도 result 존재 시 재실행 거부(one-shot 보증, evidence overwrite 0) ④`prepareInstagramBlobUploadFromRequest()` preflight 재검증 ⑤`BLOB_READ_WRITE_TOKEN` boolean presence만 확인(값 read/print/log/copy 0) — absent 시 업로드 시도 0으로 종료 ⑥업로드 body Buffer의 SHA-256 재계산=request sha256 일치 확인(업로드 바이트==검증 바이트, TOCTOU 0) ⑦`VERCEL_BLOB_RETRIES="0"`으로 SDK 내부 재시도(기본 10회)까지 차단 후 dynamic `import("@vercel/blob")` → `put(pathname, body, {access:"public", addRandomSuffix:false, allowOverwrite:false, multipart:true, contentType:"video/mp4"})` 정확 1회. 상태/exit: `UPLOADED`=0, `BLOCKED_BLOB_TOKEN_ABSENT_NO_UPLOAD`=2, `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`=3(mutation 0), `UPLOAD_FAILED_ERROR`=1(재시도 0). SDK는 게이트 전부 통과 후에만 로드(정적 import 없음).
+- **실행 결과**: request `C:\tmp\money-shorts-os\instagram-blob-upload-outdir-fix-smoke-v1\instagram-blob-upload-request.json`(t1_lifestyle_inflation/v3_2, 20294549 bytes, sha256_12 54957450ac10, pathname `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`)로 실행 → preflight PASS(`readyForFutureApprovedUpload:true`) → runtime env에 `BLOB_READ_WRITE_TOKEN` **absent** → **`BLOCKED_BLOB_TOKEN_ABSENT_NO_UPLOAD`** (exit 2, uploadAttemptCount 0, blobUploadCount 0). token-absent report: `C:\tmp\money-shorts-os\instagram-blob-upload-once-v1\instagram-blob-upload-once-token-absent.json`. no-log wrapper 생성: `output/instagram-blob-upload-from-request-once-v1/run-upload-with-token-prompt.ps1`(gitignored; Read-Host SecureString → child node env로만 주입 → finally 제거, token echo 0). **Owner-run 단일 명령**: `powershell -ExecutionPolicy Bypass -File "C:\Users\PC\jjy\instagram-auto\output\instagram-blob-upload-from-request-once-v1\run-upload-with-token-prompt.ps1"` — 실행 시 업로드가 진행되고 result JSON이 `C:\tmp\money-shorts-os\instagram-blob-upload-once-v1\instagram-blob-upload-once-result.json`에 기록됨.
+- **checks/results**: node --check 2파일 PASS. 신규 guard **64 PASS / 0 FAIL**(소스 안전 11 + token 계약 5 + gate 순서 6 + put options 6 + status 6 + wrapper 4 + 실행 스모크 26; 스모크 전부 token-free child env). regression 무변경: executor guard **90/90**, final publish orchestrator guard **357/357**. owner entrypoint 미변경이라 entrypoint guard는 HANDOFF 조건("if changed")상 생략.
+- **side effects confirmation**: Blob put 시도 0(token absent로 SDK import조차 미도달), list/head/delete/copy/liveness/public HEAD 0, Instagram/YouTube API/OAuth/publish 0, ffmpeg/ffprobe 0, 새 미디어 0, dependency/lockfile 변경 0(기존 `@vercel/blob@^2.5.0` 재사용), commit/push 0. protected 9종 미접촉.
+- **env/secret handling**: `.env.local` 읽기 0(Read 도구/스크립트 모두), token 값 read/print/hash/copy/log 0, boolean presence 확인만 2회(runner 게이트 + 사전 전략 판단용 PowerShell `[bool]` 1회), Owner에게 token 채팅 붙여넣기 요청 0. wrapper는 SecureString 방식으로 token이 화면/transcript/파일에 남지 않음.
+- **deviations/risks**: owner entrypoint 연동(optional)은 범위 최소화를 위해 미수행 — 필요 시 별도 slice 권장. `output/` 경로가 세션 권한상 직접 Read 불가라 wrapper 내용의 사후 재확인은 guard 스모크(동일 생성 함수의 출력 계약 검증 4종 PASS) + runner exit-2 경로의 논리적 보증으로 대체. 다음 단계는 Owner의 wrapper 1회 실행 → result JSON 확인 → `--blob-liveness-result` 첨부 순.
+- checkpoint recommendation: 신규 2 + docs 1 + report 1. 실제 외부 mutation은 아직 0(차단 상태)이므로 low-risk이나, 업로드 경로의 핵심 안전 계약이 담긴 파일들이라 Codex 검토 후 checkpoint commit 권장.
+
+## instagram-blob-upload-from-request-once-v1 Owner wrapper 실행 결과 (2026-07-07)
+
+- **Owner wrapper 실행**: `powershell -ExecutionPolicy Bypass -File "C:\Users\PC\jjy\instagram-auto\output\instagram-blob-upload-from-request-once-v1\run-upload-with-token-prompt.ps1"`
+- **Result JSON 경로**: `C:\tmp\money-shorts-os\instagram-blob-upload-once-v1\instagram-blob-upload-once-result.json`
+- **Status**: `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED` (exit 3)
+- **uploadAttemptCount**: 1
+- **blobUploadCount**: 0 (Blob mutation 0 — no list/head/delete/copy/liveness 수행)
+- **uploadedUrl**: 없음 (업로드 성공 아님, 기존 객체 allowOverwrite:false 거부)
+- **sourceSizeBytes**: 20294549, **sha256_12**: 54957450ac10
+- **pathname**: `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
+- **envLocalRead**: false, **tokenValuePrinted**: false, **tokenPresenceCheckedBooleanOnly**: true
+- **해석**: 요청한 pathname의 객체가 Vercel Blob에 이미 존재하고 있었으며, `allowOverwrite:false` 계약이 의도대로 재시도/overwrite/delete 없이 안전하게 거부했음. runner는 정확히 1회 put() 시도 후 기존 객체 충돌로 종료(실패 아님, 의도된 차단). token은 AWS/Vercel 토큰이라 `BLOB_READ_WRITE_TOKEN` presence boolean만 체크했고, 값 read/print/log 0. Instagram/YouTube publish와 liveness 네트워크 호출 0.
+- **다음 단계**: 별도 Owner 승인 후 existing object public URL liveness 확인 및 content unit manifest에 blobPublicUrlLivenessEvidence attach.
+
