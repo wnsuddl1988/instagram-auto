@@ -44,11 +44,24 @@ function codeLines(src) {
     .join("\n");
 }
 
+/**
+ * 실제 import/호출 여부만 검사하기 위해 블록 주석 + 문자열 리터럴 본문을 지운다.
+ * usage/문서 문자열 안의 "@vercel/blob"/"put()" 언급이 실제 import/호출로 오탐되는 것을 막는다.
+ */
+function stripBlockCommentsAndStrings(code) {
+  return code
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/`(?:[^`\\]|\\.)*`/g, "``");
+}
+
 console.log("\nStatic guard check: owner daily automation entrypoint\n");
 
 check("entrypoint file exists", existsSync(ENTRYPOINT_PATH));
 const src = existsSync(ENTRYPOINT_PATH) ? readFileSync(ENTRYPOINT_PATH, "utf-8") : "";
 const code = codeLines(src);
+const codeNoStrings = stripBlockCommentsAndStrings(code);
 
 // ── forbidden: secret/env access ──────────────────────────────────────────────
 console.log("[ forbidden: secret/env access ]");
@@ -71,8 +84,8 @@ check("no axios", !code.includes("axios"));
 check("no googleapis", !code.toLowerCase().includes("googleapis"));
 check("no youtube.videos.insert pattern", !/youtube\s*\.\s*videos\s*\.\s*insert/.test(code));
 check("no graph.facebook.com / graph.instagram.com", !code.includes("graph.facebook.com") && !code.includes("graph.instagram.com"));
-check("no @vercel/blob import", !code.includes("@vercel/blob"));
-check("no Blob put(/list(/del(/head( call pattern", !/\b(put|list|del|head)\s*\(/.test(code));
+check("no @vercel/blob import (actual import statement, not doc/string mentions)", !codeNoStrings.includes("@vercel/blob"));
+check("no Blob put(/list(/del(/head( call pattern", !/\b(put|list|del|head)\s*\(/.test(codeNoStrings));
 check("no OAuth literal outside comments", !code.includes("OAuth"));
 check("no npm install / pnpm add / dependency-changing commands", !/\b(npm install|pnpm add|yarn add)\b/.test(src));
 check("no deploy/DNS keywords (vercel deploy, dns)", !/vercel\s+deploy/i.test(src) && !/\bdns\b/i.test(src));

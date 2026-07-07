@@ -43,6 +43,7 @@ import { fileURLToPath } from "node:url";
 import { buildContentUnitFromLocalSummary } from "./build-dual-platform-content-unit-from-local-summary.mjs";
 import { planYoutubeLetterboxSourceFromContentUnit } from "./plan-youtube-letterbox-source-from-content-unit.mjs";
 import { prepareYoutubeLetterboxRenderFromPlan, RUN_DISABLED_STATUS as LETTERBOX_RENDER_RUN_DISABLED_STATUS } from "./prepare-youtube-letterbox-render-from-plan.mjs";
+import { planInstagramBlobUploadFromContentUnit } from "./plan-instagram-blob-upload-from-content-unit.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -75,7 +76,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once", "--plan-instagram-blob-upload"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -100,6 +101,8 @@ function printUsage() {
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --render-youtube-letterbox-once" +
         " --approval " + YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN +
         " [--request <youtube-letterbox-render-request.json>] [--source <mp4>] [--output <mp4>] [--out-dir <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload" +
+        " --content-unit <path> --out-dir <path>",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
@@ -125,6 +128,12 @@ function printUsage() {
       "                        from the approved source mp4. Requires the exact --approval token; refuses to",
       "                        run without it and never overwrites an existing output mp4. read-only ffprobe",
       "                        verifies the output. No API/upload/env/deploy side effects.",
+      "",
+      "  --plan-instagram-blob-upload reads a content unit manifest's instagramSourcePath, hashes it",
+      "                        read-only (SHA-256), and writes a deterministic Vercel Blob upload request",
+      "                        JSON (pathname + put() option plan). No @vercel/blob call, no upload, no",
+      "                        network/env access. Actual upload still requires a separate approved step",
+      "                        with approval token APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -252,6 +261,8 @@ function runStatus() {
         "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <outside-repo path>",
       prepareYoutubeLetterboxRender:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render --plan <youtube-letterbox-source-plan.json> --out-dir <outside-repo path>",
+      planInstagramBlobUpload:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload --content-unit <manifest.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
@@ -283,6 +294,12 @@ function runStatus() {
         "--prepare-youtube-letterbox-render validates a youtube-letterbox-source-plan.json and writes a no-execute " +
         "render request JSON with the exact future approved command. --run is refused in this slice (fail-closed, " +
         `status ${LETTERBOX_RENDER_RUN_DISABLED_STATUS}); actual ffmpeg execution requires a separate approved slice.`,
+      planInstagramBlobUpload:
+        "--plan-instagram-blob-upload reads a content unit manifest's instagramSourcePath, hashes it read-only " +
+        "(SHA-256), and writes a deterministic instagram-blob-upload-request.json (pathname + put() option plan) " +
+        "under --out-dir. No @vercel/blob call, no upload, no network/env access; the content unit manifest is " +
+        "never mutated. Actual upload still requires a separate approved step with approval token " +
+        "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST.",
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -570,6 +587,57 @@ function runRenderYoutubeLetterboxOnce() {
   return exitCode;
 }
 
+// ── mode: --plan-instagram-blob-upload ───────────────────────────────────────────
+// content unit manifest → deterministic Instagram Vercel Blob upload request(JSON only, no-upload).
+// @vercel/blob를 호출하지 않고, content unit manifest를 mutate하지 않는다(읽기 전용).
+function runPlanInstagramBlobUpload() {
+  const contentUnitPath = getArg("--content-unit");
+  const outDir = getArg("--out-dir");
+
+  if (!contentUnitPath || !outDir) {
+    console.error("ABORT: --plan-instagram-blob-upload requires --content-unit <path> and --out-dir <path>.");
+    return 1;
+  }
+
+  const outDirAbs = resolve(outDir);
+  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+    console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+    return 1;
+  }
+
+  console.log(`[owner-entrypoint] planning Instagram Vercel Blob upload request from content unit manifest (no-upload)`);
+  console.log(`[owner-entrypoint] content-unit: ${contentUnitPath}`);
+  console.log(`[owner-entrypoint] out-dir: ${outDirAbs}`);
+  console.log("");
+
+  const result = planInstagramBlobUploadFromContentUnit({ contentUnitPath });
+
+  if (!result.ok) {
+    console.error(`ABORT: ${result.reason}`);
+    return 1;
+  }
+
+  mkdirSync(outDirAbs, { recursive: true });
+  const requestPath = join(outDirAbs, "instagram-blob-upload-request.json");
+  writeFileSync(requestPath, JSON.stringify(result.request, null, 2), "utf-8");
+
+  console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_plan_instagram_blob_upload_v1", mode: "plan-instagram-blob-upload", requestPath, request: result.request }, null, 2));
+  console.log("");
+  console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  contentId:        ${result.request.contentId}`);
+  console.log(`  version:          ${result.request.version}`);
+  console.log(`  sourcePath:       ${result.request.sourcePath}`);
+  console.log(`  sourceSizeBytes:  ${result.request.sourceSizeBytes}`);
+  console.log(`  sha256_12:        ${result.request.sha256_12}`);
+  console.log(`  pathname:         ${result.request.pathname}`);
+  console.log(`  uploadPerformed:  ${result.request.uploadPerformed}`);
+  console.log("");
+  console.log(`  request: ${requestPath}`);
+  console.log("");
+
+  return 0;
+}
+
 // ── mode: --preflight ──────────────────────────────────────────────────────────
 function runPreflight() {
   const contentUnitPath = getArg("--content-unit");
@@ -738,6 +806,9 @@ switch (requestedMode) {
     break;
   case "--render-youtube-letterbox-once":
     exitCode = runRenderYoutubeLetterboxOnce();
+    break;
+  case "--plan-instagram-blob-upload":
+    exitCode = runPlanInstagramBlobUpload();
     break;
   default:
     printUsage();

@@ -4,81 +4,94 @@
 
 ## Current Task
 
-- Task ID: `content-unit-youtube-render-result-attach-preflight-no-live-v1`
-- Latest checkpoint: `f8edc2b feat(media): render youtube letterbox source once`
-- Purpose: connect the successful YouTube letterbox local render result JSON to the content unit manifest flow so the generated mp4 can be attached as `youtubeSourcePath` without manual copy/paste.
+- Task ID: `instagram-blob-upload-plan-from-content-unit-no-upload-v1`
+- Latest checkpoint: `92a861b feat(operator): attach youtube render result to content unit`
+- Purpose: create a no-upload Instagram Blob upload plan/request from a `dual_platform_content_unit_v1` manifest so the later approved Blob upload step has deterministic input and no manual pathname work.
 
 ## Why This Is Next
 
-- The approved local render step produced a verified YouTube letterbox mp4:
-  - result JSON: `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\youtube-letterbox-render-result.json`
-  - output mp4: `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4`
-- The daily runbook currently says to rebuild/attach the content unit with `--youtube-source <plannedYoutubeSourcePath>`.
-- To make the Owner workflow usable, the tool should also accept the render result JSON directly and derive `youtubeSourcePath` from the verified `outputPath`.
-- This is no-live/no-media-generation: read JSON, validate paths/booleans, write manifest/build-summary only.
+- The Owner workflow can now:
+  - build a content unit manifest from local pipeline summary;
+  - attach the generated YouTube letterbox mp4 via `--youtube-render-result`;
+  - run preflight with the manifest.
+- The next remaining readiness blocker for Instagram publish is `blobPublicUrlLivenessEvidence`.
+- Before asking for a live Blob upload/liveness step, the system should produce a deterministic no-upload request:
+  - read content unit manifest;
+  - validate Instagram full-frame source mp4;
+  - compute size + SHA-256;
+  - build deterministic Blob pathname using the existing contract;
+  - write a small upload request JSON under a repo-outside folder;
+  - keep Blob upload/env/network/API at 0.
 
 ## Approved Scope
 
-Claude Code may implement a no-live bridge from YouTube render result JSON to content unit manifest generation.
+Claude Code may implement a no-upload Instagram Blob upload planner from content unit manifests.
 
 Allowed edits:
 
-- `scripts/build-dual-platform-content-unit-from-local-summary.mjs`
-- `scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
-- `scripts/run-owner-daily-automation-entrypoint.mjs`
-- `scripts/check-owner-daily-automation-entrypoint-static.mjs`
-- `docs/owner-daily-automation-runbook.md`
-- New fixture if useful:
-  - `scripts/fixtures/youtube_letterbox_render_result_attach.sample.v1.json`
+- New script if useful:
+  - `scripts/plan-instagram-blob-upload-from-content-unit.mjs`
+- New static guard if useful:
+  - `scripts/check-instagram-blob-upload-plan-from-content-unit-static.mjs`
+- Optional owner entrypoint integration:
+  - `scripts/run-owner-daily-automation-entrypoint.mjs`
+  - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
+- Optional docs update:
+  - `docs/owner-daily-automation-runbook.md`
+- Optional fixture:
+  - `scripts/fixtures/instagram_blob_upload_plan_from_content_unit.sample.v1.json`
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`
 
-Do not modify the local render runner unless a focused bug is discovered. Do not rerun ffmpeg.
+Avoid changing `lib/instagram-blob-media.ts` unless a focused bug is discovered. Prefer using or mirroring its existing no-upload contract.
 
 ## Required Behavior
 
-1. Add support for an optional render result input, preferably:
-   - builder CLI: `--youtube-render-result <youtube-letterbox-render-result.json>`
-   - owner entrypoint forwarding through `--build-content-unit --youtube-render-result <path>`
+1. Add a no-upload planner command, preferably:
+   - `node scripts/plan-instagram-blob-upload-from-content-unit.mjs --content-unit <dual_platform_content_unit_v1 manifest> --out-dir <repo 밖>`
 
-2. Validate the render result fail-closed:
-   - JSON parses;
-   - `schemaVersion === "youtube_letterbox_render_result_v1"`;
-   - `executed === true`;
-   - `allVerificationsPass === true`;
-   - `ffmpegConversionCount === 1`;
-   - `sideEffectCounters.apiCallCount === 0`;
-   - `sideEffectCounters.uploadCount === 0`;
-   - `sideEffectCounters.envSecretReadCount === 0`;
-   - `sideEffectCounters.deployCount === 0`;
-   - `outputPath` is a non-empty `.mp4` path;
-   - `outputPath` exists and is outside the repo;
-   - output size is positive.
+2. Owner entrypoint should expose a matching mode if edited:
+   - `node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload --content-unit <manifest.json> --out-dir <repo 밖>`
 
-3. Derive `youtubeSourcePath` from validated `renderResult.outputPath`.
+3. Planner input validation:
+   - content unit JSON parses;
+   - `schemaVersion === "dual_platform_content_unit_v1"`;
+   - `contentId` and `version` are non-empty strings;
+   - `instagramSourcePath` is a non-empty `.mp4` path;
+   - `instagramSourcePath` exists;
+   - source file size > 0 and <= `35 * 1024 * 1024`;
+   - variant fixed to `instagram_reels_full_frame_1080x1920`;
+   - platform fixed to `instagram`;
+   - content type fixed to `video/mp4`.
 
-4. If both `--youtube-source` and `--youtube-render-result` are provided:
-   - either require they resolve to the same path, or fail closed with a clear reason such as `youtube_source_render_result_mismatch`.
+4. Planner behavior:
+   - read Instagram source mp4 read-only to compute SHA-256;
+   - build deterministic pathname:
+     `instagram/reels/{contentId}/instagram_reels_full_frame_1080x1920/{version}/{sha256_12}.mp4`
+   - build put option plan:
+     `access:"public"`, `addRandomSuffix:false`, `allowOverwrite:false`, `multipart:true`, `contentType:"video/mp4"`;
+   - write request JSON under `--out-dir`, e.g. `instagram-blob-upload-request.json`;
+   - include `uploadPerformed:false`, `willUpload:false`, `requiresApprovalToken:"APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"`;
+   - include side-effect counters all 0 for Blob upload/list/head/delete/copy, env/secret, API, deploy, media generation.
 
-5. Update build summary/readiness:
-   - `youtubeSourceReady:true` when the render result output path exists;
-   - include a field/note such as `youtubeSourceDerivedFromRenderResult:true`;
-   - do not mark full `contentUnitPreflightExpectedReady:true` unless metadata, Instagram source, YouTube source, and Blob liveness evidence are all ready.
+5. Output path safety:
+   - `--out-dir` must be outside repo root;
+   - do not write into `.money-shorts-local`;
+   - do not mutate the content unit manifest.
 
-6. Owner entrypoint:
-   - `--build-content-unit` should pass `--youtube-render-result` to the builder.
-   - `--status` / runbook should mention the preferred command after local render:
-     `--build-content-unit --summary <summary.json> --youtube-render-result <youtube-letterbox-render-result.json> --out-dir <repo 밖>`
+6. Smoke behavior:
+   - Use an existing sample manifest or a temp manifest outside repo.
+   - It is okay to read the existing local mp4 path if the sample points to it.
+   - Do not call Vercel Blob SDK, `@vercel/blob`, `put`, `list`, `head`, `del`, `fetch`, or any network/API.
 
-7. Smoke validation:
-   - Use existing checked-in sample summary fixture and/or a temp outside-repo output dir.
-   - It is okay to read the real render result JSON under `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\`.
-   - Do not create media. Do not run ffmpeg/ffprobe.
-   - Generated smoke manifests must be outside repo or temporary and cleaned when appropriate.
+7. Runbook:
+   - Insert this as the step after content unit has Instagram source + YouTube render result, and before actual Blob upload/liveness.
+   - Make clear this command only prepares the request; actual upload still needs `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not call Instagram API, YouTube API/OAuth/upload, Vercel Blob upload/list/delete/copy/head, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or any paid/external live service.
+- Do not import or call `@vercel/blob`.
 - Do not run ffmpeg or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
 - Do not delete/overwrite existing media or result JSON.
@@ -100,24 +113,24 @@ Do not modify the local render runner unless a focused bug is discovered. Do not
 1. `git status -sb`
 2. Syntax check for changed/new JS/MJS files.
 3. JSON parse for changed/new fixtures.
-4. Main bridge guard:
-   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
+4. New guard if added:
+   - `node scripts/check-instagram-blob-upload-plan-from-content-unit-static.mjs`
 5. Targeted regressions:
-   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-   - `node scripts/check-youtube-letterbox-local-render-execution-static.mjs`
+   - `node scripts/check-vercel-blob-dependency-code-integration-static.mjs`
+   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
+   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs` if owner entrypoint is changed
    - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run full local generation pipeline.
-Do not run ffmpeg/ffprobe.
+Do not run ffmpeg/ffprobe/upload/API/deploy.
 
 ## Definition Of Done
 
-- Owner can rebuild a content unit manifest using the render result JSON instead of manually copying the mp4 path.
-- The generated manifest has `youtubeSourcePath` equal to the verified output mp4 path.
-- Build summary clearly shows YouTube source readiness and whether it came from render result.
-- Full preflight remains fail-closed until Blob liveness evidence is supplied.
-- Guards prove no env/secret/API/upload/deploy/media-generation side effects.
+- Owner can generate an Instagram Blob upload request from a content unit manifest.
+- Request JSON contains deterministic pathname, size, sha256/sha256_12, put option plan, and future approval token requirement.
+- No Blob upload/liveness/network/env/API/media generation happens.
+- Guards prove fail-closed behavior and side-effect counters all 0.
 - No commit/push.
 
 ## Final Handoff Format
@@ -127,8 +140,8 @@ Claude Code must stop after the final handoff. Include:
 - task id
 - changed files
 - new/updated command(s)
-- render-result attach contract summary
-- smoke/preflight result
+- upload-plan request contract summary
+- smoke result
 - checks/results
 - side effects confirmation
 - deviations/risks
