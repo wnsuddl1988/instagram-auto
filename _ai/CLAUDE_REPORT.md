@@ -4091,3 +4091,19 @@ QA-only slice. 코드 변경 없음.
 - **side effects 0**: Instagram API/publish 0, YouTube API/OAuth/upload 0, Blob mutation 0, credential 값 접근/resolution 0, `.env.local` 접근 0, secret 값 출력 0, 새 영상 0, deploy/dependency 0, commit/push 0.
 - checkpoint recommendation: release arm 경계 + 4 tracked 파일(+768/-105). Codex 검토 후 Owner 승인 시 checkpoint commit 권장.
 
+## owner-usable-automation-entrypoint-no-live-v1 (2026-07-07)
+
+- **목적**: Owner가 실제로 쓸 수 있는 단일 로컬 operator entrypoint. local dry-run pipeline + dual-platform publish preflight + armed duplicate-guarded 상태를 한 명령 계열로 확인. no-live usability bridge — 신규 콘텐츠 live run은 이번 범위 아님.
+- **신규 파일**: `scripts/run-owner-daily-automation-entrypoint.mjs`(entrypoint) / `scripts/check-owner-daily-automation-entrypoint-static.mjs`(guard, dependency-free) / `docs/owner-daily-automation-runbook.md`(runbook). **변경 파일**: `package.json`(scripts 필드에 `owner:status`/`owner:dry-run`/`owner:preflight`/`owner:duplicate-guard-check` 4개 추가, dependencies/lockfile 무변경).
+- **operator 명령 4종**:
+  - `--status`: 스크립트/기본 fixture 존재 + 기존 evidence(media_id `17916511431199303`/videoId `r9jhckdpC9w`) + 다음 단계 안내(JSON+사람이 읽기 쉬운 요약).
+  - `--dry-run`: 기존 `run-local-money-shorts-from-render-manifest.mjs`를 기본 fixture로 실행(재구현 아님, 재사용). out-root는 레포 밖 강제(`C:\tmp\...`).
+  - `--preflight`: 기존 orchestrator `--preflight` 실행 + armed/duplicate-block 예정/blob evidence 요약.
+  - `--duplicate-guard-check`: **preflight로 양 플랫폼 duplicate block 확정을 먼저 확인한 뒤에만** orchestrator `--live` 1회 실행. exit 3 `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`를 안전 차단으로만 보고(`treatedAsPublishSuccess:false` 하드코딩, `true` 문자열 전체 소스에 0회). duplicate block 미확정 시 `--live` 호출 자체를 스킵하고 fail-closed abort.
+- **checks/results**: node --check entrypoint/guard ✓, 신규 guard **81 PASS / 0 FAIL**(secret/env 미접근 24항목, spawnSync+shell:false, 4 모드 존재, duplicate-guard-check 안전계약 5항목, runbook 7항목 포함), package.json JSON parse ✓, `pnpm run owner:status` alias 정상.
+- **operator smoke 실제 실행 결과**: `--status` exit 0(existingEvidence 정확) / `--preflight` exit 0(armed true, bothWillBeBlocked true, expectedLiveStatus BLOCKED_DUPLICATE_ALREADY_PUBLISHED) / `--duplicate-guard-check` exit 0(liveExitCode 3, isExpectedSafeBlock true, sideEffectCountersAllZero true, credentialResolutionReached/actualApiCallReached false) / `--dry-run` exit 0(flowStatus completed_dry_run, actualUploadPerformed false, notUploaded true, 산출물 `C:\tmp\money-shorts-os\owner-daily-automation-entrypoint-v1\`).
+- **regression**: dual-platform orchestrator guard **316/316**, local-pipeline-runner guard **61/61**, render-manifest-local-runner guard **42/42** — 전부 무변경 통과.
+- **side effects 0**: Instagram/YouTube API 0, OAuth/upload 0, Vercel Blob mutation 0, OpenAI/ElevenLabs/Pexels/Supabase/browser 0, `.env.local`/`process.env` 접근 0(guard 24항목 확인), deploy/dependency/lockfile 0, 새 live 영상 0, commit/push 0. protected/excluded 파일(`_ai/CODEX_REVIEW.md` 등 9종) 전부 미접촉.
+- **deviations/risks**: 없음. HANDOFF_NOW.md 권장 경로/모드/체크 그대로 따름. package.json은 scripts 필드만 편집(dependencies/lockfile 무변경 확인).
+- checkpoint recommendation: 신규 파일 3개 + package.json scripts 4개 추가(순수 부가 기능, 기존 파일 로직 변경 없음). Codex 검토 후 Owner 승인 시 checkpoint commit 가능.
+

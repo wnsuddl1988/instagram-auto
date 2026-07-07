@@ -10,7 +10,11 @@
     "test:caption": "node scripts/check-caption-sanitizer.mjs",
     "env:check": "node scripts/env-safe.mjs check",
     "env:flags": "node scripts/env-safe.mjs flags",
-    "env:set-flag": "node scripts/env-safe.mjs set-flag"
+    "env:set-flag": "node scripts/env-safe.mjs set-flag",
+    "owner:status": "node scripts/run-owner-daily-automation-entrypoint.mjs --status",
+    "owner:dry-run": "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
+    "owner:preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
+    "owner:duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

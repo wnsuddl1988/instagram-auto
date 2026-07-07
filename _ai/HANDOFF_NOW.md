@@ -1,124 +1,74 @@
 # HANDOFF_NOW
 
-전체프로젝트 진행률 : 약 92%
+전체프로젝트 진행률 : 약 95%
 
 ## Current Task
 
-- Task ID: `vercel-blob-env-token-write-or-pull-v1`
-- Latest accepted checkpoint: `010ccec feat(media): add vercel blob instagram no-upload integration`
-- Owner approval: `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL`
-- Purpose: prepare/verify the Vercel Blob write credential path for future Instagram Blob object upload, without uploading any object or printing/recording secret values.
+- Task ID: `owner-usable-automation-entrypoint-no-live-v1`
+- Owner request: "남은거 진행해. 실제로 프로젝트 사용해서 영상생성 및 배포 할 수 있게 해줘야지."
+- Purpose: make the current project usable by the Owner through one clear local operator entrypoint that ties together the existing local generation dry-run, dual-platform publish preflight, and armed duplicate-guarded publish status. This slice is a no-live usability bridge, not a new content live run.
 
-## Active Architecture
+## Current Reality
 
-- Instagram public `video_url` provider: Vercel Blob public direct URL.
-- YouTube upload mode: YouTube Data API direct file upload, no Blob/public URL.
-- Provisioned Blob store:
-  - name: `instagram-auto-instagram-media`
-  - id: `store_NyZYiaz51y6acaCQ`
-  - access: `public`
-  - region: `iad1`
-  - last known connectedProjects: none/standalone at checkpoint `c8e8f8f`
-- Blob no-upload code integration is committed at `010ccec`.
-- This task may prepare/verify credential availability only. It must not upload, check a live URL, deploy, or publish.
-
-## Official / Local CLI Facts Confirmed By Codex
-
-Use these as current evidence unless the CLI reports different behavior.
-
-- Official Vercel Blob CLI docs: `https://vercel.com/docs/cli/blob`
-  - `vercel blob` supports list/put/get/del/copy/create-store/delete-store/get-store/list-stores/empty-store.
-  - Blob CLI auth reads `BLOB_READ_WRITE_TOKEN` from env, or can use `--rw-token`.
-  - `create-store --yes` auto-connects to the linked project; this was not used during store creation because env write was not approved then.
-  - Current CLI help for `vercel blob list-stores` supports `--all --json`.
-- Official Vercel env CLI docs: `https://vercel.com/docs/cli/env`
-  - `vercel env list` lists env vars by environment.
-  - `vercel env pull [file]` writes env values to a local file.
-  - `vercel env run -- <command>` runs a child command with project env without writing them to a file.
-  - Production/preview env vars default to sensitive/encrypted behavior; values must not be printed.
-- Local CLI path observed by Codex:
-  - `C:\Users\PC\AppData\Roaming\npm\vercel.cmd`
-  - version: `54.5.0`
-- Current CLI help does not expose a clear standalone "connect existing Blob store to project" subcommand. If Claude discovers one from live CLI help, it may use it only under the exact safe conditions below.
+- The dual-platform publish system is implemented and armed, but the current evidence content is duplicate-guarded:
+  - Instagram evidence media_id: `17916511431199303`
+  - YouTube evidence videoId: `r9jhckdpC9w`
+  - Existing current content/version: `t1_lifestyle_inflation` / `v3_2`
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs --live` blocks current content with `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` before credential/API gates.
+- Vercel Blob public URL liveness evidence exists for the Instagram source mp4:
+  - `https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
+  - HEAD `200`, `video/mp4`, length `20294549`
+  - Result file: `output/instagram-blob-url-liveness-no-arm-v1/result.json`
+- Current UI `/money-shorts` is still a local/source-first workbench. It does not yet provide a single Owner-facing generation-to-publish workflow.
+- Existing useful scripts:
+  - `scripts/run-local-money-shorts-from-render-manifest.mjs`
+  - `scripts/run-local-money-shorts-pipeline-dry-run.mjs`
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs`
+  - Static guards for these scripts already exist.
 
 ## Approved Scope
 
-Claude Code may:
+Claude Code may implement a no-live operator usability bridge:
 
-1. Read only:
-   - `AGENTS.md`
-   - `_ai/HANDOFF_NOW.md`
-   - `docs/vercel-blob-store-provisioning-result.md`
-   - `docs/vercel-blob-dependency-code-integration-no-upload.md`
-   - `scripts/fixtures/vercel_blob_store_provisioning_result.v1.json`
-   - `scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json`
-   - `.vercel/project.json` only for non-secret linked project/org metadata.
+1. Add a single local operator entrypoint script, suggested path:
+   - `scripts/run-owner-daily-automation-entrypoint.mjs`
 
-2. Run non-secret Vercel CLI inspection:
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' --version`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' whoami`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' blob list-stores --all --json`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' blob get-store store_NyZYiaz51y6acaCQ`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list production`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list preview`
-   - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env list development`
-   - CLI help commands as needed.
-   - Record only metadata: command name, exit code, store id/name/access/project names, whether `BLOB_READ_WRITE_TOKEN` appears by name. Do not record env values.
+2. The entrypoint should support at least:
+   - `--status`: run no-live readiness checks and print a concise JSON/operator summary.
+   - `--dry-run`: run the existing local render-manifest dry-run pipeline using safe default fixtures unless explicit paths are provided.
+   - `--preflight`: run the dual-platform publish orchestrator `--preflight`.
+   - `--duplicate-guard-check`: optionally run the existing armed duplicate-guarded `--live` only after confirming the preflight says current content will be duplicate-blocked; it must treat exit `3` / `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` as an expected blocked safety result, not as a successful publish.
 
-3. Prepare a small redacted env presence checker:
-   - `scripts/check-vercel-blob-token-presence-redacted.mjs`
-   - It may read only `process.env.BLOB_READ_WRITE_TOKEN`.
-   - It must print only redacted metadata:
-     - `tokenPresent: true/false`
-     - `tokenValuePrinted: false`
-     - `allowedEnvKeysRead: ["BLOB_READ_WRITE_TOKEN"]`
-   - It must not print token length, prefix, suffix, hash, or derived value.
-   - It must not read `.env.local` or any other env key.
-   - It must not import/call `@vercel/blob`.
-   - It must not upload or call network.
+3. The entrypoint must make the Owner-facing next steps obvious:
+   - what command generates a local dry-run video packet,
+   - what command checks publish readiness,
+   - why current `t1_lifestyle_inflation/v3_2` will not be reposted,
+   - what approval would be needed for a future new-content end-to-end live run.
 
-4. Verify token runtime availability without writing env files:
-   - Prefer `vercel env run` over `vercel env pull`.
-   - Approved command shape:
-     - `& 'C:\Users\PC\AppData\Roaming\npm\vercel.cmd' env run -e production -- node scripts/check-vercel-blob-token-presence-redacted.mjs`
-     - If production is unavailable, try preview, then development.
-   - This child script may read only the allowlisted key and must not print the value.
+4. Add or update a concise operator runbook, suggested path:
+   - `docs/owner-daily-automation-runbook.md`
+   The runbook must be practical and short: exact commands, expected outputs, what is safe, what is still blocked, and how future live run approval should be requested.
 
-5. Perform at most one approved external mutation if and only if the Vercel CLI presents an unambiguous safe path to connect the existing store:
-   - exact store: `instagram-auto-instagram-media` / `store_NyZYiaz51y6acaCQ`
-   - exact linked project: `instagram-auto`
-   - action: connect/link this existing public Blob store to the project so `BLOB_READ_WRITE_TOKEN` becomes available as a project env var.
-   - Do not create a new Blob store.
-   - Do not delete/empty/put/copy/get/list blobs.
-   - Do not use `--rw-token`, `--token`, or any secret literal.
-   - Do not answer any prompt unless it explicitly names the exact existing store and exact project. If ambiguous, stop.
-   - If the CLI has no safe connect path, stop and record `BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE`.
+5. Add a dependency-free static guard, suggested path:
+   - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
+   It must verify no secret/env direct access, no API/upload/deploy/new dependency behavior, safe child process usage, and the required modes/summary fields.
 
-6. Create durable result evidence:
-   - `docs/vercel-blob-env-token-write-or-pull-result.md`
-   - `scripts/fixtures/vercel_blob_env_token_write_or_pull_result.v1.json`
-   - `scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
-   - Append `_ai/CLAUDE_REPORT.md` concise evidence.
+6. Optional package.json script additions are allowed only if they add convenience scripts without dependency/lockfile changes, for example:
+   - `owner:status`
+   - `owner:dry-run`
+   Do not change dependencies or lockfile.
 
-7. Update `_ai/HANDOFF_NOW.md` only if execution reality differs materially from this handoff.
+7. Append concise evidence to `_ai/CLAUDE_REPORT.md`.
 
 ## Forbidden Actions
 
-- Do not upload any Blob object.
-- Do not call `put()`, `vercel blob put`, `copy`, `del`, `get` for object contents, `empty-store`, or `delete-store`.
-- Do not perform public URL liveness checks.
-- Do not call Instagram API/`--arm`.
-- Do not call YouTube API/OAuth/upload.
-- Do not deploy or change DNS/domain.
-- Do not run render/mux/TTS/image/browser/ffmpeg/media generation.
-- Do not install/change dependencies, lockfiles, fonts, or pnpm config.
-- Do not commit/push.
-- Do not read, print, hash, store, copy, or record secret/token values.
-- Do not access `.env.local`.
-- Do not run broad `vercel env pull` into `.env.local`.
-- Do not use `--rw-token` or `--token`.
-- Do not create another Blob store.
-- Do not modify protected/excluded files:
+- Do not access, read, edit, print, summarize, copy, stage, commit, or push `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
+- Do not call Instagram API, YouTube API/OAuth/upload, Vercel Blob upload/list/delete/copy/head, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or any paid/external live service.
+- Do not create a new live content upload.
+- Do not create new real media using live TTS/image/browser/API services.
+- Do not modify dependencies, lockfiles, pnpm config, fonts, deploy config, or DB schema.
+- Do not commit or push.
+- Do not touch protected/excluded dirty files unless explicitly necessary and approved:
   - `_ai/CODEX_REVIEW.md`
   - `_ai/NEXT_ACTION.md`
   - `_ai/PROJECT_STATE.md`
@@ -126,89 +76,56 @@ Claude Code may:
   - `piq_diag_out.txt`
   - `scripts/render-golden-sample-visual-only-v1.mjs`
   - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-  - unrelated `output/`
-  - unrelated `C:\tmp`
+  - `scripts/get-youtube-refresh-token-once.mjs`
+  - `shadow-list.txt`
 
-## Result Fixture Contract
+## Required Design Constraints
 
-The fixture must encode:
-
-- `taskId`: `vercel-blob-env-token-write-or-pull-v1`
-- `approvalToken`: `APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL`
-- store:
-  - `storeName`: `instagram-auto-instagram-media`
-  - `storeId`: `store_NyZYiaz51y6acaCQ`
-  - `access`: `public`
-- project:
-  - linked project name/id metadata if available, no secret values.
-- outcome status, one of:
-  - `ALREADY_CONFIGURED_TOKEN_AVAILABLE_REDACTED`
-  - `CONNECTED_TOKEN_AVAILABLE_REDACTED`
-  - `CONNECTED_TOKEN_NOT_RUNTIME_AVAILABLE`
-  - `BLOCKED_VERCEL_CLI_UNAVAILABLE`
-  - `BLOCKED_VERCEL_AUTH_OR_INTERACTIVE_REQUIRED`
-  - `BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE`
-  - `BLOCKED_AMBIGUOUS_STORE_OR_PROJECT`
-  - `BLOCKED_SECRET_VALUE_WOULD_BE_EXPOSED`
-- side effect counts:
-  - `storeProjectConnectionAttemptCount`: 0 or 1
-  - `storeProjectConnectionCreatedCount`: 0 or 1
-  - `blobObjectUploadCount`: 0
-  - `blobObjectReadListDeleteCount`: 0
-  - `publicUrlLivenessCheckCount`: 0
-  - `instagramApiCallCount`: 0
-  - `youtubeApiCallCount`: 0
-  - `deployCount`: 0
-  - `dependencyChangeCount`: 0
-- env/token safety:
-  - `allowedEnvKey`: `BLOB_READ_WRITE_TOKEN`
-  - `tokenValuePrinted`: false
-  - `tokenValueRecorded`: false
-  - `tokenHashRecorded`: false
-  - `envLocalAccessed`: false
-  - `broadEnvPullPerformed`: false
-  - `vercelEnvRunUsed`: true/false
+- Default mode must be no-live and fail-closed.
+- No `process.env` access in the new operator script unless the mode is a future explicitly approved live mode; this slice should not add that.
+- Child processes must use `spawnSync`/`execFileSync` with `shell:false` where practical.
+- If the entrypoint invokes `--live`, it may do so only after parsing `--preflight` and confirming duplicate block for both existing platform keys. It must not run live for non-duplicate/new content.
+- Output must be readable for the Owner and also include machine-readable JSON summary.
+- All generated files from dry-run must stay under an explicitly chosen output path. Default output may be under `C:\tmp\money-shorts-os\owner-daily-automation-entrypoint-v1` or another path outside the repo.
 
 ## Required Checks
 
+Run the focused checks below:
+
 1. `git status -sb`
 2. Syntax:
-   - `node --check scripts/check-vercel-blob-token-presence-redacted.mjs`
-   - `node --check scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
-3. JSON parse:
-   - `scripts/fixtures/vercel_blob_env_token_write_or_pull_result.v1.json`
-4. Static guard:
-   - `node scripts/check-vercel-blob-env-token-write-or-pull-result-static.mjs`
+   - `node --check scripts/run-owner-daily-automation-entrypoint.mjs`
+   - `node --check scripts/check-owner-daily-automation-entrypoint-static.mjs`
+3. New static guard:
+   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
+4. Operator smoke:
+   - `node scripts/run-owner-daily-automation-entrypoint.mjs --status`
+   - `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight`
+   - `node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check`
 5. Targeted regressions:
-   - `node scripts/check-vercel-blob-dependency-code-integration-static.mjs`
-   - `node scripts/check-vercel-blob-store-provisioning-result-static.mjs`
-   - `node scripts/check-vercel-blob-instagram-integration-packet-static.mjs`
-   - `node scripts/check-dual-platform-variant-publish-architecture-static.mjs`
+   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+   - `node scripts/check-local-pipeline-runner-static.mjs`
+   - `node scripts/check-render-manifest-local-runner-static.mjs`
 
-Do not run full build unless required by a concrete syntax/import issue.
+Do not run full build unless a focused syntax/import issue requires it.
 
 ## Definition Of Done
 
-- The project either has redacted runtime availability for `BLOB_READ_WRITE_TOKEN`, or a fail-closed blocker explains why not.
-- If a store/project connection is created, it is exactly one connection for the existing store and linked project.
-- No secret/token value is printed, hashed, copied, stored, or recorded.
-- No Blob object upload/read/download/delete, liveness check, API publish, deploy, media generation, dependency change, commit, or push occurs.
-- Result docs + fixture + static guard capture the outcome.
-- Required checks pass, or the blocker is recorded fail-closed.
-- `_ai/CLAUDE_REPORT.md` records concise evidence.
+- Owner has one clear local command/script to check the automation system and run the safe local dry-run path.
+- The entrypoint proves the current already-published evidence will not be reposted.
+- The runbook tells the Owner exactly how to use the current system and what approval is needed for future new-content live publish.
+- New guard and targeted regressions pass.
+- No secrets, external API calls, deploy, upload, dependency/lockfile changes, commit, or push.
 
 ## Final Handoff Format
 
 Claude Code must stop after the final handoff. Include:
 
 - task id
-- outcome status
-- whether store/project connection was already configured, newly connected, or blocked
-- whether `BLOB_READ_WRITE_TOKEN` runtime availability was verified redacted
 - changed files
-- Vercel CLI commands/results summary with no secret values
+- operator commands added and what each does
 - checks/results
 - side effects confirmation
 - deviations/risks
-- checkpoint recommendation
-- `전체프로젝트 진행률 : 약 92%`
+- whether checkpoint commit is recommended
+- `전체프로젝트 진행률 : 약 95%`
