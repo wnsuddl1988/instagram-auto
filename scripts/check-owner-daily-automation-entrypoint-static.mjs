@@ -394,7 +394,11 @@ if (cpfJsonMatch) { try { cpfParsed = JSON.parse(cpfJsonMatch[0]); } catch { cpf
 check("--preflight --content-unit: JSON parse", !!cpfParsed);
 check("--preflight --content-unit: isDefaultContentUnit === false", cpfParsed?.isDefaultContentUnit === false);
 check("--preflight --content-unit: contentUnitKind === custom_manifest_content", cpfParsed?.contentUnitKind === "custom_manifest_content");
-check("--preflight --content-unit: customContentLiveHaltError === CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE", cpfParsed?.customContentLiveHaltError === "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE");
+// task: dual-platform-custom-content-live-credential-gate-no-execute-v1
+// orchestrator 계약 변경: custom content의 halt error는 옛 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE가
+// 아니라 credential resolution stub(gate 5) 도달 후의 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE다.
+// owner entrypoint는 이 값을 orchestrator preflight 출력에서 그대로 surface한다(하드코딩 없음).
+check("--preflight --content-unit: customContentLiveHaltError === CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE", cpfParsed?.customContentLiveHaltError === "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE");
 check("--preflight --content-unit: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(cpfOut));
 
 console.log("\n[ operator smoke: --duplicate-guard-check --content-unit <sample> ]");

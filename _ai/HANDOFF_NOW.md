@@ -4,117 +4,114 @@
 
 ## Current Task
 
-- Task ID: `owner-entrypoint-golden-ready-shortcuts-no-live-v1`
-- Owner approval basis: no-live operator usability continuation after checkpoint `4bd2c57 feat(media): add golden sample content unit readiness`
-- Purpose: make the owner-usable CLI flow expose the ready golden sample content unit without requiring the Owner to remember the long fixture path. Add no-live package/entrypoint/runbook/guard support for checking the ready content unit and confirming duplicate-safe block.
+- Task ID: `dual-platform-custom-content-live-credential-gate-no-execute-v1`
+- Owner approval basis: continue usability work after checkpoint `b3197c2 chore(operator): add golden sample readiness shortcuts`
+- Purpose: move custom/non-default content live evaluation past the old gate 4.5 halt when all no-secret readiness gates pass, while still stopping before credential values/API calls. This makes the remaining blocker for new content explicit: credential resolution/API execution is not wired in this slice.
+
+## Why This Is Next
+
+The ready golden sample can now be checked with short commands:
+
+- `pnpm owner:ready-preflight`
+- `pnpm owner:ready-duplicate-guard-check`
+
+However, future/new content still has a hard custom-content halt:
+
+- `CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`
+- gate 4.5, before credential resolution
+
+For actual new videos, the system needs to prove:
+
+1. metadata/source/blob/duplicate gates are evaluated in order,
+2. duplicate guard still runs before credential resolution,
+3. custom content that is otherwise ready reaches the credential stub,
+4. credential values are still not read,
+5. actual Instagram/YouTube/Blob API calls still do not execute.
 
 ## Approved Scope
 
 Approved:
 
-- Add package scripts only (no dependency/lockfile changes) for the ready golden sample fixture.
-- Update owner entrypoint status/help to mention the ready fixture and shortest commands.
-- Update owner entrypoint guard to verify the ready-fixture commands.
-- Update owner runbook with a short "existing golden sample readiness" section.
+- Update the dual-platform orchestrator so custom/non-default content no longer stops at the unconditional gate 4.5 when gates 1-4 pass.
+- Keep gate 5 as a no-secret fail-closed stub:
+  - `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`
+  - no `process.env` access in the orchestrator
+  - no credential value read/print/hash/copy/log
+  - no lib import/call
+  - no API call
+- Preserve default/golden sample behavior:
+  - default `t1_lifestyle_inflation/v3_2` still exits 3 with `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
+  - duplicate guard remains before credential resolution
+  - no repost
+- Update fixture/docs/guard to reflect the new custom-content live state:
+  - custom content can reach credential gate if readiness gates pass
+  - actual credential/API execution remains disabled in this slice
+- Add/adjust static guard tests using temp/probe manifests only if needed. Probe artifacts must be outside the repo or OS temp and cleaned up.
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`.
 
-Not approved:
+Allowed files:
 
-- Instagram publish/arm beyond existing duplicate-guard safe-block check.
-- YouTube API/OAuth/upload.
-- Blob upload/delete/overwrite/copy/mutation or public HEAD.
-- Env/secret read/write/print, including `.env`, `.env.*`, `.env.local`.
-- Deploy, dependency/lockfile changes, DB/Supabase, browser automation.
-- New media generation, ffmpeg, ffprobe, TTS/image/render/mux.
-- Commit/push.
+- `scripts/run-dual-platform-final-publish-orchestrator.mjs`
+- `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
+- `scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+- `docs/dual-platform-final-publish-orchestrator.md`
+- `_ai/CLAUDE_REPORT.md`
 
-## Existing Ready Fixture
+Only touch another file if a direct import/check break proves it is necessary, and report why.
 
-Use the committed ready fixture:
+## Required Behavior
 
-- `scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+### Default evidence content
 
-It already points to:
+Must remain unchanged:
 
-- Instagram source:
-  - `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-- YouTube source:
-  - `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4`
-- Blob liveness evidence:
-  - public URL HEAD 200 / `video/mp4` / `20294549`
+- `--preflight` default: `preflightOk:true`
+- `--live` default: exit 3
+- status: `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
+- `credentialResolutionReached:false`
+- `actualApiCallReached:false`
+- all side-effect counters 0
 
-The fixture preflight is already known to pass:
+### Custom content with missing source or missing readiness
 
-- `preflightOk:true`
-- `sourceFilesReady:true`
-- metadata gate ok
-- Blob evidence ok
-- duplicate guard uses `v3_2`
-- side effects 0
+Must still fail closed at the earliest correct gate:
 
-## Required Implementation
+- missing source -> source-file gate blocks before credential
+- bad/missing metadata -> metadata gate blocks before credential
+- bad/missing blob evidence -> blob evidence gate blocks before credential
 
-### 1. package.json scripts
+### Custom content with gates 1-4 passing
 
-Add scripts only:
+Use a temp/probe custom content manifest in the guard if needed. It may reuse existing local mp4 files and shape-valid no-network blob evidence, but must not call public HEAD or Blob SDK.
 
-- `owner:ready-preflight`
-  - runs owner entrypoint `--preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
-- `owner:ready-duplicate-guard-check`
-  - runs owner entrypoint `--duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+Expected live behavior for that probe:
 
-Do not change dependencies/devDependencies or `pnpm-lock.yaml`.
+- `--live --content-unit <probe>` exits 4
+- status: `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`
+- `credentialResolutionReached:true`
+- `credentialValuesAccessed:false`
+- `credentialValuesResolved:false`
+- `actualApiCallReached:false`
+- all side-effect counters 0
+- gate trace shows:
+  - metadata gate evaluated before source/blob/duplicate
+  - source file gate evaluated before blob
+  - blob evidence gate evaluated before duplicate
+  - duplicate guard evaluated before credential
+  - credential stub evaluated
+  - actual API call not reached
 
-### 2. Owner entrypoint
-
-Update `scripts/run-owner-daily-automation-entrypoint.mjs`:
-
-- Add a constant for the ready fixture path if useful.
-- `--status` output should include:
-  - ready fixture path
-  - command for ready preflight
-  - command for ready duplicate guard check
-  - clear note that this content is already published and duplicate-safe; these commands do not repost.
-- Help/usage text may mention the two package scripts or the ready fixture path.
-- Do not change live behavior.
-- Do not add env/secret access.
-
-### 3. Owner entrypoint guard
-
-Update `scripts/check-owner-daily-automation-entrypoint-static.mjs`:
-
-- Assert package scripts exist and use the exact ready fixture path.
-- Assert status output includes the ready fixture/commands.
-- Smoke:
-  - `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
-    - should exit 0
-    - should indicate `preflightOk:true`
-    - should not contain secret value shapes
-  - `node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
-    - should exit 0
-    - should be the expected safe duplicate block
-    - should not treat block as publish success
-    - should not contain secret value shapes
-- Keep existing checks intact.
-
-### 4. Runbook
-
-Update `docs/owner-daily-automation-runbook.md`:
-
-- Add a compact section near the top:
-  - existing golden sample readiness commands:
-    - `pnpm owner:ready-preflight`
-    - `pnpm owner:ready-duplicate-guard-check`
-  - explain they are no-live verification / duplicate-safe block, not repost.
-- Do not add secret instructions.
+The old unconditional custom halt must not be the final status for otherwise-ready custom content.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not print, hash, copy, log, stage, or commit token values.
-- Do not call public HEAD.
+- Do not read `process.env` in the orchestrator.
+- Do not import or call live client functions from the orchestrator.
 - Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or paid/external live services.
-- Do not call Blob SDK, upload/delete/overwrite/copy/mutation.
+- Do not call Blob SDK, upload/delete/overwrite/copy/list/head/mutation.
+- Do not call public HEAD.
 - Do not run ffmpeg or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
 - Do not delete/overwrite existing media or result JSON.
@@ -134,25 +131,28 @@ Update `docs/owner-daily-automation-runbook.md`:
 ## Required Checks
 
 1. `git status -sb`
-2. Syntax check for changed JS/MJS files.
-3. `package.json` JSON parse.
-4. `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-5. Targeted regressions:
+2. `node --check scripts/run-dual-platform-final-publish-orchestrator.mjs`
+3. `node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+4. Fixture JSON parse for `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
+5. `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+6. Targeted regressions:
    - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
-   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
-Do not run full local generation pipeline.
-Do not run ffmpeg/ffprobe/deploy/API.
+Do not run local generation pipeline.
+Do not run ffmpeg/ffprobe/deploy/API/network.
 
 ## Definition Of Done
 
 All must be true:
 
-1. `pnpm owner:ready-preflight` or equivalent package script exists and verifies the ready fixture without live publish.
-2. `pnpm owner:ready-duplicate-guard-check` or equivalent package script exists and verifies safe duplicate block without treating it as publish success.
-3. Owner status/runbook clearly show the short commands.
-4. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency/lockfile change, media generation, commit, or push.
+1. Default golden sample duplicate block behavior is unchanged.
+2. Custom content with incomplete readiness still fails closed before credential.
+3. Custom content probe with readiness gates passing reaches credential stub and exits with `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`.
+4. Credential values are not accessed and actual API calls are not reached.
+5. Guards/docs/fixture describe the new state without implying live publish is enabled.
+6. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency/lockfile change, media generation, commit, or push.
 
 ## Final Handoff Format
 
@@ -160,10 +160,7 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- added package scripts
-- owner status/runbook summary
-- ready preflight smoke result
-- ready duplicate-guard smoke result
+- behavior summary for default/custom missing/custom ready-probe
 - checks/results
 - side effects confirmation
 - env/secret handling confirmation

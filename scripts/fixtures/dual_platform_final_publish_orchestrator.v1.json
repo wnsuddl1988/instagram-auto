@@ -159,32 +159,37 @@
         "actualApiCallReached": false
       },
       "customContentExpected": {
-        "note": "task: dual-platform-content-unit-manifest-parameterization-no-live-v1. custom(non-default) content unit의 --live/--arm은 이 slice에서 활성화되지 않았다. metadata/source/blob gate 판정 뒤 credential resolution(gate 5)/actual API call(gate 6) 이전에 fail-closed된다.",
-        "status": "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE",
-        "exitCode": 5,
-        "credentialResolutionReached": false,
+        "note": "task: dual-platform-custom-content-live-credential-gate-no-execute-v1. custom(non-default) content unit의 실제 publish(API 실행)는 이 slice에서 비활성이다. 옛 무조건 custom halt(gate 4.5)는 제거됐다: gate 1~4(metadata/source/blob/duplicate)를 모두 통과한 custom content는 credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로 fail-closed된다. credential 값은 읽지 않으며(process.env/secret 미접근), actual API call(gate 6)에도 도달하지 않는다. gate 1~4 중 하나라도 미충족이면 그 gate에서 credential 이전에 fail-closed된다(예: source 미존재 → BLOCKED_SOURCE_FILE_MISSING, blob evidence 부재 → BLOCKED_BLOB_LIVENESS_EVIDENCE).",
+        "readyContentStatus": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
+        "readyContentExitCode": 4,
+        "credentialResolutionReached": true,
+        "credentialValuesAccessed": false,
+        "credentialValuesResolved": false,
         "actualApiCallReached": false,
-        "gateHaltedAt": "custom_content_live_not_enabled(between gate 4 and gate 5)"
+        "gateHaltedAt": "credential_presence_resolution(gate 5, after duplicate guard gate 4, before actual_api_call gate 6)",
+        "customContentLivePublishEnabledThisSlice": false,
+        "missingReadinessFailsClosedBeforeCredential": true
       }
     }
   },
 
   "contentUnitManifest": {
-    "note": "task: dual-platform-content-unit-manifest-parameterization-no-live-v1. 미래 새 영상은 이 계약의 content unit manifest(JSON)로 표현되어 --content-unit <path>로 전달된다. --content-unit이 없으면 모든 모드는 default evidence content로 동작한다(하위 호환). custom content live 실행은 이 slice에서 비활성(fail-closed).",
+    "note": "task: dual-platform-content-unit-manifest-parameterization-no-live-v1 → dual-platform-custom-content-live-credential-gate-no-execute-v1. 미래 새 영상은 이 계약의 content unit manifest(JSON)로 표현되어 --content-unit <path>로 전달된다. --content-unit이 없으면 모든 모드는 default evidence content로 동작한다(하위 호환). custom content의 실제 publish(API 실행)는 이 slice에서 비활성이다: gate 1~4를 통과하면 credential resolution stub(gate 5)에서 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed된다.",
     "schemaVersion": "dual_platform_content_unit_v1",
     "sampleFixture": "scripts/fixtures/dual_platform_content_unit.sample.v1.json",
     "requiredFields": ["schemaVersion", "contentId", "version", "instagramSourcePath", "youtubeSourcePath"],
     "optionalFields": ["instagramMetadata", "youtubeMetadata", "blobPublicUrlLivenessEvidence", "existingPublishedKeys"],
     "defaultContentIsUnchanged": true,
-    "customContentLiveEnabledThisSlice": false,
-    "customContentLiveHaltError": "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE",
+    "customContentLivePublishEnabledThisSlice": false,
+    "customContentLiveHaltError": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
+    "customContentReachesCredentialGateWhenReady": true,
     "instagramReadinessRequiresBlobLivenessEvidence": true,
     "blobLivenessEvidenceNetworkRevalidation": false,
     "envValuesAccessedForCustomContent": false,
     "liveExecutionPlanBlockedReasonByContentKind": {
-      "note": "task: dual-platform-content-unit-manifest-block-reason-fix-v1. liveExecutionPlan(및 각 step)의 willExecuteBlockedReason은 콘텐츠 종류에 따라 다르다. 아래 fixture 본문의 liveExecutionPlan 예시(steps[*].willExecuteBlockedReason = duplicate_publish_guard_blocks_current_content)는 default evidence content(v3_2) 전용 값이며, custom(non-default) content에는 적용되지 않는다.",
+      "note": "task: dual-platform-content-unit-manifest-block-reason-fix-v1 → dual-platform-custom-content-live-credential-gate-no-execute-v1. liveExecutionPlan(및 각 step)의 willExecuteBlockedReason은 콘텐츠 종류에 따라 다르다. 아래 fixture 본문의 liveExecutionPlan 예시(steps[*].willExecuteBlockedReason = duplicate_publish_guard_blocks_current_content)는 default evidence content(v3_2) 전용 값이며, custom(non-default) content에는 적용되지 않는다. custom content의 실제 최종 halt는 옛 custom_content_live_not_enabled_this_slice가 아니라 credential_resolution_not_wired_this_slice다.",
       "defaultEvidenceContent": "duplicate_publish_guard_blocks_current_content",
-      "customNonDefaultContent": "custom_content_live_not_enabled_this_slice"
+      "customNonDefaultContent": "credential_resolution_not_wired_this_slice"
     }
   },
 
@@ -450,12 +455,15 @@
       "youtubeLiveUploadWiring.duplicatePublishGuard.key가 v3_2가 아니거나 actualUploadCallPerformed가 true로 오염됨",
       "runner 실행 코드(주석/문자열 제외)에 youtube.videos.insert 또는 googleapis live upload 실행 패턴이 들어감",
       "--content-unit 지정 시 default evidence content(t1_lifestyle_inflation/v3_2)의 dry-run/preflight/live 동작이 바뀜(하위 호환 깨짐)",
-      "custom(non-default) content unit의 --live/--arm이 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE fail-closed 없이 credential resolution/actual API call로 진입",
-      "custom content live halt(gate 4.5)가 credential resolution(gate 5) 호출보다 뒤로 이동함",
+      "custom(non-default) content unit의 --live/--arm이 gate 1~4를 통과했는데도 credential resolution stub(gate 5)에 도달하지 못하거나, 반대로 credential 값을 실제로 읽거나 actual API call(gate 6)로 진입함",
+      "gate 1~4를 통과한 custom content가 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4) 이외의 상태로 종료됨(예: 옛 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/exit 5로 회귀)",
+      "credential resolution stub(gate 5)이 duplicate publish guard(gate 4) 호출보다 먼저 평가되도록 순서가 바뀜",
+      "credentialPresenceResolutionGate가 process.env/secret/credential 값을 읽거나, credentialValuesAccessed/credentialValuesResolved가 true로 오염되거나, lib live publish 함수를 import/호출함",
+      "custom content가 gate 1~4 중 하나라도 미충족인데(source/blob/metadata 부재) credential resolution stub까지 진입함(fail-closed가 credential 이전에 발생하지 않음)",
       "loadContentUnitFromManifest가 schemaVersion/필수 필드 검증 없이 manifest를 수용함",
       "custom content의 blobPublicUrlLivenessEvidence 검증이 네트워크 HEAD/list/readback을 수행하거나, evidence 부재/부정확 시에도 Instagram readiness가 ready로 통과함",
       "content unit manifest 로드/평가 경로에서 process.env 또는 .env.local 값에 접근함",
-      "custom(non-default) content unit의 liveExecutionPlan/step willExecuteBlockedReason이 duplicate_publish_guard_blocks_current_content로 하드코딩되어 실제 사유(custom_content_live_not_enabled_this_slice)를 오도함"
+      "custom(non-default) content unit의 liveExecutionPlan/step willExecuteBlockedReason이 duplicate_publish_guard_blocks_current_content로 하드코딩되어 실제 사유(credential_resolution_not_wired_this_slice)를 오도함"
     ]
   }
 }

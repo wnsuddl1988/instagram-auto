@@ -12,9 +12,13 @@
  *   --preflight : 준비 검증. publish plan + 파일경로 + metadata gate + duplicate guard +
  *                 Blob liveness evidence + arm 상태 + required env key NAME 계약(값 미접근).
  *   --live/--arm: armed(APPROVE_DUAL_PLATFORM_ARM). LIVE_GATE_ORDER 순서로 fail-closed
- *                 평가하며, current content(t1_lifestyle_inflation/v3_2)는 gate 4
+ *                 평가하며, default content(t1_lifestyle_inflation/v3_2)는 gate 4
  *                 duplicate publish guard가 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로
  *                 차단한다 — credential resolution(gate 5)/actual API call(gate 6) 미도달.
+ *                 custom(non-default) content는 gate 1~4를 통과하면 credential resolution
+ *                 stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로
+ *                 fail-closed된다 — credential 값 미접근, actual API call(gate 6) 미도달.
+ *                 실제 publish는 이 slice에서 비활성이다(credential resolution 미wiring).
  *
  * 이 슬라이스에서 절대 하지 않는 것:
  * - Instagram/YouTube API 호출 (fetch/googleapis/axios 등 네트워크 호출 없음)
@@ -45,12 +49,15 @@ export const DUPLICATE_BLOCKED_STATUS = "BLOCKED_DUPLICATE_ALREADY_PUBLISHED";
 export const CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR = "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE";
 
 /**
- * custom(non-default) content unit의 live 실행 차단 상태.
+ * (deprecated as a live-halt) custom content live 차단 상태 문자열.
  * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
- * default evidence content(t1_lifestyle_inflation/v3_2)가 아닌 외부 manifest content는
- * 이 slice에서 live 실행이 활성화되지 않았다. --live/--arm 요청 시 metadata/source/blob
- * gate 판정 이후, credential resolution(gate 5)/actual API call(gate 6)에 도달하기 전에
- * fail-closed로 멈춘다(exit 5). 새 콘텐츠 실제 배포는 별도 승인 slice에서만 wiring된다.
+ *       → dual-platform-custom-content-live-credential-gate-no-execute-v1
+ * 이전 slice에서는 custom(non-default) content의 --live/--arm이 gate 4와 gate 5 사이의
+ * 무조건 halt(옛 gate 4.5)에서 이 상태로 멈췄다. 이제는 gate 1~4를 통과한 custom content가
+ * credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
+ * fail-closed된다(exit 4). 이 상수는 하위 호환/문서 참조용으로만 export되며, 실제 live 실행
+ * 경로(executeArmedLiveRun)에서는 더 이상 halt 상태로 사용되지 않는다. custom content 실제
+ * publish(API 실행)는 여전히 비활성이다 — credential resolution이 wiring되지 않았기 때문이다.
  */
 export const CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR = "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE";
 
@@ -486,17 +493,19 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
   const ytGuard = ytJob?.duplicatePublishGuard ?? null;
 
   // task: dual-platform-content-unit-manifest-block-reason-fix-v1
+  //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
   // 실제 blocked 사유는 콘텐츠 종류에 따라 다르다:
-  //  - default evidence content(v3_2) + 양쪽 already published → duplicate_publish_guard가 차단.
-  //  - custom(non-default) content → 이 slice는 duplicate 여부와 무관하게 live 실행이
-  //    활성화되지 않았다(gate 4.5, CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE). duplicate가
-  //    아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는 하드코딩을 제거한다.
+  //  - default evidence content(v3_2) + 양쪽 already published → duplicate_publish_guard가 차단(exit 3).
+  //  - custom(non-default) content → 옛 gate 4.5 무조건 halt는 제거됐다. gate 1~4를 통과하면
+  //    credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
+  //    fail-closed된다(exit 4). duplicate가 아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는
+  //    하드코딩을 쓰지 않는다.
   const isDefault = isDefaultContentUnit(unit);
   const bothAlreadyPublished = igGuard?.alreadyPublished === true && ytGuard?.alreadyPublished === true;
   const currentContentDuplicateBlocked = isDefault && bothAlreadyPublished;
   const willExecuteBlockedReason = currentContentDuplicateBlocked
     ? "duplicate_publish_guard_blocks_current_content"
-    : "custom_content_live_not_enabled_this_slice";
+    : "credential_resolution_not_wired_this_slice";
 
   // 모든 step 공통: arm 상태(enabled)지만 실제로 실행되는 step은 없다(willExecute:false,
   // side effect 0). blocked 사유는 위에서 콘텐츠 종류에 따라 정확히 판정한 값을 사용한다.
@@ -645,9 +654,10 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
       ? "armed live wiring plan. 실제 Instagram(Vercel Blob→Graph API) / YouTube(direct upload) publish 흐름을 " +
         "코드 구조상 순서대로 연결한다. live gate는 arm 상태지만 current content(v3_2)는 duplicate publish guard가 " +
         "차단하므로 이번 run에서 실행되는 step은 없다(side effect 0). secret 값/토큰/credential은 담지 않는다."
-      : "armed live wiring plan(custom content). 이 콘텐츠는 default evidence content가 아니며, 이 slice에서는 " +
-        "duplicate 여부와 무관하게 custom content live 실행 자체가 활성화되지 않았다 " +
-        "(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE). 이번 run에서 실행되는 step은 없다(side effect 0).",
+      : "armed live wiring plan(custom content). 이 콘텐츠는 default evidence content가 아니다. gate 1~4" +
+        "(metadata/source/blob/duplicate)를 통과하면 credential resolution stub(gate 5)까지 도달한 뒤 " +
+        "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed된다 — 이 slice에서 credential resolution/" +
+        "actual API call은 wiring되지 않았다. 이번 run에서 실행되는 step은 없다(side effect 0, 실제 publish 비활성).",
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     failClosedError: LIVE_EXECUTION_DISABLED_ERROR,
     anyStepEnabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
@@ -655,8 +665,10 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
     anySideEffectPerformed: false,
     isDefaultContentUnit: isDefault,
     currentContentDuplicateBlocked,
+    // custom content live publish(실제 API 실행)는 여전히 비활성이다. 다만 옛 무조건 halt와 달리
+    // gate 1~4 통과 시 credential resolution stub까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED로 멈춘다.
     customContentLiveEnabledThisSlice: false,
-    customContentLiveHaltError: isDefault ? null : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+    customContentLiveHaltError: isDefault ? null : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
     willExecuteBlockedReason,
     duplicateBlockedStatus: DUPLICATE_BLOCKED_STATUS,
     orderedFlow: [
@@ -791,20 +803,24 @@ function buildPreflight(unit) {
       youtubeKey: ytJob?.duplicatePublishGuard?.key ?? null,
       instagramWillBeBlocked: igAlreadyPublished,
       youtubeWillBeBlocked: ytAlreadyPublished,
-      // default duplicate content는 gate 4 duplicate block(exit 3). custom non-default content는
-      // duplicate가 아니라면 gate 4를 통과하지만 gate 5 이전에 custom-live-not-enabled(exit 5)로 멈춘다.
+      // default duplicate content는 gate 4 duplicate block(exit 3, credential 미도달). custom
+      // non-default content는 duplicate가 아니라면 gate 4를 통과하고 gate 5 credential resolution
+      // stub까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE(exit 4)로 fail-closed된다.
       expectedLiveStatus: isDefault
         ? DUPLICATE_BLOCKED_STATUS
         : igAlreadyPublished && ytAlreadyPublished
           ? DUPLICATE_BLOCKED_STATUS
-          : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+          : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
       expectedLiveExitCode: isDefault
         ? 3
         : igAlreadyPublished && ytAlreadyPublished
           ? 3
-          : 5,
-      duplicateBlockHappensBeforeCredentialResolution: true,
-      credentialResolutionWouldBeReached: false,
+          : 4,
+      // duplicate content(default 및 이미 게시된 custom)는 gate 4에서 credential 이전에 차단된다.
+      // 비중복 custom content는 credential stub까지 도달하지만 credential 값은 읽지 않는다.
+      duplicateBlockHappensBeforeCredentialResolution: isDefault || (igAlreadyPublished && ytAlreadyPublished),
+      credentialResolutionWouldBeReached: !isDefault && !(igAlreadyPublished && ytAlreadyPublished),
+      credentialValuesWouldBeAccessed: false,
       actualApiCallWouldRun: false,
       retryForbidden: true,
     },
@@ -815,22 +831,28 @@ function buildPreflight(unit) {
 
   // ── custom content unit preflight 계약 (secret-free) ─────────────────────────
   // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
-  // custom(non-default) content는 이 slice에서 live 실행이 활성화되지 않는다.
-  // duplicate block이 확정되지 않은 custom content의 --live/--arm은 credential/API gate
-  // 이전에 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE로 fail-closed된다.
+  //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
+  // custom(non-default) content의 실제 live publish(API 실행)는 여전히 비활성이다. 다만 옛
+  // 무조건 custom halt(gate 4.5)는 제거됐다: gate 1~4를 통과한 custom content의 --live/--arm은
+  // credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로
+  // fail-closed된다(exit 4, credential 값 미접근, actual API call 미도달).
   const bothAlreadyPublished = igAlreadyPublished && ytAlreadyPublished;
   const contentUnit = {
     note:
-      "content unit 종류와 live 실행 가능 여부. default evidence content(t1_lifestyle_inflation/v3_2)만 " +
-      "이 slice에서 armed live gate 순서 평가로 duplicate block을 시연한다. custom content는 live 미활성(fail-closed).",
+      "content unit 종류와 live 실행 가능 여부. default evidence content(t1_lifestyle_inflation/v3_2)는 " +
+      "gate 4 duplicate guard가 차단한다(exit 3). custom content의 실제 publish는 비활성이며, gate 1~4를 " +
+      "통과하면 credential resolution stub(gate 5)까지 도달한 뒤 CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 " +
+      "fail-closed된다(exit 4).",
     kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
     isDefaultContentUnit: isDefault,
     contentId: unit.contentId,
     version: unit.version,
     duplicateGuardKeyFormatOk,
     duplicateGuardUsesUnitVersion,
+    // 실제 live publish(API 실행)는 이 slice에서 비활성이다(credential resolution 미wiring).
     customContentLiveEnabledThisSlice: false,
-    customContentLiveHaltError: isDefault ? null : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+    customContentLiveHaltError: isDefault ? null : CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+    customContentReachesCredentialGate: isDefault ? false : !bothAlreadyPublished,
     bothPlatformsAlreadyPublished: bothAlreadyPublished,
     blobLivenessEvidenceProvided: isDefault ? true : blobLivenessEvidence.provided === true,
     blobLivenessEvidenceOk: blobLivenessEvidence.ok === true,
@@ -1088,42 +1110,17 @@ function executeArmedLiveRun(unit) {
     };
   }
 
-  // ── gate 4.5: custom content live 차단 (content unit manifest parameterization) ──
-  // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
-  // duplicate가 아닌 custom(non-default) content는 이 slice에서 live 실행이 활성화되지 않았다.
-  // credential resolution(gate 5)/actual API call(gate 6)에 도달하기 전에 fail-closed로 멈춘다.
-  if (!isDefaultContentUnit(unit)) {
-    gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "custom_content_live_not_enabled" });
-    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "custom_content_live_not_enabled" });
-    return {
-      exitCode: 5,
-      result: {
-        ...base,
-        status: CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
-        gateTrace,
-        customContent: {
-          note: "custom manifest content는 이 slice에서 live 실행이 활성화되지 않았다. 실제 배포는 별도 승인 slice에서만 wiring된다.",
-          isDefaultContentUnit: false,
-          contentId: unit.contentId,
-          version: unit.version,
-          liveEnabledThisSlice: false,
-          haltedBeforeCredentialResolution: true,
-          haltedBeforeActualApiCall: true,
-        },
-        sideEffectCounters,
-        credentialResolutionReached: false,
-        credentialValuesAccessed: false,
-        credentialValuesResolved: false,
-        actualApiCallReached: false,
-      },
-    };
-  }
-
   // ── gate 5: credential_presence_resolution — 이 slice에서는 fail-closed stub ──
-  // current content는 gate 4에서 차단되어 여기 도달하지 않는다. 비중복 신규 콘텐츠라도
-  // 이 slice는 credential 값을 읽지 않고 여기서 fail-closed로 멈춘다(gate 6 미도달).
+  // task: dual-platform-custom-content-live-credential-gate-no-execute-v1
+  // default content는 gate 4 duplicate publish guard에서 이미 차단되어(exit 3) 여기 도달하지
+  // 않는다. custom(non-default) content가 gate 1~4(metadata/source/blob/duplicate)를 모두
+  // 통과하면 더 이상 무조건적인 custom-content halt(옛 gate 4.5)에서 멈추지 않고 이 credential
+  // stub까지 도달한다. 단, 이 slice에서 credential resolution은 wiring되지 않았으므로 여기서
+  // fail-closed로 멈춘다(exit 4). credential 값은 절대 읽지 않으며(process.env/secret 미접근),
+  // 어떤 lib도 import/호출하지 않고, actual API call(gate 6)에도 도달하지 않는다.
+  const isDefault = isDefaultContentUnit(unit);
   const credentialGate = credentialPresenceResolutionGate();
-  gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: true, wiredThisSlice: false, credentialValuesAccessed: false });
+  gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: true, reached: true, wiredThisSlice: false, credentialValuesAccessed: false, credentialValuesResolved: false });
   gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "credential_resolution_not_wired" });
   return {
     exitCode: 4,
@@ -1131,6 +1128,19 @@ function executeArmedLiveRun(unit) {
       ...base,
       status: credentialGate.haltError,
       gateTrace,
+      contentUnit: {
+        note:
+          "gate 1~4를 통과한 content가 credential resolution stub까지 도달했다. 이 slice에서 credential " +
+          "resolution/actual API call은 wiring되지 않았으므로 여기서 fail-closed로 멈춘다(실제 publish 비활성). " +
+          "default evidence content는 gate 4 duplicate guard가 앞서 차단하므로 이 지점에 도달하지 않는다.",
+        isDefaultContentUnit: isDefault,
+        kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+        contentId: unit.contentId,
+        version: unit.version,
+        reachedCredentialGate: true,
+        credentialResolutionWiredThisSlice: false,
+        haltedBeforeActualApiCall: true,
+      },
       sideEffectCounters,
       credentialResolutionReached: true,
       credentialValuesAccessed: false,
@@ -1211,9 +1221,10 @@ function main() {
       process.exit(2);
       return;
     }
-    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다.
-    // custom(non-default) content는 gate 4.5 custom-content-live-not-enabled로 fail-closed(exit 5).
-    // 어느 경로든 credential resolution/actual API call 미도달, 모든 side-effect counter 0.
+    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다(exit 3, credential 미도달).
+    // custom(non-default) content는 gate 1~4 통과 시 credential resolution stub(gate 5)까지 도달한 뒤
+    // CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE로 fail-closed(exit 4). 어느 경로든 credential 값 미접근,
+    // actual API call 미도달, 모든 side-effect counter 0. 실제 publish는 이 slice에서 비활성이다.
     const { result, exitCode } = executeArmedLiveRun(activeUnit);
     console.log(JSON.stringify(result, null, 2));
     process.exit(exitCode);
