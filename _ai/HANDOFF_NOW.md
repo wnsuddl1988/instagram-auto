@@ -4,75 +4,87 @@
 
 ## Current Task
 
-- Task ID: `dual-platform-content-unit-manifest-parameterization-no-live-v1`
-- Latest checkpoint: `b520fc5 feat(operator): add owner daily automation entrypoint`
+- Task ID: `local-pipeline-content-unit-manifest-bridge-no-live-v1`
+- Latest checkpoint: `fbf6b58 feat(media): parameterize dual platform content units`
 - Owner request: continue remaining work so the project can actually be used to generate and publish videos.
-- Purpose: remove the next usability bottleneck by making the dual-platform publish orchestrator and Owner entrypoint accept an external content unit manifest for future new videos. This slice is no-live/no-execute: it parameterizes and verifies the path, but does not upload, publish, generate new media, or read secrets.
+- Purpose: connect the local generation dry-run pipeline outputs to the new dual-platform content unit manifest contract, so future new videos do not require hand-written manifests. This slice is no-live/no-execute for external services.
 
 ## Why This Is Next
 
-- The Owner now has a local operator entrypoint, but the publish orchestrator is still hard-coded around the already-published evidence content:
-  - contentId/version: `t1_lifestyle_inflation` / `v3_2`
-  - Instagram media_id: `17916511431199303`
-  - YouTube videoId: `r9jhckdpC9w`
-- For actual daily use, the system must accept a new content unit manifest with different `contentId`, `version`, platform source paths, metadata, and later Blob liveness evidence.
-- Current evidence content must remain duplicate-guarded and must not be reposted.
+- The dual-platform orchestrator now accepts `--content-unit <manifest.json>`.
+- The Owner entrypoint now knows how to pass `--content-unit`.
+- But the current local generation pipeline only produces local run summaries and upload-ready dry-run packets; it does not yet produce a content unit manifest compatible with the publish orchestrator.
+- Therefore the next bottleneck is bridging:
+  - local full-frame mp4 output → `instagramSourcePath`
+  - platform upload metadata → `instagramMetadata` / `youtubeMetadata`
+  - YouTube letterbox path placeholder or explicit path → `youtubeSourcePath`
+  - optional Blob liveness evidence → `blobPublicUrlLivenessEvidence`
 
 ## Approved Scope
 
-Claude Code may implement no-live content unit parameterization.
+Claude Code may implement a no-live bridge from local pipeline output to a content unit manifest.
 
 Allowed edits:
-- `scripts/run-dual-platform-final-publish-orchestrator.mjs`
-- `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
-- `scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+- `scripts/run-local-money-shorts-from-render-manifest.mjs`
+- `scripts/run-local-money-shorts-pipeline-dry-run.mjs`
 - `scripts/run-owner-daily-automation-entrypoint.mjs`
+- `scripts/check-local-pipeline-runner-static.mjs`
+- `scripts/check-render-manifest-local-runner-static.mjs`
 - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
-- `docs/dual-platform-final-publish-orchestrator.md`
 - `docs/owner-daily-automation-runbook.md`
+- New script if useful, suggested:
+  - `scripts/build-dual-platform-content-unit-from-local-summary.mjs`
+- New static guard if useful, suggested:
+  - `scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
 - New fixture if useful, suggested:
-  - `scripts/fixtures/dual_platform_content_unit.sample.v1.json`
+  - `scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json`
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`
 
 ## Required Behavior
 
-1. Add a content unit manifest contract for future new videos.
-   Suggested fields:
-   - `schemaVersion`
-   - `contentId`
-   - `version`
-   - `instagramSourcePath`
-   - `youtubeSourcePath`
-   - optional `instagramMetadata`
-   - optional `youtubeMetadata`
-   - optional `blobPublicUrlLivenessEvidence`
-   - optional `existingPublishedKeys`
+1. Add a builder that can create a `dual_platform_content_unit_v1` manifest from local pipeline outputs.
+   Suggested input:
+   - `--summary <render-manifest-local-run-summary.local-mock.json>` or `--pipeline-summary <pipeline-run-summary.local-mock.json>`
+   - `--out-dir <outside-repo path>`
+   - optional `--content-id <id>`
+   - optional `--version <version>`
+   - optional `--youtube-source <mp4 path>`
+   - optional `--blob-liveness-result <json path>`
 
-2. Add CLI support to the publish orchestrator:
-   - `--content-unit <path>` for `--dry-run` and `--preflight`.
-   - Default behavior without `--content-unit` must remain current evidence content and duplicate-guarded.
-   - `--live` / `--arm` with a custom non-default content unit must fail closed in this slice before credential/API gates, with a clear status such as `CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`.
-   - For the default current evidence content, `--live` must still return duplicate blocked exit `3`, with all side effect counters 0.
+2. The builder should:
+   - read only local non-secret JSON outputs from the dry-run pipeline;
+   - derive `instagramSourcePath` from the generated full-frame/tts-mux mp4;
+   - derive `instagramMetadata` and `youtubeMetadata` from the upload-ready packet or upload payload platform metadata;
+   - set `youtubeSourcePath` from `--youtube-source` if provided, otherwise create a deterministic placeholder path and mark/report that the YouTube letterbox source is not ready yet;
+   - include `blobPublicUrlLivenessEvidence` only if an explicit local result JSON is provided and shape-valid; do not do any network request;
+   - write a manifest file under the provided out-dir;
+   - write a small summary JSON with readiness booleans:
+     - `instagramSourceReady`
+     - `youtubeSourceReady`
+     - `metadataReady`
+     - `blobLivenessEvidenceReady`
+     - `contentUnitPreflightExpectedReady`
 
-3. Preflight behavior for custom content:
-   - Build Instagram + YouTube jobs from the manifest.
-   - Apply metadata optimization gates.
-   - Check source file existence as booleans only.
-   - If `blobPublicUrlLivenessEvidence` is missing or invalid, preflight must report not ready/fail-closed for Instagram publish readiness.
-   - No network HEAD/list/readback is allowed.
-   - No env/secret access.
+3. Update the Owner entrypoint:
+   - `--dry-run` should surface the generated content unit manifest path if this bridge runs as part of the dry-run flow, or expose a clear command/flag to build it from the latest summary.
+   - Accept a flag such as `--build-content-unit` or a mode such as `--content-unit-from-summary`, whichever is simpler and safer.
+   - Do not make live execution easier; this is still no-live.
 
-4. Owner entrypoint:
-   - Accept `--content-unit <path>` and pass it to orchestrator `--preflight`.
-   - `--status` should mention that future new videos use `--content-unit`.
-   - `--duplicate-guard-check` must not run `--live` for a custom non-default manifest unless duplicate block is explicitly confirmed. For non-duplicate custom content, it should fail closed without invoking live.
+4. Update docs:
+   - Owner runbook should explain the practical sequence:
+     1. run local dry-run,
+     2. build content unit manifest,
+     3. generate/attach YouTube letterbox source in a later approved local media step,
+     4. attach Blob liveness evidence after approved Blob upload/liveness,
+     5. run `--preflight --content-unit <manifest>`.
+   - Make clear that this slice does not upload/publish/generate new external media.
 
 5. Existing safety must remain:
-   - Existing `t1_lifestyle_inflation/v3_2` evidence is retryForbidden.
-   - Duplicate guard happens before credential/API.
-   - No `YOUTUBE_ACCESS_TOKEN` as long-lived required env.
-   - Metadata optimization gate remains mandatory.
-   - Instagram hashtags/CTA and YouTube metadata rules remain intact.
+   - no `.env.local` / secret access;
+   - no API/OAuth/upload/deploy;
+   - no ffmpeg/media generation in this slice;
+   - out-dir must be outside repo root;
+   - generated manifests/summaries should go under out-dir, not repo, unless they are static fixtures.
 
 ## Forbidden Actions
 
@@ -95,35 +107,31 @@ Allowed edits:
 ## Required Checks
 
 1. `git status -sb`
-2. Syntax:
-   - `node --check scripts/run-dual-platform-final-publish-orchestrator.mjs`
-   - `node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-   - `node --check scripts/run-owner-daily-automation-entrypoint.mjs`
-   - `node --check scripts/check-owner-daily-automation-entrypoint-static.mjs`
-3. Fixture JSON parse for any changed/new fixtures.
-4. Static guards:
-   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+2. Syntax for any changed/new JS/MJS guard/runner files.
+3. JSON parse for any changed/new fixtures.
+4. New bridge guard, if added:
+   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
+5. Existing guards:
    - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-5. Smoke:
-   - default: `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight`
-   - default duplicate block: `node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check`
-   - custom manifest preflight: `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json`
-   - custom owner entrypoint preflight: `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json`
-6. Targeted regressions:
    - `node scripts/check-local-pipeline-runner-static.mjs`
    - `node scripts/check-render-manifest-local-runner-static.mjs`
+   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+6. Smoke:
+   - Build a content unit manifest from a small checked-in/sample JSON fixture or an existing gitignored local summary if already present.
+   - Then run:
+     - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit <generated-manifest>`
+   - This preflight may be not-ready/fail-closed if YouTube source/Blob liveness is missing; that is acceptable if clearly reported.
 
 Do not run full build unless a focused syntax/import issue requires it.
+Do not run the full local generation pipeline if it would create new media; use fixture/sample inputs for smoke unless the files already exist and no media generation command is needed.
 
 ## Definition Of Done
 
-- A future new video can be represented as a content unit manifest.
-- The publish orchestrator can build dry-run/preflight plans from that manifest.
-- Custom content live execution remains fail-closed/no-execute in this slice.
-- Existing evidence content remains duplicate-guarded and not repostable.
-- Owner runbook explains how custom manifests fit into future real use.
-- Guards/checks prove no env/secret/API/upload/deploy/media-generation side effects.
-- No commit/push.
+- A content unit manifest can be generated from local pipeline output data, not hand-written.
+- Owner has a clear command or mode to build that manifest.
+- The generated manifest can be passed to the dual-platform orchestrator `--preflight --content-unit`.
+- Missing YouTube letterbox source or Blob liveness evidence fails closed with clear readiness booleans.
+- No env/secret/API/upload/deploy/media-generation/dependency/commit/push side effects.
 
 ## Final Handoff Format
 
@@ -131,9 +139,9 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- manifest contract summary
-- default evidence behavior
-- custom manifest behavior
+- bridge command(s)
+- generated manifest contract summary
+- smoke/preflight result
 - checks/results
 - side effects confirmation
 - deviations/risks

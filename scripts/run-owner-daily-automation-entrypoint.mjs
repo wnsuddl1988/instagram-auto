@@ -37,9 +37,10 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildContentUnitFromLocalSummary } from "./build-dual-platform-content-unit-from-local-summary.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -70,7 +71,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -83,9 +84,16 @@ function printUsage() {
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run [--manifest <path>] [--out-root <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight [--content-unit <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit" +
+        " (--summary <path> | --pipeline-summary <path>) --out-dir <path>" +
+        " [--content-id <id>] [--version <version>] [--youtube-source <path>] [--blob-liveness-result <path>]",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
+      "",
+      "  --build-content-unit builds a dual_platform_content_unit_v1 manifest from an existing local",
+      "                        dry-run pipeline summary (--dry-run output). Pass the resulting manifest",
+      "                        path to --preflight --content-unit <manifest> to check readiness.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -205,6 +213,8 @@ function runStatus() {
     },
     ownerNextSteps: {
       generateLocalDryRunPacket: "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
+      buildContentUnitFromDryRunSummary:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <generated summary.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
@@ -218,6 +228,10 @@ function runStatus() {
         "fail-closes before credential resolution / API call with CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE.",
       manifestSchemaVersion: "dual_platform_content_unit_v1",
       sampleManifest: "scripts/fixtures/dual_platform_content_unit.sample.v1.json",
+      buildFromLocalPipelineOutput:
+        "--build-content-unit derives a manifest from an existing --dry-run summary (no-live; no new media/API " +
+        "calls). YouTube letterbox source and Blob liveness evidence are reported not-ready until a later approved " +
+        "step supplies --youtube-source / --blob-liveness-result.",
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -271,7 +285,90 @@ function runDryRun() {
     "--out-root", outRootAbs,
   ]);
 
+  // 생성된 top-level summary path를 surface한다(파일명은 render-manifest 러너와 고정 계약).
+  // 이 summary는 --build-content-unit --summary <path>의 입력으로 바로 쓸 수 있다.
+  const generatedSummaryPath = join(outRootAbs, "render-manifest-local-run-summary.local-mock.json");
+  if (exitCode === 0 && existsSync(generatedSummaryPath)) {
+    console.log("");
+    console.log(`[owner-entrypoint] generated summary: ${generatedSummaryPath}`);
+    console.log(
+      `[owner-entrypoint] next: node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit ` +
+        `--summary "${generatedSummaryPath}" --out-dir <outside-repo path>`,
+    );
+    console.log("");
+  }
+
   return exitCode;
+}
+
+// ── mode: --build-content-unit ───────────────────────────────────────────────────
+function runBuildContentUnit() {
+  const summaryPath = getArg("--summary");
+  const pipelineSummaryPath = getArg("--pipeline-summary");
+  const outDir = getArg("--out-dir");
+  const contentId = getArg("--content-id");
+  const version = getArg("--version");
+  const youtubeSourcePath = getArg("--youtube-source");
+  const blobLivenessResultPath = getArg("--blob-liveness-result");
+
+  if ((!summaryPath && !pipelineSummaryPath) || !outDir) {
+    console.error(
+      "ABORT: --build-content-unit requires (--summary <path> | --pipeline-summary <path>) and --out-dir <path>.",
+    );
+    return 1;
+  }
+  if (summaryPath && pipelineSummaryPath) {
+    console.error("ABORT: provide only one of --summary or --pipeline-summary, not both.");
+    return 1;
+  }
+
+  const outDirAbs = resolve(outDir);
+  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+    console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+    return 1;
+  }
+
+  console.log(`[owner-entrypoint] building content unit manifest from local pipeline summary (no-live)`);
+  console.log(`[owner-entrypoint] source summary: ${summaryPath ?? pipelineSummaryPath}`);
+  console.log(`[owner-entrypoint] out-dir: ${outDirAbs}`);
+  console.log("");
+
+  const result = buildContentUnitFromLocalSummary({
+    summaryPath,
+    pipelineSummaryPath,
+    contentId,
+    version,
+    youtubeSourcePath,
+    blobLivenessResultPath,
+  });
+
+  if (!result.ok) {
+    console.error(`ABORT: ${result.reason}`);
+    return 1;
+  }
+
+  mkdirSync(outDirAbs, { recursive: true });
+  const manifestPath = join(outDirAbs, "dual_platform_content_unit.generated.json");
+  const buildSummaryPath = join(outDirAbs, "content-unit-build-summary.local-mock.json");
+  writeFileSync(manifestPath, JSON.stringify(result.manifest, null, 2), "utf-8");
+  writeFileSync(buildSummaryPath, JSON.stringify(result.buildSummary, null, 2), "utf-8");
+
+  console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_build_content_unit_v1", mode: "build-content-unit", manifestPath, buildSummaryPath, buildSummary: result.buildSummary }, null, 2));
+  console.log("");
+  console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  contentId:                          ${result.manifest.contentId}`);
+  console.log(`  version:                            ${result.manifest.version}`);
+  console.log(`  instagramSourceReady:                ${result.buildSummary.instagramSourceReady}`);
+  console.log(`  youtubeSourceReady:                  ${result.buildSummary.youtubeSourceReady}`);
+  console.log(`  metadataReady:                       ${result.buildSummary.metadataReady}`);
+  console.log(`  blobLivenessEvidenceReady:            ${result.buildSummary.blobLivenessEvidenceReady}`);
+  console.log(`  contentUnitPreflightExpectedReady:    ${result.buildSummary.contentUnitPreflightExpectedReady}`);
+  console.log("");
+  console.log(`  manifest:      ${manifestPath}`);
+  console.log(`  next:          node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit "${manifestPath}"`);
+  console.log("");
+
+  return 0;
 }
 
 // ── mode: --preflight ──────────────────────────────────────────────────────────
@@ -430,6 +527,9 @@ switch (requestedMode) {
     break;
   case "--duplicate-guard-check":
     exitCode = runDuplicateGuardCheck();
+    break;
+  case "--build-content-unit":
+    exitCode = runBuildContentUnit();
     break;
   default:
     printUsage();

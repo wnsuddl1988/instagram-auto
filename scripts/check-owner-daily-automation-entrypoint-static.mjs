@@ -9,10 +9,11 @@
  * Exit 0 = all PASS. Exit 1 = at least one FAIL.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import os from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -20,6 +21,7 @@ const REPO_ROOT = resolve(__dirname, "..");
 const ENTRYPOINT_PATH = resolve(__dirname, "run-owner-daily-automation-entrypoint.mjs");
 const RUNBOOK_PATH = resolve(REPO_ROOT, "docs/owner-daily-automation-runbook.md");
 const CONTENT_UNIT_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit.sample.v1.json");
+const LOCAL_SUMMARY_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json");
 
 let passed = 0;
 let failed = 0;
@@ -88,10 +90,16 @@ check("--status mode present", src.includes('"--status"'));
 check("--dry-run mode present", src.includes('"--dry-run"'));
 check("--preflight mode present", src.includes('"--preflight"'));
 check("--duplicate-guard-check mode present", src.includes('"--duplicate-guard-check"'));
+check("--build-content-unit mode present", src.includes('"--build-content-unit"'));
 check("runStatus function present", /function\s+runStatus/.test(src));
 check("runDryRun function present", /function\s+runDryRun/.test(src));
 check("runPreflight function present", /function\s+runPreflight/.test(src));
 check("runDuplicateGuardCheck function present", /function\s+runDuplicateGuardCheck/.test(src));
+check("runBuildContentUnit function present", /function\s+runBuildContentUnit/.test(src));
+check(
+  "imports buildContentUnitFromLocalSummary from build-dual-platform-content-unit-from-local-summary.mjs",
+  /import\s*\{\s*buildContentUnitFromLocalSummary\s*\}\s*from\s*"\.\/build-dual-platform-content-unit-from-local-summary\.mjs"/.test(src),
+);
 
 // ── required: duplicate-guard-check safety contract ────────────────────────────
 console.log("\n[ required: duplicate-guard-check safety contract ]");
@@ -289,6 +297,53 @@ check("--duplicate-guard-check --content-unit: liveInvoked === false (custom con
 check("--duplicate-guard-check --content-unit: isDefaultContentUnit === false", cdgParsed?.isDefaultContentUnit === false);
 check("--duplicate-guard-check --content-unit: preflightConfirmedDuplicateBlock === false", cdgParsed?.preflightConfirmedDuplicateBlock === false);
 check("--duplicate-guard-check --content-unit: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(cdgOut));
+
+// ── required: local-pipeline → content-unit manifest bridge (no-live) ───────────
+// task: local-pipeline-content-unit-manifest-bridge-no-live-v1
+console.log("\n[ required: --build-content-unit bridge mode ]");
+check("local summary sample fixture 존재", existsSync(LOCAL_SUMMARY_SAMPLE_PATH));
+check("entrypoint: --status ownerNextSteps에 buildContentUnitFromDryRunSummary 안내", src.includes("buildContentUnitFromDryRunSummary"));
+check("entrypoint: --dry-run이 생성된 summary path를 surface", src.includes("render-manifest-local-run-summary.local-mock.json") && /generatedSummaryPath/.test(src));
+
+console.log("\n[ operator smoke: --build-content-unit --summary <sample> ]");
+const bcuTmpDir = mkdtempSync(join(os.tmpdir(), "owner-entrypoint-build-content-unit-guard-"));
+let bcuOut = "";
+let bcuExit = null;
+try {
+  bcuOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--build-content-unit", "--summary", LOCAL_SUMMARY_SAMPLE_PATH, "--out-dir", bcuTmpDir], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  bcuExit = 0;
+} catch (e) {
+  bcuExit = typeof e?.status === "number" ? e.status : null;
+  bcuOut = String(e?.stdout || e?.message || e);
+}
+check("--build-content-unit --summary <sample>: exit 0", bcuExit === 0, `exit=${bcuExit}`);
+const generatedManifestPath = join(bcuTmpDir, "dual_platform_content_unit.generated.json");
+const generatedBuildSummaryPath = join(bcuTmpDir, "content-unit-build-summary.local-mock.json");
+check("--build-content-unit: manifest 파일 생성됨", existsSync(generatedManifestPath));
+check("--build-content-unit: build-summary 파일 생성됨", existsSync(generatedBuildSummaryPath));
+let bcuBuildSummary = null;
+if (existsSync(generatedBuildSummaryPath)) {
+  try { bcuBuildSummary = JSON.parse(readFileSync(generatedBuildSummaryPath, "utf-8")); } catch { bcuBuildSummary = null; }
+}
+check("--build-content-unit: contentUnitPreflightExpectedReady === false (sample source 미완성)", bcuBuildSummary?.contentUnitPreflightExpectedReady === false);
+check("--build-content-unit: noLive === true", bcuBuildSummary?.noLive === true);
+check("--build-content-unit: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(bcuOut));
+
+// 생성된 manifest를 바로 --preflight --content-unit에 연결해도 안전하게 fail-closed 되는지 확인.
+let bcuPfExit = null;
+let bcuPfOut = "";
+if (existsSync(generatedManifestPath)) {
+  try {
+    bcuPfOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--preflight", "--content-unit", generatedManifestPath], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+    bcuPfExit = 0;
+  } catch (e) {
+    bcuPfExit = typeof e?.status === "number" ? e.status : null;
+    bcuPfOut = String(e?.stdout || e?.message || e);
+  }
+}
+check("--build-content-unit이 만든 manifest → --preflight --content-unit 연결 시 exit 1(예상된 fail-closed)", bcuPfExit === 1, `exit=${bcuPfExit}`);
+check("--build-content-unit이 만든 manifest → preflight stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(bcuPfOut));
+try { rmSync(bcuTmpDir, { recursive: true, force: true }); } catch {}
 
 // ── required: runbook doc ───────────────────────────────────────────────────────
 console.log("\n[ required: owner runbook doc ]");
