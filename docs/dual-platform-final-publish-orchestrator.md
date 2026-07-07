@@ -109,6 +109,56 @@ secret, refresh token, access token, account id 등은 이 문서와 fixture 어
 - deploy/DNS/env write/dependency/lockfile 변경
 - commit/push
 
+## 실행 모드 (dry-run / preflight / live)
+
+task: `dual-platform-live-orchestrator-wiring-preflight-no-live-v1`
+
+runner는 3가지 모드를 지원한다. 이 slice에서 live는 코드 구조만 준비되고 실행은 fail-closed다.
+
+| 모드 | flag | live 실행 | 동작 |
+|------|------|-----------|------|
+| dry-run | `--dry-run` | ✕ | 기존 no-live. publish plan + metadata gate/duplicate guard 판정만. |
+| preflight | `--preflight` | ✕ | no-live 준비 검증. plan + 파일경로 존재여부 + gate + guard + required env key **이름** presence plan. |
+| live | `--live` / `--arm` | ✕ (이 slice) | `LIVE_EXECUTION_DISABLED_THIS_SLICE`로 stderr + exit 2. 실제 upload 경로 진입 없음. |
+
+### preflight 모드 (`--preflight`)
+
+- publish plan 2개 job + 양쪽 `metadataOptimizationGate.ok`를 검증한다.
+- source 파일 경로의 **존재 여부(boolean)** 만 `fs.existsSync`로 확인한다 — 파일 내용은 읽지 않는다.
+- duplicate publish guard가 `v3_2` 키를 쓰는지, 이미 published인지(reference) 판정한다.
+- **required env key 이름(name) presence plan만 출력한다.** `process.env` 값은 절대 읽지 않으며(`envValuesAccessedThisRun: false`), 값/존재여부/길이/hash/prefix/suffix를 출력하지 않는다.
+- `.env.local`을 직접 읽지 않는다.
+- `sourceFilesReady`(Instagram + YouTube 두 source mp4가 모두 존재)는 `preflightOk`의 필수 조건이다. 둘 중 하나라도 없으면 metadata gate/duplicate guard가 통과해도 `preflightOk`는 `false`다.
+
+### live 모드 fail-closed (`--live` / `--arm`)
+
+- 이 slice에서는 `LIVE_EXECUTION_ENABLED_THIS_SLICE = false` 상수 때문에 항상 차단된다.
+- stderr로 `LIVE_EXECUTION_DISABLED_THIS_SLICE` + 필요한 승인 토큰 목록을 출력하고 exit 2로 종료한다.
+- stdout에는 publish plan 실행 결과가 나오지 않는다(실제 발행 경로 미진입).
+- `lib/instagram.ts#uploadInstagramReel`, `lib/youtube.ts#uploadYouTubeShorts`, `lib/instagram-blob-media.ts#uploadInstagramBlob`는 문자열 참조로만 명문화되며 이 runner가 실제로 import/호출하지 않는다.
+
+### metadata optimization gate + duplicate guard (live/preflight 공통 필수)
+
+- **metadata optimization gate**는 live와 preflight 모두에서 필수 조건이다(`영상만 업로드 금지`).
+  - Instagram: caption first-line hook, caption, CTA, hashtags 8~12개, 무관 유행 태그 금지.
+  - YouTube: title, description, tags, categoryId, language, Shorts 적합성.
+  - gate 실패 시 publish 불가.
+- **duplicate publish guard**도 live와 preflight 모두에서 필수 조건이다.
+  - key shape `{contentId}/{platform}/{version}`, `v3_2` 기준.
+  - 이미 published된 evidence(Instagram `17916511431199303`, YouTube `r9jhckdpC9w`)는 reference evidence로만 유지하고 새 실행/재시도로 취급하지 않는다.
+
+### live 실행에 필요한 env key 이름 (값 미기록)
+
+live wiring이 켜지면 아래 env key가 필요하다. 이름만 명문화하며 값은 fixture/runner/docs 어디에도 담지 않는다.
+
+- Instagram: `INSTAGRAM_BUSINESS_ACCOUNT_ID`, `INSTAGRAM_ACCESS_TOKEN`
+- YouTube: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`
+- Vercel Blob: `BLOB_READ_WRITE_TOKEN`
+
+YouTube의 short-lived access token(`YOUTUBE_ACCESS_TOKEN`)은 장기 required env key로 요구하지 않는다.
+향후 승인된 live 실행 중 refresh token(`YOUTUBE_REFRESH_TOKEN`)으로 메모리에서 발급/갱신해 사용하며,
+env로 별도 저장하지 않는다.
+
 ## 향후 승인 순서 (future approval sequence)
 
 1. `APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING` — dry-run 로직을 실제 live 호출 경로에 연결
@@ -122,5 +172,6 @@ secret, refresh token, access token, account id 등은 이 문서와 fixture 어
 node --check scripts/run-dual-platform-final-publish-orchestrator.mjs
 node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run
+node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
 node scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 ```

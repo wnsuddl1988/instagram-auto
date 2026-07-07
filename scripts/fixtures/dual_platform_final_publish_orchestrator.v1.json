@@ -125,6 +125,66 @@
     "APPROVE_DUAL_PLATFORM_ARM"
   ],
 
+  "modes": {
+    "dryRun": {
+      "flag": "--dry-run",
+      "description": "기존 no-live 동작. publish plan을 생성하고 metadata gate/duplicate guard 판정만 계산한다. 실제 upload/API/Blob 없음.",
+      "liveExecution": false,
+      "requiresEnv": false
+    },
+    "preflight": {
+      "flag": "--preflight",
+      "description": "no-live 준비 검증. publish plan + 파일 경로 + metadata optimization gate + duplicate guard + required env key NAMES presence PLAN(값 미접근)을 검증한다. env 값 출력 금지, .env.local 직접 read 금지.",
+      "liveExecution": false,
+      "requiresEnv": false,
+      "checksEnvValuePresence": false,
+      "note": "preflight는 어떤 env key가 필요한지의 '이름 계약'만 출력한다. 실제 process.env 값은 읽지 않으며, env 존재 여부/값/길이/hash/prefix를 절대 출력하지 않는다. 실제 credential resolution은 향후 live wiring slice의 별도 승인 이후에만 수행된다."
+    },
+    "live": {
+      "flags": ["--live", "--arm"],
+      "description": "실제 Instagram/YouTube/Blob publish. 이 slice에서는 코드 구조만 준비하고 실행은 fail-closed로 막힌다.",
+      "liveExecutionEnabledThisSlice": false,
+      "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE"
+    }
+  },
+
+  "liveExecutionWiring": {
+    "note": "live publish 경로의 코드 구조/조건을 명문화한다. 이 slice에서는 liveExecutionEnabledThisSlice=false이므로 --live/--arm이 들어와도 LIVE_EXECUTION_DISABLED_THIS_SLICE로 fail-closed된다.",
+    "liveExecutionEnabledThisSlice": false,
+    "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+    "requiredApprovalTokensToEnable": [
+      "APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING",
+      "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+      "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+      "APPROVE_DUAL_PLATFORM_ARM"
+    ],
+    "requiredFlagsToAttemptLive": ["--live", "--arm"],
+    "requiredEnvKeyNames": {
+      "note": "live 실행에 필요한 env key '이름'만 나열한다. 실제 값은 이 fixture/runner/docs 어디에도 담기지 않으며, preflight도 값을 읽지 않는다. YouTube는 YOUTUBE_ACCESS_TOKEN을 장기 required env key로 요구하지 않는다 — short-lived access token은 향후 승인된 live 실행 중 refresh token(YOUTUBE_REFRESH_TOKEN)으로 메모리에서 발급/갱신해 사용한다.",
+      "instagram": ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"],
+      "youtube": ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
+      "vercelBlob": ["BLOB_READ_WRITE_TOKEN"]
+    },
+    "livePublishFunctionRefs": {
+      "note": "live 실행 시 호출될 예정인 함수 참조. 이 slice의 어떤 실행 경로에서도 호출되지 않는다.",
+      "instagram": "lib/instagram.ts#uploadInstagramReel",
+      "youtube": "lib/youtube.ts#uploadYouTubeShorts",
+      "instagramBlob": "lib/instagram-blob-media.ts#uploadInstagramBlob (fail-closed until APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST)"
+    },
+    "duplicateLedgerConditionToBlockLive": {
+      "keyShape": "{contentId}/{platform}/{version}",
+      "version": "v3_2",
+      "rule": "live mode에서 (contentId, platform, version) 키가 이미 published evidence를 가지면 새 publish를 차단한다.",
+      "existingPublishedKeysReference": [
+        "t1_lifestyle_inflation/instagram_reels/v3_2",
+        "t1_lifestyle_inflation/youtube_shorts/v3_2"
+      ],
+      "referenceEvidenceNote": "위 키는 이미 완료된 live evidence(Instagram 17916511431199303 / YouTube r9jhckdpC9w)에 대응하는 reference evidence다. 새 실행으로 취급하지 않으며 재시도하지 않는다. live wiring이 켜지면 이 두 키는 duplicate guard에 의해 차단되어야 한다."
+    },
+    "metadataOptimizationGateIsMandatoryForLiveAndPreflight": true,
+    "duplicateGuardIsMandatoryForLiveAndPreflight": true
+  },
+
   "forbiddenBehavior": [
     "Instagram API 호출",
     "YouTube API 호출",
@@ -140,7 +200,13 @@
     "중복 게시 방지 계약 누락",
     "Instagram metadata(caption/hashtags/CTA) 누락한 채 영상만 업로드",
     "Instagram hashtag가 8개 미만 또는 12개 초과",
-    "무관 유행 태그 포함"
+    "무관 유행 태그 포함",
+    "preflight/dry-run 경로에서 process.env 값을 읽거나 출력",
+    "env key 값/길이/hash/prefix/suffix 출력",
+    "--live 또는 --arm이 이번 slice에서 실제 실행 가능해짐(fail-closed 우회)",
+    "이미 완료된 Instagram(17916511431199303)/YouTube(r9jhckdpC9w) evidence를 새 실행으로 재시도",
+    "metadata optimization gate를 우회하고 publish 진행",
+    "duplicate publish guard를 우회하고 publish 진행"
   ],
 
   "prohibitedOrchestratorDrift": {
@@ -158,7 +224,12 @@
       "defaultContentUnit.version 또는 existingPublishedKeysExample이 v1로 회귀(v3_2 불일치)",
       "instagramDefaultMetadata 필드(captionFirstLineHook/caption/hashtags/callToAction) 누락",
       "instagramDefaultMetadata.hashtags 개수가 8~12 범위를 벗어남",
-      "publishMetadataOptimizationGate 규칙 누락 또는 약화"
+      "publishMetadataOptimizationGate 규칙 누락 또는 약화",
+      "runner 소스에 process.env 참조가 들어감(preflight가 env 값에 접근)",
+      "preflight 경로에서 Instagram/YouTube API 또는 Blob upload가 호출됨",
+      "--live/--arm이 LIVE_EXECUTION_DISABLED_THIS_SLICE로 막히지 않고 실행 경로로 진입",
+      "liveExecutionWiring.liveExecutionEnabledThisSlice가 true로 오염됨",
+      "liveExecutionWiring.requiredEnvKeyNames에 env 값이 함께 기록됨"
     ]
   }
 }

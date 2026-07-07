@@ -323,7 +323,12 @@ check("docs에 중복 게시 방지 언급", /중복\s*게시|duplicate\s*publis
 check("docs에 향후 게이트 언급", /향후|future.*approval|다음\s*게이트/i.test(docsRaw));
 check("docs에 Instagram media_id 기록", docsRaw.includes("17916511431199303"));
 check("docs에 YouTube videoId 기록", docsRaw.includes("r9jhckdpC9w"));
-check("docs에 secret 필드명 없음", !secretFieldPattern.test(docsRaw));
+// env key '이름'(대문자 SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)은 secret 값이 아니라
+// live wiring에 필요한 key 이름 계약이므로 제거 후 검사한다. 그래도 camelCase secret
+// 필드명(accessToken 등)이나 snake_case 값 노출은 여전히 잡힌다.
+const docsWithoutEnvKeyNames = docsRaw.replace(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]*\b/g, "");
+check("docs에 secret 필드명/값 없음(env key 이름 제외)", !secretFieldPattern.test(docsWithoutEnvKeyNames));
+check("docs에 실제 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(docsRaw));
 check("docs에 v3_2 version 정합 설명 존재", docsRaw.includes("v3_2"));
 check("docs에 metadata optimization/영상만 업로드 금지 규칙 언급", /metadata.*optimization|영상만\s*업로드\s*금지/i.test(docsRaw));
 
@@ -421,6 +426,155 @@ mutantCheck("Instagram hashtag가 13개로 최대 초과", (() => {
 })(), true);
 
 mutantCheck("정상 fixture는 통과", fixture, false);
+
+// ── 6) live wiring / preflight 계약 (dual-platform-live-orchestrator-wiring-preflight-no-live-v1) ──
+
+// 6a) fixture: modes + liveExecutionWiring 계약
+const modes = fixture.modes || {};
+check("fixture.modes.dryRun.liveExecution === false", modes.dryRun?.liveExecution === false);
+check("fixture.modes.preflight.liveExecution === false", modes.preflight?.liveExecution === false);
+check("fixture.modes.preflight.checksEnvValuePresence === false (env 값 미접근)", modes.preflight?.checksEnvValuePresence === false);
+check("fixture.modes.live.liveExecutionEnabledThisSlice === false", modes.live?.liveExecutionEnabledThisSlice === false);
+check("fixture.modes.live.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", modes.live?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+
+const wiring = fixture.liveExecutionWiring || {};
+check("liveExecutionWiring.liveExecutionEnabledThisSlice === false", wiring.liveExecutionEnabledThisSlice === false);
+check("liveExecutionWiring.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", wiring.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+check(
+  "liveExecutionWiring.requiredApprovalTokensToEnable 4개 승인 토큰 포함",
+  Array.isArray(wiring.requiredApprovalTokensToEnable) &&
+    ["APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING", "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"].every((t) => wiring.requiredApprovalTokensToEnable.includes(t))
+);
+check(
+  "liveExecutionWiring.requiredFlagsToAttemptLive에 --live/--arm 포함",
+  Array.isArray(wiring.requiredFlagsToAttemptLive) && wiring.requiredFlagsToAttemptLive.includes("--live") && wiring.requiredFlagsToAttemptLive.includes("--arm")
+);
+check("liveExecutionWiring.metadataOptimizationGateIsMandatoryForLiveAndPreflight === true", wiring.metadataOptimizationGateIsMandatoryForLiveAndPreflight === true);
+check("liveExecutionWiring.duplicateGuardIsMandatoryForLiveAndPreflight === true", wiring.duplicateGuardIsMandatoryForLiveAndPreflight === true);
+
+// required env key NAMES: 이름만 있고 실제 값이 없어야 한다.
+const envNames = wiring.requiredEnvKeyNames || {};
+check(
+  "requiredEnvKeyNames.instagram에 IG 계정/토큰 KEY 이름 존재",
+  Array.isArray(envNames.instagram) && envNames.instagram.includes("INSTAGRAM_BUSINESS_ACCOUNT_ID") && envNames.instagram.includes("INSTAGRAM_ACCESS_TOKEN")
+);
+check(
+  "requiredEnvKeyNames.youtube에 YT client/refresh-token KEY 이름 존재",
+  Array.isArray(envNames.youtube) && envNames.youtube.includes("YOUTUBE_CLIENT_ID") && envNames.youtube.includes("YOUTUBE_CLIENT_SECRET") && envNames.youtube.includes("YOUTUBE_REFRESH_TOKEN")
+);
+check(
+  "requiredEnvKeyNames.youtube에 YOUTUBE_ACCESS_TOKEN 없음(short-lived, 장기 env로 요구하지 않음)",
+  Array.isArray(envNames.youtube) && !envNames.youtube.includes("YOUTUBE_ACCESS_TOKEN")
+);
+check(
+  "requiredEnvKeyNames.vercelBlob에 BLOB_READ_WRITE_TOKEN KEY 이름 존재",
+  Array.isArray(envNames.vercelBlob) && envNames.vercelBlob.includes("BLOB_READ_WRITE_TOKEN")
+);
+// 실제 secret 값 노출 회귀: env key 이름 목록에 '=' 값 할당이나 실제 토큰 형태가 없어야 한다.
+const wiringStr = JSON.stringify(wiring);
+check("liveExecutionWiring에 secret 값 형태(EAA/ya29/토큰 prefix) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(wiringStr));
+// requiredEnvKeyNames는 env key '이름'(SNAKE_CASE)만 담으므로 secretFieldPattern 검사에서 제외한다.
+// (예: "YOUTUBE_REFRESH_TOKEN"은 secret 값이 아니라 env key 이름이다.)
+const wiringWithoutEnvNames = clone(wiring);
+delete wiringWithoutEnvNames.requiredEnvKeyNames;
+check("liveExecutionWiring(env key 이름 제외)에 secret 값 필드명(camelCase accessToken 등) 없음", !secretFieldPattern.test(JSON.stringify(wiringWithoutEnvNames)));
+// env key 이름은 반드시 대문자 SNAKE_CASE만 허용(camelCase 실제 secret 필드명 혼입 방지).
+const allEnvNames = [...(envNames.instagram || []), ...(envNames.youtube || []), ...(envNames.vercelBlob || [])];
+check("requiredEnvKeyNames는 전부 대문자 SNAKE_CASE env key 이름", allEnvNames.length > 0 && allEnvNames.every((n) => /^[A-Z][A-Z0-9_]*$/.test(String(n))));
+
+const dupLedger = wiring.duplicateLedgerConditionToBlockLive || {};
+check("duplicateLedgerConditionToBlockLive.version === v3_2", dupLedger.version === "v3_2");
+check(
+  "duplicateLedgerConditionToBlockLive.existingPublishedKeysReference가 v3_2 사용",
+  Array.isArray(dupLedger.existingPublishedKeysReference) && dupLedger.existingPublishedKeysReference.length === 2 && dupLedger.existingPublishedKeysReference.every((k) => typeof k === "string" && k.endsWith("/v3_2"))
+);
+
+// 6b) runner 소스: live gate 상수 + fail-closed + env 미접근 회귀
+check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = false 존재", /LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*false/.test(runnerRawSrc));
+check("runner에 LIVE_EXECUTION_DISABLED_THIS_SLICE 에러 상수 존재", runnerRawSrc.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
+check("runner에 --live/--arm fail-closed 처리 존재", /--live/.test(runnerRawSrc) && /--arm/.test(runnerRawSrc) && /live_blocked|LIVE_EXECUTION_DISABLED/.test(runnerRawSrc));
+check("runner에 --preflight 모드 처리 존재", /--preflight/.test(runnerRawSrc) && /preflight/.test(runnerRawSrc));
+check("runner에 REQUIRED_ENV_KEY_NAMES (key 이름 계약) 존재", /REQUIRED_ENV_KEY_NAMES/.test(runnerRawSrc));
+// 가장 중요한 회귀: runner가 process.env 값을 읽지 않는다(코드 기준, 주석/문자열 제외).
+check("runner 코드에 process.env 참조 없음 (preflight가 env 값에 접근하지 않음)", !/process\s*\.\s*env/.test(runnerCode));
+// live publish 함수를 이 runner가 실제로 import하지 않는다(참조는 문자열 상수로만).
+check("runner가 lib live publish 함수를 실제 import하지 않음", !/import\s+[^\n]*uploadInstagramReel/.test(runnerCode) && !/import\s+[^\n]*uploadYouTubeShorts/.test(runnerCode) && !/import\s+[^\n]*uploadInstagramBlob/.test(runnerCode));
+
+// 6c) runner 실행: --preflight (no-live)
+let pfOutput = "";
+let pfOk = false;
+try {
+  pfOutput = execFileSync(process.execPath, [RUNNER_PATH, "--preflight"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  pfOk = true;
+} catch (e) {
+  pfOutput = String(e?.stdout || e?.message || e);
+}
+check("runner --preflight 실행 성공(exit 0)", pfOk);
+let pfResult = null;
+try { pfResult = JSON.parse(pfOutput); check("runner --preflight stdout JSON parse", true); }
+catch (e) { check("runner --preflight stdout JSON parse", false, String(e)); }
+
+check("preflight 결과 mode === preflight", pfResult?.mode === "preflight");
+check("preflight 결과 liveExecutionEnabledThisSlice === false", pfResult?.liveExecutionEnabledThisSlice === false);
+check("preflight 결과 preflight.preflightOk === true", pfResult?.preflight?.preflightOk === true);
+check("preflight 결과 metadataOptimizationGateOk === true", pfResult?.preflight?.metadataOptimizationGateOk === true);
+check("preflight 결과 duplicateGuardUsesV3_2 === true", pfResult?.preflight?.duplicateGuardUsesV3_2 === true);
+check("preflight 결과 sourceFilesReady === true (현재 환경에 두 source mp4 존재)", pfResult?.preflight?.sourceFilesReady === true);
+check(
+  "preflight 결과 sourceFilesReady가 instagramSourceExists && youtubeSourceExists와 일치",
+  pfResult?.preflight?.sourceFilesReady === (pfResult?.preflight?.sourceFilePresence?.instagramSourceExists === true && pfResult?.preflight?.sourceFilePresence?.youtubeSourceExists === true)
+);
+// 회귀: sourceFilesReady가 false이면 preflightOk도 반드시 false여야 한다(source gate 누락 재발 방지).
+check(
+  "runner 소스: preflightOk 계산식에 sourceFilesReady가 AND로 포함됨(source 파일 gate 누락 회귀 방지)",
+  /preflightOk\s*=[\s\S]{0,200}sourceFilesReady/.test(runnerCode)
+);
+check("preflight 결과 envValuesAccessedThisRun === false (env 값 미접근)", pfResult?.preflight?.requiredEnvKeyNamesPlan?.envValuesAccessedThisRun === false);
+check(
+  "preflight 결과 requiredEnvKeyNamesPlan에 key 이름만(값 없음)",
+  Array.isArray(pfResult?.preflight?.requiredEnvKeyNamesPlan?.instagram) &&
+    pfResult.preflight.requiredEnvKeyNamesPlan.instagram.includes("INSTAGRAM_ACCESS_TOKEN")
+);
+check(
+  "preflight 결과 requiredEnvKeyNamesPlan.youtube에 YOUTUBE_REFRESH_TOKEN 존재, YOUTUBE_ACCESS_TOKEN 없음",
+  Array.isArray(pfResult?.preflight?.requiredEnvKeyNamesPlan?.youtube) &&
+    pfResult.preflight.requiredEnvKeyNamesPlan.youtube.includes("YOUTUBE_REFRESH_TOKEN") &&
+    !pfResult.preflight.requiredEnvKeyNamesPlan.youtube.includes("YOUTUBE_ACCESS_TOKEN")
+);
+// preflight 결과 전체에 실제 secret 값 형태가 없어야 한다.
+const pfStr = JSON.stringify(pfResult || {});
+check("preflight 결과에 secret 값 형태(EAA/ya29/토큰) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(pfStr));
+check("preflight 결과 sideEffectCounters 전부 0", (() => { const c = pfResult?.plan?.sideEffectCounters || {}; return zeroFields.every((k) => c[k] === 0); })());
+check("preflight 결과: 이미 published evidence를 reference로만 취급(retryForbidden)", pfResult?.preflight?.duplicatePublishReference?.retryForbidden === true);
+check("preflight 결과: Instagram media_id reference 유지(재시도 대상 아님)", pfResult?.preflight?.duplicatePublishReference?.instagramMediaIdReference === "17916511431199303");
+check("preflight 결과: YouTube videoId reference 유지(재시도 대상 아님)", pfResult?.preflight?.duplicatePublishReference?.youtubeVideoIdReference === "r9jhckdpC9w");
+
+// 6d) runner 실행: --live (fail-closed, exit 0 아님)
+let liveBlocked = false;
+let liveStdout = "";
+let liveStderr = "";
+try {
+  liveStdout = execFileSync(process.execPath, [RUNNER_PATH, "--live"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  liveBlocked = false; // exit 0이면 fail-closed 실패
+} catch (e) {
+  liveBlocked = e?.status === 2;
+  liveStdout = String(e?.stdout || "");
+  liveStderr = String(e?.stderr || "");
+}
+check("runner --live 는 fail-closed로 exit 2 (실행 불가)", liveBlocked);
+check("runner --live stderr에 LIVE_EXECUTION_DISABLED_THIS_SLICE 포함", /LIVE_EXECUTION_DISABLED_THIS_SLICE/.test(liveStderr));
+check("runner --live stdout에 publish plan 실행 결과가 나오지 않음(비어있음)", liveStdout.trim() === "");
+check("runner --live stderr에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(liveStderr));
+
+// 6e) runner 실행: --arm (fail-closed)
+let armBlocked = false;
+try {
+  execFileSync(process.execPath, [RUNNER_PATH, "--arm"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  armBlocked = false;
+} catch (e) {
+  armBlocked = e?.status === 2;
+}
+check("runner --arm 도 fail-closed로 exit 2 (실행 불가)", armBlocked);
 
 // ── 요약 ────────────────────────────────────────────────────────────────
 

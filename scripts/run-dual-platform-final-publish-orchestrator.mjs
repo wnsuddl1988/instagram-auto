@@ -2,23 +2,60 @@
 /**
  * run-dual-platform-final-publish-orchestrator.mjs
  *
- * task: dual-platform-final-publish-orchestrator-no-live-v1
+ * task: dual-platform-live-orchestrator-wiring-preflight-no-live-v1
+ * (base: dual-platform-final-publish-orchestrator-no-live-v1)
  *
  * 하나의 콘텐츠 unit으로부터 Instagram job + YouTube job 2개의 publish plan을
- * 생성하는 no-live/dry-run 전용 runner다.
+ * 생성하는 runner다. 3가지 모드를 지원한다:
+ *   --dry-run   : 기존 no-live 동작. publish plan + gate/guard 판정만 계산.
+ *   --preflight : no-live 준비 검증. publish plan + 파일경로 + metadata gate +
+ *                 duplicate guard + required env key NAME presence PLAN(값 미접근).
+ *   --live/--arm: 실제 publish. 이 slice에서는 LIVE_EXECUTION_DISABLED_THIS_SLICE로 fail-closed.
  *
  * 이 슬라이스에서 절대 하지 않는 것:
  * - Instagram/YouTube API 호출 (fetch/googleapis/axios 등 네트워크 호출 없음)
  * - Vercel Blob put()/list()/del() 등 object mutation
  * - .env.local 또는 다른 secret 파일 직접 read
+ * - process.env 값 read/출력 (preflight는 key '이름'만 계약으로 출력, 값은 미접근)
  * - 새 영상 생성/렌더/ffmpeg/TTS/image/browser
  * - deploy/dependency/commit/push
  *
- * 실행: node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run
- * (--dry-run 없이 실행해도 이 슬라이스에는 live 경로가 존재하지 않으므로 항상 dry-run과 동일하게 동작한다)
+ * 실행 예: node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
  */
 import path from "node:path";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
+// ── live execution gate (이 slice에서는 항상 비활성) ─────────────────────────
+// 향후 live wiring 승인 slice에서만 true가 될 수 있다. 지금은 --live/--arm이
+// 들어와도 이 상수 때문에 LIVE_EXECUTION_DISABLED_THIS_SLICE로 fail-closed된다.
+export const LIVE_EXECUTION_ENABLED_THIS_SLICE = false;
+export const LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE";
+
+/**
+ * live 실행에 필요한 env key '이름'만 나열한다(값 미접근).
+ * preflight는 이 목록을 presence PLAN으로 출력할 뿐, process.env를 읽지 않는다.
+ * 실제 credential resolution은 향후 live wiring 승인 이후 별도 경로에서만 수행된다.
+ *
+ * YouTube는 YOUTUBE_ACCESS_TOKEN을 장기 required env key로 요구하지 않는다.
+ * short-lived access token은 향후 승인된 live 실행 중 refresh token(YOUTUBE_REFRESH_TOKEN)으로
+ * 메모리에서 발급/갱신해 사용하며, env로 별도 저장/요구하지 않는다.
+ */
+export const REQUIRED_ENV_KEY_NAMES = {
+  instagram: ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"],
+  youtube: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
+  vercelBlob: ["BLOB_READ_WRITE_TOKEN"],
+};
+
+/**
+ * live 실행 시 호출될 예정인 함수 참조(문자열). 이 runner의 어떤 실행 경로에서도
+ * 실제로 import/호출되지 않는다 — 계약 문서화용 참조일 뿐이다.
+ */
+export const LIVE_PUBLISH_FUNCTION_REFS = {
+  instagram: "lib/instagram.ts#uploadInstagramReel",
+  youtube: "lib/youtube.ts#uploadYouTubeShorts",
+  instagramBlob: "lib/instagram-blob-media.ts#uploadInstagramBlob",
+};
 
 // ── 계약 상수 (dual_platform_variant_publish_architecture.v1.json과 정합) ──────
 
@@ -233,16 +270,137 @@ const DEFAULT_CONTENT_UNIT = {
     "C:\\Users\\PC\\jjy\\instagram-auto\\output\\youtube-shorts-letterbox-render-test-v1\\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v1.mp4",
 };
 
+/**
+ * preflight 준비 검증(no-live). 실제 upload/API/Blob/env-value 접근 없이,
+ * live 실행에 필요한 준비 상태를 계약 수준에서 검증한다.
+ *
+ * 검증 항목:
+ *  - publish plan 2개 job 존재 + 양쪽 metadataOptimizationGate.ok
+ *  - source 파일 경로 존재 여부(fs.existsSync — read 아님, boolean만)
+ *  - duplicate publish guard가 v3_2 키를 사용 + 이미 published인지(reference)
+ *  - required env key NAME presence PLAN — key 이름만 나열, process.env 미접근
+ *
+ * env 값/존재여부/길이/hash/prefix를 절대 출력하지 않는다.
+ */
+function buildPreflight(unit) {
+  const plan = buildDualPlatformPublishPlan(unit);
+  const igJob = plan.jobs.find((j) => j.id === "instagram_job");
+  const ytJob = plan.jobs.find((j) => j.id === "youtube_job");
+
+  // 파일 경로 presence: 존재 여부(boolean)만 확인한다. 파일 내용은 읽지 않는다.
+  const instagramSourceExists = typeof unit.instagramSourcePath === "string" && existsSync(unit.instagramSourcePath);
+  const youtubeSourceExists = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
+
+  const metadataGateOk = igJob?.metadataOptimizationGate?.ok === true && ytJob?.metadataOptimizationGate?.ok === true;
+  const duplicateGuardUsesV3_2 =
+    typeof igJob?.duplicatePublishGuard?.key === "string" && igJob.duplicatePublishGuard.key.endsWith("/v3_2") &&
+    typeof ytJob?.duplicatePublishGuard?.key === "string" && ytJob.duplicatePublishGuard.key.endsWith("/v3_2");
+
+  // required env key NAME presence PLAN — 이름만. process.env는 읽지 않는다.
+  const requiredEnvKeyNamesPlan = {
+    note: "아래는 live 실행에 필요한 env key '이름' 계약이다. 값/존재여부/길이는 확인하지도 출력하지도 않는다.",
+    instagram: REQUIRED_ENV_KEY_NAMES.instagram,
+    youtube: REQUIRED_ENV_KEY_NAMES.youtube,
+    vercelBlob: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+    envValuesAccessedThisRun: false,
+  };
+
+  // 이미 published인 evidence는 reference로만 취급하고 새 실행으로 다루지 않는다.
+  const igAlreadyPublished = igJob?.duplicatePublishGuard?.alreadyPublished === true;
+  const ytAlreadyPublished = ytJob?.duplicatePublishGuard?.alreadyPublished === true;
+
+  // 두 source mp4가 모두 존재해야 preflight가 ready 상태다. 하나라도 없으면
+  // metadata/duplicate guard가 통과해도 preflightOk는 false여야 한다.
+  const sourceFilesReady = instagramSourceExists && youtubeSourceExists;
+
+  const preflightOk =
+    plan.jobs.length === 2 && metadataGateOk && duplicateGuardUsesV3_2 && sourceFilesReady;
+
+  return {
+    preflightOk,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    publishJobCount: plan.jobs.length,
+    metadataOptimizationGateOk: metadataGateOk,
+    duplicateGuardUsesV3_2,
+    sourceFilesReady,
+    sourceFilePresence: {
+      note: "존재 여부(boolean)만 확인. 파일 내용은 읽지 않는다. sourceFilesReady는 preflightOk의 필수 조건이다.",
+      instagramSourceExists,
+      youtubeSourceExists,
+    },
+    requiredEnvKeyNamesPlan,
+    duplicatePublishReference: {
+      note: "이미 완료된 live evidence에 대응하는 reference. 새 실행/재시도 대상이 아니다. live wiring 시 duplicate guard가 이 키를 차단해야 한다.",
+      instagramAlreadyPublished: igAlreadyPublished,
+      youtubeAlreadyPublished: ytAlreadyPublished,
+      instagramMediaIdReference: LIVE_UPLOAD_EVIDENCE.instagram.mediaId,
+      youtubeVideoIdReference: LIVE_UPLOAD_EVIDENCE.youtube.videoId,
+      retryForbidden: true,
+    },
+  };
+}
+
 const SELF = fileURLToPath(import.meta.url);
 const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(SELF);
 
-function main() {
-  const dryRun = true; // 이 slice에는 live 경로가 없으므로 --dry-run 유무와 무관하게 항상 dry-run이다.
+/** CLI args에서 mode를 판정한다. --live/--arm은 fail-closed 대상이다. */
+function resolveMode(argv) {
+  if (argv.includes("--live") || argv.includes("--arm")) return "live_requested";
+  if (argv.includes("--preflight")) return "preflight";
+  return "dry_run";
+}
 
+function main() {
+  const argv = process.argv.slice(2);
+  const mode = resolveMode(argv);
+
+  // ── live/arm: 이 slice에서는 코드 구조만 준비하고 실행은 fail-closed ──────────
+  if (mode === "live_requested") {
+    if (!LIVE_EXECUTION_ENABLED_THIS_SLICE) {
+      const output = {
+        schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+        mode: "live_blocked",
+        error: LIVE_EXECUTION_DISABLED_ERROR,
+        liveExecutionEnabledThisSlice: false,
+        requiredApprovalTokensToEnable: [
+          "APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING",
+          "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+          "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+          "APPROVE_DUAL_PLATFORM_ARM",
+        ],
+        note: "이 slice에서는 실제 Instagram/YouTube/Blob publish가 코드 경로상 실행되지 않는다. live 실행은 향후 승인 slice에서만 활성화된다.",
+      };
+      console.error(JSON.stringify(output, null, 2));
+      process.exit(2);
+      return;
+    }
+    // 도달 불가(LIVE_EXECUTION_ENABLED_THIS_SLICE=false). 방어적 fail-closed.
+    console.error(JSON.stringify({ error: LIVE_EXECUTION_DISABLED_ERROR }, null, 2));
+    process.exit(2);
+    return;
+  }
+
+  // ── preflight: no-live 준비 검증 ────────────────────────────────────────────
+  if (mode === "preflight") {
+    const plan = buildDualPlatformPublishPlan(DEFAULT_CONTENT_UNIT);
+    const preflight = buildPreflight(DEFAULT_CONTENT_UNIT);
+    const output = {
+      schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+      mode: "preflight",
+      liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+      preflight,
+      plan,
+      liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
+    };
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  // ── dry-run: 기존 no-live 동작(불변) ────────────────────────────────────────
   const plan = buildDualPlatformPublishPlan(DEFAULT_CONTENT_UNIT);
   const output = {
     schemaVersion: "dual_platform_final_publish_orchestrator_v1",
-    mode: dryRun ? "dry_run" : "dry_run",
+    mode: "dry_run",
     plan,
     liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
   };

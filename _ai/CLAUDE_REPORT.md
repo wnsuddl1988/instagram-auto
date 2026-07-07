@@ -3924,3 +3924,48 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: full pipeline 실제 실행은 시간/media 생성 위험으로 생략(위 3중 스모크로 대체, 지시사항에 명시된 대체 경로). base-rate job의 publishRecords 판정과 t1 reference evidence는 여전히 분리 유지(이번 slice는 로컬 파이프라인 summary 레이어만 다루며 automation orchestrator의 §L 로직에는 손대지 않음).
 - checkpoint recommendation: 신규 파일 없음(기존 4파일 in-place 수정 + report append). Owner 승인 시 checkpoint commit 가능한 상태.
 
+## dual-platform-live-orchestrator-wiring-preflight-no-live-v1 (2026-07-07)
+
+- **목적**: dual-platform final publish orchestrator에 live publish wiring 코드 구조 + `--preflight` 모드를 추가하되, 이번 slice에서는 실제 upload/API/Blob 호출을 절대 실행하지 않고 live는 fail-closed로 막는다.
+- **수정 파일 4개**(lib 파일 무수정 — 실제 import 없이 문자열 참조만 하므로 lib 변경 불필요):
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — 3-mode CLI 도입. `resolveMode()`로 `--dry-run`(기존 불변)/`--preflight`(신규)/`--live`·`--arm`(fail-closed) 판정. `LIVE_EXECUTION_ENABLED_THIS_SLICE = false` 상수 + `LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE"`. `--live`/`--arm`은 stderr로 에러+필요 승인토큰 출력 후 `process.exit(2)`(stdout 비어있음, publish 경로 미진입). `--preflight`는 `buildPreflight()`로 publish plan 2개 + 양쪽 metadataOptimizationGate.ok + source 파일 경로 `existsSync`(boolean만, 내용 미read) + duplicate guard v3_2 사용 + **required env key NAME presence plan**(`REQUIRED_ENV_KEY_NAMES` 상수의 key 이름만 출력, `process.env` 절대 미접근, `envValuesAccessedThisRun:false`) + 이미 published evidence를 reference로만(`retryForbidden:true`) 판정. live 함수는 `LIVE_PUBLISH_FUNCTION_REFS` 문자열 상수로만 참조(실제 import 없음). `existsSync`만 `node:fs`에서 import.
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `modes`(dryRun/preflight/live 계약, preflight.checksEnvValuePresence:false) + `liveExecutionWiring` 블록(liveExecutionEnabledThisSlice:false, failClosedError, requiredApprovalTokensToEnable 4개, requiredFlagsToAttemptLive `--live`/`--arm`, requiredEnvKeyNames는 **이름만**, livePublishFunctionRefs, duplicateLedgerConditionToBlockLive v3_2 + reference evidence, metadata/duplicate gate mandatory 플래그). forbiddenBehavior/prohibitedOrchestratorDrift에 신규 회귀 명문화(process.env 접근/secret 값 출력/live 우회/기존 evidence 재시도/gate·guard 우회).
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — §6 신규(6a fixture modes/liveExecutionWiring 계약, requiredEnvKeyNames는 SNAKE_CASE 이름만·secret 값 형태 없음; 6b runner에 live gate 상수·fail-closed·`--preflight`·**process.env 미참조 회귀**·live 함수 미import 회귀; 6c `--preflight` 실제 실행해 preflightOk/gate/guard/envValuesAccessedThisRun:false/secret 값 형태 없음/counters 0/reference evidence 검증; 6d `--live` exit 2 fail-closed·stderr에 LIVE_EXECUTION_DISABLED·stdout 비어있음·secret 값 없음; 6e `--arm` exit 2). docs secret 검사는 env key 이름(SNAKE_CASE) 마스킹 후 적용.
+  - `docs/dual-platform-final-publish-orchestrator.md` — 실행 모드 표(dry-run/preflight/live) + preflight/live fail-closed/metadata·duplicate gate 공통 필수/필요 env key 이름 섹션 추가.
+- **dry-run/preflight/live 결과**:
+  - `--dry-run`: mode `dry_run`, version `v3_2`, jobs 2, 양쪽 gate ok, counters 전부 0, preflight 키 없음 — **기존 동작 완전 불변**.
+  - `--preflight`: mode `preflight`, `preflightOk:true`, metadataGate/duplicateGuard v3_2 통과, `envValuesAccessedThisRun:false`(env 값 미접근), env key **이름만** 노출, 이미 published evidence는 `retryForbidden:true` reference, counters 전부 0.
+  - `--live`/`--arm`: exit 2, stderr `LIVE_EXECUTION_DISABLED_THIS_SLICE` + 필요 승인토큰, stdout 비어있음(발행 경로 미진입).
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **178 PASS / 0 FAIL** (기존 132 + 신규 §6 46개)
+  - targeted regression: local-pipeline-runner 61/61, render-manifest-local-runner 42/42, money-shorts-automation-orchestrator 151/151 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete/put/get 0, env/secret read/write 0(runner 코드에 `process.env` 참조 0 — guard가 회귀로 검증), `.env.local` 직접 접근 0, secret 값/토큰/길이/hash 출력 0, 새 영상 생성/render/mux/TTS 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. lib 파일은 수정 허용이었으나 실제 import 대신 문자열 참조로 충분해 무수정(불필요한 표면 확대 회피). live 함수 실제 wiring은 코드 경로상 존재하지 않으며 향후 승인 slice 몫으로 남김.
+- **다음 live 실행에 필요한 승인 문구**: `APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING` → `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` → `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` → `APPROVE_DUAL_PLATFORM_ARM` 순서. 이 토큰들이 확보되고 `LIVE_EXECUTION_ENABLED_THIS_SLICE`를 true로 여는 별도 wiring slice 승인 전까지 live는 실행 불가.
+- checkpoint recommendation: 신규 파일 없음(기존 4파일 in-place 수정 + report append). Owner 승인 시 checkpoint commit 가능한 상태.
+
+## dual-platform-live-orchestrator-preflight-review-fix-v1 (2026-07-07)
+
+- **목적**: 직전 preflight/live-wiring slice의 Codex review finding 2건 보정. (1) `preflightOk`가 source mp4 존재 여부를 반영하지 못하는 gate 누락, (2) YouTube required env key 계약에 short-lived `YOUTUBE_ACCESS_TOKEN`이 잘못 포함된 문제.
+- **수정 파일 4개**:
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — `buildPreflight()`에 `sourceFilesReady = instagramSourceExists && youtubeSourceExists` 추가, `preflightOk` 계산식에 `sourceFilesReady`를 AND 조건으로 포함(source 파일 하나라도 없으면 gate/guard 통과해도 `preflightOk:false`). preflight 출력 객체에 `sourceFilesReady` 필드 노출. `REQUIRED_ENV_KEY_NAMES.youtube`에서 `YOUTUBE_ACCESS_TOKEN` 제거, `YOUTUBE_CLIENT_ID`/`YOUTUBE_CLIENT_SECRET`/`YOUTUBE_REFRESH_TOKEN` 3개로 축소 + 주석에 "short-lived access token은 live 실행 중 refresh token으로 메모리에서 발급/갱신, 장기 env로 요구하지 않음" 명시.
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `liveExecutionWiring.requiredEnvKeyNames.youtube`에서 `YOUTUBE_ACCESS_TOKEN` 제거(3개로 축소), note에 동일 취지 추가.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — §6a에 `YOUTUBE_ACCESS_TOKEN` 부재 회귀 체크 추가, youtube 필수 key 체크에 `YOUTUBE_REFRESH_TOKEN` 포함 확인으로 강화. §6c(preflight 실행 결과)에 `sourceFilesReady===true` 확인, `sourceFilesReady`가 두 `*SourceExists` boolean의 AND와 일치하는지 확인, runner 소스에 `preflightOk` 계산식이 `sourceFilesReady`를 포함하는지(source gate 누락 회귀 방지) 확인, preflight 결과의 `requiredEnvKeyNamesPlan.youtube`에 `YOUTUBE_REFRESH_TOKEN` 존재+`YOUTUBE_ACCESS_TOKEN` 부재 확인 — 신규 8개 체크. 주석 예시도 `YOUTUBE_ACCESS_TOKEN`→`YOUTUBE_REFRESH_TOKEN`으로 수정(실제 존재하는 key 참조) → **183 PASS / 0 FAIL**.
+  - `docs/dual-platform-final-publish-orchestrator.md` — preflight 섹션에 "sourceFilesReady가 preflightOk 필수 조건" 명시, env key 이름 섹션에서 `YOUTUBE_ACCESS_TOKEN` 제거하고 short-lived/refresh-token 발급 방식 설명 추가.
+- **Finding 1 수정 확인**: `--preflight` 실행 결과 `sourceFilesReady:true`(현재 환경에 두 mp4 존재), `preflightOk:true` 유지. source 파일 gate가 이제 `preflightOk` 계산에 실제로 반영됨(guard가 계산식 텍스트 존재를 회귀로 검증).
+- **Finding 2 수정 확인**: `--preflight` 결과 `requiredEnvKeyNamesPlan.youtube` = `["YOUTUBE_CLIENT_ID","YOUTUBE_CLIENT_SECRET","YOUTUBE_REFRESH_TOKEN"]` — `YOUTUBE_ACCESS_TOKEN` 완전히 제거됨. `lib/youtube.ts`는 이번 slice에서 무수정(범위는 orchestrator preflight 계약으로 한정).
+- **dry-run/preflight/live-block 결과**:
+  - `--dry-run`: mode `dry_run`, version `v3_2`, counters 전부 0 — 불변.
+  - `--preflight`: `preflightOk:true`, `sourceFilesReady:true`, `envValuesAccessedThisRun:false`.
+  - `--live`: exit 2, fail-closed 유지(회귀 없음).
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **183 PASS / 0 FAIL**
+  - targeted regression: local-pipeline-runner 61/61, render-manifest-local-runner 42/42, money-shorts-automation-orchestrator 151/151 — 전부 ALL PASS
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete/put/get 0, env/secret read/write 0(`process.env` 참조 추가 없음, 기존 회귀 유지), `.env.local` 직접 접근 0, secret 값/토큰 출력 0, 새 영상 생성 0, deploy/dependency/commit/push 0.
+- **deviations/risks**: 없음. `lib/youtube.ts`는 지시대로 건드리지 않음.
+- checkpoint recommendation: 신규 파일 없음(기존 4파일 in-place 수정 + report append). Owner 승인 시 checkpoint commit 가능한 상태.
+
