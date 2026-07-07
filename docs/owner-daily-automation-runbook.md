@@ -17,6 +17,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --su
 node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render --plan <youtube-letterbox-source-plan.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --render-youtube-letterbox-once --approval APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE
+node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <summary.json> --youtube-render-result <youtube-letterbox-render-result.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --preflight
 node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 ```
@@ -27,7 +28,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 |------|---------|-------------|
 | `--status` | 필요한 스크립트/기본 fixture 존재 여부, 기존 게시 evidence, 다음 단계 안내를 JSON + 사람이 읽기 쉬운 요약으로 출력 | 아무 파일도 만들지 않고, 아무 프로세스도 실행하지 않음 |
 | `--dry-run` | 기존 `run-local-money-shorts-from-render-manifest.mjs`를 기본 fixture(`scripts/fixtures/provider-candidate-render-manifest.visual-only.json`)로 실행해 로컬 mp4 dry-run 패킷을 생성 | 실제 업로드/API 호출 없음. TTS는 local_mock(핑크노이즈) — 진짜 음성 아님 |
-| `--build-content-unit` | `--dry-run`이 만든 summary JSON(또는 sub-pipeline summary)에서 `dual_platform_content_unit_v1` manifest를 자동 생성 | 새 미디어/ffmpeg 실행 없음, API/네트워크 호출 없음. YouTube source/Blob evidence가 없으면 readiness boolean으로 fail-closed 보고만 함 |
+| `--build-content-unit` | `--dry-run`이 만든 summary JSON(또는 sub-pipeline summary)에서 `dual_platform_content_unit_v1` manifest를 자동 생성. `--youtube-render-result <youtube-letterbox-render-result.json>`을 주면 render result를 fail-closed로 검증(schemaVersion/executed/allVerificationsPass/ffmpegConversionCount/side-effect counters/output 존재+크기)한 뒤 그 `outputPath`를 `youtubeSourcePath`로 자동 채움(수동 mp4 경로 복사 불필요) | 새 미디어/ffmpeg/ffprobe 실행 없음, API/네트워크 호출 없음. `--youtube-source`와 `--youtube-render-result`를 동시에 주고 경로가 다르면 `youtube_source_render_result_mismatch`로 fail-closed. YouTube source/Blob evidence가 없으면 readiness boolean으로 fail-closed 보고만 함 |
 | `--plan-youtube-letterbox` | content unit manifest의 `instagramSourcePath`를 입력으로, deterministic YouTube Shorts letterbox 출력 경로 + render profile + 다음 명령을 `youtube-letterbox-source-plan.json`으로 기록 | ffmpeg 실행 없음, 새 mp4 생성 없음, content unit manifest를 mutate하지 않음(읽기 전용) |
 | `--prepare-youtube-letterbox-render` | `youtube-letterbox-source-plan.json`을 검증(schemaVersion/willExecuteFfmpeg/출력 경로)하고 실행 직전 render request(`youtube-letterbox-render-request.json`) + 정확한 미래 승인 명령을 기록 | ffmpeg 실행 없음, 새 mp4 생성 없음, plan JSON을 mutate하지 않음(읽기 전용). `--run`은 이 slice에서 항상 fail-closed(`YOUTUBE_LETTERBOX_RENDER_RUN_DISABLED_THIS_SLICE`) |
 | `--render-youtube-letterbox-once` | **승인 토큰이 있을 때만** 로컬 ffmpeg를 정확히 1회 실행해 승인된 source mp4에서 YouTube letterbox mp4를 생성하고 read-only ffprobe로 검증. 하위 runner `run-youtube-letterbox-render-from-request-once.mjs`에 위임 | `--approval APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE` 없으면 실행 거부. output mp4가 이미 있으면 덮어쓰지 않고 `BLOCKED_OUTPUT_ALREADY_EXISTS_NO_RENDER`로 중단. ffmpeg 2회 실행 없음. API/upload/env/deploy side effect 없음 |
@@ -80,8 +81,15 @@ gate다):
    `BLOCKED_OUTPUT_ALREADY_EXISTS_NO_RENDER`로 중단한다(ffmpeg 0회). API/upload/env/deploy
    side effect 없음.
 6. **YouTube letterbox source manifest에 첨부**: letterbox mp4가 준비되면
-   `--youtube-source <plannedYoutubeSourcePath>`를 다시 붙여 manifest를 재생성하거나
-   manifest의 `youtubeSourcePath`를 직접 채운다.
+   `--build-content-unit --summary <summary.json> --youtube-render-result
+   <youtube-letterbox-render-result.json> --out-dir <레포 밖 경로>`로 render result JSON을
+   직접 넘기는 방법을 우선 사용한다 — Owner가 mp4 경로를 손으로 복사할 필요 없이, builder가
+   render result를 fail-closed로 검증(schemaVersion/executed/allVerificationsPass/
+   ffmpegConversionCount/side-effect counters/output 존재+크기)한 뒤 그 `outputPath`를
+   `youtubeSourcePath`로 자동 채우고 `youtubeSourceDerivedFromRenderResult:true`를 기록한다.
+   `--youtube-source <mp4 path>`를 직접 지정하는 방식은 fallback으로만 쓴다(수동 경로 입력;
+   render result와 함께 지정하면 두 경로가 반드시 같아야 하며, 다르면
+   `youtube_source_render_result_mismatch`로 fail-closed).
 7. **Blob liveness evidence 첨부** (승인된 Blob upload/liveness 이후): `--blob-liveness-result
    <json>`으로 manifest에 `blobPublicUrlLivenessEvidence`를 추가한다. 이 slice의 builder는
    네트워크 HEAD/list/readback을 절대 수행하지 않는다 — evidence JSON을 그대로 읽어 shape만

@@ -90,7 +90,9 @@ function printUsage() {
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit" +
         " (--summary <path> | --pipeline-summary <path>) --out-dir <path>" +
-        " [--content-id <id>] [--version <version>] [--youtube-source <path>] [--blob-liveness-result <path>]",
+        " [--content-id <id>] [--version <version>]" +
+        " [--youtube-source <path> | --youtube-render-result <youtube-letterbox-render-result.json>]" +
+        " [--blob-liveness-result <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox" +
         " --content-unit <path> --out-dir <path> [--version-suffix <suffix>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render" +
@@ -105,6 +107,10 @@ function printUsage() {
       "  --build-content-unit builds a dual_platform_content_unit_v1 manifest from an existing local",
       "                        dry-run pipeline summary (--dry-run output). Pass the resulting manifest",
       "                        path to --preflight --content-unit <manifest> to check readiness.",
+      "                        Prefer --youtube-render-result <youtube-letterbox-render-result.json> (from",
+      "                        --render-youtube-letterbox-once) over --youtube-source: it is validated",
+      "                        fail-closed and youtubeSourcePath is derived automatically — no manual mp4",
+      "                        path copy needed. Providing both requires them to resolve to the same path.",
       "",
       "  --plan-youtube-letterbox plans a deterministic YouTube Shorts letterbox source path + render",
       "                        profile from a content unit manifest's instagramSourcePath. No ffmpeg is",
@@ -240,6 +246,8 @@ function runStatus() {
       generateLocalDryRunPacket: "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
       buildContentUnitFromDryRunSummary:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <generated summary.json> --out-dir <outside-repo path>",
+      attachYoutubeSourceFromRenderResult:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <generated summary.json> --youtube-render-result <youtube-letterbox-render-result.json> --out-dir <outside-repo path>",
       planYoutubeLetterboxSource:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <outside-repo path>",
       prepareYoutubeLetterboxRender:
@@ -260,7 +268,13 @@ function runStatus() {
       buildFromLocalPipelineOutput:
         "--build-content-unit derives a manifest from an existing --dry-run summary (no-live; no new media/API " +
         "calls). YouTube letterbox source and Blob liveness evidence are reported not-ready until a later approved " +
-        "step supplies --youtube-source / --blob-liveness-result.",
+        "step supplies --youtube-source / --youtube-render-result / --blob-liveness-result.",
+      attachYoutubeSourceFromRenderResult:
+        "--youtube-render-result <youtube-letterbox-render-result.json> is the preferred way to attach the " +
+        "YouTube letterbox source: it validates the render result fail-closed (schemaVersion/executed/" +
+        "allVerificationsPass/ffmpegConversionCount/side-effect counters/output existence+size) and derives " +
+        "youtubeSourcePath automatically. If --youtube-source is also given, both must resolve to the same path " +
+        "or the build aborts with youtube_source_render_result_mismatch. No ffmpeg/ffprobe is run by this step.",
       planYoutubeLetterboxSource:
         "--plan-youtube-letterbox reads a content unit manifest's instagramSourcePath and writes a deterministic " +
         "YouTube letterbox source plan JSON (planned output path + render profile + recommended next command). " +
@@ -346,6 +360,7 @@ function runBuildContentUnit() {
   const contentId = getArg("--content-id");
   const version = getArg("--version");
   const youtubeSourcePath = getArg("--youtube-source");
+  const youtubeRenderResultPath = getArg("--youtube-render-result");
   const blobLivenessResultPath = getArg("--blob-liveness-result");
 
   if ((!summaryPath && !pipelineSummaryPath) || !outDir) {
@@ -376,6 +391,7 @@ function runBuildContentUnit() {
     contentId,
     version,
     youtubeSourcePath,
+    youtubeRenderResultPath,
     blobLivenessResultPath,
   });
 
@@ -397,6 +413,7 @@ function runBuildContentUnit() {
   console.log(`  version:                            ${result.manifest.version}`);
   console.log(`  instagramSourceReady:                ${result.buildSummary.instagramSourceReady}`);
   console.log(`  youtubeSourceReady:                  ${result.buildSummary.youtubeSourceReady}`);
+  console.log(`  youtubeSourceDerivedFromRenderResult: ${result.buildSummary.youtubeSourceDerivedFromRenderResult}`);
   console.log(`  metadataReady:                       ${result.buildSummary.metadataReady}`);
   console.log(`  blobLivenessEvidenceReady:            ${result.buildSummary.blobLivenessEvidenceReady}`);
   console.log(`  contentUnitPreflightExpectedReady:    ${result.buildSummary.contentUnitPreflightExpectedReady}`);

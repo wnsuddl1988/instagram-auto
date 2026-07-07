@@ -41,6 +41,7 @@ const ORCHESTRATOR_PATH = path.join(ROOT, "scripts", "run-dual-platform-final-pu
 const SAMPLE_SUMMARY_PATH = path.join(ROOT, "scripts", "fixtures", "dual_platform_content_unit_from_local_summary.sample.v1.json");
 const SAMPLE_PACKET_PATH = path.join(ROOT, "scripts", "fixtures", "dual_platform_content_unit_from_local_summary.sample.v1.owner_approved_upload_ready_packet.json");
 const SAMPLE_BLOB_LIVENESS_PATH = path.join(ROOT, "scripts", "fixtures", "dual_platform_content_unit_from_local_summary.sample.v1.blob_liveness_result.json");
+const SAMPLE_RENDER_RESULT_PATH = path.join(ROOT, "scripts", "fixtures", "youtube_letterbox_render_result_attach.sample.v1.json");
 
 let passes = 0;
 let failures = 0;
@@ -89,7 +90,12 @@ const builderCode = stripCommentsAndStrings(builderRawSrc);
 
 check("builder: process.env 접근 없음", !/process\.env/.test(builderCode));
 check("builder: fetch/axios/googleapis/@vercel/blob 호출 없음", !/\bfetch\(|axios|googleapis|@vercel\/blob/.test(builderCode));
-check("builder: ffmpeg/spawnSync/child_process 미사용(media 생성 없음)", !/spawnSync|child_process|ffmpeg/i.test(builderCode));
+check(
+  "builder: ffmpeg/spawnSync/child_process 미사용(media 생성 없음)",
+  // ffmpegConversionCount처럼 render-result JSON 필드명을 읽기만 하는 코드는 media 생성이 아니므로
+  // 제외한다 — 실제 프로세스 실행/호출 형태(spawnSync(, child_process, ffmpeg()만 차단한다.
+  !/spawnSync|child_process|\bffmpeg\s*\(/i.test(builderCode.replace(/\.\s*ffmpeg[A-Za-z]*/gi, "")),
+);
 check("builder: shell:true 없음", !/shell:\s*true/.test(builderCode));
 check("builder: out-dir repo-root 검증 존재", /REPO_ROOT/.test(builderCode) && /outDirAbs\.startsWith/.test(builderCode));
 check("builder: .money-shorts-local 차단 존재", /\.money-shorts-local/.test(builderRawSrc));
@@ -100,6 +106,40 @@ check("builder: readiness booleans 5종 모두 산출", [
   "instagramSourceReady", "youtubeSourceReady", "metadataReady", "blobLivenessEvidenceReady", "contentUnitPreflightExpectedReady",
 ].every((f) => builderRawSrc.includes(f)));
 check("builder: --summary/--pipeline-summary 동시 지정 시 abort", /provide only one of --summary or --pipeline-summary/.test(builderRawSrc));
+
+// task: content-unit-youtube-render-result-attach-preflight-no-live-v1
+check("builder: readAndValidateYoutubeRenderResult 함수 존재", /function readAndValidateYoutubeRenderResult/.test(builderRawSrc));
+check("builder: RENDER_RESULT_SCHEMA_VERSION = youtube_letterbox_render_result_v1", /RENDER_RESULT_SCHEMA_VERSION\s*=\s*"youtube_letterbox_render_result_v1"/.test(builderRawSrc));
+check(
+  "builder: render result 검증이 executed/allVerificationsPass/ffmpegConversionCount를 모두 확인",
+  /result\?\.executed !== true/.test(builderCode) &&
+    /result\?\.allVerificationsPass !== true/.test(builderCode) &&
+    /result\?\.ffmpegConversionCount !== 1/.test(builderCode),
+);
+check(
+  "builder: render result 검증이 side-effect counters(api/upload/env/deploy) 4종을 모두 확인",
+  ["apiCallCount", "uploadCount", "envSecretReadCount", "deployCount"].every((f) => builderRawSrc.includes(`counters.${f} !== 0`)),
+);
+check(
+  "builder: render result outputPath가 repo 내부면 fail-closed",
+  /youtube_render_result_outputPath_inside_repo/.test(builderRawSrc) && /outputAbs\.startsWith\(repoRoot/.test(builderCode),
+);
+check(
+  "builder: render result outputPath 미존재/size<=0이면 fail-closed",
+  /youtube_render_result_outputPath_file_not_found/.test(builderRawSrc) && /youtube_render_result_outputSizeBytes_not_positive/.test(builderRawSrc),
+);
+check(
+  "builder: --youtube-source + --youtube-render-result 경로 불일치 시 youtube_source_render_result_mismatch로 fail-closed",
+  /youtube_source_render_result_mismatch/.test(builderRawSrc),
+);
+check(
+  "builder: youtubeSourceDerivedFromRenderResult 필드가 buildSummary에 존재",
+  /youtubeSourceDerivedFromRenderResult/.test(builderRawSrc),
+);
+check(
+  "builder: ffmpeg/ffprobe/spawnSync를 render-result 처리 경로에서도 호출하지 않음(read-only 검증만)",
+  !/spawnSync|ffprobe/i.test(builderCode),
+);
 
 // task: local-pipeline-content-unit-preflight-readiness-fix-v1
 // Codex review finding: contentUnitPreflightExpectedReady가 blobLivenessEvidenceReady를
@@ -196,6 +236,39 @@ check(
 );
 check("sample fixture 어디에도 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(
   JSON.stringify({ sampleSummary, samplePacket, sampleBlobLiveness }),
+));
+
+// task: content-unit-youtube-render-result-attach-preflight-no-live-v1
+let sampleRenderResult;
+try {
+  sampleRenderResult = JSON.parse(readFileSync(SAMPLE_RENDER_RESULT_PATH, "utf8"));
+  check("sample youtube-render-result-attach fixture JSON parse 성공", true);
+} catch (e) {
+  check("sample youtube-render-result-attach fixture JSON parse 성공", false, String(e?.message || e));
+}
+check(
+  "sample render-result fixture: schemaVersion/executed/allVerificationsPass/ffmpegConversionCount 계약 충족",
+  sampleRenderResult?.schemaVersion === "youtube_letterbox_render_result_v1" &&
+    sampleRenderResult?.executed === true &&
+    sampleRenderResult?.allVerificationsPass === true &&
+    sampleRenderResult?.ffmpegConversionCount === 1,
+);
+check(
+  "sample render-result fixture: side-effect counters(api/upload/env/deploy) 전부 0",
+  sampleRenderResult?.sideEffectCounters?.apiCallCount === 0 &&
+    sampleRenderResult?.sideEffectCounters?.uploadCount === 0 &&
+    sampleRenderResult?.sideEffectCounters?.envSecretReadCount === 0 &&
+    sampleRenderResult?.sideEffectCounters?.deployCount === 0,
+);
+check(
+  "sample render-result fixture: outputPath가 레포 밖 + .mp4 + 실제 존재 + size>0(read-only stat)",
+  typeof sampleRenderResult?.outputPath === "string" &&
+    sampleRenderResult.outputPath.toLowerCase().endsWith(".mp4") &&
+    !path.resolve(sampleRenderResult.outputPath).startsWith(ROOT + path.sep) &&
+    existsSync(sampleRenderResult.outputPath),
+);
+check("sample render-result fixture 어디에도 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(
+  JSON.stringify(sampleRenderResult),
 ));
 
 // ── 3) builder 실행: 체크인 sample fixture만 사용, out-dir은 OS temp(repo 밖) ──
@@ -356,6 +429,115 @@ try {
     try { rmSync(tmpBase2, { recursive: true, force: true }); } catch {}
   }
 
+  // ── 4.5) --youtube-render-result 지정 시 youtubeSourcePath 자동 유도 확인 ──
+  // task: content-unit-youtube-render-result-attach-preflight-no-live-v1
+  const tmpBaseRR = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-render-result-"));
+  try {
+    execFileSync(process.execPath, [
+      BUILDER_PATH,
+      "--summary", SAMPLE_SUMMARY_PATH,
+      "--out-dir", tmpBaseRR,
+      "--youtube-render-result", SAMPLE_RENDER_RESULT_PATH,
+    ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+    const rrBuildSummary = JSON.parse(readFileSync(path.join(tmpBaseRR, "content-unit-build-summary.local-mock.json"), "utf8"));
+    const rrManifest = JSON.parse(readFileSync(path.join(tmpBaseRR, "dual_platform_content_unit.generated.json"), "utf8"));
+    check(
+      "--youtube-render-result 지정 시 youtubeSourceReady === true + youtubeSourceDerivedFromRenderResult === true",
+      rrBuildSummary?.youtubeSourceReady === true && rrBuildSummary?.youtubeSourceDerivedFromRenderResult === true,
+    );
+    check(
+      "--youtube-render-result 지정 시 manifest.youtubeSourcePath === render result outputPath(수동 복사 없이 자동 유도)",
+      rrManifest?.youtubeSourcePath === path.resolve(sampleRenderResult.outputPath),
+    );
+    check(
+      "--youtube-render-result 단독 지정해도 instagram/metadata/blob 미완성이면 contentUnitPreflightExpectedReady === false",
+      rrBuildSummary?.youtubeSourceReady === true &&
+        rrBuildSummary?.instagramSourceReady === false &&
+        rrBuildSummary?.contentUnitPreflightExpectedReady === false,
+    );
+  } catch (e) {
+    check("--youtube-render-result 지정 시 youtubeSourceReady === true + youtubeSourceDerivedFromRenderResult === true", false, String(e?.message || e));
+    check("--youtube-render-result 지정 시 manifest.youtubeSourcePath === render result outputPath(수동 복사 없이 자동 유도)", false, String(e?.message || e));
+    check("--youtube-render-result 단독 지정해도 instagram/metadata/blob 미완성이면 contentUnitPreflightExpectedReady === false", false, String(e?.message || e));
+  } finally {
+    try { rmSync(tmpBaseRR, { recursive: true, force: true }); } catch {}
+  }
+
+  // --youtube-source와 --youtube-render-result가 다른 경로면 fail-closed(mismatch).
+  {
+    let threw = false;
+    let out = "";
+    try {
+      out = execFileSync(process.execPath, [
+        BUILDER_PATH,
+        "--summary", SAMPLE_SUMMARY_PATH,
+        "--out-dir", path.join(os.tmpdir(), "should-not-be-created-mismatch"),
+        "--youtube-source", "C:\\tmp\\money-shorts-os\\some-other-unrelated-path.mp4",
+        "--youtube-render-result", SAMPLE_RENDER_RESULT_PATH,
+      ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+    } catch (e) {
+      threw = (e.status ?? 1) !== 0;
+      out = String(e?.stdout || "") + String(e?.stderr || "");
+    }
+    check("--youtube-source와 --youtube-render-result 경로 불일치 → exit != 0(youtube_source_render_result_mismatch)", threw && /youtube_source_render_result_mismatch/.test(out));
+  }
+  // --youtube-source와 --youtube-render-result가 같은 경로로 resolve되면 허용.
+  {
+    const tmpBaseSame = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-same-path-"));
+    try {
+      execFileSync(process.execPath, [
+        BUILDER_PATH,
+        "--summary", SAMPLE_SUMMARY_PATH,
+        "--out-dir", tmpBaseSame,
+        "--youtube-source", sampleRenderResult.outputPath,
+        "--youtube-render-result", SAMPLE_RENDER_RESULT_PATH,
+      ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      const sameManifest = JSON.parse(readFileSync(path.join(tmpBaseSame, "dual_platform_content_unit.generated.json"), "utf8"));
+      check(
+        "--youtube-source와 --youtube-render-result가 같은 경로로 resolve되면 정상 생성됨(exit 0)",
+        sameManifest?.youtubeSourcePath === path.resolve(sampleRenderResult.outputPath),
+      );
+    } catch (e) {
+      check("--youtube-source와 --youtube-render-result가 같은 경로로 resolve되면 정상 생성됨(exit 0)", false, String(e?.message || e));
+    } finally {
+      try { rmSync(tmpBaseSame, { recursive: true, force: true }); } catch {}
+    }
+  }
+  // schemaVersion 불일치/allVerificationsPass:false render result는 fail-closed.
+  {
+    const tmpBaseBad = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-bad-render-result-"));
+    try {
+      const badRenderResultPath = path.join(tmpBaseBad, "bad-render-result.json");
+      writeFileSync(
+        badRenderResultPath,
+        JSON.stringify({
+          schemaVersion: "youtube_letterbox_render_result_v1",
+          executed: true,
+          allVerificationsPass: false,
+          ffmpegConversionCount: 1,
+          outputPath: sampleRenderResult.outputPath,
+          outputSizeBytes: sampleRenderResult.outputSizeBytes,
+          sideEffectCounters: { apiCallCount: 0, uploadCount: 0, envSecretReadCount: 0, deployCount: 0 },
+        }, null, 2),
+        "utf8",
+      );
+      let threw = false;
+      let out = "";
+      try {
+        out = execFileSync(process.execPath, [
+          BUILDER_PATH, "--summary", SAMPLE_SUMMARY_PATH, "--out-dir", path.join(tmpBaseBad, "out"),
+          "--youtube-render-result", badRenderResultPath,
+        ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      } catch (e) {
+        threw = (e.status ?? 1) !== 0;
+        out = String(e?.stdout || "") + String(e?.stderr || "");
+      }
+      check("render result allVerificationsPass:false → exit != 0(fail-closed)", threw && /youtube_render_result_allVerificationsPass_not_true/.test(out));
+    } finally {
+      try { rmSync(tmpBaseBad, { recursive: true, force: true }); } catch {}
+    }
+  }
+
   // ── 5) 생성 manifest → orchestrator --preflight --content-unit 연결 확인 ──
   if (generatedManifestPath && existsSync(generatedManifestPath)) {
     let pfOut;
@@ -510,6 +692,7 @@ const ownerRawSrc = readFileSync(OWNER_ENTRYPOINT_PATH, "utf8");
 check("owner entrypoint: --build-content-unit MODES 목록에 존재", /"--build-content-unit"/.test(ownerRawSrc));
 check("owner entrypoint: buildContentUnitFromLocalSummary import 존재", /import\s*\{\s*buildContentUnitFromLocalSummary\s*\}/.test(ownerRawSrc));
 check("owner entrypoint: runBuildContentUnit 함수 존재", /function runBuildContentUnit/.test(ownerRawSrc));
+check("owner entrypoint: --youtube-render-result를 builder로 forwarding", /getArg\("--youtube-render-result"\)/.test(ownerRawSrc) && /youtubeRenderResultPath/.test(ownerRawSrc));
 
 const tmpBase3 = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-owner-"));
 try {
@@ -531,6 +714,30 @@ try {
   );
 } finally {
   try { rmSync(tmpBase3, { recursive: true, force: true }); } catch {}
+}
+
+// task: content-unit-youtube-render-result-attach-preflight-no-live-v1
+const tmpBase4 = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-owner-rr-"));
+try {
+  execFileSync(process.execPath, [
+    OWNER_ENTRYPOINT_PATH, "--build-content-unit", "--summary", SAMPLE_SUMMARY_PATH, "--out-dir", tmpBase4,
+    "--youtube-render-result", SAMPLE_RENDER_RESULT_PATH,
+  ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  const ownerRRManifest = JSON.parse(readFileSync(path.join(tmpBase4, "dual_platform_content_unit.generated.json"), "utf8"));
+  const ownerRRBuildSummary = JSON.parse(readFileSync(path.join(tmpBase4, "content-unit-build-summary.local-mock.json"), "utf8"));
+  check(
+    "owner entrypoint --build-content-unit --youtube-render-result: youtubeSourcePath가 render result outputPath와 일치",
+    ownerRRManifest?.youtubeSourcePath === path.resolve(sampleRenderResult.outputPath),
+  );
+  check(
+    "owner entrypoint --build-content-unit --youtube-render-result: youtubeSourceDerivedFromRenderResult === true",
+    ownerRRBuildSummary?.youtubeSourceDerivedFromRenderResult === true,
+  );
+} catch (e) {
+  check("owner entrypoint --build-content-unit --youtube-render-result: youtubeSourcePath가 render result outputPath와 일치", false, String(e?.message || e));
+  check("owner entrypoint --build-content-unit --youtube-render-result: youtubeSourceDerivedFromRenderResult === true", false, String(e?.message || e));
+} finally {
+  try { rmSync(tmpBase4, { recursive: true, force: true }); } catch {}
 }
 
 // ── 7) mutant 방어: 잘못된 인자 조합은 abort ────────────────────────────────

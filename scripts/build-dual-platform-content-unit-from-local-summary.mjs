@@ -8,9 +8,17 @@
  *     --summary <render-manifest-local-run-summary.local-mock.json> \
  *     --out-dir <outside-repo path> \
  *     [--content-id <id>] [--version <version>] \
- *     [--youtube-source <mp4 path>] [--blob-liveness-result <json path>]
+ *     [--youtube-source <mp4 path>] [--youtube-render-result <youtube-letterbox-render-result.json>] \
+ *     [--blob-liveness-result <json path>]
  *
  *   (or --pipeline-summary <pipeline-run-summary.local-mock.json> instead of --summary)
+ *
+ * --youtube-render-result accepts the result JSON produced by
+ * scripts/run-youtube-letterbox-render-from-request-once.mjs (task:
+ * youtube-letterbox-local-render-execution-once-v1). It is validated fail-closed
+ * (schemaVersion/executed/allVerificationsPass/ffmpegConversionCount/side-effect
+ * counters/outputPath existence+size) and, if valid, its outputPath is used as
+ * youtubeSourcePath — the Owner no longer needs to copy the mp4 path by hand.
  *
  * Reads only local non-secret JSON output already produced by the existing no-live
  * pipeline (render-manifest-local-run-summary / pipeline-run-summary →
@@ -61,7 +69,8 @@ function printUsage() {
         " --summary <render-manifest-local-run-summary.local-mock.json>" +
         " --out-dir <outside-repo path>" +
         " [--content-id <id>] [--version <version>]" +
-        " [--youtube-source <mp4 path>] [--blob-liveness-result <json path>]",
+        " [--youtube-source <mp4 path>] [--youtube-render-result <youtube-letterbox-render-result.json>]" +
+        " [--blob-liveness-result <json path>]",
       "  (or --pipeline-summary <pipeline-run-summary.local-mock.json> instead of --summary)",
       "",
       "Reads only local non-secret JSON already produced by the existing dry-run pipeline.",
@@ -360,6 +369,69 @@ function deterministicYoutubePlaceholderPath(contentId, version) {
   return `C:\\tmp\\money-shorts-os\\${contentId}\\youtube_shorts_letterbox_1080x1920_${version}.mp4`;
 }
 
+const RENDER_RESULT_SCHEMA_VERSION = "youtube_letterbox_render_result_v1";
+
+/**
+ * --youtube-render-result JSON(scripts/run-youtube-letterbox-render-from-request-once.mjs 산출물)을
+ * 읽어 fail-closed로 검증하고, 검증된 outputPath를 반환한다. ffmpeg/ffprobe는 실행하지 않는다 —
+ * 이미 생성된 result JSON과 fs.existsSync/statSync만 사용하는 read-only 검증이다.
+ */
+function readAndValidateYoutubeRenderResult(renderResultPath, { repoRoot }) {
+  if (!existsSync(renderResultPath)) {
+    return { ok: false, reason: "youtube_render_result_file_not_found", outputPath: null };
+  }
+  let result;
+  try {
+    result = JSON.parse(readFileSync(renderResultPath, "utf-8"));
+  } catch (e) {
+    return { ok: false, reason: `youtube_render_result_json_parse_failed: ${String(e?.message || e)}`, outputPath: null };
+  }
+
+  if (result?.schemaVersion !== RENDER_RESULT_SCHEMA_VERSION) {
+    return { ok: false, reason: `youtube_render_result_unrecognized_schema_version: ${result?.schemaVersion}`, outputPath: null };
+  }
+  if (result?.executed !== true) {
+    return { ok: false, reason: "youtube_render_result_executed_not_true", outputPath: null };
+  }
+  if (result?.allVerificationsPass !== true) {
+    return { ok: false, reason: "youtube_render_result_allVerificationsPass_not_true", outputPath: null };
+  }
+  if (result?.ffmpegConversionCount !== 1) {
+    return { ok: false, reason: `youtube_render_result_ffmpegConversionCount_not_1: ${result?.ffmpegConversionCount}`, outputPath: null };
+  }
+  const counters = result?.sideEffectCounters ?? {};
+  if (counters.apiCallCount !== 0) {
+    return { ok: false, reason: `youtube_render_result_apiCallCount_not_0: ${counters.apiCallCount}`, outputPath: null };
+  }
+  if (counters.uploadCount !== 0) {
+    return { ok: false, reason: `youtube_render_result_uploadCount_not_0: ${counters.uploadCount}`, outputPath: null };
+  }
+  if (counters.envSecretReadCount !== 0) {
+    return { ok: false, reason: `youtube_render_result_envSecretReadCount_not_0: ${counters.envSecretReadCount}`, outputPath: null };
+  }
+  if (counters.deployCount !== 0) {
+    return { ok: false, reason: `youtube_render_result_deployCount_not_0: ${counters.deployCount}`, outputPath: null };
+  }
+
+  const outputPath = result?.outputPath;
+  if (typeof outputPath !== "string" || outputPath.trim() === "" || !outputPath.toLowerCase().endsWith(".mp4")) {
+    return { ok: false, reason: "youtube_render_result_outputPath_missing_or_not_mp4", outputPath: null };
+  }
+  const outputAbs = resolve(outputPath);
+  if (outputAbs.startsWith(repoRoot + "\\") || outputAbs.startsWith(repoRoot + "/")) {
+    return { ok: false, reason: "youtube_render_result_outputPath_inside_repo", outputPath: null };
+  }
+  if (!existsSync(outputAbs)) {
+    return { ok: false, reason: "youtube_render_result_outputPath_file_not_found", outputPath: null };
+  }
+  const outputSize = typeof result?.outputSizeBytes === "number" ? result.outputSizeBytes : null;
+  if (outputSize == null || outputSize <= 0) {
+    return { ok: false, reason: "youtube_render_result_outputSizeBytes_not_positive", outputPath: null };
+  }
+
+  return { ok: true, reason: null, outputPath: outputAbs };
+}
+
 /**
  * 순수 빌더: local pipeline output(summary JSON) → dual_platform_content_unit_v1 manifest + 빌드 요약.
  * 파일 IO는 입력 JSON 읽기 + 출력 JSON 쓰기만 수행한다. 네트워크/env/미디어 생성 없음.
@@ -370,6 +442,7 @@ export function buildContentUnitFromLocalSummary({
   contentId,
   version,
   youtubeSourcePath,
+  youtubeRenderResultPath,
   blobLivenessResultPath,
 }) {
   const resolvedSummaryPath = summaryPath ?? pipelineSummaryPath;
@@ -397,8 +470,25 @@ export function buildContentUnitFromLocalSummary({
   const instagramSourcePath = typeof packet.sourceVideoPath === "string" ? packet.sourceVideoPath : null;
   const instagramSourceReady = instagramSourcePath != null && existsSync(instagramSourcePath);
 
-  const resolvedYoutubeSourcePath = youtubeSourcePath ?? deterministicYoutubePlaceholderPath(resolvedContentId, resolvedVersion);
-  const youtubeSourceProvided = youtubeSourcePath != null;
+  let youtubeRenderResultOutputPath = null;
+  if (youtubeRenderResultPath != null) {
+    const renderResultCheck = readAndValidateYoutubeRenderResult(youtubeRenderResultPath, { repoRoot: REPO_ROOT });
+    if (!renderResultCheck.ok) {
+      return { ok: false, reason: renderResultCheck.reason, manifest: null, buildSummary: null };
+    }
+    youtubeRenderResultOutputPath = renderResultCheck.outputPath;
+  }
+
+  if (youtubeSourcePath != null && youtubeRenderResultOutputPath != null) {
+    if (resolve(youtubeSourcePath) !== youtubeRenderResultOutputPath) {
+      return { ok: false, reason: "youtube_source_render_result_mismatch", manifest: null, buildSummary: null };
+    }
+  }
+
+  const youtubeSourceDerivedFromRenderResult = youtubeRenderResultOutputPath != null;
+  const explicitYoutubeSourcePath = youtubeSourcePath ?? youtubeRenderResultOutputPath;
+  const resolvedYoutubeSourcePath = explicitYoutubeSourcePath ?? deterministicYoutubePlaceholderPath(resolvedContentId, resolvedVersion);
+  const youtubeSourceProvided = explicitYoutubeSourcePath != null;
   const youtubeSourceReady = youtubeSourceProvided && existsSync(resolvedYoutubeSourcePath);
 
   const blobLivenessResult = readBlobLivenessResultIfProvided(blobLivenessResultPath);
@@ -446,10 +536,13 @@ export function buildContentUnitFromLocalSummary({
     instagramSourceReady,
     youtubeSourcePath: resolvedYoutubeSourcePath,
     youtubeSourceProvidedByFlag: youtubeSourceProvided,
+    youtubeSourceDerivedFromRenderResult,
     youtubeSourceReady,
-    youtubeSourceNote: youtubeSourceProvided
-      ? "explicit --youtube-source path checked with fs.existsSync only; no file was generated."
-      : "deterministic placeholder path — no YouTube letterbox source exists yet; a later approved local media step must generate it.",
+    youtubeSourceNote: youtubeSourceDerivedFromRenderResult
+      ? "derived from a validated --youtube-render-result outputPath (schemaVersion/executed/allVerificationsPass/ffmpegConversionCount/side-effect counters all checked, output file existence+size checked with fs.existsSync/statSync only; ffmpeg was not re-run by this builder)."
+      : youtubeSourceProvided
+        ? "explicit --youtube-source path checked with fs.existsSync only; no file was generated."
+        : "deterministic placeholder path — no YouTube letterbox source exists yet; a later approved local media step must generate it.",
     metadataReady,
     instagramMetadataReasons: igDerived.reasons,
     youtubeMetadataReasons: ytDerived.reasons,
@@ -462,8 +555,10 @@ export function buildContentUnitFromLocalSummary({
       "instagramMetadata.captionFirstLineHook / callToAction are intentionally left empty — " +
         "the local pipeline's platform payload does not carry these as separate fields; a later " +
         "approved editorial step must fill them before this content unit can pass the metadata gate.",
-      "youtubeSourcePath is a placeholder until a later approved local media step generates the " +
-        "YouTube letterbox render and either passes --youtube-source or the placeholder path is filled in.",
+      youtubeSourceDerivedFromRenderResult
+        ? "youtubeSourcePath was derived from a validated --youtube-render-result outputPath — no manual mp4 path copy was needed."
+        : "youtubeSourcePath is a placeholder until a later approved local media step generates the " +
+          "YouTube letterbox render and either passes --youtube-source, --youtube-render-result, or the placeholder path is filled in.",
       "blobPublicUrlLivenessEvidence is included only if --blob-liveness-result was explicitly provided " +
         "and shape-valid; no network HEAD/list/readback was performed.",
       "nextStep: run scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit <this manifest> " +
@@ -484,6 +579,7 @@ if (isMainModule) {
   const contentId = getArg(args, "--content-id");
   const version = getArg(args, "--version");
   const youtubeSourcePath = getArg(args, "--youtube-source");
+  const youtubeRenderResultPath = getArg(args, "--youtube-render-result");
   const blobLivenessResultPath = getArg(args, "--blob-liveness-result");
 
   if ((!summaryPath && !pipelineSummaryPath) || !outDir) {
@@ -500,7 +596,7 @@ if (isMainModule) {
     console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
     process.exit(1);
   }
-  if ([summaryPath, pipelineSummaryPath, outDirAbs, youtubeSourcePath, blobLivenessResultPath]
+  if ([summaryPath, pipelineSummaryPath, outDirAbs, youtubeSourcePath, youtubeRenderResultPath, blobLivenessResultPath]
     .some((p) => typeof p === "string" && p.includes(".money-shorts-local"))) {
     console.error("ABORT: .money-shorts-local access forbidden.");
     process.exit(1);
@@ -516,6 +612,7 @@ if (isMainModule) {
     contentId,
     version,
     youtubeSourcePath,
+    youtubeRenderResultPath,
     blobLivenessResultPath,
   });
 
@@ -534,6 +631,7 @@ if (isMainModule) {
   console.log(`  version:                         ${result.manifest.version}`);
   console.log(`  instagramSourceReady:            ${result.buildSummary.instagramSourceReady}`);
   console.log(`  youtubeSourceReady:              ${result.buildSummary.youtubeSourceReady}`);
+  console.log(`  youtubeSourceDerivedFromRenderResult: ${result.buildSummary.youtubeSourceDerivedFromRenderResult}`);
   console.log(`  metadataReady:                   ${result.buildSummary.metadataReady}`);
   console.log(`  blobLivenessEvidenceReady:       ${result.buildSummary.blobLivenessEvidenceReady}`);
   console.log(`  contentUnitPreflightExpectedReady: ${result.buildSummary.contentUnitPreflightExpectedReady}`);
