@@ -4,117 +4,141 @@
 
 ## Current Task
 
-- Task ID: `instagram-blob-upload-from-request-once-v1`
-- Owner approval token: `APPROVE_INSTAGRAM_BLOB_UPLOAD_FROM_REQUEST_ONCE`
-- Latest checkpoint: `9970983 chore(operator): commonize repo root output guard`
-- Purpose: use an existing `instagram-blob-upload-request.json` to perform at most one Vercel Blob public upload attempt for the Instagram/full-frame mp4, producing a public `video_url` candidate for later Instagram publish. The upload must run only after no-execute preflight passes, must not overwrite, must not retry, and must not expose secrets.
+- Task ID: `instagram-existing-blob-liveness-and-content-unit-attach-no-arm-v1`
+- Owner approval token: `APPROVE_INSTAGRAM_EXISTING_BLOB_LIVENESS_AND_ATTACH_NO_ARM`
+- Latest checkpoint: `a96940a feat(operator): add instagram blob upload one-shot runner`
+- Purpose: confirm the existing Vercel Blob object public URL for the Instagram/full-frame mp4, verify only public `HEAD` liveness (`video/mp4`, content length `20294549`), write a secret-free liveness result JSON, and attach that evidence into a content unit/preflight path without publishing.
 
-## Approval Scope
+## Approved Scope
 
 Approved:
 
-- Build the smallest safe one-shot upload runner needed to consume a validated `instagram_blob_upload_request_v1` JSON.
-- Use `@vercel/blob` only for the one approved upload attempt.
-- Use `BLOB_READ_WRITE_TOKEN` only through runtime/platform env or a no-log Owner-run wrapper path; never read `.env.local`.
-- Perform at most one `put()` attempt for the request pathname.
-- Write a secret-free result JSON under an approved gitignored output folder.
+- Use the existing Blob object pathname:
+  - `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
+- Derive or confirm the public URL in a read-only way from existing repo evidence/result files.
+- Perform public URL `HEAD` request only against the expected existing mp4 URL.
+- Validate:
+  - HTTP status is 2xx/3xx, preferably 200
+  - `content-type` is `video/mp4` or starts with `video/`
+  - `content-length` equals `20294549`
+  - URL path contains the exact expected pathname
+- Write a secret-free liveness result JSON under a gitignored/repo-outside output path.
+- Feed that result into existing content-unit builder via `--blob-liveness-result`.
+- Verify the generated content unit contains `blobPublicUrlLivenessEvidence`.
+- Run content-unit preflight and confirm Blob evidence is accepted while no live publish occurs.
 
 Not approved:
 
-- Instagram publish/arm.
+- Instagram publish/arm or Instagram Graph API calls.
 - YouTube API/OAuth/upload.
-- Blob list/head/delete/copy/liveness/public HEAD.
-- Deploy, dependency/lockfile changes, new media generation, DB/Supabase, browser automation.
-- `.env`, `.env.*`, `.env.local`, secret file read/write/print.
+- Blob upload/delete/overwrite/copy/mutation. Avoid Blob SDK token use.
+- Env/secret read/write/print, including `.env`, `.env.*`, `.env.local`.
+- Deploy, dependency/lockfile changes, DB/Supabase, browser automation.
+- New media generation, ffmpeg, ffprobe, TTS/image/render/mux.
 - Commit/push.
 
-## Request Selection
+## Known Inputs And Evidence
 
-Preferred request input:
+Expected object:
 
-1. If a repo-outside request path is already available from recent planner output, use it.
-2. Otherwise use the checked-in sample request:
-   - `scripts/fixtures/instagram_blob_upload_plan_from_content_unit.sample.v1.json`
+- pathname/key: `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
+- source size: `20294549`
+- sha256_12: `54957450ac10`
 
-Before upload, the runner must call or reuse `prepareInstagramBlobUploadFromRequest()` so source size/SHA-256/pathname/put options are reverified.
+Recent one-shot upload result:
 
-If the chosen request targets an object that already exists, `allowOverwrite:false` must refuse it. Treat that as a safe blocked outcome:
+- status: `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`
+- uploadAttemptCount: `1`
+- blobUploadCount: `0`
+- meaning: the object already exists and `allowOverwrite:false` correctly refused overwrite.
 
-- status like `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`
-- upload attempt count = 1
-- no retry
-- no overwrite
-- no delete
+Useful existing code paths:
 
-## Allowed Edits
+- `scripts/build-dual-platform-content-unit-from-local-summary.mjs`
+  - accepts `--blob-liveness-result <json>`
+  - copies shape-valid `{ url, headStatus, contentType, contentLength }` into `blobPublicUrlLivenessEvidence`
+  - never performs network validation itself.
+- `scripts/run-dual-platform-final-publish-orchestrator.mjs`
+  - supports `--preflight --content-unit <manifest>`
+  - must remain no-publish for this task.
 
-- New one-shot runner:
-  - `scripts/run-instagram-blob-upload-from-request-once.mjs`
-- New static/result guard if useful:
-  - `scripts/check-instagram-blob-upload-from-request-once-static.mjs`
-- Optional owner entrypoint mode:
-  - `scripts/run-owner-daily-automation-entrypoint.mjs`
-  - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
+## Suggested Implementation Shape
+
+Prefer adding a small, no-secret liveness runner plus guard:
+
+- New liveness runner:
+  - `scripts/check-instagram-existing-blob-liveness-no-arm.mjs`
+- Optional static/result guard:
+  - `scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
 - Optional docs update:
   - `docs/owner-daily-automation-runbook.md`
 - Append concise evidence:
   - `_ai/CLAUDE_REPORT.md`
 
-Avoid changing existing no-execute planner/executor scripts unless a focused bug blocks the one-shot runner.
+If no new runner is needed, a temporary gitignored output script is acceptable, but durable runner + guard is preferred because this is part of the owner-usable workflow.
 
 ## Required Runner Contract
 
-The runner should be explicit and approval gated, for example:
+Example command:
 
-`node scripts/run-instagram-blob-upload-from-request-once.mjs --approval APPROVE_INSTAGRAM_BLOB_UPLOAD_FROM_REQUEST_ONCE --request <instagram-blob-upload-request.json> --out-dir <repo 밖>`
+`node scripts/check-instagram-existing-blob-liveness-no-arm.mjs --pathname instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4 --expected-size 20294549 --out-dir <repo 밖>`
 
-Required gates, in order:
+Required behavior:
 
-1. Approval token argument matches `APPROVE_INSTAGRAM_BLOB_UPLOAD_FROM_REQUEST_ONCE`.
-2. `--out-dir` is outside repo root and not `.money-shorts-local`.
-3. Request preflight passes via `prepareInstagramBlobUploadFromRequest()`.
-4. Runtime credential availability:
-   - do not read `.env.local`;
-   - do not print/copy/hash token value;
-   - boolean presence check for `BLOB_READ_WRITE_TOKEN` is allowed only if needed;
-   - if token is absent, stop with `BLOCKED_BLOB_TOKEN_ABSENT_NO_UPLOAD` and optionally create a no-log Owner-run wrapper under gitignored `output/`.
-5. Upload is attempted at most once:
-   - `put(pathname, body, { access:"public", addRandomSuffix:false, allowOverwrite:false, multipart:true, contentType:"video/mp4" })`
-   - no retry
-   - no overwrite
-   - no list/head/delete/copy/liveness
-6. Result JSON must be secret-free and include:
+1. No env/secret access and no `.env*` access.
+2. No `@vercel/blob` mutation calls (`put`, `del`, `copy`, `empty`, overwrite).
+3. Public URL derivation must be deterministic and documented in result JSON.
+   - If using an existing known base URL from project evidence, record it as non-secret public evidence.
+   - Do not require `BLOB_READ_WRITE_TOKEN`.
+4. Perform exactly one public `HEAD` request against the candidate URL.
+5. Do not perform `GET`/download/body fetch.
+6. Result JSON must include:
+   - schemaVersion
    - status
-   - uploaded URL if success
-   - pathname/key
-   - source path
-   - size
-   - sha256/sha256_12
-   - uploadAttemptCount
-   - blobUploadCount
-   - side-effect counters
-   - env/secret handling booleans
+   - url
+   - pathname
+   - headStatus
+   - contentType
+   - contentLength
+   - expectedContentLength
+   - urlPathMatchesExpectedPath
+   - livenessOk
+   - sideEffectCounters
+   - envSecretAccess booleans
+7. Fail closed if:
+   - URL is missing
+   - status is not 2xx/3xx
+   - content type is html/text or non-video
+   - content length mismatches `20294549`
+   - URL path does not contain the expected pathname
 
-## No-Log Token Fallback
+## Content Unit Attach / Preflight
 
-If Claude's runtime does not have `BLOB_READ_WRITE_TOKEN` available and the SDK cannot upload:
+After liveness result is produced:
 
-- Do not read `.env.local`.
-- Do not ask Owner to paste token into chat.
-- Create a gitignored PowerShell wrapper under `output/instagram-blob-upload-from-request-once-v1/` if useful:
-  - `Read-Host -AsSecureString`
-  - set `$env:BLOB_READ_WRITE_TOKEN` only for child Node process
-  - clear env in `finally`
-  - do not echo token
-- Report the exact single Owner-run command.
-- Stop without upload unless the wrapper was actually run by the Owner and result JSON exists.
+1. Use the existing builder to generate or rebuild a content unit with:
+   - `--blob-liveness-result <liveness-result.json>`
+   - existing local summary/render result inputs where available
+2. Confirm generated manifest has:
+   - `blobPublicUrlLivenessEvidence.url`
+   - `headStatus`
+   - `contentType`
+   - `contentLength`
+3. Run:
+   - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit <generated manifest>`
+4. Confirm:
+   - no publish/upload occurs
+   - Blob evidence gate is accepted
+   - any remaining readiness failures are accurately reported
+
+Do not run `--live` or `--arm`.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not print, hash, copy, log, stage, or commit token values.
-- Do not call Blob list/head/delete/copy/liveness/public HEAD.
-- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or any paid/external live service other than the single approved Blob `put()` attempt.
+- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or paid/external live services.
+- Do not call Blob upload/delete/overwrite/copy/mutation.
 - Do not run ffmpeg or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
 - Do not delete/overwrite existing media or result JSON.
@@ -135,13 +159,13 @@ If Claude's runtime does not have `BLOB_READ_WRITE_TOKEN` available and the SDK 
 
 1. `git status -sb`
 2. Syntax check for changed/new JS/MJS files.
-3. JSON parse for changed/new fixtures, if any.
+3. JSON parse for changed/new fixtures/result examples, if any.
 4. New guard, if added:
-   - `node scripts/check-instagram-blob-upload-from-request-once-static.mjs`
+   - `node scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
 5. Targeted regressions:
-   - `node scripts/check-instagram-blob-upload-from-request-executor-static.mjs`
-   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs` if owner entrypoint is changed
+   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
    - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+   - `node scripts/check-instagram-blob-upload-from-request-once-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run full local generation pipeline.
@@ -149,19 +173,14 @@ Do not run ffmpeg/ffprobe/deploy/API.
 
 ## Definition Of Done
 
-One of these must be true:
+All must be true:
 
-1. `UPLOADED`:
-   - exactly one Blob `put()` attempt succeeds;
-   - result JSON contains URL/path/size/sha256;
-   - no other external calls occur.
-2. `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`:
-   - exactly one Blob `put()` attempt is refused by `allowOverwrite:false`;
-   - no retry/overwrite/delete occurs.
-3. `BLOCKED_BLOB_TOKEN_ABSENT_NO_UPLOAD`:
-   - no upload attempt occurs;
-   - no secret is exposed;
-   - shortest no-log Owner-run fallback is provided.
+1. Existing Blob public URL is confirmed or fail-closed with a clear blocker.
+2. Exactly one public URL `HEAD` check is performed if URL derivation succeeds.
+3. Liveness result JSON is secret-free and records URL/status/type/length/path match.
+4. Content unit builder accepts the liveness result via `--blob-liveness-result`.
+5. Orchestrator `--preflight --content-unit <manifest>` runs without publish/upload.
+6. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency change, media generation, commit, or push.
 
 ## Final Handoff Format
 
@@ -169,13 +188,11 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- request path used
-- upload result status
-- uploaded URL if success
-- pathname/key
-- source path and size
-- sha256/sha256_12
-- upload attempt count and Blob mutation count
+- public URL
+- HEAD result: status/content-type/content-length
+- liveness result JSON path
+- content unit manifest path used/generated
+- preflight result summary
 - checks/results
 - side effects confirmation
 - env/secret handling confirmation
