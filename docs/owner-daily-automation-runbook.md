@@ -29,6 +29,53 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 `--dry-run`에 `--manifest <path>` / `--out-root <path>`를 추가로 줄 수 있다.
 기본 out-root는 레포 밖(`C:\tmp\money-shorts-os\owner-daily-automation-entrypoint-v1`)이다.
 
+## 새 영상(future new video)을 content unit manifest로 다루기
+
+지금까지의 기본 동작은 이미 게시된 evidence 콘텐츠(`t1_lifestyle_inflation/v3_2`)에
+고정되어 있었다. 새 영상이 생기면 그 영상을 **content unit manifest**(JSON)로 표현해
+`--content-unit <path>`로 넘긴다.
+
+manifest 계약(`schemaVersion: "dual_platform_content_unit_v1"`):
+
+| 필드 | 필수 | 설명 |
+|------|------|------|
+| `schemaVersion` | ✅ | 항상 `dual_platform_content_unit_v1` |
+| `contentId` | ✅ | 새 콘텐츠 식별자(default와 달라야 새 콘텐츠로 취급) |
+| `version` | ✅ | 콘텐츠 publish 버전 |
+| `instagramSourcePath` | ✅ | Instagram full-frame mp4 로컬 경로 |
+| `youtubeSourcePath` | ✅ | YouTube letterbox mp4 로컬 경로 |
+| `instagramMetadata` | 선택 | 없으면 default metadata 사용. hashtags 8~12개 + first-line hook + CTA 필요 |
+| `youtubeMetadata` | 선택 | 없으면 default metadata 사용. title + tags 필요 |
+| `blobPublicUrlLivenessEvidence` | 선택 | 없거나 부정확하면 Instagram publish readiness는 fail-closed |
+| `existingPublishedKeys` | 선택 | 이미 게시된 (contentId/platform/version) 키 배열 |
+
+샘플: [`scripts/fixtures/dual_platform_content_unit.sample.v1.json`](../scripts/fixtures/dual_platform_content_unit.sample.v1.json)
+
+명령:
+
+```
+node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json
+node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json
+node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run --content-unit <manifest.json>
+```
+
+**custom content의 live 실행은 이 slice에서 활성화되지 않았다.** custom(non-default)
+manifest로 `--live`/`--arm`을 시도하면 metadata/source/blob gate 판정 뒤,
+credential resolution/실제 API 호출에 도달하기 **전에**
+`CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`(exit 5)로 fail-closed된다. side effect는 0이다.
+
+owner entrypoint의 `--duplicate-guard-check --content-unit <path>`는 custom manifest면
+`--live`를 **아예 호출하지 않는다**(fail-closed). 이 모드는 default evidence 콘텐츠의
+duplicate block 확인 전용이다. 샘플 manifest는 source 파일이 아직 없는 템플릿이므로
+`--preflight`가 `preflightOk:false`(not ready)를 반환한다 — 실제 새 영상이 렌더되어
+source 경로가 채워지면 ready로 바뀐다.
+
+**참고**: custom manifest의 `--preflight` 결과(`preflight.liveExecutionPlan`)에서 차단 사유는
+`custom_content_live_not_enabled_this_slice`로 표시된다 — default evidence 콘텐츠의
+`duplicate_publish_guard_blocks_current_content`와 다른 값이다. 새(비중복) 콘텐츠가
+"중복이라 막힌 것"이 아니라 "이 slice에서 아직 live 실행이 연결되지 않은 것"임을 이 값으로
+구분할 수 있다.
+
 ## 왜 기존 영상이 재게시되지 않는가
 
 `t1_lifestyle_inflation` / `v3_2` 콘텐츠는 이미 업로드가 완료된 상태다:

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "dual_platform_content_unit_v1",
+  "_note": "Sample content unit manifest for a FUTURE new video. no-live/no-execute only. This is a template showing how a new content unit is expressed so the dual-platform orchestrator can build a dry-run/preflight plan. Source paths below are placeholders that do not exist yet, so preflight reports sourceFilesReady:false (fail-closed) until a real render fills them. No secrets, tokens, or credentials appear here.",
+  "contentId": "t2_sample_new_topic",
+  "version": "v1",
+  "instagramSourcePath": "C:\\tmp\\money-shorts-os\\t2_sample_new_topic\\instagram_reels_full_frame_1080x1920_v1.mp4",
+  "youtubeSourcePath": "C:\\tmp\\money-shorts-os\\t2_sample_new_topic\\youtube_shorts_letterbox_1080x1920_v1.mp4",
+  "instagramMetadata": {
+    "captionFirstLineHook": "샘플 새 주제 후킹 첫 줄",
+    "caption": "샘플 새 주제 캡션. 실제 콘텐츠가 준비되면 이 metadata를 새 주제에 맞게 교체한다.",
+    "hashtags": [
+      "재테크",
+      "돈관리",
+      "생활비절약",
+      "저축습관",
+      "사회초년생재테크",
+      "돈모으는법",
+      "경제공부",
+      "릴스",
+      "머니팁"
+    ],
+    "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
+    "forbiddenUnrelatedTrendTags": true
+  },
+  "youtubeMetadata": {
+    "titleBase": "샘플 새 주제 제목",
+    "titleWithShortsSuffix": "샘플 새 주제 제목 #Shorts",
+    "descriptionBase": "샘플 새 주제 설명. 실제 콘텐츠 준비 시 새 주제에 맞게 교체한다.",
+    "tags": [
+      "재테크",
+      "돈관리",
+      "생활비",
+      "저축",
+      "절약",
+      "돈모으는법",
+      "Shorts"
+    ],
+    "categoryId": "22",
+    "defaultLanguage": "ko",
+    "privacyStatus": "public",
+    "selfDeclaredMadeForKids": false
+  },
+  "blobPublicUrlLivenessEvidence": {
+    "_note": "Placeholder Blob liveness evidence for the sample. For a real new video, this must reflect an actual HEAD result for the uploaded full-frame mp4. The orchestrator validates the shape only (no network HEAD/list/readback) and, being a placeholder here, the URL matches the sample content path so the evidence-shape gate passes; the sourceFilesReady gate still holds Instagram publish readiness back until real files exist.",
+    "url": "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t2_sample_new_topic/instagram_reels_full_frame_1080x1920/v1/samplesample.mp4",
+    "headStatus": 200,
+    "contentType": "video/mp4",
+    "contentLength": 12345678
+  },
+  "existingPublishedKeys": []
+}

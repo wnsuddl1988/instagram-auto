@@ -286,12 +286,55 @@ YouTube의 short-lived access token(`YOUTUBE_ACCESS_TOKEN`)은 장기 required e
 향후 승인된 live 실행 중 refresh token(`YOUTUBE_REFRESH_TOKEN`)으로 메모리에서 발급/갱신해 사용하며,
 env로 별도 저장하지 않는다.
 
+## content unit manifest 파라미터화 (`--content-unit`, no-live)
+
+task: `dual-platform-content-unit-manifest-parameterization-no-live-v1`
+
+미래 새 영상은 하드코딩된 `t1_lifestyle_inflation/v3_2`가 아니라 외부 **content unit
+manifest**(JSON)로 표현되어 `--content-unit <path>`로 전달된다. `--dry-run`, `--preflight`가
+이를 지원한다. `--content-unit`이 없으면 모든 모드는 default evidence content로 동작한다
+(하위 호환 — 기존 dry-run/preflight/live 동작 완전 불변).
+
+manifest 계약(`schemaVersion: "dual_platform_content_unit_v1"`):
+
+| 필드 | 필수 | 설명 |
+|------|------|------|
+| `schemaVersion` | ✅ | `dual_platform_content_unit_v1` |
+| `contentId` | ✅ | 새 콘텐츠 식별자 |
+| `version` | ✅ | 콘텐츠 publish 버전 |
+| `instagramSourcePath` / `youtubeSourcePath` | ✅ | 플랫폼별 mp4 로컬 경로 |
+| `instagramMetadata` / `youtubeMetadata` | 선택 | 없으면 default metadata. metadata optimization gate 적용 |
+| `blobPublicUrlLivenessEvidence` | 선택 | 없거나 부정확하면 Instagram readiness fail-closed. 네트워크 재검증 없음(shape만) |
+| `existingPublishedKeys` | 선택 | 이미 게시된 (contentId/platform/version) 키 배열 |
+
+샘플: `scripts/fixtures/dual_platform_content_unit.sample.v1.json`
+
+### custom content의 live 실행 (이 slice에서 비활성 / fail-closed)
+
+custom(non-default) content unit으로 `--live`/`--arm`을 시도하면 gate 순서 평가에서
+metadata(gate 1)/source(gate 2)/blob liveness(gate 3)/duplicate(gate 4) 판정을 거친 뒤,
+credential resolution(gate 5)/actual API call(gate 6)에 **도달하기 전에**
+`CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE`(exit 5)로 fail-closed된다. 모든 live
+side-effect counter는 0이다. 실제 새 콘텐츠 배포는 별도 승인 slice에서만 wiring된다.
+
+| content unit | `--live`/`--arm` 결과 | exit | `preflight.liveExecutionPlan.willExecuteBlockedReason` |
+|--------------|----------------------|------|--------------------------------------------------------|
+| default evidence (v3_2) | `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` (gate 4) | 3 | `duplicate_publish_guard_blocks_current_content` |
+| custom non-default | `CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE` (gate 4.5, credential 이전) | 5 | `custom_content_live_not_enabled_this_slice` |
+
+**주의(task: dual-platform-content-unit-manifest-block-reason-fix-v1)**: `liveExecutionPlan`(및
+각 step)의 blocked 사유는 콘텐츠 종류에 따라 위 표대로 다르게 표시된다. custom(비중복) 새
+콘텐츠를 duplicate 사유로 표시하면 Owner가 "중복이라 막힌 것"으로 오인할 수 있어 이 slice에서
+콘텐츠 종류별로 정확히 분기했다 — `currentContentDuplicateBlocked`도 default+양쪽
+already-published일 때만 `true`이고, custom content는 duplicate 여부와 무관하게 `false`다.
+
 ## 향후 승인 순서 (future approval sequence)
 
 1. `APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING` — dry-run 로직을 실제 live 호출 경로에 연결
 2. `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` — Instagram job의 Blob 실제 업로드 허용
 3. `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` — YouTube job의 실제 업로드 재사용/자동화 허용
 4. `APPROVE_DUAL_PLATFORM_ARM` — 두 플랫폼 동시 자동 게시 활성화
+5. custom content live wiring — 새 content unit manifest의 credential resolution/실제 API 호출 활성화(별도 승인)
 
 ## 검증
 
@@ -300,5 +343,6 @@ node --check scripts/run-dual-platform-final-publish-orchestrator.mjs
 node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
+node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json
 node scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 ```

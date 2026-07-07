@@ -30,7 +30,7 @@
  *  4) docs: no-live/dry-run/중복 게시 방지/향후 게이트/metadata optimization 명시.
  *  5) mutant → 전부 fail(version v1 회귀, Instagram metadata 누락/hashtag 개수 위반 포함).
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -41,6 +41,7 @@ const ROOT = path.resolve(path.dirname(SELF), "..");
 const FIXTURE_PATH = path.join(ROOT, "scripts", "fixtures", "dual_platform_final_publish_orchestrator.v1.json");
 const DOCS_PATH = path.join(ROOT, "docs", "dual-platform-final-publish-orchestrator.md");
 const RUNNER_PATH = path.join(ROOT, "scripts", "run-dual-platform-final-publish-orchestrator.mjs");
+const CONTENT_UNIT_SAMPLE_PATH = path.join(ROOT, "scripts", "fixtures", "dual_platform_content_unit.sample.v1.json");
 
 let passes = 0;
 let failures = 0;
@@ -675,6 +676,14 @@ check(
   "liveExecutionPlan.currentContentDuplicateBlocked === true + duplicateBlockedStatus === BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
   lep?.currentContentDuplicateBlocked === true && lep?.duplicateBlockedStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED"
 );
+check(
+  "default: liveExecutionPlan.willExecuteBlockedReason === duplicate_publish_guard_blocks_current_content (모든 step 동일)",
+  lep?.willExecuteBlockedReason === "duplicate_publish_guard_blocks_current_content" &&
+    Array.isArray(lep?.steps) && lep.steps.length > 0 &&
+    lep.steps.every((s) => s.willExecuteBlockedReason === "duplicate_publish_guard_blocks_current_content"),
+);
+check("default: liveExecutionPlan.isDefaultContentUnit === true", lep?.isDefaultContentUnit === true);
+check("default: liveExecutionPlan.customContentLiveHaltError === null", lep?.customContentLiveHaltError === null);
 check("liveExecutionPlan.metadataGateIsMandatoryDependency === true", lep?.metadataGateIsMandatoryDependency === true);
 check("liveExecutionPlan.duplicateGuardIsMandatoryDependency === true", lep?.duplicateGuardIsMandatoryDependency === true);
 check(
@@ -1006,6 +1015,158 @@ if (dupBlockConfirmed) {
   check("--arm status === BLOCKED_DUPLICATE_ALREADY_PUBLISHED + credential/API 미도달", armRes?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" && armRes?.credentialResolutionReached === false && armRes?.actualApiCallReached === false);
 } else {
   check("--live/--arm 실행 skip — preflight duplicate block 미확정이므로 안전상 live 실행 금지", false, "duplicate guard가 current content를 차단하지 않는 상태에서는 live 실행을 시도하지 않는다");
+}
+
+// ── 7) content unit manifest parameterization (no-live) ──────────────────────
+// task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+// 외부 content unit manifest 기반 dry-run/preflight + custom content live fail-closed 검증.
+
+// 7a) runner 소스: manifest 로더/판정/custom fail-closed 계약이 코드에 존재
+check("runner: loadContentUnitFromManifest export 존재", /export function loadContentUnitFromManifest/.test(runnerRawSrc));
+check("runner: isDefaultContentUnit export 존재", /export function isDefaultContentUnit/.test(runnerRawSrc));
+check("runner: CONTENT_UNIT_MANIFEST_SCHEMA_VERSION = dual_platform_content_unit_v1", /CONTENT_UNIT_MANIFEST_SCHEMA_VERSION\s*=\s*"dual_platform_content_unit_v1"/.test(runnerRawSrc));
+check("runner: CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR 상수 존재", /CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR\s*=\s*"CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE"/.test(runnerRawSrc));
+check("runner: --content-unit CLI arg 파싱 존재", /--content-unit/.test(runnerRawSrc) && /resolveContentUnitArg|resolveActiveContentUnit/.test(runnerCode));
+check("runner: custom content live gate 4.5 (credential 이전 fail-closed) 존재", /custom_content_live_not_enabled/.test(runnerRawSrc) && /exitCode:\s*5/.test(runnerCode));
+check(
+  "runner: gate 4.5 custom halt가 credential resolution(gate 5) 호출 이전에 위치",
+  (() => {
+    // custom halt 상태(문자열 리터럴)와 gate 5 호출 지점을 원본 소스 기준으로 비교한다.
+    const gate45 = runnerRawSrc.indexOf("CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,\n        gateTrace");
+    const credCall = runnerRawSrc.indexOf("const credentialGate = credentialPresenceResolutionGate();");
+    // executeArmedLiveRun 내부에서 custom halt return(status: CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR)이
+    // gate 5 credential resolution 호출보다 앞서야 한다(fail-closed 순서).
+    return gate45 !== -1 && credCall !== -1 && gate45 < credCall;
+  })(),
+);
+
+// task: dual-platform-content-unit-manifest-block-reason-fix-v1
+// buildLiveExecutionPlan의 blocked reason이 콘텐츠 종류에 따라 분기되어야 한다(하드코딩 금지).
+check(
+  "runner: buildLiveExecutionPlan이 willExecuteBlockedReason을 콘텐츠 종류별로 분기(하드코딩 아님)",
+  runnerRawSrc.includes('"custom_content_live_not_enabled_this_slice"') &&
+    /const\s+willExecuteBlockedReason\s*=\s*currentContentDuplicateBlocked/.test(runnerCode),
+);
+check(
+  "runner: currentContentDuplicateBlocked이 isDefault && bothAlreadyPublished 기준으로 계산됨(default 여부 무시하고 duplicate만 보지 않음)",
+  /const\s+currentContentDuplicateBlocked\s*=\s*isDefault\s*&&\s*bothAlreadyPublished/.test(runnerCode),
+);
+
+// 7b) sample fixture 계약
+check("content unit sample fixture 존재", existsSync(CONTENT_UNIT_SAMPLE_PATH));
+let sampleUnit = null;
+if (existsSync(CONTENT_UNIT_SAMPLE_PATH)) {
+  try { sampleUnit = JSON.parse(readFileSync(CONTENT_UNIT_SAMPLE_PATH, "utf8")); check("content unit sample fixture JSON parse", true); }
+  catch (e) { check("content unit sample fixture JSON parse", false, String(e)); }
+}
+if (sampleUnit) {
+  check("sample: schemaVersion === dual_platform_content_unit_v1", sampleUnit.schemaVersion === "dual_platform_content_unit_v1");
+  check("sample: 필수 필드(contentId/version/instagramSourcePath/youtubeSourcePath) 존재",
+    typeof sampleUnit.contentId === "string" && typeof sampleUnit.version === "string" &&
+    typeof sampleUnit.instagramSourcePath === "string" && typeof sampleUnit.youtubeSourcePath === "string");
+  check("sample: default evidence content이 아님(신규 콘텐츠 템플릿)", sampleUnit.contentId !== "t1_lifestyle_inflation");
+  check("sample: secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(sampleUnit)));
+}
+
+// 7c) 실행: custom manifest --preflight (source 파일 없음 → preflightOk:false, live 미활성)
+let cpf = null;
+try {
+  const out = execFileSync(process.execPath, [RUNNER_PATH, "--preflight", "--content-unit", CONTENT_UNIT_SAMPLE_PATH], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  cpf = JSON.parse(out);
+  check("custom --preflight 실행 성공 + JSON parse", true);
+} catch (e) {
+  check("custom --preflight 실행 성공 + JSON parse", false, String(e?.message || e));
+}
+if (cpf) {
+  check("custom --preflight: isDefaultContentUnit === false", cpf.isDefaultContentUnit === false);
+  check("custom --preflight: contentUnitManifestPath 설정됨", typeof cpf.contentUnitManifestPath === "string");
+  check("custom --preflight: contentUnit.kind === custom_manifest_content", cpf.preflight?.contentUnit?.kind === "custom_manifest_content");
+  check("custom --preflight: customContentLiveHaltError === CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE", cpf.preflight?.contentUnit?.customContentLiveHaltError === "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE");
+  check("custom --preflight: duplicateGuardUsesV3_2 === false(신규 version)", cpf.preflight?.duplicateGuardUsesV3_2 === false);
+  check("custom --preflight: duplicateGuardKeyFormatOk === true(unit.version 정합)", cpf.preflight?.duplicateGuardKeyFormatOk === true);
+  check("custom --preflight: preflightOk === false(sample source 파일 미존재 → fail-closed)", cpf.preflight?.preflightOk === false);
+  const igKey = cpf.preflight?.liveArm?.currentContentDuplicateBlock?.instagramKey;
+  check("custom --preflight: duplicate key가 sample contentId/version 사용", typeof igKey === "string" && igKey.startsWith(`${sampleUnit?.contentId}/`) && igKey.endsWith(`/${sampleUnit?.version}`));
+  check("custom --preflight: stdout에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(cpf)));
+
+  // task: dual-platform-content-unit-manifest-block-reason-fix-v1
+  // custom content의 step blocked reason이 "duplicate" 계열이 아니라 "custom live disabled" 계열이어야 한다.
+  // Codex 리뷰 발견: 이전에는 이 값이 항상 duplicate_publish_guard_blocks_current_content로 하드코딩되어
+  // Owner가 새(비중복) 콘텐츠를 "중복이라 막힌 것"으로 오인할 수 있었다.
+  const cLep = cpf.preflight?.liveExecutionPlan;
+  check(
+    "custom --preflight: liveExecutionPlan.willExecuteBlockedReason === custom_content_live_not_enabled_this_slice (duplicate 사유 아님)",
+    cLep?.willExecuteBlockedReason === "custom_content_live_not_enabled_this_slice",
+  );
+  check(
+    "custom --preflight: 모든 step.willExecuteBlockedReason이 custom_content_live_not_enabled_this_slice(duplicate 사유 없음)",
+    Array.isArray(cLep?.steps) && cLep.steps.length > 0 &&
+      cLep.steps.every((s) => s.willExecuteBlockedReason === "custom_content_live_not_enabled_this_slice"),
+  );
+  check("custom --preflight: liveExecutionPlan.currentContentDuplicateBlocked === false(duplicate 아님)", cLep?.currentContentDuplicateBlocked === false);
+  check("custom --preflight: liveExecutionPlan.isDefaultContentUnit === false", cLep?.isDefaultContentUnit === false);
+  check("custom --preflight: liveExecutionPlan.customContentLiveHaltError === CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE", cLep?.customContentLiveHaltError === "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE");
+}
+
+// 7d) 실행: default 동작 불변(--preflight/--live 회귀 방지 재확인)
+let defPf = null;
+try {
+  const out = execFileSync(process.execPath, [RUNNER_PATH, "--preflight"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+  defPf = JSON.parse(out);
+} catch { defPf = null; }
+check("default --preflight: isDefaultContentUnit === true(하위 호환)", defPf?.isDefaultContentUnit === true);
+check("default --preflight: duplicateGuardUsesV3_2 === true 유지", defPf?.preflight?.duplicateGuardUsesV3_2 === true);
+check("default --preflight: contentUnit.kind === default_evidence_content", defPf?.preflight?.contentUnit?.kind === "default_evidence_content");
+
+// 7e) 실행: custom content --live gate 4.5 도달(exit 5) — 실제 존재하는 source가 있을 때만.
+// default content의 source 경로를 재사용해 gate 1~4를 통과시키고 gate 4.5(custom halt) 도달을 검증한다.
+// probe fixture는 임시로 생성했다가 검증 후 즉시 삭제한다(scratch, secret 없음).
+const igSrc = defPf?.plan?.jobs?.find?.((j) => j.id === "instagram_job")?.sourcePath;
+const ytSrc = defPf?.plan?.jobs?.find?.((j) => j.id === "youtube_job")?.sourcePath;
+if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) && existsSync(ytSrc) && sampleUnit) {
+  const probePath = path.join(ROOT, "scripts", "fixtures", "__content_unit_gate45_probe.tmp.json");
+  const probe = {
+    schemaVersion: "dual_platform_content_unit_v1",
+    contentId: "t_probe_gate45_content_unit_static",
+    version: "vprobe",
+    instagramSourcePath: igSrc,
+    youtubeSourcePath: ytSrc,
+    instagramMetadata: sampleUnit.instagramMetadata,
+    youtubeMetadata: sampleUnit.youtubeMetadata,
+    blobPublicUrlLivenessEvidence: {
+      url: `https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t_probe_gate45_content_unit_static/instagram_reels_full_frame_1080x1920/vprobe/probe.mp4`,
+      headStatus: 200,
+      contentType: "video/mp4",
+      contentLength: 123,
+    },
+    existingPublishedKeys: [],
+  };
+  let probeLive = null;
+  let probeExit = null;
+  try {
+    writeFileSync(probePath, JSON.stringify(probe, null, 2), "utf8");
+    try {
+      const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", probePath], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      probeExit = 0;
+      probeLive = JSON.parse(out);
+    } catch (e) {
+      probeExit = typeof e?.status === "number" ? e.status : null;
+      try { probeLive = JSON.parse(e?.stdout || ""); } catch { probeLive = null; }
+    }
+  } finally {
+    if (existsSync(probePath)) { try { unlinkSync(probePath); } catch { /* ignore */ } }
+  }
+  check("custom --live: gate 4.5 fail-closed exit 5", probeExit === 5, `exit=${probeExit}`);
+  check("custom --live: status === CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE", probeLive?.status === "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE");
+  check("custom --live: credentialResolutionReached === false + actualApiCallReached === false", probeLive?.credentialResolutionReached === false && probeLive?.actualApiCallReached === false);
+  const pc = probeLive?.sideEffectCounters ?? {};
+  check("custom --live: 모든 side-effect counter 0", Object.keys(pc).length > 0 && Object.values(pc).every((v) => v === 0));
+  const pt = Array.isArray(probeLive?.gateTrace) ? probeLive.gateTrace : [];
+  const p5 = pt.find((g) => g.order === 5);
+  check("custom --live: gate 5 credential_presence_resolution 미평가/미도달", p5?.evaluated === false && p5?.reached === false && p5?.blockedBy === "custom_content_live_not_enabled");
+} else {
+  // source 파일이 환경에 없으면 gate 4.5 런타임 도달은 검증 불가 — 소스 정적 계약으로만 커버함을 명시.
+  check("custom --live gate 4.5 런타임 검증 skip(default source 파일 미존재) — 소스 정적 계약(7a)로 커버", true, "환경상 default source mp4 부재");
 }
 
 // ── 요약 ────────────────────────────────────────────────────────────────

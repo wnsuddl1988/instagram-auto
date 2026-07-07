@@ -81,8 +81,11 @@ function printUsage() {
       "Usage:",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --status",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run [--manifest <path>] [--out-root <path>]",
-      "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
-      "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight [--content-unit <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>]",
+      "",
+      "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
+      "                         omit for the default already-published evidence content.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -122,8 +125,11 @@ function parseJsonSafe(text) {
 }
 
 // ── run preflight (read-only, no-live) and extract a secret-free summary ─────
-function runPreflightSummary() {
-  const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, ["--preflight"], { captureOnly: true });
+// contentUnitPath가 주어지면 orchestrator --preflight --content-unit <path>로 전달한다.
+// 없으면 default evidence content preflight(기존 동작 불변).
+function runPreflightSummary(contentUnitPath) {
+  const preflightArgs = contentUnitPath ? ["--preflight", "--content-unit", contentUnitPath] : ["--preflight"];
+  const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, preflightArgs, { captureOnly: true });
   if (exitCode !== 0) {
     return {
       ranSuccessfully: false,
@@ -145,13 +151,21 @@ function runPreflightSummary() {
   const liveArm = pf?.liveArm ?? {};
   const dupBlock = liveArm?.currentContentDuplicateBlock ?? {};
   const bothWillBeBlocked = dupBlock.instagramWillBeBlocked === true && dupBlock.youtubeWillBeBlocked === true;
+  const isDefaultContentUnit = parsed.value?.isDefaultContentUnit === true;
   return {
     ranSuccessfully: true,
     exitCode,
+    contentUnitManifestPath: parsed.value?.contentUnitManifestPath ?? null,
+    isDefaultContentUnit,
+    contentUnitKind: pf?.contentUnit?.kind ?? null,
+    customContentLiveEnabledThisSlice: pf?.contentUnit?.customContentLiveEnabledThisSlice === true,
+    customContentLiveHaltError: pf?.contentUnit?.customContentLiveHaltError ?? null,
     preflightOk: pf?.preflightOk === true,
     metadataOptimizationGateOk: pf?.metadataOptimizationGateOk === true,
     duplicateGuardUsesV3_2: pf?.duplicateGuardUsesV3_2 === true,
+    duplicateGuardKeyFormatOk: pf?.duplicateGuardKeyFormatOk === true,
     sourceFilesReady: pf?.sourceFilesReady === true,
+    blobLivenessEvidenceOk: pf?.blobPublicUrlLivenessEvidence?.ok === true,
     armed: liveArm?.armed === true,
     duplicateGuardEvaluatedBeforeCredentialResolution: liveArm?.duplicateGuardEvaluatedBeforeCredentialResolution === true,
     credentialResolutionWiredThisSlice: liveArm?.credentialResolutionWiredThisSlice === true,
@@ -193,6 +207,17 @@ function runStatus() {
       generateLocalDryRunPacket: "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
+      checkFutureNewVideoReadiness:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit <manifest.json>",
+    },
+    futureNewVideoContentUnit: {
+      note:
+        "A future new video is expressed as a content unit manifest (schemaVersion dual_platform_content_unit_v1) " +
+        "and passed via --content-unit. Without --content-unit, all modes operate on the default already-published " +
+        "evidence content. Custom (non-default) content live execution is NOT enabled in this slice: its --live path " +
+        "fail-closes before credential resolution / API call with CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE.",
+      manifestSchemaVersion: "dual_platform_content_unit_v1",
+      sampleManifest: "scripts/fixtures/dual_platform_content_unit.sample.v1.json",
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -251,21 +276,36 @@ function runDryRun() {
 
 // ── mode: --preflight ──────────────────────────────────────────────────────────
 function runPreflight() {
-  console.log(`[owner-entrypoint] running dual-platform publish orchestrator --preflight`);
+  const contentUnitPath = getArg("--content-unit");
+  if (contentUnitPath && !existsSync(contentUnitPath)) {
+    console.error(`ABORT: --content-unit manifest not found: ${contentUnitPath}`);
+    return 1;
+  }
+  console.log(
+    contentUnitPath
+      ? `[owner-entrypoint] running dual-platform publish orchestrator --preflight --content-unit ${contentUnitPath}`
+      : `[owner-entrypoint] running dual-platform publish orchestrator --preflight (default evidence content)`,
+  );
   console.log("");
 
-  const summary = runPreflightSummary();
+  const summary = runPreflightSummary(contentUnitPath);
 
   console.log("");
   console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_preflight_summary_v1", mode: "preflight", ...summary, raw: undefined }, null, 2));
   console.log("");
   console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  content unit:                        ${summary.contentUnitKind ?? "default_evidence_content"}${summary.isDefaultContentUnit ? "" : " (custom manifest)"}`);
   console.log(`  preflightOk:                       ${summary.preflightOk}`);
   console.log(`  metadata optimization gate ok:     ${summary.metadataOptimizationGateOk}`);
-  console.log(`  duplicate guard uses v3_2:          ${summary.duplicateGuardUsesV3_2}`);
+  console.log(`  duplicate guard key format ok:      ${summary.duplicateGuardKeyFormatOk}`);
   console.log(`  source files ready:                 ${summary.sourceFilesReady}`);
+  console.log(`  blob liveness evidence ok:          ${summary.blobLivenessEvidenceOk}`);
   console.log(`  live gate armed:                     ${summary.armed}`);
-  console.log(`  current content will be blocked:     ${summary.currentContentDuplicateBlock?.bothWillBeBlocked}`);
+  if (summary.isDefaultContentUnit) {
+    console.log(`  current content will be blocked:     ${summary.currentContentDuplicateBlock?.bothWillBeBlocked}`);
+  } else {
+    console.log(`  custom content live enabled:         ${summary.customContentLiveEnabledThisSlice} (halt: ${summary.customContentLiveHaltError})`);
+  }
   console.log(`  expected --live status if run now:   ${summary.currentContentDuplicateBlock?.expectedLiveStatus}`);
   console.log("");
 
@@ -274,9 +314,14 @@ function runPreflight() {
 
 // ── mode: --duplicate-guard-check ───────────────────────────────────────────────
 function runDuplicateGuardCheck() {
+  const contentUnitPath = getArg("--content-unit");
+  if (contentUnitPath && !existsSync(contentUnitPath)) {
+    console.error(`ABORT: --content-unit manifest not found: ${contentUnitPath}`);
+    return 1;
+  }
   console.log(`[owner-entrypoint] step 1/2: confirming duplicate-block via --preflight`);
   console.log("");
-  const summary = runPreflightSummary();
+  const summary = runPreflightSummary(contentUnitPath);
 
   if (!summary.ranSuccessfully) {
     console.error(`ABORT: --preflight did not run successfully: ${summary.reason}`);
@@ -284,21 +329,33 @@ function runDuplicateGuardCheck() {
   }
 
   const dupBlock = summary.currentContentDuplicateBlock;
+  // custom(non-default) manifest는 이 모드에서 --live를 호출하지 않는다. 새 콘텐츠는
+  // duplicate가 아니므로 이 모드의 안전 전제(양쪽 플랫폼 duplicate block 확정)를 만족하지 않는다.
+  // 설령 custom manifest가 existingPublishedKeys로 duplicate를 주장하더라도, custom content의
+  // live 실행 자체가 이 slice에서 비활성(fail-closed)이므로 --live를 호출하지 않는다.
+  const isDefault = summary.isDefaultContentUnit === true;
   const confirmed =
+    isDefault &&
     dupBlock.bothWillBeBlocked === true &&
     dupBlock.expectedLiveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" &&
     summary.duplicateGuardEvaluatedBeforeCredentialResolution === true;
 
   if (!confirmed) {
     console.error(
-      "ABORT: preflight does NOT confirm duplicate block for both platform keys. " +
-        "Refusing to invoke --live (safety: this mode never runs --live for non-duplicate/new content).",
+      isDefault
+        ? "ABORT: preflight does NOT confirm duplicate block for both platform keys. " +
+            "Refusing to invoke --live (safety: this mode never runs --live for non-duplicate/new content)."
+        : "ABORT: custom (non-default) content manifest. This mode never invokes --live for custom content " +
+            "in this slice (custom content live execution is not enabled — fail-closed).",
     );
     console.log(
       JSON.stringify(
         {
           schemaVersion: "owner_daily_automation_entrypoint_duplicate_guard_check_v1",
           mode: "duplicate-guard-check",
+          isDefaultContentUnit: isDefault,
+          contentUnitManifestPath: summary.contentUnitManifestPath,
+          customContentLiveHaltError: summary.customContentLiveHaltError,
           preflightConfirmedDuplicateBlock: false,
           liveInvoked: false,
           currentContentDuplicateBlock: dupBlock,

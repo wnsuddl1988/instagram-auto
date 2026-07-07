@@ -28,7 +28,7 @@
  * 실행 예: node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
  */
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // ── live execution gate (dual-platform-arm-wiring-duplicate-guarded-v1: 최종 arm) ──
@@ -43,6 +43,19 @@ export const LIVE_EXECUTION_ARM_APPROVAL_TOKEN = "APPROVE_DUAL_PLATFORM_ARM";
 export const LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE";
 export const DUPLICATE_BLOCKED_STATUS = "BLOCKED_DUPLICATE_ALREADY_PUBLISHED";
 export const CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR = "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE";
+
+/**
+ * custom(non-default) content unit의 live 실행 차단 상태.
+ * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+ * default evidence content(t1_lifestyle_inflation/v3_2)가 아닌 외부 manifest content는
+ * 이 slice에서 live 실행이 활성화되지 않았다. --live/--arm 요청 시 metadata/source/blob
+ * gate 판정 이후, credential resolution(gate 5)/actual API call(gate 6)에 도달하기 전에
+ * fail-closed로 멈춘다(exit 5). 새 콘텐츠 실제 배포는 별도 승인 slice에서만 wiring된다.
+ */
+export const CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR = "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE";
+
+/** content unit manifest 계약 스키마 버전(외부 manifest가 선언해야 하는 값). */
+export const CONTENT_UNIT_MANIFEST_SCHEMA_VERSION = "dual_platform_content_unit_v1";
 
 /**
  * 실제 live 실행 경로의 fail-closed gate 평가 순서(핵심 안전 순서 — 순서 변경 금지).
@@ -195,7 +208,10 @@ function checkDuplicatePublishGuard(contentId, platform, version, liveMode) {
 // ── job builders ──────────────────────────────────────────────────────────
 
 function buildInstagramJob(unit) {
-  const guard = checkDuplicatePublishGuard(unit.contentId, "instagram_reels", unit.version, false);
+  const guard = checkDuplicatePublishGuardForUnit(unit, "instagram_reels", false);
+  // custom content unit이 자체 instagramMetadata를 제공하면 그것을 쓰고,
+  // 없으면 default evidence content의 metadata를 사용한다(하위 호환).
+  const metadata = unit.instagramMetadata ?? INSTAGRAM_DEFAULT_METADATA;
   return {
     id: "instagram_job",
     platform: "instagram_reels",
@@ -206,13 +222,14 @@ function buildInstagramJob(unit) {
     requiresPublicBlobUrl: true,
     liveApiCallPerformed: false,
     blobUploadPerformed: false,
-    metadata: INSTAGRAM_DEFAULT_METADATA,
+    metadata,
     duplicatePublishGuard: guard,
   };
 }
 
 function buildYoutubeJob(unit) {
-  const guard = checkDuplicatePublishGuard(unit.contentId, "youtube_shorts", unit.version, false);
+  const guard = checkDuplicatePublishGuardForUnit(unit, "youtube_shorts", false);
+  const metadata = unit.youtubeMetadata ?? YOUTUBE_DEFAULT_METADATA;
   return {
     id: "youtube_job",
     platform: "youtube_shorts",
@@ -222,7 +239,7 @@ function buildYoutubeJob(unit) {
     provider: "youtube_data_api",
     requiresPublicBlobUrl: false,
     liveApiCallPerformed: false,
-    metadata: YOUTUBE_DEFAULT_METADATA,
+    metadata,
     duplicatePublishGuard: guard,
   };
 }
@@ -322,6 +339,124 @@ const DEFAULT_CONTENT_UNIT = {
 };
 
 /**
+ * unit이 default evidence content(t1_lifestyle_inflation/v3_2)인지 판정한다.
+ * 판정은 contentId + version로만 한다(source path/metadata는 무관).
+ */
+export function isDefaultContentUnit(unit) {
+  return (
+    unit != null &&
+    unit.contentId === DEFAULT_CONTENT_UNIT.contentId &&
+    unit.version === DEFAULT_CONTENT_UNIT.version
+  );
+}
+
+/**
+ * content unit manifest 파일(JSON)을 읽어 unit 객체로 변환한다.
+ * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+ *
+ * - JSON.parse만 수행한다. 미디어/네트워크/env 접근 없음.
+ * - schemaVersion / contentId / version / instagramSourcePath / youtubeSourcePath는 필수.
+ * - optional: instagramMetadata / youtubeMetadata / blobPublicUrlLivenessEvidence /
+ *   existingPublishedKeys.
+ * - 파싱 실패/필수 필드 누락 시 { ok:false, reasons:[...] }를 반환한다(throw 없음).
+ */
+export function loadContentUnitFromManifest(manifestPath) {
+  const reasons = [];
+  if (typeof manifestPath !== "string" || manifestPath.trim() === "") {
+    return { ok: false, reasons: ["manifest_path_missing"], unit: null };
+  }
+  if (!existsSync(manifestPath)) {
+    return { ok: false, reasons: ["manifest_file_not_found"], unit: null, manifestPath };
+  }
+  let raw;
+  try {
+    raw = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  } catch (e) {
+    return { ok: false, reasons: [`manifest_json_parse_failed: ${String(e?.message || e)}`], unit: null, manifestPath };
+  }
+
+  if (raw?.schemaVersion !== CONTENT_UNIT_MANIFEST_SCHEMA_VERSION) {
+    reasons.push(`schema_version_mismatch(expected ${CONTENT_UNIT_MANIFEST_SCHEMA_VERSION})`);
+  }
+  for (const field of ["contentId", "version", "instagramSourcePath", "youtubeSourcePath"]) {
+    if (typeof raw?.[field] !== "string" || raw[field].trim() === "") {
+      reasons.push(`required_field_missing_or_empty: ${field}`);
+    }
+  }
+
+  if (reasons.length > 0) {
+    return { ok: false, reasons, unit: null, manifestPath };
+  }
+
+  const unit = {
+    contentId: raw.contentId,
+    version: raw.version,
+    instagramSourcePath: raw.instagramSourcePath,
+    youtubeSourcePath: raw.youtubeSourcePath,
+  };
+  // optional fields — 있을 때만 전달한다.
+  if (raw.instagramMetadata != null) unit.instagramMetadata = raw.instagramMetadata;
+  if (raw.youtubeMetadata != null) unit.youtubeMetadata = raw.youtubeMetadata;
+  if (raw.blobPublicUrlLivenessEvidence != null) unit.blobPublicUrlLivenessEvidence = raw.blobPublicUrlLivenessEvidence;
+  if (Array.isArray(raw.existingPublishedKeys)) unit.existingPublishedKeys = raw.existingPublishedKeys;
+
+  return { ok: true, reasons: [], unit, manifestPath };
+}
+
+/**
+ * unit별 duplicate publish key 판정(default이 아닌 custom content도 지원).
+ * default content는 전역 EXISTING_PUBLISHED_KEYS를, custom content는 manifest의
+ * existingPublishedKeys(있으면)를 참조한다. liveMode에서만 실제 차단 의미를 갖는다.
+ */
+function checkDuplicatePublishGuardForUnit(unit, platform, liveMode) {
+  const key = publishKey(unit.contentId, platform, unit.version);
+  const customKeys = Array.isArray(unit.existingPublishedKeys) ? new Set(unit.existingPublishedKeys) : null;
+  const alreadyPublished = isDefaultContentUnit(unit)
+    ? EXISTING_PUBLISHED_KEYS.has(key)
+    : customKeys != null && customKeys.has(key);
+  return { key, alreadyPublished, blockedThisRun: liveMode === true && alreadyPublished };
+}
+
+/**
+ * custom content unit용 Blob liveness evidence 평가(gate 3).
+ * default content는 전역 BLOB_PUBLIC_URL_LIVENESS_EVIDENCE 상수(evaluateBlobLivenessEvidenceGate)를
+ * 사용하고, custom content는 manifest가 제공한 blobPublicUrlLivenessEvidence를 계약 수준으로만 검증한다.
+ * 네트워크 HEAD/list/readback을 절대 수행하지 않는다 — manifest evidence 필드의 형태만 확인한다.
+ * evidence가 없거나 부정확하면 ok:false(fail-closed).
+ */
+function evaluateCustomBlobLivenessEvidence(unit) {
+  const ev = unit.blobPublicUrlLivenessEvidence;
+  if (ev == null || typeof ev !== "object") {
+    return { ok: false, provided: false, reasons: ["blob_liveness_evidence_missing"] };
+  }
+  const reasons = [];
+  const urlMatchesContentPath =
+    typeof ev.url === "string" &&
+    ev.url.includes(`/${unit.contentId}/`) &&
+    ev.url.includes(`/${INSTAGRAM_VARIANT_ID}/`) &&
+    ev.url.includes(`/${unit.version}/`);
+  if (typeof ev.url !== "string" || !ev.url.startsWith("https://")) reasons.push("url_not_https");
+  if (typeof ev.url === "string" && !ev.url.includes(".public.blob.vercel-storage.com/")) reasons.push("url_not_vercel_blob_public");
+  if (typeof ev.url === "string" && !ev.url.endsWith(".mp4")) reasons.push("url_not_mp4");
+  if (ev.headStatus !== 200) reasons.push("head_status_not_200");
+  if (ev.contentType !== "video/mp4") reasons.push("content_type_not_video_mp4");
+  if (typeof ev.contentLength !== "number" || ev.contentLength <= 0) reasons.push("content_length_invalid");
+  if (!urlMatchesContentPath) reasons.push("url_does_not_match_content_path");
+  const ok = reasons.length === 0;
+  return {
+    provided: true,
+    url: typeof ev.url === "string" ? ev.url : null,
+    headStatus: ev.headStatus ?? null,
+    contentType: ev.contentType ?? null,
+    contentLength: typeof ev.contentLength === "number" ? ev.contentLength : null,
+    urlMatchesContentPath,
+    reasons,
+    ok,
+    networkRevalidationPerformed: false,
+  };
+}
+
+/**
  * preflight 준비 검증(no-live). 실제 upload/API/Blob/env-value 접근 없이,
  * live 실행에 필요한 준비 상태를 계약 수준에서 검증한다.
  *
@@ -350,12 +485,25 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
   const igGuard = igJob?.duplicatePublishGuard ?? null;
   const ytGuard = ytJob?.duplicatePublishGuard ?? null;
 
-  // 모든 step 공통: arm 상태(enabled)지만 current content는 duplicate publish guard가
-  // 차단하므로 이번 run에서 실제 실행되는 step은 없다(willExecute:false, side effect 0).
+  // task: dual-platform-content-unit-manifest-block-reason-fix-v1
+  // 실제 blocked 사유는 콘텐츠 종류에 따라 다르다:
+  //  - default evidence content(v3_2) + 양쪽 already published → duplicate_publish_guard가 차단.
+  //  - custom(non-default) content → 이 slice는 duplicate 여부와 무관하게 live 실행이
+  //    활성화되지 않았다(gate 4.5, CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE). duplicate가
+  //    아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는 하드코딩을 제거한다.
+  const isDefault = isDefaultContentUnit(unit);
+  const bothAlreadyPublished = igGuard?.alreadyPublished === true && ytGuard?.alreadyPublished === true;
+  const currentContentDuplicateBlocked = isDefault && bothAlreadyPublished;
+  const willExecuteBlockedReason = currentContentDuplicateBlocked
+    ? "duplicate_publish_guard_blocks_current_content"
+    : "custom_content_live_not_enabled_this_slice";
+
+  // 모든 step 공통: arm 상태(enabled)지만 실제로 실행되는 step은 없다(willExecute:false,
+  // side effect 0). blocked 사유는 위에서 콘텐츠 종류에 따라 정확히 판정한 값을 사용한다.
   const armedStepFlags = {
     enabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     willExecute: false,
-    willExecuteBlockedReason: "duplicate_publish_guard_blocks_current_content",
+    willExecuteBlockedReason,
     sideEffectPerformed: false,
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
   };
@@ -493,16 +641,23 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
   ];
 
   return {
-    note:
-      "armed live wiring plan. 실제 Instagram(Vercel Blob→Graph API) / YouTube(direct upload) publish 흐름을 " +
-      "코드 구조상 순서대로 연결한다. live gate는 arm 상태지만 current content(v3_2)는 duplicate publish guard가 " +
-      "차단하므로 이번 run에서 실행되는 step은 없다(side effect 0). secret 값/토큰/credential은 담지 않는다.",
+    note: isDefault
+      ? "armed live wiring plan. 실제 Instagram(Vercel Blob→Graph API) / YouTube(direct upload) publish 흐름을 " +
+        "코드 구조상 순서대로 연결한다. live gate는 arm 상태지만 current content(v3_2)는 duplicate publish guard가 " +
+        "차단하므로 이번 run에서 실행되는 step은 없다(side effect 0). secret 값/토큰/credential은 담지 않는다."
+      : "armed live wiring plan(custom content). 이 콘텐츠는 default evidence content가 아니며, 이 slice에서는 " +
+        "duplicate 여부와 무관하게 custom content live 실행 자체가 활성화되지 않았다 " +
+        "(CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE). 이번 run에서 실행되는 step은 없다(side effect 0).",
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     failClosedError: LIVE_EXECUTION_DISABLED_ERROR,
     anyStepEnabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     anyStepWillExecute: false,
     anySideEffectPerformed: false,
-    currentContentDuplicateBlocked: igGuard?.alreadyPublished === true && ytGuard?.alreadyPublished === true,
+    isDefaultContentUnit: isDefault,
+    currentContentDuplicateBlocked,
+    customContentLiveEnabledThisSlice: false,
+    customContentLiveHaltError: isDefault ? null : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+    willExecuteBlockedReason,
     duplicateBlockedStatus: DUPLICATE_BLOCKED_STATUS,
     orderedFlow: [
       "instagram_blob_upload",
@@ -517,6 +672,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
 }
 
 function buildPreflight(unit) {
+  const isDefault = isDefaultContentUnit(unit);
   const plan = buildDualPlatformPublishPlan(unit);
   const igJob = plan.jobs.find((j) => j.id === "instagram_job");
   const ytJob = plan.jobs.find((j) => j.id === "youtube_job");
@@ -526,9 +682,15 @@ function buildPreflight(unit) {
   const youtubeSourceExists = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
 
   const metadataGateOk = igJob?.metadataOptimizationGate?.ok === true && ytJob?.metadataOptimizationGate?.ok === true;
+  // default content는 publish version이 v3_2로 고정이다. custom content는 자체 version을 쓰므로
+  // duplicate guard key가 unit.version과 정합하는지(형태)만 확인한다.
   const duplicateGuardUsesV3_2 =
     typeof igJob?.duplicatePublishGuard?.key === "string" && igJob.duplicatePublishGuard.key.endsWith("/v3_2") &&
     typeof ytJob?.duplicatePublishGuard?.key === "string" && ytJob.duplicatePublishGuard.key.endsWith("/v3_2");
+  const versionSuffix = `/${unit.version}`;
+  const duplicateGuardUsesUnitVersion =
+    typeof igJob?.duplicatePublishGuard?.key === "string" && igJob.duplicatePublishGuard.key.endsWith(versionSuffix) &&
+    typeof ytJob?.duplicatePublishGuard?.key === "string" && ytJob.duplicatePublishGuard.key.endsWith(versionSuffix);
 
   // required env key NAME presence PLAN — 이름만. process.env는 읽지 않는다.
   const requiredEnvKeyNamesPlan = {
@@ -548,10 +710,17 @@ function buildPreflight(unit) {
   const sourceFilesReady = instagramSourceExists && youtubeSourceExists;
 
   // Blob public URL liveness evidence(gate 3) — arm 이후 preflightOk의 필수 조건.
-  const blobLivenessEvidence = evaluateBlobLivenessEvidenceGate(unit);
+  // default content는 전역 evidence 상수를, custom content는 manifest가 제공한
+  // blobPublicUrlLivenessEvidence를 계약 수준으로 검증한다(네트워크 재검증 없음).
+  const blobLivenessEvidence = isDefault
+    ? evaluateBlobLivenessEvidenceGate(unit)
+    : evaluateCustomBlobLivenessEvidence(unit);
+
+  // duplicate guard 형태 정합은 default=v3_2 고정, custom=unit.version 기준으로 판정한다.
+  const duplicateGuardKeyFormatOk = isDefault ? duplicateGuardUsesV3_2 : duplicateGuardUsesUnitVersion;
 
   const preflightOk =
-    plan.jobs.length === 2 && metadataGateOk && duplicateGuardUsesV3_2 && sourceFilesReady &&
+    plan.jobs.length === 2 && metadataGateOk && duplicateGuardKeyFormatOk && sourceFilesReady &&
     blobLivenessEvidence.ok === true;
 
   // no-execute live wiring plan(Instagram Blob→publish, YouTube direct upload, ledger).
@@ -622,25 +791,63 @@ function buildPreflight(unit) {
       youtubeKey: ytJob?.duplicatePublishGuard?.key ?? null,
       instagramWillBeBlocked: igAlreadyPublished,
       youtubeWillBeBlocked: ytAlreadyPublished,
-      expectedLiveStatus: DUPLICATE_BLOCKED_STATUS,
-      expectedLiveExitCode: 3,
+      // default duplicate content는 gate 4 duplicate block(exit 3). custom non-default content는
+      // duplicate가 아니라면 gate 4를 통과하지만 gate 5 이전에 custom-live-not-enabled(exit 5)로 멈춘다.
+      expectedLiveStatus: isDefault
+        ? DUPLICATE_BLOCKED_STATUS
+        : igAlreadyPublished && ytAlreadyPublished
+          ? DUPLICATE_BLOCKED_STATUS
+          : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+      expectedLiveExitCode: isDefault
+        ? 3
+        : igAlreadyPublished && ytAlreadyPublished
+          ? 3
+          : 5,
       duplicateBlockHappensBeforeCredentialResolution: true,
       credentialResolutionWouldBeReached: false,
       actualApiCallWouldRun: false,
       retryForbidden: true,
     },
+    customContentLiveEnabledThisSlice: false,
     credentialValuesAccessedThisRun: false,
     actualApiCallPerformedThisRun: false,
+  };
+
+  // ── custom content unit preflight 계약 (secret-free) ─────────────────────────
+  // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+  // custom(non-default) content는 이 slice에서 live 실행이 활성화되지 않는다.
+  // duplicate block이 확정되지 않은 custom content의 --live/--arm은 credential/API gate
+  // 이전에 CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE로 fail-closed된다.
+  const bothAlreadyPublished = igAlreadyPublished && ytAlreadyPublished;
+  const contentUnit = {
+    note:
+      "content unit 종류와 live 실행 가능 여부. default evidence content(t1_lifestyle_inflation/v3_2)만 " +
+      "이 slice에서 armed live gate 순서 평가로 duplicate block을 시연한다. custom content는 live 미활성(fail-closed).",
+    kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+    isDefaultContentUnit: isDefault,
+    contentId: unit.contentId,
+    version: unit.version,
+    duplicateGuardKeyFormatOk,
+    duplicateGuardUsesUnitVersion,
+    customContentLiveEnabledThisSlice: false,
+    customContentLiveHaltError: isDefault ? null : CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+    bothPlatformsAlreadyPublished: bothAlreadyPublished,
+    blobLivenessEvidenceProvided: isDefault ? true : blobLivenessEvidence.provided === true,
+    blobLivenessEvidenceOk: blobLivenessEvidence.ok === true,
   };
 
   return {
     preflightOk,
     liveArm,
+    contentUnit,
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
     publishJobCount: plan.jobs.length,
     metadataOptimizationGateOk: metadataGateOk,
     duplicateGuardUsesV3_2,
+    duplicateGuardKeyFormatOk,
+    isDefaultContentUnit: isDefault,
     sourceFilesReady,
+    blobPublicUrlLivenessEvidence: blobLivenessEvidence,
     liveExecutionPlan,
     youtubeLiveUploadWiring,
     sourceFilePresence: {
@@ -808,7 +1015,11 @@ function executeArmedLiveRun(unit) {
   }
 
   // ── gate 3: blob_public_url_liveness_evidence_gate ────────────────────────
-  const livenessGate = evaluateBlobLivenessEvidenceGate(unit);
+  // default content는 전역 evidence 상수를, custom content는 manifest가 제공한
+  // blobPublicUrlLivenessEvidence를 계약 수준으로 검증한다(네트워크 재검증 없음).
+  const livenessGate = isDefaultContentUnit(unit)
+    ? evaluateBlobLivenessEvidenceGate(unit)
+    : evaluateCustomBlobLivenessEvidence(unit);
   gateTrace.push({ order: 3, gate: "blob_public_url_liveness_evidence_gate", evaluated: true, ok: livenessGate.ok });
   if (!livenessGate.ok) {
     return {
@@ -877,6 +1088,37 @@ function executeArmedLiveRun(unit) {
     };
   }
 
+  // ── gate 4.5: custom content live 차단 (content unit manifest parameterization) ──
+  // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+  // duplicate가 아닌 custom(non-default) content는 이 slice에서 live 실행이 활성화되지 않았다.
+  // credential resolution(gate 5)/actual API call(gate 6)에 도달하기 전에 fail-closed로 멈춘다.
+  if (!isDefaultContentUnit(unit)) {
+    gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "custom_content_live_not_enabled" });
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "custom_content_live_not_enabled" });
+    return {
+      exitCode: 5,
+      result: {
+        ...base,
+        status: CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR,
+        gateTrace,
+        customContent: {
+          note: "custom manifest content는 이 slice에서 live 실행이 활성화되지 않았다. 실제 배포는 별도 승인 slice에서만 wiring된다.",
+          isDefaultContentUnit: false,
+          contentId: unit.contentId,
+          version: unit.version,
+          liveEnabledThisSlice: false,
+          haltedBeforeCredentialResolution: true,
+          haltedBeforeActualApiCall: true,
+        },
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
   // ── gate 5: credential_presence_resolution — 이 slice에서는 fail-closed stub ──
   // current content는 gate 4에서 차단되어 여기 도달하지 않는다. 비중복 신규 콘텐츠라도
   // 이 slice는 credential 값을 읽지 않고 여기서 fail-closed로 멈춘다(gate 6 미도달).
@@ -898,9 +1140,55 @@ function executeArmedLiveRun(unit) {
   };
 }
 
+/** argv에서 --content-unit <path> 값을 뽑는다. 없으면 null(=default evidence content). */
+function resolveContentUnitArg(argv) {
+  const idx = argv.indexOf("--content-unit");
+  if (idx !== -1 && typeof argv[idx + 1] === "string" && argv[idx + 1].trim() !== "") {
+    return argv[idx + 1];
+  }
+  return null;
+}
+
+/**
+ * content unit을 결정한다.
+ * --content-unit이 없으면 default evidence content(하위 호환, 기존 동작 완전 유지).
+ * 있으면 manifest를 로드한다. 로드 실패 시 { error } 반환(호출부가 exit 1 처리).
+ */
+function resolveActiveContentUnit(argv) {
+  const manifestPath = resolveContentUnitArg(argv);
+  if (manifestPath == null) {
+    return { unit: DEFAULT_CONTENT_UNIT, isDefault: true, manifestPath: null };
+  }
+  const loaded = loadContentUnitFromManifest(manifestPath);
+  if (!loaded.ok) {
+    return { error: { manifestPath, reasons: loaded.reasons } };
+  }
+  return { unit: loaded.unit, isDefault: isDefaultContentUnit(loaded.unit), manifestPath };
+}
+
 function main() {
   const argv = process.argv.slice(2);
   const mode = resolveMode(argv);
+
+  const resolved = resolveActiveContentUnit(argv);
+  if (resolved.error) {
+    console.error(
+      JSON.stringify(
+        {
+          schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+          mode: "content_unit_manifest_error",
+          error: "CONTENT_UNIT_MANIFEST_INVALID",
+          manifestPath: resolved.error.manifestPath,
+          reasons: resolved.error.reasons,
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(1);
+    return;
+  }
+  const activeUnit = resolved.unit;
 
   // ── live/arm: armed. LIVE_GATE_ORDER 순서로 fail-closed 평가 ────────────────
   if (mode === "live_requested") {
@@ -923,9 +1211,10 @@ function main() {
       process.exit(2);
       return;
     }
-    // armed: current content(v3_2)는 gate 4 duplicate publish guard가 차단한다
-    // (credential resolution/actual API call 미도달, 모든 side-effect counter 0).
-    const { result, exitCode } = executeArmedLiveRun(DEFAULT_CONTENT_UNIT);
+    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다.
+    // custom(non-default) content는 gate 4.5 custom-content-live-not-enabled로 fail-closed(exit 5).
+    // 어느 경로든 credential resolution/actual API call 미도달, 모든 side-effect counter 0.
+    const { result, exitCode } = executeArmedLiveRun(activeUnit);
     console.log(JSON.stringify(result, null, 2));
     process.exit(exitCode);
     return;
@@ -933,12 +1222,14 @@ function main() {
 
   // ── preflight: no-live 준비 검증 ────────────────────────────────────────────
   if (mode === "preflight") {
-    const plan = buildDualPlatformPublishPlan(DEFAULT_CONTENT_UNIT);
-    const preflight = buildPreflight(DEFAULT_CONTENT_UNIT);
+    const plan = buildDualPlatformPublishPlan(activeUnit);
+    const preflight = buildPreflight(activeUnit);
     const output = {
       schemaVersion: "dual_platform_final_publish_orchestrator_v1",
       mode: "preflight",
       liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+      contentUnitManifestPath: resolved.manifestPath,
+      isDefaultContentUnit: resolved.isDefault,
       preflight,
       plan,
       liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
@@ -947,11 +1238,13 @@ function main() {
     return;
   }
 
-  // ── dry-run: 기존 no-live 동작(불변) ────────────────────────────────────────
-  const plan = buildDualPlatformPublishPlan(DEFAULT_CONTENT_UNIT);
+  // ── dry-run: no-live publish plan. default content는 기존 동작 불변 ─────────
+  const plan = buildDualPlatformPublishPlan(activeUnit);
   const output = {
     schemaVersion: "dual_platform_final_publish_orchestrator_v1",
     mode: "dry_run",
+    contentUnitManifestPath: resolved.manifestPath,
+    isDefaultContentUnit: resolved.isDefault,
     plan,
     liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
   };
