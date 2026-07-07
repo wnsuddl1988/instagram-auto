@@ -121,11 +121,141 @@ function readUploadReadyPacket(packetPath) {
 
 const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ)/i;
 
+// task: content-unit-metadata-optimization-enrichment-no-live-v1
+// 부족한 hashtag를 채울 때만 쓰는 고정 안전 기본 태그 pool(플랫폼 일반 태그, 낚시성/유행성 아님).
+// 순서대로 채택하며, 이미 존재하는 태그와 중복되면 건너뛴다.
+const SAFE_DEFAULT_HASHTAG_POOL = [
+  "꿀팁", "정보", "일상", "생활정보", "저장각", "유용한정보", "Shorts", "Reels", "추천", "필수정보",
+];
+
+// caption 본문에서 명사형 키워드 후보를 추출하기 위한 최소 stopword(조사/접속사 성격 짧은 토큰 제거용).
+const CAPTION_KEYWORD_STOPWORDS = new Set([
+  "그리고", "그래서", "하지만", "그런데", "입니다", "합니다", "있습니다", "습니다",
+]);
+
+// task: content-unit-metadata-hook-length-guard-fix-v1
+// Codex review finding: "Keep hook concise"가 코드/guard로 강제되지 않아 긴 첫 줄 caption이
+// 그대로 captionFirstLineHook이 될 수 있었다. Instagram Reels 캡션 첫 줄(피드에 노출되는
+// hook)의 가독성을 위해 문자 수 상한을 명시적으로 고정한다.
+const INSTAGRAM_HOOK_MAX_CHARS = 48;
+
+/**
+ * caption 본문에서 첫 문장(첫 줄, 없으면 첫 마침표/줄바꿈 전까지)을 hook으로 추출한다.
+ * 해시태그 라인(#으로 시작)이나 대괄호 안내문("[...]")은 hook 후보에서 제외한다.
+ * 새로운 문구를 지어내지 않고 원문에서만 추출한다 — 그래도 유효한 문장이 없으면 null.
+ *
+ * 길이 상한(INSTAGRAM_HOOK_MAX_CHARS) 적용 순서(모두 원문에서만 자르며, 새 문구를
+ * 지어내거나 임의 위치에서 강제로 자르지 않는다):
+ *   1) 첫 줄에서 문장 구분자(. ! ?)로 첫 문장만 사용.
+ *   2) 그래도 상한을 넘으면 clause 구분자(—, -, ·, ,)로 첫 clause만 사용.
+ *   3) 그래도 상한을 넘으면 hook을 만들지 않고 null(fail-closed) — 어색하게 자르지 않는다.
+ */
+function extractCaptionFirstLineHook(caption) {
+  const lines = caption
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l !== "" && !l.startsWith("#") && !l.startsWith("[") && !l.startsWith("]"));
+  if (lines.length === 0) return { hook: null, reason: "no_candidate_line" };
+  let firstLine = lines[0];
+  // 문장 구분자(. ! ? 또는 —/-)가 있으면 첫 문장만 사용해 hook을 짧게 유지한다.
+  const sentenceMatch = firstLine.match(/^(.*?[.!?])(\s|$)/);
+  if (sentenceMatch && sentenceMatch[1].trim().length >= 4) {
+    firstLine = sentenceMatch[1].trim();
+  }
+  firstLine = firstLine.trim();
+  if (firstLine.length < 4) return { hook: null, reason: "too_short" };
+
+  if (firstLine.length > INSTAGRAM_HOOK_MAX_CHARS) {
+    // 문장이 여전히 길면 clause 구분자로 첫 clause만 재시도한다(원문 내 텍스트만 사용).
+    const clauseMatch = firstLine.match(/^(.*?)[—\-·,](\s|$)/);
+    if (clauseMatch && clauseMatch[1].trim().length >= 4 && clauseMatch[1].trim().length <= INSTAGRAM_HOOK_MAX_CHARS) {
+      firstLine = clauseMatch[1].trim();
+    } else {
+      // 어색하게 강제로 자르지 않고 fail-closed한다.
+      return { hook: null, reason: "too_long" };
+    }
+  }
+
+  return { hook: firstLine, reason: null };
+}
+
+/**
+ * caption 본문에 이미 저장/팔로우/댓글 유도 문구가 있으면 그대로 CTA로 채택하고,
+ * 없으면 낚시성 주장 없는 고정 안전 기본 CTA를 사용한다(과장/허위 유도 없음).
+ */
+const CTA_HINT_PATTERN = /(저장|팔로우|댓글|공유|구독)/;
+const SAFE_DEFAULT_CTA = "저장하고 다음에 다시 보기 · 팔로우하면 더 많은 정보를 받아보세요";
+
+function deriveCallToAction(caption) {
+  const lines = caption
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l !== "" && !l.startsWith("#"));
+  const ctaLine = lines.find((l) => CTA_HINT_PATTERN.test(l));
+  if (ctaLine) return ctaLine;
+  return SAFE_DEFAULT_CTA;
+}
+
+/**
+ * caption 본문(해시태그/안내문 제외)에서 2자 이상 한글/영문 키워드 후보를 순서대로 추출한다.
+ * 새 단어를 지어내지 않고 원문 텍스트만 토큰화한다 — hashtag 보강 시 관련성을 유지하기 위함.
+ */
+function extractCaptionKeywordCandidates(caption) {
+  const bodyLines = caption
+    .split(/\r?\n/)
+    .filter((l) => !l.trim().startsWith("#") && !l.trim().startsWith("["));
+  const body = bodyLines.join(" ");
+  const tokens = body
+    .replace(/[.,!?—\-·"'“”…]/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !CAPTION_KEYWORD_STOPWORDS.has(t));
+  // 중복 제거(순서 보존).
+  return [...new Set(tokens)];
+}
+
+/**
+ * hashtags를 8-12개, unique, 무관 유행 태그 제외 조건으로 정규화한다.
+ * 우선순위: 1) 기존 관련 태그 유지 → 2) caption 본문 키워드로 보강 →
+ * 3) 그래도 부족하면 고정 안전 기본 태그 pool에서 보강. 12개 초과 시 앞에서부터 12개로 자른다.
+ * 이미 8-12개이고 금지 패턴이 없으면 원본을 그대로 유지한다(불필요한 변형 없음).
+ */
+function normalizeInstagramHashtags(existingHashtags, caption) {
+  const seen = new Set();
+  const normalized = [];
+  for (const tag of existingHashtags) {
+    const t = String(tag).trim();
+    if (t === "" || DISALLOWED_TREND_TAG_PATTERN.test(t) || seen.has(t)) continue;
+    seen.add(t);
+    normalized.push(t);
+  }
+
+  if (normalized.length < 8) {
+    for (const kw of extractCaptionKeywordCandidates(caption)) {
+      if (normalized.length >= 8) break;
+      if (seen.has(kw) || DISALLOWED_TREND_TAG_PATTERN.test(kw)) continue;
+      seen.add(kw);
+      normalized.push(kw);
+    }
+  }
+
+  if (normalized.length < 8) {
+    for (const kw of SAFE_DEFAULT_HASHTAG_POOL) {
+      if (normalized.length >= 8) break;
+      if (seen.has(kw)) continue;
+      seen.add(kw);
+      normalized.push(kw);
+    }
+  }
+
+  return normalized.slice(0, 12);
+}
+
 /**
  * instagram_reels platformPayload → orchestrator가 기대하는 instagramMetadata 계약으로 변환.
- * 로컬 pipeline의 platformPayload에는 captionFirstLineHook/callToAction이 별도 필드로
- * 없으므로(caption 본문에 섞여 있음), 안전하게 자동 추출하지 않는다 — 대신 무엇이 부족한지
- * reasons로 정확히 보고하고 metadataReady:false로 fail-closed한다.
+ * deterministic metadata enrichment(hook/CTA/hashtag)를 적용한다 — 외부 API/네트워크 없이
+ * 로컬 caption/hashtag 원문만 사용한다. 그래도 안전한 값을 만들 수 없으면 fail-closed로
+ * reasons를 정확히 보고한다(값을 억지로 지어내지 않는다).
  */
 function deriveInstagramMetadata(igPayload) {
   const reasons = [];
@@ -133,29 +263,40 @@ function deriveInstagramMetadata(igPayload) {
     return { metadata: null, ok: false, reasons: ["instagram_platform_payload_missing"] };
   }
   const caption = typeof igPayload.caption === "string" ? igPayload.caption : "";
-  const hashtags = Array.isArray(igPayload.hashtags) ? igPayload.hashtags : [];
+  const rawHashtags = Array.isArray(igPayload.hashtags) ? igPayload.hashtags : [];
 
-  // captionFirstLineHook / callToAction은 로컬 pipeline metadata에 별도 필드로 존재하지
-  // 않는다. 값을 지어내지 않고, 누락을 정확히 보고한다(fail-closed).
   if (caption.trim() === "") reasons.push("instagram_caption_empty");
-  if (hashtags.length < 8) reasons.push(`instagram_hashtag_count_below_min_8(actual ${hashtags.length})`);
+
+  const hookResult = caption.trim() !== "" ? extractCaptionFirstLineHook(caption) : { hook: null, reason: "caption_empty" };
+  const captionFirstLineHook = hookResult.hook;
+  if (captionFirstLineHook == null) {
+    if (hookResult.reason === "too_long") {
+      reasons.push(`instagram_captionFirstLineHook_too_long(max ${INSTAGRAM_HOOK_MAX_CHARS} chars)`);
+    } else {
+      reasons.push("instagram_captionFirstLineHook_not_derivable_from_caption");
+    }
+  }
+
+  const callToAction = caption.trim() !== "" ? deriveCallToAction(caption) : null;
+  if (callToAction == null) reasons.push("instagram_callToAction_not_derivable_from_caption");
+
+  const hashtags = normalizeInstagramHashtags(rawHashtags, caption);
+  if (hashtags.length < 8) {
+    reasons.push(`instagram_hashtag_count_below_min_8_after_enrichment(actual ${hashtags.length})`);
+  }
   if (hashtags.length > 12) reasons.push(`instagram_hashtag_count_above_max_12(actual ${hashtags.length})`);
   if (hashtags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
     reasons.push("instagram_hashtag_contains_unrelated_trend_tag");
   }
-  reasons.push("instagram_captionFirstLineHook_not_derivable_from_local_pipeline_output");
-  reasons.push("instagram_callToAction_not_derivable_from_local_pipeline_output");
 
   const metadata = {
-    // captionFirstLineHook/callToAction은 의도적으로 비워둔다(orchestrator gate가
-    // 이를 필수로 요구하므로, 값을 지어내지 않고 preflight가 fail-closed로 정확히 보고하게 한다).
-    captionFirstLineHook: "",
+    captionFirstLineHook: captionFirstLineHook ?? "",
     caption,
     hashtags,
-    callToAction: "",
+    callToAction: callToAction ?? "",
     forbiddenUnrelatedTrendTags: true,
   };
-  return { metadata, ok: reasons.length === 2 /* only the two "not derivable" notes, no data problems */, reasons };
+  return { metadata, ok: reasons.length === 0, reasons };
 }
 
 /**

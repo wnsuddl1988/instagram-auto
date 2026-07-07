@@ -4156,3 +4156,30 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. 문서(`docs/owner-daily-automation-runbook.md`)는 이 필드명을 직접 언급하지 않아 보정 대상 없음.
 - checkpoint recommendation: 1줄 로직 수정 + guard 2건 추가뿐인 최소 보정. Codex 검토 후 Owner 승인 시 이전 bridge checkpoint와 함께 묶어 commit 가능.
 
+## content-unit-metadata-optimization-enrichment-no-live-v1 (2026-07-07)
+
+- **목적**: local dry-run summary에서 만든 content unit manifest가 hook/CTA/hashtag 부족으로 `metadataReady:false`가 되던 병목 해소. deterministic enrichment(외부 API 없이 caption/hashtag 원문만 사용).
+- **변경 파일**: `scripts/build-dual-platform-content-unit-from-local-summary.mjs`(`deriveInstagramMetadata` 교체 + 신규 helper 4종), `scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`(+12 checks), `docs/owner-daily-automation-runbook.md`(2단계 설명을 enrichment 동작에 맞게 보정). fixture 2종은 builder 로직만으로 충분해 무수정.
+- **metadata enrichment summary**:
+  - `captionFirstLineHook`: caption 본문(해시태그/안내문 라인 제외)의 첫 줄에서 첫 문장만 추출. 새 문구를 지어내지 않고 원문에서만 뽑으며, 유효한 문장이 없으면 `null`→fail-closed.
+  - `callToAction`: caption에 저장/팔로우/댓글/공유/구독 유도 문구가 이미 있으면 그 문장을 그대로 채택, 없으면 낚시성 주장 없는 고정 기본 CTA(`"저장하고 다음에 다시 보기 · 팔로우하면 더 많은 정보를 받아보세요"`) 사용.
+  - `hashtags`: 기존 태그를 최우선 보존(중복/금지패턴 제거) → 8개 미만이면 caption 본문 키워드(2자 이상 토큰, stopword 제외)로 관련성 있게 보강 → 그래도 부족하면 고정 안전 기본 태그 pool(`꿀팁/정보/일상/생활정보/저장각/유용한정보/Shorts/Reels/추천/필수정보` — 챌린지/viral/trend/밈/fyp 패턴 전혀 없음)에서 순서대로 채움. 12개 초과 시 앞에서부터 자름.
+  - YouTube metadata는 기존 로직(`deriveYoutubeMetadata`) 무변경 — title/tags가 있으면 이미 gate 통과하므로 enrichment 불필요.
+  - caption이 빈 문자열이면 hook/CTA 모두 생성하지 않고 `instagram_caption_empty`로 정확히 fail-closed(값을 지어내지 않는 원칙 유지).
+- **sample manifest/build-summary 결과**: 체크인 sample(원본 hashtag 4개: 샘플/브릿지테스트/가드검증/Shorts)로 실행 → `hashtags` 8개(원본 4개 all 보존 + caption 키워드 4개: 브릿지/픽스처/캡션/static), `captionFirstLineHook`="샘플 브릿지 픽스처 캡션 — static guard 검증 전용 데이터입니다.", `callToAction`="저장하고 다음에 다시 보기 · 팔로우하면 더 많은 정보를 받아보세요". `metadataReady:true`, `instagramMetadataReasons:[]`, `youtubeMetadataReasons:[]`. 생성 manifest를 실제 `run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit`에 연결한 결과 `metadataOptimizationGateOk:true`(instagram_job/youtube_job 양쪽 `metadataOptimizationGate.ok:true, reasons:[]`), `preflightOk:false`(source/Blob evidence 미완성 — 요구대로 유지).
+- **checks/results**: node --check 2파일 ✓, fixture JSON parse ✓(무변경 확인). 신규/갱신 bridge guard **59 PASS / 0 FAIL**(47→59, +12: enrichment 함수 존재/hook·CTA·hashtag 8-12/원본 태그 보존/안전 태그 pool 무유행패턴/caption 빈 값 fail-closed/YouTube metadata 보존/orchestrator 실제 metadata gate 통과 검증). regression 무변경: owner guard **115/115**, dual-platform orchestrator guard **357/357**.
+- **side effects 0**: Instagram/YouTube API/OAuth/upload 0, Vercel Blob 0, OpenAI/ElevenLabs/Pexels/Supabase/browser 0, `.env.local`/`process.env`/`YOUTUBE_ACCESS_TOKEN` 접근 0, ffmpeg/media generation 0, dependency/lockfile/deploy 0, commit/push 0. protected/excluded 9종 미접촉. smoke temp 산출물 정리 완료.
+- **deviations/risks**: 없음. `contentUnitPreflightExpectedReady`는 여전히 `instagramSourceReady && youtubeSourceReady && metadataReady && blobLivenessEvidenceReady` 전부를 요구하므로, metadata가 충족돼도 source/Blob이 없으면 전체 preflight expected는 계속 false — HANDOFF 요구사항과 정확히 일치.
+- checkpoint recommendation: builder 로직 보강(helper 4종 추가) + guard 강화, 계약/스키마 변경 없는 순수 개선. Codex 검토 후 Owner 승인 시 checkpoint commit 가능.
+
+## content-unit-metadata-hook-length-guard-fix-v1 (2026-07-07)
+
+- **Codex review finding**: `extractCaptionFirstLineHook()`가 원문 caption에서 hook을 뽑는 원칙은 지켰지만 길이 상한이 없어, `_ai/HANDOFF_NOW.md`의 "Keep hook concise" 요구가 코드/guard로 강제되지 않았음(긴 첫 줄 caption이 그대로 hook이 될 수 있었음).
+- **변경 파일**: `scripts/build-dual-platform-content-unit-from-local-summary.mjs`(`INSTAGRAM_HOOK_MAX_CHARS=48` 상수 추가 + `extractCaptionFirstLineHook`이 `{hook, reason}` 반환하도록 리팩터 + `deriveInstagramMetadata` 호출부 보정), `scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`(+8 checks), `docs/owner-daily-automation-runbook.md`(hook 48자 상한 + fail-closed 동작 문구 추가).
+- **hook length fix summary**: hook 추출 순서를 (1) 첫 문장(. ! ?) → (2) 여전히 48자 초과면 clause 구분자(—/-/·/,)로 첫 clause 재시도 → (3) 그래도 48자 초과면 강제로 자르지 않고 `{hook:null, reason:"too_long"}` 반환. `deriveInstagramMetadata`는 이를 `instagram_captionFirstLineHook_too_long(max 48 chars)` reason으로 fail-closed 보고(HANDOFF 예시 reason과 일치). 문구를 지어내거나 임의 위치에서 자르지 않는 원칙 유지.
+- **sample/long-caption guard 결과**: 체크인 sample(hook 42자)은 상한 이하라 `metadataReady:true` 그대로 유지, `captionFirstLineHook.length <= 48` 확인. guard 내부(OS temp에만 생성, 체크인 없음)에서 60자 첫 문장 caption으로 smoke 실행 → `metadataReady:false`, reason에 `instagram_captionFirstLineHook_too_long` 포함, 생성 manifest의 `captionFirstLineHook`은 빈 문자열(긴 문장을 그대로 통과시키지 않음) 확인.
+- **checks/results**: node --check 2파일 ✓. 신규/갱신 bridge guard **67 PASS / 0 FAIL**(59→67, +8: hook max 상수 존재/clause 재시도 후 fail-closed 로직/reason 문자열 산출/sample hook 길이 상한 이하/긴 caption smoke 4건). regression 무변경: owner guard **115/115**, dual-platform orchestrator guard **357/357**.
+- **side effects 0**: Instagram/YouTube API/OAuth/upload 0, Vercel Blob 0, OpenAI/ElevenLabs/Pexels/Supabase/browser 0, `.env.local`/`process.env` 접근 0, ffmpeg/media generation 0, dependency/lockfile/deploy 0, commit/push 0. protected/excluded 9종 미접촉. smoke temp 산출물(scratchpad + guard 내부 OS temp) 정리 완료.
+- **deviations/risks**: 없음. 기존 enrichment 결과 유지 확인됨(sample `metadataReady:true`, hashtag 8~12개 보존, source/Blob 미완성으로 `contentUnitPreflightExpectedReady:false` 그대로).
+- checkpoint recommendation: hook 길이 계약을 코드+guard+문서에 일관되게 고정한 좁은 보정. Codex 검토 후 Owner 승인 시 이전 enrichment checkpoint와 함께 묶어 commit 가능.
+

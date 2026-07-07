@@ -41,9 +41,14 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
    완료되면 `render-manifest-local-run-summary.local-mock.json` 경로가 출력된다.
 2. **content unit manifest 생성**: `--build-content-unit --summary <위 summary 경로>
    --out-dir <레포 밖 경로>`로 `dual_platform_content_unit_v1` manifest를 자동 생성한다.
-   이 시점에는 보통 `youtubeSourceReady:false`(YouTube letterbox가 아직 없음)와
-   `metadataReady:false`(로컬 pipeline의 caption/hashtag만으로는 hook/CTA/hashtag 개수
-   요건을 자동으로 채울 수 없음)가 정상이다 — readiness boolean으로 정확히 보고된다.
+   builder는 deterministic metadata enrichment를 적용한다 — caption 원문에서 첫 문장을
+   `captionFirstLineHook`으로 추출하고(48자 상한, 문장이 너무 길면 clause 단위로 재시도하며
+   그래도 길면 억지로 자르지 않고 fail-closed), 저장/팔로우 유도 문구가 없으면 안전한 기본
+   CTA를 채우며, hashtag가 8개 미만이면 기존 태그를 우선 보존한 채 caption 본문 키워드 →
+   고정 안전 기본 태그 순으로 8~12개까지 보강한다(외부 API 호출 없음, 무관 유행 태그
+   금지). 이를 통해 로컬 caption/hashtag가 충분하면 `metadataReady:true`가 된다.
+   다만 `youtubeSourceReady:false`(YouTube letterbox가 아직 없음)는 여전히 정상이다 —
+   readiness boolean으로 정확히 보고된다.
 3. **YouTube letterbox source 생성/첨부** (별도 승인된 local media 단계): letterbox mp4가
    준비되면 `--youtube-source <path>`를 다시 붙여 manifest를 재생성하거나 manifest의
    `youtubeSourcePath`를 직접 채운다.

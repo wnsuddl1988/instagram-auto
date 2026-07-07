@@ -26,7 +26,7 @@
  *  6) owner entrypoint --build-content-unit 모드가 동일 결과를 산출하는지 확인.
  *  7) mutant 방어: --summary/--pipeline-summary 동시 지정 시 abort, out-dir이 repo 내부면 abort.
  */
-import { readFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
@@ -88,7 +88,7 @@ const builderRawSrc = readFileSync(BUILDER_PATH, "utf8");
 const builderCode = stripCommentsAndStrings(builderRawSrc);
 
 check("builder: process.env 접근 없음", !/process\.env/.test(builderCode));
-check("builder: fetch/axios/googleapis 호출 없음", !/\bfetch\(|axios|googleapis/.test(builderCode));
+check("builder: fetch/axios/googleapis/@vercel/blob 호출 없음", !/\bfetch\(|axios|googleapis|@vercel\/blob/.test(builderCode));
 check("builder: ffmpeg/spawnSync/child_process 미사용(media 생성 없음)", !/spawnSync|child_process|ffmpeg/i.test(builderCode));
 check("builder: shell:true 없음", !/shell:\s*true/.test(builderCode));
 check("builder: out-dir repo-root 검증 존재", /REPO_ROOT/.test(builderCode) && /outDirAbs\.startsWith/.test(builderCode));
@@ -108,6 +108,46 @@ check("builder: --summary/--pipeline-summary 동시 지정 시 abort", /provide 
 check(
   "builder: contentUnitPreflightExpectedReady 계산식이 blobLivenessEvidenceReady를 포함(AND 조건)",
   /const\s+contentUnitPreflightExpectedReady\s*=\s*\n?\s*instagramSourceReady\s*&&\s*youtubeSourceReady\s*&&\s*metadataReady\s*&&\s*blobLivenessEvidenceReady\s*;/.test(builderCode),
+);
+
+// task: content-unit-metadata-optimization-enrichment-no-live-v1
+// deterministic metadata enrichment(hook/CTA 추출 + hashtag 8-12 정규화) 함수가 실제로
+// 존재하고, 외부 API 없이 원문 caption/hashtag 텍스트만 사용하는지 소스 레벨로 확인한다.
+check("builder: extractCaptionFirstLineHook 함수 존재(원문 caption에서만 추출, 새 문구 생성 없음)", /function extractCaptionFirstLineHook/.test(builderRawSrc));
+check("builder: deriveCallToAction 함수 존재 + 안전 기본 CTA 상수 존재", /function deriveCallToAction/.test(builderRawSrc) && /SAFE_DEFAULT_CTA/.test(builderRawSrc));
+check("builder: normalizeInstagramHashtags 함수 존재(8-12 정규화)", /function normalizeInstagramHashtags/.test(builderRawSrc));
+check("builder: hashtag 보강 시 기존 태그를 우선 보존(existingHashtags를 먼저 순회)", /for \(const tag of existingHashtags\)/.test(builderCode));
+check("builder: SAFE_DEFAULT_HASHTAG_POOL에 챌린지/viral/trend/밈/fyp 패턴 태그 없음", (() => {
+  const m = builderRawSrc.match(/SAFE_DEFAULT_HASHTAG_POOL\s*=\s*\[([\s\S]*?)\];/);
+  if (!m) return false;
+  return !/(챌린지|viral|trend|밈|fyp|fypシ)/i.test(m[1]);
+})());
+check(
+  "builder: deriveInstagramMetadata가 caption 원문 없이는 hook/CTA를 생성하지 않음(caption 비면 여전히 fail-closed)",
+  /if \(caption\.trim\(\) === ""\) reasons\.push\("instagram_caption_empty"\);/.test(builderRawSrc),
+);
+
+// task: content-unit-metadata-hook-length-guard-fix-v1
+// Codex review finding: hook 길이 상한이 코드/guard로 강제되지 않아 긴 첫 줄 caption이 그대로
+// captionFirstLineHook이 될 수 있었다. 상한 상수 존재 + 새 문구를 지어내지 않고 fail-closed하는
+// 로직(clause 재시도 후에도 길면 too_long reason)을 소스 레벨로 확인한다.
+check(
+  "builder: INSTAGRAM_HOOK_MAX_CHARS 상수 존재(40-56 범위)",
+  (() => {
+    const m = builderRawSrc.match(/INSTAGRAM_HOOK_MAX_CHARS\s*=\s*(\d+)\s*;/);
+    if (!m) return false;
+    const n = Number(m[1]);
+    return n >= 40 && n <= 56;
+  })(),
+);
+check(
+  "builder: hook이 상한 초과 시 clause 재시도 후에도 길면 강제로 자르지 않고 fail-closed(too_long) 반환",
+  /firstLine\.length > INSTAGRAM_HOOK_MAX_CHARS/.test(builderCode) &&
+    /return \{ hook: null, reason: "too_long" \};/.test(builderRawSrc),
+);
+check(
+  "builder: instagram_captionFirstLineHook_too_long reason이 실제로 산출됨(HANDOFF 예시 reason과 일치)",
+  /instagram_captionFirstLineHook_too_long/.test(builderRawSrc),
 );
 
 // ── 2) sample fixture JSON parse ────────────────────────────────────────────
@@ -205,11 +245,64 @@ try {
     "빌드 요약: youtubeSourceReady === false (--youtube-source 미지정 → placeholder)",
     generatedBuildSummary?.youtubeSourceReady === false && generatedBuildSummary?.youtubeSourceProvidedByFlag === false,
   );
+  // task: content-unit-metadata-optimization-enrichment-no-live-v1
+  // deterministic enrichment(hook/CTA 추출 + hashtag 8-12 정규화) 적용 이후에는
+  // sample fixture(caption/hashtag 4개 존재)만으로 metadataReady:true가 되어야 한다.
   check(
-    "빌드 요약: metadataReady === false (hashtag 4개 < 8, hook/CTA 미도출)",
-    generatedBuildSummary?.metadataReady === false &&
+    "빌드 요약: metadataReady === true (deterministic enrichment로 hook/CTA/hashtag 8-12 충족)",
+    generatedBuildSummary?.metadataReady === true &&
       Array.isArray(generatedBuildSummary?.instagramMetadataReasons) &&
-      generatedBuildSummary.instagramMetadataReasons.some((r) => r.includes("hashtag_count_below_min_8")),
+      generatedBuildSummary.instagramMetadataReasons.length === 0 &&
+      Array.isArray(generatedBuildSummary?.youtubeMetadataReasons) &&
+      generatedBuildSummary.youtubeMetadataReasons.length === 0,
+  );
+  check(
+    "생성 manifest: instagramMetadata.captionFirstLineHook non-empty(원문 caption에서 추출, 지어내지 않음)",
+    typeof generatedManifest?.instagramMetadata?.captionFirstLineHook === "string" &&
+      generatedManifest.instagramMetadata.captionFirstLineHook.trim() !== "" &&
+      sampleSummary != null &&
+      typeof generatedManifest.instagramMetadata.caption === "string" &&
+      generatedManifest.instagramMetadata.caption.includes(generatedManifest.instagramMetadata.captionFirstLineHook),
+  );
+  check(
+    "생성 manifest: instagramMetadata.callToAction non-empty",
+    typeof generatedManifest?.instagramMetadata?.callToAction === "string" &&
+      generatedManifest.instagramMetadata.callToAction.trim() !== "",
+  );
+  // task: content-unit-metadata-hook-length-guard-fix-v1
+  // sample fixture로 생성된 hook이 실제로 builder 소스의 INSTAGRAM_HOOK_MAX_CHARS 이하인지
+  // 확인한다(하드코딩된 숫자가 아니라 소스에서 파싱한 값과 비교해 상수 변경 시에도 정합 유지).
+  check(
+    "생성 manifest: instagramMetadata.captionFirstLineHook.length <= INSTAGRAM_HOOK_MAX_CHARS",
+    (() => {
+      const m = builderRawSrc.match(/INSTAGRAM_HOOK_MAX_CHARS\s*=\s*(\d+)\s*;/);
+      const maxChars = m ? Number(m[1]) : null;
+      return (
+        maxChars != null &&
+        typeof generatedManifest?.instagramMetadata?.captionFirstLineHook === "string" &&
+        generatedManifest.instagramMetadata.captionFirstLineHook.length <= maxChars
+      );
+    })(),
+  );
+  check(
+    "생성 manifest: instagramMetadata.hashtags 8-12개, unique, 무관 유행 태그 없음",
+    Array.isArray(generatedManifest?.instagramMetadata?.hashtags) &&
+      generatedManifest.instagramMetadata.hashtags.length >= 8 &&
+      generatedManifest.instagramMetadata.hashtags.length <= 12 &&
+      new Set(generatedManifest.instagramMetadata.hashtags).size === generatedManifest.instagramMetadata.hashtags.length &&
+      !generatedManifest.instagramMetadata.hashtags.some((t) => /(챌린지|viral|trend|밈|fyp|fypシ)/i.test(String(t))),
+  );
+  check(
+    "생성 manifest: 보강된 hashtags가 원본 sample hashtags(샘플/브릿지테스트/가드검증/Shorts)를 모두 보존",
+    Array.isArray(generatedManifest?.instagramMetadata?.hashtags) &&
+      ["샘플", "브릿지테스트", "가드검증", "Shorts"].every((t) => generatedManifest.instagramMetadata.hashtags.includes(t)),
+  );
+  check(
+    "생성 manifest: youtubeMetadata.titleBase/tags 보존(기존 로컬 pipeline 값 그대로 유지)",
+    typeof generatedManifest?.youtubeMetadata?.titleBase === "string" &&
+      generatedManifest.youtubeMetadata.titleBase.trim() !== "" &&
+      Array.isArray(generatedManifest?.youtubeMetadata?.tags) &&
+      generatedManifest.youtubeMetadata.tags.length > 0,
   );
   check(
     "빌드 요약: blobLivenessEvidenceReady === false (--blob-liveness-result 미지정)",
@@ -283,7 +376,11 @@ try {
       pfParsed?.isDefaultContentUnit === false,
     );
     check(
-      "orchestrator preflight: preflightOk === false (YouTube source/metadata 미완성 → 예상된 fail-closed)",
+      "orchestrator preflight: metadataOptimizationGateOk === true (deterministic enrichment로 실제 metadata gate 통과)",
+      pfParsed?.preflight?.metadataOptimizationGateOk === true,
+    );
+    check(
+      "orchestrator preflight: preflightOk === false (source/Blob evidence 미완성 → 예상된 fail-closed, metadata는 이미 통과)",
       pfParsed?.preflight?.preflightOk === false,
     );
     check(
@@ -293,11 +390,119 @@ try {
   } else {
     check("orchestrator --preflight --content-unit <생성 manifest> 실행 성공(exit 0)", false, "generated manifest missing");
     check("orchestrator preflight: isDefaultContentUnit === false (bridge로 만든 content는 custom)", false, "generated manifest missing");
-    check("orchestrator preflight: preflightOk === false (YouTube source/metadata 미완성 → 예상된 fail-closed)", false, "generated manifest missing");
+    check("orchestrator preflight: metadataOptimizationGateOk === true (deterministic enrichment로 실제 metadata gate 통과)", false, "generated manifest missing");
+    check("orchestrator preflight: preflightOk === false (source/Blob evidence 미완성 → 예상된 fail-closed, metadata는 이미 통과)", false, "generated manifest missing");
     check("orchestrator preflight: sourceFilesReady === false (instagram+youtube source 모두 미완성)", false, "generated manifest missing");
   }
 } finally {
   try { rmSync(tmpBase, { recursive: true, force: true }); } catch {}
+}
+
+// task: content-unit-metadata-hook-length-guard-fix-v1
+// ── 5.5) 긴 첫 줄 caption fixture: hook 상한을 넘는 hook을 그대로 통과시키지 않음을 확인 ──
+// guard 내부에서만 쓰는 임시 fixture(체크인되지 않음, OS temp에만 생성)로 재현한다.
+{
+  const longHookTmpBase = mkdtempSync(path.join(os.tmpdir(), "dual-platform-content-unit-guard-long-hook-"));
+  try {
+    const longCaptionPacketPath = path.join(longHookTmpBase, "packet.json");
+    const longCaptionSummaryPath = path.join(longHookTmpBase, "summary.json");
+    const longFirstLine =
+      "이것은 정말로 매우 길고 장황한 첫 문장으로 48자를 훨씬 초과하는 caption 첫 줄 테스트용 문구입니다.";
+    writeFileSync(
+      longCaptionPacketPath,
+      JSON.stringify(
+        {
+          schemaVersion: "money_shorts_owner_approved_upload_flow_v1",
+          mode: "local_mock",
+          flowStatus: "upload_ready_dry_run",
+          actualUploadAllowed: false,
+          actualUploadPerformed: false,
+          notUploaded: true,
+          ownerApprovalRequired: true,
+          sourceManifestId: "long-hook-guard-test",
+          sourceVideoPath: path.join(longHookTmpBase, "nonexistent.mp4"),
+          platformPayloads: [
+            {
+              platform: "instagram_reels",
+              caption: `${longFirstLine}\n\n#샘플 #브릿지테스트 #가드검증 #테스트`,
+              hashtags: ["샘플", "브릿지테스트", "가드검증", "테스트", "긴문장", "훅테스트", "정보", "일상"],
+              visibilityPlan: "owner_review_first",
+              notUploaded: true,
+              ownerApprovalRequired: true,
+            },
+            {
+              platform: "youtube_shorts",
+              title: "긴 훅 테스트 제목",
+              description: "테스트용 description",
+              hashtags: ["테스트"],
+              categoryId: "27",
+              defaultLanguage: "ko",
+              madeForKids: false,
+            },
+          ],
+          nextStep: "live_upload_requires_explicit_owner_approval_and_credentials",
+          builtAt: "2026-01-01T00:00:00.000Z",
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    writeFileSync(
+      longCaptionSummaryPath,
+      JSON.stringify(
+        {
+          schemaVersion: "money_shorts_render_manifest_local_run_summary_v1",
+          mode: "local_mock",
+          flowStatus: "completed_dry_run",
+          startedAt: "2026-01-01T00:00:00.000Z",
+          finishedAt: "2026-01-01T00:00:10.000Z",
+          manifestPath: "scripts/fixtures/provider-candidate-render-manifest.visual-only.json",
+          steps: [],
+          artifacts: { uploadReadyPacket: longCaptionPacketPath },
+          actualUploadAllowed: false,
+          actualUploadPerformed: false,
+          notUploaded: true,
+          ownerApprovalRequired: true,
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const longHookOutDir = path.join(longHookTmpBase, "out");
+    let longHookBuildSummary = null;
+    try {
+      execFileSync(process.execPath, [
+        BUILDER_PATH, "--summary", longCaptionSummaryPath, "--out-dir", longHookOutDir,
+      ], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+      longHookBuildSummary = JSON.parse(readFileSync(path.join(longHookOutDir, "content-unit-build-summary.local-mock.json"), "utf8"));
+      check("긴 첫 줄 caption: builder 실행 성공(exit 0, metadataReady:false는 정상 결과)", true);
+    } catch (e) {
+      check("긴 첫 줄 caption: builder 실행 성공(exit 0, metadataReady:false는 정상 결과)", false, String(e?.message || e));
+    }
+    check(
+      "긴 첫 줄 caption: metadataReady === false (hook 상한 초과로 fail-closed)",
+      longHookBuildSummary?.metadataReady === false,
+    );
+    check(
+      "긴 첫 줄 caption: instagramMetadataReasons에 instagram_captionFirstLineHook_too_long 포함",
+      Array.isArray(longHookBuildSummary?.instagramMetadataReasons) &&
+        longHookBuildSummary.instagramMetadataReasons.some((r) => r.includes("instagram_captionFirstLineHook_too_long")),
+    );
+    const longHookManifestPath = path.join(longHookOutDir, "dual_platform_content_unit.generated.json");
+    let longHookManifest = null;
+    if (existsSync(longHookManifestPath)) {
+      try { longHookManifest = JSON.parse(readFileSync(longHookManifestPath, "utf8")); } catch {}
+    }
+    check(
+      "긴 첫 줄 caption: 생성 manifest의 captionFirstLineHook은 빈 문자열(원본 긴 문장을 그대로 통과시키지 않음)",
+      longHookManifest?.instagramMetadata?.captionFirstLineHook === "",
+    );
+  } finally {
+    try { rmSync(longHookTmpBase, { recursive: true, force: true }); } catch {}
+  }
 }
 
 // ── 6) owner entrypoint --build-content-unit 모드 확인 ──────────────────────
