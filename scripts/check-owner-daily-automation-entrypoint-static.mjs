@@ -482,6 +482,50 @@ try { rmSync(prTmpDir, { recursive: true, force: true }); } catch {}
   );
 }
 
+// ── required: --render-youtube-letterbox-once approval-gated mode ──────────────
+// task: youtube-letterbox-local-render-execution-once-v1
+// NOTE: approval 없이 실행하는 fail-closed 경로만 검사한다 — 이 경로는 하위 runner에 도달하기
+// 전에 abort하므로 ffmpeg를 절대 호출하지 않는다(렌더 재실행 아님).
+console.log("\n[ required: --render-youtube-letterbox-once approval-gated mode ]");
+check("entrypoint: --render-youtube-letterbox-once MODES 목록에 존재", src.includes("--render-youtube-letterbox-once"));
+check("entrypoint: runRenderYoutubeLetterboxOnce 함수 존재", /function runRenderYoutubeLetterboxOnce/.test(src));
+check("entrypoint: approval token 상수 = APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE", src.includes("APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE"));
+check(
+  "entrypoint: runRenderYoutubeLetterboxOnce에서 approval token 불일치면 runScript 호출 전에 abort",
+  (() => {
+    const fnStart = src.indexOf("function runRenderYoutubeLetterboxOnce");
+    const fnEnd = src.indexOf("\n}\n", fnStart);
+    const fnBody = src.slice(fnStart, fnEnd === -1 ? undefined : fnEnd);
+    const abortIdx = fnBody.indexOf("ABORT: --render-youtube-letterbox-once requires the exact");
+    const runIdx = fnBody.indexOf("runScript(");
+    return abortIdx !== -1 && runIdx !== -1 && abortIdx < runIdx;
+  })(),
+);
+
+{
+  // approval 없이 → exit != 0 (하위 runner 미도달, ffmpeg 미실행).
+  let noApprovalThrew = false;
+  let noApprovalOut = "";
+  try {
+    noApprovalOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--render-youtube-letterbox-once"], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  } catch (e) {
+    noApprovalThrew = (e.status ?? 1) !== 0;
+    noApprovalOut = String(e?.stdout || e?.message || e);
+  }
+  check("--render-youtube-letterbox-once: approval 없음 → exit != 0(fail-closed)", noApprovalThrew);
+  check("--render-youtube-letterbox-once: approval 없음 → 하위 runner 위임 없이 ABORT 메시지", /requires the exact --approval/.test(noApprovalOut));
+}
+{
+  // 잘못된 approval → exit != 0.
+  let wrongApprovalThrew = false;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--render-youtube-letterbox-once", "--approval", "WRONG_TOKEN"], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  } catch (e) {
+    wrongApprovalThrew = (e.status ?? 1) !== 0;
+  }
+  check("--render-youtube-letterbox-once: 잘못된 approval → exit != 0(fail-closed)", wrongApprovalThrew);
+}
+
 // ── required: runbook doc ───────────────────────────────────────────────────────
 console.log("\n[ required: owner runbook doc ]");
 check("runbook file exists", existsSync(RUNBOOK_PATH));

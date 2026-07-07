@@ -49,6 +49,8 @@ const REPO_ROOT = resolve(__dirname, "..");
 
 const ORCHESTRATOR_SCRIPT = resolve(REPO_ROOT, "scripts/run-dual-platform-final-publish-orchestrator.mjs");
 const RENDER_MANIFEST_RUNNER_SCRIPT = resolve(REPO_ROOT, "scripts/run-local-money-shorts-from-render-manifest.mjs");
+const YOUTUBE_LETTERBOX_RENDER_ONCE_RUNNER_SCRIPT = resolve(REPO_ROOT, "scripts/run-youtube-letterbox-render-from-request-once.mjs");
+const YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN = "APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE";
 
 const DEFAULT_MANIFEST = resolve(REPO_ROOT, "scripts/fixtures/provider-candidate-render-manifest.visual-only.json");
 const DEFAULT_DRY_RUN_OUT_ROOT = "C:\\tmp\\money-shorts-os\\owner-daily-automation-entrypoint-v1";
@@ -73,7 +75,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -93,6 +95,9 @@ function printUsage() {
         " --content-unit <path> --out-dir <path> [--version-suffix <suffix>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render" +
         " --plan <youtube-letterbox-source-plan.json> --out-dir <path> [--dry-run | --run]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --render-youtube-letterbox-once" +
+        " --approval " + YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN +
+        " [--request <youtube-letterbox-render-request.json>] [--source <mp4>] [--output <mp4>] [--out-dir <path>]",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
@@ -109,6 +114,11 @@ function printUsage() {
       "                        no-execute render request JSON with the exact future approved command.",
       "                        --run is refused in this slice (fail-closed, status " +
         LETTERBOX_RENDER_RUN_DISABLED_STATUS + ").",
+      "",
+      "  --render-youtube-letterbox-once runs the approval-gated one-shot local ffmpeg render exactly once",
+      "                        from the approved source mp4. Requires the exact --approval token; refuses to",
+      "                        run without it and never overwrites an existing output mp4. read-only ffprobe",
+      "                        verifies the output. No API/upload/env/deploy side effects.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -510,6 +520,39 @@ function runPrepareYoutubeLetterboxRender() {
   return 0;
 }
 
+// ── mode: --render-youtube-letterbox-once ────────────────────────────────────────
+// approval-gated one-shot 로컬 ffmpeg 렌더를 하위 runner로 위임 실행한다.
+// approval token이 없으면 하위 runner에 도달하기 전에 fail-closed. 하위 runner는
+// output overwrite/second-run을 자체적으로 차단한다(이 entrypoint는 그 계약을 신뢰하되
+// approval token을 여기서도 먼저 확인한다).
+function runRenderYoutubeLetterboxOnce() {
+  const approval = getArg("--approval");
+  const requestPath = getArg("--request");
+  const source = getArg("--source");
+  const output = getArg("--output");
+  const outDir = getArg("--out-dir");
+
+  if (approval !== YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN) {
+    console.error(
+      `ABORT: --render-youtube-letterbox-once requires the exact --approval ${YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN}.`,
+    );
+    return 1;
+  }
+
+  const runnerArgs = ["--approval", approval];
+  if (requestPath) runnerArgs.push("--request", requestPath);
+  if (source) runnerArgs.push("--source", source);
+  if (output) runnerArgs.push("--output", output);
+  if (outDir) runnerArgs.push("--out-dir", outDir);
+
+  console.log(`[owner-entrypoint] running approval-gated one-shot YouTube letterbox local render`);
+  console.log(`[owner-entrypoint] delegating to run-youtube-letterbox-render-from-request-once.mjs`);
+  console.log("");
+
+  const { exitCode } = runScript(YOUTUBE_LETTERBOX_RENDER_ONCE_RUNNER_SCRIPT, runnerArgs);
+  return exitCode;
+}
+
 // ── mode: --preflight ──────────────────────────────────────────────────────────
 function runPreflight() {
   const contentUnitPath = getArg("--content-unit");
@@ -675,6 +718,9 @@ switch (requestedMode) {
     break;
   case "--prepare-youtube-letterbox-render":
     exitCode = runPrepareYoutubeLetterboxRender();
+    break;
+  case "--render-youtube-letterbox-once":
+    exitCode = runRenderYoutubeLetterboxOnce();
     break;
   default:
     printUsage();
