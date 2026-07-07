@@ -4038,3 +4038,26 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. lib/runner는 원칙대로 무수정(ref만 확인). fixture mismatch가 완전히 해소되고 guard가 회귀를 강제하게 됨(mutant test로 실증).
 - checkpoint recommendation: 신규 파일 없음(허용 3파일 in-place + report append). 이전 slice(lib 2파일 + runner + guard + 신규 guard)와 합쳐 diff 누적 중 — Codex 판단으로 다음 checkpoint 시 두 slice를 함께 커밋 고려.
 
+## dual-platform-live-readiness-release-gate-no-live-v1 (2026-07-07)
+
+- **목적**: 실제 live upload를 열기 전, 지금까지 완성된 dual-platform automation(orchestrator no-execute wiring + social live client import-safety)이 release-ready인지 no-live로 종합 검증하는 gate 신설. 검증 결과와 다음 Owner 승인 순서를 명문화.
+- **신규 파일 3개**:
+  - `scripts/fixtures/dual_platform_live_readiness_release_gate.v1.json` — 13개 `readinessConditions`(TypeScript 컴파일/import-safety/dry-run/preflight/live fail-closed/liveExecutionPlan disabled/metadata gate 필수/duplicate guard 필수/evidence retryForbidden/`.env.local` 금지/secret 금지/`YOUTUBE_ACCESS_TOKEN` 비-required/실제 API 호출 0) 전부 `required:true`. `readinessEvidenceCommandLog`에 이번 세션 8개 command의 PASS 결과 기록(secret 값 없이 command 문자열 + 결과 요약만). `liveApprovalSequence.steps` 4단계(order 1 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` → order 2 `APPROVE_INSTAGRAM_BLOB_URL_LIVENESS_NO_ARM`(Instagram publish/arm 미포함, liveness 전용) → order 3 `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` → order 4 `APPROVE_DUAL_PLATFORM_ARM`) + `nextOwnerDecisionSummary` 한 문단 + `prohibitedGateDrift.cases`(순서 우회 등 8건).
+  - `docs/dual-platform-live-readiness-release-gate.md` — readiness 조건 13개, evidence command log 표, live 승인 순서 4단계 표(order 2가 Instagram arm을 포함하지 않는다는 제약 명시), 다음 Owner 결정 요약 한 문단.
+  - `scripts/check-dual-platform-live-readiness-release-gate-static.mjs`(dependency-free, node 내장 모듈만 사용, 44 checks) — fixture 구조/승인 순서/secret 부재 검증(§1) + docs 핵심 조건 언급 검증(§2) + orchestrator `--preflight`/`--live`를 이 가드가 직접 1회씩 실행해 `preflightOk`/`envValuesAccessedThisRun`/`liveExecutionPlan` 4-step disabled/`sideEffectCounters` 0/evidence retryForbidden/`--live` nonzero exit+`LIVE_EXECUTION_DISABLED_THIS_SLICE`를 재확인(§3, release gate 최종 근거).
+  - **mutant sanity test**: fixture 승인 순서에서 order 1↔4를 뒤바꿔 `APPROVE_DUAL_PLATFORM_ARM`을 order 1로 승격시키는 mutant 적용 → 신규 3개 체크(order1/order4/ARM-order1-금지)가 정확히 FAIL함을 확인, 원본 즉시 복구 후 44 PASS / 0 FAIL 재확인(회귀 감지 능력 실증).
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉, 신규 3파일만 생성)
+  - fixture JSON parse ✓, `node --check` guard ✓
+  - `node scripts/check-dual-platform-live-readiness-release-gate-static.mjs` → **44 PASS / 0 FAIL**
+  - regression 전부 ALL PASS: import-safety 23/23, dual-platform 234/234, local-pipeline 61/61, render-manifest 42/42, automation-orchestrator 151/151, `tsc --noEmit` 오류 0.
+  - `--preflight`: `preflightOk:true`. `--live`: exit 2, stderr `LIVE_EXECUTION_DISABLED_THIS_SLICE` 포함 확인(spawnSync로 명시적 status/stderr 검증).
+- **live side effects 0**: Instagram/YouTube API 0, Blob 0, env/secret read/write 0, `.env.local` 접근 0, secret 값 출력 0, 새 영상 생성 0, deploy/dependency 0, commit/push 0.
+- **다음 승인 순서** (fixture/docs와 동일, Owner 결정 필요):
+  1. `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` — Instagram mp4 Blob 실제 업로드 테스트 허용.
+  2. `APPROVE_INSTAGRAM_BLOB_URL_LIVENESS_NO_ARM`(또는 동등 명칭) — Blob public URL liveness만 확인, Instagram publish(arm) 미포함.
+  3. `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` — YouTube 실제 API 업로드 경로 연결.
+  4. `APPROVE_DUAL_PLATFORM_ARM` — 전체 dual-platform 자동 게시 활성화(`LIVE_EXECUTION_ENABLED_THIS_SLICE` true 전환은 별도 슬라이스 승인 필요).
+- **deviations/risks**: 없음. `APPROVE_INSTAGRAM_BLOB_URL_LIVENESS_NO_ARM`은 handoff 요구에 따라 이번 slice에서 신규 도입한 승인 토큰명(기존 어디에도 없었음) — 명칭 자체는 Codex/Owner가 다른 이름으로 대체 가능하나 "Instagram publish를 arm하지 않는다"는 제약은 유지 필요.
+- checkpoint recommendation: 신규 파일 3개(fixture/guard/docs) + report append. 순수 신규 파일이라 diff 충돌 없음. Owner 승인 시 checkpoint commit 가능.
+
