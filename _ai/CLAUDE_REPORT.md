@@ -4079,3 +4079,15 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. lib/youtube.ts 무수정. tracked diff는 허용 파일(runner/fixture/guard/docs + report) 안에만.
 - checkpoint recommendation: 4개 tracked 파일 변경 + report append(release 경계). Owner 승인 시 checkpoint commit 권장.
 
+## dual-platform-arm-wiring-duplicate-guarded-v1 (2026-07-07)
+
+- **목적**: live execution gate 최종 arm(`APPROVE_DUAL_PLATFORM_ARM`). 단 current content `t1_lifestyle_inflation/v3_2`는 이미 게시 완료 evidence가 있어 duplicate guard가 실제 API 호출 전에 반드시 차단.
+- **변경 파일**: runner(`run-dual-platform-final-publish-orchestrator.mjs`) / fixture(`dual_platform_final_publish_orchestrator.v1.json`) / guard(`check-dual-platform-final-publish-orchestrator-static.mjs`) / docs(`dual-platform-final-publish-orchestrator.md`) + 본 report append. lib 3종(`instagram.ts`/`youtube.ts`/`instagram-blob-media.ts`) **무수정**.
+- **구현**: `LIVE_EXECUTION_ENABLED_THIS_SLICE=true`(arm) + `LIVE_GATE_ORDER` 6단계 fail-closed(metadata→source→blob liveness evidence→duplicate guard→credential→API). `executeArmedLiveRun`이 gate 순서대로 평가, current content는 gate 4에서 `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`(stdout JSON, exit 3) — gate 5 credential/gate 6 API 미도달. gate 5는 env 미접근 fail-closed stub(`CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`, exit 4, current content 미도달). disarm 회귀 시 기존 exit 2 fail-closed 유지(이중 안전장치). preflight에 `liveArm` 블록(armed/gate order/duplicate block 예정/blob evidence/credential 미접근) 추가. Blob liveness evidence(URL·200·video/mp4·20294549·result path)를 상수화해 fixture/preflight/docs 3곳 정합을 guard가 강제.
+- **--live/--arm 실제 결과**: status `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`, exit 3, side-effect counter 11종 전부 0(instagram/youtube API, OAuth, upload, blob mutation, credential accessed/resolved, .env.local, secret print, ledger, 신규 영상), `credentialResolutionReached:false`, `actualApiCallReached:false`, media_id `17916511431199303`/videoId `r9jhckdpC9w`는 retryForbidden reference로만, `wouldHaveCalledFunctionRefs`는 `...WithCredentials` explicit 함수, stderr 비어있음, secret 패턴 0.
+- **guard 보강**: 252→**316 checks**. 신규: arm 상수/gate 순서 소스 검증(duplicate<credential, liveness<duplicate), fixture/preflight `liveArm` 정합, blob evidence 3-way 정합, docs arm 계약, --live/--arm blocked 결과 전수 검증. **duplicate block 미확정이면 guard가 --live 실행을 skip하고 FAIL**(안전 전제조건).
+- **mutant sanity(2건, 원본 즉시 복구 후 316/316 재확인)**: ① duplicate guard 약화(`EXISTING_PUBLISHED_KEYS` 비움) → 4 FAIL + --live 실행 0회 skip 확인. ② credential 호출을 duplicate guard 앞으로 이동 → 소스 순서 검증 1 FAIL(dupIdx>credIdx 감지).
+- **checks**: node --check runner/guard ✓, fixture JSON parse ✓, dual guard **316/316**, import-safety **23/23**, dry-run 불변(mode dry_run·jobs 2·liveMode false) ✓, preflight(preflightOk true·liveArm 정확) ✓, --live/--arm exit 3 blocked ✓, `tsc --noEmit` 0 errors.
+- **side effects 0**: Instagram API/publish 0, YouTube API/OAuth/upload 0, Blob mutation 0, credential 값 접근/resolution 0, `.env.local` 접근 0, secret 값 출력 0, 새 영상 0, deploy/dependency 0, commit/push 0.
+- checkpoint recommendation: release arm 경계 + 4 tracked 파일(+768/-105). Codex 검토 후 Owner 승인 시 checkpoint commit 권장.
+

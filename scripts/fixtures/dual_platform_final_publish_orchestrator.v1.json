@@ -1,13 +1,15 @@
 {
   "schemaVersion": "dual_platform_final_publish_orchestrator_v1",
-  "taskId": "dual-platform-final-publish-orchestrator-no-live-v1",
-  "status": "NO_LIVE_DRY_RUN_ORCHESTRATOR",
+  "taskId": "dual-platform-arm-wiring-duplicate-guarded-v1",
+  "baseTaskId": "dual-platform-final-publish-orchestrator-no-live-v1",
+  "status": "ARMED_DUPLICATE_GUARDED_ORCHESTRATOR",
   "createdAt": "2026-07-07",
-  "nature": "카테고리 선택 → 영상 생성 → Instagram/YouTube variant → 2개 플랫폼 게시 흐름에 연결 가능한 publish orchestrator의 no-live dry-run 기반. 이 slice는 실제 Instagram/YouTube API 호출, Blob 업로드, env/secret read/write를 수행하지 않는다.",
+  "nature": "카테고리 선택 → 영상 생성 → Instagram/YouTube variant → 2개 플랫폼 게시 흐름에 연결 가능한 publish orchestrator. live gate는 APPROVE_DUAL_PLATFORM_ARM로 arm 상태지만, current content(t1_lifestyle_inflation/v3_2)는 이미 게시 완료 evidence가 있으므로 duplicate publish guard(gate 4)가 credential resolution(gate 5)/actual API call(gate 6) 이전에 차단한다. 이 slice는 실제 Instagram/YouTube API 호출, Blob mutation, env/secret read/write를 수행하지 않는다.",
   "docsRef": "docs/dual-platform-final-publish-orchestrator.md",
   "architectureRef": "scripts/fixtures/dual_platform_variant_publish_architecture.v1.json",
   "blobIntegrationRef": "scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json",
   "noLiveThisSlice": true,
+  "noLiveThisSliceNote": "arm 상태이지만 current content(v3_2)는 duplicate publish guard가 차단하므로 이 slice의 실제 live API 호출/side effect는 0이다.",
 
   "liveUploadEvidence": {
     "note": "secret 없는 public evidence만 기록. API key/token/account id/client id secret/refresh token은 기록하지 않는다.",
@@ -142,15 +144,24 @@
     },
     "live": {
       "flags": ["--live", "--arm"],
-      "description": "실제 Instagram/YouTube/Blob publish. 이 slice에서는 코드 구조만 준비하고 실행은 fail-closed로 막힌다.",
-      "liveExecutionEnabledThisSlice": false,
-      "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE"
+      "description": "arm 상태. LIVE_GATE_ORDER 순서로 fail-closed 평가하며, current content(v3_2)는 gate 4 duplicate publish guard가 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로 차단한다. credential resolution/actual API call 미도달, 모든 live side-effect counter 0.",
+      "liveExecutionEnabledThisSlice": true,
+      "armed": true,
+      "armApprovalToken": "APPROVE_DUAL_PLATFORM_ARM",
+      "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+      "failClosedErrorNote": "LIVE_EXECUTION_ENABLED_THIS_SLICE가 false로 회귀하면 여전히 이 에러로 exit 2 fail-closed된다(방어적 이중 안전장치).",
+      "currentContentExpected": {
+        "status": "BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
+        "exitCode": 3,
+        "credentialResolutionReached": false,
+        "actualApiCallReached": false
+      }
     }
   },
 
   "liveExecutionWiring": {
-    "note": "live publish 경로의 코드 구조/조건을 명문화한다. 이 slice에서는 liveExecutionEnabledThisSlice=false이므로 --live/--arm이 들어와도 LIVE_EXECUTION_DISABLED_THIS_SLICE로 fail-closed된다.",
-    "liveExecutionEnabledThisSlice": false,
+    "note": "live publish 경로의 코드 구조/조건을 명문화한다. live gate는 arm 상태(liveExecutionEnabledThisSlice=true)지만, current content(v3_2)는 duplicate publish guard가 credential resolution 이전에 차단한다. 상수가 false로 회귀하면 --live/--arm은 여전히 LIVE_EXECUTION_DISABLED_THIS_SLICE로 fail-closed된다.",
+    "liveExecutionEnabledThisSlice": true,
     "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
     "requiredApprovalTokensToEnable": [
       "APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING",
@@ -185,12 +196,14 @@
     "duplicateGuardIsMandatoryForLiveAndPreflight": true,
 
     "liveExecutionPlan": {
-      "note": "no-execute live wiring plan. Instagram(Vercel Blob public URL → Graph API publish) / YouTube(direct file upload) 흐름을 코드 구조상 순서대로 연결하되, 이번 slice에서는 모든 step이 실행 불가(disabled)다. preflight 출력의 preflight.liveExecutionPlan과 정합해야 한다. secret 값/토큰/credential value/URL query token은 담지 않는다.",
-      "liveExecutionEnabledThisSlice": false,
+      "note": "armed live wiring plan. Instagram(Vercel Blob public URL → Graph API publish) / YouTube(direct file upload) 흐름을 코드 구조상 순서대로 연결한다. arm 상태(anyStepEnabled=true)지만 current content(v3_2)는 duplicate publish guard가 차단하므로 이번 run에서 실행되는 step은 없다(anyStepWillExecute=false, side effect 0). preflight 출력의 preflight.liveExecutionPlan과 정합해야 한다. secret 값/토큰/credential value/URL query token은 담지 않는다.",
+      "liveExecutionEnabledThisSlice": true,
       "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
-      "anyStepEnabled": false,
+      "anyStepEnabled": true,
       "anyStepWillExecute": false,
       "anySideEffectPerformed": false,
+      "currentContentDuplicateBlocked": true,
+      "duplicateBlockedStatus": "BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
       "metadataGateIsMandatoryDependency": true,
       "duplicateGuardIsMandatoryDependency": true,
       "orderedFlow": [
@@ -206,8 +219,9 @@
           "id": "instagram_blob_upload",
           "platform": "instagram_reels",
           "provider": "vercel_blob",
-          "enabled": false,
+          "enabled": true,
           "willExecute": false,
+          "willExecuteBlockedReason": "duplicate_publish_guard_blocks_current_content",
           "sideEffectPerformed": false,
           "requiredApprovalTokens": ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"],
           "requiredEnvKeyNames": ["BLOB_READ_WRITE_TOKEN"],
@@ -219,8 +233,9 @@
           "id": "instagram_publish_reel",
           "platform": "instagram_reels",
           "provider": "instagram_graph_api",
-          "enabled": false,
+          "enabled": true,
           "willExecute": false,
+          "willExecuteBlockedReason": "duplicate_publish_guard_blocks_current_content",
           "sideEffectPerformed": false,
           "functionRef": "lib/instagram.ts#uploadInstagramReelWithCredentials",
           "requiredApprovalTokens": ["APPROVE_DUAL_PLATFORM_ARM"],
@@ -234,8 +249,9 @@
           "id": "youtube_direct_upload",
           "platform": "youtube_shorts",
           "provider": "youtube_data_api",
-          "enabled": false,
+          "enabled": true,
           "willExecute": false,
+          "willExecuteBlockedReason": "duplicate_publish_guard_blocks_current_content",
           "sideEffectPerformed": false,
           "functionRef": "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
           "requiredApprovalTokens": ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
@@ -249,8 +265,9 @@
           "id": "publish_ledger_record",
           "platform": "both",
           "provider": "publish_ledger",
-          "enabled": false,
+          "enabled": true,
           "willExecute": false,
+          "willExecuteBlockedReason": "duplicate_publish_guard_blocks_current_content",
           "sideEffectPerformed": false,
           "ledgerMutationThisSlice": false,
           "requiredApprovalTokens": ["APPROVE_DUAL_PLATFORM_ARM"],
@@ -284,10 +301,61 @@
       "videoUrl": "https://www.youtube.com/shorts/r9jhckdpC9w",
       "retryForbidden": true
     },
-    "liveExecutionEnabledThisSlice": false,
+    "liveExecutionEnabledThisSlice": true,
+    "liveExecutionEnabledNote": "arm 상태. 단 current content(v3_2)는 duplicate publish guard가 차단하므로 actual upload call은 0이다.",
     "liveExecutionDisabledError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
     "actualUploadCallPerformed": false,
     "requiredApprovalTokens": ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"]
+  },
+
+  "liveArm": {
+    "note": "task: dual-platform-arm-wiring-duplicate-guarded-v1. 최종 arm 계약. preflight 출력의 preflight.liveArm 및 --live/--arm blocked 결과와 정합해야 한다. secret/env 값은 담지 않는다(public URL/media_id/videoId만).",
+    "armed": true,
+    "armApprovalToken": "APPROVE_DUAL_PLATFORM_ARM",
+    "failClosedGateOrder": [
+      "metadata_optimization_gate",
+      "source_file_gate",
+      "blob_public_url_liveness_evidence_gate",
+      "duplicate_publish_guard",
+      "credential_presence_resolution",
+      "actual_api_call"
+    ],
+    "duplicateGuardEvaluatedBeforeCredentialResolution": true,
+    "credentialResolutionWiredThisSlice": false,
+    "credentialResolutionHaltError": "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE",
+    "currentContentDuplicateBlock": {
+      "instagramKey": "t1_lifestyle_inflation/instagram_reels/v3_2",
+      "youtubeKey": "t1_lifestyle_inflation/youtube_shorts/v3_2",
+      "instagramWillBeBlocked": true,
+      "youtubeWillBeBlocked": true,
+      "expectedLiveStatus": "BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
+      "expectedLiveExitCode": 3,
+      "duplicateBlockHappensBeforeCredentialResolution": true,
+      "credentialResolutionWouldBeReached": false,
+      "actualApiCallWouldRun": false,
+      "retryForbidden": true
+    },
+    "blobPublicUrlLivenessEvidence": {
+      "url": "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+      "headStatus": 200,
+      "contentType": "video/mp4",
+      "contentLength": 20294549,
+      "resultPath": "output/instagram-blob-url-liveness-no-arm-v1/result.json",
+      "sourceTask": "instagram-blob-url-liveness-no-arm-v1"
+    },
+    "zeroCountersForDuplicateBlockedRun": [
+      "instagramApiCallCount",
+      "youtubeApiCallCount",
+      "youtubeOauthTokenRequestCount",
+      "youtubeUploadCallCount",
+      "blobMutationCount",
+      "credentialValuesAccessedCount",
+      "credentialValuesResolvedCount",
+      "dotEnvLocalDirectAccessCount",
+      "envSecretValuePrintCount",
+      "ledgerMutationCount",
+      "newVideoGeneratedCount"
+    ]
   },
 
   "forbiddenBehavior": [
@@ -308,7 +376,8 @@
     "무관 유행 태그 포함",
     "preflight/dry-run 경로에서 process.env 값을 읽거나 출력",
     "env key 값/길이/hash/prefix/suffix 출력",
-    "--live 또는 --arm이 이번 slice에서 실제 실행 가능해짐(fail-closed 우회)",
+    "--live/--arm이 current content(v3_2)에 대해 duplicate guard 차단 없이 credential resolution/actual API call 단계로 진입",
+    "duplicate publish guard(gate 4)보다 credential resolution(gate 5)이 먼저 평가됨",
     "이미 완료된 Instagram(17916511431199303)/YouTube(r9jhckdpC9w) evidence를 새 실행으로 재시도",
     "metadata optimization gate를 우회하고 publish 진행",
     "duplicate publish guard를 우회하고 publish 진행"
@@ -332,10 +401,14 @@
       "publishMetadataOptimizationGate 규칙 누락 또는 약화",
       "runner 소스에 process.env 참조가 들어감(preflight가 env 값에 접근)",
       "preflight 경로에서 Instagram/YouTube API 또는 Blob upload가 호출됨",
-      "--live/--arm이 LIVE_EXECUTION_DISABLED_THIS_SLICE로 막히지 않고 실행 경로로 진입",
-      "liveExecutionWiring.liveExecutionEnabledThisSlice가 true로 오염됨",
+      "--live/--arm이 current content(v3_2)에 대해 duplicate guard 차단 없이 credential resolution/actual API call 단계로 진입",
+      "executeArmedLiveRun에서 credential resolution(gate 5)이 duplicate publish guard(gate 4)보다 먼저 평가되도록 순서가 바뀜",
+      "duplicate publish guard가 약화되어 current content(v3_2)의 instagramWillBeBlocked/youtubeWillBeBlocked가 false가 됨",
+      "--live blocked 결과의 side-effect counter(instagram/youtube API, OAuth, upload, blob mutation, credential accessed/resolved, .env.local, ledger, 신규 영상)가 0이 아님",
+      "liveArm.armed 또는 liveExecutionEnabledThisSlice가 승인 없이 false로 회귀(disarm)함",
+      "blobPublicUrlLivenessEvidence(url/headStatus/contentType/contentLength/resultPath)가 fixture/preflight/docs 간 불일치",
       "liveExecutionWiring.requiredEnvKeyNames에 env 값이 함께 기록됨",
-      "liveExecutionPlan step의 enabled/willExecute/sideEffectPerformed가 true로 오염됨",
+      "liveExecutionPlan step의 willExecute/sideEffectPerformed가 true로 오염됨",
       "liveExecutionPlan.orderedFlow가 Instagram Blob→publish, YouTube upload, ledger 순서를 벗어남",
       "liveExecutionPlan에서 metadata gate 또는 duplicate guard dependency가 누락됨",
       "liveExecutionPlan step의 requiredApprovalTokens가 누락되거나 약화됨",

@@ -2,12 +2,16 @@
 /**
  * check-dual-platform-final-publish-orchestrator-static.mjs
  *
- * Dual-platform final publish orchestrator (no-live) 정적 가드.
- * task: dual-platform-final-publish-orchestrator-no-live-v1
+ * Dual-platform final publish orchestrator 정적 가드.
+ * task: dual-platform-arm-wiring-duplicate-guarded-v1
+ * (base: dual-platform-final-publish-orchestrator-no-live-v1)
  *
  * 이 가드 자체는 no-live다: 레포 내 fixture JSON + docs + runner 소스 텍스트,
- * 그리고 runner를 child_process로 1회 실행한 stdout(JSON)만 읽는다.
+ * 그리고 runner를 child_process로 실행한 stdout(JSON)만 읽는다.
  * (network/env/secret 접근 없음, 실제 Instagram/YouTube API 호출 없음)
+ * arm 계약: --live/--arm은 preflight에서 current content duplicate block이 확정된
+ * 경우에만 실행하며, 결과는 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3) + 모든
+ * side-effect counter 0이어야 한다. duplicate block 미확정이면 live 실행을 skip하고 FAIL.
  *
  * 검증:
  *  1) fixture: noLiveThisSlice=true, expectedPublishJobs 2개(instagram/youtube)가
@@ -94,8 +98,8 @@ try {
   check("fixture JSON parse", false, String(e));
 }
 
-check("fixture.noLiveThisSlice === true", fixture.noLiveThisSlice === true);
-check("fixture.status === NO_LIVE_DRY_RUN_ORCHESTRATOR", fixture.status === "NO_LIVE_DRY_RUN_ORCHESTRATOR");
+check("fixture.noLiveThisSlice === true (arm이지만 current content duplicate blocked → 실제 live side effect 0)", fixture.noLiveThisSlice === true);
+check("fixture.status === ARMED_DUPLICATE_GUARDED_ORCHESTRATOR", fixture.status === "ARMED_DUPLICATE_GUARDED_ORCHESTRATOR");
 
 const jobs = Array.isArray(fixture.expectedPublishJobs) ? fixture.expectedPublishJobs : [];
 check("expectedPublishJobs 2개", jobs.length === 2, `count=${jobs.length}`);
@@ -448,11 +452,19 @@ const modes = fixture.modes || {};
 check("fixture.modes.dryRun.liveExecution === false", modes.dryRun?.liveExecution === false);
 check("fixture.modes.preflight.liveExecution === false", modes.preflight?.liveExecution === false);
 check("fixture.modes.preflight.checksEnvValuePresence === false (env 값 미접근)", modes.preflight?.checksEnvValuePresence === false);
-check("fixture.modes.live.liveExecutionEnabledThisSlice === false", modes.live?.liveExecutionEnabledThisSlice === false);
-check("fixture.modes.live.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", modes.live?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+check("fixture.modes.live.liveExecutionEnabledThisSlice === true (armed)", modes.live?.liveExecutionEnabledThisSlice === true);
+check("fixture.modes.live.armed === true + armApprovalToken === APPROVE_DUAL_PLATFORM_ARM", modes.live?.armed === true && modes.live?.armApprovalToken === "APPROVE_DUAL_PLATFORM_ARM");
+check("fixture.modes.live.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE (disarm 회귀 방어)", modes.live?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+check(
+  "fixture.modes.live.currentContentExpected: BLOCKED_DUPLICATE_ALREADY_PUBLISHED + exit 3 + credential/API 미도달",
+  modes.live?.currentContentExpected?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" &&
+    modes.live?.currentContentExpected?.exitCode === 3 &&
+    modes.live?.currentContentExpected?.credentialResolutionReached === false &&
+    modes.live?.currentContentExpected?.actualApiCallReached === false
+);
 
 const wiring = fixture.liveExecutionWiring || {};
-check("liveExecutionWiring.liveExecutionEnabledThisSlice === false", wiring.liveExecutionEnabledThisSlice === false);
+check("liveExecutionWiring.liveExecutionEnabledThisSlice === true (armed)", wiring.liveExecutionEnabledThisSlice === true);
 check("liveExecutionWiring.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", wiring.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
 check(
   "liveExecutionWiring.requiredApprovalTokensToEnable 4개 승인 토큰 포함",
@@ -508,7 +520,11 @@ check(
 // fixture: liveExecutionPlan(no-execute) 계약. runner preflight 출력과 정합해야 한다.
 const fixLep = wiring.liveExecutionPlan || {};
 check("fixture.liveExecutionWiring.liveExecutionPlan 존재", fixLep && typeof fixLep === "object");
-check("fixture liveExecutionPlan.anyStepEnabled/anyStepWillExecute/anySideEffectPerformed 전부 false", fixLep.anyStepEnabled === false && fixLep.anyStepWillExecute === false && fixLep.anySideEffectPerformed === false);
+check(
+  "fixture liveExecutionPlan: anyStepEnabled true(armed) + anyStepWillExecute/anySideEffectPerformed false + currentContentDuplicateBlocked true",
+  fixLep.anyStepEnabled === true && fixLep.anyStepWillExecute === false && fixLep.anySideEffectPerformed === false &&
+    fixLep.currentContentDuplicateBlocked === true && fixLep.duplicateBlockedStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED"
+);
 check("fixture liveExecutionPlan.metadataGateIsMandatoryDependency === true", fixLep.metadataGateIsMandatoryDependency === true);
 check("fixture liveExecutionPlan.duplicateGuardIsMandatoryDependency === true", fixLep.duplicateGuardIsMandatoryDependency === true);
 check(
@@ -518,7 +534,10 @@ check(
     fixLep.orderedFlow[2] === "youtube_direct_upload" && fixLep.orderedFlow[3] === "publish_ledger_record"
 );
 const fixLepSteps = Array.isArray(fixLep.steps) ? fixLep.steps : [];
-check("fixture liveExecutionPlan.steps 4개 전부 disabled(no-execute)", fixLepSteps.length === 4 && fixLepSteps.every((s) => s.enabled === false && s.willExecute === false && s.sideEffectPerformed === false));
+check(
+  "fixture liveExecutionPlan.steps 4개 전부 enabled(armed) + willExecute false(duplicate blocked) + sideEffect 0",
+  fixLepSteps.length === 4 && fixLepSteps.every((s) => s.enabled === true && s.willExecute === false && s.sideEffectPerformed === false)
+);
 check(
   "fixture liveExecutionPlan step별 requiredApprovalTokens 존재",
   fixLepSteps.length === 4 && fixLepSteps.every((s) => Array.isArray(s.requiredApprovalTokens) && s.requiredApprovalTokens.length >= 1)
@@ -555,10 +574,34 @@ check(
   fixYtUpStep?.functionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
 );
 
-// 6b) runner 소스: live gate 상수 + fail-closed + env 미접근 회귀
-check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = false 존재", /LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*false/.test(runnerRawSrc));
-check("runner에 LIVE_EXECUTION_DISABLED_THIS_SLICE 에러 상수 존재", runnerRawSrc.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
-check("runner에 --live/--arm fail-closed 처리 존재", /--live/.test(runnerRawSrc) && /--arm/.test(runnerRawSrc) && /live_blocked|LIVE_EXECUTION_DISABLED/.test(runnerRawSrc));
+// 6b) runner 소스: live gate 상수(armed) + fail-closed + env 미접근 회귀
+check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = true 존재(armed)", /LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*true/.test(runnerRawSrc));
+check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = false 회귀 없음", !/LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*false/.test(runnerRawSrc));
+check("runner에 LIVE_EXECUTION_ARM_APPROVAL_TOKEN = APPROVE_DUAL_PLATFORM_ARM 존재", /LIVE_EXECUTION_ARM_APPROVAL_TOKEN\s*=\s*"APPROVE_DUAL_PLATFORM_ARM"/.test(runnerRawSrc));
+check("runner에 LIVE_EXECUTION_DISABLED_THIS_SLICE 에러 상수 존재(disarm 회귀 방어)", runnerRawSrc.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
+check("runner에 --live/--arm 처리 + disarm 방어 fail-closed 분기 존재", /--live/.test(runnerRawSrc) && /--arm/.test(runnerRawSrc) && /live_blocked|LIVE_EXECUTION_DISABLED/.test(runnerRawSrc));
+check("runner에 LIVE_GATE_ORDER(6단계 안전 순서) 존재", /LIVE_GATE_ORDER/.test(runnerRawSrc) && runnerRawSrc.includes('"duplicate_publish_guard"') && runnerRawSrc.includes('"credential_presence_resolution"'));
+check("runner에 BLOCKED_DUPLICATE_ALREADY_PUBLISHED 상태 상수 존재", runnerRawSrc.includes("BLOCKED_DUPLICATE_ALREADY_PUBLISHED"));
+check("runner에 executeArmedLiveRun(armed live 실행 경로) 존재", /function\s+executeArmedLiveRun/.test(runnerRawSrc));
+
+// 핵심 안전 순서(소스 레벨): executeArmedLiveRun 내부에서 duplicate guard(gate 4) 평가가
+// credential resolution(gate 5) 평가보다 반드시 먼저 와야 한다. 순서가 뒤집히면 fail.
+const armExecStart = runnerRawSrc.indexOf("function executeArmedLiveRun");
+const armExecEnd = runnerRawSrc.indexOf("function main", armExecStart);
+const armExecSrc = armExecStart !== -1 && armExecEnd !== -1 ? runnerRawSrc.slice(armExecStart, armExecEnd) : "";
+const dupCallIdx = armExecSrc.indexOf("evaluateDuplicatePublishGuardGate(");
+const credCallIdx = armExecSrc.indexOf("credentialPresenceResolutionGate(");
+check(
+  "runner 소스: executeArmedLiveRun에서 duplicate guard(gate 4)가 credential resolution(gate 5)보다 먼저 평가됨",
+  armExecSrc.length > 0 && dupCallIdx !== -1 && credCallIdx !== -1 && dupCallIdx < credCallIdx,
+  `dupIdx=${dupCallIdx}, credIdx=${credCallIdx}`
+);
+// blob liveness evidence gate(gate 3)도 duplicate guard(gate 4)보다 먼저 평가되어야 한다.
+const livenessCallIdx = armExecSrc.indexOf("evaluateBlobLivenessEvidenceGate(");
+check(
+  "runner 소스: executeArmedLiveRun에서 blob liveness evidence(gate 3)가 duplicate guard(gate 4)보다 먼저 평가됨",
+  livenessCallIdx !== -1 && dupCallIdx !== -1 && livenessCallIdx < dupCallIdx
+);
 check("runner에 --preflight 모드 처리 존재", /--preflight/.test(runnerRawSrc) && /preflight/.test(runnerRawSrc));
 check("runner에 REQUIRED_ENV_KEY_NAMES (key 이름 계약) 존재", /REQUIRED_ENV_KEY_NAMES/.test(runnerRawSrc));
 // 가장 중요한 회귀: runner가 process.env 값을 읽지 않는다(코드 기준, 주석/문자열 제외).
@@ -586,7 +629,7 @@ try { pfResult = JSON.parse(pfOutput); check("runner --preflight stdout JSON par
 catch (e) { check("runner --preflight stdout JSON parse", false, String(e)); }
 
 check("preflight 결과 mode === preflight", pfResult?.mode === "preflight");
-check("preflight 결과 liveExecutionEnabledThisSlice === false", pfResult?.liveExecutionEnabledThisSlice === false);
+check("preflight 결과 liveExecutionEnabledThisSlice === true (armed)", pfResult?.liveExecutionEnabledThisSlice === true);
 check("preflight 결과 preflight.preflightOk === true", pfResult?.preflight?.preflightOk === true);
 check("preflight 결과 metadataOptimizationGateOk === true", pfResult?.preflight?.metadataOptimizationGateOk === true);
 check("preflight 결과 duplicateGuardUsesV3_2 === true", pfResult?.preflight?.duplicateGuardUsesV3_2 === true);
@@ -622,12 +665,16 @@ check("preflight 결과: YouTube videoId reference 유지(재시도 대상 아�
 
 // ── 6f) no-execute live execution plan (dual-platform-live-orchestrator-wiring-no-execute-v1) ──
 const lep = pfResult?.preflight?.liveExecutionPlan;
-check("preflight에 liveExecutionPlan(no-execute) 존재", !!lep && typeof lep === "object");
-check("liveExecutionPlan.liveExecutionEnabledThisSlice === false", lep?.liveExecutionEnabledThisSlice === false);
-check("liveExecutionPlan.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", lep?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
-check("liveExecutionPlan.anyStepEnabled === false", lep?.anyStepEnabled === false);
-check("liveExecutionPlan.anyStepWillExecute === false", lep?.anyStepWillExecute === false);
+check("preflight에 liveExecutionPlan 존재", !!lep && typeof lep === "object");
+check("liveExecutionPlan.liveExecutionEnabledThisSlice === true (armed)", lep?.liveExecutionEnabledThisSlice === true);
+check("liveExecutionPlan.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE (disarm 회귀 방어)", lep?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+check("liveExecutionPlan.anyStepEnabled === true (armed)", lep?.anyStepEnabled === true);
+check("liveExecutionPlan.anyStepWillExecute === false (current content duplicate blocked)", lep?.anyStepWillExecute === false);
 check("liveExecutionPlan.anySideEffectPerformed === false", lep?.anySideEffectPerformed === false);
+check(
+  "liveExecutionPlan.currentContentDuplicateBlocked === true + duplicateBlockedStatus === BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
+  lep?.currentContentDuplicateBlocked === true && lep?.duplicateBlockedStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED"
+);
 check("liveExecutionPlan.metadataGateIsMandatoryDependency === true", lep?.metadataGateIsMandatoryDependency === true);
 check("liveExecutionPlan.duplicateGuardIsMandatoryDependency === true", lep?.duplicateGuardIsMandatoryDependency === true);
 check(
@@ -642,11 +689,11 @@ check(
 
 const lepSteps = Array.isArray(lep?.steps) ? lep.steps : [];
 check("liveExecutionPlan.steps 4개", lepSteps.length === 4);
-// 모든 step은 이번 slice에서 실행 불가여야 한다.
+// 모든 step은 armed(enabled)지만 current content에서는 실행되지 않아야 한다.
 check(
-  "liveExecutionPlan 모든 step enabled/willExecute/sideEffectPerformed === false",
+  "liveExecutionPlan 모든 step enabled === true(armed) + willExecute/sideEffectPerformed === false",
   lepSteps.length === 4 &&
-    lepSteps.every((s) => s.enabled === false && s.willExecute === false && s.sideEffectPerformed === false)
+    lepSteps.every((s) => s.enabled === true && s.willExecute === false && s.sideEffectPerformed === false)
 );
 // step 순서(order) 정합.
 check(
@@ -730,7 +777,7 @@ check(
   "youtubeLiveUploadWiring.existingVideoEvidence가 r9jhckdpC9w를 retryForbidden reference로 유지",
   yw?.existingVideoEvidence?.videoId === "r9jhckdpC9w" && yw?.existingVideoEvidence?.retryForbidden === true
 );
-check("youtubeLiveUploadWiring.liveExecutionEnabledThisSlice === false", yw?.liveExecutionEnabledThisSlice === false);
+check("youtubeLiveUploadWiring.liveExecutionEnabledThisSlice === true (armed, current content는 duplicate blocked)", yw?.liveExecutionEnabledThisSlice === true);
 check("youtubeLiveUploadWiring.actualUploadCallPerformed === false (실제 YouTube upload 호출 0)", yw?.actualUploadCallPerformed === false);
 check(
   "youtubeLiveUploadWiring.requiredApprovalTokens에 YOUTUBE_LIVE_UPLOAD_WIRING + DUAL_PLATFORM_ARM",
@@ -770,32 +817,196 @@ check("liveExecutionPlan에 camelCase secret 값 필드(accessToken:'...' 등) �
 // preflight 실행 후에도 side effect counters는 전부 0(plan 생성이 부작용을 만들지 않음).
 check("liveExecutionPlan 생성 후에도 sideEffectCounters 전부 0", (() => { const c = pfResult?.plan?.sideEffectCounters || {}; return zeroFields.every((k) => c[k] === 0); })());
 
-// 6d) runner 실행: --live (fail-closed, exit 0 아님)
-let liveBlocked = false;
-let liveStdout = "";
-let liveStderr = "";
-try {
-  liveStdout = execFileSync(process.execPath, [RUNNER_PATH, "--live"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
-  liveBlocked = false; // exit 0이면 fail-closed 실패
-} catch (e) {
-  liveBlocked = e?.status === 2;
-  liveStdout = String(e?.stdout || "");
-  liveStderr = String(e?.stderr || "");
-}
-check("runner --live 는 fail-closed로 exit 2 (실행 불가)", liveBlocked);
-check("runner --live stderr에 LIVE_EXECUTION_DISABLED_THIS_SLICE 포함", /LIVE_EXECUTION_DISABLED_THIS_SLICE/.test(liveStderr));
-check("runner --live stdout에 publish plan 실행 결과가 나오지 않음(비어있음)", liveStdout.trim() === "");
-check("runner --live stderr에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(liveStderr));
+// ── 6g) 최종 arm 계약 (dual-platform-arm-wiring-duplicate-guarded-v1) ─────────
 
-// 6e) runner 실행: --arm (fail-closed)
-let armBlocked = false;
-try {
-  execFileSync(process.execPath, [RUNNER_PATH, "--arm"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
-  armBlocked = false;
-} catch (e) {
-  armBlocked = e?.status === 2;
+const EXPECTED_GATE_ORDER = [
+  "metadata_optimization_gate",
+  "source_file_gate",
+  "blob_public_url_liveness_evidence_gate",
+  "duplicate_publish_guard",
+  "credential_presence_resolution",
+  "actual_api_call",
+];
+const EXPECTED_BLOB_LIVENESS = {
+  url: "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+  headStatus: 200,
+  contentType: "video/mp4",
+  contentLength: 20294549,
+  resultPath: "output/instagram-blob-url-liveness-no-arm-v1/result.json",
+};
+const ARM_ZERO_COUNTERS = [
+  "instagramApiCallCount", "youtubeApiCallCount", "youtubeOauthTokenRequestCount", "youtubeUploadCallCount",
+  "blobMutationCount", "credentialValuesAccessedCount", "credentialValuesResolvedCount",
+  "dotEnvLocalDirectAccessCount", "envSecretValuePrintCount", "ledgerMutationCount", "newVideoGeneratedCount",
+];
+
+// 6g-1) fixture.liveArm 계약
+const fArm = fixture.liveArm || {};
+check("fixture.liveArm.armed === true + armApprovalToken === APPROVE_DUAL_PLATFORM_ARM", fArm.armed === true && fArm.armApprovalToken === "APPROVE_DUAL_PLATFORM_ARM");
+check(
+  "fixture.liveArm.failClosedGateOrder가 6단계 안전 순서와 정확히 일치",
+  Array.isArray(fArm.failClosedGateOrder) && fArm.failClosedGateOrder.length === 6 &&
+    fArm.failClosedGateOrder.every((g, i) => g === EXPECTED_GATE_ORDER[i])
+);
+check("fixture.liveArm.duplicateGuardEvaluatedBeforeCredentialResolution === true", fArm.duplicateGuardEvaluatedBeforeCredentialResolution === true);
+check("fixture.liveArm.credentialResolutionWiredThisSlice === false (credential 단계는 fail-closed stub)", fArm.credentialResolutionWiredThisSlice === false);
+const fArmBlock = fArm.currentContentDuplicateBlock || {};
+check(
+  "fixture.liveArm.currentContentDuplicateBlock: 양 플랫폼 v3_2 키가 blocked + retryForbidden",
+  fArmBlock.instagramKey === "t1_lifestyle_inflation/instagram_reels/v3_2" &&
+    fArmBlock.youtubeKey === "t1_lifestyle_inflation/youtube_shorts/v3_2" &&
+    fArmBlock.instagramWillBeBlocked === true && fArmBlock.youtubeWillBeBlocked === true &&
+    fArmBlock.retryForbidden === true
+);
+check(
+  "fixture.liveArm.currentContentDuplicateBlock: expectedLiveStatus BLOCKED_DUPLICATE_ALREADY_PUBLISHED + exit 3",
+  fArmBlock.expectedLiveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" && fArmBlock.expectedLiveExitCode === 3
+);
+check(
+  "fixture.liveArm.currentContentDuplicateBlock: duplicate block이 credential resolution 이전 + credential/API 미도달",
+  fArmBlock.duplicateBlockHappensBeforeCredentialResolution === true &&
+    fArmBlock.credentialResolutionWouldBeReached === false && fArmBlock.actualApiCallWouldRun === false
+);
+const fArmEv = fArm.blobPublicUrlLivenessEvidence || {};
+check(
+  "fixture.liveArm.blobPublicUrlLivenessEvidence가 통과 evidence(url/200/video/mp4/20294549/resultPath)와 정확히 일치",
+  fArmEv.url === EXPECTED_BLOB_LIVENESS.url && fArmEv.headStatus === EXPECTED_BLOB_LIVENESS.headStatus &&
+    fArmEv.contentType === EXPECTED_BLOB_LIVENESS.contentType && fArmEv.contentLength === EXPECTED_BLOB_LIVENESS.contentLength &&
+    fArmEv.resultPath === EXPECTED_BLOB_LIVENESS.resultPath
+);
+check(
+  "fixture.liveArm.zeroCountersForDuplicateBlockedRun에 API/OAuth/upload/blob/credential/.env.local/ledger counter 전부 포함",
+  Array.isArray(fArm.zeroCountersForDuplicateBlockedRun) && ARM_ZERO_COUNTERS.every((c) => fArm.zeroCountersForDuplicateBlockedRun.includes(c))
+);
+check("fixture.liveArm에 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(fArm)));
+
+// 6g-2) preflight.liveArm 계약(runner 실행 결과)
+const pArm = pfResult?.preflight?.liveArm;
+check("preflight에 liveArm 블록 존재", !!pArm && typeof pArm === "object");
+check("preflight liveArm.armed === true + armApprovalToken === APPROVE_DUAL_PLATFORM_ARM", pArm?.armed === true && pArm?.armApprovalToken === "APPROVE_DUAL_PLATFORM_ARM");
+check(
+  "preflight liveArm.failClosedGateOrder가 6단계 안전 순서와 정확히 일치",
+  Array.isArray(pArm?.failClosedGateOrder) && pArm.failClosedGateOrder.length === 6 &&
+    pArm.failClosedGateOrder.every((g, i) => g === EXPECTED_GATE_ORDER[i])
+);
+check("preflight liveArm.duplicateGuardEvaluatedBeforeCredentialResolution === true", pArm?.duplicateGuardEvaluatedBeforeCredentialResolution === true);
+check("preflight liveArm.credentialResolutionWiredThisSlice === false", pArm?.credentialResolutionWiredThisSlice === false);
+check("preflight liveArm.metadataOptimizationGateOk === true", pArm?.metadataOptimizationGateOk === true);
+check("preflight liveArm.sourceFilesReady === true", pArm?.sourceFilesReady === true);
+const pArmEv = pArm?.blobPublicUrlLivenessEvidence || {};
+check(
+  "preflight liveArm.blobPublicUrlLivenessEvidence가 fixture/통과 evidence와 정확히 일치(url/200/video/mp4/20294549)",
+  pArmEv.url === EXPECTED_BLOB_LIVENESS.url && pArmEv.headStatus === EXPECTED_BLOB_LIVENESS.headStatus &&
+    pArmEv.contentType === EXPECTED_BLOB_LIVENESS.contentType && pArmEv.contentLength === EXPECTED_BLOB_LIVENESS.contentLength &&
+    pArmEv.resultPath === EXPECTED_BLOB_LIVENESS.resultPath
+);
+check("preflight liveArm.blobPublicUrlLivenessEvidence.ok === true (evidence gate 통과)", pArmEv.ok === true && pArmEv.resultFileExists === true && pArmEv.urlMatchesCurrentContentPath === true);
+const pArmBlock = pArm?.currentContentDuplicateBlock || {};
+check(
+  "preflight liveArm.currentContentDuplicateBlock: 양 플랫폼 v3_2 키가 blocked 예정 + retryForbidden",
+  typeof pArmBlock.instagramKey === "string" && pArmBlock.instagramKey.endsWith("/v3_2") &&
+    typeof pArmBlock.youtubeKey === "string" && pArmBlock.youtubeKey.endsWith("/v3_2") &&
+    pArmBlock.instagramWillBeBlocked === true && pArmBlock.youtubeWillBeBlocked === true &&
+    pArmBlock.retryForbidden === true
+);
+check(
+  "preflight liveArm.currentContentDuplicateBlock: expectedLiveStatus BLOCKED_DUPLICATE_ALREADY_PUBLISHED + exit 3 + credential/API 미도달",
+  pArmBlock.expectedLiveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" && pArmBlock.expectedLiveExitCode === 3 &&
+    pArmBlock.duplicateBlockHappensBeforeCredentialResolution === true &&
+    pArmBlock.credentialResolutionWouldBeReached === false && pArmBlock.actualApiCallWouldRun === false
+);
+check("preflight liveArm.credentialValuesAccessedThisRun === false", pArm?.credentialValuesAccessedThisRun === false);
+check("preflight liveArm.actualApiCallPerformedThisRun === false", pArm?.actualApiCallPerformedThisRun === false);
+
+// 6g-3) docs: arm 계약 + blob liveness evidence 정합
+check("docs에 BLOCKED_DUPLICATE_ALREADY_PUBLISHED 명시", docsRaw.includes("BLOCKED_DUPLICATE_ALREADY_PUBLISHED"));
+check("docs에 blob liveness evidence URL 기록", docsRaw.includes(EXPECTED_BLOB_LIVENESS.url));
+check("docs에 blob liveness evidence contentLength(20294549) 기록", docsRaw.includes("20294549"));
+check("docs에 blob liveness evidence contentType(video/mp4) 기록", docsRaw.includes("video/mp4"));
+check("docs에 6단계 gate 순서(duplicate guard가 credential 이전) 설명", docsRaw.includes("credential_presence_resolution") && docsRaw.includes("duplicate_publish_guard"));
+
+// 6g-4) runner 실행: --live/--arm — preflight에서 duplicate block이 확정된 경우에만 1회 실행.
+// (duplicate block 미확정 상태에서 live 실행은 credential/API 단계 진입 위험이 있으므로 금지 — skip + FAIL)
+const dupBlockConfirmed =
+  pArmBlock.instagramWillBeBlocked === true &&
+  pArmBlock.youtubeWillBeBlocked === true &&
+  pArmBlock.expectedLiveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" &&
+  pArm?.duplicateGuardEvaluatedBeforeCredentialResolution === true;
+check("preflight: current content duplicate block 확정(--live 실행 전제조건)", dupBlockConfirmed);
+
+function runArmedLive(flag) {
+  let exitCode = null; let stdout = ""; let stderr = "";
+  try {
+    stdout = execFileSync(process.execPath, [RUNNER_PATH, flag], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
+    exitCode = 0;
+  } catch (e) {
+    exitCode = typeof e?.status === "number" ? e.status : null;
+    stdout = String(e?.stdout || "");
+    stderr = String(e?.stderr || "");
+  }
+  return { exitCode, stdout, stderr };
 }
-check("runner --arm 도 fail-closed로 exit 2 (실행 불가)", armBlocked);
+
+if (dupBlockConfirmed) {
+  const live = runArmedLive("--live");
+  check("--live: duplicate blocked exit 3 (publish 미수행 신호, exit 0 아님)", live.exitCode === 3, `exit=${live.exitCode}`);
+  let liveRes = null;
+  try { liveRes = JSON.parse(live.stdout); check("--live stdout JSON parse", true); }
+  catch (e) { check("--live stdout JSON parse", false, String(e)); }
+  check("--live mode === live_armed + armed === true", liveRes?.mode === "live_armed" && liveRes?.armed === true);
+  check("--live status === BLOCKED_DUPLICATE_ALREADY_PUBLISHED", liveRes?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED", `status=${liveRes?.status}`);
+  const liveCounters = liveRes?.sideEffectCounters || {};
+  for (const f of ARM_ZERO_COUNTERS) {
+    check(`--live sideEffectCounters.${f} === 0`, liveCounters[f] === 0, `value=${JSON.stringify(liveCounters[f])}`);
+  }
+  check("--live credentialResolutionReached === false (duplicate block이 credential 이전)", liveRes?.credentialResolutionReached === false);
+  check("--live credentialValuesAccessed === false + credentialValuesResolved === false", liveRes?.credentialValuesAccessed === false && liveRes?.credentialValuesResolved === false);
+  check("--live actualApiCallReached === false", liveRes?.actualApiCallReached === false);
+  check("--live dotEnvLocalDirectAccess === false", liveRes?.dotEnvLocalDirectAccess === false);
+  const trace = Array.isArray(liveRes?.gateTrace) ? liveRes.gateTrace : [];
+  const t4 = trace.find((g) => g?.order === 4);
+  const t5 = trace.find((g) => g?.order === 5);
+  const t6 = trace.find((g) => g?.order === 6);
+  check("--live gateTrace: gate 4 duplicate_publish_guard evaluated + blocked", t4?.gate === "duplicate_publish_guard" && t4?.evaluated === true && t4?.blocked === true);
+  check("--live gateTrace: gate 5 credential_presence_resolution 미평가/미도달", t5?.gate === "credential_presence_resolution" && t5?.evaluated === false && t5?.reached === false);
+  check("--live gateTrace: gate 6 actual_api_call 미평가/미도달", t6?.gate === "actual_api_call" && t6?.evaluated === false && t6?.reached === false);
+  check(
+    "--live duplicateBlock: 양 플랫폼 v3_2 키 + blockedBeforeCredentialResolution + retryForbidden",
+    typeof liveRes?.duplicateBlock?.instagramKey === "string" && liveRes.duplicateBlock.instagramKey.endsWith("/v3_2") &&
+      typeof liveRes?.duplicateBlock?.youtubeKey === "string" && liveRes.duplicateBlock.youtubeKey.endsWith("/v3_2") &&
+      liveRes?.duplicateBlock?.blockedBeforeCredentialResolution === true &&
+      liveRes?.duplicateBlock?.blockedBeforeActualApiCall === true &&
+      liveRes?.duplicateBlock?.retryForbidden === true
+  );
+  check(
+    "--live existingEvidenceReference: media_id/videoId reference로만 + retryForbidden",
+    liveRes?.existingEvidenceReference?.instagramMediaIdReference === "17916511431199303" &&
+      liveRes?.existingEvidenceReference?.youtubeVideoIdReference === "r9jhckdpC9w" &&
+      liveRes?.existingEvidenceReference?.retryForbidden === true
+  );
+  check(
+    "--live wouldHaveCalledFunctionRefs가 explicit credential 함수(wrapper-only 회귀 아님)",
+    liveRes?.wouldHaveCalledFunctionRefs?.instagram === "lib/instagram.ts#uploadInstagramReelWithCredentials" &&
+      liveRes?.wouldHaveCalledFunctionRefs?.youtube === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+  );
+  check(
+    "--live blobPublicUrlLivenessEvidence가 통과 evidence와 정합(url/200/video/mp4/20294549)",
+    liveRes?.blobPublicUrlLivenessEvidence?.url === EXPECTED_BLOB_LIVENESS.url &&
+      liveRes?.blobPublicUrlLivenessEvidence?.headStatus === 200 &&
+      liveRes?.blobPublicUrlLivenessEvidence?.contentType === "video/mp4" &&
+      liveRes?.blobPublicUrlLivenessEvidence?.contentLength === 20294549
+  );
+  check("--live stdout에 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(live.stdout));
+  check("--live stderr 비어있음(에러/secret 출력 없음)", live.stderr.trim() === "");
+
+  const arm = runArmedLive("--arm");
+  check("--arm: 동일하게 duplicate blocked exit 3", arm.exitCode === 3, `exit=${arm.exitCode}`);
+  let armRes = null;
+  try { armRes = JSON.parse(arm.stdout); } catch { armRes = null; }
+  check("--arm status === BLOCKED_DUPLICATE_ALREADY_PUBLISHED + credential/API 미도달", armRes?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" && armRes?.credentialResolutionReached === false && armRes?.actualApiCallReached === false);
+} else {
+  check("--live/--arm 실행 skip — preflight duplicate block 미확정이므로 안전상 live 실행 금지", false, "duplicate guard가 current content를 차단하지 않는 상태에서는 live 실행을 시도하지 않는다");
+}
 
 // ── 요약 ────────────────────────────────────────────────────────────────
 
