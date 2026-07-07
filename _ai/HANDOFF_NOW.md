@@ -4,110 +4,68 @@
 
 ## Current Task
 
-- Task ID: `instagram-blob-upload-from-request-executor-no-execute-v1`
-- Latest checkpoint: `94f413b feat(operator): plan instagram blob uploads from content units`
-- Purpose: add a reusable no-execute executor/preflight layer that consumes `instagram-blob-upload-request.json` and proves the exact Vercel Blob `put()` contract without performing any Blob upload, env/secret read, liveness check, Instagram publish, or external call.
+- Task ID: `owner-entrypoint-repo-root-outdir-guard-commonize-v1`
+- Latest checkpoint: `4cb215b feat(operator): prepare instagram blob uploads from requests`
+- Purpose: apply the repo-root out-dir safety fix discovered in `--prepare-instagram-blob-upload` to the remaining owner entrypoint modes that still use `startsWith(REPO_ROOT + sep)` only and therefore may allow the repo root itself as an output directory.
 
 ## Why This Is Next
 
-- The Owner workflow can now build:
-  - local content unit manifest;
-  - YouTube letterbox render result attachment;
-  - Instagram Blob upload request JSON with deterministic pathname and put option plan.
-- The next real blocker is turning that request into an approved, one-shot Blob upload step.
-- Before allowing the actual external mutation, the project needs a reusable guarded executor entrypoint that:
-  - validates the request JSON fail-closed;
-  - confirms the mp4 source still matches size + SHA-256;
-  - checks the request put options match the approved contract;
-  - refuses `--run`/live upload in this slice;
-  - can later be opened by a separate Owner approval without redesign.
+- Codex review found and fixed one concrete bug:
+  - `--prepare-instagram-blob-upload --out-dir .` used to write `instagram-blob-upload-preflight.json` at repo root.
+  - It is now fixed by `isRepoRootOrInside(absPath, repoRoot)`.
+- `scripts/run-owner-daily-automation-entrypoint.mjs` still contains similar raw checks in other modes.
+- Before allowing the real Blob upload slice, the Owner-facing daily entrypoint should consistently block repo root and repo-internal output paths for all local-output modes.
 
 ## Approved Scope
 
-Claude Code may implement a no-execute Instagram Blob upload request executor/preflight.
+Claude Code may commonize repo-root/repo-inside output guard logic in the owner daily entrypoint only.
 
 Allowed edits:
 
-- New script:
-  - `scripts/prepare-instagram-blob-upload-from-request.mjs`
-- New static guard:
-  - `scripts/check-instagram-blob-upload-from-request-executor-static.mjs`
-- Optional fixture:
-  - `scripts/fixtures/instagram_blob_upload_from_request_executor.sample.v1.json`
-- Owner entrypoint integration:
-  - `scripts/run-owner-daily-automation-entrypoint.mjs`
-  - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
-- Runbook update:
-  - `docs/owner-daily-automation-runbook.md`
-- Append concise evidence:
-  - `_ai/CLAUDE_REPORT.md`
+- `scripts/run-owner-daily-automation-entrypoint.mjs`
+- `scripts/check-owner-daily-automation-entrypoint-static.mjs`
+- `docs/owner-daily-automation-runbook.md` only if a small note is needed
+- `_ai/CLAUDE_REPORT.md` concise append
 
-Avoid changing `lib/instagram-blob-media.ts` unless a focused contract mismatch is discovered and documented. Do not modify `package.json` or `pnpm-lock.yaml`.
+Do not modify planner/executor scripts unless a direct import/export mismatch blocks the owner entrypoint. Prefer reusing the existing `isRepoRootOrInside` helper already exported by `scripts/prepare-instagram-blob-upload-from-request.mjs`.
 
 ## Required Behavior
 
-1. Add a no-execute command, preferably:
-   - `node scripts/prepare-instagram-blob-upload-from-request.mjs --request <instagram-blob-upload-request.json> --out-dir <repo 밖> [--dry-run | --run]`
+1. Replace remaining raw repo-inside checks in `scripts/run-owner-daily-automation-entrypoint.mjs`:
+   - old pattern: `abs.startsWith(REPO_ROOT + "\\") || abs.startsWith(REPO_ROOT + "/")`
+   - new behavior: block both `abs === REPO_ROOT` and any child path under repo root.
 
-2. Owner entrypoint should expose a matching mode:
-   - `node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload --request <instagram-blob-upload-request.json> --out-dir <repo 밖> [--dry-run | --run]`
+2. Cover every owner entrypoint mode that writes or delegates output to an out-root/out-dir/output path:
+   - `--dry-run` / `--out-root`
+   - `--build-content-unit` / `--out-dir`
+   - `--plan-youtube-letterbox` / `--out-dir`
+   - `--prepare-youtube-letterbox-render` / `--out-dir`
+   - `--plan-instagram-blob-upload` / `--out-dir`
+   - `--prepare-instagram-blob-upload` should remain fixed
+   - inspect whether `--render-youtube-letterbox-once` has any repo-root output check requiring the same fix; if yes, include it.
 
-3. Request validation must fail closed if:
-   - JSON parse fails;
-   - schema/version field is missing or wrong;
-   - `requiresApprovalToken !== "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"`;
-   - `uploadPerformed !== false` or `willUpload !== false`;
-   - `platform !== "instagram"`;
-   - `variant !== "instagram_reels_full_frame_1080x1920"`;
-   - `contentType !== "video/mp4"`;
-   - `sourcePath` missing, not `.mp4`, or does not exist;
-   - current source size differs from `sourceSizeBytes`;
-   - current source SHA-256 or `sha256_12` differs from request;
-   - pathname is not exactly:
-     `instagram/reels/{contentId}/instagram_reels_full_frame_1080x1920/{version}/{sha256_12}.mp4`;
-   - put option plan differs from:
-     `access:"public"`, `addRandomSuffix:false`, `allowOverwrite:false`, `multipart:true`, `contentType:"video/mp4"`.
+3. Do not change mode behavior beyond the output path safety gate.
 
-4. Executor output:
-   - write a no-execute readiness/result JSON under `--out-dir`, e.g. `instagram-blob-upload-preflight.json`;
-   - include `readyForFutureApprovedUpload:true` only when all validation passes;
-   - include `runStatus:"INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_THIS_SLICE"`;
-   - include `executed:false`, `blobUploadPerformed:false`, `willUpload:false`;
-   - include side-effect counters all 0 for Blob put/list/head/delete/copy, env/secret, API, deploy, media generation;
-   - include exact future approval token requirement and a future command template.
+4. Static guard must prove:
+   - no remaining raw `startsWith(REPO_ROOT + "\\") || startsWith(REPO_ROOT + "/")` output guard in owner entrypoint;
+   - owner entrypoint imports/uses `isRepoRootOrInside` or an equivalent local helper;
+   - each relevant mode rejects repo root as output target;
+   - each relevant mode does not create its expected output artifact at repo root when invoked with `--out-dir .` or `--out-root .`;
+   - existing secret/env/API/deploy/upload no-side-effect checks remain.
 
-5. `--run` behavior in this slice:
-   - must abort before request validation or output write if possible;
-   - exit nonzero;
-   - print a clear disabled status;
-   - perform no Blob SDK import/call and no env/secret access.
-
-6. Source/request safety:
-   - `--out-dir` must be outside repo root;
-   - do not write into `.money-shorts-local`;
-   - do not mutate the request JSON or source mp4;
-   - no `.env*` access;
-   - no `process.env` access in new executor.
-
-7. Static guard should prove:
-   - no `@vercel/blob` import;
-   - no `put/list/head/del/copy` actual calls in executable code;
-   - no `fetch`, `axios`, Graph/YouTube/OpenAI/ElevenLabs/Supabase/browser calls;
-   - no `process.env`, `.env`, secret-looking literals;
-   - `--run` is disabled before side effects;
-   - request validation covers token, pathname, source size/hash, put options, side-effect counters;
-   - owner entrypoint mode exists and forwards safely;
-   - docs mention this as no-execute preparation before actual approved upload.
+5. Execution smoke should use existing sample fixtures and fail before external work.
+   - Do not run full media generation.
+   - Do not run ffmpeg/ffprobe.
+   - For `--dry-run --out-root .`, it must fail before spawning the local pipeline.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
-- Do not call/import `@vercel/blob`.
-- Do not perform Blob `put`, `list`, `head`, `del`, `copy`, public URL HEAD/liveness, or any network call.
+- Do not call/import `@vercel/blob` beyond already existing no-execute imports if any; do not perform Blob `put`, `list`, `head`, `del`, `copy`, liveness, or network calls.
 - Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or any paid/external live service.
 - Do not run ffmpeg or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
-- Do not delete/overwrite existing media, request JSON, or result JSON.
+- Do not delete/overwrite existing media or result JSON.
 - Do not add/change dependencies, lockfiles, pnpm config, fonts, deploy config, or DB schema.
 - Do not commit or push.
 - Do not touch protected/excluded dirty files:
@@ -124,13 +82,14 @@ Avoid changing `lib/instagram-blob-media.ts` unless a focused contract mismatch 
 ## Required Checks
 
 1. `git status -sb`
-2. Syntax check for changed/new JS/MJS files.
-3. JSON parse for changed/new fixtures.
-4. New guard:
-   - `node scripts/check-instagram-blob-upload-from-request-executor-static.mjs`
-5. Targeted regressions:
-   - `node scripts/check-instagram-blob-upload-plan-from-content-unit-static.mjs`
+2. Syntax check:
+   - `node --check scripts/run-owner-daily-automation-entrypoint.mjs`
+   - `node --check scripts/check-owner-daily-automation-entrypoint-static.mjs`
+3. Main guard:
    - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
+4. Targeted regressions:
+   - `node scripts/check-instagram-blob-upload-from-request-executor-static.mjs`
+   - `node scripts/check-instagram-blob-upload-plan-from-content-unit-static.mjs`
    - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
@@ -139,11 +98,9 @@ Do not run ffmpeg/ffprobe/upload/API/deploy.
 
 ## Definition Of Done
 
-- Owner can take an `instagram-blob-upload-request.json` and produce a no-execute upload readiness JSON.
-- The readiness JSON proves source size/hash and deterministic pathname still match the request.
-- `--run` remains disabled/fail-closed in this slice.
-- No Blob upload/liveness/network/env/API/media generation happens.
-- Guards prove fail-closed behavior and side-effect counters all 0.
+- Owner daily entrypoint rejects repo root itself for all relevant output modes, not only repo child paths.
+- Guard proves no repo-root output artifact is created in the checked modes.
+- Existing no-env/no-secret/no-upload/no-media-generation contract remains intact.
 - No commit/push.
 
 ## Final Handoff Format
@@ -152,9 +109,8 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- new/updated command(s)
-- upload executor/readiness contract summary
-- smoke result
+- guard commonization summary
+- modes covered and direct root-outdir results
 - checks/results
 - side effects confirmation
 - deviations/risks

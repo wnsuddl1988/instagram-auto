@@ -352,7 +352,7 @@ function runDryRun() {
   const outRoot = getArg("--out-root") || DEFAULT_DRY_RUN_OUT_ROOT;
   const outRootAbs = resolve(outRoot);
 
-  if (outRootAbs.startsWith(REPO_ROOT + "\\") || outRootAbs.startsWith(REPO_ROOT + "/")) {
+  if (isRepoRootOrInside(outRootAbs, REPO_ROOT)) {
     console.error(`ABORT: --out-root must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-root: ${outRootAbs}`);
     return 1;
   }
@@ -410,7 +410,7 @@ function runBuildContentUnit() {
   }
 
   const outDirAbs = resolve(outDir);
-  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+  if (isRepoRootOrInside(outDirAbs, REPO_ROOT)) {
     console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
     return 1;
   }
@@ -474,7 +474,7 @@ function runPlanYoutubeLetterbox() {
   }
 
   const outDirAbs = resolve(outDir);
-  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+  if (isRepoRootOrInside(outDirAbs, REPO_ROOT)) {
     console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
     return 1;
   }
@@ -526,7 +526,7 @@ function runPrepareYoutubeLetterboxRender() {
   }
 
   const outDirAbs = resolve(outDir);
-  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+  if (isRepoRootOrInside(outDirAbs, REPO_ROOT)) {
     console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
     return 1;
   }
@@ -618,7 +618,7 @@ function runPlanInstagramBlobUpload() {
   }
 
   const outDirAbs = resolve(outDir);
-  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+  if (isRepoRootOrInside(outDirAbs, REPO_ROOT)) {
     console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
     return 1;
   }

@@ -161,11 +161,113 @@ check(
 console.log("\n[ required: safe defaults ]");
 check("default dry-run out-root is outside repo (C:\\\\tmp)", src.includes("C:\\\\tmp\\\\money-shorts-os"));
 check(
-  "dry-run mode enforces out-root outside repo root",
-  src.includes("outRootAbs.startsWith(REPO_ROOT"),
+  "dry-run mode enforces out-root outside repo root via isRepoRootOrInside (not raw startsWith)",
+  /isRepoRootOrInside\(outRootAbs,\s*REPO_ROOT\)/.test(codeNoStrings),
 );
 check("references existing render-manifest-from-manifest runner (reuse, not reimplementation)", src.includes("run-local-money-shorts-from-render-manifest.mjs"));
 check("references existing dual-platform orchestrator (reuse, not reimplementation)", src.includes("run-dual-platform-final-publish-orchestrator.mjs"));
+
+// ── required: repo-root/repo-inside output guard commonization ─────────────────
+// task: owner-entrypoint-repo-root-outdir-guard-commonize-v1
+console.log("\n[ required: repo-root output guard commonization ]");
+check(
+  "no remaining raw startsWith(REPO_ROOT + sep) output guard anywhere in owner entrypoint",
+  !/\.startsWith\(\s*REPO_ROOT\s*\+/.test(codeNoStrings),
+);
+check(
+  "owner entrypoint imports isRepoRootOrInside from prepare-instagram-blob-upload-from-request.mjs",
+  /import\s*\{[^}]*isRepoRootOrInside[^}]*\}\s*from\s*["']\.\/prepare-instagram-blob-upload-from-request\.mjs["']/.test(code),
+);
+const isRepoRootOrInsideCallCount = (codeNoStrings.match(/isRepoRootOrInside\(/g) ?? []).length;
+check(
+  `isRepoRootOrInside used for every out-dir/out-root guard (found ${isRepoRootOrInsideCallCount} call sites, expect >= 6)`,
+  isRepoRootOrInsideCallCount >= 6,
+);
+
+console.log("\n[ operator smoke: --out-dir . / --out-root . rejected as repo root itself ]");
+
+// --dry-run --out-root . : local pipeline이 spawn되기 전에 fail-closed되어야 한다(무거운 pipeline 실행 없음).
+{
+  let dryRunRootExit = null;
+  let dryRunRootOut = "";
+  try {
+    dryRunRootOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--dry-run", "--out-root", "."], { cwd: REPO_ROOT, encoding: "utf8", timeout: 20000 });
+    dryRunRootExit = 0;
+  } catch (e) {
+    dryRunRootExit = typeof e?.status === "number" ? e.status : null;
+    dryRunRootOut = String(e?.stdout || e?.message || e);
+  }
+  check("--dry-run --out-root . (repo root itself) → exit != 0 (fail-closed)", dryRunRootExit !== 0, `exit=${dryRunRootExit}`);
+  check(
+    "--dry-run --out-root . did not create render-manifest-local-run-summary.local-mock.json at repo root",
+    !existsSync(resolve(REPO_ROOT, "render-manifest-local-run-summary.local-mock.json")),
+  );
+  check("--dry-run --out-root . failed before spawning local pipeline runner (no runner-specific stdout)", !dryRunRootOut.includes("running local render-manifest dry-run pipeline") || dryRunRootExit !== 0);
+}
+
+// --build-content-unit --out-dir . : repo root 자체에 manifest가 생성되면 안 된다.
+{
+  let bcuRootExit = null;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--build-content-unit", "--summary", LOCAL_SUMMARY_SAMPLE_PATH, "--out-dir", "."], { cwd: REPO_ROOT, encoding: "utf8", timeout: 20000 });
+    bcuRootExit = 0;
+  } catch (e) {
+    bcuRootExit = typeof e?.status === "number" ? e.status : null;
+  }
+  check("--build-content-unit --out-dir . (repo root itself) → exit != 0 (fail-closed)", bcuRootExit !== 0, `exit=${bcuRootExit}`);
+  check(
+    "--build-content-unit --out-dir . did not create dual_platform_content_unit.generated.json at repo root",
+    !existsSync(resolve(REPO_ROOT, "dual_platform_content_unit.generated.json")),
+  );
+}
+
+// --plan-youtube-letterbox --out-dir . : repo root 자체에 plan JSON이 생성되면 안 된다.
+{
+  let plRootExit = null;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--plan-youtube-letterbox", "--content-unit", LETTERBOX_PLAN_SAMPLE_PATH, "--out-dir", "."], { cwd: REPO_ROOT, encoding: "utf8", timeout: 20000 });
+    plRootExit = 0;
+  } catch (e) {
+    plRootExit = typeof e?.status === "number" ? e.status : null;
+  }
+  check("--plan-youtube-letterbox --out-dir . (repo root itself) → exit != 0 (fail-closed)", plRootExit !== 0, `exit=${plRootExit}`);
+  check(
+    "--plan-youtube-letterbox --out-dir . did not create youtube-letterbox-source-plan.json at repo root",
+    !existsSync(resolve(REPO_ROOT, "youtube-letterbox-source-plan.json")),
+  );
+}
+
+// --prepare-youtube-letterbox-render --out-dir . : repo root 자체에 request JSON이 생성되면 안 된다.
+{
+  let prRootExit = null;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--prepare-youtube-letterbox-render", "--plan", LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH, "--out-dir", "."], { cwd: REPO_ROOT, encoding: "utf8", timeout: 20000 });
+    prRootExit = 0;
+  } catch (e) {
+    prRootExit = typeof e?.status === "number" ? e.status : null;
+  }
+  check("--prepare-youtube-letterbox-render --out-dir . (repo root itself) → exit != 0 (fail-closed)", prRootExit !== 0, `exit=${prRootExit}`);
+  check(
+    "--prepare-youtube-letterbox-render --out-dir . did not create youtube-letterbox-render-request.json at repo root",
+    !existsSync(resolve(REPO_ROOT, "youtube-letterbox-render-request.json")),
+  );
+}
+
+// --plan-instagram-blob-upload --out-dir . : repo root 자체에 request JSON이 생성되면 안 된다.
+{
+  let pibuRootExit = null;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--plan-instagram-blob-upload", "--content-unit", CONTENT_UNIT_SAMPLE_PATH, "--out-dir", "."], { cwd: REPO_ROOT, encoding: "utf8", timeout: 20000 });
+    pibuRootExit = 0;
+  } catch (e) {
+    pibuRootExit = typeof e?.status === "number" ? e.status : null;
+  }
+  check("--plan-instagram-blob-upload --out-dir . (repo root itself) → exit != 0 (fail-closed)", pibuRootExit !== 0, `exit=${pibuRootExit}`);
+  check(
+    "--plan-instagram-blob-upload --out-dir . did not create instagram-blob-upload-request.json at repo root",
+    !existsSync(resolve(REPO_ROOT, "instagram-blob-upload-request.json")),
+  );
+}
 
 // ── required: JSON summary schema fields ────────────────────────────────────────
 console.log("\n[ required: JSON summary schema fields ]");
