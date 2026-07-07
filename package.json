@@ -14,7 +14,9 @@
     "owner:status": "node scripts/run-owner-daily-automation-entrypoint.mjs --status",
     "owner:dry-run": "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
     "owner:preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
-    "owner:duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check"
+    "owner:duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
+    "owner:ready-preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json",
+    "owner:ready-duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

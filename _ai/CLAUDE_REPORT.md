@@ -4349,3 +4349,17 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. guard 초안에서 self-safety 체크(정규식 리터럴 텍스트 제거 방식)가 인접 리터럴과 뒤섞여 오탐하는 문제를 발견해, execFileSync 인자 배열 직접 파싱 + 마커 기반 줄 제외 방식으로 재작성해 해결(64/64 확인).
 - checkpoint recommendation: 신규 2(fixture+guard) + report append, low-risk(read-only preflight 1회 실행, 외부 mutation 0). Codex 검토 후 checkpoint commit 가능.
 
+## owner-entrypoint-golden-ready-shortcuts-no-live-v1 (2026-07-07)
+
+- **목적**: 이미 committed된 golden sample ready fixture(`t1_lifestyle_inflation/v3_2`)를 owner가 긴 경로 없이 `pnpm` 명령으로 확인할 수 있게 함. 실제 게시가 아니라 no-live preflight + duplicate-safe block 확인용.
+- **변경 파일**: `package.json`(스크립트 2개 추가: `owner:ready-preflight`, `owner:ready-duplicate-guard-check`), `scripts/run-owner-daily-automation-entrypoint.mjs`(`READY_GOLDEN_SAMPLE_CONTENT_UNIT` 상수 + `--status` 출력/usage에 ready fixture 경로·명령 안내 추가, live behavior 미변경), `scripts/check-owner-daily-automation-entrypoint-static.mjs`(package script 존재/경로 검증 + `--status` 출력 검증 + ready fixture로 `--preflight`/`--duplicate-guard-check` smoke 추가), `docs/owner-daily-automation-runbook.md`(상단에 "기존 golden sample readiness 확인" 섹션 추가).
+- **package scripts 추가**: `owner:ready-preflight` = `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`, `owner:ready-duplicate-guard-check` = 동일 fixture로 `--duplicate-guard-check`. dependencies/devDependencies/pnpm-lock.yaml 변경 없음(guard가 exact key set 비교로 확인).
+- **owner status/runbook 요약**: `--status` JSON에 `readyGoldenSampleContentUnit`(path/preflightCommand/duplicateGuardCheckCommand) 블록 + 사람이 읽는 요약 3줄 추가, usage에도 두 명령 안내. runbook 최상단에 `pnpm owner:ready-preflight`/`pnpm owner:ready-duplicate-guard-check`가 재게시가 아닌 no-live readiness/duplicate-safe block 확인이라는 설명 추가.
+- **ready preflight smoke 결과**: `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit <ready fixture>` → exit 0, `preflightOk:true`, `isDefaultContentUnit:true`, `sourceFilesReady:true`, `blobLivenessEvidenceOk:true`, secret 값 형태 없음.
+- **ready duplicate-guard smoke 결과**: 동일 fixture로 `--duplicate-guard-check` → exit 0, `isExpectedSafeBlock:true`, `liveExitCode:3`, `liveStatus:BLOCKED_DUPLICATE_ALREADY_PUBLISHED`, `treatedAsPublishSuccess:false`, `sideEffectCountersAllZero:true`, secret 값 형태 없음.
+- **checks/results**: node --check PASS(entrypoint+guard), package.json JSON parse PASS. `check-owner-daily-automation-entrypoint-static.mjs` **196 PASS / 0 FAIL**(신규 ready-shortcut 검증 포함, 기존 체크 전부 유지). regression 무변경: `check-dual-platform-content-unit-final-readiness-static.mjs` **64/64**, `check-dual-platform-final-publish-orchestrator-static.mjs` **357/357**.
+- **side effects confirmation**: public HEAD 재호출 0, Instagram/YouTube API 0, Blob SDK/mutation 0, ffmpeg/ffprobe 0, 새 미디어 0, dependency/lockfile 변경 0, deploy 0, commit/push 0.
+- **env/secret handling**: process.env 접근 0(guard가 소스 텍스트로 검증), `.env`/`.env.local` 읽기 0, token 값 read/print 0.
+- **deviations/risks**: 없음. `_ai/HANDOFF_NOW.md`는 Codex가 이번 task 범위로 이미 갱신해둔 상태이며 이번 turn에서 미수정(diff는 Codex 갱신분).
+- checkpoint recommendation: 변경 4파일(package.json, entrypoint, guard, runbook) + report append, low-risk(신규 side effect 없음, 기존 no-live 계약 재사용). Codex 검토 후 checkpoint commit 가능.
+

@@ -57,6 +57,15 @@ const YOUTUBE_LETTERBOX_RENDER_APPROVAL_TOKEN = "APPROVE_YOUTUBE_LETTERBOX_LOCAL
 const DEFAULT_MANIFEST = resolve(REPO_ROOT, "scripts/fixtures/provider-candidate-render-manifest.visual-only.json");
 const DEFAULT_DRY_RUN_OUT_ROOT = "C:\\tmp\\money-shorts-os\\owner-daily-automation-entrypoint-v1";
 
+// 이미 완료된 golden sample(t1_lifestyle_inflation/v3_2)의 checked-in ready fixture.
+// 긴 경로를 직접 타이핑하지 않도록 pnpm owner:ready-preflight / owner:ready-duplicate-guard-check가
+// 이 경로를 그대로 참조한다. contentId/version이 EXISTING_EVIDENCE와 같아 default evidence content로
+// 취급되며(재게시가 아니라 duplicate-safe block 확인용).
+const READY_GOLDEN_SAMPLE_CONTENT_UNIT = resolve(
+  REPO_ROOT,
+  "scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json",
+);
+
 // evidence reference for the current already-published content (secret-free, public only)
 const EXISTING_EVIDENCE = {
   contentId: "t1_lifestyle_inflation",
@@ -146,6 +155,10 @@ function printUsage() {
         INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_STATUS + "); actual upload requires a separate approved slice.",
       "",
       "Exactly one mode flag is required.",
+      "",
+      "  Existing golden sample (t1_lifestyle_inflation/v3_2) readiness shortcuts (no-live, no repost):",
+      "    pnpm owner:ready-preflight",
+      "    pnpm owner:ready-duplicate-guard-check",
     ].join("\n"),
   );
 }
@@ -261,6 +274,14 @@ function runStatus() {
       note: "Already-published content. Reference only — will not be reposted (see duplicate guard).",
       ...EXISTING_EVIDENCE,
     },
+    readyGoldenSampleContentUnit: {
+      note:
+        "Existing checked-in fixture for the already-published golden sample. Checking it is a " +
+        "no-live readiness / duplicate-safe block confirmation only — it never reposts.",
+      path: READY_GOLDEN_SAMPLE_CONTENT_UNIT,
+      preflightCommand: "pnpm owner:ready-preflight",
+      duplicateGuardCheckCommand: "pnpm owner:ready-duplicate-guard-check",
+    },
     ownerNextSteps: {
       generateLocalDryRunPacket: "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
       buildContentUnitFromDryRunSummary:
@@ -342,6 +363,10 @@ function runStatus() {
   console.log(`  dual-platform orchestrator present:   ${orchestratorExists}`);
   console.log(`  render-manifest local runner present: ${renderManifestRunnerExists}`);
   console.log(`  existing evidence (will NOT repost):  Instagram media_id ${EXISTING_EVIDENCE.instagramMediaId}, YouTube videoId ${EXISTING_EVIDENCE.youtubeVideoId}`);
+  console.log("");
+  console.log(`  ready golden sample fixture:          ${READY_GOLDEN_SAMPLE_CONTENT_UNIT}`);
+  console.log(`  ready preflight (no-live):            pnpm owner:ready-preflight`);
+  console.log(`  ready duplicate-guard check (no-live, no repost): pnpm owner:ready-duplicate-guard-check`);
   console.log("");
   return summary.checks.defaultDryRunManifestExists && summary.checks.dualPlatformOrchestratorScriptExists && summary.checks.renderManifestLocalRunnerScriptExists ? 0 : 1;
 }

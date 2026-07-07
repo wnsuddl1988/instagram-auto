@@ -4,141 +4,115 @@
 
 ## Current Task
 
-- Task ID: `golden-sample-content-unit-final-readiness-no-live-v1`
-- Owner approval basis: follows completed no-live/read-only approvals and latest checkpoint `5d9857b feat(media): add instagram blob liveness check`
-- Purpose: create and verify a real `dual_platform_content_unit_v1` manifest for the existing final golden sample (`t1_lifestyle_inflation`, `v3_2`) using existing local Instagram/full-frame mp4, existing YouTube letterbox mp4/render result, and existing Blob public URL liveness evidence. This is a no-live readiness consolidation step only.
+- Task ID: `owner-entrypoint-golden-ready-shortcuts-no-live-v1`
+- Owner approval basis: no-live operator usability continuation after checkpoint `4bd2c57 feat(media): add golden sample content unit readiness`
+- Purpose: make the owner-usable CLI flow expose the ready golden sample content unit without requiring the Owner to remember the long fixture path. Add no-live package/entrypoint/runbook/guard support for checking the ready content unit and confirming duplicate-safe block.
 
 ## Approved Scope
 
 Approved:
 
-- Use existing local output/evidence files only.
-- Create a checked-in fixture manifest for the ready golden sample content unit.
-- Add a static/readiness guard that validates the fixture and runs orchestrator `--preflight --content-unit <fixture>`.
-- Confirm no publish/upload/API/Blob mutation occurs.
+- Add package scripts only (no dependency/lockfile changes) for the ready golden sample fixture.
+- Update owner entrypoint status/help to mention the ready fixture and shortest commands.
+- Update owner entrypoint guard to verify the ready-fixture commands.
+- Update owner runbook with a short "existing golden sample readiness" section.
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`.
 
 Not approved:
 
-- Instagram publish/arm or Instagram Graph API calls.
+- Instagram publish/arm beyond existing duplicate-guard safe-block check.
 - YouTube API/OAuth/upload.
-- Blob upload/delete/overwrite/copy/mutation or additional public HEAD.
+- Blob upload/delete/overwrite/copy/mutation or public HEAD.
 - Env/secret read/write/print, including `.env`, `.env.*`, `.env.local`.
 - Deploy, dependency/lockfile changes, DB/Supabase, browser automation.
 - New media generation, ffmpeg, ffprobe, TTS/image/render/mux.
 - Commit/push.
 
-## Existing Inputs
+## Existing Ready Fixture
 
-Use existing files/evidence. Do not regenerate media.
-
-Instagram source mp4:
-
-- `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
-- expected size: `20294549`
-
-YouTube letterbox mp4/render evidence:
-
-- Preferred render result JSON:
-  - `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\youtube-letterbox-render-result.json`
-- If valid, use its `outputPath` as `youtubeSourcePath`.
-- Expected prior output size from that approved render: `7349425`
-
-Blob public URL liveness result:
-
-- `C:\tmp\money-shorts-os\instagram-existing-blob-liveness-no-arm-v1\instagram-existing-blob-liveness-result.json`
-- expected:
-  - `status: LIVE_PUBLIC_URL_OK`
-  - `headStatus: 200`
-  - `contentType: video/mp4`
-  - `contentLength: 20294549`
-  - `livenessOk: true`
-
-Known public URL:
-
-- `https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
-
-## Suggested Files
-
-New fixture:
+Use the committed ready fixture:
 
 - `scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
 
-New guard:
+It already points to:
 
-- `scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
+- Instagram source:
+  - `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
+- YouTube source:
+  - `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4`
+- Blob liveness evidence:
+  - public URL HEAD 200 / `video/mp4` / `20294549`
 
-Optional docs update only if useful:
+The fixture preflight is already known to pass:
 
-- `docs/owner-daily-automation-runbook.md`
+- `preflightOk:true`
+- `sourceFilesReady:true`
+- metadata gate ok
+- Blob evidence ok
+- duplicate guard uses `v3_2`
+- side effects 0
 
-Report append:
+## Required Implementation
 
-- `_ai/CLAUDE_REPORT.md`
+### 1. package.json scripts
 
-## Fixture Contract
+Add scripts only:
 
-The fixture must be secret-free and include:
+- `owner:ready-preflight`
+  - runs owner entrypoint `--preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+- `owner:ready-duplicate-guard-check`
+  - runs owner entrypoint `--duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
 
-- `schemaVersion: "dual_platform_content_unit_v1"`
-- `contentId: "t1_lifestyle_inflation"`
-- `version: "v3_2"`
-- `instagramSourcePath`: existing final Instagram/full-frame mp4 path
-- `youtubeSourcePath`: existing YouTube letterbox mp4 path, preferably derived from the render result JSON
-- optimized Instagram metadata:
-  - non-empty `captionFirstLineHook`
-  - non-empty `caption`
-  - 8-12 relevant hashtags
-  - non-empty `callToAction`
-  - `forbiddenUnrelatedTrendTags: true`
-- optimized YouTube metadata:
-  - `titleBase`
-  - `titleWithShortsSuffix`
-  - `descriptionBase`
-  - relevant tags
-  - `categoryId: "22"`
-  - `defaultLanguage: "ko"`
-  - `privacyStatus: "public"`
-  - `selfDeclaredMadeForKids: false`
-- `blobPublicUrlLivenessEvidence` copied from the liveness result:
-  - `url`
-  - `headStatus`
-  - `contentType`
-  - `contentLength`
-- optionally `existingPublishedKeys` for explicit duplicate reference, but remember `contentId/version` already makes this the default evidence content in the orchestrator.
+Do not change dependencies/devDependencies or `pnpm-lock.yaml`.
 
-## Guard Requirements
+### 2. Owner entrypoint
 
-The guard must be dependency-free and no-live. It should:
+Update `scripts/run-owner-daily-automation-entrypoint.mjs`:
 
-1. Parse the fixture JSON.
-2. Parse the existing liveness result JSON read-only.
-3. Parse the existing YouTube render result JSON read-only if present.
-4. Validate source file existence and expected sizes using `existsSync/statSync` only.
-5. Validate metadata gate expectations:
-   - Instagram hashtags 8-12
-   - no unrelated trend tags
-   - hook/CTA non-empty
-   - YouTube tags/title present
-6. Run:
-   - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
-7. Confirm preflight:
-   - `preflightOk === true`
-   - `sourceFilesReady === true`
-   - `blobLivenessEvidenceOk === true` or equivalent liveArm evidence ok
-   - metadata gate ok
-   - duplicate guard uses `v3_2`
-   - side-effect counters all zero
-   - no publish/upload/API occurs
-8. Do not run `--live` or `--arm`.
+- Add a constant for the ready fixture path if useful.
+- `--status` output should include:
+  - ready fixture path
+  - command for ready preflight
+  - command for ready duplicate guard check
+  - clear note that this content is already published and duplicate-safe; these commands do not repost.
+- Help/usage text may mention the two package scripts or the ready fixture path.
+- Do not change live behavior.
+- Do not add env/secret access.
 
-If any required local evidence file is missing, fail closed with a clear blocker and do not synthesize fake readiness.
+### 3. Owner entrypoint guard
+
+Update `scripts/check-owner-daily-automation-entrypoint-static.mjs`:
+
+- Assert package scripts exist and use the exact ready fixture path.
+- Assert status output includes the ready fixture/commands.
+- Smoke:
+  - `node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+    - should exit 0
+    - should indicate `preflightOk:true`
+    - should not contain secret value shapes
+  - `node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+    - should exit 0
+    - should be the expected safe duplicate block
+    - should not treat block as publish success
+    - should not contain secret value shapes
+- Keep existing checks intact.
+
+### 4. Runbook
+
+Update `docs/owner-daily-automation-runbook.md`:
+
+- Add a compact section near the top:
+  - existing golden sample readiness commands:
+    - `pnpm owner:ready-preflight`
+    - `pnpm owner:ready-duplicate-guard-check`
+  - explain they are no-live verification / duplicate-safe block, not repost.
+- Do not add secret instructions.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not print, hash, copy, log, stage, or commit token values.
-- Do not call public HEAD again in this task.
+- Do not call public HEAD.
 - Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or paid/external live services.
 - Do not call Blob SDK, upload/delete/overwrite/copy/mutation.
 - Do not run ffmpeg or ffprobe.
@@ -160,14 +134,12 @@ If any required local evidence file is missing, fail closed with a clear blocker
 ## Required Checks
 
 1. `git status -sb`
-2. Syntax check for changed/new JS/MJS files.
-3. JSON parse for changed/new fixtures.
-4. New guard:
-   - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
+2. Syntax check for changed JS/MJS files.
+3. `package.json` JSON parse.
+4. `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
 5. Targeted regressions:
+   - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
    - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-   - `node scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
-   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run full local generation pipeline.
@@ -177,11 +149,10 @@ Do not run ffmpeg/ffprobe/deploy/API.
 
 All must be true:
 
-1. A real golden-sample content unit fixture exists and points at existing local Instagram and YouTube mp4 files.
-2. Blob liveness evidence from the already completed HEAD result is attached.
-3. Orchestrator `--preflight --content-unit <fixture>` passes with `preflightOk:true` and side effects 0.
-4. The fixture remains duplicate-guarded for the already published `t1_lifestyle_inflation/v3_2` evidence.
-5. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency change, media generation, commit, or push.
+1. `pnpm owner:ready-preflight` or equivalent package script exists and verifies the ready fixture without live publish.
+2. `pnpm owner:ready-duplicate-guard-check` or equivalent package script exists and verifies safe duplicate block without treating it as publish success.
+3. Owner status/runbook clearly show the short commands.
+4. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency/lockfile change, media generation, commit, or push.
 
 ## Final Handoff Format
 
@@ -189,11 +160,10 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- content unit fixture path
-- Instagram source path/size
-- YouTube source path/size
-- Blob liveness evidence summary
-- preflight result summary
+- added package scripts
+- owner status/runbook summary
+- ready preflight smoke result
+- ready duplicate-guard smoke result
 - checks/results
 - side effects confirmation
 - env/secret handling confirmation

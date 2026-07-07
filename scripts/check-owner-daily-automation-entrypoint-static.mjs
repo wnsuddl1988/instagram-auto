@@ -20,10 +20,13 @@ const REPO_ROOT = resolve(__dirname, "..");
 
 const ENTRYPOINT_PATH = resolve(__dirname, "run-owner-daily-automation-entrypoint.mjs");
 const RUNBOOK_PATH = resolve(REPO_ROOT, "docs/owner-daily-automation-runbook.md");
+const PACKAGE_JSON_PATH = resolve(REPO_ROOT, "package.json");
 const CONTENT_UNIT_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit.sample.v1.json");
 const LOCAL_SUMMARY_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json");
 const LETTERBOX_PLAN_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/youtube_letterbox_source_plan_from_content_unit.sample.v1.json");
 const LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/youtube_letterbox_render_request_from_plan.sample.v1.json");
+const READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json");
+const READY_GOLDEN_SAMPLE_CONTENT_UNIT_RELATIVE = "scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json";
 
 let passed = 0;
 let failed = 0;
@@ -641,6 +644,115 @@ check(
   check("--render-youtube-letterbox-once: 잘못된 approval → exit != 0(fail-closed)", wrongApprovalThrew);
 }
 
+// ── required: ready golden sample shortcuts (package scripts + status + smoke) ──
+// task: owner-entrypoint-golden-ready-shortcuts-no-live-v1
+console.log("\n[ required: ready golden sample fixture + package scripts ]");
+check("ready golden sample fixture exists", existsSync(READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH));
+
+const packageJsonRaw = existsSync(PACKAGE_JSON_PATH) ? readFileSync(PACKAGE_JSON_PATH, "utf-8") : "";
+let packageJson = null;
+try { packageJson = JSON.parse(packageJsonRaw); } catch { packageJson = null; }
+check("package.json parses", packageJson != null);
+const readyPreflightScript = packageJson?.scripts?.["owner:ready-preflight"];
+const readyDupGuardScript = packageJson?.scripts?.["owner:ready-duplicate-guard-check"];
+check(
+  "package.json owner:ready-preflight script exists and uses the exact ready fixture path",
+  typeof readyPreflightScript === "string" &&
+    readyPreflightScript.includes("--preflight") &&
+    readyPreflightScript.includes(READY_GOLDEN_SAMPLE_CONTENT_UNIT_RELATIVE),
+);
+check(
+  "package.json owner:ready-duplicate-guard-check script exists and uses the exact ready fixture path",
+  typeof readyDupGuardScript === "string" &&
+    readyDupGuardScript.includes("--duplicate-guard-check") &&
+    readyDupGuardScript.includes(READY_GOLDEN_SAMPLE_CONTENT_UNIT_RELATIVE),
+);
+const EXPECTED_DEPENDENCY_NAMES = [
+  "@supabase/supabase-js", "@vercel/blob", "clsx", "googleapis", "lucide-react",
+  "next", "openai", "react", "react-dom", "tailwind-merge", "zustand",
+];
+const EXPECTED_DEV_DEPENDENCY_NAMES = [
+  "@tailwindcss/postcss", "@types/node", "@types/react", "@types/react-dom",
+  "eslint", "eslint-config-next", "playwright", "tailwindcss", "typescript",
+];
+check(
+  "package.json dependencies unchanged (exact same key set as before this task)",
+  packageJson != null &&
+    JSON.stringify(Object.keys(packageJson.dependencies ?? {}).sort()) === JSON.stringify([...EXPECTED_DEPENDENCY_NAMES].sort()),
+);
+check(
+  "package.json devDependencies unchanged (exact same key set as before this task)",
+  packageJson != null &&
+    JSON.stringify(Object.keys(packageJson.devDependencies ?? {}).sort()) === JSON.stringify([...EXPECTED_DEV_DEPENDENCY_NAMES].sort()),
+);
+
+check(
+  "entrypoint: READY_GOLDEN_SAMPLE_CONTENT_UNIT constant references the exact ready fixture path",
+  src.includes("dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json"),
+);
+check(
+  "entrypoint: --status output includes readyGoldenSampleContentUnit block",
+  src.includes("readyGoldenSampleContentUnit"),
+);
+check(
+  "entrypoint: --status output mentions pnpm owner:ready-preflight",
+  src.includes("pnpm owner:ready-preflight"),
+);
+check(
+  "entrypoint: --status output mentions pnpm owner:ready-duplicate-guard-check",
+  src.includes("pnpm owner:ready-duplicate-guard-check"),
+);
+
+console.log("\n[ operator smoke: --status includes ready fixture path/commands ]");
+check("--status stdout includes ready fixture path", statusOut.includes(READY_GOLDEN_SAMPLE_CONTENT_UNIT_RELATIVE) || statusOut.includes(READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH));
+check("--status stdout includes pnpm owner:ready-preflight", statusOut.includes("pnpm owner:ready-preflight"));
+check("--status stdout includes pnpm owner:ready-duplicate-guard-check", statusOut.includes("pnpm owner:ready-duplicate-guard-check"));
+check(
+  "--status readyGoldenSampleContentUnit.path matches the exact ready fixture (JSON)",
+  statusParsed?.readyGoldenSampleContentUnit?.path === READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH,
+);
+
+console.log("\n[ operator smoke: --preflight --content-unit <ready fixture> ]");
+let readyPfOut = "";
+let readyPfExit = null;
+try {
+  readyPfOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--preflight", "--content-unit", READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  readyPfExit = 0;
+} catch (e) {
+  readyPfExit = typeof e?.status === "number" ? e.status : null;
+  readyPfOut = String(e?.stdout || e?.message || e);
+}
+check("--preflight --content-unit <ready fixture>: exit 0", readyPfExit === 0, `exit=${readyPfExit}`);
+const readyPfJsonMatch = readyPfOut.match(/\{[\s\S]*?"currentContentDuplicateBlock"[\s\S]*?\n  \}\n\}/);
+let readyPfParsed = null;
+if (readyPfJsonMatch) { try { readyPfParsed = JSON.parse(readyPfJsonMatch[0]); } catch { readyPfParsed = null; } }
+check("--preflight --content-unit <ready fixture>: JSON parse", !!readyPfParsed);
+check("--preflight --content-unit <ready fixture>: preflightOk === true", readyPfParsed?.preflightOk === true);
+check("--preflight --content-unit <ready fixture>: sourceFilesReady === true", readyPfParsed?.sourceFilesReady === true);
+check("--preflight --content-unit <ready fixture>: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(readyPfOut));
+
+console.log("\n[ operator smoke: --duplicate-guard-check --content-unit <ready fixture> ]");
+let readyDgOut = "";
+let readyDgExit = null;
+try {
+  readyDgOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--duplicate-guard-check", "--content-unit", READY_GOLDEN_SAMPLE_CONTENT_UNIT_PATH], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  readyDgExit = 0;
+} catch (e) {
+  readyDgExit = typeof e?.status === "number" ? e.status : null;
+  readyDgOut = String(e?.stdout || e?.message || e);
+}
+check("--duplicate-guard-check --content-unit <ready fixture>: exit 0 (expected safe block)", readyDgExit === 0, `exit=${readyDgExit}`);
+const readyDgJsonMatch = readyDgOut.match(/\{[\s\S]*?"existingEvidence"[\s\S]*?\n  \}\n\}/);
+let readyDgParsed = null;
+if (readyDgJsonMatch) { try { readyDgParsed = JSON.parse(readyDgJsonMatch[0]); } catch { readyDgParsed = null; } }
+check("--duplicate-guard-check --content-unit <ready fixture>: JSON parse", !!readyDgParsed);
+check("--duplicate-guard-check --content-unit <ready fixture>: isExpectedSafeBlock === true", readyDgParsed?.isExpectedSafeBlock === true);
+check("--duplicate-guard-check --content-unit <ready fixture>: liveExitCode === 3", readyDgParsed?.liveExitCode === 3);
+check("--duplicate-guard-check --content-unit <ready fixture>: liveStatus === BLOCKED_DUPLICATE_ALREADY_PUBLISHED", readyDgParsed?.liveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED");
+check("--duplicate-guard-check --content-unit <ready fixture>: treatedAsPublishSuccess === false", readyDgParsed?.treatedAsPublishSuccess === false);
+check("--duplicate-guard-check --content-unit <ready fixture>: sideEffectCountersAllZero === true", readyDgParsed?.sideEffectCountersAllZero === true);
+check("--duplicate-guard-check --content-unit <ready fixture>: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(readyDgOut));
+
 // ── required: runbook doc ───────────────────────────────────────────────────────
 console.log("\n[ required: owner runbook doc ]");
 check("runbook file exists", existsSync(RUNBOOK_PATH));
@@ -653,6 +765,12 @@ check("runbook explains .env.local is not read directly by this entrypoint", run
 check("runbook explains --content-unit for future new videos", runbookRaw.includes("--content-unit") && runbookRaw.includes("dual_platform_content_unit_v1"));
 check("runbook explains custom content live is fail-closed this slice", /CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE/.test(runbookRaw));
 check("runbook has no secret value shape", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(runbookRaw));
+check("runbook mentions pnpm owner:ready-preflight", runbookRaw.includes("pnpm owner:ready-preflight"));
+check("runbook mentions pnpm owner:ready-duplicate-guard-check", runbookRaw.includes("pnpm owner:ready-duplicate-guard-check"));
+check(
+  "runbook explains ready commands are no-live readiness / duplicate-safe block, not repost",
+  /재게시가 아니|not.*repost|no-live/i.test(runbookRaw),
+);
 
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
