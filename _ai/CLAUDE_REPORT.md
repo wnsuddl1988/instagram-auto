@@ -3905,3 +3905,22 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. Codex review finding 2건만 정확히 보정, 지정된 3개 파일 외 추가 변경 없음. 새 docs 생성하지 않음(지시대로 기존 범위 내 보정만).
 - checkpoint recommendation: 신규 파일 없음(기존 3파일 in-place 수정 + report append). 이전 slice와 합쳐 diff는 여전히 소규모. 외부 mutation 0. Owner 승인 시 checkpoint commit 가능한 상태.
 
+## local-pipeline-dual-platform-publish-contract-bridge-no-live-v1 (2026-07-07)
+
+- **목적**: 로컬 자동화 dry-run 파이프라인(`run-local-money-shorts-pipeline-dry-run.mjs`, `run-local-money-shorts-from-render-manifest.mjs`)의 최종 summary에 dual-platform final publish orchestrator의 게시 계약 readiness를 연결. no-live 유지, job-agnostic shared contract 의미 보존(job-owned plan 아님).
+- **수정 파일 4개**:
+  - `scripts/run-local-money-shorts-pipeline-dry-run.mjs` — step 5 이후, summary 작성 직전에 `checkDualPlatformPublishContract()` 함수 추가. `scripts/run-dual-platform-final-publish-orchestrator.mjs`를 `spawnSync(process.execPath, [scriptAbs, "--dry-run"], {shell:false})`로만 호출(기존 5-step과 동일한 read-only spawn 패턴), stdout JSON을 파싱해 `instagramJobPresent`/`youtubeJobPresent`/`instagramMetadataGateOk`/`youtubeMetadataGateOk`/`duplicatePublishGuardUsesV3_2`(key가 `/v3_2`로 끝나는지)/`liveSideEffectCountersAllZero`/`liveApiCallPerformed`를 계산, 전부 만족해야 `contractReady:true`. exit code 비정상 또는 JSON parse 실패 시 fail-closed(`contractReady:false`, reason 기록) — live fallback 없음. `writeSummary()`에 `dualPlatformPublishContract` 파라미터 추가(실패 경로는 `null` 전달, TDZ/undefined 참조 방지), summary 객체에 `dualPlatformPublishContract` 필드 + riskNotes에 "job-agnostic shared contract, 이 run 자체의 plan 아님" 명시.
+  - `scripts/run-local-money-shorts-from-render-manifest.mjs` — 자체적으로 publish orchestrator를 재호출하지 않고, 하위 `run_local_pipeline` step이 생성한 `pipeline-run-summary.local-mock.json`을 read-only로 읽어 `dualPlatformPublishContract` 필드만 그대로 top-level summary로 전달(`readDualPlatformPublishContractFromSubSummary()`, 파일 없음/parse 실패 시 `null` fail-closed). `writeSummary()` 시그니처에 동일 파라미터 추가.
+  - `scripts/check-local-pipeline-runner-static.mjs` — 신규 섹션(15개 체크): publish orchestrator 호출 존재, `--dry-run` 플래그만 사용, `spawnSync(process.execPath` 패턴, non-zero exit/parse 실패 시 fail-closed, Instagram/YouTube job 존재 확인, 양쪽 metadataOptimizationGate.ok 확인, duplicate guard key가 `/v3_2` 확인, side-effect counters 전부 0 확인, `liveApiCallPerformed` false 확인, `isJobAgnosticSharedContract:true` 마커 존재, summary에 필드 포함 확인 → 기존 46 + 신규 15 = **61/61 PASS**.
+  - `scripts/check-render-manifest-local-runner-static.mjs` — 신규 섹션(6개 체크): publish orchestrator를 직접 재호출하지 않음(하위 요약만 read), `readDualPlatformPublishContractFromSubSummary` 함수 존재, fail-closed null 처리, `pipelineRunSummary` 경로 사용, top-level summary에 필드 forwarding, `writeSummary` 시그니처 확인 → 기존 36 + 신규 6 = **42/42 PASS**.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉)
+  - `node --check` (4개 파일) ✓
+  - `node scripts/check-local-pipeline-runner-static.mjs` → **61 PASS / 0 FAIL**
+  - `node scripts/check-render-manifest-local-runner-static.mjs` → **42 PASS / 0 FAIL**
+  - targeted regression: `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **132 PASS / 0 FAIL**(변경 없음, 회귀 확인용)
+  - full 5-step local pipeline(`render-visual-only` 등 실제 mp4 렌더 포함)은 실행 시간이 길고 새 media 생성 위험이 있어 지시대로 생략. 대신 (a) 두 static guard 전체 통과, (b) `run-dual-platform-final-publish-orchestrator.mjs --dry-run`을 직접 실행해 실제 JSON 구조가 파서 가정과 일치함을 확인(`igGateOk:true`, `ytGateOk:true`, `igDupKey/ytDupKey`가 `.../v3_2`, `counters allZero:true`, 양쪽 `liveApiCallPerformed:false`), (c) `checkDualPlatformPublishContract()` 로직을 별도 node 스크립트로 격리 재현해 `contractReady:true` 산출을 확인 — 3중 스모크로 대체 검증.
+- **live side effects**: Instagram API 호출 0, YouTube API 호출 0, Blob upload/list/delete 0, env/secret read/write 0(`process.env` 미접근, 기존 guard가 이미 검증), `.env.local` 직접 접근 0, 새 영상 생성 0(전체 파이프라인 미실행), deploy/dependency/commit/push 0.
+- **deviations/risks**: full pipeline 실제 실행은 시간/media 생성 위험으로 생략(위 3중 스모크로 대체, 지시사항에 명시된 대체 경로). base-rate job의 publishRecords 판정과 t1 reference evidence는 여전히 분리 유지(이번 slice는 로컬 파이프라인 summary 레이어만 다루며 automation orchestrator의 §L 로직에는 손대지 않음).
+- checkpoint recommendation: 신규 파일 없음(기존 4파일 in-place 수정 + report append). Owner 승인 시 checkpoint commit 가능한 상태.
+

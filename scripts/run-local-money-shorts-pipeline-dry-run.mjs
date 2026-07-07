@@ -14,7 +14,7 @@
  *   2. local_mock TTS audio mux
  *   3. upload payload build
  *   4. owner-approved upload flow dry-run
- *   5. pipeline run summary
+ *   5. pipeline run summary (includes dual-platform publish contract readiness, no-live)
  *
  * Security constraints:
  * - No upload, API call, OAuth, accessToken, refreshToken.
@@ -26,6 +26,8 @@
  * - piq_diag_out.txt never touched.
  * - actualUploadPerformed is always false.
  * - notUploaded is always true.
+ * - dual-platform publish orchestrator is invoked with --dry-run only (no-live,
+ *   job-agnostic shared contract — never this run's own publish plan).
  */
 
 import { spawnSync } from "node:child_process";
@@ -131,7 +133,7 @@ function runStep(stepName, scriptRelPath, stepArgs) {
 
   if (exitCode !== 0) {
     console.error(`\nABORT: step "${stepName}" failed with exit code ${exitCode}.`);
-    writeSummary("failed", stepResults, {});
+    writeSummary("failed", stepResults, {}, null);
     process.exit(1);
   }
 }
@@ -228,8 +230,90 @@ runStep("owner_approved_upload_flow", "scripts/build-owner-approved-upload-flow-
 const uploadReadyPacketPath = join(ownerApprovedUploadFlowDir, "owner-approved-upload-ready-packet.local-mock.json");
 const dryRunRecordPath = join(ownerApprovedUploadFlowDir, "owner-approved-upload-dry-run-record.local-mock.json");
 
+// ── Dual-platform publish contract readiness (no-live, job-agnostic shared contract) ──
+// Read-only: invokes the publish orchestrator with --dry-run ONLY, parses its stdout
+// JSON, and summarizes readiness. This is NOT this pipeline run's own publish plan —
+// it is a shared contract that all runs reference. Never calls Instagram/YouTube/Blob
+// APIs. Failure here is fail-closed (contractReady: false), never a live fallback.
+function checkDualPlatformPublishContract() {
+  const scriptAbs = resolve(REPO_ROOT, "scripts/run-dual-platform-final-publish-orchestrator.mjs");
+  const result = spawnSync(process.execPath, [scriptAbs, "--dry-run"], {
+    encoding: "utf-8",
+    maxBuffer: 20 * 1024 * 1024,
+    cwd: REPO_ROOT,
+    shell: false,
+  });
+
+  const failClosed = (reason) => ({
+    schemaVersion: "dual_platform_publish_contract_summary_v1",
+    isJobAgnosticSharedContract: true,
+    contractReady: false,
+    reason,
+    instagramJobPresent: false,
+    youtubeJobPresent: false,
+    instagramMetadataGateOk: false,
+    youtubeMetadataGateOk: false,
+    duplicatePublishGuardUsesV3_2: false,
+    liveSideEffectCountersAllZero: false,
+    liveApiCallPerformed: false,
+  });
+
+  if (result.status !== 0) {
+    return failClosed(`orchestrator exited ${result.status ?? -1}`);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch (e) {
+    return failClosed(`stdout parse failed: ${e.message}`);
+  }
+
+  const plan = parsed?.plan ?? {};
+  const jobs = Array.isArray(plan.jobs) ? plan.jobs : [];
+  const instagramJob = jobs.find((j) => j.id === "instagram_job");
+  const youtubeJob = jobs.find((j) => j.id === "youtube_job");
+  const instagramMetadataGateOk = instagramJob?.metadataOptimizationGate?.ok === true;
+  const youtubeMetadataGateOk = youtubeJob?.metadataOptimizationGate?.ok === true;
+  const dupGuardKeys = [instagramJob?.duplicatePublishGuard?.key, youtubeJob?.duplicatePublishGuard?.key];
+  const duplicatePublishGuardUsesV3_2 = dupGuardKeys.every((k) => typeof k === "string" && k.endsWith("/v3_2"));
+  const counters = plan.sideEffectCounters ?? {};
+  const liveSideEffectCountersAllZero = Object.values(counters).every((v) => v === 0);
+  const liveApiCallPerformed =
+    instagramJob?.liveApiCallPerformed === true || youtubeJob?.liveApiCallPerformed === true;
+
+  const instagramJobPresent = !!instagramJob;
+  const youtubeJobPresent = !!youtubeJob;
+
+  const contractReady =
+    instagramJobPresent &&
+    youtubeJobPresent &&
+    instagramMetadataGateOk &&
+    youtubeMetadataGateOk &&
+    duplicatePublishGuardUsesV3_2 &&
+    liveSideEffectCountersAllZero &&
+    !liveApiCallPerformed;
+
+  return {
+    schemaVersion: "dual_platform_publish_contract_summary_v1",
+    isJobAgnosticSharedContract: true,
+    contractReady,
+    reason: contractReady ? null : "one or more contract readiness checks failed",
+    instagramJobPresent,
+    youtubeJobPresent,
+    instagramMetadataGateOk,
+    youtubeMetadataGateOk,
+    duplicatePublishGuardUsesV3_2,
+    liveSideEffectCountersAllZero,
+    liveApiCallPerformed,
+  };
+}
+
+const dualPlatformPublishContract = checkDualPlatformPublishContract();
+console.log(`\n[pipeline] dual-platform publish contract ready: ${dualPlatformPublishContract.contractReady}`);
+
 // ── Build pipeline run summary ──────────────────────────────────────────────────
-function writeSummary(flowStatus, steps, artifacts) {
+function writeSummary(flowStatus, steps, artifacts, dualPlatformPublishContract) {
   const finishedAt = new Date().toISOString();
   const summary = {
     schemaVersion: "money_shorts_local_pipeline_run_summary_v1",
@@ -243,10 +327,12 @@ function writeSummary(flowStatus, steps, artifacts) {
     actualUploadPerformed: false,
     notUploaded: true,
     ownerApprovalRequired: true,
+    dualPlatformPublishContract,
     riskNotes: [
       "local_mock dry-run: no actual upload performed.",
       "TTS audio is local_mock (pink noise placeholder). ElevenLabs final-pass required before real upload.",
       "Owner approval gate was validated in step owner_approved_upload_flow.",
+      "dualPlatformPublishContract reflects a job-agnostic shared contract's readiness, not this run's own publish plan.",
       "nextStep: live_upload_requires_explicit_owner_approval_and_credentials",
     ],
   };
@@ -269,7 +355,7 @@ const artifacts = {
   dryRunRecord: dryRunRecordPath,
 };
 
-writeSummary("completed_dry_run", stepResults, artifacts);
+writeSummary("completed_dry_run", stepResults, artifacts, dualPlatformPublishContract);
 
 console.log(`\n${"═".repeat(64)}`);
 console.log("  PIPELINE COMPLETE — all 5 steps PASS");
@@ -278,4 +364,5 @@ console.log(`  actualUploadAllowed:  false`);
 console.log(`  actualUploadPerformed:false`);
 console.log(`  notUploaded:          true`);
 console.log(`  uploadReadyPacket:    ${uploadReadyPacketPath}`);
+console.log(`  dualPlatformPublishContractReady: ${dualPlatformPublishContract.contractReady}`);
 console.log(`${"═".repeat(64)}\n`);

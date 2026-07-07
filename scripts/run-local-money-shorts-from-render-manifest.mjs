@@ -26,10 +26,12 @@
  * - actualUploadAllowed is always false.
  * - actualUploadPerformed is always false.
  * - notUploaded is always true.
+ * - top-level summary forwards the sub-pipeline's dual-platform publish contract
+ *   readiness (job-agnostic shared contract, no-live) read-only from its summary JSON.
  */
 
 import { spawnSync } from "node:child_process";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -116,12 +118,26 @@ function runStep(stepName, scriptRelPath, stepArgs) {
 
   if (exitCode !== 0) {
     console.error(`\nABORT: step "${stepName}" failed with exit code ${exitCode}.`);
-    writeSummary("failed", stepResults, {});
+    writeSummary("failed", stepResults, {}, null);
     process.exit(1);
   }
 }
 
-function writeSummary(flowStatus, steps, artifacts) {
+// Read-only: forwards the sub-pipeline's dual-platform publish contract readiness
+// from its own summary JSON. Never re-invokes the publish orchestrator itself —
+// the sub-pipeline (run-local-money-shorts-pipeline-dry-run.mjs) already computed
+// it. Fail-closed (null) if the sub-summary is missing/unparseable.
+function readDualPlatformPublishContractFromSubSummary(subSummaryPath) {
+  if (!existsSync(subSummaryPath)) return null;
+  try {
+    const subSummary = JSON.parse(readFileSync(subSummaryPath, "utf-8"));
+    return subSummary.dualPlatformPublishContract ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSummary(flowStatus, steps, artifacts, dualPlatformPublishContract) {
   const finishedAt = new Date().toISOString();
   const summary = {
     schemaVersion: "money_shorts_render_manifest_local_run_summary_v1",
@@ -136,10 +152,12 @@ function writeSummary(flowStatus, steps, artifacts) {
     actualUploadPerformed: false,
     notUploaded: true,
     ownerApprovalRequired: true,
+    dualPlatformPublishContract,
     riskNotes: [
       "local_mock dry-run: no actual upload performed.",
       "TTS audio is local_mock (pink noise placeholder). Real TTS required before public upload.",
       "Generated inputs are derived from RenderManifest caption overlays only — no new claims added.",
+      "dualPlatformPublishContract reflects a job-agnostic shared contract's readiness, not this run's own publish plan.",
       "nextStep: live_upload_requires_explicit_owner_approval_and_credentials",
     ],
   };
@@ -168,7 +186,7 @@ const generatedOwnerApproval = join(inputsDir, "generated-owner-upload-approval.
 for (const p of [generatedTtsScript, generatedUploadMetadata, generatedOwnerApproval]) {
   if (!existsSync(p)) {
     console.error(`ABORT: expected generated input not found: ${p}`);
-    writeSummary("failed", stepResults, {});
+    writeSummary("failed", stepResults, {}, null);
     process.exit(1);
   }
 }
@@ -199,7 +217,8 @@ const artifacts = {
   uploadReadyPacket,
 };
 
-const summaryPath = writeSummary("completed_dry_run", stepResults, artifacts);
+const dualPlatformPublishContract = readDualPlatformPublishContractFromSubSummary(pipelineRunSummary);
+const summaryPath = writeSummary("completed_dry_run", stepResults, artifacts, dualPlatformPublishContract);
 
 console.log(`\n${"═".repeat(64)}`);
 console.log("  RENDER MANIFEST LOCAL RUN COMPLETE");
@@ -209,4 +228,5 @@ console.log(`  actualUploadPerformed: false`);
 console.log(`  notUploaded:           true`);
 console.log(`  top-level summary:     ${summaryPath}`);
 console.log(`  uploadReadyPacket:     ${uploadReadyPacket}`);
+console.log(`  dualPlatformPublishContractReady: ${dualPlatformPublishContract?.contractReady ?? "unknown"}`);
 console.log(`${"═".repeat(64)}\n`);

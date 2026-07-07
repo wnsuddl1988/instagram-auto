@@ -242,6 +242,70 @@ check(
   runnerSrc.includes("all 5 steps PASS"),
 );
 
+// ── Dual-platform publish contract bridge (no-live, job-agnostic shared contract) ──
+console.log("\n[ run-local-money-shorts-pipeline-dry-run.mjs — dual-platform publish contract bridge ]");
+
+check(
+  "invokes dual-platform publish orchestrator script",
+  runnerSrc.includes("run-dual-platform-final-publish-orchestrator.mjs"),
+);
+check(
+  "invokes it with --dry-run flag only",
+  runnerSrc.includes('[scriptAbs, "--dry-run"]') && runnerSrc.includes("run-dual-platform-final-publish-orchestrator.mjs"),
+);
+check(
+  "uses spawnSync(process.execPath for the publish orchestrator call (no shell)",
+  /spawnSync\(process\.execPath,\s*\[scriptAbs,\s*"--dry-run"\]/.test(runnerSrc),
+);
+check(
+  "fail-closed on non-zero exit (contractReady: false, no live fallback)",
+  runnerSrc.includes("result.status !== 0") && runnerSrc.includes("failClosed("),
+);
+check(
+  "fail-closed on stdout JSON parse failure",
+  runnerSrc.includes("stdout parse failed"),
+);
+check(
+  "checks Instagram job presence",
+  runnerSrc.includes("instagram_job") && runnerSrc.includes("instagramJobPresent"),
+);
+check(
+  "checks YouTube job presence",
+  runnerSrc.includes("youtube_job") && runnerSrc.includes("youtubeJobPresent"),
+);
+check(
+  "checks Instagram metadataOptimizationGate.ok",
+  runnerSrc.includes("instagramMetadataGateOk"),
+);
+check(
+  "checks YouTube metadataOptimizationGate.ok",
+  runnerSrc.includes("youtubeMetadataGateOk"),
+);
+check(
+  "checks duplicate publish guard keys end with /v3_2",
+  runnerSrc.includes('endsWith("/v3_2")'),
+);
+check(
+  "checks all live side effect counters are zero",
+  runnerSrc.includes("liveSideEffectCountersAllZero"),
+);
+check(
+  "checks liveApiCallPerformed is false before marking contract ready",
+  runnerSrc.includes("liveApiCallPerformed") && runnerSrc.includes("!liveApiCallPerformed"),
+);
+check(
+  "isJobAgnosticSharedContract marker present (not this run's own plan)",
+  runnerSrc.includes("isJobAgnosticSharedContract: true"),
+);
+check(
+  "dualPlatformPublishContract included in summary object",
+  runnerSrc.includes("dualPlatformPublishContract,"),
+);
+check(
+  "does NOT call the publish orchestrator without --dry-run",
+  !/\[scriptAbs\]\s*,\s*\{/.test(runnerSrc.replace(/\[scriptAbs,\s*"--dry-run"\]/g, "")),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {
