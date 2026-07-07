@@ -22,6 +22,7 @@ const ENTRYPOINT_PATH = resolve(__dirname, "run-owner-daily-automation-entrypoin
 const RUNBOOK_PATH = resolve(REPO_ROOT, "docs/owner-daily-automation-runbook.md");
 const CONTENT_UNIT_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit.sample.v1.json");
 const LOCAL_SUMMARY_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json");
+const LETTERBOX_PLAN_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/youtube_letterbox_source_plan_from_content_unit.sample.v1.json");
 
 let passed = 0;
 let failed = 0;
@@ -344,6 +345,65 @@ if (existsSync(generatedManifestPath)) {
 check("--build-content-unit이 만든 manifest → --preflight --content-unit 연결 시 exit 1(예상된 fail-closed)", bcuPfExit === 1, `exit=${bcuPfExit}`);
 check("--build-content-unit이 만든 manifest → preflight stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(bcuPfOut));
 try { rmSync(bcuTmpDir, { recursive: true, force: true }); } catch {}
+
+// ── required: YouTube letterbox source planning bridge (no-live, no ffmpeg) ────
+// task: owner-youtube-letterbox-source-plan-bridge-no-live-v1
+console.log("\n[ required: --plan-youtube-letterbox bridge mode ]");
+check("letterbox plan sample fixture 존재", existsSync(LETTERBOX_PLAN_SAMPLE_PATH));
+check("entrypoint: --plan-youtube-letterbox MODES 목록에 존재", src.includes("--plan-youtube-letterbox"));
+check("entrypoint: planYoutubeLetterboxSourceFromContentUnit import 존재", /import\s*\{\s*planYoutubeLetterboxSourceFromContentUnit\s*\}/.test(src));
+check("entrypoint: runPlanYoutubeLetterbox 함수 존재", /function runPlanYoutubeLetterbox/.test(src));
+check("entrypoint: --status ownerNextSteps에 planYoutubeLetterboxSource 안내", src.includes("planYoutubeLetterboxSource"));
+
+console.log("\n[ operator smoke: --plan-youtube-letterbox --content-unit <sample> ]");
+const plTmpDir = mkdtempSync(join(os.tmpdir(), "owner-entrypoint-plan-youtube-letterbox-guard-"));
+let plOut = "";
+let plExit = null;
+try {
+  plOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--plan-youtube-letterbox", "--content-unit", LETTERBOX_PLAN_SAMPLE_PATH, "--out-dir", plTmpDir], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  plExit = 0;
+} catch (e) {
+  plExit = typeof e?.status === "number" ? e.status : null;
+  plOut = String(e?.stdout || e?.message || e);
+}
+check("--plan-youtube-letterbox --content-unit <sample>: exit 0", plExit === 0, `exit=${plExit}`);
+const generatedPlanPath = join(plTmpDir, "youtube-letterbox-source-plan.json");
+check("--plan-youtube-letterbox: plan JSON 파일 생성됨", existsSync(generatedPlanPath));
+let plPlan = null;
+if (existsSync(generatedPlanPath)) {
+  try { plPlan = JSON.parse(readFileSync(generatedPlanPath, "utf-8")); } catch { plPlan = null; }
+}
+check("--plan-youtube-letterbox: willExecuteFfmpeg === false", plPlan?.willExecuteFfmpeg === false);
+check("--plan-youtube-letterbox: inputExists === false (sample instagramSourcePath 의도적 미존재)", plPlan?.inputExists === false);
+check("--plan-youtube-letterbox: outputDirOutsideRepo === true", plPlan?.outputDirOutsideRepo === true);
+check(
+  "--plan-youtube-letterbox: sideEffectCounters 전부 0",
+  plPlan?.sideEffectCounters?.ffmpegExecutionCount === 0 &&
+    plPlan?.sideEffectCounters?.mediaFilesGeneratedCount === 0 &&
+    plPlan?.sideEffectCounters?.apiCallCount === 0 &&
+    plPlan?.sideEffectCounters?.envSecretReadCount === 0 &&
+    plPlan?.sideEffectCounters?.contentUnitManifestMutationCount === 0,
+);
+check("--plan-youtube-letterbox: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(plOut));
+try { rmSync(plTmpDir, { recursive: true, force: true }); } catch {}
+
+// out-dir이 repo 내부면 abort(fail-closed) — mutant 방어.
+{
+  let plMutantThrew = false;
+  try {
+    execFileSync(process.execPath, [
+      ENTRYPOINT_PATH, "--plan-youtube-letterbox", "--content-unit", LETTERBOX_PLAN_SAMPLE_PATH,
+      "--out-dir", resolve(REPO_ROOT, "scripts/fixtures/should-not-be-created-owner-letterbox-plan"),
+    ], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  } catch (e) {
+    plMutantThrew = (e.status ?? 1) !== 0;
+  }
+  check("--plan-youtube-letterbox: --out-dir이 repo 내부면 exit != 0(fail-closed)", plMutantThrew);
+  check(
+    "--plan-youtube-letterbox: repo 내부 out-dir 시도가 실제로 디렉터리를 만들지 않음",
+    !existsSync(resolve(REPO_ROOT, "scripts/fixtures/should-not-be-created-owner-letterbox-plan")),
+  );
+}
 
 // ── required: runbook doc ───────────────────────────────────────────────────────
 console.log("\n[ required: owner runbook doc ]");

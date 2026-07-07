@@ -4,88 +4,101 @@
 
 ## Current Task
 
-- Task ID: `content-unit-metadata-optimization-enrichment-no-live-v1`
-- Latest checkpoint: `9b01b57 feat(operator): build content units from local pipeline output`
+- Task ID: `owner-youtube-letterbox-source-plan-bridge-no-live-v1`
+- Latest checkpoint: `7711e59 feat(operator): enrich content unit publish metadata`
 - Owner request: continue remaining work so the project can actually be used to generate and publish videos.
-- Purpose: make locally generated content unit manifests pass the metadata optimization gate without manual JSON editing, while staying no-live/no-execute.
+- Purpose: connect the existing YouTube Shorts letterbox variant planner to the Owner daily workflow so a future content unit can get a deterministic YouTube letterbox source path/plan without manual guessing. This slice is no-live/no-execute for ffmpeg and external services.
 
 ## Why This Is Next
 
-- The local pipeline can now produce a `dual_platform_content_unit_v1` manifest from dry-run output.
-- That bridge intentionally failed closed when local upload metadata lacked:
-  - `instagramMetadata.captionFirstLineHook`
-  - `instagramMetadata.callToAction`
-  - 8-12 Instagram hashtags
-- As a result, future/new content units can be generated but still report `metadataReady:false`.
-- The next usability bottleneck is a deterministic metadata enrichment layer:
-  - derive a short Instagram hook from existing title/caption, not from external AI;
-  - add a safe save/follow CTA;
-  - normalize hashtags to 8-12 category-relevant tags;
-  - keep YouTube metadata/tags consistent;
-  - preserve fail-closed behavior when the source metadata is too thin or malformed.
+- The Owner can now:
+  - run local dry-run;
+  - build a `dual_platform_content_unit_v1` manifest;
+  - get `metadataReady:true` when local metadata is sufficient.
+- Remaining readiness blockers for a future/new content unit are:
+  - `youtubeSourceReady:false` until the YouTube letterbox mp4 exists;
+  - `blobLivenessEvidenceReady:false` until Blob upload/liveness evidence exists.
+- The next safest step is to wire a deterministic YouTube letterbox planning bridge:
+  - read a content unit manifest;
+  - use `instagramSourcePath` as the input;
+  - plan a deterministic `youtubeSourcePath` under an Owner-provided repo-outside output directory;
+  - reuse or align with `scripts/create-youtube-shorts-letterbox-variant.mjs` dry-run profile;
+  - write a plan/summary JSON only, with no ffmpeg execution and no media generation.
 
 ## Approved Scope
 
-Claude Code may implement no-live metadata optimization enrichment for content unit manifest generation.
+Claude Code may implement a no-live YouTube letterbox source planning bridge.
 
 Allowed edits:
-- `scripts/build-dual-platform-content-unit-from-local-summary.mjs`
-- `scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
-- `scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json`
-- `scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.owner_approved_upload_ready_packet.json`
-- `scripts/run-owner-daily-automation-entrypoint.mjs` only if a small CLI flag/status message is needed
-- `scripts/check-owner-daily-automation-entrypoint-static.mjs` only if entrypoint behavior changes
+- `scripts/run-owner-daily-automation-entrypoint.mjs`
+- `scripts/check-owner-daily-automation-entrypoint-static.mjs`
 - `docs/owner-daily-automation-runbook.md`
+- New script if useful:
+  - `scripts/plan-youtube-letterbox-source-from-content-unit.mjs`
+- New static guard if useful:
+  - `scripts/check-youtube-letterbox-source-plan-bridge-static.mjs`
+- New fixture if useful:
+  - `scripts/fixtures/youtube_letterbox_source_plan_from_content_unit.sample.v1.json`
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`
 
-Do not edit local render pipeline internals unless a tiny read-only contract reference is unavoidable. Prefer enriching in the content unit builder so existing generation behavior remains stable.
+Prefer a small new planner script over modifying the actual renderer. Do not run ffmpeg or make the renderer executable in this slice.
 
 ## Required Behavior
 
-1. Add deterministic metadata enrichment in the content unit builder.
-   - It must use only already-present local summary/upload packet fields.
-   - It must not call OpenAI, browser, network, API, env, or any external service.
-   - It must not create new media.
+1. Add a planner that accepts:
+   - `--content-unit <dual_platform_content_unit_v1 manifest>`
+   - `--out-dir <outside-repo path>`
+   - optional `--version-suffix <suffix>` or similar only if needed for deterministic output naming.
 
-2. Instagram metadata rules:
-   - `captionFirstLineHook` must be non-empty.
-   - Prefer deriving hook from an existing title/caption first line.
-   - Keep hook concise and Korean-reader friendly.
-   - Do not add unrelated trend claims.
-   - `callToAction` must be non-empty and should encourage save/follow/comment without misleading claims.
-   - Hashtags must normalize to 8-12 unique relevant tags.
-   - Preserve existing relevant hashtags first, then add safe category/default tags only as needed.
-   - Reject/fail closed if metadata cannot be made safe enough.
+2. Planner output:
+   - no media file created;
+   - no ffmpeg run;
+   - no API/network/env access;
+   - writes a plan JSON under out-dir, for example:
+     - `youtube-letterbox-source-plan.json`
+   - includes:
+     - `instagramSourcePath`
+     - `plannedYoutubeSourcePath`
+     - `inputExists` boolean only
+     - `outputDirOutsideRepo` boolean
+     - `renderProfile` summary: 1080x1920 canvas, black background, centered content, current scale/pad profile
+     - `recommendedNextCommand` using existing planner/renderer in dry-run or future-approved run form
+     - `willExecuteFfmpeg:false`
+     - side-effect counters all 0
 
-3. YouTube metadata rules:
-   - Keep existing title/description/tags if present.
-   - Ensure tags remain relevant and not unrelated viral bait.
-   - Do not require `YOUTUBE_ACCESS_TOKEN`.
+3. Owner entrypoint:
+   - Add a mode such as `--plan-youtube-letterbox`.
+   - It should call the planner with `spawnSync(process.execPath, [...], { shell:false })` or import a pure function if simpler.
+   - It must not invoke ffmpeg or `--run`.
+   - It should print the planned YouTube source path and the next safe command.
+   - It should not mutate the content unit manifest in this slice.
 
-4. Readiness behavior:
-   - For the checked-in sample fixture, metadata enrichment should make `metadataReady:true` if enough source metadata exists after deterministic normalization.
-   - `contentUnitPreflightExpectedReady` must still require all readiness gates:
-     - `instagramSourceReady`
-     - `youtubeSourceReady`
-     - `metadataReady`
-     - `blobLivenessEvidenceReady`
-   - Therefore sample preflight may still be false because source files or Blob evidence are missing. That is expected.
+4. Runbook:
+   - Update the practical daily sequence:
+     1. `--dry-run`
+     2. `--build-content-unit`
+     3. `--plan-youtube-letterbox`
+     4. future Owner-approved local media generation uses that plan
+     5. rebuild/attach content unit with `--youtube-source <planned mp4>`
+     6. Blob upload/liveness
+     7. preflight/publish gates
 
 5. Guard behavior:
-   - Static guard must prove:
-     - no `process.env` / `.env` / secret access;
-     - no fetch/axios/googleapis/@vercel/blob/child_process/ffmpeg;
-     - Instagram hook/CTA are produced for the sample;
-     - Instagram hashtag count is 8-12 after enrichment;
-     - unrelated trend tags are not introduced;
-     - `contentUnitPreflightExpectedReady` still includes `blobLivenessEvidenceReady`;
-     - source/Blob missing still fail closed even if metadataReady is true.
+   - prove no `process.env` / `.env` / secret access;
+   - prove no fetch/axios/googleapis/@vercel/blob;
+   - prove no ffmpeg/ffprobe execution and no `--run` invocation;
+   - prove output dir must be outside repo;
+   - prove planner writes only plan JSON under out-dir;
+   - prove owner entrypoint mode exists and is no-live;
+   - prove generated plan uses the content unit `instagramSourcePath` and deterministic YouTube letterbox output path.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not call Instagram API, YouTube API/OAuth/upload, Vercel Blob upload/list/delete/copy/head, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or any paid/external live service.
-- Do not create new media or run render/mux/TTS/image/browser/ffmpeg.
+- Do not run ffmpeg/ffprobe.
+- Do not create new media or run render/mux/TTS/image/browser.
+- Do not modify the actual renderer to make `--run` executable unless explicitly required for no-live planning; if touched, keep `--run` fail-closed.
 - Do not add/change dependencies, lockfiles, pnpm config, fonts, deploy config, or DB schema.
 - Do not commit or push.
 - Do not touch protected/excluded dirty files:
@@ -102,26 +115,24 @@ Do not edit local render pipeline internals unless a tiny read-only contract ref
 ## Required Checks
 
 1. `git status -sb`
-2. Syntax:
-   - `node --check scripts/build-dual-platform-content-unit-from-local-summary.mjs`
-   - `node --check scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
-   - if touched: `node --check scripts/run-owner-daily-automation-entrypoint.mjs`
-   - if touched: `node --check scripts/check-owner-daily-automation-entrypoint-static.mjs`
-3. Fixture JSON parse for any changed fixtures.
-4. New/updated bridge guard:
-   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
+2. Syntax for changed/new JS/MJS files.
+3. JSON parse for changed/new fixtures.
+4. New guard if added:
+   - `node scripts/check-youtube-letterbox-source-plan-bridge-static.mjs`
 5. Targeted regressions:
    - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
+   - `node scripts/check-youtube-shorts-letterbox-variant-renderer-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
-Do not run the full local generation pipeline if it would create new media; use fixture/sample inputs for smoke.
+Do not run full local generation pipeline.
+Do not run ffmpeg or create media.
 
 ## Definition Of Done
 
-- Generated content unit manifests no longer require manual hook/CTA/hashtag JSON editing when enough local metadata exists.
-- The sample bridge output has `metadataReady:true`.
-- Overall preflight readiness still fails closed when sources or Blob evidence are missing.
+- Owner has a command to plan the YouTube letterbox source path from a content unit manifest.
+- The plan is deterministic and no-live.
+- The runbook tells the Owner where this fits in the actual daily flow.
 - Guards prove no env/secret/API/upload/deploy/media-generation side effects.
 - No commit/push.
 
@@ -131,8 +142,9 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- metadata enrichment summary
-- sample manifest/build-summary result
+- planner command(s)
+- generated plan contract summary
+- sample/owner entrypoint smoke result
 - checks/results
 - side effects confirmation
 - deviations/risks

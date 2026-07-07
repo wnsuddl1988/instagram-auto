@@ -41,6 +41,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildContentUnitFromLocalSummary } from "./build-dual-platform-content-unit-from-local-summary.mjs";
+import { planYoutubeLetterboxSourceFromContentUnit } from "./plan-youtube-letterbox-source-from-content-unit.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -71,7 +72,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -87,6 +88,8 @@ function printUsage() {
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit" +
         " (--summary <path> | --pipeline-summary <path>) --out-dir <path>" +
         " [--content-id <id>] [--version <version>] [--youtube-source <path>] [--blob-liveness-result <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox" +
+        " --content-unit <path> --out-dir <path> [--version-suffix <suffix>]",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
@@ -94,6 +97,10 @@ function printUsage() {
       "  --build-content-unit builds a dual_platform_content_unit_v1 manifest from an existing local",
       "                        dry-run pipeline summary (--dry-run output). Pass the resulting manifest",
       "                        path to --preflight --content-unit <manifest> to check readiness.",
+      "",
+      "  --plan-youtube-letterbox plans a deterministic YouTube Shorts letterbox source path + render",
+      "                        profile from a content unit manifest's instagramSourcePath. No ffmpeg is",
+      "                        run and no media is created — it only writes a plan JSON under --out-dir.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -215,6 +222,8 @@ function runStatus() {
       generateLocalDryRunPacket: "node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run",
       buildContentUnitFromDryRunSummary:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <generated summary.json> --out-dir <outside-repo path>",
+      planYoutubeLetterboxSource:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
@@ -232,6 +241,10 @@ function runStatus() {
         "--build-content-unit derives a manifest from an existing --dry-run summary (no-live; no new media/API " +
         "calls). YouTube letterbox source and Blob liveness evidence are reported not-ready until a later approved " +
         "step supplies --youtube-source / --blob-liveness-result.",
+      planYoutubeLetterboxSource:
+        "--plan-youtube-letterbox reads a content unit manifest's instagramSourcePath and writes a deterministic " +
+        "YouTube letterbox source plan JSON (planned output path + render profile + recommended next command). " +
+        "No ffmpeg is run and no media is created; the content unit manifest itself is never mutated.",
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -366,6 +379,58 @@ function runBuildContentUnit() {
   console.log("");
   console.log(`  manifest:      ${manifestPath}`);
   console.log(`  next:          node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit "${manifestPath}"`);
+  console.log("");
+
+  return 0;
+}
+
+// ── mode: --plan-youtube-letterbox ───────────────────────────────────────────────
+// content unit manifest → deterministic YouTube letterbox source plan(JSON only).
+// ffmpeg를 실행하지 않고, content unit manifest를 mutate하지 않는다(읽기 전용).
+function runPlanYoutubeLetterbox() {
+  const contentUnitPath = getArg("--content-unit");
+  const outDir = getArg("--out-dir");
+  const versionSuffix = getArg("--version-suffix");
+
+  if (!contentUnitPath || !outDir) {
+    console.error("ABORT: --plan-youtube-letterbox requires --content-unit <path> and --out-dir <path>.");
+    return 1;
+  }
+
+  const outDirAbs = resolve(outDir);
+  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+    console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+    return 1;
+  }
+
+  console.log(`[owner-entrypoint] planning YouTube letterbox source from content unit manifest (no-live, no ffmpeg)`);
+  console.log(`[owner-entrypoint] content-unit: ${contentUnitPath}`);
+  console.log(`[owner-entrypoint] out-dir: ${outDirAbs}`);
+  console.log("");
+
+  const result = planYoutubeLetterboxSourceFromContentUnit({ contentUnitPath, versionSuffix });
+
+  if (!result.ok) {
+    console.error(`ABORT: ${result.reason}`);
+    return 1;
+  }
+
+  mkdirSync(outDirAbs, { recursive: true });
+  const planPath = join(outDirAbs, "youtube-letterbox-source-plan.json");
+  writeFileSync(planPath, JSON.stringify(result.plan, null, 2), "utf-8");
+
+  console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_plan_youtube_letterbox_v1", mode: "plan-youtube-letterbox", planPath, plan: result.plan }, null, 2));
+  console.log("");
+  console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  contentId:                ${result.plan.contentId}`);
+  console.log(`  version:                  ${result.plan.version}`);
+  console.log(`  instagramSourcePath:      ${result.plan.instagramSourcePath}`);
+  console.log(`  plannedYoutubeSourcePath: ${result.plan.plannedYoutubeSourcePath}`);
+  console.log(`  inputExists:              ${result.plan.inputExists}`);
+  console.log(`  willExecuteFfmpeg:        ${result.plan.willExecuteFfmpeg}`);
+  console.log("");
+  console.log(`  plan: ${planPath}`);
+  console.log(`  next: ${result.plan.recommendedNextCommand}`);
   console.log("");
 
   return 0;
@@ -530,6 +595,9 @@ switch (requestedMode) {
     break;
   case "--build-content-unit":
     exitCode = runBuildContentUnit();
+    break;
+  case "--plan-youtube-letterbox":
+    exitCode = runPlanYoutubeLetterbox();
     break;
   default:
     printUsage();
