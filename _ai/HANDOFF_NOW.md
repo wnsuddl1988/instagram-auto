@@ -4,141 +4,143 @@
 
 ## Current Task
 
-- Task ID: `instagram-existing-blob-liveness-and-content-unit-attach-no-arm-v1`
-- Owner approval token: `APPROVE_INSTAGRAM_EXISTING_BLOB_LIVENESS_AND_ATTACH_NO_ARM`
-- Latest checkpoint: `a96940a feat(operator): add instagram blob upload one-shot runner`
-- Purpose: confirm the existing Vercel Blob object public URL for the Instagram/full-frame mp4, verify only public `HEAD` liveness (`video/mp4`, content length `20294549`), write a secret-free liveness result JSON, and attach that evidence into a content unit/preflight path without publishing.
+- Task ID: `golden-sample-content-unit-final-readiness-no-live-v1`
+- Owner approval basis: follows completed no-live/read-only approvals and latest checkpoint `5d9857b feat(media): add instagram blob liveness check`
+- Purpose: create and verify a real `dual_platform_content_unit_v1` manifest for the existing final golden sample (`t1_lifestyle_inflation`, `v3_2`) using existing local Instagram/full-frame mp4, existing YouTube letterbox mp4/render result, and existing Blob public URL liveness evidence. This is a no-live readiness consolidation step only.
 
 ## Approved Scope
 
 Approved:
 
-- Use the existing Blob object pathname:
-  - `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
-- Derive or confirm the public URL in a read-only way from existing repo evidence/result files.
-- Perform public URL `HEAD` request only against the expected existing mp4 URL.
-- Validate:
-  - HTTP status is 2xx/3xx, preferably 200
-  - `content-type` is `video/mp4` or starts with `video/`
-  - `content-length` equals `20294549`
-  - URL path contains the exact expected pathname
-- Write a secret-free liveness result JSON under a gitignored/repo-outside output path.
-- Feed that result into existing content-unit builder via `--blob-liveness-result`.
-- Verify the generated content unit contains `blobPublicUrlLivenessEvidence`.
-- Run content-unit preflight and confirm Blob evidence is accepted while no live publish occurs.
+- Use existing local output/evidence files only.
+- Create a checked-in fixture manifest for the ready golden sample content unit.
+- Add a static/readiness guard that validates the fixture and runs orchestrator `--preflight --content-unit <fixture>`.
+- Confirm no publish/upload/API/Blob mutation occurs.
+- Append concise evidence to `_ai/CLAUDE_REPORT.md`.
 
 Not approved:
 
 - Instagram publish/arm or Instagram Graph API calls.
 - YouTube API/OAuth/upload.
-- Blob upload/delete/overwrite/copy/mutation. Avoid Blob SDK token use.
+- Blob upload/delete/overwrite/copy/mutation or additional public HEAD.
 - Env/secret read/write/print, including `.env`, `.env.*`, `.env.local`.
 - Deploy, dependency/lockfile changes, DB/Supabase, browser automation.
 - New media generation, ffmpeg, ffprobe, TTS/image/render/mux.
 - Commit/push.
 
-## Known Inputs And Evidence
+## Existing Inputs
 
-Expected object:
+Use existing files/evidence. Do not regenerate media.
 
-- pathname/key: `instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
-- source size: `20294549`
-- sha256_12: `54957450ac10`
+Instagram source mp4:
 
-Recent one-shot upload result:
+- `C:\tmp\money-shorts-os\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4`
+- expected size: `20294549`
 
-- status: `BLOCKED_ALREADY_EXISTS_OR_OVERWRITE_REFUSED`
-- uploadAttemptCount: `1`
-- blobUploadCount: `0`
-- meaning: the object already exists and `allowOverwrite:false` correctly refused overwrite.
+YouTube letterbox mp4/render evidence:
 
-Useful existing code paths:
+- Preferred render result JSON:
+  - `C:\tmp\money-shorts-os\youtube-letterbox-local-render-execution-once-v1\youtube-letterbox-render-result.json`
+- If valid, use its `outputPath` as `youtubeSourcePath`.
+- Expected prior output size from that approved render: `7349425`
 
-- `scripts/build-dual-platform-content-unit-from-local-summary.mjs`
-  - accepts `--blob-liveness-result <json>`
-  - copies shape-valid `{ url, headStatus, contentType, contentLength }` into `blobPublicUrlLivenessEvidence`
-  - never performs network validation itself.
-- `scripts/run-dual-platform-final-publish-orchestrator.mjs`
-  - supports `--preflight --content-unit <manifest>`
-  - must remain no-publish for this task.
+Blob public URL liveness result:
 
-## Suggested Implementation Shape
+- `C:\tmp\money-shorts-os\instagram-existing-blob-liveness-no-arm-v1\instagram-existing-blob-liveness-result.json`
+- expected:
+  - `status: LIVE_PUBLIC_URL_OK`
+  - `headStatus: 200`
+  - `contentType: video/mp4`
+  - `contentLength: 20294549`
+  - `livenessOk: true`
 
-Prefer adding a small, no-secret liveness runner plus guard:
+Known public URL:
 
-- New liveness runner:
-  - `scripts/check-instagram-existing-blob-liveness-no-arm.mjs`
-- Optional static/result guard:
-  - `scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
-- Optional docs update:
-  - `docs/owner-daily-automation-runbook.md`
-- Append concise evidence:
-  - `_ai/CLAUDE_REPORT.md`
+- `https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`
 
-If no new runner is needed, a temporary gitignored output script is acceptable, but durable runner + guard is preferred because this is part of the owner-usable workflow.
+## Suggested Files
 
-## Required Runner Contract
+New fixture:
 
-Example command:
+- `scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
 
-`node scripts/check-instagram-existing-blob-liveness-no-arm.mjs --pathname instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4 --expected-size 20294549 --out-dir <repo 밖>`
+New guard:
 
-Required behavior:
+- `scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
 
-1. No env/secret access and no `.env*` access.
-2. No `@vercel/blob` mutation calls (`put`, `del`, `copy`, `empty`, overwrite).
-3. Public URL derivation must be deterministic and documented in result JSON.
-   - If using an existing known base URL from project evidence, record it as non-secret public evidence.
-   - Do not require `BLOB_READ_WRITE_TOKEN`.
-4. Perform exactly one public `HEAD` request against the candidate URL.
-5. Do not perform `GET`/download/body fetch.
-6. Result JSON must include:
-   - schemaVersion
-   - status
-   - url
-   - pathname
-   - headStatus
-   - contentType
-   - contentLength
-   - expectedContentLength
-   - urlPathMatchesExpectedPath
-   - livenessOk
-   - sideEffectCounters
-   - envSecretAccess booleans
-7. Fail closed if:
-   - URL is missing
-   - status is not 2xx/3xx
-   - content type is html/text or non-video
-   - content length mismatches `20294549`
-   - URL path does not contain the expected pathname
+Optional docs update only if useful:
 
-## Content Unit Attach / Preflight
+- `docs/owner-daily-automation-runbook.md`
 
-After liveness result is produced:
+Report append:
 
-1. Use the existing builder to generate or rebuild a content unit with:
-   - `--blob-liveness-result <liveness-result.json>`
-   - existing local summary/render result inputs where available
-2. Confirm generated manifest has:
-   - `blobPublicUrlLivenessEvidence.url`
-   - `headStatus`
-   - `contentType`
-   - `contentLength`
-3. Run:
-   - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit <generated manifest>`
-4. Confirm:
-   - no publish/upload occurs
-   - Blob evidence gate is accepted
-   - any remaining readiness failures are accurately reported
+- `_ai/CLAUDE_REPORT.md`
 
-Do not run `--live` or `--arm`.
+## Fixture Contract
+
+The fixture must be secret-free and include:
+
+- `schemaVersion: "dual_platform_content_unit_v1"`
+- `contentId: "t1_lifestyle_inflation"`
+- `version: "v3_2"`
+- `instagramSourcePath`: existing final Instagram/full-frame mp4 path
+- `youtubeSourcePath`: existing YouTube letterbox mp4 path, preferably derived from the render result JSON
+- optimized Instagram metadata:
+  - non-empty `captionFirstLineHook`
+  - non-empty `caption`
+  - 8-12 relevant hashtags
+  - non-empty `callToAction`
+  - `forbiddenUnrelatedTrendTags: true`
+- optimized YouTube metadata:
+  - `titleBase`
+  - `titleWithShortsSuffix`
+  - `descriptionBase`
+  - relevant tags
+  - `categoryId: "22"`
+  - `defaultLanguage: "ko"`
+  - `privacyStatus: "public"`
+  - `selfDeclaredMadeForKids: false`
+- `blobPublicUrlLivenessEvidence` copied from the liveness result:
+  - `url`
+  - `headStatus`
+  - `contentType`
+  - `contentLength`
+- optionally `existingPublishedKeys` for explicit duplicate reference, but remember `contentId/version` already makes this the default evidence content in the orchestrator.
+
+## Guard Requirements
+
+The guard must be dependency-free and no-live. It should:
+
+1. Parse the fixture JSON.
+2. Parse the existing liveness result JSON read-only.
+3. Parse the existing YouTube render result JSON read-only if present.
+4. Validate source file existence and expected sizes using `existsSync/statSync` only.
+5. Validate metadata gate expectations:
+   - Instagram hashtags 8-12
+   - no unrelated trend tags
+   - hook/CTA non-empty
+   - YouTube tags/title present
+6. Run:
+   - `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`
+7. Confirm preflight:
+   - `preflightOk === true`
+   - `sourceFilesReady === true`
+   - `blobLivenessEvidenceOk === true` or equivalent liveArm evidence ok
+   - metadata gate ok
+   - duplicate guard uses `v3_2`
+   - side-effect counters all zero
+   - no publish/upload/API occurs
+8. Do not run `--live` or `--arm`.
+
+If any required local evidence file is missing, fail closed with a clear blocker and do not synthesize fake readiness.
 
 ## Forbidden Actions
 
 - Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
 - Do not print, hash, copy, log, stage, or commit token values.
+- Do not call public HEAD again in this task.
 - Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or paid/external live services.
-- Do not call Blob upload/delete/overwrite/copy/mutation.
+- Do not call Blob SDK, upload/delete/overwrite/copy/mutation.
 - Do not run ffmpeg or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
 - Do not delete/overwrite existing media or result JSON.
@@ -159,13 +161,13 @@ Do not run `--live` or `--arm`.
 
 1. `git status -sb`
 2. Syntax check for changed/new JS/MJS files.
-3. JSON parse for changed/new fixtures/result examples, if any.
-4. New guard, if added:
-   - `node scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
+3. JSON parse for changed/new fixtures.
+4. New guard:
+   - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
 5. Targeted regressions:
-   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
    - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-   - `node scripts/check-instagram-blob-upload-from-request-once-static.mjs`
+   - `node scripts/check-instagram-existing-blob-liveness-attach-static.mjs`
+   - `node scripts/check-dual-platform-content-unit-from-local-summary-static.mjs`
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run full local generation pipeline.
@@ -175,12 +177,11 @@ Do not run ffmpeg/ffprobe/deploy/API.
 
 All must be true:
 
-1. Existing Blob public URL is confirmed or fail-closed with a clear blocker.
-2. Exactly one public URL `HEAD` check is performed if URL derivation succeeds.
-3. Liveness result JSON is secret-free and records URL/status/type/length/path match.
-4. Content unit builder accepts the liveness result via `--blob-liveness-result`.
-5. Orchestrator `--preflight --content-unit <manifest>` runs without publish/upload.
-6. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency change, media generation, commit, or push.
+1. A real golden-sample content unit fixture exists and points at existing local Instagram and YouTube mp4 files.
+2. Blob liveness evidence from the already completed HEAD result is attached.
+3. Orchestrator `--preflight --content-unit <fixture>` passes with `preflightOk:true` and side effects 0.
+4. The fixture remains duplicate-guarded for the already published `t1_lifestyle_inflation/v3_2` evidence.
+5. No env/secret access, Blob mutation, Instagram publish, YouTube upload, deploy, dependency change, media generation, commit, or push.
 
 ## Final Handoff Format
 
@@ -188,10 +189,10 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- public URL
-- HEAD result: status/content-type/content-length
-- liveness result JSON path
-- content unit manifest path used/generated
+- content unit fixture path
+- Instagram source path/size
+- YouTube source path/size
+- Blob liveness evidence summary
 - preflight result summary
 - checks/results
 - side effects confirmation

@@ -4337,3 +4337,15 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. 이전 turn의 Node/libuv exit-code crash(환경 이슈)는 이 보정과 무관하며 그대로 유지(guard가 CLI exit code 대신 result.json 내용을 검증하는 설계는 변경 없음).
 - checkpoint recommendation: guard 1파일 보정 + report append, low-risk. Codex 검토 후 checkpoint commit 가능.
 
+## golden-sample-content-unit-final-readiness-no-live-v1 (2026-07-07)
+
+- **목적**: 최종 golden sample `t1_lifestyle_inflation/v3_2`의 실제 `dual_platform_content_unit_v1` fixture를 만들고, orchestrator `--preflight`가 no-live로 완전한 준비 상태(`preflightOk:true`)를 확인하도록 연결.
+- **신규 파일**: `scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json`(Instagram source = 기존 final full-frame mp4, YouTube source = 기존 승인된 letterbox render result의 outputPath, `blobPublicUrlLivenessEvidence` = 기존 완료된 liveness result 값), `scripts/check-dual-platform-content-unit-final-readiness-static.mjs`(readiness guard, 64 PASS).
+- **핵심 발견**: `contentId`/`version`이 정확히 `t1_lifestyle_inflation`/`v3_2`이면 orchestrator의 `isDefaultContentUnit()`이 `true`가 되어, **fixture의 `blobPublicUrlLivenessEvidence` 필드는 gate 평가에 직접 쓰이지 않고** 코드에 하드코딩된 전역 `BLOB_PUBLIC_URL_LIVENESS_EVIDENCE`(동일한 url/200/video-mp4/20294549 값이 이미 존재하는 `output/instagram-blob-url-liveness-no-arm-v1/result.json` 참조)가 대신 평가된다. fixture 필드는 계약 문서화 목적으로 유지하되, guard는 이 사실을 실제 preflight 출력(`isDefaultContentUnit:true`)으로 검증한다.
+- **preflight 실행 결과**: `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit <fixture>` → **`preflightOk:true`**, `sourceFilesReady:true`(Instagram/YouTube 파일 모두 존재+크기 일치), `blobPublicUrlLivenessEvidence.ok:true`, `metadataOptimizationGateOk:true`(양쪽 gate reasons:[]), `duplicateGuardUsesV3_2:true`, `plan.sideEffectCounters` 전부 0, `liveExecutionPlan.anyStepWillExecute:false`/`anySideEffectPerformed:false`(duplicate guard가 t1_lifestyle_inflation/v3_2를 이미 published로 이중 차단). `--live`/`--arm` 미실행.
+- **checks/results**: node --check PASS, fixture JSON parse PASS. 신규 guard **64 PASS / 0 FAIL**(fixture 계약 7 + liveness result read-only 6 + youtube render result read-only 4 + source 파일 존재/크기 4 + metadata gate 19 + preflight 실행결과 검증 15 + guard 자체 안전성 5). regression 무변경: final publish orchestrator **357/357**, existing blob liveness attach **47/47**, content-unit-from-local-summary **90/90**.
+- **side effects confirmation**: public HEAD 재호출 0, Blob SDK/mutation 0, Instagram/YouTube API 0, ffmpeg/ffprobe 0(existsSync/statSync만 사용), 새 미디어 0, dependency 변경 0, commit/push 0.
+- **env/secret handling**: process.env 접근 0(guard 자체 self-check로 검증), `.env`/`.env.local` 읽기 0, token 값 read/print 0.
+- **deviations/risks**: 없음. guard 초안에서 self-safety 체크(정규식 리터럴 텍스트 제거 방식)가 인접 리터럴과 뒤섞여 오탐하는 문제를 발견해, execFileSync 인자 배열 직접 파싱 + 마커 기반 줄 제외 방식으로 재작성해 해결(64/64 확인).
+- checkpoint recommendation: 신규 2(fixture+guard) + report append, low-risk(read-only preflight 1회 실행, 외부 mutation 0). Codex 검토 후 checkpoint commit 가능.
+

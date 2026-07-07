@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "dual_platform_content_unit_v1",
+  "_note": "Real, final golden-sample content unit for t1_lifestyle_inflation/v3_2. Points at the existing local Instagram full-frame mp4 and the existing approved YouTube letterbox render output. This exact contentId/version already matches the orchestrator's DEFAULT_CONTENT_UNIT, so orchestrator preflight treats it as the default evidence content (its already-published duplicate-guard keys and its globally recorded Blob liveness evidence apply). No media was generated to build this fixture — all referenced files/results already existed.",
+  "contentId": "t1_lifestyle_inflation",
+  "version": "v3_2",
+  "instagramSourcePath": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+  "youtubeSourcePath": "C:\\tmp\\money-shorts-os\\youtube-letterbox-local-render-execution-once-v1\\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4",
+  "instagramMetadata": {
+    "captionFirstLineHook": "월급은 올랐는데 왜 통장은 그대로일까?",
+    "caption": "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "hashtags": [
+      "재테크", "돈관리", "월급관리", "생활비절약", "라이프스타일인플레이션",
+      "사회초년생재테크", "돈모으는법", "절약습관", "경제공부", "릴스"
+    ],
+    "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
+    "forbiddenUnrelatedTrendTags": true
+  },
+  "youtubeMetadata": {
+    "titleBase": "월급 올라도 돈이 안 모이는 이유",
+    "titleWithShortsSuffix": "월급 올라도 돈이 안 모이는 이유 #Shorts",
+    "descriptionBase": "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "tags": [
+      "재테크", "돈관리", "월급관리", "생활비", "라이프스타일인플레이션",
+      "저축", "절약", "사회초년생재테크", "돈모으는법", "Shorts"
+    ],
+    "categoryId": "22",
+    "defaultLanguage": "ko",
+    "privacyStatus": "public",
+    "selfDeclaredMadeForKids": false
+  },
+  "existingPublishedKeys": [
+    "t1_lifestyle_inflation/instagram_reels/v3_2",
+    "t1_lifestyle_inflation/youtube_shorts/v3_2"
+  ],
+  "blobPublicUrlLivenessEvidence": {
+    "url": "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+    "headStatus": 200,
+    "contentType": "video/mp4",
+    "contentLength": 20294549
+  }
+}
