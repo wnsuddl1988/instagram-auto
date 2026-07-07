@@ -4,128 +4,123 @@
 
 ## Current Task
 
-- Task ID: `dual-platform-credential-preflight-redacted-no-live-v1`
-- Owner approval basis: continue after checkpoint `23f1d9f chore(media): route custom content to credential gate`
-- Purpose: add a no-live, no-secret credential readiness preflight so the Owner can see whether required runtime env key names are present before the final live publish wiring step. This must not read `.env.local`, print values, call APIs, or enable actual publish.
+- Task ID: `owner-local-env-no-log-command-wrapper-v1`
+- Owner approval: `APPROVE_OWNER_LOCAL_ENV_NO_LOG_COMMAND_WRAPPER`
+- Purpose: create an Owner-run no-log wrapper/launcher so local automation commands can receive only the approved env keys from `.env.local` as child process env, without exposing values to AI/model/chat/log/docs/git. The first target is making `owner:credential-preflight` show `present:true` when the Owner runs it locally.
 
 ## Why This Is Next
 
-The previous slice removed the old custom-content gate 4.5 halt:
+`8405904 chore(media): add redacted credential preflight` added a safe redacted presence command. Codex executed:
 
-- default published content still blocks at duplicate guard(exit 3)
-- custom ready content reaches gate 5 and exits with `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`(exit 4)
+```powershell
+node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight
+```
 
-The next real blocker is credential readiness. Before wiring credential resolution/API execution, the project needs a safe command that answers:
-
-- Are the required runtime env key **names** present?
-- Which platform is missing keys?
-- Is the output free of secret values?
-- Does this check avoid `.env.local` and external APIs?
-
-This slice is still no-live. It does **not** resolve credential values into API calls.
+In the Codex shell, all six required keys were `present:false` because this process does not inherit the Owner's local secret env. The next blocker is not implementation logic; it is a safe Owner-run wrapper that can read only approved keys from the local `.env.local` file and pass them to a child command without ever printing, storing, hashing, or exposing values.
 
 ## Approved Scope
 
 Approved:
 
-- Add a redacted credential preflight mode to the dual-platform orchestrator:
-  - suggested CLI: `--credential-preflight`
-  - optional `--content-unit <manifest>` should be accepted like other modes if easy; it must not affect env presence logic except context fields.
-  - output JSON only, no secret values.
-- Add owner entrypoint support:
-  - suggested CLI: `node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight [--content-unit <path>]`
-  - package script may be added: `owner:credential-preflight`
-  - status/runbook should mention it briefly.
-- The check may inspect `process.env` **only** for boolean presence of approved key names:
+- Add a no-log Owner-run wrapper/launcher for local commands.
+- The wrapper may read `.env.local` only when the Owner runs it locally.
+- Claude/Codex must not read `.env.local` during implementation or tests.
+- Wrapper must load only these approved keys:
   - `INSTAGRAM_BUSINESS_ACCOUNT_ID`
   - `INSTAGRAM_ACCESS_TOKEN`
   - `YOUTUBE_CLIENT_ID`
   - `YOUTUBE_CLIENT_SECRET`
   - `YOUTUBE_REFRESH_TOKEN`
   - `BLOB_READ_WRITE_TOKEN`
-- Presence output must be redacted:
-  - allowed: key name, `present:true/false`, platform-level `allPresent:true/false`
-  - forbidden: actual value, value length, prefix, suffix, hash, sample, token type inference, copied value.
-- Keep live execution behavior unchanged:
-  - default duplicate content still exit 3 `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
-  - custom ready content still exit 4 `CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE`
-  - actual credential resolution/API call still disabled.
-- Update fixture/docs/guards to reflect the new redacted preflight command.
+- Values may be injected only into a child process env.
+- Output may include key names and present/missing booleans only.
+- Add an Owner command for credential preflight through the wrapper.
+- Add docs/runbook instructions that are easy for Owner to run.
+- Add static guard(s) and tests using fake temp env files or dummy env only.
 - Append concise evidence to `_ai/CLAUDE_REPORT.md`.
+
+Suggested implementation shape:
+
+- `scripts/run-owner-command-with-local-env-no-log.mjs`
+  - reads an explicit env file path, defaulting to `.env.local` only at Owner runtime
+  - allowlist-only parser for the six approved keys
+  - no value print, no length/hash/prefix/suffix/masked output
+  - spawns approved project commands with `spawnSync(process.execPath, args, { shell:false, env: sanitizedEnv })`
+  - first supported command can be `owner:credential-preflight` or `credential-preflight`
+- `scripts/check-owner-local-env-no-log-wrapper-static.mjs`
+  - dependency-free static/runtime guard
+  - uses a fake temp env file with dummy values
+  - asserts child output has `present:true` and dummy values are absent
+  - asserts real `.env.local` is never read by the guard
+- `package.json`
+  - optional script only, no dependency changes, for example `owner:credential-preflight:local`
+- `docs/owner-daily-automation-runbook.md`
+  - add a short "local env no-log wrapper" section
 
 Allowed files:
 
-- `scripts/run-dual-platform-final-publish-orchestrator.mjs`
-- `scripts/run-owner-daily-automation-entrypoint.mjs`
-- `scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-- `scripts/check-owner-daily-automation-entrypoint-static.mjs`
-- `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
-- `docs/dual-platform-final-publish-orchestrator.md`
+- `scripts/run-owner-command-with-local-env-no-log.mjs` (new)
+- `scripts/check-owner-local-env-no-log-wrapper-static.mjs` (new)
 - `docs/owner-daily-automation-runbook.md`
-- `package.json` (scripts only, no dependency/devDependency changes)
+- `package.json` (scripts only; no deps/devDeps/lockfile)
 - `_ai/CLAUDE_REPORT.md`
+- If necessary, `scripts/run-owner-daily-automation-entrypoint.mjs` only for a tiny command-list/status integration; avoid touching it if the standalone wrapper is enough.
 
 Only touch another file if a direct import/check break proves it is necessary, and report why.
 
 ## Required Behavior
 
-### Orchestrator credential preflight
+### Wrapper
 
-Suggested output fields:
+The wrapper must:
 
-- `schemaVersion`
-- `mode: "credential_preflight"`
-- `contentId` / `version` / `isDefaultContentUnit`
-- `credentialValuesAccessed:false`
-- `credentialValuesPrinted:false`
-- `dotEnvLocalDirectAccess:false`
-- `externalApiCallPerformed:false`
-- `requiredEnvKeyNames`
-- `platforms.instagram.keys[]`
-- `platforms.youtube.keys[]`
-- `platforms.vercelBlob.keys[]`
-- `allRequiredKeysPresent`
-- `readyForCredentialResolution`
+- be no-log by construction
+- never print credential values
+- never print value length, prefix, suffix, hash, masked value, token type, sample, or derived data
+- support a fake env file path for tests
+- support the real `.env.local` path only for Owner runtime, not guard tests
+- parse basic `.env` syntax safely enough for key/value lines:
+  - `KEY=value`
+  - optional single/double quotes around values
+  - ignore blank lines and comments
+  - do not expand variables or execute anything
+- allowlist only the six approved keys
+- pass those key/value pairs to a child process env
+- preserve only minimal non-secret OS env needed for child node execution on Windows
+- run the child with `shell:false`
+- remove values from local variables as much as practical after child exits
 
-It may exit 0 regardless of missing keys, as a diagnostic/readiness report. If you choose non-zero on missing keys, document it and make guards deterministic in this environment. Prefer exit 0 for a status-style operator check.
+First command target:
 
-### Owner entrypoint
+- `credential-preflight`
+  - should execute `scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight`
+  - expected with fake env: all six keys `present:true`, `readyForCredentialResolution:true`, but still `credentialResolutionWiredThisSlice:false`
+  - expected with missing fake keys: present false/missing as reported, exit still status-style if underlying command exits 0
 
-- Add `--credential-preflight` mode that delegates to the orchestrator safely with `spawnSync(process.execPath, [...], { shell:false })`.
-- Must not read `.env.local`.
-- Must not print any env value.
-- Must not call live/API/upload.
-- `--status` should list the command and explain it checks only redacted key presence.
-- If adding `package.json` script, modify scripts only:
-  - suggested: `owner:credential-preflight`
+### Guard
 
-### Guard requirements
+The guard must:
 
-- Verify the new mode exists.
-- Verify output includes key names and `present` booleans only.
-- Verify output has no secret-shaped values:
-  - Meta token shape like `EAA...`
-  - Google token shape like `ya29...`
-  - Vercel blob token shape like `vercel_blob_rw_...`
-- Verify no value length/hash/prefix/suffix fields exist.
-- Verify `.env.local` is not referenced in executable code.
-- Verify no external API/Blob/ffmpeg/deploy patterns were added.
-- Verify live behavior is unchanged:
-  - default live duplicate block exit 3
-  - custom ready-probe credential stub exit 4
+- create a fake temp env file outside the repo or under OS temp with dummy values
+- run the wrapper against that fake env only
+- verify dummy values never appear in stdout/stderr/result text
+- verify no value length/hash/prefix/suffix/masked fields are emitted
+- verify `.env.local` is not read by the guard
+- verify wrapper source has no broad env dump/spread that could copy secrets accidentally
+- verify wrapper only supports approved key names
+- verify child process uses `shell:false`
+- verify no Instagram/YouTube/Blob/OpenAI/ElevenLabs/Pexels/Supabase/API/upload/deploy/media generation patterns exist
 
 ## Forbidden Actions
 
-- Do not access/read/edit/print `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
-- Do not print, hash, copy, log, stage, or commit token values.
-- Do not use dotenv, `vercel env pull`, broad env dumps, secret file reads, or any helper that reveals values.
-- Do not report value length, prefix, suffix, hash, sample, or token type inference.
-- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, or paid/external live services.
-- Do not call Blob SDK, upload/delete/overwrite/copy/list/head/mutation.
-- Do not call public HEAD.
-- Do not run ffmpeg or ffprobe.
+- Claude/Codex must not read, print, edit, copy, stage, commit, or summarize `.env`, `.env.*`, `.env.local`, secret files, tokens, API keys, cookies, or credentials.
+- Do not run the wrapper against real `.env.local` during implementation or tests.
+- Do not print, hash, copy, log, stage, or document secret values.
+- Do not report value length, prefix, suffix, hash, masked value, sample, token type inference, or derived credential data.
+- Do not use dotenv package if it would require dependency changes.
+- Do not use `vercel env pull`.
+- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, Blob SDK/mutation/HEAD, ffmpeg, or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
-- Do not delete/overwrite existing media or result JSON.
 - Do not add/change dependencies, lockfiles, pnpm config, fonts, deploy config, or DB schema.
 - Do not commit or push.
 - Do not touch protected/excluded dirty files:
@@ -142,29 +137,26 @@ It may exit 0 regardless of missing keys, as a diagnostic/readiness report. If y
 ## Required Checks
 
 1. `git status -sb`
-2. `node --check scripts/run-dual-platform-final-publish-orchestrator.mjs`
-3. `node --check scripts/run-owner-daily-automation-entrypoint.mjs`
-4. `node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-5. `node --check scripts/check-owner-daily-automation-entrypoint-static.mjs`
-6. `package.json` JSON parse if modified.
-7. Fixture JSON parse for `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` if modified.
-8. `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-9. `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-10. Targeted regression:
-    - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
+2. `node --check scripts/run-owner-command-with-local-env-no-log.mjs`
+3. `node --check scripts/check-owner-local-env-no-log-wrapper-static.mjs`
+4. `node scripts/check-owner-local-env-no-log-wrapper-static.mjs`
+5. Regression:
+   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
+   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+6. If `package.json` changed, JSON parse and confirm deps/devDeps unchanged and `pnpm-lock.yaml` unchanged.
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run local generation pipeline.
-Do not run ffmpeg/ffprobe/deploy/API/network.
+Do not run against real `.env.local`.
 
 ## Definition Of Done
 
 All must be true:
 
-1. Owner can run a short credential preflight command.
-2. The command reports only key presence booleans and platform readiness.
-3. No credential values, lengths, hashes, prefixes, suffixes, or token-shaped strings appear in output/docs/fixtures/report.
-4. `.env.local` and secret files are not read.
+1. Owner has one clear command to run credential preflight with local `.env.local` injected no-log.
+2. The command can be tested with fake env and produces all six `present:true` booleans without exposing values.
+3. No credential values, lengths, hashes, prefixes, suffixes, masked values, or token-shaped strings appear in output/docs/fixtures/report.
+4. Claude/Codex did not read real `.env.local`.
 5. Actual live publish behavior remains unchanged and no API/upload/blob/media side effect occurs.
 6. No dependency/lockfile/deploy change, commit, or push.
 
@@ -175,11 +167,12 @@ Claude Code must stop after the final handoff. Include:
 - task id
 - changed files
 - added command/package script if any
-- credential preflight behavior summary
-- live behavior unchanged summary
+- no-log wrapper behavior summary
+- fake-env test result
 - checks/results
 - side effects confirmation
 - env/secret handling confirmation
 - deviations/risks
 - checkpoint recommendation
 - `전체프로젝트 진행률 : 약 95%`
+
