@@ -23,6 +23,7 @@ const RUNBOOK_PATH = resolve(REPO_ROOT, "docs/owner-daily-automation-runbook.md"
 const CONTENT_UNIT_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit.sample.v1.json");
 const LOCAL_SUMMARY_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.json");
 const LETTERBOX_PLAN_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/youtube_letterbox_source_plan_from_content_unit.sample.v1.json");
+const LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH = resolve(REPO_ROOT, "scripts/fixtures/youtube_letterbox_render_request_from_plan.sample.v1.json");
 
 let passed = 0;
 let failed = 0;
@@ -402,6 +403,82 @@ try { rmSync(plTmpDir, { recursive: true, force: true }); } catch {}
   check(
     "--plan-youtube-letterbox: repo 내부 out-dir 시도가 실제로 디렉터리를 만들지 않음",
     !existsSync(resolve(REPO_ROOT, "scripts/fixtures/should-not-be-created-owner-letterbox-plan")),
+  );
+}
+
+// ── required: YouTube letterbox render-request preparer (no-execute) ───────────
+// task: youtube-letterbox-render-execution-wiring-no-execute-v1
+console.log("\n[ required: --prepare-youtube-letterbox-render bridge mode ]");
+check("letterbox render-request plan sample fixture 존재", existsSync(LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH));
+check("entrypoint: --prepare-youtube-letterbox-render MODES 목록에 존재", src.includes("--prepare-youtube-letterbox-render"));
+check("entrypoint: prepareYoutubeLetterboxRenderFromPlan import 존재", /import\s*\{\s*prepareYoutubeLetterboxRenderFromPlan/.test(src));
+check("entrypoint: runPrepareYoutubeLetterboxRender 함수 존재", /function runPrepareYoutubeLetterboxRender/.test(src));
+check("entrypoint: --status ownerNextSteps에 prepareYoutubeLetterboxRender 안내", src.includes("prepareYoutubeLetterboxRender"));
+
+console.log("\n[ operator smoke: --prepare-youtube-letterbox-render --plan <sample> ]");
+const prTmpDir = mkdtempSync(join(os.tmpdir(), "owner-entrypoint-prepare-youtube-letterbox-render-guard-"));
+let prOut = "";
+let prExit = null;
+try {
+  prOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--prepare-youtube-letterbox-render", "--plan", LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH, "--out-dir", prTmpDir], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  prExit = 0;
+} catch (e) {
+  prExit = typeof e?.status === "number" ? e.status : null;
+  prOut = String(e?.stdout || e?.message || e);
+}
+check("--prepare-youtube-letterbox-render --plan <sample>: exit 0", prExit === 0, `exit=${prExit}`);
+const generatedRequestPath = join(prTmpDir, "youtube-letterbox-render-request.json");
+check("--prepare-youtube-letterbox-render: request JSON 파일 생성됨", existsSync(generatedRequestPath));
+let prRequest = null;
+if (existsSync(generatedRequestPath)) {
+  try { prRequest = JSON.parse(readFileSync(generatedRequestPath, "utf-8")); } catch { prRequest = null; }
+}
+check("--prepare-youtube-letterbox-render: willExecuteFfmpeg === false", prRequest?.willExecuteFfmpeg === false);
+check("--prepare-youtube-letterbox-render: executed === false", prRequest?.executed === false);
+check("--prepare-youtube-letterbox-render: inputExists === false (sample instagramSourcePath 의도적 미존재)", prRequest?.inputExists === false);
+check(
+  "--prepare-youtube-letterbox-render: sideEffectCounters 전부 0",
+  prRequest?.sideEffectCounters?.ffmpegExecutionCount === 0 &&
+    prRequest?.sideEffectCounters?.mediaFilesGeneratedCount === 0 &&
+    prRequest?.sideEffectCounters?.apiCallCount === 0 &&
+    prRequest?.sideEffectCounters?.envSecretReadCount === 0 &&
+    prRequest?.sideEffectCounters?.planMutationCount === 0,
+);
+check("--prepare-youtube-letterbox-render: stdout secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(prOut));
+try { rmSync(prTmpDir, { recursive: true, force: true }); } catch {}
+
+// --run 플래그는 fail-closed(exit != 0) — mutant 방어.
+{
+  const prRunTmpDir = mkdtempSync(join(os.tmpdir(), "owner-entrypoint-prepare-youtube-letterbox-render-run-guard-"));
+  let prRunThrew = false;
+  try {
+    execFileSync(process.execPath, [ENTRYPOINT_PATH, "--prepare-youtube-letterbox-render", "--plan", LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH, "--out-dir", prRunTmpDir, "--run"], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  } catch (e) {
+    prRunThrew = (e.status ?? 1) !== 0;
+  }
+  check("--prepare-youtube-letterbox-render --run: exit != 0(fail-closed)", prRunThrew);
+  check(
+    "--prepare-youtube-letterbox-render --run: request JSON이 생성되지 않음",
+    !existsSync(join(prRunTmpDir, "youtube-letterbox-render-request.json")),
+  );
+  try { rmSync(prRunTmpDir, { recursive: true, force: true }); } catch {}
+}
+
+// out-dir이 repo 내부면 abort(fail-closed) — mutant 방어.
+{
+  let prMutantThrew = false;
+  try {
+    execFileSync(process.execPath, [
+      ENTRYPOINT_PATH, "--prepare-youtube-letterbox-render", "--plan", LETTERBOX_RENDER_REQUEST_PLAN_SAMPLE_PATH,
+      "--out-dir", resolve(REPO_ROOT, "scripts/fixtures/should-not-be-created-owner-render-request"),
+    ], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+  } catch (e) {
+    prMutantThrew = (e.status ?? 1) !== 0;
+  }
+  check("--prepare-youtube-letterbox-render: --out-dir이 repo 내부면 exit != 0(fail-closed)", prMutantThrew);
+  check(
+    "--prepare-youtube-letterbox-render: repo 내부 out-dir 시도가 실제로 디렉터리를 만들지 않음",
+    !existsSync(resolve(REPO_ROOT, "scripts/fixtures/should-not-be-created-owner-render-request")),
   );
 }
 

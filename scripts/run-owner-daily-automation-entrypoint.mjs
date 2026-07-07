@@ -42,6 +42,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildContentUnitFromLocalSummary } from "./build-dual-platform-content-unit-from-local-summary.mjs";
 import { planYoutubeLetterboxSourceFromContentUnit } from "./plan-youtube-letterbox-source-from-content-unit.mjs";
+import { prepareYoutubeLetterboxRenderFromPlan, RUN_DISABLED_STATUS as LETTERBOX_RENDER_RUN_DISABLED_STATUS } from "./prepare-youtube-letterbox-render-from-plan.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -72,7 +73,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -90,6 +91,8 @@ function printUsage() {
         " [--content-id <id>] [--version <version>] [--youtube-source <path>] [--blob-liveness-result <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox" +
         " --content-unit <path> --out-dir <path> [--version-suffix <suffix>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render" +
+        " --plan <youtube-letterbox-source-plan.json> --out-dir <path> [--dry-run | --run]",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
@@ -101,6 +104,11 @@ function printUsage() {
       "  --plan-youtube-letterbox plans a deterministic YouTube Shorts letterbox source path + render",
       "                        profile from a content unit manifest's instagramSourcePath. No ffmpeg is",
       "                        run and no media is created — it only writes a plan JSON under --out-dir.",
+      "",
+      "  --prepare-youtube-letterbox-render validates a youtube-letterbox-source-plan.json and writes a",
+      "                        no-execute render request JSON with the exact future approved command.",
+      "                        --run is refused in this slice (fail-closed, status " +
+        LETTERBOX_RENDER_RUN_DISABLED_STATUS + ").",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -224,6 +232,8 @@ function runStatus() {
         "node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <generated summary.json> --out-dir <outside-repo path>",
       planYoutubeLetterboxSource:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <outside-repo path>",
+      prepareYoutubeLetterboxRender:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render --plan <youtube-letterbox-source-plan.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
@@ -245,6 +255,10 @@ function runStatus() {
         "--plan-youtube-letterbox reads a content unit manifest's instagramSourcePath and writes a deterministic " +
         "YouTube letterbox source plan JSON (planned output path + render profile + recommended next command). " +
         "No ffmpeg is run and no media is created; the content unit manifest itself is never mutated.",
+      prepareYoutubeLetterboxRender:
+        "--prepare-youtube-letterbox-render validates a youtube-letterbox-source-plan.json and writes a no-execute " +
+        "render request JSON with the exact future approved command. --run is refused in this slice (fail-closed, " +
+        `status ${LETTERBOX_RENDER_RUN_DISABLED_STATUS}); actual ffmpeg execution requires a separate approved slice.`,
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -436,6 +450,66 @@ function runPlanYoutubeLetterbox() {
   return 0;
 }
 
+// ── mode: --prepare-youtube-letterbox-render ─────────────────────────────────────
+// youtube-letterbox-source-plan.json → 실행 직전 render request(JSON only, no-execute).
+// --run은 이 slice에서 항상 fail-closed. plan을 mutate하지 않는다(읽기 전용).
+function runPrepareYoutubeLetterboxRender() {
+  const planPath = getArg("--plan");
+  const outDir = getArg("--out-dir");
+  const isRun = hasFlag("--run");
+
+  if (!planPath || !outDir) {
+    console.error("ABORT: --prepare-youtube-letterbox-render requires --plan <path> and --out-dir <path>.");
+    return 1;
+  }
+
+  const outDirAbs = resolve(outDir);
+  if (outDirAbs.startsWith(REPO_ROOT + "\\") || outDirAbs.startsWith(REPO_ROOT + "/")) {
+    console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+    return 1;
+  }
+
+  if (isRun) {
+    console.error(
+      `ABORT: --run is not executable in this slice. status: ${LETTERBOX_RENDER_RUN_DISABLED_STATUS}\n` +
+        "Actual ffmpeg execution requires a separate approved slice.",
+    );
+    return 1;
+  }
+
+  console.log(`[owner-entrypoint] preparing YouTube letterbox render request from plan (no-execute)`);
+  console.log(`[owner-entrypoint] plan: ${planPath}`);
+  console.log(`[owner-entrypoint] out-dir: ${outDirAbs}`);
+  console.log("");
+
+  const result = prepareYoutubeLetterboxRenderFromPlan({ planPath });
+
+  if (!result.ok) {
+    console.error(`ABORT: ${result.reason}`);
+    return 1;
+  }
+
+  mkdirSync(outDirAbs, { recursive: true });
+  const requestPath = join(outDirAbs, "youtube-letterbox-render-request.json");
+  writeFileSync(requestPath, JSON.stringify(result.request, null, 2), "utf-8");
+
+  console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_prepare_youtube_letterbox_render_v1", mode: "prepare-youtube-letterbox-render", requestPath, request: result.request }, null, 2));
+  console.log("");
+  console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  contentId:                ${result.request.contentId}`);
+  console.log(`  version:                  ${result.request.version}`);
+  console.log(`  instagramSourcePath:      ${result.request.instagramSourcePath}`);
+  console.log(`  plannedYoutubeSourcePath: ${result.request.plannedYoutubeSourcePath}`);
+  console.log(`  inputExists:              ${result.request.inputExists}`);
+  console.log(`  willExecuteFfmpeg:        ${result.request.willExecuteFfmpeg}`);
+  console.log("");
+  console.log(`  request: ${requestPath}`);
+  console.log(`  future approved command: ${result.request.futureApprovedCommand}`);
+  console.log("");
+
+  return 0;
+}
+
 // ── mode: --preflight ──────────────────────────────────────────────────────────
 function runPreflight() {
   const contentUnitPath = getArg("--content-unit");
@@ -598,6 +672,9 @@ switch (requestedMode) {
     break;
   case "--plan-youtube-letterbox":
     exitCode = runPlanYoutubeLetterbox();
+    break;
+  case "--prepare-youtube-letterbox-render":
+    exitCode = runPrepareYoutubeLetterboxRender();
     break;
   default:
     printUsage();

@@ -15,6 +15,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --status
 node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run
 node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <dry-run이 만든 summary.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --plan-youtube-letterbox --content-unit <manifest.json> --out-dir <레포 밖 경로>
+node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render --plan <youtube-letterbox-source-plan.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --preflight
 node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 ```
@@ -27,16 +28,17 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 | `--dry-run` | 기존 `run-local-money-shorts-from-render-manifest.mjs`를 기본 fixture(`scripts/fixtures/provider-candidate-render-manifest.visual-only.json`)로 실행해 로컬 mp4 dry-run 패킷을 생성 | 실제 업로드/API 호출 없음. TTS는 local_mock(핑크노이즈) — 진짜 음성 아님 |
 | `--build-content-unit` | `--dry-run`이 만든 summary JSON(또는 sub-pipeline summary)에서 `dual_platform_content_unit_v1` manifest를 자동 생성 | 새 미디어/ffmpeg 실행 없음, API/네트워크 호출 없음. YouTube source/Blob evidence가 없으면 readiness boolean으로 fail-closed 보고만 함 |
 | `--plan-youtube-letterbox` | content unit manifest의 `instagramSourcePath`를 입력으로, deterministic YouTube Shorts letterbox 출력 경로 + render profile + 다음 명령을 `youtube-letterbox-source-plan.json`으로 기록 | ffmpeg 실행 없음, 새 mp4 생성 없음, content unit manifest를 mutate하지 않음(읽기 전용) |
+| `--prepare-youtube-letterbox-render` | `youtube-letterbox-source-plan.json`을 검증(schemaVersion/willExecuteFfmpeg/출력 경로)하고 실행 직전 render request(`youtube-letterbox-render-request.json`) + 정확한 미래 승인 명령을 기록 | ffmpeg 실행 없음, 새 mp4 생성 없음, plan JSON을 mutate하지 않음(읽기 전용). `--run`은 이 slice에서 항상 fail-closed(`YOUTUBE_LETTERBOX_RENDER_RUN_DISABLED_THIS_SLICE`) |
 | `--preflight` | 기존 `run-dual-platform-final-publish-orchestrator.mjs --preflight`를 실행해 Instagram/YouTube 게시 준비 상태 + duplicate guard 판정을 요약 | 실제 API 호출/Blob 접근 없음 |
 | `--duplicate-guard-check` | preflight로 현재 콘텐츠가 duplicate guard에 의해 양쪽 플랫폼 모두 차단될 것을 **먼저 확인**한 뒤에만 `--live`를 1회 실행해 실제로 안전하게 차단되는지 확인 | duplicate block이 확정되지 않으면 `--live`를 아예 실행하지 않고 즉시 중단(fail-closed). exit 3(`BLOCKED_DUPLICATE_ALREADY_PUBLISHED`)을 게시 성공으로 취급하지 않음 |
 
 `--dry-run`에 `--manifest <path>` / `--out-root <path>`를 추가로 줄 수 있다.
 기본 out-root는 레포 밖(`C:\tmp\money-shorts-os\owner-daily-automation-entrypoint-v1`)이다.
 
-## 새 영상(future new video)의 실제 순서: dry-run → manifest → letterbox 계획 → media 생성/첨부 → Blob → preflight/publish
+## 새 영상(future new video)의 실제 순서: dry-run → manifest → letterbox 계획 → render 요청 준비 → media 생성/첨부 → Blob → preflight/publish
 
-새 영상 하나를 실제로 다루는 practical한 순서는 다음과 같다(이 slice는 1~3단계까지가
-자동화되어 있고, 4~6단계는 별도 승인된 후속 작업, 7단계는 이미 존재하는 preflight/publish
+새 영상 하나를 실제로 다루는 practical한 순서는 다음과 같다(이 slice는 1~4단계까지가
+자동화되어 있고, 5~7단계는 별도 승인된 후속 작업, 8단계는 이미 존재하는 preflight/publish
 gate다):
 
 1. **local dry-run 실행**: `--dry-run [--manifest <path>] [--out-root <path>]`로 로컬
@@ -58,20 +60,27 @@ gate다):
    background, 864x1536 콘텐츠 박스, 중앙 정렬) + `recommendedNextCommand`를
    `youtube-letterbox-source-plan.json`으로 기록한다. ffmpeg는 실행하지 않고, 새 mp4도
    생성하지 않으며, content unit manifest 자체는 절대 mutate하지 않는다(읽기 전용).
-4. **YouTube letterbox source 실제 생성** (별도 승인된 local media 단계): 위 plan의
-   `recommendedNextCommand`(`scripts/create-youtube-shorts-letterbox-variant.mjs --input
-   <instagramSourcePath> --output <plannedYoutubeSourcePath> --dry-run`)로 먼저 계획을
-   재확인한 뒤, 별도 승인 하에 `--run`을 여는 후속 slice에서 실제 letterbox mp4를 생성한다.
-5. **YouTube letterbox source manifest에 첨부**: letterbox mp4가 준비되면
+4. **YouTube letterbox render 요청 준비**: `--prepare-youtube-letterbox-render --plan <위
+   plan 경로> --out-dir <레포 밖 경로>`로 plan JSON의 schemaVersion/`willExecuteFfmpeg`/
+   출력 경로(레포 밖, `.mp4`)를 검증하고, 실행 직전 render request
+   (`youtube-letterbox-render-request.json`)와 정확한 미래 승인 명령
+   (`scripts/create-youtube-shorts-letterbox-variant.mjs --input <instagramSourcePath>
+   --output <plannedYoutubeSourcePath> --dry-run`)을 기록한다. `--run`은 이 slice에서
+   항상 fail-closed(`YOUTUBE_LETTERBOX_RENDER_RUN_DISABLED_THIS_SLICE`)이며, ffmpeg 실행/
+   새 mp4 생성/plan JSON mutate 전부 없음(읽기 전용).
+5. **YouTube letterbox source 실제 생성** (별도 승인된 local media 단계): 위 request의
+   미래 승인 명령으로 먼저 `--dry-run` 계획을 재확인한 뒤, 별도 승인 하에 `--run`을 여는
+   후속 slice에서 실제 letterbox mp4를 생성한다.
+6. **YouTube letterbox source manifest에 첨부**: letterbox mp4가 준비되면
    `--youtube-source <plannedYoutubeSourcePath>`를 다시 붙여 manifest를 재생성하거나
    manifest의 `youtubeSourcePath`를 직접 채운다.
-6. **Blob liveness evidence 첨부** (승인된 Blob upload/liveness 이후): `--blob-liveness-result
+7. **Blob liveness evidence 첨부** (승인된 Blob upload/liveness 이후): `--blob-liveness-result
    <json>`으로 manifest에 `blobPublicUrlLivenessEvidence`를 추가한다. 이 slice의 builder는
    네트워크 HEAD/list/readback을 절대 수행하지 않는다 — evidence JSON을 그대로 읽어 shape만
    검증한다.
-7. **`--preflight --content-unit <manifest>` 실행**: 전체 readiness gate 결과를 확인한다.
+8. **`--preflight --content-unit <manifest>` 실행**: 전체 readiness gate 결과를 확인한다.
 
-이 slice에서는 1~3단계만 자동화되어 있으며, 업로드/게시/새 외부 미디어 생성은 전혀
+이 slice에서는 1~4단계만 자동화되어 있으며, 업로드/게시/새 외부 미디어 생성은 전혀
 수행하지 않는다.
 
 ## 새 영상(future new video)을 content unit manifest로 다루기
