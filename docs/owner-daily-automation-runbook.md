@@ -19,6 +19,7 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterb
 node scripts/run-owner-daily-automation-entrypoint.mjs --render-youtube-letterbox-once --approval APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE
 node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit --summary <summary.json> --youtube-render-result <youtube-letterbox-render-result.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload --content-unit <manifest.json> --out-dir <레포 밖 경로>
+node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload --request <instagram-blob-upload-request.json> --out-dir <레포 밖 경로>
 node scripts/run-owner-daily-automation-entrypoint.mjs --preflight
 node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 ```
@@ -34,17 +35,18 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
 | `--prepare-youtube-letterbox-render` | `youtube-letterbox-source-plan.json`을 검증(schemaVersion/willExecuteFfmpeg/출력 경로)하고 실행 직전 render request(`youtube-letterbox-render-request.json`) + 정확한 미래 승인 명령을 기록 | ffmpeg 실행 없음, 새 mp4 생성 없음, plan JSON을 mutate하지 않음(읽기 전용). `--run`은 이 slice에서 항상 fail-closed(`YOUTUBE_LETTERBOX_RENDER_RUN_DISABLED_THIS_SLICE`) |
 | `--render-youtube-letterbox-once` | **승인 토큰이 있을 때만** 로컬 ffmpeg를 정확히 1회 실행해 승인된 source mp4에서 YouTube letterbox mp4를 생성하고 read-only ffprobe로 검증. 하위 runner `run-youtube-letterbox-render-from-request-once.mjs`에 위임 | `--approval APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE` 없으면 실행 거부. output mp4가 이미 있으면 덮어쓰지 않고 `BLOCKED_OUTPUT_ALREADY_EXISTS_NO_RENDER`로 중단. ffmpeg 2회 실행 없음. API/upload/env/deploy side effect 없음 |
 | `--plan-instagram-blob-upload` | content unit manifest의 `instagramSourcePath`를 read-only로 읽어 SHA-256을 계산하고, deterministic Blob pathname + `put()` 옵션 plan을 `instagram-blob-upload-request.json`으로 기록 | `@vercel/blob` 호출 없음, 실제 업로드 없음, 네트워크/env 접근 없음, content unit manifest를 mutate하지 않음(읽기 전용). 실제 업로드는 별도 승인 토큰 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`가 있는 후속 단계에서만 가능 |
+| `--prepare-instagram-blob-upload` | `instagram-blob-upload-request.json`을 받아 source mp4가 여전히 request의 size + SHA-256 + deterministic pathname + `put()` 옵션 plan과 일치하는지 read-only로 재검증하고, no-execute `instagram-blob-upload-preflight.json`(모든 검증 통과 시에만 `readyForFutureApprovedUpload:true`)을 기록 | `@vercel/blob` 호출 없음, 실제 업로드 없음, public-URL liveness/HEAD 없음, 네트워크/env 접근 없음, request JSON/source mp4를 mutate하지 않음(읽기 전용). `--run`은 이 slice에서 request 검증/출력 이전에 fail-closed(`INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_THIS_SLICE`, 부작용 0). 실제 업로드는 별도 승인 slice 필요 |
 | `--preflight` | 기존 `run-dual-platform-final-publish-orchestrator.mjs --preflight`를 실행해 Instagram/YouTube 게시 준비 상태 + duplicate guard 판정을 요약 | 실제 API 호출/Blob 접근 없음 |
 | `--duplicate-guard-check` | preflight로 현재 콘텐츠가 duplicate guard에 의해 양쪽 플랫폼 모두 차단될 것을 **먼저 확인**한 뒤에만 `--live`를 1회 실행해 실제로 안전하게 차단되는지 확인 | duplicate block이 확정되지 않으면 `--live`를 아예 실행하지 않고 즉시 중단(fail-closed). exit 3(`BLOCKED_DUPLICATE_ALREADY_PUBLISHED`)을 게시 성공으로 취급하지 않음 |
 
 `--dry-run`에 `--manifest <path>` / `--out-root <path>`를 추가로 줄 수 있다.
 기본 out-root는 레포 밖(`C:\tmp\money-shorts-os\owner-daily-automation-entrypoint-v1`)이다.
 
-## 새 영상(future new video)의 실제 순서: dry-run → manifest → letterbox 계획 → render 요청 준비 → media 생성/첨부 → Blob upload plan → Blob → preflight/publish
+## 새 영상(future new video)의 실제 순서: dry-run → manifest → letterbox 계획 → render 요청 준비 → media 생성/첨부 → Blob upload plan → Blob upload preflight → Blob → preflight/publish
 
-새 영상 하나를 실제로 다루는 practical한 순서는 다음과 같다(이 slice는 1~4단계와 7단계(계획
-생성)까지가 자동화되어 있고, 5~6단계와 8단계(실제 업로드)는 별도 승인된 후속 작업, 9단계는
-이미 존재하는 preflight/publish gate다):
+새 영상 하나를 실제로 다루는 practical한 순서는 다음과 같다(이 slice는 1~4단계와 7~8단계(계획
+생성 + no-execute upload preflight)까지가 자동화되어 있고, 5~6단계와 9단계(실제 업로드)는 별도
+승인된 후속 작업, 10단계는 이미 존재하는 preflight/publish gate다):
 
 1. **local dry-run 실행**: `--dry-run [--manifest <path>] [--out-root <path>]`로 로컬
    generation pipeline을 돌려 Instagram full-frame/tts-mux mp4 + upload metadata를 생성한다.
@@ -101,14 +103,26 @@ node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check
    기록한다. `@vercel/blob`을 호출하지 않고, 실제 업로드도 하지 않으며, content unit manifest
    자체는 절대 mutate하지 않는다(읽기 전용). 이 request는 이후 승인된 업로드 단계가 그대로
    쓸 수 있는 deterministic 입력이다.
-8. **Blob 실제 업로드 + liveness evidence 첨부** (승인 토큰 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`
-   필요): 위 request로 실제 업로드를 수행한 뒤, `--blob-liveness-result <json>`으로 manifest에
-   `blobPublicUrlLivenessEvidence`를 추가한다. 이 slice의 builder는 네트워크 HEAD/list/readback을
-   절대 수행하지 않는다 — evidence JSON을 그대로 읽어 shape만 검증한다.
-9. **`--preflight --content-unit <manifest>` 실행**: 전체 readiness gate 결과를 확인한다.
+8. **Instagram Blob upload readiness 재검증 (no-execute)**: `--prepare-instagram-blob-upload
+   --request <위 instagram-blob-upload-request.json> --out-dir <레포 밖 경로>`로 request가 여전히
+   유효한지 실제 업로드 없이 재검증한다. executor는 request의 계약 필드(schemaVersion/
+   requiresApprovalToken/uploadPerformed/willUpload/platform/variantId/contentType/putOptions)를
+   확인하고, source mp4를 read-only로 다시 열어 **현재** size + SHA-256이 request에 기록된 값과
+   정확히 일치하는지, deterministic pathname이 계약과 일치하는지 재계산·대조한 뒤
+   `instagram-blob-upload-preflight.json`을 기록한다(모든 검증 통과 시에만
+   `readyForFutureApprovedUpload:true`). `@vercel/blob` 호출/실제 업로드/public-URL liveness/HEAD/
+   네트워크/env 접근이 전혀 없고, request JSON/source mp4를 mutate하지 않는다. `--run`은 이 slice에서
+   request 검증/출력 이전에 fail-closed(`INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_THIS_SLICE`, out-dir조차
+   생성하지 않음). 이 단계는 실제 업로드 직전에 "request가 여전히 신뢰 가능한가"를 증명하는 게이트다.
+9. **Blob 실제 업로드 + liveness evidence 첨부** (승인 토큰 `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST`
+   필요): 위 preflight가 `readyForFutureApprovedUpload:true`이면, 별도 승인 slice에서 실제 업로드를
+   수행한 뒤 `--blob-liveness-result <json>`으로 manifest에 `blobPublicUrlLivenessEvidence`를 추가한다.
+   이 slice의 builder는 네트워크 HEAD/list/readback을 절대 수행하지 않는다 — evidence JSON을 그대로
+   읽어 shape만 검증한다.
+10. **`--preflight --content-unit <manifest>` 실행**: 전체 readiness gate 결과를 확인한다.
 
-이 slice에서는 1~4단계와 7단계(Blob upload 요청 계획)만 자동화되어 있으며, 실제
-업로드/게시/새 외부 미디어 생성은 전혀 수행하지 않는다.
+이 slice에서는 1~4단계와 7~8단계(Blob upload 요청 계획 + no-execute upload preflight)만
+자동화되어 있으며, 실제 업로드/게시/새 외부 미디어 생성은 전혀 수행하지 않는다.
 
 ## 새 영상(future new video)을 content unit manifest로 다루기
 

@@ -44,6 +44,7 @@ import { buildContentUnitFromLocalSummary } from "./build-dual-platform-content-
 import { planYoutubeLetterboxSourceFromContentUnit } from "./plan-youtube-letterbox-source-from-content-unit.mjs";
 import { prepareYoutubeLetterboxRenderFromPlan, RUN_DISABLED_STATUS as LETTERBOX_RENDER_RUN_DISABLED_STATUS } from "./prepare-youtube-letterbox-render-from-plan.mjs";
 import { planInstagramBlobUploadFromContentUnit } from "./plan-instagram-blob-upload-from-content-unit.mjs";
+import { prepareInstagramBlobUploadFromRequest, RUN_DISABLED_STATUS as INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_STATUS, isRepoRootOrInside } from "./prepare-instagram-blob-upload-from-request.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -76,7 +77,7 @@ function hasFlag(name) {
   return args.includes(name);
 }
 
-const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once", "--plan-instagram-blob-upload"];
+const MODES = ["--status", "--dry-run", "--preflight", "--duplicate-guard-check", "--build-content-unit", "--plan-youtube-letterbox", "--prepare-youtube-letterbox-render", "--render-youtube-letterbox-once", "--plan-instagram-blob-upload", "--prepare-instagram-blob-upload"];
 const requestedMode = MODES.find((m) => hasFlag(m));
 
 function printUsage() {
@@ -103,6 +104,8 @@ function printUsage() {
         " [--request <youtube-letterbox-render-request.json>] [--source <mp4>] [--output <mp4>] [--out-dir <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload" +
         " --content-unit <path> --out-dir <path>",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload" +
+        " --request <instagram-blob-upload-request.json> --out-dir <path> [--dry-run | --run]",
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
@@ -134,6 +137,13 @@ function printUsage() {
       "                        JSON (pathname + put() option plan). No @vercel/blob call, no upload, no",
       "                        network/env access. Actual upload still requires a separate approved step",
       "                        with approval token APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST.",
+      "",
+      "  --prepare-instagram-blob-upload consumes an instagram-blob-upload-request.json and re-verifies the",
+      "                        source mp4 still matches the recorded size + SHA-256 + deterministic pathname",
+      "                        + put() option plan, then writes a no-execute instagram-blob-upload-preflight.json",
+      "                        proving readiness. No @vercel/blob call, no upload, no liveness/HEAD, no network/env.",
+      "                        --run is refused in this slice (fail-closed, status " +
+        INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_STATUS + "); actual upload requires a separate approved slice.",
       "",
       "Exactly one mode flag is required.",
     ].join("\n"),
@@ -263,6 +273,8 @@ function runStatus() {
         "node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-youtube-letterbox-render --plan <youtube-letterbox-source-plan.json> --out-dir <outside-repo path>",
       planInstagramBlobUpload:
         "node scripts/run-owner-daily-automation-entrypoint.mjs --plan-instagram-blob-upload --content-unit <manifest.json> --out-dir <outside-repo path>",
+      prepareInstagramBlobUpload:
+        "node scripts/run-owner-daily-automation-entrypoint.mjs --prepare-instagram-blob-upload --request <instagram-blob-upload-request.json> --out-dir <outside-repo path>",
       checkPublishReadiness: "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight",
       confirmCurrentContentIsSafelyBlocked: "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
       checkFutureNewVideoReadiness:
@@ -300,6 +312,12 @@ function runStatus() {
         "under --out-dir. No @vercel/blob call, no upload, no network/env access; the content unit manifest is " +
         "never mutated. Actual upload still requires a separate approved step with approval token " +
         "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST.",
+      prepareInstagramBlobUpload:
+        "--prepare-instagram-blob-upload consumes the instagram-blob-upload-request.json and re-verifies that " +
+        "the source mp4 still matches the recorded size + SHA-256 + deterministic pathname + put() option plan, " +
+        "then writes a no-execute instagram-blob-upload-preflight.json (readyForFutureApprovedUpload:true only " +
+        "when every check passes). No @vercel/blob call, no upload, no public-URL liveness/HEAD, no network/env " +
+        `access; the request JSON is never mutated. --run is refused this slice (fail-closed, status ${INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_STATUS}).`,
     },
     whyCurrentContentWillNotRepost:
       "t1_lifestyle_inflation/v3_2 already has completed Instagram (media_id " +
@@ -638,6 +656,74 @@ function runPlanInstagramBlobUpload() {
   return 0;
 }
 
+// ── mode: --prepare-instagram-blob-upload ────────────────────────────────────────
+// instagram-blob-upload-request.json → no-execute upload readiness/preflight JSON.
+// @vercel/blob를 호출하지 않고, request JSON/source mp4를 mutate하지 않는다(읽기 전용).
+// --run은 이 slice에서 항상 fail-closed(request 검증/출력 이전에 abort, 부작용 0).
+function runPrepareInstagramBlobUpload() {
+  const requestPath = getArg("--request");
+  const outDir = getArg("--out-dir");
+  const isRun = hasFlag("--run");
+
+  // --run은 request 검증/출력 이전에 fail-closed로 막는다(부작용 0, Blob SDK/env 접근 없음).
+  if (isRun) {
+    console.error(
+      `ABORT: --run is not executable in this slice. status: ${INSTAGRAM_BLOB_UPLOAD_RUN_DISABLED_STATUS}\n` +
+        "Actual Vercel Blob upload requires a separate approved slice.",
+    );
+    return 1;
+  }
+
+  if (!requestPath || !outDir) {
+    console.error("ABORT: --prepare-instagram-blob-upload requires --request <path> and --out-dir <path>.");
+    return 1;
+  }
+
+  const outDirAbs = resolve(outDir);
+  if (isRepoRootOrInside(outDirAbs, REPO_ROOT)) {
+    console.error(`ABORT: --out-dir must be outside repo root.\n  repo: ${REPO_ROOT}\n  out-dir: ${outDirAbs}`);
+    return 1;
+  }
+  if ([requestPath, outDirAbs].some((p) => typeof p === "string" && p.includes(".money-shorts-local"))) {
+    console.error("ABORT: .money-shorts-local access forbidden.");
+    return 1;
+  }
+
+  console.log(`[owner-entrypoint] preparing Instagram Vercel Blob upload readiness from request (no-execute)`);
+  console.log(`[owner-entrypoint] request: ${requestPath}`);
+  console.log(`[owner-entrypoint] out-dir: ${outDirAbs}`);
+  console.log("");
+
+  const result = prepareInstagramBlobUploadFromRequest({ requestPath });
+
+  if (!result.ok) {
+    console.error(`ABORT: ${result.reason}`);
+    return 1;
+  }
+
+  mkdirSync(outDirAbs, { recursive: true });
+  const preflightPath = join(outDirAbs, "instagram-blob-upload-preflight.json");
+  writeFileSync(preflightPath, JSON.stringify(result.preflight, null, 2), "utf-8");
+
+  console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_prepare_instagram_blob_upload_v1", mode: "prepare-instagram-blob-upload", preflightPath, preflight: result.preflight }, null, 2));
+  console.log("");
+  console.log("── Owner summary ──────────────────────────────────────────────");
+  console.log(`  contentId:                       ${result.preflight.contentId}`);
+  console.log(`  version:                         ${result.preflight.version}`);
+  console.log(`  sourcePath:                      ${result.preflight.sourcePath}`);
+  console.log(`  sourceSizeMatches:               ${result.preflight.sourceSizeMatches}`);
+  console.log(`  sha256Matches:                   ${result.preflight.sha256Matches}`);
+  console.log(`  putOptionsMatchApprovedContract: ${result.preflight.putOptionsMatchApprovedContract}`);
+  console.log(`  readyForFutureApprovedUpload:    ${result.preflight.readyForFutureApprovedUpload}`);
+  console.log(`  runStatus:                       ${result.preflight.runStatus}`);
+  console.log("");
+  console.log(`  preflight: ${preflightPath}`);
+  console.log(`  future approved command: ${result.preflight.futureApprovedCommand}`);
+  console.log("");
+
+  return 0;
+}
+
 // ── mode: --preflight ──────────────────────────────────────────────────────────
 function runPreflight() {
   const contentUnitPath = getArg("--content-unit");
@@ -809,6 +895,9 @@ switch (requestedMode) {
     break;
   case "--plan-instagram-blob-upload":
     exitCode = runPlanInstagramBlobUpload();
+    break;
+  case "--prepare-instagram-blob-upload":
+    exitCode = runPrepareInstagramBlobUpload();
     break;
   default:
     printUsage();
