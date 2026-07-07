@@ -166,9 +166,9 @@
       "vercelBlob": ["BLOB_READ_WRITE_TOKEN"]
     },
     "livePublishFunctionRefs": {
-      "note": "live 실행 시 호출될 예정인 함수 참조. 이 slice의 어떤 실행 경로에서도 호출되지 않는다.",
-      "instagram": "lib/instagram.ts#uploadInstagramReel",
-      "youtube": "lib/youtube.ts#uploadYouTubeShorts",
+      "note": "live 실행 시 호출될 예정인 primary 함수 참조(explicit credential injection). 이 slice의 어떤 실행 경로에서도 호출되지 않는다. uploadInstagramReel/uploadYouTubeShorts(값 없이 env를 호출 시점에 읽는 호환 wrapper)는 여전히 존재하지만 이 live execution contract의 primary ref가 아니다 — orchestrator plan은 credential을 인자로 명시 주입하는 explicit 함수를 가리킨다.",
+      "instagram": "lib/instagram.ts#uploadInstagramReelWithCredentials",
+      "youtube": "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
       "instagramBlob": "lib/instagram-blob-media.ts#uploadInstagramBlob (fail-closed until APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST)"
     },
     "duplicateLedgerConditionToBlockLive": {
@@ -222,6 +222,7 @@
           "enabled": false,
           "willExecute": false,
           "sideEffectPerformed": false,
+          "functionRef": "lib/instagram.ts#uploadInstagramReelWithCredentials",
           "requiredApprovalTokens": ["APPROVE_DUAL_PLATFORM_ARM"],
           "requiredEnvKeyNames": ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"],
           "dependsOnMetadataGate": true,
@@ -236,6 +237,7 @@
           "enabled": false,
           "willExecute": false,
           "sideEffectPerformed": false,
+          "functionRef": "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
           "requiredApprovalTokens": ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
           "requiredEnvKeyNames": ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
           "shortLivedCredentialSource": "derived_in_memory_from_refresh_token",
@@ -311,7 +313,8 @@
       "liveExecutionPlan에서 metadata gate 또는 duplicate guard dependency가 누락됨",
       "liveExecutionPlan step의 requiredApprovalTokens가 누락되거나 약화됨",
       "liveExecutionPlan에 secret 값/토큰/credential value/URL query token이 기록됨",
-      "runner가 실제 lib live publish 함수를 import하거나 fetch/googleapis/@vercel/blob/put(를 실행 경로에 넣음"
+      "runner가 실제 lib live publish 함수를 import하거나 fetch/googleapis/@vercel/blob/put(를 실행 경로에 넣음",
+      "livePublishFunctionRefs 또는 liveExecutionPlan step functionRef가 explicit credential 함수(uploadInstagramReelWithCredentials/uploadYouTubeShortsWithCredentials)가 아니라 wrapper-only 함수(uploadInstagramReel/uploadYouTubeShorts)로 회귀함"
     ]
   }
 }

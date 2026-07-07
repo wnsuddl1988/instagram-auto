@@ -52,8 +52,9 @@ export const REQUIRED_ENV_KEY_NAMES = {
  * 실제로 import/호출되지 않는다 — 계약 문서화용 참조일 뿐이다.
  */
 export const LIVE_PUBLISH_FUNCTION_REFS = {
-  instagram: "lib/instagram.ts#uploadInstagramReel",
-  youtube: "lib/youtube.ts#uploadYouTubeShorts",
+  // import-safe explicit credential injection 함수를 가리킨다(credential을 인자로만 받음).
+  instagram: "lib/instagram.ts#uploadInstagramReelWithCredentials",
+  youtube: "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
   instagramBlob: "lib/instagram-blob-media.ts#uploadInstagramBlob",
   instagramBlobPlan: "lib/instagram-blob-media.ts#planInstagramBlobUpload",
   instagramBlobPathname: "lib/instagram-blob-media.ts#buildInstagramBlobPathname",
@@ -349,7 +350,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
       ...disabledFlags,
       functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
       inputContract: {
-        // uploadInstagramReel({ videoUrl, caption }) 계약과 정합.
+        // uploadInstagramReelWithCredentials({ videoUrl, caption, credentials }) 계약과 정합.
         videoUrlFrom: "instagram_blob_upload.instagram_public_video_url",
         captionFields: ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
       },
@@ -393,7 +394,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
       ...disabledFlags,
       functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
       inputContract: {
-        // uploadYouTubeShorts 계약과 정합: video 파일 + 최적화 메타데이터 + OAuth credential.
+        // uploadYouTubeShortsWithCredentials 계약과 정합: video 파일 + 최적화 메타데이터 + OAuth credential.
         // short-lived credential은 refresh token으로 메모리에서 발급 — 장기 env로 요구하지 않는다.
         videoPathField: "youtubeSourcePath",
         metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],

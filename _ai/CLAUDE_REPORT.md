@@ -3992,3 +3992,49 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. lib 파일은 수정 허용이었으나 실제 import 대신 문자열 `functionRef`로 연결(no-execute 보장·표면 확대 회피). live plan은 계약(필드 이름/boolean/key shape/pathname 템플릿)만 담고 어떤 secret 값도 담지 않음.
 - checkpoint recommendation: 신규 파일 없음(허용 4파일 in-place 수정 + report append). diff는 단일 논리(live wiring plan)로 응집. Owner 승인 시 checkpoint commit 가능한 상태.
 
+## social-live-client-credential-injection-no-execute-v1 (2026-07-07)
+
+- **목적**: Instagram/YouTube live client를 orchestrator에서 안전하게 연결할 수 있도록 import-safe + explicit credential injection 구조로 정리. no-execute — 실제 API/OAuth/upload/env·secret read·write 0.
+- **핵심 문제 해결**: 기존 `lib/instagram.ts`(top-level `process.env` read 2줄)와 `lib/youtube.ts`(top-level `new google.auth.OAuth2(process.env...)` client 생성)는 import 순간 secret/env를 읽었다. 이를 호출 시점 resolution + credential 인자 주입으로 전환.
+- **변경 파일**:
+  - `lib/instagram.ts`(수정) — top-level `process.env` 제거. `resolveInstagramCredentialsFromEnv()`(호출 시점 env read, 누락 시 key 이름만 알림), `uploadInstagramReelWithCredentials({ videoUrl, caption, coverUrl?, credentials:{businessAccountId,accessToken} })` 추가. 기존 `uploadInstagramReel(params)` wrapper 유지(내부에서 resolve 후 위임 — `app/api/upload/route.ts` 호출부 호환). 폴링 URL의 `access_token=${...}` query를 `Authorization: Bearer` 헤더로 교체(token 노출 차단). Graph 에러는 `safeGraphError()`로 code/type/message만 추출(token 포함 응답 원문 미노출).
+  - `lib/youtube.ts`(수정) — top-level OAuth client 생성 제거. `createYouTubeOAuthClient(credentials)` 팩토리(호출 시점, 반환 타입은 추론 — `google-auth-library` 직접 import 회피로 신규 의존성 없음), `resolveYouTubeOAuthCredentialsFromEnv()`(CLIENT_ID/CLIENT_SECRET만), `uploadYouTubeShortsWithCredentials({...,credentials:{clientId,clientSecret,refreshToken,accessToken?} })` 추가. 기존 `uploadYouTubeShorts`/`getYouTubeAuthUrl` wrapper 유지. `YOUTUBE_ACCESS_TOKEN`은 required env로 요구하지 않음(refresh token으로 메모리 발급/갱신).
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs`(수정) — `LIVE_PUBLISH_FUNCTION_REFS`가 `uploadInstagramReelWithCredentials`/`uploadYouTubeShortsWithCredentials`를 가리키도록 조정. 관련 inputContract 주석 계약 정합 갱신. `--dry-run`/`--preflight`/`--live` 계약 불변.
+  - `scripts/check-social-live-client-import-safety-static.mjs`(신규, 23 checks) — 문자 단위 brace-depth 분석(`analyzeSource`/`hasTopLevelCode`)으로 top-level `process.env` read 부재를 정밀 판별(주석/문자열/함수·arrow·중첩 블록 내부 구분 — sanity 6케이스 확인 후 라인 단위 결함 발견→문자 단위로 수정). explicit/wrapper export 존재, `YOUTUBE_ACCESS_TOKEN` 부재, top-level OAuth client 부재, secret 값 형태/`.env.local` 부재, 폴링 URL token query 부재+Bearer 헤더, runner ref 정합 검사.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs`(수정) — docs secret 체크를 "필드명 등장"이 아니라 "값 할당 형태(`accessToken:'값'`)"만 잡도록 정밀화(credential 함수 타입 시그니처 필드명 문서화 허용). `EAA/ya29/blob token` 값 형태 체크는 그대로 유지 — 보안 약화 없음(sanity 확인).
+  - `docs/dual-platform-final-publish-orchestrator.md`(수정) — live client credential injection(import-safe) 섹션 추가, functionRef 새 함수 이름으로 갱신.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉, 수정 5 + 신규 guard 1)
+  - `node --check` (runner, dual-platform guard, import-safety guard) ✓
+  - `node scripts/check-social-live-client-import-safety-static.mjs` → **23 PASS / 0 FAIL**
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **227 PASS / 0 FAIL**
+  - regression: local-pipeline 61/61, render-manifest 42/42, automation-orchestrator 151/151, golden-sample-upload-hard-block FAIL 0 — 전부 ALL PASS(route.ts 호출부 호환 유지 확인)
+  - `--preflight`: functionRef가 `...WithCredentials`로 갱신됨, preflightOk:true, counters 0, envValuesAccessedThisRun:false. `--dry-run` 불변. `--live` exit 2 fail-closed.
+  - **TypeScript**: `tsc --noEmit --pretty false` 전체 프로젝트 **오류 0**(격리 검증 `lib/*.ts` `--strict`도 0). 신규 변경 관련 오류 없음.
+- **live side effects 0**: Instagram API 0, YouTube API/OAuth/upload 0, Blob 0, env/secret read/write 0(**runtime**에서 lib import 시 process.env 미접근 = import-safe), `.env.local` 접근 0, secret 값/토큰 출력 0, 새 영상 생성 0, deploy/dependency/lockfile 0(신규 의존성 없음 — google-auth-library 직접 import 회피), commit/push 0.
+- **deviations/risks**:
+  - **material mismatch 보고**: `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`의 `livePublishFunctionRefs`(line 170-171)는 여전히 `uploadInstagramReel`/`uploadYouTubeShorts`(호환 wrapper 이름)를 가리킨다. fixture는 이번 slice 수정 허용 목록에 없어 건드리지 않았다. wrapper가 존재하므로 완전히 틀린 참조는 아니나, runner의 새 explicit-credential ref와 이름이 어긋난다. Codex가 fixture ref 갱신을 별도 승인할지 판단 필요.
+  - `createYouTubeOAuthClient` 반환 타입 annotation을 제거(추론)해 `google-auth-library` 신규 의존성을 피함 — tsc 통과 확인.
+- checkpoint recommendation: 신규 guard 1개 + lib 2파일 auth-adjacent 변경. diff는 단일 논리(credential injection)로 응집하나 lib client 변경이라 위험도 중간. Owner 승인 시 checkpoint commit 가능. fixture ref 정합은 별도 판단 필요.
+
+## social-live-client-credential-injection-fixture-ref-fix-v1 (2026-07-07)
+
+- **목적**: 직전 slice(social-live-client-credential-injection-no-execute-v1)에서 남은 fixture mismatch 수정. runner는 explicit credential 함수(`uploadInstagramReelWithCredentials`/`uploadYouTubeShortsWithCredentials`)로 전환됐지만 fixture의 `livePublishFunctionRefs`는 여전히 wrapper 이름(`uploadInstagramReel`/`uploadYouTubeShorts`)을 가리켰다. guard가 이 mismatch를 못 잡고 있었다.
+- **변경 파일 3개**(lib/runner는 지시대로 무수정, ref만 확인):
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `liveExecutionWiring.livePublishFunctionRefs.instagram/youtube`를 explicit credential 함수로 갱신 + note에 "wrapper는 호환용일 뿐 primary ref 아님" 명시. `liveExecutionPlan.steps`의 `instagram_publish_reel`/`youtube_direct_upload`에 `functionRef` 필드 신규 추가(기존엔 두 step에 functionRef가 아예 없었음 — runner의 실제 preflight 출력과 대조해 정확한 값 확인 후 반영). `prohibitedOrchestratorDrift.cases`에 "wrapper-only로 회귀" 케이스 추가.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — §6a에 fixture `livePublishFunctionRefs`/`liveExecutionPlan.steps[].functionRef`가 explicit credential 함수인지 + wrapper-only(WithCredentials 접미사 없음)로 회귀하지 않는지 5개 체크 추가. §6f(preflight 실행 결과)에 `instagram_publish_reel`/`youtube_direct_upload` step의 실행 결과 `functionRef`도 explicit credential 함수인지 2개 체크 추가. **mutant sanity test**: fixture 사본에서 `WithCredentials` 접미사를 전부 제거해 wrapper-only로 되돌린 뒤 guard 실행 → 신규 5개 체크가 정확히 FAIL함을 확인, 원본 즉시 복구 후 234 PASS / 0 FAIL 재확인.
+  - `docs/dual-platform-final-publish-orchestrator.md` — wrapper가 `app/api/upload/route.ts` 호환용일 뿐 live execution contract의 primary ref가 아니라는 문장 추가.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉; lib/runner는 이전 slice 변경 그대로, 이번엔 무수정)
+  - fixture JSON parse ✓
+  - `node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs` ✓
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **234 PASS / 0 FAIL**(기존 227 + 신규 7)
+  - `node scripts/check-social-live-client-import-safety-static.mjs` → **23 PASS / 0 FAIL**
+  - `--preflight`: `preflightOk:true`, `instagram_publish_reel.functionRef`/`youtube_direct_upload.functionRef` 모두 explicit credential 함수, counters 전부 0.
+  - `--live`: exit 2 fail-closed 유지.
+  - `tsc --noEmit --pretty false` 전체 프로젝트 오류 0.
+  - regression: local-pipeline 61/61, render-manifest 42/42, automation-orchestrator 151/151 — 전부 ALL PASS.
+- **live side effects 0**: Instagram/YouTube API 0, OAuth/upload 0, Blob 0, env/secret read/write 0, `.env.local` 접근 0, secret 값 출력 0, 새 영상 생성 0, deploy/dependency 0, commit/push 0.
+- **deviations/risks**: 없음. lib/runner는 원칙대로 무수정(ref만 확인). fixture mismatch가 완전히 해소되고 guard가 회귀를 강제하게 됨(mutant test로 실증).
+- checkpoint recommendation: 신규 파일 없음(허용 3파일 in-place + report append). 이전 slice(lib 2파일 + runner + guard + 신규 guard)와 합쳐 diff 누적 중 — Codex 판단으로 다음 checkpoint 시 두 slice를 함께 커밋 고려.
+

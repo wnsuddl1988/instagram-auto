@@ -336,11 +336,12 @@ check("docs에 중복 게시 방지 언급", /중복\s*게시|duplicate\s*publis
 check("docs에 향후 게이트 언급", /향후|future.*approval|다음\s*게이트/i.test(docsRaw));
 check("docs에 Instagram media_id 기록", docsRaw.includes("17916511431199303"));
 check("docs에 YouTube videoId 기록", docsRaw.includes("r9jhckdpC9w"));
-// env key '이름'(대문자 SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)과 credential 발급 방식 문자열
-// (derived_in_memory_from_refresh_token)은 secret 값이 아니라 계약이므로 제거 후 검사한다.
-// 그래도 camelCase secret 값 필드(accessToken:'...' 등)는 여전히 잡힌다.
+// env key '이름'(대문자 SNAKE_CASE)과 credential 발급 방식 문자열은 secret 값이 아니라 계약이므로 제거.
+// 또한 credential 함수의 파라미터 필드 '이름'(예: `{ businessAccountId, accessToken }` 타입 시그니처)은
+// secret 값 노출이 아니므로, 실제 "값이 할당된" 형태(accessToken: "값" / accessToken=값)만 secret 노출로 본다.
 const docsWithoutEnvKeyNames = maskEnvKeyNamesAndContractValues(docsRaw);
-check("docs에 secret 필드명/값 없음(env key 이름/계약 문자열 제외)", !secretFieldPattern.test(docsWithoutEnvKeyNames));
+const secretValueAssignmentPattern = /(clientSecret|refreshToken|accessToken|apiKey|api_key|client_secret|refresh_token|access_token)\s*[:=]\s*["'][^"']+["']/i;
+check("docs에 secret 값 할당 형태(accessToken:'값' 등) 없음(필드 이름 시그니처는 허용)", !secretValueAssignmentPattern.test(docsWithoutEnvKeyNames));
 check("docs에 실제 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(docsRaw));
 check("docs에 v3_2 version 정합 설명 존재", docsRaw.includes("v3_2"));
 check("docs에 metadata optimization/영상만 업로드 금지 규칙 언급", /metadata.*optimization|영상만\s*업로드\s*금지/i.test(docsRaw));
@@ -526,6 +527,34 @@ const fixYtStep = fixLepSteps.find((s) => s.id === "youtube_direct_upload");
 check("fixture liveExecutionPlan youtube step requiredEnvKeyNames에 YOUTUBE_ACCESS_TOKEN 없음", Array.isArray(fixYtStep?.requiredEnvKeyNames) && !fixYtStep.requiredEnvKeyNames.includes("YOUTUBE_ACCESS_TOKEN"));
 check("fixture liveExecutionPlan에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(fixLep)));
 
+// fixture: livePublishFunctionRefs가 explicit credential 함수를 가리켜야 한다(wrapper-only 회귀 방지).
+// (social-live-client-credential-injection-no-execute-v1 이후 runner가 explicit credential 함수로
+// 전환됐는데 fixture가 예전 wrapper 이름을 계속 가리키던 mismatch를 여기서 강제한다.)
+check(
+  "fixture livePublishFunctionRefs.instagram === uploadInstagramReelWithCredentials",
+  wiring.livePublishFunctionRefs?.instagram === "lib/instagram.ts#uploadInstagramReelWithCredentials"
+);
+check(
+  "fixture livePublishFunctionRefs.youtube === uploadYouTubeShortsWithCredentials",
+  wiring.livePublishFunctionRefs?.youtube === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+);
+check(
+  "fixture livePublishFunctionRefs가 wrapper-only(uploadInstagramReel/uploadYouTubeShorts, WithCredentials 접미사 없음)로 회귀하지 않음",
+  wiring.livePublishFunctionRefs?.instagram !== "lib/instagram.ts#uploadInstagramReel" &&
+    wiring.livePublishFunctionRefs?.youtube !== "lib/youtube.ts#uploadYouTubeShorts"
+);
+
+const fixIgPubStep = fixLepSteps.find((s) => s.id === "instagram_publish_reel");
+const fixYtUpStep = fixLepSteps.find((s) => s.id === "youtube_direct_upload");
+check(
+  "fixture liveExecutionPlan step instagram_publish_reel.functionRef === uploadInstagramReelWithCredentials",
+  fixIgPubStep?.functionRef === "lib/instagram.ts#uploadInstagramReelWithCredentials"
+);
+check(
+  "fixture liveExecutionPlan step youtube_direct_upload.functionRef === uploadYouTubeShortsWithCredentials",
+  fixYtUpStep?.functionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+);
+
 // 6b) runner 소스: live gate 상수 + fail-closed + env 미접근 회귀
 check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = false 존재", /LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*false/.test(runnerRawSrc));
 check("runner에 LIVE_EXECUTION_DISABLED_THIS_SLICE 에러 상수 존재", runnerRawSrc.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
@@ -643,6 +672,10 @@ check("step instagram_publish_reel: metadata gate가 필수 의존(mustBeOk, gat
 check("step instagram_publish_reel: duplicate guard가 필수 의존(v3_2 키, retryForbidden)", typeof igDupDep?.key === "string" && igDupDep.key.endsWith("/v3_2") && igDupDep.mustNotBeAlreadyPublished === true && igDupDep.retryForbidden === true);
 check("step instagram_publish_reel: 승인 토큰 APPROVE_DUAL_PLATFORM_ARM", Array.isArray(igPubStep?.requiredApprovalTokens) && igPubStep.requiredApprovalTokens.includes("APPROVE_DUAL_PLATFORM_ARM"));
 check("step instagram_publish_reel: 이미 완료된 media_id를 reference로만(재시도 금지)", igPubStep?.resultReference?.instagramMediaIdReference === "17916511431199303" && igPubStep?.resultReference?.retryForbidden === true);
+check(
+  "preflight 실행 결과 step instagram_publish_reel.functionRef === uploadInstagramReelWithCredentials(explicit credential, wrapper-only 회귀 아님)",
+  igPubStep?.functionRef === "lib/instagram.ts#uploadInstagramReelWithCredentials"
+);
 
 // step 3: YouTube direct upload — metadata gate + duplicate guard 필수 의존.
 const ytGateDep = Array.isArray(ytUpStep?.dependsOn) ? ytUpStep.dependsOn.find((d) => d && d.type === "metadata_optimization_gate") : null;
@@ -654,6 +687,10 @@ check("step youtube_direct_upload: 승인 토큰 YOUTUBE_LIVE_UPLOAD_WIRING + DU
 check("step youtube_direct_upload: short-lived credential은 refresh token으로 메모리 발급(장기 env 아님)", ytUpStep?.inputContract?.shortLivedCredentialSource === "derived_in_memory_from_refresh_token");
 check("step youtube_direct_upload: requiredEnvKeyNames에 YOUTUBE_ACCESS_TOKEN 없음", Array.isArray(ytUpStep?.requiredEnvKeyNames) && !ytUpStep.requiredEnvKeyNames.includes("YOUTUBE_ACCESS_TOKEN") && ytUpStep.requiredEnvKeyNames.includes("YOUTUBE_REFRESH_TOKEN"));
 check("step youtube_direct_upload: 이미 완료된 videoId를 reference로만(재시도 금지)", ytUpStep?.resultReference?.youtubeVideoIdReference === "r9jhckdpC9w" && ytUpStep?.resultReference?.retryForbidden === true);
+check(
+  "preflight 실행 결과 step youtube_direct_upload.functionRef === uploadYouTubeShortsWithCredentials(explicit credential, wrapper-only 회귀 아님)",
+  ytUpStep?.functionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+);
 
 // step 4: ledger record — 두 publish step에 의존, mutation 없음.
 check("step publish_ledger_record: {contentId}/{platform}/{version} keyShape + v3_2 두 키", ledgerStep?.inputContract?.keyShape === "{contentId}/{platform}/{version}" && Array.isArray(ledgerStep?.inputContract?.keys) && ledgerStep.inputContract.keys.length === 2 && ledgerStep.inputContract.keys.every((k) => typeof k === "string" && k.endsWith("/v3_2")));
