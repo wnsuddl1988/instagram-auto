@@ -1280,6 +1280,134 @@ function buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credP
   };
 }
 
+/**
+ * 향후 실제 publish 실행 시 ledger 기록을 담당할 함수 참조(문자열, string-ref only).
+ * 이 slice에서 실제로 import/호출되지 않으며, ledger mutation(파일/DB 기록)도 수행하지 않는다.
+ * lib 구현이 아직 없더라도 계약상 참조로만 존재한다(no-run/no-mutation).
+ */
+export const PUBLISH_LEDGER_RECORD_FUNCTION_REF = "lib/publish-ledger.ts#recordDualPlatformPublish";
+
+/**
+ * gate 6: actual_api_call — no-run executor 구조(dry executor plan).
+ * task: dual-platform-actual-api-executor-wiring-no-run-v1
+ *
+ * gate 6이 만든 value-free `actualApiCallPlan`을 소비해, 실제 publish가 "어떤 순서로, 어떤 함수로,
+ * 무엇에 의존해" 실행될지의 executor 구조를 value-free로 명문화한다. 이 함수는 실제 실행을 절대
+ * 수행하지 않으며(no-run), 다음을 엄격히 지킨다:
+ *
+ * - credential 값을 인자로 받지 않는다. plan에 이미 담긴 값 없는 presence boolean만 사용한다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis/publish-ledger)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / ledger mutation / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - 모든 step은 executionEnabled:false / willRun:false / performed:false / disabledReason 을 명시한
+ *   fail-closed 구조다.
+ *
+ * 반환은 순수 데이터(함수 참조 문자열, step id, dependsOn, input readiness boolean, 실행 비활성 사유)만
+ * 담는다. 실행 순서는 Blob upload → Instagram publish → YouTube upload → ledger record다.
+ *
+ * @param {object} plan gate 6 value-free actualApiCallPlan(credential 값 없음 — presence boolean만)
+ */
+function buildActualApiExecutorNoRun(plan) {
+  const disabledReason = "actual_api_executor_execution_disabled_this_slice";
+  const requiredApprovalTokens = Array.isArray(plan?.requiredApprovalTokensToEnableExecution)
+    ? plan.requiredApprovalTokensToEnableExecution
+    : ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"];
+  // plan.calls에서 value-free readiness만 참조한다(값 없음). 없으면 안전하게 false로 본다.
+  const findCall = (id) => (Array.isArray(plan?.calls) ? plan.calls.find((c) => c?.id === id) : null) ?? null;
+  const blobCall = findCall("vercel_blob_upload");
+  const igCall = findCall("instagram_graph_publish");
+  const ytCall = findCall("youtube_direct_upload");
+
+  // 공통 disabled 플래그 세트(모든 step 동일 — 실행 비활성 fail-closed).
+  const disabledFlags = { executionEnabled: false, willRun: false, performed: false, executionDisabledReason: disabledReason };
+
+  const steps = [
+    {
+      order: 1,
+      id: "instagram_blob_upload",
+      platform: "instagram_reels",
+      provider: "vercel_blob",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+      planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+      dependsOn: [], // 최초 step — Instagram source mp4를 Blob public URL로 업로드.
+      inputReadiness: {
+        sourceFileField: "instagramSourcePath",
+        sourceFileReady: blobCall?.inputReadiness?.sourceFileReady === true,
+        credentialsPresent: blobCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+        producesPublicVideoUrl: true,
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 2,
+      id: "instagram_publish_reel",
+      platform: "instagram_reels",
+      provider: "instagram_graph_api",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      dependsOn: ["instagram_blob_upload"], // Blob public URL이 있어야 Graph publish 가능.
+      inputReadiness: {
+        videoUrlFrom: "instagram_blob_upload.instagram_public_video_url",
+        blobPublicUrlPresent: igCall?.inputReadiness?.blobPublicUrlPresent === true,
+        metadataOptimizationGateOk: igCall?.inputReadiness?.metadataOptimizationGateOk === true,
+        credentialsPresent: igCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 3,
+      id: "youtube_direct_upload",
+      platform: "youtube_shorts",
+      provider: "youtube_data_api",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      dependsOn: [], // YouTube upload는 Blob/Instagram과 독립(letterbox mp4 직접 업로드).
+      inputReadiness: {
+        videoPathField: "youtubeSourcePath",
+        sourceFileReady: ytCall?.inputReadiness?.sourceFileReady === true,
+        metadataOptimizationGateOk: ytCall?.inputReadiness?.metadataOptimizationGateOk === true,
+        credentialsPresent: ytCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 4,
+      id: "publish_ledger_record",
+      platform: "dual_platform",
+      provider: "publish_ledger",
+      executorRef: PUBLISH_LEDGER_RECORD_FUNCTION_REF, // string-ref only. no-run/no-mutation.
+      dependsOn: ["instagram_publish_reel", "youtube_direct_upload"], // 두 publish 성공 후 기록.
+      inputReadiness: {
+        recordsFields: ["instagramMediaId", "youtubeVideoId", "contentId", "version", "publishedAtIso"],
+        ledgerMutationThisSlice: false, // 이 slice에서 ledger 기록/변경 절대 없음.
+      },
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+  ];
+
+  return {
+    executionEnabledThisSlice: false,
+    executorWillRun: false,
+    executorPerformed: false,
+    executionDisabledReason: disabledReason,
+    note:
+      "gate 6 value-free actualApiCallPlan을 소비해 실제 publish 실행 순서(Blob upload → Instagram publish → " +
+      "YouTube upload → ledger record)를 executor 구조로만 명문화한 no-run executor다. credential 값은 담기지 " +
+      "않으며(presence boolean만), 실제 API/upload/OAuth/Blob/ledger mutation은 이 slice에서 수행되지 않는다. " +
+      "실제 실행은 requiredApprovalTokensToEnableExecution 승인 이후 별도 slice에서만 연결된다.",
+    orderedStepIds: ["instagram_blob_upload", "instagram_publish_reel", "youtube_direct_upload", "publish_ledger_record"],
+    steps,
+    requiredApprovalTokensToEnableExecution: requiredApprovalTokens,
+    actualExecutorRunThisRun: false,
+  };
+}
+
 /** 이 run에서 전부 0이어야 하는 live side-effect counter 초기값(어떤 코드 경로도 증가시키지 않는다). */
 function zeroLiveSideEffectCounters() {
   return {
@@ -1516,13 +1644,19 @@ function executeArmedLiveRun(unit) {
   // summary(credSummary.platforms.*.allPresent)만 사용한다 — 값이 plan에 담길 원천을 제거한다.
   // 따라서 plan 구성 전에 in-memory 값 참조를 이미 끊어도 안전하다(위에서 resolution.inMemory=null 처리).
   const actualApiCallPlan = buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credSummary);
-  // gate 6 plan은 no-execute다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
+  // task: dual-platform-actual-api-executor-wiring-no-run-v1
+  // gate 6 plan을 소비해 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger)를
+  // 구성한다. executor는 credential 값을 받지 않고(plan의 presence boolean만) 어떤 실제 실행도 하지 않는다.
+  const actualApiExecutor = buildActualApiExecutorNoRun(actualApiCallPlan);
+  // gate 6 plan/executor 모두 no-run이다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
   gateTrace.push({
     order: 6,
     gate: "actual_api_call",
     evaluated: true,
     reached: true,
     executionEnabledThisSlice: false,
+    executorWillRun: false,
+    executorPerformed: false,
     blockedBy: "actual_api_call_not_enabled_this_slice",
     actualCallPerformed: false,
   });
@@ -1545,8 +1679,10 @@ function executeArmedLiveRun(unit) {
         version: unit.version,
         reachedCredentialGate: true,
         reachedActualApiCallPlan: true,
+        reachedActualApiExecutor: true,
         credentialResolutionWiredThisSlice: true,
         actualApiCallExecutionEnabledThisSlice: false,
+        actualApiExecutorExecutionEnabledThisSlice: false,
         haltedBeforeActualApiCall: true,
       },
       credentialResolution: {
@@ -1558,6 +1694,9 @@ function executeArmedLiveRun(unit) {
       // gate 6 value-free no-execute call plan(함수 참조 + 입력 readiness boolean + 실행 비활성 사유).
       // credential 값/토큰/URL query token은 담기지 않는다.
       actualApiCallPlan,
+      // gate 6 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger record).
+      // plan을 소비해 실행 순서/의존/입력 readiness를 명문화한다. 모든 step 실행 비활성, credential 값 없음.
+      actualApiExecutor,
       sideEffectCounters,
       credentialResolutionReached: true,
       credentialValuesAccessed: true,
@@ -1565,6 +1704,9 @@ function executeArmedLiveRun(unit) {
       actualApiCallReached: true,
       actualApiCallExecutionEnabledThisSlice: false,
       actualApiCallPerformed: false,
+      actualApiExecutorReached: true,
+      actualApiExecutorExecutionEnabledThisSlice: false,
+      actualApiExecutorPerformed: false,
     },
   };
 }

@@ -1109,6 +1109,9 @@ if (dupBlockConfirmed) {
   check("--live credentialResolutionReached === false (duplicate block이 credential 이전)", liveRes?.credentialResolutionReached === false);
   check("--live credentialValuesAccessed === false + credentialValuesResolved === false", liveRes?.credentialValuesAccessed === false && liveRes?.credentialValuesResolved === false);
   check("--live actualApiCallReached === false", liveRes?.actualApiCallReached === false);
+  // task: dual-platform-actual-api-executor-wiring-no-run-v1 — default duplicate block은 executor 이전 차단.
+  check("--live actualApiExecutor 미구성 + actualApiExecutorReached !== true (gate 4 duplicate block이 executor 이전)",
+    liveRes?.actualApiExecutor == null && liveRes?.actualApiExecutorReached !== true);
   check("--live dotEnvLocalDirectAccess === false", liveRes?.dotEnvLocalDirectAccess === false);
   const trace = Array.isArray(liveRes?.gateTrace) ? liveRes.gateTrace : [];
   const t4 = trace.find((g) => g?.order === 4);
@@ -1236,8 +1239,9 @@ check(
 check("runner: buildActualApiCallPlanNoExecute 함수 존재", /function\s+buildActualApiCallPlanNoExecute\s*\(/.test(runnerRawSrc));
 {
   const fnStart = runnerRawSrc.indexOf("function buildActualApiCallPlanNoExecute");
-  // 다음 최상위 함수(zeroLiveSideEffectCounters) 시작 전까지를 함수 본문으로 본다.
-  const fnEnd = runnerRawSrc.indexOf("function zeroLiveSideEffectCounters", fnStart);
+  // 다음 정의(PUBLISH_LEDGER_RECORD_FUNCTION_REF 상수 또는 buildActualApiExecutorNoRun) 시작 전까지를 함수 본문으로 본다.
+  const nextDefIdx = runnerRawSrc.indexOf("export const PUBLISH_LEDGER_RECORD_FUNCTION_REF", fnStart);
+  const fnEnd = nextDefIdx !== -1 ? nextDefIdx : runnerRawSrc.indexOf("function zeroLiveSideEffectCounters", fnStart);
   const fnBody = fnStart !== -1 ? runnerRawSrc.slice(fnStart, fnEnd === -1 ? undefined : fnEnd) : "";
   // 실행 코드만(주석/문자열 리터럴 잡음 최소화) — dropComment 계열이 이 파일에 있으면 그것을 쓰고, 없으면 원문 사용.
   check(
@@ -1269,6 +1273,62 @@ check("runner: buildActualApiCallPlanNoExecute 함수 존재", /function\s+build
   check(
     "runner: 실행 경로가 gate 6 plan에 credential 값 객체(inMemory)를 넘기지 않음(credSummary presence만)",
     /buildActualApiCallPlanNoExecute\(unit,\s*igJob,\s*ytJob,\s*livenessGate,\s*credSummary\)/.test(runnerRawSrc),
+  );
+}
+
+// task: dual-platform-actual-api-executor-wiring-no-run-v1
+// gate 6 no-run executor(buildActualApiExecutorNoRun)로 wiring됐다. 이 함수는 (a) 존재하고,
+// (b) plan(값 없음)만 인자로 받으며(credential 값 객체/summary 미수신), (c) process.env를 읽지 않고,
+// (d) 반환 executor에 credential 값 필드를 넣지 않으며, (e) live lib/ledger import·호출·network·mutation을
+// 하지 않고, (f) executionEnabled/willRun/performed를 false로 fail-closed한다.
+check("runner: buildActualApiExecutorNoRun 함수 존재", /function\s+buildActualApiExecutorNoRun\s*\(/.test(runnerRawSrc));
+check("runner: PUBLISH_LEDGER_RECORD_FUNCTION_REF 상수(string-ref only) 존재", /PUBLISH_LEDGER_RECORD_FUNCTION_REF\s*=\s*"lib\/publish-ledger\.ts#recordDualPlatformPublish"/.test(runnerRawSrc));
+{
+  const fnStart = runnerRawSrc.indexOf("function buildActualApiExecutorNoRun");
+  const fnEnd = runnerRawSrc.indexOf("function zeroLiveSideEffectCounters", fnStart);
+  const fnBody = fnStart !== -1 ? runnerRawSrc.slice(fnStart, fnEnd === -1 ? undefined : fnEnd) : "";
+  check(
+    "runner: buildActualApiExecutorNoRun이 process.env를 읽지 않음(credential 값 미접근)",
+    fnBody !== "" && !/process\.env/.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiExecutorNoRun 반환 executor에 credential 값 필드가 없음(accessToken/refreshToken 등)",
+    fnBody !== "" && !/accessToken|refreshToken|clientSecret|readWriteToken|businessAccountId|clientId/.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiExecutorNoRun이 live lib/ledger import·실제 호출·network·mutation을 하지 않음",
+    fnBody !== "" &&
+      !/\bimport\s*\(/.test(fnBody) &&
+      !/\bfetch\s*\(/.test(fnBody) &&
+      !/googleapis|youtube\.videos\.insert|graph\.facebook\.com/.test(fnBody) &&
+      !/@vercel\/blob|\bput\s*\(|\bhead\s*\(|\bdel\s*\(|\.list\s*\(|\.copy\s*\(/.test(fnBody) &&
+      !/oauth2|getToken|refreshAccessToken/i.test(fnBody) &&
+      !/writeFileSync|appendFileSync|\.insert\s*\(|\.upsert\s*\(/.test(fnBody),
+  );
+  check(
+    "runner: buildActualApiExecutorNoRun이 executor/step 실행 플래그를 false로 fail-closed(executorWillRun/executorPerformed + step executionEnabled/willRun/performed)",
+    fnBody !== "" &&
+      /executionEnabledThisSlice:\s*false/.test(fnBody) &&
+      /executorWillRun:\s*false/.test(fnBody) &&
+      /executorPerformed:\s*false/.test(fnBody) &&
+      /executionEnabled:\s*false/.test(fnBody) &&
+      /willRun:\s*false/.test(fnBody) &&
+      /performed:\s*false/.test(fnBody) &&
+      /actualExecutorRunThisRun:\s*false/.test(fnBody),
+  );
+  // executor는 credential 값 객체가 아니라 plan(값 없음)만 인자로 받는다 — signature는 plan 하나만.
+  check(
+    "runner: 실행 경로가 executor에 plan(값 없음)만 넘기고 credential 값 객체를 넘기지 않음",
+    /buildActualApiExecutorNoRun\(actualApiCallPlan\)/.test(runnerRawSrc),
+  );
+  // executor는 gate 6 plan builder 호출 직후(credential resolve 이후)에만 구성된다.
+  check(
+    "runner: 실행 경로에서 executor 구성이 gate 6 plan 구성 직후에 위치(plan → executor 순서)",
+    (() => {
+      const planIdx = runnerRawSrc.indexOf("buildActualApiCallPlanNoExecute(unit,");
+      const execIdx = runnerRawSrc.indexOf("buildActualApiExecutorNoRun(actualApiCallPlan)");
+      return planIdx !== -1 && execIdx !== -1 && planIdx < execIdx;
+    })(),
   );
 }
 
@@ -1448,6 +1508,50 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     // 핵심: gate 6 plan에도 DUMMY credential 값이 절대 없다(값 미노출).
     check("custom dummy-env ready-probe --live: actualApiCallPlan에 DUMMY credential 값 없음(값 미노출)",
       apiPlan != null && !JSON.stringify(apiPlan).includes(PROBE_DUMMY_VALUE));
+
+    // ── task: dual-platform-actual-api-executor-wiring-no-run-v1 ──
+    // gate 6 plan에서 no-run executor 구조가 구성됐는지 검증한다.
+    check("custom dummy-env ready-probe --live: actualApiExecutorReached === true (gate 6 no-run executor 도달)", readyLive?.actualApiExecutorReached === true);
+    check("custom dummy-env ready-probe --live: actualApiExecutorExecutionEnabledThisSlice === false + actualApiExecutorPerformed === false",
+      readyLive?.actualApiExecutorExecutionEnabledThisSlice === false && readyLive?.actualApiExecutorPerformed === false);
+    const executor = readyLive?.actualApiExecutor;
+    check("custom dummy-env ready-probe --live: actualApiExecutor 존재 + executorWillRun/executorPerformed === false",
+      executor != null && executor.executionEnabledThisSlice === false && executor.executorWillRun === false && executor.executorPerformed === false && executor.actualExecutorRunThisRun === false);
+    // executor는 정확히 4개 ordered step(blob → instagram publish → youtube → ledger)이어야 한다.
+    const EXPECTED_STEP_IDS = ["instagram_blob_upload", "instagram_publish_reel", "youtube_direct_upload", "publish_ledger_record"];
+    check("custom dummy-env ready-probe --live: actualApiExecutor.steps가 정확히 4개이고 order 1~4 순서 정합",
+      Array.isArray(executor?.steps) && executor.steps.length === 4 &&
+      executor.steps.every((s, i) => s.order === i + 1 && s.id === EXPECTED_STEP_IDS[i]));
+    check("custom dummy-env ready-probe --live: actualApiExecutor.orderedStepIds가 기대 순서와 일치",
+      Array.isArray(executor?.orderedStepIds) && executor.orderedStepIds.length === 4 &&
+      EXPECTED_STEP_IDS.every((id, i) => executor.orderedStepIds[i] === id));
+    // 모든 step은 executionEnabled/willRun/performed === false.
+    check("custom dummy-env ready-probe --live: actualApiExecutor 모든 step이 executionEnabled/willRun/performed === false",
+      executor?.steps?.every((s) => s.executionEnabled === false && s.willRun === false && s.performed === false));
+    // 각 step은 functionRef 또는 executorRef 문자열을 담는다(ledger는 executorRef).
+    check("custom dummy-env ready-probe --live: actualApiExecutor step들이 functionRef/executorRef 문자열을 담음(ledger는 executorRef)",
+      executor?.steps?.every((s) => typeof s.functionRef === "string" || typeof s.executorRef === "string") &&
+      executor?.steps?.find((s) => s.id === "publish_ledger_record")?.executorRef === "lib/publish-ledger.ts#recordDualPlatformPublish");
+    // dependsOn 관계: instagram publish는 blob upload에, ledger는 instagram publish + youtube upload에 의존.
+    const stepById = (id) => executor?.steps?.find((s) => s.id === id) ?? null;
+    check("custom dummy-env ready-probe --live: instagram_publish_reel이 instagram_blob_upload에 의존",
+      Array.isArray(stepById("instagram_publish_reel")?.dependsOn) && stepById("instagram_publish_reel").dependsOn.includes("instagram_blob_upload"));
+    check("custom dummy-env ready-probe --live: publish_ledger_record가 instagram_publish_reel + youtube_direct_upload에 의존",
+      Array.isArray(stepById("publish_ledger_record")?.dependsOn) &&
+      stepById("publish_ledger_record").dependsOn.includes("instagram_publish_reel") &&
+      stepById("publish_ledger_record").dependsOn.includes("youtube_direct_upload"));
+    check("custom dummy-env ready-probe --live: instagram_blob_upload와 youtube_direct_upload는 dependsOn 없음(독립)",
+      Array.isArray(stepById("instagram_blob_upload")?.dependsOn) && stepById("instagram_blob_upload").dependsOn.length === 0 &&
+      Array.isArray(stepById("youtube_direct_upload")?.dependsOn) && stepById("youtube_direct_upload").dependsOn.length === 0);
+    // ledger step은 no-mutation임을 명시(ledgerMutationThisSlice === false).
+    check("custom dummy-env ready-probe --live: publish_ledger_record가 no-mutation(ledgerMutationThisSlice === false)",
+      stepById("publish_ledger_record")?.inputReadiness?.ledgerMutationThisSlice === false);
+    // step credentialsPresent는 presence boolean(값 아님).
+    check("custom dummy-env ready-probe --live: executor step inputReadiness.credentialsPresent가 presence boolean(값 아님)",
+      executor?.steps?.filter((s) => "credentialsPresent" in (s.inputReadiness ?? {})).every((s) => typeof s.inputReadiness.credentialsPresent === "boolean"));
+    // 핵심: executor에도 DUMMY credential 값이 절대 없다(값 미노출).
+    check("custom dummy-env ready-probe --live: actualApiExecutor에 DUMMY credential 값 없음(값 미노출)",
+      executor != null && !JSON.stringify(executor).includes(PROBE_DUMMY_VALUE));
     // 핵심: DUMMY credential 값이 출력 어디에도 나타나지 않는다(값 미노출).
     check("custom dummy-env ready-probe --live: DUMMY credential 값이 출력에 없음(값 미노출)", readyRawOut !== "" && !readyRawOut.includes(PROBE_DUMMY_VALUE));
     // value length/hash/prefix/suffix/masked/token type 파생 필드가 출력에 없다.
@@ -1480,6 +1584,9 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     check("custom no-env ready-probe --live: credentialResolutionReached === true", missLive?.credentialResolutionReached === true);
     check("custom no-env ready-probe --live: credentialValuesResolved === false", missLive?.credentialValuesResolved === false);
     check("custom no-env ready-probe --live: actualApiCallReached === false", missLive?.actualApiCallReached === false);
+    // task: dual-platform-actual-api-executor-wiring-no-run-v1 — credential 누락이면 executor도 구성되지 않는다.
+    check("custom no-env ready-probe --live: actualApiExecutor 미구성 + actualApiExecutorReached !== true (gate 5에서 executor 이전 차단)",
+      missLive?.actualApiExecutor == null && missLive?.actualApiExecutorReached !== true);
     check("custom no-env ready-probe --live: missingCredentialKeyNames가 승인 6 key 이름을 담음(값 아님)",
       Array.isArray(missLive?.credentialResolution?.missingCredentialKeyNames) &&
       APPROVED_CRED_ENV_KEYS.every((k) => missLive.credentialResolution.missingCredentialKeyNames.includes(k)));
@@ -1508,6 +1615,9 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
       g6?.gate === "actual_api_call" && g6?.evaluated === true && g6?.reached === true &&
       g6?.executionEnabledThisSlice === false && g6?.actualCallPerformed === false &&
       g6?.blockedBy === "actual_api_call_not_enabled_this_slice");
+    // task: dual-platform-actual-api-executor-wiring-no-run-v1 — gate 6 trace에 executor 실행 비활성 플래그 명시.
+    check("custom dummy-env ready-probe: gate 6 trace가 executorWillRun/executorPerformed === false를 명시",
+      g6?.executorWillRun === false && g6?.executorPerformed === false);
     check("custom dummy-env ready-probe: stdout에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(readyLive)));
 
     // ── (B) missing-blob probe: source OK지만 blob evidence 부재 → gate 3에서 credential 이전 fail-closed ──
