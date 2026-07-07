@@ -180,6 +180,19 @@ check("publishMetadataOptimizationGate.forbiddenUnrelatedTrendTags === true", me
 const liveEvidence = fixture.liveUploadEvidence || {};
 const evidenceStr = JSON.stringify(liveEvidence);
 const secretFieldPattern = /(clientSecret|refreshToken|accessToken|apiKey|api_key|client_secret|refresh_token|access_token)/i;
+
+/**
+ * secret 값 검사 오탐 제거용 마스킹.
+ * - env key '이름'(대문자 SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)은 secret 값이 아니라 계약상 필요한 key 이름이다.
+ * - 계약 값 문자열 "derived_in_memory_from_refresh_token"은 credential 발급 방식 설명이지 secret 값이 아니다.
+ * 이 둘을 제거한 뒤 secretFieldPattern을 적용하면 실제 camelCase secret 값 필드(accessToken:'...')만 남아 잡힌다.
+ */
+function maskEnvKeyNamesAndContractValues(s) {
+  return String(s)
+    .replace(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]*\b/g, "")
+    .replace(/derived_in_memory_from_refresh_token/g, "");
+}
+
 check("liveUploadEvidence에 secret 필드명 없음", !secretFieldPattern.test(evidenceStr));
 check("liveUploadEvidence.instagram.mediaId === 17916511431199303", liveEvidence?.instagram?.mediaId === "17916511431199303");
 check("liveUploadEvidence.youtube.videoId === r9jhckdpC9w", liveEvidence?.youtube?.videoId === "r9jhckdpC9w");
@@ -323,11 +336,11 @@ check("docs에 중복 게시 방지 언급", /중복\s*게시|duplicate\s*publis
 check("docs에 향후 게이트 언급", /향후|future.*approval|다음\s*게이트/i.test(docsRaw));
 check("docs에 Instagram media_id 기록", docsRaw.includes("17916511431199303"));
 check("docs에 YouTube videoId 기록", docsRaw.includes("r9jhckdpC9w"));
-// env key '이름'(대문자 SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)은 secret 값이 아니라
-// live wiring에 필요한 key 이름 계약이므로 제거 후 검사한다. 그래도 camelCase secret
-// 필드명(accessToken 등)이나 snake_case 값 노출은 여전히 잡힌다.
-const docsWithoutEnvKeyNames = docsRaw.replace(/\b[A-Z][A-Z0-9]*_[A-Z0-9_]*\b/g, "");
-check("docs에 secret 필드명/값 없음(env key 이름 제외)", !secretFieldPattern.test(docsWithoutEnvKeyNames));
+// env key '이름'(대문자 SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)과 credential 발급 방식 문자열
+// (derived_in_memory_from_refresh_token)은 secret 값이 아니라 계약이므로 제거 후 검사한다.
+// 그래도 camelCase secret 값 필드(accessToken:'...' 등)는 여전히 잡힌다.
+const docsWithoutEnvKeyNames = maskEnvKeyNamesAndContractValues(docsRaw);
+check("docs에 secret 필드명/값 없음(env key 이름/계약 문자열 제외)", !secretFieldPattern.test(docsWithoutEnvKeyNames));
 check("docs에 실제 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(docsRaw));
 check("docs에 v3_2 version 정합 설명 존재", docsRaw.includes("v3_2"));
 check("docs에 metadata optimization/영상만 업로드 금지 규칙 언급", /metadata.*optimization|영상만\s*업로드\s*금지/i.test(docsRaw));
@@ -477,7 +490,9 @@ check("liveExecutionWiring에 secret 값 형태(EAA/ya29/토큰 prefix) 없음",
 // (예: "YOUTUBE_REFRESH_TOKEN"은 secret 값이 아니라 env key 이름이다.)
 const wiringWithoutEnvNames = clone(wiring);
 delete wiringWithoutEnvNames.requiredEnvKeyNames;
-check("liveExecutionWiring(env key 이름 제외)에 secret 값 필드명(camelCase accessToken 등) 없음", !secretFieldPattern.test(JSON.stringify(wiringWithoutEnvNames)));
+// wiring.liveExecutionPlan.steps[].requiredEnvKeyNames와 credential 발급 방식 문자열도
+// env key 이름/계약 값이므로 마스킹 후 검사한다. 실제 camelCase secret 값 필드는 여전히 잡힌다.
+check("liveExecutionWiring(env key 이름 제외)에 secret 값 필드명(camelCase accessToken 등) 없음", !secretFieldPattern.test(maskEnvKeyNamesAndContractValues(JSON.stringify(wiringWithoutEnvNames))));
 // env key 이름은 반드시 대문자 SNAKE_CASE만 허용(camelCase 실제 secret 필드명 혼입 방지).
 const allEnvNames = [...(envNames.instagram || []), ...(envNames.youtube || []), ...(envNames.vercelBlob || [])];
 check("requiredEnvKeyNames는 전부 대문자 SNAKE_CASE env key 이름", allEnvNames.length > 0 && allEnvNames.every((n) => /^[A-Z][A-Z0-9_]*$/.test(String(n))));
@@ -489,6 +504,28 @@ check(
   Array.isArray(dupLedger.existingPublishedKeysReference) && dupLedger.existingPublishedKeysReference.length === 2 && dupLedger.existingPublishedKeysReference.every((k) => typeof k === "string" && k.endsWith("/v3_2"))
 );
 
+// fixture: liveExecutionPlan(no-execute) 계약. runner preflight 출력과 정합해야 한다.
+const fixLep = wiring.liveExecutionPlan || {};
+check("fixture.liveExecutionWiring.liveExecutionPlan 존재", fixLep && typeof fixLep === "object");
+check("fixture liveExecutionPlan.anyStepEnabled/anyStepWillExecute/anySideEffectPerformed 전부 false", fixLep.anyStepEnabled === false && fixLep.anyStepWillExecute === false && fixLep.anySideEffectPerformed === false);
+check("fixture liveExecutionPlan.metadataGateIsMandatoryDependency === true", fixLep.metadataGateIsMandatoryDependency === true);
+check("fixture liveExecutionPlan.duplicateGuardIsMandatoryDependency === true", fixLep.duplicateGuardIsMandatoryDependency === true);
+check(
+  "fixture liveExecutionPlan.orderedFlow가 Blob→IG publish→YT upload→ledger 순서",
+  Array.isArray(fixLep.orderedFlow) && fixLep.orderedFlow.length === 4 &&
+    fixLep.orderedFlow[0] === "instagram_blob_upload" && fixLep.orderedFlow[1] === "instagram_publish_reel" &&
+    fixLep.orderedFlow[2] === "youtube_direct_upload" && fixLep.orderedFlow[3] === "publish_ledger_record"
+);
+const fixLepSteps = Array.isArray(fixLep.steps) ? fixLep.steps : [];
+check("fixture liveExecutionPlan.steps 4개 전부 disabled(no-execute)", fixLepSteps.length === 4 && fixLepSteps.every((s) => s.enabled === false && s.willExecute === false && s.sideEffectPerformed === false));
+check(
+  "fixture liveExecutionPlan step별 requiredApprovalTokens 존재",
+  fixLepSteps.length === 4 && fixLepSteps.every((s) => Array.isArray(s.requiredApprovalTokens) && s.requiredApprovalTokens.length >= 1)
+);
+const fixYtStep = fixLepSteps.find((s) => s.id === "youtube_direct_upload");
+check("fixture liveExecutionPlan youtube step requiredEnvKeyNames에 YOUTUBE_ACCESS_TOKEN 없음", Array.isArray(fixYtStep?.requiredEnvKeyNames) && !fixYtStep.requiredEnvKeyNames.includes("YOUTUBE_ACCESS_TOKEN"));
+check("fixture liveExecutionPlan에 secret 값 형태 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(fixLep)));
+
 // 6b) runner 소스: live gate 상수 + fail-closed + env 미접근 회귀
 check("runner에 LIVE_EXECUTION_ENABLED_THIS_SLICE = false 존재", /LIVE_EXECUTION_ENABLED_THIS_SLICE\s*=\s*false/.test(runnerRawSrc));
 check("runner에 LIVE_EXECUTION_DISABLED_THIS_SLICE 에러 상수 존재", runnerRawSrc.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
@@ -499,6 +536,11 @@ check("runner에 REQUIRED_ENV_KEY_NAMES (key 이름 계약) 존재", /REQUIRED_E
 check("runner 코드에 process.env 참조 없음 (preflight가 env 값에 접근하지 않음)", !/process\s*\.\s*env/.test(runnerCode));
 // live publish 함수를 이 runner가 실제로 import하지 않는다(참조는 문자열 상수로만).
 check("runner가 lib live publish 함수를 실제 import하지 않음", !/import\s+[^\n]*uploadInstagramReel/.test(runnerCode) && !/import\s+[^\n]*uploadYouTubeShorts/.test(runnerCode) && !/import\s+[^\n]*uploadInstagramBlob/.test(runnerCode));
+// no-execute live execution plan 빌더 존재 + lib import 없음.
+check("runner에 buildLiveExecutionPlan(no-execute plan 빌더) 존재", /buildLiveExecutionPlan/.test(runnerRawSrc));
+check("runner가 lib 파일에서 실제 import를 전혀 하지 않음(문자열 참조만)", !/import\s+[^\n]*from\s+["']\.\.\/lib\//.test(runnerCode) && !/import\s+[^\n]*from\s+["'][^"']*lib\/(instagram|youtube|instagram-blob)/.test(runnerCode));
+// runner 실행 코드(주석/문자열 제외)에 lib live 경로 리터럴이 실제로 실행되지 않는다.
+check("runner 코드(주석/문자열 제외)에 youtube.videos.insert 실행 없음", !/youtube\s*\.\s*videos\s*\.\s*insert/.test(runnerCode));
 
 // 6c) runner 실행: --preflight (no-live)
 let pfOutput = "";
@@ -548,6 +590,85 @@ check("preflight 결과 sideEffectCounters 전부 0", (() => { const c = pfResul
 check("preflight 결과: 이미 published evidence를 reference로만 취급(retryForbidden)", pfResult?.preflight?.duplicatePublishReference?.retryForbidden === true);
 check("preflight 결과: Instagram media_id reference 유지(재시도 대상 아님)", pfResult?.preflight?.duplicatePublishReference?.instagramMediaIdReference === "17916511431199303");
 check("preflight 결과: YouTube videoId reference 유지(재시도 대상 아님)", pfResult?.preflight?.duplicatePublishReference?.youtubeVideoIdReference === "r9jhckdpC9w");
+
+// ── 6f) no-execute live execution plan (dual-platform-live-orchestrator-wiring-no-execute-v1) ──
+const lep = pfResult?.preflight?.liveExecutionPlan;
+check("preflight에 liveExecutionPlan(no-execute) 존재", !!lep && typeof lep === "object");
+check("liveExecutionPlan.liveExecutionEnabledThisSlice === false", lep?.liveExecutionEnabledThisSlice === false);
+check("liveExecutionPlan.failClosedError === LIVE_EXECUTION_DISABLED_THIS_SLICE", lep?.failClosedError === "LIVE_EXECUTION_DISABLED_THIS_SLICE");
+check("liveExecutionPlan.anyStepEnabled === false", lep?.anyStepEnabled === false);
+check("liveExecutionPlan.anyStepWillExecute === false", lep?.anyStepWillExecute === false);
+check("liveExecutionPlan.anySideEffectPerformed === false", lep?.anySideEffectPerformed === false);
+check("liveExecutionPlan.metadataGateIsMandatoryDependency === true", lep?.metadataGateIsMandatoryDependency === true);
+check("liveExecutionPlan.duplicateGuardIsMandatoryDependency === true", lep?.duplicateGuardIsMandatoryDependency === true);
+check(
+  "liveExecutionPlan.orderedFlow가 Instagram Blob→publish, YouTube upload, ledger 순서",
+  Array.isArray(lep?.orderedFlow) &&
+    lep.orderedFlow.length === 4 &&
+    lep.orderedFlow[0] === "instagram_blob_upload" &&
+    lep.orderedFlow[1] === "instagram_publish_reel" &&
+    lep.orderedFlow[2] === "youtube_direct_upload" &&
+    lep.orderedFlow[3] === "publish_ledger_record"
+);
+
+const lepSteps = Array.isArray(lep?.steps) ? lep.steps : [];
+check("liveExecutionPlan.steps 4개", lepSteps.length === 4);
+// 모든 step은 이번 slice에서 실행 불가여야 한다.
+check(
+  "liveExecutionPlan 모든 step enabled/willExecute/sideEffectPerformed === false",
+  lepSteps.length === 4 &&
+    lepSteps.every((s) => s.enabled === false && s.willExecute === false && s.sideEffectPerformed === false)
+);
+// step 순서(order) 정합.
+check(
+  "liveExecutionPlan steps order 1,2,3,4 순서 정합",
+  lepSteps.every((s, i) => s.order === i + 1)
+);
+
+const stepById = (id) => lepSteps.find((s) => s.id === id);
+const blobStep = stepById("instagram_blob_upload");
+const igPubStep = stepById("instagram_publish_reel");
+const ytUpStep = stepById("youtube_direct_upload");
+const ledgerStep = stepById("publish_ledger_record");
+
+// step 1: Instagram Blob upload → public URL.
+check("step instagram_blob_upload: provider vercel_blob + public URL 산출", blobStep?.provider === "vercel_blob" && blobStep?.producesForNextStep === "instagram_public_video_url");
+check("step instagram_blob_upload: BLOB_READ_WRITE_TOKEN 승인 토큰 APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", Array.isArray(blobStep?.requiredApprovalTokens) && blobStep.requiredApprovalTokens.includes("APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"));
+
+// step 2: Instagram publish — blob URL + metadata gate + duplicate guard 필수 의존.
+check("step instagram_publish_reel: blob upload 산출 URL에 의존", Array.isArray(igPubStep?.dependsOn) && igPubStep.dependsOn.includes("instagram_blob_upload"));
+const igGateDep = Array.isArray(igPubStep?.dependsOn) ? igPubStep.dependsOn.find((d) => d && d.type === "metadata_optimization_gate") : null;
+const igDupDep = Array.isArray(igPubStep?.dependsOn) ? igPubStep.dependsOn.find((d) => d && d.type === "duplicate_publish_guard") : null;
+check("step instagram_publish_reel: metadata gate가 필수 의존(mustBeOk, gateOk)", igGateDep?.mustBeOk === true && igGateDep?.gateOk === true);
+check("step instagram_publish_reel: duplicate guard가 필수 의존(v3_2 키, retryForbidden)", typeof igDupDep?.key === "string" && igDupDep.key.endsWith("/v3_2") && igDupDep.mustNotBeAlreadyPublished === true && igDupDep.retryForbidden === true);
+check("step instagram_publish_reel: 승인 토큰 APPROVE_DUAL_PLATFORM_ARM", Array.isArray(igPubStep?.requiredApprovalTokens) && igPubStep.requiredApprovalTokens.includes("APPROVE_DUAL_PLATFORM_ARM"));
+check("step instagram_publish_reel: 이미 완료된 media_id를 reference로만(재시도 금지)", igPubStep?.resultReference?.instagramMediaIdReference === "17916511431199303" && igPubStep?.resultReference?.retryForbidden === true);
+
+// step 3: YouTube direct upload — metadata gate + duplicate guard 필수 의존.
+const ytGateDep = Array.isArray(ytUpStep?.dependsOn) ? ytUpStep.dependsOn.find((d) => d && d.type === "metadata_optimization_gate") : null;
+const ytDupDep = Array.isArray(ytUpStep?.dependsOn) ? ytUpStep.dependsOn.find((d) => d && d.type === "duplicate_publish_guard") : null;
+check("step youtube_direct_upload: direct file upload + youtube_data_api", ytUpStep?.provider === "youtube_data_api");
+check("step youtube_direct_upload: metadata gate가 필수 의존(mustBeOk, gateOk)", ytGateDep?.mustBeOk === true && ytGateDep?.gateOk === true);
+check("step youtube_direct_upload: duplicate guard가 필수 의존(v3_2 키, retryForbidden)", typeof ytDupDep?.key === "string" && ytDupDep.key.endsWith("/v3_2") && ytDupDep.mustNotBeAlreadyPublished === true && ytDupDep.retryForbidden === true);
+check("step youtube_direct_upload: 승인 토큰 YOUTUBE_LIVE_UPLOAD_WIRING + DUAL_PLATFORM_ARM", Array.isArray(ytUpStep?.requiredApprovalTokens) && ytUpStep.requiredApprovalTokens.includes("APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING") && ytUpStep.requiredApprovalTokens.includes("APPROVE_DUAL_PLATFORM_ARM"));
+check("step youtube_direct_upload: short-lived credential은 refresh token으로 메모리 발급(장기 env 아님)", ytUpStep?.inputContract?.shortLivedCredentialSource === "derived_in_memory_from_refresh_token");
+check("step youtube_direct_upload: requiredEnvKeyNames에 YOUTUBE_ACCESS_TOKEN 없음", Array.isArray(ytUpStep?.requiredEnvKeyNames) && !ytUpStep.requiredEnvKeyNames.includes("YOUTUBE_ACCESS_TOKEN") && ytUpStep.requiredEnvKeyNames.includes("YOUTUBE_REFRESH_TOKEN"));
+check("step youtube_direct_upload: 이미 완료된 videoId를 reference로만(재시도 금지)", ytUpStep?.resultReference?.youtubeVideoIdReference === "r9jhckdpC9w" && ytUpStep?.resultReference?.retryForbidden === true);
+
+// step 4: ledger record — 두 publish step에 의존, mutation 없음.
+check("step publish_ledger_record: {contentId}/{platform}/{version} keyShape + v3_2 두 키", ledgerStep?.inputContract?.keyShape === "{contentId}/{platform}/{version}" && Array.isArray(ledgerStep?.inputContract?.keys) && ledgerStep.inputContract.keys.length === 2 && ledgerStep.inputContract.keys.every((k) => typeof k === "string" && k.endsWith("/v3_2")));
+check("step publish_ledger_record: 두 publish step에 의존", Array.isArray(ledgerStep?.dependsOn) && ledgerStep.dependsOn.includes("instagram_publish_reel") && ledgerStep.dependsOn.includes("youtube_direct_upload"));
+check("step publish_ledger_record: ledgerMutationThisSlice === false", ledgerStep?.ledgerMutationThisSlice === false);
+
+// 전체 live execution plan에 secret 값 형태가 없어야 한다.
+const lepStr = JSON.stringify(lep || {});
+check("liveExecutionPlan에 secret 값 형태(EAA/ya29/blob token) 없음", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(lepStr));
+// env key '이름'(SNAKE_CASE, 예: YOUTUBE_REFRESH_TOKEN)과 계약 값 문자열(derived_in_memory_from_refresh_token)은
+// secret 값이 아니므로 마스킹 후 검사한다. 그래도 실제 camelCase secret 값 필드(accessToken:'...')는 잡힌다.
+const lepMasked = maskEnvKeyNamesAndContractValues(lepStr);
+check("liveExecutionPlan에 camelCase secret 값 필드(accessToken:'...' 등) 없음(env key 이름/계약 문자열 제외)", !secretFieldPattern.test(lepMasked));
+// preflight 실행 후에도 side effect counters는 전부 0(plan 생성이 부작용을 만들지 않음).
+check("liveExecutionPlan 생성 후에도 sideEffectCounters 전부 0", (() => { const c = pfResult?.plan?.sideEffectCounters || {}; return zeroFields.every((k) => c[k] === 0); })());
 
 // 6d) runner 실행: --live (fail-closed, exit 0 아님)
 let liveBlocked = false;

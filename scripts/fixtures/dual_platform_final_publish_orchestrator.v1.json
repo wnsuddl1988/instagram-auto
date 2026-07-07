@@ -182,7 +182,83 @@
       "referenceEvidenceNote": "위 키는 이미 완료된 live evidence(Instagram 17916511431199303 / YouTube r9jhckdpC9w)에 대응하는 reference evidence다. 새 실행으로 취급하지 않으며 재시도하지 않는다. live wiring이 켜지면 이 두 키는 duplicate guard에 의해 차단되어야 한다."
     },
     "metadataOptimizationGateIsMandatoryForLiveAndPreflight": true,
-    "duplicateGuardIsMandatoryForLiveAndPreflight": true
+    "duplicateGuardIsMandatoryForLiveAndPreflight": true,
+
+    "liveExecutionPlan": {
+      "note": "no-execute live wiring plan. Instagram(Vercel Blob public URL → Graph API publish) / YouTube(direct file upload) 흐름을 코드 구조상 순서대로 연결하되, 이번 slice에서는 모든 step이 실행 불가(disabled)다. preflight 출력의 preflight.liveExecutionPlan과 정합해야 한다. secret 값/토큰/credential value/URL query token은 담지 않는다.",
+      "liveExecutionEnabledThisSlice": false,
+      "failClosedError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+      "anyStepEnabled": false,
+      "anyStepWillExecute": false,
+      "anySideEffectPerformed": false,
+      "metadataGateIsMandatoryDependency": true,
+      "duplicateGuardIsMandatoryDependency": true,
+      "orderedFlow": [
+        "instagram_blob_upload",
+        "instagram_publish_reel",
+        "youtube_direct_upload",
+        "publish_ledger_record"
+      ],
+      "instagramBlobPathnameTemplate": "instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4",
+      "steps": [
+        {
+          "order": 1,
+          "id": "instagram_blob_upload",
+          "platform": "instagram_reels",
+          "provider": "vercel_blob",
+          "enabled": false,
+          "willExecute": false,
+          "sideEffectPerformed": false,
+          "requiredApprovalTokens": ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"],
+          "requiredEnvKeyNames": ["BLOB_READ_WRITE_TOKEN"],
+          "producesForNextStep": "instagram_public_video_url",
+          "dependsOn": []
+        },
+        {
+          "order": 2,
+          "id": "instagram_publish_reel",
+          "platform": "instagram_reels",
+          "provider": "instagram_graph_api",
+          "enabled": false,
+          "willExecute": false,
+          "sideEffectPerformed": false,
+          "requiredApprovalTokens": ["APPROVE_DUAL_PLATFORM_ARM"],
+          "requiredEnvKeyNames": ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"],
+          "dependsOnMetadataGate": true,
+          "dependsOnDuplicateGuard": true,
+          "dependsOnBlobUpload": true
+        },
+        {
+          "order": 3,
+          "id": "youtube_direct_upload",
+          "platform": "youtube_shorts",
+          "provider": "youtube_data_api",
+          "enabled": false,
+          "willExecute": false,
+          "sideEffectPerformed": false,
+          "requiredApprovalTokens": ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
+          "requiredEnvKeyNames": ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
+          "shortLivedCredentialSource": "derived_in_memory_from_refresh_token",
+          "dependsOnMetadataGate": true,
+          "dependsOnDuplicateGuard": true
+        },
+        {
+          "order": 4,
+          "id": "publish_ledger_record",
+          "platform": "both",
+          "provider": "publish_ledger",
+          "enabled": false,
+          "willExecute": false,
+          "sideEffectPerformed": false,
+          "ledgerMutationThisSlice": false,
+          "requiredApprovalTokens": ["APPROVE_DUAL_PLATFORM_ARM"],
+          "requiredEnvKeyNames": [],
+          "keyShape": "{contentId}/{platform}/{version}",
+          "version": "v3_2",
+          "dependsOn": ["instagram_publish_reel", "youtube_direct_upload"]
+        }
+      ]
+    }
   },
 
   "forbiddenBehavior": [
@@ -229,7 +305,13 @@
       "preflight 경로에서 Instagram/YouTube API 또는 Blob upload가 호출됨",
       "--live/--arm이 LIVE_EXECUTION_DISABLED_THIS_SLICE로 막히지 않고 실행 경로로 진입",
       "liveExecutionWiring.liveExecutionEnabledThisSlice가 true로 오염됨",
-      "liveExecutionWiring.requiredEnvKeyNames에 env 값이 함께 기록됨"
+      "liveExecutionWiring.requiredEnvKeyNames에 env 값이 함께 기록됨",
+      "liveExecutionPlan step의 enabled/willExecute/sideEffectPerformed가 true로 오염됨",
+      "liveExecutionPlan.orderedFlow가 Instagram Blob→publish, YouTube upload, ledger 순서를 벗어남",
+      "liveExecutionPlan에서 metadata gate 또는 duplicate guard dependency가 누락됨",
+      "liveExecutionPlan step의 requiredApprovalTokens가 누락되거나 약화됨",
+      "liveExecutionPlan에 secret 값/토큰/credential value/URL query token이 기록됨",
+      "runner가 실제 lib live publish 함수를 import하거나 fetch/googleapis/@vercel/blob/put(를 실행 경로에 넣음"
     ]
   }
 }

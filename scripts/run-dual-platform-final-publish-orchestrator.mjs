@@ -55,7 +55,17 @@ export const LIVE_PUBLISH_FUNCTION_REFS = {
   instagram: "lib/instagram.ts#uploadInstagramReel",
   youtube: "lib/youtube.ts#uploadYouTubeShorts",
   instagramBlob: "lib/instagram-blob-media.ts#uploadInstagramBlob",
+  instagramBlobPlan: "lib/instagram-blob-media.ts#planInstagramBlobUpload",
+  instagramBlobPathname: "lib/instagram-blob-media.ts#buildInstagramBlobPathname",
 };
+
+/**
+ * Instagram full-frame mp4가 업로드될 Vercel Blob public URL의 결정론적 pathname 템플릿.
+ * 실제 값(sha256 등)은 이 slice에서 계산/출력하지 않는다 — 구조만 문서화한다.
+ * (lib/instagram-blob-media.ts#buildInstagramBlobPathname 계약과 정합.)
+ */
+export const INSTAGRAM_BLOB_PATHNAME_TEMPLATE =
+  "instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4";
 
 // ── 계약 상수 (dual_platform_variant_publish_architecture.v1.json과 정합) ──────
 
@@ -282,6 +292,184 @@ const DEFAULT_CONTENT_UNIT = {
  *
  * env 값/존재여부/길이/hash/prefix를 절대 출력하지 않는다.
  */
+/**
+ * no-execute live execution plan.
+ *
+ * 실제 Instagram=Vercel Blob public URL → Instagram publish, YouTube=direct file
+ * upload publish 흐름을 "코드 구조상" 순서대로 명문화한다. 단, 이번 slice에서는
+ * 모든 step이 enabled:false / willExecute:false / sideEffectPerformed:false다.
+ *
+ * 이 함수는 순수 데이터 빌더다: 네트워크/파일IO/env 접근/실제 lib import가 전혀 없다.
+ * functionRef는 문자열 참조일 뿐이며, 실제 호출은 향후 별도 승인 slice에서만 처리된다.
+ * secret 값/토큰/credential value/URL query token은 이 plan에 담기지 않는다.
+ */
+function buildLiveExecutionPlan(unit, igJob, ytJob) {
+  const igGate = igJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const ytGate = ytJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const igGuard = igJob?.duplicatePublishGuard ?? null;
+  const ytGuard = ytJob?.duplicatePublishGuard ?? null;
+
+  // 모든 step 공통: 이번 slice에서는 실행 불가.
+  const disabledFlags = {
+    enabled: false,
+    willExecute: false,
+    sideEffectPerformed: false,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+  };
+
+  const steps = [
+    {
+      order: 1,
+      id: "instagram_blob_upload",
+      description: "Instagram full-frame mp4 → Vercel Blob public URL(공개 비인증 https 비디오 URL)로 업로드.",
+      platform: "instagram_reels",
+      provider: "vercel_blob",
+      ...disabledFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+      planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+      // input 계약: 값이 아니라 "무엇이 필요한지"의 필드 이름만.
+      inputContract: {
+        sourceVariantId: INSTAGRAM_VARIANT_ID,
+        sourceFileField: "instagramSourcePath",
+        blobPathnameTemplate: INSTAGRAM_BLOB_PATHNAME_TEMPLATE,
+        blobPutOptions: { access: "public", addRandomSuffix: false, allowOverwrite: false, multipart: true },
+        producesPublicVideoUrl: true,
+      },
+      requiredApprovalTokens: ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+      dependsOn: [],
+      producesForNextStep: "instagram_public_video_url",
+    },
+    {
+      order: 2,
+      id: "instagram_publish_reel",
+      description: "Blob public video URL + optimized caption/hashtags/CTA → Instagram Reels publish.",
+      platform: "instagram_reels",
+      provider: "instagram_graph_api",
+      ...disabledFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      inputContract: {
+        // uploadInstagramReel({ videoUrl, caption }) 계약과 정합.
+        videoUrlFrom: "instagram_blob_upload.instagram_public_video_url",
+        captionFields: ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
+      },
+      requiredApprovalTokens: ["APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+      dependsOn: [
+        "instagram_blob_upload",
+        {
+          type: "metadata_optimization_gate",
+          platform: "instagram_reels",
+          mustBeOk: true,
+          gateOk: igGate.ok === true,
+          gateReasons: igGate.reasons ?? [],
+          rules: [
+            "first_line_hook", "caption", "call_to_action",
+            "hashtags_8_to_12", "no_unrelated_trend_tags",
+          ],
+        },
+        {
+          type: "duplicate_publish_guard",
+          key: igGuard?.key ?? null,
+          version: unit.version,
+          alreadyPublished: igGuard?.alreadyPublished === true,
+          mustNotBeAlreadyPublished: true,
+          retryForbidden: true,
+        },
+      ],
+      producesForNextStep: null,
+      resultReference: {
+        note: "이미 완료된 evidence. 재시도 금지.",
+        instagramMediaIdReference: LIVE_UPLOAD_EVIDENCE.instagram.mediaId,
+        retryForbidden: true,
+      },
+    },
+    {
+      order: 3,
+      id: "youtube_direct_upload",
+      description: "YouTube letterbox mp4 + optimized title/description/tags → YouTube Shorts direct file upload.",
+      platform: "youtube_shorts",
+      provider: "youtube_data_api",
+      ...disabledFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      inputContract: {
+        // uploadYouTubeShorts 계약과 정합: video 파일 + 최적화 메타데이터 + OAuth credential.
+        // short-lived credential은 refresh token으로 메모리에서 발급 — 장기 env로 요구하지 않는다.
+        videoPathField: "youtubeSourcePath",
+        metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],
+        shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+      },
+      requiredApprovalTokens: ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+      dependsOn: [
+        {
+          type: "metadata_optimization_gate",
+          platform: "youtube_shorts",
+          mustBeOk: true,
+          gateOk: ytGate.ok === true,
+          gateReasons: ytGate.reasons ?? [],
+          rules: [
+            "title", "description", "tags",
+            "category_id", "language", "shorts_suitability",
+          ],
+        },
+        {
+          type: "duplicate_publish_guard",
+          key: ytGuard?.key ?? null,
+          version: unit.version,
+          alreadyPublished: ytGuard?.alreadyPublished === true,
+          mustNotBeAlreadyPublished: true,
+          retryForbidden: true,
+        },
+      ],
+      producesForNextStep: null,
+      resultReference: {
+        note: "이미 완료된 evidence. 재시도 금지.",
+        youtubeVideoIdReference: LIVE_UPLOAD_EVIDENCE.youtube.videoId,
+        retryForbidden: true,
+      },
+    },
+    {
+      order: 4,
+      id: "publish_ledger_record",
+      description: "{contentId}/{platform}/{version} duplicate ledger에 publish 기록. 이후 동일 키 재발행 차단.",
+      platform: "both",
+      provider: "publish_ledger",
+      ...disabledFlags,
+      inputContract: {
+        keyShape: "{contentId}/{platform}/{version}",
+        version: unit.version,
+        keys: [igGuard?.key ?? null, ytGuard?.key ?? null],
+      },
+      requiredApprovalTokens: ["APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: [],
+      dependsOn: ["instagram_publish_reel", "youtube_direct_upload"],
+      ledgerMutationThisSlice: false,
+      producesForNextStep: null,
+    },
+  ];
+
+  return {
+    note:
+      "no-execute live wiring plan. 실제 Instagram(Vercel Blob→Graph API) / YouTube(direct upload) publish 흐름을 " +
+      "코드 구조상 순서대로 연결하되, 이번 slice에서는 모든 step이 실행 불가(disabled)다. secret 값/토큰/credential은 담지 않는다.",
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    failClosedError: LIVE_EXECUTION_DISABLED_ERROR,
+    anyStepEnabled: false,
+    anyStepWillExecute: false,
+    anySideEffectPerformed: false,
+    orderedFlow: [
+      "instagram_blob_upload",
+      "instagram_publish_reel",
+      "youtube_direct_upload",
+      "publish_ledger_record",
+    ],
+    metadataGateIsMandatoryDependency: true,
+    duplicateGuardIsMandatoryDependency: true,
+    steps,
+  };
+}
+
 function buildPreflight(unit) {
   const plan = buildDualPlatformPublishPlan(unit);
   const igJob = plan.jobs.find((j) => j.id === "instagram_job");
@@ -316,6 +504,9 @@ function buildPreflight(unit) {
   const preflightOk =
     plan.jobs.length === 2 && metadataGateOk && duplicateGuardUsesV3_2 && sourceFilesReady;
 
+  // no-execute live wiring plan(Instagram Blob→publish, YouTube direct upload, ledger).
+  const liveExecutionPlan = buildLiveExecutionPlan(unit, igJob, ytJob);
+
   return {
     preflightOk,
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
@@ -323,6 +514,7 @@ function buildPreflight(unit) {
     metadataOptimizationGateOk: metadataGateOk,
     duplicateGuardUsesV3_2,
     sourceFilesReady,
+    liveExecutionPlan,
     sourceFilePresence: {
       note: "존재 여부(boolean)만 확인. 파일 내용은 읽지 않는다. sourceFilesReady는 preflightOk의 필수 조건이다.",
       instagramSourceExists,

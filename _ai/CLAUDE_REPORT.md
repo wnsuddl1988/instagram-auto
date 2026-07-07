@@ -3969,3 +3969,26 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. `lib/youtube.ts`는 지시대로 건드리지 않음.
 - checkpoint recommendation: 신규 파일 없음(기존 4파일 in-place 수정 + report append). Owner 승인 시 checkpoint commit 가능한 상태.
 
+## dual-platform-live-orchestrator-wiring-no-execute-v1 (2026-07-07)
+
+- **승인**: `APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING_NO_EXECUTE`.
+- **목적**: 최종 orchestrator에 Instagram=Vercel Blob public URL→Instagram publish, YouTube=direct file upload publish 흐름을 코드 구조상 연결. 단 이번 slice는 실행 불가(no-execute) 유지 — 실제 Blob upload/Instagram API/YouTube API·OAuth·upload/env·secret 접근 0.
+- **수정 파일 4개**(lib 파일 무수정 — 실제 import 대신 문자열 참조):
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — `buildLiveExecutionPlan(unit, igJob, ytJob)` 추가: 4-step no-execute plan(`instagram_blob_upload → instagram_publish_reel → youtube_direct_upload → publish_ledger_record`). 모든 step `enabled:false`/`willExecute:false`/`sideEffectPerformed:false`. step별 `requiredApprovalTokens`(Blob=APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST, IG publish=APPROVE_DUAL_PLATFORM_ARM, YT=APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING+APPROVE_DUAL_PLATFORM_ARM, ledger=APPROVE_DUAL_PLATFORM_ARM), `requiredEnvKeyNames`(이름만), `functionRef`(문자열), `inputContract`(필드 이름/pathname 템플릿/gate 결과 boolean만 — secret 값 없음). Instagram/YouTube publish step의 `dependsOn`에 metadata_optimization_gate(mustBeOk)와 duplicate_publish_guard(v3_2 키, retryForbidden) 연결. ledger step은 두 publish step 의존 + `ledgerMutationThisSlice:false`. YouTube short-lived credential은 `shortLivedCredentialSource: derived_in_memory_from_refresh_token`(장기 env 아님). `INSTAGRAM_BLOB_PATHNAME_TEMPLATE` 상수 추가. `buildPreflight()` 반환에 `liveExecutionPlan` 포함.
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `liveExecutionWiring.liveExecutionPlan` 계약 블록(orderedFlow, 4 step disabled, step별 승인 토큰/env key 이름, metadataGate/duplicateGuard mandatory, blob pathname 템플릿) 추가. `prohibitedOrchestratorDrift.cases`에 live plan 오염/순서 이탈/dependency 누락/토큰 약화/secret 기록/실제 lib import 회귀 6건 추가.
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — §6a에 fixture liveExecutionPlan 계약 검증(9개), §6b에 `buildLiveExecutionPlan` 존재/lib 실제 import 없음/youtube.videos.insert 실행 없음 회귀(3개), §6f 신규(preflight 실행 결과의 liveExecutionPlan: 4 step disabled, order 정합, step별 dependency(gate·guard v3_2·retryForbidden)·승인 토큰·이미 완료 evidence reference(재시도 금지)·ledger mutation false·secret 값 형태 없음, 약 33개). `maskEnvKeyNamesAndContractValues()` 헬퍼 추가(SNAKE_CASE env key 이름 + `derived_in_memory_from_refresh_token` 계약 문자열 마스킹) — env key 이름/credential 발급 방식 문자열 오탐 제거하되 실제 camelCase secret 값 필드(`accessToken:'...'`)는 여전히 탐지(sanity check로 확인). docs secret 체크도 동일 헬퍼로 통일. → **227 PASS / 0 FAIL**.
+  - `docs/dual-platform-final-publish-orchestrator.md` — no-execute live execution plan 섹션(4-step 표 + dependency/승인 토큰/secret 미기록/문자열 참조 설명) 추가.
+- **dry-run/preflight/live-block 결과**:
+  - `--dry-run`: mode `dry_run`, version `v3_2`, `liveExecutionPlan` 없음, counters 전부 0 — **기존 동작 완전 불변**.
+  - `--preflight`: `preflightOk:true`, `liveExecutionPlan` 포함, `anyStepEnabled/anyStepWillExecute/anySideEffectPerformed` 전부 false, orderedFlow 4-step 정확, gate/guard(v3_2) dependency 연결, counters 0, `process.env` 미출력, secret 값 형태 없음.
+  - `--live`/`--arm`: exit 2, stderr `LIVE_EXECUTION_DISABLED_THIS_SLICE`, stdout 비어있음.
+- **checks/results**:
+  - `git status -sb` ✓ (보호 파일 무접촉, 허용 4파일 + report만 변경)
+  - `node --check` (runner, guard) ✓, fixture JSON parse ✓
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` → **227 PASS / 0 FAIL**
+  - targeted regression: local-pipeline-runner 61/61, render-manifest-local-runner 42/42, money-shorts-automation-orchestrator 151/151 — 전부 ALL PASS
+  - runner에 실제 lib import 없음 확인(`NO_LIB_IMPORT`), 마스킹 헬퍼가 진짜 accessToken/clientSecret 값 필드는 여전히 탐지함 확인.
+- **live side effects 0**: Instagram API 호출 0, YouTube API/OAuth/upload 0, Vercel Blob upload/list/delete/put/get 0, env/secret read/write 0(`process.env` 참조 없음 — guard 회귀 유지), `.env.local` 직접 접근 0, secret 값/토큰/길이/hash/prefix/suffix 출력 0, 새 영상 생성/render/mux/TTS 0, deploy/dependency/lockfile 변경 0, commit/push 0. 기존 완료 evidence(Instagram 17916511431199303 / YouTube r9jhckdpC9w)는 plan에서 reference·`retryForbidden:true`로만 유지, 재시도 경로 없음.
+- **deviations/risks**: 없음. lib 파일은 수정 허용이었으나 실제 import 대신 문자열 `functionRef`로 연결(no-execute 보장·표면 확대 회피). live plan은 계약(필드 이름/boolean/key shape/pathname 템플릿)만 담고 어떤 secret 값도 담지 않음.
+- checkpoint recommendation: 신규 파일 없음(허용 4파일 in-place 수정 + report append). diff는 단일 논리(live wiring plan)로 응집. Owner 승인 시 checkpoint commit 가능한 상태.
+
