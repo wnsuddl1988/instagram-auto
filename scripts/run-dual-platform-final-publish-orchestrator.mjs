@@ -508,6 +508,47 @@ function buildPreflight(unit) {
   // no-execute live wiring plan(Instagram Blob→publish, YouTube direct upload, ledger).
   const liveExecutionPlan = buildLiveExecutionPlan(unit, igJob, ytJob);
 
+  // ── YouTube live upload wiring readiness (secret-free) ──────────────────────
+  // task: youtube-live-upload-wiring-no-execute-v1
+  // YouTube direct upload live 경로의 준비 상태를 계약 수준에서만 요약한다.
+  // functionRef는 explicit credential injection 함수(uploadYouTubeShortsWithCredentials)이며,
+  // YOUTUBE_ACCESS_TOKEN은 required env가 아니다(short-lived token은 refresh token으로 메모리 발급).
+  // 이 블록은 어떤 env 값도 읽지 않고, 실제 upload 함수를 호출하지도 않는다.
+  const ytGate = ytJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const ytGuard = ytJob?.duplicatePublishGuard ?? null;
+  const youtubeLiveUploadWiring = {
+    note:
+      "YouTube Shorts direct file upload live wiring readiness. no-execute 계약만 담는다. " +
+      "secret 값/토큰/credential은 담지 않는다. actual upload call은 이 slice에서 0이다.",
+    expectedFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube, // lib/youtube.ts#uploadYouTubeShortsWithCredentials
+    credentialInjection: "explicit", // credential은 인자로만 주입, import 시점 env read 없음
+    requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube, // CLIENT_ID / CLIENT_SECRET / REFRESH_TOKEN
+    youtubeAccessTokenIsRequiredEnv: false, // 장기 required env 아님
+    shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+    sourceFileField: "youtubeSourcePath",
+    sourceVariantId: YOUTUBE_VARIANT_ID,
+    sourceFileExists: youtubeSourceExists, // boolean only(내용 미read)
+    metadataOptimizationGateOk: ytGate.ok === true,
+    metadataOptimizationGateReasons: ytGate.reasons ?? [],
+    duplicatePublishGuard: {
+      key: ytGuard?.key ?? null, // t1_lifestyle_inflation/youtube_shorts/v3_2
+      usesV3_2: typeof ytGuard?.key === "string" && ytGuard.key.endsWith("/v3_2"),
+      alreadyPublished: ytGuard?.alreadyPublished === true,
+      mustNotBeAlreadyPublished: true,
+      retryForbidden: true,
+    },
+    existingVideoEvidence: {
+      note: "이미 완료된 YouTube upload evidence. 재업로드 금지 — reference로만 유지.",
+      videoId: LIVE_UPLOAD_EVIDENCE.youtube.videoId, // r9jhckdpC9w
+      videoUrl: LIVE_UPLOAD_EVIDENCE.youtube.videoUrl,
+      retryForbidden: true,
+    },
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE, // false
+    liveExecutionDisabledError: LIVE_EXECUTION_DISABLED_ERROR,
+    actualUploadCallPerformed: false, // 실제 YouTube upload 호출 0
+    requiredApprovalTokens: ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
+  };
+
   return {
     preflightOk,
     liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
@@ -516,6 +557,7 @@ function buildPreflight(unit) {
     duplicateGuardUsesV3_2,
     sourceFilesReady,
     liveExecutionPlan,
+    youtubeLiveUploadWiring,
     sourceFilePresence: {
       note: "존재 여부(boolean)만 확인. 파일 내용은 읽지 않는다. sourceFilesReady는 preflightOk의 필수 조건이다.",
       instagramSourceExists,

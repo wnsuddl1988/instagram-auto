@@ -263,6 +263,33 @@
     }
   },
 
+  "youtubeLiveUploadWiring": {
+    "note": "task: youtube-live-upload-wiring-no-execute-v1. YouTube Shorts direct file upload live wiring 계약. preflight 출력의 preflight.youtubeLiveUploadWiring과 정합해야 한다. secret 값/토큰/credential은 담지 않으며, 실제 YouTube upload 호출은 이 slice에서 0이다.",
+    "expectedFunctionRef": "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
+    "credentialInjection": "explicit",
+    "requiredEnvKeyNames": ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
+    "youtubeAccessTokenIsRequiredEnv": false,
+    "shortLivedCredentialSource": "derived_in_memory_from_refresh_token",
+    "sourceFileField": "youtubeSourcePath",
+    "sourceVariantId": "youtube_shorts_letterbox_1080x1920",
+    "duplicatePublishGuard": {
+      "key": "t1_lifestyle_inflation/youtube_shorts/v3_2",
+      "usesV3_2": true,
+      "mustNotBeAlreadyPublished": true,
+      "retryForbidden": true
+    },
+    "existingVideoEvidence": {
+      "note": "이미 완료된 YouTube upload evidence. 재업로드 금지 — reference로만 유지.",
+      "videoId": "r9jhckdpC9w",
+      "videoUrl": "https://www.youtube.com/shorts/r9jhckdpC9w",
+      "retryForbidden": true
+    },
+    "liveExecutionEnabledThisSlice": false,
+    "liveExecutionDisabledError": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+    "actualUploadCallPerformed": false,
+    "requiredApprovalTokens": ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"]
+  },
+
   "forbiddenBehavior": [
     "Instagram API 호출",
     "YouTube API 호출",
@@ -314,7 +341,12 @@
       "liveExecutionPlan step의 requiredApprovalTokens가 누락되거나 약화됨",
       "liveExecutionPlan에 secret 값/토큰/credential value/URL query token이 기록됨",
       "runner가 실제 lib live publish 함수를 import하거나 fetch/googleapis/@vercel/blob/put(를 실행 경로에 넣음",
-      "livePublishFunctionRefs 또는 liveExecutionPlan step functionRef가 explicit credential 함수(uploadInstagramReelWithCredentials/uploadYouTubeShortsWithCredentials)가 아니라 wrapper-only 함수(uploadInstagramReel/uploadYouTubeShorts)로 회귀함"
+      "livePublishFunctionRefs 또는 liveExecutionPlan step functionRef가 explicit credential 함수(uploadInstagramReelWithCredentials/uploadYouTubeShortsWithCredentials)가 아니라 wrapper-only 함수(uploadInstagramReel/uploadYouTubeShorts)로 회귀함",
+      "youtubeLiveUploadWiring.expectedFunctionRef가 uploadYouTubeShortsWithCredentials가 아님",
+      "youtubeLiveUploadWiring.youtubeAccessTokenIsRequiredEnv가 true로 오염(YOUTUBE_ACCESS_TOKEN을 required env로 되살림)",
+      "youtubeLiveUploadWiring.existingVideoEvidence.videoId(r9jhckdpC9w)가 retryForbidden reference가 아니게 됨",
+      "youtubeLiveUploadWiring.duplicatePublishGuard.key가 v3_2가 아니거나 actualUploadCallPerformed가 true로 오염됨",
+      "runner 실행 코드(주석/문자열 제외)에 youtube.videos.insert 또는 googleapis live upload 실행 패턴이 들어감"
     ]
   }
 }

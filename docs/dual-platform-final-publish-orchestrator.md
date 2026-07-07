@@ -163,6 +163,37 @@ live client(`lib/instagram.ts`, `lib/youtube.ts`)는 import 시점에 secret/env
 - secret 값은 throw/log에 포함하지 않는다. Instagram 폴링은 access token을 URL query 대신 `Authorization: Bearer` 헤더로 전달해 에러/로그를 통한 token 노출을 막는다.
 - 정적 가드: `scripts/check-social-live-client-import-safety-static.mjs`.
 
+### YouTube live upload wiring readiness (`preflight.youtubeLiveUploadWiring`)
+
+task: `youtube-live-upload-wiring-no-execute-v1`
+
+`--preflight` 출력에 YouTube Shorts direct file upload live 경로의 준비 상태를 요약하는
+secret-free 블록 `preflight.youtubeLiveUploadWiring`을 추가했다. 이 블록은 어떤 env 값도
+읽지 않고, 실제 YouTube upload 함수를 호출하지도 않는다(계약/boolean만).
+
+| 필드 | 값/의미 |
+|------|---------|
+| `expectedFunctionRef` | `lib/youtube.ts#uploadYouTubeShortsWithCredentials` (explicit credential injection, wrapper-only 아님) |
+| `credentialInjection` | `explicit` — credential은 인자로만 주입, import 시점 env read 없음 |
+| `requiredEnvKeyNames` | `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN` (이름만, 값 미접근) |
+| `youtubeAccessTokenIsRequiredEnv` | `false` — `YOUTUBE_ACCESS_TOKEN`은 장기 required env가 아니다 |
+| `shortLivedCredentialSource` | `derived_in_memory_from_refresh_token` — refresh token으로 메모리에서 발급 |
+| `sourceFileExists` | letterbox mp4 존재 여부(boolean만, 내용 미read) |
+| `metadataOptimizationGateOk` | YouTube metadata gate 통과 여부 |
+| `duplicatePublishGuard` | key `t1_lifestyle_inflation/youtube_shorts/v3_2`, `usesV3_2`, `retryForbidden:true` |
+| `existingVideoEvidence` | videoId `r9jhckdpC9w`, url, `retryForbidden:true` — 재업로드 금지, reference로만 유지 |
+| `liveExecutionEnabledThisSlice` | `false` |
+| `actualUploadCallPerformed` | `false` — 이 slice에서 실제 YouTube upload 호출 0 |
+| `requiredApprovalTokens` | `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING`, `APPROVE_DUAL_PLATFORM_ARM` |
+
+- source 파일은 기존 YouTube letterbox mp4:
+  `output/youtube-shorts-letterbox-render-test-v1/golden_sample_t1_lifestyle_inflation_youtube_letterbox_v1.mp4`.
+  파일명의 `_v1`은 letterbox render artifact 버전이며, publish duplicate key의 콘텐츠
+  version(`v3_2`)과는 별개다.
+- fixture(`youtubeLiveUploadWiring`)와 preflight 출력이 정합해야 하며, 정적 가드가 두 쪽을
+  모두 검증한다. `youtube.videos.insert`/`googleapis` live upload 실행 패턴이 runner 코드에
+  들어가면 가드가 fail한다.
+
 ### live 모드 fail-closed (`--live` / `--arm`)
 
 - 이 slice에서는 `LIVE_EXECUTION_ENABLED_THIS_SLICE = false` 상수 때문에 항상 차단된다.

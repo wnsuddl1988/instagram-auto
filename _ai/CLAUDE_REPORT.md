@@ -4061,3 +4061,21 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 없음. `APPROVE_INSTAGRAM_BLOB_URL_LIVENESS_NO_ARM`은 handoff 요구에 따라 이번 slice에서 신규 도입한 승인 토큰명(기존 어디에도 없었음) — 명칭 자체는 Codex/Owner가 다른 이름으로 대체 가능하나 "Instagram publish를 arm하지 않는다"는 제약은 유지 필요.
 - checkpoint recommendation: 신규 파일 3개(fixture/guard/docs) + report append. 순수 신규 파일이라 diff 충돌 없음. Owner 승인 시 checkpoint commit 가능.
 
+## youtube-live-upload-wiring-no-execute-v1 (2026-07-07)
+
+- **목적**: YouTube Shorts direct file upload 경로를 dual-platform orchestrator live flow에 no-execute로 구체화. 실제 YouTube upload 0.
+- **변경 파일** (허용 범위 내):
+  - `scripts/run-dual-platform-final-publish-orchestrator.mjs` — `buildPreflight`에 `youtubeLiveUploadWiring` secret-free readiness 블록 추가(expectedFunctionRef=`uploadYouTubeShortsWithCredentials`, requiredEnvKeyNames=CLIENT_ID/SECRET/REFRESH_TOKEN, `youtubeAccessTokenIsRequiredEnv:false`, shortLivedCredentialSource=refresh token 메모리 발급, sourceFileExists boolean, metadata gate ok, duplicate guard v3_2, existingVideoEvidence `r9jhckdpC9w` retryForbidden, liveDisabled, `actualUploadCallPerformed:false`, 승인토큰 2개). dry-run/live 경로는 불변.
+  - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json` — `youtubeLiveUploadWiring` 계약 섹션 추가 + `prohibitedOrchestratorDrift.cases`에 YouTube wiring 회귀 5건 추가(functionRef 회귀, ACCESS_TOKEN required 오염, videoId retryForbidden 이탈, v3_2 이탈/actualUploadCallPerformed 오염, `youtube.videos.insert`/googleapis 실행).
+  - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs` — `preflight.youtubeLiveUploadWiring` + fixture 정합 검증 18개 체크 추가(234→252). `youtube.videos.insert`/`googleapis` 미실행은 기존 liveApiPatterns로 이미 커버.
+  - `docs/dual-platform-final-publish-orchestrator.md` — "YouTube live upload wiring readiness" 섹션(필드 표 + source 파일 + `_v1` render버전 vs `v3_2` 콘텐츠버전 구분).
+  - `lib/youtube.ts` **무수정**(기존 `uploadYouTubeShortsWithCredentials` explicit injection 구조 그대로 참조).
+- **mutant sanity(2건, 원본 즉시 복구)**:
+  - `youtubeAccessTokenIsRequiredEnv:false→true` → guard 1 FAIL(ACCESS_TOKEN required 회귀 감지), 복구 후 재확인.
+  - youtube ref `...WithCredentials→uploadYouTubeShorts`(wrapper-only) → guard 2 FAIL(step functionRef + expectedFunctionRef), 복구 후 재확인.
+- **checks/results**: node --check runner/guard ✓, fixture JSON parse ✓, dual-platform guard **252/252**, import-safety **23/23**, dry-run(mode dry_run·jobs 2·youtubeLiveUploadWiring 부재) ✓, preflight(youtubeLiveUploadWiring 8필드 정확·preflightOk true) ✓, --live(exit 2·`LIVE_EXECUTION_DISABLED_THIS_SLICE`·stdout empty) ✓, `tsc --noEmit` 오류 0.
+- **live side effects 0**: YouTube API/OAuth/upload 0, Instagram API/publish 0, Blob mutation 0, `.env.local` 접근 0, env/secret 값 출력 0, 새 영상 0, deploy/dependency 0, commit/push 0.
+- **evidence(secret 아님)**: YouTube videoId `r9jhckdpC9w`, Instagram Blob public URL `https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4`.
+- **deviations/risks**: 없음. lib/youtube.ts 무수정. tracked diff는 허용 파일(runner/fixture/guard/docs + report) 안에만.
+- checkpoint recommendation: 4개 tracked 파일 변경 + report append(release 경계). Owner 승인 시 checkpoint commit 권장.
+

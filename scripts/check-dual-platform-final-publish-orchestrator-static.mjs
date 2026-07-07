@@ -692,6 +692,69 @@ check(
   ytUpStep?.functionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
 );
 
+// ── 6f-2) preflight.youtubeLiveUploadWiring (youtube-live-upload-wiring-no-execute-v1) ──
+// YouTube direct upload live wiring readiness 요약 블록(secret-free)을 검증한다.
+const yw = pfResult?.preflight?.youtubeLiveUploadWiring;
+check("preflight에 youtubeLiveUploadWiring 블록 존재", !!yw && typeof yw === "object");
+check(
+  "youtubeLiveUploadWiring.expectedFunctionRef === uploadYouTubeShortsWithCredentials(explicit, wrapper-only 아님)",
+  yw?.expectedFunctionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+);
+check(
+  "youtubeLiveUploadWiring.youtubeAccessTokenIsRequiredEnv === false (YOUTUBE_ACCESS_TOKEN required 회귀 아님)",
+  yw?.youtubeAccessTokenIsRequiredEnv === false
+);
+check(
+  "youtubeLiveUploadWiring.requiredEnvKeyNames에 CLIENT_ID/SECRET/REFRESH_TOKEN, ACCESS_TOKEN 없음",
+  Array.isArray(yw?.requiredEnvKeyNames) &&
+    yw.requiredEnvKeyNames.includes("YOUTUBE_CLIENT_ID") &&
+    yw.requiredEnvKeyNames.includes("YOUTUBE_CLIENT_SECRET") &&
+    yw.requiredEnvKeyNames.includes("YOUTUBE_REFRESH_TOKEN") &&
+    !yw.requiredEnvKeyNames.includes("YOUTUBE_ACCESS_TOKEN")
+);
+check(
+  "youtubeLiveUploadWiring.shortLivedCredentialSource === derived_in_memory_from_refresh_token",
+  yw?.shortLivedCredentialSource === "derived_in_memory_from_refresh_token"
+);
+check("youtubeLiveUploadWiring.sourceFileExists === true (letterbox mp4 존재, boolean만)", yw?.sourceFileExists === true);
+check("youtubeLiveUploadWiring.metadataOptimizationGateOk === true", yw?.metadataOptimizationGateOk === true);
+check(
+  "youtubeLiveUploadWiring.duplicatePublishGuard가 v3_2 키 + retryForbidden",
+  typeof yw?.duplicatePublishGuard?.key === "string" &&
+    yw.duplicatePublishGuard.key.endsWith("/v3_2") &&
+    yw.duplicatePublishGuard.usesV3_2 === true &&
+    yw.duplicatePublishGuard.mustNotBeAlreadyPublished === true &&
+    yw.duplicatePublishGuard.retryForbidden === true
+);
+check(
+  "youtubeLiveUploadWiring.existingVideoEvidence가 r9jhckdpC9w를 retryForbidden reference로 유지",
+  yw?.existingVideoEvidence?.videoId === "r9jhckdpC9w" && yw?.existingVideoEvidence?.retryForbidden === true
+);
+check("youtubeLiveUploadWiring.liveExecutionEnabledThisSlice === false", yw?.liveExecutionEnabledThisSlice === false);
+check("youtubeLiveUploadWiring.actualUploadCallPerformed === false (실제 YouTube upload 호출 0)", yw?.actualUploadCallPerformed === false);
+check(
+  "youtubeLiveUploadWiring.requiredApprovalTokens에 YOUTUBE_LIVE_UPLOAD_WIRING + DUAL_PLATFORM_ARM",
+  Array.isArray(yw?.requiredApprovalTokens) &&
+    yw.requiredApprovalTokens.includes("APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING") &&
+    yw.requiredApprovalTokens.includes("APPROVE_DUAL_PLATFORM_ARM")
+);
+// secret 값 형태가 이 블록에 없어야 한다.
+check(
+  "youtubeLiveUploadWiring에 secret 값 형태(EAA/ya29/blob token) 없음",
+  !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(JSON.stringify(yw || {}))
+);
+
+// fixture 측 youtubeLiveUploadWiring 계약도 preflight와 정합해야 한다.
+const fyw = fixture?.youtubeLiveUploadWiring;
+check("fixture.youtubeLiveUploadWiring 존재", !!fyw && typeof fyw === "object");
+check(
+  "fixture.youtubeLiveUploadWiring.expectedFunctionRef === uploadYouTubeShortsWithCredentials",
+  fyw?.expectedFunctionRef === "lib/youtube.ts#uploadYouTubeShortsWithCredentials"
+);
+check("fixture.youtubeLiveUploadWiring.youtubeAccessTokenIsRequiredEnv === false", fyw?.youtubeAccessTokenIsRequiredEnv === false);
+check("fixture.youtubeLiveUploadWiring.existingVideoEvidence.videoId === r9jhckdpC9w (retryForbidden)", fyw?.existingVideoEvidence?.videoId === "r9jhckdpC9w" && fyw?.existingVideoEvidence?.retryForbidden === true);
+check("fixture.youtubeLiveUploadWiring.actualUploadCallPerformed === false", fyw?.actualUploadCallPerformed === false);
+
 // step 4: ledger record — 두 publish step에 의존, mutation 없음.
 check("step publish_ledger_record: {contentId}/{platform}/{version} keyShape + v3_2 두 키", ledgerStep?.inputContract?.keyShape === "{contentId}/{platform}/{version}" && Array.isArray(ledgerStep?.inputContract?.keys) && ledgerStep.inputContract.keys.length === 2 && ledgerStep.inputContract.keys.every((k) => typeof k === "string" && k.endsWith("/v3_2")));
 check("step publish_ledger_record: 두 publish step에 의존", Array.isArray(ledgerStep?.dependsOn) && ledgerStep.dependsOn.includes("instagram_publish_reel") && ledgerStep.dependsOn.includes("youtube_direct_upload"));
