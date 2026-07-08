@@ -4640,3 +4640,15 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 요구의 "points 4~6개"는 empathy(문제 공감)+points 3개(심리→반전→행동)=4비트로 구현 — 기존 6씬 렌더 계약(자막 6줄)을 깨지 않기 위한 매핑. 12개짜리 다른 카테고리도 같은 anti-repeat이 적용되나 pool이 작아 unique 상한은 12개(요구는 재테크팁 한정이라 범위 내). preview_screenshot 렌더러 타임아웃으로 스크린샷은 미첨부(DOM 텍스트 검증으로 대체, 콘솔 에러 0).
 - checkpoint recommendation: 수정 5파일(전부 허용 목록) — 콘텐츠 품질 핵심 슬라이스이므로 Codex 검토 후 checkpoint commit 권장.
 
+## owner-web-golden-sample-script-and-light-ui-fix-v1 (2026-07-08) — ✅ 골든 샘플급 대본 + light 운영 UI 완료
+
+- **목표**: ① finance 제목을 설명식→후킹형으로 재작성, ② `대본 만들기` 결과를 골든 샘플 구조(훅/낭독문/6장면 플랜/자막/시각 큐/업로드 초안)로 확장, ③ `/money-shorts`를 흰 배경+큰 글자 운영 화면으로 전환.
+- **골든 샘플 규칙 반영**: `GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1` 기준 — (a) Story-Causality First: 낭독문에 고정 다리 문장 3개("왜 그럴까요?"/"그런데 진짜 문제는 따로 있습니다."/"그래서 오늘 할 일은 하나입니다.") 삽입해 문제→원인→반전→행동 인과가 끊기지 않음, (b) hook self-relevance: 제목·훅이 '내 얘기'로 읽히게 재작성, (c) 해결책 구체성: 행동 문장 + 실행 시점 CTA, (d) 장면별 시각 증거: scenes[].visualCue(훅 카드/일상 재현/심리 클로즈업/대비 컷/실행 손/타이포 카드), (e) 자막 가독성: 22자 계약 유지. `goldenSampleChecks` boolean 4종(selfRelevantHook/hasCausalBridges/concreteActionWithTiming/captionsWithinLimit)을 대본에 동봉.
+- **changed files**: `lib/owner-web-operator.ts`(48개 title 전면 재작성 + `buildScenePlan`/`WizardScriptScene` + WizardScriptPreview 확장: hookLine/scenes/captionFirstLineHook/uploadCaptionDraft/goldenSampleChecks — fixture 분기도 동일 구조 반환, 기존 필드/자막 6줄/영상 파이프라인 계약 불변), `components/VideoCreationWizard.tsx`(light 전면 전환 + 대본 결과를 "첫 2초 훅/전체 대본/장면별 구성(화면 자막·장면 그림)/업로드 문구 초안/점수" 섹션으로), `components/OperatorPanel.tsx`+`app/money-shorts/page.tsx`(light 전환, 본문 14~15px+, stale 주석 정리), `docs/simple-execution-manual.md`(3단계 설명), wizard guard(+25 checks, 167 total).
+- **후킹 제목 예시**: "가계부가 무너진 다음 날, 진짜 시험이 시작됩니다" / "연봉이 올라도 왜 나는 아직도 쫓기고 있을까" / "친구들과 놀수록 왜 내 통장만 먼저 비어 갈까" / "아껴도 안 모였다면 순서가 거꾸로였던 겁니다" / "오늘 산 건 물건이 아니라 당신의 불안이었습니다" 등 48개 전부 자기인식/반전형(이유/공통점/방법 끝맺음 0 — guard 강제).
+- **smoke (dev 서버 실측)**: scriptPreview(`gen-finance-big-visible-first`) → 낭독문 9문장(브리지 3개 포함, 첫째/둘째 0), scenes 6개(라벨+자막+시각 큐), 업로드 초안, goldenSampleChecks 4/4 true, 점수 89/89. 브라우저 DOM 실측 — 배경 lightness 98%(slate-50), 위저드 제목 24px/주제 제목 16px/훅 20px, 대본 섹션 5종·장면 라벨 6종 전부 렌더, 콘솔 에러 0, dark 잔재 클래스 0(guard 강제). preview_screenshot은 렌더러 타임아웃(환경 이슈)으로 미첨부 — DOM 검증 대체.
+- **checks**: wizard guard **167/0**(대본 UI 섹션·scene 구조·브리지·나열형 격리·title 약패턴 금지·light 계약 등 25개 신설), web guard 88/0(무수정, 회귀 없음), `tsc --noEmit` exit 0, `node --check` 2종 exit 0.
+- **side effects / env·secret**: 업로드/외부 API/OAuth/Blob/ledger write 0, `--arm` 실행 0(업로드 경로 코드·게이트 무변경, allowArm 검사 계속 통과), 새 영상 생성 0(scriptPreview까지만), `.env*` read/edit 0. 임시 smoke 스크립트 삭제.
+- **deviations/risks**: route.ts는 수정 불필요(기존 raw:{script}가 확장 필드를 자동 포함). 기존에 만든 영상(옛 제목 자막)은 그대로며 새로 만들면 새 제목/대본 반영. C:\tmp 카탈로그의 옛 레코드는 동일 slug면 새 추천 시 새 title로 덮어써짐. 페이지 배경은 전역 다크 변수 대신 명시적 light 클래스로 이 화면만 전환(다른 화면 영향 없음).
+- checkpoint recommendation: 수정 6파일(전부 허용 목록), 콘텐츠 품질+UX release-critical 슬라이스 — Codex 검토 후 checkpoint commit 권장.
+

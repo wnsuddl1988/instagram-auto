@@ -267,9 +267,48 @@ check("recent window = pool - batch (연속 배치 무겹침 보장)", /pool\.le
 // pool ≥45 + 창(pool-batch) ⇒ 5회×9개 = 45개 전부 서로 다른 title(≥30) + 연속 배치 겹침 0 — 정적으로 보장
 check("finance 5-batch ≥30 unique titles statically guaranteed", finSeedCount >= 45 && /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
 
-// 프리미엄 대본 흐름: 후킹→공감(empathy)→심리→반전→행동→저장, 나열형(첫째/둘째) 미사용
+// 프리미엄 대본 흐름: 후킹→공감(empathy)→[다리]→심리→[다리]→반전→[다리]→행동→저장
 check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.empathy/.test(helperCode));
-check("premium voiceover is story flow (hook→empathy→p1→p2→p3→save)", /\[rec\.hook,\s*curiosity,\s*p1,\s*p2,\s*p3,\s*rec\.save\]\.map\(endSentence\)/.test(helperCode));
+check(
+  "premium voiceover has causal bridges (골든 샘플: 단계 사이 다리 문장)",
+  helperCode.includes("왜 그럴까요?") && helperCode.includes("그런데 진짜 문제는 따로 있습니다.") && helperCode.includes("그래서 오늘 할 일은 하나입니다."),
+);
+{
+  // 나열형(첫째/둘째/셋째)은 비프리미엄 fallback 문자열 1곳에만 존재해야 한다.
+  // 프리미엄 낭독문은 endSentence(rec.hook) 배열 조립(브리지 포함)으로 만든다.
+  const listicleCount = (helperCode.match(/첫째, \$\{p1\}/g) ?? []).length;
+  check("listicle format confined to non-premium fallback (exactly 1)", listicleCount === 1, `found ${listicleCount}`);
+  check("premium voiceover built from sentence array (endSentence(rec.hook))", /endSentence\(rec\.hook\)\s*,/.test(helperCode));
+}
+
+// ── 골든 샘플급 대본 구조: 장면 플랜 + 확장 필드 (task: golden-sample-script-and-light-ui) ──
+check("helper exposes 6-step scene plan (buildScenePlan + scenes field)", /buildScenePlan/.test(helperSrc) && /scenes:\s*WizardScriptScene\[\]/.test(helperSrc));
+for (const sceneId of ['"hook"', '"empathy"', '"psychology"', '"twist"', '"action"', '"save"']) {
+  check(`scene plan has stage id ${sceneId}`, helperSrc.includes(`id: ${sceneId}`));
+}
+check("scene plan carries visualCue (장면성/시각 증거)", /visualCue:/.test(helperSrc));
+for (const field of ["hookLine", "captionFirstLineHook", "uploadCaptionDraft", "goldenSampleChecks"]) {
+  check(`script preview exposes ${field}`, helperSrc.includes(`${field}:`));
+}
+
+// ── 대본 결과 UI: 골든 샘플 섹션 노출 ─────────────────────────────────────────
+for (const label of ["첫 2초 훅", "전체 대본", "장면별 구성", "화면 자막", "업로드 문구 초안"]) {
+  check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
+}
+check("wizard renders scene plan rows (script.scenes map)", /script\.scenes/.test(wizardCode) && /visualCue/.test(wizardCode));
+
+// ── finance title 후킹 계약: 설명식 약한 패턴 금지 ────────────────────────────
+{
+  const titles = finSeedLines.map((l) => /title:\s*"([^"]+)"/.exec(l)?.[1] ?? "");
+  const weakEndings = titles.filter((t) => /(이유|공통점|방법|하는 법)$/.test(t));
+  check("finance titles do not end with 설명식 패턴(이유/공통점/방법)", weakEndings.length === 0, weakEndings.join(" | "));
+}
+
+// ── light 운영 UI 계약: 흰 배경 + 큰 글자, dark 테마 잔재 금지 ────────────────
+check("page uses light background (bg-slate-50)", /bg-slate-50/.test(pageSrc));
+check("wizard cards are white (bg-white)", /bg-white/.test(wizardSrc) && /bg-white/.test(panelSrc));
+check("main UI has no dark background remnants (bg-slate-900/950)", !/bg-slate-9\d\d/.test(wizardSrc) && !/bg-slate-9\d\d/.test(panelSrc) && !/bg-slate-9\d\d/.test(pageSrc));
+check("main UI body text is ≥14px (text-[15px]/text-base 사용, 11px 잔재 없음)", /text-\[15px\]|text-base/.test(wizardSrc) && !/text-\[11px\]|text-\[10px\]/.test(wizardSrc) && !/text-\[11px\]|text-\[10px\]/.test(panelSrc));
 
 // UI 문구: 개발자 용어 비노출 + 재테크팁 톤 노출
 check('user copy has no dev term "로컬 주제 은행"', !routeSrc.includes("로컬 주제 은행") && !wizardSrc.includes("로컬 주제 은행"));

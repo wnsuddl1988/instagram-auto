@@ -38,14 +38,26 @@ type WizardTopic = {
   angle?: string;
 };
 
+type WizardScriptScene = {
+  id: string;
+  label: string;
+  narration: string;
+  captionText: string;
+  visualCue: string;
+};
+
 type WizardScript = {
   title: string;
   hook: string;
+  hookLine?: string;
   curiosity: string;
   points: string[];
   twist: string;
   action: string;
   fullVoiceover: string;
+  scenes?: WizardScriptScene[];
+  captionFirstLineHook?: string;
+  uploadCaptionDraft?: string;
   hookScore: number | null;
   clarityScore: number | null;
 };
@@ -101,10 +113,10 @@ async function postAction(action: string, extra?: Record<string, unknown>): Prom
 function StateBadge({ state }: { state: RunState }) {
   if (state === "idle") return null;
   const styles: Record<Exclude<RunState, "idle">, string> = {
-    running: "bg-slate-700/60 text-slate-300 border-slate-600/50",
-    success: "bg-emerald-900/40 text-emerald-300 border-emerald-700/50",
-    blocked: "bg-amber-900/40 text-amber-300 border-amber-700/50",
-    error: "bg-red-900/40 text-red-300 border-red-700/50",
+    running: "bg-slate-100 text-slate-600 border-slate-300",
+    success: "bg-emerald-50 text-emerald-700 border-emerald-300",
+    blocked: "bg-amber-50 text-amber-700 border-amber-300",
+    error: "bg-red-50 text-red-700 border-red-300",
   };
   const labels: Record<Exclude<RunState, "idle">, string> = {
     running: "진행 중…",
@@ -113,7 +125,7 @@ function StateBadge({ state }: { state: RunState }) {
     error: "오류",
   };
   return (
-    <span className={`px-2 py-0.5 rounded border text-[11px] font-semibold shrink-0 ${styles[state]}`}>
+    <span className={`px-2.5 py-0.5 rounded-full border text-sm font-semibold shrink-0 ${styles[state]}`}>
       {labels[state]}
     </span>
   );
@@ -122,15 +134,15 @@ function StateBadge({ state }: { state: RunState }) {
 function ResultNote({ result }: { result: OperatorResult | null }) {
   if (!result) return null;
   const color =
-    result.status === "success" ? "text-emerald-300" : result.status === "blocked" ? "text-amber-300" : "text-red-300";
+    result.status === "success" ? "text-emerald-700" : result.status === "blocked" ? "text-amber-700" : "text-red-600";
   return (
-    <div className="mt-2 space-y-1">
-      <p className={`text-xs font-semibold ${color}`}>{result.summary}</p>
-      {result.detail ? <p className="text-[11px] text-slate-500 leading-relaxed">{result.detail}</p> : null}
+    <div className="mt-2.5 space-y-1">
+      <p className={`text-[15px] font-semibold ${color}`}>{result.summary}</p>
+      {result.detail ? <p className="text-sm text-slate-500 leading-relaxed">{result.detail}</p> : null}
       {result.raw != null ? (
-        <details className="text-[11px] text-slate-600">
-          <summary className="cursor-pointer hover:text-slate-400">개발자용 자세한 내용 보기</summary>
-          <pre className="mt-1 p-2 rounded bg-slate-950/60 border border-slate-800/60 overflow-x-auto max-h-48 overflow-y-auto text-slate-500">
+        <details className="text-xs text-slate-400">
+          <summary className="cursor-pointer hover:text-slate-600">개발자용 자세한 내용 보기</summary>
+          <pre className="mt-1 p-2 rounded bg-slate-50 border border-slate-200 overflow-x-auto max-h-48 overflow-y-auto text-slate-500">
             {JSON.stringify(result.raw, null, 2)}
           </pre>
         </details>
@@ -153,18 +165,18 @@ function StepCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800/60 bg-slate-900/40 px-4 py-3.5">
-      <div className="flex items-start gap-3">
-        <span className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-5">
+      <div className="flex items-start gap-3.5">
+        <span className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-base font-bold shrink-0 mt-0.5">
           {num}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-slate-200">{title}</span>
+            <span className="font-bold text-lg text-slate-900">{title}</span>
             <StateBadge state={state} />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
-          <div className="mt-2.5">{children}</div>
+          <p className="text-[15px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
+          <div className="mt-3">{children}</div>
         </div>
       </div>
     </div>
@@ -172,7 +184,7 @@ function StepCard({
 }
 
 const RUN_BTN =
-  "px-3.5 py-2 rounded-lg border border-indigo-600/60 bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/60 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+  "px-5 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 text-[15px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
 
 // ── 메인 위저드 ───────────────────────────────────────────────────────────────
 
@@ -412,30 +424,30 @@ export default function VideoCreationWizard() {
   // ── 렌더 ─────────────────────────────────────────────────────────────────────
 
   return (
-    <section className="rounded-2xl border border-indigo-800/50 bg-indigo-950/20 px-5 py-5">
-      <div className="mb-1 flex items-center gap-2 flex-wrap">
-        <h2 className="text-base font-bold text-indigo-100">자동 쇼츠 만들기</h2>
-        <span className="px-2 py-0.5 rounded bg-indigo-900/50 border border-indigo-700/50 text-indigo-300 text-[11px] font-semibold">
+    <section className="rounded-2xl border border-indigo-200 bg-white shadow-sm px-6 py-6">
+      <div className="mb-1.5 flex items-center gap-2.5 flex-wrap">
+        <h2 className="text-2xl font-bold text-slate-900">자동 쇼츠 만들기</h2>
+        <span className="px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold">
           확인 전에는 업로드 없음
         </span>
       </div>
-      <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+      <p className="text-[15px] text-slate-600 mb-5 leading-relaxed">
         여기가 새 쇼츠 만들기 시작점입니다. 1번부터 순서대로 누르면 시안 영상까지 만들어지고, 마지막 단계에서 확인
         절차를 거쳐야만 실제 업로드가 실행됩니다.
       </p>
 
       {localDev === false ? (
-        <div className="mb-4 rounded-lg border border-amber-700/50 bg-amber-900/20 px-3.5 py-2.5">
-          <p className="text-xs text-amber-300 font-semibold">
+        <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <p className="text-[15px] text-amber-800 font-semibold">
             실제 생성은 Owner PC에서 로컬 실행 화면으로 진행합니다.
           </p>
-          <p className="text-[11px] text-amber-200/70 mt-0.5">
+          <p className="text-sm text-amber-700 mt-0.5">
             이 배포 화면에서는 흐름 확인만 가능합니다. Owner PC에서 pnpm dev로 연 뒤 같은 주소를 열어 주세요.
           </p>
         </div>
       ) : null}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* 1. 카테고리 선택 */}
         <StepCard
           num={1}
@@ -443,7 +455,7 @@ export default function VideoCreationWizard() {
           state={category ? "success" : "idle"}
           desc="어떤 종류의 쇼츠를 만들지 고르세요. 8개 카테고리 모두 주제 추천이 가능합니다."
         >
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
               const selected = category === c.id;
               return (
@@ -451,10 +463,10 @@ export default function VideoCreationWizard() {
                   key={c.id}
                   type="button"
                   onClick={() => selectCategory(c.id)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                  className={`px-4 py-2 rounded-xl border text-[15px] font-semibold transition-colors ${
                     selected
-                      ? "border-indigo-500 bg-indigo-600 text-white"
-                      : "border-indigo-700/60 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/50"
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:bg-indigo-50 hover:border-indigo-300"
                   }`}
                 >
                   {c.label}
@@ -463,7 +475,7 @@ export default function VideoCreationWizard() {
             })}
           </div>
           {category && CATEGORY_DESC[category] ? (
-            <p className="text-[11px] text-slate-500 mt-1.5">{CATEGORY_DESC[category]}</p>
+            <p className="text-sm text-slate-500 mt-2">{CATEGORY_DESC[category]}</p>
           ) : null}
         </StepCard>
 
@@ -480,55 +492,55 @@ export default function VideoCreationWizard() {
           {topics.length > 0 ? (
             <button
               type="button"
-              className="ml-2 px-3.5 py-2 rounded-lg border border-slate-700/60 bg-slate-800/40 text-slate-300 hover:bg-slate-800/70 text-xs font-semibold transition-colors disabled:opacity-40"
+              className="ml-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 text-[15px] font-semibold transition-colors disabled:opacity-40"
               disabled={!runnable || !category}
               onClick={runTopicRecommend}
             >
               다른 주제 보기
             </button>
           ) : null}
-          {!category ? <p className="text-[11px] text-slate-600 mt-1.5">먼저 카테고리를 선택해 주세요.</p> : null}
+          {!category ? <p className="text-sm text-slate-400 mt-2">먼저 카테고리를 선택해 주세요.</p> : null}
           <ResultNote result={topicResult} />
           {topics.length > 0 ? (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-3 space-y-2">
               {topics.map((t) => {
                 const selected = selectedTopicId === t.topicId;
                 return (
                   <label
                     key={t.topicId}
-                    className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-colors ${
                       selected
-                        ? "border-indigo-500/70 bg-indigo-900/40"
-                        : "border-slate-800/60 bg-slate-900/40 hover:bg-slate-900/70"
+                        ? "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-300"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
                   >
                     <input
                       type="radio"
                       name="wizard-topic"
-                      className="mt-1 accent-indigo-500"
+                      className="mt-1.5 accent-indigo-600 scale-125"
                       checked={selected}
                       onChange={() => selectTopic(t.topicId)}
                     />
                     <span className="min-w-0">
-                      <span className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-semibold text-slate-200">{t.title}</span>
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base font-bold text-slate-900">{t.title}</span>
                         {t.angle ? (
-                          <span className="px-1.5 py-0.5 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold">
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-600 text-xs font-semibold">
                             {t.angle}형
                           </span>
                         ) : null}
                         {t.scriptReady ? (
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 text-[10px] font-semibold">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
                             대본 가능
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-slate-500 text-[10px]">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs">
                             대본 연결 전
                           </span>
                         )}
                       </span>
-                      {t.hook ? <span className="block text-[11px] text-slate-500 mt-0.5">“{t.hook}”</span> : null}
-                      {t.reason ? <span className="block text-[10px] text-slate-600 mt-0.5">{t.reason}</span> : null}
+                      {t.hook ? <span className="block text-[15px] text-slate-600 mt-1">“{t.hook}”</span> : null}
+                      {t.reason ? <span className="block text-sm text-slate-400 mt-0.5">{t.reason}</span> : null}
                     </span>
                   </label>
                 );
@@ -547,13 +559,43 @@ export default function VideoCreationWizard() {
           <button type="button" className={RUN_BTN} disabled={!runnable || !selectedTopicId} onClick={runScriptPreview}>
             대본 만들기
           </button>
-          {!selectedTopicId ? <p className="text-[11px] text-slate-600 mt-1.5">먼저 주제를 골라 주세요.</p> : null}
+          {!selectedTopicId ? <p className="text-sm text-slate-400 mt-2">먼저 주제를 골라 주세요.</p> : null}
           <ResultNote result={scriptResult} />
           {script ? (
-            <div className="mt-2 rounded-lg border border-slate-800/60 bg-slate-950/50 px-3.5 py-3 space-y-2">
-              <p className="text-xs text-indigo-300 font-bold">“{script.hook}”</p>
-              <p className="text-[11px] text-slate-400 leading-relaxed">{script.fullVoiceover}</p>
-              <p className="text-[10px] text-slate-600">
+            <div className="mt-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-5 py-5 space-y-5">
+              <div>
+                <p className="text-sm font-bold text-indigo-600 mb-1">첫 2초 훅</p>
+                <p className="text-xl font-bold text-slate-900 leading-snug">“{script.hookLine ?? script.hook}”</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-indigo-600 mb-1">전체 대본 (낭독문)</p>
+                <p className="text-base text-slate-800 leading-relaxed">{script.fullVoiceover}</p>
+              </div>
+              {script.scenes && script.scenes.length > 0 ? (
+                <div>
+                  <p className="text-sm font-bold text-indigo-600 mb-2">장면별 구성</p>
+                  <div className="space-y-2">
+                    {script.scenes.map((s) => (
+                      <div key={s.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                        <p className="text-[15px] font-bold text-slate-900">{s.label}</p>
+                        <p className="text-[15px] text-slate-700 mt-1">
+                          화면 자막: <span className="font-semibold">“{s.captionText}”</span>
+                        </p>
+                        <p className="text-sm text-slate-500 mt-0.5">장면 그림: {s.visualCue}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {script.uploadCaptionDraft ? (
+                <div>
+                  <p className="text-sm font-bold text-indigo-600 mb-1">업로드 문구 초안</p>
+                  <p className="text-[15px] text-slate-700 whitespace-pre-line leading-relaxed">
+                    {script.uploadCaptionDraft}
+                  </p>
+                </div>
+              ) : null}
+              <p className="text-sm text-slate-500">
                 훅 점수 {script.hookScore ?? "-"}점 · 전달력 점수 {script.clarityScore ?? "-"}점
               </p>
             </div>
@@ -570,9 +612,9 @@ export default function VideoCreationWizard() {
           <button type="button" className={RUN_BTN} disabled={!runnable || !selectedTopicId} onClick={runVoiceSample}>
             음성 만들기
           </button>
-          <p className="text-[11px] text-slate-600 mt-1.5">
+          <p className="text-sm text-slate-500 mt-2">
             지금은 테스트용 소리(실제 음성 아님)로 만들어집니다. 실제 음성 생성은{" "}
-            <span className="text-amber-400">다음 승인 필요</span>.
+            <span className="text-amber-600 font-semibold">다음 승인 필요</span>.
           </p>
           <ResultNote result={voiceResult} />
         </StepCard>
@@ -593,14 +635,14 @@ export default function VideoCreationWizard() {
             영상 만들기
           </button>
           {selectedTopic && !selectedTopic.scriptReady ? (
-            <p className="text-[11px] text-slate-600 mt-1.5">
+            <p className="text-sm text-slate-500 mt-2">
               이 주제는 아직 영상 생성까지 연결되지 않았습니다.{" "}
-              <span className="text-amber-400">「대본 준비됨」</span> 표시가 있는 주제를 선택해 주세요.
+              <span className="text-amber-600 font-semibold">「대본 준비됨」</span> 표시가 있는 주제를 선택해 주세요.
             </p>
           ) : (
-            <p className="text-[11px] text-slate-600 mt-1.5">
+            <p className="text-sm text-slate-500 mt-2">
               선택한 주제의 대본·자막이 그대로 영상에 들어갑니다. 장면 이미지는 자동 색상 카드로 채워지고, 실제
-              이미지 연결은 <span className="text-amber-400">다음 승인 필요</span>.
+              이미지 연결은 <span className="text-amber-600 font-semibold">다음 승인 필요</span>.
             </p>
           )}
           <ResultNote result={videoResult} />
@@ -618,19 +660,21 @@ export default function VideoCreationWizard() {
           </button>
           <ResultNote result={previewResult} />
           {previewVideo?.exists ? (
-            <div className="mt-2.5">
+            <div className="mt-3">
               <video
                 key={previewKey}
                 controls
                 playsInline
                 preload="metadata"
-                className="w-full max-w-[240px] rounded-lg border border-slate-700/60 bg-black"
+                className="w-full max-w-[280px] rounded-xl border border-slate-300 bg-black"
                 src={`/api/money-shorts/operator?video=muxed&topicId=${encodeURIComponent(selectedTopicId ?? "")}&v=${previewKey}`}
               />
               {previewVideo.topicTitle ? (
-                <p className="text-[11px] text-emerald-300 mt-1">“{previewVideo.topicTitle}” 주제로 만든 시안입니다.</p>
+                <p className="text-[15px] text-emerald-700 font-semibold mt-1.5">
+                  “{previewVideo.topicTitle}” 주제로 만든 시안입니다.
+                </p>
               ) : null}
-              <p className="text-[10px] text-slate-600 mt-1 break-all">{previewVideo.muxedMp4Path}</p>
+              <p className="text-xs text-slate-400 mt-1 break-all">{previewVideo.muxedMp4Path}</p>
             </div>
           ) : null}
         </StepCard>
@@ -651,7 +695,7 @@ export default function VideoCreationWizard() {
             게시 전 점검
           </button>
           {!videoDone ? (
-            <p className="text-[11px] text-slate-600 mt-1.5">먼저 [영상 만들기]로 시안 영상을 만들어 주세요.</p>
+            <p className="text-sm text-slate-400 mt-2">먼저 [영상 만들기]로 시안 영상을 만들어 주세요.</p>
           ) : null}
           <ResultNote result={preflightResult} />
         </StepCard>
@@ -664,58 +708,60 @@ export default function VideoCreationWizard() {
           desc="확인 절차를 마치면 이 영상이 실제 계정에 게시됩니다. 게시 기록이 남아 같은 콘텐츠는 다시 올라가지 않습니다."
         >
           {uploadState === "success" ? null : (
-            <div className="rounded-lg border border-rose-800/50 bg-rose-950/20 px-3 py-2.5 space-y-2">
-              <p className="text-[11px] font-bold text-rose-300">누르면 실제 계정에 게시됩니다.</p>
+            <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3.5 space-y-3">
+              <p className="text-[15px] font-bold text-rose-700">누르면 실제 계정에 게시됩니다.</p>
               {!preflightDone ? (
-                <p className="text-[11px] text-slate-500">
+                <p className="text-sm text-slate-500">
                   먼저 [영상 만들기]와 [게시 전 점검]을 통과해야 업로드할 수 있습니다.
                 </p>
               ) : null}
-              <label className="flex items-start gap-2 text-[11px] text-slate-300 cursor-pointer">
+              <label className="flex items-start gap-2.5 text-[15px] text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="mt-0.5 accent-rose-500"
+                  className="mt-1 accent-rose-600 scale-125"
                   checked={confirmReviewed}
                   onChange={(e) => setConfirmReviewed(e.target.checked)}
                   disabled={!preflightDone || uploadState === "running"}
                 />
                 미리보기에서 시안 영상과 제목·설명을 검토했습니다.
               </label>
-              <label className="flex items-start gap-2 text-[11px] text-slate-300 cursor-pointer">
+              <label className="flex items-start gap-2.5 text-[15px] text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="mt-0.5 accent-rose-500"
+                  className="mt-1 accent-rose-600 scale-125"
                   checked={confirmPublish}
                   onChange={(e) => setConfirmPublish(e.target.checked)}
                   disabled={!preflightDone || uploadState === "running"}
                 />
                 실제 인스타그램·유튜브 계정에 게시하는 것에 동의합니다.
               </label>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <input
                   type="text"
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder="업로드 라고 입력"
                   disabled={!preflightDone || uploadState === "running"}
-                  className="w-36 rounded-lg border border-slate-700/60 bg-slate-950/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-rose-600/60 disabled:opacity-40"
+                  className="w-44 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 disabled:opacity-40"
                 />
                 <button
                   type="button"
                   disabled={!uploadEnabled}
                   onClick={runActualUpload}
-                  className="px-3.5 py-2 rounded-lg border border-rose-600/70 bg-rose-900/40 text-rose-200 hover:bg-rose-900/70 text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-[15px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   인스타그램·유튜브에 업로드
                 </button>
               </div>
-              <p className="text-[10px] text-slate-600">
+              <p className="text-sm text-slate-500">
                 확인 2개 체크 + “업로드” 입력까지 마쳐야 버튼이 켜집니다. 서버도 같은 조건을 다시 검사합니다.
               </p>
             </div>
           )}
           {uploadState === "running" ? (
-            <p className="text-[11px] text-amber-300 mt-1.5">업로드 중입니다… 창을 닫지 마세요. (최대 몇 분)</p>
+            <p className="text-[15px] text-amber-700 font-semibold mt-2">
+              업로드 중입니다… 창을 닫지 마세요. (최대 몇 분)
+            </p>
           ) : null}
           <ResultNote result={uploadResult} />
         </StepCard>
