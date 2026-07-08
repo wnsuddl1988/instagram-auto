@@ -4577,3 +4577,29 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 범위 이탈 없음. 설계 결정 — ① finalE2ePreflight는 runner gate 1 통과를 위해 approval **문구**를 helper에 하드코딩(이 문구만으로는 아무것도 게시되지 않으며, live를 여는 유일 인자 `--arm`은 어떤 분기에서도 추가되지 않음. guard가 args 내 `--arm` 부재를 정적 검증) ② `readyPreflight`/`readyDuplicateGuard`는 같은 orchestrator `--preflight` 출력을 서로 다른 관점으로 해석(route 수 최소화) ③ 검증을 위해 미게시 probe manifest를 임시 생성 후 삭제(게시 0). 남은 위험: 없음.
 - checkpoint recommendation: 신규 4 + 수정 2 + docs 1 + report. 웹 UI/API/보안 경계가 함께 걸린 슬라이스이며 실브라우저 E2E로 5개 버튼 전부 실증 — Codex 검토 후 checkpoint commit 권장.
 
+## owner-one-click-video-creation-ui-v1 (2026-07-08) — ✅ 자동 쇼츠 만들기 위저드 완료
+
+- **목표**: `/money-shorts`를 개발자용 검증 화면이 아니라 Owner용 "자동 쇼츠 만들기" 제품 흐름으로 전환. 카테고리→주제→대본→음성→영상→미리보기→게시 전 점검→업로드 잠금 8단계.
+- **changed files**: `components/VideoCreationWizard.tsx`(신규, 8단계 위저드), `app/money-shorts/page.tsx`(위저드 메인화면화 + 수동 입력 "고급: 출처 직접 입력" 강등), `lib/owner-web-operator.ts`(action 5개 추가: topicRecommend/scriptPreview/voiceSample/videoCreate/previewStatus + fixture reader + mp4 스트림 헬퍼), `app/api/money-shorts/operator/route.ts`(신규 action 처리 + GET `?video=muxed|silent` 시안 영상 스트림), `components/OperatorPanel.tsx`(헤딩 "세부 점검 도구 (고급)" 강등), `scripts/check-owner-one-click-video-creation-ui-static.mjs`(신규 guard 61 checks), `docs/simple-execution-manual.md`(위저드 중심 §2 재작성), `_ai/CLAUDE_REPORT.md`.
+- **실제 연결된 버튼**: ① 카테고리(재테크팁 활성, 나머지 7개 "준비 중") ② 주제 추천받기 → 로컬 fixture 7개(대본 준비 2 + 후보 5, 추천 배지) ③ 대본 만들기 → 규칙 기반 컴파일 결과(훅+전문 낭독문+점수) ④ 음성 만들기 → local_mock TTS 30초 wav(테스트 소리, "실제 목소리는 다음 승인 필요" 명시) ⑤ 영상 만들기 → `run-local-money-shorts-pipeline-dry-run.mjs` 5단계(~8초)로 실제 mp4 생성 ⑥ 미리보기 → **브라우저에서 시안 mp4 실시간 재생**(enum 전용 스트림, 경로 입력 없음) ⑦ 게시 전 점검 → 기존 readyPreflight 재사용 ⑧ 실제 업로드 → disabled/aria-disabled/cursor-not-allowed 잠금.
+- **보안 경계**: 신규 spawn 2개(voiceSample/videoCreate)는 인자 전부 하드코딩(사용자 입력 0), out-dir은 레포 밖 `C:\tmp\money-shorts-os\` 고정. 영상 스트림은 클라이언트가 경로가 아닌 enum만 전송, helper가 `C:\tmp\money-shorts-os\` prefix + `.mp4` 강제. 신규 action 전부 LOCAL_SCRIPT_ACTIONS(배포 사이트 차단), 위저드에 「실제 생성은 Owner PC에서 로컬 실행 화면으로 진행합니다.」 배포 배너.
+- **실브라우저 E2E**(dev 서버 + 실제 클릭): 8단계 전 구간 검증 — 주제 7개 로드/기본선택, 대본 훅·낭독문·점수 표시, 음성 시안 생성, 영상 5단계 모두 통과, **video 태그 readyState 4/duration 30s로 실제 재생 확인**, 게시 전 점검 「시스템 준비 상태가 정상입니다」, 잠금 버튼 클릭 무반응. 네트워크 전수 localhost만(외부 API 0), 콘솔 에러 0.
+- **checks**: 신규 guard **61/0**, 기존 guard **85/0**, `tsc --noEmit` exit 0, pipeline runner guard 61/0, `node --check` exit 0.
+- **side effects**: Instagram/YouTube/Blob/ledger/deploy/commit/push 0. 산출물은 `C:\tmp\money-shorts-os\web-wizard-{create,voice}-v1\`에만 생성(미리보기용 보존). 검증 probe 폴더는 삭제. env/secret 직접 read 0, 값 출력 0.
+- **범위 이탈**: 없음. 대본 없는 주제 5개는 「대본 연결 전」, 실제 음성·실제 이미지·주제별 전용 영상은 「다음 승인 필요」로 정직하게 표기.
+- checkpoint recommendation: 신규 2 + 수정 5 + report. UI 제품 전환 + 로컬 생성 연결이 걸린 의미 있는 슬라이스 — Codex 검토 후 checkpoint commit 권장.
+
+## owner-one-click-video-creation-topic-linked-render-fix-v1 (2026-07-08) — ✅ 선택 주제 → 영상 연결 완료
+
+- **Codex review finding 해결**: 기존 `videoCreate`가 선택 주제와 무관하게 고정 provider/base-rate fixture로 영상을 만들던 문제를 수정. 이제 사용자가 고른 「대본 준비됨」 주제의 대본·자막이 실제 시안 영상에 반영된다.
+- **changed files**: `lib/owner-web-operator.ts`(topic-specific 입력 생성기 `buildWizardVideoInputsForTopic` 추가 + `videoCreate`가 이를 사용 + `readWizardVideoStatus`/`readWizardVideoBytes` topicId 인자화 + steps 필드명 `step` 정규화), `app/api/money-shorts/operator/route.ts`(videoCreate/previewStatus/영상스트림에 topicId 전달·검증, 대본 없는 주제 fail-closed, 요약에 선택 주제 반영), `components/VideoCreationWizard.tsx`(topicId 전달, scriptReady 기반 영상 만들기 게이트, "기준금리 시안 고정" 문구·상수 제거, 미리보기 src에 topicId), `scripts/check-owner-one-click-video-creation-ui-static.mjs`(회귀 방지 체크 다수 추가), `docs/simple-execution-manual.md`(2줄 보정), `_ai/CLAUDE_REPORT.md`.
+- **연결 방식**: `videoCreate(topicId)` → helper가 `readScriptPreview(topicId)`로 대본을 가져와 repo 밖 `C:\tmp\money-shorts-os\web-wizard-create-v1\inputs\<safe-slug>\`에 topic-specific 입력 4종(render manifest / local_mock TTS script / upload metadata / owner approval) 생성 → 그 파일들로 `run-local-money-shorts-pipeline-dry-run.mjs` 실행. 산출물도 topic별 out-root(`...\web-wizard-create-v1\<safe-slug>\`)로 분리. render 스크립트가 manifest의 `captionOverlays[].captionText`를 실제 mp4 자막으로 굽기 때문에, 선택 주제가 최종 영상에 그대로 반영된다.
+- **fail-closed**: topicId 없음 → `topic_id_invalid_or_empty`("먼저 주제를 선택하고 대본을 만든 뒤에…"), 대본 없는 주제 → `script_not_compiled_for_topic`("「대본 준비됨」 표시가 있는 주제를 선택해 주세요"). UI에서도 scriptReady 아닌 주제는 영상 만들기 버튼 disabled.
+- **실브라우저 E2E**(dev 서버 + 실제 클릭·API): ① 대본 없는 주제/topicId 없음 → blocked(정확한 한국어 메시지) ② `execution-gap-psychology-v1`(기준금리 아님) 전 흐름 → **실제 mp4 자막이 "성공은 의지가 아니라 환경." 등 선택 주제로 구워짐, 기준금리 자막 0**, 미리보기 재생(readyState 4, 30s), src에 topicId 포함 ③ `base-rate-hold-202605` → 자막 "금리 동결, 내 이자 신호." 등, muxedDurationSec 30s, 5단계 통과. 두 주제 산출물이 서로 다른 폴더로 분리됨. 네트워크 전수 localhost(외부 API 0), 콘솔 에러 0.
+- **부수 수정**: run summary의 step 항목 필드명(`step`)과 helper 파서 불일치로 "0단계 통과"로 표시되던 버그 → `step`/`id` 모두 정규화하여 "5단계 모두 통과"로 정상 표시.
+- **checks**: 신규 guard **78/0**(회귀 방지 체크 포함), `check-owner-web-operator-ui-static.mjs` **85/0**, `check-local-pipeline-runner-static.mjs` **61/0**, `tsc --noEmit` exit 0, `node --check` exit 0.
+- **side effects**: Instagram/YouTube/Blob/ledger/deploy/commit/push 0. 생성 입력·산출물은 전부 repo 밖 `C:\tmp\money-shorts-os\` 아래(safe slug `[a-z0-9-]`만). upload metadata/owner approval은 `notUploaded:true`/`ownerApprovalRequired:true`/`actualUploadAllowed:false` 유지. 외부 API 호출 0.
+- **env/secret**: `.env*` 직접 read/edit 0, 값/파생값 출력 0. topicId는 helper `toSafeTopicSlug`로 정화되어 경로 조작 불가. `--arm`/`--live` 어떤 경로에도 없음.
+- **deviations/risks**: 범위 이탈 없음. generated manifest의 duration 힌트 키를 `ffmpegPlan`→`renderPlan`으로 바꿔(web-operator guard의 "helper에 ffmpeg 리터럴 금지" 계약 준수) render 스크립트가 imageInputs 합계(=30s)로 폴백하도록 했고, 실측으로 두 주제 모두 30s mp4 생성 확인. 실제 이미지·실제 음성은 여전히 "다음 승인 필요"로 정직 표기.
+- checkpoint recommendation: 수정 5 + 신규 guard 갱신 + docs/report. Codex review finding을 정면 해결한 슬라이스이며 실브라우저 E2E로 topic 반영을 실증 — Codex 검토 후 checkpoint commit 권장.
+

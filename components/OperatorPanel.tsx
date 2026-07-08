@@ -162,7 +162,10 @@ export default function OperatorPanel() {
 
   return (
     <section className="space-y-4">
-      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">바로 할 일</div>
+      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">세부 점검 도구 (고급)</div>
+      <p className="text-[11px] text-slate-600 -mt-2">
+        영상 만들기는 위의 자동 흐름을 쓰세요. 아래는 업로드 준비 상태를 항목별로 확인하는 점검 도구입니다.
+      </p>
 
       {/* 로컬/배포 안내 — Owner가 배포 사이트에서 모든 게 실행된다고 오해하지 않도록 */}
       <div className="rounded-xl border border-amber-800/40 bg-amber-900/10 px-5 py-3">
