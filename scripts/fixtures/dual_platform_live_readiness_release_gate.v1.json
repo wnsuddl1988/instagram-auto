@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "dual_platform_live_readiness_release_gate_v1",
+  "taskId": "dual-platform-live-readiness-release-gate-no-live-v1",
+  "status": "NO_LIVE_RELEASE_GATE",
+  "createdAt": "2026-07-07",
+  "nature": "실제 live upload를 열기 전, 지금까지 완성된 dual-platform automation(orchestrator + social live client import-safety)이 release-ready인지 종합 검증하는 no-live gate. 이 slice는 실제 업로드/API/env 값 접근을 수행하지 않는다 — 검증 결과와 다음 승인 순서만 명문화한다.",
+  "docsRef": "docs/dual-platform-live-readiness-release-gate.md",
+  "orchestratorRef": "scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json",
+  "importSafetyRef": "scripts/check-social-live-client-import-safety-static.mjs",
+  "noLiveThisSlice": true,
+
+  "readinessConditions": {
+    "note": "release-ready로 판정되기 위한 필수 조건 목록. 각 항목은 아래 evidence로 뒷받침된다. 값은 boolean/조건 설명만 담으며 secret 값/토큰/credential은 담지 않는다.",
+    "typescriptCompiles": {
+      "rule": "TypeScript 전체 프로젝트 컴파일이 오류 0으로 통과해야 한다.",
+      "command": "node node_modules/typescript/bin/tsc --noEmit --pretty false",
+      "expected": "오류 0(stdout/stderr 빈 출력)",
+      "required": true
+    },
+    "socialLiveClientsImportSafe": {
+      "rule": "lib/instagram.ts, lib/youtube.ts는 top-level(module scope)에서 process.env를 읽지 않고, explicit credential injection 함수를 제공해야 한다.",
+      "command": "node scripts/check-social-live-client-import-safety-static.mjs",
+      "expectedGuardChecksCount": 23,
+      "required": true
+    },
+    "orchestratorDryRunOk": {
+      "rule": "orchestrator --dry-run이 정상 실행되고 기존 no-live 계약(job 2개, provider/variant 정합, counters 0)을 유지해야 한다.",
+      "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run",
+      "required": true
+    },
+    "orchestratorPreflightOk": {
+      "rule": "orchestrator --preflight 실행 결과 preflightOk === true여야 하며, env 값은 절대 접근하지 않아야 한다.",
+      "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight",
+      "expectedPreflightOk": true,
+      "expectedEnvValuesAccessedThisRun": false,
+      "required": true
+    },
+    "orchestratorLiveFailClosed": {
+      "rule": "orchestrator --live / --arm은 이 slice에서 항상 LIVE_EXECUTION_DISABLED_THIS_SLICE로 실패해야 한다(nonzero exit).",
+      "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --live",
+      "expectedExitCodeNonZero": true,
+      "expectedStderrContains": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+      "required": true
+    },
+    "liveExecutionPlanAllStepsDisabled": {
+      "rule": "preflight.liveExecutionPlan의 4개 step 전부 enabled/willExecute/sideEffectPerformed === false여야 하며, plan 레벨 anyStepEnabled/anyStepWillExecute/anySideEffectPerformed도 전부 false여야 한다.",
+      "required": true
+    },
+    "metadataOptimizationGateMandatory": {
+      "rule": "metadata optimization gate(\"영상만 업로드 금지\")가 Instagram/YouTube publish step의 필수 dependency로 연결되어 있어야 한다(mustBeOk:true).",
+      "required": true
+    },
+    "duplicatePublishGuardMandatory": {
+      "rule": "duplicate publish guard가 두 publish step의 필수 dependency로 연결되어 있어야 한다(key가 /v3_2로 끝나고 retryForbidden:true).",
+      "required": true
+    },
+    "existingEvidenceRetryForbidden": {
+      "rule": "이미 완료된 Instagram/YouTube live upload evidence는 reference로만 유지되고 재시도 대상이 아니어야 한다.",
+      "instagramMediaIdReference": "17916511431199303",
+      "youtubeVideoIdReference": "r9jhckdpC9w",
+      "required": true
+    },
+    "noDotEnvLocalDirectAccess": {
+      "rule": "runner/lib 소스 어디에도 .env.local 직접 접근 문자열이 없어야 한다.",
+      "required": true
+    },
+    "noSecretValueReadWritePrint": {
+      "rule": "env/secret 값의 read/write/print가 어디에도 없어야 한다 — env key '이름' 계약만 존재해야 한다.",
+      "required": true
+    },
+    "youtubeAccessTokenNotLongTermRequiredEnv": {
+      "rule": "YOUTUBE_ACCESS_TOKEN은 장기 required env key로 요구되지 않아야 한다. short-lived token은 YOUTUBE_REFRESH_TOKEN으로 메모리에서 발급된다.",
+      "required": true
+    },
+    "zeroLiveApiCallsThisSlice": {
+      "rule": "Vercel Blob / Instagram Graph API / YouTube Data API 실제 호출이 0이어야 한다(sideEffectCounters 전부 0).",
+      "required": true
+    }
+  },
+
+  "readinessEvidenceCommandLog": {
+    "note": "release gate 판정 근거가 된 command와 결과 요약. 실제 secret 값/토큰은 기록하지 않는다.",
+    "commands": [
+      { "command": "node node_modules/typescript/bin/tsc --noEmit --pretty false", "result": "PASS", "detail": "오류 0" },
+      { "command": "node scripts/check-social-live-client-import-safety-static.mjs", "result": "PASS", "detail": "23 PASS / 0 FAIL" },
+      { "command": "node scripts/check-dual-platform-final-publish-orchestrator-static.mjs", "result": "PASS", "detail": "234 PASS / 0 FAIL" },
+      { "command": "node scripts/check-local-pipeline-runner-static.mjs", "result": "PASS", "detail": "61 PASS / 0 FAIL" },
+      { "command": "node scripts/check-render-manifest-local-runner-static.mjs", "result": "PASS", "detail": "42 PASS / 0 FAIL" },
+      { "command": "node scripts/check-money-shorts-automation-orchestrator-static.mjs", "result": "PASS", "detail": "151 PASS / 0 FAIL" },
+      { "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight", "result": "PASS", "detail": "preflightOk: true" },
+      { "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --live", "result": "FAIL_CLOSED_AS_EXPECTED", "detail": "exit 2, LIVE_EXECUTION_DISABLED_THIS_SLICE" }
+    ]
+  },
+
+  "liveApprovalSequence": {
+    "note": "release gate 통과 후, 실제 live upload를 열기 위해 Owner가 명시 승인해야 하는 순서. 각 단계는 이전 단계 승인 없이는 유효하지 않다. 이 fixture/guard는 이 순서를 강제하지 않으며 문서화만 한다 — 실제 강제는 향후 live wiring 승인 slice에서 코드로 연결된다.",
+    "steps": [
+      {
+        "order": 1,
+        "token": "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+        "purpose": "Instagram full-frame mp4를 Vercel Blob에 실제로 1회 업로드해 public URL이 생성되는지 테스트 허용."
+      },
+      {
+        "order": 2,
+        "token": "APPROVE_INSTAGRAM_BLOB_URL_LIVENESS_NO_ARM",
+        "purpose": "1단계에서 생성된 Blob public URL이 외부에서 실제로 접근 가능한(liveness) 상태인지만 확인. Instagram Graph API publish(arm)는 이 단계에 포함되지 않는다 — publish 자체는 4단계 승인 이후에만 열린다.",
+        "note": "동등한 명칭의 public URL liveness 승인으로 대체 가능하나, 'Instagram publish를 실제로 arm하지 않는다'는 제약은 반드시 유지되어야 한다."
+      },
+      {
+        "order": 3,
+        "token": "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+        "purpose": "YouTube direct file upload 경로를 실제 API 호출로 연결하는 것을 허용(OAuth/refresh token 사용 포함)."
+      },
+      {
+        "order": 4,
+        "token": "APPROVE_DUAL_PLATFORM_ARM",
+        "purpose": "Instagram publish + YouTube upload + ledger record를 포함한 전체 dual-platform 자동 게시를 활성화(LIVE_EXECUTION_ENABLED_THIS_SLICE를 true로 전환하는 코드 변경이 필요하며, 이 전환 자체도 별도 슬라이스에서 명시 승인 후에만 수행된다)."
+      }
+    ]
+  },
+
+  "nextOwnerDecisionSummary": "이번 slice까지 완료된 것은 dual-platform publish orchestrator의 no-live 구조(dry-run/preflight/fail-closed live), social live client의 import-safe credential injection, 그리고 이 release gate 검증이다. 아직 실제 API 호출은 어디에도 연결되어 있지 않다. Owner가 다음으로 결정할 것은 '언제 실제 live wiring을 열지'이며, 그 첫 단계는 order 1(APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST)부터 순서대로 하나씩 명시 승인하는 것이다. 각 단계는 별도 세션/슬라이스에서 최소 변경으로 연결되며, 4단계(APPROVE_DUAL_PLATFORM_ARM) 전까지는 실제 게시가 발생하지 않는다.",
+
+  "sideEffectCounters": {
+    "instagramApiCallCount": 0,
+    "youtubeApiCallCount": 0,
+    "blobUploadCount": 0,
+    "blobListOrDeleteCount": 0,
+    "envSecretReadCount": 0,
+    "envSecretWriteCount": 0,
+    "dotEnvLocalDirectAccessCount": 0,
+    "newVideoGeneratedCount": 0,
+    "deployCount": 0,
+    "dependencyChangeCount": 0,
+    "commitCount": 0,
+    "pushCount": 0
+  },
+
+  "forbiddenBehavior": [
+    "Instagram API 호출",
+    "YouTube API 호출",
+    "Vercel Blob upload/list/delete 등 object mutation",
+    ".env.local 또는 다른 secret 파일 직접 read/write",
+    "secret 값/토큰/credential value 출력/로그/문서/fixture 기록",
+    "새 영상 생성/렌더/ffmpeg/TTS/image/browser 실행",
+    "deploy/DNS/env write/dependency/lockfile 변경",
+    "commit/push",
+    "이 gate 통과만으로 --live/--arm이 실제 실행 가능해짐(fail-closed 우회)",
+    "liveApprovalSequence 순서를 건너뛰고 APPROVE_DUAL_PLATFORM_ARM만 먼저 부여",
+    "이미 완료된 Instagram(17916511431199303)/YouTube(r9jhckdpC9w) evidence를 재시도"
+  ],
+
+  "prohibitedGateDrift": {
+    "note": "아래 상태는 이 release gate 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "readinessConditions 중 하나라도 required:false로 약화됨",
+      "liveApprovalSequence steps가 4단계 미만이거나 순서가 뒤바뀜",
+      "APPROVE_DUAL_PLATFORM_ARM이 order 1로 승격됨(순서 우회)",
+      "sideEffectCounters의 0이어야 할 필드가 0이 아님",
+      "readinessEvidenceCommandLog에 secret 값 형태(EAA/ya29/blob token)가 기록됨",
+      "orchestrator --live/--arm이 fail-closed 되지 않고 실행 경로로 진입",
+      "nextOwnerDecisionSummary가 실제 live 실행을 이미 완료된 것처럼 서술함",
+      "existingEvidenceRetryForbidden 관련 media_id/videoId가 재시도 대상으로 바뀜"
+    ]
+  }
+}

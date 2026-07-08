@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "youtube_letterbox_render_result_v1",
+  "_note": "Contract/reference sample for the one-shot YouTube letterbox local render result. Paths are placeholders; a real result JSON is written by scripts/run-youtube-letterbox-render-from-request-once.mjs into the approved repo-outside output folder. No secrets appear here. This fixture documents the result contract only and is NOT executed.",
+  "mode": "local_render_once",
+  "approvalToken": "APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE",
+  "noLive": true,
+  "executed": true,
+  "envSecretValuesAccessedThisRun": false,
+  "sourcePath": "<repo-outside>/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+  "sourceSizeBytes": 20294549,
+  "outputPath": "<repo-outside>/golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4",
+  "outputSizeBytes": 7349425,
+  "renderProfile": {
+    "canvas": "1080x1920",
+    "backgroundColor": "black",
+    "contentBox": "864x1536",
+    "centered": true,
+    "codec": { "video": "h264", "pixelFormat": "yuv420p", "faststart": true, "audio": "aac" }
+  },
+  "ffmpegConversionCount": 1,
+  "ffprobeReadOnlyCount": 2,
+  "verification": {
+    "outputExists": true,
+    "outputSizePositive": true,
+    "outputProbeOk": true,
+    "outputWidth": 1080,
+    "outputHeight": 1920,
+    "outputResolutionCorrect": true,
+    "outputCodec": "h264",
+    "outputCodecH264Compatible": true,
+    "outputPixelFormat": "yuv420p",
+    "outputPixelFormatYuv420p": true,
+    "sourceDurationSeconds": 53.966667,
+    "outputDurationSeconds": 53.966667,
+    "durationDeltaSeconds": 0,
+    "durationWithinTolerance": true,
+    "sourceHasAudio": true,
+    "outputHasAudio": true,
+    "audioPreservedIfSourceHadAudio": true
+  },
+  "allVerificationsPass": true,
+  "sideEffectCounters": {
+    "ffmpegConversionCount": 1,
+    "ffprobeReadOnlyCount": 2,
+    "outputFilesWrittenCount": 1,
+    "apiCallCount": 0,
+    "uploadCount": 0,
+    "envSecretReadCount": 0,
+    "deployCount": 0,
+    "requestMutationCount": 0
+  },
+  "nextStep": "Attach the generated mp4 as the content unit youtubeSourcePath: rebuild the content unit with --youtube-source \"<repo-outside output mp4>\" and re-run --preflight --content-unit <manifest>."
+}

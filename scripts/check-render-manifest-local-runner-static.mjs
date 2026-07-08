@@ -119,6 +119,34 @@ check("exitCode !== 0 check present", runnerSrc.includes("exitCode !== 0"));
 check("process.exit(1) on step failure", runnerSrc.includes("process.exit(1)"));
 check("writeSummary on failure", runnerSrc.includes('writeSummary("failed"'));
 
+// ── Dual-platform publish contract forwarding (read-only, job-agnostic) ──────
+console.log("\n[ run-local-money-shorts-from-render-manifest.mjs — dual-platform publish contract forwarding ]");
+
+check(
+  "does NOT re-invoke the publish orchestrator directly (reads sub-summary only)",
+  !runnerSrc.includes("run-dual-platform-final-publish-orchestrator.mjs"),
+);
+check(
+  "reads dual-platform publish contract from sub-pipeline summary JSON",
+  runnerSrc.includes("readDualPlatformPublishContractFromSubSummary"),
+);
+check(
+  "fail-closed to null when sub-summary missing/unparseable",
+  runnerSrc.includes("return null;"),
+);
+check(
+  "reads pipelineRunSummary path for the sub-pipeline JSON",
+  runnerSrc.includes("pipelineRunSummary"),
+);
+check(
+  "forwards dualPlatformPublishContract into top-level summary",
+  runnerSrc.includes("dualPlatformPublishContract,"),
+);
+check(
+  "top-level writeSummary accepts dualPlatformPublishContract parameter",
+  /function writeSummary\(flowStatus,\s*steps,\s*artifacts,\s*dualPlatformPublishContract\)/.test(runnerSrc),
+);
+
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
 
 if (failed > 0) {

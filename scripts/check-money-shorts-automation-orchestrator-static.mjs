@@ -220,6 +220,47 @@ check("K-11: guard does not reference the diag output file", !selfText.includes(
 check("K-12: guard does not import googleapis/openai/playwright/elevenlabs", !/(import|require)[^\n]*['"`](googleapis|openai|playwright|elevenlabs)['"`]/i.test(selfText));
 check("K-13: guard does not spawn/exec child processes (pure static)", !new RegExp("spawn" + "Sync?\\(|" + "exec" + "(Sync)?\\(").test(selfText));
 
+// ── § L. dual-platform publish CONTRACT bridge (shared, job-agnostic, no-live) ──
+// Naming/meaning fix: this is a SHARED, job-agnostic contract reference — NOT
+// this job's own publish plan. Old field/output names (…PublishPlanManifest,
+// …PublishPlan) must NOT reappear (cross-content confusion regression guard).
+const dpcm = job.dualPlatformPublishContractManifest ?? {};
+
+check("L-00a: old field name dualPlatformPublishPlanManifest is NOT present on job (renamed to Contract)", !("dualPlatformPublishPlanManifest" in job));
+check("L-00b: runner does NOT reference old field name dualPlatformPublishPlanManifest", !/dualPlatformPublishPlanManifest/.test(runnerText));
+check("L-00c: runner does NOT expose old output name dualPlatformPublishPlan: (old rollup var)", !/dualPlatformPublishPlan:\s*dualPlatformPublishPlanRollup/.test(runnerText));
+check("L-00d: job fixture JSON text does NOT contain old field name string", !jobRaw.includes("dualPlatformPublishPlanManifest"));
+
+check("L-01: dualPlatformPublishContractManifest.path present", isStr(dpcm.path));
+check("L-02: dualPlatformPublishContractManifest references dual_platform_final_publish_orchestrator.v1.json", /dual_platform_final_publish_orchestrator\.v1\.json$/.test(dpcm.path ?? ""));
+check("L-03: dualPlatformPublishContractManifest.schemaVersion === dual_platform_final_publish_orchestrator_v1", dpcm.schemaVersion === "dual_platform_final_publish_orchestrator_v1");
+check("L-04: dualPlatformPublishContractManifest.runnerPath references the dry-run runner", /run-dual-platform-final-publish-orchestrator\.mjs$/.test(dpcm.runnerPath ?? ""));
+check("L-05: dualPlatformPublishContractManifest.staticGuardPath references its own guard", /check-dual-platform-final-publish-orchestrator-static\.mjs$/.test(dpcm.staticGuardPath ?? ""));
+check("L-06: dualPlatformPublishContractManifest.runnerAllowedFlags is exactly ['--dry-run']", Array.isArray(dpcm.runnerAllowedFlags) && dpcm.runnerAllowedFlags.length === 1 && dpcm.runnerAllowedFlags[0] === "--dry-run");
+check("L-07: requiredStaticGuards does NOT duplicate the dual-platform contract guard (avoids double-spawn)", !rsg.some((g) => /check-dual-platform-final-publish-orchestrator-static\.mjs$/.test(g)));
+check("L-07a: dualPlatformPublishContractManifest.isJobAgnosticSharedContract === true", dpcm.isJobAgnosticSharedContract === true);
+
+// cross-content separation: reference evidence must be clearly distinct from this job's own publishRecords
+const cre = dpcm.contractReferenceEvidence ?? {};
+check("L-07b: contractReferenceEvidence.contentId is a DIFFERENT content unit than this job's jobId", isStr(cre.contentId) && !(job.jobId ?? "").includes(cre.contentId));
+check("L-07c: contractReferenceEvidence.instagramMediaId differs from this job's own expectedMediaId (no cross-content substitution)", cre.instagramMediaId !== pr.instagram_reels?.expectedMediaId);
+check("L-07d: contractReferenceEvidence.youtubeVideoId differs from this job's own expectedVideoId (no cross-content substitution)", cre.youtubeVideoId !== pr.youtube_shorts?.expectedVideoId);
+check("L-07e: manifest note explicitly states it does not replace/override this job's publishRecords", /publishRecords/.test(dpcm.note ?? "") && /(대체|덮어쓰지)/.test(dpcm.note ?? ""));
+
+// runner: contract bridge is read-only reference + read-only guard spawn only, never live-runs the publish runner
+check("L-08: runner reads dualPlatformPublishContractManifest block", /dualPlatformPublishContractManifest/.test(runnerText));
+check("L-09: runner checks noLiveThisSlice on the fixture", /noLiveThisSlice/.test(runnerText));
+check("L-10: runner checks Instagram + YouTube jobs present", /instagram_job/.test(runnerText) && /youtube_job/.test(runnerText));
+check("L-11: runner checks metadataOptimizationGate presence", /publishMetadataOptimizationGate/.test(runnerText));
+check("L-12: runner checks duplicatePublishGuard uses v3_2", /duplicatePublishGuard/.test(runnerText) && /v3_2/.test(runnerText));
+check("L-13: runner checks reference evidence matches known mediaId/videoId", /17916511431199303/.test(runnerText) && /r9jhckdpC9w/.test(runnerText));
+check("L-14: runner exposes dualPlatformPublishContract in output (backward-compatible null)", /dualPlatformPublishContract:\s*dualPlatformPublishContractRollup/.test(runnerText));
+check("L-14a: runner's contract rollup field is named dualPlatformPublishContractReady (not …PublishPlanReady)", /dualPlatformPublishContractReady/.test(runnerText) && !/dualPlatformPublishPlanReady/.test(runnerText));
+check("L-14b: runner comments/rollup clarify contract readiness is not this job's completion", /(shared contract|job-agnostic)/i.test(runnerText) && /(대체하지 않는다|does not substitute|never substitutes)/i.test(runnerText));
+check("L-15: runner does NOT invoke the publish runner script path directly (bridge is read-only + guard-spawn only)", !new RegExp("spawn" + "Sync\\([^)]*run-dual-platform-final-publish-orchestrator").test(runnerCode));
+check("L-16: runner's contract guard spawn is gated to preflight mode only", /mode === ["']preflight["'][\s\S]{0,400}dpcm\.staticGuardPath/.test(runnerText));
+check("L-17: runner's contract guard spawn uses shell:false (same as other guards)", /dpcm\.staticGuardPath[\s\S]{0,400}shell:\s*false/.test(runnerText));
+
 // ── result ────────────────────────────────────────────────────────────────────
 const pass = results.filter((r) => r.pass);
 const fail = results.filter((r) => !r.pass);

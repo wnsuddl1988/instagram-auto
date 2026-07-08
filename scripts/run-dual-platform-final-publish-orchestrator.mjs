@@ -1,0 +1,2096 @@
+#!/usr/bin/env node
+/**
+ * run-dual-platform-final-publish-orchestrator.mjs
+ *
+ * task: dual-platform-arm-wiring-duplicate-guarded-v1
+ * (base: dual-platform-live-orchestrator-wiring-preflight-no-live-v1
+ *  ← dual-platform-final-publish-orchestrator-no-live-v1)
+ *
+ * 하나의 콘텐츠 unit으로부터 Instagram job + YouTube job 2개의 publish plan을
+ * 생성하는 runner다. 4가지 모드를 지원한다:
+ *   --dry-run   : 기존 no-live 동작. publish plan + gate/guard 판정만 계산.
+ *   --preflight : 준비 검증. publish plan + 파일경로 + metadata gate + duplicate guard +
+ *                 Blob liveness evidence + arm 상태 + required env key NAME 계약(값 미접근).
+ *   --credential-preflight : redacted env key presence check(no-live). 승인된 runtime env key
+ *                 '이름'의 present boolean만 보고한다(값/길이/prefix/suffix/hash 미노출). status-style
+ *                 diagnostic이라 missing key가 있어도 exit 0. credential 값을 resolve하지 않고,
+ *                 .env.local/secret 파일을 읽지 않으며, API/upload/Blob 호출도 하지 않는다.
+ *   --live/--arm: armed(APPROVE_DUAL_PLATFORM_ARM). LIVE_GATE_ORDER 순서로 fail-closed
+ *                 평가하며, default content(t1_lifestyle_inflation/v3_2)는 gate 4
+ *                 duplicate publish guard가 BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로
+ *                 차단한다 — credential resolution(gate 5)/actual API call(gate 6) 미도달.
+ *                 custom(non-default) content는 gate 1~4를 통과하면 credential resolution
+ *                 (gate 5)이 승인된 6개 runtime env key를 in-memory explicit credential 객체로
+ *                 조립한다(값은 로컬 객체에만 존재, 출력/문서/error에 미노출). 6개 key가 모두
+ *                 present면 gate 6 actual_api_call 구조에 도달해 value-free no-execute call plan을
+ *                 구성한 뒤 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다
+ *                 (actualApiCallReached:true, actualApiCallExecutionEnabledThisSlice:false,
+ *                 actualApiCallPerformed:false). key가 하나라도 비어 있으면 gate 5에서
+ *                 CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되며 gate 6에는
+ *                 도달하지 않는다(누락 key '이름'만 출력). 실제 Instagram/YouTube/Blob
+ *                 API 호출·업로드·OAuth·mutation은 이 slice에서 어느 경로든 비활성이다.
+ *
+ * 이 슬라이스에서 절대 하지 않는 것:
+ * - Instagram/YouTube API 호출 실행 (fetch/googleapis/axios 등 네트워크 호출 없음)
+ * - Vercel Blob put()/list()/del() 등 object mutation 실행
+ * - .env.local 또는 다른 secret 파일 직접 read
+ * - credential '값'의 출력/저장/직렬화/문서화 및 값에서 파생된 정보(길이/prefix/suffix/hash/masked/
+ *   sample/token type) 노출. gate 5 live 실행 경로는 승인된 6개 key 값을 runtime env에서
+ *   in-memory 객체로 조립하지만(이는 허용됨), 그 값이 반환 JSON/gate trace/plan/문서/report/error에
+ *   나타나는 것은 금지다. preflight/credential-preflight는 key '이름' 또는 present boolean만
+ *   다루며 credential 값을 resolve하지 않는다.
+ * - duplicate publish guard(gate 4) 통과 전 credential resolution/actual API call 도달
+ * - gate 6 no-execute call plan을 실제 API 호출로 실행
+ * - 새 영상 생성/렌더/ffmpeg/TTS/image/browser
+ * - deploy/dependency/commit/push
+ *
+ * 실행 예: node scripts/run-dual-platform-final-publish-orchestrator.mjs --credential-preflight
+ */
+import path from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+// read-only publish ledger runtime bridge (dependency-free .mjs adapter).
+// task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+// lib/publish-ledger.ts(TypeScript 계약)를 런타임에서 직접 import하지 않고, read 계약을
+// 미러링한 read-only adapter만 사용한다(write/mutation 없음, 경로는 caller가 명시할 때만).
+import { evaluateLedgerDuplicateForUnit } from "../lib/publish-ledger-runtime.mjs";
+
+// ── live execution gate (dual-platform-arm-wiring-duplicate-guarded-v1: 최종 arm) ──
+// Owner 승인 APPROVE_DUAL_PLATFORM_ARM로 live gate가 arm 상태다. 단, 실제 live 실행
+// 경로는 반드시 LIVE_GATE_ORDER의 fail-closed 순서로 평가되며, current content
+// (t1_lifestyle_inflation/v3_2)는 gate 4 duplicate publish guard가 credential
+// resolution(gate 5)/actual API call(gate 6) 이전에 반드시 차단한다.
+// 이 상수가 false로 회귀하면 --live/--arm은 여전히 LIVE_EXECUTION_DISABLED_THIS_SLICE로
+// exit 2 fail-closed된다(방어적 이중 안전장치).
+export const LIVE_EXECUTION_ENABLED_THIS_SLICE = true;
+export const LIVE_EXECUTION_ARM_APPROVAL_TOKEN = "APPROVE_DUAL_PLATFORM_ARM";
+export const LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE";
+export const DUPLICATE_BLOCKED_STATUS = "BLOCKED_DUPLICATE_ALREADY_PUBLISHED";
+export const CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR = "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE";
+// read-only publish ledger bridge가 read 실패(invalid JSON/schema/non-array/duplicate key)를 만나면
+// duplicate 판정을 신뢰할 수 없으므로, credential resolution(gate 5) 이전에 이 distinct status로
+// fail-closed 차단한다. task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+export const PUBLISH_LEDGER_READ_FAILED_STATUS = "BLOCKED_PUBLISH_LEDGER_READ_FAILED";
+
+// ── credential resolution wiring (dual-platform-credential-resolution-wiring-no-execute-v1) ──
+// task: dual-platform-credential-resolution-wiring-no-execute-v1
+// gate 5 credential resolution이 이번 slice에서 wiring됐다: gate 1~4를 통과한 custom content는
+// 승인된 6개 runtime env key를 in-memory explicit credential 객체로 조립한다(값은 로컬 객체에만
+// 존재하며 출력/문서/fixture/report/error에 절대 노출되지 않는다). 단, actual API 실행(gate 6)은
+// 여전히 비활성이므로 credential이 resolve되면 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다.
+// credential key가 하나라도 비어 있으면 CREDENTIAL_KEYS_MISSING_THIS_SLICE로 fail-closed되며,
+// 출력에는 '누락 key 이름'만 담기고 값/값 파생 정보는 담기지 않는다. 어느 경로든 actual API call은
+// 도달하지 않고 모든 live side-effect counter는 0으로 유지된다.
+// 이 상수가 false로 회귀하면 credential resolution은 wiring되지 않은 것으로 간주되어야 한다(방어적).
+export const CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE = true;
+// credential이 in-memory로 resolve됐지만 actual API 실행이 비활성이라 멈추는 상태(exit 4).
+export const ACTUAL_API_CALL_NOT_ENABLED_ERROR = "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE";
+// 승인된 credential env key가 일부/전부 비어 있어 credential 이후 단계로 갈 수 없는 상태(exit 4).
+// 출력에는 누락 key '이름'만 담기며 값/길이/prefix/suffix/hash는 담기지 않는다.
+export const CREDENTIAL_KEYS_MISSING_ERROR = "CREDENTIAL_KEYS_MISSING_THIS_SLICE";
+
+/**
+ * (deprecated as a live-halt, historical) custom content live 차단 상태 문자열.
+ * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+ *       → dual-platform-custom-content-live-credential-gate-no-execute-v1
+ *       → dual-platform-credential-resolution-wiring-no-execute-v1
+ *       → dual-platform-actual-api-call-wiring-no-execute-v1
+ * 이전 slice에서는 custom(non-default) content의 --live/--arm이 gate 4와 gate 5 사이의
+ * 무조건 halt(옛 gate 4.5)에서 이 상태로 멈췄다. 그 뒤 credential resolution(gate 5)이
+ * wiring됐고, 지금은 gate 6 actual_api_call도 no-execute plan으로 wiring되어 있다.
+ * 현재 계약(active): gate 1~4를 통과한 custom content는 gate 5에서 승인 6개 env key를
+ * in-memory로 조립하고, 모두 present면 gate 6 no-execute plan에 도달해
+ * ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로, 일부 누락이면 gate 5에서
+ * CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed된다. 이 상수는 하위 호환/문서
+ * 참조용으로만 export되며, 실제 live 실행 경로(executeArmedLiveRun)에서는 더 이상 halt
+ * 상태로 사용되지 않는다. custom content의 실제 publish(actual API 실행)는 이 slice에서도
+ * 여전히 비활성이다 — gate 6이 no-execute plan까지만 wiring됐고 실제 호출 실행은 아직
+ * 활성화되지 않았기 때문이다.
+ */
+export const CUSTOM_CONTENT_LIVE_NOT_ENABLED_ERROR = "CUSTOM_CONTENT_LIVE_NOT_ENABLED_THIS_SLICE";
+
+/** content unit manifest 계약 스키마 버전(외부 manifest가 선언해야 하는 값). */
+export const CONTENT_UNIT_MANIFEST_SCHEMA_VERSION = "dual_platform_content_unit_v1";
+
+/**
+ * 실제 live 실행 경로의 fail-closed gate 평가 순서(핵심 안전 순서 — 순서 변경 금지).
+ * duplicate_publish_guard(4)는 credential_presence_resolution(5)보다 반드시 먼저 평가된다.
+ * current content는 4에서 차단되므로 5/6에 도달하지 않는다.
+ */
+export const LIVE_GATE_ORDER = [
+  "metadata_optimization_gate",
+  "source_file_gate",
+  "blob_public_url_liveness_evidence_gate",
+  "duplicate_publish_guard",
+  "credential_presence_resolution",
+  "actual_api_call",
+];
+
+/**
+ * Instagram Blob public URL liveness 통과 evidence (task: instagram-blob-url-liveness-no-arm-v1).
+ * secret이 아닌 public URL/HEAD 결과만 담는다. live 실행 gate 3이 이 evidence를 검증하며,
+ * 이 slice에서 네트워크 재검증(HEAD 재요청)은 수행하지 않는다.
+ */
+export const BLOB_PUBLIC_URL_LIVENESS_EVIDENCE = {
+  url: "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+  headStatus: 200,
+  contentType: "video/mp4",
+  contentLength: 20294549,
+  resultPath: "output/instagram-blob-url-liveness-no-arm-v1/result.json",
+  sourceTask: "instagram-blob-url-liveness-no-arm-v1",
+};
+
+/**
+ * live 실행에 필요한 env key '이름'만 나열한다(값 미접근).
+ * preflight는 이 목록을 presence PLAN으로 출력할 뿐, process.env를 읽지 않는다.
+ * 실제 credential resolution은 향후 live wiring 승인 이후 별도 경로에서만 수행된다.
+ *
+ * YouTube는 YOUTUBE_ACCESS_TOKEN을 장기 required env key로 요구하지 않는다.
+ * short-lived access token은 향후 승인된 live 실행 중 refresh token(YOUTUBE_REFRESH_TOKEN)으로
+ * 메모리에서 발급/갱신해 사용하며, env로 별도 저장/요구하지 않는다.
+ */
+export const REQUIRED_ENV_KEY_NAMES = {
+  instagram: ["INSTAGRAM_BUSINESS_ACCOUNT_ID", "INSTAGRAM_ACCESS_TOKEN"],
+  youtube: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET", "YOUTUBE_REFRESH_TOKEN"],
+  vercelBlob: ["BLOB_READ_WRITE_TOKEN"],
+};
+
+/**
+ * live 실행 시 호출될 예정인 함수 참조(문자열). 이 runner의 어떤 실행 경로에서도
+ * 실제로 import/호출되지 않는다 — 계약 문서화용 참조일 뿐이다.
+ */
+export const LIVE_PUBLISH_FUNCTION_REFS = {
+  // import-safe explicit credential injection 함수를 가리킨다(credential을 인자로만 받음).
+  instagram: "lib/instagram.ts#uploadInstagramReelWithCredentials",
+  youtube: "lib/youtube.ts#uploadYouTubeShortsWithCredentials",
+  instagramBlob: "lib/instagram-blob-media.ts#uploadInstagramBlob",
+  instagramBlobPlan: "lib/instagram-blob-media.ts#planInstagramBlobUpload",
+  instagramBlobPathname: "lib/instagram-blob-media.ts#buildInstagramBlobPathname",
+};
+
+/**
+ * Instagram full-frame mp4가 업로드될 Vercel Blob public URL의 결정론적 pathname 템플릿.
+ * 실제 값(sha256 등)은 이 slice에서 계산/출력하지 않는다 — 구조만 문서화한다.
+ * (lib/instagram-blob-media.ts#buildInstagramBlobPathname 계약과 정합.)
+ */
+export const INSTAGRAM_BLOB_PATHNAME_TEMPLATE =
+  "instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4";
+
+// ── 계약 상수 (dual_platform_variant_publish_architecture.v1.json과 정합) ──────
+
+export const INSTAGRAM_VARIANT_ID = "instagram_reels_full_frame_1080x1920";
+export const YOUTUBE_VARIANT_ID = "youtube_shorts_letterbox_1080x1920";
+
+export const YOUTUBE_DEFAULT_METADATA = {
+  titleBase: "월급 올라도 돈이 안 모이는 이유",
+  titleWithShortsSuffix: "월급 올라도 돈이 안 모이는 이유 #Shorts",
+  descriptionBase:
+    "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+  tags: [
+    "재테크", "돈관리", "월급관리", "생활비", "라이프스타일인플레이션",
+    "저축", "절약", "사회초년생재테크", "돈모으는법", "Shorts",
+  ],
+  categoryId: "22",
+  defaultLanguage: "ko",
+  privacyStatus: "public",
+  selfDeclaredMadeForKids: false,
+};
+
+/**
+ * Instagram metadata optimization contract.
+ * "영상만 업로드 금지" 규칙 — caption/hashtags/CTA 없이는 publish job이 완전하지 않다.
+ */
+export const INSTAGRAM_DEFAULT_METADATA = {
+  captionFirstLineHook: "월급은 올랐는데 왜 통장은 그대로일까?",
+  caption:
+    "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+  hashtags: [
+    "재테크", "돈관리", "월급관리", "생활비절약", "라이프스타일인플레이션",
+    "사회초년생재테크", "돈모으는법", "절약습관", "경제공부", "릴스",
+  ],
+  callToAction: "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
+  forbiddenUnrelatedTrendTags: true,
+};
+
+/**
+ * live evidence(이미 완료, 재시도 금지). secret 값은 담지 않는다.
+ */
+export const LIVE_UPLOAD_EVIDENCE = {
+  instagram: { status: "already_completed", mediaId: "17916511431199303", retryForbidden: true },
+  youtube: {
+    status: "already_completed",
+    videoId: "r9jhckdpC9w",
+    videoUrl: "https://www.youtube.com/shorts/r9jhckdpC9w",
+    retryForbidden: true,
+  },
+};
+
+// ── 중복 게시 방지 계약 (dry-run: ledger mutation 없음, in-memory read-only 판정만) ──
+
+/**
+ * 이미 published 상태로 간주하는 (contentId/platform/version) 키 목록.
+ * 이 slice는 실제 ledger를 쓰거나 읽지 않는다 — dry-run 데모용 in-memory 상수다.
+ *
+ * version은 publish duplicate key용 "콘텐츠 버전"이며 실제 live upload evidence
+ * (Instagram media_id 17916511431199303 / YouTube videoId r9jhckdpC9w)가 사용한
+ * source artifact 버전 v3_2와 정합해야 한다. YouTube letterbox render 파일명의
+ * `_v1` 접미사는 letterbox render artifact 자체의 버전(렌더 산출물 버전)이며,
+ * 이 publish duplicate key의 콘텐츠 version과는 별개 개념이다 — 혼동 금지.
+ */
+const EXISTING_PUBLISHED_KEYS = new Set([
+  "t1_lifestyle_inflation/instagram_reels/v3_2",
+  "t1_lifestyle_inflation/youtube_shorts/v3_2",
+]);
+
+function publishKey(contentId, platform, version) {
+  return `${contentId}/${platform}/${version}`;
+}
+
+/**
+ * live mode에서만 의미 있는 차단 판정. dry-run에서는 판정 결과만 계산하고
+ * 실제로 아무 것도 차단/발행하지 않는다(ledger mutation 0).
+ */
+function checkDuplicatePublishGuard(contentId, platform, version, liveMode) {
+  const key = publishKey(contentId, platform, version);
+  const alreadyPublished = EXISTING_PUBLISHED_KEYS.has(key);
+  return {
+    key,
+    alreadyPublished,
+    blockedThisRun: liveMode === true && alreadyPublished,
+  };
+}
+
+/**
+ * read-only publish ledger bridge evidence(evaluateLedgerDuplicateForUnit 결과)를 출력용
+ * non-secret 요약으로 정규화한다. secret 값은 담지 않는다 — path 제공 boolean, read boolean,
+ * record count, 플랫폼별 already-published boolean, read 실패 reason(코드)만.
+ */
+function buildLedgerBridgeSummary(ledgerEvidence) {
+  return {
+    // read-only 계약 명시(write/mutation 절대 없음).
+    readOnly: true,
+    writePerformed: false,
+    pathProvided: ledgerEvidence.pathProvided === true,
+    readAttempted: ledgerEvidence.readAttempted === true,
+    readOk: ledgerEvidence.readOk === true,
+    existed: ledgerEvidence.existed === true,
+    readFailReason: ledgerEvidence.readOk === true ? null : ledgerEvidence.reason,
+    recordCount: typeof ledgerEvidence.recordCount === "number" ? ledgerEvidence.recordCount : 0,
+    instagramKey: ledgerEvidence.instagramKey,
+    youtubeKey: ledgerEvidence.youtubeKey,
+    instagramAlreadyPublished: ledgerEvidence.instagramAlreadyPublished === true,
+    youtubeAlreadyPublished: ledgerEvidence.youtubeAlreadyPublished === true,
+    anyDuplicate: ledgerEvidence.anyDuplicate === true,
+  };
+}
+
+// ── job builders ──────────────────────────────────────────────────────────
+
+function buildInstagramJob(unit) {
+  const guard = checkDuplicatePublishGuardForUnit(unit, "instagram_reels", false);
+  // custom content unit이 자체 instagramMetadata를 제공하면 그것을 쓰고,
+  // 없으면 default evidence content의 metadata를 사용한다(하위 호환).
+  const metadata = unit.instagramMetadata ?? INSTAGRAM_DEFAULT_METADATA;
+  return {
+    id: "instagram_job",
+    platform: "instagram_reels",
+    variantId: INSTAGRAM_VARIANT_ID,
+    sourcePath: unit.instagramSourcePath,
+    deliveryMode: "public_unauthenticated_https_video_url",
+    provider: "vercel_blob",
+    requiresPublicBlobUrl: true,
+    liveApiCallPerformed: false,
+    blobUploadPerformed: false,
+    metadata,
+    duplicatePublishGuard: guard,
+  };
+}
+
+function buildYoutubeJob(unit) {
+  const guard = checkDuplicatePublishGuardForUnit(unit, "youtube_shorts", false);
+  const metadata = unit.youtubeMetadata ?? YOUTUBE_DEFAULT_METADATA;
+  return {
+    id: "youtube_job",
+    platform: "youtube_shorts",
+    variantId: YOUTUBE_VARIANT_ID,
+    sourcePath: unit.youtubeSourcePath,
+    deliveryMode: "direct_media_file_upload",
+    provider: "youtube_data_api",
+    requiresPublicBlobUrl: false,
+    liveApiCallPerformed: false,
+    metadata,
+    duplicatePublishGuard: guard,
+  };
+}
+
+// ── metadata optimization gate ───────────────────────────────────────────────
+
+/**
+ * "영상만 업로드 금지" 규칙: 플랫폼별 metadata가 최소 요건을 만족하지 않으면
+ * publish job을 metadata-incomplete로 표시한다. live mode 이전에 반드시
+ * 통과해야 하는 gate이며, 이 slice에서는 판정만 하고 발행을 막지는 않는다
+ * (no-live이므로 애초에 발행 자체가 없음).
+ */
+const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ)/i;
+
+function checkInstagramMetadataGate(metadata) {
+  const reasons = [];
+  if (!metadata) {
+    reasons.push("metadata_missing");
+    return { ok: false, reasons };
+  }
+  if (typeof metadata.captionFirstLineHook !== "string" || metadata.captionFirstLineHook.trim() === "") {
+    reasons.push("first_line_hook_missing");
+  }
+  const hashtags = Array.isArray(metadata.hashtags) ? metadata.hashtags : [];
+  if (hashtags.length < 8) reasons.push("hashtag_count_below_min_8");
+  if (hashtags.length > 12) reasons.push("hashtag_count_above_max_12");
+  if (hashtags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
+    reasons.push("hashtag_contains_unrelated_trend_tag");
+  }
+  if (typeof metadata.callToAction !== "string" || metadata.callToAction.trim() === "") {
+    reasons.push("call_to_action_missing");
+  }
+  return { ok: reasons.length === 0, reasons };
+}
+
+function checkYoutubeMetadataGate(metadata) {
+  const reasons = [];
+  if (!metadata) {
+    reasons.push("metadata_missing");
+    return { ok: false, reasons };
+  }
+  if (typeof metadata.titleBase !== "string" || metadata.titleBase.trim() === "") {
+    reasons.push("title_missing");
+  }
+  const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
+  if (tags.length === 0) reasons.push("tags_missing");
+  if (tags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
+    reasons.push("tags_contains_unrelated_trend_tag");
+  }
+  return { ok: reasons.length === 0, reasons };
+}
+
+/**
+ * 콘텐츠 unit 1개 → publish plan(Instagram job + YouTube job) 생성.
+ * 순수 함수: 네트워크/파일IO/env 접근 없음.
+ */
+export function buildDualPlatformPublishPlan(unit) {
+  const instagramJob = buildInstagramJob(unit);
+  const youtubeJob = buildYoutubeJob(unit);
+  instagramJob.metadataOptimizationGate = checkInstagramMetadataGate(instagramJob.metadata);
+  youtubeJob.metadataOptimizationGate = checkYoutubeMetadataGate(youtubeJob.metadata);
+
+  return {
+    contentId: unit.contentId,
+    version: unit.version,
+    liveMode: false,
+    generatedAt: null,
+    jobs: [instagramJob, youtubeJob],
+    sideEffectCounters: {
+      instagramApiCallCount: 0,
+      youtubeApiCallCount: 0,
+      blobUploadCount: 0,
+      blobListOrDeleteCount: 0,
+      envSecretReadCount: 0,
+      envSecretWriteCount: 0,
+      dotEnvLocalDirectAccessCount: 0,
+      newVideoGeneratedCount: 0,
+      deployCount: 0,
+      dependencyChangeCount: 0,
+      commitCount: 0,
+      pushCount: 0,
+      ledgerMutationCount: 0,
+    },
+  };
+}
+
+const DEFAULT_CONTENT_UNIT = {
+  contentId: "t1_lifestyle_inflation",
+  // 콘텐츠 publish version. 실제 live evidence(Instagram media_id 17916511431199303 /
+  // YouTube videoId r9jhckdpC9w)가 사용한 source artifact 버전 v3_2와 정합.
+  // (YouTube letterbox render 파일명의 _v1은 별개인 "render artifact 버전".)
+  version: "v3_2",
+  instagramSourcePath:
+    "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+  youtubeSourcePath:
+    "C:\\Users\\PC\\jjy\\instagram-auto\\output\\youtube-shorts-letterbox-render-test-v1\\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v1.mp4",
+};
+
+/**
+ * unit이 default evidence content(t1_lifestyle_inflation/v3_2)인지 판정한다.
+ * 판정은 contentId + version로만 한다(source path/metadata는 무관).
+ */
+export function isDefaultContentUnit(unit) {
+  return (
+    unit != null &&
+    unit.contentId === DEFAULT_CONTENT_UNIT.contentId &&
+    unit.version === DEFAULT_CONTENT_UNIT.version
+  );
+}
+
+/**
+ * content unit manifest 파일(JSON)을 읽어 unit 객체로 변환한다.
+ * task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+ *
+ * - JSON.parse만 수행한다. 미디어/네트워크/env 접근 없음.
+ * - schemaVersion / contentId / version / instagramSourcePath / youtubeSourcePath는 필수.
+ * - optional: instagramMetadata / youtubeMetadata / blobPublicUrlLivenessEvidence /
+ *   existingPublishedKeys.
+ * - 파싱 실패/필수 필드 누락 시 { ok:false, reasons:[...] }를 반환한다(throw 없음).
+ */
+export function loadContentUnitFromManifest(manifestPath) {
+  const reasons = [];
+  if (typeof manifestPath !== "string" || manifestPath.trim() === "") {
+    return { ok: false, reasons: ["manifest_path_missing"], unit: null };
+  }
+  if (!existsSync(manifestPath)) {
+    return { ok: false, reasons: ["manifest_file_not_found"], unit: null, manifestPath };
+  }
+  let raw;
+  try {
+    raw = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  } catch (e) {
+    return { ok: false, reasons: [`manifest_json_parse_failed: ${String(e?.message || e)}`], unit: null, manifestPath };
+  }
+
+  if (raw?.schemaVersion !== CONTENT_UNIT_MANIFEST_SCHEMA_VERSION) {
+    reasons.push(`schema_version_mismatch(expected ${CONTENT_UNIT_MANIFEST_SCHEMA_VERSION})`);
+  }
+  for (const field of ["contentId", "version", "instagramSourcePath", "youtubeSourcePath"]) {
+    if (typeof raw?.[field] !== "string" || raw[field].trim() === "") {
+      reasons.push(`required_field_missing_or_empty: ${field}`);
+    }
+  }
+
+  if (reasons.length > 0) {
+    return { ok: false, reasons, unit: null, manifestPath };
+  }
+
+  const unit = {
+    contentId: raw.contentId,
+    version: raw.version,
+    instagramSourcePath: raw.instagramSourcePath,
+    youtubeSourcePath: raw.youtubeSourcePath,
+  };
+  // optional fields — 있을 때만 전달한다.
+  if (raw.instagramMetadata != null) unit.instagramMetadata = raw.instagramMetadata;
+  if (raw.youtubeMetadata != null) unit.youtubeMetadata = raw.youtubeMetadata;
+  if (raw.blobPublicUrlLivenessEvidence != null) unit.blobPublicUrlLivenessEvidence = raw.blobPublicUrlLivenessEvidence;
+  if (Array.isArray(raw.existingPublishedKeys)) unit.existingPublishedKeys = raw.existingPublishedKeys;
+
+  return { ok: true, reasons: [], unit, manifestPath };
+}
+
+/**
+ * unit별 duplicate publish key 판정(default이 아닌 custom content도 지원).
+ * default content는 전역 EXISTING_PUBLISHED_KEYS를, custom content는 manifest의
+ * existingPublishedKeys(있으면)를 참조한다. liveMode에서만 실제 차단 의미를 갖는다.
+ */
+function checkDuplicatePublishGuardForUnit(unit, platform, liveMode) {
+  const key = publishKey(unit.contentId, platform, unit.version);
+  const customKeys = Array.isArray(unit.existingPublishedKeys) ? new Set(unit.existingPublishedKeys) : null;
+  const alreadyPublished = isDefaultContentUnit(unit)
+    ? EXISTING_PUBLISHED_KEYS.has(key)
+    : customKeys != null && customKeys.has(key);
+  return { key, alreadyPublished, blockedThisRun: liveMode === true && alreadyPublished };
+}
+
+/**
+ * custom content unit용 Blob liveness evidence 평가(gate 3).
+ * default content는 전역 BLOB_PUBLIC_URL_LIVENESS_EVIDENCE 상수(evaluateBlobLivenessEvidenceGate)를
+ * 사용하고, custom content는 manifest가 제공한 blobPublicUrlLivenessEvidence를 계약 수준으로만 검증한다.
+ * 네트워크 HEAD/list/readback을 절대 수행하지 않는다 — manifest evidence 필드의 형태만 확인한다.
+ * evidence가 없거나 부정확하면 ok:false(fail-closed).
+ */
+function evaluateCustomBlobLivenessEvidence(unit) {
+  const ev = unit.blobPublicUrlLivenessEvidence;
+  if (ev == null || typeof ev !== "object") {
+    return { ok: false, provided: false, reasons: ["blob_liveness_evidence_missing"] };
+  }
+  const reasons = [];
+  const urlMatchesContentPath =
+    typeof ev.url === "string" &&
+    ev.url.includes(`/${unit.contentId}/`) &&
+    ev.url.includes(`/${INSTAGRAM_VARIANT_ID}/`) &&
+    ev.url.includes(`/${unit.version}/`);
+  if (typeof ev.url !== "string" || !ev.url.startsWith("https://")) reasons.push("url_not_https");
+  if (typeof ev.url === "string" && !ev.url.includes(".public.blob.vercel-storage.com/")) reasons.push("url_not_vercel_blob_public");
+  if (typeof ev.url === "string" && !ev.url.endsWith(".mp4")) reasons.push("url_not_mp4");
+  if (ev.headStatus !== 200) reasons.push("head_status_not_200");
+  if (ev.contentType !== "video/mp4") reasons.push("content_type_not_video_mp4");
+  if (typeof ev.contentLength !== "number" || ev.contentLength <= 0) reasons.push("content_length_invalid");
+  if (!urlMatchesContentPath) reasons.push("url_does_not_match_content_path");
+  const ok = reasons.length === 0;
+  return {
+    provided: true,
+    url: typeof ev.url === "string" ? ev.url : null,
+    headStatus: ev.headStatus ?? null,
+    contentType: ev.contentType ?? null,
+    contentLength: typeof ev.contentLength === "number" ? ev.contentLength : null,
+    urlMatchesContentPath,
+    reasons,
+    ok,
+    networkRevalidationPerformed: false,
+  };
+}
+
+/**
+ * preflight 준비 검증(no-live). 실제 upload/API/Blob/env-value 접근 없이,
+ * live 실행에 필요한 준비 상태를 계약 수준에서 검증한다.
+ *
+ * 검증 항목:
+ *  - publish plan 2개 job 존재 + 양쪽 metadataOptimizationGate.ok
+ *  - source 파일 경로 존재 여부(fs.existsSync — read 아님, boolean만)
+ *  - duplicate publish guard가 v3_2 키를 사용 + 이미 published인지(reference)
+ *  - required env key NAME presence PLAN — key 이름만 나열, process.env 미접근
+ *
+ * env 값/존재여부/길이/hash/prefix를 절대 출력하지 않는다.
+ */
+/**
+ * no-execute live execution plan.
+ *
+ * 실제 Instagram=Vercel Blob public URL → Instagram publish, YouTube=direct file
+ * upload publish 흐름을 "코드 구조상" 순서대로 명문화한다. 단, 이번 slice에서는
+ * 모든 step이 enabled:false / willExecute:false / sideEffectPerformed:false다.
+ *
+ * 이 함수는 순수 데이터 빌더다: 네트워크/파일IO/env 접근/실제 lib import가 전혀 없다.
+ * functionRef는 문자열 참조일 뿐이며, 실제 호출은 향후 별도 승인 slice에서만 처리된다.
+ * secret 값/토큰/credential value/URL query token은 이 plan에 담기지 않는다.
+ */
+function buildLiveExecutionPlan(unit, igJob, ytJob) {
+  const igGate = igJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const ytGate = ytJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const igGuard = igJob?.duplicatePublishGuard ?? null;
+  const ytGuard = ytJob?.duplicatePublishGuard ?? null;
+
+  // task: dual-platform-content-unit-manifest-block-reason-fix-v1
+  //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
+  //       + dual-platform-credential-resolution-wiring-no-execute-v1
+  // 실제 blocked 사유는 콘텐츠 종류에 따라 다르다:
+  //  - default evidence content(v3_2) + 양쪽 already published → duplicate_publish_guard가 차단(exit 3).
+  //  - custom(non-default) content → gate 1~4를 통과하면 credential resolution(gate 5)이 wiring되어
+  //    승인 6개 env key를 in-memory로 조립할 수 있다. 단, actual API 실행(gate 6)은 이 slice에서
+  //    비활성이므로 credential이 resolve되면 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4).
+  //    duplicate가 아닌 새 콘텐츠를 "중복이라 막힌 것"으로 오인하게 하는 하드코딩을 쓰지 않는다.
+  //    preflight PLAN은 실제 credential 값을 읽지 않으므로(process.env 미접근), 이 blocked reason은
+  //    "실제 API 실행이 비활성이라 custom content가 최종적으로 멈추는 지점"을 나타낸다.
+  const isDefault = isDefaultContentUnit(unit);
+  const bothAlreadyPublished = igGuard?.alreadyPublished === true && ytGuard?.alreadyPublished === true;
+  const currentContentDuplicateBlocked = isDefault && bothAlreadyPublished;
+  const willExecuteBlockedReason = currentContentDuplicateBlocked
+    ? "duplicate_publish_guard_blocks_current_content"
+    : "actual_api_call_not_enabled_this_slice";
+
+  // 모든 step 공통: arm 상태(enabled)지만 실제로 실행되는 step은 없다(willExecute:false,
+  // side effect 0). blocked 사유는 위에서 콘텐츠 종류에 따라 정확히 판정한 값을 사용한다.
+  const armedStepFlags = {
+    enabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    willExecute: false,
+    willExecuteBlockedReason,
+    sideEffectPerformed: false,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+  };
+
+  const steps = [
+    {
+      order: 1,
+      id: "instagram_blob_upload",
+      description: "Instagram full-frame mp4 → Vercel Blob public URL(공개 비인증 https 비디오 URL)로 업로드.",
+      platform: "instagram_reels",
+      provider: "vercel_blob",
+      ...armedStepFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+      planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+      // input 계약: 값이 아니라 "무엇이 필요한지"의 필드 이름만.
+      inputContract: {
+        sourceVariantId: INSTAGRAM_VARIANT_ID,
+        sourceFileField: "instagramSourcePath",
+        blobPathnameTemplate: INSTAGRAM_BLOB_PATHNAME_TEMPLATE,
+        blobPutOptions: { access: "public", addRandomSuffix: false, allowOverwrite: false, multipart: true },
+        producesPublicVideoUrl: true,
+      },
+      requiredApprovalTokens: ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+      dependsOn: [],
+      producesForNextStep: "instagram_public_video_url",
+    },
+    {
+      order: 2,
+      id: "instagram_publish_reel",
+      description: "Blob public video URL + optimized caption/hashtags/CTA → Instagram Reels publish.",
+      platform: "instagram_reels",
+      provider: "instagram_graph_api",
+      ...armedStepFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      inputContract: {
+        // uploadInstagramReelWithCredentials({ videoUrl, caption, credentials }) 계약과 정합.
+        videoUrlFrom: "instagram_blob_upload.instagram_public_video_url",
+        captionFields: ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
+      },
+      requiredApprovalTokens: ["APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+      dependsOn: [
+        "instagram_blob_upload",
+        {
+          type: "metadata_optimization_gate",
+          platform: "instagram_reels",
+          mustBeOk: true,
+          gateOk: igGate.ok === true,
+          gateReasons: igGate.reasons ?? [],
+          rules: [
+            "first_line_hook", "caption", "call_to_action",
+            "hashtags_8_to_12", "no_unrelated_trend_tags",
+          ],
+        },
+        {
+          type: "duplicate_publish_guard",
+          key: igGuard?.key ?? null,
+          version: unit.version,
+          alreadyPublished: igGuard?.alreadyPublished === true,
+          mustNotBeAlreadyPublished: true,
+          retryForbidden: true,
+        },
+      ],
+      producesForNextStep: null,
+      resultReference: {
+        note: "이미 완료된 evidence. 재시도 금지.",
+        instagramMediaIdReference: LIVE_UPLOAD_EVIDENCE.instagram.mediaId,
+        retryForbidden: true,
+      },
+    },
+    {
+      order: 3,
+      id: "youtube_direct_upload",
+      description: "YouTube letterbox mp4 + optimized title/description/tags → YouTube Shorts direct file upload.",
+      platform: "youtube_shorts",
+      provider: "youtube_data_api",
+      ...armedStepFlags,
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      inputContract: {
+        // uploadYouTubeShortsWithCredentials 계약과 정합: video 파일 + 최적화 메타데이터 + OAuth credential.
+        // short-lived credential은 refresh token으로 메모리에서 발급 — 장기 env로 요구하지 않는다.
+        videoPathField: "youtubeSourcePath",
+        metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],
+        shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+      },
+      requiredApprovalTokens: ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+      dependsOn: [
+        {
+          type: "metadata_optimization_gate",
+          platform: "youtube_shorts",
+          mustBeOk: true,
+          gateOk: ytGate.ok === true,
+          gateReasons: ytGate.reasons ?? [],
+          rules: [
+            "title", "description", "tags",
+            "category_id", "language", "shorts_suitability",
+          ],
+        },
+        {
+          type: "duplicate_publish_guard",
+          key: ytGuard?.key ?? null,
+          version: unit.version,
+          alreadyPublished: ytGuard?.alreadyPublished === true,
+          mustNotBeAlreadyPublished: true,
+          retryForbidden: true,
+        },
+      ],
+      producesForNextStep: null,
+      resultReference: {
+        note: "이미 완료된 evidence. 재시도 금지.",
+        youtubeVideoIdReference: LIVE_UPLOAD_EVIDENCE.youtube.videoId,
+        retryForbidden: true,
+      },
+    },
+    {
+      order: 4,
+      id: "publish_ledger_record",
+      description: "{contentId}/{platform}/{version} duplicate ledger에 publish 기록. 이후 동일 키 재발행 차단.",
+      platform: "both",
+      provider: "publish_ledger",
+      ...armedStepFlags,
+      inputContract: {
+        keyShape: "{contentId}/{platform}/{version}",
+        version: unit.version,
+        keys: [igGuard?.key ?? null, ytGuard?.key ?? null],
+      },
+      requiredApprovalTokens: ["APPROVE_DUAL_PLATFORM_ARM"],
+      requiredEnvKeyNames: [],
+      dependsOn: ["instagram_publish_reel", "youtube_direct_upload"],
+      ledgerMutationThisSlice: false,
+      producesForNextStep: null,
+    },
+  ];
+
+  return {
+    note: isDefault
+      ? "armed live wiring plan. 실제 Instagram(Vercel Blob→Graph API) / YouTube(direct upload) publish 흐름을 " +
+        "코드 구조상 순서대로 연결한다. live gate는 arm 상태지만 current content(v3_2)는 duplicate publish guard가 " +
+        "차단하므로 이번 run에서 실행되는 step은 없다(side effect 0). secret 값/토큰/credential은 담지 않는다."
+      : "armed live wiring plan(custom content). 이 콘텐츠는 default evidence content가 아니다. gate 1~4" +
+        "(metadata/source/blob/duplicate)를 통과하면 credential resolution(gate 5)이 승인된 6개 env key를 " +
+        "in-memory로 조립한다. 단, actual API 실행(gate 6)은 이 slice에서 비활성이므로 credential이 resolve되면 " +
+        "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(credential key 누락 시 CREDENTIAL_KEYS_MISSING_THIS_SLICE). " +
+        "이번 run에서 실행되는 step은 없다(side effect 0, 실제 publish 비활성).",
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    failClosedError: LIVE_EXECUTION_DISABLED_ERROR,
+    anyStepEnabled: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    anyStepWillExecute: false,
+    anySideEffectPerformed: false,
+    isDefaultContentUnit: isDefault,
+    currentContentDuplicateBlocked,
+    // custom content live publish(실제 API 실행)는 여전히 비활성이다. gate 1~4 통과 시 credential
+    // resolution(gate 5)이 wiring되어 승인 6개 env key를 in-memory로 조립하지만, actual API 실행(gate 6)이
+    // 비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 멈춘다(credential 누락 시 CREDENTIAL_KEYS_MISSING).
+    customContentLiveEnabledThisSlice: false,
+    customContentCredentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    customContentLiveHaltError: isDefault ? null : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
+    willExecuteBlockedReason,
+    duplicateBlockedStatus: DUPLICATE_BLOCKED_STATUS,
+    orderedFlow: [
+      "instagram_blob_upload",
+      "instagram_publish_reel",
+      "youtube_direct_upload",
+      "publish_ledger_record",
+    ],
+    metadataGateIsMandatoryDependency: true,
+    duplicateGuardIsMandatoryDependency: true,
+    steps,
+  };
+}
+
+function buildPreflight(unit, ledgerEvidence = null) {
+  const isDefault = isDefaultContentUnit(unit);
+  const plan = buildDualPlatformPublishPlan(unit);
+  const igJob = plan.jobs.find((j) => j.id === "instagram_job");
+  const ytJob = plan.jobs.find((j) => j.id === "youtube_job");
+
+  // 파일 경로 presence: 존재 여부(boolean)만 확인한다. 파일 내용은 읽지 않는다.
+  const instagramSourceExists = typeof unit.instagramSourcePath === "string" && existsSync(unit.instagramSourcePath);
+  const youtubeSourceExists = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
+
+  const metadataGateOk = igJob?.metadataOptimizationGate?.ok === true && ytJob?.metadataOptimizationGate?.ok === true;
+  // default content는 publish version이 v3_2로 고정이다. custom content는 자체 version을 쓰므로
+  // duplicate guard key가 unit.version과 정합하는지(형태)만 확인한다.
+  const duplicateGuardUsesV3_2 =
+    typeof igJob?.duplicatePublishGuard?.key === "string" && igJob.duplicatePublishGuard.key.endsWith("/v3_2") &&
+    typeof ytJob?.duplicatePublishGuard?.key === "string" && ytJob.duplicatePublishGuard.key.endsWith("/v3_2");
+  const versionSuffix = `/${unit.version}`;
+  const duplicateGuardUsesUnitVersion =
+    typeof igJob?.duplicatePublishGuard?.key === "string" && igJob.duplicatePublishGuard.key.endsWith(versionSuffix) &&
+    typeof ytJob?.duplicatePublishGuard?.key === "string" && ytJob.duplicatePublishGuard.key.endsWith(versionSuffix);
+
+  // required env key NAME presence PLAN — 이름만. process.env는 읽지 않는다.
+  const requiredEnvKeyNamesPlan = {
+    note: "아래는 live 실행에 필요한 env key '이름' 계약이다. 값/존재여부/길이는 확인하지도 출력하지도 않는다.",
+    instagram: REQUIRED_ENV_KEY_NAMES.instagram,
+    youtube: REQUIRED_ENV_KEY_NAMES.youtube,
+    vercelBlob: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+    envValuesAccessedThisRun: false,
+  };
+
+  // 이미 published인 evidence는 reference로만 취급하고 새 실행으로 다루지 않는다.
+  const igAlreadyPublished = igJob?.duplicatePublishGuard?.alreadyPublished === true;
+  const ytAlreadyPublished = ytJob?.duplicatePublishGuard?.alreadyPublished === true;
+
+  // 두 source mp4가 모두 존재해야 preflight가 ready 상태다. 하나라도 없으면
+  // metadata/duplicate guard가 통과해도 preflightOk는 false여야 한다.
+  const sourceFilesReady = instagramSourceExists && youtubeSourceExists;
+
+  // Blob public URL liveness evidence(gate 3) — arm 이후 preflightOk의 필수 조건.
+  // default content는 전역 evidence 상수를, custom content는 manifest가 제공한
+  // blobPublicUrlLivenessEvidence를 계약 수준으로 검증한다(네트워크 재검증 없음).
+  const blobLivenessEvidence = isDefault
+    ? evaluateBlobLivenessEvidenceGate(unit)
+    : evaluateCustomBlobLivenessEvidence(unit);
+
+  // duplicate guard 형태 정합은 default=v3_2 고정, custom=unit.version 기준으로 판정한다.
+  const duplicateGuardKeyFormatOk = isDefault ? duplicateGuardUsesV3_2 : duplicateGuardUsesUnitVersion;
+
+  // read-only publish ledger bridge readiness(옵션 경로 제공 시).
+  // - 경로 미제공(pathProvided:false): readiness에 영향 없음(bridge 비활성, 기존 동작).
+  // - 경로 제공 & read ok(missing 파일=empty ok 포함): readiness에 영향 없음.
+  // - 경로 제공 & read 실패(invalid/corrupt/wrong-schema/duplicate-key): durable duplicate ledger를
+  //   신뢰할 수 없으므로 preflight를 not-ready로 만든다(operator가 준비 완료로 오해하지 않도록).
+  const publishLedgerPathProvided = ledgerEvidence != null && ledgerEvidence.pathProvided === true;
+  const publishLedgerReadOk = ledgerEvidence == null || ledgerEvidence.readOk === true;
+  const publishLedgerReadFailureBlocksReadiness = publishLedgerPathProvided && ledgerEvidence.readOk !== true;
+  const publishLedgerReadFailReason = publishLedgerReadFailureBlocksReadiness
+    ? (typeof ledgerEvidence.reason === "string" ? ledgerEvidence.reason : "read_error")
+    : null;
+
+  const preflightOk =
+    plan.jobs.length === 2 && metadataGateOk && duplicateGuardKeyFormatOk && sourceFilesReady &&
+    blobLivenessEvidence.ok === true &&
+    // ledger 경로가 제공됐고 read가 실패하면 not-ready(경로 미제공/read ok는 통과).
+    !publishLedgerReadFailureBlocksReadiness;
+
+  // no-execute live wiring plan(Instagram Blob→publish, YouTube direct upload, ledger).
+  const liveExecutionPlan = buildLiveExecutionPlan(unit, igJob, ytJob);
+
+  // ── YouTube live upload wiring readiness (secret-free) ──────────────────────
+  // task: youtube-live-upload-wiring-no-execute-v1
+  // YouTube direct upload live 경로의 준비 상태를 계약 수준에서만 요약한다.
+  // functionRef는 explicit credential injection 함수(uploadYouTubeShortsWithCredentials)이며,
+  // YOUTUBE_ACCESS_TOKEN은 required env가 아니다(short-lived token은 refresh token으로 메모리 발급).
+  // 이 블록은 어떤 env 값도 읽지 않고, 실제 upload 함수를 호출하지도 않는다.
+  const ytGate = ytJob?.metadataOptimizationGate ?? { ok: false, reasons: ["gate_not_computed"] };
+  const ytGuard = ytJob?.duplicatePublishGuard ?? null;
+  const youtubeLiveUploadWiring = {
+    note:
+      "YouTube Shorts direct file upload live wiring readiness. no-execute 계약만 담는다. " +
+      "secret 값/토큰/credential은 담지 않는다. actual upload call은 이 slice에서 0이다.",
+    expectedFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube, // lib/youtube.ts#uploadYouTubeShortsWithCredentials
+    credentialInjection: "explicit", // credential은 인자로만 주입, import 시점 env read 없음
+    requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube, // CLIENT_ID / CLIENT_SECRET / REFRESH_TOKEN
+    youtubeAccessTokenIsRequiredEnv: false, // 장기 required env 아님
+    shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+    sourceFileField: "youtubeSourcePath",
+    sourceVariantId: YOUTUBE_VARIANT_ID,
+    sourceFileExists: youtubeSourceExists, // boolean only(내용 미read)
+    metadataOptimizationGateOk: ytGate.ok === true,
+    metadataOptimizationGateReasons: ytGate.reasons ?? [],
+    duplicatePublishGuard: {
+      key: ytGuard?.key ?? null, // t1_lifestyle_inflation/youtube_shorts/v3_2
+      usesV3_2: typeof ytGuard?.key === "string" && ytGuard.key.endsWith("/v3_2"),
+      alreadyPublished: ytGuard?.alreadyPublished === true,
+      mustNotBeAlreadyPublished: true,
+      retryForbidden: true,
+    },
+    existingVideoEvidence: {
+      note: "이미 완료된 YouTube upload evidence. 재업로드 금지 — reference로만 유지.",
+      videoId: LIVE_UPLOAD_EVIDENCE.youtube.videoId, // r9jhckdpC9w
+      videoUrl: LIVE_UPLOAD_EVIDENCE.youtube.videoUrl,
+      retryForbidden: true,
+    },
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE, // true (armed) — 단 current content는 duplicate guard가 차단
+    liveExecutionDisabledError: LIVE_EXECUTION_DISABLED_ERROR,
+    actualUploadCallPerformed: false, // 실제 YouTube upload 호출 0 (duplicate blocked)
+    requiredApprovalTokens: ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
+  };
+
+  // ── 최종 arm 상태 + current content duplicate block 계약 (secret-free) ───────
+  // task: dual-platform-arm-wiring-duplicate-guarded-v1
+  // live gate는 APPROVE_DUAL_PLATFORM_ARM로 arm됐지만, current content(v3_2)는
+  // gate 4 duplicate publish guard가 credential resolution(gate 5) 이전에 차단한다.
+  // 이 블록은 env/secret 값을 읽지 않으며 실제 API 호출도 수행하지 않는다.
+  const liveArm = {
+    note:
+      "최종 arm 상태 요약. --live/--arm은 LIVE_GATE_ORDER 순서로 fail-closed 평가되며, current content는 " +
+      "duplicate publish guard(gate 4)가 credential resolution(gate 5)/actual API call(gate 6) 이전에 차단한다.",
+    armed: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    armApprovalToken: LIVE_EXECUTION_ARM_APPROVAL_TOKEN,
+    failClosedGateOrder: LIVE_GATE_ORDER,
+    duplicateGuardEvaluatedBeforeCredentialResolution: true,
+    credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    credentialResolutionHaltError: ACTUAL_API_CALL_NOT_ENABLED_ERROR,
+    metadataOptimizationGateOk: metadataGateOk,
+    sourceFilesReady,
+    blobPublicUrlLivenessEvidence: blobLivenessEvidence,
+    currentContentDuplicateBlock: {
+      instagramKey: igJob?.duplicatePublishGuard?.key ?? null,
+      youtubeKey: ytJob?.duplicatePublishGuard?.key ?? null,
+      instagramWillBeBlocked: igAlreadyPublished,
+      youtubeWillBeBlocked: ytAlreadyPublished,
+      // default duplicate content는 gate 4 duplicate block(exit 3, credential 미도달). custom
+      // non-default content는 duplicate가 아니라면 gate 4를 통과하고 gate 5 credential resolution까지
+      // 도달해 승인 6개 env key를 in-memory로 조립한다. actual API 실행(gate 6)이 비활성이라 resolve 시
+      // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다(preflight PLAN은 값 미접근).
+      expectedLiveStatus: isDefault
+        ? DUPLICATE_BLOCKED_STATUS
+        : igAlreadyPublished && ytAlreadyPublished
+          ? DUPLICATE_BLOCKED_STATUS
+          : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
+      expectedLiveExitCode: isDefault
+        ? 3
+        : igAlreadyPublished && ytAlreadyPublished
+          ? 3
+          : 4,
+      // duplicate content(default 및 이미 게시된 custom)는 gate 4에서 credential 이전에 차단된다.
+      // 비중복 custom content는 credential resolution까지 도달한다(값은 in-memory로만, 미노출).
+      duplicateBlockHappensBeforeCredentialResolution: isDefault || (igAlreadyPublished && ytAlreadyPublished),
+      credentialResolutionWouldBeReached: !isDefault && !(igAlreadyPublished && ytAlreadyPublished),
+      // preflight PLAN 자체는 credential 값을 읽지 않는다(process.env 미접근). 실제 값 접근은 --live 실행
+      // 경로의 credential resolution(gate 5)에서만 발생하며 그때도 값은 in-memory로만 다뤄진다.
+      credentialValuesWouldBeAccessed: !isDefault && !(igAlreadyPublished && ytAlreadyPublished),
+      actualApiCallWouldRun: false,
+      retryForbidden: true,
+    },
+    customContentLiveEnabledThisSlice: false,
+    credentialValuesAccessedThisRun: false, // preflight PLAN 경로에서는 값 미접근
+    actualApiCallPerformedThisRun: false,
+  };
+
+  // ── custom content unit preflight 계약 (secret-free) ─────────────────────────
+  // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
+  //       + dual-platform-custom-content-live-credential-gate-no-execute-v1
+  //       + dual-platform-credential-resolution-wiring-no-execute-v1
+  // custom(non-default) content의 실제 live publish(API 실행)는 여전히 비활성이다. gate 1~4를 통과한
+  // custom content의 --live/--arm은 credential resolution(gate 5)까지 도달해 승인 6개 env key를
+  // in-memory로 조립하고, 모두 present면 gate 6 actual_api_call 구조에 도달해 value-free no-execute
+  // call plan을 구성하지만(actualApiCallReached:true), 실제 API 실행은 비활성이라
+  // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4, actualApiCallExecutionEnabledThisSlice:false,
+  // actualApiCallPerformed:false; credential 값은 in-memory로만 다뤄지고 plan/출력에 미노출).
+  const bothAlreadyPublished = igAlreadyPublished && ytAlreadyPublished;
+  const contentUnit = {
+    note:
+      "content unit 종류와 live 실행 가능 여부. default evidence content(t1_lifestyle_inflation/v3_2)는 " +
+      "gate 4 duplicate guard가 차단한다(exit 3). custom content의 실제 publish(API 실행)는 비활성이며, gate 1~4를 " +
+      "통과하면 credential resolution(gate 5)까지 도달해 승인 6개 env key를 in-memory로 조립한 뒤 actual API 실행이 " +
+      "비활성이라 ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed된다(exit 4). credential 값은 미노출.",
+    kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+    isDefaultContentUnit: isDefault,
+    contentId: unit.contentId,
+    version: unit.version,
+    duplicateGuardKeyFormatOk,
+    duplicateGuardUsesUnitVersion,
+    // 실제 live publish(API 실행)는 이 slice에서 비활성이다. credential resolution(gate 5)은 wiring됨.
+    customContentLiveEnabledThisSlice: false,
+    customContentCredentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    customContentLiveHaltError: isDefault ? null : ACTUAL_API_CALL_NOT_ENABLED_ERROR,
+    customContentReachesCredentialGate: isDefault ? false : !bothAlreadyPublished,
+    bothPlatformsAlreadyPublished: bothAlreadyPublished,
+    blobLivenessEvidenceProvided: isDefault ? true : blobLivenessEvidence.provided === true,
+    blobLivenessEvidenceOk: blobLivenessEvidence.ok === true,
+  };
+
+  return {
+    preflightOk,
+    liveArm,
+    contentUnit,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    publishJobCount: plan.jobs.length,
+    metadataOptimizationGateOk: metadataGateOk,
+    duplicateGuardUsesV3_2,
+    duplicateGuardKeyFormatOk,
+    isDefaultContentUnit: isDefault,
+    sourceFilesReady,
+    blobPublicUrlLivenessEvidence: blobLivenessEvidence,
+    // read-only publish ledger bridge readiness(non-secret). ledger read 실패가 readiness를 막았는지 명시.
+    publishLedgerPathProvided,
+    publishLedgerReadOk,
+    publishLedgerReadFailureBlocksReadiness,
+    publishLedgerReadFailReason,
+    liveExecutionPlan,
+    youtubeLiveUploadWiring,
+    sourceFilePresence: {
+      note: "존재 여부(boolean)만 확인. 파일 내용은 읽지 않는다. sourceFilesReady는 preflightOk의 필수 조건이다.",
+      instagramSourceExists,
+      youtubeSourceExists,
+    },
+    requiredEnvKeyNamesPlan,
+    duplicatePublishReference: {
+      note: "이미 완료된 live evidence에 대응하는 reference. 새 실행/재시도 대상이 아니다. live wiring 시 duplicate guard가 이 키를 차단해야 한다.",
+      instagramAlreadyPublished: igAlreadyPublished,
+      youtubeAlreadyPublished: ytAlreadyPublished,
+      instagramMediaIdReference: LIVE_UPLOAD_EVIDENCE.instagram.mediaId,
+      youtubeVideoIdReference: LIVE_UPLOAD_EVIDENCE.youtube.videoId,
+      retryForbidden: true,
+    },
+  };
+}
+
+// ── redacted credential preflight (dual-platform-credential-preflight-redacted-no-live-v1) ──
+// Owner가 실제 live publish 직전에 "필요한 runtime env key '이름'이 present인지"만 값 없이 확인할 수
+// 있게 한다. 이 경로는 no-live이며 credential 값을 resolve하거나 API/upload를 실행하지 않는다.
+//
+// 보안 계약(엄격):
+// - process.env는 승인된 key 이름의 presence boolean 판정에만 접근한다.
+// - 값을 변수에 바인딩하거나, 출력하거나, 길이/prefix/suffix/hash/sample/token type을 계산/노출하지 않는다.
+// - `.env`/`.env.local`/secret 파일을 읽지 않는다(dotenv/파일 read 없음).
+// - Instagram/YouTube/Blob API, OAuth, upload, HEAD, ffmpeg, deploy를 호출하지 않는다.
+
+/**
+ * 승인된 env key 이름 하나의 presence를 boolean으로만 반환한다.
+ * Boolean(process.env[keyName])는 값을 지역 변수에 담지 않고 truthiness만 판정한다:
+ * 미설정(undefined)/빈 문자열("")은 false, 비어있지 않은 값은 true. 값 자체는 반환/저장/출력하지 않는다.
+ * 길이/prefix/suffix/hash 등 값에서 파생된 어떤 정보도 계산하지 않는다.
+ */
+function isEnvKeyPresentRedacted(keyName) {
+  return Boolean(process.env[keyName]);
+}
+
+/** 한 플랫폼의 승인된 key 이름 목록에 대해 { name, present } 배열 + allPresent를 만든다(값 미노출). */
+function buildPlatformKeyPresence(keyNames) {
+  const keys = keyNames.map((name) => ({ name, present: isEnvKeyPresentRedacted(name) }));
+  return { keys, allPresent: keys.every((k) => k.present === true) };
+}
+
+/**
+ * redacted credential preflight 결과를 만든다. key 이름 + present boolean + platform/전체 readiness만
+ * 포함한다. credential 값/길이/prefix/hash는 어디에도 담기지 않으며, API 호출/파일 read도 하지 않는다.
+ * content unit은 context 필드(contentId/version/isDefaultContentUnit)에만 쓰이고 env presence 로직에는
+ * 영향을 주지 않는다.
+ */
+function buildCredentialPreflight(unit, isDefault) {
+  const instagram = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.instagram);
+  const youtube = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.youtube);
+  const vercelBlob = buildPlatformKeyPresence(REQUIRED_ENV_KEY_NAMES.vercelBlob);
+  const allRequiredKeysPresent =
+    instagram.allPresent === true && youtube.allPresent === true && vercelBlob.allPresent === true;
+  return {
+    schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+    mode: "credential_preflight",
+    note:
+      "redacted credential presence check(no-live). 승인된 runtime env key '이름'의 present boolean만 보고한다. " +
+      "이 --credential-preflight 모드는 credential 값을 읽지 않으며(값 미접근), credential 값/길이/prefix/suffix/hash를 " +
+      "출력하지 않고, .env.local/secret 파일을 읽지 않으며, 실제 credential resolution(값 조립)이나 Instagram/YouTube/Blob " +
+      "API 호출도 수행하지 않는다. present:true는 실제 publish 가능 상태가 아니라 '해당 env key 이름이 이 프로세스 env에 " +
+      "비어있지 않게 존재함'만을 의미한다. credential resolution 코드 경로는 --live 실행 경로(gate 5)에서만 값에 접근하며, " +
+      "그 경우에도 actual API 실행(gate 6)은 이 slice에서 비활성이라 실제 publish는 발생하지 않는다.",
+    contentId: unit.contentId,
+    version: unit.version,
+    isDefaultContentUnit: isDefault === true,
+    // 안전 assertion 필드(모두 상수 false/true) — guard가 계약 위반을 fail-closed로 잡는다.
+    // 이 preflight 모드 자체는 credential 값을 읽지 않는다(값 접근/조립은 --live gate 5에서만).
+    credentialValuesAccessed: false,
+    credentialValuesResolved: false,
+    credentialValuesPrinted: false,
+    dotEnvLocalDirectAccess: false,
+    externalApiCallPerformed: false,
+    presenceCheckMethod: "non_empty_env_key_presence_boolean_only",
+    requiredEnvKeyNames: {
+      instagram: REQUIRED_ENV_KEY_NAMES.instagram,
+      youtube: REQUIRED_ENV_KEY_NAMES.youtube,
+      vercelBlob: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+    },
+    platforms: { instagram, youtube, vercelBlob },
+    allRequiredKeysPresent,
+    // readyForCredentialResolution은 "env key 이름이 모두 present"라는 presence 신호일 뿐,
+    // live publish 활성화 신호가 아니다.
+    readyForCredentialResolution: allRequiredKeysPresent,
+    // credential resolution 코드 경로는 이 slice에서 wiring됐다(--live gate 5). 단, 아래 두 필드가
+    // 명시하듯 이 preflight 모드는 값을 읽지 않으며 actual API 실행/live publish는 비활성이다 —
+    // credentialResolutionWiredThisSlice:true를 publish 활성화로 오인해서는 안 된다.
+    credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+    credentialValuesAccessedInThisMode: false,
+    actualApiExecutionEnabledThisSlice: false,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+  };
+}
+
+const SELF = fileURLToPath(import.meta.url);
+const REPO_ROOT = path.resolve(path.dirname(SELF), "..");
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(SELF);
+
+/** CLI args에서 mode를 판정한다. --live/--arm은 armed gate 순서 평가 대상이다. */
+function resolveMode(argv) {
+  if (argv.includes("--live") || argv.includes("--arm")) return "live_requested";
+  // --credential-preflight는 --preflight보다 먼저 판정한다(별도 redacted presence-only 모드).
+  if (argv.includes("--credential-preflight")) return "credential_preflight";
+  if (argv.includes("--preflight")) return "preflight";
+  return "dry_run";
+}
+
+// ── 최종 arm live 실행 경로 (dual-platform-arm-wiring-duplicate-guarded-v1) ────
+// LIVE_GATE_ORDER 순서의 fail-closed 평가. current content(v3_2)는 gate 4
+// duplicate publish guard에서 반드시 차단되어 gate 5/6에 도달하지 않는다.
+
+/** gate 3: Blob public URL liveness evidence 검증. 로컬 evidence 상수 + 파일 존재 boolean만 — 네트워크/파일내용 read 0. */
+function evaluateBlobLivenessEvidenceGate(unit) {
+  const ev = BLOB_PUBLIC_URL_LIVENESS_EVIDENCE;
+  // evidence 결과 파일은 존재 여부(boolean)만 확인한다 — 내용은 읽지 않는다.
+  const resultFileExists = existsSync(path.join(REPO_ROOT, ev.resultPath));
+  const urlMatchesCurrentContentPath =
+    typeof ev.url === "string" &&
+    ev.url.includes(`/${unit.contentId}/`) &&
+    ev.url.includes(`/${INSTAGRAM_VARIANT_ID}/`) &&
+    ev.url.includes(`/${unit.version}/`);
+  const ok =
+    typeof ev.url === "string" &&
+    ev.url.startsWith("https://") &&
+    ev.url.includes(".public.blob.vercel-storage.com/") &&
+    ev.url.endsWith(".mp4") &&
+    ev.headStatus === 200 &&
+    ev.contentType === "video/mp4" &&
+    typeof ev.contentLength === "number" &&
+    ev.contentLength > 0 &&
+    urlMatchesCurrentContentPath &&
+    resultFileExists;
+  return { ...ev, resultFileExists, urlMatchesCurrentContentPath, ok };
+}
+
+/** gate 4: duplicate publish guard(liveMode). credential resolution(gate 5)보다 반드시 먼저 평가된다. */
+function evaluateDuplicatePublishGuardGate(unit) {
+  const instagram = checkDuplicatePublishGuard(unit.contentId, "instagram_reels", unit.version, true);
+  const youtube = checkDuplicatePublishGuard(unit.contentId, "youtube_shorts", unit.version, true);
+  return {
+    instagram,
+    youtube,
+    blocked: instagram.blockedThisRun === true || youtube.blockedThisRun === true,
+    retryForbidden: true,
+  };
+}
+
+/**
+ * (deprecated wiring-stub) gate 5 credential presence/resolution의 wiring-이전 fail-closed stub.
+ * task: dual-platform-custom-content-live-credential-gate-no-execute-v1
+ *       → dual-platform-credential-resolution-wiring-no-execute-v1
+ * credential resolution이 wiring되기 전 실행 경로가 이 stub을 호출해 CREDENTIAL_RESOLUTION_NOT_WIRED로
+ * 멈췄다. 이제 실행 경로(executeArmedLiveRun)는 resolveExplicitCredentialsFromRuntimeEnv()를 호출하며,
+ * 이 stub은 하위 호환/문서 참조용으로만 남는다 — process.env/secret/credential 값을 읽지 않고 어떤
+ * lib도 import하지 않는다(guard가 이 불변식을 계속 강제한다).
+ */
+function credentialPresenceResolutionGate() {
+  return {
+    wiredThisSlice: false,
+    credentialValuesAccessed: false,
+    credentialValuesResolved: false,
+    haltError: CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR,
+  };
+}
+
+/**
+ * gate 5: 승인된 6개 runtime env key만 읽어 in-memory explicit credential 객체를 조립한다.
+ * task: dual-platform-credential-resolution-wiring-no-execute-v1
+ *
+ * 엄격한 no-log/no-value-exposure 계약:
+ * - process.env는 오직 REQUIRED_ENV_KEY_NAMES의 승인된 6개 key에 대해서만 읽는다. 그 외 임의 key read 금지.
+ * - 빈 문자열/undefined는 missing으로 취급한다.
+ * - resolve된 credential 값은 이 함수 내부의 지역 in-memory 객체(instagram/youtube/vercelBlob)에만
+ *   존재하며, 반환 객체(JSON)에는 절대 포함되지 않는다.
+ * - 반환에는 boolean(reached/resolved/allPresent)과 '누락 key 이름' 배열만 담는다.
+ * - 값의 길이/prefix/suffix/hash/masked/token type 등 파생 정보를 계산하거나 반환/출력하지 않는다.
+ * - 어떤 lib(instagram/youtube/@vercel/blob/googleapis)도 import/호출하지 않으며 API/upload도 하지 않는다.
+ *
+ * 이 함수는 in-memory credential 객체(로컬)와, 값이 없는 안전한 결과 요약(반환)을 분리해 돌려준다.
+ * 호출부는 반환의 credentialValuesResolved/missingCredentialKeyNames만 gate 판정에 사용한다.
+ */
+function resolveExplicitCredentialsFromRuntimeEnv() {
+  // 승인된 6개 key만 개별적으로 읽는다(allowlist read — 임의 process.env 순회 금지).
+  const ig = REQUIRED_ENV_KEY_NAMES.instagram;
+  const yt = REQUIRED_ENV_KEY_NAMES.youtube;
+  const blob = REQUIRED_ENV_KEY_NAMES.vercelBlob;
+
+  // 값을 담는 지역 in-memory credential 객체 — 반환 JSON에 절대 포함하지 않는다.
+  const instagramCredentials = {
+    businessAccountId: process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "",
+    accessToken: process.env.INSTAGRAM_ACCESS_TOKEN || "",
+  };
+  const youtubeCredentials = {
+    clientId: process.env.YOUTUBE_CLIENT_ID || "",
+    clientSecret: process.env.YOUTUBE_CLIENT_SECRET || "",
+    refreshToken: process.env.YOUTUBE_REFRESH_TOKEN || "",
+  };
+  const vercelBlobCredentials = {
+    readWriteToken: process.env.BLOB_READ_WRITE_TOKEN || "",
+  };
+
+  // in-memory 객체에서만 present 여부를 판정한다(빈 문자열=missing). 값 자체는 밖으로 내보내지 않는다.
+  const presentByKey = {
+    INSTAGRAM_BUSINESS_ACCOUNT_ID: instagramCredentials.businessAccountId !== "",
+    INSTAGRAM_ACCESS_TOKEN: instagramCredentials.accessToken !== "",
+    YOUTUBE_CLIENT_ID: youtubeCredentials.clientId !== "",
+    YOUTUBE_CLIENT_SECRET: youtubeCredentials.clientSecret !== "",
+    YOUTUBE_REFRESH_TOKEN: youtubeCredentials.refreshToken !== "",
+    BLOB_READ_WRITE_TOKEN: vercelBlobCredentials.readWriteToken !== "",
+  };
+
+  const missingCredentialKeyNames = [...ig, ...yt, ...blob].filter((name) => presentByKey[name] !== true);
+  const instagramAllPresent = ig.every((name) => presentByKey[name] === true);
+  const youtubeAllPresent = yt.every((name) => presentByKey[name] === true);
+  const vercelBlobAllPresent = blob.every((name) => presentByKey[name] === true);
+  const credentialValuesResolved = missingCredentialKeyNames.length === 0;
+
+  // 값 없는 안전 결과 요약(반환) + 값 있는 in-memory 객체(로컬 참조)를 분리해 반환한다.
+  // 호출부(gate 6)는 실제 API 실행이 비활성이므로 in-memory 객체를 사용하지 않는다.
+  return {
+    summary: {
+      credentialResolutionWiredThisSlice: CREDENTIAL_RESOLUTION_WIRED_THIS_SLICE,
+      credentialValuesAccessed: true, // 이 함수가 실제로 실행되면 승인 key 값에 접근한 것이다.
+      credentialValuesResolved,
+      platforms: {
+        instagram: { allPresent: instagramAllPresent },
+        youtube: { allPresent: youtubeAllPresent },
+        vercelBlob: { allPresent: vercelBlobAllPresent },
+      },
+      missingCredentialKeyNames, // 이름만. 값/값 파생 정보 없음.
+    },
+    // in-memory explicit credential 객체(값 포함) — 반환은 되지만 어디에도 직렬화/출력하지 않는다.
+    // 실제 API 실행이 비활성이라 gate 6에서 사용되지 않으며, 호출부에서 사용 후 참조를 정리한다.
+    inMemory: { instagramCredentials, youtubeCredentials, vercelBlobCredentials },
+  };
+}
+
+/**
+ * gate 6: actual_api_call — no-execute 실행 계획(dry call plan).
+ * task: dual-platform-actual-api-call-wiring-no-execute-v1
+ *
+ * gate 1~5를 통과한 custom content에 대해, 실제 Instagram Graph publish / YouTube direct upload /
+ * Vercel Blob upload 흐름을 "무엇을 어떤 함수로 어떤 입력으로 호출할지"의 value-free 구조로만 명문화한다.
+ * 이 함수는 실제 호출을 절대 수행하지 않으며(no-execute), 다음을 엄격히 지킨다:
+ *
+ * - credential 값을 인자로 받지 않는다. gate 5가 만든 값 없는 presence summary(platforms.*.allPresent,
+ *   missingCredentialKeyNames)만 사용한다 — 값/토큰/URL query token이 plan에 담길 원천을 제거한다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - 모든 call spec은 executionEnabled:false / executionDisabledReason 을 명시한 fail-closed 구조다.
+ *
+ * 반환은 순수 데이터(함수 참조 문자열, 입력 필드 이름, source/URL/metadata/credential presence boolean,
+ * 실행 비활성 사유)만 담는다. 호출부는 이 plan을 gate 6 no-execute 결과에 그대로 실어 fail-closed로 멈춘다.
+ *
+ * @param {object} unit           content unit(값 아님 — source 경로 존재 boolean 판정에만 사용)
+ * @param {object} igJob          instagram publish job(functionRef/inputContract 참조)
+ * @param {object} ytJob          youtube publish job(functionRef/inputContract 참조)
+ * @param {object} livenessGate   gate 3 결과(blob public URL evidence 형태 검증; 값 아님)
+ * @param {object} credPresence   gate 5 summary(platforms.*.allPresent, missingCredentialKeyNames — 값 없음)
+ */
+function buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credPresence) {
+  const disabledReason = "actual_api_call_execution_disabled_this_slice";
+  // source 파일 준비 여부는 존재 boolean만(read 아님). credential 준비는 gate 5 presence boolean만.
+  const instagramSourceReady = typeof unit.instagramSourcePath === "string" && existsSync(unit.instagramSourcePath);
+  const youtubeSourceReady = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
+  const blobPublicUrlPresent = livenessGate?.ok === true && typeof livenessGate?.url === "string" && livenessGate.url.length > 0;
+  const igCredentialsPresent = credPresence?.platforms?.instagram?.allPresent === true;
+  const ytCredentialsPresent = credPresence?.platforms?.youtube?.allPresent === true;
+  const blobCredentialsPresent = credPresence?.platforms?.vercelBlob?.allPresent === true;
+
+  // 각 call spec: 함수 참조 + 입력 readiness boolean + 실행 비활성 사유. 값/토큰 절대 없음.
+  return {
+    executionEnabledThisSlice: false,
+    executionDisabledReason: disabledReason,
+    note:
+      "gate 1~5를 통과한 content의 실제 API 호출 구조를 value-free로 명문화한 no-execute plan이다. " +
+      "credential 값은 이 plan에 담기지 않으며(gate 5 presence boolean만 사용), 실제 Instagram/YouTube/Blob " +
+      "호출·OAuth·mutation은 이 slice에서 수행되지 않는다. 실제 실행은 별도 승인 slice에서만 연결된다.",
+    calls: [
+      {
+        order: 1,
+        id: "vercel_blob_upload",
+        platform: "instagram_reels",
+        provider: "vercel_blob",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+        planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+        inputReadiness: {
+          sourceFileField: "instagramSourcePath",
+          sourceFileReady: instagramSourceReady,
+          blobPathnameTemplate: INSTAGRAM_BLOB_PATHNAME_TEMPLATE,
+          credentialsPresent: blobCredentialsPresent, // presence boolean(값 아님)
+          producesPublicVideoUrl: true,
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+      {
+        order: 2,
+        id: "instagram_graph_publish",
+        platform: "instagram_reels",
+        provider: "instagram_graph_api",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+        inputReadiness: {
+          videoUrlFrom: "vercel_blob_upload.instagram_public_video_url",
+          blobPublicUrlPresent, // gate 3 evidence 형태 통과 boolean
+          captionFields: ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
+          metadataOptimizationGateOk: igJob?.metadataOptimizationGate?.ok === true,
+          credentialsPresent: igCredentialsPresent, // presence boolean(값 아님)
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+      {
+        order: 3,
+        id: "youtube_direct_upload",
+        platform: "youtube_shorts",
+        provider: "youtube_data_api",
+        functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+        inputReadiness: {
+          videoPathField: "youtubeSourcePath",
+          sourceFileReady: youtubeSourceReady,
+          metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],
+          metadataOptimizationGateOk: ytJob?.metadataOptimizationGate?.ok === true,
+          shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
+          credentialsPresent: ytCredentialsPresent, // presence boolean(값 아님)
+        },
+        requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+        executionEnabled: false,
+        executionDisabledReason: disabledReason,
+        actualCallPerformed: false,
+      },
+    ],
+    // 실제 호출이 활성화됐다면 사용됐을 함수 참조(문자열). 이번 run 실제 호출 0.
+    functionRefs: {
+      instagram: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      youtube: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      instagramBlob: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+    },
+    // 실제 호출을 하려면 아직 활성화되지 않은 승인 토큰들이 필요함을 명시(fail-closed 근거).
+    requiredApprovalTokensToEnableExecution: [
+      "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+      "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+      "APPROVE_DUAL_PLATFORM_ARM",
+    ],
+    actualApiCallPerformedThisRun: false,
+  };
+}
+
+/**
+ * 향후 실제 publish 실행 시 ledger 기록을 담당할 함수 참조(문자열, string-ref only).
+ * 이 slice에서 실제로 import/호출되지 않으며, ledger mutation(파일/DB 기록)도 수행하지 않는다.
+ * lib 구현이 아직 없더라도 계약상 참조로만 존재한다(no-run/no-mutation).
+ */
+export const PUBLISH_LEDGER_RECORD_FUNCTION_REF = "lib/publish-ledger.ts#recordDualPlatformPublish";
+
+/**
+ * gate 6: actual_api_call — no-run executor 구조(dry executor plan).
+ * task: dual-platform-actual-api-executor-wiring-no-run-v1
+ *
+ * gate 6이 만든 value-free `actualApiCallPlan`을 소비해, 실제 publish가 "어떤 순서로, 어떤 함수로,
+ * 무엇에 의존해" 실행될지의 executor 구조를 value-free로 명문화한다. 이 함수는 실제 실행을 절대
+ * 수행하지 않으며(no-run), 다음을 엄격히 지킨다:
+ *
+ * - credential 값을 인자로 받지 않는다. plan에 이미 담긴 값 없는 presence boolean만 사용한다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis/publish-ledger)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / ledger mutation / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - 모든 step은 executionEnabled:false / willRun:false / performed:false / disabledReason 을 명시한
+ *   fail-closed 구조다.
+ *
+ * 반환은 순수 데이터(함수 참조 문자열, step id, dependsOn, input readiness boolean, 실행 비활성 사유)만
+ * 담는다. 실행 순서는 Blob upload → Instagram publish → YouTube upload → ledger record다.
+ *
+ * @param {object} plan gate 6 value-free actualApiCallPlan(credential 값 없음 — presence boolean만)
+ */
+function buildActualApiExecutorNoRun(plan) {
+  const disabledReason = "actual_api_executor_execution_disabled_this_slice";
+  const requiredApprovalTokens = Array.isArray(plan?.requiredApprovalTokensToEnableExecution)
+    ? plan.requiredApprovalTokensToEnableExecution
+    : ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"];
+  // plan.calls에서 value-free readiness만 참조한다(값 없음). 없으면 안전하게 false로 본다.
+  const findCall = (id) => (Array.isArray(plan?.calls) ? plan.calls.find((c) => c?.id === id) : null) ?? null;
+  const blobCall = findCall("vercel_blob_upload");
+  const igCall = findCall("instagram_graph_publish");
+  const ytCall = findCall("youtube_direct_upload");
+
+  // 공통 disabled 플래그 세트(모든 step 동일 — 실행 비활성 fail-closed).
+  const disabledFlags = { executionEnabled: false, willRun: false, performed: false, executionDisabledReason: disabledReason };
+
+  const steps = [
+    {
+      order: 1,
+      id: "instagram_blob_upload",
+      platform: "instagram_reels",
+      provider: "vercel_blob",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlob,
+      planFunctionRef: LIVE_PUBLISH_FUNCTION_REFS.instagramBlobPlan,
+      dependsOn: [], // 최초 step — Instagram source mp4를 Blob public URL로 업로드.
+      inputReadiness: {
+        sourceFileField: "instagramSourcePath",
+        sourceFileReady: blobCall?.inputReadiness?.sourceFileReady === true,
+        credentialsPresent: blobCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+        producesPublicVideoUrl: true,
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.vercelBlob,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 2,
+      id: "instagram_publish_reel",
+      platform: "instagram_reels",
+      provider: "instagram_graph_api",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+      dependsOn: ["instagram_blob_upload"], // Blob public URL이 있어야 Graph publish 가능.
+      inputReadiness: {
+        videoUrlFrom: "instagram_blob_upload.instagram_public_video_url",
+        blobPublicUrlPresent: igCall?.inputReadiness?.blobPublicUrlPresent === true,
+        metadataOptimizationGateOk: igCall?.inputReadiness?.metadataOptimizationGateOk === true,
+        credentialsPresent: igCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.instagram,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 3,
+      id: "youtube_direct_upload",
+      platform: "youtube_shorts",
+      provider: "youtube_data_api",
+      functionRef: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+      dependsOn: [], // YouTube upload는 Blob/Instagram과 독립(letterbox mp4 직접 업로드).
+      inputReadiness: {
+        videoPathField: "youtubeSourcePath",
+        sourceFileReady: ytCall?.inputReadiness?.sourceFileReady === true,
+        metadataOptimizationGateOk: ytCall?.inputReadiness?.metadataOptimizationGateOk === true,
+        credentialsPresent: ytCall?.inputReadiness?.credentialsPresent === true, // presence boolean(값 아님)
+      },
+      requiredEnvKeyNames: REQUIRED_ENV_KEY_NAMES.youtube,
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+    {
+      order: 4,
+      id: "publish_ledger_record",
+      platform: "dual_platform",
+      provider: "publish_ledger",
+      executorRef: PUBLISH_LEDGER_RECORD_FUNCTION_REF, // string-ref only. no-run/no-mutation.
+      dependsOn: ["instagram_publish_reel", "youtube_direct_upload"], // 두 publish 성공 후 기록.
+      inputReadiness: {
+        recordsFields: ["instagramMediaId", "youtubeVideoId", "contentId", "version", "publishedAtIso"],
+        ledgerMutationThisSlice: false, // 이 slice에서 ledger 기록/변경 절대 없음.
+      },
+      requiredApprovalTokens,
+      ...disabledFlags,
+    },
+  ];
+
+  return {
+    executionEnabledThisSlice: false,
+    executorWillRun: false,
+    executorPerformed: false,
+    executionDisabledReason: disabledReason,
+    note:
+      "gate 6 value-free actualApiCallPlan을 소비해 실제 publish 실행 순서(Blob upload → Instagram publish → " +
+      "YouTube upload → ledger record)를 executor 구조로만 명문화한 no-run executor다. credential 값은 담기지 " +
+      "않으며(presence boolean만), 실제 API/upload/OAuth/Blob/ledger mutation은 이 slice에서 수행되지 않는다. " +
+      "실제 실행은 requiredApprovalTokensToEnableExecution 승인 이후 별도 slice에서만 연결된다.",
+    orderedStepIds: ["instagram_blob_upload", "instagram_publish_reel", "youtube_direct_upload", "publish_ledger_record"],
+    steps,
+    requiredApprovalTokensToEnableExecution: requiredApprovalTokens,
+    actualExecutorRunThisRun: false,
+  };
+}
+
+/** dispatcher가 받아들일 수 있는 정상 executor의 ordered step id(정확히 이 4개, 이 순서). */
+const EXPECTED_DISPATCH_STEP_ORDER = Object.freeze([
+  "instagram_blob_upload",
+  "instagram_publish_reel",
+  "youtube_direct_upload",
+  "publish_ledger_record",
+]);
+
+/**
+ * gate 6: actual_api_call — arm-ready dispatcher 구조(no-run dispatcher).
+ * task: dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1
+ *
+ * gate 6이 만든 value-free `actualApiExecutor`를 소비해, "실제 실행이 활성화되면 dispatcher가 어떤 순서로,
+ * 어떤 adapter/함수를 target으로, 무엇에 의존해, 어떤 입력 readiness로 dispatch할지"의 실행 경계(execution
+ * boundary)를 value-free로 명문화한다. 이 slice에서는 dispatcher가 절대 실행되지 않는다(no-run):
+ *
+ * - executor(값 없음)만 인자로 받는다. credential 값/summary/env를 받지 않는다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis/publish-ledger)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / ledger mutation / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - dispatcher 전역/step 실행 플래그는 전부 false다:
+ *   dispatchEnabledThisSlice / dispatcherWillRun / dispatcherPerformed / (step) dispatchEnabled /
+ *   willDispatch / dispatched / performed.
+ * - adapter/module/function target은 문자열 메타데이터만이다(실제 참조/import 아님).
+ * - dependency status/readiness/입력 readiness boolean은 executor(→plan)에서 복사만 한다(재계산·값 접근 없음).
+ *
+ * executorAccepted는 executor가 기대한 4-step disabled 구조일 때만 true다.
+ *
+ * @param {object} executor gate 6 value-free actualApiExecutor(credential 값 없음 — presence boolean만)
+ */
+function buildActualApiDispatcherNoRun(executor) {
+  const dispatcherDisabledReason = "actual_api_dispatcher_execution_disabled_this_slice";
+  const requiredApprovalTokens = Array.isArray(executor?.requiredApprovalTokensToEnableExecution)
+    ? executor.requiredApprovalTokensToEnableExecution
+    : ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"];
+
+  // executor step을 id로 찾는다(값 없는 구조 참조만).
+  const execSteps = Array.isArray(executor?.steps) ? executor.steps : [];
+  const findStep = (id) => execSteps.find((s) => s?.id === id) ?? null;
+
+  // executor가 기대한 정확한 4-step disabled 구조인지 검증(순서/개수/실행 비활성 모두).
+  const executorOrderedIds = Array.isArray(executor?.orderedStepIds) ? executor.orderedStepIds : [];
+  const orderMatches =
+    executorOrderedIds.length === EXPECTED_DISPATCH_STEP_ORDER.length &&
+    EXPECTED_DISPATCH_STEP_ORDER.every((id, i) => executorOrderedIds[i] === id);
+  const allExecStepsDisabled =
+    execSteps.length === EXPECTED_DISPATCH_STEP_ORDER.length &&
+    execSteps.every((s) => s?.executionEnabled === false && s?.willRun === false && s?.performed === false);
+  const executorAccepted =
+    executor?.executionEnabledThisSlice === false &&
+    executor?.executorWillRun === false &&
+    executor?.executorPerformed === false &&
+    orderMatches &&
+    allExecStepsDisabled;
+
+  // 공통 disabled 플래그 세트(모든 dispatch step 동일 — dispatch 비활성 fail-closed).
+  const disabledDispatchFlags = {
+    dispatchEnabled: false,
+    willDispatch: false,
+    dispatched: false,
+    performed: false,
+    dispatchDisabledReason: dispatcherDisabledReason,
+  };
+
+  // 각 dispatch step은 executor step의 값 없는 readiness/의존만 복사한다(재계산·값 접근 없음).
+  // adapter/module/function target은 string-only 메타데이터다(실제 import/참조 아님).
+  const dispatchSteps = EXPECTED_DISPATCH_STEP_ORDER.map((id, i) => {
+    const execStep = findStep(id);
+    const dependsOn = Array.isArray(execStep?.dependsOn) ? execStep.dependsOn : [];
+    // 의존 step이 executor 구조에 실제 존재하는지의 status(값 아님 — 구조 존재성만).
+    const dependencySatisfiedInStructure = dependsOn.every((depId) => findStep(depId) !== null);
+    // 입력 readiness boolean은 executor step의 inputReadiness에서 복사만 한다(값/파생 없음).
+    const inputReadiness = execStep?.inputReadiness ?? {};
+    return {
+      order: i + 1,
+      id,
+      platform: execStep?.platform ?? null,
+      provider: execStep?.provider ?? null,
+      // adapter/function target은 문자열 메타데이터만. executor의 functionRef/executorRef(string)를 그대로 노출.
+      adapterTarget: typeof execStep?.functionRef === "string" ? execStep.functionRef
+        : (typeof execStep?.executorRef === "string" ? execStep.executorRef : null),
+      dependsOn,
+      dependencySatisfiedInStructure,
+      inputReadiness, // executor→plan에서 복사된 값 없는 presence/readiness boolean만
+      requiredApprovalTokens,
+      ...disabledDispatchFlags,
+    };
+  });
+
+  const dispatcherOrderedStepIds = dispatchSteps.map((s) => s.id);
+
+  return {
+    dispatchEnabledThisSlice: false,
+    dispatcherWillRun: false,
+    dispatcherPerformed: false,
+    dispatcherDisabledReason,
+    // executor가 기대한 4-step disabled 구조일 때만 수용(그 외엔 false로 fail-closed 신호).
+    executorAccepted,
+    note:
+      "gate 6 value-free actualApiExecutor를 소비해 실제 실행이 활성화되면 dispatcher가 어떤 순서로, 어떤 " +
+      "adapter를 target으로, 무엇에 의존해 dispatch할지의 execution boundary만 명문화한 no-run dispatcher다. " +
+      "이 slice에서는 dispatcher가 절대 실행되지 않는다(dispatch 비활성, willDispatch/dispatched/performed 전부 false). " +
+      "credential 값은 담기지 않으며(presence boolean만), 실제 API/upload/OAuth/Blob/ledger mutation은 수행되지 않는다. " +
+      "실제 dispatch는 requiredApprovalTokensToEnableExecution 승인 이후 별도 slice에서만 연결된다.",
+    orderedStepIds: dispatcherOrderedStepIds,
+    dispatchSteps,
+    requiredApprovalTokensToEnableExecution: requiredApprovalTokens,
+    actualDispatcherRunThisRun: false,
+  };
+}
+
+/** 이 run에서 전부 0이어야 하는 live side-effect counter 초기값(어떤 코드 경로도 증가시키지 않는다). */
+function zeroLiveSideEffectCounters() {
+  return {
+    instagramApiCallCount: 0,
+    youtubeApiCallCount: 0,
+    youtubeOauthTokenRequestCount: 0,
+    youtubeUploadCallCount: 0,
+    blobMutationCount: 0,
+    credentialValuesAccessedCount: 0,
+    credentialValuesResolvedCount: 0,
+    dotEnvLocalDirectAccessCount: 0,
+    envSecretValuePrintCount: 0,
+    ledgerMutationCount: 0,
+    newVideoGeneratedCount: 0,
+  };
+}
+
+/**
+ * --live/--arm 실행 경로(armed). LIVE_GATE_ORDER 순서로 fail-closed 평가한다.
+ * current content(t1_lifestyle_inflation/v3_2)는 gate 4 duplicate publish guard가
+ * BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로 차단한다 — gate 5/6 미도달.
+ */
+function executeArmedLiveRun(unit, ledgerPath = null) {
+  const sideEffectCounters = zeroLiveSideEffectCounters();
+  const gateTrace = [];
+  // read-only publish ledger bridge를 gate 4 이전에 평가한다(경로가 없으면 비활성).
+  // 이 evidence는 secret이 아니며(public id/boolean/count만), write/mutation을 하지 않는다.
+  const ledgerEvidence = evaluateLedgerDuplicateForUnit(ledgerPath, unit.contentId, unit.version);
+  const base = {
+    schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+    mode: "live_armed",
+    armed: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+    armApprovalToken: LIVE_EXECUTION_ARM_APPROVAL_TOKEN,
+    contentId: unit.contentId,
+    version: unit.version,
+    gateOrder: LIVE_GATE_ORDER,
+    publishLedgerBridge: buildLedgerBridgeSummary(ledgerEvidence),
+  };
+
+  const plan = buildDualPlatformPublishPlan(unit);
+  const igJob = plan.jobs.find((j) => j.id === "instagram_job");
+  const ytJob = plan.jobs.find((j) => j.id === "youtube_job");
+
+  // ── gate 1: metadata_optimization_gate ────────────────────────────────────
+  const metadataGateOk =
+    igJob?.metadataOptimizationGate?.ok === true && ytJob?.metadataOptimizationGate?.ok === true;
+  gateTrace.push({ order: 1, gate: "metadata_optimization_gate", evaluated: true, ok: metadataGateOk });
+  if (!metadataGateOk) {
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: "BLOCKED_METADATA_OPTIMIZATION_GATE",
+        gateTrace,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
+  // ── gate 2: source_file_gate ──────────────────────────────────────────────
+  const instagramSourceExists = typeof unit.instagramSourcePath === "string" && existsSync(unit.instagramSourcePath);
+  const youtubeSourceExists = typeof unit.youtubeSourcePath === "string" && existsSync(unit.youtubeSourcePath);
+  const sourceFilesReady = instagramSourceExists && youtubeSourceExists;
+  gateTrace.push({
+    order: 2, gate: "source_file_gate", evaluated: true, ok: sourceFilesReady,
+    instagramSourceExists, youtubeSourceExists,
+  });
+  if (!sourceFilesReady) {
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: "BLOCKED_SOURCE_FILE_MISSING",
+        gateTrace,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
+  // ── gate 3: blob_public_url_liveness_evidence_gate ────────────────────────
+  // default content는 전역 evidence 상수를, custom content는 manifest가 제공한
+  // blobPublicUrlLivenessEvidence를 계약 수준으로 검증한다(네트워크 재검증 없음).
+  const livenessGate = isDefaultContentUnit(unit)
+    ? evaluateBlobLivenessEvidenceGate(unit)
+    : evaluateCustomBlobLivenessEvidence(unit);
+  gateTrace.push({ order: 3, gate: "blob_public_url_liveness_evidence_gate", evaluated: true, ok: livenessGate.ok });
+  if (!livenessGate.ok) {
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: "BLOCKED_BLOB_LIVENESS_EVIDENCE",
+        gateTrace,
+        blobPublicUrlLivenessEvidence: livenessGate,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
+  // ── gate 4: duplicate_publish_guard — credential resolution(gate 5)보다 반드시 먼저 ──
+  // read-only publish ledger bridge가 활성(경로 제공)이고 read가 실패했다면, duplicate 판정을
+  // 신뢰할 수 없으므로 credential resolution 이전에 distinct status로 fail-closed 차단한다.
+  if (ledgerEvidence.pathProvided === true && ledgerEvidence.readOk !== true) {
+    gateTrace.push({
+      order: 4, gate: "duplicate_publish_guard", evaluated: true, blocked: true,
+      blockedBy: "publish_ledger_read_failed", publishLedgerReadFailReason: ledgerEvidence.reason,
+    });
+    gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "publish_ledger_read_failed" });
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "publish_ledger_read_failed" });
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: PUBLISH_LEDGER_READ_FAILED_STATUS,
+        gateTrace,
+        publishLedgerReadFailure: {
+          reason: ledgerEvidence.reason,
+          existed: ledgerEvidence.existed === true,
+          blockedBeforeCredentialResolution: true,
+          blockedBeforeActualApiCall: true,
+          note: "publish ledger read가 fail-closed됐다(invalid/corrupt/wrong-schema/duplicate-key). " +
+            "credential resolution/actual API call 이전에 차단한다 — ledger write 없음.",
+        },
+        blobPublicUrlLivenessEvidence: livenessGate,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+        dotEnvLocalDirectAccess: false,
+      },
+    };
+  }
+
+  const duplicateGate = evaluateDuplicatePublishGuardGate(unit);
+  // ledger duplicate는 additive다: 기존 reference/manifest evidence 또는 ledger가 이미 published라고
+  // 하면 duplicate로 차단한다. (ledger read가 ok일 때만 ledger 판정을 반영한다.)
+  const ledgerIgDuplicate = ledgerEvidence.readOk === true && ledgerEvidence.instagramAlreadyPublished === true;
+  const ledgerYtDuplicate = ledgerEvidence.readOk === true && ledgerEvidence.youtubeAlreadyPublished === true;
+  const igAlreadyPublished = duplicateGate.instagram.alreadyPublished === true || ledgerIgDuplicate;
+  const ytAlreadyPublished = duplicateGate.youtube.alreadyPublished === true || ledgerYtDuplicate;
+  const duplicateBlocked = igAlreadyPublished || ytAlreadyPublished;
+  gateTrace.push({
+    order: 4, gate: "duplicate_publish_guard", evaluated: true,
+    blocked: duplicateBlocked,
+    instagramKey: duplicateGate.instagram.key,
+    youtubeKey: duplicateGate.youtube.key,
+    instagramAlreadyPublished: igAlreadyPublished,
+    youtubeAlreadyPublished: ytAlreadyPublished,
+    referenceInstagramAlreadyPublished: duplicateGate.instagram.alreadyPublished === true,
+    referenceYoutubeAlreadyPublished: duplicateGate.youtube.alreadyPublished === true,
+    ledgerInstagramAlreadyPublished: ledgerIgDuplicate,
+    ledgerYoutubeAlreadyPublished: ledgerYtDuplicate,
+  });
+  if (duplicateBlocked) {
+    gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "duplicate_publish_guard" });
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "duplicate_publish_guard" });
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: DUPLICATE_BLOCKED_STATUS,
+        gateTrace,
+        duplicateBlock: {
+          instagramKey: duplicateGate.instagram.key,
+          youtubeKey: duplicateGate.youtube.key,
+          instagramAlreadyPublished: igAlreadyPublished,
+          youtubeAlreadyPublished: ytAlreadyPublished,
+          // 어느 evidence 소스가 duplicate를 확정했는지 명시(non-secret boolean).
+          duplicateSources: {
+            referenceInstagram: duplicateGate.instagram.alreadyPublished === true,
+            referenceYoutube: duplicateGate.youtube.alreadyPublished === true,
+            ledgerInstagram: ledgerIgDuplicate,
+            ledgerYoutube: ledgerYtDuplicate,
+          },
+          blockedBeforeCredentialResolution: true,
+          blockedBeforeActualApiCall: true,
+          retryForbidden: true,
+        },
+        existingEvidenceReference: {
+          note: "이미 완료된 live evidence. reference로만 출력 — 재시도/재업로드 금지.",
+          instagramMediaIdReference: LIVE_UPLOAD_EVIDENCE.instagram.mediaId,
+          youtubeVideoIdReference: LIVE_UPLOAD_EVIDENCE.youtube.videoId,
+          youtubeVideoUrlReference: LIVE_UPLOAD_EVIDENCE.youtube.videoUrl,
+          retryForbidden: true,
+        },
+        wouldHaveCalledFunctionRefs: {
+          note: "duplicate block이 없었다면 호출됐을 explicit credential injection 함수 참조(문자열). 이번 run 호출 0.",
+          instagram: LIVE_PUBLISH_FUNCTION_REFS.instagram,
+          youtube: LIVE_PUBLISH_FUNCTION_REFS.youtube,
+        },
+        blobPublicUrlLivenessEvidence: livenessGate,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+        dotEnvLocalDirectAccess: false,
+      },
+    };
+  }
+
+  // ── gate 5: credential_presence_resolution — 이 slice에서 wiring됨(no-execute) ──
+  // task: dual-platform-credential-resolution-wiring-no-execute-v1
+  // default content는 gate 4 duplicate publish guard에서 이미 차단되어(exit 3) 여기 도달하지 않는다.
+  // custom(non-default) content가 gate 1~4(metadata/source/blob/duplicate)를 모두 통과하면 이 credential
+  // resolution 단계에 도달한다. 이제 resolveExplicitCredentialsFromRuntimeEnv()가 승인된 6개 env key만
+  // 읽어 in-memory explicit credential 객체를 조립한다(값은 로컬 객체에만; 반환/출력/error에 값 미포함).
+  //   - credential이 모두 resolve되면: actual API 실행(gate 6)은 여전히 비활성이므로
+  //     ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed된다.
+  //   - credential key가 하나라도 비어 있으면: CREDENTIAL_KEYS_MISSING_THIS_SLICE(exit 4)로 fail-closed되며
+  //     출력에는 '누락 key 이름'만 담긴다(값/값 파생 없음).
+  // 어느 경로든 actual API call(gate 6)에는 도달하지 않고, 모든 live side-effect counter는 0으로 유지된다.
+  const isDefault = isDefaultContentUnit(unit);
+  const resolution = resolveExplicitCredentialsFromRuntimeEnv();
+  const credSummary = resolution.summary;
+  // in-memory credential 객체는 실제 API 실행이 비활성이라 이 경로에서 사용하지 않는다. 참조를 즉시 끊어
+  // GC 대상으로 만든다(값이 함수 스코프 밖으로 유출되지 않도록).
+  resolution.inMemory = null;
+
+  // gate 5는 이 slice에서 실제로 credential 값에 접근하므로 counter를 증가시킨다(값은 여전히 미노출).
+  sideEffectCounters.credentialValuesAccessedCount = 1;
+  if (credSummary.credentialValuesResolved) sideEffectCounters.credentialValuesResolvedCount = 1;
+
+  gateTrace.push({
+    order: 5,
+    gate: "credential_presence_resolution",
+    evaluated: true,
+    reached: true,
+    wiredThisSlice: true,
+    credentialValuesAccessed: true,
+    credentialValuesResolved: credSummary.credentialValuesResolved,
+    missingCredentialKeyNames: credSummary.missingCredentialKeyNames,
+  });
+
+  if (!credSummary.credentialValuesResolved) {
+    // credential key 일부/전부 missing → credential 단계에서 fail-closed. actual API call 미도달.
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "credential_keys_missing" });
+    return {
+      exitCode: 4,
+      result: {
+        ...base,
+        status: CREDENTIAL_KEYS_MISSING_ERROR,
+        gateTrace,
+        contentUnit: {
+          note:
+            "gate 1~4를 통과한 content가 credential resolution 단계에 도달했으나 승인된 runtime env key가 " +
+            "일부/전부 비어 있어 fail-closed로 멈춘다(exit 4). 출력에는 누락 key '이름'만 담기며 값/값 파생 " +
+            "정보는 담기지 않는다. actual API call(gate 6)에는 도달하지 않는다.",
+          isDefaultContentUnit: isDefault,
+          kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+          contentId: unit.contentId,
+          version: unit.version,
+          reachedCredentialGate: true,
+          credentialResolutionWiredThisSlice: true,
+          haltedBeforeActualApiCall: true,
+        },
+        credentialResolution: {
+          credentialResolutionWiredThisSlice: credSummary.credentialResolutionWiredThisSlice,
+          credentialValuesResolved: false,
+          platforms: credSummary.platforms,
+          missingCredentialKeyNames: credSummary.missingCredentialKeyNames, // 이름만
+        },
+        sideEffectCounters,
+        credentialResolutionReached: true,
+        credentialValuesAccessed: true,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+      },
+    };
+  }
+
+  // ── gate 6: actual_api_call — credential resolve됨 → no-execute plan 구성 후 fail-closed ──
+  // task: dual-platform-actual-api-call-wiring-no-execute-v1
+  // credential이 모두 resolve됐으므로 gate 6 실행 구조에 "도달"한다. 단, 실제 API/upload/OAuth/Blob
+  // mutation은 이 slice에서 비활성이므로, 실제 호출 대신 value-free no-execute call plan을 구성하고
+  // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE(exit 4)로 fail-closed한다.
+  //
+  // 중요: gate 6 plan은 credential 값(resolution.inMemory)을 받지 않고 gate 5의 값 없는 presence
+  // summary(credSummary.platforms.*.allPresent)만 사용한다 — 값이 plan에 담길 원천을 제거한다.
+  // 따라서 plan 구성 전에 in-memory 값 참조를 이미 끊어도 안전하다(위에서 resolution.inMemory=null 처리).
+  const actualApiCallPlan = buildActualApiCallPlanNoExecute(unit, igJob, ytJob, livenessGate, credSummary);
+  // task: dual-platform-actual-api-executor-wiring-no-run-v1
+  // gate 6 plan을 소비해 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger)를
+  // 구성한다. executor는 credential 값을 받지 않고(plan의 presence boolean만) 어떤 실제 실행도 하지 않는다.
+  const actualApiExecutor = buildActualApiExecutorNoRun(actualApiCallPlan);
+  // task: dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1
+  // executor를 소비해 arm-ready dispatcher 구조(실제 실행 경계)를 구성한다. dispatcher는 executor(값 없음)만
+  // 받고 어떤 실제 dispatch도 하지 않는다(dispatch 비활성 fail-closed).
+  const actualApiDispatcher = buildActualApiDispatcherNoRun(actualApiExecutor);
+  // gate 6 plan/executor/dispatcher 모두 no-run이다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
+  gateTrace.push({
+    order: 6,
+    gate: "actual_api_call",
+    evaluated: true,
+    reached: true,
+    executionEnabledThisSlice: false,
+    executorWillRun: false,
+    executorPerformed: false,
+    dispatchEnabledThisSlice: false,
+    dispatcherWillRun: false,
+    dispatcherPerformed: false,
+    blockedBy: "actual_api_call_not_enabled_this_slice",
+    actualCallPerformed: false,
+  });
+  return {
+    exitCode: 4,
+    result: {
+      ...base,
+      status: ACTUAL_API_CALL_NOT_ENABLED_ERROR,
+      gateTrace,
+      contentUnit: {
+        note:
+          "gate 1~4를 통과한 content가 credential resolution 단계에서 승인된 6개 env key를 in-memory explicit " +
+          "credential 객체로 조립했다(값은 로컬 객체에만 존재하며 출력/문서/report/error에 노출되지 않는다). " +
+          "gate 6 actual_api_call 구조에 도달해 value-free no-execute call plan을 구성했으나, actual API 실행은 " +
+          "이 slice에서 비활성이므로 여기서 fail-closed로 멈춘다(실제 publish/upload/OAuth/Blob mutation 0). " +
+          "default evidence content는 gate 4 duplicate guard가 앞서 차단하므로 이 지점에 도달하지 않는다.",
+        isDefaultContentUnit: isDefault,
+        kind: isDefault ? "default_evidence_content" : "custom_manifest_content",
+        contentId: unit.contentId,
+        version: unit.version,
+        reachedCredentialGate: true,
+        reachedActualApiCallPlan: true,
+        reachedActualApiExecutor: true,
+        reachedActualApiDispatcher: true,
+        credentialResolutionWiredThisSlice: true,
+        actualApiCallExecutionEnabledThisSlice: false,
+        actualApiExecutorExecutionEnabledThisSlice: false,
+        actualApiDispatcherEnabledThisSlice: false,
+        haltedBeforeActualApiCall: true,
+      },
+      credentialResolution: {
+        credentialResolutionWiredThisSlice: credSummary.credentialResolutionWiredThisSlice,
+        credentialValuesResolved: true,
+        platforms: credSummary.platforms,
+        missingCredentialKeyNames: credSummary.missingCredentialKeyNames, // 모두 present면 빈 배열
+      },
+      // gate 6 value-free no-execute call plan(함수 참조 + 입력 readiness boolean + 실행 비활성 사유).
+      // credential 값/토큰/URL query token은 담기지 않는다.
+      actualApiCallPlan,
+      // gate 6 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger record).
+      // plan을 소비해 실행 순서/의존/입력 readiness를 명문화한다. 모든 step 실행 비활성, credential 값 없음.
+      actualApiExecutor,
+      // gate 6 arm-ready no-run dispatcher 구조. executor를 소비해 실제 실행 경계(dispatch 순서/adapter target/
+      // 의존/입력 readiness)를 명문화한다. dispatch는 이 slice에서 비활성(willDispatch/dispatched/performed 전부 false).
+      actualApiDispatcher,
+      sideEffectCounters,
+      credentialResolutionReached: true,
+      credentialValuesAccessed: true,
+      credentialValuesResolved: true,
+      actualApiCallReached: true,
+      actualApiCallExecutionEnabledThisSlice: false,
+      actualApiCallPerformed: false,
+      actualApiExecutorReached: true,
+      actualApiExecutorExecutionEnabledThisSlice: false,
+      actualApiExecutorPerformed: false,
+      actualApiDispatcherReached: true,
+      actualApiDispatcherEnabledThisSlice: false,
+      actualApiDispatcherPerformed: false,
+    },
+  };
+}
+
+/** argv에서 --content-unit <path> 값을 뽑는다. 없으면 null(=default evidence content). */
+function resolveContentUnitArg(argv) {
+  const idx = argv.indexOf("--content-unit");
+  if (idx !== -1 && typeof argv[idx + 1] === "string" && argv[idx + 1].trim() !== "") {
+    return argv[idx + 1];
+  }
+  return null;
+}
+
+/**
+ * argv에서 --publish-ledger <path> 값을 뽑는다. 없으면 null(=ledger bridge 비활성, 기존 동작 보존).
+ * read-only 경로다 — 이 값이 있어도 orchestrator는 ledger를 read만 하고 절대 write하지 않는다.
+ * default/production 경로 없음: caller가 명시적으로 넘길 때만 read를 시도한다.
+ */
+function resolvePublishLedgerArg(argv) {
+  const idx = argv.indexOf("--publish-ledger");
+  if (idx !== -1 && typeof argv[idx + 1] === "string" && argv[idx + 1].trim() !== "") {
+    return argv[idx + 1];
+  }
+  return null;
+}
+
+/**
+ * content unit을 결정한다.
+ * --content-unit이 없으면 default evidence content(하위 호환, 기존 동작 완전 유지).
+ * 있으면 manifest를 로드한다. 로드 실패 시 { error } 반환(호출부가 exit 1 처리).
+ */
+function resolveActiveContentUnit(argv) {
+  const manifestPath = resolveContentUnitArg(argv);
+  if (manifestPath == null) {
+    return { unit: DEFAULT_CONTENT_UNIT, isDefault: true, manifestPath: null };
+  }
+  const loaded = loadContentUnitFromManifest(manifestPath);
+  if (!loaded.ok) {
+    return { error: { manifestPath, reasons: loaded.reasons } };
+  }
+  return { unit: loaded.unit, isDefault: isDefaultContentUnit(loaded.unit), manifestPath };
+}
+
+function main() {
+  const argv = process.argv.slice(2);
+  const mode = resolveMode(argv);
+  // read-only publish ledger bridge 경로(옵션). 없으면 null(=bridge 비활성, 기존 동작 보존).
+  const publishLedgerPath = resolvePublishLedgerArg(argv);
+
+  const resolved = resolveActiveContentUnit(argv);
+  if (resolved.error) {
+    console.error(
+      JSON.stringify(
+        {
+          schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+          mode: "content_unit_manifest_error",
+          error: "CONTENT_UNIT_MANIFEST_INVALID",
+          manifestPath: resolved.error.manifestPath,
+          reasons: resolved.error.reasons,
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(1);
+    return;
+  }
+  const activeUnit = resolved.unit;
+
+  // ── live/arm: armed. LIVE_GATE_ORDER 순서로 fail-closed 평가 ────────────────
+  if (mode === "live_requested") {
+    if (!LIVE_EXECUTION_ENABLED_THIS_SLICE) {
+      // 방어적 이중 안전장치: arm 상수가 false로 회귀하면 여전히 exit 2 fail-closed.
+      const output = {
+        schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+        mode: "live_blocked",
+        error: LIVE_EXECUTION_DISABLED_ERROR,
+        liveExecutionEnabledThisSlice: false,
+        requiredApprovalTokensToEnable: [
+          "APPROVE_DUAL_PLATFORM_LIVE_ORCHESTRATOR_WIRING",
+          "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+          "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING",
+          "APPROVE_DUAL_PLATFORM_ARM",
+        ],
+        note: "arm 상수가 비활성 상태다. live 실행은 arm 승인 상태에서만 gate 순서 평가로 진행된다.",
+      };
+      console.error(JSON.stringify(output, null, 2));
+      process.exit(2);
+      return;
+    }
+    // armed: default content(v3_2)는 gate 4 duplicate publish guard가 차단한다(exit 3, credential/gate6 미도달).
+    // custom(non-default) content는 gate 1~4 통과 시 credential resolution(gate 5)이 승인 6개 env key를
+    // in-memory로 조립한다(값은 로컬 객체에만, 출력에 미노출). 6개 key가 모두 present면 gate 6
+    // actual_api_call 구조에 도달해 value-free no-execute call plan을 구성한 뒤
+    // ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE로 fail-closed(exit 4, actualApiCallReached:true지만
+    // actualApiCallExecutionEnabledThisSlice:false/actualApiCallPerformed:false). key가 하나라도
+    // 비어 있으면 gate 5에서 CREDENTIAL_KEYS_MISSING_THIS_SLICE로 fail-closed되며 gate 6 미도달.
+    // 어느 경로든 실제 API/upload/OAuth/Blob mutation은 0, 모든 side-effect counter 0.
+    const { result, exitCode } = executeArmedLiveRun(activeUnit, publishLedgerPath);
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(exitCode);
+    return;
+  }
+
+  // ── credential-preflight: redacted env key presence check(no-live, 값 미노출) ──
+  // 승인된 runtime env key 이름의 present boolean만 보고한다. credential 값/길이/prefix/hash를
+  // 읽거나 출력하지 않고, .env.local/secret 파일을 읽지 않으며, API/upload/Blob 호출도 하지 않는다.
+  // status-style diagnostic이므로 missing key가 있어도 exit 0(정보는 JSON boolean으로 표현).
+  if (mode === "credential_preflight") {
+    const output = buildCredentialPreflight(activeUnit, resolved.isDefault);
+    console.log(JSON.stringify({ ...output, contentUnitManifestPath: resolved.manifestPath }, null, 2));
+    return;
+  }
+
+  // ── preflight: no-live 준비 검증 ────────────────────────────────────────────
+  if (mode === "preflight") {
+    const plan = buildDualPlatformPublishPlan(activeUnit);
+    // read-only publish ledger bridge evidence(경로 제공 시). read만 하고 write하지 않는다.
+    // buildPreflight보다 먼저 평가해 preflightOk가 ledger read 실패를 not-ready로 반영하도록 한다.
+    const ledgerEvidence = evaluateLedgerDuplicateForUnit(publishLedgerPath, activeUnit.contentId, activeUnit.version);
+    const preflight = buildPreflight(activeUnit, ledgerEvidence);
+    const output = {
+      schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+      mode: "preflight",
+      liveExecutionEnabledThisSlice: LIVE_EXECUTION_ENABLED_THIS_SLICE,
+      contentUnitManifestPath: resolved.manifestPath,
+      isDefaultContentUnit: resolved.isDefault,
+      preflight,
+      plan,
+      publishLedgerBridge: buildLedgerBridgeSummary(ledgerEvidence),
+      liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
+    };
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  // ── dry-run: no-live publish plan. default content는 기존 동작 불변 ─────────
+  const plan = buildDualPlatformPublishPlan(activeUnit);
+  const output = {
+    schemaVersion: "dual_platform_final_publish_orchestrator_v1",
+    mode: "dry_run",
+    contentUnitManifestPath: resolved.manifestPath,
+    isDefaultContentUnit: resolved.isDefault,
+    plan,
+    liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
+  };
+  console.log(JSON.stringify(output, null, 2));
+}
+
+if (isMainModule) {
+  main();
+}

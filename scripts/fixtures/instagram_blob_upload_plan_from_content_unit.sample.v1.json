@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "instagram_blob_upload_request_v1",
+  "_note": "Sample output of scripts/plan-instagram-blob-upload-from-content-unit.mjs, used to exercise --plan-instagram-blob-upload validation in scripts/check-instagram-blob-upload-plan-from-content-unit-static.mjs. Generated from a real content unit manifest pointing at an existing local mp4 (task instagram-blob-upload-plan-from-content-unit-no-upload-v1). No @vercel/blob upload was performed; this is read-only reference data, not executed.",
+  "noLive": true,
+  "envSecretValuesAccessedThisRun": false,
+  "contentId": "t1_lifestyle_inflation",
+  "version": "v3_2",
+  "platform": "instagram",
+  "variantId": "instagram_reels_full_frame_1080x1920",
+  "sourcePath": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+  "sourceSizeBytes": 20294549,
+  "sourceSizeCapBytes": 36700160,
+  "sha256": "54957450ac107b9a2209197244653a61ec30c63d2f17f405a211fa27e297a8e4",
+  "sha256_12": "54957450ac10",
+  "pathname": "instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+  "contentType": "video/mp4",
+  "putOptions": {
+    "access": "public",
+    "addRandomSuffix": false,
+    "allowOverwrite": false,
+    "multipart": true,
+    "contentType": "video/mp4"
+  },
+  "uploadPerformed": false,
+  "willUpload": false,
+  "requiresApprovalToken": "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+  "sideEffectCounters": {
+    "blobUploadCount": 0,
+    "blobListCount": 0,
+    "blobHeadCount": 0,
+    "blobDeleteCount": 0,
+    "blobCopyCount": 0,
+    "apiCallCount": 0,
+    "envSecretReadCount": 0,
+    "deployCount": 0,
+    "mediaGenerationCount": 0
+  },
+  "riskNotes": [
+    "no-live: no @vercel/blob call, no network/API call, no env/secret read performed by this planner.",
+    "sourcePath was read read-only to compute sha256 — the file was not modified or moved.",
+    "The content unit manifest itself was not mutated by this planner.",
+    "Actual upload requires a separate approved step with approval token APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST."
+  ]
+}

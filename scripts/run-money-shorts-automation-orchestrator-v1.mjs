@@ -387,6 +387,127 @@ if (cl) {
   };
 }
 
+// ── DUAL-PLATFORM PUBLISH CONTRACT BRIDGE (no-live, read-only) — only if present ──
+// Read-only reference check against the JOB-AGNOSTIC shared dual-platform publish
+// contract fixture. This is NOT this job's own publish plan — it is a shared
+// contract (metadata optimization gate + duplicate publish guard) that all jobs
+// must reference. Its readiness reflects the CONTRACT's own state, never this
+// job's publish completion. This job's completion is decided solely by its own
+// publishRecords (see youtube_published / instagram_published above) — the
+// contract's reference evidence (a different content unit) never substitutes
+// for or elevates that. Never runs the publish runner except with --dry-run,
+// and never touches Instagram/YouTube/Blob APIs, env, or secrets.
+const dpcm = job.dualPlatformPublishContractManifest ?? null;
+let dualPlatformPublishContractRollup = null;
+if (dpcm) {
+  const dpcmPath = dpcm.path ? repoPath(dpcm.path) : null;
+  let dpcmData = null;
+  if (dpcmPath && fileExists(dpcmPath)) {
+    const r = readJsonSafe(dpcmPath);
+    if (r.ok) dpcmData = r.data;
+  }
+
+  const fixtureOk =
+    !!dpcmData &&
+    dpcmData.schemaVersion === "dual_platform_final_publish_orchestrator_v1" &&
+    dpcmData.noLiveThisSlice === true;
+  record(
+    "dual_platform_publish_contract_fixture",
+    "Dual-platform publish contract fixture (shared, job-agnostic, no-live)",
+    fixtureOk ? "ready" : "not_ready",
+    dpcmData ? `schema=${dpcmData.schemaVersion}, noLive=${dpcmData.noLiveThisSlice}` : "fixture missing/unparseable"
+  );
+
+  const jobs = Array.isArray(dpcmData?.expectedPublishJobs) ? dpcmData.expectedPublishJobs : [];
+  const jobsOk = jobs.length === 2 && jobs.some((j) => j.id === "instagram_job") && jobs.some((j) => j.id === "youtube_job");
+  record(
+    "dual_platform_publish_contract_jobs",
+    "Dual-platform publish contract defines Instagram + YouTube jobs",
+    jobsOk ? "ready" : "not_ready",
+    `jobCount=${jobs.length}`
+  );
+
+  const metaGateOk =
+    !!dpcmData?.publishMetadataOptimizationGate?.rule &&
+    !!dpcmData?.instagramDefaultMetadata?.hashtags &&
+    !!dpcmData?.youtubeDefaultMetadata?.tags;
+  record(
+    "dual_platform_publish_contract_metadata_optimization_gate",
+    "Dual-platform publish contract metadata optimization gate present",
+    metaGateOk ? "ready" : "not_ready",
+    `hasGateRule=${!!dpcmData?.publishMetadataOptimizationGate?.rule}`
+  );
+
+  const dupGuard = dpcmData?.duplicatePublishGuard ?? {};
+  const dupKeys = Array.isArray(dupGuard.existingPublishedKeysExample) ? dupGuard.existingPublishedKeysExample : [];
+  const dupGuardOk =
+    typeof dupGuard.keyShape === "string" &&
+    dupGuard.keyShape.length > 0 &&
+    dupKeys.length > 0 &&
+    dupKeys.every((k) => k.endsWith("/v3_2"));
+  record(
+    "dual_platform_publish_contract_duplicate_publish_guard",
+    "Dual-platform publish contract duplicate publish guard uses v3_2 content version",
+    dupGuardOk ? "ready" : "not_ready",
+    `keys=${JSON.stringify(dupKeys)}`
+  );
+
+  // reference evidence belongs to the CONTRACT fixture's own validation, not to this job.
+  const refEv = dpcm.contractReferenceEvidence ?? {};
+  const contractFixtureLiveEv = dpcmData?.liveUploadEvidence ?? {};
+  const referenceEvidenceMatchesOk =
+    refEv?.instagramMediaId === contractFixtureLiveEv?.instagram?.mediaId &&
+    refEv?.youtubeVideoId === contractFixtureLiveEv?.youtube?.videoId &&
+    refEv?.instagramMediaId === "17916511431199303" &&
+    refEv?.youtubeVideoId === "r9jhckdpC9w";
+  record(
+    "dual_platform_publish_contract_reference_evidence_consistent",
+    "Dual-platform publish contract reference evidence is internally consistent (does not affect this job's completion)",
+    referenceEvidenceMatchesOk ? "ready" : "not_ready",
+    `refMediaId=${refEv?.instagramMediaId}, refVideoId=${refEv?.youtubeVideoId}`
+  );
+
+  dualPlatformPublishContractRollup = {
+    fixtureReady: fixtureOk,
+    publishJobsReady: jobsOk,
+    metadataOptimizationGateReady: metaGateOk,
+    duplicatePublishGuardUsesV3_2: dupGuardOk,
+    referenceEvidenceConsistent: referenceEvidenceMatchesOk,
+    dualPlatformPublishContractReady: fixtureOk && jobsOk && metaGateOk && dupGuardOk && referenceEvidenceMatchesOk,
+    isJobAgnosticSharedContract: dpcm.isJobAgnosticSharedContract === true,
+    note: "이 readiness는 shared contract 자체의 준비 상태다. base-rate-202605 job의 게시 완료 여부(youtubePublished/instagramPublished, 기존 publishRecords 기반)와는 무관하며 이를 대체하지 않는다.",
+    runnerPath: dpcm.runnerPath ?? null,
+    staticGuardPath: dpcm.staticGuardPath ?? null,
+    runnerAllowedFlags: Array.isArray(dpcm.runnerAllowedFlags) ? dpcm.runnerAllowedFlags : [],
+  };
+
+  // preflight only: run the shared contract's own static guard read-only
+  // (same read-only spawn discipline as requiredStaticGuards above). Never invokes
+  // the publish runner itself with anything other than --dry-run, and only via that
+  // runner's own guard — this orchestrator does not spawn the publish runner directly.
+  if (mode === "preflight" && dpcm.staticGuardPath) {
+    const gAbs = repoPath(dpcm.staticGuardPath);
+    if (fileExists(gAbs)) {
+      const proc = spawnSync(process.execPath, [gAbs], {
+        cwd: REPO_ROOT,
+        shell: false,
+        encoding: "utf8",
+        timeout: 60000,
+      });
+      const pass = proc.status === 0;
+      guardResults.push({ guard: dpcm.staticGuardPath, pass, detail: pass ? "PASS" : `exit ${proc.status}` });
+      record(
+        "dual_platform_publish_contract_guard",
+        "Dual-platform publish contract static guard",
+        pass ? "ready" : "not_ready",
+        pass ? "PASS" : `exit ${proc.status}`
+      );
+    } else {
+      record("dual_platform_publish_contract_guard", "Dual-platform publish contract static guard", "not_ready", "guard file missing");
+    }
+  }
+}
+
 // ── ROLLUP: derived status decisions ─────────────────────────────────────────
 function stateOf(id) {
   return findings.find((f) => f.id === id)?.state ?? "missing";
@@ -458,6 +579,7 @@ const output = {
   guardResults: mode === "preflight" ? guardResults : undefined,
   rollup,
   creativeLayer: creativeRollup, // null when job has no creativeLayer block (backward compatible)
+  dualPlatformPublishContract: dualPlatformPublishContractRollup, // null when job has no dualPlatformPublishContractManifest block (backward compatible); readiness is the SHARED CONTRACT's, not this job's
 };
 
 // optional record write (only into out-dir, must be outside repo root)
