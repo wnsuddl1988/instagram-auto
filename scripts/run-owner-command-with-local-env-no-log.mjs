@@ -58,6 +58,7 @@ const SELF = fileURLToPath(import.meta.url);
 const SCRIPTS_DIR = dirname(SELF);
 const REPO_ROOT = resolve(SCRIPTS_DIR, "..");
 const ENTRYPOINT_PATH = join(SCRIPTS_DIR, "run-owner-daily-automation-entrypoint.mjs");
+const FINAL_E2E_RUNNER_PATH = join(SCRIPTS_DIR, "run-final-e2e-dual-platform-publish-once.mjs");
 
 // 승인된 6개 key 이름만 로드한다(그 외 라인의 값은 파싱/보관하지 않는다).
 const APPROVED_ENV_KEY_NAMES = Object.freeze([
@@ -75,9 +76,24 @@ const SAFE_CHILD_OS_ENV_KEYS = Object.freeze([
   "TEMP", "TMP", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE",
 ]);
 
-// 지원 명령: 논리 이름 → entrypoint 실제 인자. 첫 목표는 credential-preflight.
+// 지원 명령: 논리 이름 → { script, baseArgs }. 값(secret)은 여기 없다 — child 스크립트 경로와
+// 상수 인자만. approval token은 secret이 아니라 Owner 승인 문구다.
 const SUPPORTED_COMMANDS = Object.freeze({
-  "credential-preflight": ["--credential-preflight"],
+  "credential-preflight": {
+    script: ENTRYPOINT_PATH,
+    baseArgs: ["--credential-preflight"],
+    passthrough: ["--content-unit"],
+    passthroughFlags: [],
+  },
+  // task: final-e2e-ready-content-unit-and-publish-one-v1
+  // 실제 E2E 게시 러너(별도 스크립트)를 승인 토큰과 함께 child로 실행한다. 이 wrapper 자체는
+  // 여전히 어떤 API/upload/Blob 호출도 하지 않는다 — 승인 키를 child env로 주입만 한다.
+  "final-e2e-publish": {
+    script: FINAL_E2E_RUNNER_PATH,
+    baseArgs: ["--approval", "APPROVE_FINAL_E2E_AUTOMATION_PUBLISH_ONE_NEW_CONTENT_UNIT"],
+    passthrough: ["--content-unit", "--ledger", "--out-dir"],
+    passthroughFlags: ["--arm"],
+  },
 });
 
 /**
@@ -153,8 +169,7 @@ function parseArgs(argv) {
   // 기본 env 파일은 Owner runtime에서만 .env.local. 테스트는 항상 명시적 --env-path를 준다.
   // (node 예약 옵션 --env-file과 충돌하지 않도록 --env-path 사용.)
   const envFile = getFlag("--env-path") ?? join(REPO_ROOT, ".env.local");
-  const contentUnit = getFlag("--content-unit");
-  return { commandName, envFile, contentUnit };
+  return { commandName, envFile, rawArgs: args, getFlag };
 }
 
 function printUsage() {
@@ -164,10 +179,14 @@ function printUsage() {
       "",
       "Usage:",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs <command> [--env-path <path>] [--content-unit <path>]",
+      "  node scripts/run-owner-command-with-local-env-no-log.mjs final-e2e-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <dir> [--arm]",
       "",
       "Commands:",
       "  credential-preflight   inject approved local env keys (no-log) and run the redacted",
       "                         credential presence check via the owner entrypoint.",
+      "  final-e2e-publish      inject approved local env keys (no-log) and run the one-shot final",
+      "                         E2E dual-platform publish runner (Blob→Instagram→YouTube→ledger).",
+      "                         Without --arm it is preflight-only (zero external calls).",
       "",
       "Notes:",
       "  - Loads ONLY approved key NAMES; credential values are never printed/hashed/measured.",
@@ -177,7 +196,7 @@ function printUsage() {
 }
 
 function main() {
-  const { commandName, envFile, contentUnit } = parseArgs(process.argv);
+  const { commandName, envFile, rawArgs, getFlag } = parseArgs(process.argv);
 
   if (!commandName || !(commandName in SUPPORTED_COMMANDS)) {
     printUsage();
@@ -201,8 +220,15 @@ function main() {
   console.log("");
 
   const childEnv = buildSanitizedChildEnv(injected);
-  const childArgs = [ENTRYPOINT_PATH, ...SUPPORTED_COMMANDS[commandName]];
-  if (contentUnit) childArgs.push("--content-unit", contentUnit);
+  const command = SUPPORTED_COMMANDS[commandName];
+  const childArgs = [command.script, ...command.baseArgs];
+  for (const flag of command.passthrough) {
+    const v = getFlag(flag);
+    if (v) childArgs.push(flag, v);
+  }
+  for (const flag of command.passthroughFlags) {
+    if (rawArgs.includes(flag)) childArgs.push(flag);
+  }
 
   const result = spawnSync(process.execPath, childArgs, {
     cwd: REPO_ROOT,
