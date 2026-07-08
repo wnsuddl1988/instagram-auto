@@ -199,21 +199,24 @@ node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run --conten
   조립한다(`credentialResolutionReached:true`, `credentialValuesAccessed:true`; 값은 in-memory로만,
   출력에 미노출). credential이 모두 present면 **gate 6 `actual_api_call` 구조에 도달**해 value-free
   no-execute call plan(`actualApiCallPlan` — Blob/Instagram/YouTube 3개 call spec, 함수 참조 + presence
-  boolean만)과 그 plan을 소비한 **no-run executor**(`actualApiExecutor` — Blob upload → Instagram publish
-  → YouTube upload → ledger record의 4-step ordered/dependsOn 구조, 모든 step 실행 비활성)를 구성하지만,
-  실제 API 실행이 비활성이라 `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`(exit 4)로 fail-closed된다
-  (`actualApiCallReached:true`, `actualApiExecutorReached:true`,
+  boolean만), 그 plan을 소비한 **no-run executor**(`actualApiExecutor` — Blob upload → Instagram publish
+  → YouTube upload → ledger record의 4-step ordered/dependsOn 구조, 모든 step 실행 비활성), 그리고 executor를
+  소비한 **arm-ready no-run dispatcher**(`actualApiDispatcher` — 같은 4-step 실행 경계를 adapter target/의존/
+  입력 readiness로 명문화, 모든 dispatch step 비활성)를 구성하지만, 실제 API 실행이 비활성이라
+  `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`(exit 4)로 fail-closed된다
+  (`actualApiCallReached:true`, `actualApiExecutorReached:true`, `actualApiDispatcherReached:true`,
   `actualApiCallExecutionEnabledThisSlice:false`, `actualApiExecutorExecutionEnabledThisSlice:false`,
-  `actualApiCallPerformed:false`, `actualApiExecutorPerformed:false`). credential 일부/전부 누락이면 gate 6
-  plan/executor에 도달하지 않고 gate 5에서 `CREDENTIAL_KEYS_MISSING_THIS_SLICE`(exit 4, 누락 key '이름'만
-  출력)로 fail-closed된다.
+  `actualApiDispatcherEnabledThisSlice:false`, `actualApiCallPerformed:false`,
+  `actualApiExecutorPerformed:false`, `actualApiDispatcherPerformed:false`). credential 일부/전부 누락이면
+  gate 6 plan/executor/dispatcher에 도달하지 않고 gate 5에서 `CREDENTIAL_KEYS_MISSING_THIS_SLICE`(exit 4,
+  누락 key '이름'만 출력)로 fail-closed된다.
 - **custom content, readiness 미충족**: gate 1~4 중 하나라도 실패하면 그 gate에서 credential
   **이전에** fail-closed된다 — source 미존재 → `BLOCKED_SOURCE_FILE_MISSING`(gate 2, exit 3),
   blob evidence 부재/부정확 → `BLOCKED_BLOB_LIVENESS_EVIDENCE`(gate 3, exit 3). 이 경우
   `credentialValuesAccessed:false`(credential 미도달).
 
-어느 경로든 actual API 호출/upload/blob/ledger/video side effect는 0이다. credential 값은
-in-memory로만 다뤄지고 출력에 노출되지 않는다. 실제 API 실행(gate 6)을 통한 publish는 별도 승인
+어느 경로든 actual API 호출/upload/blob/ledger/video/dispatch side effect는 0이다. credential 값은
+in-memory로만 다뤄지고 출력에 노출되지 않는다. 실제 API 실행(gate 6 dispatch)을 통한 publish는 별도 승인
 slice에서만 wiring된다.
 
 owner entrypoint의 `--duplicate-guard-check --content-unit <path>`는 custom manifest면

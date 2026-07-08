@@ -1408,6 +1408,118 @@ function buildActualApiExecutorNoRun(plan) {
   };
 }
 
+/** dispatcher가 받아들일 수 있는 정상 executor의 ordered step id(정확히 이 4개, 이 순서). */
+const EXPECTED_DISPATCH_STEP_ORDER = Object.freeze([
+  "instagram_blob_upload",
+  "instagram_publish_reel",
+  "youtube_direct_upload",
+  "publish_ledger_record",
+]);
+
+/**
+ * gate 6: actual_api_call — arm-ready dispatcher 구조(no-run dispatcher).
+ * task: dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1
+ *
+ * gate 6이 만든 value-free `actualApiExecutor`를 소비해, "실제 실행이 활성화되면 dispatcher가 어떤 순서로,
+ * 어떤 adapter/함수를 target으로, 무엇에 의존해, 어떤 입력 readiness로 dispatch할지"의 실행 경계(execution
+ * boundary)를 value-free로 명문화한다. 이 slice에서는 dispatcher가 절대 실행되지 않는다(no-run):
+ *
+ * - executor(값 없음)만 인자로 받는다. credential 값/summary/env를 받지 않는다.
+ * - 값의 길이/prefix/suffix/hash/masked/sample/token type을 계산·출력하지 않는다.
+ * - 어떤 live lib(instagram/youtube/@vercel/blob/googleapis/publish-ledger)도 import/호출하지 않는다.
+ * - fetch / googleapis / youtube.videos.insert / Graph API URL / OAuth token request /
+ *   Blob put·list·head·del·copy / ledger mutation / deploy / ffmpeg / ffprobe 를 실행하지 않는다.
+ * - dispatcher 전역/step 실행 플래그는 전부 false다:
+ *   dispatchEnabledThisSlice / dispatcherWillRun / dispatcherPerformed / (step) dispatchEnabled /
+ *   willDispatch / dispatched / performed.
+ * - adapter/module/function target은 문자열 메타데이터만이다(실제 참조/import 아님).
+ * - dependency status/readiness/입력 readiness boolean은 executor(→plan)에서 복사만 한다(재계산·값 접근 없음).
+ *
+ * executorAccepted는 executor가 기대한 4-step disabled 구조일 때만 true다.
+ *
+ * @param {object} executor gate 6 value-free actualApiExecutor(credential 값 없음 — presence boolean만)
+ */
+function buildActualApiDispatcherNoRun(executor) {
+  const dispatcherDisabledReason = "actual_api_dispatcher_execution_disabled_this_slice";
+  const requiredApprovalTokens = Array.isArray(executor?.requiredApprovalTokensToEnableExecution)
+    ? executor.requiredApprovalTokensToEnableExecution
+    : ["APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST", "APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"];
+
+  // executor step을 id로 찾는다(값 없는 구조 참조만).
+  const execSteps = Array.isArray(executor?.steps) ? executor.steps : [];
+  const findStep = (id) => execSteps.find((s) => s?.id === id) ?? null;
+
+  // executor가 기대한 정확한 4-step disabled 구조인지 검증(순서/개수/실행 비활성 모두).
+  const executorOrderedIds = Array.isArray(executor?.orderedStepIds) ? executor.orderedStepIds : [];
+  const orderMatches =
+    executorOrderedIds.length === EXPECTED_DISPATCH_STEP_ORDER.length &&
+    EXPECTED_DISPATCH_STEP_ORDER.every((id, i) => executorOrderedIds[i] === id);
+  const allExecStepsDisabled =
+    execSteps.length === EXPECTED_DISPATCH_STEP_ORDER.length &&
+    execSteps.every((s) => s?.executionEnabled === false && s?.willRun === false && s?.performed === false);
+  const executorAccepted =
+    executor?.executionEnabledThisSlice === false &&
+    executor?.executorWillRun === false &&
+    executor?.executorPerformed === false &&
+    orderMatches &&
+    allExecStepsDisabled;
+
+  // 공통 disabled 플래그 세트(모든 dispatch step 동일 — dispatch 비활성 fail-closed).
+  const disabledDispatchFlags = {
+    dispatchEnabled: false,
+    willDispatch: false,
+    dispatched: false,
+    performed: false,
+    dispatchDisabledReason: dispatcherDisabledReason,
+  };
+
+  // 각 dispatch step은 executor step의 값 없는 readiness/의존만 복사한다(재계산·값 접근 없음).
+  // adapter/module/function target은 string-only 메타데이터다(실제 import/참조 아님).
+  const dispatchSteps = EXPECTED_DISPATCH_STEP_ORDER.map((id, i) => {
+    const execStep = findStep(id);
+    const dependsOn = Array.isArray(execStep?.dependsOn) ? execStep.dependsOn : [];
+    // 의존 step이 executor 구조에 실제 존재하는지의 status(값 아님 — 구조 존재성만).
+    const dependencySatisfiedInStructure = dependsOn.every((depId) => findStep(depId) !== null);
+    // 입력 readiness boolean은 executor step의 inputReadiness에서 복사만 한다(값/파생 없음).
+    const inputReadiness = execStep?.inputReadiness ?? {};
+    return {
+      order: i + 1,
+      id,
+      platform: execStep?.platform ?? null,
+      provider: execStep?.provider ?? null,
+      // adapter/function target은 문자열 메타데이터만. executor의 functionRef/executorRef(string)를 그대로 노출.
+      adapterTarget: typeof execStep?.functionRef === "string" ? execStep.functionRef
+        : (typeof execStep?.executorRef === "string" ? execStep.executorRef : null),
+      dependsOn,
+      dependencySatisfiedInStructure,
+      inputReadiness, // executor→plan에서 복사된 값 없는 presence/readiness boolean만
+      requiredApprovalTokens,
+      ...disabledDispatchFlags,
+    };
+  });
+
+  const dispatcherOrderedStepIds = dispatchSteps.map((s) => s.id);
+
+  return {
+    dispatchEnabledThisSlice: false,
+    dispatcherWillRun: false,
+    dispatcherPerformed: false,
+    dispatcherDisabledReason,
+    // executor가 기대한 4-step disabled 구조일 때만 수용(그 외엔 false로 fail-closed 신호).
+    executorAccepted,
+    note:
+      "gate 6 value-free actualApiExecutor를 소비해 실제 실행이 활성화되면 dispatcher가 어떤 순서로, 어떤 " +
+      "adapter를 target으로, 무엇에 의존해 dispatch할지의 execution boundary만 명문화한 no-run dispatcher다. " +
+      "이 slice에서는 dispatcher가 절대 실행되지 않는다(dispatch 비활성, willDispatch/dispatched/performed 전부 false). " +
+      "credential 값은 담기지 않으며(presence boolean만), 실제 API/upload/OAuth/Blob/ledger mutation은 수행되지 않는다. " +
+      "실제 dispatch는 requiredApprovalTokensToEnableExecution 승인 이후 별도 slice에서만 연결된다.",
+    orderedStepIds: dispatcherOrderedStepIds,
+    dispatchSteps,
+    requiredApprovalTokensToEnableExecution: requiredApprovalTokens,
+    actualDispatcherRunThisRun: false,
+  };
+}
+
 /** 이 run에서 전부 0이어야 하는 live side-effect counter 초기값(어떤 코드 경로도 증가시키지 않는다). */
 function zeroLiveSideEffectCounters() {
   return {
@@ -1648,7 +1760,11 @@ function executeArmedLiveRun(unit) {
   // gate 6 plan을 소비해 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger)를
   // 구성한다. executor는 credential 값을 받지 않고(plan의 presence boolean만) 어떤 실제 실행도 하지 않는다.
   const actualApiExecutor = buildActualApiExecutorNoRun(actualApiCallPlan);
-  // gate 6 plan/executor 모두 no-run이다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
+  // task: dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1
+  // executor를 소비해 arm-ready dispatcher 구조(실제 실행 경계)를 구성한다. dispatcher는 executor(값 없음)만
+  // 받고 어떤 실제 dispatch도 하지 않는다(dispatch 비활성 fail-closed).
+  const actualApiDispatcher = buildActualApiDispatcherNoRun(actualApiExecutor);
+  // gate 6 plan/executor/dispatcher 모두 no-run이다 — 어떤 실제 호출도 하지 않으므로 side-effect counter는 계속 0으로 유지된다.
   gateTrace.push({
     order: 6,
     gate: "actual_api_call",
@@ -1657,6 +1773,9 @@ function executeArmedLiveRun(unit) {
     executionEnabledThisSlice: false,
     executorWillRun: false,
     executorPerformed: false,
+    dispatchEnabledThisSlice: false,
+    dispatcherWillRun: false,
+    dispatcherPerformed: false,
     blockedBy: "actual_api_call_not_enabled_this_slice",
     actualCallPerformed: false,
   });
@@ -1680,9 +1799,11 @@ function executeArmedLiveRun(unit) {
         reachedCredentialGate: true,
         reachedActualApiCallPlan: true,
         reachedActualApiExecutor: true,
+        reachedActualApiDispatcher: true,
         credentialResolutionWiredThisSlice: true,
         actualApiCallExecutionEnabledThisSlice: false,
         actualApiExecutorExecutionEnabledThisSlice: false,
+        actualApiDispatcherEnabledThisSlice: false,
         haltedBeforeActualApiCall: true,
       },
       credentialResolution: {
@@ -1697,6 +1818,9 @@ function executeArmedLiveRun(unit) {
       // gate 6 no-run executor 구조(Blob upload → Instagram publish → YouTube upload → ledger record).
       // plan을 소비해 실행 순서/의존/입력 readiness를 명문화한다. 모든 step 실행 비활성, credential 값 없음.
       actualApiExecutor,
+      // gate 6 arm-ready no-run dispatcher 구조. executor를 소비해 실제 실행 경계(dispatch 순서/adapter target/
+      // 의존/입력 readiness)를 명문화한다. dispatch는 이 slice에서 비활성(willDispatch/dispatched/performed 전부 false).
+      actualApiDispatcher,
       sideEffectCounters,
       credentialResolutionReached: true,
       credentialValuesAccessed: true,
@@ -1707,6 +1831,9 @@ function executeArmedLiveRun(unit) {
       actualApiExecutorReached: true,
       actualApiExecutorExecutionEnabledThisSlice: false,
       actualApiExecutorPerformed: false,
+      actualApiDispatcherReached: true,
+      actualApiDispatcherEnabledThisSlice: false,
+      actualApiDispatcherPerformed: false,
     },
   };
 }

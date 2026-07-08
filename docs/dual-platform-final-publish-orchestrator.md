@@ -357,10 +357,10 @@ manifest 계약(`schemaVersion: "dual_platform_content_unit_v1"`):
 
 샘플: `scripts/fixtures/dual_platform_content_unit.sample.v1.json`
 
-### custom content의 live 실행 (gate 6 no-execute plan + no-run executor까지 도달, actual API 실행은 fail-closed)
+### custom content의 live 실행 (gate 6 no-execute plan + no-run executor + arm-ready no-run dispatcher까지 도달, actual API 실행은 fail-closed)
 
-task: `dual-platform-actual-api-executor-wiring-no-run-v1`
-(이전: `dual-platform-actual-api-call-wiring-no-execute-v1` → `...-credential-resolution-wiring-...` → `...-custom-content-live-credential-gate-...`)
+task: `dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1`
+(이전: `dual-platform-actual-api-executor-wiring-no-run-v1` → `...-actual-api-call-wiring-no-execute-...` → `...-credential-resolution-wiring-...`)
 
 custom content unit으로 `--live`/`--arm`을 시도하면 gate 순서 평가에서
 metadata(gate 1)/source(gate 2)/blob liveness(gate 3)/duplicate(gate 4) 판정을 거친다.
@@ -389,37 +389,54 @@ fixture/report/error/gate trace에 노출되지 않는다(값 길이/prefix/suff
   (`ledgerMutationThisSlice: false`)이다. executor는 credential **값**을 받지 않고 plan의 presence
   boolean만 사용하며(값 미유입), 실행 플래그는 모두 false다(`executorWillRun: false`,
   `executorPerformed: false`, `actualApiExecutorExecutionEnabledThisSlice: false`).
+- 이어서 `buildActualApiDispatcherNoRun()`이 위 executor를 소비해 **arm-ready no-run dispatcher 구조**
+  (`actualApiDispatcher`)를 구성한다(`actualApiDispatcherReached: true`). dispatcher는 "실제 실행이 활성화되면
+  dispatcher가 어떤 순서로, 어떤 adapter를 target으로, 무엇에 의존해 dispatch할지"의 **실행 경계(execution
+  boundary)**를 명문화한다. executor와 동일한 4-step ordered 구조(`instagram_blob_upload` →
+  `instagram_publish_reel`(dependsOn: blob) → `youtube_direct_upload`(독립) → `publish_ledger_record`
+  (dependsOn: ig publish + yt upload))이며, 각 dispatch step은 `adapterTarget` **문자열 메타데이터**(실제
+  import/참조 아님), `dependsOn`, `dependencySatisfiedInStructure`(구조 존재성 boolean), executor에서 **복사만**
+  한 입력 readiness/credential presence boolean, `requiredApprovalTokens`,
+  `dispatchEnabled: false`/`willDispatch: false`/`dispatched: false`/`performed: false`/disabled 사유를 담는다.
+  `executorAccepted`는 executor가 기대한 4-step disabled 구조일 때만 true다. dispatcher는 credential **값**을
+  받지 않고 executor(값 없음)만 받으며(값 미유입), dispatch 플래그는 모두 false다
+  (`dispatchEnabledThisSlice: false`, `dispatcherWillRun: false`, `dispatcherPerformed: false`,
+  `actualDispatcherRunThisRun: false`). ledger dispatch step은 string adapterTarget만 담고 실제 dispatch/
+  mutation을 하지 않는다.
 - credential key가 하나라도 비어 있으면 `credentialValuesResolved: false`가 되고, **gate 6에 도달하지
   않은 채** gate 5에서 **`CREDENTIAL_KEYS_MISSING_THIS_SLICE`(exit 4)**로 fail-closed되며, 출력에는
-  `missingCredentialKeyNames`(누락 key '이름' 배열)만 담긴다(`actualApiCallReached: false`).
-- 어느 경로든 실제 Instagram/YouTube API 호출·OAuth·Blob mutation·ledger mutation은 0이고,
+  `missingCredentialKeyNames`(누락 key '이름' 배열)만 담긴다(`actualApiCallReached: false`,
+  `actualApiExecutorReached: false`, `actualApiDispatcherReached: false`).
+- 어느 경로든 실제 Instagram/YouTube API 호출·OAuth·Blob mutation·ledger mutation·dispatch는 0이고,
   API/upload/blob/ledger/video side-effect counter는 모두 0이다.
 
 gate 1~4 중 하나라도 미충족이면 그 gate에서 credential resolution **이전에** fail-closed된다
 (예: source 미존재 → `BLOCKED_SOURCE_FILE_MISSING`(gate 2, exit 3), blob evidence 부재/부정확
 → `BLOCKED_BLOB_LIVENESS_EVIDENCE`(gate 3, exit 3)). 이 경우 `credentialValuesAccessed: false`,
-`actualApiCallReached: false`, `actualApiExecutorReached: false`다. 실제 API **실행**(gate 6 call/executor
-수행)은 여전히 별도 승인 slice에서만 활성화된다 — 이 slice는 call plan + no-run executor 구조까지만 wiring한다.
+`actualApiCallReached: false`, `actualApiExecutorReached: false`, `actualApiDispatcherReached: false`다.
+실제 API **실행**(gate 6 call/executor/dispatcher 수행)은 여전히 별도 승인 slice에서만 활성화된다 — 이 slice는
+call plan + no-run executor + arm-ready no-run dispatcher 구조까지만 wiring한다.
 
-| content unit | `--live`/`--arm` 결과 | exit | gate 6 plan / executor |
-|--------------|----------------------|------|-------------------------|
-| default evidence (v3_2) | `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` (gate 4) | 3 | 미도달 (plan/executor 없음) |
-| custom non-default, gate 1~4 통과 + credential 전부 present | `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE` (gate 6) | 4 | plan + no-run executor 구성, 실행 비활성(`reached:true`, `executionEnabled:false`) |
-| custom non-default, gate 1~4 통과 + credential 일부/전부 누락 | `CREDENTIAL_KEYS_MISSING_THIS_SLICE` (gate 5, 누락 이름만) | 4 | 미도달 (plan/executor 없음) |
-| custom non-default, source 미존재 | `BLOCKED_SOURCE_FILE_MISSING` (gate 2) | 3 | 미도달 (plan/executor 없음) |
-| custom non-default, blob evidence 부재 | `BLOCKED_BLOB_LIVENESS_EVIDENCE` (gate 3) | 3 | 미도달 (plan/executor 없음) |
+| content unit | `--live`/`--arm` 결과 | exit | gate 6 plan / executor / dispatcher |
+|--------------|----------------------|------|--------------------------------------|
+| default evidence (v3_2) | `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` (gate 4) | 3 | 미도달 (plan/executor/dispatcher 없음) |
+| custom non-default, gate 1~4 통과 + credential 전부 present | `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE` (gate 6) | 4 | plan + no-run executor + arm-ready no-run dispatcher 구성, 실행 비활성(`reached:true`, `executionEnabled/dispatchEnabled:false`) |
+| custom non-default, gate 1~4 통과 + credential 일부/전부 누락 | `CREDENTIAL_KEYS_MISSING_THIS_SLICE` (gate 5, 누락 이름만) | 4 | 미도달 (plan/executor/dispatcher 없음) |
+| custom non-default, source 미존재 | `BLOCKED_SOURCE_FILE_MISSING` (gate 2) | 3 | 미도달 (plan/executor/dispatcher 없음) |
+| custom non-default, blob evidence 부재 | `BLOCKED_BLOB_LIVENESS_EVIDENCE` (gate 3) | 3 | 미도달 (plan/executor/dispatcher 없음) |
 
 `preflight.liveExecutionPlan.willExecuteBlockedReason`은 default evidence content가
 `duplicate_publish_guard_blocks_current_content`, custom content가
 `actual_api_call_not_enabled_this_slice`다.
 
 **핵심 안전 순서 불변**: gate 4 `duplicate_publish_guard` → gate 5 `credential_presence_resolution`
-→ gate 6 `actual_api_call`(plan → executor) 순서가 정적 가드로 강제된다. credential resolver는 승인된 6개
-key 외의 임의 `process.env` 값을 읽지 않고, gate 6 plan builder와 no-run executor builder는 credential 값
-객체를 인자로 받지 않으며(plan은 credSummary presence만, executor는 plan의 presence boolean만)
-`process.env`를 읽지 않는다. 셋 다 어떤 live client lib(instagram/youtube/@vercel/blob/googleapis/
-publish-ledger)도 import/호출하지 않고, actual API/upload/OAuth/Blob mutation/ledger mutation을 수행하지
-않으며, `fetch`/`googleapis`/`youtube.videos.insert`/Blob `put·list·head·del·copy`/ledger
+→ gate 6 `actual_api_call`(plan → executor → dispatcher) 순서가 정적 가드로 강제된다. credential resolver는
+승인된 6개 key 외의 임의 `process.env` 값을 읽지 않고, gate 6 plan builder / no-run executor builder /
+arm-ready no-run dispatcher builder는 credential 값 객체를 인자로 받지 않으며(plan은 credSummary presence만,
+executor는 plan의 presence boolean만, dispatcher는 executor(값 없음)만) `process.env`를 읽지 않는다. 넷 다
+어떤 live client lib(instagram/youtube/@vercel/blob/googleapis/publish-ledger)도 import/호출하지 않고,
+actual API/upload/OAuth/Blob mutation/ledger mutation/dispatch를 수행하지 않으며,
+`fetch`/`googleapis`/`youtube.videos.insert`/Blob `put·list·head·del·copy`/ledger
 `writeFileSync·appendFileSync·insert·upsert`를 실행하지 않는다.
 
 **주의(block reason 분기)**: `liveExecutionPlan`(및 각 step)의 blocked 사유는 콘텐츠 종류에 따라 위 표대로
@@ -434,7 +451,7 @@ publish-ledger)도 import/호출하지 않고, actual API/upload/OAuth/Blob muta
 2. `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` — Instagram job의 Blob 실제 업로드 허용
 3. `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` — YouTube job의 실제 업로드 재사용/자동화 허용
 4. `APPROVE_DUAL_PLATFORM_ARM` — 두 플랫폼 동시 자동 게시 활성화
-5. custom content actual API 실행 활성화 — credential resolution(gate 5), gate 6 actual_api_call **no-execute plan 구조**(`buildActualApiCallPlanNoExecute`, value-free call spec), 그리고 그 plan을 소비한 **no-run executor 구조**(`buildActualApiExecutorNoRun`, Blob upload → Instagram publish → YouTube upload → ledger record의 4-step ordered/dependsOn 명문화)는 이 slice에서 완료됨. 남은 것은 executor step을 실제 호출(Instagram Graph publish / YouTube upload / Blob upload / ledger 기록)로 **실행 활성화**하는 것이며, `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` / `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` / `APPROVE_DUAL_PLATFORM_ARM` 승인과 별도 slice에서만 연결된다.
+5. custom content actual API 실행 활성화 — credential resolution(gate 5), gate 6 actual_api_call **no-execute plan 구조**(`buildActualApiCallPlanNoExecute`, value-free call spec), 그 plan을 소비한 **no-run executor 구조**(`buildActualApiExecutorNoRun`, Blob upload → Instagram publish → YouTube upload → ledger record의 4-step ordered/dependsOn 명문화), 그리고 executor를 소비한 **arm-ready no-run dispatcher 구조**(`buildActualApiDispatcherNoRun`, dispatch 순서/adapter target/의존/입력 readiness의 실행 경계 명문화, `executorAccepted` 수용 게이트 포함)는 이 slice에서 완료됨. 남은 것은 dispatcher step을 실제 dispatch(Instagram Graph publish / YouTube upload / Blob upload / ledger 기록)로 **실행 활성화**하는 것이며, `APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST` / `APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING` / `APPROVE_DUAL_PLATFORM_ARM` 승인과 별도 slice에서만 연결된다.
 
 ## 검증
 

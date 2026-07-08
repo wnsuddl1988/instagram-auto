@@ -4,58 +4,61 @@
 
 ## Current Task
 
-- Task ID: `dual-platform-actual-api-executor-wiring-no-run-v1`
-- Owner approval: `APPROVE_DUAL_PLATFORM_ACTUAL_API_EXECUTOR_WIRING_NO_RUN`
-- Purpose: connect the gate 6 value-free `actualApiCallPlan` to an executor-shaped orchestration structure for Instagram Blob upload → Instagram publish → YouTube direct upload → ledger record, while keeping execution disabled/fail-closed.
+- Task ID: `dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1`
+- Owner approval: `APPROVE_DUAL_PLATFORM_EXECUTOR_EXECUTION_WIRING_NO_RUN_TO_ARM_READY`
+- Purpose: connect the gate 6 no-run executor structure to an arm-ready dispatcher shape, while keeping execution disabled and all real external/API/ledger/media side effects at 0.
 
 ## Current Evidence
 
-Checkpoint `0550a85 chore(media): wire actual api no-execute plan` completed gate 6 no-execute planning:
+Checkpoint `269067d chore(media): wire no-run publish executor` completed the no-run executor layer:
 
-- gate 6 can build a value-free `actualApiCallPlan` for custom ready-probe with dummy env
-- plan contains three call specs:
-  - Vercel Blob upload
-  - Instagram Graph publish
-  - YouTube direct upload
-- every call spec is `executionEnabled:false` and `actualCallPerformed:false`
-- default `t1_lifestyle_inflation/v3_2` still blocks at gate 4 before credential access and gate 6
+- gate 6 can build a value-free `actualApiCallPlan`
+- gate 6 can build a value-free `actualApiExecutor`
+- executor has four disabled steps:
+  1. `instagram_blob_upload`
+  2. `instagram_publish_reel`
+  3. `youtube_direct_upload`
+  4. `publish_ledger_record`
+- all executor steps are `executionEnabled:false`, `willRun:false`, `performed:false`
+- default published content still blocks at gate 4 with `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` before credential resolution, plan, executor, or dispatch
 - missing credentials still block at gate 5 before gate 6
+- custom ready-probe with dummy env reaches gate 6 executor but still fails closed with `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`
 - no credential values or value-derived data are printed or serialized
 - checks passed before checkpoint:
-  - orchestrator guard `453 PASS / 0 FAIL`
+  - orchestrator guard `477 PASS / 0 FAIL`
   - owner entrypoint guard `230 PASS / 0 FAIL`
   - owner local env wrapper guard `49 PASS / 0 FAIL`
   - golden content readiness guard `64 PASS / 0 FAIL`
 
-The next blocker is not the plan. It is adding a no-run executor structure that defines how the plan would be executed in strict order, without importing/calling live clients and without enabling actual side effects.
+The next blocker is not planning order. It is defining the dispatcher boundary that future actual execution will use, while proving that this slice still cannot run the dispatcher or call live clients.
 
 ## Approved Scope
 
 Approved:
 
-- In `scripts/run-dual-platform-final-publish-orchestrator.mjs`, add a no-run executor layer for gate 6 plan.
-- The executor structure must represent this order:
-  1. Instagram source mp4 → Vercel Blob public URL
-  2. Blob public URL + optimized metadata → Instagram Graph publish
-  3. YouTube letterbox mp4 + optimized metadata → YouTube direct upload
-  4. Publish ledger record
-- Execution flags must remain disabled:
-  - global executor execution flag false
-  - every step execution flag false
-  - every step performed flag false
-- Executor may reference existing function refs as strings/call specs only:
-  - `lib/instagram-blob-media.ts` Blob helper/plan refs
-  - `lib/instagram.ts#uploadInstagramReelWithCredentials`
-  - `lib/youtube.ts#uploadYouTubeShortsWithCredentials`
-  - future ledger record ref if represented as string only
-- Executor must not receive or serialize credential values.
-- Executor may use credential presence booleans already present in the plan.
-- Keep the current no-execute status/fail-closed behavior:
-  - custom ready-probe with dummy env may reach gate 6 executor plan
-  - actual execution remains disabled/fail-closed
-  - default duplicate content still blocks before credential/executor
-  - missing credentials still block before executor
-- Update fixture/docs/guards to reflect the no-run executor contract.
+- Add an arm-ready dispatcher structure for `actualApiExecutor`.
+- Keep the dispatcher disabled/fail-closed in this slice.
+- The dispatcher should make the future execution boundary explicit:
+  - step order validation
+  - dependency validation
+  - per-step adapter/function target representation
+  - per-step input readiness summary
+  - per-step execution state
+  - global dispatch state
+- The dispatcher may reference live functions/modules as strings only.
+- The dispatcher must not import or call live clients.
+- The dispatcher must not receive, store, print, serialize, hash, slice, mask, or derive credential values.
+- Keep all actual execution flags false:
+  - `executionEnabled:false`
+  - `dispatchEnabled:false`
+  - `dispatcherWillRun:false`
+  - `dispatcherPerformed:false`
+  - every step `willDispatch:false` / `dispatched:false` / `performed:false`
+- Keep current fail-closed behavior:
+  - default duplicate content: gate 4 blocks before credential/plan/executor/dispatcher
+  - missing credentials: gate 5 blocks before plan/executor/dispatcher
+  - custom ready-probe with dummy env: reaches plan + executor + dispatcher, then fails closed before any real call
+- Update fixture/docs/guards to reflect the dispatcher contract.
 - Append concise reusable evidence to `_ai/CLAUDE_REPORT.md`.
 
 Allowed files:
@@ -75,97 +78,125 @@ Only touch another file if a direct import/check break proves it is necessary, a
 
 ## Required Behavior
 
-### No-run executor structure
+### Dispatcher Shape
 
 Add a narrowly scoped helper, for example:
 
-- `buildActualApiExecutorNoRun(...)`
-- or `buildDualPlatformExecutorNoRun(...)`
+- `buildActualApiDispatcherNoRun(...)`
+- or `buildDualPlatformExecutionDispatcherNoRun(...)`
 
-It should consume the existing value-free `actualApiCallPlan` plus non-secret context and return a value-free executor description:
+It should consume the existing value-free `actualApiExecutor` plus non-secret context and return a value-free dispatcher description:
 
-- `executionEnabledThisSlice:false`
-- `executorWillRun:false`
-- `executorPerformed:false`
-- ordered steps array with exactly four logical steps:
+- `dispatchEnabledThisSlice:false`
+- `dispatcherWillRun:false`
+- `dispatcherPerformed:false`
+- `dispatcherDisabledReason:"actual_api_dispatcher_execution_disabled_this_slice"` or equivalent
+- `executorAccepted:true` only when the executor has the expected disabled four-step structure
+- ordered dispatch steps exactly matching:
   1. `instagram_blob_upload`
   2. `instagram_publish_reel`
   3. `youtube_direct_upload`
   4. `publish_ledger_record`
-- each step should include:
+- each dispatch step should include:
   - order
-  - id
-  - platform/provider
-  - functionRef string or executorRef string
+  - step id
+  - adapter/module/function target as string-only metadata
   - dependsOn step IDs
-  - input source/readiness booleans
+  - dependency status/readiness boolean
+  - input readiness boolean copied from executor/plan only
   - required approval tokens to enable future execution
-  - executionEnabled:false
-  - willRun:false
-  - performed:false
+  - `dispatchEnabled:false`
+  - `willDispatch:false`
+  - `dispatched:false`
+  - `performed:false`
   - disabled reason
-- ledger step must be no-run/no-mutation and string-ref only.
+- ledger dispatch step must be no-run/no-mutation and string-ref only.
 
-The executor must not:
+The dispatcher must not:
 
 - import or call `lib/instagram.ts`, `lib/youtube.ts`, `lib/instagram-blob-media.ts`, `@vercel/blob`, `googleapis`, or any live client
 - call `fetch`, `youtube.videos.insert`, Graph API URLs, OAuth/token endpoints, Blob `put/list/head/del/copy`, deploy, ffmpeg, or ffprobe
-- read `.env` or `.env.local`
+- write a ledger file/database record
+- read `.env`, `.env.local`, or secret files
 - receive credential values or any value-bearing object
-- expose credential value-derived data.
+- expose credential value-derived data
+- run Owner no-log wrapper against real `.env.local`
 
-### Default content
+### Gate 6 Result Wiring
+
+When custom ready-probe with dummy env passes gates 1-5:
+
+- build `actualApiCallPlan`
+- build `actualApiExecutor`
+- build disabled `actualApiDispatcher`
+- return all three structures
+- keep status `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE` or a clearer disabled dispatcher status only if docs/guards are updated consistently
+- keep exit code non-zero fail-closed
+- keep `actualApiCallPerformed:false`
+- add explicit top-level booleans such as:
+  - `actualApiDispatcherReached:true`
+  - `actualApiDispatcherEnabledThisSlice:false`
+  - `actualApiDispatcherPerformed:false`
+- keep every live side-effect counter at 0.
+
+Do not rename existing status codes unless necessary. If introducing a new status, make the compatibility impact explicit in docs/guards.
+
+### Default Content
 
 Default already-published content must remain unchanged:
 
 - `--live` / `--arm` exits `3`
 - status `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
-- gate 4 blocks before gate 5, gate 6 plan, and executor
+- gate 4 blocks before gate 5, gate 6 plan, executor, or dispatcher
 - `credentialValuesAccessed:false`
 - `actualApiCallReached:false`
-- no executor result for default duplicate-blocked run
+- no `actualApiCallPlan`
+- no `actualApiExecutor`
+- no `actualApiDispatcher`
 - all live side-effect counters remain 0
 
-### Custom ready-probe with dummy env
+### Custom Ready-Probe With Dummy Env
 
 For a custom content manifest that passes gates 1-5 with dummy env:
 
 - gate 6 plan is reached
-- no-run executor structure is built from the plan
-- executor reports all steps disabled/not performed
+- no-run executor is reached
+- disabled dispatcher is reached
+- dispatcher reports all dispatch steps disabled/not performed
 - actual API execution remains disabled
 - exit remains non-zero fail-closed
 - all real side-effect counters remain 0
 - dummy credential values must not appear in stdout/stderr/result JSON
 - no value-derived credential data appears
 
-### Missing credentials
+### Missing Credentials
 
 For the same custom ready-probe without dummy env:
 
 - gate 5 fails closed with missing key names only
-- gate 6 plan and executor are not reached
+- gate 6 plan, executor, and dispatcher are not reached
 - output contains no values or value-derived data
 
 ## Guard Requirements
 
 Update/add checks that prove:
 
-- default duplicate-blocked path still stops before credential resolution, gate 6 plan, and executor
-- custom dummy-env ready-probe reaches no-run executor structure
-- executor has exactly the expected four ordered steps
-- every executor step has `executionEnabled:false`, `willRun:false`, `performed:false`
-- executor dependencies are correct:
+- default duplicate-blocked path still stops before credential resolution, gate 6 plan, executor, and dispatcher
+- custom dummy-env ready-probe reaches disabled dispatcher structure
+- dispatcher has exactly the expected four ordered dispatch steps
+- every dispatch step has `dispatchEnabled:false`, `willDispatch:false`, `dispatched:false`, `performed:false`
+- dispatcher dependencies are correct:
   - Instagram publish depends on Blob upload
   - ledger depends on Instagram publish and YouTube upload
-- executor output has no dummy credential value or value-derived fields
-- custom no-env ready-probe stops at gate 5 and does not build executor
+- dispatcher output has no dummy credential value or value-derived fields
+- custom no-env ready-probe stops at gate 5 and does not build dispatcher
 - no live client function is imported or executed
+- no ledger mutation code is introduced
 - no `.env`, `.env.local`, dotenv, `vercel env pull`, secret file, broad env dump, or real Owner env wrapper is used in tests
 - `process.env` access remains limited to existing approved presence/resolver patterns
 - duplicate guard remains before credential resolver
-- credential resolver remains before gate 6 plan/executor
-- gate 6 executor remains disabled/fail-closed
+- credential resolver remains before gate 6 plan/executor/dispatcher
+- dispatcher remains disabled/fail-closed
 - no `fetch`, `googleapis`, `youtube.videos.insert`, Graph API URL execution, OAuth request, Blob `put/list/head/del/copy`, deploy, ffmpeg, or ffprobe is introduced
 
 ## Forbidden Actions
@@ -211,11 +242,11 @@ Do not run against real `.env.local`.
 
 All must be true:
 
-1. Gate 6 no-run executor structure is wired for custom dummy-env ready-probe.
-2. Executor models Blob upload → Instagram publish → YouTube upload → ledger order.
-3. Every executor step remains disabled/not performed.
-4. Default published content remains duplicate-blocked before credential access and executor.
-5. Missing credentials still block at gate 5 before executor.
+1. Gate 6 disabled dispatcher structure is wired for custom dummy-env ready-probe.
+2. Dispatcher models Blob upload -> Instagram publish -> YouTube upload -> ledger order.
+3. Every dispatcher step remains disabled/not dispatched/not performed.
+4. Default published content remains duplicate-blocked before credential access, plan, executor, and dispatcher.
+5. Missing credentials still block at gate 5 before dispatcher.
 6. Actual Instagram/YouTube/Blob/ledger execution remains disabled and fail-closed.
 7. No credential values or value-derived data appear in output/docs/fixtures/report.
 8. `.env.local` and secret files are not read by Claude/Codex/tests.
@@ -227,7 +258,7 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- no-run executor wiring summary
+- dispatcher wiring summary
 - default duplicate-block behavior summary
 - custom ready-probe with dummy env result
 - missing credential fail-closed result
