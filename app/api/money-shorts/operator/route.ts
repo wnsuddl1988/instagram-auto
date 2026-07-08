@@ -28,18 +28,28 @@ import {
   isLocalDevRuntime,
   readCredentialPresence,
   readFinalE2ePreflightResult,
+  readScriptPreview,
+  readTopicCatalog,
+  readVoiceSampleStatus,
+  readWizardVideoBytes,
+  readWizardVideoStatus,
   runOperatorScript,
 } from "@/lib/owner-web-operator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** 로컬 스크립트 실행이 필요한 action(배포 사이트에서는 차단). */
+/** 로컬 실행/로컬 파일이 필요한 action(배포 사이트에서는 차단). */
 const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "credentialPreflight",
   "readyPreflight",
   "readyDuplicateGuard",
   "finalE2ePreflight",
+  "topicRecommend",
+  "scriptPreview",
+  "voiceSample",
+  "videoCreate",
+  "previewStatus",
 ];
 
 type OperatorStatus = "success" | "blocked" | "error";
@@ -65,9 +75,43 @@ function json(body: OperatorResponse, httpStatus = 200) {
   return NextResponse.json(body, { status: httpStatus });
 }
 
-// ── GET: 기본 상태 ────────────────────────────────────────────────────────────
+// ── GET: 기본 상태 + 시안 영상 스트림 ────────────────────────────────────────
 
-export async function GET() {
+export async function GET(request: Request) {
+  // 시안 영상 미리보기 스트림. 클라이언트는 경로가 아니라 enum("muxed"|"silent")만 보낸다.
+  // 실제 파일 경로는 파이프라인 summary에서만 나오고 helper가 C:\tmp 허용 prefix를 강제한다.
+  const url = new URL(request.url);
+  const videoParam = url.searchParams.get("video");
+  if (videoParam === "muxed" || videoParam === "silent") {
+    if (!isLocalDevRuntime()) {
+      return json(
+        { action: "previewStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
+        404,
+      );
+    }
+    // topicId는 helper가 [a-z0-9-] slug로 정화하므로 경로 조작이 불가능하다.
+    const streamTopicId = url.searchParams.get("topicId");
+    const bytes = readWizardVideoBytes(videoParam, streamTopicId);
+    if (!bytes) {
+      return json(
+        { action: "previewStatus", status: "blocked", summary: "아직 영상 파일이 없습니다. 먼저 [영상 만들기]를 눌러 주세요.", blockerCode: "WIZARD_VIDEO_NOT_FOUND", noLive: true },
+        404,
+      );
+    }
+    return new Response(new Uint8Array(bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": "video/mp4",
+        "Content-Length": String(bytes.byteLength),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  return statusResponse();
+}
+
+function statusResponse() {
   const localDev = isLocalDevRuntime();
   const presence = readCredentialPresence();
   const readyCount = APPROVED_ENV_KEY_NAMES.filter((k) => presence[k] === true).length;
@@ -125,7 +169,7 @@ export async function POST(request: Request) {
 
   // status는 스크립트를 실행하지 않는다.
   if (action === "status") {
-    return GET();
+    return statusResponse();
   }
 
   // 배포 사이트에서는 로컬 스크립트 실행 action을 차단한다.
@@ -134,18 +178,95 @@ export async function POST(request: Request) {
       action,
       status: "blocked",
       summary: PRODUCTION_NOTICE,
-      detail: "실제 영상 생성과 게시 준비는 Owner PC에서 pnpm dev로 연 로컬 화면에서 실행합니다.",
+      detail: "실제 생성은 Owner PC에서 로컬 실행 화면으로 진행합니다.",
       blockerCode: LOCAL_ONLY_BLOCKER,
       noLive: true,
     });
   }
 
-  const input = body as { contentUnitPath?: string; ledgerPath?: string; outDir?: string };
-  const built = buildOperatorCommand(action, input);
-  if (!built.ok) {
+  // ── 위저드 읽기 전용 action (spawn 없음, 로컬 fixture/산출물 소비) ─────────────
+  if (action === "topicRecommend") {
+    const topics = readTopicCatalog();
+    if (!topics) {
+      return json({
+        action,
+        status: "error",
+        summary: "주제 추천 데이터를 불러오지 못했습니다.",
+        blockerCode: "TOPIC_CATALOG_NOT_FOUND",
+        noLive: true,
+      });
+    }
+    const readyCount = topics.filter((t) => t.scriptReady).length;
     return json({
       action,
-      status: "error",
+      status: "success",
+      summary: `주제 ${topics.length}개를 추천했습니다. 이 중 ${readyCount}개는 대본까지 바로 만들 수 있습니다.`,
+      detail: "로컬에 검증되어 있는 주제 후보입니다. 외부 API는 호출하지 않았습니다.",
+      raw: { topics },
+      noLive: true,
+    });
+  }
+
+  if (action === "scriptPreview") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const preview = topicId ? readScriptPreview(topicId) : null;
+    if (!preview) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "이 주제는 대본 엔진 연결 전입니다. 다음 승인 후 연결됩니다.",
+        detail: "지금은 이미 준비된 주제(대본 준비됨 표시)만 대본을 바로 만들 수 있습니다.",
+        blockerCode: "SCRIPT_NOT_COMPILED_FOR_TOPIC",
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "success",
+      summary: `대본이 준비됐습니다. 훅: "${preview.hook}"`,
+      detail: "규칙 기반 대본 엔진이 미리 만들어 둔 로컬 결과입니다. 외부 AI 호출은 없었습니다.",
+      raw: { script: preview },
+      noLive: true,
+    });
+  }
+
+  if (action === "previewStatus") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const previewTopicId = typeof topicIdRaw === "string" ? topicIdRaw : null;
+    const video = readWizardVideoStatus(previewTopicId);
+    if (!video.exists) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "아직 영상 파일이 없습니다. 먼저 [영상 만들기]를 눌러 주세요.",
+        blockerCode: "WIZARD_VIDEO_NOT_FOUND",
+        raw: { video },
+        noLive: true,
+      });
+    }
+    const mb = video.muxedMp4Bytes ? (video.muxedMp4Bytes / (1024 * 1024)).toFixed(2) : "?";
+    const titleNote = video.topicTitle ? `"${video.topicTitle}" 주제로 만든 ` : "";
+    return json({
+      action,
+      status: "success",
+      summary: `${titleNote}시안 영상이 준비되어 있습니다 (${mb}MB). 아래에서 바로 재생할 수 있습니다.`,
+      detail: "이 파일은 Owner PC에만 있습니다. 어디에도 업로드되지 않았습니다.",
+      raw: { video },
+      noLive: true,
+    });
+  }
+
+  const input = body as { contentUnitPath?: string; ledgerPath?: string; outDir?: string; topicId?: string };
+  const built = buildOperatorCommand(action, input);
+  if (!built.ok) {
+    // 대본 없는 주제로 영상 만들기를 시도하면 fail-closed(다른 주제로 몰래 만들지 않는다).
+    const isVideoTopicBlock =
+      action === "videoCreate" &&
+      (built.reason === "script_not_compiled_for_topic" || built.reason === "topic_id_invalid_or_empty");
+    return json({
+      action,
+      status: isVideoTopicBlock ? "blocked" : "error",
       summary: describeBuildFailure(built.reason),
       blockerCode: built.reason,
       noLive: true,
@@ -183,13 +304,19 @@ export async function POST(request: Request) {
     if (validatedOutDir) parsed = readFinalE2ePreflightResult(validatedOutDir) ?? run.json;
   }
 
-  return json(interpret(action, run.exitCode, parsed, run.stderr));
+  return json(interpret(action, run.exitCode, parsed, run.stderr, input.topicId ?? null));
 }
 
 // ── 결과 해석: 사람이 읽는 요약을 서버에서 만든다 ─────────────────────────────
 
 function describeBuildFailure(reason: string): string {
   if (reason === "contentUnitPath_not_found") return "콘텐츠 정보 파일을 찾을 수 없습니다. 경로를 다시 확인해 주세요.";
+  if (reason === "script_not_compiled_for_topic")
+    return "이 주제는 아직 영상 생성까지 연결되지 않았습니다. 「대본 준비됨」 표시가 있는 주제를 선택해 주세요.";
+  if (reason === "topic_id_invalid_or_empty")
+    return "먼저 주제를 선택하고 대본을 만든 뒤에 영상을 만들 수 있습니다.";
+  if (reason.startsWith("input_write_failed"))
+    return "영상 입력 파일을 만들지 못했습니다. 저장 폴더 권한을 확인해 주세요.";
   if (reason.endsWith("_must_be_absolute_path")) return "경로는 전체 경로로 입력해 주세요. (예: C:\\tmp\\...)";
   if (reason.endsWith("_missing")) return "필요한 경로가 비어 있습니다. 3개 칸을 모두 채워 주세요.";
   return "입력한 경로를 사용할 수 없습니다.";
@@ -200,6 +327,7 @@ function interpret(
   exitCode: number | null,
   parsed: unknown | null,
   stderr: string,
+  topicId: string | null,
 ): OperatorResponse {
   const raw = parsed ?? { exitCode, stderr };
 
@@ -250,6 +378,56 @@ function interpret(
         : "재업로드 차단 상태를 확인하지 못했습니다. 아래 자세한 내용을 확인해 주세요.",
       detail: "같은 영상을 두 번 올리지 않도록 막는 장치가 작동 중인지 확인한 것입니다.",
       blockerCode: blocked ? undefined : "DUPLICATE_GUARD_UNVERIFIED",
+      raw,
+      noLive: true,
+    };
+  }
+
+  if (action === "voiceSample") {
+    const voice = readVoiceSampleStatus();
+    if (exitCode === 0 && voice.exists) {
+      return {
+        action,
+        status: "success",
+        summary: `목소리 자리(테스트용 소리)를 만들었습니다. 길이 ${voice.durationSec ?? "?"}초.`,
+        detail:
+          "지금은 실제 사람 목소리가 아니라 영상 길이를 맞추는 테스트용 소리입니다. 실제 음성 생성은 다음 승인 후 연결됩니다.",
+        raw: { voice },
+        noLive: true,
+      };
+    }
+    return {
+      action,
+      status: "error",
+      summary: "목소리 시안을 만들지 못했습니다. 아래 자세한 내용을 확인해 주세요.",
+      detail: stderr ? stderr.slice(0, 400) : undefined,
+      blockerCode: "VOICE_SAMPLE_FAILED",
+      raw,
+      noLive: true,
+    };
+  }
+
+  if (action === "videoCreate") {
+    const video = readWizardVideoStatus(topicId);
+    if (exitCode === 0 && video.exists) {
+      const passCount = video.steps.filter((s) => s.status === "pass").length;
+      const titleNote = video.topicTitle ? `"${video.topicTitle}" 주제로 ` : "";
+      return {
+        action,
+        status: "success",
+        summary: `${titleNote}시안 영상을 만들었습니다 (${passCount}단계 모두 통과). 업로드는 하지 않았습니다.`,
+        detail:
+          "선택한 주제의 대본·자막이 이 영상에 반영됐습니다. 장면 이미지는 자동 색상 카드, 소리는 테스트용이며, 실제 이미지·음성 연결은 다음 승인 후 진행합니다. 아래 [미리보기]에서 바로 볼 수 있습니다.",
+        raw: { video },
+        noLive: true,
+      };
+    }
+    return {
+      action,
+      status: "error",
+      summary: "영상 시안을 만들지 못했습니다. 아래 자세한 내용을 확인해 주세요.",
+      detail: stderr ? stderr.slice(0, 400) : undefined,
+      blockerCode: "VIDEO_CREATE_FAILED",
       raw,
       noLive: true,
     };

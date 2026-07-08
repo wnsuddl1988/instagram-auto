@@ -1,166 +1,233 @@
 # HANDOFF_NOW
 
-전체프로젝트 진행률 : 약 95%
+전체프로젝트 진행률 : 약 97%
 
 ## Current Task
 
-- Task ID: `final-e2e-ready-content-unit-and-publish-one-v1`
-- Owner approval: `APPROVE_FINAL_E2E_AUTOMATION_PUBLISH_ONE_NEW_CONTENT_UNIT`
-- Purpose: finish the project by preparing exactly one eligible **new non-default content unit** from existing local media, wiring the actual dispatcher execution path, and publishing it end-to-end:
-  1. Vercel Blob upload
-  2. Instagram publish
-  3. YouTube upload
-  4. publish ledger write
+- Task ID: `owner-one-click-video-creation-topic-linked-render-fix-v1`
+- Owner approval: `APPROVE_OWNER_ONE_CLICK_VIDEO_CREATION_UI`
+- Purpose: finish the Owner-facing **"자동 쇼츠 만들기"** web flow by fixing the review finding that the selected topic/script does not yet drive the generated draft video.
 
-This is the final product-facing execution slice. Do not split this into more no-live planning tasks. If the selected local source media is usable, proceed through preparation, preflight, execution, and result reporting in this one slice.
+## Codex Review Finding To Fix
 
-Latest blocker from the previous attempt:
+The first implementation improved the web UX and passed the no-upload safety guards, but it has one product-blocking mismatch:
 
-- `final-e2e-automation-publish-one-new-content-unit-v1` stopped correctly with `BLOCKED_READY_NEW_CONTENT_UNIT_ABSENT`.
-- The only checked-in non-default manifest (`scripts/fixtures/dual_platform_content_unit.sample.v1.json`, `t2_sample_new_topic/v1`) has metadata/blob sample evidence but both source mp4 paths are placeholders:
-  - `instagramSourceExists:false`
-  - `youtubeSourceExists:false`
-  - `sourceFilesReady:false`
-  - `preflightOk:false`
-- The default ready fixture `t1_lifestyle_inflation/v3_2` is forbidden and must not be republished.
-- The shortest real path is to promote a local `t2_salary_3days` media source into a ready content unit, then run the E2E publish once.
+- The user selects a topic and sees a script for that topic.
+- But `videoCreate` still calls a hardcoded provider/base-rate render manifest and hardcoded TTS/upload metadata fixtures.
+- The UI even says "고른 주제 전용 영상은 아직 연결 필요".
 
-## Latest Stable Checkpoints
+This is not acceptable for the Owner-facing flow. A first-time user expects "주제 선택 → 대본 → 영상 만들기" to produce a draft video for the selected topic, not a different fixed sample.
 
-- `e5e57c1 feat(media): add publish ledger contract`
-- `d91b32c chore(media): add read-only publish ledger bridge`
+Fix this in the same big product slice. Do not create another tiny planning task.
 
-Current branch is local-only and ahead of origin. Push is not approved.
+The Owner is correct: the intended product is not "manual Fact Card validation". The intended product is:
 
-Current known uncommitted/protected files to preserve unless directly in this task:
+1. choose category
+2. recommend/select topic
+3. create script
+4. create voice
+5. create video
+6. preview result
+7. preflight before publish
 
-- `_ai/CODEX_REVIEW.md`
-- `_ai/NEXT_ACTION.md`
-- `_ai/PROJECT_STATE.md`
-- `_ai/CONTEXT_TRANSFER_CODEX.md`
-- `piq_diag_out.txt`
-- `scripts/render-golden-sample-visual-only-v1.mjs`
-- `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-- `scripts/get-youtube-refresh-token-once.mjs`
-- `shadow-list.txt`
+This task must make the website show that flow clearly. Do not produce another terminal-heavy manual or another developer-only diagnostics panel.
 
-There may be an untracked `lib/publish-ledger-runtime-write.mjs` from prior planning. Inspect it only if useful for this task. Use it only if it is correct and directly reduces final E2E risk; otherwise leave it unmodified/untracked. Do not delete it without explicit reason.
+## Product Problem To Fix
 
-## Hard Constraints
+Current `/money-shorts` is better than before, but it still sends users into `/fact-cards/manual/new`, which is a developer/source-validation form full of terms like `Fact Card`, `validation`, `sourceName`, `currentValue`. A first-time user cannot understand how to make a video from this.
+
+The fix is not more explanation. The fix is the web UI itself:
+
+- `/money-shorts` must become the practical entry point for making a short.
+- The primary CTA should be **"자동 쇼츠 만들기"** or **"영상 만들기 시작"**, not a path to a raw Fact Card form.
+- The visible workflow should be category/topic/script/voice/video/preview/preflight.
+- The existing manual Fact Card screen should be demoted to **advanced/source direct input**.
+- Errors should be explained in plain Korean. Do not show raw validation errors by default.
+
+## Approved Scope
+
+Allowed:
+
+- Web UI and copy changes for `/money-shorts`.
+- Add or modify client components for the "자동 쇼츠 만들기" flow.
+- Add or modify local-only API route/helper code to connect the visible buttons to existing safe local scripts.
+- Use existing local generation scripts and dry-run/preflight modes where they already exist.
+- Add a small static guard for this UI flow.
+- Update `docs/simple-execution-manual.md` if needed, but keep it web-first and short.
+- Update `_ai/CLAUDE_REPORT.md` with concise evidence if reusable.
 
 Forbidden:
 
 - Directly read/modify `.env`, `.env.*`, `.env.local`, secret files.
 - Print/log/store credential values or value-derived length/prefix/suffix/hash/masked/token type.
-- Re-publish/re-upload existing completed evidence:
-  - Instagram media_id `17916511431199303`
-  - YouTube videoId `r9jhckdpC9w`
-  - default content `t1_lifestyle_inflation/v3_2`
-- Dependency or lockfile changes.
+- Instagram/YouTube upload or publish.
+- Vercel Blob mutation (`put/delete/overwrite/list/head/copy`) unless it is already part of a no-live/preflight-only path that performs no mutation.
 - Deploy.
 - Push.
-- Commit during this implementation slice.
+- Dependency or lockfile changes.
+- Re-publish/re-upload existing evidence.
 
-Allowed by Owner approval for this final E2E slice:
+Important nuance:
 
-- Use Owner no-log env wrapper / child process env injection for approved credentials.
-- Execute exactly one new non-default content unit through Blob upload, Instagram publish, YouTube upload, and publish ledger write.
-- Write secret-free result JSON and local explicit publish ledger path.
-- Modify code/docs/scripts required to make this actual dispatcher execution work.
-- Use existing local source media/render outputs if available.
-- Run local media inspection (`ffprobe`) and exactly one local YouTube letterbox render (`ffmpeg`) if needed for the selected content unit, using existing project scripts/dependencies only.
-- Create one content unit manifest/result artifact for the selected new content unit.
+- The Owner approved connecting existing local generation scripts. If a stage can be implemented safely with existing local scripts, wire it.
+- If a stage would require external paid/content-generation APIs and no safe existing local wrapper/dry-run is available, do not fake it. Show it in the UI as "다음 승인 필요" or "아직 연결 필요" with a plain explanation.
+- Do not call external content-generation APIs merely to prove the UI unless an existing approved local script already does that safely and without secret exposure.
 
-Do **not** call OpenAI/ElevenLabs/Pexels/Supabase or other content-generation APIs unless a ready local content unit cannot be found **and** the code path is already explicitly designed for no-log child env execution. If that becomes necessary, stop and report the exact missing content blocker instead of starting a new external-content-generation side quest.
+## Desired UX
 
-## Required Execution Strategy
+`/money-shorts` should expose a clear flow like:
 
-Do this in one meaningful slice:
+1. **카테고리 선택**
+   - 8 category options from project goal if available:
+     - AI생성활용
+     - 밈&짤
+     - 충격뉴스
+     - TMI지식
+     - 게임클립
+     - 재테크팁
+     - 귀여운동물
+     - 셀럽엔터
+   - If current engine only has finance/source-based content ready, say so plainly and mark other categories as "준비 중".
 
-1. Promote one eligible **new non-default content unit** from existing local media.
-   - Must not be `t1_lifestyle_inflation/v3_2`.
-   - Primary candidate: `t2_salary_3days`.
-   - First inspect this local source candidate with `ffprobe`:
-     - `C:\tmp\money-shorts-os\golden-sample-tts-first-mux-audit-v1\golden_sample_t2_salary_3days_tts_mux.mp4`
-   - If it is 1080x1920 and within platform duration/size constraints, reuse it as the Instagram source.
-   - If it is not usable, stop with `BLOCKED_T2_SOURCE_NOT_USABLE` and report exact dimensions/duration/size. Do not start external content generation.
-   - Generate the YouTube letterbox mp4 exactly once from this source using existing local project rendering/script patterns only. Do not overwrite existing output; if the intended output exists, verify and reuse it.
-   - Create or update one `dual_platform_content_unit_v1` manifest for this new content unit, preferably under `C:\tmp\money-shorts-os\final-e2e-ready-content-unit-and-publish-one-v1\` unless a checked-in fixture is explicitly safer. Avoid committing generated media/result files.
-   - Must have actual Instagram source mp4 path and YouTube source mp4 path.
-   - Must have metadata gates pass.
-   - Must have/obtain Blob public URL liveness as part of execution after Blob upload.
-   - Must not already exist in publish ledger.
-   - If no eligible ready content unit can be created from the existing local t2 source, stop with the exact blocker. Do not create more harness-only work.
+2. **주제 추천**
+   - Button label: `주제 추천받기`
+   - Must show a recommended topic in plain Korean.
+   - Prefer local/sample/safe fixture if real topic generation is not safely wired yet.
+   - Do not expose raw Fact Card terms.
 
-2. Implement the minimum actual dispatcher execution path.
-   - Keep gate order:
-     metadata → source files → blob readiness/upload/liveness → duplicate ledger/reference → credentials → actual dispatch.
-   - Use explicit credential injection only. Do not use env-reading wrapper functions.
-   - Use existing lib clients where possible:
-     - `lib/instagram.ts#uploadInstagramReelWithCredentials`
-     - `lib/youtube.ts#uploadYouTubeShortsWithCredentials`
-     - Vercel Blob upload via existing dependency and deterministic pathname plan.
-     - publish ledger via explicit ledger path.
-   - Keep default evidence duplicate-blocked.
-   - Do not allow partial ledger write:
-     - If Instagram publish succeeds but YouTube upload fails, do not write dual-platform success ledger.
-     - If any upload/publish fails, write only secret-free failure result JSON, not ledger success.
-     - If ledger duplicate exists before execution, do not publish.
-   - If both platform publishes succeed, write ledger exactly once with both records.
-   - If the current no-run dispatcher needs conversion into a real execution branch, do it directly and narrowly:
-     - Blob upload first.
-     - Instagram publish after Blob public URL is available.
-     - YouTube direct upload from the YouTube letterbox mp4.
-     - Ledger record only after both platform publishes succeed.
+3. **대본 만들기**
+   - Button label: `대본 만들기`
+   - Show short script preview or "연결 준비됨/다음 승인 필요" if not safely wired.
 
-3. Provide an Owner-run no-log command.
-   - Prefer extending `scripts/run-owner-command-with-local-env-no-log.mjs` so Owner can run one command and inject credentials from `.env.local` into child env without AI seeing values.
-   - The command must accept the selected content unit and publish ledger path.
-   - If Claude cannot execute because secrets must be supplied by Owner, generate/update the command/wrapper and stop with a clear `OWNER_RUN_REQUIRED` instruction plus exactly one command. Do not ask Owner to paste secrets.
+4. **음성 만들기**
+   - Button label: `음성 만들기`
+   - Show voice status. Do not call paid TTS unless safely existing and approved by scope.
 
-4. Execute if possible without secrets in model context.
-   - If runtime env already has required credentials by safe child env / wrapper path, execute exactly once.
-   - If Owner must run wrapper, do not simulate success. Produce the exact single command and expected result path.
+5. **영상 만들기**
+   - Button label: `영상 만들기`
+   - If safe local render script can be called without upload/secret/API issues, wire it.
+   - If not, show clear blocker and what is needed next.
 
-## Required Result Artifacts
+6. **미리보기**
+   - Show output path/status if a local video artifact exists.
+   - Otherwise show "아직 영상 파일이 없습니다" in plain Korean.
 
-Secret-free only:
+7. **게시 전 점검**
+   - Reuse existing `finalE2ePreflight` / operator preflight when possible.
+   - Must not upload.
 
-- result JSON path under repo-gitignored `output/` or `C:\tmp`
-- contentId/version
-- source paths and sizes
-- Blob pathname and uploaded/public URL
-- Instagram media_id
-- YouTube videoId / URL
-- publish ledger path and recorded keys
-- side-effect counters
-- no credential values, no token-shaped strings
+8. **실제 업로드**
+   - Keep locked/disabled in this scope.
+   - Text: `실제 업로드는 별도 승인 후 활성화됩니다.`
 
-## Required Checks
+## UI Requirements
 
-Before/after code changes:
+- First-time user must know what to do without reading PDF.
+- Do not display raw validation errors on initial load.
+- Do not show "Fact Card", "authorManualFactCard", "validation errors", "sourceName", "currentValue" as primary user-facing language.
+- If advanced source input remains linked, label it:
+  - `고급: 출처 직접 입력`
+  - `숫자와 출처를 직접 넣는 전문가용 화면입니다.`
+- Use clear Korean button labels.
+- Avoid giant explanations inside cards. Use short one-line guidance near each button.
+- Actual upload button remains disabled.
+- Production/Vercel page must not imply it can use Owner PC local files. If local-only, say:
+  - `실제 생성은 Owner PC에서 로컬 실행 화면으로 진행합니다.`
+
+## Likely Files
+
+Inspect first, then edit only what is needed:
+
+- `app/money-shorts/page.tsx`
+- `components/OperatorPanel.tsx`
+- `lib/owner-web-operator.ts`
+- `app/api/money-shorts/operator/route.ts`
+- possibly a new component such as `components/VideoCreationWizard.tsx`
+- possibly a guard such as `scripts/check-owner-one-click-video-creation-ui-static.mjs`
+- `docs/simple-execution-manual.md`
+- `_ai/CLAUDE_REPORT.md`
+
+Do not touch unrelated dirty/protected files:
+
+- `_ai/CODEX_REVIEW.md`
+- `_ai/NEXT_ACTION.md`
+- `_ai/PROJECT_STATE.md`
+- `_ai/CONTEXT_TRANSFER_CODEX.md`
+- `pnpm-workspace.yaml`
+- `scripts/render-golden-sample-visual-only-v1.mjs`
+- `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+- `scripts/get-youtube-refresh-token-once.mjs`
+- `piq_diag_out.txt`
+- `shadow-list.txt`
+- `tmp/`
+- `output/`
+
+## Implementation Guidance
+
+Do this as one meaningful product slice:
+
+1. Keep the redesigned `/money-shorts` Owner-facing automatic creation flow.
+2. Fix `videoCreate` so it is not hardcoded to the provider/base-rate fixture when the user selected a different ready topic.
+3. Prefer a safe local approach:
+   - Accept/pass `topicId` from the wizard to the route/helper.
+   - Use the selected topic's `readScriptPreview(topicId)` result.
+   - Generate temporary repo-outside wizard input JSON files under `C:\tmp\money-shorts-os\web-wizard-create-v1\inputs\<safe-topic-id>\`:
+     - render manifest derived from the existing local render-manifest schema, but with `manifestId`, ids, captions, source overlay, and planned paths reflecting the selected topic.
+     - local mock TTS script derived from selected script text/captions.
+     - upload metadata derived from selected title/caption/hashtags, marked `local_mock`, `notUploaded:true`, `ownerApprovalRequired:true`.
+     - owner approval fixture if needed, also local/mock/no-upload.
+   - Then call `run-local-money-shorts-pipeline-dry-run.mjs` with those generated files.
+4. If a selected topic has no script preview, block plainly before video creation:
+   - `이 주제는 아직 영상 생성까지 연결되지 않았습니다. 대본 준비됨 표시가 있는 주제를 선택해 주세요.`
+5. Remove or rewrite UI text that says the video engine is fixed to 기준금리. The UI must not imply "영상 만들기" works while generating a different topic.
+6. Keep actual upload locked.
+7. Make the "manual fact card" route secondary/advanced.
+8. Update or add static guard checks that catch this regression:
+   - main page contains "자동 쇼츠 만들기" or "영상 만들기 시작"
+   - flow labels exist: category/topic/script/voice/video/preview/preflight
+   - initial UI does not show raw validation/error developer terms
+   - actual upload remains disabled/locked
+   - route/helper does not include `--arm`/`--live` in command args
+   - no direct `.env.local` read
+   - no Blob/Instagram/YouTube upload calls in this slice
+   - `videoCreate` sends/uses `topicId`
+   - helper no longer uses only the hardcoded provider/base-rate render manifest for `videoCreate`
+   - generated wizard input files are repo-outside and topic-specific
+   - a ready selected topic creates a preview whose summary/metadata/caption includes that selected topic, not the old 기준금리 fixed sample.
+
+## Checks
+
+Required:
 
 - `git status -sb`
-- targeted `node --check` for changed scripts
-- relevant static guards:
-  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+- `node --check` for changed/new scripts
+- run the new static guard
+- existing relevant guards if touched:
+  - `node scripts/check-owner-web-operator-ui-static.mjs`
   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs` if owner entrypoint/wrapper changed
-  - `node scripts/check-publish-ledger-static.mjs`
-  - `node scripts/check-social-live-client-import-safety-static.mjs` if live clients touched
-- If TypeScript check is cheap:
-  - `node node_modules/typescript/bin/tsc --noEmit --pretty false`
-  - If TS6053 local type-link issue appears, do not repair dependencies; report and rely on targeted checks.
+  - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs` if orchestrator changed
+- `node node_modules/typescript/bin/tsc --noEmit --pretty false`
+  - If TS6053 local type-link issue appears again, report it. Do not repair dependencies unless separately approved.
 
-After actual execution or Owner-run result:
+Recommended:
 
-- Verify result JSON parses.
-- Verify ledger contains exactly the new content unit keys after success.
-- Verify default evidence was not republished.
-- Verify side-effect count matches exactly one intended execution path.
+- Start local dev server if practical and inspect `/money-shorts` visually.
+- If using Playwright/browser verification, ensure no external upload/API calls are made.
 
-## Speed / Scope Guard
+## Definition Of Done
 
-The Owner explicitly requested no more endless micro-slices. Do not stop after only adding another no-run layer if the t2 source can be prepared and the actual publish command can be run or handed to the Owner. Bundle the necessary local source prep, manifest, execution wiring, no-log command, one E2E attempt, result JSON, and final report together.
+Done means the Owner can open `/money-shorts` and immediately understand:
+
+- "I choose a category."
+- "I ask for a topic."
+- "I make script."
+- "I make voice."
+- "I make video."
+- "I preview."
+- "I run preflight."
+- "Upload is intentionally locked."
+
+Do not claim full automatic production publishing is complete. This slice is web UX + local creation flow wiring up to safe preflight / safe existing local generation actions.
 
 ## Final Handoff Required
 
@@ -168,16 +235,13 @@ Return concise Korean handoff:
 
 - task id
 - changed files
-- selected content unit or blocker
-- implementation summary
-- exact Owner-run command if Owner-run required
-- execution/result summary if executed
-- Instagram/YouTube/Blob/ledger results or exact blocker
+- what the new web flow does
+- which buttons are actually wired vs clearly marked pending/locked
 - checks/results
 - side effects confirmation
-- env/secret handling confirmation
+- env/secret confirmation
 - deviations/risks
 - checkpoint recommendation
-- 전체프로젝트 진행률 : 약 95%
+- 전체프로젝트 진행률 : 약 97%
 
-Stop after final handoff. Do not commit. Do not push.
+Stop after final handoff. Do not commit. Do not push. Do not deploy.
