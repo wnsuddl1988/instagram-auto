@@ -52,7 +52,7 @@ export default function MoneyShortsDashboardPage() {
           <div>
             <h1 className="text-base font-bold text-slate-100 tracking-tight">AI 쇼츠 자동화</h1>
             <p className="text-xs text-slate-500">
-              카테고리 선택부터 대본, 음성, 영상, 게시 전 점검까지 버튼으로 진행합니다.
+              카테고리 선택부터 대본, 음성, 영상, 게시 전 점검, 업로드까지 버튼으로 진행합니다.
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -63,7 +63,7 @@ export default function MoneyShortsDashboardPage() {
               먼저 검토
             </span>
             <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-slate-400 text-xs">
-              업로드 잠금
+              확인 후 업로드
             </span>
           </div>
         </div>
@@ -139,7 +139,8 @@ export default function MoneyShortsDashboardPage() {
           <div className="font-bold text-slate-400 mb-1">현재 이 화면에서 할 수 있는 것</div>
           <p>
             맨 위의 자동 만들기에서 새 쇼츠 만들기를 시작해, 주제 추천부터 대본·음성·시안 영상·미리보기·게시 전
-            점검까지 버튼으로 진행할 수 있습니다. 실제 업로드는 별도 승인 전까지 잠겨 있습니다.
+            점검까지 버튼으로 진행할 수 있습니다. 실제 업로드는 마지막 단계에서 확인 절차(체크 2개 + “업로드” 입력)를
+            마쳐야만 실행됩니다.
           </p>
         </section>
       </main>
