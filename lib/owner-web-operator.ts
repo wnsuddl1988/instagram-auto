@@ -105,6 +105,8 @@ const WIZARD_INPUTS_ROOT = "C:\\tmp\\money-shorts-os\\web-wizard-create-v1\\inpu
 
 /** 클릭마다 생성한 주제 묶음을 누적 저장하는 로컬 카탈로그(레포 밖 고정). 대본/영상 단계가 여기서 주제를 되찾는다. */
 const WIZARD_TOPIC_CATALOG_PATH = "C:\\tmp\\money-shorts-os\\web-wizard-create-v1\\topics\\wizard-topic-catalog.json";
+/** 카테고리별 최근 노출 시드 기록 — "다른 주제 보기"가 순서만 섞지 않게 최근 것을 제외한다. */
+const WIZARD_TOPIC_RECENT_PATH = "C:\\tmp\\money-shorts-os\\web-wizard-create-v1\\topics\\wizard-topic-recent-shown.json";
 
 /**
  * 실제 게시 기록 원장(레포 밖 고정). 이전 실게시 기록(t2_salary_3days 등)이 들어 있는
@@ -639,35 +641,97 @@ const CATEGORY_LABELS: Record<WizardCategoryId, string> = {
 
 type WizardTopicAngle = "반전" | "숫자" | "실수" | "루틴" | "심리" | "꿀팁";
 
-/** topic bank의 씨앗 1개 — 대본 생성에 필요한 구조를 전부 갖는다. */
+/**
+ * topic bank의 씨앗 1개 — 대본 생성에 필요한 구조를 전부 갖는다.
+ *
+ * 프리미엄(돈·심리) 씨앗 계약: finance 씨앗은 아래 선택 필드를 전부 채운다.
+ * - empathy      : 문제 공감 한 문장(씬 2). 대본 흐름 = 후킹→공감→심리→반전→행동→저장.
+ * - points       : [심리 원인, 반전 문장, 행동 전환] 순서 고정(씬 3~5).
+ * - angleNote    : 돈+심리+행동 구조가 드러나는 한 줄 설명(UI 추천 이유로 노출).
+ * - moneyAnchor / psychologyAnchor / successAnchor : 주제의 3축 라벨.
+ * - visualMetaphor: 영상화 가능한 장면 한 컷.
+ * 자막 계약: hook/empathy/points/save는 trimCaption(22자)에 잘리지 않게 22자 이하로 쓴다.
+ */
 type WizardTopicSeed = {
   slug: string; // [a-z0-9-]만. topicId = gen-<category>-<slug>
   title: string;
   hook: string;
   angle: WizardTopicAngle;
   points: [string, string, string];
-  save: string; // 저장/행동 유도 문구
+  save: string; // 저장/행동 유도 문구 — 행동 시점(다음 월급날/결제 전/오늘 밤 등) 포함
+  empathy?: string;
+  angleNote?: string;
+  moneyAnchor?: string;
+  psychologyAnchor?: string;
+  successAnchor?: string;
+  visualMetaphor?: string;
 };
 
 /**
- * 로컬 topic bank — 8개 카테고리 × 12개 씨앗.
- * 특정 인물/사건/검증 불가한 수치 주장 없이, 생활 밀착형 evergreen 주제만 담는다.
+ * 로컬 topic bank — finance는 프리미엄 돈·심리 엔진(48개), 나머지 7개 카테고리 × 12개 씨앗.
+ * 특정 인물/사건/검증 불가한 수치 주장 없이 evergreen 주제만 담는다.
+ * finance는 절약 요령 나열이 아니라 돈×심리×성공/습관이 결합된 자기인식형 주제만 담는다
+ * (커피값/티끌/무지출/통장 쪼개기류 저품질 절약팁 금지).
  * 이미 게시된 t1_lifestyle_inflation / t2_salary_3days / base-rate 계열은 넣지 않는다.
  */
 const TOPIC_BANK: Record<WizardCategoryId, WizardTopicSeed[]> = {
   finance: [
-    { slug: "subscription-audit", title: "나도 모르게 새는 구독료 잡는 법", hook: "구독료, 합쳐 보면 생각보다 큽니다", angle: "실수", points: ["한 달 구독 목록 전부 적어보기", "석 달 안 쓴 서비스 해지하기", "연간 결제 전환 여부 따져보기"], save: "저장해 두고 이번 주말에 구독 정리해 보세요" },
-    { slug: "pay-day-routine", title: "월급날 10분 루틴이 통장을 지킨다", hook: "월급날, 딱 10분이면 됩니다", angle: "루틴", points: ["고정비 통장 먼저 채우기", "생활비 한도 정해 옮기기", "남는 돈 자동으로 저축하기"], save: "월급날 알림에 이 루틴을 붙여 두세요" },
-    { slug: "impulse-buy-24h", title: "지름신 잡는 24시간 규칙", hook: "사고 싶을 때, 딱 하루만 참아보세요", angle: "심리", points: ["장바구니에 담고 하루 기다리기", "내일도 갖고 싶은지 다시 보기", "같은 돈의 다른 쓰임 떠올리기"], save: "충동구매가 잦다면 저장해 두세요" },
-    { slug: "coffee-math", title: "커피값 아끼라는 말이 틀린 이유", hook: "문제는 커피가 아닙니다", angle: "반전", points: ["작은 지출보다 고정비부터 보기", "통신비와 보험료 다시 견적 내기", "아끼는 돈은 바로 이체하기"], save: "고정비 점검 체크리스트로 저장하세요" },
-    { slug: "emergency-fund", title: "비상금은 얼마가 적당할까", hook: "비상금, 감으로 정하면 부족합니다", angle: "숫자", points: ["한 달 필수 지출부터 계산하기", "석 달 치를 목표로 잡기", "꺼내 쓰기 어려운 통장에 두기"], save: "비상금 목표를 저장해 두고 채워가세요" },
-    { slug: "card-statement", title: "카드 명세서 5분 리뷰법", hook: "명세서, 안 보면 계속 샙니다", angle: "루틴", points: ["카테고리별로 묶어서 보기", "이름 모를 결제 바로 확인하기", "다음 달 한도 미리 정하기"], save: "매달 말 이 방법으로 점검해 보세요" },
-    { slug: "account-split", title: "통장 쪼개기, 3개면 충분한 이유", hook: "통장이 많다고 돈이 모이지 않아요", angle: "꿀팁", points: ["고정비·생활비·저축 딱 3개", "월급날 자동이체로 나누기", "생활비 통장만 들고 다니기"], save: "통장 정리할 때 꺼내 보게 저장하세요" },
-    { slug: "small-saving-auto", title: "티끌 모아 태산이 진짜 되는 조건", hook: "방법이 틀리면 티끌은 티끌입니다", angle: "반전", points: ["자동이체로 사람 손 빼기", "금액보다 빈도 먼저 늘리기", "모은 돈은 목적 통장에 두기"], save: "자동 저축 세팅할 때 참고하세요" },
-    { slug: "no-spend-day", title: "일주일에 하루, 무지출 데이의 힘", hook: "하루만 지갑을 닫아보세요", angle: "루틴", points: ["요일 정해 무지출 데이 만들기", "그날 쓸 뻔한 돈 기록하기", "기록한 만큼 저축으로 옮기기"], save: "이번 주 무지출 데이를 정해 보세요" },
-    { slug: "price-per-use", title: "비싼 물건이 오히려 절약인 경우", hook: "가격 말고 횟수로 나눠 보세요", angle: "반전", points: ["사용 횟수로 개당 비용 계산하기", "자주 쓰는 물건에만 돈 쓰기", "한 번 쓸 물건은 빌리기"], save: "쇼핑 전에 꺼내 볼 수 있게 저장하세요" },
-    { slug: "fixed-cost-diet", title: "고정비 다이어트 체크리스트", hook: "매달 나가는 돈부터 줄여야 빨라요", angle: "꿀팁", points: ["통신 요금제 다시 맞추기", "안 쓰는 멤버십 해지하기", "보험 보장 겹치는지 확인하기"], save: "고정비 점검할 때 이 순서대로 해보세요" },
-    { slug: "money-diary-3lines", title: "하루 3줄 돈 일기의 효과", hook: "가계부, 3줄이면 충분합니다", angle: "루틴", points: ["오늘 쓴 돈 세 줄로 적기", "기분과 함께 적어 패턴 보기", "일주일마다 한 번 몰아 보기"], save: "오늘부터 3줄 돈 일기를 시작해 보세요" },
+    // ── A. 월급날 심리 ──
+    { slug: "payday-rich-act", title: "월급날 하루, 당신은 부자 흉내를 내고 있습니다", hook: "그 여유, 잔액이 아니라 착각입니다", angle: "심리", empathy: "월급날엔 결제 버튼이 가벼워지죠", points: ["입금 알림이 소비 허가증이 됩니다", "금액이 아니라 그날 기분이 문제죠", "월급날엔 결제 대신 이체만 하세요"], save: "다음 월급날 아침에 열어 보세요", angleNote: "월급(돈) × 보상심리 × 월급날 첫 선택 구조", moneyAnchor: "월급", psychologyAnchor: "보상심리", successAnchor: "매일의 선택 구조", visualMetaphor: "월급 입금 알림과 커지는 장바구니 화면" },
+    { slug: "payday-vanish-reserved", title: "당신의 월급은 쓰기도 전에 이미 주인이 있습니다", hook: "쓰기도 전에 주인이 정해진 돈들", angle: "반전", empathy: "스치는 월급에 의지를 탓하게 되죠", points: ["자동 결제가 내 선택보다 빠릅니다", "의지가 아니라 예약된 구조 문제죠", "예약된 돈부터 한 줄씩 확인하세요"], save: "다음 월급날 전날 밤에 꺼내 보세요", angleNote: "자동이체(돈) × 자기합리화 × 반복 지출 구조", moneyAnchor: "자동이체", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "월급 입금 직후 줄줄이 빠지는 자동이체 목록" },
+    { slug: "payday-first-hour", title: "당신의 한 달은 월급날 1시간에 이미 끝나 있습니다", hook: "돈 관리는 사실 1시간 싸움입니다", angle: "반전", empathy: "월말의 후회는 언제나 늦습니다", points: ["결심은 잔액과 같이 줄어듭니다", "이기는 쪽은 의지가 아니라 순서죠", "들어오자마자 먼저 나눠 두세요"], save: "다음 월급날 첫 1시간에 쓰세요", angleNote: "현금흐름(돈) × 지연만족 실패 × 첫 순서 설계", moneyAnchor: "현금흐름", psychologyAnchor: "지연만족 실패", successAnchor: "매일의 선택 구조", visualMetaphor: "세 칸으로 나뉘어 이체되는 월급 화면" },
+    { slug: "raise-same-anxiety", title: "연봉이 올라도 왜 나는 아직도 쫓기고 있을까", hook: "더 벌면 편해질 줄 알았는데요", angle: "반전", empathy: "수입이 늘어도 마음은 쫓깁니다", points: ["지출 기준선이 소득을 따라 오르죠", "부족한 건 소득이 아니라 기준입니다", "오른 만큼 절반은 못 본 돈으로"], save: "다음 월급 인상 전에 꼭 읽어 보세요", angleNote: "지출 기준선(돈) × 충분함의 부재 × 기준선 관리", moneyAnchor: "지출 기준선", psychologyAnchor: "충분함의 부재", successAnchor: "기준선", visualMetaphor: "소득과 나란히 오르는 지출 그래프" },
+    { slug: "payday-mood-spend", title: "월급날 밤의 결제, 계획이 아니라 기분이었습니다", hook: "그날 산 것들, 기억나시나요", angle: "심리", empathy: "월급날 결제는 빠르고 과감해지죠", points: ["보상심리가 브레이크를 풉니다", "고생한 보상이 다음 달 짐이 되죠", "보상은 돈 말고 시간으로 즐기세요"], save: "다음 월급날 결제 전에 여세요", angleNote: "소비(돈) × 보상심리 × 반복되는 월급날 패턴", moneyAnchor: "소비", psychologyAnchor: "보상심리", successAnchor: "반복 패턴", visualMetaphor: "월급날 밤 쌓이는 결제 알림 스택" },
+    { slug: "debt-pay-order", title: "갚아도 안 줄어드는 빚, 날짜가 범인이었습니다", hook: "순서 하나가 이자보다 큽니다", angle: "반전", empathy: "갚는데도 이상하게 줄지 않죠", points: ["하루 사이 마음이 핑계를 만듭니다", "상환은 결심이 아니라 순서 문제죠", "상환 이체를 입금 직후로 옮기세요"], save: "다음 월급날 전에 순서를 바꾸세요", angleNote: "빚(돈) × 자기합리화 × 이체 순서 설계", moneyAnchor: "빚", psychologyAnchor: "자기합리화", successAnchor: "매일의 선택 구조", visualMetaphor: "입금 직후 맨 위로 올라간 상환 이체 줄" },
+    // ── B. 소비 심리 ──
+    { slug: "buy-anxiety-not-thing", title: "오늘 산 건 물건이 아니라 당신의 불안이었습니다", hook: "장바구니가 기분을 먼저 압니다", angle: "심리", empathy: "불안한 날일수록 결제가 늘죠", points: ["쇼핑은 가장 비싼 진정제입니다", "그 결제는 물건값이 아니라 감정값", "사기 전에 지금 기분을 적어 보세요"], save: "오늘 밤 장바구니 열기 전에 보세요", angleNote: "소비(돈) × 불안 × 감정-지출 반복 패턴", moneyAnchor: "소비", psychologyAnchor: "불안", successAnchor: "반복 패턴", visualMetaphor: "새벽 장바구니 화면과 쌓인 택배 상자" },
+    { slug: "midnight-checkout", title: "새벽 2시의 그 결제, 사실 내가 한 게 아닙니다", hook: "밤의 나는 낮의 나보다 관대합니다", angle: "심리", empathy: "아침에 취소하고 싶은 주문, 있죠", points: ["피로는 판단보다 욕구를 깨웁니다", "밤의 소비는 선택이 아니라 회피죠", "밤엔 결제 말고 담기까지만 하세요"], save: "오늘 밤 열두 시 전에 저장하세요", angleNote: "소비(돈) × 통제감 저하 × 밤 시간 선택 구조", moneyAnchor: "소비", psychologyAnchor: "통제감", successAnchor: "매일의 선택 구조", visualMetaphor: "어두운 방에서 홀로 빛나는 결제 화면" },
+    { slug: "this-much-is-fine", title: "이 정도는 괜찮아, 그 말이 통장을 비워 왔습니다", hook: "작은 사치엔 늘 좋은 이유가 있죠", angle: "심리", empathy: "하나하나는 다 그럴 만했습니다", points: ["합리화는 지출에 이야기를 입힙니다", "무너지는 건 금액이 아니라 기준이죠", "괜찮아 쓸 횟수를 미리 정하세요"], save: "다음 결제 직전에 한 번 여세요", angleNote: "소비(돈) × 자기합리화 × 기준선 침식", moneyAnchor: "소비", psychologyAnchor: "자기합리화", successAnchor: "기준선", visualMetaphor: "그럴듯한 이유가 붙은 영수증 더미" },
+    { slug: "regret-pattern", title: "그 후회, 지난달에도 똑같은 자리에서 했습니다", hook: "후회는 반복되는데 소비는 그대로죠", angle: "심리", empathy: "환불은 귀찮고 후회는 잊힙니다", points: ["뇌는 결제의 아픔을 빨리 지웁니다", "기록 없는 후회는 다시 반복되죠", "후회한 소비만 한 줄씩 남기세요"], save: "다음 결제일 전에 목록을 보세요", angleNote: "소비(돈) × 자기합리화 × 후회-반복 패턴", moneyAnchor: "소비", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "잊힌 영수증과 다시 열리는 결제 화면" },
+    { slug: "discount-emotion", title: "할인으로 아꼈다는 착각, 지갑은 알고 있습니다", hook: "아낀 게 아니라 없던 지출입니다", angle: "반전", empathy: "세일 기간엔 지갑이 먼저 반응하죠", points: ["할인은 득템 감정으로 판단을 덮죠", "안 샀다면 전부 아낀 돈이었습니다", "목록에 없던 세일은 넘기세요"], save: "다음 세일 알림 오면 먼저 여세요", angleNote: "소비(돈) × 보상심리 × 지출 기준선 방어", moneyAnchor: "소비", psychologyAnchor: "보상심리", successAnchor: "기준선", visualMetaphor: "빨간 할인 표시와 길어지는 결제 내역" },
+    { slug: "emotion-invoice", title: "이번 달 카드값엔 당신의 감정이 찍혀 있습니다", hook: "감정에도 청구서가 온다는 사실", angle: "심리", empathy: "힘든 달일수록 청구서가 두껍죠", points: ["스트레스는 소비로 출구를 찾습니다", "카드값 관리는 사실 감정 관리죠", "지출 옆에 그날 기분도 적어 보세요"], save: "다음 청구서 오는 날 읽어 보세요", angleNote: "소비(돈) × 불안 × 감정 지출의 축적", moneyAnchor: "소비", psychologyAnchor: "불안", successAnchor: "보이지 않는 축적", visualMetaphor: "감정 표시가 붙은 카드 청구서 한 장" },
+    // ── C. 비교와 체면 ──
+    { slug: "highlight-vs-balance", title: "남의 하이라이트에 내 잔액이 초라해지는 밤", hook: "그 비교는 시작부터 불공정합니다", angle: "심리", empathy: "피드를 닫으면 내 삶이 작아 보이죠", points: ["남의 무대와 내 대기실을 비교하죠", "보이는 소비 뒤 잔액은 아무도 몰라요", "부러울 땐 원하는 걸 적어 보세요"], save: "오늘 밤 피드 열기 전에 저장하세요", angleNote: "잔액(돈) × 비교 × 남 기준선에 끌려가는 소비", moneyAnchor: "잔액", psychologyAnchor: "비교", successAnchor: "기준선", visualMetaphor: "화려한 피드 옆에 놓인 내 잔액 화면" },
+    { slug: "face-spending", title: "없어 보일까 봐 산 것들이 통장을 비워 왔습니다", hook: "안 사면 없어 보일까 봐, 그 마음", angle: "심리", empathy: "모임 전날의 쇼핑엔 이유가 있죠", points: ["체면 소비는 시선에 내는 보험료죠", "남들은 내 소비를 기억하지 않아요", "누구에게 보여 줄 건지 물어보세요"], save: "다음 모임 전날 밤에 열어 보세요", angleNote: "소비(돈) × 체면 × 시선 지출 반복", moneyAnchor: "소비", psychologyAnchor: "체면", successAnchor: "반복 패턴", visualMetaphor: "모임 전날 밤의 쇼핑 화면과 옷장" },
+    { slug: "look-rich-vs-be-rich", title: "부자로 보이려는 지출부터 통장이 무너집니다", hook: "둘은 같은 가게에서 갈라집니다", angle: "반전", empathy: "보이는 건 빠르고 쌓임은 느리죠", points: ["보이는 소비는 박수를 받고 끝나죠", "진짜 부는 안 보이는 곳에서 자라요", "박수받을 소비 하나를 이체로 바꿔요"], save: "다음 결제일 전에 하나만 바꾸세요", angleNote: "자산(돈) × 체면 × 보이지 않는 축적", moneyAnchor: "자산", psychologyAnchor: "체면", successAnchor: "보이지 않는 축적", visualMetaphor: "쇼핑백과 조용히 오르는 계좌 그래프" },
+    { slug: "peer-money-pace", title: "친구들과 놀수록 왜 내 통장만 먼저 비어 갈까", hook: "수입은 다른데 지출만 같아집니다", angle: "심리", empathy: "같이 놀면 씀씀이도 닮아 가죠", points: ["소속감은 지출을 맞추라고 조르죠", "관계는 돈이 아니라 시간이 지킵니다", "내 소비 속도를 정하고 만나세요"], save: "다음 약속 잡기 전에 읽어 보세요", angleNote: "소비(돈) × 비교 × 내 기준선 지키기", moneyAnchor: "소비", psychologyAnchor: "비교", successAnchor: "기준선", visualMetaphor: "더치페이 화면과 서로 다른 잔액" },
+    { slug: "gift-overreach", title: "그 선물, 마음이 아니라 불안으로 골랐습니다", hook: "성의는 금액으로 재지지 않습니다", angle: "심리", empathy: "적게 쓰면 성의 없어 보일까 걱정되죠", points: ["선물 금액은 관계 불안의 온도계죠", "남는 건 가격이 아니라 정확함입니다", "상한을 정하고 고르기 시작하세요"], save: "다음 선물 고르기 전에 여세요", angleNote: "소비(돈) × 체면 × 관계 지출 기준선", moneyAnchor: "소비", psychologyAnchor: "체면", successAnchor: "기준선", visualMetaphor: "가격표 앞에서 망설이는 손" },
+    { slug: "big-visible-first", title: "크게 보이려고 산 것들이 내 선택지를 잠급니다", hook: "커 보이는 소비가 크게 남진 않죠", angle: "반전", empathy: "큰 지출일수록 남 눈이 먼저 뜨죠", points: ["규모의 소비는 체면과 붙어 다니죠", "선택권을 줄이는 소비가 제일 비싸요", "유지비까지 넣어 다시 계산하세요"], save: "큰 결제 전날 밤에 꼭 읽어 보세요", angleNote: "자산(돈) × 체면 × 장기 유지비 판단", moneyAnchor: "자산", psychologyAnchor: "체면", successAnchor: "장기 행동", visualMetaphor: "큰 쇼핑 뒤에 길게 붙는 유지비 목록" },
+    // ── D. 불안과 통제감 ──
+    { slug: "control-before-balance", title: "통장이 아니라 통제감부터 무너지고 있었습니다", hook: "모를 때 불안은 가장 커집니다", angle: "심리", empathy: "잔액 확인이 무서워 미루게 되죠", points: ["모르는 상태가 소비를 더 부릅니다", "문제의 절반은 숫자가 아니라 안개죠", "주 1회, 잔액을 그냥 보기만 하세요"], save: "오늘 밤 자기 전에 한 번 여세요", angleNote: "잔액(돈) × 통제감 × 확인 습관", moneyAnchor: "잔액", psychologyAnchor: "통제감", successAnchor: "매일의 선택 구조", visualMetaphor: "열지 못하고 밀어 둔 은행 앱 아이콘" },
+    { slug: "anxiety-scroll-buy", title: "불안해서 켠 폰, 결제로 닫은 밤이 몇 번인가요", hook: "걱정 끄려 연 앱이 결제로 닫히죠", angle: "심리", empathy: "생각을 멈추려 폰을 켠 밤, 많죠", points: ["불안은 즉시 눌리는 버튼을 찾아요", "결제는 불안을 끄지 않고 미룹니다", "불안한 밤엔 결제 앱 대신 메모를"], save: "오늘 밤 폰 켜기 전에 저장하세요", angleNote: "소비(돈) × 불안 × 밤 반복 패턴", moneyAnchor: "소비", psychologyAnchor: "불안", successAnchor: "반복 패턴", visualMetaphor: "밤마다 반복되는 결제 알림 기록" },
+    { slug: "emergency-courage", title: "비상금이 없으면 거절도 못 하는 사람이 됩니다", hook: "그 통장은 쓰려고 있는 게 아니죠", angle: "반전", empathy: "여유가 없으면 거절도 어렵습니다", points: ["잔고가 없으면 선택도 남의 것이 되죠", "비상금은 지출이 아니라 거절할 힘", "쓸 일 없어도 매달 조금씩 옮기세요"], save: "다음 월급날 이체 한 줄 추가하세요", angleNote: "현금흐름(돈) × 통제감 × 보이지 않는 축적", moneyAnchor: "현금흐름", psychologyAnchor: "통제감", successAnchor: "보이지 않는 축적", visualMetaphor: "잠겨 있어 더 든든한 통장 하나" },
+    { slug: "debt-look-away", title: "당신이 안 보는 사이, 빚은 이자보다 빨리 큽니다", hook: "안 보면 늘고, 보면 멈춥니다", angle: "심리", empathy: "고지서를 안 뜯고 쌓아 둔 적 있죠", points: ["회피는 이자보다 빨리 불어납니다", "크기보다 모른다는 게 진짜 문제죠", "총액을 딱 한 번 정확히 적으세요"], save: "오늘 밤 십 분만 내서 확인하세요", angleNote: "빚(돈) × 불안 회피 × 직면 습관", moneyAnchor: "빚", psychologyAnchor: "불안", successAnchor: "장기 행동", visualMetaphor: "뜯지 않은 고지서 더미" },
+    { slug: "income-stop-rehearsal", title: "월급이 끊기는 상상, 피할수록 더 위험해집니다", hook: "무서운 상상이 좋은 보험이 됩니다", angle: "반전", empathy: "생각만 해도 불안해 덮어 두게 되죠", points: ["막연한 두려움은 준비를 미룹니다", "구체적 상상은 불안을 계획으로 바꿔요", "석 달 버틸 비용을 숫자로 적으세요"], save: "이번 주말에 삼십 분만 계산하세요", angleNote: "현금흐름(돈) × 불안 × 장기 대비 행동", moneyAnchor: "현금흐름", psychologyAnchor: "불안", successAnchor: "장기 행동", visualMetaphor: "석 달 치 생활비를 적은 메모 한 장" },
+    { slug: "money-talk-silence", title: "돈 얘기를 미루는 집에서 돈 문제가 자랍니다", hook: "말하지 않는 돈은 혼자 커집니다", angle: "심리", empathy: "가까울수록 돈 얘기가 어렵죠", points: ["회피는 갈등이 아니라 불안 때문이죠", "숫자를 공유하면 걱정은 절반이 돼요", "이번 달 지출 하나만 같이 여세요"], save: "이번 주말 저녁 십 분만 얘기하세요", angleNote: "현금흐름(돈) × 불안 × 대화 습관", moneyAnchor: "현금흐름", psychologyAnchor: "불안", successAnchor: "매일의 선택 구조", visualMetaphor: "식탁 위에 함께 펼친 가계 화면" },
+    // ── E. 기준선 ──
+    { slug: "baseline-poverty", title: "가난은 큰 소비가 아니라 높아진 기본값에서 옵니다", hook: "올라간 기본값은 안 내려옵니다", angle: "반전", empathy: "예전엔 사치였던 게 기본이 됐죠", points: ["익숙한 편안함은 지출로 안 보입니다", "위험한 건 큰 소비가 아니라 기본값", "기본이 된 지출 하나를 찾아보세요"], save: "다음 결제일 전에 하나 점검하세요", angleNote: "지출 기준선(돈) × 충분함의 부재 × 기본값 관리", moneyAnchor: "지출 기준선", psychologyAnchor: "충분함의 부재", successAnchor: "기준선", visualMetaphor: "해마다 높아지는 기본 지출 계단" },
+    { slug: "taste-one-way", title: "한 번 올린 씀씀이는 스스로 내려오지 않습니다", hook: "좋은 걸 알면 못 돌아갑니다", angle: "심리", empathy: "한 번 좋은 걸 쓰면 예전 게 불편하죠", points: ["취향 상승은 기준선을 끌어올립니다", "비싼 건 취향이 아니라 못 돌아감이죠", "올리기 전에 유지비부터 물으세요"], save: "다음 업그레이드 욕심 전에 여세요", angleNote: "지출 기준선(돈) × 지연만족 실패 × 기준선 상승", moneyAnchor: "지출 기준선", psychologyAnchor: "지연만족 실패", successAnchor: "기준선", visualMetaphor: "점점 비싸지는 같은 품목 영수증 비교" },
+    { slug: "designed-normal", title: "당신이 믿는 보통 소비, 사실 누군가 설계했습니다", hook: "보통의 기준, 내가 정한 게 맞나요", angle: "반전", empathy: "남들 다 쓰니까 쓰게 되는 게 있죠", points: ["광고와 피드가 눈높이를 정합니다", "기본값을 의심하는 게 진짜 절약이죠", "원래 그런 거야 목록을 만들어 보세요"], save: "오늘 밤 정기 결제 목록 옆에 두세요", angleNote: "소비(돈) × 비교 × 설계된 기본값 의심", moneyAnchor: "소비", psychologyAnchor: "비교", successAnchor: "기준선", visualMetaphor: "모두 똑같이 들고 있는 신상품 화면" },
+    { slug: "enough-line", title: "얼마면 충분한지 모르면 얼마를 벌어도 쫓깁니다", hook: "얼마면 될까요, 답할 수 있나요", angle: "심리", empathy: "목표 금액은 늘 뒤로 밀리죠", points: ["기준 없는 목표는 도착해도 지나쳐요", "부족이 아니라 끝을 안 정한 겁니다", "이번 달 충분했던 순간을 적으세요"], save: "다음 월급날 목표 세우기 전에 보세요", angleNote: "자산(돈) × 충분함의 부재 × 장기 목표 설계", moneyAnchor: "자산", psychologyAnchor: "충분함의 부재", successAnchor: "장기 행동", visualMetaphor: "계속 늘어나는 목표 금액 메모" },
+    { slug: "exception-to-fixed", title: "이번 한 번만이 어느새 매달 나가고 있습니다", hook: "예외는 세 번이면 규칙이 됩니다", angle: "반전", empathy: "특별한 날 지출이 매달 보이죠", points: ["예외 지출은 죄책감을 빨리 잃습니다", "고정 지출 대부분은 예외로 시작했죠", "석 달 반복된 예외에 이름 붙이세요"], save: "다음 결제일에 예외 목록을 보세요", angleNote: "지출 기준선(돈) × 자기합리화 × 예외의 고착", moneyAnchor: "지출 기준선", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "매달 같은 자리에 찍히는 예외 결제" },
+    { slug: "scale-eats-income", title: "수입이 늘수록 살림이 커져서 남는 게 없습니다", hook: "더 벌어도 안 남는 이유입니다", angle: "심리", empathy: "수입이 늘 때마다 살림도 커졌죠", points: ["규모는 커지면 저절로 유지됩니다", "남는 돈은 수입이 아니라 규모가 정해요", "규모 키우기 전 반년만 미루세요"], save: "다음 큰 지출 결정 전에 열어 보세요", angleNote: "현금흐름(돈) × 지연만족 실패 × 규모 기준선", moneyAnchor: "현금흐름", psychologyAnchor: "지연만족 실패", successAnchor: "기준선", visualMetaphor: "수입과 함께 커지는 살림 평면도" },
+    // ── F. 보이지 않는 부와 선택권 ──
+    { slug: "wealth-is-options", title: "진짜 부자는 잔액이 아니라 선택지를 모읍니다", hook: "부자의 반대말은 선택 없음입니다", angle: "반전", empathy: "돈이 없을 때 제일 아픈 건 못 고름", points: ["돈은 고를 수 있을 때 힘이 셉니다", "모은 돈의 정체는 미래의 선택지죠", "저축에 선택권 산 돈이라 적으세요"], save: "다음 이체하는 날 이름을 바꾸세요", angleNote: "자산(돈) × 통제감 × 보이지 않는 축적", moneyAnchor: "자산", psychologyAnchor: "통제감", successAnchor: "보이지 않는 축적", visualMetaphor: "잠긴 문이 하나씩 열리는 복도" },
+    { slug: "buy-back-time", title: "돈을 모으는 사람은 사실 시간을 사는 중입니다", hook: "부자가 마지막에 사는 건 시간입니다", angle: "반전", empathy: "돈 때문에 시간을 파는 날이 많죠", points: ["소비는 시간을 쓰고 자산은 벌어 줘요", "최고의 소비는 시간을 돌려받는 것", "시간을 사 주는 지출인지 물으세요"], save: "다음 큰 결제 전에 이 질문을 하세요", angleNote: "자산(돈) × 통제감 × 장기 시간 관점", moneyAnchor: "자산", psychologyAnchor: "통제감", successAnchor: "장기 행동", visualMetaphor: "시계와 맞바꾸는 지폐 한 장" },
+    { slug: "quiet-money-wins", title: "아무도 안 보는 돈이 당신을 부자로 만듭니다", hook: "자랑 못 하는 돈이 진짜 내 돈이죠", angle: "반전", empathy: "쌓이는 돈은 티가 안 나 재미없죠", points: ["보여 주는 돈은 박수 속에 사라져요", "쌓임은 지루함을 견딘 값입니다", "재미없는 이체 하나를 자동으로"], save: "다음 월급날 이체 한 줄 거세요", angleNote: "자동이체(돈) × 지연만족 × 보이지 않는 축적", moneyAnchor: "자동이체", psychologyAnchor: "지연만족 실패", successAnchor: "보이지 않는 축적", visualMetaphor: "소리 없이 계단을 오르는 잔액 그래프" },
+    { slug: "freedom-price", title: "당신의 자유에는 이미 가격표가 붙어 있습니다", hook: "얼마 버냐보다 얼마면 사느냐죠", angle: "숫자", empathy: "연봉이 올라도 자유는 멀게 느껴지죠", points: ["나가는 돈이 클수록 못 그만둡니다", "자유의 가격은 내 한 달 생활비죠", "한 달 최소 생활비를 계산해 보세요"], save: "이번 주말 삼십 분만 계산하세요", angleNote: "현금흐름(돈) × 통제감 × 자유의 단위 계산", moneyAnchor: "현금흐름", psychologyAnchor: "통제감", successAnchor: "장기 행동", visualMetaphor: "지출 줄이 짧아질수록 열리는 문" },
+    { slug: "unseen-savings", title: "자랑 못 한 저축만 끝까지 내 편으로 남습니다", hook: "좋아요 없는 돈이 이자를 받습니다", angle: "심리", empathy: "저축은 아무도 칭찬해 주지 않죠", points: ["인정받는 소비가 저축보다 달콤해요", "박수는 순간이고 잔액은 남습니다", "지출 하나를 아무도 모르게 이체로"], save: "다음 월급날 조용히 실행해 보세요", angleNote: "자산(돈) × 체면 × 보이지 않는 축적", moneyAnchor: "자산", psychologyAnchor: "체면", successAnchor: "보이지 않는 축적", visualMetaphor: "어디에도 올리지 않은 통장 화면" },
+    { slug: "ready-money-luck", title: "기회가 안 보였던 건 잔액이 없어서였습니다", hook: "여윳돈이 없으면 기회도 위험해 보여요", angle: "반전", empathy: "돈 때문에 흘려보낸 기회가 있죠", points: ["잔액이 없으면 시야가 좁아집니다", "여윳돈은 운을 잡는 손입니다", "기회 계좌라는 통장을 만들어 보세요"], save: "다음 월급날 기회 계좌부터 만드세요", angleNote: "잔액(돈) × 통제감 × 기회 대비 축적", moneyAnchor: "잔액", psychologyAnchor: "통제감", successAnchor: "보이지 않는 축적", visualMetaphor: "기회라고 적힌 비어 있던 통장" },
+    // ── G. 결제 구조의 심리 ──
+    { slug: "default-beats-will", title: "돈 모으는 사람은 참는 대신 자동이체를 잠급니다", hook: "성공하는 사람은 결심을 안 믿습니다", angle: "반전", empathy: "결심은 매달 하는데 결과는 같죠", points: ["의지는 소모품이라 월말엔 바닥나요", "이기는 건 성실함이 아니라 설정이죠", "저축을 첫 자동이체 순서로 올리세요"], save: "다음 월급날 전에 순서를 바꾸세요", angleNote: "자동이체(돈) × 지연만족 실패 × 시스템 설계", moneyAnchor: "자동이체", psychologyAnchor: "지연만족 실패", successAnchor: "매일의 선택 구조", visualMetaphor: "맨 위로 올라간 저축 이체 줄" },
+    { slug: "subscribe-identity", title: "해지 못 하는 구독엔 당신의 로망이 걸려 있습니다", hook: "해지 앞에서 아까운 건 돈이 아니죠", angle: "심리", empathy: "안 쓰는데 해지가 망설여지죠", points: ["구독엔 되고 싶은 내가 걸려 있어요", "결제를 멈춰도 나는 줄지 않습니다", "정체성 결제엔 이름을 붙여 보세요"], save: "다음 결제 알림이 오면 여세요", angleNote: "구독(돈) × 자기합리화 × 반복 결제 정체성", moneyAnchor: "구독", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "안 쓰는데 매달 뜨는 결제 알림" },
+    { slug: "numb-small-auto", title: "몇천 원 자동결제가 당신의 돈 감각을 잠재웁니다", hook: "금액이 아니라 무감각이 문제입니다", angle: "반전", empathy: "몇천 원쯤이야 하고 넘긴 게 여럿이죠", points: ["반복 결제는 지출 감각을 마취시켜요", "무감각 습관은 큰돈에도 옮습니다", "하나를 수동으로 바꿔 감각을 깨우세요"], save: "다음 결제일 전에 하나만 바꾸세요", angleNote: "구독(돈) × 통제감 × 무감각 반복 패턴", moneyAnchor: "구독", psychologyAnchor: "통제감", successAnchor: "반복 패턴", visualMetaphor: "매달 조용히 지나가는 소액 결제 줄" },
+    { slug: "easy-pay-cost", title: "결제가 쉬워진 만큼 당신 돈도 쉽게 나갑니다", hook: "간편한 결제, 누구를 위한 걸까요", angle: "반전", empathy: "손가락 하나로 끝나 쓴 느낌이 없죠", points: ["마찰 없는 결제는 고민 틈을 없애요", "불편함은 사실 공짜 브레이크였죠", "큰 금액은 일부러 불편하게 내세요"], save: "오늘 밤 간편결제 설정을 여세요", angleNote: "소비(돈) × 지연만족 실패 × 결제 마찰 설계", moneyAnchor: "소비", psychologyAnchor: "지연만족 실패", successAnchor: "매일의 선택 구조", visualMetaphor: "원클릭 버튼과 사라지는 고민 시간" },
+    { slug: "alert-off-spend-up", title: "잔액 알림을 끈 날부터 지출이 늘고 있습니다", hook: "불편한 알림이 제일 싼 관리비죠", angle: "심리", empathy: "알림이 스트레스라 꺼 버렸죠", points: ["싫은 숫자를 피하면 감각이 무뎌져요", "불안이 아니라 정보를 끈 겁니다", "결제 알림 하나만 다시 켜 보세요"], save: "오늘 밤 알림 설정을 다시 여세요", angleNote: "잔액(돈) × 불안 회피 × 정보 습관", moneyAnchor: "잔액", psychologyAnchor: "불안", successAnchor: "매일의 선택 구조", visualMetaphor: "다시 켜지는 잔액 알림 화면" },
+    { slug: "ledger-app-3days", title: "가계부가 3일 만에 끝난 건 의지 탓이 아닙니다", hook: "앱이 아니라 목표가 문제였습니다", angle: "심리", empathy: "설치와 삭제를 반복한 앱, 있죠", points: ["완벽한 기록 욕심이 시작을 무겁게 해요", "기록의 목적은 완벽이 아니라 목격", "하루 딱 한 건만 적기로 다시 시작"], save: "오늘 밤 제일 큰 지출 하나만 적으세요", angleNote: "소비(돈) × 자기합리화 × 지속 가능한 습관", moneyAnchor: "소비", psychologyAnchor: "자기합리화", successAnchor: "장기 행동", visualMetaphor: "다시 깔린 가계부 앱의 첫 화면" },
+    // ── H. 장기 행동과 축적 ──
+    { slug: "boring-gets-rich", title: "부자 되는 길이 지루해서 다들 중간에 내립니다", hook: "화려한 비법 말고 지루한 반복이죠", angle: "반전", empathy: "짜릿한 비법을 찾아다녔었죠", points: ["재미를 좇는 돈은 수업료를 냅니다", "지루함을 견디는 게 드문 재능이죠", "지루한 이체 하나를 길게 거세요"], save: "다음 월급날 장기 이체를 시작하세요", angleNote: "자동이체(돈) × 지연만족 실패 × 장기 반복", moneyAnchor: "자동이체", psychologyAnchor: "지연만족 실패", successAnchor: "장기 행동", visualMetaphor: "십 년째 이어지는 이체 기록 한 줄" },
+    { slug: "payment-is-vote", title: "결제할 때마다 당신은 미래의 나에게 투표합니다", hook: "지갑을 열 때마다 한 표를 씁니다", angle: "심리", empathy: "하루하루 결제는 사소해 보이죠", points: ["작은 선택이 소비 정체성이 됩니다", "잔액은 과거의 내가 투표한 결과죠", "어떤 나에게 투표할지 묻고 내세요"], save: "다음 결제 직전에 떠올려 보세요", angleNote: "소비(돈) × 자기합리화 × 매일의 선택 구조", moneyAnchor: "소비", psychologyAnchor: "자기합리화", successAnchor: "매일의 선택 구조", visualMetaphor: "투표함에 들어가는 카드 한 장" },
+    { slug: "restart-after-fail", title: "가계부가 무너진 다음 날, 진짜 시험이 시작됩니다", hook: "부끄러움이 통장을 두 번 망칩니다", angle: "심리", empathy: "한 번 무너지면 다 놓게 되죠", points: ["실패 후 회피가 손실을 두 배로 해요", "복구력이 계획보다 중요합니다", "무너진 다음 날 그냥 루틴을 반복"], save: "과소비한 다음 날 아침에 여세요", angleNote: "현금흐름(돈) × 자기합리화 × 복구 반복", moneyAnchor: "현금흐름", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "하루 무너진 뒤 다시 이어지는 기록" },
+    { slug: "waiting-for-jackpot", title: "한 방을 기다리는 동안 통장은 조용히 늙습니다", hook: "큰 기회 기다리다 축적을 버리죠", angle: "반전", empathy: "월급으론 어림없다는 말, 익숙하죠", points: ["한 방 심리는 오늘을 가볍게 만들어요", "역전은 대부분 반복의 끝에서 옵니다", "이번 달 반복할 한 가지를 정하세요"], save: "다음 월급날 반복 항목을 확인하세요", angleNote: "자산(돈) × 지연만족 실패 × 축적의 힘", moneyAnchor: "자산", psychologyAnchor: "지연만족 실패", successAnchor: "보이지 않는 축적", visualMetaphor: "매달 같은 날 찍히는 작은 이체 도장" },
+    { slug: "order-over-amount", title: "아껴도 안 모였다면 순서가 거꾸로였던 겁니다", hook: "얼마보다 뭘 먼저 하느냐입니다", angle: "반전", empathy: "아끼는데도 월말이 늘 빠듯하죠", points: ["남으면 저축은 실패하는 설계예요", "성공하는 지출엔 정해진 차례가 있죠", "저축과 상환을 맨 앞 순서로 옮기세요"], save: "다음 월급날 이체 순서를 바꾸세요", angleNote: "현금흐름(돈) × 지연만족 실패 × 순서 설계", moneyAnchor: "현금흐름", psychologyAnchor: "지연만족 실패", successAnchor: "매일의 선택 구조", visualMetaphor: "순서를 바꾼 이체 목록 화면" },
+    { slug: "spending-tells-story", title: "결제 내역이 당신의 속마음을 먼저 알고 있습니다", hook: "지출 내역은 솔직한 자서전입니다", angle: "심리", empathy: "내역에서 낯선 내가 보일 때 있죠", points: ["소비는 결핍과 욕망의 기록입니다", "돈 관리는 숫자가 아니라 이야기 수정", "지난달 반복된 문장을 찾아보세요"], save: "이번 주말 지난달 내역을 읽으세요", angleNote: "소비(돈) × 자기합리화 × 정체성 서사", moneyAnchor: "소비", psychologyAnchor: "자기합리화", successAnchor: "반복 패턴", visualMetaphor: "자서전처럼 넘겨 보는 결제 내역" },
   ],
   ai: [
     { slug: "ai-daily-brief", title: "AI로 아침 브리핑 만드는 법", hook: "출근길 5분을 비서로 바꿔보세요", angle: "꿀팁", points: ["관심 주제 목록 미리 만들기", "매일 같은 질문 틀 재사용하기", "요약은 세 줄로 제한하기"], save: "브리핑 질문 틀을 저장해 두세요" },
@@ -790,10 +854,42 @@ function readWizardGeneratedTopic(topicId: string): WizardGeneratedTopicRecord |
   return rec;
 }
 
+/** 카테고리별 최근 노출 slug 목록(오래된 것 → 최신 순). 파일이 없으면 빈 기록. */
+function readRecentShownSeedSlugs(): Record<string, string[]> {
+  const parsed = readAbsJson(WIZARD_TOPIC_RECENT_PATH) as {
+    schemaVersion?: string;
+    recentByCategory?: Record<string, unknown>;
+  } | null;
+  const raw = parsed?.recentByCategory;
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (Array.isArray(v)) out[k] = v.filter((s): s is string => typeof s === "string");
+  }
+  return out;
+}
+
+/** 최근 노출 기록 저장 — 실패해도 추천 자체는 계속한다(anti-repeat만 약해질 뿐). */
+function writeRecentShownSeedSlugs(map: Record<string, string[]>): void {
+  try {
+    mkdirSync(dirname(WIZARD_TOPIC_RECENT_PATH), { recursive: true });
+    writeFileSync(
+      WIZARD_TOPIC_RECENT_PATH,
+      JSON.stringify({ schemaVersion: "wizard_topic_recent_shown_v1", recentByCategory: map }, null, 2),
+      "utf8",
+    );
+  } catch {
+    // no-op
+  }
+}
+
 /**
- * 클릭마다 새 주제 묶음을 만든다: 선택 카테고리 bank에서 무작위 부분집합+순서.
+ * 클릭마다 새 주제 묶음을 만든다. 단순 셔플이 아니라 anti-repeat:
+ * 최근에 보여준 시드(창 크기 = pool - batch)를 후보에서 빼고 뽑아서,
+ * pool이 batch의 2배 이상이면 연속 두 배치는 겹치지 않는다
+ * (finance 48개 기준 연속 5회 클릭 = 45개 전부 서로 다른 주제).
  * 생성된 주제는 레포 밖 카탈로그 파일에 누적 저장되어, 이후 대본/음성/영상 단계가
- * topicId만으로 같은 주제 구조를 되찾을 수 있다. 외부 API 호출 없음.
+ * topicId만으로 같은 주제 구조를 되찾을 수 있다. 외부 API/LLM 호출 없음.
  */
 export function generateWizardTopicBatch(
   category: WizardCategoryId,
@@ -801,13 +897,30 @@ export function generateWizardTopicBatch(
   const pool = TOPIC_BANK[category];
   if (!pool || pool.length === 0) return null;
 
-  // Fisher–Yates 셔플 후 앞에서 batch size만큼 자른다.
-  const shuffled = [...pool];
+  // 1) 최근 노출 제외 — 남은 후보가 batch보다 적으면 오래된 노출부터 후보로 복귀.
+  const recentMap = readRecentShownSeedSlugs();
+  const recent = recentMap[category] ?? [];
+  const recentSet = new Set(recent);
+  const candidates = pool.filter((s) => !recentSet.has(s.slug));
+  for (const slug of recent) {
+    if (candidates.length >= WIZARD_TOPIC_BATCH_SIZE) break;
+    const seed = pool.find((s) => s.slug === slug);
+    if (seed && !candidates.includes(seed)) candidates.push(seed);
+  }
+
+  // 2) Fisher–Yates 셔플 후 앞에서 batch size만큼 자른다.
+  const shuffled = [...candidates];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   const picked = shuffled.slice(0, Math.min(WIZARD_TOPIC_BATCH_SIZE, shuffled.length));
+
+  // 3) 최근 노출 창 갱신 — 창 크기 pool.length - WIZARD_TOPIC_BATCH_SIZE 를 넘는 오래된 기록은 버린다.
+  const pickedSlugs = new Set(picked.map((p) => p.slug));
+  const windowSize = Math.max(0, pool.length - WIZARD_TOPIC_BATCH_SIZE);
+  recentMap[category] = [...recent.filter((s) => !pickedSlugs.has(s)), ...picked.map((p) => p.slug)].slice(-windowSize);
+  writeRecentShownSeedSlugs(recentMap);
 
   const records: WizardGeneratedTopicRecord[] = picked.map((seed) => ({
     ...seed,
@@ -837,7 +950,8 @@ export function generateWizardTopicBatch(
       topicId: r.topicId,
       title: r.title,
       hook: r.hook,
-      reason: `${CATEGORY_LABELS[category]} · ${r.angle}형 훅`,
+      // 프리미엄 시드는 돈+심리+행동 구조 설명(angleNote)을 추천 이유로 그대로 보여준다.
+      reason: r.angleNote ?? `${CATEGORY_LABELS[category]} · ${r.angle}형 훅`,
       scriptReady: true, // 대본 생성에 필요한 구조(title/hook/points/save)를 전부 갖는다.
       recommended: false,
       category,
@@ -878,26 +992,114 @@ function estimateScores(seed: WizardTopicSeed): { hookScore: number; clarityScor
   return { hookScore: Math.min(95, hook), clarityScore: Math.min(95, clarity) };
 }
 
-/** 생성 주제 레코드 → 대본(WizardScriptPreview 동일 구조). topicId가 같으면 항상 같은 대본. */
+/** 문장 끝에 마침표가 없으면 붙인다(낭독문 연결용). */
+function endSentence(s: string): string {
+  const t = s.trim();
+  return /[.!?…]$/.test(t) ? t : `${t}.`;
+}
+
+/** 장면 플랜 1칸 — 골든 샘플 6단계(후킹→공감→심리→반전→행동→저장)에 1:1 대응. */
+export type WizardScriptScene = {
+  id: "hook" | "empathy" | "psychology" | "twist" | "action" | "save";
+  label: string;
+  narration: string;
+  captionText: string;
+  visualCue: string; // 이 장면이 어떤 그림/시각 증거로 보여야 하는지(골든 샘플: 이미지가 스토리의 증거)
+};
+
+/**
+ * 골든 샘플 6단계 장면 플랜을 만든다. 각 장면은 자막 + 시각 증거(visualCue)를 갖는다.
+ * (절대규칙: 이미지가 caption 없이도 주제를 전달해야 하고, 카드/타이포는 renderer가 얹는다.)
+ */
+function buildScenePlan(a: {
+  hook: string;
+  empathy: string;
+  psych: string;
+  twist: string;
+  action: string;
+  save: string;
+  visualMetaphor?: string;
+  psychologyAnchor?: string;
+  successAnchor?: string;
+}): WizardScriptScene[] {
+  return [
+    { id: "hook", label: "1. 후킹", narration: a.hook, captionText: a.hook, visualCue: `${a.visualMetaphor ?? "주제 핵심 오브젝트"} + 큰 훅 카드(첫 2초)` },
+    { id: "empathy", label: "2. 공감", narration: a.empathy, captionText: a.empathy, visualCue: "시청자가 '내 얘기'라고 느낄 일상 재현 컷" },
+    { id: "psychology", label: "3. 심리 원인", narration: a.psych, captionText: a.psych, visualCue: `심리가 드러나는 클로즈업 (키워드: ${a.psychologyAnchor ?? "심리"})` },
+    { id: "twist", label: "4. 반전", narration: a.twist, captionText: a.twist, visualCue: "앞 장면과 반대 구도의 대비 컷 — 착시가 깨지는 순간" },
+    { id: "action", label: "5. 행동 전환", narration: a.action, captionText: a.action, visualCue: `손이 실제로 실행하는 장면 (키워드: ${a.successAnchor ?? "행동"})` },
+    { id: "save", label: "6. 저장 CTA", narration: a.save, captionText: a.save, visualCue: "핵심 문장 타이포 카드 + 저장 유도" },
+  ];
+}
+
+/** 골든 샘플 계열 자가 점검 결과(참고용 boolean — 통과 못 해도 차단하지 않고 표시만). */
+export type WizardGoldenSampleChecks = {
+  selfRelevantHook: boolean; // 훅이 '내 얘기'로 읽히는가
+  hasCausalBridges: boolean; // 문제→원인→반전→행동 사이 다리 문장이 있는가
+  concreteActionWithTiming: boolean; // 행동 제안에 실행 시점이 있는가
+  captionsWithinLimit: boolean; // 자막이 화면 길이(22자) 안인가
+};
+
+/**
+ * 생성 주제 레코드 → 대본(WizardScriptPreview 동일 구조). topicId가 같으면 항상 같은 대본.
+ *
+ * 프리미엄 시드(empathy 보유)는 골든 샘플 인과 흐름으로 낭독문을 만든다:
+ * 후킹 → 공감(문제) → [다리: 왜 그럴까요?] → 심리 원인 → [다리: 진짜 문제는 따로]
+ * → 반전 → [다리: 오늘 할 일은 하나] → 행동 전환 → 저장 CTA.
+ * "첫째/둘째/셋째" 나열형 문구를 쓰지 않는다. 일반 시드는 기존 나열형 구성을 유지한다.
+ */
 function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): WizardScriptPreview {
-  const curiosity = ANGLE_CURIOSITY[rec.angle] ?? ANGLE_CURIOSITY["꿀팁"];
-  const twist = ANGLE_TWIST[rec.angle] ?? ANGLE_TWIST["꿀팁"];
   const [p1, p2, p3] = rec.points;
-  const fullVoiceover =
-    `${rec.hook} ${curiosity} ` +
-    `첫째, ${p1}. 둘째, ${p2}. 셋째, ${p3}. ` +
-    `${twist} ${rec.save}.`;
+  const isPremium = typeof rec.empathy === "string" && rec.empathy.trim().length > 0;
+  const curiosity = isPremium ? rec.empathy!.trim() : (ANGLE_CURIOSITY[rec.angle] ?? ANGLE_CURIOSITY["꿀팁"]);
+  // 프리미엄은 points[1]이 반전 문장이므로 twist 슬롯에도 그 문장을 쓴다(대본 구조 표기용).
+  const twist = isPremium ? p2 : (ANGLE_TWIST[rec.angle] ?? ANGLE_TWIST["꿀팁"]);
+  // 인과 다리 문장(골든 샘플: 단계 사이 bridge 없으면 reject) — 프리미엄 낭독문에 고정 삽입.
+  const fullVoiceover = isPremium
+    ? [
+        endSentence(rec.hook),
+        endSentence(curiosity),
+        "왜 그럴까요?",
+        endSentence(p1),
+        "그런데 진짜 문제는 따로 있습니다.",
+        endSentence(p2),
+        "그래서 오늘 할 일은 하나입니다.",
+        endSentence(p3),
+        endSentence(rec.save),
+      ].join(" ")
+    : `${rec.hook} ${curiosity} 첫째, ${p1}. 둘째, ${p2}. 셋째, ${p3}. ${twist} ${rec.save}.`;
   const { hookScore, clarityScore } = estimateScores(rec);
+  const captionLines = [rec.hook, curiosity, p1, p2, p3, rec.save];
   return {
     topicId: rec.topicId,
     title: rec.title,
     hook: rec.hook,
+    hookLine: rec.hook,
     curiosity,
     points: [...rec.points],
     twist,
     action: rec.save,
-    captionLines: [rec.hook, curiosity, p1, p2, p3, rec.save],
+    captionLines,
     fullVoiceover,
+    scenes: buildScenePlan({
+      hook: rec.hook,
+      empathy: curiosity,
+      psych: p1,
+      twist: p2,
+      action: p3,
+      save: rec.save,
+      visualMetaphor: rec.visualMetaphor,
+      psychologyAnchor: rec.psychologyAnchor,
+      successAnchor: rec.successAnchor,
+    }),
+    captionFirstLineHook: rec.hook,
+    uploadCaptionDraft: `${rec.hook}\n${curiosity}\n\n${p2}\n${p3}\n\n${rec.save}`,
+    goldenSampleChecks: {
+      selfRelevantHook: /(나|내 |내가|당신|우리)/.test(`${rec.title} ${rec.hook} ${curiosity}`),
+      hasCausalBridges: isPremium,
+      concreteActionWithTiming: /(월급|결제|오늘|이번 주|주말|밤|아침|다음)/.test(rec.save),
+      captionsWithinLimit: captionLines.every((c) => c.length <= 22),
+    },
     hookScore,
     clarityScore,
   };
@@ -907,12 +1109,21 @@ export type WizardScriptPreview = {
   topicId: string;
   title: string;
   hook: string;
+  /** 첫 2초 훅(=hook, UI 표기용 명시 필드) */
+  hookLine: string;
   curiosity: string;
   points: string[];
   twist: string;
   action: string;
   captionLines: string[];
   fullVoiceover: string;
+  /** 골든 샘플 6단계 장면/자막 플랜 */
+  scenes: WizardScriptScene[];
+  /** 업로드 caption 첫 줄(훅) */
+  captionFirstLineHook: string;
+  /** 업로드용 설명 초안 */
+  uploadCaptionDraft: string;
+  goldenSampleChecks: WizardGoldenSampleChecks;
   hookScore: number | null;
   clarityScore: number | null;
 };
@@ -949,16 +1160,39 @@ export function readScriptPreview(topicId: string): WizardScriptPreview | null {
   const cand = (t.candidates ?? []).find((c) => c.candidateId === t.selectedCandidateId) ?? (t.candidates ?? [])[0];
   const s = cand?.script;
   if (!s?.topic) return null;
+  const hook = cand?.selectedHookText ?? s.hook ?? "";
+  const points = s.points ?? [];
+  const captionLines = s.caption_lines ?? [];
+  const action = s.action_or_save_reason ?? "";
+  const fullVoiceover = s.full_voiceover ?? "";
   return {
     topicId,
     title: s.topic,
-    hook: cand?.selectedHookText ?? s.hook ?? "",
+    hook,
+    hookLine: hook,
     curiosity: s.curiosity ?? "",
-    points: s.points ?? [],
+    points,
     twist: s.twist_or_reframe ?? "",
-    action: s.action_or_save_reason ?? "",
-    captionLines: s.caption_lines ?? [],
-    fullVoiceover: s.full_voiceover ?? "",
+    action,
+    captionLines,
+    fullVoiceover,
+    // 컴파일 fixture 대본도 같은 6단계 장면 플랜으로 노출한다(시각 큐는 일반형).
+    scenes: buildScenePlan({
+      hook,
+      empathy: s.curiosity ?? "",
+      psych: points[0] ?? "",
+      twist: s.twist_or_reframe ?? points[1] ?? "",
+      action: points[2] ?? action,
+      save: action,
+    }),
+    captionFirstLineHook: hook,
+    uploadCaptionDraft: `${hook}\n\n${fullVoiceover}`.trim(),
+    goldenSampleChecks: {
+      selfRelevantHook: /(나|내 |내가|당신|우리)/.test(`${s.topic} ${hook}`),
+      hasCausalBridges: !/첫째|둘째|셋째/.test(fullVoiceover),
+      concreteActionWithTiming: /(월급|결제|오늘|이번 주|주말|밤|아침|다음)/.test(action),
+      captionsWithinLimit: captionLines.every((c) => c.length <= 22),
+    },
     hookScore: cand?.scores?.hook_score ?? null,
     clarityScore: cand?.scores?.script_clarity_score ?? null,
   };

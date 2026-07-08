@@ -196,6 +196,126 @@ check("route validates category against WIZARD_CATEGORY_IDS enum", /WIZARD_CATEG
 check("wizard resets downstream steps when topic changes", /resetDownstream/.test(wizardCode));
 check("wizard offers refresh (다른 주제 보기)", wizardSrc.includes("다른 주제 보기"));
 
+// ── 프리미엄 재테크(돈·심리) 주제 엔진 — 품질/차단/anti-repeat 계약 ──────────
+// task: owner-web-premium-money-psychology-topic-engine-fix-v2
+const finStart = helperSrc.indexOf("finance: [");
+const finEnd = helperSrc.indexOf("ai: [", finStart);
+const financeSrc = finStart !== -1 && finEnd > finStart ? helperSrc.slice(finStart, finEnd) : "";
+check("finance bank section found in helper", financeSrc.length > 0);
+
+const finSeedCount = (financeSrc.match(/slug:\s*"/g) ?? []).length;
+check("finance premium bank has at least 45 seeds", finSeedCount >= 45, `found ${finSeedCount}`);
+
+// 약한 기준선 5개 title — active 추천으로 등장 금지(helper 전체에서 금지)
+for (const weak of [
+  "월급이 사라지는 진짜 이유",
+  "돈이 모이지 않는 사람의 공통 습관",
+  "성공하는 사람은 지출을 이렇게 본다",
+  "가난해지는 소비 패턴",
+  "돈 불안이 사람을 망치는 방식",
+]) {
+  check(`weak-baseline title banned: ${weak}`, !helperSrc.includes(weak));
+}
+// 저품질 절약팁 키워드 — finance 시드 구간에서 금지
+for (const cheap of ["커피값", "티끌", "무지출", "통장 쪼개기", "카드 명세서", "고정비 다이어트", "짠테크", "지름신"]) {
+  check(`cheap saving-tip keyword banned in finance seeds: ${cheap}`, !financeSrc.includes(cheap));
+}
+
+// 4축 anchor(돈/심리/성공·습관/시각 메타포) + 공감/구조 설명 — 전 시드 보유
+for (const field of ["moneyAnchor:", "psychologyAnchor:", "successAnchor:", "visualMetaphor:", "empathy:", "angleNote:"]) {
+  const n = (financeSrc.match(new RegExp(field, "g")) ?? []).length;
+  check(`every finance seed carries ${field.replace(":", "")}`, n === finSeedCount, `${n}/${finSeedCount}`);
+}
+
+// finance 시드 라인 파싱(시드 1개 = 1줄 규약)
+const finSeedLines = financeSrc.split("\n").filter((l) => /slug:\s*"/.test(l));
+{
+  const titles = finSeedLines.map((l) => /title:\s*"([^"]+)"/.exec(l)?.[1] ?? "");
+  check("finance titles all unique", new Set(titles).size === titles.length && titles.every(Boolean));
+  const badLen = titles.filter((t) => t.length < 12 || t.length > 36);
+  check("finance titles are 12~36 chars (권장 18~34)", badLen.length === 0, badLen.join(" | "));
+}
+{
+  // 자막 계약: hook/empathy/points/save는 trimCaption(22자) 안에 들어가야 잘리지 않는다.
+  const overs = [];
+  for (const line of finSeedLines) {
+    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
+    const fields = [
+      ["hook", /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
+      ["empathy", /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
+      ["save", /save:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
+    ];
+    const pointsRaw = /points:\s*\[([^\]]+)\]/.exec(line)?.[1] ?? "";
+    [...pointsRaw.matchAll(/"([^"]+)"/g)].forEach((m, i) => fields.push([`p${i + 1}`, m[1]]));
+    for (const [f, v] of fields) if (v.length > 22) overs.push(`${slug}.${f}(${v.length})`);
+  }
+  check("finance caption slots (hook/empathy/points/save) ≤22 chars", overs.length === 0, overs.slice(0, 10).join(", "));
+}
+{
+  // 저장 CTA에 행동 시점(다음 월급날/결제 전/오늘 밤 등) 포함
+  const noTiming = finSeedLines.filter((l) => {
+    const save = /save:\s*"([^"]+)"/.exec(l)?.[1] ?? "";
+    return !/(월급|결제|오늘|이번 주|주말|밤|아침|다음)/.test(save);
+  });
+  check("finance save CTA includes 행동 시점", noTiming.length === 0, `${noTiming.length} seeds`);
+}
+
+// anti-repeat: 최근 노출 제외 창 — 순서만 바뀌는 셔플 금지
+check("helper persists recent-shown seeds outside repo", /wizard-topic-recent-shown\.json/.test(helperSrc) && /readRecentShownSeedSlugs/.test(helperCode) && /writeRecentShownSeedSlugs/.test(helperCode));
+check("batch excludes recently shown seeds", /!recentSet\.has\(s\.slug\)/.test(helperCode));
+check("recent window = pool - batch (연속 배치 무겹침 보장)", /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
+// pool ≥45 + 창(pool-batch) ⇒ 5회×9개 = 45개 전부 서로 다른 title(≥30) + 연속 배치 겹침 0 — 정적으로 보장
+check("finance 5-batch ≥30 unique titles statically guaranteed", finSeedCount >= 45 && /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
+
+// 프리미엄 대본 흐름: 후킹→공감(empathy)→[다리]→심리→[다리]→반전→[다리]→행동→저장
+check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.empathy/.test(helperCode));
+check(
+  "premium voiceover has causal bridges (골든 샘플: 단계 사이 다리 문장)",
+  helperCode.includes("왜 그럴까요?") && helperCode.includes("그런데 진짜 문제는 따로 있습니다.") && helperCode.includes("그래서 오늘 할 일은 하나입니다."),
+);
+{
+  // 나열형(첫째/둘째/셋째)은 비프리미엄 fallback 문자열 1곳에만 존재해야 한다.
+  // 프리미엄 낭독문은 endSentence(rec.hook) 배열 조립(브리지 포함)으로 만든다.
+  const listicleCount = (helperCode.match(/첫째, \$\{p1\}/g) ?? []).length;
+  check("listicle format confined to non-premium fallback (exactly 1)", listicleCount === 1, `found ${listicleCount}`);
+  check("premium voiceover built from sentence array (endSentence(rec.hook))", /endSentence\(rec\.hook\)\s*,/.test(helperCode));
+}
+
+// ── 골든 샘플급 대본 구조: 장면 플랜 + 확장 필드 (task: golden-sample-script-and-light-ui) ──
+check("helper exposes 6-step scene plan (buildScenePlan + scenes field)", /buildScenePlan/.test(helperSrc) && /scenes:\s*WizardScriptScene\[\]/.test(helperSrc));
+for (const sceneId of ['"hook"', '"empathy"', '"psychology"', '"twist"', '"action"', '"save"']) {
+  check(`scene plan has stage id ${sceneId}`, helperSrc.includes(`id: ${sceneId}`));
+}
+check("scene plan carries visualCue (장면성/시각 증거)", /visualCue:/.test(helperSrc));
+for (const field of ["hookLine", "captionFirstLineHook", "uploadCaptionDraft", "goldenSampleChecks"]) {
+  check(`script preview exposes ${field}`, helperSrc.includes(`${field}:`));
+}
+
+// ── 대본 결과 UI: 골든 샘플 섹션 노출 ─────────────────────────────────────────
+for (const label of ["첫 2초 훅", "전체 대본", "장면별 구성", "화면 자막", "업로드 문구 초안"]) {
+  check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
+}
+check("wizard renders scene plan rows (script.scenes map)", /script\.scenes/.test(wizardCode) && /visualCue/.test(wizardCode));
+
+// ── finance title 후킹 계약: 설명식 약한 패턴 금지 ────────────────────────────
+{
+  const titles = finSeedLines.map((l) => /title:\s*"([^"]+)"/.exec(l)?.[1] ?? "");
+  const weakEndings = titles.filter((t) => /(이유|공통점|방법|하는 법)$/.test(t));
+  check("finance titles do not end with 설명식 패턴(이유/공통점/방법)", weakEndings.length === 0, weakEndings.join(" | "));
+}
+
+// ── light 운영 UI 계약: 흰 배경 + 큰 글자, dark 테마 잔재 금지 ────────────────
+check("page uses light background (bg-slate-50)", /bg-slate-50/.test(pageSrc));
+check("wizard cards are white (bg-white)", /bg-white/.test(wizardSrc) && /bg-white/.test(panelSrc));
+check("main UI has no dark background remnants (bg-slate-900/950)", !/bg-slate-9\d\d/.test(wizardSrc) && !/bg-slate-9\d\d/.test(panelSrc) && !/bg-slate-9\d\d/.test(pageSrc));
+check("main UI body text is ≥14px (text-[15px]/text-base 사용, 11px 잔재 없음)", /text-\[15px\]|text-base/.test(wizardSrc) && !/text-\[11px\]|text-\[10px\]/.test(wizardSrc) && !/text-\[11px\]|text-\[10px\]/.test(panelSrc));
+
+// UI 문구: 개발자 용어 비노출 + 재테크팁 톤 노출
+check('user copy has no dev term "로컬 주제 은행"', !routeSrc.includes("로컬 주제 은행") && !wizardSrc.includes("로컬 주제 은행"));
+check("route topicRecommend copy is easy Korean (새 주제 N개를 만들었습니다)", routeSrc.includes("개를 만들었습니다"));
+check("wizard finance tone shows 돈·성공·심리·생활습관", wizardSrc.includes("돈·성공·심리·생활습관"));
+check("wizard shows topic structure line (t.reason)", /t\.reason/.test(wizardSrc));
+
 // ── 업로드 route 계약: 확인 게이트 + allowArm 단일 지점 + fail-closed ─────────
 check("route requires server-side upload confirmation gate", /UPLOAD_CONFIRMATION_REQUIRED/.test(routeSrc) && /confirmText\s*!==\s*UPLOAD_CONFIRM_TEXT/.test(routeCode));
 check('route confirm text constant is "업로드"', /UPLOAD_CONFIRM_TEXT\s*=\s*"업로드"/.test(routeSrc));
