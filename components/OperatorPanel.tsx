@@ -31,7 +31,8 @@ const INITIAL: PanelResult = { state: "idle", summary: "" };
 const PRODUCTION_NOTICE =
   "실제 영상 생성과 게시 준비는 Owner PC에서 pnpm dev로 연 로컬 화면에서 실행합니다. 배포 사이트는 상태 확인과 화면 검토용입니다.";
 
-const LOCKED_UPLOAD_NOTE = "실제 업로드는 별도 승인 후 활성화됩니다. 지금은 게시 전 점검까지만 가능합니다.";
+const UPLOAD_POINTER_NOTE =
+  "실제 업로드는 위 '자동 쇼츠 만들기' 마지막 단계에서 확인 절차(체크 2개 + '업로드' 입력)를 거쳐 실행합니다. 이 점검 화면에서는 업로드가 실행되지 않습니다.";
 
 // ── 상태 배지 ────────────────────────────────────────────────────────────────
 
@@ -266,8 +267,8 @@ export default function OperatorPanel() {
         </div>
       </Section>
 
-      {/* 5. 실제 업로드 — 잠금 */}
-      <div className="rounded-xl border border-slate-800/60 bg-slate-900/20 px-5 py-4 opacity-80">
+      {/* 5. 실제 업로드 — 이 점검 화면에서는 실행되지 않고, 위저드의 확인 게이트로 안내만 한다 */}
+      <div className="rounded-xl border border-slate-800/60 bg-slate-900/20 px-5 py-4 opacity-90">
         <div className="flex items-start gap-3">
           <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 bg-slate-800 text-slate-500">
             5
@@ -276,18 +277,10 @@ export default function OperatorPanel() {
             <div className="flex items-center gap-2 flex-wrap">
               <div className="font-semibold text-sm text-slate-400">실제 업로드</div>
               <span className="px-2 py-0.5 rounded border border-slate-700/50 bg-slate-800/60 text-slate-500 text-[11px] font-semibold">
-                잠김
+                위저드에서 실행
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{LOCKED_UPLOAD_NOTE}</p>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-800/40 text-slate-500 text-xs font-semibold cursor-not-allowed"
-            >
-              실제 업로드는 다음 승인 후 활성화
-            </button>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{UPLOAD_POINTER_NOTE}</p>
           </div>
         </div>
       </div>

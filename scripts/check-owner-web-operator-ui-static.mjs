@@ -22,7 +22,7 @@
  *  - components/OperatorPanel.tsx / app/money-shorts/page.tsx
  *      · 쉬운 한국어 버튼 문구 존재
  *      · 옛 어려운 문구 부재
- *      · 실제 업로드 버튼 disabled/잠김
+ *      · 점검 패널은 실제 업로드를 실행하지 않고 위저드 확인 게이트로 안내만 함
  *      · production/local 안내 문구 존재
  *
  * Exit 0 = all PASS. Exit 1 = at least one FAIL.
@@ -124,16 +124,46 @@ check(
   !/\bexecSync\s*\(/.test(helperCode) && !/(?<![.\w])exec\s*\(/.test(helperCode),
 );
 
-// ── helper: 명령 화이트리스트 / live 금지 ────────────────────────────────────
+// ── helper: 명령 화이트리스트 / live 게이트 계약 ─────────────────────────────
 check("helper hardcodes script whitelist", /SCRIPT_ENTRYPOINT|SCRIPT_ORCHESTRATOR|SCRIPT_FINAL_E2E/.test(helperCode));
-check("helper declares FORBIDDEN_ARG_TOKENS containing --arm", /FORBIDDEN_ARG_TOKENS[\s\S]{0,80}--arm/.test(helperCode));
 check("helper declares FORBIDDEN_ARG_TOKENS containing --live", /FORBIDDEN_ARG_TOKENS[\s\S]{0,80}--live/.test(helperCode));
 check("helper re-checks forbidden args before spawn", /for\s*\(const\s+forbidden\s+of\s+FORBIDDEN_ARG_TOKENS\)/.test(helperCode));
+// ── --arm 게이트 계약: 실게시 인자는 actualUpload 분기 + allowArm 실행 옵션에서만 ──
 {
-  // buildOperatorCommand가 어떤 분기에서도 "--arm"을 args에 넣지 않아야 한다.
-  const armInArgs = /args\s*:\s*\[[^\]]*--arm/.test(helperCode) || /push\(\s*["']--arm["']/.test(helperCode);
-  check("helper never puts --arm into any command args", !armInArgs);
+  // "--arm" 리터럴은 ARM_ARG_TOKEN 선언 딱 한 곳에만 존재해야 한다.
+  const armLiteralCount = (helperCode.match(/"--arm"/g) ?? []).length;
+  check("helper has exactly one --arm literal (ARM_ARG_TOKEN declaration only)", armLiteralCount === 1);
+  check("helper declares ARM_ARG_TOKEN constant", /const\s+ARM_ARG_TOKEN\s*=\s*"--arm"/.test(helperCode));
+  // buildOperatorCommand args 배열에 raw "--arm" 리터럴을 직접 넣는 분기는 없어야 한다.
+  const armInArgs = /args\s*:\s*\[[^\]]*"--arm"/.test(helperCode) || /push\(\s*["']--arm["']/.test(helperCode);
+  check("helper never puts a raw --arm literal into command args", !armInArgs);
+  // ARM_ARG_TOKEN이 args로 들어가는 곳(후행 콤마 = 인자 사용)은 정확히 1곳, actualUpload 분기 안이어야 한다.
+  {
+    const armUsageCount = (helperCode.match(/ARM_ARG_TOKEN,/g) ?? []).length;
+    const caseStart = helperCode.indexOf('case "actualUpload"');
+    const nextCase = caseStart === -1 ? -1 : helperCode.indexOf('case "', caseStart + 10);
+    const caseBlock = caseStart === -1 ? "" : helperCode.slice(caseStart, nextCase === -1 ? undefined : nextCase);
+    check(
+      "helper attaches ARM_ARG_TOKEN only inside the actualUpload branch",
+      armUsageCount === 1 && caseBlock.includes("ARM_ARG_TOKEN,"),
+    );
+  }
+  // 실행 게이트: allowArm 옵션 없이 --arm이 오면 실행 자체를 거부해야 한다(이중 방어).
+  check(
+    "helper runOperatorScript blocks --arm unless allowArm option is true",
+    /arg\s*===\s*ARM_ARG_TOKEN\s*&&\s*opts\?\.allowArm\s*!==\s*true/.test(helperCode),
+  );
 }
+// 업로드 fail-closed 계약: 게시 전 점검 evidence 필수 + 이미 게시 콘텐츠 차단 + repo 밖 ledger.
+check("helper actualUpload requires preflight evidence (fail-closed)", /preflight_evidence_missing/.test(helperCode));
+check(
+  "helper blocks already-published evidence content ids (t1/t2)",
+  /BLOCKED_PUBLISHED_CONTENT_IDS/.test(helperCode) && /t1_lifestyle_inflation/.test(helperSrc) && /t2_salary_3days/.test(helperSrc),
+);
+check(
+  "helper publish ledger path is a fixed repo-outside C:\\tmp path",
+  /WIZARD_PUBLISH_LEDGER_PATH\s*=[\s\S]{0,40}"C:\\\\tmp\\\\money-shorts-os\\\\/.test(helperSrc),
+);
 check("helper does not import @vercel/blob / googleapis", !/@vercel\/blob/.test(helperCode) && !/googleapis/.test(helperCode));
 check("helper makes no fetch call", !/\bfetch\s*\(/.test(helperCode));
 check("helper runs no ffmpeg/ffprobe", !/ffmpeg|ffprobe/.test(helperCode));
@@ -165,7 +195,6 @@ const REQUIRED_UI_PHRASES = [
   "업로드 키 확인",
   "재업로드 차단 확인",
   "게시 전 점검",
-  "실제 업로드는 다음 승인 후 활성화",
   "새 쇼츠 만들기",
   "AI 쇼츠 자동화",
 ];
@@ -188,12 +217,10 @@ for (const phrase of FORBIDDEN_UI_PHRASES) {
   check(`UI must not contain hard phrase: ${phrase}`, !re.test(uiText), "found in page/panel");
 }
 
-// ── UI: 실제 업로드 버튼 잠금 ────────────────────────────────────────────────
-check("UI actual-upload button is disabled", /disabled\s*\n?\s*aria-disabled=/.test(panelSrc) || /<button[^>]*\sdisabled\b[\s\S]{0,300}실제 업로드는 다음 승인 후 활성화/.test(panelSrc));
-check("UI actual-upload button has cursor-not-allowed", /cursor-not-allowed/.test(panelSrc));
-check("UI shows locked badge for actual upload", /잠김/.test(panelSrc));
-check("UI states actual upload requires separate approval", /실제 업로드는 별도 승인 후 활성화됩니다/.test(panelSrc));
-check("panel never calls action 'publish'/'arm'", !/--arm/.test(panelCode) && !/"publish"/.test(panelCode));
+// ── UI: 점검 패널의 실제 업로드 섹션 — 실행 없음, 위저드 확인 게이트로 안내만 ──
+check("panel upload section points to the wizard confirm gate", /자동 쇼츠 만들기[\s\S]{0,120}확인 절차/.test(panelSrc));
+check("panel states it never executes upload itself", /이 점검 화면에서는 업로드가 실행되지 않습니다/.test(panelSrc));
+check("panel never calls upload actions", !/actualUpload/.test(panelCode) && !/--arm/.test(panelCode) && !/"publish"/.test(panelCode));
 
 // ── UI: production/local 안내 문구 ───────────────────────────────────────────
 check(

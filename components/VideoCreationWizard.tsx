@@ -4,10 +4,12 @@
  * VideoCreationWizard — 자동 쇼츠 만들기 위저드 (Owner용 메인 흐름).
  *
  * task: owner-one-click-video-creation-ui-v1
+ * task: owner-web-auto-topic-refresh-and-upload-button-v1
  *
- * 카테고리 → 주제 추천 → 대본 → 음성 → 영상 → 미리보기 → 게시 전 점검 → (실제 업로드 잠금)
+ * 카테고리 → 새 주제 추천 → 대본 → 음성 → 영상 → 미리보기 → 게시 전 점검 → 실제 업로드
  * 순서를 버튼으로 진행한다. 모든 실행은 /api/money-shorts/operator 의 고정 action enum을
- * 통해서만 이뤄지고, 이 화면은 실제 업로드/게시를 절대 실행하지 않는다.
+ * 통해서만 이뤄진다. 실제 업로드는 마지막 단계에서만, 시안 영상 + 게시 전 점검 통과 +
+ * Owner 명시 확인(체크 2개 + "업로드" 입력)을 모두 만족해야 실행된다.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -32,6 +34,8 @@ type WizardTopic = {
   reason: string;
   scriptReady: boolean;
   recommended: boolean;
+  category?: string;
+  angle?: string;
 };
 
 type WizardScript = {
@@ -56,17 +60,17 @@ type WizardVideo = {
   topicTitle: string | null;
 };
 
-// ── 카테고리 (프로젝트 목표 8개) ────────────────────────────────────────────────
+// ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
 
-const CATEGORIES: Array<{ id: string; label: string; ready: boolean }> = [
-  { id: "finance", label: "재테크팁", ready: true },
-  { id: "ai", label: "AI생성활용", ready: false },
-  { id: "meme", label: "밈&짤", ready: false },
-  { id: "news", label: "충격뉴스", ready: false },
-  { id: "tmi", label: "TMI지식", ready: false },
-  { id: "game", label: "게임클립", ready: false },
-  { id: "animal", label: "귀여운동물", ready: false },
-  { id: "celeb", label: "셀럽엔터", ready: false },
+const CATEGORIES: Array<{ id: string; label: string }> = [
+  { id: "finance", label: "재테크팁" },
+  { id: "ai", label: "AI생성활용" },
+  { id: "meme", label: "밈&짤" },
+  { id: "news", label: "충격뉴스" },
+  { id: "tmi", label: "TMI지식" },
+  { id: "game", label: "게임클립" },
+  { id: "animal", label: "귀여운동물" },
+  { id: "celeb", label: "셀럽엔터" },
 ];
 
 // ── API 호출 ─────────────────────────────────────────────────────────────────
@@ -188,6 +192,13 @@ export default function VideoCreationWizard() {
   const [preflightState, setPreflightState] = useState<RunState>("idle");
   const [preflightResult, setPreflightResult] = useState<OperatorResult | null>(null);
 
+  // 실제 업로드 확인 게이트 상태 — 서버도 같은 값을 다시 검증한다.
+  const [uploadState, setUploadState] = useState<RunState>("idle");
+  const [uploadResult, setUploadResult] = useState<OperatorResult | null>(null);
+  const [confirmReviewed, setConfirmReviewed] = useState(false);
+  const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
   // 화면이 로컬 실행인지 배포 사이트인지 확인한다(부작용 없는 상태 조회).
   useEffect(() => {
     let cancelled = false;
@@ -204,34 +215,88 @@ export default function VideoCreationWizard() {
     };
   }, []);
 
-  const anyRunning = [topicState, scriptState, voiceState, videoState, previewState, preflightState].includes(
+  const anyRunning = [topicState, scriptState, voiceState, videoState, previewState, preflightState, uploadState].includes(
     "running",
   );
   const runnable = localDev === true && !anyRunning;
 
   const selectedTopic = topics.find((t) => t.topicId === selectedTopicId) ?? null;
 
+  // 업로드 게이트 파생 상태 — 시안 영상 → 게시 전 점검 통과 → 명시 확인 순서를 강제한다.
+  const videoDone = videoState === "success" || previewVideo?.exists === true;
+  const preflightDone = videoDone && preflightState === "success";
+  const uploadEnabled =
+    runnable &&
+    selectedTopicId != null &&
+    preflightDone &&
+    confirmReviewed &&
+    confirmPublish &&
+    confirmText.trim() === "업로드" &&
+    uploadState !== "success";
+
+  // 주제(또는 카테고리)가 바뀌면 이후 단계 결과를 전부 리셋한다 — 다른 주제의 결과가 섞이지 않게.
+  const resetDownstream = useCallback(() => {
+    setScriptState("idle");
+    setScriptResult(null);
+    setScript(null);
+    setVoiceState("idle");
+    setVoiceResult(null);
+    setVideoState("idle");
+    setVideoResult(null);
+    setPreviewState("idle");
+    setPreviewResult(null);
+    setPreviewVideo(null);
+    setPreflightState("idle");
+    setPreflightResult(null);
+    setUploadState("idle");
+    setUploadResult(null);
+    setConfirmReviewed(false);
+    setConfirmPublish(false);
+    setConfirmText("");
+  }, []);
+
+  const selectCategory = useCallback(
+    (id: string) => {
+      setCategory(id);
+      setTopics([]);
+      setSelectedTopicId(null);
+      setTopicState("idle");
+      setTopicResult(null);
+      resetDownstream();
+    },
+    [resetDownstream],
+  );
+
+  const selectTopic = useCallback(
+    (topicId: string) => {
+      setSelectedTopicId(topicId);
+      resetDownstream();
+    },
+    [resetDownstream],
+  );
+
   // ── 단계 실행 핸들러 ─────────────────────────────────────────────────────────
 
   const runTopicRecommend = useCallback(async () => {
+    if (!category) return;
     setTopicState("running");
     setTopicResult(null);
     try {
-      const r = await postAction("topicRecommend");
+      const r = await postAction("topicRecommend", { category });
       setTopicResult(r);
       setTopicState(r.status === "success" ? "success" : r.status);
       const list = (r.raw as { topics?: WizardTopic[] } | undefined)?.topics;
       if (r.status === "success" && Array.isArray(list)) {
         setTopics(list);
-        // 대본까지 준비된 주제를 기본 선택해 전체 흐름이 바로 이어지게 한다.
-        const firstReady = list.find((t) => t.scriptReady);
-        setSelectedTopicId((prev) => prev ?? firstReady?.topicId ?? list[0]?.topicId ?? null);
+        // 새 묶음이 오면 첫 주제를 자동 선택하고 이전 주제의 결과는 리셋한다.
+        setSelectedTopicId(list[0]?.topicId ?? null);
+        resetDownstream();
       }
     } catch {
       setTopicState("error");
       setTopicResult({ action: "topicRecommend", status: "error", summary: "주제 추천 요청에 실패했습니다." });
     }
-  }, []);
+  }, [category, resetDownstream]);
 
   const runScriptPreview = useCallback(async () => {
     if (!selectedTopicId) return;
@@ -251,17 +316,18 @@ export default function VideoCreationWizard() {
   }, [selectedTopicId]);
 
   const runVoiceSample = useCallback(async () => {
+    if (!selectedTopicId) return;
     setVoiceState("running");
     setVoiceResult(null);
     try {
-      const r = await postAction("voiceSample");
+      const r = await postAction("voiceSample", { topicId: selectedTopicId });
       setVoiceResult(r);
       setVoiceState(r.status === "success" ? "success" : r.status);
     } catch {
       setVoiceState("error");
       setVoiceResult({ action: "voiceSample", status: "error", summary: "음성 시안 요청에 실패했습니다." });
     }
-  }, []);
+  }, [selectedTopicId]);
 
   const runVideoCreate = useCallback(async () => {
     if (!selectedTopicId) return;
@@ -299,17 +365,37 @@ export default function VideoCreationWizard() {
   }, [selectedTopicId]);
 
   const runPreflight = useCallback(async () => {
+    if (!selectedTopicId) return;
     setPreflightState("running");
     setPreflightResult(null);
     try {
-      const r = await postAction("readyPreflight");
+      const r = await postAction("wizardPreflight", { topicId: selectedTopicId });
       setPreflightResult(r);
       setPreflightState(r.status === "success" ? "success" : r.status);
     } catch {
       setPreflightState("error");
-      setPreflightResult({ action: "readyPreflight", status: "error", summary: "게시 전 점검 요청에 실패했습니다." });
+      setPreflightResult({ action: "wizardPreflight", status: "error", summary: "게시 전 점검 요청에 실패했습니다." });
     }
-  }, []);
+  }, [selectedTopicId]);
+
+  const runActualUpload = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setUploadState("running");
+    setUploadResult(null);
+    try {
+      const r = await postAction("actualUpload", {
+        topicId: selectedTopicId,
+        confirmReviewed,
+        confirmPublish,
+        confirmText: confirmText.trim(),
+      });
+      setUploadResult(r);
+      setUploadState(r.status === "success" ? "success" : r.status);
+    } catch {
+      setUploadState("error");
+      setUploadResult({ action: "actualUpload", status: "error", summary: "업로드 요청에 실패했습니다." });
+    }
+  }, [selectedTopicId, confirmReviewed, confirmPublish, confirmText]);
 
   // ── 렌더 ─────────────────────────────────────────────────────────────────────
 
@@ -318,12 +404,12 @@ export default function VideoCreationWizard() {
       <div className="mb-1 flex items-center gap-2 flex-wrap">
         <h2 className="text-base font-bold text-indigo-100">자동 쇼츠 만들기</h2>
         <span className="px-2 py-0.5 rounded bg-indigo-900/50 border border-indigo-700/50 text-indigo-300 text-[11px] font-semibold">
-          업로드 없이 안전하게
+          확인 전에는 업로드 없음
         </span>
       </div>
       <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-        여기가 새 쇼츠 만들기 시작점입니다. 1번부터 순서대로 누르면 시안 영상까지 만들어집니다. 실제 업로드는 마지막
-        단계에서 별도 승인 전까지 잠겨 있습니다.
+        여기가 새 쇼츠 만들기 시작점입니다. 1번부터 순서대로 누르면 시안 영상까지 만들어지고, 마지막 단계에서 확인
+        절차를 거쳐야만 실제 업로드가 실행됩니다.
       </p>
 
       {localDev === false ? (
@@ -343,7 +429,7 @@ export default function VideoCreationWizard() {
           num={1}
           title="카테고리 선택"
           state={category ? "success" : "idle"}
-          desc="지금은 재테크팁 엔진이 준비되어 있습니다. 나머지 카테고리는 준비 중입니다."
+          desc="어떤 종류의 쇼츠를 만들지 고르세요. 8개 카테고리 모두 주제 추천이 가능합니다."
         >
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.map((c) => {
@@ -352,34 +438,40 @@ export default function VideoCreationWizard() {
                 <button
                   key={c.id}
                   type="button"
-                  disabled={!c.ready}
-                  onClick={() => setCategory(c.id)}
+                  onClick={() => selectCategory(c.id)}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
                     selected
                       ? "border-indigo-500 bg-indigo-600 text-white"
-                      : c.ready
-                        ? "border-indigo-700/60 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/50"
-                        : "border-slate-800/60 bg-slate-900/30 text-slate-600 cursor-not-allowed"
+                      : "border-indigo-700/60 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/50"
                   }`}
                 >
                   {c.label}
-                  {!c.ready ? <span className="ml-1 text-[10px] text-slate-600">준비 중</span> : null}
                 </button>
               );
             })}
           </div>
         </StepCard>
 
-        {/* 2. 주제 추천 */}
+        {/* 2. 새 주제 추천 */}
         <StepCard
           num={2}
-          title="주제 추천"
+          title="새 주제 추천"
           state={topicState}
-          desc="검증해 둔 주제 후보를 보여줍니다. 마음에 드는 주제를 하나 고르세요."
+          desc="누를 때마다 새 주제를 추천합니다. 마음에 드는 주제를 고르면 아래 단계가 그 주제로 이어집니다."
         >
           <button type="button" className={RUN_BTN} disabled={!runnable || !category} onClick={runTopicRecommend}>
             주제 추천받기
           </button>
+          {topics.length > 0 ? (
+            <button
+              type="button"
+              className="ml-2 px-3.5 py-2 rounded-lg border border-slate-700/60 bg-slate-800/40 text-slate-300 hover:bg-slate-800/70 text-xs font-semibold transition-colors disabled:opacity-40"
+              disabled={!runnable || !category}
+              onClick={runTopicRecommend}
+            >
+              다른 주제 보기
+            </button>
+          ) : null}
           {!category ? <p className="text-[11px] text-slate-600 mt-1.5">먼저 카테고리를 선택해 주세요.</p> : null}
           <ResultNote result={topicResult} />
           {topics.length > 0 ? (
@@ -400,25 +492,25 @@ export default function VideoCreationWizard() {
                       name="wizard-topic"
                       className="mt-1 accent-indigo-500"
                       checked={selected}
-                      onChange={() => setSelectedTopicId(t.topicId)}
+                      onChange={() => selectTopic(t.topicId)}
                     />
                     <span className="min-w-0">
                       <span className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-semibold text-slate-200">{t.title}</span>
+                        {t.angle ? (
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold">
+                            {t.angle}형
+                          </span>
+                        ) : null}
                         {t.scriptReady ? (
                           <span className="px-1.5 py-0.5 rounded bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 text-[10px] font-semibold">
-                            대본 준비됨
+                            대본 가능
                           </span>
                         ) : (
                           <span className="px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-slate-500 text-[10px]">
                             대본 연결 전
                           </span>
                         )}
-                        {t.recommended ? (
-                          <span className="px-1.5 py-0.5 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-[10px] font-semibold">
-                            추천
-                          </span>
-                        ) : null}
                       </span>
                       {t.hook ? <span className="block text-[11px] text-slate-500 mt-0.5">“{t.hook}”</span> : null}
                     </span>
@@ -532,28 +624,84 @@ export default function VideoCreationWizard() {
           num={7}
           title="게시 전 점검"
           state={preflightState}
-          desc="영상 파일과 설정이 게시 가능한 상태인지 확인만 합니다. 업로드는 하지 않습니다."
+          desc="방금 만든 그 주제의 영상 기준으로 키·중복·파일을 확인만 합니다. 업로드는 하지 않습니다."
         >
-          <button type="button" className={RUN_BTN} disabled={!runnable} onClick={runPreflight}>
+          <button
+            type="button"
+            className={RUN_BTN}
+            disabled={!runnable || !selectedTopicId || !videoDone}
+            onClick={runPreflight}
+          >
             게시 전 점검
           </button>
+          {!videoDone ? (
+            <p className="text-[11px] text-slate-600 mt-1.5">먼저 [영상 만들기]로 시안 영상을 만들어 주세요.</p>
+          ) : null}
           <ResultNote result={preflightResult} />
         </StepCard>
 
-        {/* 8. 실제 업로드 (잠금) */}
-        <StepCard num={8} title="실제 업로드" state="idle" desc="실제 업로드는 별도 승인 후 활성화됩니다.">
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="px-3.5 py-2 rounded-lg border border-slate-700/60 bg-slate-800/40 text-slate-500 text-xs font-semibold cursor-not-allowed"
-          >
-            실제 업로드는 다음 승인 후 활성화
-          </button>
-          <p className="text-[11px] text-slate-600 mt-1.5">
-            이 화면의 어떤 버튼도 인스타그램·유튜브에 올리지 않습니다. 승인 전까지{" "}
-            <span className="text-slate-400 font-semibold">잠김</span> 상태입니다.
-          </p>
+        {/* 8. 실제 업로드 — 시안 영상 + 게시 전 점검 통과 + 명시 확인 후에만 실행 */}
+        <StepCard
+          num={8}
+          title="실제 업로드"
+          state={uploadState}
+          desc="확인 절차를 마치면 이 영상이 실제 계정에 게시됩니다. 게시 기록이 남아 같은 콘텐츠는 다시 올라가지 않습니다."
+        >
+          {uploadState === "success" ? null : (
+            <div className="rounded-lg border border-rose-800/50 bg-rose-950/20 px-3 py-2.5 space-y-2">
+              <p className="text-[11px] font-bold text-rose-300">누르면 실제 계정에 게시됩니다.</p>
+              {!preflightDone ? (
+                <p className="text-[11px] text-slate-500">
+                  먼저 [영상 만들기]와 [게시 전 점검]을 통과해야 업로드할 수 있습니다.
+                </p>
+              ) : null}
+              <label className="flex items-start gap-2 text-[11px] text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 accent-rose-500"
+                  checked={confirmReviewed}
+                  onChange={(e) => setConfirmReviewed(e.target.checked)}
+                  disabled={!preflightDone || uploadState === "running"}
+                />
+                미리보기에서 시안 영상과 제목·설명을 검토했습니다.
+              </label>
+              <label className="flex items-start gap-2 text-[11px] text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 accent-rose-500"
+                  checked={confirmPublish}
+                  onChange={(e) => setConfirmPublish(e.target.checked)}
+                  disabled={!preflightDone || uploadState === "running"}
+                />
+                실제 인스타그램·유튜브 계정에 게시하는 것에 동의합니다.
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder="업로드 라고 입력"
+                  disabled={!preflightDone || uploadState === "running"}
+                  className="w-36 rounded-lg border border-slate-700/60 bg-slate-950/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-rose-600/60 disabled:opacity-40"
+                />
+                <button
+                  type="button"
+                  disabled={!uploadEnabled}
+                  onClick={runActualUpload}
+                  className="px-3.5 py-2 rounded-lg border border-rose-600/70 bg-rose-900/40 text-rose-200 hover:bg-rose-900/70 text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  인스타그램·유튜브에 업로드
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-600">
+                확인 2개 체크 + “업로드” 입력까지 마쳐야 버튼이 켜집니다. 서버도 같은 조건을 다시 검사합니다.
+              </p>
+            </div>
+          )}
+          {uploadState === "running" ? (
+            <p className="text-[11px] text-amber-300 mt-1.5">업로드 중입니다… 창을 닫지 마세요. (최대 몇 분)</p>
+          ) : null}
+          <ResultNote result={uploadResult} />
         </StepCard>
       </div>
     </section>
