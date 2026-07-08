@@ -382,6 +382,92 @@ check("--duplicate-guard-check credentialResolutionReached === false", dgParsed?
 check("--duplicate-guard-check actualApiCallReached === false", dgParsed?.actualApiCallReached === false);
 check("--duplicate-guard-check stdout has no secret value shape", !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(dgOut));
 
+// ── required: read-only publish ledger bridge passthrough (no-live) ────────────
+// task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+console.log("\n[ required: read-only publish ledger bridge passthrough ]");
+// 소스 정적 계약: --publish-ledger를 preflight/duplicate-guard-check에서 read-only passthrough.
+check("entrypoint 소스: --publish-ledger 옵션 지원", src.includes("--publish-ledger"));
+check("entrypoint 소스: runPreflightSummary가 publishLedgerPath를 두 번째 인자로 받아 orchestrator에 passthrough",
+  /function runPreflightSummary\(contentUnitPath,\s*publishLedgerPath/.test(src) && /preflightArgs\.push\("--publish-ledger",\s*publishLedgerPath\)/.test(src));
+check("entrypoint 소스: duplicate-guard-check가 --live에도 --publish-ledger를 passthrough(read-only)",
+  /liveArgs\s*=\s*publishLedgerPath\s*\?\s*\["--live",\s*"--publish-ledger",\s*publishLedgerPath\]/.test(src));
+check("entrypoint 소스: preflight/duplicate-guard-check가 getArg(\"--publish-ledger\")로 경로만 취득(값 read 아님)",
+  (src.match(/getArg\("--publish-ledger"\)/g) ?? []).length >= 2);
+// entrypoint는 ledger를 직접 read/write하지 않는다(orchestrator가 read-only로 소비).
+check("entrypoint 소스: ledger 직접 read/write 없음(readFileSync/writeFileSync로 ledger 접근 안 함)",
+  !/writePublishLedger|recordPublishLedgerEntry|recordDualPlatformPublish|appendFileSync/.test(src));
+
+// operator smoke: default + sample ledger로 --duplicate-guard-check가 여전히 안전 block(exit 0).
+const SAMPLE_LEDGER_REL = "scripts/fixtures/publish_ledger.sample.v1.json";
+if (existsSync(resolve(REPO_ROOT, SAMPLE_LEDGER_REL))) {
+  let dgLedgerOut = "", dgLedgerExit = null, dgLedgerParsed = null;
+  try {
+    dgLedgerOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--duplicate-guard-check", "--publish-ledger", SAMPLE_LEDGER_REL], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+    dgLedgerExit = 0;
+  } catch (e) {
+    dgLedgerExit = typeof e?.status === "number" ? e.status : null;
+    dgLedgerOut = String(e?.stdout || "");
+  }
+  try { dgLedgerParsed = JSON.parse(dgLedgerOut.slice(dgLedgerOut.indexOf("{"), dgLedgerOut.lastIndexOf("}") + 1)); } catch { dgLedgerParsed = null; }
+  check("ledger passthrough: --duplicate-guard-check + sample ledger → exit 0 (여전히 안전 block)", dgLedgerExit === 0, `exit=${dgLedgerExit}`);
+  check("ledger passthrough: --duplicate-guard-check + sample ledger → liveStatus BLOCKED_DUPLICATE_ALREADY_PUBLISHED, isExpectedSafeBlock true",
+    dgLedgerParsed?.liveStatus === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED" && dgLedgerParsed?.isExpectedSafeBlock === true);
+  check("ledger passthrough: --duplicate-guard-check + sample ledger → 출력에 secret 값 형태 없음",
+    !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(dgLedgerOut));
+
+  // operator smoke: --preflight + sample ledger → publishLedgerBridge read-only summary 포함(exit 0).
+  let pfLedgerOut = "", pfLedgerExit = null, pfLedgerParsed = null;
+  try {
+    pfLedgerOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--preflight", "--publish-ledger", SAMPLE_LEDGER_REL], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+    pfLedgerExit = 0;
+  } catch (e) {
+    pfLedgerExit = typeof e?.status === "number" ? e.status : null;
+    pfLedgerOut = String(e?.stdout || "");
+  }
+  try { pfLedgerParsed = JSON.parse(pfLedgerOut.slice(pfLedgerOut.indexOf("{"), pfLedgerOut.lastIndexOf("}") + 1)); } catch { pfLedgerParsed = null; }
+  check("ledger passthrough: --preflight + sample ledger → publishLedgerBridge.readOnly true, writePerformed false, readOk true, recordCount 2",
+    pfLedgerParsed?.publishLedgerBridge?.readOnly === true && pfLedgerParsed?.publishLedgerBridge?.writePerformed === false &&
+    pfLedgerParsed?.publishLedgerBridge?.readOk === true && pfLedgerParsed?.publishLedgerBridge?.recordCount === 2);
+
+  // task: publish-ledger-runtime-readonly-preflight-gate-fix-v1
+  // owner --preflight + invalid ledger는 not-ready(preflightOk false, exit 1)로 readiness flag를 표면화해야 한다.
+  // ready golden content unit + OS temp invalid ledger로 검증(레포 밖, 정리).
+  const READY_UNIT_REL = READY_GOLDEN_SAMPLE_CONTENT_UNIT_RELATIVE;
+  if (existsSync(resolve(REPO_ROOT, READY_UNIT_REL))) {
+    const ledgerTmpDir = mkdtempSync(join(os.tmpdir(), "owner-ledger-preflight-fix-"));
+    try {
+      const invalidLedgerRel = join(ledgerTmpDir, "invalid_ledger.json");
+      rmSync(invalidLedgerRel, { force: true });
+      // invalid JSON을 temp에 write(레포 밖). owner는 이 파일을 read하지 않고 orchestrator에 경로만 passthrough.
+      execFileSync(process.execPath, ["-e", `require('fs').writeFileSync(${JSON.stringify(invalidLedgerRel)}, '{ not valid json ,,,')`], { cwd: REPO_ROOT });
+      let ivOut = "", ivExit = null, ivParsed = null;
+      try {
+        ivOut = execFileSync(process.execPath, [ENTRYPOINT_PATH, "--preflight", "--content-unit", READY_UNIT_REL, "--publish-ledger", invalidLedgerRel], { cwd: REPO_ROOT, encoding: "utf8", timeout: 30000 });
+        ivExit = 0;
+      } catch (e) {
+        ivExit = typeof e?.status === "number" ? e.status : null;
+        ivOut = String(e?.stdout || "");
+      }
+      try { ivParsed = JSON.parse(ivOut.slice(ivOut.indexOf("{"), ivOut.lastIndexOf("}") + 1)); } catch { ivParsed = null; }
+      check("owner preflight readiness: invalid ledger → exit 1 (not-ready)", ivExit === 1, `exit=${ivExit}`);
+      check("owner preflight readiness: invalid ledger → preflightOk false + publishLedgerReadOk false + blocksReadiness true + reason invalid_json",
+        ivParsed?.preflightOk === false && ivParsed?.publishLedgerReadOk === false &&
+        ivParsed?.publishLedgerReadFailureBlocksReadiness === true && ivParsed?.publishLedgerReadFailReason === "invalid_json");
+      check("owner preflight readiness: invalid ledger 출력에 secret 값 형태 없음",
+        !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(ivOut));
+    } finally {
+      try { rmSync(ledgerTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+  } else {
+    check("owner preflight readiness: ready golden content unit 부재 → invalid-ledger smoke skip", true, "ready fixture 부재");
+  }
+  // 소스 정적: owner summary가 ledger readiness flag를 표면화한다.
+  check("entrypoint 소스: preflight summary에 publishLedgerReadFailureBlocksReadiness/publishLedgerReadOk flag 표면화",
+    /publishLedgerReadFailureBlocksReadiness/.test(src) && /publishLedgerReadOk/.test(src) && /publishLedgerReadFailReason/.test(src));
+} else {
+  check("ledger passthrough: sample ledger fixture 부재 → operator smoke skip", true, "sample fixture 부재");
+}
+
 // ── required: content unit manifest parameterization (no-live) ──────────────────
 // task: dual-platform-content-unit-manifest-parameterization-no-live-v1
 console.log("\n[ required: content unit manifest parameterization ]");

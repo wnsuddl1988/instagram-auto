@@ -49,6 +49,11 @@
 import path from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+// read-only publish ledger runtime bridge (dependency-free .mjs adapter).
+// task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+// lib/publish-ledger.ts(TypeScript 계약)를 런타임에서 직접 import하지 않고, read 계약을
+// 미러링한 read-only adapter만 사용한다(write/mutation 없음, 경로는 caller가 명시할 때만).
+import { evaluateLedgerDuplicateForUnit } from "../lib/publish-ledger-runtime.mjs";
 
 // ── live execution gate (dual-platform-arm-wiring-duplicate-guarded-v1: 최종 arm) ──
 // Owner 승인 APPROVE_DUAL_PLATFORM_ARM로 live gate가 arm 상태다. 단, 실제 live 실행
@@ -62,6 +67,10 @@ export const LIVE_EXECUTION_ARM_APPROVAL_TOKEN = "APPROVE_DUAL_PLATFORM_ARM";
 export const LIVE_EXECUTION_DISABLED_ERROR = "LIVE_EXECUTION_DISABLED_THIS_SLICE";
 export const DUPLICATE_BLOCKED_STATUS = "BLOCKED_DUPLICATE_ALREADY_PUBLISHED";
 export const CREDENTIAL_RESOLUTION_NOT_WIRED_ERROR = "CREDENTIAL_RESOLUTION_NOT_WIRED_THIS_SLICE";
+// read-only publish ledger bridge가 read 실패(invalid JSON/schema/non-array/duplicate key)를 만나면
+// duplicate 판정을 신뢰할 수 없으므로, credential resolution(gate 5) 이전에 이 distinct status로
+// fail-closed 차단한다. task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+export const PUBLISH_LEDGER_READ_FAILED_STATUS = "BLOCKED_PUBLISH_LEDGER_READ_FAILED";
 
 // ── credential resolution wiring (dual-platform-credential-resolution-wiring-no-execute-v1) ──
 // task: dual-platform-credential-resolution-wiring-no-execute-v1
@@ -248,6 +257,30 @@ function checkDuplicatePublishGuard(contentId, platform, version, liveMode) {
     key,
     alreadyPublished,
     blockedThisRun: liveMode === true && alreadyPublished,
+  };
+}
+
+/**
+ * read-only publish ledger bridge evidence(evaluateLedgerDuplicateForUnit 결과)를 출력용
+ * non-secret 요약으로 정규화한다. secret 값은 담지 않는다 — path 제공 boolean, read boolean,
+ * record count, 플랫폼별 already-published boolean, read 실패 reason(코드)만.
+ */
+function buildLedgerBridgeSummary(ledgerEvidence) {
+  return {
+    // read-only 계약 명시(write/mutation 절대 없음).
+    readOnly: true,
+    writePerformed: false,
+    pathProvided: ledgerEvidence.pathProvided === true,
+    readAttempted: ledgerEvidence.readAttempted === true,
+    readOk: ledgerEvidence.readOk === true,
+    existed: ledgerEvidence.existed === true,
+    readFailReason: ledgerEvidence.readOk === true ? null : ledgerEvidence.reason,
+    recordCount: typeof ledgerEvidence.recordCount === "number" ? ledgerEvidence.recordCount : 0,
+    instagramKey: ledgerEvidence.instagramKey,
+    youtubeKey: ledgerEvidence.youtubeKey,
+    instagramAlreadyPublished: ledgerEvidence.instagramAlreadyPublished === true,
+    youtubeAlreadyPublished: ledgerEvidence.youtubeAlreadyPublished === true,
+    anyDuplicate: ledgerEvidence.anyDuplicate === true,
   };
 }
 
@@ -728,7 +761,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
   };
 }
 
-function buildPreflight(unit) {
+function buildPreflight(unit, ledgerEvidence = null) {
   const isDefault = isDefaultContentUnit(unit);
   const plan = buildDualPlatformPublishPlan(unit);
   const igJob = plan.jobs.find((j) => j.id === "instagram_job");
@@ -776,9 +809,23 @@ function buildPreflight(unit) {
   // duplicate guard 형태 정합은 default=v3_2 고정, custom=unit.version 기준으로 판정한다.
   const duplicateGuardKeyFormatOk = isDefault ? duplicateGuardUsesV3_2 : duplicateGuardUsesUnitVersion;
 
+  // read-only publish ledger bridge readiness(옵션 경로 제공 시).
+  // - 경로 미제공(pathProvided:false): readiness에 영향 없음(bridge 비활성, 기존 동작).
+  // - 경로 제공 & read ok(missing 파일=empty ok 포함): readiness에 영향 없음.
+  // - 경로 제공 & read 실패(invalid/corrupt/wrong-schema/duplicate-key): durable duplicate ledger를
+  //   신뢰할 수 없으므로 preflight를 not-ready로 만든다(operator가 준비 완료로 오해하지 않도록).
+  const publishLedgerPathProvided = ledgerEvidence != null && ledgerEvidence.pathProvided === true;
+  const publishLedgerReadOk = ledgerEvidence == null || ledgerEvidence.readOk === true;
+  const publishLedgerReadFailureBlocksReadiness = publishLedgerPathProvided && ledgerEvidence.readOk !== true;
+  const publishLedgerReadFailReason = publishLedgerReadFailureBlocksReadiness
+    ? (typeof ledgerEvidence.reason === "string" ? ledgerEvidence.reason : "read_error")
+    : null;
+
   const preflightOk =
     plan.jobs.length === 2 && metadataGateOk && duplicateGuardKeyFormatOk && sourceFilesReady &&
-    blobLivenessEvidence.ok === true;
+    blobLivenessEvidence.ok === true &&
+    // ledger 경로가 제공됐고 read가 실패하면 not-ready(경로 미제공/read ok는 통과).
+    !publishLedgerReadFailureBlocksReadiness;
 
   // no-execute live wiring plan(Instagram Blob→publish, YouTube direct upload, ledger).
   const liveExecutionPlan = buildLiveExecutionPlan(unit, igJob, ytJob);
@@ -922,6 +969,11 @@ function buildPreflight(unit) {
     isDefaultContentUnit: isDefault,
     sourceFilesReady,
     blobPublicUrlLivenessEvidence: blobLivenessEvidence,
+    // read-only publish ledger bridge readiness(non-secret). ledger read 실패가 readiness를 막았는지 명시.
+    publishLedgerPathProvided,
+    publishLedgerReadOk,
+    publishLedgerReadFailureBlocksReadiness,
+    publishLedgerReadFailReason,
     liveExecutionPlan,
     youtubeLiveUploadWiring,
     sourceFilePresence: {
@@ -1542,9 +1594,12 @@ function zeroLiveSideEffectCounters() {
  * current content(t1_lifestyle_inflation/v3_2)는 gate 4 duplicate publish guard가
  * BLOCKED_DUPLICATE_ALREADY_PUBLISHED(exit 3)로 차단한다 — gate 5/6 미도달.
  */
-function executeArmedLiveRun(unit) {
+function executeArmedLiveRun(unit, ledgerPath = null) {
   const sideEffectCounters = zeroLiveSideEffectCounters();
   const gateTrace = [];
+  // read-only publish ledger bridge를 gate 4 이전에 평가한다(경로가 없으면 비활성).
+  // 이 evidence는 secret이 아니며(public id/boolean/count만), write/mutation을 하지 않는다.
+  const ledgerEvidence = evaluateLedgerDuplicateForUnit(ledgerPath, unit.contentId, unit.version);
   const base = {
     schemaVersion: "dual_platform_final_publish_orchestrator_v1",
     mode: "live_armed",
@@ -1554,6 +1609,7 @@ function executeArmedLiveRun(unit) {
     contentId: unit.contentId,
     version: unit.version,
     gateOrder: LIVE_GATE_ORDER,
+    publishLedgerBridge: buildLedgerBridgeSummary(ledgerEvidence),
   };
 
   const plan = buildDualPlatformPublishPlan(unit);
@@ -1626,16 +1682,61 @@ function executeArmedLiveRun(unit) {
   }
 
   // ── gate 4: duplicate_publish_guard — credential resolution(gate 5)보다 반드시 먼저 ──
+  // read-only publish ledger bridge가 활성(경로 제공)이고 read가 실패했다면, duplicate 판정을
+  // 신뢰할 수 없으므로 credential resolution 이전에 distinct status로 fail-closed 차단한다.
+  if (ledgerEvidence.pathProvided === true && ledgerEvidence.readOk !== true) {
+    gateTrace.push({
+      order: 4, gate: "duplicate_publish_guard", evaluated: true, blocked: true,
+      blockedBy: "publish_ledger_read_failed", publishLedgerReadFailReason: ledgerEvidence.reason,
+    });
+    gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "publish_ledger_read_failed" });
+    gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "publish_ledger_read_failed" });
+    return {
+      exitCode: 3,
+      result: {
+        ...base,
+        status: PUBLISH_LEDGER_READ_FAILED_STATUS,
+        gateTrace,
+        publishLedgerReadFailure: {
+          reason: ledgerEvidence.reason,
+          existed: ledgerEvidence.existed === true,
+          blockedBeforeCredentialResolution: true,
+          blockedBeforeActualApiCall: true,
+          note: "publish ledger read가 fail-closed됐다(invalid/corrupt/wrong-schema/duplicate-key). " +
+            "credential resolution/actual API call 이전에 차단한다 — ledger write 없음.",
+        },
+        blobPublicUrlLivenessEvidence: livenessGate,
+        sideEffectCounters,
+        credentialResolutionReached: false,
+        credentialValuesAccessed: false,
+        credentialValuesResolved: false,
+        actualApiCallReached: false,
+        dotEnvLocalDirectAccess: false,
+      },
+    };
+  }
+
   const duplicateGate = evaluateDuplicatePublishGuardGate(unit);
+  // ledger duplicate는 additive다: 기존 reference/manifest evidence 또는 ledger가 이미 published라고
+  // 하면 duplicate로 차단한다. (ledger read가 ok일 때만 ledger 판정을 반영한다.)
+  const ledgerIgDuplicate = ledgerEvidence.readOk === true && ledgerEvidence.instagramAlreadyPublished === true;
+  const ledgerYtDuplicate = ledgerEvidence.readOk === true && ledgerEvidence.youtubeAlreadyPublished === true;
+  const igAlreadyPublished = duplicateGate.instagram.alreadyPublished === true || ledgerIgDuplicate;
+  const ytAlreadyPublished = duplicateGate.youtube.alreadyPublished === true || ledgerYtDuplicate;
+  const duplicateBlocked = igAlreadyPublished || ytAlreadyPublished;
   gateTrace.push({
     order: 4, gate: "duplicate_publish_guard", evaluated: true,
-    blocked: duplicateGate.blocked,
+    blocked: duplicateBlocked,
     instagramKey: duplicateGate.instagram.key,
     youtubeKey: duplicateGate.youtube.key,
-    instagramAlreadyPublished: duplicateGate.instagram.alreadyPublished === true,
-    youtubeAlreadyPublished: duplicateGate.youtube.alreadyPublished === true,
+    instagramAlreadyPublished: igAlreadyPublished,
+    youtubeAlreadyPublished: ytAlreadyPublished,
+    referenceInstagramAlreadyPublished: duplicateGate.instagram.alreadyPublished === true,
+    referenceYoutubeAlreadyPublished: duplicateGate.youtube.alreadyPublished === true,
+    ledgerInstagramAlreadyPublished: ledgerIgDuplicate,
+    ledgerYoutubeAlreadyPublished: ledgerYtDuplicate,
   });
-  if (duplicateGate.blocked) {
+  if (duplicateBlocked) {
     gateTrace.push({ order: 5, gate: "credential_presence_resolution", evaluated: false, reached: false, blockedBy: "duplicate_publish_guard" });
     gateTrace.push({ order: 6, gate: "actual_api_call", evaluated: false, reached: false, blockedBy: "duplicate_publish_guard" });
     return {
@@ -1647,8 +1748,15 @@ function executeArmedLiveRun(unit) {
         duplicateBlock: {
           instagramKey: duplicateGate.instagram.key,
           youtubeKey: duplicateGate.youtube.key,
-          instagramAlreadyPublished: duplicateGate.instagram.alreadyPublished === true,
-          youtubeAlreadyPublished: duplicateGate.youtube.alreadyPublished === true,
+          instagramAlreadyPublished: igAlreadyPublished,
+          youtubeAlreadyPublished: ytAlreadyPublished,
+          // 어느 evidence 소스가 duplicate를 확정했는지 명시(non-secret boolean).
+          duplicateSources: {
+            referenceInstagram: duplicateGate.instagram.alreadyPublished === true,
+            referenceYoutube: duplicateGate.youtube.alreadyPublished === true,
+            ledgerInstagram: ledgerIgDuplicate,
+            ledgerYoutube: ledgerYtDuplicate,
+          },
           blockedBeforeCredentialResolution: true,
           blockedBeforeActualApiCall: true,
           retryForbidden: true,
@@ -1848,6 +1956,19 @@ function resolveContentUnitArg(argv) {
 }
 
 /**
+ * argv에서 --publish-ledger <path> 값을 뽑는다. 없으면 null(=ledger bridge 비활성, 기존 동작 보존).
+ * read-only 경로다 — 이 값이 있어도 orchestrator는 ledger를 read만 하고 절대 write하지 않는다.
+ * default/production 경로 없음: caller가 명시적으로 넘길 때만 read를 시도한다.
+ */
+function resolvePublishLedgerArg(argv) {
+  const idx = argv.indexOf("--publish-ledger");
+  if (idx !== -1 && typeof argv[idx + 1] === "string" && argv[idx + 1].trim() !== "") {
+    return argv[idx + 1];
+  }
+  return null;
+}
+
+/**
  * content unit을 결정한다.
  * --content-unit이 없으면 default evidence content(하위 호환, 기존 동작 완전 유지).
  * 있으면 manifest를 로드한다. 로드 실패 시 { error } 반환(호출부가 exit 1 처리).
@@ -1867,6 +1988,8 @@ function resolveActiveContentUnit(argv) {
 function main() {
   const argv = process.argv.slice(2);
   const mode = resolveMode(argv);
+  // read-only publish ledger bridge 경로(옵션). 없으면 null(=bridge 비활성, 기존 동작 보존).
+  const publishLedgerPath = resolvePublishLedgerArg(argv);
 
   const resolved = resolveActiveContentUnit(argv);
   if (resolved.error) {
@@ -1917,7 +2040,7 @@ function main() {
     // actualApiCallExecutionEnabledThisSlice:false/actualApiCallPerformed:false). key가 하나라도
     // 비어 있으면 gate 5에서 CREDENTIAL_KEYS_MISSING_THIS_SLICE로 fail-closed되며 gate 6 미도달.
     // 어느 경로든 실제 API/upload/OAuth/Blob mutation은 0, 모든 side-effect counter 0.
-    const { result, exitCode } = executeArmedLiveRun(activeUnit);
+    const { result, exitCode } = executeArmedLiveRun(activeUnit, publishLedgerPath);
     console.log(JSON.stringify(result, null, 2));
     process.exit(exitCode);
     return;
@@ -1936,7 +2059,10 @@ function main() {
   // ── preflight: no-live 준비 검증 ────────────────────────────────────────────
   if (mode === "preflight") {
     const plan = buildDualPlatformPublishPlan(activeUnit);
-    const preflight = buildPreflight(activeUnit);
+    // read-only publish ledger bridge evidence(경로 제공 시). read만 하고 write하지 않는다.
+    // buildPreflight보다 먼저 평가해 preflightOk가 ledger read 실패를 not-ready로 반영하도록 한다.
+    const ledgerEvidence = evaluateLedgerDuplicateForUnit(publishLedgerPath, activeUnit.contentId, activeUnit.version);
+    const preflight = buildPreflight(activeUnit, ledgerEvidence);
     const output = {
       schemaVersion: "dual_platform_final_publish_orchestrator_v1",
       mode: "preflight",
@@ -1945,6 +2071,7 @@ function main() {
       isDefaultContentUnit: resolved.isDefault,
       preflight,
       plan,
+      publishLedgerBridge: buildLedgerBridgeSummary(ledgerEvidence),
       liveUploadEvidence: LIVE_UPLOAD_EVIDENCE,
     };
     console.log(JSON.stringify(output, null, 2));

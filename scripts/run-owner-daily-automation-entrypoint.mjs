@@ -100,9 +100,9 @@ function printUsage() {
       "Usage:",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --status",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --dry-run [--manifest <path>] [--out-root <path>]",
-      "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight [--content-unit <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --preflight [--content-unit <path>] [--publish-ledger <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --credential-preflight [--content-unit <path>]",
-      "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>]",
+      "  node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check [--content-unit <path>] [--publish-ledger <path>]",
       "  node scripts/run-owner-daily-automation-entrypoint.mjs --build-content-unit" +
         " (--summary <path> | --pipeline-summary <path>) --out-dir <path>" +
         " [--content-id <id>] [--version <version>]" +
@@ -122,6 +122,12 @@ function printUsage() {
       "",
       "  --content-unit <path>  future new video content unit manifest (dual_platform_content_unit_v1).",
       "                         omit for the default already-published evidence content.",
+      "",
+      "  --publish-ledger <path>  read-only durable publish ledger (publish_ledger_v1) used as an",
+      "                         ADDITIVE duplicate-guard input. READ-ONLY / NO-WRITE: the orchestrator",
+      "                         only reads this JSON, never writes it. Missing file = empty ledger (ok).",
+      "                         Invalid/corrupt/wrong-schema/duplicate-key = fail-closed BEFORE credential",
+      "                         resolution (BLOCKED_PUBLISH_LEDGER_READ_FAILED). Omit to disable the bridge.",
       "",
       "  --build-content-unit builds a dual_platform_content_unit_v1 manifest from an existing local",
       "                        dry-run pipeline summary (--dry-run output). Pass the resulting manifest",
@@ -202,8 +208,11 @@ function parseJsonSafe(text) {
 // ── run preflight (read-only, no-live) and extract a secret-free summary ─────
 // contentUnitPath가 주어지면 orchestrator --preflight --content-unit <path>로 전달한다.
 // 없으면 default evidence content preflight(기존 동작 불변).
-function runPreflightSummary(contentUnitPath) {
-  const preflightArgs = contentUnitPath ? ["--preflight", "--content-unit", contentUnitPath] : ["--preflight"];
+// publishLedgerPath가 주어지면 --publish-ledger <path>를 read-only로 passthrough한다(write 없음).
+function runPreflightSummary(contentUnitPath, publishLedgerPath = null) {
+  const preflightArgs = ["--preflight"];
+  if (contentUnitPath) preflightArgs.push("--content-unit", contentUnitPath);
+  if (publishLedgerPath) preflightArgs.push("--publish-ledger", publishLedgerPath);
   const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, preflightArgs, { captureOnly: true });
   if (exitCode !== 0) {
     return {
@@ -241,6 +250,11 @@ function runPreflightSummary(contentUnitPath) {
     duplicateGuardKeyFormatOk: pf?.duplicateGuardKeyFormatOk === true,
     sourceFilesReady: pf?.sourceFilesReady === true,
     blobLivenessEvidenceOk: pf?.blobPublicUrlLivenessEvidence?.ok === true,
+    // read-only publish ledger bridge readiness(non-secret). ledger read 실패가 readiness를 막았는지 표면화.
+    publishLedgerPathProvided: pf?.publishLedgerPathProvided === true,
+    publishLedgerReadOk: pf?.publishLedgerReadOk !== false, // 미제공/read ok면 true, 실패면 false
+    publishLedgerReadFailureBlocksReadiness: pf?.publishLedgerReadFailureBlocksReadiness === true,
+    publishLedgerReadFailReason: pf?.publishLedgerReadFailReason ?? null,
     armed: liveArm?.armed === true,
     duplicateGuardEvaluatedBeforeCredentialResolution: liveArm?.duplicateGuardEvaluatedBeforeCredentialResolution === true,
     credentialResolutionWiredThisSlice: liveArm?.credentialResolutionWiredThisSlice === true,
@@ -254,6 +268,8 @@ function runPreflightSummary(contentUnitPath) {
       expectedLiveStatus: dupBlock.expectedLiveStatus ?? null,
       expectedLiveExitCode: dupBlock.expectedLiveExitCode ?? null,
     },
+    // read-only publish ledger bridge 요약(orchestrator preflight가 실은 non-secret boolean/count만).
+    publishLedgerBridge: parsed.value?.publishLedgerBridge ?? null,
     raw: parsed.value,
   };
 }
@@ -767,14 +783,17 @@ function runPreflight() {
     console.error(`ABORT: --content-unit manifest not found: ${contentUnitPath}`);
     return 1;
   }
+  // read-only publish ledger bridge 경로(옵션). 존재 검증만 하고 값을 읽지 않는다(read는 orchestrator가 수행).
+  const publishLedgerPath = getArg("--publish-ledger");
   console.log(
     contentUnitPath
       ? `[owner-entrypoint] running dual-platform publish orchestrator --preflight --content-unit ${contentUnitPath}`
       : `[owner-entrypoint] running dual-platform publish orchestrator --preflight (default evidence content)`,
   );
+  if (publishLedgerPath) console.log(`[owner-entrypoint] read-only publish ledger bridge: --publish-ledger ${publishLedgerPath} (read-only, no write)`);
   console.log("");
 
-  const summary = runPreflightSummary(contentUnitPath);
+  const summary = runPreflightSummary(contentUnitPath, publishLedgerPath);
 
   console.log("");
   console.log(JSON.stringify({ schemaVersion: "owner_daily_automation_entrypoint_preflight_summary_v1", mode: "preflight", ...summary, raw: undefined }, null, 2));
@@ -786,6 +805,9 @@ function runPreflight() {
   console.log(`  duplicate guard key format ok:      ${summary.duplicateGuardKeyFormatOk}`);
   console.log(`  source files ready:                 ${summary.sourceFilesReady}`);
   console.log(`  blob liveness evidence ok:          ${summary.blobLivenessEvidenceOk}`);
+  if (summary.publishLedgerPathProvided) {
+    console.log(`  publish ledger read ok:             ${summary.publishLedgerReadOk}${summary.publishLedgerReadFailureBlocksReadiness ? `  (read FAILED: ${summary.publishLedgerReadFailReason} — blocks readiness)` : ""}`);
+  }
   console.log(`  live gate armed:                     ${summary.armed}`);
   if (summary.isDefaultContentUnit) {
     console.log(`  current content will be blocked:     ${summary.currentContentDuplicateBlock?.bothWillBeBlocked}`);
@@ -884,9 +906,12 @@ function runDuplicateGuardCheck() {
     console.error(`ABORT: --content-unit manifest not found: ${contentUnitPath}`);
     return 1;
   }
+  // read-only publish ledger bridge 경로(옵션). preflight/--live 양쪽에 read-only로 passthrough한다.
+  const publishLedgerPath = getArg("--publish-ledger");
   console.log(`[owner-entrypoint] step 1/2: confirming duplicate-block via --preflight`);
+  if (publishLedgerPath) console.log(`[owner-entrypoint] read-only publish ledger bridge: --publish-ledger ${publishLedgerPath} (read-only, no write)`);
   console.log("");
-  const summary = runPreflightSummary(contentUnitPath);
+  const summary = runPreflightSummary(contentUnitPath, publishLedgerPath);
 
   if (!summary.ranSuccessfully) {
     console.error(`ABORT: --preflight did not run successfully: ${summary.reason}`);
@@ -936,7 +961,10 @@ function runDuplicateGuardCheck() {
   console.log(`[owner-entrypoint] step 2/2: invoking orchestrator --live (expected: safe block, exit 3)`);
   console.log("");
 
-  const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, ["--live"], { captureOnly: true });
+  // read-only publish ledger bridge를 --live에도 passthrough한다(read-only, write 없음). default content는
+  // reference로 이미 duplicate block이므로 ledger가 있어도 additive로 BLOCKED_DUPLICATE가 유지된다.
+  const liveArgs = publishLedgerPath ? ["--live", "--publish-ledger", publishLedgerPath] : ["--live"];
+  const { exitCode, stdout } = runScript(ORCHESTRATOR_SCRIPT, liveArgs, { captureOnly: true });
   const parsed = parseJsonSafe(stdout);
   const liveResult = parsed.ok ? parsed.value : null;
 

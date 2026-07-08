@@ -503,9 +503,54 @@ secret, API key, Blob token, OAuth 응답, raw env 값, 값 파생(length/prefix
 저장/반환하지 않는다. sample fixture(`scripts/fixtures/publish_ledger.sample.v1.json`)의 default evidence는
 public id만이다(Instagram media_id `17916511431199303` / YouTube videoId `r9jhckdpC9w`, key `v3_2`).
 
-**wiring 경계(이 slice)**: orchestrator는 여전히 in-memory/reference duplicate guard(gate 4)를 쓴다. ledger를
-`--dry-run`/`--preflight`/`--live`/`--arm` 경로에서 실제로 read/write하지 않는다 — 실제 wiring은 별도 승인
-slice에서 dispatcher 실제 dispatch 활성화와 함께 연결된다.
+## read-only publish ledger bridge (`--publish-ledger`, additive duplicate guard, no-write)
+
+task: `publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1`
+
+durable publish ledger를 orchestrator gate 4 duplicate guard에 **read-only fail-closed 입력**으로 연결했다.
+실제 publish/upload/API/OAuth/Blob/ledger write는 계속 비활성이다.
+
+**CLI 옵션**: `--publish-ledger <path>` (선택). 없으면 bridge 비활성 — 기존 동작이 완전히 보존된다
+(default `t1_lifestyle_inflation/v3_2`는 여전히 reference로 gate 4 `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`).
+default/production ledger 경로는 없다 — caller가 명시할 때만 read한다.
+
+**runtime adapter**: `lib/publish-ledger.ts`는 TypeScript 계약이고 orchestrator는 plain Node ESM(`.mjs`)이라,
+런타임에서 `.ts` 직접 import(트랜스파일 의존)는 불안정하다. 대신 dependency-free read-only adapter
+`lib/publish-ledger-runtime.mjs`가 `lib/publish-ledger.ts`의 **read 계약을 정확히 미러링**한다
+(schemaVersion/platform 허용값/fail-closed reason 코드 동일). 이 adapter는 `existsSync`/`readFileSync`만
+import하며 write API(`writeFileSync`/`renameSync`/`mkdirSync` 등)를 import조차 하지 않는다.
+
+**gate 4 read 계약(credential resolution gate 5 이전)**:
+
+- ledger 파일 없음 → 빈 ledger, ok, duplicate 없음 → 기존 gate로 계속 진행.
+- ledger read 실패(invalid JSON / non-object / wrong schema / non-array records / invalid record shape /
+  duplicate key) → **credential resolution 이전에** distinct status `BLOCKED_PUBLISH_LEDGER_READ_FAILED`
+  (exit 3)로 fail-closed. `publishLedgerReadFailure.reason`에 코드가 담긴다. ledger write 없음.
+- ledger에 매칭 record 있음 → **additive** duplicate: 기존 reference/manifest evidence 또는 ledger 중
+  하나라도 already-published면 `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`(exit 3, credential 이전). 어느
+  evidence 소스가 확정했는지는 `duplicateBlock.duplicateSources`(reference/ledger × IG/YT boolean)에 명시.
+- 매칭 없음 → 기존 gate로 계속(custom content는 gate 5 credential resolution → gate 6 no-run fail-closed).
+
+**`--preflight` readiness 반영(readiness가 ledger read 실패를 반드시 not-ready로 표시)**:
+`--publish-ledger <path>`가 제공됐고 ledger read가 실패하면 `--preflight`도 `preflight.preflightOk:false`가
+된다(operator가 준비 완료로 오해하지 않도록). preflight 출력에 non-secret readiness flag가 명시된다 —
+`preflight.publishLedgerPathProvided`, `preflight.publishLedgerReadOk`,
+`preflight.publishLedgerReadFailureBlocksReadiness`, `preflight.publishLedgerReadFailReason`(코드).
+경로 미제공 또는 read ok(**missing 파일 = empty ok 포함**)는 readiness에 영향을 주지 않아 기존 동작이
+보존된다. `--live`/`--arm`은 종전대로 `BLOCKED_PUBLISH_LEDGER_READ_FAILED`(exit 3, credential 이전,
+side-effect 0)로 fail-closed된다.
+
+**출력(non-secret only)**: `publishLedgerBridge` 요약에 `readOnly:true`, `writePerformed:false`,
+`pathProvided`, `readAttempted`, `readOk`, `existed`, `readFailReason`(코드), `recordCount`, IG/YT key,
+플랫폼별 `alreadyPublished` boolean, `anyDuplicate`만 담긴다. record metadata dump/secret 값 없음.
+
+**owner entrypoint passthrough**: `--preflight`/`--duplicate-guard-check`가 `--publish-ledger <path>`를
+read-only로 orchestrator에 passthrough한다. entrypoint 자체는 ledger를 read/write하지 않는다(orchestrator가
+소비). default content + sample ledger로 `--duplicate-guard-check`를 돌려도 여전히 안전 block(exit 0)이다.
+
+**no-write 불변식**: orchestrator/runtime adapter/owner entrypoint 어디서도 `writePublishLedger`,
+`recordPublishLedgerEntry`, `recordDualPlatformPublish`, `writeFileSync`, `appendFileSync`, ledger
+mutation을 하지 않는다. 모든 경로에서 side-effect counter는 0으로 유지된다.
 
 ## 검증
 
@@ -515,6 +560,8 @@ node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --dry-run
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight
 node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.sample.v1.json
+# read-only publish ledger bridge (additive duplicate guard, no-write)
+node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight --publish-ledger scripts/fixtures/publish_ledger.sample.v1.json
 node scripts/check-dual-platform-final-publish-orchestrator-static.mjs
 node --check scripts/check-publish-ledger-static.mjs
 node scripts/check-publish-ledger-static.mjs

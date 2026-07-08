@@ -223,9 +223,21 @@ slice에서만 wiring된다.
 `lib/publish-ledger.ts`로 구현했다(gate 6 dispatcher `publish_ledger_record` step이 참조). caller가 명시적
 `ledgerPath`를 넘길 때만 로컬 JSON을 read/write하며(default/production 경로 없음), 외부 API/OAuth/Blob/deploy/
 media 부작용이 없다. read는 fail-closed(파일없음 → 빈 ledger ok, invalid/wrong-schema/중복 → ok:false).
-token/secret/credential 값은 저장하지 않고 public media/video id만 담는다. 이 slice에서 orchestrator의
-`--dry-run`/`--preflight`/`--live`/`--arm`은 ledger를 실제로 read/write하지 않는다 — 실제 wiring은 dispatch
-활성화와 함께 별도 승인 slice에서 연결된다.
+token/secret/credential 값은 저장하지 않고 public media/video id만 담는다.
+
+**read-only publish ledger bridge(`--publish-ledger`, no-write)**: 그 ledger를 orchestrator gate 4
+duplicate guard에 **read-only additive 입력**으로 연결했다. `--preflight`/`--duplicate-guard-check`에
+`--publish-ledger <path>`를 붙이면 owner entrypoint가 orchestrator에 read-only로 passthrough한다(값을
+직접 read하지 않고 경로만 전달; orchestrator가 `lib/publish-ledger-runtime.mjs` read-only adapter로 소비).
+duplicate 판정은 additive다 — 기존 reference evidence 또는 ledger 중 하나라도 already-published면
+`BLOCKED_DUPLICATE_ALREADY_PUBLISHED`(credential 이전, exit 3). ledger read 실패(invalid/wrong-schema/중복
+key)는 credential 이전에 distinct `BLOCKED_PUBLISH_LEDGER_READ_FAILED`로 fail-closed된다. **`--preflight`도
+ledger read가 실패하면 `preflightOk:false`(not-ready)로 보고하며**, `publishLedgerReadOk:false` +
+`publishLedgerReadFailureBlocksReadiness:true` + `publishLedgerReadFailReason:<코드>` flag를 표면화한다
+(operator가 ledger 신뢰 불가 상태를 준비 완료로 오해하지 않도록). missing 파일(=empty ok)과 경로 미제공은
+readiness에 영향을 주지 않는다. 옵션을 생략하면 bridge 비활성으로 기존 동작이 완전히 보존되고,
+orchestrator/entrypoint는 어느 경로에서도 ledger를 **write하지 않는다**(read-only). 실제 publish wiring은
+dispatch 활성화와 함께 별도 승인 slice에서 연결된다.
 
 owner entrypoint의 `--duplicate-guard-check --content-unit <path>`는 custom manifest면
 `--live`를 **아예 호출하지 않는다**(fail-closed). 이 모드는 default evidence 콘텐츠의

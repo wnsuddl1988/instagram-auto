@@ -324,6 +324,67 @@ check("runner 소스에 hashtags 필드 존재", /hashtags/.test(runnerRawSrc));
 check("runner 소스에 callToAction 필드 존재", /callToAction/.test(runnerRawSrc));
 check("runner 소스에 metadataOptimizationGate 로직 존재", /metadataOptimizationGate|checkInstagramMetadataGate|checkYoutubeMetadataGate/.test(runnerRawSrc));
 
+// ── 2-ledger) read-only publish ledger bridge 정적 계약 ────────────────────────
+// task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+check("runner 소스: --publish-ledger CLI 옵션 파싱(resolvePublishLedgerArg) 존재", /resolvePublishLedgerArg/.test(runnerRawSrc) && /--publish-ledger/.test(runnerRawSrc));
+check("runner 소스: read-only runtime adapter(evaluateLedgerDuplicateForUnit) import(.ts 직접 import 아님)",
+  /import\s*\{[^}]*evaluateLedgerDuplicateForUnit[^}]*\}\s*from\s*"\.\.\/lib\/publish-ledger-runtime\.mjs"/.test(runnerRawSrc) &&
+  !/from\s*"\.\.\/lib\/publish-ledger\.ts"/.test(runnerRawSrc) && !/require\(["'].*publish-ledger\.ts/.test(runnerRawSrc));
+check("runner 소스: BLOCKED_PUBLISH_LEDGER_READ_FAILED distinct status 상수 존재", /PUBLISH_LEDGER_READ_FAILED_STATUS\s*=\s*"BLOCKED_PUBLISH_LEDGER_READ_FAILED"/.test(runnerRawSrc));
+check("runner 소스: ledger duplicate가 additive(reference OR ledger) 로직 존재", /ledgerIgDuplicate|ledgerYtDuplicate/.test(runnerCode) && /duplicateGate\.instagram\.alreadyPublished\s*===\s*true\s*\|\|\s*ledgerIgDuplicate/.test(runnerCode));
+check("runner 소스: ledger read 실패 시 credential 이전 fail-closed(pathProvided true && readOk !== true → PUBLISH_LEDGER_READ_FAILED)",
+  /ledgerEvidence\.pathProvided\s*===\s*true\s*&&\s*ledgerEvidence\.readOk\s*!==\s*true/.test(runnerCode));
+// task: publish-ledger-runtime-readonly-preflight-gate-fix-v1
+// preflight도 ledger read 실패면 not-ready여야 한다.
+check("runner 소스: buildPreflight가 ledgerEvidence를 두 번째 인자로 받음(preflightOk에 ledger 반영)",
+  /function buildPreflight\(unit,\s*ledgerEvidence/.test(runnerRawSrc));
+check("runner 소스: preflight 핸들러가 buildPreflight보다 먼저 ledgerEvidence를 평가해 전달",
+  (() => {
+    const pfIdx = runnerRawSrc.indexOf('mode === "preflight"');
+    if (pfIdx === -1) return false;
+    const seg = runnerRawSrc.slice(pfIdx, pfIdx + 800);
+    const evalIdx = seg.indexOf("evaluateLedgerDuplicateForUnit(publishLedgerPath");
+    const buildIdx = seg.indexOf("buildPreflight(activeUnit, ledgerEvidence)");
+    return evalIdx !== -1 && buildIdx !== -1 && evalIdx < buildIdx;
+  })());
+check("runner 소스: preflightOk가 ledger read 실패로 not-ready(!publishLedgerReadFailureBlocksReadiness 조건 포함)",
+  /publishLedgerReadFailureBlocksReadiness\s*=\s*publishLedgerPathProvided\s*&&\s*ledgerEvidence\.readOk\s*!==\s*true/.test(runnerCode) &&
+  /!publishLedgerReadFailureBlocksReadiness/.test(runnerCode));
+check("runner 소스: preflight 반환에 non-secret readiness flag(publishLedgerReadOk/publishLedgerReadFailureBlocksReadiness/publishLedgerReadFailReason) 존재",
+  /publishLedgerReadOk/.test(runnerRawSrc) && /publishLedgerReadFailureBlocksReadiness/.test(runnerRawSrc) && /publishLedgerReadFailReason/.test(runnerRawSrc));
+check("runner 소스: missing/no-path는 preflight readiness를 막지 않음(pathProvided true && readOk !== true 조건에만 반응)",
+  /publishLedgerPathProvided\s*=\s*ledgerEvidence\s*!=\s*null\s*&&\s*ledgerEvidence\.pathProvided\s*===\s*true/.test(runnerCode));
+// orchestrator/runtime 어디서도 ledger write/mutation을 하지 않는다(read-only).
+const ledgerWriteBannedInRunner = [/writePublishLedger/, /recordPublishLedgerEntry/, /recordDualPlatformPublish/, /appendFileSync/, /writeFileSync/];
+for (const pat of ledgerWriteBannedInRunner) {
+  check(`runner 소스에 ledger write/mutation 없음 (${pat})`, !pat.test(runnerCode));
+}
+// runtime adapter 소스: read-only, write/mutation/외부 API 없음, secret 없음.
+const LEDGER_RUNTIME_PATH = path.join(ROOT, "lib", "publish-ledger-runtime.mjs");
+check("lib/publish-ledger-runtime.mjs 존재", existsSync(LEDGER_RUNTIME_PATH));
+if (existsSync(LEDGER_RUNTIME_PATH)) {
+  const rtRaw = readFileSync(LEDGER_RUNTIME_PATH, "utf8");
+  const rtCode = stripCommentsAndStrings(rtRaw);
+  check("runtime adapter: read-only export(readPublishLedgerReadOnly/evaluateLedgerDuplicateForUnit/checkLedgerDuplicate/buildPublishLedgerKey)",
+    /export function readPublishLedgerReadOnly/.test(rtRaw) && /export function evaluateLedgerDuplicateForUnit/.test(rtRaw) &&
+    /export function checkLedgerDuplicate/.test(rtRaw) && /export function buildPublishLedgerKey/.test(rtRaw));
+  check("runtime adapter: node:fs에서 read-only(existsSync/readFileSync)만 import, write API import 없음",
+    /import\s*\{\s*existsSync\s*,\s*readFileSync\s*\}\s*from\s*"node:fs"/.test(rtRaw) &&
+    !/writeFileSync|appendFileSync|mkdirSync|renameSync|rmSync|unlinkSync/.test(rtCode));
+  check("runtime adapter: schemaVersion publish_ledger_v1 + platform 허용값 계약(lib/publish-ledger.ts와 정합)",
+    /"publish_ledger_v1"/.test(rtRaw) && /instagram_reels/.test(rtRaw) && /youtube_shorts/.test(rtRaw));
+  check("runtime adapter: fail-closed reason 코드(invalid_json/wrong_schema_version/records_not_array/record_shape_invalid/duplicate_key_in_records)",
+    /invalid_json/.test(rtRaw) && /wrong_schema_version/.test(rtRaw) && /records_not_array/.test(rtRaw) &&
+    /record_shape_invalid/.test(rtRaw) && /duplicate_key_in_records/.test(rtRaw));
+  check("runtime adapter: 외부 API/OAuth/fetch/googleapis/Blob/process.env/dotenv 접근 없음(순수 로컬 read)",
+    !/\bfetch\s*\(/.test(rtCode) && !/googleapis/.test(rtCode) && !/graph\.facebook\.com/.test(rtCode) &&
+    !/@vercel\/blob/.test(rtCode) && !/process\.env/.test(rtCode) && !/dotenv/.test(rtCode) && !/\.env\.local/.test(rtRaw));
+  check("runtime adapter: secret 필드명/값 파생 없음(accessToken/refreshToken/clientSecret/apiKey/blobToken/hash/masked)",
+    !/accessToken|refreshToken|clientSecret|apiKey|blobToken|readWriteToken|authorization|bearer|createHash|masked/i.test(rtCode));
+  check("runtime adapter: 실제 API/ffmpeg/child_process/upload 없음",
+    !/child_process|spawnSync|execFileSync|execSync|ffmpeg|ffprobe/.test(rtCode) && !/youtube\.videos\.insert/.test(rtCode));
+}
+
 // ── 3) runner 실제 실행 (child_process, --dry-run) ───────────────────────────
 
 let execOutput = "";
@@ -1767,6 +1828,183 @@ if (typeof igSrc === "string" && typeof ytSrc === "string" && existsSync(igSrc) 
     check("custom missing-blob probe: gate 5 credential이 gate trace에 없음(미도달)", !nbt.find((g) => g.order === 5));
     const nbc = noBlobLive?.sideEffectCounters ?? {};
     check("custom missing-blob probe --live: 모든 side-effect counter 0(credential access 포함)", Object.keys(nbc).length > 0 && Object.values(nbc).every((v) => v === 0));
+
+    // ── (C) read-only publish ledger bridge probe ──────────────────────────────
+    // task: publish-ledger-runtime-readonly-orchestrator-bridge-no-live-v1
+    // readyProbe(gate 1~4 통과 custom content)를 재사용해 --publish-ledger 옵션의 read-only bridge를 검증한다.
+    // ledger JSON은 probe temp에만 write하고(레포 밖) 검증 후 정리한다. orchestrator는 ledger를 read만 한다.
+    const LEDGER_SCHEMA = "publish_ledger_v1";
+    const probeIgKey = "t_probe_credgate_ready_static/instagram_reels/vprobe";
+    const probeYtKey = "t_probe_credgate_ready_static/youtube_shorts/vprobe";
+    const ledgerRecord = (platform, publishedId) => ({
+      key: `t_probe_credgate_ready_static/${platform}/vprobe`,
+      contentId: "t_probe_credgate_ready_static",
+      platform,
+      version: "vprobe",
+      publishedId,
+      status: "published",
+      publishedAtIso: "2026-07-08T00:00:00.000Z",
+    });
+    const runLive = (extraArgs, env) => {
+      let live = null, exit = null, raw = "";
+      try {
+        const out = execFileSync(process.execPath, [RUNNER_PATH, "--live", "--content-unit", readyProbePath, ...extraArgs], { cwd: ROOT, encoding: "utf8", timeout: 15000, env });
+        exit = 0; raw = out; live = JSON.parse(out);
+      } catch (e) {
+        exit = typeof e?.status === "number" ? e.status : null;
+        raw = String(e?.stdout || "");
+        try { live = JSON.parse(e?.stdout || ""); } catch { live = null; }
+      }
+      return { live, exit, raw };
+    };
+
+    // (C0) default content + sample ledger fixture: 여전히 gate 4 duplicate block(reference)이 유지되는지.
+    const SAMPLE_LEDGER_PATH = path.join(ROOT, "scripts", "fixtures", "publish_ledger.sample.v1.json");
+    if (existsSync(SAMPLE_LEDGER_PATH)) {
+      let defLedgerLive = null, defLedgerExit = null;
+      try {
+        const out = execFileSync(process.execPath, [RUNNER_PATH, "--arm", "--publish-ledger", SAMPLE_LEDGER_PATH], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: buildProbeDummyCredEnv() });
+        defLedgerExit = 0; defLedgerLive = JSON.parse(out);
+      } catch (e) {
+        defLedgerExit = typeof e?.status === "number" ? e.status : null;
+        try { defLedgerLive = JSON.parse(e?.stdout || ""); } catch { defLedgerLive = null; }
+      }
+      check("ledger bridge: default + sample ledger → exit 3 BLOCKED_DUPLICATE (reference 여전히 차단)", defLedgerExit === 3 && defLedgerLive?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED", `exit=${defLedgerExit}`);
+      check("ledger bridge: default + sample ledger → publishLedgerBridge.pathProvided/readOk true, recordCount 2, readOnly true",
+        defLedgerLive?.publishLedgerBridge?.pathProvided === true && defLedgerLive?.publishLedgerBridge?.readOk === true &&
+        defLedgerLive?.publishLedgerBridge?.recordCount === 2 && defLedgerLive?.publishLedgerBridge?.readOnly === true &&
+        defLedgerLive?.publishLedgerBridge?.writePerformed === false);
+      // sample ledger는 t1_lifestyle_inflation/v3_2를 담으므로 이 probe(default t1)의 key와 정합해 ledger도 duplicate true.
+      check("ledger bridge: default + sample ledger → ledger duplicateSources true (additive, reference+ledger 둘 다)",
+        defLedgerLive?.duplicateBlock?.duplicateSources?.referenceInstagram === true &&
+        defLedgerLive?.duplicateBlock?.duplicateSources?.ledgerInstagram === true);
+    } else {
+      check("ledger bridge: default + sample ledger probe skip(fixture 부재)", true, "sample fixture 부재");
+    }
+
+    // (C1) custom ready-probe + NO ledger path: 기존 동작 유지(gate 5/6 도달, exit 4), bridge 비활성.
+    const noLedger = runLive([], buildProbeDummyCredEnv());
+    check("ledger bridge: custom ready-probe + no ledger → exit 4 (기존 동작 유지, gate 6 no-run)", noLedger.exit === 4 && noLedger.live?.status === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", `exit=${noLedger.exit}`);
+    check("ledger bridge: custom ready-probe + no ledger → publishLedgerBridge.pathProvided false, readAttempted false",
+      noLedger.live?.publishLedgerBridge?.pathProvided === false && noLedger.live?.publishLedgerBridge?.readAttempted === false && noLedger.live?.publishLedgerBridge?.anyDuplicate === false);
+
+    // (C2) custom ready-probe + MISSING ledger file: read ok empty, duplicate 없음 → gate 5/6 도달(exit 4).
+    const missingLedgerPath = path.join(probeTmpDir, "does_not_exist_ledger.json");
+    const missLedger = runLive(["--publish-ledger", missingLedgerPath], buildProbeDummyCredEnv());
+    check("ledger bridge: custom ready-probe + missing ledger → exit 4 (missing=empty ok, duplicate 없음)", missLedger.exit === 4 && missLedger.live?.status === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", `exit=${missLedger.exit}`);
+    check("ledger bridge: custom ready-probe + missing ledger → pathProvided true, readOk true, existed false, recordCount 0",
+      missLedger.live?.publishLedgerBridge?.pathProvided === true && missLedger.live?.publishLedgerBridge?.readOk === true &&
+      missLedger.live?.publishLedgerBridge?.existed === false && missLedger.live?.publishLedgerBridge?.recordCount === 0);
+
+    // (C3) custom ready-probe + EMPTY ledger(records []): read ok, duplicate 없음 → gate 5/6 도달(exit 4).
+    const emptyLedgerPath = path.join(probeTmpDir, "empty_ledger.json");
+    writeFileSync(emptyLedgerPath, JSON.stringify({ schemaVersion: LEDGER_SCHEMA, records: [] }, null, 2), "utf8");
+    const emptyLedger = runLive(["--publish-ledger", emptyLedgerPath], buildProbeDummyCredEnv());
+    check("ledger bridge: custom ready-probe + empty ledger → exit 4 (records [], duplicate 없음)", emptyLedger.exit === 4 && emptyLedger.live?.status === "ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE", `exit=${emptyLedger.exit}`);
+    check("ledger bridge: custom ready-probe + empty ledger → readOk true, existed true, recordCount 0, anyDuplicate false",
+      emptyLedger.live?.publishLedgerBridge?.readOk === true && emptyLedger.live?.publishLedgerBridge?.existed === true &&
+      emptyLedger.live?.publishLedgerBridge?.recordCount === 0 && emptyLedger.live?.publishLedgerBridge?.anyDuplicate === false);
+
+    // (C4) custom ready-probe + MATCHING ledger record: gate 4 duplicate block before credential(exit 3).
+    const matchLedgerPath = path.join(probeTmpDir, "match_ledger.json");
+    writeFileSync(matchLedgerPath, JSON.stringify({ schemaVersion: LEDGER_SCHEMA, records: [ledgerRecord("instagram_reels", "IG_PROBE_PUBLIC"), ledgerRecord("youtube_shorts", "YT_PROBE_PUBLIC")] }, null, 2), "utf8");
+    const matchLedger = runLive(["--publish-ledger", matchLedgerPath], buildProbeDummyCredEnv());
+    check("ledger bridge: custom ready-probe + matching ledger → exit 3 BLOCKED_DUPLICATE (gate 4, credential 이전)", matchLedger.exit === 3 && matchLedger.live?.status === "BLOCKED_DUPLICATE_ALREADY_PUBLISHED", `exit=${matchLedger.exit}`);
+    check("ledger bridge: custom ready-probe + matching ledger → credentialResolutionReached false (credential 미도달)",
+      matchLedger.live?.credentialResolutionReached === false && matchLedger.live?.credentialValuesAccessed === false && matchLedger.live?.actualApiCallReached === false);
+    check("ledger bridge: custom ready-probe + matching ledger → duplicateSources.ledgerInstagram/ledgerYoutube true, reference false (ledger가 duplicate 확정)",
+      matchLedger.live?.duplicateBlock?.duplicateSources?.ledgerInstagram === true && matchLedger.live?.duplicateBlock?.duplicateSources?.ledgerYoutube === true &&
+      matchLedger.live?.duplicateBlock?.duplicateSources?.referenceInstagram === false && matchLedger.live?.duplicateBlock?.duplicateSources?.referenceYoutube === false);
+    check("ledger bridge: custom ready-probe + matching ledger → gate trace 4 blocked, 5/6 blockedBy duplicate_publish_guard",
+      (() => { const t = Array.isArray(matchLedger.live?.gateTrace) ? matchLedger.live.gateTrace : []; const g4 = t.find((g) => g.order === 4), g5 = t.find((g) => g.order === 5); return g4?.blocked === true && g5?.reached === false && g5?.blockedBy === "duplicate_publish_guard"; })());
+    const mlc = matchLedger.live?.sideEffectCounters ?? {};
+    check("ledger bridge: custom ready-probe + matching ledger → 모든 side-effect counter 0(ledger write 포함)",
+      Object.keys(mlc).length > 0 && Object.values(mlc).every((v) => v === 0));
+
+    // (C5) INVALID ledger JSON: fail-closed BLOCKED_PUBLISH_LEDGER_READ_FAILED before credential(exit 3).
+    const invalidLedgerPath = path.join(probeTmpDir, "invalid_ledger.json");
+    writeFileSync(invalidLedgerPath, "{ not valid json ,,,", "utf8");
+    const invalidLedger = runLive(["--publish-ledger", invalidLedgerPath], buildProbeDummyCredEnv());
+    check("ledger bridge: custom ready-probe + invalid JSON ledger → exit 3 BLOCKED_PUBLISH_LEDGER_READ_FAILED (credential 이전)", invalidLedger.exit === 3 && invalidLedger.live?.status === "BLOCKED_PUBLISH_LEDGER_READ_FAILED", `exit=${invalidLedger.exit}`);
+    check("ledger bridge: invalid JSON → publishLedgerReadFailure.reason invalid_json, credential 미도달",
+      invalidLedger.live?.publishLedgerReadFailure?.reason === "invalid_json" && invalidLedger.live?.credentialResolutionReached === false &&
+      invalidLedger.live?.credentialValuesAccessed === false && invalidLedger.live?.actualApiCallReached === false);
+
+    // (C6) WRONG schema ledger: fail-closed BLOCKED_PUBLISH_LEDGER_READ_FAILED before credential(exit 3).
+    const wrongSchemaPath = path.join(probeTmpDir, "wrong_schema_ledger.json");
+    writeFileSync(wrongSchemaPath, JSON.stringify({ schemaVersion: "publish_ledger_vX", records: [] }), "utf8");
+    const wrongSchema = runLive(["--publish-ledger", wrongSchemaPath], buildProbeDummyCredEnv());
+    check("ledger bridge: wrong schema ledger → exit 3 BLOCKED_PUBLISH_LEDGER_READ_FAILED, reason wrong_schema_version", wrongSchema.exit === 3 && wrongSchema.live?.status === "BLOCKED_PUBLISH_LEDGER_READ_FAILED" && wrongSchema.live?.publishLedgerReadFailure?.reason === "wrong_schema_version", `exit=${wrongSchema.exit}`);
+
+    // (C7) DUPLICATE key ledger: fail-closed before credential(exit 3).
+    const dupKeyPath = path.join(probeTmpDir, "dup_key_ledger.json");
+    writeFileSync(dupKeyPath, JSON.stringify({ schemaVersion: LEDGER_SCHEMA, records: [ledgerRecord("instagram_reels", "A"), ledgerRecord("instagram_reels", "B")] }), "utf8");
+    const dupKey = runLive(["--publish-ledger", dupKeyPath], buildProbeDummyCredEnv());
+    check("ledger bridge: duplicate-key ledger → exit 3 BLOCKED_PUBLISH_LEDGER_READ_FAILED, reason duplicate_key_in_records", dupKey.exit === 3 && dupKey.live?.status === "BLOCKED_PUBLISH_LEDGER_READ_FAILED" && dupKey.live?.publishLedgerReadFailure?.reason === "duplicate_key_in_records", `exit=${dupKey.exit}`);
+
+    // (C8) 전 케이스: ledger read summary/output에 secret 값 형태 없음.
+    const allLedgerRaw = [noLedger.raw, missLedger.raw, emptyLedger.raw, matchLedger.raw, invalidLedger.raw, wrongSchema.raw, dupKey.raw].join("\n");
+    check("ledger bridge: 전 probe 출력에 secret 값 형태/DUMMY 값 없음",
+      !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(allLedgerRaw) && !allLedgerRaw.includes(PROBE_DUMMY_VALUE));
+
+    // ── (C9) preflight readiness gate: ledger read 실패가 preflightOk를 not-ready로 만드는지 ─────
+    // task: publish-ledger-runtime-readonly-preflight-gate-fix-v1
+    // readyProbe는 source 존재 + blob liveness evidence를 가진 custom content라 preflight가 ready(preflightOk:true)다.
+    // ledger 경로가 없거나 read ok면 readiness에 영향 없고, read 실패면 preflightOk:false + 명확한 flag를 남겨야 한다.
+    const runPreflight = (extraArgs) => {
+      let live = null, exit = null, raw = "";
+      try {
+        const out = execFileSync(process.execPath, [RUNNER_PATH, "--preflight", "--content-unit", readyProbePath, ...extraArgs], { cwd: ROOT, encoding: "utf8", timeout: 15000, env: buildProbeBaseEnv() });
+        exit = 0; raw = out; live = JSON.parse(out);
+      } catch (e) {
+        exit = typeof e?.status === "number" ? e.status : null;
+        raw = String(e?.stdout || "");
+        try { live = JSON.parse(e?.stdout || ""); } catch { live = null; }
+      }
+      return { live, exit, raw };
+    };
+    // (C9a) baseline: ledger 경로 없이 preflight → preflightOk:true(readyProbe는 ready), ledger flag 비활성.
+    const pfBase = runPreflight([]);
+    check("preflight readiness: no ledger → preflightOk true (baseline ready) + publishLedgerPathProvided false",
+      pfBase.live?.preflight?.preflightOk === true &&
+      pfBase.live?.preflight?.publishLedgerPathProvided === false &&
+      pfBase.live?.preflight?.publishLedgerReadFailureBlocksReadiness === false);
+    // (C9b) invalid ledger → preflightOk:false + 명확한 non-secret flag/reason.
+    const pfInvalid = runPreflight(["--publish-ledger", invalidLedgerPath]);
+    check("preflight readiness: invalid ledger → preflightOk FALSE (review-fix 핵심)", pfInvalid.live?.preflight?.preflightOk === false);
+    check("preflight readiness: invalid ledger → publishLedgerReadOk false + publishLedgerReadFailureBlocksReadiness true + reason invalid_json",
+      pfInvalid.live?.preflight?.publishLedgerReadOk === false &&
+      pfInvalid.live?.preflight?.publishLedgerReadFailureBlocksReadiness === true &&
+      pfInvalid.live?.preflight?.publishLedgerReadFailReason === "invalid_json");
+    check("preflight readiness: invalid ledger → publishLedgerBridge.readOk false + readFailReason invalid_json + writePerformed false(no write)",
+      pfInvalid.live?.publishLedgerBridge?.readOk === false &&
+      pfInvalid.live?.publishLedgerBridge?.readFailReason === "invalid_json" &&
+      pfInvalid.live?.publishLedgerBridge?.writePerformed === false);
+    // (C9c) wrong-schema / duplicate-key ledger도 preflightOk:false로 잠근다.
+    const pfWrongSchema = runPreflight(["--publish-ledger", wrongSchemaPath]);
+    check("preflight readiness: wrong-schema ledger → preflightOk false + reason wrong_schema_version",
+      pfWrongSchema.live?.preflight?.preflightOk === false && pfWrongSchema.live?.preflight?.publishLedgerReadFailReason === "wrong_schema_version");
+    const pfDupKey = runPreflight(["--publish-ledger", dupKeyPath]);
+    check("preflight readiness: duplicate-key ledger → preflightOk false + reason duplicate_key_in_records",
+      pfDupKey.live?.preflight?.preflightOk === false && pfDupKey.live?.preflight?.publishLedgerReadFailReason === "duplicate_key_in_records");
+    // (C9d) missing ledger file → readiness 영향 없음(readOk true, existed false, preflightOk 유지).
+    const pfMissing = runPreflight(["--publish-ledger", missingLedgerPath]);
+    check("preflight readiness: missing ledger → publishLedgerReadOk true, existed false, readiness 안 막음(preflightOk 유지)",
+      pfMissing.live?.preflight?.publishLedgerReadOk === true &&
+      pfMissing.live?.publishLedgerBridge?.existed === false &&
+      pfMissing.live?.preflight?.publishLedgerReadFailureBlocksReadiness === false &&
+      pfMissing.live?.preflight?.preflightOk === pfBase.live?.preflight?.preflightOk);
+    // (C9e) empty ledger(records []) → read ok, readiness 영향 없음.
+    const pfEmpty = runPreflight(["--publish-ledger", emptyLedgerPath]);
+    check("preflight readiness: empty ledger → readOk true, readiness 안 막음(preflightOk 유지)",
+      pfEmpty.live?.preflight?.publishLedgerReadOk === true &&
+      pfEmpty.live?.preflight?.publishLedgerReadFailureBlocksReadiness === false &&
+      pfEmpty.live?.preflight?.preflightOk === pfBase.live?.preflight?.preflightOk);
+    // (C9f) preflight readiness 검증 전 출력에 secret/DUMMY 값 없음.
+    const allPfRaw = [pfBase.raw, pfInvalid.raw, pfWrongSchema.raw, pfDupKey.raw, pfMissing.raw, pfEmpty.raw].join("\n");
+    check("preflight readiness: 전 preflight 출력에 secret 값 형태/DUMMY 값 없음",
+      !/(EAA[A-Za-z0-9]{20}|ya29\.[A-Za-z0-9_-]{20}|vercel_blob_rw_[A-Za-z0-9]{10})/.test(allPfRaw) && !allPfRaw.includes(PROBE_DUMMY_VALUE));
+    void [probeIgKey, probeYtKey];
   } finally {
     try { rmSync(probeTmpDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }
