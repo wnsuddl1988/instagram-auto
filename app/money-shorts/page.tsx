@@ -1,38 +1,40 @@
 import Link from "next/link";
 
+import OperatorPanel from "@/components/OperatorPanel";
+
 // ── Workflow step data ────────────────────────────────────────────────────────
 
 const WORKFLOW_STEPS = [
   {
     num: 1,
-    title: "Fact Card Overview",
-    desc: "valid/broken fixture 예시 확인 · authorManualFactCard() 결과 비교",
+    title: "샘플 확인",
+    desc: "출처가 있는 예시와 잘못된 예시를 먼저 확인합니다.",
     href: "/fact-cards/manual",
-    label: "overview 보기",
+    label: "샘플 보기",
     accent: "indigo",
   },
   {
     num: 2,
-    title: "Manual Fact Card 입력",
-    desc: "Owner가 출처 수치를 직접 입력 · 실시간 validation · 샘플 불러오기/초기화",
+    title: "새 콘텐츠 입력",
+    desc: "숫자, 출처, 핵심 내용을 직접 입력하고 바로 검증합니다.",
     href: "/fact-cards/manual/new",
-    label: "직접 입력하기",
+    label: "입력하기",
     accent: "indigo",
   },
   {
     num: 3,
-    title: "Package Preview",
-    desc: "valid Fact Card → Blueprint → Script → Risk → QA → Owner Gate → Clipboard 전체 pipeline 미리보기",
+    title: "영상 패키지 미리보기",
+    desc: "대본, 검수 문구, 업로드용 제목과 설명을 한 번에 확인합니다.",
     href: "/fact-cards/manual/package-preview",
-    label: "pipeline 미리보기",
+    label: "미리보기",
     accent: "slate",
   },
   {
     num: 4,
-    title: "Package Library",
-    desc: "승인/반려/차단 상태별 콘텐츠 패키지 목록 · 워크플로우 상태 확인",
+    title: "저장된 콘텐츠 보기",
+    desc: "승인, 반려, 차단된 콘텐츠 목록과 진행 상태를 확인합니다.",
     href: "/packages",
-    label: "패키지 라이브러리",
+    label: "목록 보기",
     accent: "slate",
   },
 ] as const;
@@ -40,10 +42,10 @@ const WORKFLOW_STEPS = [
 // ── Principle items ───────────────────────────────────────────────────────────
 
 const PRINCIPLES = [
-  "Fact Card first — 출처 수치를 먼저 확정하고 대본은 그 다음",
-  "Fact Card에 없는 사실·숫자는 대본에 쓰지 않는다",
-  "이 화면은 local preview 전용 — DB 저장, publish, render, upload 없음",
-  "AI는 Fact Card 필드 외 값을 발명하지 않는다",
+  "숫자와 사실은 출처가 확인된 것만 사용합니다.",
+  "입력하지 않은 내용은 AI가 임의로 만들지 않습니다.",
+  "이 화면에서는 바로 업로드하지 않고 먼저 검토합니다.",
+  "검토가 끝난 콘텐츠만 영상 제작과 업로드 단계로 넘깁니다.",
 ];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -99,21 +101,21 @@ export default function MoneyShortsDashboardPage() {
         <div className="max-w-screen-lg mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-base font-bold text-slate-100 tracking-tight">
-              Money Shorts OS — Workflow Hub
+              AI 쇼츠 자동화
             </h1>
             <p className="text-xs text-slate-500">
-              Source-first MVP · local preview 전용 · 외부 API 없음 (live 경로 제외)
+              출처 확인부터 대본, 영상 패키지, 업로드 준비까지 한 번에 관리합니다.
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2 py-1 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-xs font-semibold">
-              SOURCE FIRST
+              출처 확인
             </span>
             <span className="px-2 py-1 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
-              LOCAL ONLY
+              먼저 검토
             </span>
             <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-slate-400 text-xs">
-              MVP1
+              업로드 준비
             </span>
           </div>
         </div>
@@ -121,10 +123,26 @@ export default function MoneyShortsDashboardPage() {
 
       <main className="max-w-screen-lg mx-auto px-4 py-6 space-y-6">
 
-        {/* Source-first principles */}
+        {/* 큰 CTA */}
+        <section>
+          <Link
+            href="/fact-cards/manual/new"
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-indigo-600/60 bg-indigo-600/90 hover:bg-indigo-600 px-5 py-4 text-white font-bold text-base transition-colors"
+          >
+            새 쇼츠 만들기 →
+          </Link>
+          <p className="text-xs text-slate-500 mt-2 text-center">
+            숫자와 출처를 입력하면 대본과 업로드용 제목·설명까지 만들어집니다.
+          </p>
+        </section>
+
+        {/* 웹 운영 콘솔 — 버튼으로 준비 상태 확인 (업로드는 실행하지 않음) */}
+        <OperatorPanel />
+
+        {/* 사용 전 확인 원칙 */}
         <section className="rounded-xl border border-amber-800/40 bg-amber-900/10 px-5 py-4">
           <div className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
-            출처 우선 원칙
+            사용 전 확인
           </div>
           <ul className="space-y-2">
             {PRINCIPLES.map((p, i) => (
@@ -139,7 +157,7 @@ export default function MoneyShortsDashboardPage() {
         {/* Workflow steps */}
         <section>
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-            Workflow 순서
+            진행 순서
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {WORKFLOW_STEPS.map((step) => (
@@ -148,33 +166,31 @@ export default function MoneyShortsDashboardPage() {
           </div>
         </section>
 
-        {/* Live latest draft candidate — dev-only explicit access */}
+        {/* 최신 기준금리 초안 — 클릭할 때만 데이터를 불러온다 */}
         <section className="rounded-xl border border-blue-800/40 bg-blue-900/10 px-5 py-4">
           <div className="text-xs font-bold text-blue-300 uppercase tracking-wider mb-2">
-            Live Latest Draft Candidate
+            최신 기준금리 후보 만들기
           </div>
           <p className="text-xs text-blue-200/70 mb-3 leading-relaxed">
-            ECOS에서 최신 기준금리 데이터를 직접 읽어 Fact Card 후보를 생성합니다.
-            이 경로는 개발 전용이며 클릭 시에만 외부 API를 호출합니다.
-            결과는 draft-only (isPublishable=false) 이며 render / upload가 수행되지 않습니다.
+            한국은행 데이터를 불러와 기준금리 관련 쇼츠 후보를 만듭니다.
+            클릭할 때만 데이터를 불러오며, 바로 업로드하지 않고 초안으로만 보여줍니다.
           </p>
           <Link
             href="/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606"
             prefetch={false}
             className="inline-flex items-center gap-1.5 self-start px-3 py-1.5 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 hover:bg-blue-900/60 text-xs font-semibold transition-colors"
           >
-            기준금리 live latest 미리보기 →
+            기준금리 후보 보기 →
           </Link>
         </section>
 
         {/* Status note */}
         <section className="rounded-xl border border-slate-800/50 bg-slate-900/40 px-5 py-4 text-xs text-slate-500">
-          <div className="font-bold text-slate-400 mb-1">현재 상태</div>
+          <div className="font-bold text-slate-400 mb-1">현재 이 화면에서 할 수 있는 것</div>
           <p>
-            이 화면은 source-first MVP의 로컬 workbench 진입점입니다.
-            모든 데이터는 브라우저 상태에만 머물고 외부로 전송되지 않습니다.
-            render / ffmpeg / TTS / upload는 이 UI에서 수행되지 않습니다.
-            Live Latest 섹션은 예외적으로 ECOS 외부 API를 호출하며 클릭 시에만 동작합니다.
+            새 쇼츠 아이디어를 입력하고, 출처와 내용이 맞는지 확인한 뒤,
+            영상 제작 전에 업로드용 제목·설명·검수 내용을 미리 볼 수 있습니다.
+            실제 영상 생성과 업로드는 검토가 끝난 뒤 별도 단계에서 실행됩니다.
           </p>
         </section>
       </main>
