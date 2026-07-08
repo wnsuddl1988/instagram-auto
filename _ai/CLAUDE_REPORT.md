@@ -4652,3 +4652,32 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: route.ts는 수정 불필요(기존 raw:{script}가 확장 필드를 자동 포함). 기존에 만든 영상(옛 제목 자막)은 그대로며 새로 만들면 새 제목/대본 반영. C:\tmp 카탈로그의 옛 레코드는 동일 slug면 새 추천 시 새 title로 덮어써짐. 페이지 배경은 전역 다크 변수 대신 명시적 light 클래스로 이 화면만 전환(다른 화면 영향 없음).
 - checkpoint recommendation: 수정 6파일(전부 허용 목록), 콘텐츠 품질+UX release-critical 슬라이스 — Codex 검토 후 checkpoint commit 권장.
 
+## owner-web-concrete-self-recognition-hook-fix-v1 (2026-07-08) — ✅ 자기인식 후킹·대본 첫 3초 재정립 완료
+
+- **목표**: 재테크팁 제목·대본을 추상 비유에서 "내가 어제 한 소비 행동"으로 전환. 제목만 봐도 "이거 나잖아", 대본 첫 3문장은 구체 행동→심리→돈 새는 지점.
+- **제목 품질 기준 변경**: (a) 존댓말/설명체 종결(합니다/됩니다/습니다/입니다) 및 마침표 전면 금지 → 구체 행동으로 끝맺음, (b) 제목 안에 실제 생활 장면 키워드(월급날·배달앱·구독·카드값·장바구니·세일 알림·퇴근길·잔고·고지서·가계부 등) 필수, (c) 추상어(선택권/기준선/불안/체면/비교/보상심리/자기합리화/미래의 나) 단독 사용 금지 — 구체 행동 동반 강제, (d) 약한 설명형 suffix(이유/방법/공통점/체크리스트/절약법/부자 되는 법 등) 금지. 48개 title 전면 재작성.
+- **개선된 제목 예시 10개**: "월급 들어온 날 배달앱부터 켜는 사람" / "안 쓰는 구독 못 끊는 데엔 이유가 있다" / "카드값 두꺼운 달엔 감정이 먼저 무너졌다" / "세일 알림 뜨면 합리화부터 하는 사람" / "퇴근길 보상소비가 월급을 먼저 먹는다" / "새벽에 결제 누르고 아침에 후회하는 사람" / "고지서 안 뜯고 쌓아 두면 빚만 자란다" / "친구 앞 지출 맞추다 내 통장만 빈다" / "잔고 확인이 무서워 앱을 미루는 사람" / "이 정도는 괜찮다는 말이 통장을 비운다".
+- **대본 첫 3초 수정**: 프리미엄 낭독문 구조를 hook→empathy→[왜 그럴까요?]→p1에서 **1문장 구체 행동(hook) → 2문장 그때 심리(empathy) → 3문장 돈 새는 지점(p1)**으로 교체. "왜 그럴까요?" 질문형 브리지 제거, 반전 앞 다리("그런데 진짜 문제는 따로 있습니다.") 1개만 유지. 첫째/둘째/셋째 나열형은 비프리미엄 fallback에만.
+- **대본 첫 3초 예시 2개**: ① "카드 고지서 안 뜯고 쌓아 뒀다면. / 고지서를 안 뜯고 쌓아 둔 적 있죠. / 회피는 이자보다 빨리 불어납니다." ② "돈 없어서 원치 않는 걸 골랐던 적 있죠. / 돈이 없을 때 제일 아픈 건 못 고름. / 돈은 고를 수 있을 때 힘이 셉니다." (둘 다 행동→심리→돈 새는 지점 순, 훈계 아닌 들킨 느낌)
+- **UI 구분 개선**: 대본 결과를 **① 실제 읽히는 대본(최상단 크게, "음성 만들기와 영상 만들기는 이 문장을 사용합니다") ② 첫 3초 훅(대본 첫 3문장 강조) ③ 영상에 들어갈 자막 6개(번호 리스트) ④ 장면 그림 계획(details 접힘, 보조) ⑤ SNS 설명글 초안("영상이 읽는 대본과는 다릅니다" 명시)**로 재편. 실제 대본 / 자막 / 장면계획 / 설명글이 한눈에 구분됨.
+- **checks**: `node --check` exit 0, wizard guard **176 PASS / 0 FAIL**(종결어미·마침표·생활장면·추상어단독·약한suffix·첫3문장순서·왜그럴까요제거·다리1개·UI라벨5종·자막6개 등 신규 포함), web guard 88/0(무수정·회귀 없음), `tsc --noEmit` exit 0. 브라우저 실측: 재테크팁 추천→대본까지 정상, 라벨 5종·자막 6줄·안내 문구 2종 렌더, 콘솔 에러 0. smoke: 제목 종결어미/마침표 0건, 대본 첫 3문장 구조 정확, 자막 전부 ≤22자.
+- **side effects / env·secret**: 실제 업로드/외부 API/OAuth/Blob/ledger write 0, `--arm`/`--live` 실행 0(업로드 경로·게이트·allowArm 단일 지점 코드 무변경), 새 영상 생성 0(scriptPreview까지만), `.env*` read/edit 0·값 출력 0, dependency/lockfile 무변경. 임시 smoke 스크립트 삭제.
+- **deviations/risks**: route.ts는 수정 불필요(raw:{script} 확장 필드 자동 포함)라 지침 수정 대상 5개 중 4개만 변경. buildScenePlan의 scene[3] label은 여전히 "4. 반전"이나 낭독문 다리 문장은 그 앞 1개로 절제됨(자막 6줄=hook/empathy/p1/p2/p3/save 계약 불변). 기존 생성 영상은 옛 제목 자막 유지, 새로 만들면 반영.
+- checkpoint recommendation: 수정 4파일(전부 허용 목록) — 콘텐츠 후킹 핵심 기준 재정립 슬라이스, Codex 검토 후 checkpoint commit 권장.
+
+## owner-web-hook-language-review-fix-v1 (2026-07-08) — ✅ Codex finding 3건 review-fix 완료
+
+- **배경**: 직전 task는 자동 체크는 통과했으나 guard가 느슨해 핵심 문체 기준을 놓쳤음(설명형 제목·대본 설명체 잔존). Codex finding 3건을 정확히 해소.
+- **changed files**: `lib/owner-web-operator.ts`(구독 제목 교체 + premium bridge 단정형화 + points 19건·empathy 3건 설명체→단정형), `scripts/check-owner-one-click-video-creation-ui-static.mjs`(약패턴 anywhere + bridge 금지/단정형 요구 + hook/points/empathy/save 설명체 0 + 첫 3문장 설명체 0 guard). components/docs는 이번 finding에 변경 불필요(라벨·구조 유지).
+- **Codex finding 3건 해결**:
+  - #1 (`이유`류 제목): "안 쓰는 구독 못 끊는 데엔 이유가 있다" → **"구독 해지 버튼 앞에서 손이 멈추는 사람"**. guard의 약패턴 검사를 suffix(`$`)에서 **anywhere**로 확장해 제목 중간의 `이유/방법/공통점/체크리스트/리뷰법/절약법/돈 모으는 법/부자 되는 법`도 FAIL.
+  - #2 (bridge 설명체): premium voiceover 고정 브리지 "그런데 진짜 문제는 따로 있습니다." → **"진짜 문제는 따로 있다."**(단정형). guard는 설명체 고정문 잔존 시 FAIL + 단정형 다리 정확히 1개 요구로 반전.
+  - #3 (핵심 필드 설명체): finance `points` 19건 + `empathy` 3건의 `~됩니다/입니다/셉니다/습니다` → 단정형(`~된다/이다/세다/남는다` 등). hook/save는 이미 0. guard로 hook/points/empathy 설명체 0, save는 설명체 종결 금지(하세요류 CTA만 허용).
+- **수정된 제목 예시 8개**: "구독 해지 버튼 앞에서 손이 멈추는 사람"(교체) / "월급 들어온 날 배달앱부터 켜는 사람" / "세일 알림 뜨면 합리화부터 하는 사람" / "퇴근길 보상소비가 월급을 먼저 먹는다" / "카드값 두꺼운 달엔 감정이 먼저 무너졌다" / "새벽에 결제 누르고 아침에 후회하는 사람" / "고지서 안 뜯고 쌓아 두면 빚만 자란다" / "가계부가 삼 일 만에 끝난 건 의지 탓이 아니다". (48개 전부 이유류 anywhere 0·존댓말/마침표 종결 0)
+- **수정된 대본 첫 3초 예시 2개** (smoke 실측): ① "모임 전날 밤 옷부터 사고 있다면. / 모임 전날의 쇼핑엔 이유가 있죠. / 체면 소비는 시선에 내는 보험료죠." ② "가계부 앱 깔고 삼 일 만에 지웠다면. / 설치와 삭제를 반복한 앱, 있죠. / 완벽한 기록 욕심이 시작을 무겁게 해요." — 첫 3문장 설명체 0, 이후 단정형 다리 "진짜 문제는 따로 있다."
+- **guard 강화 요약**: (a) finance title 약패턴 anywhere 검출 FAIL, (b) 설명체 고정 bridge 잔존 FAIL + 단정형 다리 1개 요구, (c) finance hook/points/empathy 설명체 0 + save 설명체 금지, (d) premium fullVoiceover 첫 3문장(hook/empathy/p1) 설명체 0 정적 검증. 기존 upload safety guard(확인 게이트·allowArm 단일 지점·중복 차단·키 부재 처리) 전부 유지·불변.
+- **checks**: `node --check` exit 0, wizard guard **183 PASS / 0 FAIL**(신규 문체 8개 포함), web guard 88/0(무수정·회귀 없음), `tsc --noEmit` exit 0. 브라우저 실측: 재테크팁 추천→대본 정상, 라벨 5종·단정형 bridge 렌더, "따로 있습니다" 부재, 콘솔 에러 0. smoke: 48 title 이유류 anywhere 0·종결 0, 대본 3건 첫 3문장·자막 설명체 0.
+- **side effects / env·secret**: 실제 업로드/외부 API/OAuth/Blob/ledger write 0, `--arm`/`--live` 0(업로드 경로·게이트 코드 무변경), 새 영상 생성 0, `.env*` read/edit 0. 임시 smoke 스크립트 삭제.
+- **deviations/risks**: 지침의 "필요 시 components/docs"는 이번 finding(제목·대본 문체) 해소에 불필요해 미변경. points 단정형 전환은 자막 22자 계약을 유지(전부 기존 길이 이하). 기존 생성 영상은 옛 자막 유지, 새로 만들면 반영.
+- checkpoint recommendation: 수정 2파일(전부 허용 목록) — Codex finding 직접 해소 + guard 실효화, Codex 재검토 후 checkpoint commit 권장.
+

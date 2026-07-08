@@ -54,6 +54,7 @@ type WizardScript = {
   points: string[];
   twist: string;
   action: string;
+  captionLines?: string[];
   fullVoiceover: string;
   scenes?: WizardScriptScene[];
   captionFirstLineHook?: string;
@@ -562,40 +563,70 @@ export default function VideoCreationWizard() {
           {!selectedTopicId ? <p className="text-sm text-slate-400 mt-2">먼저 주제를 골라 주세요.</p> : null}
           <ResultNote result={scriptResult} />
           {script ? (
-            <div className="mt-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-5 py-5 space-y-5">
-              <div>
-                <p className="text-sm font-bold text-indigo-600 mb-1">첫 2초 훅</p>
-                <p className="text-xl font-bold text-slate-900 leading-snug">“{script.hookLine ?? script.hook}”</p>
+            <div className="mt-3 space-y-4">
+              {/* 실제 읽히는 대본 — 가장 위에 크게. 음성/영상이 이 문장을 그대로 사용한다. */}
+              <div className="rounded-2xl border-2 border-indigo-300 bg-indigo-50 px-5 py-5">
+                <p className="text-base font-bold text-indigo-700 mb-1">실제 읽히는 대본</p>
+                <p className="text-sm text-slate-500 mb-3">음성 만들기와 영상 만들기는 이 문장을 사용합니다.</p>
+                <p className="text-lg text-slate-900 leading-relaxed">{script.fullVoiceover}</p>
               </div>
-              <div>
-                <p className="text-sm font-bold text-indigo-600 mb-1">전체 대본 (낭독문)</p>
-                <p className="text-base text-slate-800 leading-relaxed">{script.fullVoiceover}</p>
+
+              {/* 첫 3초 훅 — 대본 첫 세 문장을 따로 강조 */}
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                <p className="text-sm font-bold text-indigo-600 mb-1">첫 3초 훅</p>
+                <p className="text-xl font-bold text-slate-900 leading-snug">
+                  “{script.captionLines?.slice(0, 3).join(" ") ?? script.hookLine ?? script.hook}”
+                </p>
               </div>
+
+              {/* 영상에 들어갈 자막 6개 */}
+              {script.captionLines && script.captionLines.length > 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                  <p className="text-sm font-bold text-indigo-600 mb-2">영상에 들어갈 자막 6개</p>
+                  <ol className="space-y-1.5">
+                    {script.captionLines.map((c, i) => (
+                      <li key={i} className="flex gap-2.5 text-[15px] text-slate-800">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-sm font-bold shrink-0">
+                          {i + 1}
+                        </span>
+                        <span className="pt-0.5">“{c}”</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
+
+              {/* 장면 그림 계획 — 보조 정보 */}
               {script.scenes && script.scenes.length > 0 ? (
-                <div>
-                  <p className="text-sm font-bold text-indigo-600 mb-2">장면별 구성</p>
-                  <div className="space-y-2">
+                <details className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                  <summary className="text-sm font-bold text-indigo-600 cursor-pointer">
+                    장면 그림 계획 (보조 정보)
+                  </summary>
+                  <div className="mt-3 space-y-2">
                     {script.scenes.map((s) => (
-                      <div key={s.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                        <p className="text-[15px] font-bold text-slate-900">{s.label}</p>
-                        <p className="text-[15px] text-slate-700 mt-1">
-                          화면 자막: <span className="font-semibold">“{s.captionText}”</span>
-                        </p>
+                      <div key={s.id} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5">
+                        <p className="text-sm font-bold text-slate-700">{s.label}</p>
                         <p className="text-sm text-slate-500 mt-0.5">장면 그림: {s.visualCue}</p>
                       </div>
                     ))}
                   </div>
-                </div>
+                </details>
               ) : null}
+
+              {/* SNS 설명글 초안 — 실제 대본이 아님을 분명히 */}
               {script.uploadCaptionDraft ? (
-                <div>
-                  <p className="text-sm font-bold text-indigo-600 mb-1">업로드 문구 초안</p>
+                <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                  <p className="text-sm font-bold text-indigo-600 mb-1">SNS 설명글 초안</p>
+                  <p className="text-sm text-slate-500 mb-2">
+                    업로드할 때 쓰는 설명글입니다. 영상이 읽는 대본과는 다릅니다.
+                  </p>
                   <p className="text-[15px] text-slate-700 whitespace-pre-line leading-relaxed">
                     {script.uploadCaptionDraft}
                   </p>
                 </div>
               ) : null}
-              <p className="text-sm text-slate-500">
+
+              <p className="text-sm text-slate-500 px-1">
                 훅 점수 {script.hookScore ?? "-"}점 · 전달력 점수 {script.clarityScore ?? "-"}점
               </p>
             </div>

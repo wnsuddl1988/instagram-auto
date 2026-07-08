@@ -234,6 +234,39 @@ const finSeedLines = financeSrc.split("\n").filter((l) => /slug:\s*"/.test(l));
   check("finance titles all unique", new Set(titles).size === titles.length && titles.every(Boolean));
   const badLen = titles.filter((t) => t.length < 12 || t.length > 36);
   check("finance titles are 12~36 chars (권장 18~34)", badLen.length === 0, badLen.join(" | "));
+
+  // ── 자기인식 후킹 계약: 존댓말/설명체 종결 금지 (task: concrete-self-recognition-hook) ──
+  // 제목은 마침표 없이 구체 행동으로 끝나야 한다. 존댓말 종결어미로 끝나면 설명문처럼 읽힌다.
+  const politeEnd = titles.filter((t) => /(합니다|됩니다|습니다|입니다)$/.test(t));
+  check("finance titles do not end with 존댓말 종결(합니다/됩니다/습니다/입니다)", politeEnd.length === 0, politeEnd.join(" | "));
+  const hasPeriod = titles.filter((t) => /[.。]$/.test(t));
+  check("finance titles have no trailing 마침표", hasPeriod.length === 0, hasPeriod.join(" | "));
+
+  // 제목 안에 실제 생활 장면/행동 키워드가 있어야 "내 얘기" 느낌이 산다.
+  const SCENE_KW = [
+    "월급", "배달", "구독", "카드값", "장바구니", "세일", "퇴근길", "결제", "친구", "이번 달만", "이번 한 번만",
+    "할부", "택배", "잔고", "통장", "고지서", "가계부", "알림", "모임", "선물", "피드", "폰", "저축", "이체",
+    "소비", "지출", "돈", "빚", "살림", "연봉", "수입", "고정비", "비상금", "씀씀이", "지른", "산 걸", "사니까",
+    "벌어도", "구입", "사고", "쓴",
+  ];
+  const noScene = titles.filter((t) => !SCENE_KW.some((k) => t.includes(k)));
+  check("every finance title has a 생활 장면/행동 키워드", noScene.length === 0, noScene.join(" | "));
+
+  // 추상어 단독 사용 금지 — 반드시 구체 행동/상황 키워드와 함께 써야 한다.
+  const ABSTRACT_ONLY = ["선택권", "기준선", "불안", "체면", "비교", "보상심리", "자기합리화", "미래의 나"];
+  const CONCRETE_KW = [
+    "월급", "배달", "구독", "카드값", "장바구니", "세일", "퇴근길", "결제", "친구", "이번 달만", "이번 한 번만",
+    "할부", "택배", "잔고", "통장", "고지서", "가계부", "알림", "모임", "선물", "피드", "폰", "저축", "이체", "지출",
+  ];
+  const abstractOnly = titles.filter(
+    (t) => ABSTRACT_ONLY.some((a) => t.includes(a)) && !CONCRETE_KW.some((c) => t.includes(c)),
+  );
+  check("finance titles never use 추상어 단독 (구체 행동 동반 필수)", abstractOnly.length === 0, abstractOnly.join(" | "));
+
+  // 약한 설명형 패턴 금지 — suffix뿐 아니라 제목 "어디에 있든" 차단 (Codex finding: "…이유가 있다" 놓침).
+  const WEAK_ANYWHERE = /(이유|방법|공통점|체크리스트|리뷰법|절약법|돈 모으는 법|부자 되는 법)/;
+  const weakAnywhere = titles.filter((t) => WEAK_ANYWHERE.test(t));
+  check("finance titles have no 약한 설명형 패턴 anywhere (이유/방법/공통점/체크리스트…)", weakAnywhere.length === 0, weakAnywhere.join(" | "));
 }
 {
   // 자막 계약: hook/empathy/points/save는 trimCaption(22자) 안에 들어가야 잘리지 않는다.
@@ -259,6 +292,33 @@ const finSeedLines = financeSrc.split("\n").filter((l) => /slug:\s*"/.test(l));
   });
   check("finance save CTA includes 행동 시점", noTiming.length === 0, `${noTiming.length} seeds`);
 }
+{
+  // ── 문체 계약 (task: hook-language-review-fix) ──
+  // hook/points는 자막·대본 핵심 문장이라 설명체 종결(합니다/됩니다/습니다/입니다/셉니다)이 0이어야 한다.
+  const POLITE = /(합니다|됩니다|습니다|입니다|셉니다)/;
+  const hookViol = [];
+  const pointViol = [];
+  const empViol = [];
+  const saveViol = [];
+  for (const line of finSeedLines) {
+    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
+    const hook = /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
+    const emp = /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
+    const save = /save:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
+    if (POLITE.test(hook)) hookViol.push(`${slug}: ${hook}`);
+    if (POLITE.test(emp)) empViol.push(`${slug}: ${emp}`);
+    // save는 CTA라 "~하세요/여세요/보세요"는 허용, 설명체 종결만 금지.
+    if (POLITE.test(save)) saveViol.push(`${slug}: ${save}`);
+    const pointsRaw = /points:\s*\[([^\]]+)\]/.exec(line)?.[1] ?? "";
+    [...pointsRaw.matchAll(/"([^"]+)"/g)].forEach((m, i) => {
+      if (POLITE.test(m[1])) pointViol.push(`${slug}.p${i + 1}: ${m[1]}`);
+    });
+  }
+  check("finance hook has no 설명체 종결(합니다/됩니다/습니다/입니다/셉니다)", hookViol.length === 0, hookViol.slice(0, 8).join(" | "));
+  check("finance points have no 설명체 종결 (자막·대본 직접 노출)", pointViol.length === 0, pointViol.slice(0, 8).join(" | "));
+  check("finance empathy has no 설명체 종결 (대본 2번째 문장)", empViol.length === 0, empViol.slice(0, 8).join(" | "));
+  check("finance save CTA has no 설명체 종결 (하세요류만 허용)", saveViol.length === 0, saveViol.slice(0, 8).join(" | "));
+}
 
 // anti-repeat: 최근 노출 제외 창 — 순서만 바뀌는 셔플 금지
 check("helper persists recent-shown seeds outside repo", /wizard-topic-recent-shown\.json/.test(helperSrc) && /readRecentShownSeedSlugs/.test(helperCode) && /writeRecentShownSeedSlugs/.test(helperCode));
@@ -267,15 +327,43 @@ check("recent window = pool - batch (연속 배치 무겹침 보장)", /pool\.le
 // pool ≥45 + 창(pool-batch) ⇒ 5회×9개 = 45개 전부 서로 다른 title(≥30) + 연속 배치 겹침 0 — 정적으로 보장
 check("finance 5-batch ≥30 unique titles statically guaranteed", finSeedCount >= 45 && /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
 
-// 프리미엄 대본 흐름: 후킹→공감(empathy)→[다리]→심리→[다리]→반전→[다리]→행동→저장
+// 프리미엄 대본 흐름: 1문장 구체 행동(hook) → 2문장 심리(empathy) → 3문장 돈 새는 지점(p1)
+//   → [반전 앞 다리 1개] → 반전(p2) → 행동(p3) → 저장(save). "왜 그럴까요?" 질문형 브리지 남발 금지.
 check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.empathy/.test(helperCode));
-check(
-  "premium voiceover has causal bridges (골든 샘플: 단계 사이 다리 문장)",
-  helperCode.includes("왜 그럴까요?") && helperCode.includes("그런데 진짜 문제는 따로 있습니다.") && helperCode.includes("그래서 오늘 할 일은 하나입니다."),
-);
+{
+  // 첫 3문장 = hook, curiosity(empathy), p1 순서로 붙는지 정적 확인.
+  const first3Ordered =
+    /endSentence\(rec\.hook\),\s*endSentence\(curiosity\),\s*endSentence\(p1\)/.test(helperCode);
+  check("premium first 3 sentences are hook→empathy→p1 (구체 행동→심리→돈 새는 지점)", first3Ordered);
+  // 질문형 브리지 "왜 그럴까요?"는 제거됐고, 반전 앞 다리 1개만 남는다.
+  check("premium voiceover has no repeated 질문형 브리지 (왜 그럴까요? 제거)", !helperCode.includes("왜 그럴까요?"));
+  // Codex finding: 설명체 고정 브리지 "…있습니다."는 금지, 단정형 "…있다."로 대체돼야 한다.
+  check(
+    "premium bridge has no 설명체 고정문 (그런데 진짜 문제는 따로 있습니다.)",
+    !helperCode.includes("그런데 진짜 문제는 따로 있습니다."),
+  );
+  const politeBridge =
+    (helperCode.match(/그런데 진짜 문제는 따로 있습니다\./g) ?? []).length +
+    (helperCode.match(/그래서 오늘 할 일은 하나입니다\./g) ?? []).length;
+  check("premium voiceover has zero 설명체 고정 브리지", politeBridge === 0, `found ${politeBridge}`);
+  const declBridge = (helperCode.match(/진짜 문제는 따로 있다\./g) ?? []).length;
+  check("premium voiceover keeps exactly 1 단정형 반전 다리 (진짜 문제는 따로 있다.)", declBridge === 1, `found ${declBridge}`);
+}
+{
+  // 정적 검증: 전 finance seed의 fullVoiceover 첫 3문장(hook·empathy·p1)에 설명체 종결이 없어야 한다.
+  const POLITE = /(합니다|됩니다|습니다|입니다|셉니다)/;
+  const first3Viol = [];
+  for (const line of finSeedLines) {
+    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
+    const hook = /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
+    const emp = /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
+    const p1 = [.../points:\s*\[([^\]]+)\]/.exec(line)?.[1].matchAll(/"([^"]+)"/g) ?? []][0]?.[1] ?? "";
+    if ([hook, emp, p1].some((s) => POLITE.test(s))) first3Viol.push(slug);
+  }
+  check("premium fullVoiceover 첫 3문장(hook/empathy/p1) 설명체 종결 0", first3Viol.length === 0, first3Viol.slice(0, 8).join(", "));
+}
 {
   // 나열형(첫째/둘째/셋째)은 비프리미엄 fallback 문자열 1곳에만 존재해야 한다.
-  // 프리미엄 낭독문은 endSentence(rec.hook) 배열 조립(브리지 포함)으로 만든다.
   const listicleCount = (helperCode.match(/첫째, \$\{p1\}/g) ?? []).length;
   check("listicle format confined to non-premium fallback (exactly 1)", listicleCount === 1, `found ${listicleCount}`);
   check("premium voiceover built from sentence array (endSentence(rec.hook))", /endSentence\(rec\.hook\)\s*,/.test(helperCode));
@@ -291,18 +379,21 @@ for (const field of ["hookLine", "captionFirstLineHook", "uploadCaptionDraft", "
   check(`script preview exposes ${field}`, helperSrc.includes(`${field}:`));
 }
 
-// ── 대본 결과 UI: 골든 샘플 섹션 노출 ─────────────────────────────────────────
-for (const label of ["첫 2초 훅", "전체 대본", "장면별 구성", "화면 자막", "업로드 문구 초안"]) {
+// ── 대본 결과 UI: 실제 대본/자막/장면계획/설명글 구분 라벨 노출 ────────────────
+for (const label of [
+  "실제 읽히는 대본",
+  "첫 3초 훅",
+  "영상에 들어갈 자막 6개",
+  "장면 그림 계획",
+  "SNS 설명글 초안",
+]) {
   check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
 }
+// "실제 읽히는 대본"이 음성/영상에 쓰이고, SNS 설명글은 대본이 아님을 사용자에게 알린다.
+check("wizard clarifies 대본 is used by 음성/영상", wizardSrc.includes("음성 만들기와 영상 만들기는 이 문장을 사용합니다"));
+check("wizard clarifies SNS 설명글 is not the 대본", wizardSrc.includes("영상이 읽는 대본과는 다릅니다"));
+check("wizard renders caption 6 lines (script.captionLines map)", /script\.captionLines/.test(wizardCode));
 check("wizard renders scene plan rows (script.scenes map)", /script\.scenes/.test(wizardCode) && /visualCue/.test(wizardCode));
-
-// ── finance title 후킹 계약: 설명식 약한 패턴 금지 ────────────────────────────
-{
-  const titles = finSeedLines.map((l) => /title:\s*"([^"]+)"/.exec(l)?.[1] ?? "");
-  const weakEndings = titles.filter((t) => /(이유|공통점|방법|하는 법)$/.test(t));
-  check("finance titles do not end with 설명식 패턴(이유/공통점/방법)", weakEndings.length === 0, weakEndings.join(" | "));
-}
 
 // ── light 운영 UI 계약: 흰 배경 + 큰 글자, dark 테마 잔재 금지 ────────────────
 check("page uses light background (bg-slate-50)", /bg-slate-50/.test(pageSrc));
