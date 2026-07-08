@@ -23,6 +23,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
@@ -44,6 +45,13 @@ export const OPERATOR_ACTIONS = [
   // ── 게시 전 점검 + 실제 업로드 (task: owner-web-auto-topic-refresh-and-upload-button-v1) ──
   "wizardPreflight", // 선택 주제로 만든 영상 기준 게시 전 점검 (--arm 없음, 외부 호출 0)
   "actualUpload", // Owner 명시 확인 후 실제 업로드 (final E2E runner --arm; 서버 confirm 게이트 필수)
+  // ── 실제 제작 파이프라인 (task: owner-web-real-script-voice-visual-generation-pipeline-v1) ──
+  // 아래 3개 create는 Owner가 로컬 웹 버튼을 눌렀을 때만 실행되는 live 생성 경로다(업로드 아님).
+  // 키/세션 없으면 스크립트가 fail-closed로 종료하고, 산출물은 전부 C:\tmp 아래에만 쓴다.
+  "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
+  "realSceneImagesCreate", // 대본 6장면 기반 ChatGPT+Playwright 실제 장면 이미지 생성
+  "finalVideoCreate", // 실제 음성 + 실제 이미지 6장 + 자막 + 모션으로 최종 mp4 합성
+  "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -56,6 +64,19 @@ export const APPROVED_ENV_KEY_NAMES = [
   "YOUTUBE_CLIENT_SECRET",
   "YOUTUBE_REFRESH_TOKEN",
   "BLOB_READ_WRITE_TOKEN",
+] as const;
+
+/**
+ * 실제 미디어 생성(realTtsCreate) child에만 필요한 추가 key 이름. 값은 여기 없다.
+ * Next dev 서버 런타임 process.env(.env.local 자동 로드)에서 개별 복사만 하며,
+ * 로그/응답/summary 어디에도 값·길이·prefix·hash를 넣지 않는다.
+ * (ANTHROPIC_API_KEY는 child에 전달하지 않는다 — Claude 보정은 서버 in-process fetch 전용.)
+ */
+export const MEDIA_ENV_KEY_NAMES = [
+  "ELEVENLABS_API_KEY",
+  "ELEVENLABS_VOICE_ID",
+  "ELEVENLABS_MODEL_ID",
+  "ELEVENLABS_VOICE_LABEL",
 ] as const;
 
 /** node 실행에 필요한 non-secret OS 변수만 개별 상속(broad spread 금지). */
@@ -85,6 +106,11 @@ const SCRIPT_ORCHESTRATOR = "scripts/run-dual-platform-final-publish-orchestrato
 const SCRIPT_FINAL_E2E = "scripts/run-final-e2e-dual-platform-publish-once.mjs";
 const SCRIPT_MOCK_TTS = "scripts/build-local-mock-tts-audio-from-script.mjs";
 const SCRIPT_LOCAL_PIPELINE_DRY_RUN = "scripts/run-local-money-shorts-pipeline-dry-run.mjs";
+// 실제 제작 파이프라인 — 검증된 기존 ElevenLabs scene-paced 스크립트를 재사용하고,
+// 이미지/최종 영상은 wizard 전용 once 스크립트를 쓴다(전부 repo-relative 하드코딩).
+const SCRIPT_ELEVENLABS_SCENE_TTS = "scripts/build-elevenlabs-scene-paced-tts-from-script.mjs";
+const SCRIPT_REAL_SCENE_IMAGES = "scripts/run-owner-real-scene-images-from-wizard-script-once.mjs";
+const SCRIPT_REAL_VIDEO = "scripts/run-owner-real-video-from-wizard-assets-once.mjs";
 
 /**
  * 자동 쇼츠 만들기 위저드가 소비하는 로컬 fixture(repo-relative, 하드코딩, 읽기 전용).
@@ -251,8 +277,12 @@ export function readCredentialPresence(): Record<string, boolean> {
  * child process env를 구성한다. parent env broad spread 없이,
  * non-secret OS 변수 화이트리스트 + 승인된 credential key 6개만 개별 복사한다.
  * 값은 이 객체 안에만 존재하며 로그/반환값에 절대 넣지 않는다.
+ *
+ * `includeMediaEnv === true`일 때만 `MEDIA_ENV_KEY_NAMES`(ELEVENLABS 4키)를 추가 복사한다.
+ * 기본값은 false — 실제 TTS 생성(realTtsCreate) child에만 전달되고, 이미지/영상/게시 전 점검/
+ * 실제 업로드 등 다른 어떤 child에도 ELEVENLABS 키가 들어가지 않는다.
  */
-function buildSanitizedChildEnv(): NodeJS.ProcessEnv {
+function buildSanitizedChildEnv(opts?: { includeMediaEnv?: boolean }): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = Object.create(null);
   for (const name of SAFE_CHILD_OS_ENV_KEYS) {
     const v = process.env[name];
@@ -261,6 +291,13 @@ function buildSanitizedChildEnv(): NodeJS.ProcessEnv {
   for (const name of APPROVED_ENV_KEY_NAMES) {
     const v = process.env[name];
     if (typeof v === "string" && v !== "") env[name] = v;
+  }
+  // 실제 TTS 생성 child에만 전달하는 미디어 key(이름 고정 allowlist). 값은 child env에만 존재한다.
+  if (opts?.includeMediaEnv === true) {
+    for (const name of MEDIA_ENV_KEY_NAMES) {
+      const v = process.env[name];
+      if (typeof v === "string" && v !== "") env[name] = v;
+    }
   }
   return env;
 }
@@ -440,10 +477,65 @@ export function buildOperatorCommand(
       };
     }
 
+    case "realTtsCreate": {
+      // 확정 대본(script-final) 기반 실제 ElevenLabs TTS — 검증된 scene-paced 스크립트 재사용.
+      // 대본이 확정(대본 만들기 클릭)되지 않았으면 fail-closed. --arm/upload 인자 없음.
+      const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
+      if (!real.ok) return { ok: false, reason: real.reason };
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_ELEVENLABS_SCENE_TTS,
+          args: ["--tts-script", real.paths.realTtsScriptPath, "--out-dir", real.paths.ttsOutDir],
+        },
+      };
+    }
+
+    case "realSceneImagesCreate": {
+      // 대본 6장면 기준 실제 장면 이미지 생성(ChatGPT+Playwright). 대본 확정 전이면 fail-closed.
+      const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
+      if (!real.ok) return { ok: false, reason: real.reason };
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_REAL_SCENE_IMAGES,
+          args: ["--script", real.paths.scriptFinalPath, "--out-dir", real.paths.imagesOutDir],
+        },
+      };
+    }
+
+    case "finalVideoCreate": {
+      // 실제 음성 + 실제 이미지 6장이 모두 준비된 뒤에만 최종 mp4 합성을 허용한다(fail-closed).
+      const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
+      if (!real.ok) return { ok: false, reason: real.reason };
+      const media = readWizardRealMediaState(input?.topicId ?? "");
+      if (!media.realTts.ready) return { ok: false, reason: "real_tts_required" };
+      if (!media.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_REAL_VIDEO,
+          args: [
+            "--script",
+            real.paths.scriptFinalPath,
+            "--tts-script",
+            real.paths.realTtsScriptPath,
+            "--audio-summary",
+            real.paths.ttsSummaryPath,
+            "--images-dir",
+            real.paths.imagesOutDir,
+            "--out-dir",
+            real.paths.videoOutDir,
+          ],
+        },
+      };
+    }
+
     case "status":
     case "topicRecommend":
     case "scriptPreview":
     case "previewStatus":
+    case "realMediaStatus":
       // 읽기 전용 action — 스크립트를 실행하지 않는다.
       return { ok: false, reason: "read_only_action_runs_no_script" };
 
@@ -473,7 +565,20 @@ export type OperatorRunResult = {
  */
 export function runOperatorScript(
   command: OperatorCommand,
-  opts?: { allowArm?: boolean; timeoutMs?: number },
+  opts?: {
+    allowArm?: boolean;
+    timeoutMs?: number;
+    /**
+     * child env에 추가하는 non-secret 실행 마커(예: ALLOW_CHATGPT_IMAGE="1").
+     * route가 action별로 하드코딩한 값만 넘긴다 — 사용자 입력/secret 값 금지.
+     */
+    extraEnv?: Record<string, string>;
+    /**
+     * true일 때만 ELEVENLABS 미디어 key를 child env에 전달한다(기본 false).
+     * route는 실제 TTS 생성(realTtsCreate)에서만 true를 넘긴다.
+     */
+    includeMediaEnv?: boolean;
+  },
 ): OperatorRunResult {
   const repoRoot = getRepoRoot();
   const scriptAbs = resolve(join(repoRoot, command.script));
@@ -493,9 +598,12 @@ export function runOperatorScript(
     return { ran: false, exitCode: null, stdout: "", stderr: "script_not_found", json: null, timedOut: false };
   }
 
+  const childEnv = buildSanitizedChildEnv({ includeMediaEnv: opts?.includeMediaEnv === true });
+  for (const [k, v] of Object.entries(opts?.extraEnv ?? {})) childEnv[k] = v;
+
   const result = spawnSync(process.execPath, [scriptAbs, ...command.args], {
     cwd: repoRoot,
-    env: buildSanitizedChildEnv(),
+    env: childEnv,
     shell: false,
     timeout: opts?.timeoutMs ?? SPAWN_TIMEOUT_MS,
     encoding: "utf8",
@@ -1598,7 +1706,8 @@ export function buildWizardVideoInputsForTopic(topicId: string): { ok: true; pat
   const safeSlug = toSafeTopicSlug(topicId);
   if (!safeSlug) return { ok: false, reason: "topic_id_invalid_or_empty" };
 
-  const script = readScriptPreview(topicId);
+  // 확정 대본(Claude 보정 반영본)이 있으면 그것을 쓴다 — 시안/최종이 같은 대본을 공유한다.
+  const script = readWizardFinalScript(topicId) ?? readScriptPreview(topicId);
   if (!script) return { ok: false, reason: "script_not_compiled_for_topic" };
 
   // 6씬 구조로 대본을 매핑한다. narration은 원본 대본 텍스트만 사용한다.
@@ -1918,9 +2027,15 @@ export function readWizardVideoStatus(topicId?: string | null): WizardVideoStatu
  * 경로는 클라이언트 입력이 아니라 파이프라인 summary에서만 나오며,
  * `C:\tmp\money-shorts-os\` 아래의 `.mp4`만 허용한다(경로 조작 원천 차단).
  */
-export function readWizardVideoBytes(which: "muxed" | "silent", topicId?: string | null): Buffer | null {
-  const status = readWizardVideoStatus(topicId);
-  const p = which === "muxed" ? status.muxedMp4Path : status.silentMp4Path;
+export function readWizardVideoBytes(which: "muxed" | "silent" | "final", topicId?: string | null): Buffer | null {
+  let p: string | null = null;
+  if (which === "final") {
+    // 최종 영상(실제 음성+실제 이미지) — real-video summary가 가리키는 파일만 신뢰한다.
+    p = readWizardRealMediaState(topicId ?? "").finalVideo.mp4Path;
+  } else {
+    const status = readWizardVideoStatus(topicId);
+    p = which === "muxed" ? status.muxedMp4Path : status.silentMp4Path;
+  }
   if (!p) return null;
   const abs = resolve(p);
   if (!abs.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX)) return null;
@@ -1928,6 +2043,28 @@ export function readWizardVideoBytes(which: "muxed" | "silent", topicId?: string
   if (!existsSync(abs)) return null;
   try {
     return readFileSync(abs);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 실제 TTS 오디오 바이트(브라우저 audio player 스트림용).
+ * 경로는 클라이언트 입력이 아니라 TTS summary에서만 나오며,
+ * `C:\tmp\money-shorts-os\` 아래의 .mp3/.m4a만 허용한다(경로 조작 원천 차단).
+ */
+export function readWizardRealAudioBytes(topicId?: string | null): { bytes: Buffer; contentType: string } | null {
+  const media = readWizardRealMediaState(topicId ?? "");
+  const p = media.realTts.audioPath;
+  if (!p) return null;
+  const abs = resolve(p);
+  if (!abs.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX)) return null;
+  const lower = abs.toLowerCase();
+  const contentType = lower.endsWith(".mp3") ? "audio/mpeg" : lower.endsWith(".m4a") ? "audio/mp4" : null;
+  if (!contentType) return null;
+  if (!existsSync(abs)) return null;
+  try {
+    return { bytes: readFileSync(abs), contentType };
   } catch {
     return null;
   }
@@ -1987,12 +2124,19 @@ export function buildWizardContentUnitForTopic(
   const safeSlug = toSafeTopicSlug(topicId);
   if (!safeSlug) return { ok: false, reason: "topic_id_invalid_or_empty" };
 
-  const script = readScriptPreview(topicId);
+  const script = readWizardFinalScript(topicId) ?? readScriptPreview(topicId);
   if (!script) return { ok: false, reason: "script_not_compiled_for_topic" };
 
-  const video = readWizardVideoStatus(topicId);
-  if (!video.exists || !video.muxedMp4Path) return { ok: false, reason: "video_not_created_yet" };
-  const muxedAbs = resolve(video.muxedMp4Path);
+  // media quality gate — 실제 음성 + 실제 장면 이미지 + 최종 mp4가 전부 준비된 경우에만
+  // 게시 전 점검/실제 업로드용 content unit을 만든다. 시안(색상 카드/테스트 소리)은
+  // 어떤 경로로도 업로드 대상이 될 수 없다(fail-closed).
+  const media = readWizardRealMediaState(topicId);
+  if (!media.realTts.ready) return { ok: false, reason: "real_tts_required" };
+  if (!media.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
+  if (!media.finalVideo.ready || !media.finalVideo.mp4Path) return { ok: false, reason: "final_mp4_required" };
+  if (!media.mediaQualityGate.ok) return { ok: false, reason: "media_quality_gate_not_ready" };
+
+  const muxedAbs = resolve(media.finalVideo.mp4Path);
   if (!muxedAbs.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) || !muxedAbs.toLowerCase().endsWith(".mp4")) {
     return { ok: false, reason: "video_path_untrusted" };
   }
@@ -2013,8 +2157,8 @@ export function buildWizardContentUnitForTopic(
   const contentUnit = {
     schemaVersion: "dual_platform_content_unit_v1",
     _note:
-      "web wizard가 선택 주제로 생성한 content unit. 시안 영상(색상 카드+테스트 소리) 기준이며, " +
-      "실제 게시는 final E2E runner의 모든 gate(중복/키/승인/--arm)를 통과해야만 일어난다.",
+      "web wizard가 선택 주제로 생성한 content unit. 실제 TTS + 실제 장면 이미지로 합성한 최종 mp4 기준이며 " +
+      "(media quality gate 통과분만), 실제 게시는 final E2E runner의 모든 gate(중복/키/승인/--arm)를 통과해야만 일어난다.",
     contentId,
     version: "v1",
     wizardTopicId: topicId,
@@ -2130,5 +2274,724 @@ export function readWizardPublishResult(topicId: string): WizardPublishResult | 
     ledgerRecordedKeys: Array.isArray(parsed.executionResult?.ledger?.recordedKeys)
       ? parsed.executionResult.ledger.recordedKeys.filter((k): k is string => typeof k === "string")
       : [],
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 실제 제작 파이프라인 — Claude 대본 1회 보정 + 실제 TTS/이미지/최종 mp4 + media gate
+// task: owner-web-real-script-voice-visual-generation-pipeline-v1
+//
+// 구조: 로컬 후보 여러 개 생성 → 로컬 judge 최고 후보 1개 선택(기존) → 그 1개만
+// Claude API로 1회 보정 → 확정 대본(script-final.json) → 실제 TTS → 장면 이미지 →
+// 최종 mp4 → media quality gate 통과 시에만 업로드 가능.
+//
+// 안전 계약:
+// - Anthropic SDK 의존성 없음 — Node fetch만 사용하고 fetchImpl 주입으로 테스트한다.
+// - ANTHROPIC_API_KEY는 서버 런타임 process.env에서만 읽고 child/로그/응답에 절대 넣지 않는다.
+// - key 없음/HTTP 실패/JSON 파싱 실패/계약 검증 실패/judge 점수 회귀 → 로컬 대본 그대로 사용.
+// - 이 helper의 네트워크 호출은 ANTHROPIC_API_URL 하나뿐이다(guard가 강제).
+// ══════════════════════════════════════════════════════════════════════════════
+
+/** Claude 보정이 호출하는 유일한 외부 URL(고정). 다른 어떤 네트워크 호출도 이 파일에 없다. */
+export const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+/**
+ * 보정 기본 모델 — Owner 비용 정책(기본 Haiku/Sonnet, Opus는 별도 승인)에 따라 Sonnet.
+ * ANTHROPIC_POLISH_MODEL env로 오버라이드 가능(값은 모델 id 문자열, secret 아님).
+ */
+export const CLAUDE_POLISH_DEFAULT_MODEL = "claude-sonnet-4-6";
+/**
+ * 검증/점검 중 실제 Claude 호출을 잠그는 킬스위치.
+ * env WIZARD_DISABLE_CLAUDE_POLISH=1 또는 marker 파일 존재 시 polish를 건너뛴다(로컬 대본 사용).
+ * marker가 남아 있으면 UI note에 그대로 표시돼 Owner가 바로 알 수 있다.
+ */
+export const WIZARD_POLISH_DISABLE_MARKER = join(WIZARD_VIDEO_OUT_ROOT, "DISABLE_LIVE_CLAUDE_POLISH.marker");
+
+export type WizardClaudePolishInfo = {
+  applied: boolean;
+  mode: "claude_polished" | "local_only";
+  reasonCode:
+    | "APPLIED"
+    | "NO_API_KEY"
+    | "POLISH_DISABLED"
+    | "NOT_LOCAL_RUNTIME"
+    | "API_ERROR"
+    | "TIMEOUT"
+    | "PARSE_FAILED"
+    | "VALIDATION_FAILED";
+  /** 사람이 읽는 한 줄(“Claude 보정 적용됨” / “Claude 보정 미적용 — 로컬 대본 사용 중”). secret 없음. */
+  note: string;
+  /** 보정에 사용한 모델 id(적용 시). */
+  model: string | null;
+  /** Claude가 보고한 고친 부분 요약(적용 시). */
+  rewriteNotes: string[];
+  /** 로컬 대본 judge 점수 vs 보정본 judge 점수(회귀 방지 근거). */
+  localScore: number | null;
+  polishedScore: number | null;
+};
+
+/** script-final.json 레코드 — 대본 확정본(보정 or 로컬) + 엔진 메타데이터. */
+export type WizardFinalScriptRecord = {
+  schemaVersion: "wizard_script_final_v1";
+  topicId: string;
+  mode: "claude_polished" | "local_only";
+  localFingerprint: string;
+  polish: WizardClaudePolishInfo;
+  script: WizardScriptPreview;
+};
+
+/** 로컬 대본의 내용 지문 — 같은 대본이면 보정을 다시 호출하지 않는다(1회 구조). */
+export function wizardScriptFingerprint(preview: WizardScriptPreview): string {
+  return createHash("sha1")
+    .update(JSON.stringify({ t: preview.title, v: preview.fullVoiceover, c: preview.captionLines }))
+    .digest("hex");
+}
+
+/** Claude 반환 JSON 계약(검증 통과분). */
+type PolishedScriptShape = {
+  title: string;
+  oneSentencePoint: string;
+  hookLine: string;
+  fullVoiceover: string;
+  captionLines: string[];
+  scenes: Array<{ label: string; caption: string; visualCue: string; narration: string }>;
+  uploadCaptionDraft: string;
+  rewriteNotes: string[];
+};
+
+/**
+ * Claude 응답 텍스트 → 계약 검증. JSON 외 텍스트/필드 수 불일치/자막 22자 초과/
+ * 설명체 종결/제목 약패턴 발견 시 실패(→ 로컬 대본 fallback).
+ */
+export function validatePolishedScript(raw: unknown): { ok: true; value: PolishedScriptShape } | { ok: false; reasons: string[] } {
+  const reasons: string[] = [];
+  const o = raw as Partial<PolishedScriptShape> | null;
+  const str = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
+
+  if (!o || typeof o !== "object") return { ok: false, reasons: ["json_not_object"] };
+  if (!str(o.title) || o.title.trim().length < 4 || o.title.trim().length > 40) reasons.push("title_invalid");
+  if (str(o.title) && WEAK_TITLE_PATTERN.test(o.title)) reasons.push("title_weak_pattern");
+  if (!str(o.hookLine) || o.hookLine.trim().length > 40) reasons.push("hookLine_invalid");
+  if (!str(o.oneSentencePoint)) reasons.push("oneSentencePoint_invalid");
+  if (!str(o.fullVoiceover) || o.fullVoiceover.trim().length < 40 || o.fullVoiceover.trim().length > 700) {
+    reasons.push("fullVoiceover_invalid");
+  }
+  if (!Array.isArray(o.captionLines) || o.captionLines.length !== 6) reasons.push("captionLines_not_6");
+  else {
+    for (const c of o.captionLines) {
+      if (!str(c) || c.trim().length > 22) { reasons.push("caption_over_22_or_empty"); break; }
+    }
+  }
+  if (!Array.isArray(o.scenes) || o.scenes.length !== 6) reasons.push("scenes_not_6");
+  else {
+    for (const s of o.scenes) {
+      if (!s || !str(s.label) || !str(s.caption) || !str(s.visualCue) || !str(s.narration)) {
+        reasons.push("scene_fields_missing"); break;
+      }
+      if (s.caption.trim().length > 22) { reasons.push("scene_caption_over_22"); break; }
+      if (s.visualCue.trim().length < 8) { reasons.push("scene_visualCue_too_short"); break; }
+      if (s.narration.trim().length < 8 || s.narration.trim().length > 60) { reasons.push("scene_narration_length"); break; }
+    }
+  }
+  if (!str(o.uploadCaptionDraft) || o.uploadCaptionDraft.trim().length < 10) reasons.push("uploadCaptionDraft_invalid");
+  if (!Array.isArray(o.rewriteNotes) || o.rewriteNotes.some((n) => typeof n !== "string")) reasons.push("rewriteNotes_invalid");
+
+  // 설명체(하십시오체 …니다 종결)·훈계 어투는 자막/낭독 전체에서 금지.
+  const politeTargets = [
+    ...(Array.isArray(o.captionLines) ? o.captionLines : []),
+    ...(Array.isArray(o.scenes) ? o.scenes.flatMap((s) => [s?.caption ?? "", s?.narration ?? ""]) : []),
+    o.fullVoiceover ?? "",
+    o.hookLine ?? "",
+  ];
+  if (politeTargets.some((t) => AI_TONE_PATTERNS.test(String(t)))) reasons.push("polite_or_lecture_tone");
+
+  if (reasons.length > 0) return { ok: false, reasons: [...new Set(reasons)] };
+  const v = o as PolishedScriptShape;
+  return {
+    ok: true,
+    value: {
+      ...v,
+      title: v.title.trim(),
+      hookLine: v.hookLine.trim(),
+      oneSentencePoint: v.oneSentencePoint.trim(),
+      fullVoiceover: v.fullVoiceover.trim(),
+      captionLines: v.captionLines.map((c) => c.trim()),
+      scenes: v.scenes.map((s) => ({
+        label: s.label.trim(),
+        caption: s.caption.trim(),
+        visualCue: s.visualCue.trim(),
+        narration: s.narration.trim(),
+      })),
+      uploadCaptionDraft: v.uploadCaptionDraft.trim(),
+      rewriteNotes: v.rewriteNotes.map((n) => n.trim()).filter((n) => n.length > 0).slice(0, 8),
+    },
+  };
+}
+
+const CLAUDE_POLISH_SYSTEM_PROMPT = [
+  "당신은 한국어 숏폼(릴스/쇼츠) 대본 전문 에디터다. 입력으로 로컬 엔진이 만든 대본 JSON을 받는다.",
+  "구조와 핵심 메시지는 유지하면서 첫 3초 훅, 문장 자연스러움, '내 얘기 같다'는 자기인식, 장면 시각 지시를 다듬어라.",
+  "",
+  "반드시 지켜야 하는 규칙:",
+  "- 출력은 JSON 객체 하나만. 마크다운 코드펜스, 설명 문장, 주석을 절대 붙이지 마라.",
+  "- captionLines는 정확히 6개, 각각 22자 이하(공백 포함).",
+  '- scenes는 정확히 6개, 각 원소는 {"label","caption","visualCue","narration"} 형태.',
+  "  caption은 22자 이하 화면 자막, narration은 그 장면에서 실제로 읽을 한국어 낭독 문장(8~60자),",
+  "  visualCue는 자막 없이도 장면이 전달되게 하는 구체적 사진 묘사(글자/텍스트 없는 실사 장면).",
+  "- 하십시오체('…합니다/…입니다' 등 '니다' 종결) 금지. 해요체와 단정형('…다')만 사용.",
+  "- 제목에 '이유/방법/공통점/체크리스트' 같은 설명형 패턴 금지.",
+  "- 훈계/일반론 금지. 실제 소비 행동과 생활 장면 중심.",
+  "- fullVoiceover는 scenes의 narration 6개를 순서대로 자연스럽게 이은 전체 낭독문.",
+  "",
+  "출력 JSON 필드: title, oneSentencePoint, hookLine, fullVoiceover,",
+  "captionLines(문자열 6개), scenes(6개: label/caption/visualCue/narration),",
+  "uploadCaptionDraft(SNS 설명글 초안), rewriteNotes(무엇을 왜 고쳤는지 한국어 요약 배열).",
+].join("\n");
+
+/** 코드펜스가 붙어 와도 JSON 본문만 꺼낸다(그 외 prose 섞임은 parse 실패 → fallback). */
+function extractJsonText(text: string): string {
+  const t = text.trim();
+  const fence = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  return fence ? fence[1].trim() : t;
+}
+
+/**
+ * 로컬 최고 후보 대본 1개를 Claude API로 1회 보정한다.
+ * - fetchImpl 주입 가능(테스트는 fake fetch만 사용, 실제 호출은 Owner 버튼 클릭 시 서버 런타임).
+ * - 실패 시 어떤 경우에도 로컬 대본을 그대로 돌려준다(fail-open to local, 업로드와 무관).
+ */
+export async function polishWizardScriptWithClaude(
+  local: WizardScriptPreview,
+  opts?: {
+    fetchImpl?: typeof globalThis.fetch;
+    apiKey?: string | null;
+    model?: string;
+    timeoutMs?: number;
+  },
+): Promise<{ script: WizardScriptPreview; polish: WizardClaudePolishInfo }> {
+  const localJudge = local.quality?.overallScore ?? null;
+  const fallback = (reasonCode: WizardClaudePolishInfo["reasonCode"], noteTail: string): { script: WizardScriptPreview; polish: WizardClaudePolishInfo } => ({
+    script: local,
+    polish: {
+      applied: false,
+      mode: "local_only",
+      reasonCode,
+      note: `Claude 보정 미적용 — 로컬 대본 사용 중 (${noteTail})`,
+      model: null,
+      rewriteNotes: [],
+      localScore: localJudge,
+      polishedScore: null,
+    },
+  });
+
+  const apiKey = opts?.apiKey !== undefined ? opts.apiKey : (process.env.ANTHROPIC_API_KEY ?? null);
+  if (!apiKey || apiKey.trim() === "") return fallback("NO_API_KEY", "ANTHROPIC_API_KEY 없음");
+  const fetchImpl = opts?.fetchImpl ?? globalThis.fetch;
+  const model = opts?.model ?? process.env.ANTHROPIC_POLISH_MODEL ?? CLAUDE_POLISH_DEFAULT_MODEL;
+  const timeoutMs = opts?.timeoutMs ?? 45_000;
+
+  const userPayload = JSON.stringify(
+    {
+      title: local.title,
+      hookLine: local.hookLine,
+      fullVoiceover: local.fullVoiceover,
+      captionLines: local.captionLines,
+      scenes: local.scenes.map((s) => ({
+        label: s.label,
+        caption: s.captionText,
+        visualCue: s.visualCue,
+        narration: s.narration,
+      })),
+      uploadCaptionDraft: local.uploadCaptionDraft,
+    },
+    null,
+    2,
+  );
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let respText: string;
+  try {
+    const resp = await fetchImpl(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 2048,
+        system: CLAUDE_POLISH_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: `현재 대본:\n${userPayload}` }],
+      }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) return fallback("API_ERROR", `API 응답 ${resp.status}`);
+    const data = (await resp.json()) as {
+      content?: Array<{ type?: string; text?: string }>;
+      stop_reason?: string;
+    };
+    const textBlock = (data.content ?? []).find((b) => b?.type === "text" && typeof b.text === "string");
+    if (!textBlock?.text) return fallback("API_ERROR", `응답에 텍스트 없음${data.stop_reason ? ` (stop: ${data.stop_reason})` : ""}`);
+    respText = textBlock.text;
+  } catch (e) {
+    const aborted = (e as Error)?.name === "AbortError";
+    return fallback(aborted ? "TIMEOUT" : "API_ERROR", aborted ? `${Math.round(timeoutMs / 1000)}초 초과` : "네트워크/호출 실패");
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(extractJsonText(respText));
+  } catch {
+    return fallback("PARSE_FAILED", "JSON 파싱 실패");
+  }
+  const validated = validatePolishedScript(parsed);
+  if (!validated.ok) return fallback("VALIDATION_FAILED", `계약 위반: ${validated.reasons.slice(0, 3).join(", ")}`);
+  const v = validated.value;
+
+  // 보정본을 로컬 judge로 재평가 — 점수가 유의미하게 떨어지면 보정을 버린다(품질 회귀 방지).
+  const polishedJudgment = judgeTopicSeed(
+    {
+      slug: "claude-polish",
+      title: v.title,
+      hook: v.hookLine,
+      angle: "심리",
+      points: [v.scenes[2].narration, v.scenes[3].narration, v.scenes[4].narration] as [string, string, string],
+      save: v.scenes[5].narration,
+      empathy: v.scenes[1].narration,
+    },
+    false,
+  );
+  if (localJudge != null && polishedJudgment.overallScore < localJudge - 5) {
+    return fallback("VALIDATION_FAILED", `로컬 judge 점수 회귀 (${polishedJudgment.overallScore} < ${localJudge})`);
+  }
+
+  const SCENE_IDS: WizardScriptScene["id"][] = ["hook", "empathy", "psychology", "twist", "action", "save"];
+  const scenes: WizardScriptScene[] = v.scenes.map((s, i) => ({
+    id: SCENE_IDS[i],
+    label: s.label,
+    narration: s.narration,
+    captionText: s.caption,
+    visualCue: s.visualCue,
+  }));
+
+  const script: WizardScriptPreview = {
+    ...local,
+    title: v.title,
+    hook: v.hookLine,
+    hookLine: v.hookLine,
+    curiosity: scenes[1].narration,
+    action: scenes[5].narration,
+    captionLines: v.captionLines,
+    fullVoiceover: v.fullVoiceover,
+    scenes,
+    captionFirstLineHook: v.hookLine,
+    uploadCaptionDraft: v.uploadCaptionDraft,
+    goldenSampleChecks: {
+      ...local.goldenSampleChecks,
+      captionsWithinLimit: v.captionLines.every((c) => c.length <= 22),
+    },
+    quality: polishedJudgment,
+  };
+  return {
+    script,
+    polish: {
+      applied: true,
+      mode: "claude_polished",
+      reasonCode: "APPLIED",
+      note: "Claude 보정 적용됨",
+      model,
+      rewriteNotes: v.rewriteNotes,
+      localScore: localJudge,
+      polishedScore: polishedJudgment.overallScore,
+    },
+  };
+}
+
+/** script-final.json 경로(topic별, repo 밖). */
+function wizardFinalScriptPath(safeSlug: string): string {
+  return join(WIZARD_INPUTS_ROOT, safeSlug, "script-final.json");
+}
+
+/** 확정 대본 레코드를 읽는다(없거나 형식이 다르면 null). */
+export function readWizardFinalScriptRecord(topicId: string): WizardFinalScriptRecord | null {
+  const slug = toSafeTopicSlug(topicId);
+  if (!slug) return null;
+  const parsed = readAbsJson(wizardFinalScriptPath(slug)) as WizardFinalScriptRecord | null;
+  if (!parsed || parsed.schemaVersion !== "wizard_script_final_v1" || parsed.topicId !== topicId) return null;
+  if (!parsed.script || typeof parsed.script.fullVoiceover !== "string") return null;
+  return parsed;
+}
+
+/** 확정 대본(WizardScriptPreview)만 돌려준다 — TTS/이미지/영상/시안이 전부 이걸 소비한다. */
+export function readWizardFinalScript(topicId: string): WizardScriptPreview | null {
+  return readWizardFinalScriptRecord(topicId)?.script ?? null;
+}
+
+/** 검증/점검용 킬스위치 상태(env 또는 marker 파일). Owner 화면 note에 그대로 표시된다. */
+export function isClaudePolishDisabled(): boolean {
+  return process.env.WIZARD_DISABLE_CLAUDE_POLISH === "1" || existsSync(WIZARD_POLISH_DISABLE_MARKER);
+}
+
+/**
+ * 대본 확정 진입점 — scriptPreview action이 호출한다.
+ * 로컬 최고 후보(readScriptPreview 결과)를 받아:
+ *   1) 같은 로컬 대본으로 이미 보정 완료된 캐시가 있으면 재사용(추가 API 호출 0회),
+ *   2) 아니면 Claude 1회 보정 시도(키 없음/실패 시 로컬 그대로),
+ *   3) 결과를 script-final.json으로 저장해 실제 TTS/이미지/영상 단계의 단일 입력으로 만든다.
+ */
+export async function ensureWizardFinalScript(
+  topicId: string,
+  local: WizardScriptPreview,
+  opts?: { allowPolish?: boolean; fetchImpl?: typeof globalThis.fetch },
+): Promise<WizardFinalScriptRecord> {
+  const slug = toSafeTopicSlug(topicId) ?? "invalid";
+  const fp = wizardScriptFingerprint(local);
+  const disabled = isClaudePolishDisabled();
+  const keyPresent = typeof process.env.ANTHROPIC_API_KEY === "string" && process.env.ANTHROPIC_API_KEY !== "";
+  const polishAvailable = opts?.allowPolish !== false && !disabled && keyPresent;
+
+  const cached = readWizardFinalScriptRecord(topicId);
+  if (cached && cached.localFingerprint === fp) {
+    // 보정 완료 캐시는 항상 재사용. local_only 캐시는 지금 보정이 가능해졌을 때만 다시 시도한다.
+    if (cached.mode === "claude_polished" || !polishAvailable) return cached;
+  }
+
+  let record: WizardFinalScriptRecord;
+  if (!polishAvailable) {
+    const noteTail =
+      opts?.allowPolish === false ? "배포 사이트에서는 보정하지 않음" : disabled ? "점검용 차단(marker/env) 활성" : "ANTHROPIC_API_KEY 없음";
+    record = {
+      schemaVersion: "wizard_script_final_v1",
+      topicId,
+      mode: "local_only",
+      localFingerprint: fp,
+      polish: {
+        applied: false,
+        mode: "local_only",
+        reasonCode: opts?.allowPolish === false ? "NOT_LOCAL_RUNTIME" : disabled ? "POLISH_DISABLED" : "NO_API_KEY",
+        note: `Claude 보정 미적용 — 로컬 대본 사용 중 (${noteTail})`,
+        model: null,
+        rewriteNotes: [],
+        localScore: local.quality?.overallScore ?? null,
+        polishedScore: null,
+      },
+      script: local,
+    };
+  } else {
+    const polished = await polishWizardScriptWithClaude(local, { fetchImpl: opts?.fetchImpl });
+    record = {
+      schemaVersion: "wizard_script_final_v1",
+      topicId,
+      mode: polished.polish.mode,
+      localFingerprint: fp,
+      polish: polished.polish,
+      script: polished.script,
+    };
+  }
+
+  try {
+    mkdirSync(join(WIZARD_INPUTS_ROOT, slug), { recursive: true });
+    writeFileSync(wizardFinalScriptPath(slug), JSON.stringify(record, null, 2), "utf8");
+  } catch {
+    // 저장 실패 시에도 화면 표시는 가능하지만, 실제 TTS/이미지 단계는 파일이 없어 fail-closed된다.
+    record.polish.note += " · 확정 대본 저장 실패(실제 생성 단계 진행 불가)";
+  }
+  return record;
+}
+
+// ── 실제 파이프라인 입력/상태 ────────────────────────────────────────────────
+
+export type WizardRealPipelinePaths = {
+  topicId: string;
+  safeSlug: string;
+  scriptFinalPath: string;
+  realTtsScriptPath: string;
+  ttsOutDir: string;
+  ttsSummaryPath: string;
+  imagesOutDir: string;
+  videoOutDir: string;
+};
+
+/**
+ * 실제 TTS/이미지/영상 단계의 공통 입력을 만든다.
+ * - 확정 대본(script-final.json)이 없으면 fail-closed(대본 만들기 먼저).
+ * - 실전용 tts-script는 scene durationSec을 내레이션 글자수(≈6자/초, 3~8초 clamp)로 산정해
+ *   scene-paced TTS의 하드트림(단어 잘림)을 원천 차단한다. 이 duration이 최종 영상의
+ *   scene 경계와 동일하게 쓰여 오디오/자막/이미지 싱크가 결정적으로 맞는다.
+ */
+export function buildWizardRealPipelineInputs(
+  topicId: string,
+): { ok: true; paths: WizardRealPipelinePaths } | { ok: false; reason: string } {
+  const safeSlug = toSafeTopicSlug(topicId);
+  if (!safeSlug) return { ok: false, reason: "topic_id_invalid_or_empty" };
+  const record = readWizardFinalScriptRecord(topicId);
+  if (!record) return { ok: false, reason: "script_final_missing" };
+  const script = record.script;
+  if (!Array.isArray(script.scenes) || script.scenes.length !== 6) return { ok: false, reason: "script_scenes_invalid" };
+
+  const narrations = script.scenes.map((s) => String(s.narration ?? "").trim() || String(s.captionText ?? "").trim());
+  if (narrations.some((n) => n.length < 4)) return { ok: false, reason: "script_scenes_invalid" };
+
+  // 한국어 낭독 속도 보수치(≈6자/초) 기반 scene 길이 — 트림 대신 소폭 무음 패딩이 나오게 설계.
+  const durations = narrations.map((n) => Math.min(8, Math.max(3, Math.ceil(n.length / 6))));
+  const starts: number[] = [];
+  let acc = 0;
+  for (const d of durations) {
+    starts.push(acc);
+    acc += d;
+  }
+  const targetDurationSec = acc;
+
+  const realTtsScript = {
+    schemaVersion: "money_shorts_tts_script_v1",
+    scriptId: `tts-script-wizard-${safeSlug}-elevenlabs`,
+    manifestId: `rp-wizard-${safeSlug}`,
+    factCardId: `fact-card-wizard-${safeSlug}`,
+    ttsProvider: "elevenlabs",
+    ttsMode: "elevenlabs_scene_paced",
+    voiceProfile: "elevenlabs_fixed_voice",
+    targetDurationSec,
+    wizardTopicId: topicId,
+    wizardTopicTitle: script.title,
+    scriptMode: record.mode,
+    riskNotes: [
+      "Real ElevenLabs scene-paced TTS input generated from the confirmed wizard script (script-final.json).",
+      "Scene durations are sized from narration length (~6 chars/sec, clamp 3..8s) to avoid tail-trim word cuts.",
+      "No secret values are stored in this file.",
+    ],
+    scenes: script.scenes.map((s, i) => ({
+      sceneNumber: i + 1,
+      sceneRole: s.id,
+      durationSec: durations[i],
+      startSec: starts[i],
+      endSec: starts[i] + durations[i],
+      ttsText: narrations[i],
+      narration: narrations[i],
+      captionText: String(s.captionText ?? "").trim(),
+    })),
+  };
+
+  const inputDir = join(WIZARD_INPUTS_ROOT, safeSlug);
+  const realRoot = join(WIZARD_VIDEO_OUT_ROOT, safeSlug, "real");
+  const realTtsScriptPath = join(inputDir, "tts-script.real.json");
+  const ttsOutDir = join(realRoot, "tts");
+  try {
+    mkdirSync(inputDir, { recursive: true });
+    writeFileSync(realTtsScriptPath, JSON.stringify(realTtsScript, null, 2), "utf8");
+  } catch (e) {
+    return { ok: false, reason: `input_write_failed:${(e as Error).message}` };
+  }
+
+  return {
+    ok: true,
+    paths: {
+      topicId,
+      safeSlug,
+      scriptFinalPath: wizardFinalScriptPath(safeSlug),
+      realTtsScriptPath,
+      ttsOutDir,
+      ttsSummaryPath: join(ttsOutDir, "elevenlabs-scene-paced-tts-summary.json"),
+      imagesOutDir: join(realRoot, "images"),
+      videoOutDir: join(realRoot, "video"),
+    },
+  };
+}
+
+export type WizardRealMediaState = {
+  scriptEngine: {
+    finalReady: boolean;
+    mode: "claude_polished" | "local_only" | null;
+    note: string | null;
+    rewriteNotes: string[];
+    polishDisabled: boolean;
+    anthropicKeyPresent: boolean;
+    elevenLabsKeyPresent: boolean;
+  };
+  realTts: {
+    ready: boolean;
+    audioPath: string | null;
+    durationSec: number | null;
+    provider: string | null;
+    apiCallCount: number | null;
+    missingEnv: string[];
+  };
+  realImages: {
+    ready: boolean;
+    generatedCount: number;
+    expectedCount: number;
+    dir: string | null;
+    blocked: string | null;
+  };
+  finalVideo: {
+    ready: boolean;
+    mp4Path: string | null;
+    durationSec: number | null;
+    width: number | null;
+    height: number | null;
+    hasAudio: boolean;
+    sizeBytes: number | null;
+  };
+  mediaQualityGate: {
+    ok: boolean;
+    reasons: string[];
+    blockerCode: "REAL_TTS_REQUIRED" | "REAL_SCENE_IMAGES_REQUIRED" | "FINAL_MP4_REQUIRED" | null;
+  };
+};
+
+/**
+ * 실제 미디어(음성/이미지/최종 영상) 준비 상태 + media quality gate.
+ * 전부 요약 파일 읽기만 한다(spawn/네트워크 0). 업로드 게이트가 이 결과를 재검증에 쓴다.
+ * 테스트 소리(local_mock)/색상 카드 시안은 어떤 필드로도 ready가 되지 않는다.
+ */
+export function readWizardRealMediaState(topicId: string): WizardRealMediaState {
+  const slug = topicId ? toSafeTopicSlug(topicId) : null;
+  const realRoot = slug ? join(WIZARD_VIDEO_OUT_ROOT, slug, "real") : null;
+
+  const record = slug ? readWizardFinalScriptRecord(topicId) : null;
+  const scriptEngine: WizardRealMediaState["scriptEngine"] = {
+    finalReady: record != null,
+    mode: record?.mode ?? null,
+    note: record?.polish.note ?? null,
+    rewriteNotes: record?.polish.rewriteNotes ?? [],
+    polishDisabled: isClaudePolishDisabled(),
+    anthropicKeyPresent: typeof process.env.ANTHROPIC_API_KEY === "string" && process.env.ANTHROPIC_API_KEY !== "",
+    elevenLabsKeyPresent:
+      typeof process.env.ELEVENLABS_API_KEY === "string" &&
+      process.env.ELEVENLABS_API_KEY !== "" &&
+      typeof process.env.ELEVENLABS_VOICE_ID === "string" &&
+      process.env.ELEVENLABS_VOICE_ID !== "",
+  };
+
+  // 실제 TTS — 검증된 scene-paced summary만 신뢰. liveApiCallPerformed=true + 파일 존재 필수.
+  const ttsSummary = realRoot
+    ? (readAbsJson(join(realRoot, "tts", "elevenlabs-scene-paced-tts-summary.json")) as {
+        provider?: string;
+        liveApiCallPerformed?: boolean;
+        readinessFailure?: boolean;
+        missingEnv?: string[];
+        timelineAudioPath?: string | null;
+        timelineDurationSec?: number | null;
+        apiCallCount?: number;
+      } | null)
+    : null;
+  const ttsAudioPath = typeof ttsSummary?.timelineAudioPath === "string" ? ttsSummary.timelineAudioPath : null;
+  const ttsDuration = typeof ttsSummary?.timelineDurationSec === "number" ? ttsSummary.timelineDurationSec : null;
+  const realTtsReady =
+    ttsSummary?.provider === "elevenlabs" &&
+    ttsSummary.liveApiCallPerformed === true &&
+    ttsSummary.readinessFailure !== true &&
+    ttsAudioPath != null &&
+    existsSync(ttsAudioPath) &&
+    ttsDuration != null &&
+    ttsDuration >= 10 &&
+    ttsDuration <= 70;
+  const realTts: WizardRealMediaState["realTts"] = {
+    ready: realTtsReady === true,
+    audioPath: realTtsReady ? ttsAudioPath : null,
+    durationSec: ttsDuration,
+    provider: ttsSummary?.provider ?? null,
+    apiCallCount: typeof ttsSummary?.apiCallCount === "number" ? ttsSummary.apiCallCount : null,
+    missingEnv: Array.isArray(ttsSummary?.missingEnv) ? ttsSummary.missingEnv.filter((k): k is string => typeof k === "string") : [],
+  };
+
+  // 실제 장면 이미지 — 6장 전부 SAVED_OK + 파일 존재 + 세로형 최소 해상도.
+  const imagesDir = realRoot ? join(realRoot, "images") : null;
+  const imagesSummary = imagesDir
+    ? (readAbsJson(join(imagesDir, "scene-images-summary.json")) as {
+        schemaVersion?: string;
+        mode?: string;
+        allReady?: boolean;
+        blockerCode?: string | null;
+        scenes?: Array<{ sceneIndex?: number; file?: string; width?: number | null; height?: number | null; status?: string }>;
+      } | null)
+    : null;
+  const sceneRows = Array.isArray(imagesSummary?.scenes) ? imagesSummary.scenes : [];
+  const savedScenes = sceneRows.filter(
+    (s) =>
+      s.status === "SAVED_OK" &&
+      typeof s.file === "string" &&
+      existsSync(s.file) &&
+      typeof s.width === "number" &&
+      typeof s.height === "number" &&
+      s.width >= 900 &&
+      s.height >= 1200 &&
+      s.height >= Math.round(s.width * 1.2),
+  );
+  const realImagesReady =
+    imagesSummary?.mode === "chatgpt_playwright" && imagesSummary.allReady === true && sceneRows.length === 6 && savedScenes.length === 6;
+  const realImages: WizardRealMediaState["realImages"] = {
+    ready: realImagesReady === true,
+    generatedCount: savedScenes.length,
+    expectedCount: 6,
+    dir: imagesDir,
+    blocked: typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
+  };
+
+  // 최종 mp4 — 실제 음성+실제 이미지 합성 summary + ffprobe 검증값 + 파일 존재.
+  const videoSummary = realRoot
+    ? (readAbsJson(join(realRoot, "video", "real-video-summary.json")) as {
+        schemaVersion?: string;
+        status?: string;
+        finalMp4Path?: string;
+        durationSec?: number;
+        width?: number;
+        height?: number;
+        hasAudioStream?: boolean;
+        hasVideoStream?: boolean;
+        sizeBytes?: number;
+        sceneCount?: number;
+        audioProvider?: string;
+        imageMode?: string;
+      } | null)
+    : null;
+  const mp4Path = typeof videoSummary?.finalMp4Path === "string" ? videoSummary.finalMp4Path : null;
+  const finalVideoReady =
+    videoSummary?.schemaVersion === "wizard_real_video_summary_v1" &&
+    videoSummary.status === "RENDER_MUX_OK" &&
+    videoSummary.audioProvider === "elevenlabs" &&
+    videoSummary.imageMode === "chatgpt_playwright" &&
+    mp4Path != null &&
+    existsSync(mp4Path) &&
+    videoSummary.width === 1080 &&
+    videoSummary.height === 1920 &&
+    videoSummary.hasAudioStream === true &&
+    videoSummary.hasVideoStream === true &&
+    typeof videoSummary.durationSec === "number" &&
+    videoSummary.durationSec >= 15 &&
+    videoSummary.durationSec <= 60 &&
+    typeof videoSummary.sizeBytes === "number" &&
+    videoSummary.sizeBytes > 0 &&
+    videoSummary.sceneCount === 6;
+  const finalVideo: WizardRealMediaState["finalVideo"] = {
+    ready: finalVideoReady === true,
+    mp4Path: finalVideoReady ? mp4Path : null,
+    durationSec: typeof videoSummary?.durationSec === "number" ? videoSummary.durationSec : null,
+    width: typeof videoSummary?.width === "number" ? videoSummary.width : null,
+    height: typeof videoSummary?.height === "number" ? videoSummary.height : null,
+    hasAudio: videoSummary?.hasAudioStream === true,
+    sizeBytes: typeof videoSummary?.sizeBytes === "number" ? videoSummary.sizeBytes : null,
+  };
+
+  const reasons: string[] = [];
+  if (!realTts.ready) reasons.push("실제 음성이 아직 없습니다 (테스트 소리는 업로드 불가)");
+  if (!realImages.ready) reasons.push(`실제 장면 이미지가 부족합니다 (${realImages.generatedCount}/6)`);
+  if (!finalVideo.ready) reasons.push("실제 음성+이미지로 만든 최종 영상이 아직 없습니다 (시안 영상은 업로드 불가)");
+  const blockerCode = !realTts.ready
+    ? ("REAL_TTS_REQUIRED" as const)
+    : !realImages.ready
+      ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
+      : !finalVideo.ready
+        ? ("FINAL_MP4_REQUIRED" as const)
+        : null;
+
+  return {
+    scriptEngine,
+    realTts,
+    realImages,
+    finalVideo,
+    mediaQualityGate: { ok: reasons.length === 0, reasons, blockerCode },
   };
 }

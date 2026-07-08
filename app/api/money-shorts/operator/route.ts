@@ -30,6 +30,7 @@ import {
   WIZARD_CATEGORY_IDS,
   type WizardCategoryId,
   buildOperatorCommand,
+  ensureWizardFinalScript,
   generateWizardTopicBatch,
   isLocalDevRuntime,
   readCredentialPresence,
@@ -38,6 +39,8 @@ import {
   readVoiceSampleStatus,
   readWizardPublishPreflight,
   readWizardPublishResult,
+  readWizardRealAudioBytes,
+  readWizardRealMediaState,
   readWizardVideoBytes,
   readWizardVideoStatus,
   runOperatorScript,
@@ -59,6 +62,10 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "previewStatus",
   "wizardPreflight",
   "actualUpload",
+  "realTtsCreate",
+  "realSceneImagesCreate",
+  "finalVideoCreate",
+  "realMediaStatus",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -66,6 +73,17 @@ const UPLOAD_CONFIRM_TEXT = "업로드";
 
 /** 실제 업로드는 Blob 업로드 + IG 폴링 + YT 업로드로 2분을 넘길 수 있어 별도 timeout을 쓴다. */
 const UPLOAD_TIMEOUT_MS = 300_000;
+
+// 실제 제작 단계별 timeout — 실행 스크립트가 도는 동안 dev 서버가 다른 요청을 처리하지
+// 못하므로(Owner 단독 로컬 사용 전제) UI가 "몇 분 걸릴 수 있음"을 함께 안내한다.
+// 음성: 장면별 합성 호출(최대 6회) + 오디오 이어붙이기 / 이미지: 장면 6개 × 최대 180s + 브라우저 기동(21분)
+// / 최종 영상: 장면 세그먼트 6개 렌더 + 자막·음성 결합.
+const REAL_TTS_TIMEOUT_MS = 240_000;
+const REAL_IMAGES_TIMEOUT_MS = 1_260_000;
+const FINAL_VIDEO_TIMEOUT_MS = 300_000;
+
+/** 업로드 차단 시 사용자 문구(media quality gate — 시안/테스트 산출물 업로드 금지). */
+const MEDIA_GATE_USER_MESSAGE = "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
 
 type OperatorStatus = "success" | "blocked" | "error";
 
@@ -108,7 +126,7 @@ export async function GET(request: Request) {
   // 실제 파일 경로는 파이프라인 summary에서만 나오고 helper가 C:\tmp 허용 prefix를 강제한다.
   const url = new URL(request.url);
   const videoParam = url.searchParams.get("video");
-  if (videoParam === "muxed" || videoParam === "silent") {
+  if (videoParam === "muxed" || videoParam === "silent" || videoParam === "final") {
     if (!isLocalDevRuntime()) {
       return json(
         { action: "previewStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
@@ -120,7 +138,7 @@ export async function GET(request: Request) {
     const bytes = readWizardVideoBytes(videoParam, streamTopicId);
     if (!bytes) {
       return json(
-        { action: "previewStatus", status: "blocked", summary: "아직 영상 파일이 없습니다. 먼저 [영상 만들기]를 눌러 주세요.", blockerCode: "WIZARD_VIDEO_NOT_FOUND", noLive: true },
+        { action: "previewStatus", status: "blocked", summary: "아직 영상 파일이 없습니다. 먼저 영상을 만들어 주세요.", blockerCode: "WIZARD_VIDEO_NOT_FOUND", noLive: true },
         404,
       );
     }
@@ -129,6 +147,31 @@ export async function GET(request: Request) {
       headers: {
         "Content-Type": "video/mp4",
         "Content-Length": String(bytes.byteLength),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  // 실제 목소리 스트림 — 경로는 TTS summary에서만 나오고 C:\tmp 허용 prefix가 강제된다.
+  if (url.searchParams.get("audio") === "real") {
+    if (!isLocalDevRuntime()) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
+        404,
+      );
+    }
+    const audio = readWizardRealAudioBytes(url.searchParams.get("topicId"));
+    if (!audio) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: "아직 실제 음성 파일이 없습니다. 먼저 [실제 목소리 만들기]를 눌러 주세요.", blockerCode: "REAL_TTS_REQUIRED", noLive: true },
+        404,
+      );
+    }
+    return new Response(new Uint8Array(audio.bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": audio.contentType,
+        "Content-Length": String(audio.bytes.byteLength),
         "Cache-Control": "no-store",
       },
     });
@@ -256,12 +299,34 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
+    // 대본 생성 방식: 로컬 후보 선별(judge 최고 후보) → Claude 1회 보정.
+    // 보정은 로컬 dev 런타임에서만 시도하고(배포 사이트는 로컬 산출물 저장 불가),
+    // 키 없음/실패/검증 실패/점수 회귀 시 로컬 대본을 그대로 쓴다. 같은 대본은 재호출하지 않는다.
+    const record = await ensureWizardFinalScript(topicId, preview, { allowPolish: isLocalDevRuntime() });
     return json({
       action,
       status: "success",
-      summary: `대본이 준비됐습니다. 훅: "${preview.hook}"`,
-      detail: "규칙 기반 대본 엔진이 미리 만들어 둔 로컬 결과입니다. 외부 AI 호출은 없었습니다.",
-      raw: { script: preview },
+      summary:
+        record.mode === "claude_polished"
+          ? `대본이 준비됐습니다 (Claude 보정 적용됨). 훅: "${record.script.hook}"`
+          : `대본이 준비됐습니다 (로컬 대본). 훅: "${record.script.hook}"`,
+      detail:
+        record.mode === "claude_polished"
+          ? "대본 생성 방식: 로컬 후보 선별 → Claude 1회 보정. 이 확정 대본이 실제 목소리/장면 이미지/최종 영상에 그대로 쓰입니다."
+          : `대본 생성 방식: 로컬 후보 선별 → Claude 1회 보정. ${record.polish.note}`,
+      raw: {
+        script: record.script,
+        scriptEngine: {
+          mode: record.mode,
+          claudeApplied: record.polish.applied,
+          note: record.polish.note,
+          reasonCode: record.polish.reasonCode,
+          model: record.polish.model,
+          rewriteNotes: record.polish.rewriteNotes,
+          localScore: record.polish.localScore,
+          polishedScore: record.polish.polishedScore,
+        },
+      },
       noLive: true,
     });
   }
@@ -288,6 +353,165 @@ export async function POST(request: Request) {
       summary: `${titleNote}시안 영상이 준비되어 있습니다 (${mb}MB). 아래에서 바로 재생할 수 있습니다.`,
       detail: "이 파일은 Owner PC에만 있습니다. 어디에도 업로드되지 않았습니다.",
       raw: { video },
+      noLive: true,
+    });
+  }
+
+  // ── 실제 제작 파이프라인 (task: owner-web-real-script-voice-visual-generation-pipeline-v1) ──
+
+  // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음).
+  if (action === "realMediaStatus") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const media = readWizardRealMediaState(topicId);
+    const g = media.mediaQualityGate;
+    return json({
+      action,
+      status: "success",
+      summary: g.ok
+        ? "실제 음성·장면 이미지·최종 영상이 모두 준비됐습니다. 게시 전 점검으로 진행할 수 있습니다."
+        : `실제 제작 진행 중 — ${g.reasons[0] ?? "다음 단계를 진행해 주세요."}`,
+      raw: { media },
+      noLive: true,
+    });
+  }
+
+  // 실제 목소리 만들기 — 확정 대본 기반 ElevenLabs 고정 목소리 TTS(Owner 버튼 클릭 시에만 호출).
+  if (action === "realTtsCreate") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const builtTts = buildOperatorCommand(action, { topicId });
+    if (!builtTts.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(builtTts.reason), blockerCode: builtTts.reason, noLive: true });
+    }
+    // includeMediaEnv:true 는 이 action(실제 TTS 생성) child에만 ELEVENLABS 키를 전달한다.
+    const runTts = runOperatorScript(builtTts.command, { timeoutMs: REAL_TTS_TIMEOUT_MS, includeMediaEnv: true });
+    if (!runTts.ran || runTts.timedOut) {
+      return json({
+        action,
+        status: "error",
+        summary: runTts.timedOut ? "음성 생성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요." : "음성 생성 프로그램을 실행하지 못했습니다.",
+        blockerCode: runTts.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      });
+    }
+    const mediaAfterTts = readWizardRealMediaState(topicId);
+    if (mediaAfterTts.realTts.ready) {
+      return json({
+        action,
+        status: "success",
+        summary: `실제 목소리가 준비됐습니다 (${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 바로 들어볼 수 있습니다.`,
+        detail: "확정 대본을 고정 목소리로 합성한 실제 음성입니다. 파일은 Owner PC에만 있습니다.",
+        raw: { realTts: mediaAfterTts.realTts },
+        noLive: true,
+      });
+    }
+    const missing = mediaAfterTts.realTts.missingEnv;
+    if (missing.length > 0) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "실제 음성 키가 없어 생성하지 못했습니다. 테스트 소리는 업로드할 수 없습니다.",
+        detail: `누락 키: ${missing.join(", ")} — 로컬 환경 파일에 채운 뒤 dev 서버를 다시 시작해 주세요. (키 값은 화면/기록에 절대 나오지 않습니다)`,
+        blockerCode: "REAL_TTS_KEY_MISSING",
+        raw: { missingEnv: missing },
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "blocked",
+      summary: "실제 음성 생성이 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.",
+      blockerCode: "REAL_TTS_FAILED",
+      raw: { realTts: mediaAfterTts.realTts, exitCode: runTts.exitCode },
+      noLive: true,
+    });
+  }
+
+  // 장면 이미지 만들기 — ChatGPT+Playwright(로그인된 Chrome) 실제 이미지 6장(Owner 클릭 시에만).
+  if (action === "realSceneImagesCreate") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const builtImg = buildOperatorCommand(action, { topicId });
+    if (!builtImg.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(builtImg.reason), blockerCode: builtImg.reason, noLive: true });
+    }
+    // ALLOW_CHATGPT_IMAGE=1 은 이 action의 Owner 클릭이 곧 승인이라는 하드코딩 마커다(secret 아님).
+    const runImg = runOperatorScript(builtImg.command, { timeoutMs: REAL_IMAGES_TIMEOUT_MS, extraEnv: { ALLOW_CHATGPT_IMAGE: "1" } });
+    if (!runImg.ran || runImg.timedOut) {
+      return json({
+        action,
+        status: "error",
+        summary: runImg.timedOut
+          ? "이미지 생성이 시간 안에 끝나지 않았습니다. 다시 누르면 모자란 장면만 이어서 생성합니다."
+          : "이미지 생성 프로그램을 실행하지 못했습니다.",
+        blockerCode: runImg.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      });
+    }
+    const mediaAfterImg = readWizardRealMediaState(topicId);
+    if (mediaAfterImg.realImages.ready) {
+      return json({
+        action,
+        status: "success",
+        summary: "장면 이미지 6장이 모두 준비됐습니다.",
+        detail: "대본 6장면의 시각 지시(visualCue)로 만든 실제 이미지입니다. 업로드는 아직 하지 않았습니다.",
+        raw: { realImages: mediaAfterImg.realImages },
+        noLive: true,
+      });
+    }
+    const blocked = mediaAfterImg.realImages.blocked;
+    return json({
+      action,
+      status: "blocked",
+      summary:
+        blocked === "BLOCKED_SESSION"
+          ? "ChatGPT 로그인 세션이 없어 이미지를 만들지 못했습니다. Chrome(AI-GPT-1 프로필)에서 로그인 후 다시 시도해 주세요."
+          : blocked === "BLOCKED_RATE_OR_CAPTCHA"
+            ? "ChatGPT 사용 한도/보안 확인에 걸렸습니다. 잠시 후 다시 시도해 주세요."
+            : `장면 이미지가 아직 부족합니다 (${mediaAfterImg.realImages.generatedCount}/6). 다시 누르면 모자란 장면만 이어서 생성합니다.`,
+      blockerCode: blocked ?? "REAL_IMAGES_INCOMPLETE",
+      raw: { realImages: mediaAfterImg.realImages, exitCode: runImg.exitCode },
+      noLive: true,
+    });
+  }
+
+  // 최종 영상 만들기 — 실제 음성 + 실제 이미지 6장 + 자막 + 모션 합성(로컬 ffmpeg만).
+  if (action === "finalVideoCreate") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const builtVid = buildOperatorCommand(action, { topicId });
+    if (!builtVid.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true });
+    }
+    const runVid = runOperatorScript(builtVid.command, { timeoutMs: FINAL_VIDEO_TIMEOUT_MS });
+    if (!runVid.ran || runVid.timedOut) {
+      return json({
+        action,
+        status: "error",
+        summary: runVid.timedOut ? "영상 합성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요." : "영상 합성 프로그램을 실행하지 못했습니다.",
+        blockerCode: runVid.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      });
+    }
+    const mediaAfterVid = readWizardRealMediaState(topicId);
+    if (mediaAfterVid.finalVideo.ready) {
+      const mb = mediaAfterVid.finalVideo.sizeBytes ? (mediaAfterVid.finalVideo.sizeBytes / (1024 * 1024)).toFixed(2) : "?";
+      return json({
+        action,
+        status: "success",
+        summary: `최종 영상이 준비됐습니다 (${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 바로 재생됩니다.`,
+        detail: "실제 목소리와 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
+        raw: { finalVideo: mediaAfterVid.finalVideo, mediaQualityGate: mediaAfterVid.mediaQualityGate },
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "blocked",
+      summary: "최종 영상 검증을 통과하지 못했습니다. 실제 음성/이미지를 확인한 뒤 다시 시도해 주세요.",
+      blockerCode: "FINAL_MP4_VALIDATION_FAILED",
+      raw: { finalVideo: mediaAfterVid.finalVideo, exitCode: runVid.exitCode },
       noLive: true,
     });
   }
@@ -354,6 +578,20 @@ export async function POST(request: Request) {
         status: "blocked",
         summary: `업로드 확인 절차가 완료되지 않았습니다. 확인 2개를 체크하고 "${UPLOAD_CONFIRM_TEXT}"를 직접 입력해 주세요.`,
         blockerCode: "UPLOAD_CONFIRMATION_REQUIRED",
+        noLive: true,
+      });
+    }
+    // [게이트 1.5] media quality gate 서버 재검증 — 실제 TTS + 실제 장면 이미지 + 검증된 최종 mp4가
+    // 전부 준비된 경우에만 진행한다. 테스트 소리/색상 카드/시안 mp4는 여기서 차단된다(fail-closed).
+    const mediaGate = readWizardRealMediaState(topicId);
+    if (!mediaGate.mediaQualityGate.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: MEDIA_GATE_USER_MESSAGE,
+        detail: mediaGate.mediaQualityGate.reasons.join(" · "),
+        blockerCode: mediaGate.mediaQualityGate.blockerCode ?? "MEDIA_QUALITY_GATE_NOT_READY",
+        raw: { mediaQualityGate: mediaGate.mediaQualityGate },
         noLive: true,
       });
     }
@@ -490,6 +728,14 @@ function describeBuildFailure(reason: string): string {
     return "먼저 주제를 선택하고 대본을 만든 뒤에 진행할 수 있습니다.";
   if (reason === "video_not_created_yet")
     return "먼저 [영상 만들기]로 시안 영상을 만들어 주세요.";
+  if (reason === "script_final_missing" || reason === "script_scenes_invalid")
+    return "먼저 [대본 만들기]로 대본을 확정해 주세요. 확정 대본이 실제 음성·이미지·영상의 입력이 됩니다.";
+  if (reason === "real_tts_required")
+    return "먼저 [실제 목소리 만들기]로 실제 음성을 만들어 주세요. 테스트 소리는 사용할 수 없습니다.";
+  if (reason === "real_scene_images_required")
+    return "먼저 [장면 이미지 만들기]로 실제 장면 이미지 6장을 만들어 주세요.";
+  if (reason === "final_mp4_required" || reason === "media_quality_gate_not_ready")
+    return "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
   if (reason === "preflight_evidence_missing")
     return "먼저 [게시 전 점검]을 통과해야 업로드할 수 있습니다.";
   if (reason === "content_already_published_evidence")

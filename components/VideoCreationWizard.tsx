@@ -96,6 +96,60 @@ type WizardVideo = {
   topicTitle: string | null;
 };
 
+/** 대본 생성 방식(로컬 후보 선별 → Claude 1회 보정) 결과 메타데이터. */
+type WizardScriptEngine = {
+  mode: "claude_polished" | "local_only";
+  claudeApplied: boolean;
+  note: string;
+  reasonCode: string;
+  model: string | null;
+  rewriteNotes: string[];
+  localScore: number | null;
+  polishedScore: number | null;
+};
+
+/** 실제 음성/장면 이미지/최종 영상 준비 상태 + media quality gate (서버 realMediaStatus 응답). */
+type WizardRealMedia = {
+  scriptEngine: {
+    finalReady: boolean;
+    mode: "claude_polished" | "local_only" | null;
+    note: string | null;
+    rewriteNotes: string[];
+    polishDisabled: boolean;
+    anthropicKeyPresent: boolean;
+    elevenLabsKeyPresent: boolean;
+  };
+  realTts: {
+    ready: boolean;
+    audioPath: string | null;
+    durationSec: number | null;
+    provider: string | null;
+    apiCallCount: number | null;
+    missingEnv: string[];
+  };
+  realImages: {
+    ready: boolean;
+    generatedCount: number;
+    expectedCount: number;
+    dir: string | null;
+    blocked: string | null;
+  };
+  finalVideo: {
+    ready: boolean;
+    mp4Path: string | null;
+    durationSec: number | null;
+    width: number | null;
+    height: number | null;
+    hasAudio: boolean;
+    sizeBytes: number | null;
+  };
+  mediaQualityGate: {
+    ok: boolean;
+    reasons: string[];
+    blockerCode: string | null;
+  };
+};
+
 // ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
 
 /** 카테고리를 고르면 보여줄 한 줄 소개 — 재테크팁은 돈·성공·심리·생활습관 톤을 명시한다. */
@@ -232,6 +286,17 @@ export default function VideoCreationWizard() {
   const [videoState, setVideoState] = useState<RunState>("idle");
   const [videoResult, setVideoResult] = useState<OperatorResult | null>(null);
 
+  // 실제 제작 파이프라인 상태 — 대본 엔진 표시 + 실제 목소리/장면 이미지/최종 영상 + media gate.
+  const [scriptEngine, setScriptEngine] = useState<WizardScriptEngine | null>(null);
+  const [realMedia, setRealMedia] = useState<WizardRealMedia | null>(null);
+  const [realTtsState, setRealTtsState] = useState<RunState>("idle");
+  const [realTtsResult, setRealTtsResult] = useState<OperatorResult | null>(null);
+  const [imagesState, setImagesState] = useState<RunState>("idle");
+  const [imagesResult, setImagesResult] = useState<OperatorResult | null>(null);
+  const [finalVideoState, setFinalVideoState] = useState<RunState>("idle");
+  const [finalVideoResult, setFinalVideoResult] = useState<OperatorResult | null>(null);
+  const [audioKey, setAudioKey] = useState(0);
+
   const [previewState, setPreviewState] = useState<RunState>("idle");
   const [previewResult, setPreviewResult] = useState<OperatorResult | null>(null);
   const [previewVideo, setPreviewVideo] = useState<WizardVideo | null>(null);
@@ -263,19 +328,35 @@ export default function VideoCreationWizard() {
     };
   }, []);
 
-  const anyRunning = [topicState, scriptState, voiceState, videoState, previewState, preflightState, uploadState].includes(
-    "running",
-  );
+  const anyRunning = [
+    topicState,
+    scriptState,
+    voiceState,
+    videoState,
+    previewState,
+    preflightState,
+    uploadState,
+    realTtsState,
+    imagesState,
+    finalVideoState,
+  ].includes("running");
   const runnable = localDev === true && !anyRunning;
 
   const selectedTopic = topics.find((t) => t.topicId === selectedTopicId) ?? null;
 
-  // 업로드 게이트 파생 상태 — 시안 영상 → 게시 전 점검 통과 → 명시 확인 순서를 강제한다.
-  const videoDone = videoState === "success" || previewVideo?.exists === true;
-  const preflightDone = videoDone && preflightState === "success";
+  // 실제 제작 파생 상태 — 대본 확정 → 실제 음성 → 장면 이미지 → 최종 영상 → media gate.
+  const scriptFinalReady = script != null || realMedia?.scriptEngine.finalReady === true;
+  const realTtsReady = realMedia?.realTts.ready === true;
+  const realImagesReady = realMedia?.realImages.ready === true;
+  const finalVideoReady = realMedia?.finalVideo.ready === true;
+  const mediaGateOk = realMedia?.mediaQualityGate.ok === true;
+
+  // 업로드 게이트 파생 상태 — 최종 영상(media gate) → 게시 전 점검 통과 → 명시 확인 순서를 강제한다.
+  const preflightDone = mediaGateOk && preflightState === "success";
   const uploadEnabled =
     runnable &&
     selectedTopicId != null &&
+    mediaGateOk &&
     preflightDone &&
     confirmReviewed &&
     confirmPublish &&
@@ -287,6 +368,14 @@ export default function VideoCreationWizard() {
     setScriptState("idle");
     setScriptResult(null);
     setScript(null);
+    setScriptEngine(null);
+    setRealMedia(null);
+    setRealTtsState("idle");
+    setRealTtsResult(null);
+    setImagesState("idle");
+    setImagesResult(null);
+    setFinalVideoState("idle");
+    setFinalVideoResult(null);
     setVoiceState("idle");
     setVoiceResult(null);
     setVideoState("idle");
@@ -346,22 +435,92 @@ export default function VideoCreationWizard() {
     }
   }, [category, resetDownstream]);
 
+  // 실제 미디어 준비 상태(media quality gate)를 조회한다 — 읽기 전용, 언제든 안전.
+  const refreshRealMedia = useCallback(async (topicId: string) => {
+    try {
+      const r = await postAction("realMediaStatus", { topicId });
+      const raw = r.raw as { media?: WizardRealMedia } | undefined;
+      if (r.status === "success" && raw?.media) setRealMedia(raw.media);
+    } catch {
+      // 상태 조회 실패는 조용히 무시(다음 단계 버튼이 다시 조회한다).
+    }
+  }, []);
+
+  // 주제를 고르면 그 주제의 실제 제작 진행 상태를 복원한다(이전 세션 산출물 이어가기).
+  useEffect(() => {
+    if (localDev !== true || !selectedTopicId) return;
+    void refreshRealMedia(selectedTopicId);
+  }, [localDev, selectedTopicId, refreshRealMedia]);
+
   const runScriptPreview = useCallback(async () => {
     if (!selectedTopicId) return;
     setScriptState("running");
     setScriptResult(null);
     setScript(null);
+    setScriptEngine(null);
     try {
       const r = await postAction("scriptPreview", { topicId: selectedTopicId });
       setScriptResult(r);
       setScriptState(r.status === "success" ? "success" : r.status);
-      const raw = r.raw as { script?: WizardScript } | undefined;
+      const raw = r.raw as { script?: WizardScript; scriptEngine?: WizardScriptEngine } | undefined;
       if (r.status === "success" && raw?.script) setScript(raw.script);
+      if (r.status === "success" && raw?.scriptEngine) setScriptEngine(raw.scriptEngine);
+      if (r.status === "success") void refreshRealMedia(selectedTopicId);
     } catch {
       setScriptState("error");
       setScriptResult({ action: "scriptPreview", status: "error", summary: "대본 요청에 실패했습니다." });
     }
-  }, [selectedTopicId]);
+  }, [selectedTopicId, refreshRealMedia]);
+
+  // 실제 목소리 만들기 — Owner 클릭이 곧 실행 승인. 몇십 초 걸릴 수 있다.
+  const runRealTts = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setRealTtsState("running");
+    setRealTtsResult(null);
+    try {
+      const r = await postAction("realTtsCreate", { topicId: selectedTopicId });
+      setRealTtsResult(r);
+      setRealTtsState(r.status === "success" ? "success" : r.status);
+      setAudioKey((k) => k + 1);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setRealTtsState("error");
+      setRealTtsResult({ action: "realTtsCreate", status: "error", summary: "실제 목소리 생성 요청에 실패했습니다." });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
+
+  // 장면 이미지 만들기 — ChatGPT 이미지 6장, 몇 분 걸릴 수 있다(재클릭 시 모자란 장면만 이어서).
+  const runSceneImages = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setImagesState("running");
+    setImagesResult(null);
+    try {
+      const r = await postAction("realSceneImagesCreate", { topicId: selectedTopicId });
+      setImagesResult(r);
+      setImagesState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setImagesState("error");
+      setImagesResult({ action: "realSceneImagesCreate", status: "error", summary: "장면 이미지 생성 요청에 실패했습니다." });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
+
+  // 최종 영상 만들기 — 실제 음성 + 실제 이미지 6장 + 자막 + 모션 합성.
+  const runFinalVideo = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setFinalVideoState("running");
+    setFinalVideoResult(null);
+    try {
+      const r = await postAction("finalVideoCreate", { topicId: selectedTopicId });
+      setFinalVideoResult(r);
+      setFinalVideoState(r.status === "success" ? "success" : r.status);
+      setPreviewKey((k) => k + 1);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFinalVideoState("error");
+      setFinalVideoResult({ action: "finalVideoCreate", status: "error", summary: "최종 영상 합성 요청에 실패했습니다." });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
 
   const runVoiceSample = useCallback(async () => {
     if (!selectedTopicId) return;
@@ -456,8 +615,9 @@ export default function VideoCreationWizard() {
         </span>
       </div>
       <p className="text-[15px] text-slate-600 mb-5 leading-relaxed">
-        여기가 새 쇼츠 만들기 시작점입니다. 1번부터 순서대로 누르면 시안 영상까지 만들어지고, 마지막 단계에서 확인
-        절차를 거쳐야만 실제 업로드가 실행됩니다.
+        여기가 새 쇼츠 만들기 시작점입니다. 1번부터 순서대로 누르면 대본 → 실제 목소리 → 장면 이미지 → 최종 영상까지
+        만들어지고, 마지막 단계에서 확인 절차를 거쳐야만 실제 업로드가 실행됩니다. 테스트 소리·시안 영상은 업로드할 수
+        없습니다.
       </p>
 
       {localDev === false ? (
@@ -600,8 +760,37 @@ export default function VideoCreationWizard() {
               {/* 실제 읽히는 대본 — 가장 위에 크게. 음성/영상이 이 문장을 그대로 사용한다. */}
               <div className="rounded-2xl border-2 border-indigo-300 bg-indigo-50 px-5 py-5">
                 <p className="text-base font-bold text-indigo-700 mb-1">실제 읽히는 대본</p>
-                <p className="text-sm text-slate-500 mb-3">음성 만들기와 영상 만들기는 이 문장을 사용합니다.</p>
+                <p className="text-sm text-slate-500 mb-3">실제 목소리 만들기와 최종 영상 만들기는 이 문장을 사용합니다.</p>
                 <p className="text-lg text-slate-900 leading-relaxed">{script.fullVoiceover}</p>
+              </div>
+
+              {/* 대본 생성 방식 — 로컬 후보 선별 → Claude 1회 보정 (적용 여부 표시) */}
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-bold text-slate-600">대본 생성 방식: 로컬 후보 선별 → Claude 1회 보정</p>
+                  {scriptEngine?.claudeApplied ? (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                      Claude 보정 적용됨
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">
+                      Claude 보정 미적용 — 로컬 대본 사용 중
+                    </span>
+                  )}
+                </div>
+                {scriptEngine && !scriptEngine.claudeApplied ? (
+                  <p className="text-sm text-slate-500 mt-1">{scriptEngine.note}</p>
+                ) : null}
+                {scriptEngine?.claudeApplied && scriptEngine.rewriteNotes.length > 0 ? (
+                  <details className="mt-1.5">
+                    <summary className="text-[13px] text-slate-400 cursor-pointer">Claude가 고친 부분 보기</summary>
+                    <ul className="mt-1 text-sm text-slate-600 space-y-0.5">
+                      {scriptEngine.rewriteNotes.map((n, i) => (
+                        <li key={i}>· {n}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
               </div>
 
               {/* 대본 품질 점수 — 좋은 이유 / 고친 부분 / 주의할 점 (2~4줄 요약) */}
@@ -733,65 +922,199 @@ export default function VideoCreationWizard() {
           ) : null}
         </StepCard>
 
-        {/* 4. 음성 만들기 */}
+        {/* 4. 실제 목소리 만들기 — 확정 대본 기반 ElevenLabs 고정 목소리(테스트 소리 아님) */}
         <StepCard
           num={4}
-          title="음성 만들기"
-          state={voiceState}
-          desc="영상 길이에 맞는 소리 트랙을 만듭니다. 실제 사람 목소리는 다음 승인 후 연결됩니다."
+          title="실제 목소리 만들기"
+          state={realTtsReady ? "success" : realTtsState}
+          desc="확정 대본을 고정 목소리(ElevenLabs)로 실제 음성을 만듭니다. 몇십 초 걸릴 수 있습니다."
         >
-          <button type="button" className={RUN_BTN} disabled={!runnable || !selectedTopicId} onClick={runVoiceSample}>
-            음성 만들기
-          </button>
-          <p className="text-sm text-slate-500 mt-2">
-            지금은 테스트용 소리(실제 음성 아님)로 만들어집니다. 실제 음성 생성은{" "}
-            <span className="text-amber-600 font-semibold">다음 승인 필요</span>.
-          </p>
-          <ResultNote result={voiceResult} />
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              className={RUN_BTN}
+              disabled={!runnable || !selectedTopicId || !scriptFinalReady}
+              onClick={runRealTts}
+            >
+              실제 목소리 만들기
+            </button>
+            {realTtsReady ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
+                실제 음성 준비 ({realMedia?.realTts.durationSec?.toFixed(1) ?? "?"}초)
+              </span>
+            ) : realMedia && realMedia.scriptEngine.elevenLabsKeyPresent === false ? (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+                음성 키 필요
+              </span>
+            ) : null}
+          </div>
+          {!scriptFinalReady ? (
+            <p className="text-sm text-slate-400 mt-2">먼저 [대본 만들기]로 대본을 확정해 주세요.</p>
+          ) : null}
+          {realTtsState === "running" ? (
+            <p className="text-[15px] text-amber-700 font-semibold mt-2">실제 음성 생성 중… 창을 닫지 마세요.</p>
+          ) : null}
+          <ResultNote result={realTtsResult} />
+          {realTtsReady && selectedTopicId ? (
+            <div className="mt-3">
+              <audio
+                key={audioKey}
+                controls
+                preload="metadata"
+                className="w-full max-w-[360px]"
+                src={`/api/money-shorts/operator?audio=real&topicId=${encodeURIComponent(selectedTopicId)}&v=${audioKey}`}
+              />
+              <p className="text-sm text-slate-500 mt-1">이 목소리가 최종 영상에 그대로 들어갑니다.</p>
+            </div>
+          ) : null}
+          <details className="mt-3">
+            <summary className="text-[13px] text-slate-400 cursor-pointer">테스트 소리 만들기 (참고용 · 업로드 불가)</summary>
+            <div className="mt-2">
+              <button type="button" className={RUN_BTN} disabled={!runnable || !selectedTopicId} onClick={runVoiceSample}>
+                테스트 소리 만들기
+              </button>
+              <p className="text-sm text-slate-500 mt-2">실제 음성이 아닌 기계음입니다. 업로드 게이트에서 차단됩니다.</p>
+              <ResultNote result={voiceResult} />
+            </div>
+          </details>
         </StepCard>
 
-        {/* 5. 영상 만들기 */}
+        {/* 5. 장면 이미지 만들기 — 대본 6장면 기준 ChatGPT 실제 이미지 */}
         <StepCard
           num={5}
-          title="영상 만들기"
-          state={videoState}
-          desc="고른 주제의 대본과 자막으로 시안 mp4를 만듭니다. 약 10초 걸립니다."
+          title="장면 이미지 만들기"
+          state={realImagesReady ? "success" : imagesState}
+          desc="대본 6장면의 시각 지시로 실제 장면 이미지를 만듭니다. 몇 분 걸릴 수 있습니다."
+        >
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              className={RUN_BTN}
+              disabled={!runnable || !selectedTopicId || !scriptFinalReady}
+              onClick={runSceneImages}
+            >
+              장면 이미지 만들기
+            </button>
+            {realImagesReady ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
+                장면 이미지 준비 6/6
+              </span>
+            ) : realMedia && realMedia.realImages.generatedCount > 0 ? (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+                이미지 생성 필요 ({realMedia.realImages.generatedCount}/6)
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-sm">
+                이미지 생성 필요
+              </span>
+            )}
+          </div>
+          {!scriptFinalReady ? (
+            <p className="text-sm text-slate-400 mt-2">먼저 [대본 만들기]로 대본을 확정해 주세요.</p>
+          ) : (
+            <p className="text-sm text-slate-500 mt-2">
+              로그인된 Chrome(AI-GPT-1 프로필)의 ChatGPT로 생성합니다. 중간에 멈추면 다시 눌러 모자란 장면만 이어서
+              만듭니다. 색상 카드/임시 이미지는 최종 영상에 쓰지 않습니다.
+            </p>
+          )}
+          {imagesState === "running" ? (
+            <p className="text-[15px] text-amber-700 font-semibold mt-2">
+              장면 이미지 생성 중… 몇 분 걸릴 수 있습니다. 창을 닫지 마세요.
+            </p>
+          ) : null}
+          <ResultNote result={imagesResult} />
+        </StepCard>
+
+        {/* 6. 최종 영상 만들기 — 실제 음성 + 실제 이미지 + 자막 + 모션 */}
+        <StepCard
+          num={6}
+          title="최종 영상 만들기"
+          state={finalVideoReady ? "success" : finalVideoState}
+          desc="실제 목소리와 장면 이미지 6장을 자막·모션과 함께 최종 mp4로 합성합니다."
+        >
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              className={RUN_BTN}
+              disabled={!runnable || !selectedTopicId || !realTtsReady || !realImagesReady}
+              onClick={runFinalVideo}
+            >
+              최종 영상 만들기
+            </button>
+            {finalVideoReady ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
+                최종 영상 준비 ({realMedia?.finalVideo.durationSec ?? "?"}초)
+              </span>
+            ) : null}
+          </div>
+          {!realTtsReady || !realImagesReady ? (
+            <p className="text-sm text-slate-400 mt-2">
+              먼저 [실제 목소리 만들기]와 [장면 이미지 만들기]를 완료해 주세요. 테스트 소리·색상 카드로는 최종 영상을
+              만들 수 없습니다.
+            </p>
+          ) : null}
+          {finalVideoState === "running" ? (
+            <p className="text-[15px] text-amber-700 font-semibold mt-2">최종 영상 합성 중… 창을 닫지 마세요.</p>
+          ) : null}
+          <ResultNote result={finalVideoResult} />
+          <details className="mt-3">
+            <summary className="text-[13px] text-slate-400 cursor-pointer">시안 영상 만들기 (색상 카드 · 업로드 불가)</summary>
+            <div className="mt-2">
+              <button
+                type="button"
+                className={RUN_BTN}
+                disabled={!runnable || !selectedTopicId || !selectedTopic?.scriptReady}
+                onClick={runVideoCreate}
+              >
+                시안 영상 만들기
+              </button>
+              <p className="text-sm text-slate-500 mt-2">
+                장면 이미지 없이 색상 카드로 빠르게 확인하는 테스트용입니다. 업로드 게이트에서 차단됩니다.
+              </p>
+              <ResultNote result={videoResult} />
+            </div>
+          </details>
+        </StepCard>
+
+        {/* 7. 미리보기 — 최종 영상 우선, 없으면 시안(업로드 불가) 표시 */}
+        <StepCard
+          num={7}
+          title="미리보기"
+          state={finalVideoReady ? "success" : previewState}
+          desc="만들어진 영상을 이 화면에서 바로 재생합니다. 파일은 Owner PC에만 있습니다."
         >
           <button
             type="button"
             className={RUN_BTN}
-            disabled={!runnable || !selectedTopicId || !selectedTopic?.scriptReady}
-            onClick={runVideoCreate}
+            disabled={!runnable || !selectedTopicId}
+            onClick={() => {
+              if (selectedTopicId) void refreshRealMedia(selectedTopicId);
+              void runPreviewStatus();
+              setPreviewKey((k) => k + 1);
+            }}
           >
-            영상 만들기
-          </button>
-          {selectedTopic && !selectedTopic.scriptReady ? (
-            <p className="text-sm text-slate-500 mt-2">
-              이 주제는 아직 영상 생성까지 연결되지 않았습니다.{" "}
-              <span className="text-amber-600 font-semibold">「대본 준비됨」</span> 표시가 있는 주제를 선택해 주세요.
-            </p>
-          ) : (
-            <p className="text-sm text-slate-500 mt-2">
-              선택한 주제의 대본·자막이 그대로 영상에 들어갑니다. 장면 이미지는 자동 색상 카드로 채워지고, 실제
-              이미지 연결은 <span className="text-amber-600 font-semibold">다음 승인 필요</span>.
-            </p>
-          )}
-          <ResultNote result={videoResult} />
-        </StepCard>
-
-        {/* 6. 미리보기 */}
-        <StepCard
-          num={6}
-          title="미리보기"
-          state={previewState}
-          desc="만들어진 시안 영상을 이 화면에서 바로 재생합니다. 파일은 Owner PC에만 있습니다."
-        >
-          <button type="button" className={RUN_BTN} disabled={!runnable || !selectedTopicId} onClick={runPreviewStatus}>
             미리보기
           </button>
+          {finalVideoReady && selectedTopicId ? (
+            <div className="mt-3">
+              <p className="text-[15px] text-emerald-700 font-semibold mb-1.5">
+                최종 영상 (실제 음성 + 실제 장면 이미지) — 업로드 후보
+              </p>
+              <video
+                key={`final-${previewKey}`}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full max-w-[280px] rounded-xl border border-emerald-300 bg-black"
+                src={`/api/money-shorts/operator?video=final&topicId=${encodeURIComponent(selectedTopicId)}&v=${previewKey}`}
+              />
+              <p className="text-xs text-slate-400 mt-1 break-all">{realMedia?.finalVideo.mp4Path}</p>
+            </div>
+          ) : null}
           <ResultNote result={previewResult} />
           {previewVideo?.exists ? (
             <div className="mt-3">
+              <p className="text-sm text-amber-700 font-semibold mb-1.5">시안 영상 (색상 카드) — 업로드 불가</p>
               <video
                 key={previewKey}
                 controls
@@ -801,39 +1124,46 @@ export default function VideoCreationWizard() {
                 src={`/api/money-shorts/operator?video=muxed&topicId=${encodeURIComponent(selectedTopicId ?? "")}&v=${previewKey}`}
               />
               {previewVideo.topicTitle ? (
-                <p className="text-[15px] text-emerald-700 font-semibold mt-1.5">
-                  “{previewVideo.topicTitle}” 주제로 만든 시안입니다.
-                </p>
+                <p className="text-[15px] text-slate-600 mt-1.5">“{previewVideo.topicTitle}” 주제로 만든 시안입니다.</p>
               ) : null}
               <p className="text-xs text-slate-400 mt-1 break-all">{previewVideo.muxedMp4Path}</p>
             </div>
           ) : null}
         </StepCard>
 
-        {/* 7. 게시 전 점검 */}
+        {/* 8. 게시 전 점검 — media quality gate 통과분(최종 영상)만 점검 가능 */}
         <StepCard
-          num={7}
+          num={8}
           title="게시 전 점검"
           state={preflightState}
-          desc="방금 만든 그 주제의 영상 기준으로 키·중복·파일을 확인만 합니다. 업로드는 하지 않습니다."
+          desc="최종 영상 기준으로 키·중복·파일을 확인만 합니다. 업로드는 하지 않습니다."
         >
           <button
             type="button"
             className={RUN_BTN}
-            disabled={!runnable || !selectedTopicId || !videoDone}
+            disabled={!runnable || !selectedTopicId || !mediaGateOk}
             onClick={runPreflight}
           >
             게시 전 점검
           </button>
-          {!videoDone ? (
-            <p className="text-sm text-slate-400 mt-2">먼저 [영상 만들기]로 시안 영상을 만들어 주세요.</p>
+          {!mediaGateOk ? (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-sm text-amber-700 font-semibold">
+                아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.
+              </p>
+              {(realMedia?.mediaQualityGate.reasons ?? []).map((reason, i) => (
+                <p key={i} className="text-sm text-slate-500">
+                  · {reason}
+                </p>
+              ))}
+            </div>
           ) : null}
           <ResultNote result={preflightResult} />
         </StepCard>
 
-        {/* 8. 실제 업로드 — 시안 영상 + 게시 전 점검 통과 + 명시 확인 후에만 실행 */}
+        {/* 9. 실제 업로드 — media gate + 게시 전 점검 통과 + 명시 확인 후에만 실행 */}
         <StepCard
-          num={8}
+          num={9}
           title="실제 업로드"
           state={uploadState}
           desc="확인 절차를 마치면 이 영상이 실제 계정에 게시됩니다. 게시 기록이 남아 같은 콘텐츠는 다시 올라가지 않습니다."
@@ -841,10 +1171,12 @@ export default function VideoCreationWizard() {
           {uploadState === "success" ? null : (
             <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3.5 space-y-3">
               <p className="text-[15px] font-bold text-rose-700">누르면 실제 계정에 게시됩니다.</p>
-              {!preflightDone ? (
+              {!mediaGateOk ? (
                 <p className="text-sm text-slate-500">
-                  먼저 [영상 만들기]와 [게시 전 점검]을 통과해야 업로드할 수 있습니다.
+                  아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.
                 </p>
+              ) : !preflightDone ? (
+                <p className="text-sm text-slate-500">먼저 [게시 전 점검]을 통과해야 업로드할 수 있습니다.</p>
               ) : null}
               <label className="flex items-start gap-2.5 text-[15px] text-slate-700 cursor-pointer">
                 <input
@@ -854,7 +1186,7 @@ export default function VideoCreationWizard() {
                   onChange={(e) => setConfirmReviewed(e.target.checked)}
                   disabled={!preflightDone || uploadState === "running"}
                 />
-                미리보기에서 시안 영상과 제목·설명을 검토했습니다.
+                미리보기에서 최종 영상과 제목·설명을 검토했습니다.
               </label>
               <label className="flex items-start gap-2.5 text-[15px] text-slate-700 cursor-pointer">
                 <input

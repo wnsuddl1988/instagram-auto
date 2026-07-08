@@ -74,8 +74,18 @@ check(
 check("page renders <VideoCreationWizard />", /<VideoCreationWizard\s*\/>/.test(pageSrc));
 check("page renders wizard before OperatorPanel (wizard is primary)", pageSrc.indexOf("<VideoCreationWizard") !== -1 && pageSrc.indexOf("<VideoCreationWizard") < pageSrc.indexOf("<OperatorPanel"));
 
-// ── 8단계 흐름 라벨 ──────────────────────────────────────────────────────────
-for (const label of ["카테고리 선택", "주제 추천", "대본 만들기", "음성 만들기", "영상 만들기", "미리보기", "게시 전 점검", "실제 업로드"]) {
+// ── 9단계 흐름 라벨 (task: real-pipeline — 실제 목소리/장면 이미지/최종 영상 단계 추가) ──
+for (const label of [
+  "카테고리 선택",
+  "주제 추천",
+  "대본 만들기",
+  "실제 목소리 만들기",
+  "장면 이미지 만들기",
+  "최종 영상 만들기",
+  "미리보기",
+  "게시 전 점검",
+  "실제 업로드",
+]) {
   check(`wizard contains flow label: ${label}`, wizardSrc.includes(label));
 }
 
@@ -101,9 +111,9 @@ check("wizard upload warning present (누르면 실제 계정에 게시됩니다
 check("wizard upload button label is 인스타그램·유튜브에 업로드", wizardSrc.includes("인스타그램·유튜브에 업로드"));
 check("wizard requires typed confirm text 업로드", /confirmText\.trim\(\)\s*===\s*"업로드"/.test(wizardCode));
 check(
-  "wizard upload gate requires preflight + video + two checkboxes",
-  /preflightDone[\s\S]{0,200}confirmReviewed[\s\S]{0,80}confirmPublish/.test(wizardCode) &&
-    /videoDone\s*&&\s*preflightState\s*===\s*"success"/.test(wizardCode),
+  "wizard upload gate requires media gate + preflight + two checkboxes",
+  /mediaGateOk\s*&&[\s\S]{0,40}preflightDone[\s\S]{0,200}confirmReviewed[\s\S]{0,80}confirmPublish/.test(wizardCode) &&
+    /mediaGateOk\s*&&\s*preflightState\s*===\s*"success"/.test(wizardCode),
 );
 check("wizard upload button disabled unless uploadEnabled", /disabled=\{!uploadEnabled\}/.test(wizardSrc));
 check("wizard sends confirm fields to actualUpload", /postAction\(\s*["']actualUpload["'][\s\S]{0,240}confirmReviewed[\s\S]{0,120}confirmPublish[\s\S]{0,120}confirmText/.test(wizardCode));
@@ -393,8 +403,8 @@ for (const label of [
 ]) {
   check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
 }
-// "실제 읽히는 대본"이 음성/영상에 쓰이고, SNS 설명글은 대본이 아님을 사용자에게 알린다.
-check("wizard clarifies 대본 is used by 음성/영상", wizardSrc.includes("음성 만들기와 영상 만들기는 이 문장을 사용합니다"));
+// "실제 읽히는 대본"이 실제 음성/최종 영상에 쓰이고, SNS 설명글은 대본이 아님을 사용자에게 알린다.
+check("wizard clarifies 대본 is used by 실제 음성/최종 영상", wizardSrc.includes("실제 목소리 만들기와 최종 영상 만들기는 이 문장을 사용합니다"));
 check("wizard clarifies SNS 설명글 is not the 대본", wizardSrc.includes("영상이 읽는 대본과는 다릅니다"));
 check("wizard renders caption 6 lines (script.captionLines map)", /script\.captionLines/.test(wizardCode));
 check("wizard renders scene plan rows (script.scenes map)", /script\.scenes/.test(wizardCode) && /visualCue/.test(wizardCode));
@@ -505,6 +515,111 @@ for (const label of ["대본 품질 점수", "좋은 이유", "고친 부분", "
 }
 check("wizard shows topic quality badge (t.qualityScore)", /t\.qualityScore/.test(wizardCode));
 check("wizard renders quality summary from script.quality", /script\.quality/.test(wizardCode) && /qualitySummary/.test(wizardCode));
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 실제 제작 파이프라인 (task: owner-web-real-script-voice-visual-generation-pipeline-v1)
+// 이 블록은 정적 검사만 한다 — ElevenLabs/ChatGPT/Playwright/Anthropic 실제 호출은
+// 여기서 절대 실행되지 않으며(no-run), 스크립트 자체의 fail-closed gate 존재를 검증한다.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const imgScriptPath = path.join(ROOT, "scripts", "run-owner-real-scene-images-from-wizard-script-once.mjs");
+const vidScriptPath = path.join(ROOT, "scripts", "run-owner-real-video-from-wizard-assets-once.mjs");
+const imgScriptSrc = existsSync(imgScriptPath) ? readFileSync(imgScriptPath, "utf8") : "";
+const vidScriptSrc = existsSync(vidScriptPath) ? readFileSync(vidScriptPath, "utf8") : "";
+const imgScriptCode = stripComments(imgScriptSrc);
+const pkgJson = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
+const pkgDeps = JSON.stringify({ ...(pkgJson.dependencies ?? {}), ...(pkgJson.devDependencies ?? {}) });
+
+// [A] Claude 대본 보정 — 로컬 최고 후보 이후 1회, SDK 없음, fail-open to local
+check("helper defines Claude polish (polishWizardScriptWithClaude)", /export async function polishWizardScriptWithClaude/.test(helperSrc));
+check("polish accepts injectable fetchImpl (fake-fetch testable)", /fetchImpl\?:\s*typeof globalThis\.fetch/.test(helperSrc));
+check("polish targets fixed ANTHROPIC_API_URL only", /ANTHROPIC_API_URL\s*=\s*"https:\/\/api\.anthropic\.com\/v1\/messages"/.test(helperCode) && /fetchImpl\s*\(\s*ANTHROPIC_API_URL\s*,/.test(helperCode));
+// (openai는 이 레포의 기존 의존성 — 이번 task 금지 대상은 Anthropic/ElevenLabs SDK 추가다)
+check("no Anthropic/ElevenLabs SDK dependency in package.json", !/@anthropic-ai|"anthropic"|elevenlabs/i.test(pkgDeps));
+check("route scriptPreview: local best first, then ensureWizardFinalScript once", /readScriptPreview\(topicId\)[\s\S]{0,900}ensureWizardFinalScript\(topicId,\s*preview/.test(routeCode));
+check("polish cache prevents repeat API calls for same local script", /cached\.localFingerprint\s*===\s*fp/.test(helperCode));
+check("polish fallback reason codes exist (key/api/parse/validation)", ["NO_API_KEY", "API_ERROR", "PARSE_FAILED", "VALIDATION_FAILED"].every((c) => helperSrc.includes(c)));
+check("polish validation enforces caption 22자/6개 + scenes 6 + polite-tone ban", /captionLines_not_6/.test(helperSrc) && /caption_over_22_or_empty/.test(helperSrc) && /scenes_not_6/.test(helperSrc) && /polite_or_lecture_tone/.test(helperSrc));
+check("polish rejects local-judge score regression", /polishedJudgment\.overallScore\s*<\s*localJudge\s*-\s*5/.test(helperCode));
+check("polish kill-switch exists (env + marker, 검증 중 실호출 차단)", /WIZARD_DISABLE_CLAUDE_POLISH/.test(helperCode) && /DISABLE_LIVE_CLAUDE_POLISH\.marker/.test(helperSrc));
+check("ANTHROPIC key never enters child env allowlists", !/MEDIA_ENV_KEY_NAMES[\s\S]{0,300}ANTHROPIC/.test(helperSrc) && !/APPROVED_ENV_KEY_NAMES[\s\S]{0,300}ANTHROPIC/.test(helperSrc));
+check("UI shows 대본 생성 방식 + Claude 적용/미적용 배지", wizardSrc.includes("대본 생성 방식: 로컬 후보 선별 → Claude 1회 보정") && wizardSrc.includes("Claude 보정 적용됨") && wizardSrc.includes("Claude 보정 미적용 — 로컬 대본 사용 중"));
+
+// [B] 실제 TTS — 검증된 scene-paced 스크립트 재사용 + no-key fail-closed
+check("realTtsCreate reuses proven scene-paced TTS script", /SCRIPT_ELEVENLABS_SCENE_TTS\s*=\s*"scripts\/build-elevenlabs-scene-paced-tts-from-script\.mjs"/.test(helperSrc));
+check("real tts-script sizes scene durations from narration length (하드트림 방지)", /Math\.ceil\(n\.length \/ 6\)/.test(helperCode) && /Math\.min\(8,\s*Math\.max\(3,/.test(helperCode));
+check("media env allowlist is exactly the 4 ELEVENLABS keys", /MEDIA_ENV_KEY_NAMES\s*=\s*\[\s*"ELEVENLABS_API_KEY",\s*"ELEVENLABS_VOICE_ID",\s*"ELEVENLABS_MODEL_ID",\s*"ELEVENLABS_VOICE_LABEL",\s*\]/.test(helperSrc.replace(/\r?\n\s*/g, " ").replace(/\s+/g, " ")) || ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "ELEVENLABS_MODEL_ID", "ELEVENLABS_VOICE_LABEL"].every((k) => new RegExp(`MEDIA_ENV_KEY_NAMES[\\s\\S]{0,220}"${k}"`).test(helperSrc)));
+check("tts gate trusts only live elevenlabs summary (mock 불인정)", /provider\s*===\s*"elevenlabs"\s*&&[\s\S]{0,80}liveApiCallPerformed\s*===\s*true/.test(helperCode));
+// [A2] ELEVENLABS env는 realTtsCreate child에만 전달 (Codex finding 1 fix)
+check("buildSanitizedChildEnv does NOT copy media env by default", /buildSanitizedChildEnv\(opts\?:\s*\{\s*includeMediaEnv\?:\s*boolean\s*\}\)/.test(helperCode) && /opts\?\.includeMediaEnv\s*===\s*true/.test(helperCode));
+check("runOperatorScript exposes includeMediaEnv option", /includeMediaEnv\?:\s*boolean/.test(helperCode));
+check("runOperatorScript threads includeMediaEnv into child env builder", /buildSanitizedChildEnv\(\s*\{\s*includeMediaEnv:\s*opts\?\.includeMediaEnv\s*===\s*true\s*\}\s*\)/.test(helperCode));
+check("route sets includeMediaEnv:true ONLY on realTtsCreate", (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 1 && /realTtsCreate[\s\S]{0,600}includeMediaEnv:\s*true/.test(routeCode));
+for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardPreflight", "actualUpload"]) {
+  // 해당 action 핸들러 블록 내부에 includeMediaEnv:true가 없어야 한다(다음 action 시작 전까지 스캔).
+  const idx = routeCode.indexOf(`action === "${otherAction}"`);
+  const nextIdx = routeCode.indexOf("includeMediaEnv: true", idx);
+  const blockEnd = idx === -1 ? -1 : routeCode.indexOf('action === "', idx + 20);
+  const hasInBlock = idx !== -1 && nextIdx !== -1 && (blockEnd === -1 || nextIdx < blockEnd);
+  check(`route does NOT set includeMediaEnv:true for ${otherAction}`, !hasInBlock);
+}
+check("route no-key TTS message is fail-closed", routeSrc.includes("실제 음성 키가 없어 생성하지 못했습니다. 테스트 소리는 업로드할 수 없습니다."));
+check("UI real-tts states exist (실제 음성 준비 / 음성 키 필요)", wizardSrc.includes("실제 음성 준비") && wizardSrc.includes("음성 키 필요"));
+check("UI real audio player streams ?audio=real", /audio=real&topicId=/.test(wizardSrc));
+
+// [C] 장면 이미지 — ChatGPT+Playwright once 스크립트 (gate/hard-cap/repo-밖/no-upload)
+check("scene-images once script exists", imgScriptSrc.length > 0);
+check("images script requires ALLOW_CHATGPT_IMAGE=1 before any browser import", imgScriptSrc.indexOf('process.env.ALLOW_CHATGPT_IMAGE !== "1"') !== -1 && imgScriptSrc.indexOf('process.env.ALLOW_CHATGPT_IMAGE !== "1"') < imgScriptSrc.indexOf('await import("playwright")'));
+check("images script enforces out-dir outside repo", /OUT_DIR\.startsWith\(REPO_ROOT/.test(imgScriptSrc));
+// [C2] 이미지 산출물 경로는 C:\tmp\money-shorts-os\ 하위만 (Codex finding 2 fix) — import 전 검사
+check(
+  "images script forces C:\\tmp\\money-shorts-os out-dir + json script (before playwright import)",
+  /MEDIA_ROOT_RE\s*=\s*\/\^C:\[\\\\\/\]\+tmp\[\\\\\/\]\+money-shorts-os\[\\\\\/\]\+\/i/.test(imgScriptCode) &&
+    /MEDIA_ROOT_RE\.test\(OUT_DIR/.test(imgScriptCode) &&
+    /MEDIA_ROOT_RE\.test\(scriptAbs\)/.test(imgScriptCode) &&
+    imgScriptCode.indexOf("MEDIA_ROOT_RE") < imgScriptCode.indexOf('await import("playwright")'),
+);
+check("images script has submission hard cap (6) and no retry loop", /SUBMISSION_HARD_CAP\s*=\s*6/.test(imgScriptSrc));
+check("images script reuses proven _chatgpt-image-core", /_chatgpt-image-core\.mjs/.test(imgScriptSrc));
+check("images script never uploads/publishes", !/instagram|youtube|blob\.put|googleapis|@vercel/i.test(imgScriptSrc));
+check("images script forbids paid image APIs (openai api key 사용 없음)", !/OPENAI_API_KEY|api\.openai\.com|bfl\.ai|gemini/i.test(imgScriptCode));
+check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,900}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/extraEnv/g) ?? []).length <= 2);
+check("images gate requires 6/6 SAVED_OK portrait files", /savedScenes\.length\s*===\s*6/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
+check("UI image states exist (장면 이미지 준비 / 이미지 생성 필요)", wizardSrc.includes("장면 이미지 준비") && wizardSrc.includes("이미지 생성 필요"));
+
+// [D] 최종 mp4 — 실제 자산 필수 + ffprobe 검증 + C:\tmp
+check("final-video once script exists", vidScriptSrc.length > 0);
+check("video script rejects non-elevenlabs / non-live audio summary", /provider !== "elevenlabs"/.test(vidScriptSrc) && /liveApiCallPerformed !== true/.test(vidScriptSrc));
+check("video script rejects placeholder images (allReady required)", /allReady !== true/.test(vidScriptSrc));
+check("video script enforces C:\\tmp out-dir", /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc) && vidScriptSrc.includes("money-shorts-os"));
+// [D2] 최종영상 스크립트: 5개 입력/출력 전부 C:\tmp\money-shorts-os\ 하위 강제 (Codex finding 2 fix)
+check(
+  "video script forces ALL 5 path args under C:\\tmp\\money-shorts-os",
+  /MEDIA_ROOT_RE\s*=\s*\/\^C:\[\\\\\/\]\+tmp\[\\\\\/\]\+money-shorts-os\[\\\\\/\]\+\/i/.test(vidScriptSrc) &&
+    ["--script", "--tts-script", "--audio-summary", "--images-dir", "--out-dir"].every((f) => vidScriptSrc.includes(f)) &&
+    /for\s*\(const \[flag, abs\] of PATH_INPUTS\)/.test(vidScriptSrc) &&
+    /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc),
+);
+check("video script validates 1080x1920 + 15~60s + audio/video streams + size", /width1080/.test(vidScriptSrc) && /height1920/.test(vidScriptSrc) && /duration15to60/.test(vidScriptSrc) && /hasAudioStream/.test(vidScriptSrc) && /fileSizePositive/.test(vidScriptSrc));
+check("video script output marked notUploaded", /notUploaded:\s*true/.test(vidScriptSrc));
+check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode));
+check("UI final video states exist (최종 영상 준비 / 시안 영상 · 업로드 불가)", wizardSrc.includes("최종 영상 준비") && wizardSrc.includes("시안 영상") && wizardSrc.includes("업로드 불가"));
+check("UI preview streams final video (?video=final)", /video=final&topicId=/.test(wizardSrc));
+
+// [E] media quality gate / upload gate — mock·시안 업로드 원천 차단
+check("content unit requires real tts/images/final mp4 (fail-closed reasons)", ["real_tts_required", "real_scene_images_required", "final_mp4_required", "media_quality_gate_not_ready"].every((r) => helperSrc.includes(r)));
+check("actualUpload re-verifies media gate before spawn (게이트 1.5)", /actualUpload[\s\S]{0,2200}readWizardRealMediaState\(topicId\)[\s\S]{0,700}MEDIA_GATE_USER_MESSAGE/.test(routeSrc));
+check("media gate blocker codes exist", ["REAL_TTS_REQUIRED", "REAL_SCENE_IMAGES_REQUIRED", "FINAL_MP4_REQUIRED"].every((c) => helperSrc.includes(c)) && routeSrc.includes("MEDIA_QUALITY_GATE_NOT_READY"));
+check("upload block user message exact (아직 실제 음성/… 업로드를 막았습니다)", routeSrc.includes("아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.") && wizardSrc.includes("아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다."));
+check(
+  "new pipeline actions never build --arm",
+  /case "realTtsCreate"[\s\S]*?case "status"/.test(helperCode) &&
+    !(/case "realTtsCreate"[\s\S]*?case "status"/.exec(helperCode)?.[0]?.includes("--arm") ?? true),
+);
+check("--arm single-gate contract intact (actualUpload only + allowArm gate)", (helperSrc.match(/ARM_ARG_TOKEN,?\s*\]/g) ?? []).length === 1 && /allowArm\s*!==\s*true/.test(helperCode));
+check("new create actions are local-dev gated in route", ["realTtsCreate", "realSceneImagesCreate", "finalVideoCreate", "realMediaStatus"].every((a) => new RegExp(`LOCAL_SCRIPT_ACTIONS[\\s\\S]{0,700}"${a}"`).test(routeSrc)));
+check("GET final video stream is enum only", /videoParam\s*===\s*"muxed"\s*\|\|\s*videoParam\s*===\s*"silent"\s*\|\|\s*videoParam\s*===\s*"final"/.test(routeCode));
+check("real audio stream restricted to summary path + C:\\tmp prefix + mp3/m4a", /readWizardRealAudioBytes/.test(routeCode) && /WIZARD_VIDEO_ALLOWED_PREFIX/.test(helperCode) && /\.mp3|\.m4a/.test(helperSrc));
 
 // ── 결과 ─────────────────────────────────────────────────────────────────────
 console.log("");
