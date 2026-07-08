@@ -4,200 +4,168 @@
 
 ## Current Task
 
-- Task ID: `dual-platform-executor-execution-wiring-no-run-to-arm-ready-v1`
-- Owner approval: `APPROVE_DUAL_PLATFORM_EXECUTOR_EXECUTION_WIRING_NO_RUN_TO_ARM_READY`
-- Purpose: connect the gate 6 no-run executor structure to an arm-ready dispatcher shape, while keeping execution disabled and all real external/API/ledger/media side effects at 0.
+- Task ID: `publish-ledger-implementation-no-live-v1`
+- Owner approval: `APPROVE_PUBLISH_LEDGER_IMPLEMENTATION_NO_LIVE`
+- Purpose: implement the publish ledger safety layer needed before actual dual-platform publish execution, without any live social/API/Blob/deploy/media side effects.
 
 ## Current Evidence
 
-Checkpoint `269067d chore(media): wire no-run publish executor` completed the no-run executor layer:
+Checkpoint `63fa756 chore(media): wire no-run publish dispatcher` completed the gate 6 structure up to an arm-ready but disabled dispatcher:
 
-- gate 6 can build a value-free `actualApiCallPlan`
-- gate 6 can build a value-free `actualApiExecutor`
-- executor has four disabled steps:
+- `actualApiCallPlan` exists and is value-free
+- `actualApiExecutor` exists and is value-free
+- `actualApiDispatcher` exists and is value-free
+- expected dispatch order is:
   1. `instagram_blob_upload`
   2. `instagram_publish_reel`
   3. `youtube_direct_upload`
   4. `publish_ledger_record`
-- all executor steps are `executionEnabled:false`, `willRun:false`, `performed:false`
-- default published content still blocks at gate 4 with `BLOCKED_DUPLICATE_ALREADY_PUBLISHED` before credential resolution, plan, executor, or dispatch
-- missing credentials still block at gate 5 before gate 6
-- custom ready-probe with dummy env reaches gate 6 executor but still fails closed with `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`
+- default published content still blocks at gate 4 with `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
+- missing credentials still block at gate 5 before plan/executor/dispatcher
+- custom ready-probe with dummy env reaches disabled plan/executor/dispatcher and fails closed with `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE`
 - no credential values or value-derived data are printed or serialized
 - checks passed before checkpoint:
-  - orchestrator guard `477 PASS / 0 FAIL`
+  - orchestrator guard `502 PASS / 0 FAIL`
   - owner entrypoint guard `230 PASS / 0 FAIL`
   - owner local env wrapper guard `49 PASS / 0 FAIL`
   - golden content readiness guard `64 PASS / 0 FAIL`
 
-The next blocker is not planning order. It is defining the dispatcher boundary that future actual execution will use, while proving that this slice still cannot run the dispatcher or call live clients.
+The next blocker is the actual durable duplicate ledger contract. Current orchestrator duplicate guard still uses in-memory/reference evidence. Before enabling any real publish, the project needs a small, deterministic, testable publish ledger module that can be wired later.
 
 ## Approved Scope
 
 Approved:
 
-- Add an arm-ready dispatcher structure for `actualApiExecutor`.
-- Keep the dispatcher disabled/fail-closed in this slice.
-- The dispatcher should make the future execution boundary explicit:
-  - step order validation
-  - dependency validation
-  - per-step adapter/function target representation
-  - per-step input readiness summary
-  - per-step execution state
-  - global dispatch state
-- The dispatcher may reference live functions/modules as strings only.
-- The dispatcher must not import or call live clients.
-- The dispatcher must not receive, store, print, serialize, hash, slice, mask, or derive credential values.
-- Keep all actual execution flags false:
-  - `executionEnabled:false`
-  - `dispatchEnabled:false`
-  - `dispatcherWillRun:false`
-  - `dispatcherPerformed:false`
-  - every step `willDispatch:false` / `dispatched:false` / `performed:false`
-- Keep current fail-closed behavior:
-  - default duplicate content: gate 4 blocks before credential/plan/executor/dispatcher
-  - missing credentials: gate 5 blocks before plan/executor/dispatcher
-  - custom ready-probe with dummy env: reaches plan + executor + dispatcher, then fails closed before any real call
-- Update fixture/docs/guards to reflect the dispatcher contract.
+- Add a publish ledger module for future dual-platform publish recording and duplicate checks.
+- Keep this slice no-live/no-external.
+- Ledger may use local filesystem only when an explicit ledger path is passed by the caller.
+- Tests/guards may write only to OS temp or repo-gitignored output/temp paths.
+- No production/default ledger write may happen.
+- Do not integrate live execution or mutate real publish state.
+- Update docs/fixture/guards to record the contract.
 - Append concise reusable evidence to `_ai/CLAUDE_REPORT.md`.
 
-Allowed files:
+Recommended implementation files:
+
+- `lib/publish-ledger.ts` (new)
+- `scripts/check-publish-ledger-static.mjs` (new dependency-free guard)
+- `scripts/fixtures/publish_ledger.sample.v1.json` (new sample fixture)
+- `docs/dual-platform-final-publish-orchestrator.md`
+- `docs/owner-daily-automation-runbook.md`
+- `_ai/CLAUDE_REPORT.md`
+
+Optional only if needed for contract consistency:
 
 - `scripts/run-dual-platform-final-publish-orchestrator.mjs`
 - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
 - `scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-- `docs/dual-platform-final-publish-orchestrator.md`
-- `docs/owner-daily-automation-runbook.md`
-- `_ai/CLAUDE_REPORT.md`
-- If owner-facing output or guard checks break from new fields:
-  - `scripts/run-owner-daily-automation-entrypoint.mjs`
-  - `scripts/check-owner-daily-automation-entrypoint-static.mjs`
-  - `scripts/check-owner-local-env-no-log-wrapper-static.mjs`
 
-Only touch another file if a direct import/check break proves it is necessary, and report why.
+Only touch another file if directly necessary, and report why.
+
+## Required Ledger Contract
+
+Create a narrow server/local utility module with explicit path injection.
+
+Suggested exports:
+
+- `PUBLISH_LEDGER_SCHEMA_VERSION`
+- `buildPublishLedgerKey({ contentId, platform, version })`
+- `createEmptyPublishLedger()`
+- `readPublishLedger(ledgerPath)`
+- `writePublishLedger(ledgerPath, ledger)`
+- `checkPublishLedgerDuplicate(ledger, { contentId, platform, version })`
+- `recordPublishLedgerEntry(ledger, entry)`
+- `recordDualPlatformPublish(ledger, input)` or equivalent future-facing helper
+
+Exact names may vary, but the guard/docs must lock the chosen public surface.
+
+Ledger data should be deterministic and value-safe:
+
+- `schemaVersion`
+- `records` array
+- `key` shaped as `{contentId}/{platform}/{version}`
+- `contentId`
+- `platform` (`instagram_reels` or `youtube_shorts`)
+- `version`
+- `variantId`
+- `publishedId` or platform-specific public id
+- `publishedUrl` optional
+- `status` such as `published`
+- `publishedAtIso`
+- `metadata` object with only non-secret identifiers/fingerprints if needed
+
+Do not store:
+
+- access tokens
+- refresh tokens
+- client secrets
+- API keys
+- Blob tokens
+- OAuth responses
+- raw env values
+- credential lengths/prefix/suffix/hash/masked values
 
 ## Required Behavior
 
-### Dispatcher Shape
+### Read Behavior
 
-Add a narrowly scoped helper, for example:
+- Missing ledger file should return an empty ledger with `ok:true`, not throw.
+- Invalid JSON should fail closed with `ok:false`, preserving the reason and avoiding writes.
+- Wrong schemaVersion should fail closed.
+- Non-array `records` should fail closed.
+- Duplicate keys should fail closed or be reported clearly.
 
-- `buildActualApiDispatcherNoRun(...)`
-- or `buildDualPlatformExecutionDispatcherNoRun(...)`
+### Write Behavior
 
-It should consume the existing value-free `actualApiExecutor` plus non-secret context and return a value-free dispatcher description:
+- Only write when caller provides an explicit `ledgerPath`.
+- Ensure parent directory exists only for that explicit path.
+- Write JSON deterministically.
+- No append-only partial writes unless deliberately designed and guarded.
+- No default production path.
+- No writes during import.
+- No writes in orchestrator dry-run/preflight/live duplicate-block checks during this slice.
+- Guard smoke tests must use OS temp paths and clean up.
 
-- `dispatchEnabledThisSlice:false`
-- `dispatcherWillRun:false`
-- `dispatcherPerformed:false`
-- `dispatcherDisabledReason:"actual_api_dispatcher_execution_disabled_this_slice"` or equivalent
-- `executorAccepted:true` only when the executor has the expected disabled four-step structure
-- ordered dispatch steps exactly matching:
-  1. `instagram_blob_upload`
-  2. `instagram_publish_reel`
-  3. `youtube_direct_upload`
-  4. `publish_ledger_record`
-- each dispatch step should include:
-  - order
-  - step id
-  - adapter/module/function target as string-only metadata
-  - dependsOn step IDs
-  - dependency status/readiness boolean
-  - input readiness boolean copied from executor/plan only
-  - required approval tokens to enable future execution
-  - `dispatchEnabled:false`
-  - `willDispatch:false`
-  - `dispatched:false`
-  - `performed:false`
-  - disabled reason
-- ledger dispatch step must be no-run/no-mutation and string-ref only.
+### Duplicate Behavior
 
-The dispatcher must not:
+- `buildPublishLedgerKey` must produce the same shape already used by the orchestrator:
+  - `t1_lifestyle_inflation/instagram_reels/v3_2`
+  - `t1_lifestyle_inflation/youtube_shorts/v3_2`
+- `checkPublishLedgerDuplicate` should return:
+  - `alreadyPublished`
+  - `key`
+  - matching record if present
+  - no secret values
+- Existing default evidence should be represented in sample fixture or docs as non-secret media/video ids only.
 
-- import or call `lib/instagram.ts`, `lib/youtube.ts`, `lib/instagram-blob-media.ts`, `@vercel/blob`, `googleapis`, or any live client
-- call `fetch`, `youtube.videos.insert`, Graph API URLs, OAuth/token endpoints, Blob `put/list/head/del/copy`, deploy, ffmpeg, or ffprobe
-- write a ledger file/database record
-- read `.env`, `.env.local`, or secret files
-- receive credential values or any value-bearing object
-- expose credential value-derived data
-- run Owner no-log wrapper against real `.env.local`
+### Future Wiring Boundary
 
-### Gate 6 Result Wiring
+The orchestrator may still use the existing in-memory/reference duplicate guard in this slice.
 
-When custom ready-probe with dummy env passes gates 1-5:
+If you touch the orchestrator, keep it no-live:
 
-- build `actualApiCallPlan`
-- build `actualApiExecutor`
-- build disabled `actualApiDispatcher`
-- return all three structures
-- keep status `ACTUAL_API_CALL_NOT_ENABLED_THIS_SLICE` or a clearer disabled dispatcher status only if docs/guards are updated consistently
-- keep exit code non-zero fail-closed
-- keep `actualApiCallPerformed:false`
-- add explicit top-level booleans such as:
-  - `actualApiDispatcherReached:true`
-  - `actualApiDispatcherEnabledThisSlice:false`
-  - `actualApiDispatcherPerformed:false`
-- keep every live side-effect counter at 0.
-
-Do not rename existing status codes unless necessary. If introducing a new status, make the compatibility impact explicit in docs/guards.
-
-### Default Content
-
-Default already-published content must remain unchanged:
-
-- `--live` / `--arm` exits `3`
-- status `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`
-- gate 4 blocks before gate 5, gate 6 plan, executor, or dispatcher
-- `credentialValuesAccessed:false`
-- `actualApiCallReached:false`
-- no `actualApiCallPlan`
-- no `actualApiExecutor`
-- no `actualApiDispatcher`
-- all live side-effect counters remain 0
-
-### Custom Ready-Probe With Dummy Env
-
-For a custom content manifest that passes gates 1-5 with dummy env:
-
-- gate 6 plan is reached
-- no-run executor is reached
-- disabled dispatcher is reached
-- dispatcher reports all dispatch steps disabled/not performed
-- actual API execution remains disabled
-- exit remains non-zero fail-closed
-- all real side-effect counters remain 0
-- dummy credential values must not appear in stdout/stderr/result JSON
-- no value-derived credential data appears
-
-### Missing Credentials
-
-For the same custom ready-probe without dummy env:
-
-- gate 5 fails closed with missing key names only
-- gate 6 plan, executor, and dispatcher are not reached
-- output contains no values or value-derived data
+- no actual ledger file read/write in `--dry-run`, `--preflight`, `--live`, or `--arm`
+- no import that would write at module load
+- only string refs or contract metadata unless a read-only helper is proven necessary
 
 ## Guard Requirements
 
-Update/add checks that prove:
+Create/update guards proving:
 
-- default duplicate-blocked path still stops before credential resolution, gate 6 plan, executor, and dispatcher
-- custom dummy-env ready-probe reaches disabled dispatcher structure
-- dispatcher has exactly the expected four ordered dispatch steps
-- every dispatch step has `dispatchEnabled:false`, `willDispatch:false`, `dispatched:false`, `performed:false`
-- dispatcher dependencies are correct:
-  - Instagram publish depends on Blob upload
-  - ledger depends on Instagram publish and YouTube upload
-- dispatcher output has no dummy credential value or value-derived fields
-- custom no-env ready-probe stops at gate 5 and does not build dispatcher
-- no live client function is imported or executed
-- no ledger mutation code is introduced
-- no `.env`, `.env.local`, dotenv, `vercel env pull`, secret file, broad env dump, or real Owner env wrapper is used in tests
-- `process.env` access remains limited to existing approved presence/resolver patterns
-- duplicate guard remains before credential resolver
-- credential resolver remains before gate 6 plan/executor/dispatcher
-- dispatcher remains disabled/fail-closed
-- no `fetch`, `googleapis`, `youtube.videos.insert`, Graph API URL execution, OAuth request, Blob `put/list/head/del/copy`, deploy, ffmpeg, or ffprobe is introduced
+- ledger module exists and exports the chosen public API
+- no `.env`, `.env.local`, dotenv, `vercel env pull`, broad env dump, or secret file access
+- no external API, OAuth, fetch, googleapis, Graph API, YouTube upload, Blob SDK/mutation/head/list/copy/delete
+- no dependency/lockfile/deploy/media generation
+- no secret-shaped values in fixture/docs/source
+- missing file read returns empty ok ledger
+- invalid JSON fails closed
+- wrong schema fails closed
+- duplicate key detection works
+- record write/read round trip works only in OS temp
+- duplicate record insertion is blocked or fails closed
+- sample keys use exact `{contentId}/{platform}/{version}` shape and v3_2
+- committed sample fixture contains no secrets
+- orchestrator no-run guards remain passing if touched
 
 ## Forbidden Actions
 
@@ -206,7 +174,7 @@ Update/add checks that prove:
 - Do not print, hash, copy, log, stage, or document secret values.
 - Do not report value length, prefix, suffix, hash, masked value, sample, token type inference, or derived credential data.
 - Do not use dotenv or `vercel env pull`.
-- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, Blob SDK/mutation/HEAD, ffmpeg, or ffprobe.
+- Do not call Instagram API, YouTube API/OAuth/upload, OpenAI, ElevenLabs, Pexels, Supabase, browser/Chrome, deploy, DNS, Blob SDK/mutation/HEAD/list, ffmpeg, or ffprobe.
 - Do not create new media, TTS, images, browser renders, or muxed source files.
 - Do not add/change dependencies, lockfiles, pnpm config, fonts, deploy config, or DB schema.
 - Do not commit or push.
@@ -224,15 +192,13 @@ Update/add checks that prove:
 ## Required Checks
 
 1. `git status -sb`
-2. `node --check scripts/run-dual-platform-final-publish-orchestrator.mjs`
-3. `node --check scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-4. JSON parse:
-   - `scripts/fixtures/dual_platform_final_publish_orchestrator.v1.json`
-5. `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-6. Targeted regressions:
-   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs` if owner entrypoint/guard/docs status behavior changed
-   - `node scripts/check-owner-local-env-no-log-wrapper-static.mjs`
-   - `node scripts/check-dual-platform-content-unit-final-readiness-static.mjs`
+2. `node --check scripts/check-publish-ledger-static.mjs`
+3. `node scripts/check-publish-ledger-static.mjs`
+4. If `lib/publish-ledger.ts` TypeScript syntax/import risk exists:
+   - `node node_modules/typescript/bin/tsc --noEmit --pretty false`
+5. Targeted regressions:
+   - `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
+   - `node scripts/check-owner-daily-automation-entrypoint-static.mjs` if docs/status behavior changed
 
 Do not run full build unless a focused syntax/import issue requires it.
 Do not run local generation pipeline.
@@ -242,15 +208,16 @@ Do not run against real `.env.local`.
 
 All must be true:
 
-1. Gate 6 disabled dispatcher structure is wired for custom dummy-env ready-probe.
-2. Dispatcher models Blob upload -> Instagram publish -> YouTube upload -> ledger order.
-3. Every dispatcher step remains disabled/not dispatched/not performed.
-4. Default published content remains duplicate-blocked before credential access, plan, executor, and dispatcher.
-5. Missing credentials still block at gate 5 before dispatcher.
-6. Actual Instagram/YouTube/Blob/ledger execution remains disabled and fail-closed.
+1. Publish ledger module exists with explicit path injection.
+2. Missing/invalid/wrong-schema ledgers are handled fail-closed or safely empty as specified.
+3. Duplicate key check works with `{contentId}/{platform}/{version}`.
+4. Temp write/read round trip works with no external side effects.
+5. No default production ledger write is introduced.
+6. No actual publish/upload/OAuth/Blob/deploy/media/API side effect occurs.
 7. No credential values or value-derived data appear in output/docs/fixtures/report.
 8. `.env.local` and secret files are not read by Claude/Codex/tests.
-9. No dependency/lockfile/deploy/media/API side effect, commit, or push.
+9. Required guards pass.
+10. No commit or push.
 
 ## Final Handoff Format
 
@@ -258,10 +225,9 @@ Claude Code must stop after the final handoff. Include:
 
 - task id
 - changed files
-- dispatcher wiring summary
-- default duplicate-block behavior summary
-- custom ready-probe with dummy env result
-- missing credential fail-closed result
+- publish ledger API/contract summary
+- duplicate behavior summary
+- temp read/write smoke result
 - checks/results
 - side effects confirmation
 - env/secret handling confirmation

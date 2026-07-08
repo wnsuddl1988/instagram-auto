@@ -1,0 +1,33 @@
+{
+  "note": "task: publish-ledger-implementation-no-live-v1. lib/publish-ledger.ts가 read/write하는 publish ledger의 sample fixture다. records는 (contentId/platform/version) 키로 이미 게시된 콘텐츠를 표현한다. 여기 담긴 publishedId/publishedUrl은 default evidence content의 non-secret public identifier(Instagram media_id / YouTube videoId)만이며, access/refresh token, client secret, API key, Blob token, OAuth 응답, raw env 값, 값 파생(length/prefix/suffix/hash/masked)은 절대 담지 않는다. 이 fixture는 guard의 read/duplicate 검증에 쓰이며, 실제 production ledger 경로가 아니다(default/production write 없음).",
+  "schemaVersion": "publish_ledger_v1",
+  "records": [
+    {
+      "key": "t1_lifestyle_inflation/instagram_reels/v3_2",
+      "contentId": "t1_lifestyle_inflation",
+      "platform": "instagram_reels",
+      "version": "v3_2",
+      "variantId": "instagram_reels_full_frame_1080x1920",
+      "publishedId": "17916511431199303",
+      "status": "published",
+      "publishedAtIso": "2026-05-30T00:00:00.000Z",
+      "metadata": {
+        "sourceArtifactVersion": "v3_2"
+      }
+    },
+    {
+      "key": "t1_lifestyle_inflation/youtube_shorts/v3_2",
+      "contentId": "t1_lifestyle_inflation",
+      "platform": "youtube_shorts",
+      "version": "v3_2",
+      "variantId": "youtube_shorts_letterbox_1080x1920",
+      "publishedId": "r9jhckdpC9w",
+      "publishedUrl": "https://www.youtube.com/shorts/r9jhckdpC9w",
+      "status": "published",
+      "publishedAtIso": "2026-05-30T00:00:00.000Z",
+      "metadata": {
+        "sourceArtifactVersion": "v3_2"
+      }
+    }
+  ]
+}
