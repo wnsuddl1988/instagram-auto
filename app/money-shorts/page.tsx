@@ -45,40 +45,41 @@ const ADVANCED_TOOLS = [
 
 export default function MoneyShortsDashboardPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    // 운영 화면은 밝은 배경 + 큰 글자 기준(다크 전역 변수 대신 명시적 light 팔레트).
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[var(--bg-secondary)] border-b border-slate-800/70 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3.5 shadow-sm">
         <div className="max-w-screen-lg mx-auto flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-base font-bold text-slate-100 tracking-tight">AI 쇼츠 자동화</h1>
-            <p className="text-xs text-slate-500">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">AI 쇼츠 자동화</h1>
+            <p className="text-sm text-slate-500">
               카테고리 선택부터 대본, 음성, 영상, 게시 전 점검, 업로드까지 버튼으로 진행합니다.
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2 py-1 rounded bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold">
               자동 생성
             </span>
-            <span className="px-2 py-1 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
               먼저 검토
             </span>
-            <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50 text-slate-400 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm">
               확인 후 업로드
             </span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-screen-lg mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-screen-lg mx-auto px-4 py-7 space-y-7">
         {/* 자동 쇼츠 만들기 — 메인 흐름 */}
         <VideoCreationWizard />
 
         {/* 사용 전 확인 원칙 */}
-        <section className="rounded-xl border border-amber-800/40 bg-amber-900/10 px-5 py-4">
-          <div className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">사용 전 확인</div>
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-5">
+          <div className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-3">사용 전 확인</div>
           <ul className="space-y-2">
             {PRINCIPLES.map((p, i) => (
-              <li key={i} className="flex gap-2 text-xs text-amber-200">
+              <li key={i} className="flex gap-2 text-[15px] text-amber-900">
                 <span className="text-amber-500 shrink-0 mt-0.5">·</span>
                 {p}
               </li>
@@ -91,23 +92,23 @@ export default function MoneyShortsDashboardPage() {
 
         {/* 고급 도구 */}
         <section>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">고급 도구</div>
-          <p className="text-[11px] text-slate-600 mb-3">
+          <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">고급 도구</div>
+          <p className="text-sm text-slate-500 mb-3">
             기본 흐름은 위의 자동 만들기입니다. 아래는 필요할 때만 쓰는 전문가용 화면입니다.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ADVANCED_TOOLS.map((tool) => (
               <div
                 key={tool.href}
-                className="rounded-xl border border-slate-800/60 bg-slate-900/40 px-4 py-3 flex flex-col gap-2"
+                className="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4 flex flex-col gap-2.5"
               >
                 <div>
-                  <div className="font-semibold text-xs text-slate-300">{tool.title}</div>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{tool.desc}</p>
+                  <div className="font-bold text-[15px] text-slate-800">{tool.title}</div>
+                  <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{tool.desc}</p>
                 </div>
                 <Link
                   href={tool.href}
-                  className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-lg border border-slate-700/60 bg-slate-800/30 text-slate-400 hover:bg-slate-800/60 text-[11px] font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 self-start px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 text-sm font-semibold transition-colors"
                 >
                   {tool.label} →
                 </Link>
@@ -117,26 +118,26 @@ export default function MoneyShortsDashboardPage() {
         </section>
 
         {/* 최신 기준금리 초안 — 클릭할 때만 데이터를 불러온다 */}
-        <section className="rounded-xl border border-blue-800/40 bg-blue-900/10 px-5 py-4">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-wider mb-2">
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 px-6 py-5">
+          <div className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-2">
             최신 기준금리 후보 만들기
           </div>
-          <p className="text-xs text-blue-200/70 mb-3 leading-relaxed">
+          <p className="text-[15px] text-blue-900/80 mb-3 leading-relaxed">
             한국은행 데이터를 불러와 기준금리 관련 쇼츠 후보를 만듭니다. 클릭할 때만 데이터를 불러오며, 바로
             업로드하지 않고 초안으로만 보여줍니다.
           </p>
           <Link
             href="/fact-cards/manual/package-preview?candidate=ecos-live-latest&endPeriod=202606"
             prefetch={false}
-            className="inline-flex items-center gap-1.5 self-start px-3 py-1.5 rounded-lg border border-blue-700/60 bg-blue-900/30 text-blue-300 hover:bg-blue-900/60 text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 self-start px-4 py-2 rounded-lg border border-blue-300 bg-white text-blue-700 hover:bg-blue-100 text-sm font-semibold transition-colors"
           >
             기준금리 후보 보기 →
           </Link>
         </section>
 
         {/* Status note */}
-        <section className="rounded-xl border border-slate-800/50 bg-slate-900/40 px-5 py-4 text-xs text-slate-500">
-          <div className="font-bold text-slate-400 mb-1">현재 이 화면에서 할 수 있는 것</div>
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm px-6 py-5 text-[15px] text-slate-600">
+          <div className="font-bold text-slate-800 mb-1">현재 이 화면에서 할 수 있는 것</div>
           <p>
             맨 위의 자동 만들기에서 새 쇼츠 만들기를 시작해, 주제 추천부터 대본·음성·시안 영상·미리보기·게시 전
             점검까지 버튼으로 진행할 수 있습니다. 실제 업로드는 마지막 단계에서 확인 절차(체크 2개 + “업로드” 입력)를
