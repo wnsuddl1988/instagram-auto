@@ -235,8 +235,8 @@ export async function POST(request: Request) {
     return json({
       action,
       status: "success",
-      summary: `새 주제 ${batch.topics.length}개를 추천했습니다. 모두 바로 대본을 만들 수 있습니다.`,
-      detail: "누를 때마다 새 조합으로 추천합니다. 로컬 주제 은행에서 만들었고 외부 API는 호출하지 않았습니다.",
+      summary: `새 주제 ${batch.topics.length}개를 만들었습니다.`,
+      detail: "마음에 드는 주제를 고르면 아래 단계가 그 주제로 이어집니다. 다시 누르면 최근에 본 주제는 빼고 새로 만듭니다.",
       raw: { topics: batch.topics, batchId: batch.batchId, category: batch.category },
       noLive: true,
     });

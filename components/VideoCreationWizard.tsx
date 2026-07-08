@@ -62,6 +62,18 @@ type WizardVideo = {
 
 // ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
 
+/** 카테고리를 고르면 보여줄 한 줄 소개 — 재테크팁은 돈·성공·심리·생활습관 톤을 명시한다. */
+const CATEGORY_DESC: Record<string, string> = {
+  finance: "돈·성공·심리·생활습관 — 아끼라는 잔소리 대신, 돈 앞에서 마음이 움직이는 방식을 다룹니다.",
+  ai: "AI를 일상과 일에 바로 써먹는 활용법을 다룹니다.",
+  meme: "밈과 짤을 센스 있게 쓰는 감각을 다룹니다.",
+  news: "뉴스와 소문에 속지 않는 읽기 습관을 다룹니다.",
+  tmi: "알고 나면 말하고 싶어지는 생활 지식을 다룹니다.",
+  game: "게임을 더 재미있게 만드는 습관과 매너를 다룹니다.",
+  animal: "반려동물과 더 잘 지내는 방법을 다룹니다.",
+  celeb: "덕질을 오래 즐겁게 하는 방법을 다룹니다.",
+};
+
 const CATEGORIES: Array<{ id: string; label: string }> = [
   { id: "finance", label: "재테크팁" },
   { id: "ai", label: "AI생성활용" },
@@ -450,6 +462,9 @@ export default function VideoCreationWizard() {
               );
             })}
           </div>
+          {category && CATEGORY_DESC[category] ? (
+            <p className="text-[11px] text-slate-500 mt-1.5">{CATEGORY_DESC[category]}</p>
+          ) : null}
         </StepCard>
 
         {/* 2. 새 주제 추천 */}
@@ -513,6 +528,7 @@ export default function VideoCreationWizard() {
                         )}
                       </span>
                       {t.hook ? <span className="block text-[11px] text-slate-500 mt-0.5">“{t.hook}”</span> : null}
+                      {t.reason ? <span className="block text-[10px] text-slate-600 mt-0.5">{t.reason}</span> : null}
                     </span>
                   </label>
                 );

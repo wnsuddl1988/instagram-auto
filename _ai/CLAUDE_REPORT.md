@@ -4629,3 +4629,14 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 범위 이탈 없음. 판단 하나 — runner의 gate 1~9에서 side-effect 이전에 막히는 경우(예 `DUPLICATE_ALREADY_PUBLISHED`)도 arm spawn 자체는 발생했으므로 `noLive:false`/`liveRunnerInvoked:true`로 표시(보수적: "외부 게시 없었다고 단정 안 함"). `liveRunnerInvoked`는 "arm으로 실행함"이라는 정확한 사실이라 의미 안전.
 - checkpoint recommendation: 리뷰 보정 6파일(전부 허용 목록), 동작 불변·문구/타입 정합만 — `owner-web-auto-topic-refresh-and-upload-button-v1`과 함께 checkpoint commit 권장.
 
+## owner-web-premium-money-psychology-topic-engine-fix-v2 (2026-07-08) — ✅ 프리미엄 돈·심리 주제 엔진 완료
+
+- **목표**: 재테크팁 추천을 절약팁 나열에서 돈×심리×성공/습관 프리미엄 주제로 전면 교체하고, "다른 주제 보기"의 순서만-바뀜 느낌 제거.
+- **changed files**: `lib/owner-web-operator.ts`(finance 프리미엄 시드 48개 — 각각 empathy/angleNote/moneyAnchor/psychologyAnchor/successAnchor/visualMetaphor 보유, 월급날 심리·소비 심리·비교/체면·불안/통제감·기준선·보이지 않는 부/선택권·결제 구조·장기 축적 8테마×6개 + anti-repeat: `wizard-topic-recent-shown.json`(레포 밖)에 카테고리별 최근 노출 창(pool−batch=39) 기록, 후보에서 제외 후 셔플 + 프리미엄 대본 빌더: 후킹→공감→심리→반전→행동→저장 CTA 스토리 낭독문, 첫째/둘째/셋째 나열형 미사용, 자막 6줄 22자 계약 유지), `app/api/money-shorts/operator/route.ts`("로컬 주제 은행" 개발자 문구 제거 → "새 주제 N개를 만들었습니다"), `components/VideoCreationWizard.tsx`(카테고리 한 줄 소개 — 재테크팁 "돈·성공·심리·생활습관" 톤 + 주제 카드에 구조 라인 t.reason 노출), `docs/simple-execution-manual.md`(2단계 설명 갱신), wizard guard(+35 checks).
+- **약한 기준선/저품질 차단**: Codex 지정 약한 제목 5개 + 커피값/티끌/무지출/통장 쪼개기/카드 명세서/고정비 다이어트/짠테크/지름신을 guard가 정적으로 금지(구 절약팁 시드 12개 전량 삭제). 시드 4축 필드는 개수 일치(48/48)로 강제. 자막 슬롯(hook/empathy/points/save) ≤22자, title 12~36자, save에 행동 시점(다음 월급날/결제 전/오늘 밤 등) 포함도 guard로 강제.
+- **5회 batch smoke (dev 서버 실측)**: 재테크팁 5회 × 9개 = 45개 노출 → **unique title 45개**(요구 30개 이상), **연속 배치 겹침 [0,0,0,0]**, weak/cheap 노출 0, 전부 scriptReady. 대본 실측(`gen-finance-highlight-vs-balance`): 낭독문이 후킹→공감→심리→반전→행동→저장 6문장 흐름, 나열형 0, captionLines 6줄 전부 ≤22자, 훅 89/전달력 92. UI 실측: 카테고리 톤 문구·구조 라인(예: "자산(돈) × 체면 × 보이지 않는 축적") 표시, "새 주제 9개를 만들었습니다." 표시, 콘솔 에러 0.
+- **checks**: wizard guard **142/0**(프리미엄 엔진 35개 신설 포함), web guard 88/0(수정 없음, 회귀 없음), `tsc --noEmit` exit 0, `node --check` exit 0.
+- **side effects / env·secret**: 실제 업로드/외부 API/OAuth/Blob/ledger write 0, `--arm` 실행 0(업로드 경로 코드 미변경 — guard의 allowArm 단일 지점 검사 계속 통과). 새 영상 생성 0(videoCreate 미실행 — 대본/영상 입력 계약이 기존과 동일 구조(6씬/6캡션)라 tsc+guard+scriptPreview로 검증). `.env*` read/edit 0, 값 출력 0. smoke 산출물은 C:\tmp 카탈로그/recent-shown JSON뿐, 임시 스크립트는 삭제.
+- **deviations/risks**: 요구의 "points 4~6개"는 empathy(문제 공감)+points 3개(심리→반전→행동)=4비트로 구현 — 기존 6씬 렌더 계약(자막 6줄)을 깨지 않기 위한 매핑. 12개짜리 다른 카테고리도 같은 anti-repeat이 적용되나 pool이 작아 unique 상한은 12개(요구는 재테크팁 한정이라 범위 내). preview_screenshot 렌더러 타임아웃으로 스크린샷은 미첨부(DOM 텍스트 검증으로 대체, 콘솔 에러 0).
+- checkpoint recommendation: 수정 5파일(전부 허용 목록) — 콘텐츠 품질 핵심 슬라이스이므로 Codex 검토 후 checkpoint commit 권장.
+
