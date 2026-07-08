@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import OperatorPanel from "@/components/OperatorPanel";
+
 // ── Workflow step data ────────────────────────────────────────────────────────
 
 const WORKFLOW_STEPS = [
@@ -121,7 +123,23 @@ export default function MoneyShortsDashboardPage() {
 
       <main className="max-w-screen-lg mx-auto px-4 py-6 space-y-6">
 
-        {/* Source-first principles */}
+        {/* 큰 CTA */}
+        <section>
+          <Link
+            href="/fact-cards/manual/new"
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-indigo-600/60 bg-indigo-600/90 hover:bg-indigo-600 px-5 py-4 text-white font-bold text-base transition-colors"
+          >
+            새 쇼츠 만들기 →
+          </Link>
+          <p className="text-xs text-slate-500 mt-2 text-center">
+            숫자와 출처를 입력하면 대본과 업로드용 제목·설명까지 만들어집니다.
+          </p>
+        </section>
+
+        {/* 웹 운영 콘솔 — 버튼으로 준비 상태 확인 (업로드는 실행하지 않음) */}
+        <OperatorPanel />
+
+        {/* 사용 전 확인 원칙 */}
         <section className="rounded-xl border border-amber-800/40 bg-amber-900/10 px-5 py-4">
           <div className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-3">
             사용 전 확인
@@ -148,7 +166,7 @@ export default function MoneyShortsDashboardPage() {
           </div>
         </section>
 
-        {/* Live latest draft candidate — dev-only explicit access */}
+        {/* 최신 기준금리 초안 — 클릭할 때만 데이터를 불러온다 */}
         <section className="rounded-xl border border-blue-800/40 bg-blue-900/10 px-5 py-4">
           <div className="text-xs font-bold text-blue-300 uppercase tracking-wider mb-2">
             최신 기준금리 후보 만들기
