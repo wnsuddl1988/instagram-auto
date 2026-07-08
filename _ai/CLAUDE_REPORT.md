@@ -4681,3 +4681,18 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: 지침의 "필요 시 components/docs"는 이번 finding(제목·대본 문체) 해소에 불필요해 미변경. points 단정형 전환은 자막 22자 계약을 유지(전부 기존 길이 이하). 기존 생성 영상은 옛 자막 유지, 새로 만들면 반영.
 - checkpoint recommendation: 수정 2파일(전부 허용 목록) — Codex finding 직접 해소 + guard 실효화, Codex 재검토 후 checkpoint commit 권장.
 
+## owner-web-local-script-quality-judge-rewrite-engine-v1 (2026-07-09) — ✅ 로컬 품질 평가기 + 재작성 + 3안 후보 엔진 완료
+
+- **목표**: OpenAI/API 없이 로컬 주제/대본 엔진을 "여러 후보 생성 → 로컬 품질 평가 → 약한 후보 재작성/탈락 → 상위만 노출" 구조로 개선.
+- **changed files**: `lib/owner-web-operator.ts`(judge/rewrite 엔진 + batch 품질 필터 + 대본 3안 후보 + 잔존 설명체 21건 단정형화), `components/VideoCreationWizard.tsx`(대본 품질 UI + 주제 품질 배지), `scripts/check-owner-one-click-video-creation-ui-static.mjs`(judge/rewrite guard 신규 + 문체 guard를 하십시오체 종결 전반으로 확장), `docs/simple-execution-manual.md`(2·3단계 품질 평가 설명), `_ai/CLAUDE_REPORT.md` append. **route.ts는 수정 대상 아님·미변경**(qualityScore/quality가 topics·script에 실려 route가 그대로 raw 전달).
+- **local quality judge 구조**: `WizardQualityJudgment` = retentionScore/selfRecognitionScore/clarityScore/visualizabilityScore/antiAiToneScore/specificityScore/overallScore + rejectReasons/rewriteReasons/passed. `judgeTopicSeed(seed, strict)` = 제목/훅/points/save/empathy 텍스트 규칙으로 7축 결정적 점수화. 기준: 제목·첫3초 실제 행동, 자기인식("~했다면/적 있/하는 사람"), 요지 명확, 추상 비유 과다 감점, 영상화 오브젝트 유무, AI 말투(하십시오체 "니다" 종결·훈계·`이유/방법/공통점`류) 감점. 가중 종합(자기인식 0.24·retention 0.22·antiAi 0.16 무겁게), finance strict threshold 82 / 그 외 72.
+- **rewrite pass 요약**: `rewriteWeakSeed(seed)` = 설명체 종결 → 단정형(`~다`), 제목 `이유/방법/공통점`류 걷어냄. batch에서 `passed=false`면 rewrite 후 재판정, **점수가 오른 경우에만 채택**(회귀 방지). rewriteReasons를 "고친 부분"으로 UI 노출.
+- **batch 품질 필터**: `generateWizardTopicBatch`가 batch(9)의 2배 overfetch → 각 judge → 약하면 rewrite → `passed` 통과분을 점수 내림차순으로 상위 9개. 통과분 부족 시 차선 채움에도 **절대 하한 70 미만은 제외**(약한 후보 미노출, 화면이 batch보다 적어질 수 있음 허용). 탈락 후보는 `rejected`(title/점수/사유)로 반환. finance만 strict.
+- **대본 3안 후보**: `scriptPreview`가 강한 후킹형/공감형/반전형 3스타일 낭독문을 조립(`assemblePremiumVoiceover`)해 `scoreVoiceoverStyle`로 최고점 1개 기본 선택. `quality`(선택 후보 점수로 일관), `selectedStyle`, `candidateScores[3]`, `qualitySummary{goodReasons/fixedParts/watchOuts}` 노출. 자막 6줄 계약·22자 제한은 스타일과 무관하게 유지.
+- **개선 예시**: 잔존 설명체 21건 단정형화 — "빠릅니다→빠르다", "이야기를 입힙니다→입힌다", "옵니다→온다" 등(`~ㅂ니다` 불규칙, 앞 task 정규식이 못 잡던 것). 대본 예: "잠 안 와 켠 폰이 결제로 끝났다면. / 불안은 즉시 눌리는 버튼을 찾아요. / 생각을 멈추려 폰을 켠 밤, 많죠. / 여기서 통장이 무너진다."(강한 후킹형, 점수 87).
+- **UI 표시 변경**: 대본 결과에 "대본 품질 점수 NN/100" 카드 + 좋은 이유/고친 부분/주의할 점(각 2~4줄) + 선택 스타일, 개발자용 6축·후보 3점수는 details로 숨김. 주제 카드에 "품질 NN" 배지 + rewrite 주제엔 "다듬음" 배지(hover 사유).
+- **checks**: `node --check` exit 0, wizard guard **213 PASS / 0 FAIL**(judge/rewrite/UI/문체 신규 포함), web guard 88/0(무수정), `tsc --noEmit` exit 0. 브라우저 실측: 품질 배지 8개, 대본 품질 점수·좋은 이유·고친 부분·주의할 점·선택 스타일 렌더, 콘솔 에러 0. smoke: 9개 후보 qualityScore 내림차순, 3안 점수 표시, overallScore=선택후보 점수 일치, voiceover 설명체 제거·자막 ≤22자.
+- **side effects / env·secret**: helper에 OpenAI/LLM import·fetch·googleapis 0(guard 강제), 실제 업로드/외부 API/OAuth/Blob/ledger write 0, `--arm`/`--live` 0, 새 영상 생성 0, `.env*` read/edit 0. 임시 smoke 스크립트 삭제.
+- **deviations/risks**: ① route.ts 미변경이라 `rejected`(탈락 사유)는 raw 전달 안 됨 — UI는 topics의 qualityScore/rewrittenReasons로 표시. ② rewrite는 seed가 이미 고품질(앞 task)이라 실사용 트리거 드묾(count 0) — 미래 저품질·회귀 방지용. ③ judge는 결정적 텍스트 규칙(LLM 아님)이라 "형식 품질" 근사치. ④ 3안 자막 6줄은 스타일 무관 동일(voiceover 조립 순서만 차이).
+- checkpoint recommendation: 수정 4파일(전부 허용 목록) + report append. 콘텐츠 품질 루프 신설로 diff 중간 규모(judge/rewrite/3안/UI/문체 21건). Codex 검토 후 checkpoint commit 권장.
+

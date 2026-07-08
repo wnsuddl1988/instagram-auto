@@ -36,6 +36,8 @@ type WizardTopic = {
   recommended: boolean;
   category?: string;
   angle?: string;
+  qualityScore?: number;
+  rewrittenReasons?: string[];
 };
 
 type WizardScriptScene = {
@@ -44,6 +46,19 @@ type WizardScriptScene = {
   narration: string;
   captionText: string;
   visualCue: string;
+};
+
+type WizardQuality = {
+  retentionScore: number;
+  selfRecognitionScore: number;
+  clarityScore: number;
+  visualizabilityScore: number;
+  antiAiToneScore: number;
+  specificityScore: number;
+  overallScore: number;
+  rejectReasons: string[];
+  rewriteReasons: string[];
+  passed: boolean;
 };
 
 type WizardScript = {
@@ -61,6 +76,14 @@ type WizardScript = {
   uploadCaptionDraft?: string;
   hookScore: number | null;
   clarityScore: number | null;
+  quality?: WizardQuality;
+  selectedStyle?: string;
+  qualitySummary?: {
+    goodReasons: string[];
+    fixedParts: string[];
+    watchOuts: string[];
+  };
+  candidateScores?: Array<{ style: string; overallScore: number; selected: boolean }>;
 };
 
 type WizardVideo = {
@@ -539,6 +562,16 @@ export default function VideoCreationWizard() {
                             대본 연결 전
                           </span>
                         )}
+                        {typeof t.qualityScore === "number" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">
+                            품질 {t.qualityScore}
+                          </span>
+                        ) : null}
+                        {t.rewrittenReasons && t.rewrittenReasons.length > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-600 text-xs" title={t.rewrittenReasons.join(", ")}>
+                            다듬음
+                          </span>
+                        ) : null}
                       </span>
                       {t.hook ? <span className="block text-[15px] text-slate-600 mt-1">“{t.hook}”</span> : null}
                       {t.reason ? <span className="block text-sm text-slate-400 mt-0.5">{t.reason}</span> : null}
@@ -570,6 +603,73 @@ export default function VideoCreationWizard() {
                 <p className="text-sm text-slate-500 mb-3">음성 만들기와 영상 만들기는 이 문장을 사용합니다.</p>
                 <p className="text-lg text-slate-900 leading-relaxed">{script.fullVoiceover}</p>
               </div>
+
+              {/* 대본 품질 점수 — 좋은 이유 / 고친 부분 / 주의할 점 (2~4줄 요약) */}
+              {script.quality ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold text-emerald-700">대본 품질 점수</p>
+                    <span className="text-2xl font-bold text-emerald-700">
+                      {script.quality.overallScore}
+                      <span className="text-sm font-normal text-emerald-600">/100</span>
+                    </span>
+                  </div>
+                  {script.selectedStyle ? (
+                    <p className="text-sm text-slate-500 mb-3">
+                      후보 {script.candidateScores?.length ?? 3}개 중 <b className="text-slate-700">{script.selectedStyle}</b>을 골랐습니다.
+                    </p>
+                  ) : null}
+                  <div className="space-y-2.5">
+                    {script.qualitySummary?.goodReasons?.length ? (
+                      <div>
+                        <p className="text-[13px] font-bold text-emerald-700 mb-0.5">좋은 이유</p>
+                        <ul className="text-[15px] text-slate-700 space-y-0.5">
+                          {script.qualitySummary.goodReasons.map((r, i) => (
+                            <li key={i}>· {r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {script.qualitySummary?.fixedParts?.length ? (
+                      <div>
+                        <p className="text-[13px] font-bold text-indigo-700 mb-0.5">고친 부분</p>
+                        <ul className="text-[15px] text-slate-700 space-y-0.5">
+                          {script.qualitySummary.fixedParts.map((r, i) => (
+                            <li key={i}>· {r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {script.qualitySummary?.watchOuts?.length ? (
+                      <div>
+                        <p className="text-[13px] font-bold text-amber-700 mb-0.5">주의할 점</p>
+                        <ul className="text-[15px] text-slate-700 space-y-0.5">
+                          {script.qualitySummary.watchOuts.map((r, i) => (
+                            <li key={i}>· {r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                  <details className="mt-3">
+                    <summary className="text-[13px] text-slate-400 cursor-pointer">개발자용 점수 자세히 보기</summary>
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[13px] text-slate-500">
+                      <span>붙잡는 힘 {script.quality.retentionScore}</span>
+                      <span>내 얘기 같음 {script.quality.selfRecognitionScore}</span>
+                      <span>명확함 {script.quality.clarityScore}</span>
+                      <span>영상화 {script.quality.visualizabilityScore}</span>
+                      <span>말투 자연스러움 {script.quality.antiAiToneScore}</span>
+                      <span>구체성 {script.quality.specificityScore}</span>
+                    </div>
+                    {script.candidateScores?.length ? (
+                      <div className="mt-2 text-[13px] text-slate-500">
+                        후보 점수:{" "}
+                        {script.candidateScores.map((c) => `${c.style} ${c.overallScore}${c.selected ? "★" : ""}`).join(" · ")}
+                      </div>
+                    ) : null}
+                  </details>
+                </div>
+              ) : null}
 
               {/* 첫 3초 훅 — 대본 첫 세 문장을 따로 강조 */}
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">

@@ -293,9 +293,10 @@ const finSeedLines = financeSrc.split("\n").filter((l) => /slug:\s*"/.test(l));
   check("finance save CTA includes 행동 시점", noTiming.length === 0, `${noTiming.length} seeds`);
 }
 {
-  // ── 문체 계약 (task: hook-language-review-fix) ──
-  // hook/points는 자막·대본 핵심 문장이라 설명체 종결(합니다/됩니다/습니다/입니다/셉니다)이 0이어야 한다.
-  const POLITE = /(합니다|됩니다|습니다|입니다|셉니다)/;
+  // ── 문체 계약 (task: hook-language-review-fix + judge-rewrite) ──
+  // hook/points는 자막·대본 핵심 문장이라 하십시오체 종결(…니다)이 0이어야 한다.
+  // "니다"는 하십시오체 공통 종결(합니다/습니다/입힙니다/빠릅니다/옵니다 등) → 문장 끝 "니다" 전반을 금지.
+  const POLITE = /니다[.!?]?$/;
   const hookViol = [];
   const pointViol = [];
   const empViol = [];
@@ -332,8 +333,10 @@ check("finance 5-batch ≥30 unique titles statically guaranteed", finSeedCount 
 check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.empathy/.test(helperCode));
 {
   // 첫 3문장 = hook, curiosity(empathy), p1 순서로 붙는지 정적 확인.
+  // 조립은 assemblePremiumVoiceover의 empathy(기본) 스타일: [e(hook), e(curiosity), e(p1), "진짜 문제는 따로 있다.", ...]
   const first3Ordered =
-    /endSentence\(rec\.hook\),\s*endSentence\(curiosity\),\s*endSentence\(p1\)/.test(helperCode);
+    /e\(hook\),\s*e\(curiosity\),\s*e\(p1\)/.test(helperCode) &&
+    /assemblePremiumVoiceover/.test(helperCode);
   check("premium first 3 sentences are hook→empathy→p1 (구체 행동→심리→돈 새는 지점)", first3Ordered);
   // 질문형 브리지 "왜 그럴까요?"는 제거됐고, 반전 앞 다리 1개만 남는다.
   check("premium voiceover has no repeated 질문형 브리지 (왜 그럴까요? 제거)", !helperCode.includes("왜 그럴까요?"));
@@ -350,8 +353,8 @@ check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.emp
   check("premium voiceover keeps exactly 1 단정형 반전 다리 (진짜 문제는 따로 있다.)", declBridge === 1, `found ${declBridge}`);
 }
 {
-  // 정적 검증: 전 finance seed의 fullVoiceover 첫 3문장(hook·empathy·p1)에 설명체 종결이 없어야 한다.
-  const POLITE = /(합니다|됩니다|습니다|입니다|셉니다)/;
+  // 정적 검증: 전 finance seed의 fullVoiceover 첫 3문장(hook·empathy·p1)에 하십시오체 종결이 없어야 한다.
+  const POLITE = /니다[.!?]?$/;
   const first3Viol = [];
   for (const line of finSeedLines) {
     const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
@@ -366,7 +369,8 @@ check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.emp
   // 나열형(첫째/둘째/셋째)은 비프리미엄 fallback 문자열 1곳에만 존재해야 한다.
   const listicleCount = (helperCode.match(/첫째, \$\{p1\}/g) ?? []).length;
   check("listicle format confined to non-premium fallback (exactly 1)", listicleCount === 1, `found ${listicleCount}`);
-  check("premium voiceover built from sentence array (endSentence(rec.hook))", /endSentence\(rec\.hook\)\s*,/.test(helperCode));
+  // 프리미엄 낭독문은 assemblePremiumVoiceover가 문장 배열([e(hook), ...])로 조립한다.
+  check("premium voiceover built from sentence array (assemblePremiumVoiceover)", /const e = endSentence/.test(helperCode) && /\[e\(hook\)/.test(helperCode));
 }
 
 // ── 골든 샘플급 대본 구조: 장면 플랜 + 확장 필드 (task: golden-sample-script-and-light-ui) ──
@@ -455,6 +459,52 @@ check("route video stream input is enum only (no client path)", /videoParam\s*==
 // ── wizard(client): 외부 API 직접 호출 부재 ──────────────────────────────────
 check("wizard only calls the local operator API", !/https?:\/\//.test(wizardCode.replace(/\/api\/money-shorts\/operator/g, "")) || !/fetch\(\s*["']https?:/.test(wizardCode));
 check("wizard has no upload/publish call words in code", !/instagramPublish|youtubeInsert|blobPut/.test(wizardCode));
+
+// ── 로컬 품질 평가기(judge) + 재작성 pass (task: local-script-quality-judge-rewrite-engine) ──
+// judge/rewrite 함수 존재
+check("helper defines local quality judge (judgeTopicSeed)", /export function judgeTopicSeed\s*\(/.test(helperSrc));
+check("helper defines local rewrite pass (rewriteWeakSeed)", /export function rewriteWeakSeed\s*\(/.test(helperSrc));
+// 품질 판정 타입 필수 필드
+for (const field of [
+  "retentionScore",
+  "selfRecognitionScore",
+  "clarityScore",
+  "visualizabilityScore",
+  "antiAiToneScore",
+  "specificityScore",
+  "overallScore",
+  "rejectReasons",
+  "rewriteReasons",
+  "passed",
+]) {
+  check(`quality judgment type exposes ${field}`, new RegExp(`${field}\\b`).test(helperSrc));
+}
+// topic recommendation이 judge를 통과한 후보만 상위로 — overfetch → judge → passed 필터 구조
+check("topic batch judges candidates (judgeTopicSeed in batch)", /judgeTopicSeed\(/.test(helperCode) && /generateWizardTopicBatch/.test(helperCode));
+check("topic batch overfetches before quality filter", /WIZARD_TOPIC_BATCH_SIZE\s*\*\s*2/.test(helperCode));
+check("topic batch filters by passed judgment", /\.filter\(\s*\(?\w+\)?\s*=>\s*\w+\.judgment\.passed\s*\)/.test(helperCode) || /judgment\.passed/.test(helperCode));
+check("topic batch keeps reject reasons for details", /rejected/.test(helperCode) && /rejectReasons/.test(helperCode));
+check("weak candidates go through rewrite pass", /rewriteWeakSeed\(/.test(helperCode));
+check("finance uses strict judging threshold", /category\s*===\s*["']finance["']/.test(helperCode) && /strict/.test(helperCode));
+// scriptPreview: 3안 후보 → 최고점 선택
+check("script builds 3 style candidates", /hook_heavy/.test(helperCode) && /reversal/.test(helperCode) && /empathy/.test(helperCode));
+check("script preview exposes quality + candidateScores + selectedStyle", /quality:\s*judgment/.test(helperCode) && /candidateScores:/.test(helperCode) && /selectedStyle:/.test(helperCode));
+check("script preview exposes qualitySummary (good/fixed/watch)", /goodReasons/.test(helperCode) && /fixedParts/.test(helperCode) && /watchOuts/.test(helperCode));
+// helper(lib)에 외부 API/LLM 연결 부재 — import/require/클라이언트 인스턴스화/네트워크 호출만 금지
+// (문자열 안내 문구에 "OpenAI" 단어가 들어가는 건 무해하므로 실행 경로만 검사)
+check(
+  "helper has no OpenAI/LLM SDK import or client",
+  !/(import|require)[^;\n]*openai/i.test(helperCode) && !/new\s+OpenAI\s*\(/.test(helperCode),
+);
+check("helper makes no network call (fetch/axios/googleapis)", !/\bfetch\s*\(/.test(helperCode) && !/\baxios\b/.test(helperCode) && !/googleapis/.test(helperCode));
+check("helper never reads .env.local directly", !/\.env\.local/.test(helperCode) && !/process\.env\.OPENAI/.test(helperCode));
+
+// ── UI: 대본 품질 점수/좋은 이유/고친 부분/주의할 점 라벨 노출 ──────────────────
+for (const label of ["대본 품질 점수", "좋은 이유", "고친 부분", "주의할 점"]) {
+  check(`wizard shows quality label: ${label}`, wizardSrc.includes(label));
+}
+check("wizard shows topic quality badge (t.qualityScore)", /t\.qualityScore/.test(wizardCode));
+check("wizard renders quality summary from script.quality", /script\.quality/.test(wizardCode) && /qualitySummary/.test(wizardCode));
 
 // ── 결과 ─────────────────────────────────────────────────────────────────────
 console.log("");
