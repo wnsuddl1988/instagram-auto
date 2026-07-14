@@ -83,16 +83,16 @@ async function firstVisible(locator) {
   return null;
 }
 
-function isAllowedTelemetryRequest(method, url) {
+function isAllowedReadOnlyPostRequest(method, url) {
   if (method !== "POST") return false;
-  return /(?:batchLogFrontendEvents|general\.submitBatchLog|likeness:checkEligibility|google-analytics\.com\/g\/collect|google\.com\/g\/collect)/i.test(url);
+  return /(?:batchLogFrontendEvents|general\.submitBatchLog|general\.reportClientSideError|likeness:checkEligibility|v1:checkAppAvailability|v1:fetchUserRecommendations|google-analytics\.com\/g\/collect|google\.com\/g\/collect)/i.test(url);
 }
 
 function isForbiddenMutationRequest(request) {
   const method = request.method().toUpperCase();
   if (["GET", "HEAD", "OPTIONS"].includes(method)) return false;
   const url = request.url();
-  if (isAllowedTelemetryRequest(method, url)) return false;
+  if (isAllowedReadOnlyPostRequest(method, url)) return false;
   if (!/(?:labs\.google|aisandbox-pa\.googleapis\.com)/i.test(url)) return false;
   return ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 }
@@ -174,12 +174,12 @@ async function runLiveReadonly() {
 
     if (proBadge) {
       await proBadge.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(600);
       const accountDialog = await firstVisible(page.locator('[role="dialog"]').filter({ hasText: /Google Flow (?:크레딧|credits)/i }));
-      const accountText = accountDialog ? await accountDialog.innerText() : "";
+      const accountText = accountDialog ? await accountDialog.innerText() : await page.locator("body").innerText();
       const creditMatch = accountText.match(/([\d,]+)\s+Google Flow (?:크레딧|credits)/i);
       creditBalance = creditMatch ? Number(creditMatch[1].replace(/,/g, "")) : null;
-      if (accountDialog) await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape");
     }
 
     const observation = {
