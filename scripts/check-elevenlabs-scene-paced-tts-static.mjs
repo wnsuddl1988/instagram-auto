@@ -1,559 +1,128 @@
-/**
- * Static guard: ElevenLabs scene-paced TTS builder + mux scene-paced support integrity.
- * No network, no API calls, no clipboard, no fs writes to repo.
- * Exit 0 = all PASS. Exit 1 = at least one FAIL.
- */
+#!/usr/bin/env node
+/** Read-only guard for Money Shorts Korean Director TTS v2. */
 
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const BUILDER_PATH = resolve(__dirname, "build-elevenlabs-scene-paced-tts-from-script.mjs");
-const MUX_PATH = resolve(__dirname, "mux-local-tts-audio-into-visual-mp4.mjs");
+const ROOT = resolve(__dirname, "..");
+const BUILDER_PATH = resolve(__dirname, "build-elevenlabs-korean-director-tts-from-script.mjs");
+const HELPER_PATH = resolve(ROOT, "lib", "owner-web-operator.ts");
+const VOICE_CAST_DATA_PATH = resolve(ROOT, "lib", "finance-character-voice-cast-data.json");
+const MUX_PATH = resolve(__dirname, "run-owner-real-video-from-wizard-assets-once.mjs");
+const DYNAMIC_CAPTION_PATH = resolve(__dirname, "_money-shorts-dynamic-captions.mjs");
 
 let passed = 0;
 let failed = 0;
-
 function check(label, condition) {
   if (condition) {
-    console.log(`  PASS  ${label}`);
     passed++;
+    console.log(`  PASS  ${label}`);
   } else {
-    console.error(`  FAIL  ${label}`);
     failed++;
+    console.error(`  FAIL  ${label}`);
   }
 }
 
-function codeLines(src) {
-  return src
-    .split("\n")
-    .filter((l) => !/^\s*(\/\/|\*)/.test(l))
-    .join("\n");
+function codeLines(source) {
+  return source.split("\n").filter((line) => !/^\s*(\/\/|\*)/.test(line)).join("\n");
 }
 
-console.log("\nStatic guard check: ElevenLabs scene-paced TTS builder\n");
+const builder = existsSync(BUILDER_PATH) ? readFileSync(BUILDER_PATH, "utf8") : "";
+const helper = existsSync(HELPER_PATH) ? readFileSync(HELPER_PATH, "utf8") : "";
+const voiceCastData = existsSync(VOICE_CAST_DATA_PATH) ? readFileSync(VOICE_CAST_DATA_PATH, "utf8") : "";
+const mux = existsSync(MUX_PATH) ? readFileSync(MUX_PATH, "utf8") : "";
+const dynamicCaptions = existsSync(DYNAMIC_CAPTION_PATH) ? readFileSync(DYNAMIC_CAPTION_PATH, "utf8") : "";
+const code = codeLines(builder);
 
-// ── Builder file existence ──────────────────────────────────────────────────────
-console.log("[ build-elevenlabs-scene-paced-tts-from-script.mjs — file existence ]");
+console.log("\nStatic guard: Money Shorts Korean Director TTS v2\n");
+check("builder/helper/final-video/dynamic-caption consumer exist", Boolean(builder && helper && mux && dynamicCaptions));
 
-check("builder file exists", existsSync(BUILDER_PATH));
+console.log("[ safety ]");
+check("no SDK, upload, OAuth or DB calls", !/from\s+["']elevenlabs|axios|uploadVideo|OAuth|supabase|prisma/.test(code));
+check("no shell:true or execSync", !/shell\s*:\s*true|execSync/.test(code));
+check("input/output are restricted to C:\\tmp\\money-shorts-os", /MEDIA_ROOT_RE/.test(builder) && /money-shorts-os/.test(builder));
+check(".money-shorts-local remains forbidden", builder.includes(".money-shorts-local access forbidden"));
+check("builder never reads .env.local", !/\.env\.local|readFileSync\([^)]*env/i.test(code));
+check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskVoiceId/.test(builder));
+check("one paid call maximum and no retry loop", /API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
 
-if (!existsSync(BUILDER_PATH)) {
-  console.error("\nFATAL: Builder file not found. Aborting guard.\n");
-  process.exit(1);
-}
-
-const builderSrc = readFileSync(BUILDER_PATH, "utf-8");
-
-// ── Forbidden patterns ──────────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — forbidden patterns ]");
-
-check("no axios outside comments", !codeLines(builderSrc).includes("axios"));
+console.log("\n[ Korean direction engine ]");
+check("speech direction v2 is the required input", /money_shorts_speech_direction_v2/.test(builder) && /money_shorts_speech_direction_v2/.test(helper));
+check("five topic delivery profiles exist", ["economic_authority", "discipline_coach", "wealth_conviction", "reassuring_control", "social_insight"].every((id) => helper.includes(id)));
+check("Korean cadence categories exist", ["continue_rise", "contrast_pivot", "list_build", "firm_land", "command_land"].every((id) => helper.includes(id)));
+check("continuation and list endings use comma rather than forced full stop", /WIZARD_SPEECH_CONNECTIVE_END_PATTERN/.test(helper) && /WIZARD_SPEECH_LIST_END_PATTERN/.test(helper) && /\? "," :/.test(helper));
+check("connective endings continue naturally across scene boundaries", /continuesAfterScene/.test(helper) && /\(!isLast \|\| continuesAfterScene\)/.test(helper));
+check("save scene uses confident closing", /save:\s*\{[\s\S]{0,380}v3AudioTag:\s*"confident"/.test(helper) && /intensity:\s*0\.72/.test(helper));
 check(
-  "no youtube.videos or googleapis.com",
-  !codeLines(builderSrc).toLowerCase().includes("youtube.videos") &&
-    !codeLines(builderSrc).includes("googleapis.com"),
+  "topic profile is attached to every generated production-part TTS script",
+  /topicSpeechProfile/.test(helper) &&
+    /buildWizardTopicSpeechProfile\(script\.title, script\.fullVoiceover,\s*\{ topicId:\s*rootTopicId \}\)/.test(helper) &&
+    /baseSpeed:\s*typeof speedCap === "number" \? Math\.min\(baseProfile\.baseSpeed, speedCap\) : baseProfile\.baseSpeed/.test(helper),
+);
+check("single-topic review profile is isolated from the 500-topic rollout", /WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID/.test(helper) && /rolloutScope:\s*"single_topic_only"/.test(helper));
+check("sample review routes housing anxiety to reassuring control at 0.91 speed", /isWizardAvSampleReviewTopic/.test(helper) && /id:\s*"reassuring_control"[\s\S]{0,480}baseSpeed:\s*0\.91/.test(helper));
+check(
+  "staged cover validates three semantically identical spoken/display lines before any API call",
+  /STAGED_COVER_CONTRACT_VERSION/.test(builder) &&
+    /lines\.length === 3/.test(builder) &&
+    /semanticText\(line\.spokenText\) === semanticText\(line\.displayText\)/.test(builder) &&
+    /semanticText\(spokenText\) === semanticText\(sceneOneNarration\)/.test(builder) &&
+    builder.indexOf("staged cover spoken/display contract is invalid") < builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY"),
 );
 check(
-  "no graph.instagram or graph.facebook",
-  !codeLines(builderSrc).includes("graph.instagram") &&
-    !codeLines(builderSrc).includes("graph.facebook"),
-);
-check("no uploadVideo call", !codeLines(builderSrc).includes("uploadVideo"));
-check("no OAuth outside comments", !codeLines(builderSrc).includes("OAuth"));
-check("no accessToken outside comments", !codeLines(builderSrc).includes("accessToken"));
-check("no refreshToken outside comments", !codeLines(builderSrc).includes("refreshToken"));
-check("no shell: true", !codeLines(builderSrc).match(/shell\s*:\s*true/));
-check("no execSync outside comments", !codeLines(builderSrc).includes("execSync"));
-check(
-  "no .money-shorts-local direct access (guard present)",
-  builderSrc.includes(".money-shorts-local") && builderSrc.includes("forbidden"),
-);
-check("no clipboard access", !codeLines(builderSrc).includes("navigator.clipboard"));
-check(
-  "no DB/persistence calls",
-  !codeLines(builderSrc).includes("supabase") && !codeLines(builderSrc).includes("prisma"),
-);
-
-// ── API key secret safety ──────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — secret safety ]");
-
-check(
-  "API key not logged directly (no console.log/error with bare apiKey variable)",
-  !codeLines(builderSrc).includes("console.log(apiKey)") &&
-    !codeLines(builderSrc).includes("console.error(apiKey)") &&
-    !codeLines(builderSrc).match(/console\.(log|error)\(\s*`[^`]*\$\{apiKey\}/),
-);
-check(
-  "voice ID not logged directly (no console.log/error with bare voiceId variable)",
-  !codeLines(builderSrc).includes("console.log(voiceId)") &&
-    !codeLines(builderSrc).includes("console.error(voiceId)"),
-);
-check(
-  "API key not stored in summary JSON (only apiKeyConfigured boolean)",
-  !builderSrc.includes("apiKey:") || builderSrc.includes("apiKeyConfigured:"),
-);
-check("voice ID masked in summary (voiceIdMasked used)", builderSrc.includes("voiceIdMasked"));
-check("mask function present (maskVoiceId)", builderSrc.includes("maskVoiceId"));
-
-// ── ElevenLabs API contract ─────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — ElevenLabs API contract ]");
-
-check("ELEVENLABS_API_KEY env read", builderSrc.includes("ELEVENLABS_API_KEY"));
-check("ELEVENLABS_VOICE_ID env read", builderSrc.includes("ELEVENLABS_VOICE_ID"));
-check("api.elevenlabs.io endpoint present", builderSrc.includes("api.elevenlabs.io"));
-check("text-to-speech endpoint present", builderSrc.includes("text-to-speech"));
-check("eleven_multilingual_v2 default model", builderSrc.includes("eleven_multilingual_v2"));
-check("voice_settings object present", builderSrc.includes("voice_settings"));
-check("stability parameter present", builderSrc.includes("stability"));
-check("similarity_boost parameter present", builderSrc.includes("similarity_boost"));
-check("style parameter present", builderSrc.includes("style"));
-check("use_speaker_boost parameter present", builderSrc.includes("use_speaker_boost"));
-check("xi-api-key header used", builderSrc.includes("xi-api-key"));
-check("output_format query parameter present", builderSrc.includes("output_format"));
-
-// ── API call budget ─────────────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — API call budget ]");
-
-check(
-  "API_CALL_BUDGET_MAX = 6 present",
-  builderSrc.includes("API_CALL_BUDGET_MAX") && builderSrc.includes("6"),
-);
-check(
-  "apiCallBudgetMax: 6 in summary",
-  builderSrc.includes("apiCallBudgetMax") && builderSrc.includes("6"),
-);
-check("apiCallCount incremented per scene", builderSrc.includes("apiCallCount++"));
-check(
-  "budget guard: abort when apiCallCount >= budget",
-  builderSrc.includes("apiCallCount >= API_CALL_BUDGET_MAX"),
-);
-check("no retry logic (no for/while retry loop)", !builderSrc.match(/for\s*\([^)]*retry/i));
-check("apiCallCount in summary", builderSrc.includes("apiCallCount,"));
-
-// ── Per-scene normalization ─────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — per-scene normalization ]");
-
-check(
-  "per-scene normalized audio path: scene-NN-normalized.m4a",
-  builderSrc.includes("normalized.m4a"),
-);
-check(
-  "per-scene raw audio path: scene-NN-elevenlabs.mp3",
-  builderSrc.includes("elevenlabs.mp3"),
-);
-check("apad normalize (padding) present", builderSrc.includes("apad=pad_dur="));
-check(
-  "trim normalize: -t targetSceneDurationSec",
-  builderSrc.includes("targetSceneDurationSec"),
-);
-check(
-  "normalize decision: trim if rawAudio > target",
-  builderSrc.includes("rawAudioDurationSec > targetSceneDurationSec"),
-);
-check(
-  "normalize decision: pad if rawAudio < target",
-  builderSrc.includes("rawAudioDurationSec < targetSceneDurationSec"),
-);
-check(
-  "normalizedStatus field in sceneResults (fit/trimmed/padded)",
-  builderSrc.includes("normalizeStatus"),
+  "staged opening voice is confidently tagged and capped at 0.98 before any API call",
+  /openingVoiceAudit/.test(builder) && /confidentFirstTag/.test(builder) && /speedWithinCap/.test(builder) &&
+    /scenePayloads\[0\]\?\.tag === "confidently"/.test(builder) &&
+    /voiceSettings\.speed <= openingSpeedCap/.test(builder) &&
+    /openingVoiceContract:\s*script\.videoStrategy\?\.openingVoice/.test(helper) &&
+    /Math\.min\(baseProfile\.baseSpeed, speedCap\)/.test(helper),
 );
 
-// ── Concat and timeline ─────────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — concat/timeline ]");
+console.log("\n[ continuous generation ]");
+check("full narration is joined before the API request", /continuousParts/.test(builder) && /continuousText/.test(builder) && /text:\s*continuousText/.test(builder));
+check("official with-timestamps endpoint is used", /api\.elevenlabs\.io\/v1\/text-to-speech/.test(builder) && /with-timestamps\?output_format=mp3_44100_128/.test(builder));
+check(
+  "v3 Korean model and tags are explicit",
+  /FINANCE_CHARACTER_VOICE_MODEL_ID/.test(helper) &&
+    /"modelId"\s*:\s*"eleven_v3"/.test(voiceCastData) &&
+    /language_code:\s*"ko"/.test(builder) &&
+    /sceneDirectorTag/.test(builder),
+);
+check("SSML break spam is absent", !/<break time=/.test(builder));
+check("voice style is zero; legacy speed stays narrow while sample review permits official slower range", /style:\s*0/.test(builder) && /\[0\.7,\s*1\.2\]\s*:\s*\[0\.95,\s*1\.05\]/.test(builder));
+check("sample review adds v3 phrase pauses and scene beats", /\[pause\]/.test(builder) && /\[continues after a beat\]/.test(builder));
+check("cache fingerprint includes engine/model/profile/settings/full text", ["engineVersion", "modelId", "topicProfileId", "voiceSettings", "continuousText"].every((field) => builder.includes(field)));
+check("matching raw audio and alignment are reused without a paid call", /existsSync\(rawAudioPath\) && existsSync\(alignmentPath\)/.test(builder) && /reused_continuous_aligned/.test(builder));
 
-check("concat-list.txt written", builderSrc.includes("concat-list.txt"));
-check("-f concat present", builderSrc.includes('"-f", "concat"'));
-check("-safe 0 present", builderSrc.includes('"-safe", "0"'));
+console.log("\n[ alignment and downstream ]");
+check("character alignment arrays are validated", ["characters", "character_start_times_seconds", "character_end_times_seconds"].every((field) => builder.includes(field)));
+check("each directed segment is located sequentially despite v3 pause tags", /alignedText\.indexOf\(segment\.text, searchCursor\)/.test(builder));
+check("sample review duration must remain within 95~108 percent", /durationWithinTargetRange/.test(builder) && /acceptedDurationRatio/.test(builder) && /SAMPLE_REVIEW_VOICE_AUDIT_FAILED/.test(mux));
+check("scene timing includes spoken and video boundaries", ["spokenStartSec", "spokenEndSec", "normalizedDurationSec", "startSec", "endSec"].every((field) => builder.includes(field)));
+check("summary exposes the reusable alignment artifact", /alignmentPath,/.test(builder) && /alignmentPath:\s*null/.test(builder));
+check("final timeline is one continuous file with a short tail", /FINAL_TAIL_SEC\s*=\s*0\.28/.test(builder) && /elevenlabs-korean-director-\$\{inputFingerprint\}\.m4a/.test(builder));
+check("summary remains compatible and identifies director v2", /money_shorts_elevenlabs_scene_paced_tts_summary_v1/.test(builder) && /money_shorts_korean_director_v2/.test(builder));
+check("Owner listening remains required", /qualityAccepted:\s*false/.test(builder) && /ownerListeningRequired:\s*true/.test(builder));
+check("final video consumes aligned scene durations and continuous audio", /audioSummary\.timelineAudioPath/.test(mux) && /normalizedDurationSec/.test(mux));
+check("final video consumes character timing through the common dynamic-semantic caption module", /buildDynamicCaptionTimeline/.test(mux) && /character_aligned_continuous_v2/.test(mux) && /full_script_dynamic_semantic_aligned_v6/.test(mux));
+check("dynamic captions prohibit Malgun and bottom-fixed sentence subtitles", /Black Han Sans/.test(dynamicCaptions) && !/Malgun Gothic/.test(dynamicCaptions) && /bottomFixedSubtitleBar:\s*false/.test(dynamicCaptions));
+check("all captions require exact full-script coverage, source sentence boundaries and character timing", /full_script_dynamic_semantic_aligned/.test(dynamicCaptions) && /fullScriptCoveragePass/.test(dynamicCaptions) && /sentenceBoundaryPreservedPass/.test(dynamicCaptions) && /sourceSegmentBoundaryPreservedPass/.test(dynamicCaptions) && /arbitraryMidPhraseSplitAbsent/.test(dynamicCaptions) && /exactTranscriptMatchPass/.test(dynamicCaptions) && /captionCoverageRatio === 1/.test(dynamicCaptions));
 check(
-  "timeline output: elevenlabs-scene-paced-timeline.m4a",
-  builderSrc.includes("elevenlabs-scene-paced-timeline.m4a"),
+  "renderer suppresses ordinary scene-one captions and anchors exactly three cover lines to aligned words",
+  /normalCaptions = dynamicCaptionTimeline\.captions\.filter\(\(caption\) => caption\.sceneNumber !== 1\)/.test(mux) &&
+    /coverWords = coverCaptions\.flatMap\(\(caption\) => caption\.wordTimings\)/.test(mux) &&
+    /coverLines\.length !== 3/.test(mux) &&
+    /wordCursor \+= spokenWords\.length/.test(mux) &&
+    /stagedLineCount:\s*anchors\.length/.test(mux),
 );
 check(
-  "timeline ffprobe called (duration verification)",
-  builderSrc.includes("timelineProbeResult"),
+  "renderer fails closed unless cover semantics, character anchors and suppression all pass",
+  /semanticWordCoveragePass/.test(mux) && /allLinesCharacterAnchored/.test(mux) &&
+    /normalSceneOneCaptionSuppressed/.test(mux) && /coverAudit\.passed/.test(mux) &&
+    /STAGED_COVER_AUDIT_FAILED/.test(mux) && /coverMode:\s*stagedCoverEnabled \? "staged_prehook_v1"/.test(mux),
 );
-check(
-  "timeline duration within ±0.5s check",
-  builderSrc.includes("timelineDurationOk"),
-);
-check("timelineDurationSec in summary", builderSrc.includes("timelineDurationSec"));
-check("timelineAudioPath in summary", builderSrc.includes("timelineAudioPath"));
-check("timelineAudioCodec in summary", builderSrc.includes("timelineAudioCodec"));
-
-// ── Summary schema ──────────────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — summary schema ]");
-
-check(
-  "schemaVersion money_shorts_elevenlabs_scene_paced_tts_summary_v1",
-  builderSrc.includes("money_shorts_elevenlabs_scene_paced_tts_summary_v1"),
-);
-check("liveApiCallPerformed field present", builderSrc.includes("liveApiCallPerformed"));
-check("qualityAccepted: false present", builderSrc.includes("qualityAccepted: false"));
-check("ownerListeningRequired: true present", builderSrc.includes("ownerListeningRequired: true"));
-check("apiKeyConfigured field present", builderSrc.includes("apiKeyConfigured"));
-check("voiceIdConfigured field present", builderSrc.includes("voiceIdConfigured"));
-check("envSource field present", builderSrc.includes("envSource"));
-check("riskNotes present", builderSrc.includes("riskNotes"));
-check(
-  "summary JSON filename: elevenlabs-scene-paced-tts-summary.json",
-  builderSrc.includes("elevenlabs-scene-paced-tts-summary.json"),
-);
-check("sceneResults array in summary (scenes field)", builderSrc.includes("sceneResults"));
-check("readinessFailure field in summary", builderSrc.includes("readinessFailure"));
-
-// ── Safety guards ───────────────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — safety guards ]");
-
-check("out-dir repo guard present", builderSrc.includes("outDirAbs.startsWith(REPO_ROOT"));
-check(
-  "readiness check before API call",
-  builderSrc.includes("apiKeyConfigured") &&
-    builderSrc.includes("voiceIdConfigured") &&
-    builderSrc.includes("READINESS FAILURE"),
-);
-check(
-  "readiness failure: liveApiCallPerformed: false in failure summary",
-  builderSrc.includes("liveApiCallPerformed: false"),
-);
-check(
-  "env values not printed",
-  !builderSrc.includes("console.log(apiKey)") && !builderSrc.includes("console.log(voiceId)"),
-);
-check(
-  "output artifact saved to outDirAbs (not hardcoded repo path)",
-  builderSrc.includes("outDirAbs") && !builderSrc.match(/join\s*\(\s*REPO_ROOT.*elevenlabs/),
-);
-
-// ── .env.local read-only loader ─────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — .env.local read-only loader ]");
-
-check(
-  ".env.local is read via readFileSync (read-only access)",
-  builderSrc.includes("readFileSync(envLocalPath") || builderSrc.includes("readFileSync(join(REPO_ROOT"),
-);
-check(
-  "no writeFileSync to .env.local (read-only, never modified)",
-  !codeLines(builderSrc).match(/writeFileSync\s*\(\s*[^)]*\.env\.local/),
-);
-check(
-  "no dotenv import",
-  !codeLines(builderSrc).includes("dotenv"),
-);
-check(
-  "resolveEnv helper: process.env first, then .env.local fallback",
-  builderSrc.includes("resolveEnv") &&
-    builderSrc.includes("process.env[key]") &&
-    builderSrc.includes("envLocal[key]"),
-);
-check(
-  "envSource field in summary",
-  builderSrc.includes("envSource") &&
-    builderSrc.includes(".env.local") &&
-    builderSrc.includes("process.env"),
-);
-
-// ── Text selection contract ─────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — text selection contract ]");
-
-check(
-  "resolveSceneTtsText helper present",
-  builderSrc.includes("resolveSceneTtsText"),
-);
-check(
-  "ttsText priority: first candidate",
-  builderSrc.includes('"ttsText"') && builderSrc.includes("scene.ttsText"),
-);
-check(
-  "spokenCaption fallback present",
-  builderSrc.includes('"spokenCaption"') && builderSrc.includes("scene.spokenCaption"),
-);
-check(
-  "captionText fallback present",
-  builderSrc.includes('"captionText"') && builderSrc.includes("scene.captionText"),
-);
-check(
-  "narration fallback present (final fallback)",
-  builderSrc.includes('"narration"') && builderSrc.includes("scene.narration"),
-);
-check(
-  "textSource returned from resolveSceneTtsText",
-  builderSrc.includes("textSource"),
-);
-check(
-  "sentTextCharCount returned from resolveSceneTtsText",
-  builderSrc.includes("sentTextCharCount"),
-);
-check(
-  "sourceTextCharCount returned from resolveSceneTtsText",
-  builderSrc.includes("sourceTextCharCount"),
-);
-check(
-  "abort when no TTS text found (all sources empty)",
-  builderSrc.includes("no usable TTS text") && builderSrc.includes("process.exit(1)"),
-);
-
-// ── Duration budget contract ────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — duration budget contract ]");
-
-check(
-  "calcDurationTextBudget helper present",
-  builderSrc.includes("calcDurationTextBudget"),
-);
-check(
-  "TTS_CHARS_PER_SEC_MIN = 5 (calibrated lower bound)",
-  builderSrc.includes("TTS_CHARS_PER_SEC_MIN") && builderSrc.includes("TTS_CHARS_PER_SEC_MIN = 5"),
-);
-check(
-  "TTS_CHARS_PER_SEC_TARGET = 7 (calibrated conservative max)",
-  builderSrc.includes("TTS_CHARS_PER_SEC_TARGET") && builderSrc.includes("TTS_CHARS_PER_SEC_TARGET = 7"),
-);
-check(
-  "TTS_CHARS_PER_SEC_WARN = 9 (calibrated hard trim risk)",
-  builderSrc.includes("TTS_CHARS_PER_SEC_WARN") && builderSrc.includes("TTS_CHARS_PER_SEC_WARN = 9"),
-);
-check(
-  "durationTextBudgetMinChars field in scene summary",
-  builderSrc.includes("durationTextBudgetMinChars"),
-);
-check(
-  "durationTextBudgetMaxChars field in scene summary",
-  builderSrc.includes("durationTextBudgetMaxChars"),
-);
-check(
-  "durationTextBudgetStatus: under_budget present",
-  builderSrc.includes('"under_budget"'),
-);
-check(
-  "durationTextBudgetStatus: within_budget present",
-  builderSrc.includes('"within_budget"'),
-);
-check(
-  "durationTextBudgetStatus: over_budget present",
-  builderSrc.includes('"over_budget"'),
-);
-check(
-  "under_budget warning text present (silence padding likely)",
-  builderSrc.includes("silence padding likely"),
-);
-check(
-  "over_budget warning text present (trim risk)",
-  builderSrc.includes("trim"),
-);
-check(
-  "durationTextBudgetWarning field in scene summary",
-  builderSrc.includes("durationTextBudgetWarning"),
-);
-check(
-  "budget warning propagated to riskNotes (under and over)",
-  builderSrc.includes("durationTextBudgetWarning") && builderSrc.includes("riskNotes.push"),
-);
-
-// ── Voice candidate contract ────────────────────────────────────────────────────
-console.log("\n[ build-elevenlabs-scene-paced-tts-from-script.mjs — voice candidate contract ]");
-
-check(
-  "--voice-candidate CLI option supported",
-  builderSrc.includes('"--voice-candidate"') || builderSrc.includes("voiceCandidateArg"),
-);
-check(
-  "VOICE_CANDIDATES registry object present",
-  builderSrc.includes("VOICE_CANDIDATES"),
-);
-// hojin_lim
-check(
-  "hojin_lim candidate id defined",
-  builderSrc.includes("hojin_lim"),
-);
-check(
-  "Hojin Lim candidate label defined",
-  builderSrc.includes('"Hojin Lim"'),
-);
-check(
-  "ELEVENLABS_HOJIN_LIM_VOICE_ID env key present",
-  builderSrc.includes("ELEVENLABS_HOJIN_LIM_VOICE_ID"),
-);
-check(
-  "ELEVENLABS_VOICE_ID_HOJIN_LIM env key present",
-  builderSrc.includes("ELEVENLABS_VOICE_ID_HOJIN_LIM"),
-);
-check(
-  "HOJIN_LIM_ELEVENLABS_VOICE_ID env key present",
-  builderSrc.includes("HOJIN_LIM_ELEVENLABS_VOICE_ID"),
-);
-// yohan_koo
-check(
-  "yohan_koo candidate id defined",
-  builderSrc.includes("yohan_koo"),
-);
-check(
-  "Yohan Koo candidate label defined",
-  builderSrc.includes('"Yohan Koo"'),
-);
-check(
-  "ELEVENLABS_YOHAN_KOO_VOICE_ID env key present",
-  builderSrc.includes("ELEVENLABS_YOHAN_KOO_VOICE_ID"),
-);
-check(
-  "ELEVENLABS_VOICE_ID_YOHAN_KOO env key present",
-  builderSrc.includes("ELEVENLABS_VOICE_ID_YOHAN_KOO"),
-);
-check(
-  "YOHAN_KOO_ELEVENLABS_VOICE_ID env key present",
-  builderSrc.includes("YOHAN_KOO_ELEVENLABS_VOICE_ID"),
-);
-// gihong
-check(
-  "gihong candidate id defined",
-  builderSrc.includes('"gihong"') || builderSrc.includes("gihong:"),
-);
-check(
-  "Gihong candidate label defined",
-  builderSrc.includes('"Gihong"'),
-);
-check(
-  "ELEVENLABS_GIHONG_VOICE_ID env key present",
-  builderSrc.includes("ELEVENLABS_GIHONG_VOICE_ID"),
-);
-check(
-  "ELEVENLABS_VOICE_ID_GIHONG env key present",
-  builderSrc.includes("ELEVENLABS_VOICE_ID_GIHONG"),
-);
-check(
-  "GIHONG_ELEVENLABS_VOICE_ID env key present",
-  builderSrc.includes("GIHONG_ELEVENLABS_VOICE_ID"),
-);
-// resolution logic
-check(
-  "VOICE_LABEL fallback uses candidate.label (not hardcoded Hojin Lim only)",
-  builderSrc.includes("candidate.label") && builderSrc.includes("ELEVENLABS_VOICE_LABEL"),
-);
-check(
-  "unknown candidate → unknown_candidate source (not crash)",
-  builderSrc.includes("unknown_candidate"),
-);
-check(
-  "default VOICE_ID fallback allowed only when VOICE_LABEL === Hojin Lim",
-  builderSrc.includes("ELEVENLABS_VOICE_LABEL") && builderSrc.includes("Hojin Lim"),
-);
-check(
-  "candidate missing: readiness failure before API call",
-  builderSrc.includes("voiceCandidateResult") && builderSrc.includes("readinessFailure: true"),
-);
-check(
-  "voiceCandidateResolved field in summary",
-  builderSrc.includes("voiceCandidateResolved"),
-);
-check(
-  "voiceCandidateSource field in summary",
-  builderSrc.includes("voiceCandidateSource"),
-);
-check(
-  "voiceCandidateId field in summary",
-  builderSrc.includes("voiceCandidateId"),
-);
-check(
-  "voiceCandidateLabel field in summary",
-  builderSrc.includes("voiceCandidateLabel"),
-);
-check(
-  "raw voice ID not logged in candidate resolution (masked only)",
-  !codeLines(builderSrc).match(/console\.(log|error)\s*\(\s*[^)]*voiceId[^M]/) ||
-    builderSrc.includes("voiceIdMasked"),
-);
-
-// ── Fixture ttsText quality checks ─────────────────────────────────────────────
-const FIXTURE_PATH = resolve(__dirname, "fixtures/provider-candidate-tts-script.local-mock.json");
-if (!existsSync(FIXTURE_PATH)) {
-  console.error("\nFATAL: Fixture file not found. Skipping fixture checks.\n");
-} else {
-  const fixture = JSON.parse(readFileSync(FIXTURE_PATH, "utf-8"));
-  const scenes = fixture.scenes ?? [];
-
-  console.log("\n[ provider-candidate-tts-script.local-mock.json — ttsText quality ]");
-
-  check(
-    "fixture has 6 scenes with ttsText",
-    scenes.length === 6 && scenes.every((s) => typeof s.ttsText === "string" && s.ttsText.trim().length > 0),
-  );
-
-  // Calibrated from live ElevenLabs run: observed ~7–8 chars/sec for Korean eleven_multilingual_v2
-  const MIN_RATE = 5;
-  const MAX_RATE = 7;
-  check(
-    "all ttsText within_budget (5–7 chars/sec, calibrated from live run)",
-    scenes.every((s) => {
-      const len = s.ttsText.trim().length;
-      return len >= Math.floor(s.durationSec * MIN_RATE) && len <= Math.floor(s.durationSec * MAX_RATE);
-    }),
-  );
-
-  const scene05 = scenes.find((s) => s.sceneNumber === 5);
-  check(
-    "scene 05 ttsText <= 28 chars (4s scene trim-risk guard)",
-    scene05 ? scene05.ttsText.trim().length <= 28 : false,
-  );
-
-  const scene06 = scenes.find((s) => s.sceneNumber === 6);
-  check(
-    "scene 06 ttsText <= 35 chars (5s scene trim-risk guard)",
-    scene06 ? scene06.ttsText.trim().length <= 35 : false,
-  );
-
-  check(
-    "at least one ttsText differs from its captionText (not caption-only regression)",
-    scenes.some((s) => s.ttsText && s.captionText && s.ttsText.trim() !== s.captionText.trim()),
-  );
-}
-
-// ── Mux scene-paced support ─────────────────────────────────────────────────────
-if (!existsSync(MUX_PATH)) {
-  console.error("\nFATAL: Mux file not found. Skipping mux checks.\n");
-} else {
-  const muxSrc = readFileSync(MUX_PATH, "utf-8");
-
-  console.log("\n[ mux-local-tts-audio-into-visual-mp4.mjs — scene-paced schema support ]");
-
-  check(
-    "money_shorts_elevenlabs_scene_paced_tts_summary_v1 in ALLOWED_SCHEMAS",
-    muxSrc.includes("money_shorts_elevenlabs_scene_paced_tts_summary_v1"),
-  );
-  check(
-    "timelineAudioPath used for scene-paced audio path",
-    muxSrc.includes("timelineAudioPath"),
-  );
-  check(
-    "timelineDurationSec used for scene-paced raw duration",
-    muxSrc.includes("timelineDurationSec"),
-  );
-  check(
-    "scene-paced liveApiCallPerformed validated",
-    muxSrc.includes("liveApiCallPerformed") && muxSrc.includes("!== true"),
-  );
-  check(
-    "scene-paced qualityAccepted validated",
-    muxSrc.includes("qualityAccepted") && muxSrc.includes("!== false"),
-  );
-  check(
-    "scene-paced ownerListeningRequired validated",
-    muxSrc.includes("ownerListeningRequired") && muxSrc.includes("!== true"),
-  );
-  check(
-    "scene-paced risk notes added (ElevenLabs + Owner)",
-    muxSrc.includes("ElevenLabs live smoke audio is not quality accepted yet.") &&
-      muxSrc.includes("Owner listening review required."),
-  );
-  check(
-    "muxMode elevenlabs_scene_paced present",
-    muxSrc.includes('"elevenlabs_scene_paced"'),
-  );
-}
 
 console.log(`\n${passed + failed} checks — ${passed} PASS, ${failed} FAIL\n`);
-
-if (failed > 0) {
-  process.exit(1);
-}
+if (failed > 0) process.exit(1);

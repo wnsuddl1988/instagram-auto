@@ -27,7 +27,13 @@ const PAGE_PATH = path.join(ROOT, "app", "money-shorts", "page.tsx");
 const WIZARD_PATH = path.join(ROOT, "components", "VideoCreationWizard.tsx");
 const PANEL_PATH = path.join(ROOT, "components", "OperatorPanel.tsx");
 const HELPER_PATH = path.join(ROOT, "lib", "owner-web-operator.ts");
+const FINANCE_EDITORIAL_BANK_PATH = path.join(ROOT, "lib", "finance-editorial-topic-bank.ts");
+const FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH = path.join(ROOT, "lib", "finance-editorial-script-engine.ts");
 const ROUTE_PATH = path.join(ROOT, "app", "api", "money-shorts", "operator", "route.ts");
+const ELEVENLABS_TTS_SCRIPT_PATH = path.join(ROOT, "scripts", "build-elevenlabs-korean-director-tts-from-script.mjs");
+const DYNAMIC_CAPTION_PATH = path.join(ROOT, "scripts", "_money-shorts-dynamic-captions.mjs");
+const CHATGPT_IMAGE_CORE_PATH = path.join(ROOT, "scripts", "_chatgpt-image-core.mjs");
+const CHATGPT_IMAGE_LIVE_PREFLIGHT_PATH = path.join(ROOT, "scripts", "check-chatgpt-image-live-preflight-once.mjs");
 
 let passes = 0;
 let failures = 0;
@@ -54,13 +60,23 @@ function stripComments(src) {
 check("page file exists", existsSync(PAGE_PATH));
 check("wizard file exists (components/VideoCreationWizard.tsx)", existsSync(WIZARD_PATH));
 check("helper file exists", existsSync(HELPER_PATH));
+check("finance 500-title editorial bank exists", existsSync(FINANCE_EDITORIAL_BANK_PATH));
+check("finance 500-title editorial script engine exists", existsSync(FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH));
 check("route file exists", existsSync(ROUTE_PATH));
 
 const pageSrc = read(PAGE_PATH);
 const wizardSrc = read(WIZARD_PATH);
 const panelSrc = read(PANEL_PATH);
 const helperSrc = read(HELPER_PATH);
+const financeEditorialBankSrc = read(FINANCE_EDITORIAL_BANK_PATH);
+const financeEditorialScriptEngineSrc = read(FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH);
 const routeSrc = read(ROUTE_PATH);
+const ttsScriptSrc = read(ELEVENLABS_TTS_SCRIPT_PATH);
+const dynamicCaptionSrc = read(DYNAMIC_CAPTION_PATH);
+const chatgptImageCoreSrc = read(CHATGPT_IMAGE_CORE_PATH);
+const chatgptImageCoreCode = stripComments(chatgptImageCoreSrc);
+const chatgptImageLivePreflightSrc = read(CHATGPT_IMAGE_LIVE_PREFLIGHT_PATH);
+const chatgptImageLivePreflightCode = stripComments(chatgptImageLivePreflightSrc);
 
 const helperCode = stripComments(helperSrc);
 const routeCode = stripComments(routeSrc);
@@ -111,12 +127,12 @@ check("wizard upload warning present (누르면 실제 계정에 게시됩니다
 check("wizard upload button label is 인스타그램·유튜브에 업로드", wizardSrc.includes("인스타그램·유튜브에 업로드"));
 check("wizard requires typed confirm text 업로드", /confirmText\.trim\(\)\s*===\s*"업로드"/.test(wizardCode));
 check(
-  "wizard upload gate requires media gate + preflight + two checkboxes",
-  /mediaGateOk\s*&&[\s\S]{0,40}preflightDone[\s\S]{0,200}confirmReviewed[\s\S]{0,80}confirmPublish/.test(wizardCode) &&
+  "wizard upload gate requires media gate + preflight + three checkboxes",
+  /mediaGateOk\s*&&[\s\S]{0,40}preflightDone[\s\S]{0,200}confirmReviewed[\s\S]{0,80}confirmDiscoveryReady[\s\S]{0,80}confirmPublish/.test(wizardCode) &&
     /mediaGateOk\s*&&\s*preflightState\s*===\s*"success"/.test(wizardCode),
 );
 check("wizard upload button disabled unless uploadEnabled", /disabled=\{!uploadEnabled\}/.test(wizardSrc));
-check("wizard sends confirm fields to actualUpload", /postAction\(\s*["']actualUpload["'][\s\S]{0,240}confirmReviewed[\s\S]{0,120}confirmPublish[\s\S]{0,120}confirmText/.test(wizardCode));
+check("wizard sends confirm fields to actualUpload", /postAction\(\s*["']actualUpload["'][\s\S]{0,280}confirmReviewed[\s\S]{0,120}confirmDiscoveryReady[\s\S]{0,120}confirmPublish[\s\S]{0,120}confirmText/.test(wizardCode));
 check("panel upload section defers to wizard confirm gate", panelSrc.includes("이 점검 화면에서는 업로드가 실행되지 않습니다"));
 
 // ── 배포/로컬 안내 ───────────────────────────────────────────────────────────
@@ -135,6 +151,7 @@ check("helper wizard scripts are the known no-live local scripts", helperSrc.inc
 check("helper wizard out dirs are outside repo (C:\\tmp)", /WIZARD_VIDEO_OUT_ROOT\s*=\s*"C:\\\\tmp\\\\/.test(helperSrc) && /WIZARD_VOICE_OUT_DIR\s*=\s*"C:\\\\tmp\\\\/.test(helperSrc));
 check("helper video streaming restricted to C:\\tmp\\money-shorts-os prefix", /WIZARD_VIDEO_ALLOWED_PREFIX\s*=\s*"C:\\\\tmp\\\\money-shorts-os\\\\"/.test(helperSrc));
 check("helper video streaming restricted to .mp4", /endsWith\(["']\.mp4["']\)/.test(helperCode));
+check("final preview recovers only a verified topic-local final MP4 after server restart", /readWizardFinalPreviewMp4Path/.test(helperCode) && /summary\.topicId\s*===\s*topicId/.test(helperCode) && /videoDir/.test(helperCode) && /entry\.name\.startsWith\("final-"\)/.test(helperCode));
 check("helper has no .env.local direct read", !/\.env\.local/.test(helperCode) && !/readFileSync\s*\([^)]*\.env/.test(helperCode));
 
 // ── 회귀 방지: 선택 주제 → 영상 연결 (topic-linked render) ───────────────────
@@ -153,7 +170,10 @@ check("wizard preview video src carries topicId", /video=muxed&topicId=/.test(wi
 check("route reads topicId for videoCreate/previewStatus", /\.topicId/.test(routeCode));
 check("route fail-closes videoCreate without compiled script", /script_not_compiled_for_topic/.test(routeSrc) && /topic_id_invalid_or_empty/.test(routeSrc));
 check("route passes topicId into interpret/status", /readWizardVideoStatus\(\s*topicId\s*\)/.test(routeCode));
-check("route stream sanitizes topicId via helper (no raw client path)", /readWizardVideoBytes\(\s*videoParam\s*,\s*streamTopicId\s*\)/.test(routeCode));
+check(
+  "route stream sanitizes topicId and production part via helper (no raw client path)",
+  /readWizardVideoBytes\(\s*videoParam\s*,\s*streamTopicId\s*,\s*url\.searchParams\.get\("part"\)\s*\)/.test(routeCode),
+);
 
 // helper가 videoCreate에서 고정 provider fixture만 단독으로 쓰지 않아야 한다(회귀 핵심).
 {
@@ -183,7 +203,7 @@ for (const f of [
   check(`wizard fixture exists: ${f}`, existsSync(path.join(ROOT, ...f.split("/"))));
 }
 
-// ── 새 주제 추천 계약: 로컬 topic bank + 클릭마다 새 묶음 ────────────────────
+// ── 새 주제 추천 계약: Claude 신규 생성 우선 + 로컬 topic bank fallback ───────
 check("helper declares 8-category TOPIC_BANK", /const\s+TOPIC_BANK\s*:/.test(helperSrc) && ["finance:", "ai:", "meme:", "news:", "tmi:", "game:", "animal:", "celeb:"].every((k) => helperSrc.includes(k)));
 {
   // bank 씨앗 수가 배치 크기보다 충분히 커야 반복 클릭에서 다른 묶음이 나온다.
@@ -192,8 +212,74 @@ check("helper declares 8-category TOPIC_BANK", /const\s+TOPIC_BANK\s*:/.test(hel
   check("topic batch size is between 8 and 12", /WIZARD_TOPIC_BATCH_SIZE\s*=\s*(8|9|1[0-2])\b/.test(helperSrc));
 }
 check("helper shuffles bank per click (Fisher–Yates)", /Math\.random\(\)/.test(helperCode) && /generateWizardTopicBatch/.test(helperSrc));
-check("generated topics are all scriptReady", /scriptReady:\s*true/.test(helperCode));
+check("helper defines Claude topic generation path", /generateClaudeTopicSeeds/.test(helperSrc) && /CLAUDE_TOPIC_SYSTEM_PROMPT/.test(helperSrc));
+check("helper imports the new 500-title editorial bank", /finance-editorial-topic-bank/.test(helperCode) && /FINANCE_EDITORIAL_TOPIC_BANK/.test(helperCode));
+check("old 324 and temporary 60 engines are absent", !/finance-curiosity-topic-engine|finance-editorial-calibration-bank/.test(helperCode));
+check("smart topic batch uses the 500-title bank before Claude expansion", /generateFinanceEditorialBankBatch/.test(helperCode) && /if \(editorialBatch && editorialBatch\.topics\.length > 0\) return editorialBatch/.test(helperCode));
+check("one recommendation batch draws from all nine editorial lanes", /for \(const lane of shuffleWizardItems\(FINANCE_EDITORIAL_LANES\)\)/.test(helperCode) && /editorialLane === lane/.test(helperCode));
+check("500-bank recent history is versioned", /finance:editorial_bank_v2/.test(helperCode));
+check("used and rated finance titles are excluded", /usedOnly:\s*true/.test(helperCode) && /usedTitles\.has/.test(helperCode) && /ratedIds\.has/.test(helperCode));
+check("editorial decisions persist outside repo", /wizard-topic-editorial-preferences\.json/.test(helperSrc) && /saveWizardTopicEditorialDecision/.test(helperCode));
+check("Claude expansion receives Owner approved and rejected examples", /ownerApprovedPackages:\s*preferredEditorialPackages/.test(helperCode) && /ownerRejectedTitles:\s*rejectedEditorialTitles/.test(helperCode));
+check("script creation requires Owner make decision", /canWizardTopicEnterScript/.test(helperCode) && /TOPIC_EDITORIAL_APPROVAL_REQUIRED/.test(routeCode));check("AI-tone filter does not mistake 아니다 for a polite 니다 ending", /\(\?<!아\)니다/.test(helperCode));
+check("editorial bank prioritizes one fresh title per lane", /const lanePool/.test(helperCode) && /shuffleWizardItems\(lanePool\)/.test(helperCode) && /editorialLane === lane/.test(helperCode));
+check("finance exhaustion never recycles the local bank after Claude failure", /if \(category === "finance"\) return null/.test(helperCode) && /const localBatch = generateWizardTopicBatch/.test(helperCode));
+check("local topic judge recognizes all money-economy domains", ["경제", "뉴스", "금리", "물가", "환율", "집값", "주거비", "불황", "생존비", "노후", "복리"].every((word) => helperSrc.includes(`"${word}"`)));
+check("Claude expansion requests 24 candidates before strict local filtering", /CLAUDE_TOPIC_CANDIDATE_COUNT\s*=\s*24/.test(helperCode) && /makeCount:\s*CLAUDE_TOPIC_CANDIDATE_COUNT/.test(helperCode));
+check("Claude expansion has a bounded 18-second request", /CLAUDE_TOPIC_TIMEOUT_MS\s*=\s*18_000/.test(helperCode) && /CLAUDE_TOPIC_MAX_TOKENS\s*=\s*5000/.test(helperCode));
+check("Claude topic generation sends a bounded known-title list", /CLAUDE_TOPIC_KNOWN_TITLE_LIMIT\s*=\s*90/.test(helperCode) && /slice\(-CLAUDE_TOPIC_KNOWN_TITLE_LIMIT\)/.test(helperCode));
+check("Claude expansion avoids previously shown and generated titles", /allKnownTopicTitlesForCategory\(category,\s*\{[\s\S]{0,180}usedOnly:\s*false[\s\S]{0,180}includeCatalog:\s*true[\s\S]{0,180}includeBank:\s*false[\s\S]{0,180}includeShownHistory:\s*true/.test(helperCode));
+check("Claude expansion requires nine 90-point topics", /CLAUDE_TOPIC_MIN_DISPLAY_COUNT\s*=\s*9/.test(helperCode) && /CLAUDE_TOPIC_MIN_RECOMMEND_COUNT\s*=\s*9/.test(helperCode) && /picked\.length < CLAUDE_TOPIC_MIN_DISPLAY_COUNT/.test(helperCode) && /recommendedCount < CLAUDE_TOPIC_MIN_RECOMMEND_COUNT/.test(helperCode));
+check("Claude expansion uses one bounded attempt", /CLAUDE_TOPIC_MAX_ATTEMPTS\s*=\s*1/.test(helperCode) && /for \(let attempt = 1; attempt <= CLAUDE_TOPIC_MAX_ATTEMPTS/.test(helperCode));
+check("Claude topic generation uses same fixed Anthropic URL", /fetchImpl\s*\(\s*ANTHROPIC_API_URL\s*,/.test(helperCode));
+check("topic generation has local fallback with reason", /generateWizardTopicBatchSmart/.test(helperSrc) && /const localBatch = generateWizardTopicBatch\(category,\s*fallbackReason,\s*financeSubtopic\)/.test(helperCode));
+check("topic history persists seen/selected/video-created titles outside repo", /wizard-topic-history\.json/.test(helperSrc) && /markWizardTopicHistory/.test(helperCode));
+check("topic novelty filter checks exact and similar titles", /findDuplicateTopicReason/.test(helperCode) && /titleSimilarity/.test(helperCode) && /similar_title/.test(helperSrc));
+check("format topics block used exact titles and Claude expansion blocks similar shown titles", /source === "claude_generated"[\s\S]{0,220}allowSimilar:\s*true[\s\S]{0,220}includeShownHistory:\s*true/.test(helperCode) && /allowSimilar:\s*false,\s*usedOnly:\s*true/.test(helperCode));
+check("finance Claude expansion cannot use the weak soft-rescue path", /source === "claude_generated" && !strict && judgment\.overallScore >= 58/.test(helperCode) && /const displayFloor = strict \? CLAUDE_TOPIC_RECOMMEND_SCORE : 70/.test(helperCode));
+check("route awaits smart topic batch", /await\s+generateWizardTopicBatchSmart\(category/.test(routeCode));
+check(
+  "route enables bounded Claude expansion after the 500-title bank",
+  /generateWizardTopicBatchSmart\(category,\s*\{\s*allowClaude:\s*true,\s*financeSubtopic\s*\}\)/.test(routeCode),
+);
+check("route exposes topic batch source/generation note", /source:\s*batch\.source/.test(routeCode) && /generationNote:\s*batch\.generationNote/.test(routeCode));
+check("route exposes rejected topic reasons only inside raw diagnostics", /rejectedTopics:\s*batch\.rejected/.test(routeCode));
+check("route validates and passes financeSubtopic into topic recommendation", /WIZARD_FINANCE_SUBTOPIC_IDS/.test(routeSrc) && /financeSubtopicRaw/.test(routeCode) && /generateWizardTopicBatchSmart\(category,\s*\{[\s\S]{0,120}financeSubtopic/.test(routeCode));
+check("route explains 500-bank topic batches in plain Korean", routeSrc.includes("새 500개 주제은행"));
+check("route exposes Claude topic fallback reason", /fallbackReason:\s*batch\.fallbackReason/.test(routeCode) && /fallbackReasonText:\s*batch\.fallbackReason\s*\?\s*describeTopicFallbackReason/.test(routeCode));
+check("route explains missing Anthropic key restart path", routeSrc.includes("ANTHROPIC_API_KEY") && routeSrc.includes("pnpm dev를 다시 시작"));
+check("helper preserves Claude topic fallback reason", /let fallbackReason/.test(helperCode) && /fallbackReason\s*=\s*generated\.reason/.test(helperCode) && /claude_topics_below_recommendation_floor/.test(helperSrc));
+check("route explains too-weak Claude topic batches instead of showing one weak paid topic", /claude_topics_below_recommendation_floor/.test(helperCode) && routeSrc.includes("추천급 주제가 충분하지 않아"));
+check("helper distinguishes Claude topic JSON parse failure from network failure", /anthropic_topic_json_parse_failed/.test(helperSrc) && /anthropic_api_json_parse_failed/.test(helperSrc));
+check("helper accepts array-only Claude topic JSON by wrapping as topics", /Array\.isArray\(parsed\)\s*\?\s*\{\s*topics:\s*parsed\s*\}/.test(helperCode));
+check(
+  "helper extracts balanced JSON object or array from fenced/prose Claude responses",
+  /function extractBalancedJsonCandidate\(body:\s*string\)/.test(helperCode)
+    && /const stack:\s*string\[\]\s*=\s*\[first === "\{" \? "\}" : "\]"\]/.test(helperCode)
+    && /let inString = false/.test(helperCode)
+    && /let escaped = false/.test(helperCode)
+    && /t\.matchAll\(/.test(helperCode)
+    && /extractBalancedJsonCandidate\(body\)/.test(helperCode)
+);
+check(
+  "helper accepts alternate/nested Claude topic arrays and single topic objects",
+  /function coerceClaudeTopicArray\(parsed:\s*unknown,\s*depth = 0\)/.test(helperCode)
+    && /CLAUDE_TOPIC_ARRAY_KEYS/.test(helperCode)
+    && /"recommendations"/.test(helperCode)
+    && /"topicCandidates"/.test(helperCode)
+    && /"주제목록"/.test(helperCode)
+    && /hasClaudeTopicTitle\(o\)\)\s*return \[o\]/.test(helperCode)
+    && /coerceClaudeTopicArray\(value,\s*depth \+ 1\)/.test(helperCode)
+);
+check("helper normalizes alternate Claude topic title/hook field names", /pickStringField\(o,\s*\["title", "topic", "headline", "subject", "name", "idea", "제목", "주제"\]\)/.test(helperCode) && /"core_hook", "hookLine", "opening", "firstLine"/.test(helperCode));
+check("helper derives missing Claude topic internals instead of dropping usable titles", /function buildFallbackTopicParts/.test(helperCode) && /fallback\.points\[i\]/.test(helperCode) && /fallback\.empathy/.test(helperCode));
+check("route distinguishes invalid Claude topic shape reasons", routeSrc.includes("주제 목록 배열을 찾지 못해") && routeSrc.includes("제목으로 쓸 수 있는 주제가 없어"));
+check("route explains Claude topic parse failure separately", routeSrc.includes("객체/배열 JSON 본문을 더 유연하게") && /anthropic_topic_json_parse_failed/.test(routeCode));
+check("route includes safe external error code for call failures", /anthropic_call_failed_/.test(helperCode) && /Claude 연결이 실패했습니다/.test(routeSrc));
+check("wizard displays editorial decisions and AI/backup source badges", ["만든다", "애매", "버린다", "AI 신규", "백업"].every((label) => wizardSrc.includes(label)));
+check("editorial candidates are not scriptReady before approval", /scriptReady:\s*false[\s\S]{0,500}requiresEditorialDecision:\s*true/.test(helperCode));
 check("generated topic catalog persists outside repo (C:\\tmp)", /WIZARD_TOPIC_CATALOG_PATH\s*=\s*"C:\\\\tmp\\\\money-shorts-os\\\\/.test(helperSrc));
+check("topic catalog has in-memory fallback when C:\\tmp json is temporarily locked", /WIZARD_TOPIC_MEMORY_CATALOG/.test(helperCode) && /Object\.assign\(WIZARD_TOPIC_MEMORY_CATALOG,\s*topics\)/.test(helperCode) && /return\s+true;\s*\}\s*\}\s*\}/.test(helperCode));
 check("script builder exists for generated topics", /buildScriptFromGeneratedTopic/.test(helperSrc) && /readWizardGeneratedTopic/.test(helperSrc));
 check(
   "topic bank avoids published/demo ids (t1/t2/base-rate)",
@@ -202,153 +288,74 @@ check(
     !/slug:\s*"base-rate/.test(helperSrc),
 );
 check("wizard sends category on topicRecommend", /postAction\(\s*["']topicRecommend["']\s*,\s*\{\s*category/.test(wizardCode));
+check(
+  "wizard aborts a stuck topic recommendation and releases running state",
+  /action\s*===\s*["']topicRecommend["']\s*\?\s*new AbortController\(\)/.test(wizardCode) &&
+    /controller\.abort\(\),\s*25_000/.test(wizardCode) &&
+    /error\.name\s*===\s*["']AbortError["']/.test(wizardCode),
+);
+check("wizard renders finance subtopic toggles", /FINANCE_SUBTOPICS/.test(wizardSrc) && wizardSrc.includes("경제뉴스·돈공부") && wizardSrc.includes("물가·생활비") && wizardSrc.includes("금리·빚") && wizardSrc.includes("시간·노후"));
+check("wizard explains editorial package approval flow", wizardSrc.includes("제목·문제·반전·행동") && wizardSrc.includes("'만든다'로 고른 후보만 대본으로 넘어갑니다"));
+check("wizard renders make maybe reject controls", ["만든다", "애매", "버린다"].every((label) => wizardSrc.includes(label)) && /runTopicPreference/.test(wizardCode));
+check("wizard sends financeSubtopic on topicRecommend", /financeSubtopic:\s*category\s*===\s*"finance"\s*&&\s*financeSubtopic\s*!==\s*"all"\s*\?\s*financeSubtopic/.test(wizardCode));
 check("route validates category against WIZARD_CATEGORY_IDS enum", /WIZARD_CATEGORY_IDS[\s\S]{0,120}\.includes\(categoryRaw\)/.test(routeCode));
 check("wizard resets downstream steps when topic changes", /resetDownstream/.test(wizardCode));
 check("wizard offers refresh (다른 주제 보기)", wizardSrc.includes("다른 주제 보기"));
 
-// ── 프리미엄 재테크(돈·심리) 주제 엔진 — 품질/차단/anti-repeat 계약 ──────────
-// task: owner-web-premium-money-psychology-topic-engine-fix-v2
-const finStart = helperSrc.indexOf("finance: [");
-const finEnd = helperSrc.indexOf("ai: [", finStart);
-const financeSrc = finStart !== -1 && finEnd > finStart ? helperSrc.slice(finStart, finEnd) : "";
-check("finance bank section found in helper", financeSrc.length > 0);
-
-const finSeedCount = (financeSrc.match(/slug:\s*"/g) ?? []).length;
-check("finance premium bank has at least 45 seeds", finSeedCount >= 45, `found ${finSeedCount}`);
-
-// 약한 기준선 5개 title — active 추천으로 등장 금지(helper 전체에서 금지)
-for (const weak of [
-  "월급이 사라지는 진짜 이유",
-  "돈이 모이지 않는 사람의 공통 습관",
-  "성공하는 사람은 지출을 이렇게 본다",
-  "가난해지는 소비 패턴",
-  "돈 불안이 사람을 망치는 방식",
-]) {
-  check(`weak-baseline title banned: ${weak}`, !helperSrc.includes(weak));
-}
-// 저품질 절약팁 키워드 — finance 시드 구간에서 금지
-for (const cheap of ["커피값", "티끌", "무지출", "통장 쪼개기", "카드 명세서", "고정비 다이어트", "짠테크", "지름신"]) {
-  check(`cheap saving-tip keyword banned in finance seeds: ${cheap}`, !financeSrc.includes(cheap));
-}
-
-// 4축 anchor(돈/심리/성공·습관/시각 메타포) + 공감/구조 설명 — 전 시드 보유
-for (const field of ["moneyAnchor:", "psychologyAnchor:", "successAnchor:", "visualMetaphor:", "empathy:", "angleNote:"]) {
-  const n = (financeSrc.match(new RegExp(field, "g")) ?? []).length;
-  check(`every finance seed carries ${field.replace(":", "")}`, n === finSeedCount, `${n}/${finSeedCount}`);
-}
-
-// finance 시드 라인 파싱(시드 1개 = 1줄 규약)
-const finSeedLines = financeSrc.split("\n").filter((l) => /slug:\s*"/.test(l));
+// ── 재테크 500개 편집 은행은 전용 정적 가드에서 수량·중복·분포·유사도를 검증한다. ──
+check("finance bank exposes 12 subtopics", /FINANCE_EDITORIAL_SUBTOPIC_IDS/.test(financeEditorialBankSrc));
+check("finance bank exposes nine editorial lanes", /FINANCE_EDITORIAL_LANES/.test(financeEditorialBankSrc));
+check("finance bank carries title problem twist and action", ["title", "problemStatement", "twist", "takeawayAction"].every((field) => financeEditorialBankSrc.includes(field)));
+check("finance legacy TOPIC_BANK is empty", /finance:\s*\[\],/.test(helperCode));
+check("premium script builds plain 7-step parts", /function buildPlainScriptParts/.test(helperCode) && /situation/.test(helperCode) && /consequence/.test(helperCode) && /recommendation/.test(helperCode));
+check("premium mindset line maps anchors to concrete actions (no raw successAnchor sentence)", /밤에는 결제하지 마/.test(helperCode) && /친구를 맞추기 전에/.test(helperCode) && /내 한도부터 정해/.test(helperCode) && !/먼저 \$\{rec\.successAnchor/.test(helperCode));
 {
-  const titles = finSeedLines.map((l) => /title:\s*"([^"]+)"/.exec(l)?.[1] ?? "");
-  check("finance titles all unique", new Set(titles).size === titles.length && titles.every(Boolean));
-  const badLen = titles.filter((t) => t.length < 12 || t.length > 36);
-  check("finance titles are 12~36 chars (권장 18~34)", badLen.length === 0, badLen.join(" | "));
-
-  // ── 자기인식 후킹 계약: 존댓말/설명체 종결 금지 (task: concrete-self-recognition-hook) ──
-  // 제목은 마침표 없이 구체 행동으로 끝나야 한다. 존댓말 종결어미로 끝나면 설명문처럼 읽힌다.
-  const politeEnd = titles.filter((t) => /(합니다|됩니다|습니다|입니다)$/.test(t));
-  check("finance titles do not end with 존댓말 종결(합니다/됩니다/습니다/입니다)", politeEnd.length === 0, politeEnd.join(" | "));
-  const hasPeriod = titles.filter((t) => /[.。]$/.test(t));
-  check("finance titles have no trailing 마침표", hasPeriod.length === 0, hasPeriod.join(" | "));
-
-  // 제목 안에 실제 생활 장면/행동 키워드가 있어야 "내 얘기" 느낌이 산다.
-  const SCENE_KW = [
-    "월급", "배달", "구독", "카드값", "장바구니", "세일", "퇴근길", "결제", "친구", "이번 달만", "이번 한 번만",
-    "할부", "택배", "잔고", "통장", "고지서", "가계부", "알림", "모임", "선물", "피드", "폰", "저축", "이체",
-    "소비", "지출", "돈", "빚", "살림", "연봉", "수입", "고정비", "비상금", "씀씀이", "지른", "산 걸", "사니까",
-    "벌어도", "구입", "사고", "쓴",
-  ];
-  const noScene = titles.filter((t) => !SCENE_KW.some((k) => t.includes(k)));
-  check("every finance title has a 생활 장면/행동 키워드", noScene.length === 0, noScene.join(" | "));
-
-  // 추상어 단독 사용 금지 — 반드시 구체 행동/상황 키워드와 함께 써야 한다.
-  const ABSTRACT_ONLY = ["선택권", "기준선", "불안", "체면", "비교", "보상심리", "자기합리화", "미래의 나"];
-  const CONCRETE_KW = [
-    "월급", "배달", "구독", "카드값", "장바구니", "세일", "퇴근길", "결제", "친구", "이번 달만", "이번 한 번만",
-    "할부", "택배", "잔고", "통장", "고지서", "가계부", "알림", "모임", "선물", "피드", "폰", "저축", "이체", "지출",
-  ];
-  const abstractOnly = titles.filter(
-    (t) => ABSTRACT_ONLY.some((a) => t.includes(a)) && !CONCRETE_KW.some((c) => t.includes(c)),
+  const plainStart = helperCode.indexOf("function buildPlainScriptParts");
+  const plainEnd = helperCode.indexOf("function assemblePremiumVoiceover", plainStart);
+  const plainScriptSrc = plainStart !== -1 && plainEnd > plainStart ? helperCode.slice(plainStart, plainEnd) : "";
+  const subscriptionTemplateIndex = plainScriptSrc.indexOf("/구독|정기 결제|자동결제/");
+  const salaryTemplateIndex = plainScriptSrc.indexOf("/월급|자동이체|이체|입금|저축/");
+  const rewardTemplateIndex = plainScriptSrc.indexOf("/보상소비|퇴근|힘든|위로|고생/");
+  const nightTemplateIndex = plainScriptSrc.indexOf("/새벽|밤|폰|택배|장바구니/");
+  check(
+    "reward-spending template is evaluated before night-shopping template (보상소비 장바구니 오분류 방지)",
+    rewardTemplateIndex !== -1 && nightTemplateIndex !== -1 && rewardTemplateIndex < nightTemplateIndex,
+    `reward=${rewardTemplateIndex}, night=${nightTemplateIndex}`,
   );
-  check("finance titles never use 추상어 단독 (구체 행동 동반 필수)", abstractOnly.length === 0, abstractOnly.join(" | "));
-
-  // 약한 설명형 패턴 금지 — suffix뿐 아니라 제목 "어디에 있든" 차단 (Codex finding: "…이유가 있다" 놓침).
-  const WEAK_ANYWHERE = /(이유|방법|공통점|체크리스트|리뷰법|절약법|돈 모으는 법|부자 되는 법)/;
-  const weakAnywhere = titles.filter((t) => WEAK_ANYWHERE.test(t));
-  check("finance titles have no 약한 설명형 패턴 anywhere (이유/방법/공통점/체크리스트…)", weakAnywhere.length === 0, weakAnywhere.join(" | "));
+  check(
+    "small-payment template has concrete habit and consequence",
+    /작은 결제라 넘긴 적 많지/.test(plainScriptSrc) &&
+      /월말 잔고가 먼저 줄어/.test(plainScriptSrc) &&
+      /만 원 이하 결제만 따로 세어 봐/.test(plainScriptSrc),
+  );
+  check(
+    "subscription-specific template is evaluated before salary template (월급 먹는 구독 제목 방지)",
+    subscriptionTemplateIndex !== -1 && salaryTemplateIndex !== -1 && subscriptionTemplateIndex < salaryTemplateIndex,
+    `subscription=${subscriptionTemplateIndex}, salary=${salaryTemplateIndex}`,
+  );
+  const saleTemplateIndex = plainScriptSrc.indexOf("/세일|할인|쿠폰/");
+  const billTemplateIndex = plainScriptSrc.indexOf("/고지서|카드값|잔고|빚|알림|비상금/");
+  check(
+    "specific spending templates are evaluated before salary template (월급 먹는 할인/잔고 제목 방지)",
+    saleTemplateIndex !== -1 && billTemplateIndex !== -1 && salaryTemplateIndex !== -1 &&
+      saleTemplateIndex < salaryTemplateIndex && billTemplateIndex < salaryTemplateIndex,
+    `sale=${saleTemplateIndex}, bill=${billTemplateIndex}, salary=${salaryTemplateIndex}`,
+  );
+  const socialTemplateIndex = plainScriptSrc.indexOf("/친구|모임|선물|피드|하이라이트|체면|남 눈/");
+  check(
+    "specific templates are evaluated before broad night template (밤/폰/장바구니 오분류 방지)",
+    [subscriptionTemplateIndex, saleTemplateIndex, billTemplateIndex, socialTemplateIndex].every((i) => i !== -1 && i < nightTemplateIndex),
+    `subscription=${subscriptionTemplateIndex}, sale=${saleTemplateIndex}, bill=${billTemplateIndex}, social=${socialTemplateIndex}, night=${nightTemplateIndex}`,
+  );
 }
+check("premium consequence fallback avoids broken Korean particle from moneyAnchor", !/\$\{rec\.moneyAnchor[^}]*\}이 새는/.test(helperCode) && /월말 잔고가 줄어드는 건/.test(helperCode));
 {
-  // 자막 계약: hook/empathy/points/save는 trimCaption(22자) 안에 들어가야 잘리지 않는다.
-  const overs = [];
-  for (const line of finSeedLines) {
-    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
-    const fields = [
-      ["hook", /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
-      ["empathy", /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
-      ["save", /save:\s*"([^"]+)"/.exec(line)?.[1] ?? ""],
-    ];
-    const pointsRaw = /points:\s*\[([^\]]+)\]/.exec(line)?.[1] ?? "";
-    [...pointsRaw.matchAll(/"([^"]+)"/g)].forEach((m, i) => fields.push([`p${i + 1}`, m[1]]));
-    for (const [f, v] of fields) if (v.length > 22) overs.push(`${slug}.${f}(${v.length})`);
-  }
-  check("finance caption slots (hook/empathy/points/save) ≤22 chars", overs.length === 0, overs.slice(0, 10).join(", "));
-}
-{
-  // 저장 CTA에 행동 시점(다음 월급날/결제 전/오늘 밤 등) 포함
-  const noTiming = finSeedLines.filter((l) => {
-    const save = /save:\s*"([^"]+)"/.exec(l)?.[1] ?? "";
-    return !/(월급|결제|오늘|이번 주|주말|밤|아침|다음)/.test(save);
-  });
-  check("finance save CTA includes 행동 시점", noTiming.length === 0, `${noTiming.length} seeds`);
-}
-{
-  // ── 문체 계약 (task: hook-language-review-fix + judge-rewrite) ──
-  // hook/points는 자막·대본 핵심 문장이라 하십시오체 종결(…니다)이 0이어야 한다.
-  // "니다"는 하십시오체 공통 종결(합니다/습니다/입힙니다/빠릅니다/옵니다 등) → 문장 끝 "니다" 전반을 금지.
-  const POLITE = /니다[.!?]?$/;
-  const hookViol = [];
-  const pointViol = [];
-  const empViol = [];
-  const saveViol = [];
-  for (const line of finSeedLines) {
-    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
-    const hook = /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
-    const emp = /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
-    const save = /save:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
-    if (POLITE.test(hook)) hookViol.push(`${slug}: ${hook}`);
-    if (POLITE.test(emp)) empViol.push(`${slug}: ${emp}`);
-    // save는 CTA라 "~하세요/여세요/보세요"는 허용, 설명체 종결만 금지.
-    if (POLITE.test(save)) saveViol.push(`${slug}: ${save}`);
-    const pointsRaw = /points:\s*\[([^\]]+)\]/.exec(line)?.[1] ?? "";
-    [...pointsRaw.matchAll(/"([^"]+)"/g)].forEach((m, i) => {
-      if (POLITE.test(m[1])) pointViol.push(`${slug}.p${i + 1}: ${m[1]}`);
-    });
-  }
-  check("finance hook has no 설명체 종결(합니다/됩니다/습니다/입니다/셉니다)", hookViol.length === 0, hookViol.slice(0, 8).join(" | "));
-  check("finance points have no 설명체 종결 (자막·대본 직접 노출)", pointViol.length === 0, pointViol.slice(0, 8).join(" | "));
-  check("finance empathy has no 설명체 종결 (대본 2번째 문장)", empViol.length === 0, empViol.slice(0, 8).join(" | "));
-  check("finance save CTA has no 설명체 종결 (하세요류만 허용)", saveViol.length === 0, saveViol.slice(0, 8).join(" | "));
-}
-
-// anti-repeat: 최근 노출 제외 창 — 순서만 바뀌는 셔플 금지
-check("helper persists recent-shown seeds outside repo", /wizard-topic-recent-shown\.json/.test(helperSrc) && /readRecentShownSeedSlugs/.test(helperCode) && /writeRecentShownSeedSlugs/.test(helperCode));
-check("batch excludes recently shown seeds", /!recentSet\.has\(s\.slug\)/.test(helperCode));
-check("recent window = pool - batch (연속 배치 무겹침 보장)", /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
-// pool ≥45 + 창(pool-batch) ⇒ 5회×9개 = 45개 전부 서로 다른 title(≥30) + 연속 배치 겹침 0 — 정적으로 보장
-check("finance 5-batch ≥30 unique titles statically guaranteed", finSeedCount >= 45 && /pool\.length\s*-\s*WIZARD_TOPIC_BATCH_SIZE/.test(helperCode));
-
-// 프리미엄 대본 흐름: 1문장 구체 행동(hook) → 2문장 심리(empathy) → 3문장 돈 새는 지점(p1)
-//   → [반전 앞 다리 1개] → 반전(p2) → 행동(p3) → 저장(save). "왜 그럴까요?" 질문형 브리지 남발 금지.
-check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.empathy/.test(helperCode));
-{
-  // 첫 3문장 = hook, curiosity(empathy), p1 순서로 붙는지 정적 확인.
-  // 조립은 assemblePremiumVoiceover의 empathy(기본) 스타일: [e(hook), e(curiosity), e(p1), "진짜 문제는 따로 있다.", ...]
+  // 기본 조립은 hook→situation→consequence→psychology→mindset→habit→recommendation 순서다.
   const first3Ordered =
-    /e\(hook\),\s*e\(curiosity\),\s*e\(p1\)/.test(helperCode) &&
+    /e\(hook\),\s*e\(situation\),\s*e\(consequence\),\s*e\(psychology\),\s*e\(mindset\),\s*e\(habit\),\s*e\(recommendation\)/.test(helperCode) &&
     /assemblePremiumVoiceover/.test(helperCode);
-  check("premium first 3 sentences are hook→empathy→p1 (구체 행동→심리→돈 새는 지점)", first3Ordered);
-  // 질문형 브리지 "왜 그럴까요?"는 제거됐고, 반전 앞 다리 1개만 남는다.
+  check("premium script follows 7-step plain order", first3Ordered);
+  // 질문형 브리지 "왜 그럴까요?"는 제거됐고, 비유 브리지 반복도 금지한다.
   check("premium voiceover has no repeated 질문형 브리지 (왜 그럴까요? 제거)", !helperCode.includes("왜 그럴까요?"));
   // Codex finding: 설명체 고정 브리지 "…있습니다."는 금지, 단정형 "…있다."로 대체돼야 한다.
   check(
@@ -360,54 +367,164 @@ check("premium script uses empathy for scene-2 slot", /isPremium\s*\?\s*rec\.emp
     (helperCode.match(/그래서 오늘 할 일은 하나입니다\./g) ?? []).length;
   check("premium voiceover has zero 설명체 고정 브리지", politeBridge === 0, `found ${politeBridge}`);
   const declBridge = (helperCode.match(/진짜 문제는 따로 있다\./g) ?? []).length;
-  check("premium voiceover keeps exactly 1 단정형 반전 다리 (진짜 문제는 따로 있다.)", declBridge === 1, `found ${declBridge}`);
+  check("premium voiceover no longer depends on fixed metaphor bridge", declBridge === 0, `found ${declBridge}`);
 }
 {
-  // 정적 검증: 전 finance seed의 fullVoiceover 첫 3문장(hook·empathy·p1)에 하십시오체 종결이 없어야 한다.
-  const POLITE = /니다[.!?]?$/;
-  const first3Viol = [];
-  for (const line of finSeedLines) {
-    const slug = /slug:\s*"([^"]+)"/.exec(line)?.[1] ?? "?";
-    const hook = /hook:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
-    const emp = /empathy:\s*"([^"]+)"/.exec(line)?.[1] ?? "";
-    const p1 = [.../points:\s*\[([^\]]+)\]/.exec(line)?.[1].matchAll(/"([^"]+)"/g) ?? []][0]?.[1] ?? "";
-    if ([hook, emp, p1].some((s) => POLITE.test(s))) first3Viol.push(slug);
-  }
-  check("premium fullVoiceover 첫 3문장(hook/empathy/p1) 설명체 종결 0", first3Viol.length === 0, first3Viol.slice(0, 8).join(", "));
+  check(
+    "500-title bank avoids polite explanatory endings",
+    !/(합니다|됩니다|습니다|입니다)[.!?]?"/.test(financeEditorialBankSrc),
+  );
 }
 {
   // 나열형(첫째/둘째/셋째)은 비프리미엄 fallback 문자열 1곳에만 존재해야 한다.
   const listicleCount = (helperCode.match(/첫째, \$\{p1\}/g) ?? []).length;
   check("listicle format confined to non-premium fallback (exactly 1)", listicleCount === 1, `found ${listicleCount}`);
-  // 프리미엄 낭독문은 assemblePremiumVoiceover가 문장 배열([e(hook), ...])로 조립한다.
-  check("premium voiceover built from sentence array (assemblePremiumVoiceover)", /const e = endSentence/.test(helperCode) && /\[e\(hook\)/.test(helperCode));
+  // 프리미엄 낭독문은 assemblePremiumVoiceover가 7단계 배열([e(hook), ...])을 줄바꿈 리듬으로 조립한다.
+  check("premium voiceover built from short-line array (assemblePremiumVoiceover)", /const e = normalizeNarrationBlock/.test(helperCode) && /\[e\(hook\)/.test(helperCode) && /\.join\("\\n"\)/.test(helperCode));
+  check(
+    "premium voiceover matches owner short-line tone",
+    /rec\.hook/.test(helperCode) &&
+      /rec\.title/.test(helperCode) &&
+      /p1/.test(helperCode) &&
+      /p2/.test(helperCode) &&
+      /p3/.test(helperCode) &&
+      !/경제 뉴스 어렵다고 넘기는 사람 많지/.test(helperCode),
+  );
+  check(
+    "economy-literacy scripts branch by all nine economic mechanisms instead of one news template",
+    [
+      "rate-transmission",
+      "inflation-vs-wallet",
+      "exchange-pass-through",
+      "growth-vs-income",
+      "inflation-slowdown",
+      "policy-to-household",
+      "recession-early-signal",
+      "jobs-signal",
+      "news-translation",
+    ].every((mechanism) => helperSrc.includes(`\"${mechanism}\"`)) &&
+      /buildEconomyLiteracyScriptParts/.test(helperCode),
+  );
+  check(
+    "all 500 finance titles enter the title-and-mechanism script engine before legacy keyword templates",
+    (() => {
+      const plainStart = helperCode.indexOf("function buildPlainScriptParts");
+      const activeEngine = helperCode.indexOf("const curiositySpecific = buildCuriosityTopicSpecificScriptParts(rec)", plainStart);
+      const legacyEconomyTemplate = helperCode.indexOf("if (/경제\\s*뉴스", plainStart);
+      return /function buildCuriosityTopicSpecificScriptParts/.test(helperCode) &&
+        /rec\.category !== "finance" \|\| !rec\.curiosityMechanismId \|\| !rec\.financeSubtopic/.test(helperCode) &&
+        plainStart >= 0 && activeEngine > plainStart && legacyEconomyTemplate > activeEngine;
+    })(),
+  );
+  check(
+    "title-and-mechanism script engine has a distinct bridge for every finance subtopic",
+    [
+      "economy_literacy",
+      "inflation_living_cost",
+      "interest_debt",
+      "consumption_psychology",
+      "sns_comparison",
+      "labor_income",
+      "investing_assets",
+      "housing_asset_gap",
+      "anxiety_avoidance",
+      "success_habits",
+      "crisis_risk",
+      "time_retirement",
+    ].every((subtopic) => new RegExp(`${subtopic}:`).test(helperCode)),
+  );
+  check(
+    "new topic-script engine invalidates old final-script cache and old TTS summary",
+    /WIZARD_SCRIPT_ENGINE_VERSION/.test(helperCode) &&
+      /wizardScriptFingerprint:\s*part\.record\.localFingerprint/.test(helperCode) &&
+      /ttsSummary\.wizardScriptFingerprint\s*===\s*part\.record\.localFingerprint/.test(helperCode) &&
+      /wizardScriptFingerprint/.test(ttsScriptSrc),
+  );
+  check(
+    "all bank, legacy and post-500 finance topics use the shared script engine before generic package copy",
+    /from "\.\/finance-editorial-script-engine"/.test(helperCode) &&
+      /function resolveFinanceEditorialTopic/.test(helperCode) &&
+      /const editorialTopic = resolveFinanceEditorialTopic\(rec\)/.test(helperCode) &&
+      /buildFinanceEditorialScriptParts\(editorialTopic\)/.test(helperCode) &&
+      helperCode.indexOf("const editorialTopic = resolveFinanceEditorialTopic(rec)") < helperCode.indexOf("if (rec.problemStatement && rec.twist && rec.takeawayAction)"),
+  );
+  check(
+    "500-title script engine combines twelve domains, semantic overrides and nine editorial lanes",
+    /const BASE_PROFILES/.test(financeEditorialScriptEngineSrc) &&
+      /const PROFILE_OVERRIDES/.test(financeEditorialScriptEngineSrc) &&
+      /const LANE_GUIDANCE/.test(financeEditorialScriptEngineSrc) &&
+      /const DOMAIN_FOLLOW/.test(financeEditorialScriptEngineSrc) &&
+      /buildFinanceEditorialScriptParts/.test(financeEditorialScriptEngineSrc),
+  );
+  check(
+    "all finance scripts expose their generated action and upload copy instead of old bank CTA",
+    /const usesEditorialScriptEngine = rec\.category === "finance" && Boolean\(rec\.financeSubtopic\)/.test(helperCode) &&
+      /const action = usesEditorialScriptEngine \? parts\.recommendation : rec\.save/.test(helperCode) &&
+      /uploadCaptionDraft: usesEditorialScriptEngine/.test(helperCode),
+  );
+  check(
+    "temporary per-topic calibration exceptions are removed after global expansion",
+    !/WIZARD_SCRIPT_CALIBRATION_TOPIC_ID|buildCalibrationTopicScriptParts|isWizardScriptCalibrationTopic/.test(helperCode),
+  );
+  check("semantic prehook series engine bumps final-script cache contract to v13", /money_shorts_editorial_package_script_v13/.test(helperCode));
+  check("final-script fingerprint includes the semantic video strategy", /s:\s*preview\.videoStrategy/.test(helperCode));
+  check("premium polish rejects soft polite tone", /SHORTFORM_SOFT_POLITE_PATTERNS/.test(helperCode) && /soft_polite_not_owner_tone/.test(helperCode));
 }
 
 // ── 골든 샘플급 대본 구조: 장면 플랜 + 확장 필드 (task: golden-sample-script-and-light-ui) ──
-check("helper exposes 6-step scene plan (buildScenePlan + scenes field)", /buildScenePlan/.test(helperSrc) && /scenes:\s*WizardScriptScene\[\]/.test(helperSrc));
-for (const sceneId of ['"hook"', '"empathy"', '"psychology"', '"twist"', '"action"', '"save"']) {
+check("helper exposes 7-step scene plan (buildScenePlan + scenes field)", /buildScenePlan/.test(helperSrc) && /scenes:\s*WizardScriptScene\[\]/.test(helperSrc));
+for (const sceneId of ['"hook"', '"problem"', '"situation"', '"consequence"', '"psychology"', '"mindset"', '"habit"', '"save"']) {
   check(`scene plan has stage id ${sceneId}`, helperSrc.includes(`id: ${sceneId}`));
 }
+check(
+  "scene plan keeps success standard and save CTA in one closing flow even when split into multiple visual beats",
+  /const closing = block\(lines\(a\.recommendation\)/.test(helperCode) &&
+    /id:\s*"save",\s*label:\s*"성공 기준\/저장",\s*narration:\s*closing/.test(helperCode) &&
+    /splitNarrationByVisualFlow\(stage\.narration,\s*stage\.id\)/.test(helperCode),
+);
 check("scene plan carries visualCue (장면성/시각 증거)", /visualCue:/.test(helperSrc));
+check(
+  "scene plan uses bright integrated lived-in 3D visual DNA, not dark collage or photo cues",
+  /type\s+WizardVisualDna/.test(helperSrc) &&
+    /WIZARD_VISUAL_OBJECT_POOLS/.test(helperSrc) &&
+    /buildWizardVisualDna/.test(helperSrc) &&
+    /buildEditorialVisualCue/.test(helperSrc) &&
+    /Bright integrated family-feature-quality cinematic 3D animation/.test(helperSrc) &&
+    /one Korean adult naturally using the relevant object/.test(helperSrc) &&
+    /captions and titles are added later by the renderer/.test(helperSrc) &&
+    !/low-angle 3D object diorama shot|boxed-in tunnel composition|faceless stylized person|Premium human-scale 3D editorial/.test(helperSrc),
+);
+check(
+  "scene visual DNA rotates object palette, composition, camera, and accent",
+  /objectSet:\s*pickVisual\(seed,\s*"object-set"/.test(helperCode) &&
+    /composition:\s*pickVisual\(seed,\s*"composition"/.test(helperCode) &&
+    /camera:\s*pickVisual\(seed,\s*"camera"/.test(helperCode) &&
+    /accent:\s*pickVisual\(seed,\s*"accent"/.test(helperCode),
+);
 for (const field of ["hookLine", "captionFirstLineHook", "uploadCaptionDraft", "goldenSampleChecks"]) {
   check(`script preview exposes ${field}`, helperSrc.includes(`${field}:`));
 }
 
 // ── 대본 결과 UI: 실제 대본/자막/장면계획/설명글 구분 라벨 노출 ────────────────
 for (const label of [
-  "실제 읽히는 대본",
+  "확정 대본",
   "첫 3초 훅",
-  "영상에 들어갈 자막 6개",
+  "영상에 들어갈 자막",
   "장면 그림 계획",
   "SNS 설명글 초안",
 ]) {
   check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
 }
-// "실제 읽히는 대본"이 실제 음성/최종 영상에 쓰이고, SNS 설명글은 대본이 아님을 사용자에게 알린다.
-check("wizard clarifies 대본 is used by 실제 음성/최종 영상", wizardSrc.includes("실제 목소리 만들기와 최종 영상 만들기는 이 문장을 사용합니다"));
+// 확정 대본의 내용/순서를 실제 음성/최종 영상이 쓰되, 음성 단계의 낭독 연기만 별도 보정됨을 알린다.
+check("wizard clarifies confirmed script content is used with delivery-only voice direction", wizardSrc.includes("문장 내용과 순서는 그대로 사용하고") && wizardSrc.includes("장면에 맞는 억양·강조·호흡을 자동으로 보정합니다"));
 check("wizard clarifies SNS 설명글 is not the 대본", wizardSrc.includes("영상이 읽는 대본과는 다릅니다"));
-check("wizard renders caption 6 lines (script.captionLines map)", /script\.captionLines/.test(wizardCode));
+check("wizard renders dynamic caption lines (script.captionLines map)", /script\.captionLines\.length/.test(wizardCode) && /script\.captionLines/.test(wizardCode));
 check("wizard renders scene plan rows (script.scenes map)", /script\.scenes/.test(wizardCode) && /visualCue/.test(wizardCode));
+check(
+  "wizard uses a unique render key when one narrative role spans multiple scenes",
+  /script\.scenes\.map\(\(s,\s*sceneIndex\)\s*=>[\s\S]{0,180}key=\{`\$\{sceneIndex\}-\$\{s\.id\}`\}/.test(wizardCode) &&
+    !/script\.scenes\.map\(\(s\)\s*=>[\s\S]{0,180}key=\{s\.id\}/.test(wizardCode),
+);
 
 // ── light 운영 UI 계약: 흰 배경 + 큰 글자, dark 테마 잔재 금지 ────────────────
 check("page uses light background (bg-slate-50)", /bg-slate-50/.test(pageSrc));
@@ -500,6 +617,34 @@ check("finance uses strict judging threshold", /category\s*===\s*["']finance["']
 check("script builds 3 style candidates", /hook_heavy/.test(helperCode) && /reversal/.test(helperCode) && /empathy/.test(helperCode));
 check("script preview exposes quality + candidateScores + selectedStyle", /quality:\s*judgment/.test(helperCode) && /candidateScores:/.test(helperCode) && /selectedStyle:/.test(helperCode));
 check("script preview exposes qualitySummary (good/fixed/watch)", /goodReasons/.test(helperCode) && /fixedParts/.test(helperCode) && /watchOuts/.test(helperCode));
+check(
+  "finance script quality gate blocks weak drafts before persistence and rejects stale weak finals",
+  /WIZARD_FINANCE_SCRIPT_QUALITY_FLOOR\s*=\s*86/.test(helperCode) &&
+    /export function getWizardScriptQualityGate/.test(helperCode) &&
+    /getWizardScriptQualityGate\(topicId, parsed\.script\)\.passed/.test(helperCode) &&
+    /getWizardScriptQualityGate\(topicId, preview\)/.test(routeCode) &&
+    /SCRIPT_QUALITY_GATE_FAILED/.test(routeCode) &&
+    routeCode.search(/getWizardScriptQualityGate\(topicId, preview\)/) < routeCode.search(/ensureWizardFinalScript\(topicId,\s*preview/),
+);
+check(
+  "finance production gate re-evaluates confirmed script content instead of trusting stored scores",
+  /export function judgeFinanceScriptContent/.test(helperCode) &&
+    /export function getWizardScriptQualityGate[\s\S]{0,1400}judgeFinanceScriptContent\(\{/.test(helperCode) &&
+    /확정 제목이 첫 훅에 그대로 이어지지 않습니다/.test(helperCode) &&
+    /상황별 다시 보기·저장·팔로우 마무리가 완전하지 않습니다/.test(helperCode),
+);
+check(
+  "Claude-polished finance scripts use the same confirmed-content quality judge",
+  /const polishedJudgment = judgeFinanceScriptContent\(\{[\s\S]{0,500}scenes/.test(helperCode) &&
+    /실제 대본 품질 미달/.test(helperCode),
+);
+check(
+  "wizard shows blocked drafts for review without treating them as final scripts",
+  /if \(raw\?\.script\) setScript\(raw\.script\)/.test(wizardCode) &&
+    /scriptState === "success" && script != null/.test(wizardCode) &&
+    wizardSrc.includes("대본 검수본") &&
+    wizardSrc.includes("품질 기준 미달"),
+);
 // helper(lib)에 외부 API/LLM 연결 부재 — import/require/클라이언트 인스턴스화/네트워크 호출만 금지
 // (문자열 안내 문구에 "OpenAI" 단어가 들어가는 건 무해하므로 실행 경로만 검사)
 check(
@@ -514,6 +659,7 @@ for (const label of ["대본 품질 점수", "좋은 이유", "고친 부분", "
   check(`wizard shows quality label: ${label}`, wizardSrc.includes(label));
 }
 check("wizard shows topic quality badge (t.qualityScore)", /t\.qualityScore/.test(wizardCode));
+check("wizard marks 90+ topics as 추천 and lower ones as 후보", /t\.qualityScore >= 90/.test(wizardCode) && wizardSrc.includes("추천") && wizardSrc.includes("후보"));
 check("wizard renders quality summary from script.quality", /script\.quality/.test(wizardCode) && /qualitySummary/.test(wizardCode));
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -524,8 +670,10 @@ check("wizard renders quality summary from script.quality", /script\.quality/.te
 
 const imgScriptPath = path.join(ROOT, "scripts", "run-owner-real-scene-images-from-wizard-script-once.mjs");
 const vidScriptPath = path.join(ROOT, "scripts", "run-owner-real-video-from-wizard-assets-once.mjs");
+const motionHelperPath = path.join(ROOT, "scripts", "_money-shorts-layered-motion.mjs");
 const imgScriptSrc = existsSync(imgScriptPath) ? readFileSync(imgScriptPath, "utf8") : "";
 const vidScriptSrc = existsSync(vidScriptPath) ? readFileSync(vidScriptPath, "utf8") : "";
+const motionHelperSrc = existsSync(motionHelperPath) ? readFileSync(motionHelperPath, "utf8") : "";
 const imgScriptCode = stripComments(imgScriptSrc);
 const pkgJson = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
 const pkgDeps = JSON.stringify({ ...(pkgJson.dependencies ?? {}), ...(pkgJson.devDependencies ?? {}) });
@@ -536,25 +684,58 @@ check("polish accepts injectable fetchImpl (fake-fetch testable)", /fetchImpl\?:
 check("polish targets fixed ANTHROPIC_API_URL only", /ANTHROPIC_API_URL\s*=\s*"https:\/\/api\.anthropic\.com\/v1\/messages"/.test(helperCode) && /fetchImpl\s*\(\s*ANTHROPIC_API_URL\s*,/.test(helperCode));
 // (openai는 이 레포의 기존 의존성 — 이번 task 금지 대상은 Anthropic/ElevenLabs SDK 추가다)
 check("no Anthropic/ElevenLabs SDK dependency in package.json", !/@anthropic-ai|"anthropic"|elevenlabs/i.test(pkgDeps));
-check("route scriptPreview: local best first, then ensureWizardFinalScript once", /readScriptPreview\(topicId\)[\s\S]{0,900}ensureWizardFinalScript\(topicId,\s*preview/.test(routeCode));
+check("route scriptPreview: local best, quality gate, then ensureWizardFinalScript once", /readScriptPreview\(topicId\)[\s\S]{0,1200}getWizardScriptQualityGate\(topicId, preview\)[\s\S]{0,2200}ensureWizardFinalScript\(topicId,\s*preview/.test(routeCode));
 check("polish cache prevents repeat API calls for same local script", /cached\.localFingerprint\s*===\s*fp/.test(helperCode));
 check("polish fallback reason codes exist (key/api/parse/validation)", ["NO_API_KEY", "API_ERROR", "PARSE_FAILED", "VALIDATION_FAILED"].every((c) => helperSrc.includes(c)));
-check("polish validation enforces caption 22자/6개 + scenes 6 + polite-tone ban", /captionLines_not_6/.test(helperSrc) && /caption_over_22_or_empty/.test(helperSrc) && /scenes_not_6/.test(helperSrc) && /polite_or_lecture_tone/.test(helperSrc));
+check("polish validation enforces caption count matches scenes + supported scene count + polite-tone ban", /captionLines_scene_count_mismatch/.test(helperSrc) && /caption_over_limit_or_empty/.test(helperSrc) && /scenes_count_unsupported/.test(helperSrc) && /polite_or_lecture_tone/.test(helperSrc));
 check("polish rejects local-judge score regression", /polishedJudgment\.overallScore\s*<\s*localJudge\s*-\s*5/.test(helperCode));
 check("polish kill-switch exists (env + marker, 검증 중 실호출 차단)", /WIZARD_DISABLE_CLAUDE_POLISH/.test(helperCode) && /DISABLE_LIVE_CLAUDE_POLISH\.marker/.test(helperSrc));
 check("ANTHROPIC key never enters child env allowlists", !/MEDIA_ENV_KEY_NAMES[\s\S]{0,300}ANTHROPIC/.test(helperSrc) && !/APPROVED_ENV_KEY_NAMES[\s\S]{0,300}ANTHROPIC/.test(helperSrc));
 check("UI shows 대본 생성 방식 + Claude 적용/미적용 배지", wizardSrc.includes("대본 생성 방식: 로컬 후보 선별 → Claude 1회 보정") && wizardSrc.includes("Claude 보정 적용됨") && wizardSrc.includes("Claude 보정 미적용 — 로컬 대본 사용 중"));
 
-// [B] 실제 TTS — 검증된 scene-paced 스크립트 재사용 + no-key fail-closed
-check("realTtsCreate reuses proven scene-paced TTS script", /SCRIPT_ELEVENLABS_SCENE_TTS\s*=\s*"scripts\/build-elevenlabs-scene-paced-tts-from-script\.mjs"/.test(helperSrc));
-check("real tts-script sizes scene durations from narration length (하드트림 방지)", /Math\.ceil\(n\.length \/ 6\)/.test(helperCode) && /Math\.min\(8,\s*Math\.max\(3,/.test(helperCode));
+// [B] 실제 TTS — 한국어 연속 발화 디렉터 v2 + no-key fail-closed
+check("realTtsCreate uses Korean continuous director v2", /SCRIPT_ELEVENLABS_SCENE_TTS\s*=\s*"scripts\/build-elevenlabs-korean-director-tts-from-script\.mjs"/.test(helperSrc));
+check("real tts-script marks narration timing as character-aligned continuous", /timingPolicy:\s*"character_aligned_continuous_v2"/.test(helperCode) && /buildWizardSceneTimeline\(narrations\)/.test(helperCode));
+check("real tts-script adds Korean cadence direction without replacing display narration", /function buildWizardSpeechDirection/.test(helperCode) && /prosodyPolicy:\s*"korean_native_cadence_v2"/.test(helperCode) && /narration:\s*narrations\[index\]/.test(helperCode) && /speechDirection,/.test(helperCode));
+check("speech direction covers every finance-script scene role", ["hook", "problem", "situation", "consequence", "psychology", "mindset", "habit", "recommendation", "save"].every((role) => new RegExp(`${role}:\\s*\\{[\\s\\S]{0,420}delivery:`).test(helperCode)));
+check("speech direction v2 preserves words and models Korean cadence explicitly", /performanceText:\s*segments\.map/.test(helperCode) && /continue_rise/.test(helperSrc) && /contrast_pivot/.test(helperSrc) && /list_build/.test(helperSrc) && /command_land/.test(helperSrc) && /contextPolicy:\s*"continuous_full_script"/.test(helperCode));
+check("topic voice router covers five reusable delivery profiles", ["economic_authority", "discipline_coach", "wealth_conviction", "reassuring_control", "social_insight"].every((profile) => helperSrc.includes(profile)) && /buildWizardTopicSpeechProfile/.test(helperCode));
+check("Korean continuation/list endings never receive forced full stops", /WIZARD_SPEECH_CONNECTIVE_END_PATTERN/.test(helperCode) && /WIZARD_SPEECH_LIST_END_PATTERN/.test(helperCode) && /cadence === "continue_rise" \|\| cadence === "list_build" \? ","/.test(helperCode) && /\(!isLast \|\| continuesAfterScene\)/.test(helperCode));
+check("save scene closes with confidence instead of weakened calm settings", /save:\s*\{[\s\S]{0,360}v3AudioTag:\s*"confident"/.test(helperCode) && /intensity:\s*0\.72/.test(helperCode));
+check("continuous TTS runner supports flow-derived 4~18 scenes with one paid-call budget", /scenes\.length < 4/.test(ttsScriptSrc) && /scenes\.length > 18/.test(ttsScriptSrc) && /API_CALL_BUDGET_MAX\s*=\s*1/.test(ttsScriptSrc));
+check("continuous TTS sends the whole script once with character timestamps", /with-timestamps\?output_format=mp3_44100_128/.test(ttsScriptSrc) && /continuousText/.test(ttsScriptSrc) && /audio_base64/.test(ttsScriptSrc) && /character_start_times_seconds/.test(ttsScriptSrc));
+check("continuous TTS uses approved v3 voice routing and Korean direction tags without SSML break spam", /modelId:\s*financeVoiceRoute\?\.route\s*\?\s*FINANCE_CHARACTER_VOICE_MODEL_ID\s*:\s*"eleven_v3"/.test(helperCode) && /language_code:\s*"ko"/.test(ttsScriptSrc) && /sceneDirectorTag/.test(ttsScriptSrc) && !/<break time=/.test(ttsScriptSrc));
+check("continuous TTS keeps style zero and uses bounded speed for native cadence", /style:\s*0/.test(ttsScriptSrc) && /speed:/.test(ttsScriptSrc) && /0\.95,\s*1\.05/.test(ttsScriptSrc));
+check("continuous raw TTS cache is keyed by engine/model/profile/text/settings", /inputFingerprint/.test(ttsScriptSrc) && ["engineVersion", "modelId", "voiceSettings", "topicProfileId", "continuousText"].every((field) => ttsScriptSrc.includes(field)));
+check("generated per-part TTS input contract is content-addressed to avoid Windows file locks", /realTtsScriptFingerprint/.test(helperCode) && /tts-script\.real-\$\{realTtsScriptFingerprint\}\.json/.test(helperCode) && /if\s*\(!existsSync\(part\.realTtsScriptPath\)\)/.test(helperCode));
+check("continuous TTS reuses matching audio/alignment without a paid retry", /existsSync\(rawAudioPath\) && existsSync\(alignmentPath\)/.test(ttsScriptSrc) && /reused_continuous_aligned/.test(ttsScriptSrc));
+check("continuous TTS maps aligned character ranges back to every video scene", /alignedText\.indexOf\(segment\.text, searchCursor\)/.test(ttsScriptSrc) && /normalizedDurationSec/.test(ttsScriptSrc) && /spokenStartSec/.test(ttsScriptSrc));
+check("sample voice calibration remains isolated to the approved listening topic", /WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID/.test(helperSrc) && /rolloutScope:\s*"single_topic_only"/.test(helperSrc));
+check("sample voice uses slow breathing tags and fails short duration", /baseSpeed:\s*0\.91/.test(helperSrc) && /\[pause\]/.test(ttsScriptSrc) && /SAMPLE_REVIEW_VOICE_AUDIT_FAILED/.test(vidScriptSrc));
+check("all staged-cover finance captions require the complete dynamic-semantic aligned transcript", /rolloutScope:\s*hasStagedCover\s*\?\s*"all_finance_topics_with_staged_cover"/.test(helperSrc) && /mode:\s*"full_script_dynamic_semantic_aligned"/.test(helperSrc) && /safePositions:\s*6/.test(helperSrc) && /fullScriptCoveragePass/.test(dynamicCaptionSrc) && /sentenceSemanticSegmentationPass/.test(dynamicCaptionSrc) && /exactTranscriptMatchPass/.test(dynamicCaptionSrc));
+check("semantic-series videos use publish revision v5 while preserving prior ledger history", /WIZARD_FULL_SCRIPT_PUBLISH_VERSION\s*=\s*"v5"/.test(helperCode) && /version:\s*WIZARD_FULL_SCRIPT_PUBLISH_VERSION/.test(helperCode));
+check(
+  "publish preflight/result one-shot evidence is isolated by revision and production part",
+  /const publishOutDir = join\(\s*WIZARD_VIDEO_OUT_ROOT,\s*safeSlug,\s*"publish",\s*WIZARD_FULL_SCRIPT_PUBLISH_VERSION,\s*selectedPart\.id,\s*\)/.test(helperCode) &&
+    /function wizardPublishResultDir/.test(helperCode) &&
+    /\.\.\.\(strategy \? \[resolvedPartId as string\] : \[\]\)/.test(helperCode) &&
+    /join\(resultDir,\s*"final-e2e-publish-preflight\.json"\)/.test(helperCode) &&
+    /join\(resultDir,\s*"final-e2e-publish-result\.json"\)/.test(helperCode),
+);
+check("continuous TTS writes versioned files and a short final tail only", /elevenlabs-korean-director-\$\{inputFingerprint\}/.test(ttsScriptSrc) && /FINAL_TAIL_SEC\s*=\s*0\.28/.test(ttsScriptSrc));
+check("final video consumes normalized durations from the TTS summary", /audioTimelineScenes\.map\(\(s\) => Number\(s\.normalizedDurationSec\)\)/.test(vidScriptSrc));
 check("media env allowlist is exactly the 4 ELEVENLABS keys", /MEDIA_ENV_KEY_NAMES\s*=\s*\[\s*"ELEVENLABS_API_KEY",\s*"ELEVENLABS_VOICE_ID",\s*"ELEVENLABS_MODEL_ID",\s*"ELEVENLABS_VOICE_LABEL",\s*\]/.test(helperSrc.replace(/\r?\n\s*/g, " ").replace(/\s+/g, " ")) || ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "ELEVENLABS_MODEL_ID", "ELEVENLABS_VOICE_LABEL"].every((k) => new RegExp(`MEDIA_ENV_KEY_NAMES[\\s\\S]{0,220}"${k}"`).test(helperSrc)));
-check("tts gate trusts only live elevenlabs summary (mock 불인정)", /provider\s*===\s*"elevenlabs"\s*&&[\s\S]{0,80}liveApiCallPerformed\s*===\s*true/.test(helperCode));
+check("tts gate trusts only Korean director v2 live summary (mock/old voice 불인정)", /provider\s*===\s*"elevenlabs"\s*&&[\s\S]{0,160}ttsEngineVersion\s*===\s*WIZARD_TTS_ENGINE_VERSION[\s\S]{0,120}liveApiCallPerformed\s*===\s*true/.test(helperCode));
 // [A2] ELEVENLABS env는 realTtsCreate child에만 전달 (Codex finding 1 fix)
-check("buildSanitizedChildEnv does NOT copy media env by default", /buildSanitizedChildEnv\(opts\?:\s*\{\s*includeMediaEnv\?:\s*boolean\s*\}\)/.test(helperCode) && /opts\?\.includeMediaEnv\s*===\s*true/.test(helperCode));
+check("buildSanitizedChildEnv does NOT copy media env by default", /function buildSanitizedChildEnv\(opts\?:/.test(helperCode) && /includeMediaEnv\?:\s*boolean/.test(helperCode) && /opts\?\.includeMediaEnv\s*===\s*true/.test(helperCode));
 check("runOperatorScript exposes includeMediaEnv option", /includeMediaEnv\?:\s*boolean/.test(helperCode));
-check("runOperatorScript threads includeMediaEnv into child env builder", /buildSanitizedChildEnv\(\s*\{\s*includeMediaEnv:\s*opts\?\.includeMediaEnv\s*===\s*true\s*\}\s*\)/.test(helperCode));
-check("route sets includeMediaEnv:true ONLY on realTtsCreate", (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 1 && /realTtsCreate[\s\S]{0,600}includeMediaEnv:\s*true/.test(routeCode));
+check("runOperatorScript threads includeMediaEnv into child env builder", /buildSanitizedChildEnv\(\s*\{[\s\S]{0,180}includeMediaEnv:\s*opts\?\.includeMediaEnv\s*===\s*true[\s\S]{0,180}voiceOverride:\s*opts\?\.voiceOverride[\s\S]{0,80}\}\s*\)/.test(helperCode));
+check("non-TTS commands are not rejected when no finance voice override exists", /if\s*\(opts\?\.voiceOverride\s*&&\s*opts\.voiceOverride\.voiceStatus\s*!==\s*"approved"\)/.test(helperCode));
+check(
+  "route sets includeMediaEnv:true ONLY on realTtsCreate",
+  (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 1 &&
+    /action === "realTtsCreate"[\s\S]*?runOperatorScript\(builtTts\.command,\s*\{[^}]*includeMediaEnv:\s*true/.test(routeCode),
+);
 for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardPreflight", "actualUpload"]) {
   // 해당 action 핸들러 블록 내부에 includeMediaEnv:true가 없어야 한다(다음 action 시작 전까지 스캔).
   const idx = routeCode.indexOf(`action === "${otherAction}"`);
@@ -565,6 +746,7 @@ for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardP
 }
 check("route no-key TTS message is fail-closed", routeSrc.includes("실제 음성 키가 없어 생성하지 못했습니다. 테스트 소리는 업로드할 수 없습니다."));
 check("UI real-tts states exist (실제 음성 준비 / 음성 키 필요)", wizardSrc.includes("실제 음성 준비") && wizardSrc.includes("음성 키 필요"));
+check("UI explains topic-aware Korean continuous voice generation", wizardSrc.includes("주제에 맞는 화자 태도와 한국어 억양") && wizardSrc.includes("전체 대본을 한 흐름으로 읽는 실제 음성"));
 check("UI real audio player streams ?audio=real", /audio=real&topicId=/.test(wizardSrc));
 
 // [C] 장면 이미지 — ChatGPT+Playwright once 스크립트 (gate/hard-cap/repo-밖/no-upload)
@@ -579,18 +761,247 @@ check(
     /MEDIA_ROOT_RE\.test\(scriptAbs\)/.test(imgScriptCode) &&
     imgScriptCode.indexOf("MEDIA_ROOT_RE") < imgScriptCode.indexOf('await import("playwright")'),
 );
-check("images script has submission hard cap (6) and no retry loop", /SUBMISSION_HARD_CAP\s*=\s*6/.test(imgScriptSrc));
+check(
+  "images script hard cap allows one routing and one visual-difference recovery per scene",
+  /ROUTING_RECOVERY_LIMIT_PER_SCENE\s*=\s*1/.test(imgScriptCode) &&
+    /VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE\s*=\s*1/.test(imgScriptCode) &&
+    /SUBMISSION_HARD_CAP\s*=\s*sceneCount \*/.test(imgScriptCode) &&
+    /MAX_SCENES\s*=\s*18/.test(imgScriptCode),
+);
+check(
+  "shared ChatGPT image controller accepts an exact picture id or exact composer chip label",
+  /composer-plus-btn/.test(chatgptImageCoreSrc) &&
+    /export async function verifyImageToolActive/.test(chatgptImageCoreCode) &&
+    /data-inline-selection-pill/.test(chatgptImageCoreCode) &&
+    /data-id=\"picture_v2\"/.test(chatgptImageCoreCode) &&
+    /firstVisibleExactLabelLocator/.test(chatgptImageCoreCode) &&
+    /ancestor::\*\[self::form or @data-type="unified-composer"\]\[1\]/.test(chatgptImageCoreCode) &&
+    /composer\.locator\('\[data-inline-selection-pill\]'\)/.test(chatgptImageCoreCode) &&
+    /composer\.locator\('button'\)/.test(chatgptImageCoreCode) &&
+    /contenteditable=\"false\"/.test(chatgptImageCoreCode) &&
+    chatgptImageCoreSrc.includes("이미지 만들기") &&
+    chatgptImageCoreSrc.includes("Create image") &&
+    /IMAGE_TOOL_NOT_ACTIVE/.test(chatgptImageCoreSrc),
+);
+check(
+  "scene runner preserves and rechecks picture_v2 before submitting with the send button",
+  /activateImageTool,/.test(imgScriptCode) &&
+    /verifyImageToolActive,/.test(imgScriptCode) &&
+    /sendPrompt,/.test(imgScriptCode) &&
+    imgScriptCode.indexOf("await activateImageTool(page") < imgScriptCode.indexOf("await typePrompt(page") &&
+    /post-type verification failed/.test(imgScriptCode) &&
+    /final submit verification failed/.test(imgScriptCode) &&
+    /await sendPrompt\(page\)/.test(imgScriptCode) &&
+    !/function activateImageToolCurrentUI/.test(imgScriptCode),
+);
+check(
+  "scene runner uses a regular image chat, clears only automation drafts and preserves Owner drafts",
+  /openFreshImageChat,/.test(imgScriptCode) &&
+    imgScriptCode.indexOf("await openFreshImageChat(page") < imgScriptCode.indexOf("await activateImageTool(page") &&
+    /CHATGPT_IMAGE_FRESH_CHAT_URL\s*=\s*"https:\/\/chatgpt\.com\/"/.test(chatgptImageCoreCode) &&
+    !chatgptImageCoreSrc.includes("?temporary-chat=true") &&
+    /CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX/.test(chatgptImageCoreCode) &&
+    /IMAGE_TOOL_OWNER_DRAFT_PRESENT/.test(chatgptImageCoreCode) &&
+    /Cleared stale automation-owned image draft/.test(chatgptImageCoreCode) &&
+    /Owner draft preserved/.test(chatgptImageCoreCode),
+);
+check(
+  "image menu matching is menuitem-only and browser failures stop after the first scene",
+  /getByRole\("menuitemradio"/.test(chatgptImageCoreCode) &&
+    /getByRole\("menuitem"/.test(chatgptImageCoreCode) &&
+    !/getByRole\("button", \{ name: \/\^이미지 만들기/.test(chatgptImageCoreCode) &&
+    /IMAGE_TOOL_ENTRY_UNUSABLE/.test(chatgptImageCoreCode) &&
+    /IMAGE_TOOL_CHAT_OPEN_FAILED/.test(imgScriptCode) &&
+    /if \(\/IMAGE_TOOL_\/\.test\(msg\)\)/.test(imgScriptCode),
+);
+check(
+  "current ChatGPT home direct image button is awaited before and after the plus-menu fallback",
+  /async function waitForDirectImageEntry/.test(chatgptImageCoreCode) &&
+    /const directTarget = await waitForDirectImageEntry\(page\)/.test(chatgptImageCoreCode) &&
+    /page\.locator\("button"\)\.filter\(\{ hasText: \/\^이미지 만들기\$\//.test(chatgptImageCoreCode) &&
+    /page\.locator\("button"\)\.filter\(\{ hasText: \/\^Create image\$\/i/.test(chatgptImageCoreCode) &&
+    /export async function waitForImageToolActive/.test(chatgptImageCoreCode) &&
+    /await page\.waitForTimeout\(Math\.min\(250, remaining\)\)/.test(chatgptImageCoreCode) &&
+    /waitForImageToolActive\(page, 8000\)/.test(chatgptImageCoreCode) &&
+    /direct create-image button click failed/.test(chatgptImageCoreCode) &&
+    /direct create-image button did not create a picture_v2 chip/.test(chatgptImageCoreCode) &&
+    chatgptImageCoreCode.indexOf("const directTarget =") < chatgptImageCoreCode.indexOf("const plus =") &&
+    /const delayedDirectTarget = await waitForDirectImageEntry\(page, 7000\)/.test(chatgptImageCoreCode) &&
+    /delayed direct home button/.test(chatgptImageCoreCode),
+);
+check(
+  "live ChatGPT image preflight stops with a typed draft before send",
+  existsSync(CHATGPT_IMAGE_LIVE_PREFLIGHT_PATH) &&
+    /--allow-no-send/.test(chatgptImageLivePreflightCode) &&
+    /submitted:\s*false/.test(chatgptImageLivePreflightCode) &&
+    /READY_BEFORE_SEND/.test(chatgptImageLivePreflightCode) &&
+    /checkSendEnabled/.test(chatgptImageLivePreflightCode) &&
+    /await page\.close\(\)/.test(chatgptImageLivePreflightCode) &&
+    !/sendPrompt/.test(chatgptImageLivePreflightCode) &&
+    !/composer-submit-button/.test(chatgptImageLivePreflightCode),
+);
+check(
+  "image-mode prompt typing never uses fill or select-all that would delete the inline pill",
+  (() => {
+    const branchStart = chatgptImageCoreCode.indexOf("if (imageToolActive)");
+    const fallbackStart = chatgptImageCoreCode.indexOf("await ta.fill(oneLine)", branchStart);
+    const imageModeBranch = chatgptImageCoreCode.slice(branchStart, fallbackStart);
+    return branchStart >= 0 && fallbackStart > branchStart &&
+      /page\.keyboard\.type\(oneLine/.test(imageModeBranch) &&
+      /picture_v2 pill disappeared while typing/.test(imageModeBranch) &&
+      !/\.fill\(/.test(imageModeBranch) &&
+      !/selectAll\(/.test(imageModeBranch);
+  })(),
+);
+check(
+  "text-only edit-routing failure receives one new-chat recovery then stops fail-closed",
+  /IMAGE_TOOL_TEXT_FAILURE_PATTERN/.test(imgScriptCode) &&
+    /detectImageToolTextFailure/.test(imgScriptCode) &&
+    /new-chat-routing-recovery/.test(imgScriptCode) &&
+    /routingRecoveriesUsed/.test(imgScriptCode) &&
+    /BLOCKED_IMAGE_TOOL/.test(imgScriptCode) &&
+    routeSrc.includes("신규 이미지로 한 번 다시 요청했지만 편집 요청으로 잘못 처리"),
+);
+check(
+  "image tool blocker detail reaches the API and activation failures are not mislabeled as edit routing",
+  /blockerDetail:\s*string \| null/.test(helperCode) &&
+    /sceneRows\.find\(\(scene\) => typeof scene\.method === "string"/.test(helperCode) &&
+    /describeImageToolBlocker\(mediaAfterImg\.realImages\.blockerDetail\)/.test(routeCode) &&
+    routeSrc.includes("이미지 만들기 칩은 선택됐지만 활성 상태 확인 신호를 읽지 못해"),
+);
+check(
+  "image prompt explicitly requests a new image and removes duplicated storyboard boilerplate",
+  /GENERATE ONE BRAND-NEW ORIGINAL TEXT-TO-IMAGE ASSET/.test(imgScriptSrc) &&
+    /Start from a blank canvas/.test(imgScriptSrc) &&
+    !/not an edit, variation or transformation/.test(imgScriptSrc) &&
+    /PROMPT_MAX_CHARS\s*=\s*4800/.test(imgScriptCode) &&
+    /function compactSceneArtDirection/.test(imgScriptCode) &&
+    !/Full role map:/.test(imgScriptCode),
+);
+check(
+  "only files produced by the verified image controller can be resumed",
+  /previousSummary\?\.imageControllerVersion\s*===\s*IMAGE_CONTROLLER_VERSION/.test(imgScriptCode) &&
+    /reusableSceneIndexes\.has\(i \+ 1\)/.test(imgScriptCode) &&
+    /existing_file_skip/.test(imgScriptCode),
+);
+check(
+  "script planner derives scene count from narration flow instead of fixing 8 or 10",
+  /function splitNarrationByVisualFlow/.test(helperCode) &&
+    /stages\.flatMap/.test(helperCode) &&
+    /WIZARD_SCRIPT_MIN_SCENE_COUNT\s*=\s*4/.test(helperCode) &&
+    /WIZARD_SCRIPT_MAX_SCENE_COUNT\s*=\s*18/.test(helperCode) &&
+    helperSrc.includes("scenes 개수를 먼저 정하지 마라") &&
+    !helperSrc.includes("scenes는 8~10개"),
+);
+check(
+  "images script enforces one bright integrated family-quality 3D style and forbids photography",
+  /Money Shorts original bright family-feature-quality cinematic 3D animation/.test(imgScriptSrc) &&
+    /same stylized render language as the character scenes/.test(imgScriptSrc) &&
+    /no photography, no live action, no documentary realism/.test(imgScriptSrc) &&
+    /no miniature, dollhouse, diorama/.test(imgScriptSrc) &&
+    !/lived-reality editorial photography/.test(imgScriptSrc),
+);
+check(
+  "images script attaches and audits the selected character identity reference",
+  /money_shorts_selected_character_reference_v1/.test(imgScriptSrc) &&
+    /attachRef/.test(imgScriptCode) &&
+    /referenceAttachmentPassed/.test(imgScriptCode) &&
+    /CHARACTER QUALITY REGENERATION REQUIRED/.test(imgScriptSrc),
+);
+check(
+  "images script can regenerate exact failed scenes while preserving accepted images",
+  /--regenerate-scenes 4,5/.test(imgScriptSrc) &&
+    /targetedRegenerationSceneIndexes/.test(imgScriptCode) &&
+    /targetedRegenerationPassed/.test(imgScriptCode),
+);
+check(
+  "images runner processes the confirmed dynamic scene count instead of stopping at 6",
+  /for\s*\(let i = 0; i < sceneCount; i\+\+\)/.test(imgScriptCode) &&
+    /expectedCount:\s*sceneCount/.test(imgScriptCode) &&
+    !/for\s*\(let i = 0; i < 6; i\+\+\)/.test(imgScriptCode),
+);
+check(
+  "motion-ready visual storyboard assigns distinct roles, eye-level cameras and bright light progression",
+  /STORYBOARD_ROLES/.test(imgScriptCode) &&
+    ["EVERYDAY REALITY", "PSYCHOLOGY", "TURNING POINT", "PRACTICAL HABIT", "SAVE AND RECALL"].every((role) => imgScriptSrc.includes(role)) &&
+    /the recurring Korean adult making, avoiding or delaying one small decision/.test(imgScriptSrc) &&
+    /candid eye-level medium-wide or intimate over-shoulder view/.test(imgScriptSrc) &&
+    /clear hopeful daylight or soft golden light/.test(imgScriptSrc) &&
+    /retiredDirectionPatterns/.test(imgScriptCode) &&
+    !/event:\s*"one faceless stylized person|event:\s*"hands or a small faceless figure/.test(imgScriptCode),
+);
+check(
+  "visual storyboard blocks adjacent reuse and black voids",
+  /ADJACENT DIFFERENCE/.test(imgScriptSrc) &&
+    /Do not repeat its human presence, spatial form, camera distance, setting silhouette or hero/.test(imgScriptSrc) &&
+    /MODALITY DIFFERENCE: previous mode/.test(imgScriptSrc) &&
+    /blank black floor or void/.test(imgScriptSrc),
+);
+check(
+  "helper chooses bright/warning/neutral/warm topic tone arcs",
+  ["bright_progress", "warning_to_clarity", "neutral_analysis", "warm_everyday"].every((tone) => helperSrc.includes(tone)) &&
+    /brighter transitional light entering the frame/.test(helperSrc) &&
+    /natural daylight or warm practical indoor light/.test(helperSrc),
+);
+check(
+  "bright integrated motion-ready sequence v11 uses a versioned image/video set so old repetitive assets cannot pass",
+  /WIZARD_VISUAL_ENGINE_VERSION\s*=\s*"money_shorts_finance_3d_editorial_sequence_v11"/.test(helperCode) &&
+    /WIZARD_IMAGE_CONTROLLER_VERSION\s*=\s*"chatgpt_picture_v2_character_reference_v8"/.test(helperCode) &&
+    /images-3d-editorial-sequence-v11/.test(helperSrc) &&
+    /video-3d-editorial-sequence-v11/.test(helperSrc) &&
+    /imagesSummary\.visualEngineVersion\s*===\s*visualProfile\.engineVersion/.test(helperCode) &&
+    /imagesSummary\.imageControllerVersion\s*===\s*WIZARD_IMAGE_CONTROLLER_VERSION/.test(helperCode),
+);
+check(
+  "no topic can bypass the shared 3D visual profile through a photoreal sample exception",
+  !/WIZARD_SAMPLE_LIVED_REALITY_VISUAL_ENGINE_VERSION/.test(helperSrc) &&
+    !/images-lived-reality-sample-v6/.test(helperSrc) &&
+    !/LIVED_REALITY_SAMPLE_SCENES/.test(imgScriptSrc) &&
+    /void topicId/.test(helperSrc),
+);
+check(
+  "generated images must pass perceptual difference audit before video readiness",
+  /ffmpeg_dhash64_v1/.test(imgScriptSrc) &&
+    /REJECTED_NEAR_DUPLICATE_IMAGE/.test(imgScriptSrc) &&
+    /visual-difference-recovery/.test(imgScriptSrc) &&
+    /visualDifferenceAudit\?\.passed\s*===\s*true/.test(helperCode) &&
+    /visualDifferenceAudit\?\.passed\s*!==\s*true/.test(vidScriptSrc),
+);
+check(
+  "route and UI report dynamic image counts instead of fixed 6",
+  /realImages\.expectedCount/.test(routeCode) &&
+    /realMedia\?\.realImages\.expectedCount/.test(wizardCode) &&
+    !/generatedCount\}\/6/.test(routeCode),
+);
+check(
+  "scene count stays unknown until the confirmed script defines it (never falls back to 8)",
+  !/WIZARD_SCRIPT_DEFAULT_SCENE_COUNT/.test(helperCode) &&
+    /expectedCount:\s*number\s*\|\s*null/.test(helperSrc) &&
+    /expectedSceneCount\s*!==\s*null/.test(helperCode) &&
+    /plannedSceneCount/.test(wizardCode) &&
+    !/expectedCount\s*\?\?\s*8/.test(wizardCode),
+);
+check(
+  "images script forbids generated text and logos while preserving natural selected-character adult faces",
+  /No readable text, letters, numbers, UI, logo, brand or watermark/.test(imgScriptSrc) &&
+    /believable Korean adult facial proportions/.test(imgScriptSrc) &&
+    /eyes only subtly larger than real life/.test(imgScriptSrc) &&
+    /preserve the exact selected character identity/.test(imgScriptSrc),
+);
 check("images script reuses proven _chatgpt-image-core", /_chatgpt-image-core\.mjs/.test(imgScriptSrc));
 check("images script never uploads/publishes", !/instagram|youtube|blob\.put|googleapis|@vercel/i.test(imgScriptSrc));
 check("images script forbids paid image APIs (openai api key 사용 없음)", !/OPENAI_API_KEY|api\.openai\.com|bfl\.ai|gemini/i.test(imgScriptCode));
-check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,900}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/extraEnv/g) ?? []).length <= 2);
-check("images gate requires 6/6 SAVED_OK portrait files", /savedScenes\.length\s*===\s*6/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
+check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,1800}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/extraEnv/g) ?? []).length <= 2);
+check("images gate requires expectedCount SAVED_OK portrait files", /expectedSceneCount/.test(helperCode) && /savedScenes\.length\s*===\s*expectedSceneCount/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
 check("UI image states exist (장면 이미지 준비 / 이미지 생성 필요)", wizardSrc.includes("장면 이미지 준비") && wizardSrc.includes("이미지 생성 필요"));
 
 // [D] 최종 mp4 — 실제 자산 필수 + ffprobe 검증 + C:\tmp
 check("final-video once script exists", vidScriptSrc.length > 0);
+check("layered motion renderer helper exists", motionHelperSrc.length > 0);
+check("Golden Sample dynamic-caption module exists", dynamicCaptionSrc.length > 0);
 check("video script rejects non-elevenlabs / non-live audio summary", /provider !== "elevenlabs"/.test(vidScriptSrc) && /liveApiCallPerformed !== true/.test(vidScriptSrc));
-check("video script rejects placeholder images (allReady required)", /allReady !== true/.test(vidScriptSrc));
+check("video script rejects unverified or placeholder images", /imageControllerVersion !== IMAGE_CONTROLLER_VERSION/.test(vidScriptSrc) && /allReady !== true/.test(vidScriptSrc));
+check("video script rejects images without the hairstyle continuity audit", /CHARACTER_CONTINUITY_VERSION/.test(vidScriptSrc) && /characterContinuityAudit\?\.passed !== true/.test(vidScriptSrc));
 check("video script enforces C:\\tmp out-dir", /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc) && vidScriptSrc.includes("money-shorts-os"));
 // [D2] 최종영상 스크립트: 5개 입력/출력 전부 C:\tmp\money-shorts-os\ 하위 강제 (Codex finding 2 fix)
 check(
@@ -601,8 +1012,52 @@ check(
     /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc),
 );
 check("video script validates 1080x1920 + 15~60s + audio/video streams + size", /width1080/.test(vidScriptSrc) && /height1920/.test(vidScriptSrc) && /duration15to60/.test(vidScriptSrc) && /hasAudioStream/.test(vidScriptSrc) && /fileSizePositive/.test(vidScriptSrc));
+check(
+  "video renderer consumes every scene motionPlan with varied camera, parallax and micro-motion layers",
+  /buildSceneMotionRecipe/.test(vidScriptSrc) &&
+    /buildLayeredMotionFilter/.test(vidScriptSrc) &&
+    /buildLayeredMotionAudit/.test(vidScriptSrc) &&
+    /foregroundalpha/.test(motionHelperSrc) &&
+    /characteralpha/.test(motionHelperSrc) &&
+    /handsalpha/.test(motionHelperSrc) &&
+    /distinctCameraModesPass/.test(motionHelperSrc) &&
+    !/min\(1\.0\+0\.0008\*on,1\.12\)/.test(vidScriptSrc),
+);
 check("video script output marked notUploaded", /notUploaded:\s*true/.test(vidScriptSrc));
-check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode));
+check("repeat renders use unique work and final paths instead of overwriting a playing MP4", /const renderId\s*=/.test(vidScriptSrc) && /\.render-\$\{renderId\}/.test(vidScriptSrc) && /final-\$\{safeSlug\}-\$\{renderId\}\.mp4/.test(vidScriptSrc));
+check(
+  "video script enforces complete sentence-semantic captions without a bottom bar",
+  /buildDynamicCaptionTimeline/.test(vidScriptSrc) &&
+    /full_script_dynamic_semantic_aligned_v6/.test(vidScriptSrc) &&
+    /fullScriptCaptionGate/.test(vidScriptSrc) &&
+    /MAX_WORDS_PER_DISPLAY_UNIT\s*=\s*16/.test(dynamicCaptionSrc) &&
+    /MAX_VISIBLE_CHARS_PER_BLOCK\s*=\s*34/.test(dynamicCaptionSrc) &&
+    /sourceSegmentsForScene/.test(dynamicCaptionSrc) &&
+    /sentenceBoundaryPreservedPass/.test(dynamicCaptionSrc) &&
+    /sourceSegmentBoundaryPreservedPass/.test(dynamicCaptionSrc) &&
+    /arbitraryMidPhraseSplitAbsent/.test(dynamicCaptionSrc) &&
+    /fullScriptCoveragePass/.test(dynamicCaptionSrc) &&
+    /captionCoverageRatio === 1/.test(dynamicCaptionSrc) &&
+    /bottomFixedSubtitleBar:\s*false/.test(dynamicCaptionSrc) &&
+    /displayTerminalPunctuationAbsent/.test(dynamicCaptionSrc) &&
+    /multiPositionNarrativeFlowPass/.test(dynamicCaptionSrc) &&
+    /semanticColorPalettePass/.test(dynamicCaptionSrc) &&
+    /motionDiversityPass/.test(dynamicCaptionSrc) &&
+    /Black Han Sans/.test(dynamicCaptionSrc) &&
+    !/Malgun Gothic/.test(dynamicCaptionSrc),
+);
+check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode) && /durationSec\s*<=\s*60/.test(helperCode));
+check(
+  "helper rejects final videos without the layered motion audit",
+  /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v2"/.test(helperCode) &&
+    /videoSummary\.motionRendererVersion\s*===\s*WIZARD_MOTION_RENDERER_VERSION/.test(helperCode) &&
+    /motionAudit\?\.layeredParallaxCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\?\.characterMicroMotionCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\?\.localizedMotionCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\?\.visibleMicroMotionAmplitudePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\?\.passed\s*===\s*true/.test(helperCode),
+);
+check("helper rejects legacy sparse, punctuation-heavy and monotone caption videos", /WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION/.test(helperCode) && /full_script_dynamic_semantic_aligned_v6/.test(helperCode) && /fullScriptCoveragePass/.test(helperCode) && /sentenceSemanticSegmentationPass/.test(helperCode) && /arbitraryMidPhraseSplitAbsent/.test(helperCode) && /displayTerminalPunctuationAbsent/.test(helperCode) && /multiPositionNarrativeFlowPass/.test(helperCode) && /semanticColorPalettePass/.test(helperCode) && /motionDiversityPass/.test(helperCode) && /captionCoverageRatio\s*===\s*1/.test(helperCode));
 check("UI final video states exist (최종 영상 준비 / 시안 영상 · 업로드 불가)", wizardSrc.includes("최종 영상 준비") && wizardSrc.includes("시안 영상") && wizardSrc.includes("업로드 불가"));
 check("UI preview streams final video (?video=final)", /video=final&topicId=/.test(wizardSrc));
 

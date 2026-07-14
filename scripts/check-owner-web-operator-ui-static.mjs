@@ -165,18 +165,20 @@ check(
   /WIZARD_PUBLISH_LEDGER_PATH\s*=[\s\S]{0,40}"C:\\\\tmp\\\\money-shorts-os\\\\/.test(helperSrc),
 );
 check("helper does not import @vercel/blob / googleapis", !/@vercel\/blob/.test(helperCode) && !/googleapis/.test(helperCode));
-// helper의 유일한 네트워크 경로는 Claude 대본 보정(fetchImpl 주입, 고정 ANTHROPIC_API_URL) 1곳뿐이다.
-// (task: owner-web-real-script-voice-visual-generation-pipeline-v1 — 직접 fetch(...) 호출은 여전히 금지)
+// helper의 네트워크 경로는 Claude 주제 생성 + Claude 대본 보정 2곳뿐이다.
+// 둘 다 fetchImpl 주입 + 고정 ANTHROPIC_API_URL만 사용한다. 직접 fetch(...) 호출은 여전히 금지.
 check("helper makes no direct global fetch call (injectable fetchImpl only)", !/\bfetch\s*\(/.test(helperCode));
 check(
-  "helper network call targets fixed ANTHROPIC_API_URL only (single call site)",
-  (helperCode.match(/fetchImpl\s*\(/g) ?? []).length === 1 &&
-    /fetchImpl\s*\(\s*ANTHROPIC_API_URL\s*,/.test(helperCode) &&
+  "helper network calls target fixed ANTHROPIC_API_URL only (topic + script)",
+  (helperCode.match(/fetchImpl\s*\(\s*ANTHROPIC_API_URL\s*,/g) ?? []).length === 2 &&
     /ANTHROPIC_API_URL\s*=\s*"https:\/\/api\.anthropic\.com\/v1\/messages"/.test(helperCode),
 );
 check("helper does not import an Anthropic SDK", !/@anthropic-ai|from\s+["']anthropic["']/.test(helperCode));
 check("helper never logs/prints the Anthropic api key", !/console\.\w+\([^)]*apiKey/.test(helperCode) && !/console\.\w+\([^)]*ANTHROPIC_API_KEY/.test(helperCode));
-check("helper runs no ffmpeg/ffprobe", !/ffmpeg|ffprobe/.test(helperCode));
+check(
+  "helper does not invoke ffmpeg/ffprobe binaries directly",
+  !/(?:spawnSync|execSync)\s*\([\s\S]{0,240}["']ff(?:mpeg|probe)["']/.test(helperCode),
+);
 
 // ── helper: env 안전 ─────────────────────────────────────────────────────────
 check("helper declares APPROVED_ENV_KEY_NAMES", /APPROVED_ENV_KEY_NAMES/.test(helperCode));

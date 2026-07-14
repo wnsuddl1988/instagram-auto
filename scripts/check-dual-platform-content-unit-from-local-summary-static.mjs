@@ -151,11 +151,11 @@ check(
 );
 
 // task: content-unit-metadata-optimization-enrichment-no-live-v1
-// deterministic metadata enrichment(hook/CTA 추출 + hashtag 8-12 정규화) 함수가 실제로
+// deterministic metadata enrichment(hook/CTA 추출 + hashtag 4-6 정규화) 함수가 실제로
 // 존재하고, 외부 API 없이 원문 caption/hashtag 텍스트만 사용하는지 소스 레벨로 확인한다.
 check("builder: extractCaptionFirstLineHook 함수 존재(원문 caption에서만 추출, 새 문구 생성 없음)", /function extractCaptionFirstLineHook/.test(builderRawSrc));
 check("builder: deriveCallToAction 함수 존재 + 안전 기본 CTA 상수 존재", /function deriveCallToAction/.test(builderRawSrc) && /SAFE_DEFAULT_CTA/.test(builderRawSrc));
-check("builder: normalizeInstagramHashtags 함수 존재(8-12 정규화)", /function normalizeInstagramHashtags/.test(builderRawSrc));
+check("builder: normalizeInstagramHashtags 함수 존재(4-6 정규화)", /function normalizeInstagramHashtags/.test(builderRawSrc));
 check("builder: hashtag 보강 시 기존 태그를 우선 보존(existingHashtags를 먼저 순회)", /for \(const tag of existingHashtags\)/.test(builderCode));
 check("builder: SAFE_DEFAULT_HASHTAG_POOL에 챌린지/viral/trend/밈/fyp 패턴 태그 없음", (() => {
   const m = builderRawSrc.match(/SAFE_DEFAULT_HASHTAG_POOL\s*=\s*\[([\s\S]*?)\];/);
@@ -319,10 +319,10 @@ try {
     generatedBuildSummary?.youtubeSourceReady === false && generatedBuildSummary?.youtubeSourceProvidedByFlag === false,
   );
   // task: content-unit-metadata-optimization-enrichment-no-live-v1
-  // deterministic enrichment(hook/CTA 추출 + hashtag 8-12 정규화) 적용 이후에는
+  // deterministic enrichment(hook/CTA 추출 + hashtag 4-6 정규화) 적용 이후에는
   // sample fixture(caption/hashtag 4개 존재)만으로 metadataReady:true가 되어야 한다.
   check(
-    "빌드 요약: metadataReady === true (deterministic enrichment로 hook/CTA/hashtag 8-12 충족)",
+    "빌드 요약: metadataReady === true (deterministic enrichment로 hook/CTA/hashtag 4-6 충족)",
     generatedBuildSummary?.metadataReady === true &&
       Array.isArray(generatedBuildSummary?.instagramMetadataReasons) &&
       generatedBuildSummary.instagramMetadataReasons.length === 0 &&
@@ -358,10 +358,10 @@ try {
     })(),
   );
   check(
-    "생성 manifest: instagramMetadata.hashtags 8-12개, unique, 무관 유행 태그 없음",
+    "생성 manifest: instagramMetadata.hashtags 4-6개, unique, 무관 유행 태그 없음",
     Array.isArray(generatedManifest?.instagramMetadata?.hashtags) &&
-      generatedManifest.instagramMetadata.hashtags.length >= 8 &&
-      generatedManifest.instagramMetadata.hashtags.length <= 12 &&
+      generatedManifest.instagramMetadata.hashtags.length >= 4 &&
+      generatedManifest.instagramMetadata.hashtags.length <= 6 &&
       new Set(generatedManifest.instagramMetadata.hashtags).size === generatedManifest.instagramMetadata.hashtags.length &&
       !generatedManifest.instagramMetadata.hashtags.some((t) => /(챌린지|viral|trend|밈|fyp|fypシ)/i.test(String(t))),
   );

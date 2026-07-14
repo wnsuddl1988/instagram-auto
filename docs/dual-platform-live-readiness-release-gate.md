@@ -27,8 +27,8 @@ fixture의 `readinessConditions`에 있다.
 2. **social live client import-safe** — `lib/instagram.ts`/`lib/youtube.ts`가 top-level에서 `process.env`를 읽지 않고 explicit credential injection 함수를 제공.
 3. **orchestrator `--dry-run` OK** — 기존 no-live 계약 유지.
 4. **orchestrator `--preflight` OK** — `preflightOk === true`, env 값 미접근.
-5. **orchestrator `--live`/`--arm` fail-closed 유지** — nonzero exit + `LIVE_EXECUTION_DISABLED_THIS_SLICE`.
-6. **liveExecutionPlan 모든 step disabled** — `enabled`/`willExecute`/`sideEffectPerformed` 전부 false.
+5. **orchestrator `--live`/`--arm` fail-closed 유지** — 기존 게시 evidence는 nonzero exit + `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`.
+6. **liveExecutionPlan 중복 차단** — armed step도 `willExecute`/`sideEffectPerformed`가 전부 false.
 7. **metadata optimization gate 필수** — Instagram/YouTube publish step의 mandatory dependency.
 8. **duplicate publish guard 필수** — 두 publish step의 mandatory dependency, `v3_2` 키.
 9. **기존 evidence retryForbidden 유지** — Instagram `17916511431199303` / YouTube `r9jhckdpC9w`는 참조만, 재시도 대상 아님.
@@ -48,7 +48,7 @@ fixture의 `readinessConditions`에 있다.
 | `node scripts/check-render-manifest-local-runner-static.mjs` | PASS (42/42) |
 | `node scripts/check-money-shorts-automation-orchestrator-static.mjs` | PASS (151/151) |
 | `node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight` | PASS (`preflightOk: true`) |
-| `node scripts/run-dual-platform-final-publish-orchestrator.mjs --live` | FAIL_CLOSED_AS_EXPECTED (exit 2, `LIVE_EXECUTION_DISABLED_THIS_SLICE`) |
+| `node scripts/run-dual-platform-final-publish-orchestrator.mjs --live` | FAIL_CLOSED_AS_EXPECTED (exit 3, `BLOCKED_DUPLICATE_ALREADY_PUBLISHED`) |
 
 secret 값/토큰/credential은 이 로그 어디에도 기록되지 않는다 — command 문자열과
 PASS/FAIL 결과 요약만 담는다.

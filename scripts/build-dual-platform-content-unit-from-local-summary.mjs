@@ -128,13 +128,14 @@ function readUploadReadyPacket(packetPath) {
   return { ok: true, reason: null, packet };
 }
 
-const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ)/i;
+const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ|바이럴|떡상)/i;
+const PLATFORM_DISCOVERY_METADATA_VERSION = "money_shorts_platform_discovery_v1";
 
 // task: content-unit-metadata-optimization-enrichment-no-live-v1
 // 부족한 hashtag를 채울 때만 쓰는 고정 안전 기본 태그 pool(플랫폼 일반 태그, 낚시성/유행성 아님).
 // 순서대로 채택하며, 이미 존재하는 태그와 중복되면 건너뛴다.
 const SAFE_DEFAULT_HASHTAG_POOL = [
-  "꿀팁", "정보", "일상", "생활정보", "저장각", "유용한정보", "Shorts", "Reels", "추천", "필수정보",
+  "생활정보", "핵심정리", "정보", "Shorts", "Reels",
 ];
 
 // caption 본문에서 명사형 키워드 후보를 추출하기 위한 최소 stopword(조사/접속사 성격 짧은 토큰 제거용).
@@ -224,10 +225,9 @@ function extractCaptionKeywordCandidates(caption) {
 }
 
 /**
- * hashtags를 8-12개, unique, 무관 유행 태그 제외 조건으로 정규화한다.
+ * hashtags를 4-6개, unique, 무관 유행 태그 제외 조건으로 정규화한다.
  * 우선순위: 1) 기존 관련 태그 유지 → 2) caption 본문 키워드로 보강 →
- * 3) 그래도 부족하면 고정 안전 기본 태그 pool에서 보강. 12개 초과 시 앞에서부터 12개로 자른다.
- * 이미 8-12개이고 금지 패턴이 없으면 원본을 그대로 유지한다(불필요한 변형 없음).
+ * 3) 그래도 부족하면 고정 안전 기본 태그 pool에서 보강. 6개 초과 시 앞에서부터 6개로 자른다.
  */
 function normalizeInstagramHashtags(existingHashtags, caption) {
   const seen = new Set();
@@ -239,25 +239,25 @@ function normalizeInstagramHashtags(existingHashtags, caption) {
     normalized.push(t);
   }
 
-  if (normalized.length < 8) {
+  if (normalized.length < 4) {
     for (const kw of extractCaptionKeywordCandidates(caption)) {
-      if (normalized.length >= 8) break;
+      if (normalized.length >= 4) break;
       if (seen.has(kw) || DISALLOWED_TREND_TAG_PATTERN.test(kw)) continue;
       seen.add(kw);
       normalized.push(kw);
     }
   }
 
-  if (normalized.length < 8) {
+  if (normalized.length < 4) {
     for (const kw of SAFE_DEFAULT_HASHTAG_POOL) {
-      if (normalized.length >= 8) break;
+      if (normalized.length >= 4) break;
       if (seen.has(kw)) continue;
       seen.add(kw);
       normalized.push(kw);
     }
   }
 
-  return normalized.slice(0, 12);
+  return normalized.slice(0, 6);
 }
 
 /**
@@ -290,20 +290,27 @@ function deriveInstagramMetadata(igPayload) {
   if (callToAction == null) reasons.push("instagram_callToAction_not_derivable_from_caption");
 
   const hashtags = normalizeInstagramHashtags(rawHashtags, caption);
-  if (hashtags.length < 8) {
-    reasons.push(`instagram_hashtag_count_below_min_8_after_enrichment(actual ${hashtags.length})`);
+  if (hashtags.length < 4) {
+    reasons.push(`instagram_hashtag_count_below_min_4_after_enrichment(actual ${hashtags.length})`);
   }
-  if (hashtags.length > 12) reasons.push(`instagram_hashtag_count_above_max_12(actual ${hashtags.length})`);
+  if (hashtags.length > 6) reasons.push(`instagram_hashtag_count_above_max_6(actual ${hashtags.length})`);
   if (hashtags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
     reasons.push("instagram_hashtag_contains_unrelated_trend_tag");
   }
 
+  const primaryKeywords = extractCaptionKeywordCandidates(caption).slice(0, 3);
+  if (primaryKeywords.length < 2) reasons.push("instagram_primary_keywords_not_derivable");
   const metadata = {
+    discoveryContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
+    primaryKeywords,
     captionFirstLineHook: captionFirstLineHook ?? "",
     caption,
     hashtags,
     callToAction: callToAction ?? "",
     forbiddenUnrelatedTrendTags: true,
+    recommendationEligibilityReviewRequired: true,
+    originalContent: true,
+    shareToFeed: true,
   };
   return { metadata, ok: reasons.length === 0, reasons };
 }
@@ -317,6 +324,7 @@ function deriveYoutubeMetadata(ytPayload) {
     return { metadata: null, ok: false, reasons: ["youtube_platform_payload_missing"] };
   }
   const title = typeof ytPayload.title === "string" ? ytPayload.title : "";
+  const descriptionBase = typeof ytPayload.description === "string" ? ytPayload.description : "";
   const tags = Array.isArray(ytPayload.hashtags) ? ytPayload.hashtags : [];
 
   if (title.trim() === "") reasons.push("youtube_title_empty");
@@ -325,15 +333,20 @@ function deriveYoutubeMetadata(ytPayload) {
     reasons.push("youtube_tags_contains_unrelated_trend_tag");
   }
 
+  const primaryKeywords = extractCaptionKeywordCandidates(`${title}\n${descriptionBase}`).slice(0, 3);
+  if (primaryKeywords.length < 2) reasons.push("youtube_primary_keywords_not_derivable");
   const metadata = {
+    discoveryContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
+    primaryKeywords,
     titleBase: title,
     titleWithShortsSuffix: title.includes("#Shorts") ? title : `${title} #Shorts`,
-    descriptionBase: typeof ytPayload.description === "string" ? ytPayload.description : "",
+    descriptionBase,
     tags,
     categoryId: typeof ytPayload.categoryId === "string" ? ytPayload.categoryId : (ytPayload.categoryId != null ? String(ytPayload.categoryId) : ""),
     defaultLanguage: typeof ytPayload.defaultLanguage === "string" ? ytPayload.defaultLanguage : "ko",
     privacyStatus: "private",
     selfDeclaredMadeForKids: ytPayload.madeForKids === true,
+    containsSyntheticMedia: true,
   };
   return { metadata, ok: reasons.length === 0, reasons };
 }

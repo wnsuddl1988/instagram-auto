@@ -36,14 +36,14 @@
       "required": true
     },
     "orchestratorLiveFailClosed": {
-      "rule": "orchestrator --live / --arm은 이 slice에서 항상 LIVE_EXECUTION_DISABLED_THIS_SLICE로 실패해야 한다(nonzero exit).",
+      "rule": "orchestrator --live / --arm은 기존 게시 evidence 콘텐츠에서 duplicate guard로 실패해야 한다(nonzero exit).",
       "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --live",
       "expectedExitCodeNonZero": true,
-      "expectedStderrContains": "LIVE_EXECUTION_DISABLED_THIS_SLICE",
+      "expectedStderrContains": "BLOCKED_DUPLICATE_ALREADY_PUBLISHED",
       "required": true
     },
     "liveExecutionPlanAllStepsDisabled": {
-      "rule": "preflight.liveExecutionPlan의 4개 step 전부 enabled/willExecute/sideEffectPerformed === false여야 하며, plan 레벨 anyStepEnabled/anyStepWillExecute/anySideEffectPerformed도 전부 false여야 한다.",
+      "rule": "preflight.liveExecutionPlan의 4개 step은 armed(enabled=true)이지만 기존 게시 중복으로 willExecute/sideEffectPerformed === false여야 한다.",
       "required": true
     },
     "metadataOptimizationGateMandatory": {
@@ -88,7 +88,7 @@
       { "command": "node scripts/check-render-manifest-local-runner-static.mjs", "result": "PASS", "detail": "42 PASS / 0 FAIL" },
       { "command": "node scripts/check-money-shorts-automation-orchestrator-static.mjs", "result": "PASS", "detail": "151 PASS / 0 FAIL" },
       { "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --preflight", "result": "PASS", "detail": "preflightOk: true" },
-      { "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --live", "result": "FAIL_CLOSED_AS_EXPECTED", "detail": "exit 2, LIVE_EXECUTION_DISABLED_THIS_SLICE" }
+      { "command": "node scripts/run-dual-platform-final-publish-orchestrator.mjs --live", "result": "FAIL_CLOSED_AS_EXPECTED", "detail": "exit 3, BLOCKED_DUPLICATE_ALREADY_PUBLISHED" }
     ]
   },
 

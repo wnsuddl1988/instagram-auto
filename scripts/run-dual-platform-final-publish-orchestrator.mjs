@@ -180,20 +180,23 @@ export const INSTAGRAM_BLOB_PATHNAME_TEMPLATE =
 
 export const INSTAGRAM_VARIANT_ID = "instagram_reels_full_frame_1080x1920";
 export const YOUTUBE_VARIANT_ID = "youtube_shorts_letterbox_1080x1920";
+export const PLATFORM_DISCOVERY_METADATA_VERSION = "money_shorts_platform_discovery_v1";
 
 export const YOUTUBE_DEFAULT_METADATA = {
+  discoveryContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
+  primaryKeywords: ["월급관리", "돈관리", "생활경제"],
   titleBase: "월급 올라도 돈이 안 모이는 이유",
   titleWithShortsSuffix: "월급 올라도 돈이 안 모이는 이유 #Shorts",
   descriptionBase:
-    "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.\n\n개인 상황에 따라 결과는 달라질 수 있으며, 투자 권유가 아닌 일반 금융·생활 정보입니다.\n\n#Shorts #월급관리 #돈관리",
   tags: [
-    "재테크", "돈관리", "월급관리", "생활비", "라이프스타일인플레이션",
-    "저축", "절약", "사회초년생재테크", "돈모으는법", "Shorts",
+    "월급관리", "생활비", "라이프스타일인플레이션", "돈관리", "생활경제",
   ],
   categoryId: "22",
   defaultLanguage: "ko",
   privacyStatus: "public",
   selfDeclaredMadeForKids: false,
+  containsSyntheticMedia: true,
 };
 
 /**
@@ -201,15 +204,19 @@ export const YOUTUBE_DEFAULT_METADATA = {
  * "영상만 업로드 금지" 규칙 — caption/hashtags/CTA 없이는 publish job이 완전하지 않다.
  */
 export const INSTAGRAM_DEFAULT_METADATA = {
+  discoveryContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
+  primaryKeywords: ["월급관리", "돈관리", "생활경제"],
   captionFirstLineHook: "월급은 올랐는데 왜 통장은 그대로일까?",
   caption:
-    "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
   hashtags: [
-    "재테크", "돈관리", "월급관리", "생활비절약", "라이프스타일인플레이션",
-    "사회초년생재테크", "돈모으는법", "절약습관", "경제공부", "릴스",
+    "월급관리", "생활비절약", "라이프스타일인플레이션", "돈관리", "생활경제",
   ],
   callToAction: "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
   forbiddenUnrelatedTrendTags: true,
+  recommendationEligibilityReviewRequired: true,
+  originalContent: true,
+  shareToFeed: true,
 };
 
 /**
@@ -331,7 +338,12 @@ function buildYoutubeJob(unit) {
  * 통과해야 하는 gate이며, 이 slice에서는 판정만 하고 발행을 막지는 않는다
  * (no-live이므로 애초에 발행 자체가 없음).
  */
-const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ)/i;
+const DISALLOWED_TREND_TAG_PATTERN = /(챌린지|viral|trend|밈|fyp|fypシ|바이럴|떡상)/i;
+const FINANCIAL_OVERCLAIM_PATTERN = /(수익\s*보장|원금\s*보장|무조건\s*(?:번다|수익|오른다)|100%\s*(?:수익|성공)|손실\s*없)/i;
+
+function keywordAppears(text, keyword) {
+  return String(text).replace(/\s+/g, "").includes(String(keyword).replace(/\s+/g, ""));
+}
 
 function checkInstagramMetadataGate(metadata) {
   const reasons = [];
@@ -342,15 +354,27 @@ function checkInstagramMetadataGate(metadata) {
   if (typeof metadata.captionFirstLineHook !== "string" || metadata.captionFirstLineHook.trim() === "") {
     reasons.push("first_line_hook_missing");
   }
+  if (metadata.captionFirstLineHook?.length > 48) reasons.push("first_line_hook_too_long");
+  if (typeof metadata.caption !== "string" || metadata.caption.trim().length < 40) reasons.push("caption_missing_or_too_short");
   const hashtags = Array.isArray(metadata.hashtags) ? metadata.hashtags : [];
-  if (hashtags.length < 8) reasons.push("hashtag_count_below_min_8");
-  if (hashtags.length > 12) reasons.push("hashtag_count_above_max_12");
+  if (hashtags.length < 4) reasons.push("hashtag_count_below_min_4");
+  if (hashtags.length > 6) reasons.push("hashtag_count_above_max_6");
+  if (new Set(hashtags).size !== hashtags.length) reasons.push("hashtag_duplicate");
   if (hashtags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
     reasons.push("hashtag_contains_unrelated_trend_tag");
   }
   if (typeof metadata.callToAction !== "string" || metadata.callToAction.trim() === "") {
     reasons.push("call_to_action_missing");
   }
+  if (metadata.discoveryContractVersion !== PLATFORM_DISCOVERY_METADATA_VERSION) reasons.push("discovery_contract_invalid");
+  const primaryKeywords = Array.isArray(metadata.primaryKeywords) ? metadata.primaryKeywords : [];
+  const instagramText = `${metadata.captionFirstLineHook ?? ""} ${metadata.caption ?? ""}`;
+  if (primaryKeywords.length < 2 || primaryKeywords.length > 3) reasons.push("primary_keyword_count_invalid");
+  if (!primaryKeywords.every((keyword) => keywordAppears(instagramText, keyword))) reasons.push("primary_keyword_content_mismatch");
+  if (metadata.recommendationEligibilityReviewRequired !== true || metadata.originalContent !== true || metadata.shareToFeed !== true) {
+    reasons.push("instagram_recommendation_flags_missing");
+  }
+  if (FINANCIAL_OVERCLAIM_PATTERN.test(instagramText)) reasons.push("financial_overclaim_forbidden");
   return { ok: reasons.length === 0, reasons };
 }
 
@@ -363,11 +387,22 @@ function checkYoutubeMetadataGate(metadata) {
   if (typeof metadata.titleBase !== "string" || metadata.titleBase.trim() === "") {
     reasons.push("title_missing");
   }
+  if (metadata.titleWithShortsSuffix?.length > 100 || !String(metadata.titleWithShortsSuffix ?? "").includes("#Shorts")) reasons.push("shorts_title_invalid");
+  if (typeof metadata.descriptionBase !== "string" || metadata.descriptionBase.trim().length < 60) reasons.push("description_missing_or_too_short");
   const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
-  if (tags.length === 0) reasons.push("tags_missing");
+  if (tags.length < 3 || tags.length > 8) reasons.push("tag_count_invalid");
+  if (new Set(tags).size !== tags.length) reasons.push("tag_duplicate");
   if (tags.some((t) => DISALLOWED_TREND_TAG_PATTERN.test(String(t)))) {
     reasons.push("tags_contains_unrelated_trend_tag");
   }
+  if (metadata.discoveryContractVersion !== PLATFORM_DISCOVERY_METADATA_VERSION) reasons.push("discovery_contract_invalid");
+  const primaryKeywords = Array.isArray(metadata.primaryKeywords) ? metadata.primaryKeywords : [];
+  const youtubeText = `${metadata.titleBase ?? ""} ${metadata.descriptionBase ?? ""}`;
+  if (primaryKeywords.length < 2 || primaryKeywords.length > 3) reasons.push("primary_keyword_count_invalid");
+  if (!primaryKeywords.every((keyword) => keywordAppears(youtubeText, keyword))) reasons.push("primary_keyword_content_mismatch");
+  if (!metadata.categoryId || metadata.defaultLanguage !== "ko") reasons.push("category_or_language_invalid");
+  if (metadata.containsSyntheticMedia !== true) reasons.push("synthetic_media_disclosure_missing");
+  if (FINANCIAL_OVERCLAIM_PATTERN.test(youtubeText)) reasons.push("financial_overclaim_forbidden");
   return { ok: reasons.length === 0, reasons };
 }
 
@@ -640,7 +675,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
           gateReasons: igGate.reasons ?? [],
           rules: [
             "first_line_hook", "caption", "call_to_action",
-            "hashtags_8_to_12", "no_unrelated_trend_tags",
+            "hashtags_4_to_6_relevant", "original_content", "recommendation_eligibility_review", "no_unrelated_trend_tags",
           ],
         },
         {
@@ -671,7 +706,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
         // uploadYouTubeShortsWithCredentials 계약과 정합: video 파일 + 최적화 메타데이터 + OAuth credential.
         // short-lived credential은 refresh token으로 메모리에서 발급 — 장기 env로 요구하지 않는다.
         videoPathField: "youtubeSourcePath",
-        metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage"],
+        metadataFields: ["titleWithShortsSuffix", "descriptionBase", "tags", "categoryId", "defaultLanguage", "containsSyntheticMedia"],
         shortLivedCredentialSource: "derived_in_memory_from_refresh_token",
       },
       requiredApprovalTokens: ["APPROVE_YOUTUBE_LIVE_UPLOAD_WIRING", "APPROVE_DUAL_PLATFORM_ARM"],
@@ -685,7 +720,7 @@ function buildLiveExecutionPlan(unit, igJob, ytJob) {
           gateReasons: ytGate.reasons ?? [],
           rules: [
             "title", "description", "tags",
-            "category_id", "language", "shorts_suitability",
+            "category_id", "language", "shorts_suitability", "synthetic_media_disclosure",
           ],
         },
         {

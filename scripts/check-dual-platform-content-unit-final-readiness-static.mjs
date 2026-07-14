@@ -140,14 +140,15 @@ if (fixture) {
   const yt = fixture.youtubeMetadata ?? {};
   const igHashtags = Array.isArray(ig.hashtags) ? ig.hashtags : [];
   const ytTags = Array.isArray(yt.tags) ? yt.tags : [];
-  const disallowedPattern = /(챌린지|viral|trend|밈|fyp|fypシ)/i;
+  const disallowedPattern = /(챌린지|viral|trend|밈|fyp|fypシ|바이럴|떡상)/i;
 
   check("instagram captionFirstLineHook non-empty", typeof ig.captionFirstLineHook === "string" && ig.captionFirstLineHook.trim() !== "");
   check("instagram caption non-empty", typeof ig.caption === "string" && ig.caption.trim() !== "");
-  check("instagram hashtags count in [8,12]", igHashtags.length >= 8 && igHashtags.length <= 12, `count=${igHashtags.length}`);
+  check("instagram hashtags count in [4,6]", igHashtags.length >= 4 && igHashtags.length <= 6, `count=${igHashtags.length}`);
   check("instagram hashtags contain no disallowed trend tags", !igHashtags.some((t) => disallowedPattern.test(String(t))));
   check("instagram callToAction non-empty", typeof ig.callToAction === "string" && ig.callToAction.trim() !== "");
   check("instagram forbiddenUnrelatedTrendTags === true", ig.forbiddenUnrelatedTrendTags === true);
+  check("instagram discovery flags are present", ig.discoveryContractVersion === "money_shorts_platform_discovery_v1" && ig.recommendationEligibilityReviewRequired === true && ig.originalContent === true && ig.shareToFeed === true);
 
   check("youtube titleBase non-empty", typeof yt.titleBase === "string" && yt.titleBase.trim() !== "");
   check("youtube titleWithShortsSuffix non-empty", typeof yt.titleWithShortsSuffix === "string" && yt.titleWithShortsSuffix.trim() !== "");
@@ -158,6 +159,7 @@ if (fixture) {
   check("youtube defaultLanguage === ko", yt.defaultLanguage === "ko");
   check("youtube privacyStatus === public", yt.privacyStatus === "public");
   check("youtube selfDeclaredMadeForKids === false", yt.selfDeclaredMadeForKids === false);
+  check("youtube synthetic-media disclosure is enabled", yt.containsSyntheticMedia === true);
 
   const bl = fixture.blobPublicUrlLivenessEvidence ?? {};
   check("fixture blobPublicUrlLivenessEvidence.url is https vercel-storage mp4", typeof bl.url === "string" && bl.url.startsWith("https://") && bl.url.includes(".public.blob.vercel-storage.com/") && bl.url.endsWith(".mp4"));

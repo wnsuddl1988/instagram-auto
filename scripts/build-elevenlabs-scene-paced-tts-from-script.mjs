@@ -1,6 +1,7 @@
 /**
  * Scene-paced ElevenLabs TTS builder.
- * Generates one TTS audio per scene, normalizes to scene duration, then concats into a 30s timeline.
+ * Generates one TTS audio per scene, preserves its natural duration, adds a short tail breath,
+ * then concatenates an audio-driven timeline for the final video.
  *
  * Usage:
  *   node scripts/build-elevenlabs-scene-paced-tts-from-script.mjs \
@@ -13,7 +14,7 @@
  * Security constraints:
  * - API key/voice ID never logged or stored.
  * - Voice ID stored as masked form only.
- * - Max 6 ElevenLabs API calls (one per scene). No retry.
+ * - Max 10 ElevenLabs API calls (one per scene). No retry.
  * - No voices list endpoint.
  * - out-dir must be outside repo root.
  * - No .money-shorts-local/ access.
@@ -23,6 +24,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -118,6 +120,12 @@ if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
 
 const sortedScenes = [...scenes].sort((a, b) => a.sceneNumber - b.sceneNumber);
 const totalSceneDurationSec = sortedScenes.reduce((s, sc) => s + sc.durationSec, 0);
+const API_CALL_BUDGET_MAX = 10;
+
+if (sortedScenes.length > API_CALL_BUDGET_MAX) {
+  console.error(`ABORT: TTS script has ${sortedScenes.length} scenes, but max supported is ${API_CALL_BUDGET_MAX}.`);
+  process.exit(1);
+}
 
 console.log(`  scriptId:       ${scriptId}`);
 console.log(`  manifestId:     ${manifestId}`);
@@ -249,7 +257,7 @@ if (!apiKeyConfigured || !voiceIdConfigured) {
     missingEnv: missing,
     envSource: "missing",
     apiCallCount: 0,
-    apiCallBudgetMax: 6,
+    apiCallBudgetMax: API_CALL_BUDGET_MAX,
     sceneCount: sortedScenes.length,
     targetDurationSec,
     timelineAudioPath: null,
@@ -286,9 +294,67 @@ function maskVoiceId(id) {
   return id.slice(0, 3) + "***" + id.slice(-3);
 }
 
-// ── Scene TTS text selection ─────────────────────────────────────────────────────
-// Priority: ttsText → spokenCaption → captionText → narration
+// ── Scene TTS text selection / speech direction compilation ──────────────────────
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function countSpeakableChars(text) {
+  return String(text ?? "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/\s+/g, "")
+    .length;
+}
+
+function compileSpeechDirectionText(scene) {
+  const direction = scene?.speechDirection;
+  if (direction?.engineVersion !== "money_shorts_speech_direction_v1" || !Array.isArray(direction.segments)) return null;
+  const segments = direction.segments
+    .map((segment) => ({
+      text: String(segment?.text ?? "").trim(),
+      pauseAfterMs: clamp(Number(segment?.pauseAfterMs) || 0, 0, 600),
+    }))
+    .filter((segment) => segment.text.length > 0);
+  if (segments.length === 0) return null;
+
+  const isElevenV3 = /^eleven_v3(?:$|_)/.test(modelId);
+  let text;
+  let renderingMode;
+  if (isElevenV3) {
+    const requestedTag = String(direction.v3AudioTag ?? "").trim().toLowerCase();
+    const safeTag = /^[a-z ]{3,32}$/.test(requestedTag) ? `[${requestedTag}] ` : "";
+    text = `${safeTag}${segments.map((segment) => segment.text).join("\n")}`.trim();
+    renderingMode = "eleven_v3_audio_tag";
+  } else {
+    text = segments.map((segment, index) => {
+      if (index === segments.length - 1 || segment.pauseAfterMs <= 0) return segment.text;
+      return `${segment.text} <break time="${(segment.pauseAfterMs / 1000).toFixed(2)}s" />`;
+    }).join(" ");
+    renderingMode = "v2_context_and_breaks";
+  }
+
+  const sourceText = String(scene.narration ?? scene.ttsText ?? direction.performanceText ?? "").trim();
+  return {
+    text,
+    textSource: "speechDirection",
+    sourceTextCharCount: countSpeakableChars(sourceText),
+    sentTextCharCount: countSpeakableChars(text),
+    transportTextCharCount: text.length,
+    speechDirectionApplied: true,
+    speechDirectionEngineVersion: direction.engineVersion,
+    speechRenderingMode: renderingMode,
+    delivery: direction.delivery ?? "unknown",
+    emphasisWords: Array.isArray(direction.emphasisWords)
+      ? direction.emphasisWords.filter((word) => typeof word === "string" && word.trim()).slice(0, 3)
+      : [],
+  };
+}
+
+// Priority: speechDirection → ttsText → spokenCaption → captionText → narration
 function resolveSceneTtsText(scene) {
+  const directed = compileSpeechDirectionText(scene);
+  if (directed) return directed;
   const candidates = [
     { key: "ttsText", value: scene.ttsText },
     { key: "spokenCaption", value: scene.spokenCaption },
@@ -298,7 +364,18 @@ function resolveSceneTtsText(scene) {
   for (const { key, value } of candidates) {
     if (value && String(value).trim()) {
       const text = String(value).trim();
-      return { text, textSource: key, sourceTextCharCount: text.length, sentTextCharCount: text.length };
+      return {
+        text,
+        textSource: key,
+        sourceTextCharCount: countSpeakableChars(text),
+        sentTextCharCount: countSpeakableChars(text),
+        transportTextCharCount: text.length,
+        speechDirectionApplied: false,
+        speechDirectionEngineVersion: null,
+        speechRenderingMode: "plain_text_fallback",
+        delivery: "unknown",
+        emphasisWords: [],
+      };
     }
   }
   return null;
@@ -321,13 +398,13 @@ function calcDurationTextBudget(durationSec, charCount) {
   let warning = null;
   if (charCount < minChars) {
     status = "under_budget";
-    warning = `under minimum: ${charCount} chars < ${minChars} (${TTS_CHARS_PER_SEC_MIN}chars/s × ${durationSec}s) — silence padding likely`;
+    warning = `under minimum: ${charCount} chars < ${minChars} (${TTS_CHARS_PER_SEC_MIN}chars/s × ${durationSec}s) — audio-driven timeline will shorten this scene`;
   } else if (charCount > warnChars) {
     status = "over_budget";
-    warning = `over hard limit: ${charCount} chars > ${warnChars} (${TTS_CHARS_PER_SEC_WARN}chars/s × ${durationSec}s) — tail trim risk`;
+    warning = `over hard limit: ${charCount} chars > ${warnChars} (${TTS_CHARS_PER_SEC_WARN}chars/s × ${durationSec}s) — audio-driven timeline will expand this scene`;
   } else if (charCount > maxChars) {
     status = "over_budget";
-    warning = `over target: ${charCount} chars > ${maxChars} (${TTS_CHARS_PER_SEC_TARGET}chars/s × ${durationSec}s) — trim possible`;
+    warning = `over target: ${charCount} chars > ${maxChars} (${TTS_CHARS_PER_SEC_TARGET}chars/s × ${durationSec}s) — audio-driven timeline will expand this scene`;
   } else {
     status = "within_budget";
   }
@@ -340,7 +417,6 @@ console.log();
 
 // ── Per-scene TTS API calls ──────────────────────────────────────────────────────
 console.log("[step 2/5] Calling ElevenLabs TTS per scene...");
-const API_CALL_BUDGET_MAX = 6;
 let apiCallCount = 0;
 
 const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
@@ -349,10 +425,14 @@ const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURICompone
 // (속삭임/말끝 흐림 완화 목적: stability↑, similarity_boost↑, style↓).
 const VOICE_PRESETS = {
   default: { stability: 0.52, similarity_boost: 0.78, style: 0.1, use_speaker_boost: true },
+  expressive_narration_v1: { stability: 0.48, similarity_boost: 0.84, style: 0.28, use_speaker_boost: true },
   confident_v2: { stability: 0.8, similarity_boost: 0.88, style: 0.03, use_speaker_boost: true },
   // confident_v3: v2가 지나치게 flat/속삭임이라 style을 올려 문장 종결을 단단하게, stability는 낮춰
   // 단조로움을 완화. speaker identity 유지를 위해 similarity_boost는 높게.
   confident_v3: { stability: 0.68, similarity_boost: 0.9, style: 0.22, use_speaker_boost: true },
+  // 500개 재테크 공통 엔진이 쓰는 최신 기준. 기존 TTS script의 식별자가 default로
+  // 조용히 fallback하지 않도록 준호 기준의 confident_v3와 같은 값을 명시한다.
+  korean_confident_director_v2: { stability: 0.68, similarity_boost: 0.9, style: 0.22, use_speaker_boost: true },
 };
 // preset 우선순위: --voice-preset CLI > tts script voicePreset 필드 > default
 const requestedPreset = voicePresetArg ?? ttsScript.voicePreset ?? "default";
@@ -364,8 +444,76 @@ const voiceSettings = VOICE_PRESETS[voicePresetId];
 console.log(`  voicePreset: ${voicePresetId} (stability=${voiceSettings.stability}, similarity_boost=${voiceSettings.similarity_boost}, style=${voiceSettings.style}, use_speaker_boost=${voiceSettings.use_speaker_boost})`);
 
 const sceneResults = [];
+const timingBuildId = Date.now().toString(36);
+const DEFAULT_NATURAL_TAIL_PAUSE_SEC = 0.22;
+const NATURAL_TAIL_PAUSE_BY_ROLE = {
+  hook: 0.16,
+  problem: 0.18,
+  recommendation: 0.28,
+  save: 0.32,
+};
 
-for (const scene of sortedScenes) {
+function naturalTailPauseSec(sceneRole) {
+  return NATURAL_TAIL_PAUSE_BY_ROLE[sceneRole] ?? DEFAULT_NATURAL_TAIL_PAUSE_SEC;
+}
+
+function resolveSceneVoiceSettings(scene) {
+  const tuning = scene?.speechDirection?.voiceTuning;
+  if (!tuning || scene?.speechDirection?.engineVersion !== "money_shorts_speech_direction_v1") return { ...voiceSettings };
+  return {
+    ...voiceSettings,
+    stability: parseFloat(clamp(voiceSettings.stability + (Number(tuning.stabilityDelta) || 0), 0.3, 0.82).toFixed(2)),
+    style: parseFloat(clamp(voiceSettings.style + (Number(tuning.styleDelta) || 0), 0, 0.45).toFixed(2)),
+  };
+}
+
+function resolveSceneContextText(scene) {
+  return String(scene?.narration ?? scene?.speechDirection?.performanceText ?? scene?.ttsText ?? "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildSceneInputFingerprint({ text, previousText, nextText, sceneVoiceSettings, scene }) {
+  return createHash("sha256").update(JSON.stringify({
+    engineVersion: scene?.speechDirection?.engineVersion ?? "plain_text_v1",
+    modelId,
+    voiceIdentity: voiceCandidateArg ?? voiceLabel ?? voiceIdMasked,
+    voicePresetId,
+    sceneVoiceSettings,
+    text,
+    previousText,
+    nextText,
+  })).digest("hex").slice(0, 12);
+}
+
+function probeAudioFile(audioPath, sceneNum) {
+  const probeResult = spawnSync("ffprobe", ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", audioPath], {
+    encoding: "utf-8", maxBuffer: 2 * 1024 * 1024, shell: false,
+  });
+  if ((probeResult.status ?? -1) !== 0) {
+    console.error(`ABORT: ffprobe failed on scene ${sceneNum} audio.`);
+    process.exit(1);
+  }
+  let audioProbe;
+  try {
+    audioProbe = JSON.parse(probeResult.stdout);
+  } catch (e) {
+    console.error(`ABORT: Cannot parse scene ${sceneNum} ffprobe output: ${e.message}`);
+    process.exit(1);
+  }
+  const audioStream = (audioProbe.streams ?? []).find((s) => s.codec_type === "audio");
+  const rawAudioDurationSec = parseFloat(audioProbe.format?.duration ?? "NaN");
+  if (!audioStream || !Number.isFinite(rawAudioDurationSec) || rawAudioDurationSec <= 0) {
+    console.error(`ABORT: Scene ${sceneNum} audio is invalid.`);
+    process.exit(1);
+  }
+  return { rawAudioDurationSec, audioCodec: audioStream.codec_name ?? "unknown" };
+}
+
+for (let sceneIndex = 0; sceneIndex < sortedScenes.length; sceneIndex++) {
+  const scene = sortedScenes[sceneIndex];
   const sceneNum = scene.sceneNumber;
   const sceneNumStr = String(sceneNum).padStart(2, "0");
 
@@ -374,110 +522,92 @@ for (const scene of sortedScenes) {
     console.error(`ABORT: Scene ${sceneNum} has no usable TTS text (ttsText/spokenCaption/captionText/narration all empty).`);
     process.exit(1);
   }
-  const { text, textSource, sourceTextCharCount, sentTextCharCount } = resolved;
+  const {
+    text,
+    textSource,
+    sourceTextCharCount,
+    sentTextCharCount,
+    transportTextCharCount,
+    speechDirectionApplied,
+    speechDirectionEngineVersion,
+    speechRenderingMode,
+    delivery,
+    emphasisWords,
+  } = resolved;
+  const previousText = sceneIndex > 0 ? resolveSceneContextText(sortedScenes[sceneIndex - 1]) : null;
+  const nextText = sceneIndex < sortedScenes.length - 1 ? resolveSceneContextText(sortedScenes[sceneIndex + 1]) : null;
+  const sceneVoiceSettings = resolveSceneVoiceSettings(scene);
+  const inputFingerprint = buildSceneInputFingerprint({ text, previousText, nextText, sceneVoiceSettings, scene });
+  const rawAudioPath = join(outDirAbs, `scene-${sceneNumStr}-elevenlabs-${inputFingerprint}.mp3`);
+  const normalizedPath = join(outDirAbs, `scene-${sceneNumStr}-natural-${timingBuildId}.m4a`);
 
   const budget = calcDurationTextBudget(scene.durationSec, sentTextCharCount);
   if (budget.durationTextBudgetWarning) {
     console.warn(`  [WARN] scene ${sceneNumStr} text budget: ${budget.durationTextBudgetWarning}`);
   }
 
-  if (apiCallCount >= API_CALL_BUDGET_MAX) {
-    console.error(`ABORT: API call budget exceeded (max ${API_CALL_BUDGET_MAX}). Stopping at scene ${sceneNum}.`);
-    process.exit(1);
-  }
-
-  console.log(`  [scene ${sceneNumStr}] role: ${scene.sceneRole}, target: ${scene.durationSec}s, textSource: ${textSource}, chars: ${sentTextCharCount}, budget: ${budget.durationTextBudgetStatus}`);
-
   let httpStatus = null;
-  let audioBuffer = null;
-
-  try {
-    apiCallCount++;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({ text, model_id: modelId, voice_settings: voiceSettings }),
-    });
-
-    httpStatus = response.status;
-
-    if (!response.ok) {
-      console.error(`ABORT: ElevenLabs API returned ${httpStatus} for scene ${sceneNum}.`);
-      const errText = await response.text().catch(() => "(unreadable)");
-      console.error(`  Error (truncated): ${errText.slice(0, 200)}`);
+  const reusedRawAudio = existsSync(rawAudioPath);
+  if (reusedRawAudio) {
+    console.log(`  [scene ${sceneNumStr}] reusing existing raw audio, no new API call`);
+  } else {
+    if (apiCallCount >= API_CALL_BUDGET_MAX) {
+      console.error(`ABORT: API call budget exceeded (max ${API_CALL_BUDGET_MAX}). Stopping at scene ${sceneNum}.`);
       process.exit(1);
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    audioBuffer = Buffer.from(arrayBuffer);
-    console.log(`    HTTP ${httpStatus}, size: ${audioBuffer.length} bytes`);
-  } catch (e) {
-    console.error(`ABORT: Fetch failed for scene ${sceneNum}: ${e.message}`);
-    process.exit(1);
+    console.log(`  [scene ${sceneNumStr}] role: ${scene.sceneRole}, delivery: ${delivery}, planned: ${scene.durationSec}s, textSource: ${textSource}, chars: ${sentTextCharCount}, context: ${previousText?.length ?? 0}/${nextText?.length ?? 0}, budget: ${budget.durationTextBudgetStatus}`);
+    let audioBuffer = null;
+    try {
+      apiCallCount++;
+      const requestBody = {
+        text,
+        model_id: modelId,
+        voice_settings: sceneVoiceSettings,
+        ...(previousText ? { previous_text: previousText } : {}),
+        ...(nextText ? { next_text: nextText } : {}),
+      };
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      httpStatus = response.status;
+      if (!response.ok) {
+        console.error(`ABORT: ElevenLabs API returned ${httpStatus} for scene ${sceneNum}.`);
+        const errText = await response.text().catch(() => "(unreadable)");
+        console.error(`  Error (truncated): ${errText.slice(0, 200)}`);
+        process.exit(1);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      audioBuffer = Buffer.from(arrayBuffer);
+      console.log(`    HTTP ${httpStatus}, size: ${audioBuffer.length} bytes`);
+    } catch (e) {
+      console.error(`ABORT: Fetch failed for scene ${sceneNum}: ${e.message}`);
+      process.exit(1);
+    }
+    writeFileSync(rawAudioPath, audioBuffer);
   }
 
-  const rawAudioPath = join(outDirAbs, `scene-${sceneNumStr}-elevenlabs.mp3`);
-  writeFileSync(rawAudioPath, audioBuffer);
-
-  // ffprobe raw audio
-  const probeResult = spawnSync("ffprobe", ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", rawAudioPath], {
-    encoding: "utf-8", maxBuffer: 2 * 1024 * 1024, shell: false,
-  });
-
-  const ffprobeExitCode = probeResult.status ?? -1;
-  if (ffprobeExitCode !== 0) {
-    console.error(`ABORT: ffprobe failed on scene ${sceneNum} audio (exit ${ffprobeExitCode})`);
-    process.exit(1);
-  }
-
-  let audioProbe;
-  try {
-    audioProbe = JSON.parse(probeResult.stdout);
-  } catch (e) {
-    console.error(`ABORT: Cannot parse ffprobe output for scene ${sceneNum}: ${e.message}`);
-    process.exit(1);
-  }
-
-  const audioStream = (audioProbe.streams ?? []).find((s) => s.codec_type === "audio");
-  if (!audioStream) {
-    console.error(`ABORT: ffprobe found no audio stream in scene ${sceneNum} mp3.`);
-    process.exit(1);
-  }
-
-  const rawAudioDurationSec = parseFloat(audioProbe.format?.duration ?? "NaN");
-  if (!Number.isFinite(rawAudioDurationSec) || rawAudioDurationSec <= 0) {
-    console.error(`ABORT: ffprobe invalid duration for scene ${sceneNum}: ${rawAudioDurationSec}`);
-    process.exit(1);
-  }
-
-  const audioCodec = audioStream.codec_name ?? "unknown";
+  const { rawAudioDurationSec, audioCodec } = probeAudioFile(rawAudioPath, sceneNum);
   console.log(`    raw duration: ${rawAudioDurationSec.toFixed(3)}s, codec: ${audioCodec}`);
 
-  // Normalize to scene duration
-  const targetSceneDurationSec = scene.durationSec;
-  const durationDeltaSec = parseFloat((rawAudioDurationSec - targetSceneDurationSec).toFixed(3));
-  const normalizedPath = join(outDirAbs, `scene-${sceneNumStr}-normalized.m4a`);
-
-  let normalizeStatus = "fit";
-  const sceneRiskNotes = [];
-  let normalizeArgs;
-
-  if (rawAudioDurationSec > targetSceneDurationSec + 0.05) {
-    normalizeStatus = "trimmed";
-    sceneRiskNotes.push(`scene ${sceneNum} trimmed: raw ${rawAudioDurationSec.toFixed(3)}s → target ${targetSceneDurationSec}s`);
-    normalizeArgs = ["-y", "-i", rawAudioPath, "-t", String(targetSceneDurationSec), "-c:a", "aac", "-b:a", "128k", normalizedPath];
-  } else if (rawAudioDurationSec < targetSceneDurationSec - 0.05) {
-    normalizeStatus = "padded";
-    sceneRiskNotes.push(`scene ${sceneNum} padded: raw ${rawAudioDurationSec.toFixed(3)}s → target ${targetSceneDurationSec}s`);
-    normalizeArgs = ["-y", "-i", rawAudioPath, "-filter_complex", `[0:a]apad=pad_dur=${targetSceneDurationSec}[aout]`, "-map", "[aout]", "-t", String(targetSceneDurationSec), "-c:a", "aac", "-b:a", "128k", normalizedPath];
-  } else {
-    normalizeStatus = "fit";
-    normalizeArgs = ["-y", "-i", rawAudioPath, "-t", String(targetSceneDurationSec), "-c:a", "aac", "-b:a", "128k", normalizedPath];
+  // Preserve the complete narration and add only a short role-aware tail breath.
+  const tailPauseSec = naturalTailPauseSec(scene.sceneRole);
+  const resolvedSceneDurationSec = parseFloat((rawAudioDurationSec + tailPauseSec).toFixed(3));
+  if (resolvedSceneDurationSec < 1 || resolvedSceneDurationSec > 15) {
+    console.error(`ABORT: Scene ${sceneNum} natural duration ${resolvedSceneDurationSec}s is outside 1..15s.`);
+    process.exit(1);
   }
+  const normalizeArgs = [
+    "-y", "-i", rawAudioPath,
+    "-filter_complex", `[0:a]apad=pad_dur=${tailPauseSec}[aout]`,
+    "-map", "[aout]", "-t", String(resolvedSceneDurationSec),
+    "-c:a", "aac", "-b:a", "128k", normalizedPath,
+  ];
 
   const normalizeResult = spawnSync("ffmpeg", normalizeArgs, {
     encoding: "utf-8", maxBuffer: 4 * 1024 * 1024, shell: false,
@@ -489,41 +619,62 @@ for (const scene of sortedScenes) {
     process.exit(1);
   }
 
-  console.log(`    normalized: ${normalizeStatus} → ${targetSceneDurationSec}s → ${normalizedPath}`);
+  const normalizeStatus = reusedRawAudio ? "reused_natural_fit" : "natural_fit";
+  console.log(`    normalized: ${normalizeStatus} → ${resolvedSceneDurationSec}s (tail ${tailPauseSec}s) → ${normalizedPath}`);
 
   sceneResults.push({
     sceneNumber: sceneNum,
     sceneRole: scene.sceneRole ?? "unknown",
-    targetDurationSec: targetSceneDurationSec,
+    plannedDurationSec: scene.durationSec,
+    targetDurationSec: resolvedSceneDurationSec,
     textSource,
     sourceTextCharCount,
     sentTextCharCount,
+    transportTextCharCount,
+    speechDirectionApplied,
+    speechDirectionEngineVersion,
+    speechRenderingMode,
+    delivery,
+    emphasisWords,
+    previousContextCharCount: previousText?.length ?? 0,
+    nextContextCharCount: nextText?.length ?? 0,
+    sceneVoiceSettingsSanitized: sceneVoiceSettings,
+    inputFingerprint,
     durationTextBudgetMinChars: budget.durationTextBudgetMinChars,
     durationTextBudgetMaxChars: budget.durationTextBudgetMaxChars,
     durationTextBudgetStatus: budget.durationTextBudgetStatus,
     durationTextBudgetWarning: budget.durationTextBudgetWarning ?? null,
     rawAudioDurationSec,
-    normalizedDurationSec: targetSceneDurationSec,
+    normalizedDurationSec: resolvedSceneDurationSec,
+    naturalTailPauseSec: tailPauseSec,
     audioPath: rawAudioPath,
     normalizedAudioPath: normalizedPath,
     audioCodec,
     httpStatus,
     status: normalizeStatus,
-    durationDeltaSec,
-    riskNotes: sceneRiskNotes,
+    durationDeltaSec: parseFloat((resolvedSceneDurationSec - scene.durationSec).toFixed(3)),
+    riskNotes: reusedRawAudio ? [`scene ${sceneNum} reused existing raw audio; no new ElevenLabs API call was made.`] : [],
   });
 }
 
+let resolvedCursorSec = 0;
+for (const scene of sceneResults) {
+  scene.startSec = parseFloat(resolvedCursorSec.toFixed(3));
+  resolvedCursorSec += scene.normalizedDurationSec;
+  scene.endSec = parseFloat(resolvedCursorSec.toFixed(3));
+}
+const resolvedTargetDurationSec = parseFloat(resolvedCursorSec.toFixed(3));
+
 console.log(`\n  Total API calls: ${apiCallCount} / ${API_CALL_BUDGET_MAX}\n`);
 
-// ── Step 3: Concat normalized scene audios into 30s timeline ─────────────────────
+// ── Step 3: Concat natural-fit scene audios into an audio-driven timeline ─────────
 console.log("[step 3/5] Concatenating normalized scene audios into timeline...");
 
 const concatListPath = join(outDirAbs, "concat-list.txt");
 const concatListContent = sceneResults.map((sc) => `file '${sc.normalizedAudioPath.replace(/\\/g, "/")}'`).join("\n");
 writeFileSync(concatListPath, concatListContent, "utf-8");
 
-const timelineAudioPath = join(outDirAbs, "elevenlabs-scene-paced-timeline.m4a");
+const timelineAudioPath = join(outDirAbs, `elevenlabs-scene-paced-timeline-natural-${timingBuildId}.m4a`);
 
 const concatResult = spawnSync("ffmpeg", [
   "-y",
@@ -573,12 +724,12 @@ if (!Number.isFinite(timelineDurationSec) || timelineDurationSec <= 0) {
 }
 
 const timelineAudioCodec = timelineAudioStream.codec_name ?? "unknown";
-console.log(`  timeline duration: ${timelineDurationSec.toFixed(3)}s (target: ${targetDurationSec}s)`);
+console.log(`  timeline duration: ${timelineDurationSec.toFixed(3)}s (audio-driven target: ${resolvedTargetDurationSec}s, planned: ${targetDurationSec}s)`);
 console.log(`  timeline codec: ${timelineAudioCodec}`);
 
-const timelineDurationOk = Math.abs(timelineDurationSec - targetDurationSec) <= 0.5;
+const timelineDurationOk = Math.abs(timelineDurationSec - resolvedTargetDurationSec) <= 0.5;
 if (!timelineDurationOk) {
-  console.error(`WARN: Timeline duration ${timelineDurationSec.toFixed(3)}s deviates from target ${targetDurationSec}s by more than 0.5s.`);
+  console.error(`WARN: Timeline duration ${timelineDurationSec.toFixed(3)}s deviates from audio-driven target ${resolvedTargetDurationSec}s by more than 0.5s.`);
 }
 console.log();
 
@@ -598,7 +749,7 @@ for (const sc of sceneResults) {
 }
 
 if (!timelineDurationOk) {
-  riskNotes.push(`Timeline duration ${timelineDurationSec.toFixed(3)}s deviates from target ${targetDurationSec}s by more than 0.5s.`);
+  riskNotes.push(`Timeline duration ${timelineDurationSec.toFixed(3)}s deviates from audio-driven target ${resolvedTargetDurationSec}s by more than 0.5s.`);
 }
 
 const summary = {
@@ -606,11 +757,19 @@ const summary = {
   mode: "elevenlabs_scene_paced",
   provider: "elevenlabs",
   liveApiCallPerformed: true,
+  newApiCallPerformed: apiCallCount > 0,
   readinessFailure: false,
   apiCallCount,
   apiCallBudgetMax: API_CALL_BUDGET_MAX,
   sceneCount: sortedScenes.length,
-  targetDurationSec,
+  timingPolicy: "audio_driven_natural_v1",
+  prosodyPolicy: ttsScript.prosodyPolicy ?? "plain_text_fallback",
+  speechDirectionEngineVersion: sceneResults.some((scene) => scene.speechDirectionApplied)
+    ? "money_shorts_speech_direction_v1"
+    : null,
+  speechContextPolicy: "immediate_neighbor_scenes",
+  plannedTargetDurationSec: targetDurationSec,
+  targetDurationSec: resolvedTargetDurationSec,
   timelineAudioPath,
   timelineDurationSec,
   timelineAudioCodec,

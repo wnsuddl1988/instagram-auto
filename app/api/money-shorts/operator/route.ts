@@ -29,10 +29,19 @@ import {
   type OperatorAction,
   WIZARD_CATEGORY_IDS,
   type WizardCategoryId,
+  WIZARD_FINANCE_SUBTOPIC_IDS,
+  WIZARD_EDITORIAL_DECISIONS,
+  type WizardFinanceSubtopicId,
   buildOperatorCommand,
+  buildWizardContentUnitsForTopic,
+  buildWizardRealPipelineInputs,
+  canWizardTopicEnterScript,
   ensureWizardFinalScript,
-  generateWizardTopicBatch,
+  generateWizardTopicBatchSmart,
+  getWizardScriptQualityGate,
   isLocalDevRuntime,
+  listWizardUploadReadyItems,
+  markWizardTopicHistory,
   readCredentialPresence,
   readFinalE2ePreflightResult,
   readScriptPreview,
@@ -40,11 +49,20 @@ import {
   readWizardPublishPreflight,
   readWizardPublishResult,
   readWizardRealAudioBytes,
+  readWizardFinanceCharacterCastState,
+  readWizardFinanceCharacterImageBytes,
   readWizardRealMediaState,
+  resolveWizardFinanceCharacterVoice,
   readWizardVideoBytes,
   readWizardVideoStatus,
   runOperatorScript,
+  saveWizardFinanceCharacterSelection,
+  saveWizardTopicEditorialDecision,
 } from "@/lib/owner-web-operator";
+import {
+  FINANCE_CHARACTER_IDS,
+  type FinanceCharacterId,
+} from "@/lib/finance-character-cast";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,12 +74,17 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "readyDuplicateGuard",
   "finalE2ePreflight",
   "topicRecommend",
+  "topicPreference",
   "scriptPreview",
   "voiceSample",
   "videoCreate",
   "previewStatus",
   "wizardPreflight",
   "actualUpload",
+  "uploadReadyList",
+  "characterCastStatus",
+  "characterCastCreate",
+  "characterCastSelect",
   "realTtsCreate",
   "realSceneImagesCreate",
   "finalVideoCreate",
@@ -76,11 +99,14 @@ const UPLOAD_TIMEOUT_MS = 300_000;
 
 // 실제 제작 단계별 timeout — 실행 스크립트가 도는 동안 dev 서버가 다른 요청을 처리하지
 // 못하므로(Owner 단독 로컬 사용 전제) UI가 "몇 분 걸릴 수 있음"을 함께 안내한다.
-// 음성: 장면별 합성 호출(최대 6회) + 오디오 이어붙이기 / 이미지: 장면 6개 × 최대 180s + 브라우저 기동(21분)
-// / 최종 영상: 장면 세그먼트 6개 렌더 + 자막·음성 결합.
+// 음성: 전체 대본 연속 합성 / 이미지: 남은 동적 장면 수 × 최대 180s + 브라우저 기동
+// / 최종 영상: 확정 대본의 흐름 기반 동적 장면 렌더 + 자막·음성 결합.
 const REAL_TTS_TIMEOUT_MS = 240_000;
-const REAL_IMAGES_TIMEOUT_MS = 1_260_000;
+const REAL_IMAGE_BASE_TIMEOUT_MS = 120_000;
+const REAL_IMAGE_PER_SCENE_TIMEOUT_MS = 190_000;
+const REAL_IMAGES_MAX_TIMEOUT_MS = 3_540_000;
 const FINAL_VIDEO_TIMEOUT_MS = 300_000;
+const CHARACTER_CAST_TIMEOUT_MS = 480_000;
 
 /** 업로드 차단 시 사용자 문구(media quality gate — 시안/테스트 산출물 업로드 금지). */
 const MEDIA_GATE_USER_MESSAGE = "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
@@ -119,13 +145,160 @@ function json(body: OperatorResponse, httpStatus = 200) {
   return NextResponse.json(body, { status: httpStatus });
 }
 
+function describeTopicFallbackReason(reason?: string): string {
+  if (!reason) return "원인 코드를 받지 못했습니다.";
+  if (reason === "anthropic_api_key_missing") {
+    return "서버 런타임에 ANTHROPIC_API_KEY가 없습니다. 로컬 환경파일 저장 후 pnpm dev를 다시 시작해야 합니다.";
+  }
+  if (reason === "claude_topic_generation_disabled" || reason === "claude_topic_generation_disabled_by_runtime") {
+    return "현재 화면에서 Claude 주제 생성이 꺼져 있습니다.";
+  }
+  if (reason === "claude_topic_generation_finance_only") {
+    return "Claude 신규 생성은 현재 재테크팁 카테고리에만 연결돼 있습니다.";
+  }
+  if (reason === "anthropic_timeout") {
+    return "Claude 응답 시간이 너무 길어 중단됐습니다. 요청을 가볍게 조정했으니 다시 눌러 주세요.";
+  }
+  if (reason === "anthropic_api_json_parse_failed") {
+    return "Anthropic API 응답 자체를 JSON으로 읽지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+  if (reason === "anthropic_topic_json_parse_failed") {
+    return "Claude가 주제 JSON 형식으로 답하지 않아 버렸습니다. 객체/배열 JSON 본문을 더 유연하게 읽도록 보정했습니다. 다시 눌러 주세요.";
+  }
+  if (reason === "anthropic_call_failed" || reason.startsWith("anthropic_call_failed_")) {
+    const code = reason.replace(/^anthropic_call_failed_?/, "") || "unknown";
+    return `Claude 연결이 실패했습니다 (${code}). 네트워크, VPN, 방화벽, 로컬 서버 상태를 확인해 주세요.`;
+  }
+  if (reason.startsWith("anthropic_http_401") || reason.startsWith("anthropic_http_403")) {
+    return "Anthropic API 키 인증이 실패했습니다. 키 이름과 권한을 확인해야 합니다.";
+  }
+  if (reason.startsWith("anthropic_http_400")) {
+    return "Anthropic 요청이 거부됐습니다. 모델 이름(ANTHROPIC_TOPIC_MODEL 또는 ANTHROPIC_POLISH_MODEL)을 확인해야 할 수 있습니다.";
+  }
+  if (reason.startsWith("anthropic_http_")) {
+    return `Anthropic API가 오류를 반환했습니다 (${reason}).`;
+  }
+  if (reason === "anthropic_no_text") {
+    return "Claude 응답에 읽을 수 있는 텍스트가 없어 로컬 백업 주제를 보여줬습니다.";
+  }
+  if (reason === "anthropic_topics_not_array") {
+    return "Claude 응답에서 주제 목록 배열을 찾지 못해 로컬 백업 주제를 보여줬습니다.";
+  }
+  if (reason === "anthropic_no_valid_topic_seed") {
+    return "Claude 응답에 제목으로 쓸 수 있는 주제가 없어 로컬 백업 주제를 보여줬습니다.";
+  }
+  if (reason === "claude_topics_filtered_out") {
+    return "Claude가 만든 후보가 기존 주제와 비슷하거나 품질 기준을 통과하지 못했습니다.";
+  }
+  if (reason === "claude_topics_below_recommendation_floor") {
+    return "Claude가 후보를 만들었지만 추천급 주제가 충분하지 않아 보여주지 않았습니다. 다시 누르면 새 후보를 요청합니다.";
+  }
+  return `원인 코드: ${reason}`;
+}
+
+function describeImageToolBlocker(detail: string | null): string {
+  if (detail?.startsWith("IMAGE_TOOL_TEXT_RESPONSE:")) {
+    return "ChatGPT 이미지 만들기에서 신규 이미지로 한 번 다시 요청했지만 편집 요청으로 잘못 처리되어 중단했습니다. 일반 채팅이나 반복 요청으로 이어지지 않게 막았습니다.";
+  }
+  if (detail && /activation marker|pre-submit verification|post-type verification|final submit verification|pill disappeared/i.test(detail)) {
+    return "ChatGPT에서 이미지 만들기 칩은 선택됐지만 활성 상태 확인 신호를 읽지 못해 전송 전에 중단했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.";
+  }
+  if (detail?.startsWith("IMAGE_TOOL_ENTRY_MISSING:")) {
+    return "ChatGPT의 이미지 만들기 메뉴를 찾지 못해 전송 전에 중단했습니다. ChatGPT 화면을 새로고침한 뒤 다시 시도해 주세요.";
+  }
+  if (detail?.startsWith("IMAGE_TOOL_ENTRY_UNUSABLE:")) {
+    return "ChatGPT의 이미지 만들기 메뉴가 응답하지 않아 첫 장면 전송 전에 중단했습니다. ChatGPT 화면을 새로고침한 뒤 다시 시도해 주세요.";
+  }
+  if (detail?.startsWith("IMAGE_TOOL_OWNER_DRAFT_PRESENT:")) {
+    return "일반 ChatGPT 새 대화에 작성 중인 초안이 있어, 내용을 지우지 않고 이미지 생성을 중단했습니다. 해당 초안을 보내거나 다른 곳에 보관한 뒤 다시 시도해 주세요.";
+  }
+  if (detail?.startsWith("IMAGE_TOOL_CHAT_OPEN_FAILED:") || detail === "IMAGE_TOOL_TEMPORARY_CHAT_UNSUPPORTED") {
+    return "ChatGPT 이미지용 일반 새 대화를 열지 못해 첫 장면 전송 전에 중단했습니다. 열린 ChatGPT 창을 정리하고 다시 시도해 주세요.";
+  }
+  return "ChatGPT 이미지 만들기 모드를 안전하게 확인하지 못해 전송 전에 중단했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.";
+}
+
 // ── GET: 기본 상태 + 시안 영상 스트림 ────────────────────────────────────────
+
+function videoStreamResponse(bytes: Buffer, rangeHeader: string | null): Response {
+  const totalBytes = bytes.byteLength;
+  const commonHeaders = {
+    "Content-Type": "video/mp4",
+    "Accept-Ranges": "bytes",
+    "Cache-Control": "no-store",
+  };
+  if (!rangeHeader) {
+    return new Response(new Uint8Array(bytes), {
+      status: 200,
+      headers: { ...commonHeaders, "Content-Length": String(totalBytes) },
+    });
+  }
+
+  const rangeMatch = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader.trim());
+  if (!rangeMatch) {
+    return new Response(null, {
+      status: 416,
+      headers: { ...commonHeaders, "Content-Range": `bytes */${totalBytes}` },
+    });
+  }
+  const requestedStart = rangeMatch[1] === "" ? null : Number(rangeMatch[1]);
+  const requestedEnd = rangeMatch[2] === "" ? null : Number(rangeMatch[2]);
+  const start = requestedStart === null
+    ? Math.max(0, totalBytes - (requestedEnd ?? 0))
+    : requestedStart;
+  const end = requestedStart === null
+    ? totalBytes - 1
+    : Math.min(totalBytes - 1, requestedEnd ?? totalBytes - 1);
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= totalBytes) {
+    return new Response(null, {
+      status: 416,
+      headers: { ...commonHeaders, "Content-Range": `bytes */${totalBytes}` },
+    });
+  }
+  const chunk = bytes.subarray(start, end + 1);
+  return new Response(new Uint8Array(chunk), {
+    status: 206,
+    headers: {
+      ...commonHeaders,
+      "Content-Length": String(chunk.byteLength),
+      "Content-Range": `bytes ${start}-${end}/${totalBytes}`,
+    },
+  });
+}
 
 export async function GET(request: Request) {
   // 시안 영상 미리보기 스트림. 클라이언트는 경로가 아니라 enum("muxed"|"silent")만 보낸다.
   // 실제 파일 경로는 파이프라인 summary에서만 나오고 helper가 C:\tmp 허용 prefix를 강제한다.
   const url = new URL(request.url);
   const videoParam = url.searchParams.get("video");
+
+  if (url.searchParams.get("image") === "character") {
+    if (!isLocalDevRuntime()) {
+      return json(
+        { action: "characterCastStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
+        404,
+      );
+    }
+    const candidateNumber = Number(url.searchParams.get("candidate"));
+    const image = readWizardFinanceCharacterImageBytes(
+      url.searchParams.get("characterId"),
+      Number.isInteger(candidateNumber) ? candidateNumber : null,
+    );
+    if (!image) {
+      return json(
+        { action: "characterCastStatus", status: "blocked", summary: "아직 주인공 후보 이미지가 없습니다.", blockerCode: "CHARACTER_CANDIDATE_NOT_FOUND", noLive: true },
+        404,
+      );
+    }
+    return new Response(new Uint8Array(image.bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": image.contentType,
+        "Content-Length": String(image.bytes.byteLength),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
   if (videoParam === "muxed" || videoParam === "silent" || videoParam === "final") {
     if (!isLocalDevRuntime()) {
       return json(
@@ -135,21 +308,14 @@ export async function GET(request: Request) {
     }
     // topicId는 helper가 [a-z0-9-] slug로 정화하므로 경로 조작이 불가능하다.
     const streamTopicId = url.searchParams.get("topicId");
-    const bytes = readWizardVideoBytes(videoParam, streamTopicId);
+    const bytes = readWizardVideoBytes(videoParam, streamTopicId, url.searchParams.get("part"));
     if (!bytes) {
       return json(
         { action: "previewStatus", status: "blocked", summary: "아직 영상 파일이 없습니다. 먼저 영상을 만들어 주세요.", blockerCode: "WIZARD_VIDEO_NOT_FOUND", noLive: true },
         404,
       );
     }
-    return new Response(new Uint8Array(bytes), {
-      status: 200,
-      headers: {
-        "Content-Type": "video/mp4",
-        "Content-Length": String(bytes.byteLength),
-        "Cache-Control": "no-store",
-      },
-    });
+    return videoStreamResponse(bytes, request.headers.get("range"));
   }
 
   // 실제 목소리 스트림 — 경로는 TTS summary에서만 나오고 C:\tmp 허용 prefix가 강제된다.
@@ -160,7 +326,7 @@ export async function GET(request: Request) {
         404,
       );
     }
-    const audio = readWizardRealAudioBytes(url.searchParams.get("topicId"));
+    const audio = readWizardRealAudioBytes(url.searchParams.get("topicId"), url.searchParams.get("part"));
     if (!audio) {
       return json(
         { action: "realMediaStatus", status: "blocked", summary: "아직 실제 음성 파일이 없습니다. 먼저 [실제 목소리 만들기]를 눌러 주세요.", blockerCode: "REAL_TTS_REQUIRED", noLive: true },
@@ -257,7 +423,168 @@ export async function POST(request: Request) {
     });
   }
 
-  // ── 위저드 읽기 전용/생성 action (spawn 없음, 외부 API 없음) ──────────────────
+  // ── 위저드 읽기 전용/생성 action (spawn 없음; topicRecommend는 로컬 dev에서 Claude 주제 생성 시도 가능) ──
+  if (action === "topicPreference") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const decisionRaw = (body as { decision?: unknown }).decision;
+    if (
+      typeof topicIdRaw !== "string" ||
+      typeof decisionRaw !== "string" ||
+      !(WIZARD_EDITORIAL_DECISIONS as readonly string[]).includes(decisionRaw)
+    ) {
+      return json({
+        action,
+        status: "error",
+        summary: "주제와 편집 판정을 확인해 주세요.",
+        blockerCode: "INVALID_TOPIC_PREFERENCE",
+        noLive: true,
+      }, 400);
+    }
+    const saved = saveWizardTopicEditorialDecision(
+      topicIdRaw,
+      decisionRaw as (typeof WIZARD_EDITORIAL_DECISIONS)[number],
+    );
+    if (!saved.ok) {
+      return json({
+        action,
+        status: "error",
+        summary: "편집 판정을 저장하지 못했습니다.",
+        detail: saved.reason,
+        blockerCode: "TOPIC_PREFERENCE_SAVE_FAILED",
+        noLive: true,
+      }, 500);
+    }
+    const label = saved.topic.editorialDecision === "make" ? "만든다" : saved.topic.editorialDecision === "maybe" ? "애매" : "버린다";
+    return json({
+      action,
+      status: "success",
+      summary: `이 주제를 '${label}'로 저장했습니다.`,
+      detail: saved.topic.editorialDecision === "make" ? "이 후보는 바로 선택되어 대본을 만들 수 있습니다." : "다음 추천에서는 이 후보를 제외합니다.",
+      raw: { topic: saved.topic, editorialSummary: saved.summary },
+      noLive: true,
+    });
+  }
+
+  // ── 완성 영상 불러오기 목록: 최종 MP4는 있지만 양쪽 게시 완료 전인 항목만 읽는다. ──
+  if (action === "uploadReadyList") {
+    const items = listWizardUploadReadyItems();
+    return json({
+      action,
+      status: "success",
+      summary: items.length > 0 ? `업로드 대기 영상 ${items.length}개를 찾았습니다.` : "업로드 대기 중인 완성 영상이 없습니다.",
+      detail: "양쪽 플랫폼 게시이 모두 완료된 영상은 이 목록에 표시하지 않습니다.",
+      raw: { items },
+      noLive: true,
+    });
+  }
+
+  if (action === "characterCastStatus") {
+    const cast = readWizardFinanceCharacterCastState();
+    return json({
+      action,
+      status: "success",
+      summary: cast.allSelected
+        ? "재테크 영상 주인공 4명의 기준 이미지가 모두 선택됐습니다."
+        : `재테크 영상 주인공 기준 이미지 ${cast.selectedCount}/4명이 선택됐습니다.`,
+      detail: "선택 결과는 로컬에만 저장되며 영상이나 외부 계정에는 게시되지 않습니다.",
+      raw: { cast },
+      noLive: true,
+    });
+  }
+
+  if (action === "characterCastCreate") {
+    const characterIdRaw = (body as { characterId?: unknown }).characterId;
+    if (typeof characterIdRaw !== "string" || !(FINANCE_CHARACTER_IDS as readonly string[]).includes(characterIdRaw)) {
+      return json({
+        action,
+        status: "error",
+        summary: "후보 이미지를 만들 주인공을 확인해 주세요.",
+        blockerCode: "FINANCE_CHARACTER_INVALID",
+        noLive: true,
+      }, 400);
+    }
+    const characterId = characterIdRaw as FinanceCharacterId;
+    const regenerateCharacterCandidates = (body as { regenerate?: unknown }).regenerate === true;
+    const built = buildOperatorCommand(action, { characterId, regenerateCharacterCandidates });
+    if (!built.ok) {
+      return json({ action, status: "blocked", summary: "주인공 후보 이미지 생성 준비에 실패했습니다.", detail: built.reason, blockerCode: built.reason, noLive: true });
+    }
+    const run = runOperatorScript(built.command, {
+      timeoutMs: CHARACTER_CAST_TIMEOUT_MS,
+      extraEnv: { ALLOW_CHATGPT_IMAGE: "1" },
+    });
+    if (!run.ran || run.timedOut) {
+      return json({
+        action,
+        status: "error",
+        summary: run.timedOut ? "주인공 후보 이미지 생성 시간이 초과됐습니다. 다시 누르면 준비된 후보는 재사용합니다." : "주인공 후보 이미지 생성기를 실행하지 못했습니다.",
+        blockerCode: run.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      });
+    }
+    const cast = readWizardFinanceCharacterCastState();
+    const character = cast.characters.find((candidate) => candidate.id === characterId);
+    if (character?.candidatesReady) {
+      return json({
+        action,
+        status: "success",
+        summary: `${character.name} 주인공 후보 이미지 ${cast.candidateCount}장이 준비됐습니다.`,
+        detail: "두 후보를 비교한 뒤 한 장을 기준 이미지로 선택해 주세요.",
+        raw: { cast },
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "blocked",
+      summary: "주인공 후보 이미지가 모두 준비되지 않았습니다. ChatGPT 이미지 화면을 확인한 뒤 다시 시도해 주세요.",
+      blockerCode: character?.blockerCode ?? "CHARACTER_CANDIDATES_INCOMPLETE",
+      raw: { cast, exitCode: run.exitCode },
+      noLive: true,
+    });
+  }
+
+  if (action === "characterCastSelect") {
+    const characterIdRaw = (body as { characterId?: unknown }).characterId;
+    const candidateNumberRaw = (body as { candidateNumber?: unknown }).candidateNumber;
+    if (
+      typeof characterIdRaw !== "string" ||
+      !(FINANCE_CHARACTER_IDS as readonly string[]).includes(characterIdRaw) ||
+      typeof candidateNumberRaw !== "number" ||
+      !Number.isInteger(candidateNumberRaw)
+    ) {
+      return json({
+        action,
+        status: "error",
+        summary: "선택할 주인공 후보를 확인해 주세요.",
+        blockerCode: "FINANCE_CHARACTER_SELECTION_INVALID",
+        noLive: true,
+      }, 400);
+    }
+    const saved = saveWizardFinanceCharacterSelection(characterIdRaw, candidateNumberRaw);
+    if (!saved.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "준비가 끝난 후보만 기준 이미지로 선택할 수 있습니다.",
+        detail: saved.reason,
+        blockerCode: saved.reason,
+        noLive: true,
+      });
+    }
+    const selected = saved.state.characters.find((character) => character.id === characterIdRaw);
+    return json({
+      action,
+      status: "success",
+      summary: `${selected?.name ?? "주인공"}의 ${candidateNumberRaw}번 이미지를 기준으로 선택했습니다.`,
+      detail: saved.state.allSelected
+        ? "4명의 기준 이미지가 모두 선택됐습니다. 다음 단계에서는 선택 이미지를 참조해 장면 보드를 검수합니다."
+        : `현재 ${saved.state.selectedCount}/4명이 선택됐습니다.`,
+      raw: { cast: saved.state },
+      noLive: true,
+    });
+  }
+
   if (action === "topicRecommend") {
     // 카테고리는 고정 enum으로만 받는다(그 외 값은 기본 카테고리로 폴백).
     const categoryRaw = (body as { category?: unknown }).category;
@@ -265,12 +592,21 @@ export async function POST(request: Request) {
       typeof categoryRaw === "string" && (WIZARD_CATEGORY_IDS as readonly string[]).includes(categoryRaw)
         ? (categoryRaw as WizardCategoryId)
         : "finance";
-    const batch = generateWizardTopicBatch(category);
+    const financeSubtopicRaw = (body as { financeSubtopic?: unknown }).financeSubtopic;
+    const financeSubtopic: WizardFinanceSubtopicId | null =
+      category === "finance" &&
+      typeof financeSubtopicRaw === "string" &&
+      (WIZARD_FINANCE_SUBTOPIC_IDS as readonly string[]).includes(financeSubtopicRaw)
+        ? (financeSubtopicRaw as WizardFinanceSubtopicId)
+        : null;
+    // 새 500개 은행을 먼저 사용하고, 소진 뒤에는 만든다/버린다 데이터를 포함한
+    // Claude 확장 엔진을 사용한다.
+    const batch = await generateWizardTopicBatchSmart(category, { allowClaude: true, financeSubtopic });
     if (!batch) {
       return json({
         action,
         status: "error",
-        summary: "주제 추천을 만들지 못했습니다. 잠시 후 다시 눌러 주세요.",
+        summary: "사용하지 않은 고정 주제가 모두 소진됐고 새 주제 생성도 완료되지 않았습니다.",
         blockerCode: "TOPIC_BATCH_GENERATION_FAILED",
         noLive: true,
       });
@@ -278,9 +614,27 @@ export async function POST(request: Request) {
     return json({
       action,
       status: "success",
-      summary: `새 주제 ${batch.topics.length}개를 만들었습니다.`,
-      detail: "마음에 드는 주제를 고르면 아래 단계가 그 주제로 이어집니다. 다시 누르면 최근에 본 주제는 빼고 새로 만듭니다.",
-      raw: { topics: batch.topics, batchId: batch.batchId, category: batch.category },
+      summary: financeSubtopic ? `선택한 소분야에서 새 주제 ${batch.topics.length}개를 만들었습니다.` : `새 주제 ${batch.topics.length}개를 만들었습니다.`,
+      detail:
+        batch.source === "editorial_bank"
+          ? "새 500개 주제은행에서 서로 다른 느낌의 후보를 골랐습니다. 문제·반전·행동까지 보고 판정해 주세요."
+          : batch.source === "claude_generated"
+          ? "Claude가 새 후보를 만들고, 이미 본/선택/제작한 주제와 비슷한 것은 제외했습니다."
+          : `Claude 신규 생성이 안 돼 로컬 백업 주제를 보여줬습니다. 원인: ${describeTopicFallbackReason(batch.fallbackReason)}`,
+      raw: {
+        topics: batch.topics,
+        batchId: batch.batchId,
+        category: batch.category,
+        financeSubtopic: batch.financeSubtopic,
+        source: batch.source,
+        generationNote: batch.generationNote,
+        fallbackReason: batch.fallbackReason,
+        fallbackReasonText: batch.fallbackReason ? describeTopicFallbackReason(batch.fallbackReason) : undefined,
+        model: batch.model,
+        excludedKnownTitleCount: batch.excludedKnownTitleCount,
+        rejectedTopics: batch.rejected,
+        editorialSummary: batch.editorialSummary,
+      },
       noLive: true,
     });
   }
@@ -288,6 +642,16 @@ export async function POST(request: Request) {
   if (action === "scriptPreview") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    if (topicId && !canWizardTopicEnterScript(topicId)) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "먼저 이 후보를 '만든다'로 판정해 주세요.",
+        detail: "애매하거나 버린 후보는 대본·음성·이미지 제작에 들어가지 않습니다.",
+        blockerCode: "TOPIC_EDITORIAL_APPROVAL_REQUIRED",
+        noLive: true,
+      });
+    }
     const preview = topicId ? readScriptPreview(topicId) : null;
     if (!preview) {
       return json({
@@ -299,10 +663,36 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
+    const localQualityGate = getWizardScriptQualityGate(topicId, preview);
+    if (!localQualityGate.passed) {
+      return json({
+        action,
+        status: "blocked",
+        summary: `대본 품질 기준을 통과하지 못했습니다 (${localQualityGate.overallScore ?? "?"}/${localQualityGate.minimumScore ?? "?"}점).`,
+        detail: `${localQualityGate.reasons[0] ?? "재테크 대본 품질 기준을 다시 확인해 주세요."} 실제 목소리·이미지·영상 단계는 시작하지 않았습니다.`,
+        blockerCode: "SCRIPT_QUALITY_GATE_FAILED",
+        raw: { script: preview, scriptQualityGate: localQualityGate },
+        noLive: true,
+      });
+    }
     // 대본 생성 방식: 로컬 후보 선별(judge 최고 후보) → Claude 1회 보정.
     // 보정은 로컬 dev 런타임에서만 시도하고(배포 사이트는 로컬 산출물 저장 불가),
     // 키 없음/실패/검증 실패/점수 회귀 시 로컬 대본을 그대로 쓴다. 같은 대본은 재호출하지 않는다.
     const record = await ensureWizardFinalScript(topicId, preview, { allowPolish: isLocalDevRuntime() });
+    const finalQualityGate = getWizardScriptQualityGate(topicId, record.script);
+    if (!finalQualityGate.passed) {
+      return json({
+        action,
+        status: "blocked",
+        summary: `보정 후 대본이 품질 기준을 통과하지 못했습니다 (${finalQualityGate.overallScore ?? "?"}/${finalQualityGate.minimumScore ?? "?"}점).`,
+        detail: `${finalQualityGate.reasons[0] ?? "재테크 대본 품질 기준을 다시 확인해 주세요."} 실제 목소리·이미지·영상 단계는 시작하지 않았습니다.`,
+        blockerCode: "SCRIPT_QUALITY_GATE_FAILED",
+        raw: { script: record.script, scriptQualityGate: finalQualityGate },
+        noLive: true,
+      });
+    }
+    markWizardTopicHistory("selected", [record.script]);
+    markWizardTopicHistory("scripted", [record.script]);
     return json({
       action,
       status: "success",
@@ -380,29 +770,62 @@ export async function POST(request: Request) {
   if (action === "realTtsCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const builtTts = buildOperatorCommand(action, { topicId });
-    if (!builtTts.ok) {
-      return json({ action, status: "blocked", summary: describeBuildFailure(builtTts.reason), blockerCode: builtTts.reason, noLive: true });
+    const pipeline = buildWizardRealPipelineInputs(topicId);
+    if (!pipeline.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
     }
-    // includeMediaEnv:true 는 이 action(실제 TTS 생성) child에만 ELEVENLABS 키를 전달한다.
-    const runTts = runOperatorScript(builtTts.command, { timeoutMs: REAL_TTS_TIMEOUT_MS, includeMediaEnv: true });
-    if (!runTts.ran || runTts.timedOut) {
+    const financeVoiceRoute = resolveWizardFinanceCharacterVoice(topicId);
+    if (financeVoiceRoute && !financeVoiceRoute.ok) {
       return json({
         action,
-        status: "error",
-        summary: runTts.timedOut ? "음성 생성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요." : "음성 생성 프로그램을 실행하지 못했습니다.",
-        blockerCode: runTts.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        status: "blocked",
+        summary: "재테크 주제의 승인 화자를 찾지 못해 실제 음성 생성을 막았습니다.",
+        blockerCode: financeVoiceRoute.reason,
         noLive: true,
       });
+    }
+    const ttsRuns = [];
+    for (const part of pipeline.paths.parts) {
+      const builtTts = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+      if (!builtTts.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(builtTts.reason), blockerCode: builtTts.reason, noLive: true });
+      }
+      // includeMediaEnv:true 는 이 action(실제 TTS 생성) child에만 ELEVENLABS 키를 전달한다.
+      const runTts = runOperatorScript(builtTts.command, {
+        timeoutMs: REAL_TTS_TIMEOUT_MS,
+        includeMediaEnv: true,
+        voiceOverride: financeVoiceRoute?.route.voice,
+      });
+      ttsRuns.push({ partId: part.id, run: runTts });
+      if (!runTts.ran || runTts.timedOut) {
+        return json({
+          action,
+          status: "error",
+          summary: `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}음성 생성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요.`,
+          blockerCode: runTts.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+          noLive: true,
+        });
+      }
     }
     const mediaAfterTts = readWizardRealMediaState(topicId);
     if (mediaAfterTts.realTts.ready) {
       return json({
         action,
         status: "success",
-        summary: `실제 목소리가 준비됐습니다 (${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 바로 들어볼 수 있습니다.`,
-        detail: "확정 대본을 고정 목소리로 합성한 실제 음성입니다. 파일은 Owner PC에만 있습니다.",
-        raw: { realTts: mediaAfterTts.realTts },
+        summary: `실제 목소리 ${mediaAfterTts.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 편별로 바로 들어볼 수 있습니다.`,
+        detail: financeVoiceRoute?.route
+          ? `${financeVoiceRoute.route.characterName} 화자의 ${financeVoiceRoute.route.voice.voiceLabel} 보이스와 공통 한국어 발화 기준으로 전체 대본을 한 흐름으로 합성했습니다. 파일은 Owner PC에만 있습니다.`
+          : "주제별 화자 태도와 한국어 말끝을 적용해 전체 대본을 한 흐름으로 합성한 실제 음성입니다. 파일은 Owner PC에만 있습니다.",
+        raw: {
+          realTts: mediaAfterTts.realTts,
+          financeVoice: financeVoiceRoute?.route
+            ? {
+                characterId: financeVoiceRoute.route.characterId,
+                characterName: financeVoiceRoute.route.characterName,
+                voiceLabel: financeVoiceRoute.route.voice.voiceLabel,
+              }
+            : null,
+        },
         noLive: true,
       });
     }
@@ -423,39 +846,61 @@ export async function POST(request: Request) {
       status: "blocked",
       summary: "실제 음성 생성이 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.",
       blockerCode: "REAL_TTS_FAILED",
-      raw: { realTts: mediaAfterTts.realTts, exitCode: runTts.exitCode },
+      raw: { realTts: mediaAfterTts.realTts, parts: mediaAfterTts.parts.map((part) => ({ id: part.id, realTts: part.realTts })), exitCodes: ttsRuns.map((row) => row.run.exitCode) },
       noLive: true,
     });
   }
 
-  // 장면 이미지 만들기 — ChatGPT+Playwright(로그인된 Chrome) 실제 이미지 6장(Owner 클릭 시에만).
+  // 장면 이미지 만들기 — ChatGPT+Playwright(로그인된 Chrome) 흐름 기반 실제 이미지(Owner 클릭 시에만).
   if (action === "realSceneImagesCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const builtImg = buildOperatorCommand(action, { topicId });
-    if (!builtImg.ok) {
-      return json({ action, status: "blocked", summary: describeBuildFailure(builtImg.reason), blockerCode: builtImg.reason, noLive: true });
+    const pipeline = buildWizardRealPipelineInputs(topicId);
+    if (!pipeline.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
     }
-    // ALLOW_CHATGPT_IMAGE=1 은 이 action의 Owner 클릭이 곧 승인이라는 하드코딩 마커다(secret 아님).
-    const runImg = runOperatorScript(builtImg.command, { timeoutMs: REAL_IMAGES_TIMEOUT_MS, extraEnv: { ALLOW_CHATGPT_IMAGE: "1" } });
-    if (!runImg.ran || runImg.timedOut) {
-      return json({
-        action,
-        status: "error",
-        summary: runImg.timedOut
-          ? "이미지 생성이 시간 안에 끝나지 않았습니다. 다시 누르면 모자란 장면만 이어서 생성합니다."
-          : "이미지 생성 프로그램을 실행하지 못했습니다.",
-        blockerCode: runImg.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
-        noLive: true,
-      });
+    const mediaBeforeImg = readWizardRealMediaState(topicId);
+    const imageRuns = [];
+    for (const part of pipeline.paths.parts) {
+      const builtImg = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+      if (!builtImg.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(builtImg.reason), blockerCode: builtImg.reason, noLive: true });
+      }
+      const partBefore = mediaBeforeImg.parts.find((candidate) => candidate.id === part.id);
+      const expectedScenes = Math.max(1, partBefore?.realImages.expectedCount ?? part.expectedSceneCount);
+      const countedRemainingScenes = expectedScenes - (partBefore?.realImages.generatedCount ?? 0);
+      const remainingScenes = countedRemainingScenes <= 0 ? expectedScenes : Math.max(1, countedRemainingScenes);
+      const imageTimeoutMs = Math.min(
+        REAL_IMAGES_MAX_TIMEOUT_MS,
+        REAL_IMAGE_BASE_TIMEOUT_MS + remainingScenes * REAL_IMAGE_PER_SCENE_TIMEOUT_MS,
+      );
+      // ALLOW_CHATGPT_IMAGE=1 은 이 action의 Owner 클릭이 곧 승인이라는 하드코딩 마커다(secret 아님).
+      const runImg = runOperatorScript(builtImg.command, { timeoutMs: imageTimeoutMs, extraEnv: { ALLOW_CHATGPT_IMAGE: "1" } });
+      imageRuns.push({ partId: part.id, run: runImg });
+      if (!runImg.ran || runImg.timedOut) {
+        const launchFailureCode = !runImg.ran
+          ? (runImg.stderr.trim().split(/\s+/)[0] || "SCRIPT_NOT_RUN")
+          : "SCRIPT_TIMEOUT";
+        return json({
+          action,
+          status: "error",
+          summary: runImg.timedOut
+            ? `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}이미지 생성이 시간 안에 끝나지 않았습니다. 다시 누르면 모자란 장면만 이어서 생성합니다.`
+            : "이미지 생성 프로그램을 실행하지 못했습니다.",
+          detail: !runImg.ran ? `실행 진단: ${launchFailureCode}` : undefined,
+          blockerCode: runImg.timedOut ? "SCRIPT_TIMEOUT" : launchFailureCode,
+          raw: { partId: part.id, launchFailureCode },
+          noLive: true,
+        });
+      }
     }
     const mediaAfterImg = readWizardRealMediaState(topicId);
     if (mediaAfterImg.realImages.ready) {
       return json({
         action,
         status: "success",
-        summary: "장면 이미지 6장이 모두 준비됐습니다.",
-        detail: "대본 6장면의 시각 지시(visualCue)로 만든 실제 이미지입니다. 업로드는 아직 하지 않았습니다.",
+        summary: `영상 ${mediaAfterImg.production.totalParts}개에 필요한 장면 이미지 ${mediaAfterImg.realImages.expectedCount ?? "?"}장이 모두 준비됐습니다.`,
+        detail: "대본의 장면별 시각 사건과 분위기 전환에 맞춘 실제 이미지입니다. 업로드는 아직 하지 않았습니다.",
         raw: { realImages: mediaAfterImg.realImages },
         noLive: true,
       });
@@ -467,40 +912,54 @@ export async function POST(request: Request) {
       summary:
         blocked === "BLOCKED_SESSION"
           ? "ChatGPT 로그인 세션이 없어 이미지를 만들지 못했습니다. Chrome(AI-GPT-1 프로필)에서 로그인 후 다시 시도해 주세요."
+          : blocked === "BLOCKED_IMAGE_TOOL"
+            ? describeImageToolBlocker(mediaAfterImg.realImages.blockerDetail)
           : blocked === "BLOCKED_RATE_OR_CAPTCHA"
             ? "ChatGPT 사용 한도/보안 확인에 걸렸습니다. 잠시 후 다시 시도해 주세요."
-            : `장면 이미지가 아직 부족합니다 (${mediaAfterImg.realImages.generatedCount}/6). 다시 누르면 모자란 장면만 이어서 생성합니다.`,
+            : `장면 이미지가 아직 부족합니다 (${mediaAfterImg.realImages.generatedCount}/${mediaAfterImg.realImages.expectedCount ?? "?"}). 다시 누르면 모자란 장면만 이어서 생성합니다.`,
       blockerCode: blocked ?? "REAL_IMAGES_INCOMPLETE",
-      raw: { realImages: mediaAfterImg.realImages, exitCode: runImg.exitCode },
+      raw: { realImages: mediaAfterImg.realImages, parts: mediaAfterImg.parts.map((part) => ({ id: part.id, realImages: part.realImages })), exitCodes: imageRuns.map((row) => row.run.exitCode) },
       noLive: true,
     });
   }
 
-  // 최종 영상 만들기 — 실제 음성 + 실제 이미지 6장 + 자막 + 모션 합성(로컬 ffmpeg만).
+  // 최종 영상 만들기 — 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션 합성(로컬 ffmpeg만).
   if (action === "finalVideoCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const builtVid = buildOperatorCommand(action, { topicId });
-    if (!builtVid.ok) {
-      return json({ action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true });
+    const pipeline = buildWizardRealPipelineInputs(topicId);
+    if (!pipeline.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
     }
-    const runVid = runOperatorScript(builtVid.command, { timeoutMs: FINAL_VIDEO_TIMEOUT_MS });
-    if (!runVid.ran || runVid.timedOut) {
-      return json({
-        action,
-        status: "error",
-        summary: runVid.timedOut ? "영상 합성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요." : "영상 합성 프로그램을 실행하지 못했습니다.",
-        blockerCode: runVid.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
-        noLive: true,
-      });
+    const videoRuns = [];
+    for (const part of pipeline.paths.parts) {
+      const builtVid = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+      if (!builtVid.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true });
+      }
+      const runVid = runOperatorScript(builtVid.command, { timeoutMs: FINAL_VIDEO_TIMEOUT_MS });
+      videoRuns.push({ partId: part.id, run: runVid });
+      if (!runVid.ran || runVid.timedOut) {
+        return json({
+          action,
+          status: "error",
+          summary: runVid.timedOut
+            ? `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}영상 합성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요.`
+            : "영상 합성 프로그램을 실행하지 못했습니다.",
+          blockerCode: runVid.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+          noLive: true,
+        });
+      }
     }
     const mediaAfterVid = readWizardRealMediaState(topicId);
     if (mediaAfterVid.finalVideo.ready) {
+      const finalScript = topicId ? readScriptPreview(topicId) : null;
+      if (finalScript) markWizardTopicHistory("video_created", [finalScript]);
       const mb = mediaAfterVid.finalVideo.sizeBytes ? (mediaAfterVid.finalVideo.sizeBytes / (1024 * 1024)).toFixed(2) : "?";
       return json({
         action,
         status: "success",
-        summary: `최종 영상이 준비됐습니다 (${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 바로 재생됩니다.`,
+        summary: `최종 영상 ${mediaAfterVid.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 편별로 재생됩니다.`,
         detail: "실제 목소리와 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
         raw: { finalVideo: mediaAfterVid.finalVideo, mediaQualityGate: mediaAfterVid.mediaQualityGate },
         noLive: true,
@@ -511,7 +970,7 @@ export async function POST(request: Request) {
       status: "blocked",
       summary: "최종 영상 검증을 통과하지 못했습니다. 실제 음성/이미지를 확인한 뒤 다시 시도해 주세요.",
       blockerCode: "FINAL_MP4_VALIDATION_FAILED",
-      raw: { finalVideo: mediaAfterVid.finalVideo, exitCode: runVid.exitCode },
+      raw: { finalVideo: mediaAfterVid.finalVideo, parts: mediaAfterVid.parts.map((part) => ({ id: part.id, finalVideo: part.finalVideo })), exitCodes: videoRuns.map((row) => row.run.exitCode) },
       noLive: true,
     });
   }
@@ -520,44 +979,53 @@ export async function POST(request: Request) {
   if (action === "wizardPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const builtPf = buildOperatorCommand(action, { topicId });
-    if (!builtPf.ok) {
+    const contentUnits = buildWizardContentUnitsForTopic(topicId);
+    if (!contentUnits.ok) {
       return json({
         action,
         status: "blocked",
-        summary: describeBuildFailure(builtPf.reason),
-        blockerCode: builtPf.reason,
+        summary: describeBuildFailure(contentUnits.reason),
+        blockerCode: contentUnits.reason,
         noLive: true,
       });
     }
-    const runPf = runOperatorScript(builtPf.command);
-    if (!runPf.ran || runPf.timedOut) {
-      return json({
-        action,
-        status: "error",
-        summary: "게시 전 점검을 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        blockerCode: runPf.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
-        noLive: true,
-      });
+    const preflights = [];
+    for (const unit of contentUnits.paths) {
+      const builtPf = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
+      if (!builtPf.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(builtPf.reason), blockerCode: builtPf.reason, noLive: true });
+      }
+      const runPf = runOperatorScript(builtPf.command);
+      if (!runPf.ran || runPf.timedOut) {
+        return json({
+          action,
+          status: "error",
+          summary: `${unit.totalParts > 1 ? `${unit.partNumber}편 ` : ""}게시 전 점검을 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.`,
+          blockerCode: runPf.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+          noLive: true,
+        });
+      }
+      const pf = readWizardPublishPreflight(topicId, unit.productionPartId);
+      preflights.push({ partId: unit.productionPartId, preflight: pf });
+      if (runPf.exitCode !== 0 || pf?.status !== "PREFLIGHT_ONLY_OK") {
+        const pfBlocker = pf?.blockerCode ?? extractRunnerBlocker(runPf.stdout, runPf.stderr);
+        return json({
+          action,
+          status: "blocked",
+          summary: describeUploadBlocker(pfBlocker, `${unit.partNumber}편 게시 전 점검에서 막혔습니다.`),
+          blockerCode: pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
+          raw: { preflights },
+          noLive: true,
+        });
+      }
     }
-    const pf = readWizardPublishPreflight(topicId);
-    if (runPf.exitCode === 0 && pf?.status === "PREFLIGHT_ONLY_OK") {
-      return json({
-        action,
-        status: "success",
-        summary: `게시 전 점검을 통과했습니다. 업로드 키 ${pf.credentialPresentCount ?? "?"}/6, 중복 게시 없음.`,
-        detail: "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 업로드할 수 있습니다.",
-        raw: { preflight: pf },
-        noLive: true,
-      });
-    }
-    const pfBlocker = pf?.blockerCode ?? extractRunnerBlocker(runPf.stdout, runPf.stderr);
+    const credentialCount = preflights[0]?.preflight?.credentialPresentCount ?? "?";
     return json({
       action,
-      status: "blocked",
-      summary: describeUploadBlocker(pfBlocker, "게시 전 점검에서 막혔습니다."),
-      blockerCode: pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
-      raw: { preflight: pf },
+      status: "success",
+      summary: `영상 ${contentUnits.paths.length}개의 게시 전 점검을 모두 통과했습니다. 업로드 키 ${credentialCount}/6, 중복 게시 없음.`,
+      detail: "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 모든 편을 순서대로 업로드할 수 있습니다.",
+      raw: { preflights },
       noLive: true,
     });
   }
@@ -567,16 +1035,17 @@ export async function POST(request: Request) {
     const b = body as {
       topicId?: unknown;
       confirmReviewed?: unknown;
+      confirmDiscoveryReady?: unknown;
       confirmPublish?: unknown;
       confirmText?: unknown;
     };
     const topicId = typeof b.topicId === "string" ? b.topicId : "";
-    // [게이트 1] Owner 명시 확인 — 체크 2개 + "업로드" 직접 입력을 서버에서 검증한다.
-    if (b.confirmReviewed !== true || b.confirmPublish !== true || b.confirmText !== UPLOAD_CONFIRM_TEXT) {
+    // [게이트 1] Owner 명시 확인 — 영상/발견성/실게시 체크 3개 + "업로드" 직접 입력을 서버에서 검증한다.
+    if (b.confirmReviewed !== true || b.confirmDiscoveryReady !== true || b.confirmPublish !== true || b.confirmText !== UPLOAD_CONFIRM_TEXT) {
       return json({
         action,
         status: "blocked",
-        summary: `업로드 확인 절차가 완료되지 않았습니다. 확인 2개를 체크하고 "${UPLOAD_CONFIRM_TEXT}"를 직접 입력해 주세요.`,
+        summary: `업로드 확인 절차가 완료되지 않았습니다. 확인 3개를 체크하고 "${UPLOAD_CONFIRM_TEXT}"를 직접 입력해 주세요.`,
         blockerCode: "UPLOAD_CONFIRMATION_REQUIRED",
         noLive: true,
       });
@@ -595,74 +1064,96 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
-    // [게이트 2] 영상/대본/게시 전 점검 evidence/이미 게시 차단 — helper가 fail-closed로 검증.
-    const builtUp = buildOperatorCommand(action, { topicId });
-    if (!builtUp.ok) {
+    // [게이트 2] 모든 편의 영상/대본/게시 전 점검 evidence/이미 게시 차단을 arm 전에 먼저 검증한다.
+    const contentUnits = buildWizardContentUnitsForTopic(topicId);
+    if (!contentUnits.ok) {
       return json({
         action,
         status: "blocked",
-        summary: describeBuildFailure(builtUp.reason),
-        blockerCode: builtUp.reason,
+        summary: describeBuildFailure(contentUnits.reason),
+        blockerCode: contentUnits.reason,
         noLive: true,
       });
     }
-    // [게이트 3] 실행 — allowArm은 이 지점에서만 부여된다.
-    const runUp = runOperatorScript(builtUp.command, { allowArm: true, timeoutMs: UPLOAD_TIMEOUT_MS });
-    if (!runUp.ran) {
-      // spawn 자체가 시작되지 않았다 — arm runner가 돌지 않았으므로 외부 게시는 없다(noLive:true).
-      return json({
-        action,
-        status: "error",
-        summary: "업로드 실행을 시작하지 못했습니다.",
-        blockerCode: "SCRIPT_NOT_RUN",
-        noLive: true,
-      });
+    const uploadCommands = [];
+    for (const unit of contentUnits.paths) {
+      const builtUp = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
+      if (!builtUp.ok) {
+        return json({
+          action,
+          status: "blocked",
+          summary: describeBuildFailure(builtUp.reason),
+          blockerCode: builtUp.reason,
+          noLive: true,
+        });
+      }
+      uploadCommands.push({ unit, command: builtUp.command });
     }
-    // 여기서부터는 arm runner가 실제로 실행(spawn)됐다 — 외부 게시가 일어났을 수 있다(noLive:false).
-    if (runUp.timedOut) {
-      return json({
-        action,
-        status: "error",
-        summary: "업로드가 시간 안에 끝나지 않았습니다. 계정에 일부 게시됐을 수 있으니 직접 확인해 주세요.",
-        blockerCode: "UPLOAD_TIMEOUT_MANUAL_CHECK_REQUIRED",
-        noLive: false,
-        liveRunnerInvoked: true,
-      });
-    }
-    const result = readWizardPublishResult(topicId);
-    if (runUp.exitCode === 0 && result?.status === "PUBLISHED_DUAL_PLATFORM_OK") {
-      return json({
-        action,
-        status: "success",
-        summary: "업로드 완료! 인스타그램과 유튜브에 게시하고 게시 기록도 저장했습니다.",
-        detail: result.youtubeUrl
-          ? `유튜브: ${result.youtubeUrl} · 인스타그램 게시물 ID: ${result.instagramMediaId ?? "?"}`
-          : undefined,
-        raw: {
+
+    // [게이트 3] 실행 — allowArm은 이 지점에서만 부여되며 1편부터 순서대로 게시한다.
+    const published = [];
+    for (const entry of uploadCommands) {
+      const runUp = runOperatorScript(entry.command, { allowArm: true, timeoutMs: UPLOAD_TIMEOUT_MS });
+      if (!runUp.ran) {
+        return json({
+          action,
+          status: "error",
+          summary: `${entry.unit.partNumber}편 업로드 실행을 시작하지 못했습니다.`,
+          blockerCode: "SCRIPT_NOT_RUN",
+          raw: { published },
+          noLive: published.length === 0,
+          liveRunnerInvoked: published.length > 0,
+        });
+      }
+      if (runUp.timedOut) {
+        return json({
+          action,
+          status: "error",
+          summary: `${entry.unit.partNumber}편 업로드가 시간 안에 끝나지 않았습니다. 계정에 일부 게시됐을 수 있으니 직접 확인해 주세요.`,
+          blockerCode: "UPLOAD_TIMEOUT_MANUAL_CHECK_REQUIRED",
+          raw: { published, timedOutPartId: entry.unit.productionPartId },
+          noLive: false,
+          liveRunnerInvoked: true,
+        });
+      }
+      const result = readWizardPublishResult(topicId, entry.unit.productionPartId);
+      if (runUp.exitCode === 0 && result?.status === "PUBLISHED_DUAL_PLATFORM_OK") {
+        published.push({
+          partId: entry.unit.productionPartId,
+          partNumber: entry.unit.partNumber,
           instagramMediaId: result.instagramMediaId,
           youtubeVideoId: result.youtubeVideoId,
           youtubeUrl: result.youtubeUrl,
           ledgerRecordedKeys: result.ledgerRecordedKeys,
+        });
+        continue;
+      }
+      const upBlocker =
+        (runUp.exitCode !== 0 ? extractRunnerBlocker(runUp.stdout, runUp.stderr) : null) ?? result?.blockerCode ?? null;
+      const partial = runUp.exitCode !== 0 && result?.partialExternalState === "instagram_published_youtube_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: partial
+          ? `${entry.unit.partNumber}편은 인스타그램에 게시됐지만 유튜브 업로드가 실패했습니다. 직접 확인이 필요합니다.`
+          : describeUploadBlocker(upBlocker, `${entry.unit.partNumber}편 업로드가 실행됐지만 완료되지 않았습니다.`),
+        blockerCode: upBlocker ?? "UPLOAD_FAILED",
+        raw: {
+          published,
+          failedPartId: entry.unit.productionPartId,
+          instagramMediaId: result?.instagramMediaId ?? null,
+          partialExternalState: result?.partialExternalState ?? null,
         },
         noLive: false,
         liveRunnerInvoked: true,
       });
     }
-    // 실패/차단 — runner가 남긴 blocker를 한국어로 해석한다(부분 게시 포함, secret 없음).
-    // arm runner가 이미 실행됐으므로 noLive:false — 게이트에서 막힌 게 아니라 실행 중 실패한 것이다.
-    const upBlocker =
-      (runUp.exitCode !== 0 ? extractRunnerBlocker(runUp.stdout, runUp.stderr) : null) ?? result?.blockerCode ?? null;
-    const partial = runUp.exitCode !== 0 && result?.partialExternalState === "instagram_published_youtube_failed";
     return json({
       action,
-      status: "blocked",
-      summary: partial
-        ? "인스타그램에는 게시됐지만 유튜브 업로드가 실패했습니다. 자동 기록은 하지 않았으니 직접 확인이 필요합니다."
-        : describeUploadBlocker(upBlocker, "업로드가 실행됐지만 게시가 완료되지 않았습니다."),
-      blockerCode: upBlocker ?? "UPLOAD_FAILED",
-      raw: partial
-        ? { instagramMediaId: result?.instagramMediaId ?? null, partialExternalState: result?.partialExternalState }
-        : undefined,
+      status: "success",
+      summary: `업로드 완료! 영상 ${published.length}개를 인스타그램과 유튜브에 순서대로 게시하고 기록했습니다.`,
+      detail: published.map((part) => `${part.partNumber}편 유튜브: ${part.youtubeUrl ?? "?"} · 인스타그램 ID: ${part.instagramMediaId ?? "?"}`).join(" · "),
+      raw: { published },
       noLive: false,
       liveRunnerInvoked: true,
     });
@@ -733,7 +1224,11 @@ function describeBuildFailure(reason: string): string {
   if (reason === "real_tts_required")
     return "먼저 [실제 목소리 만들기]로 실제 음성을 만들어 주세요. 테스트 소리는 사용할 수 없습니다.";
   if (reason === "real_scene_images_required")
-    return "먼저 [장면 이미지 만들기]로 실제 장면 이미지 6장을 만들어 주세요.";
+    return "먼저 [장면 이미지 만들기]로 확정 대본 흐름에 맞는 실제 장면 이미지를 모두 만들어 주세요.";
+  if (reason === "finance_character_reference_not_selected" || reason === "finance_character_reference_required")
+    return "먼저 [주인공 이미지 검수]에서 담당 캐릭터의 기준 이미지를 확정해 주세요.";
+  if (reason.startsWith("finance_character_reference_") || reason === "finance_character_subtopic_missing")
+    return "담당 주인공의 확정 이미지가 현재 주제와 안전하게 연결되지 않아 이미지 생성을 막았습니다.";
   if (reason === "final_mp4_required" || reason === "media_quality_gate_not_ready")
     return "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
   if (reason === "preflight_evidence_missing")
@@ -742,6 +1237,8 @@ function describeBuildFailure(reason: string): string {
     return "이미 게시 완료된 콘텐츠입니다. 같은 콘텐츠를 다시 올릴 수 없습니다.";
   if (reason === "video_path_untrusted")
     return "영상 파일 위치를 신뢰할 수 없어 중단했습니다. [영상 만들기]를 다시 실행해 주세요.";
+  if (reason.startsWith("discovery_metadata_gate_failed"))
+    return "플랫폼별 제목·설명·핵심 태그가 발견성 기준을 통과하지 못했습니다. 대본과 메타데이터를 다시 확인해 주세요.";
   if (reason.startsWith("content_unit_write_failed") || reason.startsWith("input_write_failed"))
     return "필요한 파일을 만들지 못했습니다. 저장 폴더 권한을 확인해 주세요.";
   if (reason.endsWith("_must_be_absolute_path")) return "경로는 전체 경로로 입력해 주세요. (예: C:\\tmp\\...)";

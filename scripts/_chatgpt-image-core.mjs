@@ -26,6 +26,7 @@
  *   isCDPOpen(port)     bool
  *   ensureChrome(port, userDataDir, logFn)
  *   checkLogin(page, logFn)
+ *   openFreshImageChat(page, logFn) — 사람의 초안을 건드리지 않는 이미지 전용 일반 새 대화
  *   detectStop(page)    — quota/captcha 감지 시 throw
  *   activateImageTool(page, logFn, warnFn)  bool — fail-fast
  *   attachRef(page, refPath, logFn)         { thumbnails, baselineCids, baselineSrcs }
@@ -97,6 +98,130 @@ export async function checkLogin(page, logFn = console.log) {
   logFn(`Login OK: ${url.slice(0, 60)}`);
 }
 
+/** 임시 채팅은 이미지 만들기 메뉴가 없으므로 일반 새 대화 루트만 사용한다. */
+export const CHATGPT_IMAGE_FRESH_CHAT_URL = "https://chatgpt.com/";
+export const CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX =
+  "GENERATE ONE BRAND-NEW ORIGINAL TEXT-TO-IMAGE ASSET.";
+
+/** 이미지 생성은 Work가 아니라 일반 Chat 모드에서만 허용한다. */
+export async function ensureChatMode(page, logFn = console.log) {
+  const deadline = Date.now() + 10_000;
+  let chat = null;
+  let work = null;
+  do {
+    chat = await firstVisibleExactLabelLocator([
+      page.locator('[role="radio"]'),
+      page.locator('[role="tab"]'),
+      page.locator('button'),
+    ], ["Chat"]);
+    work = await firstVisibleExactLabelLocator([
+      page.locator('[role="radio"]'),
+      page.locator('[role="tab"]'),
+      page.locator('button'),
+    ], ["Work"]);
+    if (chat && work) break;
+    await page.waitForTimeout(300);
+  } while (Date.now() < deadline);
+  if (!chat || !work) {
+    const diagnostics = await page.evaluate(() => Array.from(document.querySelectorAll('button, [role]'))
+      .map((element) => ({
+        tag: element.tagName.toLocaleLowerCase(),
+        role: element.getAttribute("role"),
+        text: String(element.textContent || "").replace(/\s+/g, " ").trim().slice(0, 60),
+        ariaLabel: String(element.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().slice(0, 60),
+        dataState: element.getAttribute("data-state"),
+        ariaChecked: element.getAttribute("aria-checked"),
+        ariaSelected: element.getAttribute("aria-selected"),
+        ariaPressed: element.getAttribute("aria-pressed"),
+      }))
+      .filter((item) => /chat|work|채팅|작업/i.test(`${item.text} ${item.ariaLabel}`))
+      .slice(0, 12));
+    throw new Error(`IMAGE_TOOL_CHAT_MODE_SELECTOR_MISSING:${JSON.stringify(diagnostics)}`);
+  }
+
+  const selectionState = async (locator) => locator.evaluate((element) => {
+    const attributes = {
+      dataState: element.getAttribute("data-state"),
+      ariaChecked: element.getAttribute("aria-checked"),
+      ariaSelected: element.getAttribute("aria-selected"),
+      ariaPressed: element.getAttribute("aria-pressed"),
+      dataSelected: element.getAttribute("data-selected"),
+    };
+    const values = Object.values(attributes).filter(Boolean).map((value) => String(value).toLocaleLowerCase());
+    return { attributes, active: values.some((value) => ["on", "true", "active", "selected"].includes(value)) };
+  });
+
+  let chatState = await selectionState(chat);
+  if (!chatState.active) {
+    await chat.click({ timeout: 5000 });
+    await page.waitForTimeout(800);
+  }
+  chatState = await selectionState(chat);
+  const workState = await selectionState(work);
+  if (!chatState.active || workState.active) {
+    throw new Error(`IMAGE_TOOL_CHAT_MODE_NOT_ACTIVE: chat=${JSON.stringify(chatState.attributes)}, work=${JSON.stringify(workState.attributes)}`);
+  }
+  logFn("Chat mode active (Work mode off)");
+}
+
+async function readComposerUserText(page, { ignoreStandaloneToolLabel = false } = {}) {
+  const ta = page.locator("#prompt-textarea").first();
+  await ta.waitFor({ state: "visible", timeout: 15000 });
+  const normalizedText = await ta.evaluate((element, automationPrefix) => {
+    const clone = element.cloneNode(true);
+    clone.querySelectorAll("[data-inline-selection-pill]").forEach((pill) => pill.remove());
+    clone.querySelectorAll('[data-id="picture_v2"], [data-system-hint-type="picture_v2"]').forEach((pill) => pill.remove());
+    clone.querySelectorAll('[contenteditable="false"], button, [role="button"]').forEach((candidate) => {
+      const text = String(candidate.textContent || "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
+      const aria = String(candidate.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
+      if ([text, aria].some((value) => value === "이미지 만들기" || value === "create image")) candidate.remove();
+    });
+    const normalized = String(clone.textContent || "").replace(/\s+/g, " ").trim();
+    const withoutToolLabel = normalized.replace(/^(?:이미지 만들기|create image)\s*/i, "");
+    return withoutToolLabel.startsWith(automationPrefix) ? withoutToolLabel : normalized;
+  }, CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX);
+  if (ignoreStandaloneToolLabel && /^(?:이미지 만들기|create image)$/i.test(normalizedText)) {
+    return "";
+  }
+  return normalizedText;
+}
+
+export async function openFreshImageChat(page, logFn = console.log) {
+  try {
+    await page.goto(CHATGPT_IMAGE_FRESH_CHAT_URL, { waitUntil: "domcontentloaded", timeout: 20000 });
+  } catch (error) {
+    throw new Error(`IMAGE_TOOL_CHAT_OPEN_FAILED: ${String(error?.message ?? error).slice(0, 100)}`);
+  }
+  await page.waitForTimeout(1500);
+  if (/auth|login/i.test(page.url())) throw new Error("LOGIN_REQUIRED");
+  if (/temporary-chat=true/i.test(page.url())) {
+    throw new Error("IMAGE_TOOL_TEMPORARY_CHAT_UNSUPPORTED");
+  }
+  await ensureChatMode(page, logFn);
+  const existingUserText = await readComposerUserText(page);
+  if (existingUserText) {
+    if (!existingUserText.startsWith(CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX)) {
+      throw new Error(`IMAGE_TOOL_OWNER_DRAFT_PRESENT: existing draft length=${existingUserText.length}`);
+    }
+    const ta = page.locator("#prompt-textarea").first();
+    await ta.fill("");
+    await page.waitForTimeout(300);
+    let remainingAutomationText = await readComposerUserText(page, { ignoreStandaloneToolLabel: true });
+    if (remainingAutomationText) {
+      await ta.click();
+      await page.keyboard.press("Control+A");
+      await page.keyboard.press("Backspace");
+      await page.waitForTimeout(300);
+      remainingAutomationText = await readComposerUserText(page, { ignoreStandaloneToolLabel: true });
+    }
+    if (remainingAutomationText) {
+      throw new Error(`IMAGE_TOOL_AUTOMATION_DRAFT_CLEAR_FAILED: remaining length=${remainingAutomationText.length}`);
+    }
+    logFn("Cleared stale automation-owned image draft");
+  }
+  logFn("Fresh regular image chat ready (Owner draft preserved)");
+}
+
 // ── 중단 조건 감지 (throw) ────────────────────────────────────────────────────
 export async function detectStop(page) {
   const STOP_PHRASES = [
@@ -115,37 +240,149 @@ export async function detectStop(page) {
 }
 
 // ── 이미지 생성 도구 활성화 (fail-fast) ──────────────────────────────────────
+async function firstVisibleLocator(candidates) {
+  for (const candidate of candidates) {
+    const count = await candidate.count();
+    for (let i = 0; i < count; i += 1) {
+      const item = candidate.nth(i);
+      if (await item.isVisible({ timeout: 350 }).catch(() => false)) return item;
+    }
+  }
+  return null;
+}
+
+async function firstVisibleExactLabelLocator(candidates, labels) {
+  const normalizedLabels = labels.map((label) => label.toLocaleLowerCase());
+  for (const candidate of candidates) {
+    const count = await candidate.count();
+    for (let i = 0; i < count; i += 1) {
+      const item = candidate.nth(i);
+      if (!(await item.isVisible({ timeout: 350 }).catch(() => false))) continue;
+      const values = await item.evaluate((element) => [
+        String(element.textContent || "").replace(/\s+/g, " ").trim(),
+        String(element.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim(),
+      ]).catch(() => []);
+      if (values.some((value) => normalizedLabels.includes(value.toLocaleLowerCase()))) return item;
+    }
+  }
+  return null;
+}
+
+/** 내부 picture_v2 ID 또는 작성창 전체에 표시된 정확한 이미지 도구 칩 라벨로 활성 상태를 확인한다. */
+export async function verifyImageToolActive(page) {
+  const prompt = page.locator("#prompt-textarea").first();
+  const composer = prompt.locator('xpath=ancestor::*[self::form or @data-type="unified-composer"][1]');
+  const activeChip = await firstVisibleLocator([
+    page.locator('#prompt-textarea [data-inline-selection-pill][data-id="picture_v2"]'),
+    page.locator('#prompt-textarea [data-inline-selection-pill][data-system-hint-type="picture_v2"]'),
+    composer.locator('[data-inline-selection-pill][data-id="picture_v2"]'),
+    composer.locator('[data-inline-selection-pill][data-system-hint-type="picture_v2"]'),
+    composer.locator('[data-id="picture_v2"]'),
+    composer.locator('[data-system-hint-type="picture_v2"]'),
+  ]);
+  if (activeChip) return true;
+
+  // 현재 UI는 이미지 칩을 #prompt-textarea의 형제 요소로 렌더링할 수 있다.
+  // 내부 ID가 바뀌어도 작성창 컨테이너 안의 정확한 라벨만 보조 신호로 인정한다.
+  const labeledChip = await firstVisibleExactLabelLocator([
+    page.locator('#prompt-textarea [data-inline-selection-pill]'),
+    page.locator('#prompt-textarea [contenteditable="false"]'),
+    composer.locator('[data-inline-selection-pill]'),
+    composer.locator('[contenteditable="false"]'),
+    composer.locator('button'),
+    composer.locator('[role="button"]'),
+  ], ["이미지 만들기", "Create image"]);
+  return labeledChip !== null;
+}
+
+export async function waitForImageToolActive(page, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  do {
+    if (await verifyImageToolActive(page)) return true;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    await page.waitForTimeout(Math.min(250, remaining));
+  } while (Date.now() < deadline);
+  return false;
+}
+
+async function waitForDirectImageEntry(page, timeoutMs = 3500) {
+  const deadline = Date.now() + timeoutMs;
+  do {
+    const target = await firstVisibleLocator([
+      page.locator("button").filter({ hasText: /^이미지 만들기$/ }),
+      page.locator("button").filter({ hasText: /^Create image$/i }),
+    ]);
+    if (target) return target;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    await page.waitForTimeout(Math.min(250, remaining));
+  } while (Date.now() < deadline);
+  return null;
+}
+
+async function activateDirectImageEntry(page, target, logFn, source) {
+  await target.click({ timeout: 5000 }).catch((error) => {
+    throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: direct create-image button click failed (${String(error?.message ?? error).slice(0, 80)})`);
+  });
+  if (!(await waitForImageToolActive(page, 8000))) {
+    throw new Error("IMAGE_TOOL_NOT_ACTIVE: direct create-image button did not create a picture_v2 chip");
+  }
+  logFn(`Image tool activated (${source}, composer chip verified)`);
+  return true;
+}
+
 export async function activateImageTool(page, logFn = console.log, warnFn = console.warn) {
-  // "파일 추가 및 기타" 버튼 (plus 메뉴)
-  const plus = page.locator(
-    'button[aria-label="파일 추가 및 기타"], button[aria-label*="Attach"], button[aria-label*="Add"]'
-  ).first();
-
-  if (await plus.count() === 0) {
-    throw new Error("plus-menu button not found ('파일 추가 및 기타')");
+  if (await verifyImageToolActive(page)) {
+    logFn("Image tool already active (composer chip verified)");
+    return true;
   }
-  await plus.click();
-  await page.waitForTimeout(1000);
 
-  // "이미지 만들기" 메뉴 항목
-  const imgTool = page.getByRole("menuitemradio", { name: /이미지 만들기|Create image/i }).first();
-  const imgToolAlt = page.getByRole("menuitem", { name: /이미지 만들기|Create image/i }).first();
-  const target = (await imgTool.count() > 0) ? imgTool : imgToolAlt;
-
-  if (await target.count() === 0) {
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(300);
-    throw new Error("'이미지 만들기' menu item not found after plus-menu click");
+  // 빈 일반 채팅의 현재 UI는 이미지 만들기를 + 메뉴가 아닌 홈 화면 직접 버튼으로 제공한다.
+  // 오버레이를 열기 전에 정확한 버튼을 먼저 사용해야 가려진 버튼 클릭/메뉴 오탐이 없다.
+  const directTarget = await waitForDirectImageEntry(page);
+  if (directTarget) {
+    return activateDirectImageEntry(page, directTarget, logFn, "direct home button");
   }
-  await target.click();
-  await page.waitForTimeout(1000);
 
-  // DOM 진입 확인 — 이미지 모드에서 나타나는 indicator 확인
-  // (체크마크 또는 활성 상태 aria 확인)
-  const checked = await page.locator(
-    '[aria-checked="true"][aria-label*="이미지"], [data-state="checked"]'
-  ).count();
-  logFn(`Image tool activated ✅ (checked=${checked})`);
+  const plus = await firstVisibleLocator([
+    page.locator('button[data-testid="composer-plus-btn"]'),
+    page.locator('button[aria-label="파일 등 추가"]'),
+    page.locator('button[aria-label="파일 추가 및 기타"]'),
+    page.locator('button[aria-label*="Attach" i]'),
+    page.locator('button[aria-label*="Add" i]'),
+  ]);
+  if (!plus) throw new Error("IMAGE_TOOL_ENTRY_MISSING: composer plus button not found");
+
+  await plus.click({ timeout: 5000 }).catch((error) => {
+    throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: plus button click failed (${String(error?.message ?? error).slice(0, 80)})`);
+  });
+  await page.waitForTimeout(500);
+
+  const target = await firstVisibleLocator([
+    page.getByRole("menuitemradio", { name: /^이미지 만들기$|^Create image$/i }),
+    page.getByRole("menuitem", { name: /^이미지 만들기$|^Create image$/i }),
+  ]);
+  if (!target) {
+    await page.keyboard.press("Escape").catch(() => {});
+    // 최신 홈 UI의 직접 버튼은 composer보다 늦게 hydrate될 수 있다. + 메뉴에 없으면
+    // 오버레이를 닫고 직접 버튼을 한 번 더 기다려 초기 로딩 경쟁 조건을 흡수한다.
+    const delayedDirectTarget = await waitForDirectImageEntry(page, 7000);
+    if (delayedDirectTarget) {
+      return activateDirectImageEntry(page, delayedDirectTarget, logFn, "delayed direct home button");
+    }
+    throw new Error("IMAGE_TOOL_ENTRY_MISSING: exact create-image menu item not found");
+  }
+
+  await target.click({ timeout: 5000 }).catch((error) => {
+    throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: create-image menu click failed (${String(error?.message ?? error).slice(0, 80)})`);
+  });
+  if (!(await waitForImageToolActive(page, 5000))) {
+    warnFn("Create-image menu was clicked, but no active composer chip appeared.");
+    throw new Error("IMAGE_TOOL_NOT_ACTIVE: composer activation marker missing");
+  }
+
+  logFn("Image tool activated (composer chip verified)");
   return true;
 }
 
@@ -208,10 +445,29 @@ export async function attachRef(page, refPath, logFn = console.log) {
 export async function typePrompt(page, promptText, logFn = console.log) {
   const ta = page.locator("#prompt-textarea").first();
   await ta.waitFor({ state: "visible", timeout: 15000 });
+  const oneLine = promptText.replace(/\s*\n\s*/g, " ").trim();
+  const imageToolActive = await verifyImageToolActive(page);
+
+  if (imageToolActive) {
+    // contenteditable fill()은 picture_v2 inline pill까지 통째로 지운다.
+    // 활성 칩 뒤에 키보드 입력만 추가해 React의 이미지 생성 상태를 보존한다.
+    const existingUserText = await readComposerUserText(page, { ignoreStandaloneToolLabel: true });
+    if (existingUserText) throw new Error(`PROMPT_NOT_EMPTY: existing draft length=${existingUserText.length}`);
+    await ta.click();
+    await page.keyboard.press("End");
+    await page.keyboard.type(oneLine, { delay: 2 });
+    await page.waitForTimeout(500);
+    const typed = await readComposerUserText(page, { ignoreStandaloneToolLabel: true });
+    if (typed !== oneLine) throw new Error(`Prompt input mismatch — expected=${oneLine.length}, typed=${typed.length}`);
+    if (!(await verifyImageToolActive(page))) {
+      throw new Error("IMAGE_TOOL_NOT_ACTIVE: picture_v2 pill disappeared while typing");
+    }
+    logFn(`Prompt typed with image pill preserved ✅ (len=${typed.length})`);
+    return { typedLen: typed.length, imageToolPreserved: true };
+  }
+
   await ta.click();
   await page.waitForTimeout(300);
-
-  const oneLine = promptText.replace(/\s*\n\s*/g, " ").trim();
 
   // fill() 시도
   await ta.fill(oneLine);
@@ -240,10 +496,22 @@ export async function typePrompt(page, promptText, logFn = console.log) {
 export async function checkSendEnabled(page) {
   const sendBtn = page.locator(
     '#composer-submit-button, button[data-testid="send-button"], ' +
-    'button[aria-label="Send message"], button[aria-label="메시지 보내기"]'
+    'button[aria-label="Send message"], button[aria-label="메시지 보내기"], ' +
+    'button[aria-label="프롬프트 보내기"]'
   ).first();
   if (await sendBtn.count() === 0) return false;
   return sendBtn.isEnabled().catch(() => false);
+}
+
+export async function sendPrompt(page) {
+  const sendBtn = page.locator(
+    '#composer-submit-button, button[data-testid="send-button"], ' +
+    'button[aria-label="Send message"], button[aria-label="메시지 보내기"], ' +
+    'button[aria-label="프롬프트 보내기"]'
+  ).first();
+  if (await sendBtn.count() === 0) throw new Error("SEND_BUTTON_MISSING");
+  if (!(await sendBtn.isEnabled().catch(() => false))) throw new Error("SEND_BUTTON_DISABLED");
+  await sendBtn.click();
 }
 
 // ── 마지막 assistant 응답 이미지 수집 ────────────────────────────────────────

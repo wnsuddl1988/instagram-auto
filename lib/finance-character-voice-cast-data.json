@@ -1,0 +1,105 @@
+{
+  "version": "money_shorts_finance_character_voice_cast_v4",
+  "status": "approved_for_production",
+  "baseline": {
+    "source": "latest_owner_approved_money_shorts_korean_director_v2",
+    "modelId": "eleven_v3",
+    "ttsEngineVersion": "money_shorts_korean_director_v2",
+    "prosodyPolicy": "korean_native_cadence_v2",
+    "speechContextPolicy": "continuous_full_script",
+    "style": 0,
+    "useSpeakerBoost": true,
+    "languageCode": "ko",
+    "seed": 472913,
+    "productionVoicePreset": "korean_confident_director_v2",
+    "notes": [
+      "Preserve the latest approved confident Korean cadence instead of reverting to the older scene-reset voice engine.",
+      "Speed is supported by the current ElevenLabs Text to Speech API and remains inside 0.7 to 1.2.",
+      "All four audition clips use the same spoken text and audio tags; only the selected voice and character settings differ.",
+      "Production keeps one approved Korean Director preset for every character; the character voice ID is the only per-subtopic voice selection."
+    ]
+  },
+  "audition": {
+    "scriptVersion": "money_shorts_finance_voice_audition_script_v1",
+    "spokenText": "지금 통장에 돈이 남지 않는 이유, 의지가 약해서가 아닙니다. 물가가 3퍼센트 오르면 같은 월급으로 살 수 있는 양은 줄어듭니다. 그래서 이번 달 카드값과 고정비를 먼저 확인해야 합니다. 숫자를 차분히 적고, 바꿀 수 있는 지출 하나부터 오늘 바로 조정해 보세요. 다음 선택 전에 다시 볼 수 있도록 저장해 두세요.",
+    "performanceText": "[confidently]\n지금 통장에 돈이 남지 않는 이유, 의지가 약해서가 아닙니다.\n\n[conversationally]\n물가가 3퍼센트 오르면 같은 월급으로 살 수 있는 양은 줄어듭니다.\n\n[firmly]\n그래서 이번 달 카드값과 고정비를 먼저 확인해야 합니다.\n\n[calmly]\n숫자를 차분히 적고, 바꿀 수 있는 지출 하나부터 오늘 바로 조정해 보세요. 다음 선택 전에 다시 볼 수 있도록 저장해 두세요.",
+    "comparisonPolicy": "same_model_text_tags_settings_seed_loudness_voice_id_only",
+    "reviewLoudness": {
+      "integratedLufs": -14.5,
+      "integratedToleranceLu": 1.5,
+      "truePeakDbtp": -1,
+      "loudnessRangeLu": 5,
+      "method": "ffmpeg_loudnorm_two_pass_dynamic_v1"
+    }
+  },
+  "characters": [
+    {
+      "characterId": "harin_daily",
+      "characterName": "하린",
+      "characterLabel": "생활비와 소비",
+      "subtopics": ["inflation_living_cost", "consumption_psychology", "sns_comparison"],
+      "voiceLabel": "Jisoo",
+      "voiceId": "iWLjl1zCuqXRkW6494ve",
+      "voiceStatus": "approved",
+      "settings": {
+        "speed": 1.02,
+        "stability": 0.48,
+        "similarityBoost": 0.86,
+        "style": 0,
+        "useSpeakerBoost": true
+      },
+      "intent": "밝고 친근하지만 금융 정보의 무게를 잃지 않는 생활경제 화자"
+    },
+    {
+      "characterId": "junho_cashflow",
+      "characterName": "준호",
+      "characterLabel": "월급과 실행습관",
+      "subtopics": ["labor_income", "anxiety_avoidance", "success_habits"],
+      "voiceLabel": "Yohan Koo",
+      "voiceId": "4JJwo477JUAx3HV0T7n7",
+      "voiceStatus": "approved",
+      "settings": {
+        "speed": 1.02,
+        "stability": 0.48,
+        "similarityBoost": 0.86,
+        "style": 0,
+        "useSpeakerBoost": true
+      },
+      "intent": "단호하지만 강압적이지 않고 행동 문장을 또렷하게 착지시키는 실행형 화자"
+    },
+    {
+      "characterId": "seoyun_safety",
+      "characterName": "서윤",
+      "characterLabel": "부채와 생활안전",
+      "subtopics": ["interest_debt", "housing_asset_gap", "crisis_risk"],
+      "voiceLabel": "Jian.K",
+      "voiceId": "ah4r1hZOydd3XWlHOm3Y",
+      "voiceStatus": "approved",
+      "settings": {
+        "speed": 1.02,
+        "stability": 0.48,
+        "similarityBoost": 0.86,
+        "style": 0,
+        "useSpeakerBoost": true
+      },
+      "intent": "숫자와 위험을 과장하지 않고 낮고 침착하게 계산하는 안정형 화자"
+    },
+    {
+      "characterId": "minjae_horizon",
+      "characterName": "민재",
+      "characterLabel": "경제와 장기자산",
+      "subtopics": ["economy_literacy", "investing_assets", "time_retirement"],
+      "voiceLabel": "Hojin Lim",
+      "voiceId": "fHzGR8qcnsDR2uaj9r16",
+      "voiceStatus": "approved",
+      "settings": {
+        "speed": 1.02,
+        "stability": 0.48,
+        "similarityBoost": 0.86,
+        "style": 0,
+        "useSpeakerBoost": true
+      },
+      "intent": "숫자와 뉴스를 편안하게 설명하고 장기 관점으로 연결하는 탐구형 화자"
+    }
+  ]
+}

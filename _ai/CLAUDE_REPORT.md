@@ -4722,3 +4722,93 @@ QA-only slice. 코드 변경 없음.
 - **deviations/risks**: allowArm 단일 게이트·media quality gate·업로드 차단은 그대로 유지(기존 검사 통과). 큰 통합 기능 무변경. pnpm-workspace.yaml diff는 기존 dirty(보호 파일)이며 이번 task 미변경.
 - checkpoint recommendation: 이번 보정은 소규모(4 코드파일 + guard). 직전 통합 슬라이스와 함께 Codex checkpoint review 후 commit 권장 — 이번 세션에서 commit 안 함.
 
+## owner-first-real-media-smoke-no-upload-v1 (2026-07-09) — ✅ 첫 실제 제작 스모크(업로드 미실행) 성공
+
+- **목표**: 웹 `/money-shorts` 실제 제작 흐름(대본 보정 → 실제 음성 → 장면 이미지 6장 → 최종 mp4 → 미리보기)을 새 주제 1개로 처음 끝까지 검증. 업로드는 절대 미실행. 코드 수정 없음(실행 스모크만).
+- **base**: commit `d54bf66`, 브랜치 `codex/source-first-blueprint-clean`. 시작 전 이전 세션의 Claude 보정 킬스위치 marker 부재 확인(`DISABLE_LIVE_CLAUDE_POLISH.marker` absent, `WIZARD_DISABLE_CLAUDE_POLISH` unset).
+- **selected topic**: `gen-finance-taste-one-way` — "한 번 올린 씀씀이는 혼자 안 내려온다"(심리형, 라이프스타일 인플레이션). hook "좋은 거 한 번 쓰고 예전 게 불편했다면". 로컬 품질 88/100(후보 3개 중 공감형). 기게시 t1/t2/default/golden evidence와 무관한 신규 주제. `다른 주제 보기` 미사용(첫 추천이 충분히 강함).
+- **steps run/result**:
+  - 대본 만들기: ✅ 생성. **Claude 보정 미적용 — 로컬 대본 사용 중 (ANTHROPIC_API_KEY 없음)**. fail-closed 폴백 정상, **Anthropic 실호출 0**. script-final.json finalReady=true.
+  - 실제 목소리 만들기: ✅ 성공(약 11초). provider=**elevenlabs**(mock/test 아님), duration 20.99s, apiCallCount=6(scene-paced 씬별 1회), 파일 `...\real\tts\elevenlabs-scene-paced-timeline.m4a`. 웹 audio player 재생 가능(audio/mp4, 235KB, HTTP 200).
+  - 장면 이미지 만들기: ✅ 성공(약 8분). ChatGPT+Playwright 6/6 **SAVED_OK**, 941×1672 세로형(h/w=1.78 ≥1.2), submissionsUsed=6(씬당 1회), allReady=true, blockerCode=null, notUploaded=true. placeholder/가로 이미지 없음.
+  - 최종 영상 만들기: ✅ 성공(약 1분). status=**RENDER_MUX_OK**, `final-gen-finance-taste-one-way.mp4`, 1080×1920, 21s, h264+aac(hasVideo+hasAudio), 5.44MB, sceneCount=6, audioProvider=elevenlabs, imageMode=chatgpt_playwright. validation 7항목 전부 true. notUploaded=true/uploadReady=false.
+  - 미리보기: ✅ 웹에서 최종 영상 실제 렌더/재생 확인. video readyState=4(HAVE_ENOUGH_DATA), videoWidth 1080×1920, duration 21s, src=`video=final`. "최종 영상 (실제 음성 + 실제 장면 이미지) — 업로드 후보" 라벨. 스크린샷상 실제 장면 이미지(계란판+동전) + 자막 오버레이 확인. 콘솔 에러 0.
+- **generated files/paths** (전부 `C:\tmp\money-shorts-os\web-wizard-create-v1\gen-finance-taste-one-way\real\` 하위):
+  - `tts\elevenlabs-scene-paced-timeline.m4a` (20.99s)
+  - `images\scene-01..06.png` (941×1672 각) + `images\scene-images-summary.json`
+  - `video\final-gen-finance-taste-one-way.mp4` (1080×1920/21s/5.44MB) + `video\real-video-summary.json`
+- **preview result**: ✅ 웹 미리보기 최종 영상 재생 정상(readyState 4, 1080×1920 디코딩 확인, video/mp4 스트림 200). 다운로드/업로드 없이 로컬 재생만.
+- **media quality gate**: ok=true, blockerCode=null (TTS/이미지/최종영상 3게이트 전부 통과). 단계 진행 중 blocker가 REAL_TTS_REQUIRED → FINAL_MP4_REQUIRED → null 로 정상 전이.
+- **업로드 미실행 확인**: `actualUpload`/`인스타그램·유튜브에 업로드` 버튼 클릭 0회. 업로드 버튼은 확인 절차(체크박스 2 + "업로드" 입력) 미완으로 disabled 유지. Instagram/YouTube publish 0, `--arm`/`--live` 0.
+- **quality risks**:
+  - **대본 문체(주의)**: 로컬 대본이 스타카토식 짧은 문장 나열("취향 상승은 기준선을 끌어올린다. 진짜 문제는 따로 있다.")로 낭독 흐름이 다소 딱딱함. ANTHROPIC_API_KEY 부재로 Claude 보정이 걸리지 않아 로컬 대본만 사용됨 — 키 주입 시 개선 여지. 자막 6개는 주제(씀씀이 기준선 상승)와 일관되게 연결됨.
+  - 음성/이미지/영상 품질 리스크는 관찰되지 않음(실제 음성, 세로 실사 이미지, 자막+모션 mp4 정상).
+- **side effects confirmation**: Anthropic **0회**(키 없음 폴백), ElevenLabs **1단계 실행/내부 6 scene 호출**, ChatGPT 이미지 **6장(씬당 1회)**, ffmpeg 최종 mp4 **1회** — 전부 허용 범위. Instagram/YouTube upload=0, Vercel Blob put/del/list/head/copy=0, ledger write=0, upload=0. 산출물 전부 `C:\tmp\money-shorts-os\` 하위.
+- **env/secret confirmation**: `.env*` Read/Edit/Cat/Print 0. secret 값/길이/prefix/suffix/hash/masked 출력 0. 키는 presence(present/absent)만 확인(ANTHROPIC absent, ELEVENLABS present). dev server가 값 출력 없이 런타임 env 사용.
+- **changed files**: `_ai/CLAUDE_REPORT.md` append만. 코드/설정 파일 변경 0. commit/push 없음.
+- **next recommendation**: **업로드 진행 가능(기술)** — media gate 통과 + 검증된 최종 mp4 확보. 다만 대본 문체 품질을 높이려면 **ANTHROPIC_API_KEY 주입 후 Claude 보정 적용 재생성**을 권장(현재는 로컬 대본 fail-closed). 실제 업로드 여부는 콘텐츠 품질 확인 후 Owner 판단.
+
+## owner-web-ai-topic-generation-and-history-filter-v1 (2026-07-09) — ✅ Codex 직접 구현
+
+- **목표**: `주제 추천받기`가 고정 로컬 주제은행을 반복하는 문제를 해결. Claude가 신규 주제 후보를 만들고, 이미 본/선택/영상 만든 주제와 같거나 비슷한 제목은 제외한 뒤 상위 후보만 표시. API 불가 시 기존 로컬 은행 fallback 유지.
+- **changed files**: `lib/owner-web-operator.ts`(Claude 신규 topic generation, topic history, novelty filter, smart fallback), `app/api/money-shorts/operator/route.ts`(async smart batch + selected/scripted/video_created 기록), `components/VideoCreationWizard.tsx`(`AI 신규`/`백업` 배지와 쉬운 설명), `docs/simple-execution-manual.md`, `scripts/check-owner-one-click-video-creation-ui-static.mjs`, `scripts/check-owner-web-operator-ui-static.mjs`, `_ai/CLAUDE_REPORT.md`.
+- **behavior**: finance 카테고리는 `ANTHROPIC_API_KEY` present + 로컬 dev일 때 Claude가 24개 후보를 생성 → 로컬 judge/rewrite/중복 유사도 필터 → 최대 9개 표시. `wizard-topic-history.json`에 shown/selected/scripted/video_created 기록을 남겨 다음 추천에서 동일·유사 제목을 제외. 실패/키 없음/검증 실패 시 `local_bank` fallback으로 내려가며 UI에 `백업` 배지 표시.
+- **safety**: 새 네트워크 경로는 기존 Anthropic 고정 URL(`ANTHROPIC_API_URL`) + injectable `fetchImpl`만 사용. Anthropic SDK/의존성 추가 0, 직접 `fetch(...)` 호출 0, child env로 ANTHROPIC 키 전달 0, `.env*` 직접 read/edit/출력 0. 업로드/Blob/ledger/`--arm`/`--live` 경로 무변경.
+- **checks**: `node --check scripts/check-owner-one-click-video-creation-ui-static.mjs` PASS · wizard guard **280 PASS/0 FAIL** · web guard **91 PASS/0 FAIL** · `git diff --check` exit 0(라인엔딩 warning만). `tsc --noEmit`은 TS6053(`@types/node`, `@types/react`) 환경성 오류로 실패했으나, `Test-Path node_modules\@types\{node,react}\index.d.ts`는 True이고 junction도 정상(이전 세션에서 재현된 로컬 type-link 이슈와 동일).
+- **side effects**: 실제 Anthropic 호출 0(구현/정적검증만), ElevenLabs/ChatGPT/Instagram/YouTube/Blob/ledger/ffmpeg 호출 0, dependency/lockfile/pnpm-workspace 변경 0, commit/push 0.
+- **deviations/risks**: Claude topic generation은 현재 finance 카테고리 우선 적용. 다른 카테고리는 안전하게 로컬 fallback 유지. 추천 history는 `C:\tmp\money-shorts-os\web-wizard-create-v1\topics\wizard-topic-history.json`에 제목/상태만 저장하며 secret 없음.
+
+### fallback reason visibility fix (2026-07-09)
+
+- **finding**: Owner 화면에서 `Claude 신규 생성이 불가해 로컬 백업 주제`로 fallback 됐지만, 실제 원인(`ANTHROPIC_API_KEY` 미로드/모델 400/응답 형식 실패/중복 필터 전부 탈락 등)을 화면과 raw JSON에 노출하지 않아 반복 주제처럼 보이는 문제가 있었음.
+- **fix**: `WizardTopicBatchResult`에 `fallbackReason`/`model` 추가, `generateWizardTopicBatchSmart()`가 `generated.reason` 또는 `claude_topics_filtered_out`을 보존하도록 변경. route 응답에 `fallbackReason`/`fallbackReasonText`를 추가하고, 사용자 detail에 쉬운 한국어 원인 설명을 표시. missing key일 때는 `.env.local` 저장 후 `pnpm dev` 재시작 필요성을 명시.
+- **checks**: wizard guard에 fallback reason 회귀 검증 3개 추가 완료, docs에 `백업` 배지 조치 안내 추가. secret 값 출력 0, `.env*` read/edit 0, 외부 API/upload 0.
+
+### Claude topic timeout tuning (2026-07-09)
+
+- **finding**: Owner가 `주제 추천받기`를 2회 실행했지만 `anthropic_timeout`으로 fallback. 원인: 화면에는 최대 9개만 필요한데 Claude에 24개 후보 + 최근 제목 120개 + 4096 tokens를 45초 안에 요구해 실제 클릭 경로가 과하게 무거웠음.
+- **fix**: Claude topic 요청을 compact batch로 조정 — 후보 24→12, known titles 120→60, max_tokens 4096→3072, timeout 45s→90s. fallback 문구도 "요청을 가볍게 조정했으니 다시 눌러 주세요"로 갱신.
+- **checks**: `node --check` route/helper/guard PASS, wizard guard **285 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic JSON parser tolerance fix (2026-07-09)
+
+- **finding**: Owner 화면이 `anthropic_topic_json_parse_failed`로 fallback. API 연결은 됐지만 Claude가 `{ "topics": [...] }` 객체 대신 array-only JSON 또는 코드펜스/짧은 prose가 섞인 JSON을 반환하면 파서가 실패하는 구조였음.
+- **fix**: `parseClaudeTopicResponse()`가 array-only JSON을 `{ topics: parsed }`로 감싸 허용. `extractJsonText()`가 `{...}` 객체뿐 아니라 `[...]` 배열도 본문으로 추출하도록 개선. prompt에 "첫 글자 `{`, 마지막 글자 `}`, 최상위 `{\"topics\":[...]}`" 계약을 더 강하게 명시. route 문구도 객체/배열 JSON을 더 유연하게 읽는다고 정정.
+- **checks**: `node --check` route/helper/guard PASS, wizard guard **290 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic balanced JSON scanner fix (2026-07-09)
+
+- **finding**: 위 보정 후에도 Owner 화면에서 `anthropic_topic_json_parse_failed`가 반복. 단순 first/last brace 추출은 Claude 응답에 prose·코드펜스·여러 JSON 후보·문자열 내부 괄호가 섞일 때 여전히 잘못 자를 수 있었음.
+- **fix**: `extractBalancedJsonCandidate()` 추가. 응답 앞에서부터 `{`/`[` 후보를 찾고 stack + string/escape 상태로 균형 잡힌 첫 JSON 객체/배열만 추출. `extractJsonText()`는 코드펜스 내부 후보를 먼저 검사하고 실패 시 전체 텍스트에서 균형 JSON을 스캔. array-only wrapping은 유지.
+- **checks**: `node --check` route/helper/guard PASS, wizard guard **290 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic shape normalization fix (2026-07-09)
+
+- **finding**: Owner 화면에서 `Claude 응답이 주제 생성 형식에 맞지 않아` fallback 반복. 파싱은 통과했지만 Claude가 `topics` 대신 `candidates/ideas`를 쓰거나 `title/hook/points/save` 중 일부 필드명을 다르게 주면 후보 전체를 폐기하는 구조였음.
+- **fix**: `coerceClaudeTopicArray()`로 `topics/candidates/ideas/items/results` 배열을 모두 허용. `toClaudeTopicSeed()`가 `title/topic/headline/subject`, `hook/core_hook/hookLine/opening`, `points/captions/lines/beats`, `cta/action` 등 변형 필드명을 정규화. 제목과 훅이 있으면 부족한 empathy/points/save/anchor는 돈·심리 fallback 문장으로 보강해 사용 가능한 후보를 살림. 정말 제목이 없을 때만 `anthropic_no_valid_topic_seed`로 fallback.
+- **checks**: `node --check` route/helper/guard PASS, wizard guard **294 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. `tsc --noEmit`은 기존 로컬 type-link TS6053(`@types/node`, `@types/react`)로 실패했으나 두 index.d.ts 파일은 `Test-Path` True. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic nested/single-object coercion fix (2026-07-09)
+
+- **finding**: Owner 화면에서 `Claude 응답에서 주제 목록 배열을 찾지 못해` fallback. Claude가 `topics` 배열 대신 `recommendations/topicCandidates/주제목록` 같은 키 또는 단일 `{title,...}` 객체로 응답하면 여전히 폐기되는 구조였음.
+- **fix**: `CLAUDE_TOPIC_ARRAY_KEYS` 확장(`recommendations`, `suggestions`, `topicCandidates`, `topic_candidates`, `shorts`, `subjects`, `주제목록`, `후보`, `추천`, `추천주제`). `hasClaudeTopicTitle()`로 단일 주제 객체를 `[object]`로 감싸 허용. 중첩 객체도 depth 2까지 탐색해 `{data:{topics:[...]}}` 류 응답을 살림.
+- **checks**: `node --check` helper/guard PASS, wizard guard **294 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic quality-filter rescue fix (2026-07-09)
+
+- **finding**: Owner 화면에서 `Claude가 만든 후보가 기존 주제와 비슷하거나 품질 기준을 통과하지 못했습니다` fallback. Claude 생성/파싱/정규화는 성공했지만 로컬 은행과 동일한 유사도·엄격 품질 필터를 적용해 생성 후보를 전부 버렸음.
+- **fix**: Claude 생성 후보는 정확히 같은 제목만 중복 차단하고, 유사 제목은 바로 폐기하지 않도록 `findDuplicateTopicReason(..., {allowSimilar:false})` 경로 추가. 점수가 통과선보다 낮아도 `overallScore >= 58`이면 로컬 규칙으로 보강한 soft candidate로 살려 상위 후보를 표시. 정확 중복/빈 제목은 계속 차단.
+- **checks**: `node --check` helper/guard PASS, wizard guard **296 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. 실제 Claude 호출/업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic paid-quality pass fix (2026-07-09)
+
+- **finding**: Owner 화면에서 유료 Claude 호출 후에도 `AI 신규` 주제가 1개만 살아남고 품질 81점의 약한 후보가 표시됨. 원인은 후보 요청 수/토큰/타임아웃이 품질 필터 대비 부족했고, 로컬 judge가 "행동은 보이지만 돈이 새는 결과가 약한 제목"을 과하게 통과시킨 것.
+- **fix**: Claude topic 요청을 1회당 28후보/6144 tokens/120s로 확대하고, 최근 known title 전송은 90개로 제한. 시스템 prompt를 "1초 컷 자기인식형 후킹 제목" 기준으로 강화하고, 제목에 통장/잔고/월급/카드값/결제 등 돈 오브젝트 + 후회/비다/무너지다/먹는다/못 끊다 같은 결과 동사를 요구. `STAKES_RESULT_PATTERN`/`WEAK_ACTION_ONLY_TITLE_PATTERN` 점수 규칙을 추가해 결과가 약한 action-only 제목을 감점. Claude 신규 주제는 품질 85점 이상만 `추천`, 그 미만은 `후보` 배지로 표시.
+- **checks**: `node --check lib/owner-web-operator.ts` PASS, `node --check scripts/check-owner-one-click-video-creation-ui-static.mjs` PASS, wizard guard **298 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. `tsc --noEmit`은 기존 로컬 type-link TS6053(`@types/node`, `@types/react`)으로 실패했으나 `Test-Path node_modules\@types\{node,react}\index.d.ts`는 True. 실제 Claude/Anthropic 호출 0(정적검증만), 업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+
+### Claude topic weak-single-result gate fix (2026-07-09)
+
+- **finding**: 위 보정 후에도 화면에서 `새 주제 1개` + `품질 81` + `후보`가 성공처럼 표시됨. Claude 연결/파싱은 성공했지만, 1개라도 후보가 있으면 성공 처리하는 계약 때문에 유료 호출 결과가 약해도 그대로 노출됐음.
+- **fix**: Claude 신규 주제 batch는 **최소 6개 표시 후보 + 추천급(85점 이상) 최소 3개**를 만족해야만 화면에 성공으로 표시. 부족하면 같은 클릭 안에서 최대 1회 더 강한 조건으로 재요청(`CLAUDE_TOPIC_MAX_ATTEMPTS=2`, previousWeakOrRejectedTitles 전달). 그래도 부족하면 `claude_topics_below_recommendation_floor`로 처리해 약한 1개짜리 유료 결과를 보여주지 않고 fallback으로 내려감. route 문구도 "추천급 주제가 충분하지 않음"으로 명확화.
+- **checks**: `node --check` route/helper/guard PASS, wizard guard **301 PASS/0 FAIL**, web guard **91 PASS/0 FAIL**. `tsc --noEmit`은 동일 TS6053(`@types/node`, `@types/react`)로 실패했지만 두 `index.d.ts` 파일은 `Test-Path` True. 실제 Claude/Anthropic 호출 0(정적검증만), 업로드/Blob/ledger/media 생성 0, `.env*` read/edit/output 0.
+

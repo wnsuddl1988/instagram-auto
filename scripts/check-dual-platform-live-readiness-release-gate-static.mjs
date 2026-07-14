@@ -18,7 +18,7 @@
  *     sideEffectCounters 전부 0, secret 값 형태 없음, existing evidence retryForbidden 유지.
  *  2) docs: readiness 조건 12개 언급, 승인 순서 4단계 표, 다음 Owner 결정 요약 존재.
  *  3) orchestrator 실제 실행: --preflight가 preflightOk:true + envValuesAccessedThisRun:false를
- *     내고, --live/--arm이 LIVE_EXECUTION_DISABLED_THIS_SLICE로 nonzero exit함을 재확인.
+ *     내고, --live/--arm이 기존 게시 증거의 duplicate guard에서 nonzero exit함을 재확인.
  *  4) mutant → 전부 fail(order 뒤바뀜, required 약화, secret 값 노출 포함).
  */
 import { readFileSync, existsSync } from "node:fs";
@@ -176,10 +176,10 @@ catch (e) { check("orchestrator --preflight stdout JSON parse", false, String(e)
 check("release gate 근거: preflight.preflightOk === true", pfResult?.preflight?.preflightOk === true);
 check("release gate 근거: envValuesAccessedThisRun === false", pfResult?.preflight?.requiredEnvKeyNamesPlan?.envValuesAccessedThisRun === false);
 check(
-  "release gate 근거: liveExecutionPlan 모든 step disabled",
+  "release gate 근거: liveExecutionPlan은 armed이지만 기존 게시 중복으로 실행되지 않음",
   Array.isArray(pfResult?.preflight?.liveExecutionPlan?.steps) &&
     pfResult.preflight.liveExecutionPlan.steps.length === 4 &&
-    pfResult.preflight.liveExecutionPlan.steps.every((s) => s.enabled === false && s.willExecute === false && s.sideEffectPerformed === false)
+    pfResult.preflight.liveExecutionPlan.steps.every((s) => s.enabled === true && s.willExecute === false && s.sideEffectPerformed === false)
 );
 check(
   "release gate 근거: sideEffectCounters 전부 0",
@@ -197,15 +197,17 @@ check("release gate 근거: preflight 실행 결과에 secret 값 형태 없음"
 
 let liveExitCode = null;
 let liveStderr = "";
+let liveStdout = "";
 try {
   execFileSync(process.execPath, [RUNNER_PATH, "--live"], { cwd: ROOT, encoding: "utf8", timeout: 15000 });
   liveExitCode = 0;
 } catch (e) {
   liveExitCode = typeof e?.status === "number" ? e.status : -1;
   liveStderr = String(e?.stderr || "");
+  liveStdout = String(e?.stdout || "");
 }
 check("release gate 근거: orchestrator --live가 nonzero exit(fail-closed)", liveExitCode !== 0);
-check("release gate 근거: --live stderr에 LIVE_EXECUTION_DISABLED_THIS_SLICE 포함", liveStderr.includes("LIVE_EXECUTION_DISABLED_THIS_SLICE"));
+check("release gate 근거: --live 결과에 BLOCKED_DUPLICATE_ALREADY_PUBLISHED 포함", `${liveStdout}\n${liveStderr}`.includes("BLOCKED_DUPLICATE_ALREADY_PUBLISHED"));
 
 // ── 요약 ──────────────────────────────────────────────────────────────────────
 console.log(`\n${passes} PASS / ${failures} FAIL`);

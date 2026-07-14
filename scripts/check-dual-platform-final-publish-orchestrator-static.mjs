@@ -191,7 +191,7 @@ check("instagramDefaultMetadata.captionFirstLineHook 비어있지 않음", typeo
 check("instagramDefaultMetadata.caption 비어있지 않음", typeof ig.caption === "string" && ig.caption.trim().length > 0);
 check("instagramDefaultMetadata.callToAction 비어있지 않음", typeof ig.callToAction === "string" && ig.callToAction.trim().length > 0);
 const igHashtags = Array.isArray(ig.hashtags) ? ig.hashtags : [];
-check("instagramDefaultMetadata.hashtags 8~12개", igHashtags.length >= 8 && igHashtags.length <= 12, `count=${igHashtags.length}`);
+check("instagramDefaultMetadata.hashtags 4~6개", igHashtags.length >= 4 && igHashtags.length <= 6, `count=${igHashtags.length}`);
 const disallowedTagPatternIg = /(챌린지|viral|trend|밈)/i;
 check(
   "instagramDefaultMetadata.hashtags에 무관 유행 태그 없음",
@@ -206,8 +206,8 @@ check(
   Array.isArray(metaGate.instagramRequiredFields) &&
     ["captionFirstLineHook", "caption", "hashtags", "callToAction"].every((f) => metaGate.instagramRequiredFields.includes(f))
 );
-check("publishMetadataOptimizationGate.instagramHashtagCountMin === 8", metaGate.instagramHashtagCountMin === 8);
-check("publishMetadataOptimizationGate.instagramHashtagCountMax === 12", metaGate.instagramHashtagCountMax === 12);
+check("publishMetadataOptimizationGate.instagramHashtagCountMin === 4", metaGate.instagramHashtagCountMin === 4);
+check("publishMetadataOptimizationGate.instagramHashtagCountMax === 6", metaGate.instagramHashtagCountMax === 6);
 check("publishMetadataOptimizationGate.forbiddenUnrelatedTrendTags === true", metaGate.forbiddenUnrelatedTrendTags === true);
 
 const liveEvidence = fixture.liveUploadEvidence || {};
@@ -429,7 +429,7 @@ check(
   typeof runIg?.metadata?.callToAction === "string" && runIg.metadata.callToAction.trim().length > 0
 );
 const runIgHashtags = Array.isArray(runIg?.metadata?.hashtags) ? runIg.metadata.hashtags : [];
-check("runner 결과 instagram_job.metadata.hashtags 8~12개", runIgHashtags.length >= 8 && runIgHashtags.length <= 12, `count=${runIgHashtags.length}`);
+check("runner 결과 instagram_job.metadata.hashtags 4~6개", runIgHashtags.length >= 4 && runIgHashtags.length <= 6, `count=${runIgHashtags.length}`);
 check("runner 결과 instagram_job.metadataOptimizationGate.ok === true", runIg?.metadataOptimizationGate?.ok === true, JSON.stringify(runIg?.metadataOptimizationGate));
 check(
   "runner 결과 instagram_job.duplicatePublishGuard.key가 v3_2 사용",
@@ -537,7 +537,7 @@ function mutantCheck(name, mutatedFixture, expectFail) {
     keysOk &&
     typeof igMeta.captionFirstLineHook === "string" && igMeta.captionFirstLineHook.trim().length > 0 &&
     typeof igMeta.callToAction === "string" && igMeta.callToAction.trim().length > 0 &&
-    igMetaHashtags.length >= 8 && igMetaHashtags.length <= 12;
+    igMetaHashtags.length >= 4 && igMetaHashtags.length <= 6;
   const mutantOk = expectFail ? !okAll : okAll;
   check(`mutant: ${name}`, mutantOk);
   if (!mutantOk) failures = before + 1;
@@ -591,15 +591,15 @@ mutantCheck("Instagram metadata(callToAction) 누락", (() => {
   return m;
 })(), true);
 
-mutantCheck("Instagram hashtag가 7개로 최소 미만", (() => {
+mutantCheck("Instagram hashtag가 3개로 최소 미만", (() => {
   const m = clone(fixture);
-  m.instagramDefaultMetadata.hashtags = m.instagramDefaultMetadata.hashtags.slice(0, 7);
+  m.instagramDefaultMetadata.hashtags = m.instagramDefaultMetadata.hashtags.slice(0, 3);
   return m;
 })(), true);
 
-mutantCheck("Instagram hashtag가 13개로 최대 초과", (() => {
+mutantCheck("Instagram hashtag가 7개로 최대 초과", (() => {
   const m = clone(fixture);
-  m.instagramDefaultMetadata.hashtags = [...m.instagramDefaultMetadata.hashtags, "추가태그1", "추가태그2", "추가태그3"];
+  m.instagramDefaultMetadata.hashtags = [...m.instagramDefaultMetadata.hashtags, "추가태그1", "추가태그2"];
   return m;
 })(), true);
 

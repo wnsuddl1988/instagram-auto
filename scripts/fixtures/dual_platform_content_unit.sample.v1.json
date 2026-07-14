@@ -6,39 +6,43 @@
   "instagramSourcePath": "C:\\tmp\\money-shorts-os\\t2_sample_new_topic\\instagram_reels_full_frame_1080x1920_v1.mp4",
   "youtubeSourcePath": "C:\\tmp\\money-shorts-os\\t2_sample_new_topic\\youtube_shorts_letterbox_1080x1920_v1.mp4",
   "instagramMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["돈관리", "생활비절약", "저축습관"],
     "captionFirstLineHook": "샘플 새 주제 후킹 첫 줄",
-    "caption": "샘플 새 주제 캡션. 실제 콘텐츠가 준비되면 이 metadata를 새 주제에 맞게 교체한다.",
+    "caption": "핵심 주제: 돈관리 · 생활비절약 · 저축습관\n\n샘플 새 주제 캡션. 실제 콘텐츠가 준비되면 이 metadata를 새 주제에 맞게 교체한다.",
     "hashtags": [
       "재테크",
       "돈관리",
       "생활비절약",
       "저축습관",
-      "사회초년생재테크",
-      "돈모으는법",
-      "경제공부",
-      "릴스",
-      "머니팁"
+      "생활경제",
+      "재테크기초"
     ],
     "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
-    "forbiddenUnrelatedTrendTags": true
+    "forbiddenUnrelatedTrendTags": true,
+    "recommendationEligibilityReviewRequired": true,
+    "originalContent": true,
+    "shareToFeed": true
   },
   "youtubeMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["돈관리", "생활비절약", "저축습관"],
     "titleBase": "샘플 새 주제 제목",
     "titleWithShortsSuffix": "샘플 새 주제 제목 #Shorts",
-    "descriptionBase": "샘플 새 주제 설명. 실제 콘텐츠 준비 시 새 주제에 맞게 교체한다.",
+    "descriptionBase": "핵심 주제: 돈관리 · 생활비절약 · 저축습관\n\n샘플 새 주제 설명입니다. 실제 콘텐츠 준비 시 새 주제에 맞는 정보로 교체합니다.\n\n개인 상황에 따라 결과는 달라질 수 있으며, 투자 권유가 아닌 일반 금융·생활 정보입니다.\n\n#Shorts #돈관리 #생활비절약",
     "tags": [
       "재테크",
       "돈관리",
-      "생활비",
-      "저축",
-      "절약",
-      "돈모으는법",
-      "Shorts"
+      "생활비절약",
+      "저축습관",
+      "생활경제",
+      "재테크기초"
     ],
     "categoryId": "22",
     "defaultLanguage": "ko",
     "privacyStatus": "public",
-    "selfDeclaredMadeForKids": false
+    "selfDeclaredMadeForKids": false,
+    "containsSyntheticMedia": true
   },
   "blobPublicUrlLivenessEvidence": {
     "_note": "Placeholder Blob liveness evidence for the sample. For a real new video, this must reflect an actual HEAD result for the uploaded full-frame mp4. The orchestrator validates the shape only (no network HEAD/list/readback) and, being a placeholder here, the URL matches the sample content path so the evidence-shape gate passes; the sourceFilesReady gate still holds Instagram publish readiness back until real files exist.",

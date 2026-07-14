@@ -49,7 +49,7 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
-import { resolve, dirname, join } from "node:path";
+import { resolve, dirname, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildDualPlatformPublishPlan } from "./run-dual-platform-final-publish-orchestrator.mjs";
@@ -477,6 +477,7 @@ try {
       status: {
         privacyStatus: ytMeta.privacyStatus ?? "public",
         selfDeclaredMadeForKids: ytMeta.selfDeclaredMadeForKids === true,
+        containsSyntheticMedia: ytMeta.containsSyntheticMedia === true,
       },
     },
     media: { mimeType: "video/mp4", body: createReadStream(ytSourcePath) },
@@ -539,7 +540,7 @@ console.log("  [step 5/5] publish ledger write (all-or-nothing, both platforms s
       publishedUrl: `https://www.youtube.com/shorts/${ytVideoId}`,
       variantId: YOUTUBE_VARIANT_ID,
       publishedAtIso,
-      metadata: { sourceFileName: "golden_sample_t2_salary_3days_youtube_letterbox_v1.mp4" },
+      metadata: { sourceFileName: basename(ytSourcePath) },
     },
   });
   if (recordResult.ok !== true) {

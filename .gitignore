@@ -64,3 +64,9 @@ __pycache__/
 
 # Money Shorts OS — local owner state (never commit approval data)
 /.money-shorts-local/
+
+# Local generated QA / diagnostic artifacts
+/.tmp/
+/tmp/
+/piq_diag_out.txt
+/shadow-list.txt

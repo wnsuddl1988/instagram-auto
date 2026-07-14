@@ -56,36 +56,43 @@
   ],
 
   "youtubeDefaultMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["월급관리", "돈관리", "생활경제"],
     "titleBase": "월급 올라도 돈이 안 모이는 이유",
     "titleWithShortsSuffix": "월급 올라도 돈이 안 모이는 이유 #Shorts",
+    "descriptionBase": "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면 생활비가 함께 커지는 구조를 점검해야 합니다.\n\n개인 상황에 따라 결과는 달라질 수 있으며, 투자 권유가 아닌 일반 금융·생활 정보입니다.\n\n#Shorts #월급관리 #돈관리",
     "tags": [
-      "재테크", "돈관리", "월급관리", "생활비", "라이프스타일인플레이션",
-      "저축", "절약", "사회초년생재테크", "돈모으는법", "Shorts"
+      "월급관리", "돈관리", "생활경제", "생활비", "라이프스타일인플레이션"
     ],
     "categoryId": "22",
     "defaultLanguage": "ko",
     "privacyStatus": "public",
     "selfDeclaredMadeForKids": false,
+    "containsSyntheticMedia": true,
     "note": "낚시/무관 유행 태그 금지. 핵심 키워드(월급/돈관리/생활비/재테크/라이프스타일인플레이션) 중심."
   },
 
   "instagramDefaultMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["월급관리", "돈관리", "생활경제"],
     "captionFirstLineHook": "월급은 올랐는데 왜 통장은 그대로일까?",
-    "caption": "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "caption": "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
     "hashtags": [
-      "재테크", "돈관리", "월급관리", "생활비절약", "라이프스타일인플레이션",
-      "사회초년생재테크", "돈모으는법", "절약습관", "경제공부", "릴스"
+      "월급관리", "돈관리", "생활경제", "생활비절약", "라이프스타일인플레이션"
     ],
     "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
     "forbiddenUnrelatedTrendTags": true,
-    "note": "hashtags는 8~12개 범위. 과장/낚시/무관 유행 태그 금지. CTA는 저장/팔로우 유도."
+    "recommendationEligibilityReviewRequired": true,
+    "originalContent": true,
+    "shareToFeed": true,
+    "note": "hashtags는 관련성 높은 4~6개 범위. 과장/낚시/무관 유행 태그 금지. CTA는 저장/공유 유도."
   },
 
   "publishMetadataOptimizationGate": {
     "rule": "영상만 업로드 금지 — Instagram/YouTube 모두 플랫폼별 제목/캡션/설명/태그를 별도 최적화하고, 첫 줄 훅과 저장/팔로우/구독/댓글 CTA를 포함해야 발행 가능하다. 무관한 유행 태그는 금지하며, 업로드 전 metadata preview/gate를 통과해야 한다.",
     "instagramRequiredFields": ["captionFirstLineHook", "caption", "hashtags", "callToAction"],
-    "instagramHashtagCountMin": 8,
-    "instagramHashtagCountMax": 12,
+    "instagramHashtagCountMin": 4,
+    "instagramHashtagCountMax": 6,
     "youtubeRequiredFields": ["titleBase", "tags"],
     "forbiddenUnrelatedTrendTags": true,
     "enforcedBeforeLiveUploadOnly": true,

@@ -6,27 +6,33 @@
   "instagramSourcePath": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
   "youtubeSourcePath": "C:\\tmp\\money-shorts-os\\youtube-letterbox-local-render-execution-once-v1\\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4",
   "instagramMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["월급관리", "돈관리", "생활경제"],
     "captionFirstLineHook": "월급은 올랐는데 왜 통장은 그대로일까?",
-    "caption": "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "caption": "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
     "hashtags": [
-      "재테크", "돈관리", "월급관리", "생활비절약", "라이프스타일인플레이션",
-      "사회초년생재테크", "돈모으는법", "절약습관", "경제공부", "릴스"
+      "월급관리", "돈관리", "생활경제", "생활비절약", "라이프스타일인플레이션"
     ],
     "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 돈관리 팁 계속 받아보기",
-    "forbiddenUnrelatedTrendTags": true
+    "forbiddenUnrelatedTrendTags": true,
+    "recommendationEligibilityReviewRequired": true,
+    "originalContent": true,
+    "shareToFeed": true
   },
   "youtubeMetadata": {
+    "discoveryContractVersion": "money_shorts_platform_discovery_v1",
+    "primaryKeywords": ["월급관리", "돈관리", "생활경제"],
     "titleBase": "월급 올라도 돈이 안 모이는 이유",
     "titleWithShortsSuffix": "월급 올라도 돈이 안 모이는 이유 #Shorts",
-    "descriptionBase": "월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.",
+    "descriptionBase": "핵심 주제: 월급관리 · 돈관리 · 생활경제\n\n월급은 올랐는데 통장은 그대로라면, 생활비가 같이 커지는 라이프스타일 인플레이션을 점검해야 합니다.\n\n개인 상황에 따라 결과는 달라질 수 있으며, 투자 권유가 아닌 일반 금융·생활 정보입니다.\n\n#Shorts #월급관리 #돈관리",
     "tags": [
-      "재테크", "돈관리", "월급관리", "생활비", "라이프스타일인플레이션",
-      "저축", "절약", "사회초년생재테크", "돈모으는법", "Shorts"
+      "월급관리", "돈관리", "생활경제", "생활비", "라이프스타일인플레이션"
     ],
     "categoryId": "22",
     "defaultLanguage": "ko",
     "privacyStatus": "public",
-    "selfDeclaredMadeForKids": false
+    "selfDeclaredMadeForKids": false,
+    "containsSyntheticMedia": true
   },
   "existingPublishedKeys": [
     "t1_lifestyle_inflation/instagram_reels/v3_2",
