@@ -236,6 +236,47 @@ type WizardRealMedia = {
   }>;
 };
 
+type WizardFlowMotionState = "not_prepared" | "not_required" | "approval_pending" | "generating" | "qa_pass" | "qa_failed" | "render_ready";
+
+type WizardFlowMotionStatus = {
+  state: WizardFlowMotionState;
+  requiredCount: number;
+  preparedCount: number;
+  approvalPendingCount: number;
+  generatingCount: number;
+  qaPassCount: number;
+  qaFailedCount: number;
+  renderReadyCount: number;
+  readyForRender: boolean;
+  parts: Array<{
+    id: "single" | "part-1" | "part-2";
+    partNumber: number;
+    totalParts: number;
+    state: WizardFlowMotionState;
+    jobs: Array<{
+      jobId: string;
+      sceneNumber: number;
+      sceneLabel: string;
+      status: "approval_pending" | "generating" | "qa_pass" | "qa_failed" | "render_ready";
+      packetPath: string;
+      expectedVideoPath: string;
+      referenceSha256: string;
+      promptSha256: string;
+      requiredApprovalWording: string;
+    }>;
+  }>;
+};
+
+const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
+  not_prepared: "패킷 준비 필요",
+  not_required: "모션 장면 없음",
+  approval_pending: "생성 승인 대기",
+  generating: "생성 중",
+  qa_pass: "검수 통과",
+  qa_failed: "검수 실패",
+  render_ready: "렌더 준비",
+};
+
 // ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
 
 /** 카테고리를 고르면 보여줄 한 줄 소개 — 재테크팁은 돈·성공·심리·생활습관 톤을 명시한다. */
@@ -419,6 +460,9 @@ export default function VideoCreationWizard() {
   const [realTtsResult, setRealTtsResult] = useState<OperatorResult | null>(null);
   const [imagesState, setImagesState] = useState<RunState>("idle");
   const [imagesResult, setImagesResult] = useState<OperatorResult | null>(null);
+  const [flowMotionState, setFlowMotionState] = useState<RunState>("idle");
+  const [flowMotionResult, setFlowMotionResult] = useState<OperatorResult | null>(null);
+  const [flowMotion, setFlowMotion] = useState<WizardFlowMotionStatus | null>(null);
   const [finalVideoState, setFinalVideoState] = useState<RunState>("idle");
   const [finalVideoResult, setFinalVideoResult] = useState<OperatorResult | null>(null);
   const [audioKey, setAudioKey] = useState(0);
@@ -474,6 +518,7 @@ export default function VideoCreationWizard() {
     uploadState,
     realTtsState,
     imagesState,
+    flowMotionState,
     finalVideoState,
     characterCastState,
   ].includes("running") || preferenceBusyId !== null;
@@ -492,6 +537,8 @@ export default function VideoCreationWizard() {
   const characterReferenceEngineReady = characterCastReady;
   const realTtsReady = realMedia?.realTts.ready === true;
   const realImagesReady = realMedia?.realImages.ready === true;
+  const selectedFlowMotionSceneCount = flowMotion?.requiredCount ?? script?.scenes?.filter((scene) => scene.mediaStrategy === "veo_motion").length ?? 0;
+  const flowMotionPrepared = flowMotion?.state !== "not_prepared" && flowMotion?.state !== undefined;
   const finalVideoReady = realMedia?.finalVideo.ready === true;
   const mediaGateOk = realMedia?.mediaQualityGate.ok === true;
   const productionPartCount = realMedia?.production.totalParts ?? script?.videoStrategy?.parts.length ?? 1;
@@ -527,6 +574,9 @@ export default function VideoCreationWizard() {
     setRealTtsResult(null);
     setImagesState("idle");
     setImagesResult(null);
+    setFlowMotionState("idle");
+    setFlowMotionResult(null);
+    setFlowMotion(null);
     setFinalVideoState("idle");
     setFinalVideoResult(null);
     setVoiceState("idle");
@@ -736,8 +786,9 @@ export default function VideoCreationWizard() {
   const refreshRealMedia = useCallback(async (topicId: string) => {
     try {
       const r = await postAction("realMediaStatus", { topicId });
-      const raw = r.raw as { media?: WizardRealMedia } | undefined;
+      const raw = r.raw as { media?: WizardRealMedia; flowMotion?: WizardFlowMotionStatus } | undefined;
       if (r.status === "success" && raw?.media) setRealMedia(raw.media);
+      if (r.status === "success" && raw?.flowMotion) setFlowMotion(raw.flowMotion);
     } catch {
       // 상태 조회 실패는 조용히 무시(다음 단계 버튼이 다시 조회한다).
     }
@@ -812,6 +863,24 @@ export default function VideoCreationWizard() {
     } catch {
       setImagesState("error");
       setImagesResult({ action: "realSceneImagesCreate", status: "error", summary: "장면 이미지 생성 요청에 실패했습니다." });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
+
+  // Flow 모션 준비 — 로컬 패킷과 승인 대기 상태만 생성한다. 외부 브라우저/크레딧 작업은 하지 않는다.
+  const runFlowMotionPrepare = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionPrepare", { topicId: selectedTopicId });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({ action: "flowMotionPrepare", status: "error", summary: "Flow 모션 작업 패킷을 준비하지 못했습니다." });
     }
   }, [selectedTopicId, refreshRealMedia]);
 
@@ -1705,9 +1774,76 @@ export default function VideoCreationWizard() {
           <ResultNote result={imagesResult} />
         </StepCard>
 
-        {/* 7. 최종 영상 만들기 — 실제 음성 + 실제 이미지 + 자막 + 모션 */}
+        {/* 7. Veo 모션 준비 — 자동 선정 장면의 로컬 패킷/상태만 생성 */}
         <StepCard
           num={7}
+          title="Veo 모션 준비"
+          state={
+            flowMotion?.state === "render_ready" || flowMotion?.state === "not_required"
+              ? "success"
+              : flowMotion?.state === "qa_failed"
+                ? "error"
+                : flowMotion?.state === "generating" || flowMotion?.state === "qa_pass"
+                  ? "running"
+                  : flowMotion?.state === "approval_pending"
+                    ? "blocked"
+                    : flowMotionState
+          }
+          desc="자동 선정된 장면만 Google Flow용 이미지·프롬프트 해시 패킷으로 묶고 승인 상태를 관리합니다. 이 단계에서는 브라우저를 열거나 크레딧을 사용하지 않습니다."
+        >
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              data-testid="wizard-action-flow-motion-prepare"
+              className={RUN_BTN}
+              disabled={!runnable || !selectedTopicId || !realImagesReady || selectedFlowMotionSceneCount === 0}
+              onClick={runFlowMotionPrepare}
+            >
+              Flow 작업 패킷 준비
+            </button>
+            {flowMotion ? (
+              <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm font-semibold">
+                {FLOW_MOTION_STATUS_LABEL[flowMotion.state]} · 렌더 준비 {flowMotion.renderReadyCount}/{flowMotion.requiredCount}
+              </span>
+            ) : null}
+          </div>
+          {!realImagesReady ? (
+            <p className="text-sm text-slate-400 mt-2">먼저 [장면 이미지 만들기]를 완료해 주세요.</p>
+          ) : selectedFlowMotionSceneCount === 0 ? (
+            <p className="text-sm text-slate-500 mt-2">이 대본에는 영상화가 필요한 장면이 없습니다. 정지 이미지 모션으로 합성합니다.</p>
+          ) : (
+            <p className="text-sm text-slate-500 mt-2">
+              자동 선정된 {selectedFlowMotionSceneCount}개 장면만 준비합니다. 패킷에는 기준 이미지·프롬프트의 SHA-256과 정확한 승인 문구가
+              들어가며, 실제 생성 전송은 별도 Owner 승인과 검수가 필요합니다.
+            </p>
+          )}
+          {flowMotionState === "running" ? (
+            <p className="text-[15px] text-amber-700 font-semibold mt-2">로컬 Flow 작업 패킷 생성 중…</p>
+          ) : null}
+          <ResultNote result={flowMotionResult} />
+          {flowMotionPrepared && flowMotion?.parts.some((part) => part.jobs.length > 0) ? (
+            <details className="mt-3">
+              <summary className="text-[13px] text-slate-500 cursor-pointer">장면별 Flow 상태와 승인 문구</summary>
+              <div className="mt-2 space-y-3">
+                {flowMotion.parts.flatMap((part) =>
+                  part.jobs.map((job) => (
+                    <div key={job.jobId} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                      <p className="font-semibold text-slate-800">
+                        {part.id === "single" ? "단일편" : `${part.partNumber}편`} · 장면 {job.sceneNumber} · {FLOW_MOTION_STATUS_LABEL[job.status]}
+                      </p>
+                      <p className="mt-1 break-all">패킷: {job.packetPath}</p>
+                      <p className="mt-2 break-words text-xs text-slate-500">{job.requiredApprovalWording}</p>
+                    </div>
+                  )),
+                )}
+              </div>
+            </details>
+          ) : null}
+        </StepCard>
+
+        {/* 8. 최종 영상 만들기 — 실제 음성 + 실제 이미지 + 자막 + 모션 */}
+        <StepCard
+          num={8}
           title="최종 영상 만들기"
           state={finalVideoReady ? "success" : finalVideoState}
           desc={finalVideoStepDescription}
@@ -1757,9 +1893,9 @@ export default function VideoCreationWizard() {
           </details>
         </StepCard>
 
-        {/* 8. 미리보기 — 최종 영상 우선, 없으면 시안(업로드 불가) 표시 */}
+        {/* 9. 미리보기 — 최종 영상 우선, 없으면 시안(업로드 불가) 표시 */}
         <StepCard
-          num={8}
+          num={9}
           title="미리보기"
           state={finalVideoReady ? "success" : previewState}
           desc="만들어진 영상을 이 화면에서 바로 재생합니다. 파일은 Owner PC에만 있습니다."
@@ -1831,9 +1967,9 @@ export default function VideoCreationWizard() {
           ) : null}
         </StepCard>
 
-        {/* 9. 게시 전 점검 — media quality gate 통과분(최종 영상)만 점검 가능 */}
+        {/* 10. 게시 전 점검 — media quality gate 통과분(최종 영상)만 점검 가능 */}
         <StepCard
-          num={9}
+          num={10}
           title="게시 전 점검"
           state={preflightState}
           desc="최종 영상 기준으로 키·중복·파일을 확인만 합니다. 업로드는 하지 않습니다."
@@ -1862,9 +1998,9 @@ export default function VideoCreationWizard() {
           <ResultNote result={preflightResult} />
         </StepCard>
 
-        {/* 10. 실제 업로드 — media gate + 게시 전 점검 통과 + 명시 확인 후에만 실행 */}
+        {/* 11. 실제 업로드 — media gate + 게시 전 점검 통과 + 명시 확인 후에만 실행 */}
         <StepCard
-          num={10}
+          num={11}
           title="실제 업로드"
           state={uploadState}
           desc="확인 절차를 마치면 이 영상이 실제 계정에 게시됩니다. 게시 기록이 남아 같은 콘텐츠는 다시 올라가지 않습니다."

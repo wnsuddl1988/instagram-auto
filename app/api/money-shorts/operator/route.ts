@@ -42,6 +42,7 @@ import {
   isLocalDevRuntime,
   listWizardUploadReadyItems,
   markWizardTopicHistory,
+  prepareWizardFlowMotionPackets,
   readCredentialPresence,
   readFinalE2ePreflightResult,
   readScriptPreview,
@@ -51,6 +52,7 @@ import {
   readWizardRealAudioBytes,
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
+  readWizardFlowMotionStatus,
   readWizardRealMediaState,
   resolveWizardFinanceCharacterVoice,
   readWizardVideoBytes,
@@ -87,6 +89,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "characterCastSelect",
   "realTtsCreate",
   "realSceneImagesCreate",
+  "flowMotionPrepare",
   "finalVideoCreate",
   "realMediaStatus",
 ];
@@ -754,6 +757,7 @@ export async function POST(request: Request) {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
     const media = readWizardRealMediaState(topicId);
+    const flowMotion = readWizardFlowMotionStatus(topicId);
     const g = media.mediaQualityGate;
     return json({
       action,
@@ -761,7 +765,38 @@ export async function POST(request: Request) {
       summary: g.ok
         ? "실제 음성·장면 이미지·최종 영상이 모두 준비됐습니다. 게시 전 점검으로 진행할 수 있습니다."
         : `실제 제작 진행 중 — ${g.reasons[0] ?? "다음 단계를 진행해 주세요."}`,
-      raw: { media },
+      raw: { media, flowMotion },
+      noLive: true,
+    });
+  }
+
+  // Flow 모션 준비 — 자동 선정 장면의 로컬 패킷/상태만 만든다. 브라우저·업로드·생성·크레딧 0.
+  if (action === "flowMotionPrepare") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const result = prepareWizardFlowMotionPackets(topicId);
+    if (!result.ok) {
+      const needsImages = result.reason.startsWith("flow_motion_scene_images_required:");
+      return json({
+        action,
+        status: "blocked",
+        summary: needsImages
+          ? "먼저 자동 선정 장면의 기준 이미지를 모두 만들어 주세요."
+          : "Flow 모션 작업 패킷을 준비하지 못했습니다.",
+        detail: "브라우저 접근·업로드·생성 전송·크레딧 사용은 발생하지 않았습니다.",
+        blockerCode: result.reason,
+        noLive: true,
+      });
+    }
+    const status = result.status;
+    return json({
+      action,
+      status: "success",
+      summary: status.requiredCount === 0
+        ? "이 영상에는 Flow 모션이 필요한 장면이 없어 정지 이미지 흐름을 유지합니다."
+        : `Flow 모션 후보 ${status.requiredCount}개의 패킷이 준비됐습니다. 현재 상태는 생성 승인 대기입니다.`,
+      detail: "장면 이미지·프롬프트 해시를 고정한 로컬 패킷만 만들었습니다. 브라우저 접근·업로드·생성 전송·크레딧 사용은 0회입니다.",
+      raw: { flowMotion: status },
       noLive: true,
     });
   }

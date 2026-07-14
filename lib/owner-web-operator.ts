@@ -82,6 +82,14 @@ import {
   type SceneMediaStrategyOverride,
   type SceneMediaStrategySource,
 } from "./veo-scene-selector";
+import {
+  FLOW_MOTION_STATE_CONTRACT_VERSION,
+  buildFlowMotionState,
+  flowMotionStateIsValid,
+  type FlowMotionJob,
+  type FlowMotionJobStatus,
+  type FlowMotionState,
+} from "./flow-motion-jobs";
 
 // ── 상수 ─────────────────────────────────────────────────────────────────────
 
@@ -112,6 +120,7 @@ export const OPERATOR_ACTIONS = [
   // 키/세션 없으면 스크립트가 fail-closed로 종료하고, 산출물은 전부 C:\tmp 아래에만 쓴다.
   "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
   "realSceneImagesCreate", // 대본 흐름 기반 동적 장면으로 ChatGPT+Playwright 실제 이미지 생성
+  "flowMotionPrepare", // 자동 선정 장면의 Flow no-submit 패킷/승인 대기 상태 생성(외부 실행 0)
   "finalVideoCreate", // 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션으로 최종 mp4 합성
   "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
 ] as const;
@@ -707,6 +716,7 @@ export function buildOperatorCommand(
     case "scriptPreview":
     case "previewStatus":
     case "realMediaStatus":
+    case "flowMotionPrepare":
     case "characterCastStatus":
     case "characterCastSelect":
       // 읽기 전용 action — 스크립트를 실행하지 않는다.
@@ -7116,6 +7126,7 @@ export type WizardRealPipelinePartPaths = {
   ttsOutDir: string;
   ttsSummaryPath: string;
   imagesOutDir: string;
+  flowMotionDir: string;
   videoOutDir: string;
 };
 
@@ -7146,6 +7157,7 @@ function toWizardRealPipelinePartPaths(part: WizardProductionPipelinePart): Wiza
     ttsOutDir: part.ttsOutDir,
     ttsSummaryPath: part.ttsSummaryPath,
     imagesOutDir: part.imagesOutDir,
+    flowMotionDir: part.flowMotionDir,
     videoOutDir: part.videoOutDir,
   };
 }
@@ -7299,6 +7311,7 @@ function resolveWizardProductionPipelineParts(
       ttsOutDir: join(realRoot, WIZARD_TTS_OUTPUT_DIR),
       ttsSummaryPath: join(realRoot, WIZARD_TTS_OUTPUT_DIR, "elevenlabs-scene-paced-tts-summary.json"),
       imagesOutDir: join(realRoot, visualProfile.imagesDir),
+      flowMotionDir: join(realRoot, "flow-motion-v1"),
       videoOutDir: join(realRoot, visualProfile.videoDir),
       record,
       coverLines: [],
@@ -7347,6 +7360,7 @@ function resolveWizardProductionPipelineParts(
       ttsOutDir: join(realRoot, WIZARD_TTS_OUTPUT_DIR),
       ttsSummaryPath: join(realRoot, WIZARD_TTS_OUTPUT_DIR, "elevenlabs-scene-paced-tts-summary.json"),
       imagesOutDir: join(realRoot, visualProfile.imagesDir),
+      flowMotionDir: join(realRoot, "flow-motion-v1"),
       videoOutDir: join(realRoot, visualProfile.videoDir),
       record: partRecord,
       coverLines: part.coverLines,
@@ -7420,6 +7434,185 @@ export function buildWizardRealPipelineInputs(
       parts: publicParts,
     },
   };
+}
+
+export type WizardFlowMotionStatus = {
+  state: "not_prepared" | "not_required" | FlowMotionJobStatus;
+  requiredCount: number;
+  preparedCount: number;
+  approvalPendingCount: number;
+  generatingCount: number;
+  qaPassCount: number;
+  qaFailedCount: number;
+  renderReadyCount: number;
+  readyForRender: boolean;
+  parts: Array<{
+    id: "single" | "part-1" | "part-2";
+    partNumber: 1 | 2;
+    totalParts: 1 | 2;
+    requiredCount: number;
+    statePath: string;
+    state: "not_prepared" | "not_required" | FlowMotionJobStatus;
+    jobs: Array<Pick<FlowMotionJob,
+      "jobId" | "sceneNumber" | "sceneId" | "sceneLabel" | "status" | "packetPath" |
+      "expectedVideoPath" | "referenceSha256" | "promptSha256"
+    > & { requiredApprovalWording: string }>;
+  }>;
+};
+
+function flowMotionStatePath(part: Pick<WizardRealPipelinePartPaths, "flowMotionDir">): string {
+  return join(part.flowMotionDir, "flow-motion-state.json");
+}
+
+function resolveWizardFlowMotionParts(topicId: string): WizardProductionPipelinePart[] | null {
+  const safeSlug = toSafeTopicSlug(topicId);
+  const record = safeSlug ? readWizardFinalScriptRecord(topicId) : null;
+  if (!safeSlug || !record) return null;
+  try {
+    return resolveWizardProductionPipelineParts(topicId, safeSlug, record);
+  } catch {
+    return null;
+  }
+}
+
+/** Flow 상태 조회는 로컬 JSON만 읽으며 브라우저·업로드·생성 전송을 수행하지 않는다. */
+export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionStatus {
+  const parts = resolveWizardFlowMotionParts(topicId) ?? [];
+  const partRows = parts.map((part): WizardFlowMotionStatus["parts"][number] => {
+    const requiredCount = part.record.script.scenes.filter((scene) => scene.mediaStrategy === "veo_motion").length;
+    const statePath = flowMotionStatePath(part);
+    const candidate = readAbsJson(statePath);
+    const state = flowMotionStateIsValid(candidate) &&
+      candidate.schemaVersion === FLOW_MOTION_STATE_CONTRACT_VERSION &&
+      candidate.topicId === topicId &&
+      candidate.productionPartId === part.id &&
+      candidate.scriptFingerprint === part.record.localFingerprint
+      ? candidate
+      : null;
+    const publicJobs = (state?.jobs ?? []).map((job) => ({
+      jobId: job.jobId,
+      sceneNumber: job.sceneNumber,
+      sceneId: job.sceneId,
+      sceneLabel: job.sceneLabel,
+      status: job.status,
+      packetPath: job.packetPath,
+      expectedVideoPath: job.expectedVideoPath,
+      referenceSha256: job.referenceSha256,
+      promptSha256: job.promptSha256,
+      requiredApprovalWording: job.approval.requiredWording,
+    }));
+    return {
+      id: part.id,
+      partNumber: part.partNumber,
+      totalParts: part.totalParts,
+      requiredCount,
+      statePath,
+      state: requiredCount === 0 ? "not_required" : (state?.overallStatus ?? "not_prepared"),
+      jobs: publicJobs,
+    };
+  });
+  const jobs = partRows.flatMap((part) => part.jobs);
+  const requiredCount = partRows.reduce((sum, part) => sum + part.requiredCount, 0);
+  const count = (status: FlowMotionJobStatus): number => jobs.filter((job) => job.status === status).length;
+  const preparedCount = jobs.length;
+  const renderReadyCount = count("render_ready");
+  const state: WizardFlowMotionStatus["state"] = requiredCount === 0
+    ? "not_required"
+    : partRows.some((part) => part.state === "not_prepared")
+      ? "not_prepared"
+      : partRows.some((part) => part.state === "qa_failed")
+        ? "qa_failed"
+        : partRows.some((part) => part.state === "generating")
+          ? "generating"
+          : partRows.some((part) => part.state === "qa_pass")
+            ? "qa_pass"
+            : renderReadyCount === requiredCount
+              ? "render_ready"
+              : "approval_pending";
+  return {
+    state,
+    requiredCount,
+    preparedCount,
+    approvalPendingCount: count("approval_pending"),
+    generatingCount: count("generating"),
+    qaPassCount: count("qa_pass"),
+    qaFailedCount: count("qa_failed"),
+    renderReadyCount,
+    readyForRender: requiredCount === 0 || renderReadyCount === requiredCount,
+    parts: partRows,
+  };
+}
+
+/**
+ * 자동 선정된 장면의 Flow 패킷과 승인 대기 상태를 C:\tmp 아래에만 기록한다.
+ * 브라우저 접근·업로드·프롬프트 입력·생성 전송·크레딧 사용은 전혀 하지 않는다.
+ */
+export function prepareWizardFlowMotionPackets(
+  topicId: string,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const pipeline = buildWizardRealPipelineInputs(topicId);
+  if (!pipeline.ok) return pipeline;
+  const media = readWizardRealMediaState(topicId);
+  const generatedAt = new Date().toISOString();
+  try {
+    for (const part of pipeline.paths.parts) {
+      const partMedia = media.parts.find((candidate) => candidate.id === part.id);
+      if (!partMedia?.realImages.ready) return { ok: false, reason: `flow_motion_scene_images_required:${part.id}` };
+      const record = readAbsJson(part.scriptFinalPath) as WizardFinalScriptRecord | null;
+      if (!record || record.schemaVersion !== "wizard_script_final_v1") {
+        return { ok: false, reason: `flow_motion_script_final_invalid:${part.id}` };
+      }
+      const scenes = record.script.scenes.map((scene, index) => {
+        const referenceFile = join(part.imagesOutDir, `scene-${String(index + 1).padStart(2, "0")}.png`);
+        if (scene.mediaStrategy === "veo_motion" && !existsSync(referenceFile)) {
+          throw new Error(`flow_motion_reference_missing:${part.id}:${index + 1}`);
+        }
+        const referenceSha256 = scene.mediaStrategy === "veo_motion"
+          ? createHash("sha256").update(readFileSync(referenceFile)).digest("hex")
+          : "0".repeat(64);
+        return {
+          sceneNumber: index + 1,
+          sceneId: scene.id,
+          sceneLabel: scene.label,
+          narration: scene.narration,
+          visualCue: scene.visualCue,
+          visibleAction: scene.visualEvidence?.visibleAction,
+          motionPlan: scene.visualEvidence?.motionPlan,
+          mediaStrategy: scene.mediaStrategy ?? "still",
+          mediaStrategyContractVersion: scene.mediaStrategyContractVersion,
+          referenceFile,
+          referenceSha256,
+        };
+      });
+      const statePath = flowMotionStatePath(part);
+      const previousCandidate = readAbsJson(statePath);
+      const previous = flowMotionStateIsValid(previousCandidate) ? previousCandidate : null;
+      const state = buildFlowMotionState({
+        topicId,
+        productionPartId: part.id,
+        scriptFingerprint: record.localFingerprint,
+        outputRoot: part.flowMotionDir,
+        scenes,
+        generatedAt,
+        previous,
+      });
+      mkdirSync(part.flowMotionDir, { recursive: true });
+      for (const job of state.jobs) {
+        mkdirSync(dirname(job.packetPath), { recursive: true });
+        writeFileSync(job.packetPath, JSON.stringify({
+          schemaVersion: "money_shorts_flow_motion_approval_packet_v1",
+          job,
+          statePath: state.statePath,
+          status: job.status,
+          noSubmitBoundary: state.noSubmitBoundary,
+        }, null, 2), "utf8");
+      }
+      writeFileSync(state.statePath, JSON.stringify(state, null, 2), "utf8");
+    }
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_packet_write_failed:${(error as Error).message}` };
+  }
+  return { ok: true, status: readWizardFlowMotionStatus(topicId) };
 }
 
 export type WizardRealMediaState = {
