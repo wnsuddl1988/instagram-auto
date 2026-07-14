@@ -255,6 +255,8 @@ let page = null;
 let uploadArmed = false;
 let uploadRequestCount = 0;
 let uploadSelectionCount = 0;
+let libraryAssetMatchedByFileName = false;
+let composerAttachmentImageCount = 0;
 const blockedNetworkMutations = [];
 const allowedUploadRequests = [];
 let intentPath = null;
@@ -314,15 +316,34 @@ try {
   uploadArmed = false;
 
   const referenceFileName = path.basename(packet.character.referenceFile);
-  const pageTextAfterUpload = await page.locator("body").innerText();
-  const blobPreviewCount = await page.locator('img[src^="blob:"], img[src*="googleusercontent"]').count();
-  const referenceAttached = uploadSelectionCount === 1
-    && uploadRequestCount === 1
-    && (pageTextAfterUpload.includes(referenceFileName) || blobPreviewCount > 0);
-  if (!referenceAttached) throw new Error("reference_attachment_evidence_missing");
+  const assetPickerButtonAfterUpload = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
+  if (!assetPickerButtonAfterUpload) throw new Error("asset_picker_button_after_upload_missing");
+  await assetPickerButtonAfterUpload.click();
+
+  const mediaDialogLocator = page.locator('[role="dialog"]').filter({ hasText: referenceFileName });
+  await mediaDialogLocator.waitFor({ state: "visible", timeout: 10_000 }).catch(() => {});
+  const mediaDialog = await firstVisible(mediaDialogLocator);
+  if (!mediaDialog) throw new Error("uploaded_reference_missing_from_media_picker");
+  libraryAssetMatchedByFileName = true;
+
+  const addToPromptButton = await firstVisible(mediaDialog.locator("button").filter({
+    hasText: /프롬프트에 추가|Add to prompt/i,
+  }));
+  if (!addToPromptButton) throw new Error("add_uploaded_reference_to_prompt_button_missing");
+  await addToPromptButton.click();
+  await page.waitForTimeout(500);
 
   const promptBox = await firstVisible(page.locator('[contenteditable="true"][data-placeholder*="만들"], [contenteditable="true"][aria-label*="만들"], [contenteditable="true"]'));
   if (!promptBox) throw new Error("prompt_composer_missing");
+  composerAttachmentImageCount = await promptBox.evaluate((element) => (
+    element.parentElement?.parentElement?.querySelectorAll("img").length ?? 0
+  ));
+  const referenceAttached = uploadSelectionCount === 1
+    && uploadRequestCount <= 1
+    && libraryAssetMatchedByFileName
+    && composerAttachmentImageCount === 1;
+  if (!referenceAttached) throw new Error("reference_attachment_evidence_missing");
+
   await promptBox.fill(packet.scene.prompt);
   const promptDomText = normalized(await promptBox.innerText());
   const promptDomSha256 = sha256(promptDomText);
@@ -347,6 +368,8 @@ try {
       promptDomSha256,
       uploadSelectionCount,
       uploadRequestCount,
+      libraryAssetMatchedByFileName,
+      composerAttachmentImageCount,
       allowedUploadRequests,
       blockedNetworkMutations,
       generationButtonVisible,
@@ -383,6 +406,8 @@ try {
       promptSha256: packet.scene.promptSha256,
       uploadSelectionCount,
       uploadRequestCount,
+      libraryAssetMatchedByFileName,
+      composerAttachmentImageCount,
       allowedUploadRequests,
       blockedNetworkMutations,
       browserLaunched: false,
