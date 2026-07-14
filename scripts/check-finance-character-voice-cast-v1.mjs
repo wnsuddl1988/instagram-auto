@@ -26,7 +26,7 @@ const expected = new Map([
   ["harin_daily", ["Jisoo", "iWLjl1zCuqXRkW6494ve"]],
   ["junho_cashflow", ["Yohan Koo", "4JJwo477JUAx3HV0T7n7"]],
   ["seoyun_safety", ["Jian.K", "ah4r1hZOydd3XWlHOm3Y"]],
-  ["minjae_horizon", ["Hojin Lim", "fHzGR8qcnsDR2uaj9r16"]],
+  ["minjae_horizon", ["Harry Kim – Conversational", "pb3lVZVjdFWbkhPKlelB"]],
 ]);
 const results = [];
 function check(name, passed) {
@@ -49,6 +49,7 @@ const junho = cast.characters.find((row) => row.characterId === "junho_cashflow"
 check("all voices use the exact Junho synthesis settings", Boolean(junho) && cast.characters.every((row) => JSON.stringify(row.settings) === JSON.stringify(junho.settings)));
 check("all voices use one identical text and tag program", cast.audition.comparisonPolicy === "same_model_text_tags_settings_seed_loudness_voice_id_only" && cast.audition.spokenText.length >= 120 && /\[confidently\]/.test(cast.audition.performanceText) && cast.characters.every((row) => row.auditionPerformanceText == null));
 check("runner preflights every voice before paid TTS", /\/v1\/voices\//.test(runner) && /unavailable\.length > 0/.test(runner) && /No paid TTS call was made/.test(runner));
+check("single approved voice preview is hard-scoped by character ID", /--character-id/.test(runner) && /characters\.length !== 1/.test(runner) && /paidCallCap > characters\.length/.test(runner) && /approved_for_production/.test(runner));
 check("paid audition is explicit and has an Owner-bounded call cap", /ALLOW_ELEVENLABS_AUDITION/.test(runner) && /paidTtsCallCount >= paidCallCap/.test(runner) && /--paid-call-cap/.test(runner) && /No retry was attempted/.test(runner));
 check("preflight cannot overwrite paid audition state", /voice-preflight-summary\.json/.test(runner) && /existing_normalized_review_skip/.test(runner) && /existing_source_normalized_skip/.test(runner));
 check("review audio is normalized to one dynamic loudness target", cast.audition.reviewLoudness?.method === "ffmpeg_loudnorm_two_pass_dynamic_v1" && cast.audition.reviewLoudness?.integratedToleranceLu === 1.5 && /integratedToleranceLu/.test(runner) && /linear=false/.test(runner) && /normalizeForReview/.test(runner) && /loudnessAudit/.test(runner));

@@ -140,8 +140,13 @@ export async function ensureChrome(port, userDataDir, logFn = console.log) {
 // { type, text } 를 유지하고, 디버깅용으로 { pattern, snippet } 을 추가한다.
 // false positive 방지를 위해 "생성"/"만들기" 같은 일반 단어 단독 매칭은 쓰지 않는다.
 const VEO_QUOTA_PAT = [
-  /한도가/, /초기화됩니다/, /동영상 한도/, /video limit/i, /limit resets?/i,
-  /try again later/i, /quota/i, /사용량.{0,6}(초과|한도)/,
+  /동영상.{0,12}한도/, /한도.{0,20}(초기화|재설정)/,
+  /video.{0,12}limit/i, /limit.{0,20}resets?/i,
+  /quota.{0,20}(exceeded|exhausted|reset)/i, /사용량.{0,6}(초과|한도)/,
+];
+const VEO_TRANSIENT_PAT = [
+  /try again later/i, /잠시 후 다시/, /일시적인 오류/,
+  /temporary error/i, /something went wrong/i, /문제가 발생/,
 ];
 const VEO_REFUSAL_PAT = [
   // 한국어
@@ -168,6 +173,8 @@ export function classifyVeoBody(bodyText) {
   };
   for (const re of VEO_QUOTA_PAT)
     if (re.test(text)) { const s = snippet(re); return { type: "quota",   text: s, pattern: re.source, snippet: s }; }
+  for (const re of VEO_TRANSIENT_PAT)
+    if (re.test(text)) { const s = snippet(re); return { type: "transient", text: s, pattern: re.source, snippet: s }; }
   for (const re of VEO_REFUSAL_PAT)
     if (re.test(text)) { const s = snippet(re); return { type: "refusal", text: s, pattern: re.source, snippet: s }; }
   return null;

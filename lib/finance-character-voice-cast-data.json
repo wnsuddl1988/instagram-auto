@@ -1,5 +1,5 @@
 {
-  "version": "money_shorts_finance_character_voice_cast_v4",
+  "version": "money_shorts_finance_character_voice_cast_v5",
   "status": "approved_for_production",
   "baseline": {
     "source": "latest_owner_approved_money_shorts_korean_director_v2",
@@ -89,8 +89,8 @@
       "characterName": "민재",
       "characterLabel": "경제와 장기자산",
       "subtopics": ["economy_literacy", "investing_assets", "time_retirement"],
-      "voiceLabel": "Hojin Lim",
-      "voiceId": "fHzGR8qcnsDR2uaj9r16",
+      "voiceLabel": "Harry Kim – Conversational",
+      "voiceId": "pb3lVZVjdFWbkhPKlelB",
       "voiceStatus": "approved",
       "settings": {
         "speed": 1.02,

@@ -18,6 +18,7 @@ const outDir = path.resolve(argValue("--out-dir", "C:\\tmp\\money-shorts-os\\fin
 const execute = args.includes("--execute");
 const preflightOnly = args.includes("--preflight-only") || !execute;
 const paidCallCap = Number(argValue("--paid-call-cap", "4"));
+const requestedCharacterId = argValue("--character-id");
 const mediaRoot = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 const summaryPath = path.join(outDir, "voice-audition-summary.json");
 const preflightSummaryPath = path.join(outDir, "voice-preflight-summary.json");
@@ -39,9 +40,28 @@ try {
   process.exit(2);
 }
 
-const characters = Array.isArray(cast.characters) ? cast.characters : [];
-if (characters.length !== 4 || cast.status !== "provisional_owner_audition_required") {
-  console.error("ABORT: exactly four provisional finance character voices are required.");
+const castCharacters = Array.isArray(cast.characters) ? cast.characters : [];
+if (castCharacters.length !== 4) {
+  console.error("ABORT: exactly four configured finance character voices are required.");
+  process.exit(2);
+}
+const characters = requestedCharacterId
+  ? castCharacters.filter((character) => character.characterId === requestedCharacterId)
+  : castCharacters;
+if (requestedCharacterId && characters.length !== 1) {
+  console.error(`ABORT: --character-id did not resolve exactly one configured voice: ${requestedCharacterId}`);
+  process.exit(2);
+}
+if (!requestedCharacterId && cast.status !== "provisional_owner_audition_required") {
+  console.error("ABORT: the four-voice audition requires a provisional cast.");
+  process.exit(2);
+}
+if (requestedCharacterId && !["provisional_owner_audition_required", "approved_for_production"].includes(cast.status)) {
+  console.error("ABORT: a single-voice preview requires a provisional or approved cast.");
+  process.exit(2);
+}
+if (paidCallCap > characters.length) {
+  console.error(`ABORT: --paid-call-cap cannot exceed the selected voice count (${characters.length}).`);
   process.exit(2);
 }
 
@@ -234,7 +254,7 @@ const unavailable = preflightRows.filter((row) => !row.available);
 if (unavailable.length > 0) {
   writeSummary(
     preflightRows,
-    { status: "BLOCKED_VOICE_PREFLIGHT", preflightApiCallCount: 4, paidTtsCallCount: 0 },
+    { status: "BLOCKED_VOICE_PREFLIGHT", preflightApiCallCount: characters.length, paidTtsCallCount: 0 },
     preflightSummaryPath,
   );
   console.error(`BLOCKED: ${unavailable.length} configured voice IDs are unavailable. No paid TTS call was made.`);
@@ -244,7 +264,7 @@ if (unavailable.length > 0) {
 if (preflightOnly) {
   writeSummary(
     preflightRows,
-    { status: "PREFLIGHT_PASS", preflightApiCallCount: 4, paidTtsCallCount: 0 },
+    { status: "PREFLIGHT_PASS", preflightApiCallCount: characters.length, paidTtsCallCount: 0 },
     preflightSummaryPath,
   );
   console.log(JSON.stringify({ passed: true, paidTtsCallCount: 0, summaryPath: preflightSummaryPath, voices: preflightRows }, null, 2));
@@ -342,7 +362,7 @@ for (const character of characters) {
     }
   }
   if (paidTtsCallCount >= paidCallCap) {
-    writeSummary(rows, { status: "BLOCKED_CALL_BUDGET", apiCallCount: 4 + paidTtsCallCount, paidTtsCallCount, paidCallCap });
+    writeSummary(rows, { status: "BLOCKED_CALL_BUDGET", apiCallCount: characters.length + paidTtsCallCount, paidTtsCallCount, paidCallCap });
     console.error(`ABORT: paid TTS call budget of ${paidCallCap} exceeded.`);
     process.exit(5);
   }
@@ -371,14 +391,14 @@ for (const character of characters) {
     );
   } catch (error) {
     rows.push({ characterId: character.characterId, voiceLabel: character.voiceLabel, inputFingerprint, status: "BLOCKED", reason: `FETCH_FAILED: ${error.message}` });
-    writeSummary(rows, { status: "BLOCKED_TTS", apiCallCount: 4 + paidTtsCallCount, paidTtsCallCount });
+    writeSummary(rows, { status: "BLOCKED_TTS", apiCallCount: characters.length + paidTtsCallCount, paidTtsCallCount });
     console.error(`BLOCKED: ${character.characterName} TTS request failed. No retry was attempted.`);
     process.exit(6);
   }
   if (!response.ok) {
     const reason = (await response.text().catch(() => "")).slice(0, 160);
     rows.push({ characterId: character.characterId, voiceLabel: character.voiceLabel, inputFingerprint, status: "BLOCKED", reason: `HTTP_${response.status}: ${reason}` });
-    writeSummary(rows, { status: "BLOCKED_TTS", apiCallCount: 4 + paidTtsCallCount, paidTtsCallCount });
+    writeSummary(rows, { status: "BLOCKED_TTS", apiCallCount: characters.length + paidTtsCallCount, paidTtsCallCount });
     console.error(`BLOCKED: ${character.characterName} TTS returned HTTP ${response.status}. No retry was attempted.`);
     process.exit(6);
   }
@@ -386,7 +406,7 @@ for (const character of characters) {
   const normalized = normalizeForReview(sourceOutputPath, outputPath);
   if (!normalized) {
     rows.push({ characterId: character.characterId, voiceLabel: character.voiceLabel, inputFingerprint, status: "BLOCKED", reason: "LOUDNESS_NORMALIZATION_FAILED" });
-    writeSummary(rows, { status: "BLOCKED_AUDIO", apiCallCount: 4 + paidTtsCallCount, paidTtsCallCount });
+    writeSummary(rows, { status: "BLOCKED_AUDIO", apiCallCount: characters.length + paidTtsCallCount, paidTtsCallCount });
     console.error(`BLOCKED: ${character.characterName} generated audio is invalid.`);
     process.exit(7);
   }
@@ -409,8 +429,8 @@ for (const character of characters) {
 }
 
 const summary = writeSummary(rows, {
-  status: rows.length === 4 && rows.every((row) => row.status === "SAVED_OK") ? "AUDITION_READY" : "BLOCKED_INCOMPLETE",
-  apiCallCount: 4 + paidTtsCallCount,
+  status: rows.length === characters.length && rows.every((row) => row.status === "SAVED_OK") ? "AUDITION_READY" : "BLOCKED_INCOMPLETE",
+  apiCallCount: characters.length + paidTtsCallCount,
   paidTtsCallCount,
   paidCallCap,
 });
