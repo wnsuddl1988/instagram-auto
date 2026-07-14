@@ -12,7 +12,8 @@
  * - `.env`/`.env.local` 직접 read
  * - credential 값 또는 값 파생(길이/prefix/suffix/hash/masked) 출력
  *
- * 실제 업로드(actualUpload)는 이 route의 유일한 live 경로이며 전부 fail-closed다:
+ * 실제 업로드(actualUpload)는 이 route의 유일한 외부 게시 경로이며 전부 fail-closed다.
+ * 별도 flowMotionGenerate는 장면별 정확한 승인문구로 Flow 영상 1개만 생성하며 게시하지 않는다:
  * 로컬 dev 전용 + Owner 확인 게이트(체크 2개 + "업로드" 입력) 서버 검증 + 영상/게시 전 점검
  * evidence 필수 + 이미 게시된 콘텐츠 차단 + runner 자체 gate(승인/중복/ledger/원샷/--arm).
  *
@@ -35,6 +36,7 @@ import {
   buildOperatorCommand,
   buildWizardContentUnitsForTopic,
   buildWizardRealPipelineInputs,
+  authorizeWizardFlowMotionGeneration,
   canWizardTopicEnterScript,
   ensureWizardFinalScript,
   generateWizardTopicBatchSmart,
@@ -43,6 +45,10 @@ import {
   listWizardUploadReadyItems,
   markWizardTopicHistory,
   prepareWizardFlowMotionPackets,
+  passWizardFlowMotionOwnerQa,
+  failWizardFlowMotionOwnerQa,
+  markWizardFlowMotionGenerationFailed,
+  recordWizardFlowMotionGenerationResult,
   readCredentialPresence,
   readFinalE2ePreflightResult,
   readScriptPreview,
@@ -53,6 +59,7 @@ import {
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
   readWizardFlowMotionStatus,
+  readWizardFlowMotionVideoBytes,
   readWizardRealMediaState,
   resolveWizardFinanceCharacterVoice,
   readWizardVideoBytes,
@@ -90,6 +97,9 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "realTtsCreate",
   "realSceneImagesCreate",
   "flowMotionPrepare",
+  "flowMotionGenerate",
+  "flowMotionQaPass",
+  "flowMotionQaFail",
   "finalVideoCreate",
   "realMediaStatus",
 ];
@@ -110,6 +120,7 @@ const REAL_IMAGE_PER_SCENE_TIMEOUT_MS = 190_000;
 const REAL_IMAGES_MAX_TIMEOUT_MS = 3_540_000;
 const FINAL_VIDEO_TIMEOUT_MS = 300_000;
 const CHARACTER_CAST_TIMEOUT_MS = 480_000;
+const FLOW_MOTION_GENERATION_TIMEOUT_MS = 720_000;
 
 /** 업로드 차단 시 사용자 문구(media quality gate — 시안/테스트 산출물 업로드 금지). */
 const MEDIA_GATE_USER_MESSAGE = "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
@@ -129,14 +140,15 @@ type OperatorResponse = {
   /**
    * 이 응답을 만드는 과정에서 실제 게시 경로(runner `--arm`)가 시작되지 않았으면 true.
    * 대부분의 action(읽기 전용/preflight/차단)은 항상 true다.
-   * `actualUpload`에서 확인 게이트를 통과해 arm runner를 실제로 spawn한 뒤의 응답
-   * (성공/timeout/부분게시/실패)만 false다 — 그 경우 외부 게시가 일어났을 수 있다.
+   * `actualUpload`가 arm runner를 실제 spawn했거나 `flowMotionGenerate`가 장면별 승인 뒤
+   * Flow runner를 실제 spawn한 응답만 false다. 전자는 외부 게시, 후자는 크레딧 사용이
+   * 일어났을 수 있으므로 실패 응답도 보수적으로 false다.
    */
   noLive: boolean;
   /**
-   * arm runner(`--arm`)를 실제로 실행(spawn)했으면 true. `actualUpload`가 확인 게이트를
-   * 통과해 runOperatorScript(..., allowArm:true)를 호출한 응답에만 붙는다.
-   * arm 이전 차단(확인 미완료/build 실패/spawn 실패)에는 붙지 않는다. secret 값은 담지 않는다.
+   * 외부 side-effect 가능 runner를 실제로 실행(spawn)했으면 true. `actualUpload`의 arm runner와
+   * 정확한 승인 뒤 `flowMotionGenerate` runner에만 붙는다. 실행 전 차단에는 붙지 않는다.
+   * secret 값은 담지 않는다.
    */
   liveRunnerInvoked?: boolean;
 };
@@ -301,6 +313,22 @@ export async function GET(request: Request) {
         "Cache-Control": "no-store",
       },
     });
+  }
+  if (videoParam === "flow-motion") {
+    if (!isLocalDevRuntime()) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
+        404,
+      );
+    }
+    const bytes = readWizardFlowMotionVideoBytes(url.searchParams.get("topicId"), url.searchParams.get("jobId"));
+    if (!bytes) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: "Owner 검수 대기 중인 Flow 영상이 없습니다.", blockerCode: "FLOW_MOTION_VIDEO_NOT_FOUND", noLive: true },
+        404,
+      );
+    }
+    return videoStreamResponse(bytes, request.headers.get("range"));
   }
   if (videoParam === "muxed" || videoParam === "silent" || videoParam === "final") {
     if (!isLocalDevRuntime()) {
@@ -801,6 +829,120 @@ export async function POST(request: Request) {
     });
   }
 
+  // Flow 모션 생성 — 장면별 정확한 승인문구가 일치할 때만 Playwright runner를 1회 호출한다.
+  // 이 분기는 크레딧을 사용할 수 있으므로 packet/state/hash 재검증을 route/helper/runner 3겹으로 수행한다.
+  if (action === "flowMotionGenerate") {
+    const b = body as { topicId?: unknown; jobId?: unknown; ownerApproval?: unknown };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const jobId = typeof b.jobId === "string" ? b.jobId : "";
+    const ownerApproval = typeof b.ownerApproval === "string" ? b.ownerApproval : "";
+    const authorized = authorizeWizardFlowMotionGeneration(topicId, jobId, ownerApproval);
+    if (!authorized.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "장면별 Flow 생성 승인이 일치하지 않아 전송을 막았습니다.",
+        detail: "화면에 표시된 현재 승인 문구를 그대로 입력해야 하며 이전 승인 문구는 재사용할 수 없습니다.",
+        blockerCode: authorized.reason,
+        noLive: true,
+      });
+    }
+    const built = buildOperatorCommand(action, { topicId, flowMotionJobId: jobId, flowMotionOwnerApproval: ownerApproval });
+    if (!built.ok) {
+      markWizardFlowMotionGenerationFailed(topicId, jobId, built.reason);
+      return json({ action, status: "blocked", summary: "Flow 실행 명령을 안전하게 만들지 못했습니다.", blockerCode: built.reason, noLive: true });
+    }
+    const run = runOperatorScript(built.command, {
+      timeoutMs: FLOW_MOTION_GENERATION_TIMEOUT_MS,
+      extraEnv: { ALLOW_FLOW_MOTION_GENERATION: "1" },
+    });
+    if (run.ran && !run.timedOut && run.exitCode === 0) {
+      const recorded = recordWizardFlowMotionGenerationResult(topicId, jobId);
+      if (recorded.ok) {
+        return json({
+          action,
+          status: "success",
+          summary: "Flow 영상 1개를 저장했습니다. 아직 최종 영상에는 들어가지 않으며 Owner 모션 검수가 필요합니다.",
+          detail: "영상에서 실제 관절·손·사물 동작이 있는지 7개 항목을 직접 확인해 주세요.",
+          raw: { flowMotion: recorded.status, runner: run.json },
+          noLive: false,
+          liveRunnerInvoked: true,
+        });
+      }
+      markWizardFlowMotionGenerationFailed(topicId, jobId, recorded.reason);
+      return json({
+        action,
+        status: "error",
+        summary: "Flow 영상은 내려받았지만 로컬 상태에 안전하게 연결하지 못했습니다. 자동 재시도하지 않습니다.",
+        blockerCode: recorded.reason,
+        raw: { runner: run.json },
+        noLive: false,
+        liveRunnerInvoked: true,
+      });
+    }
+    const runnerFailure = run.timedOut
+      ? "FLOW_MOTION_RUNNER_TIMEOUT"
+      : (run.json && typeof run.json === "object" && "failure" in run.json && typeof run.json.failure === "string")
+        ? run.json.failure
+        : "FLOW_MOTION_RUNNER_FAILED";
+    markWizardFlowMotionGenerationFailed(topicId, jobId, runnerFailure);
+    return json({
+      action,
+      status: "error",
+      summary: run.timedOut
+        ? "Flow 생성 대기 시간이 초과됐습니다. 전송 여부를 확인해야 하므로 자동 재시도하지 않습니다."
+        : "Flow 생성 또는 영상 저장에 실패했습니다. 자동 재시도하지 않습니다.",
+      blockerCode: runnerFailure,
+      raw: { runner: run.json, exitCode: run.exitCode },
+      noLive: !run.ran,
+      liveRunnerInvoked: run.ran,
+    });
+  }
+
+  // Owner QA 통과 — 기술 검증과 별개로 영상 자체를 본 뒤 7개 항목을 모두 체크해야 한다.
+  if (action === "flowMotionQaPass") {
+    const b = body as { topicId?: unknown; jobId?: unknown; checks?: unknown };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const jobId = typeof b.jobId === "string" ? b.jobId : "";
+    const checks = b.checks && typeof b.checks === "object" ? b.checks : {};
+    const passed = passWizardFlowMotionOwnerQa(topicId, jobId, checks);
+    if (!passed.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "Owner 모션 검수 7개 항목이 모두 확인되지 않아 렌더 투입을 막았습니다.",
+        blockerCode: passed.reason,
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "success",
+      summary: "Owner 모션 검수를 통과해 이 장면을 최종 렌더 입력으로 고정했습니다.",
+      raw: { flowMotion: passed.status },
+      noLive: true,
+    });
+  }
+
+  // Owner QA 실패 — 후보 MP4는 삭제하지 않고 rejected 파일로 보존하며 자동 재생성하지 않는다.
+  if (action === "flowMotionQaFail") {
+    const b = body as { topicId?: unknown; jobId?: unknown; note?: unknown };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const jobId = typeof b.jobId === "string" ? b.jobId : "";
+    const note = typeof b.note === "string" ? b.note : "Owner visual QA failed";
+    const failed = failWizardFlowMotionOwnerQa(topicId, jobId, note);
+    if (!failed.ok) {
+      return json({ action, status: "blocked", summary: "검수 실패 상태를 저장하지 못했습니다.", blockerCode: failed.reason, noLive: true });
+    }
+    return json({
+      action,
+      status: "success",
+      summary: "불합격 후보를 보존하고 새 장면별 승인 대기 상태로 되돌렸습니다. 자동 재생성은 하지 않았습니다.",
+      raw: { flowMotion: failed.status },
+      noLive: true,
+    });
+  }
+
   // 실제 목소리 만들기 — 확정 대본 기반 ElevenLabs 고정 목소리 TTS(Owner 버튼 클릭 시에만 호출).
   if (action === "realTtsCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
@@ -1065,7 +1207,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // ── 실제 업로드(actualUpload): 이 route의 유일한 live 경로 — 전 게이트 fail-closed ──
+  // ── 실제 업로드(actualUpload): 이 route의 유일한 외부 게시 경로 — 전 게이트 fail-closed ──
   if (action === "actualUpload") {
     const b = body as {
       topicId?: unknown;

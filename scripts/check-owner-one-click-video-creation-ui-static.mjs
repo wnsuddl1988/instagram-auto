@@ -994,7 +994,8 @@ check(
 check("images script reuses proven _chatgpt-image-core", /_chatgpt-image-core\.mjs/.test(imgScriptSrc));
 check("images script never uploads/publishes", !/instagram|youtube|blob\.put|googleapis|@vercel/i.test(imgScriptSrc));
 check("images script forbids paid image APIs (openai api key 사용 없음)", !/OPENAI_API_KEY|api\.openai\.com|bfl\.ai|gemini/i.test(imgScriptCode));
-check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,1800}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/extraEnv/g) ?? []).length <= 2);
+check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,1800}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/ALLOW_CHATGPT_IMAGE/g) ?? []).length === 2);
+check("route passes the Flow live marker only inside the exact approved generation action", /flowMotionGenerate[\s\S]{0,3200}extraEnv:\s*\{\s*ALLOW_FLOW_MOTION_GENERATION:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/ALLOW_FLOW_MOTION_GENERATION/g) ?? []).length === 1);
 check("images gate requires expectedCount SAVED_OK portrait files", /expectedSceneCount/.test(helperCode) && /savedScenes\.length\s*===\s*expectedSceneCount/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
 check("UI image states exist (장면 이미지 준비 / 이미지 생성 필요)", wizardSrc.includes("장면 이미지 준비") && wizardSrc.includes("이미지 생성 필요"));
 

@@ -113,6 +113,7 @@ check("only automatically selected Veo scenes become jobs", () => {
 check("fresh packets preserve a strict no-submit boundary", () => {
   const state = build();
   assert.deepEqual(state.noSubmitBoundary, {
+    scope: "packet_preparation_only",
     externalActionPerformed: false,
     browserOpened: false,
     uploadCount: 0,
@@ -184,31 +185,31 @@ check("approved generation records approval id and timestamp", () => {
   assert.equal(state.jobs[0].approval.ownerApprovalId, "owner-approval-001");
 });
 
-check("QA pass requires the generated video hash", () => {
+check("QA pending requires the generated video hash", () => {
   const generating = transitionFlowMotionJob(build(), "flow-test-topic-single-scene-02", {
     to: "generating",
     at: "2026-07-15T01:03:00.000Z",
     ownerApprovalId: "owner-approval-001",
   });
   assert.throws(
-    () => transitionFlowMotionJob(generating, generating.jobs[0].jobId, { to: "qa_pass", at: generatedAt }),
+    () => transitionFlowMotionJob(generating, generating.jobs[0].jobId, { to: "qa_pending", at: generatedAt }),
     /flow_motion_output_hash_required/,
   );
 });
 
-check("render-ready requires QA evidence", () => {
+check("QA pass requires Owner QA evidence", () => {
   const generating = transitionFlowMotionJob(build(), "flow-test-topic-single-scene-02", {
     to: "generating",
     at: "2026-07-15T01:03:00.000Z",
     ownerApprovalId: "owner-approval-001",
   });
-  const qaPass = transitionFlowMotionJob(generating, generating.jobs[0].jobId, {
-    to: "qa_pass",
+  const qaPending = transitionFlowMotionJob(generating, generating.jobs[0].jobId, {
+    to: "qa_pending",
     at: "2026-07-15T01:04:00.000Z",
     outputVideoSha256: "c".repeat(64),
   });
   assert.throws(
-    () => transitionFlowMotionJob(qaPass, qaPass.jobs[0].jobId, { to: "render_ready", at: generatedAt }),
+    () => transitionFlowMotionJob(qaPending, qaPending.jobs[0].jobId, { to: "qa_pass", at: generatedAt }),
     /flow_motion_qa_evidence_required/,
   );
 });
@@ -219,15 +220,19 @@ check("the complete approved QA path reaches render-ready", () => {
     at: "2026-07-15T01:03:00.000Z",
     ownerApprovalId: "owner-approval-001",
   });
-  const qaPass = transitionFlowMotionJob(generating, generating.jobs[0].jobId, {
-    to: "qa_pass",
+  const qaPending = transitionFlowMotionJob(generating, generating.jobs[0].jobId, {
+    to: "qa_pending",
     at: "2026-07-15T01:04:00.000Z",
     outputVideoSha256: "c".repeat(64),
   });
-  const ready = transitionFlowMotionJob(qaPass, qaPass.jobs[0].jobId, {
-    to: "render_ready",
+  const qaPass = transitionFlowMotionJob(qaPending, qaPending.jobs[0].jobId, {
+    to: "qa_pass",
     at: "2026-07-15T01:05:00.000Z",
     qaEvidenceId: "visual-qa-001",
+  });
+  const ready = transitionFlowMotionJob(qaPass, qaPass.jobs[0].jobId, {
+    to: "render_ready",
+    at: "2026-07-15T01:05:30.000Z",
   });
   assert.equal(ready.overallStatus, "render_ready");
   assert.equal(ready.renderReadyCount, 1);
@@ -263,6 +268,7 @@ const helperSource = readFileSync(new URL("../lib/owner-web-operator.ts", import
 const routeSource = readFileSync(new URL("../app/api/money-shorts/operator/route.ts", import.meta.url), "utf8");
 const wizardSource = readFileSync(new URL("../components/VideoCreationWizard.tsx", import.meta.url), "utf8");
 const jobSource = readFileSync(new URL("../lib/flow-motion-jobs.ts", import.meta.url), "utf8");
+const runnerSource = readFileSync(new URL("./run-flow-motion-job-playwright-v1.mjs", import.meta.url), "utf8");
 
 check("operator exposes packet preparation as a no-script local action", () => {
   assert.match(helperSource, /flowMotionPrepare/);
@@ -274,6 +280,28 @@ check("wizard shows packet state without claiming that Flow generated a clip", (
   assert.match(wizardSource, /title="Veo 모션 준비"/);
   assert.match(wizardSource, /wizard-action-flow-motion-prepare/);
   assert.match(wizardSource, /브라우저를 열거나 크레딧을 사용하지 않습니다/);
+});
+
+check("operator connects exact approval, one live runner and Owner QA actions", () => {
+  assert.match(helperSource, /flowMotionGenerate/);
+  assert.match(routeSource, /authorizeWizardFlowMotionGeneration/);
+  assert.match(routeSource, /ALLOW_FLOW_MOTION_GENERATION/);
+  assert.match(routeSource, /passWizardFlowMotionOwnerQa/);
+  assert.match(routeSource, /failWizardFlowMotionOwnerQa/);
+});
+
+check("wizard exposes exact approval entry, generated clip preview and seven-item QA", () => {
+  assert.match(wizardSource, /wizard-action-flow-motion-generate/);
+  assert.match(wizardSource, /video=flow-motion/);
+  assert.match(wizardSource, /FLOW_MOTION_QA_ITEMS/);
+  assert.match(wizardSource, /7항목 통과 · 렌더에 사용/);
+});
+
+check("live runner requires confirmation and forbids post-submit fallback", () => {
+  assert.match(runnerSource, /required_generation_confirmation_dialog_missing/);
+  assert.match(runnerSource, /generation_credit_cost_unconfirmed/);
+  assert.match(runnerSource, /quota_exhausted_after_submission_no_fallback/);
+  assert.match(runnerSource, /submissionCount:\s*1/);
 });
 
 check("state builder has no browser, upload or network execution dependency", () => {

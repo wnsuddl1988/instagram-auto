@@ -24,6 +24,7 @@ export const FLOW_MOTION_PROVIDER_TARGET = Object.freeze({
 export type FlowMotionJobStatus =
   | "approval_pending"
   | "generating"
+  | "qa_pending"
   | "qa_pass"
   | "qa_failed"
   | "render_ready";
@@ -32,6 +33,7 @@ export type FlowMotionOverallStatus =
   | "not_required"
   | "approval_pending"
   | "generating"
+  | "qa_pending"
   | "qa_pass"
   | "qa_failed"
   | "render_ready";
@@ -78,6 +80,13 @@ export type FlowMotionJob = {
     evidenceId: string | null;
     note: string | null;
   };
+  execution: {
+    status: "not_started" | "authorized" | "downloaded" | "failed";
+    selectedProfile: "Gemini 2" | "Gemini 3" | "Gemini 4" | null;
+    submissionCount: 0 | 1;
+    expectedCreditsSpent: number;
+    summaryPath: string | null;
+  };
   transitionHistory: Array<{
     from: FlowMotionJobStatus | "created";
     to: FlowMotionJobStatus;
@@ -106,6 +115,7 @@ export type FlowMotionState = {
   renderReadyCount: number;
   jobs: FlowMotionJob[];
   noSubmitBoundary: {
+    scope: "packet_preparation_only";
     externalActionPerformed: false;
     browserOpened: false;
     uploadCount: 0;
@@ -122,6 +132,7 @@ export type FlowMotionTransition = {
   outputVideoSha256?: string;
   qaEvidenceId?: string;
   note?: string;
+  execution?: FlowMotionJob["execution"];
 };
 
 export type FlowMotionQaEvidence = {
@@ -188,6 +199,7 @@ function overallStatus(jobs: readonly FlowMotionJob[]): FlowMotionOverallStatus 
   if (jobs.every((job) => job.status === "render_ready")) return "render_ready";
   if (jobs.some((job) => job.status === "qa_failed")) return "qa_failed";
   if (jobs.some((job) => job.status === "generating")) return "generating";
+  if (jobs.some((job) => job.status === "qa_pending")) return "qa_pending";
   if (jobs.some((job) => job.status === "qa_pass")) return "qa_pass";
   return "approval_pending";
 }
@@ -259,6 +271,7 @@ export function buildFlowMotionState(input: {
         requiredWording,
       },
       qa: { outputVideoSha256: null, evidenceId: null, note: null },
+      execution: { status: "not_started", selectedProfile: null, submissionCount: 0, expectedCreditsSpent: 0, summaryPath: null },
       transitionHistory: [{ from: "created", to: "approval_pending", at: input.generatedAt, evidenceId: null }],
       liveBoundary: {
         browserOpenedNow: false,
@@ -273,7 +286,7 @@ export function buildFlowMotionState(input: {
       ? input.previous.jobs.find((candidate) => candidate.sceneNumber === scene.sceneNumber)
       : null;
     return previousJob && sameJobContract(previousJob, fresh)
-      ? { ...fresh, status: previousJob.status, approval: previousJob.approval, qa: previousJob.qa, transitionHistory: previousJob.transitionHistory }
+      ? { ...fresh, status: previousJob.status, approval: previousJob.approval, qa: previousJob.qa, execution: previousJob.execution, transitionHistory: previousJob.transitionHistory }
       : fresh;
   });
   const statePath = join(input.outputRoot, "flow-motion-state.json");
@@ -290,6 +303,7 @@ export function buildFlowMotionState(input: {
     renderReadyCount: jobs.filter((job) => job.status === "render_ready").length,
     jobs,
     noSubmitBoundary: {
+      scope: "packet_preparation_only",
       externalActionPerformed: false,
       browserOpened: false,
       uploadCount: 0,
@@ -302,7 +316,8 @@ export function buildFlowMotionState(input: {
 
 const ALLOWED_TRANSITIONS: Readonly<Record<FlowMotionJobStatus, readonly FlowMotionJobStatus[]>> = {
   approval_pending: ["generating"],
-  generating: ["qa_pass", "qa_failed"],
+  generating: ["qa_pending", "qa_failed"],
+  qa_pending: ["qa_pass", "qa_failed"],
   qa_pass: ["render_ready"],
   qa_failed: ["approval_pending"],
   render_ready: [],
@@ -321,10 +336,13 @@ export function transitionFlowMotionJob(
   if (job.status === "approval_pending" && transition.to === "generating" && !transition.ownerApprovalId?.trim()) {
     throw new Error("flow_motion_owner_approval_required");
   }
-  if (job.status === "generating" && transition.to === "qa_pass") {
+  if (job.status === "generating" && transition.to === "qa_pending") {
     assertSha256(transition.outputVideoSha256 ?? "", "flow_motion_output_hash_required");
   }
-  if (job.status === "qa_pass" && transition.to === "render_ready" && !transition.qaEvidenceId?.trim()) {
+  if (job.status === "qa_pending" && transition.to === "qa_pass" && !transition.qaEvidenceId?.trim()) {
+    throw new Error("flow_motion_qa_evidence_required");
+  }
+  if (job.status === "qa_pass" && transition.to === "render_ready" && !job.qa.evidenceId?.trim()) {
     throw new Error("flow_motion_qa_evidence_required");
   }
   const jobs = state.jobs.map((candidate): FlowMotionJob => {
@@ -340,6 +358,7 @@ export function transitionFlowMotionJob(
         evidenceId: transition.qaEvidenceId ?? candidate.qa.evidenceId,
         note: transition.note ?? candidate.qa.note,
       },
+      execution: transition.execution ?? candidate.execution,
       transitionHistory: [
         ...candidate.transitionHistory,
         { from: candidate.status, to: transition.to, at: transition.at, evidenceId: transition.qaEvidenceId ?? transition.ownerApprovalId ?? null },
@@ -362,13 +381,14 @@ export function flowMotionStateIsValid(state: unknown): state is FlowMotionState
   if (candidate.requiredSceneCount !== candidate.jobs.length) return false;
   if (candidate.renderReadyCount !== candidate.jobs.filter((job) => job.status === "render_ready").length) return false;
   if (!candidate.noSubmitBoundary ||
+      candidate.noSubmitBoundary.scope !== "packet_preparation_only" ||
       candidate.noSubmitBoundary.externalActionPerformed !== false ||
       candidate.noSubmitBoundary.browserOpened !== false ||
       candidate.noSubmitBoundary.uploadCount !== 0 ||
       candidate.noSubmitBoundary.promptSubmitCount !== 0 ||
       candidate.noSubmitBoundary.generationSubmitCount !== 0 ||
       candidate.noSubmitBoundary.creditsSpent !== 0) return false;
-  const validStatuses: readonly FlowMotionJobStatus[] = ["approval_pending", "generating", "qa_pass", "qa_failed", "render_ready"];
+  const validStatuses: readonly FlowMotionJobStatus[] = ["approval_pending", "generating", "qa_pending", "qa_pass", "qa_failed", "render_ready"];
   return candidate.jobs.every((job) =>
     job.contractVersion === FLOW_MOTION_JOB_CONTRACT_VERSION &&
     validStatuses.includes(job.status) &&
@@ -376,6 +396,9 @@ export function flowMotionStateIsValid(state: unknown): state is FlowMotionState
     /^[a-f0-9]{64}$/.test(job.promptSha256) &&
     job.providerTarget?.provider === FLOW_MOTION_PROVIDER_TARGET.provider &&
     job.approval?.required === true &&
+    ["not_started", "authorized", "downloaded", "failed"].includes(job.execution?.status) &&
+    [0, 1].includes(job.execution?.submissionCount) &&
+    Number.isFinite(job.execution?.expectedCreditsSpent) &&
     job.liveBoundary?.externalActionRequiresSeparateOwnerApproval === true &&
     job.liveBoundary?.browserOpenedNow === false &&
     job.liveBoundary?.referenceUploadedNow === false &&

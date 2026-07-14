@@ -236,7 +236,7 @@ type WizardRealMedia = {
   }>;
 };
 
-type WizardFlowMotionState = "not_prepared" | "not_required" | "approval_pending" | "generating" | "qa_pass" | "qa_failed" | "render_ready";
+type WizardFlowMotionState = "not_prepared" | "not_required" | "approval_pending" | "generating" | "qa_pending" | "qa_pass" | "qa_failed" | "render_ready";
 
 type WizardFlowMotionStatus = {
   state: WizardFlowMotionState;
@@ -244,6 +244,7 @@ type WizardFlowMotionStatus = {
   preparedCount: number;
   approvalPendingCount: number;
   generatingCount: number;
+  qaPendingCount: number;
   qaPassCount: number;
   qaFailedCount: number;
   renderReadyCount: number;
@@ -257,12 +258,20 @@ type WizardFlowMotionStatus = {
       jobId: string;
       sceneNumber: number;
       sceneLabel: string;
-      status: "approval_pending" | "generating" | "qa_pass" | "qa_failed" | "render_ready";
+      status: "approval_pending" | "generating" | "qa_pending" | "qa_pass" | "qa_failed" | "render_ready";
       packetPath: string;
       expectedVideoPath: string;
       referenceSha256: string;
       promptSha256: string;
       requiredApprovalWording: string;
+      outputVideoSha256: string | null;
+      execution: {
+        status: "not_started" | "authorized" | "downloaded" | "failed";
+        selectedProfile: "Gemini 2" | "Gemini 3" | "Gemini 4" | null;
+        submissionCount: 0 | 1;
+        expectedCreditsSpent: number;
+        summaryPath: string | null;
+      };
       renderAssetReady: boolean;
     }>;
   }>;
@@ -273,10 +282,24 @@ const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
   not_required: "모션 장면 없음",
   approval_pending: "생성 승인 대기",
   generating: "생성 중",
+  qa_pending: "Owner 영상 검수 대기",
   qa_pass: "검수 통과",
   qa_failed: "검수 실패",
   render_ready: "렌더 준비",
 };
+
+const FLOW_MOTION_QA_ITEMS = [
+  ["trueArticulatedMotion", "인물의 관절·손 또는 이야기 사물이 실제로 움직인다"],
+  ["cameraOnlyMotionRejected", "줌·패닝·시차만 움직인 영상이 아니다"],
+  ["identityContinuity", "한국 성인 인물의 얼굴·헤어·의상이 기준 이미지와 같다"],
+  ["sceneContinuity", "공간·소품·구도와 장면 의미가 유지된다"],
+  ["brightWarmNonPhotoreal3D", "밝고 따뜻한 비실사 3D 톤을 유지한다"],
+  ["forbiddenDarkFinanceImageryAbsent", "어두운 금고·공장·기계실·검은 금융 이미지가 없다"],
+  ["technicalArtifactsAbsent", "손·얼굴·물체 변형, 복제, 깜빡임 등 기술 결함이 없다"],
+] as const;
+
+type FlowMotionQaKey = (typeof FLOW_MOTION_QA_ITEMS)[number][0];
+type FlowMotionQaState = Partial<Record<FlowMotionQaKey, boolean>>;
 
 // ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
 
@@ -464,6 +487,9 @@ export default function VideoCreationWizard() {
   const [flowMotionState, setFlowMotionState] = useState<RunState>("idle");
   const [flowMotionResult, setFlowMotionResult] = useState<OperatorResult | null>(null);
   const [flowMotion, setFlowMotion] = useState<WizardFlowMotionStatus | null>(null);
+  const [flowMotionApprovalInputs, setFlowMotionApprovalInputs] = useState<Record<string, string>>({});
+  const [flowMotionQaChecks, setFlowMotionQaChecks] = useState<Record<string, FlowMotionQaState>>({});
+  const [flowMotionQaNotes, setFlowMotionQaNotes] = useState<Record<string, string>>({});
   const [finalVideoState, setFinalVideoState] = useState<RunState>("idle");
   const [finalVideoResult, setFinalVideoResult] = useState<OperatorResult | null>(null);
   const [audioKey, setAudioKey] = useState(0);
@@ -579,6 +605,9 @@ export default function VideoCreationWizard() {
     setFlowMotionState("idle");
     setFlowMotionResult(null);
     setFlowMotion(null);
+    setFlowMotionApprovalInputs({});
+    setFlowMotionQaChecks({});
+    setFlowMotionQaNotes({});
     setFinalVideoState("idle");
     setFinalVideoResult(null);
     setVoiceState("idle");
@@ -885,6 +914,70 @@ export default function VideoCreationWizard() {
       setFlowMotionResult({ action: "flowMotionPrepare", status: "error", summary: "Flow 모션 작업 패킷을 준비하지 못했습니다." });
     }
   }, [selectedTopicId, refreshRealMedia]);
+
+  const runFlowMotionGenerate = useCallback(async (jobId: string) => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionGenerate", {
+        topicId: selectedTopicId,
+        jobId,
+        ownerApproval: flowMotionApprovalInputs[jobId] ?? "",
+      });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      if (r.status === "success") setFlowMotionApprovalInputs((current) => ({ ...current, [jobId]: "" }));
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({ action: "flowMotionGenerate", status: "error", summary: "Flow 영상 생성 요청을 완료하지 못했습니다. 자동 재시도하지 않습니다." });
+    }
+  }, [selectedTopicId, flowMotionApprovalInputs, refreshRealMedia]);
+
+  const runFlowMotionQaPass = useCallback(async (jobId: string) => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionQaPass", {
+        topicId: selectedTopicId,
+        jobId,
+        checks: flowMotionQaChecks[jobId] ?? {},
+      });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({ action: "flowMotionQaPass", status: "error", summary: "Owner 모션 검수 결과를 저장하지 못했습니다." });
+    }
+  }, [selectedTopicId, flowMotionQaChecks, refreshRealMedia]);
+
+  const runFlowMotionQaFail = useCallback(async (jobId: string) => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionQaFail", {
+        topicId: selectedTopicId,
+        jobId,
+        note: flowMotionQaNotes[jobId] ?? "Owner visual QA failed",
+      });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({ action: "flowMotionQaFail", status: "error", summary: "Owner 모션 불합격 결과를 저장하지 못했습니다." });
+    }
+  }, [selectedTopicId, flowMotionQaNotes, refreshRealMedia]);
 
   // 최종 영상 만들기 — 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션 합성.
   const runFinalVideo = useCallback(async () => {
@@ -1785,7 +1878,7 @@ export default function VideoCreationWizard() {
               ? "success"
               : flowMotion?.state === "qa_failed"
                 ? "error"
-                : flowMotion?.state === "generating" || flowMotion?.state === "qa_pass"
+                : flowMotion?.state === "generating" || flowMotion?.state === "qa_pending" || flowMotion?.state === "qa_pass"
                   ? "running"
                   : flowMotion?.state === "approval_pending"
                     ? "blocked"
@@ -1835,6 +1928,86 @@ export default function VideoCreationWizard() {
                       </p>
                       <p className="mt-1 break-all">패킷: {job.packetPath}</p>
                       <p className="mt-2 break-words text-xs text-slate-500">{job.requiredApprovalWording}</p>
+                      {job.status === "approval_pending" || job.status === "qa_failed" ? (
+                        <div className="mt-3 space-y-2">
+                          <textarea
+                            data-testid={`wizard-flow-motion-approval-${job.jobId}`}
+                            className="min-h-24 w-full rounded-lg border border-slate-300 bg-white p-2 text-xs text-slate-700"
+                            placeholder="위 승인 문구 전체를 그대로 붙여 넣으세요"
+                            value={flowMotionApprovalInputs[job.jobId] ?? ""}
+                            onChange={(event) => setFlowMotionApprovalInputs((current) => ({ ...current, [job.jobId]: event.target.value }))}
+                          />
+                          <button
+                            type="button"
+                            data-testid={`wizard-action-flow-motion-generate-${job.jobId}`}
+                            className={RUN_BTN}
+                            disabled={flowMotionState === "running" || (flowMotionApprovalInputs[job.jobId] ?? "") !== job.requiredApprovalWording}
+                            onClick={() => void runFlowMotionGenerate(job.jobId)}
+                          >
+                            승인하고 Flow 영상 1개 생성
+                          </button>
+                          <p className="text-xs text-amber-700">Veo 3.1 Fast · 9:16 · 1개 · 예상 20크레딧. Gemini 2 우선, 명시적 한도 소진일 때만 3/4로 이동합니다.</p>
+                        </div>
+                      ) : null}
+                      {job.status === "generating" ? (
+                        <p className="mt-2 text-xs font-semibold text-amber-700">Flow가 생성·다운로드 중입니다. 자동 재시도나 다른 계정 전환은 하지 않습니다.</p>
+                      ) : null}
+                      {job.status === "qa_pending" ? (
+                        <div className="mt-3 space-y-3">
+                          <p className="text-xs font-semibold text-slate-700">
+                            {job.execution.selectedProfile ?? "Flow"} · 전송 {job.execution.submissionCount}회 · 예상 사용 {job.execution.expectedCreditsSpent}크레딧 · 영상 hash {job.outputVideoSha256?.slice(0, 12)}…
+                          </p>
+                          <video
+                            data-testid={`wizard-flow-motion-preview-${job.jobId}`}
+                            className="mx-auto max-h-[520px] w-auto max-w-full rounded-lg bg-black"
+                            controls
+                            preload="metadata"
+                            src={`/api/money-shorts/operator?video=flow-motion&topicId=${encodeURIComponent(selectedTopicId ?? "")}&jobId=${encodeURIComponent(job.jobId)}`}
+                          />
+                          <div className="space-y-1.5">
+                            {FLOW_MOTION_QA_ITEMS.map(([key, label]) => (
+                              <label key={key} className="flex items-start gap-2 text-xs text-slate-700">
+                                <input
+                                  type="checkbox"
+                                  className="mt-0.5"
+                                  checked={flowMotionQaChecks[job.jobId]?.[key] === true}
+                                  onChange={(event) => setFlowMotionQaChecks((current) => ({
+                                    ...current,
+                                    [job.jobId]: { ...current[job.jobId], [key]: event.target.checked },
+                                  }))}
+                                />
+                                <span>{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <textarea
+                            className="min-h-16 w-full rounded-lg border border-slate-300 bg-white p-2 text-xs"
+                            placeholder="불합격 사유 메모(선택)"
+                            value={flowMotionQaNotes[job.jobId] ?? ""}
+                            onChange={(event) => setFlowMotionQaNotes((current) => ({ ...current, [job.jobId]: event.target.value }))}
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              data-testid={`wizard-action-flow-motion-qa-pass-${job.jobId}`}
+                              className={RUN_BTN}
+                              disabled={flowMotionState === "running" || FLOW_MOTION_QA_ITEMS.some(([key]) => flowMotionQaChecks[job.jobId]?.[key] !== true)}
+                              onClick={() => void runFlowMotionQaPass(job.jobId)}
+                            >
+                              7항목 통과 · 렌더에 사용
+                            </button>
+                            <button
+                              type="button"
+                              data-testid={`wizard-action-flow-motion-qa-fail-${job.jobId}`}
+                              className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-40"
+                              disabled={flowMotionState === "running"}
+                              onClick={() => void runFlowMotionQaFail(job.jobId)}
+                            >
+                              불합격 · 후보 보존
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   )),
                 )}

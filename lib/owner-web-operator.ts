@@ -5,8 +5,9 @@
  * task: owner-web-auto-topic-refresh-and-upload-button-v1 (확인 게이트형 실제 업로드)
  *
  * 이 모듈의 목적은 **이미 검증된 기존 automation 스크립트**를, 웹 버튼에서 안전하게 감싸는 것이다.
- * 대부분의 action은 no-live/preflight-only다. 유일한 예외는 `actualUpload`이며, 이것만
- * final E2E runner를 `--arm`으로 실행할 수 있다.
+ * 대부분의 action은 no-live/preflight-only다. `actualUpload`만 final E2E runner를
+ * `--arm`으로 실행할 수 있고, `flowMotionGenerate`는 별도의 정확한 장면별 Owner 승인 뒤
+ * Google Flow 영상 1개를 생성할 수 있다. 두 live 경로는 서로의 승인을 재사용하지 않는다.
  *
  * 보안 계약(가드가 강제):
  * - 실행 가능한 명령은 buildOperatorCommand에 하드코딩된 것뿐이다. 임의 명령/셸 문자열 없음.
@@ -87,6 +88,7 @@ import {
   FLOW_MOTION_STATE_CONTRACT_VERSION,
   buildFlowMotionState,
   flowMotionStateIsValid,
+  transitionFlowMotionJob,
   type FlowMotionJob,
   type FlowMotionJobStatus,
   type FlowMotionQaEvidence,
@@ -123,6 +125,9 @@ export const OPERATOR_ACTIONS = [
   "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
   "realSceneImagesCreate", // 대본 흐름 기반 동적 장면으로 ChatGPT+Playwright 실제 이미지 생성
   "flowMotionPrepare", // 자동 선정 장면의 Flow no-submit 패킷/승인 대기 상태 생성(외부 실행 0)
+  "flowMotionGenerate", // 정확한 장면별 Owner 승인 뒤 Flow에서 Veo 1회 생성·로컬 저장
+  "flowMotionQaPass", // Owner 7항목 검수 통과 evidence 기록 후 render_ready 전환
+  "flowMotionQaFail", // Owner 검수 실패 기록(자동 재생성 없음)
   "finalVideoCreate", // 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션으로 최종 mp4 합성
   "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
 ] as const;
@@ -183,6 +188,7 @@ const SCRIPT_LOCAL_PIPELINE_DRY_RUN = "scripts/run-local-money-shorts-pipeline-d
 // 이미지/최종 영상은 wizard 전용 once 스크립트를 쓴다(전부 repo-relative 하드코딩).
 const SCRIPT_ELEVENLABS_SCENE_TTS = "scripts/build-elevenlabs-korean-director-tts-from-script.mjs";
 const SCRIPT_REAL_SCENE_IMAGES = "scripts/run-owner-real-scene-images-from-wizard-script-once.mjs";
+const SCRIPT_FLOW_MOTION_GENERATION = "scripts/run-flow-motion-job-playwright-v1.mjs";
 const SCRIPT_REAL_VIDEO = "scripts/run-owner-real-video-from-wizard-assets-once.mjs";
 const SCRIPT_FINANCE_CHARACTER_CAST_AUDITION = "scripts/run-owner-finance-character-cast-audition.mjs";
 
@@ -514,6 +520,8 @@ export function buildOperatorCommand(
     outDir?: string;
     topicId?: string;
     productionPartId?: "single" | "part-1" | "part-2";
+    flowMotionJobId?: string;
+    flowMotionOwnerApproval?: string;
     characterId?: FinanceCharacterId;
     regenerateCharacterCandidates?: boolean;
   },
@@ -734,6 +742,28 @@ export function buildOperatorCommand(
       };
     }
 
+    case "flowMotionGenerate": {
+      const target = resolveWizardFlowMotionJob(input?.topicId ?? "", input?.flowMotionJobId ?? "");
+      if (!target.ok) return target;
+      if (target.job.status !== "generating") return { ok: false, reason: "flow_motion_generation_not_authorized" };
+      if (input?.flowMotionOwnerApproval !== target.job.approval.requiredWording) {
+        return { ok: false, reason: "flow_motion_owner_approval_text_mismatch" };
+      }
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_FLOW_MOTION_GENERATION,
+          args: [
+            "--generate-live",
+            "--packet-path", target.job.packetPath,
+            "--state-path", target.state.statePath,
+            "--job-id", target.job.jobId,
+            "--owner-approval", input.flowMotionOwnerApproval,
+          ],
+        },
+      };
+    }
+
     case "finalVideoCreate": {
       // 실제 음성·이미지와 선정된 모든 Veo 장면의 render_ready 상태가 준비된 뒤에만 합성한다.
       const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
@@ -781,6 +811,8 @@ export function buildOperatorCommand(
     case "previewStatus":
     case "realMediaStatus":
     case "flowMotionPrepare":
+    case "flowMotionQaPass":
+    case "flowMotionQaFail":
     case "characterCastStatus":
     case "characterCastSelect":
       // 읽기 전용 action — 스크립트를 실행하지 않는다.
@@ -6077,6 +6109,24 @@ export function readWizardVideoBytes(
   }
 }
 
+/** Flow Owner QA 플레이어용 MP4. topic/job 상태가 가리키는 고정 경로와 hash가 모두 일치해야 한다. */
+export function readWizardFlowMotionVideoBytes(
+  topicId?: string | null,
+  jobId?: string | null,
+): Buffer | null {
+  const target = resolveWizardFlowMotionJob(topicId ?? "", jobId ?? "");
+  if (!target.ok || !["qa_pending", "qa_pass", "render_ready"].includes(target.job.status)) return null;
+  const abs = resolve(target.job.expectedVideoPath);
+  if (!abs.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) || !abs.toLowerCase().endsWith(".mp4") || !existsSync(abs)) return null;
+  try {
+    const bytes = readFileSync(abs);
+    const hash = createHash("sha256").update(bytes).digest("hex");
+    return hash === target.job.qa.outputVideoSha256 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 실제 TTS 오디오 바이트(브라우저 audio player 스트림용).
  * 경로는 클라이언트 입력이 아니라 TTS summary에서만 나오며,
@@ -7510,6 +7560,7 @@ export type WizardFlowMotionStatus = {
   preparedCount: number;
   approvalPendingCount: number;
   generatingCount: number;
+  qaPendingCount: number;
   qaPassCount: number;
   qaFailedCount: number;
   renderReadyCount: number;
@@ -7519,12 +7570,17 @@ export type WizardFlowMotionStatus = {
     partNumber: 1 | 2;
     totalParts: 1 | 2;
     requiredCount: number;
-    statePath: string;
+      statePath: string;
     state: "not_prepared" | "not_required" | FlowMotionJobStatus;
     jobs: Array<Pick<FlowMotionJob,
       "jobId" | "sceneNumber" | "sceneId" | "sceneLabel" | "status" | "packetPath" |
       "expectedVideoPath" | "referenceSha256" | "promptSha256"
-    > & { requiredApprovalWording: string; renderAssetReady: boolean }>;
+    > & {
+      requiredApprovalWording: string;
+      outputVideoSha256: string | null;
+      execution: FlowMotionJob["execution"];
+      renderAssetReady: boolean;
+    }>;
   }>;
 };
 
@@ -7540,6 +7596,271 @@ function resolveWizardFlowMotionParts(topicId: string): WizardProductionPipeline
     return resolveWizardProductionPipelineParts(topicId, safeSlug, record);
   } catch {
     return null;
+  }
+}
+
+type ResolvedWizardFlowMotionJob = {
+  part: WizardProductionPipelinePart;
+  state: FlowMotionState;
+  job: FlowMotionJob;
+};
+
+function resolveWizardFlowMotionJob(
+  topicId: string,
+  jobId: string,
+): { ok: true } & ResolvedWizardFlowMotionJob | { ok: false; reason: string } {
+  if (!jobId || !/^[a-zA-Z0-9._-]+$/.test(jobId)) return { ok: false, reason: "flow_motion_job_id_invalid" };
+  const parts = resolveWizardFlowMotionParts(topicId);
+  if (!parts) return { ok: false, reason: "flow_motion_topic_invalid" };
+  for (const part of parts) {
+    const candidate = readAbsJson(flowMotionStatePath(part));
+    if (!flowMotionStateIsValid(candidate) ||
+      candidate.topicId !== topicId ||
+      candidate.productionPartId !== part.id ||
+      candidate.scriptFingerprint !== part.record.localFingerprint) continue;
+    const job = candidate.jobs.find((row) => row.jobId === jobId);
+    if (job) return { ok: true, part, state: candidate, job };
+  }
+  return { ok: false, reason: "flow_motion_job_not_found" };
+}
+
+function writeWizardFlowMotionStateAtomic(state: FlowMotionState): void {
+  if (!flowMotionStateIsValid(state)) throw new Error("flow_motion_state_invalid_before_write");
+  const statePath = resolve(state.statePath);
+  if (!statePath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) || !statePath.toLowerCase().endsWith("flow-motion-state.json")) {
+    throw new Error("flow_motion_state_path_forbidden");
+  }
+  mkdirSync(dirname(statePath), { recursive: true });
+  const stateTempPath = `${statePath}.${process.pid}.tmp`;
+  writeFileSync(stateTempPath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  const packetTemps: Array<{ tempPath: string; packetPath: string }> = [];
+  for (const job of state.jobs) {
+    const packetPath = resolve(job.packetPath);
+    if (!packetPath.startsWith(`${dirname(statePath)}\\`) || dirname(packetPath) !== dirname(resolve(job.expectedVideoPath))) {
+      throw new Error("flow_motion_packet_path_forbidden");
+    }
+    const packetTempPath = `${packetPath}.${process.pid}.tmp`;
+    writeFileSync(packetTempPath, `${JSON.stringify({
+      schemaVersion: "money_shorts_flow_motion_approval_packet_v1",
+      job,
+      statePath: state.statePath,
+      status: job.status,
+      noSubmitBoundary: state.noSubmitBoundary,
+    }, null, 2)}\n`, "utf8");
+    packetTemps.push({ tempPath: packetTempPath, packetPath });
+  }
+  // 모든 새 파일이 완전히 써진 뒤 packet을 먼저 교체하고 source-of-truth state를 마지막에 교체한다.
+  // 중간 실패 시 새 state가 오래된 packet을 live 실행에 사용하게 되는 경로를 막는다.
+  for (const packet of packetTemps) renameSync(packet.tempPath, packet.packetPath);
+  renameSync(stateTempPath, statePath);
+}
+
+/** 정확한 장면별 승인 문구를 다시 대조한 뒤에만 live runner 실행 직전 상태를 연다. */
+export function authorizeWizardFlowMotionGeneration(
+  topicId: string,
+  jobId: string,
+  ownerApproval: string,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const target = resolveWizardFlowMotionJob(topicId, jobId);
+  if (!target.ok) return target;
+  if (target.job.status !== "approval_pending" && target.job.status !== "qa_failed") {
+    return { ok: false, reason: `flow_motion_job_not_approval_pending:${target.job.status}` };
+  }
+  if (ownerApproval !== target.job.approval.requiredWording) return { ok: false, reason: "flow_motion_owner_approval_text_mismatch" };
+  if (!existsSync(target.job.referenceFile)) return { ok: false, reason: "flow_motion_reference_missing" };
+  const referenceSha256 = createHash("sha256").update(readFileSync(target.job.referenceFile)).digest("hex");
+  if (referenceSha256 !== target.job.referenceSha256) return { ok: false, reason: "flow_motion_reference_hash_changed" };
+  try {
+    const at = new Date().toISOString();
+    let approvalState = target.state;
+    if (target.job.status === "qa_failed") {
+      if (existsSync(target.job.expectedVideoPath)) {
+        const stamp = at.replace(/[:.]/g, "-");
+        renameSync(target.job.expectedVideoPath, join(dirname(target.job.expectedVideoPath), `failed-${stamp}.mp4`));
+      }
+      approvalState = transitionFlowMotionJob(approvalState, jobId, {
+        to: "approval_pending",
+        at,
+        note: "A new exact Owner approval was supplied after the prior failed attempt.",
+      });
+    } else if (existsSync(target.job.expectedVideoPath)) {
+      return { ok: false, reason: "flow_motion_output_exists_manual_review_required" };
+    }
+    const approvalId = `owner-${createHash("sha256").update(`${ownerApproval}\n${at}`).digest("hex").slice(0, 20)}`;
+    writeWizardFlowMotionStateAtomic(transitionFlowMotionJob(approvalState, jobId, {
+      to: "generating",
+      at,
+      ownerApprovalId: approvalId,
+      execution: { status: "authorized", selectedProfile: null, submissionCount: 0, expectedCreditsSpent: 0, summaryPath: null },
+    }));
+    return { ok: true, status: readWizardFlowMotionStatus(topicId) };
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_authorization_write_failed:${(error as Error).message}` };
+  }
+}
+
+/** runner가 저장한 MP4 hash를 고정하고 Owner QA 대기 상태로만 이동한다. 기술 검증은 품질 통과가 아니다. */
+export function recordWizardFlowMotionGenerationResult(
+  topicId: string,
+  jobId: string,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const target = resolveWizardFlowMotionJob(topicId, jobId);
+  if (!target.ok) return target;
+  if (target.job.status !== "generating") return { ok: false, reason: `flow_motion_job_not_generating:${target.job.status}` };
+  if (!existsSync(target.job.expectedVideoPath)) return { ok: false, reason: "flow_motion_generated_video_missing" };
+  try {
+    const outputVideoSha256 = createHash("sha256").update(readFileSync(target.job.expectedVideoPath)).digest("hex");
+    const summaryPath = join(dirname(target.job.expectedVideoPath), "generation-summary.json");
+    const summary = readAbsJson(summaryPath) as {
+      schemaVersion?: string;
+      status?: string;
+      jobId?: string;
+      selectedProfile?: string;
+      submissionCount?: number;
+      expectedCreditsSpent?: number;
+      outputVideoPath?: string;
+      outputVideoSha256?: string;
+      probe?: { width?: number; height?: number; durationSec?: number };
+    } | null;
+    const selectedProfiles = ["Gemini 2", "Gemini 3", "Gemini 4"] as const;
+    if (summary?.schemaVersion !== "money_shorts_flow_motion_generation_summary_v1" ||
+      summary.status !== "OWNER_QA_REQUIRED" ||
+      summary.jobId !== jobId ||
+      !selectedProfiles.includes(summary.selectedProfile as (typeof selectedProfiles)[number]) ||
+      summary.submissionCount !== 1 ||
+      summary.expectedCreditsSpent !== target.job.providerTarget.expectedCreditsPerGeneration ||
+      resolve(summary.outputVideoPath ?? "") !== resolve(target.job.expectedVideoPath) ||
+      summary.outputVideoSha256 !== outputVideoSha256 ||
+      !summary.probe || Number(summary.probe.height) <= Number(summary.probe.width) ||
+      Number(summary.probe.durationSec) < 1 || Number(summary.probe.durationSec) > 20) {
+      return { ok: false, reason: "flow_motion_generation_summary_invalid" };
+    }
+    writeWizardFlowMotionStateAtomic(transitionFlowMotionJob(target.state, jobId, {
+      to: "qa_pending",
+      at: new Date().toISOString(),
+      outputVideoSha256,
+      note: "Flow runner technical checks passed; Owner visual QA is still required.",
+      execution: {
+        status: "downloaded",
+        selectedProfile: summary.selectedProfile as (typeof selectedProfiles)[number],
+        submissionCount: 1,
+        expectedCreditsSpent: summary.expectedCreditsSpent,
+        summaryPath,
+      },
+    }));
+    return { ok: true, status: readWizardFlowMotionStatus(topicId) };
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_result_write_failed:${(error as Error).message}` };
+  }
+}
+
+export function markWizardFlowMotionGenerationFailed(
+  topicId: string,
+  jobId: string,
+  note: string,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const target = resolveWizardFlowMotionJob(topicId, jobId);
+  if (!target.ok) return target;
+  if (target.job.status !== "generating" && target.job.status !== "qa_pending") {
+    return { ok: false, reason: `flow_motion_job_not_failure_candidate:${target.job.status}` };
+  }
+  try {
+    const summaryPath = join(dirname(target.job.expectedVideoPath), "generation-summary.json");
+    const summary = readAbsJson(summaryPath) as { selectedProfile?: string; submissionCount?: number; expectedCreditsSpent?: number } | null;
+    const selectedProfile = ["Gemini 2", "Gemini 3", "Gemini 4"].includes(summary?.selectedProfile ?? "")
+      ? summary?.selectedProfile as "Gemini 2" | "Gemini 3" | "Gemini 4"
+      : null;
+    const submissionCount = summary?.submissionCount === 1 ? 1 : 0;
+    writeWizardFlowMotionStateAtomic(transitionFlowMotionJob(target.state, jobId, {
+      to: "qa_failed",
+      at: new Date().toISOString(),
+      note: String(note || "Flow generation failed").slice(0, 240),
+      execution: {
+        status: "failed",
+        selectedProfile,
+        submissionCount,
+        expectedCreditsSpent: submissionCount === 1 ? target.job.providerTarget.expectedCreditsPerGeneration : 0,
+        summaryPath: existsSync(summaryPath) ? summaryPath : null,
+      },
+    }));
+    return { ok: true, status: readWizardFlowMotionStatus(topicId) };
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_failure_write_failed:${(error as Error).message}` };
+  }
+}
+
+export type WizardFlowMotionQaChecks = FlowMotionQaEvidence["checks"];
+
+/** Owner가 영상 자체를 본 뒤 7개 항목을 모두 통과시킨 경우에만 QA evidence와 render_ready를 함께 기록한다. */
+export function passWizardFlowMotionOwnerQa(
+  topicId: string,
+  jobId: string,
+  checks: Partial<Record<keyof WizardFlowMotionQaChecks, unknown>>,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const target = resolveWizardFlowMotionJob(topicId, jobId);
+  if (!target.ok) return target;
+  if (target.job.status !== "qa_pending") return { ok: false, reason: `flow_motion_job_not_qa_pending:${target.job.status}` };
+  const requiredChecks = [
+    "trueArticulatedMotion",
+    "cameraOnlyMotionRejected",
+    "identityContinuity",
+    "sceneContinuity",
+    "brightWarmNonPhotoreal3D",
+    "forbiddenDarkFinanceImageryAbsent",
+    "technicalArtifactsAbsent",
+  ] as const;
+  if (requiredChecks.some((key) => checks[key] !== true)) return { ok: false, reason: "flow_motion_owner_qa_checks_incomplete" };
+  if (!existsSync(target.job.expectedVideoPath)) return { ok: false, reason: "flow_motion_generated_video_missing" };
+  const videoSha256 = createHash("sha256").update(readFileSync(target.job.expectedVideoPath)).digest("hex");
+  if (videoSha256 !== target.job.qa.outputVideoSha256) return { ok: false, reason: "flow_motion_generated_video_hash_changed" };
+  try {
+    const reviewedAt = new Date().toISOString();
+    const evidenceId = `owner-qa-${createHash("sha256").update(`${jobId}\n${videoSha256}\n${reviewedAt}`).digest("hex").slice(0, 20)}`;
+    const evidence: FlowMotionQaEvidence = {
+      schemaVersion: FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION,
+      evidenceId,
+      jobId,
+      sceneNumber: target.job.sceneNumber,
+      videoSha256,
+      verdict: "pass",
+      reviewedBy: "owner",
+      reviewedAt,
+      checks: Object.fromEntries(requiredChecks.map((key) => [key, true])) as WizardFlowMotionQaChecks,
+    };
+    const evidenceTempPath = `${target.job.qaEvidencePath}.${process.pid}.tmp`;
+    writeFileSync(evidenceTempPath, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
+    renameSync(evidenceTempPath, target.job.qaEvidencePath);
+    const qaPass = transitionFlowMotionJob(target.state, jobId, { to: "qa_pass", at: reviewedAt, qaEvidenceId: evidenceId });
+    writeWizardFlowMotionStateAtomic(transitionFlowMotionJob(qaPass, jobId, { to: "render_ready", at: reviewedAt }));
+    return { ok: true, status: readWizardFlowMotionStatus(topicId) };
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_qa_write_failed:${(error as Error).message}` };
+  }
+}
+
+/** 실패 후보는 삭제하지 않고 같은 장면 폴더에 보존한 뒤 새 승인을 받을 수 있는 상태로 되돌린다. */
+export function failWizardFlowMotionOwnerQa(
+  topicId: string,
+  jobId: string,
+  note: string,
+): { ok: true; status: WizardFlowMotionStatus } | { ok: false; reason: string } {
+  const failed = markWizardFlowMotionGenerationFailed(topicId, jobId, note || "Owner visual QA failed");
+  if (!failed.ok) return failed;
+  const target = resolveWizardFlowMotionJob(topicId, jobId);
+  if (!target.ok) return target;
+  try {
+    if (existsSync(target.job.expectedVideoPath)) {
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      renameSync(target.job.expectedVideoPath, join(dirname(target.job.expectedVideoPath), `rejected-${stamp}.mp4`));
+    }
+    writeWizardFlowMotionStateAtomic(transitionFlowMotionJob(target.state, jobId, {
+      to: "approval_pending",
+      at: new Date().toISOString(),
+      note: String(note || "Owner visual QA failed; a new explicit approval is required.").slice(0, 240),
+    }));
+    return { ok: true, status: readWizardFlowMotionStatus(topicId) };
+  } catch (error) {
+    return { ok: false, reason: `flow_motion_qa_reject_write_failed:${(error as Error).message}` };
   }
 }
 
@@ -7604,6 +7925,8 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
       referenceSha256: job.referenceSha256,
       promptSha256: job.promptSha256,
       requiredApprovalWording: job.approval.requiredWording,
+      outputVideoSha256: job.qa.outputVideoSha256,
+      execution: job.execution,
       renderAssetReady: flowMotionRenderAssetIsReady(job),
     }));
     return {
@@ -7633,6 +7956,8 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
         ? "qa_failed"
         : partRows.some((part) => part.state === "generating")
           ? "generating"
+          : partRows.some((part) => part.state === "qa_pending")
+            ? "qa_pending"
           : partRows.some((part) => part.state === "qa_pass")
             ? "qa_pass"
             : renderReadyCount === requiredCount
@@ -7644,6 +7969,7 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
     preparedCount,
     approvalPendingCount: count("approval_pending"),
     generatingCount: count("generating"),
+    qaPendingCount: count("qa_pending"),
     qaPassCount: count("qa_pass"),
     qaFailedCount: count("qa_failed"),
     renderReadyCount,

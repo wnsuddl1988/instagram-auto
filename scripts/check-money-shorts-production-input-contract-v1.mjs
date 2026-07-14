@@ -15,6 +15,8 @@ const VISUAL_PATH = path.join(ROOT, "lib", "finance-visual-evidence-engine.ts");
 const DISCOVERY_PATH = path.join(ROOT, "lib", "platform-discovery-metadata.ts");
 const CHARACTER_CAST_PATH = path.join(ROOT, "lib", "finance-character-cast.ts");
 const CHARACTER_VOICE_CAST_PATH = path.join(ROOT, "lib", "finance-character-voice-cast.ts");
+const VEO_SCENE_SELECTOR_PATH = path.join(ROOT, "lib", "veo-scene-selector.ts");
+const FLOW_MOTION_JOBS_PATH = path.join(ROOT, "lib", "flow-motion-jobs.ts");
 const HELPER_PATH = path.join(ROOT, "lib", "owner-web-operator.ts");
 const nodeRequire = createRequire(import.meta.url);
 
@@ -72,6 +74,11 @@ const characterVoiceCastModule = loadTypescriptModule(CHARACTER_VOICE_CAST_PATH,
   if (specifier === "./finance-editorial-topic-bank") return bankModule;
   return nodeRequire(specifier);
 });
+const veoSceneSelectorModule = loadTypescriptModule(VEO_SCENE_SELECTOR_PATH);
+const flowMotionJobsModule = loadTypescriptModule(FLOW_MOTION_JOBS_PATH, (specifier) => {
+  if (specifier === "./veo-scene-selector") return veoSceneSelectorModule;
+  return nodeRequire(specifier);
+});
 const helperModule = loadTypescriptModule(HELPER_PATH, (specifier) => {
   if (specifier === "./finance-editorial-topic-bank") return bankModule;
   if (specifier === "./finance-editorial-script-engine") return engineModule;
@@ -79,6 +86,8 @@ const helperModule = loadTypescriptModule(HELPER_PATH, (specifier) => {
   if (specifier === "./platform-discovery-metadata") return discoveryModule;
   if (specifier === "./finance-character-cast") return characterCastModule;
   if (specifier === "./finance-character-voice-cast") return characterVoiceCastModule;
+  if (specifier === "./veo-scene-selector") return veoSceneSelectorModule;
+  if (specifier === "./flow-motion-jobs") return flowMotionJobsModule;
   return nodeRequire(specifier);
 });
 
