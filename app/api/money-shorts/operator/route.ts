@@ -995,7 +995,7 @@ export async function POST(request: Request) {
         action,
         status: "success",
         summary: `최종 영상 ${mediaAfterVid.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 편별로 재생됩니다.`,
-        detail: "실제 목소리와 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
+        detail: "선정 장면은 검수 완료 Veo 클립, 나머지는 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
         raw: { finalVideo: mediaAfterVid.finalVideo, mediaQualityGate: mediaAfterVid.mediaQualityGate },
         noLive: true,
       });
@@ -1260,6 +1260,8 @@ function describeBuildFailure(reason: string): string {
     return "먼저 [실제 목소리 만들기]로 실제 음성을 만들어 주세요. 테스트 소리는 사용할 수 없습니다.";
   if (reason === "real_scene_images_required")
     return "먼저 [장면 이미지 만들기]로 확정 대본 흐름에 맞는 실제 장면 이미지를 모두 만들어 주세요.";
+  if (reason.startsWith("flow_motion_render_ready_required:"))
+    return "자동 선정된 Veo 장면이 아직 검수 완료되지 않았습니다. [Veo 모션 준비]에서 모든 장면이 렌더 준비 상태인지 확인해 주세요.";
   if (reason === "finance_character_reference_not_selected" || reason === "finance_character_reference_required")
     return "먼저 [주인공 이미지 검수]에서 담당 캐릭터의 기준 이미지를 확정해 주세요.";
   if (reason.startsWith("finance_character_reference_") || reason === "finance_character_subtopic_missing")

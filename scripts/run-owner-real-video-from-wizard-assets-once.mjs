@@ -12,6 +12,7 @@
  *   --tts-script    tts-script.real.json (scene text/role source)
  *   --audio-summary elevenlabs-scene-paced-tts-summary.json (generated audio duration = 영상 scene 경계의 단일 소스)
  *   --images-dir    scene-01..NN.png + scene-images-summary.json (allReady=true)
+ *   --flow-motion-state flow-motion-state.json (veo_motion 장면은 render_ready + Owner QA 필수)
  *   --out-dir       repo 밖 C:\tmp 하위
  *
  * 산출: final-<slug>.mp4 + real-video-summary.json (ffprobe 검증값 + media quality gate).
@@ -39,6 +40,11 @@ import {
   buildLayeredMotionFilter,
   buildSceneMotionRecipe,
 } from "./_money-shorts-layered-motion.mjs";
+import {
+  HYBRID_MOTION_RENDERER_VERSION,
+  buildVeoMotionSegmentFilter,
+  resolveFlowMotionRenderInputs,
+} from "./_flow-motion-render-input.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -52,10 +58,11 @@ const scriptArg = getArg("--script");
 const ttsScriptArg = getArg("--tts-script");
 const audioSummaryArg = getArg("--audio-summary");
 const imagesDirArg = getArg("--images-dir");
+const flowMotionStateArg = getArg("--flow-motion-state");
 const outDirArg = getArg("--out-dir");
-if (!scriptArg || !ttsScriptArg || !audioSummaryArg || !imagesDirArg || !outDirArg) {
+if (!scriptArg || !ttsScriptArg || !audioSummaryArg || !imagesDirArg || !flowMotionStateArg || !outDirArg) {
   console.error(
-    "Usage: node run-owner-real-video-from-wizard-assets-once.mjs --script <script-final.json> --tts-script <tts-script.real.json> --audio-summary <summary.json> --images-dir <dir> --out-dir <dir>",
+    "Usage: node run-owner-real-video-from-wizard-assets-once.mjs --script <script-final.json> --tts-script <tts-script.real.json> --audio-summary <summary.json> --images-dir <dir> --flow-motion-state <state.json> --out-dir <dir>",
   );
   process.exit(2);
 }
@@ -68,6 +75,7 @@ const PATH_INPUTS = [
   ["--tts-script", path.resolve(ttsScriptArg)],
   ["--audio-summary", path.resolve(audioSummaryArg)],
   ["--images-dir", path.resolve(imagesDirArg)],
+  ["--flow-motion-state", path.resolve(flowMotionStateArg)],
   ["--out-dir", OUT_DIR],
 ];
 for (const [flag, abs] of PATH_INPUTS) {
@@ -80,7 +88,7 @@ if (OUT_DIR.startsWith(REPO_ROOT + "\\") || OUT_DIR.startsWith(REPO_ROOT + "/"))
   console.error("ABORT: --out-dir must be outside repo root.");
   process.exit(2);
 }
-if ([scriptArg, ttsScriptArg, audioSummaryArg, imagesDirArg, OUT_DIR].some((p) => String(p).includes(".money-shorts-local"))) {
+if ([scriptArg, ttsScriptArg, audioSummaryArg, imagesDirArg, flowMotionStateArg, OUT_DIR].some((p) => String(p).includes(".money-shorts-local"))) {
   console.error("ABORT: .money-shorts-local access forbidden.");
   process.exit(2);
 }
@@ -233,6 +241,23 @@ for (let i = 1; i <= scriptSceneCount; i++) {
   if (!fs.existsSync(f)) abortBlocked("REAL_SCENE_IMAGES_REQUIRED", `scene 이미지 없음: ${f}`);
   imageFiles.push(f);
 }
+
+const flowMotionInput = resolveFlowMotionRenderInputs({
+  record,
+  imagesDir: IMAGES_DIR,
+  statePath: path.resolve(flowMotionStateArg),
+  probeVideo: (target) => {
+    const probe = ffprobeJson(target);
+    const video = probe?.streams?.find((stream) => stream.codec_type === "video") ?? null;
+    return {
+      hasVideoStream: video != null,
+      width: Number(video?.width),
+      height: Number(video?.height),
+      durationSec: Number(probe?.format?.duration),
+    };
+  },
+});
+if (!flowMotionInput.ok) abortBlocked(flowMotionInput.code, flowMotionInput.note);
 
 const plannedScenes = ttsScript.scenes.slice().sort((a, b) => a.sceneNumber - b.sceneNumber);
 const durations = audioTimelineScenes.map((s) => Number(s.normalizedDurationSec));
@@ -417,10 +442,11 @@ function ffprobeJson(target) {
   try { return JSON.parse(r.stdout); } catch { return null; }
 }
 
-// ── step 1: motionPlan 기반 장면별 레이어 모션 세그먼트 ──────────────────────
+// ── step 1: still=레이어 모션, veo_motion=검수 완료 MP4 세그먼트 ─────────────
 log(`scene segments: ${scriptSceneCount}개, 총 ${totalSec}s (오디오 timeline ${audioSummary.timelineDurationSec ?? "?"}s)`);
 const segFiles = [];
-const motionSegments = [];
+const layeredMotionSegments = [];
+const sceneMotionSegments = [];
 for (let i = 0; i < scriptSceneCount; i++) {
   const dur = durations[i];
   const frames = Math.round(dur * 30);
@@ -428,6 +454,28 @@ for (let i = 0; i < scriptSceneCount; i++) {
   segFiles.push(seg);
   const scriptScene = record.script.scenes[i];
   const imageScene = imageSummaryScenes[i];
+  const visualAsset = flowMotionInput.assets[i];
+  if (visualAsset?.source === "veo_motion") {
+    const motionFilter = buildVeoMotionSegmentFilter(dur);
+    sceneMotionSegments.push({
+      sceneIndex: i + 1,
+      stage: String(scriptScene?.id ?? "unknown"),
+      source: "veo_motion",
+      inputVideoSha256: visualAsset.inputVideoSha256,
+      inputDurationSec: visualAsset.inputDurationSec,
+      qaEvidenceId: visualAsset.qaEvidenceId,
+      trueArticulatedMotion: visualAsset.trueArticulatedMotion === true,
+      timelineDurationSec: dur,
+    });
+    runFfmpeg(
+      ["-y", "-i", visualAsset.inputPath,
+        "-filter_complex", motionFilter, "-map", "[motionout]", "-frames:v", String(frames),
+        "-c:v", "libx264", "-crf", "21", "-preset", "fast", "-an", seg],
+      `Veo segment scene-${i + 1}`,
+    );
+    log(`  seg-${i + 1}: ${dur}s (${frames}f), Veo render_ready/Owner QA`);
+    continue;
+  }
   const motionRecipe = buildSceneMotionRecipe({
     stage: scriptScene?.id,
     motionPlan: scriptScene?.visualEvidence?.motionPlan,
@@ -435,13 +483,16 @@ for (let i = 0; i < scriptSceneCount; i++) {
     sceneIndex: i + 1,
   });
   const motionFilter = buildLayeredMotionFilter({ recipe: motionRecipe, frames, durationSec: dur });
-  motionSegments.push({
+  const layeredSegment = {
     ...motionRecipe,
+    source: "layered_still",
     motionPlanFingerprint: createHash("sha256")
       .update(String(scriptScene?.visualEvidence?.motionPlan ?? ""))
       .digest("hex")
       .slice(0, 16),
-  });
+  };
+  layeredMotionSegments.push(layeredSegment);
+  sceneMotionSegments.push(layeredSegment);
   runFfmpeg(
     ["-y", "-loop", "1", "-framerate", "30", "-i", imageFiles[i],
       "-filter_complex", motionFilter, "-map", "[motionout]", "-frames:v", String(frames),
@@ -450,9 +501,9 @@ for (let i = 0; i < scriptSceneCount; i++) {
   );
   log(`  seg-${i + 1}: ${dur}s (${frames}f), ${motionRecipe.cameraMode}/${motionRecipe.presenceMode}`);
 }
-const motionAudit = buildLayeredMotionAudit(motionSegments);
+const motionAudit = buildLayeredMotionAudit(layeredMotionSegments);
 if (!motionAudit.passed) {
-  abortBlocked("LAYERED_MOTION_AUDIT_FAILED", `장면별 실제 모션 계약 위반: ${JSON.stringify(motionAudit)}`);
+  abortBlocked("LAYERED_MOTION_AUDIT_FAILED", `정지 이미지 장면의 레이어 모션 계약 위반: ${JSON.stringify(motionAudit)}`);
 }
 
 // ── step 2: 세그먼트 concat (재인코딩 없음) ───────────────────────────────────
@@ -550,6 +601,12 @@ const checks = {
     coverAudit.passed === true
   ),
   layeredMotionRenderer: motionAudit.passed === true,
+  flowMotionRenderInput: flowMotionInput.audit.passed === true,
+  motionSourceCoverage: sceneMotionSegments.length === scriptSceneCount,
+  trueVeoMotionCoverage:
+    flowMotionInput.audit.renderReadySceneCount === flowMotionInput.audit.requiredSceneCount &&
+    sceneMotionSegments.filter((scene) => scene.source === "veo_motion" && scene.trueArticulatedMotion === true).length ===
+      flowMotionInput.audit.requiredSceneCount,
 };
 const ok = Object.values(checks).every(Boolean);
 
@@ -583,9 +640,11 @@ const summary = {
   captionAudit,
   imageMode: "chatgpt_playwright",
   visualEngineVersion: expectedVisualEngineVersion,
-  motionRendererVersion: LAYERED_MOTION_RENDERER_VERSION,
+  motionRendererVersion: HYBRID_MOTION_RENDERER_VERSION,
+  layeredMotionRendererVersion: LAYERED_MOTION_RENDERER_VERSION,
   motionAudit,
-  sceneMotion: motionSegments,
+  flowMotionAudit: flowMotionInput.audit,
+  sceneMotion: sceneMotionSegments,
   sceneTimeline: scenes.map((s, i) => ({ sceneNumber: i + 1, startSec: s.startSec, endSec: s.endSec, durationSec: s.durationSec })),
   validation: checks,
   notUploaded: true,

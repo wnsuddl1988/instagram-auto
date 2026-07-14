@@ -5,6 +5,8 @@ import { VEO_SCENE_SELECTION_CONTRACT_VERSION, type SceneMediaStrategy } from ".
 
 export const FLOW_MOTION_JOB_CONTRACT_VERSION = "money_shorts_flow_motion_job_v1" as const;
 export const FLOW_MOTION_STATE_CONTRACT_VERSION = "money_shorts_flow_motion_state_v1" as const;
+export const FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION = "money_shorts_flow_motion_qa_evidence_v1" as const;
+export const FLOW_MOTION_RENDER_AUDIT_VERSION = "money_shorts_flow_motion_render_audit_v1" as const;
 
 export const FLOW_MOTION_PROVIDER_TARGET = Object.freeze({
   provider: "Google Flow",
@@ -120,6 +122,26 @@ export type FlowMotionTransition = {
   outputVideoSha256?: string;
   qaEvidenceId?: string;
   note?: string;
+};
+
+export type FlowMotionQaEvidence = {
+  schemaVersion: typeof FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION;
+  evidenceId: string;
+  jobId: string;
+  sceneNumber: number;
+  videoSha256: string;
+  verdict: "pass";
+  reviewedBy: "owner";
+  reviewedAt: string;
+  checks: {
+    trueArticulatedMotion: true;
+    cameraOnlyMotionRejected: true;
+    identityContinuity: true;
+    sceneContinuity: true;
+    brightWarmNonPhotoreal3D: true;
+    forbiddenDarkFinanceImageryAbsent: true;
+    technicalArtifactsAbsent: true;
+  };
 };
 
 function sha256(value: string): string {

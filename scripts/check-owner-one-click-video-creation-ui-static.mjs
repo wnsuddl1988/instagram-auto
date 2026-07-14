@@ -672,9 +672,11 @@ check("wizard renders quality summary from script.quality", /script\.quality/.te
 const imgScriptPath = path.join(ROOT, "scripts", "run-owner-real-scene-images-from-wizard-script-once.mjs");
 const vidScriptPath = path.join(ROOT, "scripts", "run-owner-real-video-from-wizard-assets-once.mjs");
 const motionHelperPath = path.join(ROOT, "scripts", "_money-shorts-layered-motion.mjs");
+const flowMotionRenderInputPath = path.join(ROOT, "scripts", "_flow-motion-render-input.mjs");
 const imgScriptSrc = existsSync(imgScriptPath) ? readFileSync(imgScriptPath, "utf8") : "";
 const vidScriptSrc = existsSync(vidScriptPath) ? readFileSync(vidScriptPath, "utf8") : "";
 const motionHelperSrc = existsSync(motionHelperPath) ? readFileSync(motionHelperPath, "utf8") : "";
+const flowMotionRenderInputSrc = existsSync(flowMotionRenderInputPath) ? readFileSync(flowMotionRenderInputPath, "utf8") : "";
 const imgScriptCode = stripComments(imgScriptSrc);
 const pkgJson = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
 const pkgDeps = JSON.stringify({ ...(pkgJson.dependencies ?? {}), ...(pkgJson.devDependencies ?? {}) });
@@ -1004,20 +1006,23 @@ check("video script rejects non-elevenlabs / non-live audio summary", /provider 
 check("video script rejects unverified or placeholder images", /imageControllerVersion !== IMAGE_CONTROLLER_VERSION/.test(vidScriptSrc) && /allReady !== true/.test(vidScriptSrc));
 check("video script rejects images without the hairstyle continuity audit", /CHARACTER_CONTINUITY_VERSION/.test(vidScriptSrc) && /characterContinuityAudit\?\.passed !== true/.test(vidScriptSrc));
 check("video script enforces C:\\tmp out-dir", /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc) && vidScriptSrc.includes("money-shorts-os"));
-// [D2] 최종영상 스크립트: 5개 입력/출력 전부 C:\tmp\money-shorts-os\ 하위 강제 (Codex finding 2 fix)
+// [D2] 최종영상 스크립트: 6개 입력/출력 전부 C:\tmp\money-shorts-os\ 하위 강제
 check(
-  "video script forces ALL 5 path args under C:\\tmp\\money-shorts-os",
+  "video script forces ALL 6 path args under C:\\tmp\\money-shorts-os",
   /MEDIA_ROOT_RE\s*=\s*\/\^C:\[\\\\\/\]\+tmp\[\\\\\/\]\+money-shorts-os\[\\\\\/\]\+\/i/.test(vidScriptSrc) &&
-    ["--script", "--tts-script", "--audio-summary", "--images-dir", "--out-dir"].every((f) => vidScriptSrc.includes(f)) &&
+    ["--script", "--tts-script", "--audio-summary", "--images-dir", "--flow-motion-state", "--out-dir"].every((f) => vidScriptSrc.includes(f)) &&
     /for\s*\(const \[flag, abs\] of PATH_INPUTS\)/.test(vidScriptSrc) &&
     /MEDIA_ROOT_RE\.test\(abs/.test(vidScriptSrc),
 );
 check("video script validates 1080x1920 + 15~60s + audio/video streams + size", /width1080/.test(vidScriptSrc) && /height1920/.test(vidScriptSrc) && /duration15to60/.test(vidScriptSrc) && /hasAudioStream/.test(vidScriptSrc) && /fileSizePositive/.test(vidScriptSrc));
 check(
-  "video renderer consumes every scene motionPlan with varied camera, parallax and micro-motion layers",
+  "video renderer uses layered motion for stills and verified Veo MP4 for selected scenes",
   /buildSceneMotionRecipe/.test(vidScriptSrc) &&
     /buildLayeredMotionFilter/.test(vidScriptSrc) &&
     /buildLayeredMotionAudit/.test(vidScriptSrc) &&
+    /resolveFlowMotionRenderInputs/.test(vidScriptSrc) &&
+    /source === "veo_motion"/.test(vidScriptSrc) &&
+    /FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION/.test(flowMotionRenderInputSrc) &&
     /foregroundalpha/.test(motionHelperSrc) &&
     /characteralpha/.test(motionHelperSrc) &&
     /handsalpha/.test(motionHelperSrc) &&
@@ -1049,14 +1054,16 @@ check(
 );
 check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode) && /durationSec\s*<=\s*60/.test(helperCode));
 check(
-  "helper rejects final videos without the layered motion audit",
-  /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v2"/.test(helperCode) &&
-    /videoSummary\.motionRendererVersion\s*===\s*WIZARD_MOTION_RENDERER_VERSION/.test(helperCode) &&
-    /motionAudit\?\.layeredParallaxCoveragePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\?\.characterMicroMotionCoveragePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\?\.localizedMotionCoveragePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\?\.visibleMicroMotionAmplitudePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\?\.passed\s*===\s*true/.test(helperCode),
+  "helper rejects final videos without the hybrid still/Veo motion audit",
+  /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_hybrid_motion_renderer_v1"/.test(helperCode) &&
+    /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v2"/.test(helperCode) &&
+    /wizardHybridMotionSummaryIsReady/.test(helperCode) &&
+    /motionAudit\.layeredParallaxCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\.characterMicroMotionCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\.localizedMotionCoveragePass\s*===\s*true/.test(helperCode) &&
+    /flowMotionAudit\.videoHashCoveragePass\s*===\s*true/.test(helperCode) &&
+    /flowMotionAudit\.ownerQaCoveragePass\s*===\s*true/.test(helperCode) &&
+    /flowMotionAudit\.passed\s*===\s*true/.test(helperCode),
 );
 check("helper rejects legacy sparse, punctuation-heavy and monotone caption videos", /WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION/.test(helperCode) && /full_script_dynamic_semantic_aligned_v6/.test(helperCode) && /fullScriptCoveragePass/.test(helperCode) && /sentenceSemanticSegmentationPass/.test(helperCode) && /arbitraryMidPhraseSplitAbsent/.test(helperCode) && /displayTerminalPunctuationAbsent/.test(helperCode) && /multiPositionNarrativeFlowPass/.test(helperCode) && /semanticColorPalettePass/.test(helperCode) && /motionDiversityPass/.test(helperCode) && /captionCoverageRatio\s*===\s*1/.test(helperCode));
 check("UI final video states exist (최종 영상 준비 / 시안 영상 · 업로드 불가)", wizardSrc.includes("최종 영상 준비") && wizardSrc.includes("시안 영상") && wizardSrc.includes("업로드 불가"));

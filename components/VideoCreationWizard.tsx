@@ -263,6 +263,7 @@ type WizardFlowMotionStatus = {
       referenceSha256: string;
       promptSha256: string;
       requiredApprovalWording: string;
+      renderAssetReady: boolean;
     }>;
   }>;
 };
@@ -539,6 +540,7 @@ export default function VideoCreationWizard() {
   const realImagesReady = realMedia?.realImages.ready === true;
   const selectedFlowMotionSceneCount = flowMotion?.requiredCount ?? script?.scenes?.filter((scene) => scene.mediaStrategy === "veo_motion").length ?? 0;
   const flowMotionPrepared = flowMotion?.state !== "not_prepared" && flowMotion?.state !== undefined;
+  const flowMotionReadyForRender = flowMotion?.readyForRender === true;
   const finalVideoReady = realMedia?.finalVideo.ready === true;
   const mediaGateOk = realMedia?.mediaQualityGate.ok === true;
   const productionPartCount = realMedia?.production.totalParts ?? script?.videoStrategy?.parts.length ?? 1;
@@ -547,8 +549,8 @@ export default function VideoCreationWizard() {
     ? `영상 ${productionPartCount}개, 총 ${plannedSceneCount}장면의 흐름에 맞춰 서로 다른 실제 장면 이미지를 만듭니다. 몇 분 걸릴 수 있습니다.`
     : "확정 대본의 장면 흐름에 맞춰 서로 다른 실제 장면 이미지를 만듭니다. 몇 분 걸릴 수 있습니다.";
   const finalVideoStepDescription = plannedSceneCount != null
-    ? `실제 목소리와 장면 이미지 ${plannedSceneCount}장을 썸네일·자막·모션과 함께 최종 mp4 ${productionPartCount}개로 합성합니다.`
-    : "확정 대본의 실제 목소리와 장면 이미지를 자막·모션과 함께 최종 mp4로 합성합니다.";
+    ? `실제 목소리와 장면 이미지 ${plannedSceneCount}장에 검수 완료 Veo 모션 장면을 결합해 최종 mp4 ${productionPartCount}개로 합성합니다.`
+    : "확정 대본의 실제 목소리·장면 이미지와 검수 완료 Veo 모션을 최종 mp4로 합성합니다.";
 
   // 업로드 게이트 파생 상태 — 최종 영상(media gate) → 게시 전 점검 통과 → 명시 확인 순서를 강제한다.
   const preflightDone = mediaGateOk && preflightState === "success";
@@ -1829,7 +1831,7 @@ export default function VideoCreationWizard() {
                   part.jobs.map((job) => (
                     <div key={job.jobId} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
                       <p className="font-semibold text-slate-800">
-                        {part.id === "single" ? "단일편" : `${part.partNumber}편`} · 장면 {job.sceneNumber} · {FLOW_MOTION_STATUS_LABEL[job.status]}
+                        {part.id === "single" ? "단일편" : `${part.partNumber}편`} · 장면 {job.sceneNumber} · {job.status === "render_ready" && !job.renderAssetReady ? "검수 파일 불일치" : FLOW_MOTION_STATUS_LABEL[job.status]}
                       </p>
                       <p className="mt-1 break-all">패킷: {job.packetPath}</p>
                       <p className="mt-2 break-words text-xs text-slate-500">{job.requiredApprovalWording}</p>
@@ -1853,7 +1855,7 @@ export default function VideoCreationWizard() {
               type="button"
               data-testid="wizard-action-final-video"
               className={RUN_BTN}
-              disabled={!runnable || !selectedTopicId || !realTtsReady || !realImagesReady}
+              disabled={!runnable || !selectedTopicId || !realTtsReady || !realImagesReady || !flowMotionReadyForRender}
               onClick={runFinalVideo}
             >
               최종 영상 만들기
@@ -1868,6 +1870,11 @@ export default function VideoCreationWizard() {
             <p className="text-sm text-slate-400 mt-2">
               먼저 [실제 목소리 만들기]와 [장면 이미지 만들기]를 완료해 주세요. 테스트 소리·색상 카드로는 최종 영상을
               만들 수 없습니다.
+            </p>
+          ) : !flowMotionReadyForRender ? (
+            <p className="text-sm text-amber-700 mt-2">
+              자동 선정된 Veo 장면이 아직 렌더 준비 상태가 아닙니다. [Veo 모션 준비]에서 생성 승인·영상 검수까지 완료해야
+              최종 영상을 만들 수 있습니다.
             </p>
           ) : null}
           {finalVideoState === "running" ? (

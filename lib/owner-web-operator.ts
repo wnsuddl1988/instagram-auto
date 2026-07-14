@@ -83,11 +83,13 @@ import {
   type SceneMediaStrategySource,
 } from "./veo-scene-selector";
 import {
+  FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION,
   FLOW_MOTION_STATE_CONTRACT_VERSION,
   buildFlowMotionState,
   flowMotionStateIsValid,
   type FlowMotionJob,
   type FlowMotionJobStatus,
+  type FlowMotionQaEvidence,
   type FlowMotionState,
 } from "./flow-motion-jobs";
 
@@ -200,7 +202,9 @@ export const WIZARD_VOICE_OUT_DIR = "C:\\tmp\\money-shorts-os\\web-wizard-voice-
 export const WIZARD_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v11";
 export const WIZARD_IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
 export const WIZARD_VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
-export const WIZARD_MOTION_RENDERER_VERSION = "money_shorts_layered_motion_renderer_v2";
+export const WIZARD_MOTION_RENDERER_VERSION = "money_shorts_hybrid_motion_renderer_v1";
+export const WIZARD_LAYERED_MOTION_RENDERER_VERSION = "money_shorts_layered_motion_renderer_v2";
+export const WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION = "money_shorts_flow_motion_render_audit_v1";
 const WIZARD_VISUAL_OUTPUT_DIR = "images-3d-editorial-sequence-v11";
 const WIZARD_REAL_VIDEO_OUTPUT_DIR = "video-3d-editorial-sequence-v11";
 export const WIZARD_TTS_ENGINE_VERSION = "money_shorts_korean_director_v2";
@@ -224,6 +228,57 @@ type WizardLayeredMotionAudit = {
   distinctCameraModesPass?: boolean;
   passed?: boolean;
 };
+type WizardFlowMotionRenderAudit = {
+  version?: string;
+  requiredSceneNumbers?: number[];
+  requiredSceneCount?: number;
+  renderReadySceneCount?: number;
+  ownerQaEvidenceCount?: number;
+  videoHashCoveragePass?: boolean;
+  portraitVideoCoveragePass?: boolean;
+  ownerQaCoveragePass?: boolean;
+  noVeoMotionRequired?: boolean;
+  passed?: boolean;
+};
+type WizardHybridMotionSummary = {
+  motionRendererVersion?: string;
+  layeredMotionRendererVersion?: string;
+  motionAudit?: WizardLayeredMotionAudit;
+  flowMotionAudit?: WizardFlowMotionRenderAudit;
+};
+
+function wizardHybridMotionSummaryIsReady(
+  summary: WizardHybridMotionSummary | null | undefined,
+  expectedSceneCount: number,
+  scenes: Array<{ mediaStrategy?: string }>,
+): boolean {
+  const expectedVeoSceneNumbers = scenes
+    .map((scene, index) => scene.mediaStrategy === "veo_motion" ? index + 1 : null)
+    .filter((sceneNumber): sceneNumber is number => sceneNumber !== null);
+  const actualVeoSceneNumbers = summary?.flowMotionAudit?.requiredSceneNumbers ?? [];
+  return summary?.motionRendererVersion === WIZARD_MOTION_RENDERER_VERSION &&
+    summary.layeredMotionRendererVersion === WIZARD_LAYERED_MOTION_RENDERER_VERSION &&
+    summary.motionAudit?.version === WIZARD_LAYERED_MOTION_RENDERER_VERSION &&
+    summary.motionAudit.sceneCount === expectedSceneCount - expectedVeoSceneNumbers.length &&
+    summary.motionAudit.planCoveragePass === true &&
+    summary.motionAudit.layeredParallaxCoveragePass === true &&
+    summary.motionAudit.characterMicroMotionCoveragePass === true &&
+    summary.motionAudit.handActionMicroMotionCoveragePass === true &&
+    summary.motionAudit.localizedMotionCoveragePass === true &&
+    summary.motionAudit.visibleMicroMotionAmplitudePass === true &&
+    summary.motionAudit.distinctCameraModesPass === true &&
+    summary.motionAudit.passed === true &&
+    summary.flowMotionAudit?.version === WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION &&
+    summary.flowMotionAudit.requiredSceneCount === expectedVeoSceneNumbers.length &&
+    summary.flowMotionAudit.renderReadySceneCount === expectedVeoSceneNumbers.length &&
+    summary.flowMotionAudit.ownerQaEvidenceCount === expectedVeoSceneNumbers.length &&
+    summary.flowMotionAudit.videoHashCoveragePass === true &&
+    summary.flowMotionAudit.portraitVideoCoveragePass === true &&
+    summary.flowMotionAudit.ownerQaCoveragePass === true &&
+    summary.flowMotionAudit.passed === true &&
+    actualVeoSceneNumbers.length === expectedVeoSceneNumbers.length &&
+    actualVeoSceneNumbers.every((sceneNumber, index) => sceneNumber === expectedVeoSceneNumbers[index]);
+}
 export const WIZARD_AV_SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
 export const WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID = "gen-finance-editorial-v2-housing_asset_gap-psychology_gap-04";
 /** 주제별 대본 조립 규칙이 바뀌면 이전 확정본을 재사용하지 않는다. */
@@ -680,10 +735,11 @@ export function buildOperatorCommand(
     }
 
     case "finalVideoCreate": {
-      // 실제 음성 + 확정 대본 수만큼의 실제 이미지가 준비된 뒤에만 최종 mp4 합성을 허용한다(fail-closed).
+      // 실제 음성·이미지와 선정된 모든 Veo 장면의 render_ready 상태가 준비된 뒤에만 합성한다.
       const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
       if (!real.ok) return { ok: false, reason: real.reason };
       const media = readWizardRealMediaState(input?.topicId ?? "");
+      const flowMotion = readWizardFlowMotionStatus(input?.topicId ?? "");
       const part = input?.productionPartId
         ? real.paths.parts.find((candidate) => candidate.id === input.productionPartId)
         : real.paths.parts.length === 1 ? real.paths.parts[0] : null;
@@ -691,6 +747,12 @@ export function buildOperatorCommand(
       const partMedia = media.parts.find((candidate) => candidate.id === part.id);
       if (!partMedia?.realTts.ready) return { ok: false, reason: "real_tts_required" };
       if (!partMedia.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
+      const partFlowMotion = flowMotion.parts.find((candidate) => candidate.id === part.id);
+      if (!partFlowMotion || (partFlowMotion.requiredCount > 0 && (
+        partFlowMotion.state !== "render_ready" ||
+        partFlowMotion.jobs.length !== partFlowMotion.requiredCount ||
+        partFlowMotion.jobs.some((job) => job.status !== "render_ready")
+      ))) return { ok: false, reason: `flow_motion_render_ready_required:${part.id}` };
       return {
         ok: true,
         command: {
@@ -704,6 +766,8 @@ export function buildOperatorCommand(
             part.ttsSummaryPath,
             "--images-dir",
             part.imagesOutDir,
+            "--flow-motion-state",
+            flowMotionStatePath(part),
             "--out-dir",
             part.videoOutDir,
           ],
@@ -5946,8 +6010,12 @@ function readWizardFinalPreviewMp4Path(topicId: string): string | null {
     hasAudioStream?: boolean;
     hasVideoStream?: boolean;
     motionRendererVersion?: string;
+    layeredMotionRendererVersion?: string;
     motionAudit?: WizardLayeredMotionAudit;
+    flowMotionAudit?: WizardFlowMotionRenderAudit;
   } | null;
+  const record = readWizardFinalScriptRecord(topicId);
+  const previewScenes = record?.script.scenes ?? [];
   if (
     summary?.schemaVersion === "wizard_real_video_summary_v1" &&
     summary.status === "RENDER_MUX_OK" &&
@@ -5955,8 +6023,8 @@ function readWizardFinalPreviewMp4Path(topicId: string): string | null {
     typeof summary.finalMp4Path === "string" &&
     summary.width === 1080 && summary.height === 1920 &&
     summary.hasAudioStream === true && summary.hasVideoStream === true &&
-    summary.motionRendererVersion === WIZARD_MOTION_RENDERER_VERSION &&
-    summary.motionAudit?.passed === true
+    previewScenes.length > 0 &&
+    wizardHybridMotionSummaryIsReady(summary, previewScenes.length, previewScenes)
   ) return summary.finalMp4Path;
 
   // Preview only: a server restart can lose the in-memory topic catalog before it has
@@ -7456,7 +7524,7 @@ export type WizardFlowMotionStatus = {
     jobs: Array<Pick<FlowMotionJob,
       "jobId" | "sceneNumber" | "sceneId" | "sceneLabel" | "status" | "packetPath" |
       "expectedVideoPath" | "referenceSha256" | "promptSha256"
-    > & { requiredApprovalWording: string }>;
+    > & { requiredApprovalWording: string; renderAssetReady: boolean }>;
   }>;
 };
 
@@ -7472,6 +7540,42 @@ function resolveWizardFlowMotionParts(topicId: string): WizardProductionPipeline
     return resolveWizardProductionPipelineParts(topicId, safeSlug, record);
   } catch {
     return null;
+  }
+}
+
+function flowMotionRenderAssetIsReady(job: FlowMotionJob): boolean {
+  const jobDir = dirname(resolve(job.packetPath));
+  const videoPath = resolve(job.expectedVideoPath);
+  const evidencePath = resolve(job.qaEvidencePath);
+  if (
+    job.status !== "render_ready" ||
+    !videoPath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) ||
+    !evidencePath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) ||
+    dirname(videoPath) !== jobDir ||
+    dirname(evidencePath) !== jobDir ||
+    !existsSync(videoPath) ||
+    !existsSync(evidencePath)
+  ) return false;
+  try {
+    const videoSha256 = createHash("sha256").update(readFileSync(videoPath)).digest("hex");
+    if (videoSha256 !== job.qa.outputVideoSha256) return false;
+    const evidence = readAbsJson(evidencePath) as FlowMotionQaEvidence | null;
+    return evidence?.schemaVersion === FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION &&
+      evidence.evidenceId === job.qa.evidenceId &&
+      evidence.jobId === job.jobId &&
+      evidence.sceneNumber === job.sceneNumber &&
+      evidence.videoSha256 === videoSha256 &&
+      evidence.verdict === "pass" &&
+      evidence.reviewedBy === "owner" &&
+      evidence.checks.trueArticulatedMotion === true &&
+      evidence.checks.cameraOnlyMotionRejected === true &&
+      evidence.checks.identityContinuity === true &&
+      evidence.checks.sceneContinuity === true &&
+      evidence.checks.brightWarmNonPhotoreal3D === true &&
+      evidence.checks.forbiddenDarkFinanceImageryAbsent === true &&
+      evidence.checks.technicalArtifactsAbsent === true;
+  } catch {
+    return false;
   }
 }
 
@@ -7500,6 +7604,7 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
       referenceSha256: job.referenceSha256,
       promptSha256: job.promptSha256,
       requiredApprovalWording: job.approval.requiredWording,
+      renderAssetReady: flowMotionRenderAssetIsReady(job),
     }));
     return {
       id: part.id,
@@ -7507,7 +7612,11 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
       totalParts: part.totalParts,
       requiredCount,
       statePath,
-      state: requiredCount === 0 ? "not_required" : (state?.overallStatus ?? "not_prepared"),
+      state: requiredCount === 0
+        ? "not_required"
+        : state?.overallStatus === "render_ready" && publicJobs.some((job) => !job.renderAssetReady)
+          ? "qa_failed"
+          : (state?.overallStatus ?? "not_prepared"),
       jobs: publicJobs,
     };
   });
@@ -7515,7 +7624,7 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
   const requiredCount = partRows.reduce((sum, part) => sum + part.requiredCount, 0);
   const count = (status: FlowMotionJobStatus): number => jobs.filter((job) => job.status === status).length;
   const preparedCount = jobs.length;
-  const renderReadyCount = count("render_ready");
+  const renderReadyCount = jobs.filter((job) => job.status === "render_ready" && job.renderAssetReady).length;
   const state: WizardFlowMotionStatus["state"] = requiredCount === 0
     ? "not_required"
     : partRows.some((part) => part.state === "not_prepared")
@@ -7869,7 +7978,9 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         imageMode?: string;
         visualEngineVersion?: string;
         motionRendererVersion?: string;
+        layeredMotionRendererVersion?: string;
         motionAudit?: WizardLayeredMotionAudit;
+        flowMotionAudit?: WizardFlowMotionRenderAudit;
         captionMode?: string;
         captionContractVersion?: string;
         captionAudit?: {
@@ -7906,17 +8017,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     videoSummary.audioProvider === "elevenlabs" &&
     videoSummary.imageMode === "chatgpt_playwright" &&
     videoSummary.visualEngineVersion === visualProfile.engineVersion &&
-    videoSummary.motionRendererVersion === WIZARD_MOTION_RENDERER_VERSION &&
-    videoSummary.motionAudit?.version === WIZARD_MOTION_RENDERER_VERSION &&
-    videoSummary.motionAudit?.sceneCount === expectedSceneCount &&
-    videoSummary.motionAudit?.planCoveragePass === true &&
-    videoSummary.motionAudit?.layeredParallaxCoveragePass === true &&
-    videoSummary.motionAudit?.characterMicroMotionCoveragePass === true &&
-    videoSummary.motionAudit?.handActionMicroMotionCoveragePass === true &&
-    videoSummary.motionAudit?.localizedMotionCoveragePass === true &&
-    videoSummary.motionAudit?.visibleMicroMotionAmplitudePass === true &&
-    videoSummary.motionAudit?.distinctCameraModesPass === true &&
-    videoSummary.motionAudit?.passed === true &&
+    wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, record?.script.scenes ?? []) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
     videoSummary.captionContractVersion === WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION &&
     videoSummary.captionAudit?.fullScriptCoveragePass === true &&
@@ -8169,7 +8270,9 @@ function readWizardProductionPartMediaState(
     imageMode?: string;
     visualEngineVersion?: string;
     motionRendererVersion?: string;
+    layeredMotionRendererVersion?: string;
     motionAudit?: WizardLayeredMotionAudit;
+    flowMotionAudit?: WizardFlowMotionRenderAudit;
     captionMode?: string;
     captionContractVersion?: string;
     wizardScriptFingerprint?: string;
@@ -8216,17 +8319,7 @@ function readWizardProductionPartMediaState(
     videoSummary.audioProvider === "elevenlabs" &&
     videoSummary.imageMode === "chatgpt_playwright" &&
     videoSummary.visualEngineVersion === visualProfile.engineVersion &&
-    videoSummary.motionRendererVersion === WIZARD_MOTION_RENDERER_VERSION &&
-    videoSummary.motionAudit?.version === WIZARD_MOTION_RENDERER_VERSION &&
-    videoSummary.motionAudit?.sceneCount === expectedSceneCount &&
-    videoSummary.motionAudit?.planCoveragePass === true &&
-    videoSummary.motionAudit?.layeredParallaxCoveragePass === true &&
-    videoSummary.motionAudit?.characterMicroMotionCoveragePass === true &&
-    videoSummary.motionAudit?.handActionMicroMotionCoveragePass === true &&
-    videoSummary.motionAudit?.localizedMotionCoveragePass === true &&
-    videoSummary.motionAudit?.visibleMicroMotionAmplitudePass === true &&
-    videoSummary.motionAudit?.distinctCameraModesPass === true &&
-    videoSummary.motionAudit?.passed === true &&
+    wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, part.record.script.scenes) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
     videoSummary.captionContractVersion === WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION &&
     videoSummary.wizardScriptFingerprint === part.record.localFingerprint &&
