@@ -4,14 +4,18 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 
 const runnerPath = "scripts/run-minjae-veo-motion-once-v1.mjs";
-const packetPath = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/approval-packet.json";
+const defaultPacketPath = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/approval-packet.json";
+const packetPathArgIndex = process.argv.indexOf("--packet-path");
+const packetPath = packetPathArgIndex >= 0 ? process.argv[packetPathArgIndex + 1] : defaultPacketPath;
 const correctionPath = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/motion-qa-correction.json";
 const source = fs.readFileSync(runnerPath, "utf8");
 const packet = JSON.parse(fs.readFileSync(packetPath, "utf8"));
+const isRetryV2 = packet.retryContext?.retryId === "minjae_horizon_retry_v2";
 const correction = JSON.parse(fs.readFileSync(correctionPath, "utf8"));
 const result = spawnSync(process.execPath, [
   runnerPath,
   "--contract-check",
+  "--packet-path", packetPath,
   "--approved-prompt-sha256", packet.scene.promptSha256,
   "--approved-reference-sha256", packet.character.referenceSha256,
 ], { encoding: "utf8" });
@@ -30,14 +34,20 @@ function check(label, condition) {
 }
 
 check("contract check is local-only and validates both approved hashes", result.status === 0 && contract?.passed === true && contract?.promptSha256 === packet.scene.promptSha256 && contract?.referenceSha256 === packet.character.referenceSha256 && contract?.browserLaunched === false);
-check("current rejected download is proven identical to the preexisting copier S5 artifact", correction.status === "REJECTED_PAST_ARTIFACT" && contract?.existingOutputProvenance?.downloadedSha256 === correction.rejectedOutputSha256 && contract?.existingOutputProvenance?.duplicatePath === correction.duplicateExistingArtifact);
+if (isRetryV2) {
+  check("retry v2 contract is isolated from the consumed prior attempt", contract?.retryId === "minjae_horizon_retry_v2" && contract?.packetPath === packetPath && packet.retryContext?.priorAttemptId === correction.attemptId && contract?.existingOutputProvenance === null);
+} else {
+  check("current rejected download is proven identical to the preexisting copier S5 artifact", correction.status === "REJECTED_PAST_ARTIFACT" && contract?.existingOutputProvenance?.downloadedSha256 === correction.rejectedOutputSha256 && contract?.existingOutputProvenance?.duplicatePath === correction.duplicateExistingArtifact);
+}
 check("execute mode requires both exact one-submit CLI gates", /--owner-approved-once/.test(source) && /--allow-one-submit/.test(source));
 check("fresh matching no-submit preflight is required before execution", /fresh no-submit preflight is required/.test(source) && /freshConversationConfirmed/.test(source) && /30 \* 60_000/.test(source));
+check("packet override is constrained to the approved C tmp Gemini Veo root", /--packet-path/.test(source) && /packet-path must stay under C:\/tmp\/money-shorts-os\/gemini-veo/.test(source));
 check("profile traversal uses shared Owner chain and quota-only advance policy", /for \(const profile of GEMINI_VEO_PROFILE_CHAIN\)/.test(source) && /canAdvanceToNextGeminiProfile\(state\)/.test(source));
 check("prompt and reference use SHA-256 and are rechecked immediately before intent", /approvedPromptSha256/.test(source) && /approvedReferenceSha256/.test(source) && /changed immediately before submission intent/.test(source));
 check("prompt DOM must exactly match packet instead of keyword length only", /typed !== prompt/.test(source) && /sha256\(typed\) !== approvedPromptSha256/.test(source));
 check("attachment requires new composer evidence and pre-attach reference rehash", /afterThumbnails <= beforeThumbnails && afterRemove <= beforeRemove/.test(source) && /reference_hash_changed_before_attach/.test(source));
 check("each attempt starts from a verified blank conversation with no prior response or media", /ensureFreshConversation\(page\)/.test(source) && /fresh_chat_contains_prior_response_or_media/.test(source) && /prior_media_appeared_before_send/.test(source));
+check("Gemini 3.1 Pro selection is DOM-verified and recorded in preflight", /ensureReasoningModel\(page\)/.test(source) && /reasoning_model_selection_unconfirmed/.test(source) && /reasoningModel: prepared\.reasoningModel/.test(source));
 check("send button is unique visible enabled and trial-clicked", /visible\.length !== 1/.test(source) && /click\(\{ trial: true \}\)/.test(source));
 check("submission intent is exclusive and written before the only send click", source.indexOf('flag: "wx"') >= 0 && source.indexOf("fs.writeFileSync(intentPath") < source.indexOf("await prepared.sendButton.click()"));
 check("Enter fallback and browser-wide close are absent", !/press\(["']Enter|keyboard\.press\(["']Enter|browser\.close\(/.test(source));

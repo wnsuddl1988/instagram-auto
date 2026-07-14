@@ -20,7 +20,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const CAST_PATH = path.join(ROOT, "lib", "finance-character-cast-data.json");
 const SELECTION_PATH = "C:/tmp/money-shorts-os/web-wizard-create-v1/character-cast-v1/selection.json";
-const OUTPUT_DIR = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1";
+const RETRY_V2 = process.argv.includes("--retry-v2");
+const PRIOR_CORRECTION_PATH = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/motion-qa-correction.json";
+const OUTPUT_DIR = RETRY_V2
+  ? "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-retry-v2"
+  : "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1";
 const OUTPUT_PATH = path.join(OUTPUT_DIR, "approval-packet.json");
 
 function sha256(value) {
@@ -39,6 +43,25 @@ if (referenceSha256 !== String(reference.imageSha256).toLowerCase()) {
   throw new Error("ABORT: selected Minjae reference hash mismatch");
 }
 
+let retryContext = null;
+if (RETRY_V2) {
+  if (!fs.existsSync(PRIOR_CORRECTION_PATH)) throw new Error("ABORT: prior rejected-download correction is required for retry v2");
+  const correction = JSON.parse(fs.readFileSync(PRIOR_CORRECTION_PATH, "utf8"));
+  if (correction.status !== "REJECTED_PAST_ARTIFACT" || correction.submittedOnce !== true || correction.automaticRetryAllowed !== false) {
+    throw new Error("ABORT: prior attempt is not a verified one-submit rejected-artifact outcome");
+  }
+  retryContext = {
+    retryId: "minjae_horizon_retry_v2",
+    priorAttemptId: correction.attemptId,
+    priorSubmissionConsumed: true,
+    priorRejectedOutputSha256: correction.rejectedOutputSha256,
+    priorDuplicateArtifact: correction.duplicateExistingArtifact,
+    priorCorrectionPath: PRIOR_CORRECTION_PATH,
+    reason: "prior run downloaded a preexisting copier S5 artifact; retry requires new response-scoped provenance",
+    newExplicitOwnerApprovalRequired: true,
+  };
+}
+
 const prompt = [
   "Create one original, non-photoreal vertical 9:16 family-feature-quality cinematic 3D animation clip without copying any studio, franchise, film or known character.",
   "Use the attached identity board only to preserve the recurring character Minjae: a thoughtful Korean man in his early forties with a gentle side-parted black wave, cobalt-blue knit polo, light stone-gray casual jacket and dark olive trousers.",
@@ -53,7 +76,10 @@ const prompt = [
 const packet = {
   schemaVersion: "minjae_veo_motion_approval_packet_v1",
   status: "OWNER_APPROVAL_REQUIRED_NO_SUBMIT",
-  purpose: "single-scene true character-motion quality check before any new pilot; this packet is not a generation approval",
+  purpose: RETRY_V2
+    ? "isolated retry after verified past-artifact download rejection; this packet is not a generation approval"
+    : "single-scene true character-motion quality check before any new pilot; this packet is not a generation approval",
+  retryContext,
   character: {
     id: minjae.id,
     name: minjae.name,
@@ -87,10 +113,16 @@ const packet = {
     maxSubmissionCountAcrossChain: 1,
     plannedFirstProfile: "Gemini 2",
   },
+  providerUi: {
+    reasoningModelTarget: "3.1 Pro",
+    reasoningModelSelectionPolicy: "verify selected before Video/Veo tool; change only when target is not selected",
+    flashAllowedForThisRetry: false,
+    videoToolTarget: "Gemini Video powered by Veo",
+  },
   outputPlan: {
     root: OUTPUT_DIR,
-    expectedVideoPath: path.join(OUTPUT_DIR, "minjae-motion-raw.mp4"),
-    expectedReviewPath: path.join(OUTPUT_DIR, "minjae-motion-review.mp4"),
+    expectedVideoPath: path.join(OUTPUT_DIR, RETRY_V2 ? "minjae-motion-retry-v2-raw.mp4" : "minjae-motion-raw.mp4"),
+    expectedReviewPath: path.join(OUTPUT_DIR, RETRY_V2 ? "minjae-motion-retry-v2-review.mp4" : "minjae-motion-review.mp4"),
   },
   liveBoundary: {
     approvalGrantedNow: false,
@@ -98,7 +130,9 @@ const packet = {
     referenceAttachedNow: false,
     submittedNow: false,
     accountChangedNow: false,
-    requiredOwnerApprovalWording: "APPROVE_LIVE_GEMINI_VEO: minjae_horizon — Gemini 2에서 이 packet의 reference hash와 prompt hash로 Veo 1회 전송을 승인함; 명시적 quota_exhausted일 때만 Gemini 3/4 fallback 허용",
+    requiredOwnerApprovalWording: RETRY_V2
+      ? "APPROVE_LIVE_GEMINI_VEO_RETRY: minjae_horizon_retry_v2 — Gemini 2의 3.1 Pro에서 이 retry-v2 packet의 reference hash와 prompt hash로 Veo 1회 추가 전송을 승인함; 명시적 quota_exhausted일 때만 Gemini 3/4 fallback 허용"
+      : "APPROVE_LIVE_GEMINI_VEO: minjae_horizon — Gemini 2에서 이 packet의 reference hash와 prompt hash로 Veo 1회 전송을 승인함; 명시적 quota_exhausted일 때만 Gemini 3/4 fallback 허용",
   },
 };
 

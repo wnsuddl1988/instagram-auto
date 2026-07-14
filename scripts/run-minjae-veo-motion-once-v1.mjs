@@ -26,7 +26,13 @@ import {
   canAdvanceToNextGeminiProfile,
 } from "./_gemini-veo-profile-chain.mjs";
 
-const PACKET_PATH = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/approval-packet.json";
+const DEFAULT_PACKET_PATH = "C:/tmp/money-shorts-os/gemini-veo/minjae-horizon-motion-pilot-v1/approval-packet.json";
+const packetPathArgIndex = process.argv.indexOf("--packet-path");
+const PACKET_PATH = packetPathArgIndex >= 0 ? process.argv[packetPathArgIndex + 1] : DEFAULT_PACKET_PATH;
+if (!PACKET_PATH || !/^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+gemini-veo[\\/]+/i.test(PACKET_PATH)) {
+  console.error("ABORT: --packet-path must stay under C:/tmp/money-shorts-os/gemini-veo");
+  process.exit(2);
+}
 const CHROME_EXE = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const modes = ["--contract-check", "--preflight-no-submit", "--execute-one"].filter((flag) => process.argv.includes(flag));
 if (modes.length !== 1) {
@@ -68,6 +74,7 @@ function wait(ms) {
 }
 
 const packet = JSON.parse(fs.readFileSync(PACKET_PATH, "utf8"));
+const isRetryV2 = packet.retryContext?.retryId === "minjae_horizon_retry_v2";
 const prompt = normalized(packet.scene?.prompt);
 const referenceFile = packet.character?.referenceFile;
 const promptSha256 = sha256(prompt);
@@ -144,6 +151,8 @@ if (referenceSha256 !== packet.character?.referenceSha256 || referenceSha256 !==
 if (packet.profilePolicy?.advanceOnlyOn !== "quota_exhausted") contractErrors.push("fallback_policy_mismatch");
 if (packet.profilePolicy?.maxSubmissionCountAcrossChain !== 1 || GEMINI_VEO_PROFILE_POLICY.maxSubmissionCountAcrossChain !== 1) contractErrors.push("submission_budget_mismatch");
 if (JSON.stringify(packet.profilePolicy?.priority) !== JSON.stringify(GEMINI_VEO_PROFILE_CHAIN.map((profile) => profile.desktopShortcutName))) contractErrors.push("profile_priority_mismatch");
+if (isRetryV2 && (packet.retryContext?.priorSubmissionConsumed !== true || packet.retryContext?.newExplicitOwnerApprovalRequired !== true)) contractErrors.push("retry_boundary_mismatch");
+if (isRetryV2 && packet.providerUi?.reasoningModelTarget !== "3.1 Pro") contractErrors.push("retry_reasoning_model_mismatch");
 if (!/^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]/i.test(`${outputRoot}/`)) contractErrors.push("unsafe_output_root");
 if (contractErrors.length > 0) {
   console.error(JSON.stringify({ passed: false, contractErrors }, null, 2));
@@ -160,6 +169,9 @@ if (mode === "--contract-check") {
     referenceSha256,
     priority: packet.profilePolicy.priority,
     submissionBudget: 1,
+    packetPath: PACKET_PATH,
+    retryId: packet.retryContext?.retryId ?? null,
+    reasoningModelTarget: packet.providerUi?.reasoningModelTarget ?? null,
     existingOutputProvenance,
     browserLaunched: false,
     submitted: false,
@@ -184,7 +196,10 @@ if (mode === "--execute-one") {
   }
   const prior = JSON.parse(fs.readFileSync(preflightPath, "utf8"));
   const ageMs = Date.now() - Date.parse(prior.checkedAt);
-  if (!prior.readyBeforeSend || !prior.freshConversationConfirmed || prior.promptSha256 !== promptSha256 || prior.referenceSha256 !== referenceSha256 || ageMs < 0 || ageMs > 30 * 60_000) {
+  const reasoningModelMismatch = isRetryV2 && (
+    prior.reasoningModel?.target !== packet.providerUi?.reasoningModelTarget || prior.reasoningModel?.selected !== true
+  );
+  if (!prior.readyBeforeSend || !prior.freshConversationConfirmed || reasoningModelMismatch || prior.promptSha256 !== promptSha256 || prior.referenceSha256 !== referenceSha256 || ageMs < 0 || ageMs > 30 * 60_000) {
     console.error("ABORT: preflight is stale or does not match the approved packet hashes");
     process.exit(2);
   }
@@ -248,6 +263,60 @@ async function ensureFreshConversation(page) {
     throw new ProfileStateError("ambiguous_failure", "fresh_chat_contains_prior_response_or_media");
   }
   return baseline;
+}
+
+async function openReasoningModelMenu(page) {
+  const selectorButton = await firstVisible(page.locator([
+    'button[aria-label*="모드 선택 도구"]',
+    'button[aria-label*="mode selector" i]',
+    'button[aria-label*="Select mode" i]',
+  ].join(", ")));
+  if (!selectorButton) throw new ProfileStateError("ambiguous_failure", "reasoning_model_selector_missing");
+  await selectorButton.click();
+  await page.waitForTimeout(700);
+  return selectorButton;
+}
+
+async function inspectReasoningModelMenu(page, target) {
+  const items = await visibleLocators(page.locator('[role="menuitem"]'));
+  const availableModels = [];
+  let targetItem = null;
+  for (const item of items) {
+    const label = normalized(await item.innerText().catch(() => ""));
+    if (label) availableModels.push(label);
+    if (label === target || label.startsWith(`${target} `)) targetItem = item;
+  }
+  if (!targetItem) throw new ProfileStateError("ambiguous_failure", `reasoning_model_target_missing:${target}`);
+  const className = await targetItem.getAttribute("class").catch(() => "");
+  const selectedIcon = await firstVisible(targetItem.locator('[aria-label="선택됨"], [aria-label="Selected"]'));
+  return {
+    targetItem,
+    selected: /(?:^|\s)selected(?:\s|$)/.test(className ?? "") || Boolean(selectedIcon),
+    availableModels,
+  };
+}
+
+async function ensureReasoningModel(page) {
+  const target = packet.providerUi?.reasoningModelTarget;
+  if (!target) return { target: null, selected: null, changed: false, skippedForLegacyPacket: true, availableModels: [] };
+  await openReasoningModelMenu(page);
+  let state = await inspectReasoningModelMenu(page, target);
+  let changed = false;
+  if (!state.selected) {
+    await state.targetItem.click();
+    changed = true;
+    await page.waitForTimeout(1_000);
+    await openReasoningModelMenu(page);
+    state = await inspectReasoningModelMenu(page, target);
+  }
+  await page.keyboard.press("Escape");
+  if (!state.selected) throw new ProfileStateError("ambiguous_failure", `reasoning_model_selection_unconfirmed:${target}`);
+  return {
+    target,
+    selected: true,
+    changed,
+    availableModels: state.availableModels,
+  };
 }
 
 async function findNewResponseScope(page, baseline) {
@@ -465,6 +534,7 @@ async function prepareProfile(profile) {
     const signIn = await firstVisible(page.getByRole("button", { name: /^(로그인|Sign in)$/i }));
     if (/accounts\.google\.com|signin/i.test(url.href) || signIn) throw new ProfileStateError("login_required", "login_required");
     await ensureFreshConversation(page);
+    const reasoningModel = await ensureReasoningModel(page);
     await activateVideoTool(page);
     await ensureVerticalMode(page);
     const attachment = await attachReference(page);
@@ -476,7 +546,7 @@ async function prepareProfile(profile) {
     if (responseTotal !== 0 || conversationBaseline.visibleDownloadCount !== 0 || conversationBaseline.visibleVideoCount !== 0) {
       throw new ProfileStateError("ambiguous_failure", "prior_media_appeared_before_send");
     }
-    return { page, sendButton, attachment, conversationBaseline };
+    return { page, sendButton, attachment, conversationBaseline, reasoningModel };
   } catch (error) {
     await page.close().catch(() => {});
     throw error;
@@ -518,6 +588,7 @@ if (mode === "--preflight-no-submit") {
     submissionCount: 0,
     promptTyped: true,
     referenceAttached: true,
+    reasoningModel: prepared.reasoningModel,
     freshConversationConfirmed: true,
     responseBaseline: prepared.conversationBaseline,
     submitted: false,
@@ -541,6 +612,9 @@ const intent = {
   attemptId,
   reservedAt: new Date().toISOString(),
   profileId: selectedProfile.profileId,
+  packetPath: PACKET_PATH,
+  retryId: packet.retryContext?.retryId ?? null,
+  reasoningModel: prepared.reasoningModel,
   promptSha256,
   referenceSha256,
   submissionCountReserved: 1,
@@ -662,6 +736,9 @@ const result = {
   profileId: selectedProfile.profileId,
   profileAudit,
   submissionCount: 1,
+  packetPath: PACKET_PATH,
+  retryId: packet.retryContext?.retryId ?? null,
+  reasoningModel: prepared.reasoningModel,
   promptSha256,
   referenceSha256,
   outputVideo: downloaded ? outputVideo : null,
