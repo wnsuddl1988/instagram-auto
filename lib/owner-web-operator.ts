@@ -74,6 +74,14 @@ import {
   financeCharacterVoiceForSubtopic,
   type FinanceCharacterVoiceProfile,
 } from "./finance-character-voice-cast";
+import {
+  VEO_SCENE_SELECTION_CONTRACT_VERSION,
+  getVeoMotionSceneLimit,
+  selectVeoMotionScenes,
+  type SceneMediaStrategy,
+  type SceneMediaStrategyOverride,
+  type SceneMediaStrategySource,
+} from "./veo-scene-selector";
 
 // ── 상수 ─────────────────────────────────────────────────────────────────────
 
@@ -210,7 +218,7 @@ type WizardLayeredMotionAudit = {
 export const WIZARD_AV_SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
 export const WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID = "gen-finance-editorial-v2-housing_asset_gap-psychology_gap-04";
 /** 주제별 대본 조립 규칙이 바뀌면 이전 확정본을 재사용하지 않는다. */
-const WIZARD_SCRIPT_ENGINE_VERSION = "money_shorts_editorial_package_script_v13";
+const WIZARD_SCRIPT_ENGINE_VERSION = "money_shorts_editorial_package_script_v14";
 const WIZARD_TTS_OUTPUT_DIR = "tts-korean-director-v2";
 
 /** 위저드가 topic별로 생성하는 입력 JSON의 루트(레포 밖 고정). */
@@ -3132,7 +3140,65 @@ export type WizardScriptScene = {
   captionText: string;
   visualCue: string; // 이 장면이 어떤 그림/시각 증거로 보여야 하는지(골든 샘플: 이미지가 스토리의 증거)
   visualEvidence?: FinanceVisualEvidence;
+  /** 실제 미디어 방식. layered motion과 별개이며, veo_motion만 Flow 후보가 된다. */
+  mediaStrategy?: SceneMediaStrategy;
+  mediaStrategyOverride?: SceneMediaStrategyOverride;
+  mediaStrategyContractVersion?: typeof VEO_SCENE_SELECTION_CONTRACT_VERSION;
+  mediaStrategySource?: SceneMediaStrategySource;
+  mediaStrategyScore?: number;
+  mediaStrategyReasonCodes?: string[];
+  mediaStrategyMaxVeoScenes?: number;
+  mediaStrategyTotalDurationSec?: number;
 };
+
+/** 모든 장면을 영상화하지 않고, 행동성이 가장 큰 1~2개 장면만 Veo 후보로 만든다. */
+export function applyWizardSceneMediaStrategies(scenes: WizardScriptScene[]): WizardScriptScene[] {
+  const narrations = scenes.map((scene) => String(scene.narration ?? "").trim() || String(scene.captionText ?? "").trim());
+  const timeline = buildWizardSceneTimeline(narrations);
+  const plan = selectVeoMotionScenes(
+    scenes.map((scene, index) => ({
+      sceneNumber: index + 1,
+      sceneRole: scene.id,
+      narration: narrations[index],
+      visualCue: scene.visualCue,
+      visibleAction: scene.visualEvidence?.visibleAction,
+      motionPlan: scene.visualEvidence?.motionPlan,
+      override: scene.mediaStrategyOverride ?? "auto",
+    })),
+    timeline.totalDurationSec,
+  );
+  const decisions = new Map(plan.decisions.map((decision) => [decision.sceneNumber, decision]));
+  return scenes.map((scene, index) => {
+    const decision = decisions.get(index + 1);
+    if (!decision) throw new Error(`veo_scene_selection_decision_missing:${index + 1}`);
+    return {
+      ...scene,
+      mediaStrategy: decision.mediaStrategy,
+      mediaStrategyContractVersion: plan.contractVersion,
+      mediaStrategySource: decision.source,
+      mediaStrategyScore: decision.score,
+      mediaStrategyReasonCodes: decision.reasonCodes,
+      mediaStrategyMaxVeoScenes: plan.maxVeoMotionScenes,
+      mediaStrategyTotalDurationSec: plan.totalDurationSec,
+    };
+  });
+}
+
+function wizardSceneMediaStrategiesAreValid(scenes: readonly WizardScriptScene[]): boolean {
+  if (scenes.length === 0) return false;
+  const totalDurationSec = buildWizardSceneTimeline(scenes.map((scene) => scene.narration)).totalDurationSec;
+  const maxVeoMotionScenes = getVeoMotionSceneLimit(totalDurationSec);
+  const selectedCount = scenes.filter((scene) => scene.mediaStrategy === "veo_motion").length;
+  return selectedCount <= maxVeoMotionScenes && scenes.every((scene) =>
+    scene.mediaStrategyContractVersion === VEO_SCENE_SELECTION_CONTRACT_VERSION &&
+    (scene.mediaStrategy === "still" || scene.mediaStrategy === "veo_motion") &&
+    (scene.mediaStrategySource === "automatic" || scene.mediaStrategySource === "manual_override" || scene.mediaStrategySource === "budget_cap") &&
+    Number.isFinite(scene.mediaStrategyScore) &&
+    Array.isArray(scene.mediaStrategyReasonCodes) &&
+    scene.mediaStrategyMaxVeoScenes === maxVeoMotionScenes &&
+    scene.mediaStrategyTotalDurationSec === totalDurationSec
+  );
+}
 
 export type WizardSpeechDirection = {
   engineVersion: "money_shorts_speech_direction_v2";
@@ -3932,7 +3998,7 @@ function buildScenePlan(a: {
   const resolvedEditorialLane = a.editorialLane ?? (
     a.financeSubtopic ? inferFinanceEditorialLane(a.title ?? a.hook, a.problemStatement) : undefined
   );
-  return beats.map((beat, index) => {
+  const scenes = beats.map((beat, index) => {
     const partCount = partCounts.get(beat.id) ?? 1;
     const partIndex = seenParts.get(beat.id) ?? 0;
     seenParts.set(beat.id, partIndex + 1);
@@ -3963,6 +4029,7 @@ function buildScenePlan(a: {
       visualEvidence,
     };
   });
+  return applyWizardSceneMediaStrategies(scenes);
 }
 
 /** 골든 샘플 계열 자가 점검 결과(참고용 boolean — 통과 못 해도 차단하지 않고 표시만). */
@@ -5538,7 +5605,7 @@ export function buildWizardVideoInputsForTopic(topicId: string): { ok: true; pat
     script.action || script.hook,
   ].map((s) => String(s ?? "").trim() || script.hook);
   const fallbackSceneIds: WizardScriptScene["id"][] = ["hook", "problem", "situation", "consequence", "psychology", "mindset", "habit", "recommendation", "save"];
-  const sourceScenes = Array.isArray(script.scenes) && isSupportedWizardSceneCount(script.scenes.length)
+  const sourceScenesRaw: WizardScriptScene[] = Array.isArray(script.scenes) && isSupportedWizardSceneCount(script.scenes.length)
     ? script.scenes
     : fallbackNarrations.map((n, i) => ({
         id: fallbackSceneIds[i] ?? "save",
@@ -5547,6 +5614,7 @@ export function buildWizardVideoInputsForTopic(topicId: string): { ok: true; pat
         captionText: trimWizardCaption(script.captionLines?.[i] ?? n),
         visualCue: "Bright integrated family-feature-quality cinematic 3D animation for the selected topic, with natural Korean adult proportions, restrained micro-acting and one coherent lived-in home, cafe, store or workplace scene; never photography, live action, miniature, dollhouse, diorama, laboratory, vault, factory, machine room, black-metal staging, pasted cutout, superhero pose, lunge or reach toward the camera; no readable text or logo; captions are added later by the renderer.",
       }));
+  const sourceScenes = applyWizardSceneMediaStrategies(sourceScenesRaw);
   const sceneNarrations = sourceScenes.map((s, i) => String(s.narration ?? "").trim() || fallbackNarrations[i] || script.hook);
   const sceneCaptions = sourceScenes.map((s, i) => trimCaption(s.captionText ?? script.captionLines?.[i] ?? sceneNarrations[i]));
   const timeline = buildWizardSceneTimeline(sceneNarrations);
@@ -5594,6 +5662,11 @@ export function buildWizardVideoInputsForTopic(topicId: string): { ok: true; pat
       chartCardPackageId: null,
       durationSec: sceneDur[i],
       motionType: "card_slide",
+      mediaStrategy: sourceScenes[i].mediaStrategy,
+      mediaStrategyContractVersion: sourceScenes[i].mediaStrategyContractVersion,
+      mediaStrategySource: sourceScenes[i].mediaStrategySource,
+      mediaStrategyScore: sourceScenes[i].mediaStrategyScore,
+      mediaStrategyReasonCodes: sourceScenes[i].mediaStrategyReasonCodes,
     })),
     audioInput: {
       ttsPackageId,
@@ -6362,6 +6435,12 @@ export function wizardScriptFingerprint(preview: WizardScriptPreview): string {
       v: preview.fullVoiceover,
       c: preview.captionLines,
       s: preview.videoStrategy,
+      m: preview.scenes.map((scene) => ({
+        id: scene.id,
+        narration: scene.narration,
+        override: scene.mediaStrategyOverride ?? "auto",
+        strategy: scene.mediaStrategy,
+      })),
     }))
     .digest("hex");
 }
@@ -6684,7 +6763,7 @@ export async function polishWizardScriptWithClaude(
     polishedPartCounts.set(scene.id, (polishedPartCounts.get(scene.id) ?? 0) + 1);
   }
   const polishedSeenParts = new Map<WizardScriptScene["id"], number>();
-  const scenes: WizardScriptScene[] = inferredScenes.map((scene) => {
+  const scenes = applyWizardSceneMediaStrategies(inferredScenes.map((scene): WizardScriptScene => {
     const partCount = polishedPartCounts.get(scene.id) ?? 1;
     const partIndex = polishedSeenParts.get(scene.id) ?? 0;
     polishedSeenParts.set(scene.id, partIndex + 1);
@@ -6710,7 +6789,7 @@ export async function polishWizardScriptWithClaude(
       ),
       visualEvidence,
     };
-  });
+  }));
   const polishedJudgment = judgeFinanceScriptContent({
     title: v.title,
     hookLine: v.hookLine,
@@ -6785,6 +6864,7 @@ export function readWizardFinalScriptRecord(topicId: string): WizardFinalScriptR
       scene.visualEvidence.motionPlan.length < 40
     ))
   ) return null;
+  if (!Array.isArray(parsed.script.scenes) || !wizardSceneMediaStrategiesAreValid(parsed.script.scenes)) return null;
   if (!getWizardScriptQualityGate(topicId, parsed.script).passed) return null;
   return parsed;
 }
@@ -6994,7 +7074,7 @@ export function buildWizardProductionScriptParts(
     if (!isSupportedWizardSceneCount(rawScenes.length)) {
       throw new Error(`production_part_scene_count_invalid:${part.id}:${rawScenes.length}`);
     }
-    const scenes = buildWizardProductionVisualScenes(rec, baseScript, rawScenes);
+    const scenes = applyWizardSceneMediaStrategies(buildWizardProductionVisualScenes(rec, baseScript, rawScenes));
     const fullVoiceover = scenes.map((scene) => scene.narration).join("\n");
     const script: WizardScriptPreview = {
       ...baseScript,
@@ -7182,6 +7262,13 @@ function buildWizardRealTtsScript(
         narration: narrations[index],
         captionText: String(scene.captionText ?? "").trim(),
         sampleReviewCaptionCues: sampleReview ? buildWizardSampleReviewCaptionCues(index + 1) : [],
+        mediaStrategy: scene.mediaStrategy,
+        mediaStrategyContractVersion: scene.mediaStrategyContractVersion,
+        mediaStrategySource: scene.mediaStrategySource,
+        mediaStrategyScore: scene.mediaStrategyScore,
+        mediaStrategyReasonCodes: scene.mediaStrategyReasonCodes,
+        mediaStrategyMaxVeoScenes: scene.mediaStrategyMaxVeoScenes,
+        mediaStrategyTotalDurationSec: scene.mediaStrategyTotalDurationSec,
         speechDirection,
       };
     }),

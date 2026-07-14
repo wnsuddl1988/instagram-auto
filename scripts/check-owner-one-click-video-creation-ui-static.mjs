@@ -466,7 +466,7 @@ check("premium consequence fallback avoids broken Korean particle from moneyAnch
     "temporary per-topic calibration exceptions are removed after global expansion",
     !/WIZARD_SCRIPT_CALIBRATION_TOPIC_ID|buildCalibrationTopicScriptParts|isWizardScriptCalibrationTopic/.test(helperCode),
   );
-  check("semantic prehook series engine bumps final-script cache contract to v13", /money_shorts_editorial_package_script_v13/.test(helperCode));
+  check("Veo scene selection bumps final-script cache contract to v14", /money_shorts_editorial_package_script_v14/.test(helperCode));
   check("final-script fingerprint includes the semantic video strategy", /s:\s*preview\.videoStrategy/.test(helperCode));
   check("premium polish rejects soft polite tone", /SHORTFORM_SOFT_POLITE_PATTERNS/.test(helperCode) && /soft_polite_not_owner_tone/.test(helperCode));
 }

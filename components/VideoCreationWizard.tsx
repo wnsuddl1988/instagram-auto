@@ -63,6 +63,10 @@ type WizardScriptScene = {
   narration: string;
   captionText: string;
   visualCue: string;
+  mediaStrategy?: "still" | "veo_motion";
+  mediaStrategySource?: "automatic" | "manual_override" | "budget_cap";
+  mediaStrategyScore?: number;
+  mediaStrategyMaxVeoScenes?: number;
 };
 
 type WizardQuality = {
@@ -1438,17 +1442,37 @@ export default function VideoCreationWizard() {
                 </div>
               ) : null}
 
-              {/* 장면 그림 계획 — 보조 정보 */}
+              {/* 장면 그림 + Veo 후보 계획 — 보조 정보 */}
               {script.scenes && script.scenes.length > 0 ? (
                 <details className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
                   <summary className="text-sm font-bold text-indigo-600 cursor-pointer">
                     장면 그림 계획 (보조 정보)
                   </summary>
+                  <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                    모든 이미지를 영상화하지 않습니다. 행동 효과가 큰 장면만 Flow 변환 후보로 자동 표시하며,
+                    {` 이 영상은 최대 ${script.scenes[0]?.mediaStrategyMaxVeoScenes ?? 0}개까지 사용합니다.`}
+                  </p>
                   <div className="mt-3 space-y-2">
                     {script.scenes.map((s, sceneIndex) => (
                       <div key={`${sceneIndex}-${s.id}`} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5">
-                        <p className="text-sm font-bold text-slate-700">{s.label}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-slate-700">{s.label}</p>
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-bold ${
+                            s.mediaStrategy === "veo_motion"
+                              ? "border-violet-200 bg-violet-50 text-violet-700"
+                              : "border-slate-200 bg-white text-slate-500"
+                          }`}>
+                            {s.mediaStrategy === "veo_motion" ? "Flow 모션 후보" : "정지 이미지"}
+                          </span>
+                        </div>
                         <p className="text-sm text-slate-500 mt-0.5">장면 그림: {s.visualCue}</p>
+                        {s.mediaStrategy === "veo_motion" ? (
+                          <p className="text-xs text-violet-600 mt-1">
+                            실제 생성은 Owner 확인 후 진행 · 자동 판정 점수 {s.mediaStrategyScore ?? "-"}
+                          </p>
+                        ) : s.mediaStrategySource === "budget_cap" ? (
+                          <p className="text-xs text-slate-400 mt-1">움직임 후보였지만 영상별 비용 상한에 따라 정지 이미지로 유지</p>
+                        ) : null}
                       </div>
                     ))}
                   </div>

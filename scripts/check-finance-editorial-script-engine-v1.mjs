@@ -185,7 +185,7 @@ check("future finance titles are deterministically routed across all nine editor
 
 check("owner helper imports and calls the shared script engine", /from "\.\/finance-editorial-script-engine"/.test(helper) && /buildFinanceEditorialScriptParts\(editorialTopic\)/.test(helper));
 check("owner helper removes temporary per-topic calibration exceptions", !/WIZARD_SCRIPT_CALIBRATION_TOPIC_ID|buildCalibrationTopicScriptParts/.test(helper));
-check("semantic prehook series cache contract is v13", /money_shorts_editorial_package_script_v13/.test(helper));
+check("Veo scene selection cache contract is v14", /money_shorts_editorial_package_script_v14/.test(helper));
 check("semantic video strategy participates in the final-script fingerprint", /s:\s*preview\.videoStrategy/.test(helper));
 check("Claude polish cannot replace the fixed title", /입력 title은 확정 제목/.test(helper) && /v\.title !== local\.title/.test(helper));
 check("Claude polish must preserve contextual save and follow closing", /contextual_save_follow_closing_missing/.test(helper) && /저장해 둬/.test(helper) && /팔로우해 둬/.test(helper));
