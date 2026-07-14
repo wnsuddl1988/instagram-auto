@@ -51,5 +51,16 @@ const preflightSource = fs.readFileSync("scripts/preflight-gemini-veo-profile-ch
 check("local preflight cannot launch or control a browser", !/playwright|ensureChrome|connectOverCDP|\.click\(|attachRef|typeAndVerify/.test(preflightSource));
 check("local preflight emits zero-side-effect evidence", /submissionCount/.test(preflightSource) && /promptTyped: false/.test(preflightSource) && /referenceAttached: false/.test(preflightSource) && /browserLaunched: false/.test(preflightSource) && /networkAccessed: false/.test(preflightSource));
 
+const livePreflightSource = fs.readFileSync("scripts/run-gemini-veo-live-no-submit-v1.mjs", "utf8");
+check("live preflight requires an explicit read-only browser approval flag", /--allow-browser-readonly/.test(livePreflightSource));
+check("live preflight consumes the Owner profile chain instead of hardcoding another order", /for \(const profile of GEMINI_VEO_PROFILE_CHAIN\)/.test(livePreflightSource));
+check("live preflight advances only through the shared quota-only policy", /canAdvanceToNextGeminiProfile\(result\.state\)/.test(livePreflightSource));
+check("live preflight contains no prompt typing or file attachment browser calls", !/\.fill\(|\.type\(|keyboard\.|setInputFiles|filechooser|typeAndVerify|attachRef/.test(livePreflightSource));
+check("live preflight contains no send or account mutation browser calls", !/메시지 보내기|Send message|\.press\(["']Enter|selectAccount/.test(livePreflightSource));
+check("live preflight explicitly rejects account-change requests", /--change-account/.test(livePreflightSource));
+check("live preflight records zero-submit and no-mutation evidence", /submissionCount: submissionBudget\.submissionCount/.test(livePreflightSource) && /promptTyped: false/.test(livePreflightSource) && /referenceAttached: false/.test(livePreflightSource) && /accountChanged: false/.test(livePreflightSource));
+check("live preflight scopes quota text to current UI regions instead of the whole page body", /readCurrentVeoStatusText/.test(livePreflightSource) && !/locator\(["']body["']\)\.innerText/.test(livePreflightSource));
+check("live preflight writes diagnostics outside the repository output tree", /GEMINI_VEO_PROFILE_POLICY\.outputRoot/.test(livePreflightSource) && /live-no-submit-v1/.test(livePreflightSource));
+
 console.log(JSON.stringify({ passed: failed === 0, passedCount: passed, totalCount: passed + failed, failedCount: failed }, null, 2));
 process.exit(failed === 0 ? 0 : 1);
