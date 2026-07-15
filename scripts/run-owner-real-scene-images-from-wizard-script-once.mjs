@@ -46,9 +46,11 @@ const characterIdArg = getArg("--character-id");
 const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
 const modeOverridePacketArg = getArg("--mode-override-packet");
+const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
+const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--mode-override-packet <packet.json> --prompt-audit-only]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -97,8 +99,12 @@ if (MODE_OVERRIDE_PACKET_ABS && (!MEDIA_ROOT_RE.test(MODE_OVERRIDE_PACKET_ABS) |
   console.error("ABORT: --mode-override-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
-if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly) {
-  console.error("ABORT: --mode-override-packet is permitted only with --prompt-audit-only; external image generation requires a separate Owner-approved execution path.");
+if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly && !executeApprovedModeOverride) {
+  console.error("ABORT: --mode-override-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedModeOverride && (!MODE_OVERRIDE_PACKET_ABS || promptAuditOnly)) {
+  console.error("ABORT: --execute-approved-mode-override requires one mode override packet and cannot be combined with --prompt-audit-only.");
   process.exit(3);
 }
 const CHARACTER_REFERENCE_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+web-wizard-create-v1[\\/]+character-cast-v1[\\/]+(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)[\\/]+candidate-2\.png$/i;
@@ -496,7 +502,10 @@ function resolveTopicScopedModeOverride() {
   const proposedPresence = packet?.targetScene?.proposed?.presenceMode;
   const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
   const actualScriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const packetSha256 = createHash("sha256").update(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS)).digest("hex");
   const packetPartSegment = typeof packet?.productionPartId === "string" ? `${path.sep}${packet.productionPartId}${path.sep}` : "";
+  const approvalPrefix = packet?.executionPolicy?.requiredOwnerApprovalPrefix;
+  const requiredOwnerApprovalWording = typeof approvalPrefix === "string" ? `${approvalPrefix}${packetSha256}` : null;
   const valid =
     packet?.schemaVersion === "money_shorts_scene_mode_correction_packet_v1" &&
     packet?.status === "data_only_pending_owner_review" &&
@@ -512,16 +521,34 @@ function resolveTopicScopedModeOverride() {
     packet?.targetScene?.current?.presenceMode === expectedMode?.presence &&
     typeof proposedModeId === "string" && proposedModeId in VISUAL_MODES &&
     proposedPresence === VISUAL_MODES[proposedModeId].presence &&
-    proposedModeId !== expectedMode?.id;
+    proposedModeId !== expectedMode?.id &&
+    typeof packet?.targetScene?.proposed?.promptFingerprint === "string" &&
+    /^[a-f0-9]{16}$/.test(packet.targetScene.proposed.promptFingerprint) &&
+    typeof approvalPrefix === "string" && approvalPrefix.startsWith("APPROVE_SCENE_MODE_OVERRIDE_IMAGE:") &&
+    packet?.executionPolicy?.maxSubmissions === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.existingSceneImageMustBePreserved === true;
   if (!valid) {
     console.error("ABORT: topic-scoped mode override packet does not match the locked script, character reference or default mode mapping.");
     process.exit(3);
   }
+  if (executeApprovedModeOverride && (
+    ownerApprovalArg !== requiredOwnerApprovalWording ||
+    targetedRegenerationSceneIndexes.size !== 1 ||
+    !targetedRegenerationSceneIndexes.has(targetIndex)
+  )) {
+    console.error("ABORT: exact Owner approval or the single approved regeneration scene is missing.");
+    process.exit(3);
+  }
   return {
     packetPath: MODE_OVERRIDE_PACKET_ABS,
-    packetSha256: createHash("sha256").update(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS)).digest("hex"),
+    packetSha256,
     sceneIndex: targetIndex,
     visualModeId: proposedModeId,
+    promptFingerprint: packet.targetScene.proposed.promptFingerprint,
+    currentImageSha256: packet.targetScene.current.imageSha256,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedModeOverride,
   };
 }
 
@@ -931,6 +958,36 @@ const sceneRequirements = scenes.map((scene, index) => {
     promptFingerprint: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
   };
 });
+if (topicScopedModeOverride?.executionApproved) {
+  const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
+  let priorPromptAudit = null;
+  let priorImageSummary = null;
+  try {
+    priorPromptAudit = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "prompt-audit.json"), "utf8"));
+    priorImageSummary = JSON.parse(fs.readFileSync(SUMMARY_PATH, "utf8"));
+  } catch {
+    // 아래 binding gate가 fail-closed로 처리한다.
+  }
+  const priorTarget = priorImageSummary?.scenes?.find((scene) => scene?.sceneIndex === topicScopedModeOverride.sceneIndex);
+  const auditedTarget = priorPromptAudit?.rows?.find((scene) => scene?.sceneIndex === topicScopedModeOverride.sceneIndex);
+  const targetFile = sceneFile(topicScopedModeOverride.sceneIndex - 1);
+  const executionBindingsReady =
+    targetRequirement?.promptFingerprint === topicScopedModeOverride.promptFingerprint &&
+    priorPromptAudit?.passed === true &&
+    priorPromptAudit?.externalActionPerformed === false &&
+    priorPromptAudit?.topicScopedModeOverride?.packetSha256 === topicScopedModeOverride.packetSha256 &&
+    priorPromptAudit?.visualModalityAudit?.passed === true &&
+    auditedTarget?.promptFingerprint === topicScopedModeOverride.promptFingerprint &&
+    priorImageSummary?.allReady === true &&
+    priorTarget?.visualModeId !== targetRequirement?.visualModeId &&
+    priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256 &&
+    fs.existsSync(targetFile) &&
+    imageSha256(targetFile) === topicScopedModeOverride.currentImageSha256;
+  if (!executionBindingsReady) {
+    console.error("ABORT: approved override execution is not bound to the current prompt audit and existing target image.");
+    process.exit(3);
+  }
+}
 if (promptAuditOnly) {
   const legacyPresenceConflictPatterns = [
     /sculpted faceless characters and objects/i,
@@ -1220,6 +1277,22 @@ function buildMotionPlanAudit(states) {
 }
 
 const pendingCount = sceneStates.filter((s) => s.status === "PENDING").length;
+if (topicScopedModeOverride?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (pendingSceneIndexes.length !== 1 || pendingSceneIndexes[0] !== topicScopedModeOverride.sceneIndex) {
+    console.error("ABORT: approved override execution must have exactly one pending target scene.");
+    process.exit(3);
+  }
+  const targetFile = sceneFile(topicScopedModeOverride.sceneIndex - 1);
+  const backupDir = path.join(OUT_DIR, "superseded-v1");
+  const backupFile = path.join(backupDir, `scene-${String(topicScopedModeOverride.sceneIndex).padStart(2, "0")}-${topicScopedModeOverride.currentImageSha256.slice(0, 16)}.png`);
+  fs.mkdirSync(backupDir, { recursive: true });
+  if (!fs.existsSync(backupFile)) fs.copyFileSync(targetFile, backupFile);
+  if (imageSha256(backupFile) !== topicScopedModeOverride.currentImageSha256) {
+    console.error("ABORT: existing target image backup hash mismatch.");
+    process.exit(3);
+  }
+}
 log(`scenes: ${sceneCount}, 이미 저장됨: ${sceneCount - pendingCount}, 생성 대상: ${pendingCount}`);
 if (pendingCount === 0) {
   writeSummary({
@@ -1256,11 +1329,11 @@ const {
 } =
   await import("./_chatgpt-image-core.mjs");
 
-const ROUTING_RECOVERY_LIMIT_PER_SCENE = 1;
-const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = 1;
-const SUBMISSION_HARD_CAP = sceneCount * (
-  1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE
-);
+const ROUTING_RECOVERY_LIMIT_PER_SCENE = topicScopedModeOverride?.executionApproved ? 0 : 1;
+const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = topicScopedModeOverride?.executionApproved ? 0 : 1;
+const SUBMISSION_HARD_CAP = topicScopedModeOverride?.executionApproved
+  ? 1
+  : sceneCount * (1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE);
 let submissionCount = 0;
 let routingRecoveryCount = 0;
 let visualDifferenceRecoveryCount = 0;

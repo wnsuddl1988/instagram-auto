@@ -79,6 +79,18 @@ check("approved override mode is threaded through the scene prompt and adjacent-
   imageRunner.includes("scenePrompt(scene, index, sceneCount, sceneVisualModes)") &&
   imageRunner.includes("resolvedVisualModes?.[sceneIndex - 1]") &&
   imageRunner.includes("resolvedVisualModes?.[sceneIndex + 1]"));
+check("approved override execution is exact-approval, single-scene and one-submission only",
+  imageRunner.includes("--execute-approved-mode-override") &&
+  imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording") &&
+  imageRunner.includes("targetedRegenerationSceneIndexes.size !== 1") &&
+  imageRunner.includes("pendingSceneIndexes.length !== 1") &&
+  imageRunner.includes("topicScopedModeOverride?.executionApproved ? 0 : 1") &&
+  imageRunner.includes("? 1\n  : sceneCount"));
+check("approved override execution binds the prior audit and preserves the replaced image",
+  imageRunner.includes("priorPromptAudit?.topicScopedModeOverride?.packetSha256") &&
+  imageRunner.includes("priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256") &&
+  imageRunner.includes("superseded-v1") &&
+  imageRunner.includes("fs.copyFileSync(targetFile, backupFile)"));
 check("video runner requires selected-reference v8 controller", videoRunner.includes(controllerVersion));
 check("video runner rejects missing modality audit", videoRunner.includes("visualModalityAudit?.version !== VISUAL_MODALITY_VERSION") && videoRunner.includes("visualModalityAudit?.passed !== true"));
 check("video runner requires per-scene mode metadata", videoRunner.includes('typeof scene?.visualModeId === "string"') && videoRunner.includes('typeof scene?.presenceMode === "string"'));
