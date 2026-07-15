@@ -1020,6 +1020,21 @@ export async function POST(request: Request) {
           noLive: true,
         });
       }
+      if (runTts.exitCode !== 0) {
+        return json({
+          action,
+          status: "error",
+          summary: `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}음성 생성 프로세스가 실패해 다음 편을 실행하지 않았습니다. 자동 재시도는 하지 않습니다.`,
+          blockerCode: "REAL_TTS_CHILD_FAILED",
+          raw: {
+            partId: part.id,
+            exitCode: runTts.exitCode,
+            stderr: runTts.stderr.slice(-1200),
+            stdout: runTts.stdout.slice(-600),
+          },
+          noLive: true,
+        });
+      }
     }
     const mediaAfterTts = readWizardRealMediaState(topicId);
     if (mediaAfterTts.realTts.ready) {

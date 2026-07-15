@@ -8938,7 +8938,8 @@ function readWizardProductionPartMediaState(
 
 /** 편별 산출물을 모두 재검증해 한 편이라도 미완료면 전체 게시를 차단한다. */
 export function readWizardRealMediaState(topicId: string): WizardRealMediaState {
-  const record = readWizardFinalScriptRecord(topicId);
+  const baseRecord = readWizardFinalScriptRecord(topicId);
+  const record = baseRecord ? resolveWizardDurationSafeProductionRecord(topicId, baseRecord) : null;
   const strategy = record?.script.videoStrategy;
   if (!record || !strategy || strategy.contractVersion !== FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION) {
     return readWizardLegacyRealMediaState(topicId);

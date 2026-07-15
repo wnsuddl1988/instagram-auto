@@ -744,6 +744,13 @@ check(
   (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 1 &&
     /action === "realTtsCreate"[\s\S]*?runOperatorScript\(builtTts\.command,\s*\{[^}]*includeMediaEnv:\s*true/.test(routeCode),
 );
+check("realTtsCreate stops at the first nonzero child exit and returns sanitized evidence",
+  /if \(runTts\.exitCode !== 0\)/.test(routeCode) &&
+  /REAL_TTS_CHILD_FAILED/.test(routeCode) &&
+  /runTts\.stderr\.slice/.test(routeCode) &&
+  /다음 편을 실행하지 않았습니다/.test(routeCode));
+check("real media status uses the same duration-safe two-part production record",
+  /const record = baseRecord \? resolveWizardDurationSafeProductionRecord\(topicId, baseRecord\) : null/.test(helperCode));
 for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardPreflight", "actualUpload"]) {
   // 해당 action 핸들러 블록 내부에 includeMediaEnv:true가 없어야 한다(다음 action 시작 전까지 스캔).
   const idx = routeCode.indexOf(`action === "${otherAction}"`);
