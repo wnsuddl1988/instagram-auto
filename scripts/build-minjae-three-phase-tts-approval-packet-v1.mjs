@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import {
   buildMinjaeThreePhasePlan,
+  buildThreePhaseRequestContext,
   buildThreePhaseRequestFingerprint,
   maskElevenLabsVoiceId,
   validateMinjaeVoicePhaseContract,
@@ -153,13 +154,17 @@ try {
 const modelId = String(ttsScript.modelId ?? "eleven_v3");
 const voiceIdMasked = maskElevenLabsVoiceId(voiceId);
 const phaseRequests = phasePlan.map((phase, phaseIndex) => {
-  const previousText = phaseIndex > 0 ? phasePlan[phaseIndex - 1].text : null;
-  const nextText = phaseIndex < phasePlan.length - 1 ? phasePlan[phaseIndex + 1].text : null;
+  const {
+    strategy: requestContextStrategy,
+    previousText,
+    nextText,
+  } = buildThreePhaseRequestContext({ modelId, phasePlan, phaseIndex });
   const fingerprint = buildThreePhaseRequestFingerprint({
     engineVersion: ENGINE_VERSION,
     modelId,
     voiceIdMasked,
     phase,
+    requestContextStrategy,
     previousText,
     nextText,
   });
@@ -171,6 +176,7 @@ const phaseRequests = phasePlan.map((phase, phaseIndex) => {
     textSha256: sha256(phase.text),
     requestSha256: fingerprint.sha256,
     requestFingerprint: fingerprint.short,
+    requestContextStrategy,
     previousContextIncluded: previousText != null,
     nextContextIncluded: nextText != null,
   };
@@ -201,6 +207,8 @@ const stablePacket = {
     uploadAllowed: false,
     renderAllowed: false,
     phaseOrder: ["opening", "body", "closing"],
+    requestContextPolicy: phaseRequests[0].requestContextStrategy,
+    providerAdjacentContextIncluded: phaseRequests.some(({ previousContextIncluded, nextContextIncluded }) => previousContextIncluded || nextContextIncluded),
     crossfadeMs: ttsScript.voicePhaseContract.assembly.crossfadeMs,
     loudnessIntegratedLufs: ttsScript.voicePhaseContract.assembly.loudnessIntegratedLufs,
     truePeakDbtp: ttsScript.voicePhaseContract.assembly.truePeakDbtp,

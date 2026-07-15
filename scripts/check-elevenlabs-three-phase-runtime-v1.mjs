@@ -2,6 +2,7 @@
 
 import {
   buildMinjaeThreePhasePlan,
+  buildThreePhaseRequestContext,
   buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
   maskElevenLabsVoiceId,
@@ -62,22 +63,46 @@ check("closing contains only final scene", plan[2].sceneNumbers.join(",") === "4
 check("phase speeds are 1.02 1.00 1.01", plan.map(({ voiceSettings }) => voiceSettings.speed).join(",") === "1.02,1,1.01");
 check("Junho stability and similarity survive every phase", plan.every(({ voiceSettings }) => voiceSettings.stability === 0.48 && voiceSettings.similarity_boost === 0.86));
 check("voice id is masked with the shared production rule", maskElevenLabsVoiceId("pb3lVZVjdFWbkhPKlelB") === "pb3***elB");
+const v3RequestContext = buildThreePhaseRequestContext({ modelId: "eleven_v3", phasePlan: plan, phaseIndex: 1 });
+check("Eleven v3 omits unsupported adjacent text context", v3RequestContext.strategy === "eleven_v3_local_crossfade_only_v1" && v3RequestContext.previousText === null && v3RequestContext.nextText === null);
 const requestFingerprint = buildThreePhaseRequestFingerprint({
   engineVersion: "money_shorts_korean_director_v2",
   modelId: "eleven_v3",
   voiceIdMasked: "pb3***elB",
   phase: plan[1],
-  previousText: plan[0].text,
-  nextText: plan[2].text,
+  requestContextStrategy: v3RequestContext.strategy,
+  previousText: v3RequestContext.previousText,
+  nextText: v3RequestContext.nextText,
 });
 check("request fingerprint is stable and content-addressed", requestFingerprint.sha256.length === 64 && requestFingerprint.short === requestFingerprint.sha256.slice(0, 14));
-check("adjacent context changes the request fingerprint", requestFingerprint.sha256 !== buildThreePhaseRequestFingerprint({
+check("Eleven v3 fingerprint rejects unsupported adjacent text", throwsCode(() => buildThreePhaseRequestFingerprint({
   engineVersion: "money_shorts_korean_director_v2",
   modelId: "eleven_v3",
   voiceIdMasked: "pb3***elB",
   phase: plan[1],
-  previousText: null,
+  requestContextStrategy: v3RequestContext.strategy,
+  previousText: plan[0].text,
   nextText: plan[2].text,
+}), "ELEVEN_V3_ADJACENT_CONTEXT_FORBIDDEN"));
+const legacyRequestContext = buildThreePhaseRequestContext({ modelId: "eleven_multilingual_v2", phasePlan: plan, phaseIndex: 1 });
+check("non-v3 models retain adjacent text context", legacyRequestContext.strategy === "adjacent_text_context_v1" && legacyRequestContext.previousText === plan[0].text && legacyRequestContext.nextText === plan[2].text);
+const legacyRequestFingerprint = buildThreePhaseRequestFingerprint({
+  engineVersion: "money_shorts_korean_director_v2",
+  modelId: "eleven_multilingual_v2",
+  voiceIdMasked: "pb3***elB",
+  phase: plan[1],
+  requestContextStrategy: legacyRequestContext.strategy,
+  previousText: legacyRequestContext.previousText,
+  nextText: legacyRequestContext.nextText,
+});
+check("supported adjacent context changes the non-v3 fingerprint", legacyRequestFingerprint.sha256 !== buildThreePhaseRequestFingerprint({
+  engineVersion: "money_shorts_korean_director_v2",
+  modelId: "eleven_multilingual_v2",
+  voiceIdMasked: "pb3***elB",
+  phase: plan[1],
+  requestContextStrategy: legacyRequestContext.strategy,
+  previousText: null,
+  nextText: legacyRequestContext.nextText,
 }).sha256);
 check("wrong opening tag fails before synthesis", throwsCode(() => buildMinjaeThreePhasePlan({
   scenePayloads: [{ ...scenePayloads[0], tag: "calmly" }, ...scenePayloads.slice(1)],

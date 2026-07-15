@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 const CONTRACT_VERSION = "money_shorts_character_voice_phase_v1";
 const PHASE_IDS = ["opening", "body", "closing"];
+const ELEVEN_V3_CONTEXT_STRATEGY = "eleven_v3_local_crossfade_only_v1";
+const ADJACENT_TEXT_CONTEXT_STRATEGY = "adjacent_text_context_v1";
 
 function finiteNumber(value) {
   const number = Number(value);
@@ -73,7 +75,45 @@ export function maskElevenLabsVoiceId(value) {
   return `${voiceId.slice(0, 3)}***${voiceId.slice(-3)}`;
 }
 
-export function buildThreePhaseRequestFingerprint({ engineVersion, modelId, voiceIdMasked, phase, previousText, nextText }) {
+export function buildThreePhaseRequestContext({ modelId, phasePlan, phaseIndex }) {
+  if (
+    !Array.isArray(phasePlan) ||
+    phasePlan.length !== PHASE_IDS.length ||
+    phasePlan.some((phase, index) => phase?.id !== PHASE_IDS[index]) ||
+    !Number.isInteger(phaseIndex) ||
+    phaseIndex < 0 ||
+    phaseIndex >= phasePlan.length
+  ) {
+    throw new Error("INVALID_THREE_PHASE_REQUEST_CONTEXT_INPUT");
+  }
+  const isElevenV3 = /^eleven_v3(?:$|_)/.test(String(modelId ?? ""));
+  return {
+    strategy: isElevenV3 ? ELEVEN_V3_CONTEXT_STRATEGY : ADJACENT_TEXT_CONTEXT_STRATEGY,
+    previousText: !isElevenV3 && phaseIndex > 0 ? phasePlan[phaseIndex - 1].text : null,
+    nextText: !isElevenV3 && phaseIndex < phasePlan.length - 1 ? phasePlan[phaseIndex + 1].text : null,
+  };
+}
+
+export function buildThreePhaseRequestFingerprint({
+  engineVersion,
+  modelId,
+  voiceIdMasked,
+  phase,
+  requestContextStrategy,
+  previousText,
+  nextText,
+}) {
+  if (![ELEVEN_V3_CONTEXT_STRATEGY, ADJACENT_TEXT_CONTEXT_STRATEGY].includes(requestContextStrategy)) {
+    throw new Error("INVALID_THREE_PHASE_REQUEST_CONTEXT_STRATEGY");
+  }
+  if (/^eleven_v3(?:$|_)/.test(String(modelId ?? ""))) {
+    if (requestContextStrategy !== ELEVEN_V3_CONTEXT_STRATEGY) {
+      throw new Error("ELEVEN_V3_LOCAL_CONTEXT_STRATEGY_REQUIRED");
+    }
+    if (previousText != null || nextText != null) {
+      throw new Error("ELEVEN_V3_ADJACENT_CONTEXT_FORBIDDEN");
+    }
+  }
   const payload = {
     engineVersion,
     modelId,
@@ -82,6 +122,7 @@ export function buildThreePhaseRequestFingerprint({ engineVersion, modelId, voic
     sceneNumbers: phase.sceneNumbers,
     voiceSettings: phase.voiceSettings,
     text: phase.text,
+    requestContextStrategy,
     previousText: previousText ?? null,
     nextText: nextText ?? null,
   };

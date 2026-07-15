@@ -21,6 +21,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildMinjaeThreePhasePlan,
+  buildThreePhaseRequestContext,
   buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
   maskElevenLabsVoiceId,
@@ -272,6 +273,13 @@ if (voicePhaseEnabled) {
     process.exit(2);
   }
 }
+const voicePhaseRequestContexts = voicePhaseEnabled
+  ? voicePhasePlan.map((phase, phaseIndex) => buildThreePhaseRequestContext({
+      modelId,
+      phasePlan: voicePhasePlan,
+      phaseIndex,
+    }))
+  : null;
 const openingSpeedCap = Number(ttsScript?.openingVoiceContract?.speedCap);
 const openingVoiceAudit = stagedCoverEnabled ? {
   contractVersion: STAGED_COVER_CONTRACT_VERSION,
@@ -354,6 +362,11 @@ const inputFingerprint = createHash("sha256").update(JSON.stringify({
     text,
     voiceSettings: phaseVoiceSettings,
   })) ?? null,
+  voicePhaseRequestContexts: voicePhaseRequestContexts?.map(({ strategy, previousText, nextText }) => ({
+    strategy,
+    previousContextIncluded: previousText != null,
+    nextContextIncluded: nextText != null,
+  })) ?? null,
   topicProfileId: topicProfile.id ?? "economic_authority",
   sampleReviewContractVersion: sampleReviewEnabled ? SAMPLE_REVIEW_CONTRACT_VERSION : null,
   continuousText,
@@ -380,6 +393,9 @@ let phaseGenerationAudit = null;
 const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`;
 
 async function loadOrRequestAlignedAudio({ text, previousText = null, nextText = null, settings, fingerprint, rawPath, alignmentCachePath, phaseId }) {
+  if (isElevenV3 && (previousText != null || nextText != null)) {
+    throw new Error(`ABORT: Eleven v3 adjacent text context is unsupported for ${phaseId}. No API call was made.`);
+  }
   if (existsSync(rawPath) && existsSync(alignmentCachePath)) {
     try {
       const saved = JSON.parse(readFileSync(alignmentCachePath, "utf8"));
@@ -400,8 +416,8 @@ async function loadOrRequestAlignedAudio({ text, previousText = null, nextText =
     voice_settings: settings,
     seed,
     apply_text_normalization: "auto",
-    ...(previousText ? { previous_text: previousText } : {}),
-    ...(nextText ? { next_text: nextText } : {}),
+    ...(!isElevenV3 && previousText ? { previous_text: previousText } : {}),
+    ...(!isElevenV3 && nextText ? { next_text: nextText } : {}),
     ...(isElevenV3 ? { language_code: "ko" } : {}),
   };
   let response;
@@ -446,13 +462,14 @@ async function loadOrRequestAlignedAudio({ text, previousText = null, nextText =
 async function generateAndWriteSummary() {
 if (voicePhaseEnabled) {
   for (const [phaseIndex, phase] of voicePhasePlan.entries()) {
-    const previousText = phaseIndex > 0 ? voicePhasePlan[phaseIndex - 1].text : null;
-    const nextText = phaseIndex < voicePhasePlan.length - 1 ? voicePhasePlan[phaseIndex + 1].text : null;
+    const phaseRequestContext = voicePhaseRequestContexts[phaseIndex];
+    const { previousText, nextText, strategy: requestContextStrategy } = phaseRequestContext;
     const phaseFingerprint = buildThreePhaseRequestFingerprint({
       engineVersion: ENGINE_VERSION,
       modelId,
       voiceIdMasked,
       phase,
+      requestContextStrategy,
       previousText,
       nextText,
     }).short;
@@ -474,6 +491,9 @@ if (voicePhaseEnabled) {
     }
     phaseArtifacts.push({
       ...phase,
+      requestContextStrategy,
+      previousContextIncluded: previousText != null,
+      nextContextIncluded: nextText != null,
       inputFingerprint: phaseFingerprint,
       rawAudioPath: phaseRawAudioPath,
       alignmentPath: phaseAlignmentPath,
@@ -501,10 +521,15 @@ if (voicePhaseEnabled) {
     joinedDurationBeforeTailSec: merged.joinedDurationSec,
     loudnessIntegratedLufs: voicePhaseContract.assembly.loudnessIntegratedLufs,
     truePeakDbtp: voicePhaseContract.assembly.truePeakDbtp,
-    phases: phaseArtifacts.map(({ id, sceneNumbers, voiceSettings: settings, inputFingerprint: fingerprint, audioDurationSec, reused }) => ({
+    requestContextPolicy: voicePhaseRequestContexts[0].strategy,
+    providerAdjacentContextIncluded: phaseArtifacts.some(({ previousContextIncluded, nextContextIncluded }) => previousContextIncluded || nextContextIncluded),
+    phases: phaseArtifacts.map(({ id, sceneNumbers, voiceSettings: settings, requestContextStrategy, previousContextIncluded, nextContextIncluded, inputFingerprint: fingerprint, audioDurationSec, reused }) => ({
       id,
       sceneNumbers,
       voiceSettingsSanitized: settings,
+      requestContextStrategy,
+      previousContextIncluded,
+      nextContextIncluded,
       inputFingerprint: fingerprint,
       audioDurationSec,
       reused,
@@ -717,7 +742,7 @@ const summary = {
   timingPolicy: "character_aligned_continuous_v2",
   prosodyPolicy: "korean_native_cadence_v2",
   speechDirectionEngineVersion: "money_shorts_speech_direction_v2",
-  speechContextPolicy: voicePhaseEnabled ? "opening_body_closing_continuity_with_crossfade" : "continuous_full_script",
+  speechContextPolicy: voicePhaseEnabled ? voicePhaseRequestContexts[0].strategy : "continuous_full_script",
   topicSpeechProfileId: topicProfile.id ?? "economic_authority",
   speakerStance: topicProfile.speakerStance ?? null,
   deliveryArc: topicProfile.arc ?? null,
@@ -751,6 +776,9 @@ const summary = {
     voicePhaseEnabled
       ? "Minjae narration was generated as three aligned performance phases and assembled with the Owner-approved crossfade and loudness target."
       : "Full narration was generated in one request and scene timing came from character alignment.",
+    ...(voicePhaseEnabled && isElevenV3
+      ? ["Eleven v3 adjacent-text context is unsupported and was omitted; continuity is provided by ordered phases and the Owner-approved local crossfade."]
+      : []),
     ...(voicePhaseEnabled ? ["Opening/body/closing phase caches prevent duplicate paid calls for matching fingerprints; no automatic retry exists."] : []),
     ...(sampleReviewEnabled ? ["Single-topic A/V review contract applied; no 500-topic rollout is implied."] : []),
     "No upload performed. Audio generated outside the repository.",

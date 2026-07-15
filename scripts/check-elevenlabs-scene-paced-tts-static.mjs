@@ -101,7 +101,7 @@ check("sample review adds v3 phrase pauses and scene beats", /\[pause\]/.test(bu
 check("cache fingerprint includes engine/model/profile/settings/full text", ["engineVersion", "modelId", "topicProfileId", "voiceSettings", "continuousText"].every((field) => builder.includes(field)));
 check("matching phase or continuous audio and alignment are reused without a paid call", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(builder) && /reused_continuous_aligned/.test(builder) && /reused_three_phase_aligned/.test(builder));
 check("Minjae phases preserve boundaries speeds and tags", /buildMinjaeThreePhasePlan/.test(builder) && /staged_cover_first_three_lines/.test(threePhaseRuntime) && /between_opening_and_closing/.test(threePhaseRuntime) && /final_save_or_follow_scene/.test(threePhaseRuntime));
-check("adjacent phase text is sent as continuity context", /previous_text:\s*previousText/.test(builder) && /next_text:\s*nextText/.test(builder) && /voicePhasePlan\[phaseIndex - 1\]\.text/.test(builder) && /voicePhasePlan\[phaseIndex \+ 1\]\.text/.test(builder));
+check("v3 omits unsupported adjacent context while other models retain it", /buildThreePhaseRequestContext/.test(builder) && /!isElevenV3 && previousText/.test(builder) && /!isElevenV3 && nextText/.test(builder) && /Eleven v3 adjacent text context is unsupported/.test(builder) && /eleven_v3_local_crossfade_only_v1/.test(threePhaseRuntime));
 check("Minjae phases use two 60ms crossfades and final loudness mastering", /mergeThreePhaseCharacterAlignments/.test(builder) && /buildThreePhaseAudioFilter/.test(builder) && (threePhaseRuntime.match(/acrossfade=d=/g) ?? []).length === 2 && /loudnorm=I=/.test(threePhaseRuntime));
 
 console.log("\n[ alignment and downstream ]");
