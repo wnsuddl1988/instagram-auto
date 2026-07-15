@@ -456,7 +456,10 @@ function sceneRoleBeat(scene, sceneIndex) {
 function visualModeForScene(scene, sceneIndex, totalScenes) {
   const beat = sceneRoleBeat(scene, sceneIndex);
   const id = String(scene?.id ?? "");
-  if (id === "hook") return { id: "CHARACTER_EVENT", ...VISUAL_MODES.CHARACTER_EVENT };
+  if (id === "hook") {
+    const modeId = beat % 2 === 1 ? "CHARACTER_EVENT" : "OBJECT_MECHANISM";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
   if (id === "problem") return { id: "OBJECT_MECHANISM", ...VISUAL_MODES.OBJECT_MECHANISM };
   if (id === "situation") {
     const modeId = beat % 2 === 1 ? "ENVIRONMENTAL_CHARACTER" : "OBJECT_MECHANISM";

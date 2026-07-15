@@ -50,6 +50,9 @@ check("scene role mapper handles shared finance flow roles", [
   'id === "habit"',
   'id === "save"',
 ].every((token) => imageRunner.includes(token)));
+check("repeated hook beats alternate into a non-character mechanism scene",
+  imageRunner.includes('if (id === "hook") {') &&
+  imageRunner.includes('const modeId = beat % 2 === 1 ? "CHARACTER_EVENT" : "OBJECT_MECHANISM"'));
 check("no-person mode has an explicit presence gate", imageRunner.includes("PRESENCE GATE: NO PERSON"));
 check("hands-only mode has an explicit presence gate", imageRunner.includes("PRESENCE GATE: HANDS ONLY"));
 check("character mode keeps the approved selected-reference continuity contract", imageRunner.includes("ONE RECURRING CHARACTER IS ALLOWED") && imageRunner.includes("CHARACTER_CONTINUITY_INSTRUCTION") && imageRunner.includes("attachRef"));
