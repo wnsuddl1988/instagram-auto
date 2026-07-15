@@ -152,11 +152,15 @@ if (pipeline?.ok) {
       semanticText(spoken) === semanticText(display) &&
       semanticText(tts.scenes?.[0]?.narration) === semanticText(spoken);
   }));
-  check("every generated TTS input applies a confident non-rushed opening", partInputs.every(({ tts }) =>
-    tts.openingVoiceContract?.v3AudioTag === "confidently" &&
-    tts.openingVoiceContract?.speedCap === 0.98 &&
-    Number(tts.topicSpeechProfile?.baseSpeed) <= 0.98 &&
-    tts.scenes?.[0]?.speechDirection?.v3AudioTag === "confidently"));
+  check("every Minjae production part applies the approved opening body and closing phases", partInputs.every(({ tts }) =>
+    tts.openingVoiceContract?.v3AudioTag === "firm and assertive" &&
+    tts.openingVoiceContract?.speedCap === 1.02 &&
+    Number(tts.topicSpeechProfile?.baseSpeed) === 1 &&
+    tts.voicePhaseContract?.opening?.speed === 1.02 &&
+    tts.voicePhaseContract?.body?.speed === 1 &&
+    tts.voicePhaseContract?.closing?.speed === 1.01 &&
+    tts.scenes?.[0]?.speechDirection?.v3AudioTag === "firm and assertive" &&
+    tts.scenes?.at(-1)?.speechDirection?.v3AudioTag === "clear and decisive"));
   check("content-addressed TTS input names are unique per production part",
     new Set(paths.parts.map((part) => part.realTtsScriptPath)).size === paths.parts.length &&
     paths.parts.every((part) => /tts-script\.real-[a-f0-9]{12}\.json$/i.test(part.realTtsScriptPath)));

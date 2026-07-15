@@ -94,6 +94,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "characterCastStatus",
   "characterCastCreate",
   "characterCastSelect",
+  "realTtsPreflight",
   "realTtsCreate",
   "realSceneImagesCreate",
   "flowMotionPrepare",
@@ -939,6 +940,42 @@ export async function POST(request: Request) {
       status: "success",
       summary: "불합격 후보를 보존하고 새 장면별 승인 대기 상태로 되돌렸습니다. 자동 재생성은 하지 않았습니다.",
       raw: { flowMotion: failed.status },
+      noLive: true,
+    });
+  }
+
+  // 실제 목소리 사전점검 — 최신 content-addressed 입력과 3구간 요청 해시만 기록한다(API/크레딧 0).
+  if (action === "realTtsPreflight") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const pipeline = buildWizardRealPipelineInputs(topicId);
+    if (!pipeline.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
+    }
+    const packets = [];
+    for (const part of pipeline.paths.parts) {
+      const built = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+      if (!built.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(built.reason), blockerCode: built.reason, noLive: true });
+      }
+      const run = runOperatorScript(built.command, { timeoutMs: 30_000 });
+      if (!run.ran || run.timedOut || run.exitCode !== 0 || !run.json) {
+        return json({
+          action,
+          status: "blocked",
+          summary: "최신 민재 음성 입력의 승인 패킷을 만들지 못했습니다.",
+          blockerCode: run.timedOut ? "SCRIPT_TIMEOUT" : "REAL_TTS_PREFLIGHT_FAILED",
+          raw: { partId: part.id, exitCode: run.exitCode, stderr: run.stderr.slice(-600) },
+          noLive: true,
+        });
+      }
+      packets.push(run.json);
+    }
+    return json({
+      action,
+      status: "success",
+      summary: `최신 민재 3구간 음성 승인 패킷 ${packets.length}개를 만들었습니다. ElevenLabs 호출과 크레딧 사용은 없습니다.`,
+      raw: { packets },
       noLive: true,
     });
   }

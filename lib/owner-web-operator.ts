@@ -122,6 +122,7 @@ export const OPERATOR_ACTIONS = [
   // ── 실제 제작 파이프라인 (task: owner-web-real-script-voice-visual-generation-pipeline-v1) ──
   // 아래 3개 create는 Owner가 로컬 웹 버튼을 눌렀을 때만 실행되는 live 생성 경로다(업로드 아님).
   // 키/세션 없으면 스크립트가 fail-closed로 종료하고, 산출물은 전부 C:\tmp 아래에만 쓴다.
+  "realTtsPreflight", // 현재 음성 입력·구간 해시 승인 패킷 생성(API 호출 0)
   "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
   "realSceneImagesCreate", // 대본 흐름 기반 동적 장면으로 ChatGPT+Playwright 실제 이미지 생성
   "flowMotionPrepare", // 자동 선정 장면의 Flow no-submit 패킷/승인 대기 상태 생성(외부 실행 0)
@@ -187,6 +188,7 @@ const SCRIPT_LOCAL_PIPELINE_DRY_RUN = "scripts/run-local-money-shorts-pipeline-d
 // 실제 제작 파이프라인 — 검증된 기존 ElevenLabs scene-paced 스크립트를 재사용하고,
 // 이미지/최종 영상은 wizard 전용 once 스크립트를 쓴다(전부 repo-relative 하드코딩).
 const SCRIPT_ELEVENLABS_SCENE_TTS = "scripts/build-elevenlabs-korean-director-tts-from-script.mjs";
+const SCRIPT_ELEVENLABS_TTS_PREFLIGHT = "scripts/build-minjae-three-phase-tts-approval-packet-v1.mjs";
 const SCRIPT_REAL_SCENE_IMAGES = "scripts/run-owner-real-scene-images-from-wizard-script-once.mjs";
 const SCRIPT_FLOW_MOTION_GENERATION = "scripts/run-flow-motion-job-playwright-v1.mjs";
 const SCRIPT_REAL_VIDEO = "scripts/run-owner-real-video-from-wizard-assets-once.mjs";
@@ -686,6 +688,29 @@ export function buildOperatorCommand(
             "--out-dir",
             builtUnit.paths.publishOutDir,
             ARM_ARG_TOKEN,
+          ],
+        },
+      };
+    }
+
+    case "realTtsPreflight": {
+      const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
+      if (!real.ok) return { ok: false, reason: real.reason };
+      const part = input?.productionPartId
+        ? real.paths.parts.find((candidate) => candidate.id === input.productionPartId)
+        : real.paths.parts.length === 1 ? real.paths.parts[0] : null;
+      if (!part) return { ok: false, reason: "production_part_required" };
+      const voiceRoute = resolveWizardFinanceCharacterVoice(input?.topicId ?? "");
+      if (!voiceRoute?.ok) return { ok: false, reason: voiceRoute?.reason ?? "finance_voice_route_required" };
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_ELEVENLABS_TTS_PREFLIGHT,
+          args: [
+            "--tts-script", part.realTtsScriptPath,
+            "--out-dir", join(part.ttsOutDir, "approval-preflight-v1"),
+            "--voice-id", voiceRoute.route.voice.voiceId,
+            "--voice-label", voiceRoute.route.voice.voiceLabel,
           ],
         },
       };
@@ -7434,6 +7459,17 @@ function buildWizardRealTtsScript(
   };
 }
 
+function buildWizardRealTtsContractSnapshot(
+  rootTopicId: string,
+  part: WizardProductionPipelinePart,
+  sampleReview: boolean,
+): { script: Record<string, unknown>; json: string; fingerprint: string; sha256: string } {
+  const script = buildWizardRealTtsScript(rootTopicId, part, sampleReview);
+  const json = JSON.stringify(script, null, 2);
+  const sha256 = createHash("sha256").update(json).digest("hex");
+  return { script, json, fingerprint: sha256.slice(0, 12), sha256 };
+}
+
 function resolveWizardProductionPipelineParts(
   topicId: string,
   safeSlug: string,
@@ -7516,6 +7552,89 @@ function resolveWizardProductionPipelineParts(
 }
 
 /**
+ * 확정 대본 문구는 건드리지 않고 실제 제작 예상 단편이 60초를 넘을 때만 분리 전략을
+ * 다시 평가한다. 시간만으로 자르지 않으며 공통 편집 엔진의 핵심 의미 게이트를 통과한
+ * 경우에만 기존 진단→브리지 / 복기→행동 경계를 사용한다.
+ */
+function resolveWizardDurationSafeProductionRecord(
+  topicId: string,
+  record: WizardFinalScriptRecord,
+): WizardFinalScriptRecord {
+  const generated = readWizardGeneratedTopic(topicId);
+  const editorialTopic = generated ? resolveFinanceEditorialTopic(generated) : null;
+  const strategy = record.script.videoStrategy;
+  if (!generated || !editorialTopic || !strategy || strategy.mode !== "single") return record;
+
+  const [singlePart] = buildWizardProductionScriptParts(generated, record.script);
+  if (!singlePart || singlePart.totalParts !== 1) return record;
+  const singleTargetDurationSec = buildWizardSceneTimeline(
+    singlePart.script.scenes.map((scene) => String(scene.narration ?? "").trim()),
+  ).totalDurationSec;
+  if (singleTargetDurationSec <= 60) return record;
+
+  const editorialParts = buildFinanceEditorialScriptParts(editorialTopic);
+  const repairedStrategy = buildFinanceEditorialVideoStrategy(editorialTopic, editorialParts, {
+    singleTargetDurationSec,
+  });
+  if (repairedStrategy.mode !== "two_part" || repairedStrategy.durationRepair?.applied !== true) return record;
+
+  const script: WizardScriptPreview = { ...record.script, videoStrategy: repairedStrategy };
+  return {
+    ...record,
+    localFingerprint: wizardScriptFingerprint(script),
+    script,
+  };
+}
+
+/**
+ * 확정 문구와 시각 증거는 그대로 보존하고, 비어 있는 구형 still/Veo 자동선정 계약만
+ * 현재 결정론적 계약으로 갱신한다. Claude/브라우저/API 호출은 없으며 다른 형태의 stale
+ * 대본은 수정하지 않고 그대로 fail-closed한다.
+ */
+function refreshWizardFinalScriptMediaContract(topicId: string): boolean {
+  const safeSlug = toSafeTopicSlug(topicId);
+  if (!safeSlug) return false;
+  const raw = readAbsJson(wizardFinalScriptPath(safeSlug)) as WizardFinalScriptRecord | null;
+  if (!raw || raw.schemaVersion !== "wizard_script_final_v1" || raw.topicId !== topicId) return false;
+  if (!raw.script || raw.script.videoStrategy?.contractVersion !== FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION) return false;
+  if (!Array.isArray(raw.script.scenes) || raw.script.scenes.length === 0) return false;
+  if (raw.script.scenes.some((scene) =>
+    scene.visualEvidence?.version !== FINANCE_VISUAL_EVIDENCE_VERSION ||
+    typeof scene.visualEvidence?.sceneIntegrationPlan !== "string" ||
+    scene.visualEvidence.sceneIntegrationPlan.length < 40 ||
+    typeof scene.visualEvidence?.motionPlan !== "string" ||
+    scene.visualEvidence.motionPlan.length < 40
+  )) return false;
+  if (wizardSceneMediaStrategiesAreValid(raw.script.scenes)) return true;
+  if (!getWizardScriptQualityGate(topicId, raw.script).passed) return false;
+
+  let scenes: WizardScriptScene[];
+  try {
+    scenes = applyWizardSceneMediaStrategies(raw.script.scenes);
+  } catch {
+    return false;
+  }
+  if (!wizardSceneMediaStrategiesAreValid(scenes)) return false;
+  const script: WizardScriptPreview = { ...raw.script, scenes };
+  if (!getWizardScriptQualityGate(topicId, script).passed) return false;
+  const refreshed: WizardFinalScriptRecord = {
+    ...raw,
+    localFingerprint: wizardScriptFingerprint(script),
+    polish: {
+      ...raw.polish,
+      note: `${raw.polish.note} · 로컬 장면 미디어 계약 갱신`,
+    },
+    script,
+  };
+  try {
+    writeFileSync(wizardFinalScriptPath(safeSlug), JSON.stringify(refreshed, null, 2), "utf8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 실제 TTS/이미지/영상 단계의 공통 입력을 만든다.
  * - 확정 대본(script-final.json)이 없으면 fail-closed(대본 만들기 먼저).
  * - 실전용 tts-script의 durationSec은 생성 전 예상치다. 실제 ElevenLabs 음성이 생성되면
@@ -7526,26 +7645,51 @@ export function buildWizardRealPipelineInputs(
 ): { ok: true; paths: WizardRealPipelinePaths } | { ok: false; reason: string } {
   const safeSlug = toSafeTopicSlug(topicId);
   if (!safeSlug) return { ok: false, reason: "topic_id_invalid_or_empty" };
-  const record = readWizardFinalScriptRecord(topicId);
+  let record = readWizardFinalScriptRecord(topicId);
+  if (!record && refreshWizardFinalScriptMediaContract(topicId)) {
+    record = readWizardFinalScriptRecord(topicId);
+  }
   if (!record) return { ok: false, reason: "script_final_missing" };
+  record = resolveWizardDurationSafeProductionRecord(topicId, record);
   if (!Array.isArray(record.script.scenes) || !isSupportedWizardSceneCount(record.script.scenes.length)) {
     return { ok: false, reason: "script_scenes_invalid" };
   }
   let productionParts: WizardProductionPipelinePart[];
+  const preparedTtsContracts: Array<{
+    part: WizardProductionPipelinePart;
+    inputDir: string;
+    realTtsContract: ReturnType<typeof buildWizardRealTtsContractSnapshot>;
+  }> = [];
   try {
     productionParts = resolveWizardProductionPipelineParts(topicId, safeSlug, record);
     for (const part of productionParts) {
       if (!isSupportedWizardSceneCount(part.expectedSceneCount)) throw new Error("script_scenes_invalid");
       const isStagedProduction = part.coverLines.length === 3;
       const sampleReview = !isStagedProduction && isWizardAvSampleReviewTopic(topicId);
-      const realTtsScript = buildWizardRealTtsScript(topicId, part, sampleReview);
-      const realTtsScriptJson = JSON.stringify(realTtsScript, null, 2);
-      const realTtsScriptFingerprint = createHash("sha256").update(realTtsScriptJson).digest("hex").slice(0, 12);
+      const realTtsContract = buildWizardRealTtsContractSnapshot(topicId, part, sampleReview);
       const inputDir = dirname(part.scriptFinalPath);
-      part.realTtsScriptPath = join(inputDir, `tts-script.real-${realTtsScriptFingerprint}.json`);
+      part.realTtsScriptPath = join(inputDir, `tts-script.real-${realTtsContract.fingerprint}.json`);
+      preparedTtsContracts.push({ part, inputDir, realTtsContract });
+    }
+  } catch (e) {
+    return { ok: false, reason: `input_write_failed:${(e as Error).message}` };
+  }
+  const durationViolation = preparedTtsContracts.find(({ realTtsContract }) => {
+    const targetDurationSec = Number(realTtsContract.script.targetDurationSec);
+    return !Number.isFinite(targetDurationSec) || targetDurationSec < 15 || targetDurationSec > 60;
+  });
+  if (durationViolation) {
+    const durationSec = Number(durationViolation.realTtsContract.script.targetDurationSec);
+    return {
+      ok: false,
+      reason: `tts_duration_contract_violation:${durationViolation.part.id}:${Number.isFinite(durationSec) ? durationSec : "invalid"}`,
+    };
+  }
+  try {
+    for (const { part, inputDir, realTtsContract } of preparedTtsContracts) {
       mkdirSync(inputDir, { recursive: true });
       writeFileSync(part.scriptFinalPath, JSON.stringify(part.record, null, 2), "utf8");
-      if (!existsSync(part.realTtsScriptPath)) writeFileSync(part.realTtsScriptPath, realTtsScriptJson, "utf8");
+      if (!existsSync(part.realTtsScriptPath)) writeFileSync(part.realTtsScriptPath, realTtsContract.json, "utf8");
     }
   } catch (e) {
     return { ok: false, reason: `input_write_failed:${(e as Error).message}` };
@@ -8462,6 +8606,20 @@ function readWizardProductionPartMediaState(
   part: WizardProductionPipelinePart,
 ): WizardRealMediaState["parts"][number] {
   const expectedSceneCount = part.expectedSceneCount;
+  const rootTopicId = part.record.production?.rootTopicId ?? part.topicId;
+  const sampleReview = part.coverLines.length !== 3 && isWizardAvSampleReviewTopic(rootTopicId);
+  let expectedTtsContract: ReturnType<typeof buildWizardRealTtsContractSnapshot> | null = null;
+  try {
+    expectedTtsContract = buildWizardRealTtsContractSnapshot(rootTopicId, part, sampleReview);
+  } catch {
+    expectedTtsContract = null;
+  }
+  const expectedVoicePhaseContract = expectedTtsContract?.script.voicePhaseContract as {
+    enabled?: boolean;
+    contractVersion?: string;
+    assembly?: { crossfadeMs?: number };
+  } | null | undefined;
+  const expectsThreePhaseTts = expectedVoicePhaseContract?.enabled === true;
   const ttsSummary = readAbsJson(part.ttsSummaryPath) as {
     provider?: string;
     ttsEngineVersion?: string;
@@ -8472,23 +8630,48 @@ function readWizardProductionPartMediaState(
     timelineDurationSec?: number | null;
     apiCallCount?: number;
     wizardScriptFingerprint?: string;
+    ttsInputContractFingerprint?: string;
+    ttsInputContractSha256?: string;
+    generationMode?: string;
+    voicePhaseContractVersion?: string | null;
+    phaseGenerationAudit?: {
+      phaseCount?: number;
+      phaseOrder?: string[];
+      crossfadeMs?: number;
+      phases?: Array<{ id?: string; voiceSettingsSanitized?: { speed?: number } }>;
+    } | null;
     coverContractVersion?: string | null;
     openingVoiceAudit?: {
       confidentFirstTag?: boolean;
+      requestedTagApplied?: boolean;
       speedWithinCap?: boolean;
       passed?: boolean;
     };
   } | null;
   const ttsAudioPath = typeof ttsSummary?.timelineAudioPath === "string" ? ttsSummary.timelineAudioPath : null;
   const ttsDuration = typeof ttsSummary?.timelineDurationSec === "number" ? ttsSummary.timelineDurationSec : null;
+  const ttsInputContractCurrent =
+    expectedTtsContract != null &&
+    ttsSummary?.ttsInputContractFingerprint === expectedTtsContract.fingerprint &&
+    ttsSummary.ttsInputContractSha256 === expectedTtsContract.sha256;
+  const phaseAuditReady = expectsThreePhaseTts
+    ? ttsSummary?.generationMode === "minjae_three_phase_aligned" &&
+      ttsSummary.voicePhaseContractVersion === expectedVoicePhaseContract?.contractVersion &&
+      ttsSummary.openingVoiceAudit?.requestedTagApplied === true &&
+      ttsSummary.phaseGenerationAudit?.phaseCount === 3 &&
+      ttsSummary.phaseGenerationAudit?.phaseOrder?.join(",") === "opening,body,closing" &&
+      ttsSummary.phaseGenerationAudit?.crossfadeMs === expectedVoicePhaseContract?.assembly?.crossfadeMs &&
+      ttsSummary.phaseGenerationAudit?.phases?.map((phase) => phase.voiceSettingsSanitized?.speed).join(",") === "1.02,1,1.01"
+    : ttsSummary?.openingVoiceAudit?.confidentFirstTag === true;
   const realTtsReady =
     ttsSummary?.provider === "elevenlabs" &&
     ttsSummary.ttsEngineVersion === WIZARD_TTS_ENGINE_VERSION &&
     ttsSummary.wizardScriptFingerprint === part.record.localFingerprint &&
+    ttsInputContractCurrent &&
     ttsSummary.liveApiCallPerformed === true &&
     ttsSummary.readinessFailure !== true &&
     ttsSummary.coverContractVersion === WIZARD_STAGED_COVER_CONTRACT_VERSION &&
-    ttsSummary.openingVoiceAudit?.confidentFirstTag === true &&
+    phaseAuditReady &&
     ttsSummary.openingVoiceAudit?.speedWithinCap === true &&
     ttsSummary.openingVoiceAudit?.passed === true &&
     ttsAudioPath != null &&

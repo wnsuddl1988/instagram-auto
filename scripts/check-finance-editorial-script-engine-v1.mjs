@@ -87,6 +87,23 @@ check("every two-part plan explicitly connects part one and marks part two", spl
     partTwo.id === "part-2" && partTwo.explicitPartMarker === true &&
     partTwo.coverLines.some((line) => /2편/.test(line.displayText));
 }));
+const durationRepairTopic = bank.find((topic) => topic.title === "계좌가 흔들릴 때 수익보다 먼저 되찾을 것");
+const durationRepairParts = durationRepairTopic ? build(durationRepairTopic) : null;
+const durationRepairStrategy = durationRepairTopic && durationRepairParts
+  ? buildVideoStrategy(durationRepairTopic, durationRepairParts, { singleTargetDurationSec: 81 })
+  : null;
+check("over-60 production may split only through the shared semantic duration guard",
+  durationRepairStrategy?.mode === "two_part" &&
+  durationRepairStrategy.durationRepair?.applied === true &&
+  durationRepairStrategy.durationRepair.sourceTargetDurationSec === 81 &&
+  durationRepairStrategy.splitAudit.timeOnlyDecisionForbidden === true);
+check("the duration guard preserves the natural part-one bridge and part-two re-entry",
+  /2편/.test(durationRepairStrategy?.parts?.[0]?.bridgeNarration ?? "") &&
+  /1편에서/.test(durationRepairStrategy?.parts?.[1]?.recapNarration ?? ""));
+check("duration at the 60-second ceiling never forces a semantic split",
+  durationRepairTopic && durationRepairParts
+    ? buildVideoStrategy(durationRepairTopic, durationRepairParts, { singleTargetDurationSec: 60 }).durationRepair == null
+    : false);
 check("every script hook starts with its exact title", scripts.every(({ topic, parts }) => lines(parts.hook)[0] === topic.title));
 check("every script carries a semantic profile and focus", scripts.every(({ parts }) =>
   typeof parts.profileId === "string" && parts.profileId.includes(":") && typeof parts.focus === "string" && parts.focus.length >= 2));

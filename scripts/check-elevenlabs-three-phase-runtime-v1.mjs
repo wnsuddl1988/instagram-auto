@@ -2,7 +2,9 @@
 
 import {
   buildMinjaeThreePhasePlan,
+  buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
+  maskElevenLabsVoiceId,
   mergeThreePhaseCharacterAlignments,
   validateMinjaeVoicePhaseContract,
 } from "./_elevenlabs-three-phase-voice-runtime.mjs";
@@ -59,6 +61,24 @@ check("body contains only middle scenes", plan[1].sceneNumbers.join(",") === "2,
 check("closing contains only final scene", plan[2].sceneNumbers.join(",") === "4" && !plan[2].text.includes("셋째"));
 check("phase speeds are 1.02 1.00 1.01", plan.map(({ voiceSettings }) => voiceSettings.speed).join(",") === "1.02,1,1.01");
 check("Junho stability and similarity survive every phase", plan.every(({ voiceSettings }) => voiceSettings.stability === 0.48 && voiceSettings.similarity_boost === 0.86));
+check("voice id is masked with the shared production rule", maskElevenLabsVoiceId("pb3lVZVjdFWbkhPKlelB") === "pb3***elB");
+const requestFingerprint = buildThreePhaseRequestFingerprint({
+  engineVersion: "money_shorts_korean_director_v2",
+  modelId: "eleven_v3",
+  voiceIdMasked: "pb3***elB",
+  phase: plan[1],
+  previousText: plan[0].text,
+  nextText: plan[2].text,
+});
+check("request fingerprint is stable and content-addressed", requestFingerprint.sha256.length === 64 && requestFingerprint.short === requestFingerprint.sha256.slice(0, 14));
+check("adjacent context changes the request fingerprint", requestFingerprint.sha256 !== buildThreePhaseRequestFingerprint({
+  engineVersion: "money_shorts_korean_director_v2",
+  modelId: "eleven_v3",
+  voiceIdMasked: "pb3***elB",
+  phase: plan[1],
+  previousText: null,
+  nextText: plan[2].text,
+}).sha256);
 check("wrong opening tag fails before synthesis", throwsCode(() => buildMinjaeThreePhasePlan({
   scenePayloads: [{ ...scenePayloads[0], tag: "calmly" }, ...scenePayloads.slice(1)],
   continuousParts: ["a", "b", "c", "d"],

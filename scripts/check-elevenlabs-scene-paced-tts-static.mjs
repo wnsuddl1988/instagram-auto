@@ -47,7 +47,7 @@ check("no shell:true or execSync", !/shell\s*:\s*true|execSync/.test(code));
 check("input/output are restricted to C:\\tmp\\money-shorts-os", /MEDIA_ROOT_RE/.test(builder) && /money-shorts-os/.test(builder));
 check(".money-shorts-local remains forbidden", builder.includes(".money-shorts-local access forbidden"));
 check("builder never reads .env.local", !/\.env\.local|readFileSync\([^)]*env/i.test(code));
-check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskVoiceId/.test(builder));
+check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskElevenLabsVoiceId/.test(builder));
 check("legacy is one paid call and Minjae is exactly three with no retry loop", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /THREE_PHASE_API_CALL_BUDGET_MAX\s*=\s*3/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
 
 console.log("\n[ Korean direction engine ]");

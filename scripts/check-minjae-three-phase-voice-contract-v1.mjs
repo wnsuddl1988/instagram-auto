@@ -7,6 +7,7 @@ const voiceModule = fs.readFileSync("lib/finance-character-voice-cast.ts", "utf8
 const operator = fs.readFileSync("lib/owner-web-operator.ts", "utf8");
 const builder = fs.readFileSync("scripts/build-elevenlabs-korean-director-tts-from-script.mjs", "utf8");
 const runtime = fs.readFileSync("scripts/_elevenlabs-three-phase-voice-runtime.mjs", "utf8");
+const approvalBuilder = fs.readFileSync("scripts/build-minjae-three-phase-tts-approval-packet-v1.mjs", "utf8");
 
 const results = [];
 function check(name, condition) {
@@ -38,6 +39,12 @@ check("legacy remains one call while Minjae is capped at exactly three", /LEGACY
 check("runtime partitions opening body and closing by scene boundary", /id: "opening", startIndex: 0, endIndex: 1/.test(runtime) && /id: "body", startIndex: 1/.test(runtime) && /id: "closing"/.test(runtime));
 check("runtime rebases character alignment after each crossfade", /mergeThreePhaseCharacterAlignments/.test(builder) && /phaseOffsetsSec/.test(runtime) && /cursorSec -= crossfadeSec/.test(runtime));
 check("runtime assembles two crossfades and Owner loudness target", /buildThreePhaseAudioFilter/.test(builder) && (runtime.match(/acrossfade=d=/g) ?? []).length === 2 && /loudnorm=I=\$\{loudness\}:TP=\$\{truePeak\}/.test(runtime));
+check("runtime and approval packet share exact phase request fingerprints", /buildThreePhaseRequestFingerprint/.test(builder) && /buildThreePhaseRequestFingerprint/.test(approvalBuilder));
+check("TTS summary carries the exact current input contract hashes", /ttsInputContractFingerprint/.test(builder) && /ttsInputContractSha256/.test(builder));
+check("approval packet is no-live and never reads API credentials", /PREFLIGHT_ONLY_OK/.test(approvalBuilder) && /apiCallBudgetMax:\s*3/.test(approvalBuilder) && !/fetch\(|ELEVENLABS_API_KEY|process\.env/.test(approvalBuilder));
+check("operator exposes a separate no-media-env TTS preflight action", /"realTtsPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT/.test(operator) && /approval-preflight-v1/.test(operator));
+check("approval packet fails closed outside the 15~60 second contract", /BLOCKED_DURATION_CONTRACT/.test(approvalBuilder) && /targetDurationSec < 15 \|\| targetDurationSec > 60/.test(approvalBuilder) && /apiCallBudgetMax:\s*0/.test(approvalBuilder));
+check("media readiness rejects stale input hashes and accepts exact phase audit only", /ttsInputContractCurrent/.test(operator) && /phaseAuditReady/.test(operator) && /requestedTagApplied/.test(operator) && /minjae_three_phase_aligned/.test(operator));
 
 const failed = results.filter((row) => !row.passed);
 console.log(JSON.stringify({ passed: failed.length === 0, passedCount: results.length - failed.length, totalCount: results.length, failed }, null, 2));

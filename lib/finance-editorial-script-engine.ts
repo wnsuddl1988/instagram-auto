@@ -46,6 +46,14 @@ export type FinanceEditorialVideoStrategy = {
     speedCap: 0.98;
     stance: string;
   };
+  durationRepair?: {
+    applied: true;
+    sourceTargetDurationSec: number;
+    contractMinSec: 15;
+    contractMaxSec: 60;
+    semanticGateCount: 5;
+    reason: "single_exceeds_60_with_distinct_semantic_halves";
+  };
   parts: Array<{
     id: "single" | "part-1" | "part-2";
     partNumber: 1 | 2;
@@ -1343,12 +1351,14 @@ function tokenOverlapRatio(left: string, right: string): number {
 
 /**
  * 제목 은행 500개, 소진 뒤 확장 제목, 과거 저장 제목이 모두 공유하는 영상 전략.
- * duration을 입력받지 않으며, 의미 질문·행동 묶음·독립 완결·시각 전환이 모두
- * 성립할 때만 두 편으로 나눈다.
+ * 기본 판단은 의미 질문·행동 묶음·독립 완결·시각 전환이 모두 성립할 때만
+ * 두 편으로 나눈다. 실제 제작 예상치가 60초를 넘는 경우에도 시간만으로 자르지 않고,
+ * 진단/행동/연결/시각 흐름의 핵심 의미 게이트 5개가 모두 성립할 때만 같은 경계를 쓴다.
  */
 export function buildFinanceEditorialVideoStrategy(
   topic: FinanceEditorialTopic,
   suppliedParts?: FinanceEditorialScriptParts,
+  options?: { singleTargetDurationSec?: number },
 ): FinanceEditorialVideoStrategy {
   const parts = suppliedParts ?? buildFinanceEditorialScriptParts(topic);
   const diagnosticText = [parts.hook, parts.situation, parts.consequence, parts.psychology].join("\n");
@@ -1391,6 +1401,20 @@ export function buildFinanceEditorialVideoStrategy(
   ];
   const passedCount = auditFlags.filter(Boolean).length;
   const split = passedCount === auditFlags.length;
+  const semanticDurationRepairPassed = [
+    diagnosticQuestionDefined,
+    actionQuestionDefined,
+    distinctActionBundle,
+    naturalBridgeAvailable,
+    distinctVisualFlow,
+  ].every(Boolean);
+  const singleTargetDurationSec = Number(options?.singleTargetDurationSec);
+  const durationRepairApplied =
+    !split &&
+    Number.isFinite(singleTargetDurationSec) &&
+    singleTargetDurationSec > 60 &&
+    semanticDurationRepairPassed;
+  const shouldSplit = split || durationRepairApplied;
   const splitAudit: FinanceEditorialVideoStrategy["splitAudit"] = {
     timeOnlyDecisionForbidden: true,
     diagnosticQuestionDefined,
@@ -1410,7 +1434,7 @@ export function buildFinanceEditorialVideoStrategy(
     stance: "첫 문장을 낮고 단단하게 착지시키고, 과장 문구는 빠르게 몰아치지 않는 확신형 화자",
   };
 
-  if (!split) {
+  if (!shouldSplit) {
     return {
       contractVersion: FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION,
       mode: "single",
@@ -1437,6 +1461,16 @@ export function buildFinanceEditorialVideoStrategy(
     mode: "two_part",
     splitAudit,
     openingVoice,
+    ...(durationRepairApplied ? {
+      durationRepair: {
+        applied: true as const,
+        sourceTargetDurationSec: singleTargetDurationSec,
+        contractMinSec: 15 as const,
+        contractMaxSec: 60 as const,
+        semanticGateCount: 5 as const,
+        reason: "single_exceeds_60_with_distinct_semantic_halves" as const,
+      },
+    } : {}),
     parts: [
       {
         id: "part-1",

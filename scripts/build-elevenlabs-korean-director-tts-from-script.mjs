@@ -21,7 +21,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildMinjaeThreePhasePlan,
+  buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
+  maskElevenLabsVoiceId,
   mergeThreePhaseCharacterAlignments,
   validateMinjaeVoicePhaseContract,
 } from "./_elevenlabs-three-phase-voice-runtime.mjs";
@@ -132,11 +134,8 @@ if (stagedCoverEnabled) {
 
 mkdirSync(outDir, { recursive: true });
 const summaryPath = join(outDir, "elevenlabs-scene-paced-tts-summary.json");
-
-function maskVoiceId(value) {
-  if (!value || value.length <= 6) return "***";
-  return `${value.slice(0, 3)}***${value.slice(-3)}`;
-}
+const ttsInputContractSha256 = createHash("sha256").update(JSON.stringify(ttsScript, null, 2)).digest("hex");
+const ttsInputContractFingerprint = ttsInputContractSha256.slice(0, 12);
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -314,6 +313,8 @@ function writeReadinessFailure() {
     missingEnv,
     apiCallCount: 0,
     apiCallBudgetMax: API_CALL_BUDGET_MAX,
+    ttsInputContractFingerprint,
+    ttsInputContractSha256,
     sceneCount: scenes.length,
     generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
     timelineAudioPath: null,
@@ -340,7 +341,7 @@ if (missingEnv.length > 0) {
   process.exit(3);
 }
 
-const voiceIdMasked = maskVoiceId(voiceId);
+const voiceIdMasked = maskElevenLabsVoiceId(voiceId);
 const inputFingerprint = createHash("sha256").update(JSON.stringify({
   engineVersion: ENGINE_VERSION,
   modelId,
@@ -451,17 +452,14 @@ if (voicePhaseEnabled) {
   for (const [phaseIndex, phase] of voicePhasePlan.entries()) {
     const previousText = phaseIndex > 0 ? voicePhasePlan[phaseIndex - 1].text : null;
     const nextText = phaseIndex < voicePhasePlan.length - 1 ? voicePhasePlan[phaseIndex + 1].text : null;
-    const phaseFingerprint = createHash("sha256").update(JSON.stringify({
+    const phaseFingerprint = buildThreePhaseRequestFingerprint({
       engineVersion: ENGINE_VERSION,
       modelId,
       voiceIdMasked,
-      phaseId: phase.id,
-      sceneNumbers: phase.sceneNumbers,
-      voiceSettings: phase.voiceSettings,
-      text: phase.text,
+      phase,
       previousText,
       nextText,
-    })).digest("hex").slice(0, 14);
+    }).short;
     const phaseRawAudioPath = join(outDir, `elevenlabs-korean-director-${inputFingerprint}-${phase.id}-${phaseFingerprint}.mp3`);
     const phaseAlignmentPath = join(outDir, `elevenlabs-korean-director-${inputFingerprint}-${phase.id}-${phaseFingerprint}.alignment.json`);
     const result = await loadOrRequestAlignedAudio({
@@ -724,6 +722,8 @@ const summary = {
   readinessFailure: false,
   apiCallCount,
   apiCallBudgetMax: API_CALL_BUDGET_MAX,
+  ttsInputContractFingerprint,
+  ttsInputContractSha256,
   sceneCount: scenes.length,
   generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
   timingPolicy: "character_aligned_continuous_v2",

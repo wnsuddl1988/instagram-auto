@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const CONTRACT_VERSION = "money_shorts_character_voice_phase_v1";
 const PHASE_IDS = ["opening", "body", "closing"];
 
@@ -63,6 +65,28 @@ export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, base
       requestedTag: contract[id].v3AudioTag,
     };
   });
+}
+
+export function maskElevenLabsVoiceId(value) {
+  const voiceId = String(value ?? "");
+  if (voiceId.length <= 6) return "***";
+  return `${voiceId.slice(0, 3)}***${voiceId.slice(-3)}`;
+}
+
+export function buildThreePhaseRequestFingerprint({ engineVersion, modelId, voiceIdMasked, phase, previousText, nextText }) {
+  const payload = {
+    engineVersion,
+    modelId,
+    voiceIdMasked,
+    phaseId: phase.id,
+    sceneNumbers: phase.sceneNumbers,
+    voiceSettings: phase.voiceSettings,
+    text: phase.text,
+    previousText: previousText ?? null,
+    nextText: nextText ?? null,
+  };
+  const sha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  return { payload, sha256, short: sha256.slice(0, 14) };
 }
 
 export function mergeThreePhaseCharacterAlignments(phaseArtifacts, crossfadeMs) {
