@@ -95,6 +95,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "characterCastCreate",
   "characterCastSelect",
   "realTtsPreflight",
+  "realTtsReadonlyPreflight",
   "realTtsCreate",
   "realSceneImagesCreate",
   "flowMotionPrepare",
@@ -980,6 +981,57 @@ export async function POST(request: Request) {
     });
   }
 
+  // Owner가 정확히 승인한 ElevenLabs 읽기 전용 진단 — 외부에는 고정 GET 4개만 1회씩 전송한다.
+  if (action === "realTtsReadonlyPreflight") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const pipeline = buildWizardRealPipelineInputs(topicId);
+    if (!pipeline.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
+    }
+    const financeVoiceRoute = resolveWizardFinanceCharacterVoice(topicId);
+    if (!financeVoiceRoute || !financeVoiceRoute.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "민재의 승인된 ElevenLabs 화자 경로를 확인하지 못해 읽기 전용 진단을 막았습니다.",
+        blockerCode: financeVoiceRoute?.reason ?? "finance_voice_route_required",
+        noLive: true,
+      });
+    }
+    const built = buildOperatorCommand(action, { topicId });
+    if (!built.ok) {
+      return json({ action, status: "blocked", summary: describeBuildFailure(built.reason), blockerCode: built.reason, noLive: true });
+    }
+    const run = runOperatorScript(built.command, {
+      timeoutMs: 45_000,
+      includeMediaEnv: true,
+      voiceOverride: financeVoiceRoute.route.voice,
+    });
+    if (!run.ran || run.timedOut || run.exitCode !== 0 || !run.json) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "ElevenLabs 읽기 전용 진단을 완료하지 못했습니다. 생성·다운로드·재시도는 수행하지 않았습니다.",
+        blockerCode: run.timedOut ? "SCRIPT_TIMEOUT" : "ELEVENLABS_READONLY_PREFLIGHT_FAILED",
+        raw: { exitCode: run.exitCode, stderr: run.stderr.slice(-600) },
+        noLive: true,
+      });
+    }
+    const audit = run.json as { status?: unknown };
+    const auditOk = audit.status === "READONLY_PREFLIGHT_OK";
+    return json({
+      action,
+      status: auditOk ? "success" : "blocked",
+      summary: auditOk
+        ? "ElevenLabs 구독·Harry 음성·eleven_v3·최근 Harry 이력을 GET으로만 각각 1회 확인했습니다."
+        : "ElevenLabs GET-only 확인은 끝났지만 구독·음성·모델·이력 중 확정하지 못한 항목이 있습니다.",
+      blockerCode: auditOk ? undefined : "ELEVENLABS_READONLY_PREFLIGHT_INCONCLUSIVE",
+      raw: { audit },
+      noLive: true,
+    });
+  }
+
   // 실제 목소리 만들기 — 확정 대본 기반 ElevenLabs 고정 목소리 TTS(Owner 버튼 클릭 시에만 호출).
   if (action === "realTtsCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
@@ -1004,7 +1056,7 @@ export async function POST(request: Request) {
       if (!builtTts.ok) {
         return json({ action, status: "blocked", summary: describeBuildFailure(builtTts.reason), blockerCode: builtTts.reason, noLive: true });
       }
-      // includeMediaEnv:true 는 이 action(실제 TTS 생성) child에만 ELEVENLABS 키를 전달한다.
+      // includeMediaEnv:true 는 실제 TTS 생성과 별도 승인된 GET-only 진단 child에만 허용한다.
       const runTts = runOperatorScript(builtTts.command, {
         timeoutMs: REAL_TTS_TIMEOUT_MS,
         includeMediaEnv: true,

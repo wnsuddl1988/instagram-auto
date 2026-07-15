@@ -8,6 +8,7 @@ const operator = fs.readFileSync("lib/owner-web-operator.ts", "utf8");
 const builder = fs.readFileSync("scripts/build-elevenlabs-korean-director-tts-from-script.mjs", "utf8");
 const runtime = fs.readFileSync("scripts/_elevenlabs-three-phase-voice-runtime.mjs", "utf8");
 const approvalBuilder = fs.readFileSync("scripts/build-minjae-three-phase-tts-approval-packet-v1.mjs", "utf8");
+const readonlyAudit = fs.readFileSync("scripts/audit-elevenlabs-readonly-preflight-v1.mjs", "utf8");
 
 const results = [];
 function check(name, condition) {
@@ -43,6 +44,11 @@ check("runtime and approval packet share exact phase request fingerprints", /bui
 check("TTS summary carries the exact current input contract hashes", /ttsInputContractFingerprint/.test(builder) && /ttsInputContractSha256/.test(builder));
 check("approval packet is no-live and never reads API credentials", /PREFLIGHT_ONLY_OK/.test(approvalBuilder) && /apiCallBudgetMax:\s*3/.test(approvalBuilder) && !/fetch\(|ELEVENLABS_API_KEY|process\.env/.test(approvalBuilder));
 check("operator exposes a separate no-media-env TTS preflight action", /"realTtsPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT/.test(operator) && /approval-preflight-v1/.test(operator));
+check("operator exposes the separately approved GET-only audit action", /"realTtsReadonlyPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_READONLY_PREFLIGHT/.test(operator) && /audit-elevenlabs-readonly-preflight-v1\.mjs/.test(operator));
+check("read-only audit accepts exactly two content-addressed packets", /packetPaths\.length !== 2/.test(readonlyAudit) && /TWO_PART_PACKET_SET_REQUIRED/.test(readonlyAudit) && /PACKET_HASH_MISMATCH/.test(readonlyAudit));
+check("read-only audit has four fixed GET targets and no retry loop", ["\/user\/subscription", "\/voices\/", "\/models", "\/history"].every((token) => readonlyAudit.includes(token)) && (readonlyAudit.match(/getJsonOnce\(/g) ?? []).length === 5 && /method:\s*"GET"/.test(readonlyAudit) && /retries:\s*0/.test(readonlyAudit));
+check("read-only audit never writes files or prints provider text", !/writeFile|mkdir|unlink|rmSync|renameSync/.test(readonlyAudit) && /textLength/.test(readonlyAudit) && /textSha256/.test(readonlyAudit) && !/response\.text\(/.test(readonlyAudit) && !/console\.(?:log|error)\([^\n]*apiKey/.test(readonlyAudit));
+check("read-only audit uses natural async failure shutdown", !/process\.exit\(/.test(readonlyAudit) && /process\.exitCode\s*=\s*1/.test(readonlyAudit) && /setTimeout\(resolveDelay, 250\)/.test(readonlyAudit));
 check("approval packet fails closed outside the 15~60 second contract", /BLOCKED_DURATION_CONTRACT/.test(approvalBuilder) && /targetDurationSec < 15 \|\| targetDurationSec > 60/.test(approvalBuilder) && /apiCallBudgetMax:\s*0/.test(approvalBuilder));
 check("media readiness rejects stale input hashes and accepts exact phase audit only", /ttsInputContractCurrent/.test(operator) && /phaseAuditReady/.test(operator) && /requestedTagApplied/.test(operator) && /minjae_three_phase_aligned/.test(operator));
 

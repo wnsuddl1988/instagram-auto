@@ -123,6 +123,7 @@ export const OPERATOR_ACTIONS = [
   // 아래 3개 create는 Owner가 로컬 웹 버튼을 눌렀을 때만 실행되는 live 생성 경로다(업로드 아님).
   // 키/세션 없으면 스크립트가 fail-closed로 종료하고, 산출물은 전부 C:\tmp 아래에만 쓴다.
   "realTtsPreflight", // 현재 음성 입력·구간 해시 승인 패킷 생성(API 호출 0)
+  "realTtsReadonlyPreflight", // 명시 승인된 ElevenLabs 계정/음성/모델/최근 이력 GET-only 진단
   "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
   "realSceneImagesCreate", // 대본 흐름 기반 동적 장면으로 ChatGPT+Playwright 실제 이미지 생성
   "flowMotionPrepare", // 자동 선정 장면의 Flow no-submit 패킷/승인 대기 상태 생성(외부 실행 0)
@@ -146,7 +147,8 @@ export const APPROVED_ENV_KEY_NAMES = [
 ] as const;
 
 /**
- * 실제 미디어 생성(realTtsCreate) child에만 필요한 추가 key 이름. 값은 여기 없다.
+ * 실제 미디어 생성(realTtsCreate)과 명시 승인된 GET-only 진단 child에만 필요한 추가 key 이름.
+ * 값은 여기 없다.
  * Next dev 서버 런타임 process.env(.env.local 자동 로드)에서 개별 복사만 하며,
  * 로그/응답/summary 어디에도 값·길이·prefix·hash를 넣지 않는다.
  * (ANTHROPIC_API_KEY는 child에 전달하지 않는다 — Claude 보정은 서버 in-process fetch 전용.)
@@ -189,6 +191,7 @@ const SCRIPT_LOCAL_PIPELINE_DRY_RUN = "scripts/run-local-money-shorts-pipeline-d
 // 이미지/최종 영상은 wizard 전용 once 스크립트를 쓴다(전부 repo-relative 하드코딩).
 const SCRIPT_ELEVENLABS_SCENE_TTS = "scripts/build-elevenlabs-korean-director-tts-from-script.mjs";
 const SCRIPT_ELEVENLABS_TTS_PREFLIGHT = "scripts/build-minjae-three-phase-tts-approval-packet-v1.mjs";
+const SCRIPT_ELEVENLABS_READONLY_PREFLIGHT = "scripts/audit-elevenlabs-readonly-preflight-v1.mjs";
 const SCRIPT_REAL_SCENE_IMAGES = "scripts/run-owner-real-scene-images-from-wizard-script-once.mjs";
 const SCRIPT_FLOW_MOTION_GENERATION = "scripts/run-flow-motion-job-playwright-v1.mjs";
 const SCRIPT_REAL_VIDEO = "scripts/run-owner-real-video-from-wizard-assets-once.mjs";
@@ -454,8 +457,8 @@ export function readCredentialPresence(): Record<string, boolean> {
  * 값은 이 객체 안에만 존재하며 로그/반환값에 절대 넣지 않는다.
  *
  * `includeMediaEnv === true`일 때만 `MEDIA_ENV_KEY_NAMES`(ELEVENLABS 4키)를 추가 복사한다.
- * 기본값은 false — 실제 TTS 생성(realTtsCreate) child에만 전달되고, 이미지/영상/게시 전 점검/
- * 실제 업로드 등 다른 어떤 child에도 ELEVENLABS 키가 들어가지 않는다.
+ * 기본값은 false — 실제 TTS 생성(realTtsCreate)과 명시 승인된 GET-only 진단 child에만 전달되고,
+ * 이미지/영상/게시 전 점검/실제 업로드 등 다른 어떤 child에도 ELEVENLABS 키가 들어가지 않는다.
  */
 function buildSanitizedChildEnv(opts?: {
   includeMediaEnv?: boolean;
@@ -470,7 +473,7 @@ function buildSanitizedChildEnv(opts?: {
     const v = process.env[name];
     if (typeof v === "string" && v !== "") env[name] = v;
   }
-  // 실제 TTS 생성 child에만 전달하는 미디어 key(이름 고정 allowlist). 값은 child env에만 존재한다.
+  // 실제 TTS 생성/GET-only 진단 child에만 전달하는 미디어 key. 값은 child env에만 존재한다.
   if (opts?.includeMediaEnv === true) {
     for (const name of MEDIA_ENV_KEY_NAMES) {
       const v = process.env[name];
@@ -716,6 +719,27 @@ export function buildOperatorCommand(
       };
     }
 
+    case "realTtsReadonlyPreflight": {
+      const topicId = input?.topicId ?? "";
+      const real = buildWizardRealPipelineInputs(topicId);
+      if (!real.ok) return { ok: false, reason: real.reason };
+      if (real.paths.parts.length !== 2) {
+        return { ok: false, reason: "readonly_tts_audit_requires_two_parts" };
+      }
+      const jobId = `${topicId.replace(/[^a-z0-9_-]+/gi, "-")}-three-phase-tts-v1`;
+      const packetArgs = real.paths.parts.flatMap((part) => [
+        "--packet",
+        join(part.ttsOutDir, "approval-preflight-v1", `${jobId}.approval-packet.v1.json`),
+      ]);
+      return {
+        ok: true,
+        command: {
+          script: SCRIPT_ELEVENLABS_READONLY_PREFLIGHT,
+          args: packetArgs,
+        },
+      };
+    }
+
     case "realTtsCreate": {
       // 확정 대본(script-final) 기반 실제 ElevenLabs TTS — 검증된 scene-paced 스크립트 재사용.
       // 대본이 확정(대본 만들기 클릭)되지 않았으면 fail-closed. --arm/upload 인자 없음.
@@ -879,7 +903,7 @@ export function runOperatorScript(
     extraEnv?: Record<string, string>;
     /**
      * true일 때만 ELEVENLABS 미디어 key를 child env에 전달한다(기본 false).
-     * route는 실제 TTS 생성(realTtsCreate)에서만 true를 넘긴다.
+     * route는 실제 TTS 생성(realTtsCreate) 또는 명시 승인된 GET-only 진단에서만 true를 넘긴다.
      */
     includeMediaEnv?: boolean;
     /** 재테크 확정 캐스팅만 실제 TTS child env에 주입한다. */

@@ -31,6 +31,7 @@ const FINANCE_EDITORIAL_BANK_PATH = path.join(ROOT, "lib", "finance-editorial-to
 const FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH = path.join(ROOT, "lib", "finance-editorial-script-engine.ts");
 const ROUTE_PATH = path.join(ROOT, "app", "api", "money-shorts", "operator", "route.ts");
 const ELEVENLABS_TTS_SCRIPT_PATH = path.join(ROOT, "scripts", "build-elevenlabs-korean-director-tts-from-script.mjs");
+const ELEVENLABS_READONLY_PREFLIGHT_PATH = path.join(ROOT, "scripts", "audit-elevenlabs-readonly-preflight-v1.mjs");
 const DYNAMIC_CAPTION_PATH = path.join(ROOT, "scripts", "_money-shorts-dynamic-captions.mjs");
 const CHATGPT_IMAGE_CORE_PATH = path.join(ROOT, "scripts", "_chatgpt-image-core.mjs");
 const CHATGPT_IMAGE_LIVE_PREFLIGHT_PATH = path.join(ROOT, "scripts", "check-chatgpt-image-live-preflight-once.mjs");
@@ -72,6 +73,7 @@ const financeEditorialBankSrc = read(FINANCE_EDITORIAL_BANK_PATH);
 const financeEditorialScriptEngineSrc = read(FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH);
 const routeSrc = read(ROUTE_PATH);
 const ttsScriptSrc = read(ELEVENLABS_TTS_SCRIPT_PATH);
+const elevenLabsReadonlyPreflightSrc = read(ELEVENLABS_READONLY_PREFLIGHT_PATH);
 const dynamicCaptionSrc = read(DYNAMIC_CAPTION_PATH);
 const chatgptImageCoreSrc = read(CHATGPT_IMAGE_CORE_PATH);
 const chatgptImageCoreCode = stripComments(chatgptImageCoreSrc);
@@ -700,6 +702,7 @@ check("UI shows 대본 생성 방식 + Claude 적용/미적용 배지", wizardSr
 check("realTtsCreate uses Korean continuous director v2", /SCRIPT_ELEVENLABS_SCENE_TTS\s*=\s*"scripts\/build-elevenlabs-korean-director-tts-from-script\.mjs"/.test(helperSrc));
 check("realTtsPreflight uses a separate no-live approval packet builder", /"realTtsPreflight"/.test(helperSrc) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT\s*=\s*"scripts\/build-minjae-three-phase-tts-approval-packet-v1\.mjs"/.test(helperSrc) && /action === "realTtsPreflight"/.test(routeCode));
 check("realTtsPreflight runs without media env or ElevenLabs API access", /action === "realTtsPreflight"[\s\S]*?runOperatorScript\(built\.command,\s*\{ timeoutMs:\s*30_000 \}\)/.test(routeCode) && !/action === "realTtsPreflight"[\s\S]{0,1800}includeMediaEnv:\s*true/.test(routeCode));
+check("realTtsReadonlyPreflight is isolated to the fixed GET-only audit script", /SCRIPT_ELEVENLABS_READONLY_PREFLIGHT\s*=\s*"scripts\/audit-elevenlabs-readonly-preflight-v1\.mjs"/.test(helperSrc) && /action === "realTtsReadonlyPreflight"/.test(routeCode) && /method:\s*"GET"/.test(elevenLabsReadonlyPreflightSrc));
 check("real tts-script marks narration timing as character-aligned continuous", /timingPolicy:\s*"character_aligned_continuous_v2"/.test(helperCode) && /buildWizardSceneTimeline\(narrations\)/.test(helperCode));
 check("real tts-script adds Korean cadence direction without replacing display narration", /function buildWizardSpeechDirection/.test(helperCode) && /prosodyPolicy:\s*"korean_native_cadence_v2"/.test(helperCode) && /narration:\s*narrations\[index\]/.test(helperCode) && /speechDirection,/.test(helperCode));
 check("speech direction covers every finance-script scene role", ["hook", "problem", "situation", "consequence", "psychology", "mindset", "habit", "recommendation", "save"].every((role) => new RegExp(`${role}:\\s*\\{[\\s\\S]{0,420}delivery:`).test(helperCode)));
@@ -734,15 +737,16 @@ check("continuous TTS writes versioned files and a short final tail only", /elev
 check("final video consumes normalized durations from the TTS summary", /audioTimelineScenes\.map\(\(s\) => Number\(s\.normalizedDurationSec\)\)/.test(vidScriptSrc));
 check("media env allowlist is exactly the 4 ELEVENLABS keys", /MEDIA_ENV_KEY_NAMES\s*=\s*\[\s*"ELEVENLABS_API_KEY",\s*"ELEVENLABS_VOICE_ID",\s*"ELEVENLABS_MODEL_ID",\s*"ELEVENLABS_VOICE_LABEL",\s*\]/.test(helperSrc.replace(/\r?\n\s*/g, " ").replace(/\s+/g, " ")) || ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "ELEVENLABS_MODEL_ID", "ELEVENLABS_VOICE_LABEL"].every((k) => new RegExp(`MEDIA_ENV_KEY_NAMES[\\s\\S]{0,220}"${k}"`).test(helperSrc)));
 check("tts gate trusts only Korean director v2 live summary (mock/old voice 불인정)", /provider\s*===\s*"elevenlabs"\s*&&[\s\S]{0,160}ttsEngineVersion\s*===\s*WIZARD_TTS_ENGINE_VERSION[\s\S]{0,120}liveApiCallPerformed\s*===\s*true/.test(helperCode));
-// [A2] ELEVENLABS env는 realTtsCreate child에만 전달 (Codex finding 1 fix)
+// [A2] ELEVENLABS env는 realTtsCreate + 별도 승인된 GET-only 진단 child에만 전달
 check("buildSanitizedChildEnv does NOT copy media env by default", /function buildSanitizedChildEnv\(opts\?:/.test(helperCode) && /includeMediaEnv\?:\s*boolean/.test(helperCode) && /opts\?\.includeMediaEnv\s*===\s*true/.test(helperCode));
 check("runOperatorScript exposes includeMediaEnv option", /includeMediaEnv\?:\s*boolean/.test(helperCode));
 check("runOperatorScript threads includeMediaEnv into child env builder", /buildSanitizedChildEnv\(\s*\{[\s\S]{0,180}includeMediaEnv:\s*opts\?\.includeMediaEnv\s*===\s*true[\s\S]{0,180}voiceOverride:\s*opts\?\.voiceOverride[\s\S]{0,80}\}\s*\)/.test(helperCode));
 check("non-TTS commands are not rejected when no finance voice override exists", /if\s*\(opts\?\.voiceOverride\s*&&\s*opts\.voiceOverride\.voiceStatus\s*!==\s*"approved"\)/.test(helperCode));
 check(
-  "route sets includeMediaEnv:true ONLY on realTtsCreate",
-  (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 1 &&
-    /action === "realTtsCreate"[\s\S]*?runOperatorScript\(builtTts\.command,\s*\{[^}]*includeMediaEnv:\s*true/.test(routeCode),
+  "route sets includeMediaEnv:true ONLY on realTtsCreate and GET-only audit",
+  (routeCode.match(/includeMediaEnv:\s*true/g) ?? []).length === 2 &&
+    /action === "realTtsCreate"[\s\S]*?runOperatorScript\(builtTts\.command,\s*\{[^}]*includeMediaEnv:\s*true/.test(routeCode) &&
+    /action === "realTtsReadonlyPreflight"[\s\S]*?runOperatorScript\(built\.command,\s*\{[^}]*includeMediaEnv:\s*true/.test(routeCode),
 );
 check("realTtsCreate stops at the first nonzero child exit and returns sanitized evidence",
   /if \(runTts\.exitCode !== 0\)/.test(routeCode) &&
@@ -1093,7 +1097,7 @@ check(
     !(/case "realTtsCreate"[\s\S]*?case "status"/.exec(helperCode)?.[0]?.includes("--arm") ?? true),
 );
 check("--arm single-gate contract intact (actualUpload only + allowArm gate)", (helperSrc.match(/ARM_ARG_TOKEN,?\s*\]/g) ?? []).length === 1 && /allowArm\s*!==\s*true/.test(helperCode));
-check("new create actions are local-dev gated in route", ["realTtsCreate", "realSceneImagesCreate", "finalVideoCreate", "realMediaStatus"].every((a) => new RegExp(`LOCAL_SCRIPT_ACTIONS[\\s\\S]{0,700}"${a}"`).test(routeSrc)));
+check("new create and read-only audit actions are local-dev gated in route", ["realTtsReadonlyPreflight", "realTtsCreate", "realSceneImagesCreate", "finalVideoCreate", "realMediaStatus"].every((a) => new RegExp(`LOCAL_SCRIPT_ACTIONS[\\s\\S]{0,800}"${a}"`).test(routeSrc)));
 check("GET final video stream is enum only", /videoParam\s*===\s*"muxed"\s*\|\|\s*videoParam\s*===\s*"silent"\s*\|\|\s*videoParam\s*===\s*"final"/.test(routeCode));
 check("real audio stream restricted to summary path + C:\\tmp prefix + mp3/m4a", /readWizardRealAudioBytes/.test(routeCode) && /WIZARD_VIDEO_ALLOWED_PREFIX/.test(helperCode) && /\.mp3|\.m4a/.test(helperSrc));
 
