@@ -1,14 +1,15 @@
 export function selectCurrentApprovalCandidate(candidates) {
   const active = candidates.filter((candidate) =>
-    candidate?.inViewport === true &&
     candidate?.creditPromptMatches === true &&
     candidate?.promptMatches === true &&
     candidate?.acknowledged === false,
   );
-  if (active.length !== 1) {
+  if (active.length === 0 ||
+      active.some((candidate) => !Number.isInteger(candidate?.index)) ||
+      new Set(active.map((candidate) => candidate.index)).size !== active.length) {
     throw new Error(`active_approval_ambiguous:${active.length}`);
   }
-  return active[0];
+  return active.reduce((latest, candidate) => candidate.index > latest.index ? candidate : latest);
 }
 
 export function isApprovalAcknowledged(beforeCount, afterCount) {

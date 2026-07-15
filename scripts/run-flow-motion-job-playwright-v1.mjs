@@ -148,13 +148,27 @@ async function inspectExplicitQuota(page) {
 }
 
 async function closeStaleAgentPanel(page) {
-  const closeButton = await firstVisible(
+  let closed = false;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const visibleDialog = await firstVisible(page.locator('[role="dialog"]'));
+    if (!visibleDialog) break;
+    const dialogCloseButton = await firstVisible(
+      visibleDialog.locator("button").filter({ hasText: /^\s*close\s*(?:닫기|Close)\s*$/i }),
+    );
+    if (!dialogCloseButton) break;
+    await dialogCloseButton.click();
+    await page.waitForTimeout(250);
+    closed = true;
+  }
+  const panelCloseButton = await firstVisible(
     page.locator("button").filter({ hasText: /^\s*close\s*(?:닫기|Close)\s*$/i }),
   );
-  if (!closeButton) return false;
-  await closeButton.click();
-  await page.waitForTimeout(250);
-  return true;
+  if (panelCloseButton) {
+    await panelCloseButton.click();
+    await page.waitForTimeout(250);
+    closed = true;
+  }
+  return closed;
 }
 
 function buildReferenceUploadAlias(job) {
@@ -169,30 +183,40 @@ function buildReferenceUploadAlias(job) {
 async function selectMediaAndAddToPrompt(page, dialog, referenceFileName) {
   if (!/^[a-zA-Z0-9._-]+$/.test(referenceFileName)) throw new Error("reference_media_filename_invalid");
   const images = dialog.locator(`img[alt="${referenceFileName}"]`);
+  const mediaAssetCount = await images.count();
+  if (mediaAssetCount === 0) return null;
   const sources = await images.evaluateAll((elements) => [...new Set(elements
     .map((element) => element.getAttribute("src") ?? "")
     .filter(Boolean))]);
   if (sources.length === 0) return null;
-  if (sources.length !== 1) throw new Error(`reference_media_asset_ambiguous:${sources.length}`);
-  let addToPrompt = await waitForFirstVisible(
+  // Flow may retain duplicate uploads of the same hash-bound alias after a pre-submit retry.
+  // Always select the role=option tile containing an exact-alias image so a stale media
+  // selection cannot drive the Add action.
+  const mediaOptions = dialog.locator(`[role="option"]:has(img[alt="${referenceFileName}"])`);
+  const mediaOptionCount = await mediaOptions.count();
+  if (mediaOptionCount === 0) return null;
+  const mediaOption = await firstVisible(mediaOptions);
+  if (!mediaOption) return null;
+  const selectedOptionSelector = `[role="option"][aria-selected="true"]:has(img[alt="${referenceFileName}"])`;
+  let selected = await dialog.locator(selectedOptionSelector).count() > 0;
+  if (!selected) await mediaOption.click({ force: true, timeout: 5_000 });
+  const selectionDeadline = Date.now() + 5_000;
+  while (Date.now() < selectionDeadline) {
+    selected = await dialog.locator(selectedOptionSelector).count() > 0;
+    if (selected) break;
+    await page.waitForTimeout(100);
+  }
+  if (!selected) throw new Error("reference_media_option_not_selected");
+  const addToPrompt = await waitForFirstVisible(
     page,
     dialog.locator("button").filter({ hasText: /프롬프트에 추가|Add to prompt/i }),
   );
-  if (addToPrompt && !(await addToPrompt.isEnabled().catch(() => false))) {
-    const mediaTile = await firstVisible(images);
-    if (!mediaTile) return null;
-    await mediaTile.click();
-    addToPrompt = await waitForFirstVisible(
-      page,
-      dialog.locator("button").filter({ hasText: /프롬프트에 추가|Add to prompt/i }),
-    );
-  }
   if (!addToPrompt || !(await addToPrompt.isEnabled().catch(() => false))) {
     throw new Error("add_reference_to_prompt_missing");
   }
   await addToPrompt.click();
   await page.waitForTimeout(500);
-  return { referenceFileName, mediaAssetCount: sources.length };
+  return { referenceFileName, mediaAssetCount, mediaOptionCount, mediaUniqueSourceCount: sources.length };
 }
 
 async function fillPromptAndVerify(page, job, referenceEvidence) {
@@ -210,7 +234,10 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   const assetPicker = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
   if (!assetPicker) throw new Error("asset_picker_button_missing");
   await assetPicker.click();
-  let pickerDialog = await waitForFirstVisible(page, page.locator('[role="dialog"]'));
+  let pickerDialog = await waitForFirstVisible(
+    page,
+    page.locator('[role="dialog"]').filter({ hasText: /(?:미디어 업로드|Upload media|프롬프트에 추가|Add to prompt)/i }),
+  );
   if (!pickerDialog) throw new Error("media_picker_dialog_missing");
 
   const uploadReferenceFile = buildReferenceUploadAlias(job);
@@ -219,11 +246,8 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   const recoverPriorUpload = priorSummary?.status === "FAILED_NO_AUTOMATIC_RETRY" &&
     priorSummary?.jobId === job.jobId &&
     priorSummary?.submissionCount === 0 &&
-    [
-      "uploaded_reference_missing_from_media_picker",
-      "add_reference_to_prompt_missing",
-      "required_generation_confirmation_dialog_missing",
-    ].includes(priorSummary?.failure);
+    priorSummary?.referenceSha256 === job.referenceSha256 &&
+    priorSummary?.promptSha256 === job.promptSha256;
   if (recoverPriorUpload) {
     const recovered = await selectMediaAndAddToPrompt(page, pickerDialog, uploadFileName);
     if (recovered) {
@@ -239,10 +263,17 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   await chooser.setFiles(uploadReferenceFile);
   await page.waitForTimeout(5_000);
 
-  const pickerAfterUpload = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
-  if (!pickerAfterUpload) throw new Error("asset_picker_after_upload_missing");
-  await pickerAfterUpload.click();
-  pickerDialog = await waitForFirstVisible(page, page.locator('[role="dialog"]').filter({ hasText: uploadFileName }));
+  pickerDialog = await waitForFirstVisible(
+    page,
+    page.locator('[role="dialog"]').filter({ hasText: uploadFileName }),
+    2_000,
+  );
+  if (!pickerDialog) {
+    const pickerAfterUpload = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
+    if (!pickerAfterUpload) throw new Error("asset_picker_after_upload_missing");
+    await pickerAfterUpload.click();
+    pickerDialog = await waitForFirstVisible(page, page.locator('[role="dialog"]').filter({ hasText: uploadFileName }));
+  }
   if (!pickerDialog) throw new Error("uploaded_reference_missing_from_media_picker");
   const attached = await selectMediaAndAddToPrompt(page, pickerDialog, uploadFileName);
   if (!attached) throw new Error("uploaded_reference_missing_from_media_picker");
@@ -500,6 +531,9 @@ try {
       throw new Error(`gemini_${profile.profileId}_flow_project_mismatch`);
     }
     await closeStaleAgentPanel(page);
+    if (!resumeSubmittedResult && !pendingConfirmation) {
+      pendingConfirmation = await findRequiredGenerationConfirmation(page, contract.job);
+    }
     const quota = resumeSubmittedResult ? null : await inspectExplicitQuota(page);
     if (quota) {
       profileAttempts.push({ profileId: profile.profileId, state: "quota_exhausted", evidence: quota.snippet ?? quota.text });

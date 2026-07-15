@@ -13,13 +13,11 @@ assert.deepEqual(selectCurrentApprovalCandidate([
   { index: 1, inViewport: false, creditPromptMatches: true, promptMatches: true, acknowledged: true },
   current,
 ]), current);
-assert.throws(
-  () => selectCurrentApprovalCandidate([{ index: 0, inViewport: false, creditPromptMatches: true, promptMatches: true }]),
-  /active_approval_ambiguous:0/,
-);
-assert.throws(
-  () => selectCurrentApprovalCandidate([current, { ...current, index: 3 }]),
-  /active_approval_ambiguous:2/,
+const offscreen = { index: 0, inViewport: false, creditPromptMatches: true, promptMatches: true, acknowledged: false };
+assert.deepEqual(selectCurrentApprovalCandidate([offscreen]), offscreen);
+assert.deepEqual(
+  selectCurrentApprovalCandidate([current, { ...current, index: 3 }]),
+  { ...current, index: 3 },
 );
 assert.throws(
   () => selectCurrentApprovalCandidate([{ ...current, acknowledged: true }]),
