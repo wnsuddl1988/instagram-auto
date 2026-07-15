@@ -18,10 +18,10 @@ export function validateMinjaeVoicePhaseContract(contract) {
     contract.opening?.speed === 1.02 &&
     contract.opening?.v3AudioTag === "firm and assertive" &&
     contract.body?.selector === "between_opening_and_closing" &&
-    contract.body?.speed === 1 &&
+    contract.body?.speed === 1.02 &&
     contract.body?.v3AudioTag === "inherit_scene_direction" &&
     contract.closing?.selector === "final_save_or_follow_scene" &&
-    contract.closing?.speed === 1.01 &&
+    contract.closing?.speed === 1.02 &&
     contract.closing?.v3AudioTag === "clear and decisive" &&
     contract.assembly?.mode === "three_aligned_segments" &&
     contract.assembly?.crossfadeMs === 60 &&

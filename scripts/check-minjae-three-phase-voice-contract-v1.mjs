@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { validateMinjaeVoicePhaseContract } from "./_elevenlabs-three-phase-voice-runtime.mjs";
 
 const cast = JSON.parse(fs.readFileSync("lib/finance-character-voice-cast-data.json", "utf8"));
 const voiceModule = fs.readFileSync("lib/finance-character-voice-cast.ts", "utf8");
@@ -29,6 +30,7 @@ check("opening is 1.02 firm and assertive", phases?.opening?.selector === "stage
 check("body keeps the exact Junho speed at 1.02", phases?.body?.selector === "between_opening_and_closing" && phases?.body?.speed === 1.02 && phases?.body?.v3AudioTag === "inherit_scene_direction");
 check("closing keeps the exact Junho speed at 1.02", phases?.closing?.selector === "final_save_or_follow_scene" && phases?.closing?.speed === 1.02 && phases?.closing?.v3AudioTag === "clear and decisive");
 check("assembly preserves alignment and safe loudness", phases?.assembly?.mode === "three_aligned_segments" && phases?.assembly?.preserveCharacterAlignment === true && phases?.assembly?.crossfadeMs === 60 && phases?.assembly?.loudnessIntegratedLufs === -16 && phases?.assembly?.truePeakDbtp === -1.5);
+check("runtime accepts the exact current Minjae phase contract", validateMinjaeVoicePhaseContract(phases));
 check("typed voice profile exposes the optional phase contract", /deliveryPhases\?:/.test(voiceModule) && /money_shorts_character_voice_phase_v1/.test(voiceModule));
 check("wizard emits the approved phase contract", /voicePhaseContract = financeVoiceRoute\?\.route\.voice\.deliveryPhases/.test(operator) && /voicePhaseContract,/.test(operator));
 check("wizard body profile uses phase speed and cast stability", /baseSpeed: voicePhaseContract\?\.body\.speed/.test(operator) && /castSettings\.stability/.test(operator) && /castSettings\.similarityBoost/.test(operator));
