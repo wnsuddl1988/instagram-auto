@@ -86,6 +86,10 @@ check("approved override execution is exact-approval, single-scene and one-submi
   imageRunner.includes("pendingSceneIndexes.length !== 1") &&
   imageRunner.includes("topicScopedModeOverride?.executionApproved ? 0 : 1") &&
   imageRunner.includes("? 1\n  : sceneCount"));
+check("override audit binds the exact regeneration-scene prompt fingerprint",
+  imageRunner.includes("a mode override audit or execution requires the single approved regeneration scene") &&
+  imageRunner.includes("targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint") &&
+  imageRunner.includes("mode override packet prompt fingerprint does not match the exact regeneration prompt"));
 check("approved override execution binds the prior audit and preserves the replaced image",
   imageRunner.includes("priorPromptAudit?.topicScopedModeOverride?.packetSha256") &&
   imageRunner.includes("priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256") &&

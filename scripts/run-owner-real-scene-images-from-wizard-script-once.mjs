@@ -532,12 +532,15 @@ function resolveTopicScopedModeOverride() {
     console.error("ABORT: topic-scoped mode override packet does not match the locked script, character reference or default mode mapping.");
     process.exit(3);
   }
-  if (executeApprovedModeOverride && (
-    ownerApprovalArg !== requiredOwnerApprovalWording ||
+  if (
     targetedRegenerationSceneIndexes.size !== 1 ||
     !targetedRegenerationSceneIndexes.has(targetIndex)
-  )) {
-    console.error("ABORT: exact Owner approval or the single approved regeneration scene is missing.");
+  ) {
+    console.error("ABORT: a mode override audit or execution requires the single approved regeneration scene.");
+    process.exit(3);
+  }
+  if (executeApprovedModeOverride && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for the mode override execution.");
     process.exit(3);
   }
   return {
@@ -958,6 +961,13 @@ const sceneRequirements = scenes.map((scene, index) => {
     promptFingerprint: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
   };
 });
+if (topicScopedModeOverride) {
+  const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
+  if (targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint) {
+    console.error("ABORT: mode override packet prompt fingerprint does not match the exact regeneration prompt.");
+    process.exit(3);
+  }
+}
 if (topicScopedModeOverride?.executionApproved) {
   const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
   let priorPromptAudit = null;
