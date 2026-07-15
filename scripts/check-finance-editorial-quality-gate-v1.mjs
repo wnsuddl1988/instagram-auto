@@ -215,6 +215,20 @@ check("confirmed canonical titles remain unchanged while only platform titles ad
 check("every production video starts with exactly three staged cover lines", productionAudits.every(({ part }) =>
   part.coverLines.length === 3 &&
   part.script.scenes[0]?.narration === part.coverLines.map((line) => line.spokenText).join("\n")));
+check("all 574 production videos inherit a current passing hook audit", productionAudits.every(({ baseScript, part }) => {
+  const strategyPart = baseScript.videoStrategy?.parts.find((candidate) => candidate.id === part.id);
+  return strategyPart?.coverHookAudit?.contractVersion === "money_shorts_finance_cover_hook_v2" &&
+    strategyPart.coverHookAudit.sourceTextCoverageRatio === 1 &&
+    strategyPart.coverHookAudit.passed === true &&
+    engineModule.financeEditorialVideoStrategyCoverHooksPass(baseScript.videoStrategy);
+}));
+check("all 574 production covers exclude the rejected dangling and explanatory phrases", productionAudits.every(({ part }) => {
+  const spoken = part.coverLines.map((line) => line.spokenText);
+  return !spoken.includes("진짜 이유는 따로 있어") &&
+    !spoken.includes("그냥 넘기면 안 돼") &&
+    !spoken.includes("계좌가 먼저 흔들려") &&
+    spoken.every((line) => !/(?:때문이야|때문입니다)$/u.test(line));
+}));
 const coverContractFailures = productionAudits.flatMap(({ seed, part }) => part.coverLines
   .filter((line) =>
     normalizeCoverText(line.spokenText) !== normalizeCoverText(line.displayText) ||

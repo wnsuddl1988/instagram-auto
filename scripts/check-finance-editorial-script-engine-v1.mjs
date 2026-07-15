@@ -54,6 +54,8 @@ const engineModule = loadTypescriptModule(ENGINE_PATH);
 const bank = bankModule.exports.FINANCE_EDITORIAL_TOPIC_BANK ?? [];
 const build = engineModule.exports.buildFinanceEditorialScriptParts;
 const buildVideoStrategy = engineModule.exports.buildFinanceEditorialVideoStrategy;
+const auditCoverHook = engineModule.exports.auditFinanceEditorialCoverHook;
+const strategyCoverHooksPass = engineModule.exports.financeEditorialVideoStrategyCoverHooksPass;
 const inferLane = engineModule.exports.inferFinanceEditorialLane;
 const helper = readFileSync(HELPER_PATH, "utf8");
 const scripts = bank.map((topic) => ({ topic, parts: build(topic) }));
@@ -65,11 +67,50 @@ check("all seven narrative parts are present", scripts.every(({ parts }) =>
     .every((key) => typeof parts[key] === "string" && parts[key].trim().length > 0)));
 check("all 500 scripts receive the semantic prehook and series strategy", videoStrategies.length === 500 &&
   videoStrategies.every(({ strategy }) => strategy.contractVersion === "money_shorts_semantic_prehook_series_v1"));
+const coverPunctuationCount = (value) => (String(value ?? "").match(/[!?…]|\.{2,}/gu) ?? []).length;
 check("all 500 opening covers use three spoken/display lines with visual-only punctuation", videoStrategies.every(({ strategy }) =>
   strategy.parts.every((part) => part.coverLines.length === 3 && part.coverLines.every((line) =>
     typeof line.spokenText === "string" && line.spokenText.length > 0 &&
     typeof line.displayText === "string" && line.displayText.length > 0 &&
-    !/[!?]{2,}/.test(line.spokenText) && /[!?]{1,}/.test(line.displayText)))));
+    !/[!?]{2,}/.test(line.spokenText) &&
+    coverPunctuationCount(line.displayText) > coverPunctuationCount(line.spokenText)))));
+check("all 500 covers pass the current hook-preservation audit", videoStrategies.every(({ strategy }) =>
+  strategyCoverHooksPass(strategy) && strategy.parts.every((part) =>
+    part.coverHookAudit?.contractVersion === "money_shorts_finance_cover_hook_v2" &&
+    part.coverHookAudit?.sourceTextCoverageRatio === 1 &&
+    part.coverHookAudit?.passed === true)));
+const rejectedCoverTopic = videoStrategies.find(({ topic }) => topic.title === "주가가 싸졌는데 더 위험해질 수 있는 이유");
+check("the rejected investing cover keeps the full hook and breaks after a complete clause",
+  JSON.stringify(rejectedCoverTopic?.strategy.parts[0]?.coverLines.map((line) => line.spokenText)) ===
+    JSON.stringify(["주가가 싸졌는데", "더 위험해질 수 있는 이유", "문제는 가격이 아니야"]));
+const particleBreakTopic = videoStrategies.find(({ topic }) => topic.title === "뉴스를 많이 봐도 돈을 못 지키는 결정적 이유");
+check("cover lines prefer a spoken clause boundary over a dangling object particle",
+  JSON.stringify(particleBreakTopic?.strategy.parts[0]?.coverLines.slice(0, 2).map((line) => line.spokenText)) ===
+    JSON.stringify(["뉴스를 많이 봐도", "돈을 못 지키는 결정적 이유"]));
+const malformedDanglingAudit = auditCoverHook({
+  mode: "title_open_loop",
+  sourceText: "주가가 싸졌는데 더 위험해질 수 있는 이유",
+  coverLines: [
+    { spokenText: "주가가 싸졌는데 더", displayText: "주가가 싸졌는데 더...", emphasis: "topic" },
+    { spokenText: "위험해질 수 있는 이유", displayText: "위험해질 수 있는 이유?", emphasis: "tension" },
+    { spokenText: "계좌가 먼저 흔들려", displayText: "계좌가 먼저 흔들려!", emphasis: "impact" },
+  ],
+});
+check("dangling and generic rejected cover is fail-closed", malformedDanglingAudit.passed === false &&
+  malformedDanglingAudit.failures.includes("dangling_cover_token") &&
+  malformedDanglingAudit.failures.includes("explanatory_or_generic_closure"));
+const explanatoryCoverAudit = auditCoverHook({
+  mode: "title_open_loop",
+  sourceText: "주가가 싸져도 선뜻 못 사는 건",
+  coverLines: [
+    { spokenText: "주가가 싸져도", displayText: "주가가 싸져도...", emphasis: "topic" },
+    { spokenText: "선뜻 못 사는 건", displayText: "선뜻 못 사는 건?", emphasis: "tension" },
+    { spokenText: "마음이 먼저 흔들리기 때문이야", displayText: "마음이 먼저 흔들리기 때문이야!", emphasis: "impact" },
+  ],
+});
+check("explanatory answer-style cover is blocked before production", explanatoryCoverAudit.passed === false &&
+  explanatoryCoverAudit.failures.includes("explanatory_or_generic_closure") &&
+  explanatoryCoverAudit.failures.includes("open_loop_missing"));
 check("all opening voice contracts are confident without a rushed speed", videoStrategies.every(({ strategy }) =>
   strategy.openingVoice.v3AudioTag === "confidently" && strategy.openingVoice.speedCap === 0.98));
 check("split decisions are semantic and never time-only", videoStrategies.every(({ strategy }) =>

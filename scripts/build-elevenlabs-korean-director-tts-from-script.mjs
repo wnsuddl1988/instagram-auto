@@ -29,6 +29,7 @@ import {
   mergeThreePhaseCharacterAlignments,
   validateMinjaeVoicePhaseContract,
 } from "./_elevenlabs-three-phase-voice-runtime.mjs";
+import { validateFinanceCoverHookContract } from "./_finance-cover-hook-guard.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -114,6 +115,7 @@ if (stagedCoverEnabled) {
   const spokenText = lines.map((line) => String(line?.spokenText ?? "").trim()).join("\n");
   const displayText = lines.map((line) => String(line?.displayText ?? "").trim()).join("\n");
   const sceneOneNarration = String(scenes[0]?.narration ?? "").trim();
+  const coverHookGuard = validateFinanceCoverHookContract(coverContract);
   const coverContractValid =
     coverContract.contractVersion === STAGED_COVER_CONTRACT_VERSION &&
     coverContract.sceneNumber === 1 &&
@@ -122,14 +124,15 @@ if (stagedCoverEnabled) {
     lines.every((line) =>
       typeof line?.spokenText === "string" && line.spokenText.trim().length > 0 &&
       typeof line?.displayText === "string" && line.displayText.trim().length > 0 &&
-      !/[!?]{2,}/u.test(line.spokenText) && /[!?]/u.test(line.displayText) &&
+      !/[!?]{2,}/u.test(line.spokenText) && /[!?…]|\.{2,}/u.test(line.displayText) &&
       semanticText(line.spokenText) === semanticText(line.displayText)) &&
     semanticText(spokenText) === semanticText(displayText) &&
     semanticText(spokenText) === semanticText(sceneOneNarration) &&
     semanticText(coverContract.spokenText) === semanticText(spokenText) &&
-    semanticText(coverContract.displayText) === semanticText(displayText);
+    semanticText(coverContract.displayText) === semanticText(displayText) &&
+    coverHookGuard.passed;
   if (!coverContractValid) {
-    console.error("ABORT: staged cover spoken/display contract is invalid or display punctuation leaked into narration.");
+    console.error(`ABORT: staged cover hook/spoken/display contract is invalid (${coverHookGuard.failures.join(",") || "semantic_or_punctuation_failure"}).`);
     process.exit(2);
   }
 }

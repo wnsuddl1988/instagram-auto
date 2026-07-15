@@ -34,10 +34,14 @@ import {
   type FinanceEditorialTopic,
 } from "./finance-editorial-topic-bank";
 import {
+  FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION,
   FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION,
   buildFinanceEditorialScriptParts,
   buildFinanceEditorialVideoStrategy,
+  financeEditorialCoverHookAuditMatches,
+  financeEditorialVideoStrategyCoverHooksPass,
   inferFinanceEditorialLane,
+  type FinanceEditorialCoverHookAudit,
   type FinanceEditorialCoverLine,
   type FinanceEditorialVideoStrategy,
 } from "./finance-editorial-script-engine";
@@ -7033,6 +7037,10 @@ export function readWizardFinalScriptRecord(topicId: string): WizardFinalScriptR
   ) return null;
   if (
     generated?.category === "finance" &&
+    (!parsed.script.videoStrategy || !financeEditorialVideoStrategyCoverHooksPass(parsed.script.videoStrategy))
+  ) return null;
+  if (
+    generated?.category === "finance" &&
     (!Array.isArray(parsed.script.scenes) || parsed.script.scenes.some((scene) =>
       scene.visualEvidence?.version !== FINANCE_VISUAL_EVIDENCE_VERSION ||
       typeof scene.visualEvidence?.sceneIntegrationPlan !== "string" ||
@@ -7132,6 +7140,7 @@ export type WizardProductionScriptPart = {
   canonicalTitle: string;
   platformTitle: string;
   coverLines: FinanceEditorialCoverLine[];
+  coverHookAudit: FinanceEditorialCoverHookAudit | null;
   script: WizardScriptPreview;
 };
 
@@ -7217,6 +7226,7 @@ export function buildWizardProductionScriptParts(
       canonicalTitle: baseScript.title,
       platformTitle: baseScript.title,
       coverLines: [],
+      coverHookAudit: null,
       script: baseScript,
     }];
   }
@@ -7274,6 +7284,7 @@ export function buildWizardProductionScriptParts(
       canonicalTitle: baseScript.title,
       platformTitle: part.title,
       coverLines: part.coverLines,
+      coverHookAudit: part.coverHookAudit,
       script,
     };
   });
@@ -7307,6 +7318,7 @@ export type WizardRealPipelinePaths = WizardRealPipelinePartPaths & {
 type WizardProductionPipelinePart = WizardRealPipelinePartPaths & {
   record: WizardFinalScriptRecord;
   coverLines: FinanceEditorialCoverLine[];
+  coverHookAudit: FinanceEditorialCoverHookAudit | null;
 };
 
 function toWizardRealPipelinePartPaths(part: WizardProductionPipelinePart): WizardRealPipelinePartPaths {
@@ -7352,6 +7364,12 @@ function buildWizardRealTtsScript(
     baseStyle: voicePhaseContract && castSettings ? castSettings.style : baseProfile.baseStyle,
   };
   const hasStagedCover = part.coverLines.length === 3;
+  const storedCoverHookAudit = part.coverHookAudit;
+  const coverHookAuditCurrent =
+    !hasStagedCover ||
+    (storedCoverHookAudit?.contractVersion === FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION &&
+      financeEditorialCoverHookAuditMatches(storedCoverHookAudit, part.coverLines));
+  if (!coverHookAuditCurrent) throw new Error("finance_cover_hook_audit_failed");
   const directedScenes = script.scenes.map((scene, index) => buildWizardSpeechDirection(
     { id: scene.id, narration: narrations[index] },
     { topicProfile: topicSpeechProfile, sceneIndex: index, sceneCount: script.scenes.length, sampleReview },
@@ -7396,6 +7414,7 @@ function buildWizardRealTtsScript(
       displayText: part.coverLines.map((line) => line.displayText).join("\n"),
       lines: part.coverLines,
       visualOnlyPunctuation: true,
+      hookAudit: storedCoverHookAudit,
     } : null,
     captionContract: {
       enabled: true,
@@ -7528,6 +7547,7 @@ function resolveWizardProductionPipelineParts(
       videoOutDir: join(realRoot, visualProfile.videoDir),
       record,
       coverLines: [],
+      coverHookAudit: null,
     }];
   }
 
@@ -7577,6 +7597,7 @@ function resolveWizardProductionPipelineParts(
       videoOutDir: join(realRoot, visualProfile.videoDir),
       record: partRecord,
       coverLines: part.coverLines,
+      coverHookAudit: part.coverHookAudit,
     };
   });
 }
@@ -7617,9 +7638,9 @@ function resolveWizardDurationSafeProductionRecord(
 }
 
 /**
- * 확정 문구와 시각 증거는 그대로 보존하고, 비어 있는 구형 still/Veo 자동선정 계약만
- * 현재 결정론적 계약으로 갱신한다. Claude/브라우저/API 호출은 없으며 다른 형태의 stale
- * 대본은 수정하지 않고 그대로 fail-closed한다.
+ * 확정 본문과 시각 증거는 그대로 보존하고, 구형 첫 화면 후킹 계약과 비어 있는
+ * still/Veo 자동선정 계약만 현재 결정론적 계약으로 갱신한다. Claude/브라우저/API 호출은
+ * 없으며 다른 형태의 stale 대본은 수정하지 않고 그대로 fail-closed한다.
  */
 function refreshWizardFinalScriptMediaContract(topicId: string): boolean {
   const safeSlug = toSafeTopicSlug(topicId);
@@ -7635,24 +7656,41 @@ function refreshWizardFinalScriptMediaContract(topicId: string): boolean {
     typeof scene.visualEvidence?.motionPlan !== "string" ||
     scene.visualEvidence.motionPlan.length < 40
   )) return false;
-  if (wizardSceneMediaStrategiesAreValid(raw.script.scenes)) return true;
   if (!getWizardScriptQualityGate(topicId, raw.script).passed) return false;
+
+  let videoStrategy = raw.script.videoStrategy;
+  let coverHookRefreshed = false;
+  if (!financeEditorialVideoStrategyCoverHooksPass(videoStrategy)) {
+    const generated = readWizardGeneratedTopic(topicId);
+    const editorialTopic = generated ? resolveFinanceEditorialTopic(generated) : null;
+    if (!editorialTopic) return false;
+    const editorialParts = buildFinanceEditorialScriptParts(editorialTopic);
+    const refreshedStrategy = buildFinanceEditorialVideoStrategy(editorialTopic, editorialParts, {
+      singleTargetDurationSec: videoStrategy.durationRepair?.sourceTargetDurationSec,
+    });
+    if (refreshedStrategy.mode !== videoStrategy.mode) return false;
+    videoStrategy = refreshedStrategy;
+    coverHookRefreshed = true;
+  }
+
+  const mediaContractCurrent = wizardSceneMediaStrategiesAreValid(raw.script.scenes);
+  if (!coverHookRefreshed && mediaContractCurrent) return true;
 
   let scenes: WizardScriptScene[];
   try {
-    scenes = applyWizardSceneMediaStrategies(raw.script.scenes);
+    scenes = mediaContractCurrent ? raw.script.scenes : applyWizardSceneMediaStrategies(raw.script.scenes);
   } catch {
     return false;
   }
   if (!wizardSceneMediaStrategiesAreValid(scenes)) return false;
-  const script: WizardScriptPreview = { ...raw.script, scenes };
+  const script: WizardScriptPreview = { ...raw.script, videoStrategy, scenes };
   if (!getWizardScriptQualityGate(topicId, script).passed) return false;
   const refreshed: WizardFinalScriptRecord = {
     ...raw,
     localFingerprint: wizardScriptFingerprint(script),
     polish: {
       ...raw.polish,
-      note: `${raw.polish.note} · 로컬 장면 미디어 계약 갱신`,
+      note: `${raw.polish.note}${coverHookRefreshed ? " · 후킹형 첫 화면 계약 갱신" : ""}${mediaContractCurrent ? "" : " · 로컬 장면 미디어 계약 갱신"}`,
     },
     script,
   };

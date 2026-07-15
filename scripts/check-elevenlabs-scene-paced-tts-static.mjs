@@ -68,12 +68,13 @@ check(
 check("single-topic review profile is isolated from the 500-topic rollout", /WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID/.test(helper) && /rolloutScope:\s*"single_topic_only"/.test(helper));
 check("sample review routes housing anxiety to reassuring control at 0.91 speed", /isWizardAvSampleReviewTopic/.test(helper) && /id:\s*"reassuring_control"[\s\S]{0,480}baseSpeed:\s*0\.91/.test(helper));
 check(
-  "staged cover validates three semantically identical spoken/display lines before any API call",
+  "staged cover validates hook quality and three semantically identical spoken/display lines before any API call",
   /STAGED_COVER_CONTRACT_VERSION/.test(builder) &&
+    /validateFinanceCoverHookContract/.test(builder) &&
     /lines\.length === 3/.test(builder) &&
     /semanticText\(line\.spokenText\) === semanticText\(line\.displayText\)/.test(builder) &&
     /semanticText\(spokenText\) === semanticText\(sceneOneNarration\)/.test(builder) &&
-    builder.indexOf("staged cover spoken/display contract is invalid") < builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY"),
+    builder.indexOf("validateFinanceCoverHookContract(coverContract)") < builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY"),
 );
 check(
   "legacy staged opening stays confidently capped while Minjae uses its exact phase contract",

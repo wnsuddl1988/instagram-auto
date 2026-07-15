@@ -15,6 +15,7 @@ import {
   maskElevenLabsVoiceId,
   validateMinjaeVoicePhaseContract,
 } from "./_elevenlabs-three-phase-voice-runtime.mjs";
+import { validateFinanceCoverHookContract } from "./_finance-cover-hook-guard.mjs";
 
 const ENGINE_VERSION = "money_shorts_korean_director_v2";
 const PACKET_SCHEMA = "money_shorts_minjae_two_phase_tts_approval_packet_v3";
@@ -68,6 +69,11 @@ if (ttsScript.ttsEngineVersion !== ENGINE_VERSION || !validateMinjaeVoicePhaseCo
 }
 if (ttsScript.sampleReviewMode?.enabled === true) {
   console.error("ABORT: sample-review overrides cannot be mixed into the Minjae approval packet. No API call was made.");
+  process.exit(2);
+}
+const coverHookGuard = validateFinanceCoverHookContract(ttsScript.coverContract);
+if (!coverHookGuard.passed) {
+  console.error(`ABORT: current finance cover hook audit is required (${coverHookGuard.failures.join(",")}). No API call was made.`);
   process.exit(2);
 }
 

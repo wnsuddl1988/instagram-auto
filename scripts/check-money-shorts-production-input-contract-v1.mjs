@@ -148,7 +148,12 @@ if (pipeline?.ok) {
     const lines = Array.isArray(cover?.lines) ? cover.lines : [];
     const spoken = lines.map((line) => line.spokenText).join("\n");
     const display = lines.map((line) => line.displayText).join("\n");
+    const hookAudit = cover?.hookAudit;
     return cover?.enabled === true && lines.length === 3 &&
+      hookAudit?.contractVersion === "money_shorts_finance_cover_hook_v2" &&
+      hookAudit?.sourceTextCoverageRatio === 1 &&
+      hookAudit?.passed === true &&
+      Array.isArray(hookAudit?.failures) && hookAudit.failures.length === 0 &&
       semanticText(spoken) === semanticText(display) &&
       semanticText(tts.scenes?.[0]?.narration) === semanticText(spoken);
   }));

@@ -102,6 +102,11 @@ type WizardScript = {
       partNumber: number;
       totalParts: number;
       coverLines: Array<{ spokenText: string; displayText: string; emphasis: string }>;
+      coverHookAudit?: {
+        contractVersion: string;
+        passed: boolean;
+        failures: string[];
+      };
       bridgeNarration: string | null;
       recapNarration: string | null;
     }>;
@@ -1462,6 +1467,11 @@ export default function VideoCreationWizard() {
                         <p className="text-xs font-bold text-slate-500 mb-1">
                           {part.totalParts > 1 ? `${part.partNumber}편 첫 화면` : "첫 화면"}
                         </p>
+                        {part.coverHookAudit ? (
+                          <p className={`mb-1 text-xs font-bold ${part.coverHookAudit.passed ? "text-emerald-700" : "text-red-700"}`}>
+                            {part.coverHookAudit.passed ? "후킹 검증 통과 · 유료 음성 진행 가능" : "후킹 검증 실패 · 유료 음성 차단"}
+                          </p>
+                        ) : null}
                         {part.coverLines.map((line, index) => (
                           <p
                             key={`${part.id}-${index}`}

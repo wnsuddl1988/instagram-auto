@@ -518,6 +518,7 @@ for (const label of [
 ]) {
   check(`wizard script UI shows section: ${label}`, wizardSrc.includes(label));
 }
+check("wizard shows the paid-TTS cover hook pass/block result before generation", wizardSrc.includes("후킹 검증 통과 · 유료 음성 진행 가능") && wizardSrc.includes("후킹 검증 실패 · 유료 음성 차단"));
 // 확정 대본의 내용/순서를 실제 음성/최종 영상이 쓰되, 음성 단계의 낭독 연기만 별도 보정됨을 알린다.
 check("wizard clarifies confirmed script content is used with delivery-only voice direction", wizardSrc.includes("문장 내용과 순서는 그대로 사용하고") && wizardSrc.includes("장면에 맞는 억양·강조·호흡을 자동으로 보정합니다"));
 check("wizard clarifies SNS 설명글 is not the 대본", wizardSrc.includes("영상이 읽는 대본과는 다릅니다"));
@@ -718,7 +719,7 @@ check("continuous raw TTS cache is keyed by engine/model/profile/text/settings",
 check("generated per-part TTS input contract is content-addressed to avoid Windows file locks", /buildWizardRealTtsContractSnapshot/.test(helperCode) && /tts-script\.real-\$\{realTtsContract\.fingerprint\}\.json/.test(helperCode) && /if\s*\(!existsSync\(part\.realTtsScriptPath\)\)/.test(helperCode));
 check("real TTS input generation repairs only semantic over-60 scripts and fails closed afterward", /resolveWizardDurationSafeProductionRecord/.test(helperCode) && /singleTargetDurationSec > 60/.test(financeEditorialScriptEngineSrc) && /tts_duration_contract_violation/.test(helperCode));
 check("real TTS readiness requires current full input hash and exact Minjae opening/body parity audit", /ttsInputContractCurrent/.test(helperCode) && /ttsInputContractSha256/.test(helperCode) && /phaseAuditReady/.test(helperCode) && /openingMatchesBodyLead/.test(helperCode) && /providerBoundaryTagRepeated/.test(helperCode));
-check("stale final script refresh preserves content and only reapplies deterministic media selection", /function refreshWizardFinalScriptMediaContract/.test(helperCode) && /applyWizardSceneMediaStrategies\(raw\.script\.scenes\)/.test(helperCode) && /localFingerprint:\s*wizardScriptFingerprint\(script\)/.test(helperCode) && /if\s*\(!record && refreshWizardFinalScriptMediaContract\(topicId\)\)/.test(helperCode));
+check("stale final script refresh preserves body content while repairing current cover-hook and media contracts", /function refreshWizardFinalScriptMediaContract/.test(helperCode) && /financeEditorialVideoStrategyCoverHooksPass/.test(helperCode) && /buildFinanceEditorialVideoStrategy/.test(helperCode) && /applyWizardSceneMediaStrategies\(raw\.script\.scenes\)/.test(helperCode) && /localFingerprint:\s*wizardScriptFingerprint\(script\)/.test(helperCode) && /if\s*\(!record && refreshWizardFinalScriptMediaContract\(topicId\)\)/.test(helperCode));
 check("TTS reuses matching continuous or phase audio/alignment without a paid retry", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(ttsScriptSrc) && /reused_continuous_aligned/.test(ttsScriptSrc) && /reused_two_phase_aligned/.test(ttsScriptSrc));
 check("continuous TTS maps aligned character ranges back to every video scene", /alignedText\.indexOf\(segment\.text, searchCursor\)/.test(ttsScriptSrc) && /normalizedDurationSec/.test(ttsScriptSrc) && /spokenStartSec/.test(ttsScriptSrc));
 check("sample voice calibration remains isolated to the approved listening topic", /WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID/.test(helperSrc) && /rolloutScope:\s*"single_topic_only"/.test(helperSrc));

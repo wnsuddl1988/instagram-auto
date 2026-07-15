@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import { validateMinjaeVoicePhaseContract } from "./_elevenlabs-three-phase-voice-runtime.mjs";
+import { validateFinanceCoverHookContract } from "./_finance-cover-hook-guard.mjs";
 
 const cast = JSON.parse(fs.readFileSync("lib/finance-character-voice-cast-data.json", "utf8"));
 const voiceModule = fs.readFileSync("lib/finance-character-voice-cast.ts", "utf8");
@@ -9,6 +10,7 @@ const operator = fs.readFileSync("lib/owner-web-operator.ts", "utf8");
 const builder = fs.readFileSync("scripts/build-elevenlabs-korean-director-tts-from-script.mjs", "utf8");
 const runtime = fs.readFileSync("scripts/_elevenlabs-three-phase-voice-runtime.mjs", "utf8");
 const approvalBuilder = fs.readFileSync("scripts/build-minjae-three-phase-tts-approval-packet-v1.mjs", "utf8");
+const coverHookGuard = fs.readFileSync("scripts/_finance-cover-hook-guard.mjs", "utf8");
 const readonlyAudit = fs.readFileSync("scripts/audit-elevenlabs-readonly-preflight-v1.mjs", "utf8");
 
 const results = [];
@@ -47,6 +49,42 @@ check("runtime and approval packet share exact model-aware phase request context
 check("v3 request contract forbids provider adjacent text and keeps local crossfade continuity", /ELEVEN_V3_ADJACENT_CONTEXT_FORBIDDEN/.test(runtime) && /eleven_v3_local_crossfade_only_v1/.test(runtime) && /providerAdjacentContextIncluded/.test(builder) && /providerAdjacentContextIncluded/.test(approvalBuilder));
 check("TTS summary carries the exact current input contract hashes", /ttsInputContractFingerprint/.test(builder) && /ttsInputContractSha256/.test(builder));
 check("approval packet is no-live and never reads API credentials", /PREFLIGHT_ONLY_OK/.test(approvalBuilder) && /apiCallBudgetMax:\s*2/.test(approvalBuilder) && !/fetch\(|ELEVENLABS_API_KEY|process\.env/.test(approvalBuilder));
+check("approval packet and paid builder both reject stale cover hooks before paid access", /validateFinanceCoverHookContract/.test(approvalBuilder) &&
+  /validateFinanceCoverHookContract/.test(builder) &&
+  /money_shorts_finance_cover_hook_v2/.test(coverHookGuard) &&
+  /dangling_cover_token/.test(coverHookGuard) &&
+  /explanatory_or_generic_closure/.test(coverHookGuard) &&
+  builder.indexOf("validateFinanceCoverHookContract(coverContract)") < apiKeyIndex);
+const validHookContract = {
+  lines: [
+    { spokenText: "주가가 싸졌는데", displayText: "주가가 싸졌는데..." },
+    { spokenText: "더 위험해질 수 있는 이유", displayText: "더 위험해질 수 있는 이유?" },
+    { spokenText: "문제는 가격이 아니야", displayText: "문제는 가격이 아니야!" },
+  ],
+  hookAudit: {
+    contractVersion: "money_shorts_finance_cover_hook_v2",
+    mode: "title_open_loop",
+    sourceText: "주가가 싸졌는데 더 위험해질 수 있는 이유",
+    sourceTextCoverageRatio: 1,
+    sourceTextPreserved: true,
+    danglingTokenFree: true,
+    explanatoryClosureFree: true,
+    openLoopPresent: true,
+    displaySemanticsPreserved: true,
+    visualOnlyPunctuation: true,
+    failures: [],
+    passed: true,
+  },
+};
+check("runtime cover guard accepts the repaired hook and rejects the old dangling hook", validateFinanceCoverHookContract(validHookContract).passed &&
+  !validateFinanceCoverHookContract({
+    ...validHookContract,
+    lines: [
+      { spokenText: "주가가 싸졌는데 더", displayText: "주가가 싸졌는데 더..." },
+      validHookContract.lines[1],
+      { spokenText: "계좌가 먼저 흔들려", displayText: "계좌가 먼저 흔들려!" },
+    ],
+  }).passed);
 check("operator exposes a separate no-media-env TTS preflight action", /"realTtsPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT/.test(operator) && /approval-preflight-v3/.test(operator));
 check("operator exposes the separately approved GET-only audit action", /"realTtsReadonlyPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_READONLY_PREFLIGHT/.test(operator) && /audit-elevenlabs-readonly-preflight-v1\.mjs/.test(operator));
 check("read-only audit accepts exactly two content-addressed packets", /packetPaths\.length !== 2/.test(readonlyAudit) && /TWO_PART_PACKET_SET_REQUIRED/.test(readonlyAudit) && /PACKET_HASH_MISMATCH/.test(readonlyAudit));

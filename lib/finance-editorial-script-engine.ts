@@ -19,10 +19,28 @@ export type FinanceEditorialScriptParts = {
 export const FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION =
   "money_shorts_semantic_prehook_series_v1" as const;
 
+export const FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION =
+  "money_shorts_finance_cover_hook_v2" as const;
+
 export type FinanceEditorialCoverLine = {
   spokenText: string;
   displayText: string;
   emphasis: "topic" | "tension" | "impact" | "part_marker";
+};
+
+export type FinanceEditorialCoverHookAudit = {
+  contractVersion: typeof FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION;
+  mode: "title_open_loop" | "part_two_reentry";
+  sourceText: string;
+  sourceTextCoverageRatio: number;
+  sourceTextPreserved: boolean;
+  danglingTokenFree: boolean;
+  explanatoryClosureFree: boolean;
+  openLoopPresent: boolean;
+  displaySemanticsPreserved: boolean;
+  visualOnlyPunctuation: boolean;
+  failures: string[];
+  passed: boolean;
 };
 
 export type FinanceEditorialVideoStrategy = {
@@ -64,6 +82,7 @@ export type FinanceEditorialVideoStrategy = {
       "hook" | "situation" | "consequence" | "psychology" | "mindset" | "habit" | "recommendation"
     >>;
     coverLines: FinanceEditorialCoverLine[];
+    coverHookAudit: FinanceEditorialCoverHookAudit;
     bridgeNarration: string | null;
     recapNarration: string | null;
     explicitPartMarker: boolean;
@@ -1254,20 +1273,49 @@ export function buildFinanceEditorialScriptParts(topic: FinanceEditorialTopic): 
   };
 }
 
-const COVER_IMPACT_BY_SUBTOPIC: Record<FinanceEditorialSubtopicId, string> = {
-  economy_literacy: "통장이 먼저 반응해",
-  inflation_living_cost: "생활비가 먼저 무너져",
-  interest_debt: "이자가 먼저 커져",
-  consumption_psychology: "카드값으로 돌아와",
-  sns_comparison: "내 예산이 대신 갚아",
-  labor_income: "월급이 먼저 사라져",
-  investing_assets: "계좌가 먼저 흔들려",
-  housing_asset_gap: "월급이 집에 묶여",
-  anxiety_avoidance: "선택지가 먼저 줄어",
-  success_habits: "돈은 순서대로 남아",
-  crisis_risk: "버틸 돈이 먼저 사라져",
-  time_retirement: "미룬 시간이 돈이 돼",
+const COVER_OPEN_LOOP_BY_LANE: Record<FinanceEditorialLane, string> = {
+  psychology_gap: "마음이 숨기는 게 있어",
+  reversal: "반전은 뒤에 있어",
+  wealth_standard: "차이는 기준에서 갈려",
+  number_gap: "빠진 숫자가 하나 있어",
+  action_one: "먼저 바꿀 게 하나 있어",
+  habit_exposure: "반복되는 이유가 숨어 있어",
+  warning: "놓치면 늦는 신호가 있어",
+  recovery: "다시 잡을 기준이 있어",
+  economic_signal: "먼저 움직인 신호가 있어",
 };
+
+const COVER_REVERSAL_OPEN_LOOP_BY_SUBTOPIC: Record<FinanceEditorialSubtopicId, string> = {
+  economy_literacy: "문제는 뉴스만이 아니야",
+  inflation_living_cost: "문제는 가격표만이 아니야",
+  interest_debt: "문제는 금리만이 아니야",
+  consumption_psychology: "문제는 지출만이 아니야",
+  sns_comparison: "문제는 남이 아니야",
+  labor_income: "문제는 월급만이 아니야",
+  investing_assets: "문제는 가격이 아니야",
+  housing_asset_gap: "문제는 집값만이 아니야",
+  anxiety_avoidance: "문제는 의지가 아니야",
+  success_habits: "문제는 재능이 아니야",
+  crisis_risk: "문제는 위기 자체가 아니야",
+  time_retirement: "문제는 나이만이 아니야",
+};
+
+const COVER_DANGLING_TOKENS = new Set([
+  "더", "왜", "안", "못", "가장", "먼저", "진짜", "정작", "괜히", "꼭", "반드시",
+  "바로", "결국", "이미", "또", "다시", "계속", "제일", "너무", "잘", "큰", "작은",
+  "내", "이", "그", "한",
+]);
+
+const COVER_PREFERRED_BREAK_PATTERN = /(?:는데|는데도|지만|고|도|수록|때|날|순간|뒤|전에|후에)$/u;
+const COVER_PARTICLE_BREAK_PATTERN = /(?:을|를|와|과|의)$/u;
+const COVER_PARTICLE_WORD_EXCEPTIONS = new Set(["결과", "효과", "성과", "평가", "대가", "국가", "주가", "원가", "단가", "학과", "마을"]);
+const COVER_EXPLANATORY_CLOSURE_PATTERN = /(?:때문이야|때문입니다|정답은|결론은|해결책은|그래서)$/u;
+const COVER_OPEN_LOOP_PATTERN = /(?:있어|갈려|아니야)$/u;
+const COVER_FORBIDDEN_PHRASES = new Set([
+  "진짜 이유는 따로 있어",
+  "그냥 넘기면 안 돼",
+  "계좌가 먼저 흔들려",
+]);
 
 const SCRIPT_STAGE_KEYS = [
   "hook",
@@ -1303,31 +1351,196 @@ function compactCoverSubject(title: string, maxChars = 13): string {
   return result || [...clean].slice(0, maxChars).join("");
 }
 
-function buildSingleCoverLines(topic: FinanceEditorialTopic): FinanceEditorialCoverLine[] {
-  const subject = compactCoverSubject(topic.title);
-  const reasonDriven = /왜|이유|착각|심리|진짜/u.test(topic.title);
-  return [
-    { spokenText: subject, displayText: `${subject}???`, emphasis: "topic" },
-    {
-      spokenText: reasonDriven ? "진짜 이유는 따로 있어" : "그냥 넘기면 안 돼",
-      displayText: reasonDriven ? "진짜 이유는 따로 있어...??" : "그냥 넘기면 안 돼...!",
-      emphasis: "tension",
-    },
-    {
-      spokenText: COVER_IMPACT_BY_SUBTOPIC[topic.financeSubtopic],
-      displayText: `${COVER_IMPACT_BY_SUBTOPIC[topic.financeSubtopic]}!!!`,
-      emphasis: "impact",
-    },
-  ];
+function normalizedCoverWords(value: string): string {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[.!?…。！？]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
-function buildPartTwoCoverLines(focus: string): FinanceEditorialCoverLine[] {
-  const focusText = compactCoverSubject(focus, 11);
-  return [
-    { spokenText: "이 편이야", displayText: "이 편이야!", emphasis: "part_marker" },
-    { spokenText: "이 기준 놓치면 안 돼", displayText: "이 기준 놓치면 안 돼...!", emphasis: "tension" },
-    { spokenText: `${focusText}부터 봐`, displayText: `${focusText}부터 봐!!!`, emphasis: "impact" },
+function compactCoverSemanticText(value: string): string {
+  return normalizedCoverWords(value).replace(/\s+/gu, "").toLowerCase();
+}
+
+function coverPunctuationCount(value: string): number {
+  return (String(value ?? "").match(/[!?…]|\.{2,}/gu) ?? []).length;
+}
+
+function coverSourceCoverageRatio(sourceText: string, candidateText: string): number {
+  const source = semanticTokens(sourceText);
+  if (source.size === 0) return 1;
+  const candidate = semanticTokens(candidateText);
+  let matched = 0;
+  for (const token of source) if (candidate.has(token)) matched += 1;
+  return Number((matched / source.size).toFixed(3));
+}
+
+function lineEndsWithDanglingToken(value: string): boolean {
+  const words = normalizedCoverWords(value).split(/\s+/u).filter(Boolean);
+  const last = words[words.length - 1] ?? "";
+  return words.length === 0 ||
+    COVER_DANGLING_TOKENS.has(last) ||
+    (COVER_PARTICLE_BREAK_PATTERN.test(last) && !COVER_PARTICLE_WORD_EXCEPTIONS.has(last));
+}
+
+function splitHookTitle(title: string): [string, string] {
+  const clean = normalizedCoverWords(title);
+  const words = clean.split(/\s+/u).filter(Boolean);
+  if (words.length < 2) return [clean, "놓치면 안 될 포인트"];
+
+  const candidates = Array.from({ length: words.length - 1 }, (_, index) => index + 1)
+    .map((splitAt) => {
+      const lead = words.slice(0, splitAt).join(" ");
+      const tail = words.slice(splitAt).join(" ");
+      if (lineEndsWithDanglingToken(lead)) return null;
+      const leadChars = [...lead].length;
+      const tailChars = [...tail].length;
+      const overflowPenalty = Math.max(0, leadChars - 18) * 4 + Math.max(0, tailChars - 20) * 4;
+      const preferredBreakBonus = COVER_PREFERRED_BREAK_PATTERN.test(words[splitAt - 1] ?? "") ? -8 : 0;
+      return { lead, tail, score: Math.abs(leadChars - tailChars) + overflowPenalty + preferredBreakBonus };
+    })
+    .filter((candidate): candidate is { lead: string; tail: string; score: number } => candidate != null)
+    .sort((left, right) => left.score - right.score);
+
+  const best = candidates[0];
+  if (best) return [best.lead, best.tail];
+  return [words[0] ?? clean, words.slice(1).join(" ") || "놓치면 안 될 포인트"];
+}
+
+function withObjectParticle(value: string): string {
+  const clean = normalizedCoverWords(value);
+  const last = [...clean].at(-1) ?? "";
+  const code = last.charCodeAt(0);
+  const hasFinalConsonant = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+  return `${clean}${hasFinalConsonant ? "을" : "를"}`;
+}
+
+export function auditFinanceEditorialCoverHook(input: {
+  mode: FinanceEditorialCoverHookAudit["mode"];
+  sourceText: string;
+  coverLines: FinanceEditorialCoverLine[];
+}): FinanceEditorialCoverHookAudit {
+  const lines = Array.isArray(input.coverLines) ? input.coverLines : [];
+  const spoken = lines.map((line) => String(line?.spokenText ?? "").trim());
+  const sourceText = normalizedCoverWords(input.sourceText);
+  const titleCandidate = input.mode === "title_open_loop"
+    ? spoken.slice(0, 2).join(" ")
+    : spoken[1] ?? "";
+  const compactSource = compactCoverSemanticText(sourceText);
+  const compactCandidate = compactCoverSemanticText(titleCandidate);
+  const sourceTextPreserved = input.mode === "title_open_loop"
+    ? compactCandidate === compactSource
+    : compactSource.length >= 2 && compactCandidate.includes(compactSource);
+  const sourceTextCoverageRatio = sourceTextPreserved
+    ? 1
+    : coverSourceCoverageRatio(sourceText, titleCandidate);
+  const danglingIndexes = input.mode === "title_open_loop" ? [0, 1] : [1];
+  const danglingTokenFree = danglingIndexes.every((index) => !lineEndsWithDanglingToken(spoken[index] ?? ""));
+  const lastSpoken = spoken[2] ?? "";
+  const explanatoryClosureFree =
+    !COVER_EXPLANATORY_CLOSURE_PATTERN.test(lastSpoken) &&
+    !COVER_FORBIDDEN_PHRASES.has(lastSpoken);
+  const openLoopPresent = COVER_OPEN_LOOP_PATTERN.test(lastSpoken);
+  const displaySemanticsPreserved = lines.length === 3 && lines.every((line) =>
+    compactCoverSemanticText(line.spokenText) === compactCoverSemanticText(line.displayText));
+  const visualOnlyPunctuation = lines.length === 3 && lines.every((line) =>
+    coverPunctuationCount(line.displayText) > coverPunctuationCount(line.spokenText));
+  const failures = [
+    ...(lines.length === 3 ? [] : ["cover_line_count_invalid"]),
+    ...(sourceTextPreserved ? [] : ["source_hook_semantics_lost"]),
+    ...(danglingTokenFree ? [] : ["dangling_cover_token"]),
+    ...(explanatoryClosureFree ? [] : ["explanatory_or_generic_closure"]),
+    ...(openLoopPresent ? [] : ["open_loop_missing"]),
+    ...(displaySemanticsPreserved ? [] : ["display_spoken_semantics_mismatch"]),
+    ...(visualOnlyPunctuation ? [] : ["visual_only_punctuation_missing"]),
   ];
+  return {
+    contractVersion: FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION,
+    mode: input.mode,
+    sourceText,
+    sourceTextCoverageRatio,
+    sourceTextPreserved,
+    danglingTokenFree,
+    explanatoryClosureFree,
+    openLoopPresent,
+    displaySemanticsPreserved,
+    visualOnlyPunctuation,
+    failures,
+    passed: failures.length === 0,
+  };
+}
+
+export function financeEditorialCoverHookAuditMatches(
+  audit: FinanceEditorialCoverHookAudit | null | undefined,
+  coverLines: FinanceEditorialCoverLine[],
+): boolean {
+  if (!audit || audit.contractVersion !== FINANCE_EDITORIAL_COVER_HOOK_CONTRACT_VERSION || !Array.isArray(audit.failures)) return false;
+  const current = auditFinanceEditorialCoverHook({
+    mode: audit.mode,
+    sourceText: audit.sourceText,
+    coverLines,
+  });
+  return current.passed &&
+    current.mode === audit.mode &&
+    current.sourceText === audit.sourceText &&
+    current.sourceTextCoverageRatio === audit.sourceTextCoverageRatio &&
+    current.sourceTextPreserved === audit.sourceTextPreserved &&
+    current.danglingTokenFree === audit.danglingTokenFree &&
+    current.explanatoryClosureFree === audit.explanatoryClosureFree &&
+    current.openLoopPresent === audit.openLoopPresent &&
+    current.displaySemanticsPreserved === audit.displaySemanticsPreserved &&
+    current.visualOnlyPunctuation === audit.visualOnlyPunctuation &&
+    current.failures.join("|") === audit.failures.join("|") &&
+    current.passed === audit.passed;
+}
+
+export function financeEditorialVideoStrategyCoverHooksPass(strategy: FinanceEditorialVideoStrategy): boolean {
+  return strategy.parts.every((part) => financeEditorialCoverHookAuditMatches(part.coverHookAudit, part.coverLines));
+}
+
+function buildSingleCoverBundle(topic: FinanceEditorialTopic): {
+  coverLines: FinanceEditorialCoverLine[];
+  coverHookAudit: FinanceEditorialCoverHookAudit;
+} {
+  const [lead, tail] = splitHookTitle(topic.title);
+  const openLoop = topic.lane === "reversal"
+    ? COVER_REVERSAL_OPEN_LOOP_BY_SUBTOPIC[topic.financeSubtopic]
+    : COVER_OPEN_LOOP_BY_LANE[topic.lane];
+  const questionDriven = /왜|이유|착각|심리|진짜|걸까|무엇|뭘/u.test(topic.title);
+  const coverLines: FinanceEditorialCoverLine[] = [
+    { spokenText: lead, displayText: `${lead}...`, emphasis: "topic" },
+    { spokenText: tail, displayText: `${tail}${questionDriven ? "?" : "!"}`, emphasis: "tension" },
+    { spokenText: openLoop, displayText: `${openLoop}!`, emphasis: "impact" },
+  ];
+  return {
+    coverLines,
+    coverHookAudit: auditFinanceEditorialCoverHook({
+      mode: "title_open_loop",
+      sourceText: topic.title,
+      coverLines,
+    }),
+  };
+}
+
+function buildPartTwoCoverBundle(topic: FinanceEditorialTopic): {
+  coverLines: FinanceEditorialCoverLine[];
+  coverHookAudit: FinanceEditorialCoverHookAudit;
+} {
+  const focus = BASE_PROFILES[topic.financeSubtopic].focus;
+  const coverLines: FinanceEditorialCoverLine[] = [
+    { spokenText: "이 편이야", displayText: "이 편이야!", emphasis: "part_marker" },
+    { spokenText: `${withObjectParticle(focus)} 볼 차례야`, displayText: `${withObjectParticle(focus)} 볼 차례야...`, emphasis: "tension" },
+    { spokenText: "먼저 바꿀 게 하나 있어", displayText: "먼저 바꿀 게 하나 있어!", emphasis: "impact" },
+  ];
+  return {
+    coverLines,
+    coverHookAudit: auditFinanceEditorialCoverHook({
+      mode: "part_two_reentry",
+      sourceText: focus,
+      coverLines,
+    }),
+  };
 }
 
 function semanticTokens(value: string): Set<string> {
@@ -1433,6 +1646,7 @@ export function buildFinanceEditorialVideoStrategy(
     speedCap: 0.98,
     stance: "첫 문장을 낮고 단단하게 착지시키고, 과장 문구는 빠르게 몰아치지 않는 확신형 화자",
   };
+  const firstCover = buildSingleCoverBundle(topic);
 
   if (!shouldSplit) {
     return {
@@ -1446,7 +1660,8 @@ export function buildFinanceEditorialVideoStrategy(
         totalParts: 1,
         title: topic.title,
         sourceStages: [...SCRIPT_STAGE_KEYS],
-        coverLines: buildSingleCoverLines(topic),
+        coverLines: firstCover.coverLines,
+        coverHookAudit: firstCover.coverHookAudit,
         bridgeNarration: null,
         recapNarration: null,
         explicitPartMarker: false,
@@ -1456,6 +1671,7 @@ export function buildFinanceEditorialVideoStrategy(
   }
 
   const focus = compactCoverSubject(parts.focus, 12);
+  const partTwoCover = buildPartTwoCoverBundle(topic);
   return {
     contractVersion: FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION,
     mode: "two_part",
@@ -1478,7 +1694,8 @@ export function buildFinanceEditorialVideoStrategy(
         totalParts: 2,
         title: `${topic.title} 1편`,
         sourceStages: ["hook", "situation", "consequence", "psychology"],
-        coverLines: buildSingleCoverLines(topic),
+        coverLines: firstCover.coverLines,
+        coverHookAudit: firstCover.coverHookAudit,
         bridgeNarration: [
           "그럼 지금 바꿔야 할 기준은 뭘까",
           `2편에서 ${focus}부터 바로 보여줄게`,
@@ -1494,7 +1711,8 @@ export function buildFinanceEditorialVideoStrategy(
         totalParts: 2,
         title: `${topic.title} 2편`,
         sourceStages: ["mindset", "habit", "recommendation"],
-        coverLines: buildPartTwoCoverLines(parts.focus),
+        coverLines: partTwoCover.coverLines,
+        coverHookAudit: partTwoCover.coverHookAudit,
         bridgeNarration: null,
         recapNarration: "1편에서 문제와 돈의 결과를 확인했지\n이제 바꿀 기준과 실행 순서를 바로 보자",
         explicitPartMarker: true,
