@@ -18,6 +18,10 @@ import path from "node:path";
 import { classifyVeoBody, isCDPOpen } from "./_gemini-veo-core.mjs";
 import { GEMINI_VEO_PROFILE_CHAIN } from "./_gemini-veo-profile-chain.mjs";
 import { GEMINI_FLOW_TARGET } from "./_gemini-flow-no-submit-contract.mjs";
+import {
+  isApprovalAcknowledged,
+  selectCurrentApprovalCandidate,
+} from "./_flow-motion-approval-selection.mjs";
 
 const modes = ["--contract-check", "--generate-live"].filter((flag) => process.argv.includes(flag));
 const forbiddenArgs = ["--new-project", "--change-account", "--launch-browser", "--press-enter", "--save-settings"];
@@ -209,6 +213,9 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   let pickerDialog = await waitForFirstVisible(page, page.locator('[role="dialog"]'));
   if (!pickerDialog) throw new Error("media_picker_dialog_missing");
 
+  const uploadReferenceFile = buildReferenceUploadAlias(job);
+  const uploadFileName = path.basename(uploadReferenceFile);
+
   const recoverPriorUpload = priorSummary?.status === "FAILED_NO_AUTOMATIC_RETRY" &&
     priorSummary?.jobId === job.jobId &&
     priorSummary?.submissionCount === 0 &&
@@ -218,14 +225,12 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
       "required_generation_confirmation_dialog_missing",
     ].includes(priorSummary?.failure);
   if (recoverPriorUpload) {
-    const recovered = await selectMediaAndAddToPrompt(page, pickerDialog, path.basename(job.referenceFile));
+    const recovered = await selectMediaAndAddToPrompt(page, pickerDialog, uploadFileName);
     if (recovered) {
       return fillPromptAndVerify(page, job, { ...recovered, referenceSource: "recovered_prior_upload" });
     }
   }
 
-  const uploadReferenceFile = buildReferenceUploadAlias(job);
-  const uploadFileName = path.basename(uploadReferenceFile);
   const uploadButton = await firstVisible(pickerDialog.getByText(/^(?:upload\s*)?(?:미디어 업로드|Upload media)$/i, { exact: true }));
   if (!uploadButton) throw new Error("media_upload_button_missing");
   const chooserPromise = page.waitForEvent("filechooser", { timeout: 10_000 });
@@ -244,6 +249,97 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   return fillPromptAndVerify(page, job, { ...attached, referenceSource: "uploaded_hash_alias" });
 }
 
+async function findRequiredGenerationConfirmation(page, job) {
+  const expectedPromptText = normalized(job.prompt);
+  const approvalOptions = page.locator("div").filter({ hasText: /^\s*check\s*(?:승인|Approve)\s*$/i });
+  const candidates = await approvalOptions.evaluateAll((elements, expectedPrompt) => elements.map((element, index) => {
+    const rect = element.getBoundingClientRect();
+    let current = element;
+    let promptMatches = false;
+    let acknowledged = false;
+    let confirmationText = "";
+    for (let depth = 0; current && depth < 8; depth += 1, current = current.parentElement) {
+      const previousText = String(current.previousElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
+      if (previousText.includes(expectedPrompt)) {
+        promptMatches = true;
+        confirmationText = String(current.textContent ?? "").replace(/\s+/g, " ").trim();
+        const nextText = String(current.nextElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
+        acknowledged = /^(?:승인|Approve)$/i.test(nextText);
+        break;
+      }
+    }
+    const localText = String(element.parentElement?.parentElement?.textContent ?? "").replace(/\s+/g, " ").trim();
+    return {
+      index,
+      inViewport: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth,
+      creditPromptMatches: /(?:크레딧\s*20개를 사용하여\s*1개 동영상 생성을 시작할까요\?|start.{0,80}1\s*video.{0,80}20\s*credits)/i.test(localText),
+      promptMatches,
+      acknowledged,
+      confirmationText,
+    };
+  }), expectedPromptText);
+  if (candidates.length === 0) return null;
+  const promptMatches = candidates.filter((candidate) => candidate.promptMatches);
+  if (promptMatches.length === 0) return null;
+  const currentPending = promptMatches.filter((candidate) =>
+    candidate.inViewport && candidate.creditPromptMatches && !candidate.acknowledged,
+  );
+  const currentAcknowledged = promptMatches.filter((candidate) =>
+    candidate.inViewport && candidate.creditPromptMatches && candidate.acknowledged,
+  );
+  if (currentPending.length === 0 && currentAcknowledged.length > 0) {
+    throw new Error("confirmation_already_acknowledged_no_resubmit");
+  }
+  const selected = selectCurrentApprovalCandidate(candidates);
+  return {
+    approveOption: approvalOptions.nth(selected.index),
+    confirmationText: selected.confirmationText,
+  };
+}
+
+async function waitForRequiredGenerationConfirmation(page, job, timeoutMs = 120_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const confirmation = await findRequiredGenerationConfirmation(page, job);
+    if (confirmation) return confirmation;
+    await page.waitForTimeout(250);
+  }
+  return null;
+}
+
+async function approveRequiredGenerationConfirmation(page, confirmation) {
+  const confirmationText = confirmation.confirmationText;
+  if (!/(?:크레딧\s*20개|20\s*credits)/i.test(confirmationText)) {
+    throw new Error("generation_credit_cost_unconfirmed");
+  }
+  if (!/(?:1개 동영상|1\s*video)/i.test(confirmationText)) {
+    throw new Error("generation_output_count_unconfirmed");
+  }
+  if (!confirmation.approveOption) throw new Error("confirmation_approve_option_missing");
+  const acknowledgementCountBefore = await approvalAcknowledgementCount(page);
+  await confirmation.approveOption.click();
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const acknowledgementCountAfter = await approvalAcknowledgementCount(page);
+    if (isApprovalAcknowledged(acknowledgementCountBefore, acknowledgementCountAfter)) {
+      return {
+        confirmationText: confirmationText.slice(0, 240),
+        acknowledgementCountBefore,
+        acknowledgementCountAfter,
+        submissionCount: 1,
+      };
+    }
+    await page.waitForTimeout(250);
+  }
+  throw new Error("confirmation_click_not_acknowledged");
+}
+
+async function approvalAcknowledgementCount(page) {
+  return page.locator("p").filter({ hasText: /^\s*(?:승인|Approve)\s*$/i }).evaluateAll((elements) => elements.filter((element) =>
+    /^(?:승인|Approve)$/i.test(String(element.textContent ?? "").replace(/\s+/g, " ").trim()),
+  ).length);
+}
+
 async function submitWithRequiredConfirmation(page, job) {
   const makeButton = await firstVisible(
     page.locator("button").filter({ hasText: /^\s*arrow_forward\s*(?:만들기|Create)\s*$/i }),
@@ -255,44 +351,9 @@ async function submitWithRequiredConfirmation(page, job) {
   }
   await makeButton.click();
 
-  const confirmationMessage = await waitForFirstVisible(
-    page,
-    page.getByText(
-      /(?:크레딧\s*20개를 사용하여\s*1개 동영상 생성을 시작할까요\?|start.{0,80}1\s*video.{0,80}20\s*credits)/i,
-    ),
-    120_000,
-  );
-  if (!confirmationMessage) throw new Error("required_generation_confirmation_dialog_missing");
-
-  const expectedPromptText = normalized(job.prompt);
-  let confirmationContainer = confirmationMessage;
-  let approveOption = null;
-  let confirmationText = "";
-  for (let depth = 0; depth < 12; depth += 1) {
-    const tagName = await confirmationContainer.evaluate((element) => element.tagName).catch(() => "");
-    if (/^(?:BODY|HTML)$/i.test(tagName)) break;
-    const candidateText = normalized(await confirmationContainer.innerText().catch(() => ""));
-    const candidateApprove = await firstVisible(
-      confirmationContainer.getByText(/^(?:승인|Approve)$/i, { exact: true }),
-    );
-    if (candidateApprove && candidateText.includes(expectedPromptText)) {
-      approveOption = candidateApprove;
-      confirmationText = candidateText;
-      break;
-    }
-    confirmationContainer = confirmationContainer.locator("..");
-  }
-
-  if (!confirmationText) throw new Error("confirmation_prompt_identity_mismatch");
-  if (!/(?:크레딧\s*20개|20\s*credits)/i.test(confirmationText)) {
-    throw new Error("generation_credit_cost_unconfirmed");
-  }
-  if (!/(?:1개 동영상|1\s*video)/i.test(confirmationText)) {
-    throw new Error("generation_output_count_unconfirmed");
-  }
-  if (!approveOption) throw new Error("confirmation_approve_option_missing");
-  await approveOption.click();
-  return { confirmationText: confirmationText.slice(0, 240), submissionCount: 1 };
+  const confirmation = await waitForRequiredGenerationConfirmation(page, job);
+  if (!confirmation) throw new Error("required_generation_confirmation_dialog_missing");
+  return approveRequiredGenerationConfirmation(page, confirmation);
 }
 
 async function videoEditHrefs(page) {
@@ -319,19 +380,21 @@ async function downloadGeneratedVideo(page, targetPath, initialVideoEditHrefs, j
     const editBodyText = normalized(await visibleBodyText(page));
     if (!editBodyText.includes(normalized(job.prompt))) throw new Error("generated_video_prompt_mismatch");
     if (!/(?:crop_portrait\s*)?9:16\s*9:16/i.test(editBodyText)) throw new Error("generated_video_aspect_ratio_evidence_missing");
-    const downloadButton = await waitForFirstVisible(
-      page,
-      page.locator("button").filter({ hasText: /^\s*download\s*(?:다운로드|Download)\s*$/i }),
-      30_000,
-    );
-    if (!downloadButton) throw new Error("generated_video_download_button_missing");
-    const [download] = await Promise.all([
-      page.waitForEvent("download", { timeout: 60_000 }),
-      downloadButton.click(),
-    ]);
-    await download.saveAs(targetPath);
+    const sources = await page.locator("video").evaluateAll((elements) => [...new Set(elements
+      .map((element) => element.currentSrc || element.getAttribute("src") || "")
+      .filter(Boolean))]);
+    if (sources.length !== 1) throw new Error(`generated_video_source_ambiguous:${sources.length}`);
+    const mediaUrl = new URL(sources[0], page.url());
+    if (mediaUrl.hostname !== "labs.google" || mediaUrl.pathname !== "/fx/api/trpc/media.getMediaUrlRedirect") {
+      throw new Error("generated_video_source_url_untrusted");
+    }
+    const response = await page.context().request.get(mediaUrl.href, { timeout: 60_000 });
+    if (!response.ok()) throw new Error(`generated_video_download_failed:${response.status()}`);
+    const contentType = response.headers()["content-type"] ?? "";
+    if (!/^video\//i.test(contentType)) throw new Error(`generated_video_content_type_invalid:${contentType}`);
+    fs.writeFileSync(targetPath, await response.body());
     if (!fs.existsSync(targetPath) || fs.statSync(targetPath).size < 100_000) throw new Error("downloaded_video_too_small");
-    return { editUrl };
+    return { editUrl, mediaUrl: mediaUrl.href, contentType };
   }
   throw new Error("flow_generation_timeout");
 }
@@ -382,7 +445,16 @@ if (!live) {
 
 const summaryPath = path.join(path.dirname(contract.expectedVideoPath), "generation-summary.json");
 const priorSummary = fs.existsSync(summaryPath) ? loadJson(summaryPath, "prior_summary") : null;
-if (Number(priorSummary?.submissionCount ?? 0) > 0) {
+const priorSubmissionCount = Number(priorSummary?.submissionCount ?? 0);
+const resumeSubmittedResult = priorSubmissionCount === 1 &&
+  ["SUBMITTED_PENDING_RESULT", "SUBMITTED_RESULT_RECOVERY_REQUIRED"].includes(priorSummary?.status) &&
+  priorSummary?.jobId === jobId &&
+  priorSummary?.referenceSha256 === contract.job.referenceSha256 &&
+  priorSummary?.promptSha256 === contract.job.promptSha256 &&
+  samePath(priorSummary?.outputVideoPath ?? "", contract.expectedVideoPath) &&
+  Array.isArray(priorSummary?.initialVideoEditHrefs) &&
+  !fs.existsSync(contract.expectedVideoPath);
+if (priorSubmissionCount > 0 && !resumeSubmittedResult) {
   fail("prior_submission_requires_new_owner_approval");
 }
 const profileAttempts = [];
@@ -391,6 +463,8 @@ let selectedProfile = null;
 let submissionCount = 0;
 let composerEvidence = null;
 let submitEvidence = null;
+let pendingConfirmation = null;
+let initialVideoEditHrefs = [];
 let summary;
 try {
   const { chromium } = await import("playwright");
@@ -403,15 +477,30 @@ try {
     const browser = await chromium.connectOverCDP(`http://127.0.0.1:${profile.cdpPort}`);
     const context = browser.contexts()[0];
     if (!context) throw new Error(`gemini_${profile.profileId}_browser_context_missing`);
-    page = await context.newPage();
-    await page.goto(GEMINI_FLOW_TARGET.projectUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(2_500);
+    const existingProjectPage = context.pages().find((candidate) =>
+      projectIdFromUrl(candidate.url()) === GEMINI_FLOW_TARGET.projectId,
+    );
+    if (resumeSubmittedResult && profile.profileId !== 2) break;
+    if (resumeSubmittedResult && existingProjectPage) {
+      page = existingProjectPage;
+    } else if (existingProjectPage) {
+      const existingConfirmation = await findRequiredGenerationConfirmation(existingProjectPage, contract.job);
+      if (existingConfirmation) {
+        page = existingProjectPage;
+        pendingConfirmation = existingConfirmation;
+      }
+    }
+    if (!page) {
+      page = await context.newPage();
+      await page.goto(GEMINI_FLOW_TARGET.projectUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      await page.waitForTimeout(2_500);
+    }
     const currentUrl = new URL(page.url());
     if (currentUrl.hostname !== "labs.google" || projectIdFromUrl(currentUrl.href) !== GEMINI_FLOW_TARGET.projectId) {
       throw new Error(`gemini_${profile.profileId}_flow_project_mismatch`);
     }
     await closeStaleAgentPanel(page);
-    const quota = await inspectExplicitQuota(page);
+    const quota = resumeSubmittedResult ? null : await inspectExplicitQuota(page);
     if (quota) {
       profileAttempts.push({ profileId: profile.profileId, state: "quota_exhausted", evidence: quota.snippet ?? quota.text });
       await page.close();
@@ -419,18 +508,53 @@ try {
       continue;
     }
     selectedProfile = profile;
-    profileAttempts.push({ profileId: profile.profileId, state: "selected" });
+    profileAttempts.push({ profileId: profile.profileId, state: resumeSubmittedResult ? "selected_resume_download" : "selected" });
     break;
   }
   if (!page || !selectedProfile) throw new Error("all_allowed_profiles_quota_exhausted_or_unavailable");
 
-  const initialVideoEditHrefs = await videoEditHrefs(page);
-  composerEvidence = await attachReferenceAndPrompt(page, contract.job, priorSummary);
+  initialVideoEditHrefs = resumeSubmittedResult
+    ? priorSummary.initialVideoEditHrefs
+    : await videoEditHrefs(page);
   if (sha256(fs.readFileSync(contract.referencePath)) !== contract.job.referenceSha256 || sha256(contract.job.prompt) !== contract.job.promptSha256) {
     throw new Error("hash_changed_immediately_before_submit");
   }
-  submitEvidence = await submitWithRequiredConfirmation(page, contract.job);
-  submissionCount = submitEvidence.submissionCount;
+  if (resumeSubmittedResult) {
+    composerEvidence = priorSummary.composerEvidence;
+    submitEvidence = priorSummary.submitEvidence;
+    submissionCount = 1;
+  } else if (pendingConfirmation) {
+    composerEvidence = {
+      referenceSource: "recovered_pending_confirmation",
+      promptDomSha256: contract.job.promptSha256,
+      attachmentCount: 1,
+    };
+    submitEvidence = await approveRequiredGenerationConfirmation(page, pendingConfirmation);
+  } else {
+    composerEvidence = await attachReferenceAndPrompt(page, contract.job, priorSummary);
+    submitEvidence = await submitWithRequiredConfirmation(page, contract.job);
+  }
+  submissionCount = Number(submitEvidence?.submissionCount ?? submissionCount);
+  if (!resumeSubmittedResult) {
+    fs.writeFileSync(summaryPath, `${JSON.stringify({
+      schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
+      status: "SUBMITTED_PENDING_RESULT",
+      jobId,
+      generatedAt: new Date().toISOString(),
+      selectedProfile: selectedProfile.desktopShortcutName,
+      profileAttempts,
+      submissionCount,
+      expectedCreditsSpent: GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+      referenceSha256: contract.job.referenceSha256,
+      promptSha256: contract.job.promptSha256,
+      outputVideoPath: contract.expectedVideoPath,
+      initialVideoEditHrefs,
+      composerEvidence,
+      submitEvidence,
+      ownerQaPassed: false,
+      renderReady: false,
+    }, null, 2)}\n`, "utf8");
+  }
   const downloadEvidence = await downloadGeneratedVideo(page, contract.expectedVideoPath, initialVideoEditHrefs, contract.job);
   const probe = probeVideo(contract.expectedVideoPath);
   summary = {
@@ -445,6 +569,7 @@ try {
     referenceSha256: contract.job.referenceSha256,
     promptSha256: contract.job.promptSha256,
     outputVideoPath: contract.expectedVideoPath,
+    initialVideoEditHrefs,
     outputVideoSha256: sha256(fs.readFileSync(contract.expectedVideoPath)),
     probe,
     composerEvidence,
@@ -456,14 +581,17 @@ try {
 } catch (error) {
   summary = {
     schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
-    status: "FAILED_NO_AUTOMATIC_RETRY",
+    status: submissionCount === 1 ? "SUBMITTED_RESULT_RECOVERY_REQUIRED" : "FAILED_NO_AUTOMATIC_RETRY",
     jobId,
     generatedAt: new Date().toISOString(),
     selectedProfile: selectedProfile?.desktopShortcutName ?? null,
     profileAttempts,
     submissionCount,
     expectedCreditsSpent: submissionCount === 1 ? GEMINI_FLOW_TARGET.expectedCreditsPerGeneration : 0,
+    referenceSha256: contract.job.referenceSha256,
+    promptSha256: contract.job.promptSha256,
     outputVideoPath: contract.expectedVideoPath,
+    initialVideoEditHrefs,
     composerEvidence,
     submitEvidence,
     ownerQaPassed: false,

@@ -122,9 +122,15 @@ assert.match(source, /closeStaleAgentPanel/);
 assert.match(source, /generation_make_button_unavailable/);
 assert.match(source, /confirmation_approve_option_missing/);
 assert.match(source, /120_000/);
-assert.match(source, /confirmation_prompt_identity_mismatch/);
+assert.match(source, /confirmation_already_acknowledged_no_resubmit/);
+assert.match(source, /selectCurrentApprovalCandidate/);
+assert.match(source, /isApprovalAcknowledged/);
+assert.match(source, /confirmation_click_not_acknowledged/);
+assert.match(source, /SUBMITTED_PENDING_RESULT/);
+assert.match(source, /SUBMITTED_RESULT_RECOVERY_REQUIRED/);
+assert.match(source, /resumeSubmittedResult/);
 assert.match(source, /generated_video_prompt_mismatch/);
 assert.match(source, /prior_submission_requires_new_owner_approval/);
 assert.doesNotMatch(source, /ensureChrome|--remote-debugging-port/);
 
-console.log("Flow motion runner: 23/23 PASS");
+console.log("Flow motion runner: 29/29 PASS");
