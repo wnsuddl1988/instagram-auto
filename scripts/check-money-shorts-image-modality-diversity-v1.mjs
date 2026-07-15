@@ -90,6 +90,10 @@ check("override audit binds the exact regeneration-scene prompt fingerprint",
   imageRunner.includes("a mode override audit or execution requires the single approved regeneration scene") &&
   imageRunner.includes("targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint") &&
   imageRunner.includes("mode override packet prompt fingerprint does not match the exact regeneration prompt"));
+check("topic-scoped override can inject a packet-bound visual repair and recheck same-mode output",
+  imageRunner.includes("scenePromptAppend") &&
+  imageRunner.includes("scenePromptAppend.trim().length >= 80") &&
+  imageRunner.includes("priorTarget?.promptFingerprint !== targetRequirement?.promptFingerprint"));
 check("approved override execution binds the prior audit and preserves the replaced image",
   imageRunner.includes("priorPromptAudit?.topicScopedModeOverride?.packetSha256") &&
   imageRunner.includes("priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256") &&

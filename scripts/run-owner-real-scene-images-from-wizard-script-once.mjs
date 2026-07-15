@@ -500,6 +500,7 @@ function resolveTopicScopedModeOverride() {
   const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
   const proposedModeId = packet?.targetScene?.proposed?.visualModeId;
   const proposedPresence = packet?.targetScene?.proposed?.presenceMode;
+  const scenePromptAppend = packet?.targetScene?.proposed?.scenePromptAppend;
   const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
   const actualScriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
   const packetSha256 = createHash("sha256").update(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS)).digest("hex");
@@ -517,13 +518,18 @@ function resolveTopicScopedModeOverride() {
     packet?.executionPolicy?.defaultSharedModeMapperMustRemainUnchanged === true &&
     Number.isInteger(targetIndex) && targetIndex >= 1 && targetIndex <= sceneCount &&
     packet?.targetScene?.id === targetScene?.id &&
-    packet?.targetScene?.current?.visualModeId === expectedMode?.id &&
-    packet?.targetScene?.current?.presenceMode === expectedMode?.presence &&
+    (
+      (packet?.targetScene?.current?.visualModeId === expectedMode?.id &&
+        packet?.targetScene?.current?.presenceMode === expectedMode?.presence) ||
+      (packet?.targetScene?.current?.visualModeId === proposedModeId &&
+        packet?.targetScene?.current?.presenceMode === proposedPresence)
+    ) &&
     typeof proposedModeId === "string" && proposedModeId in VISUAL_MODES &&
     proposedPresence === VISUAL_MODES[proposedModeId].presence &&
     proposedModeId !== expectedMode?.id &&
     typeof packet?.targetScene?.proposed?.promptFingerprint === "string" &&
     /^[a-f0-9]{16}$/.test(packet.targetScene.proposed.promptFingerprint) &&
+    (scenePromptAppend === undefined || (typeof scenePromptAppend === "string" && scenePromptAppend.trim().length >= 80 && scenePromptAppend.trim().length <= 2400)) &&
     typeof approvalPrefix === "string" && approvalPrefix.startsWith("APPROVE_SCENE_MODE_OVERRIDE_IMAGE:") &&
     packet?.executionPolicy?.maxSubmissions === 1 &&
     packet?.executionPolicy?.automaticRetryAllowed === false &&
@@ -548,6 +554,7 @@ function resolveTopicScopedModeOverride() {
     packetSha256,
     sceneIndex: targetIndex,
     visualModeId: proposedModeId,
+    scenePromptAppend: typeof scenePromptAppend === "string" ? scenePromptAppend.trim() : null,
     promptFingerprint: packet.targetScene.proposed.promptFingerprint,
     currentImageSha256: packet.targetScene.current.imageSha256,
     requiredOwnerApprovalWording,
@@ -908,7 +915,13 @@ const sceneVisualModes = scenes.map((scene, index) => {
   return visualModeForScene(scene, index, sceneCount);
 });
 const scenePrompts = scenes.map((scene, index) => {
-  const basePrompt = scenePrompt(scene, index, sceneCount, sceneVisualModes);
+  const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
+    ? topicScopedModeOverride.scenePromptAppend
+    : null;
+  const basePrompt = [
+    scenePrompt(scene, index, sceneCount, sceneVisualModes),
+    scenePromptAppend,
+  ].filter(Boolean).join(" ");
   if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
   const qualityReset = [
     "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
@@ -964,7 +977,7 @@ const sceneRequirements = scenes.map((scene, index) => {
 if (topicScopedModeOverride) {
   const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
   if (targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint) {
-    console.error("ABORT: mode override packet prompt fingerprint does not match the exact regeneration prompt.");
+    console.error(`ABORT: mode override packet prompt fingerprint does not match the exact regeneration prompt. expected=${topicScopedModeOverride.promptFingerprint} actual=${targetRequirement?.promptFingerprint ?? "missing"}`);
     process.exit(3);
   }
 }
@@ -989,7 +1002,7 @@ if (topicScopedModeOverride?.executionApproved) {
     priorPromptAudit?.visualModalityAudit?.passed === true &&
     auditedTarget?.promptFingerprint === topicScopedModeOverride.promptFingerprint &&
     priorImageSummary?.allReady === true &&
-    priorTarget?.visualModeId !== targetRequirement?.visualModeId &&
+    priorTarget?.promptFingerprint !== targetRequirement?.promptFingerprint &&
     priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256 &&
     fs.existsSync(targetFile) &&
     imageSha256(targetFile) === topicScopedModeOverride.currentImageSha256;
