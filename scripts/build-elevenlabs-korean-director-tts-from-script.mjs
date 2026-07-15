@@ -2,13 +2,14 @@
 /**
  * Money Shorts Korean Director TTS v2.
  *
- * Generates the full Korean narration in one ElevenLabs request so pitch, cadence and speaker
- * identity do not reset at every scene. The with-timestamps response is mapped back to scene
- * boundaries for the video renderer.
+ * Generates the Korean narration as one continuous request by default, or as the Owner-approved
+ * Minjae opening/body/closing performance phases. With-timestamps responses are mapped back to
+ * the original scene boundaries for the video renderer.
  *
  * Safety:
  * - Owner button is the only caller; no upload/DB/OAuth.
- * - One API call maximum, no retry/fallback paid call.
+ * - One API call maximum for the legacy continuous path; exactly three phase calls maximum for
+ *   the Minjae phase path. No retry/fallback paid call.
  * - Secrets are accepted from process.env only and never logged or persisted.
  * - Inputs and outputs must stay under C:\tmp\money-shorts-os\ and outside the repo.
  */
@@ -18,6 +19,12 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  buildMinjaeThreePhasePlan,
+  buildThreePhaseAudioFilter,
+  mergeThreePhaseCharacterAlignments,
+  validateMinjaeVoicePhaseContract,
+} from "./_elevenlabs-three-phase-voice-runtime.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -26,7 +33,8 @@ const SUMMARY_SCHEMA = "money_shorts_elevenlabs_scene_paced_tts_summary_v1";
 const SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
 const SAMPLE_REVIEW_TOPIC_ID = "gen-finance-editorial-v2-housing_asset_gap-psychology_gap-04";
 const STAGED_COVER_CONTRACT_VERSION = "money_shorts_staged_prehook_cover_v1";
-const API_CALL_BUDGET_MAX = 1;
+const LEGACY_API_CALL_BUDGET_MAX = 1;
+const THREE_PHASE_API_CALL_BUDGET_MAX = 3;
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 
 const args = process.argv.slice(2);
@@ -79,25 +87,14 @@ if (
 }
 
 const voicePhaseContract = ttsScript?.voicePhaseContract;
-if (voicePhaseContract?.enabled === true) {
-  const validPhaseContract =
-    voicePhaseContract.contractVersion === "money_shorts_character_voice_phase_v1" &&
-    voicePhaseContract.characterId === "minjae_horizon" &&
-    voicePhaseContract.opening?.selector === "staged_cover_first_three_lines" &&
-    voicePhaseContract.opening?.speed === 1.02 &&
-    voicePhaseContract.body?.selector === "between_opening_and_closing" &&
-    voicePhaseContract.body?.speed === 1 &&
-    voicePhaseContract.closing?.selector === "final_save_or_follow_scene" &&
-    voicePhaseContract.closing?.speed === 1.01 &&
-    voicePhaseContract.assembly?.mode === "three_aligned_segments" &&
-    voicePhaseContract.assembly?.preserveCharacterAlignment === true;
-  if (!validPhaseContract) {
+const voicePhaseEnabled = voicePhaseContract?.enabled === true;
+if (voicePhaseEnabled) {
+  if (!validateMinjaeVoicePhaseContract(voicePhaseContract)) {
     console.error("ABORT: invalid money_shorts_character_voice_phase_v1 contract. No API call was made.");
     process.exit(2);
   }
-  console.error("ABORT: Minjae three-phase TTS runtime is not implemented yet. No API call was made.");
-  process.exit(2);
 }
+const API_CALL_BUDGET_MAX = voicePhaseEnabled ? THREE_PHASE_API_CALL_BUDGET_MAX : LEGACY_API_CALL_BUDGET_MAX;
 
 function semanticText(value) {
   return String(value ?? "")
@@ -262,22 +259,41 @@ const voiceSettings = {
   speed: Number(clamp(Number.isFinite(baseSpeed) ? baseSpeed : 1, speedBounds[0], speedBounds[1]).toFixed(2)),
   use_speaker_boost: true,
 };
+let voicePhasePlan = null;
+if (voicePhaseEnabled) {
+  try {
+    voicePhasePlan = buildMinjaeThreePhasePlan({
+      scenePayloads,
+      continuousParts,
+      baseVoiceSettings: voiceSettings,
+      contract: voicePhaseContract,
+    });
+  } catch (error) {
+    console.error(`ABORT: Minjae three-phase plan failed: ${error.message}. No API call was made.`);
+    process.exit(2);
+  }
+}
 const openingSpeedCap = Number(ttsScript?.openingVoiceContract?.speedCap);
 const openingVoiceAudit = stagedCoverEnabled ? {
   contractVersion: STAGED_COVER_CONTRACT_VERSION,
+  voicePhaseContractVersion: voicePhaseEnabled ? voicePhaseContract.contractVersion : null,
   requestedTag: ttsScript?.openingVoiceContract?.v3AudioTag ?? null,
   appliedFirstTag: scenePayloads[0]?.tag ?? null,
-  speed: voiceSettings.speed,
+  speed: voicePhaseEnabled ? voicePhasePlan[0].voiceSettings.speed : voiceSettings.speed,
   speedCap: Number.isFinite(openingSpeedCap) ? openingSpeedCap : null,
+  requestedTagApplied:
+    ttsScript?.openingVoiceContract?.v3AudioTag === scenePayloads[0]?.tag,
   confidentFirstTag:
+    !voicePhaseEnabled &&
     ttsScript?.openingVoiceContract?.v3AudioTag === "confidently" &&
     scenePayloads[0]?.tag === "confidently",
-  speedWithinCap: Number.isFinite(openingSpeedCap) && voiceSettings.speed <= openingSpeedCap,
+  speedWithinCap: Number.isFinite(openingSpeedCap) &&
+    (voicePhaseEnabled ? voicePhasePlan[0].voiceSettings.speed : voiceSettings.speed) <= openingSpeedCap,
   visualOnlyPunctuation: coverContract?.visualOnlyPunctuation === true,
 } : null;
 if (openingVoiceAudit) {
   openingVoiceAudit.passed =
-    openingVoiceAudit.confidentFirstTag === true &&
+    (voicePhaseEnabled ? openingVoiceAudit.requestedTagApplied === true : openingVoiceAudit.confidentFirstTag === true) &&
     openingVoiceAudit.speedWithinCap === true &&
     openingVoiceAudit.visualOnlyPunctuation === true;
   if (!openingVoiceAudit.passed) {
@@ -299,6 +315,7 @@ function writeReadinessFailure() {
     apiCallCount: 0,
     apiCallBudgetMax: API_CALL_BUDGET_MAX,
     sceneCount: scenes.length,
+    generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
     timelineAudioPath: null,
     alignmentPath: null,
     timelineDurationSec: null,
@@ -309,6 +326,8 @@ function writeReadinessFailure() {
     sampleReviewMode: sampleReviewEnabled ? sampleReviewMode : null,
     coverContractVersion: stagedCoverEnabled ? STAGED_COVER_CONTRACT_VERSION : null,
     openingVoiceAudit,
+    voicePhaseContractVersion: voicePhaseEnabled ? voicePhaseContract.contractVersion : null,
+    phaseGenerationAudit: null,
     scenes: [],
     riskNotes: ["Missing required media environment. No ElevenLabs API call was made."],
   };
@@ -327,6 +346,13 @@ const inputFingerprint = createHash("sha256").update(JSON.stringify({
   modelId,
   voiceIdMasked,
   voiceSettings,
+  voicePhaseContract: voicePhaseEnabled ? voicePhaseContract : null,
+  voicePhasePlan: voicePhasePlan?.map(({ id, sceneNumbers, text, voiceSettings: phaseVoiceSettings }) => ({
+    id,
+    sceneNumbers,
+    text,
+    voiceSettings: phaseVoiceSettings,
+  })) ?? null,
   topicProfileId: topicProfile.id ?? "economic_authority",
   sampleReviewContractVersion: sampleReviewEnabled ? SAMPLE_REVIEW_CONTRACT_VERSION : null,
   continuousText,
@@ -348,32 +374,39 @@ function validateAlignment(value) {
 let alignment;
 let apiCallCount = 0;
 let reusedRawAudio = false;
-if (existsSync(rawAudioPath) && existsSync(alignmentPath)) {
-  try {
-    const saved = JSON.parse(readFileSync(alignmentPath, "utf8"));
-    if (validateAlignment(saved.alignment)) {
-      alignment = saved.alignment;
-      reusedRawAudio = true;
-    }
-  } catch {
-    reusedRawAudio = false;
-  }
-}
+let phaseArtifacts = [];
+let phaseGenerationAudit = null;
+const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`;
 
-if (!reusedRawAudio) {
-  const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=mp3_44100_128`;
-  const seed = parseInt(inputFingerprint.slice(0, 8), 16);
+async function loadOrRequestAlignedAudio({ text, previousText = null, nextText = null, settings, fingerprint, rawPath, alignmentCachePath, phaseId }) {
+  if (existsSync(rawPath) && existsSync(alignmentCachePath)) {
+    try {
+      const saved = JSON.parse(readFileSync(alignmentCachePath, "utf8"));
+      if (saved.inputFingerprint === fingerprint && validateAlignment(saved.alignment)) {
+        return { alignment: saved.alignment, reused: true };
+      }
+    } catch {
+      // Invalid or stale cache falls through to one budgeted request.
+    }
+  }
+  if (apiCallCount >= API_CALL_BUDGET_MAX) {
+    console.error(`ABORT: ElevenLabs API call budget exhausted before ${phaseId}. No retry was attempted.`);
+    process.exit(1);
+  }
+  const seed = parseInt(fingerprint.slice(0, 8), 16);
   const requestBody = {
-    text: continuousText,
+    text,
     model_id: modelId,
-    voice_settings: voiceSettings,
+    voice_settings: settings,
     seed,
     apply_text_normalization: "auto",
+    ...(previousText ? { previous_text: previousText } : {}),
+    ...(nextText ? { next_text: nextText } : {}),
     ...(isElevenV3 ? { language_code: "ko" } : {}),
   };
   let response;
   try {
-    apiCallCount = 1;
+    apiCallCount += 1;
     response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -384,12 +417,12 @@ if (!reusedRawAudio) {
       body: JSON.stringify(requestBody),
     });
   } catch (error) {
-    console.error(`ABORT: ElevenLabs request failed: ${error.message}`);
+    console.error(`ABORT: ElevenLabs ${phaseId} request failed: ${error.message}`);
     process.exit(1);
   }
   if (!response.ok) {
     const errorText = await response.text().catch(() => "(unreadable)");
-    console.error(`ABORT: ElevenLabs API returned ${response.status}: ${errorText.slice(0, 180)}`);
+    console.error(`ABORT: ElevenLabs ${phaseId} API returned ${response.status}: ${errorText.slice(0, 180)}`);
     process.exit(1);
   }
   let body;
@@ -399,17 +432,111 @@ if (!reusedRawAudio) {
     console.error("ABORT: ElevenLabs timing response was not JSON.");
     process.exit(1);
   }
-  alignment = validateAlignment(body.alignment) ? body.alignment : body.normalized_alignment;
-  if (typeof body.audio_base64 !== "string" || !validateAlignment(alignment)) {
-    console.error("ABORT: ElevenLabs response is missing audio or character alignment.");
+  const responseAlignment = validateAlignment(body.alignment) ? body.alignment : body.normalized_alignment;
+  if (typeof body.audio_base64 !== "string" || !validateAlignment(responseAlignment)) {
+    console.error(`ABORT: ElevenLabs ${phaseId} response is missing audio or character alignment.`);
     process.exit(1);
   }
-  writeFileSync(rawAudioPath, Buffer.from(body.audio_base64, "base64"));
+  writeFileSync(rawPath, Buffer.from(body.audio_base64, "base64"));
+  writeFileSync(alignmentCachePath, JSON.stringify({
+    engineVersion: ENGINE_VERSION,
+    phaseId,
+    inputFingerprint: fingerprint,
+    alignment: responseAlignment,
+  }, null, 2), "utf8");
+  return { alignment: responseAlignment, reused: false };
+}
+
+if (voicePhaseEnabled) {
+  for (const [phaseIndex, phase] of voicePhasePlan.entries()) {
+    const previousText = phaseIndex > 0 ? voicePhasePlan[phaseIndex - 1].text : null;
+    const nextText = phaseIndex < voicePhasePlan.length - 1 ? voicePhasePlan[phaseIndex + 1].text : null;
+    const phaseFingerprint = createHash("sha256").update(JSON.stringify({
+      engineVersion: ENGINE_VERSION,
+      modelId,
+      voiceIdMasked,
+      phaseId: phase.id,
+      sceneNumbers: phase.sceneNumbers,
+      voiceSettings: phase.voiceSettings,
+      text: phase.text,
+      previousText,
+      nextText,
+    })).digest("hex").slice(0, 14);
+    const phaseRawAudioPath = join(outDir, `elevenlabs-korean-director-${inputFingerprint}-${phase.id}-${phaseFingerprint}.mp3`);
+    const phaseAlignmentPath = join(outDir, `elevenlabs-korean-director-${inputFingerprint}-${phase.id}-${phaseFingerprint}.alignment.json`);
+    const result = await loadOrRequestAlignedAudio({
+      text: phase.text,
+      previousText,
+      nextText,
+      settings: phase.voiceSettings,
+      fingerprint: phaseFingerprint,
+      rawPath: phaseRawAudioPath,
+      alignmentCachePath: phaseAlignmentPath,
+      phaseId: phase.id,
+    });
+    const audioProbe = probeAudio(phaseRawAudioPath);
+    if (!audioProbe) {
+      console.error(`ABORT: generated ${phase.id} phase audio is invalid.`);
+      process.exit(1);
+    }
+    phaseArtifacts.push({
+      ...phase,
+      inputFingerprint: phaseFingerprint,
+      rawAudioPath: phaseRawAudioPath,
+      alignmentPath: phaseAlignmentPath,
+      alignment: result.alignment,
+      audioDurationSec: audioProbe.durationSec,
+      audioCodec: audioProbe.codec,
+      reused: result.reused,
+    });
+  }
+  reusedRawAudio = phaseArtifacts.every(({ reused }) => reused);
+  let merged;
+  try {
+    merged = mergeThreePhaseCharacterAlignments(phaseArtifacts, voicePhaseContract.assembly.crossfadeMs);
+  } catch (error) {
+    console.error(`ABORT: Minjae phase alignment merge failed: ${error.message}`);
+    process.exit(1);
+  }
+  alignment = merged.alignment;
+  phaseGenerationAudit = {
+    contractVersion: voicePhaseContract.contractVersion,
+    mode: voicePhaseContract.assembly.mode,
+    phaseCount: phaseArtifacts.length,
+    phaseOrder: phaseArtifacts.map(({ id }) => id),
+    phaseOffsetsSec: merged.phaseOffsetsSec,
+    crossfadeMs: voicePhaseContract.assembly.crossfadeMs,
+    joinedDurationBeforeTailSec: merged.joinedDurationSec,
+    loudnessIntegratedLufs: voicePhaseContract.assembly.loudnessIntegratedLufs,
+    truePeakDbtp: voicePhaseContract.assembly.truePeakDbtp,
+    phases: phaseArtifacts.map(({ id, sceneNumbers, voiceSettings: settings, inputFingerprint: fingerprint, audioDurationSec, reused }) => ({
+      id,
+      sceneNumbers,
+      voiceSettingsSanitized: settings,
+      inputFingerprint: fingerprint,
+      audioDurationSec,
+      reused,
+    })),
+  };
   writeFileSync(alignmentPath, JSON.stringify({
     engineVersion: ENGINE_VERSION,
     inputFingerprint,
+    contractVersion: voicePhaseContract.contractVersion,
+    phaseOffsetsSec: merged.phaseOffsetsSec,
+    crossfadeMs: voicePhaseContract.assembly.crossfadeMs,
     alignment,
   }, null, 2), "utf8");
+} else {
+  const result = await loadOrRequestAlignedAudio({
+    text: continuousText,
+    settings: voiceSettings,
+    fingerprint: inputFingerprint,
+    rawPath: rawAudioPath,
+    alignmentCachePath: alignmentPath,
+    phaseId: "continuous",
+  });
+  alignment = result.alignment;
+  reusedRawAudio = result.reused;
 }
 
 function probeAudio(audioPath) {
@@ -431,21 +558,41 @@ function probeAudio(audioPath) {
   }
 }
 
-const rawProbe = probeAudio(rawAudioPath);
-if (!rawProbe) {
+const rawProbe = voicePhaseEnabled ? null : probeAudio(rawAudioPath);
+if (!voicePhaseEnabled && !rawProbe) {
   console.error("ABORT: generated Korean director audio is invalid.");
   process.exit(1);
 }
 
 const FINAL_TAIL_SEC = 0.28;
 if (!existsSync(timelineAudioPath)) {
-  const convertedDuration = Number((rawProbe.durationSec + FINAL_TAIL_SEC).toFixed(3));
-  const convert = spawnSync("ffmpeg", [
-    "-y", "-i", rawAudioPath,
-    "-filter_complex", `[0:a]apad=pad_dur=${FINAL_TAIL_SEC}[aout]`,
-    "-map", "[aout]", "-t", String(convertedDuration),
-    "-c:a", "aac", "-b:a", "128k", timelineAudioPath,
-  ], { encoding: "utf8", maxBuffer: 8 * 1024 * 1024, shell: false });
+  const convertedDuration = Number(((voicePhaseEnabled
+    ? phaseGenerationAudit.joinedDurationBeforeTailSec
+    : rawProbe.durationSec) + FINAL_TAIL_SEC).toFixed(3));
+  const convertArgs = voicePhaseEnabled
+    ? [
+        "-y",
+        ...phaseArtifacts.flatMap(({ rawAudioPath: phaseRawAudioPath }) => ["-i", phaseRawAudioPath]),
+        "-filter_complex", buildThreePhaseAudioFilter({
+          crossfadeMs: voicePhaseContract.assembly.crossfadeMs,
+          finalTailSec: FINAL_TAIL_SEC,
+          loudnessIntegratedLufs: voicePhaseContract.assembly.loudnessIntegratedLufs,
+          truePeakDbtp: voicePhaseContract.assembly.truePeakDbtp,
+        }),
+        "-map", "[aout]", "-t", String(convertedDuration),
+        "-c:a", "aac", "-ar", "44100", "-b:a", "128k", timelineAudioPath,
+      ]
+    : [
+        "-y", "-i", rawAudioPath,
+        "-filter_complex", `[0:a]apad=pad_dur=${FINAL_TAIL_SEC}[aout]`,
+        "-map", "[aout]", "-t", String(convertedDuration),
+        "-c:a", "aac", "-b:a", "128k", timelineAudioPath,
+      ];
+  const convert = spawnSync("ffmpeg", convertArgs, {
+    encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
+    shell: false,
+  });
   if ((convert.status ?? -1) !== 0) {
     console.error(`ABORT: ffmpeg conversion failed: ${(convert.stderr ?? "").slice(-240)}`);
     process.exit(1);
@@ -456,6 +603,10 @@ const timelineProbe = probeAudio(timelineAudioPath);
 if (!timelineProbe) {
   console.error("ABORT: Korean director timeline audio is invalid.");
   process.exit(1);
+}
+if (phaseGenerationAudit) {
+  phaseGenerationAudit.timelineDurationSec = timelineProbe.durationSec;
+  phaseGenerationAudit.finalTailSec = FINAL_TAIL_SEC;
 }
 
 const alignedText = alignment.characters.join("");
@@ -497,6 +648,9 @@ const sceneResults = timedRanges.map((range, index) => {
     console.error(`ABORT: scene ${range.scene.sceneNumber} aligned duration is outside 1..15s: ${normalizedDurationSec}`);
     process.exit(1);
   }
+  const phaseForScene = voicePhaseEnabled
+    ? voicePhasePlan.find(({ startIndex, endIndex }) => index >= startIndex && index < endIndex)
+    : null;
   return {
     sceneNumber: range.scene.sceneNumber,
     sceneRole: range.scene.sceneRole,
@@ -510,7 +664,9 @@ const sceneResults = timedRanges.map((range, index) => {
     textSource: "speechDirectionV2Continuous",
     speechDirectionApplied: true,
     speechDirectionEngineVersion: "money_shorts_speech_direction_v2",
-    speechRenderingMode: isElevenV3 ? "eleven_v3_continuous_audio_tags" : "multilingual_v2_continuous_punctuation",
+    speechRenderingMode: voicePhaseEnabled
+      ? "eleven_v3_three_phase_aligned_audio_tags"
+      : isElevenV3 ? "eleven_v3_continuous_audio_tags" : "multilingual_v2_continuous_punctuation",
     delivery: range.scene.speechDirection?.delivery ?? "unknown",
     directorTag: range.tag,
     cadenceSequence: Array.isArray(range.scene.speechDirection?.segments)
@@ -518,11 +674,14 @@ const sceneResults = timedRanges.map((range, index) => {
       : [],
     emphasisWords: range.scene.speechDirection?.emphasisWords ?? [],
     inputFingerprint,
-    sceneVoiceSettingsSanitized: voiceSettings,
+    voicePhaseId: phaseForScene?.id ?? null,
+    sceneVoiceSettingsSanitized: phaseForScene?.voiceSettings ?? voiceSettings,
     rawAudioDurationSec: Number((range.spokenEndSec - range.spokenStartSec).toFixed(3)),
     audioPath: timelineAudioPath,
     normalizedAudioPath: timelineAudioPath,
-    status: reusedRawAudio ? "reused_continuous_aligned" : "continuous_aligned",
+    status: voicePhaseEnabled
+      ? reusedRawAudio ? "reused_three_phase_aligned" : "three_phase_aligned"
+      : reusedRawAudio ? "reused_continuous_aligned" : "continuous_aligned",
     riskNotes: [],
   };
 });
@@ -566,10 +725,11 @@ const summary = {
   apiCallCount,
   apiCallBudgetMax: API_CALL_BUDGET_MAX,
   sceneCount: scenes.length,
+  generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
   timingPolicy: "character_aligned_continuous_v2",
   prosodyPolicy: "korean_native_cadence_v2",
   speechDirectionEngineVersion: "money_shorts_speech_direction_v2",
-  speechContextPolicy: "continuous_full_script",
+  speechContextPolicy: voicePhaseEnabled ? "opening_body_closing_continuity_with_crossfade" : "continuous_full_script",
   topicSpeechProfileId: topicProfile.id ?? "economic_authority",
   speakerStance: topicProfile.speakerStance ?? null,
   deliveryArc: topicProfile.arc ?? null,
@@ -583,6 +743,8 @@ const summary = {
   ownerListeningRequired: true,
   sampleReviewMode: sampleReviewEnabled ? sampleReviewMode : null,
   sampleReviewAudit,
+  voicePhaseContractVersion: voicePhaseEnabled ? voicePhaseContract.contractVersion : null,
+  phaseGenerationAudit,
   coverContractVersion: stagedCoverEnabled ? STAGED_COVER_CONTRACT_VERSION : null,
   openingVoiceAudit,
   apiKeyConfigured: true,
@@ -598,7 +760,10 @@ const summary = {
   scenes: sceneResults,
   riskNotes: [
     "Korean continuous director v2 sample; Owner listening review is required.",
-    "Full narration was generated in one request and scene timing came from character alignment.",
+    voicePhaseEnabled
+      ? "Minjae narration was generated as three aligned performance phases and assembled with the Owner-approved crossfade and loudness target."
+      : "Full narration was generated in one request and scene timing came from character alignment.",
+    ...(voicePhaseEnabled ? ["Opening/body/closing phase caches prevent duplicate paid calls for matching fingerprints; no automatic retry exists."] : []),
     ...(sampleReviewEnabled ? ["Single-topic A/V review contract applied; no 500-topic rollout is implied."] : []),
     "No upload performed. Audio generated outside the repository.",
   ],

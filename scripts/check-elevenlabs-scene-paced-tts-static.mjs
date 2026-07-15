@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const BUILDER_PATH = resolve(__dirname, "build-elevenlabs-korean-director-tts-from-script.mjs");
+const THREE_PHASE_RUNTIME_PATH = resolve(__dirname, "_elevenlabs-three-phase-voice-runtime.mjs");
 const HELPER_PATH = resolve(ROOT, "lib", "owner-web-operator.ts");
 const VOICE_CAST_DATA_PATH = resolve(ROOT, "lib", "finance-character-voice-cast-data.json");
 const MUX_PATH = resolve(__dirname, "run-owner-real-video-from-wizard-assets-once.mjs");
@@ -30,6 +31,7 @@ function codeLines(source) {
 }
 
 const builder = existsSync(BUILDER_PATH) ? readFileSync(BUILDER_PATH, "utf8") : "";
+const threePhaseRuntime = existsSync(THREE_PHASE_RUNTIME_PATH) ? readFileSync(THREE_PHASE_RUNTIME_PATH, "utf8") : "";
 const helper = existsSync(HELPER_PATH) ? readFileSync(HELPER_PATH, "utf8") : "";
 const voiceCastData = existsSync(VOICE_CAST_DATA_PATH) ? readFileSync(VOICE_CAST_DATA_PATH, "utf8") : "";
 const mux = existsSync(MUX_PATH) ? readFileSync(MUX_PATH, "utf8") : "";
@@ -46,7 +48,7 @@ check("input/output are restricted to C:\\tmp\\money-shorts-os", /MEDIA_ROOT_RE/
 check(".money-shorts-local remains forbidden", builder.includes(".money-shorts-local access forbidden"));
 check("builder never reads .env.local", !/\.env\.local|readFileSync\([^)]*env/i.test(code));
 check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskVoiceId/.test(builder));
-check("one paid call maximum and no retry loop", /API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
+check("legacy is one paid call and Minjae is exactly three with no retry loop", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /THREE_PHASE_API_CALL_BUDGET_MAX\s*=\s*3/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
 
 console.log("\n[ Korean direction engine ]");
 check("speech direction v2 is the required input", /money_shorts_speech_direction_v2/.test(builder) && /money_shorts_speech_direction_v2/.test(helper));
@@ -73,13 +75,13 @@ check(
     builder.indexOf("staged cover spoken/display contract is invalid") < builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY"),
 );
 check(
-  "legacy staged opening stays confidently capped while Minjae emits a fail-closed phase contract",
+  "legacy staged opening stays confidently capped while Minjae uses its exact phase contract",
   /openingVoiceAudit/.test(builder) && /confidentFirstTag/.test(builder) && /speedWithinCap/.test(builder) &&
     /scenePayloads\[0\]\?\.tag === "confidently"/.test(builder) &&
-    /voiceSettings\.speed <= openingSpeedCap/.test(builder) &&
+    /voicePhasePlan\[0\]\.voiceSettings\.speed/.test(builder) &&
     /openingVoiceContract:\s*voicePhaseContract/.test(helper) &&
     /voicePhaseContract\.opening\.v3AudioTag/.test(helper) &&
-    /Minjae three-phase TTS runtime is not implemented yet/.test(builder),
+    /validateMinjaeVoicePhaseContract/.test(builder),
 );
 
 console.log("\n[ continuous generation ]");
@@ -96,7 +98,10 @@ check("SSML break spam is absent", !/<break time=/.test(builder));
 check("voice style is zero; legacy speed stays narrow while sample review permits official slower range", /style:\s*0/.test(builder) && /\[0\.7,\s*1\.2\]\s*:\s*\[0\.95,\s*1\.05\]/.test(builder));
 check("sample review adds v3 phrase pauses and scene beats", /\[pause\]/.test(builder) && /\[continues after a beat\]/.test(builder));
 check("cache fingerprint includes engine/model/profile/settings/full text", ["engineVersion", "modelId", "topicProfileId", "voiceSettings", "continuousText"].every((field) => builder.includes(field)));
-check("matching raw audio and alignment are reused without a paid call", /existsSync\(rawAudioPath\) && existsSync\(alignmentPath\)/.test(builder) && /reused_continuous_aligned/.test(builder));
+check("matching phase or continuous audio and alignment are reused without a paid call", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(builder) && /reused_continuous_aligned/.test(builder) && /reused_three_phase_aligned/.test(builder));
+check("Minjae phases preserve boundaries speeds and tags", /buildMinjaeThreePhasePlan/.test(builder) && /staged_cover_first_three_lines/.test(threePhaseRuntime) && /between_opening_and_closing/.test(threePhaseRuntime) && /final_save_or_follow_scene/.test(threePhaseRuntime));
+check("adjacent phase text is sent as continuity context", /previous_text:\s*previousText/.test(builder) && /next_text:\s*nextText/.test(builder) && /voicePhasePlan\[phaseIndex - 1\]\.text/.test(builder) && /voicePhasePlan\[phaseIndex \+ 1\]\.text/.test(builder));
+check("Minjae phases use two 60ms crossfades and final loudness mastering", /mergeThreePhaseCharacterAlignments/.test(builder) && /buildThreePhaseAudioFilter/.test(builder) && (threePhaseRuntime.match(/acrossfade=d=/g) ?? []).length === 2 && /loudnorm=I=/.test(threePhaseRuntime));
 
 console.log("\n[ alignment and downstream ]");
 check("character alignment arrays are validated", ["characters", "character_start_times_seconds", "character_end_times_seconds"].every((field) => builder.includes(field)));

@@ -6,6 +6,7 @@ const cast = JSON.parse(fs.readFileSync("lib/finance-character-voice-cast-data.j
 const voiceModule = fs.readFileSync("lib/finance-character-voice-cast.ts", "utf8");
 const operator = fs.readFileSync("lib/owner-web-operator.ts", "utf8");
 const builder = fs.readFileSync("scripts/build-elevenlabs-korean-director-tts-from-script.mjs", "utf8");
+const runtime = fs.readFileSync("scripts/_elevenlabs-three-phase-voice-runtime.mjs", "utf8");
 
 const results = [];
 function check(name, condition) {
@@ -30,10 +31,13 @@ check("typed voice profile exposes the optional phase contract", /deliveryPhases
 check("wizard emits the approved phase contract", /voicePhaseContract = financeVoiceRoute\?\.route\.voice\.deliveryPhases/.test(operator) && /voicePhaseContract,/.test(operator));
 check("wizard body profile uses phase speed and cast stability", /baseSpeed: voicePhaseContract\?\.body\.speed/.test(operator) && /castSettings\.stability/.test(operator) && /castSettings\.similarityBoost/.test(operator));
 check("wizard applies opening and closing tags only at their boundaries", /voicePhaseContract && index === 0/.test(operator) && /voicePhaseContract && index === script\.scenes\.length - 1/.test(operator));
-const phaseGuardIndex = builder.indexOf("Minjae three-phase TTS runtime is not implemented yet");
+const phasePlanIndex = builder.indexOf("buildMinjaeThreePhasePlan");
 const apiKeyIndex = builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY");
-check("current single-call runtime fails closed before paid API access", phaseGuardIndex >= 0 && apiKeyIndex >= 0 && phaseGuardIndex < apiKeyIndex && /No API call was made/.test(builder));
-check("shared builder source still has one-call maximum until phase runtime lands", /API_CALL_BUDGET_MAX\s*=\s*1/.test(builder));
+check("phase contract and plan are validated before paid API access", phasePlanIndex >= 0 && apiKeyIndex >= 0 && phasePlanIndex < apiKeyIndex && /validateMinjaeVoicePhaseContract/.test(builder));
+check("legacy remains one call while Minjae is capped at exactly three", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /THREE_PHASE_API_CALL_BUDGET_MAX\s*=\s*3/.test(builder));
+check("runtime partitions opening body and closing by scene boundary", /id: "opening", startIndex: 0, endIndex: 1/.test(runtime) && /id: "body", startIndex: 1/.test(runtime) && /id: "closing"/.test(runtime));
+check("runtime rebases character alignment after each crossfade", /mergeThreePhaseCharacterAlignments/.test(builder) && /phaseOffsetsSec/.test(runtime) && /cursorSec -= crossfadeSec/.test(runtime));
+check("runtime assembles two crossfades and Owner loudness target", /buildThreePhaseAudioFilter/.test(builder) && (runtime.match(/acrossfade=d=/g) ?? []).length === 2 && /loudnorm=I=\$\{loudness\}:TP=\$\{truePeak\}/.test(runtime));
 
 const failed = results.filter((row) => !row.passed);
 console.log(JSON.stringify({ passed: failed.length === 0, passedCount: results.length - failed.length, totalCount: results.length, failed }, null, 2));
