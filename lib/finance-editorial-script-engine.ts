@@ -1324,7 +1324,7 @@ function buildSingleCoverLines(topic: FinanceEditorialTopic): FinanceEditorialCo
 function buildPartTwoCoverLines(focus: string): FinanceEditorialCoverLine[] {
   const focusText = compactCoverSubject(focus, 11);
   return [
-    { spokenText: "2편이야", displayText: "2편이야!", emphasis: "part_marker" },
+    { spokenText: "이 편이야", displayText: "이 편이야!", emphasis: "part_marker" },
     { spokenText: "이 기준 놓치면 안 돼", displayText: "이 기준 놓치면 안 돼...!", emphasis: "tension" },
     { spokenText: `${focusText}부터 봐`, displayText: `${focusText}부터 봐!!!`, emphasis: "impact" },
   ];

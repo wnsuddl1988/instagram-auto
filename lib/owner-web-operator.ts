@@ -711,7 +711,7 @@ export function buildOperatorCommand(
           script: SCRIPT_ELEVENLABS_TTS_PREFLIGHT,
           args: [
             "--tts-script", part.realTtsScriptPath,
-            "--out-dir", join(part.ttsOutDir, "approval-preflight-v1"),
+            "--out-dir", join(part.ttsOutDir, "approval-preflight-v2"),
             "--voice-id", voiceRoute.route.voice.voiceId,
             "--voice-label", voiceRoute.route.voice.voiceLabel,
           ],
@@ -726,10 +726,10 @@ export function buildOperatorCommand(
       if (real.paths.parts.length !== 2) {
         return { ok: false, reason: "readonly_tts_audit_requires_two_parts" };
       }
-      const jobId = `${topicId.replace(/[^a-z0-9_-]+/gi, "-")}-three-phase-tts-v1`;
+      const jobId = `${topicId.replace(/[^a-z0-9_-]+/gi, "-")}-two-phase-tts-v2`;
       const packetArgs = real.paths.parts.flatMap((part) => [
         "--packet",
-        join(part.ttsOutDir, "approval-preflight-v1", `${jobId}.approval-packet.v1.json`),
+        join(part.ttsOutDir, "approval-preflight-v2", `${jobId}.approval-packet.v2.json`),
       ]);
       return {
         ok: true,
@@ -7425,7 +7425,7 @@ function buildWizardRealTtsScript(
       "Each part is generated in one continuous call so Korean cadence and speaker identity do not reset at every scene.",
       "Character alignment becomes the final video scene and staged-cover timing source.",
       "Display-only punctuation is never included in spokenText.",
-      ...(voicePhaseContract ? ["Minjae uses an Owner-approved opening/body/closing phase contract; each phase requires its own aligned TTS segment."] : []),
+      ...(voicePhaseContract ? ["Minjae keeps the opening and body in one aligned TTS segment and isolates only the decisive closing segment."] : []),
       "No secret values are stored in this file.",
     ],
     scenes: script.scenes.map((scene, index) => {
@@ -8643,7 +8643,7 @@ function readWizardProductionPartMediaState(
     contractVersion?: string;
     assembly?: { crossfadeMs?: number };
   } | null | undefined;
-  const expectsThreePhaseTts = expectedVoicePhaseContract?.enabled === true;
+  const expectsPhasedTts = expectedVoicePhaseContract?.enabled === true;
   const ttsSummary = readAbsJson(part.ttsSummaryPath) as {
     provider?: string;
     ttsEngineVersion?: string;
@@ -8678,14 +8678,14 @@ function readWizardProductionPartMediaState(
     expectedTtsContract != null &&
     ttsSummary?.ttsInputContractFingerprint === expectedTtsContract.fingerprint &&
     ttsSummary.ttsInputContractSha256 === expectedTtsContract.sha256;
-  const phaseAuditReady = expectsThreePhaseTts
-    ? ttsSummary?.generationMode === "minjae_three_phase_aligned" &&
+  const phaseAuditReady = expectsPhasedTts
+    ? ttsSummary?.generationMode === "minjae_two_phase_aligned" &&
       ttsSummary.voicePhaseContractVersion === expectedVoicePhaseContract?.contractVersion &&
       ttsSummary.openingVoiceAudit?.requestedTagApplied === true &&
-      ttsSummary.phaseGenerationAudit?.phaseCount === 3 &&
-      ttsSummary.phaseGenerationAudit?.phaseOrder?.join(",") === "opening,body,closing" &&
+      ttsSummary.phaseGenerationAudit?.phaseCount === 2 &&
+      ttsSummary.phaseGenerationAudit?.phaseOrder?.join(",") === "body,closing" &&
       ttsSummary.phaseGenerationAudit?.crossfadeMs === expectedVoicePhaseContract?.assembly?.crossfadeMs &&
-      ttsSummary.phaseGenerationAudit?.phases?.map((phase) => phase.voiceSettingsSanitized?.speed).join(",") === "1.02,1,1.01"
+      ttsSummary.phaseGenerationAudit?.phases?.map((phase) => phase.voiceSettingsSanitized?.speed).join(",") === "1.02,1.02"
     : ttsSummary?.openingVoiceAudit?.confidentFirstTag === true;
   const realTtsReady =
     ttsSummary?.provider === "elevenlabs" &&

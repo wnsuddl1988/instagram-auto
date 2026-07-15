@@ -3,7 +3,7 @@
  * Owner-approved ElevenLabs account/TTS-history audit.
  *
  * Safety contract:
- * - Reads exactly two existing Minjae three-phase approval packets.
+ * - Reads exactly two existing Minjae two-phase approval packets.
  * - Performs one GET each for subscription, the approved voice, models, and
  *   recent voice-filtered history. There is no retry path.
  * - Never prints the API key, raw voice id, narration text, history ids, or
@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const AUDIT_VERSION = "elevenlabs_readonly_preflight_v1";
-const PACKET_SCHEMA = "money_shorts_minjae_three_phase_tts_approval_packet_v1";
+const PACKET_SCHEMA = "money_shorts_minjae_two_phase_tts_approval_packet_v2";
 const REQUIRED_MODEL_ID = "eleven_v3";
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 const API_ROOT = "https://api.elevenlabs.io/v1";
@@ -89,8 +89,8 @@ function readAndValidatePacket(packetPath, expectedVoiceId) {
   const phaseRequests = Array.isArray(packet.phaseRequests) ? packet.phaseRequests : [];
   const phaseIds = phaseRequests.map((phase) => phase?.id);
   if (
-    phaseRequests.length !== 3 ||
-    JSON.stringify(phaseIds) !== JSON.stringify(["opening", "body", "closing"]) ||
+    phaseRequests.length !== 2 ||
+    JSON.stringify(phaseIds) !== JSON.stringify(["body", "closing"]) ||
     phaseRequests.some((phase) => !/^[a-f0-9]{64}$/.test(String(phase?.textSha256 ?? "")))
   ) {
     throw new Error("PACKET_PHASES_INVALID");

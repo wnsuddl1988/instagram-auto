@@ -8,8 +8,8 @@
  *
  * Safety:
  * - Owner button is the only caller; no upload/DB/OAuth.
- * - One API call maximum for the legacy continuous path; exactly three phase calls maximum for
- *   the Minjae phase path. No retry/fallback paid call.
+ * - One API call maximum for the legacy continuous path; exactly two phase calls maximum for
+ *   the Minjae body/closing path. No retry/fallback paid call.
  * - Secrets are accepted from process.env only and never logged or persisted.
  * - Inputs and outputs must stay under C:\tmp\money-shorts-os\ and outside the repo.
  */
@@ -37,7 +37,7 @@ const SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
 const SAMPLE_REVIEW_TOPIC_ID = "gen-finance-editorial-v2-housing_asset_gap-psychology_gap-04";
 const STAGED_COVER_CONTRACT_VERSION = "money_shorts_staged_prehook_cover_v1";
 const LEGACY_API_CALL_BUDGET_MAX = 1;
-const THREE_PHASE_API_CALL_BUDGET_MAX = 3;
+const PHASED_API_CALL_BUDGET_MAX = 2;
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 
 const args = process.argv.slice(2);
@@ -93,11 +93,11 @@ const voicePhaseContract = ttsScript?.voicePhaseContract;
 const voicePhaseEnabled = voicePhaseContract?.enabled === true;
 if (voicePhaseEnabled) {
   if (!validateMinjaeVoicePhaseContract(voicePhaseContract)) {
-    console.error("ABORT: invalid money_shorts_character_voice_phase_v1 contract. No API call was made.");
+    console.error("ABORT: invalid money_shorts_character_voice_phase_v2 contract. No API call was made.");
     process.exit(2);
   }
 }
-const API_CALL_BUDGET_MAX = voicePhaseEnabled ? THREE_PHASE_API_CALL_BUDGET_MAX : LEGACY_API_CALL_BUDGET_MAX;
+const API_CALL_BUDGET_MAX = voicePhaseEnabled ? PHASED_API_CALL_BUDGET_MAX : LEGACY_API_CALL_BUDGET_MAX;
 
 function semanticText(value) {
   return String(value ?? "")
@@ -269,7 +269,7 @@ if (voicePhaseEnabled) {
       contract: voicePhaseContract,
     });
   } catch (error) {
-    console.error(`ABORT: Minjae three-phase plan failed: ${error.message}. No API call was made.`);
+    console.error(`ABORT: Minjae two-phase plan failed: ${error.message}. No API call was made.`);
     process.exit(2);
   }
 }
@@ -324,7 +324,7 @@ function writeReadinessFailure() {
     ttsInputContractFingerprint,
     ttsInputContractSha256,
     sceneCount: scenes.length,
-    generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
+    generationMode: voicePhaseEnabled ? "minjae_two_phase_aligned" : "continuous_full_script",
     timelineAudioPath: null,
     alignmentPath: null,
     timelineDurationSec: null,
@@ -676,7 +676,7 @@ const sceneResults = timedRanges.map((range, index) => {
     speechDirectionApplied: true,
     speechDirectionEngineVersion: "money_shorts_speech_direction_v2",
     speechRenderingMode: voicePhaseEnabled
-      ? "eleven_v3_three_phase_aligned_audio_tags"
+      ? "eleven_v3_two_phase_aligned_audio_tags"
       : isElevenV3 ? "eleven_v3_continuous_audio_tags" : "multilingual_v2_continuous_punctuation",
     delivery: range.scene.speechDirection?.delivery ?? "unknown",
     directorTag: range.tag,
@@ -691,7 +691,7 @@ const sceneResults = timedRanges.map((range, index) => {
     audioPath: timelineAudioPath,
     normalizedAudioPath: timelineAudioPath,
     status: voicePhaseEnabled
-      ? reusedRawAudio ? "reused_three_phase_aligned" : "three_phase_aligned"
+      ? reusedRawAudio ? "reused_two_phase_aligned" : "two_phase_aligned"
       : reusedRawAudio ? "reused_continuous_aligned" : "continuous_aligned",
     riskNotes: [],
   };
@@ -738,7 +738,7 @@ const summary = {
   ttsInputContractFingerprint,
   ttsInputContractSha256,
   sceneCount: scenes.length,
-  generationMode: voicePhaseEnabled ? "minjae_three_phase_aligned" : "continuous_full_script",
+  generationMode: voicePhaseEnabled ? "minjae_two_phase_aligned" : "continuous_full_script",
   timingPolicy: "character_aligned_continuous_v2",
   prosodyPolicy: "korean_native_cadence_v2",
   speechDirectionEngineVersion: "money_shorts_speech_direction_v2",

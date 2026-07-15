@@ -16,7 +16,7 @@ import {
 } from "./_elevenlabs-three-phase-voice-runtime.mjs";
 
 const ENGINE_VERSION = "money_shorts_korean_director_v2";
-const PACKET_SCHEMA = "money_shorts_minjae_three_phase_tts_approval_packet_v1";
+const PACKET_SCHEMA = "money_shorts_minjae_two_phase_tts_approval_packet_v2";
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 
 const args = process.argv.slice(2);
@@ -55,14 +55,14 @@ try {
 const ttsInputJson = JSON.stringify(ttsScript, null, 2);
 const ttsInputSha256 = sha256(ttsInputJson);
 const ttsInputFingerprint = ttsInputSha256.slice(0, 12);
-const jobId = `${String(ttsScript.wizardTopicId ?? "minjae").replace(/[^a-z0-9_-]+/gi, "-")}-three-phase-tts-v1`;
-const packetPath = join(outDir, `${jobId}.approval-packet.v1.json`);
+const jobId = `${String(ttsScript.wizardTopicId ?? "minjae").replace(/[^a-z0-9_-]+/gi, "-")}-two-phase-tts-v2`;
+const packetPath = join(outDir, `${jobId}.approval-packet.v2.json`);
 if (basename(ttsScriptPath) !== `tts-script.real-${ttsInputFingerprint}.json`) {
   console.error("ABORT: TTS input filename does not match its current content hash. No API call was made.");
   process.exit(2);
 }
 if (ttsScript.ttsEngineVersion !== ENGINE_VERSION || !validateMinjaeVoicePhaseContract(ttsScript.voicePhaseContract)) {
-  console.error("ABORT: exact Minjae three-phase TTS contract is required. No API call was made.");
+  console.error("ABORT: exact Minjae two-phase TTS contract is required. No API call was made.");
   process.exit(2);
 }
 if (ttsScript.sampleReviewMode?.enabled === true) {
@@ -147,7 +147,7 @@ try {
     contract: ttsScript.voicePhaseContract,
   });
 } catch (error) {
-  console.error(`ABORT: three-phase plan failed: ${error.message}. No API call was made.`);
+  console.error(`ABORT: two-phase plan failed: ${error.message}. No API call was made.`);
   process.exit(2);
 }
 
@@ -202,11 +202,11 @@ const stablePacket = {
   targetDurationSec,
   durationContract: { minSec: 15, maxSec: 60, passed: true },
   generationPolicy: {
-    apiCallBudgetMax: 3,
+    apiCallBudgetMax: 2,
     retryAllowed: false,
     uploadAllowed: false,
     renderAllowed: false,
-    phaseOrder: ["opening", "body", "closing"],
+    phaseOrder: ["body", "closing"],
     requestContextPolicy: phaseRequests[0].requestContextStrategy,
     providerAdjacentContextIncluded: phaseRequests.some(({ previousContextIncluded, nextContextIncluded }) => previousContextIncluded || nextContextIncluded),
     crossfadeMs: ttsScript.voicePhaseContract.assembly.crossfadeMs,
@@ -221,7 +221,7 @@ const packet = {
   packetHash,
   generatedAt: new Date().toISOString(),
   noLive: true,
-  approvalText: `APPROVE_MINJAE_THREE_PHASE_TTS: ${jobId} — packet hash ${packetHash}, TTS input hash ${ttsInputSha256}, phase request hashes ${phaseRequests.map((phase) => `${phase.id}:${phase.requestSha256}`).join(", ")} 기준으로 ElevenLabs ${voiceLabel} 3구간 TTS 작업 1회를 승인함; API 호출은 opening/body/closing 최대 3회, 자동 재시도·렌더·업로드 금지`,
+  approvalText: `APPROVE_MINJAE_TWO_PHASE_TTS: ${jobId} — packet hash ${packetHash}, TTS input hash ${ttsInputSha256}, phase request hashes ${phaseRequests.map((phase) => `${phase.id}:${phase.requestSha256}`).join(", ")} 기준으로 ElevenLabs ${voiceLabel} 2구간 TTS 작업 1회를 승인함; API 호출은 body/closing 최대 2회, 자동 재시도·렌더·업로드 금지`,
 };
 
 mkdirSync(outDir, { recursive: true });

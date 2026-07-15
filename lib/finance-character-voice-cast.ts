@@ -27,16 +27,16 @@ export type FinanceCharacterVoiceProfile = {
   };
   deliveryPhases?: {
     enabled: true;
-    contractVersion: "money_shorts_character_voice_phase_v1";
+    contractVersion: "money_shorts_character_voice_phase_v2";
     characterId: "minjae_horizon";
     opening: {
       selector: "staged_cover_first_three_lines";
       speed: number;
-      v3AudioTag: string;
+      v3AudioTag: "conversationally";
       intent: string;
     };
     body: {
-      selector: "between_opening_and_closing";
+      selector: "opening_through_preclosing";
       speed: number;
       v3AudioTag: "inherit_scene_direction";
       intent: string;
@@ -48,7 +48,7 @@ export type FinanceCharacterVoiceProfile = {
       intent: string;
     };
     assembly: {
-      mode: "three_aligned_segments";
+      mode: "two_aligned_segments";
       crossfadeMs: number;
       preserveCharacterAlignment: true;
       loudnessIntegratedLufs: number;

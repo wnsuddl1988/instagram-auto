@@ -1,5 +1,5 @@
 {
-  "version": "money_shorts_finance_character_voice_cast_v6",
+  "version": "money_shorts_finance_character_voice_cast_v7",
   "status": "approved_for_production",
   "baseline": {
     "source": "latest_owner_approved_money_shorts_korean_director_v2",
@@ -101,19 +101,19 @@
       },
       "deliveryPhases": {
         "enabled": true,
-        "contractVersion": "money_shorts_character_voice_phase_v1",
+        "contractVersion": "money_shorts_character_voice_phase_v2",
         "characterId": "minjae_horizon",
         "opening": {
           "selector": "staged_cover_first_three_lines",
           "speed": 1.02,
-          "v3AudioTag": "firm and assertive",
-          "intent": "첫 음절부터 또렷하고 단단하게 시작해 썸네일 세 문장을 즉시 붙잡되 소리치지 않는다."
+          "v3AudioTag": "conversationally",
+          "intent": "첫 세 문장을 본문과 같은 자연스러운 대화 톤으로 시작해 연기 변화나 이음새가 느껴지지 않게 한다."
         },
         "body": {
-          "selector": "between_opening_and_closing",
+          "selector": "opening_through_preclosing",
           "speed": 1.02,
           "v3AudioTag": "inherit_scene_direction",
-          "intent": "자연스러운 한국어 대화 리듬을 유지하면서 기존보다 조금 빠르게 설명한다."
+          "intent": "첫 장면부터 마지막 직전 장면까지 한 요청으로 합성해 자연스러운 한국어 대화 리듬을 유지한다."
         },
         "closing": {
           "selector": "final_save_or_follow_scene",
@@ -122,7 +122,7 @@
           "intent": "저장과 팔로우 문장을 늘어뜨리지 않고 따뜻하지만 분명하게 마무리한다."
         },
         "assembly": {
-          "mode": "three_aligned_segments",
+          "mode": "two_aligned_segments",
           "crossfadeMs": 60,
           "preserveCharacterAlignment": true,
           "loudnessIntegratedLufs": -16,

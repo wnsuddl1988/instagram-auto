@@ -48,7 +48,7 @@ check("input/output are restricted to C:\\tmp\\money-shorts-os", /MEDIA_ROOT_RE/
 check(".money-shorts-local remains forbidden", builder.includes(".money-shorts-local access forbidden"));
 check("builder never reads .env.local", !/\.env\.local|readFileSync\([^)]*env/i.test(code));
 check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskElevenLabsVoiceId/.test(builder));
-check("legacy is one paid call and Minjae is exactly three with no retry loop", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /THREE_PHASE_API_CALL_BUDGET_MAX\s*=\s*3/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
+check("legacy is one paid call and Minjae is exactly two with no retry loop", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /PHASED_API_CALL_BUDGET_MAX\s*=\s*2/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
 check("post-fetch failures drain the Windows async handle instead of calling process.exit", /generateAndWriteSummary/.test(builder) && /process\.exitCode\s*=\s*1/.test(builder) && /setTimeout\(resolveDelay,\s*250\)/.test(builder) && !/process\.exit\(1\)/.test(builder));
 
 console.log("\n[ Korean direction engine ]");
@@ -99,10 +99,10 @@ check("SSML break spam is absent", !/<break time=/.test(builder));
 check("voice style is zero; legacy speed stays narrow while sample review permits official slower range", /style:\s*0/.test(builder) && /\[0\.7,\s*1\.2\]\s*:\s*\[0\.95,\s*1\.05\]/.test(builder));
 check("sample review adds v3 phrase pauses and scene beats", /\[pause\]/.test(builder) && /\[continues after a beat\]/.test(builder));
 check("cache fingerprint includes engine/model/profile/settings/full text", ["engineVersion", "modelId", "topicProfileId", "voiceSettings", "continuousText"].every((field) => builder.includes(field)));
-check("matching phase or continuous audio and alignment are reused without a paid call", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(builder) && /reused_continuous_aligned/.test(builder) && /reused_three_phase_aligned/.test(builder));
-check("Minjae phases preserve boundaries speeds and tags", /buildMinjaeThreePhasePlan/.test(builder) && /staged_cover_first_three_lines/.test(threePhaseRuntime) && /between_opening_and_closing/.test(threePhaseRuntime) && /final_save_or_follow_scene/.test(threePhaseRuntime));
+check("matching phase or continuous audio and alignment are reused without a paid call", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(builder) && /reused_continuous_aligned/.test(builder) && /reused_two_phase_aligned/.test(builder));
+check("Minjae keeps opening with body and isolates closing", /buildMinjaeThreePhasePlan/.test(builder) && /staged_cover_first_three_lines/.test(threePhaseRuntime) && /opening_through_preclosing/.test(threePhaseRuntime) && /final_save_or_follow_scene/.test(threePhaseRuntime));
 check("v3 omits unsupported adjacent context while other models retain it", /buildThreePhaseRequestContext/.test(builder) && /!isElevenV3 && previousText/.test(builder) && /!isElevenV3 && nextText/.test(builder) && /Eleven v3 adjacent text context is unsupported/.test(builder) && /eleven_v3_local_crossfade_only_v1/.test(threePhaseRuntime));
-check("Minjae phases use two 60ms crossfades and final loudness mastering", /mergeThreePhaseCharacterAlignments/.test(builder) && /buildThreePhaseAudioFilter/.test(builder) && (threePhaseRuntime.match(/acrossfade=d=/g) ?? []).length === 2 && /loudnorm=I=/.test(threePhaseRuntime));
+check("Minjae phases use one 60ms crossfade and final loudness mastering", /mergeThreePhaseCharacterAlignments/.test(builder) && /buildThreePhaseAudioFilter/.test(builder) && (threePhaseRuntime.match(/acrossfade=d=/g) ?? []).length === 1 && /loudnorm=I=/.test(threePhaseRuntime));
 
 console.log("\n[ alignment and downstream ]");
 check("character alignment arrays are validated", ["characters", "character_start_times_seconds", "character_end_times_seconds"].every((field) => builder.includes(field)));

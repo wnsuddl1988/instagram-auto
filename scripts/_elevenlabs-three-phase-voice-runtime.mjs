@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
-const CONTRACT_VERSION = "money_shorts_character_voice_phase_v1";
-const PHASE_IDS = ["opening", "body", "closing"];
+const CONTRACT_VERSION = "money_shorts_character_voice_phase_v2";
+const PHASE_IDS = ["body", "closing"];
 const ELEVEN_V3_CONTEXT_STRATEGY = "eleven_v3_local_crossfade_only_v1";
 const ADJACENT_TEXT_CONTEXT_STRATEGY = "adjacent_text_context_v1";
 
@@ -16,14 +16,14 @@ export function validateMinjaeVoicePhaseContract(contract) {
     contract.characterId === "minjae_horizon" &&
     contract.opening?.selector === "staged_cover_first_three_lines" &&
     contract.opening?.speed === 1.02 &&
-    contract.opening?.v3AudioTag === "firm and assertive" &&
-    contract.body?.selector === "between_opening_and_closing" &&
+    contract.opening?.v3AudioTag === "conversationally" &&
+    contract.body?.selector === "opening_through_preclosing" &&
     contract.body?.speed === 1.02 &&
     contract.body?.v3AudioTag === "inherit_scene_direction" &&
     contract.closing?.selector === "final_save_or_follow_scene" &&
     contract.closing?.speed === 1.02 &&
     contract.closing?.v3AudioTag === "clear and decisive" &&
-    contract.assembly?.mode === "three_aligned_segments" &&
+    contract.assembly?.mode === "two_aligned_segments" &&
     contract.assembly?.crossfadeMs === 60 &&
     contract.assembly?.preserveCharacterAlignment === true &&
     contract.assembly?.loudnessIntegratedLufs === -16 &&
@@ -46,8 +46,7 @@ export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, base
   }
 
   const boundaries = [
-    { id: "opening", startIndex: 0, endIndex: 1 },
-    { id: "body", startIndex: 1, endIndex: scenePayloads.length - 1 },
+    { id: "body", startIndex: 0, endIndex: scenePayloads.length - 1 },
     { id: "closing", startIndex: scenePayloads.length - 1, endIndex: scenePayloads.length },
   ];
   return boundaries.map(({ id, startIndex, endIndex }) => {
@@ -64,7 +63,7 @@ export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, base
         ...baseVoiceSettings,
         speed: contract[id].speed,
       },
-      requestedTag: contract[id].v3AudioTag,
+      requestedTag: id === "body" ? contract.opening.v3AudioTag : contract.closing.v3AudioTag,
     };
   });
 }
@@ -196,8 +195,7 @@ export function buildThreePhaseAudioFilter({ crossfadeMs, finalTailSec, loudness
   }
   const fade = Number(crossfadeSec.toFixed(3));
   return [
-    `[0:a][1:a]acrossfade=d=${fade}:c1=tri:c2=tri[phase01]`,
-    `[phase01][2:a]acrossfade=d=${fade}:c1=tri:c2=tri[joined]`,
+    `[0:a][1:a]acrossfade=d=${fade}:c1=tri:c2=tri[joined]`,
     `[joined]apad=pad_dur=${tailSec},loudnorm=I=${loudness}:TP=${truePeak}:LRA=11[aout]`,
   ].join(";");
 }

@@ -945,7 +945,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // 실제 목소리 사전점검 — 최신 content-addressed 입력과 3구간 요청 해시만 기록한다(API/크레딧 0).
+  // 실제 목소리 사전점검 — 최신 content-addressed 입력과 2구간 요청 해시만 기록한다(API/크레딧 0).
   if (action === "realTtsPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
@@ -975,7 +975,7 @@ export async function POST(request: Request) {
     return json({
       action,
       status: "success",
-      summary: `최신 민재 3구간 음성 승인 패킷 ${packets.length}개를 만들었습니다. ElevenLabs 호출과 크레딧 사용은 없습니다.`,
+      summary: `최신 민재 2구간 음성 승인 패킷 ${packets.length}개를 만들었습니다. ElevenLabs 호출과 크레딧 사용은 없습니다.`,
       raw: { packets },
       noLive: true,
     });
