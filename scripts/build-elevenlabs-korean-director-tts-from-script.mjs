@@ -21,6 +21,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   buildMinjaeThreePhasePlan,
+  buildMinjaeTaggedContinuousParts,
   buildThreePhaseRequestContext,
   buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
@@ -93,7 +94,7 @@ const voicePhaseContract = ttsScript?.voicePhaseContract;
 const voicePhaseEnabled = voicePhaseContract?.enabled === true;
 if (voicePhaseEnabled) {
   if (!validateMinjaeVoicePhaseContract(voicePhaseContract)) {
-    console.error("ABORT: invalid money_shorts_character_voice_phase_v2 contract. No API call was made.");
+    console.error("ABORT: invalid money_shorts_character_voice_phase_v3 contract. No API call was made.");
     process.exit(2);
   }
 }
@@ -223,7 +224,17 @@ const modelId = String(ttsScript.modelId ?? "eleven_v3");
 const isElevenV3 = /^eleven_v3(?:$|_)/.test(modelId);
 const topicProfile = ttsScript.topicSpeechProfile ?? {};
 const globalTag = cleanTag(topicProfile.globalV3Tag) ?? "confident";
+let phasedContinuousParts = null;
+if (voicePhaseEnabled) {
+  try {
+    phasedContinuousParts = buildMinjaeTaggedContinuousParts({ scenePayloads, contract: voicePhaseContract });
+  } catch (error) {
+    console.error(`ABORT: Minjae opening/body provider boundary failed: ${error.message}. No API call was made.`);
+    process.exit(2);
+  }
+}
 const continuousParts = scenePayloads.map(({ scene, performanceText, performanceSegments, tag }, index) => {
+  if (phasedContinuousParts) return phasedContinuousParts[index];
   if (!isElevenV3) return performanceText;
   const effectiveTag = sampleReviewEnabled
     ? sampleReviewTagForScene(scene)
@@ -284,12 +295,15 @@ const openingSpeedCap = Number(ttsScript?.openingVoiceContract?.speedCap);
 const openingVoiceAudit = stagedCoverEnabled ? {
   contractVersion: STAGED_COVER_CONTRACT_VERSION,
   voicePhaseContractVersion: voicePhaseEnabled ? voicePhaseContract.contractVersion : null,
-  requestedTag: ttsScript?.openingVoiceContract?.v3AudioTag ?? null,
+  requestedTagPolicy: ttsScript?.openingVoiceContract?.v3AudioTagPolicy ?? null,
   appliedFirstTag: scenePayloads[0]?.tag ?? null,
+  bodyLeadTag: scenePayloads[1]?.tag ?? null,
   speed: voicePhaseEnabled ? voicePhasePlan[0].voiceSettings.speed : voiceSettings.speed,
   speedCap: Number.isFinite(openingSpeedCap) ? openingSpeedCap : null,
-  requestedTagApplied:
-    ttsScript?.openingVoiceContract?.v3AudioTag === scenePayloads[0]?.tag,
+  openingMatchesBodyLead:
+    ttsScript?.openingVoiceContract?.v3AudioTagPolicy === "match_body_lead" &&
+    scenePayloads[0]?.tag === scenePayloads[1]?.tag,
+  providerBoundaryTagRepeated: voicePhaseEnabled ? /^\[[^\]]+\]/u.test(continuousParts[1] ?? "") : null,
   confidentFirstTag:
     !voicePhaseEnabled &&
     ttsScript?.openingVoiceContract?.v3AudioTag === "confidently" &&
@@ -300,7 +314,9 @@ const openingVoiceAudit = stagedCoverEnabled ? {
 } : null;
 if (openingVoiceAudit) {
   openingVoiceAudit.passed =
-    (voicePhaseEnabled ? openingVoiceAudit.requestedTagApplied === true : openingVoiceAudit.confidentFirstTag === true) &&
+    (voicePhaseEnabled
+      ? openingVoiceAudit.openingMatchesBodyLead === true && openingVoiceAudit.providerBoundaryTagRepeated === false
+      : openingVoiceAudit.confidentFirstTag === true) &&
     openingVoiceAudit.speedWithinCap === true &&
     openingVoiceAudit.visualOnlyPunctuation === true;
   if (!openingVoiceAudit.passed) {

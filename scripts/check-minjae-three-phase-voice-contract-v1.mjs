@@ -22,19 +22,20 @@ const minjae = cast.characters.find((row) => row.characterId === "minjae_horizon
 const phasedCharacters = cast.characters.filter((row) => row.deliveryPhases?.enabled === true);
 const phases = minjae?.deliveryPhases;
 
-check("voice cast advances to v7", cast.version === "money_shorts_finance_character_voice_cast_v7");
+check("voice cast advances to v8", cast.version === "money_shorts_finance_character_voice_cast_v8");
 check("only Minjae receives the two-phase override", phasedCharacters.length === 1 && phasedCharacters[0]?.characterId === "minjae_horizon");
 check("Minjae uses the Owner-selected Mr. K Pro voice", minjae?.voiceLabel === "Mr. K Pro – V3 Natural Korean Voice" && minjae?.voiceId === "HCANy6ACvOWyndVWS0gV");
 check("Junho synthesis baseline stays intact", minjae?.settings?.speed === 1.02 && minjae?.settings?.stability === 0.48 && minjae?.settings?.similarityBoost === 0.86 && minjae?.settings?.style === 0 && minjae?.settings?.useSpeakerBoost === true);
-check("opening enters the body naturally at 1.02", phases?.opening?.selector === "staged_cover_first_three_lines" && phases?.opening?.speed === 1.02 && phases?.opening?.v3AudioTag === "conversationally");
-check("body includes the opening and keeps the exact Junho speed", phases?.body?.selector === "opening_through_preclosing" && phases?.body?.speed === 1.02 && phases?.body?.v3AudioTag === "inherit_scene_direction");
+check("opening copies the body lead delivery at 1.02", phases?.opening?.selector === "staged_cover_first_three_lines" && phases?.opening?.speed === 1.02 && phases?.opening?.v3AudioTagPolicy === "match_body_lead");
+check("body includes the opening and keeps the exact Junho speed", phases?.body?.selector === "opening_through_preclosing" && phases?.body?.speed === 1.02 && phases?.body?.v3AudioTagPolicy === "inherit_scene_direction");
 check("closing keeps the exact Junho speed at 1.02", phases?.closing?.selector === "final_save_or_follow_scene" && phases?.closing?.speed === 1.02 && phases?.closing?.v3AudioTag === "clear and decisive");
 check("two-part assembly preserves alignment and safe loudness", phases?.assembly?.mode === "two_aligned_segments" && phases?.assembly?.preserveCharacterAlignment === true && phases?.assembly?.crossfadeMs === 60 && phases?.assembly?.loudnessIntegratedLufs === -16 && phases?.assembly?.truePeakDbtp === -1.5);
 check("runtime accepts the exact current Minjae phase contract", validateMinjaeVoicePhaseContract(phases));
-check("typed voice profile exposes the optional v2 phase contract", /deliveryPhases\?:/.test(voiceModule) && /money_shorts_character_voice_phase_v2/.test(voiceModule));
+check("typed voice profile exposes the optional v3 phase contract", /deliveryPhases\?:/.test(voiceModule) && /money_shorts_character_voice_phase_v3/.test(voiceModule));
 check("wizard emits the approved phase contract", /voicePhaseContract = financeVoiceRoute\?\.route\.voice\.deliveryPhases/.test(operator) && /voicePhaseContract,/.test(operator));
 check("wizard body profile uses phase speed and cast stability", /baseSpeed: voicePhaseContract\?\.body\.speed/.test(operator) && /castSettings\.stability/.test(operator) && /castSettings\.similarityBoost/.test(operator));
-check("wizard applies opening and closing tags only at their boundaries", /voicePhaseContract && index === 0/.test(operator) && /voicePhaseContract && index === script\.scenes\.length - 1/.test(operator));
+check("wizard copies the body lead provider delivery onto the opening and isolates the closing", /bodyLeadDirection = directedScenes\[1\]/.test(operator) && /v3AudioTag: bodyLeadDirection\.v3AudioTag/.test(operator) && /voicePhaseContract && index === script\.scenes\.length - 1/.test(operator));
+check("runtime removes a repeated provider tag at the opening/body boundary", /buildMinjaeTaggedContinuousParts/.test(runtime) && /OPENING_BODY_TAG_MISMATCH/.test(runtime) && /OPENING_BODY_PROVIDER_BOUNDARY_MISMATCH/.test(runtime));
 const phasePlanIndex = builder.indexOf("buildMinjaeThreePhasePlan");
 const apiKeyIndex = builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY");
 check("phase contract and plan are validated before paid API access", phasePlanIndex >= 0 && apiKeyIndex >= 0 && phasePlanIndex < apiKeyIndex && /validateMinjaeVoicePhaseContract/.test(builder));
@@ -46,14 +47,14 @@ check("runtime and approval packet share exact model-aware phase request context
 check("v3 request contract forbids provider adjacent text and keeps local crossfade continuity", /ELEVEN_V3_ADJACENT_CONTEXT_FORBIDDEN/.test(runtime) && /eleven_v3_local_crossfade_only_v1/.test(runtime) && /providerAdjacentContextIncluded/.test(builder) && /providerAdjacentContextIncluded/.test(approvalBuilder));
 check("TTS summary carries the exact current input contract hashes", /ttsInputContractFingerprint/.test(builder) && /ttsInputContractSha256/.test(builder));
 check("approval packet is no-live and never reads API credentials", /PREFLIGHT_ONLY_OK/.test(approvalBuilder) && /apiCallBudgetMax:\s*2/.test(approvalBuilder) && !/fetch\(|ELEVENLABS_API_KEY|process\.env/.test(approvalBuilder));
-check("operator exposes a separate no-media-env TTS preflight action", /"realTtsPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT/.test(operator) && /approval-preflight-v2/.test(operator));
+check("operator exposes a separate no-media-env TTS preflight action", /"realTtsPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_TTS_PREFLIGHT/.test(operator) && /approval-preflight-v3/.test(operator));
 check("operator exposes the separately approved GET-only audit action", /"realTtsReadonlyPreflight"/.test(operator) && /SCRIPT_ELEVENLABS_READONLY_PREFLIGHT/.test(operator) && /audit-elevenlabs-readonly-preflight-v1\.mjs/.test(operator));
 check("read-only audit accepts exactly two content-addressed packets", /packetPaths\.length !== 2/.test(readonlyAudit) && /TWO_PART_PACKET_SET_REQUIRED/.test(readonlyAudit) && /PACKET_HASH_MISMATCH/.test(readonlyAudit));
 check("read-only audit has four fixed GET targets and no retry loop", ["\/user\/subscription", "\/voices\/", "\/models", "\/history"].every((token) => readonlyAudit.includes(token)) && (readonlyAudit.match(/getJsonOnce\(/g) ?? []).length === 5 && /method:\s*"GET"/.test(readonlyAudit) && /retries:\s*0/.test(readonlyAudit));
 check("read-only audit never writes files or prints provider text", !/writeFile|mkdir|unlink|rmSync|renameSync/.test(readonlyAudit) && /textLength/.test(readonlyAudit) && /textSha256/.test(readonlyAudit) && !/response\.text\(/.test(readonlyAudit) && !/console\.(?:log|error)\([^\n]*apiKey/.test(readonlyAudit));
 check("read-only audit uses natural async failure shutdown", !/process\.exit\(/.test(readonlyAudit) && /process\.exitCode\s*=\s*1/.test(readonlyAudit) && /setTimeout\(resolveDelay, 250\)/.test(readonlyAudit));
 check("approval packet fails closed outside the 15~60 second contract", /BLOCKED_DURATION_CONTRACT/.test(approvalBuilder) && /targetDurationSec < 15 \|\| targetDurationSec > 60/.test(approvalBuilder) && /apiCallBudgetMax:\s*0/.test(approvalBuilder));
-check("media readiness rejects stale input hashes and accepts the exact current phase speeds only", /ttsInputContractCurrent/.test(operator) && /phaseAuditReady/.test(operator) && /requestedTagApplied/.test(operator) && /minjae_two_phase_aligned/.test(operator) && /1\.02,1\.02/.test(operator));
+check("media readiness rejects stale input hashes and requires exact opening/body provider parity", /ttsInputContractCurrent/.test(operator) && /phaseAuditReady/.test(operator) && /openingMatchesBodyLead/.test(operator) && /providerBoundaryTagRepeated/.test(operator) && /minjae_two_phase_aligned/.test(operator) && /1\.02,1\.02/.test(operator));
 
 const failed = results.filter((row) => !row.passed);
 console.log(JSON.stringify({ passed: failed.length === 0, passedCount: results.length - failed.length, totalCount: results.length, failed }, null, 2));

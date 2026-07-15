@@ -153,7 +153,7 @@ if (pipeline?.ok) {
       semanticText(tts.scenes?.[0]?.narration) === semanticText(spoken);
   }));
   check("every Minjae production part keeps opening with body and isolates closing", partInputs.every(({ tts }) =>
-    tts.openingVoiceContract?.v3AudioTag === "conversationally" &&
+    tts.openingVoiceContract?.v3AudioTagPolicy === "match_body_lead" &&
     tts.openingVoiceContract?.speedCap === 1.02 &&
     Number(tts.topicSpeechProfile?.baseSpeed) === 1.02 &&
     tts.voicePhaseContract?.opening?.speed === 1.02 &&
@@ -161,7 +161,8 @@ if (pipeline?.ok) {
     tts.voicePhaseContract?.closing?.speed === 1.02 &&
     tts.voicePhaseContract?.body?.selector === "opening_through_preclosing" &&
     tts.voicePhaseContract?.assembly?.mode === "two_aligned_segments" &&
-    tts.scenes?.[0]?.speechDirection?.v3AudioTag === "conversationally" &&
+    tts.scenes?.[0]?.speechDirection?.v3AudioTag === tts.scenes?.[1]?.speechDirection?.v3AudioTag &&
+    JSON.stringify(tts.scenes?.[0]?.speechDirection?.voiceTuning) === JSON.stringify(tts.scenes?.[1]?.speechDirection?.voiceTuning) &&
     tts.scenes?.at(-1)?.speechDirection?.v3AudioTag === "clear and decisive"));
   check("content-addressed TTS input names are unique per production part",
     new Set(paths.parts.map((part) => part.realTtsScriptPath)).size === paths.parts.length &&

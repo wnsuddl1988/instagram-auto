@@ -27,18 +27,18 @@ export type FinanceCharacterVoiceProfile = {
   };
   deliveryPhases?: {
     enabled: true;
-    contractVersion: "money_shorts_character_voice_phase_v2";
+    contractVersion: "money_shorts_character_voice_phase_v3";
     characterId: "minjae_horizon";
     opening: {
       selector: "staged_cover_first_three_lines";
       speed: number;
-      v3AudioTag: "conversationally";
+      v3AudioTagPolicy: "match_body_lead";
       intent: string;
     };
     body: {
       selector: "opening_through_preclosing";
       speed: number;
-      v3AudioTag: "inherit_scene_direction";
+      v3AudioTagPolicy: "inherit_scene_direction";
       intent: string;
     };
     closing: {

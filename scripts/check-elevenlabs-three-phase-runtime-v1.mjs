@@ -2,6 +2,7 @@
 
 import {
   buildMinjaeThreePhasePlan,
+  buildMinjaeTaggedContinuousParts,
   buildThreePhaseRequestContext,
   buildThreePhaseRequestFingerprint,
   buildThreePhaseAudioFilter,
@@ -12,10 +13,10 @@ import {
 
 const contract = {
   enabled: true,
-  contractVersion: "money_shorts_character_voice_phase_v2",
+  contractVersion: "money_shorts_character_voice_phase_v3",
   characterId: "minjae_horizon",
-  opening: { selector: "staged_cover_first_three_lines", speed: 1.02, v3AudioTag: "conversationally" },
-  body: { selector: "opening_through_preclosing", speed: 1.02, v3AudioTag: "inherit_scene_direction" },
+  opening: { selector: "staged_cover_first_three_lines", speed: 1.02, v3AudioTagPolicy: "match_body_lead" },
+  body: { selector: "opening_through_preclosing", speed: 1.02, v3AudioTagPolicy: "inherit_scene_direction" },
   closing: { selector: "final_save_or_follow_scene", speed: 1.02, v3AudioTag: "clear and decisive" },
   assembly: {
     mode: "two_aligned_segments",
@@ -45,19 +46,21 @@ check("exact Minjae contract is accepted", validateMinjaeVoicePhaseContract(cont
 check("changed opening speed is rejected", !validateMinjaeVoicePhaseContract({ ...contract, opening: { ...contract.opening, speed: 1 } }));
 
 const scenePayloads = [
-  { scene: { sceneNumber: 1 }, tag: "conversationally" },
-  { scene: { sceneNumber: 2 }, tag: "conversational" },
-  { scene: { sceneNumber: 3 }, tag: "thoughtful" },
-  { scene: { sceneNumber: 4 }, tag: "clear and decisive" },
+  { scene: { sceneNumber: 1 }, performanceText: "첫째", tag: "serious" },
+  { scene: { sceneNumber: 2 }, performanceText: "둘째", tag: "serious" },
+  { scene: { sceneNumber: 3 }, performanceText: "셋째", tag: "thoughtful" },
+  { scene: { sceneNumber: 4 }, performanceText: "넷째", tag: "clear and decisive" },
 ];
+const continuousParts = buildMinjaeTaggedContinuousParts({ scenePayloads, contract });
 const plan = buildMinjaeThreePhasePlan({
   scenePayloads,
-  continuousParts: ["[conversationally]\n첫째", "[conversational]\n둘째", "[thoughtful]\n셋째", "[clear and decisive]\n넷째"],
+  continuousParts,
   baseVoiceSettings: { stability: 0.48, similarity_boost: 0.86, style: 0, speed: 1, use_speaker_boost: true },
   contract,
 });
 check("plan has exactly body and closing", plan.map(({ id }) => id).join(",") === "body,closing");
 check("body contains opening through the pre-closing scene", plan[0].sceneNumbers.join(",") === "1,2,3" && plan[0].text.includes("첫째") && !plan[0].text.includes("넷째"));
+check("opening and body lead share one provider tag without a repeated boundary tag", continuousParts[0] === "[serious]\n첫째" && continuousParts[1] === "둘째" && !/^\[[^\]]+\]/u.test(continuousParts[1]));
 check("closing contains only final scene", plan[1].sceneNumbers.join(",") === "4" && !plan[1].text.includes("셋째"));
 check("phase speeds both keep the Junho 1.02 baseline", plan.map(({ voiceSettings }) => voiceSettings.speed).join(",") === "1.02,1.02");
 check("Junho stability and similarity survive every phase", plan.every(({ voiceSettings }) => voiceSettings.stability === 0.48 && voiceSettings.similarity_boost === 0.86));
@@ -103,12 +106,16 @@ check("supported adjacent context changes the non-v3 fingerprint", legacyRequest
   previousText: null,
   nextText: null,
 }).sha256);
-check("wrong opening tag fails before synthesis", throwsCode(() => buildMinjaeThreePhasePlan({
+check("wrong opening tag fails before synthesis", throwsCode(() => buildMinjaeTaggedContinuousParts({
   scenePayloads: [{ ...scenePayloads[0], tag: "calmly" }, ...scenePayloads.slice(1)],
-  continuousParts: ["a", "b", "c", "d"],
+  contract,
+}), "OPENING_BODY_TAG_MISMATCH"));
+check("repeated provider tag at the opening/body boundary fails before synthesis", throwsCode(() => buildMinjaeThreePhasePlan({
+  scenePayloads,
+  continuousParts: ["[serious]\n첫째", "[serious]\n둘째", "[thoughtful]\n셋째", "[clear and decisive]\n넷째"],
   baseVoiceSettings: {},
   contract,
-}), "OPENING_PHASE_TAG_MISMATCH"));
+}), "OPENING_BODY_PROVIDER_BOUNDARY_MISMATCH"));
 
 const alignment = (character) => ({
   characters: [character],

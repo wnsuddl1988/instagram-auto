@@ -711,7 +711,7 @@ export function buildOperatorCommand(
           script: SCRIPT_ELEVENLABS_TTS_PREFLIGHT,
           args: [
             "--tts-script", part.realTtsScriptPath,
-            "--out-dir", join(part.ttsOutDir, "approval-preflight-v2"),
+            "--out-dir", join(part.ttsOutDir, "approval-preflight-v3"),
             "--voice-id", voiceRoute.route.voice.voiceId,
             "--voice-label", voiceRoute.route.voice.voiceLabel,
           ],
@@ -726,10 +726,10 @@ export function buildOperatorCommand(
       if (real.paths.parts.length !== 2) {
         return { ok: false, reason: "readonly_tts_audit_requires_two_parts" };
       }
-      const jobId = `${topicId.replace(/[^a-z0-9_-]+/gi, "-")}-two-phase-tts-v2`;
+      const jobId = `${topicId.replace(/[^a-z0-9_-]+/gi, "-")}-two-phase-tts-v3`;
       const packetArgs = real.paths.parts.flatMap((part) => [
         "--packet",
-        join(part.ttsOutDir, "approval-preflight-v2", `${jobId}.approval-packet.v2.json`),
+        join(part.ttsOutDir, "approval-preflight-v3", `${jobId}.approval-packet.v3.json`),
       ]);
       return {
         ok: true,
@@ -7352,6 +7352,12 @@ function buildWizardRealTtsScript(
     baseStyle: voicePhaseContract && castSettings ? castSettings.style : baseProfile.baseStyle,
   };
   const hasStagedCover = part.coverLines.length === 3;
+  const directedScenes = script.scenes.map((scene, index) => buildWizardSpeechDirection(
+    { id: scene.id, narration: narrations[index] },
+    { topicProfile: topicSpeechProfile, sceneIndex: index, sceneCount: script.scenes.length, sampleReview },
+  ));
+  const bodyLeadDirection = directedScenes[1];
+  if (voicePhaseContract && !bodyLeadDirection) throw new Error("minjae_body_lead_direction_missing");
   return {
     schemaVersion: "money_shorts_tts_script_v1",
     scriptId: `tts-script-wizard-${part.safeSlug}-${part.id}-elevenlabs`,
@@ -7376,7 +7382,7 @@ function buildWizardRealTtsScript(
     wizardScriptFingerprint: part.record.localFingerprint,
     videoStrategyContractVersion: script.videoStrategy?.contractVersion ?? null,
     openingVoiceContract: voicePhaseContract ? {
-      v3AudioTag: voicePhaseContract.opening.v3AudioTag,
+      v3AudioTagPolicy: voicePhaseContract.opening.v3AudioTagPolicy,
       speedCap: voicePhaseContract.opening.speed,
       stance: voicePhaseContract.opening.intent,
     } : script.videoStrategy?.openingVoice ?? null,
@@ -7425,22 +7431,22 @@ function buildWizardRealTtsScript(
       "Each part is generated in one continuous call so Korean cadence and speaker identity do not reset at every scene.",
       "Character alignment becomes the final video scene and staged-cover timing source.",
       "Display-only punctuation is never included in spokenText.",
-      ...(voicePhaseContract ? ["Minjae keeps the opening and body in one aligned TTS segment and isolates only the decisive closing segment."] : []),
+      ...(voicePhaseContract ? ["Minjae copies the first body scene's provider-facing delivery tag onto the staged opening, suppresses a repeated boundary tag, and isolates only the decisive closing segment."] : []),
       "No secret values are stored in this file.",
     ],
     scenes: script.scenes.map((scene, index) => {
-      const directed = buildWizardSpeechDirection(
-        { id: scene.id, narration: narrations[index] },
-        { topicProfile: topicSpeechProfile, sceneIndex: index, sceneCount: script.scenes.length, sampleReview },
-      );
+      const directed = directedScenes[index];
       const speechDirection = voicePhaseContract && index === 0
         ? {
             ...directed,
-            delivery: "direct_hook" as const,
-            intent: voicePhaseContract.opening.intent,
-            pace: "brisk" as const,
-            intensity: 0.96,
-            v3AudioTag: voicePhaseContract.opening.v3AudioTag,
+            delivery: bodyLeadDirection.delivery,
+            intent: bodyLeadDirection.intent,
+            pace: bodyLeadDirection.pace,
+            intensity: bodyLeadDirection.intensity,
+            contextPolicy: bodyLeadDirection.contextPolicy,
+            v3AudioTag: bodyLeadDirection.v3AudioTag,
+            topicProfileId: bodyLeadDirection.topicProfileId,
+            voiceTuning: { ...bodyLeadDirection.voiceTuning },
           }
         : voicePhaseContract && index === script.scenes.length - 1
           ? {
@@ -8667,7 +8673,8 @@ function readWizardProductionPartMediaState(
     coverContractVersion?: string | null;
     openingVoiceAudit?: {
       confidentFirstTag?: boolean;
-      requestedTagApplied?: boolean;
+      openingMatchesBodyLead?: boolean;
+      providerBoundaryTagRepeated?: boolean | null;
       speedWithinCap?: boolean;
       passed?: boolean;
     };
@@ -8681,7 +8688,8 @@ function readWizardProductionPartMediaState(
   const phaseAuditReady = expectsPhasedTts
     ? ttsSummary?.generationMode === "minjae_two_phase_aligned" &&
       ttsSummary.voicePhaseContractVersion === expectedVoicePhaseContract?.contractVersion &&
-      ttsSummary.openingVoiceAudit?.requestedTagApplied === true &&
+      ttsSummary.openingVoiceAudit?.openingMatchesBodyLead === true &&
+      ttsSummary.openingVoiceAudit?.providerBoundaryTagRepeated === false &&
       ttsSummary.phaseGenerationAudit?.phaseCount === 2 &&
       ttsSummary.phaseGenerationAudit?.phaseOrder?.join(",") === "body,closing" &&
       ttsSummary.phaseGenerationAudit?.crossfadeMs === expectedVoicePhaseContract?.assembly?.crossfadeMs &&

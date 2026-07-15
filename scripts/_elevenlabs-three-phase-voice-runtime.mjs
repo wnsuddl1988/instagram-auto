@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-const CONTRACT_VERSION = "money_shorts_character_voice_phase_v2";
+const CONTRACT_VERSION = "money_shorts_character_voice_phase_v3";
 const PHASE_IDS = ["body", "closing"];
 const ELEVEN_V3_CONTEXT_STRATEGY = "eleven_v3_local_crossfade_only_v1";
 const ADJACENT_TEXT_CONTEXT_STRATEGY = "adjacent_text_context_v1";
@@ -16,10 +16,10 @@ export function validateMinjaeVoicePhaseContract(contract) {
     contract.characterId === "minjae_horizon" &&
     contract.opening?.selector === "staged_cover_first_three_lines" &&
     contract.opening?.speed === 1.02 &&
-    contract.opening?.v3AudioTag === "conversationally" &&
+    contract.opening?.v3AudioTagPolicy === "match_body_lead" &&
     contract.body?.selector === "opening_through_preclosing" &&
     contract.body?.speed === 1.02 &&
-    contract.body?.v3AudioTag === "inherit_scene_direction" &&
+    contract.body?.v3AudioTagPolicy === "inherit_scene_direction" &&
     contract.closing?.selector === "final_save_or_follow_scene" &&
     contract.closing?.speed === 1.02 &&
     contract.closing?.v3AudioTag === "clear and decisive" &&
@@ -30,6 +30,29 @@ export function validateMinjaeVoicePhaseContract(contract) {
     contract.assembly?.truePeakDbtp === -1.5;
 }
 
+export function buildMinjaeTaggedContinuousParts({ scenePayloads, contract }) {
+  if (!validateMinjaeVoicePhaseContract(contract)) {
+    throw new Error("INVALID_MINJAE_VOICE_PHASE_CONTRACT");
+  }
+  if (!Array.isArray(scenePayloads) || scenePayloads.length < 3) {
+    throw new Error("INVALID_THREE_PHASE_SCENE_INPUT");
+  }
+  const openingTag = String(scenePayloads[0]?.tag ?? "").trim();
+  const bodyLeadTag = String(scenePayloads[1]?.tag ?? "").trim();
+  if (!openingTag || openingTag !== bodyLeadTag) {
+    throw new Error("OPENING_BODY_TAG_MISMATCH");
+  }
+  return scenePayloads.map(({ performanceText, tag }, index) => {
+    const text = String(performanceText ?? "").trim();
+    const normalizedTag = String(tag ?? "").trim();
+    if (!text || !normalizedTag) throw new Error("INVALID_TAGGED_SCENE_INPUT");
+    const previousTag = index > 0 ? String(scenePayloads[index - 1]?.tag ?? "").trim() : null;
+    return index > 0 && normalizedTag === previousTag
+      ? text
+      : `[${normalizedTag}]\n${text}`;
+  });
+}
+
 export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, baseVoiceSettings, contract }) {
   if (!validateMinjaeVoicePhaseContract(contract)) {
     throw new Error("INVALID_MINJAE_VOICE_PHASE_CONTRACT");
@@ -38,8 +61,11 @@ export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, base
       scenePayloads.length !== continuousParts.length || scenePayloads.length < 3) {
     throw new Error("INVALID_THREE_PHASE_SCENE_INPUT");
   }
-  if (scenePayloads[0]?.tag !== contract.opening.v3AudioTag) {
-    throw new Error("OPENING_PHASE_TAG_MISMATCH");
+  if (scenePayloads[0]?.tag !== scenePayloads[1]?.tag) {
+    throw new Error("OPENING_BODY_TAG_MISMATCH");
+  }
+  if (!continuousParts[0]?.startsWith(`[${scenePayloads[0].tag}]\n`) || /^\[[^\]]+\]/u.test(continuousParts[1] ?? "")) {
+    throw new Error("OPENING_BODY_PROVIDER_BOUNDARY_MISMATCH");
   }
   if (scenePayloads.at(-1)?.tag !== contract.closing.v3AudioTag) {
     throw new Error("CLOSING_PHASE_TAG_MISMATCH");
@@ -63,7 +89,7 @@ export function buildMinjaeThreePhasePlan({ scenePayloads, continuousParts, base
         ...baseVoiceSettings,
         speed: contract[id].speed,
       },
-      requestedTag: id === "body" ? contract.opening.v3AudioTag : contract.closing.v3AudioTag,
+      requestedTag: id === "body" ? payloads[0].tag : contract.closing.v3AudioTag,
     };
   });
 }

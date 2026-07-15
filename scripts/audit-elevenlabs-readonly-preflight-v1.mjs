@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const AUDIT_VERSION = "elevenlabs_readonly_preflight_v1";
-const PACKET_SCHEMA = "money_shorts_minjae_two_phase_tts_approval_packet_v2";
+const PACKET_SCHEMA = "money_shorts_minjae_two_phase_tts_approval_packet_v3";
 const REQUIRED_MODEL_ID = "eleven_v3";
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 const API_ROOT = "https://api.elevenlabs.io/v1";
