@@ -138,6 +138,7 @@ const CHARACTER_CONTINUITY_VERSION = "money_shorts_selected_character_reference_
 const outputVisualEngineVersion = EVIDENCE_ENGINE_VERSION;
 const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
 const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
+const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v1";
 
 function writeSummary(partial) {
   const summary = {
@@ -150,6 +151,11 @@ function writeSummary(partial) {
     visualModalityVersion: VISUAL_MODALITY_VERSION,
     visualModalityAudit: {
       version: VISUAL_MODALITY_VERSION,
+      passed: false,
+    },
+    financeSceneDiversityVersion: FINANCE_SCENE_DIVERSITY_VERSION,
+    financeSceneDiversityAudit: {
+      version: FINANCE_SCENE_DIVERSITY_VERSION,
       passed: false,
     },
     characterContinuityAudit: {
@@ -737,7 +743,61 @@ function compactSceneArtDirection(scene) {
   return compact || compactNarration(cue, 520);
 }
 
-function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null) {
+const FINANCE_SCENE_DIVERSITY_LOCATIONS = [
+  "window-side living area",
+  "dining or kitchen surface",
+  "entryway or storage boundary",
+  "cafe or everyday work counter",
+  "home-study shelf zone",
+  "neighborhood shop or commute threshold",
+  "balcony or window transition",
+  "living-room seating edge",
+];
+const FINANCE_SCENE_DIVERSITY_CAMERAS = [
+  "eye-level medium-wide with room depth",
+  "oblique three-quarter evidence view",
+  "side environmental view",
+  "low foreground close with a deep background",
+  "doorway or threshold wide view",
+  "seated over-shoulder or side-close view",
+  "window-side medium-long view",
+  "open resolved wide composition",
+];
+const FINANCE_SCENE_DIVERSITY_FOCI = [
+  "price or valuation decision",
+  "cash-reserve boundary",
+  "bill, order or reason check",
+  "chart or statement reading",
+  "household purchase consequence",
+  "portfolio or position choice",
+  "calendar or timing marker",
+  "rule or checklist resolution",
+];
+
+function sceneDiversityPlan(scene, sceneIndex, totalScenes) {
+  const cycleIndex = sceneIndex % FINANCE_SCENE_DIVERSITY_LOCATIONS.length;
+  return {
+    version: FINANCE_SCENE_DIVERSITY_VERSION,
+    locationFamily: FINANCE_SCENE_DIVERSITY_LOCATIONS[cycleIndex],
+    cameraFamily: FINANCE_SCENE_DIVERSITY_CAMERAS[cycleIndex],
+    financeFocus: FINANCE_SCENE_DIVERSITY_FOCI[cycleIndex],
+    sceneIndex: sceneIndex + 1,
+    totalScenes,
+    sceneId: String(scene?.id ?? "unknown"),
+  };
+}
+
+function financeSceneDiversityInstruction(plan, previousPlan, nextPlan) {
+  return [
+    `FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}: use ${plan.financeFocus} as this beat's primary finance focus, with a ${plan.cameraFamily} and a ${plan.locationFamily} whenever compatible with the narration's required setting.`,
+    "Cash, banknotes, charts, statements and documents are allowed whenever they directly prove this finance beat; do not ban or avoid them merely for being finance props.",
+    "Do not repeat the immediately previous scene's exact combination of room silhouette, desk position, loose-cash arrangement, paper layout, chart placement and camera angle. Change at least three of location zone, dominant finance prop, camera, character presence/action and household consequence.",
+    previousPlan ? `The previous planned focus was ${previousPlan.financeFocus} in a ${previousPlan.locationFamily}; do not recreate that composition.` : "Establish a distinct opening composition rather than a generic home-desk finance still life.",
+    nextPlan ? `Leave ${nextPlan.financeFocus} in ${nextPlan.locationFamily} available for the next beat instead of preusing it.` : "Finish with a new resolved composition rather than returning to the opening finance-prop layout.",
+  ].join(" ");
+}
+
+function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null, resolvedDiversityPlans = null) {
   const evidence = scene.visualEvidence;
   const role = storyboardRoleForScene(scene, sceneIndex, totalScenes);
   const roleBeat = sceneRoleBeat(scene, sceneIndex);
@@ -748,6 +808,13 @@ function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null)
     : null;
   const nextVisualMode = sceneIndex + 1 < totalScenes
     ? (resolvedVisualModes?.[sceneIndex + 1] ?? visualModeForScene(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes))
+    : null;
+  const diversityPlan = resolvedDiversityPlans?.[sceneIndex] ?? sceneDiversityPlan(scene, sceneIndex, totalScenes);
+  const previousDiversityPlan = sceneIndex > 0
+    ? (resolvedDiversityPlans?.[sceneIndex - 1] ?? sceneDiversityPlan(scenes[sceneIndex - 1], sceneIndex - 1, totalScenes))
+    : null;
+  const nextDiversityPlan = sceneIndex + 1 < totalScenes
+    ? (resolvedDiversityPlans?.[sceneIndex + 1] ?? sceneDiversityPlan(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes))
     : null;
   const narration = compactNarration(scene.narration ?? scene.captionText ?? "");
   const previousEvidence = scenes[sceneIndex - 1]?.visualEvidence;
@@ -768,6 +835,7 @@ function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null)
     `Hero subject: ${compactNarration(directedEvidence.heroSubject, 180)}. Visible action: ${compactNarration(directedEvidence.visibleAction, 190)}.`,
     `Distinct setting: ${compactNarration(directedEvidence.sceneSetting, 230)}.`,
     `Visual form: ${compactNarration(directedEvidence.visualForm, 220)}. Camera: ${compactNarration(directedEvidence.cameraPlan, 170)}. Lighting: ${compactNarration(directedEvidence.lightingPlan, 140)}.`,
+    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan),
     `SCENE INTEGRATION: ${compactNarration(directedEvidence.sceneIntegrationPlan, 280)}.`,
     `MOTION PLAN for later video: ${compactNarration(directedEvidence.motionPlan, 320)}. Show only a plausible mid-action instant in this still.`,
     `Causal proof: ${compactNarration(directedEvidence.causalComposition, 190)}. Editorial proof: ${compactNarration(evidence.editorialProof, 150)}.`,
@@ -797,6 +865,7 @@ function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null)
     `Visualize this narration directly: "${compactNarration(narration, 220)}".`,
     `MUST SHOW: ${compactNarration(directedEvidence.mustShow, 320)}. Hero: ${compactNarration(directedEvidence.heroSubject, 140)}. Action: ${compactNarration(directedEvidence.visibleAction, 150)}.`,
     `Setting: ${compactNarration(directedEvidence.sceneSetting, 190)}. Form: ${compactNarration(directedEvidence.visualForm, 180)}. Camera: ${compactNarration(directedEvidence.cameraPlan, 140)}. Light: ${compactNarration(directedEvidence.lightingPlan, 110)}.`,
+    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan),
     `SCENE INTEGRATION: ${compactNarration(directedEvidence.sceneIntegrationPlan, 220)}. MOTION PLAN: ${compactNarration(directedEvidence.motionPlan, 240)}. Show only a plausible mid-action instant in this still.`,
     `Use one hero subject. ${role.avoid}. Reject any image reusable for an adjacent narration; change hero, action, location and camera.`,
     `MUST NOT SHOW: ${compactNarration(directedEvidence.mustNotShow, 260)}.`,
@@ -914,28 +983,29 @@ const sceneVisualModes = scenes.map((scene, index) => {
   }
   return visualModeForScene(scene, index, sceneCount);
 });
+const sceneDiversityPlans = scenes.map((scene, index) => sceneDiversityPlan(scene, index, sceneCount));
 const scenePrompts = scenes.map((scene, index) => {
   const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
     ? topicScopedModeOverride.scenePromptAppend
     : null;
   const basePrompt = [
-    scenePrompt(scene, index, sceneCount, sceneVisualModes),
+    scenePrompt(scene, index, sceneCount, sceneVisualModes, sceneDiversityPlans),
     scenePromptAppend,
   ].filter(Boolean).join(" ");
   if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
   const qualityReset = [
     "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
     "Rebuild this as ONE bright coherent full-scale Korean everyday scene with ONE immediately understandable action and natural lived-in depth.",
-    "ABSOLUTELY NO split or stacked panels, before-and-after collage, candlestick chart, currency stacks, coin piles, transparent cash display boxes, safe or vault box, paper roller, conveyor, mechanical finance mechanism, dark half-frame, giant arrow, arrow printed on a mat, showroom exhibit or finance-prop still life.",
-    "Use only a few ordinary full-size household objects such as a plain envelope, folder, calendar, wallet, notebook or modest household-cash pouch, physically handled or changed in the narration's exact cause-and-result moment. Show no readable text or numbers.",
+    "ABSOLUTELY NO split or stacked panels, before-and-after collage, transparent cash display box, safe or vault box, paper roller, conveyor, mechanical finance mechanism, dark half-frame, giant arrow, arrow printed on a mat, showroom exhibit or decorative finance-prop still life.",
+    "Cash, banknotes, charts, statements and documents remain allowed when they physically prove the narration's exact cause-and-result moment; use only the few full-size everyday objects needed for that proof, never an unmotivated currency stack, coin pile or chart wall. Show no readable text or numbers.",
   ];
   const sceneSpecificManualReset = index + 1 === 5
     ? [
-        "SCENE 5 EXACT CORRECTION: the previous result wrongly showed neatly separated objects. Show one believable lived-in table where a plain household-bills envelope and a separate investment-rule envelope have both tipped into the SAME open fabric pouch, with their blank cards visibly tangled together, while one small closed emergency envelope remains safely apart. The accidental mixing must be unmistakable without labels, currency, diagrams or a split composition.",
+        "SCENE 5 EXACT CORRECTION: the previous result wrongly showed neatly separated objects. Show one believable lived-in table where a plain household-bills envelope and a separate investment-rule envelope have both tipped into the SAME open fabric pouch, with their blank cards visibly tangled together, while one small closed emergency envelope remains safely apart. The accidental mixing must be unmistakable without labels, diagrams, a split composition or a decorative cash display.",
       ]
     : index + 1 === 12
       ? [
-          "SCENE 12 EXACT CORRECTION: reject any tabletop-only still life, chart, graph, open notebook, document pile, portfolio case or cash container. Use a wide room-level view of a bright Korean living-room entryway: one slim closed rule folder sits in a simple grab-and-go wall pocket beside ordinary keys, a modest household pouch is stored separately on a warm wood shelf, and an open doorway or sunlit balcony gives clear forward depth. No person, cash, finance display or readable text.",
+          "SCENE 12 EXACT CORRECTION: reject any tabletop-only still life, decorative chart wall, document pile or finance-prop display. Use a wide room-level view of a bright Korean living-room entryway: one slim closed rule folder sits in a simple grab-and-go wall pocket beside ordinary keys, a modest household pouch is stored separately on a warm wood shelf, and an open doorway or sunlit balcony gives clear forward depth. No person or readable text; include finance props only when they directly prove this scene's rule.",
         ]
       : [];
   if (sceneVisualModes[index].presence === "none") {
@@ -971,6 +1041,7 @@ const sceneRequirements = scenes.map((scene, index) => {
     characterReferenceRequired: sceneVisualModes[index].presence !== "none",
     sceneIntegrationPlan: scene.visualEvidence.sceneIntegrationPlan,
     motionPlan: scene.visualEvidence.motionPlan,
+    sceneDiversityPlan: sceneDiversityPlans[index],
     promptFingerprint: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
   };
 });
@@ -1042,12 +1113,15 @@ if (promptAuditOnly) {
       /SCENE INTEGRATION:/i.test(prompt) &&
       /MOTION PLAN/i.test(prompt) &&
       /plausible mid-action instant/i.test(prompt) &&
+      new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
+      /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
       retiredDirectionPatterns.every((pattern) => !pattern.test(prompt));
     return {
       sceneIndex: index + 1,
       sceneId: scenes[index].id,
       visualModeId: mode.id,
       presenceMode: mode.presence,
+      sceneDiversityPlan: sceneDiversityPlans[index],
       presenceGatePassed,
       contractPassed,
       legacyPresenceConflicts: conflicts,
@@ -1058,17 +1132,21 @@ if (promptAuditOnly) {
   // 실제 생성 뒤에 적용되는 시퀀스 다양성 게이트를 무전송 패킷에도 동일하게 적용한다.
   // 개별 프롬프트가 모두 유효해도 캐릭터/비캐릭터 비율이 어긋나면 외부 생성 전에 차단해야 한다.
   const promptVisualModalityAudit = buildVisualModalityAudit(rows);
+  const promptFinanceSceneDiversityAudit = buildFinanceSceneDiversityAudit(rows);
   const audit = {
     schemaVersion: "money_shorts_scene_prompt_audit_v2",
     visualModalityVersion: VISUAL_MODALITY_VERSION,
+    financeSceneDiversityVersion: FINANCE_SCENE_DIVERSITY_VERSION,
     topicId,
     sceneCount,
     externalActionPerformed: false,
     topicScopedModeOverride,
     visualModalityAudit: promptVisualModalityAudit,
+    financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
     passed:
       rows.every((row) => row.presenceGatePassed && row.contractPassed && row.legacyPresenceConflicts.length === 0) &&
-      promptVisualModalityAudit.passed,
+      promptVisualModalityAudit.passed &&
+      promptFinanceSceneDiversityAudit.passed,
     rows,
   };
   const auditPath = path.join(OUT_DIR, "prompt-audit.json");
@@ -1077,6 +1155,7 @@ if (promptAuditOnly) {
     passed: audit.passed,
     auditPath,
     visualModalityAudit: promptVisualModalityAudit,
+    financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
     rows: rows.map((row) => ({
       sceneIndex: row.sceneIndex,
       sceneId: row.sceneId,
@@ -1099,10 +1178,12 @@ const reusableSceneIndexes = new Set(
           const requirement = sceneRequirements[scene.sceneIndex - 1];
           const file = sceneFile(scene.sceneIndex - 1);
           const promptMatches = scene.promptFingerprint === requirement?.promptFingerprint;
-          const targetedPreserve = targetedRegenerationSceneIndexes.size > 0;
+          const verifiedExistingOutput =
+            previousSummary?.allReady === true &&
+            previousSummary?.visualModalityAudit?.passed === true;
           return requirement &&
             scene.visualEvidenceId === requirement.visualEvidenceId &&
-            (promptMatches || targetedPreserve) &&
+            (promptMatches || verifiedExistingOutput) &&
             typeof scene.imageSha256 === "string" &&
             scene.imageSha256.length === 64 &&
             typeof scene.perceptualHash === "string" &&
@@ -1233,6 +1314,58 @@ function buildVisualModalityAudit(states) {
   };
 }
 
+function buildFinanceSceneDiversityAudit(states) {
+  const plans = states.map((state) => state?.sceneDiversityPlan ?? null);
+  const expectedPlans = scenes.map((scene, index) => sceneDiversityPlans[index] ?? sceneDiversityPlan(scene, index, sceneCount));
+  const sceneContractsPassed =
+    states.length === sceneCount &&
+    plans.every((plan, index) =>
+      plan?.version === FINANCE_SCENE_DIVERSITY_VERSION &&
+      plan?.sceneIndex === index + 1 &&
+      plan?.sceneId === expectedPlans[index].sceneId &&
+      plan?.locationFamily === expectedPlans[index].locationFamily &&
+      plan?.cameraFamily === expectedPlans[index].cameraFamily &&
+      plan?.financeFocus === expectedPlans[index].financeFocus);
+  const adjacentRepeatFailures = [];
+  for (let index = 1; index < plans.length; index += 1) {
+    const previous = plans[index - 1];
+    const current = plans[index];
+    if (!previous || !current) continue;
+    const repeatedFields = ["locationFamily", "cameraFamily", "financeFocus"]
+      .filter((field) => previous[field] === current[field]);
+    if (repeatedFields.length > 0) {
+      adjacentRepeatFailures.push({ previousScene: index, currentScene: index + 1, repeatedFields });
+    }
+  }
+  const distinctLocationCount = new Set(plans.map((plan) => plan?.locationFamily).filter(Boolean)).size;
+  const distinctCameraCount = new Set(plans.map((plan) => plan?.cameraFamily).filter(Boolean)).size;
+  const distinctFinanceFocusCount = new Set(plans.map((plan) => plan?.financeFocus).filter(Boolean)).size;
+  const requiredDistinctCount = Math.min(6, sceneCount);
+  const promptCoveragePassed = scenePrompts.every((prompt) =>
+    new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
+    /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
+    /Do not repeat the immediately previous scene's exact combination/i.test(prompt));
+  return {
+    version: FINANCE_SCENE_DIVERSITY_VERSION,
+    sceneContractsPassed,
+    promptCoveragePassed,
+    adjacentRepeatFailures,
+    distinctLocationCount,
+    distinctCameraCount,
+    distinctFinanceFocusCount,
+    requiredDistinctCount,
+    allowedFinanceProps: ["cash", "banknotes", "charts", "statements", "documents"],
+    manualVisualReviewRequired: true,
+    passed:
+      sceneContractsPassed &&
+      promptCoveragePassed &&
+      adjacentRepeatFailures.length === 0 &&
+      distinctLocationCount >= requiredDistinctCount &&
+      distinctCameraCount >= requiredDistinctCount &&
+      distinctFinanceFocusCount >= requiredDistinctCount,
+  };
+}
+
 function buildCharacterContinuityAudit(states) {
   const promptCoveragePassed = scenePrompts.every((prompt, index) => {
     const mode = sceneVisualModes[index];
@@ -1326,6 +1459,7 @@ if (pendingCount === 0) {
     scenes: sceneStates,
     visualDifferenceAudit: buildVisualDifferenceAudit(sceneStates),
     visualModalityAudit: buildVisualModalityAudit(sceneStates),
+    financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
     characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
     motionPlanAudit: buildMotionPlanAudit(sceneStates),
     submissionsUsed: 0,
@@ -1696,6 +1830,7 @@ const summary = writeSummary({
   scenes: sceneStates,
   visualDifferenceAudit: buildVisualDifferenceAudit(sceneStates),
   visualModalityAudit: buildVisualModalityAudit(sceneStates),
+  financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
   characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
   motionPlanAudit: buildMotionPlanAudit(sceneStates),
   submissionsUsed: submissionCount,

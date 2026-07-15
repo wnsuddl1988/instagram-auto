@@ -22,6 +22,7 @@ function check(name, condition) {
 }
 
 const modalityVersion = "money_shorts_visual_modality_sequence_v1";
+const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v1";
 const controllerVersion = "chatgpt_picture_v2_character_reference_v8";
 const modes = [
   "CHARACTER_EVENT",
@@ -38,6 +39,7 @@ const modes = [
 
 check("image controller contract is bumped to selected-reference v8", imageRunner.includes(controllerVersion));
 check("visual modality contract is versioned", imageRunner.includes(modalityVersion));
+check("finance scene diversity contract is versioned", imageRunner.includes(financeSceneDiversityVersion));
 for (const mode of modes) check(`visual mode exists: ${mode}`, imageRunner.includes(`${mode}: {`));
 check("scene role mapper handles shared finance flow roles", [
   'id === "hook"',
@@ -54,13 +56,30 @@ check("character mode keeps the approved selected-reference continuity contract"
 check("person-free modes explicitly exclude all human silhouettes", imageRunner.includes("no human, head, face, hair, hands, body, silhouette"));
 check("mode contract is placed before scene evidence in both prompt paths", (imageRunner.match(/VISUAL MODALITY CONTRACT/g) ?? []).length >= 2);
 check("adjacent prompts carry previous/current/next mode ids", imageRunner.includes("MODALITY DIFFERENCE: previous mode"));
+check("adjacent prompts prevent repeated finance compositions without banning finance evidence",
+  imageRunner.includes("Do not repeat the immediately previous scene's exact combination") &&
+  imageRunner.includes("Cash, banknotes, charts, statements and documents are allowed"));
+check("manual visual repair rejects decorative excess rather than finance props themselves",
+  imageRunner.includes("remain allowed when they physically prove") &&
+  imageRunner.includes("never an unmotivated currency stack, coin pile or chart wall"));
+check("scene diversity rotates location, camera and finance focus", [
+  "FINANCE_SCENE_DIVERSITY_LOCATIONS",
+  "FINANCE_SCENE_DIVERSITY_CAMERAS",
+  "FINANCE_SCENE_DIVERSITY_FOCI",
+  "function sceneDiversityPlan",
+].every((token) => imageRunner.includes(token)));
 check("every scene state records mode and presence", imageRunner.includes("visualModeId: sceneVisualModes[index].id") && imageRunner.includes("presenceMode: sceneVisualModes[index].presence"));
 check("old summaries cannot be reused without modality version", imageRunner.includes("previousSummary?.visualModalityVersion === VISUAL_MODALITY_VERSION"));
+check("existing approved images are retained when a newer prompt contract is introduced",
+  imageRunner.includes("const verifiedExistingOutput =") &&
+  imageRunner.includes("previousSummary?.allReady === true") &&
+  imageRunner.includes("promptMatches || verifiedExistingOutput"));
 check("character scenes are capped to 45 percent", imageRunner.includes("Math.ceil(sceneCount * 0.45)"));
 check("at least 55 percent are non-character modes", imageRunner.includes("Math.floor(sceneCount * 0.55)"));
 check("modality audit requires several distinct modes", imageRunner.includes("requiredDistinctModes") && imageRunner.includes("distinctModeCount >= requiredDistinctModes"));
 check("manual visual review remains required", imageRunner.includes("manualVisualReviewRequired: true"));
 check("saved and final summaries include modality audit", (imageRunner.match(/visualModalityAudit: buildVisualModalityAudit/g) ?? []).length >= 2);
+check("saved and final summaries include finance diversity audit", (imageRunner.match(/financeSceneDiversityAudit: buildFinanceSceneDiversityAudit/g) ?? []).length >= 2);
 check("prompt audit mode runs before Playwright import", imageRunner.includes("promptAuditOnly") && imageRunner.indexOf("if (promptAuditOnly)") < imageRunner.indexOf('await import("playwright")'));
 check("prompt audit detects legacy positive person instructions", imageRunner.includes("legacyPresenceConflictPatterns") && imageRunner.includes("legacyPresenceConflicts"));
 check("prompt audit records that no external action occurred", imageRunner.includes("externalActionPerformed: false"));
@@ -68,6 +87,10 @@ check("prompt audit fails closed on the same sequence-level modality audit as th
   imageRunner.includes("const promptVisualModalityAudit = buildVisualModalityAudit(rows)") &&
   imageRunner.includes("visualModalityAudit: promptVisualModalityAudit") &&
   imageRunner.includes("promptVisualModalityAudit.passed"));
+check("prompt audit fails closed on the same finance diversity contract as live summaries",
+  imageRunner.includes("const promptFinanceSceneDiversityAudit = buildFinanceSceneDiversityAudit(rows)") &&
+  imageRunner.includes("financeSceneDiversityAudit: promptFinanceSceneDiversityAudit") &&
+  imageRunner.includes("promptFinanceSceneDiversityAudit.passed"));
 check("topic-scoped mode override is packet-bound and prompt-audit-only",
   imageRunner.includes("--mode-override-packet") &&
   imageRunner.includes("MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly") &&
@@ -75,8 +98,8 @@ check("topic-scoped mode override is packet-bound and prompt-audit-only",
   imageRunner.includes("defaultSharedModeMapperMustRemainUnchanged") &&
   imageRunner.includes("topicScopedModeOverride"));
 check("approved override mode is threaded through the scene prompt and adjacent-mode contract",
-  imageRunner.includes("function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null)") &&
-  imageRunner.includes("scenePrompt(scene, index, sceneCount, sceneVisualModes)") &&
+  imageRunner.includes("function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null, resolvedDiversityPlans = null)") &&
+  imageRunner.includes("scenePrompt(scene, index, sceneCount, sceneVisualModes, sceneDiversityPlans)") &&
   imageRunner.includes("resolvedVisualModes?.[sceneIndex - 1]") &&
   imageRunner.includes("resolvedVisualModes?.[sceneIndex + 1]"));
 check("approved override execution is exact-approval, single-scene and one-submission only",
