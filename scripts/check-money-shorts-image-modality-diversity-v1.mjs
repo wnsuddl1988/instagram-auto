@@ -64,6 +64,21 @@ check("saved and final summaries include modality audit", (imageRunner.match(/vi
 check("prompt audit mode runs before Playwright import", imageRunner.includes("promptAuditOnly") && imageRunner.indexOf("if (promptAuditOnly)") < imageRunner.indexOf('await import("playwright")'));
 check("prompt audit detects legacy positive person instructions", imageRunner.includes("legacyPresenceConflictPatterns") && imageRunner.includes("legacyPresenceConflicts"));
 check("prompt audit records that no external action occurred", imageRunner.includes("externalActionPerformed: false"));
+check("prompt audit fails closed on the same sequence-level modality audit as the live summary",
+  imageRunner.includes("const promptVisualModalityAudit = buildVisualModalityAudit(rows)") &&
+  imageRunner.includes("visualModalityAudit: promptVisualModalityAudit") &&
+  imageRunner.includes("promptVisualModalityAudit.passed"));
+check("topic-scoped mode override is packet-bound and prompt-audit-only",
+  imageRunner.includes("--mode-override-packet") &&
+  imageRunner.includes("MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly") &&
+  imageRunner.includes("money_shorts_scene_mode_correction_packet_v1") &&
+  imageRunner.includes("defaultSharedModeMapperMustRemainUnchanged") &&
+  imageRunner.includes("topicScopedModeOverride"));
+check("approved override mode is threaded through the scene prompt and adjacent-mode contract",
+  imageRunner.includes("function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null)") &&
+  imageRunner.includes("scenePrompt(scene, index, sceneCount, sceneVisualModes)") &&
+  imageRunner.includes("resolvedVisualModes?.[sceneIndex - 1]") &&
+  imageRunner.includes("resolvedVisualModes?.[sceneIndex + 1]"));
 check("video runner requires selected-reference v8 controller", videoRunner.includes(controllerVersion));
 check("video runner rejects missing modality audit", videoRunner.includes("visualModalityAudit?.version !== VISUAL_MODALITY_VERSION") && videoRunner.includes("visualModalityAudit?.passed !== true"));
 check("video runner requires per-scene mode metadata", videoRunner.includes('typeof scene?.visualModeId === "string"') && videoRunner.includes('typeof scene?.presenceMode === "string"'));

@@ -45,14 +45,16 @@ const characterReferenceSha256Arg = getArg("--character-reference-sha256");
 const characterIdArg = getArg("--character-id");
 const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
+const modeOverridePacketArg = getArg("--mode-override-packet");
 const promptAuditOnly = args.includes("--prompt-audit-only");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--mode-override-packet <packet.json> --prompt-audit-only]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
 const OUT_DIR = path.resolve(outDirArg);
 const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
+const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
 const CHARACTER_ID = String(characterIdArg);
 const CHARACTER_NAME = String(characterNameArg).trim();
@@ -90,6 +92,14 @@ if (OUT_DIR.startsWith(REPO_ROOT + "\\") || OUT_DIR.startsWith(REPO_ROOT + "/"))
 if ([scriptAbs, OUT_DIR].some((p) => p.includes(".money-shorts-local"))) {
   console.error("ABORT: .money-shorts-local access forbidden.");
   process.exit(2);
+}
+if (MODE_OVERRIDE_PACKET_ABS && (!MEDIA_ROOT_RE.test(MODE_OVERRIDE_PACKET_ABS) || !MODE_OVERRIDE_PACKET_ABS.toLowerCase().endsWith(".json") || MODE_OVERRIDE_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --mode-override-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly) {
+  console.error("ABORT: --mode-override-packet is permitted only with --prompt-audit-only; external image generation requires a separate Owner-approved execution path.");
+  process.exit(3);
 }
 const CHARACTER_REFERENCE_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+web-wizard-create-v1[\\/]+character-cast-v1[\\/]+(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)[\\/]+candidate-2\.png$/i;
 if (!CHARACTER_REFERENCE_ROOT_RE.test(CHARACTER_REFERENCE_ABS)) {
@@ -194,6 +204,7 @@ if (scenes.length < MIN_SCENES || scenes.length > MAX_SCENES) {
 }
 const sceneCount = scenes.length;
 const topicId = record.topicId ?? null;
+const rootTopicId = typeof record.production?.rootTopicId === "string" ? record.production.rootTopicId : topicId;
 const targetedRegenerationSceneIndexes = new Set();
 if (regenerateScenesArg) {
   for (const token of String(regenerateScenesArg).split(",")) {
@@ -470,6 +481,50 @@ function visualModeForScene(scene, sceneIndex, totalScenes) {
   return { id: modeId, ...VISUAL_MODES[modeId] };
 }
 
+function resolveTopicScopedModeOverride() {
+  if (!MODE_OVERRIDE_PACKET_ABS) return null;
+  let packet;
+  try {
+    packet = JSON.parse(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS, "utf8"));
+  } catch (error) {
+    console.error(`ABORT: mode override packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const targetIndex = packet?.targetScene?.index;
+  const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
+  const proposedModeId = packet?.targetScene?.proposed?.visualModeId;
+  const proposedPresence = packet?.targetScene?.proposed?.presenceMode;
+  const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
+  const actualScriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const packetPartSegment = typeof packet?.productionPartId === "string" ? `${path.sep}${packet.productionPartId}${path.sep}` : "";
+  const valid =
+    packet?.schemaVersion === "money_shorts_scene_mode_correction_packet_v1" &&
+    packet?.status === "data_only_pending_owner_review" &&
+    packet?.topicId === rootTopicId &&
+    packetPartSegment !== "" && scriptAbs.includes(packetPartSegment) &&
+    packet?.sourceBinding?.scriptSha256 === actualScriptSha256 &&
+    packet?.sourceBinding?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    packet?.executionPolicy?.imageGenerationExecuted === false &&
+    packet?.executionPolicy?.defaultSharedModeMapperMustRemainUnchanged === true &&
+    Number.isInteger(targetIndex) && targetIndex >= 1 && targetIndex <= sceneCount &&
+    packet?.targetScene?.id === targetScene?.id &&
+    packet?.targetScene?.current?.visualModeId === expectedMode?.id &&
+    packet?.targetScene?.current?.presenceMode === expectedMode?.presence &&
+    typeof proposedModeId === "string" && proposedModeId in VISUAL_MODES &&
+    proposedPresence === VISUAL_MODES[proposedModeId].presence &&
+    proposedModeId !== expectedMode?.id;
+  if (!valid) {
+    console.error("ABORT: topic-scoped mode override packet does not match the locked script, character reference or default mode mapping.");
+    process.exit(3);
+  }
+  return {
+    packetPath: MODE_OVERRIDE_PACKET_ABS,
+    packetSha256: createHash("sha256").update(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS)).digest("hex"),
+    sceneIndex: targetIndex,
+    visualModeId: proposedModeId,
+  };
+}
+
 function presenceInstructionForMode(mode) {
   if (mode.presence === "character") {
     return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED IN THIS SCENE. ${CHARACTER_CONTINUITY_INSTRUCTION}`;
@@ -645,14 +700,18 @@ function compactSceneArtDirection(scene) {
   return compact || compactNarration(cue, 520);
 }
 
-function scenePrompt(scene, sceneIndex, totalScenes) {
+function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null) {
   const evidence = scene.visualEvidence;
   const role = storyboardRoleForScene(scene, sceneIndex, totalScenes);
   const roleBeat = sceneRoleBeat(scene, sceneIndex);
-  const visualMode = visualModeForScene(scene, sceneIndex, totalScenes);
+  const visualMode = resolvedVisualModes?.[sceneIndex] ?? visualModeForScene(scene, sceneIndex, totalScenes);
   const directedEvidence = evidenceForVisualMode(evidence, visualMode);
-  const previousVisualMode = sceneIndex > 0 ? visualModeForScene(scenes[sceneIndex - 1], sceneIndex - 1, totalScenes) : null;
-  const nextVisualMode = sceneIndex + 1 < totalScenes ? visualModeForScene(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes) : null;
+  const previousVisualMode = sceneIndex > 0
+    ? (resolvedVisualModes?.[sceneIndex - 1] ?? visualModeForScene(scenes[sceneIndex - 1], sceneIndex - 1, totalScenes))
+    : null;
+  const nextVisualMode = sceneIndex + 1 < totalScenes
+    ? (resolvedVisualModes?.[sceneIndex + 1] ?? visualModeForScene(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes))
+    : null;
   const narration = compactNarration(scene.narration ?? scene.captionText ?? "");
   const previousEvidence = scenes[sceneIndex - 1]?.visualEvidence;
   const nextEvidence = scenes[sceneIndex + 1]?.visualEvidence;
@@ -811,9 +870,15 @@ const reusablePreviousSummary =
   previousSummary?.characterReference?.hashVerified === true &&
   previousSummary?.expectedCount === sceneCount &&
   Array.isArray(previousSummary?.scenes);
-const sceneVisualModes = scenes.map((scene, index) => visualModeForScene(scene, index, sceneCount));
+const topicScopedModeOverride = resolveTopicScopedModeOverride();
+const sceneVisualModes = scenes.map((scene, index) => {
+  if (topicScopedModeOverride?.sceneIndex === index + 1) {
+    return { id: topicScopedModeOverride.visualModeId, ...VISUAL_MODES[topicScopedModeOverride.visualModeId] };
+  }
+  return visualModeForScene(scene, index, sceneCount);
+});
 const scenePrompts = scenes.map((scene, index) => {
-  const basePrompt = scenePrompt(scene, index, sceneCount);
+  const basePrompt = scenePrompt(scene, index, sceneCount, sceneVisualModes);
   if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
   const qualityReset = [
     "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
@@ -910,13 +975,20 @@ if (promptAuditOnly) {
       prompt,
     };
   });
+  // 실제 생성 뒤에 적용되는 시퀀스 다양성 게이트를 무전송 패킷에도 동일하게 적용한다.
+  // 개별 프롬프트가 모두 유효해도 캐릭터/비캐릭터 비율이 어긋나면 외부 생성 전에 차단해야 한다.
+  const promptVisualModalityAudit = buildVisualModalityAudit(rows);
   const audit = {
     schemaVersion: "money_shorts_scene_prompt_audit_v2",
     visualModalityVersion: VISUAL_MODALITY_VERSION,
     topicId,
     sceneCount,
     externalActionPerformed: false,
-    passed: rows.every((row) => row.presenceGatePassed && row.contractPassed && row.legacyPresenceConflicts.length === 0),
+    topicScopedModeOverride,
+    visualModalityAudit: promptVisualModalityAudit,
+    passed:
+      rows.every((row) => row.presenceGatePassed && row.contractPassed && row.legacyPresenceConflicts.length === 0) &&
+      promptVisualModalityAudit.passed,
     rows,
   };
   const auditPath = path.join(OUT_DIR, "prompt-audit.json");
@@ -924,6 +996,7 @@ if (promptAuditOnly) {
   console.log(JSON.stringify({
     passed: audit.passed,
     auditPath,
+    visualModalityAudit: promptVisualModalityAudit,
     rows: rows.map((row) => ({
       sceneIndex: row.sceneIndex,
       sceneId: row.sceneId,
