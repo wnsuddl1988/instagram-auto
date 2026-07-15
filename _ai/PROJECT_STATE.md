@@ -15,11 +15,14 @@ Updated: 2026-07-15 KST
 - Money Shorts 500-topic/editorial, character cast, voice routing, scene image, caption, and local video pipeline changes are accumulated in the working tree.
 - The latest pilot is Owner-rejected: visual tone, script-to-scene relevance, scene pacing, and true character motion are not accepted.
 - Flow retry-v3 scene 08 was generated once with Veo 3.1 Fast (9:16, 8s, 20 credits) and technically downloaded, but Owner-directed visual QA rejected it: the card finishes on the wooden desk left of the notebook rather than centered on the notebook paper. Its local state is `qa_failed`; it is not render-ready and must not be consumed by final render.
-- Playwright read-only inspection of the existing Flow project found only one unlabelled `프롬프트에 추가` media attachment control. It did not expose a start-frame/end-frame binding, so attaching two images must not be treated as deterministic first/last-frame animation.
+- The Owner-approved first/last Flow canary proved the actual agent binding: `start_image_media_id=3cf44be8-71bd-4092-b9c6-1598ce8cb17a` and `end_image_media_id=4e2a0d59-03ed-4652-95bc-35e971084489`. Ordered composer attachments were translated into real first/last-frame arguments for this run.
+- The first/last result is `FLOW_GENERATED_OWNER_QA_PASSED`: result media `3248a04b-8171-4dcf-aa5a-ebe09892b687`, local SHA-256 `8df5e4df6818083e0530922cc2d049ec16e119a9f90294845cb244e47549292b`, 720x1280 H.264/AAC, 24fps, 8.0s. Owner accepted the warm 3D identity, real hand/wrist/elbow/head/gaze motion, and card ending centered on notebook paper. The brief opening lift before lowering is recorded as an accepted minor deviation for this exact clip only.
+- The current 12-scene production script now selects scene 08 (`mindset`) as `veo_motion`; an isolated `render_ready` state and QA evidence bind the current scene ID, reference hash, prompt hash, and output hash. The existing render-input resolver accepts it (`17/17` contract checks pass).
+- The no-upload final-render canary is fail-closed at `REAL_TTS_REQUIRED`: the current full TTS timeline is 66.76 seconds, above the restored 15~60 second contract, so no final MP4 was produced. The current full TTS evidence also has masked voice `fHz***r16`, not Owner-selected Harry Kim `pb3lVZVjdFWbkhPKlelB`; no paid replacement TTS was run.
 - Current FFmpeg layered motion is camera/parallax/masked micro-motion, not true articulated character animation.
-- Minjae currently uses `Hojin Lim`; Owner requested a voice change. Historical candidates are `Hojin Lim`, `Yohan Koo`, and `Gihong`, but a complete same-script three-way audition does not yet exist.
+- Owner selected ElevenLabs `Harry Kim – Conversational` (`pb3lVZVjdFWbkhPKlelB`) for Minjae. A complete same-script Harry Kim production TTS has not yet been generated.
 - No shared-engine readiness, upload readiness, publication approval, or final product completion is declared.
-- No upload, deploy, push, env/secret change, or external account change was performed in the cleanup slice.
+- No deploy, push, env/secret change, or unrelated external account change was performed. The exact Owner-approved Flow first/last canary submitted once, clicked the ordinary `승인` once, and used 20 credits; the post-run balance observed through Flow was 920.
 
 ## Diff Cleanup State
 
@@ -42,6 +45,6 @@ Updated: 2026-07-15 KST
 ## Current Priority
 
 1. Keep retry-v3 as `qa_failed`; do not regenerate it from the existing single-reference Flow dialog.
-2. Agree a real character-motion approach before another pilot: an explicit start/end-frame product input must be proven in Flow or a different approved motion path must be selected. Do not infer end-frame support from two generic media attachments.
-3. Finish exact checkpoint inclusion/exclusion review and ask Owner for a local-only commit; no push.
-4. Resume Minjae voice audition and motion architecture only after the checkpoint boundary is complete.
+2. Preserve the accepted first/last clip as isolated `render_ready` evidence; do not call it final or upload-ready.
+3. Repair the 12-scene narration to fit 15~60 seconds, then obtain explicit approval before one full Harry Kim ElevenLabs TTS generation. Only after that TTS passes should the final render canary be retried.
+4. Finish exact checkpoint inclusion/exclusion review and ask Owner for a local-only commit; no push.
