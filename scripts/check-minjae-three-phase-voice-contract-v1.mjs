@@ -23,11 +23,11 @@ const phases = minjae?.deliveryPhases;
 
 check("voice cast advances to v6", cast.version === "money_shorts_finance_character_voice_cast_v6");
 check("only Minjae receives the three-phase override", phasedCharacters.length === 1 && phasedCharacters[0]?.characterId === "minjae_horizon");
-check("Minjae remains Harry Kim", minjae?.voiceLabel === "Harry Kim – Conversational" && minjae?.voiceId === "pb3lVZVjdFWbkhPKlelB");
+check("Minjae uses the Owner-selected Mr. K Pro voice", minjae?.voiceLabel === "Mr. K Pro – V3 Natural Korean Voice" && minjae?.voiceId === "HCANy6ACvOWyndVWS0gV");
 check("Junho synthesis baseline stays intact", minjae?.settings?.speed === 1.02 && minjae?.settings?.stability === 0.48 && minjae?.settings?.similarityBoost === 0.86 && minjae?.settings?.style === 0 && minjae?.settings?.useSpeakerBoost === true);
 check("opening is 1.02 firm and assertive", phases?.opening?.selector === "staged_cover_first_three_lines" && phases?.opening?.speed === 1.02 && phases?.opening?.v3AudioTag === "firm and assertive");
-check("body is slightly faster at 1.00", phases?.body?.selector === "between_opening_and_closing" && phases?.body?.speed === 1 && phases?.body?.v3AudioTag === "inherit_scene_direction");
-check("closing is clear and decisive at 1.01", phases?.closing?.selector === "final_save_or_follow_scene" && phases?.closing?.speed === 1.01 && phases?.closing?.v3AudioTag === "clear and decisive");
+check("body keeps the exact Junho speed at 1.02", phases?.body?.selector === "between_opening_and_closing" && phases?.body?.speed === 1.02 && phases?.body?.v3AudioTag === "inherit_scene_direction");
+check("closing keeps the exact Junho speed at 1.02", phases?.closing?.selector === "final_save_or_follow_scene" && phases?.closing?.speed === 1.02 && phases?.closing?.v3AudioTag === "clear and decisive");
 check("assembly preserves alignment and safe loudness", phases?.assembly?.mode === "three_aligned_segments" && phases?.assembly?.preserveCharacterAlignment === true && phases?.assembly?.crossfadeMs === 60 && phases?.assembly?.loudnessIntegratedLufs === -16 && phases?.assembly?.truePeakDbtp === -1.5);
 check("typed voice profile exposes the optional phase contract", /deliveryPhases\?:/.test(voiceModule) && /money_shorts_character_voice_phase_v1/.test(voiceModule));
 check("wizard emits the approved phase contract", /voicePhaseContract = financeVoiceRoute\?\.route\.voice\.deliveryPhases/.test(operator) && /voicePhaseContract,/.test(operator));

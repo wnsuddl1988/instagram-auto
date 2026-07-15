@@ -26,7 +26,7 @@ const expected = new Map([
   ["harin_daily", ["Jisoo", "iWLjl1zCuqXRkW6494ve"]],
   ["junho_cashflow", ["Yohan Koo", "4JJwo477JUAx3HV0T7n7"]],
   ["seoyun_safety", ["Jian.K", "ah4r1hZOydd3XWlHOm3Y"]],
-  ["minjae_horizon", ["Harry Kim – Conversational", "pb3lVZVjdFWbkhPKlelB"]],
+  ["minjae_horizon", ["Mr. K Pro – V3 Natural Korean Voice", "HCANy6ACvOWyndVWS0gV"]],
 ]);
 const results = [];
 function check(name, passed) {

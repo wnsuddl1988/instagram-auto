@@ -155,10 +155,10 @@ if (pipeline?.ok) {
   check("every Minjae production part applies the approved opening body and closing phases", partInputs.every(({ tts }) =>
     tts.openingVoiceContract?.v3AudioTag === "firm and assertive" &&
     tts.openingVoiceContract?.speedCap === 1.02 &&
-    Number(tts.topicSpeechProfile?.baseSpeed) === 1 &&
+    Number(tts.topicSpeechProfile?.baseSpeed) === 1.02 &&
     tts.voicePhaseContract?.opening?.speed === 1.02 &&
-    tts.voicePhaseContract?.body?.speed === 1 &&
-    tts.voicePhaseContract?.closing?.speed === 1.01 &&
+    tts.voicePhaseContract?.body?.speed === 1.02 &&
+    tts.voicePhaseContract?.closing?.speed === 1.02 &&
     tts.scenes?.[0]?.speechDirection?.v3AudioTag === "firm and assertive" &&
     tts.scenes?.at(-1)?.speechDirection?.v3AudioTag === "clear and decisive"));
   check("content-addressed TTS input names are unique per production part",
