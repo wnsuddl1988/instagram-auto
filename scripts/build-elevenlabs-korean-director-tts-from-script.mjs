@@ -391,8 +391,7 @@ async function loadOrRequestAlignedAudio({ text, previousText = null, nextText =
     }
   }
   if (apiCallCount >= API_CALL_BUDGET_MAX) {
-    console.error(`ABORT: ElevenLabs API call budget exhausted before ${phaseId}. No retry was attempted.`);
-    process.exit(1);
+    throw new Error(`ABORT: ElevenLabs API call budget exhausted before ${phaseId}. No retry was attempted.`);
   }
   const seed = parseInt(fingerprint.slice(0, 8), 16);
   const requestBody = {
@@ -418,25 +417,21 @@ async function loadOrRequestAlignedAudio({ text, previousText = null, nextText =
       body: JSON.stringify(requestBody),
     });
   } catch (error) {
-    console.error(`ABORT: ElevenLabs ${phaseId} request failed: ${error.message}`);
-    process.exit(1);
+    throw new Error(`ABORT: ElevenLabs ${phaseId} request failed after ${apiCallCount} request attempt(s): ${error.message}`);
   }
   if (!response.ok) {
     const errorText = await response.text().catch(() => "(unreadable)");
-    console.error(`ABORT: ElevenLabs ${phaseId} API returned ${response.status}: ${errorText.slice(0, 180)}`);
-    process.exit(1);
+    throw new Error(`ABORT: ElevenLabs ${phaseId} API returned ${response.status} after ${apiCallCount} request attempt(s): ${errorText.slice(0, 180)}`);
   }
   let body;
   try {
     body = await response.json();
   } catch {
-    console.error("ABORT: ElevenLabs timing response was not JSON.");
-    process.exit(1);
+    throw new Error(`ABORT: ElevenLabs timing response was not JSON after ${apiCallCount} request attempt(s).`);
   }
   const responseAlignment = validateAlignment(body.alignment) ? body.alignment : body.normalized_alignment;
   if (typeof body.audio_base64 !== "string" || !validateAlignment(responseAlignment)) {
-    console.error(`ABORT: ElevenLabs ${phaseId} response is missing audio or character alignment.`);
-    process.exit(1);
+    throw new Error(`ABORT: ElevenLabs ${phaseId} response is missing audio or character alignment after ${apiCallCount} request attempt(s).`);
   }
   writeFileSync(rawPath, Buffer.from(body.audio_base64, "base64"));
   writeFileSync(alignmentCachePath, JSON.stringify({
@@ -448,6 +443,7 @@ async function loadOrRequestAlignedAudio({ text, previousText = null, nextText =
   return { alignment: responseAlignment, reused: false };
 }
 
+async function generateAndWriteSummary() {
 if (voicePhaseEnabled) {
   for (const [phaseIndex, phase] of voicePhasePlan.entries()) {
     const previousText = phaseIndex > 0 ? voicePhasePlan[phaseIndex - 1].text : null;
@@ -474,8 +470,7 @@ if (voicePhaseEnabled) {
     });
     const audioProbe = probeAudio(phaseRawAudioPath);
     if (!audioProbe) {
-      console.error(`ABORT: generated ${phase.id} phase audio is invalid.`);
-      process.exit(1);
+      throw new Error(`ABORT: generated ${phase.id} phase audio is invalid.`);
     }
     phaseArtifacts.push({
       ...phase,
@@ -493,8 +488,7 @@ if (voicePhaseEnabled) {
   try {
     merged = mergeThreePhaseCharacterAlignments(phaseArtifacts, voicePhaseContract.assembly.crossfadeMs);
   } catch (error) {
-    console.error(`ABORT: Minjae phase alignment merge failed: ${error.message}`);
-    process.exit(1);
+    throw new Error(`ABORT: Minjae phase alignment merge failed: ${error.message}`);
   }
   alignment = merged.alignment;
   phaseGenerationAudit = {
@@ -558,8 +552,7 @@ function probeAudio(audioPath) {
 
 const rawProbe = voicePhaseEnabled ? null : probeAudio(rawAudioPath);
 if (!voicePhaseEnabled && !rawProbe) {
-  console.error("ABORT: generated Korean director audio is invalid.");
-  process.exit(1);
+  throw new Error("ABORT: generated Korean director audio is invalid.");
 }
 
 const FINAL_TAIL_SEC = 0.28;
@@ -592,15 +585,13 @@ if (!existsSync(timelineAudioPath)) {
     shell: false,
   });
   if ((convert.status ?? -1) !== 0) {
-    console.error(`ABORT: ffmpeg conversion failed: ${(convert.stderr ?? "").slice(-240)}`);
-    process.exit(1);
+    throw new Error(`ABORT: ffmpeg conversion failed: ${(convert.stderr ?? "").slice(-240)}`);
   }
 }
 
 const timelineProbe = probeAudio(timelineAudioPath);
 if (!timelineProbe) {
-  console.error("ABORT: Korean director timeline audio is invalid.");
-  process.exit(1);
+  throw new Error("ABORT: Korean director timeline audio is invalid.");
 }
 if (phaseGenerationAudit) {
   phaseGenerationAudit.timelineDurationSec = timelineProbe.durationSec;
@@ -614,8 +605,7 @@ const timedRanges = scenePayloads.map(({ scene, performanceText, performanceSegm
   for (const segment of performanceSegments) {
     const segmentStartIndex = alignedText.indexOf(segment.text, searchCursor);
     if (segmentStartIndex < 0) {
-      console.error(`ABORT: scene ${scene.sceneNumber} segment was not found in character alignment.`);
-      process.exit(1);
+      throw new Error(`ABORT: scene ${scene.sceneNumber} segment was not found in character alignment.`);
     }
     const segmentEndIndex = segmentStartIndex + segment.text.length - 1;
     searchCursor = segmentEndIndex + 1;
@@ -626,8 +616,7 @@ const timedRanges = scenePayloads.map(({ scene, performanceText, performanceSegm
     }
   }
   if (timedIndexes.length === 0) {
-    console.error(`ABORT: scene ${scene.sceneNumber} has no usable aligned characters.`);
-    process.exit(1);
+    throw new Error(`ABORT: scene ${scene.sceneNumber} has no usable aligned characters.`);
   }
   return {
     scene,
@@ -643,8 +632,7 @@ const sceneResults = timedRanges.map((range, index) => {
   const endSec = index === timedRanges.length - 1 ? timelineProbe.durationSec : timedRanges[index + 1].spokenStartSec;
   const normalizedDurationSec = Number((endSec - startSec).toFixed(3));
   if (!Number.isFinite(normalizedDurationSec) || normalizedDurationSec < 1 || normalizedDurationSec > 15) {
-    console.error(`ABORT: scene ${range.scene.sceneNumber} aligned duration is outside 1..15s: ${normalizedDurationSec}`);
-    process.exit(1);
+    throw new Error(`ABORT: scene ${range.scene.sceneNumber} aligned duration is outside 1..15s: ${normalizedDurationSec}`);
   }
   const phaseForScene = voicePhaseEnabled
     ? voicePhasePlan.find(({ startIndex, endIndex }) => index >= startIndex && index < endIndex)
@@ -777,3 +765,14 @@ console.log(`  scenes: ${sceneResults.length}`);
 console.log(`  api calls: ${apiCallCount}/${API_CALL_BUDGET_MAX}`);
 console.log(`  duration: ${timelineProbe.durationSec.toFixed(3)}s`);
 console.log(`  summary: ${summaryPath}`);
+}
+
+try {
+  await generateAndWriteSummary();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+  // Node 24 on Windows can fast-fail if the process terminates while the built-in fetch
+  // dispatcher is still closing its async handle. Yield briefly instead of process.exit().
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 250));
+}

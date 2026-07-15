@@ -49,6 +49,7 @@ check(".money-shorts-local remains forbidden", builder.includes(".money-shorts-l
 check("builder never reads .env.local", !/\.env\.local|readFileSync\([^)]*env/i.test(code));
 check("API key and full voice id are never logged or summarized", !/console\.log\([^)]*apiKey|apiKey:/.test(code) && /maskElevenLabsVoiceId/.test(builder));
 check("legacy is one paid call and Minjae is exactly three with no retry loop", /LEGACY_API_CALL_BUDGET_MAX\s*=\s*1/.test(builder) && /THREE_PHASE_API_CALL_BUDGET_MAX\s*=\s*3/.test(builder) && !/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(code));
+check("post-fetch failures drain the Windows async handle instead of calling process.exit", /generateAndWriteSummary/.test(builder) && /process\.exitCode\s*=\s*1/.test(builder) && /setTimeout\(resolveDelay,\s*250\)/.test(builder) && !/process\.exit\(1\)/.test(builder));
 
 console.log("\n[ Korean direction engine ]");
 check("speech direction v2 is the required input", /money_shorts_speech_direction_v2/.test(builder) && /money_shorts_speech_direction_v2/.test(helper));
