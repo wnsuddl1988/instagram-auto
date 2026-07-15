@@ -78,6 +78,27 @@ if (
   process.exit(2);
 }
 
+const voicePhaseContract = ttsScript?.voicePhaseContract;
+if (voicePhaseContract?.enabled === true) {
+  const validPhaseContract =
+    voicePhaseContract.contractVersion === "money_shorts_character_voice_phase_v1" &&
+    voicePhaseContract.characterId === "minjae_horizon" &&
+    voicePhaseContract.opening?.selector === "staged_cover_first_three_lines" &&
+    voicePhaseContract.opening?.speed === 1.02 &&
+    voicePhaseContract.body?.selector === "between_opening_and_closing" &&
+    voicePhaseContract.body?.speed === 1 &&
+    voicePhaseContract.closing?.selector === "final_save_or_follow_scene" &&
+    voicePhaseContract.closing?.speed === 1.01 &&
+    voicePhaseContract.assembly?.mode === "three_aligned_segments" &&
+    voicePhaseContract.assembly?.preserveCharacterAlignment === true;
+  if (!validPhaseContract) {
+    console.error("ABORT: invalid money_shorts_character_voice_phase_v1 contract. No API call was made.");
+    process.exit(2);
+  }
+  console.error("ABORT: Minjae three-phase TTS runtime is not implemented yet. No API call was made.");
+  process.exit(2);
+}
+
 function semanticText(value) {
   return String(value ?? "")
     .normalize("NFKC")

@@ -1,5 +1,5 @@
 {
-  "version": "money_shorts_finance_character_voice_cast_v5",
+  "version": "money_shorts_finance_character_voice_cast_v6",
   "status": "approved_for_production",
   "baseline": {
     "source": "latest_owner_approved_money_shorts_korean_director_v2",
@@ -98,6 +98,36 @@
         "similarityBoost": 0.86,
         "style": 0,
         "useSpeakerBoost": true
+      },
+      "deliveryPhases": {
+        "enabled": true,
+        "contractVersion": "money_shorts_character_voice_phase_v1",
+        "characterId": "minjae_horizon",
+        "opening": {
+          "selector": "staged_cover_first_three_lines",
+          "speed": 1.02,
+          "v3AudioTag": "firm and assertive",
+          "intent": "첫 음절부터 또렷하고 단단하게 시작해 썸네일 세 문장을 즉시 붙잡되 소리치지 않는다."
+        },
+        "body": {
+          "selector": "between_opening_and_closing",
+          "speed": 1.0,
+          "v3AudioTag": "inherit_scene_direction",
+          "intent": "자연스러운 한국어 대화 리듬을 유지하면서 기존보다 조금 빠르게 설명한다."
+        },
+        "closing": {
+          "selector": "final_save_or_follow_scene",
+          "speed": 1.01,
+          "v3AudioTag": "clear and decisive",
+          "intent": "저장과 팔로우 문장을 늘어뜨리지 않고 따뜻하지만 분명하게 마무리한다."
+        },
+        "assembly": {
+          "mode": "three_aligned_segments",
+          "crossfadeMs": 60,
+          "preserveCharacterAlignment": true,
+          "loudnessIntegratedLufs": -16,
+          "truePeakDbtp": -1.5
+        }
       },
       "intent": "숫자와 뉴스를 편안하게 설명하고 장기 관점으로 연결하는 탐구형 화자"
     }

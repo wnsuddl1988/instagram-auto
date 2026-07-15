@@ -7293,9 +7293,14 @@ function buildWizardRealTtsScript(
   const timeline = buildWizardSceneTimeline(narrations);
   const baseProfile = buildWizardTopicSpeechProfile(script.title, script.fullVoiceover, { topicId: rootTopicId });
   const speedCap = script.videoStrategy?.openingVoice.speedCap;
+  const voicePhaseContract = financeVoiceRoute?.route.voice.deliveryPhases ?? null;
+  const castSettings = financeVoiceRoute?.route.voice.settings;
   const topicSpeechProfile: WizardTopicSpeechProfile = {
     ...baseProfile,
-    baseSpeed: typeof speedCap === "number" ? Math.min(baseProfile.baseSpeed, speedCap) : baseProfile.baseSpeed,
+    baseSpeed: voicePhaseContract?.body.speed ?? (typeof speedCap === "number" ? Math.min(baseProfile.baseSpeed, speedCap) : baseProfile.baseSpeed),
+    baseStability: voicePhaseContract && castSettings ? castSettings.stability : baseProfile.baseStability,
+    baseSimilarityBoost: voicePhaseContract && castSettings ? castSettings.similarityBoost : baseProfile.baseSimilarityBoost,
+    baseStyle: voicePhaseContract && castSettings ? castSettings.style : baseProfile.baseStyle,
   };
   const hasStagedCover = part.coverLines.length === 3;
   return {
@@ -7321,8 +7326,13 @@ function buildWizardRealTtsScript(
     wizardPlatformTitle: part.platformTitle,
     wizardScriptFingerprint: part.record.localFingerprint,
     videoStrategyContractVersion: script.videoStrategy?.contractVersion ?? null,
-    openingVoiceContract: script.videoStrategy?.openingVoice ?? null,
+    openingVoiceContract: voicePhaseContract ? {
+      v3AudioTag: voicePhaseContract.opening.v3AudioTag,
+      speedCap: voicePhaseContract.opening.speed,
+      stance: voicePhaseContract.opening.intent,
+    } : script.videoStrategy?.openingVoice ?? null,
     topicSpeechProfile,
+    voicePhaseContract,
     coverContract: hasStagedCover ? {
       enabled: true,
       contractVersion: WIZARD_STAGED_COVER_CONTRACT_VERSION,
@@ -7366,6 +7376,7 @@ function buildWizardRealTtsScript(
       "Each part is generated in one continuous call so Korean cadence and speaker identity do not reset at every scene.",
       "Character alignment becomes the final video scene and staged-cover timing source.",
       "Display-only punctuation is never included in spokenText.",
+      ...(voicePhaseContract ? ["Minjae uses an Owner-approved opening/body/closing phase contract; each phase requires its own aligned TTS segment."] : []),
       "No secret values are stored in this file.",
     ],
     scenes: script.scenes.map((scene, index) => {
@@ -7373,7 +7384,25 @@ function buildWizardRealTtsScript(
         { id: scene.id, narration: narrations[index] },
         { topicProfile: topicSpeechProfile, sceneIndex: index, sceneCount: script.scenes.length, sampleReview },
       );
-      const speechDirection = hasStagedCover && index === 0
+      const speechDirection = voicePhaseContract && index === 0
+        ? {
+            ...directed,
+            delivery: "direct_hook" as const,
+            intent: voicePhaseContract.opening.intent,
+            pace: "brisk" as const,
+            intensity: 0.96,
+            v3AudioTag: voicePhaseContract.opening.v3AudioTag,
+          }
+        : voicePhaseContract && index === script.scenes.length - 1
+          ? {
+              ...directed,
+              delivery: "calm_close" as const,
+              intent: voicePhaseContract.closing.intent,
+              pace: "natural" as const,
+              intensity: 0.8,
+              v3AudioTag: voicePhaseContract.closing.v3AudioTag,
+            }
+          : hasStagedCover && index === 0
         ? {
             ...directed,
             intent: script.videoStrategy?.openingVoice.stance ?? directed.intent,

@@ -25,6 +25,36 @@ export type FinanceCharacterVoiceProfile = {
     style: number;
     useSpeakerBoost: boolean;
   };
+  deliveryPhases?: {
+    enabled: true;
+    contractVersion: "money_shorts_character_voice_phase_v1";
+    characterId: "minjae_horizon";
+    opening: {
+      selector: "staged_cover_first_three_lines";
+      speed: number;
+      v3AudioTag: string;
+      intent: string;
+    };
+    body: {
+      selector: "between_opening_and_closing";
+      speed: number;
+      v3AudioTag: "inherit_scene_direction";
+      intent: string;
+    };
+    closing: {
+      selector: "final_save_or_follow_scene";
+      speed: number;
+      v3AudioTag: string;
+      intent: string;
+    };
+    assembly: {
+      mode: "three_aligned_segments";
+      crossfadeMs: number;
+      preserveCharacterAlignment: true;
+      loudnessIntegratedLufs: number;
+      truePeakDbtp: number;
+    };
+  };
   intent: string;
 };
 

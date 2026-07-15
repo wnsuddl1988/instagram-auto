@@ -59,7 +59,8 @@ check(
   "topic profile is attached to every generated production-part TTS script",
   /topicSpeechProfile/.test(helper) &&
     /buildWizardTopicSpeechProfile\(script\.title, script\.fullVoiceover,\s*\{ topicId:\s*rootTopicId \}\)/.test(helper) &&
-    /baseSpeed:\s*typeof speedCap === "number" \? Math\.min\(baseProfile\.baseSpeed, speedCap\) : baseProfile\.baseSpeed/.test(helper),
+    /baseSpeed:\s*voicePhaseContract\?\.body\.speed/.test(helper) &&
+    /typeof speedCap === "number" \? Math\.min\(baseProfile\.baseSpeed, speedCap\) : baseProfile\.baseSpeed/.test(helper),
 );
 check("single-topic review profile is isolated from the 500-topic rollout", /WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID/.test(helper) && /rolloutScope:\s*"single_topic_only"/.test(helper));
 check("sample review routes housing anxiety to reassuring control at 0.91 speed", /isWizardAvSampleReviewTopic/.test(helper) && /id:\s*"reassuring_control"[\s\S]{0,480}baseSpeed:\s*0\.91/.test(helper));
@@ -72,12 +73,13 @@ check(
     builder.indexOf("staged cover spoken/display contract is invalid") < builder.indexOf("const apiKey = process.env.ELEVENLABS_API_KEY"),
 );
 check(
-  "staged opening voice is confidently tagged and capped at 0.98 before any API call",
+  "legacy staged opening stays confidently capped while Minjae emits a fail-closed phase contract",
   /openingVoiceAudit/.test(builder) && /confidentFirstTag/.test(builder) && /speedWithinCap/.test(builder) &&
     /scenePayloads\[0\]\?\.tag === "confidently"/.test(builder) &&
     /voiceSettings\.speed <= openingSpeedCap/.test(builder) &&
-    /openingVoiceContract:\s*script\.videoStrategy\?\.openingVoice/.test(helper) &&
-    /Math\.min\(baseProfile\.baseSpeed, speedCap\)/.test(helper),
+    /openingVoiceContract:\s*voicePhaseContract/.test(helper) &&
+    /voicePhaseContract\.opening\.v3AudioTag/.test(helper) &&
+    /Minjae three-phase TTS runtime is not implemented yet/.test(builder),
 );
 
 console.log("\n[ continuous generation ]");
