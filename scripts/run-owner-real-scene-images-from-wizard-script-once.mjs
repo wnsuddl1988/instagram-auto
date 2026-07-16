@@ -49,6 +49,7 @@ const regenerateScenesArg = getArg("--regenerate-scenes");
 const modeOverridePacketArg = getArg("--mode-override-packet");
 const sceneRepairPacketArg = getArg("--scene-repair-packet");
 const positiveCompositionCanaryPacketArg = getArg("--positive-composition-canary-packet");
+const existingAssetRebindPacketArg = getArg("--existing-asset-rebind-packet");
 const promptAuditOutArg = getArg("--prompt-audit-out");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
@@ -58,7 +59,7 @@ const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repa
 const executeApprovedPositiveCompositionCanary = args.includes("--execute-approved-positive-composition-canary");
 const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets | --regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets [--existing-asset-rebind-packet <packet.json>] | --regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -67,6 +68,7 @@ const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
 const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
 const SCENE_REPAIR_PACKET_ABS = sceneRepairPacketArg ? path.resolve(sceneRepairPacketArg) : null;
 const POSITIVE_COMPOSITION_CANARY_PACKET_ABS = positiveCompositionCanaryPacketArg ? path.resolve(positiveCompositionCanaryPacketArg) : null;
+const EXISTING_ASSET_REBIND_PACKET_ABS = existingAssetRebindPacketArg ? path.resolve(existingAssetRebindPacketArg) : null;
 const PROMPT_AUDIT_OUT_ABS = promptAuditOutArg ? path.resolve(promptAuditOutArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
 const CHARACTER_ID = String(characterIdArg);
@@ -118,12 +120,20 @@ if (POSITIVE_COMPOSITION_CANARY_PACKET_ABS && (!MEDIA_ROOT_RE.test(POSITIVE_COMP
   console.error("ABORT: --positive-composition-canary-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
+if (EXISTING_ASSET_REBIND_PACKET_ABS && (!MEDIA_ROOT_RE.test(EXISTING_ASSET_REBIND_PACKET_ABS) || !EXISTING_ASSET_REBIND_PACKET_ABS.toLowerCase().endsWith(".json") || EXISTING_ASSET_REBIND_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --existing-asset-rebind-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
 if (PROMPT_AUDIT_OUT_ABS && (!promptAuditOnly || !MEDIA_ROOT_RE.test(PROMPT_AUDIT_OUT_ABS) || !PROMPT_AUDIT_OUT_ABS.toLowerCase().endsWith(".json") || PROMPT_AUDIT_OUT_ABS.includes(".money-shorts-local"))) {
   console.error("ABORT: --prompt-audit-out is allowed only with --prompt-audit-only and must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
-if ([MODE_OVERRIDE_PACKET_ABS, SCENE_REPAIR_PACKET_ABS, POSITIVE_COMPOSITION_CANARY_PACKET_ABS].filter(Boolean).length > 1) {
+if ([MODE_OVERRIDE_PACKET_ABS, SCENE_REPAIR_PACKET_ABS, POSITIVE_COMPOSITION_CANARY_PACKET_ABS, EXISTING_ASSET_REBIND_PACKET_ABS].filter(Boolean).length > 1) {
   console.error("ABORT: only one packet type may be combined with an image runner invocation.");
+  process.exit(3);
+}
+if (EXISTING_ASSET_REBIND_PACKET_ABS && !refreshSummaryFromExistingAssets) {
+  console.error("ABORT: --existing-asset-rebind-packet is allowed only with --refresh-summary-from-existing-assets.");
   process.exit(3);
 }
 if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly && !executeApprovedModeOverride) {
@@ -1703,6 +1713,107 @@ const sceneRequirements = scenes.map((scene, index) => {
     promptFingerprint: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
   };
 });
+let existingAssetSemanticRebind = null;
+if (EXISTING_ASSET_REBIND_PACKET_ABS) {
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(EXISTING_ASSET_REBIND_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: existing-asset rebind packet read failed: ${error.message}`);
+    process.exit(3);
+  }
+  const targets = Array.isArray(packet?.targetScenes)
+    ? packet.targetScenes.slice().sort((left, right) => Number(left.sceneIndex) - Number(right.sceneIndex))
+    : [];
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const previousSummaryBuffer = fs.existsSync(SUMMARY_PATH) ? fs.readFileSync(SUMMARY_PATH) : null;
+  const previousSummarySha256 = previousSummaryBuffer
+    ? createHash("sha256").update(previousSummaryBuffer).digest("hex")
+    : null;
+  const packetContractValid =
+    packet?.schemaVersion === "money_shorts_existing_asset_semantic_rebind_v1" &&
+    packet?.status === "AI_REVIEWED_OWNER_RECHECK_REQUIRED" &&
+    packet?.externalActionAllowed === false &&
+    packet?.browserAllowed === false &&
+    packet?.imageGenerationAllowed === false &&
+    packet?.manualOwnerReviewStillRequired === true &&
+    packet?.topicId === topicId &&
+    packet?.productionPartId === record.production?.partId &&
+    path.resolve(String(packet?.scriptPath ?? "")) === scriptAbs &&
+    packet?.scriptSha256 === scriptSha256 &&
+    path.resolve(String(packet?.previousSummaryPath ?? "")) === SUMMARY_PATH &&
+    packet?.previousSummarySha256 === previousSummarySha256 &&
+    path.resolve(String(packet?.destinationAssetDir ?? "")) === OUT_DIR &&
+    MEDIA_ROOT_RE.test(path.resolve(String(packet?.sourceAssetDir ?? "")) + path.sep) &&
+    packet?.compatibilityReview?.reviewerRole === "main_ai" &&
+    packet?.compatibilityReview?.decision === "semantically_compatible" &&
+    packet?.compatibilityReview?.ownerRecheckRequired === true &&
+    targets.length >= 1 &&
+    targets.length <= 2;
+  if (!packetContractValid || !previousSummary || !previousSummaryBuffer) {
+    console.error("ABORT: existing-asset semantic rebind packet contract or prior summary binding is invalid.");
+    process.exit(3);
+  }
+  const targetIndexes = targets.map((target) => Number(target.sceneIndex));
+  if (new Set(targetIndexes).size !== targetIndexes.length) {
+    console.error("ABORT: existing-asset semantic rebind target indexes must be unique.");
+    process.exit(3);
+  }
+  const evidenceMismatchIndexes = sceneRequirements
+    .map((requirement, index) => ({
+      sceneIndex: index + 1,
+      currentVisualEvidenceId: requirement.visualEvidenceId,
+      previousVisualEvidenceId: previousSummary.scenes?.[index]?.visualEvidenceId,
+    }))
+    .filter((row) => row.currentVisualEvidenceId !== row.previousVisualEvidenceId)
+    .map((row) => row.sceneIndex);
+  if (JSON.stringify(evidenceMismatchIndexes) !== JSON.stringify(targetIndexes)) {
+    console.error("ABORT: existing-asset semantic rebind targets must equal every and only changed visual-evidence binding.");
+    process.exit(3);
+  }
+  for (const target of targets) {
+    const index = Number(target.sceneIndex) - 1;
+    const requirement = sceneRequirements[index];
+    const previousScene = previousSummary.scenes?.[index];
+    const destinationImagePath = sceneFile(index);
+    const sourceImagePath = path.resolve(String(target.sourceImagePath ?? ""));
+    const currentNarrationSha256 = createHash("sha256").update(String(scenes[index]?.narration ?? "")).digest("hex");
+    const targetValid =
+      Number.isInteger(target.sceneIndex) &&
+      target.sceneIndex >= 1 &&
+      target.sceneIndex <= sceneCount &&
+      target.previousVisualEvidenceId === previousScene?.visualEvidenceId &&
+      target.currentVisualEvidenceId === requirement?.visualEvidenceId &&
+      target.previousVisualEvidenceId !== target.currentVisualEvidenceId &&
+      target.previousPromptFingerprint === previousScene?.promptFingerprint &&
+      target.currentPromptFingerprint === requirement?.promptFingerprint &&
+      target.currentNarrationSha256 === currentNarrationSha256 &&
+      target.imageSha256 === previousScene?.imageSha256 &&
+      path.resolve(String(target.destinationImagePath ?? "")) === destinationImagePath &&
+      path.dirname(sourceImagePath) === path.resolve(String(packet.sourceAssetDir)) &&
+      fs.existsSync(sourceImagePath) &&
+      fs.existsSync(destinationImagePath) &&
+      imageSha256(sourceImagePath) === target.imageSha256 &&
+      imageSha256(destinationImagePath) === target.imageSha256 &&
+      typeof target.semanticCompatibilityAssessment === "string" &&
+      target.semanticCompatibilityAssessment.length >= 40;
+    if (!targetValid) {
+      console.error(`ABORT: existing-asset semantic rebind target ${target.sceneIndex} does not match the exact current script, prior summary and preserved image.`);
+      process.exit(3);
+    }
+  }
+  existingAssetSemanticRebind = {
+    schemaVersion: packet.schemaVersion,
+    packetSha256: createHash("sha256").update(packetBuffer).digest("hex"),
+    sourceAssetDir: path.resolve(packet.sourceAssetDir),
+    destinationAssetDir: OUT_DIR,
+    targetScenes: targets,
+    manualOwnerReviewStillRequired: true,
+    externalActionPerformed: false,
+  };
+}
 if (topicScopedModeOverride) {
   const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
   if (targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint) {
@@ -1916,6 +2027,9 @@ if (promptAuditOnly) {
   }, null, 2));
   process.exit(audit.passed ? 0 : 1);
 }
+const semanticRebindTargetBySceneIndex = new Map(
+  (existingAssetSemanticRebind?.targetScenes ?? []).map((target) => [target.sceneIndex, target]),
+);
 const reusableSceneIndexes = new Set(
   reusablePreviousSummary
     ? previousSummary.scenes
@@ -1925,11 +2039,19 @@ const reusableSceneIndexes = new Set(
           const requirement = sceneRequirements[scene.sceneIndex - 1];
           const file = sceneFile(scene.sceneIndex - 1);
           const promptMatches = scene.promptFingerprint === requirement?.promptFingerprint;
+          const semanticRebindTarget = semanticRebindTargetBySceneIndex.get(scene.sceneIndex);
+          const visualEvidenceBindingMatches =
+            scene.visualEvidenceId === requirement?.visualEvidenceId ||
+            (
+              semanticRebindTarget?.previousVisualEvidenceId === scene.visualEvidenceId &&
+              semanticRebindTarget?.currentVisualEvidenceId === requirement?.visualEvidenceId &&
+              semanticRebindTarget?.imageSha256 === scene.imageSha256
+            );
           const verifiedExistingOutput =
             previousSummary?.allReady === true &&
             previousSummary?.visualModalityAudit?.passed === true;
           return requirement &&
-            scene.visualEvidenceId === requirement.visualEvidenceId &&
+            visualEvidenceBindingMatches &&
             (promptMatches || verifiedExistingOutput) &&
             typeof scene.imageSha256 === "string" &&
             scene.imageSha256.length === 64 &&
@@ -2345,6 +2467,13 @@ if (pendingCount === 0) {
       previousSummarySha256,
       previousSummaryBackupFile: path.relative(OUT_DIR, backupFile).replace(/\\/g, "/"),
       preservedImageSha256: sceneStates.map((scene) => scene.imageSha256),
+      semanticRebind: existingAssetSemanticRebind ? {
+        schemaVersion: existingAssetSemanticRebind.schemaVersion,
+        packetSha256: existingAssetSemanticRebind.packetSha256,
+        targetSceneIndexes: existingAssetSemanticRebind.targetScenes.map((target) => target.sceneIndex),
+        manualOwnerReviewStillRequired: true,
+        externalActionPerformed: false,
+      } : null,
     };
   }
   writeSummary({

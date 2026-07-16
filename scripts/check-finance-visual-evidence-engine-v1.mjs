@@ -213,7 +213,10 @@ check("image runner makes scene integration and motion plans first-class prompt 
   /CHARACTER MOTION PROFILE/.test(imageRunner) &&
   /pauses in the middle of one small decision/.test(imageRunner) &&
   /candid eye-level three-quarter medium-wide view/.test(imageRunner));
-check("image reuse requires evidence id and prompt fingerprint unless exact scenes are targeted", /scene\.visualEvidenceId === requirement\.visualEvidenceId/.test(imageRunner) &&
+check("image reuse requires evidence id or an exact packet-bound semantic rebind and retains prompt checks", /scene\.visualEvidenceId === requirement\?\.visualEvidenceId/.test(imageRunner) &&
+  /semanticRebindTarget\?\.previousVisualEvidenceId === scene\.visualEvidenceId/.test(imageRunner) &&
+  /semanticRebindTarget\?\.currentVisualEvidenceId === requirement\?\.visualEvidenceId/.test(imageRunner) &&
+  /semanticRebindTarget\?\.imageSha256 === scene\.imageSha256/.test(imageRunner) &&
   /const promptMatches = scene\.promptFingerprint === requirement\?\.promptFingerprint/.test(imageRunner) &&
   /targetedRegenerationSceneIndexes\.has\(scene\.sceneIndex\)/.test(imageRunner));
 check("image runner hashes every saved asset and rejects exact cross-scene duplicates", /function imageSha256\(file\)/.test(imageRunner) &&

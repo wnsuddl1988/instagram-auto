@@ -129,6 +129,21 @@ check("existing-asset summary refresh fails closed when any scene would need gen
   imageRunner.includes("no summary or image was changed") &&
   imageRunner.includes("superseded-summary-metadata-refresh-v1") &&
   imageRunner.includes("existing-asset summary refresh backup hash mismatch"));
+check("semantic rebind is content-addressed and limited to changed existing assets",
+  imageRunner.includes("--existing-asset-rebind-packet") &&
+  imageRunner.includes("money_shorts_existing_asset_semantic_rebind_v1") &&
+  imageRunner.includes("AI_REVIEWED_OWNER_RECHECK_REQUIRED") &&
+  imageRunner.includes("evidenceMismatchIndexes") &&
+  imageRunner.includes("targets must equal every and only changed visual-evidence binding") &&
+  imageRunner.includes("targetScenes: targets") &&
+  imageRunner.includes("packetSha256"));
+check("semantic rebind preserves every image and never bypasses Owner manual review",
+  imageRunner.includes("semanticRebindTargetBySceneIndex") &&
+  imageRunner.includes("semanticRebindTarget?.imageSha256 === scene.imageSha256") &&
+  imageRunner.includes("manualOwnerReviewStillRequired: true") &&
+  imageRunner.includes("externalActionAllowed === false") &&
+  imageRunner.includes("browserAllowed === false") &&
+  imageRunner.includes("imageGenerationAllowed === false"));
 check("saved and final summaries include modality audit", (imageRunner.match(/visualModalityAudit: buildVisualModalityAudit/g) ?? []).length >= 2);
 check("saved and final summaries include finance diversity audit", (imageRunner.match(/financeSceneDiversityAudit: buildFinanceSceneDiversityAudit/g) ?? []).length >= 2);
 check("prompt audit mode runs before Playwright import", imageRunner.includes("promptAuditOnly") && imageRunner.indexOf("if (promptAuditOnly)") < imageRunner.indexOf('await import("playwright")'));
