@@ -17,7 +17,10 @@ import path from "node:path";
 
 import { classifyVeoBody, isCDPOpen } from "./_gemini-veo-core.mjs";
 import { GEMINI_VEO_PROFILE_CHAIN } from "./_gemini-veo-profile-chain.mjs";
-import { GEMINI_FLOW_TARGET } from "./_gemini-flow-no-submit-contract.mjs";
+import {
+  GEMINI_FLOW_TARGET,
+  isExactGeminiFlowProjectRootUrl,
+} from "./_gemini-flow-no-submit-contract.mjs";
 import {
   hasRequiredGenerationFacts,
   isApprovalAcknowledged,
@@ -138,10 +141,6 @@ async function waitForFirstVisible(page, locator, timeoutMs = 15_000) {
     await page.waitForTimeout(250);
   }
   return null;
-}
-
-function projectIdFromUrl(urlValue) {
-  return String(urlValue).match(/\/project\/([a-f0-9-]+)/i)?.[1] ?? null;
 }
 
 async function visibleBodyText(page) {
@@ -305,11 +304,14 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   return fillPromptAndVerify(page, job, { ...attached, referenceSource: "uploaded_hash_alias" });
 }
 
-async function waitForRequiredGenerationConfirmation(page, job, freshAfterIndex, timeoutMs = 240_000) {
+async function waitForRequiredGenerationConfirmation(page, job, timeoutMs = 240_000) {
   const deadline = Date.now() + timeoutMs;
   let lastSnapshot = null;
   while (Date.now() < deadline) {
-    const result = await findRequiredGenerationConfirmation(page, job, { freshAfterIndex });
+    // The exact prompt sibling is hash-verified before this point. Flow may
+    // re-render the whole panel after Make, so global DOM indexes are not a
+    // stable freshness signal; bind the confirmation to that exact prompt.
+    const result = await findRequiredGenerationConfirmation(page, job);
     lastSnapshot = result.snapshot;
     if (result.confirmation) return { confirmation: result.confirmation, snapshot: result.snapshot };
     await page.waitForTimeout(250);
@@ -362,7 +364,7 @@ async function submitWithRequiredConfirmation(page, job, promptBox, onClickDispa
   const baseline = await collectGenerationConfirmationCandidates(page, job);
   await makeButton.click();
 
-  const result = await waitForRequiredGenerationConfirmation(page, job, baseline.approvalElementCount);
+  const result = await waitForRequiredGenerationConfirmation(page, job);
   if (!result.confirmation) {
     const snapshot = result.snapshot;
     const facts = snapshot?.candidates?.filter((candidate) => candidate.creditPromptMatches).length ?? 0;
@@ -538,27 +540,28 @@ try {
     const browser = await chromium.connectOverCDP(`http://127.0.0.1:${profile.cdpPort}`);
     const context = browser.contexts()[0];
     if (!context) throw new Error(`gemini_${profile.profileId}_browser_context_missing`);
-    const existingProjectPage = context.pages().find((candidate) =>
-      projectIdFromUrl(candidate.url()) === GEMINI_FLOW_TARGET.projectId,
+    const existingProjectRootPage = context.pages().find((candidate) =>
+      isExactGeminiFlowProjectRootUrl(candidate.url(), GEMINI_FLOW_TARGET.projectId),
     );
     if (resumeSubmittedResult && profile.profileId !== 2) break;
-    if (resumeSubmittedResult && existingProjectPage) {
-      page = existingProjectPage;
-    } else if (existingProjectPage) {
-      const existingConfirmation = await findRequiredGenerationConfirmation(existingProjectPage, contract.job);
+    if (!resumeSubmittedResult && existingProjectRootPage) {
+      const existingConfirmation = await findRequiredGenerationConfirmation(existingProjectRootPage, contract.job);
       if (existingConfirmation.confirmation) {
-        page = existingProjectPage;
+        page = existingProjectRootPage;
         pendingConfirmation = existingConfirmation.confirmation;
       }
     }
     if (!page) {
+      // A Flow /edit/... result page also contains an enabled "Make" control, but it
+      // belongs to the result editor ("Describe changes"), not the project composer.
+      // Always use a dedicated exact-root page for a new job or result recovery.
       page = await context.newPage();
       pageOpenedByRunner = true;
       await page.goto(GEMINI_FLOW_TARGET.projectUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
       await page.waitForTimeout(2_500);
     }
     const currentUrl = new URL(page.url());
-    if (currentUrl.hostname !== "labs.google" || projectIdFromUrl(currentUrl.href) !== GEMINI_FLOW_TARGET.projectId) {
+    if (!isExactGeminiFlowProjectRootUrl(currentUrl.href, GEMINI_FLOW_TARGET.projectId)) {
       throw new Error(`gemini_${profile.profileId}_flow_project_mismatch`);
     }
     await closeStaleAgentPanel(page);

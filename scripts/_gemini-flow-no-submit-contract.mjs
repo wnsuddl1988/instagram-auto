@@ -25,6 +25,24 @@ export const GEMINI_FLOW_NO_SUBMIT_POLICY = Object.freeze({
   submissionCount: 0,
 });
 
+export function isExactGeminiFlowProjectRootUrl(value, projectId = GEMINI_FLOW_TARGET.projectId) {
+  try {
+    const url = new URL(String(value ?? ""));
+    const normalizedPath = url.pathname.replace(/\/+$/, "");
+    const segments = normalizedPath.split("/").filter(Boolean);
+    return url.hostname === "labs.google" &&
+      segments.length === 6 &&
+      segments[0] === "fx" &&
+      segments[1].length > 0 &&
+      segments[2] === "tools" &&
+      segments[3] === "flow" &&
+      segments[4] === "project" &&
+      segments[5] === projectId;
+  } catch {
+    return false;
+  }
+}
+
 function normalized(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }

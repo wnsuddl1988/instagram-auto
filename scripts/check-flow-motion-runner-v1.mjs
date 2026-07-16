@@ -6,7 +6,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const root = "C:/tmp/money-shorts-os/flow-motion-runner-contract-check-v1";
+import {
+  GEMINI_FLOW_TARGET,
+  isExactGeminiFlowProjectRootUrl,
+} from "./_gemini-flow-no-submit-contract.mjs";
+
+const root = `C:/tmp/money-shorts-os/flow-motion-runner-contract-check-v1-${process.pid}`;
 const jobRoot = path.join(root, "scene-02");
 const referenceFile = path.join(jobRoot, "reference.png");
 const packetPath = path.join(jobRoot, "approval-packet.json");
@@ -16,6 +21,13 @@ const qaEvidencePath = path.join(jobRoot, "qa-evidence.json");
 const jobId = "runner-contract-topic-single-scene-02";
 const prompt = "Animate one bright warm Korean adult scene with true restrained articulated hand motion; camera-only motion is insufficient.";
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+
+assert.equal(isExactGeminiFlowProjectRootUrl(GEMINI_FLOW_TARGET.projectUrl), true);
+assert.equal(isExactGeminiFlowProjectRootUrl(`${GEMINI_FLOW_TARGET.projectUrl}/`), true);
+assert.equal(isExactGeminiFlowProjectRootUrl(`${GEMINI_FLOW_TARGET.projectUrl}?tab=media`), true);
+assert.equal(isExactGeminiFlowProjectRootUrl(`${GEMINI_FLOW_TARGET.projectUrl}/edit/result-id`), false);
+assert.equal(isExactGeminiFlowProjectRootUrl("https://example.com/fx/ko/tools/flow/project/2b12c31a-4493-405b-aedf-2268abb10422"), false);
+assert.equal(isExactGeminiFlowProjectRootUrl(`https://labs.google/extra${new URL(GEMINI_FLOW_TARGET.projectUrl).pathname}`), false);
 
 fs.mkdirSync(jobRoot, { recursive: true });
 fs.writeFileSync(referenceFile, Buffer.from("flow-motion-runner-reference-v1"));
@@ -163,6 +175,8 @@ assert.match(source, /ensureAgentPanelOpen/);
 assert.match(source, /flow_agent_panel_not_open/);
 assert.match(source, /collectGenerationConfirmationCandidates/);
 assert.match(source, /baseline\.approvalElementCount/);
+assert.match(source, /bind the confirmation to that exact prompt/);
+assert.doesNotMatch(source, /waitForRequiredGenerationConfirmation\(page, job, baseline\.approvalElementCount\)/);
 assert.match(source, /generation_make_button_unavailable_in_current_composer/);
 assert.match(source, /confirmation_approve_option_missing/);
 assert.match(source, /240_000/);
@@ -176,6 +190,8 @@ assert.match(source, /clickDispatched: true/);
 assert.match(source, /expected_credits_mismatch/);
 assert.match(source, /pageOpenedByRunner/);
 assert.match(source, /page && pageOpenedByRunner/);
+assert.match(source, /isExactGeminiFlowProjectRootUrl/);
+assert.match(source, /dedicated exact-root page/);
 const approvalClickIndex = source.indexOf("await confirmation.approveOption.click()");
 const dispatchedRecordIndex = source.indexOf("onClickDispatched(clickEvidence)", approvalClickIndex);
 const acknowledgementWaitIndex = source.indexOf("const deadline = Date.now() + 30_000", approvalClickIndex);
