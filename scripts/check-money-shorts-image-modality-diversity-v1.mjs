@@ -144,12 +144,12 @@ check("approved override execution is exact-approval, single-scene and one-submi
   imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording") &&
   imageRunner.includes("targetedRegenerationSceneIndexes.size !== 1") &&
   imageRunner.includes("pendingSceneIndexes.length !== 1") &&
-  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry") &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || topicScopedPositiveCompositionCanary?.executionApproved || noRetry") &&
   imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1") &&
   imageRunner.includes("? 1\n  : topicScopedSceneRepairs?.executionApproved"));
 check("full-scene approval can enforce no retry and stop on first failure",
   imageRunner.includes('const noRetry = args.includes("--no-retry")') &&
-  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry") &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || topicScopedPositiveCompositionCanary?.executionApproved || noRetry") &&
   imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE > 0") &&
   imageRunner.includes('if (st.status === "BLOCKED_IMAGE_TOOL" || noRetry) break;') &&
   imageRunner.includes("if (noRetry && !audit?.accepted) break;") &&
@@ -183,7 +183,7 @@ check("each targeted repair binds the current image prompt fingerprint and visua
 check("targeted repair direction overrides generic manual regeneration examples only on targets",
   imageRunner.includes("OWNER-APPROVED TARGETED SCENE REPAIR") &&
   imageRunner.includes("This repair direction overrides any generic manual-regeneration example") &&
-  imageRunner.includes("if (targetedSceneRepair) return basePrompt;"));
+  imageRunner.includes("if (targetedSceneRepair || targetedPositiveCompositionCanary) return basePrompt;"));
 check("approved repairs bind the prior no-submit audit and preserve every replaced original",
   imageRunner.includes("priorPromptAudit?.topicScopedSceneRepairs?.packetSha256") &&
   imageRunner.includes("superseded-targeted-repair-v1") &&
@@ -192,6 +192,34 @@ check("approved repairs bind the prior no-submit audit and preserve every replac
 check("approved repair submission hard cap equals the current part target count",
   imageRunner.includes("? topicScopedSceneRepairs.targets.length") &&
   imageRunner.includes("approved targeted repair execution must have only the exact packet targets pending"));
+check("positive-composition canary is packet-bound and limited to no-submit audit or its separate execution flag",
+  imageRunner.includes("--positive-composition-canary-packet") &&
+  imageRunner.includes("--execute-approved-positive-composition-canary") &&
+  imageRunner.includes("--positive-composition-canary-packet requires --prompt-audit-only") &&
+  imageRunner.includes("only one packet type may be combined with an image runner invocation"));
+check("positive-composition canary binds the locked script prior prompt audit original image and blueprint",
+  imageRunner.includes("money_shorts_positive_composition_canary_packet_v1") &&
+  imageRunner.includes("packet?.sourceBindings?.promptAuditSha256 === promptAuditSha256") &&
+  imageRunner.includes("previousTarget?.imageSha256 === packet.targetScene.currentImageSha256") &&
+  imageRunner.includes("auditedBlueprint?.id === positiveComposition?.id") &&
+  imageRunner.includes("positiveComposition.requiredIncomeCues.length === 3"));
+check("positive-composition canary preserves its exact audited shared-engine prompt",
+  imageRunner.includes("targetedPositiveCompositionCanary") &&
+  imageRunner.includes("if (targetedSceneRepair || targetedPositiveCompositionCanary) return basePrompt;") &&
+  imageRunner.includes("positive composition canary does not match the exact audited shared-engine prompt"));
+check("positive-composition canary execution needs exact approval one target no retry and a one-submit cap",
+  imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording") &&
+  imageRunner.includes("--execute-approved-positive-composition-canary requires one canary packet, --no-retry") &&
+  imageRunner.includes("approved positive composition canary execution must have exactly its one packet target pending") &&
+  imageRunner.includes("topicScopedPositiveCompositionCanary?.executionApproved") &&
+  imageRunner.includes(": topicScopedPositiveCompositionCanary?.executionApproved\n    ? 1"));
+check("positive-composition canary preserves the original before any approved replacement",
+  imageRunner.includes("superseded-positive-composition-canary-v1") &&
+  imageRunner.includes("positive composition canary original image backup hash mismatch") &&
+  imageRunner.includes("scene-images-summary-before-${topicScopedPositiveCompositionCanary.productionPartId}"));
+check("positive-composition canary is recorded in no-submit and final execution summaries",
+  (imageRunner.match(/positiveCompositionCanary: topicScopedPositiveCompositionCanary/g) ?? []).length >= 2 &&
+  imageRunner.includes("topicScopedPositiveCompositionCanary,"));
 check("video runner requires selected-reference v8 controller", videoRunner.includes(controllerVersion));
 check("video runner rejects missing modality audit", videoRunner.includes("visualModalityAudit?.version !== VISUAL_MODALITY_VERSION") && videoRunner.includes("visualModalityAudit?.passed !== true"));
 check("video runner requires per-scene mode metadata", videoRunner.includes('typeof scene?.visualModeId === "string"') && videoRunner.includes('typeof scene?.presenceMode === "string"'));

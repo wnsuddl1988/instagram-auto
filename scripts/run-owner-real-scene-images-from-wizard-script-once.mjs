@@ -47,14 +47,16 @@ const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
 const modeOverridePacketArg = getArg("--mode-override-packet");
 const sceneRepairPacketArg = getArg("--scene-repair-packet");
+const positiveCompositionCanaryPacketArg = getArg("--positive-composition-canary-packet");
 const promptAuditOutArg = getArg("--prompt-audit-out");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
 const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repairs");
+const executeApprovedPositiveCompositionCanary = args.includes("--execute-approved-positive-composition-canary");
 const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -62,6 +64,7 @@ const OUT_DIR = path.resolve(outDirArg);
 const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
 const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
 const SCENE_REPAIR_PACKET_ABS = sceneRepairPacketArg ? path.resolve(sceneRepairPacketArg) : null;
+const POSITIVE_COMPOSITION_CANARY_PACKET_ABS = positiveCompositionCanaryPacketArg ? path.resolve(positiveCompositionCanaryPacketArg) : null;
 const PROMPT_AUDIT_OUT_ABS = promptAuditOutArg ? path.resolve(promptAuditOutArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
 const CHARACTER_ID = String(characterIdArg);
@@ -109,12 +112,16 @@ if (SCENE_REPAIR_PACKET_ABS && (!MEDIA_ROOT_RE.test(SCENE_REPAIR_PACKET_ABS) || 
   console.error("ABORT: --scene-repair-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
+if (POSITIVE_COMPOSITION_CANARY_PACKET_ABS && (!MEDIA_ROOT_RE.test(POSITIVE_COMPOSITION_CANARY_PACKET_ABS) || !POSITIVE_COMPOSITION_CANARY_PACKET_ABS.toLowerCase().endsWith(".json") || POSITIVE_COMPOSITION_CANARY_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --positive-composition-canary-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
 if (PROMPT_AUDIT_OUT_ABS && (!promptAuditOnly || !MEDIA_ROOT_RE.test(PROMPT_AUDIT_OUT_ABS) || !PROMPT_AUDIT_OUT_ABS.toLowerCase().endsWith(".json") || PROMPT_AUDIT_OUT_ABS.includes(".money-shorts-local"))) {
   console.error("ABORT: --prompt-audit-out is allowed only with --prompt-audit-only and must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
-if (MODE_OVERRIDE_PACKET_ABS && SCENE_REPAIR_PACKET_ABS) {
-  console.error("ABORT: mode override and targeted scene repair packets cannot be combined.");
+if ([MODE_OVERRIDE_PACKET_ABS, SCENE_REPAIR_PACKET_ABS, POSITIVE_COMPOSITION_CANARY_PACKET_ABS].filter(Boolean).length > 1) {
+  console.error("ABORT: only one packet type may be combined with an image runner invocation.");
   process.exit(3);
 }
 if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly && !executeApprovedModeOverride) {
@@ -133,7 +140,15 @@ if (executeApprovedSceneRepairs && (!SCENE_REPAIR_PACKET_ABS || promptAuditOnly 
   console.error("ABORT: --execute-approved-scene-repairs requires one repair packet, --no-retry and cannot be combined with --prompt-audit-only.");
   process.exit(3);
 }
-if (executeApprovedModeOverride && executeApprovedSceneRepairs) {
+if (POSITIVE_COMPOSITION_CANARY_PACKET_ABS && !promptAuditOnly && !executeApprovedPositiveCompositionCanary) {
+  console.error("ABORT: --positive-composition-canary-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedPositiveCompositionCanary && (!POSITIVE_COMPOSITION_CANARY_PACKET_ABS || promptAuditOnly || !noRetry)) {
+  console.error("ABORT: --execute-approved-positive-composition-canary requires one canary packet, --no-retry and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if ([executeApprovedModeOverride, executeApprovedSceneRepairs, executeApprovedPositiveCompositionCanary].filter(Boolean).length > 1) {
   console.error("ABORT: only one approved external image execution path may be active.");
   process.exit(3);
 }
@@ -735,6 +750,131 @@ function resolveTopicScopedSceneRepairs() {
     targetIndexes: packetTargetIndexes,
     requiredOwnerApprovalWording,
     executionApproved: executeApprovedSceneRepairs,
+  };
+}
+
+function resolvePositiveCompositionCanary() {
+  if (!POSITIVE_COMPOSITION_CANARY_PACKET_ABS) return null;
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(POSITIVE_COMPOSITION_CANARY_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: positive composition canary packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const packetSha256 = createHash("sha256").update(packetBuffer).digest("hex");
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const partMatch = scriptAbs.match(/[\\/](part-[12])[\\/]/i);
+  const productionPartId = partMatch?.[1]?.toLowerCase() ?? null;
+  const targetIndex = packet?.targetScene?.index;
+  const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
+  const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
+  const promptAuditPath = productionPartId
+    ? path.join(path.dirname(POSITIVE_COMPOSITION_CANARY_PACKET_ABS), `positive-composition-prompt-audit.${productionPartId}.v1.json`)
+    : null;
+  let promptAudit;
+  let promptAuditSha256 = null;
+  try {
+    const promptAuditBuffer = promptAuditPath ? fs.readFileSync(promptAuditPath) : null;
+    promptAudit = promptAuditBuffer ? JSON.parse(promptAuditBuffer.toString("utf8")) : null;
+    promptAuditSha256 = promptAuditBuffer ? createHash("sha256").update(promptAuditBuffer).digest("hex") : null;
+  } catch {
+    promptAudit = null;
+  }
+  const auditedTarget = promptAudit?.rows?.find((scene) => scene?.sceneIndex === targetIndex);
+  const auditedPromptSha256 = typeof auditedTarget?.prompt === "string"
+    ? createHash("sha256").update(auditedTarget.prompt).digest("hex")
+    : null;
+  const previousTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === targetIndex);
+  const targetFile = targetScene ? sceneFile(targetIndex - 1) : null;
+  const normalizedPacketTopicId = typeof packet?.topicId === "string" ? packet.topicId.replace(/_/g, "-") : null;
+  const normalizedRootTopicId = typeof rootTopicId === "string" ? rootTopicId.replace(/_/g, "-") : null;
+  const approvalTextTemplate = packet?.approvalTextTemplate;
+  const requiredOwnerApprovalWording = typeof approvalTextTemplate === "string"
+    ? approvalTextTemplate.replace("<packet-sha256>", packetSha256)
+    : null;
+  const forbiddenActions = packet?.executionPolicy?.forbiddenActions;
+  const positiveComposition = packet?.positiveComposition;
+  const auditedBlueprint = auditedTarget?.sceneDiversityPlan?.compositionBlueprint;
+  const packetValid =
+    packet?.schemaVersion === "money_shorts_positive_composition_canary_packet_v1" &&
+    packet?.status === "data_only_pending_owner_approval" &&
+    packet?.provider === "ChatGPT+Playwright" &&
+    normalizedPacketTopicId === normalizedRootTopicId &&
+    packet?.productionPartId === productionPartId &&
+    productionPartId != null &&
+    packet?.sourceBindings?.scriptSha256 === scriptSha256 &&
+    packet?.sourceBindings?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    packet?.sourceBindings?.promptAuditSha256 === promptAuditSha256 &&
+    promptAudit?.passed === true &&
+    promptAudit?.externalActionPerformed === false &&
+    Number.isInteger(targetIndex) && targetIndex >= 1 && targetIndex <= sceneCount &&
+    packet?.targetScene?.id === targetScene?.id &&
+    packet?.targetScene?.currentVisualMode === expectedMode?.id &&
+    packet?.targetScene?.currentPresenceMode === expectedMode?.presence &&
+    /^[a-f0-9]{64}$/.test(packet?.targetScene?.currentImageSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(packet?.targetScene?.currentPromptFingerprint ?? "") &&
+    /^[a-f0-9]{64}$/.test(packet?.sourceBindings?.promptSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(packet?.sourceBindings?.promptFingerprint ?? "") &&
+    Number.isInteger(packet?.sourceBindings?.promptLength) && packet.sourceBindings.promptLength > 0 &&
+    packet?.sourceBindings?.externalActionPerformedDuringAudit === false &&
+    auditedTarget?.promptFingerprint === packet.sourceBindings.promptFingerprint &&
+    auditedPromptSha256 === packet.sourceBindings.promptSha256 &&
+    auditedTarget?.promptLength === packet.sourceBindings.promptLength &&
+    auditedTarget?.semanticCompositionPassed === true &&
+    auditedBlueprint?.version === positiveComposition?.version &&
+    auditedBlueprint?.id === positiveComposition?.id &&
+    auditedBlueprint?.layoutFamily === positiveComposition?.layoutFamily &&
+    auditedBlueprint?.maxSupportingObjectGroups === positiveComposition?.maxSupportingObjectGroups &&
+    Array.isArray(positiveComposition?.requiredIncomeCues) && positiveComposition.requiredIncomeCues.length === 3 &&
+    Array.isArray(positiveComposition?.forbiddenSemanticArrangements) &&
+    ["line", "row", "trail", "chain", "conveyor", "connected tube", "repeated compartment", "display system", "token board"].every((item) => positiveComposition.forbiddenSemanticArrangements.includes(item)) &&
+    packet?.executionPolicy?.maximumSubmissions === 1 &&
+    packet?.executionPolicy?.submissionsPerTargetScene === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.stopOnFirstFailure === true &&
+    packet?.executionPolicy?.existingImageMustBePreserved === true &&
+    packet?.executionPolicy?.externalGenerationExecuted === false &&
+    Array.isArray(forbiddenActions) && ["TTS", "Flow", "render", "upload"].every((action) => forbiddenActions.includes(action)) &&
+    typeof approvalTextTemplate === "string" &&
+    approvalTextTemplate.includes("<packet-sha256>") &&
+    approvalTextTemplate.startsWith(`APPROVE_POSITIVE_COMPOSITION_CANARY_IMAGE: ${packet.topicId}`) &&
+    reusablePreviousSummary &&
+    previousSummary?.allReady === true &&
+    previousSummary?.visualModalityAudit?.passed === true &&
+    previousTarget?.status === "SAVED_OK" &&
+    previousTarget?.imageSha256 === packet.targetScene.currentImageSha256 &&
+    previousTarget?.promptFingerprint === packet.targetScene.currentPromptFingerprint &&
+    targetFile != null && fs.existsSync(targetFile) && imageSha256(targetFile) === packet.targetScene.currentImageSha256;
+  if (!packetValid) {
+    console.error("ABORT: positive composition canary packet does not match the locked script, source prompt audit, current image or execution policy.");
+    process.exit(3);
+  }
+  if (targetedRegenerationSceneIndexes.size !== 1 || !targetedRegenerationSceneIndexes.has(targetIndex)) {
+    console.error("ABORT: positive composition canary requires exactly its single approved regeneration scene.");
+    process.exit(3);
+  }
+  if (executeApprovedPositiveCompositionCanary && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for positive composition canary execution.");
+    process.exit(3);
+  }
+  return {
+    packetPath: POSITIVE_COMPOSITION_CANARY_PACKET_ABS,
+    packetSha256,
+    promptAuditPath,
+    promptAuditSha256,
+    productionPartId,
+    sceneIndex: targetIndex,
+    currentImageSha256: packet.targetScene.currentImageSha256,
+    currentPromptFingerprint: packet.targetScene.currentPromptFingerprint,
+    promptFingerprint: packet.sourceBindings.promptFingerprint,
+    promptSha256: packet.sourceBindings.promptSha256,
+    promptLength: packet.sourceBindings.promptLength,
+    compositionBlueprintId: positiveComposition.id,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedPositiveCompositionCanary,
   };
 }
 
@@ -1440,6 +1580,7 @@ const reusablePreviousSummary =
   Array.isArray(previousSummary?.scenes);
 const topicScopedModeOverride = resolveTopicScopedModeOverride();
 const topicScopedSceneRepairs = resolveTopicScopedSceneRepairs();
+const topicScopedPositiveCompositionCanary = resolvePositiveCompositionCanary();
 const topicScopedSceneRepairByIndex = new Map(
   (topicScopedSceneRepairs?.targets ?? []).map((target) => [target.sceneIndex, target]),
 );
@@ -1453,6 +1594,7 @@ const sceneDiversityPlans = scenes.map((scene, index) =>
   sceneDiversityPlan(scene, index, sceneCount, sceneVisualModes[index], sceneVisualModes));
 const scenePrompts = scenes.map((scene, index) => {
   const targetedSceneRepair = topicScopedSceneRepairByIndex.get(index + 1) ?? null;
+  const targetedPositiveCompositionCanary = topicScopedPositiveCompositionCanary?.sceneIndex === index + 1;
   const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
     ? topicScopedModeOverride.scenePromptAppend
     : null;
@@ -1469,7 +1611,7 @@ const scenePrompts = scenes.map((scene, index) => {
     scenePromptAppend,
     sceneRepairPromptAppend,
   ].filter(Boolean).join(" ");
-  if (targetedSceneRepair) return basePrompt;
+  if (targetedSceneRepair || targetedPositiveCompositionCanary) return basePrompt;
   if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
   const qualityReset = [
     "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
@@ -1530,6 +1672,21 @@ if (topicScopedModeOverride) {
     process.exit(3);
   }
 }
+if (topicScopedPositiveCompositionCanary) {
+  const targetPrompt = scenePrompts[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const targetRequirement = sceneRequirements[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const actualPromptSha256 = typeof targetPrompt === "string"
+    ? createHash("sha256").update(targetPrompt).digest("hex")
+    : null;
+  if (
+    targetRequirement?.promptFingerprint !== topicScopedPositiveCompositionCanary.promptFingerprint ||
+    actualPromptSha256 !== topicScopedPositiveCompositionCanary.promptSha256 ||
+    targetPrompt?.length !== topicScopedPositiveCompositionCanary.promptLength
+  ) {
+    console.error("ABORT: positive composition canary does not match the exact audited shared-engine prompt.");
+    process.exit(3);
+  }
+}
 if (topicScopedModeOverride?.executionApproved) {
   const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
   let priorPromptAudit = null;
@@ -1557,6 +1714,21 @@ if (topicScopedModeOverride?.executionApproved) {
     imageSha256(targetFile) === topicScopedModeOverride.currentImageSha256;
   if (!executionBindingsReady) {
     console.error("ABORT: approved override execution is not bound to the current prompt audit and existing target image.");
+    process.exit(3);
+  }
+}
+if (topicScopedPositiveCompositionCanary?.executionApproved) {
+  const targetRequirement = sceneRequirements[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const targetFile = sceneFile(topicScopedPositiveCompositionCanary.sceneIndex - 1);
+  const previousTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === topicScopedPositiveCompositionCanary.sceneIndex);
+  const executionBindingsReady =
+    targetRequirement?.promptFingerprint === topicScopedPositiveCompositionCanary.promptFingerprint &&
+    fs.existsSync(targetFile) &&
+    imageSha256(targetFile) === topicScopedPositiveCompositionCanary.currentImageSha256 &&
+    previousTarget?.imageSha256 === topicScopedPositiveCompositionCanary.currentImageSha256 &&
+    previousTarget?.promptFingerprint === topicScopedPositiveCompositionCanary.currentPromptFingerprint;
+  if (!executionBindingsReady) {
+    console.error("ABORT: positive composition canary execution is no longer bound to the current original image and audited prompt.");
     process.exit(3);
   }
 }
@@ -1671,6 +1843,7 @@ if (promptAuditOnly) {
     externalActionPerformed: false,
     topicScopedModeOverride,
     topicScopedSceneRepairs,
+    topicScopedPositiveCompositionCanary,
     visualModalityAudit: promptVisualModalityAudit,
     financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
     passed:
@@ -2074,6 +2247,33 @@ if (topicScopedSceneRepairs?.executionApproved) {
     }
   }
 }
+if (topicScopedPositiveCompositionCanary?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (
+    pendingSceneIndexes.length !== 1 ||
+    pendingSceneIndexes[0] !== topicScopedPositiveCompositionCanary.sceneIndex
+  ) {
+    console.error("ABORT: approved positive composition canary execution must have exactly its one packet target pending.");
+    process.exit(3);
+  }
+  const targetFile = sceneFile(topicScopedPositiveCompositionCanary.sceneIndex - 1);
+  const backupDir = path.join(OUT_DIR, "superseded-positive-composition-canary-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  const summaryBackupFile = path.join(
+    backupDir,
+    `scene-images-summary-before-${topicScopedPositiveCompositionCanary.productionPartId}-${topicScopedPositiveCompositionCanary.packetSha256.slice(0, 16)}.json`,
+  );
+  const imageBackupFile = path.join(
+    backupDir,
+    `scene-${String(topicScopedPositiveCompositionCanary.sceneIndex).padStart(2, "0")}-${topicScopedPositiveCompositionCanary.currentImageSha256.slice(0, 16)}.png`,
+  );
+  if (!fs.existsSync(summaryBackupFile)) fs.copyFileSync(SUMMARY_PATH, summaryBackupFile);
+  if (!fs.existsSync(imageBackupFile)) fs.copyFileSync(targetFile, imageBackupFile);
+  if (imageSha256(imageBackupFile) !== topicScopedPositiveCompositionCanary.currentImageSha256) {
+    console.error("ABORT: positive composition canary original image backup hash mismatch.");
+    process.exit(3);
+  }
+}
 log(`scenes: ${sceneCount}, 이미 저장됨: ${sceneCount - pendingCount}, 생성 대상: ${pendingCount}`);
 if (pendingCount === 0) {
   writeSummary({
@@ -2092,6 +2292,13 @@ if (pendingCount === 0) {
       productionPartId: topicScopedSceneRepairs.productionPartId,
       targetIndexes: topicScopedSceneRepairs.targetIndexes,
       executionApproved: topicScopedSceneRepairs.executionApproved,
+    } : null,
+    positiveCompositionCanary: topicScopedPositiveCompositionCanary ? {
+      packetSha256: topicScopedPositiveCompositionCanary.packetSha256,
+      productionPartId: topicScopedPositiveCompositionCanary.productionPartId,
+      sceneIndex: topicScopedPositiveCompositionCanary.sceneIndex,
+      compositionBlueprintId: topicScopedPositiveCompositionCanary.compositionBlueprintId,
+      executionApproved: topicScopedPositiveCompositionCanary.executionApproved,
     } : null,
     submissionsUsed: 0,
   });
@@ -2117,13 +2324,15 @@ const {
 } =
   await import("./_chatgpt-image-core.mjs");
 
-const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry;
+const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || topicScopedPositiveCompositionCanary?.executionApproved || noRetry;
 const ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const SUBMISSION_HARD_CAP = topicScopedModeOverride?.executionApproved
   ? 1
   : topicScopedSceneRepairs?.executionApproved
     ? topicScopedSceneRepairs.targets.length
+  : topicScopedPositiveCompositionCanary?.executionApproved
+    ? 1
   : sceneCount * (1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE);
 let submissionCount = 0;
 let routingRecoveryCount = 0;
@@ -2474,6 +2683,13 @@ const summary = writeSummary({
     productionPartId: topicScopedSceneRepairs.productionPartId,
     targetIndexes: topicScopedSceneRepairs.targetIndexes,
     executionApproved: topicScopedSceneRepairs.executionApproved,
+  } : null,
+  positiveCompositionCanary: topicScopedPositiveCompositionCanary ? {
+    packetSha256: topicScopedPositiveCompositionCanary.packetSha256,
+    productionPartId: topicScopedPositiveCompositionCanary.productionPartId,
+    sceneIndex: topicScopedPositiveCompositionCanary.sceneIndex,
+    compositionBlueprintId: topicScopedPositiveCompositionCanary.compositionBlueprintId,
+    executionApproved: topicScopedPositiveCompositionCanary.executionApproved,
   } : null,
   submissionsUsed: submissionCount,
   routingRecoveriesUsed: routingRecoveryCount,
