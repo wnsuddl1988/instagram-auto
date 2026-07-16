@@ -19,9 +19,14 @@ import { classifyVeoBody, isCDPOpen } from "./_gemini-veo-core.mjs";
 import { GEMINI_VEO_PROFILE_CHAIN } from "./_gemini-veo-profile-chain.mjs";
 import { GEMINI_FLOW_TARGET } from "./_gemini-flow-no-submit-contract.mjs";
 import {
+  hasRequiredGenerationFacts,
   isApprovalAcknowledged,
-  selectCurrentApprovalCandidate,
 } from "./_flow-motion-approval-selection.mjs";
+import {
+  collectGenerationConfirmationCandidates,
+  findCurrentComposerMakeButton,
+  findRequiredGenerationConfirmation,
+} from "./_flow-motion-confirmation-dom.mjs";
 
 const modes = ["--contract-check", "--generate-live"].filter((flag) => process.argv.includes(flag));
 const forbiddenArgs = ["--new-project", "--change-account", "--launch-browser", "--press-enter", "--save-settings"];
@@ -94,6 +99,7 @@ function validateContracts(packetPath, statePath, jobId, ownerApproval, live) {
   if (job?.providerTarget?.videoModel !== GEMINI_FLOW_TARGET.model) failures.push("model_mismatch");
   if (job?.providerTarget?.aspectRatio !== GEMINI_FLOW_TARGET.aspectRatio) failures.push("aspect_ratio_mismatch");
   if (job?.providerTarget?.outputCount !== 1) failures.push("output_count_mismatch");
+  if (job?.providerTarget?.expectedCreditsPerGeneration !== GEMINI_FLOW_TARGET.expectedCreditsPerGeneration) failures.push("expected_credits_mismatch");
   if (job?.providerTarget?.confirmBeforeGeneration !== "always") failures.push("confirmation_policy_mismatch");
   const referencePath = assertLocalPath(job?.referenceFile ?? "", "reference");
   const expectedVideoPath = assertLocalPath(job?.expectedVideoPath ?? "", "video");
@@ -231,7 +237,10 @@ async function fillPromptAndVerify(page, job, referenceEvidence) {
   if (promptDomSha256 !== job.promptSha256) throw new Error("prompt_dom_hash_mismatch");
   const attachmentCount = await promptBox.evaluate((element) => element.parentElement?.parentElement?.querySelectorAll("img").length ?? 0);
   if (attachmentCount !== 1) throw new Error(`reference_attachment_count_invalid:${attachmentCount}`);
-  return { ...referenceEvidence, promptDomSha256, attachmentCount };
+  return {
+    evidence: { ...referenceEvidence, promptDomSha256, attachmentCount },
+    promptBox,
+  };
 }
 
 async function waitForUploadedReferenceDialog(page, uploadFileName, timeoutMs = 60_000) {
@@ -296,99 +305,43 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   return fillPromptAndVerify(page, job, { ...attached, referenceSource: "uploaded_hash_alias" });
 }
 
-async function findRequiredGenerationConfirmation(page, job) {
-  const expectedPromptText = normalized(job.prompt);
-  const approvalOptions = page.locator('button, [role="button"], div').filter({
-    hasText: /^\s*(?:check\s*)?(?:승인|Approve)\s*$/i,
-  });
-  const candidates = await approvalOptions.evaluateAll((elements, expectedPrompt) => elements.map((element, index) => {
-    const rect = element.getBoundingClientRect();
-    let current = element;
-    let promptMatches = false;
-    let creditPromptMatches = false;
-    let acknowledged = false;
-    let confirmationText = "";
-    for (let depth = 0; current && depth < 14; depth += 1, current = current.parentElement) {
-      const currentText = String(current.textContent ?? "").replace(/\s+/g, " ").trim();
-      const currentHasPrompt = currentText.includes(expectedPrompt);
-      const currentHasCredits = /(?:크레딧\s*20개를 사용하여\s*1개 동영상 생성을 시작할까요\?|start.{0,80}1\s*video.{0,80}20\s*credits)/i.test(currentText);
-      if (currentHasPrompt && currentHasCredits) {
-        promptMatches = true;
-        creditPromptMatches = true;
-        confirmationText = currentText;
-        const nextText = String(current.nextElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
-        acknowledged = /^(?:승인|Approve)$/i.test(nextText);
-        break;
-      }
-      const previousText = String(current.previousElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
-      if (previousText.includes(expectedPrompt)) {
-        promptMatches = true;
-        creditPromptMatches = currentHasCredits;
-        confirmationText = currentText;
-        const nextText = String(current.nextElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
-        acknowledged = /^(?:승인|Approve)$/i.test(nextText);
-        break;
-      }
-    }
-    return {
-      index,
-      inViewport: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth,
-      interactive: element.tagName === "BUTTON" || element.getAttribute("role") === "button",
-      creditPromptMatches,
-      promptMatches,
-      acknowledged,
-      confirmationText,
-    };
-  }), expectedPromptText);
-  if (candidates.length === 0) return null;
-  const promptMatches = candidates.filter((candidate) => candidate.promptMatches);
-  if (promptMatches.length === 0) return null;
-  const currentPending = promptMatches.filter((candidate) =>
-    candidate.inViewport && candidate.creditPromptMatches && !candidate.acknowledged,
-  );
-  const currentAcknowledged = promptMatches.filter((candidate) =>
-    candidate.inViewport && candidate.creditPromptMatches && candidate.acknowledged,
-  );
-  if (currentPending.length === 0 && currentAcknowledged.length > 0) {
-    throw new Error("confirmation_already_acknowledged_no_resubmit");
-  }
-  const selected = selectCurrentApprovalCandidate(candidates);
-  return {
-    approveOption: approvalOptions.nth(selected.index),
-    confirmationText: selected.confirmationText,
-  };
-}
-
-async function waitForRequiredGenerationConfirmation(page, job, timeoutMs = 120_000) {
+async function waitForRequiredGenerationConfirmation(page, job, freshAfterIndex, timeoutMs = 240_000) {
   const deadline = Date.now() + timeoutMs;
+  let lastSnapshot = null;
   while (Date.now() < deadline) {
-    const confirmation = await findRequiredGenerationConfirmation(page, job);
-    if (confirmation) return confirmation;
+    const result = await findRequiredGenerationConfirmation(page, job, { freshAfterIndex });
+    lastSnapshot = result.snapshot;
+    if (result.confirmation) return { confirmation: result.confirmation, snapshot: result.snapshot };
     await page.waitForTimeout(250);
   }
-  return null;
+  return { confirmation: null, snapshot: lastSnapshot };
 }
 
-async function approveRequiredGenerationConfirmation(page, confirmation) {
+async function approveRequiredGenerationConfirmation(page, confirmation, job, onClickDispatched) {
   const confirmationText = confirmation.confirmationText;
-  if (!/(?:크레딧\s*20개|20\s*credits)/i.test(confirmationText)) {
-    throw new Error("generation_credit_cost_unconfirmed");
-  }
-  if (!/(?:1개 동영상|1\s*video)/i.test(confirmationText)) {
-    throw new Error("generation_output_count_unconfirmed");
-  }
+  if (!hasRequiredGenerationFacts(
+    confirmationText,
+    job.providerTarget.expectedCreditsPerGeneration,
+    job.providerTarget.outputCount,
+  )) throw new Error("generation_cost_or_output_facts_unconfirmed");
   if (!confirmation.approveOption) throw new Error("confirmation_approve_option_missing");
   const acknowledgementCountBefore = await approvalAcknowledgementCount(page);
   await confirmation.approveOption.click();
+  const clickEvidence = {
+    confirmationText: confirmationText.slice(0, 240),
+    acknowledgementCountBefore,
+    acknowledgementCountAfter: null,
+    clickDispatched: true,
+    submissionCount: 1,
+  };
+  if (typeof onClickDispatched === "function") onClickDispatched(clickEvidence);
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const acknowledgementCountAfter = await approvalAcknowledgementCount(page);
     if (isApprovalAcknowledged(acknowledgementCountBefore, acknowledgementCountAfter)) {
       return {
-        confirmationText: confirmationText.slice(0, 240),
-        acknowledgementCountBefore,
+        ...clickEvidence,
         acknowledgementCountAfter,
-        submissionCount: 1,
       };
     }
     await page.waitForTimeout(250);
@@ -402,21 +355,24 @@ async function approvalAcknowledgementCount(page) {
   ).length);
 }
 
-async function submitWithRequiredConfirmation(page, job) {
+async function submitWithRequiredConfirmation(page, job, promptBox, onClickDispatched) {
   await ensureAgentPanelOpen(page);
-  const makeButton = await firstVisible(
-    page.locator("button").filter({ hasText: /^\s*arrow_forward\s*(?:만들기|Create)\s*$/i }),
-  );
-  if (!makeButton ||
-      !(await makeButton.isEnabled().catch(() => false)) ||
-      await makeButton.getAttribute("aria-disabled") === "true") {
-    throw new Error("generation_make_button_unavailable");
-  }
+  const makeButton = await findCurrentComposerMakeButton(promptBox);
+  if (!makeButton) throw new Error("generation_make_button_unavailable_in_current_composer");
+  const baseline = await collectGenerationConfirmationCandidates(page, job);
   await makeButton.click();
 
-  const confirmation = await waitForRequiredGenerationConfirmation(page, job);
-  if (!confirmation) throw new Error("required_generation_confirmation_dialog_missing");
-  return approveRequiredGenerationConfirmation(page, confirmation);
+  const result = await waitForRequiredGenerationConfirmation(page, job, baseline.approvalElementCount);
+  if (!result.confirmation) {
+    const snapshot = result.snapshot;
+    const facts = snapshot?.candidates?.filter((candidate) => candidate.creditPromptMatches).length ?? 0;
+    const interactive = snapshot?.candidates?.filter((candidate) => candidate.creditPromptMatches && candidate.interactive).length ?? 0;
+    throw new Error(
+      `required_generation_confirmation_dialog_missing:baseline=${baseline.approvalElementCount},` +
+      `current=${snapshot?.approvalElementCount ?? 0},facts=${facts},interactive=${interactive}`,
+    );
+  }
+  return approveRequiredGenerationConfirmation(page, result.confirmation, job, onClickDispatched);
 }
 
 async function videoEditHrefs(page) {
@@ -541,6 +497,7 @@ if (priorSubmissionCount > 0 && !resumeSubmittedResult) {
 }
 const profileAttempts = [];
 let page = null;
+let pageOpenedByRunner = false;
 let selectedProfile = null;
 let submissionCount = 0;
 let composerEvidence = null;
@@ -548,6 +505,28 @@ let submitEvidence = null;
 let pendingConfirmation = null;
 let initialVideoEditHrefs = [];
 let summary;
+function recordApprovalClickDispatched(evidence) {
+  submissionCount = 1;
+  submitEvidence = evidence;
+  fs.writeFileSync(summaryPath, `${JSON.stringify({
+    schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
+    status: "SUBMITTED_PENDING_RESULT",
+    jobId,
+    generatedAt: new Date().toISOString(),
+    selectedProfile: selectedProfile?.desktopShortcutName ?? null,
+    profileAttempts,
+    submissionCount: 1,
+    expectedCreditsSpent: GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+    referenceSha256: contract.job.referenceSha256,
+    promptSha256: contract.job.promptSha256,
+    outputVideoPath: contract.expectedVideoPath,
+    initialVideoEditHrefs,
+    composerEvidence,
+    submitEvidence: evidence,
+    ownerQaPassed: false,
+    renderReady: false,
+  }, null, 2)}\n`, "utf8");
+}
 try {
   const { chromium } = await import("playwright");
   for (const profile of GEMINI_VEO_PROFILE_CHAIN) {
@@ -567,13 +546,14 @@ try {
       page = existingProjectPage;
     } else if (existingProjectPage) {
       const existingConfirmation = await findRequiredGenerationConfirmation(existingProjectPage, contract.job);
-      if (existingConfirmation) {
+      if (existingConfirmation.confirmation) {
         page = existingProjectPage;
-        pendingConfirmation = existingConfirmation;
+        pendingConfirmation = existingConfirmation.confirmation;
       }
     }
     if (!page) {
       page = await context.newPage();
+      pageOpenedByRunner = true;
       await page.goto(GEMINI_FLOW_TARGET.projectUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
       await page.waitForTimeout(2_500);
     }
@@ -583,13 +563,15 @@ try {
     }
     await closeStaleAgentPanel(page);
     if (!resumeSubmittedResult && !pendingConfirmation) {
-      pendingConfirmation = await findRequiredGenerationConfirmation(page, contract.job);
+      const existingConfirmation = await findRequiredGenerationConfirmation(page, contract.job);
+      pendingConfirmation = existingConfirmation.confirmation;
     }
     const quota = resumeSubmittedResult ? null : await inspectExplicitQuota(page);
     if (quota) {
       profileAttempts.push({ profileId: profile.profileId, state: "quota_exhausted", evidence: quota.snippet ?? quota.text });
-      await page.close();
+      if (pageOpenedByRunner) await page.close();
       page = null;
+      pageOpenedByRunner = false;
       continue;
     }
     selectedProfile = profile;
@@ -614,10 +596,21 @@ try {
       promptDomSha256: contract.job.promptSha256,
       attachmentCount: 1,
     };
-    submitEvidence = await approveRequiredGenerationConfirmation(page, pendingConfirmation);
+    submitEvidence = await approveRequiredGenerationConfirmation(
+      page,
+      pendingConfirmation,
+      contract.job,
+      recordApprovalClickDispatched,
+    );
   } else {
-    composerEvidence = await attachReferenceAndPrompt(page, contract.job, priorSummary);
-    submitEvidence = await submitWithRequiredConfirmation(page, contract.job);
+    const attachment = await attachReferenceAndPrompt(page, contract.job, priorSummary);
+    composerEvidence = attachment.evidence;
+    submitEvidence = await submitWithRequiredConfirmation(
+      page,
+      contract.job,
+      attachment.promptBox,
+      recordApprovalClickDispatched,
+    );
   }
   submissionCount = Number(submitEvidence?.submissionCount ?? submissionCount);
   if (!resumeSubmittedResult) {
@@ -684,7 +677,7 @@ try {
     failure: String(error?.message ?? error).replace(/\s+/g, " ").slice(0, 240),
   };
 } finally {
-  if (page) await page.close().catch(() => {});
+  if (page && pageOpenedByRunner) await page.close().catch(() => {});
 }
 
 fs.writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, "utf8");

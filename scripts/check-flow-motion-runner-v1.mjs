@@ -106,11 +106,44 @@ assert.equal(output.submissionCount, 0);
 assert.equal(output.creditsSpent, 0);
 assert.equal(output.browserImported, false);
 
+const wrongCreditsJob = structuredClone(job);
+wrongCreditsJob.providerTarget.expectedCreditsPerGeneration = 200;
+fs.writeFileSync(packetPath, `${JSON.stringify({
+  schemaVersion: "money_shorts_flow_motion_approval_packet_v1",
+  job: wrongCreditsJob,
+  statePath,
+  status: "generating",
+  noSubmitBoundary,
+}, null, 2)}\n`);
+fs.writeFileSync(statePath, `${JSON.stringify({
+  schemaVersion: "money_shorts_flow_motion_state_v1",
+  topicId: wrongCreditsJob.topicId,
+  productionPartId: wrongCreditsJob.productionPartId,
+  scriptFingerprint: "runner-contract-fingerprint",
+  statePath,
+  generatedAt: new Date().toISOString(),
+  overallStatus: "generating",
+  requiredSceneCount: 1,
+  renderReadyCount: 0,
+  jobs: [wrongCreditsJob],
+  noSubmitBoundary,
+}, null, 2)}\n`);
+const wrongCreditsResult = spawnSync(process.execPath, [runnerPath,
+  "--contract-check",
+  "--packet-path", packetPath,
+  "--state-path", statePath,
+  "--job-id", jobId,
+], { shell: false, encoding: "utf8", timeout: 30_000 });
+assert.equal(wrongCreditsResult.status, 2);
+assert.match(wrongCreditsResult.stderr, /expected_credits_mismatch/);
+
 const source = fs.readFileSync(runnerPath, "utf8");
+const confirmationDomSource = fs.readFileSync(path.join(process.cwd(), "scripts", "_flow-motion-confirmation-dom.mjs"), "utf8");
+const approvalSelectionSource = fs.readFileSync(path.join(process.cwd(), "scripts", "_flow-motion-approval-selection.mjs"), "utf8");
 assert.match(source, /ALLOW_FLOW_MOTION_GENERATION/);
 assert.match(source, /ownerApproval !== job\?\.approval\?\.requiredWording/);
 assert.match(source, /required_generation_confirmation_dialog_missing/);
-assert.match(source, /generation_credit_cost_unconfirmed/);
+assert.match(source, /generation_cost_or_output_facts_unconfirmed/);
 assert.match(source, /quota_exhausted_after_submission_no_fallback/);
 assert.match(source, /initialVideoEditHrefs/);
 assert.match(source, /ffprobe/);
@@ -128,15 +161,25 @@ assert.match(source, /미디어 업로드\|Upload media\|프롬프트에 추가\
 assert.match(source, /closeStaleAgentPanel/);
 assert.match(source, /ensureAgentPanelOpen/);
 assert.match(source, /flow_agent_panel_not_open/);
-assert.match(source, /button, \[role=\"button\"\], div/);
-assert.match(source, /currentHasPrompt && currentHasCredits/);
-assert.match(source, /generation_make_button_unavailable/);
+assert.match(source, /collectGenerationConfirmationCandidates/);
+assert.match(source, /baseline\.approvalElementCount/);
+assert.match(source, /generation_make_button_unavailable_in_current_composer/);
 assert.match(source, /confirmation_approve_option_missing/);
-assert.match(source, /120_000/);
-assert.match(source, /confirmation_already_acknowledged_no_resubmit/);
-assert.match(source, /selectCurrentApprovalCandidate/);
+assert.match(source, /240_000/);
+assert.match(confirmationDomSource, /confirmation_already_acknowledged_no_resubmit/);
+assert.match(confirmationDomSource, /findCurrentComposerMakeButton/);
+assert.match(approvalSelectionSource, /active_approval_card_ambiguous/);
 assert.match(source, /isApprovalAcknowledged/);
 assert.match(source, /confirmation_click_not_acknowledged/);
+assert.match(source, /recordApprovalClickDispatched/);
+assert.match(source, /clickDispatched: true/);
+assert.match(source, /expected_credits_mismatch/);
+assert.match(source, /pageOpenedByRunner/);
+assert.match(source, /page && pageOpenedByRunner/);
+const approvalClickIndex = source.indexOf("await confirmation.approveOption.click()");
+const dispatchedRecordIndex = source.indexOf("onClickDispatched(clickEvidence)", approvalClickIndex);
+const acknowledgementWaitIndex = source.indexOf("const deadline = Date.now() + 30_000", approvalClickIndex);
+assert.ok(approvalClickIndex >= 0 && dispatchedRecordIndex > approvalClickIndex && acknowledgementWaitIndex > dispatchedRecordIndex);
 assert.match(source, /SUBMITTED_PENDING_RESULT/);
 assert.match(source, /SUBMITTED_RESULT_RECOVERY_REQUIRED/);
 assert.match(source, /resumeSubmittedResult/);
@@ -147,4 +190,4 @@ assert.match(source, /currentPageEditHref/);
 assert.match(source, /prior_submission_requires_new_owner_approval/);
 assert.doesNotMatch(source, /ensureChrome|--remote-debugging-port/);
 
-console.log("Flow motion runner: 38/38 PASS");
+console.log("Flow motion runner contract: PASS");

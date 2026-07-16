@@ -299,8 +299,9 @@ check("wizard exposes exact approval entry, generated clip preview and seven-ite
 
 check("live runner requires confirmation and forbids post-submit fallback", () => {
   assert.match(runnerSource, /required_generation_confirmation_dialog_missing/);
-  assert.match(runnerSource, /generation_credit_cost_unconfirmed/);
+  assert.match(runnerSource, /generation_cost_or_output_facts_unconfirmed/);
   assert.match(runnerSource, /quota_exhausted_after_submission_no_fallback/);
+  assert.match(runnerSource, /recordApprovalClickDispatched/);
   assert.match(runnerSource, /submissionCount:\s*1/);
 });
 
