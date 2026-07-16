@@ -110,12 +110,12 @@ check("approved override execution is exact-approval, single-scene and one-submi
   imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording") &&
   imageRunner.includes("targetedRegenerationSceneIndexes.size !== 1") &&
   imageRunner.includes("pendingSceneIndexes.length !== 1") &&
-  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry") &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry") &&
   imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1") &&
-  imageRunner.includes("? 1\n  : sceneCount"));
+  imageRunner.includes("? 1\n  : topicScopedSceneRepairs?.executionApproved"));
 check("full-scene approval can enforce no retry and stop on first failure",
   imageRunner.includes('const noRetry = args.includes("--no-retry")') &&
-  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry") &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry") &&
   imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE > 0") &&
   imageRunner.includes('if (st.status === "BLOCKED_IMAGE_TOOL" || noRetry) break;') &&
   imageRunner.includes("if (noRetry && !audit?.accepted) break;") &&
@@ -133,6 +133,31 @@ check("approved override execution binds the prior audit and preserves the repla
   imageRunner.includes("priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256") &&
   imageRunner.includes("superseded-v1") &&
   imageRunner.includes("fs.copyFileSync(targetFile, backupFile)"));
+check("multi-scene repair packet binds topic scripts QA and the selected character",
+  imageRunner.includes("money_shorts_targeted_scene_image_repair_packet_v1") &&
+  imageRunner.includes("sourceScriptSha256 === scriptSha256") &&
+  imageRunner.includes("packet?.sourceBindings?.visualQaSha256 === qaSha256") &&
+  imageRunner.includes("packet?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256"));
+check("multi-scene repair execution requires exact targets approval and no-retry",
+  imageRunner.includes("--execute-approved-scene-repairs requires one repair packet, --no-retry") &&
+  imageRunner.includes("requestedTargets.some((sceneIndex, index) => sceneIndex !== packetTargetIndexes[index])") &&
+  imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording"));
+check("each targeted repair binds the current image prompt fingerprint and visual mode",
+  imageRunner.includes("previousScene?.promptFingerprint === target.currentPromptFingerprint") &&
+  imageRunner.includes("previousScene?.imageSha256 === target.currentImageSha256") &&
+  imageRunner.includes("target.currentVisualMode === expectedMode?.id"));
+check("targeted repair direction overrides generic manual regeneration examples only on targets",
+  imageRunner.includes("OWNER-APPROVED TARGETED SCENE REPAIR") &&
+  imageRunner.includes("This repair direction overrides any generic manual-regeneration example") &&
+  imageRunner.includes("if (targetedSceneRepair) return basePrompt;"));
+check("approved repairs bind the prior no-submit audit and preserve every replaced original",
+  imageRunner.includes("priorPromptAudit?.topicScopedSceneRepairs?.packetSha256") &&
+  imageRunner.includes("superseded-targeted-repair-v1") &&
+  imageRunner.includes("scene-images-summary-before-") &&
+  imageRunner.includes("imageSha256(backupFile) !== target.currentImageSha256"));
+check("approved repair submission hard cap equals the current part target count",
+  imageRunner.includes("? topicScopedSceneRepairs.targets.length") &&
+  imageRunner.includes("approved targeted repair execution must have only the exact packet targets pending"));
 check("video runner requires selected-reference v8 controller", videoRunner.includes(controllerVersion));
 check("video runner rejects missing modality audit", videoRunner.includes("visualModalityAudit?.version !== VISUAL_MODALITY_VERSION") && videoRunner.includes("visualModalityAudit?.passed !== true"));
 check("video runner requires per-scene mode metadata", videoRunner.includes('typeof scene?.visualModeId === "string"') && videoRunner.includes('typeof scene?.presenceMode === "string"'));

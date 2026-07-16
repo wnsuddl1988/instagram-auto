@@ -46,18 +46,21 @@ const characterIdArg = getArg("--character-id");
 const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
 const modeOverridePacketArg = getArg("--mode-override-packet");
+const sceneRepairPacketArg = getArg("--scene-repair-packet");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
+const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repairs");
 const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
 const OUT_DIR = path.resolve(outDirArg);
 const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
 const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
+const SCENE_REPAIR_PACKET_ABS = sceneRepairPacketArg ? path.resolve(sceneRepairPacketArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
 const CHARACTER_ID = String(characterIdArg);
 const CHARACTER_NAME = String(characterNameArg).trim();
@@ -100,12 +103,32 @@ if (MODE_OVERRIDE_PACKET_ABS && (!MEDIA_ROOT_RE.test(MODE_OVERRIDE_PACKET_ABS) |
   console.error("ABORT: --mode-override-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
+if (SCENE_REPAIR_PACKET_ABS && (!MEDIA_ROOT_RE.test(SCENE_REPAIR_PACKET_ABS) || !SCENE_REPAIR_PACKET_ABS.toLowerCase().endsWith(".json") || SCENE_REPAIR_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --scene-repair-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (MODE_OVERRIDE_PACKET_ABS && SCENE_REPAIR_PACKET_ABS) {
+  console.error("ABORT: mode override and targeted scene repair packets cannot be combined.");
+  process.exit(3);
+}
 if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly && !executeApprovedModeOverride) {
   console.error("ABORT: --mode-override-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
   process.exit(3);
 }
 if (executeApprovedModeOverride && (!MODE_OVERRIDE_PACKET_ABS || promptAuditOnly)) {
   console.error("ABORT: --execute-approved-mode-override requires one mode override packet and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if (SCENE_REPAIR_PACKET_ABS && !promptAuditOnly && !executeApprovedSceneRepairs) {
+  console.error("ABORT: --scene-repair-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedSceneRepairs && (!SCENE_REPAIR_PACKET_ABS || promptAuditOnly || !noRetry)) {
+  console.error("ABORT: --execute-approved-scene-repairs requires one repair packet, --no-retry and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if (executeApprovedModeOverride && executeApprovedSceneRepairs) {
+  console.error("ABORT: only one approved external image execution path may be active.");
   process.exit(3);
 }
 const CHARACTER_REFERENCE_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+web-wizard-create-v1[\\/]+character-cast-v1[\\/]+(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)[\\/]+candidate-2\.png$/i;
@@ -572,6 +595,140 @@ function resolveTopicScopedModeOverride() {
   };
 }
 
+function resolveTopicScopedSceneRepairs() {
+  if (!SCENE_REPAIR_PACKET_ABS) return null;
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(SCENE_REPAIR_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: targeted scene repair packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const packetSha256 = createHash("sha256").update(packetBuffer).digest("hex");
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const partMatch = scriptAbs.match(/[\\/](part-[12])[\\/]/i);
+  const productionPartId = partMatch?.[1]?.toLowerCase() ?? null;
+  const sourceScriptSha256 = productionPartId === "part-1"
+    ? packet?.sourceBindings?.part1ScriptSha256
+    : productionPartId === "part-2"
+      ? packet?.sourceBindings?.part2ScriptSha256
+      : null;
+  const qaPath = path.join(path.dirname(SCENE_REPAIR_PACKET_ABS), "scene-image-visual-qa.v1.json");
+  const qaSha256 = fs.existsSync(qaPath)
+    ? createHash("sha256").update(fs.readFileSync(qaPath)).digest("hex")
+    : null;
+  const allTargets = Array.isArray(packet?.targets) ? packet.targets : [];
+  const targetKeys = allTargets.map((target) => `${target?.partId}:${target?.sceneIndex}`);
+  const uniqueTargetKeys = new Set(targetKeys);
+  const targetShapesValid = allTargets.length === 6 && allTargets.every((target) =>
+    /^(?:part-1|part-2)$/.test(target?.partId ?? "") &&
+    Number.isInteger(target?.sceneIndex) && target.sceneIndex >= 1 && target.sceneIndex <= MAX_SCENES &&
+    typeof target?.sceneId === "string" && target.sceneId.length > 0 &&
+    /^[a-f0-9]{64}$/.test(target?.currentImageSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(target?.currentPromptFingerprint ?? "") &&
+    typeof target?.currentVisualMode === "string" && target.currentVisualMode in VISUAL_MODES &&
+    typeof target?.repairDirection === "string" &&
+    target.repairDirection.trim().length >= 180 && target.repairDirection.trim().length <= 2400);
+  const forbiddenActions = packet?.executionPolicy?.forbiddenActions;
+  const approvalTextTemplate = packet?.approvalTextTemplate;
+  const normalizedPacketTopicId = typeof packet?.topicId === "string" ? packet.topicId.replace(/_/g, "-") : null;
+  const normalizedRootTopicId = typeof rootTopicId === "string" ? rootTopicId.replace(/_/g, "-") : null;
+  const requiredOwnerApprovalWording = typeof approvalTextTemplate === "string"
+    ? approvalTextTemplate.replace("<packet-sha256>", packetSha256)
+    : null;
+  const packetValid =
+    packet?.schemaVersion === "money_shorts_targeted_scene_image_repair_packet_v1" &&
+    packet?.status === "data_only_pending_owner_approval" &&
+    normalizedPacketTopicId === normalizedRootTopicId &&
+    packet?.provider === "ChatGPT+Playwright" &&
+    packet?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    productionPartId != null &&
+    sourceScriptSha256 === scriptSha256 &&
+    packet?.sourceBindings?.visualQaSha256 === qaSha256 &&
+    targetShapesValid && uniqueTargetKeys.size === allTargets.length &&
+    packet?.executionPolicy?.maximumSubmissions === 6 &&
+    packet?.executionPolicy?.submissionsPerTargetScene === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.stopOnFirstFailure === true &&
+    packet?.executionPolicy?.existingImagesMustBePreserved === true &&
+    Array.isArray(forbiddenActions) &&
+    ["TTS", "Flow", "render", "upload"].every((action) => forbiddenActions.includes(action)) &&
+    typeof approvalTextTemplate === "string" &&
+    approvalTextTemplate.includes("<packet-sha256>") &&
+    approvalTextTemplate.startsWith(`APPROVE_TARGETED_SCENE_IMAGE_REPAIRS: ${packet.topicId}`);
+  if (!packetValid) {
+    console.error("ABORT: targeted scene repair packet does not match the locked topic, scripts, QA evidence, character reference or execution policy.");
+    process.exit(3);
+  }
+
+  const partTargets = allTargets.filter((target) => target.partId === productionPartId);
+  const requestedTargets = [...targetedRegenerationSceneIndexes].sort((a, b) => a - b);
+  const packetTargetIndexes = partTargets.map((target) => target.sceneIndex).sort((a, b) => a - b);
+  if (
+    partTargets.length === 0 ||
+    requestedTargets.length !== packetTargetIndexes.length ||
+    requestedTargets.some((sceneIndex, index) => sceneIndex !== packetTargetIndexes[index])
+  ) {
+    console.error(`ABORT: --regenerate-scenes must exactly match the approved ${productionPartId} target set: ${packetTargetIndexes.join(",")}.`);
+    process.exit(3);
+  }
+  if (
+    !reusablePreviousSummary ||
+    previousSummary?.allReady !== true ||
+    previousSummary?.visualModalityAudit?.passed !== true ||
+    previousSummary?.financeSceneDiversityAudit?.passed !== true
+  ) {
+    console.error("ABORT: targeted repairs require the verified complete existing image summary.");
+    process.exit(3);
+  }
+
+  const targets = partTargets.map((target) => {
+    const scene = scenes[target.sceneIndex - 1];
+    const expectedMode = visualModeForScene(scene, target.sceneIndex - 1, sceneCount);
+    const previousScene = previousSummary.scenes.find((candidate) => candidate?.sceneIndex === target.sceneIndex);
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    const currentBindingValid =
+      target.sceneId === scene?.id &&
+      target.currentVisualMode === expectedMode?.id &&
+      previousScene?.status === "SAVED_OK" &&
+      previousScene?.visualModeId === target.currentVisualMode &&
+      previousScene?.promptFingerprint === target.currentPromptFingerprint &&
+      previousScene?.imageSha256 === target.currentImageSha256 &&
+      fs.existsSync(targetFile) &&
+      imageSha256(targetFile) === target.currentImageSha256;
+    if (!currentBindingValid) {
+      console.error(`ABORT: ${productionPartId} scene ${target.sceneIndex} no longer matches the approved existing image/prompt/mode binding.`);
+      process.exit(3);
+    }
+    return {
+      partId: productionPartId,
+      sceneIndex: target.sceneIndex,
+      sceneId: target.sceneId,
+      visualModeId: target.currentVisualMode,
+      currentImageSha256: target.currentImageSha256,
+      currentPromptFingerprint: target.currentPromptFingerprint,
+      repairDirection: target.repairDirection.trim(),
+    };
+  });
+  if (executeApprovedSceneRepairs && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for targeted scene repair execution.");
+    process.exit(3);
+  }
+  return {
+    packetPath: SCENE_REPAIR_PACKET_ABS,
+    packetSha256,
+    productionPartId,
+    qaPath,
+    qaSha256,
+    targets,
+    targetIndexes: packetTargetIndexes,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedSceneRepairs,
+  };
+}
+
 function presenceInstructionForMode(mode) {
   if (mode.presence === "character") {
     return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED IN THIS SCENE. ${CHARACTER_CONTINUITY_INSTRUCTION}`;
@@ -981,6 +1138,10 @@ const reusablePreviousSummary =
   previousSummary?.expectedCount === sceneCount &&
   Array.isArray(previousSummary?.scenes);
 const topicScopedModeOverride = resolveTopicScopedModeOverride();
+const topicScopedSceneRepairs = resolveTopicScopedSceneRepairs();
+const topicScopedSceneRepairByIndex = new Map(
+  (topicScopedSceneRepairs?.targets ?? []).map((target) => [target.sceneIndex, target]),
+);
 const sceneVisualModes = scenes.map((scene, index) => {
   if (topicScopedModeOverride?.sceneIndex === index + 1) {
     return { id: topicScopedModeOverride.visualModeId, ...VISUAL_MODES[topicScopedModeOverride.visualModeId] };
@@ -989,13 +1150,24 @@ const sceneVisualModes = scenes.map((scene, index) => {
 });
 const sceneDiversityPlans = scenes.map((scene, index) => sceneDiversityPlan(scene, index, sceneCount));
 const scenePrompts = scenes.map((scene, index) => {
+  const targetedSceneRepair = topicScopedSceneRepairByIndex.get(index + 1) ?? null;
   const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
     ? topicScopedModeOverride.scenePromptAppend
+    : null;
+  const sceneRepairPromptAppend = targetedSceneRepair
+    ? [
+        `OWNER-APPROVED TARGETED SCENE REPAIR ${topicScopedSceneRepairs.packetSha256}, ${targetedSceneRepair.partId} scene ${targetedSceneRepair.sceneIndex}.`,
+        "Preserve the existing visual mode, presence gate, recurring-character contract and narration meaning, but replace the rejected composition exactly as follows:",
+        targetedSceneRepair.repairDirection,
+        "This repair direction overrides any generic manual-regeneration example for another scene. Do not recreate the rejected image composition.",
+      ].join(" ")
     : null;
   const basePrompt = [
     scenePrompt(scene, index, sceneCount, sceneVisualModes, sceneDiversityPlans),
     scenePromptAppend,
+    sceneRepairPromptAppend,
   ].filter(Boolean).join(" ");
+  if (targetedSceneRepair) return basePrompt;
   if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
   const qualityReset = [
     "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
@@ -1086,6 +1258,42 @@ if (topicScopedModeOverride?.executionApproved) {
     process.exit(3);
   }
 }
+if (topicScopedSceneRepairs?.executionApproved) {
+  let priorPromptAudit = null;
+  try {
+    priorPromptAudit = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "prompt-audit.json"), "utf8"));
+  } catch {
+    // 아래 binding gate가 fail-closed로 처리한다.
+  }
+  const auditedTargetIndexes = priorPromptAudit?.topicScopedSceneRepairs?.targetIndexes;
+  const targetBindingsReady = topicScopedSceneRepairs.targets.every((target) => {
+    const targetRequirement = sceneRequirements[target.sceneIndex - 1];
+    const priorTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === target.sceneIndex);
+    const auditedTarget = priorPromptAudit?.rows?.find((scene) => scene?.sceneIndex === target.sceneIndex);
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    return targetRequirement?.promptFingerprint !== target.currentPromptFingerprint &&
+      auditedTarget?.promptFingerprint === targetRequirement?.promptFingerprint &&
+      priorTarget?.promptFingerprint === target.currentPromptFingerprint &&
+      priorTarget?.imageSha256 === target.currentImageSha256 &&
+      fs.existsSync(targetFile) &&
+      imageSha256(targetFile) === target.currentImageSha256;
+  });
+  const executionBindingsReady =
+    priorPromptAudit?.passed === true &&
+    priorPromptAudit?.externalActionPerformed === false &&
+    priorPromptAudit?.topicScopedSceneRepairs?.packetSha256 === topicScopedSceneRepairs.packetSha256 &&
+    priorPromptAudit?.topicScopedSceneRepairs?.productionPartId === topicScopedSceneRepairs.productionPartId &&
+    Array.isArray(auditedTargetIndexes) &&
+    auditedTargetIndexes.length === topicScopedSceneRepairs.targetIndexes.length &&
+    auditedTargetIndexes.every((sceneIndex, index) => sceneIndex === topicScopedSceneRepairs.targetIndexes[index]) &&
+    priorPromptAudit?.visualModalityAudit?.passed === true &&
+    priorPromptAudit?.financeSceneDiversityAudit?.passed === true &&
+    targetBindingsReady;
+  if (!executionBindingsReady) {
+    console.error("ABORT: approved targeted repairs are not bound to the current prompt audit and existing target images.");
+    process.exit(3);
+  }
+}
 if (promptAuditOnly) {
   const legacyPresenceConflictPatterns = [
     /sculpted faceless characters and objects/i,
@@ -1145,6 +1353,7 @@ if (promptAuditOnly) {
     sceneCount,
     externalActionPerformed: false,
     topicScopedModeOverride,
+    topicScopedSceneRepairs,
     visualModalityAudit: promptVisualModalityAudit,
     financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
     passed:
@@ -1453,6 +1662,35 @@ if (topicScopedModeOverride?.executionApproved) {
     process.exit(3);
   }
 }
+if (topicScopedSceneRepairs?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (
+    pendingSceneIndexes.length !== topicScopedSceneRepairs.targetIndexes.length ||
+    pendingSceneIndexes.some((sceneIndex, index) => sceneIndex !== topicScopedSceneRepairs.targetIndexes[index])
+  ) {
+    console.error("ABORT: approved targeted repair execution must have only the exact packet targets pending.");
+    process.exit(3);
+  }
+  const backupDir = path.join(OUT_DIR, "superseded-targeted-repair-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  const summaryBackupFile = path.join(
+    backupDir,
+    `scene-images-summary-before-${topicScopedSceneRepairs.productionPartId}-${topicScopedSceneRepairs.packetSha256.slice(0, 16)}.json`,
+  );
+  if (!fs.existsSync(summaryBackupFile)) fs.copyFileSync(SUMMARY_PATH, summaryBackupFile);
+  for (const target of topicScopedSceneRepairs.targets) {
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    const backupFile = path.join(
+      backupDir,
+      `scene-${String(target.sceneIndex).padStart(2, "0")}-${target.currentImageSha256.slice(0, 16)}.png`,
+    );
+    if (!fs.existsSync(backupFile)) fs.copyFileSync(targetFile, backupFile);
+    if (imageSha256(backupFile) !== target.currentImageSha256) {
+      console.error(`ABORT: existing target image backup hash mismatch for scene ${target.sceneIndex}.`);
+      process.exit(3);
+    }
+  }
+}
 log(`scenes: ${sceneCount}, 이미 저장됨: ${sceneCount - pendingCount}, 생성 대상: ${pendingCount}`);
 if (pendingCount === 0) {
   writeSummary({
@@ -1466,6 +1704,12 @@ if (pendingCount === 0) {
     financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
     characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
     motionPlanAudit: buildMotionPlanAudit(sceneStates),
+    targetedSceneRepair: topicScopedSceneRepairs ? {
+      packetSha256: topicScopedSceneRepairs.packetSha256,
+      productionPartId: topicScopedSceneRepairs.productionPartId,
+      targetIndexes: topicScopedSceneRepairs.targetIndexes,
+      executionApproved: topicScopedSceneRepairs.executionApproved,
+    } : null,
     submissionsUsed: 0,
   });
   log("모든 장면 이미지가 이미 준비됨 — 생성 없이 종료.");
@@ -1490,11 +1734,13 @@ const {
 } =
   await import("./_chatgpt-image-core.mjs");
 
-const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry;
+const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || noRetry;
 const ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const SUBMISSION_HARD_CAP = topicScopedModeOverride?.executionApproved
   ? 1
+  : topicScopedSceneRepairs?.executionApproved
+    ? topicScopedSceneRepairs.targets.length
   : sceneCount * (1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE);
 let submissionCount = 0;
 let routingRecoveryCount = 0;
@@ -1840,6 +2086,12 @@ const summary = writeSummary({
   financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
   characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
   motionPlanAudit: buildMotionPlanAudit(sceneStates),
+  targetedSceneRepair: topicScopedSceneRepairs ? {
+    packetSha256: topicScopedSceneRepairs.packetSha256,
+    productionPartId: topicScopedSceneRepairs.productionPartId,
+    targetIndexes: topicScopedSceneRepairs.targetIndexes,
+    executionApproved: topicScopedSceneRepairs.executionApproved,
+  } : null,
   submissionsUsed: submissionCount,
   routingRecoveriesUsed: routingRecoveryCount,
   visualDifferenceRecoveriesUsed: visualDifferenceRecoveryCount,
