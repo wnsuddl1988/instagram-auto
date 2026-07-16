@@ -88,6 +88,7 @@ import {
 import {
   archiveCompletedMoneyShortsAutomationJob,
   enqueueMoneyShortsAutomationJob,
+  moveMoneyShortsAutomationJobPriority,
   pauseMoneyShortsAutomationJob,
   readMoneyShortsAutomationQueue,
   removeMoneyShortsAutomationJob,
@@ -140,6 +141,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "automationQueueResume",
   "automationQueueRemove",
   "automationQueueArchiveCompleted",
+  "automationQueueMovePriority",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -1193,6 +1195,51 @@ export async function POST(request: Request) {
         status: "error",
         summary: "선택한 주제를 자동 작업 큐에 저장하지 못했습니다.",
         blockerCode: "AUTOMATION_QUEUE_ENQUEUE_FAILED",
+        noLive: true,
+      });
+    }
+  }
+
+  // Owner가 명시적으로 정한 큐 순서만 한 칸 바꾼다. 실행 영수증·작업 실행은 0회다.
+  if (action === "automationQueueMovePriority") {
+    const input = body as { topicId?: unknown; direction?: unknown };
+    const topicId = typeof input.topicId === "string" ? input.topicId : "";
+    const direction = input.direction === "earlier" || input.direction === "later" ? input.direction : null;
+    if (direction == null) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "큐 우선순위 이동 방향이 올바르지 않아 순서를 바꾸지 않았습니다.",
+        blockerCode: "AUTOMATION_QUEUE_PRIORITY_DIRECTION_INVALID",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+    try {
+      moveMoneyShortsAutomationJobPriority({ topicId, direction });
+      const queue = readMoneyShortsAutomationQueueView();
+      return json({
+        action,
+        status: "success",
+        summary: direction === "earlier" ? "큐 우선순위를 한 칸 앞당겼습니다." : "큐 우선순위를 한 칸 뒤로 보냈습니다.",
+        detail: "큐 순서와 이력만 바꿨습니다. 실행 영수증·작업 실행·재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: { queue, execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "automation_queue_priority_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: reason === "automation_queue_priority_boundary"
+          ? "이미 이 방향의 첫 번째 또는 마지막 큐 작업이라 순서를 바꾸지 않았습니다."
+          : "현재 큐 상태와 달라 우선순위를 바꾸지 않았습니다.",
+        blockerCode: reason === "automation_queue_priority_boundary"
+          ? "AUTOMATION_QUEUE_PRIORITY_BOUNDARY"
+          : reason === "automation_queue_job_not_found"
+            ? "AUTOMATION_QUEUE_JOB_NOT_FOUND"
+            : "AUTOMATION_QUEUE_PRIORITY_FAILED",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0 } },
         noLive: true,
       });
     }

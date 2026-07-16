@@ -150,6 +150,7 @@ export const OPERATOR_ACTIONS = [
   "automationQueueResume", // Owner가 일시정지한 큐 멤버십만 재개
   "automationQueueRemove", // 큐 멤버십만 제거하고 산출물은 보존
   "automationQueueArchiveCompleted", // 현재 완료 계획을 bounded 로컬 보관 이력으로 이동
+  "automationQueueMovePriority", // Owner가 한 칸 앞/뒤로 조정한 큐 순서만 저장
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -919,6 +920,7 @@ export function buildOperatorCommand(
     case "automationQueueResume":
     case "automationQueueRemove":
     case "automationQueueArchiveCompleted":
+    case "automationQueueMovePriority":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

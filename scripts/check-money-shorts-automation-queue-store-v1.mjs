@@ -6,6 +6,7 @@ import {
   MONEY_SHORTS_AUTOMATION_QUEUE_VERSION,
   archiveCompletedMoneyShortsAutomationJob,
   enqueueMoneyShortsAutomationJob,
+  moveMoneyShortsAutomationJobPriority,
   pauseMoneyShortsAutomationJob,
   readMoneyShortsAutomationQueue,
   removeMoneyShortsAutomationJob,
@@ -99,6 +100,23 @@ try {
   });
   check("multiple topics remain in deterministic creation order", queuedBoth.jobs.map((job) => job.topicId).join(",") === `${topicA},${topicB}`);
 
+  const movedEarlier = moveMoneyShortsAutomationJobPriority({
+    topicId: topicB,
+    direction: "earlier",
+    rootDir,
+    now: () => "2026-07-17T03:02:30.000Z",
+    mutationId: "mutation-priority-earlier",
+  });
+  check("Owner can move one queued topic earlier with contiguous local priority", movedEarlier.jobs.map((job) => job.topicId).join(",") === `${topicB},${topicA}` && movedEarlier.jobs.map((job) => job.queueOrder).join(",") === "1,2");
+  check("priority change writes an auditable local-only history event", movedEarlier.history.at(-1)?.kind === "priority_moved_earlier" && movedEarlier.history.at(-1)?.actionCount === 0);
+  let priorityBoundaryRejected = false;
+  try {
+    moveMoneyShortsAutomationJobPriority({ topicId: topicB, direction: "earlier", rootDir, mutationId: "mutation-priority-boundary" });
+  } catch (error) {
+    priorityBoundaryRejected = error instanceof Error && error.message === "automation_queue_priority_boundary";
+  }
+  check("priority cannot move beyond the local queue boundary", priorityBoundaryRejected);
+
   const synced = syncMoneyShortsAutomationJob({
     topicId: topicA,
     plan: planAAfter,
@@ -155,7 +173,7 @@ try {
   check("only a completed plan can move into bounded archive history", archived.jobs.length === 0 && archived.archivedJobs.length === 1 && archived.archivedJobs[0].archiveReason === "completed_plan");
   check("archive retains last attempt and execution-guard summary", archived.archivedJobs[0].lastAdvance == null && archived.archivedJobs[0].executionGuard.status === "not_applicable");
   const lifecycleRestarted = readMoneyShortsAutomationQueue({ rootDir });
-  check("lifecycle history and archived completion survive restart", lifecycleRestarted.jobs.length === 0 && lifecycleRestarted.archivedJobs.length === 1 && lifecycleRestarted.history.length >= 4);
+  check("lifecycle history and archived completion survive restart", lifecycleRestarted.jobs.length === 0 && lifecycleRestarted.archivedJobs.length === 1 && lifecycleRestarted.history.length >= 5);
 
   let mismatchRejected = false;
   try {

@@ -340,6 +340,7 @@ type WizardAutomationQueueJob = {
   jobId: string;
   topicId: string;
   title: string;
+  queueOrder: number;
   createdAt: string;
   updatedAt: string;
   persistedPlan: {
@@ -388,13 +389,14 @@ type WizardAutomationQueueArchivedJob = {
 
 type WizardAutomationQueueHistoryEntry = {
   at: string;
-  kind: "safe_action_finished" | "paused" | "resumed" | "removed" | "archived_completed";
+  kind: "safe_action_finished" | "paused" | "resumed" | "removed" | "archived_completed" | "priority_moved_earlier" | "priority_moved_later";
   jobId: string;
   topicId: string;
   title: string;
   action?: string | null;
   status?: string | null;
   blockerCode?: string | null;
+  queueOrder?: number;
   actionCount?: 0 | 1;
   lastAdvance?: WizardAutomationQueueJob["lastAdvance"];
 };
@@ -403,6 +405,7 @@ type WizardAutomationQueueEvaluation = {
   jobId: string | null;
   topicId: string | null;
   title: string | null;
+  queueOrder: number | null;
   createdAt: string | null;
   eligible: boolean;
   selected: boolean;
@@ -431,6 +434,7 @@ type WizardAutomationQueueRunPreview = {
     jobId: string;
     topicId: string;
     title: string;
+    queueOrder: number;
     createdAt: string;
     action: string;
     stageId: string;
@@ -1215,6 +1219,29 @@ export default function VideoCreationWizard() {
     }
   }, [automationQueueBusyTopicId, automationQueueState, refreshAutomationPlan, refreshAutomationQueue, selectedTopicId]);
 
+  const moveAutomationQueuePriority = useCallback(async (
+    job: WizardAutomationQueueJob,
+    direction: "earlier" | "later",
+  ) => {
+    if (automationQueueState === "running" || automationQueueBusyTopicId != null) return;
+    setAutomationQueueBusyTopicId(job.topicId);
+    setAutomationQueueState("running");
+    setAutomationQueueResult(null);
+    try {
+      const r = await postAction("automationQueueMovePriority", { topicId: job.topicId, direction });
+      const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
+      if (queue) setAutomationQueue(queue);
+      else await refreshAutomationQueue();
+      setAutomationQueueResult(r);
+      setAutomationQueueState(r.status === "success" ? "success" : r.status);
+    } catch {
+      setAutomationQueueState("error");
+      setAutomationQueueResult({ action: "automationQueueMovePriority", status: "error", summary: "큐 우선순위를 변경하지 못했습니다. 제작 작업은 실행되지 않았습니다." });
+    } finally {
+      setAutomationQueueBusyTopicId(null);
+    }
+  }, [automationQueueBusyTopicId, automationQueueState, refreshAutomationQueue]);
+
   const resolveAutomationRecovery = useCallback(async (
     decision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry",
   ) => {
@@ -1612,7 +1639,7 @@ export default function VideoCreationWizard() {
                 {automationQueue.runPreview.selected ? (
                   <div className="mt-2 space-y-2">
                     <p className="text-sm font-bold text-slate-900">
-                      {automationQueue.runPreview.selected.title} · {automationQueue.runPreview.selected.stageLabel}
+                      우선순위 {automationQueue.runPreview.selected.queueOrder} · {automationQueue.runPreview.selected.title} · {automationQueue.runPreview.selected.stageLabel}
                     </p>
                     <p className="text-sm text-indigo-800">
                       정확한 다음 액션: <code className="rounded bg-white px-1.5 py-0.5 font-bold">{automationQueue.runPreview.selected.action}</code>
@@ -1646,7 +1673,7 @@ export default function VideoCreationWizard() {
             ) : null}
             {automationQueue?.jobs.length ? (
               <div className="mt-4 space-y-2.5">
-                {automationQueue.jobs.map((job) => {
+                {automationQueue.jobs.slice().sort((left, right) => left.queueOrder - right.queueOrder).map((job, jobIndex, orderedJobs) => {
                   const isPaused = job.lifecycle?.status === "paused";
                   const isComplete = job.livePlan.status === "complete";
                   const canAdvance = !isPaused && job.livePlan.next?.canAutoAdvance === true && job.executionGuard.status === "available";
@@ -1657,7 +1684,7 @@ export default function VideoCreationWizard() {
                           <p className="font-bold text-slate-900">{job.title}</p>
                           <p className="mt-0.5 text-xs text-slate-500 break-all">{job.topicId}</p>
                           <p className="mt-2 text-sm font-semibold text-slate-700">
-                            {job.livePlan.completedStageCount}/{job.livePlan.totalStageCount} 단계 · {job.livePlan.next?.stageLabel ?? "완료"}
+                            우선순위 {job.queueOrder} · {job.livePlan.completedStageCount}/{job.livePlan.totalStageCount} 단계 · {job.livePlan.next?.stageLabel ?? "완료"}
                           </p>
                           <p className={`mt-0.5 text-sm font-bold ${canAdvance ? "text-emerald-700" : "text-amber-700"}`}>
                             {isPaused
@@ -1685,6 +1712,24 @@ export default function VideoCreationWizard() {
                             {job.executionGuard.receipt?.resultStatus ? ` · ${job.executionGuard.receipt.resultStatus}` : ""}
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              data-testid="wizard-action-automation-queue-priority-earlier"
+                              className="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
+                              disabled={jobIndex === 0 || automationQueueBusyTopicId != null || automationQueueState === "running"}
+                              onClick={() => void moveAutomationQueuePriority(job, "earlier")}
+                            >
+                              앞으로
+                            </button>
+                            <button
+                              type="button"
+                              data-testid="wizard-action-automation-queue-priority-later"
+                              className="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-50 disabled:opacity-40"
+                              disabled={jobIndex === orderedJobs.length - 1 || automationQueueBusyTopicId != null || automationQueueState === "running"}
+                              onClick={() => void moveAutomationQueuePriority(job, "later")}
+                            >
+                              뒤로
+                            </button>
                             <button
                               type="button"
                               data-testid="wizard-action-automation-queue-pause-toggle"

@@ -31,8 +31,9 @@ Updated: 2026-07-17 KST
 - The former per-job queue execution buttons are removed, and a legacy `automationAdvance` request with `queueJob:true` is rejected. There is no timer, background worker, automatic retry, paid action, external generation, upload, or publication authority.
 - Queue lifecycle is now durable and local-only: an Owner can pause/resume one queued topic, remove its queue membership without deleting artifacts, or move only a currently complete plan into a bounded completed archive. Every lifecycle change records one of the last 24 local history events; the completed archive retains the last one-step result and execution-guard summary for up to 20 jobs.
 - Paused jobs are never selected by the deterministic runner. Lifecycle buttons and archive operations report `actionCount: 0`; they do not call the bounded executor, retry a task, or alter any media/publish artifact.
-- Queue status now runs a pure deterministic dry-run planner over the reconstructed live jobs. It orders jobs by `createdAt`, `topicId`, and `jobId`; selects at most one oldest eligible job; and gives every job a visible selection, wait, or skip reason. Owner-gated, complete, in-flight, manual-review, identical-recorded, unavailable-store, and unsafe jobs cannot be selected.
-- The dry-run planner writes no queue state, creates no execution receipt, and executes no action. Its content-addressed preview fingerprint binds job, topic, action, live-plan fingerprint, and execution-guard fingerprint. The UI shows the exact selected topic/stage/action or explains why no job is eligible.
+- Queue status now runs a pure deterministic dry-run planner over the reconstructed live jobs. A positive persisted `queueOrder` set by an explicit Owner move is the first selection key; legacy/unprioritized jobs fall back to `createdAt`, `topicId`, and `jobId`. It selects at most one eligible job and gives every job a visible selection, wait, or skip reason. Owner-gated, complete, in-flight, manual-review, identical-recorded, unavailable-store, and unsafe jobs cannot be selected.
+- The Owner can move a queued topic one place 앞으로/뒤로. The local queue atomically reindexes its contiguous priority, records a bounded history event with `actionCount:0`, and never creates a receipt or invokes the executor. The preview fingerprint binds `queueOrder` as well as job, topic, action, live-plan fingerprint, and execution-guard fingerprint, so an order change invalidates an old selected-run claim.
+- The dry-run planner writes no queue state, creates no execution receipt, and executes no action. The UI shows the explicit priority plus the exact selected topic/stage/action or explains why no job is eligible.
 
 ## Publication State
 
@@ -51,17 +52,18 @@ Updated: 2026-07-17 KST
 - Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
 - The accepted topic also showed `실행 안전장치: 현재 자동 실행 대상 없음`; no execution receipt or lock was created because publication is outside the safe allowlist.
 - The recovery UI was rechecked on a temporary port 3001 dev server: the accepted topic still restored at 11/12, showed no recovery card because no interrupted receipt exists, and remained stopped at publication confirmation. The temporary server was stopped; the pre-existing port 3000 process was preserved.
-- Durable queue store guard: 14/14 PASS. Content-addressed queue planner/claim guard: 24/24 PASS. Combined resumable controller/executor/recovery/queue/planner guard: 61/61 PASS. Existing execution/recovery 24/24, operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass.
+- Queue priority store guard: 23/23 PASS. Content-addressed queue planner/claim guard: 27/27 PASS. Combined resumable controller/executor/recovery/queue/planner guard: 68/68 PASS. Existing operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass.
 - The queue UI was checked on a temporary port 3001 dev server in an empty-queue state. It showed `계획 모드`, `다음 큐 실행 미리보기`, `미리보기 · 자동 실행 없음`, and `영수증 생성 0회`; selected-run buttons were 0 and the removed per-job execution buttons were 0. No real topic was enqueued, no receipt/action was created, and the browser tab and temporary server were stopped.
 - Queue lifecycle store guard: 20/20 PASS. Paused-job planner guard: 25/25 PASS. Combined queue/executor/recovery/lifecycle guard: 65/65 PASS. Operator UI 91/91, one-click UI 389/389, TypeScript, `pnpm build`, and `git diff --check` pass.
 - Lifecycle UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the queue, dry-run status, and new empty archive/history contract rendered without console errors; no queue lifecycle button was clicked, no topic was enqueued, and the temporary server was stopped.
+- Priority UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the empty-queue state remained visible and no priority button was rendered because no job exists. No topic was enqueued, no priority action was clicked, no receipt/action was created, and the temporary server was stopped.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Next, add deterministic Owner priority controls (move a queued topic earlier/later) with a visible reason for the resulting order. It must only update local queue membership ordering and never execute a task.
+4. The next safe implementation candidate is a no-submit queue batch policy preview: show the Owner which future queue items are stopped by paid/external/QA/publication gates without scheduling or executing them.
 5. Timers/background workers and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the queue implementation.
 
 ## Diff Cleanup State
@@ -70,4 +72,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted slice is limited to queue lifecycle storage, paused-job planner behavior, no-execution lifecycle routes/UI, targeted guards, and these two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to queue priority storage/planner/API/UI, targeted guards, and these two state documents. The protected three paths remain excluded.

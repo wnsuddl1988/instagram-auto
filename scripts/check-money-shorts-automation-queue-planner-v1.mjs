@@ -37,6 +37,7 @@ function job(topicId, createdAt, overrides = {}) {
     jobId: `job-${topicId}`,
     topicId,
     title: `제목 ${topicId}`,
+    queueOrder: overrides.queueOrder ?? null,
     createdAt,
     livePlan: buildMoneyShortsResumablePlan({ topicId, ...base, ...(overrides.plan ?? {}) }),
     executionGuard: { status: overrides.guardStatus ?? "available", receipt: null },
@@ -61,6 +62,15 @@ const tied = planMoneyShortsAutomationQueueRun({
   jobs: [job("topic-b", "2026-07-17T03:00:00.000Z"), job("topic-a", "2026-07-17T03:00:00.000Z")],
 });
 check("equal timestamps use topic id as deterministic tie-breaker", tied.selected?.topicId === "topic-a");
+
+const ownerPriority = planMoneyShortsAutomationQueueRun({
+  jobs: [
+    job("created-first", "2026-07-17T03:00:00.000Z", { queueOrder: 2 }),
+    job("owner-first", "2026-07-17T04:00:00.000Z", { queueOrder: 1 }),
+  ],
+});
+check("explicit Owner queue priority overrides created-time ordering", ownerPriority.selected?.topicId === "owner-first" && ownerPriority.selected.queueOrder === 1);
+check("priority is included in the content-addressed preview evidence", ownerPriority.previewFingerprint !== first.previewFingerprint && ownerPriority.evaluations.find((item) => item.topicId === "created-first")?.queueOrder === 2);
 
 const sameAgain = planMoneyShortsAutomationQueueRun({ jobs: [oldest, newest] });
 check("same live evidence reproduces the same preview fingerprint", sameAgain.previewFingerprint === first.previewFingerprint);
