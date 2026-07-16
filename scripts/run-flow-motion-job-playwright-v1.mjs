@@ -160,15 +160,19 @@ async function closeStaleAgentPanel(page) {
     await page.waitForTimeout(250);
     closed = true;
   }
-  const panelCloseButton = await firstVisible(
-    page.locator("button").filter({ hasText: /^\s*close\s*(?:닫기|Close)\s*$/i }),
-  );
-  if (panelCloseButton) {
-    await panelCloseButton.click();
-    await page.waitForTimeout(250);
-    closed = true;
-  }
   return closed;
+}
+
+async function ensureAgentPanelOpen(page) {
+  const toggle = await firstVisible(
+    page.locator("button").filter({ hasText: /^\s*(?:에이전트|Agent)\s*$/i }),
+  );
+  if (!toggle) throw new Error("flow_agent_toggle_missing");
+  if (await toggle.getAttribute("aria-pressed") !== "true") {
+    await toggle.click();
+    await page.waitForTimeout(250);
+  }
+  if (await toggle.getAttribute("aria-pressed") !== "true") throw new Error("flow_agent_panel_not_open");
 }
 
 function buildReferenceUploadAlias(job) {
@@ -294,28 +298,43 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
 
 async function findRequiredGenerationConfirmation(page, job) {
   const expectedPromptText = normalized(job.prompt);
-  const approvalOptions = page.locator("div").filter({ hasText: /^\s*check\s*(?:승인|Approve)\s*$/i });
+  const approvalOptions = page.locator('button, [role="button"], div').filter({
+    hasText: /^\s*(?:check\s*)?(?:승인|Approve)\s*$/i,
+  });
   const candidates = await approvalOptions.evaluateAll((elements, expectedPrompt) => elements.map((element, index) => {
     const rect = element.getBoundingClientRect();
     let current = element;
     let promptMatches = false;
+    let creditPromptMatches = false;
     let acknowledged = false;
     let confirmationText = "";
-    for (let depth = 0; current && depth < 8; depth += 1, current = current.parentElement) {
+    for (let depth = 0; current && depth < 14; depth += 1, current = current.parentElement) {
+      const currentText = String(current.textContent ?? "").replace(/\s+/g, " ").trim();
+      const currentHasPrompt = currentText.includes(expectedPrompt);
+      const currentHasCredits = /(?:크레딧\s*20개를 사용하여\s*1개 동영상 생성을 시작할까요\?|start.{0,80}1\s*video.{0,80}20\s*credits)/i.test(currentText);
+      if (currentHasPrompt && currentHasCredits) {
+        promptMatches = true;
+        creditPromptMatches = true;
+        confirmationText = currentText;
+        const nextText = String(current.nextElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
+        acknowledged = /^(?:승인|Approve)$/i.test(nextText);
+        break;
+      }
       const previousText = String(current.previousElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
       if (previousText.includes(expectedPrompt)) {
         promptMatches = true;
-        confirmationText = String(current.textContent ?? "").replace(/\s+/g, " ").trim();
+        creditPromptMatches = currentHasCredits;
+        confirmationText = currentText;
         const nextText = String(current.nextElementSibling?.textContent ?? "").replace(/\s+/g, " ").trim();
         acknowledged = /^(?:승인|Approve)$/i.test(nextText);
         break;
       }
     }
-    const localText = String(element.parentElement?.parentElement?.textContent ?? "").replace(/\s+/g, " ").trim();
     return {
       index,
       inViewport: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth,
-      creditPromptMatches: /(?:크레딧\s*20개를 사용하여\s*1개 동영상 생성을 시작할까요\?|start.{0,80}1\s*video.{0,80}20\s*credits)/i.test(localText),
+      interactive: element.tagName === "BUTTON" || element.getAttribute("role") === "button",
+      creditPromptMatches,
       promptMatches,
       acknowledged,
       confirmationText,
@@ -384,6 +403,7 @@ async function approvalAcknowledgementCount(page) {
 }
 
 async function submitWithRequiredConfirmation(page, job) {
+  await ensureAgentPanelOpen(page);
   const makeButton = await firstVisible(
     page.locator("button").filter({ hasText: /^\s*arrow_forward\s*(?:만들기|Create)\s*$/i }),
   );

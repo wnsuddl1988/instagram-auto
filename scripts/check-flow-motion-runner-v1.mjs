@@ -126,6 +126,10 @@ assert.match(source, /mediaOption\.click\(\{ force: true, timeout: 5_000 \}\)/);
 assert.match(source, /!addToPrompt \|\| !\(await addToPrompt\.isEnabled/);
 assert.match(source, /미디어 업로드\|Upload media\|프롬프트에 추가\|Add to prompt/);
 assert.match(source, /closeStaleAgentPanel/);
+assert.match(source, /ensureAgentPanelOpen/);
+assert.match(source, /flow_agent_panel_not_open/);
+assert.match(source, /button, \[role=\"button\"\], div/);
+assert.match(source, /currentHasPrompt && currentHasCredits/);
 assert.match(source, /generation_make_button_unavailable/);
 assert.match(source, /confirmation_approve_option_missing/);
 assert.match(source, /120_000/);
@@ -143,4 +147,4 @@ assert.match(source, /currentPageEditHref/);
 assert.match(source, /prior_submission_requires_new_owner_approval/);
 assert.doesNotMatch(source, /ensureChrome|--remote-debugging-port/);
 
-console.log("Flow motion runner: 34/34 PASS");
+console.log("Flow motion runner: 38/38 PASS");

@@ -19,6 +19,17 @@ assert.deepEqual(
   selectCurrentApprovalCandidate([current, { ...current, index: 3 }]),
   { ...current, index: 3 },
 );
+const hiddenInteractive = { ...current, index: 4, inViewport: false, interactive: true };
+assert.deepEqual(
+  selectCurrentApprovalCandidate([hiddenInteractive, { ...current, index: 5, interactive: false }]),
+  { ...current, index: 5, interactive: false },
+);
+const visibleFallback = { ...current, index: 6, interactive: false };
+const visibleInteractive = { ...current, index: 7, interactive: true };
+assert.deepEqual(
+  selectCurrentApprovalCandidate([visibleFallback, visibleInteractive]),
+  visibleInteractive,
+);
 assert.throws(
   () => selectCurrentApprovalCandidate([{ ...current, acknowledged: true }]),
   /active_approval_ambiguous:0/,
@@ -27,4 +38,4 @@ assert.equal(isApprovalAcknowledged(1, 2), true);
 assert.equal(isApprovalAcknowledged(1, 1), false);
 assert.equal(isApprovalAcknowledged(1, 3), false);
 
-console.log("Flow motion approval selection: 7/7 PASS");
+console.log("Flow motion approval selection: 9/9 PASS");
