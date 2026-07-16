@@ -30,9 +30,11 @@ The queue now also has no-execution lifecycle controls. `pause` removes a queued
 
 The queue now also turns the same dry-run evidence into a `no_submit_batch_policy_preview`. It labels every item as a local-safe next/waiting step, paid-generation approval, Owner QA, publication approval, topic selection, paused, complete, manual-recovery, or execution-blocked state. This is a visible planning card only: it has no execution action, makes no schedule or receipt, and every side-effect flag remains false. Batch-policy 32/32, combined orchestration 71/71, UI 91/91 and 389/389, TypeScript, build, and diff checks pass. The empty real queue was rendered locally as `계획 전용 · 실행 없음`; no topic was enqueued/run and the temporary server/tab were closed.
 
+The policy card now has a `no_submit_capacity_summary` that counts only those same categories: local-safe ready/waiting, paid approval, QA, publication approval, other Owner decision, paused, recovery/blocked, and completed. It changes no priority and grants no execution or approval path. Capacity 35/35, combined orchestration 74/74, UI 91/91 and 389/389, TypeScript, build, and diff checks pass. The empty real queue rendered it as `집계 전용 · 실행 없음`; no topic was enqueued/run and the temporary server/tab were closed.
+
 ## Next Implementation Milestone
 
-Add an Owner-visible queue capacity/readiness summary that aggregates the existing batch-policy categories only. It must remain a pure read-only view: no scheduling, executor invocation, receipt, retry, timer/worker, paid/external media creation, upload, or publication.
+Queue planning visibility is sufficient for the present local-only scope. The next meaningful product decision is whether an Owner-approved background scheduler should ever be designed. That would expand the product's authority, so do not implement it until the Owner explicitly approves its exact scope, pause/stop guarantees, paid/external gates, and publication boundary.
 
 ## If the Owner Requests Publication Later
 

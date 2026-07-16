@@ -2,6 +2,7 @@ import {
   MONEY_SHORTS_AUTOMATION_QUEUE_PLANNER_VERSION,
   buildMoneyShortsAutomationQueueBatchPolicy,
   planMoneyShortsAutomationQueueRun,
+  summarizeMoneyShortsAutomationQueueCapacity,
   verifyMoneyShortsAutomationQueuePreviewClaim,
 } from "../lib/money-shorts-automation-queue-planner.mjs";
 import { buildMoneyShortsResumablePlan } from "../lib/money-shorts-resumable-orchestrator.mjs";
@@ -62,6 +63,8 @@ check("dry-run disables timer, worker, retry, paid, external, upload, and public
 const firstBatchPolicy = buildMoneyShortsAutomationQueueBatchPolicy({ runPreview: first });
 check("batch policy is a no-submit view of the exact dry-run", firstBatchPolicy.mode === "no_submit_batch_policy_preview" && firstBatchPolicy.itemCount === 2 && firstBatchPolicy.entries[0].kind === "local_safe_next");
 check("batch policy keeps later local-safe work waiting without an action", firstBatchPolicy.entries[1].kind === "local_safe_waiting" && Object.values(firstBatchPolicy.safety).every((value) => value === false));
+const firstCapacitySummary = summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy: firstBatchPolicy });
+check("capacity summary aggregates safe-ready and waiting work without scheduling", firstCapacitySummary.mode === "no_submit_capacity_summary" && firstCapacitySummary.queueItemCount === 2 && firstCapacitySummary.localSafeReadyCount === 1 && firstCapacitySummary.localSafeWaitingCount === 1 && Object.values(firstCapacitySummary.safety).every((value) => value === false));
 
 const tied = planMoneyShortsAutomationQueueRun({
   jobs: [job("topic-b", "2026-07-17T03:00:00.000Z"), job("topic-a", "2026-07-17T03:00:00.000Z")],
@@ -144,6 +147,8 @@ const paidGatePolicy = buildMoneyShortsAutomationQueueBatchPolicy({
   }),
 });
 check("batch policy labels paid generation as an Owner approval stop", paidGatePolicy.entries[0].kind === "paid_generation_approval" && paidGatePolicy.entries[0].action === "flowMotionGenerate");
+const mixedCapacitySummary = summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy: skippedBatchPolicy });
+check("capacity summary keeps paused, completed, and blocked counts distinct", mixedCapacitySummary.pausedCount === 1 && mixedCapacitySummary.completedCount === 1 && mixedCapacitySummary.recoveryOrBlockedCount === 4);
 
 const none = planMoneyShortsAutomationQueueRun({ jobs: [ownerGate, completed, inFlight] });
 check("no eligible job yields a zero-selection preview", none.selected == null && none.selectionCount === 0);
@@ -164,6 +169,14 @@ try {
   invalidBatchRejected = error instanceof Error && error.message === "automation_queue_batch_policy_preview_invalid";
 }
 check("missing dry-run evidence is rejected for batch policy", invalidBatchRejected);
+
+let invalidCapacityRejected = false;
+try {
+  summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy: null });
+} catch (error) {
+  invalidCapacityRejected = error instanceof Error && error.message === "automation_queue_capacity_summary_invalid";
+}
+check("missing batch-policy evidence is rejected for capacity summary", invalidCapacityRejected);
 
 console.log(`\n${passed + failed} checks - ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);

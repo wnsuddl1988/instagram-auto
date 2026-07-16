@@ -491,6 +491,22 @@ type WizardAutomationQueueBatchPolicy = {
   };
 };
 
+type WizardAutomationQueueCapacitySummary = {
+  schemaVersion: string;
+  mode: "no_submit_capacity_summary";
+  queueItemCount: number;
+  localSafeReadyCount: number;
+  localSafeWaitingCount: number;
+  paidGenerationApprovalCount: number;
+  ownerQualityCheckCount: number;
+  publicationApprovalCount: number;
+  ownerDecisionCount: number;
+  pausedCount: number;
+  recoveryOrBlockedCount: number;
+  completedCount: number;
+  safety: WizardAutomationQueueBatchPolicy["safety"];
+};
+
 type WizardAutomationQueue = {
   schemaVersion: string;
   mode: "owner_click_planning_only";
@@ -500,6 +516,7 @@ type WizardAutomationQueue = {
   history: WizardAutomationQueueHistoryEntry[];
   runPreview: WizardAutomationQueueRunPreview;
   batchPolicy: WizardAutomationQueueBatchPolicy;
+  capacitySummary: WizardAutomationQueueCapacitySummary;
   safety: {
     timerEnabled: false;
     backgroundWorkerEnabled: false;
@@ -1729,6 +1746,22 @@ export default function VideoCreationWizard() {
                 ) : (
                   <p className="mt-2 text-sm text-slate-600">큐에 저장된 항목이 없어 정책 미리보기도 비어 있습니다.</p>
                 )}
+              </div>
+            ) : null}
+            {automationQueue ? (
+              <div data-testid="wizard-automation-queue-capacity-summary" className="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-bold text-teal-950">큐 준비도 요약</p>
+                  <span className="rounded-full border border-teal-200 bg-white px-2.5 py-1 text-xs font-bold text-teal-700">집계 전용 · 실행 없음</span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-teal-900">큐의 다음 상태를 집계한 정보입니다. 순서 변경·실행·승인 요청을 하지 않습니다.</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+                  <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>로컬 안전 가능</b> {automationQueue.capacitySummary.localSafeReadyCount}개 · 대기 {automationQueue.capacitySummary.localSafeWaitingCount}개</p>
+                  <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>유료 생성 승인</b> {automationQueue.capacitySummary.paidGenerationApprovalCount}개 · QA {automationQueue.capacitySummary.ownerQualityCheckCount}개</p>
+                  <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>게시 확인</b> {automationQueue.capacitySummary.publicationApprovalCount}개 · 기타 Owner 결정 {automationQueue.capacitySummary.ownerDecisionCount}개</p>
+                  <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>일시정지</b> {automationQueue.capacitySummary.pausedCount}개 · 복구/안전장치 {automationQueue.capacitySummary.recoveryOrBlockedCount}개</p>
+                  <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>완료</b> {automationQueue.capacitySummary.completedCount}개 · 전체 {automationQueue.capacitySummary.queueItemCount}개</p>
+                </div>
               </div>
             ) : null}
             {automationQueue?.jobs.length ? (

@@ -35,6 +35,7 @@ Updated: 2026-07-17 KST
 - The Owner can move a queued topic one place 앞으로/뒤로. The local queue atomically reindexes its contiguous priority, records a bounded history event with `actionCount:0`, and never creates a receipt or invokes the executor. The preview fingerprint binds `queueOrder` as well as job, topic, action, live-plan fingerprint, and execution-guard fingerprint, so an order change invalidates an old selected-run claim.
 - The dry-run planner writes no queue state, creates no execution receipt, and executes no action. The UI shows the explicit priority plus the exact selected topic/stage/action or explains why no job is eligible.
 - The queue now also derives a pure `no_submit_batch_policy_preview` from that exact dry-run. Every queued item is visibly classified as a local safe next/waiting action, paid-generation approval, Owner QA, publication approval, topic selection, paused, completed, manual recovery, or execution-blocked item. The view has no action button, creates no schedule or receipt, and leaves every side-effect flag false.
+- The policy preview now has a pure `no_submit_capacity_summary`: it aggregates only the existing categories into local-safe ready/waiting, paid approval, QA, publication approval, other Owner decision, paused, recovery/blocked, and completed counts. It does not infer a schedule, change priority, or add an execution/approval action.
 
 ## Publication State
 
@@ -59,13 +60,14 @@ Updated: 2026-07-17 KST
 - Lifecycle UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the queue, dry-run status, and new empty archive/history contract rendered without console errors; no queue lifecycle button was clicked, no topic was enqueued, and the temporary server was stopped.
 - Priority UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the empty-queue state remained visible and no priority button was rendered because no job exists. No topic was enqueued, no priority action was clicked, no receipt/action was created, and the temporary server was stopped.
 - Batch policy guard: 32/32 PASS. Combined queue/executor/recovery/policy guard: 71/71 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The temporary port 3001 UI showed the empty batch-policy card as `계획 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
+- Capacity summary guard: 35/35 PASS. Combined queue/executor/recovery/policy/capacity guard: 74/74 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The empty local queue rendered `큐 준비도 요약` as `집계 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. The next safe implementation candidate is an Owner-visible queue capacity/readiness summary that aggregates the existing no-submit policy categories only; it must not schedule or execute anything.
+4. Queue planning visibility is now sufficient for the current local-only scope. The next meaningful product decision is whether to build an Owner-approved automatic background scheduler; that would materially expand authority and needs separate architecture and Owner approval first.
 5. Timers/background workers and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the queue implementation.
 
 ## Diff Cleanup State
@@ -74,4 +76,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted slice is limited to a read-only queue batch policy planner/API/UI, targeted guards, and these two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to a read-only queue capacity summary planner/API/UI, targeted guards, and these two state documents. The protected three paths remain excluded.

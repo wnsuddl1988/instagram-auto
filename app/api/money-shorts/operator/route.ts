@@ -98,6 +98,7 @@ import {
 import {
   buildMoneyShortsAutomationQueueBatchPolicy,
   planMoneyShortsAutomationQueueRun,
+  summarizeMoneyShortsAutomationQueueCapacity,
   verifyMoneyShortsAutomationQueuePreviewClaim,
 } from "@/lib/money-shorts-automation-queue-planner.mjs";
 
@@ -527,12 +528,14 @@ function readMoneyShortsAutomationQueueView() {
   });
   const runPreview = planMoneyShortsAutomationQueueRun({ jobs });
   const batchPolicy = buildMoneyShortsAutomationQueueBatchPolicy({ runPreview });
+  const capacitySummary = summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy });
   return {
     ...queue,
     mode: "owner_click_planning_only" as const,
     jobs,
     runPreview,
     batchPolicy,
+    capacitySummary,
     safety: {
       timerEnabled: false,
       backgroundWorkerEnabled: false,
