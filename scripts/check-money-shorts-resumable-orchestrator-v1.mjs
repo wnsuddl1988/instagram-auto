@@ -16,6 +16,8 @@ const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-
 const executionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-execution-store.mjs"), "utf8");
 const queueStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-store.mjs"), "utf8");
 const queuePlannerSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-planner.mjs"), "utf8");
+const safeSessionPlannerSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-planner.mjs"), "utf8");
+const safeSessionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-store.mjs"), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -122,6 +124,11 @@ const queueLifecycleStart = routeSource.indexOf("// 큐 lifecycle 변경");
 const queueLifecycleBlock = queueLifecycleStart >= 0 && recoveryRouteStart > queueLifecycleStart
   ? routeSource.slice(queueLifecycleStart, recoveryRouteStart)
   : "";
+const safeSessionRouteStart = routeSource.indexOf('if (action === "safeSessionStatus")');
+const safeSessionRouteEnd = routeSource.indexOf('if (action === "automationQueueStatus")', safeSessionRouteStart);
+const safeSessionRouteBlock = safeSessionRouteStart >= 0 && safeSessionRouteEnd > safeSessionRouteStart
+  ? routeSource.slice(safeSessionRouteStart, safeSessionRouteEnd)
+  : "";
 check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
 check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
 check("automation route reads durable media/Flow/preflight/publish evidence", [
@@ -175,6 +182,11 @@ check("queue capacity summary only aggregates policy categories and keeps every 
 check("queue planner uses explicit Owner priority then stable created-time tie breakers and selects at most one", queuePlannerSource.includes("stableQueueOrder") && queuePlannerSource.includes("queueOrder") && queuePlannerSource.includes("leftCreatedAt.localeCompare(rightCreatedAt)") && queuePlannerSource.includes("topicId") && queuePlannerSource.includes("evaluations.find((item) => item.eligible)"));
 check("queue planner skips every durable guard blocker", ["topic_in_flight", "manual_review_required", "identical_attempt_recorded", "store_unavailable"].every((status) => queuePlannerSource.includes(status)));
 check("queue planner skips an Owner-paused job", queuePlannerSource.includes("paused_by_owner"));
+check("safe-session dry-run remains pure and cannot start work", safeSessionPlannerSource.includes('mode: "deterministic_session_dry_run"') && safeSessionPlannerSource.includes("executionReceiptCreated: false") && !/node:fs|node:child_process|writeFile|runOneSafeAutomationAction|\bfetch\s*\(|setTimeout|setInterval/u.test(safeSessionPlannerSource));
+check("safe-session store is atomic intent-only state with no worker or external action", safeSessionStoreSource.includes('openSync(paths.lockPath, "wx")') && safeSessionStoreSource.includes("writeJsonAtomic(paths.statePath, updated)") && safeSessionStoreSource.includes("completedActionCount: 0") && !/node:child_process|\bfetch\s*\(|setTimeout|setInterval|runOneSafeAutomationAction|actualUpload|realTtsCreate|flowMotionGenerate/u.test(safeSessionStoreSource));
+check("operator exposes Owner safe-session read/start/stop intent actions", ["safeSessionStatus", "safeSessionStart", "safeSessionStop"].every((action) => helperSource.includes(`\"${action}\"`) && routeSource.includes(`\"${action}\"`)));
+check("safe-session route mutates only local intent state and proves zero actions", ["readMoneyShortsSafeSessionStore", "startMoneyShortsSafeSession", "requestMoneyShortsSafeSessionStop"].every((name) => safeSessionRouteBlock.includes(name)) && safeSessionRouteBlock.includes("actionCount: 0") && !/runOneSafeAutomationAction|runOperatorScript|beginMoneyShortsAutomationExecution|flowMotionGenerate|realTtsCreate|realSceneImagesCreate|finalVideoCreate|actualUpload|setTimeout|setInterval/u.test(safeSessionRouteBlock));
+check("wizard renders safe-session status and Owner start/stop controls without a worker", ["wizard-safe-session", "wizard-action-safe-session-start", "wizard-action-safe-session-stop"].every((id) => wizardSource.includes(`data-testid=\"${id}\"`)) && wizardSource.includes('postAction("safeSessionStart"') && wizardSource.includes('postAction("safeSessionStop"') && wizardSource.includes("작업을 시작하지 않고"));
 check("queue status attaches a deterministic run preview without executing", snapshotBlock.includes("planMoneyShortsAutomationQueueRun({ jobs })") && snapshotBlock.includes("runPreview") && queueRouteBlock.includes("실행 영수증·작업 실행은 0회"));
 check("queue status attaches the read-only batch policy without an executor", snapshotBlock.includes("buildMoneyShortsAutomationQueueBatchPolicy({ runPreview })") && snapshotBlock.includes("batchPolicy") && !/runOneSafeAutomationAction|runOperatorScript/u.test(snapshotBlock));
 check("queue status attaches the read-only capacity summary without an executor", snapshotBlock.includes("summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy })") && snapshotBlock.includes("capacitySummary") && !/runOneSafeAutomationAction|runOperatorScript/u.test(snapshotBlock));

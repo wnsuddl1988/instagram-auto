@@ -336,6 +336,29 @@ type WizardAutomationExecutionGuard = {
   } | null;
 };
 
+type WizardSafeSession = {
+  schemaVersion: string;
+  updatedAt: string | null;
+  currentSession: {
+    sessionId: string;
+    mode: "owner_started_bounded_local";
+    status: "ready" | "stop_requested";
+    maxActionCount: 1 | 2 | 3;
+    completedActionCount: 0;
+    actionInFlight: false;
+    startedAt: string;
+    updatedAt: string;
+    stopRequestedAt: string | null;
+  } | null;
+  history: Array<{
+    at: string;
+    kind: "started" | "stop_requested";
+    sessionId: string;
+    maxActionCount: 1 | 2 | 3;
+    actionCount: 0;
+  }>;
+};
+
 type WizardAutomationQueueJob = {
   jobId: string;
   topicId: string;
@@ -767,6 +790,10 @@ export default function VideoCreationWizard() {
   const [automationQueueResult, setAutomationQueueResult] = useState<OperatorResult | null>(null);
   const [automationQueue, setAutomationQueue] = useState<WizardAutomationQueue | null>(null);
   const [automationQueueBusyTopicId, setAutomationQueueBusyTopicId] = useState<string | null>(null);
+  const [safeSessionState, setSafeSessionState] = useState<RunState>("idle");
+  const [safeSessionResult, setSafeSessionResult] = useState<OperatorResult | null>(null);
+  const [safeSession, setSafeSession] = useState<WizardSafeSession | null>(null);
+  const [safeSessionCap, setSafeSessionCap] = useState<1 | 2 | 3>(1);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -1159,6 +1186,56 @@ export default function VideoCreationWizard() {
     }
   }, []);
 
+  const refreshSafeSession = useCallback(async () => {
+    setSafeSessionState("running");
+    try {
+      const r = await postAction("safeSessionStatus");
+      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+      setSafeSession(r.status === "success" && session ? session : null);
+    } catch {
+      setSafeSessionState("error");
+      setSafeSessionResult({ action: "safeSessionStatus", status: "error", summary: "안전 세션 상태를 불러오지 못했습니다." });
+      setSafeSession(null);
+    }
+  }, []);
+
+  const startSafeSession = useCallback(async () => {
+    if (safeSessionState === "running" || safeSession?.currentSession != null) return;
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionStart", { maxActionCount: safeSessionCap });
+      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+      if (session) setSafeSession(session);
+      else await refreshSafeSession();
+    } catch {
+      setSafeSessionState("error");
+      setSafeSessionResult({ action: "safeSessionStart", status: "error", summary: "안전 세션 시작 의도를 기록하지 못했습니다." });
+    }
+  }, [refreshSafeSession, safeSession?.currentSession, safeSessionCap, safeSessionState]);
+
+  const stopSafeSession = useCallback(async () => {
+    const sessionId = safeSession?.currentSession?.sessionId;
+    if (!sessionId || safeSessionState === "running") return;
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionStop", { sessionId });
+      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+      if (session) setSafeSession(session);
+      else await refreshSafeSession();
+    } catch {
+      setSafeSessionState("error");
+      setSafeSessionResult({ action: "safeSessionStop", status: "error", summary: "안전 세션 중지 요청을 기록하지 못했습니다." });
+    }
+  }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionState]);
+
   const enqueueCurrentAutomationTopic = useCallback(async () => {
     if (!selectedTopicId || !automationPlan) return;
     setAutomationQueueState("running");
@@ -1340,12 +1417,14 @@ export default function VideoCreationWizard() {
     const listTimer = window.setTimeout(() => void refreshUploadReadyList(), 0);
     const castTimer = window.setTimeout(() => void refreshCharacterCast(), 0);
     const queueTimer = window.setTimeout(() => void refreshAutomationQueue(), 0);
+    const safeSessionTimer = window.setTimeout(() => void refreshSafeSession(), 0);
     return () => {
       window.clearTimeout(listTimer);
       window.clearTimeout(castTimer);
       window.clearTimeout(queueTimer);
+      window.clearTimeout(safeSessionTimer);
     };
-  }, [localDev, refreshAutomationQueue, refreshCharacterCast, refreshUploadReadyList]);
+  }, [localDev, refreshAutomationQueue, refreshCharacterCast, refreshSafeSession, refreshUploadReadyList]);
 
   // 주제를 고르면 그 주제의 실제 제작 진행 상태를 복원한다(이전 세션 산출물 이어가기).
   useEffect(() => {
@@ -1643,6 +1722,87 @@ export default function VideoCreationWizard() {
       ) : null}
 
       <div className="space-y-4">
+        {localDev === true ? (
+          <section data-testid="wizard-safe-session" className="rounded-2xl border-2 border-violet-200 bg-violet-50/60 px-5 py-5">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-slate-900">Owner 시작 안전 세션</h3>
+                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">의도 기록 전용</span>
+                  <StateBadge state={safeSessionState} />
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                  최대 1~3회 상한과 중지 요청만 로컬에 기록합니다. 아직 큐 실행·영수증·워커·타이머·유료 생성·업로드 기능은 연결되지 않았습니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                data-testid="wizard-action-safe-session-refresh"
+                className="rounded-xl border border-violet-300 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-100 disabled:opacity-40"
+                disabled={safeSessionState === "running"}
+                onClick={() => void refreshSafeSession()}
+              >
+                세션 상태 다시 확인
+              </button>
+            </div>
+            <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-3">
+              {safeSession?.currentSession ? (
+                <div className="space-y-2">
+                  <p className="text-[15px] font-bold text-slate-900">
+                    {safeSession.currentSession.status === "ready" ? "준비됨" : "중지 요청됨"} · 최대 {safeSession.currentSession.maxActionCount}회 · 실행 {safeSession.currentSession.completedActionCount}회
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    세션 ID: <span className="font-mono text-xs">{safeSession.currentSession.sessionId}</span> · 시작 {safeSession.currentSession.startedAt.replace("T", " ")}
+                  </p>
+                  {safeSession.currentSession.stopRequestedAt ? (
+                    <p className="text-sm font-semibold text-amber-700">중지 요청: {safeSession.currentSession.stopRequestedAt.replace("T", " ")}</p>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      data-testid="wizard-action-safe-session-stop"
+                      className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40"
+                      disabled={safeSessionState === "running" || safeSession.currentSession.status === "stop_requested"}
+                      onClick={() => void stopSafeSession()}
+                    >
+                      {safeSession.currentSession.status === "stop_requested" ? "중지 요청 기록됨" : "중지 요청 기록"}
+                    </button>
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-500">후속 실행기 단계 전까지 이 세션은 자동으로 닫히거나 작업을 실행하지 않습니다.</p>
+                </div>
+              ) : (
+                <div className="flex items-end gap-3 flex-wrap">
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                    실행 상한
+                    <select
+                      data-testid="wizard-safe-session-cap"
+                      value={safeSessionCap}
+                      onChange={(event) => setSafeSessionCap(Number(event.target.value) as 1 | 2 | 3)}
+                      className="rounded-lg border border-violet-300 bg-white px-3 py-2 text-sm font-medium text-slate-800"
+                      disabled={safeSessionState === "running"}
+                    >
+                      <option value={1}>1회</option>
+                      <option value={2}>2회</option>
+                      <option value={3}>3회</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    data-testid="wizard-action-safe-session-start"
+                    className="rounded-xl bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800 disabled:opacity-40"
+                    disabled={safeSessionState === "running"}
+                    onClick={() => void startSafeSession()}
+                  >
+                    안전 세션 시작 의도 기록
+                  </button>
+                  <p className="max-w-xl text-xs leading-relaxed text-slate-500">이 버튼은 작업을 시작하지 않고, 다음 별도 실행기 단계가 읽을 로컬 의도만 기록합니다.</p>
+                </div>
+              )}
+            </div>
+            <ResultNote result={safeSessionResult} />
+          </section>
+        ) : null}
+
         {localDev === true ? (
           <section data-testid="wizard-automation-queue" className="rounded-2xl border-2 border-sky-200 bg-sky-50/60 px-5 py-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">

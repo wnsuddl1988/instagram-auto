@@ -101,6 +101,11 @@ import {
   summarizeMoneyShortsAutomationQueueCapacity,
   verifyMoneyShortsAutomationQueuePreviewClaim,
 } from "@/lib/money-shorts-automation-queue-planner.mjs";
+import {
+  readMoneyShortsSafeSessionStore,
+  requestMoneyShortsSafeSessionStop,
+  startMoneyShortsSafeSession,
+} from "@/lib/money-shorts-safe-session-store.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -144,6 +149,9 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "automationQueueRemove",
   "automationQueueArchiveCompleted",
   "automationQueueMovePriority",
+  "safeSessionStatus",
+  "safeSessionStart",
+  "safeSessionStop",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -1145,6 +1153,115 @@ export async function POST(request: Request) {
       raw: { plan, executionGuard, preflights, publishResults },
       noLive: true,
     });
+  }
+
+  // Owner-started bounded session — 의도/상태만 저장한다. 큐 실행·영수증·워커·타이머는 없다.
+  if (action === "safeSessionStatus") {
+    try {
+      const session = readMoneyShortsSafeSessionStore();
+      return json({
+        action,
+        status: "success",
+        summary: session.currentSession == null
+          ? "현재 시작된 안전 세션이 없습니다."
+          : session.currentSession.status === "stop_requested"
+            ? "안전 세션 중지 요청이 기록됐습니다. 실행기는 아직 연결되지 않았습니다."
+            : `안전 세션 준비됨 · 최대 ${session.currentSession.maxActionCount}회 · 아직 실행 0회`,
+        detail: "이 상태 카드는 세션 의도만 읽습니다. 큐 실행·영수증·워커·타이머·유료 생성·업로드는 0회입니다.",
+        raw: { session, execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "safe_session_store_unavailable";
+      return json({
+        action,
+        status: "blocked",
+        summary: "안전 세션 상태 저장소를 읽지 못했습니다.",
+        blockerCode: reason === "safe_session_store_corrupt" || reason === "safe_session_store_schema_invalid"
+          ? "SAFE_SESSION_STORE_INVALID"
+          : "SAFE_SESSION_STORE_UNAVAILABLE",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+  }
+
+  if (action === "safeSessionStart") {
+    const maxActionCount = (body as { maxActionCount?: unknown }).maxActionCount;
+    if (typeof maxActionCount !== "number" || !Number.isInteger(maxActionCount) || maxActionCount < 1 || maxActionCount > 3) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "안전 세션 상한은 1~3회만 선택할 수 있습니다.",
+        blockerCode: "SAFE_SESSION_CAP_INVALID",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+    try {
+      const session = startMoneyShortsSafeSession({ maxActionCount });
+      return json({
+        action,
+        status: "success",
+        summary: `안전 세션 시작 의도를 기록했습니다. 상한 ${maxActionCount}회, 현재 실행 0회입니다.`,
+        detail: "이번 단계는 상태 기록만 합니다. 큐 실행·영수증·워커·타이머·유료 생성·업로드는 시작하지 않습니다.",
+        raw: { session, execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "safe_session_start_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: reason === "safe_session_already_active"
+          ? "이미 안전 세션이 기록되어 있습니다. 현재 단계에서는 새 세션으로 바꾸지 않았습니다."
+          : "안전 세션 시작 의도를 기록하지 못했습니다.",
+        blockerCode: reason === "safe_session_already_active"
+          ? "SAFE_SESSION_ALREADY_ACTIVE"
+          : "SAFE_SESSION_START_FAILED",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+  }
+
+  if (action === "safeSessionStop") {
+    const sessionId = (body as { sessionId?: unknown }).sessionId;
+    if (typeof sessionId !== "string") {
+      return json({
+        action,
+        status: "blocked",
+        summary: "중지할 안전 세션을 찾지 못했습니다.",
+        blockerCode: "SAFE_SESSION_ID_INVALID",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+    try {
+      const session = requestMoneyShortsSafeSessionStop({ sessionId });
+      return json({
+        action,
+        status: "success",
+        summary: "안전 세션 중지 요청을 기록했습니다. 현재 단계에서는 실행할 작업이 없습니다.",
+        detail: "중지 의도만 저장했습니다. 큐 실행·영수증·워커·타이머·유료 생성·업로드는 0회입니다.",
+        raw: { session, execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "safe_session_stop_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: reason === "safe_session_not_found"
+          ? "현재 저장된 안전 세션과 달라 중지 요청을 기록하지 않았습니다."
+          : "안전 세션 중지 요청을 기록하지 못했습니다.",
+        blockerCode: reason === "safe_session_not_found"
+          ? "SAFE_SESSION_NOT_FOUND"
+          : "SAFE_SESSION_STOP_FAILED",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
   }
 
   // 로컬 계획 큐 조회 — 큐 멤버십만 영속 저장되고 단계는 현재 산출물에서 매번 재구성한다.
