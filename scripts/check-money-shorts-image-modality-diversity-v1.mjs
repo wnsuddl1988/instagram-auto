@@ -29,7 +29,7 @@ function check(name, condition) {
 
 const modalityVersion = "money_shorts_visual_modality_sequence_v1";
 const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v2";
-const compositionBlueprintVersion = "money_shorts_positive_composition_blueprint_v1";
+const compositionBlueprintVersion = "money_shorts_positive_composition_blueprint_v2";
 const controllerVersion = "chatgpt_picture_v2_character_reference_v8";
 const modes = [
   "CHARACTER_EVENT",
@@ -88,13 +88,18 @@ check("object mechanism repetitions rotate through localized depth layouts", [
   "two_heights_separate_furniture",
   "doorway_cause_result",
 ].every((token) => imageRunner.includes(token)));
+check("object checklist uses one asymmetric habit anchor instead of a three-way display",
+  imageRunner.includes("one_anchor_two_context_depths") &&
+  imageRunner.includes("lived_in_action_with_context") &&
+  imageRunner.includes("never line them up on one shelf, counter, wall, tray or floor path") &&
+  imageRunner.includes("maxSupportingObjectGroups: visualMode.id === \"OBJECT_CHECKLIST\" ? 2 : 1"));
 check("composition blueprint keeps relevant finance evidence localized",
   imageRunner.includes("Finance evidence allowance:") &&
   imageRunner.includes("one compact localized group only when they directly prove the beat") &&
   imageRunner.includes("keep them localized rather than removing relevant finance evidence"));
 check("semantic repetition guard blocks linear money and apparatus motifs",
   imageRunner.includes("SEMANTIC REPETITION GUARD:") &&
-  imageRunner.includes("line, row, trail, chain, conveyor, connected tube, repeated compartment or display system") &&
+  imageRunner.includes("line, row, trail, chain, conveyor, connected tube, repeated compartment, display system, directional arrow, floating coin or matching-container trio") &&
   imageRunner.includes("SEMANTIC_LINEAR_MOTIF_PATTERNS"));
 check("source motif hazards are translated into separate anchors and open depth",
   imageRunner.includes("function sourceMotifHazards") &&
@@ -205,7 +210,10 @@ check("positive-composition canary is packet-bound and limited to no-submit audi
   imageRunner.includes("only one packet type may be combined with an image runner invocation"));
 check("positive-composition canary binds the locked script prior prompt audit original image and blueprint",
   imageRunner.includes("money_shorts_positive_composition_canary_packet_v1") &&
+  imageRunner.includes("promptAuditFileNameValid") &&
+  imageRunner.includes("positive-composition(?:-v[0-9]+)?-prompt-audit") &&
   imageRunner.includes("packet?.sourceBindings?.promptAuditSha256 === promptAuditSha256") &&
+  imageRunner.includes("APPROVE_POSITIVE_COMPOSITION_V2_CANARY_IMAGE") &&
   imageRunner.includes("previousTarget?.imageSha256 === packet.targetScene.currentImageSha256") &&
   imageRunner.includes("auditedBlueprint?.id === positiveComposition?.id") &&
   imageRunner.includes("positiveComposition.requiredIncomeCues.length === 3"));

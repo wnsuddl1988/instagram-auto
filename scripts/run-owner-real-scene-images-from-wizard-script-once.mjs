@@ -185,7 +185,7 @@ const outputVisualEngineVersion = EVIDENCE_ENGINE_VERSION;
 const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
 const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
 const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v2";
-const COMPOSITION_BLUEPRINT_VERSION = "money_shorts_positive_composition_blueprint_v1";
+const COMPOSITION_BLUEPRINT_VERSION = "money_shorts_positive_composition_blueprint_v2";
 
 function writeSummary(partial) {
   const summary = {
@@ -487,7 +487,7 @@ const VISUAL_MODES = {
   },
   OBJECT_CHECKLIST: {
     presence: "none",
-    instruction: "Show three distinct full-size everyday evidence stations or tactile physical markers arranged as a usable decision checklist in a bright practical place. No person, no screen UI, no readable text, no industrial machine bank and no generic traffic-light icon row.",
+    instruction: "Show one main full-size everyday decision object in a bright practical place, with at most two quiet contextual cues naturally separated in foreground, side depth and far room depth. It must read as a lived-in habit moment, not a three-way allocation display, checklist board or exhibit. No person, no screen UI, no readable text, no industrial machine bank and no generic traffic-light icon row.",
   },
   FUTURE_CHARACTER: {
     presence: "character",
@@ -773,8 +773,16 @@ function resolvePositiveCompositionCanary() {
   const targetIndex = packet?.targetScene?.index;
   const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
   const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
-  const promptAuditPath = productionPartId
-    ? path.join(path.dirname(POSITIVE_COMPOSITION_CANARY_PACKET_ABS), `positive-composition-prompt-audit.${productionPartId}.v1.json`)
+  const defaultPromptAuditFileName = productionPartId
+    ? `positive-composition-prompt-audit.${productionPartId}.v1.json`
+    : null;
+  const promptAuditFileName = typeof packet?.sourceBindings?.promptAuditFileName === "string"
+    ? packet.sourceBindings.promptAuditFileName
+    : defaultPromptAuditFileName;
+  const promptAuditFileNameValid = typeof promptAuditFileName === "string" &&
+    /^positive-composition(?:-v[0-9]+)?-prompt-audit\.part-[12]\.v1\.json$/i.test(promptAuditFileName);
+  const promptAuditPath = productionPartId && promptAuditFileNameValid
+    ? path.join(path.dirname(POSITIVE_COMPOSITION_CANARY_PACKET_ABS), promptAuditFileName)
     : null;
   let promptAudit;
   let promptAuditSha256 = null;
@@ -800,6 +808,9 @@ function resolvePositiveCompositionCanary() {
   const forbiddenActions = packet?.executionPolicy?.forbiddenActions;
   const positiveComposition = packet?.positiveComposition;
   const auditedBlueprint = auditedTarget?.sceneDiversityPlan?.compositionBlueprint;
+  const acceptedApprovalPrefix =
+    approvalTextTemplate?.startsWith(`APPROVE_POSITIVE_COMPOSITION_CANARY_IMAGE: ${packet.topicId}`) === true ||
+    approvalTextTemplate?.startsWith(`APPROVE_POSITIVE_COMPOSITION_V2_CANARY_IMAGE: ${packet.topicId}`) === true;
   const packetValid =
     packet?.schemaVersion === "money_shorts_positive_composition_canary_packet_v1" &&
     packet?.status === "data_only_pending_owner_approval" &&
@@ -809,6 +820,7 @@ function resolvePositiveCompositionCanary() {
     productionPartId != null &&
     packet?.sourceBindings?.scriptSha256 === scriptSha256 &&
     packet?.sourceBindings?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    promptAuditFileNameValid &&
     packet?.sourceBindings?.promptAuditSha256 === promptAuditSha256 &&
     promptAudit?.passed === true &&
     promptAudit?.externalActionPerformed === false &&
@@ -842,7 +854,7 @@ function resolvePositiveCompositionCanary() {
     Array.isArray(forbiddenActions) && ["TTS", "Flow", "render", "upload"].every((action) => forbiddenActions.includes(action)) &&
     typeof approvalTextTemplate === "string" &&
     approvalTextTemplate.includes("<packet-sha256>") &&
-    approvalTextTemplate.startsWith(`APPROVE_POSITIVE_COMPOSITION_CANARY_IMAGE: ${packet.topicId}`) &&
+    acceptedApprovalPrefix &&
     reusablePreviousSummary &&
     previousSummary?.allReady === true &&
     previousSummary?.visualModalityAudit?.passed === true &&
@@ -866,6 +878,7 @@ function resolvePositiveCompositionCanary() {
     packetPath: POSITIVE_COMPOSITION_CANARY_PACKET_ABS,
     packetSha256,
     promptAuditPath,
+    promptAuditFileName,
     promptAuditSha256,
     productionPartId,
     sceneIndex: targetIndex,
@@ -947,7 +960,7 @@ const MODE_SETTING_OVERRIDES = {
   ARCHITECTURAL_CROSS_SECTION: "show the topic-specific domestic or workplace setting as a bright full-scale room-to-room view connecting cause, action and result through ordinary objects; use natural materials, no technical cutaway, machine room, tabletop or miniature",
   SPLIT_EVIDENCE: "show two life-size connected evidence areas inside the topic-specific everyday setting with a clearly changed boundary between before and after; no portrait, machine room or vault",
   HANDS_ACTION: "a full-size standing action counter or practical work surface in a distinct location, framed tightly enough that no head enters the image",
-  OBJECT_CHECKLIST: "three full-size topic-specific evidence stations arranged across a bright practical wall, counter or floor path using warm tactile materials; no person, machine bank or traffic-light icon row",
+  OBJECT_CHECKLIST: "one principal full-size topic-specific decision object with up to two quiet contextual cues in distinct foreground, side-depth and far-depth home zones; never line them up on one shelf, counter, wall, tray or floor path, and never turn them into a three-way allocation display",
   SYMBOLIC_CHARACTER: "a bright lived-in home, cafe, store or work space where the temptation, ignored condition and cash-safety boundary are naturally visible around the character",
   FUTURE_CHARACTER: "an open bright everyday room connected to a balcony, window, doorway or work area that gives protected household cash and the next decision clear directional depth",
   OBJECT_RESOLUTION: "a bright open full-scale everyday room where the protected topic objects lead toward a clear next step; no desk still life, vault or industrial architecture",
@@ -1251,18 +1264,18 @@ const COMPOSITION_BLUEPRINTS_BY_MODE = {
   ],
   OBJECT_CHECKLIST: [
     {
-      id: "three_cues_different_heights",
-      layoutFamily: "triangular_three_cues",
-      primaryAnchor: "use one ordinary shelf or kitchen zone containing exactly three independent topic cues at different heights and depths",
-      supportPlacement: "group each cue locally and arrange the three groups as an asymmetric triangle",
-      openSpace: "leave visible empty shelf or wall space between all three groups",
+      id: "one_anchor_two_context_depths",
+      layoutFamily: "asymmetric_anchor_context_depth",
+      primaryAnchor: "place one principal everyday decision object in the near foreground as the only finance anchor",
+      supportPlacement: "place at most one small contextual cue at a side depth and one ordinary room-use cue far behind it; use different object types and never make matching containers",
+      openSpace: "leave the middle of the frame open and walkable; do not align the cues on a shelf, counter, wall, tray or display tier",
     },
     {
-      id: "three_use_sites_room_depth",
-      layoutFamily: "three_separate_use_sites",
-      primaryAnchor: "use exactly three ordinary use sites across one bright room: one near, one side-middle and one far",
-      supportPlacement: "give each site one localized evidence object and no shared apparatus",
-      openSpace: "preserve walkable room space between the sites",
+      id: "lived_in_action_with_context",
+      layoutFamily: "single_habit_action_room_context",
+      primaryAnchor: "show one ordinary household habit object in active use at one edge of a bright lived-in room",
+      supportPlacement: "use no more than two unlike supporting details in separate room depths, each functioning as natural context rather than a labeled checklist item",
+      openSpace: "preserve a clear visual route through the room and avoid any three-item lineup, staged display or repeated storage vessels",
     },
   ],
   FUTURE_CHARACTER: [
@@ -1340,9 +1353,9 @@ function compositionBlueprintForScene(scene, sceneIndex, totalScenes, visualMode
     supportPlacement: selected.supportPlacement,
     openSpace: selected.openSpace,
     actionRule: "show one localized action and one localized consequence; each appears once",
-    financeEvidencePolicy: "cash, banknotes, charts, statements or documents may appear as one compact localized group only when they directly prove the beat",
-    connectionPolicy: "keep every object group physically separate and leave the space between groups clear; communicate cause through action, gaze and room depth rather than object trails or apparatus",
-    maxSupportingObjectGroups: visualMode.id === "OBJECT_CHECKLIST" ? 3 : 1,
+    financeEvidencePolicy: "cash, banknotes, charts, statements or documents may appear as one compact localized group only when they directly prove the beat; never use money or coins as repeated matching cue markers",
+    connectionPolicy: "separate object groups with clear open space; show cause through ordinary action and room depth, never arrows, floating coins, trails, apparatus or repeated display vessels",
+    maxSupportingObjectGroups: visualMode.id === "OBJECT_CHECKLIST" ? 2 : 1,
     sourceMotifHazards: sourceHazards,
     sourceMotifNeutralizationRequired: sourceHazards.length > 0,
     semanticSignature: `${visualMode.id}:${selected.layoutFamily}`,
@@ -1379,7 +1392,7 @@ function financeSceneDiversityInstruction(plan, previousPlan, nextPlan, compact 
       `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
       `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
       `Connection policy: ${blueprint.connectionPolicy}.`,
-      "SEMANTIC REPETITION GUARD: keep money, coins, envelopes, cards, charts and containers inside localized anchor groups; reject any line, row, trail, chain, conveyor, connected tube, repeated compartment or display system.",
+      "SEMANTIC REPETITION GUARD: keep money, coins, envelopes, cards, charts and containers inside localized anchor groups; reject any line, row, trail, chain, conveyor, connected tube, repeated compartment, display system, directional arrow, floating coin or matching-container trio.",
       sourceMotifTranslation,
       "Cash, banknotes, charts, statements and documents are allowed when relevant; keep them localized rather than removing relevant finance evidence.",
       "Do not repeat the immediately previous scene's exact combination; follow the current blueprint and reserve the adjacent blueprints.",
@@ -1392,7 +1405,7 @@ function financeSceneDiversityInstruction(plan, previousPlan, nextPlan, compact 
     `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
     `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
     `Connection policy: ${blueprint.connectionPolicy}.`,
-    "SEMANTIC REPETITION GUARD: money, coins, envelopes, cards, charts and containers must stay inside their localized anchor group. Reject and rebuild before output if they form a line, row, trail, chain, conveyor, connected tube, repeated compartment or display system.",
+    "SEMANTIC REPETITION GUARD: money, coins, envelopes, cards, charts and containers must stay inside their localized anchor group. Reject and rebuild before output if they form a line, row, trail, chain, conveyor, connected tube, repeated compartment, display system, directional arrow, floating coin or matching-container trio.",
     sourceMotifTranslation,
     "Cash, banknotes, charts, statements and documents are allowed whenever they directly prove this finance beat; keep them localized rather than removing relevant finance evidence.",
     "Do not repeat the immediately previous scene's exact combination of room silhouette, desk position, loose-cash arrangement, paper layout, chart placement and camera angle. Change at least three of location zone, dominant finance prop, camera, character presence/action and household consequence.",
