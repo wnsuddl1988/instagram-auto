@@ -49,8 +49,9 @@ const modeOverridePacketArg = getArg("--mode-override-packet");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
+const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -1489,8 +1490,9 @@ const {
 } =
   await import("./_chatgpt-image-core.mjs");
 
-const ROUTING_RECOVERY_LIMIT_PER_SCENE = topicScopedModeOverride?.executionApproved ? 0 : 1;
-const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = topicScopedModeOverride?.executionApproved ? 0 : 1;
+const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry;
+const ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
+const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const SUBMISSION_HARD_CAP = topicScopedModeOverride?.executionApproved
   ? 1
   : sceneCount * (1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE);
@@ -1746,7 +1748,7 @@ try {
     const prompt = scenePrompts[i];
     try {
       let r = await generateOneScene(ctx, i, prompt, st.file);
-      if (String(r.error ?? "").startsWith("IMAGE_TOOL_TEXT_RESPONSE:")) {
+      if (String(r.error ?? "").startsWith("IMAGE_TOOL_TEXT_RESPONSE:") && ROUTING_RECOVERY_LIMIT_PER_SCENE > 0) {
         routingRecoveryCount += 1;
         warn(`scene-${i + 1}: 신규 이미지 요청이 편집으로 오인됨 — 새 대화에서 1회만 재전송`);
         r = await generateOneScene(ctx, i, prompt, st.file, "new-chat-routing-recovery");
@@ -1780,12 +1782,13 @@ try {
       if (r.ok) {
         if (!audit?.accepted) blockerCode = "NEAR_DUPLICATE_SCENE_IMAGE";
         log(`scene-${i + 1} 저장: ${st.status} ${st.width}x${st.height} (${r.method}, ${(r.latencyMs / 1000).toFixed(1)}s, nearest=${st.nearestVisualDistance ?? "n/a"})`);
+        if (noRetry && !audit?.accepted) break;
       } else {
         st.status = String(r.error ?? "").startsWith("IMAGE_TOOL_") ? "BLOCKED_IMAGE_TOOL" : "TIMEOUT_BLOCKED";
         st.method = String(r.error ?? r.method ?? "unknown").slice(0, 240);
         if (st.status === "BLOCKED_IMAGE_TOOL") blockerCode = "BLOCKED_IMAGE_TOOL";
         warn(`scene-${i + 1} 실패: ${r.error ?? r.method}`);
-        if (st.status === "BLOCKED_IMAGE_TOOL") break;
+        if (st.status === "BLOCKED_IMAGE_TOOL" || noRetry) break;
       }
     } catch (e) {
       const msg = String(e?.message ?? e);
@@ -1811,6 +1814,7 @@ try {
       st.status = "ERROR";
       st.method = msg.slice(0, 120);
       warn(`scene-${i + 1} 오류: ${msg.slice(0, 160)}`);
+      if (noRetry) break;
     }
   }
 } catch (e) {

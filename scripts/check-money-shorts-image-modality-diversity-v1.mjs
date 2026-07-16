@@ -110,8 +110,16 @@ check("approved override execution is exact-approval, single-scene and one-submi
   imageRunner.includes("ownerApprovalArg !== requiredOwnerApprovalWording") &&
   imageRunner.includes("targetedRegenerationSceneIndexes.size !== 1") &&
   imageRunner.includes("pendingSceneIndexes.length !== 1") &&
-  imageRunner.includes("topicScopedModeOverride?.executionApproved ? 0 : 1") &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry") &&
+  imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1") &&
   imageRunner.includes("? 1\n  : sceneCount"));
+check("full-scene approval can enforce no retry and stop on first failure",
+  imageRunner.includes('const noRetry = args.includes("--no-retry")') &&
+  imageRunner.includes("const retryDisabled = topicScopedModeOverride?.executionApproved || noRetry") &&
+  imageRunner.includes("ROUTING_RECOVERY_LIMIT_PER_SCENE > 0") &&
+  imageRunner.includes('if (st.status === "BLOCKED_IMAGE_TOOL" || noRetry) break;') &&
+  imageRunner.includes("if (noRetry && !audit?.accepted) break;") &&
+  imageRunner.includes("if (noRetry) break;"));
 check("override audit binds the exact regeneration-scene prompt fingerprint",
   imageRunner.includes("a mode override audit or execution requires the single approved regeneration scene") &&
   imageRunner.includes("targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint") &&
