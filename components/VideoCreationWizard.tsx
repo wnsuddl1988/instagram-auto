@@ -361,11 +361,64 @@ type WizardAutomationQueueJob = {
   } | null;
 };
 
+type WizardAutomationQueueEvaluation = {
+  jobId: string | null;
+  topicId: string | null;
+  title: string | null;
+  createdAt: string | null;
+  eligible: boolean;
+  selected: boolean;
+  eligibilityCode: string;
+  eligibilityReason: string;
+  decisionReason: string;
+  action: string | null;
+  stageId: string | null;
+  stageLabel: string | null;
+  gate: string | null;
+  completedStageCount: number | null;
+  totalStageCount: number | null;
+  executionGuardStatus: string | null;
+};
+
+type WizardAutomationQueueRunPreview = {
+  schemaVersion: string;
+  mode: "deterministic_dry_run";
+  evaluatedJobCount: number;
+  eligibleJobCount: number;
+  selectionCount: 0 | 1;
+  selected: {
+    jobId: string;
+    topicId: string;
+    title: string;
+    createdAt: string;
+    action: string;
+    stageId: string;
+    stageLabel: string;
+    gate: string;
+    completedStageCount: number;
+    totalStageCount: number;
+    reason: string;
+  } | null;
+  evaluations: WizardAutomationQueueEvaluation[];
+  safety: {
+    actionExecuted: false;
+    executionReceiptCreated: false;
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    automaticRetryEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    uploadEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 type WizardAutomationQueue = {
   schemaVersion: string;
   mode: "owner_click_planning_only";
   updatedAt: string | null;
   jobs: WizardAutomationQueueJob[];
+  runPreview: WizardAutomationQueueRunPreview;
   safety: {
     timerEnabled: false;
     backgroundWorkerEnabled: false;
@@ -1474,10 +1527,39 @@ export default function VideoCreationWizard() {
                 </button>
               </div>
             </div>
+            {automationQueue ? (
+              <div data-testid="wizard-automation-queue-dry-run" className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-bold text-indigo-950">다음 큐 실행 미리보기</p>
+                  <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-700">
+                    읽기 전용 · 실행 0회
+                  </span>
+                </div>
+                {automationQueue.runPreview.selected ? (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm font-bold text-slate-900">
+                      {automationQueue.runPreview.selected.title} · {automationQueue.runPreview.selected.stageLabel}
+                    </p>
+                    <p className="text-sm text-indigo-800">
+                      정확한 다음 액션: <code className="rounded bg-white px-1.5 py-0.5 font-bold">{automationQueue.runPreview.selected.action}</code>
+                    </p>
+                    <p className="text-sm leading-relaxed text-slate-600">{automationQueue.runPreview.selected.reason}</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    현재 큐에는 실행 가능한 로컬 안전 작업이 없습니다. 아래 주제별 건너뜀 사유를 확인해 주세요.
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-slate-500">
+                  {automationQueue.runPreview.evaluatedJobCount}개 평가 · {automationQueue.runPreview.eligibleJobCount}개 실행 가능 · 영수증 생성 0회
+                </p>
+              </div>
+            ) : null}
             {automationQueue?.jobs.length ? (
               <div className="mt-4 space-y-2.5">
                 {automationQueue.jobs.map((job) => {
                   const canAdvance = job.livePlan.next?.canAutoAdvance === true && job.executionGuard.status === "available";
+                  const runEvaluation = automationQueue.runPreview.evaluations.find((item) => item.jobId === job.jobId);
                   return (
                     <article key={job.jobId} data-testid="wizard-automation-queue-job" className="rounded-xl border border-sky-200 bg-white px-4 py-3">
                       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -1492,6 +1574,15 @@ export default function VideoCreationWizard() {
                               ? "Owner 클릭 시 안전 작업 1개 실행 가능"
                               : AUTOMATION_GATE_LABEL[job.livePlan.next?.gate ?? ""] ?? "현재 단계 확인 필요"}
                           </p>
+                          {runEvaluation ? (
+                            <p data-testid="wizard-automation-queue-job-decision" className={`mt-1 text-xs font-semibold ${runEvaluation.selected ? "text-indigo-700" : "text-slate-500"}`}>
+                              {runEvaluation.selected
+                                ? `큐 미리보기 선택 · ${runEvaluation.action}`
+                                : runEvaluation.eligible
+                                  ? `후순위 대기 · ${runEvaluation.decisionReason}`
+                                  : `건너뜀 · ${runEvaluation.decisionReason}`}
+                            </p>
+                          ) : null}
                           {job.lastAdvance ? (
                             <p className="mt-1 text-xs text-slate-500">
                               마지막 큐 실행: {job.lastAdvance.executedAction ?? "실행 없음"} · {job.lastAdvance.actionCount}개 · 자동 재시도 0회

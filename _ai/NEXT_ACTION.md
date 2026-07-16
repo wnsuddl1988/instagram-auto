@@ -22,11 +22,13 @@ The stale validation harnesses identified in the operational audit are now align
 
 The accepted topic was rechecked in the local UI at 11/12 stages. The one-step button stayed disabled at the publication gate, the durable guard showed no auto-executable action, and no recovery card appeared because there is no interrupted receipt. A direct `automationAdvance` request returned zero executed actions and no live side effects.
 
-The new queue persists selected topic membership and the last stage/gate under `C:\tmp`, then reconstructs live plans from current artifacts after restart. It has no timer or worker. A queue button invokes the same bounded executor for at most one safe local/no-submit action and then stops. Queue store 14/14, combined orchestration 51/51, execution/recovery 24/24, UI 91/91 and 389/389, TypeScript, and build checks pass. Browser verification used an empty queue and did not enqueue or execute a real topic.
+The new queue persists selected topic membership and the last stage/gate under `C:\tmp`, then reconstructs live plans from current artifacts after restart. It has no timer or worker. A queue button invokes the same bounded executor for at most one safe local/no-submit action and then stops.
+
+Queue status now also includes a deterministic dry-run planner. It sorts by `createdAt`, then `topicId`, then `jobId`; selects at most one oldest eligible job; and records a visible reason for every selection, later eligible wait, Owner gate, completed job, in-flight receipt, manual review, identical recorded attempt, or unavailable store. It executes no action and creates no receipt. Planner 17/17, combined orchestration 56/56, execution/recovery 24/24, UI 91/91 and 389/389, TypeScript, and build checks pass. Browser verification showed the empty-queue preview as read-only with zero actions and zero receipts, and did not enqueue or execute a real topic.
 
 ## Next Implementation Milestone
 
-Add a deterministic queue-run planner in dry-run mode. It should evaluate all queued live plans, choose at most one oldest eligible job, skip Owner-gated, in-flight, manual-review, identical-recorded, completed, or store-unavailable jobs, and show the exact reason/action it would select. It must execute zero actions and create no execution receipt. Do not add a timer, background worker, automatic retry, paid action, external browser action, upload, or publication in this slice.
+Bind the deterministic preview to one new explicit Owner-click queue action. The server must receive the preview selection evidence, recompute the queue and live plan immediately before dispatch, fail closed on any job/action/fingerprint drift, then reuse the existing bounded `automationAdvance` path for exactly one safe local/no-submit action and stop. It must never chain to a second job or action. Do not add a timer, background worker, automatic retry, paid action, external browser action, upload, or publication in this slice.
 
 ## If the Owner Requests Publication Later
 

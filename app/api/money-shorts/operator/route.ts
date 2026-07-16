@@ -89,6 +89,7 @@ import {
   readMoneyShortsAutomationQueue,
   syncMoneyShortsAutomationJob,
 } from "@/lib/money-shorts-automation-queue-store.mjs";
+import { planMoneyShortsAutomationQueueRun } from "@/lib/money-shorts-automation-queue-planner.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -499,18 +500,21 @@ function readMoneyShortsAutomationExecutionGuard(plan: ReturnType<typeof buildMo
 
 function readMoneyShortsAutomationQueueView() {
   const queue = readMoneyShortsAutomationQueue();
+  const jobs = queue.jobs.map((job: { topicId: string } & Record<string, unknown>) => {
+    const snapshot = readMoneyShortsAutomationSnapshot(job.topicId);
+    const executionGuard = readMoneyShortsAutomationExecutionGuard(snapshot.plan);
+    return {
+      ...job,
+      livePlan: snapshot.plan,
+      executionGuard,
+    };
+  });
+  const runPreview = planMoneyShortsAutomationQueueRun({ jobs });
   return {
     ...queue,
     mode: "owner_click_planning_only" as const,
-    jobs: queue.jobs.map((job: { topicId: string } & Record<string, unknown>) => {
-      const snapshot = readMoneyShortsAutomationSnapshot(job.topicId);
-      const executionGuard = readMoneyShortsAutomationExecutionGuard(snapshot.plan);
-      return {
-        ...job,
-        livePlan: snapshot.plan,
-        executionGuard,
-      };
-    }),
+    jobs,
+    runPreview,
     safety: {
       timerEnabled: false,
       backgroundWorkerEnabled: false,
@@ -1127,13 +1131,18 @@ export async function POST(request: Request) {
   if (action === "automationQueueStatus") {
     try {
       const queue = readMoneyShortsAutomationQueueView();
+      const selected = queue.runPreview.selected;
       return json({
         action,
         status: "success",
-        summary: queue.jobs.length > 0
-          ? `자동 작업 큐에 ${queue.jobs.length}개 주제가 있습니다. 모두 Owner 클릭 대기 상태입니다.`
-          : "자동 작업 큐가 비어 있습니다.",
-        detail: "현재 산출물에서 단계를 다시 계산만 했습니다. 자동 실행·유료 생성·업로드·게시는 0회입니다.",
+        summary: selected
+          ? `다음 큐 작업 미리보기: ${selected.title} · ${selected.action}`
+          : queue.jobs.length > 0
+            ? `자동 작업 큐 ${queue.jobs.length}개 중 지금 안전하게 실행 가능한 작업이 없습니다.`
+            : "자동 작업 큐가 비어 있습니다.",
+        detail: selected
+          ? `${selected.reason} 미리보기만 계산했으며 실행 영수증·작업 실행은 0회입니다.`
+          : "현재 산출물과 실행 안전장치를 읽어 건너뜀 사유만 계산했습니다. 자동 실행·유료 생성·업로드·게시는 0회입니다.",
         raw: { queue },
         noLive: true,
       });

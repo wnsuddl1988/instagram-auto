@@ -15,6 +15,7 @@ const wizardSource = readFileSync(join(ROOT, "components", "VideoCreationWizard.
 const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-orchestrator.mjs"), "utf8");
 const executionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-execution-store.mjs"), "utf8");
 const queueStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-store.mjs"), "utf8");
+const queuePlannerSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-planner.mjs"), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -153,6 +154,11 @@ check("queue status reconstructs live plans without executing a runner", queueRo
 check("queue enqueue persists only the selected topic plan", queueRouteBlock.includes("enqueueMoneyShortsAutomationJob") && queueRouteBlock.includes("작업 실행·유료 생성·렌더·업로드·게시는 0회"));
 check("queued advancement reuses automationAdvance and syncs only after terminal receipt", advanceRouteBlock.includes("queueJobRequested") && advanceRouteBlock.includes("syncMoneyShortsAutomationJob") && advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("syncMoneyShortsAutomationJob"));
 check("queue UI requires Owner click and the existing safe execution guard", wizardSource.includes('data-testid="wizard-automation-queue"') && wizardSource.includes('postAction("automationAdvance", { topicId: job.topicId, queueJob: true })') && wizardSource.includes('job.executionGuard.status !== "available"'));
+check("queue planner is a pure dry-run with no I/O, runner, network, or timer", queuePlannerSource.includes('mode: "deterministic_dry_run"') && queuePlannerSource.includes("executionReceiptCreated: false") && !/node:fs|node:child_process|writeFile|runOneSafeAutomationAction|\bfetch\s*\(|setTimeout|setInterval/u.test(queuePlannerSource));
+check("queue planner uses stable oldest-first tie breakers and selects at most one", queuePlannerSource.includes("stableQueueOrder") && queuePlannerSource.includes("leftCreatedAt.localeCompare(rightCreatedAt)") && queuePlannerSource.includes("topicId") && queuePlannerSource.includes("evaluations.find((item) => item.eligible)"));
+check("queue planner skips every durable guard blocker", ["topic_in_flight", "manual_review_required", "identical_attempt_recorded", "store_unavailable"].every((status) => queuePlannerSource.includes(status)));
+check("queue status attaches a deterministic run preview without executing", snapshotBlock.includes("planMoneyShortsAutomationQueueRun({ jobs })") && snapshotBlock.includes("runPreview") && queueRouteBlock.includes("실행 영수증·작업 실행은 0회"));
+check("wizard shows exact dry-run action and per-job selection reason", wizardSource.includes('data-testid="wizard-automation-queue-dry-run"') && wizardSource.includes("정확한 다음 액션:") && wizardSource.includes('data-testid="wizard-automation-queue-job-decision"'));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
 check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
 check("wizard disables advance when durable execution guard is not available", wizardSource.includes('automationExecutionGuard.status !== "available"') && wizardSource.includes("실행 안전장치:"));
