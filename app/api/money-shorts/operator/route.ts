@@ -79,6 +79,7 @@ import {
 import {
   MONEY_SHORTS_AUTOMATION_RECOVERY_DECISIONS,
   beginMoneyShortsAutomationExecution,
+  fingerprintMoneyShortsAutomationPlan,
   finishMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationRecovery,
@@ -89,7 +90,10 @@ import {
   readMoneyShortsAutomationQueue,
   syncMoneyShortsAutomationJob,
 } from "@/lib/money-shorts-automation-queue-store.mjs";
-import { planMoneyShortsAutomationQueueRun } from "@/lib/money-shorts-automation-queue-planner.mjs";
+import {
+  planMoneyShortsAutomationQueueRun,
+  verifyMoneyShortsAutomationQueuePreviewClaim,
+} from "@/lib/money-shorts-automation-queue-planner.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -127,6 +131,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "automationRecoveryResolve",
   "automationQueueStatus",
   "automationQueueEnqueue",
+  "automationQueueRunSelected",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -1269,36 +1274,96 @@ export async function POST(request: Request) {
     });
   }
 
-  // 다음 안전 작업 1개만 실행한다. 실행 후 계획을 한 번 다시 읽고 반드시 응답을 끝낸다.
+  // 다음 안전 작업 1개만 실행한다. 큐 실행은 읽기 전용 미리보기의 내용 지문을
+  // Owner 클릭 요청에 함께 보내고, 서버가 큐·계획을 즉시 재계산해 같을 때만 허용한다.
   // 유료/외부/QA/게시 작업은 허용 목록에 없으며, 같은 요청에서 두 번째 작업을 이어 실행하지 않는다.
-  if (action === "automationAdvance") {
-    const topicIdRaw = (body as { topicId?: unknown }).topicId;
-    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const queueJobRequested = (body as { queueJob?: unknown }).queueJob === true;
+  if (action === "automationAdvance" || action === "automationQueueRunSelected") {
+    const input = body as {
+      topicId?: unknown;
+      queueJob?: unknown;
+      previewFingerprint?: unknown;
+      jobId?: unknown;
+      selectedAction?: unknown;
+      planFingerprint?: unknown;
+    };
+    if (action === "automationAdvance" && input.queueJob === true) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "큐 작업은 최신 미리보기의 선택 지문을 확인한 뒤 전용 버튼으로만 실행할 수 있습니다.",
+        blockerCode: "AUTOMATION_QUEUE_PREVIEW_REQUIRED",
+        raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+
+    let expectedQueueSelection: {
+      jobId: string;
+      topicId: string;
+      action: string;
+      planFingerprint: string;
+      previewFingerprint: string;
+    } | null = null;
+    let topicId = typeof input.topicId === "string" ? input.topicId : "";
+    const queueJobRequested = action === "automationQueueRunSelected";
+
     if (queueJobRequested) {
+      let queue;
       try {
-        const queue = readMoneyShortsAutomationQueue();
-        if (!queue.jobs.some((job: { topicId: string }) => job.topicId === topicId)) {
-          return json({
-            action,
-            status: "blocked",
-            summary: "이 주제는 자동 작업 큐에 없어 실행하지 않았습니다.",
-            blockerCode: "AUTOMATION_QUEUE_JOB_NOT_FOUND",
-            raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
-            noLive: true,
-          });
-        }
+        queue = readMoneyShortsAutomationQueueView();
       } catch {
         return json({
           action,
           status: "error",
-          summary: "자동 작업 큐를 확인하지 못해 실행하지 않았습니다.",
+          summary: "자동 작업 큐를 다시 계산하지 못해 실행하지 않았습니다.",
           blockerCode: "AUTOMATION_QUEUE_STORE_UNAVAILABLE",
           raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
           noLive: true,
         });
       }
+
+      const verified = verifyMoneyShortsAutomationQueuePreviewClaim({
+        preview: queue.runPreview,
+        claim: {
+          previewFingerprint: input.previewFingerprint,
+          jobId: input.jobId,
+          topicId: input.topicId,
+          action: input.selectedAction,
+          planFingerprint: input.planFingerprint,
+        },
+      });
+      if (!verified.ok || verified.selection == null) {
+        const blockerCode = verified.reason === "preview_has_no_selection"
+          ? "AUTOMATION_QUEUE_NO_ELIGIBLE_SELECTION"
+          : verified.reason === "preview_fingerprint_drifted"
+            ? "AUTOMATION_QUEUE_PREVIEW_DRIFTED"
+            : verified.reason === "preview_selection_drifted"
+              ? "AUTOMATION_QUEUE_SELECTION_DRIFTED"
+              : "AUTOMATION_QUEUE_PREVIEW_CLAIM_INVALID";
+        return json({
+          action,
+          status: "blocked",
+          summary: "큐 미리보기와 현재 상태가 달라 작업을 시작하지 않았습니다.",
+          detail: "큐를 다시 확인한 뒤 새로 선택된 안전 작업을 직접 실행해 주세요.",
+          blockerCode,
+          raw: {
+            queue,
+            execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
+          },
+          noLive: true,
+        });
+      }
+      const verifiedSelection = verified.selection;
+      expectedQueueSelection = {
+        jobId: verifiedSelection.jobId,
+        topicId: verifiedSelection.topicId,
+        action: verifiedSelection.action,
+        planFingerprint: verifiedSelection.planFingerprint,
+        previewFingerprint: verifiedSelection.previewFingerprint,
+      };
+      topicId = verifiedSelection.topicId;
     }
+
     const before = readMoneyShortsAutomationSnapshot(topicId);
     const nextAction = before.plan.next?.action ?? null;
     if (
@@ -1312,6 +1377,28 @@ export async function POST(request: Request) {
         summary: "현재 단계는 자동 실행할 수 없어 확인 지점에서 멈췄습니다.",
         detail: before.plan.next?.reason ?? "추가 작업이 없습니다.",
         blockerCode: before.plan.next?.gate ?? "AUTOMATION_NO_SAFE_ACTION",
+        raw: {
+          planBefore: before.plan,
+          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
+        },
+        noLive: true,
+      });
+    }
+
+    if (
+      expectedQueueSelection != null &&
+      (
+        topicId !== expectedQueueSelection.topicId ||
+        nextAction !== expectedQueueSelection.action ||
+        fingerprintMoneyShortsAutomationPlan(before.plan) !== expectedQueueSelection.planFingerprint
+      )
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "실행 직전 계획이 미리보기와 달라 영수증을 만들지 않고 중단했습니다.",
+        detail: "큐를 다시 확인하면 현재 산출물 기준의 새 작업이 표시됩니다.",
+        blockerCode: "AUTOMATION_QUEUE_SELECTION_DRIFTED",
         raw: {
           planBefore: before.plan,
           execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },

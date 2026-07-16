@@ -378,6 +378,8 @@ type WizardAutomationQueueEvaluation = {
   completedStageCount: number | null;
   totalStageCount: number | null;
   executionGuardStatus: string | null;
+  planFingerprint: string | null;
+  executionGuardFingerprint: string;
 };
 
 type WizardAutomationQueueRunPreview = {
@@ -386,6 +388,7 @@ type WizardAutomationQueueRunPreview = {
   evaluatedJobCount: number;
   eligibleJobCount: number;
   selectionCount: 0 | 1;
+  previewFingerprint: string | null;
   selected: {
     jobId: string;
     topicId: string;
@@ -397,6 +400,8 @@ type WizardAutomationQueueRunPreview = {
     gate: string;
     completedStageCount: number;
     totalStageCount: number;
+    planFingerprint: string;
+    executionGuardFingerprint: string;
     reason: string;
   } | null;
   evaluations: WizardAutomationQueueEvaluation[];
@@ -1110,36 +1115,41 @@ export default function VideoCreationWizard() {
     }
   }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia]);
 
-  const runQueuedAutomationAdvance = useCallback(async (job: WizardAutomationQueueJob) => {
-    if (
-      job.livePlan.next?.canAutoAdvance !== true ||
-      job.executionGuard.status !== "available"
-    ) return;
-    setAutomationQueueBusyTopicId(job.topicId);
+  const runSelectedQueueAdvance = useCallback(async () => {
+    const preview = automationQueue?.runPreview;
+    const selected = preview?.selected;
+    if (!selected || !preview.previewFingerprint) return;
+    setAutomationQueueBusyTopicId(selected.topicId);
     setAutomationQueueState("running");
     setAutomationQueueResult(null);
     try {
-      const r = await postAction("automationAdvance", { topicId: job.topicId, queueJob: true });
+      const r = await postAction("automationQueueRunSelected", {
+        previewFingerprint: preview.previewFingerprint,
+        jobId: selected.jobId,
+        topicId: selected.topicId,
+        selectedAction: selected.action,
+        planFingerprint: selected.planFingerprint,
+      });
       const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
       if (queue) setAutomationQueue(queue);
       else await refreshAutomationQueue();
       setAutomationQueueResult(r);
       setAutomationQueueState(r.status === "success" ? "success" : r.status);
-      if (selectedTopicId === job.topicId) {
-        await refreshRealMedia(job.topicId);
-        await refreshAutomationPlan(job.topicId);
+      if (selectedTopicId === selected.topicId) {
+        await refreshRealMedia(selected.topicId);
+        await refreshAutomationPlan(selected.topicId);
       }
     } catch {
       setAutomationQueueState("error");
       setAutomationQueueResult({
-        action: "automationAdvance",
+        action: "automationQueueRunSelected",
         status: "error",
         summary: "큐의 안전 작업을 실행하지 못했습니다. 자동 재시도하지 않습니다.",
       });
     } finally {
       setAutomationQueueBusyTopicId(null);
     }
-  }, [refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia, selectedTopicId]);
+  }, [automationQueue, refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia, selectedTopicId]);
 
   const resolveAutomationRecovery = useCallback(async (
     decision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry",
@@ -1532,11 +1542,11 @@ export default function VideoCreationWizard() {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="font-bold text-indigo-950">다음 큐 실행 미리보기</p>
                   <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-700">
-                    읽기 전용 · 실행 0회
+                    미리보기 · 자동 실행 없음
                   </span>
                 </div>
                 {automationQueue.runPreview.selected ? (
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 space-y-2">
                     <p className="text-sm font-bold text-slate-900">
                       {automationQueue.runPreview.selected.title} · {automationQueue.runPreview.selected.stageLabel}
                     </p>
@@ -1544,6 +1554,21 @@ export default function VideoCreationWizard() {
                       정확한 다음 액션: <code className="rounded bg-white px-1.5 py-0.5 font-bold">{automationQueue.runPreview.selected.action}</code>
                     </p>
                     <p className="text-sm leading-relaxed text-slate-600">{automationQueue.runPreview.selected.reason}</p>
+                    <button
+                      type="button"
+                      data-testid="wizard-action-automation-queue-run-selected"
+                      className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40"
+                      disabled={
+                        !automationQueue.runPreview.previewFingerprint ||
+                        automationQueueBusyTopicId != null ||
+                        automationQueueState === "running"
+                      }
+                      onClick={() => void runSelectedQueueAdvance()}
+                    >
+                      {automationQueueBusyTopicId === automationQueue.runPreview.selected.topicId
+                        ? "선택된 안전 작업 실행 중…"
+                        : "선택된 안전 작업 1개 실행"}
+                    </button>
                   </div>
                 ) : (
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -1562,8 +1587,7 @@ export default function VideoCreationWizard() {
                   const runEvaluation = automationQueue.runPreview.evaluations.find((item) => item.jobId === job.jobId);
                   return (
                     <article key={job.jobId} data-testid="wizard-automation-queue-job" className="rounded-xl border border-sky-200 bg-white px-4 py-3">
-                      <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div className="min-w-0">
+                      <div className="min-w-0">
                           <p className="font-bold text-slate-900">{job.title}</p>
                           <p className="mt-0.5 text-xs text-slate-500 break-all">{job.topicId}</p>
                           <p className="mt-2 text-sm font-semibold text-slate-700">
@@ -1588,16 +1612,6 @@ export default function VideoCreationWizard() {
                               마지막 큐 실행: {job.lastAdvance.executedAction ?? "실행 없음"} · {job.lastAdvance.actionCount}개 · 자동 재시도 0회
                             </p>
                           ) : null}
-                        </div>
-                        <button
-                          type="button"
-                          data-testid="wizard-action-automation-queue-advance"
-                          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40"
-                          disabled={!canAdvance || automationQueueBusyTopicId != null || automationQueueState === "running"}
-                          onClick={() => void runQueuedAutomationAdvance(job)}
-                        >
-                          {automationQueueBusyTopicId === job.topicId ? "안전 작업 1개 실행 중…" : "이 주제 안전 작업 1개"}
-                        </button>
                       </div>
                     </article>
                   );

@@ -1,6 +1,7 @@
 import {
   MONEY_SHORTS_AUTOMATION_QUEUE_PLANNER_VERSION,
   planMoneyShortsAutomationQueueRun,
+  verifyMoneyShortsAutomationQueuePreviewClaim,
 } from "../lib/money-shorts-automation-queue-planner.mjs";
 import { buildMoneyShortsResumablePlan } from "../lib/money-shorts-resumable-orchestrator.mjs";
 
@@ -50,6 +51,7 @@ check("planner schema is versioned", first.schemaVersion === MONEY_SHORTS_AUTOMA
 check("oldest eligible queue job is selected", first.selected?.topicId === "oldest" && first.selected.action === "flowMotionPrepare");
 check("planner selects at most one job", first.selectionCount === 1 && first.evaluations.filter((item) => item.selected).length === 1);
 check("later eligible job explains its deterministic wait", first.evaluations.find((item) => item.topicId === "newest")?.decisionReason.includes("후순위") === true);
+check("selected preview is content-addressed", /^[a-f0-9]{64}$/.test(first.previewFingerprint) && /^[a-f0-9]{64}$/.test(first.selected?.planFingerprint));
 check("input queue order is not mutated", source[0].topicId === "newest" && source[1].topicId === "oldest");
 check("dry-run reports zero execution and zero receipt", first.safety.actionExecuted === false && first.safety.executionReceiptCreated === false);
 check("dry-run disables timer, worker, retry, paid, external, upload, and publication", Object.values(first.safety).every((value) => value === false));
@@ -58,6 +60,31 @@ const tied = planMoneyShortsAutomationQueueRun({
   jobs: [job("topic-b", "2026-07-17T03:00:00.000Z"), job("topic-a", "2026-07-17T03:00:00.000Z")],
 });
 check("equal timestamps use topic id as deterministic tie-breaker", tied.selected?.topicId === "topic-a");
+
+const sameAgain = planMoneyShortsAutomationQueueRun({ jobs: [oldest, newest] });
+check("same live evidence reproduces the same preview fingerprint", sameAgain.previewFingerprint === first.previewFingerprint);
+const changedGuard = planMoneyShortsAutomationQueueRun({
+  jobs: [job("oldest", "2026-07-17T03:00:00.000Z", { guardStatus: "topic_in_flight" }), newest],
+});
+check("guard drift changes the selected preview fingerprint", changedGuard.previewFingerprint !== first.previewFingerprint);
+
+const validClaim = {
+  previewFingerprint: first.previewFingerprint,
+  jobId: first.selected.jobId,
+  topicId: first.selected.topicId,
+  action: first.selected.action,
+  planFingerprint: first.selected.planFingerprint,
+};
+const verifiedClaim = verifyMoneyShortsAutomationQueuePreviewClaim({ preview: first, claim: validClaim });
+check("exact recomputed preview claim is accepted", verifiedClaim.ok === true && verifiedClaim.selection.topicId === "oldest");
+check("stale preview fingerprint is rejected", verifyMoneyShortsAutomationQueuePreviewClaim({
+  preview: first,
+  claim: { ...validClaim, previewFingerprint: "0".repeat(64) },
+}).reason === "preview_fingerprint_drifted");
+check("topic or action drift is rejected", verifyMoneyShortsAutomationQueuePreviewClaim({
+  preview: first,
+  claim: { ...validClaim, action: "wizardPreflight" },
+}).reason === "preview_selection_drifted");
 
 const ownerGate = job("owner-gate", "2026-07-17T01:00:00.000Z", {
   plan: { generatedImageCount: 0, realImagesReady: false },
@@ -91,6 +118,7 @@ check("oldest remaining eligible job is selected after skips", skipped.selected?
 
 const none = planMoneyShortsAutomationQueueRun({ jobs: [ownerGate, completed, inFlight] });
 check("no eligible job yields a zero-selection preview", none.selected == null && none.selectionCount === 0);
+check("zero-selection preview has no execution fingerprint", none.previewFingerprint == null);
 
 let missingJobsRejected = false;
 try {

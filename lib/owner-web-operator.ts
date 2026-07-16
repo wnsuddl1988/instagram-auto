@@ -145,6 +145,7 @@ export const OPERATOR_ACTIONS = [
   "automationRecoveryResolve", // 현재 계획과 중단 영수증 증거가 일치할 때만 Owner 결정으로 잠금 해제
   "automationQueueStatus", // 로컬 큐 멤버십을 읽고 현재 산출물 기준 단계로 재구성
   "automationQueueEnqueue", // Owner가 선택한 주제를 로컬 계획 큐에 추가/동기화
+  "automationQueueRunSelected", // 최신 큐 미리보기 지문이 일치할 때 선택된 로컬 안전 작업 1개만 실행
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -909,6 +910,7 @@ export function buildOperatorCommand(
     case "automationRecoveryResolve":
     case "automationQueueStatus":
     case "automationQueueEnqueue":
+    case "automationQueueRunSelected":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

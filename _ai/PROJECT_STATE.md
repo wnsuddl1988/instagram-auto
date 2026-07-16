@@ -8,7 +8,7 @@ Updated: 2026-07-17 KST
 - Main AI: Codex
 - Branch: `codex/source-first-blueprint-clean`
 - Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 91%.
+- Overall Owner-facing progress: approximately 92%.
 
 ## Current Product State
 
@@ -27,9 +27,10 @@ Updated: 2026-07-17 KST
 - Recovery terminalizes and preserves the old receipt before releasing the topic lock. A cleared retry receipt is archived before a later explicit attempt can start. Ambiguous plan changes or lock/receipt mismatch remain locked for manual evidence review.
 - A local durable planning queue is now implemented under `C:\tmp\money-shorts-os\automation-queue-v1`. Owner-selected topic membership, last persisted plan fingerprint/stage/gate, and the last explicit one-step result survive a restart.
 - Queue status reconstructs every job from current artifacts instead of trusting stale queue text. The queue UI shows live completed-stage count, next gate, and execution-guard state.
-- Queue advancement calls the existing bounded `automationAdvance` path only after an explicit Owner click, requires queue membership, runs at most one safe local/no-submit action, terminalizes its execution receipt, then persists the new queue stage. There is no timer, background worker, automatic retry, paid action, external generation, upload, or publication authority.
+- Queue advancement now has one dedicated Owner-click action, `automationQueueRunSelected`. The browser sends the selected job/action plus the preview and current-plan fingerprints; the server reconstructs the queue, verifies the full claim, rereads the live plan immediately before receipt creation, and fails closed on any drift. Only then does it reuse the bounded one-action executor, terminalize the receipt, and persist the new queue stage.
+- The former per-job queue execution buttons are removed, and a legacy `automationAdvance` request with `queueJob:true` is rejected. There is no timer, background worker, automatic retry, paid action, external generation, upload, or publication authority.
 - Queue status now runs a pure deterministic dry-run planner over the reconstructed live jobs. It orders jobs by `createdAt`, `topicId`, and `jobId`; selects at most one oldest eligible job; and gives every job a visible selection, wait, or skip reason. Owner-gated, complete, in-flight, manual-review, identical-recorded, unavailable-store, and unsafe jobs cannot be selected.
-- The dry-run planner writes no queue state, creates no execution receipt, and executes no action. The UI shows the exact selected topic/stage/action or explains why no job is eligible.
+- The dry-run planner writes no queue state, creates no execution receipt, and executes no action. Its content-addressed preview fingerprint binds job, topic, action, live-plan fingerprint, and execution-guard fingerprint. The UI shows the exact selected topic/stage/action or explains why no job is eligible.
 
 ## Publication State
 
@@ -48,15 +49,15 @@ Updated: 2026-07-17 KST
 - Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
 - The accepted topic also showed `실행 안전장치: 현재 자동 실행 대상 없음`; no execution receipt or lock was created because publication is outside the safe allowlist.
 - The recovery UI was rechecked on a temporary port 3001 dev server: the accepted topic still restored at 11/12, showed no recovery card because no interrupted receipt exists, and remained stopped at publication confirmation. The temporary server was stopped; the pre-existing port 3000 process was preserved.
-- Durable queue store guard: 14/14 PASS. Deterministic queue planner guard: 17/17 PASS. Combined resumable controller/executor/recovery/queue/planner guard: 56/56 PASS. Existing execution/recovery 24/24, operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, and `pnpm build` all pass.
-- The queue UI was checked on a temporary port 3001 dev server in an empty-queue state. It showed `계획 모드`, `다음 큐 실행 미리보기`, `읽기 전용 · 실행 0회`, and `영수증 생성 0회`; no console error appeared. No real topic was enqueued and no receipt or action was created. The browser tab and temporary server were stopped.
+- Durable queue store guard: 14/14 PASS. Content-addressed queue planner/claim guard: 24/24 PASS. Combined resumable controller/executor/recovery/queue/planner guard: 61/61 PASS. Existing execution/recovery 24/24, operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass.
+- The queue UI was checked on a temporary port 3001 dev server in an empty-queue state. It showed `계획 모드`, `다음 큐 실행 미리보기`, `미리보기 · 자동 실행 없음`, and `영수증 생성 0회`; selected-run buttons were 0 and the removed per-job execution buttons were 0. No real topic was enqueued, no receipt/action was created, and the browser tab and temporary server were stopped.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Next, bind the dry-run selection to one explicit Owner-click queue action with a content-addressed preview fingerprint. Recompute and reject drift before reusing the existing bounded executor for exactly one safe action, then stop.
+4. Next, add explicit queue lifecycle controls and history: pause/remove a queued topic, archive a completed topic, and show the last bounded attempt without running any task as a side effect of those controls.
 5. Timers/background workers and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the queue implementation.
 
 ## Diff Cleanup State
@@ -65,4 +66,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted planner slice is limited to the dry-run planner, operator queue view, wizard preview UI, targeted guards, and these two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to the content-addressed queue planner/claim verifier, dedicated selected-run route, single Owner-click UI, targeted guards, and these two state documents. The protected three paths remain excluded.

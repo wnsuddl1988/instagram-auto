@@ -87,7 +87,7 @@ check("safe executor allowlist is exact", MONEY_SHORTS_SAFE_AUTO_ADVANCE_ACTIONS
 check("safe action predicate rejects every external or paid action", ["realTtsCreate", "realSceneImagesCreate", "flowMotionGenerate", "actualUpload"].every((action) => !isMoneyShortsSafeAutoAdvanceAction(action)));
 
 const automationRouteStart = routeSource.indexOf('if (action === "automationPlan")');
-const automationRouteEnd = routeSource.indexOf('if (action === "automationAdvance")', automationRouteStart);
+const automationRouteEnd = routeSource.indexOf('if (action === "automationAdvance" || action === "automationQueueRunSelected")', automationRouteStart);
 const automationRouteBlock = automationRouteStart >= 0 && automationRouteEnd > automationRouteStart
   ? routeSource.slice(automationRouteStart, automationRouteEnd)
   : "";
@@ -96,7 +96,7 @@ const snapshotEnd = routeSource.indexOf("function runFlowMotionPrepareAction", s
 const snapshotBlock = snapshotStart >= 0 && snapshotEnd > snapshotStart
   ? routeSource.slice(snapshotStart, snapshotEnd)
   : "";
-const advanceRouteStart = routeSource.indexOf('if (action === "automationAdvance")');
+const advanceRouteStart = routeSource.indexOf('if (action === "automationAdvance" || action === "automationQueueRunSelected")');
 const advanceRouteEnd = routeSource.indexOf('// Flow 모션 준비', advanceRouteStart);
 const advanceRouteBlock = advanceRouteStart >= 0 && advanceRouteEnd > advanceRouteStart
   ? routeSource.slice(advanceRouteStart, advanceRouteEnd)
@@ -107,7 +107,7 @@ const safeRunnerBlock = safeRunnerStart >= 0 && safeRunnerEnd > safeRunnerStart
   ? routeSource.slice(safeRunnerStart, safeRunnerEnd)
   : "";
 const recoveryRouteStart = routeSource.indexOf('if (action === "automationRecoveryResolve")');
-const recoveryRouteEnd = routeSource.indexOf('if (action === "automationAdvance")', recoveryRouteStart);
+const recoveryRouteEnd = routeSource.indexOf('if (action === "automationAdvance" || action === "automationQueueRunSelected")', recoveryRouteStart);
 const recoveryRouteBlock = recoveryRouteStart >= 0 && recoveryRouteEnd > recoveryRouteStart
   ? routeSource.slice(recoveryRouteStart, recoveryRouteEnd)
   : "";
@@ -128,6 +128,7 @@ check("automation route reads durable media/Flow/preflight/publish evidence", [
 ].every((name) => snapshotBlock.includes(name)) && automationRouteBlock.includes("readMoneyShortsAutomationSnapshot"));
 check("automation route never spawns or arms an action", !/runOperatorScript|allowArm|ARM_ARG_TOKEN|--arm/u.test(automationRouteBlock));
 check("operator action enum exposes the bounded advance action", helperSource.includes('"automationAdvance"') && routeSource.includes('"automationAdvance",'));
+check("operator action enum exposes the selected queue execution action", helperSource.includes('"automationQueueRunSelected"') && routeSource.includes('"automationQueueRunSelected",'));
 check("advance revalidates planner permission and strict safe predicate", advanceRouteBlock.includes("canAutoAdvance !== true") && advanceRouteBlock.includes("isMoneyShortsSafeAutoAdvanceAction(nextAction)"));
 check("advance invokes exactly one safe dispatcher and then recomputes", (advanceRouteBlock.match(/runOneSafeAutomationAction\(/g) ?? []).length === 1 && (advanceRouteBlock.match(/readMoneyShortsAutomationSnapshot\(/g) ?? []).length === 2);
 check("advance response proves one action, no chaining, and no retry", advanceRouteBlock.includes("actionCount: 1") && advanceRouteBlock.includes("chainedActionCount: 0") && advanceRouteBlock.includes("automaticRetryCount: 0"));
@@ -152,8 +153,12 @@ check("queue store is local-only and contains no runner, network, timer, or sche
 check("queue mutations use one atomic exclusive lock and atomic JSON replacement", queueStoreSource.includes('openSync(paths.lockPath, "wx")') && queueStoreSource.includes("writeJsonAtomic(paths.queuePath, updated)"));
 check("queue status reconstructs live plans without executing a runner", queueRouteBlock.includes("readMoneyShortsAutomationQueueView") && routeSource.includes("livePlan: snapshot.plan") && !/runOperatorScript|runOneSafeAutomationAction|allowArm/u.test(queueRouteBlock));
 check("queue enqueue persists only the selected topic plan", queueRouteBlock.includes("enqueueMoneyShortsAutomationJob") && queueRouteBlock.includes("작업 실행·유료 생성·렌더·업로드·게시는 0회"));
-check("queued advancement reuses automationAdvance and syncs only after terminal receipt", advanceRouteBlock.includes("queueJobRequested") && advanceRouteBlock.includes("syncMoneyShortsAutomationJob") && advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("syncMoneyShortsAutomationJob"));
-check("queue UI requires Owner click and the existing safe execution guard", wizardSource.includes('data-testid="wizard-automation-queue"') && wizardSource.includes('postAction("automationAdvance", { topicId: job.topicId, queueJob: true })') && wizardSource.includes('job.executionGuard.status !== "available"'));
+check("selected queue execution recomputes and verifies preview before creating a receipt", advanceRouteBlock.indexOf("readMoneyShortsAutomationQueueView") < advanceRouteBlock.indexOf("verifyMoneyShortsAutomationQueuePreviewClaim") && advanceRouteBlock.indexOf("verifyMoneyShortsAutomationQueuePreviewClaim") < advanceRouteBlock.indexOf("beginMoneyShortsAutomationExecution"));
+check("selected queue execution rechecks the live plan fingerprint immediately before receipt creation", advanceRouteBlock.indexOf("fingerprintMoneyShortsAutomationPlan(before.plan)") < advanceRouteBlock.indexOf("beginMoneyShortsAutomationExecution") && advanceRouteBlock.includes("AUTOMATION_QUEUE_SELECTION_DRIFTED"));
+check("legacy queued advance bypass is fail-closed without an action receipt", advanceRouteBlock.includes("AUTOMATION_QUEUE_PREVIEW_REQUIRED") && advanceRouteBlock.includes("actionCount: 0"));
+check("queued advancement syncs only after terminal receipt", advanceRouteBlock.includes("queueJobRequested") && advanceRouteBlock.includes("syncMoneyShortsAutomationJob") && advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("syncMoneyShortsAutomationJob"));
+check("queue UI sends one content-addressed Owner-click claim", wizardSource.includes('data-testid="wizard-action-automation-queue-run-selected"') && wizardSource.includes('postAction("automationQueueRunSelected"') && ["previewFingerprint", "jobId", "selectedAction", "planFingerprint"].every((field) => wizardSource.includes(field)));
+check("queue UI has no per-job execution bypass", !wizardSource.includes('data-testid="wizard-action-automation-queue-advance"') && !wizardSource.includes("runQueuedAutomationAdvance"));
 check("queue planner is a pure dry-run with no I/O, runner, network, or timer", queuePlannerSource.includes('mode: "deterministic_dry_run"') && queuePlannerSource.includes("executionReceiptCreated: false") && !/node:fs|node:child_process|writeFile|runOneSafeAutomationAction|\bfetch\s*\(|setTimeout|setInterval/u.test(queuePlannerSource));
 check("queue planner uses stable oldest-first tie breakers and selects at most one", queuePlannerSource.includes("stableQueueOrder") && queuePlannerSource.includes("leftCreatedAt.localeCompare(rightCreatedAt)") && queuePlannerSource.includes("topicId") && queuePlannerSource.includes("evaluations.find((item) => item.eligible)"));
 check("queue planner skips every durable guard blocker", ["topic_in_flight", "manual_review_required", "identical_attempt_recorded", "store_unavailable"].every((status) => queuePlannerSource.includes(status)));
