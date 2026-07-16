@@ -25,7 +25,9 @@ import {
   hasRequiredGenerationFacts,
   isApprovalAcknowledged,
 } from "./_flow-motion-approval-selection.mjs";
+import { classifyPriorFlowMotionGenerationSummary } from "./_flow-motion-generation-summary.mjs";
 import {
+  clickRequiredGenerationConfirmationAtomic,
   collectGenerationConfirmationCandidates,
   findCurrentComposerMakeButton,
   findRequiredGenerationConfirmation,
@@ -319,24 +321,20 @@ async function waitForRequiredGenerationConfirmation(page, job, timeoutMs = 240_
   return { confirmation: null, snapshot: lastSnapshot };
 }
 
-async function approveRequiredGenerationConfirmation(page, confirmation, job, onClickDispatched) {
+async function approveRequiredGenerationConfirmation(page, confirmation, job, callbacks) {
   const confirmationText = confirmation.confirmationText;
   if (!hasRequiredGenerationFacts(
     confirmationText,
     job.providerTarget.expectedCreditsPerGeneration,
     job.providerTarget.outputCount,
   )) throw new Error("generation_cost_or_output_facts_unconfirmed");
-  if (!confirmation.approveOption) throw new Error("confirmation_approve_option_missing");
   const acknowledgementCountBefore = await approvalAcknowledgementCount(page);
-  await confirmation.approveOption.click();
+  const atomicEvidence = await clickRequiredGenerationConfirmationAtomic(page, job, confirmation.selected, callbacks);
   const clickEvidence = {
-    confirmationText: confirmationText.slice(0, 240),
+    ...atomicEvidence,
     acknowledgementCountBefore,
     acknowledgementCountAfter: null,
-    clickDispatched: true,
-    submissionCount: 1,
   };
-  if (typeof onClickDispatched === "function") onClickDispatched(clickEvidence);
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const acknowledgementCountAfter = await approvalAcknowledgementCount(page);
@@ -357,7 +355,7 @@ async function approvalAcknowledgementCount(page) {
   ).length);
 }
 
-async function submitWithRequiredConfirmation(page, job, promptBox, onClickDispatched) {
+async function submitWithRequiredConfirmation(page, job, promptBox, callbacks) {
   await ensureAgentPanelOpen(page);
   const makeButton = await findCurrentComposerMakeButton(promptBox);
   if (!makeButton) throw new Error("generation_make_button_unavailable_in_current_composer");
@@ -374,7 +372,7 @@ async function submitWithRequiredConfirmation(page, job, promptBox, onClickDispa
       `current=${snapshot?.approvalElementCount ?? 0},facts=${facts},interactive=${interactive}`,
     );
   }
-  return approveRequiredGenerationConfirmation(page, result.confirmation, job, onClickDispatched);
+  return approveRequiredGenerationConfirmation(page, result.confirmation, job, callbacks);
 }
 
 async function videoEditHrefs(page) {
@@ -485,16 +483,22 @@ if (!live) {
 
 const summaryPath = path.join(path.dirname(contract.expectedVideoPath), "generation-summary.json");
 const priorSummary = fs.existsSync(summaryPath) ? loadJson(summaryPath, "prior_summary") : null;
-const priorSubmissionCount = Number(priorSummary?.submissionCount ?? 0);
-const resumeSubmittedResult = priorSubmissionCount === 1 &&
-  ["SUBMITTED_PENDING_RESULT", "SUBMITTED_RESULT_RECOVERY_REQUIRED"].includes(priorSummary?.status) &&
+const priorSummaryClassification = classifyPriorFlowMotionGenerationSummary(
+  priorSummary,
+  GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+);
+if (priorSummaryClassification.action === "block") {
+  fail("prior_approval_click_outcome_requires_manual_review", priorSummaryClassification.reason);
+}
+const priorSubmissionCount = priorSummaryClassification.submissionCount;
+const resumeSubmittedResult = priorSummaryClassification.action === "resume_submitted_result" &&
   priorSummary?.jobId === jobId &&
   priorSummary?.referenceSha256 === contract.job.referenceSha256 &&
   priorSummary?.promptSha256 === contract.job.promptSha256 &&
   samePath(priorSummary?.outputVideoPath ?? "", contract.expectedVideoPath) &&
   Array.isArray(priorSummary?.initialVideoEditHrefs) &&
   !fs.existsSync(contract.expectedVideoPath);
-if (priorSubmissionCount > 0 && !resumeSubmittedResult) {
+if (priorSummaryClassification.action === "resume_submitted_result" && !resumeSubmittedResult) {
   fail("prior_submission_requires_new_owner_approval");
 }
 const profileAttempts = [];
@@ -502,13 +506,41 @@ let page = null;
 let pageOpenedByRunner = false;
 let selectedProfile = null;
 let submissionCount = 0;
+let approvalClickAttemptCount = Number(priorSummary?.approvalClickAttemptCount ?? (priorSubmissionCount > 0 ? 1 : 0));
+let approvalClickOutcomeUnknown = false;
 let composerEvidence = null;
 let submitEvidence = null;
 let pendingConfirmation = null;
 let initialVideoEditHrefs = [];
 let summary;
+function recordApprovalClickIntentArmed(evidence) {
+  if (approvalClickAttemptCount > 0) throw new Error("approval_click_attempt_duplicate");
+  approvalClickAttemptCount = 1;
+  approvalClickOutcomeUnknown = true;
+  fs.writeFileSync(summaryPath, `${JSON.stringify({
+    schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
+    status: "APPROVAL_CLICK_OUTCOME_UNKNOWN",
+    jobId,
+    generatedAt: new Date().toISOString(),
+    selectedProfile: selectedProfile?.desktopShortcutName ?? null,
+    profileAttempts,
+    submissionCount: 0,
+    expectedCreditsSpent: null,
+    approvalClickAttemptCount,
+    approvalClickIntent: evidence,
+    referenceSha256: contract.job.referenceSha256,
+    promptSha256: contract.job.promptSha256,
+    outputVideoPath: contract.expectedVideoPath,
+    initialVideoEditHrefs,
+    composerEvidence,
+    ownerQaPassed: false,
+    renderReady: false,
+  }, null, 2)}\n`, "utf8");
+}
 function recordApprovalClickDispatched(evidence) {
+  if (submissionCount === 1) return;
   submissionCount = 1;
+  approvalClickOutcomeUnknown = false;
   submitEvidence = evidence;
   fs.writeFileSync(summaryPath, `${JSON.stringify({
     schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
@@ -519,6 +551,7 @@ function recordApprovalClickDispatched(evidence) {
     profileAttempts,
     submissionCount: 1,
     expectedCreditsSpent: GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+    approvalClickAttemptCount: Math.max(approvalClickAttemptCount, 1),
     referenceSha256: contract.job.referenceSha256,
     promptSha256: contract.job.promptSha256,
     outputVideoPath: contract.expectedVideoPath,
@@ -603,7 +636,10 @@ try {
       page,
       pendingConfirmation,
       contract.job,
-      recordApprovalClickDispatched,
+      {
+        onClickArmed: recordApprovalClickIntentArmed,
+        onClickDispatched: recordApprovalClickDispatched,
+      },
     );
   } else {
     const attachment = await attachReferenceAndPrompt(page, contract.job, priorSummary);
@@ -612,7 +648,10 @@ try {
       page,
       contract.job,
       attachment.promptBox,
-      recordApprovalClickDispatched,
+      {
+        onClickArmed: recordApprovalClickIntentArmed,
+        onClickDispatched: recordApprovalClickDispatched,
+      },
     );
   }
   submissionCount = Number(submitEvidence?.submissionCount ?? submissionCount);
@@ -626,6 +665,7 @@ try {
       profileAttempts,
       submissionCount,
       expectedCreditsSpent: GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+      approvalClickAttemptCount,
       referenceSha256: contract.job.referenceSha256,
       promptSha256: contract.job.promptSha256,
       outputVideoPath: contract.expectedVideoPath,
@@ -647,6 +687,7 @@ try {
     profileAttempts,
     submissionCount,
     expectedCreditsSpent: GEMINI_FLOW_TARGET.expectedCreditsPerGeneration,
+    approvalClickAttemptCount,
     referenceSha256: contract.job.referenceSha256,
     promptSha256: contract.job.promptSha256,
     outputVideoPath: contract.expectedVideoPath,
@@ -660,15 +701,22 @@ try {
     renderReady: false,
   };
 } catch (error) {
+  const failure = String(error?.message ?? error).replace(/\s+/g, " ").slice(0, 240);
+  const unknownClickOutcome = approvalClickOutcomeUnknown || failure.includes("approval_click_outcome_unknown_no_retry");
   summary = {
     schemaVersion: "money_shorts_flow_motion_generation_summary_v1",
-    status: submissionCount === 1 ? "SUBMITTED_RESULT_RECOVERY_REQUIRED" : "FAILED_NO_AUTOMATIC_RETRY",
+    status: submissionCount === 1
+      ? "SUBMITTED_RESULT_RECOVERY_REQUIRED"
+      : unknownClickOutcome
+        ? "APPROVAL_CLICK_OUTCOME_UNKNOWN"
+        : "FAILED_NO_AUTOMATIC_RETRY",
     jobId,
     generatedAt: new Date().toISOString(),
     selectedProfile: selectedProfile?.desktopShortcutName ?? null,
     profileAttempts,
     submissionCount,
-    expectedCreditsSpent: submissionCount === 1 ? GEMINI_FLOW_TARGET.expectedCreditsPerGeneration : 0,
+    expectedCreditsSpent: submissionCount === 1 ? GEMINI_FLOW_TARGET.expectedCreditsPerGeneration : unknownClickOutcome ? null : 0,
+    approvalClickAttemptCount,
     referenceSha256: contract.job.referenceSha256,
     promptSha256: contract.job.promptSha256,
     outputVideoPath: contract.expectedVideoPath,
@@ -677,7 +725,7 @@ try {
     submitEvidence,
     ownerQaPassed: false,
     renderReady: false,
-    failure: String(error?.message ?? error).replace(/\s+/g, " ").slice(0, 240),
+    failure,
   };
 } finally {
   if (page && pageOpenedByRunner) await page.close().catch(() => {});

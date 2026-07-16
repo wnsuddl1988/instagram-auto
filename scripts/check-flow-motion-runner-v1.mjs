@@ -10,6 +10,88 @@ import {
   GEMINI_FLOW_TARGET,
   isExactGeminiFlowProjectRootUrl,
 } from "./_gemini-flow-no-submit-contract.mjs";
+import { classifyPriorFlowMotionGenerationSummary } from "./_flow-motion-generation-summary.mjs";
+
+const classifySummary = (summary) => classifyPriorFlowMotionGenerationSummary(summary, 20);
+const assertSummaryBlocked = (summary, reasonPattern) => {
+  const result = classifySummary(summary);
+  assert.equal(result.action, "block");
+  if (reasonPattern) assert.match(result.reason, reasonPattern);
+};
+
+assert.deepEqual(classifySummary(null), {
+  action: "none",
+  reason: null,
+  submissionCount: 0,
+  approvalClickAttemptCount: 0,
+});
+assert.equal(classifySummary({
+  status: "FAILED_NO_AUTOMATIC_RETRY",
+  submissionCount: 0,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 0,
+}).action, "safe_new_attempt");
+assert.equal(classifySummary({
+  status: "SUBMITTED_PENDING_RESULT",
+  submissionCount: 1,
+  expectedCreditsSpent: 20,
+  approvalClickAttemptCount: 1,
+  submitEvidence: { clickDispatched: true },
+}).action, "resume_submitted_result");
+assertSummaryBlocked({
+  status: "APPROVAL_CLICK_OUTCOME_UNKNOWN",
+  submissionCount: 0,
+  expectedCreditsSpent: null,
+  approvalClickAttemptCount: 1,
+}, /manual_review/);
+assertSummaryBlocked({
+  status: "SUBMITTED_PENDING_RESULT",
+  submissionCount: 0,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 0,
+}, /zero_submission_status_invalid/);
+assertSummaryBlocked({
+  status: "FAILED_NO_AUTOMATIC_RETRY",
+  submissionCount: 0,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 0,
+  submitEvidence: { clickDispatched: true },
+}, /dispatch_count_mismatch/);
+assertSummaryBlocked({
+  status: "FAILED_NO_AUTOMATIC_RETRY",
+  submissionCount: 0,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 1,
+}, /manual_review/);
+assertSummaryBlocked({
+  status: "FAILED_NO_AUTOMATIC_RETRY",
+  submissionCount: 0,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 0,
+  approvalClickIntent: { clickIntentArmed: true },
+}, /intent_attempt_mismatch/);
+for (const invalidCount of ["0", -1, 0.5, 2, Number.NaN]) {
+  assertSummaryBlocked({
+    status: "FAILED_NO_AUTOMATIC_RETRY",
+    submissionCount: invalidCount,
+    expectedCreditsSpent: 0,
+    approvalClickAttemptCount: 0,
+  }, /submission_count_invalid/);
+}
+for (const invalidAttempt of ["0", -1, 0.5, 2, Number.NaN]) {
+  assertSummaryBlocked({
+    status: "FAILED_NO_AUTOMATIC_RETRY",
+    submissionCount: 0,
+    expectedCreditsSpent: 0,
+    approvalClickAttemptCount: invalidAttempt,
+  }, /approval_click_attempt_count_invalid/);
+}
+assertSummaryBlocked({
+  status: "SUBMITTED_PENDING_RESULT",
+  submissionCount: 1,
+  expectedCreditsSpent: 0,
+  approvalClickAttemptCount: 1,
+}, /credit_mismatch/);
 
 const root = `C:/tmp/money-shorts-os/flow-motion-runner-contract-check-v1-${process.pid}`;
 const jobRoot = path.join(root, "scene-02");
@@ -178,24 +260,31 @@ assert.match(source, /baseline\.approvalElementCount/);
 assert.match(source, /bind the confirmation to that exact prompt/);
 assert.doesNotMatch(source, /waitForRequiredGenerationConfirmation\(page, job, baseline\.approvalElementCount\)/);
 assert.match(source, /generation_make_button_unavailable_in_current_composer/);
-assert.match(source, /confirmation_approve_option_missing/);
 assert.match(source, /240_000/);
 assert.match(confirmationDomSource, /confirmation_already_acknowledged_no_resubmit/);
 assert.match(confirmationDomSource, /findCurrentComposerMakeButton/);
+assert.match(confirmationDomSource, /clickRequiredGenerationConfirmationAtomic/);
+assert.match(confirmationDomSource, /dom_capture_click_event/);
+assert.match(confirmationDomSource, /handle\.click\(\{ trial: true/);
+assert.match(confirmationDomSource, /handle\.click\(\{ noWaitAfter: true/);
+assert.doesNotMatch(confirmationDomSource, /approvalOptions\.nth\(selected\.index\)/);
 assert.match(approvalSelectionSource, /active_approval_card_ambiguous/);
 assert.match(source, /isApprovalAcknowledged/);
 assert.match(source, /confirmation_click_not_acknowledged/);
 assert.match(source, /recordApprovalClickDispatched/);
-assert.match(source, /clickDispatched: true/);
+assert.match(confirmationDomSource, /clickDispatched: true/);
 assert.match(source, /expected_credits_mismatch/);
 assert.match(source, /pageOpenedByRunner/);
 assert.match(source, /page && pageOpenedByRunner/);
 assert.match(source, /isExactGeminiFlowProjectRootUrl/);
 assert.match(source, /dedicated exact-root page/);
-const approvalClickIndex = source.indexOf("await confirmation.approveOption.click()");
-const dispatchedRecordIndex = source.indexOf("onClickDispatched(clickEvidence)", approvalClickIndex);
-const acknowledgementWaitIndex = source.indexOf("const deadline = Date.now() + 30_000", approvalClickIndex);
-assert.ok(approvalClickIndex >= 0 && dispatchedRecordIndex > approvalClickIndex && acknowledgementWaitIndex > dispatchedRecordIndex);
+assert.match(source, /recordApprovalClickIntentArmed/);
+assert.match(source, /APPROVAL_CLICK_OUTCOME_UNKNOWN/);
+assert.match(source, /prior_approval_click_outcome_requires_manual_review/);
+assert.match(source, /approvalClickAttemptCount/);
+const armedCallbackIndex = confirmationDomSource.indexOf("callbacks.onClickArmed");
+const exactHandleClickIndex = confirmationDomSource.indexOf("await handle.click({ noWaitAfter: true");
+assert.ok(armedCallbackIndex >= 0 && exactHandleClickIndex > armedCallbackIndex);
 assert.match(source, /SUBMITTED_PENDING_RESULT/);
 assert.match(source, /SUBMITTED_RESULT_RECOVERY_REQUIRED/);
 assert.match(source, /resumeSubmittedResult/);

@@ -290,6 +290,22 @@ check("operator connects exact approval, one live runner and Owner QA actions", 
   assert.match(routeSource, /failWizardFlowMotionOwnerQa/);
 });
 
+check("unknown approval-click outcome blocks reapproval and is explicit in the wizard", () => {
+  const manualReviewGateIndex = helperSource.indexOf("flowMotionApprovalClickRequiresManualReview(priorSummary,");
+  const ownerApprovalMatchIndex = helperSource.indexOf("ownerApproval !== target.job.approval.requiredWording", manualReviewGateIndex);
+  assert.match(helperSource, /summary\.status === "APPROVAL_CLICK_OUTCOME_UNKNOWN"/);
+  assert.match(helperSource, /summaryFileExists && summary === null/);
+  assert.match(helperSource, /const priorSummaryExists = existsSync\(priorSummaryPath\)/);
+  assert.match(helperSource, /flowMotionApprovalClickRequiresManualReview/);
+  assert.match(helperSource, /flow_motion_prior_approval_click_outcome_requires_manual_review/);
+  assert.match(helperSource, /creditUsageStatus/);
+  assert.ok(manualReviewGateIndex >= 0 && ownerApprovalMatchIndex > manualReviewGateIndex);
+  assert.match(wizardSource, /wizard-flow-motion-credit-review/);
+  assert.match(wizardSource, /전송·크레딧 사용 여부를 수동 확인하기 전에는 새 생성을 진행할 수 없습니다/);
+  assert.match(wizardSource, /job\.creditUsageStatus !== "unknown" && \(job\.status === "approval_pending" \|\| job\.status === "qa_failed"\)/);
+  assert.doesNotMatch(wizardSource, /\{job\.status === "approval_pending" \|\| job\.status === "qa_failed" \?/);
+});
+
 check("wizard exposes exact approval entry, generated clip preview and seven-item QA", () => {
   assert.match(wizardSource, /wizard-action-flow-motion-generate/);
   assert.match(wizardSource, /video=flow-motion/);

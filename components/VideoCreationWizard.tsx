@@ -277,6 +277,7 @@ type WizardFlowMotionStatus = {
         expectedCreditsSpent: number;
         summaryPath: string | null;
       };
+      creditUsageStatus: "confirmed_zero" | "confirmed_spent" | "unknown";
       renderAssetReady: boolean;
     }>;
   }>;
@@ -1938,7 +1939,15 @@ export default function VideoCreationWizard() {
                       </p>
                       <p className="mt-1 break-all">패킷: {job.packetPath}</p>
                       <p className="mt-2 break-words text-xs text-slate-500">{job.requiredApprovalWording}</p>
-                      {job.status === "approval_pending" || job.status === "qa_failed" ? (
+                      {job.creditUsageStatus === "unknown" ? (
+                        <p
+                          data-testid={`wizard-flow-motion-credit-review-${job.jobId}`}
+                          className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
+                        >
+                          Flow 승인 클릭 결과가 불명확합니다. 전송·크레딧 사용 여부를 수동 확인하기 전에는 새 생성을 진행할 수 없습니다.
+                        </p>
+                      ) : null}
+                      {job.creditUsageStatus !== "unknown" && (job.status === "approval_pending" || job.status === "qa_failed") ? (
                         <div className="mt-3 space-y-2">
                           <textarea
                             data-testid={`wizard-flow-motion-approval-${job.jobId}`}
@@ -1965,7 +1974,9 @@ export default function VideoCreationWizard() {
                       {job.status === "qa_pending" ? (
                         <div className="mt-3 space-y-3">
                           <p className="text-xs font-semibold text-slate-700">
-                            {job.execution.selectedProfile ?? "Flow"} · 전송 {job.execution.submissionCount}회 · 예상 사용 {job.execution.expectedCreditsSpent}크레딧 · 영상 hash {job.outputVideoSha256?.slice(0, 12)}…
+                            {job.creditUsageStatus === "unknown"
+                              ? "Flow · 전송·크레딧 사용 여부 수동 확인 필요"
+                              : `${job.execution.selectedProfile ?? "Flow"} · 전송 ${job.execution.submissionCount}회 · 예상 사용 ${job.execution.expectedCreditsSpent}크레딧`} · 영상 hash {job.outputVideoSha256?.slice(0, 12)}…
                           </p>
                           <video
                             data-testid={`wizard-flow-motion-preview-${job.jobId}`}

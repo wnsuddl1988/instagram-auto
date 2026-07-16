@@ -7824,10 +7824,55 @@ export type WizardFlowMotionStatus = {
       requiredApprovalWording: string;
       outputVideoSha256: string | null;
       execution: FlowMotionJob["execution"];
+      creditUsageStatus: "confirmed_zero" | "confirmed_spent" | "unknown";
       renderAssetReady: boolean;
     }>;
   }>;
 };
+
+type FlowMotionGenerationSummarySnapshot = {
+  status?: unknown;
+  selectedProfile?: unknown;
+  submissionCount?: unknown;
+  expectedCreditsSpent?: unknown;
+  approvalClickAttemptCount?: unknown;
+  approvalClickIntent?: { clickIntentArmed?: unknown } | null;
+  submitEvidence?: { clickDispatched?: unknown } | null;
+};
+
+function flowMotionApprovalClickRequiresManualReview(
+  summary: FlowMotionGenerationSummarySnapshot | null,
+  summaryFileExists = false,
+): boolean {
+  if (summaryFileExists && summary === null) return true;
+  if (!summary) return false;
+  if (typeof summary !== "object" || Array.isArray(summary)) return true;
+  if (typeof summary.status !== "string" || summary.status.length === 0) return true;
+  const submissionCountValid = Number.isInteger(summary.submissionCount) && [0, 1].includes(summary.submissionCount as number);
+  const attemptMissing = summary.approvalClickAttemptCount === undefined;
+  const attemptCount = attemptMissing
+    ? (summary.submissionCount === 1 ? 1 : 0)
+    : summary.approvalClickAttemptCount;
+  const attemptCountValid = Number.isInteger(attemptCount) && [0, 1].includes(attemptCount as number);
+  if (!submissionCountValid || !attemptCountValid) return true;
+  if (summary.status === "APPROVAL_CLICK_OUTCOME_UNKNOWN") return true;
+  if ((attemptCount as number) > 0 && summary.submissionCount === 0) return true;
+  if (summary.submitEvidence?.clickDispatched === true && summary.submissionCount !== 1) return true;
+  if (summary.approvalClickIntent?.clickIntentArmed === true && attemptCount !== 1) return true;
+  if (["SUBMITTED_PENDING_RESULT", "SUBMITTED_RESULT_RECOVERY_REQUIRED"].includes(String(summary.status)) && summary.submissionCount !== 1) return true;
+  return false;
+}
+
+function flowMotionCreditUsageStatus(
+  summary: FlowMotionGenerationSummarySnapshot | null,
+  execution: FlowMotionJob["execution"],
+  summaryFileExists = false,
+): "confirmed_zero" | "confirmed_spent" | "unknown" {
+  if (flowMotionApprovalClickRequiresManualReview(summary, summaryFileExists)) return "unknown";
+  return summary?.submissionCount === 1 || execution.submissionCount === 1
+    ? "confirmed_spent"
+    : "confirmed_zero";
+}
 
 function flowMotionStatePath(part: Pick<WizardRealPipelinePartPaths, "flowMotionDir">): string {
   return join(part.flowMotionDir, "flow-motion-state.json");
@@ -7910,6 +7955,12 @@ export function authorizeWizardFlowMotionGeneration(
   if (!target.ok) return target;
   if (target.job.status !== "approval_pending" && target.job.status !== "qa_failed") {
     return { ok: false, reason: `flow_motion_job_not_approval_pending:${target.job.status}` };
+  }
+  const priorSummaryPath = join(dirname(target.job.expectedVideoPath), "generation-summary.json");
+  const priorSummaryExists = existsSync(priorSummaryPath);
+  const priorSummary = readAbsJson(priorSummaryPath) as FlowMotionGenerationSummarySnapshot | null;
+  if (flowMotionApprovalClickRequiresManualReview(priorSummary, priorSummaryExists)) {
+    return { ok: false, reason: "flow_motion_prior_approval_click_outcome_requires_manual_review" };
   }
   if (ownerApproval !== target.job.approval.requiredWording) return { ok: false, reason: "flow_motion_owner_approval_text_mismatch" };
   if (!existsSync(target.job.referenceFile)) return { ok: false, reason: "flow_motion_reference_missing" };
@@ -8011,8 +8062,8 @@ export function markWizardFlowMotionGenerationFailed(
   }
   try {
     const summaryPath = join(dirname(target.job.expectedVideoPath), "generation-summary.json");
-    const summary = readAbsJson(summaryPath) as { selectedProfile?: string; submissionCount?: number; expectedCreditsSpent?: number } | null;
-    const selectedProfile = ["Gemini 2", "Gemini 3", "Gemini 4"].includes(summary?.selectedProfile ?? "")
+    const summary = readAbsJson(summaryPath) as FlowMotionGenerationSummarySnapshot | null;
+    const selectedProfile = ["Gemini 2", "Gemini 3", "Gemini 4"].includes(String(summary?.selectedProfile ?? ""))
       ? summary?.selectedProfile as "Gemini 2" | "Gemini 3" | "Gemini 4"
       : null;
     const submissionCount = summary?.submissionCount === 1 ? 1 : 0;
@@ -8159,21 +8210,27 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
       candidate.scriptFingerprint === part.record.localFingerprint
       ? candidate
       : null;
-    const publicJobs = (state?.jobs ?? []).map((job) => ({
-      jobId: job.jobId,
-      sceneNumber: job.sceneNumber,
-      sceneId: job.sceneId,
-      sceneLabel: job.sceneLabel,
-      status: job.status,
-      packetPath: job.packetPath,
-      expectedVideoPath: job.expectedVideoPath,
-      referenceSha256: job.referenceSha256,
-      promptSha256: job.promptSha256,
-      requiredApprovalWording: job.approval.requiredWording,
-      outputVideoSha256: job.qa.outputVideoSha256,
-      execution: job.execution,
-      renderAssetReady: flowMotionRenderAssetIsReady(job),
-    }));
+    const publicJobs = (state?.jobs ?? []).map((job) => {
+      const summaryPath = join(dirname(job.expectedVideoPath), "generation-summary.json");
+      const summaryFileExists = existsSync(summaryPath);
+      const summary = readAbsJson(summaryPath) as FlowMotionGenerationSummarySnapshot | null;
+      return {
+        jobId: job.jobId,
+        sceneNumber: job.sceneNumber,
+        sceneId: job.sceneId,
+        sceneLabel: job.sceneLabel,
+        status: job.status,
+        packetPath: job.packetPath,
+        expectedVideoPath: job.expectedVideoPath,
+        referenceSha256: job.referenceSha256,
+        promptSha256: job.promptSha256,
+        requiredApprovalWording: job.approval.requiredWording,
+        outputVideoSha256: job.qa.outputVideoSha256,
+        execution: job.execution,
+        creditUsageStatus: flowMotionCreditUsageStatus(summary, job.execution, summaryFileExists),
+        renderAssetReady: flowMotionRenderAssetIsReady(job),
+      };
+    });
     return {
       id: part.id,
       partNumber: part.partNumber,
