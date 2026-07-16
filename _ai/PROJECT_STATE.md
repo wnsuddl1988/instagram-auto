@@ -1,6 +1,6 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-07-15 KST
+Updated: 2026-07-17 KST
 
 ## Operating State
 
@@ -8,43 +8,47 @@ Updated: 2026-07-15 KST
 - Main AI: Codex
 - Branch: `codex/source-first-blueprint-clean`
 - Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 88%.
+- Overall Owner-facing progress: approximately 87%.
 
 ## Current Product State
 
-- Money Shorts 500-topic/editorial, character cast, voice routing, scene image, caption, and local video pipeline changes are accumulated in the working tree.
-- The latest pilot is Owner-rejected: visual tone, script-to-scene relevance, scene pacing, and true character motion are not accepted.
-- Flow retry-v3 scene 08 was generated once with Veo 3.1 Fast (9:16, 8s, 20 credits) and technically downloaded, but Owner-directed visual QA rejected it: the card finishes on the wooden desk left of the notebook rather than centered on the notebook paper. Its local state is `qa_failed`; it is not render-ready and must not be consumed by final render.
-- The Owner-approved first/last Flow canary proved the actual agent binding: `start_image_media_id=3cf44be8-71bd-4092-b9c6-1598ce8cb17a` and `end_image_media_id=4e2a0d59-03ed-4652-95bc-35e971084489`. Ordered composer attachments were translated into real first/last-frame arguments for this run.
-- The first/last result is `FLOW_GENERATED_OWNER_QA_PASSED`: result media `3248a04b-8171-4dcf-aa5a-ebe09892b687`, local SHA-256 `8df5e4df6818083e0530922cc2d049ec16e119a9f90294845cb244e47549292b`, 720x1280 H.264/AAC, 24fps, 8.0s. Owner accepted the warm 3D identity, real hand/wrist/elbow/head/gaze motion, and card ending centered on notebook paper. The brief opening lift before lowering is recorded as an accepted minor deviation for this exact clip only.
-- The current 12-scene production script now selects scene 08 (`mindset`) as `veo_motion`; an isolated `render_ready` state and QA evidence bind the current scene ID, reference hash, prompt hash, and output hash. The existing render-input resolver accepts it (`17/17` contract checks pass).
-- The no-upload final-render canary is fail-closed at `REAL_TTS_REQUIRED`: the current full TTS timeline is 66.76 seconds, above the restored 15~60 second contract, so no final MP4 was produced. The current full TTS evidence also has masked voice `fHz***r16`, not Owner-selected Harry Kim `pb3lVZVjdFWbkhPKlelB`; no paid replacement TTS was run.
-- Current FFmpeg layered motion is camera/parallax/masked micro-motion, not true articulated character animation.
-- Owner selected ElevenLabs `Harry Kim – Conversational` (`pb3lVZVjdFWbkhPKlelB`) for Minjae. A complete same-script Harry Kim production TTS has not yet been generated.
-- No shared-engine readiness, upload readiness, publication approval, or final product completion is declared.
-- No deploy, push, env/secret change, or unrelated external account change was performed. The exact Owner-approved Flow first/last canary submitted once, clicked the ordinary `승인` once, and used 20 credits; the post-run balance observed through Flow was 920.
+- Owner has viewed and accepted the current two-part final video set for `gen-finance-editorial-v2-time_retirement-wealth_standard-05` ("자산을 키우는 사람은 미래의 월급부터 만든다"). This is a visual/content acceptance for this specific revision; it is not an upload instruction.
+- Part 1 final MP4: 47.97s, 1080x1920, H.264/AAC, real ElevenLabs audio, 8 scenes.
+- Part 2 final MP4: 46.13s, 1080x1920, H.264/AAC, real ElevenLabs audio, 7 scenes.
+- Both parts use the selected real scene images, dynamic captions, and Owner-QA-passed Veo motion for the selected scenes. Current renderer also retains layered still-image motion for non-Veo scenes.
+- Visual timing repair is included: the part 1 closing transition and part 2 closing transition are aligned to the preceding speech boundary; no audio was cut for the transition.
+- Final video summaries report `RENDER_MUX_OK`, 15~60s validity, video/audio streams, caption contracts, and Flow motion coverage as passed.
+- Owner has accepted the current final viewing result. No upload, publish, deploy, push, env/secret change, account change, or external action has occurred.
+- The current product keeps the 11-step human-in-the-loop workflow, and now adds `money_shorts_resumable_orchestrator_v1`: it reconstructs 12 durable production/publication stages from local artifacts and shows the next safe stage in the web UI after a restart.
+- The new controller is decision-only in this revision. It executes no generation, render, upload, retry, or publication. A bounded safe-step executor and any scheduler/queue are still not implemented.
 
-## Diff Cleanup State
+## Publication State
 
-- Removed approved generated QA/diagnostic artifacts: repository `.tmp/`, `tmp/`, `piq_diag_out.txt`, and `shadow-list.txt`.
-- Deleted the approved stale `_ai/CONTEXT_TRANSFER_CODEX.md`.
-- Removed the approved temporary `allowBuilds` placeholder from `pnpm-workspace.yaml`; dependency declarations and lockfile were not changed.
-- Restored the project video duration contract to `15~60s` in renderer, server readiness gates, documentation, and static checks.
-- Updated three stale static guards for the current voice-cast, character-cast, and non-executing ffmpeg evidence structure.
+- Both parts have current `PREFLIGHT_ONLY_OK` evidence under the topic's local `publish/v5` folder.
+- Both preflights recorded all six required credential names as present, no duplicate publication, `armed: false`, and all external side-effect counters at zero.
+- The videos are therefore local upload candidates only. The actual upload route remains separately fail-closed behind three Owner confirmations, literal `업로드` input, duplicate checks, and a new explicit external-action approval.
 
 ## Validation Evidence
 
-- Changed/untracked `.mjs` syntax: 59/59 PASS.
-- Targeted static guards: PASS, including 500-topic quality, character/voice cast, visual evidence, dynamic captions, layered motion, platform discovery, upload fail-closed, and production input contracts.
-- `pnpm build`: PASS (Next.js compile + TypeScript + 23 routes/pages).
-- `git diff --check`: PASS.
-- Flow motion approval selection: 7/7 PASS; Flow runner: 30/30 PASS; Flow motion job state: 22/22 PASS.
-- Retry-v3 downloaded output: SHA-256 `e380c1a0561a8476b2fd568393fd7900f344d1599fc7372406161c0b1501d065`, 720x1280, 24fps, 8 seconds. Technical validity does not override the visual QA rejection.
-- Build warnings remain for broad `output/v2` file tracing and project-wide NFT tracing; these are performance follow-ups, not build failures.
+- Part 1 `real-video-summary.json`: `RENDER_MUX_OK`; 47.97s; 1080x1920; H.264/AAC; real audio/image/caption/Flow gates passed.
+- Part 2 `real-video-summary.json`: `RENDER_MUX_OK`; 46.13s; 1080x1920; H.264/AAC; real audio/image/caption/Flow gates passed.
+- Publish preflight part 1: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
+- Publish preflight part 2: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
+- Current code-level checks: the four updated stale harnesses pass (operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5); related image/caption/motion/production-input guards also pass. `pnpm build` remains passed from the prior audit; output/v2 dynamic tracing warning remains a later speed optimization item only.
+- Resumable controller guard: 21/21 PASS. `pnpm exec tsc --noEmit` and `pnpm build` pass. Local UI restored the accepted topic at 11/12 stages and stopped at `owner_publication_confirmation`; API returned `noLive:true` with all execution flags false.
 
 ## Current Priority
 
-1. Keep retry-v3 as `qa_failed`; do not regenerate it from the existing single-reference Flow dialog.
-2. Preserve the accepted first/last clip as isolated `render_ready` evidence; do not call it final or upload-ready.
-3. Repair the 12-scene narration to fit 15~60 seconds, then obtain explicit approval before one full Harry Kim ElevenLabs TTS generation. Only after that TTS passes should the final render canary be retried.
-4. Finish exact checkpoint inclusion/exclusion review and ask Owner for a local-only commit; no push.
+1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
+2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
+3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
+4. Extend the implemented decision-only controller with a bounded safe-step executor for local/no-submit actions only (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, `wizardPreflight`). It must stop again before every paid/external/Owner-QA/publication gate.
+5. Scheduler/queue and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the controller implementation.
+
+## Diff Cleanup State
+
+- Working tree deliberately retains exactly three unrelated/isolated paths. Do not stage, edit, delete, or commit them without specific Owner approval:
+  1. `scripts/render-golden-sample-visual-only-v1.mjs`
+  2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+  3. `scripts/get-youtube-refresh-token-once.mjs`
+- No other working-tree changes are included in this state update.

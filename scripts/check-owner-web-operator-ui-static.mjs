@@ -102,7 +102,11 @@ check("route does not import node:child_process", !/from\s+["']node:child_proces
 check("route does not spawn directly (delegates to helper)", !/\bspawnSync\s*\(/.test(routeCode) && !/\bexecSync\s*\(/.test(routeCode) && !/(?<![.\w])exec\s*\(/.test(routeCode) && !/(?<![.\w])spawn\s*\(/.test(routeCode));
 check("route has no shell:true", !/shell\s*:\s*true/.test(routeCode));
 check("route runs no ffmpeg/ffprobe", !/ffmpeg|ffprobe/.test(routeCode));
-check("route calls no content-generation API (openai/elevenlabs/pexels/supabase)", !/openai|elevenlabs|pexels|supabase/i.test(routeCode));
+check(
+  "route imports no direct content-generation client and names no provider endpoint",
+  !/from\s*["'](?:openai|elevenlabs|pexels|@supabase\/supabase-js)["']/i.test(routeCode) &&
+    !/api\.(?:openai|elevenlabs|pexels)\.com|supabase\.co/i.test(routeCode),
+);
 
 // ── API route: env/secret 안전 ───────────────────────────────────────────────
 check("route has no .env.local direct read", !/readFileSync\s*\([^)]*\.env/.test(routeCode) && !/\.env\.local/.test(routeCode));

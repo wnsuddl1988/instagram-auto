@@ -55,12 +55,30 @@ export function loadProductionRecords() {
   const characterCastPath = path.join(ROOT, "lib", "finance-character-cast.ts");
   const characterVoiceCastPath = path.join(ROOT, "lib", "finance-character-voice-cast.ts");
   const helperPath = path.join(ROOT, "lib", "owner-web-operator.ts");
+  const veoSelectorPath = path.join(ROOT, "lib", "veo-scene-selector.ts");
+  const flowMotionJobsPath = path.join(ROOT, "lib", "flow-motion-jobs.ts");
   const bank = loadTypescriptModule(bankPath);
   const engine = loadTypescriptModule(enginePath);
   const visual = loadTypescriptModule(visualPath);
   const discovery = loadTypescriptModule(discoveryPath);
+  const veoSelector = loadTypescriptModule(veoSelectorPath);
+  const flowMotionJobs = loadTypescriptModule(flowMotionJobsPath, (specifier) => {
+    if (specifier === "./veo-scene-selector") return veoSelector;
+    return nodeRequire(specifier);
+  });
   const characterCastData = JSON.parse(readFileSync(path.join(ROOT, "lib", "finance-character-cast-data.json"), "utf8"));
   const characterVoiceCastData = JSON.parse(readFileSync(path.join(ROOT, "lib", "finance-character-voice-cast-data.json"), "utf8"));
+  // owner-web-operator.ts imports this ESM-only helper for media-state checks.
+  // The deterministic 500-topic planner does not enter those branches, so a
+  // no-I/O contract stub keeps this CommonJS VM loader focused on topic planning.
+  const manualVisualReview = {
+    MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE: "manual-visual-review.json",
+    validateMoneyShortsManualVisualReview: () => ({
+      passed: false,
+      reason: "MANUAL_VISUAL_REVIEW_NOT_EVALUATED_IN_TOPIC_PLANNER",
+      imageSetSha256: null,
+    }),
+  };
   const characterCast = loadTypescriptModule(characterCastPath, (specifier) => {
     if (specifier === "./finance-character-cast-data.json") return { default: characterCastData };
     if (specifier === "./finance-editorial-topic-bank") return bank;
@@ -79,6 +97,9 @@ export function loadProductionRecords() {
     if (specifier === "./platform-discovery-metadata") return discovery;
     if (specifier === "./finance-character-cast") return characterCast;
     if (specifier === "./finance-character-voice-cast") return characterVoiceCast;
+    if (specifier === "./money-shorts-manual-visual-review.mjs") return manualVisualReview;
+    if (specifier === "./veo-scene-selector") return veoSelector;
+    if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);
   });
   const seeds = helper.buildFinanceEditorialTopicSeeds();

@@ -1,0 +1,100 @@
+import {
+  MONEY_SHORTS_RESUMABLE_ORCHESTRATOR_VERSION,
+  buildMoneyShortsResumablePlan,
+} from "../lib/money-shorts-resumable-orchestrator.mjs";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const routeSource = readFileSync(join(ROOT, "app", "api", "money-shorts", "operator", "route.ts"), "utf8");
+const helperSource = readFileSync(join(ROOT, "lib", "owner-web-operator.ts"), "utf8");
+const wizardSource = readFileSync(join(ROOT, "components", "VideoCreationWizard.tsx"), "utf8");
+const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-orchestrator.mjs"), "utf8");
+
+let passed = 0;
+let failed = 0;
+function check(name, condition, detail = "") {
+  if (condition) {
+    passed += 1;
+    console.log(`PASS  ${name}`);
+  } else {
+    failed += 1;
+    console.error(`FAIL  ${name}${detail ? ` - ${detail}` : ""}`);
+  }
+}
+
+const readyBase = {
+  topicId: "resume-test-topic",
+  scriptReady: true,
+  characterReady: true,
+  realTtsReady: true,
+  generatedImageCount: 8,
+  expectedImageCount: 8,
+  realImagesReady: true,
+  flowState: "render_ready",
+  flowReadyForRender: true,
+  finalVideoReady: true,
+  mediaQualityGateOk: true,
+  publishPreflightReady: true,
+  publishedAllParts: false,
+};
+
+const script = buildMoneyShortsResumablePlan({ ...readyBase, scriptReady: false });
+check("schema is versioned", script.schemaVersion === MONEY_SHORTS_RESUMABLE_ORCHESTRATOR_VERSION);
+check("missing script stops at Owner topic selection", script.next?.stageId === "script" && script.next.gate === "owner_topic_selection" && script.next.canAutoAdvance === false);
+
+const tts = buildMoneyShortsResumablePlan({ ...readyBase, realTtsReady: false });
+check("missing TTS offers only the free packet step", tts.next?.action === "realTtsPreflight" && tts.next.canAutoAdvance === true && tts.next.gate === "owner_paid_tts");
+
+const images = buildMoneyShortsResumablePlan({ ...readyBase, generatedImageCount: 0, realImagesReady: false });
+check("image generation remains Owner-gated", images.next?.stageId === "images" && images.next.action === "realSceneImagesCreate" && images.next.canAutoAdvance === false);
+
+const visualReview = buildMoneyShortsResumablePlan({ ...readyBase, realImagesReady: false });
+check("complete image set stops for Owner visual QA", visualReview.next?.stageId === "visual_review" && visualReview.next.action === null && visualReview.next.gate === "owner_visual_qa");
+
+const flowPrepare = buildMoneyShortsResumablePlan({ ...readyBase, flowState: "not_prepared", flowReadyForRender: false });
+check("Flow packet preparation is safe to auto-advance", flowPrepare.next?.action === "flowMotionPrepare" && flowPrepare.next.canAutoAdvance === true);
+
+const flowApproval = buildMoneyShortsResumablePlan({ ...readyBase, flowState: "approval_pending", flowReadyForRender: false });
+check("paid Flow generation stops at exact Owner approval", flowApproval.next?.action === "flowMotionGenerate" && flowApproval.next.gate === "owner_paid_flow" && flowApproval.next.canAutoAdvance === false);
+
+const flowInFlight = buildMoneyShortsResumablePlan({ ...readyBase, flowState: "generating", flowReadyForRender: false });
+check("in-flight Flow job never retries automatically", flowInFlight.status === "manual_recovery_required" && flowInFlight.next?.action === null);
+
+const flowQa = buildMoneyShortsResumablePlan({ ...readyBase, flowState: "qa_pending", flowReadyForRender: false });
+check("downloaded Flow video stops for Owner QA", flowQa.next?.action === "flowMotionQaPass" && flowQa.next.gate === "owner_flow_qa");
+
+const render = buildMoneyShortsResumablePlan({ ...readyBase, finalVideoReady: false, mediaQualityGateOk: false, publishPreflightReady: false });
+check("verified assets can advance only to local render", render.next?.action === "finalVideoCreate" && render.next.canAutoAdvance === true);
+
+const preflight = buildMoneyShortsResumablePlan({ ...readyBase, publishPreflightReady: false });
+check("accepted final media can advance to no-upload preflight", preflight.next?.action === "wizardPreflight" && preflight.next.canAutoAdvance === true);
+
+const publication = buildMoneyShortsResumablePlan(readyBase);
+check("publication is always Owner-confirmed and never auto-advanced", publication.status === "publication_confirmation_required" && publication.next?.action === "actualUpload" && publication.next.canAutoAdvance === false);
+
+const complete = buildMoneyShortsResumablePlan({ ...readyBase, publishedAllParts: true });
+check("fully published content is complete", complete.status === "complete" && complete.next === null);
+check("planner itself reports zero side effects", Object.values(publication.safety).every((value) => value === false));
+check("safe auto list never includes paid generation or publication", !publication.safeAutoAdvanceActions.includes("realTtsCreate") && !publication.safeAutoAdvanceActions.includes("flowMotionGenerate") && !publication.safeAutoAdvanceActions.includes("actualUpload"));
+
+const automationRouteStart = routeSource.indexOf('if (action === "automationPlan")');
+const automationRouteEnd = routeSource.indexOf('// Flow 모션 준비', automationRouteStart);
+const automationRouteBlock = automationRouteStart >= 0 && automationRouteEnd > automationRouteStart
+  ? routeSource.slice(automationRouteStart, automationRouteEnd)
+  : "";
+check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
+check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
+check("automation route reads durable media/Flow/preflight/publish evidence", [
+  "readWizardRealMediaState",
+  "readWizardFlowMotionStatus",
+  "readWizardPublishPreflight",
+  "readWizardPublishResult",
+].every((name) => automationRouteBlock.includes(name)));
+check("automation route never spawns or arms an action", !/runOperatorScript|allowArm|ARM_ARG_TOKEN|--arm/u.test(automationRouteBlock));
+check("controller imports no network or process execution API", !/node:child_process|\bfetch\s*\(|https?:\/\//u.test(controllerSource));
+check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
+
+console.log(`\n${passed + failed} checks - ${passed} PASS, ${failed} FAIL`);
+if (failed > 0) process.exit(1);

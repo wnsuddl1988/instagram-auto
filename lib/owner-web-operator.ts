@@ -140,6 +140,7 @@ export const OPERATOR_ACTIONS = [
   "flowMotionQaFail", // Owner 검수 실패 기록(자동 재생성 없음)
   "finalVideoCreate", // 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션으로 최종 mp4 합성
   "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
+  "automationPlan", // 로컬 산출물에서 현재 단계와 다음 안전 작업을 재계산(읽기 전용, 실행 없음)
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -899,6 +900,7 @@ export function buildOperatorCommand(
     case "scriptPreview":
     case "previewStatus":
     case "realMediaStatus":
+    case "automationPlan":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

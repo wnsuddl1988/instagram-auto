@@ -782,10 +782,10 @@ check(
     imgScriptCode.indexOf("MEDIA_ROOT_RE") < imgScriptCode.indexOf('await import("playwright")'),
 );
 check(
-  "images script hard cap allows one routing and one visual-difference recovery per scene",
-  /ROUTING_RECOVERY_LIMIT_PER_SCENE\s*=\s*1/.test(imgScriptCode) &&
-    /VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE\s*=\s*1/.test(imgScriptCode) &&
-    /SUBMISSION_HARD_CAP\s*=\s*sceneCount \*/.test(imgScriptCode) &&
+  "images script caps recovery at one per scene or disables it for an approved one-shot run",
+  /ROUTING_RECOVERY_LIMIT_PER_SCENE\s*=\s*retryDisabled\s*\?\s*0\s*:\s*1/.test(imgScriptCode) &&
+    /VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE\s*=\s*retryDisabled\s*\?\s*0\s*:\s*1/.test(imgScriptCode) &&
+    /sceneCount\s*\*\s*\(1\s*\+\s*ROUTING_RECOVERY_LIMIT_PER_SCENE\s*\+\s*VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE\)/.test(imgScriptCode) &&
     /MAX_SCENES\s*=\s*18/.test(imgScriptCode),
 );
 check(

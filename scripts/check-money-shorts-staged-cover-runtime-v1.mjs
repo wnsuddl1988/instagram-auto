@@ -9,8 +9,9 @@ import { spawnSync } from "node:child_process";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const BUILDER = resolve(__dirname, "build-elevenlabs-korean-director-tts-from-script.mjs");
-const OUT_ROOT = "C:\\tmp\\money-shorts-os\\staged-cover-runtime-check-v1";
+const OUT_ROOT = `C:\\tmp\\money-shorts-os\\staged-cover-runtime-check-v1-${process.pid}`;
 const CONTRACT = "money_shorts_staged_prehook_cover_v1";
+const HOOK_CONTRACT = "money_shorts_finance_cover_hook_v2";
 
 let passed = 0;
 let failed = 0;
@@ -34,9 +35,9 @@ function speechDirection(performanceText, tag) {
 }
 
 const coverLines = [
-  { spokenText: "생활비가 새는 진짜 이유", displayText: "생활비가 새는 진짜 이유???", emphasis: "topic" },
-  { spokenText: "그냥 넘기면 안 돼", displayText: "그냥 넘기면 안 돼...!", emphasis: "tension" },
-  { spokenText: "월말 저축이 먼저 사라져", displayText: "월말 저축이 먼저 사라져!!!", emphasis: "impact" },
+  { spokenText: "생활비가 빠지는 진짜 이유", displayText: "생활비가 빠지는 진짜 이유...", emphasis: "topic" },
+  { spokenText: "장바구니가 아니라 반복 결제야", displayText: "장바구니가 아니라 반복 결제야!", emphasis: "tension" },
+  { spokenText: "월말 저축이 먼저 사라져 있어", displayText: "월말 저축이 먼저 사라져 있어…", emphasis: "impact" },
 ];
 const coverSpoken = coverLines.map((line) => line.spokenText).join("\n");
 const sceneTexts = [
@@ -56,13 +57,13 @@ function buildInput(lines = coverLines) {
     prosodyPolicy: "korean_native_cadence_v2",
     wizardTopicId: "runtime-cover-check",
     wizardScriptFingerprint: "runtime-cover-check-v1",
-    openingVoiceContract: { v3AudioTag: "confidently", speedCap: 0.98 },
+    openingVoiceContract: { v3AudioTag: "confidently", speedCap: 1.02 },
     topicSpeechProfile: {
       id: "economic_authority",
       globalV3Tag: "confidently",
-      baseSpeed: 0.98,
-      baseStability: 0.5,
-      baseSimilarityBoost: 0.87,
+      baseSpeed: 1.02,
+      baseStability: 0.48,
+      baseSimilarityBoost: 0.86,
     },
     coverContract: {
       enabled: true,
@@ -72,6 +73,20 @@ function buildInput(lines = coverLines) {
       displayText,
       lines,
       visualOnlyPunctuation: true,
+      hookAudit: {
+        contractVersion: HOOK_CONTRACT,
+        mode: "title_open_loop",
+        sourceText: lines.slice(0, 2).map((line) => line.spokenText).join(" "),
+        sourceTextCoverageRatio: 1,
+        sourceTextPreserved: true,
+        danglingTokenFree: true,
+        explanatoryClosureFree: true,
+        openLoopPresent: true,
+        displaySemanticsPreserved: true,
+        visualOnlyPunctuation: true,
+        failures: [],
+        passed: true,
+      },
     },
     scenes: sceneTexts.map((text, index) => ({
       sceneNumber: index + 1,
@@ -107,7 +122,7 @@ const validSummary = existsSync(validSummaryPath) ? JSON.parse(readFileSync(vali
 check("valid staged cover reaches the no-key readiness boundary", valid.result.status === 3,
   `exit ${valid.result.status}; ${String(valid.result.stderr).trim()}`);
 check("valid staged cover performs zero external calls", validSummary?.apiCallCount === 0 && validSummary?.liveApiCallPerformed === false);
-check("valid staged cover preserves the confident 0.98 opening audit",
+check("valid staged cover preserves the confident 1.02 opening audit",
   validSummary?.coverContractVersion === CONTRACT &&
   validSummary?.openingVoiceAudit?.confidentFirstTag === true &&
   validSummary?.openingVoiceAudit?.speedWithinCap === true &&
@@ -119,7 +134,7 @@ const invalidLines = coverLines.map((line, index) => index === 1
 const invalid = runCase("invalid-word-drop", buildInput(invalidLines));
 const invalidSummaryPath = join(invalid.outDir, "elevenlabs-scene-paced-tts-summary.json");
 check("a dropped display word is blocked before readiness or API handling",
-  invalid.result.status === 2 && /staged cover spoken\/display contract is invalid/u.test(String(invalid.result.stderr)),
+  invalid.result.status === 2 && /staged cover hook\/spoken\/display contract is invalid/u.test(String(invalid.result.stderr)),
   `exit ${invalid.result.status}; ${String(invalid.result.stderr).trim()}`);
 check("invalid staged cover cannot produce a summary", !existsSync(invalidSummaryPath));
 

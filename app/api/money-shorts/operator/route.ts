@@ -72,6 +72,7 @@ import {
   FINANCE_CHARACTER_IDS,
   type FinanceCharacterId,
 } from "@/lib/finance-character-cast";
+import { buildMoneyShortsResumablePlan } from "@/lib/money-shorts-resumable-orchestrator.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,6 +105,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "flowMotionQaFail",
   "finalVideoCreate",
   "realMediaStatus",
+  "automationPlan",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -796,6 +798,58 @@ export async function POST(request: Request) {
         ? "실제 음성·장면 이미지·최종 영상이 모두 준비됐습니다. 게시 전 점검으로 진행할 수 있습니다."
         : `실제 제작 진행 중 — ${g.reasons[0] ?? "다음 단계를 진행해 주세요."}`,
       raw: { media, flowMotion },
+      noLive: true,
+    });
+  }
+
+  // 재개 가능한 자동 진행판 — 현재 로컬 산출물만 읽어 다음 안전 단계를 결정한다.
+  // 유료 TTS/이미지/Flow, 렌더, 게시 전 점검, 실제 업로드는 여기서 실행하지 않는다.
+  if (action === "automationPlan") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const media = readWizardRealMediaState(topicId);
+    const flowMotion = readWizardFlowMotionStatus(topicId);
+    const characterCast = readWizardFinanceCharacterCastState();
+    const characterRoute = resolveWizardFinanceCharacterVoice(topicId);
+    const parts = media.parts;
+    const preflights = parts.map((part) => ({
+      partId: part.id,
+      evidence: readWizardPublishPreflight(topicId, part.id),
+    }));
+    const publishResults = parts.map((part) => ({
+      partId: part.id,
+      result: readWizardPublishResult(topicId, part.id),
+    }));
+    const publishPreflightReady = parts.length > 0 && preflights.every(({ evidence }) =>
+      evidence?.status === "PREFLIGHT_ONLY_OK" &&
+      evidence.blockerCode == null &&
+      evidence.contentUnitManifestPath != null &&
+      evidence.credentialPresentCount === APPROVED_ENV_KEY_NAMES.length);
+    const publishedAllParts = parts.length > 0 && publishResults.every(({ result }) =>
+      result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
+    const plan = buildMoneyShortsResumablePlan({
+      topicId,
+      scriptReady: media.scriptEngine.finalReady,
+      characterReady: characterRoute == null || characterCast.allSelected,
+      realTtsReady: media.realTts.ready,
+      generatedImageCount: media.realImages.generatedCount,
+      expectedImageCount: media.realImages.expectedCount ?? 0,
+      realImagesReady: media.realImages.ready,
+      flowState: flowMotion.state,
+      flowReadyForRender: flowMotion.readyForRender,
+      finalVideoReady: media.finalVideo.ready,
+      mediaQualityGateOk: media.mediaQualityGate.ok,
+      publishPreflightReady,
+      publishedAllParts,
+    });
+    return json({
+      action,
+      status: "success",
+      summary: plan.next
+        ? `자동 진행판이 다음 작업을 정했습니다: ${plan.next.stageLabel}`
+        : "이 주제의 제작·게시 단계가 모두 완료됐습니다.",
+      detail: plan.next?.reason ?? "추가 작업이 없습니다.",
+      raw: { plan, preflights, publishResults },
       noLive: true,
     });
   }

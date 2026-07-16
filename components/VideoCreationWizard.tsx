@@ -283,6 +283,51 @@ type WizardFlowMotionStatus = {
   }>;
 };
 
+type WizardAutomationPlan = {
+  schemaVersion: string;
+  topicId: string;
+  status: "ready_to_advance" | "owner_action_required" | "publication_confirmation_required" | "manual_recovery_required" | "complete";
+  completedStageCount: number;
+  totalStageCount: number;
+  stages: Array<{
+    id: string;
+    label: string;
+    state: "ready" | "current" | "waiting";
+  }>;
+  next: {
+    stageId: string;
+    stageLabel: string;
+    action: string | null;
+    gate: string;
+    reason: string;
+    canAutoAdvance: boolean;
+  } | null;
+  safeAutoAdvanceActions: string[];
+  safety: {
+    externalGenerationExecuted: false;
+    paidActionExecuted: false;
+    renderExecuted: false;
+    uploadExecuted: false;
+    publicationExecuted: false;
+    automaticRetryAllowed: false;
+  };
+};
+
+const AUTOMATION_GATE_LABEL: Record<string, string> = {
+  none: "자동으로 이어갈 수 있는 로컬 단계",
+  owner_topic_selection: "주제·대본 확인 필요",
+  owner_character_selection: "주인공 이미지 확인 필요",
+  owner_paid_tts: "유료 음성 승인에서 중단",
+  owner_image_generation: "외부 이미지 생성 승인에서 중단",
+  owner_visual_qa: "전체 이미지 검수에서 중단",
+  owner_paid_flow: "Flow 1회 생성 승인에서 중단",
+  owner_flow_qa: "Veo 영상 검수에서 중단",
+  owner_flow_rework_decision: "Veo 재작업 결정에서 중단",
+  owner_final_media_qa: "최종 영상 검수에서 중단",
+  owner_publication_confirmation: "실제 게시 확인에서 중단",
+  manual_recovery: "재전송 없이 수동 복구 필요",
+};
+
 const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
   not_prepared: "패킷 준비 필요",
   not_required: "모션 장면 없음",
@@ -481,6 +526,9 @@ export default function VideoCreationWizard() {
   // 실제 제작 파이프라인 상태 — 대본 엔진 표시 + 실제 목소리/장면 이미지/최종 영상 + media gate.
   const [scriptEngine, setScriptEngine] = useState<WizardScriptEngine | null>(null);
   const [realMedia, setRealMedia] = useState<WizardRealMedia | null>(null);
+  const [automationPlanState, setAutomationPlanState] = useState<RunState>("idle");
+  const [automationPlanResult, setAutomationPlanResult] = useState<OperatorResult | null>(null);
+  const [automationPlan, setAutomationPlan] = useState<WizardAutomationPlan | null>(null);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -604,6 +652,9 @@ export default function VideoCreationWizard() {
     setScript(null);
     setScriptEngine(null);
     setRealMedia(null);
+    setAutomationPlanState("idle");
+    setAutomationPlanResult(null);
+    setAutomationPlan(null);
     setRealTtsState("idle");
     setRealTtsResult(null);
     setImagesState("idle");
@@ -831,6 +882,21 @@ export default function VideoCreationWizard() {
     }
   }, []);
 
+  const refreshAutomationPlan = useCallback(async (topicId: string) => {
+    setAutomationPlanState("running");
+    try {
+      const r = await postAction("automationPlan", { topicId });
+      const plan = (r.raw as { plan?: WizardAutomationPlan } | undefined)?.plan;
+      setAutomationPlanResult(r);
+      setAutomationPlanState(r.status === "success" ? "success" : r.status);
+      setAutomationPlan(r.status === "success" && plan ? plan : null);
+    } catch {
+      setAutomationPlanState("error");
+      setAutomationPlanResult({ action: "automationPlan", status: "error", summary: "자동 진행 상태를 확인하지 못했습니다." });
+      setAutomationPlan(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (localDev !== true) return;
     const listTimer = window.setTimeout(() => void refreshUploadReadyList(), 0);
@@ -849,6 +915,29 @@ export default function VideoCreationWizard() {
     }, 0);
     return () => window.clearTimeout(refreshTimer);
   }, [localDev, selectedTopicId, refreshRealMedia]);
+
+  // 실제 산출물 상태가 바뀔 때마다 서버가 다음 안전 단계를 다시 계산한다.
+  // 이 조회는 어떤 생성·렌더·업로드도 실행하지 않는다.
+  useEffect(() => {
+    if (localDev !== true || !selectedTopicId) return;
+    const refreshTimer = window.setTimeout(() => {
+      void refreshAutomationPlan(selectedTopicId);
+    }, 0);
+    return () => window.clearTimeout(refreshTimer);
+  }, [
+    localDev,
+    selectedTopicId,
+    realMedia?.realTts.ready,
+    realMedia?.realImages.generatedCount,
+    realMedia?.realImages.ready,
+    realMedia?.finalVideo.ready,
+    realMedia?.mediaQualityGate.ok,
+    flowMotion?.state,
+    flowMotion?.readyForRender,
+    preflightState,
+    uploadState,
+    refreshAutomationPlan,
+  ]);
 
   const runScriptPreview = useCallback(async () => {
     if (!selectedTopicId) return;
@@ -1114,6 +1203,70 @@ export default function VideoCreationWizard() {
       ) : null}
 
       <div className="space-y-4">
+        {localDev === true && selectedTopicId ? (
+          <section data-testid="wizard-automation-plan" className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 px-5 py-5">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-slate-900">자동 진행 상태</h3>
+                  <StateBadge state={automationPlanState} />
+                  {automationPlan ? (
+                    <span className="rounded-full border border-indigo-200 bg-white px-2.5 py-1 text-xs font-bold text-indigo-700">
+                      {automationPlan.completedStageCount}/{automationPlan.totalStageCount} 단계 준비
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-sm text-slate-600">
+                  로컬 산출물을 다시 읽어 다음 작업을 자동으로 결정합니다. 유료 생성·Owner 검수·실제 게시 앞에서는 반드시 멈춥니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                data-testid="wizard-action-automation-plan"
+                className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-40"
+                disabled={automationPlanState === "running"}
+                onClick={() => void refreshAutomationPlan(selectedTopicId)}
+              >
+                진행 상태 다시 확인
+              </button>
+            </div>
+            {automationPlan ? (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {automationPlan.stages.map((stage) => (
+                    <span
+                      key={stage.id}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-bold ${
+                        stage.state === "ready"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : stage.state === "current"
+                            ? "border-indigo-300 bg-white text-indigo-700"
+                            : "border-slate-200 bg-slate-100 text-slate-400"
+                      }`}
+                    >
+                      {stage.state === "ready" ? "✓ " : stage.state === "current" ? "→ " : ""}{stage.label}
+                    </span>
+                  ))}
+                </div>
+                {automationPlan.next ? (
+                  <div className="rounded-xl border border-indigo-200 bg-white px-4 py-3">
+                    <p className="text-[15px] font-bold text-slate-900">다음 작업: {automationPlan.next.stageLabel}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{automationPlan.next.reason}</p>
+                    <p className={`mt-1.5 text-sm font-bold ${automationPlan.next.canAutoAdvance ? "text-emerald-700" : "text-amber-700"}`}>
+                      {AUTOMATION_GATE_LABEL[automationPlan.next.gate] ?? "확인 후 진행"}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-[15px] font-bold text-emerald-700">
+                    이 주제의 제작·게시 단계가 모두 완료됐습니다.
+                  </p>
+                )}
+              </div>
+            ) : null}
+            <ResultNote result={automationPlanResult} />
+          </section>
+        ) : null}
+
         {localDev === true ? (
           <section data-testid="wizard-upload-ready-library" className="border-y border-emerald-200 bg-emerald-50/60 px-5 py-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
