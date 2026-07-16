@@ -76,6 +76,11 @@ import {
   buildMoneyShortsResumablePlan,
   isMoneyShortsSafeAutoAdvanceAction,
 } from "@/lib/money-shorts-resumable-orchestrator.mjs";
+import {
+  beginMoneyShortsAutomationExecution,
+  finishMoneyShortsAutomationExecution,
+  inspectMoneyShortsAutomationExecution,
+} from "@/lib/money-shorts-automation-execution-store.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -454,6 +459,18 @@ function readMoneyShortsAutomationSnapshot(topicId: string) {
     publishedAllParts,
   });
   return { plan, preflights, publishResults };
+}
+
+function readMoneyShortsAutomationExecutionGuard(plan: ReturnType<typeof buildMoneyShortsResumablePlan>) {
+  const nextAction = plan.next?.action ?? null;
+  if (plan.next?.canAutoAdvance !== true || nextAction == null || !isMoneyShortsSafeAutoAdvanceAction(nextAction)) {
+    return { status: "not_applicable" as const, receipt: null };
+  }
+  try {
+    return inspectMoneyShortsAutomationExecution({ topicId: plan.topicId, action: nextAction, plan });
+  } catch {
+    return { status: "store_unavailable" as const, receipt: null };
+  }
 }
 
 function runFlowMotionPrepareAction(topicId: string): OperatorResponse {
@@ -1042,6 +1059,7 @@ export async function POST(request: Request) {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
     const { plan, preflights, publishResults } = readMoneyShortsAutomationSnapshot(topicId);
+    const executionGuard = readMoneyShortsAutomationExecutionGuard(plan);
     return json({
       action,
       status: "success",
@@ -1049,7 +1067,7 @@ export async function POST(request: Request) {
         ? `자동 진행판이 다음 작업을 정했습니다: ${plan.next.stageLabel}`
         : "이 주제의 제작·게시 단계가 모두 완료됐습니다.",
       detail: plan.next?.reason ?? "추가 작업이 없습니다.",
-      raw: { plan, preflights, publishResults },
+      raw: { plan, executionGuard, preflights, publishResults },
       noLive: true,
     });
   }
@@ -1080,8 +1098,95 @@ export async function POST(request: Request) {
       });
     }
 
-    const executed = runOneSafeAutomationAction(nextAction, topicId);
-    const after = readMoneyShortsAutomationSnapshot(topicId);
+    let started;
+    try {
+      started = beginMoneyShortsAutomationExecution({ topicId, action: nextAction, plan: before.plan });
+    } catch {
+      return json({
+        action,
+        status: "error",
+        summary: "자동 실행 잠금과 사전 영수증을 기록하지 못해 작업을 시작하지 않았습니다.",
+        blockerCode: "AUTOMATION_EXECUTION_STORE_UNAVAILABLE",
+        raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+    if (!started.ok) {
+      const blockerCode = started.reason === "automation_execution_topic_in_flight"
+        ? "AUTOMATION_TOPIC_IN_FLIGHT"
+        : started.reason === "automation_execution_identical_attempt_already_recorded"
+          ? "AUTOMATION_IDENTICAL_ATTEMPT_RECORDED"
+          : "AUTOMATION_PREVIOUS_ATTEMPT_MANUAL_REVIEW_REQUIRED";
+      return json({
+        action,
+        status: "blocked",
+        summary: blockerCode === "AUTOMATION_TOPIC_IN_FLIGHT"
+          ? "이 주제의 다른 안전 작업이 이미 실행 중이라 중복 실행을 막았습니다."
+          : "같은 계획의 실행 기록이 남아 있어 자동 재실행을 막았습니다.",
+        detail: "이전 실행 결과 또는 중단 상태를 확인한 뒤 다음 계획으로 진행해야 합니다.",
+        blockerCode,
+        raw: {
+          receipt: started.receipt,
+          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
+        },
+        noLive: true,
+      });
+    }
+
+    let executed;
+    let after;
+    try {
+      executed = runOneSafeAutomationAction(nextAction, topicId);
+      after = readMoneyShortsAutomationSnapshot(topicId);
+    } catch {
+      let receipt = started.receipt;
+      try {
+        receipt = finishMoneyShortsAutomationExecution({
+          handle: started.handle,
+          resultStatus: "error",
+          blockerCode: "AUTOMATION_SAFE_ACTION_UNEXPECTED_FAILURE",
+          planAfter: null,
+        });
+      } catch {
+        // 영수증 완료 실패 시 잠금을 남겨 다음 요청이 수동 확인 없이 재실행되지 않게 한다.
+      }
+      return json({
+        action,
+        status: "error",
+        summary: "안전 작업 실행 중 예기치 않은 오류가 발생해 자동 재시도 없이 중단했습니다.",
+        blockerCode: "AUTOMATION_SAFE_ACTION_UNEXPECTED_FAILURE",
+        raw: {
+          receipt,
+          execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
+        },
+        noLive: true,
+      });
+    }
+
+    let receipt;
+    try {
+      receipt = finishMoneyShortsAutomationExecution({
+        handle: started.handle,
+        resultStatus: executed.status,
+        blockerCode: executed.blockerCode ?? null,
+        planAfter: after.plan,
+      });
+    } catch {
+      return json({
+        action,
+        status: "error",
+        summary: "안전 작업은 끝났지만 완료 영수증을 확정하지 못했습니다. 잠금을 유지하고 수동 확인에서 멈췄습니다.",
+        blockerCode: "AUTOMATION_RECEIPT_FINALIZE_FAILED",
+        raw: {
+          receipt: started.receipt,
+          executedAction: nextAction,
+          execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
+        },
+        noLive: true,
+      });
+    }
+
+    const executionGuard = readMoneyShortsAutomationExecutionGuard(after.plan);
     const stopLabel = after.plan.next?.stageLabel ?? "완료";
     return json({
       action,
@@ -1093,6 +1198,8 @@ export async function POST(request: Request) {
       blockerCode: executed.blockerCode,
       raw: {
         executedAction: nextAction,
+        receipt,
+        executionGuard,
         execution: {
           actionCount: 1,
           chainedActionCount: 0,

@@ -14,15 +14,15 @@ The Owner has visually accepted both final parts of `gen-finance-editorial-v2-ti
 
 Keep this accepted revision unchanged and queued locally. No automatic upload follows from visual acceptance.
 
-The current app connects the full production and dual-platform publication path and now includes a resumable controller plus a bounded one-step executor. It reconstructs 12 stages from durable local artifacts after restart and may execute exactly one local/no-submit step before recomputing and stopping, while preserving paid TTS/image/Flow approvals, manual visual QA, publication confirmation, and duplicate guards.
+The current app connects the full production and dual-platform publication path and now includes a resumable controller, bounded one-step executor, and durable local execution store. Before each safe step it writes a content-addressed receipt and acquires a per-topic atomic lock; after the step it records the terminal result and next-plan fingerprint before releasing the lock. Refreshes, concurrent requests, and identical repeat clicks cannot execute the same plan/action twice.
 
 The stale validation harnesses identified in the operational audit are now aligned to the current contracts and pass: operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5. Related image, caption, layered-motion, and production-input guards also pass.
 
-The accepted topic was rechecked in the local UI at 11/12 stages. The one-step button stayed disabled at the publication gate, and a direct `automationAdvance` request returned zero executed actions and no live side effects.
+The accepted topic was rechecked in the local UI at 11/12 stages. The one-step button stayed disabled at the publication gate, the durable guard showed no auto-executable action, and a direct `automationAdvance` request returned zero executed actions and no live side effects.
 
 ## Next Implementation Milestone
 
-Add a durable local execution receipt and per-topic in-flight/idempotency lock around `automationAdvance`. A request must record the selected action and plan fingerprint before execution, refuse a concurrent or already-completed identical attempt, then record the result and recomputed plan. It must remain local-only and must not broaden the four-action allowlist or add scheduling, automatic retry, paid generation, QA decisions, or publication.
+Add a guided interrupted-execution recovery workflow. It should read the durable receipt/lock, compare its before-plan fingerprint with the current artifact-derived plan, and present action/time/result evidence in the Owner UI. Resolution must require an explicit Owner decision and must distinguish “artifacts already advanced, mark acknowledged” from “no advancement, clear for a later manual retry.” No automatic stale timeout, retry, paid action, scheduler, or publication may be added in this slice.
 
 ## If the Owner Requests Publication Later
 

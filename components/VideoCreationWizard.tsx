@@ -313,6 +313,19 @@ type WizardAutomationPlan = {
   };
 };
 
+type WizardAutomationExecutionGuard = {
+  status: "available" | "not_applicable" | "topic_in_flight" | "manual_review_required" | "identical_attempt_recorded" | "store_unavailable";
+  receipt: {
+    executionId: string | null;
+    action: string | null;
+    status: string | null;
+    startedAt: string | null;
+    finishedAt: string | null;
+    resultStatus: string | null;
+    blockerCode: string | null;
+  } | null;
+};
+
 const AUTOMATION_GATE_LABEL: Record<string, string> = {
   none: "자동으로 이어갈 수 있는 로컬 단계",
   owner_topic_selection: "주제·대본 확인 필요",
@@ -326,6 +339,15 @@ const AUTOMATION_GATE_LABEL: Record<string, string> = {
   owner_final_media_qa: "최종 영상 검수에서 중단",
   owner_publication_confirmation: "실제 게시 확인에서 중단",
   manual_recovery: "재전송 없이 수동 복구 필요",
+};
+
+const AUTOMATION_EXECUTION_GUARD_LABEL: Record<WizardAutomationExecutionGuard["status"], string> = {
+  available: "중복 실행 잠금 준비됨",
+  not_applicable: "현재 자동 실행 대상 없음",
+  topic_in_flight: "이 주제의 안전 작업이 실행 중",
+  manual_review_required: "중단된 이전 실행 수동 확인 필요",
+  identical_attempt_recorded: "같은 계획의 실행 기록 확인 필요",
+  store_unavailable: "실행 영수증 저장소 확인 필요",
 };
 
 const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
@@ -529,6 +551,7 @@ export default function VideoCreationWizard() {
   const [automationPlanState, setAutomationPlanState] = useState<RunState>("idle");
   const [automationPlanResult, setAutomationPlanResult] = useState<OperatorResult | null>(null);
   const [automationPlan, setAutomationPlan] = useState<WizardAutomationPlan | null>(null);
+  const [automationExecutionGuard, setAutomationExecutionGuard] = useState<WizardAutomationExecutionGuard | null>(null);
   const [automationAdvanceState, setAutomationAdvanceState] = useState<RunState>("idle");
   const [automationAdvanceResult, setAutomationAdvanceResult] = useState<OperatorResult | null>(null);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
@@ -886,16 +909,20 @@ export default function VideoCreationWizard() {
 
   const refreshAutomationPlan = useCallback(async (topicId: string) => {
     setAutomationPlanState("running");
+    setAutomationExecutionGuard(null);
     try {
       const r = await postAction("automationPlan", { topicId });
-      const plan = (r.raw as { plan?: WizardAutomationPlan } | undefined)?.plan;
+      const raw = r.raw as { plan?: WizardAutomationPlan; executionGuard?: WizardAutomationExecutionGuard } | undefined;
+      const plan = raw?.plan;
       setAutomationPlanResult(r);
       setAutomationPlanState(r.status === "success" ? "success" : r.status);
       setAutomationPlan(r.status === "success" && plan ? plan : null);
+      setAutomationExecutionGuard(r.status === "success" && raw?.executionGuard ? raw.executionGuard : null);
     } catch {
       setAutomationPlanState("error");
       setAutomationPlanResult({ action: "automationPlan", status: "error", summary: "자동 진행 상태를 확인하지 못했습니다." });
       setAutomationPlan(null);
+      setAutomationExecutionGuard(null);
     }
   }, []);
 
@@ -905,14 +932,20 @@ export default function VideoCreationWizard() {
     setAutomationAdvanceResult(null);
     try {
       const r = await postAction("automationAdvance", { topicId: selectedTopicId });
-      const raw = r.raw as { planAfter?: WizardAutomationPlan; executedAction?: string } | undefined;
+      const raw = r.raw as {
+        planAfter?: WizardAutomationPlan;
+        executedAction?: string;
+        executionGuard?: WizardAutomationExecutionGuard;
+      } | undefined;
       if (raw?.planAfter) setAutomationPlan(raw.planAfter);
+      if (raw?.executionGuard) setAutomationExecutionGuard(raw.executionGuard);
       setAutomationAdvanceResult(r);
       setAutomationAdvanceState(r.status === "success" ? "success" : r.status);
       if (raw?.executedAction === "finalVideoCreate" && r.status === "success") {
         setPreviewKey((key) => key + 1);
       }
       await refreshRealMedia(selectedTopicId);
+      await refreshAutomationPlan(selectedTopicId);
     } catch {
       setAutomationAdvanceState("error");
       setAutomationAdvanceResult({
@@ -921,7 +954,7 @@ export default function VideoCreationWizard() {
         summary: "다음 안전 작업 1개를 실행하지 못했습니다. 자동 재시도하지 않습니다.",
       });
     }
-  }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshRealMedia]);
+  }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshAutomationPlan, refreshRealMedia]);
 
   useEffect(() => {
     if (localDev !== true) return;
@@ -1253,6 +1286,7 @@ export default function VideoCreationWizard() {
                   className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={
                     automationPlan?.next?.canAutoAdvance !== true ||
+                    (automationExecutionGuard != null && automationExecutionGuard.status !== "available") ||
                     automationPlanState === "running" ||
                     automationAdvanceState === "running"
                   }
@@ -1296,6 +1330,11 @@ export default function VideoCreationWizard() {
                     <p className={`mt-1.5 text-sm font-bold ${automationPlan.next.canAutoAdvance ? "text-emerald-700" : "text-amber-700"}`}>
                       {AUTOMATION_GATE_LABEL[automationPlan.next.gate] ?? "확인 후 진행"}
                     </p>
+                    {automationExecutionGuard ? (
+                      <p className={`mt-1 text-xs font-semibold ${automationExecutionGuard.status === "available" || automationExecutionGuard.status === "not_applicable" ? "text-slate-500" : "text-amber-700"}`}>
+                        실행 안전장치: {AUTOMATION_EXECUTION_GUARD_LABEL[automationExecutionGuard.status]}
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <p className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-[15px] font-bold text-emerald-700">

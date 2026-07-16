@@ -8,7 +8,7 @@ Updated: 2026-07-17 KST
 - Main AI: Codex
 - Branch: `codex/source-first-blueprint-clean`
 - Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 88%.
+- Overall Owner-facing progress: approximately 89%.
 
 ## Current Product State
 
@@ -21,7 +21,9 @@ Updated: 2026-07-17 KST
 - Owner has accepted the current final viewing result. No upload, publish, deploy, push, env/secret change, account change, or external action has occurred.
 - The current product keeps the 11-step human-in-the-loop workflow and uses `money_shorts_resumable_orchestrator_v1` to reconstruct 12 durable production/publication stages from local artifacts after a restart.
 - The web UI now exposes one bounded `automationAdvance` button. It can execute exactly one planner-approved local/no-submit action (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, or `wizardPreflight`), then recomputes the plan and stops. It never chains, retries, runs paid generation, performs Owner QA, uploads, or publishes.
-- A durable execution receipt/idempotency lock and any scheduler/queue are still not implemented.
+- `automationAdvance` now writes a content-addressed `in_progress` receipt before execution under `C:\tmp\money-shorts-os\automation-execution-v1`, acquires one atomic per-topic lock, writes the terminal result and recomputed-plan fingerprint, then releases the lock. The same plan/action cannot execute twice.
+- Interrupted or ambiguous attempts are not expired or unlocked automatically. The UI shows the durable guard status and disables the one-step button for in-flight, interrupted, identical-recorded, or store-unavailable states.
+- A guided Owner recovery decision for interrupted receipts and any scheduler/queue are still not implemented.
 
 ## Publication State
 
@@ -36,15 +38,16 @@ Updated: 2026-07-17 KST
 - Publish preflight part 1: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
 - Publish preflight part 2: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
 - Current code-level checks: the four updated stale harnesses pass (operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5); related image/caption/motion/production-input guards also pass. `pnpm build` remains passed from the prior audit; output/v2 dynamic tracing warning remains a later speed optimization item only.
-- Resumable controller/executor guard: 30/30 PASS. Existing operator UI guard 91/91 and one-click UI guard 389/389 pass. `pnpm exec tsc --noEmit` and `pnpm build` pass.
+- Durable execution-store guard: 15/15 PASS. Resumable controller/executor guard: 37/37 PASS. Existing operator UI guard 91/91 and one-click UI guard 389/389 pass. `pnpm exec tsc --noEmit` and `pnpm build` pass.
 - Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
+- The accepted topic also showed `실행 안전장치: 현재 자동 실행 대상 없음`; no execution receipt or lock was created because publication is outside the safe allowlist.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Before adding any scheduler, give `automationAdvance` a durable local execution receipt and per-topic in-flight/idempotency lock so a crash, refresh, or duplicate click cannot repeat the same local step unnoticed.
+4. Before adding any scheduler, add an Owner-visible recovery workflow for interrupted receipts. It must compare the stored before-plan fingerprint with current artifacts, show the action/time/result evidence, and require an explicit decision before resolving a lock. It must never auto-rerun or silently clear an interrupted attempt.
 5. Scheduler/queue and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the bounded executor implementation.
 
 ## Diff Cleanup State

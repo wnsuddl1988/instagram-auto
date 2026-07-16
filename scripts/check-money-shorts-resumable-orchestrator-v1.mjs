@@ -13,6 +13,7 @@ const routeSource = readFileSync(join(ROOT, "app", "api", "money-shorts", "opera
 const helperSource = readFileSync(join(ROOT, "lib", "owner-web-operator.ts"), "utf8");
 const wizardSource = readFileSync(join(ROOT, "components", "VideoCreationWizard.tsx"), "utf8");
 const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-orchestrator.mjs"), "utf8");
+const executionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-execution-store.mjs"), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -116,11 +117,18 @@ check("operator action enum exposes the bounded advance action", helperSource.in
 check("advance revalidates planner permission and strict safe predicate", advanceRouteBlock.includes("canAutoAdvance !== true") && advanceRouteBlock.includes("isMoneyShortsSafeAutoAdvanceAction(nextAction)"));
 check("advance invokes exactly one safe dispatcher and then recomputes", (advanceRouteBlock.match(/runOneSafeAutomationAction\(/g) ?? []).length === 1 && (advanceRouteBlock.match(/readMoneyShortsAutomationSnapshot\(/g) ?? []).length === 2);
 check("advance response proves one action, no chaining, and no retry", advanceRouteBlock.includes("actionCount: 1") && advanceRouteBlock.includes("chainedActionCount: 0") && advanceRouteBlock.includes("automaticRetryCount: 0"));
+check("advance writes durable receipt before dispatch and finishes it afterward", advanceRouteBlock.indexOf("beginMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("runOneSafeAutomationAction") && advanceRouteBlock.indexOf("runOneSafeAutomationAction") < advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution"));
+check("advance refuses duplicate or in-flight execution before dispatch", advanceRouteBlock.includes("AUTOMATION_TOPIC_IN_FLIGHT") && advanceRouteBlock.includes("AUTOMATION_IDENTICAL_ATTEMPT_RECORDED") && advanceRouteBlock.includes("actionCount: 0"));
 check("safe dispatcher contains only the four local/no-submit actions", ["realTtsPreflight", "flowMotionPrepare", "finalVideoCreate", "wizardPreflight"].every((action) => safeRunnerBlock.includes(`case "${action}"`)) && !/case "(?:realTtsCreate|realSceneImagesCreate|flowMotionGenerate|actualUpload)"/u.test(safeRunnerBlock));
 check("advance route never arms, uploads, or invokes paid generation", !/allowArm|ARM_ARG_TOKEN|--arm|flowMotionGenerate|realTtsCreate|realSceneImagesCreate/u.test(advanceRouteBlock));
 check("controller imports no network or process execution API", !/node:child_process|\bfetch\s*\(|https?:\/\//u.test(controllerSource));
+check("execution store is local-only and imports no network or child process API", executionStoreSource.includes("C:\\\\tmp\\\\money-shorts-os\\\\automation-execution-v1") && !/node:child_process|\bfetch\s*\(|https?:\/\//u.test(executionStoreSource));
+check("execution store uses an atomic exclusive per-topic lock", /openSync\(paths\.lockPath,\s*"wx"\)/u.test(executionStoreSource));
+check("execution store writes terminal receipt before removing lock", executionStoreSource.indexOf("writeJsonAtomic(handle.receiptPath, receipt)") < executionStoreSource.indexOf("rmSync(handle.lockPath)"));
+check("execution store has no automatic stale-lock expiration", !/mtime|birthtime|staleAfter|expiresAt|Date\.now\(\)\s*-/u.test(executionStoreSource));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
 check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
+check("wizard disables advance when durable execution guard is not available", wizardSource.includes('automationExecutionGuard.status !== "available"') && wizardSource.includes("실행 안전장치:"));
 
 console.log(`\n${passed + failed} checks - ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);
