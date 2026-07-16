@@ -230,6 +230,30 @@ async function fillPromptAndVerify(page, job, referenceEvidence) {
   return { ...referenceEvidence, promptDomSha256, attachmentCount };
 }
 
+async function waitForUploadedReferenceDialog(page, uploadFileName, timeoutMs = 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    let pickerDialog = await firstVisible(
+      page.locator('[role="dialog"]').filter({ hasText: /(?:미디어 업로드|Upload media|프롬프트에 추가|Add to prompt)/i }),
+    );
+    if (!pickerDialog) {
+      const pickerButton = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
+      if (pickerButton) {
+        await pickerButton.click();
+        await page.waitForTimeout(500);
+        pickerDialog = await firstVisible(
+          page.locator('[role="dialog"]').filter({ hasText: /(?:미디어 업로드|Upload media|프롬프트에 추가|Add to prompt)/i }),
+        );
+      }
+    }
+    if (pickerDialog && await pickerDialog.locator(`img[alt="${uploadFileName}"]`).count() > 0) {
+      return pickerDialog;
+    }
+    await page.waitForTimeout(500);
+  }
+  return null;
+}
+
 async function attachReferenceAndPrompt(page, job, priorSummary) {
   const assetPicker = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
   if (!assetPicker) throw new Error("asset_picker_button_missing");
@@ -261,19 +285,7 @@ async function attachReferenceAndPrompt(page, job, priorSummary) {
   await uploadButton.click();
   const chooser = await chooserPromise;
   await chooser.setFiles(uploadReferenceFile);
-  await page.waitForTimeout(5_000);
-
-  pickerDialog = await waitForFirstVisible(
-    page,
-    page.locator('[role="dialog"]').filter({ hasText: uploadFileName }),
-    2_000,
-  );
-  if (!pickerDialog) {
-    const pickerAfterUpload = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
-    if (!pickerAfterUpload) throw new Error("asset_picker_after_upload_missing");
-    await pickerAfterUpload.click();
-    pickerDialog = await waitForFirstVisible(page, page.locator('[role="dialog"]').filter({ hasText: uploadFileName }));
-  }
+  pickerDialog = await waitForUploadedReferenceDialog(page, uploadFileName);
   if (!pickerDialog) throw new Error("uploaded_reference_missing_from_media_picker");
   const attached = await selectMediaAndAddToPrompt(page, pickerDialog, uploadFileName);
   if (!attached) throw new Error("uploaded_reference_missing_from_media_picker");
@@ -393,6 +405,26 @@ async function videoEditHrefs(page) {
     .filter(Boolean))]);
 }
 
+async function waitForGeneratedVideoPageEvidence(page, job, timeoutMs = 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  let promptMatched = false;
+  let aspectRatioMatched = false;
+  while (Date.now() < deadline) {
+    const editBodyText = normalized(await visibleBodyText(page));
+    promptMatched ||= editBodyText.includes(normalized(job.prompt));
+    aspectRatioMatched ||= /(?:crop_portrait\s*)?9:16\s*9:16/i.test(editBodyText);
+    const sources = await page.locator("video").evaluateAll((elements) => [...new Set(elements
+      .map((element) => element.currentSrc || element.getAttribute("src") || "")
+      .filter(Boolean))]);
+    if (sources.length > 1) throw new Error(`generated_video_source_ambiguous:${sources.length}`);
+    if (promptMatched && aspectRatioMatched && sources.length === 1) return sources[0];
+    await page.waitForTimeout(1_000);
+  }
+  if (!promptMatched) throw new Error("generated_video_prompt_mismatch");
+  if (!aspectRatioMatched) throw new Error("generated_video_aspect_ratio_evidence_missing");
+  throw new Error("generated_video_source_ambiguous:0");
+}
+
 async function downloadGeneratedVideo(page, targetPath, initialVideoEditHrefs, job) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < GENERATION_TIMEOUT_MS) {
@@ -401,21 +433,20 @@ async function downloadGeneratedVideo(page, targetPath, initialVideoEditHrefs, j
     if (classified?.type === "quota") throw new Error("quota_exhausted_after_submission_no_fallback");
     if (classified?.type === "refusal") throw new Error("generation_refused");
     if (classified?.type === "transient") throw new Error("generation_transient_error_no_retry");
+    const currentPageEditHref = /\/edit\/[a-f0-9-]+/i.test(page.url()) ? page.url() : null;
     const currentVideoEditHrefs = await videoEditHrefs(page);
-    const newVideoEditHrefs = currentVideoEditHrefs.filter((href) => !initialVideoEditHrefs.includes(href));
+    const newVideoEditHrefs = [...new Set([
+      ...currentVideoEditHrefs,
+      ...(currentPageEditHref ? [currentPageEditHref] : []),
+    ])].filter((href) => !initialVideoEditHrefs.includes(href));
     if (newVideoEditHrefs.length === 0) continue;
     if (newVideoEditHrefs.length !== 1) throw new Error(`generated_video_edit_link_ambiguous:${newVideoEditHrefs.length}`);
     const editUrl = newVideoEditHrefs[0];
-    await page.goto(editUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForTimeout(2_000);
-    const editBodyText = normalized(await visibleBodyText(page));
-    if (!editBodyText.includes(normalized(job.prompt))) throw new Error("generated_video_prompt_mismatch");
-    if (!/(?:crop_portrait\s*)?9:16\s*9:16/i.test(editBodyText)) throw new Error("generated_video_aspect_ratio_evidence_missing");
-    const sources = await page.locator("video").evaluateAll((elements) => [...new Set(elements
-      .map((element) => element.currentSrc || element.getAttribute("src") || "")
-      .filter(Boolean))]);
-    if (sources.length !== 1) throw new Error(`generated_video_source_ambiguous:${sources.length}`);
-    const mediaUrl = new URL(sources[0], page.url());
+    if (page.url() !== editUrl) {
+      await page.goto(editUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    }
+    const source = await waitForGeneratedVideoPageEvidence(page, job);
+    const mediaUrl = new URL(source, page.url());
     if (mediaUrl.hostname !== "labs.google" || mediaUrl.pathname !== "/fx/api/trpc/media.getMediaUrlRedirect") {
       throw new Error("generated_video_source_url_untrusted");
     }
