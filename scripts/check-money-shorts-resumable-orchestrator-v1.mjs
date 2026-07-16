@@ -1,6 +1,8 @@
 import {
+  MONEY_SHORTS_SAFE_AUTO_ADVANCE_ACTIONS,
   MONEY_SHORTS_RESUMABLE_ORCHESTRATOR_VERSION,
   buildMoneyShortsResumablePlan,
+  isMoneyShortsSafeAutoAdvanceAction,
 } from "../lib/money-shorts-resumable-orchestrator.mjs";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -78,11 +80,28 @@ const complete = buildMoneyShortsResumablePlan({ ...readyBase, publishedAllParts
 check("fully published content is complete", complete.status === "complete" && complete.next === null);
 check("planner itself reports zero side effects", Object.values(publication.safety).every((value) => value === false));
 check("safe auto list never includes paid generation or publication", !publication.safeAutoAdvanceActions.includes("realTtsCreate") && !publication.safeAutoAdvanceActions.includes("flowMotionGenerate") && !publication.safeAutoAdvanceActions.includes("actualUpload"));
+check("safe executor allowlist is exact", MONEY_SHORTS_SAFE_AUTO_ADVANCE_ACTIONS.join(",") === "realTtsPreflight,flowMotionPrepare,finalVideoCreate,wizardPreflight");
+check("safe action predicate rejects every external or paid action", ["realTtsCreate", "realSceneImagesCreate", "flowMotionGenerate", "actualUpload"].every((action) => !isMoneyShortsSafeAutoAdvanceAction(action)));
 
 const automationRouteStart = routeSource.indexOf('if (action === "automationPlan")');
-const automationRouteEnd = routeSource.indexOf('// Flow 모션 준비', automationRouteStart);
+const automationRouteEnd = routeSource.indexOf('if (action === "automationAdvance")', automationRouteStart);
 const automationRouteBlock = automationRouteStart >= 0 && automationRouteEnd > automationRouteStart
   ? routeSource.slice(automationRouteStart, automationRouteEnd)
+  : "";
+const snapshotStart = routeSource.indexOf("function readMoneyShortsAutomationSnapshot");
+const snapshotEnd = routeSource.indexOf("function runFlowMotionPrepareAction", snapshotStart);
+const snapshotBlock = snapshotStart >= 0 && snapshotEnd > snapshotStart
+  ? routeSource.slice(snapshotStart, snapshotEnd)
+  : "";
+const advanceRouteStart = routeSource.indexOf('if (action === "automationAdvance")');
+const advanceRouteEnd = routeSource.indexOf('// Flow 모션 준비', advanceRouteStart);
+const advanceRouteBlock = advanceRouteStart >= 0 && advanceRouteEnd > advanceRouteStart
+  ? routeSource.slice(advanceRouteStart, advanceRouteEnd)
+  : "";
+const safeRunnerStart = routeSource.indexOf("function runOneSafeAutomationAction");
+const safeRunnerEnd = routeSource.indexOf("// ── POST: action 실행", safeRunnerStart);
+const safeRunnerBlock = safeRunnerStart >= 0 && safeRunnerEnd > safeRunnerStart
+  ? routeSource.slice(safeRunnerStart, safeRunnerEnd)
   : "";
 check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
 check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
@@ -91,10 +110,17 @@ check("automation route reads durable media/Flow/preflight/publish evidence", [
   "readWizardFlowMotionStatus",
   "readWizardPublishPreflight",
   "readWizardPublishResult",
-].every((name) => automationRouteBlock.includes(name)));
+].every((name) => snapshotBlock.includes(name)) && automationRouteBlock.includes("readMoneyShortsAutomationSnapshot"));
 check("automation route never spawns or arms an action", !/runOperatorScript|allowArm|ARM_ARG_TOKEN|--arm/u.test(automationRouteBlock));
+check("operator action enum exposes the bounded advance action", helperSource.includes('"automationAdvance"') && routeSource.includes('"automationAdvance",'));
+check("advance revalidates planner permission and strict safe predicate", advanceRouteBlock.includes("canAutoAdvance !== true") && advanceRouteBlock.includes("isMoneyShortsSafeAutoAdvanceAction(nextAction)"));
+check("advance invokes exactly one safe dispatcher and then recomputes", (advanceRouteBlock.match(/runOneSafeAutomationAction\(/g) ?? []).length === 1 && (advanceRouteBlock.match(/readMoneyShortsAutomationSnapshot\(/g) ?? []).length === 2);
+check("advance response proves one action, no chaining, and no retry", advanceRouteBlock.includes("actionCount: 1") && advanceRouteBlock.includes("chainedActionCount: 0") && advanceRouteBlock.includes("automaticRetryCount: 0"));
+check("safe dispatcher contains only the four local/no-submit actions", ["realTtsPreflight", "flowMotionPrepare", "finalVideoCreate", "wizardPreflight"].every((action) => safeRunnerBlock.includes(`case "${action}"`)) && !/case "(?:realTtsCreate|realSceneImagesCreate|flowMotionGenerate|actualUpload)"/u.test(safeRunnerBlock));
+check("advance route never arms, uploads, or invokes paid generation", !/allowArm|ARM_ARG_TOKEN|--arm|flowMotionGenerate|realTtsCreate|realSceneImagesCreate/u.test(advanceRouteBlock));
 check("controller imports no network or process execution API", !/node:child_process|\bfetch\s*\(|https?:\/\//u.test(controllerSource));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
+check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
 
 console.log(`\n${passed + failed} checks - ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);

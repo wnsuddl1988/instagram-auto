@@ -8,7 +8,7 @@ Updated: 2026-07-17 KST
 - Main AI: Codex
 - Branch: `codex/source-first-blueprint-clean`
 - Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 87%.
+- Overall Owner-facing progress: approximately 88%.
 
 ## Current Product State
 
@@ -19,8 +19,9 @@ Updated: 2026-07-17 KST
 - Visual timing repair is included: the part 1 closing transition and part 2 closing transition are aligned to the preceding speech boundary; no audio was cut for the transition.
 - Final video summaries report `RENDER_MUX_OK`, 15~60s validity, video/audio streams, caption contracts, and Flow motion coverage as passed.
 - Owner has accepted the current final viewing result. No upload, publish, deploy, push, env/secret change, account change, or external action has occurred.
-- The current product keeps the 11-step human-in-the-loop workflow, and now adds `money_shorts_resumable_orchestrator_v1`: it reconstructs 12 durable production/publication stages from local artifacts and shows the next safe stage in the web UI after a restart.
-- The new controller is decision-only in this revision. It executes no generation, render, upload, retry, or publication. A bounded safe-step executor and any scheduler/queue are still not implemented.
+- The current product keeps the 11-step human-in-the-loop workflow and uses `money_shorts_resumable_orchestrator_v1` to reconstruct 12 durable production/publication stages from local artifacts after a restart.
+- The web UI now exposes one bounded `automationAdvance` button. It can execute exactly one planner-approved local/no-submit action (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, or `wizardPreflight`), then recomputes the plan and stops. It never chains, retries, runs paid generation, performs Owner QA, uploads, or publishes.
+- A durable execution receipt/idempotency lock and any scheduler/queue are still not implemented.
 
 ## Publication State
 
@@ -35,15 +36,16 @@ Updated: 2026-07-17 KST
 - Publish preflight part 1: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
 - Publish preflight part 2: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
 - Current code-level checks: the four updated stale harnesses pass (operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5); related image/caption/motion/production-input guards also pass. `pnpm build` remains passed from the prior audit; output/v2 dynamic tracing warning remains a later speed optimization item only.
-- Resumable controller guard: 21/21 PASS. `pnpm exec tsc --noEmit` and `pnpm build` pass. Local UI restored the accepted topic at 11/12 stages and stopped at `owner_publication_confirmation`; API returned `noLive:true` with all execution flags false.
+- Resumable controller/executor guard: 30/30 PASS. Existing operator UI guard 91/91 and one-click UI guard 389/389 pass. `pnpm exec tsc --noEmit` and `pnpm build` pass.
+- Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Extend the implemented decision-only controller with a bounded safe-step executor for local/no-submit actions only (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, `wizardPreflight`). It must stop again before every paid/external/Owner-QA/publication gate.
-5. Scheduler/queue and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the controller implementation.
+4. Before adding any scheduler, give `automationAdvance` a durable local execution receipt and per-topic in-flight/idempotency lock so a crash, refresh, or duplicate click cannot repeat the same local step unnoticed.
+5. Scheduler/queue and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the bounded executor implementation.
 
 ## Diff Cleanup State
 

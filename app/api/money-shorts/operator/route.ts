@@ -72,7 +72,10 @@ import {
   FINANCE_CHARACTER_IDS,
   type FinanceCharacterId,
 } from "@/lib/finance-character-cast";
-import { buildMoneyShortsResumablePlan } from "@/lib/money-shorts-resumable-orchestrator.mjs";
+import {
+  buildMoneyShortsResumablePlan,
+  isMoneyShortsSafeAutoAdvanceAction,
+} from "@/lib/money-shorts-resumable-orchestrator.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,6 +109,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "finalVideoCreate",
   "realMediaStatus",
   "automationPlan",
+  "automationAdvance",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -411,6 +415,236 @@ function statusResponse() {
     },
     noLive: true,
   });
+}
+
+function readMoneyShortsAutomationSnapshot(topicId: string) {
+  const media = readWizardRealMediaState(topicId);
+  const flowMotion = readWizardFlowMotionStatus(topicId);
+  const characterCast = readWizardFinanceCharacterCastState();
+  const characterRoute = resolveWizardFinanceCharacterVoice(topicId);
+  const parts = media.parts;
+  const preflights = parts.map((part) => ({
+    partId: part.id,
+    evidence: readWizardPublishPreflight(topicId, part.id),
+  }));
+  const publishResults = parts.map((part) => ({
+    partId: part.id,
+    result: readWizardPublishResult(topicId, part.id),
+  }));
+  const publishPreflightReady = parts.length > 0 && preflights.every(({ evidence }) =>
+    evidence?.status === "PREFLIGHT_ONLY_OK" &&
+    evidence.blockerCode == null &&
+    evidence.contentUnitManifestPath != null &&
+    evidence.credentialPresentCount === APPROVED_ENV_KEY_NAMES.length);
+  const publishedAllParts = parts.length > 0 && publishResults.every(({ result }) =>
+    result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
+  const plan = buildMoneyShortsResumablePlan({
+    topicId,
+    scriptReady: media.scriptEngine.finalReady,
+    characterReady: characterRoute == null || characterCast.allSelected,
+    realTtsReady: media.realTts.ready,
+    generatedImageCount: media.realImages.generatedCount,
+    expectedImageCount: media.realImages.expectedCount ?? 0,
+    realImagesReady: media.realImages.ready,
+    flowState: flowMotion.state,
+    flowReadyForRender: flowMotion.readyForRender,
+    finalVideoReady: media.finalVideo.ready,
+    mediaQualityGateOk: media.mediaQualityGate.ok,
+    publishPreflightReady,
+    publishedAllParts,
+  });
+  return { plan, preflights, publishResults };
+}
+
+function runFlowMotionPrepareAction(topicId: string): OperatorResponse {
+  const action = "flowMotionPrepare" as const;
+  const result = prepareWizardFlowMotionPackets(topicId);
+  if (!result.ok) {
+    const needsImages = result.reason.startsWith("flow_motion_scene_images_required:");
+    return {
+      action,
+      status: "blocked",
+      summary: needsImages
+        ? "먼저 자동 선정 장면의 기준 이미지를 모두 만들어 주세요."
+        : "Flow 모션 작업 패킷을 준비하지 못했습니다.",
+      detail: "브라우저 접근·업로드·생성 전송·크레딧 사용은 발생하지 않았습니다.",
+      blockerCode: result.reason,
+      noLive: true,
+    };
+  }
+  const status = result.status;
+  return {
+    action,
+    status: "success",
+    summary: status.requiredCount === 0
+      ? "이 영상에는 Flow 모션이 필요한 장면이 없어 정지 이미지 흐름을 유지합니다."
+      : `Flow 모션 후보 ${status.requiredCount}개의 패킷이 준비됐습니다. 현재 상태는 생성 승인 대기입니다.`,
+    detail: "장면 이미지·프롬프트 해시를 고정한 로컬 패킷만 만들었습니다. 브라우저 접근·업로드·생성 전송·크레딧 사용은 0회입니다.",
+    raw: { flowMotion: status },
+    noLive: true,
+  };
+}
+
+function runRealTtsPreflightAction(topicId: string): OperatorResponse {
+  const action = "realTtsPreflight" as const;
+  const pipeline = buildWizardRealPipelineInputs(topicId);
+  if (!pipeline.ok) {
+    return { action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true };
+  }
+  const packets = [];
+  for (const part of pipeline.paths.parts) {
+    const built = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+    if (!built.ok) {
+      return { action, status: "blocked", summary: describeBuildFailure(built.reason), blockerCode: built.reason, noLive: true };
+    }
+    const run = runOperatorScript(built.command, { timeoutMs: 30_000 });
+    if (!run.ran || run.timedOut || run.exitCode !== 0 || !run.json) {
+      return {
+        action,
+        status: "blocked",
+        summary: "최신 민재 음성 입력의 승인 패킷을 만들지 못했습니다.",
+        blockerCode: run.timedOut ? "SCRIPT_TIMEOUT" : "REAL_TTS_PREFLIGHT_FAILED",
+        raw: { partId: part.id, exitCode: run.exitCode, stderr: run.stderr.slice(-600) },
+        noLive: true,
+      };
+    }
+    packets.push(run.json);
+  }
+  return {
+    action,
+    status: "success",
+    summary: `최신 민재 2구간 음성 승인 패킷 ${packets.length}개를 만들었습니다. ElevenLabs 호출과 크레딧 사용은 없습니다.`,
+    raw: { packets },
+    noLive: true,
+  };
+}
+
+function runFinalVideoCreateAction(topicId: string): OperatorResponse {
+  const action = "finalVideoCreate" as const;
+  const pipeline = buildWizardRealPipelineInputs(topicId);
+  if (!pipeline.ok) {
+    return { action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true };
+  }
+  const videoRuns = [];
+  for (const part of pipeline.paths.parts) {
+    const builtVid = buildOperatorCommand(action, { topicId, productionPartId: part.id });
+    if (!builtVid.ok) {
+      return { action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true };
+    }
+    const runVid = runOperatorScript(builtVid.command, { timeoutMs: FINAL_VIDEO_TIMEOUT_MS });
+    videoRuns.push({ partId: part.id, run: runVid });
+    if (!runVid.ran || runVid.timedOut) {
+      return {
+        action,
+        status: "error",
+        summary: runVid.timedOut
+          ? `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}영상 합성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요.`
+          : "영상 합성 프로그램을 실행하지 못했습니다.",
+        blockerCode: runVid.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      };
+    }
+  }
+  const mediaAfterVid = readWizardRealMediaState(topicId);
+  if (mediaAfterVid.finalVideo.ready) {
+    const finalScript = topicId ? readScriptPreview(topicId) : null;
+    if (finalScript) markWizardTopicHistory("video_created", [finalScript]);
+    const mb = mediaAfterVid.finalVideo.sizeBytes ? (mediaAfterVid.finalVideo.sizeBytes / (1024 * 1024)).toFixed(2) : "?";
+    return {
+      action,
+      status: "success",
+      summary: `최종 영상 ${mediaAfterVid.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 편별로 재생됩니다.`,
+      detail: "선정 장면은 검수 완료 Veo 클립, 나머지는 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
+      raw: { finalVideo: mediaAfterVid.finalVideo, mediaQualityGate: mediaAfterVid.mediaQualityGate },
+      noLive: true,
+    };
+  }
+  return {
+    action,
+    status: "blocked",
+    summary: "최종 영상 검증을 통과하지 못했습니다. 실제 음성/이미지를 확인한 뒤 다시 시도해 주세요.",
+    blockerCode: "FINAL_MP4_VALIDATION_FAILED",
+    raw: {
+      finalVideo: mediaAfterVid.finalVideo,
+      parts: mediaAfterVid.parts.map((part) => ({ id: part.id, finalVideo: part.finalVideo })),
+      exitCodes: videoRuns.map((row) => row.run.exitCode),
+    },
+    noLive: true,
+  };
+}
+
+function runWizardPreflightAction(topicId: string): OperatorResponse {
+  const action = "wizardPreflight" as const;
+  const contentUnits = buildWizardContentUnitsForTopic(topicId);
+  if (!contentUnits.ok) {
+    return {
+      action,
+      status: "blocked",
+      summary: describeBuildFailure(contentUnits.reason),
+      blockerCode: contentUnits.reason,
+      noLive: true,
+    };
+  }
+  const preflights = [];
+  for (const unit of contentUnits.paths) {
+    const builtPf = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
+    if (!builtPf.ok) {
+      return { action, status: "blocked", summary: describeBuildFailure(builtPf.reason), blockerCode: builtPf.reason, noLive: true };
+    }
+    const runPf = runOperatorScript(builtPf.command);
+    if (!runPf.ran || runPf.timedOut) {
+      return {
+        action,
+        status: "error",
+        summary: `${unit.totalParts > 1 ? `${unit.partNumber}편 ` : ""}게시 전 점검을 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.`,
+        blockerCode: runPf.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
+        noLive: true,
+      };
+    }
+    const pf = readWizardPublishPreflight(topicId, unit.productionPartId);
+    preflights.push({ partId: unit.productionPartId, preflight: pf });
+    if (runPf.exitCode !== 0 || pf?.status !== "PREFLIGHT_ONLY_OK") {
+      const pfBlocker = pf?.blockerCode ?? extractRunnerBlocker(runPf.stdout, runPf.stderr);
+      return {
+        action,
+        status: "blocked",
+        summary: describeUploadBlocker(pfBlocker, `${unit.partNumber}편 게시 전 점검에서 막혔습니다.`),
+        blockerCode: pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
+        raw: { preflights },
+        noLive: true,
+      };
+    }
+  }
+  const credentialCount = preflights[0]?.preflight?.credentialPresentCount ?? "?";
+  return {
+    action,
+    status: "success",
+    summary: `영상 ${contentUnits.paths.length}개의 게시 전 점검을 모두 통과했습니다. 업로드 키 ${credentialCount}/6, 중복 게시 없음.`,
+    detail: "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 모든 편을 순서대로 업로드할 수 있습니다.",
+    raw: { preflights },
+    noLive: true,
+  };
+}
+
+function runOneSafeAutomationAction(action: string, topicId: string): OperatorResponse {
+  switch (action) {
+    case "realTtsPreflight":
+      return runRealTtsPreflightAction(topicId);
+    case "flowMotionPrepare":
+      return runFlowMotionPrepareAction(topicId);
+    case "finalVideoCreate":
+      return runFinalVideoCreateAction(topicId);
+    case "wizardPreflight":
+      return runWizardPreflightAction(topicId);
+    default:
+      return {
+        action: "automationAdvance",
+        status: "blocked",
+        summary: "자동 실행 허용 목록 밖의 작업이라 중단했습니다.",
+        blockerCode: "AUTOMATION_ACTION_NOT_SAFE",
+        noLive: true,
+      };
+  }
 }
 
 // ── POST: action 실행 ─────────────────────────────────────────────────────────
@@ -807,41 +1041,7 @@ export async function POST(request: Request) {
   if (action === "automationPlan") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const media = readWizardRealMediaState(topicId);
-    const flowMotion = readWizardFlowMotionStatus(topicId);
-    const characterCast = readWizardFinanceCharacterCastState();
-    const characterRoute = resolveWizardFinanceCharacterVoice(topicId);
-    const parts = media.parts;
-    const preflights = parts.map((part) => ({
-      partId: part.id,
-      evidence: readWizardPublishPreflight(topicId, part.id),
-    }));
-    const publishResults = parts.map((part) => ({
-      partId: part.id,
-      result: readWizardPublishResult(topicId, part.id),
-    }));
-    const publishPreflightReady = parts.length > 0 && preflights.every(({ evidence }) =>
-      evidence?.status === "PREFLIGHT_ONLY_OK" &&
-      evidence.blockerCode == null &&
-      evidence.contentUnitManifestPath != null &&
-      evidence.credentialPresentCount === APPROVED_ENV_KEY_NAMES.length);
-    const publishedAllParts = parts.length > 0 && publishResults.every(({ result }) =>
-      result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
-    const plan = buildMoneyShortsResumablePlan({
-      topicId,
-      scriptReady: media.scriptEngine.finalReady,
-      characterReady: characterRoute == null || characterCast.allSelected,
-      realTtsReady: media.realTts.ready,
-      generatedImageCount: media.realImages.generatedCount,
-      expectedImageCount: media.realImages.expectedCount ?? 0,
-      realImagesReady: media.realImages.ready,
-      flowState: flowMotion.state,
-      flowReadyForRender: flowMotion.readyForRender,
-      finalVideoReady: media.finalVideo.ready,
-      mediaQualityGateOk: media.mediaQualityGate.ok,
-      publishPreflightReady,
-      publishedAllParts,
-    });
+    const { plan, preflights, publishResults } = readMoneyShortsAutomationSnapshot(topicId);
     return json({
       action,
       status: "success",
@@ -854,35 +1054,70 @@ export async function POST(request: Request) {
     });
   }
 
+  // 다음 안전 작업 1개만 실행한다. 실행 후 계획을 한 번 다시 읽고 반드시 응답을 끝낸다.
+  // 유료/외부/QA/게시 작업은 허용 목록에 없으며, 같은 요청에서 두 번째 작업을 이어 실행하지 않는다.
+  if (action === "automationAdvance") {
+    const topicIdRaw = (body as { topicId?: unknown }).topicId;
+    const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const before = readMoneyShortsAutomationSnapshot(topicId);
+    const nextAction = before.plan.next?.action ?? null;
+    if (
+      before.plan.next?.canAutoAdvance !== true ||
+      nextAction == null ||
+      !isMoneyShortsSafeAutoAdvanceAction(nextAction)
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 단계는 자동 실행할 수 없어 확인 지점에서 멈췄습니다.",
+        detail: before.plan.next?.reason ?? "추가 작업이 없습니다.",
+        blockerCode: before.plan.next?.gate ?? "AUTOMATION_NO_SAFE_ACTION",
+        raw: {
+          planBefore: before.plan,
+          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
+        },
+        noLive: true,
+      });
+    }
+
+    const executed = runOneSafeAutomationAction(nextAction, topicId);
+    const after = readMoneyShortsAutomationSnapshot(topicId);
+    const stopLabel = after.plan.next?.stageLabel ?? "완료";
+    return json({
+      action,
+      status: executed.status,
+      summary: executed.status === "success"
+        ? `${executed.summary} 다음 단계(${stopLabel})를 다시 확인하고 멈췄습니다.`
+        : `안전 작업 1개를 시도한 뒤 중단했습니다: ${executed.summary}`,
+      detail: after.plan.next?.reason ?? "추가 작업이 없습니다.",
+      blockerCode: executed.blockerCode,
+      raw: {
+        executedAction: nextAction,
+        execution: {
+          actionCount: 1,
+          chainedActionCount: 0,
+          automaticRetryCount: 0,
+          externalGenerationExecuted: false,
+          paidActionExecuted: false,
+          uploadExecuted: false,
+          publicationExecuted: false,
+          localRenderExecuted: nextAction === "finalVideoCreate" && executed.status === "success",
+          result: executed,
+        },
+        planBefore: before.plan,
+        planAfter: after.plan,
+        preflights: after.preflights,
+        publishResults: after.publishResults,
+      },
+      noLive: true,
+    });
+  }
+
   // Flow 모션 준비 — 자동 선정 장면의 로컬 패킷/상태만 만든다. 브라우저·업로드·생성·크레딧 0.
   if (action === "flowMotionPrepare") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const result = prepareWizardFlowMotionPackets(topicId);
-    if (!result.ok) {
-      const needsImages = result.reason.startsWith("flow_motion_scene_images_required:");
-      return json({
-        action,
-        status: "blocked",
-        summary: needsImages
-          ? "먼저 자동 선정 장면의 기준 이미지를 모두 만들어 주세요."
-          : "Flow 모션 작업 패킷을 준비하지 못했습니다.",
-        detail: "브라우저 접근·업로드·생성 전송·크레딧 사용은 발생하지 않았습니다.",
-        blockerCode: result.reason,
-        noLive: true,
-      });
-    }
-    const status = result.status;
-    return json({
-      action,
-      status: "success",
-      summary: status.requiredCount === 0
-        ? "이 영상에는 Flow 모션이 필요한 장면이 없어 정지 이미지 흐름을 유지합니다."
-        : `Flow 모션 후보 ${status.requiredCount}개의 패킷이 준비됐습니다. 현재 상태는 생성 승인 대기입니다.`,
-      detail: "장면 이미지·프롬프트 해시를 고정한 로컬 패킷만 만들었습니다. 브라우저 접근·업로드·생성 전송·크레딧 사용은 0회입니다.",
-      raw: { flowMotion: status },
-      noLive: true,
-    });
+    return json(runFlowMotionPrepareAction(topicId));
   }
 
   // Flow 모션 생성 — 장면별 정확한 승인문구가 일치할 때만 Playwright runner를 1회 호출한다.
@@ -1003,36 +1238,7 @@ export async function POST(request: Request) {
   if (action === "realTtsPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const pipeline = buildWizardRealPipelineInputs(topicId);
-    if (!pipeline.ok) {
-      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
-    }
-    const packets = [];
-    for (const part of pipeline.paths.parts) {
-      const built = buildOperatorCommand(action, { topicId, productionPartId: part.id });
-      if (!built.ok) {
-        return json({ action, status: "blocked", summary: describeBuildFailure(built.reason), blockerCode: built.reason, noLive: true });
-      }
-      const run = runOperatorScript(built.command, { timeoutMs: 30_000 });
-      if (!run.ran || run.timedOut || run.exitCode !== 0 || !run.json) {
-        return json({
-          action,
-          status: "blocked",
-          summary: "최신 민재 음성 입력의 승인 패킷을 만들지 못했습니다.",
-          blockerCode: run.timedOut ? "SCRIPT_TIMEOUT" : "REAL_TTS_PREFLIGHT_FAILED",
-          raw: { partId: part.id, exitCode: run.exitCode, stderr: run.stderr.slice(-600) },
-          noLive: true,
-        });
-      }
-      packets.push(run.json);
-    }
-    return json({
-      action,
-      status: "success",
-      summary: `최신 민재 2구간 음성 승인 패킷 ${packets.length}개를 만들었습니다. ElevenLabs 호출과 크레딧 사용은 없습니다.`,
-      raw: { packets },
-      noLive: true,
-    });
+    return json(runRealTtsPreflightAction(topicId));
   }
 
   // Owner가 정확히 승인한 ElevenLabs 읽기 전용 진단 — 외부에는 고정 GET 4개만 1회씩 전송한다.
@@ -1262,107 +1468,14 @@ export async function POST(request: Request) {
   if (action === "finalVideoCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const pipeline = buildWizardRealPipelineInputs(topicId);
-    if (!pipeline.ok) {
-      return json({ action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true });
-    }
-    const videoRuns = [];
-    for (const part of pipeline.paths.parts) {
-      const builtVid = buildOperatorCommand(action, { topicId, productionPartId: part.id });
-      if (!builtVid.ok) {
-        return json({ action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true });
-      }
-      const runVid = runOperatorScript(builtVid.command, { timeoutMs: FINAL_VIDEO_TIMEOUT_MS });
-      videoRuns.push({ partId: part.id, run: runVid });
-      if (!runVid.ran || runVid.timedOut) {
-        return json({
-          action,
-          status: "error",
-          summary: runVid.timedOut
-            ? `${part.totalParts > 1 ? `${part.partNumber}편 ` : ""}영상 합성이 시간 안에 끝나지 않았습니다. 다시 시도해 주세요.`
-            : "영상 합성 프로그램을 실행하지 못했습니다.",
-          blockerCode: runVid.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
-          noLive: true,
-        });
-      }
-    }
-    const mediaAfterVid = readWizardRealMediaState(topicId);
-    if (mediaAfterVid.finalVideo.ready) {
-      const finalScript = topicId ? readScriptPreview(topicId) : null;
-      if (finalScript) markWizardTopicHistory("video_created", [finalScript]);
-      const mb = mediaAfterVid.finalVideo.sizeBytes ? (mediaAfterVid.finalVideo.sizeBytes / (1024 * 1024)).toFixed(2) : "?";
-      return json({
-        action,
-        status: "success",
-        summary: `최종 영상 ${mediaAfterVid.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterVid.finalVideo.durationSec ?? "?"}초, ${mb}MB). 미리보기에서 편별로 재생됩니다.`,
-        detail: "선정 장면은 검수 완료 Veo 클립, 나머지는 실제 장면 이미지로 합성한 업로드 후보 영상입니다. 아직 업로드는 하지 않았습니다.",
-        raw: { finalVideo: mediaAfterVid.finalVideo, mediaQualityGate: mediaAfterVid.mediaQualityGate },
-        noLive: true,
-      });
-    }
-    return json({
-      action,
-      status: "blocked",
-      summary: "최종 영상 검증을 통과하지 못했습니다. 실제 음성/이미지를 확인한 뒤 다시 시도해 주세요.",
-      blockerCode: "FINAL_MP4_VALIDATION_FAILED",
-      raw: { finalVideo: mediaAfterVid.finalVideo, parts: mediaAfterVid.parts.map((part) => ({ id: part.id, finalVideo: part.finalVideo })), exitCodes: videoRuns.map((row) => row.run.exitCode) },
-      noLive: true,
-    });
+    return json(runFinalVideoCreateAction(topicId));
   }
 
   // ── 게시 전 점검(wizardPreflight): 선택 주제 영상 기준, --arm 없음(외부 호출 0) ──
   if (action === "wizardPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const contentUnits = buildWizardContentUnitsForTopic(topicId);
-    if (!contentUnits.ok) {
-      return json({
-        action,
-        status: "blocked",
-        summary: describeBuildFailure(contentUnits.reason),
-        blockerCode: contentUnits.reason,
-        noLive: true,
-      });
-    }
-    const preflights = [];
-    for (const unit of contentUnits.paths) {
-      const builtPf = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
-      if (!builtPf.ok) {
-        return json({ action, status: "blocked", summary: describeBuildFailure(builtPf.reason), blockerCode: builtPf.reason, noLive: true });
-      }
-      const runPf = runOperatorScript(builtPf.command);
-      if (!runPf.ran || runPf.timedOut) {
-        return json({
-          action,
-          status: "error",
-          summary: `${unit.totalParts > 1 ? `${unit.partNumber}편 ` : ""}게시 전 점검을 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.`,
-          blockerCode: runPf.timedOut ? "SCRIPT_TIMEOUT" : "SCRIPT_NOT_RUN",
-          noLive: true,
-        });
-      }
-      const pf = readWizardPublishPreflight(topicId, unit.productionPartId);
-      preflights.push({ partId: unit.productionPartId, preflight: pf });
-      if (runPf.exitCode !== 0 || pf?.status !== "PREFLIGHT_ONLY_OK") {
-        const pfBlocker = pf?.blockerCode ?? extractRunnerBlocker(runPf.stdout, runPf.stderr);
-        return json({
-          action,
-          status: "blocked",
-          summary: describeUploadBlocker(pfBlocker, `${unit.partNumber}편 게시 전 점검에서 막혔습니다.`),
-          blockerCode: pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
-          raw: { preflights },
-          noLive: true,
-        });
-      }
-    }
-    const credentialCount = preflights[0]?.preflight?.credentialPresentCount ?? "?";
-    return json({
-      action,
-      status: "success",
-      summary: `영상 ${contentUnits.paths.length}개의 게시 전 점검을 모두 통과했습니다. 업로드 키 ${credentialCount}/6, 중복 게시 없음.`,
-      detail: "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 모든 편을 순서대로 업로드할 수 있습니다.",
-      raw: { preflights },
-      noLive: true,
-    });
+    return json(runWizardPreflightAction(topicId));
   }
 
   // ── 실제 업로드(actualUpload): 이 route의 유일한 외부 게시 경로 — 전 게이트 fail-closed ──

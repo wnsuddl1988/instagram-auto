@@ -14,13 +14,15 @@ The Owner has visually accepted both final parts of `gen-finance-editorial-v2-ti
 
 Keep this accepted revision unchanged and queued locally. No automatic upload follows from visual acceptance.
 
-The current app connects the full production and dual-platform publication path and now includes a decision-only resumable controller. It reconstructs 12 stages from durable local artifacts after restart and identifies the next safe stage, while preserving paid TTS/image/Flow approvals, manual visual QA, publication confirmation, and duplicate guards.
+The current app connects the full production and dual-platform publication path and now includes a resumable controller plus a bounded one-step executor. It reconstructs 12 stages from durable local artifacts after restart and may execute exactly one local/no-submit step before recomputing and stopping, while preserving paid TTS/image/Flow approvals, manual visual QA, publication confirmation, and duplicate guards.
 
 The stale validation harnesses identified in the operational audit are now aligned to the current contracts and pass: operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5. Related image, caption, layered-motion, and production-input guards also pass.
 
+The accepted topic was rechecked in the local UI at 11/12 stages. The one-step button stayed disabled at the publication gate, and a direct `automationAdvance` request returned zero executed actions and no live side effects.
+
 ## Next Implementation Milestone
 
-Add one bounded `automationAdvance` executor that may dispatch only the plan's local/no-submit allowlist: `realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, or `wizardPreflight`. After one action it must recompute the plan and stop. It must never dispatch `realTtsCreate`, `realSceneImagesCreate`, `flowMotionGenerate`, Flow QA decisions, `actualUpload`, retry, or another chained action without the corresponding Owner gate.
+Add a durable local execution receipt and per-topic in-flight/idempotency lock around `automationAdvance`. A request must record the selected action and plan fingerprint before execution, refuse a concurrent or already-completed identical attempt, then record the result and recomputed plan. It must remain local-only and must not broaden the four-action allowlist or add scheduling, automatic retry, paid generation, QA decisions, or publication.
 
 ## If the Owner Requests Publication Later
 

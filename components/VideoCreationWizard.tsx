@@ -529,6 +529,8 @@ export default function VideoCreationWizard() {
   const [automationPlanState, setAutomationPlanState] = useState<RunState>("idle");
   const [automationPlanResult, setAutomationPlanResult] = useState<OperatorResult | null>(null);
   const [automationPlan, setAutomationPlan] = useState<WizardAutomationPlan | null>(null);
+  const [automationAdvanceState, setAutomationAdvanceState] = useState<RunState>("idle");
+  const [automationAdvanceResult, setAutomationAdvanceResult] = useState<OperatorResult | null>(null);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -897,6 +899,30 @@ export default function VideoCreationWizard() {
     }
   }, []);
 
+  const runAutomationAdvance = useCallback(async () => {
+    if (!selectedTopicId || automationPlan?.next?.canAutoAdvance !== true) return;
+    setAutomationAdvanceState("running");
+    setAutomationAdvanceResult(null);
+    try {
+      const r = await postAction("automationAdvance", { topicId: selectedTopicId });
+      const raw = r.raw as { planAfter?: WizardAutomationPlan; executedAction?: string } | undefined;
+      if (raw?.planAfter) setAutomationPlan(raw.planAfter);
+      setAutomationAdvanceResult(r);
+      setAutomationAdvanceState(r.status === "success" ? "success" : r.status);
+      if (raw?.executedAction === "finalVideoCreate" && r.status === "success") {
+        setPreviewKey((key) => key + 1);
+      }
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setAutomationAdvanceState("error");
+      setAutomationAdvanceResult({
+        action: "automationAdvance",
+        status: "error",
+        summary: "다음 안전 작업 1개를 실행하지 못했습니다. 자동 재시도하지 않습니다.",
+      });
+    }
+  }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshRealMedia]);
+
   useEffect(() => {
     if (localDev !== true) return;
     const listTimer = window.setTimeout(() => void refreshUploadReadyList(), 0);
@@ -1220,15 +1246,30 @@ export default function VideoCreationWizard() {
                   로컬 산출물을 다시 읽어 다음 작업을 자동으로 결정합니다. 유료 생성·Owner 검수·실제 게시 앞에서는 반드시 멈춥니다.
                 </p>
               </div>
-              <button
-                type="button"
-                data-testid="wizard-action-automation-plan"
-                className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-40"
-                disabled={automationPlanState === "running"}
-                onClick={() => void refreshAutomationPlan(selectedTopicId)}
-              >
-                진행 상태 다시 확인
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  data-testid="wizard-action-automation-advance"
+                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={
+                    automationPlan?.next?.canAutoAdvance !== true ||
+                    automationPlanState === "running" ||
+                    automationAdvanceState === "running"
+                  }
+                  onClick={() => void runAutomationAdvance()}
+                >
+                  {automationAdvanceState === "running" ? "안전 작업 1개 실행 중…" : "다음 안전 작업 1개 실행"}
+                </button>
+                <button
+                  type="button"
+                  data-testid="wizard-action-automation-plan"
+                  className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-40"
+                  disabled={automationPlanState === "running" || automationAdvanceState === "running"}
+                  onClick={() => void refreshAutomationPlan(selectedTopicId)}
+                >
+                  진행 상태 다시 확인
+                </button>
+              </div>
             </div>
             {automationPlan ? (
               <div className="mt-4 space-y-3">
@@ -1263,6 +1304,7 @@ export default function VideoCreationWizard() {
                 )}
               </div>
             ) : null}
+            <ResultNote result={automationAdvanceResult} />
             <ResultNote result={automationPlanResult} />
           </section>
         ) : null}
