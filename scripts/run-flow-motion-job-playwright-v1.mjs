@@ -40,6 +40,7 @@ const EXPECTED_PACKET_SCHEMA = "money_shorts_flow_motion_approval_packet_v1";
 const EXPECTED_STATE_SCHEMA = "money_shorts_flow_motion_state_v1";
 const EXPECTED_JOB_SCHEMA = "money_shorts_flow_motion_job_v1";
 const GENERATION_TIMEOUT_MS = 600_000;
+const GENERATED_RESULT_CANDIDATE_LIMIT = 8;
 
 function argValue(name) {
   const index = process.argv.indexOf(name);
@@ -269,7 +270,10 @@ async function waitForUploadedReferenceDialog(page, uploadFileName, timeoutMs = 
 }
 
 async function attachReferenceAndPrompt(page, job, priorSummary) {
-  const assetPicker = await firstVisible(page.locator("button").filter({ hasText: /add_2/i }));
+  const assetPicker = await waitForFirstVisible(
+    page,
+    page.locator("button").filter({ hasText: /^\s*add_2\s*(?:만들기|Create)\s*$/i }),
+  );
   if (!assetPicker) throw new Error("asset_picker_button_missing");
   await assetPicker.click();
   let pickerDialog = await waitForFirstVisible(
@@ -401,6 +405,34 @@ async function waitForGeneratedVideoPageEvidence(page, job, timeoutMs = 60_000) 
   throw new Error("generated_video_source_ambiguous:0");
 }
 
+async function generatedVideoPagePromptMatches(page, job, timeoutMs = 15_000) {
+  const deadline = Date.now() + timeoutMs;
+  const expectedPrompt = normalized(job.prompt);
+  while (Date.now() < deadline) {
+    const editBodyText = normalized(await visibleBodyText(page));
+    if (editBodyText.includes(expectedPrompt)) return true;
+    const promptPanelReady = /(?:프롬프트\s*펼치기|Expand\s*prompt|Reuse\s*prompt|텍스트\s*프롬프트\s*재사용)/i.test(editBodyText);
+    if (promptPanelReady && await page.locator("video").count() > 0) return false;
+    await page.waitForTimeout(500);
+  }
+  return false;
+}
+
+async function findPromptBoundGeneratedVideoEditUrl(page, candidateEditHrefs, job) {
+  if (candidateEditHrefs.length > GENERATED_RESULT_CANDIDATE_LIMIT) {
+    throw new Error(`generated_video_edit_link_ambiguous:${candidateEditHrefs.length}`);
+  }
+  const promptBound = [];
+  for (const editUrl of candidateEditHrefs) {
+    if (page.url() !== editUrl) {
+      await page.goto(editUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    }
+    if (await generatedVideoPagePromptMatches(page, job)) promptBound.push(editUrl);
+  }
+  if (promptBound.length > 1) throw new Error(`generated_video_prompt_match_ambiguous:${promptBound.length}`);
+  return promptBound[0] ?? null;
+}
+
 async function downloadGeneratedVideo(page, targetPath, initialVideoEditHrefs, job) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < GENERATION_TIMEOUT_MS) {
@@ -416,8 +448,11 @@ async function downloadGeneratedVideo(page, targetPath, initialVideoEditHrefs, j
       ...(currentPageEditHref ? [currentPageEditHref] : []),
     ])].filter((href) => !initialVideoEditHrefs.includes(href));
     if (newVideoEditHrefs.length === 0) continue;
-    if (newVideoEditHrefs.length !== 1) throw new Error(`generated_video_edit_link_ambiguous:${newVideoEditHrefs.length}`);
-    const editUrl = newVideoEditHrefs[0];
+    const editUrl = await findPromptBoundGeneratedVideoEditUrl(page, newVideoEditHrefs, job);
+    if (!editUrl) {
+      await page.goto(GEMINI_FLOW_TARGET.projectUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      continue;
+    }
     if (page.url() !== editUrl) {
       await page.goto(editUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
     }
