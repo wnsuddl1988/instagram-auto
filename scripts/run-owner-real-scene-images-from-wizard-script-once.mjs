@@ -52,12 +52,13 @@ const positiveCompositionCanaryPacketArg = getArg("--positive-composition-canary
 const promptAuditOutArg = getArg("--prompt-audit-out");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
+const refreshSummaryFromExistingAssets = args.includes("--refresh-summary-from-existing-assets");
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
 const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repairs");
 const executeApprovedPositiveCompositionCanary = args.includes("--execute-approved-positive-composition-canary");
 const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets | --regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -153,6 +154,28 @@ if ([executeApprovedModeOverride, executeApprovedSceneRepairs, executeApprovedPo
   console.error("ABORT: only one approved external image execution path may be active.");
   process.exit(3);
 }
+if (
+  refreshSummaryFromExistingAssets &&
+  (
+    promptAuditOnly ||
+    regenerateScenesArg ||
+    MODE_OVERRIDE_PACKET_ABS ||
+    SCENE_REPAIR_PACKET_ABS ||
+    POSITIVE_COMPOSITION_CANARY_PACKET_ABS ||
+    executeApprovedModeOverride ||
+    executeApprovedSceneRepairs ||
+    executeApprovedPositiveCompositionCanary ||
+    ownerApprovalArg ||
+    noRetry
+  )
+) {
+  console.error("ABORT: --refresh-summary-from-existing-assets is an isolated no-external mode and cannot be combined with audit, regeneration, packet, approval or retry flags.");
+  process.exit(3);
+}
+if (refreshSummaryFromExistingAssets && process.env.ALLOW_CHATGPT_IMAGE === "1") {
+  console.error("ABORT: --refresh-summary-from-existing-assets requires ALLOW_CHATGPT_IMAGE to be absent so browser generation cannot be enabled accidentally.");
+  process.exit(3);
+}
 const CHARACTER_REFERENCE_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+web-wizard-create-v1[\\/]+character-cast-v1[\\/]+(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)[\\/]+candidate-2\.png$/i;
 if (!CHARACTER_REFERENCE_ROOT_RE.test(CHARACTER_REFERENCE_ABS)) {
   console.error(`ABORT: selected character reference path is outside the approved cast root: ${CHARACTER_REFERENCE_ABS}`);
@@ -237,7 +260,7 @@ function writeSummary(partial) {
 }
 
 // ── gate 1: 명시 실행 마커 (없으면 브라우저/네트워크 어떤 것도 열지 않음) ──────
-if (!promptAuditOnly && process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+if (!promptAuditOnly && !refreshSummaryFromExistingAssets && process.env.ALLOW_CHATGPT_IMAGE !== "1") {
   writeSummary({ allReady: false, blockerCode: "BLOCKED_GATE", scenes: [], submissionsUsed: 0,
     note: "ALLOW_CHATGPT_IMAGE=1 실행 마커 없음 — 브라우저를 열지 않고 종료(fail-closed)." });
   console.error("ABORT: ALLOW_CHATGPT_IMAGE=1 이 설정되지 않음 (fail-closed).");
@@ -2156,12 +2179,11 @@ function buildCharacterContinuityAudit(states) {
     if (mode.presence === "character") {
       return prompt.includes(CHARACTER_CONTINUITY_VERSION) &&
         /attached .* identity board/i.test(prompt) &&
-        /matching face, age, hairstyle, hair color, body proportions and fixed wardrobe/i.test(prompt);
+        /identity board(?:'s)? exact face, age, hairstyle, hair color, body proportions and fixed wardrobe/i.test(prompt);
     }
     if (mode.presence === "hands") {
       return /PRESENCE GATE: HANDS ONLY/i.test(prompt) &&
-        /attached .* identity board/i.test(prompt) &&
-        /fixed-wardrobe sleeves consistent/i.test(prompt) &&
+        /attached .* reference(?:'s)? skin tone and fixed-wardrobe sleeves/i.test(prompt) &&
         /no head, face, hair/i.test(prompt);
     }
     return /PRESENCE GATE: NO PERSON/i.test(prompt) && /no human, head, face, hair, hands/i.test(prompt);
@@ -2217,6 +2239,13 @@ function buildMotionPlanAudit(states) {
 }
 
 const pendingCount = sceneStates.filter((s) => s.status === "PENDING").length;
+if (refreshSummaryFromExistingAssets && pendingCount > 0) {
+  const pendingSceneIndexes = sceneStates
+    .filter((scene) => scene.status === "PENDING")
+    .map((scene) => scene.sceneIndex);
+  console.error(`ABORT: existing-asset summary refresh would require image generation for scenes ${pendingSceneIndexes.join(",")}; no summary or image was changed.`);
+  process.exit(3);
+}
 if (topicScopedModeOverride?.executionApproved) {
   const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
   if (pendingSceneIndexes.length !== 1 || pendingSceneIndexes[0] !== topicScopedModeOverride.sceneIndex) {
@@ -2291,6 +2320,33 @@ if (topicScopedPositiveCompositionCanary?.executionApproved) {
 }
 log(`scenes: ${sceneCount}, 이미 저장됨: ${sceneCount - pendingCount}, 생성 대상: ${pendingCount}`);
 if (pendingCount === 0) {
+  let metadataRefresh = null;
+  if (refreshSummaryFromExistingAssets) {
+    if (!previousSummary || !fs.existsSync(SUMMARY_PATH)) {
+      console.error("ABORT: existing-asset summary refresh requires the prior summary as migration evidence.");
+      process.exit(3);
+    }
+    const previousSummaryBuffer = fs.readFileSync(SUMMARY_PATH);
+    const previousSummarySha256 = createHash("sha256").update(previousSummaryBuffer).digest("hex");
+    const backupDir = path.join(OUT_DIR, "superseded-summary-metadata-refresh-v1");
+    const backupFile = path.join(backupDir, `scene-images-summary-${previousSummarySha256.slice(0, 16)}.json`);
+    fs.mkdirSync(backupDir, { recursive: true });
+    if (!fs.existsSync(backupFile)) fs.writeFileSync(backupFile, previousSummaryBuffer);
+    const backupSha256 = createHash("sha256").update(fs.readFileSync(backupFile)).digest("hex");
+    if (backupSha256 !== previousSummarySha256) {
+      console.error("ABORT: existing-asset summary refresh backup hash mismatch.");
+      process.exit(3);
+    }
+    metadataRefresh = {
+      version: "money_shorts_existing_asset_summary_refresh_v1",
+      externalActionPerformed: false,
+      browserOpened: false,
+      imageGenerationPerformed: false,
+      previousSummarySha256,
+      previousSummaryBackupFile: path.relative(OUT_DIR, backupFile).replace(/\\/g, "/"),
+      preservedImageSha256: sceneStates.map((scene) => scene.imageSha256),
+    };
+  }
   writeSummary({
     topicId,
     expectedCount: sceneCount,
@@ -2315,10 +2371,18 @@ if (pendingCount === 0) {
       compositionBlueprintId: topicScopedPositiveCompositionCanary.compositionBlueprintId,
       executionApproved: topicScopedPositiveCompositionCanary.executionApproved,
     } : null,
+    metadataRefresh,
     submissionsUsed: 0,
   });
-  log("모든 장면 이미지가 이미 준비됨 — 생성 없이 종료.");
+  log(refreshSummaryFromExistingAssets
+    ? "기존 장면 이미지 해시를 보존한 채 요약 메타데이터만 갱신 — 브라우저/외부 생성 없이 종료."
+    : "모든 장면 이미지가 이미 준비됨 — 생성 없이 종료.");
   process.exit(0);
+}
+
+if (refreshSummaryFromExistingAssets) {
+  console.error("ABORT: existing-asset summary refresh cannot continue into Playwright.");
+  process.exit(3);
 }
 
 // ── Playwright + ChatGPT (여기서부터만 브라우저 접근) ─────────────────────────

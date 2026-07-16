@@ -64,6 +64,9 @@ check("repeated hook beats alternate into a non-character mechanism scene",
 check("no-person mode has an explicit presence gate", imageRunner.includes("PRESENCE GATE: NO PERSON"));
 check("hands-only mode has an explicit presence gate", imageRunner.includes("PRESENCE GATE: HANDS ONLY"));
 check("character mode keeps the approved selected-reference continuity contract", imageRunner.includes("ONE RECURRING CHARACTER IS ALLOWED") && imageRunner.includes("CHARACTER_CONTINUITY_INSTRUCTION") && imageRunner.includes("attachRef"));
+check("character continuity audit matches the current character and hands prompt wording",
+  imageRunner.includes("identity board(?:'s)? exact face, age, hairstyle, hair color, body proportions and fixed wardrobe") &&
+  imageRunner.includes("reference(?:'s)? skin tone and fixed-wardrobe sleeves"));
 check("person-free modes explicitly exclude all human silhouettes", imageRunner.includes("no human, head, face, hair, hands, body, silhouette"));
 check("mode contract is placed before scene evidence in both prompt paths", (imageRunner.match(/VISUAL MODALITY CONTRACT/g) ?? []).length >= 2);
 check("adjacent prompts carry previous/current/next mode ids", imageRunner.includes("MODALITY DIFFERENCE: previous mode"));
@@ -115,6 +118,17 @@ check("character scenes are capped to 45 percent", imageRunner.includes("Math.ce
 check("at least 55 percent are non-character modes", imageRunner.includes("Math.floor(sceneCount * 0.55)"));
 check("modality audit requires several distinct modes", imageRunner.includes("requiredDistinctModes") && imageRunner.includes("distinctModeCount >= requiredDistinctModes"));
 check("manual visual review remains required", imageRunner.includes("manualVisualReviewRequired: true"));
+check("existing-asset summary refresh is isolated from every external image path",
+  imageRunner.includes("--refresh-summary-from-existing-assets") &&
+  imageRunner.includes("requires ALLOW_CHATGPT_IMAGE to be absent") &&
+  imageRunner.includes("existing-asset summary refresh cannot continue into Playwright") &&
+  imageRunner.includes("imageGenerationPerformed: false") &&
+  imageRunner.includes("browserOpened: false"));
+check("existing-asset summary refresh fails closed when any scene would need generation",
+  imageRunner.includes("existing-asset summary refresh would require image generation for scenes") &&
+  imageRunner.includes("no summary or image was changed") &&
+  imageRunner.includes("superseded-summary-metadata-refresh-v1") &&
+  imageRunner.includes("existing-asset summary refresh backup hash mismatch"));
 check("saved and final summaries include modality audit", (imageRunner.match(/visualModalityAudit: buildVisualModalityAudit/g) ?? []).length >= 2);
 check("saved and final summaries include finance diversity audit", (imageRunner.match(/financeSceneDiversityAudit: buildFinanceSceneDiversityAudit/g) ?? []).length >= 2);
 check("prompt audit mode runs before Playwright import", imageRunner.includes("promptAuditOnly") && imageRunner.indexOf("if (promptAuditOnly)") < imageRunner.indexOf('await import("playwright")'));
