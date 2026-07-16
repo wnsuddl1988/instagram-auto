@@ -28,9 +28,11 @@ Queue status now also includes a deterministic dry-run planner. An explicit Owne
 
 The queue now also has no-execution lifecycle controls. `pause` removes a queued topic from deterministic selection until an explicit `resume`; `remove` deletes only queue membership and leaves media/artifacts untouched; `archive completed` accepts only a current `complete` plan and moves its queue record into a bounded local archive with its last action/receipt summary. All three paths return `actionCount:0`, call neither the executor nor a retry, and record local history only. Queue lifecycle 20/20, paused planner 25/25, combined guard 65/65, TypeScript, UI static checks, and local empty-queue rendering pass.
 
+The queue now also turns the same dry-run evidence into a `no_submit_batch_policy_preview`. It labels every item as a local-safe next/waiting step, paid-generation approval, Owner QA, publication approval, topic selection, paused, complete, manual-recovery, or execution-blocked state. This is a visible planning card only: it has no execution action, makes no schedule or receipt, and every side-effect flag remains false. Batch-policy 32/32, combined orchestration 71/71, UI 91/91 and 389/389, TypeScript, build, and diff checks pass. The empty real queue was rendered locally as `계획 전용 · 실행 없음`; no topic was enqueued/run and the temporary server/tab were closed.
+
 ## Next Implementation Milestone
 
-Add a no-submit batch policy preview for the local queue: list each queued topic's next required Owner gate and clearly separate local safe actions from paid generation, external creation, QA, and publication stops. It must be a pure read-only planning view: no scheduling, executor invocation, receipt, retry, timer/worker, paid/external media creation, upload, or publication.
+Add an Owner-visible queue capacity/readiness summary that aggregates the existing batch-policy categories only. It must remain a pure read-only view: no scheduling, executor invocation, receipt, retry, timer/worker, paid/external media creation, upload, or publication.
 
 ## If the Owner Requests Publication Later
 

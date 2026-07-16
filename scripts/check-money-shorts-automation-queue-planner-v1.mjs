@@ -1,5 +1,6 @@
 import {
   MONEY_SHORTS_AUTOMATION_QUEUE_PLANNER_VERSION,
+  buildMoneyShortsAutomationQueueBatchPolicy,
   planMoneyShortsAutomationQueueRun,
   verifyMoneyShortsAutomationQueuePreviewClaim,
 } from "../lib/money-shorts-automation-queue-planner.mjs";
@@ -57,6 +58,10 @@ check("selected preview is content-addressed", /^[a-f0-9]{64}$/.test(first.previ
 check("input queue order is not mutated", source[0].topicId === "newest" && source[1].topicId === "oldest");
 check("dry-run reports zero execution and zero receipt", first.safety.actionExecuted === false && first.safety.executionReceiptCreated === false);
 check("dry-run disables timer, worker, retry, paid, external, upload, and publication", Object.values(first.safety).every((value) => value === false));
+
+const firstBatchPolicy = buildMoneyShortsAutomationQueueBatchPolicy({ runPreview: first });
+check("batch policy is a no-submit view of the exact dry-run", firstBatchPolicy.mode === "no_submit_batch_policy_preview" && firstBatchPolicy.itemCount === 2 && firstBatchPolicy.entries[0].kind === "local_safe_next");
+check("batch policy keeps later local-safe work waiting without an action", firstBatchPolicy.entries[1].kind === "local_safe_waiting" && Object.values(firstBatchPolicy.safety).every((value) => value === false));
 
 const tied = planMoneyShortsAutomationQueueRun({
   jobs: [job("topic-b", "2026-07-17T03:00:00.000Z"), job("topic-a", "2026-07-17T03:00:00.000Z")],
@@ -129,6 +134,17 @@ check("unavailable receipt store is skipped", codes.get("unavailable") === "stor
 check("Owner-paused job is skipped until explicit resume", codes.get("paused") === "paused_by_owner");
 check("oldest remaining eligible job is selected after skips", skipped.selected?.topicId === "fallback");
 
+const skippedBatchPolicy = buildMoneyShortsAutomationQueueBatchPolicy({ runPreview: skipped });
+const policyKinds = new Map(skippedBatchPolicy.entries.map((item) => [item.topicId, item.kind]));
+check("batch policy separates Owner gates, paused work, recovery, and completed work", policyKinds.get("owner-gate") === "owner_approval" && policyKinds.get("paused") === "paused" && policyKinds.get("completed") === "complete" && policyKinds.get("manual-review") === "execution_blocked");
+
+const paidGatePolicy = buildMoneyShortsAutomationQueueBatchPolicy({
+  runPreview: planMoneyShortsAutomationQueueRun({
+    jobs: [job("paid-flow", "2026-07-17T05:00:00.000Z", { plan: { flowState: "approval_pending", flowReadyForRender: false } })],
+  }),
+});
+check("batch policy labels paid generation as an Owner approval stop", paidGatePolicy.entries[0].kind === "paid_generation_approval" && paidGatePolicy.entries[0].action === "flowMotionGenerate");
+
 const none = planMoneyShortsAutomationQueueRun({ jobs: [ownerGate, completed, inFlight] });
 check("no eligible job yields a zero-selection preview", none.selected == null && none.selectionCount === 0);
 check("zero-selection preview has no execution fingerprint", none.previewFingerprint == null);
@@ -140,6 +156,14 @@ try {
   missingJobsRejected = error instanceof Error && error.message === "automation_queue_planner_jobs_required";
 }
 check("missing job list is rejected", missingJobsRejected);
+
+let invalidBatchRejected = false;
+try {
+  buildMoneyShortsAutomationQueueBatchPolicy({ runPreview: null });
+} catch (error) {
+  invalidBatchRejected = error instanceof Error && error.message === "automation_queue_batch_policy_preview_invalid";
+}
+check("missing dry-run evidence is rejected for batch policy", invalidBatchRejected);
 
 console.log(`\n${passed + failed} checks - ${passed} PASS, ${failed} FAIL`);
 if (failed > 0) process.exit(1);

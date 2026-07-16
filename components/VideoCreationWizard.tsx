@@ -460,6 +460,37 @@ type WizardAutomationQueueRunPreview = {
   };
 };
 
+type WizardAutomationQueueBatchPolicy = {
+  schemaVersion: string;
+  mode: "no_submit_batch_policy_preview";
+  itemCount: number;
+  localSafeItemCount: number;
+  ownerStopItemCount: number;
+  entries: Array<{
+    jobId: string | null;
+    topicId: string | null;
+    title: string | null;
+    queueOrder: number | null;
+    action: string | null;
+    gate: string | null;
+    stageLabel: string | null;
+    kind: "local_safe_next" | "local_safe_waiting" | "paid_generation_approval" | "owner_qa" | "publication_approval" | "topic_selection" | "owner_approval" | "manual_recovery" | "paused" | "complete" | "execution_blocked";
+    label: string;
+    detail: string;
+  }>;
+  safety: {
+    actionExecuted: false;
+    executionReceiptCreated: false;
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    automaticRetryEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    uploadEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 type WizardAutomationQueue = {
   schemaVersion: string;
   mode: "owner_click_planning_only";
@@ -468,6 +499,7 @@ type WizardAutomationQueue = {
   archivedJobs: WizardAutomationQueueArchivedJob[];
   history: WizardAutomationQueueHistoryEntry[];
   runPreview: WizardAutomationQueueRunPreview;
+  batchPolicy: WizardAutomationQueueBatchPolicy;
   safety: {
     timerEnabled: false;
     backgroundWorkerEnabled: false;
@@ -1669,6 +1701,34 @@ export default function VideoCreationWizard() {
                 <p className="mt-2 text-xs text-slate-500">
                   {automationQueue.runPreview.evaluatedJobCount}개 평가 · {automationQueue.runPreview.eligibleJobCount}개 실행 가능 · 영수증 생성 0회
                 </p>
+              </div>
+            ) : null}
+            {automationQueue ? (
+              <div data-testid="wizard-automation-queue-batch-policy" className="mt-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-bold text-violet-950">큐 전체 다음 단계</p>
+                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">계획 전용 · 실행 없음</span>
+                </div>
+                <p className="mt-1 text-xs text-violet-800">
+                  {automationQueue.batchPolicy.itemCount}개 항목 · 로컬 안전 작업 {automationQueue.batchPolicy.localSafeItemCount}개 · Owner 중단/확인 {automationQueue.batchPolicy.ownerStopItemCount}개
+                </p>
+                {automationQueue.batchPolicy.entries.length ? (
+                  <div className="mt-3 space-y-2">
+                    {automationQueue.batchPolicy.entries.map((item) => (
+                      <div key={item.jobId ?? item.topicId ?? item.title ?? item.label} className="rounded-lg border border-violet-100 bg-white px-3 py-2">
+                        <p className="text-sm font-bold text-slate-900">
+                          우선순위 {item.queueOrder ?? "-"} · {item.title ?? item.topicId ?? "식별 불가 항목"} · {item.label}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{item.detail}</p>
+                        <p className="mt-1 text-xs text-violet-700">
+                          다음 단계: {item.stageLabel ?? "없음"}{item.action ? ` · ${item.action}` : ""}{item.gate ? ` · ${item.gate}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-slate-600">큐에 저장된 항목이 없어 정책 미리보기도 비어 있습니다.</p>
+                )}
               </div>
             ) : null}
             {automationQueue?.jobs.length ? (
