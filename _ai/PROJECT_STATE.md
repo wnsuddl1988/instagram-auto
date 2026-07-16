@@ -36,6 +36,8 @@ Updated: 2026-07-17 KST
 - The dry-run planner writes no queue state, creates no execution receipt, and executes no action. The UI shows the explicit priority plus the exact selected topic/stage/action or explains why no job is eligible.
 - The queue now also derives a pure `no_submit_batch_policy_preview` from that exact dry-run. Every queued item is visibly classified as a local safe next/waiting action, paid-generation approval, Owner QA, publication approval, topic selection, paused, completed, manual recovery, or execution-blocked item. The view has no action button, creates no schedule or receipt, and leaves every side-effect flag false.
 - The policy preview now has a pure `no_submit_capacity_summary`: it aggregates only the existing categories into local-safe ready/waiting, paid approval, QA, publication approval, other Owner decision, paused, recovery/blocked, and completed counts. It does not infer a schedule, change priority, or add an execution/approval action.
+- Owner selected the bounded local safe-session option. The first contract-only slice now has `money_shorts_safe_session_planner_v1`: an Owner-started session may cap itself at 1~3 actions, plans at most one current allowlisted local action, independently re-fingerprints the queue selection, waits when an action is in flight, and halts on Owner stop, cap reached, no safe queue action, or invalid/stale selection.
+- The safe-session planner is a pure dry-run. It creates no session/queue/receipt state, has no filesystem, process runner, network, or timer, and executes zero actions. Paid/external generation, QA decisions, upload, and publication remain disabled.
 
 ## Publication State
 
@@ -61,14 +63,15 @@ Updated: 2026-07-17 KST
 - Priority UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the empty-queue state remained visible and no priority button was rendered because no job exists. No topic was enqueued, no priority action was clicked, no receipt/action was created, and the temporary server was stopped.
 - Batch policy guard: 32/32 PASS. Combined queue/executor/recovery/policy guard: 71/71 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The temporary port 3001 UI showed the empty batch-policy card as `계획 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
 - Capacity summary guard: 35/35 PASS. Combined queue/executor/recovery/policy/capacity guard: 74/74 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The empty local queue rendered `큐 준비도 요약` as `집계 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
+- Safe-session contract guard: 15/15 PASS. Existing queue planner/capacity guard 35/35 and combined executor/recovery/queue guard 74/74 pass. `pnpm build` and `git diff --check` pass; the known 12,062-file tracing/performance warnings remain unchanged.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Queue planning visibility is sufficient for the current local-only scope. The recommended next automation option is an Owner-started, bounded local safe-session worker: one action at a time, current four-action safe allowlist only, explicit per-session action cap, recompute after every action, stop on first error/Owner gate, zero automatic retries, and stop-after-current-action semantics.
-5. Do not build this worker until the Owner chooses it over keeping the current click-only flow. An always-on cron, paid/external generation, QA bypass, upload, or publication scheduler is not recommended in the next slice and requires separate architecture and exact approval.
+4. Owner chose the Owner-started bounded local safe-session path. The next atomic implementation candidate is a durable local session-state store for explicit start/stop/cap/status evidence only; it must not start a process, timer, queue action, or execution receipt.
+5. A real worker/executor remains a later separately reviewed slice. An always-on cron, paid/external generation, QA bypass, upload, or publication scheduler is not approved and requires separate architecture and exact approval.
 6. Do not activate or reuse `n8n/workflow_autoshorts.json`: it is a legacy inactive workflow that bypasses the current queue/receipt/Owner gates, calls old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. The legacy upload route is currently fail-closed, but that does not make the workflow a valid scheduler foundation.
 
 ## Diff Cleanup State
@@ -77,4 +80,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted slice is limited to this read-only scheduler architecture decision record in the two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to the pure safe-session dry-run planner, its no-write guard, and these two state documents. The protected three paths remain excluded.
