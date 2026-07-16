@@ -47,6 +47,7 @@ const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
 const modeOverridePacketArg = getArg("--mode-override-packet");
 const sceneRepairPacketArg = getArg("--scene-repair-packet");
+const promptAuditOutArg = getArg("--prompt-audit-out");
 const ownerApprovalArg = getArg("--owner-approval");
 const promptAuditOnly = args.includes("--prompt-audit-only");
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
@@ -61,6 +62,7 @@ const OUT_DIR = path.resolve(outDirArg);
 const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
 const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
 const SCENE_REPAIR_PACKET_ABS = sceneRepairPacketArg ? path.resolve(sceneRepairPacketArg) : null;
+const PROMPT_AUDIT_OUT_ABS = promptAuditOutArg ? path.resolve(promptAuditOutArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
 const CHARACTER_ID = String(characterIdArg);
 const CHARACTER_NAME = String(characterNameArg).trim();
@@ -105,6 +107,10 @@ if (MODE_OVERRIDE_PACKET_ABS && (!MEDIA_ROOT_RE.test(MODE_OVERRIDE_PACKET_ABS) |
 }
 if (SCENE_REPAIR_PACKET_ABS && (!MEDIA_ROOT_RE.test(SCENE_REPAIR_PACKET_ABS) || !SCENE_REPAIR_PACKET_ABS.toLowerCase().endsWith(".json") || SCENE_REPAIR_PACKET_ABS.includes(".money-shorts-local"))) {
   console.error("ABORT: --scene-repair-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (PROMPT_AUDIT_OUT_ABS && (!promptAuditOnly || !MEDIA_ROOT_RE.test(PROMPT_AUDIT_OUT_ABS) || !PROMPT_AUDIT_OUT_ABS.toLowerCase().endsWith(".json") || PROMPT_AUDIT_OUT_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --prompt-audit-out is allowed only with --prompt-audit-only and must be a JSON file under C:\\tmp\\money-shorts-os\\.");
   process.exit(2);
 }
 if (MODE_OVERRIDE_PACKET_ABS && SCENE_REPAIR_PACKET_ABS) {
@@ -162,7 +168,8 @@ const CHARACTER_CONTINUITY_VERSION = "money_shorts_selected_character_reference_
 const outputVisualEngineVersion = EVIDENCE_ENGINE_VERSION;
 const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
 const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
-const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v1";
+const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v2";
+const COMPOSITION_BLUEPRINT_VERSION = "money_shorts_positive_composition_blueprint_v1";
 
 function writeSummary(partial) {
   const summary = {
@@ -178,6 +185,7 @@ function writeSummary(partial) {
       passed: false,
     },
     financeSceneDiversityVersion: FINANCE_SCENE_DIVERSITY_VERSION,
+    compositionBlueprintVersion: COMPOSITION_BLUEPRINT_VERSION,
     financeSceneDiversityAudit: {
       version: FINANCE_SCENE_DIVERSITY_VERSION,
       passed: false,
@@ -344,6 +352,7 @@ const RESOLUTION_INSTRUCTION =
   "No readable text, letters, numbers, UI, logo, brand or watermark. When a person is required, preserve the exact selected character identity and fixed wardrobe from the attached reference. " +
   "Keep the lower caption area connected to the scene instead of leaving a blank black floor or void.";
 const PROMPT_MAX_CHARS = 4800;
+const PROMPT_HARD_MAX_CHARS = 6200;
 
 const STORYBOARD_ROLES = [
   {
@@ -752,6 +761,35 @@ function stylePrefixForMode(mode) {
   return "Money Shorts original bright family-feature-quality cinematic 3D animation made from full-size everyday topic objects in recognizable lived-in Korean homes, cafes, stores and work spaces. Use tactile fabrics, painted wood, paper, glass, warm ceramics, bright natural or practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every room, furnishing and object is adult-scale and physically usable. Include no character or human body part. ";
 }
 
+function compactStylePrefixForMode(mode) {
+  if (mode.presence === "character") {
+    return "Money Shorts original bright family-feature-quality cinematic 3D animation: one naturally proportioned Korean adult, tactile clothing and full-scale lived-in space, warm daylight, open shadows, controlled color and grounded cinematic depth. Generate character, room, props and lighting as one authored shot.";
+  }
+  if (mode.presence === "hands") {
+    return "Money Shorts original bright family-feature-quality cinematic 3D animation: grounded adult hands, tactile full-size objects, warm daylight, open shadows and lived-in Korean space. Generate hands, props and lighting as one authored shot.";
+  }
+  return "Money Shorts original bright family-feature-quality cinematic 3D animation: full-size tactile everyday objects in a warm lived-in Korean space, bright daylight, open shadows and grounded cinematic depth. No person or body part.";
+}
+
+function compactPresenceInstructionForMode(mode) {
+  if (mode.presence === "character") {
+    return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED. CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: match the attached ${CHARACTER_NAME} identity board's exact face, age, hairstyle, hair color, body proportions and fixed wardrobe in one natural story view; no duplicate or reference-board layout. Use restrained facial acting and physically grounded hand-object contact.`;
+  }
+  if (mode.presence === "hands") {
+    return `PRESENCE GATE: HANDS ONLY. Match the attached ${CHARACTER_NAME} reference's skin tone and fixed-wardrobe sleeves; show no head, face, hair, torso or background person.`;
+  }
+  return "PRESENCE GATE: NO PERSON. Show no human, head, face, hair, hands, body, silhouette, mannequin or background figure.";
+}
+
+function compactStyleRejectionForMode(mode) {
+  const presenceRejection = mode.presence === "character"
+    ? "no changed identity, duplicate character, pasted-on subject or theatrical pose"
+    : mode.presence === "hands"
+      ? "no portrait, head, torso or extra hands"
+      : "no person or body part";
+  return `STRICT STYLE REJECTION: no photography, live action, miniature, diorama, readable text, logo or watermark; no laboratory, vault, factory, machine room, black-metal architecture, gloomy finance world or industrial apparatus; ${presenceRejection}.`;
+}
+
 function resolutionInstructionForMode(mode) {
   if (mode.presence === "character") return RESOLUTION_INSTRUCTION;
   if (mode.presence === "hands") {
@@ -935,8 +973,243 @@ const FINANCE_SCENE_DIVERSITY_FOCI = [
   "rule or checklist resolution",
 ];
 
-function sceneDiversityPlan(scene, sceneIndex, totalScenes) {
+const COMPOSITION_BLUEPRINTS_BY_MODE = {
+  CHARACTER_EVENT: [
+    {
+      id: "off_center_decision_triangle",
+      layoutFamily: "asymmetric_triangle",
+      primaryAnchor: "place the character and one decision object together in one off-center lower-third action cluster",
+      supportPlacement: "place one household consequence as a separate background anchor across the room, forming a loose triangle with a quiet foreground texture",
+      openSpace: "keep the center and caption side as uninterrupted room depth",
+    },
+    {
+      id: "side_action_open_background",
+      layoutFamily: "side_anchor_open_depth",
+      primaryAnchor: "place the character at one side completing one small action on one localized object group",
+      supportPlacement: "show the changed condition once in the far background on separate furniture",
+      openSpace: "preserve a broad clean floor or wall interval between action and result",
+    },
+  ],
+  ENVIRONMENTAL_CHARACTER: [
+    {
+      id: "room_diagonal_action",
+      layoutFamily: "room_diagonal",
+      primaryAnchor: "place the character and the active object together near one room corner",
+      supportPlacement: "place one consequence diagonally deeper in the same lived-in room",
+      openSpace: "leave the diagonal between them visually open so depth, not repeated props, explains the relationship",
+    },
+    {
+      id: "over_shoulder_local_decision",
+      layoutFamily: "over_shoulder_depth",
+      primaryAnchor: "use a side or over-shoulder character action with one compact decision cluster",
+      supportPlacement: "show one separate background condition beyond the shoulder line",
+      openSpace: "keep the middle distance free of explanatory objects",
+    },
+    {
+      id: "window_side_action_result",
+      layoutFamily: "window_side_depth",
+      primaryAnchor: "place the character beside one window-side action surface with one hero object",
+      supportPlacement: "place the household result on a different-height surface deeper in the room",
+      openSpace: "use daylight and empty room depth as the visual separation",
+    },
+  ],
+  OBJECT_MECHANISM: [
+    {
+      id: "single_anchor_near_far_result",
+      layoutFamily: "single_anchor_near_far",
+      primaryAnchor: "use one compact everyday finance object group as the dominant foreground anchor",
+      supportPlacement: "show one changed household condition once in the far background on separate furniture",
+      openSpace: "leave a large clear gap between the foreground anchor and background result",
+    },
+    {
+      id: "l_corner_boundary",
+      layoutFamily: "l_shaped_room_corner",
+      primaryAnchor: "place one bounded decision object at the inside corner of an L-shaped counter or room edge",
+      supportPlacement: "place one consequence around the corner in a deeper room zone",
+      openSpace: "keep the counter run mostly clear and let the room corner create the relationship",
+    },
+    {
+      id: "two_heights_separate_furniture",
+      layoutFamily: "separate_heights",
+      primaryAnchor: "place one hero object low and close on a single ordinary surface",
+      supportPlacement: "place one supporting condition higher and farther away on different furniture",
+      openSpace: "show clean wall or room space between the two anchors",
+    },
+    {
+      id: "doorway_cause_result",
+      layoutFamily: "doorway_depth",
+      primaryAnchor: "place one localized cause object beside a doorway or threshold",
+      supportPlacement: "show one result condition through the doorway in the next full-scale room",
+      openSpace: "keep the doorway path completely clear and readable",
+    },
+  ],
+  ARCHITECTURAL_CROSS_SECTION: [
+    {
+      id: "room_to_room_depth",
+      layoutFamily: "room_to_room",
+      primaryAnchor: "place one cause anchor in the near full-scale room",
+      supportPlacement: "place one result anchor in the connected room beyond a natural opening",
+      openSpace: "use the doorway and floor depth as the only connector",
+    },
+    {
+      id: "wide_corner_cause_result",
+      layoutFamily: "wide_corner",
+      primaryAnchor: "place one cause cluster at one edge of a wide lived-in room",
+      supportPlacement: "place one result condition at the opposite depth corner",
+      openSpace: "keep the room center calm and usable",
+    },
+  ],
+  SPLIT_EVIDENCE: [
+    {
+      id: "continuous_near_far_change",
+      layoutFamily: "continuous_depth_change",
+      primaryAnchor: "show the earlier condition as one compact near anchor in a single continuous room",
+      supportPlacement: "show the changed condition once in the deeper zone of that same room",
+      openSpace: "use furniture depth and lighting transition between states, with no panel boundary",
+    },
+    {
+      id: "side_to_depth_change",
+      layoutFamily: "side_to_depth",
+      primaryAnchor: "place one condition at the side foreground of one coherent room",
+      supportPlacement: "place the consequence deeper toward a window or doorway",
+      openSpace: "keep a clean diagonal of floor or counter between the two states",
+    },
+  ],
+  SYMBOLIC_CHARACTER: [
+    {
+      id: "glance_between_two_anchors",
+      layoutFamily: "character_two_anchor_glance",
+      primaryAnchor: "place the character with one tempting or worrying object in one localized side cluster",
+      supportPlacement: "place the ignored condition once across the room at a different depth",
+      openSpace: "let the character's gaze cross clear room space between the anchors",
+    },
+    {
+      id: "quiet_pause_background_condition",
+      layoutFamily: "quiet_pause_depth",
+      primaryAnchor: "place the character in one quiet pause beside one story object",
+      supportPlacement: "show one background condition beyond the character without additional explanatory props",
+      openSpace: "preserve a calm open middle plane",
+    },
+  ],
+  HANDS_ACTION: [
+    {
+      id: "single_tactile_action",
+      layoutFamily: "tight_single_action",
+      primaryAnchor: "fill the frame with one pair of hands completing one step on one compact object group",
+      supportPlacement: "use only one small finished-state cue behind the hands",
+      openSpace: "keep the remaining work surface visibly clear",
+    },
+    {
+      id: "corner_action_clear_surface",
+      layoutFamily: "corner_close_action",
+      primaryAnchor: "place the hands and one action object at one corner of a practical surface",
+      supportPlacement: "place one completed result cue at the opposite depth edge",
+      openSpace: "leave most of the surface empty and tactile",
+    },
+  ],
+  OBJECT_CHECKLIST: [
+    {
+      id: "three_cues_different_heights",
+      layoutFamily: "triangular_three_cues",
+      primaryAnchor: "use one ordinary shelf or kitchen zone containing exactly three independent topic cues at different heights and depths",
+      supportPlacement: "group each cue locally and arrange the three groups as an asymmetric triangle",
+      openSpace: "leave visible empty shelf or wall space between all three groups",
+    },
+    {
+      id: "three_use_sites_room_depth",
+      layoutFamily: "three_separate_use_sites",
+      primaryAnchor: "use exactly three ordinary use sites across one bright room: one near, one side-middle and one far",
+      supportPlacement: "give each site one localized evidence object and no shared apparatus",
+      openSpace: "preserve walkable room space between the sites",
+    },
+  ],
+  FUTURE_CHARACTER: [
+    {
+      id: "character_open_exit",
+      layoutFamily: "character_open_path",
+      primaryAnchor: "place the character finishing one calm action beside one protected object group",
+      supportPlacement: "place the bright next step at an open window, balcony or doorway",
+      openSpace: "keep a clear visual path from the character toward the opening",
+    },
+    {
+      id: "settled_rule_forward_depth",
+      layoutFamily: "settled_rule_depth",
+      primaryAnchor: "place the character settling one rule object on one side surface",
+      supportPlacement: "show one open everyday destination deeper in the frame",
+      openSpace: "leave the foreground-to-background path free of finance props",
+    },
+  ],
+  OBJECT_RESOLUTION: [
+    {
+      id: "wall_pocket_open_exit",
+      layoutFamily: "wall_anchor_open_exit",
+      primaryAnchor: "place one compact rule or protection object in a wall pocket or single side shelf",
+      supportPlacement: "place the open next step at a bright doorway, balcony or window in the far depth",
+      openSpace: "keep the floor and visual route between them completely clear",
+    },
+    {
+      id: "single_rule_bright_destination",
+      layoutFamily: "single_rule_destination",
+      primaryAnchor: "place one localized rule object at one edge of a lived-in room",
+      supportPlacement: "show one bright destination beyond the room as the only secondary anchor",
+      openSpace: "use open room depth, not repeated objects, to connect rule and future",
+    },
+  ],
+};
+
+const SEMANTIC_LINEAR_MOTIF_PATTERNS = [
+  { id: "linear_row", pattern: /\b(?:long\s+)?(?:row|line|trail|chain|string|sequence)\s+of\b/i },
+  { id: "connected_apparatus", pattern: /\b(?:connected|linked)\s+(?:tube|pipe|container|compartment|station)s?\b/i },
+  { id: "mechanical_transport", pattern: /\b(?:conveyor|roller|chute|machine bank|token board)\b/i },
+  { id: "serial_container", pattern: /\b(?:series|array|wall)\s+of\s+(?:jar|box|tray|envelope|container|compartment)s?\b/i },
+  { id: "korean_linear_arrangement", pattern: /(?:줄지어|일렬|행렬|나열|연결관|컨베이어|칸막이|트레이)/i },
+];
+
+function sourceMotifHazards(scene) {
+  const evidence = scene?.visualEvidence ?? {};
+  const positiveSource = [
+    evidence.mustShow,
+    evidence.visibleAction,
+    evidence.sceneSpecificSignal,
+    evidence.heroSubject,
+    evidence.causalComposition,
+    evidence.sceneIntegrationPlan,
+    evidence.visualForm,
+  ].filter(Boolean).join(" ");
+  return SEMANTIC_LINEAR_MOTIF_PATTERNS
+    .filter(({ pattern }) => pattern.test(positiveSource))
+    .map(({ id }) => id);
+}
+
+function compositionBlueprintForScene(scene, sceneIndex, totalScenes, visualMode, resolvedVisualModes = null) {
+  const variants = COMPOSITION_BLUEPRINTS_BY_MODE[visualMode.id] ?? COMPOSITION_BLUEPRINTS_BY_MODE.OBJECT_MECHANISM;
+  let modeOccurrence = 0;
+  for (let index = 0; index <= sceneIndex; index += 1) {
+    const candidateMode = resolvedVisualModes?.[index] ?? visualModeForScene(scenes[index], index, totalScenes);
+    if (candidateMode.id === visualMode.id) modeOccurrence += 1;
+  }
+  const selected = variants[(modeOccurrence - 1) % variants.length];
+  const sourceHazards = sourceMotifHazards(scene);
+  return {
+    version: COMPOSITION_BLUEPRINT_VERSION,
+    id: selected.id,
+    layoutFamily: selected.layoutFamily,
+    primaryAnchor: selected.primaryAnchor,
+    supportPlacement: selected.supportPlacement,
+    openSpace: selected.openSpace,
+    actionRule: "show one localized action and one localized consequence; each appears once",
+    financeEvidencePolicy: "cash, banknotes, charts, statements or documents may appear as one compact localized group only when they directly prove the beat",
+    connectionPolicy: "keep every object group physically separate and leave the space between groups clear; communicate cause through action, gaze and room depth rather than object trails or apparatus",
+    maxSupportingObjectGroups: visualMode.id === "OBJECT_CHECKLIST" ? 3 : 1,
+    sourceMotifHazards: sourceHazards,
+    sourceMotifNeutralizationRequired: sourceHazards.length > 0,
+    semanticSignature: `${visualMode.id}:${selected.layoutFamily}`,
+  };
+}
+
+function sceneDiversityPlan(scene, sceneIndex, totalScenes, visualMode = null, resolvedVisualModes = null) {
   const cycleIndex = sceneIndex % FINANCE_SCENE_DIVERSITY_LOCATIONS.length;
+  const selectedVisualMode = visualMode ?? visualModeForScene(scene, sceneIndex, totalScenes);
   return {
     version: FINANCE_SCENE_DIVERSITY_VERSION,
     locationFamily: FINANCE_SCENE_DIVERSITY_LOCATIONS[cycleIndex],
@@ -945,16 +1218,44 @@ function sceneDiversityPlan(scene, sceneIndex, totalScenes) {
     sceneIndex: sceneIndex + 1,
     totalScenes,
     sceneId: String(scene?.id ?? "unknown"),
+    compositionBlueprint: compositionBlueprintForScene(scene, sceneIndex, totalScenes, selectedVisualMode, resolvedVisualModes),
   };
 }
 
-function financeSceneDiversityInstruction(plan, previousPlan, nextPlan) {
+function financeSceneDiversityInstruction(plan, previousPlan, nextPlan, compact = false) {
+  const blueprint = plan.compositionBlueprint;
+  const previousBlueprint = previousPlan?.compositionBlueprint;
+  const nextBlueprint = nextPlan?.compositionBlueprint;
+  const sourceMotifTranslation = blueprint.sourceMotifNeutralizationRequired
+    ? `SOURCE MOTIF TRANSLATION REQUIRED (${blueprint.sourceMotifHazards.join(", ")}): preserve the meaning but translate serial or connected cues into separate anchors and open room depth.`
+    : "SOURCE MOTIF TRANSLATION: preserve the localized-anchor design.";
+  if (compact) {
+    return [
+      `FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}: ${plan.financeFocus}; ${plan.cameraFamily}; ${plan.locationFamily}.`,
+      `POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}, layout ${blueprint.layoutFamily}.`,
+      `Primary anchor: ${blueprint.primaryAnchor}. Supporting placement: ${blueprint.supportPlacement}.`,
+      `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
+      `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
+      `Connection policy: ${blueprint.connectionPolicy}.`,
+      "SEMANTIC REPETITION GUARD: keep money, coins, envelopes, cards, charts and containers inside localized anchor groups; reject any line, row, trail, chain, conveyor, connected tube, repeated compartment or display system.",
+      sourceMotifTranslation,
+      "Cash, banknotes, charts, statements and documents are allowed when relevant; keep them localized rather than removing relevant finance evidence.",
+      "Do not repeat the immediately previous scene's exact combination; follow the current blueprint and reserve the adjacent blueprints.",
+    ].join(" ");
+  }
   return [
     `FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}: use ${plan.financeFocus} as this beat's primary finance focus, with a ${plan.cameraFamily} and a ${plan.locationFamily} whenever compatible with the narration's required setting.`,
-    "Cash, banknotes, charts, statements and documents are allowed whenever they directly prove this finance beat; do not ban or avoid them merely for being finance props.",
+    `POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}, layout ${blueprint.layoutFamily}.`,
+    `Primary anchor: ${blueprint.primaryAnchor}. Supporting placement: ${blueprint.supportPlacement}.`,
+    `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
+    `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
+    `Connection policy: ${blueprint.connectionPolicy}.`,
+    "SEMANTIC REPETITION GUARD: money, coins, envelopes, cards, charts and containers must stay inside their localized anchor group. Reject and rebuild before output if they form a line, row, trail, chain, conveyor, connected tube, repeated compartment or display system.",
+    sourceMotifTranslation,
+    "Cash, banknotes, charts, statements and documents are allowed whenever they directly prove this finance beat; keep them localized rather than removing relevant finance evidence.",
     "Do not repeat the immediately previous scene's exact combination of room silhouette, desk position, loose-cash arrangement, paper layout, chart placement and camera angle. Change at least three of location zone, dominant finance prop, camera, character presence/action and household consequence.",
-    previousPlan ? `The previous planned focus was ${previousPlan.financeFocus} in a ${previousPlan.locationFamily}; do not recreate that composition.` : "Establish a distinct opening composition rather than a generic home-desk finance still life.",
-    nextPlan ? `Leave ${nextPlan.financeFocus} in ${nextPlan.locationFamily} available for the next beat instead of preusing it.` : "Finish with a new resolved composition rather than returning to the opening finance-prop layout.",
+    previousPlan ? `The previous planned focus was ${previousPlan.financeFocus} in ${previousPlan.locationFamily} using ${previousBlueprint?.id}; use the current positive blueprint instead.` : "Establish this positive opening blueprint rather than a generic home-desk finance still life.",
+    nextPlan ? `Reserve ${nextPlan.financeFocus} in ${nextPlan.locationFamily} with ${nextBlueprint?.id} for the next beat.` : "Finish with this resolved blueprint and open depth.",
   ].join(" ");
 }
 
@@ -1018,15 +1319,15 @@ function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null,
   if (prompt.length <= PROMPT_MAX_CHARS) return prompt;
   return [
     NEW_IMAGE_INSTRUCTION,
-    stylePrefixForMode(visualMode),
+    compactStylePrefixForMode(visualMode),
     `VISUAL MODALITY CONTRACT ${VISUAL_MODALITY_VERSION}: mode ${visualMode.id}. ${visualMode.instruction}`,
-    presenceInstructionForMode(visualMode),
-    styleRejectionForMode(visualMode),
+    compactPresenceInstructionForMode(visualMode),
+    compactStyleRejectionForMode(visualMode),
     `Storyboard scene ${sceneIndex + 1} of ${totalScenes}; role ${role.role}, beat ${roleBeat}.`,
     `Visualize this narration directly: "${compactNarration(narration, 220)}".`,
     `MUST SHOW: ${compactNarration(directedEvidence.mustShow, 320)}. Hero: ${compactNarration(directedEvidence.heroSubject, 140)}. Action: ${compactNarration(directedEvidence.visibleAction, 150)}.`,
     `Setting: ${compactNarration(directedEvidence.sceneSetting, 190)}. Form: ${compactNarration(directedEvidence.visualForm, 180)}. Camera: ${compactNarration(directedEvidence.cameraPlan, 140)}. Light: ${compactNarration(directedEvidence.lightingPlan, 110)}.`,
-    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan),
+    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan, true),
     `SCENE INTEGRATION: ${compactNarration(directedEvidence.sceneIntegrationPlan, 220)}. MOTION PLAN: ${compactNarration(directedEvidence.motionPlan, 240)}. Show only a plausible mid-action instant in this still.`,
     `Use one hero subject. ${role.avoid}. Reject any image reusable for an adjacent narration; change hero, action, location and camera.`,
     `MUST NOT SHOW: ${compactNarration(directedEvidence.mustNotShow, 260)}.`,
@@ -1148,7 +1449,8 @@ const sceneVisualModes = scenes.map((scene, index) => {
   }
   return visualModeForScene(scene, index, sceneCount);
 });
-const sceneDiversityPlans = scenes.map((scene, index) => sceneDiversityPlan(scene, index, sceneCount));
+const sceneDiversityPlans = scenes.map((scene, index) =>
+  sceneDiversityPlan(scene, index, sceneCount, sceneVisualModes[index], sceneVisualModes));
 const scenePrompts = scenes.map((scene, index) => {
   const targetedSceneRepair = topicScopedSceneRepairByIndex.get(index + 1) ?? null;
   const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
@@ -1320,6 +1622,16 @@ if (promptAuditOnly) {
       : mode.presence === "hands"
         ? /PRESENCE GATE: HANDS ONLY/i.test(prompt)
         : /PRESENCE GATE: NO PERSON/i.test(prompt);
+    const semanticCompositionPassed =
+      new RegExp(`POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}`).test(prompt) &&
+      /Primary anchor:/i.test(prompt) &&
+      /Supporting placement:/i.test(prompt) &&
+      /Open-space requirement:/i.test(prompt) &&
+      /Finance evidence allowance:/i.test(prompt) &&
+      /Connection policy:/i.test(prompt) &&
+      /SEMANTIC REPETITION GUARD:/i.test(prompt) &&
+      /SOURCE MOTIF TRANSLATION/i.test(prompt);
+    const promptLengthPassed = prompt.length <= PROMPT_HARD_MAX_CHARS;
     const contractPassed =
       /bright family-feature-quality cinematic 3D animation/i.test(prompt) &&
       /SCENE INTEGRATION:/i.test(prompt) &&
@@ -1327,6 +1639,8 @@ if (promptAuditOnly) {
       /plausible mid-action instant/i.test(prompt) &&
       new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
       /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
+      semanticCompositionPassed &&
+      promptLengthPassed &&
       retiredDirectionPatterns.every((pattern) => !pattern.test(prompt));
     return {
       sceneIndex: index + 1,
@@ -1335,6 +1649,9 @@ if (promptAuditOnly) {
       presenceMode: mode.presence,
       sceneDiversityPlan: sceneDiversityPlans[index],
       presenceGatePassed,
+      semanticCompositionPassed,
+      promptLength: prompt.length,
+      promptLengthPassed,
       contractPassed,
       legacyPresenceConflicts: conflicts,
       promptFingerprint: sceneRequirements[index].promptFingerprint,
@@ -1362,7 +1679,8 @@ if (promptAuditOnly) {
       promptFinanceSceneDiversityAudit.passed,
     rows,
   };
-  const auditPath = path.join(OUT_DIR, "prompt-audit.json");
+  const auditPath = PROMPT_AUDIT_OUT_ABS ?? path.join(OUT_DIR, "prompt-audit.json");
+  fs.mkdirSync(path.dirname(auditPath), { recursive: true });
   fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2), "utf8");
   console.log(JSON.stringify({
     passed: audit.passed,
@@ -1375,6 +1693,11 @@ if (promptAuditOnly) {
       visualModeId: row.visualModeId,
       presenceMode: row.presenceMode,
       presenceGatePassed: row.presenceGatePassed,
+      semanticCompositionPassed: row.semanticCompositionPassed,
+      promptLength: row.promptLength,
+      promptLengthPassed: row.promptLengthPassed,
+      compositionBlueprintId: row.sceneDiversityPlan?.compositionBlueprint?.id ?? null,
+      sourceMotifHazards: row.sceneDiversityPlan?.compositionBlueprint?.sourceMotifHazards ?? [],
       contractPassed: row.contractPassed,
       legacyPresenceConflicts: row.legacyPresenceConflicts,
       promptFingerprint: row.promptFingerprint,
@@ -1529,7 +1852,8 @@ function buildVisualModalityAudit(states) {
 
 function buildFinanceSceneDiversityAudit(states) {
   const plans = states.map((state) => state?.sceneDiversityPlan ?? null);
-  const expectedPlans = scenes.map((scene, index) => sceneDiversityPlans[index] ?? sceneDiversityPlan(scene, index, sceneCount));
+  const expectedPlans = scenes.map((scene, index) => sceneDiversityPlans[index] ??
+    sceneDiversityPlan(scene, index, sceneCount, sceneVisualModes[index], sceneVisualModes));
   const sceneContractsPassed =
     states.length === sceneCount &&
     plans.every((plan, index) =>
@@ -1538,8 +1862,14 @@ function buildFinanceSceneDiversityAudit(states) {
       plan?.sceneId === expectedPlans[index].sceneId &&
       plan?.locationFamily === expectedPlans[index].locationFamily &&
       plan?.cameraFamily === expectedPlans[index].cameraFamily &&
-      plan?.financeFocus === expectedPlans[index].financeFocus);
+      plan?.financeFocus === expectedPlans[index].financeFocus &&
+      plan?.compositionBlueprint?.version === COMPOSITION_BLUEPRINT_VERSION &&
+      plan?.compositionBlueprint?.id === expectedPlans[index].compositionBlueprint.id &&
+      plan?.compositionBlueprint?.semanticSignature === expectedPlans[index].compositionBlueprint.semanticSignature &&
+      plan?.compositionBlueprint?.connectionPolicy === expectedPlans[index].compositionBlueprint.connectionPolicy &&
+      Array.isArray(plan?.compositionBlueprint?.sourceMotifHazards));
   const adjacentRepeatFailures = [];
+  const adjacentSemanticRepeatFailures = [];
   for (let index = 1; index < plans.length; index += 1) {
     const previous = plans[index - 1];
     const current = plans[index];
@@ -1549,33 +1879,86 @@ function buildFinanceSceneDiversityAudit(states) {
     if (repeatedFields.length > 0) {
       adjacentRepeatFailures.push({ previousScene: index, currentScene: index + 1, repeatedFields });
     }
+    if (
+      previous?.compositionBlueprint?.semanticSignature &&
+      previous.compositionBlueprint.semanticSignature === current?.compositionBlueprint?.semanticSignature
+    ) {
+      adjacentSemanticRepeatFailures.push({
+        previousScene: index,
+        currentScene: index + 1,
+        semanticSignature: current.compositionBlueprint.semanticSignature,
+      });
+    }
   }
   const distinctLocationCount = new Set(plans.map((plan) => plan?.locationFamily).filter(Boolean)).size;
   const distinctCameraCount = new Set(plans.map((plan) => plan?.cameraFamily).filter(Boolean)).size;
   const distinctFinanceFocusCount = new Set(plans.map((plan) => plan?.financeFocus).filter(Boolean)).size;
+  const distinctCompositionCount = new Set(
+    plans.map((plan) => plan?.compositionBlueprint?.semanticSignature).filter(Boolean),
+  ).size;
   const requiredDistinctCount = Math.min(6, sceneCount);
+  const requiredDistinctCompositionCount = Math.min(6, sceneCount);
+  const sourceMotifHazardScenes = plans
+    .filter((plan) => plan?.compositionBlueprint?.sourceMotifHazards?.length > 0)
+    .map((plan) => ({
+      sceneIndex: plan.sceneIndex,
+      hazards: plan.compositionBlueprint.sourceMotifHazards,
+      neutralizationRequired: plan.compositionBlueprint.sourceMotifNeutralizationRequired === true,
+    }));
   const promptCoveragePassed = scenePrompts.every((prompt) =>
     new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
     /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
     /Do not repeat the immediately previous scene's exact combination/i.test(prompt));
+  const semanticMotifGuardPassed = scenePrompts.every((prompt, index) => {
+    const blueprint = plans[index]?.compositionBlueprint;
+    return blueprint?.version === COMPOSITION_BLUEPRINT_VERSION &&
+      prompt.includes(`POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}`) &&
+      /Primary anchor:/i.test(prompt) &&
+      /Supporting placement:/i.test(prompt) &&
+      /Open-space requirement:/i.test(prompt) &&
+      /Connection policy:/i.test(prompt) &&
+      /SEMANTIC REPETITION GUARD:/i.test(prompt) &&
+      /SOURCE MOTIF TRANSLATION/i.test(prompt) &&
+      /keep them localized rather than removing relevant finance evidence/i.test(prompt) &&
+      prompt.length <= PROMPT_HARD_MAX_CHARS;
+  });
+  const promptLengths = scenePrompts.map((prompt) => prompt.length);
+  const promptLengthAudit = {
+    hardMaximum: PROMPT_HARD_MAX_CHARS,
+    minimum: Math.min(...promptLengths),
+    maximum: Math.max(...promptLengths),
+    average: Math.round(promptLengths.reduce((sum, length) => sum + length, 0) / Math.max(1, promptLengths.length)),
+    passed: promptLengths.every((length) => length <= PROMPT_HARD_MAX_CHARS),
+  };
   return {
     version: FINANCE_SCENE_DIVERSITY_VERSION,
+    compositionBlueprintVersion: COMPOSITION_BLUEPRINT_VERSION,
     sceneContractsPassed,
     promptCoveragePassed,
+    semanticMotifGuardPassed,
+    promptLengthAudit,
     adjacentRepeatFailures,
+    adjacentSemanticRepeatFailures,
     distinctLocationCount,
     distinctCameraCount,
     distinctFinanceFocusCount,
+    distinctCompositionCount,
     requiredDistinctCount,
+    requiredDistinctCompositionCount,
+    sourceMotifHazardScenes,
     allowedFinanceProps: ["cash", "banknotes", "charts", "statements", "documents"],
     manualVisualReviewRequired: true,
     passed:
       sceneContractsPassed &&
       promptCoveragePassed &&
+      semanticMotifGuardPassed &&
+      promptLengthAudit.passed &&
       adjacentRepeatFailures.length === 0 &&
+      adjacentSemanticRepeatFailures.length === 0 &&
       distinctLocationCount >= requiredDistinctCount &&
       distinctCameraCount >= requiredDistinctCount &&
-      distinctFinanceFocusCount >= requiredDistinctCount,
+      distinctFinanceFocusCount >= requiredDistinctCount &&
+      distinctCompositionCount >= requiredDistinctCompositionCount,
   };
 }
 

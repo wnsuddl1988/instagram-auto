@@ -22,7 +22,8 @@ function check(name, condition) {
 }
 
 const modalityVersion = "money_shorts_visual_modality_sequence_v1";
-const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v1";
+const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v2";
+const compositionBlueprintVersion = "money_shorts_positive_composition_blueprint_v1";
 const controllerVersion = "chatgpt_picture_v2_character_reference_v8";
 const modes = [
   "CHARACTER_EVENT",
@@ -40,6 +41,7 @@ const modes = [
 check("image controller contract is bumped to selected-reference v8", imageRunner.includes(controllerVersion));
 check("visual modality contract is versioned", imageRunner.includes(modalityVersion));
 check("finance scene diversity contract is versioned", imageRunner.includes(financeSceneDiversityVersion));
+check("positive composition blueprint contract is versioned", imageRunner.includes(compositionBlueprintVersion));
 for (const mode of modes) check(`visual mode exists: ${mode}`, imageRunner.includes(`${mode}: {`));
 check("scene role mapper handles shared finance flow roles", [
   'id === "hook"',
@@ -71,6 +73,27 @@ check("scene diversity rotates location, camera and finance focus", [
   "FINANCE_SCENE_DIVERSITY_FOCI",
   "function sceneDiversityPlan",
 ].every((token) => imageRunner.includes(token)));
+check("positive composition blueprints cover every finance visual mode",
+  imageRunner.includes("COMPOSITION_BLUEPRINTS_BY_MODE") &&
+  modes.every((mode) => imageRunner.includes(`${mode}: [`)));
+check("object mechanism repetitions rotate through localized depth layouts", [
+  "single_anchor_near_far_result",
+  "l_corner_boundary",
+  "two_heights_separate_furniture",
+  "doorway_cause_result",
+].every((token) => imageRunner.includes(token)));
+check("composition blueprint keeps relevant finance evidence localized",
+  imageRunner.includes("Finance evidence allowance:") &&
+  imageRunner.includes("one compact localized group only when they directly prove the beat") &&
+  imageRunner.includes("keep them localized rather than removing relevant finance evidence"));
+check("semantic repetition guard blocks linear money and apparatus motifs",
+  imageRunner.includes("SEMANTIC REPETITION GUARD:") &&
+  imageRunner.includes("line, row, trail, chain, conveyor, connected tube, repeated compartment or display system") &&
+  imageRunner.includes("SEMANTIC_LINEAR_MOTIF_PATTERNS"));
+check("source motif hazards are translated into separate anchors and open depth",
+  imageRunner.includes("function sourceMotifHazards") &&
+  imageRunner.includes("sourceMotifNeutralizationRequired") &&
+  imageRunner.includes("SOURCE MOTIF TRANSLATION REQUIRED"));
 check("every scene state records mode and presence", imageRunner.includes("visualModeId: sceneVisualModes[index].id") && imageRunner.includes("presenceMode: sceneVisualModes[index].presence"));
 check("old summaries cannot be reused without modality version", imageRunner.includes("previousSummary?.visualModalityVersion === VISUAL_MODALITY_VERSION"));
 check("existing approved images are retained when a newer prompt contract is introduced",
@@ -86,6 +109,13 @@ check("saved and final summaries include finance diversity audit", (imageRunner.
 check("prompt audit mode runs before Playwright import", imageRunner.includes("promptAuditOnly") && imageRunner.indexOf("if (promptAuditOnly)") < imageRunner.indexOf('await import("playwright")'));
 check("prompt audit detects legacy positive person instructions", imageRunner.includes("legacyPresenceConflictPatterns") && imageRunner.includes("legacyPresenceConflicts"));
 check("prompt audit records that no external action occurred", imageRunner.includes("externalActionPerformed: false"));
+check("prompt audit can write a separate evidence file without overwriting execution binding",
+  imageRunner.includes("--prompt-audit-out") &&
+  imageRunner.includes("PROMPT_AUDIT_OUT_ABS ?? path.join(OUT_DIR, \"prompt-audit.json\")"));
+check("prompt audit enforces a bounded compact prompt after adding composition contracts",
+  imageRunner.includes("PROMPT_HARD_MAX_CHARS = 6200") &&
+  imageRunner.includes("promptLengthPassed") &&
+  imageRunner.includes("promptLengthAudit.passed"));
 check("prompt audit fails closed on the same sequence-level modality audit as the live summary",
   imageRunner.includes("const promptVisualModalityAudit = buildVisualModalityAudit(rows)") &&
   imageRunner.includes("visualModalityAudit: promptVisualModalityAudit") &&
@@ -94,6 +124,10 @@ check("prompt audit fails closed on the same finance diversity contract as live 
   imageRunner.includes("const promptFinanceSceneDiversityAudit = buildFinanceSceneDiversityAudit(rows)") &&
   imageRunner.includes("financeSceneDiversityAudit: promptFinanceSceneDiversityAudit") &&
   imageRunner.includes("promptFinanceSceneDiversityAudit.passed"));
+check("finance diversity audit rejects repeated semantic composition signatures",
+  imageRunner.includes("adjacentSemanticRepeatFailures") &&
+  imageRunner.includes("distinctCompositionCount") &&
+  imageRunner.includes("semanticMotifGuardPassed"));
 check("topic-scoped mode override is packet-bound and prompt-audit-only",
   imageRunner.includes("--mode-override-packet") &&
   imageRunner.includes("MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly") &&
