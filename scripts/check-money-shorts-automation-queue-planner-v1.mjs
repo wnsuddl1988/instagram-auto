@@ -40,6 +40,7 @@ function job(topicId, createdAt, overrides = {}) {
     createdAt,
     livePlan: buildMoneyShortsResumablePlan({ topicId, ...base, ...(overrides.plan ?? {}) }),
     executionGuard: { status: overrides.guardStatus ?? "available", receipt: null },
+    lifecycle: overrides.lifecycleStatus ? { status: overrides.lifecycleStatus } : { status: "active" },
   };
 }
 
@@ -103,9 +104,10 @@ const inFlight = job("in-flight", "2026-07-17T01:02:00.000Z", { guardStatus: "to
 const manualReview = job("manual-review", "2026-07-17T01:03:00.000Z", { guardStatus: "manual_review_required" });
 const identical = job("identical", "2026-07-17T01:04:00.000Z", { guardStatus: "identical_attempt_recorded" });
 const unavailable = job("unavailable", "2026-07-17T01:05:00.000Z", { guardStatus: "store_unavailable" });
+const paused = job("paused", "2026-07-17T01:06:00.000Z", { lifecycleStatus: "paused" });
 const fallback = job("fallback", "2026-07-17T02:00:00.000Z");
 const skipped = planMoneyShortsAutomationQueueRun({
-  jobs: [fallback, unavailable, identical, manualReview, inFlight, completed, ownerGate],
+  jobs: [fallback, paused, unavailable, identical, manualReview, inFlight, completed, ownerGate],
 });
 const codes = new Map(skipped.evaluations.map((item) => [item.topicId, item.eligibilityCode]));
 check("Owner-gated job is skipped", codes.get("owner-gate") === "owner_gate_required");
@@ -114,6 +116,7 @@ check("in-flight job is skipped", codes.get("in-flight") === "topic_in_flight");
 check("manual-review job is skipped", codes.get("manual-review") === "manual_review_required");
 check("identical recorded attempt is skipped", codes.get("identical") === "identical_attempt_recorded");
 check("unavailable receipt store is skipped", codes.get("unavailable") === "store_unavailable");
+check("Owner-paused job is skipped until explicit resume", codes.get("paused") === "paused_by_owner");
 check("oldest remaining eligible job is selected after skips", skipped.selected?.topicId === "fallback");
 
 const none = planMoneyShortsAutomationQueueRun({ jobs: [ownerGate, completed, inFlight] });

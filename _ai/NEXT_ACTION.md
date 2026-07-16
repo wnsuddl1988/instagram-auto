@@ -26,9 +26,11 @@ The new queue persists selected topic membership and the last stage/gate under `
 
 Queue status now also includes a deterministic dry-run planner. It sorts by `createdAt`, then `topicId`, then `jobId`; selects at most one oldest eligible job; and records a visible reason for every selection, later eligible wait, Owner gate, completed job, in-flight receipt, manual review, identical recorded attempt, or unavailable store. Its preview fingerprint binds the selected job, action, live-plan fingerprint, and execution-guard fingerprint. The former per-job execution path is removed and legacy `queueJob:true` calls fail closed. Planner/claim 24/24, combined orchestration 61/61, execution/recovery 24/24, UI 91/91 and 389/389, TypeScript, build, and diff checks pass. Browser verification showed the empty queue with zero selected-run buttons, zero legacy per-job buttons, zero actions, and zero receipts; it did not enqueue or execute a real topic.
 
+The queue now also has no-execution lifecycle controls. `pause` removes a queued topic from deterministic selection until an explicit `resume`; `remove` deletes only queue membership and leaves media/artifacts untouched; `archive completed` accepts only a current `complete` plan and moves its queue record into a bounded local archive with its last action/receipt summary. All three paths return `actionCount:0`, call neither the executor nor a retry, and record local history only. Queue lifecycle 20/20, paused planner 25/25, combined guard 65/65, TypeScript, UI static checks, and local empty-queue rendering pass.
+
 ## Next Implementation Milestone
 
-Add explicit queue lifecycle controls and a compact history view. Owner must be able to pause or remove a queued topic and archive a completed topic, while the UI shows the last bounded attempt and its receipt/result state. These controls must never execute a production step as a side effect, and completed/manual-review evidence must remain inspectable. Do not add a timer, background worker, automatic retry, paid action, external browser action, upload, or publication in this slice.
+Add deterministic Owner priority controls for queued topics: move one active topic earlier or later, persist the explicit order, show why that order determines the next dry-run selection, and keep pause/resume/remove/archive history intact. This slice changes queue order only; it must never execute a production step, create an execution receipt, retry, add a timer/worker, create paid/external media, upload, or publish.
 
 ## If the Owner Requests Publication Later
 

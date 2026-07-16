@@ -351,6 +351,10 @@ type WizardAutomationQueueJob = {
   };
   livePlan: WizardAutomationPlan;
   executionGuard: WizardAutomationExecutionGuard;
+  lifecycle: {
+    status: "active" | "paused";
+    changedAt: string;
+  } | null;
   lastAdvance: {
     at: string;
     status: string | null;
@@ -359,6 +363,40 @@ type WizardAutomationQueueJob = {
     actionCount: 0 | 1;
     automaticRetryCount: 0;
   } | null;
+};
+
+type WizardAutomationQueueArchivedJob = {
+  jobId: string;
+  topicId: string;
+  title: string;
+  archivedAt: string;
+  archiveReason: "completed_plan";
+  lastAdvance: WizardAutomationQueueJob["lastAdvance"];
+  archivedPlan: {
+    completedStageCount: number | null;
+    totalStageCount: number | null;
+  };
+  executionGuard: {
+    status: string | null;
+    receipt: {
+      action: string | null;
+      status: string | null;
+      resultStatus: string | null;
+    } | null;
+  };
+};
+
+type WizardAutomationQueueHistoryEntry = {
+  at: string;
+  kind: "safe_action_finished" | "paused" | "resumed" | "removed" | "archived_completed";
+  jobId: string;
+  topicId: string;
+  title: string;
+  action?: string | null;
+  status?: string | null;
+  blockerCode?: string | null;
+  actionCount?: 0 | 1;
+  lastAdvance?: WizardAutomationQueueJob["lastAdvance"];
 };
 
 type WizardAutomationQueueEvaluation = {
@@ -423,6 +461,8 @@ type WizardAutomationQueue = {
   mode: "owner_click_planning_only";
   updatedAt: string | null;
   jobs: WizardAutomationQueueJob[];
+  archivedJobs: WizardAutomationQueueArchivedJob[];
+  history: WizardAutomationQueueHistoryEntry[];
   runPreview: WizardAutomationQueueRunPreview;
   safety: {
     timerEnabled: false;
@@ -1151,6 +1191,30 @@ export default function VideoCreationWizard() {
     }
   }, [automationQueue, refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia, selectedTopicId]);
 
+  const updateAutomationQueueLifecycle = useCallback(async (
+    action: "automationQueuePause" | "automationQueueResume" | "automationQueueRemove" | "automationQueueArchiveCompleted",
+    job: WizardAutomationQueueJob,
+  ) => {
+    if (automationQueueState === "running" || automationQueueBusyTopicId != null) return;
+    setAutomationQueueBusyTopicId(job.topicId);
+    setAutomationQueueState("running");
+    setAutomationQueueResult(null);
+    try {
+      const r = await postAction(action, { topicId: job.topicId });
+      const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
+      if (queue) setAutomationQueue(queue);
+      else await refreshAutomationQueue();
+      setAutomationQueueResult(r);
+      setAutomationQueueState(r.status === "success" ? "success" : r.status);
+      if (selectedTopicId === job.topicId) await refreshAutomationPlan(job.topicId);
+    } catch {
+      setAutomationQueueState("error");
+      setAutomationQueueResult({ action, status: "error", summary: "큐 lifecycle 변경을 기록하지 못했습니다. 제작 작업은 실행되지 않았습니다." });
+    } finally {
+      setAutomationQueueBusyTopicId(null);
+    }
+  }, [automationQueueBusyTopicId, automationQueueState, refreshAutomationPlan, refreshAutomationQueue, selectedTopicId]);
+
   const resolveAutomationRecovery = useCallback(async (
     decision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry",
   ) => {
@@ -1583,7 +1647,9 @@ export default function VideoCreationWizard() {
             {automationQueue?.jobs.length ? (
               <div className="mt-4 space-y-2.5">
                 {automationQueue.jobs.map((job) => {
-                  const canAdvance = job.livePlan.next?.canAutoAdvance === true && job.executionGuard.status === "available";
+                  const isPaused = job.lifecycle?.status === "paused";
+                  const isComplete = job.livePlan.status === "complete";
+                  const canAdvance = !isPaused && job.livePlan.next?.canAutoAdvance === true && job.executionGuard.status === "available";
                   const runEvaluation = automationQueue.runPreview.evaluations.find((item) => item.jobId === job.jobId);
                   return (
                     <article key={job.jobId} data-testid="wizard-automation-queue-job" className="rounded-xl border border-sky-200 bg-white px-4 py-3">
@@ -1594,7 +1660,9 @@ export default function VideoCreationWizard() {
                             {job.livePlan.completedStageCount}/{job.livePlan.totalStageCount} 단계 · {job.livePlan.next?.stageLabel ?? "완료"}
                           </p>
                           <p className={`mt-0.5 text-sm font-bold ${canAdvance ? "text-emerald-700" : "text-amber-700"}`}>
-                            {canAdvance
+                            {isPaused
+                              ? "Owner가 일시정지함"
+                              : canAdvance
                               ? "Owner 클릭 시 안전 작업 1개 실행 가능"
                               : AUTOMATION_GATE_LABEL[job.livePlan.next?.gate ?? ""] ?? "현재 단계 확인 필요"}
                           </p>
@@ -1612,6 +1680,41 @@ export default function VideoCreationWizard() {
                               마지막 큐 실행: {job.lastAdvance.executedAction ?? "실행 없음"} · {job.lastAdvance.actionCount}개 · 자동 재시도 0회
                             </p>
                           ) : null}
+                          <p className="mt-1 text-xs text-slate-500">
+                            실행 영수증: {job.executionGuard.status}
+                            {job.executionGuard.receipt?.resultStatus ? ` · ${job.executionGuard.receipt.resultStatus}` : ""}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              data-testid="wizard-action-automation-queue-pause-toggle"
+                              className="rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-100 disabled:opacity-40"
+                              disabled={automationQueueBusyTopicId != null || automationQueueState === "running" || isComplete}
+                              onClick={() => void updateAutomationQueueLifecycle(isPaused ? "automationQueueResume" : "automationQueuePause", job)}
+                            >
+                              {automationQueueBusyTopicId === job.topicId ? "처리 중…" : isPaused ? "큐 재개" : "큐 일시정지"}
+                            </button>
+                            {isComplete ? (
+                              <button
+                                type="button"
+                                data-testid="wizard-action-automation-queue-archive"
+                                className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-40"
+                                disabled={automationQueueBusyTopicId != null || automationQueueState === "running"}
+                                onClick={() => void updateAutomationQueueLifecycle("automationQueueArchiveCompleted", job)}
+                              >
+                                완료 작업 보관
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              data-testid="wizard-action-automation-queue-remove"
+                              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                              disabled={automationQueueBusyTopicId != null || automationQueueState === "running"}
+                              onClick={() => void updateAutomationQueueLifecycle("automationQueueRemove", job)}
+                            >
+                              큐에서 제거
+                            </button>
+                          </div>
                       </div>
                     </article>
                   );
@@ -1621,6 +1724,32 @@ export default function VideoCreationWizard() {
               <p className="mt-4 rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm text-slate-600">
                 큐가 비어 있습니다. 주제를 선택한 뒤 현재 단계를 큐에 저장할 수 있습니다.
               </p>
+            ) : null}
+            {automationQueue?.history.length ? (
+              <div data-testid="wizard-automation-queue-history" className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <p className="font-bold text-slate-900">최근 큐 이력</p>
+                <div className="mt-2 space-y-1 text-xs text-slate-600">
+                  {automationQueue.history.slice(-8).reverse().map((item) => (
+                    <p key={`${item.at}-${item.kind}-${item.jobId}`}>
+                      {item.at} · {item.title} · {item.kind}
+                      {item.action ? ` · ${item.action}` : ""}
+                      {item.status ? ` · ${item.status}` : ""}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {automationQueue?.archivedJobs.length ? (
+              <div data-testid="wizard-automation-queue-archive" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="font-bold text-emerald-950">완료 보관 이력</p>
+                <div className="mt-2 space-y-1 text-xs text-emerald-900">
+                  {automationQueue.archivedJobs.slice(-5).reverse().map((job) => (
+                    <p key={`${job.jobId}-${job.archivedAt}`}>
+                      {job.title} · {job.archivedPlan.completedStageCount}/{job.archivedPlan.totalStageCount} 단계 완료 · 최근 영수증 {job.executionGuard.status ?? "없음"}
+                    </p>
+                  ))}
+                </div>
+              </div>
             ) : null}
             <ResultNote result={automationQueueResult} />
           </section>

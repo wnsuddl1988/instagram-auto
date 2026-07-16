@@ -146,6 +146,10 @@ export const OPERATOR_ACTIONS = [
   "automationQueueStatus", // 로컬 큐 멤버십을 읽고 현재 산출물 기준 단계로 재구성
   "automationQueueEnqueue", // Owner가 선택한 주제를 로컬 계획 큐에 추가/동기화
   "automationQueueRunSelected", // 최신 큐 미리보기 지문이 일치할 때 선택된 로컬 안전 작업 1개만 실행
+  "automationQueuePause", // 큐 멤버십을 일시정지하고 실행 없이 이력만 남김
+  "automationQueueResume", // Owner가 일시정지한 큐 멤버십만 재개
+  "automationQueueRemove", // 큐 멤버십만 제거하고 산출물은 보존
+  "automationQueueArchiveCompleted", // 현재 완료 계획을 bounded 로컬 보관 이력으로 이동
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -911,6 +915,10 @@ export function buildOperatorCommand(
     case "automationQueueStatus":
     case "automationQueueEnqueue":
     case "automationQueueRunSelected":
+    case "automationQueuePause":
+    case "automationQueueResume":
+    case "automationQueueRemove":
+    case "automationQueueArchiveCompleted":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

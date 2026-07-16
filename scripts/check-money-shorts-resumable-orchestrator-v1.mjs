@@ -118,6 +118,10 @@ const queueRouteEnd = routeSource.indexOf('// 중단 영수증 복구', queueSta
 const queueRouteBlock = queueStatusRouteStart >= 0 && queueRouteEnd > queueStatusRouteStart
   ? routeSource.slice(queueStatusRouteStart, queueRouteEnd)
   : "";
+const queueLifecycleStart = routeSource.indexOf("// 큐 lifecycle 변경");
+const queueLifecycleBlock = queueLifecycleStart >= 0 && recoveryRouteStart > queueLifecycleStart
+  ? routeSource.slice(queueLifecycleStart, recoveryRouteStart)
+  : "";
 check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
 check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
 check("automation route reads durable media/Flow/preflight/publish evidence", [
@@ -149,6 +153,7 @@ check("recovery route never executes, retries, pays, renders, uploads, or publis
 check("wizard renders evidence and only the server-allowed recovery decision", wizardSource.includes('data-testid="wizard-automation-recovery"') && wizardSource.includes("recovery.allowedDecision ===") && wizardSource.includes('postAction("automationRecoveryResolve"'));
 check("manual retry clearance does not auto-run and preserves an archived receipt", executionStoreSource.includes("archiveManualRetryClearance") && executionStoreSource.includes("actionExecuted: false") && !/setTimeout|setInterval/u.test(recoveryStoreBlock));
 check("operator exposes local queue status and enqueue actions", helperSource.includes('"automationQueueStatus"') && helperSource.includes('"automationQueueEnqueue"'));
+check("operator exposes queue lifecycle actions", ["automationQueuePause", "automationQueueResume", "automationQueueRemove", "automationQueueArchiveCompleted"].every((action) => helperSource.includes(`"${action}"`) && routeSource.includes(`"${action}"`)));
 check("queue store is local-only and contains no runner, network, timer, or schedule", queueStoreSource.includes("C:\\\\tmp\\\\money-shorts-os\\\\automation-queue-v1") && !/node:child_process|\bfetch\s*\(|https?:\/\/|setTimeout|setInterval|runAt|cron/u.test(queueStoreSource));
 check("queue mutations use one atomic exclusive lock and atomic JSON replacement", queueStoreSource.includes('openSync(paths.lockPath, "wx")') && queueStoreSource.includes("writeJsonAtomic(paths.queuePath, updated)"));
 check("queue status reconstructs live plans without executing a runner", queueRouteBlock.includes("readMoneyShortsAutomationQueueView") && routeSource.includes("livePlan: snapshot.plan") && !/runOperatorScript|runOneSafeAutomationAction|allowArm/u.test(queueRouteBlock));
@@ -159,9 +164,12 @@ check("legacy queued advance bypass is fail-closed without an action receipt", a
 check("queued advancement syncs only after terminal receipt", advanceRouteBlock.includes("queueJobRequested") && advanceRouteBlock.includes("syncMoneyShortsAutomationJob") && advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("syncMoneyShortsAutomationJob"));
 check("queue UI sends one content-addressed Owner-click claim", wizardSource.includes('data-testid="wizard-action-automation-queue-run-selected"') && wizardSource.includes('postAction("automationQueueRunSelected"') && ["previewFingerprint", "jobId", "selectedAction", "planFingerprint"].every((field) => wizardSource.includes(field)));
 check("queue UI has no per-job execution bypass", !wizardSource.includes('data-testid="wizard-action-automation-queue-advance"') && !wizardSource.includes("runQueuedAutomationAdvance"));
+check("queue lifecycle route mutates only local queue state with zero executed actions", ["pauseMoneyShortsAutomationJob", "resumeMoneyShortsAutomationJob", "removeMoneyShortsAutomationJob", "archiveCompletedMoneyShortsAutomationJob"].every((name) => queueLifecycleBlock.includes(name)) && queueLifecycleBlock.includes("actionCount: 0") && !/runOneSafeAutomationAction|runOperatorScript|realTtsCreate|realSceneImagesCreate|flowMotionGenerate|finalVideoCreate|actualUpload/u.test(queueLifecycleBlock));
+check("queue UI exposes lifecycle controls and bounded local history", ["wizard-action-automation-queue-pause-toggle", "wizard-action-automation-queue-remove", "wizard-action-automation-queue-archive", "wizard-automation-queue-history", "wizard-automation-queue-archive"].every((id) => wizardSource.includes(`data-testid=\"${id}\"`)));
 check("queue planner is a pure dry-run with no I/O, runner, network, or timer", queuePlannerSource.includes('mode: "deterministic_dry_run"') && queuePlannerSource.includes("executionReceiptCreated: false") && !/node:fs|node:child_process|writeFile|runOneSafeAutomationAction|\bfetch\s*\(|setTimeout|setInterval/u.test(queuePlannerSource));
 check("queue planner uses stable oldest-first tie breakers and selects at most one", queuePlannerSource.includes("stableQueueOrder") && queuePlannerSource.includes("leftCreatedAt.localeCompare(rightCreatedAt)") && queuePlannerSource.includes("topicId") && queuePlannerSource.includes("evaluations.find((item) => item.eligible)"));
 check("queue planner skips every durable guard blocker", ["topic_in_flight", "manual_review_required", "identical_attempt_recorded", "store_unavailable"].every((status) => queuePlannerSource.includes(status)));
+check("queue planner skips an Owner-paused job", queuePlannerSource.includes("paused_by_owner"));
 check("queue status attaches a deterministic run preview without executing", snapshotBlock.includes("planMoneyShortsAutomationQueueRun({ jobs })") && snapshotBlock.includes("runPreview") && queueRouteBlock.includes("실행 영수증·작업 실행은 0회"));
 check("wizard shows exact dry-run action and per-job selection reason", wizardSource.includes('data-testid="wizard-automation-queue-dry-run"') && wizardSource.includes("정확한 다음 액션:") && wizardSource.includes('data-testid="wizard-automation-queue-job-decision"'));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));

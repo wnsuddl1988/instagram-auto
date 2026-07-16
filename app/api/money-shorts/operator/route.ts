@@ -86,8 +86,12 @@ import {
   resolveMoneyShortsAutomationRecovery,
 } from "@/lib/money-shorts-automation-execution-store.mjs";
 import {
+  archiveCompletedMoneyShortsAutomationJob,
   enqueueMoneyShortsAutomationJob,
+  pauseMoneyShortsAutomationJob,
   readMoneyShortsAutomationQueue,
+  removeMoneyShortsAutomationJob,
+  resumeMoneyShortsAutomationJob,
   syncMoneyShortsAutomationJob,
 } from "@/lib/money-shorts-automation-queue-store.mjs";
 import {
@@ -132,6 +136,10 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "automationQueueStatus",
   "automationQueueEnqueue",
   "automationQueueRunSelected",
+  "automationQueuePause",
+  "automationQueueResume",
+  "automationQueueRemove",
+  "automationQueueArchiveCompleted",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -1185,6 +1193,87 @@ export async function POST(request: Request) {
         status: "error",
         summary: "선택한 주제를 자동 작업 큐에 저장하지 못했습니다.",
         blockerCode: "AUTOMATION_QUEUE_ENQUEUE_FAILED",
+        noLive: true,
+      });
+    }
+  }
+
+  // 큐 lifecycle 변경은 멤버십/표시 상태만 바꾸며 제작 작업·재시도·외부 호출을 하지 않는다.
+  if (
+    action === "automationQueuePause" ||
+    action === "automationQueueResume" ||
+    action === "automationQueueRemove"
+  ) {
+    const input = body as { topicId?: unknown };
+    const topicId = typeof input.topicId === "string" ? input.topicId : "";
+    try {
+      if (action === "automationQueuePause") pauseMoneyShortsAutomationJob({ topicId });
+      if (action === "automationQueueResume") resumeMoneyShortsAutomationJob({ topicId });
+      if (action === "automationQueueRemove") removeMoneyShortsAutomationJob({ topicId });
+      const queue = readMoneyShortsAutomationQueueView();
+      const label = action === "automationQueuePause"
+        ? "일시정지"
+        : action === "automationQueueResume"
+          ? "재개"
+          : "제거";
+      return json({
+        action,
+        status: "success",
+        summary: `큐 작업을 ${label}했습니다.`,
+        detail: "큐 상태와 이력만 바꿨습니다. 제작 작업·재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: { queue, execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "automation_queue_lifecycle_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 큐 상태와 달라 lifecycle 변경을 기록하지 않았습니다.",
+        blockerCode: reason === "automation_queue_job_not_found"
+          ? "AUTOMATION_QUEUE_JOB_NOT_FOUND"
+          : "AUTOMATION_QUEUE_LIFECYCLE_FAILED",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+  }
+
+  // 완료된 현재 계획만 로컬 보관함으로 이동한다. 영상/산출물/영수증을 삭제하지 않는다.
+  if (action === "automationQueueArchiveCompleted") {
+    const input = body as { topicId?: unknown };
+    const topicId = typeof input.topicId === "string" ? input.topicId : "";
+    let snapshot: ReturnType<typeof readMoneyShortsAutomationSnapshot> | null = null;
+    let executionGuard: ReturnType<typeof readMoneyShortsAutomationExecutionGuard> | null = null;
+    try {
+      snapshot = readMoneyShortsAutomationSnapshot(topicId);
+      executionGuard = readMoneyShortsAutomationExecutionGuard(snapshot.plan);
+      archiveCompletedMoneyShortsAutomationJob({
+        topicId,
+        plan: snapshot.plan,
+        executionGuard,
+      });
+      const queue = readMoneyShortsAutomationQueueView();
+      return json({
+        action,
+        status: "success",
+        summary: "완료된 큐 작업을 최근 보관 이력으로 옮겼습니다.",
+        detail: "큐 멤버십만 정리했습니다. 산출물 삭제·작업 실행·재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: { queue, execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "automation_queue_archive_failed";
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 계획이 완료 상태가 아니거나 큐 증거가 달라 보관하지 않았습니다.",
+        blockerCode: reason === "automation_queue_job_not_complete"
+          ? "AUTOMATION_QUEUE_ARCHIVE_REQUIRES_COMPLETE"
+          : reason === "automation_queue_job_not_found"
+            ? "AUTOMATION_QUEUE_JOB_NOT_FOUND"
+            : "AUTOMATION_QUEUE_ARCHIVE_FAILED",
+        raw: { plan: snapshot?.plan ?? null, executionGuard, execution: { actionCount: 0, automaticRetryCount: 0 } },
         noLive: true,
       });
     }
