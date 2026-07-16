@@ -142,6 +142,7 @@ export const OPERATOR_ACTIONS = [
   "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
   "automationPlan", // 로컬 산출물에서 현재 단계와 다음 안전 작업을 재계산(읽기 전용, 실행 없음)
   "automationAdvance", // 계획이 허용한 로컬/no-submit 작업을 정확히 1개 실행한 뒤 재계산하고 중단
+  "automationRecoveryResolve", // 현재 계획과 중단 영수증 증거가 일치할 때만 Owner 결정으로 잠금 해제
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -903,6 +904,7 @@ export function buildOperatorCommand(
     case "realMediaStatus":
     case "automationPlan":
     case "automationAdvance":
+    case "automationRecoveryResolve":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

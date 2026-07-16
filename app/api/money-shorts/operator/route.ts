@@ -77,9 +77,12 @@ import {
   isMoneyShortsSafeAutoAdvanceAction,
 } from "@/lib/money-shorts-resumable-orchestrator.mjs";
 import {
+  MONEY_SHORTS_AUTOMATION_RECOVERY_DECISIONS,
   beginMoneyShortsAutomationExecution,
   finishMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationExecution,
+  inspectMoneyShortsAutomationRecovery,
+  resolveMoneyShortsAutomationRecovery,
 } from "@/lib/money-shorts-automation-execution-store.mjs";
 
 export const runtime = "nodejs";
@@ -115,10 +118,16 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "realMediaStatus",
   "automationPlan",
   "automationAdvance",
+  "automationRecoveryResolve",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
 const UPLOAD_CONFIRM_TEXT = "업로드";
+
+const AUTOMATION_RECOVERY_CONFIRM_TEXT = {
+  acknowledge_artifacts_advanced: "산출물 전진 확인 완료",
+  clear_for_manual_retry: "실행 없음 확인 재시도 허용",
+} as const;
 
 /** 실제 업로드는 Blob 업로드 + IG 폴링 + YT 업로드로 2분을 넘길 수 있어 별도 timeout을 쓴다. */
 const UPLOAD_TIMEOUT_MS = 300_000;
@@ -462,14 +471,22 @@ function readMoneyShortsAutomationSnapshot(topicId: string) {
 }
 
 function readMoneyShortsAutomationExecutionGuard(plan: ReturnType<typeof buildMoneyShortsResumablePlan>) {
-  const nextAction = plan.next?.action ?? null;
-  if (plan.next?.canAutoAdvance !== true || nextAction == null || !isMoneyShortsSafeAutoAdvanceAction(nextAction)) {
-    return { status: "not_applicable" as const, receipt: null };
-  }
   try {
+    const recovery = inspectMoneyShortsAutomationRecovery({ topicId: plan.topicId, currentPlan: plan });
+    if (recovery.status !== "none") {
+      return {
+        status: "manual_review_required" as const,
+        receipt: recovery.receipt,
+        recovery,
+      };
+    }
+    const nextAction = plan.next?.action ?? null;
+    if (plan.next?.canAutoAdvance !== true || nextAction == null || !isMoneyShortsSafeAutoAdvanceAction(nextAction)) {
+      return { status: "not_applicable" as const, receipt: null, recovery };
+    }
     return inspectMoneyShortsAutomationExecution({ topicId: plan.topicId, action: nextAction, plan });
   } catch {
-    return { status: "store_unavailable" as const, receipt: null };
+    return { status: "store_unavailable" as const, receipt: null, recovery: null };
   }
 }
 
@@ -1068,6 +1085,90 @@ export async function POST(request: Request) {
         : "이 주제의 제작·게시 단계가 모두 완료됐습니다.",
       detail: plan.next?.reason ?? "추가 작업이 없습니다.",
       raw: { plan, executionGuard, preflights, publishResults },
+      noLive: true,
+    });
+  }
+
+  // 중단 영수증 복구 — 현재 산출물 계획과 영수증을 다시 대조한 뒤 Owner가 선택한
+  // 한 가지 해석만 기록하고 잠금을 해제한다. 원래 작업 실행·재시도·외부 호출은 하지 않는다.
+  if (action === "automationRecoveryResolve") {
+    const input = body as {
+      topicId?: unknown;
+      decision?: unknown;
+      executionId?: unknown;
+      currentPlanFingerprint?: unknown;
+      confirmation?: unknown;
+    };
+    const topicId = typeof input.topicId === "string" ? input.topicId : "";
+    const decision = typeof input.decision === "string" ? input.decision : "";
+    const expectedExecutionId = typeof input.executionId === "string" ? input.executionId : "";
+    const expectedCurrentPlanFingerprint = typeof input.currentPlanFingerprint === "string"
+      ? input.currentPlanFingerprint
+      : "";
+    const expectedConfirmation = AUTOMATION_RECOVERY_CONFIRM_TEXT[
+      decision as keyof typeof AUTOMATION_RECOVERY_CONFIRM_TEXT
+    ];
+    if (
+      !(MONEY_SHORTS_AUTOMATION_RECOVERY_DECISIONS as readonly string[]).includes(decision) ||
+      expectedExecutionId.length === 0 ||
+      !/^[a-f0-9]{64}$/.test(expectedCurrentPlanFingerprint) ||
+      input.confirmation !== expectedConfirmation
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "복구 결정 확인값이 맞지 않아 잠금을 유지했습니다.",
+        blockerCode: "AUTOMATION_RECOVERY_CONFIRMATION_INVALID",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+
+    const before = readMoneyShortsAutomationSnapshot(topicId);
+    let resolved;
+    try {
+      resolved = resolveMoneyShortsAutomationRecovery({
+        topicId,
+        currentPlan: before.plan,
+        decision,
+        expectedExecutionId,
+        expectedCurrentPlanFingerprint,
+      });
+    } catch {
+      const executionGuard = readMoneyShortsAutomationExecutionGuard(before.plan);
+      return json({
+        action,
+        status: "blocked",
+        summary: "중단 영수증과 현재 산출물 증거가 달라 잠금을 유지했습니다.",
+        detail: "진행 상태를 다시 확인하고 표시된 증거에 맞는 결정만 선택해 주세요.",
+        blockerCode: "AUTOMATION_RECOVERY_EVIDENCE_MISMATCH",
+        raw: { plan: before.plan, executionGuard, execution: { actionCount: 0, automaticRetryCount: 0 } },
+        noLive: true,
+      });
+    }
+
+    const after = readMoneyShortsAutomationSnapshot(topicId);
+    const executionGuard = readMoneyShortsAutomationExecutionGuard(after.plan);
+    return json({
+      action,
+      status: "success",
+      summary: decision === "acknowledge_artifacts_advanced"
+        ? "중단된 작업 뒤 산출물이 전진한 사실을 확인 기록하고 잠금을 해제했습니다."
+        : "산출물이 전진하지 않은 사실을 확인 기록하고, 나중에 수동으로 다시 실행할 수 있게 잠금을 해제했습니다.",
+      detail: "복구 결정만 기록했습니다. 작업 재실행·유료 생성·렌더·업로드·게시는 0회입니다.",
+      raw: {
+        resolved,
+        planAfter: after.plan,
+        executionGuard,
+        execution: {
+          actionCount: 0,
+          automaticRetryCount: 0,
+          externalGenerationExecuted: false,
+          paidActionExecuted: false,
+          uploadExecuted: false,
+          publicationExecuted: false,
+        },
+      },
       noLive: true,
     });
   }

@@ -317,12 +317,22 @@ type WizardAutomationExecutionGuard = {
   status: "available" | "not_applicable" | "topic_in_flight" | "manual_review_required" | "identical_attempt_recorded" | "store_unavailable";
   receipt: {
     executionId: string | null;
+    planFingerprint: string | null;
     action: string | null;
     status: string | null;
     startedAt: string | null;
     finishedAt: string | null;
     resultStatus: string | null;
     blockerCode: string | null;
+  } | null;
+  recovery?: {
+    status: "none" | "decision_required" | "manual_evidence_required";
+    comparison: "no_in_flight_lock" | "current_plan_unchanged" | "artifacts_advanced" | "ambiguous_plan_change" | "invalid_lock_evidence" | "receipt_lock_mismatch";
+    allowedDecision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry" | null;
+    currentPlanFingerprint?: string;
+    beforeCompletedStageCount?: number | null;
+    currentCompletedStageCount?: number | null;
+    receipt: WizardAutomationExecutionGuard["receipt"];
   } | null;
 };
 
@@ -349,6 +359,11 @@ const AUTOMATION_EXECUTION_GUARD_LABEL: Record<WizardAutomationExecutionGuard["s
   identical_attempt_recorded: "같은 계획의 실행 기록 확인 필요",
   store_unavailable: "실행 영수증 저장소 확인 필요",
 };
+
+const AUTOMATION_RECOVERY_CONFIRM_TEXT = {
+  acknowledge_artifacts_advanced: "산출물 전진 확인 완료",
+  clear_for_manual_retry: "실행 없음 확인 재시도 허용",
+} as const;
 
 const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
   not_prepared: "패킷 준비 필요",
@@ -554,6 +569,8 @@ export default function VideoCreationWizard() {
   const [automationExecutionGuard, setAutomationExecutionGuard] = useState<WizardAutomationExecutionGuard | null>(null);
   const [automationAdvanceState, setAutomationAdvanceState] = useState<RunState>("idle");
   const [automationAdvanceResult, setAutomationAdvanceResult] = useState<OperatorResult | null>(null);
+  const [automationRecoveryState, setAutomationRecoveryState] = useState<RunState>("idle");
+  const [automationRecoveryResult, setAutomationRecoveryResult] = useState<OperatorResult | null>(null);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -680,6 +697,11 @@ export default function VideoCreationWizard() {
     setAutomationPlanState("idle");
     setAutomationPlanResult(null);
     setAutomationPlan(null);
+    setAutomationExecutionGuard(null);
+    setAutomationAdvanceState("idle");
+    setAutomationAdvanceResult(null);
+    setAutomationRecoveryState("idle");
+    setAutomationRecoveryResult(null);
     setRealTtsState("idle");
     setRealTtsResult(null);
     setImagesState("idle");
@@ -955,6 +977,50 @@ export default function VideoCreationWizard() {
       });
     }
   }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshAutomationPlan, refreshRealMedia]);
+
+  const resolveAutomationRecovery = useCallback(async (
+    decision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry",
+  ) => {
+    const recovery = automationExecutionGuard?.recovery;
+    const receipt = recovery?.receipt;
+    if (
+      !selectedTopicId ||
+      recovery?.status !== "decision_required" ||
+      recovery.allowedDecision !== decision ||
+      !recovery.currentPlanFingerprint ||
+      !receipt?.executionId
+    ) return;
+
+    const confirmed = window.confirm(
+      decision === "acknowledge_artifacts_advanced"
+        ? "현재 산출물 단계가 중단 전보다 전진했습니다. 실행을 다시 하지 않고 완료 확인 기록만 남길까요?"
+        : "현재 산출물 단계가 중단 전과 같습니다. 지금 작업을 실행하지 않고 잠금만 해제해 나중에 수동 재시도를 허용할까요?",
+    );
+    if (!confirmed) return;
+
+    setAutomationRecoveryState("running");
+    setAutomationRecoveryResult(null);
+    try {
+      const r = await postAction("automationRecoveryResolve", {
+        topicId: selectedTopicId,
+        decision,
+        executionId: receipt.executionId,
+        currentPlanFingerprint: recovery.currentPlanFingerprint,
+        confirmation: AUTOMATION_RECOVERY_CONFIRM_TEXT[decision],
+      });
+      setAutomationRecoveryResult(r);
+      setAutomationRecoveryState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+      await refreshAutomationPlan(selectedTopicId);
+    } catch {
+      setAutomationRecoveryState("error");
+      setAutomationRecoveryResult({
+        action: "automationRecoveryResolve",
+        status: "error",
+        summary: "복구 결정을 기록하지 못했습니다. 잠금은 유지됩니다.",
+      });
+    }
+  }, [automationExecutionGuard, refreshAutomationPlan, refreshRealMedia, selectedTopicId]);
 
   useEffect(() => {
     if (localDev !== true) return;
@@ -1288,7 +1354,8 @@ export default function VideoCreationWizard() {
                     automationPlan?.next?.canAutoAdvance !== true ||
                     (automationExecutionGuard != null && automationExecutionGuard.status !== "available") ||
                     automationPlanState === "running" ||
-                    automationAdvanceState === "running"
+                    automationAdvanceState === "running" ||
+                    automationRecoveryState === "running"
                   }
                   onClick={() => void runAutomationAdvance()}
                 >
@@ -1298,7 +1365,7 @@ export default function VideoCreationWizard() {
                   type="button"
                   data-testid="wizard-action-automation-plan"
                   className="rounded-xl border border-indigo-300 bg-white px-4 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-40"
-                  disabled={automationPlanState === "running" || automationAdvanceState === "running"}
+                  disabled={automationPlanState === "running" || automationAdvanceState === "running" || automationRecoveryState === "running"}
                   onClick={() => void refreshAutomationPlan(selectedTopicId)}
                 >
                   진행 상태 다시 확인
@@ -1341,8 +1408,53 @@ export default function VideoCreationWizard() {
                     이 주제의 제작·게시 단계가 모두 완료됐습니다.
                   </p>
                 )}
+                {automationExecutionGuard?.recovery?.status !== "none" && automationExecutionGuard?.recovery ? (
+                  <div data-testid="wizard-automation-recovery" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-[15px] font-bold text-amber-900">중단 실행 증거 확인</p>
+                      <StateBadge state={automationRecoveryState} />
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-amber-800">
+                      {automationExecutionGuard.recovery.comparison === "current_plan_unchanged"
+                        ? "중단 전과 현재 단계가 같습니다. 원래 작업은 실행하지 않은 채 잠금을 해제하면, 이후 별도 클릭으로 다시 시도할 수 있습니다."
+                        : automationExecutionGuard.recovery.comparison === "artifacts_advanced"
+                          ? "현재 산출물 단계가 중단 전보다 전진했습니다. 원래 작업을 다시 실행하지 않고 전진 사실만 확인 기록할 수 있습니다."
+                          : "영수증·잠금·현재 산출물의 관계가 명확하지 않아 자동 복구 결정을 막았습니다."}
+                    </p>
+                    <dl className="mt-3 grid gap-1 text-xs text-amber-900 sm:grid-cols-2">
+                      <div><dt className="inline font-bold">작업: </dt><dd className="inline">{automationExecutionGuard.recovery.receipt?.action ?? "확인 불가"}</dd></div>
+                      <div><dt className="inline font-bold">시작: </dt><dd className="inline">{automationExecutionGuard.recovery.receipt?.startedAt?.replace("T", " ") ?? "확인 불가"}</dd></div>
+                      <div><dt className="inline font-bold">중단 전 준비 단계: </dt><dd className="inline">{automationExecutionGuard.recovery.beforeCompletedStageCount ?? "확인 불가"}</dd></div>
+                      <div><dt className="inline font-bold">현재 준비 단계: </dt><dd className="inline">{automationExecutionGuard.recovery.currentCompletedStageCount ?? "확인 불가"}</dd></div>
+                    </dl>
+                    {automationExecutionGuard.recovery.allowedDecision === "acknowledge_artifacts_advanced" ? (
+                      <button
+                        type="button"
+                        data-testid="wizard-action-automation-recovery-acknowledge"
+                        className="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40"
+                        disabled={automationRecoveryState === "running" || automationAdvanceState === "running"}
+                        onClick={() => void resolveAutomationRecovery("acknowledge_artifacts_advanced")}
+                      >
+                        산출물 전진 확인 · 재실행 없이 잠금 해제
+                      </button>
+                    ) : automationExecutionGuard.recovery.allowedDecision === "clear_for_manual_retry" ? (
+                      <button
+                        type="button"
+                        data-testid="wizard-action-automation-recovery-retry"
+                        className="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40"
+                        disabled={automationRecoveryState === "running" || automationAdvanceState === "running"}
+                        onClick={() => void resolveAutomationRecovery("clear_for_manual_retry")}
+                      >
+                        실행 없음 확인 · 나중 수동 재시도 허용
+                      </button>
+                    ) : (
+                      <p className="mt-3 text-xs font-bold text-red-700">잠금을 유지했습니다. 증거 파일을 별도로 점검해야 합니다.</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             ) : null}
+            <ResultNote result={automationRecoveryResult} />
             <ResultNote result={automationAdvanceResult} />
             <ResultNote result={automationPlanResult} />
           </section>

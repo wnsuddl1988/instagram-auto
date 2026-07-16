@@ -104,6 +104,13 @@ const safeRunnerEnd = routeSource.indexOf("// ── POST: action 실행", safeR
 const safeRunnerBlock = safeRunnerStart >= 0 && safeRunnerEnd > safeRunnerStart
   ? routeSource.slice(safeRunnerStart, safeRunnerEnd)
   : "";
+const recoveryRouteStart = routeSource.indexOf('if (action === "automationRecoveryResolve")');
+const recoveryRouteEnd = routeSource.indexOf('if (action === "automationAdvance")', recoveryRouteStart);
+const recoveryRouteBlock = recoveryRouteStart >= 0 && recoveryRouteEnd > recoveryRouteStart
+  ? routeSource.slice(recoveryRouteStart, recoveryRouteEnd)
+  : "";
+const recoveryStoreStart = executionStoreSource.indexOf("export function resolveMoneyShortsAutomationRecovery");
+const recoveryStoreBlock = recoveryStoreStart >= 0 ? executionStoreSource.slice(recoveryStoreStart) : "";
 check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
 check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
 check("automation route reads durable media/Flow/preflight/publish evidence", [
@@ -126,6 +133,13 @@ check("execution store is local-only and imports no network or child process API
 check("execution store uses an atomic exclusive per-topic lock", /openSync\(paths\.lockPath,\s*"wx"\)/u.test(executionStoreSource));
 check("execution store writes terminal receipt before removing lock", executionStoreSource.indexOf("writeJsonAtomic(handle.receiptPath, receipt)") < executionStoreSource.indexOf("rmSync(handle.lockPath)"));
 check("execution store has no automatic stale-lock expiration", !/mtime|birthtime|staleAfter|expiresAt|Date\.now\(\)\s*-/u.test(executionStoreSource));
+check("operator exposes an explicit Owner recovery action", helperSource.includes('"automationRecoveryResolve"') && routeSource.includes('"automationRecoveryResolve",'));
+check("recovery compares current plan fingerprint and stage progress", executionStoreSource.includes("currentPlanFingerprint") && executionStoreSource.includes("currentCompletedStageCount > beforeCompletedStageCount"));
+check("recovery permits only evidence-matched acknowledgement or manual retry clearance", executionStoreSource.includes('"acknowledge_artifacts_advanced"') && executionStoreSource.includes('"clear_for_manual_retry"') && recoveryStoreBlock.includes("recovery.allowedDecision !== decision"));
+check("recovery terminalizes evidence before releasing the lock", recoveryStoreBlock.indexOf("writeJsonAtomic(paths.receiptPath, receipt)") < recoveryStoreBlock.indexOf("rmSync(paths.lockPath)"));
+check("recovery route never executes, retries, pays, renders, uploads, or publishes", !/runOneSafeAutomationAction|runOperatorScript|realTtsCreate|flowMotionGenerate|actualUpload|finalVideoCreate/u.test(recoveryRouteBlock) && recoveryRouteBlock.includes("actionCount: 0") && recoveryRouteBlock.includes("automaticRetryCount: 0"));
+check("wizard renders evidence and only the server-allowed recovery decision", wizardSource.includes('data-testid="wizard-automation-recovery"') && wizardSource.includes("recovery.allowedDecision ===") && wizardSource.includes('postAction("automationRecoveryResolve"'));
+check("manual retry clearance does not auto-run and preserves an archived receipt", executionStoreSource.includes("archiveManualRetryClearance") && executionStoreSource.includes("actionExecuted: false") && !/setTimeout|setInterval/u.test(recoveryStoreBlock));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
 check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
 check("wizard disables advance when durable execution guard is not available", wizardSource.includes('automationExecutionGuard.status !== "available"') && wizardSource.includes("실행 안전장치:"));

@@ -8,6 +8,8 @@ import {
   fingerprintMoneyShortsAutomationPlan,
   finishMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationExecution,
+  inspectMoneyShortsAutomationRecovery,
+  resolveMoneyShortsAutomationRecovery,
 } from "../lib/money-shorts-automation-execution-store.mjs";
 import { buildMoneyShortsResumablePlan } from "../lib/money-shorts-resumable-orchestrator.mjs";
 
@@ -105,6 +107,148 @@ try {
     unsafeRejected = error instanceof Error && error.message === "automation_execution_action_not_safe";
   }
   check("paid or publication action cannot enter the store", unsafeRejected);
+
+  const retryTopicId = "automation-recovery-retry-topic";
+  const retryPlan = buildMoneyShortsResumablePlan({ ...base, topicId: retryTopicId });
+  const interruptedRetry = beginMoneyShortsAutomationExecution({
+    topicId: retryTopicId,
+    action: "flowMotionPrepare",
+    plan: retryPlan,
+    rootDir,
+    executionId: "execution-retry-1",
+  });
+  const unchangedRecovery = inspectMoneyShortsAutomationRecovery({
+    topicId: retryTopicId,
+    currentPlan: retryPlan,
+    rootDir,
+  });
+  check(
+    "unchanged interrupted plan offers only manual retry clearance",
+    unchangedRecovery.status === "decision_required" &&
+      unchangedRecovery.comparison === "current_plan_unchanged" &&
+      unchangedRecovery.allowedDecision === "clear_for_manual_retry",
+  );
+  let wrongUnchangedDecisionRejected = false;
+  try {
+    resolveMoneyShortsAutomationRecovery({
+      topicId: retryTopicId,
+      currentPlan: retryPlan,
+      decision: "acknowledge_artifacts_advanced",
+      expectedExecutionId: "execution-retry-1",
+      expectedCurrentPlanFingerprint: unchangedRecovery.currentPlanFingerprint,
+      rootDir,
+    });
+  } catch (error) {
+    wrongUnchangedDecisionRejected = error instanceof Error && error.message === "automation_recovery_evidence_or_decision_mismatch";
+  }
+  check("unchanged plan rejects advanced-artifact acknowledgement", wrongUnchangedDecisionRejected);
+  const clearedRetry = resolveMoneyShortsAutomationRecovery({
+    topicId: retryTopicId,
+    currentPlan: retryPlan,
+    decision: "clear_for_manual_retry",
+    expectedExecutionId: "execution-retry-1",
+    expectedCurrentPlanFingerprint: unchangedRecovery.currentPlanFingerprint,
+    rootDir,
+    now: () => "2026-07-17T02:00:00.000Z",
+  });
+  check(
+    "manual retry clearance terminalizes evidence before unlocking",
+    interruptedRetry.ok === true &&
+      clearedRetry.receipt.resultStatus === "recovered_cleared_for_manual_retry" &&
+      clearedRetry.receipt.manualRetryAllowed === true &&
+      !existsSync(interruptedRetry.handle.lockPath),
+  );
+  const retryInspection = inspectMoneyShortsAutomationExecution({
+    topicId: retryTopicId,
+    action: "flowMotionPrepare",
+    plan: retryPlan,
+    rootDir,
+  });
+  check("cleared identical plan is available but does not auto-run", retryInspection.status === "available" && clearedRetry.actionExecuted === false);
+  const manualRetry = beginMoneyShortsAutomationExecution({
+    topicId: retryTopicId,
+    action: "flowMotionPrepare",
+    plan: retryPlan,
+    rootDir,
+    executionId: "execution-retry-2",
+  });
+  check("later explicit attempt may start with a new execution id", manualRetry.ok === true && manualRetry.receipt.executionId === "execution-retry-2");
+  if (manualRetry.ok) {
+    finishMoneyShortsAutomationExecution({ handle: manualRetry.handle, resultStatus: "blocked", planAfter: retryPlan });
+  }
+
+  const advancedTopicId = "automation-recovery-advanced-topic";
+  const advancedPlanBefore = buildMoneyShortsResumablePlan({ ...base, topicId: advancedTopicId });
+  const advancedPlanAfter = buildMoneyShortsResumablePlan({
+    ...base,
+    topicId: advancedTopicId,
+    flowState: "render_ready",
+    flowReadyForRender: true,
+  });
+  const interruptedAdvanced = beginMoneyShortsAutomationExecution({
+    topicId: advancedTopicId,
+    action: "flowMotionPrepare",
+    plan: advancedPlanBefore,
+    rootDir,
+    executionId: "execution-advanced-1",
+  });
+  const advancedRecovery = inspectMoneyShortsAutomationRecovery({
+    topicId: advancedTopicId,
+    currentPlan: advancedPlanAfter,
+    rootDir,
+  });
+  check(
+    "advanced artifact plan offers only acknowledgement",
+    advancedRecovery.status === "decision_required" &&
+      advancedRecovery.comparison === "artifacts_advanced" &&
+      advancedRecovery.allowedDecision === "acknowledge_artifacts_advanced" &&
+      advancedRecovery.currentCompletedStageCount > advancedRecovery.beforeCompletedStageCount,
+  );
+  const acknowledged = resolveMoneyShortsAutomationRecovery({
+    topicId: advancedTopicId,
+    currentPlan: advancedPlanAfter,
+    decision: "acknowledge_artifacts_advanced",
+    expectedExecutionId: "execution-advanced-1",
+    expectedCurrentPlanFingerprint: advancedRecovery.currentPlanFingerprint,
+    rootDir,
+  });
+  check(
+    "advanced recovery records acknowledgement without rerun",
+    interruptedAdvanced.ok === true &&
+      acknowledged.receipt.resultStatus === "recovered_artifacts_advanced_acknowledged" &&
+      acknowledged.actionExecuted === false &&
+      !existsSync(interruptedAdvanced.handle.lockPath),
+  );
+  const acknowledgedOriginal = beginMoneyShortsAutomationExecution({
+    topicId: advancedTopicId,
+    action: "flowMotionPrepare",
+    plan: advancedPlanBefore,
+    rootDir,
+  });
+  check("acknowledged original plan remains non-repeatable", acknowledgedOriginal.ok === false && acknowledgedOriginal.reason === "automation_execution_identical_attempt_already_recorded");
+
+  const ambiguousTopicId = "automation-recovery-ambiguous-topic";
+  const ambiguousPlanBefore = buildMoneyShortsResumablePlan({ ...base, topicId: ambiguousTopicId });
+  const ambiguousPlanAfter = structuredClone(ambiguousPlanBefore);
+  ambiguousPlanAfter.status = "manual_attention";
+  beginMoneyShortsAutomationExecution({
+    topicId: ambiguousTopicId,
+    action: "flowMotionPrepare",
+    plan: ambiguousPlanBefore,
+    rootDir,
+    executionId: "execution-ambiguous-1",
+  });
+  const ambiguousRecovery = inspectMoneyShortsAutomationRecovery({
+    topicId: ambiguousTopicId,
+    currentPlan: ambiguousPlanAfter,
+    rootDir,
+  });
+  check(
+    "same-count plan mutation remains locked for manual evidence",
+    ambiguousRecovery.status === "manual_evidence_required" &&
+      ambiguousRecovery.comparison === "ambiguous_plan_change" &&
+      ambiguousRecovery.allowedDecision == null,
+  );
 } finally {
   rmSync(rootDir, { recursive: true, force: true });
 }
