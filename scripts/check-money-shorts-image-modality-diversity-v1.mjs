@@ -4,11 +4,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  buildPendingManualVisualReviewState,
+  moneyShortsImageSetSha256,
+  validateMoneyShortsManualVisualReview,
+} from "../lib/money-shorts-manual-visual-review.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const imageRunner = fs.readFileSync(path.join(root, "scripts", "run-owner-real-scene-images-from-wizard-script-once.mjs"), "utf8");
 const videoRunner = fs.readFileSync(path.join(root, "scripts", "run-owner-real-video-from-wizard-assets-once.mjs"), "utf8");
 const helper = fs.readFileSync(path.join(root, "lib", "owner-web-operator.ts"), "utf8");
+const manualVisualReviewContract = fs.readFileSync(path.join(root, "lib", "money-shorts-manual-visual-review.mjs"), "utf8");
 let passed = 0;
 let failed = 0;
 function check(name, condition) {
@@ -220,11 +226,61 @@ check("positive-composition canary preserves the original before any approved re
 check("positive-composition canary is recorded in no-submit and final execution summaries",
   (imageRunner.match(/positiveCompositionCanary: topicScopedPositiveCompositionCanary/g) ?? []).length >= 2 &&
   imageRunner.includes("topicScopedPositiveCompositionCanary,"));
+const manualReviewScenes = [1, 2].map((sceneIndex) => ({
+  sceneIndex,
+  visualEvidenceId: `scene-evidence-${sceneIndex}`,
+  promptFingerprint: String(sceneIndex).repeat(16),
+  imageSha256: String(sceneIndex + 2).repeat(64),
+}));
+const manualReviewSummary = {
+  topicId: "manual-review-fixture",
+  scenes: manualReviewScenes,
+  manualVisualReview: buildPendingManualVisualReviewState(),
+};
+const manualReviewEvidence = {
+  schemaVersion: "money_shorts_manual_visual_review_v1",
+  topicId: manualReviewSummary.topicId,
+  decision: "accepted",
+  acceptedForDownstream: true,
+  renderAllowed: true,
+  reviewerRole: "owner",
+  ownerApproval: true,
+  reviewedAt: "2026-07-16T00:00:00.000Z",
+  sceneCount: manualReviewScenes.length,
+  imageSetSha256: moneyShortsImageSetSha256(manualReviewScenes),
+  scenes: manualReviewScenes,
+};
+check("manual visual review accepts only an exact Owner-approved image-set binding",
+  validateMoneyShortsManualVisualReview({ summary: manualReviewSummary, evidence: manualReviewEvidence }).passed === true);
+check("manual visual review fails closed when evidence is missing or an image hash changes",
+  validateMoneyShortsManualVisualReview({ summary: manualReviewSummary, evidence: null }).passed === false &&
+  validateMoneyShortsManualVisualReview({
+    summary: manualReviewSummary,
+    evidence: {
+      ...manualReviewEvidence,
+      scenes: manualReviewEvidence.scenes.map((scene, index) => index === 1 ? { ...scene, imageSha256: "f".repeat(64) } : scene),
+    },
+  }).passed === false);
+check("image summaries declare the manual visual review evidence contract as pending",
+  imageRunner.includes("buildPendingManualVisualReviewState") &&
+  imageRunner.includes("manualVisualReview: buildPendingManualVisualReviewState()"));
+check("manual visual review contract binds scene identity prompt fingerprint and image hash",
+  manualVisualReviewContract.includes("visualEvidenceId") &&
+  manualVisualReviewContract.includes("promptFingerprint") &&
+  manualVisualReviewContract.includes("imageSha256") &&
+  manualVisualReviewContract.includes("MANUAL_VISUAL_REVIEW_NOT_ACCEPTED_OR_STALE"));
 check("video runner requires selected-reference v8 controller", videoRunner.includes(controllerVersion));
+check("video runner blocks before render without exact manual visual acceptance",
+  videoRunner.includes("validateMoneyShortsManualVisualReview") &&
+  videoRunner.includes("MANUAL_VISUAL_REVIEW_REQUIRED") &&
+  videoRunner.indexOf("MANUAL_VISUAL_REVIEW_REQUIRED") < videoRunner.indexOf("const imageFiles = []"));
 check("video runner rejects missing modality audit", videoRunner.includes("visualModalityAudit?.version !== VISUAL_MODALITY_VERSION") && videoRunner.includes("visualModalityAudit?.passed !== true"));
 check("video runner requires per-scene mode metadata", videoRunner.includes('typeof scene?.visualModeId === "string"') && videoRunner.includes('typeof scene?.presenceMode === "string"'));
 check("web helper requires selected-reference v8 controller", helper.includes(`WIZARD_IMAGE_CONTROLLER_VERSION = "${controllerVersion}"`));
 check("web helper requires modality summary and audit", helper.includes("imagesSummary.visualModalityVersion === WIZARD_VISUAL_MODALITY_VERSION") && helper.includes("imagesSummary.visualModalityAudit?.passed === true"));
+check("web helper keeps both legacy and production image readiness behind manual visual acceptance",
+  (helper.match(/manualVisualReview\.passed === true/g) ?? []).length >= 2 &&
+  (helper.match(/MANUAL_VISUAL_REVIEW_REQUIRED/g) ?? []).length >= 5);
 check("shared style still forbids photography", imageRunner.includes("no photography, no live action"));
 check("all presence modes share the bright integrated family-quality 3D style", (imageRunner.match(/Money Shorts original bright family-feature-quality cinematic 3D animation/g) ?? []).length >= 3);
 check("laboratory, vault, factory, machine-room and gloomy finance environments are rejected",

@@ -45,6 +45,10 @@ import {
   buildVeoMotionSegmentFilter,
   resolveFlowMotionRenderInputs,
 } from "./_flow-motion-render-input.mjs";
+import {
+  MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE,
+  validateMoneyShortsManualVisualReview,
+} from "../lib/money-shorts-manual-visual-review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -234,6 +238,16 @@ if (
   !imageAssetContractReady
 ) {
   abortBlocked("REAL_SCENE_IMAGES_REQUIRED", "현재 주제의 장면 증거·프롬프트 지문·시각 모달리티 분산·고유 이미지 해시·근접 유사도·인물 연속성·장면 통합·모션 계획 계약이 모두 통과한 실제 이미지 summary 필요 — 구버전/중복/유사/변경 이미지 사용 불가");
+}
+const manualVisualReview = validateMoneyShortsManualVisualReview({
+  summary: imagesSummary,
+  evidence: readJson(path.join(IMAGES_DIR, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE)),
+});
+if (!manualVisualReview.passed) {
+  abortBlocked(
+    "MANUAL_VISUAL_REVIEW_REQUIRED",
+    `현재 이미지 해시 묶음에 정확히 결합된 Owner 수동 시각 승인 필요: ${manualVisualReview.reason}`,
+  );
 }
 const imageFiles = [];
 for (let i = 1; i <= scriptSceneCount; i++) {

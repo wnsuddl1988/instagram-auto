@@ -28,6 +28,7 @@ import fs from "fs";
 import { spawnSync } from "node:child_process";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
+import { buildPendingManualVisualReviewState } from "../lib/money-shorts-manual-visual-review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -219,6 +220,7 @@ function writeSummary(partial) {
       manualVideoReviewRequired: true,
       passed: false,
     },
+    manualVisualReview: buildPendingManualVisualReviewState(),
     characterReference: {
       characterId: CHARACTER_ID,
       characterName: CHARACTER_NAME,

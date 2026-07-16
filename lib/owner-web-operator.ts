@@ -80,6 +80,10 @@ import {
   type FinanceCharacterVoiceProfile,
 } from "./finance-character-voice-cast";
 import {
+  MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE,
+  validateMoneyShortsManualVisualReview,
+} from "./money-shorts-manual-visual-review.mjs";
+import {
   VEO_SCENE_SELECTION_CONTRACT_VERSION,
   getVeoMotionSceneLimit,
   selectVeoMotionScenes,
@@ -8334,7 +8338,7 @@ export type WizardRealMediaState = {
   mediaQualityGate: {
     ok: boolean;
     reasons: string[];
-    blockerCode: "REAL_TTS_REQUIRED" | "REAL_SCENE_IMAGES_REQUIRED" | "FINAL_MP4_REQUIRED" | null;
+    blockerCode: "REAL_TTS_REQUIRED" | "REAL_SCENE_IMAGES_REQUIRED" | "MANUAL_VISUAL_REVIEW_REQUIRED" | "FINAL_MP4_REQUIRED" | null;
   };
   parts: Array<{
     id: "single" | "part-1" | "part-2";
@@ -8425,6 +8429,14 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         visualModalityVersion?: string;
         allReady?: boolean;
         blockerCode?: string | null;
+        manualVisualReview?: {
+          version?: string;
+          required?: boolean;
+          status?: string;
+          acceptedForDownstream?: boolean;
+          renderAllowed?: boolean;
+          evidenceFileName?: string;
+        };
         visualDifferenceAudit?: {
           version?: string;
           passed?: boolean;
@@ -8469,6 +8481,12 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
       } | null)
     : null;
   const sceneRows = Array.isArray(imagesSummary?.scenes) ? imagesSummary.scenes : [];
+  const manualVisualReview = validateMoneyShortsManualVisualReview({
+    summary: imagesSummary,
+    evidence: imagesDir
+      ? readAbsJson(join(imagesDir, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE))
+      : null,
+  });
   const savedScenes = sceneRows.filter(
     (s) =>
       s.status === "SAVED_OK" &&
@@ -8500,6 +8518,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     imagesSummary.imageControllerVersion === WIZARD_IMAGE_CONTROLLER_VERSION &&
     imagesSummary.visualModalityVersion === WIZARD_VISUAL_MODALITY_VERSION &&
     imagesSummary.allReady === true &&
+    manualVisualReview.passed === true &&
     imagesSummary.visualDifferenceAudit?.version === "ffmpeg_dhash64_v1" &&
     imagesSummary.visualDifferenceAudit?.passed === true &&
     imagesSummary.visualDifferenceAudit?.checkedCount === expectedSceneCount &&
@@ -8523,9 +8542,12 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     generatedCount: savedScenes.length,
     expectedCount: expectedSceneCount,
     dir: imagesDir,
-    blocked: typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
-    blockerDetail:
-      sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
+    blocked: imagesSummary?.allReady === true && !manualVisualReview.passed
+      ? "MANUAL_VISUAL_REVIEW_REQUIRED"
+      : typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
+    blockerDetail: imagesSummary?.allReady === true && !manualVisualReview.passed
+      ? manualVisualReview.reason
+      : sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
   };
 
   // 최종 mp4 — 실제 음성+실제 이미지 합성 summary + ffprobe 검증값 + 파일 존재.
@@ -8635,7 +8657,9 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
   if (!realTts.ready) reasons.push("실제 음성이 아직 없습니다 (테스트 소리는 업로드 불가)");
   if (!realImages.ready) {
     reasons.push(
-      realImages.expectedCount == null
+      realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
+        ? "현재 이미지 묶음의 Owner 수동 시각 승인이 필요합니다"
+        : realImages.expectedCount == null
         ? "확정 대본 장면 수가 아직 준비되지 않았습니다"
         : `실제 장면 이미지가 부족합니다 (${realImages.generatedCount}/${realImages.expectedCount})`,
     );
@@ -8643,6 +8667,8 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
   if (!finalVideo.ready) reasons.push("실제 음성+이미지로 만든 최종 영상이 아직 없습니다 (시안 영상은 업로드 불가)");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
+    : realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
+      ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !realImages.ready
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !finalVideo.ready
@@ -8767,6 +8793,14 @@ function readWizardProductionPartMediaState(
     visualModalityVersion?: string;
     allReady?: boolean;
     blockerCode?: string | null;
+    manualVisualReview?: {
+      version?: string;
+      required?: boolean;
+      status?: string;
+      acceptedForDownstream?: boolean;
+      renderAllowed?: boolean;
+      evidenceFileName?: string;
+    };
     visualDifferenceAudit?: { version?: string; passed?: boolean; checkedCount?: number };
     characterContinuityAudit?: {
       version?: string;
@@ -8798,6 +8832,10 @@ function readWizardProductionPartMediaState(
     }>;
   } | null;
   const sceneRows = Array.isArray(imagesSummary?.scenes) ? imagesSummary.scenes : [];
+  const manualVisualReview = validateMoneyShortsManualVisualReview({
+    summary: imagesSummary,
+    evidence: readAbsJson(join(part.imagesOutDir, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE)),
+  });
   const savedScenes = sceneRows.filter((scene) => {
     if (
       scene.status !== "SAVED_OK" ||
@@ -8837,6 +8875,7 @@ function readWizardProductionPartMediaState(
     imagesSummary.imageControllerVersion === WIZARD_IMAGE_CONTROLLER_VERSION &&
     imagesSummary.visualModalityVersion === WIZARD_VISUAL_MODALITY_VERSION &&
     imagesSummary.allReady === true &&
+    manualVisualReview.passed === true &&
     imagesSummary.visualDifferenceAudit?.version === "ffmpeg_dhash64_v1" &&
     imagesSummary.visualDifferenceAudit?.passed === true &&
     imagesSummary.visualDifferenceAudit?.checkedCount === expectedSceneCount &&
@@ -8859,8 +8898,12 @@ function readWizardProductionPartMediaState(
     generatedCount: savedScenes.length,
     expectedCount: expectedSceneCount,
     dir: part.imagesOutDir,
-    blocked: typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
-    blockerDetail: sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
+    blocked: imagesSummary?.allReady === true && !manualVisualReview.passed
+      ? "MANUAL_VISUAL_REVIEW_REQUIRED"
+      : typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
+    blockerDetail: imagesSummary?.allReady === true && !manualVisualReview.passed
+      ? manualVisualReview.reason
+      : sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
   };
 
   const videoSummary = readAbsJson(join(part.videoOutDir, "real-video-summary.json")) as {
@@ -8984,10 +9027,16 @@ function readWizardProductionPartMediaState(
   };
   const reasons: string[] = [];
   if (!realTts.ready) reasons.push("실제 음성 또는 확신형 썸네일 음성 게이트가 아직 준비되지 않았습니다");
-  if (!realImages.ready) reasons.push(`실제 장면 이미지가 부족합니다 (${realImages.generatedCount}/${expectedSceneCount})`);
+  if (!realImages.ready) reasons.push(
+    realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
+      ? "현재 이미지 묶음의 Owner 수동 시각 승인이 필요합니다"
+      : `실제 장면 이미지가 부족합니다 (${realImages.generatedCount}/${expectedSceneCount})`,
+  );
   if (!finalVideo.ready) reasons.push("검증된 썸네일·자막이 포함된 최종 영상이 아직 없습니다");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
+    : realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
+      ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !realImages.ready
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !finalVideo.ready
@@ -9038,6 +9087,7 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
   const parts = plannedParts.map(readWizardProductionPartMediaState);
   const allTtsReady = parts.length > 0 && parts.every((part) => part.realTts.ready);
   const allImagesReady = parts.length > 0 && parts.every((part) => part.realImages.ready);
+  const manualVisualReviewBlocked = parts.some((part) => part.realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED");
   const allVideosReady = parts.length > 0 && parts.every((part) => part.finalVideo.ready);
   const totalDuration = parts.reduce((sum, part) => sum + (part.realTts.durationSec ?? 0), 0);
   const totalVideoDuration = parts.reduce((sum, part) => sum + (part.finalVideo.durationSec ?? 0), 0);
@@ -9048,6 +9098,8 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
     `${part.totalParts > 1 ? `${part.partNumber}편` : "영상"}: ${reason}`));
   const blockerCode = !allTtsReady
     ? ("REAL_TTS_REQUIRED" as const)
+    : manualVisualReviewBlocked
+      ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !allImagesReady
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !allVideosReady
