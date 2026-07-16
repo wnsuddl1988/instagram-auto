@@ -8,6 +8,7 @@ import {
   buildLayeredMotionAudit,
   buildLayeredMotionFilter,
   buildSceneMotionRecipe,
+  buildAudioSynchronizedVisualTimeline,
 } from "./_money-shorts-layered-motion.mjs";
 
 let passed = 0;
@@ -41,17 +42,40 @@ const samples = [
 const audit = buildLayeredMotionAudit(samples);
 const filters = samples.map((recipe) => buildLayeredMotionFilter({ recipe, frames: 90, durationSec: 3 }));
 
-check("renderer contract is versioned", LAYERED_MOTION_RENDERER_VERSION === "money_shorts_layered_motion_renderer_v2");
+check("renderer contract is versioned", LAYERED_MOTION_RENDERER_VERSION === "money_shorts_layered_motion_renderer_v3");
 check("every semantic motion plan maps to a camera recipe", samples.every((recipe) => recipe.planMapped));
 check("motion audit covers at least three distinct camera modes", audit.distinctCameraModeCount >= 3 && audit.distinctCameraModesPass);
 check("every scene receives layered foreground parallax", audit.layeredParallaxCoveragePass && filters.every((filter) => /foregroundalpha/.test(filter)));
 check("character scenes receive a feathered micro-motion layer", audit.characterMicroMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "character").every((filter) => /characteralpha/.test(filter)));
 check("hands-only scenes receive a separate action layer", audit.handActionMicroMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "hands").every((filter) => /handsalpha/.test(filter)));
 check("character head and action areas receive independent feathered motion", audit.localizedMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "character").every((filter) => /headalpha/.test(filter) && /actionalpha/.test(filter)));
-check("micro-motion amplitude is visible but restrained", audit.visibleMicroMotionAmplitudePass && samples.every((recipe) => recipe.visibleMicroMotionAmplitudePx >= (recipe.presenceMode === "none" ? 5 : 8)));
+check("micro-motion amplitude is visible but restrained", audit.visibleMicroMotionAmplitudePass && samples.every((recipe) => recipe.visibleMicroMotionAmplitudePx >= (recipe.presenceMode === "none" ? 3 : 4) && recipe.visibleMicroMotionAmplitudePx <= (recipe.presenceMode === "hands" ? 5 : 4)));
+check("masked layers use one eased path with temporal smoothing", audit.smoothMotionPathPass && samples.every((recipe) => recipe.motionPath === "single_eased_drift" && recipe.temporalSmoothing === true) && filters.every((filter) => /tmix=frames=3/.test(filter)));
 check("camera recipes include lateral, push, pull, vertical and breathing behavior", ["lateral", "evidence_push", "pull_open", "vertical_reveal", "breathing_hold"].every((mode) => audit.cameraModes.includes(mode)));
-check("filter uses time-varying motion rather than one fixed center zoom", filters.every((filter) => /sin\(|cos\(|on\//.test(filter)) && filters.every((filter) => !/x='\(iw-iw\/zoom\)\/2':y='\(ih-ih\/zoom\)\/2'/.test(filter)));
+check("filter uses eased time-varying motion rather than periodic layer bobbing", filters.every((filter) => /on\//.test(filter) && /3-2\*/.test(filter)) && filters.every((filter) => !/2\*PI\*t/.test(filter)));
 check("combined motion audit passes", audit.passed === true);
+
+const closingTimeline = buildAudioSynchronizedVisualTimeline(
+  [{ sceneNumber: 1, sceneRole: "habit" }, { sceneNumber: 2, sceneRole: "save" }],
+  [
+    { startSec: 0, spokenEndSec: 5.12, normalizedDurationSec: 5.319 },
+    { startSec: 5.319, spokenEndSec: 13.692, normalizedDurationSec: 8.653 },
+  ],
+);
+check("final bridge keeps source audio timing and plans a 0.45s visual fade",
+  closingTimeline.audit.passed === true &&
+  closingTimeline.timeline[1].startSec === 5.319 &&
+  closingTimeline.timeline[1].durationSec === 8.653 &&
+  closingTimeline.audit.audioRetimed === false &&
+  closingTimeline.audit.transitionType === "fade" &&
+  closingTimeline.audit.transitionDurationSec === 0.45 &&
+  closingTimeline.audit.transitionStartsAtSec === 5.319 &&
+  closingTimeline.audit.nextSceneFullyVisibleAtSec === 5.769 &&
+  closingTimeline.audit.transitionStartsAtAudioBoundary === true &&
+  closingTimeline.audit.audioBoundaryAlignmentPass === true &&
+  closingTimeline.audit.priorSpeechCompletionPass === true &&
+  closingTimeline.audit.earlyVisualTransitionCount === 0 &&
+  closingTimeline.audit.totalDurationPreserved === true);
 
 const argv = process.argv.slice(2);
 const smokeIndex = argv.indexOf("--render-smoke");

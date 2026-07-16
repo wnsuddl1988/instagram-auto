@@ -10,6 +10,8 @@ import {
   DYNAMIC_CAPTION_CONTRACT_VERSION,
   FULL_SCRIPT_CAPTION_CONTRACT_VERSION,
   DYNAMIC_CAPTION_FONT,
+  DYNAMIC_CAPTION_LAYOUT_VERSION,
+  DYNAMIC_CAPTION_TWO_LINE_GAP_PX,
   DYNAMIC_CAPTION_EMPHASIS_PALETTE,
   buildDynamicCaptionTimeline,
   createDynamicCaptionAss,
@@ -123,6 +125,12 @@ check("spoken transcript punctuation remains in the timing source", captions[0]?
 check("display captions remove only terminal punctuation", audit.displayTerminalPunctuationAbsent && audit.displayWordCoveragePass && displayCaptionTranscript.includes("않아") && !displayCaptionTranscript.includes("않아."));
 check("editorial summary cues cannot replace the transcript", !captionTranscript.includes("이 문구만 뽑으면 실패"));
 check("every caption is a bounded two-line sentence or semantic phrase", audit.displayUnitLengthPass && captions.every((caption) => caption.wordCount >= 1 && caption.wordCount <= 16 && caption.visibleCharacterCount <= 34 && caption.lineCount <= 2 && caption.maxLineVisibleChars <= 20));
+check("two-line captions use the comfortable line-gap layout contract",
+  audit.layoutVersion === DYNAMIC_CAPTION_LAYOUT_VERSION &&
+  audit.twoLineSpacingPass === true &&
+  audit.twoLineSpacingPx === DYNAMIC_CAPTION_TWO_LINE_GAP_PX &&
+  captions.every((caption) => caption.lineCount === 2 ? caption.lineGapPx === 18 : caption.lineGapPx === 0) &&
+  ass.includes("\\N{\\fs18}\\h"));
 check("source sentence boundaries are preserved", audit.sentenceBoundaryPreservedPass && audit.sentenceBoundaryCount === audit.expectedSentenceBoundaryCount);
 check("script paragraph boundaries are preserved", audit.sourceSegmentBoundaryPreservedPass && audit.sourceSegmentBoundaryCount === audit.expectedSourceSegmentBoundaryCount);
 check("arbitrary mid-phrase splits are forbidden", audit.sentenceSemanticSegmentationPass && audit.arbitraryMidPhraseSplitAbsent && audit.arbitrarySplitCount === 0);

@@ -4,6 +4,8 @@ export const SEMANTIC_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VE
 export const DYNAMIC_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VERSION;
 export const SAMPLE_REVIEW_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VERSION;
 export const DYNAMIC_CAPTION_FONT = "Black Han Sans";
+export const DYNAMIC_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v2_comfortable_two_line";
+export const DYNAMIC_CAPTION_TWO_LINE_GAP_PX = 18;
 
 const MAX_WORDS_PER_DISPLAY_UNIT = 16;
 const MAX_VISIBLE_CHARS_PER_BLOCK = 34;
@@ -378,6 +380,9 @@ function captionAssText(lines, emphasisWords, fontSize) {
     ...token,
     displayText: token === finalToken ? stripDisplayTerminalPunctuation(token.text) : token.text,
   })).filter((token) => token.displayText));
+  const lineSeparator = displayLines.length > 1
+    ? "\\N{\\fs" + DYNAMIC_CAPTION_TWO_LINE_GAP_PX + "}\\h{\\fs" + fontSize + "}\\N"
+    : "\\N";
   const assText = displayLines.map((line) => line.map((token) => {
     const escaped = escapeAssText(token.displayText);
     const emphasis = emphasisWords.find((candidate) =>
@@ -391,7 +396,7 @@ function captionAssText(lines, emphasisWords, fontSize) {
     return "{\\c" + palette.assColor + "\\fs" + (fontSize + (strong ? 14 : 8)) +
       "\\bord" + (strong ? 8 : 7) + "\\shad" + (strong ? 3 : 2) + "}" + escaped +
       "{\\c&H00F2EFE8&\\fs" + fontSize + "\\bord6\\shad2}";
-  }).join(" ")).join("\\N");
+  }).join(" ")).join(lineSeparator);
   return {
     assText,
     displayText: displayLines.flat().map((token) => token.displayText).join(" "),
@@ -409,8 +414,8 @@ function motionPresetForScene(sceneRole) {
   return ROLE_MOTION_PRESET[sceneRole] ?? "soft_settle";
 }
 
-function captionVisualBounds({ y, lineCount, fontSize }) {
-  const halfHeight = Math.ceil(lineCount * fontSize * 0.72 + 18);
+function captionVisualBounds({ y, lineCount, fontSize, lineGapPx }) {
+  const halfHeight = Math.ceil(lineCount * fontSize * 0.72 + 18 + lineGapPx / 2);
   return { top: y - halfHeight, bottom: y + halfHeight };
 }
 
@@ -464,6 +469,7 @@ function buildRawBlocks(plannedScenes, measuredScenes, alignmentData) {
         y: placement.y,
         lineCount: lines.length,
         fontSize,
+        lineGapPx: lines.length > 1 ? DYNAMIC_CAPTION_TWO_LINE_GAP_PX : 0,
       });
       const wordTimings = group.map((token) => {
         const wordEntries = timedEntriesForSpan(
@@ -510,6 +516,7 @@ function buildRawBlocks(plannedScenes, measuredScenes, alignmentData) {
         visualTop: visualBounds.top,
         visualBottom: visualBounds.bottom,
         fontSize,
+        lineGapPx: lines.length > 1 ? DYNAMIC_CAPTION_TWO_LINE_GAP_PX : 0,
         emphasisWords: emphasisWords.map((item) => item.text),
         emphasisItems: renderedCaption.appliedEmphasis,
         motionPreset: motionPresetForScene(scene.sceneRole),
@@ -639,9 +646,15 @@ function buildFullScriptAudit(plannedScenes, measuredScenes, captions) {
     caption.lineCount <= 2 &&
     caption.maxLineVisibleChars <= MAX_VISIBLE_CHARS_PER_LINE
   );
+  const twoLineSpacingPass = captions.every((caption) =>
+    caption.lineCount === 2
+      ? caption.lineGapPx === DYNAMIC_CAPTION_TWO_LINE_GAP_PX
+      : caption.lineGapPx === 0
+  );
 
   return {
     contractVersion: FULL_SCRIPT_CAPTION_CONTRACT_VERSION,
+    layoutVersion: DYNAMIC_CAPTION_LAYOUT_VERSION,
     timingSource: "elevenlabs_character_alignment_full_script",
     mode: "full_script_dynamic_semantic_aligned",
     blockCount: captions.length,
@@ -675,6 +688,8 @@ function buildFullScriptAudit(plannedScenes, measuredScenes, captions) {
     minCaptionGapSec,
     firstTwoSecondsHook: firstStart < 2,
     displayUnitLengthPass,
+    twoLineSpacingPx: DYNAMIC_CAPTION_TWO_LINE_GAP_PX,
+    twoLineSpacingPass,
     wordsPerBlockPass: displayUnitLengthPass,
     dwellPass: captions.every((caption) =>
       caption.dwellSec > 0 && caption.dwellSec <= MAX_CAPTION_DWELL_SEC + 0.001

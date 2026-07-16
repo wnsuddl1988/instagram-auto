@@ -30,6 +30,7 @@ import { fileURLToPath } from "node:url";
 import {
   FULL_SCRIPT_CAPTION_CONTRACT_VERSION,
   DYNAMIC_CAPTION_FONT,
+  DYNAMIC_CAPTION_LAYOUT_VERSION,
   buildDynamicCaptionTimeline,
   createDynamicCaptionAss,
   escapeAssText,
@@ -39,6 +40,7 @@ import {
   buildLayeredMotionAudit,
   buildLayeredMotionFilter,
   buildSceneMotionRecipe,
+  buildAudioSynchronizedVisualTimeline,
 } from "./_money-shorts-layered-motion.mjs";
 import {
   HYBRID_MOTION_RENDERER_VERSION,
@@ -274,21 +276,20 @@ const flowMotionInput = resolveFlowMotionRenderInputs({
 if (!flowMotionInput.ok) abortBlocked(flowMotionInput.code, flowMotionInput.note);
 
 const plannedScenes = ttsScript.scenes.slice().sort((a, b) => a.sceneNumber - b.sceneNumber);
-const durations = audioTimelineScenes.map((s) => Number(s.normalizedDurationSec));
-if (durations.some((d) => !Number.isFinite(d) || d < 1 || d > 15)) {
+const audioDurations = audioTimelineScenes.map((s) => Number(s.normalizedDurationSec));
+if (audioDurations.some((d) => !Number.isFinite(d) || d < 1 || d > 15)) {
   abortBlocked("REAL_TTS_REQUIRED", "TTS summary normalizedDurationSec(1~15s) 형식 오류");
 }
+const visualTiming = buildAudioSynchronizedVisualTimeline(plannedScenes, audioTimelineScenes);
+if (!visualTiming.audit.passed) {
+  abortBlocked("VISUAL_TIMING_AUDIT_FAILED", `원본 음성을 변경하지 않는 마지막 장면 전환 계약 위반: ${JSON.stringify(visualTiming.audit)}`);
+}
+const durations = visualTiming.durations;
 const totalSec = durations.reduce((a, b) => a + b, 0);
 if (totalSec < 15 || totalSec > 60) {
   abortBlocked("REAL_TTS_REQUIRED", `audio-driven 전체 길이(15~60s) 형식 오류: ${totalSec}s`);
 }
-let sceneCursorSec = 0;
-const scenes = plannedScenes.map((scene, i) => {
-  const startSec = sceneCursorSec;
-  const durationSec = durations[i];
-  sceneCursorSec += durationSec;
-  return { ...scene, startSec, endSec: sceneCursorSec, durationSec };
-});
+const scenes = plannedScenes.map((scene, index) => ({ ...scene, ...visualTiming.timeline[index] }));
 const safeSlug = String(record.topicId ?? "topic").replace(/[^a-z0-9-]/gi, "-").toLowerCase().slice(0, 60);
 const renderId = `${Date.now().toString(36)}-${process.pid}`;
 const renderDir = path.join(OUT_DIR, `.render-${renderId}`);
@@ -422,7 +423,9 @@ const fullScriptCaptionPass = (
   captionAudit.semanticColorPalettePass === true &&
   captionAudit.emphasisDensityPass === true &&
   captionAudit.highImpactRoleEmphasisPass === true &&
-  captionAudit.motionDiversityPass === true
+  captionAudit.motionDiversityPass === true &&
+  captionAudit.layoutVersion === DYNAMIC_CAPTION_LAYOUT_VERSION &&
+  captionAudit.twoLineSpacingPass === true
 );
 if (
   !captionAudit.firstTwoSecondsHook ||
@@ -520,9 +523,31 @@ if (!motionAudit.passed) {
   abortBlocked("LAYERED_MOTION_AUDIT_FAILED", `정지 이미지 장면의 레이어 모션 계약 위반: ${JSON.stringify(motionAudit)}`);
 }
 
-// ── step 2: 세그먼트 concat (재인코딩 없음) ───────────────────────────────────
+// ── step 2: 일반 장면은 그대로 연결하고, 마지막 연결만 음성 경계부터 부드럽게 디졸브 ──
+let concatSegments = [...segFiles];
+if (visualTiming.audit.applicable === true) {
+  const previousIndex = scriptSceneCount - 2;
+  const finalIndex = scriptSceneCount - 1;
+  const previousDuration = durations[previousIndex];
+  const finalDuration = durations[finalIndex];
+  const transitionDuration = Number(visualTiming.audit.transitionDurationSec);
+  const closingBridgePath = path.join(renderDir, "closing-visual-transition.mp4");
+  const transitionFilter =
+    `[0:v]settb=AVTB,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=${transitionDuration.toFixed(3)}[previous];` +
+    `[1:v]settb=AVTB,setpts=PTS-STARTPTS[next];` +
+    `[previous][next]xfade=transition=fade:duration=${transitionDuration.toFixed(3)}:offset=${previousDuration.toFixed(3)},fps=30,format=yuv420p[motionout]`;
+  runFfmpeg(
+    ["-y", "-i", segFiles[previousIndex], "-i", segFiles[finalIndex],
+      "-filter_complex", transitionFilter, "-map", "[motionout]",
+      "-frames:v", String(Math.round((previousDuration + finalDuration) * 30)),
+      "-c:v", "libx264", "-crf", "21", "-preset", "fast", "-an", closingBridgePath],
+    "closing visual transition",
+  );
+  concatSegments = [...segFiles.slice(0, previousIndex), closingBridgePath];
+  log(`  closing transition: ${transitionDuration.toFixed(2)}s fade from audio boundary; source audio untouched`);
+}
 const concatList = path.join(renderDir, "concat.txt");
-fs.writeFileSync(concatList, segFiles.map((f) => `file '${f.replace(/\\/g, "/")}'`).join("\n") + "\n", "utf8");
+fs.writeFileSync(concatList, concatSegments.map((f) => `file '${f.replace(/\\/g, "/")}'`).join("\n") + "\n", "utf8");
 const silentPath = path.join(renderDir, "silent-concat.mp4");
 runFfmpeg(["-y", "-f", "concat", "-safe", "0", "-i", concatList, "-c", "copy", silentPath], "concat");
 
@@ -562,7 +587,7 @@ runFfmpeg(
     "-c:a", "aac", "-b:a", "128k",
     "-t", String(totalSec), "-shortest",
     finalPath],
-  "final mux",
+  "final mux with untouched source audio",
 );
 
 // ── step 5: ffprobe 검증 + summary ───────────────────────────────────────────
@@ -645,6 +670,7 @@ const summary = {
   timingPolicy: audioSummary.timingPolicy ?? "audio_summary_scene_durations",
   captionMode: "full_script_dynamic_semantic_aligned_v6",
   captionContractVersion: captionAudit.contractVersion,
+  captionLayoutVersion: DYNAMIC_CAPTION_LAYOUT_VERSION,
   coverMode: stagedCoverEnabled ? "staged_prehook_v1" : null,
   coverContractVersion: stagedCoverEnabled ? STAGED_COVER_CONTRACT_VERSION : null,
   coverAudit,
@@ -657,9 +683,18 @@ const summary = {
   motionRendererVersion: HYBRID_MOTION_RENDERER_VERSION,
   layeredMotionRendererVersion: LAYERED_MOTION_RENDERER_VERSION,
   motionAudit,
+  visualTimingAudit: visualTiming.audit,
   flowMotionAudit: flowMotionInput.audit,
   sceneMotion: sceneMotionSegments,
   sceneTimeline: scenes.map((s, i) => ({ sceneNumber: i + 1, startSec: s.startSec, endSec: s.endSec, durationSec: s.durationSec })),
+  audioSceneTimeline: audioTimelineScenes.map((s) => ({
+    sceneNumber: s.sceneNumber,
+    startSec: s.startSec,
+    endSec: s.endSec,
+    spokenStartSec: s.spokenStartSec,
+    spokenEndSec: s.spokenEndSec,
+    durationSec: s.normalizedDurationSec,
+  })),
   validation: checks,
   notUploaded: true,
   uploadReady: false, // 업로드 가능 여부는 서버 media quality gate + preflight + Owner 확인 게이트가 판정한다.

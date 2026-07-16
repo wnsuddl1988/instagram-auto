@@ -1074,7 +1074,7 @@ check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummar
 check(
   "helper rejects final videos without the hybrid still/Veo motion audit",
   /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_hybrid_motion_renderer_v1"/.test(helperCode) &&
-    /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v2"/.test(helperCode) &&
+    /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v3"/.test(helperCode) &&
     /wizardHybridMotionSummaryIsReady/.test(helperCode) &&
     /motionAudit\.layeredParallaxCoveragePass\s*===\s*true/.test(helperCode) &&
     /motionAudit\.characterMicroMotionCoveragePass\s*===\s*true/.test(helperCode) &&

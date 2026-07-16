@@ -222,7 +222,8 @@ export const WIZARD_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_s
 export const WIZARD_IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
 export const WIZARD_VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
 export const WIZARD_MOTION_RENDERER_VERSION = "money_shorts_hybrid_motion_renderer_v1";
-export const WIZARD_LAYERED_MOTION_RENDERER_VERSION = "money_shorts_layered_motion_renderer_v2";
+export const WIZARD_LAYERED_MOTION_RENDERER_VERSION = "money_shorts_layered_motion_renderer_v3";
+export const WIZARD_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v2_comfortable_two_line";
 export const WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION = "money_shorts_flow_motion_render_audit_v1";
 const WIZARD_VISUAL_OUTPUT_DIR = "images-3d-editorial-sequence-v11";
 const WIZARD_REAL_VIDEO_OUTPUT_DIR = "video-3d-editorial-sequence-v11";
@@ -244,6 +245,7 @@ type WizardLayeredMotionAudit = {
   handActionMicroMotionCoveragePass?: boolean;
   localizedMotionCoveragePass?: boolean;
   visibleMicroMotionAmplitudePass?: boolean;
+  smoothMotionPathPass?: boolean;
   distinctCameraModesPass?: boolean;
   passed?: boolean;
 };
@@ -264,6 +266,22 @@ type WizardHybridMotionSummary = {
   layeredMotionRendererVersion?: string;
   motionAudit?: WizardLayeredMotionAudit;
   flowMotionAudit?: WizardFlowMotionRenderAudit;
+  visualTimingAudit?: {
+    version?: string;
+    applicable?: boolean;
+    audioRetimed?: boolean;
+    transitionType?: string | null;
+    transitionDurationSec?: number;
+    transitionStartsAtSec?: number | null;
+    nextSceneFullyVisibleAtSec?: number | null;
+    transitionStartsAtAudioBoundary?: boolean;
+    audioBoundaryAlignmentPass?: boolean;
+    priorSpeechCompletionPass?: boolean;
+    earlyVisualTransitionCount?: number;
+    totalDurationPreserved?: boolean;
+    minimumSceneDurationPass?: boolean;
+    passed?: boolean;
+  };
 };
 
 function wizardHybridMotionSummaryIsReady(
@@ -285,8 +303,22 @@ function wizardHybridMotionSummaryIsReady(
     summary.motionAudit.handActionMicroMotionCoveragePass === true &&
     summary.motionAudit.localizedMotionCoveragePass === true &&
     summary.motionAudit.visibleMicroMotionAmplitudePass === true &&
+    summary.motionAudit.smoothMotionPathPass === true &&
     summary.motionAudit.distinctCameraModesPass === true &&
     summary.motionAudit.passed === true &&
+    summary.visualTimingAudit?.version === "money_shorts_natural_closing_visual_transition_v1" &&
+    summary.visualTimingAudit.audioRetimed === false &&
+    (summary.visualTimingAudit.applicable !== true || (
+      summary.visualTimingAudit.transitionType === "fade" &&
+      Number(summary.visualTimingAudit.transitionDurationSec) >= 0.449 &&
+      summary.visualTimingAudit.transitionStartsAtAudioBoundary === true
+    )) &&
+    summary.visualTimingAudit.audioBoundaryAlignmentPass === true &&
+    summary.visualTimingAudit.priorSpeechCompletionPass === true &&
+    summary.visualTimingAudit.earlyVisualTransitionCount === 0 &&
+    summary.visualTimingAudit.totalDurationPreserved === true &&
+    summary.visualTimingAudit.minimumSceneDurationPass === true &&
+    summary.visualTimingAudit.passed === true &&
     summary.flowMotionAudit?.version === WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION &&
     summary.flowMotionAudit.requiredSceneCount === expectedVeoSceneNumbers.length &&
     summary.flowMotionAudit.renderReadySceneCount === expectedVeoSceneNumbers.length &&
@@ -8629,7 +8661,10 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         flowMotionAudit?: WizardFlowMotionRenderAudit;
         captionMode?: string;
         captionContractVersion?: string;
+        captionLayoutVersion?: string;
         captionAudit?: {
+          layoutVersion?: string;
+          twoLineSpacingPass?: boolean;
           fullScriptCoveragePass?: boolean;
           exactTranscriptMatchPass?: boolean;
           perSceneTranscriptMatchPass?: boolean;
@@ -8666,6 +8701,9 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, record?.script.scenes ?? []) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
     videoSummary.captionContractVersion === WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION &&
+    videoSummary.captionLayoutVersion === WIZARD_CAPTION_LAYOUT_VERSION &&
+    videoSummary.captionAudit?.layoutVersion === WIZARD_CAPTION_LAYOUT_VERSION &&
+    videoSummary.captionAudit.twoLineSpacingPass === true &&
     videoSummary.captionAudit?.fullScriptCoveragePass === true &&
     videoSummary.captionAudit?.exactTranscriptMatchPass === true &&
     videoSummary.captionAudit?.perSceneTranscriptMatchPass === true &&
@@ -8983,6 +9021,7 @@ function readWizardProductionPartMediaState(
     flowMotionAudit?: WizardFlowMotionRenderAudit;
     captionMode?: string;
     captionContractVersion?: string;
+    captionLayoutVersion?: string;
     wizardScriptFingerprint?: string;
     coverMode?: string;
     coverContractVersion?: string;
@@ -8994,6 +9033,8 @@ function readWizardProductionPartMediaState(
       passed?: boolean;
     };
     captionAudit?: {
+      layoutVersion?: string;
+      twoLineSpacingPass?: boolean;
       fullScriptCoveragePass?: boolean;
       exactTranscriptMatchPass?: boolean;
       perSceneTranscriptMatchPass?: boolean;
@@ -9030,6 +9071,7 @@ function readWizardProductionPartMediaState(
     wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, part.record.script.scenes) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
     videoSummary.captionContractVersion === WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION &&
+    videoSummary.captionLayoutVersion === WIZARD_CAPTION_LAYOUT_VERSION &&
     videoSummary.wizardScriptFingerprint === part.record.localFingerprint &&
     videoSummary.coverMode === "staged_prehook_v1" &&
     videoSummary.coverContractVersion === WIZARD_STAGED_COVER_CONTRACT_VERSION &&
@@ -9039,6 +9081,8 @@ function readWizardProductionPartMediaState(
     cover.stagedLineCount === 3 &&
     cover.passed === true &&
     caption?.fullScriptCoveragePass === true &&
+    caption.layoutVersion === WIZARD_CAPTION_LAYOUT_VERSION &&
+    caption.twoLineSpacingPass === true &&
     caption.exactTranscriptMatchPass === true &&
     caption.perSceneTranscriptMatchPass === true &&
     caption.perSceneBlockCountPass === true &&
