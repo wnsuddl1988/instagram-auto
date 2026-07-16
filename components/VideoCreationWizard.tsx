@@ -336,6 +336,47 @@ type WizardAutomationExecutionGuard = {
   } | null;
 };
 
+type WizardAutomationQueueJob = {
+  jobId: string;
+  topicId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  persistedPlan: {
+    fingerprint: string;
+    completedStageCount: number | null;
+    totalStageCount: number | null;
+    currentStageLabel: string | null;
+    nextGate: string | null;
+  };
+  livePlan: WizardAutomationPlan;
+  executionGuard: WizardAutomationExecutionGuard;
+  lastAdvance: {
+    at: string;
+    status: string | null;
+    blockerCode: string | null;
+    executedAction: string | null;
+    actionCount: 0 | 1;
+    automaticRetryCount: 0;
+  } | null;
+};
+
+type WizardAutomationQueue = {
+  schemaVersion: string;
+  mode: "owner_click_planning_only";
+  updatedAt: string | null;
+  jobs: WizardAutomationQueueJob[];
+  safety: {
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    automaticAdvanceEnabled: false;
+    automaticRetryEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 const AUTOMATION_GATE_LABEL: Record<string, string> = {
   none: "자동으로 이어갈 수 있는 로컬 단계",
   owner_topic_selection: "주제·대본 확인 필요",
@@ -571,6 +612,10 @@ export default function VideoCreationWizard() {
   const [automationAdvanceResult, setAutomationAdvanceResult] = useState<OperatorResult | null>(null);
   const [automationRecoveryState, setAutomationRecoveryState] = useState<RunState>("idle");
   const [automationRecoveryResult, setAutomationRecoveryResult] = useState<OperatorResult | null>(null);
+  const [automationQueueState, setAutomationQueueState] = useState<RunState>("idle");
+  const [automationQueueResult, setAutomationQueueResult] = useState<OperatorResult | null>(null);
+  const [automationQueue, setAutomationQueue] = useState<WizardAutomationQueue | null>(null);
+  const [automationQueueBusyTopicId, setAutomationQueueBusyTopicId] = useState<string | null>(null);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -948,6 +993,39 @@ export default function VideoCreationWizard() {
     }
   }, []);
 
+  const refreshAutomationQueue = useCallback(async () => {
+    setAutomationQueueState("running");
+    try {
+      const r = await postAction("automationQueueStatus");
+      const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
+      setAutomationQueueResult(r);
+      setAutomationQueueState(r.status === "success" ? "success" : r.status);
+      setAutomationQueue(r.status === "success" && queue ? queue : null);
+    } catch {
+      setAutomationQueueState("error");
+      setAutomationQueueResult({ action: "automationQueueStatus", status: "error", summary: "자동 작업 큐를 불러오지 못했습니다." });
+      setAutomationQueue(null);
+    }
+  }, []);
+
+  const enqueueCurrentAutomationTopic = useCallback(async () => {
+    if (!selectedTopicId || !automationPlan) return;
+    setAutomationQueueState("running");
+    try {
+      const r = await postAction("automationQueueEnqueue", {
+        topicId: selectedTopicId,
+        title: selectedTopic?.title ?? script?.title ?? selectedTopicId,
+      });
+      const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
+      setAutomationQueueResult(r);
+      setAutomationQueueState(r.status === "success" ? "success" : r.status);
+      if (queue) setAutomationQueue(queue);
+    } catch {
+      setAutomationQueueState("error");
+      setAutomationQueueResult({ action: "automationQueueEnqueue", status: "error", summary: "선택한 주제를 작업 큐에 저장하지 못했습니다." });
+    }
+  }, [automationPlan, script?.title, selectedTopic?.title, selectedTopicId]);
+
   const runAutomationAdvance = useCallback(async () => {
     if (!selectedTopicId || automationPlan?.next?.canAutoAdvance !== true) return;
     setAutomationAdvanceState("running");
@@ -968,6 +1046,7 @@ export default function VideoCreationWizard() {
       }
       await refreshRealMedia(selectedTopicId);
       await refreshAutomationPlan(selectedTopicId);
+      await refreshAutomationQueue();
     } catch {
       setAutomationAdvanceState("error");
       setAutomationAdvanceResult({
@@ -976,7 +1055,38 @@ export default function VideoCreationWizard() {
         summary: "다음 안전 작업 1개를 실행하지 못했습니다. 자동 재시도하지 않습니다.",
       });
     }
-  }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshAutomationPlan, refreshRealMedia]);
+  }, [selectedTopicId, automationPlan?.next?.canAutoAdvance, refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia]);
+
+  const runQueuedAutomationAdvance = useCallback(async (job: WizardAutomationQueueJob) => {
+    if (
+      job.livePlan.next?.canAutoAdvance !== true ||
+      job.executionGuard.status !== "available"
+    ) return;
+    setAutomationQueueBusyTopicId(job.topicId);
+    setAutomationQueueState("running");
+    setAutomationQueueResult(null);
+    try {
+      const r = await postAction("automationAdvance", { topicId: job.topicId, queueJob: true });
+      const queue = (r.raw as { queue?: WizardAutomationQueue } | undefined)?.queue;
+      if (queue) setAutomationQueue(queue);
+      else await refreshAutomationQueue();
+      setAutomationQueueResult(r);
+      setAutomationQueueState(r.status === "success" ? "success" : r.status);
+      if (selectedTopicId === job.topicId) {
+        await refreshRealMedia(job.topicId);
+        await refreshAutomationPlan(job.topicId);
+      }
+    } catch {
+      setAutomationQueueState("error");
+      setAutomationQueueResult({
+        action: "automationAdvance",
+        status: "error",
+        summary: "큐의 안전 작업을 실행하지 못했습니다. 자동 재시도하지 않습니다.",
+      });
+    } finally {
+      setAutomationQueueBusyTopicId(null);
+    }
+  }, [refreshAutomationPlan, refreshAutomationQueue, refreshRealMedia, selectedTopicId]);
 
   const resolveAutomationRecovery = useCallback(async (
     decision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry",
@@ -1026,11 +1136,13 @@ export default function VideoCreationWizard() {
     if (localDev !== true) return;
     const listTimer = window.setTimeout(() => void refreshUploadReadyList(), 0);
     const castTimer = window.setTimeout(() => void refreshCharacterCast(), 0);
+    const queueTimer = window.setTimeout(() => void refreshAutomationQueue(), 0);
     return () => {
       window.clearTimeout(listTimer);
       window.clearTimeout(castTimer);
+      window.clearTimeout(queueTimer);
     };
-  }, [localDev, refreshCharacterCast, refreshUploadReadyList]);
+  }, [localDev, refreshAutomationQueue, refreshCharacterCast, refreshUploadReadyList]);
 
   // 주제를 고르면 그 주제의 실제 제작 진행 상태를 복원한다(이전 세션 산출물 이어가기).
   useEffect(() => {
@@ -1328,6 +1440,87 @@ export default function VideoCreationWizard() {
       ) : null}
 
       <div className="space-y-4">
+        {localDev === true ? (
+          <section data-testid="wizard-automation-queue" className="rounded-2xl border-2 border-sky-200 bg-sky-50/60 px-5 py-5">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-bold text-slate-900">자동 작업 큐</h3>
+                  <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs font-bold text-sky-700">계획 모드</span>
+                  <StateBadge state={automationQueueState} />
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                  주제와 현재 단계를 로컬에 보존합니다. 자동 타이머는 없으며, 버튼을 누를 때도 안전한 로컬 작업을 최대 1개만 실행합니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  data-testid="wizard-action-automation-queue-enqueue"
+                  className="rounded-xl bg-sky-700 px-4 py-2 text-sm font-bold text-white hover:bg-sky-800 disabled:opacity-40"
+                  disabled={!selectedTopicId || !automationPlan || automationQueueState === "running" || automationQueueBusyTopicId != null}
+                  onClick={() => void enqueueCurrentAutomationTopic()}
+                >
+                  선택 주제 큐에 저장
+                </button>
+                <button
+                  type="button"
+                  data-testid="wizard-action-automation-queue-refresh"
+                  className="rounded-xl border border-sky-300 bg-white px-4 py-2 text-sm font-bold text-sky-800 hover:bg-sky-100 disabled:opacity-40"
+                  disabled={automationQueueState === "running" || automationQueueBusyTopicId != null}
+                  onClick={() => void refreshAutomationQueue()}
+                >
+                  큐 다시 확인
+                </button>
+              </div>
+            </div>
+            {automationQueue?.jobs.length ? (
+              <div className="mt-4 space-y-2.5">
+                {automationQueue.jobs.map((job) => {
+                  const canAdvance = job.livePlan.next?.canAutoAdvance === true && job.executionGuard.status === "available";
+                  return (
+                    <article key={job.jobId} data-testid="wizard-automation-queue-job" className="rounded-xl border border-sky-200 bg-white px-4 py-3">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900">{job.title}</p>
+                          <p className="mt-0.5 text-xs text-slate-500 break-all">{job.topicId}</p>
+                          <p className="mt-2 text-sm font-semibold text-slate-700">
+                            {job.livePlan.completedStageCount}/{job.livePlan.totalStageCount} 단계 · {job.livePlan.next?.stageLabel ?? "완료"}
+                          </p>
+                          <p className={`mt-0.5 text-sm font-bold ${canAdvance ? "text-emerald-700" : "text-amber-700"}`}>
+                            {canAdvance
+                              ? "Owner 클릭 시 안전 작업 1개 실행 가능"
+                              : AUTOMATION_GATE_LABEL[job.livePlan.next?.gate ?? ""] ?? "현재 단계 확인 필요"}
+                          </p>
+                          {job.lastAdvance ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              마지막 큐 실행: {job.lastAdvance.executedAction ?? "실행 없음"} · {job.lastAdvance.actionCount}개 · 자동 재시도 0회
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          data-testid="wizard-action-automation-queue-advance"
+                          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-40"
+                          disabled={!canAdvance || automationQueueBusyTopicId != null || automationQueueState === "running"}
+                          onClick={() => void runQueuedAutomationAdvance(job)}
+                        >
+                          {automationQueueBusyTopicId === job.topicId ? "안전 작업 1개 실행 중…" : "이 주제 안전 작업 1개"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : automationQueueState !== "running" ? (
+              <p className="mt-4 rounded-xl border border-sky-200 bg-white px-4 py-3 text-sm text-slate-600">
+                큐가 비어 있습니다. 주제를 선택한 뒤 현재 단계를 큐에 저장할 수 있습니다.
+              </p>
+            ) : null}
+            <ResultNote result={automationQueueResult} />
+          </section>
+        ) : null}
+
         {localDev === true && selectedTopicId ? (
           <section data-testid="wizard-automation-plan" className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 px-5 py-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">

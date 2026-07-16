@@ -8,7 +8,7 @@ Updated: 2026-07-17 KST
 - Main AI: Codex
 - Branch: `codex/source-first-blueprint-clean`
 - Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 90%.
+- Overall Owner-facing progress: approximately 91%.
 
 ## Current Product State
 
@@ -25,7 +25,9 @@ Updated: 2026-07-17 KST
 - Interrupted or ambiguous attempts are not expired or unlocked automatically. The UI shows the durable guard status and disables the one-step button for in-flight, interrupted, identical-recorded, or store-unavailable states.
 - The Owner UI now exposes a guided recovery card only when a durable in-flight receipt exists. It shows the action, start time, before/current completed-stage counts, and permits exactly one evidence-derived decision: acknowledge already-advanced artifacts without rerun, or clear an unchanged attempt for a later separate manual retry.
 - Recovery terminalizes and preserves the old receipt before releasing the topic lock. A cleared retry receipt is archived before a later explicit attempt can start. Ambiguous plan changes or lock/receipt mismatch remain locked for manual evidence review.
-- Scheduler/queue is still not implemented.
+- A local durable planning queue is now implemented under `C:\tmp\money-shorts-os\automation-queue-v1`. Owner-selected topic membership, last persisted plan fingerprint/stage/gate, and the last explicit one-step result survive a restart.
+- Queue status reconstructs every job from current artifacts instead of trusting stale queue text. The queue UI shows live completed-stage count, next gate, and execution-guard state.
+- Queue advancement calls the existing bounded `automationAdvance` path only after an explicit Owner click, requires queue membership, runs at most one safe local/no-submit action, terminalizes its execution receipt, then persists the new queue stage. There is no timer, background worker, automatic retry, paid action, external generation, upload, or publication authority.
 
 ## Publication State
 
@@ -44,14 +46,16 @@ Updated: 2026-07-17 KST
 - Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
 - The accepted topic also showed `실행 안전장치: 현재 자동 실행 대상 없음`; no execution receipt or lock was created because publication is outside the safe allowlist.
 - The recovery UI was rechecked on a temporary port 3001 dev server: the accepted topic still restored at 11/12, showed no recovery card because no interrupted receipt exists, and remained stopped at publication confirmation. The temporary server was stopped; the pre-existing port 3000 process was preserved.
+- Durable queue store guard: 14/14 PASS. Combined resumable controller/executor/recovery/queue guard: 51/51 PASS. Existing execution/recovery 24/24, operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, and `pnpm build` all pass.
+- The queue UI was checked on a temporary port 3001 dev server in an empty-queue state. It showed `계획 모드`, no timer, disabled enqueue before topic selection, and no automatic action. No real topic was enqueued during validation. The temporary server was stopped.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Next, define and implement a local durable job queue in planning/dry-run mode only. It should enqueue topic jobs, reconstruct the current stage, and stop at every existing Owner/paid/external/publication gate; it must not schedule or execute external actions yet.
-5. Automatic external generation/publication remains later architecture work requiring separate Owner decisions; do not infer permission from the bounded executor or recovery implementation.
+4. Next, add a deterministic queue-run planner in dry-run mode. It should select the oldest eligible safe job, skip Owner-gated/in-flight/completed jobs, explain the selection, and preview the exact single action without running it.
+5. Timers/background workers and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the queue implementation.
 
 ## Diff Cleanup State
 

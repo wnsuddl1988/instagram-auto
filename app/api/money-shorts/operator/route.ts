@@ -84,6 +84,11 @@ import {
   inspectMoneyShortsAutomationRecovery,
   resolveMoneyShortsAutomationRecovery,
 } from "@/lib/money-shorts-automation-execution-store.mjs";
+import {
+  enqueueMoneyShortsAutomationJob,
+  readMoneyShortsAutomationQueue,
+  syncMoneyShortsAutomationJob,
+} from "@/lib/money-shorts-automation-queue-store.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -119,6 +124,8 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "automationPlan",
   "automationAdvance",
   "automationRecoveryResolve",
+  "automationQueueStatus",
+  "automationQueueEnqueue",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -488,6 +495,32 @@ function readMoneyShortsAutomationExecutionGuard(plan: ReturnType<typeof buildMo
   } catch {
     return { status: "store_unavailable" as const, receipt: null, recovery: null };
   }
+}
+
+function readMoneyShortsAutomationQueueView() {
+  const queue = readMoneyShortsAutomationQueue();
+  return {
+    ...queue,
+    mode: "owner_click_planning_only" as const,
+    jobs: queue.jobs.map((job: { topicId: string } & Record<string, unknown>) => {
+      const snapshot = readMoneyShortsAutomationSnapshot(job.topicId);
+      const executionGuard = readMoneyShortsAutomationExecutionGuard(snapshot.plan);
+      return {
+        ...job,
+        livePlan: snapshot.plan,
+        executionGuard,
+      };
+    }),
+    safety: {
+      timerEnabled: false,
+      backgroundWorkerEnabled: false,
+      automaticAdvanceEnabled: false,
+      automaticRetryEnabled: false,
+      paidActionEnabled: false,
+      externalGenerationEnabled: false,
+      publicationEnabled: false,
+    },
+  };
 }
 
 function runFlowMotionPrepareAction(topicId: string): OperatorResponse {
@@ -1089,6 +1122,60 @@ export async function POST(request: Request) {
     });
   }
 
+  // 로컬 계획 큐 조회 — 큐 멤버십만 영속 저장되고 단계는 현재 산출물에서 매번 재구성한다.
+  // 타이머·백그라운드 실행·외부 호출은 없다.
+  if (action === "automationQueueStatus") {
+    try {
+      const queue = readMoneyShortsAutomationQueueView();
+      return json({
+        action,
+        status: "success",
+        summary: queue.jobs.length > 0
+          ? `자동 작업 큐에 ${queue.jobs.length}개 주제가 있습니다. 모두 Owner 클릭 대기 상태입니다.`
+          : "자동 작업 큐가 비어 있습니다.",
+        detail: "현재 산출물에서 단계를 다시 계산만 했습니다. 자동 실행·유료 생성·업로드·게시는 0회입니다.",
+        raw: { queue },
+        noLive: true,
+      });
+    } catch {
+      return json({
+        action,
+        status: "error",
+        summary: "로컬 자동 작업 큐를 읽지 못했습니다.",
+        blockerCode: "AUTOMATION_QUEUE_STORE_UNAVAILABLE",
+        noLive: true,
+      });
+    }
+  }
+
+  // Owner가 현재 선택한 주제를 계획 큐에 추가한다. 작업은 실행하지 않는다.
+  if (action === "automationQueueEnqueue") {
+    const input = body as { topicId?: unknown; title?: unknown };
+    const topicId = typeof input.topicId === "string" ? input.topicId : "";
+    const title = typeof input.title === "string" ? input.title : null;
+    try {
+      const snapshot = readMoneyShortsAutomationSnapshot(topicId);
+      enqueueMoneyShortsAutomationJob({ topicId, title, plan: snapshot.plan });
+      const queue = readMoneyShortsAutomationQueueView();
+      return json({
+        action,
+        status: "success",
+        summary: "선택한 주제를 로컬 자동 작업 큐에 추가했습니다.",
+        detail: "현재 단계만 저장했습니다. 작업 실행·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: { queue },
+        noLive: true,
+      });
+    } catch {
+      return json({
+        action,
+        status: "error",
+        summary: "선택한 주제를 자동 작업 큐에 저장하지 못했습니다.",
+        blockerCode: "AUTOMATION_QUEUE_ENQUEUE_FAILED",
+        noLive: true,
+      });
+    }
+  }
+
   // 중단 영수증 복구 — 현재 산출물 계획과 영수증을 다시 대조한 뒤 Owner가 선택한
   // 한 가지 해석만 기록하고 잠금을 해제한다. 원래 작업 실행·재시도·외부 호출은 하지 않는다.
   if (action === "automationRecoveryResolve") {
@@ -1178,6 +1265,31 @@ export async function POST(request: Request) {
   if (action === "automationAdvance") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    const queueJobRequested = (body as { queueJob?: unknown }).queueJob === true;
+    if (queueJobRequested) {
+      try {
+        const queue = readMoneyShortsAutomationQueue();
+        if (!queue.jobs.some((job: { topicId: string }) => job.topicId === topicId)) {
+          return json({
+            action,
+            status: "blocked",
+            summary: "이 주제는 자동 작업 큐에 없어 실행하지 않았습니다.",
+            blockerCode: "AUTOMATION_QUEUE_JOB_NOT_FOUND",
+            raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
+            noLive: true,
+          });
+        }
+      } catch {
+        return json({
+          action,
+          status: "error",
+          summary: "자동 작업 큐를 확인하지 못해 실행하지 않았습니다.",
+          blockerCode: "AUTOMATION_QUEUE_STORE_UNAVAILABLE",
+          raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
+          noLive: true,
+        });
+      }
+    }
     const before = readMoneyShortsAutomationSnapshot(topicId);
     const nextAction = before.plan.next?.action ?? null;
     if (
@@ -1287,6 +1399,37 @@ export async function POST(request: Request) {
       });
     }
 
+    let queue = null;
+    if (queueJobRequested) {
+      try {
+        syncMoneyShortsAutomationJob({
+          topicId,
+          plan: after.plan,
+          advanceResult: {
+            status: executed.status,
+            blockerCode: executed.blockerCode ?? null,
+            executedAction: nextAction,
+            actionCount: 1,
+          },
+        });
+        queue = readMoneyShortsAutomationQueueView();
+      } catch {
+        return json({
+          action,
+          status: "error",
+          summary: "안전 작업 1개는 끝났지만 큐의 최신 단계를 저장하지 못했습니다. 자동 재시도 없이 중단했습니다.",
+          blockerCode: "AUTOMATION_QUEUE_SYNC_FAILED",
+          raw: {
+            executedAction: nextAction,
+            receipt,
+            planAfter: after.plan,
+            execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
+          },
+          noLive: true,
+        });
+      }
+    }
+
     const executionGuard = readMoneyShortsAutomationExecutionGuard(after.plan);
     const stopLabel = after.plan.next?.stageLabel ?? "완료";
     return json({
@@ -1301,6 +1444,7 @@ export async function POST(request: Request) {
         executedAction: nextAction,
         receipt,
         executionGuard,
+        queue,
         execution: {
           actionCount: 1,
           chainedActionCount: 0,

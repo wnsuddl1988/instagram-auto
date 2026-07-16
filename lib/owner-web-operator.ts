@@ -143,6 +143,8 @@ export const OPERATOR_ACTIONS = [
   "automationPlan", // 로컬 산출물에서 현재 단계와 다음 안전 작업을 재계산(읽기 전용, 실행 없음)
   "automationAdvance", // 계획이 허용한 로컬/no-submit 작업을 정확히 1개 실행한 뒤 재계산하고 중단
   "automationRecoveryResolve", // 현재 계획과 중단 영수증 증거가 일치할 때만 Owner 결정으로 잠금 해제
+  "automationQueueStatus", // 로컬 큐 멤버십을 읽고 현재 산출물 기준 단계로 재구성
+  "automationQueueEnqueue", // Owner가 선택한 주제를 로컬 계획 큐에 추가/동기화
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -905,6 +907,8 @@ export function buildOperatorCommand(
     case "automationPlan":
     case "automationAdvance":
     case "automationRecoveryResolve":
+    case "automationQueueStatus":
+    case "automationQueueEnqueue":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

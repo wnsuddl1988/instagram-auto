@@ -14,7 +14,7 @@ The Owner has visually accepted both final parts of `gen-finance-editorial-v2-ti
 
 Keep this accepted revision unchanged and queued locally. No automatic upload follows from visual acceptance.
 
-The current app connects the full production and dual-platform publication path and now includes a resumable controller, bounded one-step executor, durable local execution store, and Owner-guided interrupted-attempt recovery. Before each safe step it writes a content-addressed receipt and acquires a per-topic atomic lock; after the step it records the terminal result and next-plan fingerprint before releasing the lock. Refreshes, concurrent requests, and identical repeat clicks cannot execute the same plan/action twice.
+The current app connects the full production and dual-platform publication path and now includes a resumable controller, bounded one-step executor, durable local execution store, Owner-guided interrupted-attempt recovery, and a local durable planning queue. Before each safe step it writes a content-addressed receipt and acquires a per-topic atomic lock; after the step it records the terminal result and next-plan fingerprint before releasing the lock. Refreshes, concurrent requests, and identical repeat clicks cannot execute the same plan/action twice.
 
 When an in-flight receipt remains, the UI compares its before-plan fingerprint and completed-stage count with the current artifact-derived plan. Only an unchanged plan can be cleared for a later separate manual retry; only an increased completed-stage count can be acknowledged as already advanced. Both paths preserve terminal recovery evidence before unlocking. Ambiguous changes remain locked, and recovery itself executes no action.
 
@@ -22,9 +22,11 @@ The stale validation harnesses identified in the operational audit are now align
 
 The accepted topic was rechecked in the local UI at 11/12 stages. The one-step button stayed disabled at the publication gate, the durable guard showed no auto-executable action, and no recovery card appeared because there is no interrupted receipt. A direct `automationAdvance` request returned zero executed actions and no live side effects.
 
+The new queue persists selected topic membership and the last stage/gate under `C:\tmp`, then reconstructs live plans from current artifacts after restart. It has no timer or worker. A queue button invokes the same bounded executor for at most one safe local/no-submit action and then stops. Queue store 14/14, combined orchestration 51/51, execution/recovery 24/24, UI 91/91 and 389/389, TypeScript, and build checks pass. Browser verification used an empty queue and did not enqueue or execute a real topic.
+
 ## Next Implementation Milestone
 
-Add a local durable job queue in planning/dry-run mode. It should accept an Owner-selected topic job, persist its current stage and next gate, reconstruct that state after restart, and expose queue status in the Owner UI. Queue advancement must reuse the existing bounded executor and recovery guard, execute at most one already-safe local/no-submit action per explicit Owner click, and stop at every paid generation, external browser action, QA, upload, and publication gate. Do not add a timer, background worker, automatic retry, paid action, or publication in this slice.
+Add a deterministic queue-run planner in dry-run mode. It should evaluate all queued live plans, choose at most one oldest eligible job, skip Owner-gated, in-flight, manual-review, identical-recorded, completed, or store-unavailable jobs, and show the exact reason/action it would select. It must execute zero actions and create no execution receipt. Do not add a timer, background worker, automatic retry, paid action, external browser action, upload, or publication in this slice.
 
 ## If the Owner Requests Publication Later
 

@@ -14,6 +14,7 @@ const helperSource = readFileSync(join(ROOT, "lib", "owner-web-operator.ts"), "u
 const wizardSource = readFileSync(join(ROOT, "components", "VideoCreationWizard.tsx"), "utf8");
 const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-orchestrator.mjs"), "utf8");
 const executionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-execution-store.mjs"), "utf8");
+const queueStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-store.mjs"), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -111,6 +112,11 @@ const recoveryRouteBlock = recoveryRouteStart >= 0 && recoveryRouteEnd > recover
   : "";
 const recoveryStoreStart = executionStoreSource.indexOf("export function resolveMoneyShortsAutomationRecovery");
 const recoveryStoreBlock = recoveryStoreStart >= 0 ? executionStoreSource.slice(recoveryStoreStart) : "";
+const queueStatusRouteStart = routeSource.indexOf('if (action === "automationQueueStatus")');
+const queueRouteEnd = routeSource.indexOf('// 중단 영수증 복구', queueStatusRouteStart);
+const queueRouteBlock = queueStatusRouteStart >= 0 && queueRouteEnd > queueStatusRouteStart
+  ? routeSource.slice(queueStatusRouteStart, queueRouteEnd)
+  : "";
 check("operator action enum exposes the read-only automation plan", helperSource.includes('"automationPlan"'));
 check("automation route is local-only and returns noLive true", routeSource.includes('"automationPlan",') && automationRouteBlock.includes("noLive: true"));
 check("automation route reads durable media/Flow/preflight/publish evidence", [
@@ -140,6 +146,13 @@ check("recovery terminalizes evidence before releasing the lock", recoveryStoreB
 check("recovery route never executes, retries, pays, renders, uploads, or publishes", !/runOneSafeAutomationAction|runOperatorScript|realTtsCreate|flowMotionGenerate|actualUpload|finalVideoCreate/u.test(recoveryRouteBlock) && recoveryRouteBlock.includes("actionCount: 0") && recoveryRouteBlock.includes("automaticRetryCount: 0"));
 check("wizard renders evidence and only the server-allowed recovery decision", wizardSource.includes('data-testid="wizard-automation-recovery"') && wizardSource.includes("recovery.allowedDecision ===") && wizardSource.includes('postAction("automationRecoveryResolve"'));
 check("manual retry clearance does not auto-run and preserves an archived receipt", executionStoreSource.includes("archiveManualRetryClearance") && executionStoreSource.includes("actionExecuted: false") && !/setTimeout|setInterval/u.test(recoveryStoreBlock));
+check("operator exposes local queue status and enqueue actions", helperSource.includes('"automationQueueStatus"') && helperSource.includes('"automationQueueEnqueue"'));
+check("queue store is local-only and contains no runner, network, timer, or schedule", queueStoreSource.includes("C:\\\\tmp\\\\money-shorts-os\\\\automation-queue-v1") && !/node:child_process|\bfetch\s*\(|https?:\/\/|setTimeout|setInterval|runAt|cron/u.test(queueStoreSource));
+check("queue mutations use one atomic exclusive lock and atomic JSON replacement", queueStoreSource.includes('openSync(paths.lockPath, "wx")') && queueStoreSource.includes("writeJsonAtomic(paths.queuePath, updated)"));
+check("queue status reconstructs live plans without executing a runner", queueRouteBlock.includes("readMoneyShortsAutomationQueueView") && routeSource.includes("livePlan: snapshot.plan") && !/runOperatorScript|runOneSafeAutomationAction|allowArm/u.test(queueRouteBlock));
+check("queue enqueue persists only the selected topic plan", queueRouteBlock.includes("enqueueMoneyShortsAutomationJob") && queueRouteBlock.includes("작업 실행·유료 생성·렌더·업로드·게시는 0회"));
+check("queued advancement reuses automationAdvance and syncs only after terminal receipt", advanceRouteBlock.includes("queueJobRequested") && advanceRouteBlock.includes("syncMoneyShortsAutomationJob") && advanceRouteBlock.indexOf("finishMoneyShortsAutomationExecution") < advanceRouteBlock.indexOf("syncMoneyShortsAutomationJob"));
+check("queue UI requires Owner click and the existing safe execution guard", wizardSource.includes('data-testid="wizard-automation-queue"') && wizardSource.includes('postAction("automationAdvance", { topicId: job.topicId, queueJob: true })') && wizardSource.includes('job.executionGuard.status !== "available"'));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
 check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
 check("wizard disables advance when durable execution guard is not available", wizardSource.includes('automationExecutionGuard.status !== "available"') && wizardSource.includes("실행 안전장치:"));
