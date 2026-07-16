@@ -34,7 +34,13 @@ The policy card now has a `no_submit_capacity_summary` that counts only those sa
 
 ## Next Implementation Milestone
 
-Queue planning visibility is sufficient for the present local-only scope. The next meaningful product decision is whether an Owner-approved background scheduler should ever be designed. That would expand the product's authority, so do not implement it until the Owner explicitly approves its exact scope, pause/stop guarantees, paid/external gates, and publication boundary.
+Owner decision required between:
+
+1. Keep the current Owner-click queue unchanged.
+2. Recommended: build an Owner-started bounded local safe-session worker. The first implementation slice must be contract/dry-run only and prove: one action at a time; current safe allowlist only (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, `wizardPreflight`); explicit per-session action cap; recompute after every terminal receipt; stop on Owner gate, error, interruption, pause, or manual-recovery evidence; zero automatic retries; stop requests take effect after the current action; no paid/external generation, QA decision, upload, or publication authority.
+3. Do not pursue an always-on/full external scheduler yet. It would require a later separate design for pre-approved paid packets, browser/account availability, budgets/quotas, QA policy, publication windows, credentials, and rollback.
+
+Implementation host recommendation: a separate Owner-started local Node process, not a Next.js request timer and not the legacy n8n workflow. The current Next route is request-bound and the queue/execution evidence lives under local `C:\tmp`; the legacy inactive n8n workflow bypasses current queue/receipt/Owner gates, targets old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. Do not activate or reuse it. The old upload route is currently fail-closed but remains the wrong foundation.
 
 ## If the Owner Requests Publication Later
 

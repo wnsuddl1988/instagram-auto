@@ -67,8 +67,9 @@ Updated: 2026-07-17 KST
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Queue planning visibility is now sufficient for the current local-only scope. The next meaningful product decision is whether to build an Owner-approved automatic background scheduler; that would materially expand authority and needs separate architecture and Owner approval first.
-5. Timers/background workers and automatic external generation/publication remain later architecture work requiring separate Owner decisions; do not infer permission from the queue implementation.
+4. Queue planning visibility is sufficient for the current local-only scope. The recommended next automation option is an Owner-started, bounded local safe-session worker: one action at a time, current four-action safe allowlist only, explicit per-session action cap, recompute after every action, stop on first error/Owner gate, zero automatic retries, and stop-after-current-action semantics.
+5. Do not build this worker until the Owner chooses it over keeping the current click-only flow. An always-on cron, paid/external generation, QA bypass, upload, or publication scheduler is not recommended in the next slice and requires separate architecture and exact approval.
+6. Do not activate or reuse `n8n/workflow_autoshorts.json`: it is a legacy inactive workflow that bypasses the current queue/receipt/Owner gates, calls old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. The legacy upload route is currently fail-closed, but that does not make the workflow a valid scheduler foundation.
 
 ## Diff Cleanup State
 
@@ -76,4 +77,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted slice is limited to a read-only queue capacity summary planner/API/UI, targeted guards, and these two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to this read-only scheduler architecture decision record in the two state documents. The protected three paths remain excluded.
