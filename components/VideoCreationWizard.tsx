@@ -708,6 +708,84 @@ type WizardUnattendedPolicyPreview = {
   };
 };
 
+type WizardExternalGenerationBudgetPolicyPreview = {
+  schemaVersion: string;
+  mode: "read_only_external_generation_budget_policy";
+  currentProfileId: "owner_approval_each_submission";
+  recommendedProfileId: "bounded_per_topic_external_generation";
+  activationState: "blocked_missing_owner_limits";
+  activationReady: false;
+  policyFingerprint: string;
+  sourcePolicyFingerprint: string;
+  reason: string;
+  options: Array<{
+    profileId:
+      | "owner_approval_each_submission"
+      | "bounded_per_topic_external_generation"
+      | "multi_topic_unattended_generation";
+    label: string;
+    riskLevel: "current" | "high" | "critical";
+    recommended: boolean;
+    availability:
+      | "active_current_mode"
+      | "blocked_missing_owner_limits"
+      | "inactive_requires_separate_architecture";
+    description: string;
+  }>;
+  providerBudgets: Array<{
+    providerId: "elevenlabs_tts" | "chatgpt_scene_images" | "google_flow_veo_fast";
+    label: string;
+    action: "realTtsCreate" | "realSceneImagesCreate" | "flowMotionGenerate";
+    budgetUnit: "provider_request" | "image_submission" | "credit";
+    proposedPerTopicSubmissionCap: number;
+    proposedPerDaySubmissionCap: number | null;
+    proposedPerMonthSubmissionCap: number | null;
+    proposedPerTopicCreditCap: number | null;
+    estimatedCreditPerSubmission: number | null;
+    maxConcurrentSubmissions: 1;
+    automaticRetryLimit: 0;
+    primaryAccountAlias?: "Gemini 2";
+    accountFallbackPolicy: "disabled" | "disabled_until_exact_owner_approval";
+    humanQaRequired: true;
+    humanQaGate: string;
+  }>;
+  stopRules: Array<{
+    event: string;
+    disposition: string;
+    retryAllowed: false;
+    accountFallbackAllowed: false;
+    evidenceRequired: string;
+  }>;
+  missingOwnerDecisions: string[];
+  invariants: {
+    exactInputFingerprintRequired: true;
+    preSubmitBudgetReservationRequired: true;
+    terminalReceiptRequiredBeforeNextSubmission: true;
+    unknownSubmissionResultLocksBudget: true;
+    providerHistoryEvidenceRequiredBeforeClear: true;
+    humanQaRequired: true;
+    maxConcurrentSubmissions: 1;
+    automaticRetryLimit: 0;
+  };
+  safety: {
+    viewOnly: true;
+    budgetStateWritten: false;
+    budgetReserved: false;
+    activationChanged: false;
+    actionExecuted: false;
+    executionReceiptCreated: false;
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    automaticRetryEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    accountFallbackEnabled: false;
+    ownerQaDecisionEnabled: false;
+    uploadEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 type WizardAutomationQueue = {
   schemaVersion: string;
   mode: "owner_click_planning_only";
@@ -719,6 +797,7 @@ type WizardAutomationQueue = {
   batchPolicy: WizardAutomationQueueBatchPolicy;
   capacitySummary: WizardAutomationQueueCapacitySummary;
   unattendedPolicy: WizardUnattendedPolicyPreview;
+  externalGenerationBudgetPolicy: WizardExternalGenerationBudgetPolicyPreview;
   safety: {
     timerEnabled: false;
     backgroundWorkerEnabled: false;
@@ -2595,6 +2674,69 @@ export default function VideoCreationWizard() {
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-amber-800">
                   이 카드는 상태만 보여줍니다. 로컬 최대 3회 실행은 위 안전 세션에서 Owner가 직접 시작하며, 타이머·백그라운드 작업·자동 재시도·유료 생성·QA 판정·업로드·게시는 모두 비활성입니다.
+                </p>
+              </div>
+            ) : null}
+            {automationQueue ? (
+              <div data-testid="wizard-external-generation-budget-policy" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-bold text-rose-950">유료·외부 생성 상한 후보</p>
+                  <span className="rounded-full border border-rose-200 bg-white px-2.5 py-1 text-xs font-bold text-rose-800">
+                    활성화 차단 · 일/월 상한 미설정
+                  </span>
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-rose-950">
+                  {automationQueue.externalGenerationBudgetPolicy.reason}
+                </p>
+                <p className="mt-1 text-xs text-rose-800">
+                  현재: 매 제출 Owner 승인 · 추천 후보: 주제별 상한형 · 정책 지문{" "}
+                  <span className="font-mono">
+                    {automationQueue.externalGenerationBudgetPolicy.policyFingerprint.slice(0, 12)}
+                  </span>
+                </p>
+                <div className="mt-3 grid gap-2 lg:grid-cols-3">
+                  {automationQueue.externalGenerationBudgetPolicy.providerBudgets.map((provider) => (
+                    <article
+                      key={provider.providerId}
+                      data-testid="wizard-external-generation-provider-budget"
+                      className="rounded-lg border border-rose-100 bg-white px-3 py-3"
+                    >
+                      <p className="text-sm font-bold text-slate-900">{provider.label}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">
+                        주제당 최대 {provider.proposedPerTopicSubmissionCap}회
+                        {provider.proposedPerTopicCreditCap != null
+                          ? ` · 최대 ${provider.proposedPerTopicCreditCap}크레딧`
+                          : ""}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                        일일 상한 미설정 · 월간 상한 미설정 · 동시 1개 · 자동 재시도 0회
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-rose-700">
+                        사람 검수 필수 · 계정 fallback 비활성
+                      </p>
+                    </article>
+                  ))}
+                </div>
+                <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                  <div className="rounded-lg border border-rose-100 bg-white px-3 py-2">
+                    <p className="text-sm font-bold text-slate-900">무조건 중단하는 경우</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-slate-600">
+                      <li>로그인·세션·UI 준비 실패 또는 제출 전 한도 소진</li>
+                      <li>제출 후 timeout·전송 여부 불명·결과 식별 실패</li>
+                      <li>provider 오류·다운로드 연결 실패·사람 QA 대기/실패</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-rose-100 bg-white px-3 py-2">
+                    <p className="text-sm font-bold text-slate-900">Owner 결정이 남은 항목</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-slate-600">
+                      {automationQueue.externalGenerationBudgetPolicy.missingOwnerDecisions.map((decision) => (
+                        <li key={decision}>{decision}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-rose-800">
+                  이 카드는 예산을 예약하거나 생성 요청을 보내지 않습니다. 한도가 모두 확정되기 전에는 유료 TTS·이미지·Flow 자동 생성과 Gemini 3·4 fallback을 사용할 수 없습니다.
                 </p>
               </div>
             ) : null}
