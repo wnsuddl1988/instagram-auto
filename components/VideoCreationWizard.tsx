@@ -461,6 +461,26 @@ type WizardSafeSessionCoordinator = {
   };
 };
 
+type WizardSafeSessionCloseView = {
+  schemaVersion: string;
+  mode: "owner_confirmed_archive_close_view";
+  eligible: boolean;
+  reasonCode: string;
+  reason: string;
+  sessionId: string | null;
+  closeReason: "stop_requested" | "action_cap_reached" | "stop_requested_and_action_cap_reached" | null;
+  closeFingerprint: string | null;
+  actionExecuted: false;
+  executionReceiptCreated: false;
+  sessionStateWritten: false;
+  automaticRetryCount: 0;
+  paidActionExecuted: false;
+  externalGenerationExecuted: false;
+  renderExecuted: false;
+  uploadExecuted: false;
+  publicationExecuted: false;
+};
+
 type WizardAutomationQueueJob = {
   jobId: string;
   topicId: string;
@@ -689,6 +709,7 @@ const SAFE_SESSION_RECOVERY_CONFIRM_TEXT = {
 } as const;
 
 const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
+const SAFE_SESSION_CLOSE_CONFIRM_TEXT = "안전 세션 보관 종료 확인";
 
 type WizardSafeSessionDirectRecoveryDecision =
   keyof typeof SAFE_SESSION_RECOVERY_CONFIRM_TEXT;
@@ -915,6 +936,7 @@ export default function VideoCreationWizard() {
   const [safeSession, setSafeSession] = useState<WizardSafeSession | null>(null);
   const [safeSessionRecovery, setSafeSessionRecovery] = useState<WizardSafeSessionRecovery | null>(null);
   const [safeSessionCoordinator, setSafeSessionCoordinator] = useState<WizardSafeSessionCoordinator | null>(null);
+  const [safeSessionClose, setSafeSessionClose] = useState<WizardSafeSessionCloseView | null>(null);
   const [safeSessionCap, setSafeSessionCap] = useState<1 | 2 | 3>(1);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
@@ -1316,18 +1338,21 @@ export default function VideoCreationWizard() {
         session?: WizardSafeSession;
         recovery?: WizardSafeSessionRecovery;
         coordination?: WizardSafeSessionCoordinator;
+        close?: WizardSafeSessionCloseView;
       } | undefined;
       setSafeSessionResult(r);
       setSafeSessionState(r.status === "success" ? "success" : r.status);
       setSafeSession(r.status === "success" && raw?.session ? raw.session : null);
       setSafeSessionRecovery(r.status === "success" && raw?.recovery ? raw.recovery : null);
       setSafeSessionCoordinator(r.status === "success" && raw?.coordination ? raw.coordination : null);
+      setSafeSessionClose(r.status === "success" && raw?.close ? raw.close : null);
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({ action: "safeSessionStatus", status: "error", summary: "안전 세션 상태를 불러오지 못했습니다." });
       setSafeSession(null);
       setSafeSessionRecovery(null);
       setSafeSessionCoordinator(null);
+      setSafeSessionClose(null);
     }
   }, []);
 
@@ -1361,6 +1386,39 @@ export default function VideoCreationWizard() {
       setSafeSessionResult({ action: "safeSessionStop", status: "error", summary: "안전 세션 중지 요청을 기록하지 못했습니다." });
     }
   }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionState]);
+
+  const closeSafeSession = useCallback(async () => {
+    const sessionId = safeSession?.currentSession?.sessionId;
+    const close = safeSessionClose;
+    if (
+      !sessionId ||
+      safeSessionState === "running" ||
+      close?.eligible !== true ||
+      close.sessionId !== sessionId ||
+      !close.closeFingerprint
+    ) return;
+
+    const confirmed = window.confirm(
+      "이 안전 세션을 요약 이력으로 보관하고 종료할까요?\n\n현재 작업은 실행하지 않으며, 종료 뒤 새 안전 세션을 시작할 수 있습니다.",
+    );
+    if (!confirmed) return;
+
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionClose", {
+        sessionId,
+        closeFingerprint: close.closeFingerprint,
+        confirmation: SAFE_SESSION_CLOSE_CONFIRM_TEXT,
+      });
+      await refreshSafeSession();
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+    } catch {
+      setSafeSessionState("error");
+      setSafeSessionResult({ action: "safeSessionClose", status: "error", summary: "안전 세션을 보관 종료하지 못했습니다." });
+    }
+  }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionClose, safeSessionState]);
 
   const runSafeSessionNext = useCallback(async () => {
     const sessionId = safeSession?.currentSession?.sessionId;
@@ -2068,6 +2126,37 @@ export default function VideoCreationWizard() {
                   {safeSession.currentSession.stopRequestedAt ? (
                     <p className="text-sm font-semibold text-amber-700">중지 요청: {safeSession.currentSession.stopRequestedAt.replace("T", " ")}</p>
                   ) : null}
+                  {safeSessionClose ? (
+                    <div
+                      data-testid="wizard-safe-session-close"
+                      className={`rounded-lg border px-3 py-3 ${
+                        safeSessionClose.eligible
+                          ? "border-emerald-300 bg-emerald-50"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <p className="text-sm font-bold text-slate-900">
+                        {safeSessionClose.eligible ? "세션 보관 종료 가능" : "세션 보관 종료 대기"}
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-600">{safeSessionClose.reason}</p>
+                      {safeSessionClose.eligible ? (
+                        <>
+                          <button
+                            type="button"
+                            data-testid="wizard-action-safe-session-close"
+                            className="mt-3 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-40"
+                            disabled={safeSessionState === "running"}
+                            onClick={() => void closeSafeSession()}
+                          >
+                            세션 보관 종료
+                          </button>
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                            종료 요약만 이력에 남기고 현재 세션을 비웁니다. 작업 실행·재시도·유료 생성·업로드는 실행하지 않습니다.
+                          </p>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="flex flex-wrap gap-2 pt-1">
                     <button
                       type="button"
@@ -2079,7 +2168,7 @@ export default function VideoCreationWizard() {
                       {safeSession.currentSession.status === "stop_requested" ? "중지 요청 기록됨" : "중지 요청 기록"}
                     </button>
                   </div>
-                  <p className="text-xs leading-relaxed text-slate-500">실행기 연결 전까지 세션은 자동으로 닫히거나 다음 작업을 실행하지 않습니다.</p>
+                  <p className="text-xs leading-relaxed text-slate-500">세션은 자동으로 닫히지 않습니다. 중지 요청 또는 상한 도달 뒤 Owner가 별도 보관 종료를 확인해야만 새 세션을 시작할 수 있습니다.</p>
                 </div>
               ) : (
                 <div className="flex items-end gap-3 flex-wrap">

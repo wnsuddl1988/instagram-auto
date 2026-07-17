@@ -105,6 +105,8 @@ import { executeMoneyShortsBoundedAutomationStep } from "@/lib/money-shorts-auto
 import { executeMoneyShortsSafeSessionHostStep } from "@/lib/money-shorts-safe-session-host.mjs";
 import {
   readMoneyShortsSafeSessionStore,
+  readMoneyShortsSafeSessionCloseView,
+  closeMoneyShortsSafeSession,
   requestMoneyShortsSafeSessionStop,
   resolveMoneyShortsSafeSessionRecovery,
   startMoneyShortsSafeSession,
@@ -155,6 +157,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "safeSessionStatus",
   "safeSessionStart",
   "safeSessionStop",
+  "safeSessionClose",
   "safeSessionRecoveryResolve",
   "safeSessionRunNext",
 ];
@@ -179,6 +182,7 @@ const SAFE_SESSION_CHAIN_RECOVERY_DECISIONS = new Set([
 ]);
 
 const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
+const SAFE_SESSION_CLOSE_CONFIRM_TEXT = "안전 세션 보관 종료 확인";
 
 type SafeSessionRecoveryResolver = (input: {
   sessionId: string;
@@ -1106,6 +1110,7 @@ export async function POST(request: Request) {
       const session = readMoneyShortsSafeSessionStore();
       const recovery = readMoneyShortsSafeSessionRecoveryView(session);
       const coordination = readMoneyShortsSafeSessionCoordinatorView(session);
+      const close = readMoneyShortsSafeSessionCloseView(session);
       const current = session.currentSession;
       return json({
         action,
@@ -1117,7 +1122,9 @@ export async function POST(request: Request) {
             : current.status === "stop_requested"
               ? `안전 세션 중지 요청이 기록됐습니다 · 완료 ${current.completedActionCount}/${current.maxActionCount}회`
               : `안전 세션 준비됨 · 완료 ${current.completedActionCount}/${current.maxActionCount}회`,
-        detail: recovery.state === "decision_required"
+        detail: close.eligible
+          ? "현재 세션은 보관 종료할 수 있습니다. Owner 확인 전에는 세션을 비우지 않습니다."
+          : recovery.state === "decision_required"
           ? recovery.executionRecoveryDecision == null
             ? "현재 증거와 일치하는 Owner 직접 복구 결정 1개가 있습니다. 확인 전에는 세션을 변경하지 않습니다."
             : "먼저 기존 실행 영수증 복구를 끝내야 합니다. 이 상태 조회는 어떤 복구도 자동 실행하지 않습니다."
@@ -1128,6 +1135,7 @@ export async function POST(request: Request) {
           session,
           recovery,
           coordination,
+          close,
           execution: {
             actionCount: 0,
             automaticRetryCount: 0,
@@ -1228,6 +1236,88 @@ export async function POST(request: Request) {
         blockerCode: reason === "safe_session_not_found"
           ? "SAFE_SESSION_NOT_FOUND"
           : "SAFE_SESSION_STOP_FAILED",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+  }
+
+  // Owner가 표시된 종료 지문을 다시 확인한 경우에만, 중지 또는 상한 도달 세션의
+  // 요약 이력을 남기고 currentSession을 비운다. 큐 실행·영수증·재시도는 하지 않는다.
+  if (action === "safeSessionClose") {
+    const input = body as {
+      sessionId?: unknown;
+      closeFingerprint?: unknown;
+      confirmation?: unknown;
+    };
+    const sessionId = typeof input.sessionId === "string" ? input.sessionId : "";
+    const closeFingerprint = typeof input.closeFingerprint === "string" ? input.closeFingerprint : "";
+    const confirmation = typeof input.confirmation === "string" ? input.confirmation : "";
+    if (
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(sessionId) ||
+      !/^[a-f0-9]{64}$/.test(closeFingerprint) ||
+      confirmation !== SAFE_SESSION_CLOSE_CONFIRM_TEXT
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "안전 세션 보관 종료 확인 정보가 올바르지 않습니다.",
+        blockerCode: "SAFE_SESSION_CLOSE_CONFIRMATION_INVALID",
+        raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+    try {
+      const session = closeMoneyShortsSafeSession({
+        sessionId,
+        expectedCloseFingerprint: closeFingerprint,
+      });
+      return json({
+        action,
+        status: "success",
+        summary: "안전 세션을 보관 종료했습니다. 다음 안전 세션을 새로 시작할 수 있습니다.",
+        detail: "중지/상한 도달 증거를 mutation lock 안에서 다시 확인하고 요약 이력만 남겼습니다. 작업 실행·영수증 변경·재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: {
+          session,
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "safe_session_close_failed";
+      const evidenceMismatch = reason === "safe_session_close_evidence_mismatch" ||
+        reason === "safe_session_close_fingerprint_invalid";
+      const nonTerminal = [
+        "safe_session_not_terminal",
+        "safe_session_action_in_flight",
+        "safe_session_active_claim_present",
+      ].includes(reason);
+      return json({
+        action,
+        status: "blocked",
+        summary: evidenceMismatch
+          ? "표시 후 세션 증거가 달라졌습니다. 상태를 다시 확인해 주세요."
+          : nonTerminal
+            ? "현재 세션은 아직 보관 종료 조건을 충족하지 않습니다. 세션 상태는 유지했습니다."
+            : reason === "safe_session_not_found"
+              ? "현재 보관 종료할 안전 세션을 찾지 못했습니다."
+              : "안전 세션을 보관 종료하지 못했습니다. 현재 세션은 유지했습니다.",
+        blockerCode: evidenceMismatch
+          ? "SAFE_SESSION_CLOSE_EVIDENCE_MISMATCH"
+          : nonTerminal
+            ? "SAFE_SESSION_CLOSE_NOT_ELIGIBLE"
+            : reason === "safe_session_not_found"
+              ? "SAFE_SESSION_NOT_FOUND"
+              : "SAFE_SESSION_CLOSE_FAILED",
         raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
         noLive: true,
       });
