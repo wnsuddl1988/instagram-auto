@@ -344,19 +344,86 @@ type WizardSafeSession = {
     mode: "owner_started_bounded_local";
     status: "ready" | "stop_requested";
     maxActionCount: 1 | 2 | 3;
-    completedActionCount: 0;
-    actionInFlight: false;
+    completedActionCount: number;
+    actionInFlight: boolean;
+    activeClaim: {
+      jobId: string;
+      topicId: string;
+      action: string;
+      planFingerprint: string;
+      claimFingerprint: string;
+      startedAt: string;
+    } | null;
+    lastTerminalResult: {
+      claimFingerprint: string;
+      recoveryFingerprint?: string;
+      resultStatus: "success" | "blocked" | "error";
+      blockerCode: string | null;
+      actionCount: 1;
+      finishedAt: string;
+    } | null;
+    lastRecoveryResult: {
+      recoveryFingerprint: string;
+      claimFingerprint: string;
+      decision: string;
+      terminalResult: {
+        resultStatus: "success" | "blocked" | "error";
+        blockerCode: string | null;
+        actionCount: 1;
+      } | null;
+      actionCountDelta: 0 | 1;
+      sessionDisposition: string;
+      resolvedAt: string;
+    } | null;
     startedAt: string;
     updatedAt: string;
     stopRequestedAt: string | null;
   } | null;
   history: Array<{
     at: string;
-    kind: "started" | "stop_requested";
+    kind: string;
     sessionId: string;
     maxActionCount: 1 | 2 | 3;
-    actionCount: 0;
+    actionCount: number;
   }>;
+};
+
+type WizardSafeSessionRecovery = {
+  schemaVersion: string;
+  mode: "evidence_only_recovery_plan";
+  state: "inactive" | "decision_required" | "manual_evidence_required";
+  comparison: string;
+  allowedDecision:
+    | "clear_unstarted_session_claim"
+    | "clear_session_claim_after_execution_recovery"
+    | "terminalize_session_from_receipt"
+    | "resolve_execution_then_clear_session_claim"
+    | "resolve_execution_then_terminalize_session"
+    | null;
+  reason: string;
+  sessionId: string | null;
+  claimFingerprint: string | null;
+  currentPlanFingerprint: string | null;
+  recoveryFingerprint: string;
+  executionRecoveryDecision: "acknowledge_artifacts_advanced" | "clear_for_manual_retry" | null;
+  terminalResult: {
+    resultStatus: "success" | "blocked" | "error";
+    blockerCode: string | null;
+    actionCount: 1;
+  } | null;
+  actionCountDelta: 0 | 1;
+  sessionDisposition: "unchanged" | "keep_locked" | "halt_after_clear" | "terminalize_matching_claim";
+  ownerConfirmationRequired: boolean;
+  actionExecuted: false;
+  executionReceiptCreated: false;
+  executionReceiptMutated: false;
+  sessionStateWritten: false;
+  automaticRetryCount: 0;
+  paidActionExecuted: false;
+  externalGenerationExecuted: false;
+  renderExecuted: false;
+  uploadExecuted: false;
+  publicationExecuted: false;
 };
 
 type WizardAutomationQueueJob = {
@@ -580,6 +647,22 @@ const AUTOMATION_RECOVERY_CONFIRM_TEXT = {
   clear_for_manual_retry: "실행 없음 확인 재시도 허용",
 } as const;
 
+const SAFE_SESSION_RECOVERY_CONFIRM_TEXT = {
+  clear_unstarted_session_claim: "미실행 세션 claim 해제 확인",
+  clear_session_claim_after_execution_recovery: "실행 복구 완료 후 세션 claim 해제 확인",
+  terminalize_session_from_receipt: "일치 영수증으로 세션 작업 종결 확인",
+} as const;
+
+type WizardSafeSessionDirectRecoveryDecision =
+  keyof typeof SAFE_SESSION_RECOVERY_CONFIRM_TEXT;
+
+function isSafeSessionDirectRecoveryDecision(
+  decision: WizardSafeSessionRecovery["allowedDecision"],
+): decision is WizardSafeSessionDirectRecoveryDecision {
+  return decision != null &&
+    Object.prototype.hasOwnProperty.call(SAFE_SESSION_RECOVERY_CONFIRM_TEXT, decision);
+}
+
 const FLOW_MOTION_STATUS_LABEL: Record<WizardFlowMotionState, string> = {
   not_prepared: "패킷 준비 필요",
   not_required: "모션 장면 없음",
@@ -793,6 +876,7 @@ export default function VideoCreationWizard() {
   const [safeSessionState, setSafeSessionState] = useState<RunState>("idle");
   const [safeSessionResult, setSafeSessionResult] = useState<OperatorResult | null>(null);
   const [safeSession, setSafeSession] = useState<WizardSafeSession | null>(null);
+  const [safeSessionRecovery, setSafeSessionRecovery] = useState<WizardSafeSessionRecovery | null>(null);
   const [safeSessionCap, setSafeSessionCap] = useState<1 | 2 | 3>(1);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
@@ -1190,14 +1274,19 @@ export default function VideoCreationWizard() {
     setSafeSessionState("running");
     try {
       const r = await postAction("safeSessionStatus");
-      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      const raw = r.raw as {
+        session?: WizardSafeSession;
+        recovery?: WizardSafeSessionRecovery;
+      } | undefined;
       setSafeSessionResult(r);
       setSafeSessionState(r.status === "success" ? "success" : r.status);
-      setSafeSession(r.status === "success" && session ? session : null);
+      setSafeSession(r.status === "success" && raw?.session ? raw.session : null);
+      setSafeSessionRecovery(r.status === "success" && raw?.recovery ? raw.recovery : null);
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({ action: "safeSessionStatus", status: "error", summary: "안전 세션 상태를 불러오지 못했습니다." });
       setSafeSession(null);
+      setSafeSessionRecovery(null);
     }
   }, []);
 
@@ -1235,6 +1324,60 @@ export default function VideoCreationWizard() {
       setSafeSessionResult({ action: "safeSessionStop", status: "error", summary: "안전 세션 중지 요청을 기록하지 못했습니다." });
     }
   }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionState]);
+
+  const resolveSafeSessionRecovery = useCallback(async (
+    decision: WizardSafeSessionDirectRecoveryDecision,
+  ) => {
+    const sessionId = safeSession?.currentSession?.sessionId;
+    const recovery = safeSessionRecovery;
+    if (
+      !sessionId ||
+      safeSessionState === "running" ||
+      recovery?.state !== "decision_required" ||
+      recovery.allowedDecision !== decision ||
+      recovery.ownerConfirmationRequired !== true ||
+      recovery.executionRecoveryDecision != null ||
+      !recovery.recoveryFingerprint
+    ) return;
+
+    const confirmed = window.confirm(
+      decision === "terminalize_session_from_receipt"
+        ? "현재 claim과 정확히 일치하는 종료 영수증으로 안전 세션 작업 1회를 종결할까요? 작업 자체를 다시 실행하지 않습니다."
+        : "현재 증거와 일치하는 중단 claim을 해제하고 안전 세션을 중지할까요? 작업 자체를 실행하지 않습니다.",
+    );
+    if (!confirmed) return;
+
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionRecoveryResolve", {
+        sessionId,
+        recoveryFingerprint: recovery.recoveryFingerprint,
+        decision,
+        confirmation: SAFE_SESSION_RECOVERY_CONFIRM_TEXT[decision],
+      });
+      const raw = r.raw as {
+        session?: WizardSafeSession;
+        recovery?: WizardSafeSessionRecovery;
+      } | undefined;
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+      if (raw?.session) setSafeSession(raw.session);
+      if (raw?.recovery) setSafeSessionRecovery(raw.recovery);
+      if (!raw?.session || !raw?.recovery) {
+        await refreshSafeSession();
+        setSafeSessionResult(r);
+        setSafeSessionState(r.status === "success" ? "success" : r.status);
+      }
+    } catch {
+      setSafeSessionState("error");
+      setSafeSessionResult({
+        action: "safeSessionRecoveryResolve",
+        status: "error",
+        summary: "안전 세션 복구를 기록하지 못했습니다. 기존 claim 잠금은 유지됩니다.",
+      });
+    }
+  }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionRecovery, safeSessionState]);
 
   const enqueueCurrentAutomationTopic = useCallback(async () => {
     if (!selectedTopicId || !automationPlan) return;
@@ -1402,6 +1545,7 @@ export default function VideoCreationWizard() {
       setAutomationRecoveryState(r.status === "success" ? "success" : r.status);
       await refreshRealMedia(selectedTopicId);
       await refreshAutomationPlan(selectedTopicId);
+      await refreshSafeSession();
     } catch {
       setAutomationRecoveryState("error");
       setAutomationRecoveryResult({
@@ -1410,7 +1554,7 @@ export default function VideoCreationWizard() {
         summary: "복구 결정을 기록하지 못했습니다. 잠금은 유지됩니다.",
       });
     }
-  }, [automationExecutionGuard, refreshAutomationPlan, refreshRealMedia, selectedTopicId]);
+  }, [automationExecutionGuard, refreshAutomationPlan, refreshRealMedia, refreshSafeSession, selectedTopicId]);
 
   useEffect(() => {
     if (localDev !== true) return;
@@ -1728,11 +1872,11 @@ export default function VideoCreationWizard() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-lg font-bold text-slate-900">Owner 시작 안전 세션</h3>
-                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">의도 기록 전용</span>
+                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">Owner 제어 · 실행기 미연결</span>
                   <StateBadge state={safeSessionState} />
                 </div>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                  최대 1~3회 상한과 중지 요청만 로컬에 기록합니다. 아직 큐 실행·영수증·워커·타이머·유료 생성·업로드 기능은 연결되지 않았습니다.
+                  최대 1~3회 상한·중지·중단 claim 복구 상태를 로컬에 기록합니다. 자동 실행·재시도·유료 생성·렌더·업로드는 연결되지 않았습니다.
                 </p>
               </div>
               <button
@@ -1749,11 +1893,25 @@ export default function VideoCreationWizard() {
               {safeSession?.currentSession ? (
                 <div className="space-y-2">
                   <p className="text-[15px] font-bold text-slate-900">
-                    {safeSession.currentSession.status === "ready" ? "준비됨" : "중지 요청됨"} · 최대 {safeSession.currentSession.maxActionCount}회 · 실행 {safeSession.currentSession.completedActionCount}회
+                    {safeSession.currentSession.actionInFlight
+                      ? "중단 claim 확인 필요"
+                      : safeSession.currentSession.status === "ready"
+                        ? "준비됨"
+                        : "중지 요청됨"} · 최대 {safeSession.currentSession.maxActionCount}회 · 완료 {safeSession.currentSession.completedActionCount}회
                   </p>
                   <p className="text-sm text-slate-600">
                     세션 ID: <span className="font-mono text-xs">{safeSession.currentSession.sessionId}</span> · 시작 {safeSession.currentSession.startedAt.replace("T", " ")}
                   </p>
+                  {safeSession.currentSession.activeClaim ? (
+                    <div data-testid="wizard-safe-session-active-claim" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                      <p className="text-sm font-bold text-amber-900">
+                        중단된 작업: {safeSession.currentSession.activeClaim.topicId} · {safeSession.currentSession.activeClaim.action}
+                      </p>
+                      <p className="mt-0.5 text-xs text-amber-700">
+                        claim <span className="font-mono">{safeSession.currentSession.activeClaim.claimFingerprint.slice(0, 12)}</span> · 자동 재시도 없음
+                      </p>
+                    </div>
+                  ) : null}
                   {safeSession.currentSession.stopRequestedAt ? (
                     <p className="text-sm font-semibold text-amber-700">중지 요청: {safeSession.currentSession.stopRequestedAt.replace("T", " ")}</p>
                   ) : null}
@@ -1768,7 +1926,7 @@ export default function VideoCreationWizard() {
                       {safeSession.currentSession.status === "stop_requested" ? "중지 요청 기록됨" : "중지 요청 기록"}
                     </button>
                   </div>
-                  <p className="text-xs leading-relaxed text-slate-500">후속 실행기 단계 전까지 이 세션은 자동으로 닫히거나 작업을 실행하지 않습니다.</p>
+                  <p className="text-xs leading-relaxed text-slate-500">실행기 연결 전까지 세션은 자동으로 닫히거나 다음 작업을 실행하지 않습니다.</p>
                 </div>
               ) : (
                 <div className="flex items-end gap-3 flex-wrap">
@@ -1799,6 +1957,60 @@ export default function VideoCreationWizard() {
                 </div>
               )}
             </div>
+            {safeSessionRecovery && safeSessionRecovery.state !== "inactive" ? (
+              <div
+                data-testid="wizard-safe-session-recovery"
+                className={`mt-3 rounded-xl border px-4 py-3 ${
+                  safeSessionRecovery.state === "decision_required"
+                    ? "border-amber-300 bg-amber-50"
+                    : "border-rose-300 bg-rose-50"
+                }`}
+              >
+                <p className="text-sm font-bold text-slate-900">
+                  {safeSessionRecovery.state === "decision_required"
+                    ? "Owner 복구 확인 필요"
+                    : "자동 판정 불가 · claim 잠금 유지"}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-700">{safeSessionRecovery.reason}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  판정 {safeSessionRecovery.comparison} · 복구 지문{" "}
+                  <span className="font-mono">{safeSessionRecovery.recoveryFingerprint.slice(0, 12)}</span>
+                </p>
+                {safeSessionRecovery.state === "decision_required" &&
+                safeSessionRecovery.executionRecoveryDecision != null ? (
+                  <div
+                    data-testid="wizard-safe-session-recovery-chain-required"
+                    className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-2"
+                  >
+                    <p className="text-sm font-semibold text-amber-900">
+                      먼저 아래 자동 진행 안전장치의 실행 영수증 복구를 완료하세요.
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-700">
+                      이 카드에서는 두 복구를 이어서 실행하지 않으며 안전 세션 claim도 변경하지 않습니다.
+                    </p>
+                  </div>
+                ) : null}
+                {safeSessionRecovery.state === "decision_required" &&
+                isSafeSessionDirectRecoveryDecision(safeSessionRecovery.allowedDecision) ? (
+                  <button
+                    type="button"
+                    data-testid="wizard-action-safe-session-recovery-resolve"
+                    className="mt-3 rounded-xl bg-amber-700 px-4 py-2 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-40"
+                    disabled={safeSessionState === "running"}
+                    onClick={() => void resolveSafeSessionRecovery(
+                      safeSessionRecovery.allowedDecision as WizardSafeSessionDirectRecoveryDecision,
+                    )}
+                  >
+                    {safeSessionRecovery.allowedDecision === "terminalize_session_from_receipt"
+                      ? "일치 영수증으로 세션 1회 종결"
+                      : "claim 해제 후 세션 중지"}
+                  </button>
+                ) : null}
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  이 복구는 작업·영수증·재시도·유료 생성·렌더·업로드·게시를 실행하지 않습니다.
+                </p>
+              </div>
+            ) : null}
             <ResultNote result={safeSessionResult} />
           </section>
         ) : null}

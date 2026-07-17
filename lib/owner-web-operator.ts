@@ -154,6 +154,7 @@ export const OPERATOR_ACTIONS = [
   "safeSessionStatus", // Owner-started bounded safe-session 상태만 읽기
   "safeSessionStart", // 1~3회 상한의 세션 시작 의도만 로컬 기록
   "safeSessionStop", // 현재 세션의 stop-after-current-action 의도만 로컬 기록
+  "safeSessionRecoveryResolve", // 표시된 증거 지문과 일치하는 직접 복구만 Owner 확인으로 기록
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -927,12 +928,13 @@ export function buildOperatorCommand(
     case "safeSessionStatus":
     case "safeSessionStart":
     case "safeSessionStop":
+    case "safeSessionRecoveryResolve":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":
     case "characterCastStatus":
     case "characterCastSelect":
-      // 읽기 전용 action — 스크립트를 실행하지 않는다.
+      // route 내부 상태 처리 action — 외부 스크립트를 실행하지 않는다.
       return { ok: false, reason: "read_only_action_runs_no_script" };
 
     default:

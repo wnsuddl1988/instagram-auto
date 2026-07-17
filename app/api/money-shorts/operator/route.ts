@@ -98,11 +98,13 @@ import {
   readMoneyShortsAutomationExecutionGuard,
   readMoneyShortsAutomationQueueView,
   readMoneyShortsAutomationSnapshot,
+  readMoneyShortsSafeSessionRecoveryView,
 } from "@/lib/money-shorts-automation-read-model";
 import { executeMoneyShortsBoundedAutomationStep } from "@/lib/money-shorts-automation-executor.mjs";
 import {
   readMoneyShortsSafeSessionStore,
   requestMoneyShortsSafeSessionStop,
+  resolveMoneyShortsSafeSessionRecovery,
   startMoneyShortsSafeSession,
 } from "@/lib/money-shorts-safe-session-store.mjs";
 
@@ -151,6 +153,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "safeSessionStatus",
   "safeSessionStart",
   "safeSessionStop",
+  "safeSessionRecoveryResolve",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -160,6 +163,29 @@ const AUTOMATION_RECOVERY_CONFIRM_TEXT = {
   acknowledge_artifacts_advanced: "산출물 전진 확인 완료",
   clear_for_manual_retry: "실행 없음 확인 재시도 허용",
 } as const;
+
+const SAFE_SESSION_RECOVERY_CONFIRM_TEXT = {
+  clear_unstarted_session_claim: "미실행 세션 claim 해제 확인",
+  clear_session_claim_after_execution_recovery: "실행 복구 완료 후 세션 claim 해제 확인",
+  terminalize_session_from_receipt: "일치 영수증으로 세션 작업 종결 확인",
+} as const;
+
+const SAFE_SESSION_CHAIN_RECOVERY_DECISIONS = new Set([
+  "resolve_execution_then_clear_session_claim",
+  "resolve_execution_then_terminalize_session",
+]);
+
+type SafeSessionRecoveryResolver = (input: {
+  sessionId: string;
+  expectedRecoveryFingerprint: string;
+  decision: string;
+  recomputeRecoveryPlan: (
+    lockedStore: ReturnType<typeof readMoneyShortsSafeSessionStore>,
+  ) => ReturnType<typeof readMoneyShortsSafeSessionRecoveryView>;
+}) => ReturnType<typeof readMoneyShortsSafeSessionStore>;
+
+const resolveSafeSessionRecovery =
+  resolveMoneyShortsSafeSessionRecovery as unknown as SafeSessionRecoveryResolver;
 
 /** 실제 업로드는 Blob 업로드 + IG 폴링 + YT 업로드로 2분을 넘길 수 있어 별도 timeout을 쓴다. */
 const UPLOAD_TIMEOUT_MS = 300_000;
@@ -1041,20 +1067,42 @@ export async function POST(request: Request) {
     });
   }
 
-  // Owner-started bounded session — 의도/상태만 저장한다. 큐 실행·영수증·워커·타이머는 없다.
+  // Owner-started bounded session — 현재 세션과 중단 claim의 증거 기반 복구 보기만 읽는다.
+  // 조회 자체는 큐 작업·영수증 변경·워커·타이머·유료/외부 작업을 실행하지 않는다.
   if (action === "safeSessionStatus") {
     try {
       const session = readMoneyShortsSafeSessionStore();
+      const recovery = readMoneyShortsSafeSessionRecoveryView(session);
+      const current = session.currentSession;
       return json({
         action,
         status: "success",
-        summary: session.currentSession == null
+        summary: current == null
           ? "현재 시작된 안전 세션이 없습니다."
-          : session.currentSession.status === "stop_requested"
-            ? "안전 세션 중지 요청이 기록됐습니다. 실행기는 아직 연결되지 않았습니다."
-            : `안전 세션 준비됨 · 최대 ${session.currentSession.maxActionCount}회 · 아직 실행 0회`,
-        detail: "이 상태 카드는 세션 의도만 읽습니다. 큐 실행·영수증·워커·타이머·유료 생성·업로드는 0회입니다.",
-        raw: { session, execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+          : current.actionInFlight
+            ? `안전 세션의 중단 claim을 확인했습니다 · 완료 ${current.completedActionCount}/${current.maxActionCount}회`
+            : current.status === "stop_requested"
+              ? `안전 세션 중지 요청이 기록됐습니다 · 완료 ${current.completedActionCount}/${current.maxActionCount}회`
+              : `안전 세션 준비됨 · 완료 ${current.completedActionCount}/${current.maxActionCount}회`,
+        detail: recovery.state === "decision_required"
+          ? recovery.executionRecoveryDecision == null
+            ? "현재 증거와 일치하는 Owner 직접 복구 결정 1개가 있습니다. 확인 전에는 세션을 변경하지 않습니다."
+            : "먼저 기존 실행 영수증 복구를 끝내야 합니다. 이 상태 조회는 어떤 복구도 자동 실행하지 않습니다."
+          : "상태와 복구 증거만 읽었습니다. 큐 실행·영수증 변경·자동 재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: {
+          session,
+          recovery,
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
         noLive: true,
       });
     } catch (error) {
@@ -1145,6 +1193,154 @@ export async function POST(request: Request) {
           ? "SAFE_SESSION_NOT_FOUND"
           : "SAFE_SESSION_STOP_FAILED",
         raw: { execution: { actionCount: 0, automaticRetryCount: 0, chainedActionCount: 0 } },
+        noLive: true,
+      });
+    }
+  }
+
+  // 안전 세션 중단 claim 복구 — UI에 표시된 직접 결정과 지문을 Owner가 다시 확인한 경우만
+  // 동일 세션 mutation lock 안에서 전체 증거를 재조립한 뒤 claim 상태를 1회 변경한다.
+  // 기존 실행 영수증 복구가 선행되어야 하는 chain 결정은 여기서 실행하지 않는다.
+  if (action === "safeSessionRecoveryResolve") {
+    const input = body as {
+      sessionId?: unknown;
+      recoveryFingerprint?: unknown;
+      decision?: unknown;
+      confirmation?: unknown;
+    };
+    const sessionId = typeof input.sessionId === "string" ? input.sessionId : "";
+    const recoveryFingerprint = typeof input.recoveryFingerprint === "string"
+      ? input.recoveryFingerprint
+      : "";
+    const decision = typeof input.decision === "string" ? input.decision : "";
+    const confirmation = typeof input.confirmation === "string" ? input.confirmation : "";
+
+    if (SAFE_SESSION_CHAIN_RECOVERY_DECISIONS.has(decision)) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "기존 실행 영수증 복구를 먼저 완료해야 합니다. 안전 세션 claim은 변경하지 않았습니다.",
+        detail: "아래 자동 진행 안전장치 복구 카드에서 기존 실행 복구를 Owner 확인으로 끝낸 뒤 안전 세션 상태를 다시 확인해 주세요.",
+        blockerCode: "SAFE_SESSION_EXECUTION_RECOVERY_REQUIRED",
+        raw: {
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    }
+
+    const expectedConfirmation = SAFE_SESSION_RECOVERY_CONFIRM_TEXT[
+      decision as keyof typeof SAFE_SESSION_RECOVERY_CONFIRM_TEXT
+    ];
+    if (
+      sessionId.length === 0 ||
+      !/^[a-f0-9]{64}$/.test(recoveryFingerprint) ||
+      expectedConfirmation == null ||
+      confirmation !== expectedConfirmation
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "안전 세션 복구 확인 정보가 현재 표시된 직접 결정과 일치하지 않습니다.",
+        blockerCode: "SAFE_SESSION_RECOVERY_CONFIRMATION_INVALID",
+        raw: {
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    }
+
+    try {
+      const session = resolveSafeSessionRecovery({
+        sessionId,
+        expectedRecoveryFingerprint: recoveryFingerprint,
+        decision,
+        recomputeRecoveryPlan: (lockedStore: ReturnType<typeof readMoneyShortsSafeSessionStore>) =>
+          readMoneyShortsSafeSessionRecoveryView(lockedStore),
+      });
+      const recovery = readMoneyShortsSafeSessionRecoveryView(session);
+      const resolution = session.currentSession?.lastRecoveryResult ?? null;
+      return json({
+        action,
+        status: "success",
+        summary: resolution?.actionCountDelta === 1
+          ? "일치하는 종료 영수증으로 안전 세션 작업 1회를 종결했습니다."
+          : decision === "clear_unstarted_session_claim"
+            ? "실행 전 안전 세션 claim을 해제하고 세션을 중지했습니다."
+            : "기존 실행 영수증 복구 확인 후 안전 세션 claim을 해제하고 세션을 중지했습니다.",
+        detail: "표시 지문을 mutation lock 안에서 다시 검증해 세션 상태만 변경했습니다. 작업 실행·영수증 변경·재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+        raw: {
+          session,
+          recovery,
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            sessionActionCountDelta: resolution?.actionCountDelta ?? 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "safe_session_recovery_failed";
+      const executionRecoveryRequired = reason === "safe_session_recovery_execution_resolution_required";
+      const noActiveClaim = reason === "safe_session_not_found" ||
+        reason === "safe_session_action_not_in_flight";
+      const evidenceMismatch = reason === "safe_session_recovery_evidence_or_decision_mismatch" ||
+        reason === "safe_session_recovery_result_mismatch" ||
+        reason === "safe_session_recovery_fingerprint_invalid";
+      return json({
+        action,
+        status: "blocked",
+        summary: executionRecoveryRequired
+          ? "기존 실행 영수증 복구를 먼저 완료해야 합니다. 안전 세션 claim은 변경하지 않았습니다."
+          : noActiveClaim
+            ? "현재 복구할 안전 세션 claim이 없습니다."
+            : evidenceMismatch
+              ? "표시 후 증거가 달라졌습니다. 안전 세션 상태를 다시 확인해 주세요."
+              : "안전 세션 복구를 기록하지 못했습니다. 기존 claim 잠금은 유지됩니다.",
+        blockerCode: executionRecoveryRequired
+          ? "SAFE_SESSION_EXECUTION_RECOVERY_REQUIRED"
+          : noActiveClaim
+            ? "SAFE_SESSION_RECOVERY_NOT_ACTIVE"
+            : evidenceMismatch
+              ? "SAFE_SESSION_RECOVERY_EVIDENCE_MISMATCH"
+              : "SAFE_SESSION_RECOVERY_FAILED",
+        raw: {
+          execution: {
+            actionCount: 0,
+            automaticRetryCount: 0,
+            chainedActionCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            renderExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
         noLive: true,
       });
     }

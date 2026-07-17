@@ -13,6 +13,7 @@ import {
 } from "@/lib/money-shorts-resumable-orchestrator.mjs";
 import {
   inspectMoneyShortsAutomationExecution,
+  inspectMoneyShortsAutomationExecutionByFingerprint,
   inspectMoneyShortsAutomationRecovery,
 } from "@/lib/money-shorts-automation-execution-store.mjs";
 import { readMoneyShortsAutomationQueue } from "@/lib/money-shorts-automation-queue-store.mjs";
@@ -21,9 +22,22 @@ import {
   planMoneyShortsAutomationQueueRun,
   summarizeMoneyShortsAutomationQueueCapacity,
 } from "@/lib/money-shorts-automation-queue-planner.mjs";
+import { planMoneyShortsSafeSessionRecovery } from "@/lib/money-shorts-safe-session-recovery.mjs";
+import { readMoneyShortsSafeSessionStore } from "@/lib/money-shorts-safe-session-store.mjs";
 
 export const MONEY_SHORTS_AUTOMATION_READ_MODEL_VERSION =
   "money_shorts_automation_read_model_v1";
+
+type MoneyShortsSafeSessionRecoveryPlanner = (input: {
+  sessionStore: ReturnType<typeof readMoneyShortsSafeSessionStore>;
+  currentPlan?: ReturnType<typeof buildMoneyShortsResumablePlan> | null;
+  runPreview?: ReturnType<typeof planMoneyShortsAutomationQueueRun> | null;
+  claimExecutionGuard?: ReturnType<typeof inspectMoneyShortsAutomationExecutionByFingerprint> | null;
+  executionRecovery?: ReturnType<typeof inspectMoneyShortsAutomationRecovery> | null;
+}) => ReturnType<typeof planMoneyShortsSafeSessionRecovery>;
+
+const buildMoneyShortsSafeSessionRecoveryView =
+  planMoneyShortsSafeSessionRecovery as unknown as MoneyShortsSafeSessionRecoveryPlanner;
 
 export function readMoneyShortsAutomationSnapshot(topicId: string) {
   const media = readWizardRealMediaState(topicId);
@@ -121,4 +135,39 @@ export function readMoneyShortsAutomationQueueView() {
       publicationEnabled: false,
     },
   };
+}
+
+/**
+ * Rebuilds recovery evidence for the exact active safe-session claim.
+ * This view reads only current artifacts, queue preview, and durable execution evidence.
+ * It never resolves a receipt, clears a claim, retries, dispatches, renders, uploads, or publishes.
+ */
+export function readMoneyShortsSafeSessionRecoveryView(
+  sessionStore = readMoneyShortsSafeSessionStore(),
+) {
+  const session = sessionStore.currentSession;
+  if (session?.actionInFlight !== true || session.activeClaim == null) {
+    return buildMoneyShortsSafeSessionRecoveryView({ sessionStore });
+  }
+
+  const claim = session.activeClaim;
+  const snapshot = readMoneyShortsAutomationSnapshot(claim.topicId);
+  const queue = readMoneyShortsAutomationQueueView();
+  const claimExecutionGuard = inspectMoneyShortsAutomationExecutionByFingerprint({
+    topicId: claim.topicId,
+    action: claim.action,
+    planFingerprint: claim.planFingerprint,
+  });
+  const executionRecovery = inspectMoneyShortsAutomationRecovery({
+    topicId: claim.topicId,
+    currentPlan: snapshot.plan,
+  });
+
+  return buildMoneyShortsSafeSessionRecoveryView({
+    sessionStore,
+    currentPlan: snapshot.plan,
+    runPreview: queue.runPreview,
+    claimExecutionGuard,
+    executionRecovery,
+  });
 }
