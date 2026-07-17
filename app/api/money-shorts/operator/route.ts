@@ -98,9 +98,11 @@ import {
   readMoneyShortsAutomationExecutionGuard,
   readMoneyShortsAutomationQueueView,
   readMoneyShortsAutomationSnapshot,
+  readMoneyShortsSafeSessionCoordinatorView,
   readMoneyShortsSafeSessionRecoveryView,
 } from "@/lib/money-shorts-automation-read-model";
 import { executeMoneyShortsBoundedAutomationStep } from "@/lib/money-shorts-automation-executor.mjs";
+import { executeMoneyShortsSafeSessionHostStep } from "@/lib/money-shorts-safe-session-host.mjs";
 import {
   readMoneyShortsSafeSessionStore,
   requestMoneyShortsSafeSessionStop,
@@ -154,6 +156,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "safeSessionStart",
   "safeSessionStop",
   "safeSessionRecoveryResolve",
+  "safeSessionRunNext",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -174,6 +177,8 @@ const SAFE_SESSION_CHAIN_RECOVERY_DECISIONS = new Set([
   "resolve_execution_then_clear_session_claim",
   "resolve_execution_then_terminalize_session",
 ]);
+
+const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
 
 type SafeSessionRecoveryResolver = (input: {
   sessionId: string;
@@ -659,6 +664,33 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
   };
 }
 
+function runMoneyShortsBoundedAutomationStep(
+  requestAction: "automationAdvance" | "automationQueueRunSelected",
+  input: Record<string, unknown>,
+) {
+  return executeMoneyShortsBoundedAutomationStep({
+    requestAction,
+    input,
+    handlers: {
+      realTtsPreflight: runRealTtsPreflightAction,
+      flowMotionPrepare: runFlowMotionPrepareAction,
+      finalVideoCreate: runFinalVideoCreateAction,
+      wizardPreflight: runWizardPreflightAction,
+    },
+    dependencies: {
+      beginExecution: beginMoneyShortsAutomationExecution,
+      fingerprintPlan: fingerprintMoneyShortsAutomationPlan,
+      finishExecution: finishMoneyShortsAutomationExecution,
+      isSafeAction: isMoneyShortsSafeAutoAdvanceAction,
+      readExecutionGuard: readMoneyShortsAutomationExecutionGuard,
+      readQueueView: readMoneyShortsAutomationQueueView,
+      readSnapshot: readMoneyShortsAutomationSnapshot,
+      syncQueueJob: syncMoneyShortsAutomationJob,
+      verifyQueuePreviewClaim: verifyMoneyShortsAutomationQueuePreviewClaim,
+    },
+  });
+}
+
 // ── POST: action 실행 ─────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -1073,6 +1105,7 @@ export async function POST(request: Request) {
     try {
       const session = readMoneyShortsSafeSessionStore();
       const recovery = readMoneyShortsSafeSessionRecoveryView(session);
+      const coordination = readMoneyShortsSafeSessionCoordinatorView(session);
       const current = session.currentSession;
       return json({
         action,
@@ -1088,10 +1121,13 @@ export async function POST(request: Request) {
           ? recovery.executionRecoveryDecision == null
             ? "현재 증거와 일치하는 Owner 직접 복구 결정 1개가 있습니다. 확인 전에는 세션을 변경하지 않습니다."
             : "먼저 기존 실행 영수증 복구를 끝내야 합니다. 이 상태 조회는 어떤 복구도 자동 실행하지 않습니다."
-          : "상태와 복구 증거만 읽었습니다. 큐 실행·영수증 변경·자동 재시도·유료 생성·렌더·업로드·게시는 0회입니다.",
+          : coordination.state === "ready"
+            ? `다음 로컬 안전 작업 1개가 준비됐습니다: ${coordination.nextClaim?.action ?? "확인 필요"}`
+            : coordination.reason,
         raw: {
           session,
           recovery,
+          coordination,
           execution: {
             actionCount: 0,
             automaticRetryCount: 0,
@@ -1196,6 +1232,70 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
+  }
+
+  // Owner가 상태 카드에서 본 coordinator 지문과 동일한 경우에만 local-safe 작업 1개를 실행한다.
+  // 세션 claim -> 기존 bounded executor 1회 -> terminal 영수증 -> 같은 세션 claim 종결 순서이며,
+  // 어떤 결과에서도 두 번째 작업, 자동 재시도, 유료/외부 생성, QA 판단, 업로드, 게시는 이어서 실행하지 않는다.
+  if (action === "safeSessionRunNext") {
+    const input = body as {
+      sessionId?: unknown;
+      coordinatorFingerprint?: unknown;
+      queuePreviewFingerprint?: unknown;
+      confirmation?: unknown;
+    };
+    const sessionId = typeof input.sessionId === "string" ? input.sessionId : "";
+    const coordinatorFingerprint = typeof input.coordinatorFingerprint === "string"
+      ? input.coordinatorFingerprint
+      : "";
+    const queuePreviewFingerprint = typeof input.queuePreviewFingerprint === "string"
+      ? input.queuePreviewFingerprint
+      : "";
+    const confirmation = typeof input.confirmation === "string" ? input.confirmation : "";
+    if (
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(sessionId) ||
+      !/^[a-f0-9]{64}$/.test(coordinatorFingerprint) ||
+      !/^[a-f0-9]{64}$/.test(queuePreviewFingerprint) ||
+      confirmation !== SAFE_SESSION_RUN_CONFIRM_TEXT
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "화면에 표시된 안전 세션 단일 실행 확인 정보가 올바르지 않습니다.",
+        blockerCode: "SAFE_SESSION_RUN_CONFIRMATION_INVALID",
+        raw: {
+          execution: {
+            actionCount: 0,
+            sessionActionCountDelta: 0,
+            chainedActionCount: 0,
+            automaticRetryCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    }
+
+    const result = executeMoneyShortsSafeSessionHostStep({
+      expectedSessionId: sessionId,
+      expectedCoordinatorFingerprint: coordinatorFingerprint,
+      expectedQueuePreviewFingerprint: queuePreviewFingerprint,
+      dependencies: {
+        readSessionStore: readMoneyShortsSafeSessionStore,
+        readQueueView: readMoneyShortsAutomationQueueView,
+        executeBoundedStep: (request: {
+          requestAction: "automationAdvance" | "automationQueueRunSelected";
+          input: Record<string, unknown>;
+        }) => runMoneyShortsBoundedAutomationStep(
+          request.requestAction,
+          request.input,
+        ),
+      },
+    });
+    return json(result as OperatorResponse);
   }
 
   // 안전 세션 중단 claim 복구 — UI에 표시된 직접 결정과 지문을 Owner가 다시 확인한 경우만
@@ -1619,27 +1719,10 @@ export async function POST(request: Request) {
   // Owner 클릭 요청에 함께 보내고, 서버가 큐·계획을 즉시 재계산해 같을 때만 허용한다.
   // 유료/외부/QA/게시 작업은 허용 목록에 없으며, 같은 요청에서 두 번째 작업을 이어 실행하지 않는다.
   if (action === "automationAdvance" || action === "automationQueueRunSelected") {
-    const result = executeMoneyShortsBoundedAutomationStep({
-      requestAction: action,
-      input: body as Record<string, unknown>,
-      handlers: {
-        realTtsPreflight: runRealTtsPreflightAction,
-        flowMotionPrepare: runFlowMotionPrepareAction,
-        finalVideoCreate: runFinalVideoCreateAction,
-        wizardPreflight: runWizardPreflightAction,
-      },
-      dependencies: {
-        beginExecution: beginMoneyShortsAutomationExecution,
-        fingerprintPlan: fingerprintMoneyShortsAutomationPlan,
-        finishExecution: finishMoneyShortsAutomationExecution,
-        isSafeAction: isMoneyShortsSafeAutoAdvanceAction,
-        readExecutionGuard: readMoneyShortsAutomationExecutionGuard,
-        readQueueView: readMoneyShortsAutomationQueueView,
-        readSnapshot: readMoneyShortsAutomationSnapshot,
-        syncQueueJob: syncMoneyShortsAutomationJob,
-        verifyQueuePreviewClaim: verifyMoneyShortsAutomationQueuePreviewClaim,
-      },
-    });
+    const result = runMoneyShortsBoundedAutomationStep(
+      action,
+      body as Record<string, unknown>,
+    );
     return json(result as OperatorResponse);
   }
 

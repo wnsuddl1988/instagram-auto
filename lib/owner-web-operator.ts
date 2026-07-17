@@ -155,6 +155,7 @@ export const OPERATOR_ACTIONS = [
   "safeSessionStart", // 1~3회 상한의 세션 시작 의도만 로컬 기록
   "safeSessionStop", // 현재 세션의 stop-after-current-action 의도만 로컬 기록
   "safeSessionRecoveryResolve", // 표시된 증거 지문과 일치하는 직접 복구만 Owner 확인으로 기록
+  "safeSessionRunNext", // 표시된 coordinator 지문과 일치하는 로컬 안전 작업 1회만 실행
 ] as const;
 
 export type OperatorAction = (typeof OPERATOR_ACTIONS)[number];
@@ -929,6 +930,7 @@ export function buildOperatorCommand(
     case "safeSessionStart":
     case "safeSessionStop":
     case "safeSessionRecoveryResolve":
+    case "safeSessionRunNext":
     case "flowMotionPrepare":
     case "flowMotionQaPass":
     case "flowMotionQaFail":

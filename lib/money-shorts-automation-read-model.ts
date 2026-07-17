@@ -11,6 +11,7 @@ import {
   buildMoneyShortsResumablePlan,
   isMoneyShortsSafeAutoAdvanceAction,
 } from "@/lib/money-shorts-resumable-orchestrator.mjs";
+import { coordinateMoneyShortsSafeSessionDryRun } from "@/lib/money-shorts-safe-session-coordinator.mjs";
 import {
   inspectMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationExecutionByFingerprint,
@@ -38,6 +39,14 @@ type MoneyShortsSafeSessionRecoveryPlanner = (input: {
 
 const buildMoneyShortsSafeSessionRecoveryView =
   planMoneyShortsSafeSessionRecovery as unknown as MoneyShortsSafeSessionRecoveryPlanner;
+
+type MoneyShortsSafeSessionCoordinator = (input: {
+  sessionStore: ReturnType<typeof readMoneyShortsSafeSessionStore>;
+  runPreview: ReturnType<typeof planMoneyShortsAutomationQueueRun>;
+}) => ReturnType<typeof coordinateMoneyShortsSafeSessionDryRun>;
+
+const buildMoneyShortsSafeSessionCoordinatorView =
+  coordinateMoneyShortsSafeSessionDryRun as unknown as MoneyShortsSafeSessionCoordinator;
 
 export function readMoneyShortsAutomationSnapshot(topicId: string) {
   const media = readWizardRealMediaState(topicId);
@@ -135,6 +144,17 @@ export function readMoneyShortsAutomationQueueView() {
       publicationEnabled: false,
     },
   };
+}
+
+/** Recomputes one no-execution safe-session decision from current durable queue evidence. */
+export function readMoneyShortsSafeSessionCoordinatorView(
+  sessionStore = readMoneyShortsSafeSessionStore(),
+) {
+  const queue = readMoneyShortsAutomationQueueView();
+  return buildMoneyShortsSafeSessionCoordinatorView({
+    sessionStore,
+    runPreview: queue.runPreview,
+  });
 }
 
 /**

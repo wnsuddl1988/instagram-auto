@@ -426,6 +426,41 @@ type WizardSafeSessionRecovery = {
   publicationExecuted: false;
 };
 
+type WizardSafeSessionCoordinator = {
+  schemaVersion: string;
+  mode: "session_coordinator_dry_run";
+  state: "inactive" | "ready" | "waiting" | "halted" | "blocked";
+  reason: string;
+  sessionId: string | null;
+  sessionStoreUpdatedAt: string | null;
+  sessionDecisionFingerprint: string | null;
+  queuePreviewFingerprint: string | null;
+  coordinatorFingerprint: string;
+  nextClaim: {
+    previewFingerprint: string;
+    jobId: string;
+    topicId: string;
+    action: string;
+    planFingerprint: string;
+  } | null;
+  actionPlannedCount: 0 | 1;
+  actionExecuted: false;
+  executionReceiptCreated: false;
+  queueStateWritten: false;
+  sessionStateWritten: false;
+  lockAcquired: false;
+  automaticRetryCount: 0;
+  safety: {
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    ownerQaDecisionEnabled: false;
+    uploadEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 type WizardAutomationQueueJob = {
   jobId: string;
   topicId: string;
@@ -653,6 +688,8 @@ const SAFE_SESSION_RECOVERY_CONFIRM_TEXT = {
   terminalize_session_from_receipt: "일치 영수증으로 세션 작업 종결 확인",
 } as const;
 
+const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
+
 type WizardSafeSessionDirectRecoveryDecision =
   keyof typeof SAFE_SESSION_RECOVERY_CONFIRM_TEXT;
 
@@ -877,6 +914,7 @@ export default function VideoCreationWizard() {
   const [safeSessionResult, setSafeSessionResult] = useState<OperatorResult | null>(null);
   const [safeSession, setSafeSession] = useState<WizardSafeSession | null>(null);
   const [safeSessionRecovery, setSafeSessionRecovery] = useState<WizardSafeSessionRecovery | null>(null);
+  const [safeSessionCoordinator, setSafeSessionCoordinator] = useState<WizardSafeSessionCoordinator | null>(null);
   const [safeSessionCap, setSafeSessionCap] = useState<1 | 2 | 3>(1);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
@@ -1277,16 +1315,19 @@ export default function VideoCreationWizard() {
       const raw = r.raw as {
         session?: WizardSafeSession;
         recovery?: WizardSafeSessionRecovery;
+        coordination?: WizardSafeSessionCoordinator;
       } | undefined;
       setSafeSessionResult(r);
       setSafeSessionState(r.status === "success" ? "success" : r.status);
       setSafeSession(r.status === "success" && raw?.session ? raw.session : null);
       setSafeSessionRecovery(r.status === "success" && raw?.recovery ? raw.recovery : null);
+      setSafeSessionCoordinator(r.status === "success" && raw?.coordination ? raw.coordination : null);
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({ action: "safeSessionStatus", status: "error", summary: "안전 세션 상태를 불러오지 못했습니다." });
       setSafeSession(null);
       setSafeSessionRecovery(null);
+      setSafeSessionCoordinator(null);
     }
   }, []);
 
@@ -1296,11 +1337,9 @@ export default function VideoCreationWizard() {
     setSafeSessionResult(null);
     try {
       const r = await postAction("safeSessionStart", { maxActionCount: safeSessionCap });
-      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      await refreshSafeSession();
       setSafeSessionResult(r);
       setSafeSessionState(r.status === "success" ? "success" : r.status);
-      if (session) setSafeSession(session);
-      else await refreshSafeSession();
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({ action: "safeSessionStart", status: "error", summary: "안전 세션 시작 의도를 기록하지 못했습니다." });
@@ -1314,16 +1353,86 @@ export default function VideoCreationWizard() {
     setSafeSessionResult(null);
     try {
       const r = await postAction("safeSessionStop", { sessionId });
-      const session = (r.raw as { session?: WizardSafeSession } | undefined)?.session;
+      await refreshSafeSession();
       setSafeSessionResult(r);
       setSafeSessionState(r.status === "success" ? "success" : r.status);
-      if (session) setSafeSession(session);
-      else await refreshSafeSession();
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({ action: "safeSessionStop", status: "error", summary: "안전 세션 중지 요청을 기록하지 못했습니다." });
     }
   }, [refreshSafeSession, safeSession?.currentSession?.sessionId, safeSessionState]);
+
+  const runSafeSessionNext = useCallback(async () => {
+    const sessionId = safeSession?.currentSession?.sessionId;
+    const coordination = safeSessionCoordinator;
+    const claim = coordination?.nextClaim;
+    if (
+      !sessionId ||
+      safeSessionState === "running" ||
+      safeSession?.currentSession?.actionInFlight === true ||
+      safeSessionRecovery?.state !== "inactive" ||
+      coordination?.state !== "ready" ||
+      coordination.sessionId !== sessionId ||
+      coordination.actionPlannedCount !== 1 ||
+      !coordination.coordinatorFingerprint ||
+      !coordination.queuePreviewFingerprint ||
+      claim == null
+    ) return;
+
+    const confirmed = window.confirm(
+      `${claim.topicId}의 ${claim.action} 작업을 정확히 1회 실행할까요?\n\n두 번째 작업·자동 재시도·유료 생성·업로드는 이어서 실행하지 않습니다.`,
+    );
+    if (!confirmed) return;
+
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionRunNext", {
+        sessionId,
+        coordinatorFingerprint: coordination.coordinatorFingerprint,
+        queuePreviewFingerprint: coordination.queuePreviewFingerprint,
+        confirmation: SAFE_SESSION_RUN_CONFIRM_TEXT,
+      });
+      const raw = r.raw as {
+        executorResult?: {
+          raw?: {
+            executedAction?: string;
+          };
+        };
+      } | undefined;
+      await refreshSafeSession();
+      await refreshAutomationQueue();
+      if (selectedTopicId === claim.topicId) {
+        await refreshRealMedia(claim.topicId);
+        await refreshAutomationPlan(claim.topicId);
+      }
+      if (raw?.executorResult?.raw?.executedAction === "finalVideoCreate" && r.status === "success") {
+        setPreviewKey((key) => key + 1);
+      }
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+    } catch {
+      const failure: OperatorResult = {
+        action: "safeSessionRunNext",
+        status: "error",
+        summary: "안전 세션의 단일 작업을 실행하지 못했습니다. 자동 재시도하지 않습니다.",
+      };
+      await refreshSafeSession();
+      setSafeSessionState("error");
+      setSafeSessionResult(failure);
+    }
+  }, [
+    refreshAutomationPlan,
+    refreshAutomationQueue,
+    refreshRealMedia,
+    refreshSafeSession,
+    safeSession?.currentSession?.actionInFlight,
+    safeSession?.currentSession?.sessionId,
+    safeSessionCoordinator,
+    safeSessionRecovery?.state,
+    safeSessionState,
+    selectedTopicId,
+  ]);
 
   const resolveSafeSessionRecovery = useCallback(async (
     decision: WizardSafeSessionDirectRecoveryDecision,
@@ -1364,11 +1473,9 @@ export default function VideoCreationWizard() {
       setSafeSessionState(r.status === "success" ? "success" : r.status);
       if (raw?.session) setSafeSession(raw.session);
       if (raw?.recovery) setSafeSessionRecovery(raw.recovery);
-      if (!raw?.session || !raw?.recovery) {
-        await refreshSafeSession();
-        setSafeSessionResult(r);
-        setSafeSessionState(r.status === "success" ? "success" : r.status);
-      }
+      await refreshSafeSession();
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
     } catch {
       setSafeSessionState("error");
       setSafeSessionResult({
@@ -1910,6 +2017,52 @@ export default function VideoCreationWizard() {
                       <p className="mt-0.5 text-xs text-amber-700">
                         claim <span className="font-mono">{safeSession.currentSession.activeClaim.claimFingerprint.slice(0, 12)}</span> · 자동 재시도 없음
                       </p>
+                    </div>
+                  ) : null}
+                  {safeSessionCoordinator ? (
+                    <div
+                      data-testid="wizard-safe-session-coordinator"
+                      className={`rounded-lg border px-3 py-3 ${
+                        safeSessionCoordinator.state === "ready"
+                          ? "border-violet-300 bg-violet-50"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <p className="text-sm font-bold text-slate-900">
+                        {safeSessionCoordinator.state === "ready"
+                          ? "다음 로컬 안전 작업 1개 준비됨"
+                          : "현재 세션 결정"}
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                        {safeSessionCoordinator.reason}
+                      </p>
+                      {safeSessionCoordinator.state === "ready" &&
+                      safeSessionCoordinator.nextClaim ? (
+                        <>
+                          <p
+                            data-testid="wizard-safe-session-next-action"
+                            className="mt-2 text-sm font-semibold text-violet-900"
+                          >
+                            {safeSessionCoordinator.nextClaim.topicId} · {safeSessionCoordinator.nextClaim.action}
+                          </p>
+                          <button
+                            type="button"
+                            data-testid="wizard-action-safe-session-run-next"
+                            className="mt-3 rounded-xl bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800 disabled:opacity-40"
+                            disabled={
+                              safeSessionState === "running" ||
+                              safeSession.currentSession.actionInFlight ||
+                              safeSessionRecovery?.state !== "inactive"
+                            }
+                            onClick={() => void runSafeSessionNext()}
+                          >
+                            다음 안전 작업 1회 실행
+                          </button>
+                          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                            이 버튼은 현재 지문과 일치하는 로컬 작업 1개만 실행하고 즉시 멈춥니다. 두 번째 작업·자동 재시도·유료 생성·업로드는 실행하지 않습니다.
+                          </p>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                   {safeSession.currentSession.stopRequestedAt ? (
