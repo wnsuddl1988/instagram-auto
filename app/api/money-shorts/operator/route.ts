@@ -99,6 +99,7 @@ import {
   readMoneyShortsAutomationQueueView,
   readMoneyShortsAutomationSnapshot,
 } from "@/lib/money-shorts-automation-read-model";
+import { executeMoneyShortsBoundedAutomationStep } from "@/lib/money-shorts-automation-executor.mjs";
 import {
   readMoneyShortsSafeSessionStore,
   requestMoneyShortsSafeSessionStop,
@@ -630,27 +631,6 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
     raw: { preflights },
     noLive: true,
   };
-}
-
-function runOneSafeAutomationAction(action: string, topicId: string): OperatorResponse {
-  switch (action) {
-    case "realTtsPreflight":
-      return runRealTtsPreflightAction(topicId);
-    case "flowMotionPrepare":
-      return runFlowMotionPrepareAction(topicId);
-    case "finalVideoCreate":
-      return runFinalVideoCreateAction(topicId);
-    case "wizardPreflight":
-      return runWizardPreflightAction(topicId);
-    default:
-      return {
-        action: "automationAdvance",
-        status: "blocked",
-        summary: "자동 실행 허용 목록 밖의 작업이라 중단했습니다.",
-        blockerCode: "AUTOMATION_ACTION_NOT_SAFE",
-        noLive: true,
-      };
-  }
 }
 
 // ── POST: action 실행 ─────────────────────────────────────────────────────────
@@ -1443,287 +1423,28 @@ export async function POST(request: Request) {
   // Owner 클릭 요청에 함께 보내고, 서버가 큐·계획을 즉시 재계산해 같을 때만 허용한다.
   // 유료/외부/QA/게시 작업은 허용 목록에 없으며, 같은 요청에서 두 번째 작업을 이어 실행하지 않는다.
   if (action === "automationAdvance" || action === "automationQueueRunSelected") {
-    const input = body as {
-      topicId?: unknown;
-      queueJob?: unknown;
-      previewFingerprint?: unknown;
-      jobId?: unknown;
-      selectedAction?: unknown;
-      planFingerprint?: unknown;
-    };
-    if (action === "automationAdvance" && input.queueJob === true) {
-      return json({
-        action,
-        status: "blocked",
-        summary: "큐 작업은 최신 미리보기의 선택 지문을 확인한 뒤 전용 버튼으로만 실행할 수 있습니다.",
-        blockerCode: "AUTOMATION_QUEUE_PREVIEW_REQUIRED",
-        raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
-        noLive: true,
-      });
-    }
-
-    let expectedQueueSelection: {
-      jobId: string;
-      topicId: string;
-      action: string;
-      planFingerprint: string;
-      previewFingerprint: string;
-    } | null = null;
-    let topicId = typeof input.topicId === "string" ? input.topicId : "";
-    const queueJobRequested = action === "automationQueueRunSelected";
-
-    if (queueJobRequested) {
-      let queue;
-      try {
-        queue = readMoneyShortsAutomationQueueView();
-      } catch {
-        return json({
-          action,
-          status: "error",
-          summary: "자동 작업 큐를 다시 계산하지 못해 실행하지 않았습니다.",
-          blockerCode: "AUTOMATION_QUEUE_STORE_UNAVAILABLE",
-          raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
-          noLive: true,
-        });
-      }
-
-      const verified = verifyMoneyShortsAutomationQueuePreviewClaim({
-        preview: queue.runPreview,
-        claim: {
-          previewFingerprint: input.previewFingerprint,
-          jobId: input.jobId,
-          topicId: input.topicId,
-          action: input.selectedAction,
-          planFingerprint: input.planFingerprint,
-        },
-      });
-      if (!verified.ok || verified.selection == null) {
-        const blockerCode = verified.reason === "preview_has_no_selection"
-          ? "AUTOMATION_QUEUE_NO_ELIGIBLE_SELECTION"
-          : verified.reason === "preview_fingerprint_drifted"
-            ? "AUTOMATION_QUEUE_PREVIEW_DRIFTED"
-            : verified.reason === "preview_selection_drifted"
-              ? "AUTOMATION_QUEUE_SELECTION_DRIFTED"
-              : "AUTOMATION_QUEUE_PREVIEW_CLAIM_INVALID";
-        return json({
-          action,
-          status: "blocked",
-          summary: "큐 미리보기와 현재 상태가 달라 작업을 시작하지 않았습니다.",
-          detail: "큐를 다시 확인한 뒤 새로 선택된 안전 작업을 직접 실행해 주세요.",
-          blockerCode,
-          raw: {
-            queue,
-            execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
-          },
-          noLive: true,
-        });
-      }
-      const verifiedSelection = verified.selection;
-      expectedQueueSelection = {
-        jobId: verifiedSelection.jobId,
-        topicId: verifiedSelection.topicId,
-        action: verifiedSelection.action,
-        planFingerprint: verifiedSelection.planFingerprint,
-        previewFingerprint: verifiedSelection.previewFingerprint,
-      };
-      topicId = verifiedSelection.topicId;
-    }
-
-    const before = readMoneyShortsAutomationSnapshot(topicId);
-    const nextAction = before.plan.next?.action ?? null;
-    if (
-      before.plan.next?.canAutoAdvance !== true ||
-      nextAction == null ||
-      !isMoneyShortsSafeAutoAdvanceAction(nextAction)
-    ) {
-      return json({
-        action,
-        status: "blocked",
-        summary: "현재 단계는 자동 실행할 수 없어 확인 지점에서 멈췄습니다.",
-        detail: before.plan.next?.reason ?? "추가 작업이 없습니다.",
-        blockerCode: before.plan.next?.gate ?? "AUTOMATION_NO_SAFE_ACTION",
-        raw: {
-          planBefore: before.plan,
-          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
-        },
-        noLive: true,
-      });
-    }
-
-    if (
-      expectedQueueSelection != null &&
-      (
-        topicId !== expectedQueueSelection.topicId ||
-        nextAction !== expectedQueueSelection.action ||
-        fingerprintMoneyShortsAutomationPlan(before.plan) !== expectedQueueSelection.planFingerprint
-      )
-    ) {
-      return json({
-        action,
-        status: "blocked",
-        summary: "실행 직전 계획이 미리보기와 달라 영수증을 만들지 않고 중단했습니다.",
-        detail: "큐를 다시 확인하면 현재 산출물 기준의 새 작업이 표시됩니다.",
-        blockerCode: "AUTOMATION_QUEUE_SELECTION_DRIFTED",
-        raw: {
-          planBefore: before.plan,
-          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
-        },
-        noLive: true,
-      });
-    }
-
-    let started;
-    try {
-      started = beginMoneyShortsAutomationExecution({ topicId, action: nextAction, plan: before.plan });
-    } catch {
-      return json({
-        action,
-        status: "error",
-        summary: "자동 실행 잠금과 사전 영수증을 기록하지 못해 작업을 시작하지 않았습니다.",
-        blockerCode: "AUTOMATION_EXECUTION_STORE_UNAVAILABLE",
-        raw: { execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 } },
-        noLive: true,
-      });
-    }
-    if (!started.ok) {
-      const blockerCode = started.reason === "automation_execution_topic_in_flight"
-        ? "AUTOMATION_TOPIC_IN_FLIGHT"
-        : started.reason === "automation_execution_identical_attempt_already_recorded"
-          ? "AUTOMATION_IDENTICAL_ATTEMPT_RECORDED"
-          : "AUTOMATION_PREVIOUS_ATTEMPT_MANUAL_REVIEW_REQUIRED";
-      return json({
-        action,
-        status: "blocked",
-        summary: blockerCode === "AUTOMATION_TOPIC_IN_FLIGHT"
-          ? "이 주제의 다른 안전 작업이 이미 실행 중이라 중복 실행을 막았습니다."
-          : "같은 계획의 실행 기록이 남아 있어 자동 재실행을 막았습니다.",
-        detail: "이전 실행 결과 또는 중단 상태를 확인한 뒤 다음 계획으로 진행해야 합니다.",
-        blockerCode,
-        raw: {
-          receipt: started.receipt,
-          execution: { actionCount: 0, chainedActionCount: 0, automaticRetryCount: 0 },
-        },
-        noLive: true,
-      });
-    }
-
-    let executed;
-    let after;
-    try {
-      executed = runOneSafeAutomationAction(nextAction, topicId);
-      after = readMoneyShortsAutomationSnapshot(topicId);
-    } catch {
-      let receipt = started.receipt;
-      try {
-        receipt = finishMoneyShortsAutomationExecution({
-          handle: started.handle,
-          resultStatus: "error",
-          blockerCode: "AUTOMATION_SAFE_ACTION_UNEXPECTED_FAILURE",
-          planAfter: null,
-        });
-      } catch {
-        // 영수증 완료 실패 시 잠금을 남겨 다음 요청이 수동 확인 없이 재실행되지 않게 한다.
-      }
-      return json({
-        action,
-        status: "error",
-        summary: "안전 작업 실행 중 예기치 않은 오류가 발생해 자동 재시도 없이 중단했습니다.",
-        blockerCode: "AUTOMATION_SAFE_ACTION_UNEXPECTED_FAILURE",
-        raw: {
-          receipt,
-          execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
-        },
-        noLive: true,
-      });
-    }
-
-    let receipt;
-    try {
-      receipt = finishMoneyShortsAutomationExecution({
-        handle: started.handle,
-        resultStatus: executed.status,
-        blockerCode: executed.blockerCode ?? null,
-        planAfter: after.plan,
-      });
-    } catch {
-      return json({
-        action,
-        status: "error",
-        summary: "안전 작업은 끝났지만 완료 영수증을 확정하지 못했습니다. 잠금을 유지하고 수동 확인에서 멈췄습니다.",
-        blockerCode: "AUTOMATION_RECEIPT_FINALIZE_FAILED",
-        raw: {
-          receipt: started.receipt,
-          executedAction: nextAction,
-          execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
-        },
-        noLive: true,
-      });
-    }
-
-    let queue = null;
-    if (queueJobRequested) {
-      try {
-        syncMoneyShortsAutomationJob({
-          topicId,
-          plan: after.plan,
-          advanceResult: {
-            status: executed.status,
-            blockerCode: executed.blockerCode ?? null,
-            executedAction: nextAction,
-            actionCount: 1,
-          },
-        });
-        queue = readMoneyShortsAutomationQueueView();
-      } catch {
-        return json({
-          action,
-          status: "error",
-          summary: "안전 작업 1개는 끝났지만 큐의 최신 단계를 저장하지 못했습니다. 자동 재시도 없이 중단했습니다.",
-          blockerCode: "AUTOMATION_QUEUE_SYNC_FAILED",
-          raw: {
-            executedAction: nextAction,
-            receipt,
-            planAfter: after.plan,
-            execution: { actionCount: 1, chainedActionCount: 0, automaticRetryCount: 0 },
-          },
-          noLive: true,
-        });
-      }
-    }
-
-    const executionGuard = readMoneyShortsAutomationExecutionGuard(after.plan);
-    const stopLabel = after.plan.next?.stageLabel ?? "완료";
-    return json({
-      action,
-      status: executed.status,
-      summary: executed.status === "success"
-        ? `${executed.summary} 다음 단계(${stopLabel})를 다시 확인하고 멈췄습니다.`
-        : `안전 작업 1개를 시도한 뒤 중단했습니다: ${executed.summary}`,
-      detail: after.plan.next?.reason ?? "추가 작업이 없습니다.",
-      blockerCode: executed.blockerCode,
-      raw: {
-        executedAction: nextAction,
-        receipt,
-        executionGuard,
-        queue,
-        execution: {
-          actionCount: 1,
-          chainedActionCount: 0,
-          automaticRetryCount: 0,
-          externalGenerationExecuted: false,
-          paidActionExecuted: false,
-          uploadExecuted: false,
-          publicationExecuted: false,
-          localRenderExecuted: nextAction === "finalVideoCreate" && executed.status === "success",
-          result: executed,
-        },
-        planBefore: before.plan,
-        planAfter: after.plan,
-        preflights: after.preflights,
-        publishResults: after.publishResults,
+    const result = executeMoneyShortsBoundedAutomationStep({
+      requestAction: action,
+      input: body as Record<string, unknown>,
+      handlers: {
+        realTtsPreflight: runRealTtsPreflightAction,
+        flowMotionPrepare: runFlowMotionPrepareAction,
+        finalVideoCreate: runFinalVideoCreateAction,
+        wizardPreflight: runWizardPreflightAction,
       },
-      noLive: true,
+      dependencies: {
+        beginExecution: beginMoneyShortsAutomationExecution,
+        fingerprintPlan: fingerprintMoneyShortsAutomationPlan,
+        finishExecution: finishMoneyShortsAutomationExecution,
+        isSafeAction: isMoneyShortsSafeAutoAdvanceAction,
+        readExecutionGuard: readMoneyShortsAutomationExecutionGuard,
+        readQueueView: readMoneyShortsAutomationQueueView,
+        readSnapshot: readMoneyShortsAutomationSnapshot,
+        syncQueueJob: syncMoneyShortsAutomationJob,
+        verifyQueuePreviewClaim: verifyMoneyShortsAutomationQueuePreviewClaim,
+      },
     });
+    return json(result as OperatorResponse);
   }
 
   // Flow 모션 준비 — 자동 선정 장면의 로컬 패킷/상태만 만든다. 브라우저·업로드·생성·크레딧 0.
