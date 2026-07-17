@@ -42,6 +42,7 @@ Updated: 2026-07-17 KST
 - A stop request is durable and idempotent. This slice intentionally has no worker, timer, queue dispatch, receipt creation, retry, network call, paid generation, QA action, upload, or publication action. `completedActionCount` remains zero until a later separately reviewed executor slice exists.
 - The local wizard now exposes the same safe-session state as an `의도 기록 전용` card: status refresh, 1~3 cap start intent, and stop-request intent. Each API response declares `actionCount:0`, `automaticRetryCount:0`, and `chainedActionCount:0`; it calls only the local state store and cannot invoke the queue executor, receipt store, worker, timer, render, paid generation, upload, or publication path.
 - The next host-facing boundary is now explicit as `money_shorts_safe_session_coordinator_v1`. Given a previously read session store and previously computed deterministic queue preview, it returns only `inactive`, wait/halt/block, or one content-addressed local-safe claim. It is pure: it reads/writes no store itself, acquires no lock, creates no receipt, dispatches no action, and leaves every side-effect flag false.
+- The artifact-derived automation read model is now shared in `money-shorts-automation-read-model.ts`. The Next operator route no longer privately defines snapshot, execution-guard, or queue-view reconstruction; it imports the shared functions. Media, Flow, cast/voice, publish preflight/result, durable receipt recovery, deterministic queue preview, batch policy, capacity summary, returned durable queue schema, and all false safety flags remain unchanged.
 
 ## Publication State
 
@@ -70,13 +71,14 @@ Updated: 2026-07-17 KST
 - Safe-session contract guard: 15/15 PASS. Durable safe-session store guard: 14/14 PASS. Existing queue planner/capacity guard 35/35 and combined executor/recovery/queue/session guard 76/76 pass. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; the known 12,062-file tracing/performance warnings remain unchanged.
 - Safe-session API/UI integration guard: combined executor/recovery/queue/session guard 79/79 PASS; operator UI 91/91 and one-click wizard UI 389/389 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
 - Safe-session coordinator guard: 9/9 PASS; combined executor/recovery/queue/session/coordinator guard 80/80 PASS. The store, planner, queue planner, `pnpm exec tsc --noEmit`, `pnpm build`, and diff checks pass. The known 12,062-file tracing/performance warnings remain unchanged.
+- Shared automation read-model guard: 10/10 PASS; combined executor/recovery/queue/session/coordinator/read-model guard 81/81 PASS; operator UI guard 91/91 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Owner chose the Owner-started bounded local safe-session path. The contract, durable state store, Owner start/stop/status UI, and pure coordinator are complete. The next candidate is to extract the existing artifact-derived queue read model from the Next route into a shared local-only module so a future Node host and the route compute the identical preview before any executor is permitted.
+4. Owner chose the Owner-started bounded local safe-session path. The contract, durable state store, Owner start/stop/status UI, pure coordinator, and shared artifact-derived read model are complete. The next candidate is to extract the existing bounded one-action dispatcher and receipt lifecycle from the Next route into a shared local-only executor service without starting a session loop or executing it during validation.
 5. A real worker/executor remains a later separately reviewed slice. An always-on cron, paid/external generation, QA bypass, upload, or publication scheduler is not approved and requires separate architecture and exact approval.
 6. Do not activate or reuse `n8n/workflow_autoshorts.json`: it is a legacy inactive workflow that bypasses the current queue/receipt/Owner gates, calls old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. The legacy upload route is currently fail-closed, but that does not make the workflow a valid scheduler foundation.
 
@@ -86,4 +88,4 @@ Updated: 2026-07-17 KST
   1. `scripts/render-golden-sample-visual-only-v1.mjs`
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
-- The current uncommitted slice is limited to the pure safe-session coordinator, its guard, the combined orchestration guard, and these two state documents. The protected three paths remain excluded.
+- The current uncommitted slice is limited to the shared automation read model, its route import refactor, associated guards, and these two state documents. The protected three paths remain excluded.

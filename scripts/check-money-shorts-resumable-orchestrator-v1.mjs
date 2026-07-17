@@ -16,6 +16,7 @@ const controllerSource = readFileSync(join(ROOT, "lib", "money-shorts-resumable-
 const executionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-execution-store.mjs"), "utf8");
 const queueStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-store.mjs"), "utf8");
 const queuePlannerSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-queue-planner.mjs"), "utf8");
+const readModelSource = readFileSync(join(ROOT, "lib", "money-shorts-automation-read-model.ts"), "utf8");
 const safeSessionPlannerSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-planner.mjs"), "utf8");
 const safeSessionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-store.mjs"), "utf8");
 const safeSessionCoordinatorSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-coordinator.mjs"), "utf8");
@@ -94,10 +95,10 @@ const automationRouteEnd = routeSource.indexOf('if (action === "automationAdvanc
 const automationRouteBlock = automationRouteStart >= 0 && automationRouteEnd > automationRouteStart
   ? routeSource.slice(automationRouteStart, automationRouteEnd)
   : "";
-const snapshotStart = routeSource.indexOf("function readMoneyShortsAutomationSnapshot");
-const snapshotEnd = routeSource.indexOf("function runFlowMotionPrepareAction", snapshotStart);
+const snapshotStart = readModelSource.indexOf("export function readMoneyShortsAutomationSnapshot");
+const snapshotEnd = readModelSource.length;
 const snapshotBlock = snapshotStart >= 0 && snapshotEnd > snapshotStart
-  ? routeSource.slice(snapshotStart, snapshotEnd)
+  ? readModelSource.slice(snapshotStart, snapshotEnd)
   : "";
 const advanceRouteStart = routeSource.indexOf('if (action === "automationAdvance" || action === "automationQueueRunSelected")');
 const advanceRouteEnd = routeSource.indexOf('// Flow 모션 준비', advanceRouteStart);
@@ -165,7 +166,7 @@ check("operator exposes queue lifecycle actions", ["automationQueuePause", "auto
 check("operator exposes a local-only queue priority action", helperSource.includes('"automationQueueMovePriority"') && routeSource.includes('"automationQueueMovePriority"'));
 check("queue store is local-only and contains no runner, network, timer, or schedule", queueStoreSource.includes("C:\\\\tmp\\\\money-shorts-os\\\\automation-queue-v1") && !/node:child_process|\bfetch\s*\(|https?:\/\/|setTimeout|setInterval|runAt|cron/u.test(queueStoreSource));
 check("queue mutations use one atomic exclusive lock and atomic JSON replacement", queueStoreSource.includes('openSync(paths.lockPath, "wx")') && queueStoreSource.includes("writeJsonAtomic(paths.queuePath, updated)"));
-check("queue status reconstructs live plans without executing a runner", queueRouteBlock.includes("readMoneyShortsAutomationQueueView") && routeSource.includes("livePlan: snapshot.plan") && !/runOperatorScript|runOneSafeAutomationAction|allowArm/u.test(queueRouteBlock));
+check("queue status reconstructs live plans without executing a runner", queueRouteBlock.includes("readMoneyShortsAutomationQueueView") && readModelSource.includes("livePlan: snapshot.plan") && !/runOperatorScript|runOneSafeAutomationAction|allowArm/u.test(queueRouteBlock));
 check("queue enqueue persists only the selected topic plan", queueRouteBlock.includes("enqueueMoneyShortsAutomationJob") && queueRouteBlock.includes("작업 실행·유료 생성·렌더·업로드·게시는 0회"));
 check("selected queue execution recomputes and verifies preview before creating a receipt", advanceRouteBlock.indexOf("readMoneyShortsAutomationQueueView") < advanceRouteBlock.indexOf("verifyMoneyShortsAutomationQueuePreviewClaim") && advanceRouteBlock.indexOf("verifyMoneyShortsAutomationQueuePreviewClaim") < advanceRouteBlock.indexOf("beginMoneyShortsAutomationExecution"));
 check("selected queue execution rechecks the live plan fingerprint immediately before receipt creation", advanceRouteBlock.indexOf("fingerprintMoneyShortsAutomationPlan(before.plan)") < advanceRouteBlock.indexOf("beginMoneyShortsAutomationExecution") && advanceRouteBlock.includes("AUTOMATION_QUEUE_SELECTION_DRIFTED"));
@@ -186,6 +187,7 @@ check("queue planner skips an Owner-paused job", queuePlannerSource.includes("pa
 check("safe-session dry-run remains pure and cannot start work", safeSessionPlannerSource.includes('mode: "deterministic_session_dry_run"') && safeSessionPlannerSource.includes("executionReceiptCreated: false") && !/node:fs|node:child_process|writeFile|runOneSafeAutomationAction|\bfetch\s*\(|setTimeout|setInterval/u.test(safeSessionPlannerSource));
 check("safe-session store is atomic intent-only state with no worker or external action", safeSessionStoreSource.includes('openSync(paths.lockPath, "wx")') && safeSessionStoreSource.includes("writeJsonAtomic(paths.statePath, updated)") && safeSessionStoreSource.includes("completedActionCount: 0") && !/node:child_process|\bfetch\s*\(|setTimeout|setInterval|runOneSafeAutomationAction|actualUpload|realTtsCreate|flowMotionGenerate/u.test(safeSessionStoreSource));
 check("safe-session coordinator is a no-claim/no-lock dry-run boundary", safeSessionCoordinatorSource.includes('mode: "session_coordinator_dry_run"') && safeSessionCoordinatorSource.includes("coordinateMoneyShortsSafeSessionDryRun") && safeSessionCoordinatorSource.includes("actionExecuted: false") && safeSessionCoordinatorSource.includes("lockAcquired: false") && !/node:fs|node:child_process|readMoneyShortsSafeSessionStore|writeFile|runOneSafeAutomationAction|beginMoneyShortsAutomationExecution|\bfetch\s*\(|setTimeout|setInterval|actualUpload|realTtsCreate|flowMotionGenerate/u.test(safeSessionCoordinatorSource));
+check("shared automation read model preserves queue evidence without execution authority", readModelSource.includes("readMoneyShortsAutomationQueueView") && readModelSource.includes("livePlan: snapshot.plan") && readModelSource.includes("planMoneyShortsAutomationQueueRun({ jobs })") && !/runOneSafeAutomationAction|beginMoneyShortsAutomationExecution|finishMoneyShortsAutomationExecution|syncMoneyShortsAutomationJob|runOperatorScript|\bfetch\s*\(|setTimeout|setInterval|actualUpload|realTtsCreate|flowMotionGenerate/u.test(readModelSource));
 check("operator exposes Owner safe-session read/start/stop intent actions", ["safeSessionStatus", "safeSessionStart", "safeSessionStop"].every((action) => helperSource.includes(`\"${action}\"`) && routeSource.includes(`\"${action}\"`)));
 check("safe-session route mutates only local intent state and proves zero actions", ["readMoneyShortsSafeSessionStore", "startMoneyShortsSafeSession", "requestMoneyShortsSafeSessionStop"].every((name) => safeSessionRouteBlock.includes(name)) && safeSessionRouteBlock.includes("actionCount: 0") && !/runOneSafeAutomationAction|runOperatorScript|beginMoneyShortsAutomationExecution|flowMotionGenerate|realTtsCreate|realSceneImagesCreate|finalVideoCreate|actualUpload|setTimeout|setInterval/u.test(safeSessionRouteBlock));
 check("wizard renders safe-session status and Owner start/stop controls without a worker", ["wizard-safe-session", "wizard-action-safe-session-start", "wizard-action-safe-session-stop"].every((id) => wizardSource.includes(`data-testid=\"${id}\"`)) && wizardSource.includes('postAction("safeSessionStart"') && wizardSource.includes('postAction("safeSessionStop"') && wizardSource.includes("작업을 시작하지 않고"));
