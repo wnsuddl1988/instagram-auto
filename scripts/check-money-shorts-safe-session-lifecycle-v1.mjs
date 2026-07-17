@@ -79,7 +79,7 @@ try {
     history: [],
   }, null, 2)}\n`, "utf8");
   const legacy = readMoneyShortsSafeSessionStore({ rootDir: legacyRoot });
-  check("legacy v1 session normalizes missing lifecycle evidence", legacy.currentSession?.activeClaim === null && legacy.currentSession?.lastTerminalResult === null);
+  check("legacy v1 session normalizes missing lifecycle evidence", legacy.currentSession?.activeClaim === null && legacy.currentSession?.lastTerminalResult === null && legacy.currentSession?.lastRecoveryResult === null);
 } finally {
   rmSync(legacyRoot, { recursive: true, force: true });
 }
@@ -94,7 +94,7 @@ try {
     now: () => "2026-07-17T13:00:00.000Z",
     mutationId: "start-session",
   });
-  check("new session initializes empty lifecycle evidence", started.currentSession?.activeClaim === null && started.currentSession?.lastTerminalResult === null);
+  check("new session initializes empty lifecycle evidence", started.currentSession?.activeClaim === null && started.currentSession?.lastTerminalResult === null && started.currentSession?.lastRecoveryResult === null);
 
   const expectedClaimFingerprint = fingerprintMoneyShortsSafeSessionClaim({
     sessionId,
