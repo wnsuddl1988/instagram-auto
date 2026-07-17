@@ -76,13 +76,14 @@ Updated: 2026-07-17 KST
 - Shared automation read-model guard: 10/10 PASS; combined executor/recovery/queue/session/coordinator/read-model guard 81/81 PASS; operator UI guard 91/91 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
 - Shared bounded-executor behavior guard: 13/13 PASS; combined orchestration guard 83/83 PASS; operator UI guard 91/91 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
 - Safe-session action lifecycle guard: 21/21 PASS; existing session store 14/14, planner 15/15, coordinator 9/9, and combined orchestration guard 84/84 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. No executor, queue action, receipt, render, external generation, upload, or publication action was invoked.
+- Safe-session interrupted-claim recovery planner: 17/17 PASS; execution-store historical fingerprint inspection 25/25 PASS; combined orchestration guard 85/85 PASS. It distinguishes an unstarted claim, matching terminal receipt, unchanged interrupted execution, advanced artifacts, and ambiguous drift while exposing only Owner-confirmed decisions. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; no receipt/session mutation or real action occurred.
 
 ## Current Priority
 
 1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
 2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
 3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Owner chose the Owner-started bounded local safe-session path. The contract, durable state store, Owner start/stop/status UI, pure coordinator, shared artifact-derived read model, shared bounded executor, and atomic session action lifecycle are complete. The next candidate is an evidence-only recovery contract for an interrupted active session claim, so a process interruption cannot leave the Owner-started session permanently locked or permit an unproven retry before one claim is connected to the executor.
+4. Owner chose the Owner-started bounded local safe-session path. The contract, durable state store, Owner start/stop/status UI, pure coordinator, shared artifact-derived read model, shared bounded executor, atomic session action lifecycle, and evidence-only interrupted-claim recovery planner are complete. The next candidate is the atomic session recovery mutation: it must revalidate the exact recovery fingerprint and active claim before either halting/clearing a proven unstarted claim or terminalizing one matching execution receipt.
 5. A real worker/executor remains a later separately reviewed slice. An always-on cron, paid/external generation, QA bypass, upload, or publication scheduler is not approved and requires separate architecture and exact approval.
 6. Do not activate or reuse `n8n/workflow_autoshorts.json`: it is a legacy inactive workflow that bypasses the current queue/receipt/Owner gates, calls old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. The legacy upload route is currently fail-closed, but that does not make the workflow a valid scheduler foundation.
 
@@ -93,4 +94,5 @@ Updated: 2026-07-17 KST
   2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
   3. `scripts/get-youtube-refresh-token-once.mjs`
 - Shared bounded-executor work was checkpointed locally as `321c0ec` (`refactor(money-shorts): share bounded automation executor`); it was not pushed.
-- The current uncommitted slice is limited to safe-session claim begin/finish lifecycle transitions, their dedicated/combined guards, and these two state documents. The protected three paths remain excluded.
+- Safe-session lifecycle work was checkpointed locally as `2550685` (`feat(money-shorts): persist safe session action lifecycle`); it was not pushed.
+- The current uncommitted slice is limited to historical execution-receipt inspection, the evidence-only safe-session recovery planner, their dedicated/combined guards, and these two state documents. The protected three paths remain excluded.

@@ -8,6 +8,7 @@ import {
   fingerprintMoneyShortsAutomationPlan,
   finishMoneyShortsAutomationExecution,
   inspectMoneyShortsAutomationExecution,
+  inspectMoneyShortsAutomationExecutionByFingerprint,
   inspectMoneyShortsAutomationRecovery,
   resolveMoneyShortsAutomationRecovery,
 } from "../lib/money-shorts-automation-execution-store.mjs";
@@ -81,6 +82,13 @@ try {
   check("identical completed attempt never reruns", sameAfterSuccess.ok === false && sameAfterSuccess.reason === "automation_execution_identical_attempt_already_recorded");
   const inspection = inspectMoneyShortsAutomationExecution({ topicId, action: "flowMotionPrepare", plan: planA, rootDir });
   check("restart inspection sees terminal receipt", inspection.status === "identical_attempt_recorded" && inspection.receipt?.executionId === "execution-a");
+  const historicalInspection = inspectMoneyShortsAutomationExecutionByFingerprint({
+    topicId,
+    action: "flowMotionPrepare",
+    planFingerprint: fingerprintMoneyShortsAutomationPlan(planA),
+    rootDir,
+  });
+  check("historical fingerprint inspection sees the same terminal receipt without mutation", historicalInspection.status === "identical_attempt_recorded" && historicalInspection.receipt?.executionId === "execution-a");
 
   const nextPlan = beginMoneyShortsAutomationExecution({
     topicId,
