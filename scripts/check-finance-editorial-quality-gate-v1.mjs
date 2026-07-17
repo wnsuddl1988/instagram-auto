@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import vm from "node:vm";
 import ts from "typescript";
+import * as manualVisualReviewModule from "../lib/money-shorts-manual-visual-review.mjs";
 
 const ROOT = process.cwd();
 const BANK_PATH = path.join(ROOT, "lib", "finance-editorial-topic-bank.ts");
@@ -84,6 +85,7 @@ const helperModule = loadTypescriptModule(HELPER_PATH, (specifier) => {
   if (specifier === "./finance-character-voice-cast") return characterVoiceCastModule;
   if (specifier === "./veo-scene-selector") return veoSceneSelectorModule;
   if (specifier === "./flow-motion-jobs") return flowMotionJobsModule;
+  if (specifier === "./money-shorts-manual-visual-review.mjs") return manualVisualReviewModule;
   return nodeRequire(specifier);
 });
 
