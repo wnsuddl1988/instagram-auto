@@ -654,9 +654,10 @@ type WizardAutomationQueueCapacitySummary = {
 
 type WizardUnattendedPolicyPreview = {
   schemaVersion: string;
-  mode: "proposal_only_unattended_policy";
-  currentMode: "owner_click_only";
-  activationState: "inactive_requires_exact_owner_approval";
+  mode: "owner_started_unattended_policy_status";
+  currentMode: "owner_started_bounded_local";
+  activationState: "bounded_local_no_submit_available";
+  enabledProfileId: "bounded_local_no_submit";
   recommendedProfileId: "bounded_local_no_submit";
   policyFingerprint: string;
   reason: string;
@@ -665,6 +666,7 @@ type WizardUnattendedPolicyPreview = {
     label: string;
     riskLevel: "low" | "high" | "critical";
     recommended: boolean;
+    availability: "available_owner_started" | "inactive_requires_exact_owner_approval";
     description: string;
     localNoSubmitActionAllowed: boolean;
     paidTtsAllowed: boolean;
@@ -689,7 +691,8 @@ type WizardUnattendedPolicyPreview = {
   };
   requiredOwnerDecisionsBeforeActivation: string[];
   safety: {
-    proposalOnly: true;
+    viewOnly: true;
+    boundedLocalRunEnabled: true;
     policyStateWritten: false;
     activationChanged: false;
     actionExecuted: false;
@@ -763,6 +766,7 @@ const SAFE_SESSION_RECOVERY_CONFIRM_TEXT = {
 } as const;
 
 const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
+const SAFE_SESSION_BOUNDED_RUN_CONFIRM_TEXT = "로컬 안전 작업 최대 3회 연속 실행";
 const SAFE_SESSION_CLOSE_CONFIRM_TEXT = "안전 세션 보관 종료 확인";
 
 type WizardSafeSessionDirectRecoveryDecision =
@@ -1546,6 +1550,92 @@ export default function VideoCreationWizard() {
     selectedTopicId,
   ]);
 
+  const runSafeSessionBounded = useCallback(async () => {
+    const currentSession = safeSession?.currentSession;
+    const sessionId = currentSession?.sessionId;
+    const coordination = safeSessionCoordinator;
+    const claim = coordination?.nextClaim;
+    if (
+      !sessionId ||
+      safeSessionState === "running" ||
+      currentSession?.status !== "ready" ||
+      currentSession.actionInFlight === true ||
+      currentSession.completedActionCount >= currentSession.maxActionCount ||
+      safeSessionRecovery?.state !== "inactive" ||
+      coordination?.state !== "ready" ||
+      coordination.sessionId !== sessionId ||
+      coordination.actionPlannedCount !== 1 ||
+      !coordination.coordinatorFingerprint ||
+      !coordination.queuePreviewFingerprint ||
+      claim == null
+    ) return;
+
+    const remainingActionCount = Math.min(
+      3,
+      currentSession.maxActionCount - currentSession.completedActionCount,
+    );
+    const confirmed = window.confirm(
+      `${claim.topicId}의 ${claim.action} 작업부터 최대 ${remainingActionCount}회 실행할까요?\n\n매 회차 세션·큐·지문을 다시 확인합니다. 첫 실패·증거 변경·Owner 확인 단계·상한에서 즉시 멈추며 자동 재시도·유료 생성·QA 판정·업로드·게시는 실행하지 않습니다.`,
+    );
+    if (!confirmed) return;
+
+    setSafeSessionState("running");
+    setSafeSessionResult(null);
+    try {
+      const r = await postAction("safeSessionRunBounded", {
+        sessionId,
+        coordinatorFingerprint: coordination.coordinatorFingerprint,
+        queuePreviewFingerprint: coordination.queuePreviewFingerprint,
+        confirmation: SAFE_SESSION_BOUNDED_RUN_CONFIRM_TEXT,
+      });
+      const raw = r.raw as {
+        steps?: Array<{
+          topicId?: string | null;
+          action?: string | null;
+        }>;
+      } | undefined;
+      await refreshSafeSession();
+      await refreshAutomationQueue();
+      if (
+        selectedTopicId &&
+        raw?.steps?.some((step) => step.topicId === selectedTopicId)
+      ) {
+        await refreshRealMedia(selectedTopicId);
+        await refreshAutomationPlan(selectedTopicId);
+      }
+      if (
+        raw?.steps?.some(
+          (step) => step.topicId === selectedTopicId && step.action === "finalVideoCreate",
+        ) &&
+        r.status === "success"
+      ) {
+        setPreviewKey((key) => key + 1);
+      }
+      setSafeSessionResult(r);
+      setSafeSessionState(r.status === "success" ? "success" : r.status);
+    } catch {
+      const failure: OperatorResult = {
+        action: "safeSessionRunBounded",
+        status: "error",
+        summary: "로컬 최대 3회 실행을 중단했습니다. 자동 재시도하지 않습니다.",
+      };
+      await refreshSafeSession();
+      await refreshAutomationQueue();
+      setSafeSessionState("error");
+      setSafeSessionResult(failure);
+    }
+  }, [
+    refreshAutomationPlan,
+    refreshAutomationQueue,
+    refreshRealMedia,
+    refreshSafeSession,
+    safeSession?.currentSession,
+    safeSessionCoordinator,
+    safeSessionRecovery?.state,
+    safeSessionState,
+    selectedTopicId,
+  ]);
+
   const resolveSafeSessionRecovery = useCallback(async (
     decision: WizardSafeSessionDirectRecoveryDecision,
   ) => {
@@ -2091,11 +2181,11 @@ export default function VideoCreationWizard() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-lg font-bold text-slate-900">Owner 시작 안전 세션</h3>
-                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">Owner 제어 · 실행기 미연결</span>
+                  <span className="rounded-full border border-violet-200 bg-white px-2.5 py-1 text-xs font-bold text-violet-700">Owner 클릭 · 로컬 최대 3회</span>
                   <StateBadge state={safeSessionState} />
                 </div>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                  최대 1~3회 상한·중지·중단 claim 복구 상태를 로컬에 기록합니다. 자동 실행·재시도·유료 생성·렌더·업로드는 연결되지 않았습니다.
+                  최대 1~3회 상한 안에서 Owner가 단일 실행 또는 유한 연속 실행을 선택합니다. 자동 재시도·유료 생성·QA 판정·업로드·게시는 연결되지 않았습니다.
                 </p>
               </div>
               <button
@@ -2170,8 +2260,23 @@ export default function VideoCreationWizard() {
                           >
                             다음 안전 작업 1회 실행
                           </button>
+                          <button
+                            type="button"
+                            data-testid="wizard-action-safe-session-run-bounded"
+                            className="ml-2 mt-3 rounded-xl border border-violet-700 bg-white px-4 py-2 text-sm font-bold text-violet-800 hover:bg-violet-100 disabled:opacity-40"
+                            disabled={
+                              safeSessionState === "running" ||
+                              safeSession.currentSession.status !== "ready" ||
+                              safeSession.currentSession.actionInFlight ||
+                              safeSession.currentSession.completedActionCount >= safeSession.currentSession.maxActionCount ||
+                              safeSessionRecovery?.state !== "inactive"
+                            }
+                            onClick={() => void runSafeSessionBounded()}
+                          >
+                            남은 로컬 작업 최대 3회 실행
+                          </button>
                           <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                            이 버튼은 현재 지문과 일치하는 로컬 작업 1개만 실행하고 즉시 멈춥니다. 두 번째 작업·자동 재시도·유료 생성·업로드는 실행하지 않습니다.
+                            단일 실행은 현재 작업 1개 뒤 멈춥니다. 최대 3회 실행은 매 회차 지문을 다시 확인하고 첫 실패·Owner 확인 단계·상한에서 멈춥니다. 자동 재시도·유료 생성·QA 판정·업로드·게시는 실행하지 않습니다.
                           </p>
                         </>
                       ) : null}
@@ -2435,14 +2540,14 @@ export default function VideoCreationWizard() {
             {automationQueue ? (
               <div data-testid="wizard-unattended-policy-preview" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-bold text-amber-950">무인 자동화 정책 후보</p>
+                  <p className="font-bold text-amber-950">자동화 정책 상태</p>
                   <span className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-bold text-amber-800">
-                    제안 전용 · 현재 비활성
+                    로컬 제한 모드 · Owner 시작
                   </span>
                 </div>
                 <p className="mt-1 text-sm leading-relaxed text-amber-950">{automationQueue.unattendedPolicy.reason}</p>
                 <p className="mt-1 text-xs text-amber-800">
-                  현재 모드: Owner 클릭 전용 · 정책 지문{" "}
+                  현재 모드: Owner 시작 로컬 최대 3회 · 정책 지문{" "}
                   <span className="font-mono">{automationQueue.unattendedPolicy.policyFingerprint.slice(0, 12)}</span>
                 </p>
                 <div className="mt-3 grid gap-2 lg:grid-cols-3">
@@ -2463,7 +2568,11 @@ export default function VideoCreationWizard() {
                               ? "bg-amber-100 text-amber-800"
                               : "bg-rose-100 text-rose-800"
                         }`}>
-                          {option.recommended ? "권장" : option.riskLevel === "critical" ? "최고 위험" : "고위험"}
+                          {option.availability === "available_owner_started"
+                            ? "사용 가능"
+                            : option.riskLevel === "critical"
+                              ? "최고 위험 · 비활성"
+                              : "고위험 · 비활성"}
                         </span>
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-slate-600">{option.description}</p>
@@ -2485,7 +2594,7 @@ export default function VideoCreationWizard() {
                   </ul>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-amber-800">
-                  이 카드는 권한을 저장하거나 실행하지 않습니다. 타이머·백그라운드 작업·유료 생성·QA 판정·업로드·게시는 모두 0회입니다.
+                  이 카드는 상태만 보여줍니다. 로컬 최대 3회 실행은 위 안전 세션에서 Owner가 직접 시작하며, 타이머·백그라운드 작업·자동 재시도·유료 생성·QA 판정·업로드·게시는 모두 비활성입니다.
                 </p>
               </div>
             ) : null}

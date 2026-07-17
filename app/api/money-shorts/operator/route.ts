@@ -102,6 +102,7 @@ import {
   readMoneyShortsSafeSessionRecoveryView,
 } from "@/lib/money-shorts-automation-read-model";
 import { executeMoneyShortsBoundedAutomationStep } from "@/lib/money-shorts-automation-executor.mjs";
+import { executeMoneyShortsSafeSessionBoundedRun } from "@/lib/money-shorts-safe-session-bounded-runner.mjs";
 import { executeMoneyShortsSafeSessionHostStep } from "@/lib/money-shorts-safe-session-host.mjs";
 import {
   readMoneyShortsSafeSessionStore,
@@ -160,6 +161,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "safeSessionClose",
   "safeSessionRecoveryResolve",
   "safeSessionRunNext",
+  "safeSessionRunBounded",
 ];
 
 /** actualUpload 확인 게이트에서 요구하는 입력 문구(Owner가 직접 타이핑). */
@@ -182,6 +184,7 @@ const SAFE_SESSION_CHAIN_RECOVERY_DECISIONS = new Set([
 ]);
 
 const SAFE_SESSION_RUN_CONFIRM_TEXT = "다음 안전 작업 1회 실행";
+const SAFE_SESSION_BOUNDED_RUN_CONFIRM_TEXT = "로컬 안전 작업 최대 3회 연속 실행";
 const SAFE_SESSION_CLOSE_CONFIRM_TEXT = "안전 세션 보관 종료 확인";
 
 type SafeSessionRecoveryResolver = (input: {
@@ -1376,6 +1379,73 @@ export async function POST(request: Request) {
       dependencies: {
         readSessionStore: readMoneyShortsSafeSessionStore,
         readQueueView: readMoneyShortsAutomationQueueView,
+        executeBoundedStep: (request: {
+          requestAction: "automationAdvance" | "automationQueueRunSelected";
+          input: Record<string, unknown>;
+        }) => runMoneyShortsBoundedAutomationStep(
+          request.requestAction,
+          request.input,
+        ),
+      },
+    });
+    return json(result as OperatorResponse);
+  }
+
+  // Owner가 현재 첫 작업 지문과 최대 3회 유한 실행을 명시적으로 확인한 경우에만,
+  // 기존 claim/receipt 보호 단일 host를 매 회차 새 증거로 최대 3번 호출한다.
+  // 첫 비정상 결과, 지문 변경, 중지/복구, 상한, Owner gate에서 즉시 멈추며 재시도하지 않는다.
+  if (action === "safeSessionRunBounded") {
+    const input = body as {
+      sessionId?: unknown;
+      coordinatorFingerprint?: unknown;
+      queuePreviewFingerprint?: unknown;
+      confirmation?: unknown;
+    };
+    const sessionId = typeof input.sessionId === "string" ? input.sessionId : "";
+    const coordinatorFingerprint = typeof input.coordinatorFingerprint === "string"
+      ? input.coordinatorFingerprint
+      : "";
+    const queuePreviewFingerprint = typeof input.queuePreviewFingerprint === "string"
+      ? input.queuePreviewFingerprint
+      : "";
+    const confirmation = typeof input.confirmation === "string" ? input.confirmation : "";
+    if (
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(sessionId) ||
+      !/^[a-f0-9]{64}$/.test(coordinatorFingerprint) ||
+      !/^[a-f0-9]{64}$/.test(queuePreviewFingerprint) ||
+      confirmation !== SAFE_SESSION_BOUNDED_RUN_CONFIRM_TEXT
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "화면에 표시된 로컬 최대 3회 실행 확인 정보가 올바르지 않습니다.",
+        blockerCode: "SAFE_SESSION_BOUNDED_RUN_CONFIRMATION_INVALID",
+        raw: {
+          execution: {
+            actionCount: 0,
+            sessionActionCountDelta: 0,
+            chainedActionCount: 0,
+            automaticRetryCount: 0,
+            paidActionExecuted: false,
+            externalGenerationExecuted: false,
+            ownerQaDecisionExecuted: false,
+            uploadExecuted: false,
+            publicationExecuted: false,
+          },
+        },
+        noLive: true,
+      });
+    }
+
+    const result = executeMoneyShortsSafeSessionBoundedRun({
+      expectedSessionId: sessionId,
+      expectedCoordinatorFingerprint: coordinatorFingerprint,
+      expectedQueuePreviewFingerprint: queuePreviewFingerprint,
+      dependencies: {
+        readSessionStore: readMoneyShortsSafeSessionStore,
+        readQueueView: readMoneyShortsAutomationQueueView,
+      },
+      hostDependencies: {
         executeBoundedStep: (request: {
           requestAction: "automationAdvance" | "automationQueueRunSelected";
           input: Record<string, unknown>;

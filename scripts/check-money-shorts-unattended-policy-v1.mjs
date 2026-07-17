@@ -33,17 +33,17 @@ const preview = buildMoneyShortsUnattendedPolicyPreview({
 });
 
 check("policy schema is versioned", preview.schemaVersion === MONEY_SHORTS_UNATTENDED_POLICY_VERSION);
-check("policy is proposal-only and inactive", preview.mode === "proposal_only_unattended_policy" && preview.currentMode === "owner_click_only" && preview.activationState === "inactive_requires_exact_owner_approval");
+check("policy exposes the Owner-started bounded local mode", preview.mode === "owner_started_unattended_policy_status" && preview.currentMode === "owner_started_bounded_local" && preview.activationState === "bounded_local_no_submit_available" && preview.enabledProfileId === "bounded_local_no_submit");
 check("three bounded policy options are visible", preview.options.length === 3 && preview.options.map((item) => item.profileId).join(",") === "bounded_local_no_submit,bounded_external_generation,autonomous_publish");
-check("bounded local no-submit is the only recommended profile", preview.recommendedProfileId === "bounded_local_no_submit" && preview.options.filter((item) => item.recommended).length === 1);
+check("bounded local no-submit is the only enabled and recommended profile", preview.recommendedProfileId === "bounded_local_no_submit" && preview.options.filter((item) => item.recommended).length === 1 && preview.options.filter((item) => item.availability === "available_owner_started").map((item) => item.profileId).join(",") === "bounded_local_no_submit");
 const local = preview.options.find((item) => item.profileId === "bounded_local_no_submit");
 check("recommended profile keeps every external and Owner-judgment capability blocked", local?.localNoSubmitActionAllowed === true && local.maxActionsPerSession === 3 && local.maxConcurrentActions === 1 && local.automaticRetryLimit === 0 && local.paidTtsAllowed === false && local.imageGenerationAllowed === false && local.flowGenerationAllowed === false && local.ownerQaDecisionAllowed === false && local.uploadAllowed === false && local.publicationAllowed === false);
 const publish = preview.options.find((item) => item.profileId === "autonomous_publish");
-check("autonomous publication is visible only as a critical inactive candidate", publish?.riskLevel === "critical" && publish.recommended === false && preview.activationState !== "active");
+check("autonomous publication is visible only as a critical inactive candidate", publish?.riskLevel === "critical" && publish.recommended === false && publish.availability === "inactive_requires_exact_owner_approval");
 check("current queue evidence is copied without an inferred schedule", preview.currentQueueEvidence.queueItemCount === 0 && preview.currentQueueEvidence.localSafeReadyCount === 0);
 check("policy fingerprint is deterministic", /^[a-f0-9]{64}$/.test(preview.policyFingerprint) && preview.policyFingerprint === buildMoneyShortsUnattendedPolicyPreview({ batchPolicy, capacitySummary }).policyFingerprint);
 check("activation decisions include paid caps, QA, and publication recovery", preview.requiredOwnerDecisionsBeforeActivation.length === 5 && preview.requiredOwnerDecisionsBeforeActivation.some((item) => item.includes("비용 상한")) && preview.requiredOwnerDecisionsBeforeActivation.some((item) => item.includes("품질 검수")) && preview.requiredOwnerDecisionsBeforeActivation.some((item) => item.includes("부분 게시 복구")));
-check("preview reports zero authority and zero side effects", preview.safety.proposalOnly === true && Object.entries(preview.safety).filter(([key]) => key !== "proposalOnly").every(([, value]) => value === false));
+check("status view enables only bounded local execution and no external side effects", preview.safety.viewOnly === true && preview.safety.boundedLocalRunEnabled === true && Object.entries(preview.safety).filter(([key]) => !["viewOnly", "boundedLocalRunEnabled"].includes(key)).every(([, value]) => value === false));
 
 let invalidRejected = false;
 try {
