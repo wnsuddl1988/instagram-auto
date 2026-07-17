@@ -652,6 +652,59 @@ type WizardAutomationQueueCapacitySummary = {
   safety: WizardAutomationQueueBatchPolicy["safety"];
 };
 
+type WizardUnattendedPolicyPreview = {
+  schemaVersion: string;
+  mode: "proposal_only_unattended_policy";
+  currentMode: "owner_click_only";
+  activationState: "inactive_requires_exact_owner_approval";
+  recommendedProfileId: "bounded_local_no_submit";
+  policyFingerprint: string;
+  reason: string;
+  options: Array<{
+    profileId: "bounded_local_no_submit" | "bounded_external_generation" | "autonomous_publish";
+    label: string;
+    riskLevel: "low" | "high" | "critical";
+    recommended: boolean;
+    description: string;
+    localNoSubmitActionAllowed: boolean;
+    paidTtsAllowed: boolean;
+    imageGenerationAllowed: boolean;
+    flowGenerationAllowed: boolean;
+    ownerQaDecisionAllowed: boolean;
+    uploadAllowed: boolean;
+    publicationAllowed: boolean;
+    maxActionsPerSession: number | null;
+    maxConcurrentActions: number;
+    automaticRetryLimit: number;
+  }>;
+  currentQueueEvidence: {
+    queueItemCount: number;
+    localSafeReadyCount: number;
+    localSafeWaitingCount: number;
+    paidGenerationApprovalCount: number;
+    ownerQualityCheckCount: number;
+    publicationApprovalCount: number;
+    ownerDecisionCount: number;
+    recoveryOrBlockedCount: number;
+  };
+  requiredOwnerDecisionsBeforeActivation: string[];
+  safety: {
+    proposalOnly: true;
+    policyStateWritten: false;
+    activationChanged: false;
+    actionExecuted: false;
+    executionReceiptCreated: false;
+    timerEnabled: false;
+    backgroundWorkerEnabled: false;
+    automaticRetryEnabled: false;
+    paidActionEnabled: false;
+    externalGenerationEnabled: false;
+    ownerQaDecisionEnabled: false;
+    uploadEnabled: false;
+    publicationEnabled: false;
+  };
+};
+
 type WizardAutomationQueue = {
   schemaVersion: string;
   mode: "owner_click_planning_only";
@@ -662,6 +715,7 @@ type WizardAutomationQueue = {
   runPreview: WizardAutomationQueueRunPreview;
   batchPolicy: WizardAutomationQueueBatchPolicy;
   capacitySummary: WizardAutomationQueueCapacitySummary;
+  unattendedPolicy: WizardUnattendedPolicyPreview;
   safety: {
     timerEnabled: false;
     backgroundWorkerEnabled: false;
@@ -2376,6 +2430,63 @@ export default function VideoCreationWizard() {
                   <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>일시정지</b> {automationQueue.capacitySummary.pausedCount}개 · 복구/안전장치 {automationQueue.capacitySummary.recoveryOrBlockedCount}개</p>
                   <p className="rounded-lg border border-teal-100 bg-white px-3 py-2"><b>완료</b> {automationQueue.capacitySummary.completedCount}개 · 전체 {automationQueue.capacitySummary.queueItemCount}개</p>
                 </div>
+              </div>
+            ) : null}
+            {automationQueue ? (
+              <div data-testid="wizard-unattended-policy-preview" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-bold text-amber-950">무인 자동화 정책 후보</p>
+                  <span className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs font-bold text-amber-800">
+                    제안 전용 · 현재 비활성
+                  </span>
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-amber-950">{automationQueue.unattendedPolicy.reason}</p>
+                <p className="mt-1 text-xs text-amber-800">
+                  현재 모드: Owner 클릭 전용 · 정책 지문{" "}
+                  <span className="font-mono">{automationQueue.unattendedPolicy.policyFingerprint.slice(0, 12)}</span>
+                </p>
+                <div className="mt-3 grid gap-2 lg:grid-cols-3">
+                  {automationQueue.unattendedPolicy.options.map((option) => (
+                    <article
+                      key={option.profileId}
+                      data-testid="wizard-unattended-policy-option"
+                      className={`rounded-lg border bg-white px-3 py-3 ${
+                        option.recommended ? "border-emerald-300" : "border-amber-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-bold text-slate-900">{option.label}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                          option.riskLevel === "low"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : option.riskLevel === "high"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-rose-100 text-rose-800"
+                        }`}>
+                          {option.recommended ? "권장" : option.riskLevel === "critical" ? "최고 위험" : "고위험"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{option.description}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-700">
+                        유료 TTS {option.paidTtsAllowed ? "허용 후보" : "차단"} · 이미지 {option.imageGenerationAllowed ? "허용 후보" : "차단"} · Flow {option.flowGenerationAllowed ? "허용 후보" : "차단"}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-slate-700">
+                        QA 자동판정 {option.ownerQaDecisionAllowed ? "허용 후보" : "차단"} · 실제 게시 {option.publicationAllowed ? "허용 후보" : "차단"} · 자동 재시도 {option.automaticRetryLimit}회
+                      </p>
+                    </article>
+                  ))}
+                </div>
+                <div className="mt-3 rounded-lg border border-amber-100 bg-white px-3 py-2">
+                  <p className="text-sm font-bold text-slate-900">활성화 전에 Owner가 정할 항목</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-slate-600">
+                    {automationQueue.unattendedPolicy.requiredOwnerDecisionsBeforeActivation.map((decision) => (
+                      <li key={decision}>{decision}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-amber-800">
+                  이 카드는 권한을 저장하거나 실행하지 않습니다. 타이머·백그라운드 작업·유료 생성·QA 판정·업로드·게시는 모두 0회입니다.
+                </p>
               </div>
             ) : null}
             {automationQueue?.jobs.length ? (

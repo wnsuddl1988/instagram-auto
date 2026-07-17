@@ -23,6 +23,7 @@ const safeSessionStoreSource = readFileSync(join(ROOT, "lib", "money-shorts-safe
 const safeSessionCoordinatorSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-coordinator.mjs"), "utf8");
 const safeSessionRecoverySource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-recovery.mjs"), "utf8");
 const safeSessionHostSource = readFileSync(join(ROOT, "lib", "money-shorts-safe-session-host.mjs"), "utf8");
+const unattendedPolicySource = readFileSync(join(ROOT, "lib", "money-shorts-unattended-policy.mjs"), "utf8");
 
 let passed = 0;
 let failed = 0;
@@ -226,9 +227,11 @@ check("wizard sends one displayed safe-session recovery fingerprint and never of
 check("queue status attaches a deterministic run preview without executing", snapshotBlock.includes("planMoneyShortsAutomationQueueRun({ jobs })") && snapshotBlock.includes("runPreview") && queueRouteBlock.includes("실행 영수증·작업 실행은 0회"));
 check("queue status attaches the read-only batch policy without an executor", snapshotBlock.includes("buildMoneyShortsAutomationQueueBatchPolicy({ runPreview })") && snapshotBlock.includes("batchPolicy") && !/runOneSafeAutomationAction|runOperatorScript/u.test(snapshotBlock));
 check("queue status attaches the read-only capacity summary without an executor", snapshotBlock.includes("summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy })") && snapshotBlock.includes("capacitySummary") && !/runOneSafeAutomationAction|runOperatorScript/u.test(snapshotBlock));
+check("queue status attaches a proposal-only unattended policy without granting authority", snapshotBlock.includes("buildMoneyShortsUnattendedPolicyPreview") && snapshotBlock.includes("unattendedPolicy") && unattendedPolicySource.includes('mode: "proposal_only_unattended_policy"') && unattendedPolicySource.includes('currentMode: "owner_click_only"') && !/writeFile|executeMoneyShortsBoundedAutomationStep|runOperatorScript|\bfetch\s*\(|setTimeout|setInterval/u.test(unattendedPolicySource));
 check("wizard shows exact dry-run action and per-job selection reason", wizardSource.includes('data-testid="wizard-automation-queue-dry-run"') && wizardSource.includes("정확한 다음 액션:") && wizardSource.includes('data-testid="wizard-automation-queue-job-decision"'));
 check("wizard renders batch policy as a plan-only view", wizardSource.includes('data-testid="wizard-automation-queue-batch-policy"') && wizardSource.includes("큐 전체 다음 단계") && wizardSource.includes("계획 전용 · 실행 없음"));
 check("wizard renders capacity summary as an aggregation-only view", wizardSource.includes('data-testid="wizard-automation-queue-capacity-summary"') && wizardSource.includes("큐 준비도 요약") && wizardSource.includes("집계 전용 · 실행 없음"));
+check("wizard renders three inactive unattended policy candidates without an activation action", wizardSource.includes('data-testid="wizard-unattended-policy-preview"') && wizardSource.includes('data-testid="wizard-unattended-policy-option"') && wizardSource.includes("제안 전용 · 현재 비활성") && wizardSource.includes("정책 지문") && !/postAction\("(?:activate|save|apply|enable)Unattended/u.test(wizardSource));
 check("wizard renders the resumable plan and explicit stop gate", wizardSource.includes('data-testid="wizard-automation-plan"') && wizardSource.includes("실제 게시 확인에서 중단"));
 check("wizard exposes one-safe-step button and disables it outside safe plans", wizardSource.includes('data-testid="wizard-action-automation-advance"') && wizardSource.includes('postAction("automationAdvance"') && wizardSource.includes('automationPlan?.next?.canAutoAdvance !== true'));
 check("wizard disables advance when durable execution guard is not available", wizardSource.includes('automationExecutionGuard.status !== "available"') && wizardSource.includes("실행 안전장치:"));

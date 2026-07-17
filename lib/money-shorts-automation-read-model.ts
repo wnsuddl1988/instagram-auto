@@ -25,6 +25,7 @@ import {
 } from "@/lib/money-shorts-automation-queue-planner.mjs";
 import { planMoneyShortsSafeSessionRecovery } from "@/lib/money-shorts-safe-session-recovery.mjs";
 import { readMoneyShortsSafeSessionStore } from "@/lib/money-shorts-safe-session-store.mjs";
+import { buildMoneyShortsUnattendedPolicyPreview } from "@/lib/money-shorts-unattended-policy.mjs";
 
 export const MONEY_SHORTS_AUTOMATION_READ_MODEL_VERSION =
   "money_shorts_automation_read_model_v1";
@@ -127,6 +128,10 @@ export function readMoneyShortsAutomationQueueView() {
   const runPreview = planMoneyShortsAutomationQueueRun({ jobs });
   const batchPolicy = buildMoneyShortsAutomationQueueBatchPolicy({ runPreview });
   const capacitySummary = summarizeMoneyShortsAutomationQueueCapacity({ batchPolicy });
+  const unattendedPolicy = buildMoneyShortsUnattendedPolicyPreview({
+    batchPolicy,
+    capacitySummary,
+  });
   return {
     ...queue,
     mode: "owner_click_planning_only" as const,
@@ -134,6 +139,7 @@ export function readMoneyShortsAutomationQueueView() {
     runPreview,
     batchPolicy,
     capacitySummary,
+    unattendedPolicy,
     safety: {
       timerEnabled: false,
       backgroundWorkerEnabled: false,
