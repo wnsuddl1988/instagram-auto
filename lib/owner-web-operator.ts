@@ -1393,11 +1393,13 @@ export function readTopicCatalog(): WizardTopic[] | null {
 // task: owner-web-auto-topic-refresh-and-upload-button-v1
 // ══════════════════════════════════════════════════════════════════════════════
 
-/** 위저드 카테고리 id(웹 UI와 동일). */
-export const WIZARD_CATEGORY_IDS = ["finance", "ai", "meme", "news", "tmi", "game", "animal", "celeb"] as const;
+/** 재테크 V1 active 위저드 카테고리 id. */
+export const WIZARD_CATEGORY_IDS = ["finance"] as const;
 export type WizardCategoryId = (typeof WIZARD_CATEGORY_IDS)[number];
 
-const CATEGORY_LABELS: Record<WizardCategoryId, string> = {
+// Legacy category labels/seeds are retained below until a separate dependency audit.
+// They are not reachable from the finance-only active enum above.
+const CATEGORY_LABELS: Record<string, string> = {
   finance: "재테크팁",
   ai: "AI생성활용",
   meme: "밈&짤",
@@ -1481,7 +1483,7 @@ type WizardTopicSeed = {
  * 특정 인물/사건/검증 불가한 수치 주장 없이 evergreen 주제만 담는다.
  * 이미 게시된 t1_lifestyle_inflation / t2_salary_3days / base-rate 계열은 넣지 않는다.
  */
-const TOPIC_BANK: Record<WizardCategoryId, WizardTopicSeed[]> = {
+const TOPIC_BANK: Record<string, WizardTopicSeed[]> = {
   finance: [],
   ai: [
     { slug: "ai-daily-brief", title: "AI로 아침 브리핑 만드는 법", hook: "출근길 5분을 비서로 바꿔보세요", angle: "꿀팁", points: ["관심 주제 목록 미리 만들기", "매일 같은 질문 틀 재사용하기", "요약은 세 줄로 제한하기"], save: "브리핑 질문 틀을 저장해 두세요" },
@@ -6575,6 +6577,9 @@ export function listWizardUploadReadyItems(): WizardUploadReadyItem[] {
     const media = readWizardRealMediaState(topicId);
     if (!record || !media.mediaQualityGate.ok || !media.finalVideo.ready || media.parts.length === 0) continue;
 
+    const generatedTopic = readWizardGeneratedTopic(topicId);
+    if (generatedTopic?.category !== "finance" && !topicId.startsWith("gen-finance-")) continue;
+
     const publishResults = media.parts.map((part) => readWizardPublishResult(topicId, part.id));
     const allPublished = publishResults.every((result) => result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
     if (allPublished) continue;
@@ -6594,7 +6599,7 @@ export function listWizardUploadReadyItems(): WizardUploadReadyItem[] {
     items.push({
       topicId,
       title: record.script.title,
-      category: readWizardGeneratedTopic(topicId)?.category ?? "finance",
+      category: "finance",
       totalParts: media.production.totalParts,
       totalDurationSec: media.finalVideo.durationSec,
       updatedAt: newestMtimeMs > 0 ? new Date(newestMtimeMs).toISOString() : null,

@@ -9,7 +9,7 @@
  *
  * 검증 대상:
  *  - app/money-shorts/page.tsx — 위저드가 메인 흐름, 수동 입력은 "고급"으로 강등
- *  - components/VideoCreationWizard.tsx — 11단계 흐름 + 8개 카테고리 전체 추천 + 확인 게이트형 업로드
+ *  - components/VideoCreationWizard.tsx — 재테크 V1 흐름 + 확인 게이트형 업로드
  *  - lib/owner-web-operator.ts — 로컬 topic bank 생성 + 하드코딩 스크립트 + --arm 게이트(actualUpload 전용)
  *  - app/api/money-shorts/operator/route.ts — 서버 확인 게이트/allowArm 단일 지점/fail-closed 유지
  *
@@ -108,11 +108,21 @@ for (const label of [
   check(`wizard contains flow label: ${label}`, wizardSrc.includes(label));
 }
 
-// ── 8개 카테고리 — 전부 선택/추천 가능 ───────────────────────────────────────
-for (const cat of ["AI생성활용", "밈&짤", "충격뉴스", "TMI지식", "게임클립", "재테크팁", "귀여운동물", "셀럽엔터"]) {
-  check(`wizard lists category: ${cat}`, wizardSrc.includes(cat));
-}
-check("wizard no longer marks categories as 준비 중 (all selectable)", !wizardSrc.includes("준비 중"));
+// ── 재테크 V1 active category — finance 하나만 선택/추천 가능 ───────────────
+const activeCategoryBlock = wizardCode.match(/const CATEGORIES\s*=\s*\[([\s\S]*?)\]\s*as const;/);
+const activeCategoryIds = activeCategoryBlock
+  ? [...activeCategoryBlock[1].matchAll(/id:\s*"([^"]+)"/g)].map((match) => match[1])
+  : [];
+const activeCategoryLabels = activeCategoryBlock
+  ? [...activeCategoryBlock[1].matchAll(/label:\s*"([^"]+)"/g)].map((match) => match[1])
+  : [];
+check(
+  "wizard exposes finance as the only active category",
+  JSON.stringify(activeCategoryIds) === JSON.stringify(["finance"]) &&
+    JSON.stringify(activeCategoryLabels) === JSON.stringify(["재테크팁"]),
+  JSON.stringify({ activeCategoryIds, activeCategoryLabels }),
+);
+check("wizard keeps no category preparation state", !wizardSrc.includes("준비 중"));
 
 // ── 첫 화면에 개발자 용어 금지 ───────────────────────────────────────────────
 const initialUi = pageSrc + "\n" + wizardSrc;
@@ -206,12 +216,12 @@ for (const f of [
   check(`wizard fixture exists: ${f}`, existsSync(path.join(ROOT, ...f.split("/"))));
 }
 
-// ── 새 주제 추천 계약: Claude 신규 생성 우선 + 로컬 topic bank fallback ───────
-check("helper declares 8-category TOPIC_BANK", /const\s+TOPIC_BANK\s*:/.test(helperSrc) && ["finance:", "ai:", "meme:", "news:", "tmi:", "game:", "animal:", "celeb:"].every((k) => helperSrc.includes(k)));
+// ── 재테크 V1 주제 추천 계약 ────────────────────────────────────────────────
+check(
+  "helper exposes finance as the only active wizard category",
+  /export const WIZARD_CATEGORY_IDS\s*=\s*\["finance"\]\s*as const/.test(helperCode),
+);
 {
-  // bank 씨앗 수가 배치 크기보다 충분히 커야 반복 클릭에서 다른 묶음이 나온다.
-  const seedCount = (helperSrc.match(/slug:\s*"/g) ?? []).length;
-  check("topic bank has at least 60 seeds across categories", seedCount >= 60, `found ${seedCount}`);
   check("topic batch size is between 8 and 12", /WIZARD_TOPIC_BATCH_SIZE\s*=\s*(8|9|1[0-2])\b/.test(helperSrc));
 }
 check("helper shuffles bank per click (Fisher–Yates)", /Math\.random\(\)/.test(helperCode) && /generateWizardTopicBatch/.test(helperSrc));
@@ -301,7 +311,11 @@ check("wizard renders finance subtopic toggles", /FINANCE_SUBTOPICS/.test(wizard
 check("wizard explains editorial package approval flow", wizardSrc.includes("제목·문제·반전·행동") && wizardSrc.includes("'만든다'로 고른 후보만 대본으로 넘어갑니다"));
 check("wizard renders make maybe reject controls", ["만든다", "애매", "버린다"].every((label) => wizardSrc.includes(label)) && /runTopicPreference/.test(wizardCode));
 check("wizard sends financeSubtopic on topicRecommend", /financeSubtopic:\s*category\s*===\s*"finance"\s*&&\s*financeSubtopic\s*!==\s*"all"\s*\?\s*financeSubtopic/.test(wizardCode));
-check("route validates category against WIZARD_CATEGORY_IDS enum", /WIZARD_CATEGORY_IDS[\s\S]{0,120}\.includes\(categoryRaw\)/.test(routeCode));
+check(
+  "route rejects every non-finance category input",
+  /categoryRaw\s*!==\s*undefined\s*&&\s*categoryRaw\s*!==\s*"finance"/.test(routeCode) &&
+    /FINANCE_CATEGORY_ONLY/.test(routeSrc),
+);
 check("wizard resets downstream steps when topic changes", /resetDownstream/.test(wizardCode));
 check("wizard offers refresh (다른 주제 보기)", wizardSrc.includes("다른 주제 보기"));
 

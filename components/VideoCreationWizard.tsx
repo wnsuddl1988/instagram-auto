@@ -138,7 +138,7 @@ type WizardVideo = {
 type WizardUploadReadyItem = {
   topicId: string;
   title: string;
-  category: string;
+  category: "finance";
   totalParts: number;
   totalDurationSec: number | null;
   updatedAt: string | null;
@@ -882,7 +882,7 @@ const FLOW_MOTION_QA_ITEMS = [
 type FlowMotionQaKey = (typeof FLOW_MOTION_QA_ITEMS)[number][0];
 type FlowMotionQaState = Partial<Record<FlowMotionQaKey, boolean>>;
 
-// ── 카테고리 (프로젝트 목표 8개 — 전부 주제 추천 가능) ─────────────────────────
+// ── V1 active category (재테크 쇼츠만 노출) ──────────────────────────────────
 
 /** 카테고리를 고르면 보여줄 한 줄 소개 — 재테크팁은 돈·성공·심리·생활습관 톤을 명시한다. */
 const CATEGORY_DESC: Record<string, string> = {
@@ -896,16 +896,9 @@ const CATEGORY_DESC: Record<string, string> = {
   celeb: "덕질을 오래 즐겁게 하는 방법을 다룹니다.",
 };
 
-const CATEGORIES: Array<{ id: string; label: string }> = [
+const CATEGORIES = [
   { id: "finance", label: "재테크팁" },
-  { id: "ai", label: "AI생성활용" },
-  { id: "meme", label: "밈&짤" },
-  { id: "news", label: "충격뉴스" },
-  { id: "tmi", label: "TMI지식" },
-  { id: "game", label: "게임클립" },
-  { id: "animal", label: "귀여운동물" },
-  { id: "celeb", label: "셀럽엔터" },
-];
+] as const;
 
 const FINANCE_SUBTOPICS: Array<{ id: string; label: string; desc: string }> = [
   { id: "all", label: "전체", desc: "전체 돈·경제 주제에서 추천" },
@@ -1028,7 +1021,7 @@ const RUN_BTN =
 export default function VideoCreationWizard() {
   const [localDev, setLocalDev] = useState<boolean | null>(null);
 
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<"finance" | null>(null);
   const [financeSubtopic, setFinanceSubtopic] = useState<string>("all");
 
   const [topicState, setTopicState] = useState<RunState>("idle");
@@ -1236,9 +1229,9 @@ export default function VideoCreationWizard() {
   }, []);
 
   const selectCategory = useCallback(
-    (id: string) => {
+    (id: "finance") => {
       setCategory(id);
-      if (id !== "finance") setFinanceSubtopic("all");
+      setFinanceSubtopic("all");
       setTopics([]);
       setSelectedTopicId(null);
       setTopicState("idle");

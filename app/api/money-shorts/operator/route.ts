@@ -28,7 +28,6 @@ import {
   LOCAL_ONLY_BLOCKER,
   OPERATOR_ACTIONS,
   type OperatorAction,
-  WIZARD_CATEGORY_IDS,
   type WizardCategoryId,
   WIZARD_FINANCE_SUBTOPIC_IDS,
   WIZARD_EDITORIAL_DECISIONS,
@@ -906,12 +905,17 @@ export async function POST(request: Request) {
   }
 
   if (action === "topicRecommend") {
-    // 카테고리는 고정 enum으로만 받는다(그 외 값은 기본 카테고리로 폴백).
     const categoryRaw = (body as { category?: unknown }).category;
-    const category: WizardCategoryId =
-      typeof categoryRaw === "string" && (WIZARD_CATEGORY_IDS as readonly string[]).includes(categoryRaw)
-        ? (categoryRaw as WizardCategoryId)
-        : "finance";
+    if (categoryRaw !== undefined && categoryRaw !== "finance") {
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 V1은 재테크 쇼츠만 지원합니다.",
+        blockerCode: "FINANCE_CATEGORY_ONLY",
+        noLive: true,
+      }, 400);
+    }
+    const category: WizardCategoryId = "finance";
     const financeSubtopicRaw = (body as { financeSubtopic?: unknown }).financeSubtopic;
     const financeSubtopic: WizardFinanceSubtopicId | null =
       category === "finance" &&
