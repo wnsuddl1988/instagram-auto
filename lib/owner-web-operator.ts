@@ -80,6 +80,9 @@ import {
   inspectMoneyShortsPublishAttemptEvidence,
 } from "./money-shorts-publish-attempt-journal.mjs";
 import {
+  buildMoneyShortsPublishReconciliationPacket,
+} from "./money-shorts-publish-reconciliation-packet.mjs";
+import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
   FINANCE_CHARACTER_CAST_VERSION,
@@ -6962,10 +6965,40 @@ export type WizardPublishAttemptEvidence = {
   latestRecordedAtIso: string | null;
 };
 
+export type WizardPublishReconciliationPacket = {
+  schemaVersion: string;
+  mode: string;
+  state: string;
+  reason: string | null;
+  conclusion: string;
+  confirmedFacts: Array<{
+    id: string;
+    label: string;
+    value: string | null;
+  }>;
+  uncertainFacts: Array<{
+    id: string;
+    label: string;
+    value: string | null;
+  }>;
+  ownerReview: Array<{
+    id: string;
+    label: string;
+  }>;
+  safety: {
+    automaticRetryAllowed: boolean;
+    automaticRecoveryAllowed: boolean;
+    externalActionCount: number;
+    uploadAllowed: boolean;
+    ledgerMutationAllowed: boolean;
+  };
+};
+
 export type WizardPublishRecoveryState = ReturnType<
   typeof classifyMoneyShortsPublishRecovery
 > & {
   attemptEvidence: WizardPublishAttemptEvidence;
+  reconciliationPacket: WizardPublishReconciliationPacket;
 };
 
 type WizardPublishPartId = "single" | "part-1" | "part-2";
@@ -7033,17 +7066,23 @@ function unreadableWizardPublishRecoveryState(
       youtubePublishedIdReference: null,
     },
   });
+  const attemptEvidence: WizardPublishAttemptEvidence = {
+    present: false,
+    journalValid: false,
+    reason: "publish_recovery_binding_unavailable",
+    claimSha256: null,
+    eventCount: 0,
+    latestTransition: null,
+    latestRecordedAtIso: null,
+  };
   return {
     ...recovery,
-    attemptEvidence: {
-      present: false,
-      journalValid: false,
-      reason: "publish_recovery_binding_unavailable",
-      claimSha256: null,
-      eventCount: 0,
-      latestTransition: null,
-      latestRecordedAtIso: null,
-    },
+    attemptEvidence,
+    reconciliationPacket:
+      buildMoneyShortsPublishReconciliationPacket({
+        recovery,
+        attemptEvidence,
+      }),
   };
 }
 
@@ -7281,10 +7320,16 @@ function readWizardPublishRecoveryStateFromMedia(
     currentBinding,
     ledgerEvidence,
   });
+  const attemptEvidence =
+    summarizeWizardPublishAttemptEvidence(attemptInspection);
   return {
     ...recovery,
-    attemptEvidence:
-      summarizeWizardPublishAttemptEvidence(attemptInspection),
+    attemptEvidence,
+    reconciliationPacket:
+      buildMoneyShortsPublishReconciliationPacket({
+        recovery,
+        attemptEvidence,
+      }),
   };
 }
 

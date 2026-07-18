@@ -940,6 +940,13 @@ check(
     wizardSource.includes("attemptEvidence.latestTransition") &&
     wizardSource.includes("PUBLISH_ATTEMPT_TRANSITION_LABEL"),
 );
+check(
+  "operator and wizard expose a read-only reconciliation packet with no automatic execution",
+  helperSource.includes("buildMoneyShortsPublishReconciliationPacket") &&
+    helperSource.includes("reconciliationPacket:") &&
+    wizardSource.includes("wizard-publish-reconciliation-packet") &&
+    wizardSource.includes("자동 재시도·자동 복구·외부 실행 0회"),
+);
 
 const actualUploadBlock = sourceBlock(
   routeSource,

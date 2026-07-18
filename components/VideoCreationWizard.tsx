@@ -176,6 +176,31 @@ type WizardPublishRecoveryState = {
     latestTransition: string | null;
     latestRecordedAtIso: string | null;
   };
+  reconciliationPacket: {
+    mode: "read_only_evidence_packet";
+    conclusion: string;
+    confirmedFacts: Array<{
+      id: string;
+      label: string;
+      value: string | null;
+    }>;
+    uncertainFacts: Array<{
+      id: string;
+      label: string;
+      value: string | null;
+    }>;
+    ownerReview: Array<{
+      id: string;
+      label: string;
+    }>;
+    safety: {
+      automaticRetryAllowed: false;
+      automaticRecoveryAllowed: false;
+      externalActionCount: 0;
+      uploadAllowed: false;
+      ledgerMutationAllowed: false;
+    };
+  };
 };
 
 type WizardFinanceCharacterCast = {
@@ -1164,6 +1189,44 @@ function PublishRecoveryEvidence({ states }: { states: WizardPublishRecoveryStat
                   </dd>
                 </div>
               </dl>
+              <details
+                data-testid="wizard-publish-reconciliation-packet"
+                className="mt-2 rounded border border-amber-200 bg-white/70 px-2 py-1.5 text-xs text-slate-700"
+              >
+                <summary className="cursor-pointer font-bold text-amber-900">
+                  Owner 수동 대조 판단 패킷 보기
+                </summary>
+                <p className="mt-1 leading-relaxed">
+                  {recovery.reconciliationPacket.conclusion}
+                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="font-bold">확인된 사실</p>
+                  {recovery.reconciliationPacket.confirmedFacts.map((item) => (
+                    <p key={item.id} className="break-all">
+                      · {item.label}{item.value ? ` (${item.value})` : ""}
+                    </p>
+                  ))}
+                </div>
+                {recovery.reconciliationPacket.uncertainFacts.length > 0 ? (
+                  <div className="mt-2 space-y-1 text-amber-800">
+                    <p className="font-bold">불명확한 사실</p>
+                    {recovery.reconciliationPacket.uncertainFacts.map((item) => (
+                      <p key={item.id} className="break-all">
+                        · {item.label}{item.value ? ` (${item.value})` : ""}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mt-2 space-y-1">
+                  <p className="font-bold">Owner 확인 필요</p>
+                  {recovery.reconciliationPacket.ownerReview.map((item) => (
+                    <p key={item.id}>· {item.label}</p>
+                  ))}
+                </div>
+                <p className="mt-2 font-semibold text-amber-800">
+                  자동 재시도·자동 복구·외부 실행 0회
+                </p>
+              </details>
             </div>
           ))}
         </div>
