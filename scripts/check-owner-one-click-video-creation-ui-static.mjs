@@ -779,8 +779,8 @@ for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardP
   check(`route does NOT set includeMediaEnv:true for ${otherAction}`, !hasInBlock);
 }
 check("route no-key TTS message is fail-closed", routeSrc.includes("실제 음성 키가 없어 생성하지 못했습니다. 테스트 소리는 업로드할 수 없습니다."));
-check("UI real-tts states exist (실제 음성 준비 / 음성 키 필요)", wizardSrc.includes("실제 음성 준비") && wizardSrc.includes("음성 키 필요"));
-check("UI explains topic-aware Korean continuous voice generation", wizardSrc.includes("주제에 맞는 화자 태도와 한국어 억양") && wizardSrc.includes("전체 대본을 한 흐름으로 읽는 실제 음성"));
+check("UI separates TTS generation from Owner listening approval", wizardSrc.includes("생성 완료 · 청취 승인 필요") && wizardSrc.includes("Owner 청취 승인 완료"));
+check("UI explains that all parts require listening approval", wizardSrc.includes("모든 편을 직접 듣고 승인해야 다음 제작 단계로 넘어갑니다") && wizardSrc.includes("현재 음성 청취 승인"));
 check("UI real audio player streams ?audio=real", /audio=real&topicId=/.test(wizardSrc));
 
 // [C] 장면 이미지 — ChatGPT+Playwright once 스크립트 (gate/hard-cap/repo-밖/no-upload)
@@ -1025,10 +1025,21 @@ check(
 check("images script reuses proven _chatgpt-image-core", /_chatgpt-image-core\.mjs/.test(imgScriptSrc));
 check("images script never uploads/publishes", !/instagram|youtube|blob\.put|googleapis|@vercel/i.test(imgScriptSrc));
 check("images script forbids paid image APIs (openai api key 사용 없음)", !/OPENAI_API_KEY|api\.openai\.com|bfl\.ai|gemini/i.test(imgScriptCode));
-check("route passes hardcoded ALLOW_CHATGPT_IMAGE extraEnv only for images action", /realSceneImagesCreate[\s\S]{0,1800}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/ALLOW_CHATGPT_IMAGE/g) ?? []).length === 2);
+check(
+  "route passes hardcoded ALLOW_CHATGPT_IMAGE only for character, full-scene, or exact selected-scene generation",
+  /characterCastCreate[\s\S]{0,1800}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) &&
+  /realSceneImagesRegenerateSelected[\s\S]{0,5200}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) &&
+  /realSceneImagesCreate[\s\S]{0,3000}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) &&
+  (routeCode.match(/ALLOW_CHATGPT_IMAGE/g) ?? []).length === 3,
+);
 check("route passes the Flow live marker only inside the exact approved generation action", /flowMotionGenerate[\s\S]{0,3200}extraEnv:\s*\{\s*ALLOW_FLOW_MOTION_GENERATION:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/ALLOW_FLOW_MOTION_GENERATION/g) ?? []).length === 1);
 check("images gate requires expectedCount SAVED_OK portrait files", /expectedSceneCount/.test(helperCode) && /savedScenes\.length\s*===\s*expectedSceneCount/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
-check("UI image states exist (장면 이미지 준비 / 이미지 생성 필요)", wizardSrc.includes("장면 이미지 준비") && wizardSrc.includes("이미지 생성 필요"));
+check(
+  "UI separates image generation, Owner review, and hash-bound acceptance states",
+  wizardSrc.includes("이미지 생성 미완료") &&
+  wizardSrc.includes("전체 이미지 생성 완료 · Owner 검수 필요") &&
+  wizardSrc.includes("전체 이미지 Owner 승인 완료"),
+);
 
 // [D] 최종 mp4 — 실제 자산 필수 + ffprobe 검증 + C:\tmp
 check("final-video once script exists", vidScriptSrc.length > 0);

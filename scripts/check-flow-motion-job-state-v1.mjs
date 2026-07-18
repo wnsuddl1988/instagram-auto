@@ -52,6 +52,7 @@ function check(name, fn) {
 
 const hashA = "a".repeat(64);
 const hashB = "b".repeat(64);
+const hashC = "c".repeat(64);
 const generatedAt = "2026-07-15T01:02:03.000Z";
 const outputRoot = "C:\\tmp\\money-shorts-os\\flow-test-topic\\real\\flow-motion-v1";
 const scenes = [
@@ -155,6 +156,24 @@ check("packet hashes and approval wording are deterministic", () => {
   assert.match(left.jobs[0].approval.requiredWording, /APPROVE_FLOW_MOTION_GENERATION:/);
   assert.match(left.jobs[0].approval.requiredWording, new RegExp(left.jobs[0].promptSha256));
   assert.match(left.jobs[0].approval.requiredWording, /quota_exhausted/);
+});
+
+check("a changed reference gets a new content-addressed output path while the prior contract path is preserved", () => {
+  const previous = build();
+  const changedScenes = structuredClone(scenes);
+  changedScenes[1].referenceSha256 = hashC;
+  const next = buildFlowMotionState({
+    topicId: "flow-test-topic",
+    productionPartId: "single",
+    scriptFingerprint: "script-fingerprint-v1",
+    outputRoot,
+    scenes: changedScenes,
+    generatedAt,
+    previous,
+  });
+  assert.notEqual(next.jobs[0].expectedVideoPath, previous.jobs[0].expectedVideoPath);
+  assert.match(next.jobs[0].expectedVideoPath, /contract-c{16}-[a-f0-9]{16}/i);
+  assert.equal(build(previous).jobs[0].expectedVideoPath, previous.jobs[0].expectedVideoPath);
 });
 
 check("an unchanged packet preserves prior state", () => {

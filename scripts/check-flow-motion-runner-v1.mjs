@@ -94,15 +94,11 @@ assertSummaryBlocked({
 }, /credit_mismatch/);
 
 const root = `C:/tmp/money-shorts-os/flow-motion-runner-contract-check-v1-${process.pid}`;
-const jobRoot = path.join(root, "scene-02");
-const referenceFile = path.join(jobRoot, "reference.png");
-const packetPath = path.join(jobRoot, "approval-packet.json");
 const statePath = path.join(root, "flow-motion-state.json");
-const expectedVideoPath = path.join(jobRoot, "flow-motion-raw.mp4");
-const qaEvidencePath = path.join(jobRoot, "qa-evidence.json");
 const jobId = "runner-contract-topic-single-scene-02";
 const prompt = "Animate one bright warm Korean adult scene with true restrained articulated hand motion; camera-only motion is insufficient.";
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const referenceFile = path.join(root, "images", "scene-02.png");
 
 assert.equal(isExactGeminiFlowProjectRootUrl(GEMINI_FLOW_TARGET.projectUrl), true);
 assert.equal(isExactGeminiFlowProjectRootUrl(`${GEMINI_FLOW_TARGET.projectUrl}/`), true);
@@ -111,11 +107,20 @@ assert.equal(isExactGeminiFlowProjectRootUrl(`${GEMINI_FLOW_TARGET.projectUrl}/e
 assert.equal(isExactGeminiFlowProjectRootUrl("https://example.com/fx/ko/tools/flow/project/2b12c31a-4493-405b-aedf-2268abb10422"), false);
 assert.equal(isExactGeminiFlowProjectRootUrl(`https://labs.google/extra${new URL(GEMINI_FLOW_TARGET.projectUrl).pathname}`), false);
 
-fs.mkdirSync(jobRoot, { recursive: true });
+fs.mkdirSync(path.dirname(referenceFile), { recursive: true });
 fs.writeFileSync(referenceFile, Buffer.from("flow-motion-runner-reference-v1"));
-if (fs.existsSync(expectedVideoPath)) throw new Error("contract_check_output_must_not_exist");
 const referenceSha256 = sha256(fs.readFileSync(referenceFile));
 const promptSha256 = sha256(prompt);
+const jobRoot = path.join(
+  root,
+  "scene-02",
+  `contract-${referenceSha256.slice(0, 16)}-${promptSha256.slice(0, 16)}`,
+);
+const packetPath = path.join(jobRoot, "approval-packet.json");
+const expectedVideoPath = path.join(jobRoot, "flow-motion-raw.mp4");
+const qaEvidencePath = path.join(jobRoot, "qa-evidence.json");
+fs.mkdirSync(jobRoot, { recursive: true });
+if (fs.existsSync(expectedVideoPath)) throw new Error("contract_check_output_must_not_exist");
 const requiredWording = `APPROVE_FLOW_MOTION_GENERATION: ${jobId} — reference hash ${referenceSha256} 및 prompt hash ${promptSha256}로 Gemini 2 Flow에서 Veo 3.1 Fast 9:16 1개 생성 전송을 승인함; 명시적 quota_exhausted일 때만 Gemini 3/4 fallback 허용`;
 const job = {
   contractVersion: "money_shorts_flow_motion_job_v1",

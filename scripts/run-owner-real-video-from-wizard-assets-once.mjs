@@ -679,6 +679,7 @@ const summary = {
   captionTimelinePath,
   captionAudit,
   imageMode: "chatgpt_playwright",
+  imageSetSha256: manualVisualReview.imageSetSha256,
   visualEngineVersion: expectedVisualEngineVersion,
   motionRendererVersion: HYBRID_MOTION_RENDERER_VERSION,
   layeredMotionRendererVersion: LAYERED_MOTION_RENDERER_VERSION,

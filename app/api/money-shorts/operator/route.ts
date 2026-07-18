@@ -32,6 +32,8 @@ import {
   WIZARD_FINANCE_SUBTOPIC_IDS,
   WIZARD_EDITORIAL_DECISIONS,
   type WizardFinanceSubtopicId,
+  acceptWizardRealSceneImagesVisualQuality,
+  acceptWizardRealTtsListeningQuality,
   buildOperatorCommand,
   buildWizardContentUnitsForTopic,
   buildWizardRealPipelineInputs,
@@ -57,12 +59,14 @@ import {
   readWizardRealAudioBytes,
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
+  readWizardRealSceneImageBytes,
   readWizardFlowMotionStatus,
   readWizardFlowMotionVideoBytes,
   readWizardRealMediaState,
   resolveWizardFinanceCharacterVoice,
   readWizardVideoBytes,
   readWizardVideoStatus,
+  planWizardSelectedSceneImageRegeneration,
   runOperatorScript,
   saveWizardFinanceCharacterSelection,
   saveWizardTopicEditorialDecision,
@@ -136,7 +140,10 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "realTtsPreflight",
   "realTtsReadonlyPreflight",
   "realTtsCreate",
+  "realTtsQualityAccept",
   "realSceneImagesCreate",
+  "realSceneImagesReviewAccept",
+  "realSceneImagesRegenerateSelected",
   "flowMotionPrepare",
   "flowMotionGenerate",
   "flowMotionQaPass",
@@ -378,6 +385,36 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const videoParam = url.searchParams.get("video");
 
+  if (url.searchParams.get("image") === "scene") {
+    if (!isLocalDevRuntime()) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: PRODUCTION_NOTICE, blockerCode: LOCAL_ONLY_BLOCKER, noLive: true },
+        404,
+      );
+    }
+    const sceneIndex = Number(url.searchParams.get("scene"));
+    const image = readWizardRealSceneImageBytes(
+      url.searchParams.get("topicId"),
+      url.searchParams.get("part"),
+      Number.isInteger(sceneIndex) ? sceneIndex : null,
+      url.searchParams.get("sha256"),
+    );
+    if (!image) {
+      return json(
+        { action: "realMediaStatus", status: "blocked", summary: "현재 이미지 세트에 결합된 장면 파일을 찾지 못했습니다.", blockerCode: "REAL_SCENE_IMAGE_NOT_FOUND_OR_STALE", noLive: true },
+        404,
+      );
+    }
+    return new Response(new Uint8Array(image.bytes), {
+      status: 200,
+      headers: {
+        "Content-Type": image.contentType,
+        "Content-Length": String(image.bytes.byteLength),
+        "Cache-Control": "no-store",
+        "X-Image-Sha256": image.imageSha256,
+      },
+    });
+  }
   if (url.searchParams.get("image") === "character") {
     if (!isLocalDevRuntime()) {
       return json(
@@ -1904,6 +1941,16 @@ export async function POST(request: Request) {
     const topicId = typeof b.topicId === "string" ? b.topicId : "";
     const jobId = typeof b.jobId === "string" ? b.jobId : "";
     const ownerApproval = typeof b.ownerApproval === "string" ? b.ownerApproval : "";
+    const media = readWizardRealMediaState(topicId);
+    if (!media.realTts.qualityAccepted) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 실제 음성을 모두 듣고 승인하기 전에는 Flow 생성을 시작할 수 없습니다.",
+        blockerCode: "REAL_TTS_OWNER_APPROVAL_REQUIRED",
+        noLive: true,
+      });
+    }
     const authorized = authorizeWizardFlowMotionGeneration(topicId, jobId, ownerApproval);
     if (!authorized.ok) {
       return json({
@@ -2018,6 +2065,46 @@ export async function POST(request: Request) {
     return json(runRealTtsPreflightAction(topicId));
   }
 
+  // 생성 완료와 품질 승인을 분리한다. 현재 모든 편의 오디오 해시에 결박된
+  // Owner 청취 evidence가 기록되기 전에는 이미지·Flow·렌더·게시로 넘어가지 않는다.
+  if (action === "realTtsQualityAccept") {
+    const b = body as {
+      topicId?: unknown;
+      confirmListenedAllParts?: unknown;
+      confirmVoiceQualityAccepted?: unknown;
+      confirmDownstreamUse?: unknown;
+      approvalText?: unknown;
+    };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const accepted = acceptWizardRealTtsListeningQuality(topicId, {
+      confirmListenedAllParts: b.confirmListenedAllParts === true,
+      confirmVoiceQualityAccepted: b.confirmVoiceQualityAccepted === true,
+      confirmDownstreamUse: b.confirmDownstreamUse === true,
+      approvalText: typeof b.approvalText === "string" ? b.approvalText : "",
+    });
+    if (!accepted.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "모든 편의 현재 음성을 직접 듣고 세 가지 확인과 ‘음성 승인’을 완료해야 합니다.",
+        blockerCode: accepted.reason,
+        noLive: true,
+      }, 400);
+    }
+    return json({
+      action,
+      status: "success",
+      summary: "현재 모든 편의 실제 음성을 Owner 청취 승인으로 고정했습니다.",
+      detail: "오디오·대본·TTS 입력 중 하나라도 바뀌면 이 승인은 자동으로 무효화됩니다.",
+      raw: {
+        realTts: accepted.media.realTts,
+        qualityApprovalFingerprint:
+          accepted.qualityApprovalFingerprint.slice(0, 16),
+      },
+      noLive: true,
+    });
+  }
+
   // Owner가 정확히 승인한 ElevenLabs 읽기 전용 진단 — 외부에는 고정 GET 4개만 1회씩 전송한다.
   if (action === "realTtsReadonlyPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
@@ -2130,10 +2217,10 @@ export async function POST(request: Request) {
       return json({
         action,
         status: "success",
-        summary: `실제 목소리 ${mediaAfterTts.production.totalParts}개가 준비됐습니다 (합계 ${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 편별로 바로 들어볼 수 있습니다.`,
+        summary: `실제 목소리 ${mediaAfterTts.production.totalParts}개가 생성됐습니다 (합계 ${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 모든 편을 듣고 별도로 승인해 주세요.`,
         detail: financeVoiceRoute?.route
-          ? `${financeVoiceRoute.route.characterName} 화자의 ${financeVoiceRoute.route.voice.voiceLabel} 보이스와 공통 한국어 발화 기준으로 전체 대본을 한 흐름으로 합성했습니다. 파일은 Owner PC에만 있습니다.`
-          : "주제별 화자 태도와 한국어 말끝을 적용해 전체 대본을 한 흐름으로 합성한 실제 음성입니다. 파일은 Owner PC에만 있습니다.",
+          ? `${financeVoiceRoute.route.characterName} 화자의 ${financeVoiceRoute.route.voice.voiceLabel} 보이스로 합성했습니다. 현재는 생성 완료 상태이며 Owner 청취 승인 전에는 downstream에서 차단됩니다.`
+          : "실제 음성 파일은 Owner PC에만 있습니다. Owner 청취 승인 전에는 downstream에서 차단됩니다.",
         raw: {
           realTts: mediaAfterTts.realTts,
           financeVoice: financeVoiceRoute?.route
@@ -2169,6 +2256,140 @@ export async function POST(request: Request) {
     });
   }
 
+  // 전체 장면 이미지를 본 Owner가 현재 편별 image-set hash에만 품질 승인을 기록한다.
+  // 이 분기는 JSON evidence만 쓰며 browser/network/image runner를 호출하지 않는다.
+  if (action === "realSceneImagesReviewAccept") {
+    const b = body as {
+      topicId?: unknown;
+      claims?: unknown;
+      confirmReviewedAllImages?: unknown;
+      confirmVisualQualityAccepted?: unknown;
+      confirmDownstreamUse?: unknown;
+      approvalText?: unknown;
+    };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const accepted = acceptWizardRealSceneImagesVisualQuality(topicId, {
+      claims: Array.isArray(b.claims) ? b.claims : undefined,
+      confirmReviewedAllImages: b.confirmReviewedAllImages === true,
+      confirmVisualQualityAccepted: b.confirmVisualQualityAccepted === true,
+      confirmDownstreamUse: b.confirmDownstreamUse === true,
+      approvalText: typeof b.approvalText === "string" ? b.approvalText : "",
+    });
+    if (!accepted.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "전체 편의 모든 장면을 확인하고 세 가지 확인과 ‘이미지 승인’을 완료해야 합니다.",
+        blockerCode: accepted.reason,
+        noLive: true,
+      }, 400);
+    }
+    return json({
+      action,
+      status: "success",
+      summary: "현재 전체 장면 이미지 세트를 Owner 시각 승인으로 고정했습니다.",
+      detail: "장면 이미지·프롬프트·시각 증거 중 하나라도 바뀌면 이 승인은 자동으로 무효화되고, 기존 최종 영상과 Flow 참조도 다시 준비해야 합니다.",
+      raw: {
+        realImages: accepted.media.realImages,
+        imageApprovalFingerprint: accepted.imageApprovalFingerprint.slice(0, 16),
+      },
+      noLive: true,
+    });
+  }
+
+  // Owner가 실패로 고른 현재 장면만 exact hash로 다시 생성한다.
+  // empty/stale/중복 선택은 child spawn 전에 차단하고 runner에는 --no-retry를 하드코딩한다.
+  if (action === "realSceneImagesRegenerateSelected") {
+    const b = body as {
+      topicId?: unknown;
+      selections?: unknown;
+      confirmRegeneration?: unknown;
+      approvalText?: unknown;
+    };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const plan = planWizardSelectedSceneImageRegeneration(topicId, {
+      selections: Array.isArray(b.selections) ? b.selections : undefined,
+      confirmRegeneration: b.confirmRegeneration === true,
+      approvalText: typeof b.approvalText === "string" ? b.approvalText : "",
+    });
+    if (!plan.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "현재 이미지 세트에서 실패 장면을 하나 이상 고르고 ‘선택 장면 재생성’을 확인해야 합니다.",
+        blockerCode: plan.reason,
+        noLive: true,
+      }, 400);
+    }
+    const imageRuns = [];
+    for (const selectedPart of plan.parts) {
+      const builtImg = buildOperatorCommand(action, {
+        topicId,
+        productionPartId: selectedPart.partId,
+        regenerateScenes: selectedPart.regenerateScenes,
+        expectedImageSetSha256: selectedPart.imageSetSha256,
+      });
+      if (!builtImg.ok) {
+        return json({ action, status: "blocked", summary: describeBuildFailure(builtImg.reason), blockerCode: builtImg.reason, noLive: true });
+      }
+      const imageTimeoutMs = Math.min(
+        REAL_IMAGES_MAX_TIMEOUT_MS,
+        REAL_IMAGE_BASE_TIMEOUT_MS + selectedPart.regenerateScenes.length * REAL_IMAGE_PER_SCENE_TIMEOUT_MS,
+      );
+      const runImg = runOperatorScript(builtImg.command, {
+        timeoutMs: imageTimeoutMs,
+        extraEnv: { ALLOW_CHATGPT_IMAGE: "1" },
+      });
+      imageRuns.push({ partId: selectedPart.partId, run: runImg });
+      if (!runImg.ran || runImg.timedOut || runImg.exitCode !== 0) {
+        return json({
+          action,
+          status: "error",
+          summary: `${selectedPart.partId === "single" ? "" : `${selectedPart.partId === "part-1" ? "1" : "2"}편 `}선택 장면 재생성이 완료되지 않았습니다. 자동 재시도하지 않았습니다.`,
+          blockerCode: runImg.timedOut ? "SCRIPT_TIMEOUT" : !runImg.ran ? "SCRIPT_NOT_RUN" : "SELECTED_SCENE_REGENERATION_FAILED",
+          raw: {
+            partId: selectedPart.partId,
+            selectedSceneIndexes: selectedPart.regenerateScenes.map((scene) => scene.sceneIndex),
+            exitCode: runImg.exitCode,
+            stderr: runImg.stderr.slice(-800),
+          },
+          noLive: true,
+        });
+      }
+    }
+    const mediaAfter = readWizardRealMediaState(topicId);
+    if (mediaAfter.realImages.reviewable) {
+      return json({
+        action,
+        status: "success",
+        summary: `선택한 실패 장면 ${plan.selectedSceneCount}장만 다시 만들었습니다. 전체 이미지를 다시 보고 승인해 주세요.`,
+        detail: "선택하지 않은 장면 파일은 그대로 보존했습니다. 기존 이미지 승인·최종 영상·변경된 참조를 쓰는 Flow 결과는 현재 해시와 맞지 않으면 차단됩니다.",
+        raw: {
+          selectedSceneCount: plan.selectedSceneCount,
+          selectedParts: plan.parts.map((part) => ({
+            partId: part.partId,
+            sceneIndexes: part.regenerateScenes.map((scene) => scene.sceneIndex),
+            retainedSceneHashes: part.retainedScenes,
+          })),
+          realImages: mediaAfter.realImages,
+        },
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "blocked",
+      summary: "선택 장면 재생성 후 이미지 기술 검증을 통과하지 못했습니다. 생성 결과를 확인해 주세요.",
+      blockerCode: mediaAfter.realImages.blocked ?? "SELECTED_SCENE_REGENERATION_VALIDATION_FAILED",
+      raw: {
+        selectedSceneCount: plan.selectedSceneCount,
+        realImages: mediaAfter.realImages,
+        exitCodes: imageRuns.map((row) => row.run.exitCode),
+      },
+      noLive: true,
+    });
+  }
+
   // 장면 이미지 만들기 — ChatGPT+Playwright(로그인된 Chrome) 흐름 기반 실제 이미지(Owner 클릭 시에만).
   if (action === "realSceneImagesCreate") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
@@ -2180,11 +2401,13 @@ export async function POST(request: Request) {
     const mediaBeforeImg = readWizardRealMediaState(topicId);
     const imageRuns = [];
     for (const part of pipeline.paths.parts) {
+      const partBefore = mediaBeforeImg.parts.find((candidate) => candidate.id === part.id);
+      // 다편 중 이미 기술 검증까지 끝난 편은 그대로 보존하고, 미완료 편만 이어서 생성한다.
+      if (partBefore?.realImages.reviewable === true) continue;
       const builtImg = buildOperatorCommand(action, { topicId, productionPartId: part.id });
       if (!builtImg.ok) {
         return json({ action, status: "blocked", summary: describeBuildFailure(builtImg.reason), blockerCode: builtImg.reason, noLive: true });
       }
-      const partBefore = mediaBeforeImg.parts.find((candidate) => candidate.id === part.id);
       const expectedScenes = Math.max(1, partBefore?.realImages.expectedCount ?? part.expectedSceneCount);
       const countedRemainingScenes = expectedScenes - (partBefore?.realImages.generatedCount ?? 0);
       const remainingScenes = countedRemainingScenes <= 0 ? expectedScenes : Math.max(1, countedRemainingScenes);
@@ -2220,6 +2443,20 @@ export async function POST(request: Request) {
         summary: `영상 ${mediaAfterImg.production.totalParts}개에 필요한 장면 이미지 ${mediaAfterImg.realImages.expectedCount ?? "?"}장이 모두 준비됐습니다.`,
         detail: "대본의 장면별 시각 사건과 분위기 전환에 맞춘 실제 이미지입니다. 업로드는 아직 하지 않았습니다.",
         raw: { realImages: mediaAfterImg.realImages },
+        noLive: true,
+      });
+    }
+    if (mediaAfterImg.realImages.reviewable) {
+      return json({
+        action,
+        status: "blocked",
+        summary: `영상 ${mediaAfterImg.production.totalParts}개의 장면 이미지 ${mediaAfterImg.realImages.expectedCount ?? "?"}장이 모두 생성됐습니다. 전체 장면을 검수한 뒤 현재 이미지 세트를 승인해 주세요.`,
+        blockerCode: "MANUAL_VISUAL_REVIEW_REQUIRED",
+        raw: {
+          realImages: mediaAfterImg.realImages,
+          parts: mediaAfterImg.parts.map((part) => ({ id: part.id, realImages: part.realImages })),
+          exitCodes: imageRuns.map((row) => row.run.exitCode),
+        },
         noLive: true,
       });
     }
@@ -2448,6 +2685,8 @@ function describeBuildFailure(reason: string): string {
     return "먼저 [대본 만들기]로 대본을 확정해 주세요. 확정 대본이 실제 음성·이미지·영상의 입력이 됩니다.";
   if (reason === "real_tts_required")
     return "먼저 [실제 목소리 만들기]로 실제 음성을 만들어 주세요. 테스트 소리는 사용할 수 없습니다.";
+  if (reason === "real_tts_owner_approval_required")
+    return "모든 편의 현재 실제 음성을 직접 듣고 [현재 음성 청취 승인]을 완료해 주세요.";
   if (reason === "real_scene_images_required")
     return "먼저 [장면 이미지 만들기]로 확정 대본 흐름에 맞는 실제 장면 이미지를 모두 만들어 주세요.";
   if (reason.startsWith("flow_motion_render_ready_required:"))

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { VEO_SCENE_SELECTION_CONTRACT_VERSION, type SceneMediaStrategy } from "./veo-scene-selector";
 
@@ -234,12 +234,32 @@ export function buildFlowMotionState(input: {
     }
     assertSha256(scene.referenceSha256, `flow_motion_reference_hash_invalid:${scene.sceneNumber}`);
     const jobId = `${input.topicId}-${input.productionPartId}-scene-${String(scene.sceneNumber).padStart(2, "0")}`;
-    const jobRoot = join(input.outputRoot, `scene-${String(scene.sceneNumber).padStart(2, "0")}`);
     const prompt = buildFlowMotionPrompt(scene);
     const promptSha256 = sha256(prompt);
-    const packetPath = join(jobRoot, "approval-packet.json");
-    const expectedVideoPath = join(jobRoot, "flow-motion-raw.mp4");
-    const qaEvidencePath = join(jobRoot, "qa-evidence.json");
+    const previousJob = input.previous?.scriptFingerprint === input.scriptFingerprint
+      ? input.previous.jobs.find((candidate) => candidate.sceneNumber === scene.sceneNumber)
+      : null;
+    const previousContractMatches =
+      previousJob?.jobId === jobId &&
+      previousJob.referenceSha256 === scene.referenceSha256 &&
+      previousJob.promptSha256 === promptSha256;
+    const contractRevision = `${scene.referenceSha256.slice(0, 16)}-${promptSha256.slice(0, 16)}`;
+    const jobRoot = previousContractMatches
+      ? dirname(previousJob.expectedVideoPath)
+      : join(
+          input.outputRoot,
+          `scene-${String(scene.sceneNumber).padStart(2, "0")}`,
+          `contract-${contractRevision}`,
+        );
+    const packetPath = previousContractMatches
+      ? previousJob.packetPath
+      : join(jobRoot, "approval-packet.json");
+    const expectedVideoPath = previousContractMatches
+      ? previousJob.expectedVideoPath
+      : join(jobRoot, "flow-motion-raw.mp4");
+    const qaEvidencePath = previousContractMatches
+      ? previousJob.qaEvidencePath
+      : join(jobRoot, "qa-evidence.json");
     for (const path of [packetPath, expectedVideoPath, qaEvidencePath]) assertInsideRoot(path, input.outputRoot);
     const requiredWording = [
       `APPROVE_FLOW_MOTION_GENERATION: ${jobId}`,
@@ -282,9 +302,6 @@ export function buildFlowMotionState(input: {
         externalActionRequiresSeparateOwnerApproval: true,
       },
     };
-    const previousJob = input.previous?.scriptFingerprint === input.scriptFingerprint
-      ? input.previous.jobs.find((candidate) => candidate.sceneNumber === scene.sceneNumber)
-      : null;
     return previousJob && sameJobContract(previousJob, fresh)
       ? { ...fresh, status: previousJob.status, approval: previousJob.approval, qa: previousJob.qa, execution: previousJob.execution, transitionHistory: previousJob.transitionHistory }
       : fresh;

@@ -7,6 +7,7 @@ import path from "node:path";
 import vm from "node:vm";
 import ts from "typescript";
 import * as manualVisualReviewModule from "../lib/money-shorts-manual-visual-review.mjs";
+import * as ttsOwnerListeningGateModule from "../lib/money-shorts-tts-owner-listening-gate.mjs";
 
 const ROOT = process.cwd();
 const TOPIC_ID = "gen-finance-editorial-v2-investing_assets-reversal-01";
@@ -90,6 +91,7 @@ const helperModule = loadTypescriptModule(HELPER_PATH, (specifier) => {
   if (specifier === "./veo-scene-selector") return veoSceneSelectorModule;
   if (specifier === "./flow-motion-jobs") return flowMotionJobsModule;
   if (specifier === "./money-shorts-manual-visual-review.mjs") return manualVisualReviewModule;
+  if (specifier === "./money-shorts-tts-owner-listening-gate.mjs") return ttsOwnerListeningGateModule;
   return nodeRequire(specifier);
 });
 

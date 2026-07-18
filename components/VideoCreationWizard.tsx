@@ -13,7 +13,7 @@
  */
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -201,6 +201,10 @@ type WizardRealMedia = {
   };
   realTts: {
     ready: boolean;
+    qualityAccepted: boolean;
+    qualityApprovalFingerprint: string | null;
+    qualityAcceptedAt: string | null;
+    audioSha256: string | null;
     audioPath: string | null;
     durationSec: number | null;
     provider: string | null;
@@ -209,10 +213,25 @@ type WizardRealMedia = {
   };
   realImages: {
     ready: boolean;
+    reviewable: boolean;
     generatedCount: number;
     expectedCount: number | null;
     dir: string | null;
     blocked: string | null;
+    blockerDetail?: string | null;
+    manualVisualReview: {
+      accepted: boolean;
+      imageSetSha256: string | null;
+      approvalTransactionId: string | null;
+      reason: string | null;
+    };
+    scenes: Array<{
+      sceneIndex: number;
+      ready: boolean;
+      imageSha256: string | null;
+      width: number | null;
+      height: number | null;
+    }>;
   };
   finalVideo: {
     ready: boolean;
@@ -814,6 +833,7 @@ const AUTOMATION_GATE_LABEL: Record<string, string> = {
   owner_topic_selection: "주제·대본 확인 필요",
   owner_character_selection: "주인공 이미지 확인 필요",
   owner_paid_tts: "유료 음성 승인에서 중단",
+  owner_tts_listening_approval: "실제 음성 청취 승인에서 중단",
   owner_image_generation: "외부 이미지 생성 승인에서 중단",
   owner_visual_qa: "전체 이미지 검수에서 중단",
   owner_paid_flow: "Flow 1회 생성 승인에서 중단",
@@ -1028,6 +1048,7 @@ export default function VideoCreationWizard() {
   const [topicResult, setTopicResult] = useState<OperatorResult | null>(null);
   const [topics, setTopics] = useState<WizardTopic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const selectedTopicIdRef = useRef<string | null>(null);
   const [uploadReadyState, setUploadReadyState] = useState<RunState>("idle");
   const [uploadReadyResult, setUploadReadyResult] = useState<OperatorResult | null>(null);
   const [uploadReadyItems, setUploadReadyItems] = useState<WizardUploadReadyItem[]>([]);
@@ -1075,8 +1096,29 @@ export default function VideoCreationWizard() {
   const [characterImageKey, setCharacterImageKey] = useState(0);
   const [realTtsState, setRealTtsState] = useState<RunState>("idle");
   const [realTtsResult, setRealTtsResult] = useState<OperatorResult | null>(null);
+  const [realTtsApprovalState, setRealTtsApprovalState] =
+    useState<RunState>("idle");
+  const [realTtsApprovalResult, setRealTtsApprovalResult] =
+    useState<OperatorResult | null>(null);
+  const [confirmTtsListenedAllParts, setConfirmTtsListenedAllParts] =
+    useState(false);
+  const [confirmTtsVoiceQuality, setConfirmTtsVoiceQuality] =
+    useState(false);
+  const [confirmTtsDownstreamUse, setConfirmTtsDownstreamUse] =
+    useState(false);
+  const [confirmTtsApprovalText, setConfirmTtsApprovalText] = useState("");
   const [imagesState, setImagesState] = useState<RunState>("idle");
   const [imagesResult, setImagesResult] = useState<OperatorResult | null>(null);
+  const [imageReviewState, setImageReviewState] = useState<RunState>("idle");
+  const [imageReviewResult, setImageReviewResult] = useState<OperatorResult | null>(null);
+  const [selectedFailedScenes, setSelectedFailedScenes] = useState<Record<string, boolean>>({});
+  const [confirmImagesReviewedAll, setConfirmImagesReviewedAll] = useState(false);
+  const [confirmImageVisualQuality, setConfirmImageVisualQuality] = useState(false);
+  const [confirmImageDownstreamUse, setConfirmImageDownstreamUse] = useState(false);
+  const [confirmImageApprovalText, setConfirmImageApprovalText] = useState("");
+  const [confirmSelectedRegeneration, setConfirmSelectedRegeneration] = useState(false);
+  const [confirmSelectedRegenerationText, setConfirmSelectedRegenerationText] = useState("");
+  const [sceneImageKey, setSceneImageKey] = useState(0);
   const [flowMotionState, setFlowMotionState] = useState<RunState>("idle");
   const [flowMotionResult, setFlowMotionResult] = useState<OperatorResult | null>(null);
   const [flowMotion, setFlowMotion] = useState<WizardFlowMotionStatus | null>(null);
@@ -1102,6 +1144,10 @@ export default function VideoCreationWizard() {
   const [confirmDiscoveryReady, setConfirmDiscoveryReady] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+
+  useEffect(() => {
+    selectedTopicIdRef.current = selectedTopicId;
+  }, [selectedTopicId]);
 
   // Playwright 주문형 운영과 브라우저 재시작 후 이어가기를 위한 로컬 전용 복원점.
   // topicId는 이후 모든 서버 action에서 다시 검증되며 파일 경로로 직접 사용되지 않는다.
@@ -1137,7 +1183,9 @@ export default function VideoCreationWizard() {
     preflightState,
     uploadState,
     realTtsState,
+    realTtsApprovalState,
     imagesState,
+    imageReviewState,
     flowMotionState,
     finalVideoState,
     characterCastState,
@@ -1155,8 +1203,38 @@ export default function VideoCreationWizard() {
   const characterCastReady = characterCast?.allSelected === true;
   // 서버는 주제의 소주제에서 담당 캐릭터를 결정하고, 선택 파일의 SHA-256까지 검증한 뒤에만 생성한다.
   const characterReferenceEngineReady = characterCastReady;
-  const realTtsReady = realMedia?.realTts.ready === true;
+  const realTtsGenerated = realMedia?.realTts.ready === true;
+  const realTtsReady = realMedia?.realTts.qualityAccepted === true;
+  const realTtsApprovalReady =
+    confirmTtsListenedAllParts &&
+    confirmTtsVoiceQuality &&
+    confirmTtsDownstreamUse &&
+    confirmTtsApprovalText.trim() === "음성 승인";
   const realImagesReady = realMedia?.realImages.ready === true;
+  const realImagesReviewable = realMedia?.realImages.reviewable === true;
+  const imageSceneRows = (realMedia?.parts ?? []).flatMap((part) =>
+    part.realImages.scenes.map((scene) => ({
+      partId: part.id,
+      partNumber: part.partNumber,
+      totalParts: part.totalParts,
+      imageSetSha256: part.realImages.manualVisualReview.imageSetSha256,
+      ...scene,
+      selectionKey: `${part.id}:${scene.sceneIndex}:${scene.imageSha256 ?? "missing"}`,
+    })),
+  );
+  const selectedImageScenes = imageSceneRows.filter((scene) => selectedFailedScenes[scene.selectionKey] === true);
+  const imageReviewApprovalReady =
+    realImagesReviewable &&
+    selectedImageScenes.length === 0 &&
+    confirmImagesReviewedAll &&
+    confirmImageVisualQuality &&
+    confirmImageDownstreamUse &&
+    confirmImageApprovalText.trim() === "이미지 승인";
+  const selectedImageRegenerationReady =
+    realImagesReviewable &&
+    selectedImageScenes.length > 0 &&
+    confirmSelectedRegeneration &&
+    confirmSelectedRegenerationText.trim() === "선택 장면 재생성";
   const selectedFlowMotionSceneCount = flowMotion?.requiredCount ?? script?.scenes?.filter((scene) => scene.mediaStrategy === "veo_motion").length ?? 0;
   const flowMotionPrepared = flowMotion?.state !== "not_prepared" && flowMotion?.state !== undefined;
   const flowMotionReadyForRender = flowMotion?.readyForRender === true;
@@ -1165,8 +1243,8 @@ export default function VideoCreationWizard() {
   const productionPartCount = realMedia?.production.totalParts ?? script?.videoStrategy?.parts.length ?? 1;
   const plannedSceneCount = realMedia?.realImages.expectedCount ?? script?.scenes?.length ?? null;
   const imageStepDescription = plannedSceneCount != null
-    ? `영상 ${productionPartCount}개, 총 ${plannedSceneCount}장면의 흐름에 맞춰 서로 다른 실제 장면 이미지를 만듭니다. 몇 분 걸릴 수 있습니다.`
-    : "확정 대본의 장면 흐름에 맞춰 서로 다른 실제 장면 이미지를 만듭니다. 몇 분 걸릴 수 있습니다.";
+    ? `영상 ${productionPartCount}개, 총 ${plannedSceneCount}장면을 모두 미리 보고 실패 장면만 다시 만든 뒤 현재 이미지 세트를 승인합니다.`
+    : "확정 대본의 장면 이미지를 모두 미리 보고 실패 장면만 다시 만든 뒤 현재 이미지 세트를 승인합니다.";
   const finalVideoStepDescription = plannedSceneCount != null
     ? `실제 목소리와 장면 이미지 ${plannedSceneCount}장에 검수 완료 Veo 모션 장면을 결합해 최종 mp4 ${productionPartCount}개로 합성합니다.`
     : "확정 대본의 실제 목소리·장면 이미지와 검수 완료 Veo 모션을 최종 mp4로 합성합니다.";
@@ -1201,8 +1279,23 @@ export default function VideoCreationWizard() {
     setAutomationRecoveryResult(null);
     setRealTtsState("idle");
     setRealTtsResult(null);
+    setRealTtsApprovalState("idle");
+    setRealTtsApprovalResult(null);
+    setConfirmTtsListenedAllParts(false);
+    setConfirmTtsVoiceQuality(false);
+    setConfirmTtsDownstreamUse(false);
+    setConfirmTtsApprovalText("");
     setImagesState("idle");
     setImagesResult(null);
+    setImageReviewState("idle");
+    setImageReviewResult(null);
+    setSelectedFailedScenes({});
+    setConfirmImagesReviewedAll(false);
+    setConfirmImageVisualQuality(false);
+    setConfirmImageDownstreamUse(false);
+    setConfirmImageApprovalText("");
+    setConfirmSelectedRegeneration(false);
+    setConfirmSelectedRegenerationText("");
     setFlowMotionState("idle");
     setFlowMotionResult(null);
     setFlowMotion(null);
@@ -1419,6 +1512,7 @@ export default function VideoCreationWizard() {
     try {
       const r = await postAction("realMediaStatus", { topicId });
       const raw = r.raw as { media?: WizardRealMedia; flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (selectedTopicIdRef.current !== topicId) return;
       if (r.status === "success" && raw?.media) setRealMedia(raw.media);
       if (r.status === "success" && raw?.flowMotion) setFlowMotion(raw.flowMotion);
     } catch {
@@ -1960,6 +2054,35 @@ export default function VideoCreationWizard() {
     return () => window.clearTimeout(refreshTimer);
   }, [localDev, selectedTopicId, refreshRealMedia]);
 
+  // 이미지 파일 하나라도 바뀌어 image-set hash가 달라지면 이전 선택/확인 입력을 재사용하지 않는다.
+  useEffect(() => {
+    setImageReviewState("idle");
+    setImageReviewResult(null);
+    setSelectedFailedScenes({});
+    setConfirmImagesReviewedAll(false);
+    setConfirmImageVisualQuality(false);
+    setConfirmImageDownstreamUse(false);
+    setConfirmImageApprovalText("");
+    setConfirmSelectedRegeneration(false);
+    setConfirmSelectedRegenerationText("");
+    setFlowMotionState("idle");
+    setFlowMotionResult(null);
+    setFlowMotionApprovalInputs({});
+    setFlowMotionQaChecks({});
+    setFlowMotionQaNotes({});
+    setFinalVideoState("idle");
+    setFinalVideoResult(null);
+    setPreflightState("idle");
+    setPreflightResult(null);
+    setConfirmReviewed(false);
+    setConfirmDiscoveryReady(false);
+    setConfirmPublish(false);
+    setConfirmText("");
+    setUploadState((current) => current === "success" ? current : "idle");
+    setUploadResult((current) => current?.status === "success" ? current : null);
+    setSceneImageKey((key) => key + 1);
+  }, [selectedTopicId, realMedia?.realImages.manualVisualReview.imageSetSha256]);
+
   // 실제 산출물 상태가 바뀔 때마다 서버가 다음 안전 단계를 다시 계산한다.
   // 이 조회는 어떤 생성·렌더·업로드도 실행하지 않는다.
   useEffect(() => {
@@ -1972,7 +2095,9 @@ export default function VideoCreationWizard() {
     localDev,
     selectedTopicId,
     realMedia?.realTts.ready,
+    realMedia?.realTts.qualityAccepted,
     realMedia?.realImages.generatedCount,
+    realMedia?.realImages.manualVisualReview.imageSetSha256,
     realMedia?.realImages.ready,
     realMedia?.finalVideo.ready,
     realMedia?.mediaQualityGate.ok,
@@ -2008,6 +2133,12 @@ export default function VideoCreationWizard() {
     if (!selectedTopicId) return;
     setRealTtsState("running");
     setRealTtsResult(null);
+    setRealTtsApprovalState("idle");
+    setRealTtsApprovalResult(null);
+    setConfirmTtsListenedAllParts(false);
+    setConfirmTtsVoiceQuality(false);
+    setConfirmTtsDownstreamUse(false);
+    setConfirmTtsApprovalText("");
     try {
       const r = await postAction("realTtsCreate", { topicId: selectedTopicId });
       setRealTtsResult(r);
@@ -2020,21 +2151,136 @@ export default function VideoCreationWizard() {
     }
   }, [selectedTopicId, refreshRealMedia]);
 
+  const acceptRealTtsQuality = useCallback(async () => {
+    if (!selectedTopicId || !realTtsApprovalReady) return;
+    setRealTtsApprovalState("running");
+    setRealTtsApprovalResult(null);
+    try {
+      const r = await postAction("realTtsQualityAccept", {
+        topicId: selectedTopicId,
+        confirmListenedAllParts: confirmTtsListenedAllParts,
+        confirmVoiceQualityAccepted: confirmTtsVoiceQuality,
+        confirmDownstreamUse: confirmTtsDownstreamUse,
+        approvalText: confirmTtsApprovalText.trim(),
+      });
+      setRealTtsApprovalResult(r);
+      setRealTtsApprovalState(
+        r.status === "success" ? "success" : r.status,
+      );
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setRealTtsApprovalState("error");
+      setRealTtsApprovalResult({
+        action: "realTtsQualityAccept",
+        status: "error",
+        summary: "음성 청취 승인을 기록하지 못했습니다.",
+      });
+    }
+  }, [
+    confirmTtsApprovalText,
+    confirmTtsDownstreamUse,
+    confirmTtsListenedAllParts,
+    confirmTtsVoiceQuality,
+    realTtsApprovalReady,
+    refreshRealMedia,
+    selectedTopicId,
+  ]);
+
   // 장면 이미지 만들기 — 확정 대본의 흐름 기반 장면 수, 재클릭 시 모자란 장면만 이어서 생성한다.
   const runSceneImages = useCallback(async () => {
-    if (!selectedTopicId) return;
+    if (!selectedTopicId || realImagesReviewable) return;
     setImagesState("running");
     setImagesResult(null);
+    setImageReviewState("idle");
+    setImageReviewResult(null);
     try {
       const r = await postAction("realSceneImagesCreate", { topicId: selectedTopicId });
       setImagesResult(r);
       setImagesState(r.status === "success" ? "success" : r.status);
+      setSceneImageKey((key) => key + 1);
       await refreshRealMedia(selectedTopicId);
     } catch {
       setImagesState("error");
       setImagesResult({ action: "realSceneImagesCreate", status: "error", summary: "장면 이미지 생성 요청에 실패했습니다." });
     }
-  }, [selectedTopicId, refreshRealMedia]);
+  }, [realImagesReviewable, selectedTopicId, refreshRealMedia]);
+
+  const acceptRealSceneImagesQuality = useCallback(async () => {
+    if (!selectedTopicId || !imageReviewApprovalReady || !realMedia) return;
+    setImageReviewState("running");
+    setImageReviewResult(null);
+    try {
+      const r = await postAction("realSceneImagesReviewAccept", {
+        topicId: selectedTopicId,
+        claims: realMedia.parts.map((part) => ({
+          partId: part.id,
+          imageSetSha256: part.realImages.manualVisualReview.imageSetSha256,
+        })),
+        confirmReviewedAllImages: confirmImagesReviewedAll,
+        confirmVisualQualityAccepted: confirmImageVisualQuality,
+        confirmDownstreamUse: confirmImageDownstreamUse,
+        approvalText: confirmImageApprovalText.trim(),
+      });
+      setImageReviewResult(r);
+      setImageReviewState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setImageReviewState("error");
+      setImageReviewResult({
+        action: "realSceneImagesReviewAccept",
+        status: "error",
+        summary: "이미지 시각 승인을 기록하지 못했습니다.",
+      });
+    }
+  }, [
+    confirmImageApprovalText,
+    confirmImageDownstreamUse,
+    confirmImageVisualQuality,
+    confirmImagesReviewedAll,
+    imageReviewApprovalReady,
+    realMedia,
+    refreshRealMedia,
+    selectedTopicId,
+  ]);
+
+  const regenerateSelectedSceneImages = useCallback(async () => {
+    if (!selectedTopicId || !selectedImageRegenerationReady) return;
+    setImagesState("running");
+    setImagesResult(null);
+    setImageReviewState("idle");
+    setImageReviewResult(null);
+    try {
+      const r = await postAction("realSceneImagesRegenerateSelected", {
+        topicId: selectedTopicId,
+        selections: selectedImageScenes.map((scene) => ({
+          partId: scene.partId,
+          sceneIndex: scene.sceneIndex,
+          imageSha256: scene.imageSha256,
+          imageSetSha256: scene.imageSetSha256,
+        })),
+        confirmRegeneration: confirmSelectedRegeneration,
+        approvalText: confirmSelectedRegenerationText.trim(),
+      });
+      setImagesResult(r);
+      setImagesState(r.status === "success" ? "success" : r.status);
+      setSceneImageKey((key) => key + 1);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setImagesState("error");
+      setImagesResult({
+        action: "realSceneImagesRegenerateSelected",
+        status: "error",
+        summary: "선택 장면 재생성 요청에 실패했습니다.",
+      });
+    }
+  }, [
+    confirmSelectedRegeneration,
+    confirmSelectedRegenerationText,
+    refreshRealMedia,
+    selectedImageRegenerationReady,
+    selectedImageScenes,
+    selectedTopicId,
+  ]);
 
   // Flow 모션 준비 — 로컬 패킷과 승인 대기 상태만 생성한다. 외부 브라우저/크레딧 작업은 하지 않는다.
   const runFlowMotionPrepare = useCallback(async () => {
@@ -3650,8 +3896,17 @@ export default function VideoCreationWizard() {
         <StepCard
           num={5}
           title="실제 목소리 만들기"
-          state={realTtsReady ? "success" : realTtsState}
-          desc="주제에 맞는 화자 태도와 한국어 억양을 정한 뒤, 전체 대본을 한 흐름으로 읽는 실제 음성을 만듭니다. 몇십 초 걸릴 수 있습니다."
+          state={
+            realTtsReady
+              ? "success"
+              : realTtsState === "running" ||
+                  realTtsApprovalState === "running"
+                ? "running"
+                : realTtsApprovalState === "error"
+                  ? "error"
+                  : "idle"
+          }
+          desc="실제 음성을 만든 뒤 모든 편을 직접 듣고 승인해야 다음 제작 단계로 넘어갑니다."
         >
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
@@ -3665,7 +3920,11 @@ export default function VideoCreationWizard() {
             </button>
             {realTtsReady ? (
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
-                실제 음성 준비 ({realMedia?.realTts.durationSec?.toFixed(1) ?? "?"}초)
+                Owner 청취 승인 완료 ({realMedia?.realTts.durationSec?.toFixed(1) ?? "?"}초)
+              </span>
+            ) : realTtsGenerated ? (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+                생성 완료 · 청취 승인 필요
               </span>
             ) : realMedia && realMedia.scriptEngine.elevenLabsKeyPresent === false ? (
               <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
@@ -3680,7 +3939,7 @@ export default function VideoCreationWizard() {
             <p className="text-[15px] text-amber-700 font-semibold mt-2">실제 음성 생성 중… 창을 닫지 마세요.</p>
           ) : null}
           <ResultNote result={realTtsResult} />
-          {realTtsReady && selectedTopicId ? (
+          {realTtsGenerated && selectedTopicId ? (
             <div className="mt-3 space-y-3">
               {(realMedia?.parts ?? []).map((part) => (
                 <div key={part.id}>
@@ -3696,7 +3955,74 @@ export default function VideoCreationWizard() {
                   />
                 </div>
               ))}
-              <p className="text-sm text-slate-500">이 목소리가 각 최종 영상에 그대로 들어갑니다.</p>
+              {!realTtsReady ? (
+                <div
+                  data-testid="wizard-tts-owner-listening-gate"
+                  className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-3"
+                >
+                  <p className="text-sm font-bold text-amber-900">
+                    모든 편을 끝까지 들어본 뒤 현재 음성을 승인해 주세요.
+                  </p>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmTtsListenedAllParts}
+                      onChange={(event) =>
+                        setConfirmTtsListenedAllParts(event.target.checked)
+                      }
+                    />
+                    모든 편의 실제 음성을 직접 들었습니다.
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmTtsVoiceQuality}
+                      onChange={(event) =>
+                        setConfirmTtsVoiceQuality(event.target.checked)
+                      }
+                    />
+                    발음·억양·속도·감정이 최종 영상에 사용할 품질입니다.
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmTtsDownstreamUse}
+                      onChange={(event) =>
+                        setConfirmTtsDownstreamUse(event.target.checked)
+                      }
+                    />
+                    이 음성을 이미지·Veo·렌더·게시 후보에 사용하는 데 동의합니다.
+                  </label>
+                  <input
+                    type="text"
+                    value={confirmTtsApprovalText}
+                    onChange={(event) =>
+                      setConfirmTtsApprovalText(event.target.value)
+                    }
+                    placeholder="음성 승인"
+                    className="w-full max-w-sm rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    data-testid="wizard-action-real-tts-quality-accept"
+                    className={RUN_BTN}
+                    disabled={!runnable || !realTtsApprovalReady}
+                    onClick={acceptRealTtsQuality}
+                  >
+                    현재 음성 청취 승인
+                  </button>
+                  <ResultNote result={realTtsApprovalResult} />
+                </div>
+              ) : (
+                <p className="text-sm text-emerald-700 font-semibold">
+                  승인 지문{" "}
+                  {realMedia?.realTts.qualityApprovalFingerprint?.slice(
+                    0,
+                    16,
+                  ) ?? "확인됨"}
+                  · 현재 오디오가 바뀌면 자동으로 재승인이 필요합니다.
+                </p>
+              )}
             </div>
           ) : null}
           <details className="mt-3">
@@ -3715,7 +4041,7 @@ export default function VideoCreationWizard() {
         <StepCard
           num={6}
           title="장면 이미지 만들기"
-          state={realImagesReady ? "success" : imagesState}
+          state={realImagesReady ? "success" : imageReviewState === "running" ? "running" : realImagesReviewable ? "blocked" : imagesState}
           desc={imageStepDescription}
         >
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -3723,18 +4049,22 @@ export default function VideoCreationWizard() {
               type="button"
               data-testid="wizard-action-real-images"
               className={RUN_BTN}
-              disabled={!runnable || !selectedTopicId || !scriptFinalReady || !characterCastReady || !characterReferenceEngineReady}
+              disabled={!runnable || !selectedTopicId || !scriptFinalReady || !realTtsReady || !characterCastReady || !characterReferenceEngineReady || realImagesReviewable}
               onClick={runSceneImages}
             >
               장면 이미지 만들기
             </button>
             {realImagesReady ? (
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold">
-                장면 이미지 준비 {realMedia.realImages.generatedCount}/{realMedia.realImages.expectedCount ?? "?"}
+                전체 이미지 Owner 승인 완료 {realMedia.realImages.generatedCount}/{realMedia.realImages.expectedCount ?? "?"}
+              </span>
+            ) : realImagesReviewable ? (
+              <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+                전체 이미지 생성 완료 · Owner 검수 필요 ({realMedia?.realImages.generatedCount}/{realMedia?.realImages.expectedCount ?? "?"})
               </span>
             ) : realMedia && realMedia.realImages.generatedCount > 0 ? (
               <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
-                이미지 생성 필요 ({realMedia.realImages.generatedCount}/{realMedia.realImages.expectedCount ?? "?"})
+                이미지 생성 미완료 ({realMedia.realImages.generatedCount}/{realMedia.realImages.expectedCount ?? "?"})
               </span>
             ) : (
               <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-sm">
@@ -3744,8 +4074,16 @@ export default function VideoCreationWizard() {
           </div>
           {!scriptFinalReady ? (
             <p className="text-sm text-slate-400 mt-2">먼저 [대본 만들기]로 대본을 확정해 주세요.</p>
+          ) : !realTtsReady ? (
+            <p className="text-sm text-amber-700 mt-2">
+              먼저 모든 편의 실제 음성을 듣고 [현재 음성 청취 승인]을 완료해 주세요.
+            </p>
           ) : !characterCastReady ? (
             <p className="text-sm text-amber-700 mt-2">먼저 [주인공 이미지 검수]에서 4명의 기준 이미지를 선택해 주세요.</p>
+          ) : realImagesReviewable ? (
+            <p className="text-sm text-amber-700 mt-2">
+              아래 모든 장면을 직접 확인하세요. 문제가 있는 장면은 체크해 선택 장면만 다시 만들고, 실패 장면이 하나도 없을 때 현재 이미지 세트를 승인합니다.
+            </p>
           ) : (
             <p className="text-sm text-slate-500 mt-2">
               로그인된 Chrome(AI-GPT-1 프로필)의 ChatGPT로 생성합니다. 담당 주인공의 확정 이미지는 인물 장면에만 첨부하고,
@@ -3758,6 +4096,151 @@ export default function VideoCreationWizard() {
             </p>
           ) : null}
           <ResultNote result={imagesResult} />
+          {imageSceneRows.length > 0 ? (
+            <div data-testid="wizard-real-scene-image-review-grid" className="mt-4 space-y-4">
+              {realMedia?.parts.map((part) => (
+                <div key={part.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="mb-3 text-sm font-bold text-slate-800">
+                    {part.id === "single" ? "단일편" : `${part.partNumber}편`} · 장면 {part.realImages.scenes.length}개
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {part.realImages.scenes.map((scene) => {
+                      const selectionKey = `${part.id}:${scene.sceneIndex}:${scene.imageSha256 ?? "missing"}`;
+                      const imageSrc = scene.ready && scene.imageSha256
+                        ? `/api/money-shorts/operator?image=scene&topicId=${encodeURIComponent(selectedTopicId ?? "")}&part=${encodeURIComponent(part.id)}&scene=${scene.sceneIndex}&sha256=${scene.imageSha256}&v=${sceneImageKey}`
+                        : null;
+                      return (
+                        <div
+                          key={selectionKey}
+                          data-testid={`wizard-real-scene-image-${part.id}-${scene.sceneIndex}`}
+                          className={`rounded-xl border p-2 ${selectedFailedScenes[selectionKey] ? "border-red-400 bg-red-50" : "border-slate-200 bg-white"}`}
+                        >
+                          {imageSrc ? (
+                            <Image
+                              unoptimized
+                              src={imageSrc}
+                              alt={`${part.id === "single" ? "단일편" : `${part.partNumber}편`} 장면 ${scene.sceneIndex}`}
+                              width={scene.width ?? 900}
+                              height={scene.height ?? 1200}
+                              className="mx-auto max-h-[460px] w-auto rounded-lg bg-slate-100 object-contain"
+                            />
+                          ) : (
+                            <div className="flex min-h-48 items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-500">
+                              장면 파일 미완료
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">장면 {scene.sceneIndex}</p>
+                              <p className="text-xs text-slate-400">
+                                {scene.width ?? "?"}×{scene.height ?? "?"} · {scene.imageSha256?.slice(0, 12) ?? "hash 없음"}…
+                              </p>
+                            </div>
+                            <label className="flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                              <input
+                                type="checkbox"
+                                data-testid={`wizard-select-failed-scene-${part.id}-${scene.sceneIndex}`}
+                                disabled={!scene.ready || imagesState === "running"}
+                                checked={selectedFailedScenes[selectionKey] === true}
+                                onChange={(event) => setSelectedFailedScenes((current) => ({
+                                  ...current,
+                                  [selectionKey]: event.target.checked,
+                                }))}
+                              />
+                              실패 장면
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {realImagesReviewable ? (
+            <div className="mt-4 space-y-4">
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                <p className="text-sm font-bold text-red-800">
+                  실패 장면 {selectedImageScenes.length}개 선택
+                </p>
+                <p className="mt-1 text-xs text-red-700">
+                  선택 장면만 각 1회 다시 만들며 자동 재시도하지 않습니다. 선택하지 않은 장면의 파일과 해시는 그대로 보존합니다.
+                </p>
+                <label className="mt-3 flex items-start gap-2 text-xs text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={confirmSelectedRegeneration}
+                    onChange={(event) => setConfirmSelectedRegeneration(event.target.checked)}
+                  />
+                  <span>위에 체크한 현재 장면만 외부 이미지 생성으로 다시 만드는 것을 확인했습니다.</span>
+                </label>
+                <input
+                  type="text"
+                  value={confirmSelectedRegenerationText}
+                  onChange={(event) => setConfirmSelectedRegenerationText(event.target.value)}
+                  placeholder="선택 장면 재생성"
+                  className="mt-2 w-full max-w-sm rounded-lg border border-red-300 bg-white px-3 py-2 text-sm"
+                />
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    data-testid="wizard-action-regenerate-selected-scene-images"
+                    className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-40"
+                    disabled={!runnable || !selectedImageRegenerationReady}
+                    onClick={regenerateSelectedSceneImages}
+                  >
+                    선택한 실패 장면만 재생성
+                  </button>
+                </div>
+              </div>
+              {!realImagesReady ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm font-bold text-amber-900">현재 전체 이미지 세트 승인</p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    실패 장면 선택이 0개일 때만 승인할 수 있습니다. 현재 해시 묶음이 바뀌면 승인은 자동으로 무효화됩니다.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    <label className="flex items-start gap-2 text-xs text-slate-700">
+                      <input type="checkbox" checked={confirmImagesReviewedAll} onChange={(event) => setConfirmImagesReviewedAll(event.target.checked)} />
+                      <span>모든 편의 모든 장면 이미지를 크게 확인했습니다.</span>
+                    </label>
+                    <label className="flex items-start gap-2 text-xs text-slate-700">
+                      <input type="checkbox" checked={confirmImageVisualQuality} onChange={(event) => setConfirmImageVisualQuality(event.target.checked)} />
+                      <span>실패 장면이 없고 내용 전달·인물 연속성·밝기·무문자 품질을 수용합니다.</span>
+                    </label>
+                    <label className="flex items-start gap-2 text-xs text-slate-700">
+                      <input type="checkbox" checked={confirmImageDownstreamUse} onChange={(event) => setConfirmImageDownstreamUse(event.target.checked)} />
+                      <span>현재 이미지 세트를 Veo 준비와 최종 렌더에 사용하는 것을 승인합니다.</span>
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    value={confirmImageApprovalText}
+                    onChange={(event) => setConfirmImageApprovalText(event.target.value)}
+                    placeholder="이미지 승인"
+                    className="mt-3 w-full max-w-sm rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+                  />
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      data-testid="wizard-action-real-images-review-accept"
+                      className={RUN_BTN}
+                      disabled={!runnable || !imageReviewApprovalReady}
+                      onClick={acceptRealSceneImagesQuality}
+                    >
+                      현재 전체 이미지 승인
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-emerald-700">
+                  현재 이미지 세트 승인 완료 · {realMedia?.realImages.manualVisualReview.imageSetSha256?.slice(0, 16) ?? "hash 확인"}…
+                </p>
+              )}
+              <ResultNote result={imageReviewResult} />
+            </div>
+          ) : null}
         </StepCard>
 
         {/* 7. Veo 모션 준비 — 자동 선정 장면의 로컬 패킷/상태만 생성 */}
@@ -3782,7 +4265,7 @@ export default function VideoCreationWizard() {
               type="button"
               data-testid="wizard-action-flow-motion-prepare"
               className={RUN_BTN}
-              disabled={!runnable || !selectedTopicId || !realImagesReady || selectedFlowMotionSceneCount === 0}
+              disabled={!runnable || !selectedTopicId || !realTtsReady || !realImagesReady || selectedFlowMotionSceneCount === 0}
               onClick={runFlowMotionPrepare}
             >
               Flow 작업 패킷 준비
@@ -3793,7 +4276,9 @@ export default function VideoCreationWizard() {
               </span>
             ) : null}
           </div>
-          {!realImagesReady ? (
+          {!realTtsReady ? (
+            <p className="text-sm text-amber-700 mt-2">현재 실제 음성의 Owner 청취 승인이 필요합니다.</p>
+          ) : !realImagesReady ? (
             <p className="text-sm text-slate-400 mt-2">먼저 [장면 이미지 만들기]를 완료해 주세요.</p>
           ) : selectedFlowMotionSceneCount === 0 ? (
             <p className="text-sm text-slate-500 mt-2">이 대본에는 영상화가 필요한 장면이 없습니다. 정지 이미지 모션으로 합성합니다.</p>
@@ -3921,7 +4406,7 @@ export default function VideoCreationWizard() {
         <StepCard
           num={8}
           title="최종 영상 만들기"
-          state={finalVideoReady ? "success" : finalVideoState}
+          state={finalVideoReady ? "success" : !realImagesReady || !flowMotionReadyForRender ? "blocked" : finalVideoState}
           desc={finalVideoStepDescription}
         >
           <div className="flex items-center gap-2.5 flex-wrap">

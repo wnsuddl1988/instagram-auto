@@ -63,6 +63,11 @@ import {
   buildPlatformDiscoveryMetadata,
 } from "./platform-discovery-metadata";
 import {
+  MONEY_SHORTS_TTS_OWNER_APPROVAL_TEXT,
+  buildMoneyShortsTtsOwnerListeningEvidence,
+  validateMoneyShortsTtsOwnerListeningEvidence,
+} from "./money-shorts-tts-owner-listening-gate.mjs";
+import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
   FINANCE_CHARACTER_CAST_VERSION,
@@ -81,7 +86,12 @@ import {
 } from "./finance-character-voice-cast";
 import {
   MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE,
+  buildMoneyShortsManualVisualReviewEvidence,
+  commitMoneyShortsManualVisualReviewEvidenceTransaction,
+  validateMoneyShortsImageReviewApproval,
   validateMoneyShortsManualVisualReview,
+  validateMoneyShortsManualVisualReviewTransaction,
+  validateMoneyShortsSelectedSceneRegeneration,
 } from "./money-shorts-manual-visual-review.mjs";
 import {
   VEO_SCENE_SELECTION_CONTRACT_VERSION,
@@ -133,7 +143,10 @@ export const OPERATOR_ACTIONS = [
   "realTtsPreflight", // 현재 음성 입력·구간 해시 승인 패킷 생성(API 호출 0)
   "realTtsReadonlyPreflight", // 명시 승인된 ElevenLabs 계정/음성/모델/최근 이력 GET-only 진단
   "realTtsCreate", // 확정 대본(script-final) 기반 ElevenLabs 고정 목소리 실제 TTS 생성
+  "realTtsQualityAccept", // 생성된 모든 편을 Owner가 청취한 뒤 현재 오디오 해시에만 품질 승인
   "realSceneImagesCreate", // 대본 흐름 기반 동적 장면으로 ChatGPT+Playwright 실제 이미지 생성
+  "realSceneImagesReviewAccept", // 전체 장면을 Owner가 본 뒤 현재 이미지 세트 해시에만 품질 승인
+  "realSceneImagesRegenerateSelected", // Owner가 고른 실패 장면만 no-retry로 다시 생성
   "flowMotionPrepare", // 자동 선정 장면의 Flow no-submit 패킷/승인 대기 상태 생성(외부 실행 0)
   "flowMotionGenerate", // 정확한 장면별 Owner 승인 뒤 Flow에서 Veo 1회 생성·로컬 저장
   "flowMotionQaPass", // Owner 7항목 검수 통과 evidence 기록 후 render_ready 전환
@@ -587,6 +600,8 @@ export function buildOperatorCommand(
     flowMotionOwnerApproval?: string;
     characterId?: FinanceCharacterId;
     regenerateCharacterCandidates?: boolean;
+    regenerateScenes?: Array<{ sceneIndex: number; imageSha256: string }>;
+    expectedImageSetSha256?: string;
   },
 ): { ok: true; command: OperatorCommand } | { ok: false; reason: string } {
   switch (action) {
@@ -816,10 +831,16 @@ export function buildOperatorCommand(
       };
     }
 
-    case "realSceneImagesCreate": {
+    case "realSceneImagesCreate":
+    case "realSceneImagesRegenerateSelected": {
       // 확정 대본의 흐름 기반 동적 장면으로 실제 이미지 생성(ChatGPT+Playwright). 대본 확정 전이면 fail-closed.
       const real = buildWizardRealPipelineInputs(input?.topicId ?? "");
       if (!real.ok) return { ok: false, reason: real.reason };
+      const media = readWizardRealMediaState(input?.topicId ?? "");
+      if (!media.realTts.ready) return { ok: false, reason: "real_tts_required" };
+      if (!media.realTts.qualityAccepted) {
+        return { ok: false, reason: "real_tts_owner_approval_required" };
+      }
       const characterVisualRoute = resolveWizardFinanceCharacterVisual(input?.topicId ?? "");
       if (!characterVisualRoute) return { ok: false, reason: "finance_character_reference_required" };
       if (!characterVisualRoute.ok) return { ok: false, reason: characterVisualRoute.reason };
@@ -827,29 +848,79 @@ export function buildOperatorCommand(
         ? real.paths.parts.find((candidate) => candidate.id === input.productionPartId)
         : real.paths.parts.length === 1 ? real.paths.parts[0] : null;
       if (!part) return { ok: false, reason: "production_part_required" };
+      const partMedia = media.parts.find((candidate) => candidate.id === part.id);
+      if (action === "realSceneImagesCreate" && partMedia?.realImages.reviewable === true) {
+        return { ok: false, reason: "real_scene_images_owner_review_required" };
+      }
+      const commandArgs = [
+        "--script",
+        part.scriptFinalPath,
+        "--out-dir",
+        part.imagesOutDir,
+        "--character-reference",
+        characterVisualRoute.route.referenceImagePath,
+        "--character-reference-sha256",
+        characterVisualRoute.route.referenceImageSha256,
+        "--character-id",
+        characterVisualRoute.route.characterId,
+        "--character-name",
+        characterVisualRoute.route.characterName,
+      ];
+      if (action === "realSceneImagesRegenerateSelected") {
+        const selected = input?.regenerateScenes;
+        const expectedImageSetSha256 = input?.expectedImageSetSha256?.toLowerCase();
+        if (
+          !Array.isArray(selected) ||
+          selected.length === 0 ||
+          partMedia?.realImages.reviewable !== true ||
+          !/^[a-f0-9]{64}$/.test(expectedImageSetSha256 ?? "") ||
+          partMedia.realImages.manualVisualReview.imageSetSha256 !== expectedImageSetSha256
+        ) {
+          return { ok: false, reason: "selected_scene_regeneration_targets_required" };
+        }
+        const seen = new Set<number>();
+        const normalized = selected
+          .map((scene) => ({
+            sceneIndex: scene?.sceneIndex,
+            imageSha256: typeof scene?.imageSha256 === "string" ? scene.imageSha256.toLowerCase() : "",
+          }))
+          .sort((a, b) => a.sceneIndex - b.sceneIndex);
+        const valid = normalized.every((scene) => {
+          if (
+            !Number.isInteger(scene.sceneIndex) ||
+            seen.has(scene.sceneIndex) ||
+            !/^[a-f0-9]{64}$/.test(scene.imageSha256)
+          ) return false;
+          seen.add(scene.sceneIndex);
+          const current = partMedia.realImages.scenes.find((candidate) => candidate.sceneIndex === scene.sceneIndex);
+          return current?.ready === true && current.imageSha256 === scene.imageSha256;
+        });
+        if (!valid) return { ok: false, reason: "selected_scene_regeneration_targets_stale_or_invalid" };
+        commandArgs.push(
+          "--regenerate-scenes",
+          normalized.map((scene) => scene.sceneIndex).join(","),
+          "--owner-selected-scene-bindings",
+          normalized.map((scene) => `${scene.sceneIndex}:${scene.imageSha256}`).join(","),
+          "--expected-image-set-sha256",
+          expectedImageSetSha256!,
+          "--exact-owner-selected-scenes",
+          "--no-retry",
+        );
+      }
       return {
         ok: true,
         command: {
           script: SCRIPT_REAL_SCENE_IMAGES,
-          args: [
-            "--script",
-            part.scriptFinalPath,
-            "--out-dir",
-            part.imagesOutDir,
-            "--character-reference",
-            characterVisualRoute.route.referenceImagePath,
-            "--character-reference-sha256",
-            characterVisualRoute.route.referenceImageSha256,
-            "--character-id",
-            characterVisualRoute.route.characterId,
-            "--character-name",
-            characterVisualRoute.route.characterName,
-          ],
+          args: commandArgs,
         },
       };
     }
 
     case "flowMotionGenerate": {
+      const media = readWizardRealMediaState(input?.topicId ?? "");
+      if (!media.realTts.qualityAccepted) {
+        return { ok: false, reason: "real_tts_owner_approval_required" };
+      }
       const target = resolveWizardFlowMotionJob(input?.topicId ?? "", input?.flowMotionJobId ?? "");
       if (!target.ok) return target;
       if (target.job.status !== "generating") return { ok: false, reason: "flow_motion_generation_not_authorized" };
@@ -883,6 +954,9 @@ export function buildOperatorCommand(
       if (!part) return { ok: false, reason: "production_part_required" };
       const partMedia = media.parts.find((candidate) => candidate.id === part.id);
       if (!partMedia?.realTts.ready) return { ok: false, reason: "real_tts_required" };
+      if (!media.realTts.qualityAccepted || !partMedia.realTts.qualityAccepted) {
+        return { ok: false, reason: "real_tts_owner_approval_required" };
+      }
       if (!partMedia.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
       const partFlowMotion = flowMotion.parts.find((candidate) => candidate.id === part.id);
       if (!partFlowMotion || (partFlowMotion.requiredCount > 0 && (
@@ -6282,6 +6356,57 @@ export function readWizardRealAudioBytes(
   }
 }
 
+function wizardCanonicalSceneImagePath(
+  imagesDir: string | null | undefined,
+  sceneIndex: number | null | undefined,
+): string | null {
+  if (!imagesDir || !Number.isInteger(sceneIndex) || Number(sceneIndex) < 1) return null;
+  const imageDir = resolve(imagesDir);
+  const imagePath = resolve(imageDir, `scene-${String(sceneIndex).padStart(2, "0")}.png`);
+  return imageDir.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    imagePath.startsWith(`${imageDir}\\`)
+    ? imagePath
+    : null;
+}
+
+/**
+ * Owner 장면 검수용 이미지 바이트.
+ * 클라이언트는 파일 경로를 보낼 수 없고, 현재 read model의 편/장면/hash 결박이 실제 파일과
+ * 다시 일치할 때만 C:\tmp 아래 canonical scene PNG를 반환한다.
+ */
+export function readWizardRealSceneImageBytes(
+  topicId?: string | null,
+  productionPartId?: string | null,
+  sceneIndexInput?: number | null,
+  expectedImageSha256?: string | null,
+): { bytes: Buffer; contentType: "image/png"; imageSha256: string } | null {
+  if (
+    !["single", "part-1", "part-2"].includes(productionPartId ?? "") ||
+    !Number.isInteger(sceneIndexInput) ||
+    Number(sceneIndexInput) < 1 ||
+    !/^[a-f0-9]{64}$/.test(expectedImageSha256 ?? "")
+  ) return null;
+  const media = readWizardRealMediaState(topicId ?? "");
+  const part = media.parts.find((candidate) => candidate.id === productionPartId);
+  const scene = part?.realImages.scenes.find((candidate) => candidate.sceneIndex === sceneIndexInput);
+  if (
+    !part?.realImages.dir ||
+    scene?.ready !== true ||
+    scene.imageSha256 !== expectedImageSha256
+  ) return null;
+  const imagePath = wizardCanonicalSceneImagePath(part.realImages.dir, scene.sceneIndex);
+  if (!imagePath || !existsSync(imagePath)) return null;
+  try {
+    const bytes = readFileSync(imagePath);
+    const imageSha256 = createHash("sha256").update(bytes).digest("hex");
+    return imageSha256 === scene.imageSha256
+      ? { bytes, contentType: "image/png", imageSha256 }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 게시 전 점검 + 실제 업로드 — content unit 생성/preflight·result 읽기
 // task: owner-web-auto-topic-refresh-and-upload-button-v1
@@ -6328,6 +6453,9 @@ export function buildWizardContentUnitForTopic(
   const media = readWizardRealMediaState(topicId);
   const partMedia = media.parts.find((part) => part.id === selectedPart.id);
   if (!partMedia?.realTts.ready) return { ok: false, reason: "real_tts_required" };
+  if (!media.realTts.qualityAccepted || !partMedia.realTts.qualityAccepted) {
+    return { ok: false, reason: "real_tts_owner_approval_required" };
+  }
   if (!partMedia.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
   if (!partMedia.finalVideo.ready || !partMedia.finalVideo.mp4Path) return { ok: false, reason: "final_mp4_required" };
   if (!partMedia.mediaQualityGate.ok) return { ok: false, reason: "media_quality_gate_not_ready" };
@@ -8237,16 +8365,21 @@ function flowMotionRenderAssetIsReady(job: FlowMotionJob): boolean {
   const jobDir = dirname(resolve(job.packetPath));
   const videoPath = resolve(job.expectedVideoPath);
   const evidencePath = resolve(job.qaEvidencePath);
+  const referencePath = resolve(job.referenceFile);
   if (
     job.status !== "render_ready" ||
     !videoPath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) ||
     !evidencePath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) ||
+    !referencePath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) ||
     dirname(videoPath) !== jobDir ||
     dirname(evidencePath) !== jobDir ||
     !existsSync(videoPath) ||
-    !existsSync(evidencePath)
+    !existsSync(evidencePath) ||
+    !existsSync(referencePath)
   ) return false;
   try {
+    const referenceSha256 = createHash("sha256").update(readFileSync(referencePath)).digest("hex");
+    if (referenceSha256 !== job.referenceSha256) return false;
     const videoSha256 = createHash("sha256").update(readFileSync(videoPath)).digest("hex");
     if (videoSha256 !== job.qa.outputVideoSha256) return false;
     const evidence = readAbsJson(evidencePath) as FlowMotionQaEvidence | null;
@@ -8363,6 +8496,9 @@ export function prepareWizardFlowMotionPackets(
   const pipeline = buildWizardRealPipelineInputs(topicId);
   if (!pipeline.ok) return pipeline;
   const media = readWizardRealMediaState(topicId);
+  if (!media.realTts.qualityAccepted) {
+    return { ok: false, reason: "real_tts_owner_approval_required" };
+  }
   const generatedAt = new Date().toISOString();
   try {
     for (const part of pipeline.paths.parts) {
@@ -8425,6 +8561,332 @@ export function prepareWizardFlowMotionPackets(
   return { ok: true, status: readWizardFlowMotionStatus(topicId) };
 }
 
+const WIZARD_TTS_OWNER_LISTENING_APPROVAL_FILE =
+  "owner-listening-approval-v1.json";
+
+type WizardTtsOwnerListeningPartEvidence = {
+  partId: "single" | "part-1" | "part-2";
+  audioSha256: string;
+  ttsInputContractSha256: string;
+  wizardScriptFingerprint: string;
+  durationSec: number;
+};
+
+function wizardTtsOwnerListeningApprovalPath(
+  part: Pick<WizardRealPipelinePartPaths, "ttsOutDir">,
+): string {
+  return join(part.ttsOutDir, WIZARD_TTS_OWNER_LISTENING_APPROVAL_FILE);
+}
+
+function readWizardTtsOwnerListeningApproval(
+  topicId: string,
+  part: WizardTtsOwnerListeningPartEvidence,
+  approvalPath: string,
+): {
+  accepted: boolean;
+  qualityApprovalFingerprint: string | null;
+  acceptedAt: string | null;
+} {
+  const result = validateMoneyShortsTtsOwnerListeningEvidence({
+    evidence: readAbsJson(approvalPath),
+    topicId,
+    currentPart: part,
+  });
+  return {
+    accepted: result.accepted === true,
+    qualityApprovalFingerprint:
+      result.accepted === true &&
+      typeof result.qualityApprovalFingerprint === "string"
+        ? result.qualityApprovalFingerprint
+        : null,
+    acceptedAt:
+      result.accepted === true && typeof result.acceptedAt === "string"
+        ? result.acceptedAt
+        : null,
+  };
+}
+
+export function acceptWizardRealTtsListeningQuality(
+  topicId: string,
+  input: {
+    confirmListenedAllParts?: boolean;
+    confirmVoiceQualityAccepted?: boolean;
+    confirmDownstreamUse?: boolean;
+    approvalText?: string;
+  },
+):
+  | {
+      ok: true;
+      media: WizardRealMediaState;
+      qualityApprovalFingerprint: string;
+    }
+  | { ok: false; reason: string } {
+  if (
+    input.confirmListenedAllParts !== true ||
+    input.confirmVoiceQualityAccepted !== true ||
+    input.confirmDownstreamUse !== true ||
+    input.approvalText?.trim() !== MONEY_SHORTS_TTS_OWNER_APPROVAL_TEXT
+  ) {
+    return { ok: false, reason: "tts_owner_listening_confirmation_required" };
+  }
+  const pipeline = buildWizardRealPipelineInputs(topicId);
+  if (!pipeline.ok) return pipeline;
+  const media = readWizardRealMediaState(topicId);
+  if (
+    media.parts.length !== pipeline.paths.parts.length ||
+    media.parts.length === 0 ||
+    media.parts.some((part) => !part.realTts.ready || !part.realTts.audioPath)
+  ) {
+    return { ok: false, reason: "real_tts_required" };
+  }
+
+  const evidenceParts: WizardTtsOwnerListeningPartEvidence[] = [];
+  try {
+    for (const part of pipeline.paths.parts) {
+      const partMedia = media.parts.find((candidate) => candidate.id === part.id);
+      const summary = readAbsJson(part.ttsSummaryPath) as {
+        ttsInputContractSha256?: unknown;
+        wizardScriptFingerprint?: unknown;
+      } | null;
+      const audioPath = partMedia?.realTts.audioPath;
+      if (
+        !partMedia?.realTts.ready ||
+        !audioPath ||
+        typeof summary?.ttsInputContractSha256 !== "string" ||
+        typeof summary.wizardScriptFingerprint !== "string" ||
+        typeof partMedia.realTts.durationSec !== "number"
+      ) {
+        return { ok: false, reason: `tts_owner_listening_evidence_missing:${part.id}` };
+      }
+      evidenceParts.push({
+        partId: part.id,
+        audioSha256: createHash("sha256")
+          .update(readFileSync(audioPath))
+          .digest("hex"),
+        ttsInputContractSha256: summary.ttsInputContractSha256,
+        wizardScriptFingerprint: summary.wizardScriptFingerprint,
+        durationSec: partMedia.realTts.durationSec,
+      });
+    }
+  } catch {
+    return { ok: false, reason: "tts_owner_listening_audio_read_failed" };
+  }
+
+  let evidence: {
+    qualityApprovalFingerprint: string;
+  } & Record<string, unknown>;
+  try {
+    evidence = buildMoneyShortsTtsOwnerListeningEvidence({
+      topicId,
+      parts: evidenceParts,
+      acceptedAt: new Date().toISOString(),
+    });
+  } catch {
+    return { ok: false, reason: "tts_owner_listening_evidence_invalid" };
+  }
+
+  try {
+    const writes = pipeline.paths.parts.map((part) => {
+      const path = wizardTtsOwnerListeningApprovalPath(part);
+      const tempPath = `${path}.tmp`;
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(tempPath, JSON.stringify(evidence, null, 2), "utf8");
+      return { path, tempPath };
+    });
+    for (const write of writes) renameSync(write.tempPath, write.path);
+  } catch {
+    return { ok: false, reason: "tts_owner_listening_evidence_write_failed" };
+  }
+
+  const mediaAfter = readWizardRealMediaState(topicId);
+  if (!mediaAfter.realTts.qualityAccepted) {
+    return { ok: false, reason: "tts_owner_listening_evidence_recheck_failed" };
+  }
+  return {
+    ok: true,
+    media: mediaAfter,
+    qualityApprovalFingerprint: evidence.qualityApprovalFingerprint,
+  };
+}
+
+function wizardCurrentImageReviewParts(media: WizardRealMediaState) {
+  return media.parts.map((part) => ({
+    partId: part.id,
+    imageSetSha256: part.realImages.manualVisualReview.imageSetSha256,
+    scenes: part.realImages.scenes,
+  }));
+}
+
+/**
+ * 전체 편의 현재 이미지 해시 묶음에만 Owner 시각 승인 evidence를 기록한다.
+ * 네트워크/브라우저/생성 runner는 호출하지 않으며, stale UI claim은 쓰기 전에 거부한다.
+ */
+export function acceptWizardRealSceneImagesVisualQuality(
+  topicId: string,
+  input: {
+    claims?: unknown;
+    confirmReviewedAllImages?: boolean;
+    confirmVisualQualityAccepted?: boolean;
+    confirmDownstreamUse?: boolean;
+    approvalText?: string;
+  },
+):
+  | {
+      ok: true;
+      media: WizardRealMediaState;
+      imageApprovalFingerprint: string;
+    }
+  | { ok: false; reason: string } {
+  const media = readWizardRealMediaState(topicId);
+  if (
+    media.parts.length === 0 ||
+    media.parts.some((part) =>
+      part.realImages.reviewable !== true ||
+      !part.realImages.dir ||
+      !part.realImages.manualVisualReview.imageSetSha256)
+  ) {
+    return { ok: false, reason: "real_scene_images_not_reviewable" };
+  }
+  const currentParts = wizardCurrentImageReviewParts(media);
+  const validation = validateMoneyShortsImageReviewApproval({
+    currentParts,
+    claims: input.claims,
+    confirmReviewedAllImages: input.confirmReviewedAllImages,
+    confirmVisualQualityAccepted: input.confirmVisualQualityAccepted,
+    confirmDownstreamUse: input.confirmDownstreamUse,
+    approvalText: input.approvalText?.trim(),
+  });
+  if (validation.ok !== true) {
+    return { ok: false, reason: validation.reason ?? "manual_visual_review_validation_failed" };
+  }
+  const approvedParts = validation.parts as Array<{
+    partId: "single" | "part-1" | "part-2";
+    imageSetSha256: string;
+  }>;
+
+  const reviewedAt = new Date().toISOString();
+  const approvalTransactionId = createHash("sha256").update(JSON.stringify({
+    topicId,
+    reviewedAt,
+    parts: approvedParts.map((part) => ({
+      partId: part.partId,
+      imageSetSha256: part.imageSetSha256,
+    })),
+  })).digest("hex");
+  const writes: Array<{ path: string; content: string }> = [];
+  for (const part of media.parts) {
+    const imagesDir = part.realImages.dir;
+    const currentImageSetSha256 = part.realImages.manualVisualReview.imageSetSha256;
+    if (!imagesDir || !currentImageSetSha256) {
+      return { ok: false, reason: `manual_visual_review_part_missing:${part.id}` };
+    }
+    const summary = readAbsJson(join(imagesDir, "scene-images-summary.json"));
+    const built = buildMoneyShortsManualVisualReviewEvidence({
+      summary,
+      approvalTransactionId,
+      reviewedAt,
+    });
+    const evidence = built.ok === true ? built.evidence : null;
+    if (!evidence || evidence.imageSetSha256 !== currentImageSetSha256) {
+      return { ok: false, reason: `manual_visual_review_image_set_stale:${part.id}` };
+    }
+    writes.push({
+      path: join(imagesDir, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE),
+      content: `${JSON.stringify(evidence, null, 2)}\n`,
+    });
+  }
+  const committed = commitMoneyShortsManualVisualReviewEvidenceTransaction({
+    writes,
+    approvalTransactionId,
+    io: {
+      exists: existsSync,
+      writeText: (path: string, content: string) => writeFileSync(path, content, "utf8"),
+      rename: renameSync,
+    },
+  });
+  if (committed.ok !== true) {
+    return { ok: false, reason: committed.reason ?? "manual_visual_review_evidence_write_failed" };
+  }
+
+  const mediaAfter = readWizardRealMediaState(topicId);
+  if (
+    mediaAfter.parts.length !== media.parts.length ||
+    mediaAfter.parts.some((part) =>
+      !part.realImages.ready ||
+      part.realImages.manualVisualReview.approvalTransactionId !== approvalTransactionId)
+  ) {
+    return { ok: false, reason: "manual_visual_review_evidence_recheck_failed" };
+  }
+  const imageApprovalFingerprint = createHash("sha256").update(JSON.stringify({
+    topicId,
+    parts: mediaAfter.parts.map((part) => ({
+      partId: part.id,
+      imageSetSha256: part.realImages.manualVisualReview.imageSetSha256,
+    })),
+  })).digest("hex");
+  return { ok: true, media: mediaAfter, imageApprovalFingerprint };
+}
+
+/**
+ * 현재 전체 이미지 세트와 UI 선택 해시를 순수 검증해, 실제 runner를 호출해도 되는
+ * 편별 exact target plan만 돌려준다. 이 함수 자체는 생성·브라우저·네트워크 작업을 하지 않는다.
+ */
+export function planWizardSelectedSceneImageRegeneration(
+  topicId: string,
+  input: {
+    selections?: unknown;
+    confirmRegeneration?: boolean;
+    approvalText?: string;
+  },
+):
+  | {
+      ok: true;
+      media: WizardRealMediaState;
+      parts: Array<{
+        partId: "single" | "part-1" | "part-2";
+        imageSetSha256: string;
+        regenerateScenes: Array<{ sceneIndex: number; imageSha256: string }>;
+        retainedScenes: Array<{ sceneIndex: number; imageSha256: string }>;
+      }>;
+      selectedSceneCount: number;
+    }
+  | { ok: false; reason: string } {
+  const media = readWizardRealMediaState(topicId);
+  if (
+    media.parts.length === 0 ||
+    media.parts.some((part) =>
+      part.realImages.reviewable !== true ||
+      !part.realImages.manualVisualReview.imageSetSha256)
+  ) {
+    return { ok: false, reason: "real_scene_images_not_reviewable" };
+  }
+  const validation = validateMoneyShortsSelectedSceneRegeneration({
+    currentParts: wizardCurrentImageReviewParts(media),
+    selections: input.selections,
+    confirmRegeneration: input.confirmRegeneration,
+    approvalText: input.approvalText?.trim(),
+  });
+  if (
+    validation.ok !== true ||
+    !Array.isArray(validation.parts) ||
+    !Number.isInteger(validation.selectedSceneCount)
+  ) {
+    return { ok: false, reason: validation.reason ?? "selected_scene_regeneration_validation_failed" };
+  }
+  const selectedParts = validation.parts as Array<{
+    partId: "single" | "part-1" | "part-2";
+    imageSetSha256: string;
+    regenerateScenes: Array<{ sceneIndex: number; imageSha256: string }>;
+    retainedScenes: Array<{ sceneIndex: number; imageSha256: string }>;
+  }>;
+  return {
+    ok: true,
+    media,
+    parts: selectedParts,
+    selectedSceneCount: validation.selectedSceneCount as number,
+  };
+}
+
 export type WizardRealMediaState = {
   production: {
     strategyVersion: typeof FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION | null;
@@ -8442,6 +8904,10 @@ export type WizardRealMediaState = {
   };
   realTts: {
     ready: boolean;
+    qualityAccepted: boolean;
+    qualityApprovalFingerprint: string | null;
+    qualityAcceptedAt: string | null;
+    audioSha256: string | null;
     audioPath: string | null;
     durationSec: number | null;
     provider: string | null;
@@ -8450,11 +8916,25 @@ export type WizardRealMediaState = {
   };
   realImages: {
     ready: boolean;
+    reviewable: boolean;
     generatedCount: number;
     expectedCount: number | null;
     dir: string | null;
     blocked: string | null;
     blockerDetail: string | null;
+    manualVisualReview: {
+      accepted: boolean;
+      imageSetSha256: string | null;
+      approvalTransactionId: string | null;
+      reason: string | null;
+    };
+    scenes: Array<{
+      sceneIndex: number;
+      ready: boolean;
+      imageSha256: string | null;
+      width: number | null;
+      height: number | null;
+    }>;
   };
   finalVideo: {
     ready: boolean;
@@ -8468,7 +8948,13 @@ export type WizardRealMediaState = {
   mediaQualityGate: {
     ok: boolean;
     reasons: string[];
-    blockerCode: "REAL_TTS_REQUIRED" | "REAL_SCENE_IMAGES_REQUIRED" | "MANUAL_VISUAL_REVIEW_REQUIRED" | "FINAL_MP4_REQUIRED" | null;
+    blockerCode:
+      | "REAL_TTS_REQUIRED"
+      | "REAL_TTS_OWNER_APPROVAL_REQUIRED"
+      | "REAL_SCENE_IMAGES_REQUIRED"
+      | "MANUAL_VISUAL_REVIEW_REQUIRED"
+      | "FINAL_MP4_REQUIRED"
+      | null;
   };
   parts: Array<{
     id: "single" | "part-1" | "part-2";
@@ -8523,6 +9009,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         timelineDurationSec?: number | null;
         apiCallCount?: number;
         wizardScriptFingerprint?: string;
+        ttsInputContractSha256?: string;
       } | null)
     : null;
   const ttsAudioPath = typeof ttsSummary?.timelineAudioPath === "string" ? ttsSummary.timelineAudioPath : null;
@@ -8538,8 +9025,41 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     ttsDuration != null &&
     ttsDuration >= 10 &&
     ttsDuration <= 60;
+  const audioSha256 =
+    realTtsReady && ttsAudioPath ? fileSha256(ttsAudioPath) : null;
+  const listeningApproval =
+    realTtsReady &&
+    realRoot &&
+    audioSha256 &&
+    typeof ttsSummary?.ttsInputContractSha256 === "string" &&
+    typeof ttsSummary.wizardScriptFingerprint === "string" &&
+    ttsDuration != null
+      ? readWizardTtsOwnerListeningApproval(
+          topicId,
+          {
+            partId: "single",
+            audioSha256,
+            ttsInputContractSha256: ttsSummary.ttsInputContractSha256,
+            wizardScriptFingerprint: ttsSummary.wizardScriptFingerprint,
+            durationSec: ttsDuration,
+          },
+          join(
+            realRoot,
+            WIZARD_TTS_OUTPUT_DIR,
+            WIZARD_TTS_OWNER_LISTENING_APPROVAL_FILE,
+          ),
+        )
+      : {
+          accepted: false,
+          qualityApprovalFingerprint: null,
+          acceptedAt: null,
+        };
   const realTts: WizardRealMediaState["realTts"] = {
     ready: realTtsReady === true,
+    qualityAccepted: listeningApproval.accepted,
+    qualityApprovalFingerprint: listeningApproval.qualityApprovalFingerprint,
+    qualityAcceptedAt: listeningApproval.acceptedAt,
+    audioSha256,
     audioPath: realTtsReady ? ttsAudioPath : null,
     durationSec: ttsDuration,
     provider: ttsSummary?.provider ?? null,
@@ -8617,17 +9137,25 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
       ? readAbsJson(join(imagesDir, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE))
       : null,
   });
-  const savedScenes = sceneRows.filter(
-    (s) =>
-      s.status === "SAVED_OK" &&
+  const savedScenes = sceneRows.filter((s) => {
+    const canonicalFile = wizardCanonicalSceneImagePath(
+      imagesDir,
+      typeof s.sceneIndex === "number" ? s.sceneIndex : null,
+    );
+    return s.status === "SAVED_OK" &&
       typeof s.file === "string" &&
-      existsSync(s.file) &&
+      canonicalFile != null &&
+      resolve(s.file) === canonicalFile &&
+      existsSync(canonicalFile) &&
       typeof s.width === "number" &&
       typeof s.height === "number" &&
       s.width >= 900 &&
       s.height >= 1200 &&
-      s.height >= Math.round(s.width * 1.2),
-  );
+      s.height >= Math.round(s.width * 1.2) &&
+      typeof s.imageSha256 === "string" &&
+      s.imageSha256.length === 64 &&
+      fileSha256(canonicalFile) === s.imageSha256;
+  });
   const imageAssetContractReady = expectedSceneCount !== null && sceneRows.every((scene, index) =>
     scene.sceneIndex === index + 1 &&
     typeof scene.visualEvidenceId === "string" &&
@@ -8641,14 +9169,13 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     typeof scene.perceptualHash === "string" &&
     scene.perceptualHash.length === 16
   ) && new Set(sceneRows.map((scene) => scene.imageSha256)).size === expectedSceneCount;
-  const realImagesReady =
+  const realImagesTechnicalReady =
     expectedSceneCount !== null &&
     imagesSummary?.mode === "chatgpt_playwright" &&
     imagesSummary.visualEngineVersion === visualProfile.engineVersion &&
     imagesSummary.imageControllerVersion === WIZARD_IMAGE_CONTROLLER_VERSION &&
     imagesSummary.visualModalityVersion === WIZARD_VISUAL_MODALITY_VERSION &&
     imagesSummary.allReady === true &&
-    manualVisualReview.passed === true &&
     imagesSummary.visualDifferenceAudit?.version === "ffmpeg_dhash64_v1" &&
     imagesSummary.visualDifferenceAudit?.passed === true &&
     imagesSummary.visualDifferenceAudit?.checkedCount === expectedSceneCount &&
@@ -8667,17 +9194,33 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     sceneRows.length === expectedSceneCount &&
     savedScenes.length === expectedSceneCount &&
     imageAssetContractReady;
+  const realImagesReady = realImagesTechnicalReady && manualVisualReview.passed === true;
+  const savedSceneIndexes = new Set(savedScenes.map((scene) => scene.sceneIndex));
   const realImages: WizardRealMediaState["realImages"] = {
     ready: realImagesReady === true,
+    reviewable: realImagesTechnicalReady === true,
     generatedCount: savedScenes.length,
     expectedCount: expectedSceneCount,
     dir: imagesDir,
-    blocked: imagesSummary?.allReady === true && !manualVisualReview.passed
+    blocked: realImagesTechnicalReady && !manualVisualReview.passed
       ? "MANUAL_VISUAL_REVIEW_REQUIRED"
       : typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
-    blockerDetail: imagesSummary?.allReady === true && !manualVisualReview.passed
+    blockerDetail: realImagesTechnicalReady && !manualVisualReview.passed
       ? manualVisualReview.reason
       : sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
+    manualVisualReview: {
+      accepted: manualVisualReview.passed === true,
+      imageSetSha256: manualVisualReview.imageSetSha256,
+      approvalTransactionId: manualVisualReview.approvalTransactionId ?? null,
+      reason: manualVisualReview.reason,
+    },
+    scenes: sceneRows.map((scene) => ({
+      sceneIndex: typeof scene.sceneIndex === "number" ? scene.sceneIndex : 0,
+      ready: typeof scene.sceneIndex === "number" && savedSceneIndexes.has(scene.sceneIndex),
+      imageSha256: typeof scene.imageSha256 === "string" ? scene.imageSha256 : null,
+      width: typeof scene.width === "number" ? scene.width : null,
+      height: typeof scene.height === "number" ? scene.height : null,
+    })).filter((scene) => scene.sceneIndex > 0),
   };
 
   // 최종 mp4 — 실제 음성+실제 이미지 합성 summary + ffprobe 검증값 + 파일 존재.
@@ -8695,6 +9238,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         sceneCount?: number;
         audioProvider?: string;
         imageMode?: string;
+        imageSetSha256?: string;
         visualEngineVersion?: string;
         motionRendererVersion?: string;
         layeredMotionRendererVersion?: string;
@@ -8738,6 +9282,8 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     videoSummary.status === "RENDER_MUX_OK" &&
     videoSummary.audioProvider === "elevenlabs" &&
     videoSummary.imageMode === "chatgpt_playwright" &&
+    manualVisualReview.passed === true &&
+    videoSummary.imageSetSha256 === manualVisualReview.imageSetSha256 &&
     videoSummary.visualEngineVersion === visualProfile.engineVersion &&
     wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, record?.script.scenes ?? []) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
@@ -8791,6 +9337,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
 
   const reasons: string[] = [];
   if (!realTts.ready) reasons.push("실제 음성이 아직 없습니다 (테스트 소리는 업로드 불가)");
+  else if (!realTts.qualityAccepted) reasons.push("현재 실제 음성의 Owner 청취 승인이 필요합니다");
   if (!realImages.ready) {
     reasons.push(
       realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
@@ -8803,6 +9350,8 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
   if (!finalVideo.ready) reasons.push("실제 음성+이미지로 만든 최종 영상이 아직 없습니다 (시안 영상은 업로드 불가)");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
+    : !realTts.qualityAccepted
+      ? ("REAL_TTS_OWNER_APPROVAL_REQUIRED" as const)
     : realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
       ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !realImages.ready
@@ -8911,8 +9460,35 @@ function readWizardProductionPartMediaState(
     ttsDuration != null &&
     ttsDuration >= 10 &&
     ttsDuration <= 60;
+  const audioSha256 = realTtsReady && ttsAudioPath ? fileSha256(ttsAudioPath) : null;
+  const listeningApproval =
+    realTtsReady &&
+    audioSha256 &&
+    typeof ttsSummary?.ttsInputContractSha256 === "string" &&
+    typeof ttsSummary.wizardScriptFingerprint === "string" &&
+    ttsDuration != null
+      ? readWizardTtsOwnerListeningApproval(
+          rootTopicId,
+          {
+            partId: part.id,
+            audioSha256,
+            ttsInputContractSha256: ttsSummary.ttsInputContractSha256,
+            wizardScriptFingerprint: ttsSummary.wizardScriptFingerprint,
+            durationSec: ttsDuration,
+          },
+          wizardTtsOwnerListeningApprovalPath(part),
+        )
+      : {
+          accepted: false,
+          qualityApprovalFingerprint: null,
+          acceptedAt: null,
+        };
   const realTts: WizardRealMediaState["realTts"] = {
     ready: realTtsReady === true,
+    qualityAccepted: listeningApproval.accepted,
+    qualityApprovalFingerprint: listeningApproval.qualityApprovalFingerprint,
+    qualityAcceptedAt: listeningApproval.acceptedAt,
+    audioSha256,
     audioPath: realTtsReady ? ttsAudioPath : null,
     durationSec: ttsDuration,
     provider: ttsSummary?.provider ?? null,
@@ -8973,10 +9549,16 @@ function readWizardProductionPartMediaState(
     evidence: readAbsJson(join(part.imagesOutDir, MONEY_SHORTS_MANUAL_VISUAL_REVIEW_EVIDENCE_FILE)),
   });
   const savedScenes = sceneRows.filter((scene) => {
+    const canonicalFile = wizardCanonicalSceneImagePath(
+      part.imagesOutDir,
+      typeof scene.sceneIndex === "number" ? scene.sceneIndex : null,
+    );
     if (
       scene.status !== "SAVED_OK" ||
       typeof scene.file !== "string" ||
-      !existsSync(scene.file) ||
+      canonicalFile == null ||
+      resolve(scene.file) !== canonicalFile ||
+      !existsSync(canonicalFile) ||
       typeof scene.width !== "number" ||
       typeof scene.height !== "number" ||
       scene.width < 900 ||
@@ -8986,7 +9568,7 @@ function readWizardProductionPartMediaState(
       scene.imageSha256.length !== 64
     ) return false;
     try {
-      return createHash("sha256").update(readFileSync(scene.file)).digest("hex") === scene.imageSha256;
+      return createHash("sha256").update(readFileSync(canonicalFile)).digest("hex") === scene.imageSha256;
     } catch {
       return false;
     }
@@ -9005,13 +9587,12 @@ function readWizardProductionPartMediaState(
     scene.perceptualHash.length === 16
   ) && new Set(sceneRows.map((scene) => scene.imageSha256)).size === expectedSceneCount;
   const visualProfile = wizardVisualProfileForTopic(part.record.production?.rootTopicId ?? part.topicId);
-  const realImagesReady =
+  const realImagesTechnicalReady =
     imagesSummary?.mode === "chatgpt_playwright" &&
     imagesSummary.visualEngineVersion === visualProfile.engineVersion &&
     imagesSummary.imageControllerVersion === WIZARD_IMAGE_CONTROLLER_VERSION &&
     imagesSummary.visualModalityVersion === WIZARD_VISUAL_MODALITY_VERSION &&
     imagesSummary.allReady === true &&
-    manualVisualReview.passed === true &&
     imagesSummary.visualDifferenceAudit?.version === "ffmpeg_dhash64_v1" &&
     imagesSummary.visualDifferenceAudit?.passed === true &&
     imagesSummary.visualDifferenceAudit?.checkedCount === expectedSceneCount &&
@@ -9029,17 +9610,33 @@ function readWizardProductionPartMediaState(
     imagesSummary.motionPlanAudit?.passed === true &&
     savedScenes.length === expectedSceneCount &&
     imageAssetContractReady;
+  const realImagesReady = realImagesTechnicalReady && manualVisualReview.passed === true;
+  const savedSceneIndexes = new Set(savedScenes.map((scene) => scene.sceneIndex));
   const realImages: WizardRealMediaState["realImages"] = {
     ready: realImagesReady === true,
+    reviewable: realImagesTechnicalReady === true,
     generatedCount: savedScenes.length,
     expectedCount: expectedSceneCount,
     dir: part.imagesOutDir,
-    blocked: imagesSummary?.allReady === true && !manualVisualReview.passed
+    blocked: realImagesTechnicalReady && !manualVisualReview.passed
       ? "MANUAL_VISUAL_REVIEW_REQUIRED"
       : typeof imagesSummary?.blockerCode === "string" ? imagesSummary.blockerCode : null,
-    blockerDetail: imagesSummary?.allReady === true && !manualVisualReview.passed
+    blockerDetail: realImagesTechnicalReady && !manualVisualReview.passed
       ? manualVisualReview.reason
       : sceneRows.find((scene) => typeof scene.method === "string" && scene.method !== "")?.method ?? null,
+    manualVisualReview: {
+      accepted: manualVisualReview.passed === true,
+      imageSetSha256: manualVisualReview.imageSetSha256,
+      approvalTransactionId: manualVisualReview.approvalTransactionId ?? null,
+      reason: manualVisualReview.reason,
+    },
+    scenes: sceneRows.map((scene) => ({
+      sceneIndex: typeof scene.sceneIndex === "number" ? scene.sceneIndex : 0,
+      ready: typeof scene.sceneIndex === "number" && savedSceneIndexes.has(scene.sceneIndex),
+      imageSha256: typeof scene.imageSha256 === "string" ? scene.imageSha256 : null,
+      width: typeof scene.width === "number" ? scene.width : null,
+      height: typeof scene.height === "number" ? scene.height : null,
+    })).filter((scene) => scene.sceneIndex > 0),
   };
 
   const videoSummary = readAbsJson(join(part.videoOutDir, "real-video-summary.json")) as {
@@ -9055,6 +9652,7 @@ function readWizardProductionPartMediaState(
     sceneCount?: number;
     audioProvider?: string;
     imageMode?: string;
+    imageSetSha256?: string;
     visualEngineVersion?: string;
     motionRendererVersion?: string;
     layeredMotionRendererVersion?: string;
@@ -9108,6 +9706,8 @@ function readWizardProductionPartMediaState(
     videoSummary.status === "RENDER_MUX_OK" &&
     videoSummary.audioProvider === "elevenlabs" &&
     videoSummary.imageMode === "chatgpt_playwright" &&
+    manualVisualReview.passed === true &&
+    videoSummary.imageSetSha256 === manualVisualReview.imageSetSha256 &&
     videoSummary.visualEngineVersion === visualProfile.engineVersion &&
     wizardHybridMotionSummaryIsReady(videoSummary, expectedSceneCount, part.record.script.scenes) &&
     videoSummary.captionMode === "full_script_dynamic_semantic_aligned_v6" &&
@@ -9169,6 +9769,7 @@ function readWizardProductionPartMediaState(
   };
   const reasons: string[] = [];
   if (!realTts.ready) reasons.push("실제 음성 또는 확신형 썸네일 음성 게이트가 아직 준비되지 않았습니다");
+  else if (!realTts.qualityAccepted) reasons.push("현재 오디오 해시의 Owner 청취 승인이 필요합니다");
   if (!realImages.ready) reasons.push(
     realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
       ? "현재 이미지 묶음의 Owner 수동 시각 승인이 필요합니다"
@@ -9177,6 +9778,8 @@ function readWizardProductionPartMediaState(
   if (!finalVideo.ready) reasons.push("검증된 썸네일·자막이 포함된 최종 영상이 아직 없습니다");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
+    : !realTts.qualityAccepted
+      ? ("REAL_TTS_OWNER_APPROVAL_REQUIRED" as const)
     : realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED"
       ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !realImages.ready
@@ -9228,8 +9831,41 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
   }
   const parts = plannedParts.map(readWizardProductionPartMediaState);
   const allTtsReady = parts.length > 0 && parts.every((part) => part.realTts.ready);
-  const allImagesReady = parts.length > 0 && parts.every((part) => part.realImages.ready);
+  const allPartsTtsQualityAccepted =
+    allTtsReady && parts.every((part) => part.realTts.qualityAccepted);
+  const candidateTtsQualityFingerprint =
+    parts[0]?.realTts.qualityApprovalFingerprint ?? null;
+  const allTtsQualityAccepted =
+    allPartsTtsQualityAccepted &&
+    candidateTtsQualityFingerprint != null &&
+    parts.every(
+      (part) =>
+        part.realTts.qualityApprovalFingerprint ===
+        candidateTtsQualityFingerprint,
+    );
+  const sharedTtsQualityFingerprint = allTtsQualityAccepted
+    ? candidateTtsQualityFingerprint
+    : null;
+  const sharedTtsQualityAcceptedAt = allTtsQualityAccepted
+    ? parts[0]?.realTts.qualityAcceptedAt ?? null
+    : null;
+  const allImagesReviewable = parts.length > 0 && parts.every((part) => part.realImages.reviewable);
+  const imageApprovalTransaction = validateMoneyShortsManualVisualReviewTransaction(
+    parts.map((part) => ({
+      ready: part.realImages.ready,
+      approvalTransactionId: part.realImages.manualVisualReview.approvalTransactionId,
+    })),
+  );
+  const allImagesReady = imageApprovalTransaction.passed === true;
+  const imageApprovalTransactionMismatch =
+    imageApprovalTransaction.reason === "MANUAL_VISUAL_REVIEW_TRANSACTION_MISMATCH";
   const manualVisualReviewBlocked = parts.some((part) => part.realImages.blocked === "MANUAL_VISUAL_REVIEW_REQUIRED");
+  const aggregateImageSetSha256 = allImagesReviewable
+    ? createHash("sha256").update(JSON.stringify(parts.map((part) => ({
+        partId: part.id,
+        imageSetSha256: part.realImages.manualVisualReview.imageSetSha256,
+      })))).digest("hex")
+    : null;
   const allVideosReady = parts.length > 0 && parts.every((part) => part.finalVideo.ready);
   const totalDuration = parts.reduce((sum, part) => sum + (part.realTts.durationSec ?? 0), 0);
   const totalVideoDuration = parts.reduce((sum, part) => sum + (part.finalVideo.durationSec ?? 0), 0);
@@ -9238,9 +9874,17 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
   const totalBytes = parts.reduce((sum, part) => sum + (part.finalVideo.sizeBytes ?? 0), 0);
   const reasons = parts.flatMap((part) => part.mediaQualityGate.reasons.map((reason) =>
     `${part.totalParts > 1 ? `${part.partNumber}편` : "영상"}: ${reason}`));
+  if (allTtsReady && !allTtsQualityAccepted) {
+    reasons.unshift("전체 편이 동일한 현재 오디오 묶음으로 Owner 청취 승인되지 않았습니다");
+  }
+  if (imageApprovalTransactionMismatch) {
+    reasons.unshift("전체 편이 하나의 동일한 현재 이미지 Owner 승인으로 묶이지 않았습니다");
+  }
   const blockerCode = !allTtsReady
     ? ("REAL_TTS_REQUIRED" as const)
-    : manualVisualReviewBlocked
+    : !allTtsQualityAccepted
+      ? ("REAL_TTS_OWNER_APPROVAL_REQUIRED" as const)
+    : manualVisualReviewBlocked || imageApprovalTransactionMismatch
       ? ("MANUAL_VISUAL_REVIEW_REQUIRED" as const)
     : !allImagesReady
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
@@ -9262,6 +9906,11 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
     },
     realTts: {
       ready: allTtsReady,
+      qualityAccepted: allTtsQualityAccepted,
+      qualityApprovalFingerprint: sharedTtsQualityFingerprint,
+      qualityAcceptedAt: sharedTtsQualityAcceptedAt,
+      audioSha256:
+        parts.length === 1 ? parts[0]?.realTts.audioSha256 ?? null : null,
       audioPath: parts[0]?.realTts.audioPath ?? null,
       durationSec: totalDuration > 0 ? Number(totalDuration.toFixed(3)) : null,
       provider: parts.every((part) => part.realTts.provider === "elevenlabs") ? "elevenlabs" : null,
@@ -9270,11 +9919,27 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
     },
     realImages: {
       ready: allImagesReady,
+      reviewable: allImagesReviewable,
       generatedCount: totalImages,
       expectedCount: expectedImages,
       dir: parts[0]?.realImages.dir ?? null,
-      blocked: parts.find((part) => part.realImages.blocked)?.realImages.blocked ?? null,
-      blockerDetail: parts.find((part) => part.realImages.blockerDetail)?.realImages.blockerDetail ?? null,
+      blocked: imageApprovalTransactionMismatch
+        ? "MANUAL_VISUAL_REVIEW_REQUIRED"
+        : parts.find((part) => part.realImages.blocked)?.realImages.blocked ?? null,
+      blockerDetail: imageApprovalTransactionMismatch
+        ? imageApprovalTransaction.reason
+        : parts.find((part) => part.realImages.blockerDetail)?.realImages.blockerDetail ?? null,
+      manualVisualReview: {
+        accepted: allImagesReady,
+        imageSetSha256: aggregateImageSetSha256,
+        approvalTransactionId: allImagesReady ? imageApprovalTransaction.approvalTransactionId : null,
+        reason: allImagesReady
+          ? null
+          : imageApprovalTransactionMismatch
+            ? imageApprovalTransaction.reason
+            : parts.find((part) => part.realImages.manualVisualReview.reason)?.realImages.manualVisualReview.reason ?? null,
+      },
+      scenes: parts.flatMap((part) => part.realImages.scenes),
     },
     finalVideo: {
       ready: allVideosReady,
@@ -9285,7 +9950,7 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
       hasAudio: parts.every((part) => part.finalVideo.hasAudio),
       sizeBytes: totalBytes > 0 ? totalBytes : null,
     },
-    mediaQualityGate: { ok: reasons.length === 0, reasons, blockerCode },
+    mediaQualityGate: { ok: blockerCode === null && reasons.length === 0, reasons, blockerCode },
     parts,
   };
 }

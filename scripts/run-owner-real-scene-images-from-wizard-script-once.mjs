@@ -28,7 +28,10 @@ import fs from "fs";
 import { spawnSync } from "node:child_process";
 import { createHash } from "crypto";
 import { fileURLToPath } from "url";
-import { buildPendingManualVisualReviewState } from "../lib/money-shorts-manual-visual-review.mjs";
+import {
+  buildPendingManualVisualReviewState,
+  moneyShortsImageSetSha256,
+} from "../lib/money-shorts-manual-visual-review.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -46,6 +49,8 @@ const characterReferenceSha256Arg = getArg("--character-reference-sha256");
 const characterIdArg = getArg("--character-id");
 const characterNameArg = getArg("--character-name");
 const regenerateScenesArg = getArg("--regenerate-scenes");
+const ownerSelectedSceneBindingsArg = getArg("--owner-selected-scene-bindings");
+const expectedImageSetSha256Arg = getArg("--expected-image-set-sha256");
 const modeOverridePacketArg = getArg("--mode-override-packet");
 const sceneRepairPacketArg = getArg("--scene-repair-packet");
 const positiveCompositionCanaryPacketArg = getArg("--positive-composition-canary-packet");
@@ -57,9 +62,10 @@ const refreshSummaryFromExistingAssets = args.includes("--refresh-summary-from-e
 const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
 const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repairs");
 const executeApprovedPositiveCompositionCanary = args.includes("--execute-approved-positive-composition-canary");
+const exactOwnerSelectedScenes = args.includes("--exact-owner-selected-scenes");
 const noRetry = args.includes("--no-retry");
 if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
-  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets [--existing-asset-rebind-packet <packet.json>] | --regenerate-scenes 4,5] [--no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets [--existing-asset-rebind-packet <packet.json>] | --regenerate-scenes 4,5] [--owner-selected-scene-bindings 4:<sha256>,5:<sha256> --expected-image-set-sha256 <sha256> --exact-owner-selected-scenes --no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
   process.exit(2);
 }
 const scriptAbs = path.resolve(scriptArg);
@@ -71,6 +77,9 @@ const POSITIVE_COMPOSITION_CANARY_PACKET_ABS = positiveCompositionCanaryPacketAr
 const EXISTING_ASSET_REBIND_PACKET_ABS = existingAssetRebindPacketArg ? path.resolve(existingAssetRebindPacketArg) : null;
 const PROMPT_AUDIT_OUT_ABS = promptAuditOutArg ? path.resolve(promptAuditOutArg) : null;
 const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
+const EXPECTED_IMAGE_SET_SHA256 = expectedImageSetSha256Arg
+  ? String(expectedImageSetSha256Arg).toLowerCase()
+  : null;
 const CHARACTER_ID = String(characterIdArg);
 const CHARACTER_NAME = String(characterNameArg).trim();
 const CAST_DATA_PATH = path.join(REPO_ROOT, "lib", "finance-character-cast-data.json");
@@ -165,6 +174,30 @@ if ([executeApprovedModeOverride, executeApprovedSceneRepairs, executeApprovedPo
   process.exit(3);
 }
 if (
+  exactOwnerSelectedScenes &&
+  (
+    !regenerateScenesArg ||
+    !ownerSelectedSceneBindingsArg ||
+    !/^[a-f0-9]{64}$/i.test(expectedImageSetSha256Arg ?? "") ||
+    !noRetry ||
+    promptAuditOnly ||
+    refreshSummaryFromExistingAssets ||
+    MODE_OVERRIDE_PACKET_ABS ||
+    SCENE_REPAIR_PACKET_ABS ||
+    POSITIVE_COMPOSITION_CANARY_PACKET_ABS ||
+    executeApprovedModeOverride ||
+    executeApprovedSceneRepairs ||
+    executeApprovedPositiveCompositionCanary
+  )
+) {
+  console.error("ABORT: --exact-owner-selected-scenes requires exact bindings, --regenerate-scenes and --no-retry, with no other image mode.");
+  process.exit(3);
+}
+if ((ownerSelectedSceneBindingsArg || expectedImageSetSha256Arg || exactOwnerSelectedScenes) && !exactOwnerSelectedScenes) {
+  console.error("ABORT: Owner-selected scene bindings are valid only in exact Owner-selected mode.");
+  process.exit(3);
+}
+if (
   refreshSummaryFromExistingAssets &&
   (
     promptAuditOnly ||
@@ -176,6 +209,9 @@ if (
     executeApprovedSceneRepairs ||
     executeApprovedPositiveCompositionCanary ||
     ownerApprovalArg ||
+    ownerSelectedSceneBindingsArg ||
+    expectedImageSetSha256Arg ||
+    exactOwnerSelectedScenes ||
     noRetry
   )
 ) {
@@ -311,6 +347,34 @@ if (regenerateScenesArg) {
   }
 }
 const targetedRegenerationScenes = [...targetedRegenerationSceneIndexes].sort((a, b) => a - b);
+const ownerSelectedSceneBindings = new Map();
+if (exactOwnerSelectedScenes) {
+  for (const token of String(ownerSelectedSceneBindingsArg).split(",")) {
+    const match = /^([1-9]\d*):([a-f0-9]{64})$/i.exec(token.trim());
+    const sceneNumber = match ? Number(match[1]) : null;
+    const imageSha256 = match?.[2]?.toLowerCase() ?? null;
+    if (
+      !Number.isInteger(sceneNumber) ||
+      sceneNumber < 1 ||
+      sceneNumber > sceneCount ||
+      !imageSha256 ||
+      ownerSelectedSceneBindings.has(sceneNumber)
+    ) {
+      console.error("ABORT: --owner-selected-scene-bindings must contain unique in-range scene:sha256 pairs.");
+      process.exit(2);
+    }
+    ownerSelectedSceneBindings.set(sceneNumber, imageSha256);
+  }
+  const bindingIndexes = [...ownerSelectedSceneBindings.keys()].sort((a, b) => a - b);
+  if (
+    bindingIndexes.length === 0 ||
+    bindingIndexes.length !== targetedRegenerationScenes.length ||
+    bindingIndexes.some((sceneNumber, index) => sceneNumber !== targetedRegenerationScenes[index])
+  ) {
+    console.error("ABORT: Owner-selected bindings must match every and only --regenerate-scenes target.");
+    process.exit(3);
+  }
+}
 const visualEvidenceReady = scenes.every((scene) =>
   scene?.visualEvidence?.version === EVIDENCE_ENGINE_VERSION &&
   scene.visualEvidence.visualStyle === VISUAL_STYLE_CONTRACT &&
@@ -1626,6 +1690,34 @@ const reusablePreviousSummary =
   previousSummary?.characterReference?.hashVerified === true &&
   previousSummary?.expectedCount === sceneCount &&
   Array.isArray(previousSummary?.scenes);
+if (exactOwnerSelectedScenes) {
+  const completeCurrentSetReady =
+    reusablePreviousSummary &&
+    previousSummary?.allReady === true &&
+    previousSummary?.visualDifferenceAudit?.passed === true &&
+    previousSummary?.visualModalityAudit?.passed === true &&
+    previousSummary?.financeSceneDiversityAudit?.passed === true &&
+    previousSummary?.characterContinuityAudit?.passed === true &&
+    previousSummary?.motionPlanAudit?.passed === true &&
+    moneyShortsImageSetSha256(previousSummary?.scenes) === EXPECTED_IMAGE_SET_SHA256 &&
+    previousSummary.scenes.length === sceneCount &&
+    previousSummary.scenes.every((scene, index) => {
+      const file = sceneFile(index);
+      return scene?.sceneIndex === index + 1 &&
+        scene?.status === "SAVED_OK" &&
+        typeof scene?.imageSha256 === "string" &&
+        /^[a-f0-9]{64}$/.test(scene.imageSha256) &&
+        fs.existsSync(file) &&
+        imageSha256(file) === scene.imageSha256;
+    }) &&
+    [...ownerSelectedSceneBindings].every(([sceneNumber, expectedSha256]) =>
+      previousSummary.scenes[sceneNumber - 1]?.imageSha256 === expectedSha256 &&
+      imageSha256(sceneFile(sceneNumber - 1)) === expectedSha256);
+  if (!completeCurrentSetReady) {
+    console.error("ABORT: exact Owner-selected regeneration requires the complete current image set and matching selected hashes.");
+    process.exit(3);
+  }
+}
 const topicScopedModeOverride = resolveTopicScopedModeOverride();
 const topicScopedSceneRepairs = resolveTopicScopedSceneRepairs();
 const topicScopedPositiveCompositionCanary = resolvePositiveCompositionCanary();
@@ -1667,20 +1759,10 @@ const scenePrompts = scenes.map((scene, index) => {
     "ABSOLUTELY NO split or stacked panels, before-and-after collage, transparent cash display box, safe or vault box, paper roller, conveyor, mechanical finance mechanism, dark half-frame, giant arrow, arrow printed on a mat, showroom exhibit or decorative finance-prop still life.",
     "Cash, banknotes, charts, statements and documents remain allowed when they physically prove the narration's exact cause-and-result moment; use only the few full-size everyday objects needed for that proof, never an unmotivated currency stack, coin pile or chart wall. Show no readable text or numbers.",
   ];
-  const sceneSpecificManualReset = index + 1 === 5
-    ? [
-        "SCENE 5 EXACT CORRECTION: the previous result wrongly showed neatly separated objects. Show one believable lived-in table where a plain household-bills envelope and a separate investment-rule envelope have both tipped into the SAME open fabric pouch, with their blank cards visibly tangled together, while one small closed emergency envelope remains safely apart. The accidental mixing must be unmistakable without labels, diagrams, a split composition or a decorative cash display.",
-      ]
-    : index + 1 === 12
-      ? [
-          "SCENE 12 EXACT CORRECTION: reject any tabletop-only still life, decorative chart wall, document pile or finance-prop display. Use a wide room-level view of a bright Korean living-room entryway: one slim closed rule folder sits in a simple grab-and-go wall pocket beside ordinary keys, a modest household pouch is stored separately on a warm wood shelf, and an open doorway or sunlit balcony gives clear forward depth. No person or readable text; include finance props only when they directly prove this scene's rule.",
-        ]
-      : [];
   if (sceneVisualModes[index].presence === "none") {
     return [
       basePrompt,
       ...qualityReset,
-      ...sceneSpecificManualReset,
       "Keep the scene person-free and make the ordinary objects themselves reveal the exact economic change without becoming a diagram or machine.",
     ].join(" ");
   }
@@ -1688,14 +1770,12 @@ const scenePrompts = scenes.map((scene, index) => {
     return [
       basePrompt,
       ...qualityReset,
-      ...sceneSpecificManualReset,
       `The earlier hands-only result also broke ${CHARACTER_NAME}'s wardrobe continuity. Match the attached identity board's visible fixed-wardrobe sleeves exactly, with natural adult male hands and restrained finger action; show no beige knitwear and keep the head, face, hair and torso fully outside the frame.`,
     ].join(" ");
   }
   return [
     basePrompt,
     ...qualityReset,
-    ...sceneSpecificManualReset,
     "CHARACTER QUALITY REGENERATION REQUIRED: the earlier result drifted away from the selected character identity reference.",
     `Restore the exact ${CHARACTER_NAME} face, age, hairstyle, hair color, body proportions and fixed wardrobe from the attached identity board while preserving the economic event, setting, action and camera plan.`,
   ].join(" ");
@@ -2361,6 +2441,39 @@ function buildMotionPlanAudit(states) {
 }
 
 const pendingCount = sceneStates.filter((s) => s.status === "PENDING").length;
+if (exactOwnerSelectedScenes) {
+  const pendingSceneIndexes = sceneStates
+    .filter((scene) => scene.status === "PENDING")
+    .map((scene) => scene.sceneIndex);
+  const retainedScenesReady = sceneStates
+    .filter((scene) => !targetedRegenerationSceneIndexes.has(scene.sceneIndex))
+    .every((scene) =>
+      scene.status === "SAVED_OK" &&
+      typeof scene.imageSha256 === "string" &&
+      scene.imageSha256 === previousSummary.scenes[scene.sceneIndex - 1]?.imageSha256);
+  if (
+    pendingSceneIndexes.length !== targetedRegenerationScenes.length ||
+    pendingSceneIndexes.some((sceneIndex, index) => sceneIndex !== targetedRegenerationScenes[index]) ||
+    !retainedScenesReady
+  ) {
+    console.error("ABORT: exact Owner-selected regeneration must leave every and only the selected scenes pending.");
+    process.exit(3);
+  }
+  const backupDir = path.join(OUT_DIR, "superseded-owner-review-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  for (const [sceneNumber, expectedSha256] of ownerSelectedSceneBindings) {
+    const sourceFile = sceneFile(sceneNumber - 1);
+    const backupFile = path.join(
+      backupDir,
+      `scene-${String(sceneNumber).padStart(2, "0")}-${expectedSha256.slice(0, 16)}.png`,
+    );
+    if (!fs.existsSync(backupFile)) fs.copyFileSync(sourceFile, backupFile);
+    if (imageSha256(backupFile) !== expectedSha256) {
+      console.error(`ABORT: Owner-selected scene ${sceneNumber} backup hash mismatch.`);
+      process.exit(3);
+    }
+  }
+}
 if (refreshSummaryFromExistingAssets && pendingCount > 0) {
   const pendingSceneIndexes = sceneStates
     .filter((scene) => scene.status === "PENDING")
@@ -2535,7 +2648,9 @@ const {
 const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || topicScopedPositiveCompositionCanary?.executionApproved || noRetry;
 const ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
 const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
-const SUBMISSION_HARD_CAP = topicScopedModeOverride?.executionApproved
+const SUBMISSION_HARD_CAP = exactOwnerSelectedScenes
+  ? targetedRegenerationScenes.length
+  : topicScopedModeOverride?.executionApproved
   ? 1
   : topicScopedSceneRepairs?.executionApproved
     ? topicScopedSceneRepairs.targets.length
@@ -2886,6 +3001,16 @@ const summary = writeSummary({
   financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
   characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
   motionPlanAudit: buildMotionPlanAudit(sceneStates),
+  ownerSelectedRegeneration: exactOwnerSelectedScenes ? {
+    targetSceneIndexes: targetedRegenerationScenes,
+    previousImageSetSha256: EXPECTED_IMAGE_SET_SHA256,
+    priorImageBindings: [...ownerSelectedSceneBindings].map(([sceneIndex, imageSha256]) => ({
+      sceneIndex,
+      imageSha256,
+    })),
+    noRetry: true,
+    submissionHardCap: SUBMISSION_HARD_CAP,
+  } : null,
   targetedSceneRepair: topicScopedSceneRepairs ? {
     packetSha256: topicScopedSceneRepairs.packetSha256,
     productionPartId: topicScopedSceneRepairs.productionPartId,

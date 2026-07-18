@@ -46,6 +46,7 @@ const readyBase = {
   realTtsReady: true,
   generatedImageCount: 8,
   expectedImageCount: 8,
+  realImagesReviewable: true,
   realImagesReady: true,
   flowState: "render_ready",
   flowReadyForRender: true,
@@ -62,11 +63,24 @@ check("missing script stops at Owner topic selection", script.next?.stageId === 
 const tts = buildMoneyShortsResumablePlan({ ...readyBase, realTtsReady: false });
 check("missing TTS offers only the free packet step", tts.next?.action === "realTtsPreflight" && tts.next.canAutoAdvance === true && tts.next.gate === "owner_paid_tts");
 
-const images = buildMoneyShortsResumablePlan({ ...readyBase, generatedImageCount: 0, realImagesReady: false });
+const images = buildMoneyShortsResumablePlan({
+  ...readyBase,
+  generatedImageCount: 0,
+  realImagesReviewable: false,
+  realImagesReady: false,
+});
 check("image generation remains Owner-gated", images.next?.stageId === "images" && images.next.action === "realSceneImagesCreate" && images.next.canAutoAdvance === false);
 
 const visualReview = buildMoneyShortsResumablePlan({ ...readyBase, realImagesReady: false });
-check("complete image set stops for Owner visual QA", visualReview.next?.stageId === "visual_review" && visualReview.next.action === null && visualReview.next.gate === "owner_visual_qa");
+check("complete image set stops at the explicit Owner visual QA action", visualReview.next?.stageId === "visual_review" && visualReview.next.action === "realSceneImagesReviewAccept" && visualReview.next.gate === "owner_visual_qa" && visualReview.next.canAutoAdvance === false);
+const auditFailedImages = buildMoneyShortsResumablePlan({
+  ...readyBase,
+  generatedImageCount: 8,
+  expectedImageCount: 8,
+  realImagesReviewable: false,
+  realImagesReady: false,
+});
+check("N/N files with failed technical audits stay at image generation diagnostics", auditFailedImages.next?.stageId === "images");
 
 const flowPrepare = buildMoneyShortsResumablePlan({ ...readyBase, flowState: "not_prepared", flowReadyForRender: false });
 check("Flow packet preparation is safe to auto-advance", flowPrepare.next?.action === "flowMotionPrepare" && flowPrepare.next.canAutoAdvance === true);
