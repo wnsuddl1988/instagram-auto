@@ -56,7 +56,9 @@ import {
   readScriptPreview,
   readVoiceSampleStatus,
   readWizardPublishPreflight,
+  readWizardPublishRecoveryState,
   readWizardPublishResult,
+  readWizardTopicPublishRecoveryStates,
   readWizardRealAudioBytes,
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
@@ -1157,7 +1159,12 @@ export async function POST(request: Request) {
   if (action === "automationPlan") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
-    const { plan, preflights, publishResults } = readMoneyShortsAutomationSnapshot(topicId);
+    const {
+      plan,
+      preflights,
+      publishResults,
+      publishRecoveries,
+    } = readMoneyShortsAutomationSnapshot(topicId);
     const executionGuard = readMoneyShortsAutomationExecutionGuard(plan);
     return json({
       action,
@@ -1166,7 +1173,13 @@ export async function POST(request: Request) {
         ? `자동 진행판이 다음 작업을 정했습니다: ${plan.next.stageLabel}`
         : "이 주제의 제작·게시 단계가 모두 완료됐습니다.",
       detail: plan.next?.reason ?? "추가 작업이 없습니다.",
-      raw: { plan, executionGuard, preflights, publishResults },
+      raw: {
+        plan,
+        executionGuard,
+        preflights,
+        publishResults,
+        publishRecoveries,
+      },
       noLive: true,
     });
   }
@@ -2605,6 +2618,49 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
+    // [게이트 1.25] 기존 armed result/ledger 증거가 하나라도 있으면 generic dual upload를
+    // 재실행하지 않는다. 이 검사는 content unit 생성, --arm 구성, runner spawn보다 먼저다.
+    const publishRecoveries =
+      readWizardTopicPublishRecoveryStates(topicId);
+    const existingPublishEvidence = publishRecoveries.filter(
+      (recovery) => recovery.state !== "not_started",
+    );
+    if (existingPublishEvidence.length > 0) {
+      const allComplete =
+        publishRecoveries.length > 0 &&
+        publishRecoveries.every(
+          (recovery) => recovery.state === "complete",
+        );
+      return json({
+        action,
+        status: "blocked",
+        summary: allComplete
+          ? "이미 양쪽 플랫폼 게시가 완료된 콘텐츠입니다. 일반 업로드를 다시 실행하지 않습니다."
+          : "기존 게시 결과 증거를 먼저 확인해야 합니다. 자동 재시도와 일반 양쪽 업로드를 막았습니다.",
+        blockerCode: allComplete
+          ? "CONTENT_ALREADY_PUBLISHED"
+          : "PUBLISH_RECOVERY_MANUAL_REVIEW_REQUIRED",
+        raw: {
+          publishRecoveries: publishRecoveries.map(
+            (recovery) => ({
+              partId: recovery.partId,
+              state: recovery.state,
+              reason: recovery.reason,
+              recoveryFingerprint:
+                recovery.recoveryFingerprint,
+              instagramMediaId: recovery.instagramMediaId,
+              youtubeVideoId: recovery.youtubeVideoId,
+              automaticRetryAllowed:
+                recovery.automaticRetryAllowed,
+              externalRecoveryEnabled:
+                recovery.externalRecoveryEnabled,
+            }),
+          ),
+        },
+        noLive: true,
+        liveRunnerInvoked: false,
+      });
+    }
     // [게이트 1.5] media quality gate 서버 재검증 — 실제 TTS + 실제 장면 이미지 + 검증된 최종 mp4가
     // 전부 준비된 경우에만 진행한다. 테스트 소리/색상 카드/시안 mp4는 여기서 차단된다(fail-closed).
     const mediaGate = readWizardRealMediaState(topicId);
@@ -2686,12 +2742,20 @@ export async function POST(request: Request) {
         });
       }
       const result = readWizardPublishResult(topicId, entry.unit.productionPartId);
-      if (runUp.exitCode === 0 && result?.status === "PUBLISHED_DUAL_PLATFORM_OK") {
+      const recovery = readWizardPublishRecoveryState(
+        topicId,
+        entry.unit.productionPartId,
+      );
+      if (
+        runUp.exitCode === 0 &&
+        result?.status === "PUBLISHED_DUAL_PLATFORM_OK" &&
+        recovery.state === "complete"
+      ) {
         published.push({
           partId: entry.unit.productionPartId,
           partNumber: entry.unit.partNumber,
-          instagramMediaId: result.instagramMediaId,
-          youtubeVideoId: result.youtubeVideoId,
+          instagramMediaId: recovery.instagramMediaId,
+          youtubeVideoId: recovery.youtubeVideoId,
           youtubeUrl: result.youtubeUrl,
           ledgerRecordedKeys: result.ledgerRecordedKeys,
         });
@@ -2712,6 +2776,16 @@ export async function POST(request: Request) {
           failedPartId: entry.unit.productionPartId,
           instagramMediaId: result?.instagramMediaId ?? null,
           partialExternalState: result?.partialExternalState ?? null,
+          recovery: {
+            state: recovery.state,
+            reason: recovery.reason,
+            recoveryFingerprint:
+              recovery.recoveryFingerprint,
+            automaticRetryAllowed:
+              recovery.automaticRetryAllowed,
+            externalRecoveryEnabled:
+              recovery.externalRecoveryEnabled,
+          },
         },
         noLive: false,
         liveRunnerInvoked: true,
@@ -2813,6 +2887,8 @@ function describeBuildFailure(reason: string): string {
     return "현재 승인된 영상 hash로 [게시 전 점검]을 다시 통과해야 업로드할 수 있습니다.";
   if (reason === "content_already_published_evidence")
     return "이미 게시 완료된 콘텐츠입니다. 같은 콘텐츠를 다시 올릴 수 없습니다.";
+  if (reason === "publish_recovery_manual_review_required")
+    return "기존 게시 결과 증거를 먼저 확인해야 합니다. 자동 재시도와 일반 양쪽 업로드를 막았습니다.";
   if (reason === "video_path_untrusted")
     return "영상 파일 위치를 신뢰할 수 없어 중단했습니다. [영상 만들기]를 다시 실행해 주세요.";
   if (reason.startsWith("discovery_metadata_gate_failed"))

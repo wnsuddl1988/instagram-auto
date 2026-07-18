@@ -74,6 +74,8 @@ import {
   validateMoneyShortsPublishPreflightBinding,
   validateMoneyShortsFinalVideoOwnerApprovalEvidence,
 } from "./money-shorts-final-video-owner-approval.mjs";
+import { evaluateLedgerDuplicateForUnit } from "./publish-ledger-runtime.mjs";
+import { classifyMoneyShortsPublishRecovery } from "./money-shorts-publish-recovery.mjs";
 import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
@@ -748,6 +750,21 @@ export function buildOperatorCommand(
       if (!builtUnit.ok) return { ok: false, reason: builtUnit.reason };
       if ((BLOCKED_PUBLISHED_CONTENT_IDS as readonly string[]).includes(builtUnit.paths.contentId)) {
         return { ok: false, reason: "content_already_published_evidence" };
+      }
+      // 기존 armed result가 하나라도 있으면 generic dual upload를 다시 만들지 않는다.
+      // 실제 복구 실행은 별도 Owner 승인 task가 생기기 전까지 항상 수동 확인에서 멈춘다.
+      const recovery = readWizardPublishRecoveryState(
+        input?.topicId ?? "",
+        builtUnit.paths.productionPartId,
+      );
+      if (recovery.state !== "not_started") {
+        return {
+          ok: false,
+          reason:
+            recovery.state === "complete"
+              ? "content_already_published_evidence"
+              : "publish_recovery_manual_review_required",
+        };
       }
       // 게시 전 점검 통과 evidence가 같은 content unit에 대해 존재해야 한다(fail-closed).
       const pf = readWizardPublishPreflight(input?.topicId ?? "", builtUnit.paths.productionPartId);
@@ -6788,7 +6805,7 @@ function wizardPublishResultDir(topicId: string, productionPartId?: "single" | "
     slug,
     "publish",
     WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
-    ...(strategy ? [resolvedPartId as string] : []),
+    ...(resolvedPartId ? [resolvedPartId] : []),
   );
 }
 
@@ -6932,6 +6949,284 @@ export function readWizardPublishResult(
   };
 }
 
+export type WizardPublishRecoveryState = ReturnType<
+  typeof classifyMoneyShortsPublishRecovery
+>;
+
+type WizardPublishPartId = "single" | "part-1" | "part-2";
+const WIZARD_PUBLISH_PART_IDS = [
+  "single",
+  "part-1",
+  "part-2",
+] as const satisfies readonly WizardPublishPartId[];
+
+function unreadableWizardPublishRecoveryState(
+  currentBinding: Record<string, string>,
+): WizardPublishRecoveryState {
+  return classifyMoneyShortsPublishRecovery({
+    resultFile: {
+      exists: false,
+      parseOk: false,
+      sha256: null,
+      evidence: null,
+    },
+    currentBinding,
+    ledgerEvidence: {
+      readOk: false,
+      instagramAlreadyPublished: false,
+      youtubeAlreadyPublished: false,
+      instagramPublishedIdReference: null,
+      youtubePublishedIdReference: null,
+    },
+  });
+}
+
+function readWizardPublishRecoveryStateFromMedia(
+  topicId: string,
+  productionPartId: WizardPublishPartId,
+  media: WizardRealMediaState,
+): WizardPublishRecoveryState {
+  const safeSlug = toSafeTopicSlug(topicId);
+  const currentPart = media.parts.find(
+    (part) => part.id === productionPartId,
+  );
+  const resultDir = wizardPublishResultDir(
+    topicId,
+    productionPartId,
+  );
+  if (!safeSlug || !resultDir) {
+    return unreadableWizardPublishRecoveryState({
+      contentId: "",
+      version: WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
+      productionPartId,
+      contentUnitManifestPath: "",
+      contentUnitSha256: "",
+      instagramSourceSha256: "",
+      youtubeSourceSha256: "",
+      publishMetadataSha256: "",
+      finalVideoApprovalFingerprint: "",
+    });
+  }
+
+  const contentId =
+    productionPartId !== "single"
+      ? `wizard-${safeSlug}-${productionPartId}`
+      : `wizard-${safeSlug}`;
+  const contentUnitManifestPath = resolve(
+    join(
+      resultDir,
+      "dual_platform_content_unit." +
+        contentId +
+        "." +
+        WIZARD_FULL_SCRIPT_PUBLISH_VERSION +
+        ".json",
+    ),
+  );
+  const currentMp4Path =
+    typeof currentPart?.finalVideo.mp4Path === "string"
+      ? resolve(currentPart.finalVideo.mp4Path)
+      : null;
+  const currentFinalVideo = currentPart?.finalVideo ?? null;
+  const currentArtifactsReady =
+    currentFinalVideo?.ready === true &&
+    currentFinalVideo.ownerApproved === true &&
+    currentMp4Path != null &&
+    currentMp4Path.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    typeof currentFinalVideo.finalMp4Sha256 === "string" &&
+    typeof currentFinalVideo.publishMetadataSha256 === "string" &&
+    typeof currentFinalVideo.ownerApprovalFingerprint === "string";
+
+  let contentUnitSha256 = "";
+  if (
+    currentArtifactsReady &&
+    contentUnitManifestPath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    existsSync(contentUnitManifestPath)
+  ) {
+    try {
+      const contentUnitBytes = readFileSync(contentUnitManifestPath);
+      const parsed = JSON.parse(
+        contentUnitBytes.toString("utf8"),
+      ) as {
+        schemaVersion?: unknown;
+        contentId?: unknown;
+        version?: unknown;
+        wizardTopicId?: unknown;
+        wizardProductionPartId?: unknown;
+        instagramSourcePath?: unknown;
+        youtubeSourcePath?: unknown;
+        sourceIntegrity?: {
+          rootTopicId?: unknown;
+          productionPartId?: unknown;
+          finalVideoApprovalFingerprint?: unknown;
+          finalMp4Sha256?: unknown;
+          publishMetadataSha256?: unknown;
+        };
+      };
+      const instagramSourcePath =
+        typeof parsed.instagramSourcePath === "string"
+          ? resolve(parsed.instagramSourcePath)
+          : null;
+      const youtubeSourcePath =
+        typeof parsed.youtubeSourcePath === "string"
+          ? resolve(parsed.youtubeSourcePath)
+          : null;
+      const manifestMatchesCurrent =
+        currentFinalVideo != null &&
+        parsed.schemaVersion === "dual_platform_content_unit_v1" &&
+        parsed.contentId === contentId &&
+        parsed.version === WIZARD_FULL_SCRIPT_PUBLISH_VERSION &&
+        parsed.wizardTopicId === topicId &&
+        parsed.wizardProductionPartId === productionPartId &&
+        instagramSourcePath === currentMp4Path &&
+        youtubeSourcePath === currentMp4Path &&
+        parsed.sourceIntegrity?.rootTopicId === topicId &&
+        parsed.sourceIntegrity?.productionPartId ===
+          productionPartId &&
+        parsed.sourceIntegrity?.finalVideoApprovalFingerprint ===
+          currentFinalVideo.ownerApprovalFingerprint &&
+        parsed.sourceIntegrity?.finalMp4Sha256 ===
+          currentFinalVideo.finalMp4Sha256 &&
+        parsed.sourceIntegrity?.publishMetadataSha256 ===
+          currentFinalVideo.publishMetadataSha256;
+      if (manifestMatchesCurrent) {
+        contentUnitSha256 = createHash("sha256")
+          .update(contentUnitBytes)
+          .digest("hex");
+      }
+    } catch {
+      contentUnitSha256 = "";
+    }
+  }
+
+  const currentBinding = {
+    contentId,
+    version: WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
+    productionPartId,
+    contentUnitManifestPath,
+    contentUnitSha256,
+    instagramSourceSha256:
+      currentArtifactsReady
+        ? currentFinalVideo?.finalMp4Sha256 ?? ""
+        : "",
+    youtubeSourceSha256:
+      currentArtifactsReady
+        ? currentFinalVideo?.finalMp4Sha256 ?? ""
+        : "",
+    publishMetadataSha256:
+      currentArtifactsReady
+        ? currentFinalVideo?.publishMetadataSha256 ?? ""
+        : "",
+    finalVideoApprovalFingerprint:
+      currentArtifactsReady
+        ? currentFinalVideo?.ownerApprovalFingerprint ?? ""
+        : "",
+  };
+
+  const resultPath = join(
+    resultDir,
+    "final-e2e-publish-result.json",
+  );
+  const resultFile: {
+    exists: boolean;
+    parseOk: boolean;
+    sha256: string | null;
+    evidence: unknown;
+  } = {
+    exists: existsSync(resultPath),
+    parseOk: false,
+    sha256: null,
+    evidence: null,
+  };
+  if (resultFile.exists) {
+    try {
+      const resultBytes = readFileSync(resultPath);
+      resultFile.sha256 = createHash("sha256")
+        .update(resultBytes)
+        .digest("hex");
+      try {
+        resultFile.evidence = JSON.parse(
+          resultBytes.toString("utf8"),
+        );
+        resultFile.parseOk = true;
+      } catch {
+        resultFile.parseOk = false;
+      }
+    } catch {
+      resultFile.parseOk = false;
+    }
+  }
+
+  const ledgerEvidence = evaluateLedgerDuplicateForUnit(
+    WIZARD_PUBLISH_LEDGER_PATH,
+    contentId,
+    WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
+  );
+  return classifyMoneyShortsPublishRecovery({
+    resultFile,
+    currentBinding,
+    ledgerEvidence,
+  });
+}
+
+/**
+ * 기존 armed publish 결과를 현재 full-hash artifacts 및 canonical ledger와
+ * read-only로 대조한다. 이 함수는 파일을 생성/수정하지 않고 외부 호출도 하지 않는다.
+ */
+export function readWizardPublishRecoveryState(
+  topicId: string,
+  productionPartId?: WizardPublishPartId,
+): WizardPublishRecoveryState {
+  const media = readWizardRealMediaState(topicId);
+  const resolvedPartId =
+    productionPartId ??
+    (media.parts.length === 1 ? media.parts[0].id : null);
+  if (!resolvedPartId) {
+    return unreadableWizardPublishRecoveryState({
+      contentId: "",
+      version: WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
+      productionPartId: "",
+      contentUnitManifestPath: "",
+      contentUnitSha256: "",
+      instagramSourceSha256: "",
+      youtubeSourceSha256: "",
+      publishMetadataSha256: "",
+      finalVideoApprovalFingerprint: "",
+    });
+  }
+  return readWizardPublishRecoveryStateFromMedia(
+    topicId,
+    resolvedPartId,
+    media,
+  );
+}
+
+export type WizardTopicPublishRecovery = WizardPublishRecoveryState & {
+  partId: WizardPublishPartId;
+};
+
+export function readWizardTopicPublishRecoveryStates(
+  topicId: string,
+): WizardTopicPublishRecovery[] {
+  const media = readWizardRealMediaState(topicId);
+  const currentPartIds = new Set(
+    media.parts.map((part) => part.id),
+  );
+  return WIZARD_PUBLISH_PART_IDS
+    .map((partId) => ({
+      partId,
+      ...readWizardPublishRecoveryStateFromMedia(
+        topicId,
+        partId,
+        media,
+      ),
+    }))
+    .filter(
+      (recovery) =>
+        currentPartIds.has(recovery.partId) ||
+        recovery.state !== "not_started",
+    );
+}
+
 /**
  * 최종 영상은 만들었지만 아직 양쪽 플랫폼에 모두 게시하지 않은 주제의 로컬 보관함 항목.
  * 별도 큐 파일을 만들지 않고, 검증된 최종 MP4와 실제 게시 결과를 다시 읽어 계산한다.
@@ -6946,6 +7241,7 @@ export type WizardUploadReadyItem = {
   updatedAt: string | null;
   status: "ready" | "needs_attention";
   detail: string;
+  recoveryStates: WizardTopicPublishRecovery[];
 };
 
 export function listWizardUploadReadyItems(): WizardUploadReadyItem[] {
@@ -6966,18 +7262,29 @@ export function listWizardUploadReadyItems(): WizardUploadReadyItem[] {
   for (const topicId of topicIds) {
     const record = readWizardFinalScriptRecord(topicId);
     const media = readWizardRealMediaState(topicId);
-    if (!record || !media.mediaQualityGate.ok || !media.finalVideo.ready || media.parts.length === 0) continue;
+    if (!record) continue;
 
     const generatedTopic = readWizardGeneratedTopic(topicId);
     if (generatedTopic?.category !== "finance" && !topicId.startsWith("gen-finance-")) continue;
 
-    const publishResults = media.parts.map((part) => readWizardPublishResult(topicId, part.id));
-    const allPublished = publishResults.every((result) => result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
+    const recoveryStates =
+      readWizardTopicPublishRecoveryStates(topicId);
+    const allPublished =
+      recoveryStates.length > 0 &&
+      recoveryStates.every(
+        (recovery) => recovery.state === "complete",
+      );
     if (allPublished) continue;
 
-    const needsAttention = publishResults.some((result) =>
-      result?.partialExternalState != null || result?.instagramMediaId != null || result?.youtubeVideoId != null,
+    // 2편 중 한 편만 complete여도 generic dual upload는 완료 편을 중복 게시할 수 있다.
+    // 따라서 all-complete가 아닌 상태에서는 기존 result가 단 하나라도 있으면 주의 항목이다.
+    const needsAttention = recoveryStates.some(
+      (recovery) => recovery.genericDualUploadBlocked === true,
     );
+    if (
+      !needsAttention &&
+      (!media.mediaQualityGate.ok || !media.finalVideo.ready)
+    ) continue;
     let newestMtimeMs = 0;
     for (const part of media.parts) {
       if (!part.finalVideo.mp4Path) continue;
@@ -6991,13 +7298,17 @@ export function listWizardUploadReadyItems(): WizardUploadReadyItem[] {
       topicId,
       title: record.script.title,
       category: "finance",
-      totalParts: media.production.totalParts,
+      totalParts:
+        media.production.totalParts > 0
+          ? media.production.totalParts
+          : recoveryStates.length,
       totalDurationSec: media.finalVideo.durationSec,
       updatedAt: newestMtimeMs > 0 ? new Date(newestMtimeMs).toISOString() : null,
       status: needsAttention ? "needs_attention" : "ready",
       detail: needsAttention
-        ? "일부 게시 기록이 있어 재업로드를 막았습니다. 계정과 게시 결과를 먼저 확인해 주세요."
+        ? "게시 결과 증거를 확인해야 합니다. 자동 재시도와 일반 양쪽 업로드를 막았습니다."
         : "최종 영상이 준비됐습니다. 게시 전 점검 후 실제 업로드만 진행하면 됩니다.",
+      recoveryStates,
     });
   }
 

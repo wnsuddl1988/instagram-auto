@@ -132,6 +132,7 @@ function nowIso() {
 
 // ── result writer ────────────────────────────────────────────────────────────
 let outDirAbs = null;
+let resultArtifactBinding = null;
 function writeResultJson(status, blockerCode, extra) {
   const record = {
     schemaVersion: RESULT_SCHEMA,
@@ -145,6 +146,7 @@ function writeResultJson(status, blockerCode, extra) {
     envSecretValuesPrinted: false,
     dotEnvLocalDirectRead: false,
     sideEffectCounters,
+    ...(resultArtifactBinding ?? {}),
     ...extra,
   };
   if (outDirAbs) {
@@ -328,6 +330,22 @@ const currentPreflightBinding = {
   finalVideoApprovalFingerprint:
     sourceIntegrity.finalVideoApprovalFingerprint,
 };
+const publicationAttemptFingerprint = createHash("sha256")
+  .update(JSON.stringify({
+    contentId: unit.contentId,
+    version: unit.version,
+    wizardProductionPartId: productionPartId,
+    ...currentPreflightBinding,
+  }))
+  .digest("hex");
+// 이 지점 이후의 armed 실패도 현재 exact artifacts에 결속되도록 모든 결과에 공통 기록한다.
+resultArtifactBinding = {
+  contentId: unit.contentId,
+  version: unit.version,
+  wizardProductionPartId: productionPartId,
+  ...currentPreflightBinding,
+  publicationAttemptFingerprint,
+};
 console.log(`  [gate 6] IG source: ${igSourceSize} bytes, sha256_12=${igSha256.slice(0, 12)}`);
 console.log(`           YT source: ${ytSourceSize} bytes, sha256_12=${ytSha256.slice(0, 12)}`);
 console.log(`           blob pathname: ${blobPathname}`);
@@ -433,8 +451,8 @@ const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 
 const executionResult = {
   blob: { status: "pending", pathname: blobPathname, url: null, headStatus: null, headContentType: null },
-  instagram: { status: "pending", mediaId: null, containerId: null, errorExcerpt: null },
-  youtube: { status: "pending", videoId: null, url: null, errorExcerpt: null },
+  instagram: { status: "pending", outcome: "not_started", mediaId: null, containerId: null, errorExcerpt: null },
+  youtube: { status: "pending", outcome: "not_started", videoId: null, url: null, errorExcerpt: null },
   ledger: { status: "pending", path: ledgerAbs, recordedKeys: [], writeOk: false },
 };
 
@@ -504,6 +522,7 @@ const igCaption = [
 let igMediaId = null;
 try {
   // container 생성 (access_token은 body로만 — URL/로그 미노출)
+  executionResult.instagram.outcome = "unknown";
   sideEffectCounters.instagramContainerCreateCount += 1;
   const containerRes = await fetch(`${GRAPH_API_BASE}/${IG_ACCOUNT_ID}/media`, {
     method: "POST",
@@ -566,6 +585,7 @@ try {
     bail("FAILED", "INSTAGRAM_RETURNED_FORBIDDEN_EVIDENCE_ID", { executionResult });
   }
   executionResult.instagram.status = "published";
+  executionResult.instagram.outcome = "confirmed_published";
   executionResult.instagram.mediaId = igMediaId;
   console.log(`           published mediaId=${igMediaId}`);
 } catch (e) {
@@ -585,6 +605,7 @@ try {
   const oauth2 = new google.auth.OAuth2(YT_CLIENT_ID, YT_CLIENT_SECRET, "http://localhost:3000/api/auth/youtube/callback");
   oauth2.setCredentials({ refresh_token: YT_REFRESH_TOKEN }); // access token은 refresh로 in-memory 발급
   const youtube = google.youtube({ version: "v3", auth: oauth2 });
+  executionResult.youtube.outcome = "unknown";
   sideEffectCounters.youtubeInsertCount += 1;
   const resp = await youtube.videos.insert({
     part: ["snippet", "status"],
@@ -617,6 +638,7 @@ try {
     bail("FAILED", "YOUTUBE_RETURNED_FORBIDDEN_EVIDENCE_ID", { executionResult, partialExternalState: "instagram_published_youtube_failed" });
   }
   executionResult.youtube.status = "uploaded";
+  executionResult.youtube.outcome = "confirmed_published";
   executionResult.youtube.videoId = ytVideoId;
   executionResult.youtube.url = `https://www.youtube.com/shorts/${ytVideoId}`;
   console.log(`           uploaded videoId=${ytVideoId}`);

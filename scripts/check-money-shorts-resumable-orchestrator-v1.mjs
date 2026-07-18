@@ -55,6 +55,7 @@ const readyBase = {
   mediaQualityGateOk: true,
   publishPreflightReady: true,
   publishedAllParts: false,
+  publishRecoveryRequired: false,
 };
 
 const script = buildMoneyShortsResumablePlan({ ...readyBase, scriptReady: false });
@@ -116,6 +117,35 @@ check("accepted final media can advance to no-upload preflight", preflight.next?
 
 const publication = buildMoneyShortsResumablePlan(readyBase);
 check("publication is always Owner-confirmed and never auto-advanced", publication.status === "publication_confirmation_required" && publication.next?.action === "actualUpload" && publication.next.canAutoAdvance === false);
+
+const publicationRecovery = buildMoneyShortsResumablePlan({
+  ...readyBase,
+  publishRecoveryRequired: true,
+});
+check(
+  "partial or uncertain publication evidence requires manual recovery without a generic upload action",
+  publicationRecovery.status === "manual_recovery_required" &&
+    publicationRecovery.next?.stageId === "publication" &&
+    publicationRecovery.next?.gate === "manual_recovery" &&
+    publicationRecovery.next?.action === null &&
+    publicationRecovery.next.canAutoAdvance === false,
+);
+
+const staleMediaPublicationRecovery = buildMoneyShortsResumablePlan({
+  ...readyBase,
+  scriptReady: false,
+  finalVideoReady: false,
+  mediaQualityGateOk: false,
+  publishPreflightReady: false,
+  publishRecoveryRequired: true,
+});
+check(
+  "existing external publish evidence takes priority over stale local media stages",
+  staleMediaPublicationRecovery.status ===
+    "manual_recovery_required" &&
+    staleMediaPublicationRecovery.next?.stageId === "publication" &&
+    staleMediaPublicationRecovery.next?.action === null,
+);
 
 const complete = buildMoneyShortsResumablePlan({ ...readyBase, publishedAllParts: true });
 check("fully published content is complete", complete.status === "complete" && complete.next === null);
@@ -192,7 +222,15 @@ check("automation route reads durable media/Flow/preflight/publish evidence", [
   "readWizardFlowMotionStatus",
   "readWizardPublishPreflight",
   "readWizardPublishResult",
+  "readWizardTopicPublishRecoveryStates",
 ].every((name) => snapshotBlock.includes(name)) && automationRouteBlock.includes("readMoneyShortsAutomationSnapshot"));
+check(
+  "automation snapshot exposes per-part recovery evidence and completes only exact recovery states",
+  snapshotBlock.includes("publishRecoveries") &&
+    snapshotBlock.includes('recovery.state === "complete"') &&
+    snapshotBlock.includes("recovery.genericDualUploadBlocked === true") &&
+    snapshotBlock.includes("publishRecoveryRequired,"),
+);
 check("automation route never spawns or arms an action", !/runOperatorScript|allowArm|ARM_ARG_TOKEN|--arm/u.test(automationRouteBlock));
 check("operator action enum exposes the bounded advance action", helperSource.includes('"automationAdvance"') && routeSource.includes('"automationAdvance",'));
 check("operator action enum exposes the selected queue execution action", helperSource.includes('"automationQueueRunSelected"') && routeSource.includes('"automationQueueRunSelected",'));

@@ -742,9 +742,9 @@ check("all staged-cover finance captions require the complete dynamic-semantic a
 check("semantic-series videos use publish revision v5 while preserving prior ledger history", /WIZARD_FULL_SCRIPT_PUBLISH_VERSION\s*=\s*"v5"/.test(helperCode) && /version:\s*WIZARD_FULL_SCRIPT_PUBLISH_VERSION/.test(helperCode));
 check(
   "publish preflight/result one-shot evidence is isolated by revision and production part",
-  /const publishOutDir = join\(\s*WIZARD_VIDEO_OUT_ROOT,\s*safeSlug,\s*"publish",\s*WIZARD_FULL_SCRIPT_PUBLISH_VERSION,\s*selectedPart\.id,\s*\)/.test(helperCode) &&
+    /const publishOutDir = join\(\s*WIZARD_VIDEO_OUT_ROOT,\s*safeSlug,\s*"publish",\s*WIZARD_FULL_SCRIPT_PUBLISH_VERSION,\s*selectedPart\.id,\s*\)/.test(helperCode) &&
     /function wizardPublishResultDir/.test(helperCode) &&
-    /\.\.\.\(strategy \? \[resolvedPartId as string\] : \[\]\)/.test(helperCode) &&
+    /\.\.\.\(resolvedPartId \? \[resolvedPartId\] : \[\]\)/.test(helperCode) &&
     /join\(resultDir,\s*"final-e2e-publish-preflight\.json"\)/.test(helperCode) &&
     /join\(resultDir,\s*"final-e2e-publish-result\.json"\)/.test(helperCode),
 );
@@ -1114,7 +1114,7 @@ check("UI preview streams final video (?video=final)", /video=final&topicId=/.te
 
 // [E] media quality gate / upload gate — mock·시안 업로드 원천 차단
 check("content unit requires real tts/images/final mp4 (fail-closed reasons)", ["real_tts_required", "real_scene_images_required", "final_mp4_required", "media_quality_gate_not_ready"].every((r) => helperSrc.includes(r)));
-check("actualUpload re-verifies media gate before spawn (게이트 1.5)", /actualUpload[\s\S]{0,2200}readWizardRealMediaState\(topicId\)[\s\S]{0,700}MEDIA_GATE_USER_MESSAGE/.test(routeSrc));
+check("actualUpload re-verifies media gate before spawn (게이트 1.5)", /actualUpload[\s\S]{0,5200}readWizardRealMediaState\(topicId\)[\s\S]{0,700}MEDIA_GATE_USER_MESSAGE/.test(routeSrc));
 check("media gate blocker codes exist", ["REAL_TTS_REQUIRED", "REAL_SCENE_IMAGES_REQUIRED", "FINAL_MP4_REQUIRED"].every((c) => helperSrc.includes(c)) && routeSrc.includes("MEDIA_QUALITY_GATE_NOT_READY"));
 check("upload block user message exact (아직 실제 음성/… 업로드를 막았습니다)", routeSrc.includes("아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.") && wizardSrc.includes("아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다."));
 check(

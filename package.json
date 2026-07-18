@@ -18,7 +18,8 @@
     "owner:credential-preflight:local": "node scripts/run-owner-command-with-local-env-no-log.mjs credential-preflight",
     "owner:duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check",
     "owner:ready-preflight": "node scripts/run-owner-daily-automation-entrypoint.mjs --preflight --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json",
-    "owner:ready-duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json"
+    "owner:ready-duplicate-guard-check": "node scripts/run-owner-daily-automation-entrypoint.mjs --duplicate-guard-check --content-unit scripts/fixtures/dual_platform_content_unit.t1_lifestyle_inflation.v3_2.ready.v1.json",
+    "check:money-shorts-publish-partial-recovery-v1": "node scripts/check-money-shorts-publish-partial-recovery-v1.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

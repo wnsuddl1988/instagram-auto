@@ -144,6 +144,29 @@ type WizardUploadReadyItem = {
   updatedAt: string | null;
   status: "ready" | "needs_attention";
   detail: string;
+  recoveryStates: WizardPublishRecoveryState[];
+};
+
+type WizardPublishRecoveryStateName =
+  | "not_started"
+  | "complete"
+  | "no_external_failed"
+  | "instagram_only"
+  | "both_published_ledger_missing"
+  | "ambiguous"
+  | "invalid_evidence";
+
+type WizardPublishRecoveryState = {
+  partId: string;
+  state: WizardPublishRecoveryStateName;
+  reason: string;
+  recoveryFingerprint: string | null;
+  instagramMediaId: string | null;
+  youtubeVideoId: string | null;
+  manualRecoveryRequired: boolean;
+  genericDualUploadBlocked: boolean;
+  automaticRetryAllowed: boolean;
+  recoverablePlatformCandidate: string | null;
 };
 
 type WizardFinanceCharacterCast = {
@@ -863,6 +886,16 @@ const AUTOMATION_GATE_LABEL: Record<string, string> = {
   manual_recovery: "재전송 없이 수동 복구 필요",
 };
 
+const PUBLISH_RECOVERY_STATE_LABEL: Record<WizardPublishRecoveryStateName, string> = {
+  not_started: "게시 시작 전",
+  complete: "양쪽 게시 완료",
+  no_external_failed: "외부 게시 전 실패",
+  instagram_only: "Instagram만 게시됨",
+  both_published_ledger_missing: "양쪽 게시 확인 · 원장 누락",
+  ambiguous: "게시 결과 불명확",
+  invalid_evidence: "게시 증거 무효",
+};
+
 const AUTOMATION_EXECUTION_GUARD_LABEL: Record<WizardAutomationExecutionGuard["status"], string> = {
   available: "중복 실행 잠금 준비됨",
   not_applicable: "현재 자동 실행 대상 없음",
@@ -1016,6 +1049,53 @@ function ResultNote({ result }: { result: OperatorResult | null }) {
           </pre>
         </details>
       ) : null}
+    </div>
+  );
+}
+
+function PublishRecoveryEvidence({ states }: { states: WizardPublishRecoveryState[] }) {
+  return (
+    <div
+      data-testid="wizard-publish-recovery-evidence"
+      className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5"
+    >
+      <p className="text-xs font-bold text-amber-800">자동 재시도 0회 · 일반 양쪽 업로드 차단</p>
+      {states.length === 0 ? (
+        <p className="mt-1 text-xs text-amber-700">편별 게시 증거를 받지 못했습니다. 서버 상태를 다시 확인해야 합니다.</p>
+      ) : (
+        <div className="mt-2 space-y-2">
+          {states.map((recovery) => (
+            <div
+              key={`${recovery.partId}:${recovery.recoveryFingerprint ?? recovery.state}`}
+              data-testid="wizard-publish-recovery-part"
+              className="border-t border-amber-200 pt-2 first:border-t-0 first:pt-0"
+            >
+              <p className="text-xs font-bold text-slate-800">
+                {recovery.partId} · {PUBLISH_RECOVERY_STATE_LABEL[recovery.state]}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-600">{recovery.reason}</p>
+              <dl className="mt-1 grid gap-x-3 gap-y-0.5 text-xs text-slate-600 sm:grid-cols-2">
+                <div>
+                  <dt className="inline font-bold">Instagram ID: </dt>
+                  <dd className="inline break-all">{recovery.instagramMediaId ?? "없음"}</dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">YouTube ID: </dt>
+                  <dd className="inline break-all">{recovery.youtubeVideoId ?? "없음"}</dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">복구 후보: </dt>
+                  <dd className="inline">{recovery.recoverablePlatformCandidate ?? "없음"}</dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">복구 지문: </dt>
+                  <dd className="inline break-all">{recovery.recoveryFingerprint ?? "없음"}</dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1230,6 +1310,18 @@ export default function VideoCreationWizard() {
   const filteredUploadReadyItems = uploadReadyItems.filter((item) =>
     !normalizedUploadReadyQuery || item.title.toLocaleLowerCase("ko-KR").includes(normalizedUploadReadyQuery),
   );
+  const selectedUploadReadyItem =
+    uploadReadyItems.find((item) => item.topicId === selectedTopicId) ?? null;
+  const selectedPublishRecoveryStates =
+    selectedUploadReadyItem?.recoveryStates ?? [];
+  const publishRecoveryRequired =
+    selectedUploadReadyItem?.status === "needs_attention" ||
+    selectedPublishRecoveryStates.some(
+      (recovery) =>
+        recovery.manualRecoveryRequired ||
+        recovery.genericDualUploadBlocked ||
+        (recovery.state !== "not_started" && recovery.state !== "complete"),
+    );
 
   // 실제 제작 파생 상태 — 대본 확정 → 실제 음성 → 장면 이미지 → 최종 영상 → media gate.
   const scriptFinalReady = (scriptState === "success" && script != null) || realMedia?.scriptEngine.finalReady === true;
@@ -1320,6 +1412,7 @@ export default function VideoCreationWizard() {
   const uploadEnabled =
     runnable &&
     selectedTopicId != null &&
+    !publishRecoveryRequired &&
     finalVideoOwnerApproved &&
     mediaGateOk &&
     preflightDone &&
@@ -2624,10 +2717,16 @@ export default function VideoCreationWizard() {
       });
       setUploadResult(r);
       setUploadState(r.status === "success" ? "success" : r.status);
-      if (r.status === "success") void refreshUploadReadyList();
     } catch {
       setUploadState("error");
       setUploadResult({ action: "actualUpload", status: "error", summary: "업로드 요청에 실패했습니다." });
+    } finally {
+      // 성공/부분 실패/timeout/클라이언트 응답 유실 모두 최신 result+ledger 증거를 다시 읽는다.
+      // 다음 클릭은 새 needs_attention/manual_recovery 상태가 즉시 막는다.
+      await Promise.all([
+        refreshUploadReadyList(),
+        refreshAutomationPlan(selectedTopicId),
+      ]);
     }
   }, [
     selectedTopicId,
@@ -2636,6 +2735,7 @@ export default function VideoCreationWizard() {
     confirmPublish,
     confirmText,
     realMedia?.finalVideo.ownerApprovalFingerprint,
+    refreshAutomationPlan,
     refreshUploadReadyList,
   ]);
 
@@ -3454,27 +3554,32 @@ export default function VideoCreationWizard() {
                   <div
                     key={item.topicId}
                     data-testid="wizard-upload-ready-item"
-                    className={`flex items-center gap-3 border px-4 py-3 ${selected ? "border-emerald-500 bg-white" : "border-emerald-200 bg-white/80"}`}
+                    className={`border px-4 py-3 ${selected ? "border-emerald-500 bg-white" : "border-emerald-200 bg-white/80"}`}
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-bold text-slate-900">{item.title}</p>
-                      <p className={`mt-0.5 text-sm ${blocked ? "text-amber-700" : "text-slate-600"}`}>{item.detail}</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {item.totalParts > 1 ? `${item.totalParts}편` : "단편"}
-                        {item.totalDurationSec != null ? ` · ${item.totalDurationSec.toFixed(1)}초` : ""}
-                        {item.updatedAt ? ` · ${new Date(item.updatedAt).toLocaleString("ko-KR")}` : ""}
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-bold text-slate-900">{item.title}</p>
+                        <p className={`mt-0.5 text-sm ${blocked ? "text-amber-700" : "text-slate-600"}`}>{item.detail}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.totalParts > 1 ? `${item.totalParts}편` : "단편"}
+                          {item.totalDurationSec != null ? ` · ${item.totalDurationSec.toFixed(1)}초` : ""}
+                          {item.updatedAt ? ` · ${new Date(item.updatedAt).toLocaleString("ko-KR")}` : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="wizard-action-load-upload-ready"
+                        className={`shrink-0 px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          blocked ? "bg-amber-700 hover:bg-amber-800" : "bg-emerald-600 hover:bg-emerald-700"
+                        }`}
+                        disabled={!runnable}
+                        title={blocked ? "게시 복구 증거를 확인합니다. 일반 양쪽 업로드는 차단됩니다." : "완성 영상을 불러옵니다."}
+                        onClick={() => selectUploadReadyItem(item)}
+                      >
+                        {blocked ? "상태 보기" : "불러오기"}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      data-testid="wizard-action-load-upload-ready"
-                      className="shrink-0 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      disabled={blocked || !runnable}
-                      title={blocked ? "일부 게시 기록이 있어 재업로드를 막았습니다." : "완성 영상을 불러옵니다."}
-                      onClick={() => selectUploadReadyItem(item)}
-                    >
-                      불러오기
-                    </button>
+                    {blocked ? <PublishRecoveryEvidence states={item.recoveryStates ?? []} /> : null}
                   </div>
                 );
               })}
@@ -4903,7 +5008,17 @@ export default function VideoCreationWizard() {
           {uploadState === "success" ? null : (
             <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3.5 space-y-3">
               <p className="text-[15px] font-bold text-rose-700">누르면 실제 계정에 게시됩니다.</p>
-              {!mediaGateOk ? (
+              {publishRecoveryRequired ? (
+                <div
+                  data-testid="wizard-publish-recovery-upload-block"
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5"
+                >
+                  <p className="text-sm font-bold text-amber-800">
+                    기존 게시 결과를 수동 확인해야 하므로 일반 인스타그램·유튜브 업로드를 막았습니다.
+                  </p>
+                  <PublishRecoveryEvidence states={selectedPublishRecoveryStates} />
+                </div>
+              ) : !mediaGateOk ? (
                 <p className="text-sm text-slate-500">
                   아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.
                 </p>

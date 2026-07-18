@@ -4,6 +4,7 @@ import {
   readWizardFlowMotionStatus,
   readWizardPublishPreflight,
   readWizardPublishResult,
+  readWizardTopicPublishRecoveryStates,
   readWizardRealMediaState,
   resolveWizardFinanceCharacterVoice,
 } from "@/lib/owner-web-operator";
@@ -64,14 +65,24 @@ export function readMoneyShortsAutomationSnapshot(topicId: string) {
     partId: part.id,
     result: readWizardPublishResult(topicId, part.id),
   }));
+  const publishRecoveries =
+    readWizardTopicPublishRecoveryStates(topicId).map(
+      (recovery) => ({
+        partId: recovery.partId,
+        recovery,
+      }),
+    );
   const publishPreflightReady = parts.length > 0 && preflights.every(({ evidence }) =>
     evidence?.status === "PREFLIGHT_ONLY_OK" &&
     evidence.blockerCode == null &&
     evidence.contentUnitManifestPath != null &&
     evidence.boundToCurrentArtifacts === true &&
     evidence.credentialPresentCount === APPROVED_ENV_KEY_NAMES.length);
-  const publishedAllParts = parts.length > 0 && publishResults.every(({ result }) =>
-    result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
+  const publishedAllParts = parts.length > 0 && publishRecoveries.every(({ recovery }) =>
+    recovery.state === "complete");
+  const publishRecoveryRequired = !publishedAllParts && publishRecoveries.some(
+    ({ recovery }) => recovery.genericDualUploadBlocked === true,
+  );
   const plan = buildMoneyShortsResumablePlan({
     topicId,
     scriptReady: media.scriptEngine.finalReady,
@@ -89,8 +100,9 @@ export function readMoneyShortsAutomationSnapshot(topicId: string) {
     mediaQualityGateOk: media.mediaQualityGate.ok,
     publishPreflightReady,
     publishedAllParts,
+    publishRecoveryRequired,
   });
-  return { plan, preflights, publishResults };
+  return { plan, preflights, publishResults, publishRecoveries };
 }
 
 export function readMoneyShortsAutomationExecutionGuard(
