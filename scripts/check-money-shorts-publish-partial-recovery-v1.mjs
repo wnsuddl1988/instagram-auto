@@ -1040,9 +1040,10 @@ check(
 );
 check(
   "wizard renders per-part recovery evidence with zero automatic retry",
-  uploadLibraryBlock.includes(
-    "<PublishRecoveryEvidence states={item.recoveryStates ?? []}",
-  ) &&
+  uploadLibraryBlock.includes("<PublishRecoveryEvidence") &&
+    uploadLibraryBlock.includes(
+      "states={item.recoveryStates ?? []}",
+    ) &&
     wizardSource.includes("자동 재시도 0회 · 일반 양쪽 업로드 차단"),
 );
 const actualUploadUiHandler = sourceBlock(

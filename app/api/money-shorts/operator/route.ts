@@ -59,6 +59,7 @@ import {
   readWizardPublishRecoveryState,
   readWizardPublishResult,
   readWizardTopicPublishRecoveryStates,
+  resolveWizardPublishOwnerReconciliation,
   readWizardRealAudioBytes,
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
@@ -74,6 +75,10 @@ import {
   saveWizardFinanceCharacterSelection,
   saveWizardTopicEditorialDecision,
 } from "@/lib/owner-web-operator";
+import {
+  MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT,
+  MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DECISION,
+} from "@/lib/money-shorts-publish-owner-reconciliation.mjs";
 import {
   FINANCE_CHARACTER_IDS,
   type FinanceCharacterId,
@@ -136,6 +141,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "previewStatus",
   "wizardPreflight",
   "actualUpload",
+  "publishOwnerReconciliationResolve",
   "uploadReadyList",
   "characterCastStatus",
   "characterCastCreate",
@@ -2595,6 +2601,107 @@ export async function POST(request: Request) {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
     return json(runWizardPreflightAction(topicId));
+  }
+
+  // ── 부분 게시 Owner 대조 기록: immutable local evidence only, 외부 실행 0 ──
+  if (action === "publishOwnerReconciliationResolve") {
+    const b = body as {
+      topicId?: unknown;
+      productionPartId?: unknown;
+      expectedRecoveryFingerprint?: unknown;
+      decision?: unknown;
+      confirmation?: unknown;
+      confirmInstagramPublished?: unknown;
+      confirmYoutubeNotPublished?: unknown;
+      instagramPermalink?: unknown;
+      youtubeChannelId?: unknown;
+    };
+    if (
+      typeof b.topicId !== "string" ||
+      b.productionPartId !== "part-1" ||
+      typeof b.expectedRecoveryFingerprint !== "string" ||
+      !/^[a-f0-9]{64}$/.test(
+        b.expectedRecoveryFingerprint,
+      ) ||
+      b.decision !==
+        MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DECISION ||
+      b.confirmation !==
+        MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT ||
+      b.confirmInstagramPublished !== true ||
+      b.confirmYoutubeNotPublished !== true ||
+      typeof b.instagramPermalink !== "string" ||
+      typeof b.youtubeChannelId !== "string"
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary:
+          "현재 부분 게시 증거와 Owner 수동 대조 확인값이 완전하지 않습니다.",
+        blockerCode:
+          "PUBLISH_OWNER_RECONCILIATION_CONFIRMATION_INVALID",
+        noLive: true,
+        liveRunnerInvoked: false,
+      });
+    }
+    const resolved =
+      resolveWizardPublishOwnerReconciliation({
+        topicId: b.topicId,
+        productionPartId: b.productionPartId,
+        expectedRecoveryFingerprint:
+          b.expectedRecoveryFingerprint,
+        decision: b.decision,
+        confirmation: b.confirmation,
+        confirmInstagramPublished:
+          b.confirmInstagramPublished,
+        confirmYoutubeNotPublished:
+          b.confirmYoutubeNotPublished,
+        instagramPermalink: b.instagramPermalink,
+        youtubeChannelId: b.youtubeChannelId,
+      });
+    if (!resolved.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary:
+          "부분 게시 대조 증거를 기록하지 않았습니다. 화면을 새로 읽고 현재 증거를 다시 확인해 주세요.",
+        blockerCode: resolved.reason,
+        raw: {
+          recoveryState:
+            resolved.recovery?.state ?? null,
+          recoveryReason:
+            resolved.recovery?.reason ?? null,
+          automaticRetryCount: 0,
+          externalActionCount: 0,
+          part2ActionCount: 0,
+        },
+        noLive: true,
+        liveRunnerInvoked: false,
+      });
+    }
+    return json({
+      action,
+      status: "success",
+      summary: resolved.alreadyResolved
+        ? "동일한 Owner 부분 게시 대조 증거가 이미 기록되어 있습니다."
+        : "Instagram 게시·YouTube 미게시 Owner 대조 증거를 현재 결과에 고정했습니다.",
+      detail:
+        "일반 양쪽 업로드와 Instagram 재게시, 2편 게시를 계속 차단합니다. YouTube-only 복구 후보만 표시하며 실제 복구는 실행하지 않았습니다.",
+      raw: {
+        partId: "part-1",
+        recoveryState: resolved.recovery.state,
+        recoveryReason: resolved.recovery.reason,
+        recoverablePlatformCandidate:
+          resolved.recovery.recoverablePlatformCandidate,
+        instagramMediaId:
+          resolved.recovery.instagramMediaId,
+        resolutionSha256: resolved.resolutionSha256,
+        automaticRetryCount: 0,
+        externalActionCount: 0,
+        part2ActionCount: 0,
+      },
+      noLive: true,
+      liveRunnerInvoked: false,
+    });
   }
 
   // ── 실제 업로드(actualUpload): 이 route의 유일한 외부 게시 경로 — 전 게이트 fail-closed ──

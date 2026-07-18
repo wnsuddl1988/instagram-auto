@@ -83,6 +83,16 @@ import {
   buildMoneyShortsPublishReconciliationPacket,
 } from "./money-shorts-publish-reconciliation-packet.mjs";
 import {
+  MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT,
+  MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DECISION,
+  MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DIRNAME,
+  buildMoneyShortsPublishOwnerReconciliationEvidence,
+  moneyShortsPublishOwnerReconciliationMatchesRequest,
+} from "./money-shorts-publish-owner-reconciliation.mjs";
+import {
+  writeMoneyShortsPublishOwnerReconciliationOnce,
+} from "./money-shorts-publish-owner-reconciliation-store.mjs";
+import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
   FINANCE_CHARACTER_CAST_VERSION,
@@ -147,6 +157,7 @@ export const OPERATOR_ACTIONS = [
   // ── 게시 전 점검 + 실제 업로드 (task: owner-web-auto-topic-refresh-and-upload-button-v1) ──
   "wizardPreflight", // 선택 주제로 만든 영상 기준 게시 전 점검 (--arm 없음, 외부 호출 0)
   "actualUpload", // Owner 명시 확인 후 실제 업로드 (final E2E runner --arm; 서버 confirm 게이트 필수)
+  "publishOwnerReconciliationResolve", // 부분 게시의 Owner 수동 대조 증거만 immutable local 기록
   "uploadReadyList", // 완성됐지만 양쪽 플랫폼에 아직 게시되지 않은 영상 목록(읽기 전용)
   // ── 재테크 영상 주인공 검수 (영상/장면 생성 전, 외부 게시 없음) ──
   "characterCastStatus", // 4명 후보 이미지/선택 상태(읽기 전용)
@@ -6815,6 +6826,74 @@ function wizardPublishResultDir(topicId: string, productionPartId?: "single" | "
   );
 }
 
+function wizardPublishOwnerReconciliationPath(
+  topicId: string,
+  productionPartId: "single" | "part-1" | "part-2",
+): string | null {
+  const slug = toSafeTopicSlug(topicId);
+  if (!slug || productionPartId !== "part-1") {
+    return null;
+  }
+  return join(
+    WIZARD_VIDEO_OUT_ROOT,
+    slug,
+    "publish",
+    MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DIRNAME,
+    `${productionPartId}.json`,
+  );
+}
+
+function readWizardPublishOwnerReconciliationFile(
+  topicId: string,
+  productionPartId: "single" | "part-1" | "part-2",
+): {
+  exists: boolean;
+  parseOk: boolean;
+  sha256: string | null;
+  evidence: unknown;
+} {
+  const path = wizardPublishOwnerReconciliationPath(
+    topicId,
+    productionPartId,
+  );
+  if (!path || !existsSync(path)) {
+    return {
+      exists: false,
+      parseOk: false,
+      sha256: null,
+      evidence: null,
+    };
+  }
+  try {
+    const bytes = readFileSync(path);
+    const sha256 = createHash("sha256")
+      .update(bytes)
+      .digest("hex");
+    try {
+      return {
+        exists: true,
+        parseOk: true,
+        sha256,
+        evidence: JSON.parse(bytes.toString("utf8")),
+      };
+    } catch {
+      return {
+        exists: true,
+        parseOk: false,
+        sha256,
+        evidence: null,
+      };
+    }
+  } catch {
+    return {
+      exists: true,
+      parseOk: false,
+      sha256: null,
+      evidence: null,
+    };
+  }
+}
+
 export function readWizardPublishPreflight(
   topicId: string,
   productionPartId?: "single" | "part-1" | "part-2",
@@ -6963,6 +7042,7 @@ export type WizardPublishAttemptEvidence = {
   eventCount: number;
   latestTransition: string | null;
   latestRecordedAtIso: string | null;
+  latestEventSha256: string | null;
 };
 
 export type WizardPublishReconciliationPacket = {
@@ -7018,6 +7098,7 @@ function summarizeWizardPublishAttemptEvidence(
     latestEvent?: {
       transition?: unknown;
       recordedAtIso?: unknown;
+      eventSha256?: unknown;
     } | null;
   },
 ): WizardPublishAttemptEvidence {
@@ -7043,6 +7124,10 @@ function summarizeWizardPublishAttemptEvidence(
     latestRecordedAtIso:
       typeof inspection.latestEvent?.recordedAtIso === "string"
         ? inspection.latestEvent.recordedAtIso
+        : null,
+    latestEventSha256:
+      typeof inspection.latestEvent?.eventSha256 === "string"
+        ? inspection.latestEvent.eventSha256
         : null,
   };
 }
@@ -7074,6 +7159,7 @@ function unreadableWizardPublishRecoveryState(
     eventCount: 0,
     latestTransition: null,
     latestRecordedAtIso: null,
+    latestEventSha256: null,
   };
   return {
     ...recovery,
@@ -7275,6 +7361,7 @@ function readWizardPublishRecoveryStateFromMedia(
     latestEvent?: {
       transition?: unknown;
       recordedAtIso?: unknown;
+      eventSha256?: unknown;
     } | null;
   };
   try {
@@ -7314,14 +7401,21 @@ function readWizardPublishRecoveryStateFromMedia(
     contentId,
     WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
   );
+  const attemptEvidence =
+    summarizeWizardPublishAttemptEvidence(attemptInspection);
+  const ownerResolutionFile =
+    readWizardPublishOwnerReconciliationFile(
+      topicId,
+      productionPartId,
+    );
   const recovery = classifyMoneyShortsPublishRecovery({
     resultFile,
     attemptFile,
+    attemptEvidence,
+    ownerResolutionFile,
     currentBinding,
     ledgerEvidence,
   });
-  const attemptEvidence =
-    summarizeWizardPublishAttemptEvidence(attemptInspection);
   return {
     ...recovery,
     attemptEvidence,
@@ -7363,6 +7457,213 @@ export function readWizardPublishRecoveryState(
     resolvedPartId,
     media,
   );
+}
+
+export type WizardPublishOwnerReconciliationResolveResult =
+  | {
+      ok: true;
+      alreadyResolved: boolean;
+      recovery: WizardPublishRecoveryState;
+      resolutionSha256: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+      recovery: WizardPublishRecoveryState | null;
+    };
+
+function wizardPublishOwnerReconciliationMatchesRequest(
+  recovery: WizardPublishRecoveryState,
+  input: {
+    expectedRecoveryFingerprint: string;
+    decision: string;
+    confirmation: string;
+    confirmInstagramPublished: boolean;
+    confirmYoutubeNotPublished: boolean;
+    instagramPermalink: string;
+    youtubeChannelId: string;
+  },
+): boolean {
+  return moneyShortsPublishOwnerReconciliationMatchesRequest(
+    recovery,
+    input,
+  );
+}
+
+/**
+ * Owner가 직접 확인한 Instagram 게시/YouTube 미게시 사실을 현재 result,
+ * full artifact binding, attempt claim+journal head에 묶어 최초 1회 기록한다.
+ * 외부 API, child process, env/credential, 업로드, 게시, 원장 mutation은 없다.
+ */
+export function resolveWizardPublishOwnerReconciliation(input: {
+  topicId: string;
+  productionPartId: WizardPublishPartId;
+  expectedRecoveryFingerprint: string;
+  decision: string;
+  confirmation: string;
+  confirmInstagramPublished: boolean;
+  confirmYoutubeNotPublished: boolean;
+  instagramPermalink: string;
+  youtubeChannelId: string;
+}): WizardPublishOwnerReconciliationResolveResult {
+  if (
+    input.productionPartId !== "part-1" ||
+    !toSafeTopicSlug(input.topicId)
+  ) {
+    return {
+      ok: false,
+      reason:
+        "PUBLISH_OWNER_RECONCILIATION_PART_OR_TOPIC_INVALID",
+      recovery: null,
+    };
+  }
+  const current = readWizardPublishRecoveryState(
+    input.topicId,
+    input.productionPartId,
+  );
+  if (current.state === "instagram_only") {
+    return wizardPublishOwnerReconciliationMatchesRequest(
+      current,
+      input,
+    ) &&
+      typeof current.ownerResolution.sha256 === "string"
+      ? {
+          ok: true,
+          alreadyResolved: true,
+          recovery: current,
+          resolutionSha256:
+            current.ownerResolution.sha256,
+        }
+      : {
+          ok: false,
+          reason:
+            "PUBLISH_OWNER_RECONCILIATION_ALREADY_RECORDED_CONFLICT",
+          recovery: current,
+        };
+  }
+  if (
+    current.state !== "ambiguous" ||
+    current.reason !== "youtube_publish_outcome_unknown" ||
+    current.recoveryFingerprint !==
+      input.expectedRecoveryFingerprint
+  ) {
+    return {
+      ok: false,
+      reason:
+        "PUBLISH_OWNER_RECONCILIATION_CURRENT_EVIDENCE_STALE",
+      recovery: current,
+    };
+  }
+  const built =
+    buildMoneyShortsPublishOwnerReconciliationEvidence({
+      topicId: input.topicId,
+      productionPartId: input.productionPartId,
+      recovery: current,
+      attemptEvidence: current.attemptEvidence,
+      decision: input.decision,
+      confirmation: input.confirmation,
+      confirmInstagramPublished:
+        input.confirmInstagramPublished,
+      confirmYoutubeNotPublished:
+        input.confirmYoutubeNotPublished,
+      instagramPermalink: input.instagramPermalink,
+      youtubeChannelId: input.youtubeChannelId,
+    });
+  if (built.ok !== true || !built.evidence) {
+    return {
+      ok: false,
+      reason:
+        built.reason ??
+        "PUBLISH_OWNER_RECONCILIATION_EVIDENCE_BUILD_FAILED",
+      recovery: current,
+    };
+  }
+  const evidence = built.evidence;
+  const path = wizardPublishOwnerReconciliationPath(
+    input.topicId,
+    input.productionPartId,
+  );
+  if (!path) {
+    return {
+      ok: false,
+      reason:
+        "PUBLISH_OWNER_RECONCILIATION_PATH_INVALID",
+      recovery: current,
+    };
+  }
+  const written =
+    writeMoneyShortsPublishOwnerReconciliationOnce({
+      path,
+      evidence,
+    });
+  if (
+    written.ok !== true ||
+    !("sha256" in written) ||
+    typeof written.sha256 !== "string" ||
+    !("alreadyExists" in written) ||
+    typeof written.alreadyExists !== "boolean"
+  ) {
+    const raced = readWizardPublishRecoveryState(
+      input.topicId,
+      input.productionPartId,
+    );
+    if (
+      wizardPublishOwnerReconciliationMatchesRequest(
+        raced,
+        input,
+      ) &&
+      typeof raced.ownerResolution.sha256 === "string"
+    ) {
+      return {
+        ok: true,
+        alreadyResolved: true,
+        recovery: raced,
+        resolutionSha256:
+          raced.ownerResolution.sha256,
+      };
+    }
+    return {
+      ok: false,
+      reason:
+        written.reason ??
+        "PUBLISH_OWNER_RECONCILIATION_WRITE_FAILED",
+      recovery: current,
+    };
+  }
+  const successfulWrite = written as {
+    ok: true;
+    alreadyExists: boolean;
+    sha256: string;
+  };
+  const resolved = readWizardPublishRecoveryState(
+    input.topicId,
+    input.productionPartId,
+  );
+  if (
+    resolved.state !== "instagram_only" ||
+    resolved.reason !==
+      "owner_confirmed_instagram_published_youtube_not_published" ||
+    resolved.recoverablePlatformCandidate !==
+      "youtube_shorts" ||
+    resolved.ownerResolution?.resolutionFingerprint !==
+      evidence.resolutionFingerprint ||
+    resolved.ownerResolution?.sha256 !==
+      successfulWrite.sha256
+  ) {
+    return {
+      ok: false,
+      reason:
+        "PUBLISH_OWNER_RECONCILIATION_READBACK_NOT_APPLIED",
+      recovery: resolved,
+    };
+  }
+  return {
+    ok: true,
+    alreadyResolved:
+      successfulWrite.alreadyExists === true,
+    recovery: resolved,
+    resolutionSha256: successfulWrite.sha256,
+  };
 }
 
 export type WizardTopicPublishRecovery = WizardPublishRecoveryState & {

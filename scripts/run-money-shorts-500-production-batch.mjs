@@ -9,6 +9,8 @@ import ts from "typescript";
 import * as finalVideoOwnerApproval from "../lib/money-shorts-final-video-owner-approval.mjs";
 import * as publishAttemptJournal from "../lib/money-shorts-publish-attempt-journal.mjs";
 import * as publishReconciliationPacket from "../lib/money-shorts-publish-reconciliation-packet.mjs";
+import * as publishOwnerReconciliation from "../lib/money-shorts-publish-owner-reconciliation.mjs";
+import * as publishOwnerReconciliationStore from "../lib/money-shorts-publish-owner-reconciliation-store.mjs";
 import * as publishRecovery from "../lib/money-shorts-publish-recovery.mjs";
 import * as publishLedgerRuntime from "../lib/publish-ledger-runtime.mjs";
 import * as ttsOwnerListeningGate from "../lib/money-shorts-tts-owner-listening-gate.mjs";
@@ -116,6 +118,8 @@ export function loadProductionRecords(options = {}) {
     if (specifier === "./money-shorts-publish-recovery.mjs") return publishRecovery;
     if (specifier === "./money-shorts-publish-attempt-journal.mjs") return publishAttemptJournal;
     if (specifier === "./money-shorts-publish-reconciliation-packet.mjs") return publishReconciliationPacket;
+    if (specifier === "./money-shorts-publish-owner-reconciliation.mjs") return publishOwnerReconciliation;
+    if (specifier === "./money-shorts-publish-owner-reconciliation-store.mjs") return publishOwnerReconciliationStore;
     if (specifier === "./veo-scene-selector") return veoSelector;
     if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);

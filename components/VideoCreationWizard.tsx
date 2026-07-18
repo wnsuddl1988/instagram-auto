@@ -175,6 +175,18 @@ type WizardPublishRecoveryState = {
     eventCount: number;
     latestTransition: string | null;
     latestRecordedAtIso: string | null;
+    latestEventSha256: string | null;
+  };
+  ownerResolution: {
+    present: boolean;
+    valid: boolean;
+    applied: boolean;
+    sha256: string | null;
+    resolutionFingerprint: string | null;
+    sourceRecoveryFingerprint: string | null;
+    instagramPermalink: string | null;
+    youtubeChannelId: string | null;
+    checkedAtIso: string | null;
   };
   reconciliationPacket: {
     mode: "read_only_evidence_packet";
@@ -1108,7 +1120,198 @@ function ResultNote({ result }: { result: OperatorResult | null }) {
   );
 }
 
-function PublishRecoveryEvidence({ states }: { states: WizardPublishRecoveryState[] }) {
+const PUBLISH_OWNER_RECONCILIATION_DECISION =
+  "confirm_instagram_published_youtube_not_published";
+const PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT =
+  "유튜브 미게시 확인";
+
+function PublishOwnerReconciliationForm({
+  topicId,
+  recovery,
+  disabled,
+  onResolved,
+}: {
+  topicId: string;
+  recovery: WizardPublishRecoveryState;
+  disabled: boolean;
+  onResolved: () => Promise<void>;
+}) {
+  const [instagramPermalink, setInstagramPermalink] =
+    useState("");
+  const [youtubeChannelId, setYoutubeChannelId] =
+    useState("");
+  const [
+    confirmInstagramPublished,
+    setConfirmInstagramPublished,
+  ] = useState(false);
+  const [
+    confirmYoutubeNotPublished,
+    setConfirmYoutubeNotPublished,
+  ] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [result, setResult] =
+    useState<OperatorResult | null>(null);
+  const [running, setRunning] = useState(false);
+  const ready =
+    !disabled &&
+    !running &&
+    recovery.partId === "part-1" &&
+    recovery.state === "ambiguous" &&
+    recovery.reason === "youtube_publish_outcome_unknown" &&
+    recovery.instagramMediaId != null &&
+    recovery.youtubeVideoId == null &&
+    recovery.attemptEvidence.present &&
+    recovery.attemptEvidence.journalValid &&
+    recovery.recoveryFingerprint != null &&
+    confirmInstagramPublished &&
+    confirmYoutubeNotPublished &&
+    instagramPermalink.trim().length > 0 &&
+    youtubeChannelId.trim().length > 0 &&
+    confirmation.trim() ===
+      PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT;
+
+  const resolve = async () => {
+    if (!ready || !recovery.recoveryFingerprint) return;
+    setRunning(true);
+    setResult(null);
+    try {
+      const response = await postAction(
+        "publishOwnerReconciliationResolve",
+        {
+          topicId,
+          productionPartId: "part-1",
+          expectedRecoveryFingerprint:
+            recovery.recoveryFingerprint,
+          decision: PUBLISH_OWNER_RECONCILIATION_DECISION,
+          confirmation: confirmation.trim(),
+          confirmInstagramPublished,
+          confirmYoutubeNotPublished,
+          instagramPermalink: instagramPermalink.trim(),
+          youtubeChannelId: youtubeChannelId.trim(),
+        },
+      );
+      setResult(response);
+      if (response.status === "success") {
+        await onResolved();
+      }
+    } catch {
+      setResult({
+        action: "publishOwnerReconciliationResolve",
+        status: "error",
+        summary:
+          "Owner 부분 게시 대조 기록 요청에 실패했습니다.",
+      });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div
+      data-testid="wizard-publish-owner-reconciliation-form"
+      className="mt-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-3"
+    >
+      <p className="text-xs font-bold text-violet-900">
+        수동 확인 결과 고정
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-violet-800">
+        Instagram 게시물과 YouTube Studio의 미게시 상태를 직접
+        확인한 경우에만 기록합니다. 기록해도 업로드나 복구는
+        실행되지 않습니다.
+      </p>
+      <label className="mt-2 block text-xs font-semibold text-slate-700">
+        Instagram 공개 주소
+        <input
+          data-testid="wizard-publish-owner-instagram-permalink"
+          type="url"
+          value={instagramPermalink}
+          onChange={(event) =>
+            setInstagramPermalink(event.target.value)
+          }
+          placeholder="https://www.instagram.com/.../reel/.../"
+          disabled={disabled || running}
+          className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-normal"
+        />
+      </label>
+      <label className="mt-2 block text-xs font-semibold text-slate-700">
+        확인한 YouTube 채널 ID
+        <input
+          data-testid="wizard-publish-owner-youtube-channel-id"
+          type="text"
+          value={youtubeChannelId}
+          onChange={(event) =>
+            setYoutubeChannelId(event.target.value)
+          }
+          placeholder="UC로 시작하는 채널 ID"
+          disabled={disabled || running}
+          className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-normal"
+        />
+      </label>
+      <label className="mt-2 flex items-start gap-2 text-xs text-slate-700">
+        <input
+          data-testid="wizard-publish-owner-confirm-instagram"
+          type="checkbox"
+          checked={confirmInstagramPublished}
+          onChange={(event) =>
+            setConfirmInstagramPublished(event.target.checked)
+          }
+          disabled={disabled || running}
+          className="mt-0.5"
+        />
+        위 Instagram 주소에서 현재 1편 게시물을 직접 확인했습니다.
+      </label>
+      <label className="mt-2 flex items-start gap-2 text-xs text-slate-700">
+        <input
+          data-testid="wizard-publish-owner-confirm-youtube"
+          type="checkbox"
+          checked={confirmYoutubeNotPublished}
+          onChange={(event) =>
+            setConfirmYoutubeNotPublished(event.target.checked)
+          }
+          disabled={disabled || running}
+          className="mt-0.5"
+        />
+        위 YouTube 채널의 Studio에서 해당 영상이 없음을 직접
+        확인했습니다.
+      </label>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <input
+          data-testid="wizard-publish-owner-confirmation"
+          type="text"
+          value={confirmation}
+          onChange={(event) =>
+            setConfirmation(event.target.value)
+          }
+          placeholder="유튜브 미게시 확인"
+          disabled={disabled || running}
+          className="w-48 rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
+        />
+        <button
+          data-testid="wizard-action-publish-owner-reconciliation"
+          type="button"
+          onClick={resolve}
+          disabled={!ready}
+          className="rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {running ? "기록 중…" : "수동 대조 결과 고정"}
+        </button>
+      </div>
+      <ResultNote result={result} />
+    </div>
+  );
+}
+
+function PublishRecoveryEvidence({
+  topicId,
+  states,
+  disabled,
+  onResolved,
+}: {
+  topicId: string;
+  states: WizardPublishRecoveryState[];
+  disabled: boolean;
+  onResolved: () => Promise<void>;
+}) {
   return (
     <div
       data-testid="wizard-publish-recovery-evidence"
@@ -1188,7 +1391,49 @@ function PublishRecoveryEvidence({ states }: { states: WizardPublishRecoveryStat
                     {recovery.attemptEvidence.claimSha256 ?? "없음"}
                   </dd>
                 </div>
+                <div>
+                  <dt className="inline font-bold">journal head: </dt>
+                  <dd className="inline break-all">
+                    {recovery.attemptEvidence.latestEventSha256 ?? "없음"}
+                  </dd>
+                </div>
               </dl>
+              {recovery.ownerResolution.applied ? (
+                <div
+                  data-testid="wizard-publish-owner-reconciliation-applied"
+                  className="mt-2 rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800"
+                >
+                  <p className="font-bold">
+                    Owner 수동 대조 증거 적용됨
+                  </p>
+                  <p className="mt-1 break-all">
+                    Instagram:{" "}
+                    {recovery.ownerResolution.instagramPermalink ??
+                      "주소 없음"}
+                  </p>
+                  <p className="break-all">
+                    YouTube 채널:{" "}
+                    {recovery.ownerResolution.youtubeChannelId ??
+                      "채널 없음"}
+                  </p>
+                </div>
+              ) : null}
+              {recovery.partId === "part-1" &&
+              recovery.state === "ambiguous" &&
+              recovery.reason ===
+                "youtube_publish_outcome_unknown" &&
+              recovery.instagramMediaId != null &&
+              recovery.youtubeVideoId == null &&
+              recovery.attemptEvidence.present &&
+              recovery.attemptEvidence.journalValid &&
+              recovery.recoveryFingerprint != null ? (
+                <PublishOwnerReconciliationForm
+                  topicId={topicId}
+                  recovery={recovery}
+                  disabled={disabled}
+                  onResolved={onResolved}
+                />
+              ) : null}
               <details
                 data-testid="wizard-publish-reconciliation-packet"
                 className="mt-2 rounded border border-amber-200 bg-white/70 px-2 py-1.5 text-xs text-slate-700"
@@ -3714,7 +3959,16 @@ export default function VideoCreationWizard() {
                         {blocked ? "상태 보기" : "불러오기"}
                       </button>
                     </div>
-                    {blocked ? <PublishRecoveryEvidence states={item.recoveryStates ?? []} /> : null}
+                    {blocked ? (
+                      <PublishRecoveryEvidence
+                        topicId={item.topicId}
+                        states={item.recoveryStates ?? []}
+                        disabled={!runnable}
+                        onResolved={async () => {
+                          await refreshUploadReadyList();
+                        }}
+                      />
+                    ) : null}
                   </div>
                 );
               })}
@@ -5175,7 +5429,19 @@ export default function VideoCreationWizard() {
                   <p className="text-sm font-bold text-amber-800">
                     기존 게시 결과를 수동 확인해야 하므로 일반 인스타그램·유튜브 업로드를 막았습니다.
                   </p>
-                  <PublishRecoveryEvidence states={selectedPublishRecoveryStates} />
+                  <PublishRecoveryEvidence
+                    topicId={selectedTopicId ?? ""}
+                    states={selectedPublishRecoveryStates}
+                    disabled={!runnable}
+                    onResolved={async () => {
+                      await Promise.all([
+                        refreshUploadReadyList(),
+                        selectedTopicId
+                          ? refreshAutomationPlan(selectedTopicId)
+                          : Promise.resolve(),
+                      ]);
+                    }}
+                  />
                 </div>
               ) : !mediaGateOk ? (
                 <p className="text-sm text-slate-500">
