@@ -212,7 +212,7 @@ const REQUIRED_UI_PHRASES = [
   "재업로드 차단 확인",
   "게시 전 점검",
   "새 쇼츠 만들기",
-  "AI 쇼츠 자동화",
+  "자동 쇼츠 만들기",
 ];
 for (const phrase of REQUIRED_UI_PHRASES) {
   check(`UI contains plain-Korean phrase: ${phrase}`, uiText.includes(phrase));

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 로컬 Playwright/Owner 화면이 127.0.0.1로 접속해도 개발 번들(HMR)이
+  // 교차 출처로 차단되지 않게 한다. 외부 호스트나 배포 런타임에는 적용되지 않는다.
+  allowedDevOrigins: ["127.0.0.1"],
   // Python 실행 파일·FFmpeg·PIL 등 서버 사이드 바이너리 경로를
   // Turbopack/Next.js가 번들 추적하지 않도록 제외한다.
   // render-v2/route.ts 안의 process.cwd() + path.join 패턴이 Turbopack NFT

@@ -47,29 +47,6 @@ export default function MoneyShortsDashboardPage() {
   return (
     // 운영 화면은 밝은 배경 + 큰 글자 기준(다크 전역 변수 대신 명시적 light 팔레트).
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3.5 shadow-sm">
-        <div className="max-w-screen-lg mx-auto flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">AI 쇼츠 자동화</h1>
-            <p className="text-sm text-slate-500">
-              카테고리 선택부터 대본, 음성, 영상, 게시 전 점검, 업로드까지 버튼으로 진행합니다.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold">
-              자동 생성
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
-              먼저 검토
-            </span>
-            <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm">
-              확인 후 업로드
-            </span>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-screen-lg mx-auto px-4 py-7 space-y-7">
         {/* 자동 쇼츠 만들기 — 메인 흐름 */}
         <VideoCreationWizard />

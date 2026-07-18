@@ -4219,12 +4219,32 @@ export default function VideoCreationWizard() {
           num={4}
           title="주인공 이미지 검수"
           state={characterCastReady ? "success" : characterCastState}
-          desc="유사한 재테크 소주제 3개씩을 한 주인공에게 묶었습니다. 각 인물의 후보 2장을 먼저 비교하고 기준 이미지를 선택합니다. 이 단계에서는 영상을 만들지 않습니다."
+          desc={characterCastReady
+            ? "기준 이미지 4명이 확정됐습니다. 캐릭터를 바꿀 때만 아래 비교 영역을 엽니다."
+            : "유사한 재테크 소주제 3개씩을 한 주인공에게 묶었습니다. 각 인물의 후보 2장을 먼저 비교하고 기준 이미지를 선택합니다. 이 단계에서는 영상을 만들지 않습니다."}
         >
           {characterCast ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {characterCast.characters.map((character) => (
-                <section key={character.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <div>
+              {characterCastReady ? (
+                <div data-testid="wizard-character-cast-ready-summary" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <p className="text-sm font-bold text-emerald-800">기준 캐릭터 4명 확정됨</p>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {characterCast.characters.map((character) => (
+                      <div key={character.id} className="rounded-lg border border-emerald-100 bg-white px-3 py-2">
+                        <p className="text-sm font-semibold text-slate-800">{character.name} · {character.label}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{character.role}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <details data-testid="wizard-character-cast-details" open={!characterCastReady} className={characterCastReady ? "mt-3" : undefined}>
+                {characterCastReady ? (
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-500">캐릭터 변경 또는 후보 비교</summary>
+                ) : null}
+                <div className={`grid gap-4 lg:grid-cols-2 ${characterCastReady ? "mt-3" : ""}`}>
+                  {characterCast.characters.map((character) => (
+                    <section key={character.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-base font-bold text-slate-900">{character.name} · {character.label}</p>
@@ -4294,15 +4314,19 @@ export default function VideoCreationWizard() {
                       );
                     })}
                   </div>
-                </section>
-              ))}
+                    </section>
+                  ))}
+                </div>
+              </details>
             </div>
           ) : (
             <p className="text-sm text-slate-500">주인공 검수 상태를 불러오는 중입니다.</p>
           )}
           <ResultNote result={characterCastResult} />
           <p className="text-sm text-slate-500 mt-3">
-            4명 선택이 끝나야 새 장면 이미지 제작으로 넘어갈 수 있습니다. 선택 이미지는 Owner PC에만 저장됩니다.
+            {characterCastReady
+              ? "확정된 기준 이미지는 새 장면 이미지 제작에 그대로 사용됩니다."
+              : "4명 선택이 끝나야 새 장면 이미지 제작으로 넘어갈 수 있습니다. 선택 이미지는 Owner PC에만 저장됩니다."}
           </p>
         </StepCard>
 
