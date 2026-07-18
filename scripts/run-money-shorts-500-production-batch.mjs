@@ -6,6 +6,13 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import ts from "typescript";
 
+import * as finalVideoOwnerApproval from "../lib/money-shorts-final-video-owner-approval.mjs";
+import * as publishAttemptJournal from "../lib/money-shorts-publish-attempt-journal.mjs";
+import * as publishReconciliationPacket from "../lib/money-shorts-publish-reconciliation-packet.mjs";
+import * as publishRecovery from "../lib/money-shorts-publish-recovery.mjs";
+import * as publishLedgerRuntime from "../lib/publish-ledger-runtime.mjs";
+import * as ttsOwnerListeningGate from "../lib/money-shorts-tts-owner-listening-gate.mjs";
+
 export const BATCH_SCHEMA_VERSION = "money_shorts_500_production_batch_v1";
 export const LEDGER_SCHEMA_VERSION = "money_shorts_500_production_ledger_v1";
 export const TOTAL_TOPIC_COUNT = 500;
@@ -47,7 +54,12 @@ function loadTypescriptModule(filePath, requireFromModule = nodeRequire) {
   return sandboxModule.exports;
 }
 
-export function loadProductionRecords() {
+export function loadProductionRecords(options = {}) {
+  const detailTopicIds = new Set(
+    Array.isArray(options?.pipelineSmokeTopicIds)
+      ? options.pipelineSmokeTopicIds.map((value) => String(value))
+      : [],
+  );
   const bankPath = path.join(ROOT, "lib", "finance-editorial-topic-bank.ts");
   const enginePath = path.join(ROOT, "lib", "finance-editorial-script-engine.ts");
   const visualPath = path.join(ROOT, "lib", "finance-visual-evidence-engine.ts");
@@ -98,6 +110,12 @@ export function loadProductionRecords() {
     if (specifier === "./finance-character-cast") return characterCast;
     if (specifier === "./finance-character-voice-cast") return characterVoiceCast;
     if (specifier === "./money-shorts-manual-visual-review.mjs") return manualVisualReview;
+    if (specifier === "./money-shorts-tts-owner-listening-gate.mjs") return ttsOwnerListeningGate;
+    if (specifier === "./money-shorts-final-video-owner-approval.mjs") return finalVideoOwnerApproval;
+    if (specifier === "./publish-ledger-runtime.mjs") return publishLedgerRuntime;
+    if (specifier === "./money-shorts-publish-recovery.mjs") return publishRecovery;
+    if (specifier === "./money-shorts-publish-attempt-journal.mjs") return publishAttemptJournal;
+    if (specifier === "./money-shorts-publish-reconciliation-packet.mjs") return publishReconciliationPacket;
     if (specifier === "./veo-scene-selector") return veoSelector;
     if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);
@@ -105,15 +123,16 @@ export function loadProductionRecords() {
   const seeds = helper.buildFinanceEditorialTopicSeeds();
   return seeds.map((seed, index) => {
     const topicId = `gen-finance-${seed.slug}`;
-    const script = helper.buildScriptFromGeneratedTopic({
+    const topicRecord = {
       ...seed,
       topicId,
       category: "finance",
       source: "editorial_bank",
-    });
+    };
+    const script = helper.buildScriptFromGeneratedTopic(topicRecord);
     const gate = helper.getWizardScriptQualityGate(topicId, script);
     if (!gate.passed) throw new Error(`QUALITY_GATE_FAILED:${topicId}:${gate.reasons?.[0] ?? "unknown"}`);
-    return {
+    const record = {
       index: index + 1,
       topicId,
       title: script.title,
@@ -121,6 +140,68 @@ export function loadProductionRecords() {
       editorialLane: seed.editorialLane,
       sceneCount: script.scenes.length,
       qualityScore: gate.overallScore,
+    };
+    if (!detailTopicIds.has(topicId)) return record;
+
+    const productionParts = helper.buildWizardProductionScriptParts(topicRecord, script).map((part) => {
+      const speechProfile = helper.buildWizardTopicSpeechProfile(
+        part.script.title,
+        part.script.fullVoiceover,
+        { topicId },
+      );
+      const speechDirections = part.script.scenes.map((scene, sceneIndex) =>
+        helper.buildWizardSpeechDirection(scene, {
+          topicProfile: speechProfile,
+          sceneIndex,
+          sceneCount: part.script.scenes.length,
+          sampleReview: false,
+        }),
+      );
+      const outputRoot = path.join(
+        "C:\\tmp\\money-shorts-os\\finance-v1-multi-topic-smoke-v1",
+        topicId,
+        part.id,
+      );
+      const flowMotionState = flowMotionJobs.buildFlowMotionState({
+        topicId,
+        productionPartId: part.id,
+        scriptFingerprint: helper.wizardScriptFingerprint(part.script),
+        outputRoot,
+        generatedAt: "2026-07-18T00:00:00.000Z",
+        scenes: part.script.scenes.map((scene, sceneIndex) => ({
+          sceneNumber: sceneIndex + 1,
+          sceneId: scene.id,
+          sceneLabel: scene.label,
+          narration: scene.narration,
+          visualCue: scene.visualCue,
+          visibleAction: scene.visualEvidence?.visibleAction,
+          motionPlan: scene.visualEvidence?.motionPlan,
+          mediaStrategy: scene.mediaStrategy,
+          mediaStrategyContractVersion: scene.mediaStrategyContractVersion,
+          referenceFile: path.join(outputRoot, `scene-${String(sceneIndex + 1).padStart(2, "0")}.png`),
+          referenceSha256: createHash("sha256")
+            .update(`${topicId}:${part.id}:${sceneIndex + 1}:${scene.visualCue}`)
+            .digest("hex"),
+        })),
+      });
+      return {
+        id: part.id,
+        partNumber: part.partNumber,
+        totalParts: part.totalParts,
+        script: part.script,
+        speechProfile,
+        speechDirections,
+        flowMotionState,
+      };
+    });
+    return {
+      ...record,
+      pipelineSmoke: {
+        category: "finance",
+        videoStrategyMode: script.videoStrategy?.mode ?? "single",
+        videoStrategyContractVersion: script.videoStrategy?.contractVersion ?? null,
+        productionParts,
+      },
     };
   });
 }
