@@ -25,6 +25,7 @@ import {
   completeYoutubeRefreshTokenRenewal,
   createYoutubeOAuthSession,
   mergeYoutubeRefreshTokenLockRelease,
+  mergeYoutubeRefreshTokenRuntimeCounters,
   readYoutubeOAuthClientFile,
   releaseYoutubeRefreshTokenRenewalLock,
   validateYoutubeRefreshTokenRenewalAuthorization,
@@ -210,9 +211,15 @@ function finalizeOnce(
       renewalLock,
     });
   renewalLock = null;
+  const resultWithRuntimeCounters =
+    mergeYoutubeRefreshTokenRuntimeCounters({
+      result,
+      externalRequestCount,
+      oauthBrowserOpenCount,
+    });
   const finalResult =
     mergeYoutubeRefreshTokenLockRelease({
-      result,
+      result: resultWithRuntimeCounters,
       lockRelease,
     });
 

@@ -17,6 +17,7 @@ import {
   completeYoutubeRefreshTokenRenewal,
   createYoutubeOAuthSession,
   mergeYoutubeRefreshTokenLockRelease,
+  mergeYoutubeRefreshTokenRuntimeCounters,
   parseYoutubeOAuthClientCredentials,
   readYoutubeOAuthClientFile,
   releaseYoutubeRefreshTokenRenewalLock,
@@ -925,6 +926,23 @@ check(
       "YOUTUBE_REFRESH_TOKEN_RENEWAL_LOCK_RELEASE_FAILED_AFTER_SAVE" &&
     postCommitLockFailure.refreshTokenSaved === true &&
     postCommitLockFailure.lockCleanupFailed === true,
+);
+
+const runtimeCounterMerge =
+  mergeYoutubeRefreshTokenRuntimeCounters({
+    result: {
+      ok: true,
+      externalRequestCount: 2,
+      refreshTokenSaved: true,
+    },
+    externalRequestCount: 2,
+    oauthBrowserOpenCount: 1,
+  });
+check(
+  "final safe result preserves the actual browser-open runtime count",
+  runtimeCounterMerge.externalRequestCount === 2 &&
+    runtimeCounterMerge.oauthBrowserOpenCount === 1 &&
+    runtimeCounterMerge.refreshTokenSaved === true,
 );
 
 const realDummyDir = mkdtempSync(
