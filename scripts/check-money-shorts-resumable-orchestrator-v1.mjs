@@ -51,6 +51,7 @@ const readyBase = {
   flowState: "render_ready",
   flowReadyForRender: true,
   finalVideoReady: true,
+  finalVideoOwnerApproved: true,
   mediaQualityGateOk: true,
   publishPreflightReady: true,
   publishedAllParts: false,
@@ -96,6 +97,19 @@ check("downloaded Flow video stops for Owner QA", flowQa.next?.action === "flowM
 
 const render = buildMoneyShortsResumablePlan({ ...readyBase, finalVideoReady: false, mediaQualityGateOk: false, publishPreflightReady: false });
 check("verified assets can advance only to local render", render.next?.action === "finalVideoCreate" && render.next.canAutoAdvance === true);
+
+const finalReview = buildMoneyShortsResumablePlan({
+  ...readyBase,
+  finalVideoOwnerApproved: false,
+  mediaQualityGateOk: false,
+  publishPreflightReady: false,
+});
+check(
+  "technical final MP4 stops at exact Owner video and metadata approval",
+  finalReview.next?.action === "finalVideoReviewAccept" &&
+    finalReview.next?.gate === "owner_final_media_qa" &&
+    finalReview.next.canAutoAdvance === false,
+);
 
 const preflight = buildMoneyShortsResumablePlan({ ...readyBase, publishPreflightReady: false });
 check("accepted final media can advance to no-upload preflight", preflight.next?.action === "wizardPreflight" && preflight.next.canAutoAdvance === true);

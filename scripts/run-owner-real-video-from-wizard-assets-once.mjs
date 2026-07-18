@@ -169,6 +169,9 @@ if (
 }
 const AUDIO_PATH = path.resolve(audioSummary.timelineAudioPath);
 if (!fs.existsSync(AUDIO_PATH)) abortBlocked("REAL_TTS_REQUIRED", `timeline 오디오 파일 없음: ${AUDIO_PATH}`);
+const audioSha256 = createHash("sha256")
+  .update(fs.readFileSync(AUDIO_PATH))
+  .digest("hex");
 if (audioSummary.timingPolicy !== "character_aligned_continuous_v2") {
   abortBlocked("DYNAMIC_CAPTION_ALIGNMENT_REQUIRED", "연속 TTS character alignment가 있어야 문장·문단 기준 자막을 만들 수 있습니다.");
 }
@@ -596,6 +599,10 @@ const vStream = probe?.streams?.find((s) => s.codec_type === "video") ?? null;
 const aStream = probe?.streams?.find((s) => s.codec_type === "audio") ?? null;
 const durationSec = probe?.format?.duration ? Math.round(parseFloat(probe.format.duration) * 100) / 100 : null;
 const sizeBytes = fs.existsSync(finalPath) ? fs.statSync(finalPath).size : 0;
+const finalMp4Sha256 =
+  sizeBytes > 0
+    ? createHash("sha256").update(fs.readFileSync(finalPath)).digest("hex")
+    : null;
 
 const checks = {
   width1080: vStream?.width === 1080,
@@ -657,6 +664,7 @@ const summary = {
   wizardScriptFingerprint: record.localFingerprint ?? null,
   scriptMode: record.mode ?? null,
   finalMp4Path: finalPath,
+  finalMp4Sha256,
   durationSec,
   width: vStream?.width ?? null,
   height: vStream?.height ?? null,
@@ -667,6 +675,7 @@ const summary = {
   sizeBytes,
   sceneCount: scriptSceneCount,
   audioProvider: "elevenlabs",
+  audioSha256,
   timingPolicy: audioSummary.timingPolicy ?? "audio_summary_scene_durations",
   captionMode: "full_script_dynamic_semantic_aligned_v6",
   captionContractVersion: captionAudit.contractVersion,

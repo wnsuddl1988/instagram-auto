@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type PreviewPageProps = {
-  searchParams: Promise<{ topicId?: string; part?: string }>;
+  searchParams: Promise<{ topicId?: string; part?: string; sha256?: string }>;
 };
 
 function safeTopicId(value: string | undefined): string | null {
@@ -9,11 +9,17 @@ function safeTopicId(value: string | undefined): string | null {
   return value;
 }
 
+function safeSha256(value: string | undefined): string | null {
+  if (!value || !/^[a-f0-9]{64}$/.test(value)) return null;
+  return value;
+}
+
 export default async function MoneyShortsPreviewPage({ searchParams }: PreviewPageProps) {
-  const { topicId: rawTopicId, part: rawPart } = await searchParams;
+  const { topicId: rawTopicId, part: rawPart, sha256: rawSha256 } = await searchParams;
   const topicId = safeTopicId(rawTopicId);
+  const sha256 = safeSha256(rawSha256);
   const part = rawPart === "single" || rawPart === "part-1" || rawPart === "part-2" ? rawPart : "single";
-  if (!topicId) {
+  if (!topicId || !sha256) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
         <div className="mx-auto max-w-md">
@@ -27,7 +33,7 @@ export default async function MoneyShortsPreviewPage({ searchParams }: PreviewPa
     );
   }
 
-  const videoSrc = `/api/money-shorts/operator?video=final&topicId=${encodeURIComponent(topicId)}&part=${part}`;
+  const videoSrc = `/api/money-shorts/operator?video=final&topicId=${encodeURIComponent(topicId)}&part=${part}&sha256=${sha256}`;
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-50">
       <div className="mx-auto max-w-md">

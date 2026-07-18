@@ -68,6 +68,7 @@ export function readMoneyShortsAutomationSnapshot(topicId: string) {
     evidence?.status === "PREFLIGHT_ONLY_OK" &&
     evidence.blockerCode == null &&
     evidence.contentUnitManifestPath != null &&
+    evidence.boundToCurrentArtifacts === true &&
     evidence.credentialPresentCount === APPROVED_ENV_KEY_NAMES.length);
   const publishedAllParts = parts.length > 0 && publishResults.every(({ result }) =>
     result?.status === "PUBLISHED_DUAL_PLATFORM_OK");
@@ -84,6 +85,7 @@ export function readMoneyShortsAutomationSnapshot(topicId: string) {
     flowState: flowMotion.state,
     flowReadyForRender: flowMotion.readyForRender,
     finalVideoReady: media.finalVideo.ready,
+    finalVideoOwnerApproved: media.finalVideo.ownerApproved,
     mediaQualityGateOk: media.mediaQualityGate.ok,
     publishPreflightReady,
     publishedAllParts,

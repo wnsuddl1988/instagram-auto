@@ -68,6 +68,13 @@ import {
   validateMoneyShortsTtsOwnerListeningEvidence,
 } from "./money-shorts-tts-owner-listening-gate.mjs";
 import {
+  MONEY_SHORTS_FINAL_VIDEO_OWNER_APPROVAL_VERSION,
+  MONEY_SHORTS_FINAL_VIDEO_OWNER_APPROVAL_TEXT,
+  buildMoneyShortsFinalVideoOwnerApprovalEvidence,
+  validateMoneyShortsPublishPreflightBinding,
+  validateMoneyShortsFinalVideoOwnerApprovalEvidence,
+} from "./money-shorts-final-video-owner-approval.mjs";
+import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
   FINANCE_CHARACTER_CAST_VERSION,
@@ -152,6 +159,7 @@ export const OPERATOR_ACTIONS = [
   "flowMotionQaPass", // Owner 7항목 검수 통과 evidence 기록 후 render_ready 전환
   "flowMotionQaFail", // Owner 검수 실패 기록(자동 재생성 없음)
   "finalVideoCreate", // 실제 음성 + 흐름 기반 실제 이미지 + 자막 + 모션으로 최종 mp4 합성
+  "finalVideoReviewAccept", // 모든 최종 MP4와 게시 문구를 Owner가 본 뒤 현재 full hash에만 승인
   "realMediaStatus", // 실제 음성/이미지/최종 영상 준비 상태 + media quality gate (읽기 전용, spawn 없음)
   "automationPlan", // 로컬 산출물에서 현재 단계와 다음 안전 작업을 재계산(읽기 전용, 실행 없음)
   "automationAdvance", // 계획이 허용한 로컬/no-submit 작업을 정확히 1개 실행한 뒤 재계산하고 중단
@@ -746,7 +754,14 @@ export function buildOperatorCommand(
       if (
         !pf ||
         pf.status !== "PREFLIGHT_ONLY_OK" ||
-        pf.contentUnitManifestPath !== resolve(builtUnit.paths.contentUnitPath)
+        pf.contentUnitManifestPath !== resolve(builtUnit.paths.contentUnitPath) ||
+        pf.boundToCurrentArtifacts !== true ||
+        pf.contentUnitSha256 !== builtUnit.paths.contentUnitSha256 ||
+        pf.instagramSourceSha256 !== builtUnit.paths.finalMp4Sha256 ||
+        pf.youtubeSourceSha256 !== builtUnit.paths.finalMp4Sha256 ||
+        pf.publishMetadataSha256 !== builtUnit.paths.publishMetadataSha256 ||
+        pf.finalVideoApprovalFingerprint !==
+          builtUnit.paths.finalVideoApprovalFingerprint
       ) {
         return { ok: false, reason: "preflight_evidence_missing" };
       }
@@ -6284,9 +6299,17 @@ export function readWizardVideoBytes(
   which: "muxed" | "silent" | "final",
   topicId?: string | null,
   productionPartId?: string | null,
+  expectedFinalMp4Sha256?: string | null,
 ): Buffer | null {
   let p: string | null = null;
+  let currentFinalMp4Sha256: string | null = null;
   if (which === "final") {
+    if (
+      typeof expectedFinalMp4Sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(expectedFinalMp4Sha256)
+    ) {
+      return null;
+    }
     // 현재 제작 게이트가 준비된 경우를 우선한다. 서버 재시작 뒤 주제 메모리가 사라진
     // 경우에도, summary 자체를 다시 검증한 로컬 MP4는 미리보기만 허용한다.
     const media = readWizardRealMediaState(topicId ?? "");
@@ -6294,6 +6317,12 @@ export function readWizardVideoBytes(
       ? media.parts.find((part) => part.id === productionPartId)
       : media.parts[0];
     p = selectedPart?.finalVideo.mp4Path ?? media.finalVideo.mp4Path ?? readWizardFinalPreviewMp4Path(topicId ?? "");
+    currentFinalMp4Sha256 =
+      selectedPart?.finalVideo.finalMp4Sha256 ??
+      media.finalVideo.finalMp4Sha256;
+    if (currentFinalMp4Sha256 !== expectedFinalMp4Sha256) {
+      return null;
+    }
   } else {
     const status = readWizardVideoStatus(topicId);
     p = which === "muxed" ? status.muxedMp4Path : status.silentMp4Path;
@@ -6304,7 +6333,15 @@ export function readWizardVideoBytes(
   if (!abs.toLowerCase().endsWith(".mp4")) return null;
   if (!existsSync(abs)) return null;
   try {
-    return readFileSync(abs);
+    const bytes = readFileSync(abs);
+    if (
+      which === "final" &&
+      createHash("sha256").update(bytes).digest("hex") !==
+        expectedFinalMp4Sha256
+    ) {
+      return null;
+    }
+    return bytes;
   } catch {
     return null;
   }
@@ -6412,6 +6449,106 @@ export function readWizardRealSceneImageBytes(
 // task: owner-web-auto-topic-refresh-and-upload-button-v1
 // ══════════════════════════════════════════════════════════════════════════════
 
+export type WizardPublishMetadataPreview = {
+  sha256: string;
+  instagram: {
+    captionFirstLineHook: string;
+    caption: string;
+    hashtags: string[];
+    callToAction: string;
+  };
+  youtube: {
+    title: string;
+    description: string;
+    tags: string[];
+  };
+};
+
+function buildWizardPublishMetadataSnapshot(
+  topicId: string,
+  platformTitle: string,
+  script: WizardFinalScriptRecord["script"],
+):
+  | {
+      ok: true;
+      contract: {
+        discoveryMetadataContractVersion: typeof PLATFORM_DISCOVERY_METADATA_VERSION;
+        discoveryMetadataGate: ReturnType<typeof buildPlatformDiscoveryMetadata>["gate"];
+        instagramMetadata: ReturnType<typeof buildPlatformDiscoveryMetadata>["metadata"]["instagram"] & {
+          discoveryContractVersion: typeof PLATFORM_DISCOVERY_METADATA_VERSION;
+          primaryKeywords: string[];
+          forbiddenUnrelatedTrendTags: true;
+        };
+        youtubeMetadata: ReturnType<typeof buildPlatformDiscoveryMetadata>["metadata"]["youtube"] & {
+          discoveryContractVersion: typeof PLATFORM_DISCOVERY_METADATA_VERSION;
+          primaryKeywords: string[];
+        };
+      };
+      sha256: string;
+      preview: WizardPublishMetadataPreview;
+    }
+  | { ok: false; reason: string } {
+  const generated = readWizardGeneratedTopic(topicId);
+  const category = (generated?.category ?? "finance") as WizardCategoryId;
+  const consequence =
+    script.scenes
+      .filter((scene) => scene.id === "consequence")
+      .map((scene) => scene.narration)
+      .join(" ") || script.twist;
+  const discovery = buildPlatformDiscoveryMetadata({
+    title: platformTitle,
+    hook: script.hook,
+    consequence,
+    action: script.action,
+    category,
+    financeSubtopic: generated?.financeSubtopic,
+  });
+  if (!discovery.gate.ok) {
+    return {
+      ok: false,
+      reason: `discovery_metadata_gate_failed:${discovery.gate.reasons.join(",")}`,
+    };
+  }
+  const contract = {
+    discoveryMetadataContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
+    discoveryMetadataGate: discovery.gate,
+    instagramMetadata: {
+      discoveryContractVersion: discovery.metadata.contractVersion,
+      primaryKeywords: discovery.metadata.primaryKeywords,
+      ...discovery.metadata.instagram,
+      forbiddenUnrelatedTrendTags: true as const,
+    },
+    youtubeMetadata: {
+      discoveryContractVersion: discovery.metadata.contractVersion,
+      primaryKeywords: discovery.metadata.primaryKeywords,
+      ...discovery.metadata.youtube,
+    },
+  };
+  const sha256 = createHash("sha256")
+    .update(JSON.stringify(contract))
+    .digest("hex");
+  return {
+    ok: true,
+    contract,
+    sha256,
+    preview: {
+      sha256,
+      instagram: {
+        captionFirstLineHook:
+          discovery.metadata.instagram.captionFirstLineHook,
+        caption: discovery.metadata.instagram.caption,
+        hashtags: discovery.metadata.instagram.hashtags,
+        callToAction: discovery.metadata.instagram.callToAction,
+      },
+      youtube: {
+        title: discovery.metadata.youtube.titleWithShortsSuffix,
+        description: discovery.metadata.youtube.descriptionBase,
+        tags: discovery.metadata.youtube.tags,
+      },
+    },
+  };
+}
+
 export type WizardPublishPaths = {
   topicId: string;
   safeSlug: string;
@@ -6425,6 +6562,13 @@ export type WizardPublishPaths = {
   ledgerPath: string;
   muxedMp4Path: string;
   titleBase: string;
+  contentUnitSha256: string;
+  finalMp4Sha256: string;
+  publishMetadataSha256: string;
+  finalVideoApprovalFingerprint: string;
+  imageSetSha256: string;
+  audioSha256: string;
+  wizardScriptFingerprint: string;
 };
 
 /**
@@ -6448,7 +6592,14 @@ export function buildWizardContentUnitForTopic(
   if (!selectedPart) return { ok: false, reason: "production_part_required" };
   const partRecord = readAbsJson(selectedPart.scriptFinalPath) as WizardFinalScriptRecord | null;
   const script = partRecord?.schemaVersion === "wizard_script_final_v1" ? partRecord.script : null;
-  if (!script) return { ok: false, reason: "production_script_missing" };
+  const wizardScriptFingerprint =
+    partRecord?.schemaVersion === "wizard_script_final_v1" &&
+    typeof partRecord.localFingerprint === "string"
+      ? partRecord.localFingerprint
+      : null;
+  if (!script || !wizardScriptFingerprint) {
+    return { ok: false, reason: "production_script_missing" };
+  }
 
   const media = readWizardRealMediaState(topicId);
   const partMedia = media.parts.find((part) => part.id === selectedPart.id);
@@ -6458,6 +6609,22 @@ export function buildWizardContentUnitForTopic(
   }
   if (!partMedia.realImages.ready) return { ok: false, reason: "real_scene_images_required" };
   if (!partMedia.finalVideo.ready || !partMedia.finalVideo.mp4Path) return { ok: false, reason: "final_mp4_required" };
+  if (
+    !partMedia.finalVideo.ownerApproved ||
+    !partMedia.finalVideo.finalMp4Sha256 ||
+    !partMedia.finalVideo.publishMetadataSha256 ||
+    !partMedia.finalVideo.ownerApprovalFingerprint ||
+    !partMedia.realImages.manualVisualReview.imageSetSha256 ||
+    !partMedia.realTts.audioSha256
+  ) {
+    return { ok: false, reason: "final_video_owner_approval_required" };
+  }
+  const ownerFinalVideoApprovalEvidence = readAbsJson(
+    wizardFinalVideoOwnerApprovalPath(topicId),
+  );
+  if (!ownerFinalVideoApprovalEvidence) {
+    return { ok: false, reason: "final_video_owner_approval_required" };
+  }
   if (!partMedia.mediaQualityGate.ok) return { ok: false, reason: "media_quality_gate_not_ready" };
 
   const muxedAbs = resolve(partMedia.finalVideo.mp4Path);
@@ -6472,24 +6639,20 @@ export function buildWizardContentUnitForTopic(
     return { ok: false, reason: "content_already_published_evidence" };
   }
 
-  const generated = readWizardGeneratedTopic(topicId);
-  const category = (generated?.category ?? "finance") as WizardCategoryId;
-  const consequence = script.scenes
-    .filter((scene) => scene.id === "consequence")
-    .map((scene) => scene.narration)
-    .join(" ") || script.twist;
-  const discovery = buildPlatformDiscoveryMetadata({
-    title: selectedPart.platformTitle,
-    hook: script.hook,
-    consequence,
-    action: script.action,
-    category,
-    financeSubtopic: generated?.financeSubtopic,
-  });
-  if (!discovery.gate.ok) {
-    return { ok: false, reason: `discovery_metadata_gate_failed:${discovery.gate.reasons.join(",")}` };
+  const publishMetadata = buildWizardPublishMetadataSnapshot(
+    topicId,
+    selectedPart.platformTitle,
+    script,
+  );
+  if (!publishMetadata.ok) return publishMetadata;
+  if (
+    publishMetadata.sha256 !==
+    partMedia.finalVideo.publishMetadataSha256
+  ) {
+    return { ok: false, reason: "final_video_owner_approval_stale" };
   }
-  const titleBase = discovery.metadata.youtube.titleBase;
+  const titleBase =
+    publishMetadata.contract.youtubeMetadata.titleBase;
 
   const contentUnit = {
     schemaVersion: "dual_platform_content_unit_v1",
@@ -6509,20 +6672,26 @@ export function buildWizardContentUnitForTopic(
       explicitContinuationCue: selectedPart.id === "part-1",
       explicitPartMarker: selectedPart.totalParts > 1,
     },
-    discoveryMetadataContractVersion: PLATFORM_DISCOVERY_METADATA_VERSION,
-    discoveryMetadataGate: discovery.gate,
+    ...publishMetadata.contract,
     instagramSourcePath: muxedAbs,
     youtubeSourcePath: muxedAbs,
-    instagramMetadata: {
-      discoveryContractVersion: discovery.metadata.contractVersion,
-      primaryKeywords: discovery.metadata.primaryKeywords,
-      ...discovery.metadata.instagram,
-      forbiddenUnrelatedTrendTags: true,
-    },
-    youtubeMetadata: {
-      discoveryContractVersion: discovery.metadata.contractVersion,
-      primaryKeywords: discovery.metadata.primaryKeywords,
-      ...discovery.metadata.youtube,
+    ownerFinalVideoApproval: ownerFinalVideoApprovalEvidence,
+    sourceIntegrity: {
+      contractVersion:
+        MONEY_SHORTS_FINAL_VIDEO_OWNER_APPROVAL_VERSION,
+      rootTopicId: topicId,
+      productionPartId: selectedPart.id,
+      finalVideoApprovalFingerprint:
+        partMedia.finalVideo.ownerApprovalFingerprint,
+      finalMp4Sha256: partMedia.finalVideo.finalMp4Sha256,
+      publishMetadataSha256:
+        partMedia.finalVideo.publishMetadataSha256,
+      imageSetSha256:
+        partMedia.realImages.manualVisualReview.imageSetSha256,
+      audioSha256: partMedia.realTts.audioSha256,
+      wizardScriptFingerprint,
+      durationSec: partMedia.finalVideo.durationSec,
+      sizeBytes: partMedia.finalVideo.sizeBytes,
     },
     existingPublishedKeys: [],
   };
@@ -6540,9 +6709,13 @@ export function buildWizardContentUnitForTopic(
     publishOutDir,
     "dual_platform_content_unit." + contentId + "." + WIZARD_FULL_SCRIPT_PUBLISH_VERSION + ".json",
   );
+  const contentUnitJson = JSON.stringify(contentUnit, null, 2);
+  const contentUnitSha256 = createHash("sha256")
+    .update(contentUnitJson)
+    .digest("hex");
   try {
     mkdirSync(publishOutDir, { recursive: true });
-    writeFileSync(contentUnitPath, JSON.stringify(contentUnit, null, 2), "utf8");
+    writeFileSync(contentUnitPath, contentUnitJson, "utf8");
   } catch (e) {
     return { ok: false, reason: `content_unit_write_failed:${(e as Error).message}` };
   }
@@ -6562,6 +6735,16 @@ export function buildWizardContentUnitForTopic(
       ledgerPath: WIZARD_PUBLISH_LEDGER_PATH,
       muxedMp4Path: muxedAbs,
       titleBase,
+      contentUnitSha256,
+      finalMp4Sha256: partMedia.finalVideo.finalMp4Sha256,
+      publishMetadataSha256:
+        partMedia.finalVideo.publishMetadataSha256,
+      finalVideoApprovalFingerprint:
+        partMedia.finalVideo.ownerApprovalFingerprint,
+      imageSetSha256:
+        partMedia.realImages.manualVisualReview.imageSetSha256,
+      audioSha256: partMedia.realTts.audioSha256,
+      wizardScriptFingerprint,
     },
   };
 }
@@ -6585,6 +6768,12 @@ export type WizardPublishPreflight = {
   blockerCode: string | null;
   contentUnitManifestPath: string | null;
   credentialPresentCount: number | null;
+  contentUnitSha256: string | null;
+  instagramSourceSha256: string | null;
+  youtubeSourceSha256: string | null;
+  publishMetadataSha256: string | null;
+  finalVideoApprovalFingerprint: string | null;
+  boundToCurrentArtifacts: boolean;
 };
 
 /** wizardPreflight가 남긴 runner preflight 결과(JSON)를 읽는다(secret 없음 — status/blocker/경로만). */
@@ -6615,15 +6804,89 @@ export function readWizardPublishPreflight(
     blockerCode?: string | null;
     contentUnitManifestPath?: string;
     credentialPresence?: Record<string, boolean>;
+    contentUnitSha256?: string;
+    instagramSourceSha256?: string;
+    youtubeSourceSha256?: string;
+    publishMetadataSha256?: string;
+    finalVideoApprovalFingerprint?: string;
   } | null;
   if (!parsed) return null;
   const presence = parsed.credentialPresence ?? null;
+  const contentUnitManifestPath =
+    typeof parsed.contentUnitManifestPath === "string"
+      ? resolve(parsed.contentUnitManifestPath)
+      : null;
+  let currentContentUnitSha256: string | null = null;
+  if (
+    contentUnitManifestPath &&
+    contentUnitManifestPath.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    existsSync(contentUnitManifestPath)
+  ) {
+    try {
+      currentContentUnitSha256 = createHash("sha256")
+        .update(readFileSync(contentUnitManifestPath))
+        .digest("hex");
+    } catch {
+      currentContentUnitSha256 = null;
+    }
+  }
+  const media = readWizardRealMediaState(topicId);
+  const currentPart = productionPartId
+    ? media.parts.find((part) => part.id === productionPartId)
+    : media.parts.length === 1
+      ? media.parts[0]
+      : null;
+  const contentUnitSha256 =
+    typeof parsed.contentUnitSha256 === "string"
+      ? parsed.contentUnitSha256
+      : null;
+  const instagramSourceSha256 =
+    typeof parsed.instagramSourceSha256 === "string"
+      ? parsed.instagramSourceSha256
+      : null;
+  const youtubeSourceSha256 =
+    typeof parsed.youtubeSourceSha256 === "string"
+      ? parsed.youtubeSourceSha256
+      : null;
+  const publishMetadataSha256 =
+    typeof parsed.publishMetadataSha256 === "string"
+      ? parsed.publishMetadataSha256
+      : null;
+  const finalVideoApprovalFingerprint =
+    typeof parsed.finalVideoApprovalFingerprint === "string"
+      ? parsed.finalVideoApprovalFingerprint
+      : null;
+  const bindingValidation =
+    validateMoneyShortsPublishPreflightBinding({
+      evidence: parsed,
+      current: {
+        contentUnitManifestPath,
+        contentUnitSha256: currentContentUnitSha256,
+        instagramSourceSha256:
+          currentPart?.finalVideo.finalMp4Sha256,
+        youtubeSourceSha256:
+          currentPart?.finalVideo.finalMp4Sha256,
+        publishMetadataSha256:
+          currentPart?.finalVideo.publishMetadataSha256,
+        finalVideoApprovalFingerprint:
+          currentPart?.finalVideo.ownerApprovalFingerprint,
+      },
+    });
+  const boundToCurrentArtifacts =
+    currentPart?.finalVideo.ready === true &&
+    currentPart.finalVideo.ownerApproved === true &&
+    bindingValidation.valid === true;
   return {
     status: typeof parsed.status === "string" ? parsed.status : null,
     blockerCode: typeof parsed.blockerCode === "string" ? parsed.blockerCode : null,
-    contentUnitManifestPath:
-      typeof parsed.contentUnitManifestPath === "string" ? parsed.contentUnitManifestPath : null,
+    contentUnitManifestPath,
     credentialPresentCount: presence ? Object.values(presence).filter((v) => v === true).length : null,
+    contentUnitSha256,
+    instagramSourceSha256,
+    youtubeSourceSha256,
+    publishMetadataSha256,
+    finalVideoApprovalFingerprint,
+    boundToCurrentArtifacts,
   };
 }
 
@@ -8709,6 +8972,225 @@ export function acceptWizardRealTtsListeningQuality(
   };
 }
 
+const WIZARD_FINAL_VIDEO_OWNER_APPROVAL_FILE =
+  "owner-final-video-approval-v1.json";
+
+type WizardFinalVideoOwnerApprovalPartEvidence = {
+  partId: "single" | "part-1" | "part-2";
+  wizardScriptFingerprint: string;
+  audioSha256: string;
+  imageSetSha256: string;
+  finalMp4Sha256: string;
+  publishMetadataSha256: string;
+  durationSec: number;
+  sizeBytes: number;
+};
+
+function wizardFinalVideoOwnerApprovalPath(topicId: string): string {
+  const safeSlug = toSafeTopicSlug(topicId) ?? "invalid";
+  return join(
+    WIZARD_VIDEO_OUT_ROOT,
+    safeSlug,
+    "real",
+    WIZARD_FINAL_VIDEO_OWNER_APPROVAL_FILE,
+  );
+}
+
+function readWizardFinalVideoOwnerApproval(
+  topicId: string,
+  part: WizardFinalVideoOwnerApprovalPartEvidence,
+  approvalPath: string,
+): {
+  accepted: boolean;
+  ownerApprovalFingerprint: string | null;
+  acceptedAt: string | null;
+} {
+  const result =
+    validateMoneyShortsFinalVideoOwnerApprovalEvidence({
+      evidence: readAbsJson(approvalPath),
+      topicId,
+      currentPart: part,
+    });
+  return {
+    accepted: result.accepted === true,
+    ownerApprovalFingerprint:
+      result.accepted === true &&
+      typeof result.finalVideoApprovalFingerprint === "string"
+        ? result.finalVideoApprovalFingerprint
+        : null,
+    acceptedAt:
+      result.accepted === true &&
+      typeof result.acceptedAt === "string"
+        ? result.acceptedAt
+        : null,
+  };
+}
+
+export function acceptWizardFinalVideoReview(
+  topicId: string,
+  input: {
+    confirmWatchedAllParts?: boolean;
+    confirmPublishMetadataReviewed?: boolean;
+    confirmExactFilesForPublish?: boolean;
+    approvalText?: string;
+    expectedParts?: Array<{
+      partId?: string;
+      finalMp4Sha256?: string;
+      publishMetadataSha256?: string;
+    }>;
+  },
+):
+  | {
+      ok: true;
+      media: WizardRealMediaState;
+      finalVideoApprovalFingerprint: string;
+    }
+  | { ok: false; reason: string } {
+  if (
+    input.confirmWatchedAllParts !== true ||
+    input.confirmPublishMetadataReviewed !== true ||
+    input.confirmExactFilesForPublish !== true ||
+    input.approvalText?.trim() !==
+      MONEY_SHORTS_FINAL_VIDEO_OWNER_APPROVAL_TEXT
+  ) {
+    return {
+      ok: false,
+      reason: "final_video_owner_confirmation_required",
+    };
+  }
+  const pipeline = buildWizardRealPipelineInputs(topicId);
+  if (!pipeline.ok) return pipeline;
+  const media = readWizardRealMediaState(topicId);
+  if (
+    media.parts.length !== pipeline.paths.parts.length ||
+    media.parts.length === 0
+  ) {
+    return { ok: false, reason: "final_mp4_required" };
+  }
+
+  const evidenceParts: WizardFinalVideoOwnerApprovalPartEvidence[] =
+    [];
+  for (const part of pipeline.paths.parts) {
+    const partMedia = media.parts.find(
+      (candidate) => candidate.id === part.id,
+    );
+    const partRecord = readAbsJson(
+      part.scriptFinalPath,
+    ) as WizardFinalScriptRecord | null;
+    if (
+      !partMedia?.finalVideo.ready ||
+      !partMedia.finalVideo.finalMp4Sha256 ||
+      !partMedia.finalVideo.publishMetadataSha256 ||
+      !partMedia.realTts.audioSha256 ||
+      !partMedia.realImages.manualVisualReview.imageSetSha256 ||
+      partRecord?.schemaVersion !== "wizard_script_final_v1" ||
+      typeof partRecord.localFingerprint !== "string" ||
+      typeof partMedia.finalVideo.durationSec !== "number" ||
+      typeof partMedia.finalVideo.sizeBytes !== "number"
+    ) {
+      return {
+        ok: false,
+        reason: `final_video_owner_evidence_missing:${part.id}`,
+      };
+    }
+    evidenceParts.push({
+      partId: part.id,
+      wizardScriptFingerprint: partRecord.localFingerprint,
+      audioSha256: partMedia.realTts.audioSha256,
+      imageSetSha256:
+        partMedia.realImages.manualVisualReview.imageSetSha256,
+      finalMp4Sha256: partMedia.finalVideo.finalMp4Sha256,
+      publishMetadataSha256:
+        partMedia.finalVideo.publishMetadataSha256,
+      durationSec: partMedia.finalVideo.durationSec,
+      sizeBytes: partMedia.finalVideo.sizeBytes,
+    });
+  }
+
+  const expectedParts = Array.isArray(input.expectedParts)
+    ? input.expectedParts
+        .map((part) => ({
+          partId: String(part?.partId ?? ""),
+          finalMp4Sha256: String(part?.finalMp4Sha256 ?? ""),
+          publishMetadataSha256: String(
+            part?.publishMetadataSha256 ?? "",
+          ),
+        }))
+        .sort((left, right) =>
+          left.partId.localeCompare(right.partId),
+        )
+    : [];
+  const currentClaims = evidenceParts
+    .map((part) => ({
+      partId: part.partId,
+      finalMp4Sha256: part.finalMp4Sha256,
+      publishMetadataSha256: part.publishMetadataSha256,
+    }))
+    .sort((left, right) =>
+      left.partId.localeCompare(right.partId),
+    );
+  if (
+    JSON.stringify(expectedParts) !== JSON.stringify(currentClaims)
+  ) {
+    return {
+      ok: false,
+      reason: "final_video_owner_stale_ui_claim",
+    };
+  }
+
+  let evidence: {
+    finalVideoApprovalFingerprint: string;
+  } & Record<string, unknown>;
+  try {
+    evidence = buildMoneyShortsFinalVideoOwnerApprovalEvidence({
+      topicId,
+      parts: evidenceParts,
+      acceptedAt: new Date().toISOString(),
+    });
+  } catch {
+    return {
+      ok: false,
+      reason: "final_video_owner_evidence_invalid",
+    };
+  }
+
+  try {
+    const path = wizardFinalVideoOwnerApprovalPath(topicId);
+    const tempPath = `${path}.${process.pid}.${Date.now()}.tmp`;
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      tempPath,
+      JSON.stringify(evidence, null, 2),
+      "utf8",
+    );
+    // 전체 편 evidence를 한 파일에 원자적으로 교체해 2편 split state를 막는다.
+    renameSync(tempPath, path);
+  } catch {
+    return {
+      ok: false,
+      reason: "final_video_owner_evidence_write_failed",
+    };
+  }
+
+  const mediaAfter = readWizardRealMediaState(topicId);
+  if (
+    !mediaAfter.finalVideo.ownerApproved ||
+    mediaAfter.finalVideo.ownerApprovalFingerprint !==
+      evidence.finalVideoApprovalFingerprint
+  ) {
+    return {
+      ok: false,
+      reason: "final_video_owner_evidence_recheck_failed",
+    };
+  }
+  return {
+    ok: true,
+    media: mediaAfter,
+    finalVideoApprovalFingerprint:
+      evidence.finalVideoApprovalFingerprint,
+  };
+}
+
 function wizardCurrentImageReviewParts(media: WizardRealMediaState) {
   return media.parts.map((part) => ({
     partId: part.id,
@@ -8939,6 +9421,12 @@ export type WizardRealMediaState = {
   finalVideo: {
     ready: boolean;
     mp4Path: string | null;
+    finalMp4Sha256: string | null;
+    publishMetadataSha256: string | null;
+    publishMetadata: WizardPublishMetadataPreview | null;
+    ownerApproved: boolean;
+    ownerApprovalFingerprint: string | null;
+    ownerApprovedAt: string | null;
     durationSec: number | null;
     width: number | null;
     height: number | null;
@@ -8954,6 +9442,7 @@ export type WizardRealMediaState = {
       | "REAL_SCENE_IMAGES_REQUIRED"
       | "MANUAL_VISUAL_REVIEW_REQUIRED"
       | "FINAL_MP4_REQUIRED"
+      | "FINAL_VIDEO_OWNER_APPROVAL_REQUIRED"
       | null;
   };
   parts: Array<{
@@ -9229,6 +9718,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         schemaVersion?: string;
         status?: string;
         finalMp4Path?: string;
+        finalMp4Sha256?: string;
         durationSec?: number;
         width?: number;
         height?: number;
@@ -9237,6 +9727,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
         sizeBytes?: number;
         sceneCount?: number;
         audioProvider?: string;
+        audioSha256?: string;
         imageMode?: string;
         imageSetSha256?: string;
         visualEngineVersion?: string;
@@ -9276,11 +9767,46 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
       } | null)
     : null;
   const mp4Path = typeof videoSummary?.finalMp4Path === "string" ? videoSummary.finalMp4Path : null;
+  const resolvedMp4Path =
+    mp4Path != null ? resolve(mp4Path) : null;
+  const mp4PathTrusted =
+    resolvedMp4Path != null &&
+    resolvedMp4Path.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    resolvedMp4Path.toLowerCase().endsWith(".mp4") &&
+    existsSync(resolvedMp4Path);
+  let currentFinalMp4Sha256: string | null = null;
+  let currentFinalMp4SizeBytes: number | null = null;
+  if (mp4PathTrusted && resolvedMp4Path) {
+    try {
+      currentFinalMp4SizeBytes = statSync(resolvedMp4Path).size;
+      currentFinalMp4Sha256 = createHash("sha256")
+        .update(readFileSync(resolvedMp4Path))
+        .digest("hex");
+    } catch {
+      currentFinalMp4SizeBytes = null;
+      currentFinalMp4Sha256 = null;
+    }
+  }
+  const publishMetadata =
+    record != null
+      ? buildWizardPublishMetadataSnapshot(
+          topicId,
+          record.script.title,
+          record.script,
+        )
+      : null;
+  const publishMetadataReady =
+    publishMetadata?.ok === true ? publishMetadata : null;
+  const renderSummaryHashMatches =
+    currentFinalMp4Sha256 != null &&
+    videoSummary?.finalMp4Sha256 === currentFinalMp4Sha256;
   const finalVideoReady =
     expectedSceneCount !== null &&
     videoSummary?.schemaVersion === "wizard_real_video_summary_v1" &&
     videoSummary.status === "RENDER_MUX_OK" &&
     videoSummary.audioProvider === "elevenlabs" &&
+    typeof realTts.audioSha256 === "string" &&
+    videoSummary.audioSha256 === realTts.audioSha256 &&
     videoSummary.imageMode === "chatgpt_playwright" &&
     manualVisualReview.passed === true &&
     videoSummary.imageSetSha256 === manualVisualReview.imageSetSha256 &&
@@ -9313,8 +9839,8 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     videoSummary.captionAudit?.emphasisDensityPass === true &&
     videoSummary.captionAudit?.highImpactRoleEmphasisPass === true &&
     videoSummary.captionAudit?.motionDiversityPass === true &&
-    mp4Path != null &&
-    existsSync(mp4Path) &&
+    mp4PathTrusted &&
+    renderSummaryHashMatches &&
     videoSummary.width === 1080 &&
     videoSummary.height === 1920 &&
     videoSummary.hasAudioStream === true &&
@@ -9324,10 +9850,55 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     videoSummary.durationSec <= 60 &&
     typeof videoSummary.sizeBytes === "number" &&
     videoSummary.sizeBytes > 0 &&
+    currentFinalMp4SizeBytes === videoSummary.sizeBytes &&
+    publishMetadataReady != null &&
     videoSummary.sceneCount === expectedSceneCount;
+  const finalVideoApproval =
+    finalVideoReady &&
+    currentFinalMp4Sha256 &&
+    publishMetadataReady &&
+    realTts.audioSha256 &&
+    manualVisualReview.imageSetSha256 &&
+    record?.localFingerprint &&
+    typeof videoSummary?.durationSec === "number" &&
+    typeof videoSummary.sizeBytes === "number" &&
+    realRoot
+      ? readWizardFinalVideoOwnerApproval(
+          topicId,
+          {
+            partId: "single",
+            wizardScriptFingerprint: record.localFingerprint,
+            audioSha256: realTts.audioSha256,
+            imageSetSha256: manualVisualReview.imageSetSha256,
+            finalMp4Sha256: currentFinalMp4Sha256,
+            publishMetadataSha256: publishMetadataReady.sha256,
+            durationSec: videoSummary.durationSec,
+            sizeBytes: videoSummary.sizeBytes,
+          },
+          wizardFinalVideoOwnerApprovalPath(topicId),
+        )
+      : {
+          accepted: false,
+          ownerApprovalFingerprint: null,
+          acceptedAt: null,
+        };
   const finalVideo: WizardRealMediaState["finalVideo"] = {
     ready: finalVideoReady === true,
     mp4Path: finalVideoReady ? mp4Path : null,
+    finalMp4Sha256:
+      finalVideoReady ? currentFinalMp4Sha256 : null,
+    publishMetadataSha256:
+      finalVideoReady && publishMetadataReady
+        ? publishMetadataReady.sha256
+        : null,
+    publishMetadata:
+      finalVideoReady && publishMetadataReady
+        ? publishMetadataReady.preview
+        : null,
+    ownerApproved: finalVideoApproval.accepted === true,
+    ownerApprovalFingerprint:
+      finalVideoApproval.ownerApprovalFingerprint,
+    ownerApprovedAt: finalVideoApproval.acceptedAt,
     durationSec: typeof videoSummary?.durationSec === "number" ? videoSummary.durationSec : null,
     width: typeof videoSummary?.width === "number" ? videoSummary.width : null,
     height: typeof videoSummary?.height === "number" ? videoSummary.height : null,
@@ -9348,6 +9919,7 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
     );
   }
   if (!finalVideo.ready) reasons.push("실제 음성+이미지로 만든 최종 영상이 아직 없습니다 (시안 영상은 업로드 불가)");
+  else if (!finalVideo.ownerApproved) reasons.push("현재 최종 MP4와 게시 문구의 Owner 승인이 필요합니다");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
     : !realTts.qualityAccepted
@@ -9358,6 +9930,8 @@ function readWizardLegacyRealMediaState(topicId: string): WizardRealMediaState {
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !finalVideo.ready
         ? ("FINAL_MP4_REQUIRED" as const)
+        : !finalVideo.ownerApproved
+          ? ("FINAL_VIDEO_OWNER_APPROVAL_REQUIRED" as const)
         : null;
 
   return {
@@ -9643,6 +10217,7 @@ function readWizardProductionPartMediaState(
     schemaVersion?: string;
     status?: string;
     finalMp4Path?: string;
+    finalMp4Sha256?: string;
     durationSec?: number;
     width?: number;
     height?: number;
@@ -9651,6 +10226,7 @@ function readWizardProductionPartMediaState(
     sizeBytes?: number;
     sceneCount?: number;
     audioProvider?: string;
+    audioSha256?: string;
     imageMode?: string;
     imageSetSha256?: string;
     visualEngineVersion?: string;
@@ -9701,10 +10277,42 @@ function readWizardProductionPartMediaState(
   const mp4Path = typeof videoSummary?.finalMp4Path === "string" ? videoSummary.finalMp4Path : null;
   const caption = videoSummary?.captionAudit;
   const cover = videoSummary?.coverAudit;
+  const resolvedMp4Path =
+    mp4Path != null ? resolve(mp4Path) : null;
+  const mp4PathTrusted =
+    resolvedMp4Path != null &&
+    resolvedMp4Path.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    resolvedMp4Path.toLowerCase().endsWith(".mp4") &&
+    existsSync(resolvedMp4Path);
+  let currentFinalMp4Sha256: string | null = null;
+  let currentFinalMp4SizeBytes: number | null = null;
+  if (mp4PathTrusted && resolvedMp4Path) {
+    try {
+      currentFinalMp4SizeBytes = statSync(resolvedMp4Path).size;
+      currentFinalMp4Sha256 = createHash("sha256")
+        .update(readFileSync(resolvedMp4Path))
+        .digest("hex");
+    } catch {
+      currentFinalMp4SizeBytes = null;
+      currentFinalMp4Sha256 = null;
+    }
+  }
+  const publishMetadata = buildWizardPublishMetadataSnapshot(
+    rootTopicId,
+    part.platformTitle,
+    part.record.script,
+  );
+  const publishMetadataReady =
+    publishMetadata.ok ? publishMetadata : null;
+  const renderSummaryHashMatches =
+    currentFinalMp4Sha256 != null &&
+    videoSummary?.finalMp4Sha256 === currentFinalMp4Sha256;
   const finalVideoReady =
     videoSummary?.schemaVersion === "wizard_real_video_summary_v1" &&
     videoSummary.status === "RENDER_MUX_OK" &&
     videoSummary.audioProvider === "elevenlabs" &&
+    typeof realTts.audioSha256 === "string" &&
+    videoSummary.audioSha256 === realTts.audioSha256 &&
     videoSummary.imageMode === "chatgpt_playwright" &&
     manualVisualReview.passed === true &&
     videoSummary.imageSetSha256 === manualVisualReview.imageSetSha256 &&
@@ -9745,9 +10353,8 @@ function readWizardProductionPartMediaState(
     caption.emphasisDensityPass === true &&
     caption.highImpactRoleEmphasisPass === true &&
     caption.motionDiversityPass === true &&
-    mp4Path != null &&
-    existsSync(mp4Path) &&
-    mp4Path.startsWith(WIZARD_VIDEO_ALLOWED_PREFIX) &&
+    mp4PathTrusted &&
+    renderSummaryHashMatches &&
     videoSummary.width === 1080 &&
     videoSummary.height === 1920 &&
     videoSummary.hasAudioStream === true &&
@@ -9757,10 +10364,53 @@ function readWizardProductionPartMediaState(
     videoSummary.durationSec <= 60 &&
     typeof videoSummary.sizeBytes === "number" &&
     videoSummary.sizeBytes > 0 &&
+    currentFinalMp4SizeBytes === videoSummary.sizeBytes &&
+    publishMetadataReady != null &&
     videoSummary.sceneCount === expectedSceneCount;
+  const finalVideoApproval =
+    finalVideoReady &&
+    currentFinalMp4Sha256 &&
+    publishMetadataReady &&
+    realTts.audioSha256 &&
+    manualVisualReview.imageSetSha256 &&
+    typeof videoSummary?.durationSec === "number" &&
+    typeof videoSummary.sizeBytes === "number"
+      ? readWizardFinalVideoOwnerApproval(
+          rootTopicId,
+          {
+            partId: part.id,
+            wizardScriptFingerprint: part.record.localFingerprint,
+            audioSha256: realTts.audioSha256,
+            imageSetSha256: manualVisualReview.imageSetSha256,
+            finalMp4Sha256: currentFinalMp4Sha256,
+            publishMetadataSha256: publishMetadataReady.sha256,
+            durationSec: videoSummary.durationSec,
+            sizeBytes: videoSummary.sizeBytes,
+          },
+          wizardFinalVideoOwnerApprovalPath(rootTopicId),
+        )
+      : {
+          accepted: false,
+          ownerApprovalFingerprint: null,
+          acceptedAt: null,
+        };
   const finalVideo: WizardRealMediaState["finalVideo"] = {
     ready: finalVideoReady === true,
     mp4Path: finalVideoReady ? mp4Path : null,
+    finalMp4Sha256:
+      finalVideoReady ? currentFinalMp4Sha256 : null,
+    publishMetadataSha256:
+      finalVideoReady && publishMetadataReady
+        ? publishMetadataReady.sha256
+        : null,
+    publishMetadata:
+      finalVideoReady && publishMetadataReady
+        ? publishMetadataReady.preview
+        : null,
+    ownerApproved: finalVideoApproval.accepted === true,
+    ownerApprovalFingerprint:
+      finalVideoApproval.ownerApprovalFingerprint,
+    ownerApprovedAt: finalVideoApproval.acceptedAt,
     durationSec: typeof videoSummary?.durationSec === "number" ? videoSummary.durationSec : null,
     width: typeof videoSummary?.width === "number" ? videoSummary.width : null,
     height: typeof videoSummary?.height === "number" ? videoSummary.height : null,
@@ -9776,6 +10426,7 @@ function readWizardProductionPartMediaState(
       : `실제 장면 이미지가 부족합니다 (${realImages.generatedCount}/${expectedSceneCount})`,
   );
   if (!finalVideo.ready) reasons.push("검증된 썸네일·자막이 포함된 최종 영상이 아직 없습니다");
+  else if (!finalVideo.ownerApproved) reasons.push("현재 최종 MP4와 게시 문구의 Owner 승인이 필요합니다");
   const blockerCode = !realTts.ready
     ? ("REAL_TTS_REQUIRED" as const)
     : !realTts.qualityAccepted
@@ -9786,6 +10437,8 @@ function readWizardProductionPartMediaState(
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !finalVideo.ready
         ? ("FINAL_MP4_REQUIRED" as const)
+        : !finalVideo.ownerApproved
+          ? ("FINAL_VIDEO_OWNER_APPROVAL_REQUIRED" as const)
         : null;
   return {
     id: part.id,
@@ -9867,6 +10520,48 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
       })))).digest("hex")
     : null;
   const allVideosReady = parts.length > 0 && parts.every((part) => part.finalVideo.ready);
+  const candidateFinalVideoApprovalFingerprint =
+    parts[0]?.finalVideo.ownerApprovalFingerprint ?? null;
+  const allVideosOwnerApproved =
+    allVideosReady &&
+    candidateFinalVideoApprovalFingerprint != null &&
+    parts.every(
+      (part) =>
+        part.finalVideo.ownerApproved === true &&
+        part.finalVideo.ownerApprovalFingerprint ===
+          candidateFinalVideoApprovalFingerprint,
+    );
+  const aggregateFinalMp4Sha256 =
+    allVideosReady &&
+    parts.every((part) => part.finalVideo.finalMp4Sha256 != null)
+      ? createHash("sha256")
+          .update(
+            JSON.stringify(
+              parts.map((part) => ({
+                partId: part.id,
+                finalMp4Sha256: part.finalVideo.finalMp4Sha256,
+              })),
+            ),
+          )
+          .digest("hex")
+      : null;
+  const aggregatePublishMetadataSha256 =
+    allVideosReady &&
+    parts.every(
+      (part) => part.finalVideo.publishMetadataSha256 != null,
+    )
+      ? createHash("sha256")
+          .update(
+            JSON.stringify(
+              parts.map((part) => ({
+                partId: part.id,
+                publishMetadataSha256:
+                  part.finalVideo.publishMetadataSha256,
+              })),
+            ),
+          )
+          .digest("hex")
+      : null;
   const totalDuration = parts.reduce((sum, part) => sum + (part.realTts.durationSec ?? 0), 0);
   const totalVideoDuration = parts.reduce((sum, part) => sum + (part.finalVideo.durationSec ?? 0), 0);
   const totalImages = parts.reduce((sum, part) => sum + part.realImages.generatedCount, 0);
@@ -9880,6 +10575,13 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
   if (imageApprovalTransactionMismatch) {
     reasons.unshift("전체 편이 하나의 동일한 현재 이미지 Owner 승인으로 묶이지 않았습니다");
   }
+  if (
+    allVideosReady &&
+    !allVideosOwnerApproved &&
+    parts.some((part) => part.finalVideo.ownerApproved)
+  ) {
+    reasons.unshift("전체 편이 하나의 동일한 현재 최종 영상 Owner 승인으로 묶이지 않았습니다");
+  }
   const blockerCode = !allTtsReady
     ? ("REAL_TTS_REQUIRED" as const)
     : !allTtsQualityAccepted
@@ -9890,6 +10592,8 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
       ? ("REAL_SCENE_IMAGES_REQUIRED" as const)
       : !allVideosReady
         ? ("FINAL_MP4_REQUIRED" as const)
+        : !allVideosOwnerApproved
+          ? ("FINAL_VIDEO_OWNER_APPROVAL_REQUIRED" as const)
         : null;
   return {
     production: { strategyVersion: strategy.contractVersion, mode: strategy.mode, totalParts: parts.length },
@@ -9944,6 +10648,19 @@ export function readWizardRealMediaState(topicId: string): WizardRealMediaState 
     finalVideo: {
       ready: allVideosReady,
       mp4Path: parts[0]?.finalVideo.mp4Path ?? null,
+      finalMp4Sha256: aggregateFinalMp4Sha256,
+      publishMetadataSha256: aggregatePublishMetadataSha256,
+      publishMetadata:
+        parts.length === 1
+          ? parts[0]?.finalVideo.publishMetadata ?? null
+          : null,
+      ownerApproved: allVideosOwnerApproved,
+      ownerApprovalFingerprint: allVideosOwnerApproved
+        ? candidateFinalVideoApprovalFingerprint
+        : null,
+      ownerApprovedAt: allVideosOwnerApproved
+        ? parts[0]?.finalVideo.ownerApprovedAt ?? null
+        : null,
       durationSec: totalVideoDuration > 0 ? Number(totalVideoDuration.toFixed(3)) : null,
       width: parts.every((part) => part.finalVideo.width === 1080) ? 1080 : null,
       height: parts.every((part) => part.finalVideo.height === 1920) ? 1920 : null,

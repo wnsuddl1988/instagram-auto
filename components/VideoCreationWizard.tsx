@@ -236,6 +236,25 @@ type WizardRealMedia = {
   finalVideo: {
     ready: boolean;
     mp4Path: string | null;
+    finalMp4Sha256: string | null;
+    publishMetadataSha256: string | null;
+    publishMetadata: {
+      sha256: string;
+      instagram: {
+        captionFirstLineHook: string;
+        caption: string;
+        hashtags: string[];
+        callToAction: string;
+      };
+      youtube: {
+        title: string;
+        description: string;
+        tags: string[];
+      };
+    } | null;
+    ownerApproved: boolean;
+    ownerApprovalFingerprint: string | null;
+    ownerApprovedAt: string | null;
     durationSec: number | null;
     width: number | null;
     height: number | null;
@@ -1127,6 +1146,20 @@ export default function VideoCreationWizard() {
   const [flowMotionQaNotes, setFlowMotionQaNotes] = useState<Record<string, string>>({});
   const [finalVideoState, setFinalVideoState] = useState<RunState>("idle");
   const [finalVideoResult, setFinalVideoResult] = useState<OperatorResult | null>(null);
+  const [finalVideoReviewState, setFinalVideoReviewState] =
+    useState<RunState>("idle");
+  const [finalVideoReviewResult, setFinalVideoReviewResult] =
+    useState<OperatorResult | null>(null);
+  const [confirmFinalVideosWatched, setConfirmFinalVideosWatched] =
+    useState(false);
+  const [
+    confirmFinalPublishMetadataReviewed,
+    setConfirmFinalPublishMetadataReviewed,
+  ] = useState(false);
+  const [confirmFinalExactFiles, setConfirmFinalExactFiles] =
+    useState(false);
+  const [confirmFinalVideoApprovalText, setConfirmFinalVideoApprovalText] =
+    useState("");
   const [audioKey, setAudioKey] = useState(0);
 
   const [previewState, setPreviewState] = useState<RunState>("idle");
@@ -1239,6 +1272,36 @@ export default function VideoCreationWizard() {
   const flowMotionPrepared = flowMotion?.state !== "not_prepared" && flowMotion?.state !== undefined;
   const flowMotionReadyForRender = flowMotion?.readyForRender === true;
   const finalVideoReady = realMedia?.finalVideo.ready === true;
+  const finalVideoOwnerApproved =
+    realMedia?.finalVideo.ownerApproved === true;
+  const expectedFinalVideoApprovalParts = (realMedia?.parts ?? [])
+    .map((part) => ({
+      partId: part.id,
+      finalMp4Sha256: part.finalVideo.finalMp4Sha256 ?? "",
+      publishMetadataSha256:
+        part.finalVideo.publishMetadataSha256 ?? "",
+    }))
+    .sort((left, right) =>
+      left.partId.localeCompare(right.partId),
+    );
+  const finalVideoIdentityKey = expectedFinalVideoApprovalParts
+    .map(
+      (part) =>
+        `${part.partId}:${part.finalMp4Sha256}:${part.publishMetadataSha256}`,
+    )
+    .join("|");
+  const finalVideoReviewReady =
+    finalVideoReady &&
+    expectedFinalVideoApprovalParts.length > 0 &&
+    expectedFinalVideoApprovalParts.every(
+      (part) =>
+        /^[a-f0-9]{64}$/.test(part.finalMp4Sha256) &&
+        /^[a-f0-9]{64}$/.test(part.publishMetadataSha256),
+    ) &&
+    confirmFinalVideosWatched &&
+    confirmFinalPublishMetadataReviewed &&
+    confirmFinalExactFiles &&
+    confirmFinalVideoApprovalText.trim() === "최종 영상 승인";
   const mediaGateOk = realMedia?.mediaQualityGate.ok === true;
   const productionPartCount = realMedia?.production.totalParts ?? script?.videoStrategy?.parts.length ?? 1;
   const plannedSceneCount = realMedia?.realImages.expectedCount ?? script?.scenes?.length ?? null;
@@ -1250,10 +1313,14 @@ export default function VideoCreationWizard() {
     : "확정 대본의 실제 목소리·장면 이미지와 검수 완료 Veo 모션을 최종 mp4로 합성합니다.";
 
   // 업로드 게이트 파생 상태 — 최종 영상(media gate) → 게시 전 점검 통과 → 명시 확인 순서를 강제한다.
-  const preflightDone = mediaGateOk && preflightState === "success";
+  const preflightDone =
+    finalVideoOwnerApproved &&
+    mediaGateOk &&
+    preflightState === "success";
   const uploadEnabled =
     runnable &&
     selectedTopicId != null &&
+    finalVideoOwnerApproved &&
     mediaGateOk &&
     preflightDone &&
     confirmReviewed &&
@@ -1304,6 +1371,12 @@ export default function VideoCreationWizard() {
     setFlowMotionQaNotes({});
     setFinalVideoState("idle");
     setFinalVideoResult(null);
+    setFinalVideoReviewState("idle");
+    setFinalVideoReviewResult(null);
+    setConfirmFinalVideosWatched(false);
+    setConfirmFinalPublishMetadataReviewed(false);
+    setConfirmFinalExactFiles(false);
+    setConfirmFinalVideoApprovalText("");
     setVoiceState("idle");
     setVoiceResult(null);
     setVideoState("idle");
@@ -2072,6 +2145,12 @@ export default function VideoCreationWizard() {
     setFlowMotionQaNotes({});
     setFinalVideoState("idle");
     setFinalVideoResult(null);
+    setFinalVideoReviewState("idle");
+    setFinalVideoReviewResult(null);
+    setConfirmFinalVideosWatched(false);
+    setConfirmFinalPublishMetadataReviewed(false);
+    setConfirmFinalExactFiles(false);
+    setConfirmFinalVideoApprovalText("");
     setPreflightState("idle");
     setPreflightResult(null);
     setConfirmReviewed(false);
@@ -2082,6 +2161,29 @@ export default function VideoCreationWizard() {
     setUploadResult((current) => current?.status === "success" ? current : null);
     setSceneImageKey((key) => key + 1);
   }, [selectedTopicId, realMedia?.realImages.manualVisualReview.imageSetSha256]);
+
+  // 최종 MP4 바이트나 게시 문구 fingerprint가 하나라도 바뀌면 이전 최종 승인과
+  // 게시 전 점검·미게시 확인 입력을 브라우저 상태에서도 즉시 재사용하지 않는다.
+  useEffect(() => {
+    setFinalVideoReviewState("idle");
+    setFinalVideoReviewResult(null);
+    setConfirmFinalVideosWatched(false);
+    setConfirmFinalPublishMetadataReviewed(false);
+    setConfirmFinalExactFiles(false);
+    setConfirmFinalVideoApprovalText("");
+    setPreflightState("idle");
+    setPreflightResult(null);
+    setConfirmReviewed(false);
+    setConfirmDiscoveryReady(false);
+    setConfirmPublish(false);
+    setConfirmText("");
+    setUploadState((current) =>
+      current === "success" ? current : "idle",
+    );
+    setUploadResult((current) =>
+      current?.status === "success" ? current : null,
+    );
+  }, [selectedTopicId, finalVideoIdentityKey]);
 
   // 실제 산출물 상태가 바뀔 때마다 서버가 다음 안전 단계를 다시 계산한다.
   // 이 조회는 어떤 생성·렌더·업로드도 실행하지 않는다.
@@ -2100,6 +2202,8 @@ export default function VideoCreationWizard() {
     realMedia?.realImages.manualVisualReview.imageSetSha256,
     realMedia?.realImages.ready,
     realMedia?.finalVideo.ready,
+    realMedia?.finalVideo.ownerApproved,
+    realMedia?.finalVideo.ownerApprovalFingerprint,
     realMedia?.mediaQualityGate.ok,
     flowMotion?.state,
     flowMotion?.readyForRender,
@@ -2369,6 +2473,18 @@ export default function VideoCreationWizard() {
     if (!selectedTopicId) return;
     setFinalVideoState("running");
     setFinalVideoResult(null);
+    setFinalVideoReviewState("idle");
+    setFinalVideoReviewResult(null);
+    setConfirmFinalVideosWatched(false);
+    setConfirmFinalPublishMetadataReviewed(false);
+    setConfirmFinalExactFiles(false);
+    setConfirmFinalVideoApprovalText("");
+    setPreflightState("idle");
+    setPreflightResult(null);
+    setConfirmReviewed(false);
+    setConfirmDiscoveryReady(false);
+    setConfirmPublish(false);
+    setConfirmText("");
     try {
       const r = await postAction("finalVideoCreate", { topicId: selectedTopicId });
       setFinalVideoResult(r);
@@ -2380,6 +2496,54 @@ export default function VideoCreationWizard() {
       setFinalVideoResult({ action: "finalVideoCreate", status: "error", summary: "최종 영상 합성 요청에 실패했습니다." });
     }
   }, [selectedTopicId, refreshRealMedia]);
+
+  const acceptFinalVideoReview = useCallback(async () => {
+    if (!selectedTopicId) return;
+    setFinalVideoReviewState("running");
+    setFinalVideoReviewResult(null);
+    try {
+      const expectedParts = (realMedia?.parts ?? [])
+        .map((part) => ({
+          partId: part.id,
+          finalMp4Sha256:
+            part.finalVideo.finalMp4Sha256 ?? "",
+          publishMetadataSha256:
+            part.finalVideo.publishMetadataSha256 ?? "",
+        }))
+        .sort((left, right) =>
+          left.partId.localeCompare(right.partId),
+        );
+      const r = await postAction("finalVideoReviewAccept", {
+        topicId: selectedTopicId,
+        confirmWatchedAllParts: confirmFinalVideosWatched,
+        confirmPublishMetadataReviewed:
+          confirmFinalPublishMetadataReviewed,
+        confirmExactFilesForPublish: confirmFinalExactFiles,
+        approvalText: confirmFinalVideoApprovalText.trim(),
+        expectedParts,
+      });
+      setFinalVideoReviewResult(r);
+      setFinalVideoReviewState(
+        r.status === "success" ? "success" : r.status,
+      );
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFinalVideoReviewState("error");
+      setFinalVideoReviewResult({
+        action: "finalVideoReviewAccept",
+        status: "error",
+        summary: "최종 영상 Owner 승인을 기록하지 못했습니다.",
+      });
+    }
+  }, [
+    confirmFinalExactFiles,
+    confirmFinalPublishMetadataReviewed,
+    confirmFinalVideoApprovalText,
+    confirmFinalVideosWatched,
+    realMedia?.parts,
+    refreshRealMedia,
+    selectedTopicId,
+  ]);
 
   const runVoiceSample = useCallback(async () => {
     if (!selectedTopicId) return;
@@ -2455,6 +2619,8 @@ export default function VideoCreationWizard() {
         confirmDiscoveryReady,
         confirmPublish,
         confirmText: confirmText.trim(),
+        expectedFinalVideoApprovalFingerprint:
+          realMedia?.finalVideo.ownerApprovalFingerprint,
       });
       setUploadResult(r);
       setUploadState(r.status === "success" ? "success" : r.status);
@@ -2463,7 +2629,15 @@ export default function VideoCreationWizard() {
       setUploadState("error");
       setUploadResult({ action: "actualUpload", status: "error", summary: "업로드 요청에 실패했습니다." });
     }
-  }, [selectedTopicId, confirmReviewed, confirmDiscoveryReady, confirmPublish, confirmText, refreshUploadReadyList]);
+  }, [
+    selectedTopicId,
+    confirmReviewed,
+    confirmDiscoveryReady,
+    confirmPublish,
+    confirmText,
+    realMedia?.finalVideo.ownerApprovalFingerprint,
+    refreshUploadReadyList,
+  ]);
 
   // ── 렌더 ─────────────────────────────────────────────────────────────────────
 
@@ -4459,12 +4633,20 @@ export default function VideoCreationWizard() {
           </details>
         </StepCard>
 
-        {/* 9. 미리보기 — 최종 영상 우선, 없으면 시안(업로드 불가) 표시 */}
+        {/* 9. 미리보기·최종 승인 — exact MP4 + 게시 문구 hash를 Owner evidence로 고정 */}
         <StepCard
           num={9}
-          title="미리보기"
-          state={finalVideoReady ? "success" : previewState}
-          desc="만들어진 영상을 이 화면에서 바로 재생합니다. 파일은 Owner PC에만 있습니다."
+          title="미리보기 및 최종 승인"
+          state={
+            finalVideoOwnerApproved
+              ? "success"
+              : finalVideoReady
+                ? finalVideoReviewState === "idle"
+                  ? "blocked"
+                  : finalVideoReviewState
+                : previewState
+          }
+          desc="모든 최종 MP4를 소리와 함께 재생하고 Instagram·YouTube 게시 문구를 확인한 뒤, 정확한 현재 hash 묶음만 승인합니다."
         >
           <button
             type="button"
@@ -4492,16 +4674,16 @@ export default function VideoCreationWizard() {
                     {part.totalParts > 1 ? `${part.partNumber}편` : "단편"} · {part.platformTitle}
                   </p>
                   <video
-                    key={`final-${part.id}-${previewKey}`}
+                    key={`final-${part.id}-${part.finalVideo.finalMp4Sha256 ?? "missing"}-${previewKey}`}
                     data-testid={part.partNumber === 1 ? "wizard-final-video" : `wizard-final-video-${part.partNumber}`}
                     controls
                     playsInline
                     preload="metadata"
                     className="w-full max-w-[280px] rounded-xl border border-emerald-300 bg-black"
-                    src={`/api/money-shorts/operator?video=final&topicId=${encodeURIComponent(selectedTopicId)}&part=${part.id}&v=${previewKey}`}
+                    src={`/api/money-shorts/operator?video=final&topicId=${encodeURIComponent(selectedTopicId)}&part=${part.id}&sha256=${encodeURIComponent(part.finalVideo.finalMp4Sha256 ?? "")}&v=${previewKey}`}
                   />
                   <a
-                    href={`/money-shorts/preview?topicId=${encodeURIComponent(selectedTopicId)}&part=${part.id}`}
+                    href={`/money-shorts/preview?topicId=${encodeURIComponent(selectedTopicId)}&part=${part.id}&sha256=${encodeURIComponent(part.finalVideo.finalMp4Sha256 ?? "")}`}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-2 inline-flex text-sm font-semibold text-indigo-700 hover:underline"
@@ -4509,8 +4691,150 @@ export default function VideoCreationWizard() {
                     크게 보기
                   </a>
                   <p className="text-xs text-slate-400 mt-1 break-all">{part.finalVideo.mp4Path}</p>
+                  <p className="text-xs text-slate-500 mt-1 break-all">
+                    MP4 SHA-256{" "}
+                    {part.finalVideo.finalMp4Sha256 ?? "확인 불가"}
+                  </p>
+                  {part.finalVideo.publishMetadata ? (
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-xl border border-pink-200 bg-pink-50/60 p-3">
+                        <p className="text-sm font-bold text-pink-800">
+                          Instagram 게시 문구
+                        </p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                          {part.finalVideo.publishMetadata.instagram.captionFirstLineHook}
+                          {"\n\n"}
+                          {part.finalVideo.publishMetadata.instagram.caption}
+                          {"\n\n"}
+                          {part.finalVideo.publishMetadata.instagram.callToAction}
+                          {"\n\n"}
+                          {part.finalVideo.publishMetadata.instagram.hashtags
+                            .map((tag) => `#${tag}`)
+                            .join(" ")}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-red-200 bg-red-50/60 p-3">
+                        <p className="text-sm font-bold text-red-800">
+                          YouTube 게시 문구
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-800">
+                          {part.finalVideo.publishMetadata.youtube.title}
+                        </p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                          {part.finalVideo.publishMetadata.youtube.description}
+                        </p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          태그:{" "}
+                          {part.finalVideo.publishMetadata.youtube.tags.join(
+                            ", ",
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-xs text-slate-500 break-all lg:col-span-2">
+                        게시 문구 SHA-256{" "}
+                        {part.finalVideo.publishMetadata.sha256}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               ))}
+              {finalVideoOwnerApproved ? (
+                <div
+                  data-testid="wizard-final-video-owner-approved"
+                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3"
+                >
+                  <p className="text-sm font-bold text-emerald-800">
+                    현재 최종 영상 Owner 승인 완료
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-700 break-all">
+                    승인 지문{" "}
+                    {realMedia?.finalVideo.ownerApprovalFingerprint ??
+                      "확인 불가"}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-700">
+                    영상·대본·음성·이미지·게시 문구 중 하나라도 바뀌면
+                    자동으로 재승인이 필요합니다.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  data-testid="wizard-final-video-owner-approval"
+                  className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 space-y-3"
+                >
+                  <p className="text-sm font-bold text-amber-900">
+                    현재 최종 영상과 게시 문구 승인
+                  </p>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmFinalVideosWatched}
+                      onChange={(event) =>
+                        setConfirmFinalVideosWatched(
+                          event.target.checked,
+                        )
+                      }
+                    />
+                    <span>
+                      모든 편을 소리와 함께 끝까지 재생해 화면·음성·자막을
+                      확인했습니다.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmFinalPublishMetadataReviewed}
+                      onChange={(event) =>
+                        setConfirmFinalPublishMetadataReviewed(
+                          event.target.checked,
+                        )
+                      }
+                    />
+                    <span>
+                      위 Instagram·YouTube 제목·설명·태그를 모두
+                      확인했습니다.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={confirmFinalExactFiles}
+                      onChange={(event) =>
+                        setConfirmFinalExactFiles(event.target.checked)
+                      }
+                    />
+                    <span>
+                      표시된 정확한 MP4와 게시 문구 hash 묶음을 게시
+                      후보로 승인합니다.
+                    </span>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      data-testid="wizard-final-video-approval-text"
+                      value={confirmFinalVideoApprovalText}
+                      onChange={(event) =>
+                        setConfirmFinalVideoApprovalText(
+                          event.target.value,
+                        )
+                      }
+                      placeholder="최종 영상 승인"
+                      className="min-w-[220px] rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      data-testid="wizard-action-final-video-review-accept"
+                      className={RUN_BTN}
+                      disabled={
+                        !finalVideoReviewReady ||
+                        finalVideoReviewState === "running"
+                      }
+                      onClick={acceptFinalVideoReview}
+                    >
+                      현재 최종 영상 승인
+                    </button>
+                  </div>
+                  <ResultNote result={finalVideoReviewResult} />
+                </div>
+              )}
             </div>
           ) : null}
           <ResultNote result={previewResult} />
@@ -4549,7 +4873,12 @@ export default function VideoCreationWizard() {
           >
             게시 전 점검
           </button>
-          {!mediaGateOk ? (
+          {!finalVideoOwnerApproved && finalVideoReady ? (
+            <p className="mt-2 text-sm font-semibold text-amber-700">
+              먼저 모든 최종 MP4와 게시 문구를 확인하고 [현재 최종 영상
+              승인]을 완료해 주세요.
+            </p>
+          ) : !mediaGateOk ? (
             <div className="mt-2 space-y-0.5">
               <p className="text-sm text-amber-700 font-semibold">
                 아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.

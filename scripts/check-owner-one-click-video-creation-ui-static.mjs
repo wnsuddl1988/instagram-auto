@@ -184,8 +184,8 @@ check("route reads topicId for videoCreate/previewStatus", /\.topicId/.test(rout
 check("route fail-closes videoCreate without compiled script", /script_not_compiled_for_topic/.test(routeSrc) && /topic_id_invalid_or_empty/.test(routeSrc));
 check("route passes topicId into interpret/status", /readWizardVideoStatus\(\s*topicId\s*\)/.test(routeCode));
 check(
-  "route stream sanitizes topicId and production part via helper (no raw client path)",
-  /readWizardVideoBytes\(\s*videoParam\s*,\s*streamTopicId\s*,\s*url\.searchParams\.get\("part"\)\s*\)/.test(routeCode),
+  "route stream sanitizes topicId/part and hash-binds final bytes via helper (no raw client path)",
+  /readWizardVideoBytes\(\s*videoParam\s*,\s*streamTopicId\s*,\s*url\.searchParams\.get\("part"\)\s*,\s*videoParam === "final"[\s\S]{0,120}url\.searchParams\.get\("sha256"\)/.test(routeCode),
 );
 
 // helper가 videoCreate에서 고정 provider fixture만 단독으로 쓰지 않아야 한다(회귀 핵심).

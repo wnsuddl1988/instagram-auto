@@ -47,9 +47,9 @@
  */
 
 import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join, basename } from "node:path";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { buildDualPlatformPublishPlan } from "./run-dual-platform-final-publish-orchestrator.mjs";
@@ -58,6 +58,11 @@ import {
   recordDualPlatformPublishRuntime,
   writePublishLedgerRuntime,
 } from "../lib/publish-ledger-runtime-write.mjs";
+import {
+  buildMoneyShortsPublishPreflightBinding,
+  validateMoneyShortsPublishPreflightBinding,
+  validateMoneyShortsFinalVideoOwnerApprovalEvidence,
+} from "../lib/money-shorts-final-video-owner-approval.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -197,11 +202,16 @@ if (!existsSync(contentUnitPath)) {
   bail("BLOCKED", "CONTENT_UNIT_NOT_FOUND", {});
 }
 let unit = null;
+let contentUnitBuffer = null;
 try {
-  unit = JSON.parse(readFileSync(contentUnitPath, "utf8"));
+  contentUnitBuffer = readFileSync(contentUnitPath);
+  unit = JSON.parse(contentUnitBuffer.toString("utf8"));
 } catch (e) {
   bail("BLOCKED", "CONTENT_UNIT_JSON_PARSE_FAILED", { errorExcerpt: sanitizeErrorText(e?.message) });
 }
+const contentUnitSha256 = createHash("sha256")
+  .update(contentUnitBuffer)
+  .digest("hex");
 if (unit?.schemaVersion !== "dual_platform_content_unit_v1") {
   bail("BLOCKED", "CONTENT_UNIT_WRONG_SCHEMA", { got: String(unit?.schemaVersion ?? "") });
 }
@@ -240,11 +250,109 @@ if (typeof ytSourcePath !== "string" || !existsSync(ytSourcePath)) {
 const igSourceSize = statSync(igSourcePath).size;
 const ytSourceSize = statSync(ytSourcePath).size;
 const igSourceBuffer = readFileSync(igSourcePath);
+const ytSourceBuffer = readFileSync(ytSourcePath);
 const igSha256 = createHash("sha256").update(igSourceBuffer).digest("hex");
+const ytSha256 = createHash("sha256").update(ytSourceBuffer).digest("hex");
+const publishMetadataContract = {
+  discoveryMetadataContractVersion: unit.discoveryMetadataContractVersion,
+  discoveryMetadataGate: unit.discoveryMetadataGate,
+  instagramMetadata: unit.instagramMetadata,
+  youtubeMetadata: unit.youtubeMetadata,
+};
+const publishMetadataSha256 = createHash("sha256")
+  .update(JSON.stringify(publishMetadataContract))
+  .digest("hex");
+const sourceIntegrity = unit.sourceIntegrity ?? {};
+const productionPartId = String(
+  sourceIntegrity.productionPartId ?? "",
+);
+const seriesTotalParts = Number(unit.series?.totalParts);
+const expectedPartIds =
+  seriesTotalParts === 1
+    ? ["single"]
+    : seriesTotalParts === 2
+      ? ["part-1", "part-2"]
+      : [];
+const expectedPartNumber =
+  productionPartId === "single" || productionPartId === "part-1"
+    ? 1
+    : productionPartId === "part-2"
+      ? 2
+      : null;
+const productionIdentityReady =
+  expectedPartIds.length === seriesTotalParts &&
+  expectedPartIds.includes(productionPartId) &&
+  unit.wizardProductionPartId === productionPartId &&
+  Number(unit.series?.partNumber) === expectedPartNumber;
+const ownerApprovalValidation =
+  validateMoneyShortsFinalVideoOwnerApprovalEvidence({
+    evidence: unit.ownerFinalVideoApproval,
+    topicId: unit.wizardTopicId,
+    expectedPartIds,
+    currentPart: {
+      partId: productionPartId,
+      wizardScriptFingerprint:
+        sourceIntegrity.wizardScriptFingerprint,
+      audioSha256: sourceIntegrity.audioSha256,
+      imageSetSha256: sourceIntegrity.imageSetSha256,
+      finalMp4Sha256: igSha256,
+      publishMetadataSha256,
+      durationSec: sourceIntegrity.durationSec,
+      sizeBytes: sourceIntegrity.sizeBytes,
+    },
+  });
+if (
+  productionIdentityReady !== true ||
+  ownerApprovalValidation.accepted !== true ||
+  ownerApprovalValidation.finalVideoApprovalFingerprint !==
+    sourceIntegrity.finalVideoApprovalFingerprint ||
+  sourceIntegrity.rootTopicId !== unit.wizardTopicId ||
+  sourceIntegrity.finalMp4Sha256 !== igSha256 ||
+  igSha256 !== ytSha256 ||
+  sourceIntegrity.publishMetadataSha256 !== publishMetadataSha256 ||
+  sourceIntegrity.sizeBytes !== igSourceSize ||
+  sourceIntegrity.sizeBytes !== ytSourceSize
+) {
+  bail("BLOCKED", "OWNER_APPROVED_FINAL_VIDEO_HASH_MISMATCH", {
+    approvalReason:
+      ownerApprovalValidation.reason ?? "source_integrity_mismatch",
+  });
+}
 const blobPathname = `${BLOB_PATH_PREFIX}/${unit.contentId}/${INSTAGRAM_VARIANT_ID}/${unit.version}/${igSha256.slice(0, 12)}.mp4`;
+const currentPreflightBinding = {
+  contentUnitManifestPath: resolve(contentUnitPath),
+  contentUnitSha256,
+  instagramSourceSha256: igSha256,
+  youtubeSourceSha256: ytSha256,
+  publishMetadataSha256,
+  finalVideoApprovalFingerprint:
+    sourceIntegrity.finalVideoApprovalFingerprint,
+};
 console.log(`  [gate 6] IG source: ${igSourceSize} bytes, sha256_12=${igSha256.slice(0, 12)}`);
-console.log(`           YT source: ${ytSourceSize} bytes`);
+console.log(`           YT source: ${ytSourceSize} bytes, sha256_12=${ytSha256.slice(0, 12)}`);
 console.log(`           blob pathname: ${blobPathname}`);
+
+// [gate 6.5] armed 실행은 exact manifest/source/Owner approval에 결속된
+// 직전 preflight full-hash evidence가 있어야 한다. 고정 경로만 같은 과거 결과는 거부한다.
+if (armed) {
+  const preflightPath = join(outDirAbs, PREFLIGHT_FILENAME);
+  let preflight = null;
+  try {
+    preflight = existsSync(preflightPath)
+      ? JSON.parse(readFileSync(preflightPath, "utf8"))
+      : null;
+  } catch {
+    preflight = null;
+  }
+  const preflightValidation =
+    validateMoneyShortsPublishPreflightBinding({
+      evidence: preflight,
+      current: currentPreflightBinding,
+    });
+  if (preflightValidation.valid !== true) {
+    bail("BLOCKED", "PREFLIGHT_EVIDENCE_STALE_OR_MISSING", {});
+  }
+}
 
 // [gate 7] duplicate guard — reference(existingPublishedKeys) + ledger read(fail-closed)
 const igRefDup = igJob?.duplicatePublishGuard?.alreadyPublished === true;
@@ -290,12 +398,26 @@ if (!allCredentialsPresent) {
 // [gate 9] arm 게이트 — 없으면 preflight-only로 종료(외부 호출 0)
 if (!armed) {
   console.log("\n  PREFLIGHT_ONLY_OK — 모든 gate 통과. --arm 없이 외부 호출 0으로 종료.");
+  const artifactBinding = buildMoneyShortsPublishPreflightBinding({
+    current: currentPreflightBinding,
+    boundAt: nowIso(),
+  });
   writeResultJson("PREFLIGHT_ONLY_OK", null, {
     credentialPresence,
     blobPathname,
     igSourceSizeBytes: igSourceSize,
     ytSourceSizeBytes: ytSourceSize,
     igSha256_12: igSha256.slice(0, 12),
+    contentUnitSha256: artifactBinding.contentUnitSha256,
+    instagramSourceSha256:
+      artifactBinding.instagramSourceSha256,
+    youtubeSourceSha256: artifactBinding.youtubeSourceSha256,
+    publishMetadataSha256:
+      artifactBinding.publishMetadataSha256,
+    finalVideoApprovalFingerprint:
+      artifactBinding.finalVideoApprovalFingerprint,
+    bindingFingerprint: artifactBinding.bindingFingerprint,
+    artifactBindingVersion: artifactBinding.schemaVersion,
   });
   process.exit(0);
 }
@@ -480,7 +602,10 @@ try {
         containsSyntheticMedia: ytMeta.containsSyntheticMedia === true,
       },
     },
-    media: { mimeType: "video/mp4", body: createReadStream(ytSourcePath) },
+    media: {
+      mimeType: "video/mp4",
+      body: Readable.from(ytSourceBuffer),
+    },
   });
   if (!resp?.data?.id) {
     executionResult.youtube.status = "failed";
@@ -569,6 +694,12 @@ writeResultJson("PUBLISHED_DUAL_PLATFORM_OK", null, {
   igSourceSizeBytes: igSourceSize,
   ytSourcePath: resolve(ytSourcePath),
   ytSourceSizeBytes: ytSourceSize,
+  contentUnitSha256,
+  instagramSourceSha256: igSha256,
+  youtubeSourceSha256: ytSha256,
+  publishMetadataSha256,
+  finalVideoApprovalFingerprint:
+    sourceIntegrity.finalVideoApprovalFingerprint,
   executionResult,
   credentialPresence,
   defaultEvidenceRepublished: false,

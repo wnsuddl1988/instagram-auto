@@ -32,6 +32,7 @@ import {
   WIZARD_FINANCE_SUBTOPIC_IDS,
   WIZARD_EDITORIAL_DECISIONS,
   type WizardFinanceSubtopicId,
+  acceptWizardFinalVideoReview,
   acceptWizardRealSceneImagesVisualQuality,
   acceptWizardRealTtsListeningQuality,
   buildOperatorCommand,
@@ -149,6 +150,7 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "flowMotionQaPass",
   "flowMotionQaFail",
   "finalVideoCreate",
+  "finalVideoReviewAccept",
   "realMediaStatus",
   "automationPlan",
   "automationAdvance",
@@ -467,7 +469,14 @@ export async function GET(request: Request) {
     }
     // topicId는 helper가 [a-z0-9-] slug로 정화하므로 경로 조작이 불가능하다.
     const streamTopicId = url.searchParams.get("topicId");
-    const bytes = readWizardVideoBytes(videoParam, streamTopicId, url.searchParams.get("part"));
+    const bytes = readWizardVideoBytes(
+      videoParam,
+      streamTopicId,
+      url.searchParams.get("part"),
+      videoParam === "final"
+        ? url.searchParams.get("sha256")
+        : null,
+    );
     if (!bytes) {
       return json(
         { action: "previewStatus", status: "blocked", summary: "아직 영상 파일이 없습니다. 먼저 영상을 만들어 주세요.", blockerCode: "WIZARD_VIDEO_NOT_FOUND", noLive: true },
@@ -684,13 +693,28 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
     }
     const pf = readWizardPublishPreflight(topicId, unit.productionPartId);
     preflights.push({ partId: unit.productionPartId, preflight: pf });
-    if (runPf.exitCode !== 0 || pf?.status !== "PREFLIGHT_ONLY_OK") {
+    if (
+      runPf.exitCode !== 0 ||
+      pf?.status !== "PREFLIGHT_ONLY_OK" ||
+      pf.boundToCurrentArtifacts !== true
+    ) {
       const pfBlocker = pf?.blockerCode ?? extractRunnerBlocker(runPf.stdout, runPf.stderr);
       return {
         action,
         status: "blocked",
-        summary: describeUploadBlocker(pfBlocker, `${unit.partNumber}편 게시 전 점검에서 막혔습니다.`),
-        blockerCode: pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
+        summary:
+          pf?.status === "PREFLIGHT_ONLY_OK" &&
+          pf.boundToCurrentArtifacts !== true
+            ? `${unit.partNumber}편 게시 전 점검 결과가 현재 영상 hash와 일치하지 않습니다. 다시 점검해 주세요.`
+            : describeUploadBlocker(
+                pfBlocker,
+                `${unit.partNumber}편 게시 전 점검에서 막혔습니다.`,
+              ),
+        blockerCode:
+          pf?.status === "PREFLIGHT_ONLY_OK" &&
+          pf.boundToCurrentArtifacts !== true
+            ? "PREFLIGHT_ARTIFACT_BINDING_FAILED"
+            : pfBlocker ?? "WIZARD_PREFLIGHT_FAILED",
         raw: { preflights },
         noLive: true,
       };
@@ -2485,6 +2509,74 @@ export async function POST(request: Request) {
     return json(runFinalVideoCreateAction(topicId));
   }
 
+  // 최종 MP4와 게시 문구를 Owner가 직접 확인한 뒤, 현재 full hash 묶음에만 승인 evidence를 기록한다.
+  // 이 action은 로컬 JSON만 기록하며 preflight runner·업로드·외부 API를 실행하지 않는다.
+  if (action === "finalVideoReviewAccept") {
+    const b = body as {
+      topicId?: unknown;
+      confirmWatchedAllParts?: unknown;
+      confirmPublishMetadataReviewed?: unknown;
+      confirmExactFilesForPublish?: unknown;
+      approvalText?: unknown;
+      expectedParts?: Array<{
+        partId?: unknown;
+        finalMp4Sha256?: unknown;
+        publishMetadataSha256?: unknown;
+      }>;
+    };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const accepted = acceptWizardFinalVideoReview(topicId, {
+      confirmWatchedAllParts: b.confirmWatchedAllParts === true,
+      confirmPublishMetadataReviewed:
+        b.confirmPublishMetadataReviewed === true,
+      confirmExactFilesForPublish:
+        b.confirmExactFilesForPublish === true,
+      approvalText:
+        typeof b.approvalText === "string" ? b.approvalText : "",
+      expectedParts: Array.isArray(b.expectedParts)
+        ? b.expectedParts.map((part) => ({
+            partId:
+              typeof part?.partId === "string" ? part.partId : "",
+            finalMp4Sha256:
+              typeof part?.finalMp4Sha256 === "string"
+                ? part.finalMp4Sha256
+                : "",
+            publishMetadataSha256:
+              typeof part?.publishMetadataSha256 === "string"
+                ? part.publishMetadataSha256
+                : "",
+          }))
+        : undefined,
+    });
+    if (!accepted.ok) {
+      return json(
+        {
+          action,
+          status: "blocked",
+          summary:
+            "모든 최종 영상을 소리와 함께 재생하고 게시 문구를 확인한 뒤 ‘최종 영상 승인’을 완료해야 합니다.",
+          blockerCode: accepted.reason,
+          noLive: true,
+        },
+        400,
+      );
+    }
+    return json({
+      action,
+      status: "success",
+      summary:
+        "현재 모든 최종 MP4와 게시 문구를 Owner 승인으로 고정했습니다.",
+      detail:
+        "영상 바이트·대본·음성·이미지 세트·게시 문구 중 하나라도 바뀌면 승인과 게시 전 점검이 자동으로 무효화됩니다.",
+      raw: {
+        finalVideo: accepted.media.finalVideo,
+        finalVideoApprovalFingerprint:
+          accepted.finalVideoApprovalFingerprint.slice(0, 16),
+      },
+      noLive: true,
+    });
+  }
+
   // ── 게시 전 점검(wizardPreflight): 선택 주제 영상 기준, --arm 없음(외부 호출 0) ──
   if (action === "wizardPreflight") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
@@ -2500,6 +2592,7 @@ export async function POST(request: Request) {
       confirmDiscoveryReady?: unknown;
       confirmPublish?: unknown;
       confirmText?: unknown;
+      expectedFinalVideoApprovalFingerprint?: unknown;
     };
     const topicId = typeof b.topicId === "string" ? b.topicId : "";
     // [게이트 1] Owner 명시 확인 — 영상/발견성/실게시 체크 3개 + "업로드" 직접 입력을 서버에서 검증한다.
@@ -2523,6 +2616,20 @@ export async function POST(request: Request) {
         detail: mediaGate.mediaQualityGate.reasons.join(" · "),
         blockerCode: mediaGate.mediaQualityGate.blockerCode ?? "MEDIA_QUALITY_GATE_NOT_READY",
         raw: { mediaQualityGate: mediaGate.mediaQualityGate },
+        noLive: true,
+      });
+    }
+    if (
+      typeof b.expectedFinalVideoApprovalFingerprint !== "string" ||
+      b.expectedFinalVideoApprovalFingerprint !==
+        mediaGate.finalVideo.ownerApprovalFingerprint
+    ) {
+      return json({
+        action,
+        status: "blocked",
+        summary:
+          "화면에서 확인한 최종 영상 승인 지문이 현재 파일과 다릅니다. 영상을 다시 확인해 주세요.",
+        blockerCode: "FINAL_VIDEO_OWNER_APPROVAL_STALE",
         noLive: true,
       });
     }
@@ -2697,8 +2804,13 @@ function describeBuildFailure(reason: string): string {
     return "담당 주인공의 확정 이미지가 현재 주제와 안전하게 연결되지 않아 이미지 생성을 막았습니다.";
   if (reason === "final_mp4_required" || reason === "media_quality_gate_not_ready")
     return "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
+  if (
+    reason === "final_video_owner_approval_required" ||
+    reason === "final_video_owner_approval_stale"
+  )
+    return "현재 최종 영상과 게시 문구를 다시 확인하고 [최종 영상 승인]을 완료해 주세요.";
   if (reason === "preflight_evidence_missing")
-    return "먼저 [게시 전 점검]을 통과해야 업로드할 수 있습니다.";
+    return "현재 승인된 영상 hash로 [게시 전 점검]을 다시 통과해야 업로드할 수 있습니다.";
   if (reason === "content_already_published_evidence")
     return "이미 게시 완료된 콘텐츠입니다. 같은 콘텐츠를 다시 올릴 수 없습니다.";
   if (reason === "video_path_untrusted")
