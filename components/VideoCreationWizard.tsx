@@ -167,6 +167,15 @@ type WizardPublishRecoveryState = {
   genericDualUploadBlocked: boolean;
   automaticRetryAllowed: boolean;
   recoverablePlatformCandidate: string | null;
+  attemptEvidence: {
+    present: boolean;
+    journalValid: boolean;
+    reason: string;
+    claimSha256: string | null;
+    eventCount: number;
+    latestTransition: string | null;
+    latestRecordedAtIso: string | null;
+  };
 };
 
 type WizardFinanceCharacterCast = {
@@ -896,6 +905,27 @@ const PUBLISH_RECOVERY_STATE_LABEL: Record<WizardPublishRecoveryStateName, strin
   invalid_evidence: "게시 증거 무효",
 };
 
+const PUBLISH_ATTEMPT_TRANSITION_LABEL: Record<string, string> = {
+  external_execution_ready: "외부 실행 직전 기록",
+  blob_put_intent: "영상 저장 요청 전",
+  blob_put_confirmed: "영상 저장 확인",
+  blob_head_intent: "영상 확인 요청 전",
+  blob_head_confirmed: "영상 확인 완료",
+  instagram_container_intent: "Instagram 컨테이너 요청 전",
+  instagram_container_confirmed: "Instagram 컨테이너 확인",
+  instagram_poll_intent: "Instagram 처리 상태 확인 전",
+  instagram_poll_observed: "Instagram 처리 상태 확인",
+  instagram_poll_unknown: "Instagram 처리 상태 응답 불명확",
+  instagram_container_ready: "Instagram 게시 준비 확인",
+  instagram_publish_intent: "Instagram 게시 요청 전",
+  instagram_publish_confirmed: "Instagram 게시 확인",
+  youtube_insert_intent: "YouTube 업로드 요청 전",
+  youtube_insert_confirmed: "YouTube 업로드 확인",
+  ledger_write_intent: "게시 원장 기록 전",
+  ledger_write_confirmed: "게시 원장 기록 확인",
+  complete: "게시 시도 기록 완료",
+};
+
 const AUTOMATION_EXECUTION_GUARD_LABEL: Record<WizardAutomationExecutionGuard["status"], string> = {
   available: "중복 실행 잠금 준비됨",
   not_applicable: "현재 자동 실행 대상 없음",
@@ -1090,6 +1120,48 @@ function PublishRecoveryEvidence({ states }: { states: WizardPublishRecoveryStat
                 <div>
                   <dt className="inline font-bold">복구 지문: </dt>
                   <dd className="inline break-all">{recovery.recoveryFingerprint ?? "없음"}</dd>
+                </div>
+                <div data-testid="wizard-publish-attempt-evidence-status">
+                  <dt className="inline font-bold">시도 기록: </dt>
+                  <dd className="inline">
+                    {recovery.attemptEvidence.present
+                      ? recovery.attemptEvidence.journalValid
+                        ? "있음 · 무결성 확인"
+                        : "있음 · 무결성 수동 확인 필요"
+                      : "없음"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">기록 수: </dt>
+                  <dd className="inline">{recovery.attemptEvidence.eventCount}건</dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">마지막 기록: </dt>
+                  <dd className="inline">
+                    {recovery.attemptEvidence.latestTransition
+                      ? PUBLISH_ATTEMPT_TRANSITION_LABEL[
+                          recovery.attemptEvidence.latestTransition
+                        ] ?? recovery.attemptEvidence.latestTransition
+                      : "없음"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">기록 시각: </dt>
+                  <dd className="inline break-all">
+                    {recovery.attemptEvidence.latestRecordedAtIso ?? "없음"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">기록 판정: </dt>
+                  <dd className="inline break-all">
+                    {recovery.attemptEvidence.reason}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold">claim hash: </dt>
+                  <dd className="inline break-all">
+                    {recovery.attemptEvidence.claimSha256 ?? "없음"}
+                  </dd>
                 </div>
               </dl>
             </div>

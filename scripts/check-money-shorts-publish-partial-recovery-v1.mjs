@@ -919,15 +919,26 @@ check(
     ),
 );
 check(
-  "operator recovery reader hashes the immutable claim and treats a journal directory as evidence",
+  "operator recovery reader inspects immutable claim/journal evidence fail-closed",
   helperSource.includes(
-    "MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME",
+    "inspectMoneyShortsPublishAttemptEvidence",
   ) &&
     helperSource.includes(
-      "MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME",
+      "attempt_journal_inspection_failed",
     ) &&
-    helperSource.includes("attemptFile.sha256") &&
-    helperSource.includes("attemptFile,"),
+    helperSource.includes(
+      "summarizeWizardPublishAttemptEvidence",
+    ) &&
+    helperSource.includes("attemptEvidence:"),
+);
+check(
+  "wizard presents read-only claim/journal integrity and latest transition evidence",
+  wizardSource.includes(
+    "wizard-publish-attempt-evidence-status",
+  ) &&
+    wizardSource.includes("attemptEvidence.journalValid") &&
+    wizardSource.includes("attemptEvidence.latestTransition") &&
+    wizardSource.includes("PUBLISH_ATTEMPT_TRANSITION_LABEL"),
 );
 
 const actualUploadBlock = sourceBlock(

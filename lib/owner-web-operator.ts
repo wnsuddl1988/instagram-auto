@@ -77,8 +77,7 @@ import {
 import { evaluateLedgerDuplicateForUnit } from "./publish-ledger-runtime.mjs";
 import { classifyMoneyShortsPublishRecovery } from "./money-shorts-publish-recovery.mjs";
 import {
-  MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
-  MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+  inspectMoneyShortsPublishAttemptEvidence,
 } from "./money-shorts-publish-attempt-journal.mjs";
 import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
@@ -6953,9 +6952,21 @@ export function readWizardPublishResult(
   };
 }
 
+export type WizardPublishAttemptEvidence = {
+  present: boolean;
+  journalValid: boolean;
+  reason: string;
+  claimSha256: string | null;
+  eventCount: number;
+  latestTransition: string | null;
+  latestRecordedAtIso: string | null;
+};
+
 export type WizardPublishRecoveryState = ReturnType<
   typeof classifyMoneyShortsPublishRecovery
->;
+> & {
+  attemptEvidence: WizardPublishAttemptEvidence;
+};
 
 type WizardPublishPartId = "single" | "part-1" | "part-2";
 const WIZARD_PUBLISH_PART_IDS = [
@@ -6964,10 +6975,49 @@ const WIZARD_PUBLISH_PART_IDS = [
   "part-2",
 ] as const satisfies readonly WizardPublishPartId[];
 
+function summarizeWizardPublishAttemptEvidence(
+  inspection: {
+    exists?: unknown;
+    valid?: unknown;
+    reason?: unknown;
+    claimFile?: { sha256?: unknown } | null;
+    events?: unknown;
+    latestEvent?: {
+      transition?: unknown;
+      recordedAtIso?: unknown;
+    } | null;
+  },
+): WizardPublishAttemptEvidence {
+  const events = Array.isArray(inspection.events)
+    ? inspection.events
+    : [];
+  return {
+    present: inspection.exists === true,
+    journalValid: inspection.valid === true,
+    reason:
+      typeof inspection.reason === "string"
+        ? inspection.reason
+        : "attempt_journal_inspection_failed",
+    claimSha256:
+      typeof inspection.claimFile?.sha256 === "string"
+        ? inspection.claimFile.sha256
+        : null,
+    eventCount: events.length,
+    latestTransition:
+      typeof inspection.latestEvent?.transition === "string"
+        ? inspection.latestEvent.transition
+        : null,
+    latestRecordedAtIso:
+      typeof inspection.latestEvent?.recordedAtIso === "string"
+        ? inspection.latestEvent.recordedAtIso
+        : null,
+  };
+}
+
 function unreadableWizardPublishRecoveryState(
   currentBinding: Record<string, string>,
 ): WizardPublishRecoveryState {
-  return classifyMoneyShortsPublishRecovery({
+  const recovery = classifyMoneyShortsPublishRecovery({
     resultFile: {
       exists: false,
       parseOk: false,
@@ -6983,6 +7033,18 @@ function unreadableWizardPublishRecoveryState(
       youtubePublishedIdReference: null,
     },
   });
+  return {
+    ...recovery,
+    attemptEvidence: {
+      present: false,
+      journalValid: false,
+      reason: "publish_recovery_binding_unavailable",
+      claimSha256: null,
+      eventCount: 0,
+      latestTransition: null,
+      latestRecordedAtIso: null,
+    },
+  };
 }
 
 function readWizardPublishRecoveryStateFromMedia(
@@ -7160,57 +7222,70 @@ function readWizardPublishRecoveryStateFromMedia(
     }
   }
 
-  const attemptClaimPath = join(
-    resultDir,
-    MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
-  );
-  const attemptJournalDir = join(
-    resultDir,
-    MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
-  );
-  const attemptFile: {
+  let attemptInspection: {
     exists: boolean;
-    parseOk: boolean;
-    sha256: string | null;
-    evidence: unknown;
-  } = {
-    exists:
-      existsSync(attemptClaimPath) ||
-      existsSync(attemptJournalDir),
-    parseOk: false,
-    sha256: null,
-    evidence: null,
+    valid: boolean;
+    reason: string;
+    claimFile: {
+      exists: boolean;
+      parseOk: boolean;
+      sha256: string | null;
+      evidence: unknown;
+    };
+    events: unknown[];
+    latestEvent?: {
+      transition?: unknown;
+      recordedAtIso?: unknown;
+    } | null;
   };
-  if (existsSync(attemptClaimPath)) {
-    try {
-      const claimBytes = readFileSync(attemptClaimPath);
-      attemptFile.sha256 = createHash("sha256")
-        .update(claimBytes)
-        .digest("hex");
-      try {
-        attemptFile.evidence = JSON.parse(
-          claimBytes.toString("utf8"),
-        );
-        attemptFile.parseOk = true;
-      } catch {
-        attemptFile.parseOk = false;
-      }
-    } catch {
-      attemptFile.parseOk = false;
-    }
+  try {
+    attemptInspection = inspectMoneyShortsPublishAttemptEvidence({
+      outDir: resultDir,
+      currentBinding,
+    });
+  } catch {
+    // 읽기 자체가 실패하면 게시 미시작으로 간주하지 않는다.
+    attemptInspection = {
+      exists: true,
+      valid: false,
+      reason: "attempt_journal_inspection_failed",
+      claimFile: {
+        exists: true,
+        parseOk: false,
+        sha256: null,
+        evidence: null,
+      },
+      events: [],
+      latestEvent: null,
+    };
   }
+  const attemptFile = attemptInspection.claimFile.exists
+    ? attemptInspection.claimFile
+    : attemptInspection.exists
+      ? {
+          exists: true,
+          parseOk: false,
+          sha256: null,
+          evidence: null,
+        }
+      : attemptInspection.claimFile;
 
   const ledgerEvidence = evaluateLedgerDuplicateForUnit(
     WIZARD_PUBLISH_LEDGER_PATH,
     contentId,
     WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
   );
-  return classifyMoneyShortsPublishRecovery({
+  const recovery = classifyMoneyShortsPublishRecovery({
     resultFile,
     attemptFile,
     currentBinding,
     ledgerEvidence,
   });
+  return {
+    ...recovery,
+    attemptEvidence:
+      summarizeWizardPublishAttemptEvidence(attemptInspection),
+  };
 }
 
 /**
