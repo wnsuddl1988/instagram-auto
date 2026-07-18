@@ -7,6 +7,10 @@ import {
   classifyMoneyShortsPublishRecovery,
   MONEY_SHORTS_PUBLISH_RECOVERY_VERSION,
 } from "../lib/money-shorts-publish-recovery.mjs";
+import {
+  MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_VERSION,
+  fingerprintMoneyShortsPublishAttemptBinding,
+} from "../lib/money-shorts-publish-attempt-journal.mjs";
 import { buildMoneyShortsResumablePlan } from "../lib/money-shorts-resumable-orchestrator.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -169,6 +173,31 @@ function makeResultFile(evidence, sha256 = SHA.result) {
   };
 }
 
+function makeAttemptFile(
+  binding = CURRENT_BINDING,
+  overrides = {},
+) {
+  const evidence = {
+    schemaVersion:
+      MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_VERSION,
+    armed: true,
+    claimId: "claim-recovery-test",
+    claimedAtIso: "2026-07-18T00:00:00.000Z",
+    publicationAttemptFingerprint:
+      fingerprintMoneyShortsPublishAttemptBinding(binding),
+    binding: { ...binding },
+    ...overrides,
+  };
+  return {
+    exists: true,
+    parseOk: true,
+    sha256: createHash("sha256")
+      .update(JSON.stringify(evidence))
+      .digest("hex"),
+    evidence,
+  };
+}
+
 function makeLedger(overrides = {}) {
   return {
     readOk: true,
@@ -182,11 +211,13 @@ function makeLedger(overrides = {}) {
 
 function classify({
   resultFile = { exists: false },
+  attemptFile = { exists: false },
   currentBinding = CURRENT_BINDING,
   ledgerEvidence = makeLedger(),
 } = {}) {
   return classifyMoneyShortsPublishRecovery({
     resultFile,
+    attemptFile,
     currentBinding,
     ledgerEvidence,
   });
@@ -215,6 +246,71 @@ check(
     notStarted.recoveryFingerprint === null,
 );
 
+const claimWithoutResult = expectState(
+  "exact armed claim without a result is ambiguous",
+  "ambiguous",
+  { attemptFile: makeAttemptFile() },
+);
+check(
+  "claim-only evidence is visible and blocks every automatic retry",
+  claimWithoutResult.reason ===
+    "armed_attempt_claim_present_result_missing" &&
+    claimWithoutResult.attemptEvidencePresent === true &&
+    claimWithoutResult.attemptClaimSha256 !== null &&
+    claimWithoutResult.genericDualUploadBlocked === true &&
+    claimWithoutResult.automaticRetryAllowed === false,
+);
+const corruptClaim = expectState(
+  "unreadable claim remains ambiguous instead of not_started",
+  "ambiguous",
+  {
+    attemptFile: {
+      exists: true,
+      parseOk: false,
+      sha256: SHA.alternate,
+      evidence: null,
+    },
+  },
+);
+check(
+  "unreadable claim has a dedicated fail-closed reason",
+  corruptClaim.reason ===
+    "attempt_journal_unreadable_or_unhashed",
+);
+const staleClaim = expectState(
+  "claim bound to stale single topology is invalid evidence",
+  "invalid_evidence",
+  {
+    attemptFile: makeAttemptFile(),
+    currentBinding: {
+      ...CURRENT_BINDING,
+      productionPartId: "part-1",
+    },
+  },
+);
+check(
+  "stale claim cannot disappear into a clean not_started state",
+  staleClaim.reason ===
+    "attempt_journal_schema_or_artifact_binding_invalid" &&
+    staleClaim.genericDualUploadBlocked === true,
+);
+const dirtyLedgerClaim = expectState(
+  "claim plus dirty ledger never implies automatic completion",
+  "ambiguous",
+  {
+    attemptFile: makeAttemptFile(),
+    ledgerEvidence: makeLedger({
+      instagramAlreadyPublished: true,
+      instagramPublishedIdReference: "ig-claim-only",
+    }),
+  },
+);
+check(
+  "claim remains the manual-review boundary when result is missing",
+  dirtyLedgerClaim.reason ===
+    "armed_attempt_claim_present_result_missing",
+);
+
 const zeroSideEffectEvidence = makeEvidence();
 const zeroSideEffectBefore = JSON.stringify(zeroSideEffectEvidence);
 const noExternalFailed = expectState(
@@ -227,6 +323,38 @@ check(
   noExternalFailed.manualRecoveryRequired === true &&
     noExternalFailed.automaticRetryAllowed === false &&
     JSON.stringify(zeroSideEffectEvidence) === zeroSideEffectBefore,
+);
+const matchingClaimResult = expectState(
+  "matching result and claim preserve the existing recovery state",
+  "no_external_failed",
+  {
+    resultFile: makeResultFile(zeroSideEffectEvidence),
+    attemptFile: makeAttemptFile(),
+  },
+);
+check(
+  "matching result and claim are both bound into recovery evidence",
+  matchingClaimResult.attemptEvidencePresent === true &&
+    matchingClaimResult.attemptClaimSha256 !== null,
+);
+const conflictingBinding = {
+  ...CURRENT_BINDING,
+  contentId: "wizard-finance-other",
+};
+const conflictingResult = expectState(
+  "result and exact claim binding conflict is invalid evidence",
+  "invalid_evidence",
+  {
+    resultFile: makeResultFile(
+      makeEvidence({ binding: conflictingBinding }),
+    ),
+    attemptFile: makeAttemptFile(),
+  },
+);
+check(
+  "result/claim conflict has a dedicated reason",
+  conflictingResult.reason ===
+    "result_and_attempt_journal_conflict",
 );
 for (const [label, malformedCounter] of [
   ["null", null],
@@ -715,6 +843,91 @@ check(
     runnerSource
       .slice(youtubeCounterIndex, youtubeConfirmedIndex)
       .includes("ytVideoId"),
+);
+
+const claimIndex = runnerSource.indexOf(
+  "claimMoneyShortsPublishAttempt({",
+);
+const readyJournalIndex = runnerSource.indexOf(
+  'recordPublishAttemptTransition("external_execution_ready")',
+);
+const blobIntentIndex = runnerSource.indexOf(
+  'recordPublishAttemptTransition("blob_put_intent")',
+);
+const blobCounterIndex = runnerSource.indexOf(
+  "sideEffectCounters.blobPutCount += 1",
+);
+const blobCallIndex = runnerSource.indexOf(
+  "await blobPut(blobPathname",
+);
+check(
+  "runner acquires and journals a durable attempt before the first external mutation",
+  claimIndex >= 0 &&
+    readyJournalIndex > claimIndex &&
+    blobIntentIndex > readyJournalIndex &&
+    blobCounterIndex > blobIntentIndex &&
+    blobCallIndex > blobCounterIndex,
+);
+for (const [label, intent, counterToken, callToken] of [
+  [
+    "Instagram container",
+    "instagram_container_intent",
+    "sideEffectCounters.instagramContainerCreateCount += 1",
+    "await fetch(`${GRAPH_API_BASE}/${IG_ACCOUNT_ID}/media`",
+  ],
+  [
+    "Instagram publish",
+    "instagram_publish_intent",
+    "sideEffectCounters.instagramPublishCount += 1",
+    "await fetch(`${GRAPH_API_BASE}/${IG_ACCOUNT_ID}/media_publish`",
+  ],
+  [
+    "YouTube insert",
+    "youtube_insert_intent",
+    "sideEffectCounters.youtubeInsertCount += 1",
+    "await youtube.videos.insert({",
+  ],
+  [
+    "ledger write",
+    "ledger_write_intent",
+    "sideEffectCounters.ledgerWriteCount += 1",
+    "writePublishLedgerRuntime(ledgerAbs",
+  ],
+]) {
+  const intentIndex = runnerSource.indexOf(
+    `recordPublishAttemptTransition("${intent}")`,
+  );
+  const counterIndex = runnerSource.indexOf(counterToken);
+  const callIndex = runnerSource.indexOf(callToken);
+  check(
+    `${label} intent is durable before its counter and call`,
+    intentIndex >= 0 &&
+      counterIndex > intentIndex &&
+      callIndex > counterIndex,
+  );
+}
+check(
+  "runner blocks existing claim or journal evidence before command work",
+  runnerSource.includes(
+    "PUBLISH_ATTEMPT_EVIDENCE_ALREADY_EXISTS",
+  ) &&
+    runnerSource.includes(
+      "MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME",
+    ) &&
+    runnerSource.includes(
+      "MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME",
+    ),
+);
+check(
+  "operator recovery reader hashes the immutable claim and treats a journal directory as evidence",
+  helperSource.includes(
+    "MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME",
+  ) &&
+    helperSource.includes(
+      "MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME",
+    ) &&
+    helperSource.includes("attemptFile.sha256") &&
+    helperSource.includes("attemptFile,"),
 );
 
 const actualUploadBlock = sourceBlock(

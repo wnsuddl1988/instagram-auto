@@ -77,6 +77,10 @@ import {
 import { evaluateLedgerDuplicateForUnit } from "./publish-ledger-runtime.mjs";
 import { classifyMoneyShortsPublishRecovery } from "./money-shorts-publish-recovery.mjs";
 import {
+  MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
+  MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+} from "./money-shorts-publish-attempt-journal.mjs";
+import {
   FINANCE_CHARACTER_CANDIDATE_COUNT,
   FINANCE_CHARACTER_CAST,
   FINANCE_CHARACTER_CAST_VERSION,
@@ -7156,6 +7160,46 @@ function readWizardPublishRecoveryStateFromMedia(
     }
   }
 
+  const attemptClaimPath = join(
+    resultDir,
+    MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
+  );
+  const attemptJournalDir = join(
+    resultDir,
+    MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+  );
+  const attemptFile: {
+    exists: boolean;
+    parseOk: boolean;
+    sha256: string | null;
+    evidence: unknown;
+  } = {
+    exists:
+      existsSync(attemptClaimPath) ||
+      existsSync(attemptJournalDir),
+    parseOk: false,
+    sha256: null,
+    evidence: null,
+  };
+  if (existsSync(attemptClaimPath)) {
+    try {
+      const claimBytes = readFileSync(attemptClaimPath);
+      attemptFile.sha256 = createHash("sha256")
+        .update(claimBytes)
+        .digest("hex");
+      try {
+        attemptFile.evidence = JSON.parse(
+          claimBytes.toString("utf8"),
+        );
+        attemptFile.parseOk = true;
+      } catch {
+        attemptFile.parseOk = false;
+      }
+    } catch {
+      attemptFile.parseOk = false;
+    }
+  }
+
   const ledgerEvidence = evaluateLedgerDuplicateForUnit(
     WIZARD_PUBLISH_LEDGER_PATH,
     contentId,
@@ -7163,6 +7207,7 @@ function readWizardPublishRecoveryStateFromMedia(
   );
   return classifyMoneyShortsPublishRecovery({
     resultFile,
+    attemptFile,
     currentBinding,
     ledgerEvidence,
   });

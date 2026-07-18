@@ -63,6 +63,13 @@ import {
   validateMoneyShortsPublishPreflightBinding,
   validateMoneyShortsFinalVideoOwnerApprovalEvidence,
 } from "../lib/money-shorts-final-video-owner-approval.mjs";
+import {
+  MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
+  MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+  appendMoneyShortsPublishAttemptJournal,
+  claimMoneyShortsPublishAttempt,
+  fingerprintMoneyShortsPublishAttemptBinding,
+} from "../lib/money-shorts-publish-attempt-journal.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -191,11 +198,26 @@ if (ledgerAbs.startsWith(REPO_ROOT + "\\") || ledgerAbs.startsWith(REPO_ROOT + "
   process.exit(1);
 }
 
-// [gate 3] one-shot: 기존 성공/실패 result가 있으면 armed 재실행 차단
+// [gate 3] one-shot: 기존 result/claim/journal evidence가 있으면 armed 재실행 차단
 const existingResultPath = join(outDirAbs, RESULT_FILENAME);
-if (armed && existsSync(existingResultPath)) {
-  console.error(`BLOCKED: RESULT_ALREADY_EXISTS_ONE_SHOT — ${existingResultPath}`);
-  console.error("  이 러너는 정확히 1회만 실행된다. 재실행은 Codex/Owner 수동 판단 필요.");
+const existingAttemptClaimPath = join(
+  outDirAbs,
+  MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
+);
+const existingAttemptJournalDir = join(
+  outDirAbs,
+  MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+);
+if (
+  armed &&
+  (existsSync(existingResultPath) ||
+    existsSync(existingAttemptClaimPath) ||
+    existsSync(existingAttemptJournalDir))
+) {
+  console.error(
+    `BLOCKED: PUBLISH_ATTEMPT_EVIDENCE_ALREADY_EXISTS — ${outDirAbs}`,
+  );
+  console.error("  기존 result/claim/journal은 자동 재실행하지 않는다. Codex/Owner 수동 판단 필요.");
   process.exit(1);
 }
 
@@ -330,14 +352,13 @@ const currentPreflightBinding = {
   finalVideoApprovalFingerprint:
     sourceIntegrity.finalVideoApprovalFingerprint,
 };
-const publicationAttemptFingerprint = createHash("sha256")
-  .update(JSON.stringify({
+const publicationAttemptFingerprint =
+  fingerprintMoneyShortsPublishAttemptBinding({
     contentId: unit.contentId,
     version: unit.version,
-    wizardProductionPartId: productionPartId,
+    productionPartId,
     ...currentPreflightBinding,
-  }))
-  .digest("hex");
+  });
 // 이 지점 이후의 armed 실패도 현재 exact artifacts에 결속되도록 모든 결과에 공통 기록한다.
 resultArtifactBinding = {
   contentId: unit.contentId,
@@ -451,23 +472,107 @@ const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 
 const executionResult = {
   blob: { status: "pending", pathname: blobPathname, url: null, headStatus: null, headContentType: null },
-  instagram: { status: "pending", outcome: "not_started", mediaId: null, containerId: null, errorExcerpt: null },
+  instagram: { status: "pending", outcome: "not_started", mediaId: null, containerId: null, lastStatusCode: null, errorExcerpt: null },
   youtube: { status: "pending", outcome: "not_started", videoId: null, url: null, errorExcerpt: null },
   ledger: { status: "pending", path: ledgerAbs, recordedKeys: [], writeOk: false },
 };
+
+function publishAttemptPublicState() {
+  return {
+    sideEffectCounters,
+    blob: {
+      status: executionResult.blob.status,
+      pathname: executionResult.blob.pathname,
+      headStatus: executionResult.blob.headStatus,
+    },
+    instagram: {
+      status: executionResult.instagram.status,
+      outcome: executionResult.instagram.outcome,
+      containerId: executionResult.instagram.containerId,
+      mediaId: executionResult.instagram.mediaId,
+      lastStatusCode:
+        executionResult.instagram.lastStatusCode,
+    },
+    youtube: {
+      status: executionResult.youtube.status,
+      outcome: executionResult.youtube.outcome,
+      videoId: executionResult.youtube.videoId,
+    },
+    ledger: {
+      status: executionResult.ledger.status,
+      writeOk: executionResult.ledger.writeOk,
+      recordedKeys: executionResult.ledger.recordedKeys,
+    },
+  };
+}
+
+let blobPut = null;
+try {
+  ({ put: blobPut } = await import("@vercel/blob"));
+} catch {
+  bail("FAILED", "BLOB_CLIENT_LOAD_FAILED", {
+    executionResult,
+  });
+}
+const uploadSha = createHash("sha256")
+  .update(igSourceBuffer)
+  .digest("hex");
+if (uploadSha !== igSha256) {
+  bail("FAILED", "SOURCE_CHANGED_BETWEEN_HASH_AND_UPLOAD", {
+    executionResult,
+  });
+}
+
+let publishAttemptClaim = null;
+try {
+  publishAttemptClaim = claimMoneyShortsPublishAttempt({
+    outDir: outDirAbs,
+    binding: {
+      contentId: unit.contentId,
+      version: unit.version,
+      productionPartId,
+      ...currentPreflightBinding,
+    },
+  });
+} catch {
+  bail("FAILED", "PUBLISH_ATTEMPT_CLAIM_WRITE_FAILED", {
+    executionResult,
+  });
+}
+if (publishAttemptClaim?.ok !== true) {
+  console.error(
+    "\nBLOCKED: PUBLISH_ATTEMPT_CLAIM_ALREADY_EXISTS",
+  );
+  console.error(
+    "  다른 실행 또는 남은 claim/journal evidence가 있어 외부 호출 전에 종료한다.",
+  );
+  process.exit(1);
+}
+let publishAttemptHandle = publishAttemptClaim.handle;
+function recordPublishAttemptTransition(transition) {
+  try {
+    const appended = appendMoneyShortsPublishAttemptJournal({
+      handle: publishAttemptHandle,
+      transition,
+      state: publishAttemptPublicState(),
+    });
+    publishAttemptHandle = appended.handle;
+  } catch {
+    bail("FAILED", "PUBLISH_ATTEMPT_JOURNAL_WRITE_FAILED", {
+      executionResult,
+      journalTransition: transition,
+    });
+  }
+}
+recordPublishAttemptTransition("external_execution_ready");
 
 // ── step 1: Vercel Blob upload (put ×1, allowOverwrite:false) ─────────────────
 console.log("\n  [step 1/5] Vercel Blob upload (put ×1, allowOverwrite:false)...");
 let blobUrl = null;
 try {
-  const { put } = await import("@vercel/blob");
-  // 업로드 직전 buffer sha256 재확인 — 검증한 바이트가 업로드되는 바이트(no TOCTOU).
-  const uploadSha = createHash("sha256").update(igSourceBuffer).digest("hex");
-  if (uploadSha !== igSha256) {
-    bail("FAILED", "SOURCE_CHANGED_BETWEEN_HASH_AND_UPLOAD", { executionResult });
-  }
+  recordPublishAttemptTransition("blob_put_intent");
   sideEffectCounters.blobPutCount += 1;
-  const putResult = await put(blobPathname, igSourceBuffer, {
+  const putResult = await blobPut(blobPathname, igSourceBuffer, {
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: false,
@@ -482,6 +587,7 @@ try {
   }
   executionResult.blob.status = "uploaded";
   executionResult.blob.url = blobUrl;
+  recordPublishAttemptTransition("blob_put_confirmed");
   console.log(`           uploaded: ${blobUrl}`);
 } catch (e) {
   executionResult.blob.status = "failed";
@@ -492,10 +598,12 @@ try {
 // ── step 2: Blob liveness HEAD ────────────────────────────────────────────────
 console.log("  [step 2/5] Blob public URL liveness (HEAD)...");
 try {
+  recordPublishAttemptTransition("blob_head_intent");
   sideEffectCounters.blobHeadCount += 1;
   const headRes = await fetch(blobUrl, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(30000) });
   executionResult.blob.headStatus = headRes.status;
   executionResult.blob.headContentType = headRes.headers.get("content-type");
+  recordPublishAttemptTransition("blob_head_confirmed");
   const ct = String(headRes.headers.get("content-type") ?? "");
   if (!(headRes.status >= 200 && headRes.status < 300) || !ct.startsWith("video/")) {
     bail("FAILED", "BLOB_LIVENESS_CHECK_FAILED", { executionResult });
@@ -523,6 +631,7 @@ let igMediaId = null;
 try {
   // container 생성 (access_token은 body로만 — URL/로그 미노출)
   executionResult.instagram.outcome = "unknown";
+  recordPublishAttemptTransition("instagram_container_intent");
   sideEffectCounters.instagramContainerCreateCount += 1;
   const containerRes = await fetch(`${GRAPH_API_BASE}/${IG_ACCOUNT_ID}/media`, {
     method: "POST",
@@ -543,12 +652,16 @@ try {
     bail("FAILED", "INSTAGRAM_CONTAINER_CREATE_FAILED", { executionResult });
   }
   executionResult.instagram.containerId = container.id;
+  recordPublishAttemptTransition(
+    "instagram_container_confirmed",
+  );
   console.log(`           containerId=${container.id}`);
 
   // poll — status_code FINISHED까지 (Bearer 헤더: 토큰 URL 미노출)
   let finished = false;
   for (let i = 0; i < 24; i++) {
     await new Promise((r) => setTimeout(r, 5000));
+    recordPublishAttemptTransition("instagram_poll_intent");
     sideEffectCounters.instagramStatusPollCount += 1;
     try {
       const stRes = await fetch(`${GRAPH_API_BASE}/${container.id}?fields=status_code`, {
@@ -556,16 +669,34 @@ try {
         signal: AbortSignal.timeout(30000),
       });
       const st = await stRes.json();
-      if (st?.status_code === "FINISHED") { finished = true; break; }
+      executionResult.instagram.lastStatusCode =
+        ["IN_PROGRESS", "FINISHED", "ERROR", "EXPIRED"].includes(
+          st?.status_code,
+        )
+          ? st.status_code
+          : "UNKNOWN";
+      recordPublishAttemptTransition(
+        "instagram_poll_observed",
+      );
+      if (st?.status_code === "FINISHED") {
+        finished = true;
+        break;
+      }
       if (st?.status_code === "ERROR") break;
-    } catch { /* transient poll error — 다음 poll에서 재확인 (업로드 재시도 아님) */ }
+    } catch {
+      executionResult.instagram.lastStatusCode = "UNKNOWN";
+      recordPublishAttemptTransition("instagram_poll_unknown");
+      // transient poll error — 다음 poll에서 재확인 (업로드 재시도 아님)
+    }
   }
   if (!finished) {
     executionResult.instagram.status = "failed";
     bail("FAILED", "INSTAGRAM_CONTAINER_NOT_FINISHED", { executionResult });
   }
+  recordPublishAttemptTransition("instagram_container_ready");
 
   // publish
+  recordPublishAttemptTransition("instagram_publish_intent");
   sideEffectCounters.instagramPublishCount += 1;
   const pubRes = await fetch(`${GRAPH_API_BASE}/${IG_ACCOUNT_ID}/media_publish`, {
     method: "POST",
@@ -587,6 +718,9 @@ try {
   executionResult.instagram.status = "published";
   executionResult.instagram.outcome = "confirmed_published";
   executionResult.instagram.mediaId = igMediaId;
+  recordPublishAttemptTransition(
+    "instagram_publish_confirmed",
+  );
   console.log(`           published mediaId=${igMediaId}`);
 } catch (e) {
   if (executionResult.instagram.status !== "failed") {
@@ -606,6 +740,7 @@ try {
   oauth2.setCredentials({ refresh_token: YT_REFRESH_TOKEN }); // access token은 refresh로 in-memory 발급
   const youtube = google.youtube({ version: "v3", auth: oauth2 });
   executionResult.youtube.outcome = "unknown";
+  recordPublishAttemptTransition("youtube_insert_intent");
   sideEffectCounters.youtubeInsertCount += 1;
   const resp = await youtube.videos.insert({
     part: ["snippet", "status"],
@@ -641,6 +776,9 @@ try {
   executionResult.youtube.outcome = "confirmed_published";
   executionResult.youtube.videoId = ytVideoId;
   executionResult.youtube.url = `https://www.youtube.com/shorts/${ytVideoId}`;
+  recordPublishAttemptTransition(
+    "youtube_insert_confirmed",
+  );
   console.log(`           uploaded videoId=${ytVideoId}`);
 } catch (e) {
   if (executionResult.youtube.status !== "failed") {
@@ -696,18 +834,21 @@ console.log("  [step 5/5] publish ledger write (all-or-nothing, both platforms s
       anyDuplicateBlocked: recordResult.anyDuplicateBlocked,
     });
   }
-  const writeResult = writePublishLedgerRuntime(ledgerAbs, recordResult.ledger);
+  recordPublishAttemptTransition("ledger_write_intent");
   sideEffectCounters.ledgerWriteCount += 1;
+  const writeResult = writePublishLedgerRuntime(ledgerAbs, recordResult.ledger);
   if (writeResult.ok !== true) {
     bail("FAILED", "LEDGER_FILE_WRITE_FAILED", { executionResult, ledgerWriteReason: writeResult.reason ?? null });
   }
   executionResult.ledger.status = "written";
   executionResult.ledger.writeOk = true;
   executionResult.ledger.recordedKeys = [recordResult.instagram.key, recordResult.youtube.key];
+  recordPublishAttemptTransition("ledger_write_confirmed");
   console.log(`           ledger written: ${executionResult.ledger.recordedKeys.join(", ")}`);
 }
 
 // ── 성공 결과 ────────────────────────────────────────────────────────────────
+recordPublishAttemptTransition("complete");
 console.log("\n  E2E PUBLISH SUCCESS — both platforms published, ledger recorded once.");
 writeResultJson("PUBLISHED_DUAL_PLATFORM_OK", null, {
   contentId: unit.contentId,
