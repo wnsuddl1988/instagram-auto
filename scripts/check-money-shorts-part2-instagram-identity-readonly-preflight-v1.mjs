@@ -136,8 +136,6 @@ function successfulAdapter(
           overrides.accountId ?? EXPECTED_ACCOUNT_ID,
         username:
           overrides.username ?? "finance.owner",
-        accountType:
-          overrides.accountType ?? "BUSINESS",
       };
     },
   };
@@ -215,7 +213,7 @@ try {
     "plan fixes one GET, fields, redirect, cache and retry count",
     dryRun.requestContract.method === "GET" &&
       dryRun.requestContract.fields.join(",") ===
-        "id,username,account_type" &&
+        "id,username" &&
       dryRun.requestContract.redirect === "error" &&
       dryRun.requestContract.cache === "no-store" &&
       dryRun.requestContract.maximumAttempts === 1,
@@ -234,6 +232,28 @@ try {
     "armed run requires the exact plan fingerprint before env",
     missingFingerprint.ok === false &&
       missingFingerprintEnvReads === 0,
+  );
+
+  let staleFingerprintEnvReads = 0;
+  const staleFingerprint =
+    await runMoneyShortsPart2InstagramIdentityPreflight({
+      argv: [
+        ...fixture.baseArgs,
+        "--expected-plan-fingerprint",
+        "0".repeat(64),
+        "--arm",
+      ],
+      envProvider: () => {
+        staleFingerprintEnvReads += 1;
+        return fakeEnv();
+      },
+    });
+  check(
+    "stale plan fingerprint stops before env and Graph GET",
+    staleFingerprint.ok === false &&
+      staleFingerprintEnvReads === 0 &&
+      staleFingerprint.sideEffectCounters
+        .externalApiGetCount === 0,
   );
 
   let mismatchedEnvAdapterLoads = 0;
@@ -285,8 +305,8 @@ try {
         .externalMutationCount === 0,
   );
 
-  const invalidProfessionalCalls = [];
-  const invalidProfessional =
+  const invalidUsernameCalls = [];
+  const invalidUsername =
     await runMoneyShortsPart2InstagramIdentityPreflight({
       argv: [
         ...fixture.baseArgs,
@@ -296,15 +316,14 @@ try {
       ],
       envProvider: () => fakeEnv(),
       adapterFactory: () =>
-        successfulAdapter(invalidProfessionalCalls, {
+        successfulAdapter(invalidUsernameCalls, {
           username: "",
-          accountType: "PERSONAL",
         }),
     });
   check(
-    "missing username or non-professional type fails closed",
-    invalidProfessional.ok === false &&
-      invalidProfessionalCalls.length === 1,
+    "missing username fails closed",
+    invalidUsername.ok === false &&
+      invalidUsernameCalls.length === 1,
   );
 
   const successCalls = [];
@@ -327,7 +346,9 @@ try {
         "INSTAGRAM_IDENTITY_READONLY_PREFLIGHT_OK" &&
       success.accountIdMatchesExpected === true &&
       success.username === "finance.owner" &&
-      success.accountType === "BUSINESS" &&
+      success.professionalAccountBasis ===
+        "META_IG_USER_OBJECT" &&
+      !Object.hasOwn(success, "accountType") &&
       success.externalReadOnlyCheckPerformed === true &&
       success.externalMutationPerformed === false &&
       success.publishPerformed === false &&
@@ -403,7 +424,6 @@ try {
             return {
               id: EXPECTED_ACCOUNT_ID,
               username: "finance.owner",
-              account_type: "BUSINESS",
             };
           },
         };
@@ -420,10 +440,12 @@ try {
       capturedOptions.cache === "no-store" &&
       parsedUrl.origin === "https://graph.facebook.com" &&
       parsedUrl.pathname ===
-        `/v19.0/${EXPECTED_ACCOUNT_ID}` &&
+        `/v25.0/${EXPECTED_ACCOUNT_ID}` &&
       parsedUrl.searchParams.get("fields") ===
-        "id,username,account_type" &&
-      fetchIdentity.accountId === EXPECTED_ACCOUNT_ID,
+        "id,username" &&
+      fetchIdentity.accountId === EXPECTED_ACCOUNT_ID &&
+      fetchIdentity.username === "finance.owner" &&
+      !Object.hasOwn(fetchIdentity, "accountType"),
   );
   check(
     "default adapter keeps the token in the Authorization header only",
@@ -542,7 +564,12 @@ try {
       !runnerSource.includes("media_publish") &&
       !runnerSource.includes("writeFileSync") &&
       !runnerSource.includes("appendFileSync") &&
-      !runnerSource.includes("writePublishLedger"),
+      !runnerSource.includes("writePublishLedger") &&
+      !runnerSource.includes("account_type") &&
+      !runnerSource.includes("accountType") &&
+      !runnerSource.includes(
+        "PROFESSIONAL_ACCOUNT_TYPES",
+      ),
   );
 } finally {
   for (const root of roots) {

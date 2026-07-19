@@ -29,16 +29,14 @@ export const MONEY_SHORTS_PART2_INSTAGRAM_IDENTITY_APPROVAL =
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const GRAPH_API_BASE =
-  "https://graph.facebook.com/v19.0";
+  "https://graph.facebook.com/v25.0";
 const GRAPH_FIELDS = Object.freeze([
   "id",
   "username",
-  "account_type",
 ]);
-const PROFESSIONAL_ACCOUNT_TYPES = Object.freeze([
-  "BUSINESS",
-  "MEDIA_CREATOR",
-]);
+// Meta v25 documents IG User itself as a Business or Creator account;
+// Account subtype is not part of the documented IG User field contract.
+const PROFESSIONAL_ACCOUNT_BASIS = "META_IG_USER_OBJECT";
 const REQUIRED_ENV_KEYS = Object.freeze([
   "INSTAGRAM_BUSINESS_ACCOUNT_ID",
   "INSTAGRAM_ACCESS_TOKEN",
@@ -364,13 +362,11 @@ export function buildMoneyShortsPart2InstagramIdentityPlan({
 export function buildMoneyShortsPart2InstagramIdentityBinding({
   plan,
   username,
-  accountType,
 }) {
   if (
     !isPlainObject(plan) ||
     !SHA256_RE.test(plan.planFingerprint ?? "") ||
-    !USERNAME_RE.test(username ?? "") ||
-    !PROFESSIONAL_ACCOUNT_TYPES.includes(accountType)
+    !USERNAME_RE.test(username ?? "")
   ) {
     return null;
   }
@@ -384,7 +380,7 @@ export function buildMoneyShortsPart2InstagramIdentityBinding({
     expectedInstagramAccountId:
       plan.expectedInstagramAccountId,
     username,
-    accountType,
+    professionalAccountBasis: PROFESSIONAL_ACCOUNT_BASIS,
     accountIdMatchesExpected: true,
     requestMethod: "GET",
     graphFields: [...GRAPH_FIELDS],
@@ -436,10 +432,6 @@ export function buildMoneyShortsInstagramIdentityFetchAdapter({
         username:
           typeof data?.username === "string"
             ? data.username
-            : null,
-        accountType:
-          typeof data?.account_type === "string"
-            ? data.account_type
             : null,
       };
     },
@@ -583,10 +575,7 @@ export async function runMoneyShortsPart2InstagramIdentityPreflight({
     identity?.ok !== true ||
     identity.accountId !==
       plan.expectedInstagramAccountId ||
-    !USERNAME_RE.test(identity.username ?? "") ||
-    !PROFESSIONAL_ACCOUNT_TYPES.includes(
-      identity.accountType,
-    )
+    !USERNAME_RE.test(identity.username ?? "")
   ) {
     return {
       ok: false,
@@ -604,7 +593,6 @@ export async function runMoneyShortsPart2InstagramIdentityPreflight({
     buildMoneyShortsPart2InstagramIdentityBinding({
       plan,
       username: identity.username,
-      accountType: identity.accountType,
     });
   if (!identityBinding) {
     return {
@@ -627,7 +615,8 @@ export async function runMoneyShortsPart2InstagramIdentityPreflight({
       plan.expectedInstagramAccountId,
     accountIdMatchesExpected: true,
     username: identity.username,
-    accountType: identity.accountType,
+    professionalAccountBasis:
+      PROFESSIONAL_ACCOUNT_BASIS,
     planFingerprint: plan.planFingerprint,
     identityBindingFingerprint:
       identityBinding.identityBindingFingerprint,

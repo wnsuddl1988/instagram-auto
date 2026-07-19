@@ -80,7 +80,7 @@ const INSTAGRAM_VARIANT_ID =
 const YOUTUBE_VARIANT_ID =
   "youtube_shorts_letterbox_1080x1920";
 const GRAPH_API_BASE =
-  "https://graph.facebook.com/v19.0";
+  "https://graph.facebook.com/v25.0";
 const BLOB_PATH_PREFIX = "instagram/reels";
 const REQUIRED_ENV_KEYS = Object.freeze([
   "INSTAGRAM_BUSINESS_ACCOUNT_ID",
