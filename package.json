@@ -33,6 +33,7 @@
     "check:part2-only-dual-publish-safe-v1": "node scripts/check-money-shorts-part2-only-dual-publish-safe-v1.mjs",
     "check:part2-instagram-identity-readonly-preflight-v1": "node scripts/check-money-shorts-part2-instagram-identity-readonly-preflight-v1.mjs",
     "check:part2-instagram-recovery-preflight-v1": "node scripts/check-money-shorts-part2-instagram-recovery-preflight-v1.mjs",
+    "check:part2-instagram-recovery-execution-v1": "node scripts/check-money-shorts-part2-instagram-recovery-execution-v1.mjs",
     "check:finance-v1-multi-topic-local-pipeline-smoke-v1": "node scripts/check-finance-v1-multi-topic-local-pipeline-smoke-v1.mjs",
     "check:finance-v1-local-ui-api-smoke-v1": "node scripts/check-finance-v1-local-ui-api-smoke-v1.mjs",
     "check:finance-v1-pilot-resume-ui-recovery-v1": "node scripts/check-finance-v1-pilot-resume-ui-recovery-v1.mjs"
