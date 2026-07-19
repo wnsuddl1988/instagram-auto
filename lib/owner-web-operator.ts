@@ -26,7 +26,13 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  resolve,
+} from "node:path";
 import {
   FINANCE_EDITORIAL_LANES,
   FINANCE_EDITORIAL_TOPIC_BANK,
@@ -74,8 +80,20 @@ import {
   validateMoneyShortsPublishPreflightBinding,
   validateMoneyShortsFinalVideoOwnerApprovalEvidence,
 } from "./money-shorts-final-video-owner-approval.mjs";
-import { evaluateLedgerDuplicateForUnit } from "./publish-ledger-runtime.mjs";
+import {
+  buildPublishLedgerKey,
+  readPublishLedgerReadOnly,
+} from "./publish-ledger-runtime.mjs";
 import { classifyMoneyShortsPublishRecovery } from "./money-shorts-publish-recovery.mjs";
+import {
+  MONEY_SHORTS_YOUTUBE_ONLY_RECOVERY_EVENT_TRANSITIONS,
+  moneyShortsYoutubeOnlyRecoveryEventPath,
+  moneyShortsYoutubeOnlyRecoveryPaths,
+} from "./money-shorts-youtube-only-recovery.mjs";
+import {
+  applyMoneyShortsYoutubeOnlyRecoveryOverlay,
+  emptyMoneyShortsYoutubeOnlyRecoveryOverlaySummary,
+} from "./money-shorts-youtube-only-recovery-overlay.mjs";
 import {
   inspectMoneyShortsPublishAttemptEvidence,
 } from "./money-shorts-publish-attempt-journal.mjs";
@@ -275,6 +293,8 @@ const FIXTURE_SCRIPT_COMPILER_OUTPUT = "scripts/fixtures/money-shorts-retention-
  * 파이프라인 스크립트 자체가 repo 안 out-dir을 거부하므로 이중 방어가 된다.
  */
 export const WIZARD_VIDEO_OUT_ROOT = "C:\\tmp\\money-shorts-os\\web-wizard-create-v1";
+export const WIZARD_YOUTUBE_ONLY_RECOVERY_ROOT =
+  "C:\\tmp\\money-shorts-os\\youtube-only-part1-recovery-v1";
 export const WIZARD_VOICE_OUT_DIR = "C:\\tmp\\money-shorts-os\\web-wizard-voice-v1";
 export const WIZARD_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v11";
 export const WIZARD_IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
@@ -6843,6 +6863,289 @@ function wizardPublishOwnerReconciliationPath(
   );
 }
 
+type WizardYoutubeOnlyRecoveryEvidenceFile = {
+  exists: boolean;
+  parseOk: boolean;
+  sha256: string | null;
+  evidence: unknown;
+};
+
+type WizardYoutubeOnlyRecoveryEvidenceBundle = {
+  present: boolean;
+  discoveryValid: boolean;
+  candidateCount: number;
+  unknownFileCount: number;
+  preflightFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+  claimFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+  resultFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+  eventFiles: Array<
+    WizardYoutubeOnlyRecoveryEvidenceFile & {
+      transition: string;
+    }
+  >;
+};
+
+function absentWizardYoutubeOnlyRecoveryEvidenceFile(): WizardYoutubeOnlyRecoveryEvidenceFile {
+  return {
+    exists: false,
+    parseOk: false,
+    sha256: null,
+    evidence: null,
+  };
+}
+
+function readWizardYoutubeOnlyRecoveryEvidenceFile(
+  path: string,
+): WizardYoutubeOnlyRecoveryEvidenceFile {
+  if (!existsSync(path)) {
+    return absentWizardYoutubeOnlyRecoveryEvidenceFile();
+  }
+  try {
+    const bytes = readFileSync(path);
+    const sha256 = createHash("sha256")
+      .update(bytes)
+      .digest("hex");
+    try {
+      return {
+        exists: true,
+        parseOk: true,
+        sha256,
+        evidence: JSON.parse(bytes.toString("utf8")),
+      };
+    } catch {
+      return {
+        exists: true,
+        parseOk: false,
+        sha256,
+        evidence: null,
+      };
+    }
+  } catch {
+    return {
+      exists: true,
+      parseOk: false,
+      sha256: null,
+      evidence: null,
+    };
+  }
+}
+
+function evidenceContentId(
+  file: WizardYoutubeOnlyRecoveryEvidenceFile,
+): string | null {
+  if (
+    file.parseOk !== true ||
+    typeof file.evidence !== "object" ||
+    file.evidence === null ||
+    Array.isArray(file.evidence)
+  ) {
+    return null;
+  }
+  const evidence = file.evidence as {
+    currentBinding?: { contentId?: unknown };
+  };
+  return typeof evidence.currentBinding?.contentId ===
+    "string"
+    ? evidence.currentBinding.contentId
+    : null;
+}
+
+function absentWizardYoutubeOnlyRecoveryEvidenceBundle(): WizardYoutubeOnlyRecoveryEvidenceBundle {
+  return {
+    present: false,
+    discoveryValid: true,
+    candidateCount: 0,
+    unknownFileCount: 0,
+    preflightFile:
+      absentWizardYoutubeOnlyRecoveryEvidenceFile(),
+    claimFile:
+      absentWizardYoutubeOnlyRecoveryEvidenceFile(),
+    resultFile:
+      absentWizardYoutubeOnlyRecoveryEvidenceFile(),
+    eventFiles: [],
+  };
+}
+
+function readWizardYoutubeOnlyRecoveryEvidenceBundle(
+  contentId: string,
+): WizardYoutubeOnlyRecoveryEvidenceBundle {
+  const absent =
+    absentWizardYoutubeOnlyRecoveryEvidenceBundle();
+  if (
+    contentId.length === 0 ||
+    !existsSync(WIZARD_YOUTUBE_ONLY_RECOVERY_ROOT)
+  ) {
+    return absent;
+  }
+  const candidates: Array<{
+    outDir: string;
+    preflightFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+    claimFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+    resultFile: WizardYoutubeOnlyRecoveryEvidenceFile;
+  }> = [];
+  let unboundArmedEvidenceCount = 0;
+  try {
+    for (const entry of readdirSync(
+      WIZARD_YOUTUBE_ONLY_RECOVERY_ROOT,
+      { withFileTypes: true },
+    )) {
+      if (!entry.isDirectory()) continue;
+      const outDir = join(
+        WIZARD_YOUTUBE_ONLY_RECOVERY_ROOT,
+        entry.name,
+      );
+      const paths =
+        moneyShortsYoutubeOnlyRecoveryPaths(outDir);
+      if (!existsSync(paths.recoveryDir)) {
+        // dry-run preflight만 있는 디렉터리는 실제 recovery
+        // overlay가 아니며 기존 상태를 바꾸지 않는다.
+        continue;
+      }
+      const preflightFile =
+        readWizardYoutubeOnlyRecoveryEvidenceFile(
+          paths.preflightPath,
+        );
+      const claimFile =
+        readWizardYoutubeOnlyRecoveryEvidenceFile(
+          paths.claimPath,
+        );
+      const resultFile =
+        readWizardYoutubeOnlyRecoveryEvidenceFile(
+          paths.resultPath,
+        );
+      const boundContentIds = new Set(
+        [
+          evidenceContentId(preflightFile),
+          evidenceContentId(claimFile),
+          evidenceContentId(resultFile),
+        ].filter(
+          (value): value is string =>
+            typeof value === "string" &&
+            value.length > 0,
+        ),
+      );
+      if (boundContentIds.size === 0) {
+        unboundArmedEvidenceCount += 1;
+        continue;
+      }
+      if (boundContentIds.has(contentId)) {
+        candidates.push({
+          outDir,
+          preflightFile,
+          claimFile,
+          resultFile,
+        });
+      }
+    }
+  } catch {
+    return {
+      ...absent,
+      present: true,
+      discoveryValid: false,
+      candidateCount: 0,
+      unknownFileCount: 1,
+    };
+  }
+  if (
+    candidates.length !== 1 ||
+    unboundArmedEvidenceCount > 0
+  ) {
+    return candidates.length === 0 &&
+      unboundArmedEvidenceCount === 0
+      ? absent
+      : {
+          ...absent,
+          present: true,
+          discoveryValid: false,
+          candidateCount: candidates.length,
+          unknownFileCount:
+            unboundArmedEvidenceCount,
+        };
+  }
+
+  const candidate = candidates[0];
+  const paths =
+    moneyShortsYoutubeOnlyRecoveryPaths(
+      candidate.outDir,
+    );
+  const expectedNames = new Set<string>([
+    "claim.json",
+    "result.json",
+  ]);
+  const eventFiles: WizardYoutubeOnlyRecoveryEvidenceBundle["eventFiles"] =
+    [];
+  for (
+    let index = 0;
+    index <
+    MONEY_SHORTS_YOUTUBE_ONLY_RECOVERY_EVENT_TRANSITIONS.length;
+    index += 1
+  ) {
+    const transition =
+      MONEY_SHORTS_YOUTUBE_ONLY_RECOVERY_EVENT_TRANSITIONS[
+        index
+      ];
+    const eventPath =
+      moneyShortsYoutubeOnlyRecoveryEventPath(
+        paths.recoveryDir,
+        transition,
+      );
+    if (typeof eventPath !== "string") continue;
+    expectedNames.add(
+      `${String(index + 1).padStart(2, "0")}-${transition}.json`,
+    );
+    const file =
+      readWizardYoutubeOnlyRecoveryEvidenceFile(eventPath);
+    if (file.exists) {
+      eventFiles.push({
+        transition,
+        ...file,
+      });
+    }
+  }
+  let unknownFileCount = 0;
+  try {
+    const allowedOutDirEntries = new Set([
+      basename(paths.preflightPath),
+      basename(paths.recoveryDir),
+    ]);
+    for (const entry of readdirSync(
+      candidate.outDir,
+      { withFileTypes: true },
+    )) {
+      if (!allowedOutDirEntries.has(entry.name)) {
+        unknownFileCount += 1;
+      }
+    }
+  } catch {
+    unknownFileCount += 1;
+  }
+  try {
+    for (const entry of readdirSync(
+      paths.recoveryDir,
+      { withFileTypes: true },
+    )) {
+      if (
+        !entry.isFile() ||
+        !expectedNames.has(entry.name)
+      ) {
+        unknownFileCount += 1;
+      }
+    }
+  } catch {
+    unknownFileCount += 1;
+  }
+  return {
+    present: true,
+    discoveryValid: true,
+    candidateCount: 1,
+    unknownFileCount,
+    preflightFile: candidate.preflightFile,
+    claimFile: candidate.claimFile,
+    resultFile: candidate.resultFile,
+    eventFiles,
+  };
+}
+
 function readWizardPublishOwnerReconciliationFile(
   topicId: string,
   productionPartId: "single" | "part-1" | "part-2",
@@ -7078,6 +7381,9 @@ export type WizardPublishRecoveryState = ReturnType<
   typeof classifyMoneyShortsPublishRecovery
 > & {
   attemptEvidence: WizardPublishAttemptEvidence;
+  youtubeOnlyRecovery: ReturnType<
+    typeof emptyMoneyShortsYoutubeOnlyRecoveryOverlaySummary
+  >;
   reconciliationPacket: WizardPublishReconciliationPacket;
 };
 
@@ -7164,11 +7470,79 @@ function unreadableWizardPublishRecoveryState(
   return {
     ...recovery,
     attemptEvidence,
+    youtubeOnlyRecovery:
+      emptyMoneyShortsYoutubeOnlyRecoveryOverlaySummary(),
     reconciliationPacket:
       buildMoneyShortsPublishReconciliationPacket({
         recovery,
         attemptEvidence,
       }),
+  };
+}
+
+function readWizardPublishLedgerSnapshotForUnit(
+  contentId: string,
+  version: string,
+) {
+  const instagramKey = buildPublishLedgerKey(
+    contentId,
+    "instagram_reels",
+    version,
+  );
+  const youtubeKey = buildPublishLedgerKey(
+    contentId,
+    "youtube_shorts",
+    version,
+  );
+  const read = readPublishLedgerReadOnly(
+    WIZARD_PUBLISH_LEDGER_PATH,
+  );
+  if (read?.ok !== true) {
+    return {
+      evidence: {
+        readOk: false,
+        instagramAlreadyPublished: false,
+        youtubeAlreadyPublished: false,
+        instagramPublishedIdReference: null,
+        youtubePublishedIdReference: null,
+      },
+      youtubeRecord: null,
+    };
+  }
+  const records: Array<{
+    key?: unknown;
+    publishedId?: unknown;
+    [key: string]: unknown;
+  }> = Array.isArray(read.ledger?.records)
+    ? read.ledger.records
+    : [];
+  const instagramRecord =
+    records.find(
+      (record) =>
+        record?.key === instagramKey,
+    ) ?? null;
+  const youtubeRecord =
+    records.find(
+      (record) =>
+        record?.key === youtubeKey,
+    ) ?? null;
+  return {
+    evidence: {
+      readOk: true,
+      instagramAlreadyPublished:
+        instagramRecord !== null,
+      youtubeAlreadyPublished:
+        youtubeRecord !== null,
+      instagramPublishedIdReference:
+        typeof instagramRecord?.publishedId === "string"
+          ? instagramRecord.publishedId
+          : null,
+      youtubePublishedIdReference:
+        typeof youtubeRecord?.publishedId === "string"
+          ? youtubeRecord.publishedId
+          : null,
+    },
+    youtubeRecord,
   };
 }
 
@@ -7396,11 +7770,12 @@ function readWizardPublishRecoveryStateFromMedia(
         }
       : attemptInspection.claimFile;
 
-  const ledgerEvidence = evaluateLedgerDuplicateForUnit(
-    WIZARD_PUBLISH_LEDGER_PATH,
-    contentId,
-    WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
-  );
+  const ledgerSnapshot =
+    readWizardPublishLedgerSnapshotForUnit(
+      contentId,
+      WIZARD_FULL_SCRIPT_PUBLISH_VERSION,
+    );
+  const ledgerEvidence = ledgerSnapshot.evidence;
   const attemptEvidence =
     summarizeWizardPublishAttemptEvidence(attemptInspection);
   const ownerResolutionFile =
@@ -7408,7 +7783,8 @@ function readWizardPublishRecoveryStateFromMedia(
       topicId,
       productionPartId,
     );
-  const recovery = classifyMoneyShortsPublishRecovery({
+  const currentRecovery =
+    classifyMoneyShortsPublishRecovery({
     resultFile,
     attemptFile,
     attemptEvidence,
@@ -7416,9 +7792,49 @@ function readWizardPublishRecoveryStateFromMedia(
     currentBinding,
     ledgerEvidence,
   });
+  const recoveryBundle =
+    readWizardYoutubeOnlyRecoveryEvidenceBundle(contentId);
+  let recovery = currentRecovery;
+  let youtubeOnlyRecovery =
+    emptyMoneyShortsYoutubeOnlyRecoveryOverlaySummary();
+  if (recoveryBundle.present) {
+    // Recovery claim은 업로드 직전의 target-clean ledger
+    // fingerprint에 결속된다. 현재 원장에 새 YouTube record가
+    // 생긴 뒤에도 원본 Owner resolution을 재검증할 수 있도록
+    // 해당 content의 사전 상태만 순수하게 복원한다.
+    const sourceLedgerEvidence = {
+      ...ledgerEvidence,
+      instagramAlreadyPublished: false,
+      youtubeAlreadyPublished: false,
+      instagramPublishedIdReference: null,
+      youtubePublishedIdReference: null,
+    };
+    const sourceRecovery =
+      classifyMoneyShortsPublishRecovery({
+        resultFile,
+        attemptFile,
+        attemptEvidence,
+        ownerResolutionFile,
+        currentBinding,
+        ledgerEvidence: sourceLedgerEvidence,
+      });
+    const overlaid =
+      applyMoneyShortsYoutubeOnlyRecoveryOverlay({
+        sourceRecovery,
+        currentBinding,
+        ledgerEvidence,
+        youtubeLedgerRecord:
+          ledgerSnapshot.youtubeRecord,
+        evidenceBundle: recoveryBundle,
+      });
+    recovery = overlaid.recovery;
+    youtubeOnlyRecovery =
+      overlaid.youtubeOnlyRecovery;
+  }
   return {
     ...recovery,
     attemptEvidence,
+    youtubeOnlyRecovery,
     reconciliationPacket:
       buildMoneyShortsPublishReconciliationPacket({
         recovery,

@@ -188,6 +188,24 @@ type WizardPublishRecoveryState = {
     youtubeChannelId: string | null;
     checkedAtIso: string | null;
   };
+  youtubeOnlyRecovery: {
+    schemaVersion: string;
+    present: boolean;
+    valid: boolean;
+    status: string | null;
+    reason: string;
+    claimSha256: string | null;
+    resultSha256: string | null;
+    resultFingerprint: string | null;
+    eventCount: number;
+    latestTransition: string | null;
+    latestEventSha256: string | null;
+    youtubeVideoId: string | null;
+    youtubeUrl: string | null;
+    writeLockReleased: boolean | null;
+    automaticRetryAllowed: false;
+    externalActionAllowed: false;
+  };
   reconciliationPacket: {
     mode: "read_only_evidence_packet";
     conclusion: string;
@@ -956,6 +974,8 @@ const PUBLISH_ATTEMPT_TRANSITION_LABEL: Record<string, string> = {
   instagram_container_ready: "Instagram 게시 준비 확인",
   instagram_publish_intent: "Instagram 게시 요청 전",
   instagram_publish_confirmed: "Instagram 게시 확인",
+  youtube_channel_verify_intent: "YouTube 채널 확인 요청 전",
+  youtube_channel_verify_confirmed: "YouTube 채널 확인 완료",
   youtube_insert_intent: "YouTube 업로드 요청 전",
   youtube_insert_confirmed: "YouTube 업로드 확인",
   ledger_write_intent: "게시 원장 기록 전",
@@ -1415,6 +1435,84 @@ function PublishRecoveryEvidence({
                     YouTube 채널:{" "}
                     {recovery.ownerResolution.youtubeChannelId ??
                       "채널 없음"}
+                  </p>
+                </div>
+              ) : null}
+              {recovery.youtubeOnlyRecovery.present ? (
+                <div
+                  data-testid="wizard-youtube-only-recovery-overlay"
+                  className={`mt-2 rounded border px-2 py-1.5 text-xs ${
+                    recovery.state === "complete" &&
+                    recovery.youtubeOnlyRecovery.valid
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-rose-200 bg-rose-50 text-rose-800"
+                  }`}
+                >
+                  <p className="font-bold">
+                    YouTube-only 복구 증거{" "}
+                    {recovery.youtubeOnlyRecovery.valid
+                      ? "무결성 확인"
+                      : "수동 확인 필요"}
+                  </p>
+                  <p className="mt-1 break-all">
+                    {recovery.youtubeOnlyRecovery.reason}
+                  </p>
+                  <dl className="mt-1 grid gap-x-3 gap-y-0.5 sm:grid-cols-2">
+                    <div>
+                      <dt className="inline font-bold">결과: </dt>
+                      <dd className="inline">
+                        {recovery.youtubeOnlyRecovery.status ??
+                          "최종 result 없음"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-bold">복구 기록: </dt>
+                      <dd className="inline">
+                        {recovery.youtubeOnlyRecovery.eventCount}건
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-bold">마지막 단계: </dt>
+                      <dd className="inline">
+                        {recovery.youtubeOnlyRecovery.latestTransition
+                          ? PUBLISH_ATTEMPT_TRANSITION_LABEL[
+                              recovery.youtubeOnlyRecovery
+                                .latestTransition
+                            ] ??
+                            recovery.youtubeOnlyRecovery
+                              .latestTransition
+                          : "없음"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-bold">YouTube ID: </dt>
+                      <dd className="inline break-all">
+                        {recovery.youtubeOnlyRecovery.youtubeVideoId ??
+                          "확정되지 않음"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-bold">원장 잠금 정리: </dt>
+                      <dd className="inline">
+                        {recovery.youtubeOnlyRecovery
+                          .writeLockReleased === true
+                          ? "완료"
+                          : recovery.youtubeOnlyRecovery
+                                .writeLockReleased === false
+                            ? "수동 확인 필요"
+                            : "해당 없음"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-bold">result 지문: </dt>
+                      <dd className="inline break-all">
+                        {recovery.youtubeOnlyRecovery
+                          .resultFingerprint ?? "없음"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="mt-1 font-semibold">
+                    자동 재시도·자동 재업로드 0회
                   </p>
                 </div>
               ) : null}

@@ -28,6 +28,10 @@ import {
   buildPublishLedgerKey,
 } from "../lib/publish-ledger-runtime.mjs";
 import {
+  applyMoneyShortsYoutubeOnlyRecoveryOverlay,
+  classifyMoneyShortsYoutubeOnlyRecoveryOverlay,
+} from "../lib/money-shorts-youtube-only-recovery-overlay.mjs";
+import {
   publishLedgerWriteLockPath,
   recordDualPlatformPublishRuntime,
   recordPublishLedgerEntryRuntime,
@@ -602,6 +606,302 @@ check(
       recoveryEvidenceWriteCount: 10,
     }),
   }) === null,
+);
+
+const overlayFile = (evidence) => {
+  const bytes = Buffer.from(
+    `${JSON.stringify(evidence, null, 2)}\n`,
+    "utf8",
+  );
+  return {
+    exists: true,
+    parseOk: true,
+    sha256: hash(bytes),
+    evidence,
+  };
+};
+const overlayClaimFile = overlayFile(claim);
+const overlayEventSpecs = [
+  {
+    transition: "external_execution_ready",
+    publicState: initialPublicState,
+    sideEffectCounters: counters({
+      credentialReadCount: 3,
+      recoveryEvidenceWriteCount: 2,
+    }),
+  },
+  {
+    transition: "youtube_channel_verify_intent",
+    publicState: initialPublicState,
+    sideEffectCounters: counters({
+      credentialReadCount: 3,
+      recoveryEvidenceWriteCount: 3,
+    }),
+  },
+  {
+    transition: "youtube_channel_verify_confirmed",
+    publicState: initialPublicState,
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 1,
+      recoveryEvidenceWriteCount: 4,
+    }),
+  },
+  {
+    transition: "youtube_insert_intent",
+    publicState: initialPublicState,
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 1,
+      recoveryEvidenceWriteCount: 5,
+    }),
+  },
+  {
+    transition: "youtube_insert_confirmed",
+    publicState: {
+      instagram: initialPublicState.instagram,
+      youtube: youtubePublished,
+      ledger: initialPublicState.ledger,
+    },
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      youtubeInsertCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 2,
+      recoveryEvidenceWriteCount: 6,
+    }),
+  },
+  {
+    transition: "ledger_write_intent",
+    publicState: {
+      instagram: initialPublicState.instagram,
+      youtube: youtubePublished,
+      ledger: initialPublicState.ledger,
+    },
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      youtubeInsertCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 2,
+      recoveryEvidenceWriteCount: 7,
+    }),
+  },
+  {
+    transition: "ledger_write_confirmed",
+    publicState: {
+      instagram: initialPublicState.instagram,
+      youtube: youtubePublished,
+      ledger: ledgerPublished,
+    },
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      youtubeInsertCount: 1,
+      ledgerWriteCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 2,
+      recoveryEvidenceWriteCount: 8,
+    }),
+  },
+  {
+    transition: "complete",
+    publicState: {
+      instagram: initialPublicState.instagram,
+      youtube: youtubePublished,
+      ledger: ledgerPublished,
+    },
+    sideEffectCounters: counters({
+      youtubeChannelVerificationCount: 1,
+      youtubeInsertCount: 1,
+      ledgerWriteCount: 1,
+      credentialReadCount: 3,
+      youtubeApiInvocationCount: 2,
+      recoveryEvidenceWriteCount: 9,
+    }),
+  },
+];
+const overlayEventFiles = [];
+let overlayPreviousEvidenceSha256 =
+  overlayClaimFile.sha256;
+let overlayPreviousTransition = null;
+for (const spec of overlayEventSpecs) {
+  const event =
+    buildMoneyShortsYoutubeOnlyRecoveryEvent({
+      claim,
+      previousEvidenceSha256:
+        overlayPreviousEvidenceSha256,
+      previousTransition:
+        overlayPreviousTransition,
+      transition: spec.transition,
+      recordedAtIso:
+        `2026-07-19T01:0${overlayEventFiles.length + 2}:00.000Z`,
+      publicState: spec.publicState,
+      sideEffectCounters: spec.sideEffectCounters,
+    });
+  const file = overlayFile(event);
+  overlayEventFiles.push({
+    transition: spec.transition,
+    ...file,
+  });
+  overlayPreviousEvidenceSha256 = file.sha256;
+  overlayPreviousTransition = spec.transition;
+}
+const overlayResult = buildMoneyShortsYoutubeOnlyRecoveryResult({
+  claim,
+  latestEventSha256:
+    overlayPreviousEvidenceSha256,
+  latestTransition: "complete",
+  status: "YOUTUBE_ONLY_RECOVERY_OK",
+  blockerCode: null,
+  completedAtIso: "2026-07-19T01:11:00.000Z",
+  instagram: initialPublicState.instagram,
+  youtube: youtubePublished,
+  ledger: ledgerPublished,
+  sideEffectCounters: counters({
+    youtubeChannelVerificationCount: 1,
+    youtubeInsertCount: 1,
+    ledgerWriteCount: 1,
+    credentialReadCount: 3,
+    youtubeApiInvocationCount: 2,
+    recoveryEvidenceWriteCount: 10,
+  }),
+});
+const overlayBundle = {
+  present: true,
+  discoveryValid: true,
+  candidateCount: 1,
+  unknownFileCount: 0,
+  preflightFile: overlayFile(preflight),
+  claimFile: overlayClaimFile,
+  resultFile: overlayFile(overlayResult),
+  eventFiles: overlayEventFiles,
+};
+const overlayLedgerRecord = {
+  key: recordedKey,
+  contentId: binding.contentId,
+  platform: "youtube_shorts",
+  version: binding.version,
+  variantId:
+    "youtube_shorts_letterbox_1080x1920",
+  publishedId: videoId,
+  publishedUrl:
+    `https://www.youtube.com/shorts/${videoId}`,
+  status: "published",
+  publishedAtIso: youtubePublished.publishedAtIso,
+  metadata: {
+    sourceFileName: "final.mp4",
+    sourceSha256: binding.youtubeSourceSha256,
+    recoveryFingerprint,
+    originalResultSha256: recovery.resultSha256,
+    ownerResolutionSha256: resolutionSha256,
+    channelId,
+  },
+};
+const overlayLedgerEvidence = {
+  readOk: true,
+  instagramAlreadyPublished: false,
+  youtubeAlreadyPublished: true,
+  instagramPublishedIdReference: null,
+  youtubePublishedIdReference: videoId,
+};
+const completeOverlay =
+  classifyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: overlayLedgerEvidence,
+    youtubeLedgerRecord: overlayLedgerRecord,
+    evidenceBundle: overlayBundle,
+  });
+check(
+  "strict recovery overlay promotes only exact result and ledger to complete",
+  completeOverlay.applied === true &&
+    completeOverlay.state === "complete" &&
+    completeOverlay.youtubeVideoId === videoId &&
+    completeOverlay.summary.valid === true &&
+    completeOverlay.summary.eventCount === 8,
+);
+const appliedCompleteOverlay =
+  applyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: overlayLedgerEvidence,
+    youtubeLedgerRecord: overlayLedgerRecord,
+    evidenceBundle: overlayBundle,
+  });
+check(
+  "applied complete overlay remains duplicate-blocked with no recovery authority",
+  appliedCompleteOverlay.recovery.state ===
+      "complete" &&
+    appliedCompleteOverlay.recovery
+      .manualRecoveryRequired === false &&
+    appliedCompleteOverlay.recovery
+      .genericDualUploadBlocked === true &&
+    appliedCompleteOverlay.recovery
+      .recoverablePlatformCandidate === null &&
+    appliedCompleteOverlay.recovery.safety
+      .youtubePublishAllowed === false,
+);
+check(
+  "success overlay rejects a missing current YouTube ledger record",
+  classifyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: {
+      ...overlayLedgerEvidence,
+      youtubeAlreadyPublished: false,
+      youtubePublishedIdReference: null,
+    },
+    youtubeLedgerRecord: null,
+    evidenceBundle: overlayBundle,
+  }).state === "invalid_evidence",
+);
+const tamperedOverlayBundle =
+  structuredClone(overlayBundle);
+tamperedOverlayBundle.eventFiles[2].evidence.recordedAtIso =
+  "2026-07-19T09:00:00.000Z";
+check(
+  "recovery overlay rejects a tampered event chain",
+  classifyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: overlayLedgerEvidence,
+    youtubeLedgerRecord: overlayLedgerRecord,
+    evidenceBundle: tamperedOverlayBundle,
+  }).reason ===
+    "youtube_only_recovery_event_chain_invalid",
+);
+check(
+  "claim without final result remains ambiguous and never retriable",
+  classifyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: {
+      ...overlayLedgerEvidence,
+      youtubeAlreadyPublished: false,
+      youtubePublishedIdReference: null,
+    },
+    youtubeLedgerRecord: null,
+    evidenceBundle: {
+      ...overlayBundle,
+      resultFile: {
+        exists: false,
+        parseOk: false,
+        sha256: null,
+        evidence: null,
+      },
+    },
+  }).state === "ambiguous",
+);
+check(
+  "preflight-only absence does not change the source recovery state",
+  applyMoneyShortsYoutubeOnlyRecoveryOverlay({
+    sourceRecovery: recovery,
+    currentBinding: binding,
+    ledgerEvidence: recovery.ledger,
+    youtubeLedgerRecord: null,
+    evidenceBundle: { present: false },
+  }).recovery === recovery,
 );
 
 const emptyLedger = {
