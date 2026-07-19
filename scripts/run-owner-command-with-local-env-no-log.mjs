@@ -55,6 +55,7 @@ import {
   dirname,
   isAbsolute,
   join,
+  relative,
   resolve,
 } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,6 +77,11 @@ const PART2_INSTAGRAM_IDENTITY_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-money-shorts-part2-instagram-identity-readonly-preflight-v1.mjs",
 );
+const PART2_INSTAGRAM_RECOVERY_EXECUTION_RUNNER_PATH =
+  join(
+    SCRIPTS_DIR,
+    "run-money-shorts-part2-instagram-recovery-execution-v1.mjs",
+  );
 
 // 승인된 6개 key 이름만 로드한다(그 외 라인의 값은 파싱/보관하지 않는다).
 const APPROVED_ENV_KEY_NAMES = Object.freeze([
@@ -91,7 +97,7 @@ const YOUTUBE_ONLY_ENV_KEY_NAMES = Object.freeze([
   "YOUTUBE_CLIENT_SECRET",
   "YOUTUBE_REFRESH_TOKEN",
 ]);
-const INSTAGRAM_IDENTITY_ENV_KEY_NAMES = Object.freeze([
+const INSTAGRAM_ONLY_ENV_KEY_NAMES = Object.freeze([
   "INSTAGRAM_BUSINESS_ACCOUNT_ID",
   "INSTAGRAM_ACCESS_TOKEN",
 ]);
@@ -130,10 +136,51 @@ const PART2_INSTAGRAM_IDENTITY_REQUIRED_FLAGS =
     "--expected-source-sha256",
     "--expected-instagram-account-id",
   ]);
+const PART2_INSTAGRAM_RECOVERY_REQUIRED_PATH_FLAGS =
+  Object.freeze([
+    "--recovery-out-dir",
+    "--content-unit",
+    "--ledger",
+    "--out-dir",
+  ]);
+const PART2_INSTAGRAM_RECOVERY_REQUIRED_HASH_FLAGS =
+  Object.freeze([
+    "--expected-review-preflight-fingerprint",
+    "--expected-manifest-sha256",
+    "--expected-source-sha256",
+    "--expected-publication-attempt-fingerprint",
+    "--expected-original-safe-preflight-fingerprint",
+    "--expected-original-safe-claim-fingerprint",
+    "--expected-original-safe-result-fingerprint",
+    "--expected-original-canonical-result-fingerprint",
+    "--expected-original-plan-fingerprint",
+    "--expected-original-safe-preflight-file-sha256",
+    "--expected-original-safe-claim-file-sha256",
+    "--expected-original-safe-result-file-sha256",
+    "--expected-original-safe-latest-event-sha256",
+    "--expected-original-canonical-attempt-claim-file-sha256",
+    "--expected-original-canonical-latest-event-sha256",
+    "--expected-original-canonical-result-file-sha256",
+    "--expected-original-ledger-sha256",
+    "--expected-original-blob-url-sha256",
+    "--expected-original-recovery-fingerprint",
+  ]);
+const PART2_INSTAGRAM_RECOVERY_REQUIRED_VALUE_FLAGS =
+  Object.freeze([
+    ...PART2_INSTAGRAM_RECOVERY_REQUIRED_PATH_FLAGS,
+    "--expected-content-id",
+    "--expected-instagram-account-id",
+    "--expected-youtube-channel-id",
+    ...PART2_INSTAGRAM_RECOVERY_REQUIRED_HASH_FLAGS,
+  ]);
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const YOUTUBE_CHANNEL_ID_RE =
   /^UC[A-Za-z0-9_-]{22}$/;
 const INSTAGRAM_ACCOUNT_ID_RE = /^[0-9]{5,32}$/;
+const INSTAGRAM_NONZERO_ACCOUNT_ID_RE =
+  /^[1-9][0-9]{5,31}$/;
+const PART2_CONTENT_ID_RE =
+  /^[A-Za-z0-9._:-]{1,240}-part-2$/;
 
 // child node 실행에 필요한 최소 non-secret OS 변수만 개별 상속한다(broad spread 금지).
 const SAFE_CHILD_OS_ENV_KEYS = Object.freeze([
@@ -212,10 +259,29 @@ const SUPPORTED_COMMANDS = Object.freeze({
       "--expected-plan-fingerprint",
     ],
     passthroughFlags: ["--arm"],
-    envKeyNames: INSTAGRAM_IDENTITY_ENV_KEY_NAMES,
+    envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
     validateBeforeEnvAccess:
       validatePart2InstagramIdentityBeforeEnvAccess,
+  },
+  "part2-instagram-recovery-execution": {
+    script:
+      PART2_INSTAGRAM_RECOVERY_EXECUTION_RUNNER_PATH,
+    baseArgs: [
+      "--approval",
+      "APPROVE_PART2_INSTAGRAM_RECOVERY_EXECUTION_V1",
+      "--inspection",
+      "INSPECT_PART2_INSTAGRAM_RECOVERY_EVIDENCE_V1",
+    ],
+    passthrough: [
+      ...PART2_INSTAGRAM_RECOVERY_REQUIRED_VALUE_FLAGS,
+      "--expected-execution-preflight-fingerprint",
+    ],
+    passthroughFlags: ["--arm"],
+    envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess:
+      validatePart2InstagramRecoveryBeforeEnvAccess,
   },
 });
 
@@ -504,6 +570,133 @@ function validatePart2InstagramIdentityBeforeEnvAccess(
   return { ok: true };
 }
 
+function lexicalPathInside(rootPath, candidatePath) {
+  const rel = relative(
+    resolve(rootPath).toLowerCase(),
+    resolve(candidatePath).toLowerCase(),
+  );
+  return (
+    rel === "" ||
+    (!rel.startsWith("..") && !isAbsolute(rel))
+  );
+}
+
+function validatePart2InstagramRecoveryBeforeEnvAccess(
+  rawArgs,
+) {
+  if (
+    !Array.isArray(rawArgs) ||
+    rawArgs[0] !==
+      "part2-instagram-recovery-execution"
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_instagram_recovery_command_position_invalid",
+    };
+  }
+  const valueFlags = new Set([
+    "--env-path",
+    ...PART2_INSTAGRAM_RECOVERY_REQUIRED_VALUE_FLAGS,
+    "--expected-execution-preflight-fingerprint",
+  ]);
+  const values = Object.create(null);
+  let armed = false;
+  for (
+    let index = 1;
+    index < rawArgs.length;
+    index += 1
+  ) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) {
+        return {
+          ok: false,
+          reason:
+            "part2_instagram_recovery_duplicate_arm",
+        };
+      }
+      armed = true;
+      continue;
+    }
+    if (
+      !valueFlags.has(token) ||
+      Object.hasOwn(values, token)
+    ) {
+      return {
+        ok: false,
+        reason:
+          "part2_instagram_recovery_unknown_or_duplicate_flag",
+      };
+    }
+    const value = rawArgs[index + 1];
+    if (
+      typeof value !== "string" ||
+      value.length === 0 ||
+      value.startsWith("--")
+    ) {
+      return {
+        ok: false,
+        reason:
+          "part2_instagram_recovery_flag_value_invalid",
+      };
+    }
+    values[token] = value;
+    index += 1;
+  }
+  const recoveryOutDir =
+    values["--recovery-out-dir"] ?? "";
+  const outDir = values["--out-dir"] ?? "";
+  const contentUnit =
+    values["--content-unit"] ?? "";
+  const ledger = values["--ledger"] ?? "";
+  if (
+    !PART2_INSTAGRAM_RECOVERY_REQUIRED_VALUE_FLAGS.every(
+      (flag) => typeof values[flag] === "string",
+    ) ||
+    !PART2_INSTAGRAM_RECOVERY_REQUIRED_PATH_FLAGS.every(
+      (flag) => isAbsolute(values[flag] ?? ""),
+    ) ||
+    (values["--env-path"] !== undefined &&
+      !isAbsolute(values["--env-path"])) ||
+    !PART2_CONTENT_ID_RE.test(
+      values["--expected-content-id"] ?? "",
+    ) ||
+    !INSTAGRAM_NONZERO_ACCOUNT_ID_RE.test(
+      values["--expected-instagram-account-id"] ??
+        "",
+    ) ||
+    !YOUTUBE_CHANNEL_ID_RE.test(
+      values["--expected-youtube-channel-id"] ?? "",
+    ) ||
+    !PART2_INSTAGRAM_RECOVERY_REQUIRED_HASH_FLAGS.every(
+      (flag) => SHA256_RE.test(values[flag] ?? ""),
+    ) ||
+    (armed &&
+      !SHA256_RE.test(
+        values[
+          "--expected-execution-preflight-fingerprint"
+        ] ?? "",
+      )) ||
+    (!armed &&
+      values[
+        "--expected-execution-preflight-fingerprint"
+      ] !== undefined) ||
+    lexicalPathInside(REPO_ROOT, recoveryOutDir) ||
+    lexicalPathInside(outDir, recoveryOutDir) ||
+    lexicalPathInside(recoveryOutDir, outDir) ||
+    lexicalPathInside(recoveryOutDir, contentUnit) ||
+    lexicalPathInside(recoveryOutDir, ledger)
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_instagram_recovery_required_binding_invalid",
+    };
+  }
+  return { ok: true };
+}
+
 /**
  * .env 형식 파일에서 승인된 key만 골라 { KEY: value } 를 만든다.
  * 값은 이 객체 안에만 존재하며, 어디에도 출력/파생/저장하지 않는다.
@@ -597,6 +790,7 @@ function printUsage() {
       "  node scripts/run-owner-command-with-local-env-no-log.mjs youtube-only-part1-recovery --source-publish-dir <dir> --recovery-out-dir <separate-dir> --content-unit <manifest> --owner-resolution <part-1.json> --ledger <ledger.json> --expected-recovery-fingerprint <sha256> --expected-resolution-sha256 <sha256> --expected-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-only-dual-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <part-2 publish dir> --expected-content-id <part-2 id> --expected-manifest-sha256 <sha256> --expected-source-sha256 <sha256> --expected-publication-attempt-fingerprint <sha256> --expected-instagram-account-id <id> --expected-youtube-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-instagram-identity-preflight --content-unit <manifest> --expected-content-id <part-2 id> --expected-manifest-sha256 <sha256> --expected-source-sha256 <sha256> --expected-instagram-account-id <id> [--expected-plan-fingerprint <sha256> --arm]",
+      "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-instagram-recovery-execution --recovery-out-dir <separate-dir> --expected-review-preflight-fingerprint <sha256> --content-unit <manifest> --ledger <ledger.json> --out-dir <part-2 publish dir> --expected-content-id <part-2 id> --expected-instagram-account-id <id> --expected-youtube-channel-id <channel> <all original evidence hash flags> [--expected-execution-preflight-fingerprint <sha256> --arm]",
       "",
       "Commands:",
       "  credential-preflight   inject approved local env keys (no-log) and run the redacted",
@@ -614,6 +808,10 @@ function printUsage() {
       "                         inject ONLY the Instagram account-id/token keys and perform one",
       "                         fixed GET-only account identity check. No publish or local write.",
       "                         Dry-run does not access the env file; --arm requires the exact plan fingerprint.",
+      "  part2-instagram-recovery-execution",
+      "                         inject ONLY the two Instagram keys and run the one-shot",
+      "                         part-2 Instagram-only recovery. No Blob PUT, YouTube, Part 1, DB, or retry.",
+      "                         Dry-run does not access the env file; --arm requires the exact execution preflight fingerprint.",
       "",
       "Notes:",
       "  - Loads ONLY approved key NAMES; credential values are never printed/hashed/measured.",
