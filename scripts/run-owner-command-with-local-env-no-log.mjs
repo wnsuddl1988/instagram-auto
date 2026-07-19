@@ -8,15 +8,15 @@
  * -------
  * The redacted credential-preflight command (`--credential-preflight`) only reports
  * `present:true` for keys that exist in *this* process env. When Codex/Claude run it,
- * the six required keys are `present:false` because that shell does not inherit the
+ * the required keys are `present:false` because that shell does not inherit the
  * Owner's local secret env. This wrapper lets the OWNER — running locally — read only
- * the six approved keys from a local `.env` file (default `.env.local`) and inject them
+ * command-specific approved keys from a local `.env` file (default `.env.local`) and inject them
  * into a child command's process env, WITHOUT ever printing, logging, hashing, storing,
  * or otherwise exposing any credential value.
  *
  * Strict no-log / no-secret-exposure contract
  * --------------------------------------------
- * - Reads ONLY the six allowlisted key names from the env file. Any other line is ignored
+ * - Reads ONLY the selected command's allowlisted key names. Any other line is ignored
  *   (its value is never parsed into a retained variable).
  * - Credential values live ONLY inside the child process `env` object handed to spawnSync.
  *   They are never console.log'd, written to disk, returned, hashed, measured (length),
@@ -25,7 +25,7 @@
  *   (already-redacted) stdout, and non-secret diagnostics.
  * - The parent env is NOT spread into the child (no `{ ...process.env }`). Only a small
  *   whitelist of non-secret OS variables needed to launch node on Windows is inherited
- *   individually, plus the six approved credential keys.
+ *   individually, plus the command-specific approved credential keys.
  * - The child runs with `shell:false` and `process.execPath` (no shell string, no glob).
  *
  * What this file does NOT do
@@ -51,7 +51,12 @@
 
 import { spawnSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname, join } from "node:path";
+import {
+  dirname,
+  isAbsolute,
+  join,
+  resolve,
+} from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SELF = fileURLToPath(import.meta.url);
@@ -59,6 +64,10 @@ const SCRIPTS_DIR = dirname(SELF);
 const REPO_ROOT = resolve(SCRIPTS_DIR, "..");
 const ENTRYPOINT_PATH = join(SCRIPTS_DIR, "run-owner-daily-automation-entrypoint.mjs");
 const FINAL_E2E_RUNNER_PATH = join(SCRIPTS_DIR, "run-final-e2e-dual-platform-publish-once.mjs");
+const YOUTUBE_ONLY_RECOVERY_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-money-shorts-youtube-only-part1-recovery-v1.mjs",
+);
 
 // 승인된 6개 key 이름만 로드한다(그 외 라인의 값은 파싱/보관하지 않는다).
 const APPROVED_ENV_KEY_NAMES = Object.freeze([
@@ -69,6 +78,27 @@ const APPROVED_ENV_KEY_NAMES = Object.freeze([
   "YOUTUBE_REFRESH_TOKEN",
   "BLOB_READ_WRITE_TOKEN",
 ]);
+const YOUTUBE_ONLY_ENV_KEY_NAMES = Object.freeze([
+  "YOUTUBE_CLIENT_ID",
+  "YOUTUBE_CLIENT_SECRET",
+  "YOUTUBE_REFRESH_TOKEN",
+]);
+const YOUTUBE_ONLY_REQUIRED_PATH_FLAGS = Object.freeze([
+  "--source-publish-dir",
+  "--recovery-out-dir",
+  "--content-unit",
+  "--owner-resolution",
+  "--ledger",
+]);
+const YOUTUBE_ONLY_REQUIRED_EVIDENCE_FLAGS =
+  Object.freeze([
+    "--expected-recovery-fingerprint",
+    "--expected-resolution-sha256",
+    "--expected-channel-id",
+  ]);
+const SHA256_RE = /^[a-f0-9]{64}$/;
+const YOUTUBE_CHANNEL_ID_RE =
+  /^UC[A-Za-z0-9_-]{22}$/;
 
 // child node 실행에 필요한 최소 non-secret OS 변수만 개별 상속한다(broad spread 금지).
 const SAFE_CHILD_OS_ENV_KEYS = Object.freeze([
@@ -84,6 +114,7 @@ const SUPPORTED_COMMANDS = Object.freeze({
     baseArgs: ["--credential-preflight"],
     passthrough: ["--content-unit"],
     passthroughFlags: [],
+    envKeyNames: APPROVED_ENV_KEY_NAMES,
   },
   // task: final-e2e-ready-content-unit-and-publish-one-v1
   // 실제 E2E 게시 러너(별도 스크립트)를 승인 토큰과 함께 child로 실행한다. 이 wrapper 자체는
@@ -93,8 +124,120 @@ const SUPPORTED_COMMANDS = Object.freeze({
     baseArgs: ["--approval", "APPROVE_FINAL_E2E_AUTOMATION_PUBLISH_ONE_NEW_CONTENT_UNIT"],
     passthrough: ["--content-unit", "--ledger", "--out-dir"],
     passthroughFlags: ["--arm"],
+    envKeyNames: APPROVED_ENV_KEY_NAMES,
+  },
+  "youtube-only-part1-recovery": {
+    script: YOUTUBE_ONLY_RECOVERY_RUNNER_PATH,
+    baseArgs: [
+      "--approval",
+      "APPROVE_YOUTUBE_ONLY_PART1_RECOVERY_V1",
+    ],
+    passthrough: [
+      "--source-publish-dir",
+      "--recovery-out-dir",
+      "--content-unit",
+      "--owner-resolution",
+      "--ledger",
+      "--expected-recovery-fingerprint",
+      "--expected-resolution-sha256",
+      "--expected-channel-id",
+      "--expected-preflight-fingerprint",
+    ],
+    passthroughFlags: ["--arm"],
+    envKeyNames: YOUTUBE_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess:
+      validateYoutubeOnlyRecoveryBeforeEnvAccess,
   },
 });
+
+function validateYoutubeOnlyRecoveryBeforeEnvAccess(
+  rawArgs,
+) {
+  if (
+    !Array.isArray(rawArgs) ||
+    rawArgs[0] !== "youtube-only-part1-recovery"
+  ) {
+    return {
+      ok: false,
+      reason: "youtube_recovery_command_position_invalid",
+    };
+  }
+  const valueFlags = new Set([
+    "--env-path",
+    ...YOUTUBE_ONLY_REQUIRED_PATH_FLAGS,
+    ...YOUTUBE_ONLY_REQUIRED_EVIDENCE_FLAGS,
+    "--expected-preflight-fingerprint",
+  ]);
+  const values = Object.create(null);
+  let armed = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) {
+        return {
+          ok: false,
+          reason: "youtube_recovery_duplicate_arm",
+        };
+      }
+      armed = true;
+      continue;
+    }
+    if (!valueFlags.has(token) || Object.hasOwn(values, token)) {
+      return {
+        ok: false,
+        reason: "youtube_recovery_unknown_or_duplicate_flag",
+      };
+    }
+    const value = rawArgs[index + 1];
+    if (
+      typeof value !== "string" ||
+      value.length === 0 ||
+      value.startsWith("--")
+    ) {
+      return {
+        ok: false,
+        reason: "youtube_recovery_flag_value_invalid",
+      };
+    }
+    values[token] = value;
+    index += 1;
+  }
+  if (
+    !YOUTUBE_ONLY_REQUIRED_PATH_FLAGS.every(
+      (flag) =>
+        typeof values[flag] === "string" &&
+        isAbsolute(values[flag]),
+    ) ||
+    !YOUTUBE_ONLY_REQUIRED_EVIDENCE_FLAGS.every(
+      (flag) => typeof values[flag] === "string",
+    ) ||
+    !SHA256_RE.test(
+      values["--expected-recovery-fingerprint"] ?? "",
+    ) ||
+    !SHA256_RE.test(
+      values["--expected-resolution-sha256"] ?? "",
+    ) ||
+    !YOUTUBE_CHANNEL_ID_RE.test(
+      values["--expected-channel-id"] ?? "",
+    ) ||
+    (values["--expected-preflight-fingerprint"] !==
+      undefined &&
+      !SHA256_RE.test(
+        values["--expected-preflight-fingerprint"],
+      )) ||
+    (armed &&
+      !SHA256_RE.test(
+        values["--expected-preflight-fingerprint"] ?? "",
+      ))
+  ) {
+    return {
+      ok: false,
+      reason: "youtube_recovery_required_evidence_invalid",
+    };
+  }
+  return { ok: true };
+}
 
 /**
  * .env 형식 파일에서 승인된 key만 골라 { KEY: value } 를 만든다.
@@ -106,10 +249,13 @@ const SUPPORTED_COMMANDS = Object.freeze({
  * 승인 목록에 없는 key는 값을 읽지 않고 건너뛴다.
  * @returns {{ present: Record<string, boolean>, injected: Record<string, string> }}
  */
-function loadApprovedKeysFromEnvFile(envFilePath) {
+function loadApprovedKeysFromEnvFile(
+  envFilePath,
+  approvedEnvKeyNames,
+) {
   const injected = Object.create(null);
   const present = Object.create(null);
-  for (const name of APPROVED_ENV_KEY_NAMES) present[name] = false;
+  for (const name of approvedEnvKeyNames) present[name] = false;
 
   if (!envFilePath || !existsSync(envFilePath)) {
     return { present, injected };
@@ -122,7 +268,7 @@ function loadApprovedKeysFromEnvFile(envFilePath) {
     return { present, injected }; // 읽기 실패 시 값 노출 없이 present=false 유지
   }
 
-  const approved = new Set(APPROVED_ENV_KEY_NAMES);
+  const approved = new Set(approvedEnvKeyNames);
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (trimmed === "" || trimmed.startsWith("#")) continue;
@@ -147,13 +293,16 @@ function loadApprovedKeysFromEnvFile(envFilePath) {
 }
 
 /** sanitized child env: 화이트리스트 OS 변수(개별 상속) + 승인 credential key만. broad spread 없음. */
-function buildSanitizedChildEnv(injected) {
+function buildSanitizedChildEnv(
+  injected,
+  approvedEnvKeyNames,
+) {
   const env = Object.create(null);
   for (const name of SAFE_CHILD_OS_ENV_KEYS) {
     const v = process.env[name];
     if (typeof v === "string") env[name] = v; // non-secret OS 변수만, 개별 상속
   }
-  for (const name of APPROVED_ENV_KEY_NAMES) {
+  for (const name of approvedEnvKeyNames) {
     if (typeof injected[name] === "string") env[name] = injected[name];
   }
   return env;
@@ -180,6 +329,7 @@ function printUsage() {
       "Usage:",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs <command> [--env-path <path>] [--content-unit <path>]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs final-e2e-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <dir> [--arm]",
+      "  node scripts/run-owner-command-with-local-env-no-log.mjs youtube-only-part1-recovery --source-publish-dir <dir> --recovery-out-dir <separate-dir> --content-unit <manifest> --owner-resolution <part-1.json> --ledger <ledger.json> --expected-recovery-fingerprint <sha256> --expected-resolution-sha256 <sha256> --expected-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
       "",
       "Commands:",
       "  credential-preflight   inject approved local env keys (no-log) and run the redacted",
@@ -187,6 +337,9 @@ function printUsage() {
       "  final-e2e-publish      inject approved local env keys (no-log) and run the one-shot final",
       "                         E2E dual-platform publish runner (Blob→Instagram→YouTube→ledger).",
       "                         Without --arm it is preflight-only (zero external calls).",
+      "  youtube-only-part1-recovery",
+      "                         inject ONLY the three YouTube OAuth keys and run the one-shot",
+      "                         part-1 YouTube-only recovery. Instagram/Blob keys are excluded.",
       "",
       "Notes:",
       "  - Loads ONLY approved key NAMES; credential values are never printed/hashed/measured.",
@@ -207,20 +360,55 @@ function main() {
     process.exit(commandName ? 0 : 2);
   }
 
-  const { present, injected } = loadApprovedKeysFromEnvFile(envFile);
+  const command = SUPPORTED_COMMANDS[commandName];
+  const preEnvValidation =
+    typeof command.validateBeforeEnvAccess === "function"
+      ? command.validateBeforeEnvAccess(rawArgs)
+      : { ok: true };
+  if (preEnvValidation.ok !== true) {
+    console.error(
+      `ABORT: ${preEnvValidation.reason}`,
+    );
+    process.exit(2);
+  }
+  const approvedEnvKeyNames = command.envKeyNames;
+  const shouldLoadApprovedCredentials =
+    command.loadEnvInDryRun !== false ||
+    rawArgs.includes("--arm");
+  const { present, injected } =
+    shouldLoadApprovedCredentials
+      ? loadApprovedKeysFromEnvFile(
+          envFile,
+          approvedEnvKeyNames,
+        )
+      : {
+          present: Object.fromEntries(
+            approvedEnvKeyNames.map((name) => [
+              name,
+              false,
+            ]),
+          ),
+          injected: Object.create(null),
+        };
 
   // 진단 출력: key 이름 + present boolean만. 값/길이/prefix/hash 없음.
-  const presentCount = APPROVED_ENV_KEY_NAMES.filter((k) => present[k] === true).length;
+  const presentCount = approvedEnvKeyNames.filter((k) => present[k] === true).length;
   console.log("[owner-env-no-log] injecting approved credential key NAMES into child process env (no values printed).");
-  console.log(`[owner-env-no-log] env file: ${envFile}${existsSync(envFile) ? "" : " (not found — all keys will be present:false)"}`);
-  console.log(`[owner-env-no-log] approved keys present: ${presentCount}/${APPROVED_ENV_KEY_NAMES.length}`);
-  for (const name of APPROVED_ENV_KEY_NAMES) {
+  console.log(
+    shouldLoadApprovedCredentials
+      ? `[owner-env-no-log] env file: ${envFile}${existsSync(envFile) ? "" : " (not found — all keys will be present:false)"}`
+      : "[owner-env-no-log] dry-run: credential env file was not accessed.",
+  );
+  console.log(`[owner-env-no-log] approved keys present: ${presentCount}/${approvedEnvKeyNames.length}`);
+  for (const name of approvedEnvKeyNames) {
     console.log(`  ${name}: ${present[name] === true}`);
   }
   console.log("");
 
-  const childEnv = buildSanitizedChildEnv(injected);
-  const command = SUPPORTED_COMMANDS[commandName];
+  const childEnv = buildSanitizedChildEnv(
+    injected,
+    approvedEnvKeyNames,
+  );
   const childArgs = [command.script, ...command.baseArgs];
   for (const flag of command.passthrough) {
     const v = getFlag(flag);
@@ -239,7 +427,7 @@ function main() {
   });
 
   // 실용적 범위에서 로컬 secret 참조를 정리한다(GC 대상화).
-  for (const name of APPROVED_ENV_KEY_NAMES) {
+  for (const name of approvedEnvKeyNames) {
     if (name in injected) delete injected[name];
     if (name in childEnv) delete childEnv[name];
   }
