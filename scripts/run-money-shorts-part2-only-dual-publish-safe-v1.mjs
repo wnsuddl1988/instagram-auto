@@ -720,6 +720,10 @@ function inspectCurrentContext({ paths, authorization }) {
   }
 }
 
+export {
+  inspectCurrentContext as inspectMoneyShortsPart2DualPublishSafeCurrentContext,
+};
+
 function evidenceAbsent(paths) {
   return (
     !existsSync(paths.claimPath) &&
