@@ -837,7 +837,7 @@ async function executeArmed({
     const result =
       buildMoneyShortsYoutubeOnlyRecoveryResult({
         claim,
-        latestEventSha256,
+        latestEventSha256: latestEvidenceSha256,
         latestTransition,
         status,
         blockerCode,
@@ -1218,7 +1218,7 @@ async function executeArmed({
     const result =
       buildMoneyShortsYoutubeOnlyRecoveryResult({
         claim,
-        latestEventSha256,
+        latestEventSha256: latestEvidenceSha256,
         latestTransition,
         status: "YOUTUBE_ONLY_RECOVERY_OK",
         blockerCode: null,

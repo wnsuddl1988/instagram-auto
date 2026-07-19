@@ -113,6 +113,16 @@ check(
     ),
 );
 check(
+  "operator accepts only byte-identical write-once committed-source sidecars",
+  operator.includes(
+    "committedSourceSha256ByName",
+  ) &&
+    operator.includes(".committed-source") &&
+    operator.includes(
+      "committedSourceFile.sha256 !==\n          expectedCommittedSourceSha256",
+    ),
+);
+check(
   "operator derives ledger evidence and exact record from one snapshot",
     operator.includes(
       "readWizardPublishLedgerSnapshotForUnit",

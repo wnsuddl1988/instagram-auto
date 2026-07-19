@@ -7072,6 +7072,47 @@ function readWizardYoutubeOnlyRecoveryEvidenceBundle(
     "claim.json",
     "result.json",
   ]);
+  const committedSourceSha256ByName =
+    new Map<string, string>();
+  const registerCommittedSource = (
+    canonicalName: string,
+    file: WizardYoutubeOnlyRecoveryEvidenceFile,
+    fingerprintField: string,
+  ) => {
+    if (
+      file.exists !== true ||
+      file.parseOk !== true ||
+      typeof file.sha256 !== "string" ||
+      typeof file.evidence !== "object" ||
+      file.evidence === null ||
+      Array.isArray(file.evidence)
+    ) {
+      return;
+    }
+    const fingerprint = (
+      file.evidence as Record<string, unknown>
+    )[fingerprintField];
+    if (
+      typeof fingerprint !== "string" ||
+      !/^[a-f0-9]{64}$/.test(fingerprint)
+    ) {
+      return;
+    }
+    committedSourceSha256ByName.set(
+      `${canonicalName}.${fingerprint}.committed-source`,
+      file.sha256,
+    );
+  };
+  registerCommittedSource(
+    "claim.json",
+    candidate.claimFile,
+    "claimFingerprint",
+  );
+  registerCommittedSource(
+    "result.json",
+    candidate.resultFile,
+    "resultFingerprint",
+  );
   const eventFiles: WizardYoutubeOnlyRecoveryEvidenceBundle["eventFiles"] =
     [];
   for (
@@ -7096,6 +7137,11 @@ function readWizardYoutubeOnlyRecoveryEvidenceBundle(
     const file =
       readWizardYoutubeOnlyRecoveryEvidenceFile(eventPath);
     if (file.exists) {
+      registerCommittedSource(
+        `${String(index + 1).padStart(2, "0")}-${transition}.json`,
+        file,
+        "eventFingerprint",
+      );
       eventFiles.push({
         transition,
         ...file,
@@ -7124,9 +7170,27 @@ function readWizardYoutubeOnlyRecoveryEvidenceBundle(
       paths.recoveryDir,
       { withFileTypes: true },
     )) {
+      if (!entry.isFile()) {
+        unknownFileCount += 1;
+        continue;
+      }
+      if (expectedNames.has(entry.name)) {
+        continue;
+      }
+      const expectedCommittedSourceSha256 =
+        committedSourceSha256ByName.get(entry.name);
+      if (!expectedCommittedSourceSha256) {
+        unknownFileCount += 1;
+        continue;
+      }
+      const committedSourceFile =
+        readWizardYoutubeOnlyRecoveryEvidenceFile(
+          join(paths.recoveryDir, entry.name),
+        );
       if (
-        !entry.isFile() ||
-        !expectedNames.has(entry.name)
+        committedSourceFile.parseOk !== true ||
+        committedSourceFile.sha256 !==
+          expectedCommittedSourceSha256
       ) {
         unknownFileCount += 1;
       }

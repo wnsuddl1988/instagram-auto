@@ -1149,6 +1149,14 @@ check(
       ),
 );
 check(
+  "result builders bind the latest durable event file SHA",
+  (
+    runnerSource.match(
+      /latestEventSha256:\s*latestEvidenceSha256/gu,
+    ) ?? []
+  ).length === 2,
+);
+check(
   "wrapper command uses exact three-key YouTube allowlist",
   wrapperSource.includes(
     '"youtube-only-part1-recovery"',
