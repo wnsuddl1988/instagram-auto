@@ -68,6 +68,10 @@ const YOUTUBE_ONLY_RECOVERY_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-money-shorts-youtube-only-part1-recovery-v1.mjs",
 );
+const PART2_DUAL_PUBLISH_SAFE_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-money-shorts-part2-only-dual-publish-safe-v1.mjs",
+);
 
 // 승인된 6개 key 이름만 로드한다(그 외 라인의 값은 파싱/보관하지 않는다).
 const APPROVED_ENV_KEY_NAMES = Object.freeze([
@@ -96,9 +100,24 @@ const YOUTUBE_ONLY_REQUIRED_EVIDENCE_FLAGS =
     "--expected-resolution-sha256",
     "--expected-channel-id",
   ]);
+const PART2_DUAL_SAFE_REQUIRED_PATH_FLAGS = Object.freeze([
+  "--content-unit",
+  "--ledger",
+  "--out-dir",
+]);
+const PART2_DUAL_SAFE_REQUIRED_EVIDENCE_FLAGS =
+  Object.freeze([
+    "--expected-content-id",
+    "--expected-manifest-sha256",
+    "--expected-source-sha256",
+    "--expected-publication-attempt-fingerprint",
+    "--expected-instagram-account-id",
+    "--expected-youtube-channel-id",
+  ]);
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const YOUTUBE_CHANNEL_ID_RE =
   /^UC[A-Za-z0-9_-]{22}$/;
+const INSTAGRAM_ACCOUNT_ID_RE = /^[0-9]{5,32}$/;
 
 // child node 실행에 필요한 최소 non-secret OS 변수만 개별 상속한다(broad spread 금지).
 const SAFE_CHILD_OS_ENV_KEYS = Object.freeze([
@@ -148,6 +167,23 @@ const SUPPORTED_COMMANDS = Object.freeze({
     loadEnvInDryRun: false,
     validateBeforeEnvAccess:
       validateYoutubeOnlyRecoveryBeforeEnvAccess,
+  },
+  "part2-only-dual-publish": {
+    script: PART2_DUAL_PUBLISH_SAFE_RUNNER_PATH,
+    baseArgs: [
+      "--approval",
+      "APPROVE_MONEY_SHORTS_PART2_DUAL_PLATFORM_PUBLISH_SAFE_V1",
+    ],
+    passthrough: [
+      ...PART2_DUAL_SAFE_REQUIRED_PATH_FLAGS,
+      ...PART2_DUAL_SAFE_REQUIRED_EVIDENCE_FLAGS,
+      "--expected-preflight-fingerprint",
+    ],
+    passthroughFlags: ["--arm"],
+    envKeyNames: APPROVED_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess:
+      validatePart2DualPublishBeforeEnvAccess,
   },
 });
 
@@ -234,6 +270,109 @@ function validateYoutubeOnlyRecoveryBeforeEnvAccess(
     return {
       ok: false,
       reason: "youtube_recovery_required_evidence_invalid",
+    };
+  }
+  return { ok: true };
+}
+
+function validatePart2DualPublishBeforeEnvAccess(rawArgs) {
+  if (
+    !Array.isArray(rawArgs) ||
+    rawArgs[0] !== "part2-only-dual-publish"
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_dual_safe_command_position_invalid",
+    };
+  }
+  const valueFlags = new Set([
+    "--env-path",
+    ...PART2_DUAL_SAFE_REQUIRED_PATH_FLAGS,
+    ...PART2_DUAL_SAFE_REQUIRED_EVIDENCE_FLAGS,
+    "--expected-preflight-fingerprint",
+  ]);
+  const values = Object.create(null);
+  let armed = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) {
+        return {
+          ok: false,
+          reason: "part2_dual_safe_duplicate_arm",
+        };
+      }
+      armed = true;
+      continue;
+    }
+    if (
+      !valueFlags.has(token) ||
+      Object.hasOwn(values, token)
+    ) {
+      return {
+        ok: false,
+        reason:
+          "part2_dual_safe_unknown_or_duplicate_flag",
+      };
+    }
+    const value = rawArgs[index + 1];
+    if (
+      typeof value !== "string" ||
+      value.length === 0 ||
+      value.startsWith("--")
+    ) {
+      return {
+        ok: false,
+        reason: "part2_dual_safe_flag_value_invalid",
+      };
+    }
+    values[token] = value;
+    index += 1;
+  }
+  const contentId =
+    values["--expected-content-id"] ?? "";
+  if (
+    !PART2_DUAL_SAFE_REQUIRED_PATH_FLAGS.every(
+      (flag) =>
+        typeof values[flag] === "string" &&
+        isAbsolute(values[flag]),
+    ) ||
+    !PART2_DUAL_SAFE_REQUIRED_EVIDENCE_FLAGS.every(
+      (flag) => typeof values[flag] === "string",
+    ) ||
+    !contentId.endsWith("-part-2") ||
+    !SHA256_RE.test(
+      values["--expected-manifest-sha256"] ?? "",
+    ) ||
+    !SHA256_RE.test(
+      values["--expected-source-sha256"] ?? "",
+    ) ||
+    !SHA256_RE.test(
+      values[
+        "--expected-publication-attempt-fingerprint"
+      ] ?? "",
+    ) ||
+    !INSTAGRAM_ACCOUNT_ID_RE.test(
+      values["--expected-instagram-account-id"] ?? "",
+    ) ||
+    !YOUTUBE_CHANNEL_ID_RE.test(
+      values["--expected-youtube-channel-id"] ?? "",
+    ) ||
+    (values["--expected-preflight-fingerprint"] !==
+      undefined &&
+      !SHA256_RE.test(
+        values["--expected-preflight-fingerprint"],
+      )) ||
+    (armed &&
+      !SHA256_RE.test(
+        values["--expected-preflight-fingerprint"] ?? "",
+      ))
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_dual_safe_required_evidence_invalid",
     };
   }
   return { ok: true };
@@ -330,6 +469,7 @@ function printUsage() {
       "  node scripts/run-owner-command-with-local-env-no-log.mjs <command> [--env-path <path>] [--content-unit <path>]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs final-e2e-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <dir> [--arm]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs youtube-only-part1-recovery --source-publish-dir <dir> --recovery-out-dir <separate-dir> --content-unit <manifest> --owner-resolution <part-1.json> --ledger <ledger.json> --expected-recovery-fingerprint <sha256> --expected-resolution-sha256 <sha256> --expected-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
+      "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-only-dual-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <part-2 publish dir> --expected-content-id <part-2 id> --expected-manifest-sha256 <sha256> --expected-source-sha256 <sha256> --expected-publication-attempt-fingerprint <sha256> --expected-instagram-account-id <id> --expected-youtube-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
       "",
       "Commands:",
       "  credential-preflight   inject approved local env keys (no-log) and run the redacted",
@@ -340,6 +480,9 @@ function printUsage() {
       "  youtube-only-part1-recovery",
       "                         inject ONLY the three YouTube OAuth keys and run the one-shot",
       "                         part-1 YouTube-only recovery. Instagram/Blob keys are excluded.",
+      "  part2-only-dual-publish",
+      "                         run the dedicated part-2-only dual publish safety gate.",
+      "                         Dry-run does not access the env file; --arm requires the exact preflight fingerprint.",
       "",
       "Notes:",
       "  - Loads ONLY approved key NAMES; credential values are never printed/hashed/measured.",

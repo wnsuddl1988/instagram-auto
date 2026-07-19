@@ -2618,7 +2618,8 @@ export async function POST(request: Request) {
     };
     if (
       typeof b.topicId !== "string" ||
-      b.productionPartId !== "part-1" ||
+      (b.productionPartId !== "part-1" &&
+        b.productionPartId !== "part-2") ||
       typeof b.expectedRecoveryFingerprint !== "string" ||
       !/^[a-f0-9]{64}$/.test(
         b.expectedRecoveryFingerprint,
@@ -2685,9 +2686,9 @@ export async function POST(request: Request) {
         ? "동일한 Owner 부분 게시 대조 증거가 이미 기록되어 있습니다."
         : "Instagram 게시·YouTube 미게시 Owner 대조 증거를 현재 결과에 고정했습니다.",
       detail:
-        "일반 양쪽 업로드와 Instagram 재게시, 2편 게시를 계속 차단합니다. YouTube-only 복구 후보만 표시하며 실제 복구는 실행하지 않았습니다.",
+        "일반 양쪽 업로드와 Instagram 재게시를 계속 차단합니다. 해당 편의 YouTube-only 복구 후보만 표시하며 실제 복구는 실행하지 않았습니다.",
       raw: {
-        partId: "part-1",
+        partId: b.productionPartId,
         recoveryState: resolved.recovery.state,
         recoveryReason: resolved.recovery.reason,
         recoverablePlatformCandidate:
@@ -2870,12 +2871,14 @@ export async function POST(request: Request) {
       }
       const upBlocker =
         (runUp.exitCode !== 0 ? extractRunnerBlocker(runUp.stdout, runUp.stderr) : null) ?? result?.blockerCode ?? null;
-      const partial = runUp.exitCode !== 0 && result?.partialExternalState === "instagram_published_youtube_failed";
+      const partial =
+        recovery.reason ===
+        "youtube_publish_outcome_unknown";
       return json({
         action,
         status: "blocked",
         summary: partial
-          ? `${entry.unit.partNumber}편은 인스타그램에 게시됐지만 유튜브 업로드가 실패했습니다. 직접 확인이 필요합니다.`
+          ? `${entry.unit.partNumber}편은 Instagram 게시가 확인됐지만 YouTube 게시 결과를 확정할 수 없습니다. 계정에서 직접 확인이 필요합니다.`
           : describeUploadBlocker(upBlocker, `${entry.unit.partNumber}편 업로드가 실행됐지만 완료되지 않았습니다.`),
         blockerCode: upBlocker ?? "UPLOAD_FAILED",
         raw: {

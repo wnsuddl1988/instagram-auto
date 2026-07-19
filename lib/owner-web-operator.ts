@@ -6851,7 +6851,11 @@ function wizardPublishOwnerReconciliationPath(
   productionPartId: "single" | "part-1" | "part-2",
 ): string | null {
   const slug = toSafeTopicSlug(topicId);
-  if (!slug || productionPartId !== "part-1") {
+  if (
+    !slug ||
+    (productionPartId !== "part-1" &&
+      productionPartId !== "part-2")
+  ) {
     return null;
   }
   return join(
@@ -7987,7 +7991,8 @@ export function resolveWizardPublishOwnerReconciliation(input: {
   youtubeChannelId: string;
 }): WizardPublishOwnerReconciliationResolveResult {
   if (
-    input.productionPartId !== "part-1" ||
+    (input.productionPartId !== "part-1" &&
+      input.productionPartId !== "part-2") ||
     !toSafeTopicSlug(input.topicId)
   ) {
     return {

@@ -367,6 +367,16 @@ resultArtifactBinding = {
   ...currentPreflightBinding,
   publicationAttemptFingerprint,
 };
+
+// part-2는 계정/채널 identity와 retry-off가 승인 fingerprint에 결속되는
+// 전용 runner만 허용한다. generic armed 경로는 현재 part-1 완료 증거를
+// 우회하거나 안전 계약 없이 part-2를 직접 게시할 수 없도록 fail-closed다.
+if (armed && productionPartId === "part-2") {
+  bail("BLOCKED", "PART2_SAFE_RUNNER_REQUIRED", {
+    ownerRunHint:
+      "Use part2-only-dual-publish through the Owner no-log wrapper after its dedicated preflight.",
+  });
+}
 console.log(`  [gate 6] IG source: ${igSourceSize} bytes, sha256_12=${igSha256.slice(0, 12)}`);
 console.log(`           YT source: ${ytSourceSize} bytes, sha256_12=${ytSha256.slice(0, 12)}`);
 console.log(`           blob pathname: ${blobPathname}`);
@@ -762,6 +772,8 @@ try {
       mimeType: "video/mp4",
       body: Readable.from(ytSourceBuffer),
     },
+  }, {
+    retry: false,
   });
   if (!resp?.data?.id) {
     executionResult.youtube.status = "failed";

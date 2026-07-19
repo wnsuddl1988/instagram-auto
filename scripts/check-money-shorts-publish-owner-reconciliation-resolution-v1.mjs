@@ -336,6 +336,125 @@ check(
     built.evidence?.safety.part2PublishAllowed === false &&
     built.evidence?.safety.externalActionCount === 0,
 );
+
+const PART2_BINDING = Object.freeze({
+  ...CURRENT_BINDING,
+  contentId: `wizard-${TOPIC_SLUG}-part-2`,
+  productionPartId: "part-2",
+});
+const part2ResultEvidence = {
+  ...makeResultEvidence(),
+  contentId: PART2_BINDING.contentId,
+  wizardProductionPartId:
+    PART2_BINDING.productionPartId,
+  publicationAttemptFingerprint:
+    fingerprintMoneyShortsPublishAttemptBinding(
+      PART2_BINDING,
+    ),
+};
+const part2AttemptFile = {
+  ...makeAttemptFile(),
+  evidence: {
+    ...makeAttemptFile().evidence,
+    publicationAttemptFingerprint:
+      fingerprintMoneyShortsPublishAttemptBinding(
+        PART2_BINDING,
+      ),
+    binding: { ...PART2_BINDING },
+  },
+};
+const part2Unresolved =
+  classifyMoneyShortsPublishRecovery({
+    resultFile: {
+      exists: true,
+      parseOk: true,
+      sha256: RESULT_SHA,
+      evidence: part2ResultEvidence,
+    },
+    attemptFile: part2AttemptFile,
+    attemptEvidence: makeAttemptEvidence(),
+    currentBinding: PART2_BINDING,
+    ledgerEvidence: makeLedger(),
+  });
+const part2Built =
+  buildMoneyShortsPublishOwnerReconciliationEvidence({
+    topicId: TOPIC_ID,
+    productionPartId: "part-2",
+    recovery: part2Unresolved,
+    attemptEvidence: makeAttemptEvidence(),
+    decision:
+      MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_DECISION,
+    confirmation:
+      MONEY_SHORTS_PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT,
+    confirmInstagramPublished: true,
+    confirmYoutubeNotPublished: true,
+    instagramPermalink: INSTAGRAM_PERMALINK,
+    youtubeChannelId: YOUTUBE_CHANNEL_ID,
+    checkedAtIso: "2026-07-19T00:02:00.000Z",
+  });
+const part2ResolutionBytes = part2Built.ok
+  ? `${JSON.stringify(part2Built.evidence, null, 2)}\n`
+  : "";
+const part2Resolved =
+  classifyMoneyShortsPublishRecovery({
+    resultFile: {
+      exists: true,
+      parseOk: true,
+      sha256: RESULT_SHA,
+      evidence: part2ResultEvidence,
+    },
+    attemptFile: part2AttemptFile,
+    attemptEvidence: makeAttemptEvidence(),
+    ownerResolutionFile: {
+      exists: part2Built.ok === true,
+      parseOk: part2Built.ok === true,
+      sha256:
+        part2Built.ok === true
+          ? hash(part2ResolutionBytes)
+          : null,
+      evidence:
+        part2Built.ok === true
+          ? part2Built.evidence
+          : null,
+    },
+    currentBinding: PART2_BINDING,
+    ledgerEvidence: makeLedger(),
+  });
+check(
+  "part-2 partial result supports the same local-only Owner reconciliation overlay",
+  part2Unresolved.state === "ambiguous" &&
+    part2Unresolved.reason ===
+      "youtube_publish_outcome_unknown" &&
+    part2Built.ok === true &&
+    part2Built.evidence?.productionPartId === "part-2" &&
+    part2Built.evidence?.currentBinding.contentId ===
+      PART2_BINDING.contentId &&
+    part2Resolved.state === "instagram_only" &&
+    part2Resolved.recoverablePlatformCandidate ===
+      "youtube_shorts" &&
+    part2Resolved.ownerResolution.applied === true &&
+    part2Resolved.externalRecoveryEnabled === false &&
+    part2Resolved.automaticRetryAllowed === false &&
+    part2Resolved.safety.youtubePublishAllowed === false &&
+    part2Resolved.safety.ledgerMutationAllowed === false &&
+    part2Built.evidence?.safety.externalActionCount === 0,
+  `${part2Unresolved.state}/${part2Resolved.state}`,
+);
+const crossPartValidation =
+  validateMoneyShortsPublishOwnerReconciliationEvidence({
+    evidence: built.evidence,
+    fileSha256: resolutionFile.sha256,
+    currentBinding: PART2_BINDING,
+    resultSha256: RESULT_SHA,
+    attemptEvidence: makeAttemptEvidence(),
+    instagramMediaId: INSTAGRAM_MEDIA_ID,
+    expectedSourceRecoveryFingerprint:
+      part2Unresolved.recoveryFingerprint,
+  });
+check(
+  "part-1 resolution evidence cannot be applied to part-2",
+  crossPartValidation.valid === false,
+);
 check(
   "original result and attempt evidence remain immutable",
   makeResultEvidence().executionResult.youtube.outcome ===
@@ -465,8 +584,8 @@ for (const [label, overrides] of [
     { confirmation: "확인" },
   ],
   [
-    "part-2 request",
-    { productionPartId: "part-2" },
+    "single request",
+    { productionPartId: "single" },
   ],
   [
     "invalid attempt journal",
@@ -770,6 +889,19 @@ check(
       "resolveWizardPublishOwnerReconciliation",
     ),
 );
+check(
+  "contract, path, resolver, route, and response preserve exact part-2 identity",
+  sources.contract.includes(
+    "RECONCILIABLE_PART_IDS",
+  ) &&
+    /productionPartId !== "part-1"[\s\S]*productionPartId !== "part-2"/.test(
+      sources.helper,
+    ) &&
+    /b\.productionPartId !== "part-1"[\s\S]*b\.productionPartId !== "part-2"/.test(
+      routeBlock,
+    ) &&
+    routeBlock.includes("partId: b.productionPartId"),
+);
 const resolverWriteFailureBlock = sources.helper.slice(
   sources.helper.indexOf(
     "const written =\n    writeMoneyShortsPublishOwnerReconciliationOnce",
@@ -795,9 +927,15 @@ check(
     ),
 );
 check(
-  "UI exposes the mutation only for the exact part-1 ambiguous incident",
+  "UI exposes the local-only resolution for exact part-1 or part-2 ambiguous incidents",
   sources.wizard.includes(
-    'recovery.partId === "part-1"',
+    "isOwnerReconciliationPart(recovery.partId)",
+  ) &&
+    /partId === "part-1" \|\| partId === "part-2"/.test(
+      sources.wizard,
+    ) &&
+    sources.wizard.includes(
+      "productionPartId: recovery.partId",
   ) &&
     sources.wizard.includes(
       'recovery.state === "ambiguous"',

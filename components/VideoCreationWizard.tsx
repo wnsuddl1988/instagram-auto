@@ -1145,6 +1145,12 @@ const PUBLISH_OWNER_RECONCILIATION_DECISION =
 const PUBLISH_OWNER_RECONCILIATION_CONFIRM_TEXT =
   "유튜브 미게시 확인";
 
+function isOwnerReconciliationPart(
+  partId: WizardPublishRecoveryState["partId"],
+): partId is "part-1" | "part-2" {
+  return partId === "part-1" || partId === "part-2";
+}
+
 function PublishOwnerReconciliationForm({
   topicId,
   recovery,
@@ -1175,7 +1181,7 @@ function PublishOwnerReconciliationForm({
   const ready =
     !disabled &&
     !running &&
-    recovery.partId === "part-1" &&
+    isOwnerReconciliationPart(recovery.partId) &&
     recovery.state === "ambiguous" &&
     recovery.reason === "youtube_publish_outcome_unknown" &&
     recovery.instagramMediaId != null &&
@@ -1199,7 +1205,7 @@ function PublishOwnerReconciliationForm({
         "publishOwnerReconciliationResolve",
         {
           topicId,
-          productionPartId: "part-1",
+          productionPartId: recovery.partId,
           expectedRecoveryFingerprint:
             recovery.recoveryFingerprint,
           decision: PUBLISH_OWNER_RECONCILIATION_DECISION,
@@ -1278,7 +1284,7 @@ function PublishOwnerReconciliationForm({
           disabled={disabled || running}
           className="mt-0.5"
         />
-        위 Instagram 주소에서 현재 1편 게시물을 직접 확인했습니다.
+        위 Instagram 주소에서 해당 편 게시물을 직접 확인했습니다.
       </label>
       <label className="mt-2 flex items-start gap-2 text-xs text-slate-700">
         <input
@@ -1516,7 +1522,7 @@ function PublishRecoveryEvidence({
                   </p>
                 </div>
               ) : null}
-              {recovery.partId === "part-1" &&
+              {isOwnerReconciliationPart(recovery.partId) &&
               recovery.state === "ambiguous" &&
               recovery.reason ===
                 "youtube_publish_outcome_unknown" &&
