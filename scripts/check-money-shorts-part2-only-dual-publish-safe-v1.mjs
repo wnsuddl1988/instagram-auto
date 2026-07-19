@@ -38,6 +38,7 @@ import {
   writePublishLedgerRuntime,
 } from "../lib/publish-ledger-runtime-write.mjs";
 import {
+  createMoneyShortsInstagramContainerOnce,
   inspectSafeEvidenceDirectory,
   readLedgerSnapshot,
   runMoneyShortsPart2DualPublishSafe,
@@ -60,6 +61,22 @@ function check(label, condition, detail = "") {
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function evidenceFingerprintMatches(
+  evidence,
+  field = "resultFingerprint",
+) {
+  if (
+    typeof evidence?.[field] !== "string" ||
+    !SHA256_RE.test(evidence[field])
+  ) {
+    return false;
+  }
+  const stable = structuredClone(evidence);
+  const actual = stable[field];
+  delete stable[field];
+  return actual === sha256(JSON.stringify(stable));
 }
 
 const expectedInstagramAccountId = "17841400000000001";
@@ -368,10 +385,13 @@ function createFixture(label) {
   };
 }
 
-function fakeEnv(instagramId = expectedInstagramAccountId) {
+function fakeEnv(
+  instagramId = expectedInstagramAccountId,
+  instagramAccessToken = "fake-instagram-token",
+) {
   return {
     INSTAGRAM_BUSINESS_ACCOUNT_ID: instagramId,
-    INSTAGRAM_ACCESS_TOKEN: "fake-instagram-token",
+    INSTAGRAM_ACCESS_TOKEN: instagramAccessToken,
     YOUTUBE_CLIENT_ID: "fake-youtube-client",
     YOUTUBE_CLIENT_SECRET: "fake-youtube-secret",
     YOUTUBE_REFRESH_TOKEN: "fake-youtube-refresh",
@@ -411,11 +431,31 @@ function successfulAdapters(calls, overrides = {}) {
         headers: { get: () => "video/mp4" },
       };
     },
-    async createInstagramContainer() {
+    async createInstagramContainer(input) {
       calls.push("createInstagramContainer");
+      if (
+        typeof overrides.instagramContainer === "function"
+      ) {
+        return overrides.instagramContainer(input);
+      }
       return {
-        ok: true,
-        containerId: "17900000000000001",
+        ...(overrides.instagramContainer ?? {
+          ok: true,
+          containerId: "17900000000000001",
+          diagnostic: {
+            responseReceived: true,
+            httpStatus: 200,
+            responseOk: true,
+            jsonParsed: true,
+            containerIdPresent: true,
+            providerError: {
+              code: null,
+              errorSubcode: null,
+              type: null,
+              isTransient: null,
+            },
+          },
+        }),
       };
     },
     async readInstagramContainer() {
@@ -483,6 +523,196 @@ const invalidRun =
 check(
   "authorization fails before filesystem/env/network",
   invalidRun.ok === false && invalidEnvReadCount === 0,
+);
+
+const diagnosticTokenSentinel =
+  "DIAGNOSTIC_TOKEN_MUST_NOT_PERSIST";
+const diagnosticMessageSentinel =
+  "DIAGNOSTIC_RAW_MESSAGE_MUST_NOT_PERSIST";
+const diagnosticParseSentinel =
+  "DIAGNOSTIC_PARSE_ERROR_MUST_NOT_PERSIST";
+
+async function invokeContainerSeam({
+  status,
+  ok,
+  payload,
+  jsonErrorMessage = null,
+}) {
+  const calls = [];
+  const result =
+    await createMoneyShortsInstagramContainerOnce({
+      accountId: expectedInstagramAccountId,
+      accessToken: diagnosticTokenSentinel,
+      videoUrl: "https://blob.example/part2.mp4",
+      caption: "safe fixture caption",
+      shareToFeed: true,
+      fetchImpl: async (url, init) => {
+        calls.push({ url, init });
+        return {
+          status,
+          ok,
+          async json() {
+            if (jsonErrorMessage) {
+              throw new Error(jsonErrorMessage);
+            }
+            return payload;
+          },
+        };
+      },
+    });
+  return { calls, result };
+}
+
+const graphErrorSeam = await invokeContainerSeam({
+  status: 400,
+  ok: false,
+  payload: {
+    error: {
+      code: 190,
+      error_subcode: 463,
+      type: "OAuthException",
+      is_transient: false,
+      message: diagnosticMessageSentinel,
+      fbtrace_id: diagnosticTokenSentinel,
+    },
+  },
+});
+const successNoIdSeam = await invokeContainerSeam({
+  status: 200,
+  ok: true,
+  payload: {
+    success: true,
+    access_token: diagnosticTokenSentinel,
+  },
+});
+const invalidJsonSeam = await invokeContainerSeam({
+  status: 200,
+  ok: true,
+  payload: null,
+  jsonErrorMessage: diagnosticParseSentinel,
+});
+const invalidIdSeam = await invokeContainerSeam({
+  status: 200,
+  ok: true,
+  payload: {
+    id: diagnosticTokenSentinel,
+  },
+});
+const validIdSeam = await invokeContainerSeam({
+  status: 200,
+  ok: true,
+  payload: {
+    id: "17900000000000001",
+    access_token: diagnosticTokenSentinel,
+  },
+});
+
+check(
+  "container seam preserves only structured Graph error diagnostics",
+  graphErrorSeam.result.ok === false &&
+    graphErrorSeam.result.containerId === null &&
+    graphErrorSeam.result.diagnostic?.httpStatus === 400 &&
+    graphErrorSeam.result.diagnostic?.responseOk === false &&
+    graphErrorSeam.result.diagnostic?.jsonParsed === true &&
+    graphErrorSeam.result.diagnostic?.containerIdPresent ===
+      false &&
+    graphErrorSeam.result.diagnostic?.providerError?.code ===
+      190 &&
+    graphErrorSeam.result.diagnostic?.providerError
+      ?.errorSubcode === 463 &&
+    graphErrorSeam.result.diagnostic?.providerError?.type ===
+      "OAuthException" &&
+    graphErrorSeam.result.diagnostic?.providerError
+      ?.isTransient === false,
+);
+check(
+  "container seam distinguishes HTTP 200 without an id",
+  successNoIdSeam.result.ok === false &&
+    successNoIdSeam.result.containerId === null &&
+    successNoIdSeam.result.diagnostic?.httpStatus === 200 &&
+    successNoIdSeam.result.diagnostic?.responseOk === true &&
+    successNoIdSeam.result.diagnostic?.jsonParsed === true &&
+    successNoIdSeam.result.diagnostic
+      ?.containerIdPresent === false,
+);
+check(
+  "container seam distinguishes a received non-JSON response",
+  invalidJsonSeam.result.ok === false &&
+    invalidJsonSeam.result.containerId === null &&
+    invalidJsonSeam.result.diagnostic?.httpStatus === 200 &&
+    invalidJsonSeam.result.diagnostic?.responseOk === true &&
+    invalidJsonSeam.result.diagnostic?.jsonParsed === false &&
+    invalidJsonSeam.result.diagnostic
+      ?.containerIdPresent === false,
+);
+check(
+  "container seam rejects a token-shaped provider id",
+  invalidIdSeam.result.ok === false &&
+    invalidIdSeam.result.containerId === null &&
+    invalidIdSeam.result.diagnostic?.httpStatus === 200 &&
+    invalidIdSeam.result.diagnostic?.responseOk === true &&
+    invalidIdSeam.result.diagnostic?.jsonParsed === true &&
+    invalidIdSeam.result.diagnostic?.containerIdPresent ===
+      true &&
+    !JSON.stringify(invalidIdSeam.result).includes(
+      diagnosticTokenSentinel,
+    ),
+);
+check(
+  "container seam accepts only a valid public container id",
+  validIdSeam.result.ok === true &&
+    validIdSeam.result.containerId ===
+      "17900000000000001" &&
+    validIdSeam.result.diagnostic?.containerIdPresent ===
+      true,
+);
+const seamRuns = [
+  graphErrorSeam,
+  successNoIdSeam,
+  invalidJsonSeam,
+  invalidIdSeam,
+  validIdSeam,
+];
+check(
+  "container seam keeps the exact one-POST v25 request surface",
+  seamRuns.every(({ calls }) => {
+    if (calls.length !== 1) return false;
+    const [{ url, init }] = calls;
+    return (
+      url ===
+        `https://graph.facebook.com/v25.0/${expectedInstagramAccountId}/media` &&
+      init.method === "POST" &&
+      init.redirect === "error" &&
+      init.headers?.Authorization ===
+        `Bearer ${diagnosticTokenSentinel}` &&
+      init.headers?.["Content-Type"] ===
+        "application/x-www-form-urlencoded" &&
+      init.body?.get("media_type") === "REELS" &&
+      init.body?.get("video_url") ===
+        "https://blob.example/part2.mp4" &&
+      init.body?.get("caption") ===
+        "safe fixture caption" &&
+      init.body?.get("share_to_feed") === "true" &&
+      !url.includes(diagnosticTokenSentinel) &&
+      !String(init.body).includes(
+        diagnosticTokenSentinel,
+      ) &&
+      !String(init.body).includes("access_token")
+    );
+  }),
+);
+check(
+  "container seam returns no token, raw message, trace, or parse error",
+  seamRuns.every(({ result }) => {
+    const serialized = JSON.stringify(result);
+    return (
+      !serialized.includes(diagnosticTokenSentinel) &&
+      !serialized.includes(diagnosticMessageSentinel) &&
+      !serialized.includes(diagnosticParseSentinel) &&
+      !serialized.includes("fbtrace_id") &&
+      !serialized.includes("message")
+    );
+  }),
 );
 
 const roots = [];
@@ -769,6 +999,274 @@ try {
       safeResultEvidence.latestEventSha256 ===
         previousSafeEvidenceSha256,
   );
+
+  const containerFailureScenarios = [
+    {
+      label: "container-graph-400",
+      status: 400,
+      ok: false,
+      payload: {
+        error: {
+          code: 190,
+          error_subcode: 463,
+          type: "OAuthException",
+          is_transient: false,
+          message: diagnosticMessageSentinel,
+          fbtrace_id: diagnosticTokenSentinel,
+        },
+      },
+      jsonErrorMessage: null,
+      expectedDiagnostic: graphErrorSeam.result.diagnostic,
+    },
+    {
+      label: "container-success-no-id",
+      status: 200,
+      ok: true,
+      payload: {
+        success: true,
+        raw: diagnosticMessageSentinel,
+      },
+      jsonErrorMessage: null,
+      expectedDiagnostic:
+        successNoIdSeam.result.diagnostic,
+    },
+    {
+      label: "container-invalid-json",
+      status: 200,
+      ok: true,
+      payload: null,
+      jsonErrorMessage: diagnosticParseSentinel,
+      expectedDiagnostic:
+        invalidJsonSeam.result.diagnostic,
+    },
+    {
+      label: "container-token-shaped-id",
+      status: 200,
+      ok: true,
+      payload: {
+        id: diagnosticTokenSentinel,
+      },
+      jsonErrorMessage: null,
+      expectedDiagnostic:
+        invalidIdSeam.result.diagnostic,
+    },
+  ];
+  for (const scenario of containerFailureScenarios) {
+    const fixture = createFixture(scenario.label);
+    roots.push(fixture.root);
+    const dry =
+      await runMoneyShortsPart2DualPublishSafe({
+        argv: fixture.baseArgs,
+      });
+    const orchestrationCalls = [];
+    const containerFetchCalls = [];
+    let ledgerWriterCalls = 0;
+    const failure =
+      await runMoneyShortsPart2DualPublishSafe({
+        argv: [
+          ...fixture.baseArgs,
+          "--expected-preflight-fingerprint",
+          dry.preflightFingerprint,
+          "--arm",
+        ],
+        envProvider: () =>
+          fakeEnv(
+            expectedInstagramAccountId,
+            diagnosticTokenSentinel,
+          ),
+        adapterFactory: async ({
+          credentials,
+          expectedInstagramAccountId:
+            boundInstagramAccountId,
+        }) =>
+          successfulAdapters(orchestrationCalls, {
+            instagramContainer: async ({
+              videoUrl,
+              caption,
+              shareToFeed,
+            }) =>
+              createMoneyShortsInstagramContainerOnce({
+                accountId: boundInstagramAccountId,
+                accessToken:
+                  credentials.INSTAGRAM_ACCESS_TOKEN,
+                videoUrl,
+                caption,
+                shareToFeed,
+                fetchImpl: async (url, init) => {
+                  containerFetchCalls.push({
+                    url,
+                    init,
+                  });
+                  return {
+                    status: scenario.status,
+                    ok: scenario.ok,
+                    async json() {
+                      if (scenario.jsonErrorMessage) {
+                        throw new Error(
+                          scenario.jsonErrorMessage,
+                        );
+                      }
+                      return scenario.payload;
+                    },
+                  };
+                },
+              }),
+          }),
+        ledgerWriter: () => {
+          ledgerWriterCalls += 1;
+          return {
+            ok: false,
+            committed: false,
+            lockReleased: true,
+          };
+        },
+      });
+    const failurePaths =
+      moneyShortsPart2DualPublishSafePaths(
+        fixture.outDir,
+      );
+    const failureSafeResult = JSON.parse(
+      readFileSync(failurePaths.resultPath, "utf8"),
+    );
+    const failureCanonicalBytes = readFileSync(
+      join(
+        fixture.outDir,
+        "final-e2e-publish-result.json",
+      ),
+    );
+    const failureCanonical = JSON.parse(
+      failureCanonicalBytes.toString("utf8"),
+    );
+    const failureEventText = nodeFs
+      .readdirSync(failurePaths.eventDir)
+      .filter((name) => /^\d{2}-.*\.json$/.test(name))
+      .sort()
+      .map((name) =>
+        readFileSync(
+          join(failurePaths.eventDir, name),
+          "utf8",
+        ),
+      )
+      .join("\n");
+    const safeDiagnostic =
+      failureSafeResult.publicState?.instagram
+        ?.containerCreateDiagnostic;
+    const canonicalDiagnostic =
+      failureCanonical.executionResult?.instagram
+        ?.containerCreateDiagnostic;
+    check(
+      `${scenario.label} stops before every downstream publication action`,
+      failure.ok === false &&
+        failure.blockerCode ===
+          "PART2_DUAL_SAFE_INSTAGRAM_CONTAINER_NO_ID" &&
+        containerFetchCalls.length === 1 &&
+        orchestrationCalls.filter(
+          (name) => name === "createInstagramContainer",
+        ).length === 1 &&
+        !orchestrationCalls.includes(
+          "readInstagramContainer",
+        ) &&
+        !orchestrationCalls.includes("publishInstagram") &&
+        !orchestrationCalls.includes("insertYoutube") &&
+        !orchestrationCalls.includes("sleep") &&
+        ledgerWriterCalls === 0 &&
+        failure.sideEffectCounters
+          .instagramContainerCreateCount === 1 &&
+        failure.sideEffectCounters
+          .instagramStatusPollCount === 0 &&
+        failure.sideEffectCounters.instagramPublishCount ===
+          0 &&
+        failure.sideEffectCounters.youtubeInsertCount === 0 &&
+        failure.sideEffectCounters.ledgerWriteCount === 0 &&
+        failure.sideEffectCounters.automaticRetryCount === 0,
+    );
+    check(
+      `${scenario.label} stores the same allowlisted diagnostic in both results`,
+      JSON.stringify(safeDiagnostic) ===
+        JSON.stringify(scenario.expectedDiagnostic) &&
+        JSON.stringify(canonicalDiagnostic) ===
+          JSON.stringify(scenario.expectedDiagnostic) &&
+        failureSafeResult.automaticRetryAllowed === false &&
+        failureSafeResult.externalRecoveryEnabled === false,
+    );
+    const attempt =
+      inspectMoneyShortsPublishAttemptEvidence({
+        outDir: fixture.outDir,
+        currentBinding: fixture.currentBinding,
+      });
+    const allFailureEvidence = [
+      JSON.stringify(failure),
+      JSON.stringify(failureSafeResult),
+      failureCanonicalBytes.toString("utf8"),
+      failureEventText,
+      readFileSync(failurePaths.claimPath, "utf8"),
+      JSON.stringify(attempt.claimFile.evidence),
+      JSON.stringify(attempt.events),
+    ].join("\n");
+    check(
+      `${scenario.label} evidence excludes credentials and raw provider errors`,
+      attempt.valid === true &&
+        !allFailureEvidence.includes(
+          diagnosticTokenSentinel,
+        ) &&
+        !allFailureEvidence.includes(
+          diagnosticMessageSentinel,
+        ) &&
+        !allFailureEvidence.includes(
+          diagnosticParseSentinel,
+        ) &&
+        !allFailureEvidence.includes("fbtrace_id") &&
+        !allFailureEvidence.includes("access_token"),
+    );
+    const recovery =
+      classifyMoneyShortsPublishRecovery({
+        resultFile: {
+          exists: true,
+          parseOk: true,
+          sha256: sha256(failureCanonicalBytes),
+          evidence: failureCanonical,
+        },
+        attemptFile: attempt.claimFile,
+        attemptEvidence: {
+          present: attempt.exists === true,
+          journalValid: attempt.valid === true,
+          claimSha256: attempt.claimFile.sha256,
+          eventCount: attempt.events.length,
+          latestTransition:
+            attempt.latestEvent?.transition,
+          latestEventSha256:
+            attempt.latestEvent?.eventSha256,
+        },
+        currentBinding: fixture.currentBinding,
+        ledgerEvidence: {
+          readOk: true,
+          instagramAlreadyPublished: false,
+          youtubeAlreadyPublished: false,
+          instagramPublishedIdReference: null,
+          youtubePublishedIdReference: null,
+        },
+      });
+    check(
+      `${scenario.label} remains ambiguous and manually gated`,
+      recovery.state === "ambiguous" &&
+        recovery.reason ===
+          "instagram_publish_outcome_unknown" &&
+        recovery.automaticRetryAllowed === false &&
+        recovery.externalRecoveryEnabled === false &&
+        recovery.recoverablePlatformCandidate === null,
+    );
+    const tamperedSafeResult =
+      structuredClone(failureSafeResult);
+    tamperedSafeResult.publicState.instagram
+      .containerCreateDiagnostic.httpStatus =
+      scenario.status === 400 ? 401 : 299;
+    check(
+      `${scenario.label} diagnostic is fingerprint-bound`,
+      evidenceFingerprintMatches(failureSafeResult) &&
+        evidenceFingerprintMatches(failureCanonical) &&
+        !evidenceFingerprintMatches(tamperedSafeResult),
+    );
+  }
 
   const initialLedgerBytes = Buffer.from(
     `${JSON.stringify({

@@ -104,8 +104,14 @@ const VALUE_FLAGS = Object.freeze([
   "--expected-preflight-fingerprint",
 ]);
 const SHA256_RE = /^[a-f0-9]{64}$/;
-const PUBLIC_ID_RE = /^[A-Za-z0-9._:-]{1,240}$/;
+const INSTAGRAM_PUBLIC_ID_RE = /^[1-9][0-9]{5,39}$/;
 const YOUTUBE_VIDEO_ID_RE = /^[A-Za-z0-9_-]{6,30}$/;
+const GRAPH_ERROR_TYPE_ALLOWLIST = new Set([
+  "FacebookApiException",
+  "GraphMethodException",
+  "IGApiException",
+  "OAuthException",
+]);
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -121,6 +127,124 @@ function isPlainObject(value) {
     value !== null &&
     !Array.isArray(value)
   );
+}
+
+function safeGraphErrorInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+function safeGraphErrorType(value) {
+  return typeof value === "string" &&
+    GRAPH_ERROR_TYPE_ALLOWLIST.has(value)
+    ? value
+    : null;
+}
+
+function normalizeInstagramContainerCreateDiagnostic(value) {
+  if (!isPlainObject(value)) return null;
+  const providerError = isPlainObject(value.providerError)
+    ? value.providerError
+    : {};
+  return {
+    responseReceived: value.responseReceived === true,
+    httpStatus:
+      Number.isSafeInteger(value.httpStatus) &&
+      value.httpStatus >= 100 &&
+      value.httpStatus <= 599
+        ? value.httpStatus
+        : null,
+    responseOk:
+      typeof value.responseOk === "boolean"
+        ? value.responseOk
+        : null,
+    jsonParsed: value.jsonParsed === true,
+    containerIdPresent:
+      value.containerIdPresent === true,
+    providerError: {
+      code: safeGraphErrorInteger(providerError.code),
+      errorSubcode: safeGraphErrorInteger(
+        providerError.errorSubcode,
+      ),
+      type: safeGraphErrorType(providerError.type),
+      isTransient:
+        typeof providerError.isTransient === "boolean"
+          ? providerError.isTransient
+          : null,
+    },
+  };
+}
+
+export async function createMoneyShortsInstagramContainerOnce({
+  accountId,
+  accessToken,
+  videoUrl,
+  caption,
+  shareToFeed,
+  fetchImpl = fetch,
+}) {
+  const body = new URLSearchParams({
+    media_type: "REELS",
+    video_url: videoUrl,
+    caption,
+    share_to_feed: shareToFeed ? "true" : "false",
+  });
+  const response = await fetchImpl(
+    `${GRAPH_API_BASE}/${encodeURIComponent(accountId)}/media`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+      redirect: "error",
+      signal: AbortSignal.timeout(30_000),
+    },
+  );
+  let data = null;
+  let jsonParsed = false;
+  try {
+    data = await response.json();
+    jsonParsed = true;
+  } catch {
+    // A received non-JSON response is diagnostic evidence, not a retry signal.
+  }
+  const rawContainerId =
+    jsonParsed && typeof data?.id === "string"
+      ? data.id
+      : null;
+  const containerId =
+    rawContainerId &&
+    INSTAGRAM_PUBLIC_ID_RE.test(rawContainerId)
+      ? rawContainerId
+      : null;
+  const rawProviderError =
+    jsonParsed && isPlainObject(data?.error)
+      ? data.error
+      : {};
+  const diagnostic =
+    normalizeInstagramContainerCreateDiagnostic({
+      responseReceived: true,
+      httpStatus: response?.status,
+      responseOk: response?.ok === true,
+      jsonParsed,
+      containerIdPresent:
+        typeof rawContainerId === "string" &&
+        rawContainerId.length > 0,
+      providerError: {
+        code: rawProviderError.code,
+        errorSubcode: rawProviderError.error_subcode,
+        type: rawProviderError.type,
+        isTransient: rawProviderError.is_transient,
+      },
+    });
+  return {
+    ok: response?.ok === true && containerId !== null,
+    containerId,
+    diagnostic,
+  };
 }
 
 function pathInside(rootPath, candidatePath) {
@@ -894,32 +1018,14 @@ async function buildDefaultAdapters({
       caption,
       shareToFeed,
     }) {
-      const body = new URLSearchParams({
-        media_type: "REELS",
-        video_url: videoUrl,
+      return createMoneyShortsInstagramContainerOnce({
+        accountId: expectedInstagramAccountId,
+        accessToken:
+          credentials.INSTAGRAM_ACCESS_TOKEN,
+        videoUrl,
         caption,
-        share_to_feed: shareToFeed ? "true" : "false",
+        shareToFeed,
       });
-      const response = await fetch(
-        `${graphUrl(expectedInstagramAccountId)}/media`,
-        {
-          method: "POST",
-          headers: {
-            ...instagramHeaders,
-            "Content-Type":
-              "application/x-www-form-urlencoded",
-          },
-          body,
-          redirect: "error",
-          signal: AbortSignal.timeout(30_000),
-        },
-      );
-      const data = await response.json();
-      return {
-        ok: response.ok === true,
-        containerId:
-          typeof data?.id === "string" ? data.id : null,
-      };
     },
     async readInstagramContainer(containerId) {
       const response = await fetch(
@@ -1059,6 +1165,7 @@ async function executeArmed({
       outcome: "not_started",
       mediaId: null,
       containerId: null,
+      containerCreateDiagnostic: null,
       lastStatusCode: null,
     },
     youtube: {
@@ -1568,11 +1675,21 @@ async function executeArmed({
       });
       return returnValue;
     }
-    const containerId = containerResponse?.containerId;
+    executionResult.instagram.containerCreateDiagnostic =
+      normalizeInstagramContainerCreateDiagnostic(
+        containerResponse?.diagnostic,
+      );
+    const containerId =
+      typeof containerResponse?.containerId === "string" &&
+      INSTAGRAM_PUBLIC_ID_RE.test(
+        containerResponse.containerId,
+      )
+        ? containerResponse.containerId
+        : null;
     if (
       containerResponse?.ok !== true ||
       typeof containerId !== "string" ||
-      !PUBLIC_ID_RE.test(containerId)
+      !INSTAGRAM_PUBLIC_ID_RE.test(containerId)
     ) {
       returnValue = finalize({
         ok: false,
@@ -1646,7 +1763,7 @@ async function executeArmed({
     if (
       instagramPublish?.ok !== true ||
       typeof instagramMediaId !== "string" ||
-      !PUBLIC_ID_RE.test(instagramMediaId)
+      !INSTAGRAM_PUBLIC_ID_RE.test(instagramMediaId)
     ) {
       returnValue = finalize({
         ok: false,
