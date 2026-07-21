@@ -123,6 +123,30 @@ check(
   JSON.stringify({ activeCategoryIds, activeCategoryLabels }),
 );
 check("wizard keeps no category preparation state", !wizardSrc.includes("준비 중"));
+check(
+  "wizard labels the active surface as finance-only without the stale eight-category claim",
+  wizardSrc.includes("현재 재테크팁 전용 화면입니다.") &&
+    !wizardSrc.includes("8개 카테고리 모두 주제 추천이 가능합니다."),
+);
+check(
+  "wizard keeps queue, safe-session, and prior-video controls behind an opt-in advanced toggle",
+  wizardSrc.includes("wizard-advanced-operations-toggle") &&
+    wizardSrc.includes("showAdvancedOperations") &&
+    wizardSrc.includes("기존 작업 이어보기 · 고급 운영 도구") &&
+    /localDev\s*===\s*true\s*&&\s*showAdvancedOperations/.test(wizardCode),
+);
+check(
+  "wizard explains that a two-part proposal is semantic, never length-only or mandatory",
+  wizardSrc.includes("길이만으로 나누지 않습니다.") &&
+    wizardSrc.includes("길이만으로 2편으로 나누지 않습니다."),
+);
+check(
+  "wizard displays the effective production strategy from real media when it differs from the script proposal",
+  wizardSrc.includes("const effectiveVideoStrategyMode = realMedia?.production.mode ?? script?.videoStrategy?.mode ?? null") &&
+    wizardSrc.includes("videoStrategyDisplayMismatch") &&
+    wizardSrc.includes("실제 제작 길이 검사에서 공통 의미 게이트 5개를 모두 통과해 2편으로 확정했습니다.") &&
+    wizardSrc.includes("realMedia.parts.map"),
+);
 
 // ── 첫 화면에 개발자 용어 금지 ───────────────────────────────────────────────
 const initialUi = pageSrc + "\n" + wizardSrc;

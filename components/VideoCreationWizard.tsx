@@ -1672,6 +1672,7 @@ export default function VideoCreationWizard() {
   const [safeSessionCoordinator, setSafeSessionCoordinator] = useState<WizardSafeSessionCoordinator | null>(null);
   const [safeSessionClose, setSafeSessionClose] = useState<WizardSafeSessionCloseView | null>(null);
   const [safeSessionCap, setSafeSessionCap] = useState<1 | 2 | 3>(1);
+  const [showAdvancedOperations, setShowAdvancedOperations] = useState(false);
   const [characterCast, setCharacterCast] = useState<WizardFinanceCharacterCast | null>(null);
   const [characterCastState, setCharacterCastState] = useState<RunState>("idle");
   const [characterCastResult, setCharacterCastResult] = useState<OperatorResult | null>(null);
@@ -1880,6 +1881,12 @@ export default function VideoCreationWizard() {
     confirmFinalVideoApprovalText.trim() === "최종 영상 승인";
   const mediaGateOk = realMedia?.mediaQualityGate.ok === true;
   const productionPartCount = realMedia?.production.totalParts ?? script?.videoStrategy?.parts.length ?? 1;
+  const effectiveVideoStrategyMode = realMedia?.production.mode ?? script?.videoStrategy?.mode ?? null;
+  const videoStrategyDisplayMismatch =
+    script?.videoStrategy != null &&
+    realMedia?.production != null &&
+    (script.videoStrategy.mode !== realMedia.production.mode ||
+      script.videoStrategy.parts.length !== realMedia.production.totalParts);
   const plannedSceneCount = realMedia?.realImages.expectedCount ?? script?.scenes?.length ?? null;
   const imageStepDescription = plannedSceneCount != null
     ? `영상 ${productionPartCount}개, 총 ${plannedSceneCount}장면을 모두 미리 보고 실패 장면만 다시 만든 뒤 현재 이미지 세트를 승인합니다.`
@@ -2685,15 +2692,19 @@ export default function VideoCreationWizard() {
     if (localDev !== true) return;
     const listTimer = window.setTimeout(() => void refreshUploadReadyList(), 0);
     const castTimer = window.setTimeout(() => void refreshCharacterCast(), 0);
-    const queueTimer = window.setTimeout(() => void refreshAutomationQueue(), 0);
-    const safeSessionTimer = window.setTimeout(() => void refreshSafeSession(), 0);
+    const queueTimer = showAdvancedOperations
+      ? window.setTimeout(() => void refreshAutomationQueue(), 0)
+      : null;
+    const safeSessionTimer = showAdvancedOperations
+      ? window.setTimeout(() => void refreshSafeSession(), 0)
+      : null;
     return () => {
       window.clearTimeout(listTimer);
       window.clearTimeout(castTimer);
-      window.clearTimeout(queueTimer);
-      window.clearTimeout(safeSessionTimer);
+      if (queueTimer != null) window.clearTimeout(queueTimer);
+      if (safeSessionTimer != null) window.clearTimeout(safeSessionTimer);
     };
-  }, [localDev, refreshAutomationQueue, refreshCharacterCast, refreshSafeSession, refreshUploadReadyList]);
+  }, [localDev, refreshAutomationQueue, refreshCharacterCast, refreshSafeSession, refreshUploadReadyList, showAdvancedOperations]);
 
   // 주제를 고르면 그 주제의 실제 제작 진행 상태를 복원한다(이전 세션 산출물 이어가기).
   useEffect(() => {
@@ -3252,6 +3263,21 @@ export default function VideoCreationWizard() {
 
       <div className="space-y-4">
         {localDev === true ? (
+          <details
+            data-testid="wizard-advanced-operations-toggle"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+            onToggle={(event) => setShowAdvancedOperations(event.currentTarget.open)}
+          >
+            <summary className="cursor-pointer text-sm font-bold text-slate-700">
+              기존 작업 이어보기 · 고급 운영 도구
+            </summary>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              새 쇼츠 제작에는 아래 카테고리 선택부터 시작하면 됩니다. 이 영역은 이미 만든 영상의 게시 준비, 중단된 로컬 작업 확인, 여러 주제의 작업 순서를 다룰 때만 엽니다.
+            </p>
+          </details>
+        ) : null}
+
+        {localDev === true && showAdvancedOperations ? (
           <section data-testid="wizard-safe-session" className="rounded-2xl border-2 border-violet-200 bg-violet-50/60 px-5 py-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
@@ -3492,7 +3518,7 @@ export default function VideoCreationWizard() {
           </section>
         ) : null}
 
-        {localDev === true ? (
+        {localDev === true && showAdvancedOperations ? (
           <section data-testid="wizard-automation-queue" className="rounded-2xl border-2 border-sky-200 bg-sky-50/60 px-5 py-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
@@ -3866,7 +3892,7 @@ export default function VideoCreationWizard() {
           </section>
         ) : null}
 
-        {localDev === true && selectedTopicId ? (
+        {localDev === true && showAdvancedOperations && selectedTopicId ? (
           <section data-testid="wizard-automation-plan" className="rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 px-5 py-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
@@ -3998,7 +4024,7 @@ export default function VideoCreationWizard() {
           </section>
         ) : null}
 
-        {localDev === true ? (
+        {localDev === true && showAdvancedOperations ? (
           <section data-testid="wizard-upload-ready-library" className="border-y border-emerald-200 bg-emerald-50/60 px-5 py-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
@@ -4086,7 +4112,7 @@ export default function VideoCreationWizard() {
           num={1}
           title="카테고리 선택"
           state={category ? "success" : "idle"}
-          desc="어떤 종류의 쇼츠를 만들지 고르세요. 8개 카테고리 모두 주제 추천이 가능합니다."
+          desc="현재 재테크팁 전용 화면입니다. 재테크 주제를 골라 추천받으세요."
         >
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
@@ -4357,34 +4383,62 @@ export default function VideoCreationWizard() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-bold text-slate-700">최종 영상 구성</p>
                     <span className="text-xs font-semibold text-rose-700">
-                      {script.videoStrategy.mode === "two_part" ? "의미 흐름 기준 2편" : "단편"}
+                      {effectiveVideoStrategyMode === "two_part"
+                        ? `실제 제작 기준 ${productionPartCount}편`
+                        : "실제 제작 기준 단편"}
                     </span>
                   </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {script.videoStrategy.parts.map((part) => (
-                      <div key={part.id} className="border-t border-slate-200 pt-3">
-                        <p className="text-xs font-bold text-slate-500 mb-1">
-                          {part.totalParts > 1 ? `${part.partNumber}편 첫 화면` : "첫 화면"}
-                        </p>
-                        {part.coverHookAudit ? (
-                          <p className={`mb-1 text-xs font-bold ${part.coverHookAudit.passed ? "text-emerald-700" : "text-red-700"}`}>
-                            {part.coverHookAudit.passed ? "후킹 검증 통과 · 유료 음성 진행 가능" : "후킹 검증 실패 · 유료 음성 차단"}
-                          </p>
-                        ) : null}
-                        {part.coverLines.map((line, index) => (
-                          <p
-                            key={`${part.id}-${index}`}
-                            className={index === 2 ? "text-xl font-bold text-rose-600" : "text-lg font-bold text-slate-900"}
-                          >
-                            {line.displayText}
-                          </p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    {videoStrategyDisplayMismatch
+                      ? effectiveVideoStrategyMode === "two_part"
+                        ? "대본 제안은 단편이었지만 실제 제작 길이 검사에서 공통 의미 게이트 5개를 모두 통과해 2편으로 확정했습니다. 길이만으로 자르지 않았습니다."
+                        : "대본 제안과 달리 실제 제작 계획은 한 영상으로 확정되었습니다. 아래에는 실제 제작 구성을 표시합니다."
+                      : effectiveVideoStrategyMode === "two_part"
+                        ? "문제 진단과 실행 방법이 각각 독립적으로 완결되고 자연스럽게 이어질 때만 연속 2편으로 제안합니다. 길이만으로 나누지 않습니다."
+                        : "이 주제는 한 영상 안에서 메시지가 완결되어 단편으로 제안했습니다. 길이만으로 2편으로 나누지 않습니다."}
+                  </p>
+                  {videoStrategyDisplayMismatch ? (
+                    realMedia && realMedia.parts.length > 0 ? (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {realMedia.parts.map((part) => (
+                          <div key={part.id} className="border-t border-slate-200 pt-3">
+                            <p className="text-xs font-bold text-slate-500 mb-1">
+                              {part.totalParts > 1 ? `${part.partNumber}편 실제 제작` : "실제 제작"}
+                            </p>
+                            <p className="text-lg font-bold text-slate-900">{part.platformTitle || part.canonicalTitle}</p>
+                          </div>
                         ))}
-                        {part.bridgeNarration ? (
-                          <p className="mt-2 text-sm font-semibold text-indigo-700 whitespace-pre-line">{part.bridgeNarration}</p>
-                        ) : null}
                       </div>
-                    ))}
-                  </div>
+                    ) : (
+                      <p className="mt-3 text-sm font-semibold text-slate-500">실제 제작 구성을 확인하고 있습니다.</p>
+                    )
+                  ) : (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {script.videoStrategy.parts.map((part) => (
+                        <div key={part.id} className="border-t border-slate-200 pt-3">
+                          <p className="text-xs font-bold text-slate-500 mb-1">
+                            {part.totalParts > 1 ? `${part.partNumber}편 첫 화면` : "첫 화면"}
+                          </p>
+                          {part.coverHookAudit ? (
+                            <p className={`mb-1 text-xs font-bold ${part.coverHookAudit.passed ? "text-emerald-700" : "text-red-700"}`}>
+                              {part.coverHookAudit.passed ? "후킹 검증 통과 · 유료 음성 진행 가능" : "후킹 검증 실패 · 유료 음성 차단"}
+                            </p>
+                          ) : null}
+                          {part.coverLines.map((line, index) => (
+                            <p
+                              key={`${part.id}-${index}`}
+                              className={index === 2 ? "text-xl font-bold text-rose-600" : "text-lg font-bold text-slate-900"}
+                            >
+                              {line.displayText}
+                            </p>
+                          ))}
+                          {part.bridgeNarration ? (
+                            <p className="mt-2 text-sm font-semibold text-indigo-700 whitespace-pre-line">{part.bridgeNarration}</p>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : null}
 

@@ -14,6 +14,8 @@ import * as publishOwnerReconciliationStore from "../lib/money-shorts-publish-ow
 import * as publishRecovery from "../lib/money-shorts-publish-recovery.mjs";
 import * as publishLedgerRuntime from "../lib/publish-ledger-runtime.mjs";
 import * as ttsOwnerListeningGate from "../lib/money-shorts-tts-owner-listening-gate.mjs";
+import * as youtubeOnlyRecovery from "../lib/money-shorts-youtube-only-recovery.mjs";
+import * as youtubeOnlyRecoveryOverlay from "../lib/money-shorts-youtube-only-recovery-overlay.mjs";
 
 export const BATCH_SCHEMA_VERSION = "money_shorts_500_production_batch_v1";
 export const LEDGER_SCHEMA_VERSION = "money_shorts_500_production_ledger_v1";
@@ -120,6 +122,8 @@ export function loadProductionRecords(options = {}) {
     if (specifier === "./money-shorts-publish-reconciliation-packet.mjs") return publishReconciliationPacket;
     if (specifier === "./money-shorts-publish-owner-reconciliation.mjs") return publishOwnerReconciliation;
     if (specifier === "./money-shorts-publish-owner-reconciliation-store.mjs") return publishOwnerReconciliationStore;
+    if (specifier === "./money-shorts-youtube-only-recovery.mjs") return youtubeOnlyRecovery;
+    if (specifier === "./money-shorts-youtube-only-recovery-overlay.mjs") return youtubeOnlyRecoveryOverlay;
     if (specifier === "./veo-scene-selector") return veoSelector;
     if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);
