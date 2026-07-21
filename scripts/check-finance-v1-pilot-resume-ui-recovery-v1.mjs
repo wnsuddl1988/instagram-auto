@@ -57,8 +57,16 @@ try {
   );
   if (!response || response.status() !== 200) throw new Error(`money-shorts HTTP ${response?.status() ?? "none"}`);
 
-  await page.getByTestId("wizard-tts-owner-listening-gate").waitFor({ state: "visible", timeout: 60_000 });
-  await page.getByTestId("wizard-action-real-images-review-accept").waitFor({ state: "visible", timeout: 60_000 });
+  const ttsReviewState = page
+    .getByTestId("wizard-tts-owner-listening-gate")
+    .or(page.getByText("Owner 청취 승인 완료", { exact: false }))
+    .first();
+  const imageReviewState = page
+    .getByTestId("wizard-action-real-images-review-accept")
+    .or(page.getByText("전체 이미지 Owner 승인 완료", { exact: false }))
+    .first();
+  await ttsReviewState.waitFor({ state: "visible", timeout: 60_000 });
+  await imageReviewState.waitFor({ state: "visible", timeout: 60_000 });
 
   const forbiddenActions = observedActions.filter((action) => FORBIDDEN_ACTIONS.has(action));
   if (forbiddenActions.length > 0) throw new Error(`forbidden action observed: ${forbiddenActions.join(",")}`);
@@ -70,8 +78,8 @@ try {
   console.log(JSON.stringify({
     status: "PASS",
     topicId: TOPIC_ID,
-    ttsOwnerListeningGateVisible: true,
-    imageOwnerReviewGateVisible: true,
+    ttsOwnerReviewStateVisible: true,
+    imageOwnerReviewStateVisible: true,
     observedActions,
     externalActionsInvoked: false,
   }, null, 2));

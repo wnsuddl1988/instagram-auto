@@ -82,6 +82,11 @@ const PART2_INSTAGRAM_RECOVERY_EXECUTION_RUNNER_PATH =
     SCRIPTS_DIR,
     "run-money-shorts-part2-instagram-recovery-execution-v1.mjs",
   );
+const PART2_YOUTUBE_RECOVERY_EXECUTION_RUNNER_PATH =
+  join(
+    SCRIPTS_DIR,
+    "run-money-shorts-part2-youtube-recovery-execution-v1.mjs",
+  );
 
 // 승인된 6개 key 이름만 로드한다(그 외 라인의 값은 파싱/보관하지 않는다).
 const APPROVED_ENV_KEY_NAMES = Object.freeze([
@@ -173,12 +178,44 @@ const PART2_INSTAGRAM_RECOVERY_REQUIRED_VALUE_FLAGS =
     "--expected-youtube-channel-id",
     ...PART2_INSTAGRAM_RECOVERY_REQUIRED_HASH_FLAGS,
   ]);
+const PART2_YOUTUBE_RECOVERY_REQUIRED_PATH_FLAGS =
+  Object.freeze([
+    "--recovery-out-dir",
+    "--content-unit",
+    "--ledger",
+    "--original-out-dir",
+    "--instagram-recovery-out-dir",
+  ]);
+const PART2_YOUTUBE_RECOVERY_REQUIRED_HASH_FLAGS =
+  Object.freeze([
+    "--expected-manifest-sha256",
+    "--expected-source-sha256",
+    "--expected-publication-attempt-fingerprint",
+    "--expected-original-safe-result-file-sha256",
+    "--expected-original-safe-result-fingerprint",
+    "--expected-instagram-recovery-preflight-fingerprint",
+    "--expected-instagram-recovery-claim-fingerprint",
+    "--expected-instagram-recovery-result-file-sha256",
+    "--expected-instagram-recovery-result-fingerprint",
+    "--expected-ledger-sha256",
+    "--expected-review-preflight-fingerprint",
+  ]);
+const PART2_YOUTUBE_RECOVERY_REQUIRED_VALUE_FLAGS =
+  Object.freeze([
+    ...PART2_YOUTUBE_RECOVERY_REQUIRED_PATH_FLAGS,
+    "--expected-content-id",
+    "--expected-instagram-account-id",
+    "--expected-instagram-media-id",
+    "--expected-youtube-channel-id",
+    ...PART2_YOUTUBE_RECOVERY_REQUIRED_HASH_FLAGS,
+  ]);
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const YOUTUBE_CHANNEL_ID_RE =
   /^UC[A-Za-z0-9_-]{22}$/;
 const INSTAGRAM_ACCOUNT_ID_RE = /^[0-9]{5,32}$/;
 const INSTAGRAM_NONZERO_ACCOUNT_ID_RE =
   /^[1-9][0-9]{5,31}$/;
+const INSTAGRAM_MEDIA_ID_RE = /^[1-9][0-9]{5,39}$/;
 const PART2_CONTENT_ID_RE =
   /^[A-Za-z0-9._:-]{1,240}-part-2$/;
 
@@ -282,6 +319,25 @@ const SUPPORTED_COMMANDS = Object.freeze({
     loadEnvInDryRun: false,
     validateBeforeEnvAccess:
       validatePart2InstagramRecoveryBeforeEnvAccess,
+  },
+  "part2-youtube-recovery-execution": {
+    script:
+      PART2_YOUTUBE_RECOVERY_EXECUTION_RUNNER_PATH,
+    baseArgs: [
+      "--approval",
+      "APPROVE_PART2_YOUTUBE_RECOVERY_EXECUTION_V1",
+      "--inspection",
+      "INSPECT_PART2_YOUTUBE_RECOVERY_EVIDENCE_V1",
+    ],
+    passthrough: [
+      ...PART2_YOUTUBE_RECOVERY_REQUIRED_VALUE_FLAGS,
+      "--expected-execution-preflight-fingerprint",
+    ],
+    passthroughFlags: ["--arm"],
+    envKeyNames: YOUTUBE_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess:
+      validatePart2YoutubeRecoveryBeforeEnvAccess,
   },
 });
 
@@ -697,6 +753,135 @@ function validatePart2InstagramRecoveryBeforeEnvAccess(
   return { ok: true };
 }
 
+function validatePart2YoutubeRecoveryBeforeEnvAccess(
+  rawArgs,
+) {
+  if (
+    !Array.isArray(rawArgs) ||
+    rawArgs[0] !==
+      "part2-youtube-recovery-execution"
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_youtube_recovery_command_position_invalid",
+    };
+  }
+  const valueFlags = new Set([
+    "--env-path",
+    ...PART2_YOUTUBE_RECOVERY_REQUIRED_VALUE_FLAGS,
+    "--expected-execution-preflight-fingerprint",
+  ]);
+  const values = Object.create(null);
+  let armed = false;
+  for (
+    let index = 1;
+    index < rawArgs.length;
+    index += 1
+  ) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) {
+        return {
+          ok: false,
+          reason:
+            "part2_youtube_recovery_duplicate_arm",
+        };
+      }
+      armed = true;
+      continue;
+    }
+    if (
+      !valueFlags.has(token) ||
+      Object.hasOwn(values, token)
+    ) {
+      return {
+        ok: false,
+        reason:
+          "part2_youtube_recovery_unknown_or_duplicate_flag",
+      };
+    }
+    const value = rawArgs[index + 1];
+    if (
+      typeof value !== "string" ||
+      value.length === 0 ||
+      value.startsWith("--")
+    ) {
+      return {
+        ok: false,
+        reason:
+          "part2_youtube_recovery_flag_value_invalid",
+      };
+    }
+    values[token] = value;
+    index += 1;
+  }
+
+  const recoveryOutDir =
+    values["--recovery-out-dir"] ?? "";
+  const contentUnit = values["--content-unit"] ?? "";
+  const ledger = values["--ledger"] ?? "";
+  const originalOutDir =
+    values["--original-out-dir"] ?? "";
+  const instagramRecoveryOutDir =
+    values["--instagram-recovery-out-dir"] ?? "";
+  const sourceEvidencePaths = [
+    contentUnit,
+    ledger,
+    originalOutDir,
+    instagramRecoveryOutDir,
+  ];
+
+  if (
+    !PART2_YOUTUBE_RECOVERY_REQUIRED_VALUE_FLAGS.every(
+      (flag) => typeof values[flag] === "string",
+    ) ||
+    !PART2_YOUTUBE_RECOVERY_REQUIRED_PATH_FLAGS.every(
+      (flag) => isAbsolute(values[flag] ?? ""),
+    ) ||
+    (values["--env-path"] !== undefined &&
+      !isAbsolute(values["--env-path"])) ||
+    !PART2_CONTENT_ID_RE.test(
+      values["--expected-content-id"] ?? "",
+    ) ||
+    !INSTAGRAM_NONZERO_ACCOUNT_ID_RE.test(
+      values["--expected-instagram-account-id"] ?? "",
+    ) ||
+    !INSTAGRAM_MEDIA_ID_RE.test(
+      values["--expected-instagram-media-id"] ?? "",
+    ) ||
+    !YOUTUBE_CHANNEL_ID_RE.test(
+      values["--expected-youtube-channel-id"] ?? "",
+    ) ||
+    !PART2_YOUTUBE_RECOVERY_REQUIRED_HASH_FLAGS.every(
+      (flag) => SHA256_RE.test(values[flag] ?? ""),
+    ) ||
+    (armed &&
+      !SHA256_RE.test(
+        values[
+          "--expected-execution-preflight-fingerprint"
+        ] ?? "",
+      )) ||
+    (!armed &&
+      values[
+        "--expected-execution-preflight-fingerprint"
+      ] !== undefined) ||
+    lexicalPathInside(REPO_ROOT, recoveryOutDir) ||
+    sourceEvidencePaths.some(
+      (sourcePath) =>
+        lexicalPathInside(sourcePath, recoveryOutDir) ||
+        lexicalPathInside(recoveryOutDir, sourcePath),
+    )
+  ) {
+    return {
+      ok: false,
+      reason:
+        "part2_youtube_recovery_required_binding_invalid",
+    };
+  }
+  return { ok: true };
+}
+
 /**
  * .env 형식 파일에서 승인된 key만 골라 { KEY: value } 를 만든다.
  * 값은 이 객체 안에만 존재하며, 어디에도 출력/파생/저장하지 않는다.
@@ -791,6 +976,7 @@ function printUsage() {
       "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-only-dual-publish --content-unit <manifest> --ledger <ledger.json> --out-dir <part-2 publish dir> --expected-content-id <part-2 id> --expected-manifest-sha256 <sha256> --expected-source-sha256 <sha256> --expected-publication-attempt-fingerprint <sha256> --expected-instagram-account-id <id> --expected-youtube-channel-id <channel> [--expected-preflight-fingerprint <sha256> --arm]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-instagram-identity-preflight --content-unit <manifest> --expected-content-id <part-2 id> --expected-manifest-sha256 <sha256> --expected-source-sha256 <sha256> --expected-instagram-account-id <id> [--expected-plan-fingerprint <sha256> --arm]",
       "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-instagram-recovery-execution --recovery-out-dir <separate-dir> --expected-review-preflight-fingerprint <sha256> --content-unit <manifest> --ledger <ledger.json> --out-dir <part-2 publish dir> --expected-content-id <part-2 id> --expected-instagram-account-id <id> --expected-youtube-channel-id <channel> <all original evidence hash flags> [--expected-execution-preflight-fingerprint <sha256> --arm]",
+      "  node scripts/run-owner-command-with-local-env-no-log.mjs part2-youtube-recovery-execution --recovery-out-dir <separate-dir> --content-unit <manifest> --ledger <ledger.json> --original-out-dir <part-2 publish dir> --instagram-recovery-out-dir <part-2 Instagram recovery dir> --expected-content-id <part-2 id> --expected-instagram-account-id <id> --expected-instagram-media-id <id> --expected-youtube-channel-id <channel> <all immutable evidence hash flags> [--expected-execution-preflight-fingerprint <sha256> --arm]",
       "",
       "Commands:",
       "  credential-preflight   inject approved local env keys (no-log) and run the redacted",
@@ -811,6 +997,10 @@ function printUsage() {
       "  part2-instagram-recovery-execution",
       "                         inject ONLY the two Instagram keys and run the one-shot",
       "                         part-2 Instagram-only recovery. No Blob PUT, YouTube, Part 1, DB, or retry.",
+      "                         Dry-run does not access the env file; --arm requires the exact execution preflight fingerprint.",
+      "  part2-youtube-recovery-execution",
+      "                         inject ONLY the three YouTube OAuth keys and run the one-shot",
+      "                         part-2 YouTube-only recovery. No Instagram, Blob, Part 1, DB, or retry.",
       "                         Dry-run does not access the env file; --arm requires the exact execution preflight fingerprint.",
       "",
       "Notes:",

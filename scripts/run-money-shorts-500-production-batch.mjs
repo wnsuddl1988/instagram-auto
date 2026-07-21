@@ -16,6 +16,8 @@ import * as publishLedgerRuntime from "../lib/publish-ledger-runtime.mjs";
 import * as ttsOwnerListeningGate from "../lib/money-shorts-tts-owner-listening-gate.mjs";
 import * as youtubeOnlyRecovery from "../lib/money-shorts-youtube-only-recovery.mjs";
 import * as youtubeOnlyRecoveryOverlay from "../lib/money-shorts-youtube-only-recovery-overlay.mjs";
+import * as part2YoutubeRecoveryExecution from "../lib/money-shorts-part2-youtube-recovery-execution.mjs";
+import * as part2YoutubeRecoveryOverlay from "../lib/money-shorts-part2-youtube-recovery-overlay.mjs";
 
 export const BATCH_SCHEMA_VERSION = "money_shorts_500_production_batch_v1";
 export const LEDGER_SCHEMA_VERSION = "money_shorts_500_production_ledger_v1";
@@ -124,6 +126,8 @@ export function loadProductionRecords(options = {}) {
     if (specifier === "./money-shorts-publish-owner-reconciliation-store.mjs") return publishOwnerReconciliationStore;
     if (specifier === "./money-shorts-youtube-only-recovery.mjs") return youtubeOnlyRecovery;
     if (specifier === "./money-shorts-youtube-only-recovery-overlay.mjs") return youtubeOnlyRecoveryOverlay;
+    if (specifier === "./money-shorts-part2-youtube-recovery-execution.mjs") return part2YoutubeRecoveryExecution;
+    if (specifier === "./money-shorts-part2-youtube-recovery-overlay.mjs") return part2YoutubeRecoveryOverlay;
     if (specifier === "./veo-scene-selector") return veoSelector;
     if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);
