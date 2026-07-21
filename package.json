@@ -30,6 +30,7 @@
     "check:money-shorts-publish-owner-reconciliation-resolution-v1": "node scripts/check-money-shorts-publish-owner-reconciliation-resolution-v1.mjs",
     "check:youtube-refresh-token-renewal-v1": "node scripts/check-youtube-refresh-token-renewal-v1.mjs",
     "check:youtube-only-part1-recovery-v1": "node scripts/check-money-shorts-youtube-only-part1-recovery-v1.mjs",
+    "check:part2-youtube-recovery-preflight-v1": "node scripts/check-money-shorts-part2-youtube-recovery-preflight-v1.mjs",
     "check:youtube-only-recovery-overlay-v1": "node scripts/check-money-shorts-youtube-only-recovery-overlay-v1.mjs",
     "check:part2-only-dual-publish-safe-v1": "node scripts/check-money-shorts-part2-only-dual-publish-safe-v1.mjs",
     "check:part2-instagram-identity-readonly-preflight-v1": "node scripts/check-money-shorts-part2-instagram-identity-readonly-preflight-v1.mjs",
