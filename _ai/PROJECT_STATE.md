@@ -1,124 +1,75 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-07-17 KST
+Updated: 2026-07-22 KST
 
-## Operating State
+## 현재 운영 기준
 
-- ROLE_MODE: `MAIN_AI_MODE`
-- Main AI: Codex
-- Branch: `codex/source-first-blueprint-clean`
-- Remote state: local commits ahead of origin; push not approved and not performed.
-- Overall Owner-facing progress: approximately 93%.
+- `ROLE_MODE: MAIN_AI_MODE`, Main AI는 Codex다.
+- 현재 V1은 **재테크 쇼츠 전용 제작 화면과 제작·검수·게시 경로**다. 비재테크 7개 카테고리는 활성 제품 범위가 아니다.
+- 한 주제를 무조건 2편으로 나누지 않는다. `finance-editorial-script-engine`의 의미 게이트가 `single | part-1 | part-2`를 결정하며, UI에는 대본 제안이 아니라 실제 미디어의 최종 제작 전략을 표시한다.
+- Phase 0~4 기준 작업은 완료됐다. 이후 기본 상태는 운영 동결이며, 새 주제 제작이나 외부 게시를 자동으로 시작하지 않는다.
 
-## Current Product State
+## 현재 게시 완료 증거
 
-- Owner has viewed and accepted the current two-part final video set for `gen-finance-editorial-v2-time_retirement-wealth_standard-05` ("자산을 키우는 사람은 미래의 월급부터 만든다"). This is a visual/content acceptance for this specific revision; it is not an upload instruction.
-- Part 1 final MP4: 47.97s, 1080x1920, H.264/AAC, real ElevenLabs audio, 8 scenes.
-- Part 2 final MP4: 46.13s, 1080x1920, H.264/AAC, real ElevenLabs audio, 7 scenes.
-- Both parts use the selected real scene images, dynamic captions, and Owner-QA-passed Veo motion for the selected scenes. Current renderer also retains layered still-image motion for non-Veo scenes.
-- Visual timing repair is included: the part 1 closing transition and part 2 closing transition are aligned to the preceding speech boundary; no audio was cut for the transition.
-- Final video summaries report `RENDER_MUX_OK`, 15~60s validity, video/audio streams, caption contracts, and Flow motion coverage as passed.
-- Owner has accepted the current final viewing result. No upload, publish, deploy, push, env/secret change, account change, or external action has occurred.
-- The current product keeps the 11-step human-in-the-loop workflow and uses `money_shorts_resumable_orchestrator_v1` to reconstruct 12 durable production/publication stages from local artifacts after a restart.
-- The web UI now exposes one bounded `automationAdvance` button. It can execute exactly one planner-approved local/no-submit action (`realTtsPreflight`, `flowMotionPrepare`, `finalVideoCreate`, or `wizardPreflight`), then recomputes the plan and stops. It never chains, retries, runs paid generation, performs Owner QA, uploads, or publishes.
-- `automationAdvance` now writes a content-addressed `in_progress` receipt before execution under `C:\tmp\money-shorts-os\automation-execution-v1`, acquires one atomic per-topic lock, writes the terminal result and recomputed-plan fingerprint, then releases the lock. The same plan/action cannot execute twice.
-- Interrupted or ambiguous attempts are not expired or unlocked automatically. The UI shows the durable guard status and disables the one-step button for in-flight, interrupted, identical-recorded, or store-unavailable states.
-- The Owner UI now exposes a guided recovery card only when a durable in-flight receipt exists. It shows the action, start time, before/current completed-stage counts, and permits exactly one evidence-derived decision: acknowledge already-advanced artifacts without rerun, or clear an unchanged attempt for a later separate manual retry.
-- Recovery terminalizes and preserves the old receipt before releasing the topic lock. A cleared retry receipt is archived before a later explicit attempt can start. Ambiguous plan changes or lock/receipt mismatch remain locked for manual evidence review.
-- A local durable planning queue is now implemented under `C:\tmp\money-shorts-os\automation-queue-v1`. Owner-selected topic membership, last persisted plan fingerprint/stage/gate, and the last explicit one-step result survive a restart.
-- Queue status reconstructs every job from current artifacts instead of trusting stale queue text. The queue UI shows live completed-stage count, next gate, and execution-guard state.
-- Queue advancement now has one dedicated Owner-click action, `automationQueueRunSelected`. The browser sends the selected job/action plus the preview and current-plan fingerprints; the server reconstructs the queue, verifies the full claim, rereads the live plan immediately before receipt creation, and fails closed on any drift. Only then does it reuse the bounded one-action executor, terminalize the receipt, and persist the new queue stage.
-- The former per-job queue execution buttons are removed, and a legacy `automationAdvance` request with `queueJob:true` is rejected. There is no timer, background worker, automatic retry, paid action, external generation, upload, or publication authority.
-- Queue lifecycle is now durable and local-only: an Owner can pause/resume one queued topic, remove its queue membership without deleting artifacts, or move only a currently complete plan into a bounded completed archive. Every lifecycle change records one of the last 24 local history events; the completed archive retains the last one-step result and execution-guard summary for up to 20 jobs.
-- Paused jobs are never selected by the deterministic runner. Lifecycle buttons and archive operations report `actionCount: 0`; they do not call the bounded executor, retry a task, or alter any media/publish artifact.
-- Queue status now runs a pure deterministic dry-run planner over the reconstructed live jobs. A positive persisted `queueOrder` set by an explicit Owner move is the first selection key; legacy/unprioritized jobs fall back to `createdAt`, `topicId`, and `jobId`. It selects at most one eligible job and gives every job a visible selection, wait, or skip reason. Owner-gated, complete, in-flight, manual-review, identical-recorded, unavailable-store, and unsafe jobs cannot be selected.
-- The Owner can move a queued topic one place 앞으로/뒤로. The local queue atomically reindexes its contiguous priority, records a bounded history event with `actionCount:0`, and never creates a receipt or invokes the executor. The preview fingerprint binds `queueOrder` as well as job, topic, action, live-plan fingerprint, and execution-guard fingerprint, so an order change invalidates an old selected-run claim.
-- The dry-run planner writes no queue state, creates no execution receipt, and executes no action. The UI shows the explicit priority plus the exact selected topic/stage/action or explains why no job is eligible.
-- The queue now also derives a pure `no_submit_batch_policy_preview` from that exact dry-run. Every queued item is visibly classified as a local safe next/waiting action, paid-generation approval, Owner QA, publication approval, topic selection, paused, completed, manual recovery, or execution-blocked item. The view has no action button, creates no schedule or receipt, and leaves every side-effect flag false.
-- The policy preview now has a pure `no_submit_capacity_summary`: it aggregates only the existing categories into local-safe ready/waiting, paid approval, QA, publication approval, other Owner decision, paused, recovery/blocked, and completed counts. It does not infer a schedule, change priority, or add an execution/approval action.
-- The queue read model now exposes `money_shorts_unattended_policy_v2`. `bounded_local_no_submit` is available only as an Owner-started local mode; bounded paid/external generation and autonomous publication remain inactive high-risk/critical candidates.
-- The Owner UI now offers both the existing exact one-step action and `safeSessionRunBounded`. The bounded action starts only after one explicit browser confirmation, executes at most the session's remaining 1~3 local/no-submit actions, and re-reads the session, queue, coordinator fingerprint, and queue-preview fingerprint before every step.
-- The bounded runner delegates each step to the existing atomic claim/receipt-protected one-action host. It stops on the first failure/block, evidence drift, in-flight/recovery state, Owner gate, session stop, or action cap. Concurrency remains one and automatic retry remains zero.
-- Paid TTS, external image generation, Flow generation, Owner QA decisions, upload, and publication are not in the bounded runner allowlist. They still require later exact Owner decisions on cost caps, stop criteria, QA policy, accounts/frequency, duplicate guards, and partial-publication recovery.
-- `money_shorts_external_generation_budget_policy_v1` now exposes a read-only comparison of the current per-submission Owner approval, a recommended bounded-per-topic candidate, and a critical multi-topic unattended candidate. The current per-submission approval remains the only active mode.
-- The bounded external candidate proposes at most 4 ElevenLabs provider requests, 15 ChatGPT image submissions, and 4 Flow submissions/80 Flow credits per topic. All providers are single-flight, automatic retry is zero, and human QA remains required.
-- Daily/monthly caps are deliberately `null`, Gemini 3/4 fallback is disabled, and `activationReady:false` remains fixed until the Owner defines those limits. Post-submit timeout or an unknown result locks the proposed budget for manual provider-history/result-identity evidence; it cannot retry or switch accounts.
-- Owner selected the bounded local safe-session option. The first contract-only slice now has `money_shorts_safe_session_planner_v1`: an Owner-started session may cap itself at 1~3 actions, plans at most one current allowlisted local action, independently re-fingerprints the queue selection, waits when an action is in flight, and halts on Owner stop, cap reached, no safe queue action, or invalid/stale selection.
-- The safe-session planner is a pure dry-run. It creates no session/queue/receipt state, has no filesystem, process runner, network, or timer, and executes zero actions. Paid/external generation, QA decisions, upload, and publication remain disabled.
-- The durable companion `money_shorts_safe_session_store_v1` records exactly one Owner-started bounded session under `C:\\tmp\\money-shorts-os\\safe-session-v1`: session ID, 1~3 action cap, `ready`/`stop_requested` state, completed count, one content-addressed active claim, terminal/recovery evidence, and bounded local history. It uses one exclusive mutation lock plus atomic JSON replacement; a second session, invalid cap, corrupt store, or existing lock fails closed.
-- A stop request is durable and idempotent. Start/stop/status/close controls themselves do not start queue work, create or mutate an execution receipt, retry, call a network service, run paid generation/QA, render, upload, or publish; the separately confirmed `safeSessionRunNext` host is the only one-action execution boundary.
-- The local wizard now exposes the same safe-session state as an `Owner 제어 · 실행기 미연결` card: status refresh, 1~3 cap start intent, stop request, active-claim evidence, and evidence-derived recovery state. Direct recovery requires a browser confirmation and the exact displayed recovery fingerprint; a pending execution-receipt recovery shows instructions only and has no session mutation button.
-- The next host-facing boundary is now explicit as `money_shorts_safe_session_coordinator_v1`. Given a previously read session store and previously computed deterministic queue preview, it returns only `inactive`, wait/halt/block, or one content-addressed local-safe claim. It is pure: it reads/writes no store itself, acquires no lock, creates no receipt, dispatches no action, and leaves every side-effect flag false.
-- The artifact-derived automation read model is now shared in `money-shorts-automation-read-model.ts`. The Next operator route no longer privately defines snapshot, execution-guard, or queue-view reconstruction; it imports the shared functions. Media, Flow, cast/voice, publish preflight/result, durable receipt recovery, deterministic queue preview, batch policy, capacity summary, returned durable queue schema, and all false safety flags remain unchanged.
-- The bounded one-action orchestration is now shared in `money_shorts_automation_executor_v1`. The route injects the exact four existing local-safe handlers plus read-model, queue-claim, receipt, and queue-sync dependencies, then delegates once. The shared service preserves preview verification, immediate plan re-fingerprinting, receipt-before-dispatch, exactly one handler call, plan recomputation, terminal receipt-before-queue-sync, fail-closed lock retention, zero chaining, and zero retry.
-- The executor service contains no loop, timer, background worker, network call, paid generation, Owner QA, upload, or publication path. Validation used only in-memory fake dependencies; no real render, filesystem production action, receipt mutation, queue mutation, or external action was executed.
-- The Owner-started safe session is now connected to the shared bounded executor through `money_shorts_safe_session_host_v1` and the local `safeSessionRunNext` action. The UI sends the displayed session/coordinator/queue fingerprints; the host rereads session and queue evidence, atomically records the exact session claim, invokes the existing queue-selected executor exactly once, requires a matching terminal execution receipt, terminalizes the same session claim, and stops.
-- If evidence drifts before the executor, the executor returns zero actions, the executor throws, its receipt remains non-terminal, or session terminalization fails, the host never clears or retries automatically. It preserves the active claim for the existing evidence-based recovery UI. The host has no loop, timer, background worker, paid/external generation, Owner-QA decision, upload, or publication authority; a local final render is possible only when it is the one planner-selected allowlisted action.
-- Terminal safe sessions can now be explicitly archive-closed. The no-write close view exposes a SHA-256 fingerprint only when the session is `stop_requested` or its 1~3 action cap is reached, with no in-flight action and no active claim. The atomic close mutation rechecks that exact fingerprint under the existing lock, preserves a bounded `closed` summary (including terminal/recovery evidence), clears `currentSession`, and lets the Owner start a fresh bounded session. Ready, in-flight, claim-present, stale, and ambiguous states fail closed; a repeated identical close is idempotent. The close API/UI performs no queue execution, receipt mutation, retry, paid/external generation, render, upload, or publication.
+현재 승인된 한 개의 재테크 콘텐츠 유닛은 2편 모두 Instagram과 YouTube 게시가 완료됐다.
 
-## Publication State
+| 편 | Instagram | YouTube | 운영 판정 |
+| --- | --- | --- | --- |
+| Part 1 | media `17875557156526534` · [게시물](https://www.instagram.com/gyeongjebeonyeokso/reel/Da8mtd3iQ0w/) | video `3pdH6FTbHlg` · [Shorts](https://www.youtube.com/shorts/3pdH6FTbHlg) | `complete` |
+| Part 2 | media `17942576889054573` | video `WD0Ayy-1E5M` · [Shorts](https://www.youtube.com/shorts/WD0Ayy-1E5M) | `complete` |
 
-- Both parts have current `PREFLIGHT_ONLY_OK` evidence under the topic's local `publish/v5` folder.
-- Both preflights recorded all six required credential names as present, no duplicate publication, `armed: false`, and all external side-effect counters at zero.
-- The videos are therefore local upload candidates only. The actual upload route remains separately fail-closed behind three Owner confirmations, literal `업로드` input, duplicate checks, and a new explicit external-action approval.
+- Part 2 YouTube 복구 실행 결과는 `PART2_YOUTUBE_RECOVERY_OK`이며, result fingerprint는 `fdc6199cef1bff5126f6dd338018c92eea347977bf8dbddf5996ee96fbb69c73`다.
+- Part 2 기록 후 publication ledger SHA-256은 `88f37924b8995533d965d0bed6b53482918f64d07e3caec7d7c1060159d987ec`다.
+- Part 1 Instagram은 최초 이중 게시 실행이 ledger 기록 전 실패해 활성 ledger 행이 없지만, Owner reconciliation의 canonical media 증거와 Part 1 YouTube ledger를 결합한 recovery overlay가 `complete`로 판정한다. 일반 재업로드 경로는 차단돼 있으며 ledger backfill은 V1 완료에 필요하지 않아 수행하지 않았다.
+- 두 편 모두 자동 재시도는 0이고, 같은 콘텐츠를 일반 이중 업로드 경로로 다시 게시하면 안 된다.
 
-## Validation Evidence
+## 승인된 산출물 잠금
 
-- Part 1 `real-video-summary.json`: `RENDER_MUX_OK`; 47.97s; 1080x1920; H.264/AAC; real audio/image/caption/Flow gates passed.
-- Part 2 `real-video-summary.json`: `RENDER_MUX_OK`; 46.13s; 1080x1920; H.264/AAC; real audio/image/caption/Flow gates passed.
-- Publish preflight part 1: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
-- Publish preflight part 2: `PREFLIGHT_ONLY_OK`, `armed: false`, no external counters incremented.
-- Current code-level checks: the four updated stale harnesses pass (operator UI 91, one-click UI 389, 500-topic planner 27, staged-cover runtime 5); related image/caption/motion/production-input guards also pass. `pnpm build` remains passed.
-- Durable execution-store/recovery guard: 24/24 PASS. Resumable controller/executor/recovery guard: 44/44 PASS. Existing operator UI guard 91/91 and one-click UI guard 389/389 pass. `pnpm exec tsc --noEmit` and `pnpm build` pass.
-- Local UI restored the accepted topic at 11/12 stages, disabled the one-step button at `owner_publication_confirmation`, and showed no console errors. A direct local `automationAdvance` request returned `blocked`, `noLive:true`, `actionCount:0`, `chainedActionCount:0`, and `automaticRetryCount:0`.
-- The accepted topic also showed `실행 안전장치: 현재 자동 실행 대상 없음`; no execution receipt or lock was created because publication is outside the safe allowlist.
-- The recovery UI was rechecked on a temporary port 3001 dev server: the accepted topic still restored at 11/12, showed no recovery card because no interrupted receipt exists, and remained stopped at publication confirmation. The temporary server was stopped; the pre-existing port 3000 process was preserved.
-- Queue priority store guard: 23/23 PASS. Content-addressed queue planner/claim guard: 27/27 PASS. Combined resumable controller/executor/recovery/queue/planner guard: 68/68 PASS. Existing operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass.
-- The queue UI was checked on a temporary port 3001 dev server in an empty-queue state. It showed `계획 모드`, `다음 큐 실행 미리보기`, `미리보기 · 자동 실행 없음`, and `영수증 생성 0회`; selected-run buttons were 0 and the removed per-job execution buttons were 0. No real topic was enqueued, no receipt/action was created, and the browser tab and temporary server were stopped.
-- Queue lifecycle store guard: 20/20 PASS. Paused-job planner guard: 25/25 PASS. Combined queue/executor/recovery/lifecycle guard: 65/65 PASS. Operator UI 91/91, one-click UI 389/389, TypeScript, `pnpm build`, and `git diff --check` pass.
-- Lifecycle UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the queue, dry-run status, and new empty archive/history contract rendered without console errors; no queue lifecycle button was clicked, no topic was enqueued, and the temporary server was stopped.
-- Priority UI was rechecked on a temporary port 3001 dev server with the real queue left empty: the empty-queue state remained visible and no priority button was rendered because no job exists. No topic was enqueued, no priority action was clicked, no receipt/action was created, and the temporary server was stopped.
-- Batch policy guard: 32/32 PASS. Combined queue/executor/recovery/policy guard: 71/71 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The temporary port 3001 UI showed the empty batch-policy card as `계획 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
-- Capacity summary guard: 35/35 PASS. Combined queue/executor/recovery/policy/capacity guard: 74/74 PASS. Operator UI 91/91, one-click UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The empty local queue rendered `큐 준비도 요약` as `집계 전용 · 실행 없음`; no queue job was added or run, and the temporary server/tab were closed.
-- Safe-session contract guard: 15/15 PASS. Durable safe-session store guard: 14/14 PASS. Existing queue planner/capacity guard 35/35 and combined executor/recovery/queue/session guard 76/76 pass. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; the known 12,062-file tracing/performance warnings remain unchanged.
-- Safe-session API/UI integration guard: combined executor/recovery/queue/session guard 79/79 PASS; operator UI 91/91 and one-click wizard UI 389/389 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
-- Safe-session coordinator guard: 9/9 PASS; combined executor/recovery/queue/session/coordinator guard 80/80 PASS. The store, planner, queue planner, `pnpm exec tsc --noEmit`, `pnpm build`, and diff checks pass. The known 12,062-file tracing/performance warnings remain unchanged.
-- Shared automation read-model guard: 10/10 PASS; combined executor/recovery/queue/session/coordinator/read-model guard 81/81 PASS; operator UI guard 91/91 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
-- Shared bounded-executor behavior guard: 13/13 PASS; combined orchestration guard 83/83 PASS; operator UI guard 91/91 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The known 12,062-file tracing/performance warnings remain unchanged.
-- Safe-session action lifecycle guard: 21/21 PASS; existing session store 14/14, planner 15/15, coordinator 9/9, and combined orchestration guard 84/84 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. No executor, queue action, receipt, render, external generation, upload, or publication action was invoked.
-- Safe-session interrupted-claim recovery planner: 17/17 PASS; execution-store historical fingerprint inspection 25/25 PASS; combined orchestration guard 85/85 PASS. It distinguishes an unstarted claim, matching terminal receipt, unchanged interrupted execution, advanced artifacts, and ambiguous drift while exposing only Owner-confirmed decisions. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; no receipt/session mutation or real action occurred.
-- Atomic safe-session recovery mutation: 18/18 PASS; planner 17/17, lifecycle 21/21, store 14/14, coordinator 9/9, execution store 25/25, and combined orchestration guard 86/86 PASS. Recovery evidence is recomputed exactly once while the exclusive session mutation lock is held. Exact repeat resolution is idempotent; stale fingerprints, drift, and pending execution-receipt recovery preserve the active claim and zero count. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; no executor or real action was invoked.
-- Safe-session recovery API/UI integration: the shared read model reconstructs the active claim from its current artifact plan, deterministic queue preview, historical execution fingerprint, and execution-recovery evidence. The local route accepts only three direct Owner decisions and re-runs the same evidence view inside the session mutation lock; chain decisions remain blocked until the existing execution receipt is resolved separately. Recovery 17/17, mutation 18/18, lifecycle 21/21, execution store 25/25, combined orchestration 89/89, operator UI 91/91, and wizard UI 389/389 PASS. `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass; no executor, paid/external action, render, upload, or publication was invoked.
-- Safe-session single-action host: dedicated host guard 15/15 PASS, including an actual atomic store integration in an isolated temporary directory; combined orchestration 94/94, executor 13/13, lifecycle 21/21, recovery 17/17, mutation 18/18, store 14/14, coordinator 9/9, and execution store 25/25 PASS. Operator UI 91/91, wizard UI 389/389, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. The production `C:\tmp` safe-session store remained absent; no real queue action, receipt, render, external generation, upload, or publication was invoked.
-- Safe-session archive close: dedicated close guard 11/11 PASS (ready/active/stale rejection, stop/cap close, bounded history, idempotency, fresh-session reuse); combined orchestration 95/95, store 14/14, lifecycle 21/21, recovery 17/17, mutation 18/18, coordinator 9/9, host 15/15, operator UI 91/91, `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. Only temporary test stores were mutated; the production `C:\tmp` safe-session store remains untouched. The existing 12,062-file output tracing warning is unchanged and remains a later speed optimization item.
-- Owner-started bounded-local runner: dedicated behavior guard 12/12 PASS; policy status 12/12; combined orchestration 99/99; existing one-action host 15/15; lifecycle 21/21; recovery 17/17; operator UI 91/91; one-click wizard UI 389/389; `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. No production session/queue/receipt state or external service was touched. The existing 12,062-file output tracing warning is unchanged.
-- External-generation budget/stop-policy proposal: dedicated guard 15/15 PASS; local policy 12/12; combined orchestration 101/101; operator UI 91/91; one-click wizard UI 389/389; `pnpm exec tsc --noEmit`, `pnpm build`, and `git diff --check` pass. No budget store/reservation, provider request, account fallback, QA decision, upload, or publication action occurred. The existing 12,062-file output tracing warning is unchanged.
+- Part 1 MP4 SHA-256: `c8ea9b608fd6cb537da54d795b3b525b312ef65f531efd67e289991d54053310`
+- Part 2 MP4 SHA-256: `bd9286b24f6463ae4a876e2c6414d49083b350c3759e9e33c60d27e0ca9a9d98`
+- Part 1 manifest SHA-256: `92d491cf3d298899f44c1198888faacddde2c3f52233f4bf41ff9387fc663b90`
+- Part 2 manifest SHA-256: `f71e8f303cdeb22c06af0f7998a619d91d1b0f24c90a7b9d1c3846144c6bf099`
 
-## Current Priority
+## V1에 유지할 것
 
-1. Preserve the accepted two-part final MP4s and their preflight evidence; do not regenerate or replace them without a new Owner request.
-2. Keep the content in local upload-candidate state. Do not press/upload/arm anything until the Owner gives an exact external upload approval.
-3. Before any actual upload, re-run the no-upload preflight against the then-current files and ask for explicit Owner confirmation of platform metadata and the real publication action.
-4. Owner chose the Owner-started bounded local safe-session path. The contract, durable state store, Owner start/stop/status UI, pure coordinator, shared artifact-derived read model, shared bounded executor, atomic session action lifecycle, evidence-only interrupted-claim recovery planner, atomic recovery mutation, and exact Owner-confirmed recovery API/UI are complete.
-5. The single-action host, archive-close boundary, and Owner-started `bounded_local_no_submit` runner are complete. The enabled profile is limited to at most 3 local/no-submit actions, concurrency 1, and retry 0.
-6. The read-only `bounded_external_generation` contract is complete. The next Owner decision is the exact daily/monthly topic and provider caps; the recommended conservative starting point is one topic/day and ten topics/month, which implies TTS 4/40 requests, images 15/150 submissions, and Flow 4/40 submissions or 80/800 credits.
-7. Keep Gemini 3/4 automatic fallback disabled and retain human TTS/image/Flow QA for the first bounded external phase unless the Owner explicitly changes those two policies.
-8. Multi-action automatic continuation, timers/background workers, paid/external generation, QA decisions, upload, and publication remain separate later architecture/approval gates.
-9. Do not activate or reuse `n8n/workflow_autoshorts.json`: it is a legacy inactive workflow that bypasses the current queue/receipt/Owner gates, calls old `/api/auto` and `/api/upload` routes, and contains a credential-like literal. The legacy upload route is currently fail-closed, but that does not make the workflow a valid scheduler foundation.
+- 재테크 전용 주제 추천, 500-title editorial bank, 대표 주제 품질·신선도 검사
+- 의미 기반 `single | part-1 | part-2` 대본·제작 전략
+- 대본 품질 게이트, TTS 청취 승인, 이미지 QA, Flow 유료 실행 승인, 최종 영상 해시 검증
+- 실제 게시 직전 Owner 확인과 일회성·증거 결합 복구 경로
+- Instagram/YouTube publication read model과 중복 게시 차단
 
-## Diff Cleanup State
+## V1에서 동결할 것
 
-- Working tree deliberately retains exactly three unrelated/isolated paths. Do not stage, edit, delete, or commit them without specific Owner approval:
-  1. `scripts/render-golden-sample-visual-only-v1.mjs`
-  2. `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-  3. `scripts/get-youtube-refresh-token-once.mjs`
-- Shared bounded-executor work was checkpointed locally as `321c0ec` (`refactor(money-shorts): share bounded automation executor`); it was not pushed.
-- Safe-session lifecycle work was checkpointed locally as `2550685` (`feat(money-shorts): persist safe session action lifecycle`); it was not pushed.
-- Safe-session recovery planning work was checkpointed locally as `0107794` (`feat(money-shorts): plan safe session recovery`); it was not pushed.
-- Atomic safe-session recovery mutation was checkpointed locally as `4c1956f` (`feat(money-shorts): resolve safe session recovery atomically`); it was not pushed.
-- Safe-session recovery API/UI was checkpointed locally as `18f80ac` (`feat(money-shorts): expose safe session recovery controls`); it was not pushed.
-- Safe-session single-action host was checkpointed locally as `83c4c0e` (`feat(money-shorts): execute one safe session action`); it was not pushed.
-- Safe-session archive-close work was checkpointed locally as `d78d373` (`feat(money-shorts): archive-close safe sessions`); it was not pushed.
-- Proposal-only unattended-policy work was checkpointed locally as `0c6d9c7` (`feat(money-shorts): preview unattended automation policy`); it was not pushed.
-- Owner-started maximum-three local runner work was checkpointed locally as `5b97adc` (`feat(money-shorts): run bounded local safe sessions`); it was not pushed.
-- The current uncommitted slice is limited to the read-only external-generation budget/stop-policy contract, read-model/UI exposure, its guards, and these two state documents. The protected three paths remain excluded.
+- 큐·안전 세션·무인 실행·외부 생성 예산 정책의 추가 확장
+- 자동 게시, 자동 재시도, 다계정 fallback, 백그라운드 스케줄러
+- 비재테크 8개 카테고리 일반화, n8n 활성화, DB·배포 구조 확대
+- 기존 큐·안전 세션 코드는 제거하지 않되 고급 로컬 기능으로 비활성 유지한다. 새 요구가 생기기 전에는 V1 우선순위로 다루지 않는다.
+
+## 최종 검증
+
+- 재테크 전용 Owner UI 정적 계약: `385/385 PASS`
+- 대표 3주제 local pipeline smoke: `17/17 PASS`
+- Part 1 recovery: `61/61 PASS`
+- Part 1 overlay: `15/15 PASS`
+- Part 2 overlay: `18/18 PASS`
+- Owner reconciliation: `33/33 PASS`
+- publication packet: `8/8 PASS`
+- partial recovery: `83/83 PASS`
+- `pnpm exec tsc --noEmit`: PASS
+- `pnpm build`: PASS. `next.config.ts`/`app/api/manual-render/route.ts`의 기존 Turbopack 동적 경로 추적 경고 1건은 남지만 빌드 실패가 아니며 이번 V1 게시 상태와 무관하다.
+
+## Git / 보호 범위
+
+- 브랜치: `codex/source-first-blueprint-clean`
+- 마지막 기능 체크포인트: `cc8975d` (`feat(money-shorts): add Part 2 YouTube recovery execution`)
+- push는 승인되지 않았고 수행하지 않았다.
+- 다음 3개는 Owner 보호 변경이다. 읽기 외 편집·삭제·stage·commit 금지:
+  - `scripts/render-golden-sample-visual-only-v1.mjs`
+  - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+  - `scripts/get-youtube-refresh-token-once.mjs`
+
+## Owner 승인 게이트
+
+- 새 주제의 유료 TTS·이미지·Flow 실행 및 실제 Instagram/YouTube 게시
+- push, deploy, env/secret, 계정, DB, 외부 서비스 상태 변경
+- 게시 완료 증거의 backfill 또는 기존 publication ledger 변경
