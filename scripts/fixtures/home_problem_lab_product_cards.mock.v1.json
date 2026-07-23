@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "home_problem_lab_product_card_mock_v1",
+  "engineId": "home_problem_lab",
+  "isMock": true,
+  "isPublishable": false,
+  "affiliateUrl": null,
+  "sourceUrl": null,
+  "imageOrigin": "no_product_image_in_phase_2",
+  "disclosure": "테스트용·게시불가",
+  "note": "실제 판매 상품, 실제 제품 이미지, 외부 제품 조회를 포함하지 않는 Phase 2 로컬 fixture입니다."
+}

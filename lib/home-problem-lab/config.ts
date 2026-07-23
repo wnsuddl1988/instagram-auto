@@ -1,0 +1,54 @@
+import {
+  HOME_PROBLEM_LAB_ENGINE_ID,
+  HOME_PROBLEM_LAB_UPLOAD_PROFILE,
+  type HomeProblemLabAxis,
+} from "./types";
+
+export const HOME_PROBLEM_LAB_CONFIG = {
+  engineId: HOME_PROBLEM_LAB_ENGINE_ID,
+  uploadProfile: HOME_PROBLEM_LAB_UPLOAD_PROFILE,
+  channelName: "집안문제연구소",
+  characterName: "살림탐정 루미",
+  philosophy: "사기 전에 원인부터.",
+  axes: {
+    cleaning_odor_storage: "청소·냄새·수납 문제 해결",
+    kitchen_food_time: "주방·식비·시간 절약 문제 해결",
+  } satisfies Record<HomeProblemLabAxis, string>,
+  visualContract: {
+    lumi2_5dPercent: [20, 25],
+    aiHomeReenactmentPercent: [35, 45],
+    graphicChecklistDiagramPercent: [20, 25],
+    actualProductImagePercent: [10, 15],
+    lumiIdentity: "2.5D 반실사, 얼굴·헤어·의상·신체 비율 고정, 포토리얼 AI 인플루언서 금지",
+    productImageRule: "실제 제품 이미지는 product_card_optional 장면에서만 허용하며 AI 가짜 제품은 금지",
+  },
+  lumiVoice: {
+    characterId: "lumi",
+    voiceProfileId: "lumi_home_problem_lab",
+    voiceProfileVersion: "v1",
+    envKey: "ELEVENLABS_LUMI_VOICE_ID",
+    productionModel: "eleven_multilingual_v2",
+    previewModel: "eleven_flash_v2_5",
+    stability: 0.62,
+    similarityBoost: 0.78,
+    style: 0.08,
+    useSpeakerBoost: true,
+    speed: 1.08,
+    requiredTones: ["차분함", "명료함", "빠르지만 이해 가능한 속도", "똑똑한 AI 살림탐정", "소비자 편", "재치", "과장 없는 자신감"],
+    prohibitedTones: ["홈쇼핑 판매자", "뉴스 앵커", "과한 애교", "ASMR", "과도한 흥분", "공포·위협", "과장 광고", "사용 후기 사칭"],
+  },
+  uploadProfileContract: {
+    profileId: HOME_PROBLEM_LAB_UPLOAD_PROFILE,
+    instagramCredentialKeyNames: [
+      "HOME_PROBLEM_LAB_INSTAGRAM_BUSINESS_ACCOUNT_ID",
+      "HOME_PROBLEM_LAB_INSTAGRAM_ACCESS_TOKEN",
+    ],
+    youtubeCredentialKeyNames: [
+      "HOME_PROBLEM_LAB_YOUTUBE_CLIENT_ID",
+      "HOME_PROBLEM_LAB_YOUTUBE_CLIENT_SECRET",
+      "HOME_PROBLEM_LAB_YOUTUBE_REFRESH_TOKEN",
+    ],
+    allowExistingAccountFallback: false,
+    phase2PublishEnabled: false,
+  },
+} as const;

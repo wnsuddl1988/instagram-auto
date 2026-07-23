@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "language": "ko",
+  "cases": [
+    { "id": "minutes", "input": "3분만 투자하세요.", "expectedIncludes": ["삼 분"] },
+    { "id": "cause-count", "input": "욕실 냄새의 원인은 3가지입니다.", "expectedIncludes": ["삼 가지"] },
+    { "id": "percentage", "input": "100% 해결된다는 표현은 믿지 마세요.", "expectedIncludes": ["백 퍼센트"] },
+    { "id": "time-range", "input": "1~2초 안에 넘겨버립니다.", "expectedIncludes": ["일에서 이 초"] },
+    { "id": "product-timing", "input": "25초 이후에 제품 기준을 확인하세요.", "expectedIncludes": ["이십오 초"] },
+    { "id": "ai-abbreviation", "input": "AI가 만든 가짜 제품은 사용하지 않습니다.", "expectedIncludes": ["에이아이"] },
+    { "id": "units", "input": "pH 7, 500ml, 10cm를 확인하세요.", "expectedIncludes": ["피에이치", "오백 밀리리터", "십 센티미터"] },
+    { "id": "brackets-and-slash", "input": "[정리/청소] 순서를 먼저 바꾸세요.", "expectedIncludes": ["정리 또는 청소"] },
+    { "id": "url", "input": "https://example.com/faq 를 확인하세요.", "expectedIncludes": ["에이치티티피에스 콜론", "슬래시 슬래시", "점"] },
+    { "id": "special-characters", "input": "#욕실 @루미: 물&환기를 2× 확인하세요.", "expectedIncludes": ["해시태그", "골뱅이", "그리고", "곱하기"] }
+  ]
+}

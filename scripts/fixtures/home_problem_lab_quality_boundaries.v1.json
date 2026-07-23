@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "home_problem_lab_quality_boundaries_v1",
+  "engineId": "home_problem_lab",
+  "cases": {
+    "score21": {
+      "signals": { "topicFit": 4, "firstTwoSecondsHook": 4, "problemSolving": 4, "naturalPurchaseConversion": 4, "aiQualityConsistency": 5 },
+      "total": 21,
+      "expectedQualityCandidate": false
+    },
+    "score22": {
+      "signals": { "topicFit": 5, "firstTwoSecondsHook": 4, "problemSolving": 4, "naturalPurchaseConversion": 4, "aiQualityConsistency": 5 },
+      "total": 22,
+      "expectedQualityCandidate": true
+    },
+    "score25HardFail": {
+      "signals": { "topicFit": 5, "firstTwoSecondsHook": 5, "problemSolving": 5, "naturalPurchaseConversion": 5, "aiQualityConsistency": 5 },
+      "total": 25,
+      "hardFail": "ai_fake_product_detected",
+      "expectedQualityCandidate": false
+    },
+    "score25Pass": {
+      "signals": { "topicFit": 5, "firstTwoSecondsHook": 5, "problemSolving": 5, "naturalPurchaseConversion": 5, "aiQualityConsistency": 5 },
+      "total": 25,
+      "expectedQualityCandidate": true
+    }
+  }
+}

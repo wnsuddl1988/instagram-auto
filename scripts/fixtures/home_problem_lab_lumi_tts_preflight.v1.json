@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "providerDefault": "mock",
+  "cases": [
+    { "id": "normal-pass", "text": "욕실 냄새의 원인은 3가지입니다.", "expectedPassed": true },
+    { "id": "empty-block", "text": "", "expectedPassed": false, "expectedError": "TTS_TEXT_REQUIRED" },
+    { "id": "long-warning", "textKind": "repeat_가_350", "expectedPassed": true, "expectedWarning": "TTS_LONG_TEXT_WARNING" },
+    { "id": "long-block", "textKind": "repeat_가_501", "expectedPassed": false, "expectedError": "TTS_CHARACTER_LIMIT_EXCEEDED" },
+    { "id": "fake-review", "text": "제가 써봤는데 이 방법이 좋아요.", "expectedPassed": false, "expectedError": "TTS_FAKE_REVIEW" },
+    { "id": "fake-nedon", "text": "내돈내산으로 추천합니다.", "expectedPassed": false, "expectedError": "TTS_FAKE_NEDON" },
+    { "id": "exaggeration", "text": "무조건 100% 해결됩니다.", "expectedPassed": false, "expectedError": "TTS_EXAGGERATED_EFFICACY" },
+    { "id": "cleaning-mix", "text": "락스와 식초를 섞어서 사용하세요.", "expectedPassed": false, "expectedError": "TTS_DANGEROUS_CLEANING_MIX" },
+    { "id": "voice-id-exposure", "requestPatch": { "voiceId": "forbidden" }, "expectedPassed": false, "expectedError": "TTS_VOICE_ID_EXPOSURE_BLOCKED" },
+    { "id": "existing-profile-fallback", "requestPatch": { "voiceProfileId": "existing_money_shorts_voice" }, "expectedPassed": false, "expectedError": "TTS_VOICE_PROFILE_MISMATCH" },
+    { "id": "external-provider-blocked", "provider": "elevenlabs_future", "expectedSupportsExternalCalls": false },
+    { "id": "mock-zero-calls", "provider": "mock", "expectedExternalCalls": 0 }
+  ]
+}
