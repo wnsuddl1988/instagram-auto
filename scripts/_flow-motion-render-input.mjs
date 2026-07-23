@@ -84,9 +84,23 @@ export function resolveFlowMotionRenderInputs({ record, imagesDir, statePath, pr
     return fail("FLOW_MOTION_PATH_FORBIDDEN", "Flow 입력은 C:\\tmp\\money-shorts-os 아래에 있어야 합니다.");
   }
 
-  const selectedScenes = scenes
+  const scriptedVeoScenes = scenes
     .map((scene, index) => ({ scene, sceneNumber: index + 1 }))
     .filter(({ scene }) => scene?.mediaStrategy === "veo_motion");
+  const imageSummary = readJson(path.join(resolvedImagesDir, "scene-images-summary.json"));
+  const imageSceneRows = Array.isArray(imageSummary?.scenes) ? imageSummary.scenes : [];
+  if (scriptedVeoScenes.some(({ sceneNumber }) => {
+    const presenceMode = imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode;
+    return presenceMode !== "character" && presenceMode !== "hands" && presenceMode !== "none";
+  })) {
+    return fail("FLOW_MOTION_IMAGE_PRESENCE_INVALID", "Veo 후보 장면의 이미지 인물·손 존재 계약을 확인하지 못했습니다.");
+  }
+  const selectedScenes = scriptedVeoScenes.filter(({ sceneNumber }) =>
+    imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode !== "none"
+  );
+  const excludedObjectOnlySceneNumbers = scriptedVeoScenes
+    .filter(({ sceneNumber }) => imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode === "none")
+    .map(({ sceneNumber }) => sceneNumber);
   const baseAssets = scenes.map((_, index) => ({
     sceneNumber: index + 1,
     source: "layered_still",
@@ -107,6 +121,7 @@ export function resolveFlowMotionRenderInputs({ record, imagesDir, statePath, pr
         portraitVideoCoveragePass: true,
         ownerQaCoveragePass: true,
         noVeoMotionRequired: true,
+        excludedObjectOnlySceneNumbers,
         passed: true,
       },
     };
@@ -257,6 +272,7 @@ export function resolveFlowMotionRenderInputs({ record, imagesDir, statePath, pr
       portraitVideoCoveragePass: true,
       ownerQaCoveragePass: true,
       noVeoMotionRequired: false,
+      excludedObjectOnlySceneNumbers,
       passed: true,
     },
   };

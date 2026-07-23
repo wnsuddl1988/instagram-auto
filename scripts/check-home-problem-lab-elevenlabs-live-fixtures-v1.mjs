@@ -19,7 +19,7 @@ const typesUrl = toModuleUrl("lib/home-problem-lab/types.ts");
 const configUrl = toModuleUrl("lib/home-problem-lab/config.ts", { "./types": typesUrl });
 const normalizationUrl = toModuleUrl("lib/home-problem-lab/tts-normalization.ts");
 const preflightUrl = toModuleUrl("lib/home-problem-lab/tts-preflight.ts");
-const authorizationUrl = toModuleUrl("lib/home-problem-lab/tts-live-authorization.ts");
+const authorizationUrl = toModuleUrl("lib/home-problem-lab/tts-live-authorization.ts", { "./config": configUrl });
 const adapterUrl = toModuleUrl("lib/home-problem-lab/elevenlabs-tts-adapter.ts", {
   "./config": configUrl,
   "./tts-live-authorization": authorizationUrl,

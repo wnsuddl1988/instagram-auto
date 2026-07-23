@@ -42,18 +42,13 @@ const samples = [
 const audit = buildLayeredMotionAudit(samples);
 const filters = samples.map((recipe) => buildLayeredMotionFilter({ recipe, frames: 90, durationSec: 3 }));
 
-check("renderer contract is versioned", LAYERED_MOTION_RENDERER_VERSION === "money_shorts_layered_motion_renderer_v3");
-check("every semantic motion plan maps to a camera recipe", samples.every((recipe) => recipe.planMapped));
-check("motion audit covers at least three distinct camera modes", audit.distinctCameraModeCount >= 3 && audit.distinctCameraModesPass);
-check("every scene receives layered foreground parallax", audit.layeredParallaxCoveragePass && filters.every((filter) => /foregroundalpha/.test(filter)));
-check("character scenes receive a feathered micro-motion layer", audit.characterMicroMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "character").every((filter) => /characteralpha/.test(filter)));
-check("hands-only scenes receive a separate action layer", audit.handActionMicroMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "hands").every((filter) => /handsalpha/.test(filter)));
-check("character head and action areas receive independent feathered motion", audit.localizedMotionCoveragePass && filters.filter((_, index) => samples[index].presenceMode === "character").every((filter) => /headalpha/.test(filter) && /actionalpha/.test(filter)));
-check("micro-motion amplitude is visible but restrained", audit.visibleMicroMotionAmplitudePass && samples.every((recipe) => recipe.visibleMicroMotionAmplitudePx >= (recipe.presenceMode === "none" ? 3 : 4) && recipe.visibleMicroMotionAmplitudePx <= (recipe.presenceMode === "hands" ? 5 : 4)));
-check("masked layers use one eased path with temporal smoothing", audit.smoothMotionPathPass && samples.every((recipe) => recipe.motionPath === "single_eased_drift" && recipe.temporalSmoothing === true) && filters.every((filter) => /tmix=frames=3/.test(filter)));
-check("camera recipes include lateral, push, pull, vertical and breathing behavior", ["lateral", "evidence_push", "pull_open", "vertical_reveal", "breathing_hold"].every((mode) => audit.cameraModes.includes(mode)));
-check("filter uses eased time-varying motion rather than periodic layer bobbing", filters.every((filter) => /on\//.test(filter) && /3-2\*/.test(filter)) && filters.every((filter) => !/2\*PI\*t/.test(filter)));
-check("combined motion audit passes", audit.passed === true);
+check("renderer contract is versioned for fixed stills", LAYERED_MOTION_RENDERER_VERSION === "money_shorts_static_still_renderer_v4");
+check("every regular-image recipe is an explicit fixed still", samples.every((recipe) => recipe.staticStill === true && recipe.imageMotionDisabled === true && recipe.cameraMode === "static_hold"));
+check("source motion plans remain present for image planning without becoming render motion", audit.sourceMotionPlanCoveragePass === true);
+check("motion audit requires all ordinary images to be fixed", audit.staticStillCoveragePass === true && audit.imageMotionDisabledCoveragePass === true);
+check("fixed still filter has no time-varying image motion", filters.every((filter) => !/zoompan|overlay|tmix|on\//.test(filter)));
+check("fixed still filter only fits the image into the 9:16 frame", filters.every((filter) => /scale=1080:1920/.test(filter) && /crop=1080:1920/.test(filter) && /\[motionout\]/.test(filter)));
+check("fixed-still audit passes", audit.passed === true);
 
 const closingTimeline = buildAudioSynchronizedVisualTimeline(
   [{ sceneNumber: 1, sceneRole: "habit" }, { sceneNumber: 2, sceneRole: "save" }],
@@ -104,7 +99,7 @@ if (smokeIndex >= 0) {
         "-filter_complex", filter, "-map", "[motionout]", "-frames:v", String(frames),
         "-c:v", "libx264", "-crf", "21", "-preset", "fast", "-an", target,
       ], { shell: false, encoding: "utf8", timeout: 120_000, maxBuffer: 16 * 1024 * 1024 });
-      check(`ffmpeg ${recipe.presenceMode} layered-motion smoke render succeeds`, render.status === 0 && fs.existsSync(target) && fs.statSync(target).size > 0);
+      check(`ffmpeg ${recipe.presenceMode} fixed-still smoke render succeeds`, render.status === 0 && fs.existsSync(target) && fs.statSync(target).size > 0);
       if (render.status !== 0) console.error((render.stderr ?? "").slice(-1600));
     }
   }

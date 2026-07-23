@@ -46,6 +46,8 @@ export type FlowMotionSceneInput = {
   visualCue: string;
   visibleAction?: string;
   motionPlan?: string;
+  presenceMode?: "character" | "hands" | "none";
+  visualModeId?: string;
   mediaStrategy: SceneMediaStrategy;
   mediaStrategyContractVersion?: string;
   referenceFile: string;
@@ -134,6 +136,34 @@ export type FlowMotionTransition = {
   note?: string;
   execution?: FlowMotionJob["execution"];
 };
+
+export function flowMotionUnknownCreditNoResultCanReopen(input: {
+  jobStatus: FlowMotionJobStatus;
+  outputExists: boolean;
+  exactUncertainAttempt: boolean;
+  summaryStatus: unknown;
+  summaryFailure: unknown;
+  profileAttempts: unknown;
+  transitionHistory: FlowMotionJob["transitionHistory"];
+}): boolean {
+  if (input.jobStatus !== "qa_failed" || input.outputExists || !input.exactUncertainAttempt) return false;
+  if (!["MAKE_CLICK_OUTCOME_UNKNOWN", "APPROVAL_CLICK_OUTCOME_UNKNOWN"].includes(String(input.summaryStatus ?? "")) ||
+      input.summaryFailure !== "flow_result_binding_timeout_no_search") return false;
+  if (!Array.isArray(input.profileAttempts) ||
+      !input.profileAttempts.some((entry) =>
+        entry !== null &&
+        typeof entry === "object" &&
+        "state" in entry &&
+        entry.state === "selected_resume_download")) return false;
+  const recoveryAuthorization = input.transitionHistory.at(-2);
+  const recoveryFailure = input.transitionHistory.at(-1);
+  return recoveryAuthorization?.from === "approval_pending" &&
+    recoveryAuthorization.to === "generating" &&
+    typeof recoveryAuthorization.evidenceId === "string" &&
+    recoveryAuthorization.evidenceId.startsWith("owner-recovery-") &&
+    recoveryFailure?.from === "generating" &&
+    recoveryFailure.to === "qa_failed";
+}
 
 export type FlowMotionQaEvidence = {
   schemaVersion: typeof FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION;
@@ -225,6 +255,10 @@ export function buildFlowMotionState(input: {
     throw new Error("flow_motion_identity_invalid");
   }
   const selectedScenes = input.scenes.filter((scene) => scene.mediaStrategy === "veo_motion");
+  const forbiddenObjectOnlyScene = selectedScenes.find((scene) => scene.presenceMode === "none");
+  if (forbiddenObjectOnlyScene) {
+    throw new Error(`flow_motion_object_only_scene_forbidden:${forbiddenObjectOnlyScene.sceneNumber}`);
+  }
   const duplicateSceneNumbers = selectedScenes.length !== new Set(selectedScenes.map((scene) => scene.sceneNumber)).size;
   if (duplicateSceneNumbers) throw new Error("flow_motion_scene_numbers_duplicate");
 
@@ -236,9 +270,9 @@ export function buildFlowMotionState(input: {
     const jobId = `${input.topicId}-${input.productionPartId}-scene-${String(scene.sceneNumber).padStart(2, "0")}`;
     const prompt = buildFlowMotionPrompt(scene);
     const promptSha256 = sha256(prompt);
-    const previousJob = input.previous?.scriptFingerprint === input.scriptFingerprint
-      ? input.previous.jobs.find((candidate) => candidate.sceneNumber === scene.sceneNumber)
-      : null;
+    // 다른 편의 문구나 자막만 바뀌어도 전체 대본 fingerprint는 달라질 수 있다.
+    // 이미지 해시와 Flow 프롬프트가 같은 장면은 이미 검수된 결과를 그대로 이어 쓴다.
+    const previousJob = input.previous?.jobs.find((candidate) => candidate.sceneNumber === scene.sceneNumber) ?? null;
     const previousContractMatches =
       previousJob?.jobId === jobId &&
       previousJob.referenceSha256 === scene.referenceSha256 &&

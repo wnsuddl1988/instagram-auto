@@ -37,6 +37,7 @@ const {
   buildFlowMotionState,
   flowMotionStateIsValid,
   transitionFlowMotionJob,
+  flowMotionUnknownCreditNoResultCanReopen,
 } = loadTypeScriptModule(new URL("../lib/flow-motion-jobs.ts", import.meta.url).pathname.replace(/^\/(.:\/)/, "$1"));
 
 const { VEO_SCENE_SELECTION_CONTRACT_VERSION } = loadTypeScriptModule(
@@ -146,6 +147,20 @@ check("motion prompt preserves the bright warm non-photoreal visual contract", (
   assert.match(prompt, /non-photoreal family-feature-quality cinematic 3D/);
   assert.match(prompt, /bright warm palette/);
   assert.match(prompt, /No readable text[\s\S]*laboratory, vault, factory, machine room/);
+});
+
+check("object-only reference images cannot become Flow generation jobs", () => {
+  const objectOnlyScenes = structuredClone(scenes);
+  objectOnlyScenes[1].presenceMode = "none";
+  objectOnlyScenes[1].visualModeId = "OBJECT_MECHANISM";
+  assert.throws(() => buildFlowMotionState({
+    topicId: "flow-test-topic",
+    productionPartId: "single",
+    scriptFingerprint: "script-fingerprint-v1",
+    outputRoot,
+    scenes: objectOnlyScenes,
+    generatedAt,
+  }), /flow_motion_object_only_scene_forbidden:2/);
 });
 
 check("packet hashes and approval wording are deterministic", () => {
@@ -293,26 +308,251 @@ check("operator exposes packet preparation as a no-script local action", () => {
   assert.match(helperSource, /flowMotionPrepare/);
   assert.match(routeSource, /prepareWizardFlowMotionPackets/);
   assert.match(routeSource, /생성 전송·크레딧 사용은 0회/);
+  assert.match(helperSource, /scene-images-summary\.json/);
+  assert.match(helperSource, /flow_motion_presence_contract_missing/);
+  assert.match(helperSource, /flow_motion_image_summary_hash_mismatch/);
+  assert.match(helperSource, /presenceMode:/);
+  assert.match(helperSource, /scene\.mediaStrategy === "veo_motion" && presenceMode === "none"[\s\S]*\? "still"/);
 });
 
 check("wizard shows packet state without claiming that Flow generated a clip", () => {
   assert.match(wizardSource, /title="Veo 모션 준비"/);
   assert.match(wizardSource, /wizard-action-flow-motion-prepare/);
   assert.match(wizardSource, /브라우저를 열거나 크레딧을 사용하지 않습니다/);
+  assert.match(wizardSource, /wizard-flow-motion-preview-[\s\S]*muted/);
+  assert.match(wizardSource, /Veo 원본 오디오는 검수·최종 영상에 사용하지 않습니다/);
+  assert.match(wizardSource, /인물·손이 없는 이미지는 Veo 생성 대상에서 자동 제외됩니다/);
 });
 
 check("operator connects exact approval, one live runner and Owner QA actions", () => {
   assert.match(helperSource, /flowMotionGenerate/);
+  assert.match(helperSource, /flowMotionRecover/);
   assert.match(routeSource, /authorizeWizardFlowMotionGeneration/);
+  assert.match(routeSource, /authorizeWizardFlowMotionResultRecovery/);
   assert.match(routeSource, /ALLOW_FLOW_MOTION_GENERATION/);
   assert.match(routeSource, /passWizardFlowMotionOwnerQa/);
   assert.match(routeSource, /failWizardFlowMotionOwnerQa/);
 });
 
+check("paid Flow result recovery is download-only and evidence-bound", () => {
+  assert.match(helperSource, /FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT = "기존결과복구"/);
+  assert.match(helperSource, /FLOW_MOTION_RESUMABLE_SUMMARY_STATUSES/);
+  assert.match(helperSource, /SUBMITTED_RESULT_BOUND_PENDING_DOWNLOAD/);
+  assert.match(helperSource, /flowMotionResultBindingIsExact/);
+  assert.match(helperSource, /money_shorts_flow_motion_result_binding_v1/);
+  assert.match(helperSource, /flow_motion_recovery_evidence_invalid/);
+  assert.match(helperSource, /Owner approved download-only recovery of an existing paid Flow result; no new generation submission/);
+  assert.match(routeSource, /action === "flowMotionGenerate" \|\| action === "flowMotionRecover"/);
+  assert.match(routeSource, /const media = recoveryOnly \? null : readWizardRealMediaState/);
+  assert.match(helperSource, /ownerObservedSubmissionCount/);
+  assert.match(wizardSource, /Owner 확인 누적 전송/);
+  assert.match(wizardSource, /추가 생성 없이 기존 영상 저장 복구/);
+  assert.match(helperSource, /resultRecoveryAvailable/);
+  assert.match(wizardSource, /job\.resultRecoveryAvailable/);
+  assert.match(helperSource, /flowMotionSubmissionEvidenceIsReliable/);
+  assert.match(helperSource, /flowMotionUncertainResultRecoveryIsExact/);
+  assert.match(helperSource, /exact_attempt_result_recovered_after_uncertain_click/);
+  assert.match(helperSource, /--recover-existing-only/);
+  assert.match(runnerSource, /recoverExistingOnly/);
+  assert.match(runnerSource, /recovery_only_requires_existing_attempt/);
+  assert.match(wizardSource, /새 생성 없이 기존 결과 확인·복구/);
+  assert.doesNotMatch(wizardSource, /\(job\.status === "approval_pending" \|\| job\.status === "qa_failed"\)/);
+});
+
+check("saved paid Flow output reconnects to QA before any recovery runner", () => {
+  const flowBranchStart = routeSource.indexOf('if (action === "flowMotionGenerate" || action === "flowMotionRecover")');
+  const flowBranchEnd = routeSource.indexOf('if (action === "flowMotionQaPass")', flowBranchStart);
+  assert.ok(flowBranchStart >= 0 && flowBranchEnd > flowBranchStart);
+  const flowRouteBranch = routeSource.slice(flowBranchStart, flowBranchEnd);
+  const authorizedIndex = flowRouteBranch.indexOf("const authorized =");
+  const runnerIndex = flowRouteBranch.indexOf("await runOperatorScriptAsync");
+  const firstRecordIndex = flowRouteBranch.indexOf("recordWizardFlowMotionGenerationResult(topicId, jobId)");
+  assert.ok(firstRecordIndex >= 0 && firstRecordIndex < authorizedIndex && authorizedIndex < runnerIndex);
+  const preAuthorizationRecovery = flowRouteBranch.slice(0, authorizedIndex);
+  assert.match(preAuthorizationRecovery, /if \(recoveryOnly(?: && [^)]+)?\)[\s\S]*recordWizardFlowMotionGenerationResult\(topicId, jobId\)/);
+
+  const recordStart = helperSource.indexOf("export function recordWizardFlowMotionGenerationResult");
+  const recordEnd = helperSource.indexOf("export function markWizardFlowMotionGenerationFailed", recordStart);
+  assert.ok(recordStart >= 0 && recordEnd > recordStart);
+  const recordSource = helperSource.slice(recordStart, recordEnd);
+  assert.match(recordSource, /existsSync\(target\.job\.expectedVideoPath\)/);
+  assert.match(recordSource, /flowMotionSavedOutputFinalizationIsExact\(summary, target\.job\)/);
+  assert.match(recordSource, /target\.job\.status !== "generating" && target\.job\.status !== "qa_pending"/);
+  assert.match(recordSource, /const alreadyRecorded = target\.job\.qa\.outputVideoSha256 === outputVideoSha256/);
+  assert.match(recordSource, /flow_motion_qa_pending_result_mismatch/);
+  assert.match(recordSource, /to: "qa_pending"/);
+  const qaPendingIdempotenceStart = recordSource.indexOf('if (target.job.status === "qa_pending")');
+  const qaPendingIdempotenceEnd = recordSource.indexOf("const at =", qaPendingIdempotenceStart);
+  assert.ok(qaPendingIdempotenceStart >= 0 && qaPendingIdempotenceEnd > qaPendingIdempotenceStart);
+  const qaPendingIdempotenceSource = recordSource.slice(qaPendingIdempotenceStart, qaPendingIdempotenceEnd);
+  assert.match(qaPendingIdempotenceSource, /target\.job\.execution\.status === "downloaded"/);
+  assert.match(qaPendingIdempotenceSource, /target\.job\.execution\.selectedProfile === summary\?\.selectedProfile/);
+  assert.match(qaPendingIdempotenceSource, /resolve\(String\(target\.job\.execution\.summaryPath \?\? ""\)\) === resolve\(summaryPath\)/);
+  assert.match(qaPendingIdempotenceSource, /\? \{ ok: true, status: readWizardFlowMotionStatus\(topicId\) \}/);
+  assert.doesNotMatch(qaPendingIdempotenceSource, /writeWizardFlowMotionStateAtomic|transitionFlowMotionJob/);
+
+  const savedOutputCheckStart = helperSource.indexOf("function flowMotionSavedOutputFinalizationIsExact");
+  const savedOutputCheckEnd = helperSource.indexOf("function flowMotionUncertainResultRecoveryIsExact", savedOutputCheckStart);
+  assert.ok(savedOutputCheckStart >= 0 && savedOutputCheckEnd > savedOutputCheckStart);
+  const savedOutputCheckSource = helperSource.slice(savedOutputCheckStart, savedOutputCheckEnd);
+  assert.match(savedOutputCheckSource, /summary\.status === "OWNER_QA_REQUIRED"/);
+  assert.match(savedOutputCheckSource, /flowMotionAttemptIdentityIsExact\(summary, job\)/);
+  assert.match(savedOutputCheckSource, /flowMotionResultBindingIsExact\(summary, job\)/);
+  assert.match(savedOutputCheckSource, /flowMotionSubmissionEvidenceIsReliable\(summary, job\.providerTarget\.expectedCreditsPerGeneration, job\)/);
+  assert.match(savedOutputCheckSource, /summary\.outputVideoSha256 === outputVideoSha256/);
+  assert.match(savedOutputCheckSource, /summary\.probe\?\.audioStreamCount\) === 0/);
+
+  const failedFinalizationStart = helperSource.indexOf("function flowMotionFailedAfterRunnerFinalization");
+  const failedFinalizationEnd = helperSource.indexOf("function flowMotionUncertainResultRecoveryIsExact", failedFinalizationStart);
+  assert.ok(failedFinalizationStart >= 0 && failedFinalizationEnd > failedFinalizationStart);
+  const failedFinalizationSource = helperSource.slice(failedFinalizationStart, failedFinalizationEnd);
+  assert.match(failedFinalizationSource, /job\.transitionHistory\.at\(-1\)/);
+  assert.match(failedFinalizationSource, /latestTransition\?\.from === "generating"/);
+  assert.match(failedFinalizationSource, /latestTransition\.to === "qa_failed"/);
+  assert.doesNotMatch(failedFinalizationSource, /qa_pending|\.some\(/);
+  assert.match(recordSource, /const recoverableFailedFinalization = flowMotionFailedAfterRunnerFinalization\(target\.job\)/);
+  assert.match(recordSource, /target\.job\.status !== "generating" && target\.job\.status !== "qa_pending" && !recoverableFailedFinalization/);
+});
+
+check("public recovery availability includes exact generating saved-output states", () => {
+  const publicJobsStart = helperSource.indexOf("const publicJobs =");
+  const publicRecoveryStart = helperSource.indexOf("const outputExists = existsSync(job.expectedVideoPath)", publicJobsStart);
+  const publicRecoveryEnd = helperSource.indexOf("const newAttemptReopenAvailable", publicRecoveryStart);
+  assert.ok(publicRecoveryStart >= 0 && publicRecoveryEnd > publicRecoveryStart);
+  const publicRecoverySource = helperSource.slice(publicRecoveryStart, publicRecoveryEnd);
+  assert.match(publicRecoverySource, /job\.status === "generating"/);
+  assert.match(publicRecoverySource, /existsSync\(job\.expectedVideoPath\)/);
+  assert.match(publicRecoverySource, /flowMotionKnownResultRecoveryIsExact\(summary, job\)/);
+  assert.match(publicRecoverySource, /flowMotionUncertainResultRecoveryIsExact\(summary, job\)/);
+  assert.match(publicRecoverySource, /flowMotionResultBindingIsExact\(summary, job\)/);
+  assert.match(publicRecoverySource, /flowMotionSavedOutputFinalizationIsExact\(summary, job\)|summary\?\.status === "OWNER_QA_REQUIRED"/);
+  assert.match(publicRecoverySource, /const interruptedGeneratingRecoveryAvailable =[\s\S]*job\.status === "generating" &&[\s\S]*!outputExists &&[\s\S]*\(knownResultRecoveryIsExact \|\| uncertainResultRecoveryIsExact\)/);
+  assert.match(publicRecoverySource, /const failedBoundOutputRecoveryAvailable =[\s\S]*job\.status === "qa_failed" &&[\s\S]*exactBoundOutputExists/);
+  assert.match(publicRecoverySource, /const failedSavedOutputFinalizationAvailable =[\s\S]*flowMotionFailedAfterRunnerFinalization\(job\) &&[\s\S]*outputExists &&[\s\S]*flowMotionSavedOutputFinalizationIsExact\(summary, job\)/);
+  assert.match(publicRecoverySource, /resultRecoveryAvailable = !unknownCreditNewAttemptReopenAvailable && \([\s\S]*resumableResultRecoveryAvailable \|\|[\s\S]*failedBoundOutputRecoveryAvailable \|\|[\s\S]*failedSavedOutputFinalizationAvailable \|\|[\s\S]*existingOutputFinalizationAvailable \|\|[\s\S]*interruptedGeneratingRecoveryAvailable/);
+});
+
+check("generating recovery authorization resumes exact attempts in place without rewriting authorization", () => {
+  const authorizerStart = helperSource.indexOf("export function authorizeWizardFlowMotionResultRecovery");
+  const authorizerEnd = helperSource.indexOf("export function reopenWizardFlowMotionNewAttempt", authorizerStart);
+  assert.ok(authorizerStart >= 0 && authorizerEnd > authorizerStart);
+  const authorizerSource = helperSource.slice(authorizerStart, authorizerEnd);
+  assert.match(authorizerSource, /target\.job\.status !== "qa_failed" && target\.job\.status !== "generating"/);
+  assert.match(authorizerSource, /const existingBoundOutput = outputExists &&[\s\S]*knownSubmittedResult &&[\s\S]*summary\?\.resultBinding != null &&[\s\S]*flowMotionResultBindingIsExact\(summary, target\.job\)/);
+  assert.match(authorizerSource, /if \(target\.job\.status === "generating"\) \{[\s\S]*const existingAttemptCanResume = outputExists[\s\S]*\? existingBoundOutput[\s\S]*: knownSubmittedResult \|\| uncertainAttemptResult/);
+  assert.match(authorizerSource, /\{ ok: true, status: readWizardFlowMotionStatus\(topicId\), authorizationChanged: false \}/);
+  assert.match(authorizerSource, /authorizationChanged: true/);
+  assert.match(authorizerSource, /flow_motion_recovery_generating_state_invalid/);
+});
+
+check("global Flow lease conflicts preserve authorization without overwriting attempt evidence", () => {
+  assert.match(runnerSource, /EXECUTION_LOCK_BLOCKED_NO_BROWSER/);
+  assert.match(runnerSource, /browserAccessed: false/);
+  assert.ok(runnerSource.indexOf("await acquireFlowMotionExecutionLock") < runnerSource.indexOf("const priorSummary ="));
+  assert.match(routeSource, /rollbackWizardFlowMotionAuthorizationWithoutExecution/);
+  assert.match(routeSource, /const authorizationChanged = "authorizationChanged" in authorized/);
+  assert.match(routeSource, /\? authorized\.authorizationChanged[\s\S]*: true/);
+  assert.match(routeSource, /const executionLockBlockedNoBrowser =[\s\S]*runnerStatus === "EXECUTION_LOCK_BLOCKED_NO_BROWSER"[\s\S]*run\.json\.browserAccessed === false[\s\S]*noFlowSubmission/);
+  const lockBranchStart = routeSource.indexOf("if (executionLockBlockedNoBrowser)");
+  const lockBranchEnd = routeSource.indexOf("if (!authorizationChanged)", lockBranchStart);
+  assert.ok(lockBranchStart >= 0 && lockBranchEnd > lockBranchStart);
+  const lockBranchSource = routeSource.slice(lockBranchStart, lockBranchEnd);
+  assert.match(lockBranchSource, /const rolledBack = \{ ok: true as const, status: readWizardFlowMotionStatus\(topicId\) \}/);
+  assert.doesNotMatch(lockBranchSource, /rollbackWizardFlowMotionAuthorizationWithoutExecution/);
+  const finalizeAfterFailureIndex = routeSource.indexOf("const finalizedAfterRunnerFailure = recordWizardFlowMotionGenerationResult(topicId, jobId)");
+  const preserveUnchangedIndex = routeSource.indexOf("if (!authorizationChanged)", finalizeAfterFailureIndex);
+  const markFailedIndex = routeSource.indexOf("const failed = markWizardFlowMotionGenerationFailed", preserveUnchangedIndex);
+  assert.ok(finalizeAfterFailureIndex >= 0 && preserveUnchangedIndex > finalizeAfterFailureIndex && markFailedIndex > preserveUnchangedIndex);
+  assert.match(routeSource.slice(preserveUnchangedIndex, markFailedIndex), /readWizardFlowMotionStatus\(topicId\)/);
+  assert.match(routeSource, /recoveryOnly \? "recovery" : "generation"/);
+  assert.match(helperSource, /mode: "generation" \| "recovery"/);
+  assert.match(helperSource, /const restored = mode === "generation"/);
+  assert.match(routeSource, /FLOW_MOTION_GENERATION_TIMEOUT_MS = 1_500_000/);
+});
+
+check("a pre-run crash resumes only an exact zero-submit authorized generation", () => {
+  const resumeHelperStart = helperSource.indexOf("function flowMotionUnstartedAuthorizedAttemptCanResume");
+  const resumeHelperEnd = helperSource.indexOf("function flowMotionUncertainResultRecoveryIsExact", resumeHelperStart);
+  assert.ok(resumeHelperStart >= 0 && resumeHelperEnd > resumeHelperStart);
+  const resumeHelperSource = helperSource.slice(resumeHelperStart, resumeHelperEnd);
+  assert.match(resumeHelperSource, /job\.status !== "generating"/);
+  assert.match(resumeHelperSource, /job\.execution\.status !== "authorized"/);
+  assert.match(resumeHelperSource, /job\.execution\.selectedProfile !== null/);
+  assert.match(resumeHelperSource, /job\.execution\.submissionCount !== 0/);
+  assert.match(resumeHelperSource, /job\.execution\.expectedCreditsSpent !== 0/);
+  assert.match(resumeHelperSource, /job\.execution\.summaryPath !== null/);
+  assert.match(resumeHelperSource, /if \(!summaryFileExists\) return true/);
+  assert.match(resumeHelperSource, /"FAILED_NO_AUTOMATIC_RETRY", "CONFIRMATION_PENDING_NO_SUBMISSION"/);
+  assert.match(resumeHelperSource, /summary\.approvalClickAttemptCount !== 0/);
+  assert.match(resumeHelperSource, /ownerObservedSubmissionCount/);
+  assert.match(resumeHelperSource, /ownerObservedCreditsSpent/);
+  assert.match(resumeHelperSource, /flowMotionApprovalClickRequiresManualReview\(summary, true\)/);
+  assert.match(resumeHelperSource, /Number\.isInteger\(summary\.makeClickAttemptCount\)/);
+  assert.match(resumeHelperSource, /summary\.makeClickIntent\?\.clickIntentArmed === true/);
+  assert.match(resumeHelperSource, /summary\.status === "CONFIRMATION_PENDING_NO_SUBMISSION"[\s\S]*\? confirmedNoSubmission/);
+
+  const generationAuthorizerStart = helperSource.indexOf("export function authorizeWizardFlowMotionGeneration");
+  const generationAuthorizerEnd = helperSource.indexOf("export function rollbackWizardFlowMotionAuthorizationWithoutExecution", generationAuthorizerStart);
+  const generationAuthorizerSource = helperSource.slice(generationAuthorizerStart, generationAuthorizerEnd);
+  assert.match(generationAuthorizerSource, /target\.job\.status !== "approval_pending" && target\.job\.status !== "qa_failed" && target\.job\.status !== "generating"/);
+  assert.match(generationAuthorizerSource, /flowMotionUnstartedAuthorizedAttemptCanResume\(priorSummary, priorSummaryExists, target\.job\)/);
+  assert.match(generationAuthorizerSource, /flow_motion_generating_attempt_not_safe_to_resume/);
+  assert.match(generationAuthorizerSource, /authorizationChanged: false/);
+  assert.match(wizardSource, /job\.status === "approval_pending" \|\| job\.generationResumeAvailable/);
+  assert.match(wizardSource, /이전 실행은 유료 생성 클릭 전에 중단됐습니다/);
+});
+
+check("QA rejection and legacy lazy-link false positives reopen only a fresh approved attempt", () => {
+  assert.match(helperSource, /FLOW_MOTION_NEW_ATTEMPT_CONFIRM_TEXT = "새생성열기"/);
+  assert.match(helperSource, /new_flow_edit_result_after_make_without_confirmation/);
+  assert.match(helperSource, /reopened-\$\{stamp\}\.generation-summary\.json/);
+  assert.match(helperSource, /rejected-\$\{stamp\}\.generation-summary\.json/);
+  assert.match(helperSource, /newAttemptReopenAvailable/);
+  assert.match(routeSource, /action === "flowMotionReopenNewAttempt"/);
+  assert.match(wizardSource, /wizard-action-flow-motion-reopen/);
+  assert.match(wizardSource, /이 버튼은 Flow를 실행하지 않으며 크레딧을 사용하지 않습니다/);
+});
+
+check("unknown-credit attempt reopens only after exact no-result recovery timeout", () => {
+  const transitionHistory = [
+    { from: "approval_pending", to: "generating", at: "2026-07-22T19:54:31.112Z", evidenceId: "owner-recovery-example" },
+    { from: "generating", to: "qa_failed", at: "2026-07-22T20:04:36.724Z", evidenceId: null },
+  ];
+  const candidate = {
+    jobStatus: "qa_failed",
+    outputExists: false,
+    exactUncertainAttempt: true,
+    summaryStatus: "MAKE_CLICK_OUTCOME_UNKNOWN",
+    summaryFailure: "flow_result_binding_timeout_no_search",
+    profileAttempts: [{ profileId: 2, state: "selected_resume_download" }],
+    transitionHistory,
+  };
+  assert.equal(flowMotionUnknownCreditNoResultCanReopen(candidate), true);
+  assert.equal(flowMotionUnknownCreditNoResultCanReopen({ ...candidate, outputExists: true }), false);
+  assert.equal(flowMotionUnknownCreditNoResultCanReopen({ ...candidate, exactUncertainAttempt: false }), false);
+  assert.equal(flowMotionUnknownCreditNoResultCanReopen({ ...candidate, profileAttempts: [{ profileId: 2, state: "selected" }] }), false);
+  assert.equal(flowMotionUnknownCreditNoResultCanReopen({ ...candidate, transitionHistory: transitionHistory.slice(1) }), false);
+});
+
+check("unknown-credit no-result resolution is archived and remains no-live", () => {
+  assert.match(helperSource, /FLOW_MOTION_UNKNOWN_CREDIT_NEW_ATTEMPT_CONFIRM_TEXT = "영상없음차감모름새생성열기"/);
+  assert.match(helperSource, /video_missing_credit_usage_unknown_start_new_attempt/);
+  assert.match(helperSource, /money_shorts_flow_motion_owner_resolution_v1/);
+  assert.match(helperSource, /unknownCreditNewAttemptReopenAvailable/);
+  assert.match(helperSource, /flow_motion_recovery_already_exhausted_no_result/);
+  assert.match(helperSource, /const resultRecoveryAvailable = !unknownCreditNewAttemptReopenAvailable/);
+  assert.match(wizardSource, /영상 없음·차감 모름 기록하고 새 생성 열기/);
+  assert.match(wizardSource, /job\.resultRecoveryAvailable && !job\.unknownCreditNewAttemptReopenAvailable/);
+  assert.match(routeSource, /영상 없음·크레딧 차감 여부 모름을 기록하고 새 생성 승인 대기 상태를 열었습니다/);
+});
+
 check("unknown approval-click outcome blocks reapproval and is explicit in the wizard", () => {
   const manualReviewGateIndex = helperSource.indexOf("flowMotionApprovalClickRequiresManualReview(priorSummary,");
   const ownerApprovalMatchIndex = helperSource.indexOf("ownerApproval !== target.job.approval.requiredWording", manualReviewGateIndex);
-  assert.match(helperSource, /summary\.status === "APPROVAL_CLICK_OUTCOME_UNKNOWN"/);
+  assert.match(helperSource, /"MAKE_CLICK_OUTCOME_UNKNOWN", "APPROVAL_CLICK_OUTCOME_UNKNOWN"/);
+  assert.match(helperSource, /required_generation_confirmation_dialog_missing/);
+  assert.match(helperSource, /const confirmedNoSubmission = summary\.submissionCount === 0/);
+  assert.match(helperSource, /!confirmedNoSubmission/);
   assert.match(helperSource, /summaryFileExists && summary === null/);
   assert.match(helperSource, /const priorSummaryExists = existsSync\(priorSummaryPath\)/);
   assert.match(helperSource, /flowMotionApprovalClickRequiresManualReview/);
@@ -321,12 +561,15 @@ check("unknown approval-click outcome blocks reapproval and is explicit in the w
   assert.ok(manualReviewGateIndex >= 0 && ownerApprovalMatchIndex > manualReviewGateIndex);
   assert.match(wizardSource, /wizard-flow-motion-credit-review/);
   assert.match(wizardSource, /전송·크레딧 사용 여부를 수동 확인하기 전에는 새 생성을 진행할 수 없습니다/);
-  assert.match(wizardSource, /job\.creditUsageStatus !== "unknown" && \(job\.status === "approval_pending" \|\| job\.status === "qa_failed"\)/);
+  assert.match(wizardSource, /job\.creditUsageStatus !== "unknown" && \(job\.status === "approval_pending" \|\| job\.generationResumeAvailable\)/);
   assert.doesNotMatch(wizardSource, /\{job\.status === "approval_pending" \|\| job\.status === "qa_failed" \?/);
 });
 
 check("wizard exposes exact approval entry, generated clip preview and seven-item QA", () => {
   assert.match(wizardSource, /wizard-action-flow-motion-generate/);
+  assert.match(wizardSource, /wizard-action-flow-motion-approval-fill/);
+  assert.match(wizardSource, /승인 문구만 자동 입력/);
+  assert.match(wizardSource, /flowMotionApprovalInputs\[job\.jobId\].*\.trim\(\)/);
   assert.match(wizardSource, /video=flow-motion/);
   assert.match(wizardSource, /FLOW_MOTION_QA_ITEMS/);
   assert.match(wizardSource, /7항목 통과 · 렌더에 사용/);
@@ -337,7 +580,12 @@ check("live runner requires confirmation and forbids post-submit fallback", () =
   assert.match(runnerSource, /generation_cost_or_output_facts_unconfirmed/);
   assert.match(runnerSource, /quota_exhausted_after_submission_no_fallback/);
   assert.match(runnerSource, /recordApprovalClickDispatched/);
-  assert.match(runnerSource, /submissionCount:\s*1/);
+  assert.match(runnerSource, /recordMakeClickIntentArmed/);
+  assert.match(runnerSource, /waitForPostMakeOutcome/);
+  assert.match(runnerSource, /exact_attempt_result_after_make_no_confirmation/);
+  assert.match(runnerSource, /capturePostMakeFailureEvidence/);
+  assert.match(runnerSource, /MAKE_CLICK_OUTCOME_UNKNOWN/);
+  assert.match(runnerSource, /submissionCount = 1/);
 });
 
 check("state builder has no browser, upload or network execution dependency", () => {

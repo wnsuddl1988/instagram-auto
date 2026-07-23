@@ -2798,17 +2798,18 @@ async function generateOneScene(ctx, sceneIdx, prompt, destPath, attemptLabel = 
     // 임시 채팅에는 이미지 도구가 없다. 일반 새 대화를 사용하되 사람의 미전송 초안은 절대 지우지 않는다.
     await openFreshImageChat(page, log);
     await detectStop(page);
-    await activateImageTool(page, log, warn);
-    if (!(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: pre-submit verification failed");
+    const imageToolActivation = await activateImageTool(page, log, warn);
+    const explicitImageTool = imageToolActivation?.mode === "explicit-tool";
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: pre-submit verification failed");
     const characterReferenceRequired = sceneVisualModes[sceneIdx].presence !== "none";
     const referenceAttachment = characterReferenceRequired
       ? await attachRef(page, CHARACTER_REFERENCE_ABS, log)
       : null;
-    if (characterReferenceRequired && !(await verifyImageToolActive(page))) {
+    if (characterReferenceRequired && explicitImageTool && !(await verifyImageToolActive(page))) {
       throw new Error("IMAGE_TOOL_NOT_ACTIVE: reference attach removed image mode");
     }
     await typePrompt(page, prompt, log);
-    if (!(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: post-type verification failed");
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: post-type verification failed");
     if (!(await checkSendEnabled(page))) throw new Error("send button disabled");
 
     const baseline = new Set([
@@ -2818,7 +2819,7 @@ async function generateOneScene(ctx, sceneIdx, prompt, destPath, attemptLabel = 
     const baselineAssistantCount = await page.locator('[data-message-author-role="assistant"]').count();
     if (submissionCount >= SUBMISSION_HARD_CAP) throw new Error(`SUBMISSION_HARD_CAP(${SUBMISSION_HARD_CAP}) 도달`);
     submissionCount += 1;
-    if (!(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: final submit verification failed");
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: final submit verification failed");
     await sendPrompt(page);
     const submittedAt = Date.now();
     log(`scene-${sceneIdx + 1} 제출 [${attemptLabel}] (${submissionCount}/${SUBMISSION_HARD_CAP}) — passive ${PASSIVE_UNTIL_MS / 1000}s`);

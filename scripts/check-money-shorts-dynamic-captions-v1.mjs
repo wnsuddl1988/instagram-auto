@@ -124,13 +124,12 @@ check("source and caption character counts match", audit.sourceCharacterCount ==
 check("spoken transcript punctuation remains in the timing source", captions[0]?.text.endsWith(".") && captionTranscript.includes("않아."));
 check("display captions remove only terminal punctuation", audit.displayTerminalPunctuationAbsent && audit.displayWordCoveragePass && displayCaptionTranscript.includes("않아") && !displayCaptionTranscript.includes("않아."));
 check("editorial summary cues cannot replace the transcript", !captionTranscript.includes("이 문구만 뽑으면 실패"));
-check("every caption is a bounded two-line sentence or semantic phrase", audit.displayUnitLengthPass && captions.every((caption) => caption.wordCount >= 1 && caption.wordCount <= 16 && caption.visibleCharacterCount <= 34 && caption.lineCount <= 2 && caption.maxLineVisibleChars <= 20));
-check("two-line captions use the comfortable line-gap layout contract",
+check("every caption is a bounded two-line sentence or semantic phrase", audit.displayUnitLengthPass && captions.every((caption) => caption.wordCount >= 1 && caption.wordCount <= 16 && caption.visibleCharacterCount <= 34 && caption.lineCount <= 2 && caption.maxLineVisibleChars <= 18));
+check("two-line captions use the compact sentence-card line-gap contract",
   audit.layoutVersion === DYNAMIC_CAPTION_LAYOUT_VERSION &&
   audit.twoLineSpacingPass === true &&
   audit.twoLineSpacingPx === DYNAMIC_CAPTION_TWO_LINE_GAP_PX &&
-  captions.every((caption) => caption.lineCount === 2 ? caption.lineGapPx === 18 : caption.lineGapPx === 0) &&
-  ass.includes("\\N{\\fs18}\\h"));
+  captions.every((caption) => caption.lineCount === 2 ? caption.lineGapPx === 16 : caption.lineGapPx === 0));
 check("source sentence boundaries are preserved", audit.sentenceBoundaryPreservedPass && audit.sentenceBoundaryCount === audit.expectedSentenceBoundaryCount);
 check("script paragraph boundaries are preserved", audit.sourceSegmentBoundaryPreservedPass && audit.sourceSegmentBoundaryCount === audit.expectedSourceSegmentBoundaryCount);
 check("arbitrary mid-phrase splits are forbidden", audit.sentenceSemanticSegmentationPass && audit.arbitraryMidPhraseSplitAbsent && audit.arbitrarySplitCount === 0);
@@ -151,8 +150,8 @@ check("caption placement uses at least three scene-aware safe positions", audit.
 check("no fixed bottom bar is introduced", audit.bottomFixedSubtitleBar === false && audit.karaokeFixedLowerLine === false);
 check("legacy transcript-forbidden gate is absent", !Object.hasOwn(audit, "fullTranscriptForbiddenPass"));
 check("approved bold Korean font remains", DYNAMIC_CAPTION_FONT === "Black Han Sans" && ass.includes("Black Han Sans"));
-check("semantic emphasis uses multiple bounded colors and stronger high-impact words", audit.semanticColorPalettePass && audit.emphasisDensityPass && audit.highImpactRoleEmphasisPass && audit.distinctEmphasisColors >= 2 && audit.maxEmphasizedWordsPerCaption <= 2 && Object.values(DYNAMIC_CAPTION_EMPHASIS_PALETTE).every((palette) => /^#[0-9A-F]{6}$/u.test(palette.hex)));
-check("ASS uses role-specific pop, punch, reveal, lift and landing motion", audit.motionDiversityPass && audit.distinctMotionPresets >= 3 && /\\move\(/.test(ass) && /\\fscx105/.test(ass) && /\\fscx103/.test(ass));
+check("sentence cards use full-line color roles without word-level color fragments", audit.semanticColorPalettePass && audit.sentenceCardVisualPass && audit.wordLevelColorEmphasisAbsent && audit.emphasisDensityPass && audit.highImpactRoleEmphasisPass && audit.distinctEmphasisColors >= 2 && audit.maxEmphasizedWordsPerCaption <= 1 && captions.every((caption) => caption.lineVisuals.every((line) => line.role === "support" || line.text === caption.displayLines[line.lineIndex])) && Object.values(DYNAMIC_CAPTION_EMPHASIS_PALETTE).every((palette) => /^#[0-9A-F]{6}$/u.test(palette.hex)) && ass.includes("Style: CaptionSupport,") && ass.includes("Style: CaptionKey,") && !/\\fs(?:6[8-9]|7[0-9]|8[0-9]|9[0-9]|1\d{2})\\bord(?:7|8)/.test(ass));
+check("ASS uses restrained fade and short slide motion without bounce scaling", audit.motionDiversityPass && audit.distinctMotionPresets >= 3 && /\\move\(/.test(ass) && /\\fad\(/.test(ass) && !/\\fscx10[1-9]/.test(ass));
 check(
   "ASS contains every opening token",
   ["주가가", "싸졌는데", "살", "이유가", "생기진", "않아"].every((token) => plainAssText.includes(token)) && !plainAssText.includes("않아."),
@@ -244,6 +243,8 @@ for (const topic of bank) {
       result.audit.displayWordCoveragePass !== true ||
       result.audit.multiPositionNarrativeFlowPass !== true ||
       result.audit.semanticColorPalettePass !== true ||
+      result.audit.sentenceCardVisualPass !== true ||
+      result.audit.wordLevelColorEmphasisAbsent !== true ||
       result.audit.highImpactRoleEmphasisPass !== true ||
       result.audit.motionDiversityPass !== true
     ) {

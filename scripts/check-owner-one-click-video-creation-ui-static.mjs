@@ -27,6 +27,7 @@ const PAGE_PATH = path.join(ROOT, "app", "money-shorts", "page.tsx");
 const WIZARD_PATH = path.join(ROOT, "components", "VideoCreationWizard.tsx");
 const PANEL_PATH = path.join(ROOT, "components", "OperatorPanel.tsx");
 const HELPER_PATH = path.join(ROOT, "lib", "owner-web-operator.ts");
+const FLOW_MOTION_JOBS_PATH = path.join(ROOT, "lib", "flow-motion-jobs.ts");
 const FINANCE_EDITORIAL_BANK_PATH = path.join(ROOT, "lib", "finance-editorial-topic-bank.ts");
 const FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH = path.join(ROOT, "lib", "finance-editorial-script-engine.ts");
 const ROUTE_PATH = path.join(ROOT, "app", "api", "money-shorts", "operator", "route.ts");
@@ -69,6 +70,7 @@ const pageSrc = read(PAGE_PATH);
 const wizardSrc = read(WIZARD_PATH);
 const panelSrc = read(PANEL_PATH);
 const helperSrc = read(HELPER_PATH);
+const flowMotionJobsSrc = read(FLOW_MOTION_JOBS_PATH);
 const financeEditorialBankSrc = read(FINANCE_EDITORIAL_BANK_PATH);
 const financeEditorialScriptEngineSrc = read(FINANCE_EDITORIAL_SCRIPT_ENGINE_PATH);
 const routeSrc = read(ROUTE_PATH);
@@ -170,6 +172,15 @@ check(
 );
 check("wizard upload button disabled unless uploadEnabled", /disabled=\{!uploadEnabled\}/.test(wizardSrc));
 check("wizard sends confirm fields to actualUpload", /postAction\(\s*["']actualUpload["'][\s\S]{0,280}confirmReviewed[\s\S]{0,120}confirmDiscoveryReady[\s\S]{0,120}confirmPublish[\s\S]{0,120}confirmText/.test(wizardCode));
+check(
+  "wizard unlocks the confirmation gate only for exact part-1 complete plus zero-side-effect part-2 resume",
+  /const part2OnlySafeResume = Boolean/.test(wizardCode) &&
+    /part1PublishRecovery\?\.state === "complete"/.test(wizardCode) &&
+    /exactPart2ZeroSideEffectHandoff/.test(wizardCode) &&
+    /!part2OnlySafeResume &&/.test(wizardCode) &&
+    /wizard-part2-only-safe-resume/.test(wizardCode) &&
+    wizardSrc.includes("2편만 게시합니다."),
+);
 check("panel upload section defers to wizard confirm gate", panelSrc.includes("이 점검 화면에서는 업로드가 실행되지 않습니다"));
 
 // ── 배포/로컬 안내 ───────────────────────────────────────────────────────────
@@ -255,7 +266,17 @@ check("old 324 and temporary 60 engines are absent", !/finance-curiosity-topic-e
 check("smart topic batch uses the 500-title bank before Claude expansion", /generateFinanceEditorialBankBatch/.test(helperCode) && /if \(editorialBatch && editorialBatch\.topics\.length > 0\) return editorialBatch/.test(helperCode));
 check("one recommendation batch draws from all nine editorial lanes", /for \(const lane of shuffleWizardItems\(FINANCE_EDITORIAL_LANES\)\)/.test(helperCode) && /editorialLane === lane/.test(helperCode));
 check("500-bank recent history is versioned", /finance:editorial_bank_v2/.test(helperCode));
-check("used and rated finance titles are excluded", /usedOnly:\s*true/.test(helperCode) && /usedTitles\.has/.test(helperCode) && /ratedIds\.has/.test(helperCode));
+check("used, rendered-video and rated finance titles are excluded", /usedOnly:\s*true/.test(helperCode) && /usedTitles\.has/.test(helperCode) && /ratedIds\.has/.test(helperCode) && /readWizardCompletedVideoTopics/.test(helperCode) && /finalMp4Exists/.test(helperCode));
+check(
+  "saved-work library includes script, voice and partial-image progress instead of final videos only",
+  /status: "in_progress" \| "ready" \| "needs_attention"/.test(helperCode) &&
+    /generatedImageCount/.test(helperCode) &&
+    /expectedImageCount/.test(helperCode) &&
+    /progressStage === "images"/.test(helperCode) &&
+    wizardSrc.includes("기존 작업 불러오기") &&
+    wizardSrc.includes("이어보기") &&
+    routeSrc.includes("대본·음성·이미지 단계의 진행 중 작업도 표시합니다"),
+);
 check("editorial decisions persist outside repo", /wizard-topic-editorial-preferences\.json/.test(helperSrc) && /saveWizardTopicEditorialDecision/.test(helperCode));
 check("Claude expansion receives Owner approved and rejected examples", /ownerApprovedPackages:\s*preferredEditorialPackages/.test(helperCode) && /ownerRejectedTitles:\s*rejectedEditorialTitles/.test(helperCode));
 check("script creation requires Owner make decision", /canWizardTopicEnterScript/.test(helperCode) && /TOPIC_EDITORIAL_APPROVAL_REQUIRED/.test(routeCode));check("AI-tone filter does not mistake 아니다 for a polite 니다 ending", /\(\?<!아\)니다/.test(helperCode));
@@ -482,6 +503,18 @@ check("premium consequence fallback avoids broken Korean particle from moneyAnch
       /wizardScriptFingerprint/.test(ttsScriptSrc),
   );
   check(
+    "a Part 2-only script correction preserves an unchanged completed Part 1",
+    /function wizardProductionPartRenderFingerprint/.test(helperCode) &&
+      /const \{ videoStrategy: _sharedStrategy, \.\.\.renderScript \} = part\.script/.test(helperCode) &&
+      /function reusableWizardProductionPartFingerprint/.test(helperCode),
+  );
+  check(
+    "a text-only Part 2 marker correction preserves reviewed images and matching Flow footage",
+    /partMarkerTextOnlyCorrection/.test(helperCode) &&
+      /part\.coverLines\[0\]\?\.emphasis === "part_marker"/.test(helperCode) &&
+      /input\.previous\?\.jobs\.find/.test(flowMotionJobsSrc),
+  );
+  check(
     "all bank, legacy and post-500 finance topics use the shared script engine before generic package copy",
     /from "\.\/finance-editorial-script-engine"/.test(helperCode) &&
       /function resolveFinanceEditorialTopic/.test(helperCode) &&
@@ -585,9 +618,41 @@ check("route requires server-side upload confirmation gate", /UPLOAD_CONFIRMATIO
 check('route confirm text constant is "업로드"', /UPLOAD_CONFIRM_TEXT\s*=\s*"업로드"/.test(routeSrc));
 {
   const allowArmCount = (routeCode.match(/allowArm:\s*true/g) ?? []).length;
-  const inActualUpload = /action\s*===\s*"actualUpload"[\s\S]{0,4000}allowArm:\s*true/.test(routeCode);
+  const actualUploadStart = routeCode.indexOf('action === "actualUpload"');
+  const actualUploadEnd = actualUploadStart === -1
+    ? -1
+    : routeCode.indexOf("\n  const input = body", actualUploadStart);
+  const actualUploadBlock = actualUploadStart === -1
+    ? ""
+    : routeCode.slice(
+        actualUploadStart,
+        actualUploadEnd === -1 ? undefined : actualUploadEnd,
+      );
+  const inActualUpload = /allowArm:\s*true/.test(actualUploadBlock);
   check("route grants allowArm exactly once, inside actualUpload handler", allowArmCount === 1 && inActualUpload);
 }
+check(
+  "two-part upload routes part-2 through exact safe preflight and resumes after completed part-1",
+  /resumePart2Only/.test(routeCode) &&
+    /isWizardPart2OnlySafePublishResume/.test(routeCode) &&
+    /buildWizardPart2SafePublishCommand\(topicId\)/.test(routeCode) &&
+    /PART2_SAFE_PREFLIGHT_NOT_EXACT/.test(routeCode) &&
+    /safePreflight\.preflightFingerprint/.test(routeCode),
+);
+check(
+  "step 10 preserves completed part-1 and reuses the current bound part-2 preflight",
+  /function runWizardPreflightAction/.test(routeCode) &&
+    /const selectedUnits = resumePart2Only/.test(routeCode) &&
+    /existingPart2Preflight/.test(routeCode) &&
+    /publishMode: resumePart2Only/.test(routeCode) &&
+    routeSrc.includes("1편 게시 완료 기록을 보존하고 2편 게시 전 점검을 통과했습니다."),
+);
+check(
+  "upload-ready list uses the same exact part-2-only resume predicate as execution",
+  /export function isWizardPart2OnlySafePublishResume/.test(helperCode) &&
+    /const part2OnlySafeResume =\s*isWizardPart2OnlySafePublishResume\(recoveryStates\)/.test(helperCode) &&
+    helperSrc.includes("1편 게시 완료 기록을 보존하고, 게시 전 점검 후 2편만 안전하게 이어서 업로드합니다."),
+);
 check("route gates wizardPreflight/actualUpload as local-only actions", /LOCAL_SCRIPT_ACTIONS[\s\S]{0,600}"wizardPreflight"/.test(routeSrc) && /LOCAL_SCRIPT_ACTIONS[\s\S]{0,600}"actualUpload"/.test(routeSrc));
 check("route blocks duplicate publish in Korean", routeSrc.includes("이미 게시된 콘텐츠입니다"));
 check("route explains missing upload keys in Korean", routeSrc.includes("업로드 키가 준비되지 않았습니다"));
@@ -719,6 +784,7 @@ const vidScriptSrc = existsSync(vidScriptPath) ? readFileSync(vidScriptPath, "ut
 const motionHelperSrc = existsSync(motionHelperPath) ? readFileSync(motionHelperPath, "utf8") : "";
 const flowMotionRenderInputSrc = existsSync(flowMotionRenderInputPath) ? readFileSync(flowMotionRenderInputPath, "utf8") : "";
 const imgScriptCode = stripComments(imgScriptSrc);
+const motionHelperCode = stripComments(motionHelperSrc);
 const pkgJson = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
 const pkgDeps = JSON.stringify({ ...(pkgJson.dependencies ?? {}), ...(pkgJson.devDependencies ?? {}) });
 
@@ -794,6 +860,13 @@ check("realTtsCreate stops at the first nonzero child exit and returns sanitized
   /다음 편을 실행하지 않았습니다/.test(routeCode));
 check("real media status uses the same duration-safe two-part production record",
   /const record = baseRecord \? resolveWizardDurationSafeProductionRecord\(topicId, baseRecord\) : null/.test(helperCode));
+check(
+  "Flow status uses the duration-safe production topology and the UI only completes render-ready states",
+  /function resolveWizardFlowMotionParts[\s\S]{0,500}resolveWizardDurationSafeProductionRecord\(topicId, baseRecord\)/.test(helperCode) &&
+    /const flowMotionStepState: RunState/.test(wizardCode) &&
+    /flowMotion\.state === "render_ready" \|\| flowMotion\.state === "not_required"/.test(wizardCode) &&
+    /state=\{flowMotionStepState\}/.test(wizardCode),
+);
 for (const otherAction of ["realSceneImagesCreate", "finalVideoCreate", "wizardPreflight", "actualUpload"]) {
   // 해당 action 핸들러 블록 내부에 includeMediaEnv:true가 없어야 한다(다음 action 시작 전까지 스캔).
   const idx = routeCode.indexOf(`action === "${otherAction}"`);
@@ -842,13 +915,13 @@ check(
     /IMAGE_TOOL_NOT_ACTIVE/.test(chatgptImageCoreSrc),
 );
 check(
-  "scene runner preserves and rechecks picture_v2 before submitting with the send button",
+  "scene runner preserves and rechecks picture_v2 only when the current ChatGPT UI exposes it",
   /activateImageTool,/.test(imgScriptCode) &&
     /verifyImageToolActive,/.test(imgScriptCode) &&
     /sendPrompt,/.test(imgScriptCode) &&
     imgScriptCode.indexOf("await activateImageTool(page") < imgScriptCode.indexOf("await typePrompt(page") &&
-    /post-type verification failed/.test(imgScriptCode) &&
-    /final submit verification failed/.test(imgScriptCode) &&
+    /const explicitImageTool = imageToolActivation\?\.mode === "explicit-tool"/.test(imgScriptCode) &&
+    /explicitImageTool && !\(await verifyImageToolActive\(page\)\)/.test(imgScriptCode) &&
     /await sendPrompt\(page\)/.test(imgScriptCode) &&
     !/function activateImageToolCurrentUI/.test(imgScriptCode),
 );
@@ -864,16 +937,19 @@ check(
     /Owner draft preserved/.test(chatgptImageCoreCode),
 );
 check(
-  "image menu matching is menuitem-only and browser failures stop after the first scene",
+  "image menu matching is menuitem-only and current no-menu Chat UI uses bounded prompt routing",
   /getByRole\("menuitemradio"/.test(chatgptImageCoreCode) &&
     /getByRole\("menuitem"/.test(chatgptImageCoreCode) &&
     !/getByRole\("button", \{ name: \/\^이미지 만들기/.test(chatgptImageCoreCode) &&
     /IMAGE_TOOL_ENTRY_UNUSABLE/.test(chatgptImageCoreCode) &&
+    /IMAGE_TOOL_PROMPT_ROUTING_FALLBACK/.test(chatgptImageCoreCode) &&
+    /return \{ mode: IMAGE_TOOL_PROMPT_ROUTING_FALLBACK \}/.test(chatgptImageCoreCode) &&
+    /aria-label\*=\"파일 등 추가\"/.test(chatgptImageCoreCode) &&
     /IMAGE_TOOL_CHAT_OPEN_FAILED/.test(imgScriptCode) &&
     /if \(\/IMAGE_TOOL_\/\.test\(msg\)\)/.test(imgScriptCode),
 );
 check(
-  "current ChatGPT home direct image button is awaited before and after the plus-menu fallback",
+  "current ChatGPT home direct image button is awaited and absent menu falls back to explicit prompt routing",
   /async function waitForDirectImageEntry/.test(chatgptImageCoreCode) &&
     /const directTarget = await waitForDirectImageEntry\(page\)/.test(chatgptImageCoreCode) &&
     /page\.locator\("button"\)\.filter\(\{ hasText: \/\^이미지 만들기\$\//.test(chatgptImageCoreCode) &&
@@ -884,7 +960,7 @@ check(
     /direct create-image button click failed/.test(chatgptImageCoreCode) &&
     /direct create-image button did not create a picture_v2 chip/.test(chatgptImageCoreCode) &&
     chatgptImageCoreCode.indexOf("const directTarget =") < chatgptImageCoreCode.indexOf("const plus =") &&
-    /const delayedDirectTarget = await waitForDirectImageEntry\(page, 7000\)/.test(chatgptImageCoreCode) &&
+    /const delayedDirectTarget = await waitForDirectImageEntry\(page, 1500\)/.test(chatgptImageCoreCode) &&
     /delayed direct home button/.test(chatgptImageCoreCode),
 );
 check(
@@ -892,6 +968,7 @@ check(
   existsSync(CHATGPT_IMAGE_LIVE_PREFLIGHT_PATH) &&
     /--allow-no-send/.test(chatgptImageLivePreflightCode) &&
     /submitted:\s*false/.test(chatgptImageLivePreflightCode) &&
+    /imageRoute:\s*null/.test(chatgptImageLivePreflightCode) &&
     /READY_BEFORE_SEND/.test(chatgptImageLivePreflightCode) &&
     /checkSendEnabled/.test(chatgptImageLivePreflightCode) &&
     /await page\.close\(\)/.test(chatgptImageLivePreflightCode) &&
@@ -1056,7 +1133,29 @@ check(
   /realSceneImagesCreate[\s\S]{0,3000}extraEnv:\s*\{\s*ALLOW_CHATGPT_IMAGE:\s*"1"\s*\}/.test(routeCode) &&
   (routeCode.match(/ALLOW_CHATGPT_IMAGE/g) ?? []).length === 3,
 );
-check("route passes the Flow live marker only inside the exact approved generation action", /flowMotionGenerate[\s\S]{0,3200}extraEnv:\s*\{\s*ALLOW_FLOW_MOTION_GENERATION:\s*"1"\s*\}/.test(routeCode) && (routeCode.match(/ALLOW_FLOW_MOTION_GENERATION/g) ?? []).length === 1);
+const flowMotionRouteBranchStart = routeCode.indexOf('if (action === "flowMotionGenerate" || action === "flowMotionRecover")');
+const flowMotionRouteBranchEnd = routeCode.indexOf('if (action === "flowMotionQaPass")', flowMotionRouteBranchStart);
+const flowMotionRouteBranch = flowMotionRouteBranchStart >= 0 && flowMotionRouteBranchEnd > flowMotionRouteBranchStart
+  ? routeCode.slice(flowMotionRouteBranchStart, flowMotionRouteBranchEnd)
+  : "";
+check(
+  "route passes Flow browser-launch markers only inside the exact approved generation action",
+  /extraEnv:\s*\{\s*ALLOW_FLOW_MOTION_GENERATION:\s*"1",\s*ALLOW_GEMINI_VEO:\s*"1",\s*\}/.test(flowMotionRouteBranch) &&
+    (routeCode.match(/ALLOW_FLOW_MOTION_GENERATION/g) ?? []).length === 1 &&
+    (routeCode.match(/ALLOW_GEMINI_VEO/g) ?? []).length === 1,
+);
+check(
+  "route distinguishes zero-credit Flow browser startup and session failures from generation failures",
+  /browserStartupFailure/.test(routeCode) &&
+    /browserSessionFailure/.test(routeCode) &&
+    routeSrc.includes("이번 시도는 Flow 전송 0회·크레딧 0회입니다."),
+);
+check(
+  "route separates uncertain approval and submitted-result recovery from safe zero-submit failures",
+  /approvalClickOutcomeUnknown/.test(routeCode) &&
+    /submittedResultRecoveryRequired/.test(routeCode) &&
+    routeSrc.includes("새로 생성하지 말고 기존 결과를 복구해 주세요."),
+);
 check("images gate requires expectedCount SAVED_OK portrait files", /expectedSceneCount/.test(helperCode) && /savedScenes\.length\s*===\s*expectedSceneCount/.test(helperCode) && /s\.width\s*>=\s*900/.test(helperCode));
 check(
   "UI separates image generation, Owner review, and hash-bound acceptance states",
@@ -1083,28 +1182,28 @@ check(
 );
 check("video script validates 1080x1920 + 15~60s + audio/video streams + size", /width1080/.test(vidScriptSrc) && /height1920/.test(vidScriptSrc) && /duration15to60/.test(vidScriptSrc) && /hasAudioStream/.test(vidScriptSrc) && /fileSizePositive/.test(vidScriptSrc));
 check(
-  "video renderer uses layered motion for stills and verified Veo MP4 for selected scenes",
+  "video renderer keeps ordinary images fixed and uses verified Veo MP4 only for selected motion scenes",
   /buildSceneMotionRecipe/.test(vidScriptSrc) &&
     /buildLayeredMotionFilter/.test(vidScriptSrc) &&
     /buildLayeredMotionAudit/.test(vidScriptSrc) &&
     /resolveFlowMotionRenderInputs/.test(vidScriptSrc) &&
     /source === "veo_motion"/.test(vidScriptSrc) &&
     /FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION/.test(flowMotionRenderInputSrc) &&
-    /foregroundalpha/.test(motionHelperSrc) &&
-    /characteralpha/.test(motionHelperSrc) &&
-    /handsalpha/.test(motionHelperSrc) &&
-    /distinctCameraModesPass/.test(motionHelperSrc) &&
-    !/min\(1\.0\+0\.0008\*on,1\.12\)/.test(vidScriptSrc),
+    /static_still/.test(vidScriptSrc) &&
+    /imageMotionDisabled/.test(motionHelperCode) &&
+    /staticStillCoveragePass/.test(motionHelperCode) &&
+    !/zoompan|foregroundalpha|characteralpha|handsalpha|tmix/.test(motionHelperCode),
 );
 check("video script output marked notUploaded", /notUploaded:\s*true/.test(vidScriptSrc));
 check("repeat renders use unique work and final paths instead of overwriting a playing MP4", /const renderId\s*=/.test(vidScriptSrc) && /\.render-\$\{renderId\}/.test(vidScriptSrc) && /final-\$\{safeSlug\}-\$\{renderId\}\.mp4/.test(vidScriptSrc));
 check(
-  "video script enforces complete sentence-semantic captions without a bottom bar",
+  "video script enforces compact sentence-card captions without a bottom bar",
   /buildDynamicCaptionTimeline/.test(vidScriptSrc) &&
     /full_script_dynamic_semantic_aligned_v6/.test(vidScriptSrc) &&
     /fullScriptCaptionGate/.test(vidScriptSrc) &&
     /MAX_WORDS_PER_DISPLAY_UNIT\s*=\s*16/.test(dynamicCaptionSrc) &&
     /MAX_VISIBLE_CHARS_PER_BLOCK\s*=\s*34/.test(dynamicCaptionSrc) &&
+    /MAX_VISIBLE_CHARS_PER_LINE\s*=\s*18/.test(dynamicCaptionSrc) &&
     /sourceSegmentsForScene/.test(dynamicCaptionSrc) &&
     /sentenceBoundaryPreservedPass/.test(dynamicCaptionSrc) &&
     /sourceSegmentBoundaryPreservedPass/.test(dynamicCaptionSrc) &&
@@ -1115,24 +1214,32 @@ check(
     /displayTerminalPunctuationAbsent/.test(dynamicCaptionSrc) &&
     /multiPositionNarrativeFlowPass/.test(dynamicCaptionSrc) &&
     /semanticColorPalettePass/.test(dynamicCaptionSrc) &&
+    /sentenceCardVisualPass/.test(dynamicCaptionSrc) &&
+    /wordLevelColorEmphasisAbsent/.test(dynamicCaptionSrc) &&
+    /Style: CaptionSupport,/.test(dynamicCaptionSrc) &&
+    /Style: CaptionKey,/.test(dynamicCaptionSrc) &&
     /motionDiversityPass/.test(dynamicCaptionSrc) &&
     /Black Han Sans/.test(dynamicCaptionSrc) &&
     !/Malgun Gothic/.test(dynamicCaptionSrc),
 );
 check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode) && /durationSec\s*<=\s*60/.test(helperCode));
 check(
-  "helper rejects final videos without the hybrid still/Veo motion audit",
+  "helper requires the fixed-still/Veo audit while preserving already-approved legacy videos",
   /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_hybrid_motion_renderer_v1"/.test(helperCode) &&
-    /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_layered_motion_renderer_v3"/.test(helperCode) &&
+    /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_static_still_renderer_v4"/.test(helperCode) &&
+    /LEGACY_WIZARD_LAYERED_MOTION_RENDERER_VERSION/.test(helperCode) &&
     /wizardHybridMotionSummaryIsReady/.test(helperCode) &&
-    /motionAudit\.layeredParallaxCoveragePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\.characterMicroMotionCoveragePass\s*===\s*true/.test(helperCode) &&
-    /motionAudit\.localizedMotionCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\.staticStillCoveragePass\s*===\s*true/.test(helperCode) &&
+    /motionAudit\.imageMotionDisabledCoveragePass\s*===\s*true/.test(helperCode) &&
     /flowMotionAudit\.videoHashCoveragePass\s*===\s*true/.test(helperCode) &&
     /flowMotionAudit\.ownerQaCoveragePass\s*===\s*true/.test(helperCode) &&
-    /flowMotionAudit\.passed\s*===\s*true/.test(helperCode),
+    /flowMotionAudit\.passed\s*===\s*true/.test(helperCode) &&
+    /presenceBySceneNumber/.test(helperCode) &&
+    /expectedExcludedObjectOnlySceneNumbers/.test(helperCode) &&
+    /actualExcludedObjectOnlySceneNumbers/.test(helperCode) &&
+    /wizardHybridMotionSummaryIsReady\(videoSummary, expectedSceneCount,[\s\S]{0,120}sceneRows\)/.test(helperCode),
 );
-check("helper rejects legacy sparse, punctuation-heavy and monotone caption videos", /WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION/.test(helperCode) && /full_script_dynamic_semantic_aligned_v6/.test(helperCode) && /fullScriptCoveragePass/.test(helperCode) && /sentenceSemanticSegmentationPass/.test(helperCode) && /arbitraryMidPhraseSplitAbsent/.test(helperCode) && /displayTerminalPunctuationAbsent/.test(helperCode) && /multiPositionNarrativeFlowPass/.test(helperCode) && /semanticColorPalettePass/.test(helperCode) && /motionDiversityPass/.test(helperCode) && /captionCoverageRatio\s*===\s*1/.test(helperCode));
+check("helper rejects legacy sparse, punctuation-heavy, word-colored and monotone caption videos", /WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION/.test(helperCode) && /full_script_dynamic_semantic_aligned_v6/.test(helperCode) && /money_shorts_caption_layout_v3_sentence_cards/.test(helperCode) && /fullScriptCoveragePass/.test(helperCode) && /sentenceSemanticSegmentationPass/.test(helperCode) && /arbitraryMidPhraseSplitAbsent/.test(helperCode) && /displayTerminalPunctuationAbsent/.test(helperCode) && /multiPositionNarrativeFlowPass/.test(helperCode) && /semanticColorPalettePass/.test(helperCode) && /sentenceCardVisualPass/.test(helperCode) && /wordLevelColorEmphasisAbsent/.test(helperCode) && /motionDiversityPass/.test(helperCode) && /captionCoverageRatio\s*===\s*1/.test(helperCode));
 check("UI final video states exist (최종 영상 준비 / 시안 영상 · 업로드 불가)", wizardSrc.includes("최종 영상 준비") && wizardSrc.includes("시안 영상") && wizardSrc.includes("업로드 불가"));
 check("UI preview streams final video (?video=final)", /video=final&topicId=/.test(wizardSrc));
 
@@ -1146,7 +1253,13 @@ check(
   /case "realTtsCreate"[\s\S]*?case "status"/.test(helperCode) &&
     !(/case "realTtsCreate"[\s\S]*?case "status"/.exec(helperCode)?.[0]?.includes("--arm") ?? true),
 );
-check("--arm single-gate contract intact (actualUpload only + allowArm gate)", (helperSrc.match(/ARM_ARG_TOKEN,?\s*\]/g) ?? []).length === 1 && /allowArm\s*!==\s*true/.test(helperCode));
+check(
+  "--arm dual-runner gate contract intact (generic + part-2 safe, both behind allowArm)",
+  (helperSrc.match(/ARM_ARG_TOKEN,?\s*\]/g) ?? []).length === 2 &&
+    /buildWizardPart2SafePublishCommand/.test(helperCode) &&
+    /part2_safe_publish_command_required/.test(helperCode) &&
+    /allowArm\s*!==\s*true/.test(helperCode),
+);
 check("new create and read-only audit actions are local-dev gated in route", ["realTtsReadonlyPreflight", "realTtsCreate", "realSceneImagesCreate", "finalVideoCreate", "realMediaStatus"].every((a) => new RegExp(`LOCAL_SCRIPT_ACTIONS[\\s\\S]{0,800}"${a}"`).test(routeSrc)));
 check("GET final video stream is enum only", /videoParam\s*===\s*"muxed"\s*\|\|\s*videoParam\s*===\s*"silent"\s*\|\|\s*videoParam\s*===\s*"final"/.test(routeCode));
 check("real audio stream restricted to summary path + C:\\tmp prefix + mp3/m4a", /readWizardRealAudioBytes/.test(routeCode) && /WIZARD_VIDEO_ALLOWED_PREFIX/.test(helperCode) && /\.mp3|\.m4a/.test(helperSrc));

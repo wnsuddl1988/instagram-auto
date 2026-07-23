@@ -41,6 +41,7 @@ let result = {
   checkedAt: new Date().toISOString(),
   submitted: false,
   imageToolActive: false,
+  imageRoute: null,
   promptTyped: false,
   sendEnabled: false,
   screenshot: null,
@@ -56,9 +57,10 @@ try {
   page = await context.newPage();
 
   await openFreshImageChat(page, () => {});
-  await activateImageTool(page, () => {}, () => {});
-  result.imageToolActive = await verifyImageToolActive(page);
-  if (!result.imageToolActive) throw new Error("IMAGE_TOOL_NOT_ACTIVE_AFTER_ACTIVATION");
+  const imageToolActivation = await activateImageTool(page, () => {}, () => {});
+  result.imageRoute = imageToolActivation?.mode ?? null;
+  result.imageToolActive = result.imageRoute === "explicit-tool" && await verifyImageToolActive(page);
+  if (!result.imageRoute) throw new Error("IMAGE_TOOL_ROUTE_MISSING_AFTER_ACTIVATION");
 
   const typed = await typePrompt(page, DIAGNOSTIC_PROMPT, () => {});
   result.promptTyped = typed.typedLen === DIAGNOSTIC_PROMPT.length;

@@ -142,7 +142,10 @@ type WizardUploadReadyItem = {
   totalParts: number;
   totalDurationSec: number | null;
   updatedAt: string | null;
-  status: "ready" | "needs_attention";
+  status: "in_progress" | "ready" | "needs_attention";
+  progressStage: "script" | "voice" | "images" | "final_video";
+  generatedImageCount: number;
+  expectedImageCount: number | null;
   detail: string;
   recoveryStates: WizardPublishRecoveryState[];
 };
@@ -402,6 +405,12 @@ type WizardFlowMotionStatus = {
         expectedCreditsSpent: number;
         summaryPath: string | null;
       };
+      ownerObservedSubmissionCount: number | null;
+      ownerObservedCreditsSpent: number | null;
+      resultRecoveryAvailable: boolean;
+      generationResumeAvailable: boolean;
+      newAttemptReopenAvailable: boolean;
+      unknownCreditNewAttemptReopenAvailable: boolean;
       creditUsageStatus: "confirmed_zero" | "confirmed_spent" | "unknown";
       renderAssetReady: boolean;
     }>;
@@ -1038,6 +1047,10 @@ const FLOW_MOTION_QA_ITEMS = [
   ["technicalArtifactsAbsent", "손·얼굴·물체 변형, 복제, 깜빡임 등 기술 결함이 없다"],
 ] as const;
 
+const FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT = "기존결과복구";
+const FLOW_MOTION_NEW_ATTEMPT_CONFIRM_TEXT = "새생성열기";
+const FLOW_MOTION_UNKNOWN_CREDIT_NEW_ATTEMPT_CONFIRM_TEXT = "영상없음차감모름새생성열기";
+
 type FlowMotionQaKey = (typeof FLOW_MOTION_QA_ITEMS)[number][0];
 type FlowMotionQaState = Partial<Record<FlowMotionQaKey, boolean>>;
 
@@ -1632,6 +1645,8 @@ export default function VideoCreationWizard() {
   const [topics, setTopics] = useState<WizardTopic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const selectedTopicIdRef = useRef<string | null>(null);
+  const [resumeRestoreSettled, setResumeRestoreSettled] = useState(false);
+  const [resumeLoadingTopicId, setResumeLoadingTopicId] = useState<string | null>(null);
   const [uploadReadyState, setUploadReadyState] = useState<RunState>("idle");
   const [uploadReadyResult, setUploadReadyResult] = useState<OperatorResult | null>(null);
   const [uploadReadyItems, setUploadReadyItems] = useState<WizardUploadReadyItem[]>([]);
@@ -1747,13 +1762,32 @@ export default function VideoCreationWizard() {
     selectedTopicIdRef.current = selectedTopicId;
   }, [selectedTopicId]);
 
+  // 현재 선택은 주소에만 남긴다. 새로고침/브라우저 재시작 뒤에도 같은 로컬 산출물을
+  // 읽어 이어갈 수 있고, 새 주제 추천이나 생성은 실행하지 않는다.
+  useEffect(() => {
+    // 개발 모드 Strict Mode의 effect 재실행 중 초기 query를 먼저 지우지 않는다.
+    if (!resumeRestoreSettled) return;
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get("resumeTopicId");
+    if (selectedTopicId) {
+      if (current === selectedTopicId) return;
+      url.searchParams.set("resumeTopicId", selectedTopicId);
+    } else {
+      if (current == null) return;
+      url.searchParams.delete("resumeTopicId");
+    }
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [resumeRestoreSettled, selectedTopicId]);
+
   // Playwright 주문형 운영과 브라우저 재시작 후 이어가기를 위한 로컬 전용 복원점.
   // topicId는 이후 모든 서버 action에서 다시 검증되며 파일 경로로 직접 사용되지 않는다.
   useEffect(() => {
     const resumeTopicId = new URLSearchParams(window.location.search).get("resumeTopicId")?.trim();
-    if (!resumeTopicId || !/^[a-z0-9][a-z0-9_-]{2,180}$/i.test(resumeTopicId)) return;
-    const resumeTimer = window.setTimeout(() => setSelectedTopicId(resumeTopicId), 0);
-    return () => window.clearTimeout(resumeTimer);
+    if (resumeTopicId && /^[a-z0-9][a-z0-9_-]{2,180}$/i.test(resumeTopicId)) {
+      setResumeLoadingTopicId(resumeTopicId);
+      setSelectedTopicId(resumeTopicId);
+    }
+    setResumeRestoreSettled(true);
   }, []);
 
   // 화면이 로컬 실행인지 배포 사이트인지 확인한다(부작용 없는 상태 조회).
@@ -1799,14 +1833,42 @@ export default function VideoCreationWizard() {
     uploadReadyItems.find((item) => item.topicId === selectedTopicId) ?? null;
   const selectedPublishRecoveryStates =
     selectedUploadReadyItem?.recoveryStates ?? [];
-  const publishRecoveryRequired =
-    selectedUploadReadyItem?.status === "needs_attention" ||
-    selectedPublishRecoveryStates.some(
-      (recovery) =>
-        recovery.manualRecoveryRequired ||
-        recovery.genericDualUploadBlocked ||
-        (recovery.state !== "not_started" && recovery.state !== "complete"),
+  const part1PublishRecovery =
+    selectedPublishRecoveryStates.find(
+      (recovery) => recovery.partId === "part-1",
     );
+  const part2PublishRecovery =
+    selectedPublishRecoveryStates.find(
+      (recovery) => recovery.partId === "part-2",
+    );
+  const exactPart2ZeroSideEffectHandoff = Boolean(
+    part2PublishRecovery?.state ===
+      "no_external_failed" &&
+    part2PublishRecovery.reason ===
+      "armed_attempt_recorded_with_zero_side_effects" &&
+    part2PublishRecovery.instagramMediaId === null &&
+    part2PublishRecovery.youtubeVideoId === null &&
+    part2PublishRecovery.attemptEvidence.present === false &&
+    part2PublishRecovery.attemptEvidence.journalValid === true &&
+    part2PublishRecovery.attemptEvidence.reason ===
+      "no_publish_attempt_evidence",
+  );
+  const part2OnlySafeResume = Boolean(
+    selectedPublishRecoveryStates.length === 2 &&
+    part1PublishRecovery?.state === "complete" &&
+    (part2PublishRecovery?.state === "not_started" ||
+      exactPart2ZeroSideEffectHandoff),
+  );
+  const publishRecoveryRequired =
+    !part2OnlySafeResume &&
+    (selectedUploadReadyItem?.status === "needs_attention" ||
+      selectedPublishRecoveryStates.some(
+        (recovery) =>
+          recovery.manualRecoveryRequired ||
+          recovery.genericDualUploadBlocked ||
+          (recovery.state !== "not_started" &&
+            recovery.state !== "complete"),
+      ));
 
   // 실제 제작 파생 상태 — 대본 확정 → 실제 음성 → 장면 이미지 → 최종 영상 → media gate.
   const scriptFinalReady = (scriptState === "success" && script != null) || realMedia?.scriptEngine.finalReady === true;
@@ -1848,6 +1910,15 @@ export default function VideoCreationWizard() {
   const selectedFlowMotionSceneCount = flowMotion?.requiredCount ?? script?.scenes?.filter((scene) => scene.mediaStrategy === "veo_motion").length ?? 0;
   const flowMotionPrepared = flowMotion?.state !== "not_prepared" && flowMotion?.state !== undefined;
   const flowMotionReadyForRender = flowMotion?.readyForRender === true;
+  const flowMotionStepState: RunState = flowMotion == null
+    ? flowMotionState === "success" ? "idle" : flowMotionState
+    : flowMotion.state === "render_ready" || flowMotion.state === "not_required"
+      ? "success"
+      : flowMotion.state === "qa_failed"
+        ? "error"
+        : flowMotion.state === "generating" || flowMotion.state === "qa_pending" || flowMotion.state === "qa_pass"
+          ? "running"
+          : "blocked";
   const finalVideoReady = realMedia?.finalVideo.ready === true;
   const finalVideoOwnerApproved =
     realMedia?.finalVideo.ownerApproved === true;
@@ -2023,7 +2094,7 @@ export default function VideoCreationWizard() {
       if (r.status === "success" && Array.isArray(items)) setUploadReadyItems(items);
     } catch {
       setUploadReadyState("error");
-      setUploadReadyResult({ action: "uploadReadyList", status: "error", summary: "완성 영상 목록을 불러오지 못했습니다." });
+      setUploadReadyResult({ action: "uploadReadyList", status: "error", summary: "저장된 제작 작업 목록을 불러오지 못했습니다." });
     }
   }, []);
 
@@ -2083,7 +2154,7 @@ export default function VideoCreationWizard() {
           topicId: item.topicId,
           title: item.title,
           hook: item.title,
-          reason: "완성 영상 불러오기",
+          reason: item.status === "in_progress" ? "진행 중 제작 작업 이어보기" : "완성 영상 불러오기",
           scriptReady: true,
           recommended: false,
           category: item.category,
@@ -2168,12 +2239,33 @@ export default function VideoCreationWizard() {
   const refreshRealMedia = useCallback(async (topicId: string) => {
     try {
       const r = await postAction("realMediaStatus", { topicId });
-      const raw = r.raw as { media?: WizardRealMedia; flowMotion?: WizardFlowMotionStatus } | undefined;
+      const raw = r.raw as {
+        media?: WizardRealMedia;
+        flowMotion?: WizardFlowMotionStatus;
+        resume?: {
+          topic: WizardTopic;
+          script: WizardScript;
+          scriptEngine: WizardScriptEngine;
+        } | null;
+      } | undefined;
       if (selectedTopicIdRef.current !== topicId) return;
       if (r.status === "success" && raw?.media) setRealMedia(raw.media);
       if (r.status === "success" && raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      if (r.status === "success" && raw?.resume) {
+        const resume = raw.resume;
+        setCategory("finance");
+        setTopics((current) =>
+          current.some((topic) => topic.topicId === resume.topic.topicId)
+            ? current
+            : [resume.topic, ...current],
+        );
+        setScript(resume.script);
+        setScriptEngine(resume.scriptEngine);
+      }
+      setResumeLoadingTopicId((current) => current === topicId ? null : current);
     } catch {
       // 상태 조회 실패는 조용히 무시(다음 단계 버튼이 다시 조회한다).
+      setResumeLoadingTopicId((current) => current === topicId ? null : current);
     }
   }, []);
 
@@ -3000,7 +3092,7 @@ export default function VideoCreationWizard() {
       const r = await postAction("flowMotionGenerate", {
         topicId: selectedTopicId,
         jobId,
-        ownerApproval: flowMotionApprovalInputs[jobId] ?? "",
+        ownerApproval: (flowMotionApprovalInputs[jobId] ?? "").trim(),
       });
       const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
       if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
@@ -3013,6 +3105,54 @@ export default function VideoCreationWizard() {
       setFlowMotionResult({ action: "flowMotionGenerate", status: "error", summary: "Flow 영상 생성 요청을 완료하지 못했습니다. 자동 재시도하지 않습니다." });
     }
   }, [selectedTopicId, flowMotionApprovalInputs, refreshRealMedia]);
+
+  const runFlowMotionRecover = useCallback(async (jobId: string) => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionRecover", {
+        topicId: selectedTopicId,
+        jobId,
+        recoveryApproval: FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT,
+      });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({
+        action: "flowMotionRecover",
+        status: "error",
+        summary: "기존 Flow 결과를 저장하지 못했습니다. 새 영상을 생성하지 마세요.",
+      });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
+
+  const runFlowMotionReopenNewAttempt = useCallback(async (jobId: string, unknownCredit: boolean) => {
+    if (!selectedTopicId) return;
+    setFlowMotionState("running");
+    setFlowMotionResult(null);
+    try {
+      const r = await postAction("flowMotionReopenNewAttempt", {
+        topicId: selectedTopicId,
+        jobId,
+        confirmation: unknownCredit
+          ? FLOW_MOTION_UNKNOWN_CREDIT_NEW_ATTEMPT_CONFIRM_TEXT
+          : FLOW_MOTION_NEW_ATTEMPT_CONFIRM_TEXT,
+      });
+      const raw = r.raw as { flowMotion?: WizardFlowMotionStatus } | undefined;
+      if (raw?.flowMotion) setFlowMotion(raw.flowMotion);
+      setFlowMotionResult(r);
+      setFlowMotionState(r.status === "success" ? "success" : r.status);
+      await refreshRealMedia(selectedTopicId);
+    } catch {
+      setFlowMotionState("error");
+      setFlowMotionResult({ action: "flowMotionReopenNewAttempt", status: "error", summary: "새 생성 승인 대기 상태를 열지 못했습니다." });
+    }
+  }, [selectedTopicId, refreshRealMedia]);
 
   const runFlowMotionQaPass = useCallback(async (jobId: string) => {
     if (!selectedTopicId) return;
@@ -3249,6 +3389,11 @@ export default function VideoCreationWizard() {
         만들어지고, 마지막 단계에서 확인 절차를 거쳐야만 실제 업로드가 실행됩니다. 테스트 소리·시안 영상은 업로드할 수
         없습니다.
       </p>
+      {resumeLoadingTopicId ? (
+        <p data-testid="wizard-resume-loading" className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-800">
+          저장된 제작 작업을 불러오는 중입니다. 새 주제·이미지·Flow 영상은 생성하지 않습니다.
+        </p>
+      ) : null}
 
       {localDev === false ? (
         <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
@@ -4025,16 +4170,16 @@ export default function VideoCreationWizard() {
         ) : null}
 
         {localDev === true && showAdvancedOperations ? (
-          <section data-testid="wizard-upload-ready-library" className="border-y border-emerald-200 bg-emerald-50/60 px-5 py-5">
+          <section data-testid="wizard-upload-ready-library" className="border-y border-indigo-200 bg-indigo-50/60 px-5 py-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">완성 영상 불러오기</h3>
-                <p className="mt-1 text-sm text-slate-600">이미 만든 최종 영상을 다시 열어, 게시 전 점검과 실제 업로드만 진행합니다.</p>
+                <h3 className="text-lg font-bold text-slate-900">기존 작업 불러오기</h3>
+                <p className="mt-1 text-sm text-slate-600">대본·음성·이미지·최종 영상 중 저장된 단계부터 다시 열어 이어서 진행합니다.</p>
               </div>
               <button
                 type="button"
                 data-testid="wizard-action-refresh-upload-ready"
-                className="px-4 py-2 rounded-xl border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100 text-sm font-bold transition-colors disabled:opacity-40"
+                className="px-4 py-2 rounded-xl border border-indigo-300 bg-white text-indigo-800 hover:bg-indigo-100 text-sm font-bold transition-colors disabled:opacity-40"
                 disabled={uploadReadyState === "running" || !runnable}
                 onClick={() => void refreshUploadReadyList()}
               >
@@ -4048,23 +4193,24 @@ export default function VideoCreationWizard() {
                 value={uploadReadyQuery}
                 onChange={(event) => setUploadReadyQuery(event.target.value)}
                 placeholder="주제명으로 찾기"
-                className="w-full max-w-sm rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+                className="w-full max-w-sm rounded-xl border border-indigo-200 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
               />
-              <span className="text-sm font-semibold text-emerald-800">업로드 대기 {uploadReadyItems.length}개</span>
+              <span className="text-sm font-semibold text-indigo-800">저장된 작업 {uploadReadyItems.length}개</span>
             </div>
-            {uploadReadyState === "running" ? <p className="mt-3 text-sm font-semibold text-emerald-800">완성 영상을 확인하는 중입니다.</p> : null}
+            {uploadReadyState === "running" ? <p className="mt-3 text-sm font-semibold text-indigo-800">저장된 제작 작업을 확인하는 중입니다.</p> : null}
             {uploadReadyState === "success" && filteredUploadReadyItems.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-600">업로드 대기 중인 완성 영상이 없습니다.</p>
+              <p className="mt-3 text-sm text-slate-600">이어갈 제작 작업이 없습니다.</p>
             ) : null}
             <div className="mt-3 space-y-2">
               {filteredUploadReadyItems.map((item) => {
                 const selected = selectedTopicId === item.topicId;
                 const blocked = item.status === "needs_attention";
+                const inProgress = item.status === "in_progress";
                 return (
                   <div
                     key={item.topicId}
                     data-testid="wizard-upload-ready-item"
-                    className={`border px-4 py-3 ${selected ? "border-emerald-500 bg-white" : "border-emerald-200 bg-white/80"}`}
+                    className={`border px-4 py-3 ${selected ? "border-indigo-500 bg-white" : "border-indigo-200 bg-white/80"}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
@@ -4080,13 +4226,21 @@ export default function VideoCreationWizard() {
                         type="button"
                         data-testid="wizard-action-load-upload-ready"
                         className={`shrink-0 px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                          blocked ? "bg-amber-700 hover:bg-amber-800" : "bg-emerald-600 hover:bg-emerald-700"
+                          blocked
+                            ? "bg-amber-700 hover:bg-amber-800"
+                            : inProgress
+                              ? "bg-indigo-600 hover:bg-indigo-700"
+                              : "bg-emerald-600 hover:bg-emerald-700"
                         }`}
                         disabled={!runnable}
-                        title={blocked ? "게시 복구 증거를 확인합니다. 일반 양쪽 업로드는 차단됩니다." : "완성 영상을 불러옵니다."}
+                        title={blocked
+                          ? "게시 복구 증거를 확인합니다. 일반 양쪽 업로드는 차단됩니다."
+                          : inProgress
+                            ? "저장된 단계부터 제작 작업을 이어갑니다."
+                            : "완성 영상을 불러옵니다."}
                         onClick={() => selectUploadReadyItem(item)}
                       >
-                        {blocked ? "상태 보기" : "불러오기"}
+                        {blocked ? "상태 보기" : inProgress ? "이어보기" : "불러오기"}
                       </button>
                     </div>
                     {blocked ? (
@@ -5097,18 +5251,8 @@ export default function VideoCreationWizard() {
         <StepCard
           num={7}
           title="Veo 모션 준비"
-          state={
-            flowMotion?.state === "render_ready" || flowMotion?.state === "not_required"
-              ? "success"
-              : flowMotion?.state === "qa_failed"
-                ? "error"
-                : flowMotion?.state === "generating" || flowMotion?.state === "qa_pending" || flowMotion?.state === "qa_pass"
-                  ? "running"
-                  : flowMotion?.state === "approval_pending"
-                    ? "blocked"
-                    : flowMotionState
-          }
-          desc="자동 선정된 장면만 Google Flow용 이미지·프롬프트 해시 패킷으로 묶고 승인 상태를 관리합니다. 이 단계에서는 브라우저를 열거나 크레딧을 사용하지 않습니다."
+          state={flowMotionStepState}
+          desc="자동 후보 중 실제 이미지에 인물 또는 손이 있는 장면만 Google Flow 패킷으로 묶습니다. 인물·손이 없는 장면은 Veo를 사용하지 않고 정지 이미지 모션으로 합성합니다. 이 단계에서는 브라우저를 열거나 크레딧을 사용하지 않습니다."
         >
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
@@ -5134,8 +5278,8 @@ export default function VideoCreationWizard() {
             <p className="text-sm text-slate-500 mt-2">이 대본에는 영상화가 필요한 장면이 없습니다. 정지 이미지 모션으로 합성합니다.</p>
           ) : (
             <p className="text-sm text-slate-500 mt-2">
-              자동 선정된 {selectedFlowMotionSceneCount}개 장면만 준비합니다. 패킷에는 기준 이미지·프롬프트의 SHA-256과 정확한 승인 문구가
-              들어가며, 실제 생성 전송은 별도 Owner 승인과 검수가 필요합니다.
+              인물 또는 손이 확인된 {selectedFlowMotionSceneCount}개 장면만 준비합니다. 패킷에는 기준 이미지·프롬프트의 SHA-256과 정확한 승인 문구가
+              들어가며, 실제 생성 전송은 별도 Owner 승인과 검수가 필요합니다. 인물·손이 없는 이미지는 Veo 생성 대상에서 자동 제외됩니다.
             </p>
           )}
           {flowMotionState === "running" ? (
@@ -5159,11 +5303,16 @@ export default function VideoCreationWizard() {
                           data-testid={`wizard-flow-motion-credit-review-${job.jobId}`}
                           className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
                         >
-                          Flow 승인 클릭 결과가 불명확합니다. 전송·크레딧 사용 여부를 수동 확인하기 전에는 새 생성을 진행할 수 없습니다.
+                          Flow 승인 클릭 결과가 불명확합니다. 전송·크레딧 사용 여부를 수동 확인하기 전에는 새 생성을 진행할 수 없습니다. 아래에서 기존 결과 복구 또는 영상 없음·차감 여부 모름 종결을 선택해 주세요.
                         </p>
                       ) : null}
-                      {job.creditUsageStatus !== "unknown" && (job.status === "approval_pending" || job.status === "qa_failed") ? (
+                      {job.creditUsageStatus !== "unknown" && (job.status === "approval_pending" || job.generationResumeAvailable) ? (
                         <div className="mt-3 space-y-2">
+                          {job.generationResumeAvailable ? (
+                            <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-900">
+                              이전 실행은 유료 생성 클릭 전에 중단됐습니다. 현재 승인 문구를 다시 확인하면 같은 장면을 안전하게 재개합니다.
+                            </p>
+                          ) : null}
                           <textarea
                             data-testid={`wizard-flow-motion-approval-${job.jobId}`}
                             className="min-h-24 w-full rounded-lg border border-slate-300 bg-white p-2 text-xs text-slate-700"
@@ -5173,14 +5322,66 @@ export default function VideoCreationWizard() {
                           />
                           <button
                             type="button"
+                            data-testid={`wizard-action-flow-motion-approval-fill-${job.jobId}`}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+                            disabled={flowMotionState === "running"}
+                            onClick={() => setFlowMotionApprovalInputs((current) => ({ ...current, [job.jobId]: job.requiredApprovalWording }))}
+                          >
+                            승인 문구만 자동 입력
+                          </button>
+                          <button
+                            type="button"
                             data-testid={`wizard-action-flow-motion-generate-${job.jobId}`}
                             className={RUN_BTN}
-                            disabled={flowMotionState === "running" || (flowMotionApprovalInputs[job.jobId] ?? "") !== job.requiredApprovalWording}
+                            disabled={flowMotionState === "running" || (flowMotionApprovalInputs[job.jobId] ?? "").trim() !== job.requiredApprovalWording}
                             onClick={() => void runFlowMotionGenerate(job.jobId)}
                           >
                             승인하고 Flow 영상 1개 생성
                           </button>
                           <p className="text-xs text-amber-700">Veo 3.1 Fast · 9:16 · 1개 · 예상 20크레딧. Gemini 2 우선, 명시적 한도 소진일 때만 3/4로 이동합니다.</p>
+                        </div>
+                      ) : null}
+                      {job.resultRecoveryAvailable && !job.unknownCreditNewAttemptReopenAvailable ? (
+                        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                          <p className="text-xs font-bold text-amber-900">
+                            {job.creditUsageStatus === "confirmed_spent"
+                              ? "이미 Flow 전송 1회가 확인됐습니다. 새 생성은 잠겼고 기존 결과 저장만 복구할 수 있습니다."
+                              : "Flow 클릭 결과가 불명확합니다. 새 생성은 잠그고, 이 작업의 고유 결과가 있는지만 확인해 저장합니다."}
+                          </p>
+                          <button
+                            type="button"
+                            data-testid={`wizard-action-flow-motion-recover-${job.jobId}`}
+                            className="mt-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white hover:bg-amber-800 disabled:opacity-40"
+                            disabled={flowMotionState === "running"}
+                            onClick={() => void runFlowMotionRecover(job.jobId)}
+                          >
+                            {job.creditUsageStatus === "confirmed_spent"
+                              ? "추가 생성 없이 기존 영상 저장 복구"
+                              : "새 생성 없이 기존 결과 확인·복구"}
+                          </button>
+                        </div>
+                      ) : null}
+                      {job.newAttemptReopenAvailable ? (
+                        <div className="mt-3 rounded-lg border border-blue-300 bg-blue-50 p-3">
+                          <p className="text-xs font-bold text-blue-900">
+                            {job.unknownCreditNewAttemptReopenAvailable
+                              ? "동일 시도의 결과 복구까지 확인했지만 영상이 없습니다. 크레딧 차감 여부는 알 수 없으며, 이 사실을 기록하고 별개의 새 생성 승인 단계만 열 수 있습니다."
+                              : "기존 실패 영상 또는 잘못 기록된 전송 이력은 보존하고, 새 생성 승인 단계만 다시 열 수 있습니다."}
+                          </p>
+                          <button
+                            type="button"
+                            data-testid={`wizard-action-flow-motion-reopen-${job.jobId}`}
+                            className="mt-2 rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800 disabled:opacity-40"
+                            disabled={flowMotionState === "running"}
+                            onClick={() => void runFlowMotionReopenNewAttempt(job.jobId, job.unknownCreditNewAttemptReopenAvailable)}
+                          >
+                            {job.unknownCreditNewAttemptReopenAvailable
+                              ? "영상 없음·차감 모름 기록하고 새 생성 열기"
+                              : "실패 이력 보존하고 새 생성 열기"}
+                          </button>
+                          <p className="mt-1 text-xs text-blue-800">
+                            이 버튼은 Flow를 실행하지 않으며 크레딧을 사용하지 않습니다. 새 영상 생성은 다음 단계에서 별도 승인해야 합니다.
+                          </p>
                         </div>
                       ) : null}
                       {job.status === "generating" ? (
@@ -5191,15 +5392,21 @@ export default function VideoCreationWizard() {
                           <p className="text-xs font-semibold text-slate-700">
                             {job.creditUsageStatus === "unknown"
                               ? "Flow · 전송·크레딧 사용 여부 수동 확인 필요"
-                              : `${job.execution.selectedProfile ?? "Flow"} · 전송 ${job.execution.submissionCount}회 · 예상 사용 ${job.execution.expectedCreditsSpent}크레딧`} · 영상 hash {job.outputVideoSha256?.slice(0, 12)}…
+                              : job.ownerObservedSubmissionCount !== null && job.ownerObservedCreditsSpent !== null
+                                ? `${job.execution.selectedProfile ?? "Flow"} · Owner 확인 누적 전송 ${job.ownerObservedSubmissionCount}회 · 사용 ${job.ownerObservedCreditsSpent}크레딧`
+                                : `${job.execution.selectedProfile ?? "Flow"} · 전송 ${job.execution.submissionCount}회 · 예상 사용 ${job.execution.expectedCreditsSpent}크레딧`} · 영상 hash {job.outputVideoSha256?.slice(0, 12)}…
                           </p>
                           <video
                             data-testid={`wizard-flow-motion-preview-${job.jobId}`}
                             className="mx-auto max-h-[520px] w-auto max-w-full rounded-lg bg-black"
                             controls
+                            muted
                             preload="metadata"
                             src={`/api/money-shorts/operator?video=flow-motion&topicId=${encodeURIComponent(selectedTopicId ?? "")}&jobId=${encodeURIComponent(job.jobId)}`}
                           />
+                          <p className="text-xs text-slate-600">
+                            Veo 원본 오디오는 검수·최종 영상에 사용하지 않습니다. 최종 음성은 승인된 ElevenLabs 음성입니다.
+                          </p>
                           <div className="space-y-1.5">
                             {FLOW_MOTION_QA_ITEMS.map(([key, label]) => (
                               <label key={key} className="flex items-start gap-2 text-xs text-slate-700">
@@ -5579,7 +5786,21 @@ export default function VideoCreationWizard() {
           {uploadState === "success" ? null : (
             <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3.5 space-y-3">
               <p className="text-[15px] font-bold text-rose-700">누르면 실제 계정에 게시됩니다.</p>
-              {publishRecoveryRequired ? (
+              {part2OnlySafeResume ? (
+                <div
+                  data-testid="wizard-part2-only-safe-resume"
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5"
+                >
+                  <p className="text-sm font-bold text-emerald-800">
+                    1편 게시 완료 기록은 그대로 보존합니다. 이번
+                    업로드에서는 2편만 게시합니다.
+                  </p>
+                  <p className="mt-1 text-sm text-emerald-700">
+                    2편은 기존 외부 게시 요청이 0회인 것이 확인됐으며,
+                    전용 안전 점검과 계정 확인 후 한 번만 실행됩니다.
+                  </p>
+                </div>
+              ) : publishRecoveryRequired ? (
                 <div
                   data-testid="wizard-publish-recovery-upload-block"
                   className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5"

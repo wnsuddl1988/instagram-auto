@@ -4,13 +4,13 @@ export const SEMANTIC_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VE
 export const DYNAMIC_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VERSION;
 export const SAMPLE_REVIEW_CAPTION_CONTRACT_VERSION = FULL_SCRIPT_CAPTION_CONTRACT_VERSION;
 export const DYNAMIC_CAPTION_FONT = "Black Han Sans";
-export const DYNAMIC_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v2_comfortable_two_line";
-export const DYNAMIC_CAPTION_TWO_LINE_GAP_PX = 18;
+export const DYNAMIC_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v3_sentence_cards";
+export const DYNAMIC_CAPTION_TWO_LINE_GAP_PX = 16;
 
 const MAX_WORDS_PER_DISPLAY_UNIT = 16;
 const MAX_VISIBLE_CHARS_PER_BLOCK = 34;
-const TARGET_VISIBLE_CHARS_PER_LINE = 16;
-const MAX_VISIBLE_CHARS_PER_LINE = 20;
+const TARGET_VISIBLE_CHARS_PER_LINE = 14;
+const MAX_VISIBLE_CHARS_PER_LINE = 18;
 const MAX_CAPTION_DWELL_SEC = 6.8;
 const SAFE_TEXT_MAX_Y = 1580;
 const STRONG_SENTENCE_END_PATTERN = /[.!?…。！？]$/u;
@@ -271,7 +271,7 @@ function sentenceSemanticTokenGroups(scene, performanceText, sceneStartOffset) {
 }
 
 function captionLines(tokens) {
-  if (visibleCharacterCount(tokens) <= TARGET_VISIBLE_CHARS_PER_LINE || tokens.length < 3) {
+  if (visibleCharacterCount(tokens) <= TARGET_VISIBLE_CHARS_PER_LINE) {
     return [tokens];
   }
   let bestSplit = 1;
@@ -290,13 +290,12 @@ function captionLines(tokens) {
 
 function fontSizeFor(lines) {
   const maxLineChars = Math.max(...lines.map(visibleCharacterCount));
-  if (maxLineChars <= 7) return 92;
-  if (maxLineChars <= 10) return 84;
-  if (maxLineChars <= 13) return 76;
-  if (maxLineChars <= 16) return 68;
+  if (maxLineChars <= 7) return 88;
+  if (maxLineChars <= 10) return 80;
+  if (maxLineChars <= 13) return 74;
+  if (maxLineChars <= 16) return 66;
   if (maxLineChars <= 18) return 60;
-  if (maxLineChars <= 20) return 54;
-  return 48;
+  return 54;
 }
 
 function matchesEmphasis(word, emphasis) {
@@ -372,35 +371,42 @@ export function escapeAssText(value) {
     .replace(/\r?\n/g, " ");
 }
 
-function captionAssText(lines, emphasisWords, fontSize) {
+function captionAssText(scene, lines, emphasisWords) {
   const finalToken = lines[lines.length - 1]?.[lines[lines.length - 1].length - 1] ?? null;
-  const appliedEmphasis = [];
-  const usedEmphasis = new Set();
   const displayLines = lines.map((line) => line.map((token) => ({
     ...token,
     displayText: token === finalToken ? stripDisplayTerminalPunctuation(token.text) : token.text,
   })).filter((token) => token.displayText));
-  const lineSeparator = displayLines.length > 1
-    ? "\\N{\\fs" + DYNAMIC_CAPTION_TWO_LINE_GAP_PX + "}\\h{\\fs" + fontSize + "}\\N"
-    : "\\N";
-  const assText = displayLines.map((line) => line.map((token) => {
-    const escaped = escapeAssText(token.displayText);
-    const emphasis = emphasisWords.find((candidate) =>
-      !usedEmphasis.has(candidate.text) && matchesEmphasis(token.text, candidate.text)
+  const lineVisuals = displayLines.map((line, lineIndex) => {
+    const wholeLineText = line.map((token) => token.displayText).join(" ");
+    const matchedEmphasis = emphasisWords.find((candidate) =>
+      line.some((token) => matchesEmphasis(token.text, candidate.text))
     );
-    if (!emphasis) return escaped;
-    usedEmphasis.add(emphasis.text);
-    const palette = DYNAMIC_CAPTION_EMPHASIS_PALETTE[emphasis.category];
-    const strong = emphasis.strength === "strong";
-    appliedEmphasis.push({ ...emphasis, color: palette.hex, assColor: palette.assColor });
-    return "{\\c" + palette.assColor + "\\fs" + (fontSize + (strong ? 14 : 8)) +
-      "\\bord" + (strong ? 8 : 7) + "\\shad" + (strong ? 3 : 2) + "}" + escaped +
-      "{\\c&H00F2EFE8&\\fs" + fontSize + "\\bord6\\shad2}";
-  }).join(" ")).join(lineSeparator);
+    const isKeyLine = lineIndex === displayLines.length - 1 && (
+      matchedEmphasis != null || HIGH_IMPACT_ROLES.has(scene?.sceneRole)
+    );
+    const category = isKeyLine
+      ? (matchedEmphasis?.category ?? ROLE_FALLBACK_CATEGORY[scene?.sceneRole] ?? "contrast")
+      : null;
+    const palette = category ? DYNAMIC_CAPTION_EMPHASIS_PALETTE[category] : null;
+    return {
+      lineIndex,
+      text: wholeLineText,
+      role: isKeyLine ? "key" : "support",
+      category,
+      color: palette?.hex ?? "#E6E7EB",
+      assColor: palette?.assColor ?? "&H00EBE7E2",
+      matchedWords: [],
+    };
+  });
+  const appliedEmphasis = lineVisuals.filter((line) => line.role === "key");
+  const assText = lineVisuals.map((line) => escapeAssText(line.text)).join("\\N");
   return {
     assText,
     displayText: displayLines.flat().map((token) => token.displayText).join(" "),
     appliedEmphasis,
+    displayLines: lineVisuals.map((line) => line.text),
+    lineVisuals,
   };
 }
 
@@ -463,7 +469,7 @@ function buildRawBlocks(plannedScenes, measuredScenes, alignmentData) {
       const fontSize = fontSizeFor(lines);
       const text = group.map((token) => token.text).join(" ");
       const emphasisWords = emphasisWordsForScene(scene, text);
-      const renderedCaption = captionAssText(lines, emphasisWords, fontSize);
+      const renderedCaption = captionAssText(scene, lines, emphasisWords);
       const placement = captionPlacement(scene.sceneRole, sceneIndex, groupIndex);
       const visualBounds = captionVisualBounds({
         y: placement.y,
@@ -519,6 +525,8 @@ function buildRawBlocks(plannedScenes, measuredScenes, alignmentData) {
         lineGapPx: lines.length > 1 ? DYNAMIC_CAPTION_TWO_LINE_GAP_PX : 0,
         emphasisWords: emphasisWords.map((item) => item.text),
         emphasisItems: renderedCaption.appliedEmphasis,
+        displayLines: renderedCaption.displayLines,
+        lineVisuals: renderedCaption.lineVisuals,
         motionPreset: motionPresetForScene(scene.sceneRole),
         wordTimings,
       });
@@ -601,6 +609,7 @@ function buildFullScriptAudit(plannedScenes, measuredScenes, captions) {
   const appliedEmphasis = captions.flatMap((caption) => caption.emphasisItems);
   const distinctEmphasisColors = new Set(appliedEmphasis.map((item) => item.color)).size;
   const distinctEmphasisCategories = new Set(appliedEmphasis.map((item) => item.category)).size;
+  const lineVisuals = captions.flatMap((caption) => caption.lineVisuals ?? []);
   const distinctMotionPresets = new Set(captions.map((caption) => caption.motionPreset)).size;
   const distinctSceneRoles = new Set(captions.map((caption) => caption.sceneRole)).size;
   const highImpactCaptions = captions.filter((caption) => HIGH_IMPACT_ROLES.has(caption.sceneRole));
@@ -746,9 +755,20 @@ function buildFullScriptAudit(plannedScenes, measuredScenes, captions) {
       appliedEmphasis.every((item) =>
         DYNAMIC_CAPTION_EMPHASIS_PALETTE[item.category]?.hex === item.color
       ),
-    emphasisDensityPass: captions.every((caption) => caption.emphasisItems.length <= 2),
+    sentenceCardVisualPass:
+      lineVisuals.length > 0 &&
+      lineVisuals.every((line) =>
+        (line.role === "support" && line.category === null && line.matchedWords.length === 0) ||
+        (line.role === "key" && typeof line.category === "string" && line.text.length > 0)
+      ),
+    wordLevelColorEmphasisAbsent: captions.every((caption) =>
+      (caption.lineVisuals ?? []).every((line) =>
+        line.matchedWords.length === 0
+      )
+    ),
+    emphasisDensityPass: captions.every((caption) => caption.emphasisItems.length <= 1),
     highImpactRoleEmphasisPass: highImpactCaptions.every((caption) =>
-      caption.emphasisItems.some((item) => item.strength === "strong")
+      caption.emphasisItems.some((item) => item.role === "key")
     ),
     distinctMotionPresets,
     motionDiversityPass:
@@ -800,31 +820,42 @@ export function createDynamicCaptionAss(captions) {
     "",
     "[V4+ Styles]",
     "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-    "Style: Caption," + DYNAMIC_CAPTION_FONT + ",76,&H00F2EFE8,&H0057C8FF,&H00100F0D,&H00000000,-1,0,0,0,100,100,0,0,1,6,2,5,60,60,0,1",
+    "Style: CaptionSupport," + DYNAMIC_CAPTION_FONT + ",76,&H00E6E7EB,&H00E6E7EB,&H00111418,&H6A111418,-1,0,0,0,100,100,0,0,1,6,3,5,60,60,0,1",
+    "Style: CaptionKey," + DYNAMIC_CAPTION_FONT + ",76,&H00FFC857,&H00FFC857,&H00111418,&H72111418,-1,0,0,0,100,100,0,0,1,7,3,5,60,60,0,1",
     "",
     "[Events]",
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
   ];
   for (const caption of captions) {
-    const position = caption.motionPreset === "action_lift"
-      ? "\\move(" + caption.x + "," + (caption.y + 28) + "," + caption.x + "," + caption.y + ",0,190)"
+    const positionForY = (y) => caption.motionPreset === "action_lift"
+      ? "\\move(" + caption.x + "," + (y + 18) + "," + caption.x + "," + y + ",0,180)"
       : caption.motionPreset === "contrast_reveal"
-        ? "\\move(" + (caption.x - 24) + "," + caption.y + "," + caption.x + "," + caption.y + ",0,180)"
-        : "\\pos(" + caption.x + "," + caption.y + ")";
+        ? "\\move(" + (caption.x - 14) + "," + y + "," + caption.x + "," + y + ",0,160)"
+        : "\\pos(" + caption.x + "," + y + ")";
     const motionByPreset = {
-      hook_pop: "\\fad(35,65)\\fscx88\\fscy88\\t(0,110,0.75,\\fscx104\\fscy104)\\t(110,220,0.7,\\fscx100\\fscy100)",
-      evidence_snap: "\\fad(40,70)\\fscx92\\fscy92\\t(0,145,0.8,\\fscx101\\fscy101)\\t(145,230,0.75,\\fscx100\\fscy100)",
-      soft_settle: "\\fad(55,85)\\fscx96\\fscy96\\t(0,220,0.65,\\fscx100\\fscy100)",
-      risk_punch: "\\fad(30,70)\\fscx90\\fscy90\\t(0,95,0.8,\\fscx105\\fscy105)\\t(95,215,0.7,\\fscx100\\fscy100)",
-      contrast_reveal: "\\fad(45,75)\\fscx95\\fscy95\\t(0,190,0.7,\\fscx100\\fscy100)",
-      action_lift: "\\fad(40,70)\\fscx93\\fscy93\\t(0,190,0.7,\\fscx100\\fscy100)",
-      recall_land: "\\fad(35,95)\\fscx90\\fscy90\\t(0,120,0.75,\\fscx103\\fscy103)\\t(120,245,0.68,\\fscx100\\fscy100)",
+      hook_pop: "\\fad(45,80)\\fscx96\\fscy96\\t(0,160,0.7,\\fscx100\\fscy100)",
+      evidence_snap: "\\fad(45,80)\\fscx97\\fscy97\\t(0,180,0.7,\\fscx100\\fscy100)",
+      soft_settle: "\\fad(55,90)",
+      risk_punch: "\\fad(35,80)\\fscx96\\fscy96\\t(0,150,0.72,\\fscx100\\fscy100)",
+      contrast_reveal: "\\fad(45,80)",
+      action_lift: "\\fad(40,80)",
+      recall_land: "\\fad(45,95)\\fscx97\\fscy97\\t(0,170,0.7,\\fscx100\\fscy100)",
     };
-    const motion = "{\\an5" + position + "\\fs" + caption.fontSize + motionByPreset[caption.motionPreset] + "}";
-    lines.push(
-      "Dialogue: 0," + secToAssTime(caption.startSec) + "," + secToAssTime(caption.endSec) +
-      ",Caption,,0,0,0,," + motion + caption.assText,
-    );
+    const visualLines = Array.isArray(caption.lineVisuals) && caption.lineVisuals.length > 0
+      ? caption.lineVisuals
+      : [{ text: caption.displayText, role: "key", assColor: "&H0057C8FF" }];
+    const verticalStep = caption.fontSize + DYNAMIC_CAPTION_TWO_LINE_GAP_PX;
+    visualLines.forEach((line, lineIndex) => {
+      const yOffset = (lineIndex - (visualLines.length - 1) / 2) * verticalStep;
+      const linePosition = positionForY(Math.round(caption.y + yOffset));
+      const style = line.role === "key" ? "CaptionKey" : "CaptionSupport";
+      const color = line.role === "key" ? "\\1c" + line.assColor : "";
+      const motion = "{\\an5" + linePosition + "\\fs" + caption.fontSize + color + motionByPreset[caption.motionPreset] + "}";
+      lines.push(
+        "Dialogue: " + (line.role === "key" ? "1" : "0") + "," + secToAssTime(caption.startSec) + "," + secToAssTime(caption.endSec) +
+        "," + style + ",,0,0,0,," + motion + escapeAssText(line.text),
+      );
+    });
   }
   return lines.join("\n") + "\n";
 }

@@ -9,6 +9,9 @@ const APPROVAL_CONTROL_SELECTOR = 'button, [role="button"], [role="radio"], labe
 const MAKE_BUTTON_TEXT = /^\s*arrow_forward\s*(?:만들기|Create)\s*$/i;
 const APPROVAL_TARGET_ATTRIBUTE = "data-flow-motion-approval-target";
 const APPROVAL_ARMED_ATTRIBUTE = "data-flow-motion-approval-armed";
+const APPROVAL_CARD_ATTRIBUTE = "data-flow-motion-approval-card";
+const MAKE_TARGET_ATTRIBUTE = "data-flow-motion-make-target";
+const MAKE_ARMED_ATTRIBUTE = "data-flow-motion-make-armed";
 
 async function evaluateGenerationConfirmationCandidates(page, job, mark = null) {
   const approvalOptions = page.locator(APPROVAL_CONTROL_SELECTOR);
@@ -113,6 +116,7 @@ async function evaluateGenerationConfirmationCandidates(page, job, mark = null) 
       const outermost = !approvalElements.some((other) => other !== element && other.contains(element));
       return {
         element,
+        confirmationRoot,
         candidate: {
           index,
           cardKey,
@@ -130,14 +134,29 @@ async function evaluateGenerationConfirmationCandidates(page, job, mark = null) 
       };
     });
 
+    const rootFingerprints = roots.map((root) => normalized(root.textContent));
+    const rootOrdinals = rootFingerprints.map((fingerprint, index) =>
+      rootFingerprints.slice(0, index).filter((candidate) => candidate === fingerprint).length,
+    );
+    for (const record of records) {
+      const cardKey = record.candidate.cardKey;
+      record.candidate.cardFingerprint = Number.isInteger(cardKey) ? rootFingerprints[cardKey] : null;
+      record.candidate.cardOrdinal = Number.isInteger(cardKey) ? rootOrdinals[cardKey] : null;
+    }
+
     let markedCount = 0;
     let markError = null;
     if (args.mark) {
       for (const element of elements) element.removeAttribute(args.mark.attribute);
-      const active = records.filter(({ candidate }) =>
+      const activeCandidates = records.filter(({ candidate }) =>
         candidate.creditPromptMatches && candidate.promptMatches && !candidate.acknowledged &&
         candidate.interactive && candidate.enabled,
       );
+      const active = args.mark.selected.freshCardBound === true
+        ? activeCandidates.filter(({ candidate }) =>
+          candidate.cardFingerprint === args.mark.selected.cardFingerprint &&
+          candidate.cardOrdinal === args.mark.selected.cardOrdinal)
+        : activeCandidates;
       const cardKeys = [...new Set(active.map(({ candidate }) => candidate.cardKey))];
       let preferred = [];
       if (cardKeys.length !== 1 || cardKeys[0] === null || cardKeys[0] === undefined) {
@@ -154,7 +173,10 @@ async function evaluateGenerationConfirmationCandidates(page, job, mark = null) 
         const record = preferred[0];
         if (record.candidate.confirmationText !== args.mark.selected.confirmationText ||
             record.candidate.controlText !== args.mark.selected.controlText ||
-            record.candidate.outermost !== args.mark.selected.outermost) {
+            record.candidate.outermost !== args.mark.selected.outermost ||
+            (args.mark.selected.freshCardBound === true &&
+              (record.candidate.cardFingerprint !== args.mark.selected.cardFingerprint ||
+                record.candidate.cardOrdinal !== args.mark.selected.cardOrdinal))) {
           markError = "atomic_approval_descriptor_changed";
         }
       }
@@ -162,12 +184,14 @@ async function evaluateGenerationConfirmationCandidates(page, job, mark = null) 
         const record = preferred[0];
         markedCount = 1;
         record.element.setAttribute(args.mark.attribute, args.mark.token);
+        record.confirmationRoot.setAttribute(args.mark.cardAttribute, args.mark.token);
         const payload = {
           confirmationText: record.candidate.confirmationText.slice(0, 240),
           controlText: record.candidate.controlText,
           observedBy: "dom_capture_click_event",
           clickDispatched: true,
           submissionCount: 1,
+          approvalCardToken: args.mark.token,
         };
         const gate = { armed: false, seen: false };
         const dispatchListener = (event) => {
@@ -199,7 +223,22 @@ export async function collectGenerationConfirmationCandidates(page, job) {
   return evaluateGenerationConfirmationCandidates(page, job);
 }
 
-export async function findRequiredGenerationConfirmation(page, job) {
+export function captureGenerationConfirmationBaseline(snapshot) {
+  const cardCounts = {};
+  const seenCards = new Set();
+  for (const candidate of snapshot?.candidates ?? []) {
+    if (candidate?.promptMatches !== true || candidate?.creditPromptMatches !== true ||
+        typeof candidate?.cardFingerprint !== "string" || !candidate.cardFingerprint ||
+        !Number.isInteger(candidate?.cardKey)) continue;
+    const identity = `${candidate.cardKey}\n${candidate.cardFingerprint}`;
+    if (seenCards.has(identity)) continue;
+    seenCards.add(identity);
+    cardCounts[candidate.cardFingerprint] = (cardCounts[candidate.cardFingerprint] ?? 0) + 1;
+  }
+  return { cardCounts };
+}
+
+export async function findRequiredGenerationConfirmation(page, job, options = {}) {
   const snapshot = await collectGenerationConfirmationCandidates(page, job);
   const relevant = snapshot.candidates.filter((candidate) =>
     candidate.creditPromptMatches && candidate.interactive && candidate.enabled,
@@ -208,8 +247,15 @@ export async function findRequiredGenerationConfirmation(page, job) {
     !candidate.acknowledged && candidate.promptMatches,
   );
   const acknowledged = relevant.filter((candidate) => candidate.promptMatches && candidate.acknowledged);
-  if (pending.length === 0) {
-    if (acknowledged.length > 0) {
+  const baselineCardCounts = options?.baseline?.cardCounts ?? null;
+  const current = baselineCardCounts
+    ? pending.filter((candidate) =>
+      typeof candidate.cardFingerprint === "string" &&
+      Number.isInteger(candidate.cardOrdinal) &&
+      candidate.cardOrdinal >= Number(baselineCardCounts[candidate.cardFingerprint] ?? 0))
+    : pending;
+  if (current.length === 0) {
+    if (!baselineCardCounts && acknowledged.length > 0) {
       throw new Error("confirmation_already_acknowledged_no_resubmit");
     }
     return { confirmation: null, snapshot };
@@ -217,7 +263,7 @@ export async function findRequiredGenerationConfirmation(page, job) {
 
   let selected;
   try {
-    selected = selectCurrentApprovalCandidate(snapshot.candidates);
+    selected = selectCurrentApprovalCandidate(current);
   } catch (error) {
     if (/^active_approval_ambiguous:0$/.test(String(error?.message ?? error))) {
       return { confirmation: null, snapshot };
@@ -234,7 +280,7 @@ export async function findRequiredGenerationConfirmation(page, job) {
   return {
     confirmation: {
       confirmationText: selected.confirmationText,
-      selected,
+      selected: baselineCardCounts ? { ...selected, freshCardBound: true } : selected,
     },
     snapshot,
   };
@@ -274,6 +320,7 @@ export async function clickRequiredGenerationConfirmationAtomic(page, job, selec
     bindingName,
     listenerKey,
     gateKey,
+    cardAttribute: APPROVAL_CARD_ATTRIBUTE,
     selected,
   });
   if (marked.markError) throw new Error(marked.markError);
@@ -368,4 +415,115 @@ export async function findCurrentComposerMakeButton(promptBox) {
     scope = scope.locator("xpath=..");
   }
   return null;
+}
+
+export async function clickCurrentComposerMakeAtomic(page, promptBox, callbacks = {}) {
+  const makeButton = await findCurrentComposerMakeButton(promptBox);
+  if (!makeButton) throw new Error("generation_make_button_unavailable_in_current_composer");
+  const token = randomUUID().replace(/-/g, "");
+  const bindingName = `flowMotionMakeDispatch_${token}`;
+  const listenerKey = `__flowMotionMakeListener_${token}`;
+  const gateKey = `__flowMotionMakeGate_${token}`;
+  let dispatchEvidence = null;
+  let dispatchPersistenceError = null;
+  let resolveDispatch;
+  const dispatchObserved = new Promise((resolve) => { resolveDispatch = resolve; });
+  await page.exposeBinding(bindingName, async (_source, evidence) => {
+    if (!dispatchEvidence) {
+      dispatchEvidence = evidence;
+      try {
+        if (typeof callbacks.onClickDispatched === "function") callbacks.onClickDispatched(evidence);
+      } catch (error) {
+        dispatchPersistenceError = error;
+      }
+      resolveDispatch(evidence);
+    }
+    return true;
+  });
+
+  const handle = await makeButton.elementHandle();
+  if (!handle) throw new Error("atomic_make_target_handle_missing");
+  try {
+    await handle.evaluate((element, args) => {
+      element.setAttribute(args.attribute, args.token);
+      const gate = { armed: false, seen: false };
+      const listener = (event) => {
+        if (!gate.armed || gate.seen) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
+        gate.seen = true;
+        const binding = globalThis[args.bindingName];
+        if (typeof binding === "function") {
+          void binding({
+            observedBy: "composer_make_dom_capture_click_event",
+            clickDispatched: true,
+            makeClickAttemptCount: 1,
+          });
+        }
+      };
+      element[args.gateKey] = gate;
+      element[args.listenerKey] = listener;
+      element.addEventListener("click", listener, { capture: true });
+    }, { attribute: MAKE_TARGET_ATTRIBUTE, token, bindingName, gateKey, listenerKey });
+    const pinned = page.locator(`[${MAKE_TARGET_ATTRIBUTE}="${token}"]`);
+    if (await pinned.count() !== 1) throw new Error(`atomic_make_target_ambiguous:${await pinned.count()}`);
+    await handle.click({ trial: true, timeout: 2_000 });
+    const armedEvidence = {
+      clickIntentArmed: true,
+      observedBy: "composer_make_click",
+      makeClickAttemptCount: 1,
+    };
+    if (typeof callbacks.onClickArmed === "function") callbacks.onClickArmed(armedEvidence);
+    const gateArmed = await handle.evaluate((element, args) => {
+      const gate = element[args.gateKey];
+      if (!element.isConnected || !gate || gate.seen) return false;
+      gate.armed = true;
+      element.setAttribute(args.armedAttribute, "true");
+      return true;
+    }, { gateKey, armedAttribute: MAKE_ARMED_ATTRIBUTE });
+    if (!gateArmed) throw new Error("atomic_make_gate_not_armed");
+    let clickError = null;
+    try {
+      await handle.click({ noWaitAfter: true, timeout: 5_000 });
+    } catch (error) {
+      clickError = error;
+    }
+    if (!dispatchEvidence) {
+      await Promise.race([
+        dispatchObserved,
+        new Promise((resolve) => setTimeout(resolve, 1_500)),
+      ]);
+    }
+    if (!dispatchEvidence) {
+      const unknown = new Error("make_click_outcome_unknown_no_retry");
+      unknown.cause = clickError;
+      throw unknown;
+    }
+    if (dispatchPersistenceError) {
+      const persistenceFailure = new Error("make_dispatch_persistence_failed_no_retry");
+      persistenceFailure.cause = dispatchPersistenceError;
+      throw persistenceFailure;
+    }
+    return {
+      ...dispatchEvidence,
+      clickCallError: clickError ? String(clickError?.message ?? clickError).replace(/\s+/g, " ").slice(0, 160) : null,
+    };
+  } finally {
+    await handle.evaluate((element, args) => {
+      const listener = element[args.listenerKey];
+      if (typeof listener === "function") element.removeEventListener("click", listener, true);
+      delete element[args.listenerKey];
+      delete element[args.gateKey];
+      element.removeAttribute(args.attribute);
+      element.removeAttribute(args.armedAttribute);
+    }, {
+      attribute: MAKE_TARGET_ATTRIBUTE,
+      armedAttribute: MAKE_ARMED_ATTRIBUTE,
+      listenerKey,
+      gateKey,
+    }).catch(() => {});
+    await handle.dispose().catch(() => {});
+  }
 }

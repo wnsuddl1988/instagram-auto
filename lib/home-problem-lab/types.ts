@@ -151,6 +151,7 @@ export interface HomeProblemLabLiveAuthorization {
   liveCallAuthorized: boolean;
   maxExternalCalls: 1;
   requestId: string;
+  sampleText: string;
   batchSize: 1;
   sentenceCount: number;
   preflightPassed: boolean;
@@ -159,6 +160,21 @@ export interface HomeProblemLabLiveAuthorization {
   imageGeneration: false;
   productLookup: false;
   credentialPresence: HomeProblemLabCredentialPresence;
+}
+
+export interface HomeProblemLabLiveExecutionPermit {
+  purpose: "single_lumi_voice_sample";
+  engineId: typeof HOME_PROBLEM_LAB_ENGINE_ID;
+  characterId: "lumi";
+  requestId: string;
+  liveCallAuthorized: true;
+  maxExternalCalls: 1;
+  expiresAt: number;
+  instagramUpload: false;
+  youtubeUpload: false;
+  imageGeneration: false;
+  productLookup: false;
+  publish: false;
 }
 
 export interface HomeProblemLabElevenLabsRequestEnvelope {
@@ -199,13 +215,13 @@ export interface HomeProblemLabLiveTtsResult {
   isMock: false;
   isPublishable: false;
   audioGenerated: boolean;
-  audioPath: null;
+  audioPath: string | null;
   durationMs: number | null;
   byteLength: number | null;
   contentType: string | null;
   outputFormat: "mp3_44100_128";
   requestId: string;
-  externalCalls: 0;
+  externalCalls: number;
   voiceIdExposed: false;
   secretExposed: false;
   uploadCandidate: false;

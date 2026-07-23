@@ -6,7 +6,7 @@
  *   - 로그인 / 중단 조건 fail-fast
  *   - reference 직접 첨부 (setInputFiles) + 썸네일 DOM 검증
  *   - 첨부 이미지 baseline CID/src 수집 (결과 후보 제외용)
- *   - 이미지 생성 도구 활성화 + DOM 진입 검증 (warn-and-continue 제거)
+ *   - 이미지 생성 도구 활성화 또는 현재 Chat UI의 명시적 프롬프트 라우팅 검증
  *   - 프롬프트 DOM 입력 확인 (fill → keyboard.type fallback)
  *   - send enabled 확인
  *   - 마지막 assistant 응답 내부 이미지만 후보 탐색
@@ -28,7 +28,7 @@
  *   checkLogin(page, logFn)
  *   openFreshImageChat(page, logFn) — 사람의 초안을 건드리지 않는 이미지 전용 일반 새 대화
  *   detectStop(page)    — quota/captcha 감지 시 throw
- *   activateImageTool(page, logFn, warnFn)  bool — fail-fast
+ *   activateImageTool(page, logFn, warnFn)  { mode } — explicit-tool | prompt-routed
  *   attachRef(page, refPath, logFn)         { thumbnails, baselineCids, baselineSrcs }
  *   typePrompt(page, promptText, logFn)     { typedLen }
  *   checkSendEnabled(page)                  bool
@@ -102,6 +102,11 @@ export async function checkLogin(page, logFn = console.log) {
 export const CHATGPT_IMAGE_FRESH_CHAT_URL = "https://chatgpt.com/";
 export const CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX =
   "GENERATE ONE BRAND-NEW ORIGINAL TEXT-TO-IMAGE ASSET.";
+// 2026-07 현재 일반 Chat 작성창은 이미지 도구를 + 메뉴에 노출하지 않는 경우가 있다.
+// 이 프롬프트는 그 UI에서 ChatGPT가 텍스트 응답이 아니라 신규 이미지 생성으로 라우팅할
+// 수 있도록 각 장면 프롬프트의 첫 문장으로 고정한다. 실제 결과가 텍스트면 runner가
+// 기존의 1회 새 대화 복구 뒤 fail-closed 처리한다.
+export const IMAGE_TOOL_PROMPT_ROUTING_FALLBACK = "prompt-routed";
 
 /** 이미지 생성은 Work가 아니라 일반 Chat 모드에서만 허용한다. */
 export async function ensureChatMode(page, logFn = console.log) {
@@ -329,13 +334,13 @@ async function activateDirectImageEntry(page, target, logFn, source) {
     throw new Error("IMAGE_TOOL_NOT_ACTIVE: direct create-image button did not create a picture_v2 chip");
   }
   logFn(`Image tool activated (${source}, composer chip verified)`);
-  return true;
+  return { mode: "explicit-tool" };
 }
 
 export async function activateImageTool(page, logFn = console.log, warnFn = console.warn) {
   if (await verifyImageToolActive(page)) {
     logFn("Image tool already active (composer chip verified)");
-    return true;
+    return { mode: "explicit-tool" };
   }
 
   // 빈 일반 채팅의 현재 UI는 이미지 만들기를 + 메뉴가 아닌 홈 화면 직접 버튼으로 제공한다.
@@ -352,38 +357,44 @@ export async function activateImageTool(page, logFn = console.log, warnFn = cons
     page.locator('button[aria-label*="Attach" i]'),
     page.locator('button[aria-label*="Add" i]'),
   ]);
-  if (!plus) throw new Error("IMAGE_TOOL_ENTRY_MISSING: composer plus button not found");
+  if (plus) {
+    await plus.click({ timeout: 5000 }).catch((error) => {
+      throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: plus button click failed (${String(error?.message ?? error).slice(0, 80)})`);
+    });
+    await page.waitForTimeout(500);
 
-  await plus.click({ timeout: 5000 }).catch((error) => {
-    throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: plus button click failed (${String(error?.message ?? error).slice(0, 80)})`);
-  });
-  await page.waitForTimeout(500);
-
-  const target = await firstVisibleLocator([
-    page.getByRole("menuitemradio", { name: /^이미지 만들기$|^Create image$/i }),
-    page.getByRole("menuitem", { name: /^이미지 만들기$|^Create image$/i }),
-  ]);
-  if (!target) {
-    await page.keyboard.press("Escape").catch(() => {});
-    // 최신 홈 UI의 직접 버튼은 composer보다 늦게 hydrate될 수 있다. + 메뉴에 없으면
-    // 오버레이를 닫고 직접 버튼을 한 번 더 기다려 초기 로딩 경쟁 조건을 흡수한다.
-    const delayedDirectTarget = await waitForDirectImageEntry(page, 7000);
-    if (delayedDirectTarget) {
-      return activateDirectImageEntry(page, delayedDirectTarget, logFn, "delayed direct home button");
+    const target = await firstVisibleLocator([
+      page.getByRole("menuitemradio", { name: /^이미지 만들기$|^Create image$/i }),
+      page.getByRole("menuitem", { name: /^이미지 만들기$|^Create image$/i }),
+    ]);
+    if (target) {
+      await target.click({ timeout: 5000 }).catch((error) => {
+        throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: create-image menu click failed (${String(error?.message ?? error).slice(0, 80)})`);
+      });
+      if (!(await waitForImageToolActive(page, 5000))) {
+        warnFn("Create-image menu was clicked, but no active composer chip appeared.");
+        throw new Error("IMAGE_TOOL_NOT_ACTIVE: composer activation marker missing");
+      }
+      logFn("Image tool activated (composer chip verified)");
+      return { mode: "explicit-tool" };
     }
-    throw new Error("IMAGE_TOOL_ENTRY_MISSING: exact create-image menu item not found");
+    await page.keyboard.press("Escape").catch(() => {});
   }
 
-  await target.click({ timeout: 5000 }).catch((error) => {
-    throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: create-image menu click failed (${String(error?.message ?? error).slice(0, 80)})`);
-  });
-  if (!(await waitForImageToolActive(page, 5000))) {
-    warnFn("Create-image menu was clicked, but no active composer chip appeared.");
-    throw new Error("IMAGE_TOOL_NOT_ACTIVE: composer activation marker missing");
+  // 일반 Chat의 새 UI는 +를 파일 첨부 전용으로 바꾸고 이미지 항목/칩을 전혀 노출하지
+  // 않는다(Owner 녹화로 재현). 이때는 존재하지 않는 메뉴를 재시도하지 않고, 새 일반
+  // 채팅 + 고정 text-to-image 접두사로 한 번만 전송한다. 이후 실제 응답이 텍스트이면
+  // runner의 기존 신규 채팅 1회 복구와 fail-closed 규칙이 그대로 적용된다.
+  const delayedDirectTarget = await waitForDirectImageEntry(page, 1500);
+  if (delayedDirectTarget) {
+    return activateDirectImageEntry(page, delayedDirectTarget, logFn, "delayed direct home button");
   }
-
-  logFn("Image tool activated (composer chip verified)");
-  return true;
+  const composer = page.locator("#prompt-textarea").first();
+  if (!(await composer.isVisible({ timeout: 3000 }).catch(() => false))) {
+    throw new Error("IMAGE_TOOL_ENTRY_MISSING: no visible ChatGPT composer for prompt routing");
+  }
+  logFn("IMAGE_TOOL_PROMPT_ROUTING_FALLBACK: current Chat UI has no image menu/chip; using explicit text-to-image prompt routing");
+  return { mode: IMAGE_TOOL_PROMPT_ROUTING_FALLBACK };
 }
 
 // ── reference 첨부 + baseline 수집 ───────────────────────────────────────────
@@ -397,7 +408,7 @@ export async function attachRef(page, refPath, logFn = console.log) {
 
   if (await fileInput.count() === 0) {
     const attachBtn = page.locator(
-      'button[aria-label*="파일 추가" i], button[aria-label*="Attach" i], ' +
+      'button[aria-label*="파일 등 추가" i], button[aria-label*="파일 추가" i], button[aria-label*="Attach" i], ' +
       'button[aria-label*="attach" i], button[data-testid*="attach"]'
     ).first();
     if (await attachBtn.count() > 0) {

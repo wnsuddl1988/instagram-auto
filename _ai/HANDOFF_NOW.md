@@ -1,236 +1,87 @@
 # HANDOFF_NOW
 
-전체프로젝트 진행률 : 약 97%
+ROLE_MODE: CROSS_REVIEW_MODE
+Claude Code 모델: Opus 4.8 (alias: opus)
+사고 수준: high/높음
+Claude Code 설정 힌트: `--model opus --effort high --permission-mode plan`
+선정 이유: 유료 Google Flow UI 경계에서 여러 번 진단이 빗나갔고, `Make` 직후 상태 전이가 불명확하므로 독립적인 근본 원인 검토가 필요하다.
 
-## Current Task
+Tool Call Safety: 실제 도구 인터페이스만 사용하고 `<invoke>`, `<parameter>`, 가짜 Bash/Edit 태그 같은 출력용 도구 호출 마크업을 사용하지 않는다.
 
-- Task ID: `owner-web-auto-topic-refresh-and-upload-button-v1`
-- Owner direction: "처음 쓰는 사람이 주제 추천부터 영상 생성, 업로드까지 웹에서 이해하고 쓸 수 있게 하라. 작은 단위로 쪼개지 말고 큰 흐름 하나로 완성."
-- Purpose: finish the Owner-facing `/money-shorts` workflow so it behaves like an actual automatic shorts tool, not a fixed demo or developer diagnostic page.
+## Task
 
-## Product Problem
+현재 Money Shorts의 Google Flow/Veo 자동화가 기준 이미지 등록과 프롬프트 입력 직후 새 Flow 탭을 닫고 실패하는 원인을 **읽기 전용으로 교차검토**한다.
 
-Current web flow is closer, but still has two unacceptable product gaps:
+## Owner Observation
 
-1. `주제 추천받기` only loads 7 fixed local topics:
-   - 2 script-ready topics from `money-shorts-retention-script-compiler.output.v1.json`
-   - 5 candidate-only topics from `topic_candidate_report.v1.json`
-   A first-time user expects fresh usable topic ideas whenever they click/refresh.
+- 실제 순서: 기준 이미지 등록 → 프롬프트 입력 → 창이 바로 닫힘.
+- 생성 결과/승인 화면으로 진행되지 않음.
+- 반복 유료 검증으로 Owner의 시간과 크레딧 손실이 있었으므로 추측성 수정이나 추가 라이브 클릭은 금지한다.
 
-2. `실제 업로드` is still locked, so the Owner still needs terminal commands for real publishing. The Owner explicitly wants a web upload button.
+## Latest Local Evidence
 
-## Approved Scope
+- topic: `gen-finance-editorial-v2-success-habits-economic-signal-03`
+- job: `gen-finance-editorial-v2-success_habits-economic_signal-03-part-2-scene-04`
+- latest attempt: `d2792f66-2da0-400f-8c0e-3d04584d766e`
+- summary status: `MAKE_CLICK_OUTCOME_UNKNOWN`
+- failure: `required_generation_confirmation_dialog_missing:baseline=471,current=464,facts=0,interactive=0`
+- `makeClickAttemptCount=1`
+- `approvalClickAttemptCount=0`
+- `submissionCount=0`, but `expectedCreditsSpent=null`; therefore retry is unsafe.
+- attachment/prompt evidence succeeded:
+  - `referenceIdentityMethod=controlled_single_attachment_transition`
+  - `attachmentCount=1`
+  - provider prompt hash matched.
+- Owner says the new Flow tab closed immediately after prompt entry.
 
-Allowed in this slice:
+Relevant live summary (read only):
+`C:\tmp\money-shorts-os\web-wizard-create-v1\gen-finance-editorial-v2-success-habits-economic-signal-03\real\money_shorts_semantic_prehook_series_v1\part-2\flow-motion-v1\scene-04\contract-535162bd0fbfdf51-1aa6b5d29200ae4e\generation-summary.json`
 
-- Update `/money-shorts` web UX so the main flow is:
-  1. 카테고리 선택
-  2. 새 주제 추천
-  3. 대본 만들기
-  4. 음성 만들기
-  5. 영상 만들기
-  6. 미리보기
-  7. 게시 전 점검
-  8. 실제 업로드
-- Replace the fixed 7-topic catalog experience with fresh recommendations on each click/page session.
-- Use a safe local/deterministic generator first if external LLM topic generation is not already safely wired.
-- Ensure every shown recommended topic is usable by downstream steps:
-  - script can be generated
-  - voice mock/sample can be generated
-  - video draft can be generated
-  - preview works
-- Keep the existing topic-linked render behavior and extend it, do not regress to fixed base-rate output.
-- Add a web upload action/button that calls the existing final E2E one-shot runner path from the server side, using only approved runtime env keys from `process.env`, with values passed to child env only and never printed.
-- Add a clear confirmation gate before upload in UI, e.g. type `업로드` or tick explicit checkboxes, so accidental clicks cannot publish.
-- Add/reuse guard coverage for fresh topic generation, selected-topic propagation, upload button gating, no secret output, no raw command injection, and no duplicate t1/t2 republish.
-- Update `docs/simple-execution-manual.md` briefly if needed.
-- Append concise evidence to `_ai/CLAUDE_REPORT.md`.
+## Review Scope
 
-Forbidden:
+Read only what is needed:
 
-- Directly read/modify `.env`, `.env.*`, `.env.local`, secret files.
-- Print/log/store credential values or value-derived length/prefix/suffix/hash/masked/token type.
-- Dependency or lockfile changes.
-- Deploy.
-- Push.
-- Re-upload/re-publish existing evidence:
-  - Instagram `17916511431199303`
-  - YouTube `r9jhckdpC9w`
-  - Instagram `18103818062321982`
-  - YouTube `T4Kgxhq4cpE`
-- Use shell string command construction for user-controlled values.
-- Allow arbitrary path/command input from the browser.
+- `scripts/run-flow-motion-job-playwright-v1.mjs`
+- `scripts/_flow-motion-confirmation-dom.mjs`
+- `scripts/_flow-motion-generation-summary.mjs`
+- `scripts/_flow-motion-reference-binding.mjs`
+- `scripts/_flow-motion-result-binding.mjs`
+- `scripts/check-flow-motion-runner-v1.mjs`
+- `scripts/check-flow-motion-confirmation-dom-v1.mjs`
+- the latest summary above
 
-Important upload boundary:
+Determine:
 
-- Implementing the web upload button is approved.
-- Do **not** click/run a real upload during automated tests.
-- Tests must use fake/dummy env, preflight-only, duplicate-block, or a disabled/no-op probe path.
-- The real button may be wired for Owner use, but implementation verification must not publish another live video.
-- The route must fail closed if required files/ledger/content unit are missing or if the topic was already published.
+1. Whether the code is clicking `Make` before an Owner/provider approval step, or whether current Flow sends generation directly on `Make`.
+2. Why `required_generation_confirmation_dialog_missing` closes the runner-created tab instead of recovering a potentially submitted generation.
+3. Whether `makeClickOutcomeUnknown` is being set too broadly or correctly.
+4. The smallest robust state machine for:
+   - exact image attachment
+   - exact prompt entry
+   - Make click
+   - either confirmation-card approval OR direct provider submission detection
+   - result binding and download without a second paid click
+5. Which current tests gave false confidence and the exact missing regression fixture.
 
-## Expected Product Behavior
+## Forbidden
 
-### Fresh Topic Recommendations
+- Do not edit any file.
+- Do not run Browser/Chrome/Playwright against Google Flow.
+- Do not click `Make`, approve generation, submit, download, or spend credits.
+- Do not read or modify env/secrets.
+- Do not run external uploads, publication, DB, deploy, commit, or push.
+- Do not touch the protected files:
+  - `scripts/render-golden-sample-visual-only-v1.mjs`
+  - `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
+  - `scripts/get-youtube-refresh-token-once.mjs`
 
-`주제 추천받기` should no longer feel like "7 fixed samples".
+## Required Output
 
-Implement a practical local generator such as:
+Return a concise Korean Cross Review report with:
 
-- category-specific topic templates/pools for the 8 supported categories:
-  - AI생성활용
-  - 밈&짤
-  - 충격뉴스
-  - TMI지식
-  - 게임클립
-  - 재테크팁
-  - 귀여운동물
-  - 셀럽엔터
-- each click/session picks a new batch with unique IDs, fresh titles/hooks/angles
-- avoid already published/used demo IDs (`t1_lifestyle_inflation`, `t2_salary_3days`, `base-rate-hold-202605`) unless explicitly marked as examples
-- mark every generated recommendation as `scriptReady:true` by providing enough structured fields for rule-based script creation
-
-If robust fully dynamic generation is too large, make it deterministic-local but varied enough:
-
-- rotate/randomize from a larger in-repo topic bank
-- include timestamp/session/batch id
-- show at least 8-12 options, not 7
-- each new click should produce a different set/order unless the Owner pins a topic
-
-### Downstream Steps
-
-For a selected generated topic:
-
-- `대본 만들기` must build a script from that selected topic.
-- `음성 만들기` must generate the local mock/sample voice from that script.
-- `영상 만들기` must generate a draft video whose visible captions/title reflect that selected topic.
-- `미리보기` must play that generated video.
-- `게시 전 점검` must check the selected/generated content, not the old default sample.
-
-Plain Korean errors only. Do not show raw validation/dev terms by default.
-
-### Upload Button
-
-The web UI should include an actual upload button for Owner local use, but protected:
-
-- visible only after video exists and preflight passes
-- requires explicit confirmation in the UI before enabling
-- clear label: `인스타그램·유튜브에 업로드`
-- show warning: `누르면 실제 계정에 게시됩니다.`
-- server route should call the existing final E2E one-shot runner with `--arm` only after confirmation flag is present
-- output should show only public IDs/URLs/status, never secrets
-- if duplicate/ledger says already published, block and explain in Korean
-- if env keys missing, say `업로드 키가 준비되지 않았습니다`
-
-## Likely Files
-
-Inspect first; edit only what is needed:
-
-- `components/VideoCreationWizard.tsx`
-- `components/OperatorPanel.tsx`
-- `app/money-shorts/page.tsx`
-- `app/api/money-shorts/operator/route.ts`
-- `lib/owner-web-operator.ts`
-- `scripts/check-owner-one-click-video-creation-ui-static.mjs`
-- `scripts/check-owner-web-operator-ui-static.mjs` if route/operator contract changes
-- `docs/simple-execution-manual.md`
-- `_ai/CLAUDE_REPORT.md`
-
-Do not touch unrelated dirty/protected files:
-
-- `_ai/CODEX_REVIEW.md`
-- `_ai/NEXT_ACTION.md`
-- `_ai/PROJECT_STATE.md`
-- `_ai/CONTEXT_TRANSFER_CODEX.md`
-- `pnpm-workspace.yaml`
-- `scripts/render-golden-sample-visual-only-v1.mjs`
-- `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json`
-- `scripts/get-youtube-refresh-token-once.mjs`
-- `piq_diag_out.txt`
-- `shadow-list.txt`
-- `tmp/`
-- `output/`
-
-## Implementation Guidance
-
-Do this as one meaningful product slice:
-
-1. Build a real `freshTopicRecommend` path.
-   - It can be local rule/template based for now.
-   - It must generate more useful choices and different results on repeated clicks.
-   - It must produce all fields needed for script creation.
-
-2. Make script generation work for generated topics.
-   - Do not depend only on `money-shorts-retention-script-compiler.output.v1.json`.
-   - Add rule-based script builder if needed.
-   - Keep language short, punchy, and suitable for 15-60 sec shorts.
-
-3. Keep selected-topic propagation through voice/video/preview.
-   - Topic ID/title/hook/caption lines must be reflected in generated input files and rendered captions.
-   - Path usage must be sanitized and repo-outside under `C:\tmp\money-shorts-os\...`.
-
-4. Add upload button wiring.
-   - Use existing final E2E runner path if available.
-   - Use `spawnSync(process.execPath, argsArray, { shell:false, ... })`.
-   - Pass only approved env keys into child env; no broad spread.
-   - Add confirmation gate and duplicate guard.
-   - Do not execute actual upload in tests.
-
-5. Update UI copy.
-   - Replace "주제 추천받기" explanations with something like:
-     `누를 때마다 새 주제를 추천합니다. 마음에 드는 주제를 고르면 아래 단계가 자동으로 이어집니다.`
-   - Replace "실제 업로드 잠금" with gated upload instructions if implemented.
-
-## Required Checks
-
-Run targeted checks:
-
-- `git status -sb`
-- `node --check` for changed/new scripts
-- `node scripts/check-owner-one-click-video-creation-ui-static.mjs`
-- `node scripts/check-owner-web-operator-ui-static.mjs`
-- `node node_modules/typescript/bin/tsc --noEmit --pretty false`
-
-If touched, also run:
-
-- `node scripts/check-owner-daily-automation-entrypoint-static.mjs`
-- `node scripts/check-dual-platform-final-publish-orchestrator-static.mjs`
-
-Recommended browser verification:
-
-- start local dev server
-- open `http://localhost:3000/money-shorts`
-- click topic recommend twice and confirm different usable topics appear
-- select one generated topic
-- run script/voice/video/preview/preflight
-- confirm upload button is gated and does not publish unless confirmation path is deliberately triggered
-- do **not** perform actual live upload during verification
-
-## Definition Of Done
-
-Done means:
-
-- A first-time user can understand the page without the PDF.
-- `주제 추천받기` no longer shows only the same 7 fixed topics.
-- Selected generated topic drives script, voice, video, and preview.
-- Upload is available from web for Owner local use, with confirmation and fail-closed safety.
-- No secrets are exposed.
-- No real upload is executed during tests.
-- Existing published evidence is never retried.
-- Checks pass or any known environment-only failure is reported clearly.
-
-## Final Handoff Required
-
-Claude Code final report must include:
-
-- task id
-- changed files
-- exact fresh-topic behavior
-- exact downstream automation proof
-- upload button behavior and whether any live upload was or was not executed
-- checks/results
-- side effects confirmation
-- env/secret confirmation
-- deviations/risks
-- checkpoint recommendation
-- progress line
+- verdict: `PASS | NEEDS_FIX | BLOCKED`
+- confirmed root cause(s), separating evidence from inference
+- exact must-fix functions/state transitions
+- missing tests
+- whether the current attempt can be recovered without another Make click
+- no code changes and no external side effects confirmation

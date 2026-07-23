@@ -24,6 +24,7 @@ const imagesDir = path.join(root, "images");
 const flowDir = path.join(root, "flow-motion-v1");
 const jobDir = path.join(flowDir, "scene-02");
 const statePath = path.join(flowDir, "flow-motion-state.json");
+const imageSummaryPath = path.join(imagesDir, "scene-images-summary.json");
 const referenceFile = path.join(imagesDir, "scene-02.png");
 const videoPath = path.join(jobDir, "flow-motion-raw.mp4");
 const evidencePath = path.join(jobDir, "qa-evidence.json");
@@ -115,11 +116,18 @@ const validState = () => ({
 });
 
 const portraitProbe = () => ({ hasVideoStream: true, width: 1080, height: 1920, durationSec: 8 });
+const validImageSummary = () => ({
+  scenes: [
+    { sceneIndex: 1, presenceMode: "none" },
+    { sceneIndex: 2, presenceMode: "hands" },
+  ],
+});
 const writeValidFixture = () => {
   writeFileSync(referenceFile, "reference-image-v1", "utf8");
   writeFileSync(videoPath, "fake-veo-video-v1", "utf8");
   writeFileSync(evidencePath, JSON.stringify(validEvidence(), null, 2), "utf8");
   writeFileSync(statePath, JSON.stringify(validState(), null, 2), "utf8");
+  writeFileSync(imageSummaryPath, JSON.stringify(validImageSummary(), null, 2), "utf8");
 };
 writeValidFixture();
 
@@ -173,6 +181,31 @@ check("a script without Veo scenes needs no Flow state", () => {
   assert.equal(result.ok, true);
   assert.equal(result.audit.noVeoMotionRequired, true);
   assert.deepEqual(result.assets.map((asset) => asset.source), ["layered_still", "layered_still"]);
+});
+
+check("an object-only image is excluded from Veo and rendered as a layered still", () => {
+  writeValidFixture();
+  const summary = validImageSummary();
+  summary.scenes[1].presenceMode = "none";
+  writeFileSync(imageSummaryPath, JSON.stringify(summary, null, 2), "utf8");
+  const result = resolveFlowMotionRenderInputs({
+    record,
+    imagesDir,
+    statePath: path.join(flowDir, "missing-state.json"),
+    probeVideo: portraitProbe,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.audit.noVeoMotionRequired, true);
+  assert.deepEqual(result.audit.excludedObjectOnlySceneNumbers, [2]);
+  assert.deepEqual(result.assets.map((asset) => asset.source), ["layered_still", "layered_still"]);
+});
+
+check("a Veo candidate without valid image-presence evidence fails closed", () => {
+  writeValidFixture();
+  writeFileSync(imageSummaryPath, JSON.stringify({ scenes: [] }, null, 2), "utf8");
+  const result = resolveFlowMotionRenderInputs({ record, imagesDir, statePath, probeVideo: portraitProbe });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "FLOW_MOTION_IMAGE_PRESENCE_INVALID");
 });
 
 check("a selected Veo scene consumes the render-ready MP4", () => {

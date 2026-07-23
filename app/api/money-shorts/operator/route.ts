@@ -25,6 +25,9 @@ import { NextResponse } from "next/server";
 
 import {
   APPROVED_ENV_KEY_NAMES,
+  FLOW_MOTION_NEW_ATTEMPT_CONFIRM_TEXT,
+  FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT,
+  FLOW_MOTION_UNKNOWN_CREDIT_NEW_ATTEMPT_CONFIRM_TEXT,
   LOCAL_ONLY_BLOCKER,
   OPERATOR_ACTIONS,
   type OperatorAction,
@@ -36,15 +39,18 @@ import {
   acceptWizardRealSceneImagesVisualQuality,
   acceptWizardRealTtsListeningQuality,
   buildOperatorCommand,
+  buildWizardPart2SafePublishCommand,
   buildWizardContentUnitsForTopic,
   buildWizardRealPipelineInputs,
   authorizeWizardFlowMotionGeneration,
+  authorizeWizardFlowMotionResultRecovery,
   canWizardTopicEnterScript,
   ensureWizardFinalScript,
   generateWizardTopicBatchSmart,
   getWizardScriptQualityGate,
   isLocalDevRuntime,
   listWizardUploadReadyItems,
+  isWizardPart2OnlySafePublishResume,
   markWizardTopicHistory,
   prepareWizardFlowMotionPackets,
   passWizardFlowMotionOwnerQa,
@@ -64,14 +70,18 @@ import {
   readWizardFinanceCharacterCastState,
   readWizardFinanceCharacterImageBytes,
   readWizardRealSceneImageBytes,
+  readWizardFinalScriptRecord,
   readWizardFlowMotionStatus,
   readWizardFlowMotionVideoBytes,
   readWizardRealMediaState,
+  reopenWizardFlowMotionNewAttempt,
+  rollbackWizardFlowMotionAuthorizationWithoutExecution,
   resolveWizardFinanceCharacterVoice,
   readWizardVideoBytes,
   readWizardVideoStatus,
   planWizardSelectedSceneImageRegeneration,
   runOperatorScript,
+  runOperatorScriptAsync,
   saveWizardFinanceCharacterSelection,
   saveWizardTopicEditorialDecision,
 } from "@/lib/owner-web-operator";
@@ -155,6 +165,8 @@ const LOCAL_SCRIPT_ACTIONS: OperatorAction[] = [
   "realSceneImagesRegenerateSelected",
   "flowMotionPrepare",
   "flowMotionGenerate",
+  "flowMotionRecover",
+  "flowMotionReopenNewAttempt",
   "flowMotionQaPass",
   "flowMotionQaFail",
   "finalVideoCreate",
@@ -228,7 +240,7 @@ const REAL_IMAGE_PER_SCENE_TIMEOUT_MS = 190_000;
 const REAL_IMAGES_MAX_TIMEOUT_MS = 3_540_000;
 const FINAL_VIDEO_TIMEOUT_MS = 300_000;
 const CHARACTER_CAST_TIMEOUT_MS = 480_000;
-const FLOW_MOTION_GENERATION_TIMEOUT_MS = 720_000;
+const FLOW_MOTION_GENERATION_TIMEOUT_MS = 1_500_000;
 
 /** 업로드 차단 시 사용자 문구(media quality gate — 시안/테스트 산출물 업로드 금지). */
 const MEDIA_GATE_USER_MESSAGE = "아직 실제 음성/실제 장면 이미지가 들어간 최종 영상이 아닙니다. 업로드를 막았습니다.";
@@ -576,7 +588,9 @@ function runFlowMotionPrepareAction(topicId: string): OperatorResponse {
     status: "success",
     summary: status.requiredCount === 0
       ? "이 영상에는 Flow 모션이 필요한 장면이 없어 정지 이미지 흐름을 유지합니다."
-      : `Flow 모션 후보 ${status.requiredCount}개의 패킷이 준비됐습니다. 현재 상태는 생성 승인 대기입니다.`,
+      : status.state === "render_ready"
+        ? `인물·손이 확인된 Flow 장면 ${status.requiredCount}개가 모두 렌더 준비됐습니다.`
+        : `인물·손이 확인된 Flow 장면 ${status.requiredCount}개의 패킷이 준비됐습니다. 현재 상태는 ${status.state}입니다.`,
     detail: "장면 이미지·프롬프트 해시를 고정한 로컬 패킷만 만들었습니다. 브라우저 접근·업로드·생성 전송·크레딧 사용은 0회입니다.",
     raw: { flowMotion: status },
     noLive: true,
@@ -623,8 +637,22 @@ function runFinalVideoCreateAction(topicId: string): OperatorResponse {
   if (!pipeline.ok) {
     return { action, status: "blocked", summary: describeBuildFailure(pipeline.reason), blockerCode: pipeline.reason, noLive: true };
   }
+  // 현재 검증을 통과한 MP4는 재합성하지 않는다. 바뀐 편만 새 음성·자막으로 렌더한다.
+  const mediaBeforeVid = readWizardRealMediaState(topicId);
+  const pendingVideoParts = pipeline.paths.parts.filter((part) =>
+    mediaBeforeVid.parts.find((candidate) => candidate.id === part.id)?.finalVideo.ready !== true,
+  );
+  if (pendingVideoParts.length === 0) {
+    return {
+      action,
+      status: "success",
+      summary: "현재 확정 대본과 일치하는 최종 MP4가 이미 준비돼 있습니다. 추가 합성은 하지 않았습니다.",
+      raw: { finalVideo: mediaBeforeVid.finalVideo, mediaQualityGate: mediaBeforeVid.mediaQualityGate },
+      noLive: true,
+    };
+  }
   const videoRuns = [];
-  for (const part of pipeline.paths.parts) {
+  for (const part of pendingVideoParts) {
     const builtVid = buildOperatorCommand(action, { topicId, productionPartId: part.id });
     if (!builtVid.ok) {
       return { action, status: "blocked", summary: describeBuildFailure(builtVid.reason), blockerCode: builtVid.reason, noLive: true };
@@ -683,8 +711,76 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
       noLive: true,
     };
   }
+  const publishRecoveries =
+    readWizardTopicPublishRecoveryStates(topicId);
+  const allComplete =
+    publishRecoveries.length > 0 &&
+    publishRecoveries.every(
+      (recovery) => recovery.state === "complete",
+    );
+  const resumePart2Only =
+    isWizardPart2OnlySafePublishResume(
+      publishRecoveries,
+    );
+  const existingPublishEvidence = publishRecoveries.filter(
+    (recovery) => recovery.state !== "not_started",
+  );
+  if (allComplete) {
+    return {
+      action,
+      status: "blocked",
+      summary:
+        "이미 모든 편이 게시 완료됐습니다. 같은 영상을 다시 점검하거나 업로드하지 않습니다.",
+      blockerCode: "CONTENT_ALREADY_PUBLISHED",
+      raw: { publishRecoveries },
+      noLive: true,
+    };
+  }
+  if (
+    existingPublishEvidence.length > 0 &&
+    !resumePart2Only
+  ) {
+    return {
+      action,
+      status: "blocked",
+      summary:
+        "기존 게시 결과에 수동 확인이 필요한 상태가 있어 게시 전 점검을 중단했습니다.",
+      blockerCode:
+        "PUBLISH_RECOVERY_MANUAL_REVIEW_REQUIRED",
+      raw: { publishRecoveries },
+      noLive: true,
+    };
+  }
+
+  const selectedUnits = resumePart2Only
+    ? contentUnits.paths.filter(
+        (unit) => unit.productionPartId === "part-2",
+      )
+    : contentUnits.paths;
   const preflights = [];
-  for (const unit of contentUnits.paths) {
+  for (const unit of selectedUnits) {
+    // 1편 완료 후 2편만 재개할 때는 현재 산출물에 이미 결속된 2편 preflight를
+    // 그대로 사용한다. 불필요한 재작성으로 전용 safe preflight를 stale하게 만들지 않는다.
+    const existingPart2Preflight =
+      resumePart2Only &&
+      unit.productionPartId === "part-2"
+        ? readWizardPublishPreflight(
+            topicId,
+            "part-2",
+          )
+        : null;
+    if (
+      existingPart2Preflight?.status ===
+        "PREFLIGHT_ONLY_OK" &&
+      existingPart2Preflight.boundToCurrentArtifacts === true
+    ) {
+      preflights.push({
+        partId: unit.productionPartId,
+        preflight: existingPart2Preflight,
+        reused: true,
+      });
+      continue;
+    }
     const builtPf = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
     if (!builtPf.ok) {
       return { action, status: "blocked", summary: describeBuildFailure(builtPf.reason), blockerCode: builtPf.reason, noLive: true };
@@ -700,7 +796,11 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
       };
     }
     const pf = readWizardPublishPreflight(topicId, unit.productionPartId);
-    preflights.push({ partId: unit.productionPartId, preflight: pf });
+    preflights.push({
+      partId: unit.productionPartId,
+      preflight: pf,
+      reused: false,
+    });
     if (
       runPf.exitCode !== 0 ||
       pf?.status !== "PREFLIGHT_ONLY_OK" ||
@@ -732,9 +832,21 @@ function runWizardPreflightAction(topicId: string): OperatorResponse {
   return {
     action,
     status: "success",
-    summary: `영상 ${contentUnits.paths.length}개의 게시 전 점검을 모두 통과했습니다. 업로드 키 ${credentialCount}/6, 중복 게시 없음.`,
-    detail: "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 모든 편을 순서대로 업로드할 수 있습니다.",
-    raw: { preflights },
+    summary: resumePart2Only
+      ? `1편 게시 완료 기록을 보존하고 2편 게시 전 점검을 통과했습니다. 업로드 키 ${credentialCount}/6.`
+      : `영상 ${selectedUnits.length}개의 게시 전 점검을 모두 통과했습니다. 업로드 키 ${credentialCount}/6, 중복 게시 없음.`,
+    detail: resumePart2Only
+      ? "확인만 했고 업로드는 하지 않았습니다. 마지막 단계에서는 1편을 다시 올리지 않고 2편만 업로드합니다."
+      : "확인만 했고 업로드는 하지 않았습니다. 이제 마지막 단계에서 확인 절차 후 모든 편을 순서대로 업로드할 수 있습니다.",
+    raw: {
+      preflights,
+      publishMode: resumePart2Only
+        ? "part2_only_resume"
+        : "all_unpublished_parts",
+      preservedCompletedPartIds: resumePart2Only
+        ? ["part-1"]
+        : [],
+    },
     noLive: true,
   };
 }
@@ -853,14 +965,18 @@ export async function POST(request: Request) {
     });
   }
 
-  // ── 완성 영상 불러오기 목록: 최종 MP4는 있지만 양쪽 게시 완료 전인 항목만 읽는다. ──
+  // ── 기존 작업 불러오기 목록: 대본 이후 진행 중 작업 + 양쪽 게시 완료 전 최종 영상. ──
   if (action === "uploadReadyList") {
     const items = listWizardUploadReadyItems();
+    const inProgressCount = items.filter((item) => item.status === "in_progress").length;
+    const completedVideoCount = items.length - inProgressCount;
     return json({
       action,
       status: "success",
-      summary: items.length > 0 ? `업로드 대기 영상 ${items.length}개를 찾았습니다.` : "업로드 대기 중인 완성 영상이 없습니다.",
-      detail: "양쪽 플랫폼 게시이 모두 완료된 영상은 이 목록에 표시하지 않습니다.",
+      summary: items.length > 0
+        ? `이어갈 제작 작업 ${items.length}개를 찾았습니다 (진행 중 ${inProgressCount}개 · 최종 영상 ${completedVideoCount}개).`
+        : "이어갈 제작 작업이 없습니다.",
+      detail: "대본·음성·이미지 단계의 진행 중 작업도 표시합니다. 양쪽 플랫폼 게시가 모두 완료된 영상은 표시하지 않습니다.",
       raw: { items },
       noLive: true,
     });
@@ -1035,6 +1151,8 @@ export async function POST(request: Request) {
   if (action === "scriptPreview") {
     const topicIdRaw = (body as { topicId?: unknown }).topicId;
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
+    // 기존 확정본의 오탈자·표시 문구만 로컬 엔진으로 갱신할 때는 외부 보정 호출을 하지 않는다.
+    const localOnlyRefresh = (body as { localOnlyRefresh?: unknown }).localOnlyRefresh === true;
     if (topicId && !canWizardTopicEnterScript(topicId)) {
       return json({
         action,
@@ -1071,7 +1189,9 @@ export async function POST(request: Request) {
     // 대본 생성 방식: 로컬 후보 선별(judge 최고 후보) → Claude 1회 보정.
     // 보정은 로컬 dev 런타임에서만 시도하고(배포 사이트는 로컬 산출물 저장 불가),
     // 키 없음/실패/검증 실패/점수 회귀 시 로컬 대본을 그대로 쓴다. 같은 대본은 재호출하지 않는다.
-    const record = await ensureWizardFinalScript(topicId, preview, { allowPolish: isLocalDevRuntime() });
+    const record = await ensureWizardFinalScript(topicId, preview, {
+      allowPolish: isLocalDevRuntime() && !localOnlyRefresh,
+    });
     const finalQualityGate = getWizardScriptQualityGate(topicId, record.script);
     if (!finalQualityGate.passed) {
       return json({
@@ -1148,6 +1268,33 @@ export async function POST(request: Request) {
     const topicId = typeof topicIdRaw === "string" ? topicIdRaw : "";
     const media = readWizardRealMediaState(topicId);
     const flowMotion = readWizardFlowMotionStatus(topicId);
+    // 새로고침 뒤에도 이미 확정된 로컬 작업을 같은 주제로 다시 그릴 수 있게,
+    // 생성·보정·파일 변경 없이 기존 확정 대본만 함께 돌려준다.
+    const finalScript = readWizardFinalScriptRecord(topicId);
+    const resume = finalScript
+      ? {
+          topic: {
+            topicId,
+            title: finalScript.script.title,
+            hook: finalScript.script.hook,
+            reason: "저장된 재테크 제작 작업",
+            scriptReady: true,
+            recommended: false,
+            category: "finance",
+          },
+          script: finalScript.script,
+          scriptEngine: {
+            mode: finalScript.mode,
+            claudeApplied: finalScript.polish.applied,
+            note: finalScript.polish.note,
+            reasonCode: finalScript.polish.reasonCode,
+            model: finalScript.polish.model,
+            rewriteNotes: finalScript.polish.rewriteNotes,
+            localScore: finalScript.polish.localScore,
+            polishedScore: finalScript.polish.polishedScore,
+          },
+        }
+      : null;
     const g = media.mediaQualityGate;
     return json({
       action,
@@ -1155,7 +1302,7 @@ export async function POST(request: Request) {
       summary: g.ok
         ? "실제 음성·장면 이미지·최종 영상이 모두 준비됐습니다. 게시 전 점검으로 진행할 수 있습니다."
         : `실제 제작 진행 중 — ${g.reasons[0] ?? "다음 단계를 진행해 주세요."}`,
-      raw: { media, flowMotion },
+      raw: { media, flowMotion, resume },
       noLive: true,
     });
   }
@@ -1977,15 +2124,45 @@ export async function POST(request: Request) {
     return json(runFlowMotionPrepareAction(topicId));
   }
 
+  // 기존 증거를 보존한 채 새 승인 대기만 연다. 외부 브라우저·생성·크레딧 사용은 없다.
+  if (action === "flowMotionReopenNewAttempt") {
+    const b = body as { topicId?: unknown; jobId?: unknown; confirmation?: unknown };
+    const topicId = typeof b.topicId === "string" ? b.topicId : "";
+    const jobId = typeof b.jobId === "string" ? b.jobId : "";
+    const confirmation = typeof b.confirmation === "string" ? b.confirmation : "";
+    const reopened = reopenWizardFlowMotionNewAttempt(topicId, jobId, confirmation);
+    if (!reopened.ok) {
+      return json({
+        action,
+        status: "blocked",
+        summary: "이 장면은 새 생성 시도를 안전하게 다시 열 수 있는 상태가 아닙니다.",
+        blockerCode: reopened.reason,
+        noLive: true,
+      });
+    }
+    return json({
+      action,
+      status: "success",
+      summary: confirmation === FLOW_MOTION_UNKNOWN_CREDIT_NEW_ATTEMPT_CONFIRM_TEXT
+        ? "영상 없음·크레딧 차감 여부 모름을 기록하고 새 생성 승인 대기 상태를 열었습니다."
+        : "이전 실패·오탐 증거를 보존하고 새 생성 승인 대기 상태를 열었습니다.",
+      detail: `새 영상 생성은 별도로 승인 문구를 입력해야 하며 ${confirmation} 처리만으로는 크레딧을 사용하지 않습니다.`,
+      raw: { flowMotion: reopened.status },
+      noLive: true,
+    });
+  }
+
   // Flow 모션 생성 — 장면별 정확한 승인문구가 일치할 때만 Playwright runner를 1회 호출한다.
   // 이 분기는 크레딧을 사용할 수 있으므로 packet/state/hash 재검증을 route/helper/runner 3겹으로 수행한다.
-  if (action === "flowMotionGenerate") {
-    const b = body as { topicId?: unknown; jobId?: unknown; ownerApproval?: unknown };
+  if (action === "flowMotionGenerate" || action === "flowMotionRecover") {
+    const recoveryOnly = action === "flowMotionRecover";
+    const b = body as { topicId?: unknown; jobId?: unknown; ownerApproval?: unknown; recoveryApproval?: unknown };
     const topicId = typeof b.topicId === "string" ? b.topicId : "";
     const jobId = typeof b.jobId === "string" ? b.jobId : "";
     const ownerApproval = typeof b.ownerApproval === "string" ? b.ownerApproval : "";
-    const media = readWizardRealMediaState(topicId);
-    if (!media.realTts.qualityAccepted) {
+    const recoveryApproval = typeof b.recoveryApproval === "string" ? b.recoveryApproval : "";
+    const media = recoveryOnly ? null : readWizardRealMediaState(topicId);
+    if (!recoveryOnly && !media?.realTts.qualityAccepted) {
       return json({
         action,
         status: "blocked",
@@ -1994,25 +2171,78 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
-    const authorized = authorizeWizardFlowMotionGeneration(topicId, jobId, ownerApproval);
+    if (recoveryOnly && recoveryApproval === FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT) {
+      const finalized = recordWizardFlowMotionGenerationResult(topicId, jobId);
+      if (finalized.ok) {
+        return json({
+          action,
+          status: "success",
+          summary: "이미 저장·검증된 Flow 영상을 새 생성 없이 Owner 모션 검수 대기로 복구했습니다.",
+          detail: "브라우저를 열거나 Flow 생성 버튼을 다시 누르지 않았고 추가 크레딧도 사용하지 않았습니다.",
+          raw: { flowMotion: finalized.status },
+          noLive: true,
+          liveRunnerInvoked: false,
+        });
+      }
+    }
+    const authorized = recoveryOnly
+      ? authorizeWizardFlowMotionResultRecovery(topicId, jobId, recoveryApproval)
+      : authorizeWizardFlowMotionGeneration(topicId, jobId, ownerApproval);
     if (!authorized.ok) {
       return json({
         action,
         status: "blocked",
-        summary: "장면별 Flow 생성 승인이 일치하지 않아 전송을 막았습니다.",
-        detail: "화면에 표시된 현재 승인 문구를 그대로 입력해야 하며 이전 승인 문구는 재사용할 수 없습니다.",
+        summary: recoveryOnly
+          ? "기존 Flow 결과 복구 승인이 일치하지 않거나 복구 증거가 부족해 중단했습니다."
+          : "장면별 Flow 생성 승인이 일치하지 않아 전송을 막았습니다.",
+        detail: recoveryOnly
+          ? `복구 요청에는 ${FLOW_MOTION_RESULT_RECOVERY_CONFIRM_TEXT} 확인과 현재 작업의 고유 시도·결과 증거가 필요합니다.`
+          : "화면에 표시된 현재 승인 문구를 그대로 입력해야 하며 이전 승인 문구는 재사용할 수 없습니다.",
         blockerCode: authorized.reason,
         noLive: true,
       });
     }
+    const authorizationChanged = "authorizationChanged" in authorized
+      ? authorized.authorizationChanged
+      : true;
     const built = buildOperatorCommand(action, { topicId, flowMotionJobId: jobId, flowMotionOwnerApproval: ownerApproval });
     if (!built.ok) {
-      markWizardFlowMotionGenerationFailed(topicId, jobId, built.reason);
-      return json({ action, status: "blocked", summary: "Flow 실행 명령을 안전하게 만들지 못했습니다.", blockerCode: built.reason, noLive: true });
+      const finalized = recoveryOnly ? recordWizardFlowMotionGenerationResult(topicId, jobId) : null;
+      if (finalized?.ok) {
+        return json({
+          action,
+          status: "success",
+          summary: "동시에 완료된 기존 Flow 영상을 새 생성 없이 Owner 모션 검수 대기로 연결했습니다.",
+          detail: "브라우저 실행이나 추가 크레딧 사용 없이 현재 저장 결과만 재검증했습니다.",
+          raw: { flowMotion: finalized.status },
+          noLive: true,
+          liveRunnerInvoked: false,
+        });
+      }
+      const rolledBack = !authorizationChanged
+        ? { ok: true as const, status: readWizardFlowMotionStatus(topicId) }
+        : rollbackWizardFlowMotionAuthorizationWithoutExecution(
+          topicId,
+          jobId,
+          recoveryOnly ? "recovery" : "generation",
+          built.reason,
+        );
+      return json({
+        action,
+        status: "blocked",
+        summary: "Flow 실행 명령을 안전하게 만들지 못해 외부 실행 전에 중단했습니다.",
+        blockerCode: built.reason,
+        raw: { flowMotion: rolledBack.ok ? rolledBack.status : null },
+        noLive: true,
+        liveRunnerInvoked: false,
+      });
     }
-    const run = runOperatorScript(built.command, {
+    const run = await runOperatorScriptAsync(built.command, {
       timeoutMs: FLOW_MOTION_GENERATION_TIMEOUT_MS,
-      extraEnv: { ALLOW_FLOW_MOTION_GENERATION: "1" },
+      extraEnv: {
+        ALLOW_FLOW_MOTION_GENERATION: "1",
+        ALLOW_GEMINI_VEO: "1",
+      },
     });
     if (run.ran && !run.timedOut && run.exitCode === 0) {
       const recorded = recordWizardFlowMotionGenerationResult(topicId, jobId);
@@ -2020,7 +2250,9 @@ export async function POST(request: Request) {
         return json({
           action,
           status: "success",
-          summary: "Flow 영상 1개를 저장했습니다. 아직 최종 영상에는 들어가지 않으며 Owner 모션 검수가 필요합니다.",
+          summary: recoveryOnly
+            ? "기존 Flow 영상 1개를 추가 생성 없이 복구해 저장했습니다. Owner 모션 검수가 필요합니다."
+            : "Flow 영상 1개를 저장했습니다. 아직 최종 영상에는 들어가지 않으며 Owner 모션 검수가 필요합니다.",
           detail: "영상에서 실제 관절·손·사물 동작이 있는지 7개 항목을 직접 확인해 주세요.",
           raw: { flowMotion: recorded.status, runner: run.json },
           noLive: false,
@@ -2043,15 +2275,101 @@ export async function POST(request: Request) {
       : (run.json && typeof run.json === "object" && "failure" in run.json && typeof run.json.failure === "string")
         ? run.json.failure
         : "FLOW_MOTION_RUNNER_FAILED";
-    markWizardFlowMotionGenerationFailed(topicId, jobId, runnerFailure);
+    const runnerStatus = run.json && typeof run.json === "object" && "status" in run.json && typeof run.json.status === "string"
+      ? run.json.status
+      : "";
+    const makeClickOutcomeUnknown = runnerStatus === "MAKE_CLICK_OUTCOME_UNKNOWN";
+    const approvalClickOutcomeUnknown = runnerStatus === "APPROVAL_CLICK_OUTCOME_UNKNOWN";
+    const confirmationPendingNoSubmission = runnerStatus === "CONFIRMATION_PENDING_NO_SUBMISSION";
+    const submittedResultRecoveryRequired = runnerStatus === "SUBMITTED_RESULT_RECOVERY_REQUIRED";
+    const executionLockFailureText = /flow_motion_execution_lock_(?:active|initializing|race)/i.test(runnerFailure);
+    const browserStartupFailure = /cdp_(?:not_open_browser_launch_forbidden|auto_launch_failed)/i.test(runnerFailure);
+    const browserSessionFailure = /browser_context_missing|flow_project_mismatch/i.test(runnerFailure);
+    const noFlowSubmission = run.json && typeof run.json === "object" &&
+      "submissionCount" in run.json && run.json.submissionCount === 0 &&
+      "expectedCreditsSpent" in run.json && run.json.expectedCreditsSpent === 0;
+    const executionLockBlockedNoBrowser =
+      runnerStatus === "EXECUTION_LOCK_BLOCKED_NO_BROWSER" &&
+      run.json && typeof run.json === "object" &&
+      "browserAccessed" in run.json && run.json.browserAccessed === false &&
+      noFlowSubmission;
+    const executionLockActive = executionLockFailureText || Boolean(executionLockBlockedNoBrowser);
+    let failureSummary = "Flow 생성 또는 영상 저장에 실패했습니다. 자동 재시도하지 않습니다.";
+    let failureDetail: string | undefined;
+    if (run.timedOut) {
+      failureSummary = "Flow 생성 대기 시간이 초과됐습니다. 전송 여부를 확인해야 하므로 자동 재시도하지 않습니다.";
+    } else if (executionLockActive) {
+      failureSummary = "다른 Flow 장면을 처리 중이라 이번 요청은 브라우저 작업 전에 중단했습니다.";
+      failureDetail = "한 번에 한 장면만 처리합니다. 진행 중인 장면이 저장되거나 복구 상태가 된 뒤 다시 승인해 주세요.";
+    } else if (confirmationPendingNoSubmission) {
+      failureSummary = "유료 승인창을 찾지 못해 전송 전에 중단했습니다. 이번 시도는 생성 0회·크레딧 0회입니다.";
+      failureDetail = "상태를 새 승인 대기로 안전하게 되돌렸습니다. 화면의 현재 승인 문구로 다시 시도할 수 있습니다.";
+    } else if (makeClickOutcomeUnknown) {
+      failureSummary = "Flow 생성은 시작됐을 수 있지만 결과 저장을 확인하지 못했습니다. 재생성하지 말고 기존 결과를 복구해야 합니다.";
+      failureDetail = "새 생성은 잠겼습니다. Flow의 기존 결과를 확인해 로컬 저장만 복구하세요.";
+    } else if (approvalClickOutcomeUnknown) {
+      failureSummary = "Flow 승인 클릭 결과가 불명확합니다. 새 생성은 잠그고 이 작업의 기존 결과만 확인해야 합니다.";
+      failureDetail = "화면의 복구 버튼은 고유 작업 결과만 찾으며 새 생성 클릭은 하지 않습니다.";
+    } else if (submittedResultRecoveryRequired) {
+      failureSummary = "Flow 생성은 전송됐지만 영상 저장을 완료하지 못했습니다. 새로 생성하지 말고 기존 결과를 복구해 주세요.";
+      failureDetail = "이미 전송된 결과를 찾는 복구 버튼만 사용하세요. 새 생성은 크레딧을 다시 사용할 수 있습니다.";
+    } else if (browserStartupFailure) {
+      failureSummary = "자동화용 Gemini Chrome을 열지 못해 Flow 전송 전에 중단했습니다.";
+      failureDetail = noFlowSubmission
+        ? "이번 시도는 Flow 전송 0회·크레딧 0회입니다. Chrome 자동 기동 상태를 확인한 뒤 다시 시도해 주세요."
+        : "자동 재시도하지 않습니다. 개발자용 자세한 내용에서 전송 여부를 먼저 확인해 주세요.";
+    } else if (browserSessionFailure) {
+      failureSummary = "Gemini 2 로그인 또는 Flow 프로젝트 화면을 확인하지 못해 전송 전에 중단했습니다.";
+      failureDetail = "Gemini 2 창에서 로그인과 지정 Flow 프로젝트 접근 상태를 확인해 주세요. 자동 재시도하지 않습니다.";
+    }
+    if (executionLockBlockedNoBrowser) {
+      // Another runner owns the OS lease. Preserve this exact authorization even
+      // when it was just written: the competing winner can be the same job, and
+      // rolling back here would invalidate its packet while it is still running.
+      const rolledBack = { ok: true as const, status: readWizardFlowMotionStatus(topicId) };
+      return json({
+        action,
+        status: "blocked",
+        summary: failureSummary,
+        detail: failureDetail,
+        blockerCode: runnerFailure,
+        raw: { runner: run.json, flowMotion: rolledBack.ok ? rolledBack.status : null },
+        noLive: false,
+        liveRunnerInvoked: true,
+      });
+    }
+    const finalizedAfterRunnerFailure = recordWizardFlowMotionGenerationResult(topicId, jobId);
+    if (finalizedAfterRunnerFailure.ok) {
+      return json({
+        action,
+        status: "success",
+        summary: "동시에 완료된 기존 Flow 영상을 새 생성 없이 Owner 모션 검수 대기로 연결했습니다.",
+        detail: "실행이 중단된 뒤에도 저장된 결과의 해시·바인딩·무음 영상을 다시 검증했습니다.",
+        raw: { flowMotion: finalizedAfterRunnerFailure.status, runner: run.json },
+        noLive: false,
+        liveRunnerInvoked: true,
+      });
+    }
+    if (!authorizationChanged) {
+      return json({
+        action,
+        status: "error",
+        summary: failureSummary,
+        detail: failureDetail,
+        blockerCode: runnerFailure,
+        raw: { runner: run.json, exitCode: run.exitCode, flowMotion: readWizardFlowMotionStatus(topicId) },
+        noLive: !run.ran,
+        liveRunnerInvoked: run.ran,
+      });
+    }
+    const failed = markWizardFlowMotionGenerationFailed(topicId, jobId, runnerFailure);
     return json({
       action,
       status: "error",
-      summary: run.timedOut
-        ? "Flow 생성 대기 시간이 초과됐습니다. 전송 여부를 확인해야 하므로 자동 재시도하지 않습니다."
-        : "Flow 생성 또는 영상 저장에 실패했습니다. 자동 재시도하지 않습니다.",
+      summary: failureSummary,
+      detail: failureDetail,
       blockerCode: runnerFailure,
-      raw: { runner: run.json, exitCode: run.exitCode },
+      raw: { runner: run.json, exitCode: run.exitCode, flowMotion: failed.ok ? failed.status : null },
       noLive: !run.ran,
       liveRunnerInvoked: run.ran,
     });
@@ -2217,8 +2535,23 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
+    // 이미 현재 계약을 만족하는 편은 다시 ElevenLabs에 보내지 않는다.
+    // Part 2 문구만 고친 경우 Part 1의 유료 음성을 중복 생성하지 않는다.
+    const mediaBeforeTts = readWizardRealMediaState(topicId);
+    const pendingTtsParts = pipeline.paths.parts.filter((part) =>
+      mediaBeforeTts.parts.find((candidate) => candidate.id === part.id)?.realTts.ready !== true,
+    );
+    if (pendingTtsParts.length === 0) {
+      return json({
+        action,
+        status: "success",
+        summary: "현재 확정 대본과 일치하는 실제 음성이 이미 준비돼 있습니다. 추가 생성은 하지 않았습니다.",
+        raw: { realTts: mediaBeforeTts.realTts },
+        noLive: true,
+      });
+    }
     const ttsRuns = [];
-    for (const part of pipeline.paths.parts) {
+    for (const part of pendingTtsParts) {
       const builtTts = buildOperatorCommand(action, { topicId, productionPartId: part.id });
       if (!builtTts.ok) {
         return json({ action, status: "blocked", summary: describeBuildFailure(builtTts.reason), blockerCode: builtTts.reason, noLive: true });
@@ -2260,7 +2593,7 @@ export async function POST(request: Request) {
       return json({
         action,
         status: "success",
-        summary: `실제 목소리 ${mediaAfterTts.production.totalParts}개가 생성됐습니다 (합계 ${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 모든 편을 듣고 별도로 승인해 주세요.`,
+        summary: `실제 목소리 ${ttsRuns.length}개를 생성했습니다 (현재 합계 ${mediaAfterTts.realTts.durationSec?.toFixed(1) ?? "?"}초). 아래에서 바뀐 편을 듣고 별도로 승인해 주세요.`,
         detail: financeVoiceRoute?.route
           ? `${financeVoiceRoute.route.characterName} 화자의 ${financeVoiceRoute.route.voice.voiceLabel} 보이스로 합성했습니다. 현재는 생성 완료 상태이며 Owner 청취 승인 전에는 downstream에서 차단됩니다.`
           : "실제 음성 파일은 Owner PC에만 있습니다. Owner 청취 승인 전에는 downstream에서 차단됩니다.",
@@ -2733,12 +3066,19 @@ export async function POST(request: Request) {
     const existingPublishEvidence = publishRecoveries.filter(
       (recovery) => recovery.state !== "not_started",
     );
-    if (existingPublishEvidence.length > 0) {
-      const allComplete =
-        publishRecoveries.length > 0 &&
-        publishRecoveries.every(
-          (recovery) => recovery.state === "complete",
-        );
+    const allComplete =
+      publishRecoveries.length > 0 &&
+      publishRecoveries.every(
+        (recovery) => recovery.state === "complete",
+      );
+    const resumePart2Only =
+      isWizardPart2OnlySafePublishResume(
+        publishRecoveries,
+      );
+    if (
+      existingPublishEvidence.length > 0 &&
+      !resumePart2Only
+    ) {
       return json({
         action,
         status: "blocked",
@@ -2808,9 +3148,24 @@ export async function POST(request: Request) {
         noLive: true,
       });
     }
-    const uploadCommands = [];
-    for (const unit of contentUnits.paths) {
-      const builtUp = buildOperatorCommand(action, { topicId, productionPartId: unit.productionPartId });
+    const selectedUnits = resumePart2Only
+      ? contentUnits.paths.filter(
+          (unit) => unit.productionPartId === "part-2",
+        )
+      : contentUnits.paths;
+    const uploadCommands: Array<{
+      unit: (typeof contentUnits.paths)[number];
+      command: Parameters<typeof runOperatorScript>[0];
+      mode: "generic" | "part2-safe";
+    }> = [];
+    for (const unit of selectedUnits) {
+      const builtUp =
+        unit.productionPartId === "part-2"
+          ? buildWizardPart2SafePublishCommand(topicId)
+          : buildOperatorCommand(action, {
+              topicId,
+              productionPartId: unit.productionPartId,
+            });
       if (!builtUp.ok) {
         return json({
           action,
@@ -2820,13 +3175,122 @@ export async function POST(request: Request) {
           noLive: true,
         });
       }
-      uploadCommands.push({ unit, command: builtUp.command });
+      uploadCommands.push({
+        unit,
+        command: builtUp.command,
+        mode:
+          unit.productionPartId === "part-2"
+            ? "part2-safe"
+            : "generic",
+      });
     }
 
-    // [게이트 3] 실행 — allowArm은 이 지점에서만 부여되며 1편부터 순서대로 게시한다.
+    // [게이트 3] 실행 — 1편은 generic one-shot, 2편은 전용 zero-side-effect
+    // preflight의 exact fingerprint를 같은 Owner 요청 안에서 다시 결속한 뒤 실행한다.
     const published = [];
     for (const entry of uploadCommands) {
-      const runUp = runOperatorScript(entry.command, { allowArm: true, timeoutMs: UPLOAD_TIMEOUT_MS });
+      let armedCommand = entry.command;
+      if (entry.mode === "part2-safe") {
+        const safePreflightRun = runOperatorScript(
+          entry.command,
+          { timeoutMs: UPLOAD_TIMEOUT_MS },
+        );
+        const safePreflight = safePreflightRun.json as {
+          ok?: unknown;
+          status?: unknown;
+          armed?: unknown;
+          productionPartId?: unknown;
+          preflightFingerprint?: unknown;
+          noLiveActions?: unknown;
+          sideEffectCounters?: unknown;
+        } | null;
+        const safeCounters =
+          safePreflight?.sideEffectCounters &&
+          typeof safePreflight.sideEffectCounters === "object"
+            ? safePreflight.sideEffectCounters as Record<
+                string,
+                unknown
+              >
+            : null;
+        const requiredZeroSafeCounters = [
+          "instagramIdentityVerificationCount",
+          "youtubeChannelVerificationCount",
+          "blobPutCount",
+          "blobHeadCount",
+          "instagramContainerCreateCount",
+          "instagramStatusPollCount",
+          "instagramPublishCount",
+          "youtubeInsertCount",
+          "ledgerWriteCount",
+          "credentialReadCount",
+          "externalApiInvocationCount",
+          "part1ActionCount",
+          "automaticRetryCount",
+          "credentialValuePrintCount",
+        ];
+        const exactSafePreflight =
+          safePreflightRun.ran === true &&
+          safePreflightRun.timedOut !== true &&
+          safePreflightRun.exitCode === 0 &&
+          safePreflight?.ok === true &&
+          safePreflight.status === "PREFLIGHT_ONLY_OK" &&
+          safePreflight.armed === false &&
+          safePreflight.productionPartId === "part-2" &&
+          safePreflight.noLiveActions === true &&
+          typeof safePreflight.preflightFingerprint ===
+            "string" &&
+          /^[a-f0-9]{64}$/.test(
+            safePreflight.preflightFingerprint,
+          ) &&
+          safeCounters !== null &&
+          requiredZeroSafeCounters.every(
+            (field) => safeCounters[field] === 0,
+          );
+        if (!exactSafePreflight) {
+          return json({
+            action,
+            status: "blocked",
+            summary:
+              `${entry.unit.partNumber}편 전용 안전 점검을 통과하지 못했습니다. 외부 업로드는 시작하지 않았습니다.`,
+            blockerCode:
+              "PART2_SAFE_PREFLIGHT_NOT_EXACT",
+            raw: {
+              published,
+              failedPartId:
+                entry.unit.productionPartId,
+              safePreflightStatus:
+                typeof safePreflight?.status === "string"
+                  ? safePreflight.status
+                  : null,
+            },
+            noLive: published.length === 0,
+            liveRunnerInvoked: published.length > 0,
+          });
+        }
+        const armedPart2 =
+          buildWizardPart2SafePublishCommand(
+            topicId,
+            safePreflight.preflightFingerprint as string,
+          );
+        if (!armedPart2.ok) {
+          return json({
+            action,
+            status: "blocked",
+            summary:
+              `${entry.unit.partNumber}편 전용 안전 실행 명령을 만들지 못했습니다. 외부 업로드는 시작하지 않았습니다.`,
+            blockerCode: armedPart2.reason,
+            raw: {
+              published,
+              failedPartId:
+                entry.unit.productionPartId,
+            },
+            noLive: published.length === 0,
+            liveRunnerInvoked: published.length > 0,
+          });
+        }
+        armedCommand = armedPart2.command;
+      }
+      const runUp = runOperatorScript(armedCommand, { allowArm: true, timeoutMs: UPLOAD_TIMEOUT_MS });
       if (!runUp.ran) {
         return json({
           action,

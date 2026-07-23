@@ -1529,7 +1529,7 @@ function buildPartTwoCoverBundle(topic: FinanceEditorialTopic): {
 } {
   const focus = BASE_PROFILES[topic.financeSubtopic].focus;
   const coverLines: FinanceEditorialCoverLine[] = [
-    { spokenText: "이 편이야", displayText: "이 편이야!", emphasis: "part_marker" },
+    { spokenText: "2편이야", displayText: "2편이야!", emphasis: "part_marker" },
     { spokenText: `${withObjectParticle(focus)} 볼 차례야`, displayText: `${withObjectParticle(focus)} 볼 차례야...`, emphasis: "tension" },
     { spokenText: "먼저 바꿀 게 하나 있어", displayText: "먼저 바꿀 게 하나 있어!", emphasis: "impact" },
   ];

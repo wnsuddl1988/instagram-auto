@@ -14,6 +14,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   statSync,
 } from "node:fs";
 import {
@@ -71,6 +72,8 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REPO_ROOT = resolve(dirname(SCRIPT_PATH), "..");
 const CANONICAL_RESULT_FILENAME =
   "final-e2e-publish-result.json";
+const GENERIC_PART2_HANDOFF_ARCHIVE_FILENAME =
+  "final-e2e-publish-result.part2-safe-runner-required.handoff.json";
 const GENERIC_PREFLIGHT_FILENAME =
   "final-e2e-publish-preflight.json";
 const CANONICAL_RESULT_SCHEMA =
@@ -866,22 +869,170 @@ export function inspectSafeEvidenceDirectory({
   return { ok: true, reason: null };
 }
 
-function canonicalAttemptAbsent(outDir) {
+const GENERIC_PART2_HANDOFF_HINT =
+  "Use part2-only-dual-publish through the Owner no-log wrapper after its dedicated preflight.";
+
+function exactZeroCanonicalCounters(value) {
+  const fields = [
+    "blobPutCount",
+    "blobHeadCount",
+    "instagramContainerCreateCount",
+    "instagramStatusPollCount",
+    "instagramPublishCount",
+    "youtubeInsertCount",
+    "ledgerWriteCount",
+    "envSecretValuePrintCount",
+  ];
   return (
-    !existsSync(join(outDir, CANONICAL_RESULT_FILENAME)) &&
-    !existsSync(
-      join(
-        outDir,
-        MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
-      ),
-    ) &&
-    !existsSync(
-      join(
-        outDir,
-        MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
-      ),
-    )
+    isPlainObject(value) &&
+    Object.keys(value).length === fields.length &&
+    fields.every((field) => value[field] === 0)
   );
+}
+
+function genericPart2HandoffMatchesCurrent(
+  evidence,
+  currentBinding,
+) {
+  return (
+    isPlainObject(evidence) &&
+    evidence.schemaVersion === CANONICAL_RESULT_SCHEMA &&
+    evidence.approvalToken ===
+      "APPROVE_FINAL_E2E_AUTOMATION_PUBLISH_ONE_NEW_CONTENT_UNIT" &&
+    evidence.status === "BLOCKED" &&
+    evidence.blockerCode === "PART2_SAFE_RUNNER_REQUIRED" &&
+    evidence.armed === true &&
+    evidence.contentId === currentBinding.contentId &&
+    evidence.version === currentBinding.version &&
+    evidence.wizardProductionPartId === "part-2" &&
+    resolve(String(evidence.contentUnitManifestPath ?? "")) ===
+      resolve(currentBinding.contentUnitManifestPath) &&
+    evidence.contentUnitSha256 ===
+      currentBinding.contentUnitSha256 &&
+    evidence.instagramSourceSha256 ===
+      currentBinding.instagramSourceSha256 &&
+    evidence.youtubeSourceSha256 ===
+      currentBinding.youtubeSourceSha256 &&
+    evidence.publishMetadataSha256 ===
+      currentBinding.publishMetadataSha256 &&
+    evidence.finalVideoApprovalFingerprint ===
+      currentBinding.finalVideoApprovalFingerprint &&
+    evidence.publicationAttemptFingerprint ===
+      fingerprintMoneyShortsPublishAttemptBinding(
+        currentBinding,
+      ) &&
+    evidence.ownerRunHint === GENERIC_PART2_HANDOFF_HINT &&
+    evidence.envSecretValuesPrinted === false &&
+    evidence.dotEnvLocalDirectRead === false &&
+    exactZeroCanonicalCounters(evidence.sideEffectCounters) &&
+    evidence.executionResult === undefined &&
+    evidence.partialExternalState === undefined
+  );
+}
+
+/**
+ * generic runner가 외부 호출 0회로 남긴 정확한 part-2 handoff sentinel만
+ * 전용 runner가 승계한다. 다른 result/claim/journal은 전부 기존 시도로 본다.
+ */
+function inspectCanonicalAttemptState(outDir, currentBinding) {
+  const resultPath = join(
+    outDir,
+    CANONICAL_RESULT_FILENAME,
+  );
+  const archivePath = join(
+    outDir,
+    GENERIC_PART2_HANDOFF_ARCHIVE_FILENAME,
+  );
+  const claimExists = existsSync(
+    join(
+      outDir,
+      MONEY_SHORTS_PUBLISH_ATTEMPT_CLAIM_FILENAME,
+    ),
+  );
+  const journalExists = existsSync(
+    join(
+      outDir,
+      MONEY_SHORTS_PUBLISH_ATTEMPT_JOURNAL_DIRNAME,
+    ),
+  );
+  if (claimExists || journalExists) {
+    return {
+      ok: false,
+      reason: "PART2_DUAL_SAFE_CANONICAL_ATTEMPT_EXISTS",
+      mode: "attempt_exists",
+      resultPath,
+      archivePath,
+    };
+  }
+
+  const result = readJsonEvidence(resultPath);
+  const archive = readJsonEvidence(archivePath);
+  const resultExists = result.exists === true;
+  const archiveExists = archive.exists === true;
+  if (!resultExists && !archiveExists) {
+    return {
+      ok: true,
+      reason: null,
+      mode: "absent",
+      resultPath,
+      archivePath,
+    };
+  }
+  if (resultExists && archiveExists) {
+    return {
+      ok: false,
+      reason:
+        "PART2_DUAL_SAFE_CANONICAL_HANDOFF_DUPLICATED",
+      mode: "ambiguous",
+      resultPath,
+      archivePath,
+    };
+  }
+  const candidate = resultExists ? result : archive;
+  if (
+    candidate.parseOk !== true ||
+    !genericPart2HandoffMatchesCurrent(
+      candidate.evidence,
+      currentBinding,
+    )
+  ) {
+    return {
+      ok: false,
+      reason: "PART2_DUAL_SAFE_CANONICAL_ATTEMPT_EXISTS",
+      mode: "attempt_exists",
+      resultPath,
+      archivePath,
+    };
+  }
+  return {
+    ok: true,
+    reason: null,
+    mode: resultExists
+      ? "generic_part2_handoff"
+      : "generic_part2_handoff_archived",
+    resultPath,
+    archivePath,
+    handoffSha256: candidate.sha256,
+  };
+}
+
+function archiveGenericPart2Handoff(state) {
+  if (state.mode !== "generic_part2_handoff") {
+    return state.mode ===
+      "generic_part2_handoff_archived"
+      ? { ok: true, archivedNow: false }
+      : { ok: true, archivedNow: false };
+  }
+  try {
+    renameSync(state.resultPath, state.archivePath);
+    return { ok: true, archivedNow: true };
+  } catch {
+    return {
+      ok: false,
+      reason:
+        "PART2_DUAL_SAFE_CANONICAL_HANDOFF_ARCHIVE_FAILED",
+    };
+  }
 }
 
 function canonicalCounters(counters) {
@@ -1388,19 +1539,62 @@ async function executeArmed({
         allowLock: true,
         expectedLockIdentity: lock.fileIdentity,
       });
+    const lockedCanonicalState =
+      lockedContext.ok === true
+        ? inspectCanonicalAttemptState(
+            context.paths.outDir,
+            lockedContext.currentBinding,
+          )
+        : {
+            ok: false,
+            reason:
+              "PART2_DUAL_SAFE_LOCAL_EVIDENCE_INSPECTION_FAILED",
+          };
     if (
       !lockedContext.ok ||
       lockedContext.plan.planFingerprint !==
         context.plan.planFingerprint ||
       lockedEvidenceHygiene.ok !== true ||
       !evidenceAbsent(evidencePaths) ||
-      !canonicalAttemptAbsent(context.paths.outDir)
+      lockedCanonicalState.ok !== true
     ) {
       returnValue = {
         ok: false,
         status: "BLOCKED",
         blockerCode:
           "PART2_DUAL_SAFE_EVIDENCE_CHANGED_AFTER_LOCK",
+        sideEffectCounters: counters,
+      };
+      return returnValue;
+    }
+    const archivedHandoff =
+      archiveGenericPart2Handoff(lockedCanonicalState);
+    if (archivedHandoff.ok !== true) {
+      returnValue = {
+        ok: false,
+        status: "BLOCKED",
+        blockerCode: archivedHandoff.reason,
+        sideEffectCounters: counters,
+      };
+      return returnValue;
+    }
+    const canonicalAfterArchive =
+      inspectCanonicalAttemptState(
+        context.paths.outDir,
+        lockedContext.currentBinding,
+      );
+    if (
+      canonicalAfterArchive.ok !== true ||
+      ![
+        "absent",
+        "generic_part2_handoff_archived",
+      ].includes(canonicalAfterArchive.mode)
+    ) {
+      returnValue = {
+        ok: false,
+        status: "BLOCKED",
+        blockerCode:
+          "PART2_DUAL_SAFE_CANONICAL_HANDOFF_ARCHIVE_NOT_VERIFIED",
         sideEffectCounters: counters,
       };
       return returnValue;
@@ -2089,6 +2283,13 @@ export async function runMoneyShortsPart2DualPublishSafe({
     moneyShortsPart2DualPublishSafePaths(
       context.paths.outDir,
     );
+  const canonicalState = inspectCanonicalAttemptState(
+    context.paths.outDir,
+    context.currentBinding,
+  );
+  if (canonicalState.ok !== true) {
+    return canonicalState;
+  }
 
   if (!authorization.armed) {
     if (
@@ -2139,6 +2340,7 @@ export async function runMoneyShortsPart2DualPublishSafe({
           preflightPath: evidencePaths.preflightPath,
           sideEffectCounters:
             existing.evidence.sideEffectCounters,
+          canonicalHandoffState: canonicalState.mode,
           noLiveActions: true,
         };
       }
@@ -2224,13 +2426,14 @@ export async function runMoneyShortsPart2DualPublishSafe({
       preflightPath: evidencePaths.preflightPath,
       sideEffectCounters:
         preflight.sideEffectCounters,
+      canonicalHandoffState: canonicalState.mode,
       noLiveActions: true,
     };
   }
 
   if (
     !evidenceAbsent(evidencePaths) ||
-    !canonicalAttemptAbsent(context.paths.outDir)
+    canonicalState.ok !== true
   ) {
     return {
       ok: false,

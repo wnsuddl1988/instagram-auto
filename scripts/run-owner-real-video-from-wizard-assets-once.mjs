@@ -4,7 +4,7 @@
  * task: owner-web-real-script-voice-visual-generation-pipeline-v1
  *
  * 웹 위저드 최종 영상 합성: 실제 ElevenLabs TTS(timeline mp3) + 흐름 기반 실제 장면 이미지 +
- * ASS 자막 + 장면별 카메라 이동·전경 패럴랙스·인물/손 미세 레이어 모션 → 1080x1920 mp4.
+ * ASS 자막 + Veo 장면만 실제 모션, 일반 이미지는 고정 프레임 → 1080x1920 mp4.
  * 로컬 ffmpeg/ffprobe만 사용한다.
  *
  * 입력 계약(fail-closed — 전부 만족해야 렌더 시작):
@@ -424,6 +424,8 @@ const fullScriptCaptionPass = (
   captionAudit.displayWordCoveragePass === true &&
   captionAudit.multiPositionNarrativeFlowPass === true &&
   captionAudit.semanticColorPalettePass === true &&
+  captionAudit.sentenceCardVisualPass === true &&
+  captionAudit.wordLevelColorEmphasisAbsent === true &&
   captionAudit.emphasisDensityPass === true &&
   captionAudit.highImpactRoleEmphasisPass === true &&
   captionAudit.motionDiversityPass === true &&
@@ -462,10 +464,10 @@ function ffprobeJson(target) {
   try { return JSON.parse(r.stdout); } catch { return null; }
 }
 
-// ── step 1: still=레이어 모션, veo_motion=검수 완료 MP4 세그먼트 ─────────────
+// ── step 1: still=고정 프레임, veo_motion=검수 완료 MP4 세그먼트 ────────────
 log(`scene segments: ${scriptSceneCount}개, 총 ${totalSec}s (오디오 timeline ${audioSummary.timelineDurationSec ?? "?"}s)`);
 const segFiles = [];
-const layeredMotionSegments = [];
+const staticStillSegments = [];
 const sceneMotionSegments = [];
 for (let i = 0; i < scriptSceneCount; i++) {
   const dur = durations[i];
@@ -496,34 +498,34 @@ for (let i = 0; i < scriptSceneCount; i++) {
     log(`  seg-${i + 1}: ${dur}s (${frames}f), Veo render_ready/Owner QA`);
     continue;
   }
-  const motionRecipe = buildSceneMotionRecipe({
+  const staticRecipe = buildSceneMotionRecipe({
     stage: scriptScene?.id,
     motionPlan: scriptScene?.visualEvidence?.motionPlan,
     presenceMode: imageScene?.presenceMode,
     sceneIndex: i + 1,
   });
-  const motionFilter = buildLayeredMotionFilter({ recipe: motionRecipe, frames, durationSec: dur });
-  const layeredSegment = {
-    ...motionRecipe,
-    source: "layered_still",
+  const motionFilter = buildLayeredMotionFilter({ recipe: staticRecipe, frames, durationSec: dur });
+  const staticSegment = {
+    ...staticRecipe,
+    source: "static_still",
     motionPlanFingerprint: createHash("sha256")
       .update(String(scriptScene?.visualEvidence?.motionPlan ?? ""))
       .digest("hex")
       .slice(0, 16),
   };
-  layeredMotionSegments.push(layeredSegment);
-  sceneMotionSegments.push(layeredSegment);
+  staticStillSegments.push(staticSegment);
+  sceneMotionSegments.push(staticSegment);
   runFfmpeg(
     ["-y", "-loop", "1", "-framerate", "30", "-i", imageFiles[i],
       "-filter_complex", motionFilter, "-map", "[motionout]", "-frames:v", String(frames),
       "-c:v", "libx264", "-crf", "21", "-preset", "fast", "-an", seg],
     `segment scene-${i + 1}`,
   );
-  log(`  seg-${i + 1}: ${dur}s (${frames}f), ${motionRecipe.cameraMode}/${motionRecipe.presenceMode}`);
+  log(`  seg-${i + 1}: ${dur}s (${frames}f), fixed still/${staticRecipe.presenceMode}`);
 }
-const motionAudit = buildLayeredMotionAudit(layeredMotionSegments);
+const motionAudit = buildLayeredMotionAudit(staticStillSegments);
 if (!motionAudit.passed) {
-  abortBlocked("LAYERED_MOTION_AUDIT_FAILED", `정지 이미지 장면의 레이어 모션 계약 위반: ${JSON.stringify(motionAudit)}`);
+  abortBlocked("STATIC_STILL_AUDIT_FAILED", `일반 이미지 고정 프레임 계약 위반: ${JSON.stringify(motionAudit)}`);
 }
 
 // ── step 2: 일반 장면은 그대로 연결하고, 마지막 연결만 음성 경계부터 부드럽게 디졸브 ──
@@ -631,6 +633,7 @@ const checks = {
   captionSafeFrame: captionAudit.safeFramePass,
   captionPlacementMovesByScene: captionAudit.dynamicPlacementPass && captionAudit.multiPositionNarrativeFlowPass,
   captionSemanticColorPalette: captionAudit.semanticColorPalettePass,
+  captionSentenceCards: captionAudit.sentenceCardVisualPass && captionAudit.wordLevelColorEmphasisAbsent,
   captionHighImpactEmphasis: captionAudit.highImpactRoleEmphasisPass,
   captionMotionDiversity: captionAudit.motionDiversityPass,
   firstTwoSecondsHookCaption: captionAudit.firstTwoSecondsHook,
@@ -646,7 +649,7 @@ const checks = {
     coverAudit.stagedLineCount === 3 &&
     coverAudit.passed === true
   ),
-  layeredMotionRenderer: motionAudit.passed === true,
+  staticStillRenderer: motionAudit.passed === true,
   flowMotionRenderInput: flowMotionInput.audit.passed === true,
   motionSourceCoverage: sceneMotionSegments.length === scriptSceneCount,
   trueVeoMotionCoverage:

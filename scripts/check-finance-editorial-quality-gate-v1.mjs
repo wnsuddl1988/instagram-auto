@@ -242,7 +242,8 @@ check("two-part videos expose an explicit 1-to-2 bridge and a visible part-2 mar
   const [partOne, partTwo] = script.videoStrategy.parts;
   return partOne?.id === "part-1" && partOne.explicitPartMarker && partOne.explicitContinuationCue &&
     /2편/u.test(partOne.bridgeNarration ?? "") && /이어/u.test(partOne.bridgeNarration ?? "") &&
-    partTwo?.id === "part-2" && partTwo.explicitPartMarker && /이 편/u.test(partTwo.coverLines[0]?.displayText ?? "") &&
+    partTwo?.id === "part-2" && partTwo.explicitPartMarker && partTwo.coverLines[0]?.spokenText === "2편이야" &&
+    partTwo.coverLines[0]?.displayText === "2편이야!" &&
     /1편/u.test(partTwo.recapNarration ?? "");
 }));
 check("all 574 production videos stay within the supported 4-18 scene contract", productionAudits.every(({ part }) =>

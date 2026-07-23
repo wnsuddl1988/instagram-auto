@@ -126,7 +126,8 @@ check("every two-part plan explicitly connects part one and marks part two", spl
     partOne.id === "part-1" && partOne.explicitContinuationCue === true &&
     /2편/.test(partOne.bridgeNarration ?? "") && /지금 이어서 봐/.test(partOne.bridgeNarration ?? "") &&
     partTwo.id === "part-2" && partTwo.explicitPartMarker === true &&
-    partTwo.coverLines.some((line) => /이 편/.test(line.displayText));
+    partTwo.coverLines[0]?.spokenText === "2편이야" &&
+    partTwo.coverLines[0]?.displayText === "2편이야!";
 }));
 const durationRepairTopic = bank.find((topic) => topic.title === "계좌가 흔들릴 때 수익보다 먼저 되찾을 것");
 const durationRepairParts = durationRepairTopic ? build(durationRepairTopic) : null;

@@ -385,6 +385,63 @@ function createFixture(label) {
   };
 }
 
+function writeGenericPart2SafeRunnerHandoff(
+  fixture,
+  overrides = {},
+) {
+  const evidence = {
+    schemaVersion:
+      "final_e2e_dual_platform_publish_result_v1",
+    approvalToken:
+      "APPROVE_FINAL_E2E_AUTOMATION_PUBLISH_ONE_NEW_CONTENT_UNIT",
+    status: "BLOCKED",
+    blockerCode: "PART2_SAFE_RUNNER_REQUIRED",
+    armed: true,
+    finishedAtIso: "2026-07-19T00:00:01.000Z",
+    contentUnitManifestPath: fixture.manifestPath,
+    ledgerPath: fixture.ledgerPath,
+    envSecretValuesPrinted: false,
+    dotEnvLocalDirectRead: false,
+    sideEffectCounters: {
+      blobPutCount: 0,
+      blobHeadCount: 0,
+      instagramContainerCreateCount: 0,
+      instagramStatusPollCount: 0,
+      instagramPublishCount: 0,
+      youtubeInsertCount: 0,
+      ledgerWriteCount: 0,
+      envSecretValuePrintCount: 0,
+    },
+    contentId: fixture.contentId,
+    version: fixture.version,
+    wizardProductionPartId: "part-2",
+    contentUnitSha256:
+      fixture.currentBinding.contentUnitSha256,
+    instagramSourceSha256:
+      fixture.currentBinding.instagramSourceSha256,
+    youtubeSourceSha256:
+      fixture.currentBinding.youtubeSourceSha256,
+    publishMetadataSha256:
+      fixture.currentBinding.publishMetadataSha256,
+    finalVideoApprovalFingerprint:
+      fixture.currentBinding
+        .finalVideoApprovalFingerprint,
+    publicationAttemptFingerprint:
+      fingerprintMoneyShortsPublishAttemptBinding(
+        fixture.currentBinding,
+      ),
+    ownerRunHint:
+      "Use part2-only-dual-publish through the Owner no-log wrapper after its dedicated preflight.",
+    ...overrides,
+  };
+  writeFileSync(
+    join(fixture.outDir, "final-e2e-publish-result.json"),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+    "utf8",
+  );
+  return evidence;
+}
+
 function fakeEnv(
   instagramId = expectedInstagramAccountId,
   instagramAccessToken = "fake-instagram-token",
@@ -717,6 +774,112 @@ check(
 
 const roots = [];
 try {
+  const handoffFixture = createFixture("generic-handoff");
+  roots.push(handoffFixture.root);
+  writeGenericPart2SafeRunnerHandoff(handoffFixture);
+  const handoffDry =
+    await runMoneyShortsPart2DualPublishSafe({
+      argv: handoffFixture.baseArgs,
+      envProvider: () => {
+        throw new Error(
+          "generic handoff dry-run must not read env",
+        );
+      },
+    });
+  check(
+    "exact zero-side-effect generic part-2 result is accepted only as a safe-runner handoff",
+    handoffDry.ok === true &&
+      handoffDry.status === "PREFLIGHT_ONLY_OK" &&
+      handoffDry.canonicalHandoffState ===
+        "generic_part2_handoff",
+    JSON.stringify(handoffDry),
+  );
+  const handoffCalls = [];
+  const handoffArmed =
+    await runMoneyShortsPart2DualPublishSafe({
+      argv: [
+        ...handoffFixture.baseArgs,
+        "--expected-preflight-fingerprint",
+        handoffDry.preflightFingerprint,
+        "--arm",
+      ],
+      envProvider: () => fakeEnv(),
+      adapterFactory: async () =>
+        successfulAdapters(handoffCalls),
+    });
+  const handoffCanonical = JSON.parse(
+    readFileSync(
+      join(
+        handoffFixture.outDir,
+        "final-e2e-publish-result.json",
+      ),
+      "utf8",
+    ),
+  );
+  check(
+    "safe runner archives the generic handoff and replaces it with the successful canonical result",
+    handoffArmed.ok === true &&
+      handoffCanonical.status ===
+        "PUBLISHED_DUAL_PLATFORM_OK" &&
+      existsSync(
+        join(
+          handoffFixture.outDir,
+          "final-e2e-publish-result.part2-safe-runner-required.handoff.json",
+        ),
+      ),
+    JSON.stringify(handoffArmed),
+  );
+  check(
+    "generic handoff promotion invokes only the dedicated part-2 adapters once",
+    handoffCalls.join(",") ===
+      [
+        "verifyInstagramAccount",
+        "verifyYoutubeChannel",
+        "putBlob",
+        "headBlob",
+        "createInstagramContainer",
+        "readInstagramContainer",
+        "publishInstagram",
+        "insertYoutube",
+      ].join(","),
+    handoffCalls.join(","),
+  );
+
+  const unsafeHandoffFixture = createFixture(
+    "unsafe-generic-handoff",
+  );
+  roots.push(unsafeHandoffFixture.root);
+  writeGenericPart2SafeRunnerHandoff(
+    unsafeHandoffFixture,
+    {
+      sideEffectCounters: {
+        blobPutCount: 1,
+        blobHeadCount: 0,
+        instagramContainerCreateCount: 0,
+        instagramStatusPollCount: 0,
+        instagramPublishCount: 0,
+        youtubeInsertCount: 0,
+        ledgerWriteCount: 0,
+        envSecretValuePrintCount: 0,
+      },
+    },
+  );
+  let unsafeHandoffEnvReads = 0;
+  const unsafeHandoff =
+    await runMoneyShortsPart2DualPublishSafe({
+      argv: unsafeHandoffFixture.baseArgs,
+      envProvider: () => {
+        unsafeHandoffEnvReads += 1;
+        return fakeEnv();
+      },
+    });
+  check(
+    "any nonzero generic result side effect remains manual-review blocked before env access",
+    unsafeHandoff.ok === false &&
+      unsafeHandoffEnvReads === 0,
+    JSON.stringify(unsafeHandoff),
+  );
+
   const successFixture = createFixture("success");
   roots.push(successFixture.root);
   let dryEnvReads = 0;

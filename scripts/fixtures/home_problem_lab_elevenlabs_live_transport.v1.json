@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "mode": "synthetic_credentials_and_fake_fetch_only",
+  "expectedNetworkCalls": 0,
+  "expectedAudioFiles": 0,
+  "cases": [
+    "normal_mp3", "url_internal", "headers_and_body", "result_nonpublishable",
+    "http_401", "http_403", "http_429", "http_422", "http_500", "timeout",
+    "empty_audio", "json_response", "html_response", "wrong_content_type", "audio_too_small", "audio_too_large",
+    "duplicate_request", "expired_permit", "permit_request_mismatch", "missing_credentials", "unchecked_credentials",
+    "missing_fetch", "missing_sink", "secret_redaction", "one_call_no_retry", "no_file_output",
+    "authorization_required", "permit_side_effect_flags",
+    "normal_single_sentence", "comma_single_sentence", "colon_single_sentence",
+    "two_sentences", "three_lines", "list_three_items", "five_semicolons", "repeated_separators",
+    "unpunctuated_221", "unpunctuated_400", "over_max_single_sentence", "transport_bypass_long"
+  ]
+}

@@ -4,11 +4,17 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 import {
+  captureGenerationConfirmationBaseline,
+  clickCurrentComposerMakeAtomic,
   clickRequiredGenerationConfirmationAtomic,
   collectGenerationConfirmationCandidates,
   findCurrentComposerMakeButton,
   findRequiredGenerationConfirmation,
 } from "./_flow-motion-confirmation-dom.mjs";
+import {
+  collectPromptBoundFlowResultCandidates,
+  selectExactNewFlowResult,
+} from "./_flow-motion-result-binding.mjs";
 
 const CHROME_EXE = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const prompt = "EXACT SCENE PROMPT HASH-BOUND";
@@ -19,6 +25,11 @@ const job = {
     outputCount: 1,
   },
 };
+const projectUrl = "https://labs.google/fx/ko/tools/flow/project/2b12c31a-4493-405b-aedf-2268abb10422";
+
+function resultCard({ id, resultId, cardPrompt = prompt } = {}) {
+  return `<section id="${id}"><div class="prompt">${cardPrompt}</div><a href="${projectUrl}/edit/${resultId}"><video src="data:video/mp4;base64,AA=="></video></a></section>`;
+}
 
 function card({ id, generation = "v1", includePrompt = true, question = "크레딧 20개를 사용하여 1개 동영상 생성을 시작할까요?", control = "nested", acknowledged = false, persistentAriaTrap = false } = {}) {
   const approve = control === "aria"
@@ -56,6 +67,21 @@ async function check(name, fn) {
 }
 
 try {
+  await check("atomic Make click records one exact composer dispatch", async () => {
+    await page.setContent('<section><div contenteditable="true">prompt</div><button data-action="make">arrow_forward 만들기</button></section>');
+    await installClickLedger();
+    let armed = 0;
+    let dispatched = 0;
+    const evidence = await clickCurrentComposerMakeAtomic(page, page.locator('[contenteditable="true"]'), {
+      onClickArmed: () => { armed += 1; },
+      onClickDispatched: () => { dispatched += 1; },
+    });
+    assert.equal(armed, 1);
+    assert.equal(dispatched, 1);
+    assert.equal(evidence.observedBy, "composer_make_dom_capture_click_event");
+    assert.deepEqual(await page.evaluate(() => window.clickLedger), ["make"]);
+  });
+
   await check("current Korean card resolves one outer approval control", async () => {
     await page.setContent(card({ id: "current" }));
     const result = await findRequiredGenerationConfirmation(page, job);
@@ -106,6 +132,93 @@ try {
       () => findRequiredGenerationConfirmation(page, job),
       /active_approval_card_ambiguous:2/,
     );
+  });
+
+  await check("only the identical prompt card created after this Make baseline may be approved", async () => {
+    await page.setContent(card({ id: "old-identical", generation: "old" }));
+    await installClickLedger();
+    const baseline = captureGenerationConfirmationBaseline(
+      await collectGenerationConfirmationCandidates(page, job),
+    );
+    await page.locator("body").evaluate(
+      (body, html) => body.insertAdjacentHTML("beforeend", html),
+      card({ id: "new-identical", generation: "new" }),
+    );
+    const found = await findRequiredGenerationConfirmation(page, job, { baseline });
+    assert.ok(found.confirmation);
+    assert.equal(found.confirmation.selected.cardOrdinal, 1);
+    await clickRequiredGenerationConfirmationAtomic(page, job, found.confirmation.selected, {
+      onClickArmed: () => {},
+      onClickDispatched: () => {},
+    });
+    assert.deepEqual(await page.evaluate(() => window.clickLedger), ["once-new"]);
+  });
+
+  await check("a rerendered old identical card cannot masquerade as a fresh confirmation", async () => {
+    await page.setContent(card({ id: "old-rerender", generation: "old" }));
+    const baseline = captureGenerationConfirmationBaseline(
+      await collectGenerationConfirmationCandidates(page, job),
+    );
+    await page.locator("body").evaluate(
+      (body, html) => { body.innerHTML = html; },
+      card({ id: "replacement", generation: "replacement" }),
+    );
+    const found = await findRequiredGenerationConfirmation(page, job, { baseline });
+    assert.equal(found.confirmation, null);
+  });
+
+  await check("result binding ignores old and unrelated cards without navigating them", async () => {
+    const oldId = "11111111-1111-1111-1111-111111111111";
+    const newId = "22222222-2222-2222-2222-222222222222";
+    await page.setContent(
+      resultCard({ id: "old-result", resultId: oldId }) +
+      resultCard({ id: "unrelated-result", resultId: "33333333-3333-3333-3333-333333333333", cardPrompt: "OTHER PROMPT" }) +
+      resultCard({ id: "new-result", resultId: newId }),
+    );
+    const beforeUrl = page.url();
+    const candidates = await collectPromptBoundFlowResultCandidates(page, prompt);
+    const selected = selectExactNewFlowResult(
+      candidates,
+      [`${projectUrl}/edit/${oldId}`],
+      projectUrl,
+    );
+    assert.equal(selected.state, "ready");
+    assert.equal(selected.binding.providerResultId, newId);
+    assert.equal(page.url(), beforeUrl);
+  });
+
+  await check("two new exact-prompt result cards fail closed", async () => {
+    await page.setContent(
+      resultCard({ id: "new-a", resultId: "44444444-4444-4444-4444-444444444444" }) +
+      resultCard({ id: "new-b", resultId: "55555555-5555-5555-5555-555555555555" }),
+    );
+    const selected = selectExactNewFlowResult(
+      await collectPromptBoundFlowResultCandidates(page, prompt),
+      [],
+      projectUrl,
+    );
+    assert.equal(selected.state, "ambiguous");
+  });
+
+  await check("result inside the exact marked approval card binds without prompt text", async () => {
+    const approvalCardToken = "0123456789abcdef0123456789abcdef";
+    const oldId = "66666666-6666-6666-6666-666666666666";
+    const newId = "77777777-7777-7777-7777-777777777777";
+    await page.setContent(
+      resultCard({ id: "old-unmarked-result", resultId: oldId }) +
+      `<section id="marked-approval-result" data-flow-motion-approval-card="${approvalCardToken}">
+        <a href="${projectUrl}/edit/${newId}"><video src="data:video/mp4;base64,AA=="></video></a>
+      </section>`,
+    );
+    const candidates = await collectPromptBoundFlowResultCandidates(page, prompt, approvalCardToken);
+    const selected = selectExactNewFlowResult(
+      candidates,
+      [`${projectUrl}/edit/${oldId}`],
+      projectUrl,
+    );
+    assert.equal(selected.state, "ready");
+    assert.equal(selected.binding.providerResultId, newId);
+    assert.equal(selected.binding.observedBy, "exact_approval_card_new_link");
   });
 
   await check("current composer scopes the Make button", async () => {
@@ -163,6 +276,15 @@ try {
       onClickDispatched: () => { assert.equal(armed, 1); dispatched += 1; },
     });
     assert.equal(evidence.clickDispatched, true);
+    assert.match(evidence.approvalCardToken, /^[0-9a-f]{32}$/);
+    const markedApprovalCard = page.locator(
+      `#atomic [data-flow-motion-approval-card="${evidence.approvalCardToken}"]`,
+    );
+    assert.equal(await markedApprovalCard.count(), 1);
+    assert.equal(
+      await markedApprovalCard.getAttribute("data-flow-motion-approval-card"),
+      evidence.approvalCardToken,
+    );
     assert.equal(armed, 1);
     assert.equal(dispatched, 1);
     assert.deepEqual(await page.evaluate(() => window.clickLedger), ["once-v2"]);
