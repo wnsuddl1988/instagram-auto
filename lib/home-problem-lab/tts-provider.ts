@@ -1,17 +1,36 @@
 import { HOME_PROBLEM_LAB_CONFIG } from "./config";
+import {
+  buildHomeProblemLabElevenLabsRequest,
+  DisabledHomeProblemLabElevenLabsTransport,
+} from "./elevenlabs-tts-adapter";
 import { preflightHomeProblemLabLumiTts } from "./tts-preflight";
 import { normalizeLumiTtsText } from "./tts-normalization";
 import type {
   HomeProblemLabLumiTtsRequest,
+  HomeProblemLabLiveAuthorization,
+  HomeProblemLabLiveTtsResult,
   HomeProblemLabMockTtsResponse,
+  HomeProblemLabTtsProviderMode,
   HomeProblemLabTtsPreflightArtifact,
 } from "./types";
 
 export interface HomeProblemLabTtsProvider {
-  providerName: "mock" | "elevenlabs_future";
+  providerName: HomeProblemLabTtsProviderMode;
   supportsExternalCalls: false;
   preflight(request: HomeProblemLabLumiTtsRequest): ReturnType<typeof preflightHomeProblemLabLumiTts>;
+}
+
+export interface HomeProblemLabMockTtsProvider extends HomeProblemLabTtsProvider {
+  providerName: "mock";
   synthesize(request: HomeProblemLabLumiTtsRequest): HomeProblemLabMockTtsResponse;
+}
+
+export interface HomeProblemLabLiveTtsProvider extends HomeProblemLabTtsProvider {
+  providerName: "elevenlabs_live";
+  synthesizeLive(
+    request: HomeProblemLabLumiTtsRequest,
+    authorization: HomeProblemLabLiveAuthorization,
+  ): HomeProblemLabLiveTtsResult;
 }
 
 export function createHomeProblemLabLumiTtsRequest(text: string, requestId: string): HomeProblemLabLumiTtsRequest {
@@ -37,7 +56,15 @@ export function createHomeProblemLabLumiTtsRequest(text: string, requestId: stri
   };
 }
 
-class MockHomeProblemLabTtsProvider implements HomeProblemLabTtsProvider {
+export function createHomeProblemLabLumiLiveTtsRequest(text: string, requestId: string): HomeProblemLabLumiTtsRequest {
+  return {
+    ...createHomeProblemLabLumiTtsRequest(text, requestId),
+    model: HOME_PROBLEM_LAB_CONFIG.lumiVoice.productionModel,
+    dryRun: false,
+  };
+}
+
+class MockHomeProblemLabTtsProvider implements HomeProblemLabMockTtsProvider {
   providerName = "mock" as const;
   supportsExternalCalls = false as const;
 
@@ -66,25 +93,33 @@ class MockHomeProblemLabTtsProvider implements HomeProblemLabTtsProvider {
   }
 }
 
-class FutureElevenLabsHomeProblemLabTtsProvider implements HomeProblemLabTtsProvider {
-  providerName = "elevenlabs_future" as const;
+class DisabledElevenLabsLiveHomeProblemLabTtsProvider implements HomeProblemLabLiveTtsProvider {
+  providerName = "elevenlabs_live" as const;
   supportsExternalCalls = false as const;
+  private readonly transport = new DisabledHomeProblemLabElevenLabsTransport();
 
   preflight(request: HomeProblemLabLumiTtsRequest) {
     return preflightHomeProblemLabLumiTts(request);
   }
 
-  synthesize(_request: HomeProblemLabLumiTtsRequest): HomeProblemLabMockTtsResponse {
-    throw new Error("HOME_PROBLEM_LAB_ELEVENLABS_NOT_IMPLEMENTED");
+  synthesizeLive(
+    request: HomeProblemLabLumiTtsRequest,
+    authorization: HomeProblemLabLiveAuthorization,
+  ): HomeProblemLabLiveTtsResult {
+    const requestEnvelope = buildHomeProblemLabElevenLabsRequest(request, authorization);
+    return this.transport.execute(requestEnvelope, authorization);
   }
 }
 
+export function getHomeProblemLabTtsProvider(): HomeProblemLabMockTtsProvider;
+export function getHomeProblemLabTtsProvider(providerName: "mock"): HomeProblemLabMockTtsProvider;
+export function getHomeProblemLabTtsProvider(providerName: "elevenlabs_live"): HomeProblemLabLiveTtsProvider;
 export function getHomeProblemLabTtsProvider(
-  providerName: "mock" | "elevenlabs_future" = "mock",
+  providerName: string = HOME_PROBLEM_LAB_CONFIG.liveTtsSafety.defaultProvider,
 ): HomeProblemLabTtsProvider {
   if (providerName === "mock") return new MockHomeProblemLabTtsProvider();
-  if (providerName === "elevenlabs_future") return new FutureElevenLabsHomeProblemLabTtsProvider();
-  throw new Error("HOME_PROBLEM_LAB_TTS_PROVIDER_BLOCKED");
+  if (providerName === "elevenlabs_live") return new DisabledElevenLabsLiveHomeProblemLabTtsProvider();
+  throw new Error("HOME_PROBLEM_LAB_TTS_PROVIDER_INVALID");
 }
 
 export function createHomeProblemLabLumiMockPreflight(dialogue: string, requestId: string): HomeProblemLabTtsPreflightArtifact {

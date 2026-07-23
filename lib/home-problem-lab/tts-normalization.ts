@@ -48,8 +48,8 @@ export function normalizeLumiTtsText(input: string): string {
   return text
     .replace(/(\d[\d,]*)\s*~\s*(\d[\d,]*)/g, "$1에서 $2")
     .replace(/%/g, " 퍼센트")
-    .replace(/×/g, "곱하기")
-    .replace(/&/g, "그리고")
+    .replace(/×/g, " 곱하기 ")
+    .replace(/&/g, " 그리고 ")
     .replace(/\+/g, "더하기")
     .replace(/[\[\](){}]/g, " ")
     .replace(/\s*\/\s*/g, " 또는 ")

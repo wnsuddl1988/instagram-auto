@@ -130,8 +130,102 @@ export interface HomeProblemLabLumiTtsRequest {
   model: HomeProblemLabTtsModel;
   voiceSettings: HomeProblemLabLumiVoiceSettings;
   outputFormat: "mp3_44100_128";
-  dryRun: true;
+  dryRun: boolean;
   requestId: string;
+}
+
+export type HomeProblemLabTtsProviderMode = "mock" | "elevenlabs_live";
+export type HomeProblemLabCredentialPresenceStatus = "present" | "missing" | "unchecked";
+
+export interface HomeProblemLabCredentialPresence {
+  apiKey: HomeProblemLabCredentialPresenceStatus;
+  lumiVoiceId: HomeProblemLabCredentialPresenceStatus;
+}
+
+export interface HomeProblemLabLiveAuthorization {
+  engineId: typeof HOME_PROBLEM_LAB_ENGINE_ID;
+  characterId: "lumi";
+  voiceProfileId: "lumi_home_problem_lab";
+  provider: "elevenlabs_live";
+  dryRun: false;
+  liveCallAuthorized: boolean;
+  maxExternalCalls: 1;
+  requestId: string;
+  batchSize: 1;
+  sentenceCount: number;
+  preflightPassed: boolean;
+  instagramUpload: false;
+  youtubeUpload: false;
+  imageGeneration: false;
+  productLookup: false;
+  credentialPresence: HomeProblemLabCredentialPresence;
+}
+
+export interface HomeProblemLabElevenLabsRequestEnvelope {
+  provider: "elevenlabs_live";
+  engineId: typeof HOME_PROBLEM_LAB_ENGINE_ID;
+  characterId: "lumi";
+  voiceProfileId: "lumi_home_problem_lab";
+  requestId: string;
+  text: string;
+  normalizedText: string;
+  model: "eleven_multilingual_v2";
+  voiceSettings: HomeProblemLabLumiVoiceSettings;
+  outputFormat: "mp3_44100_128";
+  characterCount: number;
+  estimatedBillableCharacters: number;
+  timeoutMs: 20000;
+  maxExternalCalls: 1;
+  retryCount: 0;
+  credentialPresence: HomeProblemLabCredentialPresence;
+}
+
+export interface HomeProblemLabAudioResponseMetadata {
+  status: number;
+  contentType: string | null;
+  byteLength: number;
+  timedOut: boolean;
+}
+
+export interface HomeProblemLabAudioResponseValidation {
+  passed: boolean;
+  errorCode: string | null;
+  contentType: string | null;
+  byteLength: number;
+}
+
+export interface HomeProblemLabLiveTtsResult {
+  provider: "elevenlabs";
+  isMock: false;
+  isPublishable: false;
+  audioGenerated: boolean;
+  audioPath: null;
+  durationMs: number | null;
+  byteLength: number | null;
+  contentType: string | null;
+  outputFormat: "mp3_44100_128";
+  requestId: string;
+  externalCalls: 0;
+  voiceIdExposed: false;
+  secretExposed: false;
+  uploadCandidate: false;
+  validationPassed: boolean;
+  errorCode: string;
+}
+
+export interface HomeProblemLabSafeTtsLogEvent {
+  requestId: string;
+  provider: HomeProblemLabTtsProviderMode;
+  engineId: typeof HOME_PROBLEM_LAB_ENGINE_ID;
+  characterId: "lumi";
+  model: HomeProblemLabTtsModel;
+  outputFormat: "mp3_44100_128";
+  characterCount: number;
+  estimatedBillableCharacters: number;
+  timeoutMs: number;
+  externalCallCount: 0;
+  outcomeCode: string;
+  credentialPresence: HomeProblemLabCredentialPresence;
 }
 
 export interface HomeProblemLabTtsPreflightResult {

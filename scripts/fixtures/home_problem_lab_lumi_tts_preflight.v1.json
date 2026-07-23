@@ -12,7 +12,7 @@
     { "id": "cleaning-mix", "text": "락스와 식초를 섞어서 사용하세요.", "expectedPassed": false, "expectedError": "TTS_DANGEROUS_CLEANING_MIX" },
     { "id": "voice-id-exposure", "requestPatch": { "voiceId": "forbidden" }, "expectedPassed": false, "expectedError": "TTS_VOICE_ID_EXPOSURE_BLOCKED" },
     { "id": "existing-profile-fallback", "requestPatch": { "voiceProfileId": "existing_money_shorts_voice" }, "expectedPassed": false, "expectedError": "TTS_VOICE_PROFILE_MISMATCH" },
-    { "id": "external-provider-blocked", "provider": "elevenlabs_future", "expectedSupportsExternalCalls": false },
+    { "id": "external-provider-blocked", "provider": "elevenlabs_live", "expectedSupportsExternalCalls": false },
     { "id": "mock-zero-calls", "provider": "mock", "expectedExternalCalls": 0 }
   ]
 }

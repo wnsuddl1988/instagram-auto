@@ -37,6 +37,17 @@ export const HOME_PROBLEM_LAB_CONFIG = {
     requiredTones: ["차분함", "명료함", "빠르지만 이해 가능한 속도", "똑똑한 AI 살림탐정", "소비자 편", "재치", "과장 없는 자신감"],
     prohibitedTones: ["홈쇼핑 판매자", "뉴스 앵커", "과한 애교", "ASMR", "과도한 흥분", "공포·위협", "과장 광고", "사용 후기 사칭"],
   },
+  liveTtsSafety: {
+    defaultProvider: "mock",
+    liveProvider: "elevenlabs_live",
+    outputFormat: "mp3_44100_128",
+    timeoutMs: 20_000,
+    maxExternalCalls: 1,
+    retryCount: 0,
+    maxCharacters: 500,
+    credentialKeyNames: ["ELEVENLABS_API_KEY", "ELEVENLABS_LUMI_VOICE_ID"],
+    transport: "disabled",
+  },
   uploadProfileContract: {
     profileId: HOME_PROBLEM_LAB_UPLOAD_PROFILE,
     instagramCredentialKeyNames: [

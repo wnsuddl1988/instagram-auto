@@ -20,7 +20,7 @@ const required = [
   "voiceProfileVersion: \"v1\"", "language: \"ko\"", "requestId: string", "ELEVENLABS_LUMI_VOICE_ID",
   "eleven_multilingual_v2", "eleven_flash_v2_5", "stability: 0.62", "similarityBoost: 0.78", "style: 0.08",
   "useSpeakerBoost: true", "speed: 1.08", "HomeProblemLabTtsProvider", "MockHomeProblemLabTtsProvider",
-  "FutureElevenLabsHomeProblemLabTtsProvider", "HOME_PROBLEM_LAB_TTS_PROVIDER_BLOCKED", "supportsExternalCalls = false",
+  "DisabledElevenLabsLiveHomeProblemLabTtsProvider", "HOME_PROBLEM_LAB_TTS_PROVIDER_INVALID", "supportsExternalCalls = false",
   "isMock: true", "isPublishable: false", "externalCalls: 0", "audioGenerated: false", "audioPath: null",
   "voiceIdExposed: false", "uploadCandidate: false", "TTS_CHARACTER_LIMIT_EXCEEDED", "TTS_FAKE_REVIEW",
   "TTS_FAKE_NEDON", "TTS_EXAGGERATED_EFFICACY", "TTS_DANGEROUS_CLEANING_MIX", "TTS_VOICE_PROFILE_MISMATCH",
