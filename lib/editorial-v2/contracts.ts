@@ -241,3 +241,92 @@ export interface FieldLevelRepairResult {
   readonly value: unknown;
   readonly reason: string;
 }
+
+export const RESEARCH_WINDOW_PRESETS = ["24h", "7d", "30d"] as const;
+export type ResearchWindowPreset = (typeof RESEARCH_WINDOW_PRESETS)[number];
+export type TargetDurationSeconds = 30 | 45 | 60;
+
+export interface TrendResearchPromptInput {
+  readonly projectId: string;
+  readonly researchCutoffDate: string;
+  readonly researchWindow: ResearchWindowPreset;
+  readonly domain: string;
+  readonly audience: string;
+  readonly targetDurationSeconds: TargetDurationSeconds;
+  readonly additionalFocus?: string;
+}
+
+export interface TrendBriefImportSource {
+  readonly sourceId: string;
+  readonly publisher: string;
+  readonly title: string;
+  readonly url: string;
+  readonly publishedAt: string;
+  readonly eventDate: string | null;
+}
+
+export interface TrendBriefImportNumber {
+  readonly value: number;
+  readonly unit: string;
+  readonly currency: string | null;
+  readonly asOf: string;
+  readonly context: string;
+}
+
+export interface TrendBriefImportSignal {
+  readonly signalId: string;
+  readonly headline: string;
+  readonly claim: string;
+  readonly whyNow: string;
+  readonly audienceImpact: string;
+  readonly sourceRefs: readonly string[];
+  readonly numbers: readonly TrendBriefImportNumber[];
+}
+
+export interface TrendBriefImportCandidate {
+  readonly schemaVersion: string;
+  readonly researchCutoffDate: string;
+  readonly researchWindow: ResearchWindowPreset;
+  readonly domain: string;
+  readonly audience: string;
+  readonly targetDurationSeconds: TargetDurationSeconds;
+  readonly briefTitle: string;
+  readonly executiveSummary: string;
+  readonly sources: readonly TrendBriefImportSource[];
+  readonly signals: readonly TrendBriefImportSignal[];
+}
+
+export type ImportedResponseFormat = "json_object" | "json_array" | "markdown" | "unsupported";
+export type ImportNormalizationMethod =
+  | "exact_json"
+  | "fenced_json"
+  | "embedded_json"
+  | "structured_markdown"
+  | "unsupported";
+export type ImportIssueSeverity = "error" | "warning";
+
+export interface ImportIssue {
+  readonly code: string;
+  readonly severity: ImportIssueSeverity;
+  readonly blocking: boolean;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly repairable: boolean;
+}
+
+export interface TrendBriefImportValidationSummary extends ImportValidationSummary {
+  readonly issues: readonly ImportIssue[];
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+}
+
+export interface FieldRepairOperation {
+  readonly path: string;
+  readonly value: unknown;
+}
+
+export interface FieldRepairPackage {
+  readonly repairs: readonly FieldRepairOperation[];
+}
+
+export type ImportApprovalState = "not_approved" | "approved" | "invalidated";
