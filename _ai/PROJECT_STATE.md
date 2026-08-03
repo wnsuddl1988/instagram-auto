@@ -1,6 +1,26 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-07-22 KST
+Updated: 2026-08-04 KST
+
+## Shorts Editorial OS V2 — Slice 1 FINAL_PASS checkpoint
+
+- Slice 0: `FINAL_PASS`; Owner 최종 판정: `SHORTS_EDITORIAL_OS_V2_SLICE_0_FINAL_PASS`.
+- Slice 1: `FINAL_PASS`; Owner 최종 판정: `SHORTS_EDITORIAL_OS_V2_SLICE_1_FINAL_PASS`.
+- Slice 1 Cross Review: `PASS` (`P0 0`, `P1 0`, 기술적 `P2` 차단 사유 `0`).
+- 통합 설계 Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_SLICE_0_BLUEPRINT.md`.
+- 시작 baseline: branch `codex/source-first-blueprint-clean`, HEAD `1a52e1f9c0b540d492f25707dc74cf0498752a5e`, upstream `+0/-0`, modified `23`, untracked `4`, staged `0`, status path `27`.
+- 보호 manifest: `_ai/SHORTS_EDITORIAL_OS_V2_SLICE_1_BASELINE.json`; 기존 dirty baseline은 `NOT_RECONSTRUCTABLE`이며 상태 문서 2개 외 기존 25개 보호 path SHA-256은 불변이다.
+- Slice 1 implementation scope: `contracts`, `isolation`, `inert route skeleton`.
+- 구현 세부: V2 namespace/schema, artifact/LLM exchange contracts, lifecycle validator, default-OFF flag, local `notFound()` inert route, storage interface only, deterministic fixtures, targeted checker.
+- 자체 검증: `node scripts/check-shorts-editorial-os-v2-slice1.mjs` → `50/50 PASS`; targeted TypeScript diagnostics `0`.
+- 기존 `/money-shorts`, V1 component/storage, middleware, `app/layout.tsx`, `next.config.*`, `package.json`, 기존 app tree는 수정하지 않았다.
+- V1 실제 데이터, 외부 API, 생성·렌더·게시, OAuth, browser/worker, dev/build, DB/migration, env/secret에는 접근하거나 실행하지 않았다.
+- Runtime/external integration: `NOT_STARTED`; product operational capability: `NOT_CLAIMED`.
+- Slice 2: `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation: `DISABLED`.
+- 공식 전체 진행률: `NOT_CALCULATED`.
+- Push: `NOT_AUTHORIZED`; checkpoint commit: `OWNER_AUTHORIZED`.
+- 절차 참고: Cross Review 중 저장소 밖 scratchpad probe 파일이 사용됐으나 저장소/V1 데이터 영향은 `0`; 향후 read-only Cross Review는 inline command only.
+- 상태: `SHORTS_EDITORIAL_OS_V2_SLICE_0_AND_SLICE_1_FINAL_PASS_CHECKPOINT_AUTHORIZED`.
 
 ## 현재 운영 기준
 

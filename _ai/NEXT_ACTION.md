@@ -1,6 +1,25 @@
 # AutoShorts AI — Next Action
 
-Updated: 2026-07-22 KST
+Updated: 2026-08-04 KST
+
+## Shorts Editorial OS V2 — Slice 0·1 FINAL_PASS checkpoint
+
+- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 1 Cross Review: `PASS`.
+- Slice 1 implementation scope: `contracts`, `isolation`, `inert route skeleton`.
+- baseline manifest는 시작 시 status path 27개와 SHA-256을 기록하며, 상태 문서 2개 외 기존 25개 보호 path는 불변이다.
+- targeted checker 결과는 `50/50 PASS`, targeted TypeScript diagnostics는 `0`이다.
+- Runtime/external integration은 `NOT_STARTED`; product operational capability는 `NOT_CLAIMED`다.
+- Slice 2는 `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation은 `DISABLED`다.
+- 공식 전체 진행률은 `NOT_CALCULATED`.
+- Push는 `NOT_AUTHORIZED`; checkpoint commit은 `OWNER_AUTHORIZED`다.
+- 절차 참고: Cross Review 중 저장소 밖 scratchpad probe 파일이 사용됐으나 저장소/V1 데이터 영향은 `0`; 향후 read-only Cross Review는 inline command only.
+- 상태: `SHORTS_EDITORIAL_OS_V2_SLICE_0_AND_SLICE_1_FINAL_PASS_CHECKPOINT_AUTHORIZED`.
+
+## Owner가 다음에 판정할 항목
+
+1. 승인된 Slice 0·1 checkpoint commit 결과를 수용할지 여부.
+2. Slice 2 exact scope를 별도로 설계·승인할지 여부. 자동 시작하지 않는다.
+3. baseline manifest로 보호한 기존 dirty baseline 상태를 계속 유지할지 여부. 기존 dirty baseline 자체는 `NOT_RECONSTRUCTABLE`이다.
 
 ## 현재 상태
 
