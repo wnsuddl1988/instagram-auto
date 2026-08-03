@@ -2,6 +2,24 @@
 
 Updated: 2026-08-04 KST
 
+## Shorts Editorial OS V2 — governance transition
+
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_TOP_LEVEL_AUTONOMOUS_EXECUTION_AND_CHATGPT_CONTROL_TOWER_ESCALATION_GOVERNANCE_V1`.
+- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`.
+- Slice 2 checkpoint HEAD: `58736883c200148e90fe4de44d7e25a1c63f70a2`; parent: `795ff8a93b350991c0069cd67f7b6ca58ee7f433`.
+- Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`.
+- Governance transition: `IMPLEMENTATION_COMPLETE_AWAITING_TARGETED_CROSS_REVIEW`.
+- Autonomous same-Slice loop: `PENDING_ACTIVATION`.
+- Mandatory routing header: `PENDING_ACTIVATION`.
+- ChatGPT major-decision escalation: `PENDING_ACTIVATION`.
+- Existing dirty snapshot: modified `21`, untracked `3`, staged `0`, status paths `24`; 보호 근거는 `_ai/SHORTS_EDITORIAL_OS_V2_SLICE_2_BASELINE.json`의 path별 SHA-256 24개와 status code다.
+- Governance Cross Review: `PENDING_CLAUDE_CODE_READ_ONLY_TARGETED_REVIEW`.
+- Governance checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`.
+- Slice 3: `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation: `DISABLED`.
+- Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
+- Runtime/external integration: `NOT_STARTED`; product operational capability: `NOT_CLAIMED`.
+- Process finding: `PROCESS_DEVIATION_EXPLICITLY_FORBIDDEN_BUILD_EXECUTED_WITHOUT_SCOPE_AUTHORIZATION`; 이번 governance 작업에서는 product build/dev를 실행하지 않는다.
+
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 
 - Slice 0: `FINAL_PASS`; Owner 최종 판정: `SHORTS_EDITORIAL_OS_V2_SLICE_0_FINAL_PASS`.
@@ -28,9 +46,9 @@ Updated: 2026-08-04 KST
 - 비차단 P2: 24h UTC calendar-day 설명, valid+malformed JSON 후보 정책, duplicate JSON key, repair leading-zero/missing-key 정책, currency heuristic 한계.
 - Slice 3: `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation: `DISABLED`.
 - 공식 전체 진행률: `NOT_CALCULATED`.
-- Push: `NOT_AUTHORIZED`; Slice 2 checkpoint commit: `OWNER_AUTHORIZED`.
+- Push: `NOT_AUTHORIZED`; Slice 2 checkpoint commit: `58736883c200148e90fe4de44d7e25a1c63f70a2` (`COMPLETED`).
 - 절차 참고: Cross Review 중 저장소 밖 scratchpad probe 파일이 사용됐으나 저장소/V1 데이터 영향은 `0`; 향후 read-only Cross Review는 inline command only.
-- 상태: `SHORTS_EDITORIAL_OS_V2_SLICE_2_FINAL_PASS_CHECKPOINT_AUTHORIZED`.
+- 상태: `SHORTS_EDITORIAL_OS_V2_SLICE_2_CHECKPOINT_COMMIT_COMPLETE`.
 
 ## 현재 운영 기준
 

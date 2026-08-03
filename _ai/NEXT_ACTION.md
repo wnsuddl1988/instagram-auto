@@ -2,29 +2,26 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
+## Shorts Editorial OS V2 — governance targeted review
 
-- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`.
-- Slice 2 Cross Review는 최초 `NEEDS_FIX` (`P0 0`, `P1 2`) 후 P1 correction targeted re-review에서 `PASS` (`P0 0`, `P1 0`, 비차단 `P2 5`)했다.
-- P1 두 건인 strict `publishedAt` calendar validation과 localhost / IPv4-mapped IPv6 URL validation correction을 완료했다.
-- Slice 2 checkpoint-aware checker는 `182/182 PASS`, targeted TypeScript syntactic/semantic diagnostics는 각각 `0`이다.
-- Slice 1 checker는 pre-checkpoint 상태 전용이므로 Owner 보정 승인에 따라 재실행하지 않았다.
-- Slice 2 scope는 Prompt Export, session-only Safe LLM Import, deterministic normalization, import validation, field-level repair, session approval이다.
-- External LLM API는 `NOT_CONNECTED`; URL fetch·DNS·source existence verification과 durable persistence는 `NOT_IMPLEMENTED`다.
-- Runtime browser UI·clipboard는 `UNVERIFIED`; Evidence Pack·Topic Evaluation·Script·Scene Card는 `NOT_IMPLEMENTED`다.
-- 비차단 P2는 24h UTC calendar-day 설명, valid+malformed JSON 후보 정책, duplicate JSON key, repair leading-zero/missing-key 정책, currency heuristic 한계다.
-- Product operational capability는 `NOT_CLAIMED`; Slice 3는 `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation은 `DISABLED`다.
-- 공식 전체 진행률은 `NOT_CALCULATED`.
-- Slice 2 checkpoint commit은 `OWNER_AUTHORIZED`; Push는 `NOT_AUTHORIZED`다.
-- 절차 참고: Cross Review 중 저장소 밖 scratchpad probe 파일이 사용됐으나 저장소/V1 데이터 영향은 `0`; 향후 read-only Cross Review는 inline command only.
-- 외부 API·검색·URL fetch·생성·렌더·게시를 실행하지 않는다.
-- 상태: `SHORTS_EDITORIAL_OS_V2_SLICE_2_FINAL_PASS_CHECKPOINT_AUTHORIZED`.
+- Slice 0·1·2는 `FINAL_PASS`; Slice 2 checkpoint는 `58736883c200148e90fe4de44d7e25a1c63f70a2`다.
+- Governance transition: `IMPLEMENTATION_COMPLETE_AWAITING_TARGETED_CROSS_REVIEW`.
+- 다음 routine 작업은 정확한 4개 governance 파일에 대한 Claude Code read-only targeted review다.
+- 이 중간 결과는 ChatGPT Control Tower에 전달하지 않는다. 사용자는 Codex가 제공하는 prompt를 Claude Code에 전달하고 검수 결과를 Codex에 돌려준다.
+- Claude Code는 파일 수정·임시 파일 생성·external write·commit·push 없이 `PASS | NEEDS_FIX | BLOCKED`, `P0/P1/P2`, `CONTROL_TOWER_ESCALATION_TRIGGERED`를 보고한다.
+- 일반 P1이고 4-file allowlist 안의 문구 correction이면 Codex가 최대 2회까지 자율 수정·targeted re-review한다.
+- Claude 최종 `PASS`, `P0 0`, `P1 0`이면 exact 4-file governance checkpoint commit이 사전 승인돼 있다.
+- 고정 commit message는 `docs(editorial-v2): establish control tower escalation governance`; push는 `NOT_AUTHORIZED`다.
+- Governance checkpoint 최종 결과는 `SLICE_COMPLETE_AWAITING_CHATGPT_NEXT_SCOPE`로 ChatGPT Control Tower에 전달한다.
+- Slice 3는 `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; 자동 시작하지 않는다.
+- Product build/dev, 외부 API·검색·URL fetch·생성·렌더·게시·deploy·push를 실행하지 않는다.
+- 상태: `GOVERNANCE_TARGETED_CLAUDE_CODE_READ_ONLY_REVIEW_REQUIRED`.
 
-## Owner가 다음에 판정할 항목
+## Governance review 후 분기
 
-1. 승인된 Slice 2 checkpoint commit 결과를 수용할지 여부.
-2. Slice 3 exact scope를 별도로 설계·승인할지 여부. 자동 시작하지 않는다.
-3. 비차단 P2를 향후 어떤 Slice에서 다룰지 여부.
+1. `PASS`, `P0 0`, `P1 0`, escalation `NO`: exact 4-file checkpoint를 수행하고 최종 결과를 ChatGPT에 전달한다.
+2. allowlist 안의 일반 P1, escalation `NO`: 최소 correction 후 Claude targeted re-review를 요청한다.
+3. P0, BLOCKED, escalation `YES`, 우선순위 충돌, 범위 확대 필요, 반복 P1: 즉시 중단하고 ChatGPT Control Tower decision packet을 출력한다.
 
 ## 현재 상태
 
