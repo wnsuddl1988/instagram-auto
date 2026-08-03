@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import type {
+  ApprovedTrendBriefSessionSnapshot,
   FieldRepairPackage,
   ImportApprovalState,
   ImportIssue,
@@ -10,6 +11,7 @@ import type {
   ResearchWindowPreset,
   TargetDurationSeconds,
   TrendBriefImportValidationSummary,
+  TrendBriefImportCandidate,
   TrendResearchPromptInput,
 } from "../../lib/editorial-v2/contracts";
 import {
@@ -45,6 +47,22 @@ const AUDIENCES = [
 
 type CopyState = "idle" | "copied" | "failed";
 
+export interface ResearchImportWorkbenchProps {
+  readonly onApprovedImportChange?: (snapshot: ApprovedTrendBriefSessionSnapshot | null) => void;
+}
+
+function cloneTrendBriefCandidate(candidate: TrendBriefImportCandidate): TrendBriefImportCandidate {
+  return {
+    ...candidate,
+    sources: candidate.sources.map((source) => ({ ...source })),
+    signals: candidate.signals.map((signal) => ({
+      ...signal,
+      sourceRefs: [...signal.sourceRefs],
+      numbers: signal.numbers.map((number) => ({ ...number })),
+    })),
+  };
+}
+
 function duplicateIssue(): ImportIssue {
   return {
     code: "duplicate_session_import",
@@ -56,7 +74,7 @@ function duplicateIssue(): ImportIssue {
   };
 }
 
-export default function ResearchImportWorkbench() {
+export default function ResearchImportWorkbench({ onApprovedImportChange }: ResearchImportWorkbenchProps) {
   const [researchCutoffDate, setResearchCutoffDate] = useState("");
   const [researchWindow, setResearchWindow] = useState<ResearchWindowPreset>("7d");
   const [domain, setDomain] = useState<(typeof DOMAINS)[number]>("생활경제");
@@ -89,6 +107,7 @@ export default function ResearchImportWorkbench() {
   }), [researchCutoffDate, researchWindow, domain, audience, targetDurationSeconds, additionalFocus]);
 
   function invalidatePreview(): void {
+    onApprovedImportChange?.(null);
     setPreview(null);
     setRawHash("");
     setNormalizedHash("");
@@ -128,6 +147,7 @@ export default function ResearchImportWorkbench() {
   }
 
   async function importPreview(): Promise<void> {
+    onApprovedImportChange?.(null);
     const normalization = normalizeExternalLlmResponse(rawText);
     const nextRawHash = await sha256Utf8(rawText);
     const duplicate = isDuplicateImportHash(nextRawHash, sessionHashes);
@@ -166,6 +186,7 @@ export default function ResearchImportWorkbench() {
   }
 
   function previewRepair(): void {
+    onApprovedImportChange?.(null);
     const parsed = parseFieldRepairPackage(repairText);
     setRepairPackage(parsed.package);
     setRepairIssues(parsed.issues);
@@ -174,6 +195,7 @@ export default function ResearchImportWorkbench() {
 
   async function applyRepair(): Promise<void> {
     if (!preview?.value || !repairPackage) return;
+    onApprovedImportChange?.(null);
     const result = applyFieldLevelRepairs(preview.value, repairPackage, allowedRepairPaths);
     const issues = [...result.issues, ...validateTrendBriefImport(result.value, expectedInput)];
     setPreview({ ...preview, value: result.value, issues: result.issues });
@@ -184,6 +206,7 @@ export default function ResearchImportWorkbench() {
   }
 
   function resetWorkbench(): void {
+    onApprovedImportChange?.(null);
     setPromptPackage(null);
     setPromptCopyState("idle");
     setRawText("");
@@ -191,6 +214,24 @@ export default function ResearchImportWorkbench() {
     setRepairCopyState("idle");
     setApprovalState("not_approved");
     invalidatePreview();
+  }
+
+  function approveImport(): void {
+    if (!preview?.value || !summary || !canApproveImport(summary)) return;
+    const candidate = cloneTrendBriefCandidate(preview.value as TrendBriefImportCandidate);
+    const snapshot: ApprovedTrendBriefSessionSnapshot = {
+      candidate,
+      rawHash,
+      normalizedHash,
+      expectedInput: { ...expectedInput },
+      validationSummary: {
+        ...summary,
+        issues: summary.issues.map((entry) => ({ ...entry })),
+      },
+      approvalState: "approved",
+    };
+    setApprovalState("approved");
+    onApprovedImportChange?.(snapshot);
   }
 
   return (
@@ -205,7 +246,7 @@ export default function ResearchImportWorkbench() {
         <h2 id="step-1"><span>1</span> 조사 설정</h2>
         <div className={styles.grid}>
           <label>조사 기준일<input type="date" value={researchCutoffDate} onChange={(event) => { setResearchCutoffDate(event.target.value); invalidateResearchConfiguration(); }} /></label>
-          <label>기간<select value={researchWindow} onChange={(event) => { setResearchWindow(event.target.value as ResearchWindowPreset); invalidateResearchConfiguration(); }}><option value="24h">24시간</option><option value="7d">7일</option><option value="30d">30일</option></select></label>
+          <label>기간<select value={researchWindow} onChange={(event) => { setResearchWindow(event.target.value as ResearchWindowPreset); invalidateResearchConfiguration(); }}><option value="24h">24시간</option><option value="7d">7일</option><option value="30d">30일</option></select><small>24시간은 rolling 24시간이 아니라 cutoff date의 UTC calendar-day 기준입니다.</small></label>
           <label>분야<select value={domain} onChange={(event) => { setDomain(event.target.value as (typeof DOMAINS)[number]); invalidateResearchConfiguration(); }}>{DOMAINS.map((entry) => <option key={entry}>{entry}</option>)}</select></label>
           <label>시청자<select value={audience} onChange={(event) => { setAudience(event.target.value as (typeof AUDIENCES)[number]); invalidateResearchConfiguration(); }}>{AUDIENCES.map((entry) => <option key={entry}>{entry}</option>)}</select></label>
           <label>목표 영상 길이<select value={targetDurationSeconds} onChange={(event) => { setTargetDurationSeconds(Number(event.target.value) as TargetDurationSeconds); invalidateResearchConfiguration(); }}><option value={30}>30초</option><option value={45}>45초</option><option value={60}>60초</option></select></label>
@@ -234,13 +275,13 @@ export default function ResearchImportWorkbench() {
         <h2 id="step-5"><span>5</span> Validation & Repair</h2>
         {!summary ? <p className={styles.muted}>Import Preview 후 validation summary가 표시됩니다.</p> : <><div className={styles.counts}><strong>Blocking {summary.blockingIssueCount}</strong><strong>Warning {summary.warningCount}</strong></div><ul className={styles.issues}>{summary.issues.map((entry, index) => <li key={`${entry.code}-${entry.fieldPath}-${index}`} data-severity={entry.severity}><strong>{entry.code}</strong><code>{entry.fieldPath || "/"}</code><span>{entry.message}</span><small>{entry.repairable ? "field repair 가능" : "전체 재포맷 또는 사용자 확인 필요"}</small></li>)}</ul></>}
         <div className={styles.actions}><button type="button" onClick={generateRepairPrompt} disabled={!summary || allowedRepairPaths.length === 0 || needsFullReformat}>보완 프롬프트 생성</button>{needsFullReformat && <span>구조 전체 재포맷이 필요해 field repair가 비활성화됐습니다.</span>}</div>
-        {repairPrompt && <><textarea className={styles.largeTextarea} readOnly aria-label="보완 프롬프트" value={repairPrompt.instructions} /><div className={styles.actions}><button type="button" onClick={() => void copyText(repairPrompt.instructions, setRepairCopyState)}>보완 프롬프트 복사</button><span role="status">{repairCopyState === "copied" ? "복사 완료" : repairCopyState === "failed" ? "복사 실패" : ""}</span></div><label>Repair response<textarea value={repairText} onChange={(event) => { setRepairText(event.target.value); setRepairPackage(null); setApprovalState((previous) => invalidateImportApproval(previous)); }} /></label><div className={styles.actions}><button type="button" onClick={previewRepair} disabled={!repairText}>Repair 적용 전 preview</button><button type="button" onClick={() => void applyRepair()} disabled={!repairPackage || !preview?.value}>허용 field repair 적용·재검증</button></div>{repairPackage && <pre>{JSON.stringify(repairPackage, null, 2)}</pre>}{repairIssues.map((entry) => <p key={`${entry.code}-${entry.fieldPath}`} className={styles.error}>{entry.message}</p>)}</>}
+        {repairPrompt && <><textarea className={styles.largeTextarea} readOnly aria-label="보완 프롬프트" value={repairPrompt.instructions} /><div className={styles.actions}><button type="button" onClick={() => void copyText(repairPrompt.instructions, setRepairCopyState)}>보완 프롬프트 복사</button><span role="status">{repairCopyState === "copied" ? "복사 완료" : repairCopyState === "failed" ? "복사 실패" : ""}</span></div><label>Repair response<textarea value={repairText} onChange={(event) => { onApprovedImportChange?.(null); setRepairText(event.target.value); setRepairPackage(null); setApprovalState((previous) => invalidateImportApproval(previous)); }} /></label><div className={styles.actions}><button type="button" onClick={previewRepair} disabled={!repairText}>Repair 적용 전 preview</button><button type="button" onClick={() => void applyRepair()} disabled={!repairPackage || !preview?.value}>허용 field repair 적용·재검증</button></div>{repairPackage && <pre>{JSON.stringify(repairPackage, null, 2)}</pre>}{repairIssues.map((entry) => <p key={`${entry.code}-${entry.fieldPath}`} className={styles.error}>{entry.message}</p>)}</>}
       </section>
 
       <section className={styles.step} aria-labelledby="step-6">
         <h2 id="step-6"><span>6</span> Session Approval</h2>
         <p>승인은 현재 브라우저 세션에만 적용되며 Trend Brief artifact로 저장되지 않습니다.</p>
-        <div className={styles.actions}><button type="button" onClick={() => setApprovalState("approved")} disabled={!canApproveImport(summary)}>사용자 명시적 승인</button><button type="button" className={styles.secondary} onClick={resetWorkbench}>작업 초기화</button></div>
+        <div className={styles.actions}><button type="button" onClick={approveImport} disabled={!canApproveImport(summary)}>사용자 명시적 승인</button><button type="button" className={styles.secondary} onClick={resetWorkbench}>작업 초기화</button></div>
         <p className={approvalState === "approved" ? styles.success : styles.muted} role="status">{approvalState === "approved" ? "세션 승인, 아직 저장되지 않음" : approvalState === "invalidated" ? "입력 또는 repair 변경으로 승인이 무효화됐습니다." : "승인되지 않음"}</p>
       </section>
     </main>

@@ -2,23 +2,22 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — governance transition
+## Shorts Editorial OS V2 — Slice 3 intelligence workflow
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_TOP_LEVEL_AUTONOMOUS_EXECUTION_AND_CHATGPT_CONTROL_TOWER_ESCALATION_GOVERNANCE_V1`.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_3_EVIDENCE_TOPIC_AND_SCRIPT_INTELLIGENCE_AUTONOMOUS_LOOP`.
 - Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`.
-- Slice 2 checkpoint HEAD: `58736883c200148e90fe4de44d7e25a1c63f70a2`; parent: `795ff8a93b350991c0069cd67f7b6ca58ee7f433`.
-- Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`.
-- Governance transition: `IMPLEMENTATION_COMPLETE_AWAITING_TARGETED_CROSS_REVIEW`.
-- Autonomous same-Slice loop: `PENDING_ACTIVATION`.
-- Mandatory routing header: `PENDING_ACTIVATION`.
-- ChatGPT major-decision escalation: `PENDING_ACTIVATION`.
-- Existing dirty snapshot: modified `21`, untracked `3`, staged `0`, status paths `24`; 보호 근거는 `_ai/SHORTS_EDITORIAL_OS_V2_SLICE_2_BASELINE.json`의 path별 SHA-256 24개와 status code다.
-- Governance Cross Review: `PENDING_CLAUDE_CODE_READ_ONLY_TARGETED_REVIEW`.
-- Governance checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`.
-- Slice 3: `BLOCKED_PENDING_OWNER_EXACT_SCOPE`; automatic continuation: `DISABLED`.
+- Governance transition: `FINAL_PASS`; checkpoint HEAD: `07840765d312fb6a1a897d68d575fc82ad4957c9`.
+- Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT major-decision escalation are `ACTIVE`.
+- Slice 3: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- Slice 3 scope: approved Trend Brief snapshot → structural-only Evidence Pack → deterministic Topic Candidates and heuristic evaluation → user-approved Selected Angle → provider-independent Detailed Script Prompt → pasted external LLM response normalization, validation, field repair, and session-only user approval.
+- Evidence Pack: `STRUCTURAL_ONLY`; external source existence, content, and factual verification: `NOT_IMPLEMENTED`.
+- detailed script package: `SESSION_ONLY`; durable persistence: `NOT_IMPLEMENTED`.
+- Scene Cards and Visual Planning: `NOT_IMPLEMENTED`; Slice 4: `BLOCKED` and automatic continuation: `DISABLED`.
+- runtime UI: `UNVERIFIED`; clipboard: `UNVERIFIED`; product operational capability: `NOT_CLAIMED`.
+- Slice 3 Cross Review: `NOT_STARTED`; exact 17-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
 - Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
-- Runtime/external integration: `NOT_STARTED`; product operational capability: `NOT_CLAIMED`.
-- Process finding: `PROCESS_DEVIATION_EXPLICITLY_FORBIDDEN_BUILD_EXECUTED_WITHOUT_SCOPE_AUTHORIZATION`; 이번 governance 작업에서는 product build/dev를 실행하지 않는다.
+- Slice 3 checker PASS 후 `pnpm build`를 허용 범위대로 정확히 1회 실행해 compile, TypeScript, static page generation을 통과했다; 기존 `next.config.ts` → `app/api/manual-render/route.ts` NFT 추적 범위 경고 1건은 수정하지 않았다.
+- Product dev, external API/search/URL fetch/DNS, DB/storage, generation/render/publish were not performed in Slice 3. Next build는 환경 파일 존재를 자동 표시했지만 Codex는 env/secret 값을 직접 읽거나 출력·요약·편집하지 않았다.
 
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 

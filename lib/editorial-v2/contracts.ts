@@ -97,6 +97,17 @@ export interface TopicCandidate {
   readonly title: string;
   readonly angle: string;
   readonly evidenceRefs: readonly string[];
+  readonly sourceSignalId: string;
+  readonly angleType: TopicAngleType;
+  readonly workingTitle: string;
+  readonly hookPromise: string;
+  readonly viewerQuestion: string;
+  readonly lifeImpact: string;
+  readonly claimRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly generationRationale: string;
+  readonly ordinal: number;
 }
 
 export interface TopicCandidatesPayload {
@@ -330,3 +341,216 @@ export interface FieldRepairPackage {
 }
 
 export type ImportApprovalState = "not_approved" | "approved" | "invalidated";
+
+export interface ApprovedTrendBriefSessionSnapshot {
+  readonly candidate: TrendBriefImportCandidate;
+  readonly rawHash: string;
+  readonly normalizedHash: string;
+  readonly expectedInput: TrendResearchPromptInput;
+  readonly validationSummary: TrendBriefImportValidationSummary;
+  readonly approvalState: "approved";
+}
+
+export type EvidenceVerificationLevel = "structural_only";
+export type EvidenceFreshnessClassification = "fresh" | "stale" | "unknown";
+
+export interface EvidenceSourceRecord {
+  readonly sourceId: string;
+  readonly publisher: string;
+  readonly title: string;
+  readonly url: string;
+  readonly publishedAt: string;
+  readonly eventDate: string | null;
+  readonly freshness: EvidenceFreshnessClassification;
+  readonly originalIndex: number;
+}
+
+export interface EvidenceClaimRecord {
+  readonly claimId: string;
+  readonly signalId: string;
+  readonly headline: string;
+  readonly claim: string;
+  readonly whyNow: string;
+  readonly audienceImpact: string;
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+}
+
+export interface EvidenceNumberRecord {
+  readonly numberId: string;
+  readonly signalId: string;
+  readonly value: number;
+  readonly unit: string;
+  readonly currency: string | null;
+  readonly asOf: string;
+  readonly context: string;
+  readonly sourceRefs: readonly string[];
+}
+
+export interface EvidenceSignalCoverage {
+  readonly signalId: string;
+  readonly sourceCount: number;
+  readonly numberCount: number;
+  readonly freshSourceCount: number;
+}
+
+export interface EvidenceCoverageSummary {
+  readonly sourceCount: number;
+  readonly signalCount: number;
+  readonly numberCount: number;
+  readonly freshSourceCount: number;
+  readonly signalCoverage: readonly EvidenceSignalCoverage[];
+  readonly warnings: readonly string[];
+}
+
+export interface EvidencePackProvenance {
+  readonly rawHash: string;
+  readonly normalizedHash: string;
+  readonly researchCutoffDate: string;
+  readonly researchWindow: ResearchWindowPreset;
+  readonly domain: string;
+  readonly audience: string;
+  readonly targetDurationSeconds: TargetDurationSeconds;
+  readonly sourceImportSchemaVersion: string;
+}
+
+export interface EvidencePackDraft {
+  readonly verificationLevel: EvidenceVerificationLevel;
+  readonly provenance: EvidencePackProvenance;
+  readonly sources: readonly EvidenceSourceRecord[];
+  readonly claims: readonly EvidenceClaimRecord[];
+  readonly numbers: readonly EvidenceNumberRecord[];
+  readonly coverage: EvidenceCoverageSummary;
+}
+
+export interface EvidenceReviewState {
+  readonly status: "not_reviewed" | "approved" | "invalidated";
+  readonly blockingIssues: readonly string[];
+  readonly warnings: readonly string[];
+}
+
+export type TopicAngleType = "number_first" | "why_now" | "life_impact";
+
+export type TopicEvaluationMetricName =
+  | "watch_reason"
+  | "freshness"
+  | "evidence"
+  | "specificity"
+  | "visual_proof"
+  | "audience_relevance"
+  | "retention_potential"
+  | "financial_safety";
+
+export interface TopicEvaluationMetric {
+  readonly name: TopicEvaluationMetricName;
+  readonly label: string;
+  readonly score: number;
+  readonly weight: number;
+  readonly weightedScore: number;
+  readonly reasons: readonly string[];
+  readonly evidenceReferences: readonly string[];
+}
+
+export interface TopicEvaluationResult {
+  readonly candidateId: string;
+  readonly totalScore: number;
+  readonly blockingIssues: readonly string[];
+  readonly warnings: readonly string[];
+  readonly scoreBreakdown: readonly TopicEvaluationMetric[];
+  readonly rank: number;
+  readonly tieBreakKey: string;
+  readonly scoreMeaning: "heuristic_pre_score_not_quality_gate";
+}
+
+export interface SelectedAngleDraft {
+  readonly selectedAngleId: string;
+  readonly candidateId: string;
+  readonly sourceSignalId: string;
+  readonly workingTitle: string;
+  readonly hookPromise: string;
+  readonly angleStatement: string;
+  readonly viewerQuestion: string;
+  readonly sourceRefs: readonly string[];
+  readonly claimRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+}
+
+export interface SelectedAngleValidationIssue {
+  readonly code: string;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface SelectedAngleValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly issues: readonly SelectedAngleValidationIssue[];
+}
+
+export type SelectedAngleApprovalState = "not_approved" | "approved" | "invalidated";
+
+export const DETAILED_SCRIPT_BEAT_TYPES = [
+  "anomaly_or_problem",
+  "common_interpretation_crack",
+  "evidence_and_number",
+  "hidden_cause_or_connection",
+  "audience_life_impact",
+  "misread_correction",
+  "practical_check_or_action",
+  "next_signal_to_watch",
+] as const;
+
+export type DetailedScriptBeatType = (typeof DETAILED_SCRIPT_BEAT_TYPES)[number];
+
+export interface DetailedScriptBeat {
+  readonly beatId: string;
+  readonly beatType: DetailedScriptBeatType;
+  readonly purpose: string;
+  readonly narration: string;
+  readonly keyCaption: string;
+  readonly claimRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly retentionDevice: string;
+}
+
+export interface DetailedScriptPackage {
+  readonly schemaVersion: string;
+  readonly selectedAngleId: string;
+  readonly title: string;
+  readonly audience: string;
+  readonly durationSeconds: TargetDurationSeconds;
+  readonly thesis: string;
+  readonly beats: readonly DetailedScriptBeat[];
+  readonly closingAction: string;
+  readonly nextSignal: string;
+  readonly financialSafetyNote: string;
+}
+
+export interface DetailedScriptValidationIssue extends ImportIssue {}
+
+export interface DetailedScriptValidationSummary extends ImportValidationSummary {
+  readonly issues: readonly DetailedScriptValidationIssue[];
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+}
+
+export type DetailedScriptApprovalState = "not_approved" | "approved" | "invalidated";
+
+export interface EditorialIntelligenceSessionState {
+  readonly approvedTrendBrief: ApprovedTrendBriefSessionSnapshot | null;
+  readonly evidencePack: EvidencePackDraft | null;
+  readonly evidenceReview: EvidenceReviewState;
+  readonly topicCandidates: readonly TopicCandidate[];
+  readonly topicEvaluations: readonly TopicEvaluationResult[];
+  readonly selectedAngle: SelectedAngleDraft | null;
+  readonly selectedAngleApproval: SelectedAngleApprovalState;
+  readonly scriptPrompt: PromptPackage | null;
+  readonly scriptRawText: string;
+  readonly scriptPackage: DetailedScriptPackage | null;
+  readonly scriptValidation: DetailedScriptValidationSummary | null;
+  readonly scriptRepairText: string;
+  readonly scriptApproval: DetailedScriptApprovalState;
+}

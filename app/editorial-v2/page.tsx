@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import ResearchImportWorkbench from "../../components/editorial-v2/ResearchImportWorkbench";
+import EditorialV2Workbench from "../../components/editorial-v2/EditorialV2Workbench";
 import { isEditorialV2Enabled } from "../../lib/editorial-v2/feature-flag";
 
 export default function EditorialV2Page() {
@@ -8,5 +8,5 @@ export default function EditorialV2Page() {
     notFound();
   }
 
-  return <ResearchImportWorkbench />;
+  return <EditorialV2Workbench />;
 }
