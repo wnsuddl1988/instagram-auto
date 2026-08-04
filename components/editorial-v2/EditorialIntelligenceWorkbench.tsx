@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 
 import type {
+  ApprovedDetailedScriptSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
   DetailedScriptPackage,
   DetailedScriptValidationIssue,
@@ -20,6 +21,7 @@ import {
 } from "../../lib/editorial-v2/intelligence-session";
 import { parseFieldRepairPackage } from "../../lib/editorial-v2/import-repair";
 import { hashNormalizedImport, isDuplicateImportHash, sha256Utf8 } from "../../lib/editorial-v2/import-session";
+import { cloneApprovedDetailedScriptSnapshot } from "../../lib/editorial-v2/planning-session";
 import {
   applyDetailedScriptRepairs,
   buildDetailedScriptRepairPrompt,
@@ -41,6 +43,7 @@ import styles from "./EditorialIntelligenceWorkbench.module.css";
 
 interface EditorialIntelligenceWorkbenchProps {
   readonly approvedSnapshot: ApprovedTrendBriefSessionSnapshot;
+  readonly onApprovedScriptChange?: (snapshot: ApprovedDetailedScriptSessionSnapshot | null) => void;
 }
 
 type CopyState = "idle" | "copied" | "failed";
@@ -64,7 +67,10 @@ function mergeValidation(
   };
 }
 
-export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: EditorialIntelligenceWorkbenchProps) {
+export default function EditorialIntelligenceWorkbench({
+  approvedSnapshot,
+  onApprovedScriptChange,
+}: EditorialIntelligenceWorkbenchProps) {
   const [session, dispatch] = useReducer(
     reduceEditorialIntelligenceSession,
     approvedSnapshot,
@@ -91,7 +97,14 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
     : null;
   const scriptRepairPaths = getDetailedScriptRepairAllowedPaths(session.scriptValidation);
 
+  useEffect(() => () => onApprovedScriptChange?.(null), [onApprovedScriptChange]);
+
+  function invalidateApprovedScript(): void {
+    onApprovedScriptChange?.(null);
+  }
+
   function clearScriptImportUi(): void {
+    invalidateApprovedScript();
     setNormalizationMethod("not_imported");
     setScriptRawHash("");
     setScriptNormalizedHash("");
@@ -123,6 +136,14 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
     dispatch({
       type: "evidence_review_changed",
       review: { ...session.evidenceReview, status: "approved" },
+    });
+    clearScriptImportUi();
+  }
+
+  function cancelEvidenceApproval(): void {
+    dispatch({
+      type: "evidence_review_changed",
+      review: { ...session.evidenceReview, status: "not_reviewed" },
     });
     clearScriptImportUi();
   }
@@ -169,6 +190,7 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
   }
 
   function updateScriptRaw(rawText: string): void {
+    invalidateApprovedScript();
     dispatch({ type: "script_raw_changed", rawText });
     setNormalizationMethod("not_imported");
     setScriptRawHash("");
@@ -180,6 +202,7 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
 
   async function previewScriptImport(): Promise<void> {
     if (!session.evidencePack || !session.selectedAngle) return;
+    invalidateApprovedScript();
     const normalized = normalizeDetailedScriptResponse(session.scriptRawText);
     const rawHash = await sha256Utf8(session.scriptRawText);
     const duplicate = isDuplicateImportHash(rawHash, rawImportHashes);
@@ -224,6 +247,7 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
 
   function applyRepair(): void {
     if (!repairPackage || !session.scriptPackage || !session.evidencePack || !session.selectedAngle) return;
+    invalidateApprovedScript();
     const applied = applyDetailedScriptRepairs(session.scriptPackage, repairPackage, scriptRepairPaths);
     const summary = mergeValidation(validateDetailedScriptPackage(applied.value, {
       selectedAngle: session.selectedAngle,
@@ -240,9 +264,33 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
   }
 
   function reset(): void {
+    invalidateApprovedScript();
     dispatch({ type: "reset" });
     setRawImportHashes([]);
     clearScriptImportUi();
+  }
+
+  function approveDetailedScript(): void {
+    if (!session.scriptPackage || !session.scriptValidation || !session.evidencePack || !session.selectedAngle) return;
+    if (!scriptRawHash || !scriptNormalizedHash || !canApproveDetailedScript(session.scriptValidation)) return;
+    dispatch({ type: "script_approved" });
+    onApprovedScriptChange?.(cloneApprovedDetailedScriptSnapshot({
+      approvedScript: session.scriptPackage,
+      evidencePack: session.evidencePack,
+      selectedAngle: session.selectedAngle,
+      scriptRawHash,
+      scriptNormalizedHash,
+      evidenceIdentity: session.evidencePack.provenance.normalizedHash,
+      validation: session.scriptValidation,
+      approvalState: "approved",
+      audience: approvedSnapshot.expectedInput.audience,
+      durationSeconds: approvedSnapshot.expectedInput.targetDurationSeconds,
+    }));
+  }
+
+  function cancelDetailedScriptApproval(): void {
+    dispatch({ type: "script_repair_response_changed", repairText: session.scriptRepairText });
+    invalidateApprovedScript();
   }
 
   return (
@@ -261,7 +309,7 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
           <p className={styles.notice}>URL 존재·publisher 신뢰도·출처 진위는 확인하지 않았습니다. Evidence Gate PASS가 아닙니다.</p>
           <div className={styles.tableWrap}><table><thead><tr><th>Source</th><th>Publisher</th><th>Title</th><th>Freshness</th></tr></thead><tbody>{session.evidencePack.sources.map((source) => <tr key={source.sourceId}><td>{source.sourceId}</td><td>{source.publisher}</td><td>{source.title}</td><td>{source.freshness}</td></tr>)}</tbody></table></div>
           <ul className={styles.issues}>{session.evidenceReview.blockingIssues.map((entry) => <li key={entry} data-kind="error">차단 · {entry}</li>)}{session.evidenceReview.warnings.map((entry) => <li key={entry} data-kind="warning">경고 · {entry}</li>)}</ul>
-          <div className={styles.actions}><button type="button" onClick={approveEvidence} disabled={session.evidenceReview.blockingIssues.length > 0 || session.evidenceReview.status === "approved"}>Evidence 확인</button><strong>{session.evidenceReview.status === "approved" ? "사용자 확인 완료" : "확인 대기"}</strong></div>
+          <div className={styles.actions}><button type="button" onClick={approveEvidence} disabled={session.evidenceReview.blockingIssues.length > 0 || session.evidenceReview.status === "approved"}>Evidence 확인</button><button type="button" className={styles.secondary} onClick={cancelEvidenceApproval} disabled={session.evidenceReview.status !== "approved"}>Evidence 확인 취소</button><strong>{session.evidenceReview.status === "approved" ? "사용자 확인 완료" : "확인 대기"}</strong></div>
         </>}
       </section>
 
@@ -302,8 +350,8 @@ export default function EditorialIntelligenceWorkbench({ approvedSnapshot }: Edi
       <section className={styles.step} aria-labelledby="intelligence-repair">
         <h2 id="intelligence-repair"><span>6</span> Script Repair and Approval</h2>
         <div className={styles.actions}><button type="button" onClick={generateRepairPrompt} disabled={!session.scriptValidation || scriptRepairPaths.length === 0}>Repair prompt 생성</button><small>허용된 기존 leaf field만 수정합니다.</small></div>
-        {repairPrompt && <><textarea className={styles.largeTextarea} readOnly aria-label="Script repair prompt" value={repairPrompt.instructions} /><div className={styles.actions}><button type="button" onClick={() => void copyText(repairPrompt.instructions, setRepairCopyState)}>Repair prompt 복사</button><span role="status">{repairCopyState === "copied" ? "복사 완료" : repairCopyState === "failed" ? "복사 실패" : ""}</span></div><label>Repair response<textarea value={session.scriptRepairText} onChange={(event) => { dispatch({ type: "script_repair_response_changed", repairText: event.target.value }); setRepairPackage(null); }} /></label><div className={styles.actions}><button type="button" onClick={previewRepair} disabled={!session.scriptRepairText}>적용 전 preview</button><button type="button" onClick={applyRepair} disabled={!repairPackage}>Field-level 적용·재검증</button></div>{repairPackage && <pre>{JSON.stringify(repairPackage, null, 2)}</pre>}{repairIssues.map((entry, index) => <p className={styles.error} key={`${entry.code}:${index}`}>{entry.message}</p>)}</>}
-        <div className={styles.actions}><button type="button" onClick={() => dispatch({ type: "script_approved" })} disabled={!canApproveDetailedScript(session.scriptValidation)}>Detailed Script Package 사용자 승인</button><button type="button" className={styles.secondary} onClick={reset}>Slice 3 session reset</button></div>
+        {repairPrompt && <><textarea className={styles.largeTextarea} readOnly aria-label="Script repair prompt" value={repairPrompt.instructions} /><div className={styles.actions}><button type="button" onClick={() => void copyText(repairPrompt.instructions, setRepairCopyState)}>Repair prompt 복사</button><span role="status">{repairCopyState === "copied" ? "복사 완료" : repairCopyState === "failed" ? "복사 실패" : ""}</span></div><label>Repair response<textarea value={session.scriptRepairText} onChange={(event) => { invalidateApprovedScript(); dispatch({ type: "script_repair_response_changed", repairText: event.target.value }); setRepairPackage(null); }} /></label><div className={styles.actions}><button type="button" onClick={previewRepair} disabled={!session.scriptRepairText}>적용 전 preview</button><button type="button" onClick={applyRepair} disabled={!repairPackage}>Field-level 적용·재검증</button></div>{repairPackage && <pre>{JSON.stringify(repairPackage, null, 2)}</pre>}{repairIssues.map((entry, index) => <p className={styles.error} key={`${entry.code}:${index}`}>{entry.message}</p>)}</>}
+        <div className={styles.actions}><button type="button" onClick={approveDetailedScript} disabled={!canApproveDetailedScript(session.scriptValidation) || !scriptRawHash || !scriptNormalizedHash}>Detailed Script Package 사용자 승인</button><button type="button" className={styles.secondary} onClick={cancelDetailedScriptApproval} disabled={session.scriptApproval !== "approved"}>Script 승인 취소</button><button type="button" className={styles.secondary} onClick={reset}>Slice 3 session reset</button></div>
         <p className={session.scriptApproval === "approved" ? styles.success : styles.muted} role="status">{session.scriptApproval === "approved" ? "세션 승인, 저장되지 않음" : session.scriptApproval === "invalidated" ? "변경으로 승인이 무효화됐습니다." : "승인되지 않음"}</p>
         <p className={styles.notice}>Scene Card와 Visual Planning은 아직 생성되지 않았습니다.</p>
       </section>

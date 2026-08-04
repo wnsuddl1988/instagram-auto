@@ -2,23 +2,24 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — Slice 3 read-only Cross Review
+## Shorts Editorial OS V2 — Slice 4 read-only Cross Review
 
-- Slice 0·1·2와 governance checkpoint는 `FINAL_PASS`; governance checkpoint HEAD는 `07840765d312fb6a1a897d68d575fc82ad4957c9`다.
-- Slice 3 implementation: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- 다음 routine 작업은 승인된 정확한 17개 파일에 대한 `Claude Code Slice 3 read-only Cross Review`다.
+- Slice 0·1·2·3은 `FINAL_PASS`; Slice 3 checkpoint HEAD는 `3edc034022e179492c38272f30049c5950fe54c3`다.
+- Slice 4 implementation: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- 다음 routine 작업은 승인된 정확한 14개 파일에 대한 `Claude Code Slice 4 read-only Cross Review`다.
 - `ChatGPT 중간 전달 불필요`; Owner는 Codex가 제공하는 prompt를 Claude Code에 전달하고, `Claude 결과는 Codex에 전달`한다.
 - Claude Code는 파일 수정·임시 파일 생성·external write·commit·push 없이 `PASS | NEEDS_FIX | BLOCKED`, `P0/P1/P2`, `CONTROL_TOWER_ESCALATION_TRIGGERED`를 보고한다.
-- 일반 P1이고 17-file allowlist 안의 same-Slice correction이면 Codex가 국소 수정과 targeted re-review를 이어간다. `P0/BLOCKED/scope expansion`은 Control Tower escalation 대상이다.
-- Claude 최종 `PASS`, `P0 0`, `P1 0`, escalation `NO`이면 exact 17-file checkpoint commit이 사전 승인돼 있다.
-- 고정 commit message는 `feat(editorial-v2): checkpoint slice 3 intelligence workflow`; push는 `NOT_AUTHORIZED`다.
-- `Slice 4 자동 시작 금지`; Scene Cards와 Visual Planning도 `BLOCKED`다.
-- 허용된 `pnpm build` 1회는 PASS로 완료됐으므로 재실행하지 않는다. Product dev, 외부 API·검색·URL fetch·DNS·DB/storage·생성·렌더·게시·deploy·push·env/secret 접근은 실행하지 않는다.
-- 상태: `SLICE_3_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
+- 승인 범위 안의 일반 P1이고 escalation `NO`이면 Codex가 국소 수정과 targeted re-review를 자율 진행한다. `P0/BLOCKED/scope expansion`은 ChatGPT Control Tower escalation 대상이다.
+- Claude 최종 `PASS`, `P0 0`, `P1 0`, escalation `NO`이면 exact 14-file checkpoint commit이 사전 승인돼 있다.
+- 고정 commit message는 `feat(editorial-v2): checkpoint slice 4 scene planning`; push는 `NOT_AUTHORIZED`다.
+- `Slice 5 자동 시작 금지`; 실제 asset generation·render·publish·durable persistence도 금지다.
+- Slice 4 최종 checker `464/464 PASS`, targeted TypeScript `0`, 허용된 `pnpm build` 1회 PASS가 완료됐다. Build 이후 국소 safety correction은 최종 checker·TypeScript로 검증했고 build 1회 제한에 따라 재실행하지 않는다.
+- Product dev, browser, 외부 API·검색·URL fetch·DNS·DB/storage·생성·렌더·게시·deploy·push·env/secret 접근을 실행하지 않는다.
+- 상태: `SLICE_4_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
 
-## Slice 3 review 후 분기
+## Slice 4 review 후 분기
 
-1. `PASS`, `P0 0`, `P1 0`, escalation `NO`: exact 17-file checkpoint commit을 수행하고 결과를 보고한다.
+1. `PASS`, `P0 0`, `P1 0`, escalation `NO`: exact 14-file checkpoint commit을 수행하고 결과를 보고한다.
 2. allowlist 안의 일반 P1, escalation `NO`: 최소 correction 후 Claude targeted re-review를 요청한다.
 3. P0, BLOCKED, escalation `YES`, 우선순위 충돌, 범위 확대 필요, 반복 P1: 즉시 중단하고 ChatGPT Control Tower decision packet을 출력한다.
 

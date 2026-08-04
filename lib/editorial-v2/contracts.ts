@@ -554,3 +554,206 @@ export interface EditorialIntelligenceSessionState {
   readonly scriptRepairText: string;
   readonly scriptApproval: DetailedScriptApprovalState;
 }
+
+export interface ApprovedDetailedScriptSessionSnapshot {
+  readonly approvedScript: DetailedScriptPackage;
+  readonly evidencePack: EvidencePackDraft;
+  readonly selectedAngle: SelectedAngleDraft;
+  readonly scriptRawHash: string;
+  readonly scriptNormalizedHash: string;
+  readonly evidenceIdentity: string;
+  readonly validation: DetailedScriptValidationSummary;
+  readonly approvalState: "approved";
+  readonly audience: string;
+  readonly durationSeconds: TargetDurationSeconds;
+}
+
+export interface SceneCardRevision {
+  readonly value: number;
+  readonly origin: "deterministic_default" | "user_override";
+}
+
+export interface SceneCardProvenance {
+  readonly beatId: string;
+  readonly beatType: DetailedScriptBeatType;
+  readonly sourceSignalId: string;
+  readonly claimRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly selectedAngleId: string;
+  readonly scriptPackageIdentity: string;
+  readonly sceneRevision: SceneCardRevision;
+}
+
+export interface SceneCardDraft extends SceneCard {
+  readonly provenance: SceneCardProvenance;
+}
+
+export interface SceneCardValidationIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface SceneCardValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly enabledSceneCount: number;
+  readonly issues: readonly SceneCardValidationIssue[];
+}
+
+export type VisualStrategyType =
+  | "number_text_motion"
+  | "chart_comparison"
+  | "official_source_card"
+  | "timeline"
+  | "relationship_diagram"
+  | "map"
+  | "character_motion"
+  | "generated_image"
+  | "generated_video"
+  | "stock_video"
+  | "direct_upload";
+
+export type VisualStrategyClass = "evidence_first" | "supporting" | "illustrative";
+
+export type AssetAcquisitionMode =
+  | "deterministic_overlay"
+  | "manual_ai_image"
+  | "manual_ai_video"
+  | "manual_stock"
+  | "direct_upload_required";
+
+export type VisualCostClass = "none_estimate" | "low_estimate" | "medium_estimate" | "high_estimate" | "unknown_estimate";
+
+export type RightsReviewState = "not_required" | "pending_manual_review" | "reviewed_for_planning";
+
+export type CharacterMotionTag =
+  | "none"
+  | "point_to_source"
+  | "highlight_number"
+  | "trace_relationship"
+  | "watch_timeline";
+
+export interface ChartPlan {
+  readonly numberRefs: readonly string[];
+  readonly labels: readonly string[];
+  readonly unit: string;
+  readonly comparisonMode: "side_by_side";
+}
+
+export interface SourceCardPlan {
+  readonly sourceRefs: readonly string[];
+  readonly publisherLabels: readonly string[];
+  readonly downloadExpected: false;
+}
+
+export interface TimelinePlan {
+  readonly entries: readonly {
+    readonly evidenceRef: string;
+    readonly date: string;
+    readonly label: string;
+  }[];
+}
+
+export interface RelationshipDiagramPlan {
+  readonly labels: readonly string[];
+  readonly evidenceRefs: readonly string[];
+  readonly inventedCausalityAllowed: false;
+}
+
+export interface GeneratedImagePlan {
+  readonly promptDraft: string;
+  readonly illustrativeOnly: true;
+  readonly actualGenerationRequested: false;
+}
+
+export interface GeneratedVideoPlan {
+  readonly promptDraft: string;
+  readonly illustrativeOnly: true;
+  readonly actualGenerationRequested: false;
+}
+
+export interface StockVideoPlan {
+  readonly contextRequirement: string;
+  readonly searchRequested: false;
+  readonly illustrativeOnly: true;
+}
+
+export interface DirectUploadPlan {
+  readonly requirement: string;
+  readonly uploadRequested: false;
+}
+
+export interface SceneVisualPlan {
+  readonly sceneId: string;
+  readonly sceneRevision: SceneCardRevision;
+  readonly primaryStrategy: VisualStrategyType;
+  readonly primaryStrategyClass: VisualStrategyClass;
+  readonly secondaryStrategies: readonly VisualStrategyType[];
+  readonly acquisitionMode: AssetAcquisitionMode;
+  readonly evidenceRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly chartPlan: ChartPlan | null;
+  readonly sourceCardPlan: SourceCardPlan | null;
+  readonly timelinePlan: TimelinePlan | null;
+  readonly relationshipDiagramPlan: RelationshipDiagramPlan | null;
+  readonly generatedImagePlan: GeneratedImagePlan | null;
+  readonly generatedVideoPlan: GeneratedVideoPlan | null;
+  readonly stockVideoPlan: StockVideoPlan | null;
+  readonly directUploadPlan: DirectUploadPlan | null;
+  readonly characterMotionTag: CharacterMotionTag;
+  readonly cameraMotion: string;
+  readonly textMotion: string;
+  readonly generationPromptDraft: string | null;
+  readonly stockContextRequirement: string | null;
+  readonly directUploadRequirement: string | null;
+  readonly costClass: VisualCostClass;
+  readonly requiresOwnerApproval: boolean;
+  readonly ownerApprovalConfirmed: boolean;
+  readonly rightsReviewState: RightsReviewState;
+  readonly visualProofClass: "STRUCTURAL_PRECHECK_ONLY";
+  readonly warnings: readonly string[];
+  readonly blockingIssues: readonly string[];
+}
+
+export interface VisualProofIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface VisualProofSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly verificationLevel: "STRUCTURAL_PRECHECK_ONLY";
+  readonly issues: readonly VisualProofIssue[];
+}
+
+export type ScenePlanningApprovalState = "not_approved" | "approved" | "invalidated";
+
+export interface ApprovedScenePlanningSessionSnapshot {
+  readonly approvedScriptIdentity: string;
+  readonly sceneCards: readonly SceneCardDraft[];
+  readonly sceneValidation: SceneCardValidationSummary;
+  readonly visualPlan: readonly SceneVisualPlan[];
+  readonly visualProof: VisualProofSummary;
+  readonly approvalState: "approved";
+}
+
+export interface ScenePlanningSessionState {
+  readonly approvedScript: ApprovedDetailedScriptSessionSnapshot | null;
+  readonly sceneCards: readonly SceneCardDraft[];
+  readonly sceneValidation: SceneCardValidationSummary | null;
+  readonly sceneCardApproval: ScenePlanningApprovalState;
+  readonly visualPlan: readonly SceneVisualPlan[];
+  readonly visualProof: VisualProofSummary | null;
+  readonly planningApproval: ScenePlanningApprovalState;
+}

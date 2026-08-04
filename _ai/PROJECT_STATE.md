@@ -2,22 +2,25 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — Slice 3 intelligence workflow
+## Shorts Editorial OS V2 — Slice 4 scene and visual planning
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_3_EVIDENCE_TOPIC_AND_SCRIPT_INTELLIGENCE_AUTONOMOUS_LOOP`.
-- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`.
-- Governance transition: `FINAL_PASS`; checkpoint HEAD: `07840765d312fb6a1a897d68d575fc82ad4957c9`.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_4_SCENE_CARDS_AND_VISUAL_PLANNING_AUTONOMOUS_LOOP`.
+- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`.
+- Slice 3 checkpoint HEAD: `3edc034022e179492c38272f30049c5950fe54c3`; parent: `07840765d312fb6a1a897d68d575fc82ad4957c9`.
 - Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT major-decision escalation are `ACTIVE`.
-- Slice 3: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- Slice 3 scope: approved Trend Brief snapshot → structural-only Evidence Pack → deterministic Topic Candidates and heuristic evaluation → user-approved Selected Angle → provider-independent Detailed Script Prompt → pasted external LLM response normalization, validation, field repair, and session-only user approval.
-- Evidence Pack: `STRUCTURAL_ONLY`; external source existence, content, and factual verification: `NOT_IMPLEMENTED`.
-- detailed script package: `SESSION_ONLY`; durable persistence: `NOT_IMPLEMENTED`.
-- Scene Cards and Visual Planning: `NOT_IMPLEMENTED`; Slice 4: `BLOCKED` and automatic continuation: `DISABLED`.
-- runtime UI: `UNVERIFIED`; clipboard: `UNVERIFIED`; product operational capability: `NOT_CLAIMED`.
-- Slice 3 Cross Review: `NOT_STARTED`; exact 17-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
+- Slice 4: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- Slice 4 scope: approved Detailed Script snapshot → deterministic 8 Scene Cards → Scene Card validation → evidence-first Visual Asset Plan → per-scene override → Visual Proof structural validation → session-only user approval.
+- Slice 4 Cross Review: `NOT_STARTED`; exact 14-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
+- Scene Cards: `SESSION_ONLY`; Visual Plan: `STRUCTURAL_PRECHECK_ONLY`; actual assets: `NOT_CREATED`.
+- Character system: `NOT_IMPLEMENTED`; render: `NOT_IMPLEMENTED`; runtime UI: `UNVERIFIED`.
+- durable persistence: `NOT_IMPLEMENTED`; product operational capability: `NOT_CLAIMED`.
+- Slice 5: `BLOCKED`; automatic continuation: `DISABLED`.
 - Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
-- Slice 3 checker PASS 후 `pnpm build`를 허용 범위대로 정확히 1회 실행해 compile, TypeScript, static page generation을 통과했다; 기존 `next.config.ts` → `app/api/manual-render/route.ts` NFT 추적 범위 경고 1건은 수정하지 않았다.
-- Product dev, external API/search/URL fetch/DNS, DB/storage, generation/render/publish were not performed in Slice 3. Next build는 환경 파일 존재를 자동 표시했지만 Codex는 env/secret 값을 직접 읽거나 출력·요약·편집하지 않았다.
+- Slice 3 maintenance backlog: 숫자 표기 동등값의 안전측 과잉 차단 가능성과 금융 안전 정규식 중복은 비차단 P2로 유지하며 Slice 4에서 수정하지 않았다.
+- Slice 4 최종 자체 검증: checker `464/464 PASS`; targeted TypeScript syntactic/semantic diagnostics 각각 `0`.
+- Slice 4 최초 checker PASS 후 `pnpm build`를 허용 범위대로 정확히 1회 실행해 compile, 전체 TypeScript, 26개 page generation을 통과했다; 기존 `next.config.ts` → `app/api/manual-render/route.ts` NFT 추적 경고 1건은 수정하지 않았다.
+- Build 후 checker self-audit에서 manual acquisition/secondary rights 상태 전이를 국소 보강했고 최종 checker·TypeScript를 재통과했다. 1회 제한에 따라 build는 재실행하지 않았다.
+- External API/search/URL fetch/DNS, DB/storage, asset generation, upload, render, publish, deploy, env/secret direct read were not performed in Slice 4.
 
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 
