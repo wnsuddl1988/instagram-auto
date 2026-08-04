@@ -757,3 +757,292 @@ export interface ScenePlanningSessionState {
   readonly visualProof: VisualProofSummary | null;
   readonly planningApproval: ScenePlanningApprovalState;
 }
+
+// Slice 5 augments the approved planning identity without weakening the Slice 4 contract.
+export interface ApprovedScenePlanningSessionSnapshot {
+  readonly approvedScriptRawHash: string;
+  readonly approvedScriptNormalizedHash: string;
+  readonly evidenceIdentity: string;
+  readonly selectedAngleId: string;
+}
+
+export type CharacterDirectionId =
+  | "loop_signal_navigator"
+  | "pin_field_finch"
+  | "moa_archive_sprite";
+
+export type CharacterDirectionStatus = "comparison_only";
+
+export type CharacterSilhouetteClass =
+  | "asymmetric_open_signal_ring"
+  | "direction_pin_with_information_wings"
+  | "layered_archive_tabs";
+
+export type CharacterVisualRole =
+  | "signal_navigation"
+  | "source_navigation"
+  | "number_navigation"
+  | "comparison_navigation"
+  | "warning_navigation"
+  | "timeline_navigation"
+  | "relationship_navigation";
+
+export interface CharacterDirectionDefinition {
+  readonly directionId: CharacterDirectionId;
+  readonly temporaryDisplayName: string;
+  readonly status: CharacterDirectionStatus;
+  readonly silhouetteClass: CharacterSilhouetteClass;
+  readonly silhouetteDescription: string;
+  readonly visualRoles: readonly CharacterVisualRole[];
+  readonly personality: string;
+  readonly motionVocabularyEmphasis: readonly string[];
+  readonly implementationComplexity: "low" | "medium" | "high";
+  readonly maintenanceComplexity: "low" | "medium" | "high";
+  readonly accessibilityConsiderations: readonly string[];
+  readonly screenOccupancyTargetPercent: number;
+  readonly evidencePriorityRule: "character_secondary_evidence_first";
+  readonly rightsProvenance: "internal_svg_primitives_only";
+  readonly similarityRisks: readonly string[];
+  readonly prohibitedMotifs: readonly string[];
+  readonly reducedMotionBehavior: string;
+  readonly finalIdentityApproved: false;
+}
+
+export type CharacterRigLayerId =
+  | "root"
+  | "body"
+  | "signalCore"
+  | "indicator"
+  | "pointer"
+  | "leftGuide"
+  | "rightGuide"
+  | "evidencePanel"
+  | "accent"
+  | "focusMarker";
+
+export interface CharacterRigLayerDefinition {
+  readonly layerId: CharacterRigLayerId;
+  readonly semanticRole: CharacterVisualRole;
+  readonly primitive: "circle" | "ellipse" | "rect" | "path" | "line" | "polyline";
+  readonly transformOrigin: readonly [number, number];
+  readonly zOrder: number;
+  readonly opacity: number;
+  readonly scale: number;
+  readonly rotationDegrees: number;
+  readonly translation: readonly [number, number];
+  readonly fillToken: string;
+  readonly strokeToken: string;
+  readonly reducedMotionVisible: boolean;
+}
+
+export interface CharacterRigDefinition {
+  readonly rigVersion: "character-rig-v1";
+  readonly directionId: CharacterDirectionId;
+  readonly viewBox: readonly [number, number, number, number];
+  readonly layers: readonly CharacterRigLayerDefinition[];
+  readonly evidenceNavigationLayerIds: readonly CharacterRigLayerId[];
+  readonly occupancyTargetPercent: number;
+  readonly reducedMotionDescription: string;
+  readonly prohibitedMotifMarkers: readonly string[];
+  readonly productionExportReady: false;
+}
+
+export const CHARACTER_RIG_MOTION_TAGS = [
+  "idle_scan",
+  "signal_detect",
+  "source_scan",
+  "number_emphasis",
+  "compare_left_right",
+  "cause_effect_link",
+  "warning_pulse",
+  "discovery_reveal",
+  "next_signal_point",
+  "chart_assist",
+  "source_card_assist",
+] as const;
+
+export type CharacterRigMotionTag = (typeof CHARACTER_RIG_MOTION_TAGS)[number];
+export type CharacterMotionIntensity = "low" | "medium" | "high";
+
+export interface CharacterMotionTiming {
+  readonly durationMs: number;
+  readonly easingToken: "ease_in_out" | "ease_out" | "linear_soft";
+  readonly loopPolicy: "none" | "limited_2" | "ambient_pause";
+}
+
+export interface CharacterMotionKeyframe {
+  readonly offset: number;
+  readonly opacity: number;
+  readonly scale: number;
+  readonly rotationDegrees: number;
+  readonly translateX: number;
+  readonly translateY: number;
+}
+
+export interface CharacterMotionDefinition {
+  readonly motionTag: CharacterRigMotionTag;
+  readonly semanticPurpose: string;
+  readonly timing: CharacterMotionTiming;
+  readonly keyframes: readonly CharacterMotionKeyframe[];
+  readonly affectedLayerIds: readonly CharacterRigLayerId[];
+  readonly affectedSemanticRoles: readonly CharacterVisualRole[];
+  readonly maximumScale: number;
+  readonly maximumRotationDegrees: number;
+  readonly maximumTranslation: number;
+  readonly screenOccupancyConstraintPercent: number;
+  readonly reducedMotionAlternative: string;
+  readonly evidenceObstructionPolicy: "never_cover_primary_evidence";
+  readonly allowedDirectionIds: readonly CharacterDirectionId[];
+  readonly createsNewFact: false;
+  readonly rapidFlashAllowed: false;
+}
+
+export interface SceneCharacterMotionAssignment {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly directionId: CharacterDirectionId;
+  readonly motionTag: CharacterRigMotionTag;
+  readonly intensity: CharacterMotionIntensity;
+  readonly enabled: boolean;
+  readonly characterRole: "secondary_evidence_navigation";
+  readonly reducedMotionAlternative: string;
+  readonly screenOccupancyClass: "compact" | "standard";
+  readonly primaryVisualStrategy: VisualStrategyType;
+  readonly evidenceRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly obstructionWarning: string | null;
+  readonly userOverride: boolean;
+}
+
+export interface CharacterMotionPlan {
+  readonly planVersion: "character-motion-plan-v1";
+  readonly vocabularyVersion: "character-motion-v1";
+  readonly directionId: CharacterDirectionId;
+  readonly sourcePlanningIdentity: string;
+  readonly assignments: readonly SceneCharacterMotionAssignment[];
+  readonly reducedMotionAssignments: readonly SceneCharacterMotionAssignment[];
+  readonly productionRendered: false;
+}
+
+export interface CharacterComparisonScene {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly narration: string;
+  readonly keyCaption: string;
+  readonly primaryVisualStrategy: VisualStrategyType;
+  readonly semanticMotionTag: CharacterRigMotionTag;
+  readonly evidenceRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+}
+
+export interface CharacterComparisonResult {
+  readonly scene: CharacterComparisonScene;
+  readonly comparedDirectionIds: readonly CharacterDirectionId[];
+  readonly sameSceneIdentityConfirmed: boolean;
+  readonly sameSemanticMotionTagConfirmed: boolean;
+  readonly standardMotionReviewed: boolean;
+  readonly reducedMotionReviewed: boolean;
+}
+
+export type CharacterOriginalityCheckId =
+  | "not_money_face"
+  | "not_reference_silhouette"
+  | "not_reference_expression_prop_palette"
+  | "not_reference_signature_motion"
+  | "no_external_svg_icon_font"
+  | "no_third_party_logo"
+  | "no_real_person_face"
+  | "evidence_first_priority"
+  | "character_secondary_only"
+  | "screen_occupancy_within_target"
+  | "no_evidence_obstruction"
+  | "reduced_motion_supported"
+  | "no_rapid_flashing"
+  | "status_not_color_only"
+  | "internal_svg_rights_provenance";
+
+export interface CharacterOriginalityCheck {
+  readonly checkId: CharacterOriginalityCheckId;
+  readonly label: string;
+  readonly confirmed: boolean;
+  readonly blocking: true;
+}
+
+export interface CharacterAccessibilityReview {
+  readonly reducedMotionCompared: boolean;
+  readonly rapidFlashingAbsent: boolean;
+  readonly statusNotColorOnly: boolean;
+  readonly evidenceRemainsReadable: boolean;
+  readonly blockingIssueCount: number;
+}
+
+export interface CharacterRightsReview {
+  readonly sourceStatus: "OWNED_ORIGINAL";
+  readonly provenance: "internal_svg_primitives_only";
+  readonly externalAssetsUsed: false;
+  readonly thirdPartyMarksUsed: false;
+  readonly realPersonLikenessUsed: false;
+  readonly blockingIssueCount: number;
+}
+
+export interface CharacterDirectionSelectionDraft {
+  readonly directions: readonly CharacterDirectionDefinition[];
+  readonly rigs: readonly CharacterRigDefinition[];
+  readonly motionPlans: readonly CharacterMotionPlan[];
+  readonly comparisonResult: CharacterComparisonResult | null;
+  readonly selectedDirectionId: CharacterDirectionId | null;
+  readonly originalityChecks: readonly CharacterOriginalityCheck[];
+  readonly rightsReview: CharacterRightsReview;
+  readonly accessibilityReview: CharacterAccessibilityReview;
+  readonly approvalState: CharacterDirectionApprovalState;
+  readonly finalName: null;
+  readonly finalPalette: null;
+  readonly finalBrandIdentity: null;
+}
+
+export interface CharacterDirectionValidationIssue {
+  readonly code: string;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface CharacterDirectionValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly issues: readonly CharacterDirectionValidationIssue[];
+}
+
+export type CharacterDirectionApprovalState = "not_approved" | "provisionally_approved" | "invalidated";
+
+export interface ApprovedCharacterMotionSessionSnapshot {
+  readonly selectedDirectionId: CharacterDirectionId;
+  readonly temporaryDisplayName: string;
+  readonly rigVersion: "character-rig-v1";
+  readonly motionVocabularyVersion: "character-motion-v1";
+  readonly comparisonSceneId: string;
+  readonly sceneMotionAssignments: readonly SceneCharacterMotionAssignment[];
+  readonly reducedMotionAssignments: readonly SceneCharacterMotionAssignment[];
+  readonly originalityReview: readonly CharacterOriginalityCheck[];
+  readonly rightsReview: CharacterRightsReview;
+  readonly accessibilityReview: CharacterAccessibilityReview;
+  readonly provisionalApprovalState: "provisionally_approved";
+  readonly sourcePlanningIdentity: string;
+  readonly sessionOnly: true;
+  readonly finalIdentityApproved: false;
+  readonly productionAssetCreated: false;
+}
+
+export interface CharacterMotionSessionState {
+  readonly approvedPlanning: ApprovedScenePlanningSessionSnapshot | null;
+  readonly representativeScene: CharacterComparisonScene | null;
+  readonly selection: CharacterDirectionSelectionDraft | null;
+  readonly validation: CharacterDirectionValidationSummary | null;
+  readonly approvedSnapshot: ApprovedCharacterMotionSessionSnapshot | null;
+  readonly playbackState: "playing" | "paused";
+  readonly previewSpeed: 0.75 | 1 | 1.25;
+  readonly reducedMotion: boolean;
+}

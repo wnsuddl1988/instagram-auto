@@ -2,25 +2,26 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — Slice 4 scene and visual planning
+## Shorts Editorial OS V2 — Slice 5 character direction, rig, and motion system
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_4_SCENE_CARDS_AND_VISUAL_PLANNING_AUTONOMOUS_LOOP`.
-- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`.
-- Slice 3 checkpoint HEAD: `3edc034022e179492c38272f30049c5950fe54c3`; parent: `07840765d312fb6a1a897d68d575fc82ad4957c9`.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_5_CHARACTER_DIRECTION_RIG_AND_MOTION_SYSTEM_AUTONOMOUS_LOOP`.
+- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`; Slice 4: `FINAL_PASS`.
+- Slice 4 checkpoint HEAD: `80aa56cfdc75f3014fb5415392a6b363ced18feb`; parent: `3edc034022e179492c38272f30049c5950fe54c3`.
 - Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT major-decision escalation are `ACTIVE`.
-- Slice 4: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- Slice 4 scope: approved Detailed Script snapshot → deterministic 8 Scene Cards → Scene Card validation → evidence-first Visual Asset Plan → per-scene override → Visual Proof structural validation → session-only user approval.
-- Slice 4 Cross Review: `NOT_STARTED`; exact 14-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
+- Slice 5: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- Slice 5 scope: approved Scene Planning snapshot → three comparison-only character directions → reusable SVG rig prototypes → eleven semantic motions → deterministic scene mapping → originality, rights, and accessibility review → provisional session-only direction approval.
+- Slice 5 Cross Review: `NOT_STARTED`; exact 15-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
+- Character directions: `COMPARISON_ONLY`; selected direction: `PROVISIONAL_SESSION_ONLY`; SVG rig: `PROTOTYPE_ONLY`.
 - Scene Cards: `SESSION_ONLY`; Visual Plan: `STRUCTURAL_PRECHECK_ONLY`; actual assets: `NOT_CREATED`.
-- Character system: `NOT_IMPLEMENTED`; render: `NOT_IMPLEMENTED`; runtime UI: `UNVERIFIED`.
-- durable persistence: `NOT_IMPLEMENTED`; product operational capability: `NOT_CLAIMED`.
-- Slice 5: `BLOCKED`; automatic continuation: `DISABLED`.
+- Lottie/WebM export: `NOT_IMPLEMENTED`; actual asset generation: `NOT_IMPLEMENTED`; renderer integration: `NOT_IMPLEMENTED`.
+- runtime UI: `UNVERIFIED`; durable persistence: `NOT_IMPLEMENTED`; product operational capability: `NOT_CLAIMED`.
+- Slice 6: `BLOCKED`; automatic continuation: `DISABLED`.
 - Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
-- Slice 3 maintenance backlog: 숫자 표기 동등값의 안전측 과잉 차단 가능성과 금융 안전 정규식 중복은 비차단 P2로 유지하며 Slice 4에서 수정하지 않았다.
-- Slice 4 최종 자체 검증: checker `464/464 PASS`; targeted TypeScript syntactic/semantic diagnostics 각각 `0`.
-- Slice 4 최초 checker PASS 후 `pnpm build`를 허용 범위대로 정확히 1회 실행해 compile, 전체 TypeScript, 26개 page generation을 통과했다; 기존 `next.config.ts` → `app/api/manual-render/route.ts` NFT 추적 경고 1건은 수정하지 않았다.
-- Build 후 checker self-audit에서 manual acquisition/secondary rights 상태 전이를 국소 보강했고 최종 checker·TypeScript를 재통과했다. 1회 제한에 따라 build는 재실행하지 않았다.
-- External API/search/URL fetch/DNS, DB/storage, asset generation, upload, render, publish, deploy, env/secret direct read were not performed in Slice 4.
+- Slice 3 maintenance backlog: 숫자 표기 동등값의 안전측 과잉 차단 가능성과 금융 안전 정규식 중복은 비차단 P2로 유지한다.
+- Slice 4 maintenance backlog: 기본 visual strategy 우선순위 의도 주석과 visual plan field 복제 유지보수성은 비차단 P2로 유지하며 Slice 5에서 수정하지 않았다.
+- Character prototype provenance: 저장소 내부 React SVG primitive only; 외부 SVG·아이콘·폰트·이미지·실제 인물·타사 상표 사용 없음.
+- Character role: `SECONDARY_EVIDENCE_NAVIGATION_ONLY`; character가 primary evidence 또는 차트·숫자·source card 가림 요소가 되는 계획은 차단한다.
+- External API/search/URL fetch/DNS, DB/storage, asset generation, upload, render, publish, deploy, env/secret direct read were not performed in Slice 5.
 
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 

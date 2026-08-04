@@ -4,8 +4,10 @@ import { useState } from "react";
 
 import type {
   ApprovedDetailedScriptSessionSnapshot,
+  ApprovedScenePlanningSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
 } from "../../lib/editorial-v2/contracts";
+import CharacterMotionWorkbench from "./CharacterMotionWorkbench";
 import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
@@ -13,16 +15,26 @@ import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
 export default function EditorialV2Workbench() {
   const [approvedSnapshot, setApprovedSnapshot] = useState<ApprovedTrendBriefSessionSnapshot | null>(null);
   const [approvedScriptSnapshot, setApprovedScriptSnapshot] = useState<ApprovedDetailedScriptSessionSnapshot | null>(null);
+  const [approvedPlanningSnapshot, setApprovedPlanningSnapshot] = useState<ApprovedScenePlanningSessionSnapshot | null>(null);
   const intelligenceKey = approvedSnapshot
     ? `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`
     : "no-approved-trend-brief";
   const planningKey = approvedScriptSnapshot
     ? `${approvedScriptSnapshot.scriptNormalizedHash}:${approvedScriptSnapshot.evidenceIdentity}`
     : "no-approved-detailed-script";
+  const characterKey = approvedPlanningSnapshot
+    ? `${approvedPlanningSnapshot.approvedScriptNormalizedHash}:${approvedPlanningSnapshot.evidenceIdentity}:${approvedPlanningSnapshot.selectedAngleId}:${approvedPlanningSnapshot.sceneCards.map((scene) => `${scene.sceneId}:${scene.provenance.sceneRevision.value}`).join("|")}`
+    : "no-approved-scene-planning";
 
   function handleApprovedTrendBriefChange(snapshot: ApprovedTrendBriefSessionSnapshot | null): void {
     setApprovedSnapshot(snapshot);
     setApprovedScriptSnapshot(null);
+    setApprovedPlanningSnapshot(null);
+  }
+
+  function handleApprovedScriptChange(snapshot: ApprovedDetailedScriptSessionSnapshot | null): void {
+    setApprovedScriptSnapshot(snapshot);
+    setApprovedPlanningSnapshot(null);
   }
 
   return (
@@ -39,7 +51,7 @@ export default function EditorialV2Workbench() {
         <EditorialIntelligenceWorkbench
           key={intelligenceKey}
           approvedSnapshot={approvedSnapshot}
-          onApprovedScriptChange={setApprovedScriptSnapshot}
+          onApprovedScriptChange={handleApprovedScriptChange}
         />
       )}
       <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
@@ -53,6 +65,20 @@ export default function EditorialV2Workbench() {
         <ScenePlanningWorkbench
           key={planningKey}
           approvedScriptSnapshot={approvedScriptSnapshot}
+          onApprovedScenePlanningChange={setApprovedPlanningSnapshot}
+        />
+      )}
+      <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
+        <strong>Character Motion session-only 연결:</strong>{" "}
+        {approvedPlanningSnapshot
+          ? "승인된 Scene Planning snapshot이 Character Motion 비교 단계로 전달됐습니다. upstream 변경 시 character state 전체가 무효화됩니다."
+          : "승인된 Scene and Visual Planning이 없어 Character Motion Workbench가 잠겨 있습니다."}
+        <p>브라우저 내 SVG prototype이며 network·persistence·asset export·render는 없습니다.</p>
+      </aside>
+      {approvedPlanningSnapshot && (
+        <CharacterMotionWorkbench
+          key={characterKey}
+          approvedScenePlanningSnapshot={approvedPlanningSnapshot}
         />
       )}
     </div>

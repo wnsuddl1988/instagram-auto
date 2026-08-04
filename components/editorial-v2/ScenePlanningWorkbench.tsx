@@ -1,13 +1,15 @@
 "use client";
 
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 
 import type {
   ApprovedDetailedScriptSessionSnapshot,
+  ApprovedScenePlanningSessionSnapshot,
   AssetAcquisitionMode,
   CharacterMotionTag,
   RightsReviewState,
   SceneCardDraft,
+  SceneVisualPlan,
   VisualStrategyType,
 } from "../../lib/editorial-v2/contracts";
 import {
@@ -47,6 +49,30 @@ import styles from "./ScenePlanningWorkbench.module.css";
 
 interface ScenePlanningWorkbenchProps {
   readonly approvedScriptSnapshot: ApprovedDetailedScriptSessionSnapshot;
+  readonly onApprovedScenePlanningChange?: (
+    snapshot: ApprovedScenePlanningSessionSnapshot | null,
+  ) => void;
+}
+
+function cloneVisualPlan(plan: readonly SceneVisualPlan[]): readonly SceneVisualPlan[] {
+  return plan.map((entry) => ({
+    ...entry,
+    sceneRevision: { ...entry.sceneRevision },
+    secondaryStrategies: [...entry.secondaryStrategies],
+    evidenceRefs: [...entry.evidenceRefs],
+    sourceRefs: [...entry.sourceRefs],
+    numberRefs: [...entry.numberRefs],
+    chartPlan: entry.chartPlan ? { ...entry.chartPlan, numberRefs: [...entry.chartPlan.numberRefs], labels: [...entry.chartPlan.labels] } : null,
+    sourceCardPlan: entry.sourceCardPlan ? { ...entry.sourceCardPlan, sourceRefs: [...entry.sourceCardPlan.sourceRefs], publisherLabels: [...entry.sourceCardPlan.publisherLabels] } : null,
+    timelinePlan: entry.timelinePlan ? { entries: entry.timelinePlan.entries.map((item) => ({ ...item })) } : null,
+    relationshipDiagramPlan: entry.relationshipDiagramPlan ? { ...entry.relationshipDiagramPlan, labels: [...entry.relationshipDiagramPlan.labels], evidenceRefs: [...entry.relationshipDiagramPlan.evidenceRefs] } : null,
+    generatedImagePlan: entry.generatedImagePlan ? { ...entry.generatedImagePlan } : null,
+    generatedVideoPlan: entry.generatedVideoPlan ? { ...entry.generatedVideoPlan } : null,
+    stockVideoPlan: entry.stockVideoPlan ? { ...entry.stockVideoPlan } : null,
+    directUploadPlan: entry.directUploadPlan ? { ...entry.directUploadPlan } : null,
+    warnings: [...entry.warnings],
+    blockingIssues: [...entry.blockingIssues],
+  }));
 }
 
 const VISUAL_STRATEGIES: readonly VisualStrategyType[] = [
@@ -60,12 +86,57 @@ const SOUND_EFFECTS = ["soft_alert", "contrast_click", "data_tick", "line_draw",
 const ACQUISITION_MODES: readonly AssetAcquisitionMode[] = ["deterministic_overlay", "manual_ai_image", "manual_ai_video", "manual_stock", "direct_upload_required"];
 const RIGHTS_STATES: readonly RightsReviewState[] = ["pending_manual_review", "reviewed_for_planning"];
 
-export default function ScenePlanningWorkbench({ approvedScriptSnapshot }: ScenePlanningWorkbenchProps) {
+export default function ScenePlanningWorkbench({
+  approvedScriptSnapshot,
+  onApprovedScenePlanningChange,
+}: ScenePlanningWorkbenchProps) {
   const [session, dispatch] = useReducer(
     reduceScenePlanningSession,
     approvedScriptSnapshot,
     createInitialScenePlanningSession,
   );
+
+  useEffect(() => {
+    if (!onApprovedScenePlanningChange) return;
+    if (
+      session.planningApproval !== "approved"
+      || !session.sceneValidation
+      || !session.visualProof
+      || !canApproveScenePlanning(session)
+    ) {
+      onApprovedScenePlanningChange(null);
+      return;
+    }
+    onApprovedScenePlanningChange({
+      approvedScriptIdentity: approvedScriptSnapshot.scriptNormalizedHash,
+      approvedScriptRawHash: approvedScriptSnapshot.scriptRawHash,
+      approvedScriptNormalizedHash: approvedScriptSnapshot.scriptNormalizedHash,
+      evidenceIdentity: approvedScriptSnapshot.evidenceIdentity,
+      selectedAngleId: approvedScriptSnapshot.selectedAngle.selectedAngleId,
+      sceneCards: session.sceneCards.map((scene) => ({
+        ...scene,
+        evidenceRefs: [...scene.evidenceRefs],
+        sourceRefs: [...scene.sourceRefs],
+        provenance: {
+          ...scene.provenance,
+          claimRefs: [...scene.provenance.claimRefs],
+          numberRefs: [...scene.provenance.numberRefs],
+          sourceRefs: [...scene.provenance.sourceRefs],
+          sceneRevision: { ...scene.provenance.sceneRevision },
+        },
+      })),
+      sceneValidation: {
+        ...session.sceneValidation,
+        issues: session.sceneValidation.issues.map((entry) => ({ ...entry })),
+      },
+      visualPlan: cloneVisualPlan(session.visualPlan),
+      visualProof: {
+        ...session.visualProof,
+        issues: session.visualProof.issues.map((entry) => ({ ...entry })),
+      },
+      approvalState: "approved",
+    });
+  }, [approvedScriptSnapshot, onApprovedScenePlanningChange, session]);
 
   function generateSceneCards(): void {
     const sceneCards = buildSceneCardDrafts(approvedScriptSnapshot);
