@@ -2,6 +2,27 @@
 
 Updated: 2026-08-06 KST
 
+## Shorts Editorial OS V2 — Slice 8 read-only Cross Review
+
+- Slice 0~7는 `FINAL_PASS`; Slice 7 checkpoint HEAD는 `9a29fd4d2fd3e828a45f31d0c0ee2332465b4a62`다.
+- Slice 8 implementation: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- 다음 routine 작업은 exact 17개 path에 대한 `Claude Code Slice 8 read-only Cross Review`다.
+- `ChatGPT 중간 전달 불필요`; Owner는 Codex가 제공하는 prompt를 Claude Code에 전달하고, `Claude 결과는 Codex에 전달`한다.
+- Claude Code는 파일 수정·임시 파일 생성·external write·probe 재실행·commit·push 없이 `PASS | NEEDS_FIX | BLOCKED`, `P0/P1/P2`, `CONTROL_TOWER_ESCALATION_TRIGGERED`를 보고한다.
+- 승인 범위 안의 일반 `P1 correction`이고 escalation `NO`이면 Codex가 17-path allowlist 안에서 최대 2회 국소 수정과 targeted re-review를 자율 진행한다.
+- `P0/BLOCKED/scope expansion`, 최종 브랜드 선택, 실제 production sample/account/API/asset generation 필요는 ChatGPT Control Tower escalation 대상이다.
+- Claude 최종 PASS, P0 0, P1 0, checker·diagnostics·synthetic proof·보호 baseline PASS이면 exact 17-file checkpoint가 사전 승인돼 있다.
+- 고정 commit message: `feat(editorial-v2): checkpoint slice 8 relaunch readiness`; Push: `NOT_AUTHORIZED`.
+- Production Activation 자동 시작 금지; final brand/account/OAuth/external TTS/actual asset/user-content render/persistence/publish/deploy/push도 금지다.
+- Codex 검증: checker `784/784 PASS`; targeted TypeScript semantic/syntactic 각각 `0`; final full `pnpm exec tsc --noEmit` PASS; `git diff --check` PASS; synthetic representative sample probe `PASS` (1회); `pnpm build` PASS (1회, 이후 pure hardening은 tsc+checker 재검증); exact 41-path와 보호 mismatch `0`.
+- 상태: `SLICE_8_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
+
+## Slice 8 review 후 분기
+
+1. PASS, P0 0, P1 0, escalation NO: exact 17-file checkpoint를 수행한다.
+2. allowlist 안의 일반 P1, escalation NO: 최대 2회 최소 correction 후 Claude targeted re-review를 요청한다.
+3. P0, BLOCKED, escalation YES, scope expansion, 최종 브랜드 결정 또는 실제 외부 실행 필요: 즉시 ChatGPT Control Tower로 에스컬레이션한다.
+
 ## Shorts Editorial OS V2 — Slice 7 read-only Cross Review
 
 - Slice 0·1·2·3·4·5·6는 `FINAL_PASS`; Slice 6 checkpoint HEAD는 `5e0e0e044b3ebea6af07b98e733a3eac6a96aa2c`다.

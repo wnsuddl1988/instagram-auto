@@ -2,6 +2,25 @@
 
 Updated: 2026-08-06 KST
 
+## Shorts Editorial OS V2 — Slice 8 representative sample and relaunch readiness
+
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_8_REPRESENTATIVE_SAMPLE_AND_RELAUNCH_READINESS_AUTONOMOUS_LOOP`.
+- Slice 0~7: `FINAL_PASS`; Slice 7 checkpoint HEAD: `9a29fd4d2fd3e828a45f31d0c0ee2332465b4a62`; actual parent: `5e0e0e044b3ebea6af07b98e733a3eac6a96aa2c`.
+- Governance: `ACTIVE`; Slice 8: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; Slice 8 Cross Review: `NOT_STARTED`.
+- Scope: approved Publish Integration snapshot → end-to-end provenance → eight-scene representative storyboard → synthetic local sample proof → three relaunch directions → provisional identity/descriptions/SVG drafts/pinned post → launch checklist → Production Activation gaps.
+- exact 17-file checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint slice 8 relaunch readiness`.
+- representative sample: `SYNTHETIC_ONLY`; user-content production sample: `NOT_IMPLEMENTED`; sample validation: `REPRESENTATIVE_SAMPLE_PRECHECK_ONLY`.
+- relaunch identity: `PROVISIONAL_SESSION_ONLY`; final brand: `NOT_APPROVED`; handle availability: `UNVERIFIED`; current platform limits: `UNVERIFIED`.
+- profile/cover: `INLINE_SVG_PREVIEW_ONLY`; actual visual assets: `NOT_CREATED`; final typography/color/character name: `NOT_APPROVED`.
+- actual account changes: `NOT_EXECUTED`; external TTS: `NOT_CONNECTED`; production render: `NOT_IMPLEMENTED`; OAuth: `NOT_CONNECTED`; actual publish: `NOT_IMPLEMENTED`; durable persistence: `NOT_IMPLEMENTED`.
+- Production Activation gaps: `_ai/SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_GAPS.md`; public launch readiness: `FALSE`; Production Activation: `BLOCKED_PENDING_CHATGPT_CONTROL_TOWER_SCOPE`.
+- self-check: Slice 8 checker `784/784 PASS`; targeted TypeScript semantic `0`, syntactic `0`; final full `pnpm exec tsc --noEmit` PASS; `git diff --check` PASS; exact 41-path와 보호 mismatch `0`.
+- synthetic representative sample probe: `PASS` (정확히 1회); 8 scenes, 1080×1920, 30fps, 24 seconds, video/audio/subtitle streams, output SHA-256 `30f034e968108161da68de0b8d837aad26e3a7ef0a2d32b48ba4682a2c76da9f`, `publicReady=false`, `syntheticOnly=true`, temporary directory removed, repository status unchanged.
+- optional build: `PASS` (정확히 1회); Next.js compile·TypeScript·26 routes/pages generation 완료. Build 후 pure provenance/reference hardening은 final full `tsc`와 checker로 재검증했으며 build/probe는 재실행하지 않았다. 기존 `next.config.ts`/`app/api/manual-render/route.ts` NFT dynamic trace warning 1건은 pre-existing이며 Slice 8 경로 밖이다.
+- runtime UI: `UNVERIFIED`; product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; automatic continuation: `DISABLED`; progress: `NOT_CALCULATED`.
+- P2 backlog 유지: Slice 3 숫자 표기/금융 정규식, Slice 4 visual-plan 유지보수성, Slice 5 최종 identity, Slice 6 renderer capability/voice locale, Slice 7 deterministic digest 및 manual identity 범위 주석.
+- External API/search/URL fetch/DNS, actual TTS/image/video asset generation, actual user-content render, account/OAuth, DB/storage, upload/publish/schedule, deploy, push, env/secret direct read는 Slice 8에서 수행하지 않았다.
+
 ## Shorts Editorial OS V2 — Slice 7 publish package, identity, dedupe, and recovery dry-run
 
 - Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_7_PUBLISH_PACKAGE_IDENTITY_DEDUPE_AND_RECOVERY_DRY_RUN_AUTONOMOUS_LOOP`.

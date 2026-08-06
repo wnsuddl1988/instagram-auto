@@ -1734,3 +1734,386 @@ export interface PublishIntegrationSessionState {
   readonly approvalState: PublishApprovalState;
   readonly approvedSnapshot: ApprovedPublishIntegrationSessionSnapshot | null;
 }
+
+// Slice 8 augments the approved publish snapshot without weakening the Slice 7 contract.
+export interface ApprovedPublishIntegrationSessionSnapshot {
+  readonly sourceRenderIntegrationSnapshot: ApprovedRenderIntegrationSessionSnapshot;
+  readonly sourceRenderIntegrationIdentity: string;
+  readonly sceneFingerprints: readonly SceneRenderFingerprint[];
+  readonly selectedCharacterDirectionId: CharacterDirectionId;
+  readonly platformPackages: readonly PlatformPublishPackage[];
+  readonly publishMetadata: readonly PublishMetadataDraft[];
+  readonly sourceDisclosures: readonly PublishSourceDisclosurePlan[];
+  readonly destinationIdentityPlan: readonly PublishExpectedDestinationIdentity[];
+  readonly dedupeKeys: readonly PublishDeduplicationKey[];
+}
+
+export type RepresentativeSampleStatus =
+  | "synthetic_local_proof_ready"
+  | "user_content_production_blocked"
+  | "public_launch_blocked";
+
+export type RepresentativeSampleLevel = "REPRESENTATIVE_SAMPLE_PRECHECK_ONLY";
+
+export interface RepresentativeSampleProvenance {
+  readonly trendBriefIdentity: string;
+  readonly evidencePackIdentity: string;
+  readonly selectedAngleIdentity: string;
+  readonly detailedScriptIdentity: string;
+  readonly scenePlanningIdentity: string;
+  readonly characterMotionIdentity: string;
+  readonly renderIntegrationIdentity: string;
+  readonly publishIntegrationIdentity: string;
+  readonly renderManifestHash: string;
+  readonly publishPackageHash: string;
+  readonly selectedCharacterDirectionId: CharacterDirectionId;
+  readonly platformPackageIdentities: readonly string[];
+}
+
+export interface RepresentativeSampleScene {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly narration: string;
+  readonly keyCaption: string;
+  readonly beatType: DetailedScriptBeatType;
+  readonly evidenceRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly primaryVisualStrategy: VisualStrategyType;
+  readonly secondaryVisualStrategies: readonly VisualStrategyType[];
+  readonly characterMotion: SceneCharacterMotionAssignment | null;
+  readonly subtitleCueSummary: string;
+  readonly publishCoverCandidate: boolean;
+  readonly unresolvedAssets: readonly string[];
+  readonly rightsState: RightsReviewState;
+  readonly costState: VisualCostClass;
+  readonly safeAreaState: "structural_precheck_pass" | "structural_precheck_blocked";
+  readonly actualAssetAvailable: false;
+  readonly productionReady: false;
+}
+
+export interface RepresentativeSampleStoryboard {
+  readonly storyboardVersion: "representative-storyboard-v1";
+  readonly sceneCount: 8;
+  readonly scenes: readonly RepresentativeSampleScene[];
+  readonly sourceOrderPreserved: true;
+  readonly syntheticOnly: true;
+  readonly productionReady: false;
+  readonly publicLaunchReady: false;
+}
+
+export interface RepresentativeSampleRenderProfile {
+  readonly profileVersion: "representative-sample-profile-v1";
+  readonly width: 1080;
+  readonly height: 1920;
+  readonly framesPerSecond: 30;
+  readonly targetDurationSeconds: 24;
+  readonly syntheticToneAudio: true;
+  readonly actualTts: false;
+  readonly actualVisualAssets: false;
+  readonly publicReady: false;
+}
+
+export interface RepresentativeSampleReferenceRegistry {
+  readonly evidenceRefs: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+}
+
+export interface RepresentativeSampleProvenanceChecks {
+  readonly publishSnapshotApproved: boolean;
+  readonly renderSnapshotApproved: boolean;
+  readonly renderManifestMatchesPublishPackage: boolean;
+  readonly selectedCharacterDirectionMatches: boolean;
+  readonly sceneFingerprintsMatch: boolean;
+  readonly platformPackagesMatch: boolean;
+  readonly upstreamExecutionFlagsClear: boolean;
+}
+
+export interface RepresentativeSamplePackage {
+  readonly packageVersion: "representative-sample-package-v1";
+  readonly packageId: string;
+  readonly status: "synthetic_local_proof_ready";
+  readonly productionStatus: "user_content_production_blocked";
+  readonly launchStatus: "public_launch_blocked";
+  readonly validationLevel: RepresentativeSampleLevel;
+  readonly provenance: RepresentativeSampleProvenance;
+  readonly storyboard: RepresentativeSampleStoryboard;
+  readonly renderProfile: RepresentativeSampleRenderProfile;
+  readonly referenceRegistry: RepresentativeSampleReferenceRegistry;
+  readonly provenanceChecks: RepresentativeSampleProvenanceChecks;
+  readonly sourceDisclosurePresent: boolean;
+  readonly publishMetadataPresent: boolean;
+  readonly unresolvedRequirements: readonly string[];
+  readonly executionRequested: false;
+  readonly externalRequestsMade: false;
+  readonly userContentIncluded: false;
+  readonly actualAssetsIncluded: false;
+  readonly actualRenderExecuted: false;
+  readonly syntheticOnly: true;
+  readonly productionReady: false;
+  readonly publicLaunchReady: false;
+}
+
+export interface RepresentativeSampleRenderProof {
+  readonly proofVersion: "representative-sample-render-proof-v1";
+  readonly sceneCount: 8;
+  readonly width: 1080;
+  readonly height: 1920;
+  readonly framesPerSecond: 30;
+  readonly durationSeconds: number;
+  readonly videoStreamPresent: boolean;
+  readonly audioStreamPresent: boolean;
+  readonly subtitleStreamPresent: boolean;
+  readonly outputSha256: string;
+  readonly nonEmptyOutput: boolean;
+  readonly repositoryStatusUnchanged: boolean;
+  readonly temporaryDirectoryRemoved: boolean;
+  readonly publicReady: false;
+  readonly syntheticOnly: true;
+}
+
+export interface RepresentativeSampleValidationIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface RepresentativeSampleValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly verificationLevel: RepresentativeSampleLevel;
+  readonly approvable: boolean;
+  readonly publicLaunchReady: false;
+  readonly issues: readonly RepresentativeSampleValidationIssue[];
+}
+
+export type RelaunchDirectionId =
+  | "evidence_signal_lab"
+  | "everyday_economy_lens"
+  | "hidden_connection_brief";
+
+export interface RelaunchDirectionDefinition {
+  readonly directionId: RelaunchDirectionId;
+  readonly temporaryDirectionLabel: string;
+  readonly channelPromise: string;
+  readonly editorialEmphasis: readonly string[];
+  readonly audienceEmphasis: string;
+  readonly tone: string;
+  readonly visualIdentityPrinciples: readonly string[];
+  readonly titleStyle: string;
+  readonly descriptionStyle: string;
+  readonly pinnedPostStyle: string;
+  readonly similarityRisk: string;
+  readonly prohibitedClaims: readonly string[];
+  readonly provisionalOnly: true;
+  readonly finalOwnerApprovalRequired: true;
+}
+
+export interface ChannelHandleCandidate {
+  readonly handle: string;
+  readonly platformIntent: "instagram" | "youtube" | "cross_platform";
+  readonly availabilityVerified: false;
+  readonly provisionalOnly: true;
+}
+
+export interface ChannelSourceDisclosureStandard {
+  readonly standardVersion: "channel-source-standard-v1";
+  readonly shortStatement: string;
+  readonly fullStatement: string;
+  readonly requiresSourceAndAsOfDate: true;
+  readonly sourceExistenceExternallyVerified: false;
+}
+
+export interface ChannelFinancialSafetyStandard {
+  readonly standardVersion: "channel-financial-safety-v1";
+  readonly statement: string;
+  readonly investmentAdviceProvided: false;
+  readonly returnGuaranteesAllowed: false;
+  readonly specificSecurityRecommendationsAllowed: false;
+}
+
+export interface ProvisionalChannelIdentityDraft {
+  readonly draftVersion: "provisional-channel-identity-v1";
+  readonly directionId: RelaunchDirectionId;
+  readonly channelDisplayNameCandidate: string;
+  readonly handleCandidates: readonly ChannelHandleCandidate[];
+  readonly oneLinePromise: string;
+  readonly primaryAudience: string;
+  readonly preferredDirectionLabel: string;
+  readonly prohibitedWords: readonly string[];
+  readonly optionalTagline: string | null;
+  readonly provisionalOnly: true;
+  readonly finalBrandApproved: false;
+  readonly finalHandleAvailabilityVerified: false;
+  readonly actualAccountChanged: false;
+  readonly finalOwnerApprovalRequired: true;
+}
+
+export interface ChannelDescriptionPackage {
+  readonly descriptionVersion: "channel-description-package-v1";
+  readonly instagramBioDraft: string;
+  readonly youtubeShortDescription: string;
+  readonly youtubeFullDescription: string;
+  readonly sourceStandard: ChannelSourceDisclosureStandard;
+  readonly financialSafetyStandard: ChannelFinancialSafetyStandard;
+  readonly launchHashtags: readonly string[];
+  readonly initialContentPillars: readonly string[];
+  readonly currentPlatformLimitsVerified: false;
+  readonly performanceClaimsIncluded: false;
+  readonly provisionalOnly: true;
+}
+
+export interface ProfileAssetDraft {
+  readonly assetDraftVersion: "profile-asset-draft-v1";
+  readonly badgeText: string;
+  readonly conceptDescription: string;
+  readonly characterDirectionId: CharacterDirectionId;
+  readonly inlineSvgPreviewOnly: true;
+  readonly actualProductionAsset: false;
+  readonly thirdPartyAssetsUsed: false;
+}
+
+export interface CoverAssetDraft {
+  readonly assetDraftVersion: "cover-asset-draft-v1";
+  readonly coverTitle: string;
+  readonly coverSubtitle: string;
+  readonly sourceFirstBadge: string;
+  readonly safeAreaGuideRequired: true;
+  readonly inlineSvgPreviewOnly: true;
+  readonly actualProductionAsset: false;
+  readonly thirdPartyAssetsUsed: false;
+}
+
+export interface PinnedRelaunchPostDraft {
+  readonly postVersion: "pinned-relaunch-post-v1";
+  readonly headline: string;
+  readonly contentPromise: string;
+  readonly sourceCommitment: string;
+  readonly financialSafetyStatement: string;
+  readonly firstContentPillars: readonly string[];
+  readonly performanceClaimsIncluded: false;
+  readonly publicPostCreated: false;
+  readonly provisionalOnly: true;
+}
+
+export interface RelaunchAssetPlan {
+  readonly planVersion: "relaunch-asset-plan-v1";
+  readonly profile: ProfileAssetDraft;
+  readonly verticalCover: CoverAssetDraft;
+  readonly youtubeBanner: CoverAssetDraft;
+  readonly pinnedPostCover: CoverAssetDraft;
+  readonly characterOriginalityState: "owned_original_planning_evidence";
+  readonly rightsState: "planning_review_only";
+  readonly actualAssetsCreated: false;
+}
+
+export interface RelaunchPackage {
+  readonly packageVersion: "relaunch-readiness-package-v1";
+  readonly packageId: string;
+  readonly directions: readonly RelaunchDirectionDefinition[];
+  readonly selectedDirectionId: RelaunchDirectionId;
+  readonly identityDraft: ProvisionalChannelIdentityDraft;
+  readonly descriptions: ChannelDescriptionPackage;
+  readonly pinnedPost: PinnedRelaunchPostDraft;
+  readonly assetPlan: RelaunchAssetPlan;
+  readonly finalBrandApproved: false;
+  readonly actualAccountChanged: false;
+  readonly publicLaunchReady: false;
+  readonly controlTowerFinalApprovalRequired: true;
+}
+
+export interface RelaunchValidationIssue {
+  readonly code: string;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface RelaunchValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly approvable: boolean;
+  readonly publicLaunchReady: false;
+  readonly issues: readonly RelaunchValidationIssue[];
+}
+
+export type LaunchReadinessCategory =
+  | "content"
+  | "evidence"
+  | "brand"
+  | "character"
+  | "voice"
+  | "assets"
+  | "render"
+  | "account"
+  | "publishing"
+  | "persistence"
+  | "rights"
+  | "cost"
+  | "operations";
+
+export type LaunchReadinessStatus = "ready_for_scope_request" | "blocked" | "not_verified";
+
+export interface LaunchReadinessChecklistItem {
+  readonly itemId: string;
+  readonly category: LaunchReadinessCategory;
+  readonly label: string;
+  readonly status: LaunchReadinessStatus;
+  readonly blocking: boolean;
+  readonly evidence: readonly string[];
+  readonly requiredAction: string;
+  readonly responsibleRole: "Owner" | "ChatGPT Control Tower" | "Codex Main" | "Production Activation implementation";
+  readonly externalActionRequired: boolean;
+}
+
+export interface LaunchReadinessSummary {
+  readonly totalCount: number;
+  readonly blockingCount: number;
+  readonly notVerifiedCount: number;
+  readonly categoryCounts: readonly {
+    readonly category: LaunchReadinessCategory;
+    readonly total: number;
+    readonly blocking: number;
+  }[];
+  readonly canRequestProductionActivation: boolean;
+  readonly publicLaunchReady: false;
+}
+
+export type RelaunchApprovalState = "not_approved" | "provisionally_approved" | "invalidated";
+
+export interface ApprovedRelaunchReadinessSessionSnapshot {
+  readonly representativePackage: RepresentativeSamplePackage;
+  readonly representativeValidation: RepresentativeSampleValidationSummary;
+  readonly relaunchPackage: RelaunchPackage;
+  readonly relaunchValidation: RelaunchValidationSummary;
+  readonly launchChecklist: readonly LaunchReadinessChecklistItem[];
+  readonly launchReadiness: LaunchReadinessSummary;
+  readonly selectedDirectionId: RelaunchDirectionId;
+  readonly allDirectionsReviewed: true;
+  readonly actualProductionGapsAcknowledged: true;
+  readonly controlTowerFinalApprovalAcknowledged: true;
+  readonly approvalState: "provisionally_approved";
+  readonly sessionOnly: true;
+  readonly finalBrandApproved: false;
+  readonly actualAccountChanged: false;
+  readonly actualAssetsCreated: false;
+  readonly publicLaunchApproved: false;
+  readonly publicLaunchReady: false;
+}
+
+export interface Slice8SessionState {
+  readonly approvedPublishIntegration: ApprovedPublishIntegrationSessionSnapshot | null;
+  readonly representativePackage: RepresentativeSamplePackage | null;
+  readonly representativeValidation: RepresentativeSampleValidationSummary | null;
+  readonly relaunchPackage: RelaunchPackage | null;
+  readonly relaunchValidation: RelaunchValidationSummary | null;
+  readonly launchChecklist: readonly LaunchReadinessChecklistItem[];
+  readonly launchReadiness: LaunchReadinessSummary | null;
+  readonly approvalState: RelaunchApprovalState;
+  readonly approvedSnapshot: ApprovedRelaunchReadinessSessionSnapshot | null;
+}

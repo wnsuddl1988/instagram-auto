@@ -17,6 +17,7 @@ import { buildPlatformPublishMetadata } from "../../lib/editorial-v2/publish-met
 import { buildPublishPackage, clonePublishPackage, hashPublishPackage } from "../../lib/editorial-v2/publish-package";
 import { buildFailedPlatformRetryPackage, buildPublishRecoveryPlan } from "../../lib/editorial-v2/publish-recovery";
 import { canApprovePublishIntegration, summarizePublishValidation, validatePublishIntegration } from "../../lib/editorial-v2/publish-validation";
+import { cloneRenderManifest } from "../../lib/editorial-v2/render-manifest";
 import styles from "./PublishIntegrationWorkbench.module.css";
 
 interface PublishIntegrationWorkbenchProps {
@@ -34,6 +35,61 @@ function createEmptyLedger(sessionIdentity: string): SessionPublicationLedger {
 
 function platformLabel(platformId: PublishPlatformId): string {
   return platformId === "instagram_reels" ? "Instagram Reels" : "YouTube Shorts";
+}
+
+function cloneApprovedRenderIntegrationSnapshot(
+  snapshot: ApprovedRenderIntegrationSessionSnapshot,
+): ApprovedRenderIntegrationSessionSnapshot {
+  return {
+    ...snapshot,
+    sourceDetailedScriptSnapshot: {
+      ...snapshot.sourceDetailedScriptSnapshot,
+      approvedScript: {
+        ...snapshot.sourceDetailedScriptSnapshot.approvedScript,
+        beats: snapshot.sourceDetailedScriptSnapshot.approvedScript.beats.map((beat) => ({
+          ...beat,
+          claimRefs: [...beat.claimRefs],
+          sourceRefs: [...beat.sourceRefs],
+          numberRefs: [...beat.numberRefs],
+        })),
+      },
+      evidencePack: {
+        ...snapshot.sourceDetailedScriptSnapshot.evidencePack,
+        provenance: { ...snapshot.sourceDetailedScriptSnapshot.evidencePack.provenance },
+        sources: snapshot.sourceDetailedScriptSnapshot.evidencePack.sources.map((source) => ({ ...source })),
+        claims: snapshot.sourceDetailedScriptSnapshot.evidencePack.claims.map((claim) => ({ ...claim, sourceRefs: [...claim.sourceRefs], numberRefs: [...claim.numberRefs] })),
+        numbers: snapshot.sourceDetailedScriptSnapshot.evidencePack.numbers.map((number) => ({ ...number, sourceRefs: [...number.sourceRefs] })),
+        coverage: {
+          ...snapshot.sourceDetailedScriptSnapshot.evidencePack.coverage,
+          signalCoverage: snapshot.sourceDetailedScriptSnapshot.evidencePack.coverage.signalCoverage.map((coverage) => ({ ...coverage })),
+          warnings: [...snapshot.sourceDetailedScriptSnapshot.evidencePack.coverage.warnings],
+        },
+      },
+      selectedAngle: {
+        ...snapshot.sourceDetailedScriptSnapshot.selectedAngle,
+        sourceRefs: [...snapshot.sourceDetailedScriptSnapshot.selectedAngle.sourceRefs],
+        claimRefs: [...snapshot.sourceDetailedScriptSnapshot.selectedAngle.claimRefs],
+        numberRefs: [...snapshot.sourceDetailedScriptSnapshot.selectedAngle.numberRefs],
+      },
+      validation: {
+        ...snapshot.sourceDetailedScriptSnapshot.validation,
+        issues: snapshot.sourceDetailedScriptSnapshot.validation.issues.map((issue) => ({ ...issue })),
+      },
+    },
+    sourceCharacterSnapshot: {
+      ...snapshot.sourceCharacterSnapshot,
+      sceneMotionAssignments: snapshot.sourceCharacterSnapshot.sceneMotionAssignments.map((assignment) => ({ ...assignment, evidenceRefs: [...assignment.evidenceRefs], sourceRefs: [...assignment.sourceRefs], numberRefs: [...assignment.numberRefs] })),
+      reducedMotionAssignments: snapshot.sourceCharacterSnapshot.reducedMotionAssignments.map((assignment) => ({ ...assignment, evidenceRefs: [...assignment.evidenceRefs], sourceRefs: [...assignment.sourceRefs], numberRefs: [...assignment.numberRefs] })),
+      originalityReview: snapshot.sourceCharacterSnapshot.originalityReview.map((check) => ({ ...check })),
+      rightsReview: { ...snapshot.sourceCharacterSnapshot.rightsReview },
+      accessibilityReview: { ...snapshot.sourceCharacterSnapshot.accessibilityReview },
+    },
+    voicePlan: { ...snapshot.voicePlan, provider: snapshot.voicePlan.provider ? { ...snapshot.voicePlan.provider } : null, scenes: snapshot.voicePlan.scenes.map((scene) => ({ ...scene })), usage: { ...snapshot.voicePlan.usage } },
+    subtitleTrack: { ...snapshot.subtitleTrack, scenePlans: snapshot.subtitleTrack.scenePlans.map((scene) => ({ ...scene, cues: scene.cues.map((cue) => ({ ...cue })) })), cues: snapshot.subtitleTrack.cues.map((cue) => ({ ...cue })) },
+    renderManifest: cloneRenderManifest(snapshot.renderManifest),
+    validation: { ...snapshot.validation, issues: snapshot.validation.issues.map((issue) => ({ ...issue })) },
+    bridgePlan: { ...snapshot.bridgePlan, capabilities: snapshot.bridgePlan.capabilities.map((capability) => ({ ...capability })), sceneLogicalUris: [...snapshot.bridgePlan.sceneLogicalUris], missingRequirements: [...snapshot.bridgePlan.missingRequirements] },
+  };
 }
 
 export default function PublishIntegrationWorkbench({
@@ -134,9 +190,28 @@ export default function PublishIntegrationWorkbench({
       schedulingExecuted: false,
       durableLedgerAvailable: false,
       executionReady: false,
+      sourceRenderIntegrationSnapshot: cloneApprovedRenderIntegrationSnapshot(approvedRenderIntegrationSnapshot),
+      sourceRenderIntegrationIdentity: `${approvedRenderIntegrationSnapshot.renderManifest.sourcePlanningIdentity}:${approvedRenderIntegrationSnapshot.renderManifest.manifestHash}`,
+      sceneFingerprints: approvedRenderIntegrationSnapshot.renderManifest.scenes.map((scene) => ({ ...scene.fingerprint })),
+      selectedCharacterDirectionId: approvedRenderIntegrationSnapshot.sourceCharacterSnapshot.selectedDirectionId,
+      platformPackages: publishPackage.platformPackages.map((entry) => ({
+        ...entry,
+        expectedDestinationIdentity: { ...entry.expectedDestinationIdentity },
+        observedDestinationIdentity: { ...entry.observedDestinationIdentity },
+        identityComparison: { ...entry.identityComparison, blockingReasons: [...entry.identityComparison.blockingReasons] },
+        metadata: { ...entry.metadata, hashtags: { ...entry.metadata.hashtags, rawHashtags: [...entry.metadata.hashtags.rawHashtags], normalizedHashtags: [...entry.metadata.hashtags.normalizedHashtags] }, sourceDisclosure: { ...entry.metadata.sourceDisclosure, sources: entry.metadata.sourceDisclosure.sources.map((source) => ({ ...source })) }, coverPlan: { ...entry.metadata.coverPlan }, policy: { ...entry.metadata.policy } },
+        coverPlan: { ...entry.coverPlan },
+        dedupeKey: { ...entry.dedupeKey },
+        blockingIssues: [...entry.blockingIssues],
+        warnings: [...entry.warnings],
+      })),
+      publishMetadata: publishPackage.platformPackages.map((entry) => ({ ...entry.metadata, hashtags: { ...entry.metadata.hashtags, rawHashtags: [...entry.metadata.hashtags.rawHashtags], normalizedHashtags: [...entry.metadata.hashtags.normalizedHashtags] }, sourceDisclosure: { ...entry.metadata.sourceDisclosure, sources: entry.metadata.sourceDisclosure.sources.map((source) => ({ ...source })) }, coverPlan: { ...entry.metadata.coverPlan }, policy: { ...entry.metadata.policy } })),
+      sourceDisclosures: publishPackage.platformPackages.map((entry) => ({ ...entry.metadata.sourceDisclosure, sources: entry.metadata.sourceDisclosure.sources.map((source) => ({ ...source })) })),
+      destinationIdentityPlan: publishPackage.platformPackages.map((entry) => ({ ...entry.expectedDestinationIdentity })),
+      dedupeKeys: publishPackage.platformPackages.map((entry) => ({ ...entry.dedupeKey })),
     });
     return () => onApprovedPublishIntegrationChange(null);
-  }, [approvalState, approvable, bridgePlan, ledger, onApprovedPublishIntegrationChange, publishPackage, recoveryPlan, validation]);
+  }, [approvalState, approvable, approvedRenderIntegrationSnapshot, bridgePlan, ledger, onApprovedPublishIntegrationChange, publishPackage, recoveryPlan, validation]);
 
   function togglePlatform(platformId: PublishPlatformId): void {
     setSelectedPlatforms((current) => current.includes(platformId) ? current.filter((entry) => entry !== platformId) : [...current, platformId]);

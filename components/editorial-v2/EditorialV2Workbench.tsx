@@ -6,6 +6,7 @@ import type {
   ApprovedCharacterMotionSessionSnapshot,
   ApprovedDetailedScriptSessionSnapshot,
   ApprovedPublishIntegrationSessionSnapshot,
+  ApprovedRelaunchReadinessSessionSnapshot,
   ApprovedRenderIntegrationSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
@@ -15,6 +16,7 @@ import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
 import PublishIntegrationWorkbench from "./PublishIntegrationWorkbench";
 import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
+import SampleRelaunchWorkbench from "./SampleRelaunchWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
 
 export default function EditorialV2Workbench() {
@@ -24,6 +26,7 @@ export default function EditorialV2Workbench() {
   const [approvedCharacterSnapshot, setApprovedCharacterSnapshot] = useState<ApprovedCharacterMotionSessionSnapshot | null>(null);
   const [approvedRenderSnapshot, setApprovedRenderSnapshot] = useState<ApprovedRenderIntegrationSessionSnapshot | null>(null);
   const [approvedPublishSnapshot, setApprovedPublishSnapshot] = useState<ApprovedPublishIntegrationSessionSnapshot | null>(null);
+  const [approvedRelaunchSnapshot, setApprovedRelaunchSnapshot] = useState<ApprovedRelaunchReadinessSessionSnapshot | null>(null);
   const intelligenceKey = approvedSnapshot
     ? `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`
     : "no-approved-trend-brief";
@@ -39,6 +42,9 @@ export default function EditorialV2Workbench() {
   const publishKey = approvedRenderSnapshot
     ? `${approvedRenderSnapshot.renderManifest.manifestHash}:${approvedRenderSnapshot.voicePlan.sourceScriptHash}:${approvedRenderSnapshot.subtitleTrack.sourceScriptHash}:${approvedRenderSnapshot.bridgePlan.manifestHash}`
     : "no-approved-render-integration";
+  const sampleRelaunchKey = approvedPublishSnapshot
+    ? `${approvedPublishSnapshot.publishPackage.packageId}:${approvedPublishSnapshot.publishPackage.renderManifestHash}:${approvedPublishSnapshot.publishPackage.platformPackages.map((entry) => `${entry.platformId}:${entry.dedupeKey.value}`).join("|")}`
+    : "no-approved-publish-integration";
 
   const handleApprovedTrendBriefChange = useCallback((snapshot: ApprovedTrendBriefSessionSnapshot | null): void => {
     setApprovedSnapshot(snapshot);
@@ -47,6 +53,7 @@ export default function EditorialV2Workbench() {
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
     setApprovedPublishSnapshot(null);
+    setApprovedRelaunchSnapshot(null);
   }, []);
 
   const handleApprovedScriptChange = useCallback((snapshot: ApprovedDetailedScriptSessionSnapshot | null): void => {
@@ -55,6 +62,7 @@ export default function EditorialV2Workbench() {
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
     setApprovedPublishSnapshot(null);
+    setApprovedRelaunchSnapshot(null);
   }, []);
 
   const handleApprovedPlanningChange = useCallback((snapshot: ApprovedScenePlanningSessionSnapshot | null): void => {
@@ -62,17 +70,25 @@ export default function EditorialV2Workbench() {
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
     setApprovedPublishSnapshot(null);
+    setApprovedRelaunchSnapshot(null);
   }, []);
 
   const handleApprovedCharacterChange = useCallback((snapshot: ApprovedCharacterMotionSessionSnapshot | null): void => {
     setApprovedCharacterSnapshot(snapshot);
     setApprovedRenderSnapshot(null);
     setApprovedPublishSnapshot(null);
+    setApprovedRelaunchSnapshot(null);
   }, []);
 
   const handleApprovedRenderChange = useCallback((snapshot: ApprovedRenderIntegrationSessionSnapshot | null): void => {
     setApprovedRenderSnapshot(snapshot);
     setApprovedPublishSnapshot(null);
+    setApprovedRelaunchSnapshot(null);
+  }, []);
+
+  const handleApprovedPublishChange = useCallback((snapshot: ApprovedPublishIntegrationSessionSnapshot | null): void => {
+    setApprovedPublishSnapshot(snapshot);
+    setApprovedRelaunchSnapshot(null);
   }, []);
 
   return (
@@ -149,7 +165,22 @@ export default function EditorialV2Workbench() {
         <PublishIntegrationWorkbench
           key={publishKey}
           approvedRenderIntegrationSnapshot={approvedRenderSnapshot}
-          onApprovedPublishIntegrationChange={setApprovedPublishSnapshot}
+          onApprovedPublishIntegrationChange={handleApprovedPublishChange}
+        />
+      )}
+      <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
+        <strong>Representative Sample · Relaunch session-only 연결:</strong>{" "}
+        {approvedPublishSnapshot
+          ? "승인된 Publish Integration snapshot이 대표 sample과 provisional relaunch planning에 전달됐습니다. upstream 변경 시 Slice 8 state 전체가 무효화됩니다."
+          : "승인된 Publish Integration Package가 없어 Slice 8 Sample/Relaunch Workbench가 잠겨 있습니다."}
+        <p>Synthetic local proof planning only · network·persistence·actual asset/account change/publish 없음 · final brand와 Production Activation은 ChatGPT Control Tower 승인 대상입니다.</p>
+        <p>현재 Relaunch Readiness approval: {approvedRelaunchSnapshot ? "PROVISIONALLY_APPROVED_SESSION_ONLY" : "NOT_APPROVED"}</p>
+      </aside>
+      {approvedPublishSnapshot && (
+        <SampleRelaunchWorkbench
+          key={sampleRelaunchKey}
+          approvedPublishIntegrationSnapshot={approvedPublishSnapshot}
+          onApprovedRelaunchReadinessChange={setApprovedRelaunchSnapshot}
         />
       )}
     </div>
