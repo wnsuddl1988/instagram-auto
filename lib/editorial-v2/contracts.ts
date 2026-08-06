@@ -1366,6 +1366,7 @@ export interface SyntheticRenderProofResult {
 export type RenderIntegrationApprovalState = "not_approved" | "approved" | "invalidated";
 
 export interface ApprovedRenderIntegrationSessionSnapshot {
+  readonly sourceDetailedScriptSnapshot: ApprovedDetailedScriptSessionSnapshot;
   readonly sourceCharacterSnapshot: ApprovedCharacterMotionSessionSnapshot;
   readonly voicePlan: VoiceRequestPlan;
   readonly subtitleTrack: SubtitleTrackPlan;
@@ -1394,4 +1395,342 @@ export interface RenderIntegrationSessionState {
   readonly bridgePlan: RendererBridgePlan | null;
   readonly approvalState: RenderIntegrationApprovalState;
   readonly approvedSnapshot: ApprovedRenderIntegrationSessionSnapshot | null;
+}
+
+export type PublishPlatformId = "instagram_reels" | "youtube_shorts";
+export type PublishExecutionIntent = "immediate_future" | "scheduled_future";
+export type PublishVisibilityIntent = "public" | "unlisted" | "private";
+export type PlatformPolicyAuthority = "internal_planning_only";
+
+export interface PlatformMetadataPolicy {
+  readonly policyVersion: "publish-metadata-policy-v1";
+  readonly authority: PlatformPolicyAuthority;
+  readonly actualCurrentPlatformLimitsVerified: false;
+  readonly lengthPolicy: "conservative_warning_only";
+}
+
+export interface PublishExpectedDestinationIdentity {
+  readonly platformId: PublishPlatformId;
+  readonly stableDestinationId: string;
+  readonly displayLabel: string;
+  readonly ownerConfirmation: boolean;
+  readonly identityPolicyVersion: "publish-identity-policy-v1";
+}
+
+export type PublishIdentityObservationLevel = "manual_unverified" | "external_readonly_future";
+
+export interface PublishObservedDestinationIdentity {
+  readonly platformId: PublishPlatformId;
+  readonly stableDestinationId: string;
+  readonly displayLabel: string;
+  readonly observationLevel: PublishIdentityObservationLevel;
+  readonly observedBy: string;
+  readonly observedAtIso: string;
+  readonly sourceDescription: string;
+}
+
+export interface PublishIdentityComparison {
+  readonly platformId: PublishPlatformId;
+  readonly expectedStableDestinationId: string;
+  readonly observedStableDestinationId: string;
+  readonly platformMatches: boolean;
+  readonly stableDestinationIdMatches: boolean;
+  readonly ownerConfirmed: boolean;
+  readonly matchesForPlanning: boolean;
+  readonly identityExecutionVerified: false;
+  readonly blockingReasons: readonly string[];
+}
+
+export interface PublishHashtagPlan {
+  readonly rawHashtags: readonly string[];
+  readonly normalizedHashtags: readonly string[];
+  readonly duplicateCount: number;
+}
+
+export interface PublishSourceDisclosurePlan {
+  readonly disclosureVersion: "publish-source-disclosure-v1";
+  readonly statement: string;
+  readonly sources: readonly {
+    readonly sourceId: string;
+    readonly publisher: string;
+    readonly title: string;
+    readonly url: string;
+    readonly sourceExistenceVerified: false;
+  }[];
+  readonly sourceExistenceVerified: false;
+}
+
+export interface PublishCoverPlan {
+  readonly selectedSceneId: string;
+  readonly titleOverlay: string;
+  readonly logicalUri: string;
+  readonly metadataOnly: true;
+  readonly actualCoverCreated: false;
+}
+
+export interface PublishMetadataDraft {
+  readonly platformId: PublishPlatformId;
+  readonly title: string;
+  readonly description: string;
+  readonly caption: string;
+  readonly hashtags: PublishHashtagPlan;
+  readonly sourceDisclosure: PublishSourceDisclosurePlan;
+  readonly coverPlan: PublishCoverPlan;
+  readonly accessibilityDescription: string;
+  readonly visibilityIntent: PublishVisibilityIntent;
+  readonly policy: PlatformMetadataPolicy;
+  readonly metadataHash: string;
+}
+
+export interface PublishScheduleIntent {
+  readonly executionIntent: PublishExecutionIntent;
+  readonly scheduledAtIso: string | null;
+  readonly timezone: string | null;
+  readonly validationNowIso: string;
+  readonly scheduleOwnerConfirmation: boolean;
+  readonly schedulerCapabilityRequired: boolean;
+  readonly schedulerAvailable: false;
+  readonly executionReady: false;
+}
+
+export interface PublishDeduplicationKey {
+  readonly keyVersion: "publish-dedupe-key-v1";
+  readonly platformId: PublishPlatformId;
+  readonly stableDestinationId: string;
+  readonly renderManifestHash: string;
+  readonly metadataHash: string;
+  readonly visibilityIntent: PublishVisibilityIntent;
+  readonly coverPlanHash: string;
+  readonly value: string;
+}
+
+export interface PublishDuplicateCheckResult {
+  readonly duplicate: boolean;
+  readonly blocking: boolean;
+  readonly matchedAttemptIds: readonly string[];
+  readonly checkedSessionOnly: true;
+  readonly remotePlatformChecked: false;
+  readonly durableLedgerChecked: false;
+}
+
+export interface PlatformPublishPackage {
+  readonly platformId: PublishPlatformId;
+  readonly expectedDestinationIdentity: PublishExpectedDestinationIdentity;
+  readonly observedDestinationIdentity: PublishObservedDestinationIdentity;
+  readonly identityComparison: PublishIdentityComparison;
+  readonly metadata: PublishMetadataDraft;
+  readonly coverPlan: PublishCoverPlan;
+  readonly visibilityIntent: PublishVisibilityIntent;
+  readonly renderLogicalUri: string;
+  readonly coverLogicalUri: string;
+  readonly dedupeKey: PublishDeduplicationKey;
+  readonly blockingIssues: readonly string[];
+  readonly warnings: readonly string[];
+}
+
+export interface PublishPackage {
+  readonly packageId: string;
+  readonly packageVersion: "publish-package-v1";
+  readonly renderIntegrationIdentity: string;
+  readonly renderManifestHash: string;
+  readonly finalProfileIdentity: string;
+  readonly platformPackages: readonly PlatformPublishPackage[];
+  readonly metadataPolicyVersion: "publish-metadata-policy-v1";
+  readonly sourceDisclosure: PublishSourceDisclosurePlan;
+  readonly rightsSummary: {
+    readonly planningState: "planning_review_only";
+    readonly unresolved: boolean;
+  };
+  readonly costSummary: {
+    readonly classification: VoiceCostEstimateClass;
+    readonly paidPossible: boolean;
+    readonly ownerConfirmation: boolean;
+  };
+  readonly executionIntent: PublishExecutionIntent;
+  readonly scheduleIntent: PublishScheduleIntent;
+  readonly createdFromSessionIdentity: string;
+  readonly executionRequested: false;
+  readonly externalCallExecuted: false;
+  readonly uploadExecuted: false;
+  readonly publicationExecuted: false;
+  readonly durableLedgerAvailable: false;
+  readonly executionReady: false;
+}
+
+export type PublicationAttemptStatus =
+  | "planned"
+  | "blocked"
+  | "dry_run_in_progress"
+  | "dry_run_success"
+  | "dry_run_failed"
+  | "superseded";
+
+export interface PublicationAttemptRecord {
+  readonly attemptId: string;
+  readonly platformId: PublishPlatformId;
+  readonly dedupeKey: string;
+  readonly attemptOrdinal: number;
+  readonly status: PublicationAttemptStatus;
+  readonly requestedAtIso: string;
+  readonly completedAtIso: string | null;
+  readonly failureCode: string | null;
+  readonly failureMessage: string | null;
+  readonly retryable: boolean;
+  readonly identityMatchAtAttempt: boolean;
+  readonly externalExecution: false;
+  readonly dryRun: true;
+}
+
+export interface PlatformPublicationState {
+  readonly platformId: PublishPlatformId;
+  readonly dedupeKey: string;
+  readonly latestAttemptId: string | null;
+  readonly latestStatus: PublicationAttemptStatus | "not_attempted";
+  readonly successful: boolean;
+  readonly failed: boolean;
+  readonly blocked: boolean;
+  readonly retryable: boolean;
+}
+
+export interface SessionPublicationLedger {
+  readonly ledgerVersion: "session-publication-ledger-v1";
+  readonly sessionIdentity: string;
+  readonly attempts: readonly PublicationAttemptRecord[];
+  readonly platformStates: readonly PlatformPublicationState[];
+  readonly durable: false;
+  readonly remoteSynchronized: false;
+}
+
+export type PublishRecoveryReason =
+  | "platform_dry_run_failed"
+  | "identity_mismatch"
+  | "duplicate_blocked"
+  | "non_retryable_failure"
+  | "schedule_expired"
+  | "package_changed";
+
+export interface PlatformRecoveryAction {
+  readonly platformId: PublishPlatformId;
+  readonly action: "preserve_success" | "retry_failed_dry_run" | "change_plan_required" | "no_action";
+  readonly reasons: readonly PublishRecoveryReason[];
+  readonly attemptIds: readonly string[];
+  readonly actualRetryExecuted: false;
+}
+
+export interface PublishRecoveryPlan {
+  readonly planVersion: "publish-recovery-plan-v1";
+  readonly successfulPlatformIds: readonly PublishPlatformId[];
+  readonly failedPlatformIds: readonly PublishPlatformId[];
+  readonly retryablePlatformIds: readonly PublishPlatformId[];
+  readonly blockedPlatformIds: readonly PublishPlatformId[];
+  readonly unchangedSuccessfulAttemptIds: readonly string[];
+  readonly requiredPlanChanges: readonly string[];
+  readonly globalBlockingReasons: readonly string[];
+  readonly nextAllowedActions: readonly PlatformRecoveryAction[];
+  readonly actualRetryExecuted: false;
+}
+
+export interface PublishBridgeCapability {
+  readonly capabilityId:
+    | "destination_identity_read"
+    | "media_upload"
+    | "metadata_publish"
+    | "cover_publish"
+    | "immediate_publish"
+    | "scheduled_publish"
+    | "publication_status_read"
+    | "publication_cancel"
+    | "duplicate_remote_check"
+    | "per_platform_retry"
+    | "durable_publication_ledger";
+  readonly available: false;
+  readonly future: true;
+}
+
+export interface PublishBridgePlan {
+  readonly bridgeVersion: "publish-bridge-plan-v1";
+  readonly packageId: string;
+  readonly platformPlans: readonly {
+    readonly platformId: PublishPlatformId;
+    readonly logicalRenderUri: string;
+    readonly logicalCoverUri: string;
+    readonly expectedDestinationId: string;
+    readonly observedManualDestinationId: string;
+    readonly metadataPackageIdentity: string;
+    readonly scheduleIntent: PublishScheduleIntent;
+    readonly dedupeKey: string;
+    readonly requiredCapabilities: readonly PublishBridgeCapability[];
+    readonly unavailableCapabilities: readonly PublishBridgeCapability["capabilityId"][];
+  }[];
+  readonly missingCredentials: true;
+  readonly missingExternalIdentityVerification: true;
+  readonly missingDurableLedger: true;
+  readonly executionReady: false;
+  readonly executionCommand: null;
+  readonly externalRequest: null;
+}
+
+export interface PublishDryRunResult {
+  readonly dryRunVersion: "publish-dry-run-v1";
+  readonly packageId: string;
+  readonly instagramStatus: "dry_run_success";
+  readonly youtubeInitialStatus: "dry_run_failed";
+  readonly youtubeRetryStatus: "dry_run_success";
+  readonly retryPlatformIds: readonly ["youtube_shorts"];
+  readonly duplicateSuccessBlocked: true;
+  readonly wrongAccountBlocked: true;
+  readonly pastScheduleBlocked: true;
+  readonly missingOwnerConfirmationBlocked: true;
+  readonly executionReady: false;
+  readonly externalExecution: false;
+  readonly uploadExecuted: false;
+  readonly publicationExecuted: false;
+  readonly repositoryStatusUnchanged: boolean;
+  readonly syntheticOnly: true;
+}
+
+export interface PublishValidationIssue {
+  readonly code: string;
+  readonly platformId: PublishPlatformId | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface PublishValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly verificationLevel: "PUBLISH_INTEGRATION_PRECHECK_ONLY";
+  readonly executionEligible: false;
+  readonly issues: readonly PublishValidationIssue[];
+}
+
+export type PublishApprovalState = "not_approved" | "approved" | "invalidated";
+
+export interface ApprovedPublishIntegrationSessionSnapshot {
+  readonly publishPackage: PublishPackage;
+  readonly validation: PublishValidationSummary;
+  readonly bridgePlan: PublishBridgePlan;
+  readonly ledger: SessionPublicationLedger;
+  readonly recoveryPlan: PublishRecoveryPlan;
+  readonly approvalState: "approved";
+  readonly sessionOnly: true;
+  readonly externalIdentityVerified: false;
+  readonly uploadExecuted: false;
+  readonly publicationExecuted: false;
+  readonly schedulingExecuted: false;
+  readonly durableLedgerAvailable: false;
+  readonly executionReady: false;
+}
+
+export interface PublishIntegrationSessionState {
+  readonly approvedRenderIntegration: ApprovedRenderIntegrationSessionSnapshot | null;
+  readonly publishPackage: PublishPackage | null;
+  readonly validation: PublishValidationSummary | null;
+  readonly bridgePlan: PublishBridgePlan | null;
+  readonly ledger: SessionPublicationLedger;
+  readonly recoveryPlan: PublishRecoveryPlan | null;
+  readonly approvalState: PublishApprovalState;
+  readonly approvedSnapshot: ApprovedPublishIntegrationSessionSnapshot | null;
 }

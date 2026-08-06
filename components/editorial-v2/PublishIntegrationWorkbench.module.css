@@ -1,0 +1,74 @@
+.shell {
+  max-width: 1180px;
+  margin: 36px auto 80px;
+  padding: 0 24px;
+  color: #172033;
+}
+
+.hero {
+  padding: 34px;
+  border: 1px solid #cbd7ea;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f7f9ff 0%, #eef8f5 100%);
+}
+
+.hero h1 { margin: 6px 0 12px; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1; }
+.hero p { max-width: 820px; line-height: 1.7; }
+.eyebrow { margin: 0; color: #3557a6; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.step {
+  margin-top: 24px;
+  padding: 26px;
+  border: 1px solid #d8e0ed;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(31, 48, 78, 0.06);
+}
+
+.step h2 { display: flex; align-items: center; gap: 10px; margin-top: 0; }
+.step h2 span { display: inline-grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: #1d315d; color: #fff; font-size: 0.9rem; }
+.step h3 { margin-top: 0; }
+.step label { display: grid; gap: 7px; font-weight: 700; }
+.step input, .step select { min-height: 42px; padding: 9px 11px; border: 1px solid #aebbd0; border-radius: 9px; background: #fff; color: inherit; }
+.step code { overflow-wrap: anywhere; font-size: 0.78rem; }
+
+.platformGrid, .identityGrid, .metadataGrid, .recoveryGrid, .summaryGrid, .formGrid { display: grid; gap: 16px; }
+.platformGrid, .identityGrid, .metadataGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.recoveryGrid, .summaryGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.formGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.platformCard, .identityGrid article, .metadataGrid article, .recoveryGrid article, .summaryGrid article { padding: 18px; border: 1px solid #d5deeb; border-radius: 14px; background: #f9fbfe; }
+.platformCard { display: flex !important; align-items: center; gap: 12px !important; }
+.platformCard[data-selected="true"] { border-color: #3f69c5; background: #eef3ff; }
+.platformCard small { margin-left: auto; color: #5b6678; }
+.identityGrid article, .metadataGrid article { display: grid; gap: 13px; }
+.checkbox { display: flex !important; align-items: center; gap: 9px !important; }
+.checkbox input { min-height: auto; }
+
+.notice { padding: 13px 15px; border-left: 4px solid #cf8b22; background: #fff7e8; line-height: 1.6; }
+.tableWrap { overflow-x: auto; }
+.tableWrap table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: 12px; border-bottom: 1px solid #d9e0eb; text-align: left; vertical-align: top; }
+.issues { max-height: 340px; overflow: auto; padding-left: 22px; }
+.issues li { margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: #fff8e9; }
+.issues li[data-blocking="true"] { background: #fff0f0; color: #8a2020; }
+.confirmation { margin-top: 18px; display: flex !important; align-items: flex-start; gap: 10px !important; padding: 14px; border: 1px solid #8297bf; border-radius: 12px; background: #f1f5fc; line-height: 1.5; }
+.confirmation input { min-height: auto; margin-top: 4px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.actions button { min-height: 42px; padding: 10px 15px; border: 0; border-radius: 9px; background: #203f80; color: #fff; font-weight: 800; cursor: pointer; }
+.actions button:disabled { cursor: not-allowed; opacity: 0.45; }
+.actions .secondary { background: #e8edf6; color: #26354f; }
+.success { color: #12653f; font-weight: 800; }
+.muted { color: #6a7280; }
+.step :focus-visible { outline: 3px solid #ffb02e; outline-offset: 2px; }
+
+@media (max-width: 920px) {
+  .platformGrid, .identityGrid, .metadataGrid, .recoveryGrid, .summaryGrid, .formGrid { grid-template-columns: 1fr; }
+  .platformCard small { margin-left: 0; }
+}
+
+@media (max-width: 640px) {
+  .shell { padding: 0 14px; }
+  .hero, .step { padding: 19px; border-radius: 15px; }
+  .actions { align-items: stretch; flex-direction: column; }
+  .actions button { width: 100%; }
+}

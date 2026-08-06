@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import type {
   ApprovedCharacterMotionSessionSnapshot,
+  ApprovedDetailedScriptSessionSnapshot,
   ApprovedRenderIntegrationSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   RenderProfileId,
@@ -18,11 +19,48 @@ import { buildVoiceRequestPlan, canApproveVoicePlan, summarizeVoicePlanValidatio
 import styles from "./RenderIntegrationWorkbench.module.css";
 
 interface RenderIntegrationWorkbenchProps {
+  readonly approvedDetailedScriptSnapshot: ApprovedDetailedScriptSessionSnapshot;
   readonly approvedScenePlanningSnapshot: ApprovedScenePlanningSessionSnapshot;
   readonly approvedCharacterMotionSnapshot: ApprovedCharacterMotionSessionSnapshot;
   readonly onApprovedRenderIntegrationChange?: (
     snapshot: ApprovedRenderIntegrationSessionSnapshot | null,
   ) => void;
+}
+
+function cloneDetailedScriptSnapshot(
+  snapshot: ApprovedDetailedScriptSessionSnapshot,
+): ApprovedDetailedScriptSessionSnapshot {
+  return {
+    ...snapshot,
+    approvedScript: {
+      ...snapshot.approvedScript,
+      beats: snapshot.approvedScript.beats.map((beat) => ({
+        ...beat,
+        claimRefs: [...beat.claimRefs],
+        sourceRefs: [...beat.sourceRefs],
+        numberRefs: [...beat.numberRefs],
+      })),
+    },
+    evidencePack: {
+      ...snapshot.evidencePack,
+      provenance: { ...snapshot.evidencePack.provenance },
+      sources: snapshot.evidencePack.sources.map((source) => ({ ...source })),
+      claims: snapshot.evidencePack.claims.map((claim) => ({ ...claim, sourceRefs: [...claim.sourceRefs], numberRefs: [...claim.numberRefs] })),
+      numbers: snapshot.evidencePack.numbers.map((number) => ({ ...number, sourceRefs: [...number.sourceRefs] })),
+      coverage: {
+        ...snapshot.evidencePack.coverage,
+        signalCoverage: snapshot.evidencePack.coverage.signalCoverage.map((coverage) => ({ ...coverage })),
+        warnings: [...snapshot.evidencePack.coverage.warnings],
+      },
+    },
+    selectedAngle: {
+      ...snapshot.selectedAngle,
+      sourceRefs: [...snapshot.selectedAngle.sourceRefs],
+      claimRefs: [...snapshot.selectedAngle.claimRefs],
+      numberRefs: [...snapshot.selectedAngle.numberRefs],
+    },
+    validation: { ...snapshot.validation, issues: snapshot.validation.issues.map((issue) => ({ ...issue })) },
+  };
 }
 
 const VOICE_MODES: readonly VoiceProviderMode[] = ["plan_only", "existing_external_provider", "manual_audio_future"];
@@ -55,6 +93,7 @@ function validationClass(blocking: boolean): string {
 }
 
 export default function RenderIntegrationWorkbench({
+  approvedDetailedScriptSnapshot,
   approvedScenePlanningSnapshot,
   approvedCharacterMotionSnapshot,
   onApprovedRenderIntegrationChange,
@@ -129,6 +168,7 @@ export default function RenderIntegrationWorkbench({
       return;
     }
     onApprovedRenderIntegrationChange({
+      sourceDetailedScriptSnapshot: cloneDetailedScriptSnapshot(approvedDetailedScriptSnapshot),
       sourceCharacterSnapshot: cloneCharacterSnapshot(approvedCharacterMotionSnapshot),
       voicePlan: { ...voicePlan, provider: voicePlan.provider ? { ...voicePlan.provider } : null, scenes: voicePlan.scenes.map((scene) => ({ ...scene })), usage: { ...voicePlan.usage } },
       subtitleTrack: { ...subtitleTrack, scenePlans: subtitleTrack.scenePlans.map((scene) => ({ ...scene, cues: scene.cues.map((cue) => ({ ...cue })) })), cues: subtitleTrack.cues.map((cue) => ({ ...cue })) },
@@ -143,7 +183,7 @@ export default function RenderIntegrationWorkbench({
       productionReady: false,
     });
     return () => onApprovedRenderIntegrationChange(null);
-  }, [approvedCharacterMotionSnapshot, approvable, bridgePlan, manifest, onApprovedRenderIntegrationChange, renderApprovalState, renderValidation, subtitleTrack, voicePlan]);
+  }, [approvedCharacterMotionSnapshot, approvedDetailedScriptSnapshot, approvable, bridgePlan, manifest, onApprovedRenderIntegrationChange, renderApprovalState, renderValidation, subtitleTrack, voicePlan]);
 
   function approveRenderIntegration(): void {
     if (!approvable) return;

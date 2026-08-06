@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import type {
   ApprovedCharacterMotionSessionSnapshot,
   ApprovedDetailedScriptSessionSnapshot,
+  ApprovedPublishIntegrationSessionSnapshot,
   ApprovedRenderIntegrationSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
@@ -12,6 +13,7 @@ import type {
 import CharacterMotionWorkbench from "./CharacterMotionWorkbench";
 import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
+import PublishIntegrationWorkbench from "./PublishIntegrationWorkbench";
 import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
 
@@ -21,6 +23,7 @@ export default function EditorialV2Workbench() {
   const [approvedPlanningSnapshot, setApprovedPlanningSnapshot] = useState<ApprovedScenePlanningSessionSnapshot | null>(null);
   const [approvedCharacterSnapshot, setApprovedCharacterSnapshot] = useState<ApprovedCharacterMotionSessionSnapshot | null>(null);
   const [approvedRenderSnapshot, setApprovedRenderSnapshot] = useState<ApprovedRenderIntegrationSessionSnapshot | null>(null);
+  const [approvedPublishSnapshot, setApprovedPublishSnapshot] = useState<ApprovedPublishIntegrationSessionSnapshot | null>(null);
   const intelligenceKey = approvedSnapshot
     ? `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`
     : "no-approved-trend-brief";
@@ -33,6 +36,9 @@ export default function EditorialV2Workbench() {
   const renderKey = approvedCharacterSnapshot
     ? `${approvedCharacterSnapshot.sourcePlanningIdentity}:${approvedCharacterSnapshot.selectedDirectionId}:${approvedCharacterSnapshot.sceneMotionAssignments.map((assignment) => `${assignment.sceneId}:${assignment.motionTag}:${assignment.intensity}:${assignment.enabled}`).join("|")}`
     : "no-approved-character-motion";
+  const publishKey = approvedRenderSnapshot
+    ? `${approvedRenderSnapshot.renderManifest.manifestHash}:${approvedRenderSnapshot.voicePlan.sourceScriptHash}:${approvedRenderSnapshot.subtitleTrack.sourceScriptHash}:${approvedRenderSnapshot.bridgePlan.manifestHash}`
+    : "no-approved-render-integration";
 
   const handleApprovedTrendBriefChange = useCallback((snapshot: ApprovedTrendBriefSessionSnapshot | null): void => {
     setApprovedSnapshot(snapshot);
@@ -40,6 +46,7 @@ export default function EditorialV2Workbench() {
     setApprovedPlanningSnapshot(null);
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
+    setApprovedPublishSnapshot(null);
   }, []);
 
   const handleApprovedScriptChange = useCallback((snapshot: ApprovedDetailedScriptSessionSnapshot | null): void => {
@@ -47,17 +54,25 @@ export default function EditorialV2Workbench() {
     setApprovedPlanningSnapshot(null);
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
+    setApprovedPublishSnapshot(null);
   }, []);
 
   const handleApprovedPlanningChange = useCallback((snapshot: ApprovedScenePlanningSessionSnapshot | null): void => {
     setApprovedPlanningSnapshot(snapshot);
     setApprovedCharacterSnapshot(null);
     setApprovedRenderSnapshot(null);
+    setApprovedPublishSnapshot(null);
   }, []);
 
   const handleApprovedCharacterChange = useCallback((snapshot: ApprovedCharacterMotionSessionSnapshot | null): void => {
     setApprovedCharacterSnapshot(snapshot);
     setApprovedRenderSnapshot(null);
+    setApprovedPublishSnapshot(null);
+  }, []);
+
+  const handleApprovedRenderChange = useCallback((snapshot: ApprovedRenderIntegrationSessionSnapshot | null): void => {
+    setApprovedRenderSnapshot(snapshot);
+    setApprovedPublishSnapshot(null);
   }, []);
 
   return (
@@ -113,12 +128,28 @@ export default function EditorialV2Workbench() {
         <p>External TTS·audio/asset 생성·실제 user-content/final render·network·persistence는 없습니다. Synthetic preview proof는 checker 통과 후 별도 local CLI에서만 1회 허용됩니다.</p>
         <p>현재 Render Integration approval: {approvedRenderSnapshot ? "SESSION_ONLY_APPROVED" : "NOT_APPROVED"}</p>
       </aside>
-      {approvedPlanningSnapshot && approvedCharacterSnapshot && (
+      {approvedScriptSnapshot && approvedPlanningSnapshot && approvedCharacterSnapshot && (
         <RenderIntegrationWorkbench
           key={renderKey}
+          approvedDetailedScriptSnapshot={approvedScriptSnapshot}
           approvedScenePlanningSnapshot={approvedPlanningSnapshot}
           approvedCharacterMotionSnapshot={approvedCharacterSnapshot}
-          onApprovedRenderIntegrationChange={setApprovedRenderSnapshot}
+          onApprovedRenderIntegrationChange={handleApprovedRenderChange}
+        />
+      )}
+      <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
+        <strong>Publish Integration session-only 연결:</strong>{" "}
+        {approvedRenderSnapshot
+          ? "승인된 Render Integration snapshot이 platform publish planning에 전달됐습니다. upstream 변경 시 identity·metadata·ledger·recovery 전체가 무효화됩니다."
+          : "승인된 Render Integration Package가 없어 Publish Integration Workbench가 잠겨 있습니다."}
+        <p>실제 계정 API 조회·OAuth·upload·publish·schedule·network·durable persistence는 없습니다.</p>
+        <p>현재 Publish Integration approval: {approvedPublishSnapshot ? "SESSION_ONLY_APPROVED" : "NOT_APPROVED"}</p>
+      </aside>
+      {approvedRenderSnapshot && (
+        <PublishIntegrationWorkbench
+          key={publishKey}
+          approvedRenderIntegrationSnapshot={approvedRenderSnapshot}
+          onApprovedPublishIntegrationChange={setApprovedPublishSnapshot}
         />
       )}
     </div>

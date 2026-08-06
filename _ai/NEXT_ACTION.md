@@ -1,27 +1,27 @@
 # AutoShorts AI — Next Action
 
-Updated: 2026-08-04 KST
+Updated: 2026-08-06 KST
 
-## Shorts Editorial OS V2 — Slice 6 read-only Cross Review
+## Shorts Editorial OS V2 — Slice 7 read-only Cross Review
 
-- Slice 0·1·2·3·4·5는 `FINAL_PASS`; Slice 5 checkpoint HEAD는 `ce6346411d8a071921e942fad5c895f5fcf94b1b`다.
-- Slice 6 implementation: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- 다음 routine 작업은 승인된 정확한 17개 파일에 대한 `Claude Code Slice 6 read-only Cross Review`다.
+- Slice 0·1·2·3·4·5·6는 `FINAL_PASS`; Slice 6 checkpoint HEAD는 `5e0e0e044b3ebea6af07b98e733a3eac6a96aa2c`다.
+- Slice 7 implementation: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- 다음 routine 작업은 승인된 정확한 18개 파일에 대한 `Claude Code Slice 7 read-only Cross Review`다.
 - `ChatGPT 중간 전달 불필요`; Owner는 Codex가 제공하는 prompt를 Claude Code에 전달하고, `Claude 결과는 Codex에 전달`한다.
 - Claude Code는 파일 수정·임시 파일 생성·external write·commit·push 없이 `PASS | NEEDS_FIX | BLOCKED`, `P0/P1/P2`, `CONTROL_TOWER_ESCALATION_TRIGGERED`를 보고한다.
-- 승인 범위 안의 일반 P1이고 escalation `NO`이면 Codex가 국소 수정과 targeted re-review를 자율 진행한다. `P0/BLOCKED/scope expansion`은 ChatGPT Control Tower escalation 대상이다.
-- Claude 최종 `PASS`, `P0 0`, `P1 0`, escalation `NO`이면 exact 17-file checkpoint commit이 사전 승인돼 있다.
-- 고정 commit message는 `feat(editorial-v2): checkpoint slice 6 render integration`; Push: `NOT_AUTHORIZED`다.
-- `Slice 7 자동 시작 금지`; external TTS, actual audio/assets, user-content render, final render, publish, deploy, durable persistence도 금지다.
-- Claude는 checker·synthetic probe·build를 실행하지 않는다. Codex가 완료한 probe 재실행 금지, build 재실행 금지이며 read-only source/diff/evidence만 검수한다.
-- Product dev, browser, 외부 API·검색·URL fetch·DNS·DB/storage·생성·렌더·게시·deploy·push·env/secret 접근을 실행하지 않는다.
-- 상태: `SLICE_6_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
+- 승인 범위 안의 일반 P1이고 escalation `NO`이면 Codex가 18-path allowlist 안에서 최대 2회 국소 수정과 targeted re-review를 자율 진행한다. `P0/BLOCKED/scope expansion`은 ChatGPT Control Tower escalation 대상이다.
+- Claude 최종 `PASS`, `P0 0`, `P1 0`, escalation `NO`이면 exact 18-file checkpoint commit이 사전 승인돼 있다.
+- 고정 commit message는 `feat(editorial-v2): checkpoint slice 7 publish recovery plan`; Push: `NOT_AUTHORIZED`다.
+- `Slice 8 자동 시작 금지`; OAuth, actual account lookup/upload/publish/schedule, durable ledger, external network, deploy, push도 금지다.
+- Claude는 checker·synthetic probe·build를 실행하지 않는다. Codex가 완료한 probe 재실행 금지이며 read-only source/diff/evidence만 검수한다.
+- Codex 검증: Slice 7 checker `603/603 PASS`, targeted TypeScript semantic/syntactic 각각 `0`, `git diff --check` PASS, synthetic no-network publish dry-run `PASS`, 보호 mismatch `0`; optional build는 `NOT_RUN`이다.
+- 상태: `SLICE_7_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
 
-## Slice 6 review 후 분기
+## Slice 7 review 후 분기
 
-1. `PASS`, `P0 0`, `P1 0`, escalation `NO`: exact 17-file checkpoint commit을 수행하고 결과를 보고한다.
+1. `PASS`, `P0 0`, `P1 0`, escalation `NO`: exact 18-file checkpoint commit을 수행하고 결과를 보고한다.
 2. allowlist 안의 일반 P1, escalation `NO`: 최대 2회 범위에서 최소 correction 후 Claude targeted re-review를 요청한다.
-3. P0, BLOCKED, escalation `YES`, 캐릭터 방향 판단 충돌, 범위 확대 필요, 반복 P1: 즉시 중단하고 ChatGPT Control Tower decision packet을 출력한다.
+3. P0, BLOCKED, escalation `YES`, allowlist 확대, 실제 외부 계정 검증·업로드·게시·예약 필요, 반복 P1: 즉시 중단하고 ChatGPT Control Tower decision packet을 출력한다.
 
 ## 현재 상태
 

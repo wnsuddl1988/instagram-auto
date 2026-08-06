@@ -1,29 +1,30 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-08-04 KST
+Updated: 2026-08-06 KST
 
-## Shorts Editorial OS V2 — Slice 6 voice, subtitle, and render integration
+## Shorts Editorial OS V2 — Slice 7 publish package, identity, dedupe, and recovery dry-run
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_6_VOICE_SUBTITLE_RENDER_INTEGRATION_AND_LOCAL_FIXTURE_PROOF_AUTONOMOUS_LOOP`.
-- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`; Slice 4: `FINAL_PASS`; Slice 5: `FINAL_PASS`.
-- Slice 5 checkpoint HEAD: `ce6346411d8a071921e942fad5c895f5fcf94b1b`; parent: `80aa56cfdc75f3014fb5415392a6b363ced18feb`.
-- Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT major-decision escalation are `ACTIVE`.
-- Slice 6: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- Slice 6 scope: approved Character Motion snapshot → Voice Request Plan → estimated Subtitle Timing Plan → deterministic Render Manifest and scene fingerprints → Recovery Plan → Renderer Bridge Plan → local synthetic preview fixture proof → session-only Render Integration approval.
-- Slice 6 Cross Review: `NOT_STARTED`; exact 17-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
-- Voice: `SESSION_ONLY`; TTS: `NOT_CONNECTED`; audio: `NOT_CREATED`; external provider execution: `NOT_EXECUTED`.
-- Subtitle: `ESTIMATED_NOT_AUDIO_ALIGNED`; Render Manifest: `INTEGRATION_PRECHECK_ONLY`; safe-area gate: `STRUCTURAL_SAFE_AREA_PRECHECK`.
-- Synthetic render proof: `PASS`; checker `725/725 PASS` 후 정확히 1회 실행해 8 scenes, 540×960, 30fps, video/audio/subtitle streams, 4.0s, non-empty output, repository status unchanged를 확인했다. Output SHA-256은 `59e858b2d19aef3785c720f2897a9a9b340ef2a695c72a4dddedc385596409e3`이며 production 또는 user-content proof가 아니다.
-- `pnpm build`: `PASS` (정확히 1회); compile, TypeScript, 26-page generation 성공. `next.config.ts`에서 `app/api/manual-render/route.ts`로 이어지는 기존 Turbopack NFT dynamic-path warning 1건만 재현됐고, `app/layout.tsx`·`package.json`·`next.config.ts` 전후 SHA-256은 불변이다.
-- production render: `NOT_IMPLEMENTED`; final 1080×1920 execution: `FORBIDDEN`; Recovery: `PLAN_ONLY`; renderer bridge: `PLAN_ONLY`.
-- runtime UI: `UNVERIFIED`; durable persistence: `NOT_IMPLEMENTED`; product operational capability: `NOT_CLAIMED`.
-- Slice 7: `BLOCKED`; automatic continuation: `DISABLED`.
-- Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_7_PUBLISH_PACKAGE_IDENTITY_DEDUPE_AND_RECOVERY_DRY_RUN_AUTONOMOUS_LOOP`.
+- Slice 0·1·2·3·4·5·6는 `FINAL_PASS`; Slice 6 checkpoint HEAD는 `5e0e0e044b3ebea6af07b98e733a3eac6a96aa2c`다.
+- Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT escalation are `ACTIVE`.
+- Slice 7: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; Slice 7 Cross Review: `NOT_STARTED`.
+- Slice 7 scope: approved Render Integration snapshot → platform publish packages → manual destination identity hard stop → internal metadata/source disclosure → immediate/scheduled intent → deterministic session dedupe → attempt journal → failed-platform-only recovery → provider-independent bridge → synthetic no-network dry-run → session approval.
+- exact 18-file checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`; fixed message: `feat(editorial-v2): checkpoint slice 7 publish recovery plan`.
+- Publish Package: `SESSION_ONLY`; account identity: `MANUAL_UNVERIFIED`; wrong-account hard stop: `STRUCTURAL`; external identity verification: `NOT_PERFORMED`.
+- platform metadata: `INTERNAL_PLANNING_POLICY`; source existence: `UNVERIFIED`; cover: `METADATA_ONLY`; schedule: `INTENT_ONLY`; scheduler: `UNAVAILABLE`.
+- duplicate prevention: `SESSION_ONLY`; publication ledger: `SESSION_ONLY`; remote duplicate status: `UNKNOWN`; durable ledger: `NOT_IMPLEMENTED`.
+- attempt journal: `DRY_RUN_ONLY`; recovery: `PLAN_ONLY`; successful-platform re-execution: `FORBIDDEN`; publish bridge: `executionReady=false`.
+- self-check: Slice 7 checker `603/603 PASS`; targeted TypeScript semantic `0`, syntactic `0`; `git diff --check` PASS; exact 42-path와 보호 mismatch `0`.
+- synthetic no-network publish dry-run: `PASS` (정확히 1회); Instagram success + YouTube retryable failure → YouTube-only retry success, 성공 key 중복·wrong-account·과거 schedule·Owner 미확인 차단, repository status unchanged를 확인했다. 실제 외부 실행은 `0`이다.
+- optional build: `NOT_RUN`; checker·probe·targeted diagnostics가 PASS했고 dependency/config 변경이 없어 이번 Slice에서는 생략했다.
+- OAuth: `NOT_CONNECTED`; actual account lookup: `NOT_PERFORMED`; actual upload: `NOT_IMPLEMENTED`; actual publish: `NOT_IMPLEMENTED`; actual schedule: `NOT_IMPLEMENTED`.
+- runtime UI: `UNVERIFIED`; product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; automatic continuation: `DISABLED`; progress: `NOT_CALCULATED`.
+- Slice 8: `BLOCKED`; 다음 exact scope는 ChatGPT Control Tower와 Owner 승인 전 정의하거나 시작하지 않는다.
 - Slice 3 maintenance backlog: 숫자 표기 동등값의 안전측 과잉 차단 가능성과 금융 안전 정규식 중복은 비차단 P2로 유지한다.
 - Slice 4 maintenance backlog: 기본 visual strategy 우선순위 의도 주석과 visual plan field 복제 유지보수성은 비차단 P2로 유지한다.
-- Slice 5 maintenance backlog: character occupancy·safe-area P2는 Slice 6에서 structural blocking으로 승격했으며 최종 캐릭터명·팔레트·브랜드 identity 결정은 계속 범위 밖이다.
-- Character role: `SECONDARY_EVIDENCE_NAVIGATION_ONLY`; character primary visual, occupancy target 초과, subtitle/chart/number/source safe-area 침범, obstruction policy 위반을 차단한다.
-- External TTS/API/search/URL fetch/DNS, DB/storage, actual asset/audio generation, user-content/final render, upload, publish, deploy, env/secret direct read were not performed in Slice 6.
+- Slice 5 maintenance backlog: 최종 캐릭터명·팔레트·브랜드 identity 결정은 계속 범위 밖이다.
+- Slice 6 maintenance backlog: `renderer-bridge.ts` ffprobe capability의 declaration-only 명시 검토와 `voice_locale_unverified` blocking 승격 검토는 비차단 P2로 유지하며 Slice 7에서는 수정하지 않았다.
+- External TTS/API/search/URL fetch/DNS, OAuth, account API, DB/storage, actual asset/audio/render, upload, publish, schedule, deploy, env/secret direct read는 Slice 7에서 수행하지 않았다.
 
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 
