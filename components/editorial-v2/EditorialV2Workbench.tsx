@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import type {
+  ApprovedCharacterMotionSessionSnapshot,
   ApprovedDetailedScriptSessionSnapshot,
+  ApprovedRenderIntegrationSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
 } from "../../lib/editorial-v2/contracts";
 import CharacterMotionWorkbench from "./CharacterMotionWorkbench";
 import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
+import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
 
 export default function EditorialV2Workbench() {
   const [approvedSnapshot, setApprovedSnapshot] = useState<ApprovedTrendBriefSessionSnapshot | null>(null);
   const [approvedScriptSnapshot, setApprovedScriptSnapshot] = useState<ApprovedDetailedScriptSessionSnapshot | null>(null);
   const [approvedPlanningSnapshot, setApprovedPlanningSnapshot] = useState<ApprovedScenePlanningSessionSnapshot | null>(null);
+  const [approvedCharacterSnapshot, setApprovedCharacterSnapshot] = useState<ApprovedCharacterMotionSessionSnapshot | null>(null);
+  const [approvedRenderSnapshot, setApprovedRenderSnapshot] = useState<ApprovedRenderIntegrationSessionSnapshot | null>(null);
   const intelligenceKey = approvedSnapshot
     ? `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`
     : "no-approved-trend-brief";
@@ -25,17 +30,35 @@ export default function EditorialV2Workbench() {
   const characterKey = approvedPlanningSnapshot
     ? `${approvedPlanningSnapshot.approvedScriptNormalizedHash}:${approvedPlanningSnapshot.evidenceIdentity}:${approvedPlanningSnapshot.selectedAngleId}:${approvedPlanningSnapshot.sceneCards.map((scene) => `${scene.sceneId}:${scene.provenance.sceneRevision.value}`).join("|")}`
     : "no-approved-scene-planning";
+  const renderKey = approvedCharacterSnapshot
+    ? `${approvedCharacterSnapshot.sourcePlanningIdentity}:${approvedCharacterSnapshot.selectedDirectionId}:${approvedCharacterSnapshot.sceneMotionAssignments.map((assignment) => `${assignment.sceneId}:${assignment.motionTag}:${assignment.intensity}:${assignment.enabled}`).join("|")}`
+    : "no-approved-character-motion";
 
-  function handleApprovedTrendBriefChange(snapshot: ApprovedTrendBriefSessionSnapshot | null): void {
+  const handleApprovedTrendBriefChange = useCallback((snapshot: ApprovedTrendBriefSessionSnapshot | null): void => {
     setApprovedSnapshot(snapshot);
     setApprovedScriptSnapshot(null);
     setApprovedPlanningSnapshot(null);
-  }
+    setApprovedCharacterSnapshot(null);
+    setApprovedRenderSnapshot(null);
+  }, []);
 
-  function handleApprovedScriptChange(snapshot: ApprovedDetailedScriptSessionSnapshot | null): void {
+  const handleApprovedScriptChange = useCallback((snapshot: ApprovedDetailedScriptSessionSnapshot | null): void => {
     setApprovedScriptSnapshot(snapshot);
     setApprovedPlanningSnapshot(null);
-  }
+    setApprovedCharacterSnapshot(null);
+    setApprovedRenderSnapshot(null);
+  }, []);
+
+  const handleApprovedPlanningChange = useCallback((snapshot: ApprovedScenePlanningSessionSnapshot | null): void => {
+    setApprovedPlanningSnapshot(snapshot);
+    setApprovedCharacterSnapshot(null);
+    setApprovedRenderSnapshot(null);
+  }, []);
+
+  const handleApprovedCharacterChange = useCallback((snapshot: ApprovedCharacterMotionSessionSnapshot | null): void => {
+    setApprovedCharacterSnapshot(snapshot);
+    setApprovedRenderSnapshot(null);
+  }, []);
 
   return (
     <div>
@@ -65,7 +88,7 @@ export default function EditorialV2Workbench() {
         <ScenePlanningWorkbench
           key={planningKey}
           approvedScriptSnapshot={approvedScriptSnapshot}
-          onApprovedScenePlanningChange={setApprovedPlanningSnapshot}
+          onApprovedScenePlanningChange={handleApprovedPlanningChange}
         />
       )}
       <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
@@ -79,6 +102,23 @@ export default function EditorialV2Workbench() {
         <CharacterMotionWorkbench
           key={characterKey}
           approvedScenePlanningSnapshot={approvedPlanningSnapshot}
+          onApprovedCharacterMotionChange={handleApprovedCharacterChange}
+        />
+      )}
+      <aside aria-live="polite" style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 24px" }}>
+        <strong>Render Integration session-only 연결:</strong>{" "}
+        {approvedCharacterSnapshot
+          ? "승인된 Character Motion snapshot이 Voice·Subtitle·Render Integration planning에 전달됐습니다. upstream 변경 시 render package 전체가 무효화됩니다."
+          : "승인된 Character Motion Package가 없어 Render Integration Workbench가 잠겨 있습니다."}
+        <p>External TTS·audio/asset 생성·실제 user-content/final render·network·persistence는 없습니다. Synthetic preview proof는 checker 통과 후 별도 local CLI에서만 1회 허용됩니다.</p>
+        <p>현재 Render Integration approval: {approvedRenderSnapshot ? "SESSION_ONLY_APPROVED" : "NOT_APPROVED"}</p>
+      </aside>
+      {approvedPlanningSnapshot && approvedCharacterSnapshot && (
+        <RenderIntegrationWorkbench
+          key={renderKey}
+          approvedScenePlanningSnapshot={approvedPlanningSnapshot}
+          approvedCharacterMotionSnapshot={approvedCharacterSnapshot}
+          onApprovedRenderIntegrationChange={setApprovedRenderSnapshot}
         />
       )}
     </div>

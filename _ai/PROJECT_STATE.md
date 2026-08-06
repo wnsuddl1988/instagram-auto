@@ -2,26 +2,28 @@
 
 Updated: 2026-08-04 KST
 
-## Shorts Editorial OS V2 — Slice 5 character direction, rig, and motion system
+## Shorts Editorial OS V2 — Slice 6 voice, subtitle, and render integration
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_5_CHARACTER_DIRECTION_RIG_AND_MOTION_SYSTEM_AUTONOMOUS_LOOP`.
-- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`; Slice 4: `FINAL_PASS`.
-- Slice 4 checkpoint HEAD: `80aa56cfdc75f3014fb5415392a6b363ced18feb`; parent: `3edc034022e179492c38272f30049c5950fe54c3`.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_SLICE_6_VOICE_SUBTITLE_RENDER_INTEGRATION_AND_LOCAL_FIXTURE_PROOF_AUTONOMOUS_LOOP`.
+- Slice 0: `FINAL_PASS`; Slice 1: `FINAL_PASS`; Slice 2: `FINAL_PASS`; Slice 3: `FINAL_PASS`; Slice 4: `FINAL_PASS`; Slice 5: `FINAL_PASS`.
+- Slice 5 checkpoint HEAD: `ce6346411d8a071921e942fad5c895f5fcf94b1b`; parent: `80aa56cfdc75f3014fb5415392a6b363ced18feb`.
 - Governance Source of Truth: `_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md`; governance: `ACTIVE`; autonomous same-Slice loop, mandatory routing header, and ChatGPT major-decision escalation are `ACTIVE`.
-- Slice 5: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
-- Slice 5 scope: approved Scene Planning snapshot → three comparison-only character directions → reusable SVG rig prototypes → eleven semantic motions → deterministic scene mapping → originality, rights, and accessibility review → provisional session-only direction approval.
-- Slice 5 Cross Review: `NOT_STARTED`; exact 15-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
-- Character directions: `COMPARISON_ONLY`; selected direction: `PROVISIONAL_SESSION_ONLY`; SVG rig: `PROTOTYPE_ONLY`.
-- Scene Cards: `SESSION_ONLY`; Visual Plan: `STRUCTURAL_PRECHECK_ONLY`; actual assets: `NOT_CREATED`.
-- Lottie/WebM export: `NOT_IMPLEMENTED`; actual asset generation: `NOT_IMPLEMENTED`; renderer integration: `NOT_IMPLEMENTED`.
+- Slice 6: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`.
+- Slice 6 scope: approved Character Motion snapshot → Voice Request Plan → estimated Subtitle Timing Plan → deterministic Render Manifest and scene fingerprints → Recovery Plan → Renderer Bridge Plan → local synthetic preview fixture proof → session-only Render Integration approval.
+- Slice 6 Cross Review: `NOT_STARTED`; exact 17-file checkpoint is `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0_ESCALATION_NO`.
+- Voice: `SESSION_ONLY`; TTS: `NOT_CONNECTED`; audio: `NOT_CREATED`; external provider execution: `NOT_EXECUTED`.
+- Subtitle: `ESTIMATED_NOT_AUDIO_ALIGNED`; Render Manifest: `INTEGRATION_PRECHECK_ONLY`; safe-area gate: `STRUCTURAL_SAFE_AREA_PRECHECK`.
+- Synthetic render proof: `PASS`; checker `725/725 PASS` 후 정확히 1회 실행해 8 scenes, 540×960, 30fps, video/audio/subtitle streams, 4.0s, non-empty output, repository status unchanged를 확인했다. Output SHA-256은 `59e858b2d19aef3785c720f2897a9a9b340ef2a695c72a4dddedc385596409e3`이며 production 또는 user-content proof가 아니다.
+- `pnpm build`: `PASS` (정확히 1회); compile, TypeScript, 26-page generation 성공. `next.config.ts`에서 `app/api/manual-render/route.ts`로 이어지는 기존 Turbopack NFT dynamic-path warning 1건만 재현됐고, `app/layout.tsx`·`package.json`·`next.config.ts` 전후 SHA-256은 불변이다.
+- production render: `NOT_IMPLEMENTED`; final 1080×1920 execution: `FORBIDDEN`; Recovery: `PLAN_ONLY`; renderer bridge: `PLAN_ONLY`.
 - runtime UI: `UNVERIFIED`; durable persistence: `NOT_IMPLEMENTED`; product operational capability: `NOT_CLAIMED`.
-- Slice 6: `BLOCKED`; automatic continuation: `DISABLED`.
+- Slice 7: `BLOCKED`; automatic continuation: `DISABLED`.
 - Push: `NOT_AUTHORIZED`; official progress: `NOT_CALCULATED`.
 - Slice 3 maintenance backlog: 숫자 표기 동등값의 안전측 과잉 차단 가능성과 금융 안전 정규식 중복은 비차단 P2로 유지한다.
-- Slice 4 maintenance backlog: 기본 visual strategy 우선순위 의도 주석과 visual plan field 복제 유지보수성은 비차단 P2로 유지하며 Slice 5에서 수정하지 않았다.
-- Character prototype provenance: 저장소 내부 React SVG primitive only; 외부 SVG·아이콘·폰트·이미지·실제 인물·타사 상표 사용 없음.
-- Character role: `SECONDARY_EVIDENCE_NAVIGATION_ONLY`; character가 primary evidence 또는 차트·숫자·source card 가림 요소가 되는 계획은 차단한다.
-- External API/search/URL fetch/DNS, DB/storage, asset generation, upload, render, publish, deploy, env/secret direct read were not performed in Slice 5.
+- Slice 4 maintenance backlog: 기본 visual strategy 우선순위 의도 주석과 visual plan field 복제 유지보수성은 비차단 P2로 유지한다.
+- Slice 5 maintenance backlog: character occupancy·safe-area P2는 Slice 6에서 structural blocking으로 승격했으며 최종 캐릭터명·팔레트·브랜드 identity 결정은 계속 범위 밖이다.
+- Character role: `SECONDARY_EVIDENCE_NAVIGATION_ONLY`; character primary visual, occupancy target 초과, subtitle/chart/number/source safe-area 침범, obstruction policy 위반을 차단한다.
+- External TTS/API/search/URL fetch/DNS, DB/storage, actual asset/audio generation, user-content/final render, upload, publish, deploy, env/secret direct read were not performed in Slice 6.
 
 ## Shorts Editorial OS V2 — Slice 2 FINAL_PASS checkpoint
 

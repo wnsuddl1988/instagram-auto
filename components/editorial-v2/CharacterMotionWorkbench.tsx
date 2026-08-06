@@ -1,8 +1,9 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 import type {
+  ApprovedCharacterMotionSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   CharacterMotionIntensity,
   CharacterOriginalityCheckId,
@@ -23,6 +24,9 @@ import styles from "./CharacterMotionWorkbench.module.css";
 
 interface CharacterMotionWorkbenchProps {
   readonly approvedScenePlanningSnapshot: ApprovedScenePlanningSessionSnapshot;
+  readonly onApprovedCharacterMotionChange?: (
+    snapshot: ApprovedCharacterMotionSessionSnapshot | null,
+  ) => void;
 }
 
 const PREVIEW_SPEEDS = [0.75, 1, 1.25] as const;
@@ -49,8 +53,32 @@ function groupFor(checkId: CharacterOriginalityCheckId): "originality" | "rights
   return "originality";
 }
 
+function cloneApprovedCharacterMotionSnapshot(
+  snapshot: ApprovedCharacterMotionSessionSnapshot,
+): ApprovedCharacterMotionSessionSnapshot {
+  return {
+    ...snapshot,
+    sceneMotionAssignments: snapshot.sceneMotionAssignments.map((assignment) => ({
+      ...assignment,
+      evidenceRefs: [...assignment.evidenceRefs],
+      sourceRefs: [...assignment.sourceRefs],
+      numberRefs: [...assignment.numberRefs],
+    })),
+    reducedMotionAssignments: snapshot.reducedMotionAssignments.map((assignment) => ({
+      ...assignment,
+      evidenceRefs: [...assignment.evidenceRefs],
+      sourceRefs: [...assignment.sourceRefs],
+      numberRefs: [...assignment.numberRefs],
+    })),
+    originalityReview: snapshot.originalityReview.map((check) => ({ ...check })),
+    rightsReview: { ...snapshot.rightsReview },
+    accessibilityReview: { ...snapshot.accessibilityReview },
+  };
+}
+
 export default function CharacterMotionWorkbench({
   approvedScenePlanningSnapshot,
+  onApprovedCharacterMotionChange,
 }: CharacterMotionWorkbenchProps) {
   const [session, dispatch] = useReducer(
     reduceCharacterMotionSession,
@@ -63,6 +91,16 @@ export default function CharacterMotionWorkbench({
   const selection = session.selection;
   const vocabulary = getCharacterMotionVocabulary();
   const comparisonMotion = getCharacterMotionDefinition(comparisonMotionTag);
+
+  useEffect(() => {
+    if (!onApprovedCharacterMotionChange) return;
+    onApprovedCharacterMotionChange(
+      session.approvedSnapshot
+        ? cloneApprovedCharacterMotionSnapshot(session.approvedSnapshot)
+        : null,
+    );
+    return () => onApprovedCharacterMotionChange(null);
+  }, [onApprovedCharacterMotionChange, session.approvedSnapshot]);
 
   function updateSelection(nextSelection: NonNullable<typeof selection>): void {
     dispatch({ type: "selection_changed", selection: nextSelection });
@@ -216,7 +254,7 @@ export default function CharacterMotionWorkbench({
           <button type="button" className={styles.secondary} onClick={() => dispatch({ type: "reset" })}>Slice 5 reset</button>
         </div>
         <p className={session.approvedSnapshot ? styles.success : styles.muted} role="status">{session.approvedSnapshot ? "Provisional Character Motion Package 승인됨 · session-only · 저장되지 않음" : "승인되지 않음"}</p>
-        <p className={styles.notice}>Production asset 아님 · 최종 캐릭터명/팔레트 아님 · Lottie/WebM export 없음 · renderer integration 없음 · network/persistence 없음 · Slice 6는 구현되지 않았습니다.</p>
+        <p className={styles.notice}>Production asset 아님 · 최종 캐릭터명/팔레트 아님 · Lottie/WebM export 없음 · downstream render integration은 별도 session 승인 필요 · network/persistence 없음.</p>
       </section>
     </main>
   );

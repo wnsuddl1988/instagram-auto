@@ -1046,3 +1046,352 @@ export interface CharacterMotionSessionState {
   readonly previewSpeed: 0.75 | 1 | 1.25;
   readonly reducedMotion: boolean;
 }
+
+export type VoiceProviderMode = "plan_only" | "existing_external_provider" | "manual_audio_future";
+
+export interface VoiceProviderReference {
+  readonly providerId: string;
+  readonly displayLabel: string;
+  readonly mode: VoiceProviderMode;
+  readonly locale: string;
+  readonly voiceIdentity: string;
+  readonly configuredForPlanning: boolean;
+  readonly ownerExternalApprovalConfirmed: boolean;
+  readonly actualRequestExecuted: false;
+  readonly audioCreated: false;
+}
+
+export interface VoiceRequestScene {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly narration: string;
+  readonly characterCount: number;
+  readonly wordCount: number;
+  readonly estimatedDurationSeconds: number;
+  readonly locale: string;
+  readonly voiceIdentity: string;
+  readonly sourceScriptHash: string;
+  readonly executionRequested: false;
+  readonly executed: false;
+  readonly audioCreated: false;
+}
+
+export interface VoiceUsageEstimate {
+  readonly totalCharacters: number;
+  readonly totalWords: number;
+  readonly totalEstimatedDurationSeconds: number;
+  readonly targetDurationSeconds: number;
+  readonly durationVarianceSeconds: number;
+}
+
+export type VoiceCostEstimateClass = "unknown" | "manual_basis_only" | "provider_estimate_unverified";
+
+export interface VoiceRequestPlan {
+  readonly planVersion: "voice-request-plan-v1";
+  readonly sourceScriptHash: string;
+  readonly mode: VoiceProviderMode;
+  readonly provider: VoiceProviderReference | null;
+  readonly scenes: readonly VoiceRequestScene[];
+  readonly usage: VoiceUsageEstimate;
+  readonly costEstimateClass: VoiceCostEstimateClass;
+  readonly manualCostBasisLabel: string | null;
+  readonly externalProviderRequired: boolean;
+  readonly requiresOwnerApproval: boolean;
+  readonly ownerApprovalConfirmed: boolean;
+  readonly actualRequestExecuted: false;
+  readonly audioCreated: false;
+  readonly productionReady: false;
+}
+
+export interface VoicePlanValidationIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface VoicePlanValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly issues: readonly VoicePlanValidationIssue[];
+}
+
+export type VoicePlanApprovalState = "not_approved" | "approved" | "invalidated";
+export type SubtitleAlignmentStatus = "estimated_not_audio_aligned";
+
+export interface SubtitleCue {
+  readonly cueId: string;
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly cueOrder: number;
+  readonly text: string;
+  readonly startSeconds: number;
+  readonly endSeconds: number;
+  readonly keyCaption: boolean;
+  readonly safeZone: "lower_safe_caption_zone";
+  readonly alignmentStatus: SubtitleAlignmentStatus;
+}
+
+export interface SceneSubtitlePlan {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly narration: string;
+  readonly keyCaption: string;
+  readonly startSeconds: number;
+  readonly endSeconds: number;
+  readonly cues: readonly SubtitleCue[];
+  readonly alignmentStatus: SubtitleAlignmentStatus;
+}
+
+export interface SubtitleTrackPlan {
+  readonly trackVersion: "subtitle-track-plan-v1";
+  readonly sourceScriptHash: string;
+  readonly locale: string;
+  readonly targetDurationSeconds: number;
+  readonly scenePlans: readonly SceneSubtitlePlan[];
+  readonly cues: readonly SubtitleCue[];
+  readonly safeZone: "lower_safe_caption_zone";
+  readonly alignmentStatus: SubtitleAlignmentStatus;
+  readonly audioAlignmentPerformed: false;
+  readonly productionReady: false;
+}
+
+export interface SubtitleValidationIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface SubtitleValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly issues: readonly SubtitleValidationIssue[];
+}
+
+export type RenderProfileId = "preview_540x960" | "final_1080x1920";
+
+export interface RenderProfile {
+  readonly profileId: RenderProfileId;
+  readonly label: string;
+  readonly width: 540 | 1080;
+  readonly height: 960 | 1920;
+  readonly framesPerSecond: 30;
+  readonly bitrateIntent: "low_preview" | "production_intent_unverified";
+  readonly encodingIntent: "fast_preview" | "production_quality_intent";
+  readonly preview: boolean;
+  readonly final: boolean;
+  readonly executionAllowed: boolean;
+  readonly productionReady: false;
+}
+
+export type RenderLayerType =
+  | "base_placeholder"
+  | "primary_visual"
+  | "supporting_visual"
+  | "source_metadata"
+  | "number_chart_metadata"
+  | "character"
+  | "subtitle"
+  | "key_caption"
+  | "safe_area";
+
+export interface SceneRenderLayer {
+  readonly layerId: string;
+  readonly layerType: RenderLayerType;
+  readonly logicalUri: string;
+  readonly required: boolean;
+  readonly resolved: boolean;
+  readonly role: "primary" | "secondary" | "overlay" | "guide";
+  readonly zIndex: number;
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly rightsReviewState: RightsReviewState;
+  readonly costClass: VisualCostClass;
+}
+
+export interface SceneRenderFingerprint {
+  readonly sceneId: string;
+  readonly fingerprintVersion: "scene-render-fingerprint-v1";
+  readonly fingerprint: string;
+  readonly sceneContentHash: string;
+  readonly voiceHash: string;
+  readonly subtitleHash: string;
+  readonly characterHash: string;
+  readonly profileHash: string;
+}
+
+export interface SceneRenderInput {
+  readonly sceneId: string;
+  readonly sceneOrder: number;
+  readonly enabled: boolean;
+  readonly durationSeconds: number;
+  readonly primaryVisualStrategy: VisualStrategyType;
+  readonly acquisitionMode: AssetAcquisitionMode;
+  readonly narration: string;
+  readonly keyCaption: string;
+  readonly sourceRefs: readonly string[];
+  readonly numberRefs: readonly string[];
+  readonly layers: readonly SceneRenderLayer[];
+  readonly characterAssignment: SceneCharacterMotionAssignment | null;
+  readonly subtitleCueIds: readonly string[];
+  readonly unresolvedRequirements: readonly string[];
+  readonly characterOccupancyPercent: number;
+  readonly characterOccupancyTargetPercent: number;
+  readonly characterOverlapsSubtitleSafeZone: boolean;
+  readonly characterIntrudesPrimarySafeZone: boolean;
+  readonly obstructionPolicySatisfied: boolean;
+  readonly characterIsPrimaryVisual: boolean;
+  readonly captionDensityClass: "normal" | "dense";
+  readonly evidenceDensityClass: "normal" | "dense";
+  readonly structuralSafeAreaPrecheck: "STRUCTURAL_SAFE_AREA_PRECHECK";
+  readonly fingerprint: SceneRenderFingerprint;
+}
+
+export interface RenderManifest {
+  readonly manifestVersion: "render-manifest-v1";
+  readonly sourcePlanningIdentity: string;
+  readonly sourceScriptHash: string;
+  readonly selectedAngleId: string;
+  readonly selectedCharacterDirectionId: CharacterDirectionId;
+  readonly profile: RenderProfile;
+  readonly voicePlan: VoiceRequestPlan;
+  readonly subtitleTrack: SubtitleTrackPlan;
+  readonly scenes: readonly SceneRenderInput[];
+  readonly enabledSceneCount: number;
+  readonly totalDurationSeconds: number;
+  readonly globalSafeAreaPolicy: "evidence_first_no_obstruction";
+  readonly integrationReadiness: "INTEGRATION_PRECHECK_ONLY";
+  readonly manifestHash: string;
+  readonly renderExecuted: false;
+  readonly audioCreated: false;
+  readonly externalRequestsMade: false;
+  readonly productionReady: false;
+}
+
+export interface RenderManifestValidationIssue {
+  readonly code: string;
+  readonly sceneId: string | null;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface RenderManifestValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly verificationLevel: "INTEGRATION_PRECHECK_ONLY";
+  readonly issues: readonly RenderManifestValidationIssue[];
+}
+
+export type SceneRenderExecutionStatus = "not_started" | "blocked" | "synthetic_fixture_pass" | "failed_retryable";
+
+export interface RenderAttemptRecord {
+  readonly attemptId: string;
+  readonly sceneId: string;
+  readonly fingerprint: string;
+  readonly profileId: RenderProfileId;
+  readonly status: SceneRenderExecutionStatus;
+  readonly retryable: boolean;
+  readonly outputHash: string | null;
+  readonly syntheticFixtureOnly: boolean;
+}
+
+export interface RenderRecoveryPlan {
+  readonly planVersion: "render-recovery-plan-v1";
+  readonly globalInvalidation: boolean;
+  readonly globalReasons: readonly string[];
+  readonly changedSceneIds: readonly string[];
+  readonly reusableSceneIds: readonly string[];
+  readonly removedSceneIds: readonly string[];
+  readonly newSceneIds: readonly string[];
+  readonly retryableSceneIds: readonly string[];
+  readonly blockedSceneIds: readonly string[];
+  readonly previousOutputsAssumed: false;
+  readonly persistenceUsed: false;
+}
+
+export interface RendererBridgeCapability {
+  readonly capabilityId:
+    | "scene_concat"
+    | "profile_selection"
+    | "audio_placeholder"
+    | "subtitle_overlay"
+    | "character_overlay"
+    | "text_overlay"
+    | "transitions"
+    | "fingerprint_verification"
+    | "manifest_hash_verification"
+    | "ffprobe_verification";
+  readonly planned: true;
+  readonly implemented: false;
+  readonly externalExecutionRequired: boolean;
+}
+
+export interface RendererBridgePlan {
+  readonly bridgeVersion: "renderer-bridge-plan-v1";
+  readonly manifestHash: string;
+  readonly profileId: RenderProfileId;
+  readonly capabilities: readonly RendererBridgeCapability[];
+  readonly sceneLogicalUris: readonly string[];
+  readonly missingRequirements: readonly string[];
+  readonly executionReady: false;
+  readonly networkRequired: false;
+  readonly filesystemAccessDeclared: false;
+  readonly processExecutionDeclared: false;
+  readonly v1ImportsUsed: false;
+}
+
+export interface SyntheticRenderProofResult {
+  readonly proofVersion: "synthetic-render-proof-v1";
+  readonly profileId: "preview_540x960";
+  readonly sceneCount: 8;
+  readonly width: 540;
+  readonly height: 960;
+  readonly videoStreamPresent: boolean;
+  readonly audioStreamPresent: boolean;
+  readonly subtitleStreamPresent: boolean;
+  readonly durationSeconds: number;
+  readonly outputSha256: string;
+  readonly nonEmptyOutput: boolean;
+  readonly repositoryStatusUnchanged: boolean;
+  readonly syntheticOnly: true;
+}
+
+export type RenderIntegrationApprovalState = "not_approved" | "approved" | "invalidated";
+
+export interface ApprovedRenderIntegrationSessionSnapshot {
+  readonly sourceCharacterSnapshot: ApprovedCharacterMotionSessionSnapshot;
+  readonly voicePlan: VoiceRequestPlan;
+  readonly subtitleTrack: SubtitleTrackPlan;
+  readonly renderManifest: RenderManifest;
+  readonly validation: RenderManifestValidationSummary;
+  readonly bridgePlan: RendererBridgePlan;
+  readonly approvalState: "approved";
+  readonly sessionOnly: true;
+  readonly ttsConnected: false;
+  readonly audioCreated: false;
+  readonly renderExecuted: false;
+  readonly productionReady: false;
+}
+
+export interface RenderIntegrationSessionState {
+  readonly approvedCharacterMotion: ApprovedCharacterMotionSessionSnapshot | null;
+  readonly voicePlan: VoiceRequestPlan | null;
+  readonly voiceValidation: VoicePlanValidationSummary | null;
+  readonly voiceApproval: VoicePlanApprovalState;
+  readonly subtitleTrack: SubtitleTrackPlan | null;
+  readonly subtitleValidation: SubtitleValidationSummary | null;
+  readonly selectedProfileId: RenderProfileId;
+  readonly renderManifest: RenderManifest | null;
+  readonly renderValidation: RenderManifestValidationSummary | null;
+  readonly recoveryPlan: RenderRecoveryPlan | null;
+  readonly bridgePlan: RendererBridgePlan | null;
+  readonly approvalState: RenderIntegrationApprovalState;
+  readonly approvedSnapshot: ApprovedRenderIntegrationSessionSnapshot | null;
+}
