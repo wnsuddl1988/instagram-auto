@@ -2,27 +2,32 @@
 
 Updated: 2026-08-09 KST
 
-## Shorts Editorial OS V2 — Production Activation PA-3 local user-content preview renderer
+## Shorts Editorial OS V2 — Production Activation PA-4 external voice materialization
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA3_LOCAL_USER_CONTENT_PREVIEW_RENDERER_AUTONOMOUS_LOOP`.
-- Slice 0~8, V2 base rebuild milestone, PA-1, PA-2: `FINAL_PASS`; PA-2 checkpoint: `fc1bdd98aff12425daf31241934de783d3ca9b15`; Governance: `ACTIVE`.
-- PA-3: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-3 Cross Review: `NOT_STARTED`; product correction cycle: `0`; validation-harness correction: `2`.
-- Scope: persisted approved Script/Planning/Character/Render checkpoints → canonical render input → deterministic evidence-first scene HTML → Playwright frame capture → system ffmpeg/ffprobe → V2 project data-root preview MP4/metadata → same-origin UI playback/cache reuse.
-- exact 18-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint local user-content preview renderer`.
-- feature flags: V2 + local persistence + local preview render의 명시적 enable이 모두 필요하고 기본값은 OFF다.
-- render authority: `PERSISTED_APPROVED_CHECKPOINT_ONLY`; client request는 revision/checkpoint/profile/Owner local-preview confirmation만 허용하며 content·asset·filesystem path 입력을 거부한다.
-- local user-content preview renderer: `IMPLEMENTED_PENDING_CROSS_REVIEW`; profile: `540×960` 30fps; audio: `silent placeholder`; subtitle: `estimated_not_audio_aligned`; character: `PREVIEW_PROXY_ONLY`; `productionReady=false`.
-- 실제 narration/caption/source/number/scene plan/character assignment를 사용하되 미해결 map/generated/stock/upload asset은 placeholder로 표시한다. 실제 external asset 생성·다운로드와 TTS 호출은 없다.
-- Scene markup은 untrusted persisted text를 HTML escape하고 script/img/link/iframe/object/embed, URL-bearing attribute, event handler, CSS import를 차단한다. Playwright frame context의 network request도 fail-closed다.
-- output store: `<V2 data root>/projects/<projectId>/renders/preview/<renderId>/preview.mp4|metadata.json`; path containment·symlink·size/hash·ffprobe 검증 후 valid cache만 재사용하며 UI/API에 실제 data-root path를 노출하지 않는다.
-- same-origin API: GET metadata/media + POST render; cross-origin, archived project, stale revision, checkpoint mismatch, final profile, Owner 미확인, client content/path, oversized body를 hard stop한다. DELETE는 없다.
-- Self-validation: PA-3 checker `2929/2929 PASS`; targeted TypeScript syntactic/semantic diagnostics `0`; strict preEmit `PASS`; `git diff --check` PASS; exact 42-path 상태, staged `0`, 보호 baseline/config/governance mismatch `0`.
-- Local browser/runtime proof: final `PASS`; 실제 8-scene local preview, video/audio/subtitle stream, 540×960/30fps, silent placeholder, estimated_not_audio_aligned subtitle, character proxy, adversarial persisted text escape, client content/path·final profile·stale revision·cross-origin 차단, first ffmpeg render 뒤 동일 input cache hit에서 ffmpeg 미실행, external request `0`, page error `0`, temp cleanup, repository status/hash 불변을 확인했다.
-- Validation-harness correction: 최초 synthetic `evidence_and_number` fixture의 canonical number ref 누락과 브라우저 same-origin `blob:` media URL의 external-request 오분류를 probe 파일 안에서만 보완했다. 두 경우 모두 제품/runtime output 최종 판정 전에 fail-closed됐으며 final proof가 전체 계약을 다시 검증했다.
-- pnpm build: `PROHIBITED_NOT_RUN`; PA-3 전체에서 실행하지 않으며 package/workspace/lock/Next config는 변경하지 않는다.
-- V1 migration/data/root: `UNTOUCHED`; external API/TTS/asset, OAuth/account, DB/cloud, upload/publish/schedule, deploy, push: `NOT_EXECUTED`.
-- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; progress: `NOT_CALCULATED`; PA-4: `BLOCKED`.
-- 다음 routine 작업은 PA-3 정적/runtime 증거 PASS 후 exact 18-path Claude Code read-only Cross Review다. Claude는 runtime probe와 build를 재실행하지 않는다.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA4_EXTERNAL_TTS_AUDIO_MATERIALIZATION_AND_TIMESTAMP_ALIGNMENT_AUTONOMOUS_LOOP`.
+- Slice 0~8, V2 base rebuild milestone, PA-1, PA-2, PA-3: `FINAL_PASS`; PA-3 checkpoint: `1b6c597487904b21f22072a5af2c93b7aac78b63`; Governance: `ACTIVE`.
+- PA-4: `FINAL_PASS_AWAITING_CHECKPOINT`; PA-4 Cross Review: `PASS`; P0 `0`; P1 `0`; P2 `2`; escalation `NO`; product correction cycle: `1`; validation-harness correction: `1`; package-baseline clarification correction cycle: `0`.
+- Scope: persisted approved Detailed Script/Scene Planning/Render checkpoint → deterministic voice plan → two-step paid-call gate → ElevenLabs timestamp adapter → per-scene MP3/ffprobe/alignment → provider-timed subtitle → V2 content-addressed audio cache → partial recovery → browser audio review → local Audio Materialization Package.
+- exact 18-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint external voice materialization foundation`.
+- external TTS flag: `SHORTS_EDITORIAL_OS_V2_EXTERNAL_TTS_ENABLED`; undefined/empty/default OFF, exact `1|true`만 ON이다. Provider는 `elevenlabs_tts_with_timestamps`, output은 `mp3_44100_128`로 고정했다.
+- canonical voice authority: `PERSISTED_APPROVED_CHECKPOINT_ONLY`; client는 identifier/config/revision/checkpoint/plan hash/Owner confirmation만 보낼 수 있고 narration·raw text·URL·path·API key는 request schema에서 거부한다.
+- two-step gate: GET plan preview는 network `0`, scene/character/cache/missing/max-request/plan hash/credential yes-no/price `UNKNOWN`만 계산한다. POST는 feature·credential·Owner paid confirmation·exact revision/checkpoint/plan hash를 다시 확인한다.
+- ElevenLabs connector: fixed HTTPS timestamp endpoint, explicit voice/model/output, server-only `xi-api-key`, redirect error, AbortController/timeout, bounded 32 MiB JSON, strict base64, scene 20 MiB/total 80 MiB cap, injectable fetch, sequential concurrency `1`, automatic retry `0`, `STOP_ON_FIRST_EXTERNAL_FAILURE`.
+- audio/alignment: MP3-compatible stream·size·SHA·duration을 ffprobe로 검증하고 original character alignment의 equal length/nonnegative/finite/monotonic/text reconstruction을 확인한다. CRLF→LF만 허용하며 normalized alignment는 non-authoritative다.
+- audio-aligned subtitle: `provider_character_timestamps_aligned`; punctuation 우선 cue, provider character indexes의 first-start/last-end, overlap·coverage·duration 검증을 사용하며 estimated fallback을 aligned로 표시하지 않는다.
+- local audio store: `<V2 data root>/projects/<projectId>/audio/tts/scenes|sets`; containment·symlink/junction·atomic write·immutable scene identity·metadata/audio hash를 검증한 valid cache만 재사용한다. absolute path·credential·비용 금액은 API/metadata에 노출·저장하지 않는다.
+- partial failure: 첫 external failure에서 중단하고 성공 scene cache를 유지한다. failed/pending scene만 새 plan preview와 Owner confirmation 후 수동 retry할 수 있으며 checkpoint/voice/model/narration 변화는 stale/new identity다.
+- browser panel: provider config → plan preview → paid confirmation → materialization → scene audio review → failure recovery → technical package approval의 7단계다. API key input은 없고 Blob URL cleanup을 수행한다.
+- live ElevenLabs execution: `NOT_EXECUTED`; paid provider capability: `IMPLEMENTED_BUT_LIVE_UNVERIFIED`; actual audio materialization: `MOCK_PROVIDER_PROVEN`; production voice approval: `NOT_APPROVED`.
+- PA-3 Local Preview는 계속 `SILENT_PLACEHOLDER`; materialized audio를 PA-3 preview/final render와 합성하지 않았다. actual audio preview integration, external visual assets, final 1080×1920 render: `NOT_IMPLEMENTED|NOT_CREATED`.
+- package.json은 기존 protected dirty baseline이다. 초기 HEAD-identical 충돌에서 Codex가 fail-closed했고 Control Tower는 restore를 승인하지 않았다. PA-3 working blob/SHA identity를 보호하며 PA-4 delta·stage·commit inclusion은 `0`이어야 한다. workspace/lock/next config는 HEAD-identical이다.
+- Self-validation: checker `1523/1523 PASS`; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; `git diff --check` PASS; exact `42` status paths(`25M/17U`), staged `0`, 기존 dirty/config/governance/checkpoint mismatch `0`.
+- No-network audio proof: `SHORTS_EDITORIAL_OS_V2_PA4_AUDIO_MATERIALIZATION_PROOF_PASS`; synthetic canonical 8 scenes, full provider requests `8`, valid cache provider requests `0`, third-request failure에서 `2 complete/1 failed/5 pending`, failed/pending-only retry requests `6`, final technical package `approved`, actual network `0`, ffprobe MP3 `1000ms`, repository status/hash unchanged, temp root removed.
+- Corrections: validation harness의 unsupported numeric literal fixture를 숫자 없는 장면 label로 바꿨고, 제품의 Render manifest identity 검증을 잘못된 64-length 가정에서 기존 canonical `hashRenderManifest()` exact equality로 수정했다. 각 실패는 provider 요청 전 fail-closed됐고 최종 checker/diagnostics/proof를 전체 재검증했다.
+- Claude Code read-only Cross Review: local Claude Code `2.1.207`에서 `sonnet` alias / `high` effort를 최소 충분 설정으로 사용해 `PASS`, P0 `0`, P1 `0`, P2 `2`, `CONTROL_TOWER_ESCALATION_TRIGGERED=NO`를 확인했다. 파일/임시파일 생성, checker/probe/build/live provider 재실행은 없었다.
+- Claude optional P2: Origin header가 없는 non-browser mutation의 향후 공통 route hardening, 그리고 선행 canonical text equality로 이미 보호되는 subtitle coverage length 조건 단순화다. PA-4 must-fix는 `0`이며 correction 없이 checkpoint로 진행한다.
+- `pnpm build`: `PROHIBITED_NOT_RUN`; 성공 probe 이후 상태 문서만 증거값으로 갱신했고 probe는 재실행하지 않는다.
+- V1 migration/data/root, OAuth/account, DB/cloud, upload/publish/schedule, deploy, push: `NOT_EXECUTED`; product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; progress: `NOT_CALCULATED`; PA-5/next activation: `BLOCKED`.
 
 ## Shorts Editorial OS V2 — Slice 8 representative sample and relaunch readiness
 

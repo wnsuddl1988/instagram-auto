@@ -25,17 +25,23 @@ PA-2는 `FINAL_PASS`이며 checkpoint `fc1bdd98aff12425daf31241934de783d3ca9b15`
 
 ## 6. PA-3 Local User-Content Preview Renderer
 
-PA-3는 `IMPLEMENTED_PENDING_CROSS_REVIEW`다. Persisted approved checkpoint만 canonical source로 사용하여 실제 narration/caption/source/number/scene/character 계획을 `540×960` 30fps local preview MP4로 만든다. system ffmpeg/ffprobe와 Playwright를 사용하지만 dependency/config는 변경하지 않는다.
+PA-3는 `FINAL_PASS`이며 checkpoint `1b6c597487904b21f22072a5af2c93b7aac78b63`에 저장됐다. Persisted approved checkpoint만 canonical source로 사용하여 실제 narration/caption/source/number/scene/character 계획을 `540×960` 30fps local preview MP4로 만든다. system ffmpeg/ffprobe와 Playwright를 사용하지만 dependency/config는 변경하지 않는다.
 
 PA-3 output은 silent placeholder audio, estimated subtitle, character motion preview proxy, unresolved external asset placeholder를 명시하며 `productionReady=false`다. 실제 external asset 생성·다운로드, TTS, final 1080 render, retry automation, public output, upload/publish는 범위 밖이다. Same-origin identifier-only API, revision/checkpoint hard stop, HTML/network/path containment, deterministic cache와 cleanup을 검증한다.
 
-## 7. PA-4 후보: external TTS·asset integration
+## 7. PA-4 External TTS Audio Materialization and Timestamp Alignment
 
-후보 범위일 뿐이다. provider, 비용 한도, voice/visual profile isolation, rights, retry, secret-safe helper와 Owner paid-action gate가 필요하다.
+PA-4는 `FINAL_PASS_AWAITING_CHECKPOINT`다. Persisted approved narration으로만 deterministic plan을 만들고, plan preview와 별도의 Owner paid confirmation 뒤 고정 ElevenLabs timestamp endpoint를 호출할 수 있는 server adapter를 구현한다. Live provider는 자동 검증하지 않았으며 `IMPLEMENTED_BUT_LIVE_UNVERIFIED`다.
+
+Scene MP3는 ffprobe·SHA·duration·provider character alignment를 검증하고 `provider_character_timestamps_aligned` subtitle cue와 함께 V2 data root의 content-addressed immutable cache에 저장한다. 첫 외부 실패에서 중단하며 성공 cache는 보존하고 failed/pending scene만 새 preview/Owner confirmation으로 재시도한다. Browser에서 scene audio를 검토할 수 있지만 production voice quality는 `NOT_APPROVED`다.
+
+PA-3 Local Preview는 계속 silent placeholder audio를 사용한다. PA-4 audio를 preview/final MP4에 합성하거나 external visual asset/final render/publish를 수행하지 않는다.
+
+Codex self-validation은 checker `1523/1523`, targeted TypeScript `0/0/0`, exact Git/baseline/config와 no-network mock-provider audio proof를 PASS했다. Synthetic 8-scene full/cache/stop-on-first-failure/failed-pending retry를 검증했고 실제 network request는 `0`이었다. Claude Code `sonnet/high` read-only Cross Review도 `PASS`, P0 `0`, P1 `0`, P2 `2`, escalation `NO`였으며 probe/build/live provider call은 재실행하지 않았다.
 
 ## 8. PA-5 후보: account identity·OAuth
 
-후보 범위일 뿐이다. Instagram/YouTube 계정·채널 식별자, OAuth scope, token lifecycle, wrong-account hard stop과 no-log 운영 절차가 필요하다.
+후보 범위일 뿐이며 PA-4 완료가 자동 승인을 뜻하지 않는다. Instagram/YouTube 계정·채널 식별자, OAuth scope, token lifecycle, wrong-account hard stop과 no-log 운영 절차가 필요하다.
 
 ## 9. PA-6 후보: private test publishing
 
@@ -59,10 +65,10 @@ V2가 full draft hydration, actual render, external identity, private publish sm
 
 ## 14. Push·deploy·external cost 승인
 
-PA-3 local checkpoint commit 사전 승인은 Claude 최종 PASS/P0 0/P1 0과 exact 18-path·checker·runtime·TypeScript·Git 검증 조건에만 적용된다. 고정 메시지는 `feat(editorial-v2): checkpoint local user-content preview renderer`다. Push, deploy, paid TTS/asset/final render, account/OAuth, upload/publish/schedule은 각각 Owner의 별도 exact 승인이 필요하다.
+PA-4 checkpoint commit 사전 승인은 Claude 최종 PASS/P0 0/P1 0과 exact 18-path·checker·mock-provider no-network proof·TypeScript·Git 검증 조건에만 적용된다. 고정 메시지는 `feat(editorial-v2): checkpoint external voice materialization foundation`이다. Push, deploy, 실제 paid TTS/asset/final render, account/OAuth, upload/publish/schedule은 각각 Owner의 별도 exact 승인이 필요하다.
 
 ## 15. 현재 product operational capability
 
 `product operational capability = NOT_CLAIMED`
 
-PA-1 persistence와 PA-2 draft resume 이후 PA-3 Local User-Content Preview Renderer를 구현했지만, 이는 preview-only 증거다. Cloud backup, encryption at rest, authentication, V1 migration, external TTS/asset, production-quality 1080 render, account identity, durable publication ledger와 public launch 능력을 주장하지 않는다. PA-4는 Control Tower와 Owner의 새 exact 승인 전 `BLOCKED`다.
+PA-1 persistence, PA-2 draft resume, PA-3 Local User-Content Preview와 PA-4 external voice materialization foundation을 구현했지만, live ElevenLabs 실행과 production voice 품질은 검증·승인하지 않았다. Cloud backup, encryption at rest, authentication, V1 migration, external visual asset, audio-integrated preview/final 1080 render, account identity, durable publication ledger와 public launch 능력을 주장하지 않는다. PA-5와 다음 activation은 Control Tower와 Owner의 새 exact 승인 전 `BLOCKED`다.

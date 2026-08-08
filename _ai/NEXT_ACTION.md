@@ -2,22 +2,23 @@
 
 Updated: 2026-08-09 KST
 
-## Shorts Editorial OS V2 — Production Activation PA-3 self-validation and read-only Cross Review
+## Shorts Editorial OS V2 — Production Activation PA-4 self-validation and read-only Cross Review
 
-- Slice 0~8, V2 base rebuild milestone, PA-1, PA-2는 `FINAL_PASS`; PA-3 implementation은 `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`다.
-- Codex의 PA-3 checker → targeted TypeScript syntactic/semantic/strict preEmit → Git/baseline/config → localhost runtime probe가 모두 PASS했으므로, 다음 routine 작업은 exact 18-path에 대한 `Claude Code PA-3 read-only Cross Review`다.
-- `ChatGPT 중간 전달 불필요`; Owner는 Codex가 제공하는 prompt를 Claude Code에 전달하고 `Claude 결과를 Codex에 전달`한다.
-- 검수 대상: exact allowlist/baseline/governance, persisted approved checkpoint 단독 권위, revision/checkpoint mismatch, identifier-only request, same-origin, path traversal/symlink/path 비노출, HTML/network injection, real user content mapping, placeholder honesty, silent audio/estimated subtitle/character proxy, 540×960/30fps ffprobe, deterministic cache, cleanup, checker false-PASS, V1/config isolation.
-- Claude Code는 파일 수정·임시 파일 생성·checker 실행·runtime probe 재실행·build 실행·dev server·external write·commit·push를 하지 않는다.
+- Slice 0~8, V2 base rebuild milestone, PA-1, PA-2, PA-3는 `FINAL_PASS`; PA-4는 Claude Code `sonnet/high` read-only Cross Review에서 `PASS`, P0 `0`, P1 `0`, P2 `2`, escalation `NO`를 받았고 `FINAL_PASS_AWAITING_CHECKPOINT`다.
+- Codex self-validation: checker `1523/1523 PASS`; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; `git diff --check` PASS; exact `42` paths(`25M/17U`), staged 0, baseline/config/governance/checkpoint mismatch 0; no-network mock-provider proof PASS.
+- Mock proof: canonical 8 scenes, full requests 8, cache requests 0, synthetic third-request failure에서 즉시 중단, failed/pending-only retry 6, final technical package approved, actual network 0, ffprobe MP3 1000ms, repository status/hash unchanged, temp cleanup. `pnpm build`와 실제 ElevenLabs 호출은 실행하지 않았다.
+- 다음 routine 작업은 사전 승인된 exact 18-path checkpoint다. 고정 message는 `feat(editorial-v2): checkpoint external voice materialization foundation`이며 package.json과 기존 dirty baseline은 stage/commit하지 않는다.
+- 검수 대상: exact allowlist/baseline/governance, canonical narration authority, plan-hash paid gate, server-only secret, fixed endpoint/redirect, response/audio bounds, strict base64, timestamp/text/duration validation, provider-timed subtitles, immutable cache, stop-on-first failure, failed/pending-only recovery, same-origin API, checker false-PASS, no live network, PA-3 silent-preview honesty.
+- package.json은 기존 protected dirty baseline이다. 초기 HEAD-identical 조건 충돌로 Codex가 fail-closed했으며 Control Tower가 HEAD restore 대신 PA-3 protected working identity 보존으로 정정했다. PA-4 delta/stage/commit inclusion은 0이고 workspace/lock/Next config는 계속 HEAD-identical이어야 한다.
 - 승인 범위 안의 일반 P1이고 escalation `NO`이면 Codex가 exact 18-path 안에서 최대 2회 correction과 targeted re-review를 진행한다.
-- `P0/BLOCKED/escalation YES`, allowlist 확대, canonical authority bypass, injection/network/path escape, V1 접근, dependency/config/auth, external API/TTS/asset, final render, 게시·deploy·push 필요 시 ChatGPT Control Tower로 즉시 에스컬레이션한다.
-- Claude 최종 PASS, P0 0, P1 0, checker·diagnostics·runtime proof·보호 baseline PASS이면 exact 18-path checkpoint가 사전 승인돼 있다.
-- 고정 commit message: `feat(editorial-v2): checkpoint local user-content preview renderer`; Push: `NOT_AUTHORIZED`.
-- Codex self-validation: checker `2929/2929 PASS`; targeted syntactic/semantic `0`; strict preEmit PASS; `git diff --check` PASS; exact 42-path/staged 0/보호 mismatch 0; runtime proof final PASS; 8 scenes, 540×960/30fps, video/silent audio/estimated subtitle, adversarial text escape, first render+cache hit, external request/page error 0, cleanup 및 repository status/hash 불변. build는 PA-3 명시 금지로 실행하지 않았다.
-- runtime probe 재실행 금지 및 build 실행 금지는 Claude 검수에도 그대로 적용한다.
-- PA-4 자동 시작 금지. 현재 상태: `PA3_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED_PA4_BLOCKED`.
+- API key leak, canonical narration bypass, arbitrary provider URL/path, actual external call, uncontrolled paid retry, V1 contamination, allowlist 확대, P0/BLOCKED, 동일 P1 재발, correction 2회 초과는 ChatGPT Control Tower 즉시 에스컬레이션이다.
+- Claude 최종 PASS, P0 0, P1 0, checker·mock-provider proof·diagnostics·보호 baseline PASS이면 exact 18-path checkpoint가 사전 승인돼 있다.
+- 고정 commit message: `feat(editorial-v2): checkpoint external voice materialization foundation`; Push: `NOT_AUTHORIZED`; 다음 activation: `BLOCKED`.
+- Correction evidence: validation-harness correction `1`(numeric literal 없는 fixture), product correction `1`(Render manifest canonical 32-hex hash 재계산 검증). 두 실패 모두 provider request 전 fail-closed했고 최종 전체 검증은 PASS했다.
+- Claude optional P2 2건은 Origin 없는 non-browser mutation의 향후 공통 route hardening과 선행 exact-text 검증으로 이미 보호되는 subtitle coverage 조건 단순화다. Must-fix는 0이므로 PA-4 correction 없이 checkpoint한다.
+- Self-validation evidence: `FINAL_PASS`; Cross Review: `PASS`; live provider capability: `IMPLEMENTED_BUT_LIVE_UNVERIFIED`; production voice quality: `NOT_APPROVED`; PA-3 preview audio: `SILENT_PLACEHOLDER`; next activation: `BLOCKED`.
 
-## PA-3 review 후 분기
+## PA-4 review 후 분기
 
 1. PASS, P0 0, P1 0, escalation NO: exact 18-path checkpoint를 수행한다.
 2. allowlist 안의 일반 P1, escalation NO: 최대 2회 최소 correction 후 Claude targeted re-review를 요청한다.

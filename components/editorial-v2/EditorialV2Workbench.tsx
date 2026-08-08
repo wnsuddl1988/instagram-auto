@@ -43,6 +43,7 @@ import LocalPreviewRenderPanel from "./LocalPreviewRenderPanel";
 import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
 import SampleRelaunchWorkbench from "./SampleRelaunchWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
+import VoiceMaterializationPanel from "./VoiceMaterializationPanel";
 
 type DraftHydrationPresentation = EditorialV2DraftHydrationStatus | "not_loaded" | "loading";
 type WorkspaceFeatureState = "checking" | "enabled" | "disabled" | "error";
@@ -466,6 +467,11 @@ export default function EditorialV2Workbench() {
         onStartFromApproved={startFromApprovedCheckpoint}
       />
       <LocalPreviewRenderPanel
+        persistenceEnabled={workspaceFeatureState === "enabled"}
+        persistedProject={persistedPreviewSummary}
+        currentSessionRenderManifestHash={approvedRenderSnapshot?.renderManifest.manifestHash ?? null}
+      />
+      <VoiceMaterializationPanel
         persistenceEnabled={workspaceFeatureState === "enabled"}
         persistedProject={persistedPreviewSummary}
         currentSessionRenderManifestHash={approvedRenderSnapshot?.renderManifest.manifestHash ?? null}
