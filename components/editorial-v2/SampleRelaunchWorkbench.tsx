@@ -8,6 +8,7 @@ import type {
   RelaunchDirectionId,
   RelaunchValidationIssue,
 } from "../../lib/editorial-v2/contracts";
+import type { SampleRelaunchDraftState } from "../../lib/editorial-v2/draft-contracts";
 import { buildLaunchReadinessChecklist, canRequestProductionActivation, summarizeLaunchReadiness } from "../../lib/editorial-v2/launch-checklist";
 import {
   buildChannelDescriptionPackage,
@@ -30,6 +31,9 @@ interface SampleRelaunchWorkbenchProps {
   readonly onApprovedRelaunchReadinessChange?: (
     snapshot: ApprovedRelaunchReadinessSessionSnapshot | null,
   ) => void;
+  readonly initialDraftState?: SampleRelaunchDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: SampleRelaunchDraftState) => void;
 }
 
 const DIRECTION_IDS: readonly RelaunchDirectionId[] = [
@@ -50,6 +54,9 @@ function blockingSummaryIssue(): RelaunchValidationIssue {
 export default function SampleRelaunchWorkbench({
   approvedPublishIntegrationSnapshot,
   onApprovedRelaunchReadinessChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: SampleRelaunchWorkbenchProps) {
   const sourceRender = approvedPublishIntegrationSnapshot.sourceRenderIntegrationSnapshot;
   const sourceScript = sourceRender.sourceDetailedScriptSnapshot;
@@ -66,16 +73,16 @@ export default function SampleRelaunchWorkbench({
     sourceFirstRequired: true,
   }), [sourceScript.audience]);
 
-  const [selectedDirectionId, setSelectedDirectionId] = useState<RelaunchDirectionId | "">("");
-  const [reviewedDirectionIds, setReviewedDirectionIds] = useState<readonly RelaunchDirectionId[]>([]);
-  const [channelNameCandidate, setChannelNameCandidate] = useState("");
-  const [handleCandidates, setHandleCandidates] = useState("");
-  const [oneLinePromise, setOneLinePromise] = useState("");
-  const [primaryAudience, setPrimaryAudience] = useState(sourceScript.audience);
-  const [prohibitedWords, setProhibitedWords] = useState("수익 보장, 성공 보장, 무조건 매수, 무조건 매도");
-  const [tagline, setTagline] = useState("");
-  const [productionGapsAcknowledged, setProductionGapsAcknowledged] = useState(false);
-  const [controlTowerApprovalAcknowledged, setControlTowerApprovalAcknowledged] = useState(false);
+  const [selectedDirectionId, setSelectedDirectionId] = useState<RelaunchDirectionId | "">(initialDraftState?.selectedDirectionId ?? "");
+  const [reviewedDirectionIds, setReviewedDirectionIds] = useState<readonly RelaunchDirectionId[]>(initialDraftState?.reviewedDirectionIds ?? []);
+  const [channelNameCandidate, setChannelNameCandidate] = useState(initialDraftState?.identityDraft.channelNameCandidate ?? "");
+  const [handleCandidates, setHandleCandidates] = useState(initialDraftState?.identityDraft.handleCandidates ?? "");
+  const [oneLinePromise, setOneLinePromise] = useState(initialDraftState?.identityDraft.oneLinePromise ?? "");
+  const [primaryAudience, setPrimaryAudience] = useState(initialDraftState?.identityDraft.primaryAudience ?? sourceScript.audience);
+  const [prohibitedWords, setProhibitedWords] = useState(initialDraftState?.identityDraft.prohibitedWords ?? "수익 보장, 성공 보장, 무조건 매수, 무조건 매도");
+  const [tagline, setTagline] = useState(initialDraftState?.identityDraft.tagline ?? "");
+  const [productionGapsAcknowledged, setProductionGapsAcknowledged] = useState(initialDraftState?.acknowledgementStates.productionGapsAcknowledged ?? false);
+  const [controlTowerApprovalAcknowledged, setControlTowerApprovalAcknowledged] = useState(initialDraftState?.acknowledgementStates.controlTowerApprovalAcknowledged ?? false);
   const [approvedIdentity, setApprovedIdentity] = useState<string | null>(null);
 
   const selectedDirection = directions.find((direction) => direction.directionId === selectedDirectionId) ?? null;
@@ -165,6 +172,19 @@ export default function SampleRelaunchWorkbench({
     });
     return () => onApprovedRelaunchReadinessChange(null);
   }, [approvalReady, approvalState, launchChecklist, launchReadiness, onApprovedRelaunchReadinessChange, relaunchPackage, relaunchValidation, representativePackage, representativeValidation, selectedDirection]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "relaunch_readiness",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: approvedIdentity ? "pending_reconfirmation" : "not_approved",
+      selectedDirectionId,
+      reviewedDirectionIds: [...reviewedDirectionIds],
+      identityDraft: { channelNameCandidate, handleCandidates, oneLinePromise, primaryAudience, prohibitedWords, tagline },
+      acknowledgementStates: { productionGapsAcknowledged, controlTowerApprovalAcknowledged },
+      approvedIdentity,
+    });
+  }, [approvedIdentity, channelNameCandidate, controlTowerApprovalAcknowledged, draftHydrationKey, handleCandidates, onDraftStateChange, oneLinePromise, primaryAudience, productionGapsAcknowledged, prohibitedWords, reviewedDirectionIds, selectedDirectionId, tagline]);
 
   function toggleDirectionReviewed(directionId: RelaunchDirectionId): void {
     setReviewedDirectionIds((current) => current.includes(directionId)

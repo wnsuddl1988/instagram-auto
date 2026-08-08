@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   ApprovedTrendBriefSessionSnapshot,
@@ -13,7 +13,9 @@ import type {
   TrendBriefImportValidationSummary,
   TrendBriefImportCandidate,
   TrendResearchPromptInput,
+  EditorialV2JsonValue,
 } from "../../lib/editorial-v2/contracts";
+import type { ResearchImportDraftState } from "../../lib/editorial-v2/draft-contracts";
 import {
   applyFieldLevelRepairs,
   buildImportRepairPrompt,
@@ -49,6 +51,9 @@ type CopyState = "idle" | "copied" | "failed";
 
 export interface ResearchImportWorkbenchProps {
   readonly onApprovedImportChange?: (snapshot: ApprovedTrendBriefSessionSnapshot | null) => void;
+  readonly initialDraftState?: ResearchImportDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: ResearchImportDraftState) => void;
 }
 
 function cloneTrendBriefCandidate(candidate: TrendBriefImportCandidate): TrendBriefImportCandidate {
@@ -74,27 +79,36 @@ function duplicateIssue(): ImportIssue {
   };
 }
 
-export default function ResearchImportWorkbench({ onApprovedImportChange }: ResearchImportWorkbenchProps) {
-  const [researchCutoffDate, setResearchCutoffDate] = useState("");
-  const [researchWindow, setResearchWindow] = useState<ResearchWindowPreset>("7d");
-  const [domain, setDomain] = useState<(typeof DOMAINS)[number]>("생활경제");
-  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]>("일반 성인");
-  const [targetDurationSeconds, setTargetDurationSeconds] = useState<TargetDurationSeconds>(30);
-  const [additionalFocus, setAdditionalFocus] = useState("");
-  const [promptPackage, setPromptPackage] = useState<PromptPackage | null>(null);
+function draftJson(value: unknown): EditorialV2JsonValue | null {
+  return value === null ? null : JSON.parse(JSON.stringify(value)) as EditorialV2JsonValue;
+}
+
+export default function ResearchImportWorkbench({
+  onApprovedImportChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
+}: ResearchImportWorkbenchProps) {
+  const [researchCutoffDate, setResearchCutoffDate] = useState(initialDraftState?.researchInput.researchCutoffDate ?? "");
+  const [researchWindow, setResearchWindow] = useState<ResearchWindowPreset>(initialDraftState?.researchInput.researchWindow ?? "7d");
+  const [domain, setDomain] = useState<(typeof DOMAINS)[number]>((initialDraftState?.researchInput.domain as (typeof DOMAINS)[number] | undefined) ?? "생활경제");
+  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]>((initialDraftState?.researchInput.audience as (typeof AUDIENCES)[number] | undefined) ?? "일반 성인");
+  const [targetDurationSeconds, setTargetDurationSeconds] = useState<TargetDurationSeconds>(initialDraftState?.researchInput.targetDurationSeconds ?? 30);
+  const [additionalFocus, setAdditionalFocus] = useState(initialDraftState?.researchInput.additionalFocus ?? "");
+  const [promptPackage, setPromptPackage] = useState<PromptPackage | null>(initialDraftState?.generatedPrompt ?? null);
   const [promptCopyState, setPromptCopyState] = useState<CopyState>("idle");
-  const [rawText, setRawText] = useState("");
-  const [preview, setPreview] = useState<ExternalLlmNormalizationResult | null>(null);
-  const [rawHash, setRawHash] = useState("");
-  const [normalizedHash, setNormalizedHash] = useState("");
-  const [summary, setSummary] = useState<TrendBriefImportValidationSummary | null>(null);
-  const [sessionHashes, setSessionHashes] = useState<readonly string[]>([]);
-  const [repairPrompt, setRepairPrompt] = useState<PromptPackage | null>(null);
+  const [rawText, setRawText] = useState(initialDraftState?.rawImport ?? "");
+  const [preview, setPreview] = useState<ExternalLlmNormalizationResult | null>(initialDraftState?.normalizedPreview ? initialDraftState.normalizedPreview as unknown as ExternalLlmNormalizationResult : null);
+  const [rawHash, setRawHash] = useState(initialDraftState?.rawHash ?? "");
+  const [normalizedHash, setNormalizedHash] = useState(initialDraftState?.normalizedHash ?? "");
+  const [summary, setSummary] = useState<TrendBriefImportValidationSummary | null>(initialDraftState?.validationSummary ?? null);
+  const [sessionHashes, setSessionHashes] = useState<readonly string[]>(initialDraftState?.sessionHashes ?? []);
+  const [repairPrompt, setRepairPrompt] = useState<PromptPackage | null>(initialDraftState?.repairPrompt ?? null);
   const [repairCopyState, setRepairCopyState] = useState<CopyState>("idle");
-  const [repairText, setRepairText] = useState("");
-  const [repairPackage, setRepairPackage] = useState<FieldRepairPackage | null>(null);
-  const [repairIssues, setRepairIssues] = useState<readonly ImportIssue[]>([]);
-  const [approvalState, setApprovalState] = useState<ImportApprovalState>("not_approved");
+  const [repairText, setRepairText] = useState(initialDraftState?.repairInput ?? "");
+  const [repairPackage, setRepairPackage] = useState<FieldRepairPackage | null>(initialDraftState?.repairPreview ?? null);
+  const [repairIssues, setRepairIssues] = useState<readonly ImportIssue[]>(initialDraftState?.repairIssues ?? []);
+  const [approvalState, setApprovalState] = useState<ImportApprovalState>(initialDraftState?.approvalState === "pending_reconfirmation" ? "invalidated" : initialDraftState?.approvalState ?? "not_approved");
 
   const expectedInput = useMemo<TrendResearchPromptInput>(() => ({
     projectId: "session-only-editorial-v2",
@@ -105,6 +119,28 @@ export default function ResearchImportWorkbench({ onApprovedImportChange }: Rese
     targetDurationSeconds,
     additionalFocus,
   }), [researchCutoffDate, researchWindow, domain, audience, targetDurationSeconds, additionalFocus]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "trend_brief_import",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: approvalState === "approved" ? "pending_reconfirmation" : approvalState,
+      researchInput: { researchCutoffDate, researchWindow, domain, audience, targetDurationSeconds, additionalFocus },
+      generatedPrompt: promptPackage,
+      rawImport: rawText,
+      normalizedPreview: draftJson(preview),
+      rawHash,
+      normalizedHash,
+      validationSummary: summary,
+      sessionHashes: [...sessionHashes],
+      repairInput: repairText,
+      repairPrompt,
+      repairPreview: repairPackage,
+      repairIssues: repairIssues.map((issue) => ({ ...issue })),
+      uiSelectionState: { promptCopyState, repairCopyState },
+      approvalState,
+    });
+  }, [additionalFocus, approvalState, audience, domain, draftHydrationKey, normalizedHash, onDraftStateChange, preview, promptCopyState, promptPackage, rawHash, rawText, repairCopyState, repairIssues, repairPackage, repairPrompt, repairText, researchCutoffDate, researchWindow, sessionHashes, summary, targetDurationSeconds]);
 
   function invalidatePreview(): void {
     onApprovedImportChange?.(null);

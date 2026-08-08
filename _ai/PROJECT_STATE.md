@@ -2,26 +2,29 @@
 
 Updated: 2026-08-08 KST
 
-## Shorts Editorial OS V2 — Production Activation PA-1 durable project store
+## Shorts Editorial OS V2 — Production Activation PA-2 full draft autosave and hydration
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA1_DURABLE_PROJECT_STORE_AND_APPROVED_CHECKPOINT_RESUME_AUTONOMOUS_LOOP`.
-- Slice 0~8: `FINAL_PASS`; V2 base rebuild milestone: `FINAL_PASS`; Governance: `ACTIVE`.
-- PA-1: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-1 Cross Review: `NOT_STARTED`; correction cycle: `0`.
-- Scope: V2 project registry → approved milestone snapshot → atomic local save → SHA-256 integrity → last-known-good → revision history → project list/load → approved-checkpoint resume 안내 → explicit Owner recovery → archive without hard delete.
-- exact 20-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint production activation persistence foundation`.
-- approved checkpoint persistence: `IMPLEMENTED_PENDING_REVIEW`; local project store: `LOCAL_ONLY`; persistence feature default: `OFF`.
-- default data root: OS application-data 후보; `C:\tmp` 권위 저장소: `FORBIDDEN`; 실제 기본 data root 접근: `NOT_EXECUTED`.
-- full draft autosave: `NOT_IMPLEMENTED`; full Workbench hydration: `NOT_IMPLEMENTED`; resume는 저장된 승인 stage·summary 표시와 새 세션 시작 안내까지다.
-- V1 migration: `NOT_IMPLEMENTED`; V1 data: `UNTOUCHED`; V1 namespace/root와 PA-1 store는 분리한다.
-- API: local-only/same-origin intended, feature OFF hard stop, body/content-type/ID/schema/integrity guard, path 비노출, DELETE 없음; 인증 없는 외부 배포 안전성은 주장하지 않는다.
-- Recovery: current corruption 자동 덮어쓰기·삭제 없음, last-known-good/history 후보와 Owner confirmation 필요; probe에서만 synthetic corruption·명시적 복구가 허용된다.
-- Self-validation: PA-1 checker `1187/1187 PASS`; full `pnpm exec tsc --noEmit --pretty false` PASS; targeted semantic/syntactic diagnostics `0`; `git diff --check` PASS. 일회성 probe/build 뒤 schema·recovery candidate·API client validation hardening은 checker와 TypeScript로 재검증했으며 probe/build는 재실행하지 않았다.
-- Synthetic persistence probe: `PASS` (정확히 1회); project create/list, approved checkpoints, raw UTF-8 string, revision/history/LKG, corruption detection, explicit Owner recovery, quarantine, archive/no-delete, temp cleanup, repository status unchanged을 확인했다.
-- Optional build: `PASS` (정확히 1회); Next.js compile·TypeScript·26 static pages 및 PA-1 dynamic API 2개를 확인했다. `next.config.ts → app/api/render-v2/route.ts` NFT warning 1건은 pre-existing·PA-1 범위 밖이다.
-- External API, network, OAuth, actual TTS/asset/render, account write, upload/publish/schedule, DB, deploy, push: `NOT_EXECUTED`.
-- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; automatic continuation: `DISABLED`; progress: `NOT_CALCULATED`.
-- PA-1 Cross Review: `REQUIRED`; PA-2: `BLOCKED`; full Workbench hydration·autosave exact scope는 ChatGPT Control Tower와 Owner 승인 전 시작하지 않는다.
-- P2 backlog 유지: Slice 3~8의 기존 비차단 항목은 PA-1에 끼워 넣지 않았다.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA2_FULL_DRAFT_AUTOSAVE_HYDRATION_AND_RESUME_AUTONOMOUS_LOOP`.
+- Slice 0~8: `FINAL_PASS`; V2 base rebuild milestone: `FINAL_PASS`; PA-1: `FINAL_PASS`; Governance: `ACTIVE`.
+- PA-1 checkpoint: `41d302a9954015ad34a7ca96313f3ccb54a344b2`; PA-2: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-2 Cross Review: `NOT_STARTED`; correction cycle: `2`.
+- Scope: seven Workbench full draft capture → deterministic snapshot/hash → 1,350ms autosave → optimistic draft/base revision guard → atomic local draft/LKG → safe hydration → approval downgrade → explicit draft recovery → localhost Playwright reload/two-tab proof.
+- exact 23-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint production activation draft resume`.
+- approved checkpoint authority: `CANONICAL`; draft approval authority: `NON_CANONICAL`; Draft Resume는 Approval Resume가 아니다.
+- full draft autosave: `IMPLEMENTED_PENDING_REVIEW`; full Workbench hydration: `IMPLEMENTED_PENDING_REVIEW`; optimistic conflict guard: `IMPLEMENTED_PENDING_REVIEW`.
+- local draft store: `LOCAL_ONLY_UNENCRYPTED_JSON`; cloud sync: `NOT_IMPLEMENTED`; encryption at rest: `NOT_IMPLEMENTED`; 민감한 secret/API key 저장은 금지 안내한다.
+- automatic merge, stale draft force hydration, conflict force overwrite, draft hard delete, automatic approved checkpoint creation: `NOT_IMPLEMENTED`.
+- safe hydration은 project/schema/integrity/base revision/approved checkpoint hash가 모두 일치할 때만 허용하고, draft의 approval-like state는 `pending_reconfirmation` 또는 `invalidated`로 내린다.
+- Draft API: same-origin GET/PUT/PATCH, feature OFF·invalid ID·body/schema/integrity/revision/origin/recovery confirmation hard stop, DELETE 없음, 실제 data root·stack 비노출.
+- Draft recovery: current corruption 자동 덮어쓰기·삭제 없음; valid LKG와 explicit Owner confirmation이 필요하며 approved snapshot을 수정하지 않는다.
+- Self-validation: PA-2 checker `1103/1103 PASS`; targeted TypeScript syntactic/semantic diagnostics `0`; full strict pre-emit `PASS`; `git diff --check` PASS; exact 47-path 상태와 보호 mismatch `0`.
+- Draft persistence probe: `PASS`; OS temp root에서 seven-stage draft, exact raw string, optimistic revision/base conflict, current 불변, corruption overwrite 차단, explicit Owner LKG recovery, approval downgrade, project/schema/size 차단, approved snapshot 불변, cleanup 및 repository status/hash 불변을 확인했다.
+- Local browser runtime proof: final `PASS`; UI project create, Research field/raw exact autosave·reload, same-origin seven-stage full draft, 7 Workbench hydration, approval 비승격, two-tab first-writer save/second-writer 409, conflict autosave pause, external request `0`, page error `0`, server/browser/temp cleanup, repository status/hash 불변을 확인했다.
+- Runtime correction: 정상 same-origin host 정규화 false 403과 시간 기반 hydration suppression 경합을 발견해 allowlist 안에서 Host/request URL strict candidate 비교와 mounted-stage callback completion barrier로 수정했다. `Hydrating → Clean` 전환 후 사용자 입력을 받는 probe 동기화까지 correction cycle 2 안에서 완료했다.
+- Optional build: `NOT_COMPLETED_ENVIRONMENT_TOOLING`; 정확히 1회 시도했으나 compile 전 pnpm supply-chain wrapper의 `ERR_PNPM_IGNORED_BUILDS`(`sharp`, `unrs-resolver`)로 중단했다. dependency 승인·install·lockfile/config 변경 및 build 재실행은 하지 않았다.
+- V1 migration: `NOT_IMPLEMENTED`; V1 data/root: `UNTOUCHED`; external integrations: `NOT_STARTED`.
+- External API, OAuth, actual TTS/asset/render, account write, upload/publish/schedule, DB/cloud, deploy, push: `NOT_EXECUTED`.
+- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; progress: `NOT_CALCULATED`; PA-3: `BLOCKED`.
+- 다음 routine 작업은 exact 23-path Claude Code read-only Cross Review다. runtime probe와 build는 Claude가 재실행하지 않는다.
 
 ## Shorts Editorial OS V2 — Slice 8 representative sample and relaunch readiness
 

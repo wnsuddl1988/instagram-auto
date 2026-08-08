@@ -10,6 +10,7 @@ import type {
   RenderProfileId,
   VoiceProviderMode,
 } from "../../lib/editorial-v2/contracts";
+import type { RenderIntegrationDraftState } from "../../lib/editorial-v2/draft-contracts";
 import { buildRenderManifest, cloneRenderManifest, RENDER_PROFILES } from "../../lib/editorial-v2/render-manifest";
 import { buildRenderRecoveryPlan } from "../../lib/editorial-v2/render-recovery";
 import { canApproveRenderIntegration, summarizeRenderManifestValidation, validateRenderManifest } from "../../lib/editorial-v2/render-validation";
@@ -25,6 +26,9 @@ interface RenderIntegrationWorkbenchProps {
   readonly onApprovedRenderIntegrationChange?: (
     snapshot: ApprovedRenderIntegrationSessionSnapshot | null,
   ) => void;
+  readonly initialDraftState?: RenderIntegrationDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: RenderIntegrationDraftState) => void;
 }
 
 function cloneDetailedScriptSnapshot(
@@ -97,16 +101,19 @@ export default function RenderIntegrationWorkbench({
   approvedScenePlanningSnapshot,
   approvedCharacterMotionSnapshot,
   onApprovedRenderIntegrationChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: RenderIntegrationWorkbenchProps) {
-  const [voiceMode, setVoiceMode] = useState<VoiceProviderMode>("plan_only");
-  const [locale, setLocale] = useState("ko-KR");
-  const [voiceIdentity, setVoiceIdentity] = useState("session-voice-unassigned");
-  const [providerId, setProviderId] = useState("");
-  const [providerLabel, setProviderLabel] = useState("");
-  const [manualCostBasisLabel, setManualCostBasisLabel] = useState("");
-  const [ownerExternalApprovalConfirmed, setOwnerExternalApprovalConfirmed] = useState(false);
-  const [targetDurationSeconds, setTargetDurationSeconds] = useState(45);
-  const [selectedProfileId, setSelectedProfileId] = useState<RenderProfileId>("preview_540x960");
+  const [voiceMode, setVoiceMode] = useState<VoiceProviderMode>(initialDraftState?.voiceMode ?? "plan_only");
+  const [locale, setLocale] = useState(initialDraftState?.locale ?? "ko-KR");
+  const [voiceIdentity, setVoiceIdentity] = useState(initialDraftState?.voiceIdentity ?? "session-voice-unassigned");
+  const [providerId, setProviderId] = useState(initialDraftState?.providerId ?? "");
+  const [providerLabel, setProviderLabel] = useState(initialDraftState?.providerLabel ?? "");
+  const [manualCostBasisLabel, setManualCostBasisLabel] = useState(initialDraftState?.manualCostBasisLabel ?? "");
+  const [ownerExternalApprovalConfirmed, setOwnerExternalApprovalConfirmed] = useState(initialDraftState?.ownerExternalApprovalConfirmed ?? false);
+  const [targetDurationSeconds, setTargetDurationSeconds] = useState(initialDraftState?.targetDurationSeconds ?? 45);
+  const [selectedProfileId, setSelectedProfileId] = useState<RenderProfileId>(initialDraftState?.selectedProfileId ?? "preview_540x960");
   const [approvedVoiceKey, setApprovedVoiceKey] = useState<string | null>(null);
   const [approvedRenderKey, setApprovedRenderKey] = useState<string | null>(null);
   const [lastApprovedManifest, setLastApprovedManifest] = useState<ReturnType<typeof buildRenderManifest> | null>(null);
@@ -184,6 +191,26 @@ export default function RenderIntegrationWorkbench({
     });
     return () => onApprovedRenderIntegrationChange(null);
   }, [approvedCharacterMotionSnapshot, approvedDetailedScriptSnapshot, approvable, bridgePlan, manifest, onApprovedRenderIntegrationChange, renderApprovalState, renderValidation, subtitleTrack, voicePlan]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "render_integration",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: approvedRenderKey || approvedVoiceKey ? "pending_reconfirmation" : "not_approved",
+      voiceMode,
+      locale,
+      voiceIdentity,
+      providerId,
+      providerLabel,
+      manualCostBasisLabel,
+      ownerExternalApprovalConfirmed,
+      targetDurationSeconds,
+      selectedProfileId,
+      approvedVoiceKey,
+      approvedRenderKey,
+      lastApprovedManifest,
+    });
+  }, [approvedRenderKey, approvedVoiceKey, draftHydrationKey, lastApprovedManifest, locale, manualCostBasisLabel, onDraftStateChange, ownerExternalApprovalConfirmed, providerId, providerLabel, selectedProfileId, targetDurationSeconds, voiceIdentity, voiceMode]);
 
   function approveRenderIntegration(): void {
     if (!approvable) return;

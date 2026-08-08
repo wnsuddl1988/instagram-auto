@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 import type {
   ApprovedDetailedScriptSessionSnapshot,
@@ -12,6 +12,7 @@ import type {
   SceneVisualPlan,
   VisualStrategyType,
 } from "../../lib/editorial-v2/contracts";
+import type { ScenePlanningDraftState } from "../../lib/editorial-v2/draft-contracts";
 import {
   canApproveScenePlanning,
   createInitialScenePlanningSession,
@@ -52,6 +53,9 @@ interface ScenePlanningWorkbenchProps {
   readonly onApprovedScenePlanningChange?: (
     snapshot: ApprovedScenePlanningSessionSnapshot | null,
   ) => void;
+  readonly initialDraftState?: ScenePlanningDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: ScenePlanningDraftState) => void;
 }
 
 function cloneVisualPlan(plan: readonly SceneVisualPlan[]): readonly SceneVisualPlan[] {
@@ -89,12 +93,21 @@ const RIGHTS_STATES: readonly RightsReviewState[] = ["pending_manual_review", "r
 export default function ScenePlanningWorkbench({
   approvedScriptSnapshot,
   onApprovedScenePlanningChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: ScenePlanningWorkbenchProps) {
+  const initialSession = initialDraftState ? {
+    ...initialDraftState.session,
+    approvedScript: approvedScriptSnapshot,
+    sceneCardApproval: initialDraftState.session.sceneCardApproval === "approved" ? "invalidated" as const : initialDraftState.session.sceneCardApproval,
+    planningApproval: initialDraftState.session.planningApproval === "approved" ? "invalidated" as const : initialDraftState.session.planningApproval,
+  } : createInitialScenePlanningSession(approvedScriptSnapshot);
   const [session, dispatch] = useReducer(
     reduceScenePlanningSession,
-    approvedScriptSnapshot,
-    createInitialScenePlanningSession,
+    initialSession,
   );
+  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(initialDraftState?.selectedSceneId ?? null);
 
   useEffect(() => {
     if (!onApprovedScenePlanningChange) return;
@@ -137,6 +150,16 @@ export default function ScenePlanningWorkbench({
       approvalState: "approved",
     });
   }, [approvedScriptSnapshot, onApprovedScenePlanningChange, session]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "scene_planning",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: session.planningApproval === "approved" ? "pending_reconfirmation" : session.planningApproval,
+      session: { ...session, approvedScript: approvedScriptSnapshot },
+      selectedSceneId,
+    });
+  }, [approvedScriptSnapshot, draftHydrationKey, onDraftStateChange, selectedSceneId, session]);
 
   function generateSceneCards(): void {
     const sceneCards = buildSceneCardDrafts(approvedScriptSnapshot);
@@ -187,7 +210,7 @@ export default function ScenePlanningWorkbench({
           <small>원본 beat order와 provenance를 1:1로 유지합니다.</small>
         </div>
         <div className={styles.sceneGrid}>{session.sceneCards.map((scene) => (
-          <article className={styles.sceneCard} key={scene.sceneId}>
+          <article className={styles.sceneCard} key={scene.sceneId} aria-current={selectedSceneId === scene.sceneId ? "true" : undefined} onClick={() => setSelectedSceneId(scene.sceneId)}>
             <div className={styles.sceneHeading}>
               <div><p className={styles.tag}>Scene {scene.order} · {scene.provenance.beatType}</p><h3>{scene.purpose}</h3></div>
               <label className={styles.inlineControl}>활성<input type="checkbox" checked={scene.enabled} onChange={() => updateCards(toggleSceneEnabled(session.sceneCards, scene.sceneId))} /></label>

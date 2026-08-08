@@ -14,6 +14,7 @@ import type {
   SelectedAngleDraft,
   TopicCandidate,
 } from "../../lib/editorial-v2/contracts";
+import type { EditorialIntelligenceDraftState } from "../../lib/editorial-v2/draft-contracts";
 import { buildEvidencePackDraft, validateEvidencePackDraft } from "../../lib/editorial-v2/evidence-pack";
 import {
   createInitialEditorialIntelligenceSession,
@@ -44,6 +45,9 @@ import styles from "./EditorialIntelligenceWorkbench.module.css";
 interface EditorialIntelligenceWorkbenchProps {
   readonly approvedSnapshot: ApprovedTrendBriefSessionSnapshot;
   readonly onApprovedScriptChange?: (snapshot: ApprovedDetailedScriptSessionSnapshot | null) => void;
+  readonly initialDraftState?: EditorialIntelligenceDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: EditorialIntelligenceDraftState) => void;
 }
 
 type CopyState = "idle" | "copied" | "failed";
@@ -70,21 +74,30 @@ function mergeValidation(
 export default function EditorialIntelligenceWorkbench({
   approvedSnapshot,
   onApprovedScriptChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: EditorialIntelligenceWorkbenchProps) {
+  const initialSession = initialDraftState ? {
+    ...initialDraftState.session,
+    approvedTrendBrief: approvedSnapshot,
+    evidenceReview: { ...initialDraftState.session.evidenceReview, status: initialDraftState.session.evidenceReview.status === "approved" ? "not_reviewed" as const : initialDraftState.session.evidenceReview.status },
+    selectedAngleApproval: initialDraftState.session.selectedAngleApproval === "approved" ? "invalidated" as const : initialDraftState.session.selectedAngleApproval,
+    scriptApproval: initialDraftState.session.scriptApproval === "approved" ? "invalidated" as const : initialDraftState.session.scriptApproval,
+  } : createInitialEditorialIntelligenceSession(approvedSnapshot);
   const [session, dispatch] = useReducer(
     reduceEditorialIntelligenceSession,
-    approvedSnapshot,
-    createInitialEditorialIntelligenceSession,
+    initialSession,
   );
   const [promptCopyState, setPromptCopyState] = useState<CopyState>("idle");
   const [repairCopyState, setRepairCopyState] = useState<CopyState>("idle");
-  const [normalizationMethod, setNormalizationMethod] = useState("not_imported");
-  const [scriptRawHash, setScriptRawHash] = useState("");
-  const [scriptNormalizedHash, setScriptNormalizedHash] = useState("");
-  const [rawImportHashes, setRawImportHashes] = useState<readonly string[]>([]);
-  const [repairPrompt, setRepairPrompt] = useState<PromptPackage | null>(null);
-  const [repairPackage, setRepairPackage] = useState<FieldRepairPackage | null>(null);
-  const [repairIssues, setRepairIssues] = useState<readonly ImportIssue[]>([]);
+  const [normalizationMethod, setNormalizationMethod] = useState(initialDraftState?.normalizationMethod ?? "not_imported");
+  const [scriptRawHash, setScriptRawHash] = useState(initialDraftState?.scriptRawHash ?? "");
+  const [scriptNormalizedHash, setScriptNormalizedHash] = useState(initialDraftState?.scriptNormalizedHash ?? "");
+  const [rawImportHashes, setRawImportHashes] = useState<readonly string[]>(initialDraftState?.rawImportHashes ?? []);
+  const [repairPrompt, setRepairPrompt] = useState<PromptPackage | null>(initialDraftState?.repairPrompt ?? null);
+  const [repairPackage, setRepairPackage] = useState<FieldRepairPackage | null>(initialDraftState?.repairPackage ?? null);
+  const [repairIssues, setRepairIssues] = useState<readonly ImportIssue[]>(initialDraftState?.repairIssues ?? []);
 
   const selectedAngleSummary = useMemo(
     () => session.selectedAngle && session.evidencePack
@@ -98,6 +111,25 @@ export default function EditorialIntelligenceWorkbench({
   const scriptRepairPaths = getDetailedScriptRepairAllowedPaths(session.scriptValidation);
 
   useEffect(() => () => onApprovedScriptChange?.(null), [onApprovedScriptChange]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "editorial_intelligence",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: session.scriptApproval === "approved" ? "pending_reconfirmation" : session.scriptApproval,
+      session: {
+        ...session,
+        approvedTrendBrief: approvedSnapshot,
+      },
+      normalizationMethod,
+      scriptRawHash,
+      scriptNormalizedHash,
+      rawImportHashes: [...rawImportHashes],
+      repairPrompt,
+      repairPackage,
+      repairIssues: repairIssues.map((issue) => ({ ...issue })),
+    });
+  }, [approvedSnapshot, draftHydrationKey, normalizationMethod, onDraftStateChange, rawImportHashes, repairIssues, repairPackage, repairPrompt, scriptNormalizedHash, scriptRawHash, session]);
 
   function invalidateApprovedScript(): void {
     onApprovedScriptChange?.(null);

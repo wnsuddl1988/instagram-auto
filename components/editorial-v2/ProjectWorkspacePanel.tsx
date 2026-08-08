@@ -8,6 +8,10 @@ import type {
   EditorialV2ProjectSnapshot,
 } from "../../lib/editorial-v2/contracts";
 import type { EditorialV2ApprovedCheckpointOption } from "../../lib/editorial-v2/persistence-contracts";
+import type {
+  EditorialV2DraftAutosaveStatus,
+  EditorialV2DraftHydrationStatus,
+} from "../../lib/editorial-v2/draft-contracts";
 import { EDITORIAL_V2_APPROVED_STAGE_ORDER } from "../../lib/editorial-v2/persistence-contracts";
 import {
   EditorialV2ProjectApiError,
@@ -23,6 +27,16 @@ import styles from "./ProjectWorkspacePanel.module.css";
 interface ProjectWorkspacePanelProps {
   readonly approvedCheckpoints: readonly EditorialV2ApprovedCheckpointOption[];
   readonly currentSessionStage: EditorialV2ApprovedStageId | null;
+  readonly draftSummary: {
+    readonly status: EditorialV2DraftAutosaveStatus;
+    readonly draftRevision: number | null;
+    readonly draftHash: string | null;
+    readonly lastSavedAt: string | null;
+    readonly hydrationStatus: EditorialV2DraftHydrationStatus | "not_loaded" | "loading";
+  };
+  readonly onFeatureStateChange?: (state: FeatureState) => void;
+  readonly onProjectSelectionChange?: (projectId: string | null) => void;
+  readonly onApprovedProjectLoaded?: (snapshot: EditorialV2ProjectSnapshot | null) => void;
 }
 
 type FeatureState = "checking" | "enabled" | "disabled" | "error";
@@ -39,6 +53,10 @@ function stageIndex(stageId: EditorialV2ApprovedStageId | null): number {
 export default function ProjectWorkspacePanel({
   approvedCheckpoints,
   currentSessionStage,
+  draftSummary,
+  onFeatureStateChange,
+  onProjectSelectionChange,
+  onApprovedProjectLoaded,
 }: ProjectWorkspacePanelProps) {
   const [featureState, setFeatureState] = useState<FeatureState>("checking");
   const [projects, setProjects] = useState<readonly EditorialV2ProjectIndexEntry[]>([]);
@@ -96,6 +114,10 @@ export default function ProjectWorkspacePanel({
   }, []);
 
   useEffect(() => {
+    onFeatureStateChange?.(featureState);
+  }, [featureState, onFeatureStateChange]);
+
+  useEffect(() => {
     if (savableCheckpoints.length === 0) {
       setSelectedStageId("");
       return;
@@ -111,6 +133,8 @@ export default function ProjectWorkspacePanel({
       await refreshProjects(result.projectId);
       const snapshot = await loadEditorialV2Project(result.projectId);
       setLoadedSnapshot(snapshot);
+      onProjectSelectionChange?.(snapshot.projectId);
+      onApprovedProjectLoaded?.(snapshot);
       setDisplayName("");
       setCreationTimestampIso(new Date().toISOString());
       setMessage(`프로젝트를 생성했습니다. revision ${snapshot.revision}`);
@@ -127,11 +151,13 @@ export default function ProjectWorkspacePanel({
     try {
       const snapshot = await loadEditorialV2Project(selectedProjectId);
       setLoadedSnapshot(snapshot);
+      onApprovedProjectLoaded?.(snapshot);
       setRecoveryRequired(false);
       setRecoveryPlanMessage("현재 snapshot integrity가 정상입니다. 복구는 실행하지 않습니다.");
       setMessage(`프로젝트를 불러왔습니다. revision ${snapshot.revision}`);
     } catch (error) {
       setLoadedSnapshot(null);
+      onApprovedProjectLoaded?.(null);
       if (error instanceof EditorialV2ProjectApiError && error.code === "integrity_conflict") {
         const plan = error.details.recoveryPlan;
         const state = error.details.recoveryState;
@@ -172,6 +198,7 @@ export default function ProjectWorkspacePanel({
       if (!result.ok) throw new Error(result.message);
       const snapshot = await loadEditorialV2Project(selectedProjectId);
       setLoadedSnapshot(snapshot);
+      onApprovedProjectLoaded?.(snapshot);
       setSaveConfirmed(false);
       await refreshProjects(selectedProjectId);
       setMessage(`승인 checkpoint 저장 완료 · revision ${result.revision} · integrity ${result.integrityHash?.slice(0, 12)}`);
@@ -190,6 +217,7 @@ export default function ProjectWorkspacePanel({
       if (!result.ok) throw new Error(result.message);
       setArchiveConfirmed(false);
       setLoadedSnapshot(null);
+      onApprovedProjectLoaded?.(null);
       await refreshProjects();
       setMessage("프로젝트를 삭제하지 않고 archived 상태로 전환했습니다.");
     } catch (error) {
@@ -207,6 +235,7 @@ export default function ProjectWorkspacePanel({
       if (!result.ok) throw new Error(result.message);
       const snapshot = await loadEditorialV2Project(selectedProjectId);
       setLoadedSnapshot(snapshot);
+      onApprovedProjectLoaded?.(snapshot);
       setRecoveryConfirmed(false);
       setRecoveryRequired(false);
       setRecoveryPlanMessage(`복구 완료 · source ${result.source} · corrupted current 보존 ${result.currentCorruptionPreserved ? "YES" : "NO"}`);
@@ -221,14 +250,14 @@ export default function ProjectWorkspacePanel({
   return (
     <section className={styles.panel} aria-labelledby="project-workspace-title">
       <header className={styles.header}>
-        <div><p className={styles.eyebrow}>Production Activation PA-1 · Local only</p><h2 id="project-workspace-title">Project Workspace</h2></div>
+        <div><p className={styles.eyebrow}>Production Activation PA-2 · Local only</p><h2 id="project-workspace-title">Project Workspace</h2></div>
         <span className={styles.status} data-state={featureState}>{featureState}</span>
       </header>
       <div className={styles.boundary}>
-        <strong>승인 checkpoint 저장·복구만 지원</strong>
-        <span>Full draft autosave: NOT IMPLEMENTED</span>
-        <span>Workbench form hydration: NOT IMPLEMENTED</span>
-        <span>V1 data: ISOLATED · data root path: HIDDEN</span>
+        <strong>승인 checkpoint와 편집 draft를 분리 저장</strong>
+        <span>Full draft autosave: LOCAL-ONLY ENABLED · 승인 권위 없음</span>
+        <span>Workbench hydration: SAFE BASE MATCH ONLY · approval 재확인 필요</span>
+        <span>V1 data: ISOLATED · local JSON: UNENCRYPTED · data root path: HIDDEN</span>
       </div>
       <p role="status" aria-live="polite" className={styles.message}>{message}</p>
 
@@ -243,9 +272,9 @@ export default function ProjectWorkspacePanel({
 
         <article className={styles.card}>
           <h3>프로젝트 목록·불러오기</h3>
-          <label>Project<select value={selectedProjectId} disabled={busy || projects.length === 0} onChange={(event) => setSelectedProjectId(event.target.value)}><option value="">선택</option><optgroup label="Active">{activeProjects.map((project) => <option key={project.projectId} value={project.projectId}>{project.displayName} · r{project.revision} · {project.lastApprovedStage ?? "no checkpoint"}</option>)}</optgroup><optgroup label="Archived">{archivedProjects.map((project) => <option key={project.projectId} value={project.projectId}>{project.displayName} · archived</option>)}</optgroup></select></label>
+          <label>Project<select value={selectedProjectId} disabled={busy || projects.length === 0} onChange={(event) => { const projectId = event.target.value; setSelectedProjectId(projectId); setLoadedSnapshot(null); onProjectSelectionChange?.(projectId || null); onApprovedProjectLoaded?.(null); }}><option value="">선택</option><optgroup label="Active">{activeProjects.map((project) => <option key={project.projectId} value={project.projectId}>{project.displayName} · r{project.revision} · {project.lastApprovedStage ?? "no checkpoint"}</option>)}</optgroup><optgroup label="Archived">{archivedProjects.map((project) => <option key={project.projectId} value={project.projectId}>{project.displayName} · archived</option>)}</optgroup></select></label>
           <button type="button" disabled={busy || !selectedProjectId} onClick={() => void loadProject()}>Load approved checkpoint summary</button>
-          <small>불러오기는 snapshot 요약과 승인 단계만 표시합니다. 편집 중 draft를 UI에 자동 주입하지 않습니다.</small>
+          <small>승인 snapshot을 먼저 검증한 뒤 base revision/hash가 정확히 일치하는 draft만 자동 복원합니다.</small>
         </article>
 
         <article className={styles.card}>
@@ -261,7 +290,8 @@ export default function ProjectWorkspacePanel({
           <h3>불러온 snapshot·resume 안내</h3>
           {loadedSnapshot ? <dl className={styles.summary}><dt>Project ID</dt><dd>{loadedSnapshot.projectId}</dd><dt>Status</dt><dd>{loadedSnapshot.metadata.status}</dd><dt>Revision</dt><dd>{loadedSnapshot.revision}</dd><dt>Current stage</dt><dd>{loadedSnapshot.currentStage ?? "none"}</dd><dt>Last approved</dt><dd>{loadedSnapshot.lastApprovedStage ?? "none"}</dd><dt>Integrity</dt><dd>verified · {loadedSnapshot.integrity.canonicalHash.slice(0, 12)}</dd><dt>Approved stages</dt><dd>{loadedSnapshot.approvedCheckpoints.map((checkpoint) => checkpoint.stageId).join(" → ") || "none"}</dd></dl> : <p>불러온 프로젝트가 없습니다.</p>}
           <p>{currentLoadedComparison}</p>
-          <strong>Resume from approved checkpoint:</strong><p>저장된 단계 요약을 기준으로 새 세션을 다시 시작할 수 있습니다. 전체 Workbench 상태가 복원됐다는 뜻은 아닙니다.</p>
+          <dl className={styles.summary}><dt>Draft autosave</dt><dd>{draftSummary.status}</dd><dt>Draft revision</dt><dd>{draftSummary.draftRevision ?? "none"}</dd><dt>Draft integrity</dt><dd>{draftSummary.draftHash ? `${draftSummary.draftHash.slice(0, 12)}…` : "none"}</dd><dt>Draft hydration</dt><dd>{draftSummary.hydrationStatus}</dd><dt>Draft saved</dt><dd>{draftSummary.lastSavedAt ?? "never"}</dd></dl>
+          <strong>Resume 경계:</strong><p>Approved checkpoint는 단계 개방 권위, draft는 편집값 복원 전용입니다. Draft Resume는 Approval Resume가 아니며 모든 승인·확인은 다시 받아야 합니다.</p>
         </article>
 
         <article className={styles.card}>

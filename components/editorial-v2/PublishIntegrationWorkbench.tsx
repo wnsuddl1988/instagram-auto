@@ -11,6 +11,7 @@ import type {
   PublishVisibilityIntent,
   SessionPublicationLedger,
 } from "../../lib/editorial-v2/contracts";
+import type { PublishIntegrationDraftState } from "../../lib/editorial-v2/draft-contracts";
 import { buildPublishBridgePlan, validatePublishBridgePlan } from "../../lib/editorial-v2/publish-bridge";
 import { cloneSessionPublicationLedger, recordSessionPublicationAttempt } from "../../lib/editorial-v2/publish-ledger-session";
 import { buildPlatformPublishMetadata } from "../../lib/editorial-v2/publish-metadata";
@@ -25,6 +26,9 @@ interface PublishIntegrationWorkbenchProps {
   readonly onApprovedPublishIntegrationChange?: (
     snapshot: ApprovedPublishIntegrationSessionSnapshot | null,
   ) => void;
+  readonly initialDraftState?: PublishIntegrationDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: PublishIntegrationDraftState) => void;
 }
 
 const PLATFORMS: readonly PublishPlatformId[] = ["instagram_reels", "youtube_shorts"];
@@ -95,31 +99,34 @@ function cloneApprovedRenderIntegrationSnapshot(
 export default function PublishIntegrationWorkbench({
   approvedRenderIntegrationSnapshot,
   onApprovedPublishIntegrationChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: PublishIntegrationWorkbenchProps) {
   const manifest = approvedRenderIntegrationSnapshot.renderManifest;
   const firstSceneId = manifest.scenes[0]?.sceneId ?? "";
   const sessionIdentity = `publish-session:${manifest.manifestHash}`;
-  const [selectedPlatforms, setSelectedPlatforms] = useState<readonly PublishPlatformId[]>(PLATFORMS);
-  const [instagramExpectedId, setInstagramExpectedId] = useState("");
-  const [instagramObservedId, setInstagramObservedId] = useState("");
-  const [instagramLabel, setInstagramLabel] = useState("");
-  const [instagramOwnerConfirmed, setInstagramOwnerConfirmed] = useState(false);
-  const [youtubeExpectedId, setYoutubeExpectedId] = useState("");
-  const [youtubeObservedId, setYoutubeObservedId] = useState("");
-  const [youtubeLabel, setYoutubeLabel] = useState("");
-  const [youtubeOwnerConfirmed, setYoutubeOwnerConfirmed] = useState(false);
-  const [instagramHashtags, setInstagramHashtags] = useState("출처확인,기준일");
-  const [youtubeHashtags, setYoutubeHashtags] = useState("출처확인,생활비신호");
-  const [instagramCoverSceneId, setInstagramCoverSceneId] = useState(firstSceneId);
-  const [youtubeCoverSceneId, setYoutubeCoverSceneId] = useState(firstSceneId);
-  const [youtubeVisibility, setYoutubeVisibility] = useState<PublishVisibilityIntent>("private");
-  const [executionIntent, setExecutionIntent] = useState<PublishExecutionIntent>("immediate_future");
-  const [scheduledAtIso, setScheduledAtIso] = useState("");
-  const [timezone, setTimezone] = useState("Asia/Seoul");
-  const [validationNowIso, setValidationNowIso] = useState("2026-08-06T00:00:00.000Z");
-  const [scheduleOwnerConfirmation, setScheduleOwnerConfirmation] = useState(false);
-  const [ledger, setLedger] = useState<SessionPublicationLedger>(() => createEmptyLedger(sessionIdentity));
-  const [actualPublishNotIncludedConfirmed, setActualPublishNotIncludedConfirmed] = useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<readonly PublishPlatformId[]>(initialDraftState?.selectedPlatforms ?? PLATFORMS);
+  const [instagramExpectedId, setInstagramExpectedId] = useState(initialDraftState?.instagramExpectedId ?? "");
+  const [instagramObservedId, setInstagramObservedId] = useState(initialDraftState?.instagramObservedId ?? "");
+  const [instagramLabel, setInstagramLabel] = useState(initialDraftState?.instagramLabel ?? "");
+  const [instagramOwnerConfirmed, setInstagramOwnerConfirmed] = useState(initialDraftState?.instagramOwnerConfirmed ?? false);
+  const [youtubeExpectedId, setYoutubeExpectedId] = useState(initialDraftState?.youtubeExpectedId ?? "");
+  const [youtubeObservedId, setYoutubeObservedId] = useState(initialDraftState?.youtubeObservedId ?? "");
+  const [youtubeLabel, setYoutubeLabel] = useState(initialDraftState?.youtubeLabel ?? "");
+  const [youtubeOwnerConfirmed, setYoutubeOwnerConfirmed] = useState(initialDraftState?.youtubeOwnerConfirmed ?? false);
+  const [instagramHashtags, setInstagramHashtags] = useState(initialDraftState?.instagramHashtags ?? "출처확인,기준일");
+  const [youtubeHashtags, setYoutubeHashtags] = useState(initialDraftState?.youtubeHashtags ?? "출처확인,생활비신호");
+  const [instagramCoverSceneId, setInstagramCoverSceneId] = useState(initialDraftState?.instagramCoverSceneId ?? firstSceneId);
+  const [youtubeCoverSceneId, setYoutubeCoverSceneId] = useState(initialDraftState?.youtubeCoverSceneId ?? firstSceneId);
+  const [youtubeVisibility, setYoutubeVisibility] = useState<PublishVisibilityIntent>(initialDraftState?.youtubeVisibility ?? "private");
+  const [executionIntent, setExecutionIntent] = useState<PublishExecutionIntent>(initialDraftState?.executionIntent ?? "immediate_future");
+  const [scheduledAtIso, setScheduledAtIso] = useState(initialDraftState?.scheduledAtIso ?? "");
+  const [timezone, setTimezone] = useState(initialDraftState?.timezone ?? "Asia/Seoul");
+  const [validationNowIso, setValidationNowIso] = useState(initialDraftState?.validationNowIso ?? "2026-08-06T00:00:00.000Z");
+  const [scheduleOwnerConfirmation, setScheduleOwnerConfirmation] = useState(initialDraftState?.scheduleOwnerConfirmation ?? false);
+  const [ledger, setLedger] = useState<SessionPublicationLedger>(() => initialDraftState?.ledger.sessionIdentity === sessionIdentity ? cloneSessionPublicationLedger(initialDraftState.ledger) : createEmptyLedger(sessionIdentity));
+  const [actualPublishNotIncludedConfirmed, setActualPublishNotIncludedConfirmed] = useState(initialDraftState?.actualPublishNotIncludedConfirmed ?? false);
   const [approvedPackageHash, setApprovedPackageHash] = useState<string | null>(null);
 
   const expectedDestinations = useMemo(() => [
@@ -212,6 +219,36 @@ export default function PublishIntegrationWorkbench({
     });
     return () => onApprovedPublishIntegrationChange(null);
   }, [approvalState, approvable, approvedRenderIntegrationSnapshot, bridgePlan, ledger, onApprovedPublishIntegrationChange, publishPackage, recoveryPlan, validation]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "publish_integration",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: approvedPackageHash ? "pending_reconfirmation" : "not_approved",
+      selectedPlatforms: [...selectedPlatforms],
+      instagramExpectedId,
+      instagramObservedId,
+      instagramLabel,
+      instagramOwnerConfirmed,
+      youtubeExpectedId,
+      youtubeObservedId,
+      youtubeLabel,
+      youtubeOwnerConfirmed,
+      instagramHashtags,
+      youtubeHashtags,
+      instagramCoverSceneId,
+      youtubeCoverSceneId,
+      youtubeVisibility,
+      executionIntent,
+      scheduledAtIso,
+      timezone,
+      validationNowIso,
+      scheduleOwnerConfirmation,
+      ledger: cloneSessionPublicationLedger(ledger),
+      actualPublishNotIncludedConfirmed,
+      approvedPackageHash,
+    });
+  }, [actualPublishNotIncludedConfirmed, approvedPackageHash, draftHydrationKey, executionIntent, instagramCoverSceneId, instagramExpectedId, instagramHashtags, instagramLabel, instagramObservedId, instagramOwnerConfirmed, ledger, onDraftStateChange, scheduleOwnerConfirmation, scheduledAtIso, selectedPlatforms, timezone, validationNowIso, youtubeCoverSceneId, youtubeExpectedId, youtubeHashtags, youtubeLabel, youtubeObservedId, youtubeOwnerConfirmed, youtubeVisibility]);
 
   function togglePlatform(platformId: PublishPlatformId): void {
     setSelectedPlatforms((current) => current.includes(platformId) ? current.filter((entry) => entry !== platformId) : [...current, platformId]);

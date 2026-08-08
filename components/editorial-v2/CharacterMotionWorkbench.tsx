@@ -9,6 +9,7 @@ import type {
   CharacterOriginalityCheckId,
   CharacterRigMotionTag,
 } from "../../lib/editorial-v2/contracts";
+import type { CharacterMotionDraftState } from "../../lib/editorial-v2/draft-contracts";
 import { getCharacterMotionDefinition, getCharacterMotionVocabulary } from "../../lib/editorial-v2/character-motion";
 import {
   canApproveCharacterDirection,
@@ -27,6 +28,9 @@ interface CharacterMotionWorkbenchProps {
   readonly onApprovedCharacterMotionChange?: (
     snapshot: ApprovedCharacterMotionSessionSnapshot | null,
   ) => void;
+  readonly initialDraftState?: CharacterMotionDraftState | null;
+  readonly draftHydrationKey?: string;
+  readonly onDraftStateChange?: (state: CharacterMotionDraftState) => void;
 }
 
 const PREVIEW_SPEEDS = [0.75, 1, 1.25] as const;
@@ -79,14 +83,25 @@ function cloneApprovedCharacterMotionSnapshot(
 export default function CharacterMotionWorkbench({
   approvedScenePlanningSnapshot,
   onApprovedCharacterMotionChange,
+  initialDraftState = null,
+  draftHydrationKey = "no-draft",
+  onDraftStateChange,
 }: CharacterMotionWorkbenchProps) {
+  const initialSession = initialDraftState ? {
+    ...initialDraftState.session,
+    approvedPlanning: approvedScenePlanningSnapshot,
+    approvedSnapshot: null,
+    selection: initialDraftState.session.selection ? {
+      ...initialDraftState.session.selection,
+      approvalState: initialDraftState.session.selection.approvalState === "provisionally_approved" ? "invalidated" as const : initialDraftState.session.selection.approvalState,
+    } : null,
+  } : createInitialCharacterMotionSession(approvedScenePlanningSnapshot);
   const [session, dispatch] = useReducer(
     reduceCharacterMotionSession,
-    approvedScenePlanningSnapshot,
-    createInitialCharacterMotionSession,
+    initialSession,
   );
   const [comparisonMotionTag, setComparisonMotionTag] = useState<CharacterRigMotionTag>(
-    session.representativeScene?.semanticMotionTag ?? "idle_scan",
+    (initialDraftState?.comparisonMotionTag as CharacterRigMotionTag | undefined) ?? session.representativeScene?.semanticMotionTag ?? "idle_scan",
   );
   const selection = session.selection;
   const vocabulary = getCharacterMotionVocabulary();
@@ -101,6 +116,16 @@ export default function CharacterMotionWorkbench({
     );
     return () => onApprovedCharacterMotionChange(null);
   }, [onApprovedCharacterMotionChange, session.approvedSnapshot]);
+
+  useEffect(() => {
+    onDraftStateChange?.({
+      stageId: "character_motion",
+      approvalAuthority: "non_canonical_draft",
+      approvalLikeState: session.approvedSnapshot || session.selection?.approvalState === "provisionally_approved" ? "pending_reconfirmation" : session.selection?.approvalState ?? "not_approved",
+      session: { ...session, approvedPlanning: approvedScenePlanningSnapshot, approvedSnapshot: null },
+      comparisonMotionTag,
+    });
+  }, [approvedScenePlanningSnapshot, comparisonMotionTag, draftHydrationKey, onDraftStateChange, session]);
 
   function updateSelection(nextSelection: NonNullable<typeof selection>): void {
     dispatch({ type: "selection_changed", selection: nextSelection });
