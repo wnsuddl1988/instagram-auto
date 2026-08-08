@@ -9,11 +9,15 @@ import type {
   VoiceMaterializationSet,
 } from "../../lib/editorial-v2/voice-materialization-contracts";
 import {
+  PA4L_MAX_EXTERNAL_GENERATION_REQUESTS,
+  PA4L_MAX_NARRATION_CHARACTERS,
+  PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
+} from "../../lib/editorial-v2/voice-materialization-contracts";
+import {
   fetchMaterializedSceneAudio,
   getVoiceMaterializationStatus,
   previewVoiceMaterializationPlan,
-  requestVoiceMaterialization,
-  retryVoiceMaterialization,
+  requestPa4lSingleSceneMaterialization,
   VoiceMaterializationApiError,
 } from "../../lib/editorial-v2/voice-materialization-api-client";
 import styles from "./VoiceMaterializationPanel.module.css";
@@ -43,7 +47,6 @@ export default function VoiceMaterializationPanel({
   const [set, setSet] = useState<VoiceMaterializationSet | null>(null);
   const [recovery, setRecovery] = useState<VoiceMaterializationRecoveryPlan | null>(null);
   const [paidConfirmed, setPaidConfirmed] = useState(false);
-  const [retryPlanPreviewed, setRetryPlanPreviewed] = useState(false);
   const [message, setMessage] = useState("Voice ID와 model ID를 입력한 뒤 비용 발생 전 plan을 먼저 확인하세요.");
   const [audioUrls, setAudioUrls] = useState<Readonly<Record<string, string>>>({});
   const objectUrlsRef = useRef(new Map<string, string>());
@@ -74,7 +77,6 @@ export default function VoiceMaterializationPanel({
     setSet(null);
     setRecovery(null);
     setPaidConfirmed(false);
-    setRetryPlanPreviewed(false);
     revokeAudioUrls();
     const ready = persistenceEnabled && persistedProject?.projectStatus === "active" && canonicalMatch;
     setPhase(ready ? "configuration" : "not_ready");
@@ -88,7 +90,6 @@ export default function VoiceMaterializationPanel({
     setSet(null);
     setRecovery(null);
     setPaidConfirmed(false);
-    setRetryPlanPreviewed(false);
     revokeAudioUrls();
     setPhase("configuration");
     setMessage("Provider configuration이 변경되어 이전 plan과 유료 확인을 무효화했습니다.");
@@ -124,13 +125,12 @@ export default function VoiceMaterializationPanel({
     setPhase("previewing");
     setMessage("Canonical persisted Render checkpoint에서 narration plan을 계산합니다. External network는 호출하지 않습니다.");
     setPaidConfirmed(false);
-    setRetryPlanPreviewed(false);
     try {
       const found = await previewVoiceMaterializationPlan(persistedProject.projectId, voiceId, modelId, { timeoutMs: 15_000 });
       if (sequence !== sequenceRef.current) return;
       setPreview(found);
       setPhase("plan_ready");
-      setMessage(`Plan ready · ${found.plan.sceneCount} scenes · 최대 ${found.maximumExternalRequests} external requests · 실제 가격 UNKNOWN`);
+      setMessage(`PA-4L plan ready · canonical 1 scene · 최대 ${found.maximumExternalRequests} external request · 실제 가격 UNKNOWN`);
       try {
         await refreshStatus(persistedProject.projectId, found.plan.materializationSetId, sequence);
       } catch (error) {
@@ -145,73 +145,27 @@ export default function VoiceMaterializationPanel({
 
   async function materialize(): Promise<void> {
     if (!persistedProject?.renderCheckpointHash || !preview || !paidConfirmed) return;
+    const selectedScene = preview.plan.scenes[0];
+    if (!selectedScene) return;
     const sequence = ++sequenceRef.current;
     setPhase("materializing");
-    setMessage("Scene audio를 순차 생성합니다. 첫 외부 실패에서 즉시 중단하며 자동 retry는 없습니다.");
+    setMessage("PA-4L canonical 1 Scene만 요청합니다. 첫 시도 후 성공·실패와 관계없이 추가 request와 retry는 없습니다.");
     try {
-      const result = await requestVoiceMaterialization(persistedProject.projectId, {
+      const result = await requestPa4lSingleSceneMaterialization(persistedProject.projectId, {
         expectedProjectRevision: persistedProject.projectRevision,
         expectedRenderCheckpointHash: persistedProject.renderCheckpointHash,
         voiceId: preview.plan.voiceId,
         modelId: preview.plan.modelId,
         expectedPlanHash: preview.plan.planHash,
         ownerPaidExternalTtsConfirmation: true,
+        requestedSceneIds: [selectedScene.sceneId],
       });
       if (sequence !== sequenceRef.current) return;
       setPaidConfirmed(false);
       setSet(result.set);
       await refreshStatus(persistedProject.projectId, result.set.materializationSetId, sequence);
       if (sequence !== sequenceRef.current) return;
-      setMessage(result.stoppedOnFirstFailure ? "첫 외부 실패에서 중단했습니다. 성공 cache는 유지되며 failed/pending만 수동 재시도할 수 있습니다." : "Audio Materialization Package 기술 승인 조건을 계산했습니다.");
-    } catch (error) {
-      if (sequence !== sequenceRef.current) return;
-      setPaidConfirmed(false);
-      setPhase("failed");
-      setMessage(messageFrom(error));
-    }
-  }
-
-  async function previewRetry(): Promise<void> {
-    if (!persistedProject || !preview || !recovery || recovery.stale || recovery.retryableSceneIds.length === 0) return;
-    const sequence = ++sequenceRef.current;
-    setPhase("previewing");
-    setPaidConfirmed(false);
-    try {
-      const current = await previewVoiceMaterializationPlan(persistedProject.projectId, preview.plan.voiceId, preview.plan.modelId, { timeoutMs: 15_000 });
-      if (sequence !== sequenceRef.current) return;
-      if (current.plan.planHash !== preview.plan.planHash) throw new Error("VOICE_RETRY_PLAN_STALE");
-      setPreview(current);
-      setRetryPlanPreviewed(true);
-      setPhase("partial_failure");
-      setMessage(`Retry plan ready · failed/pending ${recovery.retryableSceneIds.length} scenes · 최대 ${recovery.retryableSceneIds.length} external requests`);
-    } catch (error) {
-      if (sequence !== sequenceRef.current) return;
-      setPhase("failed");
-      setMessage(messageFrom(error));
-    }
-  }
-
-  async function retryFailed(): Promise<void> {
-    if (!persistedProject?.renderCheckpointHash || !preview || !recovery || !retryPlanPreviewed || !paidConfirmed || recovery.stale || recovery.retryableSceneIds.length === 0) return;
-    const sequence = ++sequenceRef.current;
-    setPhase("materializing");
-    setMessage("Failed/pending scene만 순차 재시도합니다. 자동 retry는 없습니다.");
-    try {
-      const result = await retryVoiceMaterialization(persistedProject.projectId, {
-        expectedProjectRevision: persistedProject.projectRevision,
-        expectedRenderCheckpointHash: persistedProject.renderCheckpointHash,
-        voiceId: preview.plan.voiceId,
-        modelId: preview.plan.modelId,
-        expectedPlanHash: preview.plan.planHash,
-        ownerPaidExternalTtsConfirmation: true,
-        requestedSceneIds: recovery.retryableSceneIds,
-      });
-      if (sequence !== sequenceRef.current) return;
-      setPaidConfirmed(false);
-      setRetryPlanPreviewed(false);
-      await refreshStatus(persistedProject.projectId, result.set.materializationSetId, sequence);
-      if (sequence !== sequenceRef.current) return;
-      setMessage(result.stoppedOnFirstFailure ? "재시도도 첫 외부 실패에서 중단했습니다." : "Failed/pending scene 재시도가 완료됐습니다.");
+      setMessage(result.stoppedOnFirstFailure ? "첫 외부 실패에서 중단했습니다. PA-4L에서는 재시도하지 않습니다." : "PA-4L single-scene technical package 조건을 계산했습니다.");
     } catch (error) {
       if (sequence !== sequenceRef.current) return;
       setPaidConfirmed(false);
@@ -221,21 +175,31 @@ export default function VoiceMaterializationPanel({
   }
 
   const canPreview = persistenceEnabled && canonicalMatch && persistedProject?.projectStatus === "active" && voiceId.length > 0 && modelId.length > 0 && phase !== "previewing" && phase !== "materializing";
-  const canMaterialize = Boolean(preview?.featureEnabled && preview.credentialConfigured && preview.maximumExternalRequests > 0 && paidConfirmed && phase !== "materializing" && !retryPlanPreviewed);
-  const canRetry = Boolean(recovery && !recovery.stale && recovery.retryableSceneIds.length > 0 && retryPlanPreviewed && paidConfirmed && phase !== "materializing");
+  const canMaterialize = Boolean(preview?.featureEnabled
+    && preview.credentialConfigured
+    && preview.plan.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    && preview.plan.scenes.length === 1
+    && preview.plan.scenes[0]!.characterCount <= PA4L_MAX_NARRATION_CHARACTERS
+    && preview.maximumExternalRequests === PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+    && paidConfirmed
+    && phase !== "materializing");
   const completeCount = set?.completeSceneIds.length ?? preview?.cacheHitSceneIds.length ?? 0;
   const statusRows = useMemo(() => set?.sceneEntries ?? preview?.plan.scenes.map((scene) => ({ ...scene, status: preview.cacheHitSceneIds.includes(scene.sceneId) ? "cache_hit" : "pending", durationMs: null, alignmentStatus: "not_available", audioSha256: null, subtitleCueCount: 0, retryable: false })) ?? [], [preview, set]);
 
   return (
-    <section className={styles.panel} aria-labelledby="voice-materialization-title" data-pa4-phase={phase} data-pa4-plan-hash={preview?.plan.planHash ?? "none"}>
+    <section className={styles.panel} aria-labelledby="voice-materialization-title" data-pa4-phase={phase} data-pa4l-mode={PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE} data-pa4-plan-hash={preview?.plan.planHash ?? "none"}>
       <header className={styles.header}>
-        <div><p className={styles.eyebrow}>Production Activation PA-4 · Paid external-call gate</p><h2 id="voice-materialization-title">External Voice Materialization</h2></div>
+        <div><p className={styles.eyebrow}>PA-4L Live Smoke Mode · Paid external-call gate</p><h2 id="voice-materialization-title">Single-Scene External Voice Materialization</h2></div>
         <span className={styles.phase}>{phase.replaceAll("_", " ")}</span>
       </header>
 
       <div className={styles.silentBoundary} data-pa4-pa3-silent-boundary="true">
         <strong>PA-3 Preview 경계</strong>
         <span>현재 Local Preview는 PA-3의 silent placeholder audio를 사용합니다. 실제 생성 음성의 Preview 합성은 다음 Production Activation 범위입니다.</span>
+      </div>
+      <div className={styles.silentBoundary} data-pa4l-single-scene-boundary="true">
+        <strong>PA-4L Single-Scene Guard</strong>
+        <span>최초 live verification은 canonical Scene 1개, narration 최대 180자, provider generation request 최대 1회, 자동 retry 0입니다. Full-scene TTS는 아직 승인되지 않았습니다.</span>
       </div>
       <p className={styles.message} role="status" aria-live="polite">{message}</p>
 
@@ -250,8 +214,8 @@ export default function VoiceMaterializationPanel({
 
         <article className={styles.step} data-step="2">
           <h3><span>2</span> Plan Preview</h3>
-          <button type="button" disabled={!canPreview} onClick={() => void previewPlan()}>Preview External TTS Plan</button>
-          <dl><dt>Canonical checkpoint</dt><dd>{persistedProject?.renderCheckpointHash ? `${persistedProject.renderCheckpointHash.slice(0, 12)}…` : "none"}</dd><dt>Session match</dt><dd>{canonicalMatch ? "MATCH" : "MISMATCH"}</dd><dt>Scenes</dt><dd>{preview?.plan.sceneCount ?? 0}</dd><dt>Total characters</dt><dd>{preview?.plan.totalCharacters ?? 0}</dd><dt>Cache hits</dt><dd>{completeCount}</dd><dt>Missing scenes</dt><dd>{preview?.missingSceneIds.length ?? 0}</dd><dt>Maximum requests</dt><dd>{preview?.maximumExternalRequests ?? 0}</dd><dt>Actual price</dt><dd className={styles.unknown}>UNKNOWN</dd><dt>Plan hash</dt><dd>{preview ? `${preview.plan.planHash.slice(0, 16)}…` : "none"}</dd></dl>
+          <button type="button" disabled={!canPreview} onClick={() => void previewPlan()}>Preview 1-Scene Live Smoke Plan</button>
+          <dl><dt>Canonical checkpoint</dt><dd>{persistedProject?.renderCheckpointHash ? `${persistedProject.renderCheckpointHash.slice(0, 12)}…` : "none"}</dd><dt>Session match</dt><dd>{canonicalMatch ? "MATCH" : "MISMATCH"}</dd><dt>Selected Scene ID</dt><dd>{preview?.plan.scenes[0]?.sceneId ?? "none"}</dd><dt>Scene order</dt><dd>{preview?.plan.scenes[0]?.sceneOrder ?? "—"}</dd><dt>Canonical narration</dt><dd>{preview?.plan.scenes[0]?.narration ?? "none"}</dd><dt>Characters</dt><dd>{preview?.plan.scenes[0]?.characterCount ?? 0}</dd><dt>Narration hash</dt><dd>{preview ? `${preview.plan.scenes[0]!.narrationHash.slice(0, 12)}…` : "none"}</dd><dt>Voice ID</dt><dd>{preview?.plan.voiceId ?? "none"}</dd><dt>Model ID</dt><dd>{preview?.plan.modelId ?? "none"}</dd><dt>Cache status</dt><dd>{preview ? (preview.cacheHitSceneIds.length === 1 ? "HIT" : "MISS") : "unknown"}</dd><dt>Expected provider requests</dt><dd>{preview?.maximumExternalRequests ?? 0}</dd><dt>Max requests</dt><dd>1</dd><dt>Actual price</dt><dd className={styles.unknown}>UNKNOWN</dd><dt>Plan hash</dt><dd>{preview ? `${preview.plan.planHash.slice(0, 16)}…` : "none"}</dd></dl>
           <p>실제 Provider 가격을 이 프로그램이 검증한 것이 아닙니다.</p>
           {preview && <ol className={styles.sceneCounts}>{preview.plan.scenes.map((scene) => <li key={scene.sceneId}><span>{scene.sceneId}</span><strong>{scene.characterCount} chars</strong></li>)}</ol>}
         </article>
@@ -265,9 +229,9 @@ export default function VoiceMaterializationPanel({
 
         <article className={styles.step} data-step="4">
           <h3><span>4</span> Materialization</h3>
-          <button type="button" disabled={!canMaterialize} onClick={() => void materialize()}>Generate Missing Scene Audio</button>
+          <button type="button" disabled={!canMaterialize} onClick={() => void materialize()}>Generate Selected 1-Scene Audio</button>
           <dl><dt>Status</dt><dd>{phase}</dd><dt>External requests</dt><dd>{set?.externalRequestCount ?? 0}</dd><dt>Completed</dt><dd>{set?.completeSceneIds.length ?? 0}</dd><dt>Failed</dt><dd>{set?.failedSceneIds.length ?? 0}</dd><dt>Pending</dt><dd>{set?.pendingSceneIds.length ?? preview?.missingSceneIds.length ?? 0}</dd></dl>
-          <strong>STOP_ON_FIRST_EXTERNAL_FAILURE · concurrency=1 · automatic retry=0</strong>
+          <strong>MAX_REQUESTS=1 · STOP_AFTER_FIRST_ATTEMPT · automatic retry=0 · fallback=0</strong>
         </article>
 
         <article className={`${styles.step} ${styles.audioReview}`} data-step="5">
@@ -285,8 +249,8 @@ export default function VoiceMaterializationPanel({
         <article className={styles.step} data-step="6">
           <h3><span>6</span> Failure Recovery</h3>
           <dl><dt>Failed</dt><dd>{recovery?.failedSceneIds.join(", ") || "none"}</dd><dt>Pending</dt><dd>{recovery?.pendingSceneIds.join(", ") || "none"}</dd><dt>Retryable</dt><dd>{recovery?.retryableSceneIds.join(", ") || "none"}</dd><dt>Reusable cache</dt><dd>{recovery?.reusableSceneIds.join(", ") || "none"}</dd><dt>Stale</dt><dd>{recovery?.stale ? "YES" : "NO"}</dd></dl>
-          <div className={styles.actions}><button type="button" disabled={!recovery || recovery.stale || recovery.retryableSceneIds.length === 0 || phase === "materializing"} onClick={() => void previewRetry()}>Preview Retry Plan</button><button type="button" disabled={!canRetry} onClick={() => void retryFailed()}>Retry Failed/Pending Audio</button></div>
-          <p>성공/cache scene은 재시도하지 않습니다. Retry도 새 plan preview와 Owner 유료 확인이 필요합니다.</p>
+          <div className={styles.actions}><button type="button" disabled>Retry unavailable in PA-4L</button></div>
+          <p>PA-4L은 첫 provider attempt 이후 자동·수동 retry와 fallback을 모두 금지합니다. 실패 결과는 Control Tower에 전달합니다.</p>
         </article>
 
         <article className={`${styles.step} ${styles.approval}`} data-step="7" data-pa4-approval-state={set?.approvalState ?? "pending"}>

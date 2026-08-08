@@ -2,11 +2,31 @@
 
 Updated: 2026-08-09 KST
 
+## Shorts Editorial OS V2 — PA-4L PREP single-scene live guard
+
+- Owner approval: `APPROVE_PA4L_PREP_SINGLE_SCENE_LIVE_GUARD_IMPLEMENTATION_AND_VALIDATION_ONLY`.
+- PA-4: `FINAL_PASS`; checkpoint: `d774ab277756a730ed603501d9c4ce1467aa2a3b`.
+- PA-4L PREP: `FINAL_PASS_AWAITING_CHECKPOINT`; actual PA-4L live request: `NOT_EXECUTED`.
+- live external TTS execution mode: `SINGLE_SCENE_SMOKE_ONLY`; ordinary full live materialization: `BLOCKED`.
+- canonical deterministic selection: enabled approved Scene, narration `<=180`, Korean/80~180/number-date-currency evidence/source evidence/middle/order tie-break; truncation·rewriting·randomness `0`.
+- hard caps: scene count `1`; narration characters `180`; provider generation attempts `1`; automatic retry `0`; fallback `0`.
+- authority layers: plan exact-one invariant, server canonical recalculation/client mismatch rejection, executor request budget consumption before provider attempt.
+- cache hit: selected canonical Scene만 재사용하며 provider request `0`; 다른 missing Scene 자동 대체 `0`.
+- UI: `PA-4L Live Smoke Mode`; 1-Scene plan preview만 제공하며 retry/full-scene live generation은 unavailable이다.
+- self-validation: dedicated checker `675/675 PASS`; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; `git diff --check` PASS; exact precommit tree `29M/6U/35 paths`, staged `0`; protected baseline/config/governance/checkpoint mismatch `0`.
+- no-network proof: `SHORTS_EDITORIAL_OS_V2_PA4L_SINGLE_SCENE_GUARD_PROOF_PASS`; canonical 8 scenes → deterministic Scene 3 한 개(48 chars), fake success request `1`, fake first-failure request `1`, cache request `0`, malicious multi-scene/provider second-attempt block, retry/fallback `0`, actual external network `0`, repository unchanged, temp root removed.
+- validation-harness corrections: checker static expression alignment `2`, synthetic unsupported numeric literal removal `1`; product correction `0`. 모든 실패는 provider/fake fetch 전 또는 actual external network `0` 상태에서 종료됐다.
+- Claude Code read-only Cross Review: local Claude Code `2.1.207`, `sonnet/high`에서 `PASS`, P0 `0`, P1 `0`, P2 `1`, escalation `NO`; checker/probe/build/live provider 재실행과 파일 수정은 `0`이다.
+- Claude optional P2: PA-4L 전용 client preview 함수의 generic `executionMode` parameter가 다소 넓어 보일 수 있으나 client가 non-PA-4L 응답을 fail-closed하고 server가 독립 재검증하므로 exploitable path와 PA-4L must-fix는 `0`이다.
+- actual provider request count: `0`; actual external network: `0`; PA-3 preview: `SILENT_PLACEHOLDER`; product operational capability: `NOT_CLAIMED`.
+- checkpoint: Claude `PASS`, P0 `0`, P1 `0`, checker/probe/diagnostics/baseline PASS 후 exact 11-path commit 사전 승인; push `NOT_AUTHORIZED`.
+- PA-4L 실제 1-Scene paid smoke는 별도 `APPROVE_PA4L_ONE_SCENE_LIVE_ELEVENLABS_REQUEST` 전 금지; PA-5 자동 시작 금지.
+
 ## Shorts Editorial OS V2 — Production Activation PA-4 external voice materialization
 
 - Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA4_EXTERNAL_TTS_AUDIO_MATERIALIZATION_AND_TIMESTAMP_ALIGNMENT_AUTONOMOUS_LOOP`.
 - Slice 0~8, V2 base rebuild milestone, PA-1, PA-2, PA-3: `FINAL_PASS`; PA-3 checkpoint: `1b6c597487904b21f22072a5af2c93b7aac78b63`; Governance: `ACTIVE`.
-- PA-4: `FINAL_PASS_AWAITING_CHECKPOINT`; PA-4 Cross Review: `PASS`; P0 `0`; P1 `0`; P2 `2`; escalation `NO`; product correction cycle: `1`; validation-harness correction: `1`; package-baseline clarification correction cycle: `0`.
+- PA-4: `FINAL_PASS`; checkpoint: `d774ab277756a730ed603501d9c4ce1467aa2a3b`; PA-4 Cross Review: `PASS`; P0 `0`; P1 `0`; P2 `2`; escalation `NO`; product correction cycle: `1`; validation-harness correction: `1`; package-baseline clarification correction cycle: `0`.
 - Scope: persisted approved Detailed Script/Scene Planning/Render checkpoint → deterministic voice plan → two-step paid-call gate → ElevenLabs timestamp adapter → per-scene MP3/ffprobe/alignment → provider-timed subtitle → V2 content-addressed audio cache → partial recovery → browser audio review → local Audio Materialization Package.
 - exact 18-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint external voice materialization foundation`.
 - external TTS flag: `SHORTS_EDITORIAL_OS_V2_EXTERNAL_TTS_ENABLED`; undefined/empty/default OFF, exact `1|true`만 ON이다. Provider는 `elevenlabs_tts_with_timestamps`, output은 `mp3_44100_128`로 고정했다.

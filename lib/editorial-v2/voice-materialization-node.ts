@@ -8,11 +8,13 @@ import type {
   EditorialV2ProjectSnapshot,
 } from "./contracts";
 import { buildLocalPreviewRenderInput } from "./local-preview-input";
+import type { LocalPreviewSceneInput } from "./local-preview-contracts";
 import { hashRenderManifest } from "./render-manifest";
 import type {
   AudioMaterializationPackageBoundary,
   VoiceAudioProbeSummary,
   VoiceMaterializationExecutionResult,
+  VoiceMaterializationExecutionMode,
   VoiceMaterializationPlan,
   VoiceMaterializationPlanComparison,
   VoiceMaterializationPlanPreview,
@@ -23,8 +25,15 @@ import type {
 } from "./voice-materialization-contracts";
 import {
   ELEVENLABS_OUTPUT_FORMAT,
+  PA4L_AUTOMATIC_RETRY_LIMIT,
+  PA4L_FALLBACK_REQUEST_LIMIT,
+  PA4L_MAX_EXTERNAL_GENERATION_REQUESTS,
+  PA4L_MAX_NARRATION_CHARACTERS,
+  PA4L_MAX_SCENES,
+  PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
   VOICE_MATERIALIZATION_MAX_TOTAL_AUDIO_BYTES,
   VOICE_MATERIALIZATION_PROVIDER_ID,
+  VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE,
   isVoiceMaterializationIdentifier,
 } from "./voice-materialization-contracts";
 import { requestElevenLabsTimestampTts } from "./elevenlabs-timestamp-tts-node";
@@ -53,10 +62,12 @@ const execFile = promisify(execFileCallback);
 export interface BuildVoiceMaterializationPlanOptions {
   readonly voiceId: string;
   readonly modelId: string;
+  readonly executionMode?: VoiceMaterializationExecutionMode;
 }
 
 export interface MaterializeVoicePlanOptions extends VoiceMaterializationRuntimeOptions {
   readonly mode: "initial" | "retry";
+  readonly executionMode?: VoiceMaterializationExecutionMode;
   readonly requestedSceneIds?: readonly string[];
 }
 
@@ -100,12 +111,53 @@ export function hashVoiceMaterializationPlan(plan: VoiceMaterializationPlan): st
   return sha256(stableStringify(planHashInput(clone(plan))));
 }
 
+function hasKoreanNarration(scene: LocalPreviewSceneInput): boolean {
+  return /[\uAC00-\uD7A3]/u.test(scene.narration);
+}
+
+function hasNumberDateOrCurrencyEvidence(scene: LocalPreviewSceneInput): boolean {
+  return scene.numberRefs.length > 0
+    || scene.numbers.some((number) => number.currency !== null || Boolean(number.asOf));
+}
+
+function hasSourceEvidence(scene: LocalPreviewSceneInput): boolean {
+  return scene.sourceRefs.length > 0 || scene.claimRefs.length > 0 || scene.numberRefs.length > 0;
+}
+
+export function selectPa4lSingleSmokeScene(
+  scenes: readonly LocalPreviewSceneInput[],
+): LocalPreviewSceneInput {
+  const candidates = scenes.filter((scene) => {
+    const characterCount = [...scene.narration].length;
+    return scene.narration.length > 0 && characterCount <= PA4L_MAX_NARRATION_CHARACTERS;
+  });
+  if (candidates.length === 0) throw new Error("PA4L_SINGLE_SCENE_NOT_AVAILABLE");
+  const middle = (scenes.length + 1) / 2;
+  const ranked = candidates.slice().sort((left, right) => {
+    const priority = [
+      Number(hasKoreanNarration(right)) - Number(hasKoreanNarration(left)),
+      Number([...right.narration].length >= 80) - Number([...left.narration].length >= 80),
+      Number(hasNumberDateOrCurrencyEvidence(right)) - Number(hasNumberDateOrCurrencyEvidence(left)),
+      Number(hasSourceEvidence(right)) - Number(hasSourceEvidence(left)),
+      Math.abs(left.order - middle) - Math.abs(right.order - middle),
+      left.order - right.order,
+    ];
+    return priority.find((value) => value !== 0) ?? left.sceneId.localeCompare(right.sceneId, "en");
+  });
+  return clone(ranked[0]!);
+}
+
 export function buildVoiceMaterializationPlan(
   projectSnapshot: EditorialV2ProjectSnapshot,
   options: BuildVoiceMaterializationPlanOptions,
 ): VoiceMaterializationPlan {
   if (!isVoiceMaterializationIdentifier(options.voiceId) || !isVoiceMaterializationIdentifier(options.modelId)) {
     throw new Error("VOICE_MATERIALIZATION_VOICE_OR_MODEL_INVALID");
+  }
+  const executionMode = options.executionMode ?? VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE;
+  if (executionMode !== VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE
+    && executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) {
+    throw new Error("VOICE_MATERIALIZATION_EXECUTION_MODE_INVALID");
   }
   const input = buildLocalPreviewRenderInput(projectSnapshot);
   const requiredStageIds = new Set(["editorial_intelligence", "scene_planning", "render_integration"]);
@@ -122,7 +174,10 @@ export function buildVoiceMaterializationPlan(
     || render.renderManifest?.manifestHash !== hashRenderManifest(render.renderManifest)) {
     throw new Error("VOICE_MATERIALIZATION_RENDER_CHECKPOINT_INVALID");
   }
-  const scenes = input.scenes.map((scene) => {
+  const canonicalScenes = executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    ? [selectPa4lSingleSmokeScene(input.scenes)]
+    : input.scenes;
+  const scenes = canonicalScenes.map((scene) => {
     const characterCount = [...scene.narration].length;
     return {
       sceneId: scene.sceneId,
@@ -162,9 +217,16 @@ export function buildVoiceMaterializationPlan(
     voiceId: options.voiceId,
     modelId: options.modelId,
     outputFormat: ELEVENLABS_OUTPUT_FORMAT,
+    executionMode,
     sceneCount: scenes.length,
+    plannedSceneCount: scenes.length,
     scenes,
     totalCharacters: scenes.reduce((total, scene) => total + scene.characterCount, 0),
+    maximumExternalGenerationRequests: executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+      ? PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+      : scenes.length,
+    automaticRetryLimit: PA4L_AUTOMATIC_RETRY_LIMIT,
+    fallbackRequestLimit: PA4L_FALLBACK_REQUEST_LIMIT,
     materializationSetId,
     planHash: "0".repeat(64),
     externalCallRequired: true,
@@ -185,6 +247,35 @@ export function validateVoiceMaterializationPlan(plan: VoiceMaterializationPlan)
   return [...new Set(issues)];
 }
 
+export function assertPa4lSingleScenePlan(plan: VoiceMaterializationPlan): VoiceMaterializationPlan["scenes"][number] {
+  const issues = validateVoiceMaterializationPlan(plan);
+  if (issues.length > 0) throw new Error(`VOICE_MATERIALIZATION_PLAN_INVALID:${issues.join(",")}`);
+  const scene = plan.scenes[0];
+  if (plan.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    || plan.sceneCount !== PA4L_MAX_SCENES
+    || plan.plannedSceneCount !== PA4L_MAX_SCENES
+    || plan.scenes.length !== PA4L_MAX_SCENES
+    || !scene
+    || scene.characterCount > PA4L_MAX_NARRATION_CHARACTERS
+    || plan.maximumExternalGenerationRequests !== PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+    || plan.automaticRetryLimit !== PA4L_AUTOMATIC_RETRY_LIMIT
+    || plan.fallbackRequestLimit !== PA4L_FALLBACK_REQUEST_LIMIT) {
+    throw new Error("PA4L_SINGLE_SCENE_PLAN_INVARIANT_FAILED");
+  }
+  return scene;
+}
+
+export function assertPa4lRequestedSceneIds(
+  plan: VoiceMaterializationPlan,
+  requestedSceneIds: readonly string[] | undefined,
+): VoiceMaterializationPlan["scenes"][number] {
+  const scene = assertPa4lSingleScenePlan(plan);
+  if (requestedSceneIds?.length !== PA4L_MAX_SCENES || requestedSceneIds[0] !== scene.sceneId) {
+    throw new Error("PA4L_CANONICAL_SCENE_SELECTION_MISMATCH");
+  }
+  return scene;
+}
+
 export function compareVoiceMaterializationPlans(
   expected: VoiceMaterializationPlan,
   current: VoiceMaterializationPlan,
@@ -195,6 +286,7 @@ export function compareVoiceMaterializationPlans(
   if (expected.sourceRenderCheckpointHash !== current.sourceRenderCheckpointHash) reasons.push("render_checkpoint_hash_mismatch");
   if (expected.renderManifestHash !== current.renderManifestHash) reasons.push("render_manifest_hash_mismatch");
   if (expected.providerId !== current.providerId || expected.voiceId !== current.voiceId || expected.modelId !== current.modelId || expected.outputFormat !== current.outputFormat) reasons.push("provider_configuration_mismatch");
+  if (expected.executionMode !== current.executionMode) reasons.push("execution_mode_mismatch");
   if (expected.materializationSetId !== current.materializationSetId) reasons.push("materialization_set_identity_mismatch");
   if (expected.planHash !== current.planHash || hashVoiceMaterializationPlan(expected) !== expected.planHash || hashVoiceMaterializationPlan(current) !== current.planHash) reasons.push("plan_hash_mismatch");
   return { matches: reasons.length === 0, stale: reasons.length > 0, reasons };
@@ -258,6 +350,9 @@ export async function buildVoiceMaterializationPlanPreview(
   for (const scene of plan.scenes) {
     const cache = await inspectVoiceSceneCache(configuration, plan, scene);
     (cache.hit ? cacheHitSceneIds : missingSceneIds).push(scene.sceneId);
+  }
+  if (plan.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE && missingSceneIds.length > PA4L_MAX_EXTERNAL_GENERATION_REQUESTS) {
+    throw new Error("PA4L_EXTERNAL_REQUEST_PREVIEW_CAP_EXCEEDED");
   }
   return {
     plan,
@@ -369,6 +464,10 @@ function buildSet(
     voiceId: plan.voiceId,
     modelId: plan.modelId,
     outputFormat: plan.outputFormat,
+    executionMode: plan.executionMode,
+    maximumExternalGenerationRequests: plan.maximumExternalGenerationRequests,
+    automaticRetryLimit: plan.automaticRetryLimit,
+    fallbackRequestLimit: plan.fallbackRequestLimit,
     planHash: plan.planHash,
     sceneEntries: entries,
     completeSceneIds,
@@ -393,6 +492,14 @@ export async function materializeVoiceMaterializationPlan(
   const planIssues = validateVoiceMaterializationPlan(plan);
   if (planIssues.length > 0) throw new Error(`VOICE_MATERIALIZATION_PLAN_INVALID:${planIssues.join(",")}`);
   if (!options.apiKey) throw new Error("ELEVENLABS_CREDENTIAL_MISSING");
+  const pa4lScene = plan.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    ? assertPa4lRequestedSceneIds(plan, options.requestedSceneIds)
+    : null;
+  if (pa4lScene) {
+    if (options.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE || options.mode !== "initial") {
+      throw new Error("PA4L_EXECUTION_MODE_MISMATCH");
+    }
+  }
   const now = options.now ?? (() => new Date().toISOString());
   const existing = await readVoiceMaterializationSet(options.configuration, plan.projectId, plan.materializationSetId);
   if (existing && (existing.planHash !== plan.planHash || existing.projectRevision !== plan.projectRevision || existing.sourceRenderCheckpointHash !== plan.sourceRenderCheckpointHash)) {
@@ -405,7 +512,7 @@ export async function materializeVoiceMaterializationPlan(
   const retryPlan = options.mode === "retry" && existing
     ? buildRetryMaterializationPlan(plan, existing, options.requestedSceneIds)
     : null;
-  const selectedSceneIds = new Set(retryPlan?.requestedSceneIds ?? plan.scenes.map((scene) => scene.sceneId));
+  const selectedSceneIds = new Set(pa4lScene ? [pa4lScene.sceneId] : retryPlan?.requestedSceneIds ?? plan.scenes.map((scene) => scene.sceneId));
   const entries = plan.scenes.map((scene) => existing?.sceneEntries.find((entry) => entry.sceneId === scene.sceneId) ?? pendingEntry(scene));
   const createdAtIso = existing?.createdAtIso ?? now();
   let externalRequestCount = existing?.externalRequestCount ?? 0;
@@ -429,6 +536,15 @@ export async function materializeVoiceMaterializationPlan(
         if (probeIssues.length > 0 || Math.abs(probe.durationMs - cache.metadata.durationMs) > 1) throw new Error("VOICE_SCENE_CACHE_FFPROBE_MISMATCH");
         entries[index] = completeEntry(scene, cache.metadata, "cache_hit");
       } else {
+        if (pa4lScene) {
+          if (externalRequestsThisRun >= PA4L_MAX_EXTERNAL_GENERATION_REQUESTS) throw new Error("PA4L_EXTERNAL_REQUEST_BUDGET_EXHAUSTED");
+          if (scene.sceneId !== pa4lScene.sceneId
+            || scene.narrationHash !== sha256(scene.narration)
+            || scene.characterCount !== [...scene.narration].length
+            || scene.characterCount > PA4L_MAX_NARRATION_CHARACTERS) {
+            throw new Error("PA4L_PROVIDER_ATTEMPT_INVARIANT_FAILED");
+          }
+        }
         externalRequestCount += 1;
         externalRequestsThisRun += 1;
         const provider = await requestElevenLabsTimestampTts({

@@ -1,12 +1,20 @@
 import type {
   VoiceMaterializationExecutionResult,
+  VoiceMaterializationExecutionMode,
   VoiceMaterializationPlan,
   VoiceMaterializationPlanPreview,
   VoiceMaterializationRecoveryPlan,
   VoiceMaterializationRequest,
   VoiceMaterializationSet,
 } from "./voice-materialization-contracts";
-import { isMaterializationSetId, isVoiceMaterializationIdentifier } from "./voice-materialization-contracts";
+import {
+  PA4L_MAX_EXTERNAL_GENERATION_REQUESTS,
+  PA4L_MAX_NARRATION_CHARACTERS,
+  PA4L_MAX_SCENES,
+  PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
+  isMaterializationSetId,
+  isVoiceMaterializationIdentifier,
+} from "./voice-materialization-contracts";
 
 const API_ROOT = "/api/editorial-v2/projects";
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -26,6 +34,10 @@ export class VoiceMaterializationApiError extends Error {
 export interface VoiceMaterializationApiOptions {
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
+}
+
+export interface VoiceMaterializationPlanPreviewOptions extends VoiceMaterializationApiOptions {
+  readonly executionMode?: VoiceMaterializationExecutionMode;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -62,8 +74,19 @@ function isPlan(value: unknown): value is VoiceMaterializationPlan {
     && typeof value.materializationSetId === "string" && isMaterializationSetId(value.materializationSetId)
     && value.providerId === "elevenlabs_tts_with_timestamps"
     && value.outputFormat === "mp3_44100_128"
+    && value.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    && value.sceneCount === PA4L_MAX_SCENES
+    && value.plannedSceneCount === PA4L_MAX_SCENES
+    && value.maximumExternalGenerationRequests === PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+    && value.automaticRetryLimit === 0
+    && value.fallbackRequestLimit === 0
     && Array.isArray(value.scenes)
-    && value.scenes.every((scene) => isRecord(scene) && typeof scene.sceneId === "string" && typeof scene.narration === "string" && Number.isSafeInteger(scene.characterCount));
+    && value.scenes.length === PA4L_MAX_SCENES
+    && value.scenes.every((scene) => isRecord(scene)
+      && typeof scene.sceneId === "string"
+      && typeof scene.narration === "string"
+      && Number.isSafeInteger(scene.characterCount)
+      && Number(scene.characterCount) <= PA4L_MAX_NARRATION_CHARACTERS);
 }
 
 function isPreview(value: unknown): value is VoiceMaterializationPlanPreview {
@@ -74,6 +97,8 @@ function isPreview(value: unknown): value is VoiceMaterializationPlanPreview {
     && Array.isArray(value.cacheHitSceneIds)
     && Array.isArray(value.missingSceneIds)
     && Number.isSafeInteger(value.maximumExternalRequests)
+    && Number(value.maximumExternalRequests) <= PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+    && value.cacheHitSceneIds.length + value.missingSceneIds.length === PA4L_MAX_SCENES
     && value.actualPrice === "UNKNOWN"
     && value.providerPriceVerified === false
     && value.externalNetworkRequestsMade === 0;
@@ -85,8 +110,15 @@ function isSet(value: unknown): value is VoiceMaterializationSet {
     && typeof value.materializationSetId === "string" && isMaterializationSetId(value.materializationSetId)
     && typeof value.projectId === "string"
     && Number.isSafeInteger(value.projectRevision)
+    && value.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+    && value.maximumExternalGenerationRequests === PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+    && value.automaticRetryLimit === 0
+    && value.fallbackRequestLimit === 0
     && Array.isArray(value.sceneEntries)
+    && value.sceneEntries.length === PA4L_MAX_SCENES
     && value.sceneEntries.every((scene) => isRecord(scene) && typeof scene.sceneId === "string" && typeof scene.status === "string")
+    && Number.isSafeInteger(value.externalRequestCount)
+    && Number(value.externalRequestCount) <= PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
     && Array.isArray(value.completeSceneIds)
     && Array.isArray(value.failedSceneIds)
     && Array.isArray(value.pendingSceneIds)
@@ -126,10 +158,12 @@ export async function previewVoiceMaterializationPlan(
   projectId: string,
   voiceId: string,
   modelId: string,
-  options: VoiceMaterializationApiOptions = {},
+  options: VoiceMaterializationPlanPreviewOptions = {},
 ): Promise<VoiceMaterializationPlanPreview> {
   if (!isVoiceMaterializationIdentifier(voiceId) || !isVoiceMaterializationIdentifier(modelId)) throw new VoiceMaterializationApiError(0, "VOICE_OR_MODEL_ID_INVALID", "Voice ID와 model ID가 올바르지 않습니다.");
-  const payload = await requestJson(queryUrl(projectId, { mode: "plan", voiceId, modelId }), { method: "GET" }, options);
+  const executionMode = options.executionMode ?? PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE;
+  if (executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) throw new VoiceMaterializationApiError(0, "LIVE_FULL_MATERIALIZATION_NOT_ACTIVATED", "PA-4L single-scene plan만 허용됩니다.");
+  const payload = await requestJson(queryUrl(projectId, { mode: "plan", voiceId, modelId, executionMode }), { method: "GET" }, options);
   if (!isPreview(payload.preview)) throw new VoiceMaterializationApiError(200, "VOICE_PLAN_PREVIEW_INVALID", "Voice plan preview 응답이 올바르지 않습니다.");
   return payload.preview;
 }
@@ -154,6 +188,21 @@ export async function requestVoiceMaterialization(
   options: VoiceMaterializationApiOptions = {},
 ): Promise<VoiceMaterializationExecutionResult> {
   return execute(projectId, { ...request, action: "materialize" }, options);
+}
+
+export async function requestPa4lSingleSceneMaterialization(
+  projectId: string,
+  request: Omit<VoiceMaterializationRequest, "action" | "executionMode"> & { readonly requestedSceneIds: readonly [string] },
+  options: VoiceMaterializationApiOptions = {},
+): Promise<VoiceMaterializationExecutionResult> {
+  if (request.requestedSceneIds.length !== PA4L_MAX_SCENES || !isSceneId(request.requestedSceneIds[0])) {
+    throw new VoiceMaterializationApiError(0, "PA4L_REQUESTED_SCENE_INVALID", "PA-4L canonical scene ID 하나가 필요합니다.");
+  }
+  return execute(projectId, {
+    ...request,
+    action: "materialize",
+    executionMode: PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
+  }, options);
 }
 
 export async function retryVoiceMaterialization(

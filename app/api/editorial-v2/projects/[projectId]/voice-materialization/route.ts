@@ -9,12 +9,16 @@ import { isEditorialV2ProjectId } from "../../../../../../lib/editorial-v2/proje
 import { readProject } from "../../../../../../lib/editorial-v2/project-store-node";
 import {
   ELEVENLABS_API_KEY_ENV,
+  PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
   VOICE_MATERIALIZATION_MAX_REQUEST_BYTES,
+  VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE,
   isExternalTtsEnabled,
   isMaterializationSetId,
   isVoiceMaterializationIdentifier,
 } from "../../../../../../lib/editorial-v2/voice-materialization-contracts";
 import {
+  assertPa4lRequestedSceneIds,
+  assertPa4lSingleScenePlan,
   buildVoiceMaterializationPlan,
   buildVoiceMaterializationPlanPreview,
   materializeVoiceMaterializationPlan,
@@ -119,7 +123,7 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const url = new URL(request.url);
     const mode = url.searchParams.get("mode");
-    const allowedKeys = mode === "plan" ? new Set(["mode", "voiceId", "modelId"])
+    const allowedKeys = mode === "plan" ? new Set(["mode", "voiceId", "modelId", "executionMode"])
       : mode === "status" ? new Set(["mode", "materializationSetId"])
         : mode === "audio" ? new Set(["mode", "materializationSetId", "sceneId"])
           : new Set<string>();
@@ -129,7 +133,10 @@ export async function GET(request: Request, context: RouteContext) {
       const voiceId = url.searchParams.get("voiceId");
       const modelId = url.searchParams.get("modelId");
       if (!isVoiceMaterializationIdentifier(voiceId) || !isVoiceMaterializationIdentifier(modelId)) return jsonError(400, "VOICE_OR_MODEL_ID_INVALID", "Voice ID와 model ID가 필요합니다.");
-      const plan = buildVoiceMaterializationPlan(project, { voiceId, modelId });
+      const executionMode = url.searchParams.get("executionMode");
+      if (executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) return jsonError(409, "LIVE_FULL_MATERIALIZATION_NOT_ACTIVATED", "최초 live 검증은 PA-4L single-scene mode만 허용됩니다.");
+      const plan = buildVoiceMaterializationPlan(project, { voiceId, modelId, executionMode });
+      assertPa4lSingleScenePlan(plan);
       const preview = await buildVoiceMaterializationPlanPreview(configuration, plan, {
         featureEnabled: isExternalTtsEnabled(process.env),
         credentialConfigured: credentialConfigured(),
@@ -143,7 +150,11 @@ export async function GET(request: Request, context: RouteContext) {
         ? await readVoiceMaterializationSet(configuration, projectId, materializationSetId)
         : await readLatestVoiceMaterializationSet(configuration, projectId);
       if (!set) return jsonError(404, "VOICE_MATERIALIZATION_SET_NOT_FOUND", "저장된 voice materialization set이 없습니다.");
-      const currentPlan = buildVoiceMaterializationPlan(project, { voiceId: set.voiceId, modelId: set.modelId });
+      const currentPlan = buildVoiceMaterializationPlan(project, {
+        voiceId: set.voiceId,
+        modelId: set.modelId,
+        executionMode: set.executionMode ?? VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE,
+      });
       const recovery = buildVoiceMaterializationRecoveryPlan(set, currentPlan);
       return NextResponse.json({ ok: true, localOnly: true, productionVoiceQualityApproval: "NOT_APPROVED", set, recovery });
     }
@@ -186,7 +197,13 @@ export async function POST(request: Request, context: RouteContext) {
     const renderCheckpoint = project.approvedCheckpoints.find((entry) => entry.stageId === "render_integration");
     if (!renderCheckpoint) throw new Error("RENDER_CHECKPOINT_MISSING");
     if (renderCheckpoint.payloadHash !== parsed.expectedRenderCheckpointHash) throw new Error("RENDER_CHECKPOINT_HASH_MISMATCH");
-    const plan = buildVoiceMaterializationPlan(project, { voiceId: parsed.voiceId, modelId: parsed.modelId });
+    if (parsed.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) throw new Error("LIVE_FULL_MATERIALIZATION_NOT_ACTIVATED");
+    const plan = buildVoiceMaterializationPlan(project, {
+      voiceId: parsed.voiceId,
+      modelId: parsed.modelId,
+      executionMode: parsed.executionMode,
+    });
+    assertPa4lRequestedSceneIds(plan, parsed.requestedSceneIds);
     if (plan.planHash !== parsed.expectedPlanHash) throw new Error("VOICE_MATERIALIZATION_PLAN_HASH_MISMATCH");
     const apiKey = process.env[ELEVENLABS_API_KEY_ENV];
     if (typeof apiKey !== "string" || apiKey.length === 0) throw new Error("ELEVENLABS_CREDENTIAL_MISSING");
@@ -197,7 +214,8 @@ export async function POST(request: Request, context: RouteContext) {
       const result = await materializeVoiceMaterializationPlan(plan, {
         configuration,
         apiKey,
-        mode: parsed.action === "retry_failed" ? "retry" : "initial",
+        mode: "initial",
+        executionMode: PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
         requestedSceneIds: parsed.requestedSceneIds,
       });
       return NextResponse.json({

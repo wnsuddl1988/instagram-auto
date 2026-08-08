@@ -14,9 +14,19 @@ export const ELEVENLABS_MAX_RESPONSE_JSON_BYTES = 32 * 1024 * 1024;
 export const VOICE_MATERIALIZATION_MAX_SCENE_AUDIO_BYTES = 20 * 1024 * 1024;
 export const VOICE_MATERIALIZATION_MAX_TOTAL_AUDIO_BYTES = 80 * 1024 * 1024;
 export const VOICE_MATERIALIZATION_MAX_AUDIO_DURATION_MS = 10 * 60 * 1_000;
+export const VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE = "standard_full_materialization" as const;
+export const PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE = "pa4l_single_scene_live_smoke" as const;
+export const PA4L_MAX_SCENES = 1 as const;
+export const PA4L_MAX_EXTERNAL_GENERATION_REQUESTS = 1 as const;
+export const PA4L_MAX_NARRATION_CHARACTERS = 180 as const;
+export const PA4L_AUTOMATIC_RETRY_LIMIT = 0 as const;
+export const PA4L_FALLBACK_REQUEST_LIMIT = 0 as const;
 
 export type VoiceMaterializationProviderId = typeof VOICE_MATERIALIZATION_PROVIDER_ID;
 export type VoiceMaterializationOutputFormat = typeof ELEVENLABS_OUTPUT_FORMAT;
+export type VoiceMaterializationExecutionMode =
+  | typeof VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE
+  | typeof PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE;
 export type VoiceMaterializationSceneStatus = "cache_hit" | "generated" | "failed" | "pending";
 export type VoiceMaterializationApprovalState = "pending" | "blocked" | "approved";
 
@@ -41,9 +51,14 @@ export interface VoiceMaterializationPlan {
   readonly voiceId: string;
   readonly modelId: string;
   readonly outputFormat: VoiceMaterializationOutputFormat;
+  readonly executionMode: VoiceMaterializationExecutionMode;
   readonly sceneCount: number;
+  readonly plannedSceneCount: number;
   readonly scenes: readonly VoiceMaterializationScenePlan[];
   readonly totalCharacters: number;
+  readonly maximumExternalGenerationRequests: number;
+  readonly automaticRetryLimit: 0;
+  readonly fallbackRequestLimit: 0;
   readonly materializationSetId: string;
   readonly planHash: string;
   readonly externalCallRequired: true;
@@ -74,6 +89,7 @@ export interface VoiceMaterializationPlanPreview {
 
 export interface VoiceMaterializationRequest {
   readonly action: "materialize" | "retry_failed";
+  readonly executionMode: VoiceMaterializationExecutionMode;
   readonly expectedProjectRevision: number;
   readonly expectedRenderCheckpointHash: string;
   readonly voiceId: string;
@@ -227,6 +243,10 @@ export interface VoiceMaterializationSet {
   readonly voiceId: string;
   readonly modelId: string;
   readonly outputFormat: VoiceMaterializationOutputFormat;
+  readonly executionMode: VoiceMaterializationExecutionMode;
+  readonly maximumExternalGenerationRequests: number;
+  readonly automaticRetryLimit: 0;
+  readonly fallbackRequestLimit: 0;
   readonly planHash: string;
   readonly sceneEntries: readonly VoiceMaterializationSceneEntry[];
   readonly completeSceneIds: readonly string[];

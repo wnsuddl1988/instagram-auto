@@ -1,0 +1,61 @@
+{
+  "manifestVersion": "1.0.0",
+  "capturedAtUtc": "2026-08-09T00:00:00.000Z",
+  "baselineReconstructability": "NOT_RECONSTRUCTABLE",
+  "repository": "Shorts Editorial OS V2",
+  "activationSlice": "PA-4L_PREP_SINGLE_SCENE_LIVE_GUARD",
+  "git": {
+    "branch": "codex/source-first-blueprint-clean",
+    "head": "d774ab277756a730ed603501d9c4ce1467aa2a3b",
+    "parent": "1b6c597487904b21f22072a5af2c93b7aac78b63",
+    "tree": "9346cf95988408e1e191680c5e842f9318a5ba4d",
+    "upstream": { "ahead": 13, "behind": 0 },
+    "modifiedCount": 21,
+    "untrackedCount": 3,
+    "stagedCount": 0,
+    "statusPathCount": 24
+  },
+  "protectedDirtyBaselineManifest": {
+    "path": "_ai/SHORTS_EDITORIAL_OS_V2_PA4_BASELINE.json",
+    "sha256": "569b09c7219a1240576ced8b4c43ac6e22be05dc1f8bddfb2e940d9a3ec583a2",
+    "reuseStatusPathsAndHashes": true
+  },
+  "pa4lAllowlist": [
+    { "path": "_ai/SHORTS_EDITORIAL_OS_V2_PA4L_SINGLE_SCENE_GUARD_BASELINE.json", "expectedAction": "new" },
+    { "path": "scripts/check-shorts-editorial-os-v2-pa4l-single-scene.mjs", "expectedAction": "new" },
+    { "path": "scripts/probe-shorts-editorial-os-v2-pa4l-single-scene.mjs", "expectedAction": "new" },
+    { "path": "lib/editorial-v2/voice-materialization-contracts.ts", "expectedAction": "modified", "originalBlob": "4333b28aebb8e107d336cd4025867c4a17074276" },
+    { "path": "lib/editorial-v2/voice-materialization-node.ts", "expectedAction": "modified", "originalBlob": "868fc911b4e67b9821200cf1b1a0176721c3fceb" },
+    { "path": "lib/editorial-v2/voice-materialization-validation.ts", "expectedAction": "modified", "originalBlob": "fb413db794b3057df36d6ba24641c39d09987aee" },
+    { "path": "lib/editorial-v2/voice-materialization-api-client.ts", "expectedAction": "modified", "originalBlob": "d3d7e190b5bce17ed6f45c502cd1d2c5b469d010" },
+    { "path": "app/api/editorial-v2/projects/[projectId]/voice-materialization/route.ts", "expectedAction": "modified", "originalBlob": "745c7fed796aeacfe07a7f98ae4f96459af91718" },
+    { "path": "components/editorial-v2/VoiceMaterializationPanel.tsx", "expectedAction": "modified", "originalBlob": "f83b837e70fa75de1be22b957337872237efdd18" },
+    { "path": "_ai/PROJECT_STATE.md", "expectedAction": "modified", "originalBlob": "867848d85068e0d86fc54c78717a85a16c3b5c14" },
+    { "path": "_ai/NEXT_ACTION.md", "expectedAction": "modified", "originalBlob": "b3cdac2daf388eb4908bac8017bdddf82934536c" }
+  ],
+  "governanceFiles": [
+    { "path": "AGENTS.md", "sha256": "331fffc22782535d4bc842a9132d5bb9954964f245077f7114371ab20f0868f2" },
+    { "path": "_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md", "sha256": "d4c7b29ae81a48fd32736098e894af05f0c7112b1697ceeeecb621215635e3f1" }
+  ],
+  "protectedConfigFiles": [
+    { "path": "package.json", "status": " M", "headBlob": "1b1fd7729548c483585a500fe1b5a89c6884f262", "workingBlob": "3f649c7468fae381df54fd592fb47f10386dd539", "sha256": "d93f0746133417780d3a77cac602d63a490d5ddc8b5f9db372e15bb71abeeff8", "expectedHeadIdentical": false },
+    { "path": "pnpm-workspace.yaml", "status": "", "headBlob": "581a9d5b591dfcd01516bf429db120be05a6534f", "workingBlob": "581a9d5b591dfcd01516bf429db120be05a6534f", "sha256": "3ff85564ea77ba0e86c05a6a3cce42828d01a6546f0ba56bb10d6fc046f65845", "expectedHeadIdentical": true },
+    { "path": "pnpm-lock.yaml", "status": "", "headBlob": "9c4f045a2127fc86731cae6ff58dad69cca31508", "workingBlob": "9c4f045a2127fc86731cae6ff58dad69cca31508", "sha256": "497a5abf58598c52cfe9881fabb9c761280963cd4b9bf82035f93d4ad8adc4e9", "expectedHeadIdentical": true },
+    { "path": "next.config.ts", "status": "", "headBlob": "10e92406d1c5ad93741bf6aabd333b8c7c07ec73", "workingBlob": "10e92406d1c5ad93741bf6aabd333b8c7c07ec73", "sha256": "243100a6dd2fecc7cf9a4e67b4a774476183ff993b7125070517eac41f780ea1", "expectedHeadIdentical": true }
+  ],
+  "expectedPreCommitTree": { "modified": 29, "untracked": 6, "staged": 0, "statusPaths": 35 },
+  "expectedPostCommitTree": { "modified": 21, "untracked": 3, "staged": 0, "statusPaths": 24 },
+  "constraints": {
+    "executionMode": "pa4l_single_scene_live_smoke",
+    "maximumSceneCount": 1,
+    "maximumNarrationCharacters": 180,
+    "maximumExternalGenerationRequests": 1,
+    "automaticRetryLimit": 0,
+    "fallbackRequestLimit": 0,
+    "actualExternalNetwork": "PROHIBITED",
+    "actualPaidTts": "PROHIBITED",
+    "fullLiveMaterialization": "BLOCKED",
+    "dependencyAndConfigChange": "PROHIBITED",
+    "push": "NOT_AUTHORIZED"
+  }
+}
