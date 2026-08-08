@@ -1,6 +1,27 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-08-06 KST
+Updated: 2026-08-08 KST
+
+## Shorts Editorial OS V2 — Production Activation PA-1 durable project store
+
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA1_DURABLE_PROJECT_STORE_AND_APPROVED_CHECKPOINT_RESUME_AUTONOMOUS_LOOP`.
+- Slice 0~8: `FINAL_PASS`; V2 base rebuild milestone: `FINAL_PASS`; Governance: `ACTIVE`.
+- PA-1: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-1 Cross Review: `NOT_STARTED`; correction cycle: `0`.
+- Scope: V2 project registry → approved milestone snapshot → atomic local save → SHA-256 integrity → last-known-good → revision history → project list/load → approved-checkpoint resume 안내 → explicit Owner recovery → archive without hard delete.
+- exact 20-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint production activation persistence foundation`.
+- approved checkpoint persistence: `IMPLEMENTED_PENDING_REVIEW`; local project store: `LOCAL_ONLY`; persistence feature default: `OFF`.
+- default data root: OS application-data 후보; `C:\tmp` 권위 저장소: `FORBIDDEN`; 실제 기본 data root 접근: `NOT_EXECUTED`.
+- full draft autosave: `NOT_IMPLEMENTED`; full Workbench hydration: `NOT_IMPLEMENTED`; resume는 저장된 승인 stage·summary 표시와 새 세션 시작 안내까지다.
+- V1 migration: `NOT_IMPLEMENTED`; V1 data: `UNTOUCHED`; V1 namespace/root와 PA-1 store는 분리한다.
+- API: local-only/same-origin intended, feature OFF hard stop, body/content-type/ID/schema/integrity guard, path 비노출, DELETE 없음; 인증 없는 외부 배포 안전성은 주장하지 않는다.
+- Recovery: current corruption 자동 덮어쓰기·삭제 없음, last-known-good/history 후보와 Owner confirmation 필요; probe에서만 synthetic corruption·명시적 복구가 허용된다.
+- Self-validation: PA-1 checker `1187/1187 PASS`; full `pnpm exec tsc --noEmit --pretty false` PASS; targeted semantic/syntactic diagnostics `0`; `git diff --check` PASS. 일회성 probe/build 뒤 schema·recovery candidate·API client validation hardening은 checker와 TypeScript로 재검증했으며 probe/build는 재실행하지 않았다.
+- Synthetic persistence probe: `PASS` (정확히 1회); project create/list, approved checkpoints, raw UTF-8 string, revision/history/LKG, corruption detection, explicit Owner recovery, quarantine, archive/no-delete, temp cleanup, repository status unchanged을 확인했다.
+- Optional build: `PASS` (정확히 1회); Next.js compile·TypeScript·26 static pages 및 PA-1 dynamic API 2개를 확인했다. `next.config.ts → app/api/render-v2/route.ts` NFT warning 1건은 pre-existing·PA-1 범위 밖이다.
+- External API, network, OAuth, actual TTS/asset/render, account write, upload/publish/schedule, DB, deploy, push: `NOT_EXECUTED`.
+- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; automatic continuation: `DISABLED`; progress: `NOT_CALCULATED`.
+- PA-1 Cross Review: `REQUIRED`; PA-2: `BLOCKED`; full Workbench hydration·autosave exact scope는 ChatGPT Control Tower와 Owner 승인 전 시작하지 않는다.
+- P2 backlog 유지: Slice 3~8의 기존 비차단 항목은 PA-1에 끼워 넣지 않았다.
 
 ## Shorts Editorial OS V2 — Slice 8 representative sample and relaunch readiness
 

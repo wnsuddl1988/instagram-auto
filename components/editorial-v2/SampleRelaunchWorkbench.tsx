@@ -144,6 +144,7 @@ export default function SampleRelaunchWorkbench({
       return;
     }
     onApprovedRelaunchReadinessChange({
+      sourcePublishIntegrationIdentity: representativePackage.provenance.publishIntegrationIdentity,
       representativePackage: cloneRepresentativeSamplePackage(representativePackage),
       representativeValidation: { ...representativeValidation, issues: representativeValidation.issues.map((issue) => ({ ...issue })) },
       relaunchPackage: cloneRelaunchPackage(relaunchPackage),

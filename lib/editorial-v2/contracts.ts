@@ -2087,6 +2087,7 @@ export interface LaunchReadinessSummary {
 export type RelaunchApprovalState = "not_approved" | "provisionally_approved" | "invalidated";
 
 export interface ApprovedRelaunchReadinessSessionSnapshot {
+  readonly sourcePublishIntegrationIdentity: string;
   readonly representativePackage: RepresentativeSamplePackage;
   readonly representativeValidation: RepresentativeSampleValidationSummary;
   readonly relaunchPackage: RelaunchPackage;
@@ -2116,4 +2117,182 @@ export interface Slice8SessionState {
   readonly launchReadiness: LaunchReadinessSummary | null;
   readonly approvalState: RelaunchApprovalState;
   readonly approvedSnapshot: ApprovedRelaunchReadinessSessionSnapshot | null;
+}
+
+// Production Activation PA-1 adds a local-only, approved-checkpoint persistence contract.
+// It deliberately does not represent full draft autosave or Workbench hydration.
+export type EditorialV2ProjectId = string;
+
+export type EditorialV2ProjectStatus = "active" | "archived";
+
+export type EditorialV2ApprovedStageId =
+  | "trend_brief_import"
+  | "editorial_intelligence"
+  | "scene_planning"
+  | "character_motion"
+  | "render_integration"
+  | "publish_integration"
+  | "relaunch_readiness";
+
+export type EditorialV2JsonPrimitive = string | number | boolean | null;
+
+export type EditorialV2JsonValue =
+  | EditorialV2JsonPrimitive
+  | readonly EditorialV2JsonValue[]
+  | { readonly [key: string]: EditorialV2JsonValue };
+
+export interface EditorialV2ProjectMetadata {
+  readonly displayName: string;
+  readonly status: EditorialV2ProjectStatus;
+  readonly createdAtIso: string;
+  readonly updatedAtIso: string;
+  readonly archivedAtIso: string | null;
+}
+
+export interface EditorialV2RawArtifactRecord {
+  readonly artifactId: string;
+  readonly artifactKind: string;
+  readonly sourceStage: EditorialV2ApprovedStageId;
+  readonly rawText: string;
+  readonly rawHash: string;
+  readonly normalizedHash: string | null;
+  readonly importedAtIso: string;
+  readonly providerLabel: string | null;
+  readonly modelLabel: string | null;
+  readonly promptVersion: string | null;
+  readonly trust: "UNTRUSTED_DATA";
+}
+
+export interface EditorialV2ApprovedCheckpoint {
+  readonly checkpointId: string;
+  readonly stageId: EditorialV2ApprovedStageId;
+  readonly approvedAtIso: string;
+  readonly sourceIdentity: string;
+  readonly payloadHash: string;
+  readonly payload: EditorialV2JsonValue;
+  readonly approvedOnly: true;
+  readonly fullDraftIncluded: false;
+}
+
+export interface EditorialV2SnapshotIntegrity {
+  readonly algorithm: "sha256";
+  readonly canonicalization: "stable-json-v1";
+  readonly canonicalHash: string;
+}
+
+export interface EditorialV2PersistenceCapability {
+  readonly localOnly: true;
+  readonly approvedCheckpointPersistence: true;
+  readonly fullDraftAutosave: false;
+  readonly fullWorkbenchHydration: false;
+  readonly v1Migration: false;
+  readonly cloudBackup: false;
+}
+
+export interface EditorialV2ProjectSnapshot {
+  readonly namespace: "shorts-editorial-os-v2-project-store";
+  readonly schemaVersion: "1.0.0";
+  readonly projectId: EditorialV2ProjectId;
+  readonly metadata: EditorialV2ProjectMetadata;
+  readonly currentStage: EditorialV2ApprovedStageId | null;
+  readonly lastApprovedStage: EditorialV2ApprovedStageId | null;
+  readonly createdAtIso: string;
+  readonly updatedAtIso: string;
+  readonly revision: number;
+  readonly approvedCheckpoints: readonly EditorialV2ApprovedCheckpoint[];
+  readonly rawArtifacts: readonly EditorialV2RawArtifactRecord[];
+  readonly integrity: EditorialV2SnapshotIntegrity;
+  readonly migrationState: "V1_ISOLATED_NO_MIGRATION";
+  readonly persistenceCapabilities: EditorialV2PersistenceCapability;
+}
+
+export interface EditorialV2ProjectIndexEntry {
+  readonly projectId: EditorialV2ProjectId;
+  readonly displayName: string;
+  readonly status: EditorialV2ProjectStatus;
+  readonly revision: number;
+  readonly lastApprovedStage: EditorialV2ApprovedStageId | null;
+  readonly createdAtIso: string;
+  readonly updatedAtIso: string;
+  readonly archivedAtIso: string | null;
+}
+
+export interface EditorialV2ProjectIndex {
+  readonly namespace: "shorts-editorial-os-v2-project-store";
+  readonly schemaVersion: "1.0.0";
+  readonly indexVersion: 1;
+  readonly projects: readonly EditorialV2ProjectIndexEntry[];
+}
+
+export interface EditorialV2StoreWriteResult {
+  readonly ok: boolean;
+  readonly operation: "create" | "checkpoint" | "archive" | "recovery";
+  readonly projectId: EditorialV2ProjectId | null;
+  readonly revision: number | null;
+  readonly integrityHash: string | null;
+  readonly status: EditorialV2PersistenceStatus;
+  readonly message: string;
+}
+
+export interface EditorialV2StoreReadResult {
+  readonly ok: boolean;
+  readonly projectId: EditorialV2ProjectId | null;
+  readonly snapshot: EditorialV2ProjectSnapshot | null;
+  readonly status: EditorialV2PersistenceStatus;
+  readonly message: string;
+}
+
+export interface EditorialV2RecoveryResult {
+  readonly ok: boolean;
+  readonly projectId: EditorialV2ProjectId;
+  readonly recoveredRevision: number | null;
+  readonly source: "none" | "last_known_good" | "history";
+  readonly currentCorruptionPreserved: boolean;
+  readonly ownerConfirmed: boolean;
+  readonly status: EditorialV2PersistenceStatus;
+  readonly message: string;
+}
+
+export type EditorialV2PersistenceStatus =
+  | "disabled"
+  | "ready"
+  | "not_found"
+  | "validation_error"
+  | "schema_conflict"
+  | "integrity_conflict"
+  | "storage_error";
+
+export interface EditorialV2PersistenceValidationIssue {
+  readonly code: string;
+  readonly fieldPath: string;
+  readonly message: string;
+  readonly blocking: boolean;
+}
+
+export interface EditorialV2PersistenceValidationSummary {
+  readonly valid: boolean;
+  readonly blockingIssueCount: number;
+  readonly warningCount: number;
+  readonly issues: readonly EditorialV2PersistenceValidationIssue[];
+}
+
+export interface EditorialV2LocalStoreConfiguration {
+  readonly enabled: boolean;
+  readonly namespace: "shorts-editorial-os-v2-project-store";
+  readonly schemaVersion: "1.0.0";
+  readonly dataRoot: string;
+  readonly dataRootKind: "os_application_data" | "environment_override" | "synthetic_probe";
+  readonly localOnly: true;
+  readonly exposeDataRoot: false;
+}
+
+export interface EditorialV2WorkspaceState {
+  readonly persistenceStatus: EditorialV2PersistenceStatus;
+  readonly projects: readonly EditorialV2ProjectIndexEntry[];
+  readonly selectedProjectId: EditorialV2ProjectId | null;
+  readonly loadedSnapshot: EditorialV2ProjectSnapshot | null;
+  readonly lastOperation: "none" | "list" | "create" | "load" | "save" | "archive" | "recovery";
+  readonly message: string;
+  readonly fullDraftAutosaveAvailable: false;
+  readonly fullWorkbenchHydrationAvailable: false;
 }

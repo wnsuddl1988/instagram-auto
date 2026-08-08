@@ -1,6 +1,26 @@
 # AutoShorts AI — Next Action
 
-Updated: 2026-08-06 KST
+Updated: 2026-08-08 KST
+
+## Shorts Editorial OS V2 — Production Activation PA-1 read-only Cross Review
+
+- Slice 0~8 및 V2 base rebuild milestone은 `FINAL_PASS`; PA-1 implementation은 `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`다.
+- 다음 routine 작업은 exact 20-path에 대한 `Claude Code PA-1 read-only Cross Review`다.
+- `ChatGPT 중간 전달 불필요`; Owner는 Codex가 제공하는 prompt를 Claude Code에 전달하고 Claude 결과를 Codex에 전달한다.
+- 검수 대상: baseline/governance/checkpoint, contracts regression, feature default OFF, data root·V1 isolation, deterministic project ID, snapshot/hash/deep isolation, atomic write·backup·history, corruption/recovery confirmation, no hard delete, API hard stops/path 비노출, same-origin client, callback invalidation, UI의 checkpoint-only resume 정직성, checker false-PASS, probe cleanup.
+- Claude Code는 파일 수정·임시 파일 생성·probe/build 재실행·external write·commit·push를 하지 않는다.
+- 승인 범위 안의 P1이고 escalation `NO`이면 Codex가 exact 20-path 안에서 최대 2회 correction과 targeted re-review를 진행한다.
+- `P0/BLOCKED/escalation YES`, allowlist 확대, full draft hydration/autosave, V1 migration, dependency/config/auth, external API·실제 render·게시·deploy·push 필요 시 ChatGPT Control Tower로 즉시 에스컬레이션한다.
+- Claude 최종 PASS, P0 0, P1 0, checker·diagnostics·persistence probe·보호 baseline PASS이면 exact 20-path checkpoint가 사전 승인돼 있다.
+- 고정 commit message: `feat(editorial-v2): checkpoint production activation persistence foundation`; Push: `NOT_AUTHORIZED`.
+- Codex self-validation: checker `1187/1187 PASS`; TypeScript PASS; `git diff --check` PASS; synthetic persistence probe PASS(정확히 1회); optional build PASS(정확히 1회); probe/build 뒤 validation hardening은 checker+TypeScript로 재검증; 보호 baseline mismatch `0` 확인.
+- PA-2 자동 시작 금지. 현재 상태: `PA1_CLAUDE_CODE_READ_ONLY_CROSS_REVIEW_REQUIRED`.
+
+## PA-1 review 후 분기
+
+1. PASS, P0 0, P1 0, escalation NO: exact 20-path checkpoint를 수행한다.
+2. allowlist 안의 일반 P1, escalation NO: 최대 2회 최소 correction 후 Claude targeted re-review를 요청한다.
+3. P0, BLOCKED, escalation YES, allowlist 확대, full draft hydration·V1 migration·인증/배포 보안 필요: 즉시 ChatGPT Control Tower로 에스컬레이션한다.
 
 ## Shorts Editorial OS V2 — Slice 8 read-only Cross Review
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type {
   ApprovedCharacterMotionSessionSnapshot,
@@ -10,11 +10,15 @@ import type {
   ApprovedRenderIntegrationSessionSnapshot,
   ApprovedScenePlanningSessionSnapshot,
   ApprovedTrendBriefSessionSnapshot,
+  EditorialV2ApprovedStageId,
+  EditorialV2JsonValue,
 } from "../../lib/editorial-v2/contracts";
+import type { EditorialV2ApprovedCheckpointOption } from "../../lib/editorial-v2/persistence-contracts";
 import CharacterMotionWorkbench from "./CharacterMotionWorkbench";
 import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
 import PublishIntegrationWorkbench from "./PublishIntegrationWorkbench";
+import ProjectWorkspacePanel from "./ProjectWorkspacePanel";
 import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
 import SampleRelaunchWorkbench from "./SampleRelaunchWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
@@ -27,6 +31,19 @@ export default function EditorialV2Workbench() {
   const [approvedRenderSnapshot, setApprovedRenderSnapshot] = useState<ApprovedRenderIntegrationSessionSnapshot | null>(null);
   const [approvedPublishSnapshot, setApprovedPublishSnapshot] = useState<ApprovedPublishIntegrationSessionSnapshot | null>(null);
   const [approvedRelaunchSnapshot, setApprovedRelaunchSnapshot] = useState<ApprovedRelaunchReadinessSessionSnapshot | null>(null);
+  const approvedCheckpointOptions = useMemo((): readonly EditorialV2ApprovedCheckpointOption[] => {
+    const options: EditorialV2ApprovedCheckpointOption[] = [];
+    const payload = (value: unknown): EditorialV2JsonValue => JSON.parse(JSON.stringify(value)) as EditorialV2JsonValue;
+    if (approvedSnapshot) options.push({ stageId: "trend_brief_import", label: "Trend Brief Import", sourceIdentity: `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`, payload: payload(approvedSnapshot) });
+    if (approvedScriptSnapshot) options.push({ stageId: "editorial_intelligence", label: "Editorial Intelligence / Script", sourceIdentity: `${approvedScriptSnapshot.scriptNormalizedHash}:${approvedScriptSnapshot.evidenceIdentity}`, payload: payload(approvedScriptSnapshot) });
+    if (approvedPlanningSnapshot) options.push({ stageId: "scene_planning", label: "Scene Planning", sourceIdentity: `${approvedPlanningSnapshot.approvedScriptNormalizedHash}:${approvedPlanningSnapshot.selectedAngleId}`, payload: payload(approvedPlanningSnapshot) });
+    if (approvedCharacterSnapshot) options.push({ stageId: "character_motion", label: "Character Motion", sourceIdentity: `${approvedCharacterSnapshot.sourcePlanningIdentity}:${approvedCharacterSnapshot.selectedDirectionId}`, payload: payload(approvedCharacterSnapshot) });
+    if (approvedRenderSnapshot) options.push({ stageId: "render_integration", label: "Render Integration", sourceIdentity: `${approvedRenderSnapshot.renderManifest.manifestHash}:${approvedRenderSnapshot.bridgePlan.manifestHash}`, payload: payload(approvedRenderSnapshot) });
+    if (approvedPublishSnapshot) options.push({ stageId: "publish_integration", label: "Publish Integration", sourceIdentity: `${approvedPublishSnapshot.publishPackage.packageId}:${approvedPublishSnapshot.publishPackage.renderManifestHash}`, payload: payload(approvedPublishSnapshot) });
+    if (approvedRelaunchSnapshot) options.push({ stageId: "relaunch_readiness", label: "Relaunch Readiness", sourceIdentity: `${approvedRelaunchSnapshot.sourcePublishIntegrationIdentity}:${approvedRelaunchSnapshot.relaunchPackage.packageId}`, payload: payload(approvedRelaunchSnapshot) });
+    return options;
+  }, [approvedCharacterSnapshot, approvedPlanningSnapshot, approvedPublishSnapshot, approvedRelaunchSnapshot, approvedRenderSnapshot, approvedScriptSnapshot, approvedSnapshot]);
+  const currentSessionStage = (approvedCheckpointOptions.at(-1)?.stageId ?? null) as EditorialV2ApprovedStageId | null;
   const intelligenceKey = approvedSnapshot
     ? `${approvedSnapshot.rawHash}:${approvedSnapshot.normalizedHash}`
     : "no-approved-trend-brief";
@@ -93,13 +110,14 @@ export default function EditorialV2Workbench() {
 
   return (
     <div>
+      <ProjectWorkspacePanel approvedCheckpoints={approvedCheckpointOptions} currentSessionStage={currentSessionStage} />
       <ResearchImportWorkbench onApprovedImportChange={handleApprovedTrendBriefChange} />
       <aside aria-live="polite" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
         <strong>Session-only 연결:</strong>{" "}
         {approvedSnapshot
           ? "승인된 Trend Brief가 Intelligence 단계로 전달됐습니다. 입력이 바뀌면 downstream 전체가 무효화됩니다."
           : "승인된 Trend Brief가 없어 Intelligence 단계가 잠겨 있습니다."}
-        <p>네트워크 요청과 영구 저장은 없습니다.</p>
+        <p>Workbench 편집 draft의 직접 autosave는 없습니다. 별도 Project Workspace는 Owner가 확인한 승인 checkpoint만 local-only로 저장합니다.</p>
       </aside>
       {approvedSnapshot && (
         <EditorialIntelligenceWorkbench
