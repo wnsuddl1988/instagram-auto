@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type {
+  ApprovedRenderIntegrationSessionSnapshot,
   EditorialV2ApprovedStageId,
   EditorialV2ProjectIndexEntry,
   EditorialV2ProjectSnapshot,
 } from "../../lib/editorial-v2/contracts";
+import type { LocalPreviewPersistedProjectSummary } from "../../lib/editorial-v2/local-preview-contracts";
 import type { EditorialV2ApprovedCheckpointOption } from "../../lib/editorial-v2/persistence-contracts";
 import type {
   EditorialV2DraftAutosaveStatus,
@@ -37,6 +39,7 @@ interface ProjectWorkspacePanelProps {
   readonly onFeatureStateChange?: (state: FeatureState) => void;
   readonly onProjectSelectionChange?: (projectId: string | null) => void;
   readonly onApprovedProjectLoaded?: (snapshot: EditorialV2ProjectSnapshot | null) => void;
+  readonly onPersistedPreviewSummaryChange?: (summary: LocalPreviewPersistedProjectSummary | null) => void;
 }
 
 type FeatureState = "checking" | "enabled" | "disabled" | "error";
@@ -50,6 +53,37 @@ function stageIndex(stageId: EditorialV2ApprovedStageId | null): number {
   return stageId === null ? -1 : EDITORIAL_V2_APPROVED_STAGE_ORDER.indexOf(stageId);
 }
 
+function persistedPreviewSummary(snapshot: EditorialV2ProjectSnapshot | null): LocalPreviewPersistedProjectSummary | null {
+  if (!snapshot) return null;
+  const checkpoint = snapshot.approvedCheckpoints.find((entry) => entry.stageId === "render_integration");
+  if (!checkpoint) {
+    return {
+      projectId: snapshot.projectId,
+      projectRevision: snapshot.revision,
+      projectStatus: snapshot.metadata.status,
+      renderCheckpointHash: null,
+      renderManifestHash: null,
+      sceneCount: 0,
+      durationMs: 0,
+      unresolvedAssetCount: 0,
+      characterDirection: null,
+    };
+  }
+  const approved = JSON.parse(JSON.stringify(checkpoint.payload)) as ApprovedRenderIntegrationSessionSnapshot;
+  const manifest = approved.renderManifest;
+  return {
+    projectId: snapshot.projectId,
+    projectRevision: snapshot.revision,
+    projectStatus: snapshot.metadata.status,
+    renderCheckpointHash: checkpoint.payloadHash,
+    renderManifestHash: manifest.manifestHash,
+    sceneCount: manifest.enabledSceneCount,
+    durationMs: Math.round(manifest.totalDurationSeconds * 1_000),
+    unresolvedAssetCount: manifest.scenes.reduce((count, scene) => count + scene.unresolvedRequirements.length, 0),
+    characterDirection: manifest.selectedCharacterDirectionId,
+  };
+}
+
 export default function ProjectWorkspacePanel({
   approvedCheckpoints,
   currentSessionStage,
@@ -57,6 +91,7 @@ export default function ProjectWorkspacePanel({
   onFeatureStateChange,
   onProjectSelectionChange,
   onApprovedProjectLoaded,
+  onPersistedPreviewSummaryChange,
 }: ProjectWorkspacePanelProps) {
   const [featureState, setFeatureState] = useState<FeatureState>("checking");
   const [projects, setProjects] = useState<readonly EditorialV2ProjectIndexEntry[]>([]);
@@ -90,6 +125,7 @@ export default function ProjectWorkspacePanel({
       ? "현재 세션 승인 단계와 저장된 마지막 승인 단계가 같습니다."
       : "현재 세션과 저장된 checkpoint 단계가 다릅니다. 자동 hydration은 수행하지 않습니다."
     : "불러온 checkpoint가 없습니다.";
+  const previewSummary = useMemo(() => persistedPreviewSummary(loadedSnapshot), [loadedSnapshot]);
 
   async function refreshProjects(preferredProjectId?: string): Promise<void> {
     try {
@@ -116,6 +152,10 @@ export default function ProjectWorkspacePanel({
   useEffect(() => {
     onFeatureStateChange?.(featureState);
   }, [featureState, onFeatureStateChange]);
+
+  useEffect(() => {
+    onPersistedPreviewSummaryChange?.(previewSummary);
+  }, [onPersistedPreviewSummaryChange, previewSummary]);
 
   useEffect(() => {
     if (savableCheckpoints.length === 0) {
@@ -250,7 +290,7 @@ export default function ProjectWorkspacePanel({
   return (
     <section className={styles.panel} aria-labelledby="project-workspace-title">
       <header className={styles.header}>
-        <div><p className={styles.eyebrow}>Production Activation PA-2 · Local only</p><h2 id="project-workspace-title">Project Workspace</h2></div>
+        <div><p className={styles.eyebrow}>Production Activation PA-3 · Local only</p><h2 id="project-workspace-title">Project Workspace</h2></div>
         <span className={styles.status} data-state={featureState}>{featureState}</span>
       </header>
       <div className={styles.boundary}>

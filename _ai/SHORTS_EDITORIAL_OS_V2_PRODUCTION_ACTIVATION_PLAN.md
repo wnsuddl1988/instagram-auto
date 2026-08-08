@@ -19,13 +19,15 @@ PA-1은 V2 전용 local-only project registry, 승인 milestone snapshot, atomic
 
 PA-1은 모든 textarea, 입력 중 form state, 선택 직전 상태, 각 Workbench 내부 state를 자동 저장하거나 hydration하지 않는다. 저장 대상은 callback으로 확정된 approved checkpoint뿐이다. Resume는 저장된 승인 단계와 요약을 읽고 새 세션을 그 단계 기준으로 다시 시작하라는 안내다.
 
-## 5. PA-2 후보: full Workbench hydration·autosave
+## 5. PA-2 full Workbench hydration·autosave
 
-후보 범위일 뿐 승인된 scope가 아니다. draft schema, 변경 충돌, partial hydration, invalidation, 개인정보·민감정보 저장 정책과 migration 전략을 먼저 결정해야 한다.
+PA-2는 `FINAL_PASS`이며 checkpoint `fc1bdd98aff12425daf31241934de783d3ca9b15`에 저장됐다. Full draft는 local-only non-canonical state로 저장하고 exact approved checkpoint base와 일치할 때만 hydration하며 approval-like state는 재확인 전까지 승격하지 않는다.
 
-## 6. PA-3 후보: 실제 user-content render pipeline
+## 6. PA-3 Local User-Content Preview Renderer
 
-후보 범위일 뿐이다. 실제 user content, production asset, subtitle/audio alignment, renderer capability, retry·cleanup·artifact manifest를 별도 승인·검증해야 한다.
+PA-3는 `IMPLEMENTED_PENDING_CROSS_REVIEW`다. Persisted approved checkpoint만 canonical source로 사용하여 실제 narration/caption/source/number/scene/character 계획을 `540×960` 30fps local preview MP4로 만든다. system ffmpeg/ffprobe와 Playwright를 사용하지만 dependency/config는 변경하지 않는다.
+
+PA-3 output은 silent placeholder audio, estimated subtitle, character motion preview proxy, unresolved external asset placeholder를 명시하며 `productionReady=false`다. 실제 external asset 생성·다운로드, TTS, final 1080 render, retry automation, public output, upload/publish는 범위 밖이다. Same-origin identifier-only API, revision/checkpoint hard stop, HTML/network/path containment, deterministic cache와 cleanup을 검증한다.
 
 ## 7. PA-4 후보: external TTS·asset integration
 
@@ -45,7 +47,7 @@ PA-1은 모든 textarea, 입력 중 form state, 선택 직전 상태, 각 Workbe
 
 ## 11. 각 단계의 Control Tower gates
 
-새 PA Slice, allowlist 확대, persistence architecture 변경, V1 migration, dependency/config/auth, 외부 API·비용·실제 render·게시·deploy·push, P0/BLOCKED는 Control Tower 결정 대상이다. PA-1 완료가 PA-2 자동 승인을 뜻하지 않는다.
+새 PA Slice, allowlist 확대, persistence architecture 변경, V1 migration, dependency/config/auth, 외부 API·비용·final production render·게시·deploy·push, P0/BLOCKED는 Control Tower 결정 대상이다. PA-3 local preview 완료가 PA-4 external integration 자동 승인을 뜻하지 않는다.
 
 ## 12. Rollback 원칙
 
@@ -57,10 +59,10 @@ V2가 full draft hydration, actual render, external identity, private publish sm
 
 ## 14. Push·deploy·external cost 승인
 
-Local checkpoint commit 사전 승인은 PA-1 exact 20-path와 검증 조건에만 적용된다. Push, deploy, paid TTS/asset/render, account/OAuth, upload/publish/schedule은 각각 Owner의 별도 exact 승인이 필요하다.
+PA-3 local checkpoint commit 사전 승인은 Claude 최종 PASS/P0 0/P1 0과 exact 18-path·checker·runtime·TypeScript·Git 검증 조건에만 적용된다. 고정 메시지는 `feat(editorial-v2): checkpoint local user-content preview renderer`다. Push, deploy, paid TTS/asset/final render, account/OAuth, upload/publish/schedule은 각각 Owner의 별도 exact 승인이 필요하다.
 
 ## 15. 현재 product operational capability
 
 `product operational capability = NOT_CLAIMED`
 
-PA-1은 local approved-checkpoint persistence foundation이다. Full draft autosave, Workbench hydration, cloud backup, encryption at rest, authentication, V1 migration, external API, actual render와 public launch 능력을 주장하지 않는다.
+PA-1 persistence와 PA-2 draft resume 이후 PA-3 Local User-Content Preview Renderer를 구현했지만, 이는 preview-only 증거다. Cloud backup, encryption at rest, authentication, V1 migration, external TTS/asset, production-quality 1080 render, account identity, durable publication ledger와 public launch 능력을 주장하지 않는다. PA-4는 Control Tower와 Owner의 새 exact 승인 전 `BLOCKED`다.

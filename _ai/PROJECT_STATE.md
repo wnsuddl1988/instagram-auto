@@ -1,30 +1,28 @@
 # AutoShorts AI — Project State
 
-Updated: 2026-08-08 KST
+Updated: 2026-08-09 KST
 
-## Shorts Editorial OS V2 — Production Activation PA-2 full draft autosave and hydration
+## Shorts Editorial OS V2 — Production Activation PA-3 local user-content preview renderer
 
-- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA2_FULL_DRAFT_AUTOSAVE_HYDRATION_AND_RESUME_AUTONOMOUS_LOOP`.
-- Slice 0~8: `FINAL_PASS`; V2 base rebuild milestone: `FINAL_PASS`; PA-1: `FINAL_PASS`; Governance: `ACTIVE`.
-- PA-1 checkpoint: `41d302a9954015ad34a7ca96313f3ccb54a344b2`; PA-2: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-2 Cross Review: `NOT_STARTED`; correction cycle: `2`.
-- Scope: seven Workbench full draft capture → deterministic snapshot/hash → 1,350ms autosave → optimistic draft/base revision guard → atomic local draft/LKG → safe hydration → approval downgrade → explicit draft recovery → localhost Playwright reload/two-tab proof.
-- exact 23-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint production activation draft resume`.
-- approved checkpoint authority: `CANONICAL`; draft approval authority: `NON_CANONICAL`; Draft Resume는 Approval Resume가 아니다.
-- full draft autosave: `IMPLEMENTED_PENDING_REVIEW`; full Workbench hydration: `IMPLEMENTED_PENDING_REVIEW`; optimistic conflict guard: `IMPLEMENTED_PENDING_REVIEW`.
-- local draft store: `LOCAL_ONLY_UNENCRYPTED_JSON`; cloud sync: `NOT_IMPLEMENTED`; encryption at rest: `NOT_IMPLEMENTED`; 민감한 secret/API key 저장은 금지 안내한다.
-- automatic merge, stale draft force hydration, conflict force overwrite, draft hard delete, automatic approved checkpoint creation: `NOT_IMPLEMENTED`.
-- safe hydration은 project/schema/integrity/base revision/approved checkpoint hash가 모두 일치할 때만 허용하고, draft의 approval-like state는 `pending_reconfirmation` 또는 `invalidated`로 내린다.
-- Draft API: same-origin GET/PUT/PATCH, feature OFF·invalid ID·body/schema/integrity/revision/origin/recovery confirmation hard stop, DELETE 없음, 실제 data root·stack 비노출.
-- Draft recovery: current corruption 자동 덮어쓰기·삭제 없음; valid LKG와 explicit Owner confirmation이 필요하며 approved snapshot을 수정하지 않는다.
-- Self-validation: PA-2 checker `1103/1103 PASS`; targeted TypeScript syntactic/semantic diagnostics `0`; full strict pre-emit `PASS`; `git diff --check` PASS; exact 47-path 상태와 보호 mismatch `0`.
-- Draft persistence probe: `PASS`; OS temp root에서 seven-stage draft, exact raw string, optimistic revision/base conflict, current 불변, corruption overwrite 차단, explicit Owner LKG recovery, approval downgrade, project/schema/size 차단, approved snapshot 불변, cleanup 및 repository status/hash 불변을 확인했다.
-- Local browser runtime proof: final `PASS`; UI project create, Research field/raw exact autosave·reload, same-origin seven-stage full draft, 7 Workbench hydration, approval 비승격, two-tab first-writer save/second-writer 409, conflict autosave pause, external request `0`, page error `0`, server/browser/temp cleanup, repository status/hash 불변을 확인했다.
-- Runtime correction: 정상 same-origin host 정규화 false 403과 시간 기반 hydration suppression 경합을 발견해 allowlist 안에서 Host/request URL strict candidate 비교와 mounted-stage callback completion barrier로 수정했다. `Hydrating → Clean` 전환 후 사용자 입력을 받는 probe 동기화까지 correction cycle 2 안에서 완료했다.
-- Optional build: `NOT_COMPLETED_ENVIRONMENT_TOOLING`; 정확히 1회 시도했으나 compile 전 pnpm supply-chain wrapper의 `ERR_PNPM_IGNORED_BUILDS`(`sharp`, `unrs-resolver`)로 중단했다. dependency 승인·install·lockfile/config 변경 및 build 재실행은 하지 않았다.
-- V1 migration: `NOT_IMPLEMENTED`; V1 data/root: `UNTOUCHED`; external integrations: `NOT_STARTED`.
-- External API, OAuth, actual TTS/asset/render, account write, upload/publish/schedule, DB/cloud, deploy, push: `NOT_EXECUTED`.
-- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; progress: `NOT_CALCULATED`; PA-3: `BLOCKED`.
-- 다음 routine 작업은 exact 23-path Claude Code read-only Cross Review다. runtime probe와 build는 Claude가 재실행하지 않는다.
+- Owner approval: `APPROVE_SHORTS_EDITORIAL_OS_V2_PRODUCTION_ACTIVATION_PA3_LOCAL_USER_CONTENT_PREVIEW_RENDERER_AUTONOMOUS_LOOP`.
+- Slice 0~8, V2 base rebuild milestone, PA-1, PA-2: `FINAL_PASS`; PA-2 checkpoint: `fc1bdd98aff12425daf31241934de783d3ca9b15`; Governance: `ACTIVE`.
+- PA-3: `IMPLEMENTATION_COMPLETE_AWAITING_CROSS_REVIEW`; PA-3 Cross Review: `NOT_STARTED`; product correction cycle: `0`; validation-harness correction: `2`.
+- Scope: persisted approved Script/Planning/Character/Render checkpoints → canonical render input → deterministic evidence-first scene HTML → Playwright frame capture → system ffmpeg/ffprobe → V2 project data-root preview MP4/metadata → same-origin UI playback/cache reuse.
+- exact 18-path checkpoint: `PREAUTHORIZED_AFTER_CLAUDE_PASS_P0_0_P1_0`; fixed message: `feat(editorial-v2): checkpoint local user-content preview renderer`.
+- feature flags: V2 + local persistence + local preview render의 명시적 enable이 모두 필요하고 기본값은 OFF다.
+- render authority: `PERSISTED_APPROVED_CHECKPOINT_ONLY`; client request는 revision/checkpoint/profile/Owner local-preview confirmation만 허용하며 content·asset·filesystem path 입력을 거부한다.
+- local user-content preview renderer: `IMPLEMENTED_PENDING_CROSS_REVIEW`; profile: `540×960` 30fps; audio: `silent placeholder`; subtitle: `estimated_not_audio_aligned`; character: `PREVIEW_PROXY_ONLY`; `productionReady=false`.
+- 실제 narration/caption/source/number/scene plan/character assignment를 사용하되 미해결 map/generated/stock/upload asset은 placeholder로 표시한다. 실제 external asset 생성·다운로드와 TTS 호출은 없다.
+- Scene markup은 untrusted persisted text를 HTML escape하고 script/img/link/iframe/object/embed, URL-bearing attribute, event handler, CSS import를 차단한다. Playwright frame context의 network request도 fail-closed다.
+- output store: `<V2 data root>/projects/<projectId>/renders/preview/<renderId>/preview.mp4|metadata.json`; path containment·symlink·size/hash·ffprobe 검증 후 valid cache만 재사용하며 UI/API에 실제 data-root path를 노출하지 않는다.
+- same-origin API: GET metadata/media + POST render; cross-origin, archived project, stale revision, checkpoint mismatch, final profile, Owner 미확인, client content/path, oversized body를 hard stop한다. DELETE는 없다.
+- Self-validation: PA-3 checker `2929/2929 PASS`; targeted TypeScript syntactic/semantic diagnostics `0`; strict preEmit `PASS`; `git diff --check` PASS; exact 42-path 상태, staged `0`, 보호 baseline/config/governance mismatch `0`.
+- Local browser/runtime proof: final `PASS`; 실제 8-scene local preview, video/audio/subtitle stream, 540×960/30fps, silent placeholder, estimated_not_audio_aligned subtitle, character proxy, adversarial persisted text escape, client content/path·final profile·stale revision·cross-origin 차단, first ffmpeg render 뒤 동일 input cache hit에서 ffmpeg 미실행, external request `0`, page error `0`, temp cleanup, repository status/hash 불변을 확인했다.
+- Validation-harness correction: 최초 synthetic `evidence_and_number` fixture의 canonical number ref 누락과 브라우저 same-origin `blob:` media URL의 external-request 오분류를 probe 파일 안에서만 보완했다. 두 경우 모두 제품/runtime output 최종 판정 전에 fail-closed됐으며 final proof가 전체 계약을 다시 검증했다.
+- pnpm build: `PROHIBITED_NOT_RUN`; PA-3 전체에서 실행하지 않으며 package/workspace/lock/Next config는 변경하지 않는다.
+- V1 migration/data/root: `UNTOUCHED`; external API/TTS/asset, OAuth/account, DB/cloud, upload/publish/schedule, deploy, push: `NOT_EXECUTED`.
+- product operational capability: `NOT_CLAIMED`; Push: `NOT_AUTHORIZED`; progress: `NOT_CALCULATED`; PA-4: `BLOCKED`.
+- 다음 routine 작업은 PA-3 정적/runtime 증거 PASS 후 exact 18-path Claude Code read-only Cross Review다. Claude는 runtime probe와 build를 재실행하지 않는다.
 
 ## Shorts Editorial OS V2 — Slice 8 representative sample and relaunch readiness
 

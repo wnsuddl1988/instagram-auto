@@ -30,6 +30,7 @@ import type {
 } from "../../lib/editorial-v2/draft-contracts";
 import { EDITORIAL_V2_DRAFT_AUTOSAVE_DEBOUNCE_MS } from "../../lib/editorial-v2/draft-contracts";
 import type { EditorialV2ApprovedCheckpointOption } from "../../lib/editorial-v2/persistence-contracts";
+import type { LocalPreviewPersistedProjectSummary } from "../../lib/editorial-v2/local-preview-contracts";
 import { EditorialV2DraftApiError, loadEditorialV2Draft, saveEditorialV2Draft } from "../../lib/editorial-v2/draft-api-client";
 import { buildEditorialV2FullDraftSnapshot, decideDraftHydration, sanitizeHydratedDraftApprovals } from "../../lib/editorial-v2/draft-snapshot";
 import CharacterMotionWorkbench from "./CharacterMotionWorkbench";
@@ -38,6 +39,7 @@ import EditorialIntelligenceWorkbench from "./EditorialIntelligenceWorkbench";
 import ResearchImportWorkbench from "./ResearchImportWorkbench";
 import PublishIntegrationWorkbench from "./PublishIntegrationWorkbench";
 import ProjectWorkspacePanel from "./ProjectWorkspacePanel";
+import LocalPreviewRenderPanel from "./LocalPreviewRenderPanel";
 import RenderIntegrationWorkbench from "./RenderIntegrationWorkbench";
 import SampleRelaunchWorkbench from "./SampleRelaunchWorkbench";
 import ScenePlanningWorkbench from "./ScenePlanningWorkbench";
@@ -106,6 +108,7 @@ export default function EditorialV2Workbench() {
   const [workspaceFeatureState, setWorkspaceFeatureState] = useState<WorkspaceFeatureState>("checking");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [loadedApprovedSnapshot, setLoadedApprovedSnapshot] = useState<EditorialV2ProjectSnapshot | null>(null);
+  const [persistedPreviewSummary, setPersistedPreviewSummary] = useState<LocalPreviewPersistedProjectSummary | null>(null);
   const [loadedDraft, setLoadedDraft] = useState<EditorialV2FullDraftSnapshot | null>(null);
   const [hydratedDraft, setHydratedDraft] = useState<EditorialV2FullDraftSnapshot | null>(null);
   const [stageDraftStates, setStageDraftStates] = useState<EditorialV2DraftStageStateMap>({});
@@ -445,6 +448,7 @@ export default function EditorialV2Workbench() {
         onFeatureStateChange={(state) => { setWorkspaceFeatureState(state); if (state === "disabled") updateAutosaveStatus("disabled"); }}
         onProjectSelectionChange={setSelectedProjectId}
         onApprovedProjectLoaded={applyApprovedProject}
+        onPersistedPreviewSummaryChange={setPersistedPreviewSummary}
       />
       <DraftAutosaveStatus
         status={autosaveStatus}
@@ -460,6 +464,11 @@ export default function EditorialV2Workbench() {
         onSaveNow={() => void saveCurrentDraft()}
         onReload={reloadSavedDraft}
         onStartFromApproved={startFromApprovedCheckpoint}
+      />
+      <LocalPreviewRenderPanel
+        persistenceEnabled={workspaceFeatureState === "enabled"}
+        persistedProject={persistedPreviewSummary}
+        currentSessionRenderManifestHash={approvedRenderSnapshot?.renderManifest.manifestHash ?? null}
       />
       <ResearchImportWorkbench key={`research:${draftHydrationKey}`} onApprovedImportChange={handleApprovedTrendBriefChange} initialDraftState={hydratedDraft?.stageStates.trend_brief_import ?? null} draftHydrationKey={draftHydrationKey} onDraftStateChange={handleResearchDraft} />
       <aside aria-live="polite" style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
