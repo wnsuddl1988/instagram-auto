@@ -2,6 +2,22 @@
 
 Updated: 2026-08-09 KST
 
+## Shorts Editorial OS V2 — PA-4L second-final one-scene TTS result
+
+- Owner의 exact 단일 요청 승인 후 `selected-angle:revolving-balance-not-erased:scene:04`에 대해 ElevenLabs provider generation을 정확히 `1`회 실행했다. 기존 첫 실패를 포함한 누적 provider request는 `2`이며, 세 번째 요청은 허용하지 않는다.
+- result: `generated`; audio `219472` bytes; duration `13653ms`; SHA-256 `032f7098f1c0eaf8f5009404386510a16da64075ad9bd7655d4839c67729986a`; alignment `provider_character_timestamps_aligned`; failed/pending scene `0/0`; automatic retry/fallback `0/0`.
+- actual render, publish, deploy, push는 `0`이다. 단일 요청 직후 external TTS flag는 default-OFF로 되돌렸고, local persistence와 V2 runtime gate만 유지한다.
+- 다음 작업은 별도 Owner 승인 범위의 local audio listening/alignment review 또는 그 결과에 대한 후속 결정이다. PA-5·production render·publish 자동 시작 금지.
+
+## Shorts Editorial OS V2 — PA-4L second-final retry guard checkpoint
+
+- checkpoint commit: `70137a2a9169fcd1b72b62d997458775cedf0436` (`fix(editorial-v2): guard second-final retry`); parent `02db0549568f16f9de9a29a92a6b369815a5efdb`; exact `8` files, `+223/-66`; push `NOT_AUTHORIZED`.
+- guard: retry_failed는 일반 유료 확인과 `ownerSecondFinalPaidExternalTtsConfirmation`을 함께 요구한다. initial/retry 확인값은 상호배타이며, UI에 일반 재시도 경로는 노출하지 않는다.
+- provider budget: 실행당 최대 `1`, 누적 최대 `2`; 기존 set이 실패 `1`·완료 `0`·pending `0`이고 Scene identity가 모두 일치할 때만 두 번째·최종 시도를 허용한다. 자동 retry/fallback은 `0/0`이며 세 번째 시도는 provider 호출 전에 차단한다.
+- Claude Code Sonnet High read-only Cross Review: `PASS`; P0/P1/P2 `0/0/0`; checker `688/688 PASS`, error-diagnostics `222/222 PASS`, fake-fetch probe `PASS` (`secondFinalFakeRequests=1`, unconfirmed/third retry blocked, actual external network `0`).
+- protected state: staged `0`; 기존 `21 modified + 3 untracked` dirty baseline만 남아 있고 protected config는 이번 commit에 포함되지 않았다.
+- next gate: generation-zero live preflight와 실제 두 번째·최종 TTS 요청은 각각 Owner의 별도 exact approval 전 `BLOCKED`다. PA-5, final render, publish, deploy, push 자동 시작 금지.
+
 ## Shorts Editorial OS V2 — PA-4L-DIAG HTTP 400 generation-zero diagnostics
 
 - Owner approval: `APPROVE_PA4L_HTTP400_GENERATION_ZERO_DIAGNOSTICS_AND_SANITIZED_ERROR_CAPTURE`.

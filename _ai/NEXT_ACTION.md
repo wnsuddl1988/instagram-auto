@@ -2,6 +2,19 @@
 
 Updated: 2026-08-09 KST
 
+## Shorts Editorial OS V2 — PA-4L post-generation local review gate
+
+- second-final one-scene TTS request는 Owner 승인으로 정확히 `1`회 실행되어 성공했다. Scene `selected-angle:revolving-balance-not-erased:scene:04`; generated audio SHA-256 `032f7098f1c0eaf8f5009404386510a16da64075ad9bd7655d4839c67729986a`; duration `13653ms`; provider character timestamp alignment `PASS`.
+- 자동 retry/fallback은 `0/0`, failed/pending scene은 `0/0`, provider 누적 request는 기존 첫 실패를 포함해 `2`다. external TTS gate는 요청 직후 default-OFF로 복귀했다.
+- 다음 승인된 작업은 local audio listening/alignment review다. production render, publish, deploy, push, 추가 provider generation은 승인 범위 밖이다.
+
+## Shorts Editorial OS V2 — PA-4L next gate after second-final retry guard checkpoint
+
+- checkpoint `70137a2a9169fcd1b72b62d997458775cedf0436`와 Claude Code Sonnet High read-only Cross Review는 `PASS`(P0/P1/P2 `0/0/0`)로 완료됐다. checker `688/688 PASS`, error-diagnostics `222/222 PASS`, fake-fetch probe `PASS`; actual external network `0`.
+- 다음 작업은 Owner가 별도 승인할 때에만 generation-zero live preflight를 수행하는 것이다. canonical Scene 정확히 `1`, narration `<=180`, voice/model/output/plan hash/cache와 요청 상한 `<=1`, retry/fallback `0/0`만 확인하며 실제 provider generation은 `0`이다.
+- 두 번째·최종 단일 Scene ElevenLabs TTS 요청은 새 preflight 및 필요한 검수 PASS 후에도 Owner의 정확한 1회 승인 전 `NOT_AUTHORIZED`다. 자동 retry, fallback, 세 번째 요청은 금지한다.
+- push, PA-5, final render, publish, deploy, dependency/config/lockfile/env 변경은 이번 PA-4L 범위 밖이며 자동 시작하지 않는다.
+
 ## Shorts Editorial OS V2 — PA-4L-DIAG HTTP 400 generation-zero diagnostics
 
 - current gate: `LIVE_TTS_SMOKE_FAILED_DIAGNOSED_OR_PENDING_RETRY`; PA-4L guard checkpoint `a5a7591bb24840a914e076cac32c356897b56a09`.

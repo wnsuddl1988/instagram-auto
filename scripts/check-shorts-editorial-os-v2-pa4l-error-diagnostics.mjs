@@ -20,6 +20,8 @@ const postCheckpointCorrectionAllowlist = new Set([
   "scripts/probe-shorts-editorial-os-v2-pa4l-single-scene.mjs",
   "scripts/check-shorts-editorial-os-v2-pa4l-single-scene.mjs",
   "scripts/check-shorts-editorial-os-v2-pa4l-error-diagnostics.mjs",
+  "_ai/PROJECT_STATE.md",
+  "_ai/NEXT_ACTION.md",
 ]);
 const failures = [];
 let passed = 0;
