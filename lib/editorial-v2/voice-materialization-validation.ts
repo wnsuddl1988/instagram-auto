@@ -15,6 +15,7 @@ import {
   PA4L_AUTOMATIC_RETRY_LIMIT,
   PA4L_FALLBACK_REQUEST_LIMIT,
   PA4L_MAX_EXTERNAL_GENERATION_REQUESTS,
+  PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS,
   PA4L_MAX_NARRATION_CHARACTERS,
   PA4L_MAX_SCENES,
   PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
@@ -29,6 +30,7 @@ import {
   isMaterializationSetId,
   isSceneAudioIdentity,
   isVoiceMaterializationIdentifier,
+  isVoiceMaterializationSceneId,
 } from "./voice-materialization-contracts";
 
 const POST_KEYS = new Set([
@@ -40,6 +42,7 @@ const POST_KEYS = new Set([
   "modelId",
   "expectedPlanHash",
   "ownerPaidExternalTtsConfirmation",
+  "ownerSecondFinalPaidExternalTtsConfirmation",
   "requestedSceneIds",
 ]);
 
@@ -175,16 +178,19 @@ export function validateVoiceMaterializationRequest(value: unknown): readonly st
   if (!isRecord(value)) return ["request_object_required"];
   const issues: string[] = [];
   for (const key of Object.keys(value)) if (!POST_KEYS.has(key)) issues.push(`client_content_or_path_forbidden:${key}`);
-  if (value.action !== "materialize") issues.push(value.action === "retry_failed" ? "pa4l_retry_not_activated" : "action_invalid");
+  const secondFinalRetry = value.action === "retry_failed";
+  if (value.action !== "materialize" && !secondFinalRetry) issues.push("action_invalid");
   if (value.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) issues.push(value.executionMode === VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE ? "live_full_materialization_not_activated" : "execution_mode_invalid");
   if (!Number.isSafeInteger(value.expectedProjectRevision) || Number(value.expectedProjectRevision) < 0) issues.push("project_revision_invalid");
   if (typeof value.expectedRenderCheckpointHash !== "string" || !/^[a-f0-9]{64}$/u.test(value.expectedRenderCheckpointHash)) issues.push("render_checkpoint_hash_invalid");
   if (!isVoiceMaterializationIdentifier(value.voiceId) || !isVoiceMaterializationIdentifier(value.modelId)) issues.push("voice_or_model_invalid");
   if (typeof value.expectedPlanHash !== "string" || !/^[a-f0-9]{64}$/u.test(value.expectedPlanHash)) issues.push("plan_hash_invalid");
   if (value.ownerPaidExternalTtsConfirmation !== true) issues.push("owner_paid_external_tts_confirmation_required");
+  if (secondFinalRetry && value.ownerSecondFinalPaidExternalTtsConfirmation !== true) issues.push("pa4l_second_final_paid_tts_confirmation_required");
+  if (!secondFinalRetry && value.ownerSecondFinalPaidExternalTtsConfirmation !== undefined) issues.push("pa4l_second_final_confirmation_without_retry_forbidden");
   if (!Array.isArray(value.requestedSceneIds)
     || value.requestedSceneIds.length !== PA4L_MAX_SCENES
-    || value.requestedSceneIds.some((entry) => typeof entry !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(entry))
+    || value.requestedSceneIds.some((entry) => !isVoiceMaterializationSceneId(entry))
     || new Set(value.requestedSceneIds).size !== value.requestedSceneIds.length) issues.push("pa4l_requested_scene_exactly_one_required");
   return [...new Set(issues)];
 }
@@ -202,6 +208,7 @@ export function parseVoiceMaterializationRequest(value: unknown): VoiceMateriali
     modelId: String(record.modelId),
     expectedPlanHash: String(record.expectedPlanHash),
     ownerPaidExternalTtsConfirmation: true,
+    ...(record.ownerSecondFinalPaidExternalTtsConfirmation === true ? { ownerSecondFinalPaidExternalTtsConfirmation: true as const } : {}),
     ...(Array.isArray(record.requestedSceneIds) ? { requestedSceneIds: record.requestedSceneIds.map(String) } : {}),
   };
 }
@@ -246,7 +253,7 @@ export function validateVoiceMaterializationSet(set: VoiceMaterializationSet): r
   if (set.externalRequestCount < 0 || !Number.isSafeInteger(set.externalRequestCount) || set.automaticRetryCount !== 0 || set.costAmountStored !== false) issues.push("set_external_request_accounting_invalid");
   if (set.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
     && (set.sceneEntries.length !== PA4L_MAX_SCENES
-      || set.externalRequestCount > PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
+      || set.externalRequestCount > PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS
       || set.maximumExternalGenerationRequests !== PA4L_MAX_EXTERNAL_GENERATION_REQUESTS
       || set.automaticRetryLimit !== 0
       || set.fallbackRequestLimit !== 0)) issues.push("pa4l_set_limits_invalid");

@@ -14,6 +14,7 @@ import {
   PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
   isMaterializationSetId,
   isVoiceMaterializationIdentifier,
+  isVoiceMaterializationSceneId,
 } from "./voice-materialization-contracts";
 
 const API_ROOT = "/api/editorial-v2/projects";
@@ -46,10 +47,6 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 
 function isProjectId(value: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/u.test(value) && !value.includes("..");
-}
-
-function isSceneId(value: string): boolean {
-  return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(value);
 }
 
 function routeRoot(projectId: string): string {
@@ -192,10 +189,10 @@ export async function requestVoiceMaterialization(
 
 export async function requestPa4lSingleSceneMaterialization(
   projectId: string,
-  request: Omit<VoiceMaterializationRequest, "action" | "executionMode"> & { readonly requestedSceneIds: readonly [string] },
+  request: Omit<VoiceMaterializationRequest, "action" | "executionMode" | "ownerSecondFinalPaidExternalTtsConfirmation"> & { readonly requestedSceneIds: readonly [string] },
   options: VoiceMaterializationApiOptions = {},
 ): Promise<VoiceMaterializationExecutionResult> {
-  if (request.requestedSceneIds.length !== PA4L_MAX_SCENES || !isSceneId(request.requestedSceneIds[0])) {
+  if (request.requestedSceneIds.length !== PA4L_MAX_SCENES || !isVoiceMaterializationSceneId(request.requestedSceneIds[0])) {
     throw new VoiceMaterializationApiError(0, "PA4L_REQUESTED_SCENE_INVALID", "PA-4L canonical scene ID 하나가 필요합니다.");
   }
   return execute(projectId, {
@@ -205,12 +202,20 @@ export async function requestPa4lSingleSceneMaterialization(
   }, options);
 }
 
-export async function retryVoiceMaterialization(
+export async function requestPa4lSecondFinalSingleSceneMaterialization(
   projectId: string,
-  request: Omit<VoiceMaterializationRequest, "action"> & { readonly requestedSceneIds: readonly string[] },
+  request: Omit<VoiceMaterializationRequest, "action" | "executionMode" | "ownerSecondFinalPaidExternalTtsConfirmation"> & { readonly requestedSceneIds: readonly [string] },
   options: VoiceMaterializationApiOptions = {},
 ): Promise<VoiceMaterializationExecutionResult> {
-  return execute(projectId, { ...request, action: "retry_failed" }, options);
+  if (request.requestedSceneIds.length !== PA4L_MAX_SCENES || !isVoiceMaterializationSceneId(request.requestedSceneIds[0])) {
+    throw new VoiceMaterializationApiError(0, "PA4L_REQUESTED_SCENE_INVALID", "PA-4L canonical scene ID 하나가 필요합니다.");
+  }
+  return execute(projectId, {
+    ...request,
+    action: "retry_failed",
+    executionMode: PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
+    ownerSecondFinalPaidExternalTtsConfirmation: true,
+  }, options);
 }
 
 export async function getVoiceMaterializationStatus(
@@ -232,7 +237,7 @@ export async function fetchMaterializedSceneAudio(
   sceneId: string,
   options: VoiceMaterializationApiOptions = {},
 ): Promise<Blob> {
-  if (!isMaterializationSetId(materializationSetId) || !isSceneId(sceneId)) throw new VoiceMaterializationApiError(0, "VOICE_AUDIO_IDENTITY_INVALID", "Scene audio identity가 올바르지 않습니다.");
+  if (!isMaterializationSetId(materializationSetId) || !isVoiceMaterializationSceneId(sceneId)) throw new VoiceMaterializationApiError(0, "VOICE_AUDIO_IDENTITY_INVALID", "Scene audio identity가 올바르지 않습니다.");
   return withTimeout(options, async (signal) => {
     const response = await fetch(queryUrl(projectId, { mode: "audio", materializationSetId, sceneId }), { method: "GET", signal, credentials: "same-origin", redirect: "error", cache: "no-store" });
     if (!response.ok) {

@@ -281,9 +281,12 @@ try {
   assert(maliciousBlocked && successRequests === beforeWrongRequest, "malicious multi-scene plan reached provider");
 
   const requestBase = { action: "materialize", executionMode: contracts.PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE, expectedProjectRevision: project.revision, expectedRenderCheckpointHash: plan.sourceRenderCheckpointHash, voiceId: plan.voiceId, modelId: plan.modelId, expectedPlanHash: plan.planHash, ownerPaidExternalTtsConfirmation: true, requestedSceneIds: [selected.sceneId] };
+  assert(validationModule.validateVoiceMaterializationRequest(requestBase).length === 0, "canonical colon-delimited scene request invalid");
   assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, requestedSceneIds: standardPlan.scenes.map((scene) => scene.sceneId) }).includes("pa4l_requested_scene_exactly_one_required"), "client eight-scene request not blocked");
   assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, executionMode: contracts.VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE }).includes("live_full_materialization_not_activated"), "standard full live request not blocked");
-  assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed" }).includes("pa4l_retry_not_activated"), "retry request not blocked");
+  assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed" }).includes("pa4l_second_final_paid_tts_confirmation_required"), "unconfirmed retry request not blocked");
+  assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed", ownerSecondFinalPaidExternalTtsConfirmation: true }).length === 0, "confirmed retry request invalid");
+  assert(validationModule.validateVoiceMaterializationRequest({ ...requestBase, ownerSecondFinalPaidExternalTtsConfirmation: true }).includes("pa4l_second_final_confirmation_without_retry_forbidden"), "initial request accepted second-final confirmation");
 
   const setPath = join(temporaryDirectory, "projects", projectId, "audio", "tts", "sets", `${plan.materializationSetId}.json`);
   assert(resolve(setPath).startsWith(resolve(temporaryDirectory)), "cache cleanup path escaped temp root");
@@ -304,6 +307,37 @@ try {
   assert(!failed.ok && failed.stoppedOnFirstFailure && failed.externalRequestsThisRun === 1 && failureRequests === 1, "first failure request accounting invalid");
   assert(failed.set.failedSceneIds.length === 1 && failed.set.pendingSceneIds.length === 0 && failed.set.automaticRetryCount === 0, "failure state or retry count invalid");
 
+  let unconfirmedRetryBlocked = false;
+  try {
+    await voiceNode.materializeVoiceMaterializationPlan(failurePlan, { configuration, apiKey: secretSentinel, fetchImpl: failureFetch, mode: "retry", executionMode: contracts.PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE, requestedSceneIds: [failurePlan.scenes[0].sceneId], now: () => "2026-08-09T00:22:30.000Z" });
+  } catch (error) { unconfirmedRetryBlocked = error instanceof Error && error.message === "PA4L_SECOND_FINAL_OWNER_CONFIRMATION_REQUIRED"; }
+  assert(unconfirmedRetryBlocked && failureRequests === 1, "unconfirmed second-final retry reached provider");
+
+  let secondFinalRequests = 0;
+  const secondFinalFetch = async (url, init) => {
+    secondFinalRequests += 1;
+    assert(secondFinalRequests <= 1, "second-final retry attempted more than one provider request");
+    assert(typeof url === "string" && url.startsWith("https://api.elevenlabs.io/v1/text-to-speech/") && url.endsWith("/with-timestamps?output_format=mp3_44100_128"), `second-final provider URL invalid: ${url}`);
+    assert(init?.method === "POST" && init.redirect === "error", "second-final provider method/redirect invalid");
+    assert(init?.headers?.["xi-api-key"] === secretSentinel, "second-final server credential missing");
+    const body = JSON.parse(init.body);
+    assert(body.model_id === "eleven_multilingual_v2", "second-final model mismatch");
+    const characters = [...body.text];
+    const durationSeconds = audioProbe.durationMs / 1_000;
+    const step = durationSeconds / characters.length;
+    const alignment = { characters, character_start_times_seconds: characters.map((_, index) => index * step), character_end_times_seconds: characters.map((_, index) => (index + 1) * step) };
+    return new Response(JSON.stringify({ audio_base64: mp3Bytes.toString("base64"), alignment, normalized_alignment: alignment }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const retried = await voiceNode.materializeVoiceMaterializationPlan(failurePlan, { configuration, apiKey: secretSentinel, fetchImpl: secondFinalFetch, mode: "retry", executionMode: contracts.PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE, ownerSecondFinalPaidExternalTtsConfirmation: true, requestedSceneIds: [failurePlan.scenes[0].sceneId], now: () => "2026-08-09T00:23:00.000Z" });
+  assert(retried.ok && !retried.stoppedOnFirstFailure && retried.externalRequestsThisRun === 1 && secondFinalRequests === 1, "second-final retry did not make exactly one successful provider request");
+  assert(retried.set.externalRequestCount === 2 && retried.set.completeSceneIds.length === 1 && retried.set.failedSceneIds.length === 0 && retried.set.automaticRetryCount === 0, "second-final retry state accounting invalid");
+
+  let thirdRetryBlocked = false;
+  try {
+    await voiceNode.materializeVoiceMaterializationPlan(failurePlan, { configuration, apiKey: secretSentinel, fetchImpl: secondFinalFetch, mode: "retry", executionMode: contracts.PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE, ownerSecondFinalPaidExternalTtsConfirmation: true, requestedSceneIds: [failurePlan.scenes[0].sceneId], now: () => "2026-08-09T00:24:00.000Z" });
+  } catch (error) { thirdRetryBlocked = error instanceof Error && error.message === "PA4L_SECOND_FINAL_RETRY_STATE_INVALID"; }
+  assert(thirdRetryBlocked && secondFinalRequests === 1, "third retry was not blocked before provider");
+
   const persistedSuccess = readFileSync(join(temporaryDirectory, "projects", projectId, "audio", "tts", "sets", `${plan.materializationSetId}.json`), "utf8");
   const persistedFailure = readFileSync(join(temporaryDirectory, "projects", projectId, "audio", "tts", "sets", `${failurePlan.materializationSetId}.json`), "utf8");
   assert(!persistedSuccess.includes(secretSentinel) && !persistedFailure.includes(secretSentinel) && !JSON.stringify({ success, cached, failed }).includes(secretSentinel), "secret sentinel leaked");
@@ -317,6 +351,9 @@ try {
     maximumExternalRequests: plan.maximumExternalGenerationRequests,
     successFakeRequests: successRequests,
     failureFakeRequests: failureRequests,
+    secondFinalFakeRequests: secondFinalRequests,
+    unconfirmedSecondFinalRetryBlocked: unconfirmedRetryBlocked,
+    thirdRetryBlocked,
     cacheFakeRequests: cached.externalRequestsThisRun,
     automaticRetryCount: failed.set.automaticRetryCount,
     fallbackRequests: plan.fallbackRequestLimit,

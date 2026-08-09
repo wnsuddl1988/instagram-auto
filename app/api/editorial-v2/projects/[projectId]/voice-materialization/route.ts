@@ -15,6 +15,7 @@ import {
   isExternalTtsEnabled,
   isMaterializationSetId,
   isVoiceMaterializationIdentifier,
+  isVoiceMaterializationSceneId,
 } from "../../../../../../lib/editorial-v2/voice-materialization-contracts";
 import {
   assertPa4lRequestedSceneIds,
@@ -160,7 +161,7 @@ export async function GET(request: Request, context: RouteContext) {
     }
     if (!materializationSetId || !isMaterializationSetId(materializationSetId)) return jsonError(400, "MATERIALIZATION_SET_ID_INVALID", "Audio 조회에는 materialization set ID가 필요합니다.");
     const sceneId = url.searchParams.get("sceneId");
-    if (!sceneId || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(sceneId)) return jsonError(400, "SCENE_ID_INVALID", "Audio 조회에는 scene ID가 필요합니다.");
+    if (!isVoiceMaterializationSceneId(sceneId)) return jsonError(400, "SCENE_ID_INVALID", "Audio 조회에는 scene ID가 필요합니다.");
     const set = await readVoiceMaterializationSet(configuration, projectId, materializationSetId);
     if (!set) return jsonError(404, "VOICE_MATERIALIZATION_SET_NOT_FOUND", "저장된 voice materialization set이 없습니다.");
     const scene = set.sceneEntries.find((entry) => entry.sceneId === sceneId);
@@ -214,9 +215,10 @@ export async function POST(request: Request, context: RouteContext) {
       const result = await materializeVoiceMaterializationPlan(plan, {
         configuration,
         apiKey,
-        mode: "initial",
+        mode: parsed.action === "retry_failed" ? "retry" : "initial",
         executionMode: PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
         requestedSceneIds: parsed.requestedSceneIds,
+        ...(parsed.ownerSecondFinalPaidExternalTtsConfirmation === true ? { ownerSecondFinalPaidExternalTtsConfirmation: true } : {}),
       });
       return NextResponse.json({
         ok: true,

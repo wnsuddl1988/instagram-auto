@@ -18,6 +18,8 @@ export const VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE = "standard_full_mate
 export const PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE = "pa4l_single_scene_live_smoke" as const;
 export const PA4L_MAX_SCENES = 1 as const;
 export const PA4L_MAX_EXTERNAL_GENERATION_REQUESTS = 1 as const;
+export const PA4L_FIRST_FAILED_EXTERNAL_REQUEST_COUNT = 1 as const;
+export const PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS = 2 as const;
 export const PA4L_MAX_NARRATION_CHARACTERS = 180 as const;
 export const PA4L_AUTOMATIC_RETRY_LIMIT = 0 as const;
 export const PA4L_FALLBACK_REQUEST_LIMIT = 0 as const;
@@ -112,6 +114,7 @@ export interface VoiceMaterializationRequest {
   readonly modelId: string;
   readonly expectedPlanHash: string;
   readonly ownerPaidExternalTtsConfirmation: true;
+  readonly ownerSecondFinalPaidExternalTtsConfirmation?: true;
   readonly requestedSceneIds?: readonly string[];
 }
 
@@ -336,6 +339,10 @@ export function isExternalTtsEnabled(env: Readonly<Record<string, string | undef
 
 export function isVoiceMaterializationIdentifier(value: unknown): value is string {
   return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(value);
+}
+
+export function isVoiceMaterializationSceneId(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_:-]{0,127}$/u.test(value);
 }
 
 export function isSceneAudioIdentity(value: unknown): value is string {

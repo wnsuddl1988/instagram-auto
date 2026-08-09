@@ -10,6 +10,17 @@ const ts = require("typescript");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const baseline = JSON.parse(readFileSync(resolve(root, "_ai/SHORTS_EDITORIAL_OS_V2_PA4L_ERROR_DIAGNOSTICS_BASELINE.json"), "utf8"));
 const inherited = JSON.parse(readFileSync(resolve(root, baseline.protectedDirtyBaselineManifest.path), "utf8"));
+const postCheckpoint = process.argv.includes("--post-checkpoint");
+const postCheckpointCorrectionAllowlist = new Set([
+  "lib/editorial-v2/voice-materialization-contracts.ts",
+  "lib/editorial-v2/voice-materialization-validation.ts",
+  "lib/editorial-v2/voice-materialization-api-client.ts",
+  "lib/editorial-v2/voice-materialization-node.ts",
+  "app/api/editorial-v2/projects/[projectId]/voice-materialization/route.ts",
+  "scripts/probe-shorts-editorial-os-v2-pa4l-single-scene.mjs",
+  "scripts/check-shorts-editorial-os-v2-pa4l-single-scene.mjs",
+  "scripts/check-shorts-editorial-os-v2-pa4l-error-diagnostics.mjs",
+]);
 const failures = [];
 let passed = 0;
 let actualFetchCalls = 0;
@@ -44,17 +55,33 @@ const inheritedStatusMap = new Map(inherited.statusPaths.map((entry) => [entry.p
 const status = parseStatus();
 const statusMap = new Map(status.map((entry) => [entry.path, entry.status]));
 
-check("branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
-check("HEAD exact", git(["rev-parse", "HEAD"]) === baseline.git.head);
-check("parent exact", git(["rev-parse", "HEAD^"]) === baseline.git.parent);
-check("tree exact", git(["rev-parse", "HEAD^{tree}"]) === baseline.git.tree);
-const [behind, ahead] = git(["rev-list", "--left-right", "--count", "@{upstream}...HEAD"]).split(/\s+/u).map(Number);
-check("upstream behind exact", behind === baseline.git.upstream.behind);
-check("upstream ahead exact", ahead === baseline.git.upstream.ahead);
+if (!postCheckpoint) {
+  check("branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
+  check("HEAD exact", git(["rev-parse", "HEAD"]) === baseline.git.head);
+  check("parent exact", git(["rev-parse", "HEAD^"]) === baseline.git.parent);
+  check("tree exact", git(["rev-parse", "HEAD^{tree}"]) === baseline.git.tree);
+  const [behind, ahead] = git(["rev-list", "--left-right", "--count", "@{upstream}...HEAD"]).split(/\s+/u).map(Number);
+  check("upstream behind exact", behind === baseline.git.upstream.behind);
+  check("upstream ahead exact", ahead === baseline.git.upstream.ahead);
+  check("precommit status paths exact", status.length === baseline.expectedPreCommitTree.statusPaths, String(status.length));
+  check("precommit modified exact", status.filter((entry) => entry.status.includes("M")).length === baseline.expectedPreCommitTree.modified);
+  check("precommit untracked exact", status.filter((entry) => entry.status === "??").length === baseline.expectedPreCommitTree.untracked);
+  for (const entry of baseline.pa4lDiagAllowlist) {
+    const expectedStatus = entry.expectedAction === "new" ? "??" : " M";
+    check(`allowlist status ${entry.path}`, statusMap.get(entry.path) === expectedStatus, statusMap.get(entry.path) ?? "missing");
+    check(`allowlist exists ${entry.path}`, existsSync(resolve(root, entry.path)));
+    if (entry.originalBlob) check(`allowlist HEAD blob ${entry.path}`, git(["rev-parse", `HEAD:${entry.path}`]) === entry.originalBlob);
+  }
+  for (const entry of status) check(`status exact baseline or allowlist ${entry.path}`, inheritedStatusMap.has(entry.path) || allowlistSet.has(entry.path));
+} else {
+  check("post-checkpoint branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
+  for (const entry of baseline.pa4lDiagAllowlist) {
+    check(`post-checkpoint allowlist committed ${entry.path}`, existsSync(resolve(root, entry.path)) && (postCheckpointCorrectionAllowlist.has(entry.path) || !statusMap.has(entry.path)));
+  }
+  for (const entry of status) check(`post-checkpoint status protected or correction ${entry.path}`, inheritedStatusMap.has(entry.path) || postCheckpointCorrectionAllowlist.has(entry.path));
+}
+
 check("staged zero", git(["diff", "--cached", "--name-only"]) === "");
-check("precommit status paths exact", status.length === baseline.expectedPreCommitTree.statusPaths, String(status.length));
-check("precommit modified exact", status.filter((entry) => entry.status.includes("M")).length === baseline.expectedPreCommitTree.modified);
-check("precommit untracked exact", status.filter((entry) => entry.status === "??").length === baseline.expectedPreCommitTree.untracked);
 check("rename zero", status.every((entry) => !entry.status.includes("R")));
 check("delete zero", status.every((entry) => !entry.status.includes("D")));
 check("allowlist exact eight", allowlist.length === 8 && allowlistSet.size === 8);
@@ -65,14 +92,6 @@ for (const entry of inherited.statusPaths) {
   check(`protected path status ${entry.path}`, statusMap.get(entry.path) === entry.status, statusMap.get(entry.path) ?? "missing");
   check(`protected path hash ${entry.path}`, existsSync(resolve(root, entry.path)) && sha256File(entry.path) === entry.sha256);
 }
-for (const entry of baseline.pa4lDiagAllowlist) {
-  const expectedStatus = entry.expectedAction === "new" ? "??" : " M";
-  check(`allowlist status ${entry.path}`, statusMap.get(entry.path) === expectedStatus, statusMap.get(entry.path) ?? "missing");
-  check(`allowlist exists ${entry.path}`, existsSync(resolve(root, entry.path)));
-  if (entry.originalBlob) check(`allowlist HEAD blob ${entry.path}`, git(["rev-parse", `HEAD:${entry.path}`]) === entry.originalBlob);
-}
-for (const entry of status) check(`status exact baseline or allowlist ${entry.path}`, inheritedStatusMap.has(entry.path) || allowlistSet.has(entry.path));
-
 check("inherited PA4 baseline hash", sha256File(baseline.protectedDirtyBaselineManifest.path) === baseline.protectedDirtyBaselineManifest.sha256);
 for (const entry of baseline.governanceFiles) {
   check(`governance hash ${entry.path}`, sha256File(entry.path) === entry.sha256);
@@ -122,21 +141,29 @@ check("no headers persisted", !/providerHeaders|rawHeaders|responseHeaders/iu.te
 check("no product logging", !/console\.(?:log|info|warn|error)|logger\./u.test(productSource));
 check("fixed ElevenLabs origin retained", contractsSource.includes('ELEVENLABS_API_ORIGIN = "https://api.elevenlabs.io"'));
 check("PA4L max request one", contractsSource.includes("PA4L_MAX_EXTERNAL_GENERATION_REQUESTS = 1"));
+check("PA4L second-final total request cap two", contractsSource.includes("PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS = 2"));
 check("PA4L retry zero", contractsSource.includes("PA4L_AUTOMATIC_RETRY_LIMIT = 0"));
 check("PA4L fallback zero", contractsSource.includes("PA4L_FALLBACK_REQUEST_LIMIT = 0"));
+check("second-final retry state guard", nodeSource.includes("PA4L_SECOND_FINAL_RETRY_STATE_INVALID"));
+check("second-final retry owner confirmation", nodeSource.includes("PA4L_SECOND_FINAL_OWNER_CONFIRMATION_REQUIRED"));
 for (const fixture of ["invalid_parameters", "invalid_model", "invalid_voice_style_param", "missing_required_field", "quota", "malformed", "oversizedMessage", "secretBearing", "readerBound", "successful"]) {
   check(`probe fixture ${fixture}`, probeSource.includes(fixture));
 }
 check("probe global fetch fail closed", probeSource.includes("ACTUAL_NETWORK_FORBIDDEN_IN_PA4L_DIAG_PROBE"));
 check("probe external zero assertion", probeSource.includes("actualExternalNetworkRequests === 0"));
 check("probe repository invariant", probeSource.includes("repositoryUnchanged"));
-check("diagnostic provider requests zero", baseline.externalReadOnlyDiagnostics.actualRequests === 0 && baseline.externalReadOnlyDiagnostics.generationRequests === 0);
-check("root cause not guessed", baseline.rootCauseClassification === "PROVIDER_CAUSE_STILL_UNKNOWN");
-check("second live not authorized", baseline.constraints.secondLiveRequest === "NOT_AUTHORIZED");
-check("state failure current", source("_ai/PROJECT_STATE.md").includes("LIVE_TTS_SMOKE_FAILED_DIAGNOSED_OR_PENDING_RETRY"));
-check("state diagnostics zero", source("_ai/PROJECT_STATE.md").includes("actual external diagnostic request count: `0`"));
-check("next exact diagnostic approval", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_ELEVENLABS_READONLY_DIAGNOSTICS_WITH_API_KEY_NO_SECRET_OUTPUT"));
-check("next second live blocked", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_SECOND_AND_FINAL_ONE_SCENE_LIVE_ELEVENLABS_REQUEST"));
+if (!postCheckpoint) {
+  check("diagnostic provider requests zero", baseline.externalReadOnlyDiagnostics.actualRequests === 0 && baseline.externalReadOnlyDiagnostics.generationRequests === 0);
+  check("root cause not guessed", baseline.rootCauseClassification === "PROVIDER_CAUSE_STILL_UNKNOWN");
+  check("second live not authorized", baseline.constraints.secondLiveRequest === "NOT_AUTHORIZED");
+  check("state failure current", source("_ai/PROJECT_STATE.md").includes("LIVE_TTS_SMOKE_FAILED_DIAGNOSED_OR_PENDING_RETRY"));
+  check("state diagnostics zero", source("_ai/PROJECT_STATE.md").includes("actual external diagnostic request count: `0`"));
+  check("next exact diagnostic approval", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_ELEVENLABS_READONLY_DIAGNOSTICS_WITH_API_KEY_NO_SECRET_OUTPUT"));
+  check("next second live blocked", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_SECOND_AND_FINAL_ONE_SCENE_LIVE_ELEVENLABS_REQUEST"));
+} else {
+  check("post-checkpoint provider errors sanitized", adapterSource.includes("sanitizeElevenLabsProviderErrorPayload"));
+  check("post-checkpoint second live owner gated", contractsSource.includes("readonly ownerConfirmationRequired: true"));
+}
 
 const moduleCache = new Map();
 function resolveTs(fromFile, specifier) {

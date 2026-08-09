@@ -10,6 +10,17 @@ const ts = require("typescript");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const baseline = JSON.parse(readFileSync(resolve(root, "_ai/SHORTS_EDITORIAL_OS_V2_PA4L_SINGLE_SCENE_GUARD_BASELINE.json"), "utf8"));
 const inherited = JSON.parse(readFileSync(resolve(root, baseline.protectedDirtyBaselineManifest.path), "utf8"));
+const postCheckpoint = process.argv.includes("--post-checkpoint");
+const postCheckpointCorrectionAllowlist = new Set([
+  "lib/editorial-v2/voice-materialization-contracts.ts",
+  "lib/editorial-v2/voice-materialization-validation.ts",
+  "lib/editorial-v2/voice-materialization-api-client.ts",
+  "lib/editorial-v2/voice-materialization-node.ts",
+  "app/api/editorial-v2/projects/[projectId]/voice-materialization/route.ts",
+  "scripts/probe-shorts-editorial-os-v2-pa4l-single-scene.mjs",
+  "scripts/check-shorts-editorial-os-v2-pa4l-single-scene.mjs",
+  "scripts/check-shorts-editorial-os-v2-pa4l-error-diagnostics.mjs",
+]);
 const failures = [];
 let passed = 0;
 let actualFetchCalls = 0;
@@ -48,17 +59,33 @@ const inheritedStatusMap = new Map(inherited.statusPaths.map((entry) => [entry.p
 const status = parseStatus();
 const statusMap = new Map(status.map((entry) => [entry.path, entry.status]));
 
-check("branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
-check("HEAD exact", git(["rev-parse", "HEAD"]) === baseline.git.head);
-check("parent exact", git(["rev-parse", "HEAD^"]) === baseline.git.parent);
-check("tree exact", git(["rev-parse", "HEAD^{tree}"]) === baseline.git.tree);
-const [behind, ahead] = git(["rev-list", "--left-right", "--count", "@{upstream}...HEAD"]).split(/\s+/u).map(Number);
-check("upstream behind exact", behind === baseline.git.upstream.behind);
-check("upstream ahead exact", ahead === baseline.git.upstream.ahead);
+if (!postCheckpoint) {
+  check("branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
+  check("HEAD exact", git(["rev-parse", "HEAD"]) === baseline.git.head);
+  check("parent exact", git(["rev-parse", "HEAD^"]) === baseline.git.parent);
+  check("tree exact", git(["rev-parse", "HEAD^{tree}"]) === baseline.git.tree);
+  const [behind, ahead] = git(["rev-list", "--left-right", "--count", "@{upstream}...HEAD"]).split(/\s+/u).map(Number);
+  check("upstream behind exact", behind === baseline.git.upstream.behind);
+  check("upstream ahead exact", ahead === baseline.git.upstream.ahead);
+  check("precommit status paths exact", status.length === baseline.expectedPreCommitTree.statusPaths, String(status.length));
+  check("precommit modified exact", status.filter((entry) => entry.status.includes("M")).length === baseline.expectedPreCommitTree.modified);
+  check("precommit untracked exact", status.filter((entry) => entry.status === "??").length === baseline.expectedPreCommitTree.untracked);
+  for (const entry of baseline.pa4lAllowlist) {
+    const expectedStatus = entry.expectedAction === "new" ? "??" : " M";
+    check(`allowlist status ${entry.path}`, statusMap.get(entry.path) === expectedStatus, statusMap.get(entry.path) ?? "missing");
+    check(`allowlist exists ${entry.path}`, existsSync(resolve(root, entry.path)));
+    if (entry.originalBlob) check(`allowlist HEAD blob ${entry.path}`, git(["rev-parse", `HEAD:${entry.path}`]) === entry.originalBlob);
+  }
+  for (const entry of status) check(`status exact baseline or allowlist ${entry.path}`, inheritedStatusMap.has(entry.path) || allowlistSet.has(entry.path));
+} else {
+  check("post-checkpoint branch exact", git(["branch", "--show-current"]) === baseline.git.branch);
+  for (const entry of baseline.pa4lAllowlist) {
+    check(`post-checkpoint allowlist committed ${entry.path}`, existsSync(resolve(root, entry.path)) && (postCheckpointCorrectionAllowlist.has(entry.path) || !statusMap.has(entry.path)));
+  }
+  for (const entry of status) check(`post-checkpoint status protected or correction ${entry.path}`, inheritedStatusMap.has(entry.path) || postCheckpointCorrectionAllowlist.has(entry.path));
+}
+
 check("staged zero", git(["diff", "--cached", "--name-only"]) === "");
-check("precommit status paths exact", status.length === baseline.expectedPreCommitTree.statusPaths, String(status.length));
-check("precommit modified exact", status.filter((entry) => entry.status.includes("M")).length === baseline.expectedPreCommitTree.modified);
-check("precommit untracked exact", status.filter((entry) => entry.status === "??").length === baseline.expectedPreCommitTree.untracked);
 check("rename zero", status.every((entry) => !entry.status.includes("R")));
 check("delete zero", status.every((entry) => !entry.status.includes("D")));
 check("allowlist exact 11", allowlist.length === 11 && allowlistSet.size === 11);
@@ -69,14 +96,6 @@ for (const entry of inherited.statusPaths) {
   check(`protected path status ${entry.path}`, statusMap.get(entry.path) === entry.status, statusMap.get(entry.path) ?? "missing");
   check(`protected path hash ${entry.path}`, existsSync(resolve(root, entry.path)) && sha256File(entry.path) === entry.sha256);
 }
-for (const entry of baseline.pa4lAllowlist) {
-  const expectedStatus = entry.expectedAction === "new" ? "??" : " M";
-  check(`allowlist status ${entry.path}`, statusMap.get(entry.path) === expectedStatus, statusMap.get(entry.path) ?? "missing");
-  check(`allowlist exists ${entry.path}`, existsSync(resolve(root, entry.path)));
-  if (entry.originalBlob) check(`allowlist HEAD blob ${entry.path}`, git(["rev-parse", `HEAD:${entry.path}`]) === entry.originalBlob);
-}
-for (const entry of status) check(`status exact baseline or allowlist ${entry.path}`, inheritedStatusMap.has(entry.path) || allowlistSet.has(entry.path));
-
 check("inherited PA4 baseline hash", sha256File(baseline.protectedDirtyBaselineManifest.path) === baseline.protectedDirtyBaselineManifest.sha256);
 for (const entry of baseline.governanceFiles) {
   check(`governance hash ${entry.path}`, sha256File(entry.path) === entry.sha256);
@@ -105,6 +124,7 @@ const productSource = [contractsSource, nodeSource, validationSource, clientSour
 check("execution mode exact constant", contractsSource.includes('PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE = "pa4l_single_scene_live_smoke"'));
 check("max scenes exact one", contractsSource.includes("PA4L_MAX_SCENES = 1"));
 check("max requests exact one", contractsSource.includes("PA4L_MAX_EXTERNAL_GENERATION_REQUESTS = 1"));
+check("second-final total request cap exact two", contractsSource.includes("PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS = 2"));
 check("max narration exact 180", contractsSource.includes("PA4L_MAX_NARRATION_CHARACTERS = 180"));
 check("automatic retry exact zero", contractsSource.includes("PA4L_AUTOMATIC_RETRY_LIMIT = 0"));
 check("fallback exact zero", contractsSource.includes("PA4L_FALLBACK_REQUEST_LIMIT = 0"));
@@ -121,13 +141,24 @@ check("route recomputes plan", routeSource.includes("buildVoiceMaterializationPl
 check("route canonical scene compare", routeSource.includes("assertPa4lRequestedSceneIds(plan, parsed.requestedSceneIds)"));
 check("route full live block", routeSource.includes("LIVE_FULL_MATERIALIZATION_NOT_ACTIVATED"));
 check("route passes exact PA4L mode", routeSource.includes("executionMode: PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE"));
-check("route never retry mode", !routeSource.includes('mode: parsed.action === "retry_failed"'));
+check("route explicit retry mode", routeSource.includes('mode: parsed.action === "retry_failed" ? "retry" : "initial"'));
+check("route passes second-final confirmation only", routeSource.includes("parsed.ownerSecondFinalPaidExternalTtsConfirmation === true"));
 check("request schema requires one", validationSource.includes("pa4l_requested_scene_exactly_one_required"));
-check("request schema blocks retry", validationSource.includes("pa4l_retry_not_activated"));
+check("canonical scene identifier helper", contractsSource.includes("export function isVoiceMaterializationSceneId"));
+check("request schema accepts canonical scene helper", validationSource.includes("isVoiceMaterializationSceneId(entry)"));
+check("client accepts canonical scene helper", clientSource.includes("isVoiceMaterializationSceneId(request.requestedSceneIds[0])"));
+check("route audio lookup accepts canonical scene helper", routeSource.includes("isVoiceMaterializationSceneId(sceneId)"));
+check("request schema requires second-final confirmation", validationSource.includes("pa4l_second_final_paid_tts_confirmation_required"));
+check("request schema blocks second-final confirmation on initial", validationSource.includes("pa4l_second_final_confirmation_without_retry_forbidden"));
 check("request schema blocks standard full", validationSource.includes("live_full_materialization_not_activated"));
 check("client plan mode explicit", clientSource.includes("executionMode?: VoiceMaterializationExecutionMode"));
 check("client response scene count one", clientSource.includes("value.sceneEntries.length === PA4L_MAX_SCENES"));
 check("client explicit PA4L request", clientSource.includes("requestPa4lSingleSceneMaterialization"));
+check("client explicit second-final PA4L request", clientSource.includes("requestPa4lSecondFinalSingleSceneMaterialization"));
+check("executor requires first failed request count", nodeSource.includes("existing.externalRequestCount !== PA4L_FIRST_FAILED_EXTERNAL_REQUEST_COUNT"));
+check("executor requires second-final owner confirmation", nodeSource.includes("PA4L_SECOND_FINAL_OWNER_CONFIRMATION_REQUIRED"));
+check("executor blocks invalid second-final state", nodeSource.includes("PA4L_SECOND_FINAL_RETRY_STATE_INVALID"));
+check("executor total budget before provider", nodeSource.indexOf("PA4L_TOTAL_EXTERNAL_REQUEST_BUDGET_EXHAUSTED") < nodeSource.indexOf("requestElevenLabsTimestampTts({"));
 check("client same-origin root retained", clientSource.includes('const API_ROOT = "/api/editorial-v2/projects"'));
 check("UI PA4L heading", panelSource.includes("PA-4L Live Smoke Mode"));
 check("UI one-scene preview", panelSource.includes("Preview 1-Scene Live Smoke Plan"));
@@ -144,9 +175,14 @@ check("no config in allowlist", ["package.json", "pnpm-workspace.yaml", "pnpm-lo
 check("no secret logging", !/console\.(?:log|info|warn|error)|logger\./u.test(productSource));
 check("no client API key", !/xi-api-key|apiKey\s*:/u.test(clientSource + panelSource));
 check("fixed provider path retained", contractsSource.includes('ELEVENLABS_API_ORIGIN = "https://api.elevenlabs.io"'));
-check("state actual provider zero", source("_ai/PROJECT_STATE.md").includes("actual provider request count: `0`"));
-check("state full materialization blocked", source("_ai/PROJECT_STATE.md").includes("ordinary full live materialization: `BLOCKED`"));
-check("next live approval separate", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_ONE_SCENE_LIVE_ELEVENLABS_REQUEST"));
+if (!postCheckpoint) {
+  check("state actual provider zero", source("_ai/PROJECT_STATE.md").includes("actual provider request count: `0`"));
+  check("state full materialization blocked", source("_ai/PROJECT_STATE.md").includes("ordinary full live materialization: `BLOCKED`"));
+  check("next live approval separate", source("_ai/NEXT_ACTION.md").includes("APPROVE_PA4L_ONE_SCENE_LIVE_ELEVENLABS_REQUEST"));
+} else {
+  check("post-checkpoint full materialization blocked", routeSource.includes("LIVE_FULL_MATERIALIZATION_NOT_ACTIVATED"));
+  check("post-checkpoint owner confirmation required", contractsSource.includes("readonly ownerConfirmationRequired: true"));
+}
 
 const moduleCache = new Map();
 function resolveTs(fromFile, specifier) {
@@ -315,7 +351,9 @@ try {
     check(`full mode blocked ${index}`, validation.validateVoiceMaterializationRequest({ ...requestBase, executionMode: contracts.VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE }).includes("live_full_materialization_not_activated"));
   }
   for (let index = 0; index < 20; index += 1) {
-    check(`retry action blocked ${index}`, validation.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed" }).includes("pa4l_retry_not_activated"));
+    check(`retry confirmation required ${index}`, validation.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed" }).includes("pa4l_second_final_paid_tts_confirmation_required"));
+    check(`retry exact confirmation accepted ${index}`, validation.validateVoiceMaterializationRequest({ ...requestBase, action: "retry_failed", ownerSecondFinalPaidExternalTtsConfirmation: true }).length === 0);
+    check(`initial second-final confirmation blocked ${index}`, validation.validateVoiceMaterializationRequest({ ...requestBase, ownerSecondFinalPaidExternalTtsConfirmation: true }).includes("pa4l_second_final_confirmation_without_retry_forbidden"));
   }
 
   const legacyScenes = Array.from({ length: 8 }, (_, index) => ({ ...scenePlan, sceneId: `legacy-${index + 1}`, sceneOrder: index + 1 }));

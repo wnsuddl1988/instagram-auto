@@ -28,7 +28,9 @@ import {
   ELEVENLABS_OUTPUT_FORMAT,
   PA4L_AUTOMATIC_RETRY_LIMIT,
   PA4L_FALLBACK_REQUEST_LIMIT,
+  PA4L_FIRST_FAILED_EXTERNAL_REQUEST_COUNT,
   PA4L_MAX_EXTERNAL_GENERATION_REQUESTS,
+  PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS,
   PA4L_MAX_NARRATION_CHARACTERS,
   PA4L_MAX_SCENES,
   PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE,
@@ -73,6 +75,7 @@ export interface MaterializeVoicePlanOptions extends VoiceMaterializationRuntime
   readonly mode: "initial" | "retry";
   readonly executionMode?: VoiceMaterializationExecutionMode;
   readonly requestedSceneIds?: readonly string[];
+  readonly ownerSecondFinalPaidExternalTtsConfirmation?: true;
 }
 
 function stableStringify(value: unknown): string {
@@ -505,15 +508,42 @@ export async function materializeVoiceMaterializationPlan(
   const pa4lScene = plan.executionMode === PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
     ? assertPa4lRequestedSceneIds(plan, options.requestedSceneIds)
     : null;
+  const pa4lSecondFinalRetry = Boolean(pa4lScene && options.mode === "retry");
   if (pa4lScene) {
-    if (options.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE || options.mode !== "initial") {
+    if (options.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE) {
       throw new Error("PA4L_EXECUTION_MODE_MISMATCH");
     }
+    if (pa4lSecondFinalRetry && options.ownerSecondFinalPaidExternalTtsConfirmation !== true) throw new Error("PA4L_SECOND_FINAL_OWNER_CONFIRMATION_REQUIRED");
+    if (!pa4lSecondFinalRetry && options.ownerSecondFinalPaidExternalTtsConfirmation !== undefined) throw new Error("PA4L_SECOND_FINAL_CONFIRMATION_WITHOUT_RETRY_FORBIDDEN");
   }
   const now = options.now ?? (() => new Date().toISOString());
   const existing = await readVoiceMaterializationSet(options.configuration, plan.projectId, plan.materializationSetId);
   if (existing && (existing.planHash !== plan.planHash || existing.projectRevision !== plan.projectRevision || existing.sourceRenderCheckpointHash !== plan.sourceRenderCheckpointHash)) {
     throw new Error("VOICE_MATERIALIZATION_EXISTING_SET_STALE");
+  }
+  if (pa4lSecondFinalRetry) {
+    if (!existing) throw new Error("PA4L_SECOND_FINAL_RETRY_SET_MISSING");
+    const failedEntry = existing.sceneEntries.find((entry) => entry.sceneId === pa4lScene!.sceneId);
+    if (existing.executionMode !== PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE
+      || existing.materializationSetId !== plan.materializationSetId
+      || existing.renderManifestHash !== plan.renderManifestHash
+      || existing.providerId !== plan.providerId
+      || existing.voiceId !== plan.voiceId
+      || existing.modelId !== plan.modelId
+      || existing.outputFormat !== plan.outputFormat
+      || existing.externalRequestCount !== PA4L_FIRST_FAILED_EXTERNAL_REQUEST_COUNT
+      || existing.completeSceneIds.length !== 0
+      || existing.failedSceneIds.length !== PA4L_MAX_SCENES
+      || existing.failedSceneIds[0] !== pa4lScene!.sceneId
+      || existing.pendingSceneIds.length !== 0
+      || existing.sceneEntries.length !== PA4L_MAX_SCENES
+      || failedEntry?.status !== "failed"
+      || failedEntry.retryable !== true
+      || failedEntry.sceneAudioIdentity !== pa4lScene!.sceneAudioIdentity
+      || failedEntry.narrationHash !== pa4lScene!.narrationHash
+      || failedEntry.characterCount !== pa4lScene!.characterCount) {
+      throw new Error("PA4L_SECOND_FINAL_RETRY_STATE_INVALID");
+    }
   }
   if (options.mode === "initial" && existing && (existing.failedSceneIds.length > 0 || existing.pendingSceneIds.length > 0)) {
     throw new Error("VOICE_MATERIALIZATION_RETRY_ACTION_REQUIRED");
@@ -548,6 +578,10 @@ export async function materializeVoiceMaterializationPlan(
       } else {
         if (pa4lScene) {
           if (externalRequestsThisRun >= PA4L_MAX_EXTERNAL_GENERATION_REQUESTS) throw new Error("PA4L_EXTERNAL_REQUEST_BUDGET_EXHAUSTED");
+          const totalExternalRequestLimit = pa4lSecondFinalRetry
+            ? PA4L_MAX_TOTAL_EXTERNAL_GENERATION_REQUESTS
+            : PA4L_MAX_EXTERNAL_GENERATION_REQUESTS;
+          if (externalRequestCount >= totalExternalRequestLimit) throw new Error("PA4L_TOTAL_EXTERNAL_REQUEST_BUDGET_EXHAUSTED");
           if (scene.sceneId !== pa4lScene.sceneId
             || scene.narrationHash !== sha256(scene.narration)
             || scene.characterCount !== [...scene.narration].length
