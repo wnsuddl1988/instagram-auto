@@ -1,10 +1,17 @@
 import { Buffer } from "node:buffer";
 
-import type { ElevenLabsTimestampTtsResult } from "./voice-materialization-contracts";
+import type {
+  ElevenLabsTimestampTtsResult,
+  SanitizedElevenLabsProviderError,
+} from "./voice-materialization-contracts";
 import {
   ELEVENLABS_API_ORIGIN,
   ELEVENLABS_MAX_RESPONSE_JSON_BYTES,
   ELEVENLABS_OUTPUT_FORMAT,
+  ELEVENLABS_PROVIDER_ERROR_LONG_FIELD_MAX_LENGTH,
+  ELEVENLABS_PROVIDER_ERROR_MESSAGE_MAX_LENGTH,
+  ELEVENLABS_PROVIDER_ERROR_SHORT_FIELD_MAX_LENGTH,
+  PROVIDER_ERROR_DETAIL_UNAVAILABLE,
   VOICE_MATERIALIZATION_MAX_SCENE_AUDIO_BYTES,
   VOICE_MATERIALIZATION_PROVIDER_ID,
   isVoiceMaterializationIdentifier,
@@ -25,6 +32,86 @@ const STRICT_BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+const CREDENTIAL_ASSIGNMENT_PATTERN = /\b(?:xi-api-key|authorization|api[_-]?key|secret|token)\b\s*[:=]\s*(?:bearer\s+)?[^\s,;}\]]+/giu;
+const BEARER_CREDENTIAL_PATTERN = /\bbearer\s+[A-Za-z0-9._~+/=-]{4,}/giu;
+const OBVIOUS_SECRET_TOKEN_PATTERN = /\b(?:sk|xi|token|secret)[_-][A-Za-z0-9_-]{8,}\b/giu;
+
+function redactCredentialMaterial(value: string, apiKey: string): string {
+  let redacted = apiKey ? value.replaceAll(apiKey, "[REDACTED]") : value;
+  redacted = redacted.replace(CREDENTIAL_ASSIGNMENT_PATTERN, "[REDACTED]");
+  redacted = redacted.replace(BEARER_CREDENTIAL_PATTERN, "[REDACTED]");
+  return redacted.replace(OBVIOUS_SECRET_TOKEN_PATTERN, "[REDACTED]");
+}
+
+function boundedProviderField(
+  value: unknown,
+  maximumLength: number,
+  apiKey: string,
+): { readonly value: string | null; readonly truncated: boolean } {
+  if (typeof value !== "string") return { value: null, truncated: false };
+  const redacted = redactCredentialMaterial(value, apiKey);
+  return {
+    value: redacted.slice(0, maximumLength),
+    truncated: redacted.length > maximumLength,
+  };
+}
+
+function unavailableProviderError(
+  httpStatus: number,
+  truncated = false,
+): SanitizedElevenLabsProviderError {
+  return {
+    provider: VOICE_MATERIALIZATION_PROVIDER_ID,
+    httpStatus,
+    type: null,
+    code: PROVIDER_ERROR_DETAIL_UNAVAILABLE,
+    message: PROVIDER_ERROR_DETAIL_UNAVAILABLE,
+    param: null,
+    requestId: null,
+    legacyStatus: null,
+    truncated,
+  };
+}
+
+export function sanitizeElevenLabsProviderErrorPayload(
+  payload: unknown,
+  httpStatus: number,
+  apiKey: string,
+): SanitizedElevenLabsProviderError {
+  if (!isRecord(payload) || !isRecord(payload.detail)) return unavailableProviderError(httpStatus);
+  const detail = payload.detail;
+  const type = boundedProviderField(detail.type, ELEVENLABS_PROVIDER_ERROR_SHORT_FIELD_MAX_LENGTH, apiKey);
+  const code = boundedProviderField(detail.code, ELEVENLABS_PROVIDER_ERROR_SHORT_FIELD_MAX_LENGTH, apiKey);
+  const message = boundedProviderField(detail.message, ELEVENLABS_PROVIDER_ERROR_MESSAGE_MAX_LENGTH, apiKey);
+  const param = boundedProviderField(detail.param, ELEVENLABS_PROVIDER_ERROR_LONG_FIELD_MAX_LENGTH, apiKey);
+  const requestId = boundedProviderField(detail.request_id, ELEVENLABS_PROVIDER_ERROR_LONG_FIELD_MAX_LENGTH, apiKey);
+  const legacyStatus = boundedProviderField(detail.status, ELEVENLABS_PROVIDER_ERROR_SHORT_FIELD_MAX_LENGTH, apiKey);
+  if (![type, code, message, param, requestId, legacyStatus].some((field) => field.value !== null)) {
+    return unavailableProviderError(httpStatus);
+  }
+  return {
+    provider: VOICE_MATERIALIZATION_PROVIDER_ID,
+    httpStatus,
+    type: type.value,
+    code: code.value ?? PROVIDER_ERROR_DETAIL_UNAVAILABLE,
+    message: message.value ?? PROVIDER_ERROR_DETAIL_UNAVAILABLE,
+    param: param.value,
+    requestId: requestId.value,
+    legacyStatus: legacyStatus.value,
+    truncated: [type, code, message, param, requestId, legacyStatus].some((field) => field.truncated),
+  };
+}
+
+export class ElevenLabsProviderHttpError extends Error {
+  readonly providerError: SanitizedElevenLabsProviderError;
+
+  constructor(providerError: SanitizedElevenLabsProviderError) {
+    super(`ELEVENLABS_HTTP_${providerError.httpStatus}`);
+    this.name = "ElevenLabsProviderHttpError";
+    this.providerError = providerError;
+  }
 }
 
 async function readBoundedJsonText(response: Response): Promise<string> {
@@ -107,7 +194,23 @@ export async function requestElevenLabsTimestampTts(
       redirect: "error",
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`ELEVENLABS_HTTP_${response.status}`);
+    if (!response.ok) {
+      let providerError: SanitizedElevenLabsProviderError;
+      try {
+        const errorText = await readBoundedJsonText(response);
+        let errorPayload: unknown;
+        try {
+          errorPayload = JSON.parse(errorText);
+        } catch {
+          throw new Error("ELEVENLABS_ERROR_RESPONSE_JSON_INVALID");
+        }
+        providerError = sanitizeElevenLabsProviderErrorPayload(errorPayload, response.status, request.apiKey);
+      } catch (error) {
+        const truncated = error instanceof Error && error.message === "ELEVENLABS_RESPONSE_JSON_TOO_LARGE";
+        providerError = unavailableProviderError(response.status, truncated);
+      }
+      throw new ElevenLabsProviderHttpError(providerError);
+    }
     const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
     if (!contentType.startsWith("application/json")) throw new Error("ELEVENLABS_RESPONSE_CONTENT_TYPE_INVALID");
     const text = await readBoundedJsonText(response);

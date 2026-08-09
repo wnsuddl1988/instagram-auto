@@ -21,6 +21,10 @@ export const PA4L_MAX_EXTERNAL_GENERATION_REQUESTS = 1 as const;
 export const PA4L_MAX_NARRATION_CHARACTERS = 180 as const;
 export const PA4L_AUTOMATIC_RETRY_LIMIT = 0 as const;
 export const PA4L_FALLBACK_REQUEST_LIMIT = 0 as const;
+export const ELEVENLABS_PROVIDER_ERROR_SHORT_FIELD_MAX_LENGTH = 128 as const;
+export const ELEVENLABS_PROVIDER_ERROR_LONG_FIELD_MAX_LENGTH = 256 as const;
+export const ELEVENLABS_PROVIDER_ERROR_MESSAGE_MAX_LENGTH = 2_000 as const;
+export const PROVIDER_ERROR_DETAIL_UNAVAILABLE = "PROVIDER_ERROR_DETAIL_UNAVAILABLE" as const;
 
 export type VoiceMaterializationProviderId = typeof VOICE_MATERIALIZATION_PROVIDER_ID;
 export type VoiceMaterializationOutputFormat = typeof ELEVENLABS_OUTPUT_FORMAT;
@@ -29,6 +33,18 @@ export type VoiceMaterializationExecutionMode =
   | typeof PA4L_SINGLE_SCENE_LIVE_SMOKE_MODE;
 export type VoiceMaterializationSceneStatus = "cache_hit" | "generated" | "failed" | "pending";
 export type VoiceMaterializationApprovalState = "pending" | "blocked" | "approved";
+
+export interface SanitizedElevenLabsProviderError {
+  readonly provider: VoiceMaterializationProviderId;
+  readonly httpStatus: number;
+  readonly type: string | null;
+  readonly code: string;
+  readonly message: string;
+  readonly param: string | null;
+  readonly requestId: string | null;
+  readonly legacyStatus: string | null;
+  readonly truncated: boolean;
+}
 
 export interface VoiceMaterializationScenePlan {
   readonly sceneId: string;
@@ -216,6 +232,7 @@ export interface VoiceMaterializationSceneEntry {
   readonly audioAlignmentUsable: boolean;
   readonly subtitleCueCount: number;
   readonly failureCode: string | null;
+  readonly providerError: SanitizedElevenLabsProviderError | null;
   readonly retryable: boolean;
 }
 

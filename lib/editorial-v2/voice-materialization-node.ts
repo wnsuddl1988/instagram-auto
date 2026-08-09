@@ -19,6 +19,7 @@ import type {
   VoiceMaterializationPlanComparison,
   VoiceMaterializationPlanPreview,
   VoiceMaterializationRuntimeOptions,
+  SanitizedElevenLabsProviderError,
   VoiceMaterializationSceneEntry,
   VoiceMaterializationSet,
   VoiceSceneAudioMetadata,
@@ -36,7 +37,10 @@ import {
   VOICE_MATERIALIZATION_STANDARD_EXECUTION_MODE,
   isVoiceMaterializationIdentifier,
 } from "./voice-materialization-contracts";
-import { requestElevenLabsTimestampTts } from "./elevenlabs-timestamp-tts-node";
+import {
+  ElevenLabsProviderHttpError,
+  requestElevenLabsTimestampTts,
+} from "./elevenlabs-timestamp-tts-node";
 import { buildAudioAlignedSubtitleTrack, validateAudioAlignedSubtitleTrack } from "./audio-alignment";
 import {
   cleanupVoiceSceneAudioWorkspace,
@@ -384,6 +388,7 @@ function pendingEntry(scene: VoiceMaterializationPlan["scenes"][number]): VoiceM
     audioAlignmentUsable: false,
     subtitleCueCount: 0,
     failureCode: null,
+    providerError: null,
     retryable: true,
   };
 }
@@ -408,6 +413,7 @@ function completeEntry(
     audioAlignmentUsable: true,
     subtitleCueCount: metadata.subtitleTrack.cues.length,
     failureCode: null,
+    providerError: null,
     retryable: false,
   };
 }
@@ -419,6 +425,10 @@ function sanitizedFailureCode(error: unknown): string {
       ? error.message.split(":", 1)[0] ?? ""
       : "";
   return /^[A-Z][A-Z0-9_]{2,127}$/u.test(raw) ? raw : "VOICE_SCENE_MATERIALIZATION_FAILED";
+}
+
+function sanitizedProviderError(error: unknown): SanitizedElevenLabsProviderError | null {
+  return error instanceof ElevenLabsProviderHttpError ? error.providerError : null;
 }
 
 function approvalBoundary(entries: readonly VoiceMaterializationSceneEntry[], checkpointIdentityCurrent = true): AudioMaterializationPackageBoundary {
@@ -610,11 +620,13 @@ export async function materializeVoiceMaterializationPlan(
       }
     } catch (error) {
       const failureCode = sanitizedFailureCode(error);
+      const providerError = sanitizedProviderError(error);
       entries[index] = {
         ...pendingEntry(scene),
         status: "failed",
         alignmentStatus: failureCode.includes("ALIGNMENT") ? "unusable" : "not_available",
         failureCode,
+        providerError,
         retryable: true,
       };
       stoppedOnFirstFailure = true;

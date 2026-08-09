@@ -2,18 +2,19 @@
 
 Updated: 2026-08-09 KST
 
-## Shorts Editorial OS V2 — PA-4L PREP single-scene live guard
+## Shorts Editorial OS V2 — PA-4L-DIAG HTTP 400 generation-zero diagnostics
 
-- PA-4: `FINAL_PASS`; checkpoint `d774ab277756a730ed603501d9c4ce1467aa2a3b`.
-- PA-4L PREP: `FINAL_PASS_AWAITING_CHECKPOINT`; actual ElevenLabs request `0`; actual paid generation `0`.
-- Codex validation: checker `675/675 PASS`; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; no-network probe `PASS`; fake success/failure 각각 request `1`, cache `0`, retry/fallback/actual external network `0`; exact precommit tree `29M/6U/35`, staged `0`.
-- Claude Code `sonnet/high` read-only Cross Review: `PASS`, P0 `0`, P1 `0`, P2 `1`, escalation `NO`; 실제 provider request·probe/checker/build 재실행·파일 수정 `0`.
-- 필수 검수: deterministic canonical Scene selection, exact scene `1`, narration `<=180`, server authority, client multi-scene rejection, executor budget `1`, first failure/success 후 second request `0`, cache-hit request `0`, full live materialization block, secret/network leak `0`, PA-4 regression `0`.
-- Claude `PASS`, P0 `0`, P1 `0`이고 checker·no-network probe·targeted TypeScript·exact allowlist·baseline이 PASS하면 exact 11-path checkpoint가 사전 승인돼 있다.
-- 다음 routine 작업은 사전 승인된 exact 11-path checkpoint다. Claude P2는 generic client preview parameter가 넓어 보인다는 비차단 관찰이며 server 독립 차단으로 correction은 필요하지 않다.
-- fixed commit message: `fix(editorial-v2): enforce single-scene live tts smoke gate`; push `NOT_AUTHORIZED`.
-- checkpoint 후 실제 PA-4L live smoke는 별도 Owner approval `APPROVE_PA4L_ONE_SCENE_LIVE_ELEVENLABS_REQUEST`가 필요하다.
-- PA-5, 8-scene TTS, actual-audio Preview, final render, publish/deploy/push는 자동 시작하지 않는다.
+- current gate: `LIVE_TTS_SMOKE_FAILED_DIAGNOSED_OR_PENDING_RETRY`; PA-4L guard checkpoint `a5a7591bb24840a914e076cac32c356897b56a09`.
+- consumed live request `1`은 `HTTP 400`으로 종료됐고 retry/fallback/audio `0`; 기존 live approval은 소진됐다.
+- current root cause: `PROVIDER_CAUSE_STILL_UNKNOWN`; checkpointed adapter가 provider body를 폐기했기 때문에 오류 분류를 추측하지 않는다.
+- sanitizer repair 검증: checker `251/251 PASS`; mock-only probe `PASS`(fake response `12`, actual network/retry/fallback `0`, success regression `0`); targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; Git diff/allowlist/protected baseline PASS.
+- Claude Code `2.1.207` `sonnet/high` read-only Cross Review: `PASS`, P0 `0`, P1 `0`, P2 `0`, escalation `NO`; 구현·파일 생성·검증/네트워크 재실행 `0`.
+- generation-zero provider diagnostics는 플랫폼 보안 검토가 credential 사용을 거부해 실제 요청 `0`이다. 계속하려면 Owner가 현재 대화에서 `APPROVE_PA4L_ELEVENLABS_READONLY_DIAGNOSTICS_WITH_API_KEY_NO_SECRET_OUTPUT`을 직접 입력해야 한다.
+- 허용될 read-only 진단은 exact origin의 voice/models/subscription/request analytics 최대 `4`회, sequential, retry `0`, secret output `0`; TTS generation endpoint는 호출하지 않는다.
+- 외부 진단이 계속 미실행이면 원인 미확정 상태로 Control Tower에 보고하며 두 번째 live request로 넘어가지 않는다.
+- Claude `PASS`, P0 `0`, P1 `0`과 checker/probe/TypeScript/Git PASS로 exact 8-path checkpoint 조건을 충족했다. fixed commit: `fix(editorial-v2): preserve sanitized elevenlabs provider errors`; push `NOT_AUTHORIZED`.
+- second live request는 `NOT_AUTHORIZED`. 새 preflight와 Owner의 exact approval `APPROVE_PA4L_SECOND_AND_FINAL_ONE_SCENE_LIVE_ELEVENLABS_REQUEST` 전 실제 ElevenLabs generation `0`을 유지한다.
+- PA-5, final render, publish, deploy, push는 자동 시작하지 않는다.
 
 ## Shorts Editorial OS V2 — Production Activation PA-4 self-validation and read-only Cross Review
 

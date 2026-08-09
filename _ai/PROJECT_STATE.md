@@ -2,25 +2,21 @@
 
 Updated: 2026-08-09 KST
 
-## Shorts Editorial OS V2 — PA-4L PREP single-scene live guard
+## Shorts Editorial OS V2 — PA-4L-DIAG HTTP 400 generation-zero diagnostics
 
-- Owner approval: `APPROVE_PA4L_PREP_SINGLE_SCENE_LIVE_GUARD_IMPLEMENTATION_AND_VALIDATION_ONLY`.
-- PA-4: `FINAL_PASS`; checkpoint: `d774ab277756a730ed603501d9c4ce1467aa2a3b`.
-- PA-4L PREP: `FINAL_PASS_AWAITING_CHECKPOINT`; actual PA-4L live request: `NOT_EXECUTED`.
-- live external TTS execution mode: `SINGLE_SCENE_SMOKE_ONLY`; ordinary full live materialization: `BLOCKED`.
-- canonical deterministic selection: enabled approved Scene, narration `<=180`, Korean/80~180/number-date-currency evidence/source evidence/middle/order tie-break; truncation·rewriting·randomness `0`.
-- hard caps: scene count `1`; narration characters `180`; provider generation attempts `1`; automatic retry `0`; fallback `0`.
-- authority layers: plan exact-one invariant, server canonical recalculation/client mismatch rejection, executor request budget consumption before provider attempt.
-- cache hit: selected canonical Scene만 재사용하며 provider request `0`; 다른 missing Scene 자동 대체 `0`.
-- UI: `PA-4L Live Smoke Mode`; 1-Scene plan preview만 제공하며 retry/full-scene live generation은 unavailable이다.
-- self-validation: dedicated checker `675/675 PASS`; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; `git diff --check` PASS; exact precommit tree `29M/6U/35 paths`, staged `0`; protected baseline/config/governance/checkpoint mismatch `0`.
-- no-network proof: `SHORTS_EDITORIAL_OS_V2_PA4L_SINGLE_SCENE_GUARD_PROOF_PASS`; canonical 8 scenes → deterministic Scene 3 한 개(48 chars), fake success request `1`, fake first-failure request `1`, cache request `0`, malicious multi-scene/provider second-attempt block, retry/fallback `0`, actual external network `0`, repository unchanged, temp root removed.
-- validation-harness corrections: checker static expression alignment `2`, synthetic unsupported numeric literal removal `1`; product correction `0`. 모든 실패는 provider/fake fetch 전 또는 actual external network `0` 상태에서 종료됐다.
-- Claude Code read-only Cross Review: local Claude Code `2.1.207`, `sonnet/high`에서 `PASS`, P0 `0`, P1 `0`, P2 `1`, escalation `NO`; checker/probe/build/live provider 재실행과 파일 수정은 `0`이다.
-- Claude optional P2: PA-4L 전용 client preview 함수의 generic `executionMode` parameter가 다소 넓어 보일 수 있으나 client가 non-PA-4L 응답을 fail-closed하고 server가 독립 재검증하므로 exploitable path와 PA-4L must-fix는 `0`이다.
-- actual provider request count: `0`; actual external network: `0`; PA-3 preview: `SILENT_PLACEHOLDER`; product operational capability: `NOT_CLAIMED`.
-- checkpoint: Claude `PASS`, P0 `0`, P1 `0`, checker/probe/diagnostics/baseline PASS 후 exact 11-path commit 사전 승인; push `NOT_AUTHORIZED`.
-- PA-4L 실제 1-Scene paid smoke는 별도 `APPROVE_PA4L_ONE_SCENE_LIVE_ELEVENLABS_REQUEST` 전 금지; PA-5 자동 시작 금지.
+- Owner approval: `APPROVE_PA4L_HTTP400_GENERATION_ZERO_DIAGNOSTICS_AND_SANITIZED_ERROR_CAPTURE`.
+- PA-4L guard checkpoint: `a5a7591bb24840a914e076cac32c356897b56a09`; current state: `LIVE_TTS_SMOKE_FAILED_DIAGNOSED_OR_PENDING_RETRY`.
+- consumed live attempt: exactly `1`; provider result `HTTP 400`; automatic retry `0`; fallback `0`; audio generation `0`; materialization set `blocked`.
+- failed set: `voice-set-ea6195e9f8890c6cd0221a5ceb434ab7664a5f9ad8f5ae4d91c84488f4d11dba`; failed Scene `selected-angle:revolving-balance-not-erased:scene:04`; persisted legacy failure code `ELEVENLABS_HTTP_400`; provider response detail was not retained by the checkpointed adapter.
+- root-cause classification: `PROVIDER_CAUSE_STILL_UNKNOWN`. Invalid voice/model/parameter/quota/auth/account/request-format 중 하나로 추측하지 않는다.
+- generation-zero read-only provider diagnostics: 플랫폼 보안 검토에서 credential-backed subscription/analytics 조회가 실행 전에 거부됐다. actual external diagnostic request count: `0`; generation request `0`; secret output `0`.
+- direct diagnostic approval required: `APPROVE_PA4L_ELEVENLABS_READONLY_DIAGNOSTICS_WITH_API_KEY_NO_SECRET_OUTPUT`.
+- bounded repair: non-2xx body는 기존 32 MiB reader 안에서만 읽고 `provider/httpStatus/type/code/message/param/requestId/legacyStatus/truncated`만 보존한다. invalid/malformed/missing/string/oversized detail은 `PROVIDER_ERROR_DETAIL_UNAVAILABLE`로 fail-closed한다.
+- privacy: exact API key, `xi-api-key`, Authorization/Bearer, credential-like secret/token을 비식별화하며 raw body·headers·env dump는 저장/출력하지 않는다.
+- self-validation: dedicated checker `251/251 PASS`; mock-only probe `PASS` with fake provider responses `12`, actual external network `0`, retry/fallback `0`, successful-response regression `0`, repository unchanged; targeted TypeScript syntactic/semantic/strict preEmit `0/0/0`; `git diff --check` PASS; exact precommit tree `26M/6U/32 paths`, staged `0`; protected baseline/config/governance/checkpoint mismatch `0`.
+- Claude Code read-only Cross Review: local Claude Code `2.1.207`, `sonnet/high`에서 `PASS`, P0 `0`, P1 `0`, P2 `0`, escalation `NO`; 첫 실행은 `124s` tool timeout으로 결과 없이 종료됐고 두 번째 실행은 Bash/Edit/Write/network 권한을 제거한 read-only 모드에서 완료됐다. 파일 수정·checker/probe/build/ElevenLabs 재실행 `0`.
+- checkpoint gate: exact 8-path commit `fix(editorial-v2): preserve sanitized elevenlabs provider errors` 승인 조건 충족. push `NOT_AUTHORIZED`.
+- second live request: `NOT_AUTHORIZED`; 향후 exact approval `APPROVE_PA4L_SECOND_AND_FINAL_ONE_SCENE_LIVE_ELEVENLABS_REQUEST` 전 실제 provider generation은 계속 `0`이다. PA-5/final render/publish/deploy 자동 시작 금지.
 
 ## Shorts Editorial OS V2 — Production Activation PA-4 external voice materialization
 
