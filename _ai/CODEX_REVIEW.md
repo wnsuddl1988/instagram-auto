@@ -1,31 +1,11 @@
-# Codex Review
+# CODEX_REVIEW
 
-## 2026-07-14 — Accumulated Diff Cleanup Audit
+Updated: 2026-09-21 KST
 
-Verdict: `PASS_FOR_LOCAL_CHECKPOINT_PREPARATION`
+현재 대기 중인 검수 요청 없음. 검수가 필요할 때는 이 파일에 해당 작업의
+`_ai/CURRENT_STANDARDS.md` 기준 대비 검증 결과만 남기고, 완료되면 다음 검수를
+위해 비운다.
 
-This verdict is limited to preserving the current implementation in a local checkpoint. It is not a visual-quality, pilot, upload, or production-readiness approval.
-
-### Accepted Evidence
-
-- 86 initial working-tree entries were classified into integrated Money Shorts core, platform/discovery, repository hygiene, stale state, configuration blocker, and isolated legacy/external-auth groups.
-- Approved generated QA and diagnostic artifacts were deleted without touching character references, voice auditions, pilot assets, `output/`, or `.next/`.
-- The stale context transfer file and temporary pnpm `allowBuilds` placeholder were removed with Owner approval.
-- The project-wide 15~60 second format was restored after the rejected 66.76-second pilot exposed a 15~90-second gate.
-- Three stale guards were aligned with the current imported voice model, cast module graph, and ffmpeg evidence strings.
-- Syntax, targeted static guards, production input contract, `git diff --check`, and `pnpm build` pass.
-
-### Remaining Risks
-
-- The latest pilot remains rejected by the Owner.
-- Current motion is layered 2D camera/parallax/masked motion, not true character articulation.
-- Minjae voice recast is pending.
-- Build still warns that `output/v2` dynamic tracing matches 12,062 files and that NFT tracing can include the project too broadly.
-- A local checkpoint must not be described as 500-topic engine readiness or upload readiness.
-
-### Commit Gate
-
-- No files are staged.
-- No commit or push has been performed.
-- Exact included/excluded file lists and explicit Owner approval are required before a local checkpoint commit.
-
+이 파일이 과거 담고 있던 내용은 전부 이미 폐기된 프로젝트(Shorts Editorial OS
+V2 — PA-5 시리즈)의 검수 기록이었다. 현재 활성 프로젝트와 무관하므로 여기
+남기지 않는다. 필요하면 git log/git diff로 조회한다.
