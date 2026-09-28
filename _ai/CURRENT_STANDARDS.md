@@ -367,4 +367,6 @@ suspended.` 에러). 이때는:
 **황소특보**
 - 배포 완료: 1~4편 (4편: 릴스 instagram.com/reel/DdvNSe9k5_U, 유튜브 youtube.com/shorts/gCCC5Z6nyy0)
 - 참고: 4편 배포본은 CTA 결합 스크립트 개선 전 버전이라 전환부에서 마지막 멘트 끝이 CTA 화면 위로 들리고 CTA 첫 프레임이 약 0.8초 정지한다. 개선된 재결합본은 `C:/tmp/bull-ep4-final-v2/owl_episode_final.mp4`(재배포 여부는 Owner 결정).
-- **다음 신규: 5편(v3 구조)**
+- **6편(삼성전자 배당, 2026-09-28, 수동배포)**: 릴스 instagram.com/reel/Ddz1XhcToBx, 유튜브 youtube.com/shorts/6ZVskG7TYTk — Vercel Blob 스토어 정지로 자동 파이프라인 우회.
+- **7편(국내 바이오사 FDA 승인 상한가, 2026-09-28)**: 릴스 instagram.com/reel/Dd1PBm9DPEB, 유튜브 youtube.com/shorts/RnnV9NaW3BU, 스토리 게시 완료. 최종본은 s12(균형 씬, "매수 추천 아님" 나레이션)를 삭제한 15씬 버전(`scripts/_bull-ep7-assembly-spec.mjs`) — 종목명 언급 없이 매수 불가를 명시하는 게 어색하다는 Owner 지적으로 삭제, s11→s13 직결. 리스크 고지는 오프닝(s3)·마지막(s16) 하단 자막바로만 유지.
+- **다음 신규: 8편(v3 구조)**
