@@ -8,15 +8,25 @@ export const DYNAMIC_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v3_se
 export const DYNAMIC_CAPTION_TWO_LINE_GAP_PX = 16;
 
 const MAX_WORDS_PER_DISPLAY_UNIT = 16;
-const MAX_VISIBLE_CHARS_PER_BLOCK = 34;
-const TARGET_VISIBLE_CHARS_PER_LINE = 14;
-const MAX_VISIBLE_CHARS_PER_LINE = 18;
+const MAX_VISIBLE_CHARS_PER_BLOCK = 30;
+// 긴 절을 재귀 분할하다가 "거고"처럼 1~2글자짜리 조각이 혼자 남아 한 줄로
+// 아주 짧게(0.5초 안팎) 뜨는 문제(Owner 지적, 2026-09-22, 부엉이 13편 s7:
+// "DB형은 회사가 운용해서 퇴직금이 미리 정해져 있는 거고," 한 절이 "참고로"
+// "회사가 운용해서" "퇴직금이 미리" "정해져 있는" "거고" 5조각으로 쪼개짐).
+// 분할 후보를 고를 때 양쪽 모두 이 글자수 이상이어야 후보로 인정한다 —
+// 만족하는 분할점이 없으면 차라리 안 쪼개고(overflow 허용) 넘어간다.
+const MIN_VISIBLE_CHARS_PER_SPLIT_SIDE = 5;
+// 모바일 검수(2026-09-17)에서 자막 크기를 키우기로 하면서(72px → 88px, 약 1.22배)
+// 같은 화면 폭에 들어가는 줄당 글자수를 그만큼 낮춘다(18/1.22≈14.75 → 15).
+// 그대로 두면 큰 폰트가 화면 밖으로 밀려 나가는 원인이 된다.
+const TARGET_VISIBLE_CHARS_PER_LINE = 12;
+const MAX_VISIBLE_CHARS_PER_LINE = 15;
 const MAX_CAPTION_DWELL_SEC = 6.8;
 const SAFE_TEXT_MAX_Y = 1580;
 const STRONG_SENTENCE_END_PATTERN = /[.!?…。！？]$/u;
 const CLAUSE_PUNCTUATION_PATTERN = /[,，;；:：…]$/u;
 const DISPLAY_TRAILING_PUNCTUATION_PATTERN = /[\s"'“”‘’.,!?…，。！？:;；：]+$/u;
-const CLAUSE_ENDING_PATTERN = /(?:지만|는데|면서|으면|라면|다면|하면|되면|보면|수록|해서|니까|라도|전에|후에|때문에|덕분에|반면|대신|부터|까지|보다|하려면|않고|말고|두고|놓고|확인하고|비교하고|계산하고|바꾸고|옮기고|나누고|남기고|줄이고|늘리고)$/u;
+const CLAUSE_ENDING_PATTERN = /(?:지만|는데|면서|으면|라면|다면|하면|되면|보면|수록|해서|니까|라도|전에|후에|때문에|덕분에|반면|대신|부터|까지|보다|하려면|않고|말고|두고|놓고|확인하고|비교하고|계산하고|바꾸고|옮기고|나누고|남기고|줄이고|늘리고|몰리며|팔리며|오르며|내리며|바뀌며|늘며|줄며)$/u;
 const PIVOT_START_PATTERN = /^(?:그리고|하지만|그런데|그래서|그러면|반면|대신|결국|특히|먼저|다음|이때)$/u;
 const ALLOWED_BOUNDARY_TYPES = new Set([
   "sentence",
@@ -186,6 +196,11 @@ function chooseSemanticSplit(tokens) {
     if (!boundaryType) continue;
     const leftChars = visibleCharacterCount(leftTokens);
     const rightChars = visibleCharacterCount(rightTokens);
+    // 한쪽이 너무 짧은 조각으로 남는 분할은 후보에서 제외한다(예: "거고"
+    // 처럼 1~2글자짜리 블록이 혼자 뜨는 것 방지). 남은 텍스트가 애초에
+    // 이 최소치보다 작으면(문장 자체가 짧은 경우) 예외로 허용한다.
+    if (leftChars < MIN_VISIBLE_CHARS_PER_SPLIT_SIDE && leftChars < visibleCharacterCount(tokens)) continue;
+    if (rightChars < MIN_VISIBLE_CHARS_PER_SPLIT_SIDE && rightChars < visibleCharacterCount(tokens)) continue;
     const overflowPenalty = Math.max(0, leftChars - MAX_VISIBLE_CHARS_PER_BLOCK) * 40 +
       Math.max(0, rightChars - MAX_VISIBLE_CHARS_PER_BLOCK) * 40;
     const boundaryPenalty = boundaryType === "clause_punctuation" ? 0 : boundaryType === "clause_ending" ? 3 : 5;
@@ -400,7 +415,16 @@ function captionAssText(scene, lines, emphasisWords) {
     };
   });
   const appliedEmphasis = lineVisuals.filter((line) => line.role === "key");
-  const assText = lineVisuals.map((line) => escapeAssText(line.text)).join("\\N");
+  // 버그 수정(2026-09-19): assColor는 계산만 되고 실제 ASS 텍스트에 삽입되지
+  // 않아 강조 색상이 렌더링에 전혀 반영되지 않고 있었다(항상 스타일 기본색인
+  // 흰색으로만 출력됨). key 줄에만 \c 색상 태그를 감싸고, 줄이 끝나면 스타일
+  // 기본색(\c&H00FFFFFF&)으로 되돌려 다음 줄에 색이 새지 않게 한다.
+  const assText = lineVisuals
+    .map((line) => {
+      const escaped = escapeAssText(line.text);
+      return line.role === "key" ? `{\\c${line.assColor}&}${escaped}{\\c&H00FFFFFF&}` : escaped;
+    })
+    .join("\\N");
   return {
     assText,
     displayText: displayLines.flat().map((token) => token.displayText).join(" "),

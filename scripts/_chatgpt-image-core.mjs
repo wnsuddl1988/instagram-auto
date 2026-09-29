@@ -98,6 +98,15 @@ export async function checkLogin(page, logFn = console.log) {
   logFn(`Login OK: ${url.slice(0, 60)}`);
 }
 
+// 2026-09-26 확인: ChatGPT가 채팅 입력창 DOM을
+// <textarea id="prompt-textarea">에서 <div contenteditable="true"
+// class="ProseMirror" data-composer-markdown>로 바꿨다(OpenAI 쪽 프론트엔드
+// 변경, 이 프로젝트 설정과 무관). 신·구 두 형태를 모두 매칭하는 CSS 콤마
+// 셀렉터로 바꿔 이후 다시 바뀌어도 한쪽은 걸리게 한다. 이 문자열 하나만
+// 고치면 파일 전체(9곳)에 반영되므로, id가 또 바뀌면 여기만 수정할 것.
+export const PROMPT_COMPOSER_SELECTOR =
+  '#prompt-textarea, div[contenteditable="true"][data-composer-markdown]';
+
 /** 임시 채팅은 이미지 만들기 메뉴가 없으므로 일반 새 대화 루트만 사용한다. */
 export const CHATGPT_IMAGE_FRESH_CHAT_URL = "https://chatgpt.com/";
 export const CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX =
@@ -170,7 +179,7 @@ export async function ensureChatMode(page, logFn = console.log) {
 }
 
 async function readComposerUserText(page, { ignoreStandaloneToolLabel = false } = {}) {
-  const ta = page.locator("#prompt-textarea").first();
+  const ta = page.locator(PROMPT_COMPOSER_SELECTOR).first();
   await ta.waitFor({ state: "visible", timeout: 15000 });
   const normalizedText = await ta.evaluate((element, automationPrefix) => {
     const clone = element.cloneNode(true);
@@ -202,13 +211,38 @@ export async function openFreshImageChat(page, logFn = console.log) {
   if (/temporary-chat=true/i.test(page.url())) {
     throw new Error("IMAGE_TOOL_TEMPORARY_CHAT_UNSUPPORTED");
   }
+  // 2026-09-26: 루트 URL(/)로 이동했는데도, 이 CDP 프로필/탭 상태에 따라
+  // 기존 대화(예: "3D 황소 캐릭터 생성" 같은 캐릭터 디자인용 대화)가 그대로
+  // 남아 열려 있던 사고가 실제 발생했다(황소특보 4편 s1이 그 대화에 이어
+  // 붙어 배경·소품 지시가 무시됨). URL만 믿지 않고 화면에 기존 메시지가
+  // 있으면 사이드바 "새 채팅"을 명시적으로 눌러 강제로 새 대화를 만든다.
+  // turn 판정 셀렉터는 [data-turn-key](신) 우선, [data-message-author-role]
+  // (구)도 함께 매칭해 어느 한쪽이 또 바뀌어도 살아남게 한다.
+  const EXISTING_MESSAGE_SELECTOR = '[data-turn-key], [data-message-author-role]';
+  const hasExistingMessages = (await page.locator(EXISTING_MESSAGE_SELECTOR).count()) > 0;
+  if (hasExistingMessages) {
+    logFn("Existing conversation detected on chatgpt.com root — forcing new chat via sidebar button");
+    const newChatBtn = page.locator(
+      'a[aria-label="새 채팅"], button[aria-label="새 채팅"], ' +
+      'a[aria-label="New chat"], button[aria-label="New chat"]'
+    ).first();
+    if ((await newChatBtn.count()) === 0) {
+      throw new Error("IMAGE_TOOL_NEW_CHAT_BUTTON_MISSING: cannot force a fresh conversation");
+    }
+    await newChatBtn.click({ timeout: 5000 });
+    await page.waitForTimeout(1500);
+    const stillHasMessages = (await page.locator(EXISTING_MESSAGE_SELECTOR).count()) > 0;
+    if (stillHasMessages) {
+      throw new Error("IMAGE_TOOL_NEW_CHAT_FAILED: conversation still has prior messages after clicking new chat");
+    }
+  }
   await ensureChatMode(page, logFn);
   const existingUserText = await readComposerUserText(page);
   if (existingUserText) {
     if (!existingUserText.startsWith(CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX)) {
       throw new Error(`IMAGE_TOOL_OWNER_DRAFT_PRESENT: existing draft length=${existingUserText.length}`);
     }
-    const ta = page.locator("#prompt-textarea").first();
+    const ta = page.locator(PROMPT_COMPOSER_SELECTOR).first();
     await ta.fill("");
     await page.waitForTimeout(300);
     let remainingAutomationText = await readComposerUserText(page, { ignoreStandaloneToolLabel: true });
@@ -275,11 +309,11 @@ async function firstVisibleExactLabelLocator(candidates, labels) {
 
 /** 내부 picture_v2 ID 또는 작성창 전체에 표시된 정확한 이미지 도구 칩 라벨로 활성 상태를 확인한다. */
 export async function verifyImageToolActive(page) {
-  const prompt = page.locator("#prompt-textarea").first();
+  const prompt = page.locator(PROMPT_COMPOSER_SELECTOR).first();
   const composer = prompt.locator('xpath=ancestor::*[self::form or @data-type="unified-composer"][1]');
   const activeChip = await firstVisibleLocator([
-    page.locator('#prompt-textarea [data-inline-selection-pill][data-id="picture_v2"]'),
-    page.locator('#prompt-textarea [data-inline-selection-pill][data-system-hint-type="picture_v2"]'),
+    prompt.locator('[data-inline-selection-pill][data-id="picture_v2"]'),
+    prompt.locator('[data-inline-selection-pill][data-system-hint-type="picture_v2"]'),
     composer.locator('[data-inline-selection-pill][data-id="picture_v2"]'),
     composer.locator('[data-inline-selection-pill][data-system-hint-type="picture_v2"]'),
     composer.locator('[data-id="picture_v2"]'),
@@ -287,11 +321,11 @@ export async function verifyImageToolActive(page) {
   ]);
   if (activeChip) return true;
 
-  // 현재 UI는 이미지 칩을 #prompt-textarea의 형제 요소로 렌더링할 수 있다.
+  // 현재 UI는 이미지 칩을 컴포저의 형제 요소로 렌더링할 수 있다.
   // 내부 ID가 바뀌어도 작성창 컨테이너 안의 정확한 라벨만 보조 신호로 인정한다.
   const labeledChip = await firstVisibleExactLabelLocator([
-    page.locator('#prompt-textarea [data-inline-selection-pill]'),
-    page.locator('#prompt-textarea [contenteditable="false"]'),
+    prompt.locator('[data-inline-selection-pill]'),
+    prompt.locator('[contenteditable="false"]'),
     composer.locator('[data-inline-selection-pill]'),
     composer.locator('[contenteditable="false"]'),
     composer.locator('button'),
@@ -358,9 +392,17 @@ export async function activateImageTool(page, logFn = console.log, warnFn = cons
     page.locator('button[aria-label*="Add" i]'),
   ]);
   if (plus) {
-    await plus.click({ timeout: 5000 }).catch((error) => {
-      throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: plus button click failed (${String(error?.message ?? error).slice(0, 80)})`);
-    });
+    // 2026-09-26: 페이지 전환 직후 곧바로 클릭하면 UI가 아직 안정화되지 않아
+    // 드물게 첫 클릭이 실패하는 게 관찰됐다(요소 자체는 존재·visible). 1회
+    // 짧은 대기 후 재시도해서 일시적 타이밍 실패를 흡수한다.
+    try {
+      await plus.click({ timeout: 5000 });
+    } catch (firstError) {
+      await page.waitForTimeout(1200);
+      await plus.click({ timeout: 5000 }).catch((error) => {
+        throw new Error(`IMAGE_TOOL_ENTRY_UNUSABLE: plus button click failed (${String(error?.message ?? error).slice(0, 80)})`);
+      });
+    }
     await page.waitForTimeout(500);
 
     const target = await firstVisibleLocator([
@@ -389,8 +431,8 @@ export async function activateImageTool(page, logFn = console.log, warnFn = cons
   if (delayedDirectTarget) {
     return activateDirectImageEntry(page, delayedDirectTarget, logFn, "delayed direct home button");
   }
-  const composer = page.locator("#prompt-textarea").first();
-  if (!(await composer.isVisible({ timeout: 3000 }).catch(() => false))) {
+  const composer = page.locator(PROMPT_COMPOSER_SELECTOR).first();
+  if (!(await composer.isVisible({ timeout: 8000 }).catch(() => false))) {
     throw new Error("IMAGE_TOOL_ENTRY_MISSING: no visible ChatGPT composer for prompt routing");
   }
   logFn("IMAGE_TOOL_PROMPT_ROUTING_FALLBACK: current Chat UI has no image menu/chip; using explicit text-to-image prompt routing");
@@ -454,7 +496,7 @@ export async function attachRef(page, refPath, logFn = console.log) {
 
 // ── 프롬프트 입력 + DOM 확인 ─────────────────────────────────────────────────
 export async function typePrompt(page, promptText, logFn = console.log) {
-  const ta = page.locator("#prompt-textarea").first();
+  const ta = page.locator(PROMPT_COMPOSER_SELECTOR).first();
   await ta.waitFor({ state: "visible", timeout: 15000 });
   const oneLine = promptText.replace(/\s*\n\s*/g, " ").trim();
   const imageToolActive = await verifyImageToolActive(page);
@@ -504,48 +546,68 @@ export async function typePrompt(page, promptText, logFn = console.log) {
 }
 
 // ── send enabled 확인 ─────────────────────────────────────────────────────────
+// 2026-09-26 확인: 전송 버튼 aria-label이 "메시지 보내기"/"프롬프트 보내기"에서
+// "보내기"로 바뀌었다(OpenAI 쪽 변경). 기존 라벨도 재발 대비로 남겨둔다.
+const SEND_BUTTON_SELECTOR =
+  '#composer-submit-button, button[data-testid="send-button"], ' +
+  'button[aria-label="Send message"], button[aria-label="메시지 보내기"], ' +
+  'button[aria-label="프롬프트 보내기"], button[aria-label="보내기"]';
+
+// 2026-09-26: 타이핑 직후 곧바로 확인하면 React가 아직 버튼 상태를 갱신하기
+// 전이라 드물게 "없음/비활성"으로 오판됐다(실측: "보내기" 버튼 자체는 존재·
+// enabled인데 호출 시점에 count 0으로 잡힘). locator.waitFor로 최대 3초
+// 기다렸다가 최종 판정한다.
 export async function checkSendEnabled(page) {
-  const sendBtn = page.locator(
-    '#composer-submit-button, button[data-testid="send-button"], ' +
-    'button[aria-label="Send message"], button[aria-label="메시지 보내기"], ' +
-    'button[aria-label="프롬프트 보내기"]'
-  ).first();
-  if (await sendBtn.count() === 0) return false;
+  const sendBtn = page.locator(SEND_BUTTON_SELECTOR).first();
+  const appeared = await sendBtn.waitFor({ state: "visible", timeout: 3000 }).then(() => true).catch(() => false);
+  if (!appeared) return false;
   return sendBtn.isEnabled().catch(() => false);
 }
 
 export async function sendPrompt(page) {
-  const sendBtn = page.locator(
-    '#composer-submit-button, button[data-testid="send-button"], ' +
-    'button[aria-label="Send message"], button[aria-label="메시지 보내기"], ' +
-    'button[aria-label="프롬프트 보내기"]'
-  ).first();
-  if (await sendBtn.count() === 0) throw new Error("SEND_BUTTON_MISSING");
+  const sendBtn = page.locator(SEND_BUTTON_SELECTOR).first();
+  const appeared = await sendBtn.waitFor({ state: "visible", timeout: 3000 }).then(() => true).catch(() => false);
+  if (!appeared) throw new Error("SEND_BUTTON_MISSING");
   if (!(await sendBtn.isEnabled().catch(() => false))) throw new Error("SEND_BUTTON_DISABLED");
   await sendBtn.click();
 }
 
 // ── 마지막 assistant 응답 이미지 수집 ────────────────────────────────────────
+// 2026-09-26 확인: ChatGPT가 메시지 turn의 DOM을 바꿔서
+// [data-message-author-role="assistant"]가 더 이상 존재하지 않는다(turn
+// 컨테이너는 이제 [data-turn-key] 속성으로 구분된다). 생성된 이미지는
+// [data-testid="generated-image-preview"] 버튼 안의 img로 렌더링되고,
+// 여러 장이면 [data-testid="generated-image-gallery"]가 이들을 감싼다.
+// 이 새 testid는 "생성된 이미지"라는 의미가 명확해 사용자가 첨부한 참조
+// 이미지(user-message 쪽)와 섞일 위험이 없어 이전보다 오히려 더 안전한
+// 판정 기준이다. src가 blob: URL이라 gen 판정용 정규식도 갱신했다.
 export async function collectLastAssistantImages(page) {
   return await page.evaluate(() => {
-    const msgs = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
-    if (msgs.length === 0) return [];
-    const lastMsg = msgs[msgs.length - 1];
+    const previews = Array.from(document.querySelectorAll('[data-testid="generated-image-preview"]'));
+    if (previews.length === 0) return [];
+    const lastPreview = previews[previews.length - 1];
+    const gallery = lastPreview.closest('[data-testid="generated-image-gallery"]') || lastPreview.parentElement;
+    const scope = gallery || lastPreview;
     function cid(s) { const m = (s||"").match(/[?&]id=([^&]+)/); return m ? m[1] : null; }
-    return Array.from(lastMsg.querySelectorAll("img"))
+    return Array.from(scope.querySelectorAll("img"))
       .filter(i => i.naturalWidth >= 200)
       .map(i => ({
         src: i.src || i.currentSrc || i.getAttribute("data-src") || "",
         cid: cid(i.src),
         w: i.naturalWidth,
         h: i.naturalHeight,
-        gen: /backend-api\/estuary\/content|oaiusercontent/.test(i.src),
+        gen: /backend-api\/estuary\/content|oaiusercontent|^blob:/.test(i.src),
       }))
       .filter(x => x.src);
   });
 }
 
 // ── 생성 완료 판정 ────────────────────────────────────────────────────────────
+// 2026-09-26 확인: turn 컨테이너 testid가 "conversation-turn"에서
+// [data-turn-key] 속성으로 바뀌었다. 옛 셀렉터가 매치 0건이라 length===0
+// 분기로 빠져 "이미 완료"로 오판했고, 실제로는 이미지가 다 만들어졌는데도
+// 이 오판과 무관하게 결과 판정(collectLastAssistantImages)이 img를 못
+// 찾아 timeout이 났다(두 문제가 겹쳐 있었음 — 둘 다 이번에 같이 고침).
 export async function isAssistantDone(page) {
   return await page.evaluate(() => {
     const spinners = document.querySelectorAll(
@@ -553,7 +615,7 @@ export async function isAssistantDone(page) {
       '.result-streaming, [class*="streaming"]'
     );
     if (spinners.length > 0) return false;
-    const turns = document.querySelectorAll('[data-testid^="conversation-turn"]');
+    const turns = document.querySelectorAll('[data-turn-key], [data-testid^="conversation-turn"]');
     if (turns.length === 0) return true;
     const last = turns[turns.length - 1].textContent || "";
     return !/생성하고 있습니다|만들고 있습니다|Creating image|생성 중|잠시만|이미지를 만드는 중/i.test(last);
