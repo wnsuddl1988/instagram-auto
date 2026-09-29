@@ -247,13 +247,13 @@ function warn(m) { console.warn(`[WARN][wizard-scene-img] ${m}`); }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const SUMMARY_PATH = path.join(OUT_DIR, "scene-images-summary.json");
-const EVIDENCE_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v11";
+const EVIDENCE_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v12";
 const VISUAL_STYLE_CONTRACT = "money_shorts_bright_integrated_motion_ready_family_3d_v3";
 const CHARACTER_CONTINUITY_VERSION = "money_shorts_selected_character_reference_v1";
 const outputVisualEngineVersion = EVIDENCE_ENGINE_VERSION;
-const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
+const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v9";
 const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
-const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v2";
+const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v3";
 const COMPOSITION_BLUEPRINT_VERSION = "money_shorts_positive_composition_blueprint_v2";
 
 function writeSummary(partial) {
@@ -446,7 +446,7 @@ const STYLE_PREFIX =
   "Money Shorts original bright family-feature-quality cinematic 3D animation without copying any studio, franchise, film or known character. " +
   "Make it unmistakably stylized rather than live action, with believable Korean adult facial proportions, eyes only subtly larger than real life, restrained catchlights, defined eyelids, natural jaw structure and gentle facial asymmetry. " +
   "Use shaped hair, tactile woven fabric, physically grounded hands, bright natural daylight, warm color bounce, open facial shadows and rich but controlled color. " +
-  "Generate the character, room, props and lighting together as one authored shot in a bright lived-in Korean home, cafe, store or work space. Keep every person, room and furnishing full-size and physically inhabitable. ";
+  "Generate the character, setting, props and lighting together as one authored shot in the narration-specific Korean location: home, transit, bank, market, shop, workplace, public service space or outdoor neighborhood. Keep every person, place and furnishing full-size and physically inhabitable. Do not default to a home, desk, dining table or kitchen when the story supports a more specific real-world location. ";
 const CHARACTER_CONTINUITY_INSTRUCTION =
   `CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: use the attached ${CHARACTER_NAME} identity board only as a strict identity reference. ` +
   "Whenever a full or upper body person is visible, show the exact same single character with matching face, age, hairstyle, hair color, body proportions and fixed wardrobe. " +
@@ -485,7 +485,7 @@ const STORYBOARD_ROLES = [
   },
   {
     role: "EVERYDAY REALITY",
-    event: "a recognizable home, commute, grocery, office or payment moment that makes the narration feel personal",
+    event: "a recognizable transit, bank, market, grocery, workplace, public-service, home or payment moment selected by the narration",
     camera: "eye-level environmental scene with human-scale objects and lived-in depth",
     light: "natural daylight or warm practical indoor light",
     avoid: "no classical bank facade, chains, giant percent signs, giant arrows or abstract chart wall",
@@ -499,7 +499,7 @@ const STORYBOARD_ROLES = [
   },
   {
     role: "PSYCHOLOGY",
-    event: "the recurring Korean adult making, avoiding or delaying one small decision in a recognizable home, cafe, store or work setting",
+    event: "the recurring Korean adult making, avoiding or delaying one small decision in the narration's most specific real-world setting",
     camera: "candid eye-level medium-wide or intimate over-shoulder view with a natural adult face and hands, not another object stack",
     light: "soft reflective daylight with restrained contrast and clear facial exposure",
     avoid: "no bank temple, no giant metal key, no receipt mountain and no literal text",
@@ -528,7 +528,7 @@ const STORYBOARD_ROLES = [
   {
     role: "RECOMMENDATION",
     event: "a concise success standard visualized as an organized choice or repeatable system",
-    camera: "calm eye-level home, cafe, store or workplace composition with ample but textured caption space",
+    camera: "calm eye-level narration-specific everyday composition with ample but textured caption space",
     light: "bright natural daylight or warm practical light",
     avoid: "no warning-symbol overload and no reuse of the previous scene's main object",
   },
@@ -554,6 +554,10 @@ const STORYBOARD_ROLE_INDEX_BY_SCENE_ID = {
 };
 
 const VISUAL_MODES = {
+  VEO_FULL_CHARACTER: {
+    presence: "character",
+    instruction: "VEO FULL-CHARACTER REFERENCE: show the one recurring character completely from head to both feet in one uncropped environmental wide shot. Keep the face, both hands, torso, legs and both feet clearly visible, with comfortable space above the head and below the shoes. Use one small whole-body action with grounded feet and a motion-safe background; no seated crop, close-up, upper-body crop, hands-only framing, foreground occlusion or background-only composition.",
+  },
   CHARACTER_EVENT: {
     presence: "character",
     instruction: "Show the recurring character in the plausible middle of one small topic-defining action inside a bright full-scale everyday environment. Use restrained gaze, hands and weight shift with natural spatial depth; no presenter pose or frozen catalog portrait.",
@@ -568,7 +572,7 @@ const VISUAL_MODES = {
   },
   ARCHITECTURAL_CROSS_SECTION: {
     presence: "none",
-    instruction: "Use a bright full-scale domestic or workplace room-to-room view to expose the hidden economic mechanism through ordinary objects and natural depth. It must read as warm human-scale space with natural materials, never a technical cutaway, industrial machine room, vault, miniature, dollhouse or tabletop model.",
+    instruction: "Use a bright full-scale narration-specific place-to-place or near-to-far view to expose the hidden economic mechanism through ordinary objects and natural depth. It must read as warm human-scale space with natural materials, never a technical cutaway, industrial machine room, vault, miniature, dollhouse or tabletop model.",
   },
   SPLIT_EVIDENCE: {
     presence: "none",
@@ -576,7 +580,7 @@ const VISUAL_MODES = {
   },
   SYMBOLIC_CHARACTER: {
     presence: "character",
-    instruction: "Place the recurring character in a bright lived-in home, cafe, store or work space where the tempting cue, ignored condition and consequence are all physically present. Use a restrained eye or head turn and relaxed posture, never an abstract corridor, threshold, chamber or theatrical stance.",
+    instruction: "Place the recurring character in the narration's most specific bright everyday location where the tempting cue, ignored condition and consequence are all physically present. Use a restrained eye or head turn and relaxed posture, never an abstract corridor, threshold, chamber or theatrical stance.",
   },
   HANDS_ACTION: {
     presence: "hands",
@@ -1010,7 +1014,7 @@ function stylePrefixForMode(mode) {
   if (mode.presence === "hands") {
     return "Money Shorts original bright family-feature-quality cinematic 3D animation: naturally grounded hands, full-size everyday topic objects, tactile fabrics, painted wood, paper, glass and warm ceramics, bright natural or warm practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every room, furnishing, hand and object is adult-scale and physically usable. ";
   }
-  return "Money Shorts original bright family-feature-quality cinematic 3D animation made from full-size everyday topic objects in recognizable lived-in Korean homes, cafes, stores and work spaces. Use tactile fabrics, painted wood, paper, glass, warm ceramics, bright natural or practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every room, furnishing and object is adult-scale and physically usable. Include no character or human body part. ";
+  return "Money Shorts original bright family-feature-quality cinematic 3D animation made from full-size everyday topic objects in a narration-specific Korean transit, bank, market, shop, workplace, public-service, outdoor-neighborhood or home setting. Use tactile materials, bright natural or practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every place, furnishing and object is adult-scale and physically usable. Include no character or human body part. ";
 }
 
 function compactStylePrefixForMode(mode) {
@@ -1024,6 +1028,9 @@ function compactStylePrefixForMode(mode) {
 }
 
 function compactPresenceInstructionForMode(mode) {
+  if (mode.id === "VEO_FULL_CHARACTER") {
+    return `PRESENCE GATE: ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO. CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: match the attached ${CHARACTER_NAME} identity board's exact face, age, hairstyle, hair color, body proportions and fixed wardrobe. Show the same character completely from head to both feet, including both hands and both shoes, in one natural uncropped environmental wide shot; no duplicate, reference-board layout, seated crop, upper-body crop, hands-only frame or body-part close-up.`;
+  }
   if (mode.presence === "character") {
     return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED. CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: match the attached ${CHARACTER_NAME} identity board's exact face, age, hairstyle, hair color, body proportions and fixed wardrobe in one natural story view; no duplicate or reference-board layout. Use restrained facial acting and physically grounded hand-object contact.`;
   }
@@ -1051,16 +1058,17 @@ function resolutionInstructionForMode(mode) {
 }
 
 const MODE_SETTING_OVERRIDES = {
+  VEO_FULL_CHARACTER: "use the narration-specific everyday setting at full scale with a clear walkable floor plane and enough environmental depth for a complete uncropped head-to-feet character action",
   CHARACTER_EVENT: "use the topic-specific lived-in setting at full scale, with the decision object in the foreground and its household consequence in a separate background zone; place the character off-center in a natural mid-action moment",
   ENVIRONMENTAL_CHARACTER: "use the topic-specific everyday setting at full scale, divided naturally into a decision area, a changed-condition area and a household-cash boundary; let the character complete one small action within the room",
   OBJECT_MECHANISM: "keep the topic-specific lived-in setting recognizable while its everyday objects form one visible input-action-result relationship; no portrait, industrial apparatus or dark architecture",
-  ARCHITECTURAL_CROSS_SECTION: "show the topic-specific domestic or workplace setting as a bright full-scale room-to-room view connecting cause, action and result through ordinary objects; use natural materials, no technical cutaway, machine room, tabletop or miniature",
+  ARCHITECTURAL_CROSS_SECTION: "show the topic-specific real-world setting as a bright full-scale near-to-far view connecting cause, action and result through ordinary objects; use natural materials, no technical cutaway, machine room, tabletop or miniature",
   SPLIT_EVIDENCE: "show two life-size connected evidence areas inside the topic-specific everyday setting with a clearly changed boundary between before and after; no portrait, machine room or vault",
   HANDS_ACTION: "a full-size standing action counter or practical work surface in a distinct location, framed tightly enough that no head enters the image",
-  OBJECT_CHECKLIST: "one principal full-size topic-specific decision object with up to two quiet contextual cues in distinct foreground, side-depth and far-depth home zones; never line them up on one shelf, counter, wall, tray or floor path, and never turn them into a three-way allocation display",
-  SYMBOLIC_CHARACTER: "a bright lived-in home, cafe, store or work space where the temptation, ignored condition and cash-safety boundary are naturally visible around the character",
-  FUTURE_CHARACTER: "an open bright everyday room connected to a balcony, window, doorway or work area that gives protected household cash and the next decision clear directional depth",
-  OBJECT_RESOLUTION: "a bright open full-scale everyday room where the protected topic objects lead toward a clear next step; no desk still life, vault or industrial architecture",
+  OBJECT_CHECKLIST: "one principal full-size topic-specific decision object with up to two quiet contextual cues in distinct foreground, side-depth and far-depth zones of the selected location; never line them up on one shelf, counter, wall, tray or floor path, and never turn them into a three-way allocation display",
+  SYMBOLIC_CHARACTER: "the narration's bright specific everyday location where the temptation, ignored condition and cash-safety boundary are naturally visible around the character",
+  FUTURE_CHARACTER: "an open bright everyday location with a doorway, street, platform, aisle, window or work route that gives protected household cash and the next decision clear directional depth",
+  OBJECT_RESOLUTION: "a bright open full-scale everyday location where the protected topic objects lead toward a clear next step; no desk still life, vault or industrial architecture",
 };
 
 function topicSpecificSetting(evidence, mode) {
@@ -1070,6 +1078,7 @@ function topicSpecificSetting(evidence, mode) {
 }
 
 const CHARACTER_ACTION_OVERRIDES = {
+  VEO_FULL_CHARACTER: "the recurring character completes one restrained whole-body action with both feet grounded, a small weight shift, relaxed shoulders and one purposeful hand-object interaction while remaining fully visible from head to shoes",
   CHARACTER_EVENT: "the recurring character pauses in the middle of one small decision, shifts their gaze from the topic object to its household consequence and completes one relaxed hand movement",
   ENVIRONMENTAL_CHARACTER: "the recurring character completes one ordinary topic-specific action with purposeful hands, relaxed shoulders and a gentle weight shift while the changed condition remains visible nearby",
   SYMBOLIC_CHARACTER: "the recurring character makes a restrained eye or head turn from the tempting cue toward the ignored condition, with quiet breathing and no theatrical body movement",
@@ -1077,6 +1086,7 @@ const CHARACTER_ACTION_OVERRIDES = {
 };
 
 const CHARACTER_CAMERA_OVERRIDES = {
+  VEO_FULL_CHARACTER: "motion-safe eye-level environmental full shot showing the complete character from head to both feet with clear floor contact, both hands visible and comfortable margin above the head and below the shoes",
   CHARACTER_EVENT: "candid eye-level three-quarter medium-wide view with off-center placement, a near everyday object for parallax and clear room depth",
   ENVIRONMENTAL_CHARACTER: "eye-level environmental medium-wide view showing the character, purposeful hands, story prop and three natural depth planes in one coherent room",
   SYMBOLIC_CHARACTER: "intimate eye-level or over-shoulder composition where the character, tempting cue and ignored condition remain visible in one lived-in setting",
@@ -1194,15 +1204,29 @@ function compactSceneArtDirection(scene) {
   return compact || compactNarration(cue, 520);
 }
 
-const FINANCE_SCENE_DIVERSITY_LOCATIONS = [
-  "window-side living area",
-  "dining or kitchen surface",
-  "entryway or storage boundary",
-  "cafe or everyday work counter",
-  "home-study shelf zone",
-  "neighborhood shop or commute threshold",
-  "balcony or window transition",
-  "living-room seating edge",
+const FINANCE_SCENE_DIVERSITY_LOCATIONS_BY_SUBTOPIC = {
+  economy_literacy: ["commuter rail platform", "neighborhood market aisle", "workplace break area", "bank service lobby", "street-side purchase point", "public information space", "commute coffee stand", "home consequence zone"],
+  inflation_living_cost: ["grocery aisle", "traditional market stall", "convenience-store checkout", "lunch-district food counter", "public transit fare gate", "neighborhood pharmacy", "street-side produce stand", "home pantry consequence"],
+  interest_debt: ["bank consultation booth", "ATM vestibule", "workplace payday area", "vehicle or housing contract counter", "public service desk", "commuter station bill-check moment", "neighborhood bank lobby", "home statement check"],
+  consumption_psychology: ["retail checkout", "convenience-store aisle", "commuter train seat", "daylight cafe counter", "shopping street", "delivery pickup point", "event merchandise area", "home parcel consequence"],
+  sns_comparison: ["event entrance", "restaurant gathering", "shopping street", "workplace celebration area", "weekend public plaza", "cafe group table", "transit meeting point", "home aftermath zone"],
+  labor_income: ["workplace payroll area", "coworking lobby", "commuter platform", "bank transfer kiosk", "side-income worksite", "office cafeteria", "neighborhood service counter", "home allocation check"],
+  investing_assets: ["securities consultation lounge", "public library finance corner", "commuter coffee stand", "coworking window area", "bank investment counter", "quiet public courtyard", "workplace break area", "home protected-cash check"],
+  housing_asset_gap: ["rental viewing", "transit station exit", "real-estate consultation counter", "apartment entrance", "neighborhood street approach", "commute transfer point", "building management office", "home total-cost check"],
+  anxiety_avoidance: ["bank waiting area", "quiet commuter bench", "public library desk", "neighborhood service counter", "clinic waiting area", "postal counter", "calm public courtyard", "home avoidance cue"],
+  success_habits: ["workplace payday area", "bank transfer kiosk", "commuter station concourse", "grocery checkout", "coworking entrance", "neighborhood errands route", "public library planning desk", "home routine check"],
+  crisis_risk: ["workplace exit", "neighborhood market", "bank consultation area", "transit concourse", "public service center", "pharmacy essentials aisle", "community support desk", "home emergency plan"],
+  time_retirement: ["pension consultation counter", "neighborhood park walkway", "workplace corridor", "community service center", "bank transfer area", "public library long-view aisle", "commuter bridge", "home automatic-transfer check"],
+};
+const FINANCE_SCENE_DIVERSITY_DEFAULT_LOCATIONS = [
+  "commuter setting",
+  "neighborhood market",
+  "bank or service counter",
+  "workplace setting",
+  "public everyday space",
+  "street-side decision point",
+  "shop or cafe",
+  "home only when narration requires it",
 ];
 const FINANCE_SCENE_DIVERSITY_CAMERAS = [
   "eye-level medium-wide with room depth",
@@ -1226,6 +1250,22 @@ const FINANCE_SCENE_DIVERSITY_FOCI = [
 ];
 
 const COMPOSITION_BLUEPRINTS_BY_MODE = {
+  VEO_FULL_CHARACTER: [
+    {
+      id: "full_character_motion_lane",
+      layoutFamily: "full_character_environmental_lane",
+      primaryAnchor: "place the complete recurring character from head to both feet in one off-center full-body action lane with both hands and shoes visible",
+      supportPlacement: "place one narration-specific result deeper in the same environment without covering any body part",
+      openSpace: "keep clear floor contact, margin around the full silhouette and an unobstructed motion-safe path",
+    },
+    {
+      id: "full_character_side_action_depth",
+      layoutFamily: "full_character_side_depth",
+      primaryAnchor: "show the complete character in a natural side three-quarter whole-body action with grounded feet and one compact story prop",
+      supportPlacement: "place one supporting economic condition at a different depth and height outside the body silhouette",
+      openSpace: "leave the body contour, floor plane and likely motion direction visually clear",
+    },
+  ],
   CHARACTER_EVENT: [
     {
       id: "off_center_decision_triangle",
@@ -1460,11 +1500,14 @@ function compositionBlueprintForScene(scene, sceneIndex, totalScenes, visualMode
 }
 
 function sceneDiversityPlan(scene, sceneIndex, totalScenes, visualMode = null, resolvedVisualModes = null) {
-  const cycleIndex = sceneIndex % FINANCE_SCENE_DIVERSITY_LOCATIONS.length;
+  const subtopic = String(scene?.visualEvidence?.financeSubtopic ?? "");
+  const locationFamilies = FINANCE_SCENE_DIVERSITY_LOCATIONS_BY_SUBTOPIC[subtopic] ??
+    FINANCE_SCENE_DIVERSITY_DEFAULT_LOCATIONS;
+  const cycleIndex = sceneIndex % locationFamilies.length;
   const selectedVisualMode = visualMode ?? visualModeForScene(scene, sceneIndex, totalScenes);
   return {
     version: FINANCE_SCENE_DIVERSITY_VERSION,
-    locationFamily: FINANCE_SCENE_DIVERSITY_LOCATIONS[cycleIndex],
+    locationFamily: locationFamilies[cycleIndex],
     cameraFamily: FINANCE_SCENE_DIVERSITY_CAMERAS[cycleIndex],
     financeFocus: FINANCE_SCENE_DIVERSITY_FOCI[cycleIndex],
     sceneIndex: sceneIndex + 1,
@@ -1725,6 +1768,9 @@ const topicScopedSceneRepairByIndex = new Map(
   (topicScopedSceneRepairs?.targets ?? []).map((target) => [target.sceneIndex, target]),
 );
 const sceneVisualModes = scenes.map((scene, index) => {
+  if (scene?.mediaStrategy === "veo_motion") {
+    return { id: "VEO_FULL_CHARACTER", ...VISUAL_MODES.VEO_FULL_CHARACTER };
+  }
   if (topicScopedModeOverride?.sceneIndex === index + 1) {
     return { id: topicScopedModeOverride.visualModeId, ...VISUAL_MODES[topicScopedModeOverride.visualModeId] };
   }
@@ -1786,6 +1832,10 @@ const sceneRequirements = scenes.map((scene, index) => {
     visualEvidenceId: scene.visualEvidence.sceneIdentity,
     visualModeId: sceneVisualModes[index].id,
     presenceMode: sceneVisualModes[index].presence,
+    veoMotionEligibility: scene.mediaStrategy === "veo_motion" &&
+      sceneVisualModes[index].id === "VEO_FULL_CHARACTER"
+      ? "full_character"
+      : "not_required",
     characterReferenceRequired: sceneVisualModes[index].presence !== "none",
     sceneIntegrationPlan: scene.visualEvidence.sceneIntegrationPlan,
     motionPlan: scene.visualEvidence.motionPlan,
@@ -2018,8 +2068,10 @@ if (promptAuditOnly) {
     const conflicts = mode.presence === "character"
       ? []
       : legacyPresenceConflictPatterns.filter((pattern) => pattern.test(prompt)).map((pattern) => pattern.source);
-    const presenceGatePassed = mode.presence === "character"
-      ? /PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED/i.test(prompt)
+    const presenceGatePassed = mode.id === "VEO_FULL_CHARACTER"
+      ? /PRESENCE GATE: ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO/i.test(prompt)
+      : mode.presence === "character"
+        ? /PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED/i.test(prompt)
       : mode.presence === "hands"
         ? /PRESENCE GATE: HANDS ONLY/i.test(prompt)
         : /PRESENCE GATE: NO PERSON/i.test(prompt);
@@ -2042,12 +2094,20 @@ if (promptAuditOnly) {
       /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
       semanticCompositionPassed &&
       promptLengthPassed &&
+      (scenes[index]?.mediaStrategy !== "veo_motion" ||
+        (
+          mode.id === "VEO_FULL_CHARACTER" &&
+          /ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO/i.test(prompt) &&
+          /head to both feet/i.test(prompt) &&
+          /both hands and both shoes/i.test(prompt)
+        )) &&
       retiredDirectionPatterns.every((pattern) => !pattern.test(prompt));
     return {
       sceneIndex: index + 1,
       sceneId: scenes[index].id,
       visualModeId: mode.id,
       presenceMode: mode.presence,
+      veoMotionEligibility: sceneRequirements[index].veoMotionEligibility,
       sceneDiversityPlan: sceneDiversityPlans[index],
       presenceGatePassed,
       semanticCompositionPassed,
@@ -2130,8 +2190,13 @@ const reusableSceneIndexes = new Set(
           const verifiedExistingOutput =
             previousSummary?.allReady === true &&
             previousSummary?.visualModalityAudit?.passed === true;
+          const modeContractMatches =
+            scene.visualModeId === requirement.visualModeId &&
+            scene.presenceMode === requirement.presenceMode &&
+            scene.veoMotionEligibility === requirement.veoMotionEligibility;
           return requirement &&
             visualEvidenceBindingMatches &&
+            modeContractMatches &&
             (promptMatches || verifiedExistingOutput) &&
             typeof scene.imageSha256 === "string" &&
             scene.imageSha256.length === 64 &&
@@ -2236,8 +2301,11 @@ function buildVisualModalityAudit(states) {
   const handsOnlyCount = sceneVisualModes.filter((mode) => mode.presence === "hands").length;
   const noPersonCount = sceneVisualModes.filter((mode) => mode.presence === "none").length;
   const distinctModeCount = new Set(sceneVisualModes.map((mode) => mode.id)).size;
-  const maxCharacterCount = Math.ceil(sceneCount * 0.45);
-  const minNonCharacterCount = Math.floor(sceneCount * 0.55);
+  // VEO 후보는 손/배경 장면이 아니라 전신 캐릭터 장면만 허용한다. 따라서 인물 장면은
+  // 장면 흐름의 주축이 될 수 있고, 비인물 장면은 전환·근거 장면으로 최소만 유지한다.
+  // 기존 45/55 비율은 이 계약과 충돌해 정상 저장된 전신 VEO 장면을 미완료로 오판했다.
+  const minNonCharacterCount = Math.max(1, Math.floor(sceneCount * 0.25));
+  const maxCharacterCount = sceneCount - minNonCharacterCount;
   const requiredDistinctModes = Math.min(6, Math.max(3, sceneCount - 1));
   const sceneContractsPassed = states.length === sceneCount && states.every((state, index) =>
     state.visualModeId === sceneVisualModes[index].id &&

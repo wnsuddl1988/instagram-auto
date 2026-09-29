@@ -257,12 +257,33 @@ if (continuousText.replace(/\[[^\]]+\]/g, "").replace(/\s+/g, "").length < 120) 
   process.exit(2);
 }
 
+// 캐릭터별 voice env 분리(2026-09-19 Owner 확정) — 이전에는 ELEVENLABS_VOICE_ID
+// 하나만 있어서 편을 바꿀 때마다 .env.local 값을 손으로 고쳐 써야 했고, 되돌리는
+// 걸 잊으면 잘못된 캐릭터 목소리로 생성되는 사고 위험이 있었다. --character로
+// 캐릭터를 명시하면 그 캐릭터 전용 env를 자동으로 골라 쓰고, 지정하지 않으면
+// 기존 동작(범용 ELEVENLABS_VOICE_ID)을 그대로 유지해 하위 호환을 지킨다.
+const CHARACTER_VOICE_ENV_MAP = {
+  owl: { id: "ELEVENLABS_VOICE_ID_OWL", label: "ELEVENLABS_VOICE_LABEL_OWL" },
+  geumbaksa: { id: "ELEVENLABS_VOICE_ID_GEUMBAKSA", label: "ELEVENLABS_VOICE_LABEL_GEUMBAKSA" },
+  bull: { id: "ELEVENLABS_VOICE_ID_BULL", label: "ELEVENLABS_VOICE_LABEL_BULL" },
+};
+const characterArg = getArg("--character");
+if (characterArg && !CHARACTER_VOICE_ENV_MAP[characterArg]) {
+  console.error(
+    `ABORT: --character 는 ${Object.keys(CHARACTER_VOICE_ENV_MAP).join("|")} 중 하나여야 합니다. 받은 값: ${characterArg}`,
+  );
+  process.exit(2);
+}
+const voiceEnvNames = characterArg
+  ? CHARACTER_VOICE_ENV_MAP[characterArg]
+  : { id: "ELEVENLABS_VOICE_ID", label: "ELEVENLABS_VOICE_LABEL" };
+
 const apiKey = process.env.ELEVENLABS_API_KEY;
-const voiceId = process.env.ELEVENLABS_VOICE_ID;
-const voiceLabel = process.env.ELEVENLABS_VOICE_LABEL ?? null;
+const voiceId = process.env[voiceEnvNames.id];
+const voiceLabel = process.env[voiceEnvNames.label] ?? null;
 const missingEnv = [];
 if (!apiKey) missingEnv.push("ELEVENLABS_API_KEY");
-if (!voiceId) missingEnv.push("ELEVENLABS_VOICE_ID");
+if (!voiceId) missingEnv.push(voiceEnvNames.id);
 
 const baseSpeed = Number(topicProfile.baseSpeed);
 const speedBounds = sampleReviewEnabled ? [0.7, 1.2] : [0.95, 1.05];
@@ -675,8 +696,11 @@ const sceneResults = timedRanges.map((range, index) => {
   const startSec = index === 0 ? 0 : timedRanges[index].spokenStartSec;
   const endSec = index === timedRanges.length - 1 ? timelineProbe.durationSec : timedRanges[index + 1].spokenStartSec;
   const normalizedDurationSec = Number((endSec - startSec).toFixed(3));
-  if (!Number.isFinite(normalizedDurationSec) || normalizedDurationSec < 1 || normalizedDurationSec > 15) {
-    throw new Error(`ABORT: scene ${range.scene.sceneNumber} aligned duration is outside 1..15s: ${normalizedDurationSec}`);
+  // 상한은 1편의 60초 영상 제한 시절 설정(15초/장면)이었다. Owner 지시로 영상
+  // 길이 상한을 없애고 밀도 있는 대본으로 가면서 장면당 15초를 넘는 경우가
+  // 정상적으로 발생한다(2026-09-17, 2편 Scene 2 실측 18.7초) — 30초로 완화.
+  if (!Number.isFinite(normalizedDurationSec) || normalizedDurationSec < 1 || normalizedDurationSec > 30) {
+    throw new Error(`ABORT: scene ${range.scene.sceneNumber} aligned duration is outside 1..30s: ${normalizedDurationSec}`);
   }
   const phaseForScene = voicePhaseEnabled
     ? voicePhasePlan.find(({ startIndex, endIndex }) => index >= startIndex && index < endIndex)

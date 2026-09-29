@@ -11,7 +11,7 @@ import {
 } from "../lib/money-shorts-tts-owner-listening-gate.mjs";
 import { buildMoneyShortsResumablePlan } from "../lib/money-shorts-resumable-orchestrator.mjs";
 
-const VEO_CONTRACT = "money_shorts_veo_scene_selection_v1";
+const VEO_CONTRACT = "money_shorts_veo_scene_selection_v2";
 const VIDEO_STRATEGY_CONTRACT = "money_shorts_semantic_prehook_series_v1";
 
 let passed = 0;
@@ -68,6 +68,13 @@ check(
         parts.every((part) => part.totalParts === 2))
     );
   }),
+);
+check(
+  "representative topics stay single before measured over-60 timing evidence exists",
+  detailed.every((record) =>
+    record.pipelineSmoke.productionParts.length === 1 &&
+    record.pipelineSmoke.productionParts[0].id === "single"
+  ),
 );
 check(
   "every production part preserves the supported dynamic 4~18 scene contract",

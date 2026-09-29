@@ -1,4 +1,4 @@
-export const VEO_SCENE_SELECTION_CONTRACT_VERSION = "money_shorts_veo_scene_selection_v1" as const;
+export const VEO_SCENE_SELECTION_CONTRACT_VERSION = "money_shorts_veo_scene_selection_v2" as const;
 
 export type SceneMediaStrategy = "still" | "veo_motion";
 export type SceneMediaStrategyOverride = "auto" | SceneMediaStrategy;
@@ -11,6 +11,7 @@ export type VeoSceneSelectionInput = {
   visualCue?: string;
   visibleAction?: string;
   motionPlan?: string;
+  estimatedDurationSec?: number;
   override?: SceneMediaStrategyOverride;
 };
 
@@ -78,6 +79,15 @@ function scoreScene(scene: VeoSceneSelectionInput): { score: number; reasonCodes
   if (STATIC_INFORMATION_RE.test(text)) {
     score -= 26;
     reasonCodes.push("static_information_penalty");
+  }
+  if (Number.isFinite(scene.estimatedDurationSec)) {
+    if (Number(scene.estimatedDurationSec) >= 6) {
+      score += 10;
+      reasonCodes.push("longer_natural_motion_window");
+    } else if (Number(scene.estimatedDurationSec) < 4.5) {
+      score -= 12;
+      reasonCodes.push("short_motion_window_penalty");
+    }
   }
 
   return { score, reasonCodes };

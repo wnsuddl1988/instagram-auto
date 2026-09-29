@@ -44,6 +44,7 @@ import {
 } from "./_money-shorts-layered-motion.mjs";
 import {
   HYBRID_MOTION_RENDERER_VERSION,
+  buildNaturalVeoTimelineAllocation,
   buildVeoMotionSegmentFilter,
   resolveFlowMotionRenderInputs,
 } from "./_flow-motion-render-input.mjs";
@@ -132,9 +133,9 @@ function abortBlocked(code, note) {
 // ── 입력 검증 (fail-closed) ───────────────────────────────────────────────────
 const MIN_SCENES = 4;
 const MAX_SCENES = 18;
-const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
+const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v9";
 const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
-const BASE_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v11";
+const BASE_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v12";
 const CHARACTER_CONTINUITY_VERSION = "money_shorts_selected_character_reference_v1";
 const MOTION_PLAN_VERSION = "money_shorts_scene_motion_plan_v1";
 const SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
@@ -292,6 +293,14 @@ const totalSec = durations.reduce((a, b) => a + b, 0);
 if (totalSec < 15 || totalSec > 60) {
   abortBlocked("REAL_TTS_REQUIRED", `audio-driven 전체 길이(15~60s) 형식 오류: ${totalSec}s`);
 }
+const veoTimelineAllocation = buildNaturalVeoTimelineAllocation(durations, flowMotionInput.assets);
+if (!veoTimelineAllocation.audit.passed) {
+  abortBlocked(
+    "VEO_TIMELINE_ALLOCATION_FAILED",
+    `Veo 모션 자연 확장 계약 위반: ${JSON.stringify(veoTimelineAllocation.audit)}`,
+  );
+}
+const renderDurations = veoTimelineAllocation.durations;
 const scenes = plannedScenes.map((scene, index) => ({ ...scene, ...visualTiming.timeline[index] }));
 const safeSlug = String(record.topicId ?? "topic").replace(/[^a-z0-9-]/gi, "-").toLowerCase().slice(0, 60);
 const renderId = `${Date.now().toString(36)}-${process.pid}`;
@@ -470,7 +479,7 @@ const segFiles = [];
 const staticStillSegments = [];
 const sceneMotionSegments = [];
 for (let i = 0; i < scriptSceneCount; i++) {
-  const dur = durations[i];
+  const dur = renderDurations[i];
   const frames = Math.round(dur * 30);
   const seg = path.join(renderDir, `seg-${String(i + 1).padStart(2, "0")}.mp4`);
   segFiles.push(seg);
@@ -533,8 +542,8 @@ let concatSegments = [...segFiles];
 if (visualTiming.audit.applicable === true) {
   const previousIndex = scriptSceneCount - 2;
   const finalIndex = scriptSceneCount - 1;
-  const previousDuration = durations[previousIndex];
-  const finalDuration = durations[finalIndex];
+  const previousDuration = renderDurations[previousIndex];
+  const finalDuration = renderDurations[finalIndex];
   const transitionDuration = Number(visualTiming.audit.transitionDurationSec);
   const closingBridgePath = path.join(renderDir, "closing-visual-transition.mp4");
   const transitionFilter =
@@ -697,9 +706,15 @@ const summary = {
   layeredMotionRendererVersion: LAYERED_MOTION_RENDERER_VERSION,
   motionAudit,
   visualTimingAudit: visualTiming.audit,
+  veoTimelineAllocationAudit: veoTimelineAllocation.audit,
   flowMotionAudit: flowMotionInput.audit,
   sceneMotion: sceneMotionSegments,
   sceneTimeline: scenes.map((s, i) => ({ sceneNumber: i + 1, startSec: s.startSec, endSec: s.endSec, durationSec: s.durationSec })),
+  visualSceneDurations: renderDurations.map((durationSec, index) => ({
+    sceneNumber: index + 1,
+    durationSec,
+    source: flowMotionInput.assets[index]?.source ?? "layered_still",
+  })),
   audioSceneTimeline: audioTimelineScenes.map((s) => ({
     sceneNumber: s.sceneNumber,
     startSec: s.startSec,

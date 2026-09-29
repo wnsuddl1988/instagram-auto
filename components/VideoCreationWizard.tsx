@@ -5252,7 +5252,7 @@ export default function VideoCreationWizard() {
           num={7}
           title="Veo 모션 준비"
           state={flowMotionStepState}
-          desc="자동 후보 중 실제 이미지에 인물 또는 손이 있는 장면만 Google Flow 패킷으로 묶습니다. 인물·손이 없는 장면은 Veo를 사용하지 않고 정지 이미지 모션으로 합성합니다. 이 단계에서는 브라우저를 열거나 크레딧을 사용하지 않습니다."
+          desc="자동 후보 중 선택 캐릭터가 머리부터 양발까지 온전히 보이는 전신 장면만 Google Flow 패킷으로 묶습니다. 배경·손·상반신·잘린 인물 이미지는 Veo에 보내지 않고 고정 이미지로 합성합니다. 이 단계에서는 브라우저를 열거나 크레딧을 사용하지 않습니다."
         >
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
@@ -5278,8 +5278,8 @@ export default function VideoCreationWizard() {
             <p className="text-sm text-slate-500 mt-2">이 대본에는 영상화가 필요한 장면이 없습니다. 정지 이미지 모션으로 합성합니다.</p>
           ) : (
             <p className="text-sm text-slate-500 mt-2">
-              인물 또는 손이 확인된 {selectedFlowMotionSceneCount}개 장면만 준비합니다. 패킷에는 기준 이미지·프롬프트의 SHA-256과 정확한 승인 문구가
-              들어가며, 실제 생성 전송은 별도 Owner 승인과 검수가 필요합니다. 인물·손이 없는 이미지는 Veo 생성 대상에서 자동 제외됩니다.
+              전신 캐릭터 계약을 통과한 {selectedFlowMotionSceneCount}개 장면만 준비합니다. 패킷에는 기준 이미지·프롬프트의 SHA-256과 정확한 승인 문구가
+              들어가며, 실제 생성 전송은 별도 Owner 승인과 검수가 필요합니다. 전신 캐릭터가 아닌 이미지는 Veo 생성 대상에서 차단됩니다.
             </p>
           )}
           {flowMotionState === "running" ? (

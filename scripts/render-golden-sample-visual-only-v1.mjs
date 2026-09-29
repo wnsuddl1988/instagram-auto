@@ -78,7 +78,14 @@ function runFfmpeg(args, label) {
 // STEP 1 — LOCKED IMAGE GATE (MD5 + resolution) — render 전 필수
 // ══════════════════════════════════════════════════════════════════════════
 const lock = JSON.parse(readFileSync(assetAbs(manifest.imageSource.lockFixture), "utf8"));
-const lockByOrder = new Map(lock.lockedImages.map((l) => [l.order, l]));
+// v2 lock 스키마 어댑터 — lockedImages[](v1)는 기존 경로 그대로, scenes[](golden_sample_v2 selected image set lock)는
+// order=배열순서+1로 매핑하고 lock에 기록된 width/height를 정확 일치 조건으로 추가 검증한다 (v1 manifest 동작 불변)
+const lockedImagesResolved = lock.lockedImages
+  ?? (Array.isArray(lock.scenes)
+    ? lock.scenes.map((sc, i) => ({ order: i + 1, path: sc.image, md5: sc.md5, fileSizeBytes: sc.fileSizeBytes, width: sc.width, height: sc.height }))
+    : null);
+if (!lockedImagesResolved) { console.error("ABORT: lock fixture has neither lockedImages nor scenes."); process.exit(10); }
+const lockByOrder = new Map(lockedImagesResolved.map((l) => [l.order, l]));
 const GATE = manifest.imageQualityGate;
 const targetAspect = W / H;
 
@@ -99,19 +106,20 @@ for (const scene of manifest.scenes) {
   }
   const md5Match = !!li && md5 === li.md5;
   const sizeMatch = !!li && sizeBytes === li.fileSizeBytes;
+  const dimsMatch = li?.width != null ? width === li.width && height === li.height : true;
   const aspect = width && height ? width / height : null;
   const resOk = !!(width && height && width >= GATE.minWidthPx && height >= GATE.minHeightPx);
   const aspectOk = aspect != null ? Math.abs(aspect - targetAspect) <= 0.01 : false;
   gateResults.push({
     order: scene.order, sceneRole: scene.sceneRole, path: li?.path ?? null, exists,
     md5, md5Expected: li?.md5 ?? null, md5Match, sizeMatch,
-    width, height, resOk, aspectOk,
-    gatePass: exists && md5Match && sizeMatch && resOk && aspectOk,
+    width, height, widthExpected: li?.width ?? null, heightExpected: li?.height ?? null, dimsMatch, resOk, aspectOk,
+    gatePass: exists && md5Match && sizeMatch && dimsMatch && resOk && aspectOk,
   });
 }
 const gateFail = gateResults.filter((g) => !g.gatePass);
 const md5Fail = gateResults.filter((g) => g.exists && !g.md5Match);
-writeFileSync(join(outAbs, "image_gate_report.json"), JSON.stringify({
+writeFileSync(join(outAbs, manifest.outputPaths.imageGateReport || "image_gate_report.json"), JSON.stringify({
   schemaVersion: "golden_sample_visual_only_image_gate_report_v1",
   lockFixture: manifest.imageSource.lockFixture,
   verdict: gateFail.length ? "IMAGE_GATE_BLOCKED" : "IMAGE_GATE_PASS",
@@ -191,12 +199,16 @@ const COLOR = {
   white: "&H00F2EFE8", amber: "&H0033AEFF", dim: "&H00AAB4BA", dark: "&H00100F0D",
   panelFill: "&H0F1417", barWhite: "&HE8EFF2",
 };
+// manifest 확장 팔레트 (red/yellow/green 등) — 미지정 시 기존 팔레트 그대로
+Object.assign(COLOR, manifest.typography.extraColors || {});
 const PANEL_ALPHA = "&H3C&";   // ~76% opacity
 const ROW_ALPHA = "&H55&";     // item rows slightly lighter
 const BAR_ALPHA = "&H30&";
 const FONT = manifest.typography.font;
 // manifest-driven caption typography — 미지정 시 v1 기본값 유지 (하위호환)
 const CAP_STYLE = { outline: 4, shadow: 1.6, ...(manifest.typography.capStyle || {}) };
+// 카드 텍스트(Txt style) outline/shadow — 미지정 시 v1 기본(0/0) 유지
+const TXT_STYLE = { outline: 0, shadow: 0, ...(manifest.typography.txtStyle || {}) };
 const EMPH_FS_BOOST = manifest.typography.captionEmphasis?.fsBoost ?? 0;
 
 const ts = (sec) => {
@@ -361,6 +373,37 @@ for (const card of manifest.cardTimeline) {
     }
   }
 
+  if (card.cardTemplate === "three_slot_card") {
+    // s4 조건부 lock 전용 — slot 패널 3개가 scene cut과 동시에 고정 위치 fade-in(≤0.3s)으로 진입해
+    // 봉투 지폐 노출부를 즉시 가리고, 라벨(고정비/생활비/저축)은 발화 예정 시점에 순차 pop (hard fail #5 대응)
+    const fadeTag = `\\fad(${card.entryFadeMs},0)`;
+    for (const sp of card.slotPanels) {
+      panelAbs(sp.x1, sp.y1, sp.x2, sp.y2, s, e, fadeTag);
+      const cx = Math.round((sp.x1 + sp.x2) / 2);
+      const lbl = sp.label;
+      const seg1End = card.rePulse ? card.rePulse.atSec : e;
+      EV(2, sp.labelPopAtSec, seg1End, "Txt", `{\\an8\\pos(${cx},${lbl.y})\\fs${lbl.fs}\\b1\\c${runColor(lbl.c)}${popIn(220, 0.55, 86)}}${esc(lbl.text)}`);
+      if (card.rePulse) EV(2, card.rePulse.atSec, e, "Txt", `{\\an8\\pos(${cx},${lbl.y})\\fs${lbl.fs}\\b1\\c${runColor(lbl.c)}\\fscx107\\fscy107\\t(0,180,0.6,\\fscx100\\fscy100)}${esc(lbl.text)}`);
+    }
+  }
+
+  if (card.cardTemplate === "save_cta_card") {
+    // s6 조건부 lock 전용 — shiftV1 고정 좌표에서 fade/scale-in만 허용
+    // (세로 slide/이동 entry 금지: 이동 경로에서 배경 visible '2' 노출 방지 — card occlusion reprobe 조건 승계)
+    const p = card.panel;
+    panelAbs(p.x1, p.y1, p.x2, p.y2, s, e, `\\fad(${card.entryMs},0)`);
+    const line = card.line;
+    const textEntry = `\\fscx96\\fscy96\\t(0,${card.entryMs},0.6,\\fscx100\\fscy100)\\fad(${card.entryMs},0)`;
+    if (line.keywordPulse) {
+      const kp = line.keywordPulse;
+      EV(2, s, kp.atSec, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1${textEntry}}${runsToAss(line.runs, line.fs)}`);
+      const pulsedRuns = line.runs.map((r, i) => (i === kp.runIndex ? { ...r, c: kp.toColor } : r));
+      EV(2, kp.atSec, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1\\fscx107\\fscy107\\t(0,190,0.6,\\fscx100\\fscy100)}${runsToAss(pulsedRuns, line.fs)}`);
+    } else {
+      EV(2, s, e, "Txt", `{\\an8\\pos(540,${line.y})\\fs${line.fs}\\b1${textEntry}}${runsToAss(line.runs, line.fs)}`);
+    }
+  }
+
   if (card.cardTemplate === "final_action_card") {
     const p = card.panel;
     const reveal = clipRevealUp(p.x1 - 6, p.y1 - 6, p.x2 + 6, p.y2 + 6, card.entryMs);
@@ -393,7 +436,7 @@ function captionRuns(cap) {
   const runs = [];
   if (idx > 0) runs.push({ t: cap.text.slice(0, idx), c: "white" });
   // 강조 단어: amber + (manifest 지정 시) fs boost — 최대 2속성 (caption contract)
-  runs.push({ t: cap.emphasis, c: "amber", ...(EMPH_FS_BOOST ? { fs: cap.fs + EMPH_FS_BOOST } : {}) });
+  runs.push({ t: cap.emphasis, c: cap.emphasisColor || "amber", ...(EMPH_FS_BOOST ? { fs: cap.fs + EMPH_FS_BOOST } : {}) });
   if (idx + cap.emphasis.length < cap.text.length) runs.push({ t: cap.text.slice(idx + cap.emphasis.length), c: "white" });
   return runs;
 }
@@ -428,7 +471,7 @@ const assHeader = [
   "ScaledBorderAndShadow: yes", "WrapStyle: 2", "",
   "[V4+ Styles]",
   "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-  `Style: Txt,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,0,0,5,60,60,60,1`,
+  `Style: Txt,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,${TXT_STYLE.outline},${TXT_STYLE.shadow},5,60,60,60,1`,
   `Style: Cap,${FONT},60,${COLOR.white},&H000000FF,&H00141210,&H96000000,1,0,0,0,100,100,0,0,1,${CAP_STYLE.outline},${CAP_STYLE.shadow},8,60,60,60,1`,
   `Style: Drw,${FONT},20,${COLOR.white},&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1`,
   "", "[Events]",
@@ -515,6 +558,7 @@ function cardRectsAt(tSec) {
     if (tSec < c.timeStartSec || tSec >= c.timeEndSec) continue;
     if (c.panel) rects.push({ id: c.cardId, ...c.panel });
     if (c.splitPanels) for (const sp of c.splitPanels) rects.push({ id: c.cardId, x1: sp.x1, y1: sp.y1, x2: sp.x2, y2: sp.y2 });
+    if (c.slotPanels) for (const sp of c.slotPanels) rects.push({ id: c.cardId, x1: sp.x1, y1: sp.y1, x2: sp.x2, y2: sp.y2 });
     if (c.header) rects.push({ id: c.cardId, x1: c.header.x1, y1: c.header.y1, x2: c.header.x2, y2: c.header.y2 });
     if (c.items) for (const it of c.items) if (tSec >= it.popAtSec) rects.push({ id: c.cardId, ...it.row });
     if (c.underline) rects.push({ id: c.cardId, x1: c.underline.x1, y1: c.underline.y1, x2: c.underline.x2, y2: c.underline.y2 });
@@ -549,7 +593,8 @@ const evs = manifest.perceptualEventPlan.coreEvents.map((e2) => e2.atSec).sort((
 let maxGap = 0;
 for (let i = 1; i < evs.length; i++) maxGap = Math.max(maxGap, evs[i] - evs[i - 1]);
 const windows = [];
-for (let w0 = 0; w0 < 30; w0 += 5) {
+const windowSpanEnd = Math.ceil(manifest.fullDurationSec / 5) * 5; // 30s manifest는 기존과 동일한 6개 창
+for (let w0 = 0; w0 < windowSpanEnd; w0 += 5) {
   windows.push({ window: `${w0}-${w0 + 5}s`, count: evs.filter((t) => t >= w0 && t < w0 + 5).length });
 }
 // card presence (merged intervals)

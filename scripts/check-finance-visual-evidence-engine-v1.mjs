@@ -115,8 +115,8 @@ const investingFalsePositiveCases = [
 
 check("visual evidence engine covers exactly 500 finance videos", allVideos.length === 500, String(allVideos.length));
 check("eight representative semantic beats are audited for every video", allEvidence.length === 4000, String(allEvidence.length));
-check("every scene uses bright integrated motion-ready family 3D sequence v11", allEvidence.every((item) =>
-  item.version === "money_shorts_finance_3d_editorial_sequence_v11" && item.visualStyle === "money_shorts_bright_integrated_motion_ready_family_3d_v3"));
+check("every scene uses bright integrated motion-ready family 3D sequence v12", allEvidence.every((item) =>
+  item.version === "money_shorts_finance_3d_editorial_sequence_v12" && item.visualStyle === "money_shorts_bright_integrated_motion_ready_family_3d_v3"));
 check("all 4000 scene identities are globally unique", new Set(allEvidence.map((item) => item.sceneIdentity)).size === 4000);
 check("every scene preserves its exact narration claim", allVideos.every(({ parts, evidence }) => {
   const [saveA, saveB] = recommendationBeats(parts.recommendation);
@@ -244,7 +244,7 @@ check("targeted regeneration replaces only failed character scenes and records t
   /manualVisualReviewRequired: true/.test(imageRunner));
 check("old scripts and old image summaries fail closed before generation/render", /VISUAL_EVIDENCE_V11_REQUIRED/.test(imageRunner) &&
   /imagesSummary\.visualEngineVersion !== expectedVisualEngineVersion/.test(videoRunner));
-check("visual evidence engine version and style are shared across planner and both runners", version === "money_shorts_finance_3d_editorial_sequence_v11" &&
+check("visual evidence engine version and style are shared across planner and both runners", version === "money_shorts_finance_3d_editorial_sequence_v12" &&
   visualStyle === "money_shorts_bright_integrated_motion_ready_family_3d_v3" &&
   [owner, imageRunner, videoRunner].every((source) => source.includes(version)));
 check("owner visual DNA no longer positively directs dark dioramas, tunnels or faceless symbolic people",

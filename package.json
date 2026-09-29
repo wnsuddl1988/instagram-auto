@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/run-dev-with-edge.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -43,7 +43,17 @@
     "check:part2-instagram-recovery-no-log-owner-wrapper-v1": "node scripts/check-money-shorts-part2-instagram-recovery-no-log-owner-wrapper-v1.mjs",
     "check:finance-v1-multi-topic-local-pipeline-smoke-v1": "node scripts/check-finance-v1-multi-topic-local-pipeline-smoke-v1.mjs",
     "check:finance-v1-local-ui-api-smoke-v1": "node scripts/check-finance-v1-local-ui-api-smoke-v1.mjs",
-    "check:finance-v1-pilot-resume-ui-recovery-v1": "node scripts/check-finance-v1-pilot-resume-ui-recovery-v1.mjs"
+    "check:finance-v1-pilot-resume-ui-recovery-v1": "node scripts/check-finance-v1-pilot-resume-ui-recovery-v1.mjs",
+    "check:editorial-v2-l2-config-loaders": "node scripts/check-editorial-v2-l2-config-loaders.mjs",
+    "check:editorial-v2-l2-naver-news-connector": "node scripts/check-editorial-v2-l2-naver-news-connector.mjs",
+    "check:editorial-v2-l2-live-evidence-adapter": "node scripts/check-editorial-v2-l2-live-evidence-adapter.mjs",
+    "check:editorial-v2-l2-indicator-orchestrator": "node scripts/check-editorial-v2-l2-indicator-orchestrator.mjs",
+    "check:editorial-v2-l2-live-topic-prompt": "node scripts/check-editorial-v2-l2-live-topic-prompt.mjs",
+    "check:editorial-v2-l3-cutline-verifier": "node scripts/check-editorial-v2-l3-cutline-verifier.mjs",
+    "check:editorial-v2-l3-score": "node scripts/check-editorial-v2-l3-score.mjs",
+    "check:editorial-v2-l2l3-pipeline": "node scripts/check-editorial-v2-l2l3-pipeline.mjs",
+    "editorial-v2:generate-topic": "node scripts/run-editorial-v2-live-topic-pipeline.mjs generate",
+    "editorial-v2:verify-topic": "node scripts/run-editorial-v2-live-topic-pipeline.mjs verify"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

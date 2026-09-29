@@ -48,6 +48,7 @@ export type FlowMotionSceneInput = {
   motionPlan?: string;
   presenceMode?: "character" | "hands" | "none";
   visualModeId?: string;
+  veoMotionEligibility?: "full_character" | "not_required";
   mediaStrategy: SceneMediaStrategy;
   mediaStrategyContractVersion?: string;
   referenceFile: string;
@@ -214,6 +215,7 @@ export function buildFlowMotionPrompt(scene: FlowMotionSceneInput): string {
   return [
     "Animate the attached reference image into one original vertical 9:16 non-photoreal family-feature-quality cinematic 3D clip without copying any studio, franchise, film or known character.",
     "Treat the reference image as the exact visual source: preserve the same Korean adult identity, age, face, hairstyle, fixed wardrobe, room, props, bright warm palette, daylight direction, camera height and composition.",
+    "The one recurring character must remain completely visible from head to both feet for the whole clip, including both hands and both shoes. Keep both feet grounded and never crop, zoom into, occlude or replace the full-body character with hands-only, a body-part close-up or background-only footage.",
     `Scene meaning: ${compact(scene.narration, 260)}.`,
     `Required visible action: ${compact(scene.visibleAction || scene.motionPlan || scene.visualCue, 360)}.`,
     `Motion direction: ${compact(scene.motionPlan || "use one restrained gaze, hand or object-state action that completes the narration's exact event", 420)}.`,
@@ -255,9 +257,12 @@ export function buildFlowMotionState(input: {
     throw new Error("flow_motion_identity_invalid");
   }
   const selectedScenes = input.scenes.filter((scene) => scene.mediaStrategy === "veo_motion");
-  const forbiddenObjectOnlyScene = selectedScenes.find((scene) => scene.presenceMode === "none");
-  if (forbiddenObjectOnlyScene) {
-    throw new Error(`flow_motion_object_only_scene_forbidden:${forbiddenObjectOnlyScene.sceneNumber}`);
+  const ineligibleScene = selectedScenes.find((scene) =>
+    scene.presenceMode !== "character" ||
+    scene.visualModeId !== "VEO_FULL_CHARACTER" ||
+    scene.veoMotionEligibility !== "full_character");
+  if (ineligibleScene) {
+    throw new Error(`flow_motion_full_character_scene_required:${ineligibleScene.sceneNumber}`);
   }
   const duplicateSceneNumbers = selectedScenes.length !== new Set(selectedScenes.map((scene) => scene.sceneNumber)).size;
   if (duplicateSceneNumbers) throw new Error("flow_motion_scene_numbers_duplicate");

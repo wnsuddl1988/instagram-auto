@@ -318,16 +318,17 @@ export const WIZARD_YOUTUBE_ONLY_RECOVERY_ROOT =
 export const WIZARD_PART2_YOUTUBE_RECOVERY_ROOT =
   "C:\\tmp\\money-shorts-os\\part2-youtube-recovery-execution-v1";
 export const WIZARD_VOICE_OUT_DIR = "C:\\tmp\\money-shorts-os\\web-wizard-voice-v1";
-export const WIZARD_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v11";
-export const WIZARD_IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v8";
+export const WIZARD_VISUAL_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v12";
+export const WIZARD_IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v9";
 export const WIZARD_VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
 export const WIZARD_MOTION_RENDERER_VERSION = "money_shorts_hybrid_motion_renderer_v1";
 export const WIZARD_LAYERED_MOTION_RENDERER_VERSION = "money_shorts_static_still_renderer_v4";
 const LEGACY_WIZARD_LAYERED_MOTION_RENDERER_VERSION = "money_shorts_layered_motion_renderer_v3";
 export const WIZARD_CAPTION_LAYOUT_VERSION = "money_shorts_caption_layout_v3_sentence_cards";
 export const WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION = "money_shorts_flow_motion_render_audit_v1";
-const WIZARD_VISUAL_OUTPUT_DIR = "images-3d-editorial-sequence-v11";
-const WIZARD_REAL_VIDEO_OUTPUT_DIR = "video-3d-editorial-sequence-v11";
+export const WIZARD_VEO_TIMELINE_ALLOCATION_VERSION = "money_shorts_veo_natural_timeline_allocation_v1";
+const WIZARD_VISUAL_OUTPUT_DIR = "images-3d-editorial-sequence-v12";
+const WIZARD_REAL_VIDEO_OUTPUT_DIR = "video-3d-editorial-sequence-v12";
 export const WIZARD_TTS_ENGINE_VERSION = "money_shorts_korean_director_v2";
 export const WIZARD_FULL_SCRIPT_CAPTION_CONTRACT_VERSION = "money_shorts_dynamic_semantic_caption_v6";
 export const WIZARD_STAGED_COVER_CONTRACT_VERSION = "money_shorts_staged_prehook_cover_v1";
@@ -371,6 +372,16 @@ type WizardHybridMotionSummary = {
   layeredMotionRendererVersion?: string;
   motionAudit?: WizardLayeredMotionAudit;
   flowMotionAudit?: WizardFlowMotionRenderAudit;
+  veoTimelineAllocationAudit?: {
+    version?: string;
+    applicable?: boolean;
+    audioRetimed?: boolean;
+    captionsRetimed?: boolean;
+    totalDurationPreserved?: boolean;
+    staticMinimumPreserved?: boolean;
+    sourceDurationNotExceeded?: boolean;
+    passed?: boolean;
+  };
   visualTimingAudit?: {
     version?: string;
     applicable?: boolean;
@@ -393,21 +404,19 @@ function wizardHybridMotionSummaryIsReady(
   summary: WizardHybridMotionSummary | null | undefined,
   expectedSceneCount: number,
   scenes: Array<{ mediaStrategy?: string }>,
-  imageScenes: Array<{ sceneIndex?: number; presenceMode?: string }>,
+  imageScenes: Array<{ sceneIndex?: number; presenceMode?: string; visualModeId?: string; veoMotionEligibility?: string }>,
 ): boolean {
   const scriptedVeoSceneNumbers = scenes
     .map((scene, index) => scene.mediaStrategy === "veo_motion" ? index + 1 : null)
     .filter((sceneNumber): sceneNumber is number => sceneNumber !== null);
-  const presenceBySceneNumber = new Map(imageScenes.map((scene) => [scene.sceneIndex, scene.presenceMode]));
+  const imageContractBySceneNumber = new Map(imageScenes.map((scene) => [scene.sceneIndex, scene]));
   const imagePresenceContractReady = scriptedVeoSceneNumbers.every((sceneNumber) =>
-    ["character", "hands", "none"].includes(presenceBySceneNumber.get(sceneNumber) ?? "")
+    imageContractBySceneNumber.get(sceneNumber)?.presenceMode === "character" &&
+    imageContractBySceneNumber.get(sceneNumber)?.visualModeId === "VEO_FULL_CHARACTER" &&
+    imageContractBySceneNumber.get(sceneNumber)?.veoMotionEligibility === "full_character"
   );
-  const expectedVeoSceneNumbers = scriptedVeoSceneNumbers.filter((sceneNumber) =>
-    presenceBySceneNumber.get(sceneNumber) !== "none"
-  );
-  const expectedExcludedObjectOnlySceneNumbers = scriptedVeoSceneNumbers.filter((sceneNumber) =>
-    presenceBySceneNumber.get(sceneNumber) === "none"
-  );
+  const expectedVeoSceneNumbers = scriptedVeoSceneNumbers;
+  const expectedExcludedObjectOnlySceneNumbers: number[] = [];
   const actualVeoSceneNumbers = summary?.flowMotionAudit?.requiredSceneNumbers ?? [];
   const actualExcludedObjectOnlySceneNumbers = summary?.flowMotionAudit?.excludedObjectOnlySceneNumbers ?? [];
   const expectedStaticStillCount = expectedSceneCount - expectedVeoSceneNumbers.length;
@@ -449,6 +458,13 @@ function wizardHybridMotionSummaryIsReady(
     summary.visualTimingAudit.totalDurationPreserved === true &&
     summary.visualTimingAudit.minimumSceneDurationPass === true &&
     summary.visualTimingAudit.passed === true &&
+    summary.veoTimelineAllocationAudit?.version === WIZARD_VEO_TIMELINE_ALLOCATION_VERSION &&
+    summary.veoTimelineAllocationAudit.audioRetimed === false &&
+    summary.veoTimelineAllocationAudit.captionsRetimed === false &&
+    summary.veoTimelineAllocationAudit.totalDurationPreserved === true &&
+    summary.veoTimelineAllocationAudit.staticMinimumPreserved === true &&
+    summary.veoTimelineAllocationAudit.sourceDurationNotExceeded === true &&
+    summary.veoTimelineAllocationAudit.passed === true &&
     summary.flowMotionAudit?.version === WIZARD_FLOW_MOTION_RENDER_AUDIT_VERSION &&
     summary.flowMotionAudit.requiredSceneCount === expectedVeoSceneNumbers.length &&
     summary.flowMotionAudit.renderReadySceneCount === expectedVeoSceneNumbers.length &&
@@ -467,7 +483,7 @@ function wizardHybridMotionSummaryIsReady(
 export const WIZARD_AV_SAMPLE_REVIEW_CONTRACT_VERSION = "money_shorts_av_sample_review_v1";
 export const WIZARD_AV_SAMPLE_REVIEW_TOPIC_ID = "gen-finance-editorial-v2-housing_asset_gap-psychology_gap-04";
 /** 주제별 대본 조립 규칙이 바뀌면 이전 확정본을 재사용하지 않는다. */
-const WIZARD_SCRIPT_ENGINE_VERSION = "money_shorts_editorial_package_script_v14";
+const WIZARD_SCRIPT_ENGINE_VERSION = "money_shorts_editorial_package_script_v16";
 const WIZARD_TTS_OUTPUT_DIR = "tts-korean-director-v2";
 
 /** 위저드가 topic별로 생성하는 입력 JSON의 루트(레포 밖 고정). */
@@ -3696,7 +3712,8 @@ const WIZARD_SCRIPT_MAX_SCENE_COUNT = 18;
 const WIZARD_CAPTION_MAX_CHARS = 34;
 const WIZARD_SCRIPT_FULL_VOICEOVER_MAX_CHARS = 1200;
 const WIZARD_SCRIPT_SCENE_NARRATION_MAX_CHARS = 260;
-const WIZARD_SCRIPT_MIN_SHORT_LINES = 22;
+// 제목은 커버에서만 읽으므로, 단편 대본은 실제 내레이션 10줄이면 충분하다.
+const WIZARD_SCRIPT_MIN_SHORT_LINES = 10;
 const WIZARD_SCRIPT_MAX_SHORT_LINES = 45;
 const WIZARD_SCENE_MIN_SEC = 5;
 const WIZARD_SCENE_MAX_SEC = 12;
@@ -3768,6 +3785,7 @@ export function applyWizardSceneMediaStrategies(scenes: WizardScriptScene[]): Wi
       visualCue: scene.visualCue,
       visibleAction: scene.visualEvidence?.visibleAction,
       motionPlan: scene.visualEvidence?.motionPlan,
+      estimatedDurationSec: timeline.durations[index],
       override: scene.mediaStrategyOverride ?? "auto",
     })),
     timeline.totalDurationSec,
@@ -4676,6 +4694,71 @@ type WizardScriptParts = {
   habit: string;
   recommendation: string;
 };
+
+function narrationLines(text: string): string[] {
+  return String(text ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function compactNarrationStage(text: string, maximumLines: number, requiredSignal?: RegExp): string {
+  const lines = narrationLines(text);
+  if (lines.length <= maximumLines) return lines.join("\n");
+  if (maximumLines === 1) {
+    const signaled = requiredSignal ? lines.filter((line) => requiredSignal.test(line)) : [];
+    return [...(signaled.length > 0 ? signaled : lines)].sort((left, right) => right.length - left.length)[0];
+  }
+  const selected = [lines[0]];
+  const remaining = lines.slice(1);
+  if (requiredSignal && !selected.some((line) => requiredSignal.test(line))) {
+    const signaled = remaining
+      .filter((line) => requiredSignal.test(line))
+      .sort((left, right) => right.length - left.length)[0];
+    if (signaled) {
+      selected.push(signaled);
+      remaining.splice(remaining.indexOf(signaled), 1);
+    }
+  }
+  while (selected.length < maximumLines && remaining.length > 0) {
+    const next = remaining.sort((left, right) => right.length - left.length).shift();
+    if (next) selected.push(next);
+  }
+  return selected.join("\n");
+}
+
+function compactSingleRecommendation(text: string): string {
+  const lines = narrationLines(text);
+  const context = lines.find((line) => /다음|때|전에|순간|날|시작|하려|싶어|보이면|느껴지면/.test(line));
+  const recall = lines.find((line) => /다시 봐|꺼내/.test(line));
+  const save = lines.find((line) => /저장해 둬/.test(line));
+  const follow = lines.find((line) => /팔로우해 둬/.test(line));
+  const contextualRecall = context
+    ? `${context.replace(/[.!?。]+$/g, "")} 이 영상을 다시 봐`
+    : recall;
+  return [contextualRecall, save, follow]
+    .filter((line): line is string => Boolean(line))
+    .filter((line, index, values) => values.indexOf(line) === index)
+    .slice(0, 3)
+    .join("\n");
+}
+
+/**
+ * 의미 게이트가 단편으로 판정한 주제만 60초 안쪽의 한 편으로 먼저 정리한다.
+ * 진짜 두 질문·두 행동 묶음이 있는 two_part 대본은 손대지 않는다.
+ */
+function compactFinanceSingleScriptParts(parts: WizardScriptParts): WizardScriptParts {
+  const recommendation = compactSingleRecommendation(parts.recommendation);
+  return {
+    hook: compactNarrationStage(parts.hook, 2),
+    situation: compactNarrationStage(parts.situation, 1),
+    consequence: compactNarrationStage(parts.consequence, 1, FINANCE_SCRIPT_RESULT_PATTERN),
+    psychology: compactNarrationStage(parts.psychology, 1, FINANCE_SCRIPT_PSYCHOLOGY_PATTERN),
+    mindset: compactNarrationStage(parts.mindset, 1, FINANCE_SCRIPT_STANDARD_PATTERN),
+    habit: compactNarrationStage(parts.habit, 2, FINANCE_SCRIPT_ACTION_PATTERN),
+    recommendation: recommendation || compactNarrationStage(parts.recommendation, 3),
+  };
+}
 
 /** 경제뉴스·돈공부 안에서도 경제 메커니즘마다 다른 생활 결과와 행동을 쓴다. */
 function buildEconomyLiteracyScriptParts(rec: WizardGeneratedTopicRecord): WizardScriptParts | null {
@@ -5696,7 +5779,11 @@ export function judgeFinanceScriptContent(input: FinanceScriptQualityInput): Wiz
   const sceneIds = new Set(scenes.map((scene) => scene?.id));
   const reject: string[] = [];
 
-  const hasTitleHook = title.length >= 8 && title.length <= 40 && hookText.includes(title);
+  const normalizedTitle = title.replace(/[\s\p{P}\p{S}]/gu, "");
+  const normalizedOpeningNarration = String(narrationLines[0] ?? "").replace(/[\s\p{P}\p{S}]/gu, "");
+  const hasCoverTitle = title.length >= 8 && title.length <= 40;
+  const hasNarratedHook = hookLine.length >= 8 && hookLine.length <= 64 && hookText.length >= 8;
+  const titleRepeatedAtNarrationOpening = normalizedTitle.length > 0 && normalizedOpeningNarration === normalizedTitle;
   const hasSituation = sceneIds.has("situation") && situationText.length >= 12;
   const hasMoneyResult = sceneIds.has("consequence") && FINANCE_SCRIPT_RESULT_PATTERN.test(consequenceText);
   const hasPsychology = sceneIds.has("psychology") && FINANCE_SCRIPT_PSYCHOLOGY_PATTERN.test(psychologyText);
@@ -5710,7 +5797,7 @@ export function judgeFinanceScriptContent(input: FinanceScriptQualityInput): Wiz
     const text = String(line ?? "").trim();
     return text.length > 0 && text.length <= WIZARD_CAPTION_MAX_CHARS;
   });
-  const lineRhythmOk = narrationLines.length >= 18 && narrationLines.length <= WIZARD_SCRIPT_MAX_SHORT_LINES &&
+  const lineRhythmOk = narrationLines.length >= WIZARD_SCRIPT_MIN_SHORT_LINES && narrationLines.length <= WIZARD_SCRIPT_MAX_SHORT_LINES &&
     narrationLines.every((line) => line.length <= 64);
   const expectsStructuredVisualEvidence = true;
   const structuredVisualEvidenceOk = scenes.every((scene) =>
@@ -5748,7 +5835,9 @@ export function judgeFinanceScriptContent(input: FinanceScriptQualityInput): Wiz
   const nonGeneric = !FINANCE_SCRIPT_FORBIDDEN_GENERIC_PATTERN.test(allText);
   const titleQualityOk = !WEAK_TITLE_PATTERN.test(title) && !BROAD_METAPHOR_TITLE_PATTERN.test(title);
 
-  if (!hasTitleHook) reject.push("확정 제목이 첫 훅에 그대로 이어지지 않습니다");
+  if (!hasCoverTitle) reject.push("썸네일 제목 길이가 안전 범위를 벗어났습니다");
+  if (!hasNarratedHook) reject.push("제목과 분리된 실제 낭독 훅이 부족합니다");
+  if (titleRepeatedAtNarrationOpening) reject.push("썸네일 제목이 실제 낭독 첫 줄에 반복됩니다");
   if (!hasSituation) reject.push("누구나 겪는 보편 상황 장면이 부족합니다");
   if (!hasMoneyResult) reject.push("구체적인 경제 결과가 대본에 없습니다");
   if (!hasPsychology) reject.push("반복 행동을 설명하는 심리 장면이 부족합니다");
@@ -5764,7 +5853,7 @@ export function judgeFinanceScriptContent(input: FinanceScriptQualityInput): Wiz
   if (!titleQualityOk) reject.push("확정 제목이 설명형 또는 큰 비유형 패턴에 걸립니다");
 
   let retention = 58;
-  if (hasTitleHook) retention += 14;
+  if (hasNarratedHook) retention += 14;
   if (hookLine.length >= 8 && hookLine.length <= 40) retention += 6;
   if (STAKES_RESULT_PATTERN.test(hookText) || CURIOSITY_GAP_PATTERN.test(title) || ECONOMIC_CONTRADICTION_PATTERN.test(title)) retention += 8;
   if (CONCRETE_MONEY_OBJECT_PATTERN.test(title)) retention += 6;
@@ -5828,12 +5917,13 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
   const [p1, p2, p3] = rec.points;
   const isPremium = typeof rec.empathy === "string" && rec.empathy.trim().length > 0;
   const strict = rec.category === "finance";
+  const usesEditorialScriptEngine = rec.category === "finance" && Boolean(rec.financeSubtopic);
   const editorialTopic = resolveFinanceEditorialTopic(rec);
   const editorialParts = editorialTopic ? buildFinanceEditorialScriptParts(editorialTopic) : null;
   const videoStrategy = editorialTopic && editorialParts
     ? buildFinanceEditorialVideoStrategy(editorialTopic, editorialParts)
     : null;
-  const parts = isPremium
+  const unboundedParts = isPremium
     ? buildPlainScriptParts(rec)
     : {
         hook: rec.hook,
@@ -5844,6 +5934,10 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
         habit: p3,
         recommendation: rec.save,
       };
+  const parts = strict && videoStrategy?.mode === "single"
+    ? compactFinanceSingleScriptParts(unboundedParts)
+    : unboundedParts;
+  const narratedHook = usesEditorialScriptEngine ? parts.hook : rec.hook;
   const curiosity = parts.situation;
   // 프리미엄은 points[1]이 반전 문장이므로 twist 슬롯에도 그 문장을 쓴다(대본 구조 표기용).
   const twist = isPremium ? p2 : (ANGLE_TWIST[rec.angle] ?? ANGLE_TWIST["꿀팁"]);
@@ -5852,7 +5946,7 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
   const baseJudgment = judgeTopicSeed(rec, strict);
   const styleOrder: ScriptStyle[] = ["hook_heavy", "empathy", "reversal"];
   const candidates = styleOrder.map((style) => {
-    const voiceover = isPremium
+    const voiceover = isPremium || usesEditorialScriptEngine
       ? assemblePremiumVoiceover(style, parts)
       : `${rec.hook} ${curiosity} 첫째, ${p1}. 둘째, ${p2}. 셋째, ${p3}. ${twist} ${rec.save}.`;
     return { style, voiceover, score: scoreVoiceoverStyle(style, baseJudgment, voiceover) };
@@ -5860,7 +5954,6 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
   // 최고점 선택(동점이면 styleOrder 우선순위 유지 = 안정 정렬).
   const best = candidates.reduce((a, b) => (b.score > a.score ? b : a), candidates[0]);
   const fullVoiceover = best.voiceover;
-  const usesEditorialScriptEngine = rec.category === "finance" && Boolean(rec.financeSubtopic);
   const action = usesEditorialScriptEngine ? parts.recommendation : rec.save;
 
   const { hookScore, clarityScore } = estimateScores(rec);
@@ -5885,7 +5978,7 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
   });
   const captionLines = scenes.map((s) => trimWizardCaption(s.captionText || s.narration));
   const judgment: WizardQualityJudgment = strict
-    ? judgeFinanceScriptContent({ title: rec.title, hookLine: rec.hook, fullVoiceover, captionLines, scenes })
+    ? judgeFinanceScriptContent({ title: rec.title, hookLine: narratedHook, fullVoiceover, captionLines, scenes })
     : { ...baseJudgment, overallScore: best.score };
 
   // 사람이 읽는 품질 요약(좋은 이유 / 고친 부분 / 주의할 점) — 2~4줄용.
@@ -5912,8 +6005,8 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
   return {
     topicId: rec.topicId,
     title: rec.title,
-    hook: rec.hook,
-    hookLine: rec.hook,
+    hook: narratedHook,
+    hookLine: narratedHook,
     curiosity,
     points: [...rec.points],
     twist,
@@ -5922,15 +6015,15 @@ export function buildScriptFromGeneratedTopic(rec: WizardGeneratedTopicRecord): 
     fullVoiceover,
     scenes,
     videoStrategy,
-    captionFirstLineHook: rec.hook,
+    captionFirstLineHook: usesEditorialScriptEngine ? rec.title : rec.hook,
     uploadCaptionDraft: usesEditorialScriptEngine
-      ? `${rec.hook}\n\n${fullVoiceover}`.trim()
+      ? `${rec.title}\n\n${fullVoiceover}`.trim()
       : `${rec.hook}\n${curiosity}\n\n${p2}\n${p3}\n\n${rec.save}`,
     goldenSampleChecks: {
       // 자기인식형: 2인칭 지칭 또는 "~했다면/~적 있죠/~하는 사람" 같은 들킨-느낌 어투를 인정.
       selfRelevantHook:
         /(나|내 |내가|당신|우리|했다면|적 있|하는 사람|계신가요|있나요|있었나요|비웠|잠근)/.test(
-          `${rec.title} ${rec.hook} ${curiosity}`,
+          `${rec.title} ${narratedHook} ${curiosity}`,
         ),
       hasCausalBridges: isPremium,
       concreteActionWithTiming: /(월급|결제|오늘|이번 주|주말|밤|아침|다음)/.test(action),
@@ -6021,7 +6114,7 @@ export function getWizardScriptQualityGate(topicId: string, script: WizardScript
     reasons.unshift(`대본 품질 점수 ${quality.overallScore}점이 재테크 통과 기준 ${WIZARD_FINANCE_SCRIPT_QUALITY_FLOOR}점보다 낮습니다`);
   }
   if (!quality.passed) {
-    reasons.unshift("첫 3초 훅·자기인식·구체성 중 하나 이상이 재테크 통과 기준에 미달합니다");
+    reasons.unshift("확정 대본의 내용·구조 검증 기준 중 하나 이상이 통과 기준에 미달합니다");
   }
   return {
     required: true,
@@ -6157,6 +6250,23 @@ export function toSafeTopicSlug(topicId: string): string | null {
     .replace(/^-|-$/g, "")
     .slice(0, 80);
   return slug.length > 0 ? slug : null;
+}
+
+/**
+ * 재개 URL은 파일시스템 safe slug를 들고 올 수 있다. underscore가 hyphen으로
+ * 정규화된 경우에도 해당 입력 폴더의 원본 topicId만 복원한다. 임의 경로는 받지 않는다.
+ */
+function resolveWizardCanonicalTopicId(topicId: string): string {
+  const requestedTopicId = String(topicId ?? "").trim();
+  const safeSlug = toSafeTopicSlug(requestedTopicId);
+  if (!safeSlug) return requestedTopicId;
+  const stored = readAbsJson(join(WIZARD_INPUTS_ROOT, safeSlug, "script-final.json")) as {
+    topicId?: unknown;
+  } | null;
+  const storedTopicId = typeof stored?.topicId === "string" ? stored.topicId.trim() : "";
+  return storedTopicId && toSafeTopicSlug(storedTopicId) === safeSlug
+    ? storedTopicId
+    : requestedTopicId;
 }
 
 /** 한 캡션 줄을 ASS/자막 폭에 맞게 자른다(원본 대본 텍스트만 사용, 새 주장 생성 금지). */
@@ -9307,7 +9417,7 @@ const CLAUDE_POLISH_SYSTEM_PROMPT = [
   "- 문제 지적 뒤에는 실제 생활 장면, 구체 금전 결과, 반복하게 만드는 심리, 성공 기준, 오늘 실행할 행동 순서로 이어라.",
   "- 행동은 '확인해라/번역해라' 같은 추상 명령으로 끝내지 마라. 열 앱이나 명세서, 볼 숫자, 바꿀 자동이체·한도·결제 행동을 적어라.",
   "- '제목 속 선택', '같은 돈 문제', '비슷한 선택', '정보 감각'처럼 다른 제목에도 붙는 문장으로 로컬 대본을 덮어쓰지 마라.",
-  "- fullVoiceover는 scenes의 narration을 순서대로 자연스럽게 이은 전체 낭독문. 22~45개의 짧은 줄로 몰아치는 쇼츠 내레이션이어야 한다.",
+  "- fullVoiceover는 scenes의 narration을 순서대로 자연스럽게 이은 전체 낭독문. 의미상 단편은 11~16개의 짧은 줄과 약 45~58초를 목표로 하고, 실제 제작 예상치가 60초를 넘을 때만 의미 게이트를 거쳐 연속편을 허용한다.",
   "- 좋은 리듬: 제목의 실제 훅과 경제 원인을 짧게 끊어 말하되, 다른 제목의 예시 문장을 재사용하지 마라.",
   "- scenes 권장 순서: 첫 훅, 문제 확대, 보편 상황, 경제 결과, 심리 원인, 기준 전환, 실천 루틴, 성공 기준+저장/재시청.",
   "- 마지막 장면에는 이 주제와 같은 상황이 다시 오는 순간, 다시 볼 이유, '저장해 둬', 다음 콘텐츠를 팔로우할 구체 이유와 '팔로우해 둬'를 함께 넣어라.",
@@ -9571,12 +9681,13 @@ function wizardFinalScriptPath(safeSlug: string): string {
 
 /** 확정 대본 레코드를 읽는다(없거나 형식이 다르면 null). */
 export function readWizardFinalScriptRecord(topicId: string): WizardFinalScriptRecord | null {
-  const slug = toSafeTopicSlug(topicId);
+  const canonicalTopicId = resolveWizardCanonicalTopicId(topicId);
+  const slug = toSafeTopicSlug(canonicalTopicId);
   if (!slug) return null;
   const parsed = readAbsJson(wizardFinalScriptPath(slug)) as WizardFinalScriptRecord | null;
-  if (!parsed || parsed.schemaVersion !== "wizard_script_final_v1" || parsed.topicId !== topicId) return null;
+  if (!parsed || parsed.schemaVersion !== "wizard_script_final_v1" || parsed.topicId !== canonicalTopicId) return null;
   if (!parsed.script || typeof parsed.script.fullVoiceover !== "string") return null;
-  const generated = readWizardGeneratedTopic(topicId);
+  const generated = readWizardGeneratedTopic(canonicalTopicId);
   if (
     generated?.category === "finance" &&
     parsed.script.videoStrategy?.contractVersion !== FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION
@@ -9596,7 +9707,7 @@ export function readWizardFinalScriptRecord(topicId: string): WizardFinalScriptR
     ))
   ) return null;
   if (!Array.isArray(parsed.script.scenes) || !wizardSceneMediaStrategiesAreValid(parsed.script.scenes)) return null;
-  if (!getWizardScriptQualityGate(topicId, parsed.script).passed) return null;
+  if (!getWizardScriptQualityGate(canonicalTopicId, parsed.script).passed) return null;
   return parsed;
 }
 
@@ -11326,12 +11437,16 @@ export function readWizardFlowMotionStatus(topicId: string): WizardFlowMotionSta
   const parts = resolveWizardFlowMotionParts(topicId) ?? [];
   const partRows = parts.map((part): WizardFlowMotionStatus["parts"][number] => {
     const imageSummary = readAbsJson(join(part.imagesOutDir, "scene-images-summary.json")) as {
-      scenes?: Array<{ sceneIndex?: number; presenceMode?: string }>;
+      scenes?: Array<{
+        sceneIndex?: number;
+        presenceMode?: string;
+        visualModeId?: string;
+        veoMotionEligibility?: string;
+      }>;
     } | null;
     const imageSceneRows = Array.isArray(imageSummary?.scenes) ? imageSummary.scenes : [];
-    const requiredCount = part.record.script.scenes.filter((scene, index) =>
-      scene.mediaStrategy === "veo_motion" &&
-      imageSceneRows.find((candidate) => candidate.sceneIndex === index + 1)?.presenceMode !== "none"
+    const requiredCount = part.record.script.scenes.filter((scene) =>
+      scene.mediaStrategy === "veo_motion"
     ).length;
     const statePath = flowMotionStatePath(part);
     const candidate = readAbsJson(statePath);
@@ -11495,6 +11610,7 @@ export function prepareWizardFlowMotionPackets(
           sceneIndex?: number;
           presenceMode?: string;
           visualModeId?: string;
+          veoMotionEligibility?: string;
           imageSha256?: string | null;
         }>;
       } | null;
@@ -11504,8 +11620,12 @@ export function prepareWizardFlowMotionPackets(
         const imageScene = imageSceneRows.find((candidate) => candidate.sceneIndex === index + 1);
         const presenceMode = imageScene?.presenceMode;
         if (scene.mediaStrategy === "veo_motion") {
-          if (presenceMode !== "character" && presenceMode !== "hands" && presenceMode !== "none") {
-            throw new Error(`flow_motion_presence_contract_missing:${part.id}:${index + 1}`);
+          if (
+            presenceMode !== "character" ||
+            imageScene?.visualModeId !== "VEO_FULL_CHARACTER" ||
+            imageScene?.veoMotionEligibility !== "full_character"
+          ) {
+            throw new Error(`flow_motion_full_character_contract_missing:${part.id}:${index + 1}`);
           }
           if (!existsSync(referenceFile)) {
             throw new Error(`flow_motion_reference_missing:${part.id}:${index + 1}`);
@@ -11515,9 +11635,7 @@ export function prepareWizardFlowMotionPackets(
             throw new Error(`flow_motion_image_summary_hash_mismatch:${part.id}:${index + 1}`);
           }
         }
-        const effectiveMediaStrategy = scene.mediaStrategy === "veo_motion" && presenceMode === "none"
-          ? "still"
-          : (scene.mediaStrategy ?? "still");
+        const effectiveMediaStrategy = scene.mediaStrategy ?? "still";
         const referenceSha256 = effectiveMediaStrategy === "veo_motion"
           ? createHash("sha256").update(readFileSync(referenceFile)).digest("hex")
           : "0".repeat(64);
@@ -11533,6 +11651,9 @@ export function prepareWizardFlowMotionPackets(
             ? presenceMode
             : undefined,
           visualModeId: imageScene?.visualModeId,
+          veoMotionEligibility: imageScene?.veoMotionEligibility === "full_character"
+            ? "full_character"
+            : "not_required",
           mediaStrategy: effectiveMediaStrategy,
           mediaStrategyContractVersion: scene.mediaStrategyContractVersion,
           referenceFile,
@@ -13218,19 +13339,20 @@ function readWizardProductionPartMediaState(
 
 /** 편별 산출물을 모두 재검증해 한 편이라도 미완료면 전체 게시를 차단한다. */
 export function readWizardRealMediaState(topicId: string): WizardRealMediaState {
-  const baseRecord = readWizardFinalScriptRecord(topicId);
-  const record = baseRecord ? resolveWizardDurationSafeProductionRecord(topicId, baseRecord) : null;
+  const canonicalTopicId = resolveWizardCanonicalTopicId(topicId);
+  const baseRecord = readWizardFinalScriptRecord(canonicalTopicId);
+  const record = baseRecord ? resolveWizardDurationSafeProductionRecord(canonicalTopicId, baseRecord) : null;
   const strategy = record?.script.videoStrategy;
   if (!record || !strategy || strategy.contractVersion !== FINANCE_EDITORIAL_VIDEO_STRATEGY_VERSION) {
-    return readWizardLegacyRealMediaState(topicId);
+    return readWizardLegacyRealMediaState(canonicalTopicId);
   }
-  const safeSlug = toSafeTopicSlug(topicId);
-  if (!safeSlug) return readWizardLegacyRealMediaState(topicId);
+  const safeSlug = toSafeTopicSlug(canonicalTopicId);
+  if (!safeSlug) return readWizardLegacyRealMediaState(canonicalTopicId);
   let plannedParts: WizardProductionPipelinePart[];
   try {
-    plannedParts = resolveWizardProductionPipelineParts(topicId, safeSlug, record);
+    plannedParts = resolveWizardProductionPipelineParts(canonicalTopicId, safeSlug, record);
   } catch {
-    const blocked = readWizardLegacyRealMediaState(topicId);
+    const blocked = readWizardLegacyRealMediaState(canonicalTopicId);
     return {
       ...blocked,
       production: { strategyVersion: strategy.contractVersion, mode: strategy.mode, totalParts: strategy.parts.length },

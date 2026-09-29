@@ -76,6 +76,9 @@ const scenes = [
     visualCue: "민재의 손이 생활비 카드보다 저축 카드를 먼저 놓는다.",
     visibleAction: "민재가 저축 카드를 집어 생활비 카드 앞에 내려놓는다.",
     motionPlan: "시선이 카드로 이동하고 오른손이 카드 한 장을 집어 옮긴 뒤 멈춘다.",
+    presenceMode: "character",
+    visualModeId: "VEO_FULL_CHARACTER",
+    veoMotionEligibility: "full_character",
     mediaStrategy: "veo_motion",
     mediaStrategyContractVersion: VEO_SCENE_SELECTION_CONTRACT_VERSION,
     referenceFile: "C:\\tmp\\money-shorts-os\\flow-test-topic\\scene-02.png",
@@ -149,7 +152,7 @@ check("motion prompt preserves the bright warm non-photoreal visual contract", (
   assert.match(prompt, /No readable text[\s\S]*laboratory, vault, factory, machine room/);
 });
 
-check("object-only reference images cannot become Flow generation jobs", () => {
+check("anything other than a full-character reference cannot become a Flow generation job", () => {
   const objectOnlyScenes = structuredClone(scenes);
   objectOnlyScenes[1].presenceMode = "none";
   objectOnlyScenes[1].visualModeId = "OBJECT_MECHANISM";
@@ -160,7 +163,7 @@ check("object-only reference images cannot become Flow generation jobs", () => {
     outputRoot,
     scenes: objectOnlyScenes,
     generatedAt,
-  }), /flow_motion_object_only_scene_forbidden:2/);
+  }), /flow_motion_full_character_scene_required:2/);
 });
 
 check("packet hashes and approval wording are deterministic", () => {
@@ -309,10 +312,10 @@ check("operator exposes packet preparation as a no-script local action", () => {
   assert.match(routeSource, /prepareWizardFlowMotionPackets/);
   assert.match(routeSource, /생성 전송·크레딧 사용은 0회/);
   assert.match(helperSource, /scene-images-summary\.json/);
-  assert.match(helperSource, /flow_motion_presence_contract_missing/);
+  assert.match(helperSource, /flow_motion_full_character_contract_missing/);
   assert.match(helperSource, /flow_motion_image_summary_hash_mismatch/);
   assert.match(helperSource, /presenceMode:/);
-  assert.match(helperSource, /scene\.mediaStrategy === "veo_motion" && presenceMode === "none"[\s\S]*\? "still"/);
+  assert.match(helperSource, /veoMotionEligibility:/);
 });
 
 check("wizard shows packet state without claiming that Flow generated a clip", () => {
@@ -321,7 +324,7 @@ check("wizard shows packet state without claiming that Flow generated a clip", (
   assert.match(wizardSource, /브라우저를 열거나 크레딧을 사용하지 않습니다/);
   assert.match(wizardSource, /wizard-flow-motion-preview-[\s\S]*muted/);
   assert.match(wizardSource, /Veo 원본 오디오는 검수·최종 영상에 사용하지 않습니다/);
-  assert.match(wizardSource, /인물·손이 없는 이미지는 Veo 생성 대상에서 자동 제외됩니다/);
+  assert.match(wizardSource, /전신 캐릭터가 아닌 이미지는 Veo 생성 대상에서 차단됩니다/);
 });
 
 check("operator connects exact approval, one live runner and Owner QA actions", () => {

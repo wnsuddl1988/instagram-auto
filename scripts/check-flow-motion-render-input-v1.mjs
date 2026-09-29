@@ -8,6 +8,8 @@ import {
   FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION,
   FLOW_MOTION_RENDER_AUDIT_VERSION,
   HYBRID_MOTION_RENDERER_VERSION,
+  VEO_NATURAL_TIMELINE_ALLOCATION_VERSION,
+  buildNaturalVeoTimelineAllocation,
   buildVeoMotionSegmentFilter,
   resolveFlowMotionRenderInputs,
 } from "./_flow-motion-render-input.mjs";
@@ -19,7 +21,7 @@ function check(name, fn) {
   console.log(`PASS ${String(passed).padStart(2, "0")} ${name}`);
 }
 
-const root = "C:\\tmp\\money-shorts-os\\flow-render-input-guard-v1";
+const root = `C:\\tmp\\money-shorts-os\\flow-render-input-guard-v1-${process.pid}`;
 const imagesDir = path.join(root, "images");
 const flowDir = path.join(root, "flow-motion-v1");
 const jobDir = path.join(flowDir, "scene-02");
@@ -47,8 +49,8 @@ const record = {
   localFingerprint: "script-fingerprint-v1",
   script: {
     scenes: [
-      { id: "hook", mediaStrategy: "still", mediaStrategyContractVersion: "money_shorts_veo_scene_selection_v1" },
-      { id: "habit", mediaStrategy: "veo_motion", mediaStrategyContractVersion: "money_shorts_veo_scene_selection_v1" },
+      { id: "hook", mediaStrategy: "still", mediaStrategyContractVersion: "money_shorts_veo_scene_selection_v2" },
+      { id: "habit", mediaStrategy: "veo_motion", mediaStrategyContractVersion: "money_shorts_veo_scene_selection_v2" },
     ],
   },
 };
@@ -118,8 +120,8 @@ const validState = () => ({
 const portraitProbe = () => ({ hasVideoStream: true, width: 1080, height: 1920, durationSec: 8 });
 const validImageSummary = () => ({
   scenes: [
-    { sceneIndex: 1, presenceMode: "none" },
-    { sceneIndex: 2, presenceMode: "hands" },
+    { sceneIndex: 1, presenceMode: "none", visualModeId: "OBJECT_MECHANISM", veoMotionEligibility: "not_required" },
+    { sceneIndex: 2, presenceMode: "character", visualModeId: "VEO_FULL_CHARACTER", veoMotionEligibility: "full_character" },
   ],
 });
 const writeValidFixture = () => {
@@ -135,6 +137,7 @@ check("hybrid renderer and QA evidence contracts are versioned", () => {
   assert.equal(HYBRID_MOTION_RENDERER_VERSION, "money_shorts_hybrid_motion_renderer_v1");
   assert.equal(FLOW_MOTION_RENDER_AUDIT_VERSION, "money_shorts_flow_motion_render_audit_v1");
   assert.equal(FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION, "money_shorts_flow_motion_qa_evidence_v1");
+  assert.equal(VEO_NATURAL_TIMELINE_ALLOCATION_VERSION, "money_shorts_veo_natural_timeline_allocation_v1");
 });
 
 check("Veo segment filter produces an exact portrait scene segment", () => {
@@ -183,10 +186,12 @@ check("a script without Veo scenes needs no Flow state", () => {
   assert.deepEqual(result.assets.map((asset) => asset.source), ["layered_still", "layered_still"]);
 });
 
-check("an object-only image is excluded from Veo and rendered as a layered still", () => {
+check("an object-only or hands-only Veo reference fails closed", () => {
   writeValidFixture();
   const summary = validImageSummary();
   summary.scenes[1].presenceMode = "none";
+  summary.scenes[1].visualModeId = "OBJECT_MECHANISM";
+  summary.scenes[1].veoMotionEligibility = "not_required";
   writeFileSync(imageSummaryPath, JSON.stringify(summary, null, 2), "utf8");
   const result = resolveFlowMotionRenderInputs({
     record,
@@ -194,10 +199,8 @@ check("an object-only image is excluded from Veo and rendered as a layered still
     statePath: path.join(flowDir, "missing-state.json"),
     probeVideo: portraitProbe,
   });
-  assert.equal(result.ok, true);
-  assert.equal(result.audit.noVeoMotionRequired, true);
-  assert.deepEqual(result.audit.excludedObjectOnlySceneNumbers, [2]);
-  assert.deepEqual(result.assets.map((asset) => asset.source), ["layered_still", "layered_still"]);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "FLOW_MOTION_FULL_CHARACTER_IMAGE_REQUIRED");
 });
 
 check("a Veo candidate without valid image-presence evidence fails closed", () => {
@@ -205,7 +208,29 @@ check("a Veo candidate without valid image-presence evidence fails closed", () =
   writeFileSync(imageSummaryPath, JSON.stringify({ scenes: [] }, null, 2), "utf8");
   const result = resolveFlowMotionRenderInputs({ record, imagesDir, statePath, probeVideo: portraitProbe });
   assert.equal(result.ok, false);
-  assert.equal(result.code, "FLOW_MOTION_IMAGE_PRESENCE_INVALID");
+  assert.equal(result.code, "FLOW_MOTION_FULL_CHARACTER_IMAGE_REQUIRED");
+});
+
+check("Veo timeline borrows adjacent still time without retiming audio or captions", () => {
+  const allocation = buildNaturalVeoTimelineAllocation(
+    [5, 5, 3, 5, 5, 5, 5],
+    [
+      { source: "layered_still" },
+      { source: "layered_still" },
+      { source: "veo_motion", inputDurationSec: 8 },
+      { source: "layered_still" },
+      { source: "layered_still" },
+      { source: "layered_still" },
+      { source: "layered_still" },
+    ],
+  );
+  assert.equal(allocation.audit.passed, true);
+  assert.equal(allocation.audit.audioRetimed, false);
+  assert.equal(allocation.audit.captionsRetimed, false);
+  assert.equal(allocation.durations[2], 7.5);
+  assert.equal(allocation.durations.reduce((sum, value) => sum + value, 0), 33);
+  assert.ok(allocation.durations[1] >= 1.8);
+  assert.ok(allocation.durations[3] >= 1.8);
 });
 
 check("a selected Veo scene consumes the render-ready MP4", () => {

@@ -28,10 +28,11 @@ function check(name, condition) {
 }
 
 const modalityVersion = "money_shorts_visual_modality_sequence_v1";
-const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v2";
+const financeSceneDiversityVersion = "money_shorts_finance_scene_diversity_v3";
 const compositionBlueprintVersion = "money_shorts_positive_composition_blueprint_v2";
-const controllerVersion = "chatgpt_picture_v2_character_reference_v8";
+const controllerVersion = "chatgpt_picture_v2_character_reference_v9";
 const modes = [
+  "VEO_FULL_CHARACTER",
   "CHARACTER_EVENT",
   "ENVIRONMENTAL_CHARACTER",
   "OBJECT_MECHANISM",
@@ -44,7 +45,7 @@ const modes = [
   "OBJECT_RESOLUTION",
 ];
 
-check("image controller contract is bumped to selected-reference v8", imageRunner.includes(controllerVersion));
+check("image controller contract is bumped to selected-reference v9", imageRunner.includes(controllerVersion));
 check("visual modality contract is versioned", imageRunner.includes(modalityVersion));
 check("finance scene diversity contract is versioned", imageRunner.includes(financeSceneDiversityVersion));
 check("positive composition blueprint contract is versioned", imageRunner.includes(compositionBlueprintVersion));
@@ -114,8 +115,9 @@ check("existing approved images are retained when a newer prompt contract is int
   imageRunner.includes("const verifiedExistingOutput =") &&
   imageRunner.includes("previousSummary?.allReady === true") &&
   imageRunner.includes("promptMatches || verifiedExistingOutput"));
-check("character scenes are capped to 45 percent", imageRunner.includes("Math.ceil(sceneCount * 0.45)"));
-check("at least 55 percent are non-character modes", imageRunner.includes("Math.floor(sceneCount * 0.55)"));
+check("full-character VEO candidates can lead the sequence while preserving non-character transitions",
+  imageRunner.includes("const minNonCharacterCount = Math.max(1, Math.floor(sceneCount * 0.25))") &&
+  imageRunner.includes("const maxCharacterCount = sceneCount - minNonCharacterCount"));
 check("modality audit requires several distinct modes", imageRunner.includes("requiredDistinctModes") && imageRunner.includes("distinctModeCount >= requiredDistinctModes"));
 check("manual visual review remains required", imageRunner.includes("manualVisualReviewRequired: true"));
 check("existing-asset summary refresh is isolated from every external image path",

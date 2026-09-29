@@ -1257,7 +1257,9 @@ export function buildFinanceEditorialScriptParts(topic: FinanceEditorialTopic): 
   const profile = resolveProfile(topic);
   const lane = LANE_GUIDANCE[topic.lane];
   return {
-    hook: beat(topic.title, ...profile.hook),
+    // 제목은 썸네일/커버에서 한 번만 보여 준다. 실제 내레이션은 같은 제목을
+    // 다시 읽지 않고, 바로 상황·손해·반전이 있는 내용 훅으로 시작해야 한다.
+    hook: beat(...profile.hook),
     situation: beat(...profile.situation),
     consequence: beat(...profile.consequence),
     psychology: beat(...profile.psychology, ...lane.psychology),
@@ -1564,9 +1566,9 @@ function tokenOverlapRatio(left: string, right: string): number {
 
 /**
  * 제목 은행 500개, 소진 뒤 확장 제목, 과거 저장 제목이 모두 공유하는 영상 전략.
- * 기본 판단은 의미 질문·행동 묶음·독립 완결·시각 전환이 모두 성립할 때만
- * 두 편으로 나눈다. 실제 제작 예상치가 60초를 넘는 경우에도 시간만으로 자르지 않고,
- * 진단/행동/연결/시각 흐름의 핵심 의미 게이트 5개가 모두 성립할 때만 같은 경계를 쓴다.
+ * 기본은 항상 한 편이다. 의미 밀도가 높다는 이유만으로 연속편을 만들지 않는다.
+ * 실제 제작 예상치가 60초를 넘고 진단/행동/연결/시각 흐름의 핵심 의미 게이트 5개가
+ * 모두 성립할 때만 같은 경계로 두 편을 만든다.
  */
 export function buildFinanceEditorialVideoStrategy(
   topic: FinanceEditorialTopic,
@@ -1613,7 +1615,7 @@ export function buildFinanceEditorialVideoStrategy(
     semanticDensityHigh,
   ];
   const passedCount = auditFlags.filter(Boolean).length;
-  const split = passedCount === auditFlags.length;
+  const semanticSplitEligible = passedCount === auditFlags.length;
   const semanticDurationRepairPassed = [
     diagnosticQuestionDefined,
     actionQuestionDefined,
@@ -1623,11 +1625,10 @@ export function buildFinanceEditorialVideoStrategy(
   ].every(Boolean);
   const singleTargetDurationSec = Number(options?.singleTargetDurationSec);
   const durationRepairApplied =
-    !split &&
     Number.isFinite(singleTargetDurationSec) &&
     singleTargetDurationSec > 60 &&
     semanticDurationRepairPassed;
-  const shouldSplit = split || durationRepairApplied;
+  const shouldSplit = durationRepairApplied;
   const splitAudit: FinanceEditorialVideoStrategy["splitAudit"] = {
     timeOnlyDecisionForbidden: true,
     diagnosticQuestionDefined,
@@ -1639,7 +1640,7 @@ export function buildFinanceEditorialVideoStrategy(
     semanticDensityHigh,
     passedCount,
     requiredCount: 7,
-    passed: split,
+    passed: semanticSplitEligible,
   };
   const openingVoice: FinanceEditorialVideoStrategy["openingVoice"] = {
     v3AudioTag: "confidently",

@@ -18,6 +18,7 @@ import * as youtubeOnlyRecovery from "../lib/money-shorts-youtube-only-recovery.
 import * as youtubeOnlyRecoveryOverlay from "../lib/money-shorts-youtube-only-recovery-overlay.mjs";
 import * as part2YoutubeRecoveryExecution from "../lib/money-shorts-part2-youtube-recovery-execution.mjs";
 import * as part2YoutubeRecoveryOverlay from "../lib/money-shorts-part2-youtube-recovery-overlay.mjs";
+import * as part2DualPublishSafe from "../lib/money-shorts-part2-dual-publish-safe.mjs";
 
 export const BATCH_SCHEMA_VERSION = "money_shorts_500_production_batch_v1";
 export const LEDGER_SCHEMA_VERSION = "money_shorts_500_production_ledger_v1";
@@ -128,6 +129,7 @@ export function loadProductionRecords(options = {}) {
     if (specifier === "./money-shorts-youtube-only-recovery-overlay.mjs") return youtubeOnlyRecoveryOverlay;
     if (specifier === "./money-shorts-part2-youtube-recovery-execution.mjs") return part2YoutubeRecoveryExecution;
     if (specifier === "./money-shorts-part2-youtube-recovery-overlay.mjs") return part2YoutubeRecoveryOverlay;
+    if (specifier === "./money-shorts-part2-dual-publish-safe.mjs") return part2DualPublishSafe;
     if (specifier === "./veo-scene-selector") return veoSelector;
     if (specifier === "./flow-motion-jobs") return flowMotionJobs;
     return nodeRequire(specifier);
@@ -143,7 +145,9 @@ export function loadProductionRecords(options = {}) {
     };
     const script = helper.buildScriptFromGeneratedTopic(topicRecord);
     const gate = helper.getWizardScriptQualityGate(topicId, script);
-    if (!gate.passed) throw new Error(`QUALITY_GATE_FAILED:${topicId}:${gate.reasons?.[0] ?? "unknown"}`);
+    if (!gate.passed) {
+      throw new Error(`QUALITY_GATE_FAILED:${topicId}:${gate.reasons?.join(" | ") || "unknown"}`);
+    }
     const record = {
       index: index + 1,
       topicId,
@@ -188,6 +192,9 @@ export function loadProductionRecords(options = {}) {
           visualCue: scene.visualCue,
           visibleAction: scene.visualEvidence?.visibleAction,
           motionPlan: scene.visualEvidence?.motionPlan,
+          presenceMode: scene.mediaStrategy === "veo_motion" ? "character" : "none",
+          visualModeId: scene.mediaStrategy === "veo_motion" ? "VEO_FULL_CHARACTER" : "OBJECT_MECHANISM",
+          veoMotionEligibility: scene.mediaStrategy === "veo_motion" ? "full_character" : "not_required",
           mediaStrategy: scene.mediaStrategy,
           mediaStrategyContractVersion: scene.mediaStrategyContractVersion,
           referenceFile: path.join(outputRoot, `scene-${String(sceneIndex + 1).padStart(2, "0")}.png`),

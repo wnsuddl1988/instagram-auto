@@ -42,7 +42,7 @@ const baseScenes: VeoSceneSelectionInput[] = [
 ];
 
 check("contract version is stable", () => {
-  assert.equal(VEO_SCENE_SELECTION_CONTRACT_VERSION, "money_shorts_veo_scene_selection_v1");
+  assert.equal(VEO_SCENE_SELECTION_CONTRACT_VERSION, "money_shorts_veo_scene_selection_v2");
 });
 
 check("up to 30 seconds allows one Veo scene", () => {

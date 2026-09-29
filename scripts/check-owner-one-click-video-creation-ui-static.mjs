@@ -540,7 +540,7 @@ check("premium consequence fallback avoids broken Korean particle from moneyAnch
     "temporary per-topic calibration exceptions are removed after global expansion",
     !/WIZARD_SCRIPT_CALIBRATION_TOPIC_ID|buildCalibrationTopicScriptParts|isWizardScriptCalibrationTopic/.test(helperCode),
   );
-  check("Veo scene selection bumps final-script cache contract to v14", /money_shorts_editorial_package_script_v14/.test(helperCode));
+  check("cover-only title rule bumps final-script cache contract to v16", /money_shorts_editorial_package_script_v16/.test(helperCode));
   check("final-script fingerprint includes the semantic video strategy", /s:\s*preview\.videoStrategy/.test(helperCode));
   check("premium polish rejects soft polite tone", /SHORTFORM_SOFT_POLITE_PATTERNS/.test(helperCode) && /soft_polite_not_owner_tone/.test(helperCode));
 }
@@ -724,11 +724,12 @@ check("finance uses strict judging threshold", /category\s*===\s*["']finance["']
 check("script builds 3 style candidates", /hook_heavy/.test(helperCode) && /reversal/.test(helperCode) && /empathy/.test(helperCode));
 check("script preview exposes quality + candidateScores + selectedStyle", /quality:\s*judgment/.test(helperCode) && /candidateScores:/.test(helperCode) && /selectedStyle:/.test(helperCode));
 check("script preview exposes qualitySummary (good/fixed/watch)", /goodReasons/.test(helperCode) && /fixedParts/.test(helperCode) && /watchOuts/.test(helperCode));
+check("cover-only title narration accepts the compact 10-line single-video rhythm", /WIZARD_SCRIPT_MIN_SHORT_LINES\s*=\s*10/.test(helperCode));
 check(
   "finance script quality gate blocks weak drafts before persistence and rejects stale weak finals",
   /WIZARD_FINANCE_SCRIPT_QUALITY_FLOOR\s*=\s*86/.test(helperCode) &&
     /export function getWizardScriptQualityGate/.test(helperCode) &&
-    /getWizardScriptQualityGate\(topicId, parsed\.script\)\.passed/.test(helperCode) &&
+    /getWizardScriptQualityGate\((?:topicId|canonicalTopicId), parsed\.script\)\.passed/.test(helperCode) &&
     /getWizardScriptQualityGate\(topicId, preview\)/.test(routeCode) &&
     /SCRIPT_QUALITY_GATE_FAILED/.test(routeCode) &&
     routeCode.search(/getWizardScriptQualityGate\(topicId, preview\)/) < routeCode.search(/ensureWizardFinalScript\(topicId,\s*preview/),
@@ -737,7 +738,7 @@ check(
   "finance production gate re-evaluates confirmed script content instead of trusting stored scores",
   /export function judgeFinanceScriptContent/.test(helperCode) &&
     /export function getWizardScriptQualityGate[\s\S]{0,1400}judgeFinanceScriptContent\(\{/.test(helperCode) &&
-    /확정 제목이 첫 훅에 그대로 이어지지 않습니다/.test(helperCode) &&
+    /썸네일 제목이 실제 낭독 첫 줄에 반복됩니다/.test(helperCode) &&
     /상황별 다시 보기·저장·팔로우 마무리가 완전하지 않습니다/.test(helperCode),
 );
 check(
@@ -1079,11 +1080,11 @@ check(
     /natural daylight or warm practical indoor light/.test(helperSrc),
 );
 check(
-  "bright integrated motion-ready sequence v11 uses a versioned image/video set so old repetitive assets cannot pass",
-  /WIZARD_VISUAL_ENGINE_VERSION\s*=\s*"money_shorts_finance_3d_editorial_sequence_v11"/.test(helperCode) &&
-    /WIZARD_IMAGE_CONTROLLER_VERSION\s*=\s*"chatgpt_picture_v2_character_reference_v8"/.test(helperCode) &&
-    /images-3d-editorial-sequence-v11/.test(helperSrc) &&
-    /video-3d-editorial-sequence-v11/.test(helperSrc) &&
+  "bright integrated motion-ready sequence v12 uses a versioned image/video set so old repetitive assets cannot pass",
+  /WIZARD_VISUAL_ENGINE_VERSION\s*=\s*"money_shorts_finance_3d_editorial_sequence_v12"/.test(helperCode) &&
+    /WIZARD_IMAGE_CONTROLLER_VERSION\s*=\s*"chatgpt_picture_v2_character_reference_v9"/.test(helperCode) &&
+    /images-3d-editorial-sequence-v12/.test(helperSrc) &&
+    /video-3d-editorial-sequence-v12/.test(helperSrc) &&
     /imagesSummary\.visualEngineVersion\s*===\s*visualProfile\.engineVersion/.test(helperCode) &&
     /imagesSummary\.imageControllerVersion\s*===\s*WIZARD_IMAGE_CONTROLLER_VERSION/.test(helperCode),
 );
@@ -1224,7 +1225,7 @@ check(
 );
 check("helper final video gate re-checks 1080x1920/15~60s/streams", /videoSummary\.width\s*===\s*1080/.test(helperCode) && /videoSummary\.height\s*===\s*1920/.test(helperCode) && /durationSec\s*>=\s*15/.test(helperCode) && /durationSec\s*<=\s*60/.test(helperCode));
 check(
-  "helper requires the fixed-still/Veo audit while preserving already-approved legacy videos",
+  "helper requires fixed-still, full-character Veo and natural Veo timeline audits",
   /WIZARD_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_hybrid_motion_renderer_v1"/.test(helperCode) &&
     /WIZARD_LAYERED_MOTION_RENDERER_VERSION\s*=\s*"money_shorts_static_still_renderer_v4"/.test(helperCode) &&
     /LEGACY_WIZARD_LAYERED_MOTION_RENDERER_VERSION/.test(helperCode) &&
@@ -1234,7 +1235,11 @@ check(
     /flowMotionAudit\.videoHashCoveragePass\s*===\s*true/.test(helperCode) &&
     /flowMotionAudit\.ownerQaCoveragePass\s*===\s*true/.test(helperCode) &&
     /flowMotionAudit\.passed\s*===\s*true/.test(helperCode) &&
-    /presenceBySceneNumber/.test(helperCode) &&
+    /imageContractBySceneNumber/.test(helperCode) &&
+    /VEO_FULL_CHARACTER/.test(helperCode) &&
+    /veoMotionEligibility/.test(helperCode) &&
+    /veoTimelineAllocationAudit\.totalDurationPreserved\s*===\s*true/.test(helperCode) &&
+    /veoTimelineAllocationAudit\.sourceDurationNotExceeded\s*===\s*true/.test(helperCode) &&
     /expectedExcludedObjectOnlySceneNumbers/.test(helperCode) &&
     /actualExcludedObjectOnlySceneNumbers/.test(helperCode) &&
     /wizardHybridMotionSummaryIsReady\(videoSummary, expectedSceneCount,[\s\S]{0,120}sceneRows\)/.test(helperCode),
@@ -1262,6 +1267,7 @@ check(
 );
 check("new create and read-only audit actions are local-dev gated in route", ["realTtsReadonlyPreflight", "realTtsCreate", "realSceneImagesCreate", "finalVideoCreate", "realMediaStatus"].every((a) => new RegExp(`LOCAL_SCRIPT_ACTIONS[\\s\\S]{0,800}"${a}"`).test(routeSrc)));
 check("GET final video stream is enum only", /videoParam\s*===\s*"muxed"\s*\|\|\s*videoParam\s*===\s*"silent"\s*\|\|\s*videoParam\s*===\s*"final"/.test(routeCode));
+check("real audio stream restores a canonical topicId from a safe resume slug", /function resolveWizardCanonicalTopicId/.test(helperCode) && /toSafeTopicSlug\(storedTopicId\) === safeSlug/.test(helperCode) && /const canonicalTopicId = resolveWizardCanonicalTopicId\(topicId\);/.test(helperCode));
 check("real audio stream restricted to summary path + C:\\tmp prefix + mp3/m4a", /readWizardRealAudioBytes/.test(routeCode) && /WIZARD_VIDEO_ALLOWED_PREFIX/.test(helperCode) && /\.mp3|\.m4a/.test(helperSrc));
 
 // ── 결과 ─────────────────────────────────────────────────────────────────────

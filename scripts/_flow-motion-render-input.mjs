@@ -7,7 +7,11 @@ export const FLOW_MOTION_JOB_CONTRACT_VERSION = "money_shorts_flow_motion_job_v1
 export const FLOW_MOTION_QA_EVIDENCE_CONTRACT_VERSION = "money_shorts_flow_motion_qa_evidence_v1";
 export const FLOW_MOTION_RENDER_AUDIT_VERSION = "money_shorts_flow_motion_render_audit_v1";
 export const HYBRID_MOTION_RENDERER_VERSION = "money_shorts_hybrid_motion_renderer_v1";
-export const VEO_SCENE_SELECTION_CONTRACT_VERSION = "money_shorts_veo_scene_selection_v1";
+export const VEO_SCENE_SELECTION_CONTRACT_VERSION = "money_shorts_veo_scene_selection_v2";
+export const VEO_NATURAL_TIMELINE_ALLOCATION_VERSION = "money_shorts_veo_natural_timeline_allocation_v1";
+
+const VEO_PREFERRED_TIMELINE_SEC = 7.5;
+const STATIC_SCENE_MIN_TIMELINE_SEC = 1.8;
 
 const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
 const SHA256_RE = /^[a-f0-9]{64}$/;
@@ -72,6 +76,112 @@ export function buildVeoMotionSegmentFilter(durationSec) {
 }
 
 /**
+ * 음성·자막 timeline은 그대로 두고, Veo 장면의 시각 구간만 인접 정지 장면에서
+ * 안전하게 빌려 원본 모션을 더 오래 보여준다. 마무리 2개 장면은 기존 음성 경계
+ * 디졸브 계약을 보존하기 위해 재배분하지 않는다.
+ */
+export function buildNaturalVeoTimelineAllocation(audioDurations, assets) {
+  const sourceDurations = Array.isArray(audioDurations)
+    ? audioDurations.map((value) => Number(value))
+    : [];
+  const rows = Array.isArray(assets) ? assets : [];
+  if (
+    sourceDurations.length === 0 ||
+    rows.length !== sourceDurations.length ||
+    sourceDurations.some((value) => !Number.isFinite(value) || value <= 0)
+  ) {
+    throw new Error("veo_timeline_allocation_input_invalid");
+  }
+  const allocated = [...sourceDurations];
+  const protectedClosingStart = Math.max(0, sourceDurations.length - 2);
+  const allocations = [];
+
+  const borrowFrom = (donorIndex, requested) => {
+    if (
+      donorIndex < 0 ||
+      donorIndex >= protectedClosingStart ||
+      rows[donorIndex]?.source === "veo_motion" ||
+      requested <= 0
+    ) return 0;
+    const available = Math.max(0, allocated[donorIndex] - STATIC_SCENE_MIN_TIMELINE_SEC);
+    const borrowed = Math.min(available, requested);
+    allocated[donorIndex] -= borrowed;
+    return borrowed;
+  };
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const asset = rows[index];
+    if (asset?.source !== "veo_motion") continue;
+    const inputDurationSec = Number(asset.inputDurationSec);
+    const originalDurationSec = sourceDurations[index];
+    const preferredDurationSec = Number.isFinite(inputDurationSec)
+      ? Math.max(originalDurationSec, Math.min(inputDurationSec, VEO_PREFERRED_TIMELINE_SEC))
+      : originalDurationSec;
+    let remaining = Math.max(0, preferredDurationSec - allocated[index]);
+    let borrowedBeforeSec = 0;
+    let borrowedAfterSec = 0;
+
+    if (index < protectedClosingStart && remaining > 0) {
+      const firstHalf = remaining / 2;
+      borrowedBeforeSec += borrowFrom(index - 1, firstHalf);
+      borrowedAfterSec += borrowFrom(index + 1, firstHalf);
+      remaining = Math.max(0, preferredDurationSec - allocated[index] - borrowedBeforeSec - borrowedAfterSec);
+      if (remaining > 0) borrowedBeforeSec += borrowFrom(index - 1, remaining);
+      remaining = Math.max(0, preferredDurationSec - allocated[index] - borrowedBeforeSec - borrowedAfterSec);
+      if (remaining > 0) borrowedAfterSec += borrowFrom(index + 1, remaining);
+    }
+    allocated[index] += borrowedBeforeSec + borrowedAfterSec;
+    const allocatedDurationSec = allocated[index];
+    allocations.push({
+      sceneNumber: index + 1,
+      originalTimelineDurationSec: Number(originalDurationSec.toFixed(3)),
+      inputDurationSec: Number.isFinite(inputDurationSec) ? Number(inputDurationSec.toFixed(3)) : null,
+      preferredDurationSec: Number(preferredDurationSec.toFixed(3)),
+      allocatedTimelineDurationSec: Number(allocatedDurationSec.toFixed(3)),
+      borrowedBeforeSec: Number(borrowedBeforeSec.toFixed(3)),
+      borrowedAfterSec: Number(borrowedAfterSec.toFixed(3)),
+      sourceUtilizationRatio: Number.isFinite(inputDurationSec) && inputDurationSec > 0
+        ? Number(Math.min(1, allocatedDurationSec / inputDurationSec).toFixed(3))
+        : null,
+      protectedClosingScene: index >= protectedClosingStart,
+    });
+  }
+
+  const rounded = allocated.map((value) => Number(value.toFixed(3)));
+  const sourceTotal = sourceDurations.reduce((sum, value) => sum + value, 0);
+  const roundedTotal = rounded.reduce((sum, value) => sum + value, 0);
+  const drift = Number((sourceTotal - roundedTotal).toFixed(3));
+  if (drift !== 0) {
+    const correctionIndex = rounded.findIndex((_, index) => rows[index]?.source !== "veo_motion");
+    if (correctionIndex >= 0) rounded[correctionIndex] = Number((rounded[correctionIndex] + drift).toFixed(3));
+  }
+  const totalDurationPreserved =
+    Math.abs(rounded.reduce((sum, value) => sum + value, 0) - sourceTotal) <= 0.002;
+  const staticMinimumPreserved = rounded.every((value, index) =>
+    rows[index]?.source === "veo_motion" || value + 0.001 >= STATIC_SCENE_MIN_TIMELINE_SEC);
+  const sourceDurationNotExceeded = allocations.every((row) =>
+    row.inputDurationSec == null || row.allocatedTimelineDurationSec <= row.inputDurationSec + 0.002);
+
+  return {
+    durations: rounded,
+    audit: {
+      version: VEO_NATURAL_TIMELINE_ALLOCATION_VERSION,
+      applicable: allocations.length > 0,
+      audioRetimed: false,
+      captionsRetimed: false,
+      preferredVeoDurationSec: VEO_PREFERRED_TIMELINE_SEC,
+      minimumStaticSceneDurationSec: STATIC_SCENE_MIN_TIMELINE_SEC,
+      protectedClosingSceneCount: Math.min(2, sourceDurations.length),
+      totalDurationPreserved,
+      staticMinimumPreserved,
+      sourceDurationNotExceeded,
+      allocations,
+      passed: totalDurationPreserved && staticMinimumPreserved && sourceDurationNotExceeded,
+    },
+  };
+}
+
+/**
  * 확정 대본의 mediaStrategy와 Flow 상태·클립·Owner QA 증거를 하나의 렌더 입력으로 결합한다.
  * 외부 실행은 없으며, 현재 파일의 SHA-256과 ffprobe 결과가 모두 일치해야 Veo 장면을 반환한다.
  */
@@ -90,17 +200,15 @@ export function resolveFlowMotionRenderInputs({ record, imagesDir, statePath, pr
   const imageSummary = readJson(path.join(resolvedImagesDir, "scene-images-summary.json"));
   const imageSceneRows = Array.isArray(imageSummary?.scenes) ? imageSummary.scenes : [];
   if (scriptedVeoScenes.some(({ sceneNumber }) => {
-    const presenceMode = imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode;
-    return presenceMode !== "character" && presenceMode !== "hands" && presenceMode !== "none";
+    const imageScene = imageSceneRows.find((row) => row?.sceneIndex === sceneNumber);
+    return imageScene?.presenceMode !== "character" ||
+      imageScene?.visualModeId !== "VEO_FULL_CHARACTER" ||
+      imageScene?.veoMotionEligibility !== "full_character";
   })) {
-    return fail("FLOW_MOTION_IMAGE_PRESENCE_INVALID", "Veo 후보 장면의 이미지 인물·손 존재 계약을 확인하지 못했습니다.");
+    return fail("FLOW_MOTION_FULL_CHARACTER_IMAGE_REQUIRED", "Veo 후보는 전신 캐릭터 기준 이미지 계약을 통과해야 합니다.");
   }
-  const selectedScenes = scriptedVeoScenes.filter(({ sceneNumber }) =>
-    imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode !== "none"
-  );
-  const excludedObjectOnlySceneNumbers = scriptedVeoScenes
-    .filter(({ sceneNumber }) => imageSceneRows.find((row) => row?.sceneIndex === sceneNumber)?.presenceMode === "none")
-    .map(({ sceneNumber }) => sceneNumber);
+  const selectedScenes = scriptedVeoScenes;
+  const excludedObjectOnlySceneNumbers = [];
   const baseAssets = scenes.map((_, index) => ({
     sceneNumber: index + 1,
     source: "layered_still",
