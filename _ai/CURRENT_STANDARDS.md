@@ -333,7 +333,8 @@ suspended.` 에러). 이때는:
 ## 7. 재고·다음 번호 (2026-09-26 기준 — 배포 전 Owner 메모장과 대조해 다시 확인)
 
 **부엉박사**
-- 완성(배포 대기): 12편 `C:/tmp/owl-v2-ep12-final/owl_episode_final.mp4`, 13편 `C:/tmp/owl-v2-ep13-final-v2/owl_episode_final.mp4`, 14편 `C:/tmp/owl-v2-ep14-final-v2/owl_episode_final.mp4`(배포 준비 파일 `C:/tmp/owl-v2-ep1{2,3,4}-publish/`).
+- **14편 배포 완료(2026-09-29): 릴스 instagram.com/reel/Dd2-6U6Csf7, 카드뉴스 instagram.com/p/Dd2_FUsEwhu, 유튜브 youtube.com/shorts/lNJ1E5CM7yA, 스토리 게시.** 12·13편도 Owner 확인으로 배포 완료. 다음 신규 15편(실업급여, 국회 진행 상황·수치 재대조 필수).
+- (이력) 완성 12편 `C:/tmp/owl-v2-ep12-final/owl_episode_final.mp4`, 13편 `C:/tmp/owl-v2-ep13-final-v2/owl_episode_final.mp4`, 14편 `C:/tmp/owl-v2-ep14-final-v3/owl_episode_final.mp4`(2026-09-29 s6 "기금 소진 2056→2064년"으로 팩트 수정 후 재조립, TTS `output-v2`, 총 114.75초; v2는 2071년 오류본이라 폐기)(배포 준비 파일 `C:/tmp/owl-v2-ep1{2,3,4}-publish/`).
 - 배포 완료: 1~10편 (9~10편은 표시 번호 ≠ 파일 번호, 10편=카드론, 파일 ep9), **11편 청약(v2 첫 편, 2026-09-26): 릴스 instagram.com/reel/Ddv6St0AGcE, 카드뉴스 instagram.com/p/Ddv6fTck2bP, 유튜브 youtube.com/shorts/8xPxKhnd9_o, 스토리 게시**
 - **★ 재고 전면 v2 재제작(Owner 결정 2026-09-26)**: 옛 구조 재고 7편(아래 v1 완성본)은 **배포하지 않는다**. 7개 소재를 전부 씬 구조 v2(§1)로 다시 만들고, 시의성 기준으로 순서·표시 번호·배포일을 다시 매긴다.
   - 새 파일 이름: 스펙 `scripts/_owl-v2-ep{N}-assembly-spec.mjs`, 작업 폴더 `C:/tmp/owl-v2-ep{N}-*`(N = 새 표시 번호 — 이제부터 표시 번호 = 파일 번호). 옛 v1 파일은 지우지 않고 **이미지·영상 재사용 원본**으로만 쓴다(v1 영상은 8초라 재사용하는 씬은 발화 7초 이내로 쓴다).
@@ -366,7 +367,7 @@ suspended.` 에러). 이때는:
 | 5 (9/26) | ep7 예금자보호 | `C:/tmp/geumbaksa-ep7-final-v3std/owl_episode_final.mp4`(표준 CTA 재결합 PASS) | 11 청약통장 |
 | 6 (9/27) | ep8 토지거래허가구역 | `C:/tmp/geumbaksa-ep8-final-v3std/owl_episode_final.mp4`(s2·s5 재생성+풀클립 재조립, 옛 v2voice는 화면·대사 4.6초 어긋나 폐기) | 12 토지 유예 |
 | 7 (9/28) ✅배포완료 | ep5 신용점수 | `C:/tmp/geumbaksa-ep5-final-v4std/owl_episode_final.mp4`(짧은 클립 1~7% 느리게 + s4 재생성, 옛 v2voice는 1.2초 어긋남·s4 'PIXAR' 결함으로 폐기) | 13 고용률 |
-| 8 (9/29) | ep6 소득대체율 | `C:/tmp/geumbaksa-ep6-final-v3std/owl_episode_final.mp4`(풀클립 재조립, 옛 v2voice 폐기) | 14 국민연금 |
+| 8 (9/29) ✅배포완료 | ep6 소득대체율 | `C:/tmp/geumbaksa-ep6-final-v3std/owl_episode_final.mp4`(풀클립 재조립, 옛 v2voice 폐기). 릴스 instagram.com/reel/Dd3XBXCCvlD, 유튜브 youtube.com/shorts/Ow0w4Vq5aBs, 스토리 게시 | 14 국민연금 |
 | 9 (9/30) | ep10 실업급여 계산 | `C:/tmp/geumbaksa-ep10-final/owl_episode_final.mp4` | 15 실업급여 개편(같은 날 필수, 국회 상황 확인) |
 | 10 (10/1) | ep9 DB형·DC형 | `C:/tmp/geumbaksa-ep9-final-v2voice/owl_episode_final.mp4` | 16 퇴직연금 |
 | 11 (10/2) | **신규 제작**(파일 ep11, 오프닝 훅 뒤 첫 편) | – | 17 최저임금 |
@@ -380,4 +381,5 @@ suspended.` 에러). 이때는:
 - **6편(삼성전자 배당, 2026-09-28, 수동배포)**: 릴스 instagram.com/reel/Ddz1XhcToBx, 유튜브 youtube.com/shorts/6ZVskG7TYTk — Vercel Blob 스토어 정지로 자동 파이프라인 우회.
 - **7편(국내 바이오사 FDA 승인 상한가, 2026-09-28)**: 릴스 instagram.com/reel/Dd1PBm9DPEB, 유튜브 youtube.com/shorts/RnnV9NaW3BU, 스토리 게시 완료. 최종본은 s12(균형 씬, "매수 추천 아님" 나레이션)를 삭제한 15씬 버전(`scripts/_bull-ep7-assembly-spec.mjs`) — 종목명 언급 없이 매수 불가를 명시하는 게 어색하다는 Owner 지적으로 삭제, s11→s13 직결. 리스크 고지는 오프닝(s3)·마지막(s16) 하단 자막바로만 유지.
 - **8편(미국 태양광 최저수입가격 랠리, 16씬) 제작 중**: 대본 확정, TTS 완료(`C:/tmp/money-shorts-os/bull-ep8-tts/output-v3`, 스크립트 `bull-ep8-tts-script-16scene.json`). 스펙 `scripts/_bull-ep8-assembly-spec.mjs` 작성 완료, 씬 이미지 16장 검수 통과(`C:/tmp/bull-ep8-images`), 영상 프롬프트 `_ai/bull-ep8-video-generation-prompts.md` 작성 완료(8초 6개·10초 10개). 영상 16개 검수 통과(s12만 1회 재생성, s14는 끝 0.3초 보드 기울어짐 감수). 조립+CTA 완료(`C:/tmp/bull-ep8-final/owl_episode_final.mp4` 139.08초, cta-join-report PASS, 압축본 `owl_episode_final_compressed.mp4` 32.5MB), 커버 `C:/tmp/bull-ep8-cover`·스토리 `C:/tmp/bull-ep8-story` 생성(스펙 `_bull-cover-ep8-spec.mjs`·`_bull-story-ep8-spec.mjs`). **배포 완료(2026-09-29)**: 릴스 instagram.com/reel/Dd2huJpFRtH, 유튜브 youtube.com/shorts/8a9buzZhz9Q, 스토리 게시. 다음 신규 9편. 팩트 근거 수준은 스펙 파일 상단 참고(회담 문장 한경 단독, 모듈 가격 출처 안자).
-- **다음 신규: 9편(v3 구조)**
+- **9편(오픈AI 신모델 출시 취소 × 마이크론 실적 D-1, 16씬) 배포 완료(2026-09-29): 릴스 instagram.com/reel/Dd3mM3gDyAc, 유튜브 youtube.com/shorts/dTZioUmJqaM, 스토리 게시.**: 스펙 `scripts/_bull-ep9-assembly-spec.mjs`, TTS `C:/tmp/money-shorts-os/bull-ep9-tts/output-v5`(5회차, 타임라인 127.96초; s6 "지난 6월 밝힌 규모"·s10 "달러 값이" 문구 수정 반영), 영상 16개 검수 통과(s15는 8초로 2회 카드 소멸 → 10초로 재생성해 통과), 최종 `C:/tmp/bull-ep9-final-v3/owl_episode_final.mp4`(136.17초, cta-join PASS), 압축본 31.6MB, 배포 폴더 `C:/tmp/bull-ep9-publish/`, 커버 `C:/tmp/bull-ep9-cover`·스토리 `C:/tmp/bull-ep9-story`. 카드 두 손 든 씬은 8초 클립 끝에서 카드가 사라지는 경향(8편 s12, 9편 s15) → 카드 씬은 10초로 요청. 조립기 `run-owl-assemble-shorts-v2.mjs`의 자막 치환(`alignWordGroups`)을 고쳐, 어절 수가 같은 불일치 구간을 1:1로 나눔(자막에 발음 표기가 남던 버그).
+- **다음 신규: 10편(v3 구조)**

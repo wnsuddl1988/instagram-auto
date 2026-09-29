@@ -376,6 +376,10 @@ const BULL_EP8_16SCENE_MODE = argv.includes("--bull-ep8-16scene");
 // 황소특보 8편 버전: POSES_BULL_EP8_16SCENE 에서 단일 장면(또는 콤마 구분
 // 다중 장면)만 재생성. 순번(1~16)으로만 지정한다.
 const BULL_EP8_16SCENE_ONLY = getArg("--bull-ep8-16scene-only");
+// 황소특보 9편(오픈AI 신모델 출시 취소 × 마이크론 실적 D-1) 16장면. 파일명은 scene
+// 순번만 쓴다(bull_ep9_s1 ~ bull_ep9_s16). --bull-ep9-16scene-only "3,7" 처럼 선택 재생성.
+const BULL_EP9_16SCENE_MODE = argv.includes("--bull-ep9-16scene");
+const BULL_EP9_16SCENE_ONLY = getArg("--bull-ep9-16scene-only");
 // 황소특보 1편 배경 컨셉 비교(2안, 2026-09-23) — 최초 스펙이 CTA용 서재
 // 배경을 기계적으로 재사용해 "반도체 강세"라는 소재와 개연성이 없다는
 // Owner 지적으로 재설계. 트레이딩데스크/시황브리핑룸 vs 반도체 공장/클린룸
@@ -545,6 +549,12 @@ if ((BULL_EP7_16SCENE_MODE || BULL_EP7_16SCENE_ONLY) && CHARACTER !== "bull3dv1"
 if ((BULL_EP8_16SCENE_MODE || BULL_EP8_16SCENE_ONLY) && CHARACTER !== "bull3dv1") {
   console.error(
     `ABORT: --bull-ep8-16scene(-only)은 --character bull3dv1(황소특보)와 함께 써야 합니다. 받은 값: --character ${CHARACTER}`,
+  );
+  process.exit(1);
+}
+if ((BULL_EP9_16SCENE_MODE || BULL_EP9_16SCENE_ONLY) && CHARACTER !== "bull3dv1") {
+  console.error(
+    `ABORT: --bull-ep9-16scene(-only)은 --character bull3dv1(황소특보)와 함께 써야 합니다. 받은 값: --character ${CHARACTER}`,
   );
   process.exit(1);
 }
@@ -4433,6 +4443,18 @@ const POSES_OWL_V2_EP14_5SCENE = [
       `짧은 문구만 크게. 배경: ${OWL_EP10_BG_V2}`,
   },
   {
+    // 2026-09-29 팩트 수정 재생성: v1 보드 '기금 소진 2071년으로 연장'은 수익률 가정이 달라
+    // (2056=4.5%, 2071=5.5%) 개혁 효과로 비교 불가 → 같은 가정의 2064년으로 교체.
+    id: "owl_v2_ep14_s6_why",
+    file: "owl_v2_ep14_s6_why.png",
+    first: false,
+    clause:
+      `장면 6 (왜): '기금 소진' / '2056년 → 2064년'이라는 큰 글자 2줄이 적힌 카드를 한쪽 ` +
+      `날개로 감싸 쥐고, 다른 날개는 카드를 가리키듯 살짝 들어 설명하는 진지한 표정 — 웃지 ` +
+      `않음. 카드에는 이 짧은 문구만 크게. 배경은 앞 장면과 절대적으로 동일해야 한다 — ` +
+      `${OWL_EP10_BG_V2}`,
+  },
+  {
     id: "owl_v2_ep14_s7_core_q_answer",
     file: "owl_v2_ep14_s7_core_q_answer.png",
     first: false,
@@ -6207,6 +6229,157 @@ const POSES_BULL_EP8_16SCENE = [
   },
 ];
 
+// 황소특보 9편(오픈AI 신모델 출시 취소 × 마이크론 실적 D-1) — 8편과 동일한 증권사
+// 트레이딩 라운지 배경. 카드·보드 글자는 크고 짧게(줄당 12자 이내), 소품은
+// 감싸 쥐거나 바닥 거치, 동작은 빈 손에만(§0-1).
+const BULL_EP9_BG =
+  `${BULL_EP4_BG} 구도 규칙: 캐릭터와 카드·보드·손 전체가 화면 좌우 가장자리에서 최소 ` +
+  `8% 안쪽에 완전히 들어오게 하고(가장자리에 닿거나 잘리면 안 됨), 캐릭터와 소품 ` +
+  `묶음을 화면 중앙에 배치한다. 카드·보드의 글자는 화면 가로의 절반 가까이 차지할 ` +
+  `만큼 크게 쓴다.`;
+const POSES_BULL_EP9_16SCENE = [
+  {
+    id: "bull_ep9_s1",
+    file: "bull_ep9_s1.png",
+    first: true,
+    clause:
+      `장면 1 (훅): 황소가 궁금하다는 표정으로 '오픈AI 출시 취소'와 '마이크론 500억 달러'` +
+      `가 두 줄로 크게 적힌 카드를 두 손으로 감싸 쥐고 보여주는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s2",
+    file: "bull_ep9_s2.png",
+    first: false,
+    clause:
+      `장면 2 (훅 판돈): 황소가 '10월 1일'과 '새벽 5시 30분'이 두 줄로 크게 적힌 카드를 ` +
+      `두 손으로 감싸 쥐고 눈이 커진 긴장한 표정으로 보여주는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s3",
+    file: "bull_ep9_s3.png",
+    first: false,
+    clause:
+      `장면 3 (오프닝): 황소가 정면을 보며 한 손으로 위를 가리키고 다른 손은 ` +
+      `허리에 얹은 채 밝고 명랑하게 웃는 포즈, 소품 없음. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s4",
+    file: "bull_ep9_s4.png",
+    first: false,
+    clause:
+      `장면 4 (상황): 황소 옆 바닥에 세운 보드(바닥 거치)에 'GPT-6.1 아스트라'와 ` +
+      `'출시 취소'가 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 ` +
+      `설명하는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s5",
+    file: "bull_ep9_s5.png",
+    first: false,
+    clause:
+      `장면 5 (핵심질문+즉답): 황소가 '답은'과 '계약 장부'가 두 줄로 크게 적힌 카드를 ` +
+      `한 손으로 감싸 쥐고, 다른 빈 손 검지를 세워 확신에 찬 표정을 짓는 ` +
+      `자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s6",
+    file: "bull_ep9_s6.png",
+    first: false,
+    clause:
+      `장면 6 (개념-장기계약): 황소 옆 바닥에 세운 보드(바닥 거치)에 '5년 장기계약'과 ` +
+      `'1000억 달러'가 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 톡톡 짚으며 ` +
+      `차분히 설명하는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s7",
+    file: "bull_ep9_s7.png",
+    first: false,
+    clause:
+      `장면 7 (개념-HBM): 황소 옆 바닥에 세운 보드(바닥 거치)에 'HBM 웨이퍼'와 ` +
+      `'D램의 3배'가 두 줄로 크게 적혀 있고, 황소가 빈 손으로 손가락 세 개를 ` +
+      `펴 보이며 설명하는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s8",
+    file: "bull_ep9_s8.png",
+    first: false,
+    clause:
+      `장면 8 (한국 연결): 황소가 '마이크론 먼저'와 '삼성·SK 잣대'가 두 줄로 크게 적힌 ` +
+      `카드를 한 손으로 감싸 쥐고, 다른 빈 손으로 앞을 가리키며 확신에 찬 표정을 ` +
+      `짓는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s9",
+    file: "bull_ep9_s9.png",
+    first: false,
+    clause:
+      `장면 9 (균형): 황소가 '계약도 재협상'과 '가능성 주의'가 두 줄로 크게 적힌 카드를 ` +
+      `한 손으로 감싸 쥐고, 다른 빈 손으로 카드를 톡톡 짚으며 신중하게 고개를 ` +
+      `끄덕이는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s10",
+    file: "bull_ep9_s10.png",
+    first: false,
+    clause:
+      `장면 10 (반전-환율): 황소 옆 바닥에 세운 보드(바닥 거치)에 '환율 -11%'와 ` +
+      `'2분기 말 대비'가 두 줄로 크게 적혀 있고, 황소가 빈 손으로 아래로 향하는 ` +
+      `화살표를 그리듯 보드를 가리키는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s11",
+    file: "bull_ep9_s11.png",
+    first: false,
+    clause:
+      `장면 11 (환율 숫자): 황소가 '삼성전자 104조'와 'SK하이닉스 70조'가 두 줄로 크게 ` +
+      `적힌 카드를 두 손으로 감싸 쥐고 신중하고 진지한 표정으로 보여주는 ` +
+      `자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s12",
+    file: "bull_ep9_s12.png",
+    first: false,
+    clause:
+      `장면 12 (엔딩1 통찰): 황소가 '수요가 계약으로'와 '잠겨 있는가'가 두 줄로 크게 ` +
+      `적힌 카드를 두 손으로 감싸 쥐고 확신에 찬 표정으로 보여주는 ` +
+      `자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s13",
+    file: "bull_ep9_s13.png",
+    first: false,
+    clause:
+      `장면 13 (엔딩2 프레임): 황소 옆 바닥에 세운 보드(바닥 거치)에 '달러 숫자', ` +
+      `'다음 전망', '환율' 세 단어가 위에서 아래로 화살표로 이어진 큰 세 칸으로 크게 ` +
+      `적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s14",
+    file: "bull_ep9_s14.png",
+    first: false,
+    clause:
+      `장면 14 (엔딩3 체크): 황소가 '체크', '① 다음 분기 전망', '② 한국은 환율'이 ` +
+      `세 줄로 크게 적힌 카드를 한 손으로 감싸 쥐고, 다른 빈 손으로 손가락 ` +
+      `두 개를 세워 보이는 자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s15",
+    file: "bull_ep9_s15.png",
+    first: false,
+    clause:
+      `장면 15 (엔딩4 이득): 황소가 '순서대로 읽으면'과 '속보에 안 흔들려'가 두 줄로 ` +
+      `크게 적힌 카드를 두 손으로 감싸 쥐고 따뜻하고 차분한 미소로 보여주는 ` +
+      `자세. ${BULL_EP9_BG}`,
+  },
+  {
+    id: "bull_ep9_s16",
+    file: "bull_ep9_s16.png",
+    first: false,
+    clause:
+      `장면 16 (엔딩5 약속+댓글): 황소가 밝은 미소로 한 손을 가볍게 흔들고 ` +
+      `다른 손은 자연스럽게 내린 마무리 포즈, 소품 없이 빈 손. ${BULL_EP9_BG}`,
+  },
+];
+
 // 금박사 전용 클로징(팔로우 유도) — 2026-09-19 Owner 확정: 부엉이의 고정 CTA
 // (follow 8초+teaser 8초, 부엉이 캐릭터 등장)를 금박사 편 끝에 그대로 붙이면
 // 캐릭터가 갑자기 바뀌어 흐름이 끊긴다는 지적. 금박사는 비정기 게시라 "다음 편
@@ -7515,6 +7688,25 @@ const POSES_BULL_EP8_16SCENE_SINGLE = BULL_EP8_16SCENE_ONLY
     })()
   : null;
 
+const POSES_BULL_EP9_16SCENE_SINGLE = BULL_EP9_16SCENE_ONLY
+  ? (() => {
+      const requested = BULL_EP9_16SCENE_ONLY.split(",").map((s) => s.trim()).filter(Boolean);
+      const targets = requested.map((token) => {
+        const index = Number.parseInt(token, 10);
+        const target = Number.isInteger(index) ? POSES_BULL_EP9_16SCENE[index - 1] : undefined;
+        if (!target) {
+          console.error(
+            `ABORT: --bull-ep9-16scene-only "${token}" 에 해당하는 장면을 찾을 수 없습니다. ` +
+              `1~${POSES_BULL_EP9_16SCENE.length} 사이의 순번을 사용하세요.`,
+          );
+          process.exit(1);
+        }
+        return target;
+      });
+      return targets.map((t, i) => ({ ...t, first: i === 0 }));
+    })()
+  : null;
+
 const POSES_GEUMBAKSA_EP6_10SCENE_SINGLE = GEUMBAKSA_EP6_10SCENE_ONLY
   ? (() => {
       const requested = GEUMBAKSA_EP6_10SCENE_ONLY.split(",").map((s) => s.trim()).filter(Boolean);
@@ -7624,6 +7816,8 @@ const POSES = OWL_8SCENE_ONLY
   ? POSES_BULL_EP7_16SCENE_SINGLE
   : BULL_EP8_16SCENE_ONLY
   ? POSES_BULL_EP8_16SCENE_SINGLE
+  : BULL_EP9_16SCENE_ONLY
+  ? POSES_BULL_EP9_16SCENE_SINGLE
   : OWL_8SCENE_MODE
   ? POSES_OWL_8SCENE
   : OWL_EP2_8SCENE_MODE
@@ -7720,6 +7914,8 @@ const POSES = OWL_8SCENE_ONLY
   ? POSES_BULL_EP7_16SCENE
   : BULL_EP8_16SCENE_MODE
   ? POSES_BULL_EP8_16SCENE
+  : BULL_EP9_16SCENE_MODE
+  ? POSES_BULL_EP9_16SCENE
   : BULL_EP1_BG_COMPARE_MODE
   ? POSES_BULL_EP1_BG_COMPARE
   : GEUMBAKSA_CTA_FOLLOW_MODE
