@@ -1,12 +1,11 @@
 # AutoShorts AI — Next Action
 
-Updated: 2026-09-21 KST
+Updated: 2026-09-26 KST
 
-현재 대기 중인 다음 작업 항목은 없다. Money Shorts OS(부엉박사·금박사)의
-다음 작업 후보는 [`CURRENT_STANDARDS.md`](./CURRENT_STANDARDS.md) §2 "카드뉴스
-— 부엉박사 대비 뒤처진 부분(조치 필요)" 및 `CLEANUP_CANDIDATES_2026-09-21.md`의
-"다음 결정이 필요한 사항"을 참고한다.
+다음 작업은 [`CONTEXT_TRANSFER_CLAUDE.md`](./CONTEXT_TRANSFER_CLAUDE.md)의 "진행 중 작업"을 따른다.
 
-이 파일이 과거 담고 있던 내용은 전부 이미 폐기된 프로젝트(Shorts Editorial OS
-V2 — Coin/Detective Piggy)의 다음 작업 기록이었다. 현재 활성 프로젝트와
-무관하므로 여기 남기지 않는다. 필요하면 git log/git diff로 조회한다.
+1. 부엉박사 17편 영상 검수 → 조립+CTA 결합 → 커버·카드뉴스·스토리 (옛 구조 유지)
+2. 재고 배포(Owner가 날짜·순서 지정): 부엉박사 11~16편, 금박사 5~10편(새 목소리 경로)
+3. 신규 제작: 황소특보 5편(v3), 부엉박사 18편·금박사 11편(오프닝을 훅 뒤로)
+
+기준은 [`CURRENT_STANDARDS.md`](./CURRENT_STANDARDS.md).
