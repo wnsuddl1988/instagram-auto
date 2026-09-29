@@ -65,6 +65,13 @@ __pycache__/
 # Money Shorts OS — local owner state (never commit approval data)
 /.money-shorts-local/
 
+# Legacy Coin/Piggy 자산·실행 결과, 일회성 임시 스크립트 (삭제하지 않고 추적만 제외)
+/assets/editorial-v2/
+/_ai/live-topic-runs/
+/_tmp_*.mjs
+/scripts/_patch-*-once.mjs
+/scripts/_diag-*.mjs
+
 # Local generated QA / diagnostic artifacts
 /.tmp/
 /tmp/
