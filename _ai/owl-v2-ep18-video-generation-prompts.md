@@ -9,21 +9,26 @@
 
 | 씬 | 이미지 소스 | 저장할 영상 파일명 | 실측 발화(raw) | 요청 티어 | 예상 여유 |
 |---|---|---|---|---|---|
-| s1 hook_q | `owl_v2_ep18_s1_hook_q.png` | `owl_v2_ep18_s1_hook_q_motion.mp4` | 4.951초 | **8초** | 3.049초 |
-| s2 hook_stakes | `owl_v2_ep18_s2_hook_stakes.png` | `owl_v2_ep18_s2_hook_stakes_motion.mp4` | 3.06초 | **8초** | 4.940초 |
-| s3 opening | `owl_v2_ep18_s3_opening.png` | `owl_v2_ep18_s3_opening_motion.mp4` | 3.13초 | **8초** | 4.870초 |
-| s4 definition | `owl_v2_ep18_s4_definition.png` | `owl_v2_ep18_s4_definition_motion.mp4` | 6.52초 | **8초** | 1.480초 |
-| s5 fact_timing | `owl_v2_ep18_s5_fact_timing.png` | `owl_v2_ep18_s5_fact_timing_motion.mp4` | 4.41초 | **8초** | 3.590초 |
-| s6 fact_criteria | `owl_v2_ep18_s6_fact_criteria.png` | `owl_v2_ep18_s6_fact_criteria_motion.mp4` | 6.76초 | **8초** | 1.240초 |
-| s7 retroactive | `owl_v2_ep18_s7_retroactive.png` | `owl_v2_ep18_s7_retroactive_motion.mp4` | 6.293초 | **8초** | 1.707초 |
-| s8 core_q_answer | `owl_v2_ep18_s8_core_q_answer.png` | `owl_v2_ep18_s8_core_q_answer_motion.mp4` | 8.493초 | **10초** | 1.507초 |
-| s9 point1_limit | `owl_v2_ep18_s9_point1_limit.png` | `owl_v2_ep18_s9_point1_limit_motion.mp4` | 7.04초 | **10초** | 2.960초 |
-| s10 point2_deadline | `owl_v2_ep18_s10_point2_deadline.png` | `owl_v2_ep18_s10_point2_deadline_motion.mp4` | 7.52초 | **10초** | 2.480초 |
-| s11 caution_exclusion | `owl_v2_ep18_s11_caution_exclusion.png` | `owl_v2_ep18_s11_caution_exclusion_motion.mp4` | 5.547초 | **8초** | 2.453초 |
-| s12 caution_choice | `owl_v2_ep18_s12_caution_choice.png` | `owl_v2_ep18_s12_caution_choice_motion.mp4` | 3.595초 | **8초** | 4.405초 |
-| s13 summary | `owl_v2_ep18_s13_summary.png` | `owl_v2_ep18_s13_summary_motion.mp4` | 6.08초 | **8초** | 1.920초 |
-| s14 checklist | `owl_v2_ep18_s14_checklist.png` | `owl_v2_ep18_s14_checklist_motion.mp4` | 5.56초 | **8초** | 2.440초 |
-| s15 bridge(closing) | `owl_v2_ep18_s15_bridge.png` | `owl_v2_ep18_s15_bridge_motion.mp4` | 7.893초 | **10초** | 2.107초 |
+| s1 hook_q | `owl_v2_ep18_s1_hook_q.png` | `owl_v2_ep18_s1_hook_q_motion.mp4` | 5.03초 | **10초** | 4.97초 (사용 구간 6.30초) |
+| s2 hook_stakes | `owl_v2_ep18_s2_hook_stakes.png` | `owl_v2_ep18_s2_hook_stakes_motion.mp4` | 3.14초 | **10초** | 6.86초 (사용 구간 4.01초) |
+| s3 opening | `owl_v2_ep18_s3_opening.png` | `owl_v2_ep18_s3_opening_motion.mp4` | 3.61초 | **8초** | 4.39초 (사용 구간 4.30초) |
+| s4 definition | `owl_v2_ep18_s4_definition.png` | `owl_v2_ep18_s4_definition_motion.mp4` | 6.83초 | **10초** | 3.17초 (사용 구간 7.78초) |
+| s5 fact_timing | `owl_v2_ep18_s5_fact_timing.png` | `owl_v2_ep18_s5_fact_timing_motion.mp4` | 4.49초 | **10초** | 5.51초 (사용 구간 5.43초) |
+| s6 fact_criteria | `owl_v2_ep18_s6_fact_criteria.png` | `owl_v2_ep18_s6_fact_criteria_motion.mp4` | 7.23초 | **10초** | 2.77초 (사용 구간 8.50초) |
+| s7 retroactive | `owl_v2_ep18_s7_retroactive.png` | `owl_v2_ep18_s7_retroactive_motion.mp4` | 6.81초 | **10초** | 3.19초 (사용 구간 7.83초) |
+| s8 core_q_answer | `owl_v2_ep18_s8_core_q_answer.png` | `owl_v2_ep18_s8_core_q_answer_motion.mp4` | 8.98초 | **10초** | 1.02초 (사용 구간 10.08초) |
+| s9 point1_limit | `owl_v2_ep18_s9_point1_limit.png` | `owl_v2_ep18_s9_point1_limit_motion.mp4` | 6.82초 | **10초** | 3.18초 (사용 구간 7.94초) |
+| s10 point2_deadline | `owl_v2_ep18_s10_point2_deadline.png` | `owl_v2_ep18_s10_point2_deadline_motion.mp4` | 7.92초 | **10초** | 2.08초 (사용 구간 8.93초) |
+| s11 caution_exclusion | `owl_v2_ep18_s11_caution_exclusion.png` | `owl_v2_ep18_s11_caution_exclusion_motion.mp4` | 5.98초 | **10초** | 4.02초 (사용 구간 6.77초) |
+| s12 caution_choice | `owl_v2_ep18_s12_caution_choice.png` | `owl_v2_ep18_s12_caution_choice_motion.mp4` | 3.98초 | **10초** | 6.02초 (사용 구간 4.86초) |
+| s13 summary | `owl_v2_ep18_s13_summary.png` | `owl_v2_ep18_s13_summary_motion.mp4` | 6.24초 | **10초** | 3.76초 (사용 구간 7.24초) |
+| s14 checklist | `owl_v2_ep18_s14_checklist.png` | `owl_v2_ep18_s14_checklist_motion.mp4` | 5.72초 | **10초** | 4.28초 (사용 구간 6.59초) |
+| s15 bridge | `owl_v2_ep18_s15_bridge.png` | `owl_v2_ep18_s15_bridge_motion.mp4` | 5.85초 | **10초** | 4.15초 (사용 구간 6.13초) |
+
+★ 2026-09-30 변경: (1) 금박사 연결 제거로 s15(마지막 씬)를 '저장해두고 / 신청 전 확인'으로 바꾸고 TTS를 6회차로 다시 만들었다.
+(2) **카드를 든 씬은 8초로 뽑으면 끝에서 카드가 투명해져 사라지는 사고가 8편 s12, 9편 s15(2회)에서 났다 → 이 편은 소품 없는 s3만 8초, 나머지 14개를 전부 10초로 요청한다.**
+조립에서 사용 구간(사용 구간 열)까지만 쓰고 나머지는 잘리므로 10초로 받아도 손해가 없다.
+
 
 ★ 영상 생성 절대규칙(87씬 전수조사 확정, `_ai/CURRENT_STANDARDS.md` §0) 전부 반영:
 - 소품을 든 손(날개)은 **한 지점 고정**("holds steadily at", 이동·반복 왕복 지시 금지)
@@ -56,18 +61,17 @@
 ================================================================================
 
 ---
-
-## s1 — hook_q (8초, 카드 감싸쥠)
+## s1 — hook_q (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image — same round
 consultation desk, same contract/deposit/housing-dispute icon signage, same
 warm lighting. Do not change any colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds. The framing at frame 1 and the framing at the very last frame must
 be pixel-for-pixel identical in scale and crop.
@@ -82,7 +86,7 @@ is never released, and the wing never opens outward away from the card at
 any point, including the last 1-2 seconds. The card does not tilt, rotate,
 rise, lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration. The other wing rests near the character's chin
+entire 10-second duration. The other wing rests near the character's chin
 in a worried gesture.
 
 MOTION DETAIL: the character's expression shifts subtly between worried
@@ -91,7 +95,7 @@ question to the viewer. The sunglasses stay perched on the forehead
 throughout.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces or head tilts, continuous beak movement while speaking. This
 motion must come ONLY from the head and body — the wing holding the card
@@ -108,7 +112,7 @@ background at any point.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
 ("보증금", "한 푼도?") and the background signage text as locked,
-non-regenerating image layers for the full 8 seconds, including the very
+non-regenerating image layers for the full 10 seconds, including the very
 last frame. Render these exactly as pixels copied from the reference
 image, unchanged frame to frame, and still fully visible and held by the
 character at the end of the clip.
@@ -134,21 +138,21 @@ movement.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s1_hook_q_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — **카드가 끝까지 들려 있는지 최우선 확인**, 카메라 줌/크롭 여부 포함
+2. 시작·중반·끝(9~10초) 프레임 확인 — **카드가 끝까지 들려 있는지 최우선 확인**, 카메라 줌/크롭 여부 포함
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s2 — hook_stakes (8초, 카드 감싸쥠)
+## s2 — hook_stakes (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -162,13 +166,13 @@ and the wing never opens outward away from the card at any point,
 including the last 1-2 seconds. The card does not tilt, rotate, rise,
 lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration.
+entire 10-second duration.
 
 MOTION DETAIL: the character's expression is wide-eyed and surprised, as
 if astonished by unexpected good news.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -180,7 +184,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
 ("국가가", "채워준다?") as locked, non-regenerating image layers for the
-full 8 seconds, including the very last frame. Render these exactly as
+full 10 seconds, including the very last frame. Render these exactly as
 pixels copied from the reference image, unchanged frame to frame, still
 fully visible and held at the end.
 
@@ -204,12 +208,12 @@ The card stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s2_hook_stakes_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s3 — opening (8초, 소품 없음)
+## s3 — opening (8초, 소품 없음 — 이 편에서 유일한 8초)
 
 ```
 Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
@@ -264,16 +268,16 @@ viewer — never static, never frozen even in the final seconds.
 
 ---
 
-## s4 — definition (8초, 카드 감싸쥠)
+## s4 — definition (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -286,14 +290,14 @@ never released, and the wing never opens outward away from the card at any
 point, including the last 1-2 seconds. The card does not tilt, rotate,
 rise, lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration.
+entire 10-second duration.
 
 MOTION DETAIL: the character's expression is calm and instructive, as if
 plainly explaining a term to the viewer — no smile, sharp neutral
 expression.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -305,7 +309,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
 ("전세사기 최소보장제") as a locked, non-regenerating image layer for the
-full 8 seconds, including the very last frame. Render it exactly as pixels
+full 10 seconds, including the very last frame. Render it exactly as pixels
 copied from the reference image, unchanged frame to frame, still fully
 visible and held at the end.
 
@@ -329,21 +333,21 @@ stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s4_definition_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s5 — fact_timing (8초, 카드 감싸쥠)
+## s5 — fact_timing (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -356,13 +360,13 @@ is never dropped, is never released, and the wing never opens outward away
 from the card at any point, including the last 1-2 seconds. The card does
 not tilt, rotate, rise, lower, or drift at any point. Treat the card as a
 frozen photograph layered in front of the character, holding steadily in
-place for the entire 8-second duration.
+place for the entire 10-second duration.
 
 MOTION DETAIL: the character's expression is confident and assured, as if
 stating a confirmed fact.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -374,7 +378,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text ("11월
 13일 시행") and the calendar icon as locked, non-regenerating image layers
-for the full 8 seconds, including the very last frame. Render these
+for the full 10 seconds, including the very last frame. Render these
 exactly as pixels copied from the reference image, unchanged frame to
 frame, still fully visible and held at the end.
 
@@ -398,21 +402,21 @@ stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s5_fact_timing_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s6 — fact_criteria (8초, 카드 감싸쥠)
+## s6 — fact_criteria (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -425,13 +429,13 @@ never disappears, is never dropped, is never released, and the wing never
 opens outward away from the card at any point, including the last 1-2
 seconds. The card does not tilt, rotate, rise, lower, or drift at any
 point. Treat the card as a frozen photograph layered in front of the
-character, holding steadily in place for the entire 8-second duration.
+character, holding steadily in place for the entire 10-second duration.
 
 MOTION DETAIL: the character's expression is serious and instructive, as
 if carefully walking through a formula.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -443,7 +447,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
 ("보증금 × 1/3") and the arrow icon as locked, non-regenerating image
-layers for the full 8 seconds, including the very last frame. Render these
+layers for the full 10 seconds, including the very last frame. Render these
 exactly as pixels copied from the reference image, unchanged frame to
 frame, still fully visible and held at the end.
 
@@ -467,21 +471,21 @@ stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s6_fact_criteria_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s7 — retroactive (8초, 카드 감싸쥠)
+## s7 — retroactive (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -495,13 +499,13 @@ never released, and the wing never opens outward away from the card at any
 point, including the last 1-2 seconds. The card does not tilt, rotate,
 rise, lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration.
+entire 10-second duration.
 
 MOTION DETAIL: the character's expression is calm and reassuring, as if
 putting the viewer's mind at ease.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -513,7 +517,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text ("이미
 끝났어도 OK") and the icons as locked, non-regenerating image layers for
-the full 8 seconds, including the very last frame. Render these exactly as
+the full 10 seconds, including the very last frame. Render these exactly as
 pixels copied from the reference image, unchanged frame to frame, still
 fully visible and held at the end.
 
@@ -537,21 +541,21 @@ stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s7_retroactive_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s11 — caution_exclusion (8초, 카드 감싸쥠)
+## s11 — caution_exclusion (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -565,13 +569,13 @@ never released, and the wing never opens outward away from the card at any
 point, including the last 1-2 seconds. The card does not tilt, rotate,
 rise, lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration.
+entire 10-second duration.
 
 MOTION DETAIL: the character's expression is firm and serious, as if
 clearly stating an important restriction, without exaggerated alarm.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -583,7 +587,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text ("직접
 매수·배당요구 없음") and the prohibition icon as locked, non-regenerating
-image layers for the full 8 seconds, including the very last frame. Render
+image layers for the full 10 seconds, including the very last frame. Render
 these exactly as pixels copied from the reference image, unchanged frame
 to frame, still fully visible and held at the end.
 
@@ -607,21 +611,21 @@ card stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s11_caution_exclusion_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s12 — caution_choice (8초, 카드 감싸쥠)
+## s12 — caution_choice (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -635,13 +639,13 @@ never released, and the wing never opens outward away from the card at any
 point, including the last 1-2 seconds. The card does not tilt, rotate,
 rise, lower, or drift at any point. Treat the card as a frozen photograph
 layered in front of the character, holding steadily in place for the
-entire 8-second duration.
+entire 10-second duration.
 
 MOTION DETAIL: the character's expression is thoughtful and careful, as if
 weighing two options for the viewer.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head and body — the wing holding the card must remain
@@ -653,7 +657,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
 ("현금", "or", "공공임대") and the balance-scale icon as locked,
-non-regenerating image layers for the full 8 seconds, including the very
+non-regenerating image layers for the full 10 seconds, including the very
 last frame. Render these exactly as pixels copied from the reference
 image, unchanged frame to frame, still fully visible and held at the end.
 
@@ -677,21 +681,21 @@ card stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s12_caution_choice_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s13 — summary (8초, 카드 감싸쥠)
+## s13 — summary (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -705,14 +709,14 @@ never disappears, is never dropped, is never released, and the wing never
 opens outward away from the card at any point, including the last 1-2
 seconds. The card does not tilt, rotate, rise, lower, or drift at any
 point. Treat the card as a frozen photograph layered in front of the
-character, holding steadily in place for the entire 8-second duration.
+character, holding steadily in place for the entire 10-second duration.
 
 MOTION DETAIL: the character's expression is confident and assured, as if
 proudly summarizing the key takeaway. One wing may give a small thumbs-up
 gesture while the other holds the card steady.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head, body, and the free wing — the wing holding the
@@ -724,7 +728,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text ("최소",
 "3분의 1은", "국가 보장") and the shield-and-bank icon as locked,
-non-regenerating image layers for the full 8 seconds, including the very
+non-regenerating image layers for the full 10 seconds, including the very
 last frame. Render these exactly as pixels copied from the reference
 image, unchanged frame to frame, still fully visible and held at the end.
 
@@ -748,21 +752,21 @@ card stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s13_summary_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
 3. 문제 없으면 다음 씬 진행
 
 ---
 
-## s14 — checklist (8초, 카드 감싸쥠)
+## s14 — checklist (10초, 카드 감싸쥠)
 
 ```
-Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+Animate this image into a 10-second video clip. STYLE CONSISTENCY: keep the
 owl analyst character's design and the legal/housing-dispute consultation
 desk background exactly as shown in the reference image. Do not change any
 colors, text, or object positions.
 
 CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
-for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly, no
+for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly, no
 framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
@@ -776,14 +780,14 @@ disappears, is never dropped, is never released, and the wing never opens
 outward away from the card at any point, including the last 1-2 seconds.
 The card does not tilt, rotate, rise, lower, or drift at any point. Treat
 the card as a frozen photograph layered in front of the character, holding
-steadily in place for the entire 8-second duration. The other wing holds
+steadily in place for the entire 10-second duration. The other wing holds
 up two claws/fingers in a "two things" gesture near the character's head.
 
 MOTION DETAIL: the character's expression is bright and helpful (within
 its usual sharp neutral range), as if clearly listing two things to check.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY): the character must
-show visible, continuous motion for the ENTIRE 8 seconds, including the
+show visible, continuous motion for the ENTIRE 10 seconds, including the
 last 2-3 seconds — natural eye blinks at least every 2-3 seconds, subtle
 body bounces, continuous beak movement while speaking. This motion must
 come ONLY from the head, body, and the free wing — the wing holding the
@@ -795,7 +799,7 @@ object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text ("체크",
 "① 피해자 인정 여부", "② 신청 기한") and the icons as locked,
-non-regenerating image layers for the full 8 seconds, including the very
+non-regenerating image layers for the full 10 seconds, including the very
 last frame. Render these exactly as pixels copied from the reference
 image, unchanged frame to frame, still fully visible and held at the end.
 
@@ -819,11 +823,11 @@ The card stays held throughout.
 
 ## 완료 후 절차
 1. 생성된 영상을 `C:/tmp/owl-v2-ep18-videos/owl_v2_ep18_s14_checklist_motion.mp4`로 저장
-2. 시작·중반·끝(7~8초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
-3. 8초 티어 씬 전부 완료 후 10초 티어 씬으로 진행
+2. 시작·중반·끝(9~10초) 프레임 확인 — 카드가 끝까지 들려 있는지 최우선 확인
+3. 다음 씬 진행
 
 ================================================================================
-# 🟨 10초 티어 (s8, s9, s10, s15)
+# (계속) 10초 티어 — s8, s9, s10, s15
 ================================================================================
 
 ---
@@ -1053,9 +1057,9 @@ for the ENTIRE 10 seconds — absolutely no zoom in, no zoom out, no dolly,
 no framing drift, not even a slow or subtle one, including the final 1-2
 seconds.
 
-PROP LOCK (HIGHEST PRIORITY): the character holds a card reading "경·공매는?"
-in large text with a small house-and-gavel icon below, completely rigid,
-held in one wing at chest height for the entire clip, from frame 1 to the
+PROP LOCK (HIGHEST PRIORITY): the character holds a card with two lines of large text — "저장해두고"
+on the top line and "신청 전 확인" in red on the bottom line, completely
+rigid, held in one wing at chest height for the entire clip, from frame 1 to the
 very last frame with NO exception. The card must still be visibly held at
 the exact final frame, identically to frame 1. The card never disappears,
 is never dropped, is never released, and the wing never opens outward away
@@ -1065,8 +1069,8 @@ frozen photograph layered in front of the character, holding steadily in
 place for the entire 10-second duration.
 
 MOTION DETAIL: the character's expression is bright and friendly (within
-its usual sharp neutral range), as if warmly wrapping up and handing off
-to a colleague.
+its usual sharp neutral range), as if warmly wrapping up and inviting the viewer
+to save this and leave a comment.
 
 CONTINUOUS MOTION FOR THE FULL CLIP (HIGHEST PRIORITY, THIS IS THE FINAL
 SCENE OF THE EPISODE — DO NOT LET IT GO STATIC): the character must show
@@ -1081,7 +1085,7 @@ chairs must stay completely fixed — no camera pan or zoom, no background
 object movement, no card movement, no card disappearance.
 
 CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
-("경·공매는?") and the icon as locked, non-regenerating image layers for
+("저장해두고", "신청 전 확인") as locked, non-regenerating image layers for
 the full 10 seconds, including the very last frame. Render these exactly
 as pixels copied from the reference image, unchanged frame to frame, still
 fully visible and held at the end.
@@ -1100,8 +1104,8 @@ FRAMING DRIFT AT ANY POINT INCLUDING THE LAST SECOND, NO CARD TILT OR
 ROTATION AT ANY POINT INCLUDING THE LAST SECOND.
 
 MOUTH MOVEMENT: the character's beak actively opens and closes continuously
-in natural speech rhythm for the entire clip, as if warmly handing off to
-the next segment — never static, never frozen even in the final seconds.
+in natural speech rhythm for the entire clip, as if warmly inviting the viewer to save and
+comment — never static, never frozen even in the final seconds.
 The card stays held throughout.
 ```
 
@@ -1111,9 +1115,9 @@ The card stays held throughout.
 3. 15개 씬 전부 완료 후 본편 조립(`run-owl-assemble-shorts-v2.mjs`,
    `--spec-module ./_owl-v2-ep18-assembly-spec.mjs --spec-export
    OWL_ASSEMBLY_SPEC`, `--clip-dir C:/tmp/owl-v2-ep18-videos`,
-   `--audio-summary C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v5/elevenlabs-scene-paced-tts-summary.json`,
+   `--audio-summary C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v6/elevenlabs-scene-paced-tts-summary.json`,
    `--tts-script C:/tmp/money-shorts-os/owl-v2-ep18-tts/owl-v2-ep18-tts-script.json`) →
    고정 CTA 연결(`run-owl-episode-with-fixed-cta-once.mjs --alignment
-   C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v5/elevenlabs-korean-director-*.alignment.json`,
+   C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v6/elevenlabs-korean-director-*.alignment.json`,
    부엉박사 고정 CTA `C:\tmp\owl-cta-fixed-v2\owl_cta_fixed_v2_final_v6.mp4`)
    진행

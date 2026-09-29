@@ -3,9 +3,9 @@
  * 특별법 "최소보장제", 2026-11-13 시행.
  *
  * 기준: _ai/CURRENT_STANDARDS.md §1 "씬 구조 v2", §7. 유형: C형(제도
- * 변경 → 나한테 뭐가 달라지나). 배포 예정 짝: 금박사(파일 번호 미정,
- * "경·공매" 절차 해설 — 부엉박사 본문에서는 이름만 언급하고 경매·공매
- * 절차 자체는 설명하지 않는다).
+ * 변경 → 나한테 뭐가 달라지나). 금박사 연결은 2026-09-30에 제거했다(금박사
+ * 반응 저조, Owner 결정) — 부엉박사 본문에서 경·공매는 이름만 언급하고
+ * 설명하지 않으며, 마지막 씬은 "저장해 두고 신청 전 다시 확인 + 댓글"이다.
  *
  * ★ 핵심 팩트(2026-09-28 WebSearch로 원문 직접 확인, OBSERVED_FULL)★:
  * - 전세사기 특별법 개정안이 2026-04-23 국회 본회의 통과, 공포 후
@@ -65,7 +65,9 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   scriptStructureVersion: "owl_script_structure_v2",
   episode: 18,
   scriptType: "C_policy_change",
-  geumbaksaHandoffTerm: "경·공매",
+  // 2026-09-30 Owner 결정: 금박사 반응이 세 캐릭터 중 가장 낮아 18편부터 금박사 연결을
+  // 뺀다. 마지막 씬은 저장·댓글 유도로 바꿨고, 경·공매는 부엉박사 본문에서 설명하지 않는다.
+  geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-jeonse-fraud-minimum-guarantee-2026-11-13",
   title: "전세사기 당했는데 한 푼도 못 받았다면, 11월부터 달라진다",
   channelName: "경제번역소",
@@ -286,9 +288,9 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
       key: "s15_bridge",
       role: "save",
       video: "owl_v2_ep18_s15_bridge_motion.mp4",
-      narration: "전세사기 피해자 결정받는 절차에서 경·공매가 헷갈리면 금박사가 이어서 풀어줄게. 궁금한 제도는 댓글로 남겨줘.",
+      narration: "이 두 가지는 저장해 두고, 신청하기 전에 다시 확인해. 궁금한 제도는 댓글로 남겨줘.",
       imageBrief:
-        "동일 배경. 부엉이가 밝은 미소로 '경·공매는?' 큰 글자 카드를 " +
+        "동일 배경. 부엉이가 밝은 미소로 '저장해두고 / 신청 전 확인' 두 줄 큰 글자 카드를 " +
         "한쪽 날개로 감싸 쥐고 마무리하는 자세.",
       overlays: [],
     },
