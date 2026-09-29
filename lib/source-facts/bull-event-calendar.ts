@@ -17,6 +17,9 @@ export type BullEventCategory =
   | "us_cpi"
   | "kr_cpi"
   | "earnings_season_start"
+  | "earnings_us" // 미국 주요 기업 실적 발표
+  | "company_kpi" // 기업 월/분기 판매·인도량 등 KPI 발표
+  | "kr_trade_data" // 한국 수출입동향 등 무역 통계
   | "other_macro";
 
 export interface BullScheduledEvent {
@@ -28,6 +31,11 @@ export interface BullScheduledEvent {
   readonly displayName: string;
   /** 이 날짜의 근거(공식 발표 출처) — 검증 없이 채워 넣지 않는다. */
   readonly sourceNote: string;
+  /**
+   * 날짜 확정 여부. 생략하면 "confirmed". 공식 공지 전이라 관행으로만 아는 날짜는
+   * "tentative"로 넣고 공식 공지가 나오면 갱신한다(날짜 날조 금지 원칙 유지).
+   */
+  readonly status?: "confirmed" | "tentative";
 }
 
 /**
@@ -108,6 +116,35 @@ export const BULL_SCHEDULED_EVENTS: readonly BullScheduledEvent[] = [
     displayName: "한국은행 금융통화위원회 통화정책방향 결정회의(11월)",
     sourceNote: "bok.or.kr/portal/singl/crncyPolicyDrcMtg/listYear.do",
   },
+  // ── 2026-09-30 추가: 이벤트 D-N 레인용(황소특보 소재 발굴 레인 ③) ───────────────
+  // 아래 3건은 이번 세션에서 복수 보도/회사 공시로 날짜를 직접 확인했다.
+  {
+    id: "micron-fy2026-q4",
+    category: "earnings_us",
+    dateIso: "2026-10-01",
+    displayName: "마이크론 FY2026 4분기 실적 발표(미국 현지 9/30 콘퍼런스콜 MT 14:30, 한국 10/1 05:30)",
+    sourceNote:
+      "Nasdaq/회사 보도자료 'Micron Technology to Report Fiscal Fourth Quarter Results on September 30, 2026'(2026-08-26); 지이뉴스 2026-09-26(한국시간 10/1 05:30)",
+  },
+  {
+    id: "kr-trade-2026-09",
+    category: "kr_trade_data",
+    dateIso: "2026-10-01",
+    displayName: "산업통상부 9월 수출입동향 발표",
+    sourceNote:
+      "산업통상부는 8월 동향을 2026-09-01에 발표(KDI EIEC 확인). 매월 1일 발표 관행이라 10/1 발표로 보되, 당일 공지 재확인 필요",
+    status: "tentative",
+  },
+  {
+    id: "tesla-2026-q3-deliveries",
+    category: "company_kpi",
+    dateIso: "2026-10-02",
+    displayName: "테슬라 2026년 3분기 생산·인도량 발표(미국 현지 10/2)",
+    sourceNote: "디지털투데이·지이뉴스 2026-09-29 보도('테슬라는 10월 2일 3분기 생산·인도량 발표')",
+  },
+  // TODO(공식 확정 공시 시 추가): 삼성전자 3분기 잠정실적(관행상 10월 7~8일 예상, 미확정),
+  // SK하이닉스 3분기 실적(10/27 보도 있으나 회사 IR 공시 미확인), 앤트로픽 나스닥 상장(11월 계획 보도만
+  // 있고 날짜 미확정). 규칙 계산으로 날짜를 만들지 않는다.
 ];
 
 export interface BullUpcomingEventQuery {

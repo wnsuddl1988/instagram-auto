@@ -116,6 +116,10 @@ const BULL_TOPIC_RISK_AWARENESS_NEWS_SEARCH_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-bull-topic-risk-awareness-news-search-once.mjs",
 );
+const BULL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-bull-topic-lane-news-search-once.mjs",
+);
 const OWL_BLOB_UPLOAD_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-instagram-blob-upload-from-request-once.mjs",
@@ -243,6 +247,11 @@ const BULL_TOPIC_SECTOR_NEWS_SEARCH_ENV_KEY_NAMES = Object.freeze([
 ]);
 // 황소특보 위험고지·투자심리 뉴스 검색은 네이버뉴스 키만 있으면 된다.
 const BULL_TOPIC_RISK_AWARENESS_NEWS_SEARCH_ENV_KEY_NAMES = Object.freeze([
+  "NAVER_CLIENT_ID",
+  "NAVER_CLIENT_SECRET",
+]);
+// 황소특보 소재 발굴 레인 뉴스 검색(2026-09-30 신설)도 네이버뉴스 키만 있으면 된다.
+const BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES = Object.freeze([
   "NAVER_CLIENT_ID",
   "NAVER_CLIENT_SECRET",
 ]);
@@ -561,6 +570,17 @@ const SUPPORTED_COMMANDS = Object.freeze({
     envKeyNames: BULL_TOPIC_RISK_AWARENESS_NEWS_SEARCH_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
     validateBeforeEnvAccess: validateBullTopicRiskAwarenessNewsSearchBeforeEnvAccess,
+  },
+  // 황소특보 소재 발굴 레인(인물 발언·제도 변경·신테마·매크로·수급) 뉴스 검색 — 읽기 전용,
+  // 인자 없음(2026-09-30 신설).
+  "bull-topic-lane-news-search": {
+    script: BULL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: validateBullTopicLaneNewsSearchBeforeEnvAccess,
   },
   "owl-blob-upload": {
     script: OWL_BLOB_UPLOAD_RUNNER_PATH,
@@ -968,6 +988,41 @@ function validateBullTopicRiskAwarenessNewsSearchBeforeEnvAccess(rawArgs) {
   }
   if (values["--env-path"] !== undefined && !isAbsolute(values["--env-path"])) {
     return { ok: false, reason: "bull_topic_risk_awareness_news_search_env_path_invalid" };
+  }
+  return { ok: true };
+}
+
+/**
+ * bull-topic-lane-news-search 인자 검증. env 접근 전에 수행한다.
+ * - 인자는 --arm(+선택 --env-path) 뿐이다. 검색 키워드가 스크립트 코드에 고정돼 있어
+ *   임의 키워드를 주입할 통로가 없다.
+ */
+function validateBullTopicLaneNewsSearchBeforeEnvAccess(rawArgs) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== "bull-topic-lane-news-search") {
+    return { ok: false, reason: "bull_topic_lane_news_search_command_position_invalid" };
+  }
+  const valueFlags = new Set(["--env-path"]);
+  const values = Object.create(null);
+  let armed = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) return { ok: false, reason: "bull_topic_lane_news_search_duplicate_arm" };
+      armed = true;
+      continue;
+    }
+    if (!valueFlags.has(token) || Object.hasOwn(values, token)) {
+      return { ok: false, reason: "bull_topic_lane_news_search_unknown_or_duplicate_flag" };
+    }
+    const value = rawArgs[index + 1];
+    if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) {
+      return { ok: false, reason: "bull_topic_lane_news_search_flag_value_invalid" };
+    }
+    values[token] = value;
+    index += 1;
+  }
+  if (values["--env-path"] !== undefined && !isAbsolute(values["--env-path"])) {
+    return { ok: false, reason: "bull_topic_lane_news_search_env_path_invalid" };
   }
   return { ok: true };
 }
@@ -2153,6 +2208,11 @@ function printUsage() {
       "                         inject ONLY the Naver News keys and run a read-only news search for",
       "                         황소특보 leverage/margin warnings, investor psychology, fund flows,",
       "                         market structure, and valuation-education topic candidates.",
+      "                         No arguments beyond --arm. Dry-run does not access the env file.",
+      "  bull-topic-lane-news-search",
+      "                         inject ONLY the Naver News keys and run a read-only news search across",
+      "                         the 황소특보 topic lanes (figure statements, policy changes, new themes,",
+      "                         macro, flows/decoupling). Titles+links only, no auto-extraction.",
       "                         No arguments beyond --arm. Dry-run does not access the env file.",
       "",
       "Notes:",
