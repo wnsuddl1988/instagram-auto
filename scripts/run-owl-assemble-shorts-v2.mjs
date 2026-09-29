@@ -514,12 +514,22 @@ function alignWordGroups(spokenWords, displayWords) {
     }
     const nextSi = found ? found.dsi : spokenWords.length;
     const nextDi = found ? found.ddi : displayWords.length;
-    groups.push({
-      spokenStart: si,
-      spokenLen: nextSi - si,
-      displayStart: di,
-      displayLen: nextDi - di,
-    });
+    if (nextSi - si === nextDi - di) {
+      // 불일치 구간이라도 양쪽 어절 수가 같으면 위치대로 1:1 그룹으로 나눈다
+      // (2026-09-29 황소특보 9편: "오픈에이아이가 이십팔일, 시월"↔"오픈AI가 28일, 10월"
+      // 3어절이 한 그룹으로 묶여, 자막 블록이 그 중간에서 끊기면 치환을 포기하고
+      // 발음 표기가 화면에 그대로 나왔다). 어절 수가 다른 구간만 묶음 그룹으로 둔다.
+      for (let k = 0; k < nextSi - si; k += 1) {
+        groups.push({ spokenStart: si + k, spokenLen: 1, displayStart: di + k, displayLen: 1 });
+      }
+    } else {
+      groups.push({
+        spokenStart: si,
+        spokenLen: nextSi - si,
+        displayStart: di,
+        displayLen: nextDi - di,
+      });
+    }
     si = nextSi;
     di = nextDi;
   }
