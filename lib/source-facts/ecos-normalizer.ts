@@ -13,7 +13,8 @@ import { generateCandidateFromSnapshot } from "./raw-snapshot-parser";
 
 /**
  * Converts an ECOS TIME string to a human-readable data period.
- * Monthly cycle only (YYYYMM → "YYYY년 M월").
+ * Handles monthly (YYYYMM → "YYYY년 M월") and daily (YYYYMMDD →
+ * "YYYY년 M월 D일", used by the fx_usd_krw daily series) cycles.
  * Returns the raw string unchanged for unrecognised formats.
  */
 export function ecosTimeToDataPeriod(time: string): string {
@@ -21,6 +22,12 @@ export function ecosTimeToDataPeriod(time: string): string {
     const year = time.slice(0, 4);
     const month = String(parseInt(time.slice(4, 6), 10));
     return `${year}년 ${month}월`;
+  }
+  if (/^\d{8}$/.test(time)) {
+    const year = time.slice(0, 4);
+    const month = String(parseInt(time.slice(4, 6), 10));
+    const day = String(parseInt(time.slice(6, 8), 10));
+    return `${year}년 ${month}월 ${day}일`;
   }
   return time;
 }

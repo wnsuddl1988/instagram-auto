@@ -50,12 +50,18 @@ export const BOK_BASE_RATE_DECISION_SOURCE_NAME =
  * Official BOK base-rate decision history, most-recent first.
  *
  * Each entry is transcribed from the official BOK monetary-policy page
- * (BOK_BASE_RATE_DECISION_SOURCE_URL), verified on 2026-06-26.
+ * (BOK_BASE_RATE_DECISION_SOURCE_URL). The 2025-05-29-and-earlier entries were
+ * verified on 2026-06-26; the 2026-07-16 and 2026-08-27 entries were supplied
+ * by the Owner from the same official BOK page on 2026-09-16 (screenshot of
+ * "한국은행 기준금리 추이" table, cross-checked against the live ECOS series
+ * showing 202607=2.75%, 202608=3.00%).
  * These are decision dates (the day the Monetary Policy Board changed the rate),
  * not ECOS data periods. Do not add a date here unless it was read off the
  * official BOK source for that exact decision.
  */
 export const BOK_BASE_RATE_DECISIONS: readonly BokBaseRateDecision[] = [
+  { decisionDate: "2026-08-27", value: 3.0 },
+  { decisionDate: "2026-07-16", value: 2.75 },
   { decisionDate: "2025-05-29", value: 2.5 },
   { decisionDate: "2025-02-25", value: 2.75 },
   { decisionDate: "2024-11-28", value: 3.0 },

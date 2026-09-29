@@ -3,6 +3,7 @@ export type SourceProviderType =
   | "kosis"
   | "opendart"
   | "fred"
+  | "alpha_vantage"
   | "public_finance"
   | "company_ir"
   | "manual";
