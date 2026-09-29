@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+const root = process.cwd();
+const output = path.join(root, "output", "shorts-editorial-os-v2", "pa5c-r2-rig-feasibility");
+const report = JSON.parse(fs.readFileSync(path.join(output, "pa5c-r2-rig-feasibility-report.json"), "utf8"));
+const hash = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+assert.equal(report.schemaVersion, "shorts_editorial_os_v2_pa5c_r2_rig_feasibility_v1");
+assert.deepEqual(report.components, ["head_group", "body_core", "left_arm", "right_arm", "left_leg", "right_leg", "left_eye", "right_eye", "mouth", "prop_phone", "information_calendar"]);
+assert.equal(hash(report.source.path), report.source.sha256);
+assert.equal(hash(report.transparency.path), report.transparency.sha256);
+assert.equal(hash(report.proof.path), report.proof.sha256);
+assert.equal(report.proof.probe.width, 1080); assert.equal(report.proof.probe.height, 1920); assert.equal(report.proof.probe.fps, 30);
+assert.ok(report.proof.probe.durationMs >= 5000 && report.proof.probe.durationMs <= 5400);
+for (const frame of Object.values(report.proof.qa)) assert.ok(fs.statSync(frame).size > 10000);
+assert.equal(report.externalRequests, 0); assert.equal(report.imageGenerationRequests, 0); assert.equal(report.ttsRequests, 0); assert.equal(report.videoProviderRequests, 0); assert.equal(report.request03Used, false);
+console.log("PA5C_R2_RIG_FEASIBILITY_CHECK: PASS (14/14)");

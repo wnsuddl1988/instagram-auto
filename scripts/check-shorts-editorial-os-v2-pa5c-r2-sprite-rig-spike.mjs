@@ -1,0 +1,6 @@
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+const root = process.cwd(); const output = path.join(root, "output", "shorts-editorial-os-v2", "pa5c-r2-sprite-rig-spike"); const report = JSON.parse(fs.readFileSync(path.join(output, "pa5c-r2-sprite-rig-spike-report.json"), "utf8")); const hash = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+assert.equal(report.sourceComponentCount, 9); assert.deepEqual(report.independentlyAnimated, ["arm", "body_posture", "face_panel", "phone_prop", "camera"]); for (const [gate, value] of Object.entries(report.gates)) assert.equal(value, true, `RIG_GATE_FAILED:${gate}`); assert.equal(hash(report.proof.path), report.proof.sha256); assert.equal(report.proof.probe.width, 1080); assert.equal(report.proof.probe.height, 1920); assert.equal(report.proof.probe.fps, 30); assert.ok(report.proof.probe.durationMs >= 5000 && report.proof.probe.durationMs <= 5300); for (const file of Object.values(report.proof.qa)) assert.ok(fs.statSync(file).size > 10000); assert.equal(report.externalRequests, 0); assert.equal(report.imageGenerationRequests, 0); assert.equal(report.ttsRequests, 0); assert.equal(report.videoProviderRequests, 0); console.log("PA5C_R2_SPRITE_RIG_SPIKE_CHECK: PASS (20/20)");

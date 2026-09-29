@@ -1,0 +1,91 @@
+{
+  "version": "1.0.0",
+  "sourceDoc": "_ai/SHORTS_EDITORIAL_OS_V2_TOPIC_SCRIPT_CUTLINE_V1.md",
+  "hardCut": {
+    "hookMaxWords": 15,
+    "hookMaxChars": 40,
+    "requireTemporalToken": true,
+    "requireProperNoun": true,
+    "requireDisclaimer": false
+  },
+  "freshnessWindows": {
+    "news": 7,
+    "policy": 180,
+    "statisticMaxDays": 400,
+    "background": null
+  },
+  "score": {
+    "maxScore": 20,
+    "passThreshold": 14,
+    "statisticOnlyTimelinessCap": 1
+  },
+  "bannedPhrases": {
+    "guarantee": [
+      "무조건",
+      "확실히",
+      "반드시 오른다",
+      "100%",
+      "보장",
+      "절대",
+      "필승",
+      "대박"
+    ],
+    "profitImplication": [
+      "떡상",
+      "존버하면",
+      "지금 사면",
+      "얼마 번다",
+      "수익 인증"
+    ],
+    "fearMongering": [
+      "망한다",
+      "폭망",
+      "거지 된다"
+    ],
+    "benefitOverreach": [
+      "누구나 받는다",
+      "무조건 받는다",
+      "전 국민",
+      "자동으로 지급",
+      "신청만 하면 받는다"
+    ]
+  },
+  "conditionalPhrases": [
+    {
+      "phrase": "역대급",
+      "condition": "evidence_backed",
+      "note": "통계 근거가 evidence pack에 있을 때만 허용"
+    }
+  ],
+  "temporalTokens": [
+    "오늘",
+    "어제",
+    "이번 주",
+    "이번주",
+    "이달",
+    "지난달",
+    "내년",
+    "올해",
+    "방금",
+    "최근"
+  ],
+  "allowedHookTypes": [
+    "real_reason",
+    "info_gap",
+    "named_mistake",
+    "myth_bust",
+    "direct_callout"
+  ],
+  "disclaimerText": "※본 영상은 참고용이며, 최종 판단과 책임은 본인에게 있습니다",
+  "sceneStructure": [
+    { "scene": 1, "role": "hook" },
+    { "scene": 2, "role": "loss_aversion" },
+    { "scene": 3, "role": "evidence_card" },
+    { "scene": 4, "role": "background" },
+    { "scene": 5, "role": "twist" },
+    { "scene": 6, "role": "impact" },
+    { "scene": 7, "role": "action" },
+    { "scene": 8, "role": "closing_disclaimer" }
+  ],
+  "durationSeconds": { "min": 20, "max": 45 }
+}

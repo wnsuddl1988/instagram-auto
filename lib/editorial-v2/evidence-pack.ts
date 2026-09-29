@@ -41,6 +41,7 @@ export function buildEvidencePackDraft(
     eventDate: source.eventDate,
     freshness: classifyFreshness(source.publishedAt, input.researchCutoffDate, input.researchWindow),
     originalIndex,
+    ...(source.description !== undefined && { description: source.description }),
   }));
   const claims: EvidenceClaimRecord[] = input.signals.map((signal) => ({
     claimId: `claim:${signal.signalId}`,

@@ -1,0 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const source = readFileSync(resolve(process.cwd(), "lib/editorial-v2/pa5b-full-production-candidate-render-node.ts"), "utf8"); let pass = 0; let fail = 0;
+function check(label, valid) { if (valid) pass += 1; else { fail += 1; console.error(`FAIL: ${label}`); } }
+for (const [label, value] of [["all-audio render gate", "PA5B_RENDER_BLOCKED_UNTIL_ALL_AUDIO_VALID"], ["latest eight-scene set required", "set.completeSceneIds.length !== 8"], ["provider timestamps required", "provider_character_timestamps_aligned"], ["original local graphics", "원본 정보 그래픽"], ["browser network blocked", "PA5B_EXTERNAL_BROWSER_REQUEST_DETECTED"], ["ffmpeg local render", '"ffmpeg"'], ["1080x1920 output", "scale=1080:1920:flags=lanczos"], ["30fps output", '"-r", "30"'], ["embedded subtitles", '"-c:s", "mov_text"'], ["ffprobe validation", "PA5B_FFPROBE_VALIDATION_FAILED"], ["eight QA frames", "qaFramePaths[`scene${scene.sceneOrder}`]"], ["no provider request", !source.includes("requestElevenLabs")], ["not production ready", "productionReady: false"], ["not public launch ready", "publicLaunchReady: false"]]) check(label, typeof value === "string" ? source.includes(value) : value);
+console.log(`PA5B_FULL_RENDER_CHECKER: ${pass}/${pass + fail} PASS`); if (fail) process.exit(1);

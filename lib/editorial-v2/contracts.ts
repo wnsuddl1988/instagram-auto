@@ -274,6 +274,13 @@ export interface TrendBriefImportSource {
   readonly url: string;
   readonly publishedAt: string;
   readonly eventDate: string | null;
+  /**
+   * Optional article summary (e.g. Naver News API's `description` field).
+   * Lets narration cite a number that appears only in the article body, not
+   * the title, while still being traceable to an actual source snippet — not
+   * an invented figure. Absent for non-news sources (ECOS/KOSIS stat cards).
+   */
+  readonly description?: string;
 }
 
 export interface TrendBriefImportNumber {
@@ -363,6 +370,8 @@ export interface EvidenceSourceRecord {
   readonly eventDate: string | null;
   readonly freshness: EvidenceFreshnessClassification;
   readonly originalIndex: number;
+  /** See TrendBriefImportSource.description. */
+  readonly description?: string;
 }
 
 export interface EvidenceClaimRecord {
