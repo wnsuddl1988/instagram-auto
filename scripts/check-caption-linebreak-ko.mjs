@@ -43,9 +43,11 @@ const FORBIDDEN_PAIRS = [
   ["걸리는", "게"],         // Owner 예시: "오래걸리는 / 게"
   ["할", "수"],
   ["6만", "8천480원이야"], // 금박사 10편: "하루 6만 / 8천480원이야"(한 숫자가 갈림)
+  ["우리", "지갑을"],       // 부엉박사 CTA: "다음 편엔 우리 / 지갑을"
+  ["내", "지갑"],
   ["늘고", "있는지"],       // 보조용언 앞은 금지는 아니지만 강한 벌점(아래 3번에서 확인)
 ];
-for (const [l, r] of FORBIDDEN_PAIRS.slice(0, 11)) {
+for (const [l, r] of FORBIDDEN_PAIRS.slice(0, -1)) {
   check(`금지: "${l} / ${r}"`, () => assert(!Number.isFinite(splitPenalty(l, r)), `penalty=${splitPenalty(l, r)}`));
 }
 
@@ -69,6 +71,7 @@ const WRAP_CASES = [
   ["저PBR은 업종 안의 순위로 정해", [["업종", "안의"]]],
   ["사업 흐름은 실적이 늘고 있는지", [["늘고", "있는지"]]],
   ["10월 22일까지 PBR 개선계획을 담은", [["10월", "22일까지"]]],
+  ["다음 편엔 우리 지갑을", [["우리", "지갑을"]]],
 ];
 for (const [text, bad] of WRAP_CASES) {
   check(`줄바꿈: "${text}"`, () => {

@@ -1,4 +1,16 @@
-# 진행 중 작업 인계 — 2026-09-28 (Claude Code 세션 → 본계정 이관)
+# 진행 중 작업 인계 — 최신 2026-09-30
+
+## ★ 2026-09-30 기준 — 먼저 읽을 것
+- 오늘 변경·결함 수정·미결 항목의 원문은 **`_ai/CURRENT_STANDARDS.md` §7 맨 위 "2026-09-30 변경 반영 현황과 미결 항목"** 과 최우선 규칙 11~17. 이 문서보다 그쪽이 우선한다.
+- 커밋 `41ab016`~`0aa956f`까지 푸시 완료(브랜치 `codex/source-first-blueprint-clean`). 미추적은 Owner 보호 파일 `scripts/fixtures/golden_sample_v2_visual_only_render_manifest.salary_3days.v1.json` 하나(커밋 금지).
+- 황소특보 10편 배포 완료(릴스 instagram.com/reel/Dd5MZRaks2t, 유튜브 youtube.com/shorts/8tSCrplyAVI). 다음 신규는 황소 11편(새 체계 첫 적용: 훅 규칙 17, 스펙 shot·bg·motion·sceneBackgrounds·hookType, 입 멈춤 A/B 파일럿).
+- 부엉박사 18편은 배포 대기 — **배포 전 새 코드로 재조립 → CTA 결합 → `run-audio-finish-once.mjs` → `run-episode-qa-once.mjs`**(시험본은 `C:/tmp/quality-v2-test/owl-ep18-final/` 검수 통과).
+- **오후 추가(미커밋)**: ① 부엉 소재 도구(`owl-topic-lanes.ts`·레인 뉴스검색·쏠림점검) ② 고정 CTA 배치 v2 재제작 — 황소 `C:/tmp/bull-cta-fixed-v6/bull_cta_fixed_final_layout_v2.mp4`, 부엉 `C:/tmp/owl-cta-fixed-v3/owl_cta_fixed_v3_final_layout_v2.mp4`(`run-cta-layout-v2-rerender-once.mjs`, 결합 스크립트 등록, 시험 결합 PASS) ③ 부엉 15편 수정 진행 — s15 영상만 Owner 생성 대기(§7 "15편 진행"). 16·17편도 같은 방식(B안). 카드뉴스 중단·금박사 중단·배경음 없음 확정.
+- 플랫폼 권한: 인스타 SYSTEM_USER 무기한 토큰(insights·comments 포함, 권한 추가는 비즈니스 설정 → 시스템 사용자 → 새 토큰 "만료 안 함"으로만), 유튜브 관리·분석 권한 + Analytics API 활성화 완료.
+
+---
+
+# (이전) 진행 중 작업 인계 — 2026-09-28 (Claude Code 세션 → 본계정 이관)
 
 이 세션(부계정)에서 이틀에 걸쳐 진행한 작업 전체 요약과, 오늘(9/28) 배포 중
 발생한 미해결 문제를 정리한다. 본계정에서 이 문서를 읽고 그대로 이어가면 된다.

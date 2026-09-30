@@ -135,6 +135,17 @@ if (spec.imageCharacter === "bull3dv1" || spec.characterDisplayName === "황소�
   }
 }
 
+// 4-1) Veo 워터마크 제거 표식(2026-09-30 Owner 지적 — 하단 채널명 띠를 뺀 뒤로 우하단 워터마크가 드러남)
+// run-remove-veo-watermark-once.mjs가 남긴 전역 메타데이터가 최종본에 없으면 배포 금지.
+{
+  const r = spawnSync("ffprobe", ["-v", "error", "-show_entries", "format_tags=comment", "-of", "default=nw=1:nk=1", FINAL], { encoding: "utf8" });
+  if (!(r.stdout ?? "").includes("veo_watermark_removed_v1")) {
+    mustFix.push("Veo 워터마크 제거 표식 없음 → CTA 결합 직후 run-remove-veo-watermark-once.mjs를 적용한 뒤 오디오 마감(§A-7)");
+  } else {
+    info.push("Veo 워터마크 제거 표식 확인(veo_watermark_removed_v1)");
+  }
+}
+
 // 5) 입 멈춤
 if (CLIP_DIR) {
   const r = spawnSync("node", [path.join("scripts", "check-clip-speech-timing-once.mjs"), "--spec-module", SPEC_MODULE, "--spec-export", SPEC_EXPORT, "--clip-dir", CLIP_DIR, "--tts-summary", TTS_SUMMARY], { encoding: "utf8" });
@@ -154,6 +165,31 @@ if (IMAGES_DIR) {
 }
 spawnSync("node", ["scripts/run-safe-zone-preview-once.mjs", "--video", FINAL, "--count", "8", "--out", path.join(reviewDir, "safe-video.png")], { encoding: "utf8" });
 sheets.push(path.join(reviewDir, "safe-video.png"));
+
+// 워터마크 잔여 확인용: 우하단 영역을 영상 전체에서 균등 간격으로 잘라 한 장에 모은다(표식이 있어도 눈으로 한 번 본다).
+{
+  const durRaw = spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", FINAL], { encoding: "utf8" }).stdout.trim();
+  const dur = Number(durRaw);
+  if (Number.isFinite(dur) && dur > 5) {
+    const count = 20;
+    const tiles = [];
+    for (let i = 0; i < count; i += 1) {
+      const t = 1 + ((dur - 2) * i) / (count - 1);
+      const out = path.join(reviewDir, `wm_${i}.png`);
+      spawnSync("ffmpeg", ["-v", "error", "-y", "-ss", t.toFixed(2), "-i", FINAL, "-frames:v", "1", "-vf", "crop=300:300:780:1620,scale=200:200", out], { encoding: "utf8" });
+      if (fs.existsSync(out)) tiles.push(out);
+    }
+    if (tiles.length > 0) {
+      const sheet = path.join(reviewDir, "watermark-check.png");
+      const args = ["-v", "error", "-y"];
+      tiles.forEach((t) => args.push("-i", t));
+      args.push("-filter_complex", `xstack=inputs=${tiles.length}:layout=${tiles.map((_, i) => `${(i % 10) * 200}_${Math.floor(i / 10) * 200}`).join("|")}:fill=black`, sheet);
+      spawnSync("ffmpeg", args, { encoding: "utf8" });
+      tiles.forEach((t) => fs.rmSync(t, { force: true }));
+      sheets.push(sheet);
+    }
+  }
+}
 
 const report = [
   `# 자동 검수 — ${spec.characterDisplayName} ${spec.episode}편`,

@@ -47,6 +47,13 @@
  *
  * 금박사 handoff 용어: "실업급여 계산"(정확한 내 수급액 계산법 — 금박사
  * 9편 소재, 부엉박사 본문에서는 이름만 언급하고 계산법은 설명하지 않음).
+ *
+ * ★ 2026-09-30 수정(Owner B안): 금박사 운영 중단으로 s15 금박사 예고를 없애고
+ * 대사·이미지·영상을 새로 만든다. TTS output-v2(스크립트
+ * owl-v2-ep15-tts-script-v2-no-geumbaksa.json, 105.48초), 이미지
+ * C:/tmp/owl-v2-ep15-images-v2/owl_v2_ep15_s15_bridge.png, 영상
+ * owl_v2_ep15_s15_bridge_v2_motion.mp4. 팩트 재확인(2026-09-30): 여전히 정부안,
+ * 국회 통과 전("연내 법 개정 목표") — s13·s14 표현 그대로 유효.
  */
 
 export const OWL_ASSEMBLY_SPEC = Object.freeze({
@@ -55,7 +62,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   episode: 15,
   v1SourceSpec: "_owl-ep15-assembly-spec.mjs",
   scriptType: "C_policy_change",
-  geumbaksaHandoffTerm: "실업급여 계산",
+  // 2026-09-30 금박사 운영 중단·연결 폐지(Owner 확정) — 짝 금박사 9편도 배포하지 않는다.
+  geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-final-sep-unemployment-benefit-reform-v2",
   title: "실업급여 22년 만의 개편, 내년부터 얼마나 달라질까",
   channelName: "경제번역소",
@@ -262,11 +270,13 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
       scene: 15,
       key: "s15_bridge",
       role: "save",
-      video: "owl_v2_ep15_s15_bridge_motion.mp4",
-      narration: "실업급여 실제로 얼마 받는지 계산이 헷갈리면 금박사가 이어서 풀어줄게. 궁금한 제도는 댓글로 남겨줘.",
+      // 2026-09-30 금박사 연결 폐지(Owner B안): 대사·이미지·영상 새로 만듦. 옛 클립
+      // owl_v2_ep15_s15_bridge_motion.mp4("금박사가 이어서 풀어줄게")는 쓰지 않는다.
+      video: "owl_v2_ep15_s15_bridge_v2_motion.mp4",
+      narration: "퇴사 계획 있으면 이 두 가지는 저장해 두고, 국회 결과 나오면 다시 확인해. 궁금한 제도는 댓글로 남겨줘.",
       imageBrief:
-        "동일 배경. 부엉이가 밝은 미소로 '실업급여 계산?' 큰 글자 카드를 한쪽 " +
-        "날개로 감싸 쥐고 마무리하는 자세.",
+        "동일 배경. 부엉이가 밝은 표정으로 '저장해두고' / '국회 결과 확인' 큰 글자 " +
+        "2줄 카드를 한쪽 날개로 감싸 쥐고, 다른 날개는 가볍게 흔드는 마무리 자세.",
       overlays: [],
     },
   ]),

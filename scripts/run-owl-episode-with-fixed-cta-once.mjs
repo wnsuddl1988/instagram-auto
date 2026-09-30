@@ -99,6 +99,10 @@ const KNOWN_CTA_LEADING_SILENCE_TRIM_SEC = new Map([
   // 부엉박사 확정 CTA v6(실측 무음 0.516s, 2026-09-24 재측정 — 기존
   // 하드코딩 0.5초와 사실상 일치, 회귀 없음).
   ["C:/tmp/owl-cta-fixed-v2/owl_cta_fixed_v2_final_v6.mp4", 0.5],
+  // 화면 배치 v2 재제작본(2026-09-30, run-cta-layout-v2-rerender-once.mjs). 영상·음성은 위 확정본과
+  // 같은 원본이라 앞 무음도 동일하게 실측됨(황소 0.093~0.169s 구간, 부엉 0.512s).
+  ["C:/tmp/bull-cta-fixed-v6/bull_cta_fixed_final_layout_v2.mp4", 0.15],
+  ["C:/tmp/owl-cta-fixed-v3/owl_cta_fixed_v3_final_layout_v2.mp4", 0.5],
   // 금박사 구 CTA(여성 Hana Lee 목소리, 실측 무음 0.897s). 표시 1~4편 전용.
   ["C:/tmp/geumbaksa-cta-fixed-clean/geumbaksa_cta_clean_final.mp4", 0.5],
   // 금박사 현행 CTA(남성 Yohan Koo 목소리, 2026-09-25) — 5편 이후 전부 이것.

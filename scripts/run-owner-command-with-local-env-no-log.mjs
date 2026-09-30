@@ -129,6 +129,11 @@ const YOUTUBE_ANALYTICS_COLLECT_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-youtube-analytics-collect-once.mjs",
 );
+// 2026-09-30: 부엉박사 전용 소재 레인 뉴스 검색(네이버, 제목+링크만).
+const OWL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-owl-topic-lane-news-search-once.mjs",
+);
 const OWL_BLOB_UPLOAD_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-instagram-blob-upload-from-request-once.mjs",
@@ -707,6 +712,15 @@ const SUPPORTED_COMMANDS = Object.freeze({
     envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
     validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "instagram-insights-collect"),
+  },
+  "owl-topic-lane-news-search": {
+    script: OWL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "owl-topic-lane-news-search"),
   },
   "youtube-analytics-collect": {
     script: YOUTUBE_ANALYTICS_COLLECT_RUNNER_PATH,

@@ -1,5 +1,70 @@
 # 부엉박사 15편(v2 재제작 — 실업급여 22년 만의 개편) 영상 생성 프롬프트 — 수동 진행용
 
+> ★ 2026-09-30 수정: 금박사 운영 중단으로 **s15만 새로 만든다**(아래 "s15 v2" 블록). 옛 s15 블록(카드 '실업급여 / 계산?')은 쓰지 않는다. 나머지 14개 클립은 기존 것 그대로 쓴다(TTS output-v2로 모든 씬이 기존 클립 길이 안에 들어감 확인).
+> 새 이미지: `C:/tmp/owl-v2-ep15-images-v2/owl_v2_ep15_s15_bridge.png` / 새 대사 발화 0~6.96초(raw) → **8초 티어**(여유 1.04초) / 저장: `C:/Users/PC/Downloads/15.mp4` → `C:/tmp/owl-v2-ep15-videos/owl_v2_ep15_s15_bridge_v2_motion.mp4`
+
+## s15 v2 — bridge (8초, 카드 한쪽 날개로 감싸 쥠)
+
+```
+Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+owl mascot character's design and the bright government employment policy
+briefing room background exactly as shown in the reference image. Do not
+change any colors, text, or object positions.
+
+CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
+for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly,
+no framing drift, not even a slow or subtle one, including the final 1-2
+seconds. The framing at frame 1 and the framing at the very last frame must
+be pixel-for-pixel identical in scale and crop.
+
+PROP LOCK (HIGHEST PRIORITY): the character holds a card with 2 lines of
+large text — "저장해두고" on the first line, "국회 결과 확인" on the second
+line — in one wing at chest height. The card holds steadily at this
+position for the entire clip, from frame 1 to the very last frame, and does
+not move, tilt, rotate, or drift at any point. Treat the card as a frozen
+photograph layered in front of the character.
+
+MOTION DETAIL: only the character's other wing (holding nothing) makes one
+small friendly wave and settles, never passing in front of the card text.
+The wing holding the card does not move. Bright, friendly closing
+expression.
+
+SPEECH TIMING (HIGHEST PRIORITY): the character talks ONLY from 0.00s to 7.06s.
+During that time the mouth actively opens and closes in a natural speech
+rhythm — never closed-mouth talking. At 7.06s the character finishes the
+sentence. From 7.06s until the end of the clip (8s) the mouth stays gently
+closed in a soft, natural smile — no talking and no lip movement at all after
+7.06s — while the eyes keep blinking and the head gives a small nod, as if
+waiting for the viewer's reaction.
+
+BODY MOTION FOR THE FULL CLIP: natural eye blinks every 2-3 seconds, subtle
+breathing and gentle head movement. Only the mouth follows the SPEECH TIMING
+above. The wing holding the card stays steady and in place for the full clip.
+
+STATIC ELEMENTS: the card, the large screen behind with faint employment
+policy icon silhouettes, the wooden podium, the navy chairs, and the plants
+must stay completely fixed — no camera pan or zoom, no background object
+movement, no card movement.
+
+CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
+("저장해두고", "국회 결과 확인") as a locked, non-regenerating image layer for
+the full 8 seconds. Render this exactly as pixels copied from the reference
+image, unchanged frame to frame.
+
+NEGATIVE PROMPT: no face distortion, no proportion drift, no extra or
+malformed feathers, no warped, blurred, flickering, or misspelled text
+anywhere in the frame, no regenerated or reinterpreted signage, no
+background changes, no character redesign, no abrupt cut, no card dropping,
+falling, slipping, tilting, or motion blur at any point, no wing passing in
+front of the card, no talking after 7.06s, NO CAMERA ZOOM OR FRAMING DRIFT AT
+ANY POINT INCLUDING THE LAST SECOND, NO CARD MOVEMENT OR DROP AT ANY POINT
+INCLUDING THE LAST SECOND.
+```
+
+================================================================================
+# (이하 2026-09-24 원본 — s15 블록은 폐기, 나머지는 기록용)
+================================================================================
+
 이미지 소스 폴더: `C:/tmp/owl-v2-ep15-images/`
 영상 전달: `C:/Users/PC/Downloads/`에 **장면 번호로** `1.mp4`, `2.mp4`, `4.mp4`, `7.mp4`, `9.mp4`, `11.mp4`, `12.mp4`, `14.mp4`, `15.mp4` 저장("부엉박사 15편"이라고 알려주기).
 나머지 6장면(s3, s5, s6, s8, s10, s13)은 v1(파일 ep15) 영상 재사용(복사 완료, `C:/tmp/owl-v2-ep15-videos/`).
