@@ -27,7 +27,7 @@
 3. **TTS**: 씬 하나의 순수 발화(`rawAudioDurationSec`)는 **9.5초 이내**로 쓴다(10초 초과 금지). 세그먼트 한 조각은 7~8어절 이내로 끊는다(§A-3).
 4. **이미지**: 작은 글씨 금지 · 소품은 감싸 쥐거나 바닥 거치 · 크고 빈 면 금지 · 캐릭터 크기는 **씬별 샷**으로 정한다(와이드 35~40% / 미디엄 45~50% / 클로즈 60~70%, 규칙 15, §A-4). ChatGPT 화면이 바뀌어 자동화가 실패하면 §4 체크리스트를 따른다.
 5. **영상 프롬프트**: `scripts/build-video-generation-prompts.mjs`로 만든다(영어, HIGHEST PRIORITY 블록 + **씬별 입 멈춤 시각 SPEECH TIMING**, 규칙 15, §A-5). **8초 씬끼리, 10초 씬끼리 묶어서** 전달한다. 9초 요청 금지.
-6. **조립 + CTA**: `run-owl-assemble-shorts-v2.mjs` → `run-owl-episode-with-fixed-cta-once.mjs --alignment ...`를 **한 번에 이어서** 실행하고, `cta-join-report.json`이 PASS인지 확인한 뒤 완성본 하나로 검수를 요청한다(§A-7). **xfade 금지, 수동 ffmpeg 결합 금지.** CTA 결합 뒤에는 **워터마크 제거(규칙 18) → 오디오 마감 → 자동 검수(규칙 15)** 순서로 이어서 한다. CTA 경로는 규칙 20.
+6. **조립 + CTA**: `run-owl-assemble-shorts-v2.mjs` → `run-owl-episode-with-fixed-cta-once.mjs --alignment ...`를 **한 번에 이어서** 실행하고, `cta-join-report.json`이 PASS인지 확인한 뒤 완성본 하나로 검수를 요청한다(§A-7). **xfade 금지, 수동 ffmpeg 결합 금지.** 조립 로그의 "씬 전환 싱크: 누적 오차 0, 컷 리드 0.10초 이상"을 확인한다(규칙 21, QA가 못 넘기게 막음). CTA 결합 뒤에는 **워터마크 제거(규칙 18) → 오디오 마감 → 자동 검수(규칙 15)** 순서로 이어서 한다. CTA 경로는 규칙 20.
 7. **배포 자산**: **★ 카드뉴스는 2026-09-30부로 전면 중단**(Owner 결정 — 성과 실측: 피드 게시물 조회 7~28·도달 3~8로 노출이 거의 없음, `_ai/performance-report-2026-09-30.md`). 만들지도 게시하지도 않는다(아래 §A-8·§5의 카드뉴스 단계는 건너뛴다). **배경음은 넣지 않는다**(Owner 결정 2026-09-30 — 대사 방해 우려, 오디오 마감은 음량 맞춤만). (이전 규칙: 카드뉴스는 **부엉박사만** 만든다.) 커버(=유튜브 썸네일 겸용)와 스토리 이미지는 세 캐릭터 모두 편마다 **새로** 만든다. 스토리 이미지는 9:16 전용 스펙으로 만들어 Instagram Story에만 올린다(§A-8).
 8. **배포**: §5 절차를 한 단계도 빼지 않는다(커버 merge 필수, `--privacy public` 필수, `youtubeTitle`에 `#Shorts` 넣지 않음).
 9. **금박사 5편 이후 재고는 새 목소리(Yohan Koo) 경로만 쓴다**(`geumbaksa-ep{N}-final-v2voice`). `-episode-final-v12`는 옛 여성 목소리본이라 배포하면 안 된다(§7).
