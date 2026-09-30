@@ -56,32 +56,39 @@ if (Math.abs(W0 / H0 - 9 / 16) > 0.01) abort(`9:16 이미지가 아닙니다: ${
 const W = 1080;
 const H = 1920;
 
-// 가장 긴 줄이 maxWidthPct 안에 들어가도록 글자 크기 결정(외곽선 두께를 감안해 여유 4%)
-const widest = Math.max(...lines.map((l) => textWidthRatio(l)));
-const fontSize = Math.floor((W * (maxWidthPct / 100) * 0.96) / widest);
-const borderW = Math.max(8, Math.round(fontSize * 0.14));
-const lineH = fontSize + Math.round(H * (lineGapPct / 100));
-const blockH = lineH * lines.length - Math.round(H * (lineGapPct / 100));
+// 줄마다 따로 폭을 채우는 크기로 정한다(2026-09-30 Owner 지적: 가장 긴 줄 기준 한 가지 크기로 맞추면
+// 10자 문구가 97px로 작아져 그리드에서 안 보였다 — 예전 커버처럼 줄별로 꽉 채운다). 최대 크기 상한으로
+// 짧은 줄이 지나치게 커지는 것만 막는다. --colors "#FFFFFF,#FFD54A"로 줄별 색(강조) 지정.
+const maxFont = Number(arg("max-font", "230"));
+const minFontWarn = Number(arg("min-font-warn", "140"));
+const colors = (arg("colors", "") || "").split(",").map((c) => c.trim()).filter(Boolean);
+const gap = Math.round(H * (lineGapPct / 100));
+const sizes = lines.map((l) => Math.min(maxFont, Math.floor((W * (maxWidthPct / 100) * 0.96) / textWidthRatio(l))));
+const blockH = sizes.reduce((s, f) => s + f, 0) + gap * (lines.length - 1);
 const top = Math.round(H * (centerYPct / 100) - blockH / 2);
 
 const dir = mkdtempSync(path.join(tmpdir(), "headline-"));
 const fontForFilter = FONT.replace(/\\/g, "/").replace(/^([A-Za-z]):/, "$1\\:");
 const filters = [`scale=${W}:${H}:flags=lanczos`];
+let y = top;
 lines.forEach((text, i) => {
   const file = path.join(dir, `line${i}.txt`).replace(/\\/g, "/");
   writeFileSync(file, text, "utf8");
   const fileForFilter = file.replace(/^([A-Za-z]):/, "$1\\:");
-  const y = top + i * lineH;
+  const fontSize = sizes[i];
+  const borderW = Math.max(8, Math.round(fontSize * 0.12));
   // 두꺼운 외곽선(+골드 그림자) 후 본문
   filters.push(
-    `drawtext=fontfile='${fontForFilter}':textfile='${fileForFilter}':fontsize=${fontSize}:fontcolor=${fill}:borderw=${borderW}:bordercolor=${stroke}:shadowcolor=0xFBBF24@0.75:shadowx=0:shadowy=${Math.round(fontSize * 0.07)}:x=(w-text_w)/2:y=${y}`,
+    `drawtext=fontfile='${fontForFilter}':textfile='${fileForFilter}':fontsize=${fontSize}:fontcolor=${colors[i] ?? fill}:borderw=${borderW}:bordercolor=${stroke}:shadowcolor=0xFBBF24@0.75:shadowx=0:shadowy=${Math.round(fontSize * 0.07)}:x=(w-text_w)/2:y=${y}`,
   );
+  y += fontSize + gap;
 });
 try {
   execFileSync("ffmpeg", ["-y", "-v", "error", "-i", input, "-vf", filters.join(","), "-frames:v", "1", output]);
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
-const estWidthPct = ((widest * fontSize + borderW * 2) / W) * 100;
 console.log(`완료: ${output}`);
-console.log(`글자 크기 ${fontSize}px, 줄 ${lines.length}개, 세로 ${((top / H) * 100).toFixed(1)}~${(((top + blockH) / H) * 100).toFixed(1)}%, 가장 긴 줄 폭 약 ${estWidthPct.toFixed(1)}% (좌우 여백 약 ${((100 - estWidthPct) / 2).toFixed(1)}%)`);
+console.log(`줄별 글자 크기 ${sizes.join("/")}px, 세로 ${((top / H) * 100).toFixed(1)}~${(((top + blockH) / H) * 100).toFixed(1)}%`);
+const small = lines.filter((_, i) => sizes[i] < minFontWarn);
+if (small.length) console.log(`⚠ 글자가 ${minFontWarn}px보다 작은 줄: ${small.join(" / ")} — 줄당 8자 이하로 문구를 줄일 것(예전 커버 수준 130~220px)`);
