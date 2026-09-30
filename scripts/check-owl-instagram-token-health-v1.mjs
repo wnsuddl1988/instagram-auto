@@ -86,6 +86,11 @@ if (expiresAt > 0) {
 const scopes = Array.isArray(info.scopes) ? info.scopes : [];
 const missing = REQUIRED_SCOPES.filter((scope) => !scopes.includes(scope));
 findings.push(["필수 권한", missing.length === 0 ? "모두 있음" : `누락: ${missing.join(", ")}`]);
+// 2026-09-30: 토큰 종류(USER/PAGE/SYSTEM_USER)와 전체 권한 이름을 보여준다 — 성과 권한 추가 시
+// 무기한 토큰을 60일 토큰으로 잘못 바꾸지 않도록(종류에 따라 재발급 경로가 다르다).
+findings.push(["토큰 종류", String(info.type ?? "알 수 없음")]);
+findings.push(["전체 권한", scopes.join(", ") || "(없음)"]);
+findings.push(["성과 권한", scopes.includes("instagram_manage_insights") ? "있음" : "없음(instagram_manage_insights)"]);
 if (missing.length > 0) exitCode = 1;
 
 // ── 3. 계정 조회 (프로필 정비 점검용 필드 포함, 2026-09-18) ──────────────────

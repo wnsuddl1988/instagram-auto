@@ -120,6 +120,15 @@ const BULL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-bull-topic-lane-news-search-once.mjs",
 );
+// 2026-09-30 품질 개선: 성과 데이터 수집(읽기 전용).
+const INSTAGRAM_INSIGHTS_COLLECT_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-instagram-insights-collect-once.mjs",
+);
+const YOUTUBE_ANALYTICS_COLLECT_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-youtube-analytics-collect-once.mjs",
+);
 const OWL_BLOB_UPLOAD_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-instagram-blob-upload-from-request-once.mjs",
@@ -690,6 +699,24 @@ const SUPPORTED_COMMANDS = Object.freeze({
     validateBeforeEnvAccess: validateOwlYoutubeThumbnailSetBeforeEnvAccess,
   },
   // 읽기 전용 토큰 점검. GET만 하고 게시·수정을 하지 않으므로 인자가 없다.
+  "instagram-insights-collect": {
+    script: INSTAGRAM_INSIGHTS_COLLECT_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "instagram-insights-collect"),
+  },
+  "youtube-analytics-collect": {
+    script: YOUTUBE_ANALYTICS_COLLECT_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: YOUTUBE_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "youtube-analytics-collect"),
+  },
   "owl-instagram-token-health": {
     script: OWL_INSTAGRAM_TOKEN_HEALTH_RUNNER_PATH,
     baseArgs: [],
@@ -1023,6 +1050,34 @@ function validateBullTopicLaneNewsSearchBeforeEnvAccess(rawArgs) {
   }
   if (values["--env-path"] !== undefined && !isAbsolute(values["--env-path"])) {
     return { ok: false, reason: "bull_topic_lane_news_search_env_path_invalid" };
+  }
+  return { ok: true };
+}
+
+/**
+ * --arm(과 선택 --env-path)만 받는 읽기 전용 명령용 공통 인자 검증. env 접근 전에 수행한다.
+ */
+function validateArmOnlyBeforeEnvAccess(rawArgs, commandName) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== commandName) {
+    return { ok: false, reason: `${commandName}_command_position_invalid` };
+  }
+  let armed = false;
+  let envPathSeen = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) return { ok: false, reason: `${commandName}_duplicate_arm` };
+      armed = true;
+      continue;
+    }
+    if (token === "--env-path" && !envPathSeen) {
+      const value = rawArgs[index + 1];
+      if (typeof value !== "string" || !isAbsolute(value)) return { ok: false, reason: `${commandName}_env_path_invalid` };
+      envPathSeen = true;
+      index += 1;
+      continue;
+    }
+    return { ok: false, reason: `${commandName}_unknown_or_duplicate_flag` };
   }
   return { ok: true };
 }
