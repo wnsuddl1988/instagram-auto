@@ -56,7 +56,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   episode: 16,
   v1SourceSpec: "_owl-ep13-assembly-spec.mjs",
   scriptType: "D_what_to_do",
-  geumbaksaHandoffTerm: "DB형·DC형",
+  // 2026-09-30 금박사 운영 중단 — 짝 금박사 10편도 배포하지 않는다.
+  geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-final-sep-retirement-pension-in-kind-transfer-v2",
   title: "퇴직연금 계좌, 팔지 않고 그대로 옮길 수 있다",
   channelName: "경제번역소",
@@ -260,11 +261,13 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
       scene: 14,
       key: "s14_bridge",
       role: "save",
-      video: "owl_v2_ep16_s14_bridge_motion.mp4",
-      narration: "DB형이랑 DC형이 정확히 뭐가 다른지 헷갈리면 금박사가 이어서 풀어줄게. 궁금한 제도는 댓글로 남겨줘.",
+      // 2026-09-30 금박사 운영 중단(Owner B안): 예고 제거, 대사·이미지·영상 새로 제작.
+      // 옛 클립 owl_v2_ep16_s14_bridge_motion.mp4("금박사가 이어서 풀어줄게")는 쓰지 않는다.
+      video: "owl_v2_ep16_s14_bridge_v2_motion.mp4",
+      narration: "이 두 가지는 저장해 두고, 회사 옮기기 전에 내 계좌 종류부터 다시 확인해. 궁금한 제도는 댓글로 남겨줘.",
       imageBrief:
-        "동일 배경. 부엉이가 밝은 미소로 'DB형·DC형?' 큰 글자 카드를 한쪽 " +
-        "날개로 감싸 쥐고 마무리하는 자세.",
+        "동일 배경. 부엉이가 밝은 표정으로 '저장해두고' / '계좌 종류 확인' 큰 글자 " +
+        "2줄 카드를 한쪽 날개로 감싸 쥐고, 다른 날개는 가볍게 흔드는 마무리 자세.",
       overlays: [],
     },
   ]),

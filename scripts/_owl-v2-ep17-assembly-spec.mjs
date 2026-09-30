@@ -58,7 +58,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   episode: 17,
   v1SourceSpec: "_owl-ep16-assembly-spec.mjs",
   scriptType: "C_policy_change",
-  geumbaksaHandoffTerm: "주휴수당",
+  // 2026-09-30 금박사 운영 중단 — 짝 금박사 재고도 배포하지 않는다.
+  geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-final-sep-minimum-wage-2027-unemployment-benefit-link",
   title: "최저임금 올랐다는데, 나랑 상관없다고?",
   channelName: "경제번역소",
@@ -277,11 +278,13 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
       scene: 16,
       key: "s16_bridge",
       role: "save",
-      video: "owl_v2_ep17_s16_bridge_motion.mp4",
-      narration: "최저임금 받을 때 주휴수당까지 제대로 챙기고 있는지 헷갈리면 금박사가 이어서 풀어줄게. 궁금한 제도는 댓글로 남겨줘.",
+      // 2026-09-30 금박사 운영 중단(Owner B안): 예고 제거, 대사·이미지·영상 새로 제작.
+      // 옛 클립 owl_v2_ep17_s16_bridge_motion.mp4("금박사가 이어서 풀어줄게")는 쓰지 않는다.
+      video: "owl_v2_ep17_s16_bridge_v2_motion.mp4",
+      narration: "이 내용은 저장해 두고, 퇴사하기 전에 다시 확인해. 궁금한 제도는 댓글로 남겨줘.",
       imageBrief:
-        "동일 배경. 부엉이가 밝은 미소로 '주휴수당은?' 큰 글자 카드를 한쪽 " +
-        "날개로 감싸 쥐고 마무리하는 자세.",
+        "동일 배경. 부엉이가 밝은 표정으로 '저장해두고' / '퇴사 전 확인' 큰 글자 " +
+        "2줄 카드를 한쪽 날개로 감싸 쥐고, 다른 날개는 가볍게 흔드는 마무리 자세.",
       overlays: [],
     },
   ]),

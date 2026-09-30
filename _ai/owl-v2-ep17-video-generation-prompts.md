@@ -1,5 +1,70 @@
 # 부엉박사 17편(2027년 최저임금 확정, v2 재제작) 영상 생성 프롬프트 — 수동 진행용
 
+> ★ 2026-09-30 수정: 금박사 운영 중단으로 **마지막 장면만 새로 만든다**(아래 "s16 v2 — bridge (8초, 카드 한쪽 날개로 감싸 쥠)" 블록). 옛 마지막 장면 블록('금박사가 이어서 풀어줄게')은 쓰지 않는다. 나머지 클립은 기존 것 그대로 쓴다.
+> 새 이미지: `C:/tmp/owl-v2-ep17-images-v2/owl_v2_ep17_s16_bridge_v2.png` / 새 대사 발화 0~5.53초(raw) → 여유 2.47초라 **8초 티어** / 저장: `C:/Users/PC/Downloads/16.mp4` → `C:/tmp/owl-v2-ep17-videos/owl_v2_ep17_s16_bridge_v2_motion.mp4`
+
+## s16 v2 — bridge (8초, 카드 한쪽 날개로 감싸 쥠)
+
+```
+Animate this image into an 8-second video clip. STYLE CONSISTENCY: keep the
+owl mascot character's design and the minimum wage council chamber background
+exactly as shown in the reference image. Do not change any colors, text, or
+object positions.
+
+CAMERA LOCK (HIGHEST PRIORITY): the camera is completely static and locked
+for the ENTIRE 8 seconds — absolutely no zoom in, no zoom out, no dolly,
+no framing drift, not even a slow or subtle one, including the final 1-2
+seconds. The framing at frame 1 and the framing at the very last frame must
+be pixel-for-pixel identical in scale and crop.
+
+PROP LOCK (HIGHEST PRIORITY): the character holds a card with 2 lines of
+large text — "저장해두고" on the first line, "퇴사 전 확인" on the second
+line — in one wing at chest height. The card holds steadily at this
+position for the entire clip, from frame 1 to the very last frame, and does
+not move, tilt, rotate, or drift at any point. Treat the card as a frozen
+photograph layered in front of the character.
+
+MOTION DETAIL: only the character's other wing (holding nothing) makes one
+small friendly wave and settles, never passing in front of the card text.
+The wing holding the card does not move. Bright, friendly closing
+expression.
+
+SPEECH TIMING (HIGHEST PRIORITY): the character talks ONLY from 0.00s to 5.63s.
+During that time the mouth actively opens and closes in a natural speech
+rhythm — never closed-mouth talking. At 5.63s the character finishes the
+sentence. From 5.63s until the end of the clip (8s) the mouth stays gently
+closed in a soft, natural smile — no talking and no lip movement at all after
+5.63s — while the eyes keep blinking and the head gives a small nod, as if
+waiting for the viewer's reaction.
+
+BODY MOTION FOR THE FULL CLIP: natural eye blinks every 2-3 seconds, subtle
+breathing and gentle head movement. Only the mouth follows the SPEECH TIMING
+above. The wing holding the card stays steady and in place for the full clip.
+
+STATIC ELEMENTS: the committee table, member nameplates, screen silhouette icons, potted plants, and chairs
+must stay completely fixed — no camera pan or zoom, no background object
+movement, no card movement.
+
+CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the card text
+("저장해두고", "퇴사 전 확인") as a locked, non-regenerating image layer for
+the full 8 seconds. Render this exactly as pixels copied from the reference
+image, unchanged frame to frame.
+
+NEGATIVE PROMPT: no face distortion, no proportion drift, no extra or
+malformed feathers, no warped, blurred, flickering, or misspelled text
+anywhere in the frame, no regenerated or reinterpreted signage, no
+background changes, no character redesign, no abrupt cut, no card dropping,
+falling, slipping, tilting, or motion blur at any point, no wing passing in
+front of the card, no talking after 5.63s, NO CAMERA ZOOM OR FRAMING DRIFT AT
+ANY POINT INCLUDING THE LAST SECOND, NO CARD MOVEMENT OR DROP AT ANY POINT
+INCLUDING THE LAST SECOND.
+```
+
+================================================================================
+# (이하 원본 — 마지막 장면 블록은 폐기, 나머지는 기록용)
+================================================================================
+
+
 이미지 소스 폴더: `C:/tmp/owl-v2-ep17-images/`
 영상 저장 폴더(신규 생성): `C:/tmp/owl-v2-ep17-videos/`
 
