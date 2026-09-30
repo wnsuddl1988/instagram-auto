@@ -33,6 +33,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { textWidthRatio, wrapToLines as wrapToLinesKo, wrapToLinesScored, segmentWordsIntoBlocks, splitPenalty } from "./_caption-linebreak-ko.mjs";
 import {
   buildDynamicCaptionTimeline,
   escapeAssText,
@@ -262,14 +263,21 @@ const OVERLAY_STYLE = {
 // 모바일 검수(2026-09-17): 제목이 화면 최상단에 너무 붙어 있어 실기기의 카메라
 // 펀치홀/노치에 가려진다는 지적 — topY를 한 줄 정도(약 화면 높이의 6%) 아래로
 // 내리고, 제목·채널명 폰트도 확대한다.
+// ★ 화면 배치 v2(2026-09-30, Owner가 보낸 인스타·유튜브 실제 화면 캡처로 실측):
+//   - 앱 상단 아이콘(뒤로가기·카메라·검색·메뉴)이 원본 기준 y≈168~210에 떠서 제목 첫 줄 양끝을 덮었다
+//     → 제목을 한 줄 정도 내린다(topY 150 → 232).
+//   - 하단은 앱이 계정명·영상 제목·"공개·조회수"·공유 버튼으로 덮는다(유튜브는 원본 y≈1510부터,
+//     인스타는 y≈1720부터) → 하단 채널명 띠는 가려져 의미가 없어 뺀다(footerChannelBar: true인 스펙만 유지).
+//   - 리스크 고지도 하단(y≈1658~1758)이라 유튜브 "AI·공개·조회수" 줄에 가렸다 → 제목 바로 아래로 옮긴다.
+//   - 좌우 크롭은 실측 약 5%(원본 57px)라 안전폭 864px로 충분하다.
 const HEADER_BAR = Object.freeze({
   height: 0,            // 영상을 밀어내지 않는다
-  scrimHeight: 420,     // 제목 뒤 어두운 층 (topY가 내려간 만큼 함께 확장)
+  scrimHeight: 580,     // 제목 + 리스크 고지 뒤 어두운 층
   scrimColor: "black@0.45",
   titleColor: "#FFFFFF",
   accentColor: "#FFD54A",
   titleSize: 92,
-  topY: 150,
+  topY: 232,
   lineGap: 112,
 });
 const FOOTER_BAR = Object.freeze({
@@ -290,31 +298,45 @@ const FOOTER_BAR = Object.freeze({
 // 하나로 교체, 폰트도 그 길이에 맞춰 조정. 글자색은 흰색이 안 두드러진다는
 // 지적(2026-09-23)으로 경고성 오렌지레드 강조색으로 교체(채널명 바의
 // 골드 #FFD54A와도 구분되게).
+// 2026-09-30 Owner 지적(인스타·유튜브 실제 화면에서 첫 글자·끝 글자가 잘림): 화면비가 긴 폰(20:9 등)은
+// 앱이 9:16 영상을 꽉 채우며 좌우를 각각 약 10%(108px) 잘라낸다. 화면에 새기는 모든 글자(자막·헤더·
+// 리스크 고지)는 가운데 864px 안에 둔다. 리스크 고지는 한 줄(화면 폭 약 94%)이라 잘렸으므로 두 줄로 나눈다.
+const TEXT_SAFE_WIDTH_PX = 864; // 1080 - 좌우 108씩
 const RISK_BAR = Object.freeze({
-  height: 80,
-  gapAboveFooter: 24,
+  height: 100,
+  gapAboveFooter: 12,
   bgColor: "black@0.55",
   textColor: "#FF6B4A",
-  textSize: 38,
+  textSize: 36,
+  lineGap: 44,
+  lines: ["이 영상은 정보 전달 목적이며,", "투자 판단의 책임은 본인에게 있습니다."],
 });
 function buildSceneRiskDisclosureFilters(scene) {
   if (!scene?.riskDisclosure) return [];
-  const footerY = render.height - FOOTER_BAR.height;
-  const riskY = footerY - RISK_BAR.height - RISK_BAR.gapAboveFooter;
-  const text = "이 영상은 정보 전달 목적이며, 투자 판단의 책임은 본인에게 있습니다.";
+  // 배치 v2: 제목 두 줄 바로 아래(앱 UI가 덮지 않는 자리). 오프닝·마지막 씬은 와이드 샷이라 캐릭터 머리와 안 겹친다.
+  const titleLines = Math.max(1, (ASSEMBLY_SPEC.headerTitle ?? []).length);
+  const riskY = HEADER_BAR.topY + HEADER_BAR.lineGap * titleLines + 8;
+  const blockHeight = RISK_BAR.lineGap * (RISK_BAR.lines.length - 1) + RISK_BAR.textSize;
+  const firstY = riskY + Math.round((RISK_BAR.height - blockHeight) / 2) - 2;
+  for (const line of RISK_BAR.lines) {
+    const width = textWidthRatio(line) * RISK_BAR.textSize;
+    if (width > TEXT_SAFE_WIDTH_PX) {
+      throw new Error(`리스크 고지 한 줄이 안전폭을 넘습니다(${Math.round(width)}px > ${TEXT_SAFE_WIDTH_PX}px): ${line}`);
+    }
+  }
   return [
     `drawbox=x=0:y=${riskY}:w=${render.width}:h=${RISK_BAR.height}:color=${RISK_BAR.bgColor}:t=fill`,
-    `drawtext=${[
+    ...RISK_BAR.lines.map((line, index) => `drawtext=${[
       `fontfile='${OVERLAY_FONT_FOR_FILTER}'`,
-      `text='${escapeDrawtextValue(text)}'`,
+      `text='${escapeDrawtextValue(line)}'`,
       "x=(w-text_w)/2",
-      `y=${riskY + Math.round((RISK_BAR.height - RISK_BAR.textSize) / 2) - 4}`,
+      `y=${firstY + index * RISK_BAR.lineGap}`,
       `fontsize=${RISK_BAR.textSize}`,
       `fontcolor=${RISK_BAR.textColor}`,
       "borderw=3",
       "bordercolor=black@0.8",
       "expansion=none",
-    ].join(":")}`,
+    ].join(":")}`),
   ];
 }
 
@@ -334,7 +356,7 @@ function buildHeaderFooterFilters() {
     // 제목 폰트를 키우면서(78→92) 화면 폭(1080, 좌우 여백 70씩 = 안전폭 940)을
     // 넘는 줄이 생길 수 있다(모바일 검수 2026-09-17). drawtext는 자동 줄바꿈이나
     // 축소를 하지 않으므로, 폭 초과 줄만 그 줄에 한해 폰트를 낮춰 화면 안에 둔다.
-    const HEADER_SAFE_WIDTH_PX = 940;
+    const HEADER_SAFE_WIDTH_PX = TEXT_SAFE_WIDTH_PX;
     title.forEach((line, index) => {
       // 마지막 줄(질문)만 노란색 — 시선이 질문에 멈추게 한다.
       const color = index === title.length - 1 ? HEADER_BAR.accentColor : HEADER_BAR.titleColor;
@@ -381,7 +403,8 @@ function buildHeaderFooterFilters() {
     });
   }
 
-  if (channel) {
+  // 배치 v2: 하단 채널명 띠는 앱 UI(계정명·공유 버튼)에 가려져 기본으로 그리지 않는다.
+  if (channel && ASSEMBLY_SPEC.footerChannelBar === true) {
     const footerY = render.height - FOOTER_BAR.height;
     filters.push(
       `drawbox=x=0:y=${footerY}:w=${render.width}:h=${FOOTER_BAR.height}:color=${FOOTER_BAR.bgColor}:t=fill`,
@@ -646,10 +669,17 @@ function rebuildCaptionText(caption, words, replacedWordTimings) {
 // 모바일 검수(2026-09-17): 자막이 작게 보이고 일부 기기에서 화면 폭을 벗어난다는
 // 지적 — 크기를 키우되(72→88) 좌우 여백을 넉넉히(80px) 둬 기종 간 화면비 차이에도
 // 잘리지 않게 한다.
-const CAPTION_MAX_WIDTH_PX = 920; // 1080 - 좌우 여백 80씩
-const CAPTION_FONT_SIZE = 88;
+// 배치 v2(2026-09-30 실측): 자막이 y=1500이면 유튜브 채널명·제목 줄(원본 y≈1510~)에 덮였다 → y=1290으로 올린다.
+// 그 높이에는 오른쪽에 좋아요·댓글 아이콘 열(원본 x≈917~)이 있으므로 폭을 760px(오른쪽 끝 x=920)로 줄이고,
+// 줄당 글자 수를 유지하려고 글자를 88 → 84px로 조금 줄인다.
+// ★ 단, 새 체계(스펙에 sceneBackgrounds — 이미지 글자를 세로 60% 위로 제한해 만든 편)에서만 y=1290을 쓴다.
+// 그 전에 만든 편(부엉 18편·재고 15~17편, 금박사 9·10편 등)은 캐릭터가 카드를 가슴 높이(화면 60~70%)에 들고 있어
+// y=1290 자막이 카드 글자를 덮는다(2026-09-30 부엉 18편 시험 조립에서 확인). 그런 편은 카드 아래 y=1470·폭 864로 둔다.
+const CAPTION_LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SPEC.captionLayout === "v2";
+const CAPTION_MAX_WIDTH_PX = CAPTION_LAYOUT_V2 ? 760 : TEXT_SAFE_WIDTH_PX;
+const CAPTION_FONT_SIZE = 84;
 const CAPTION_FIXED_X = 540;      // 항상 화면 중앙
-const CAPTION_FIXED_Y = 1500;     // 항상 하단 고정
+const CAPTION_FIXED_Y = CAPTION_LAYOUT_V2 ? 1290 : 1470;
 
 // 강조는 세 색을 쓴다(모바일 재검수 2026-09-17: "노랑·빨강 두 색밖에 안 보인다,
 // 3색을 쓴다고 했는데" 지적 — number와 key가 같은 노랑을 공유해 실질 2색이었다).
@@ -768,16 +798,7 @@ function emphasisMapFor(line) {
  * 블록이 화면 폭에 맞는 최대 크기를 찾는다. Black Han Sans 는 한글이 거의
  * 정사각형이라 글자수 × 크기로 폭을 근사할 수 있다(영문·숫자는 약 0.55배).
  */
-/** Black Han Sans 기준 글자폭 근사. 한글은 거의 정사각, 영숫자는 약 0.55배. */
-function textWidthRatio(text) {
-  let ratio = 0;
-  for (const char of String(text)) {
-    if (char === " ") ratio += 0.3;
-    else if (/[0-9A-Za-z.%,→]/.test(char)) ratio += 0.55;
-    else ratio += 1;
-  }
-  return ratio;
-}
+// textWidthRatio는 _caption-linebreak-ko.mjs에서 가져온다(줄바꿈 규칙과 같은 폭 계산).
 
 /**
  * 고정 크기로 줄을 나눈다. 글자를 줄이는 대신 줄을 늘린다.
@@ -792,7 +813,14 @@ function textWidthRatio(text) {
 // captions.mjs 의 MAX_VISIBLE_CHARS_PER_BLOCK)이 1차 방어선이지만, 그래도 폭을
 // 넘는 블록이 있으면 여기서 절대 3줄로 넘어가지 않고 좌우 폭 차이가 최소인
 // 지점에서 강제로 2줄로만 나눈다(폭이 살짝 넘쳐도 2줄 유지가 우선).
+// 2026-09-30: 줄바꿈 기준을 "폭 균형"에서 "의미 단위 우선, 폭 균형은 마지막"으로 교체했다
+// (Owner 지적: "11월 / 2일부터", "결론이 / 아니라"처럼 의미가 끊김). 규칙 본체와 회귀 사례는
+// _caption-linebreak-ko.mjs / check-caption-linebreak-ko.mjs. 아래 옛 구현은 참고용으로 남긴다.
 function wrapToLines(text, fontSize, maxWidth) {
+  return wrapToLinesKo(text, fontSize, maxWidth);
+}
+
+function wrapToLinesLegacyWidthBalance(text, fontSize, maxWidth) {
   const words = String(text).split(/\s+/).filter(Boolean);
   if (words.length === 0) return [String(text)];
   if (words.length === 1 || textWidthRatio(words.join(" ")) * fontSize <= maxWidth) {
@@ -862,63 +890,43 @@ function toStyledCaption(caption, cleaned, lines) {
 // 타이밍(wordTimings)을 그대로 쓴다.
 function splitCaptionIntoScreenSafeBlocks(caption) {
   const cleaned = stripTrailingPunctuation(caption.displayText);
-  const fitLines = wrapToLines(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
-  if (fitLines) {
-    return [toStyledCaption(caption, cleaned, fitLines.map(stripTrailingPunctuation))];
+  const single = wrapToLinesScored(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
+  // 한 줄에 들어가거나, 두 줄이어도 자연스러운 자리(벌점 6 미만)에서 나뉘면 그대로 쓴다.
+  if (single && (single.lines.length === 1 || single.score < 6)) {
+    return [toStyledCaption(caption, cleaned, single.lines.map(stripTrailingPunctuation))];
   }
 
   const words = cleaned.split(/\s+/).filter(Boolean);
   const timings = Array.isArray(caption.wordTimings) ? caption.wordTimings : null;
   if (!timings || timings.length !== words.length) {
-    // 시간 정보가 없으면(방어적 폴백) 폭을 넘더라도 2줄 강제였던 이전 동작을 유지.
-    const forced = wrapToLinesForced(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
-    return [toStyledCaption(caption, cleaned, forced.map(stripTrailingPunctuation))];
+    // 시간 정보가 없으면(방어적 폴백) 가능한 2줄, 안 되면 폭을 넘더라도 2줄 강제.
+    const lines = single ? single.lines : wrapToLinesForced(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
+    return [toStyledCaption(caption, cleaned, lines.map(stripTrailingPunctuation))];
   }
 
-  // 관형사(순우리말 수 관형사·지시 관형사) 바로 뒤는 분할 금지 — "한 달", "두 번",
-  // "그 종목"처럼 뒤 명사와 의미상 붙어 있어야 하는 조합이 "N등분" 균등 분할에
-  // 걸려 "한"과 "달"이 서로 다른 자막 조각으로 쪼개지는 버그(2026-09-20, 8편
-  // 2번째 씬 "4개 중 1개는 한 / 달 이후"로 실제 발생) 재발 방지.
-  // 부정 부사("못", "안") 바로 뒤도 동일하게 금지(2026-09-24, 15편 s7 "못 받게"
-  // 분리 사고 재발 방지 — wrapToLines의 WRAP_DETERMINER_PATTERN과 동일 패턴).
-  const DETERMINER_PATTERN = /^(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|그|이|저|또|몇|못|안)$/u;
-  const forbiddenSplitAfter = new Set(
-    words.reduce((acc, word, index) => {
-      if (index < words.length - 1 && DETERMINER_PATTERN.test(word)) acc.push(index);
-      return acc;
-    }, []),
-  );
-
-  for (let parts = 2; parts <= words.length; parts += 1) {
-    const groupSize = Math.ceil(words.length / parts);
-    const rawBoundaries = [];
-    for (let i = groupSize; i < words.length; i += groupSize) rawBoundaries.push(i);
-    // 금지된 경계(관형사 직후)는 한 칸 뒤로 민다 — 그룹 개수는 유지하되 그
-    // 경계만 다음 어절 뒤로 옮겨서 관형사+명사가 항상 같은 그룹에 남게 한다.
-    const boundaries = rawBoundaries.map((b) => (forbiddenSplitAfter.has(b - 1) ? b + 1 : b));
-    const groups = [];
-    let prev = 0;
-    for (const b of boundaries) {
-      const clamped = Math.min(b, words.length - 1);
-      if (clamped > prev) groups.push(words.slice(prev, clamped));
-      prev = clamped;
-    }
-    groups.push(words.slice(prev));
-    if (groups.some((g) => g.length === 0) || groups.length < 2) continue;
-
-    const groupLines = groups.map((g) => wrapToLines(g.join(" "), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX));
-    if (groupLines.some((lines) => !lines)) continue; // 이 조각 수로는 아직 안 들어가는 조각이 있음
-
-    let cursor = 0;
-    return groups.map((group, index) => {
-      const startWord = timings[cursor];
-      const endWord = timings[cursor + group.length - 1];
-      cursor += group.length;
-      const text = group.join(" ");
+  // 2026-09-30: 어절 수 N등분 대신, 끊는 자리의 자연스러움(splitPenalty — 관형사·부정부사·숫자+단위·
+  // 의존명사 앞 등은 금지)과 폭 제한을 함께 보는 동적계획법으로 블록을 나눈다. N등분은 "안녕, 투자
+  // 소식을 쉽고 / 빠르게 정리해주는"처럼 의미 단위를 갈랐다(10편 s3). 두 줄로 들어가더라도 어색한 자리
+  // ("자본 / 효율")에서만 나뉘는 경우엔 블록을 둘로 나누는 쪽이 낫다면 그쪽을 고른다. 0.6초 미만으로
+  // 스쳐 지나가는 블록은 읽기 어려우므로 벌점을 준다.
+  const MIN_BLOCK_DWELL_SEC = 0.6;
+  const blockScore = (slice, from, to) => {
+    const scored = wrapToLinesScored(slice.join(" "), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
+    if (!scored) return null;
+    const dwell = timings[to - 1].endSec - timings[from].startSec;
+    return scored.score + (dwell < MIN_BLOCK_DWELL_SEC ? 8 : 0);
+  };
+  const ranges = segmentWordsIntoBlocks(words, blockScore);
+  if (ranges && ranges.length === 1 && single) {
+    return [toStyledCaption(caption, cleaned, single.lines.map(stripTrailingPunctuation))];
+  }
+  if (ranges && ranges.length >= 2) {
+    return ranges.map(([from, to]) => {
+      const text = words.slice(from, to).join(" ");
       return toStyledCaption(
-        { ...caption, startSec: startWord.startSec, endSec: endWord.endSec },
+        { ...caption, startSec: timings[from].startSec, endSec: timings[to - 1].endSec },
         stripTrailingPunctuation(text),
-        groupLines[index].map(stripTrailingPunctuation),
+        wrapToLines(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX).map(stripTrailingPunctuation),
       );
     });
   }
@@ -932,10 +940,9 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
 function wrapToLinesForced(text, fontSize, maxWidth) {
   const words = String(text).split(/\s+/).filter(Boolean);
   if (words.length <= 1) return [text];
-  const FORCED_DETERMINER_PATTERN = /^(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|그|이|저|또|몇)$/u;
   let best = null;
   for (let split = 1; split < words.length; split += 1) {
-    if (FORCED_DETERMINER_PATTERN.test(words[split - 1]) && split < words.length - 1) continue;
+    if (!Number.isFinite(splitPenalty(words[split - 1], words[split])) && split < words.length - 1) continue;
     const left = words.slice(0, split).join(" ");
     const right = words.slice(split).join(" ");
     const score = Math.abs(textWidthRatio(left) - textWidthRatio(right));

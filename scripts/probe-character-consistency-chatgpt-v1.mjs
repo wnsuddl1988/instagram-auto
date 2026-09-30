@@ -384,6 +384,16 @@ const BULL_EP9_16SCENE_ONLY = getArg("--bull-ep9-16scene-only");
 // bull_ep10_s17). --bull-ep10-17scene-only "3,7" 처럼 선택 재생성.
 const BULL_EP10_17SCENE_MODE = argv.includes("--bull-ep10-17scene");
 const BULL_EP10_17SCENE_ONLY = getArg("--bull-ep10-17scene-only");
+// ★ 2026-09-30 품질 개선: 스펙 기반 장면 생성(모든 캐릭터 공통, 11편·19편 이후 기본).
+// 편마다 probe 모드 블록을 손으로 복사하지 않고, 조립 스펙의 씬별 imageBrief·shot(와이드/미디엄/클로즈)·
+// bg(편별 배경 구역)에서 장면 목록을 만든다. 샷이 지정된 장면은 샷 규칙·글자 안전영역 규칙을 쓰고,
+// "단순한 배경"·"배경 흐림"·"포즈·표정만 바꿔" 같은 옛 공통 문구를 넣지 않는다(배경 활용을 막던 원인).
+//   --scene-spec ./_bull-ep11-assembly-spec.mjs --scene-spec-export BULL_EP11_ASSEMBLY_SPEC [--scene-spec-only 3,7]
+//   --print-prompts : 브라우저를 띄우지 않고 최종 프롬프트만 출력(검토용)
+const SCENE_SPEC_MODULE = getArg("--scene-spec");
+const SCENE_SPEC_EXPORT = getArg("--scene-spec-export");
+const SCENE_SPEC_ONLY = getArg("--scene-spec-only");
+const PRINT_PROMPTS_ONLY = argv.includes("--print-prompts");
 // 황소특보 1편 배경 컨셉 비교(2안, 2026-09-23) — 최초 스펙이 CTA용 서재
 // 배경을 기계적으로 재사용해 "반도체 강세"라는 소재와 개연성이 없다는
 // Owner 지적으로 재설계. 트레이딩데스크/시황브리핑룸 vs 반도체 공장/클린룸
@@ -7937,7 +7947,90 @@ const POSES_GEUMBAKSA_EP6_10SCENE_SINGLE = GEUMBAKSA_EP6_10SCENE_ONLY
     })()
   : null;
 
-const POSES = OWL_8SCENE_ONLY
+// ── 스펙 기반 장면(샷 체계) ───────────────────────────────────────────────
+// 샷 규칙(2026-09-30): 캐릭터 크기 규칙이 공통 55~60% / 편별 45% / 표준 45~50%로 한 프롬프트 안에서
+// 충돌해 결과가 들쭉날쭉했다. 샷이 지정된 장면은 아래 규칙 하나만 쓴다.
+// (프롬프트가 2,700자를 넘으면 생성 완료 감지가 시간 초과된 적이 있어 짧게 쓴다.)
+const SHOT_FRAME_RULES = Object.freeze({
+  wide:
+    "샷=와이드(반드시): 카메라를 멀리 두고, 캐릭터 전신이 이미지 세로의 35~40%만 차지. 화면 절반 이상을 " +
+    "배경 공간과 상징 소품이 채운다. 캐릭터가 크면 실패.",
+  medium:
+    "샷=미디엄(반드시): 캐릭터 전신(정수리~발끝)이 이미지 세로의 45~50%. 머리 위·발 아래와 옆으로 " +
+    "배경이 보인다. 상반신 클로즈업은 실패.",
+  close:
+    "샷=클로즈(반드시): 무릎 위~머리가 이미지 세로의 60~70%. 표정과 카드가 크게, 머리 위 여백 10% 이상.",
+});
+const SHOT_COMMON_RULE = "배경은 흐리게 하지 말고 공간과 소품이 또렷하게 보이게.";
+// 글자 안전영역(2026-09-30 Owner 지적: 보드 글자가 실제 폰 화면에서 잘림). 화면비가 긴 폰은 앱이 영상
+// 좌우를 각 약 10%씩 잘라내고, 위에는 제목 띠·아래에는 자막이 올라간다.
+// 세로 60%까지: 배치 v2에서 자막이 y≈1215~1365(63~71%)로 올라가 그 아래까지 글자를 두면 자막과 겹친다.
+const TEXT_SAFE_ZONE_RULE =
+  "글자 안전영역(반드시): 보드·카드 등 글자 있는 소품은 좌우 가장자리에서 각각 이미지 가로의 12% 이상 " +
+  "안쪽, 글자는 이미지 세로 22~60% 사이에만(그 아래는 자막 자리). 가장자리에 닿거나 잘리면 실패.";
+
+function buildScenePosesFromSpec(spec) {
+  const backgrounds = spec.sceneBackgrounds ?? {};
+  const prefix = spec.imagePrefix;
+  if (!prefix) {
+    console.error("ABORT: 스펙에 imagePrefix(예: \"bull_ep11\")가 없습니다.");
+    process.exit(1);
+  }
+  return spec.scenes.map((scene, index) => {
+    if (!SHOT_FRAME_RULES[scene.shot]) {
+      console.error(`ABORT: 씬 ${scene.scene}의 shot은 wide|medium|close 중 하나여야 합니다(받은 값: ${scene.shot}).`);
+      process.exit(1);
+    }
+    const bg = backgrounds[scene.bg];
+    if (!bg?.image) {
+      console.error(`ABORT: 씬 ${scene.scene}의 bg "${scene.bg}"에 해당하는 sceneBackgrounds[..].image가 없습니다.`);
+      process.exit(1);
+    }
+    return {
+      id: `${prefix}_s${scene.scene}`,
+      file: `${prefix}_s${scene.scene}.png`,
+      first: index === 0,
+      shot: scene.shot,
+      clause: `장면 ${scene.scene} (${scene.role}): ${scene.imageBrief} ${wrapBull3dv1SceneBackground(bg.image)}`,
+    };
+  });
+}
+
+let POSES_SCENE_SPEC = null;
+let POSES_SCENE_SPEC_SINGLE = null;
+if (SCENE_SPEC_MODULE) {
+  if (!SCENE_SPEC_EXPORT) {
+    console.error("ABORT: --scene-spec 에는 --scene-spec-export 가 필요합니다.");
+    process.exit(1);
+  }
+  const specModule = await import(new URL(SCENE_SPEC_MODULE, import.meta.url).href);
+  const sceneSpec = specModule[SCENE_SPEC_EXPORT];
+  if (!sceneSpec?.scenes) {
+    console.error(`ABORT: ${SCENE_SPEC_MODULE}에서 ${SCENE_SPEC_EXPORT}.scenes를 찾지 못했습니다.`);
+    process.exit(1);
+  }
+  if (sceneSpec.imageCharacter !== CHARACTER) {
+    console.error(`ABORT: 스펙 imageCharacter(${sceneSpec.imageCharacter})와 --character(${CHARACTER})가 다릅니다.`);
+    process.exit(1);
+  }
+  POSES_SCENE_SPEC = buildScenePosesFromSpec(sceneSpec);
+  if (SCENE_SPEC_ONLY) {
+    POSES_SCENE_SPEC_SINGLE = SCENE_SPEC_ONLY.split(",").map((s) => s.trim()).filter(Boolean).map((token, i) => {
+      const target = POSES_SCENE_SPEC[Number.parseInt(token, 10) - 1];
+      if (!target) {
+        console.error(`ABORT: --scene-spec-only "${token}" 에 해당하는 장면이 없습니다(1~${POSES_SCENE_SPEC.length}).`);
+        process.exit(1);
+      }
+      return { ...target, first: i === 0 };
+    });
+  }
+}
+
+const POSES = SCENE_SPEC_ONLY && POSES_SCENE_SPEC_SINGLE
+  ? POSES_SCENE_SPEC_SINGLE
+  : POSES_SCENE_SPEC
+  ? POSES_SCENE_SPEC
+  : OWL_8SCENE_ONLY
   ? POSES_OWL_8SCENE_SINGLE
   : OWL_EP2_8SCENE_ONLY
   ? POSES_OWL_EP2_8SCENE_SINGLE
@@ -8230,8 +8323,21 @@ const BULL3DV1_FRAME_RATIO_RULE =
   "양옆 배경이 자연스럽게 보여야 해. 절대 하지 말 것: 캐릭터 얼굴이나 " +
   "상반신만 클로즈업해서 화면의 80% 이상을 채우는 구도, 반대로 캐릭터가 " +
   "화면 세로의 40% 이하로 작아져 배경 소품에 묻혀 보이는 구도. 캐릭터가 " +
-  "화면의 주인공으로 뚜렷하게 보이면서 그 뒤로 트레이딩 라운지 배경이 " +
+  "화면의 주인공으로 뚜렷하게 보이면서 그 뒤로 장면에 지정한 배경이 " +
   "적당히 보여야 정답이다.";
+// ↑ 2026-09-30: "트레이딩 라운지 배경"이 하드코딩돼 있어 편마다 배경을 바꿔도 라운지로 끌려갔다 → 일반화.
+// 샷이 지정된 장면(스펙 기반 모드)은 이 규칙 대신 SHOT_FRAME_RULES를 쓴다.
+
+// 샷 체계 장면 전용 캐릭터 고정 문구 — 옛 SAME_CHARACTER_RULE의 "단순한 배경", "얕은 피사계심도",
+// "바꿀 것은 오직 포즈와 표정, 소품뿐" 문구가 매 장면 배경 활용을 막고 있었다(2026-09-30 확인).
+const SAME_CHARACTER_RULE_SHOT =
+  "앞에서 만든 그 캐릭터와 똑같은 캐릭터로, 외형(비율, 눈, 색조, 안경·옷차림·액세서리·신발)을 하나도 " +
+  "바꾸지 마. 같은 픽사풍 3D 렌더링 유지, 2D·셀셰이딩·외곽선·실사 금지. 세로 9:16. 외형만 그대로 두고 " +
+  "포즈·표정·소품·배경 공간·카메라 거리는 아래 샷 규칙과 장면 설명대로 바꿔.";
+const IDENTITY_SHOT = IDENTITY
+  .replace(/얕은 피사계심도로\s*배경은 살짝 흐리게\.\s*/u, "")
+  .replace(/배경은 아주 단순한 단색 또는 연한 색으로\.\s*/u, "")
+  .replace(/세로 9:16 구도,\s*전신이 화면 중앙에 보이게\.\s*/u, "세로 9:16. ");
 
 // 10편(국민연금) 이미지 생성 중 발견(2026-09-21): clause에서 명시적으로 지정하지
 // 않은 배경 요소(간판, 스크린 문구 등)를 ChatGPT가 기본값으로 영어로 채워 넣는
@@ -8280,6 +8386,15 @@ const VEO_SAFE_IMAGE_RULE =
   "빈 계기판 등)을 남기지 마 — 빈 면이 크면 영상 변환 중 엉뚱한 글자가 저절로 생겨난다.";
 
 function buildPrompt(pose, toolMode) {
+  if (pose.shot) {
+    const shotRules = `${SHOT_FRAME_RULES[pose.shot]} ${SHOT_COMMON_RULE} ${TEXT_SAFE_ZONE_RULE}`;
+    const shotBody = pose.first
+      ? `${IDENTITY_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`
+      : `${SAME_CHARACTER_RULE_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`;
+    return toolMode === IMAGE_TOOL_PROMPT_ROUTING_FALLBACK
+      ? `${CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX} ${shotBody}`
+      : shotBody;
+  }
   const sameRule = USES_VARIED_BACKGROUND
     ? `${SAME_CHARACTER_RULE} 배경은 장면마다 달라도 되지만, 캐릭터의 옷차림과 소품은 ` +
       "배경에 가려지거나 바뀌지 않고 그대로 온전히 보여야 해."
@@ -8567,6 +8682,14 @@ async function main() {
   log(`character: ${CHARACTER} — ${CHAR_DEF.label}`);
   log(`out-dir: ${OUT_DIR_ABS}`);
   log(`mode:    ${PREFLIGHT_ONLY ? "PREFLIGHT_ONLY (전송 0회)" : `GENERATE (최대 ${POSES.length}장)`}`);
+
+  if (PRINT_PROMPTS_ONLY) {
+    for (const pose of POSES) {
+      console.log(`\n===== ${pose.id} (shot=${pose.shot ?? "-"}) =====\n${buildPrompt(pose, null)}`);
+    }
+    log(`--print-prompts: ${POSES.length}장 프롬프트 출력만 하고 종료(브라우저 미실행)`);
+    return;
+  }
 
   await ensureChrome(CDP_PORT_GPT1, USER_DATA_GPT1, log);
   const browser = await chromium.connectOverCDP(`http://localhost:${CDP_PORT_GPT1}`);

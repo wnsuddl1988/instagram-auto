@@ -25,8 +25,8 @@
    - 부엉박사: **11편부터 영구적으로 v2(§1)** — 훅→오프닝 한 문장→개념 정의→상황→"나한테 뭐가 달라지나/어떻게 해야 하나"→항목 2~3단→주의→정리+확인→금박사 연결, 전체 115~130초. 옛 구조 재고 7편은 배포하지 않고 v2로 전부 다시 만든다(순서·번호는 §7).
    - 금박사 **11편부터**: 오프닝(자기소개)을 훅 **뒤**로 옮기고 한 문장으로 줄인다(§2). 10편까지와 재고는 옛 구조 그대로.
 3. **TTS**: 씬 하나의 순수 발화(`rawAudioDurationSec`)는 **9.5초 이내**로 쓴다(10초 초과 금지). 세그먼트 한 조각은 7~8어절 이내로 끊는다(§A-3).
-4. **이미지**: 작은 글씨 금지 · 소품은 감싸 쥐거나 바닥 거치 · 크고 빈 면 금지 · 캐릭터는 화면 세로의 45~50%(§0-1, §A-4). ChatGPT 화면이 바뀌어 자동화가 실패하면 §4 체크리스트를 따른다.
-5. **영상 프롬프트**: §A-5 형식 그대로(영어, 5개 HIGHEST PRIORITY 블록). **8초 씬끼리, 10초 씬끼리 묶어서** 전달한다. 9초 요청 금지.
+4. **이미지**: 작은 글씨 금지 · 소품은 감싸 쥐거나 바닥 거치 · 크고 빈 면 금지 · 캐릭터 크기는 **씬별 샷**으로 정한다(와이드 35~40% / 미디엄 45~50% / 클로즈 60~70%, 규칙 15, §A-4). ChatGPT 화면이 바뀌어 자동화가 실패하면 §4 체크리스트를 따른다.
+5. **영상 프롬프트**: `scripts/build-video-generation-prompts.mjs`로 만든다(영어, HIGHEST PRIORITY 블록 + **씬별 입 멈춤 시각 SPEECH TIMING**, 규칙 15, §A-5). **8초 씬끼리, 10초 씬끼리 묶어서** 전달한다. 9초 요청 금지.
 6. **조립 + CTA**: `run-owl-assemble-shorts-v2.mjs` → `run-owl-episode-with-fixed-cta-once.mjs --alignment ...`를 **한 번에 이어서** 실행하고, `cta-join-report.json`이 PASS인지 확인한 뒤 완성본 하나로 검수를 요청한다(§A-7). **xfade 금지, 수동 ffmpeg 결합 금지.**
 7. **배포 자산**: 카드뉴스는 **부엉박사만** 만든다. 커버(=유튜브 썸네일 겸용)와 스토리 이미지는 세 캐릭터 모두 편마다 **새로** 만든다. 스토리 이미지는 9:16 전용 스펙으로 만들어 Instagram Story에만 올린다(§A-8).
 8. **배포**: §5 절차를 한 단계도 빼지 않는다(커버 merge 필수, `--privacy public` 필수, `youtubeTitle`에 `#Shorts` 넣지 않음).
@@ -34,7 +34,32 @@
 10. 외부 게시·유료 API·env/secret·commit/push·삭제는 Owner가 명시적으로 승인할 때만 한다.
 11. **★ 황소특보 소재 찾기 (2026-09-30 Owner 확정)**: "N편 주제 찾아보자" 류 요청이 오면 **매번 새로 탐색**한다(미리 쌓아 둔 창고 없음, 재고를 원하면 Owner가 따로 요청). 지시 없이 §3 "소재"의 **자동 적용 규칙**(일정 러너 → 레인 뉴스 검색 → 후보별 쏠림 점검)을 전부 실행한다. 후보는 **7~12개**를 기본으로 내고, **번호 = 추천순위**(1번이 최우선)로 쓴다. 순위는 **중요도(시청자 매매·자산에 직접 닿는가, 특보다운 무게)와 신선도(제작·게시 동안 안 식는가, 기한이 있으면 그 기한)**를 함께 반영하고, 쏠림 경고는 후보를 빼지 않고 표시만 한다. 각 후보에 레인·영역·유형·경고·팩트 확인 상태(확인/제목 수준)를 붙인다.
 13. **★ 부엉박사 소재 찾기 (2026-09-30 Owner 확정, 11번과 같은 뼈대)**: "부엉박사 N편 주제 찾아보자" → **매번 새로 탐색**, 후보 **7~12개**, **번호 = 추천순위**, 레인·영역·경고·팩트 상태 표시, 쏠림 경고는 표시만. 부엉박사만 다른 점: ⓐ 순위 기준은 **시청자 행동·자산 영향도 > 팩트 안정성(공식 자료로 확정 가능) > 신선도(시행일 임박·최근 개정·신청 마감 D-N)** — 하루 만에 식는 소재가 아니라서 신선도 비중이 황소특보보다 작다. ⓑ 후보 단계에서 **정부 제도명의 현재 운영 여부를 공식 사이트로 확인**하고(청년내일채움공제 사고), 전망치는 같은 가정끼리만 비교한다. ⓒ 레인(초안): ① 제도 변경·시행 D-N ② 내 돈 계산법(대출·세금·연금) ③ 주거(월세·전세·청약·경매) ④ 소득·일자리 지원 ⑤ 생활물가·공공요금 ⑥ 지표 번역(ECOS/KOSIS) ⑦ 금융사기·피해 예방 ⑧ 신청 마감 임박 혜택. 쏠림 기준: 최근 5편 중 같은 영역 ≤2, 직전 편과 같은 레인·같은 제목 모양 연속 금지, 경제사냥꾼식 "진짜 이유/정체" 제목 금지. ⓓ 18편부터 금박사 연결 폐지이므로 소재는 독립 선정한다. ⓔ **도구**: 부엉박사용 레인 뉴스 검색·게시 장부는 아직 없다(황소특보 전용만 있음) — 부엉박사 소재가 실제로 필요해지는 때(재고 15~18편 소진 전) Claude가 황소특보 도구를 본떠 만든다. 그 전에는 웹 검색 + ECOS/KOSIS 지표로 같은 형식으로 제안한다.
-14. **★ 씬 배경은 편마다 소재에 맞게 새로 구성한다 (2026-09-30 Owner 지시: "맨날 똑같은 배경")**: 직전 편과 같은 배경(특히 트레이딩 라운지)을 그대로 재사용하지 않는다. 대본이 확정되면 소재에 어울리는 공간을 정한다(예: 10편 저PBR 공표 = 거래소 공표 로비 / 공시 접수 사무 구역 / 밝은 분석실). 한 편 안에서도 씬 역할에 따라 **2~3개 구역**을 나눠 쓴다(도입·마무리 / 개념 설명 / 절차·확인). 배경 규칙은 그대로: 저폴리곤 단순화, **배경 글자·숫자 없음, 큰 빈 면 금지**, 좌우 8% 안쪽 구도 규칙. 영상 프롬프트의 STATIC ELEMENTS·STYLE 문구도 씬별 배경에 맞게 바꾼다(라운지 문구 복붙 금지). 구현: probe 모드에 `BULL_EP{N}_BG_A/B/C`를 두고 씬마다 지정(10편 예: `BULL_EP10_BG_A~C`).
+14. **★ 씬 배경은 편마다 소재에 맞게 새로 구성한다 (2026-09-30 Owner 지시: "맨날 똑같은 배경")**: 직전 편과 같은 배경(특히 트레이딩 라운지)을 그대로 재사용하지 않는다. 대본이 확정되면 소재에 어울리는 공간을 정한다(예: 10편 저PBR 공표 = 거래소 공표 로비 / 공시 접수 사무 구역 / 밝은 분석실). 한 편 안에서도 씬 역할에 따라 **2~3개 구역**을 나눠 쓴다(도입·마무리 / 개념 설명 / 절차·확인). 배경 규칙은 그대로: 저폴리곤 단순화, **배경 글자·숫자 없음, 큰 빈 면 금지**, 글자 소품은 좌우 12% 안쪽(규칙 15). 영상 프롬프트의 STATIC ELEMENTS·STYLE 문구도 씬별 배경에 맞게 바꾼다(라운지 문구 복붙 금지). 구현(11편부터): 스펙의 `sceneBackgrounds` + 씬별 `bg`(규칙 15). 10편은 probe 모드 `BULL_EP10_BG_A~C`로 만들었다.
+15. **★ 영상 품질 체계 v2 (2026-09-30 Owner 지시 — 싱크·이미지 균일·배경 활용·화면 잘림·자막 줄바꿈을 한 번에 개선, 세 캐릭터 공통, 황소 11편·부엉 19편·금박사 신규부터)**:
+    - **스펙 필드 필수**: 편 단위 `imageCharacter`·`imagePrefix`·`sceneBackgrounds{구역: {label, image(한국어), videoStyle, videoStatics(영어)}}`, 씬 단위 `shot`(wide/medium/close)·`bg`(구역)·`motion{type: card2|card1|board|open, action, mood}`. imageBrief의 카드·보드 글자는 '작은따옴표'로. 예시: `scripts/_bull-ep10-assembly-spec.mjs`(backfill).
+    - **샷 배정 기준**: 카드 강조·훅·통찰 = 클로즈, 공간이 바뀌는 첫 씬·오프닝·마무리·배경이 의미를 전달하는 씬 = 와이드, 나머지 설명 = 미디엄. 같은 구역에서 같은 샷 3연속 금지(점프컷 = 짜집기 티). 보드·카드가 아닌 장면(배경 요소 가리키기, 상징 소품, 리액션)도 섞는다.
+    - **이미지 생성**: `probe-character-consistency-chatgpt-v1.mjs --scene-spec <spec> --scene-spec-export <EXPORT>`(편별 모드 블록 복사 불필요). 샷 규칙·글자 안전영역(좌우 12% 안쪽, 세로 22~60%)이 자동 주입되고, 옛 공통 문구("단순한 배경", "배경 흐림", "포즈·표정만 바꿔", 하드코딩 "트레이딩 라운지")는 쓰지 않는다. `--print-prompts`로 생성 전 검토. 생성 후 `run-safe-zone-preview-once.mjs --images-dir … --spec-module …`로 안전선 시트를 만들어 크기·글자 위치를 확인하고, 벗어난 씬만 `--scene-spec-only`로 재생성.
+    - **영상 프롬프트**: `build-video-generation-prompts.mjs`가 TTS 실측으로 씬별 **입 멈춤 시각**을 넣는다("X초까지만 말하고, 이후 입 다물고 미소·끄덕임"). 옛 규칙 "클립 끝까지 쉬지 않고 입 움직임"은 폐기(10편 실측: 17개 중 16개가 대사 뒤 0.8~5.7초 더 말함). 몸 움직임(깜빡임·호흡)은 끝까지 유지. 싱크 파일럿은 `--pilot-dialogue 2,8,12`(B안: 실제 한국어 대사 입력) — A/B 비교 결과로 표준 확정 예정.
+    - **영상 검수 추가**: `check-clip-speech-timing-once.mjs`로 클립별 입 멈춤 추정(Veo 자체 음성 끝 vs TTS 발화 끝, +0.4초 넘으면 경고 → 프레임 육안 확인).
+    - **화면 배치 v2(2026-09-30 Owner 폰 캡처로 실측)**: 좌우 크롭은 약 5%(원본 57px)지만 **앱 UI가 영상을 덮는다** — 상단 아이콘 y≈168~210, 오른쪽 아이콘 열 x≈917~(y≈1144~1773), 유튜브 채널명·제목 y≈1510~, 인스타 계정명 y≈1720~. 그래서: 제목 topY 232(안전폭 864), **리스크 고지는 제목 바로 아래 두 줄**, **자막은 새 체계 편(스펙에 `sceneBackgrounds`)만 y=1290·폭 760px·84px, 그 전에 만든 편(부엉 18편·재고 15~17편, 금박사 9·10편 등)은 캐릭터가 카드를 가슴 높이에 들고 있어 y=1470·폭 864px·84px**(y=1290이면 카드 글자를 덮는 것을 부엉 18편 시험 조립에서 확인 — 조립기가 스펙을 보고 자동 선택), **하단 채널명 띠 없음**(스펙 `footerChannelBar: true`일 때만). 이미지 속 글자는 좌우 12% 안쪽·세로 22~60%(그 아래는 자막 자리). 고정 CTA 클립은 옛 배치가 구워져 있다(교체는 Owner 결정).
+    - **조립 후 확인**: `run-safe-zone-preview-once.mjs --video … --count 6` + `--times <오프닝 중간>,<마지막 씬 중간>`(리스크 고지).
+    - **오디오 마감(필수, CTA 결합 다음)**: `node scripts/run-audio-finish-once.mjs --in <final.mp4> --out <final_mastered.mp4> [--sfx-cuts-from <tts-summary>] [--bgm <음원> --bgm-db -26]` — -14 LUFS·피크 -1 dBTP로 맞춘다(실측: 부엉박사 -22 LUFS로 7dB 작았고, 황소 8·9편은 피크가 0을 넘었다). 배포 압축은 mastered 파일로. 배경음 음원은 Owner가 고른 저작권 확인 파일만(스크립트가 받아오지 않음), 전환 효과음은 합성음이라 선택 사용.
+    - **편 단위 자동 검수(Owner 검수 요청 전 필수)**: `node scripts/run-episode-qa-once.mjs --spec-module … --spec-export … --tts-summary … --assembly-dir … --final <mastered.mp4> --clip-dir … --images-dir …` → `qa-report.md`의 "반드시 수정"이 0이어야 Owner에게 넘긴다(스펙 필드·샷 3연속, 자막 폭·읽는 표기·금지 경계·짧은 블록, 리스크 고지, 음량, 입 멈춤, 안전선 시트). 음량만 따로: `check-audio-loudness-once.mjs`.
+    - **자막 줄바꿈**: `_caption-linebreak-ko.mjs` — 의미 단위 우선(쉼표 > 전환어 앞 > 연결어미 뒤 > 조사 뒤), 숫자+단위·관형사+명사·명사+의존명사·"A가 아니라"·본용언+보조용언은 안 끊음, 폭 균형은 마지막. Owner가 줄바꿈 수정을 요청하면 **그 사례를 `check-caption-linebreak-ko.mjs`에 추가**하고 규칙을 고친다(회귀 방지).
+16. **★ 성과 데이터·플랫폼 권한 (2026-09-30 Owner 승인: "인스타·유튜브 다 접근·수정 가능하게")**:
+    - **수집(읽기 전용)**: `node scripts/run-owner-command-with-local-env-no-log.mjs instagram-insights-collect --arm` / `… youtube-analytics-collect --arm` → `C:/tmp/money-shorts-os/insights/`. 편별 조회·도달·평균 시청 시간·유지율·저장·공유를 비교해 무엇이 효과가 있었는지 본다(편 배포 1~2일 뒤, 주 1회 이상).
+    - **권한 현황(2026-09-30 교체 완료)**: 인스타 = **시스템 사용자(SYSTEM_USER) 무기한 토큰**, 권한 `instagram_basic·instagram_content_publish·instagram_manage_insights·instagram_manage_comments·pages_show_list·pages_read_engagement`. **권한을 더 붙일 때는 비즈니스 설정 → 시스템 사용자 → 새 토큰 생성(만료 "안 함")으로 발급**한다(Graph API 탐색기·60일 연장 방식 금지 — 무기한이 60일로 바뀐다). 토큰 종류·권한은 `owl-instagram-token-health --arm`에 표시됨. 유튜브 = 업로드·조회·관리(`youtube`)·분석(`yt-analytics.readonly`) 권한(재발급: `node scripts/run-youtube-refresh-token-renewal-v1.mjs --arm --approval APPROVE_YOUTUBE_REFRESH_TOKEN_RENEWAL_V1 --expected-channel-id UCR23z78qDtyhHIaV29rSB9A`, 브라우저에서 Owner 동의). 단 구글 클라우드 프로젝트 460802818413에서 **YouTube Analytics API 사용 설정**이 필요(미설정 시 수집기가 조회수·좋아요만 모음).
+    - **1차 성과 분석**: [performance-report-2026-09-30.md](performance-report-2026-09-30.md) — 가장 큰 누수는 첫 2~3초(릴스 절반이 평균 시청 5초 미만), 통념 뒤집기형 훅이 22~28초로 가장 길고 "~라는 거 알아?"형은 2~3초, 카드뉴스는 노출이 거의 없음.
+    - **수정 권한이 생겨도** 게시물 제목·설명·공개 범위·삭제 같은 외부 수정은 **건마다 Owner 확인 후** 실행한다.
+17. **★ 훅 규칙 (2026-09-30 Owner 확정 — 세 캐릭터 공통, 새로 쓰는 대본부터)**: 근거는 인스타 릴스 32편 평균 시청 시간([performance-report-2026-09-30.md](performance-report-2026-09-30.md)) — 규칙 통과 편 평균 약 18초 vs 위반 편 약 7초.
+    - **H1** 첫 문장(0~3초)에 긴장이 있어야 한다: 통념 뒤집기 / 내 돈 손실·안전 / 특정 대상 이득·변경 / 사건+큰 변동+예상 밖 이유.
+    - **H2 금지**: 자기소개로 시작(오프닝은 훅 뒤) · 용어 정의로 시작("X, 결국 ~", "X란") · 긴장 없는 사실 확인형("~라는 거 알아?" 앞이 단순 사실) · 첫 문장 숫자 3개 이상. ("알고 있었어?" 어미 자체는 허용 — 앞 내용이 반전·이득·손실이면 부엉 11·12편처럼 13초대가 나왔다.)
+    - **H3** 첫 문장 주어는 시청자가 아는 구체 대상(삼성전자·은행·내 통장·세입자 있는 집). 추상 제도명(IRP 안전자산 규정·소득대체율)은 둘째 문장으로.
+    - **H4** 긴장 단어는 첫 문장 앞 절반(약 16~18자 안).
+    - **템플릿**: T1 통념 뒤집기("다들, [통념]이라고 생각했지? [반전 한마디].") · T2 내 돈 안전("[내 돈 상황], 괜찮을까? [시점]부터 기준이 바뀌었어.") · T3 대상 이득("[대상] 있는 사람, [이득]이 생겼어.") · T4 사건+이유("[사건] 하나에 [숫자] 뛰었어. 이유는 [예상 밖 단서]야.") · T5 손실 경고("[행동]하면 [손실] 볼 수 있어. [시점] 전에 이것만 봐."). 스펙 씬 1(또는 스펙 최상위)에 `hookType: "T1"`~`"T5"`를 적어 성과를 유형별로 비교한다.
+    - **자동 검사**: `scripts/_hook-rules.mjs`(H2 전부·H1 긴장 단어·H4 위치) — `run-episode-qa-once.mjs`가 첫 씬을 검사해 위반이면 "반드시 수정". 대본 확정 전에도 같은 규칙으로 스스로 점검한다. H3은 사람이 본다.
+    - **예외**: 규칙 이전에 TTS·영상까지 만든 금박사 재고 9·10편은 `hookRuleException: true`(자기소개 시작 그대로 배포, Owner 승인). 부엉 재고 15~18편은 규칙 통과.
+    - **기존 구조와의 관계**: 황소 v3 훅 공식·부엉 v2 훅은 그대로 쓰되 H1~H4를 통과해야 한다. 10편 이상 쌓이면 훅 유형별 평균 시청으로 규칙을 재조정한다.
 12. **★ 작업 방식이 바뀌면 그때마다 이 최우선 규칙 + 메모리(MEMORY.md 최우선 섹션)에 기록한다.** Owner가 매번 요청하지 않아도 Claude가 먼저 한다(2026-09-30 Owner 확정). 새 규칙은 세션이 바뀌어도 누락되지 않도록 문서와 메모리 양쪽에 남긴다.
 
 ---
@@ -94,7 +119,8 @@
 - 결과: `…/elevenlabs-scene-paced-tts-summary.json`(씬별 길이), `…/*.alignment.json`(글자별 시각, CTA 결합에 사용).
 
 ### A-4. 씬 이미지 (ChatGPT 웹 자동화)
-- 스크립트: `scripts/probe-character-consistency-chatgpt-v1.mjs`. **편마다 전용 모드를 이 파일에 추가한다**: 직전 편 블록(예: `BULL_EP4_14SCENE_MODE` / `BULL_EP4_14SCENE_ONLY` / `POSES_BULL_EP4_14SCENE`)을 복사해 `--{char}-ep{N}-{씬수}scene` 플래그와 씬별 `imageBrief` 배열을 만든다. 캐릭터 불일치 시 강제 ABORT 가드가 있으니 우회하지 않는다.
+- **★ 2026-09-30부터(황소 11편·부엉 19편·금박사 신규): 스펙 기반 모드를 쓴다** — `ALLOW_CHATGPT_IMAGE=1 node scripts/probe-character-consistency-chatgpt-v1.mjs --character <…> --scene-spec ./_{char}-ep{N}-assembly-spec.mjs --scene-spec-export <EXPORT> --out-dir C:/tmp/{char}-ep{N}-images [--scene-spec-only 3,7] [--print-prompts]`. 샷·배경·안전영역 규칙은 최우선 규칙 15. 생성 후 안전선 시트(`run-safe-zone-preview-once.mjs --images-dir … --spec-module … --spec-export …`)로 검수. 아래 "편마다 전용 모드" 방식은 10편 이전 방식이다.
+- (옛 방식) 스크립트: `scripts/probe-character-consistency-chatgpt-v1.mjs`. **편마다 전용 모드를 이 파일에 추가한다**: 직전 편 블록(예: `BULL_EP4_14SCENE_MODE` / `BULL_EP4_14SCENE_ONLY` / `POSES_BULL_EP4_14SCENE`)을 복사해 `--{char}-ep{N}-{씬수}scene` 플래그와 씬별 `imageBrief` 배열을 만든다. 캐릭터 불일치 시 강제 ABORT 가드가 있으니 우회하지 않는다.
 - 실행:
   ```
   ALLOW_CHATGPT_IMAGE=1 node scripts/probe-character-consistency-chatgpt-v1.mjs --character <owl3dv5|coin3dv1|bull3dv1> --{char}-ep{N}-{씬수}scene --out-dir C:/tmp/{char}-ep{N}-images
@@ -104,7 +130,8 @@
 - 검수 기준: 캐릭터가 화면 세로 45~50%를 넘게 크면 재생성, 글자 오타·작은 글씨·빈 면·불안정 그립이 있으면 재생성. 배경 글자는 한국어만.
 
 ### A-5. 영상 생성 프롬프트 (Owner가 Veo/Flow로 직접 생성)
-- 문서: `_ai/{char}-ep{N}-video-generation-prompts.md`. **최신 템플릿: `_ai/bull-ep4-video-generation-prompts.md`** — 형식을 줄이거나 요약하지 않고 그대로 따른다.
+- **★ 2026-09-30부터 생성기로 만든다**: `node scripts/build-video-generation-prompts.mjs --spec-module ./_{char}-ep{N}-assembly-spec.mjs --spec-export <EXPORT> --tts-summary <…/elevenlabs-scene-paced-tts-summary.json> --out _ai/{char}-ep{N}-video-generation-prompts.md [--pilot-dialogue 2,8,12]`. 티어 계산·배경 STATIC 문구·카드/보드 글자 인용·**SPEECH TIMING(씬별 입 멈춤 시각)**이 자동으로 들어간다. 아래의 "MOUTH MOVEMENT(클립 끝까지 입 움직임)" 블록은 폐기됐다(대사가 끝나도 계속 말하는 원인).
+- 문서: `_ai/{char}-ep{N}-video-generation-prompts.md`. (옛 템플릿: `_ai/bull-ep4-video-generation-prompts.md`)
 - 문서 맨 위 표: 씬 / 이미지 파일 / 저장할 영상 파일명 / 실측 발화(raw) / 요청 티어 / 예상 여유 / (생성 도구).
 - **티어는 8초·10초 두 가지뿐.** 발화 8초 미만이고 여유가 1초 이상이면 8초, 그 외(8초 이상이거나 여유 1초 미만)는 10초. 10초로 정한 씬은 발화가 10초를 넘지 않는 한 안전하다(다시 줄이지 않는다). **Gemini(Veo)로 배정한 씬은 발화와 무관하게 항상 10초**로 쓴다. 9초 요청 금지.
 - **본문은 🟦 8초 티어 묶음 → 🟨 10초 티어 묶음 순서로 나눠 적는다.**
@@ -120,6 +147,7 @@
 - Owner가 `C:\Users\PC\Downloads\1.mp4`~`N.mp4`로 전달하면 **숫자가 곧 씬 번호**다(묻지 않는다). `C:/tmp/{char}-ep{N}-videos/{char}_ep{N}_s{번호}_motion.mp4`(스펙의 `video` 필드 이름)로 복사한다.
 - 씬마다 ffprobe 길이(요청 티어와 일치, 발화보다 긴지) + 시작·중반·끝 프레임을 확대해서 본다(글자 깨짐, 소품 이탈, 카메라 줌·크롭, 표정 붕괴, 정지).
 - Veo 화면에 quota 문구가 떠도 완성된 영상이 있으면 먼저 확인한다(실패로 오판 금지).
+- **입 멈춤 측정(2026-09-30)**: `node scripts/check-clip-speech-timing-once.mjs --spec-module … --spec-export … --clip-dir C:/tmp/{char}-ep{N}-videos --tts-summary …` — 경고(+0.4초 초과) 클립은 발화 끝 직후 프레임을 눈으로 확인하고, 심하면 같은 프롬프트로 재생성.
 
 ### A-7. 조립 + CTA 결합 (★ 항상 한 번에 이어서 실행)
 1. 본편 조립:
@@ -141,6 +169,7 @@
    - `--scene8-start`는 이름과 무관하게 **본편 오디오 전체 길이**다. `--alignment`를 빼면 무음 감지로 추정하므로 항상 넣는다.
    - **결과 확인**: `<out-dir>/cta-join-report.json`의 `frameCheck`·`avLengthCheck`가 PASS여야 한다. `checkFramesAtSec`의 네 시점(발화 종료 직전 / 전환 / 전환 후 / CTA 마지막 프레임)을 프레임으로 뽑아 눈으로 확인한다.
    - **금지**: xfade, 수동 ffmpeg 결합, CTA 클립 새로 만들기, CTA 앞 대기 인트로 추가. 새 CTA 클립으로 바꾸면 스크립트의 `KNOWN_CTA_LEADING_SILENCE_TRIM_SEC`에 실측값을 등록해야 한다(등록 안 하면 ABORT).
+2-1. **안전선 확인(2026-09-30)**: `node scripts/run-safe-zone-preview-once.mjs --video <final.mp4> --count 6 --out …` + `--times <오프닝 씬 중간>,<마지막 씬 중간>`(리스크 고지). 자막·헤더·리스크 고지는 조립기가 안전폭 864px로 자동 제한하고(리스크 고지 두 줄), 자막 줄바꿈은 `_caption-linebreak-ko.mjs` 규칙을 쓴다(회귀 테스트 `node scripts/check-caption-linebreak-ko.mjs`).
 3. 완성본(CTA까지 붙은 것) 하나로 Owner에게 검수를 요청한다. "본편 조립했는데 CTA도 붙일까요?"처럼 중간에 끊지 않는다.
 
 ### A-8. 커버·스토리·카드뉴스 이미지
@@ -294,6 +323,7 @@ OpenAI가 ChatGPT 웹 화면을 바꾸면 이미지 자동화가 "어제까지 �
 배포는 외부 게시다. 캡션·자산 요약을 짧게 보여주고 Owner 승인을 받은 뒤 실행한다. 명령은 모두 저장소 루트에서 실행하고, 결과 폴더는 `C:/tmp/{char}-ep{N}-publish/`로 한다.
 
 1. 자산 경로 확인(§7): 최종 영상, 커버, 스토리, (부엉박사) 카드뉴스 폴더.
+1-1. **(2026-09-30) 배포 영상은 오디오 마감본(`*_mastered.mp4`, 규칙 15)을 쓴다.** 없으면 `run-audio-finish-once.mjs`부터 실행.
 2. **영상이 35MB(36,700,160바이트)를 넘으면 압축**(보통 넘는다):
    `ffmpeg -y -i <final.mp4> -c:v libx264 -preset medium -b:v 1900k -maxrate 2100k -bufsize 4000k -pix_fmt yuv420p -c:a aac -b:a 128k -ar 48000 -ac 1 -movflags +faststart <compressed.mp4>` — 결과가 35MB 이하인지 확인(130초대 영상은 1900k, 90초대는 2300~2500k).
 3. `owl-content-unit.json` 작성(형식: `C:/tmp/bull-ep4-publish/owl-content-unit.json`). **`youtubeTitle`에 `#Shorts`를 넣지 않는다**(업로드 스크립트가 자동으로 붙임). `instagramSourcePath`=압축본, `thumbnailImagePath`=커버.
@@ -369,7 +399,7 @@ suspended.` 에러). 이때는:
   - **연결 문장은 짝 금박사 편이 실제로 다루는 내용에 맞춘다** — 대본 쓰기 전에 그 금박사 스펙의 narration을 확인한다(예: 금박사 ep7은 예금자보호 "한도·계산·신청"만 다루고 청약통장 제외 이유는 안 다룸 → 부엉박사 11편은 "예금자보호 한도가 궁금하면"으로 넘김).
   - 금박사 짝 편이 가정하는 내용(예: 14편은 "소득대체율 41.5%→43%"를 이름만 언급, 12편은 토지거래허가구역을 설명하지 않고 넘김, 17편은 DB/DC/IRP를 이름만 언급)은 새 부엉박사 대본에서도 **유지**한다 — 주제 정의(s4)가 넘길 용어를 먼저 설명해 버리지 않게 한다.
   - 옛 v1 완성본(배포 안 함, 재사용 원본 확인용): 국민연금 `owl-ep10-episode-final-v-cta-std`, 고용률 `owl-ep11-…`, 토지 `owl-ep12-…`, 퇴직연금 `owl-ep13-…`, 실업급여 `owl-ep15-episode-final-v3`, 최저임금 `owl-ep16-episode-final-v1`, 청약 `owl-ep17-final-v2`(모두 `C:/tmp/` 아래). 청약 v1용 커버·스토리·카드뉴스(`owl-cover/story/cardnews-ep17`, 2026-09-26 제작·미배포)는 내용이 v2 대본과 맞고(3.1%·2027-09-30 절대 날짜·되돌리기 불가·예금자보호 제외·은행 앱/창구) 커버 문구가 v2 헤더와 같아 **새 11편에 그대로 쓴다**.
-- **18편(전세사기 최소보장제, 15씬) 완성·배포 전(2026-09-30)**: 스펙 `scripts/_owl-v2-ep18-assembly-spec.mjs`, TTS `C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v6`(금박사 연결 제거 반영, 102.7초), 영상 15개 검수 통과, 최종 `C:/tmp/owl-v2-ep18-final/owl_episode_final.mp4`(117.17초, cta-join PASS), 압축본 31.9MB. 팩트 재대조 완료(2026-09-30, 인천일보·헤럴드·한경·국토부 보도 등: 시행 11/13, 3분의 1 기준, 한도 5억·재량 최대 7억, 인정 전 2027.5.31·인정 후 결정일+3년, 신청 제한 3가지, 소급 적용 포함). 커버·스토리·카드뉴스 4장 생성 완료(`C:/tmp/owl-cover-ep18`, `owl-story-ep18`, `owl-cardnews-ep18`, 스펙 `_owl-{cover,story,cardnews}-ep18-spec.mjs`). 남은 일: Owner 검수·음성 청취 → "18편 배포해줘"(10월 중 게시: 대사 "다음 달부터"가 11월 시행을 가리킴).
+- **18편(전세사기 최소보장제, 15씬) 완성·배포 전(2026-09-30)** — ★ 기존 최종본(`C:/tmp/owl-v2-ep18-final`)은 옛 배치(하단 채널명 띠, 자막 y=1500·폭 920, 음량 -21.6 LUFS)라 **배포 전에 새 코드로 재조립 → CTA 결합 → 오디오 마감 → `run-episode-qa-once.mjs`** 순서로 다시 만든다(시험본 `C:/tmp/quality-v2-test/owl-ep18-final/owl_episode_final_mastered.mp4`는 검수 통과: 반드시 수정 0). 금박사 10편 재고 원고에 "최저임금 만 700원"(→ "1만 700원" 권장) 표기 문제 있음 — 배포 전 점검 때 수정.: 스펙 `scripts/_owl-v2-ep18-assembly-spec.mjs`, TTS `C:/tmp/money-shorts-os/owl-v2-ep18-tts/output-v6`(금박사 연결 제거 반영, 102.7초), 영상 15개 검수 통과, 최종 `C:/tmp/owl-v2-ep18-final/owl_episode_final.mp4`(117.17초, cta-join PASS), 압축본 31.9MB. 팩트 재대조 완료(2026-09-30, 인천일보·헤럴드·한경·국토부 보도 등: 시행 11/13, 3분의 1 기준, 한도 5억·재량 최대 7억, 인정 전 2027.5.31·인정 후 결정일+3년, 신청 제한 3가지, 소급 적용 포함). 커버·스토리·카드뉴스 4장 생성 완료(`C:/tmp/owl-cover-ep18`, `owl-story-ep18`, `owl-cardnews-ep18`, 스펙 `_owl-{cover,story,cardnews}-ep18-spec.mjs`). 남은 일: Owner 검수·음성 청취 → "18편 배포해줘"(10월 중 게시: 대사 "다음 달부터"가 11월 시행을 가리킴).
 
 **금박사**
 - 배포 완료: 1~4편(4편 레버리지는 옛 여성 목소리로 배포됨), **5편 예금자보호(파일 ep7, 2026-09-26): 릴스 instagram.com/reel/DdwCAo6DtBU, 유튜브 youtube.com/shorts/9qFa3fhYljg, 스토리 게시**, **7편 신용점수(파일 ep5, 2026-09-28, 수동배포): 릴스 instagram.com/reel/Dd0492RvjIW, 유튜브 youtube.com/shorts/PNPHQhwfsIE**(Vercel Blob 스토어 정지로 자동 파이프라인 우회)

@@ -47,6 +47,49 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
   characterDisplayName: "황소특보",
   headerTitle: ["11월 2일 저PBR 공표", "내 종목 읽는 순서"],
 
+  // ── 이미지·영상 연출 필드(2026-09-30 품질 개선, 11편부터 필수) ──────────────────────────
+  // 10편 이미지는 옛 방식으로 만들었고, 아래 값은 다음 편이 복사해 쓰도록 채운 예시(backfill)다.
+  // probe: --scene-spec ./_bull-ep10-assembly-spec.mjs --scene-spec-export BULL_EP10_ASSEMBLY_SPEC
+  // 영상 프롬프트: node scripts/build-video-generation-prompts.mjs --spec-module ./_bull-ep10-assembly-spec.mjs ...
+  // 훅 유형(T1~T5, 최우선 규칙 17) — 11편부터 씬 1 또는 여기에 hookType을 적는다. 10편 첫 문장은 숫자 3개·긴장 단어
+  // 없음으로 규칙 위반(인스타 평균 시청 2.3초) — 복사할 때 훅은 새로 쓸 것.
+  imageCharacter: "bull3dv1",
+  imagePrefix: "bull_ep10",
+  // 편마다 소재에 맞는 공간 2~3곳(CURRENT_STANDARDS 최우선 규칙 14). image=이미지용(한국어),
+  // videoStyle/videoStatics=영상 프롬프트용(영어). 배경에 글자·숫자를 넣지 않는다.
+  sceneBackgrounds: Object.freeze({
+    A: {
+      label: "거래소 공표 로비(도입·마무리)",
+      image:
+        "증권거래소 공표 로비. 황소특보 뒤로 천장까지 닿는 큼직한 곡면 전광판 벽(줄무늬 막대와 둥근 가격표 " +
+        "모양 아이콘만 은은하게 흐르는 단순화된 저폴리곤 그래픽, 글자·숫자 없음)이 넓게 펼쳐지고, 앞쪽에는 " +
+        "매끈한 광택 로비 바닥과 둥근 화분 몇 개, 양옆에 둥근 기둥. 넓고 밝은 공공기관 로비 느낌. 은은한 " +
+        "골드·민트 조명. 글자가 적힌 간판·표지판·배너 없음.",
+      videoStyle: "stock exchange announcement lobby",
+      videoStatics: "the large curved chart display wall with candlestick shapes, the glossy lobby floor, the round columns, and the potted plants",
+    },
+    B: {
+      label: "공시 접수 사무 구역(절차·확인)",
+      image:
+        "상장기업 공시 접수 사무 구역. 황소특보 뒤로 유리 접수 창구 두세 개가 나란히 있고, 그 뒤 벽면에는 " +
+        "두툼한 서류철(등에 글자 없음, 색만 다른 매끈한 상자 모양)이 가득 꽂힌 진열 선반, 창구 위에는 둥근 " +
+        "펜던트 조명. 바닥은 매끈한 밝은 타일, 한쪽에 둥근 서류 트레이 탑. 글자가 적힌 표지판·번호표·서류 " +
+        "없음. 은은한 블루·화이트 조명.",
+      videoStyle: "listed-company disclosure office area",
+      videoStatics: "the glass service counters, the shelves of blank-spined binders, the pendant lights, and the tiled floor",
+    },
+    C: {
+      label: "밝은 분석실(개념·시각차)",
+      image:
+        "밝은 분석실 겸 서재. 황소특보 뒤로 큼직한 통창(창밖에 매끈한 저폴리곤 도시 스카이라인)이 넓게 " +
+        "펼쳐지고, 양옆에 책이 가득 꽂힌 높은 책장(책등에 글자 없음), 한쪽에 둥근 지구본과 낮은 라운지 소파, " +
+        "바닥에 둥근 러그. 글자가 적힌 포스터·칠판·간판 없음, 큰 빈 벽면 없이 책장과 창으로 채운다. 따뜻한 " +
+        "골드·크림 조명.",
+      videoStyle: "bright study-like analysis room",
+      videoStatics: "the large window with the city skyline, the tall bookshelves, the globe, the low sofa, and the rug",
+    },
+  }),
+
   scenesTimeline:
     "s1 훅 / s2 훅 판돈 / s3 오프닝 / s4 상황(11/2 첫 공표) / s5 핵심질문+정의(PBR) / s6 개념 예시 / s7 기준(저PBR) / s8 회사 쪽 절차(10/22) / s9 예외(6년) / s10 인과 고리 / s11 시각차 / s12 엔딩1 통찰 / s13 엔딩2 프레임 / s14 사업 흐름 / s15 엔딩3 조건 체크 / s16 엔딩4 이득 각인 / s17 엔딩5 약속+댓글",
 
@@ -97,6 +140,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "다들, 11월 2일부터 증권앱에 저PBR 태그가 붙는 종목이 최대 220곳이라는데, 내 종목도 들어갈까?",
       imageBrief: "황소가 궁금하다는 표정으로 '저PBR 태그'와 '최대 220곳'이 두 줄로 크게 적힌 카드를 두 손으로 감싸 쥐고 보여주는 자세.",
       overlays: [],
+      shot: "close",
+      bg: "A",
+      motion: { type: "card2", action: "the character's expression is wide-eyed and curious, eyebrows raised, as if asking whether the viewer's own stock could be on the list; body and face move gently while the hands holding the card stay still.", mood: "posing an intriguing question to the viewer" },
     },
     {
       scene: 2,
@@ -106,6 +152,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "핵심 날짜는 10월 22일이야. 이 날을 모르면 명단에 있든 없든 이유를 몰라.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '핵심 날짜'와 '10월 22일'이 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 진지하고 긴장한 표정을 짓는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "A",
+      motion: { type: "board", action: "the character's free hand (not holding anything) points toward the board without touching it, with a serious, slightly tense expression, while the other hand rests near its hip.", mood: "emphasizing a key date" },
     },
     {
       scene: 3,
@@ -115,6 +164,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "안녕, 투자 소식을 쉽고 빠르게 정리해주는 황소특보야. 핵심만 짚어줄게, 끝까지 들어봐.",
       imageBrief: "황소가 정면을 보며 한 손으로 위를 가리키고 다른 손은 허리에 얹은 채 밝고 명랑하게 웃는 포즈, 소품 없음.",
       overlays: [],
+      shot: "wide",
+      bg: "A",
+      motion: { type: "open", action: "the character keeps one hand raised with the index finger pointing upward in a confident, friendly gesture while the other hand rests on its hip, smiling brightly and warmly at the viewer.", mood: "warmly greeting the viewer" },
       riskDisclosure: true,
     },
     {
@@ -125,6 +177,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "먼저 사실부터 보자. 한국거래소가 11월 2일 저PBR 기업을 처음 공표해.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '11월 2일'과 '저PBR 첫 공표'가 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "A",
+      motion: { type: "board", action: "the character's free hand points at the board while explaining, with a bright, informative expression, while the other hand rests near its hip.", mood: "calmly presenting the news" },
     },
     {
       scene: 5,
@@ -134,6 +189,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "그럼 PBR이 뭘까? 주가를 주당순자산으로 나눈 값이야. 한 주당 회사가 가진 순수 재산이지.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 'PBR'과 '주가 ÷ 주당순자산'이 두 줄로 크게 적혀 있고, 황소가 빈 손 검지를 세워 설명하는 자세.",
       overlays: [],
+      shot: "wide",
+      bg: "C",
+      motion: { type: "board", action: "the character's free hand keeps its index finger raised and gives small emphasizing nods in the air, with a clear, teaching expression, while the other hand rests near its hip.", mood: "clearly defining a term" },
     },
     {
       scene: 6,
@@ -143,6 +201,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "주가 1만 원, 주당순자산 5천 원이면 PBR은 2배야. 회사 재산은 그대로인데 주가가 5천 원이 되면 1배야.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '주가 1만 원', '주당순자산 5천 원', 'PBR 2배'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 톡톡 짚으며 차분히 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "C",
+      motion: { type: "board", action: "the character's free hand gently taps the air toward each line of the board one after another without touching it, explaining calmly, while the other hand rests near its hip.", mood: "calmly walking through a simple example" },
     },
     {
       scene: 7,
@@ -152,6 +213,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "저PBR은 업종 안의 순위로 정해. 3년간 코스피 하위 25%, 코스닥 하위 10%에 머문 회사가 올라.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '업종 안 3년 하위', '코스피 25%', '코스닥 10%'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 손가락 하나를 펴 보이며 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "C",
+      motion: { type: "board", action: "one free hand keeps one finger raised while the other free hand points toward the board without touching it, with an explaining, engaged expression.", mood: "explaining a ranking criterion" },
     },
     {
       scene: 8,
@@ -161,6 +225,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "회사 쪽 절차도 있어. 10월 22일까지 PBR 개선계획을 담은 기업가치 제고 계획을 공시하면 1년간 빠져.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '10월 22일까지', '계획 공시하면', '1년 명단 제외'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세.",
       overlays: [],
+      shot: "wide",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand points to the board lines one after another from top to bottom without touching it, explaining with a bright, clear expression, while the other hand rests near its hip.", mood: "clearly explaining a procedure" },
     },
     {
       scene: 9,
@@ -170,6 +237,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "다만 6년 내내 하위권이었던 회사는 공시를 했더라도 명단에 올라.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '6년 내내 하위권'과 '공시해도 명단 포함'이 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 신중한 표정을 짓는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand points toward the board without touching it, with a careful, serious expression and small nods, while the other hand rests near its hip.", mood: "carefully noting an exception" },
     },
     {
       scene: 10,
@@ -179,6 +249,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "그래서 회사들이 자본 효율 계획을 서두르고, 유상증자와 전환사채 발행은 줄 거라는 전망이 나와.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '자본 효율 계획', '유상증자·CB', '줄어들 전망'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand traces along the board lines without touching it, explaining with a confident, informative expression, while the other hand rests near its hip.", mood: "explaining an expected consequence" },
     },
     {
       scene: 11,
@@ -188,6 +261,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "PBR은 시각이 갈려. 낮으면 가치주로도 성장 둔화로도, 높으면 기대로도 거품으로도 봐.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '낮음 = 가치주? 둔화?'와 '높음 = 기대? 거품?'이 두 줄로 크게 적혀 있고, 황소가 빈 손을 위로 펴 보이며 고민하는 표정을 짓는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "C",
+      motion: { type: "board", action: "the character's free hand is held open, palm up, and tilts gently side to side in the air as if weighing two views, with a thoughtful, balanced expression, while the other hand rests near its hip. The board does not move.", mood: "thoughtfully presenting two different views" },
     },
     {
       scene: 12,
@@ -197,6 +273,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "결국 태그는 결론이 아니라 질문이야. 왜 그 평가를 받는지, 답을 찾아봐야 해.",
       imageBrief: "황소가 '태그는 질문'과 '결론이 아니야'가 두 줄로 크게 적힌 카드를 두 손으로 감싸 쥐고 확신에 찬 표정으로 보여주는 자세.",
       overlays: [],
+      shot: "close",
+      bg: "C",
+      motion: { type: "card2", action: "the character's expression is confident and knowing, with slight nods; only the face and body move while the hands holding the card stay still.", mood: "confidently delivering the key insight" },
     },
     {
       scene: 13,
@@ -206,6 +285,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "답은 세 가지 순서로 찾아. 회사가 계획을 냈는지, 6년 내내 하위권인지, 그리고 사업 흐름이야.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '① 계획 공시', '② 6년 하위권', '③ 사업 흐름'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세.",
       overlays: [],
+      shot: "wide",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand points to the lines one after another from top to bottom without touching the board, while explaining with a bright, clear expression.", mood: "clearly explaining a three-step order" },
     },
     {
       scene: 14,
@@ -215,6 +297,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "사업 흐름은 실적이 늘고 있는지, 성장할 여지가 있는지를 봐. 낮은 이유가 보이기도 해.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '실적 늘고 있나'와 '성장 여지는?'이 두 줄로 크게 적혀 있고, 황소가 빈 손으로 손가락 두 개를 세워 보이며 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand keeps two fingers raised and gives small emphasizing motions, with a clear, helpful expression, while the other hand rests near its hip.", mood: "clearly listing two things to check" },
     },
     {
       scene: 15,
@@ -224,6 +309,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "10월 22일 전 공시가 있으면 1년은 빠지고, 없으면 오를 수 있어. 확인은 전자공시에서.",
       imageBrief: "황소 옆 바닥에 세운 보드(바닥 거치)에 '10월 22일 전', '계획 공시?', '전자공시 확인'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 자세.",
       overlays: [],
+      shot: "medium",
+      bg: "B",
+      motion: { type: "board", action: "the character's free hand points toward the board lines one after another without touching it, explaining with a clear, practical expression, while the other hand rests near its hip.", mood: "clearly explaining what to check" },
     },
     {
       scene: 16,
@@ -233,6 +321,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "태그에 휘둘리지 말고 이유를 읽어. 이유를 알아야 다음 신호도 읽혀.",
       imageBrief: "황소가 '태그 말고'와 '이유를 읽어'가 두 줄로 크게 적힌 카드를 두 손으로 감싸 쥐고 따뜻하고 차분한 미소로 보여주는 자세.",
       overlays: [],
+      shot: "close",
+      bg: "A",
+      motion: { type: "card2", action: "the character's expression is warm and calm with a gentle smile; only the face and body move while the hands holding the card stay still.", mood: "warmly reassuring the viewer" },
     },
     {
       scene: 17,
@@ -242,6 +333,9 @@ export const BULL_EP10_ASSEMBLY_SPEC = Object.freeze({
       narration: "이것만은 챙겨가. 11월 2일 명단은 황소특보가 제일 먼저 들고 올게. 궁금한 건 댓글로 남겨줘.",
       imageBrief: "황소가 밝은 미소로 한 손을 가볍게 흔들고 다른 손은 자연스럽게 내린 마무리 포즈, 소품 없이 빈 손.",
       overlays: [],
+      shot: "wide",
+      bg: "A",
+      motion: { type: "open", action: "the character smiles brightly and waves one hand lightly in a friendly goodbye while the other hand hangs naturally relaxed.", mood: "warmly saying goodbye and inviting comments" },
       riskDisclosure: true,
     },
   ]),

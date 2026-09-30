@@ -251,10 +251,12 @@ const HEADER_BAR = Object.freeze({
   titleColor: "#FFFFFF",
   accentColor: "#FFD54A",
   titleSize: 92,
-  topY: 150,
+  topY: 232, // 2026-09-30 배치 v2: 앱 상단 아이콘을 피해 조립기와 같은 높이로 내림
   lineGap: 112,
 });
-const HEADER_SAFE_WIDTH_PX = 940;
+// 2026-09-30: 940 → 864. 화면비가 긴 폰에서 앱이 좌우를 각 약 10%씩 잘라내 헤더 끝 글자가
+// 잘릴 수 있다(조립기 TEXT_SAFE_WIDTH_PX와 같은 값).
+const HEADER_SAFE_WIDTH_PX = 864;
 
 // CTA 클립은 follow(0~8s, "팔로우" 유도)와 teaser(8s~, "다음 편도 기대해줘")
 // 두 파트가 이어붙은 것이다. 헤더 제목은 follow 구간에만 얹는다 — teaser는

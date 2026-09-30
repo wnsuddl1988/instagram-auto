@@ -83,6 +83,8 @@
 
 export const GEUMBAKSA_EP9_ASSEMBLY_SPEC = Object.freeze({
   specVersion: "geumbaksa_assembly_spec_v1",
+  // 훅 규칙(최우선 규칙 17, 2026-09-30) 이전에 TTS·영상까지 만든 재고라 자기소개로 시작한다 — Owner 승인 예외.
+  hookRuleException: true,
   episode: 9,
   deployEpisode: 9,
   sourceTopic: "retirement-pension-db-dc-irp",
