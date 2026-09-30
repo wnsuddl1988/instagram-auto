@@ -80,6 +80,10 @@ export function splitPenalty(leftWord, rightWord) {
   const R = core(rightWord);
   if (!L || !R) return 6;
 
+  // 시간어 + 숫자("올해 / 9조 8천억 원에서")는 금지가 아니라 벌점. 숫자 덩어리(숫자+단위 연쇄)는 못 가르므로
+  // "올해 9조 8천억 원에서"(840px)가 폭 760에 안 들어갈 때 금지로 두면 숫자 중간에서 끊기는 더 나쁜 해만 남는다
+  // (황소 11편 s4, 2026-09-30). 그래도 붙이는 쪽을 선호하도록 벌점은 높게 둔다.
+  if (/^(올해|내년|작년|이번|지난)$/u.test(L) && /^[0-9]/.test(R)) return 25;
   // 절대 금지
   if (DETERMINER.test(L)) return HARD_FORBIDDEN;
   if (/[0-9]/.test(L) && NUMBER_END.test(L) && UNIT_START.test(R)) return HARD_FORBIDDEN; // 5천 / 원, 3 / 년
