@@ -91,4 +91,17 @@ try {
 console.log(`완료: ${output}`);
 console.log(`줄별 글자 크기 ${sizes.join("/")}px, 세로 ${((top / H) * 100).toFixed(1)}~${(((top + blockH) / H) * 100).toFixed(1)}%`);
 const small = lines.filter((_, i) => sizes[i] < minFontWarn);
-if (small.length) console.log(`⚠ 글자가 ${minFontWarn}px보다 작은 줄: ${small.join(" / ")} — 줄당 8자 이하로 문구를 줄일 것(예전 커버 수준 130~220px)`);
+// 배포 전 게이트(run-deploy-preflight-once.mjs)가 읽는 기록 — 커버 글자가 너무 작으면 배포가 막힌다(2026-10-01, 11편 커버 사고).
+writeFileSync(
+  `${output}.headline.json`,
+  JSON.stringify(
+    { tool: "run-cover-headline-overlay-once", lines, sizes, minFont: Math.min(...sizes), topPct: +((top / H) * 100).toFixed(1), bottomPct: +(((top + blockH) / H) * 100).toFixed(1), createdAt: new Date().toISOString() },
+    null,
+    2,
+  ),
+  "utf8",
+);
+if (small.length) {
+  console.log(`❌ 글자가 ${minFontWarn}px보다 작은 줄: ${small.join(" / ")} — 줄당 8자 이하로 문구를 줄일 것(예전 커버 수준 130~220px). 이 커버는 배포 전 게이트에서 막힌다.`);
+  process.exit(1);
+}

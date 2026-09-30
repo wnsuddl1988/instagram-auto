@@ -60,6 +60,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-final-sep-retirement-pension-in-kind-transfer-v2",
   title: "퇴직연금 계좌, 팔지 않고 그대로 옮길 수 있다",
+  // 번호 없는 예비 재고(2026-09-30). 규칙 26(대본 기준 검사기) 이전에 TTS·영상·final-v3까지 끝난 재고 — 대사를 다시 만들지 않는다.
+  scriptStandardsException: "규칙 26 이전 제작 재고(번호 없는 예비, final-v3 완성)",
   channelName: "경제번역소",
   characterDisplayName: "부엉박사",
   headerTitle: ["퇴직연금 계좌", "손해없이 갈아타기"],

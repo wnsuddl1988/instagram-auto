@@ -2,7 +2,14 @@
 
 ## 🔴 최우선 — 작업 시작 전 반드시 먼저 읽을 것
 
-**[`_ai/CURRENT_STANDARDS.md`](_ai/CURRENT_STANDARDS.md)가 이 프로젝트의 유일한 현행 기준이다.** 맨 위 "★ 최우선 규칙" 10개를 먼저 읽고, 해당 작업 단계(§A-1~A-8)와 캐릭터 섹션(§1 부엉박사 / §2 금박사 / §3 황소특보)을 읽은 뒤 시작한다. 메모리·대화 기억·옛 문서와 충돌하면 그 문서를 따르고, 충돌 사실을 Owner에게 보고한다.
+**[`_ai/CURRENT_STANDARDS.md`](_ai/CURRENT_STANDARDS.md)가 이 프로젝트의 유일한 현행 기준이다.** 맨 위 "★ 최우선 규칙"(현재 1~27)을 먼저 읽고, 해당 작업 단계(§A-1~A-8)와 캐릭터 섹션(§1 부엉박사 / §3 황소특보)을 **그 세션에서 직접 열어** 읽은 뒤 시작한다. **메모리는 색인일 뿐 기준의 원문이 아니다** — 요약 메모리로 구조를 떠올려 대본을 쓰다가 위반 6개가 난 적이 있다(2026-09-30, 규칙 26). 메모리·대화 기억·옛 문서와 충돌하면 그 문서를 따르고, 충돌 사실을 Owner에게 보고한다.
+
+**실수는 기억이 아니라 게이트로 막는다(규칙 27)** — 아래 명령은 통과 못 하면 다음 단계가 멈춘다. 우회하지 않는다.
+- 대본: `node scripts/check-script-standards.mjs --character owl|bull --scenes <json> --hook-type T#` → 반드시 수정 0(TTS 래퍼·QA에도 자동으로 걸려 있음). 결과 표를 보고에 붙인다.
+- 완성본: `run-episode-qa-once.mjs` → 반드시 수정 0. 보드·카드 씬은 `qa/edge-review-*.png`를 보고 `qa/edge-review.json`에 씬마다 ok/over 기록.
+- 커버: `run-cover-headline-overlay-once.mjs`(140px 미만이면 실패).
+- 배포: `run-deploy-preflight-once.mjs --content-unit …`(게시 명령이 자동으로 다시 돌림). 콘텐츠 유닛에 `finalMasteredPath`·`qaReportPath` 필수.
+- 새 편은 `_ai/templates/episode-production-checklist.md`를 복사해 단계마다 증거를 적는다. 보고에는 "검증한 것(증거) / 못 본 것"을 나눠 적는다.
 
 세션·계정이 바뀌었으면 [`_ai/CONTEXT_TRANSFER_CLAUDE.md`](_ai/CONTEXT_TRANSFER_CLAUDE.md)에서 진행 중 작업을 이어받는다.
 
@@ -11,7 +18,8 @@
 - 이미지: 작은 글씨 금지 / 소품은 감싸 쥐거나 바닥 거치 / 빈 면 금지 / 캐릭터는 화면 세로 45~50%. `VEO_SAFE_IMAGE_RULE` 등 이미지 규칙 상수를 제거하지 않는다.
 - 영상 프롬프트는 `_ai/bull-ep4-video-generation-prompts.md` 형식 그대로 쓰고, 8초끼리·10초끼리 묶어서 준다.
 - 조립 후 CTA 결합까지 한 번에: `run-owl-episode-with-fixed-cta-once.mjs --alignment …` 실행 후 `cta-join-report.json` PASS를 확인한다. xfade·수동 ffmpeg 결합을 쓰지 않는다.
-- 카드뉴스는 부엉박사만 만든다. 배포는 CURRENT_STANDARDS §5 순서 그대로(커버 merge, `--privacy public`).
+- 카드뉴스는 **2026-09-30부로 전면 중단**(만들지도 게시하지도 않음). 금박사도 운영 중단. 배포는 CURRENT_STANDARDS §5 순서 그대로(커버 merge, `--privacy public` — 둘 다 게이트가 막는다). 부엉박사 배포 시점은 Owner가 정한다(제안 금지).
+- 소재 탐색은 요청할 때마다 오케스트레이터를 새로 전부 실행(규칙 25): 황소 `run-bull-topic-full-scan-once.mjs`, 부엉 `run-owl-topic-full-scan-once.mjs`. 채널 분야 = 경제·금융 전반(규칙 24).
 - 금박사 5편 이후 재고는 기본적으로 `geumbaksa-ep{N}-final-v2voice` 경로(새 목소리)를 쓰되, 조립 기록(`assembly-manifest.json`)의 화면 길이가 오디오 길이보다 1초 넘게 짧으면 화면·대사가 어긋난 것이니 재조립본(예: `-v3std`, `-v4std`)을 쓴다 — CURRENT_STANDARDS §7의 최신 경로가 항상 우선(2026-09-27 확인: ep5·ep6·ep8은 재조립본이 최종).
 - 모델은 기본 **Sonnet**(주제 선정·대본은 high, 검수·조립·배포는 medium~high)이다. Opus는 대본 구조를 새로 설계하거나, 같은 결과물이 2번 넘게 반려되거나, 원인을 못 찾는 문제가 반복될 때만 예외로 쓴다(CURRENT_STANDARDS 상단 "모델 권장 기준" 참고, 2026-09-27 Owner 확정).
 

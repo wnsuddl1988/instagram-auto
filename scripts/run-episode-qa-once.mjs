@@ -10,6 +10,8 @@
  *   4. 음량: 완성본 -14 LUFS ±1.5, 피크 -0.5 dBTP 이하(아니면 run-audio-finish-once.mjs)
  *   5. 입 멈춤: 클립별 Veo 음성 끝 vs TTS 발화 끝(check-clip-speech-timing-once.mjs 결과 요약)
  *   6. 안전선 시트 생성(이미지·완성본) — 사람이 마지막으로 눈으로 본다
+ *   7. (2026-09-30 밤) 대본 기준 대조(_script-standards.mjs, 규칙 26) — 반드시 수정이면 QA도 막힌다
+ *   8. (2026-09-30 밤) 보드·카드 씬 오른쪽 끝 확대 시트 + 판정 기록(edge-review.json) 필수 — 기록이 없거나 초과 씬이 있으면 반드시 수정
  * 결과: <final-dir>/qa-report.md + 콘솔 요약. 반드시 고쳐야 하는 항목이 있으면 종료 코드 1.
  *
  * 사용:
@@ -23,6 +25,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { splitPenalty, textWidthRatio } from "./_caption-linebreak-ko.mjs";
 import { checkHook } from "./_hook-rules.mjs";
+import { checkScriptStandards } from "./_script-standards.mjs";
 
 const argv = process.argv.slice(2);
 function getArg(name) {
@@ -54,6 +57,23 @@ const info = [];
   mustFix.push(...hook.mustFix);
   warn.push(...hook.warn);
   info.push(...hook.info);
+}
+
+// 0-1) 대본 기준 대조(최우선 규칙 26, 2026-09-30 밤 Owner 승인) — TTS 게이트와 같은 규칙. 통과 못 하면 QA도 "반드시 수정".
+// 캐릭터는 스펙의 imageCharacter/파일 이름으로 판정(금박사 제외). 규칙 이전에 만든 재고는 스펙의 scriptStandardsException(사유)로만 예외.
+{
+  const specName = path.basename(SPEC_MODULE);
+  const character = /bull/.test(spec.imageCharacter ?? specName) ? "bull" : /owl/.test(spec.imageCharacter ?? specName) ? "owl" : null;
+  if (character) {
+    const r = checkScriptStandards({ character, scenes: spec.scenes.map((s) => s.narration), hookType: spec.hookType ?? null });
+    if (typeof spec.scriptStandardsException === "string" && spec.scriptStandardsException.trim()) {
+      info.push(`대본 기준 대조 예외(${spec.scriptStandardsException.trim()}): 반드시 수정 ${r.fix.length}건은 기록만 — ${r.fix.join(" / ") || "없음"}`);
+    } else {
+      mustFix.push(...r.fix.map((f) => `대본: ${f}`));
+      warn.push(...r.warn.map((w) => `대본: ${w}`));
+      info.push(`대본 기준 대조(${r.version}): 통과 ${r.ok.length} · 확인 권장 ${r.warn.length} · 반드시 수정 ${r.fix.length}`);
+    }
+  }
 }
 
 // 1) 스펙
@@ -216,6 +236,61 @@ sheets.push(path.join(reviewDir, "safe-video.png"));
       spawnSync("ffmpeg", args, { encoding: "utf8" });
       tiles.forEach((t) => fs.rmSync(t, { force: true }));
       sheets.push(sheet);
+    }
+  }
+}
+
+// 8) 보드·카드 글자 좌우 끝 확대 시트 + 판정 기록 필수(2026-09-30 밤, 황소 11편 사고 — 이미지 시트에서 "안전폭 안"이라 본 보드
+// 7개가 완성본에서 크롭선(90%) 밖이었다). OCR이 없어 자동 판정은 못 하므로, 씬마다 좌우 22%를 확대하고 크롭선(빨강 10%·90%)과
+// 글자 안전선(주황 12%·88%)을 그어 한 장에 모은다. 그리고 사람이 씬마다 판정한 기록 qa/edge-review.json이 **이 완성본보다 나중에**
+// 저장돼 있어야 통과한다({"final":"<파일명>","scenes":{"3":"ok","6":"over",...},"note":"..."} — "over"가 하나라도 있으면 반드시 수정).
+{
+  const manifestPath = path.join(ASSEMBLY_DIR, "assembly-manifest.json");
+  const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : null;
+  const textScenes = spec.scenes.filter((s) => ["board", "card1", "card2"].includes(s.motion?.type)).map((s) => s.scene);
+  if (textScenes.length && manifest?.timeline) {
+    const tiles = [];
+    for (const n of textScenes) {
+      const t = manifest.timeline.find((x) => x.scene === n);
+      if (!t) continue;
+      const at = (t.start + t.duration * 0.45).toFixed(2);
+      const out = path.join(reviewDir, `edge_${n}.png`);
+      const lines = "drawbox=x=108:y=0:w=3:h=ih:color=red@0.9:t=fill,drawbox=x=969:y=0:w=3:h=ih:color=red@0.9:t=fill,drawbox=x=130:y=0:w=3:h=ih:color=orange@0.9:t=fill,drawbox=x=947:y=0:w=3:h=ih:color=orange@0.9:t=fill";
+      const label = `drawtext=fontfile=assets/fonts/BlackHanSans.ttf:text='s${n}':fontsize=40:fontcolor=white:borderw=4:bordercolor=black:x=8:y=8`;
+      spawnSync(
+        "ffmpeg",
+        ["-v", "error", "-y", "-ss", at, "-i", FINAL, "-frames:v", "1", "-filter_complex",
+          `[0]${lines},split[a][b];[a]crop=240:1100:0:270[l];[b]crop=240:1100:840:270[r];[l][r]hstack=inputs=2,pad=iw+12:ih:0:0:black,${label}`, out],
+        { encoding: "utf8" },
+      );
+      if (fs.existsSync(out)) tiles.push(out);
+    }
+    // 원본 1:1 크기(축소하면 글자가 선에 닿는지 판단이 흐려진다 — 2026-09-30 시험에서 확인). 시트 한 장에 4씬씩.
+    fs.readdirSync(reviewDir).filter((f) => /^edge-review(-\d+)?\.png$/.test(f)).forEach((f) => fs.rmSync(path.join(reviewDir, f), { force: true }));
+    const perSheet = 4;
+    for (let k = 0; k * perSheet < tiles.length; k += 1) {
+      const chunk = tiles.slice(k * perSheet, (k + 1) * perSheet);
+      const sheet = path.join(reviewDir, `edge-review-${k + 1}.png`);
+      const args = ["-v", "error", "-y"];
+      chunk.forEach((t) => args.push("-i", t));
+      if (chunk.length === 1) args.push(sheet);
+      else args.push("-filter_complex", `hstack=inputs=${chunk.length}`, sheet);
+      spawnSync("ffmpeg", args, { encoding: "utf8" });
+      if (fs.existsSync(sheet)) sheets.push(sheet);
+    }
+    tiles.forEach((t) => fs.rmSync(t, { force: true }));
+    const reviewFile = path.join(reviewDir, "edge-review.json");
+    if (!fs.existsSync(reviewFile)) {
+      mustFix.push(`보드·카드 씬 ${textScenes.length}개(s${textScenes.join(",s")})의 글자 좌우 끝 판정 기록 없음 → qa/edge-review-*.png(원본 1:1, 한 장에 4씬)를 보고 qa/edge-review.json에 씬마다 ok(주황 안전선 안)/over(넘음)를 적은 뒤 QA 재실행`);
+    } else {
+      const review = JSON.parse(fs.readFileSync(reviewFile, "utf8"));
+      const stale = fs.statSync(reviewFile).mtimeMs < fs.statSync(FINAL).mtimeMs || review.final !== path.basename(FINAL);
+      const missingScenes = textScenes.filter((n) => !["ok", "over"].includes(review.scenes?.[String(n)]));
+      const over = textScenes.filter((n) => review.scenes?.[String(n)] === "over");
+      if (stale) mustFix.push("edge-review.json이 이 완성본보다 먼저 저장됐거나 다른 파일 기준 — 새 완성본으로 다시 판정");
+      else if (missingScenes.length) mustFix.push(`edge-review.json에 판정 없는 씬: s${missingScenes.join(",s")}`);
+      else if (over.length) mustFix.push(`글자가 안전선(좌 12%·우 88%)을 넘은 씬(판정 over): s${over.join(",s")} → 클립 이동 교정(A-6) 후 재조립`);
+      else info.push(`보드·카드 글자 좌우 끝 판정 기록 확인(${textScenes.length}씬 모두 ok${review.note ? ` — ${review.note}` : ""})`);
     }
   }
 }

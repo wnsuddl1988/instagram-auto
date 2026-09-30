@@ -70,6 +70,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-jeonse-fraud-minimum-guarantee-2026-11-13",
   title: "전세사기 당했는데 한 푼도 못 받았다면, 11월부터 달라진다",
+  // 표시 17편(2026-09-30 재배치). 규칙 26(대본 기준 검사기) 이전에 TTS·영상·final-v3까지 끝난 재고 — 대사를 다시 만들지 않는다.
+  scriptStandardsException: "규칙 26 이전 제작 재고(표시 17편, final-v3 완성)",
   channelName: "경제번역소",
   characterDisplayName: "부엉박사",
   headerTitle: ["전세사기 최소보장제", "11월 13일부터 시행"],

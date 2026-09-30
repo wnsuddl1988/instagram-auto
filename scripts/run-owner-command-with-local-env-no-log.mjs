@@ -627,7 +627,7 @@ const SUPPORTED_COMMANDS = Object.freeze({
     passthroughFlags: ["--arm"],
     envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
-    validateBeforeEnvAccess: validateOwlInstagramPublishBeforeEnvAccess,
+    validateBeforeEnvAccess: withDeployPreflight(validateOwlInstagramPublishBeforeEnvAccess, "reels"),
   },
   // 스토리 게시 — 영상(Reels)이 아니라 카드뉴스 표지 이미지 1장을 올린다
   // (2026-09-20 확정: Story는 60초 상한이라 90초 안팎인 편 영상이 그대로
@@ -640,7 +640,7 @@ const SUPPORTED_COMMANDS = Object.freeze({
     passthroughFlags: ["--arm"],
     envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
-    validateBeforeEnvAccess: validateOwlInstagramStoryPublishBeforeEnvAccess,
+    validateBeforeEnvAccess: withDeployPreflight(validateOwlInstagramStoryPublishBeforeEnvAccess, "story"),
   },
   "owl-instagram-media-delete": {
     script: OWL_INSTAGRAM_MEDIA_DELETE_RUNNER_PATH,
@@ -687,7 +687,7 @@ const SUPPORTED_COMMANDS = Object.freeze({
     passthroughFlags: ["--arm"],
     envKeyNames: YOUTUBE_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
-    validateBeforeEnvAccess: validateOwlYoutubePublishBeforeEnvAccess,
+    validateBeforeEnvAccess: withDeployPreflight(validateOwlYoutubePublishBeforeEnvAccess, "youtube"),
   },
   "owl-youtube-token-health": {
     script: OWL_YOUTUBE_TOKEN_HEALTH_RUNNER_PATH,
@@ -812,6 +812,74 @@ function validateOwlTtsBeforeEnvAccess(rawArgs) {
     (values["--env-path"] !== undefined && !isAbsolute(values["--env-path"]))
   ) {
     return { ok: false, reason: "owl_tts_required_paths_invalid" };
+  }
+  // 2026-09-30 밤(최우선 규칙 26, Owner 승인): 대본 기준 검사를 통과하지 못하면 음성을 만들지 않는다(env 접근 전).
+  return runScriptStandardsGate(ttsScript, values["--character"] ?? "owl");
+}
+
+// 배포 전 게이트(2026-10-01, 최우선 규칙 27) — 게시 명령(릴스·스토리·유튜브)은 원래 인자 검증을 통과한 뒤,
+// 자격증명을 읽기 전에 scripts/run-deploy-preflight-once.mjs(완성본·QA·압축본·커버·제목·캡션)를 통과해야 한다.
+// 추가로 §5에서 되돌릴 수 없던 실수 두 가지를 막는다: 유튜브 --arm인데 --privacy public(또는 --publish-at)이 없음(비공개로 올라가고
+// 토큰 권한상 공개 전환 불가), 릴스 --blob-result에 커버 merge 결과(coverImageUrl)가 없음(자동 프레임이 커버가 되고 나중에 못 고침).
+const DEPLOY_PREFLIGHT_PATH = join(SCRIPTS_DIR, "run-deploy-preflight-once.mjs");
+function withDeployPreflight(validate, kind) {
+  return (rawArgs) => {
+    const base = validate(rawArgs);
+    if (base.ok !== true) return base;
+    const valueOf = (flag) => {
+      const i = rawArgs.indexOf(flag);
+      return i >= 0 ? rawArgs[i + 1] : undefined;
+    };
+    const armed = rawArgs.includes("--arm");
+    if (kind === "youtube" && armed && valueOf("--privacy") !== "public" && valueOf("--publish-at") === undefined) {
+      return { ok: false, reason: "deploy_gate_youtube_privacy_not_public(--privacy public 필수 — 빠뜨리면 비공개로 올라가고 나중에 못 바꾼다, §5 10단계)" };
+    }
+    if (kind === "reels") {
+      const blob = valueOf("--blob-result");
+      try {
+        const j = JSON.parse(readFileSync(blob, "utf8"));
+        if (typeof j.coverImageUrl !== "string" || !/^https:\/\//.test(j.coverImageUrl)) {
+          return { ok: false, reason: "deploy_gate_reel_cover_not_merged(커버 merge 결과가 아님 — merge-instagram-reel-cover-into-blob-result.mjs 후 .merged.json을 넘길 것, §5 6단계)" };
+        }
+      } catch {
+        return { ok: false, reason: "deploy_gate_blob_result_unreadable" };
+      }
+    }
+    const contentUnit = valueOf("--content-unit");
+    const r = spawnSync(process.execPath, [DEPLOY_PREFLIGHT_PATH, "--content-unit", contentUnit], { encoding: "utf8", timeout: 120_000 });
+    if (r.stdout) console.error(r.stdout.trimEnd());
+    if (r.status !== 0) {
+      if (r.stderr) console.error(r.stderr.trimEnd());
+      return { ok: false, reason: "deploy_preflight_failed(배포 전 게이트 미통과 — 위 ❌ 항목을 고친 뒤 다시 실행)" };
+    }
+    return { ok: true };
+  };
+}
+
+// 대본 기준 검사 게이트 — scripts/check-script-standards.mjs(규칙 본체 _script-standards.mjs)를 돌려 "반드시 수정"이 있으면 중단한다.
+// 금박사는 운영 중단이라 제외. 규칙 이전에 만든 재고를 다시 녹음할 때만 TTS 스크립트 JSON에 scriptStandardsException: "<사유>"를
+// 적어 통과시킨다(사유는 출력에 남는다). 이 게이트는 비밀값과 무관하다(파일만 읽는다).
+const SCRIPT_STANDARDS_CHECKER_PATH = join(SCRIPTS_DIR, "check-script-standards.mjs");
+function runScriptStandardsGate(ttsScriptPath, character) {
+  if (character === "geumbaksa") return { ok: true };
+  let json;
+  try {
+    json = JSON.parse(readFileSync(ttsScriptPath, "utf8"));
+  } catch {
+    return { ok: false, reason: "script_standards_tts_script_unreadable" };
+  }
+  if (typeof json.scriptStandardsException === "string" && json.scriptStandardsException.trim().length > 0) {
+    console.error(`[script-standards] 예외로 통과(TTS 스크립트에 기록된 사유): ${json.scriptStandardsException.trim()}`);
+    return { ok: true };
+  }
+  const r = spawnSync(process.execPath, [SCRIPT_STANDARDS_CHECKER_PATH, "--character", character, "--tts-script", ttsScriptPath], {
+    encoding: "utf8",
+    timeout: 60_000,
+  });
+  if (r.stdout) console.error(r.stdout.trimEnd());
+  if (r.status !== 0) {
+    if (r.stderr) console.error(r.stderr.trimEnd());
+    return { ok: false, reason: "script_standards_failed(대본 기준 검사 미통과 — 반드시 수정 항목을 고친 뒤 다시 실행)" };
   }
   return { ok: true };
 }

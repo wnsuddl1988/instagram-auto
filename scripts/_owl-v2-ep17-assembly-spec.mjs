@@ -62,6 +62,8 @@ export const OWL_ASSEMBLY_SPEC = Object.freeze({
   geumbaksaHandoffTerm: null,
   sourceCandidate: "candidate-final-sep-minimum-wage-2027-unemployment-benefit-link",
   title: "최저임금 올랐다는데, 나랑 상관없다고?",
+  // 표시 16편(2026-09-30 재배치). 규칙 26(대본 기준 검사기) 이전에 TTS·영상·final-v3까지 끝난 재고 — 대사를 다시 만들지 않는다.
+  scriptStandardsException: "규칙 26 이전 제작 재고(표시 16편, final-v3 완성)",
   channelName: "경제번역소",
   characterDisplayName: "부엉박사",
   headerTitle: ["2027년 최저임금 확정", "실업급여도 같이 오른다"],
