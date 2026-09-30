@@ -168,7 +168,21 @@ const audioDuration = probeDuration(timelineAudioPath);
 // 신뢰해야 한다. 아래 SCENE_GAP_SEC 보정을 다시 적용하면 화면 컷이 오디오
 // 실제 무음 길이(0.5초)보다 0.05초씩 밀려 어긋난다.
 const SCENE_GAP_SEC = 0.55;
-const videoCutScenes = summary.timingPolicy === "rebuilt_uniform_gap_v1"
+// ── 씬 전환 싱크 v3 (2026-09-30 Owner 지적: "씬이 넘어갈 때마다 다음 씬 자막 첫 부분이 이전 씬 끝에서
+// 먼저 나오고 넘어가 뚝뚝 끊긴다") ──
+// 실측 원인: 씬마다 `-t 초`로 따로 인코딩하면 길이가 프레임(1/24초) 단위로 올림돼 씬당 약 0.02초씩 늘고,
+// concat 하면 그 오차가 누적된다 → 뒤쪽 씬일수록 화면 컷이 발화보다 늦어짐(부엉 17편 마지막 전환 +0.31초,
+// 황소 9편 +0.39초 — 옛 편도 같았고, 자막이 화면 가운데로 커지면서 눈에 띄게 됨).
+// 해결: ① 모든 컷을 절대 시각으로 계산해 24fps 프레임 격자에 맞추고, 씬 길이를 "프레임 수"로 인코딩해
+// 누적 오차를 0으로 만든다. ② 편집 관행대로 컷을 다음 발화보다 SCENE_CUT_LEAD_SEC 먼저 둔다 — 새 화면이
+// 보인 뒤 목소리·자막이 나와야 자연스럽다. 단 이전 씬 발화 끝 + MIN_TAIL_AFTER_SPEECH_SEC 보다 앞으로는
+// 당기지 않는다(말 끝 자르기 금지). ③ 이전 클립이 컷 지점까지 못 버티면(클립이 짧음) 정지 프레임 대신 컷을
+// 앞당기고, 다음 씬들은 그 영향을 받지 않는다(절대 시각 기준이라 밀림이 전파되지 않음).
+const SCENE_CUT_LEAD_SEC = 0.1;
+const MIN_TAIL_AFTER_SPEECH_SEC = 0.08;
+const FPS = Number(render.fps);
+const snapDownToFrame = (sec) => Math.floor(sec * FPS + 1e-6) / FPS;
+const videoCutScenesRaw = summary.timingPolicy === "rebuilt_uniform_gap_v1"
   ? audioScenes
   : (() => {
       // 1단계: 각 씬의 화면 시작 시각(startSec)을 정한다.
@@ -230,6 +244,40 @@ const videoCutScenes = summary.timingPolicy === "rebuilt_uniform_gap_v1"
         return { ...s, startSec, endSec };
       });
     })();
+
+// 절대 컷 지점(프레임 격자) 계산 — 위 videoCutScenesRaw의 startSec(= 다음 씬 발화 시작, 겹침 보정 포함)을
+// 기준으로 리드를 주고, 이전 발화 끝·이전 클립 길이로 제한한다. 결과 씬 구간은 빈틈·겹침 없이 이어진다.
+const videoCutScenes = (() => {
+  const n = videoCutScenesRaw.length;
+  const spokenEnds = audioScenes.map((s) => (Number.isFinite(Number(s.spokenEndSec)) ? Number(s.spokenEndSec) : Number(s.endSec)));
+  const clipDurs = scenes.map((sc) => {
+    const p = path.join(CLIP_DIR, sc.video);
+    return fs.existsSync(p) ? probeDuration(p) : Number.POSITIVE_INFINITY;
+  });
+  const cuts = [0];
+  for (let i = 1; i < n; i++) {
+    const speechStart = Number(videoCutScenesRaw[i].startSec);
+    const floorSec = spokenEnds[i - 1] + MIN_TAIL_AFTER_SPEECH_SEC;
+    let cut = Math.min(speechStart, Math.max(speechStart - SCENE_CUT_LEAD_SEC, floorSec));
+    // 이전 클립이 여기까지 못 버티면(첫 씬 제외 — 기존 규칙 유지) 정지 프레임 대신 컷을 앞당긴다.
+    const prevReach = cuts[i - 1] + clipDurs[i - 1];
+    if (i - 1 > 0 && prevReach < cut) cut = Math.max(prevReach, floorSec);
+    cut = snapDownToFrame(cut);
+    if (cut <= cuts[i - 1]) cut = cuts[i - 1] + 1 / FPS;
+    cuts.push(cut);
+  }
+  const last = videoCutScenesRaw[n - 1];
+  let lastEnd = Number(last.endSec);
+  if (Number.isFinite(clipDurs[n - 1])) lastEnd = Math.max(Math.min(lastEnd, cuts[n - 1] + clipDurs[n - 1]), spokenEnds[n - 1]);
+  cuts.push(Math.round(lastEnd * FPS) / FPS);
+  return videoCutScenesRaw.map((s, i) => ({ ...s, startSec: cuts[i], endSec: cuts[i + 1] }));
+})();
+const cutSync = videoCutScenes.slice(1).map((s, idx) => ({
+  scene: idx + 2,
+  cutSec: Number(s.startSec.toFixed(3)),
+  speechStartSec: Number(Number(audioScenes[idx + 1].startSec).toFixed(3)),
+  leadSec: Number((Number(audioScenes[idx + 1].startSec) - s.startSec).toFixed(3)),
+}));
 
 // ── 1단계: 장면별 무음 클립 (오디오 타임코드에 길이를 맞춘다) ────────────────
 
@@ -1106,9 +1154,12 @@ for (let i = 0; i < scenes.length; i++) {
   // 말만 나온다" — 부엉이 12편 s10, 캡 적용 후에도 8.45초로 그대로였음).
   // videoCutScenes[i].endSec을 그대로 신뢰한다.
   const startSec = Number(audioScene.startSec);
+  // tailPadSec는 옛 스펙(부엉 3편·금박사 8편)만 쓴다 — 중간 씬에 쓰면 그만큼 뒤 씬 화면이 밀린다(새 편 금지).
   const tailPadSec = Number.isFinite(scene.tailPadSec) ? scene.tailPadSec : 0;
   const endSec = Number(audioScene.endSec) + tailPadSec;
-  const targetDuration = endSec - startSec;
+  // 씬 전환 싱크 v3: 길이를 절대 프레임 경계 차이로 정한다(씬별 반올림 누적 방지).
+  const frameCount = Math.round(endSec * FPS) - Math.round(startSec * FPS);
+  const targetDuration = frameCount / FPS;
   if (!Number.isFinite(targetDuration) || targetDuration <= 0) {
     console.error(`ABORT: scene ${scene.scene} 의 오디오 구간이 올바르지 않습니다.`);
     process.exit(1);
@@ -1140,7 +1191,7 @@ for (let i = 0; i < scenes.length; i++) {
     "-y", "-i", clip,
     "-an", // 소스 오디오는 버린다. 최종 오디오는 연속 TTS 하나뿐이다.
     "-vf", vFilters.join(","),
-    "-t", targetDuration.toFixed(3),
+    "-frames:v", String(frameCount),
     "-r", String(render.fps),
     "-c:v", render.videoCodec, "-preset", "medium", "-crf", String(render.crf),
     "-pix_fmt", render.pixFmt,
@@ -1168,6 +1219,27 @@ const silentPath = path.join(OUT_DIR, "owl_timeline_silent.mp4");
 log(`concat → ${path.basename(silentPath)}`);
 run("ffmpeg", ["-y", "-f", "concat", "-safe", "0", "-i", concatList, "-c", "copy", silentPath]);
 const silentDuration = probeDuration(silentPath);
+
+// 씬 전환 싱크 v3 검증: 실제 인코딩된 씬 파일의 프레임 수를 누적해 각 씬이 타임라인 어디서 시작하는지
+// 계산하고, 의도한 컷 지점과 1프레임 넘게 어긋나면 중단한다(누적 밀림 재발 방지).
+{
+  let cursorFrames = 0;
+  let maxDriftSec = 0;
+  sceneOutputs.forEach((file, i) => {
+    const intended = Number(videoCutScenes[i].startSec);
+    const actual = cursorFrames / FPS;
+    maxDriftSec = Math.max(maxDriftSec, Math.abs(actual - intended));
+    const nb = Number(run("ffprobe", ["-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", file]).trim());
+    cursorFrames += nb;
+  });
+  const leads = cutSync.map((c) => c.leadSec);
+  log(`씬 전환 싱크: 누적 오차 최대 ${maxDriftSec.toFixed(3)}s, 컷 리드(발화보다 먼저) ${Math.min(...leads).toFixed(2)}~${Math.max(...leads).toFixed(2)}s`);
+  if (maxDriftSec > 1.5 / FPS) {
+    console.error(`ABORT: 씬 컷 누적 오차 ${maxDriftSec.toFixed(3)}s(1프레임 초과) — 화면이 발화보다 밀린다.`);
+    process.exit(1);
+  }
+  cutSync.maxDriftSec = Number(maxDriftSec.toFixed(3));
+}
 
 // ── 3단계: 동적 자막 ASS 생성 ────────────────────────────────────────────────
 
@@ -1295,6 +1367,13 @@ fs.writeFileSync(
     render,
     totalDurationSec: Number(finalDuration.toFixed(3)),
     timeline,
+    // 씬 전환 싱크 v3(2026-09-30): 컷 지점·발화 시작·리드(양수 = 화면이 먼저 넘어감), 누적 오차.
+    cutSync: {
+      version: "scene_cut_sync_v3",
+      leadTargetSec: SCENE_CUT_LEAD_SEC,
+      maxDriftSec: cutSync.maxDriftSec,
+      cuts: cutSync,
+    },
     output: finalOut,
     finishedAt: new Date().toISOString(),
   }, null, 2) + "\n",

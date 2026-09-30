@@ -135,6 +135,35 @@ if (spec.imageCharacter === "bull3dv1" || spec.characterDisplayName === "황소�
   }
 }
 
+// 4-0) 씬 전환 싱크 v3(2026-09-30 Owner 지적 — "다음 씬 자막 첫 부분이 이전 씬 끝에서 먼저 나오고 넘어가 뚝뚝 끊긴다")
+// 조립기가 남긴 cutSync(절대 프레임 컷·리드·누적 오차)와 자막 ASS를 교차 검사한다.
+{
+  const manifestPath = path.join(ASSEMBLY_DIR, "assembly-manifest.json");
+  const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : null;
+  const cs = manifest?.cutSync;
+  if (!cs || cs.version !== "scene_cut_sync_v3") {
+    mustFix.push("씬 전환 싱크 v3 정보 없음 — 옛 조립기로 만든 본편(씬마다 화면이 발화보다 누적으로 늦어짐). run-owl-assemble-shorts-v2.mjs로 다시 조립");
+  } else {
+    const lateCuts = cs.cuts.filter((c) => c.leadSec < -0.02);
+    if (cs.maxDriftSec > 0.05) mustFix.push(`씬 컷 누적 오차 ${cs.maxDriftSec}s(1프레임 초과)`);
+    if (lateCuts.length) mustFix.push(`화면 컷이 다음 발화보다 늦은 전환 ${lateCuts.length}곳: ${lateCuts.map((c) => `s${c.scene}(${c.leadSec}s)`).join(", ")}`);
+    const toSec = (t) => { const [h, mm, s] = t.split(":"); return Number(h) * 3600 + Number(mm) * 60 + Number(s); };
+    const assFile = path.join(ASSEMBLY_DIR, "owl_captions.ass");
+    if (fs.existsSync(assFile)) {
+      const events = fs.readFileSync(assFile, "utf8").split(/\r?\n/).filter((l) => l.startsWith("Dialogue:")).map((l) => {
+        const f = l.slice(9).split(",");
+        return { start: toSec(f[1].trim()), end: toSec(f[2].trim()) };
+      });
+      const crossing = cs.cuts.filter((c) => events.some((e) => e.start < c.cutSec - 0.01 && e.end > c.cutSec + 0.01));
+      const early = cs.cuts.filter((c) => events.some((e) => e.start >= c.cutSec - 0.3 && e.start < c.cutSec - 0.01));
+      if (crossing.length) mustFix.push(`자막이 씬 컷을 가로지름(이전 씬 자막이 새 화면에 남음) ${crossing.length}곳: ${crossing.map((c) => `s${c.scene}`).join(", ")}`);
+      if (early.length) mustFix.push(`다음 씬 자막이 컷보다 먼저 뜸 ${early.length}곳: ${early.map((c) => `s${c.scene}`).join(", ")}`);
+    }
+    const leads = cs.cuts.map((c) => c.leadSec);
+    info.push(`씬 전환 싱크: 컷 ${cs.cuts.length}개, 화면이 발화보다 ${Math.min(...leads).toFixed(2)}~${Math.max(...leads).toFixed(2)}초 먼저 넘어감, 누적 오차 ${cs.maxDriftSec}s`);
+  }
+}
+
 // 4-1) Veo 워터마크 제거 표식(2026-09-30 Owner 지적 — 하단 채널명 띠를 뺀 뒤로 우하단 워터마크가 드러남)
 // run-remove-veo-watermark-once.mjs가 남긴 전역 메타데이터가 최종본에 없으면 배포 금지.
 {
