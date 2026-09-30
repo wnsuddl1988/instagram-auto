@@ -41,10 +41,9 @@ const BAN_COMMON = [
   [/진짜 이유|정체(가|는|를)? /, "벤치마크식 '진짜 이유/정체' 틀"],
   [/투자 판단의 책임/, "리스크 고지는 나레이션에 넣지 않는다(자막바)"],
 ];
-const BAN_OWL = [
-  [/다들,|핵심만 짚어줄게|한 줄로 정리하면|이것만은 챙겨가/, "황소특보 고유 문구"],
-  [/금박사/, "18편부터 금박사 언급 금지"],
-];
+const BAN_OWL = [[/금박사/, "18편부터 금박사 언급 금지"]];
+// 황소 고유 문구는 차별화 목적의 Claude 제안이라 확인 권장만(Owner 규칙 아님)
+const SOFT_BAN_OWL = [[/다들,|핵심만 짚어줄게|한 줄로 정리하면|이것만은 챙겨가/, "황소특보 고유 문구와 겹침(차별화 권고)"]];
 // "사라지다"를 매수 암시로 오판하지 않게 "사라(?!지)"
 const BAN_BULL = [[/미리 주워|담아\s*두|매수\s*추천|사야\s*해|사라(?!지)/, "매수 암시"]];
 
@@ -66,12 +65,15 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
   const find = (re) => scenes.findIndex((t) => re.test(t));
   const n = scenes.length;
   const need = (cond, msg) => (cond ? ok.push(msg) : fix.push(`누락: ${msg}`));
+  // Owner 발언 근거가 없는 Claude 제안 구조는 확인 권장만(규칙 28, _ai/owner-rule-provenance.md)
+  const needSoft = (cond, msg) => (cond ? ok.push(msg) : warn.push(`구조 권고 누락(Owner 규칙 아님): ${msg}`));
 
   // 1) 씬 수
-  const [minScene, maxScene] = character === "owl" ? [11, 13] : [12, 17];
+  // 씬 수는 Owner 규칙이 아니다(Owner: 흐름·메시지가 자연스러우면 제한 없음, 다만 극단은 피함). 권고 범위 밖이면 확인만 권한다.
+  const [minScene, maxScene] = character === "owl" ? [11, 17] : [12, 17];
   if (n < minScene || n > maxScene) {
-    (character === "owl" ? fix : warn).push(`씬 수 ${n}개 — ${character === "owl" ? "부엉 v2는 11~13씬" : "황소 v3는 12~14(자연스러우면 중간안 ≤17)"}`);
-  } else ok.push(`씬 수 ${n}개`);
+    warn.push(`씬 수 ${n}개 — 권고 ${minScene}~${maxScene}(Owner 제한 아님, 흐름이 자연스러우면 무방·극단만 피함)`);
+  } else ok.push(`씬 수 ${n}개(권고 범위)`);
 
   // 2) 씬당 발화 9.5초(약 50자) 이내
   const longScenes = scenes.map((t, i) => [i + 1, estimatedSeconds(t), spokenChars(t)]).filter(([, s]) => s > 9.5);
@@ -94,6 +96,7 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
   // 5) 금지 표현
   const bans = [...BAN_COMMON, ...(character === "owl" ? BAN_OWL : BAN_BULL)];
   scenes.forEach((t, i) => bans.forEach(([re, why]) => has(t, re) && fix.push(`${i + 1}번 금지 표현(${why}): "${t.match(re)[0]}"`)));
+  if (character === "owl") scenes.forEach((t, i) => SOFT_BAN_OWL.forEach(([re, why]) => has(t, re) && warn.push(`${i + 1}번 ${why}: "${t.match(re)[0]}"`)));
   if (has(scenes[n - 1], /팔로우/)) fix.push("마지막 씬에서 팔로우를 말하지 않는다(CTA 클립에 있음)");
 
   // 6) 같은 수치 두 번 금지(월 표기는 시점일 수 있어 확인 권장으로)
@@ -109,17 +112,24 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
   tokens.forEach((set, i) => set.forEach((tk) => seen.set(tk, [...(seen.get(tk) ?? []), i + 1])));
   const dups = [...seen.entries()].filter(([, at]) => at.length >= 2);
   const monthDups = dups.filter(([tk]) => /^[0-9]+월$/.test(tk));
-  const realDups = dups.filter(([tk]) => !/^[0-9]+월$/.test(tk));
+  const allRealDups = dups.filter(([tk]) => !/^[0-9]+월$/.test(tk));
+  // Owner 결정(2026-10-01): 계산 예시 씬에서 앞서 말한 수치를 다시 쓰는 것은 경고만
+  const isCalcScene = (i) => /(이면|라면|하면|채우면|받으면)[^.]*[0-9]/.test(scenes[i - 1] ?? "");
+  const realDups = allRealDups.filter(([, at]) => !at.some(isCalcScene));
+  const calcDups = allRealDups.filter(([, at]) => at.some(isCalcScene));
   if (realDups.length) fix.push(`같은 수치 중복: ${realDups.map(([tk, at]) => `"${tk}" ${at.join("·")}번`).join(", ")}`);
-  else ok.push("같은 수치 두 번 쓰지 않음");
+  else ok.push("같은 수치 두 번 쓰지 않음(계산 예시 씬의 재사용 제외)");
+  if (calcDups.length) warn.push(`계산 예시 씬에서 앞 수치 재사용(확인): ${calcDups.map(([tk, at]) => `"${tk}" ${at.join("·")}번`).join(", ")}`);
   if (monthDups.length) warn.push(`월 표기 반복(수치가 아니라 시점일 수 있음, 확인): ${monthDups.map(([tk, at]) => `"${tk}" ${at.join("·")}번`).join(", ")}`);
 
   // 7) 연속 씬 어미 반복
   const ends = scenes.map(endingOf);
   const repeats = [];
-  for (let i = 1; i < n; i += 1) if (ends[i] === ends[i - 1]) repeats.push(`${i}·${i + 1}번("${ends[i]}")`);
+  const softRepeats = []; // Owner 결정(2026-10-01): 평서 종결 "~야" 연속은 경고만
+  for (let i = 1; i < n; i += 1) if (ends[i] === ends[i - 1]) (ends[i] === "야" ? softRepeats : repeats).push(`${i}·${i + 1}번("${ends[i]}")`);
   if (repeats.length) fix.push(`연속 씬 같은 어미: ${repeats.join(", ")} — 연속 씬의 어미·동사를 반복하지 않는다(A-2)`);
-  else ok.push("연속 씬 어미 반복 없음");
+  else ok.push("연속 씬 어미 반복 없음(평서 '~야' 연속 제외)");
+  if (softRepeats.length) warn.push(`연속 씬 '~야' 종결(확인, 다른 어미로 바꾸면 좋음): ${softRepeats.join(", ")}`);
 
   // 8) 오프닝 고정 문구(훅 뒤 한 문장)
   const OPENING =
@@ -133,12 +143,12 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
   // 9) 캐릭터별 구조 요소
   if (character === "owl") {
     const qIdx = find(/답부터 말하면/);
-    need(qIdx >= 0 && has(scenes[qIdx], /(어떻게 해야|달라질까|뭐가 달라)/), "핵심 질문+즉답(C형 '뭐가 달라질까' / D형 '어떻게 해야 할까' + '답부터 말하면')");
+    needSoft(qIdx >= 0 && has(scenes[qIdx], /(어떻게 해야|달라질까|뭐가 달라)/), "핵심 질문+즉답(C형 '뭐가 달라질까' / D형 '어떻게 해야 할까' + '답부터 말하면')");
     if (qIdx >= 0) {
       const pos = (qIdx + 1) / n;
       if (pos < 0.25 || pos > 0.5) warn.push(`핵심 질문 위치 ${Math.round(pos * 100)}%(약 30~35% 지점 권장, ${qIdx + 1}번)`);
     }
-    need(find(/(첫째|둘째)/) >= 0, "항목 단(첫째·둘째, 대상·금액)");
+    needSoft(find(/(첫째|둘째)/) >= 0, "항목 단(첫째·둘째, 대상·금액)");
     const itemStarts = scenes.map((t, i) => (/(첫째|둘째|셋째)/.test(t) ? i : -1)).filter((i) => i >= 0);
     const missing = [];
     itemStarts.forEach((s, k) => {
@@ -147,30 +157,32 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
     });
     if (missing.length) fix.push(`항목마다 "쉽게 풀면"/비유 1개 누락: ${missing.join(", ")}`);
     else if (itemStarts.length) ok.push("항목마다 '쉽게 풀면'/비유 있음");
-    need(find(/(이면|라면|하면|채우면|받으면)[^.]*[0-9]/) >= 0, "계산 예시 1개(숫자로 풀어 주는 씬)");
-    need(find(/(그렇다고|무작정|놓치면|사라지거든|안 돼)/) >= 0, "주의(놓치면 손해 보는 조건 한 줄)");
+    needSoft(find(/(이면|라면|하면|채우면|받으면)[^.]*[0-9]/) >= 0, "계산 예시 1개(숫자로 풀어 주는 씬)");
+    needSoft(find(/(그렇다고|무작정|놓치면|사라지거든|안 돼)/) >= 0, "주의(놓치면 손해 보는 조건 한 줄)");
     const sumIdx = find(/콕 집어 정리하면/);
-    need(sumIdx >= 0 && (has(scenes[sumIdx], /두 가지/) || has(scenes[sumIdx + 1], /두 가지/)), "정리+확인: '콕 집어 정리하면' + 먼저 확인할 것 '두 가지'");
+    needSoft(sumIdx >= 0 && (has(scenes[sumIdx], /두 가지/) || has(scenes[sumIdx + 1], /두 가지/)), "정리+확인: '콕 집어 정리하면' + 먼저 확인할 것 '두 가지'");
     if (sumIdx >= 0) {
       const before = scenes[sumIdx].split(/먼저 확인|확인할 건|지금 먼저/)[0].replace(/콕 집어 정리하면,?/, "").trim();
-      if (before.length < 12) fix.push("정리 씬에 '한 문장 결론'이 없음(확인할 것만 있음)");
+      if (before.length < 12) warn.push("정리 씬에 '한 문장 결론'이 없음(확인할 것만 있음) — 구조 권고");
     }
     const agency = /(위원회|공단|부|청|원|은행|국회|정부|공사|금융위|기재부|국토부|고용부|복지부|공정위|금감원)[가는이을를]? ?[^.]{0,30}(발표|의결|밝혔|시행|받는다|통과)/;
-    need(scenes.slice(2, 7).some((t) => agency.test(t)), "상황: 기관이 날짜·수치를 발표(기관명 + 발표/시행)");
+    needSoft(scenes.slice(2, 7).some((t) => agency.test(t)), "상황: 기관이 날짜·수치를 발표(기관명 + 발표/시행)");
     const change = scenes.slice(2, 8).some((t) => /(원래|이전|기존|예전|1차|지난)/.test(t) && /(이번|이제|바뀌|달라|부터는)/.test(t));
     if (!change) warn.push("상황: '기존 vs 변경' 대비(원래는 ~였는데 이제는 ~) 문장을 찾지 못함 — 제도 변경형이면 필수");
     else ok.push("상황: 기존 vs 변경 대비 있음");
-    need(has(scenes[n - 1], /댓글/) && has(scenes[n - 1], /(저장|다시 확인|확인해)/), "마지막 씬: 저장·확인 + 댓글 요청");
+    need(has(scenes[n - 1], /댓글/), "마지막 씬: 댓글 요청(Owner 9/30 결정)");
+    needSoft(has(scenes[n - 1], /(저장|다시 확인|확인해)/), "마지막 씬: 저장·확인 권유");
   } else {
-    need(/^다들,/.test(scenes[0]), "훅 첫마디 '다들,'");
-    need(find(/숫자부터 보자/) >= 0, "상황 '(먼저) 숫자부터 보자'");
-    need(find(/한마디로/) >= 0, "핵심 질문+즉답 '그럼 왜 ~걸까? 한마디로 ~'");
-    need(find(/첫째/) >= 0 && find(/둘째/) >= 0, "근거 첫째·둘째(근거가 두 갈래면 축을 나눔)");
-    need(find(/물론/) >= 0, "균형 '물론 조심할 것도 있어'(반대 시각·리스크)");
+    // 황소 v3 구조 문구는 Owner 결정(2026-10-01)으로 권고로 내림 — 확인 권장만
+    needSoft(/^다들,/.test(scenes[0]), "훅 첫마디 '다들,'");
+    needSoft(find(/숫자부터 보자/) >= 0, "상황 '(먼저) 숫자부터 보자'");
+    needSoft(find(/한마디로/) >= 0, "핵심 질문+즉답 '그럼 왜 ~걸까? 한마디로 ~'");
+    needSoft(find(/첫째/) >= 0 && find(/둘째/) >= 0, "근거 첫째·둘째(근거가 두 갈래면 축을 나눔)");
+    needSoft(find(/물론/) >= 0, "균형 '물론 조심할 것도 있어'(반대 시각·리스크)");
     const sum = find(/한 줄로 정리하면/);
-    need(sum >= 0 && (has(scenes[sum], /두 가지/) || has(scenes[sum + 1], /두 가지/)), "요약+체크 '한 줄로 정리하면' + 확인할 것 '두 가지'(같은 씬 또는 바로 다음 씬)");
-    need(find(/이것만은 챙겨가/) >= 0, "당부 '이것만은 챙겨가'");
-    need(find(/황소특보가 제일 먼저 들고 올게/) >= 0, "다음 단계 예고 '황소특보가 제일 먼저 들고 올게'");
+    needSoft(sum >= 0 && (has(scenes[sum], /두 가지/) || has(scenes[sum + 1], /두 가지/)), "요약+체크 '한 줄로 정리하면' + 확인할 것 '두 가지'(같은 씬 또는 바로 다음 씬)");
+    needSoft(find(/이것만은 챙겨가/) >= 0, "당부 '이것만은 챙겨가'");
+    needSoft(find(/황소특보가 제일 먼저 들고 올게/) >= 0, "다음 단계 예고 '황소특보가 제일 먼저 들고 올게'");
     need(has(scenes[n - 1], /댓글/), "마지막 씬 댓글 요청");
     if (find(/(쫓지 말고|이유를 알아야)/) < 0) warn.push("엔딩 5박자 ④ 이득 각인('쫓지 말고 이유를 알아라, 이유를 알아야 다음 신호가 읽힌다') 문구를 찾지 못함");
     if (find(/(이 종목|이 주식).*(사|담)/) >= 0) fix.push("매수 암시 의심 표현");

@@ -247,7 +247,10 @@ sheets.push(path.join(reviewDir, "safe-video.png"));
 {
   const manifestPath = path.join(ASSEMBLY_DIR, "assembly-manifest.json");
   const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, "utf8")) : null;
-  const textScenes = spec.scenes.filter((s) => ["board", "card1", "card2"].includes(s.motion?.type)).map((s) => s.scene);
+  // 옛 스펙(motion 필드가 하나도 없음)은 어느 씬에 글자가 있는지 알 수 없어 검사가 통째로 건너뛰어지던 구멍(2026-10-01 부엉 16편 재고에서 발견)
+  // → motion이 전혀 없으면 전 씬을 검사 대상으로 한다(판정 기록 필수).
+  const hasMotionInfo = spec.scenes.some((s) => s.motion?.type);
+  const textScenes = (hasMotionInfo ? spec.scenes.filter((s) => ["board", "card1", "card2"].includes(s.motion?.type)) : spec.scenes).map((s) => s.scene);
   if (textScenes.length && manifest?.timeline) {
     const tiles = [];
     for (const n of textScenes) {

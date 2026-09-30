@@ -23,6 +23,7 @@ const assert = (c, m) => {
   if (!c) throw new Error(m);
 };
 const hasFix = (r, re) => r.fix.some((f) => re.test(f));
+const hasWarn = (r, re) => r.warn.some((f) => re.test(f));
 
 // 1) 부엉 18편 최종 수정본 — 반드시 수정 0이어야 한다
 const OWL18_GOOD = [
@@ -61,9 +62,9 @@ const OWL18_FIRST_DRAFT = [
   "콕 집어 정리하면, 신청은 10월 7일부터 열흘이고, 먼저 확인할 건 내 총급여 구간이랑 고를 유형 두 가지야.",
   "이 두 가지는 저장해 두고, 신청하기 전에 다시 확인해. 궁금한 제도는 댓글로 남겨줘.",
 ];
-check("부엉 18편 첫 초안: 핵심 질문 C/D형 누락을 잡는다", () => {
+check("부엉 18편 첫 초안: 핵심 질문 C/D형 누락은 확인 권장(Owner 규칙 아님, 규칙 28)", () => {
   const r = checkScriptStandards({ character: "owl", scenes: OWL18_FIRST_DRAFT, hookType: "T3" });
-  assert(hasFix(r, /핵심 질문/), JSON.stringify(r.fix));
+  assert(hasWarn(r, /핵심 질문/) && !hasFix(r, /핵심 질문/), JSON.stringify(r));
 });
 check("부엉 18편 첫 초안: 항목별 '쉽게 풀면' 누락을 잡는다", () => {
   const r = checkScriptStandards({ character: "owl", scenes: OWL18_FIRST_DRAFT, hookType: "T3" });
@@ -73,13 +74,30 @@ check("부엉 18편 첫 초안: 같은 수치 중복(6퍼센트·12퍼센트)을
   const r = checkScriptStandards({ character: "owl", scenes: OWL18_FIRST_DRAFT, hookType: "T3" });
   assert(hasFix(r, /같은 수치 중복/), JSON.stringify(r.fix));
 });
-check("부엉 18편 첫 초안: 연속 '~야' 어미를 잡는다", () => {
+check("부엉 18편 첫 초안: 연속 '~야' 종결은 경고만(Owner 결정 2026-10-01)", () => {
   const r = checkScriptStandards({ character: "owl", scenes: OWL18_FIRST_DRAFT, hookType: "T3" });
-  assert(hasFix(r, /연속 씬 같은 어미/), JSON.stringify(r.fix));
+  assert(hasWarn(r, /연속 씬 '~야' 종결/) && !hasFix(r, /연속 씬 같은 어미/), JSON.stringify(r));
 });
-check("부엉 18편 첫 초안: 상황의 기관 발표 누락을 잡는다", () => {
+check("부엉: '~야' 아닌 연속 같은 어미(거든·거든)는 반드시 수정", () => {
+  const scenes = [...OWL18_GOOD];
+  scenes[3] = "금융위원회가 2차 신청을 10월 7일부터 16일까지 받는다고 발표했거든.";
+  scenes[4] = "1차 때 심사 오류가 있어서 이번부터는 유형을 직접 고르는 거거든.";
+  const r = checkScriptStandards({ character: "owl", scenes, hookType: "T3" });
+  assert(hasFix(r, /연속 씬 같은 어미/), JSON.stringify(r));
+});
+check("부엉: 계산 예시 씬의 앞 수치 재사용은 경고만", () => {
+  const scenes = [...OWL18_GOOD];
+  scenes[8] = "월 50만 원씩 만기까지 채우면 원금 1,800만 원에 일반형 기여금은 6퍼센트, 쉽게 풀면 108만 원을 더 받아.";
+  const r = checkScriptStandards({ character: "owl", scenes, hookType: "T3" });
+  assert(hasWarn(r, /계산 예시 씬에서 앞 수치 재사용/) && !hasFix(r, /같은 수치 중복/), JSON.stringify(r));
+});
+check("부엉 18편 첫 초안: 상황의 기관 발표 누락은 확인 권장", () => {
   const r = checkScriptStandards({ character: "owl", scenes: OWL18_FIRST_DRAFT, hookType: "T3" });
-  assert(hasFix(r, /기관/), JSON.stringify(r.fix));
+  assert(hasWarn(r, /기관/) && !hasFix(r, /기관/), JSON.stringify(r));
+});
+check("부엉: 씬 수는 권고일 뿐 — 11~17 밖이어도 반드시 수정이 아니다", () => {
+  const r = checkScriptStandards({ character: "owl", scenes: OWL18_GOOD.slice(0, 10), hookType: "T3" });
+  assert(!r.fix.some((f) => /씬 수/.test(f)) && hasWarn(r, /씬 수/), JSON.stringify(r));
 });
 
 // 3) 황소 11편 배포본 — 알려진 위반(1,350원 두 번, 연속 '~야')을 잡고 구조 문구는 통과
@@ -90,7 +108,13 @@ check("황소 11편: '1,350원' 중복을 잡는다", () => {
 });
 check("황소 11편: 구조 문구(다들·숫자부터·한마디로·첫째둘째·물론·한 줄로·챙겨가·들고 올게)는 누락 없음", () => {
   const r = checkScriptStandards({ character: "bull", scenes: bullScenes, hookType: "T1" });
-  assert(!r.fix.some((f) => f.startsWith("누락:")), JSON.stringify(r.fix));
+  assert(!r.fix.some((f) => f.startsWith("누락:")) && !hasWarn(r, /구조 권고 누락/), JSON.stringify(r));
+});
+
+check("황소: 구조 문구가 빠져도 반드시 수정이 아니라 확인 권장", () => {
+  const scenes = bullScenes.map((t) => t.replace(/황소특보가 제일 먼저 들고 올게/g, "다음 소식도 전할게"));
+  const r = checkScriptStandards({ character: "bull", scenes, hookType: "T1" });
+  assert(hasWarn(r, /구조 권고 누락.*들고 올게/) && !r.fix.some((f) => f.startsWith("누락:")), JSON.stringify(r));
 });
 
 // 4) 오탐 방지
@@ -106,11 +130,11 @@ check("황소: '미리 주워'는 매수 암시로 잡는다", () => {
   const r = checkScriptStandards({ character: "bull", scenes, hookType: "T1" });
   assert(r.fix.some((f) => /매수 암시/.test(f)), JSON.stringify(r.fix));
 });
-check("부엉: 금박사 언급·황소 문구('다들,')를 잡는다", () => {
+check("부엉: 금박사 언급은 반드시 수정, 황소 문구('다들,')는 확인 권장", () => {
   const scenes = [...OWL18_GOOD];
   scenes[12] = "다들, 금박사가 이어서 풀어줄게. 궁금한 제도는 댓글로 남겨줘, 저장해 둬.";
   const r = checkScriptStandards({ character: "owl", scenes, hookType: "T3" });
-  assert(r.fix.some((f) => /금박사/.test(f)) && r.fix.some((f) => /황소특보 고유/.test(f)), JSON.stringify(r.fix));
+  assert(r.fix.some((f) => /금박사/.test(f)) && hasWarn(r, /황소특보 고유/) && !r.fix.some((f) => /황소특보 고유/.test(f)), JSON.stringify(r));
 });
 check("오프닝이 첫 씬이면 잡는다(훅 뒤로)", () => {
   const scenes = [OWL18_GOOD[1], OWL18_GOOD[0], ...OWL18_GOOD.slice(2)];
