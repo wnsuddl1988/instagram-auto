@@ -6,6 +6,7 @@
 - 황소특보 10편 배포 완료(릴스 instagram.com/reel/Dd5MZRaks2t, 유튜브 youtube.com/shorts/8tSCrplyAVI). 다음 신규는 황소 11편(새 체계 첫 적용: 훅 규칙 17, 스펙 shot·bg·motion·sceneBackgrounds·hookType, 입 멈춤 A/B 파일럿).
 - 부엉박사 18편은 배포 대기 — **배포 전 새 코드로 재조립 → CTA 결합 → `run-audio-finish-once.mjs` → `run-episode-qa-once.mjs`**(시험본은 `C:/tmp/quality-v2-test/owl-ep18-final/` 검수 통과).
 - **오후 추가(미커밋)**: ① 부엉 소재 도구(`owl-topic-lanes.ts`·레인 뉴스검색·쏠림점검) ② 고정 CTA 배치 v2 재제작 — 황소 `C:/tmp/bull-cta-fixed-v6/bull_cta_fixed_final_layout_v2.mp4`, 부엉 `C:/tmp/owl-cta-fixed-v3/owl_cta_fixed_v3_final_layout_v2.mp4`(`run-cta-layout-v2-rerender-once.mjs`, 결합 스크립트 등록, 시험 결합 PASS) ③ 부엉 15편 수정 진행 — s15 영상만 Owner 생성 대기(§7 "15편 진행"). 16·17편도 같은 방식(B안). 카드뉴스 중단·금박사 중단·배경음 없음 확정.
+- **2026-09-30 저녁 추가(미커밋 포함)**: 황소 11편 = 조선주(대본 초안 `_ai/bull-ep11-ship-script-draft.md`, 체크리스트 `_ai/bull-ep11-production-checklist.md`, Owner 대본 확정 대기). 규칙 21(씬 전환 싱크 v3)·22(역할 분담: 황소=투자자/부엉=경제뉴스·정책)·23(규칙 누락 금지, 체크리스트 첨부). 소재 탐색은 `node scripts/run-bull-topic-full-scan-once.mjs` 한 번에 7단계. 레인 ⑨⑩·영역 industrial 추가. 부엉 15편 배포 완료, 16·17·18편은 `final-v3` 배포 대기(배포 시기는 Owner가 지시).
 - 플랫폼 권한: 인스타 SYSTEM_USER 무기한 토큰(insights·comments 포함, 권한 추가는 비즈니스 설정 → 시스템 사용자 → 새 토큰 "만료 안 함"으로만), 유튜브 관리·분석 권한 + Analytics API 활성화 완료.
 
 ---

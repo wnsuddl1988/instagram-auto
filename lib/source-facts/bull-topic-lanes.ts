@@ -16,7 +16,9 @@ export type BullTopicLane =
   | "new_theme" // ⑤ 신테마 입문(개념+비유)
   | "macro_translation" // ⑥ 매크로 번역(환율·금리·유가·금)
   | "decoupling_flows" // ⑦ 한미 디커플링·수급 구조
-  | "weekly_checkpoint"; // ⑧ 주간 체크포인트
+  | "weekly_checkpoint" // ⑧ 주간 체크포인트
+  | "corporate_catalyst" // ⑨ 기업 계약·호재(공시·수주 사실 기반, 2026-09-30 Owner 추가)
+  | "sector_outlook"; // ⑩ 유망 섹터·미래 전망(출처 있는 전망, 2026-09-30 Owner 추가)
 
 /** 1~9편처럼 레인 도입 전에 만든 편. */
 export type BullLegacyLane = "legacy";
@@ -64,7 +66,7 @@ export const BULL_TOPIC_LANES: readonly BullTopicLaneDefinition[] = [
   {
     id: "macro_translation",
     label: "⑥ 매크로 번역",
-    seeks: "환율·금리·유가·금 움직임을 개인 체감으로 번역",
+    seeks: "환율·금리·유가·금 움직임을 투자자 자산가격(주식·환율·금) 관점으로 번역 — 대출·예금 같은 생활 금융 각도는 부엉박사 소재",
     sources: "bull-topic-lane-news-search(macro)",
   },
   {
@@ -78,6 +80,18 @@ export const BULL_TOPIC_LANES: readonly BullTopicLaneDefinition[] = [
     label: "⑧ 주간 체크포인트",
     seeks: "다음 주 일정을 한 장으로 정리(주 1회 이하)",
     sources: "bull-event-calendar",
+  },
+  {
+    id: "corporate_catalyst",
+    label: "⑨ 기업 계약·호재",
+    seeks: "공급계약·수주·신규 계약 공시처럼 '방금 확인된 사실'을 업종·밸류체인 구조로 풀기(종목 실명은 허용리스트만, 나머지는 업종명). 매수 추천·목표가 단정 금지",
+    sources: "bull-topic-dart-scan(공시) + bull-topic-news-search(공급계약)",
+  },
+  {
+    id: "sector_outlook",
+    label: "⑩ 유망 섹터·미래 전망",
+    seeks: "섹터·산업의 앞으로 전망을 '출처 있는 전망(증권사·기관)'과 '조건 체크(무엇이 유지되면 어떻게 읽나)'로 제시(자체 예측·종목 추천 금지)",
+    sources: "bull-topic-sector-news-search + 인물·기관 발언",
   },
 ];
 
@@ -94,6 +108,7 @@ export type BullTopicDomain =
   | "mobility"
   | "theme_new"
   | "platform_consumer"
+  | "industrial" // 방산·조선·풍력·건설기계 등 산업재(2026-09-30 추가)
   | "other";
 
 /** 제목 문장 모양. 같은 모양을 연달아 쓰지 않는다. */

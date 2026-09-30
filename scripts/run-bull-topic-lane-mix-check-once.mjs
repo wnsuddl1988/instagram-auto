@@ -14,9 +14,9 @@ import { runTsProbe } from "./_editorial-v2-ts-probe.mjs";
 
 const ROOT = process.cwd();
 
-const LANES = ["cause_explainer", "figure_statement", "event_countdown", "policy_change", "new_theme", "macro_translation", "decoupling_flows", "weekly_checkpoint"];
+const LANES = ["cause_explainer", "figure_statement", "event_countdown", "policy_change", "new_theme", "macro_translation", "decoupling_flows", "weekly_checkpoint", "corporate_catalyst", "sector_outlook"];
 const KINDS = ["event", "schedule", "structure", "concept"];
-const DOMAINS = ["semiconductor", "flows_structure", "dividend_policy", "bio", "energy", "macro", "mobility", "theme_new", "platform_consumer", "other"];
+const DOMAINS = ["semiconductor", "flows_structure", "dividend_policy", "bio", "energy", "macro", "mobility", "theme_new", "platform_consumer", "industrial", "other"];
 const SHAPES = ["contrast", "quote", "countdown", "question", "declaration", "metaphor", "number", "why"];
 
 const args = {};

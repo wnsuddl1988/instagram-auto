@@ -2,7 +2,7 @@
 //
 // 검증 항목
 //   1. tsc strict 타입체크(bull-topic-lanes.ts, bull-event-calendar.ts)
-//   2. 레인 8개, id 중복 없음
+//   2. 레인 10개, id 중복 없음
 //   3. 게시 장부: 1~9편, 편 번호 중복 없음
 //   4. assessBullTopicProposal: 반도체/사건형/레인 연속/제목 모양 연속/금지 제목 틀 경고
 //   5. 쏠림 경고가 없는 정상 제안은 ok=true
@@ -106,8 +106,8 @@ check("runtime probe executes", () => {
 
 if (r) {
   check("8 lanes with unique ids", () => {
-    assert(r.laneIds.length === 8, `lane count ${r.laneIds.length}`);
-    assert(new Set(r.laneIds).size === 8, "duplicate lane ids");
+    assert(r.laneIds.length === 10, `lane count ${r.laneIds.length}`);
+    assert(new Set(r.laneIds).size === 10, "duplicate lane ids");
   });
 
   check("ledger covers episodes 1-10 without duplicates; 6 of 10 are semiconductor-related", () => {
