@@ -24,12 +24,14 @@ function assert(cond, msg) {
 }
 
 const probe = `
-import { OWL_TOPIC_LANES, OWL_EPISODE_LEDGER, assessOwlTopicProposal } from "./owl-topic-lanes.js";
+import { OWL_TOPIC_LANES, OWL_EPISODE_LEDGER, OWL_UNNUMBERED_STOCK, assessOwlTopicProposal } from "./owl-topic-lanes.js";
 const r: Record<string, any> = {};
 r.laneIds = OWL_TOPIC_LANES.map((l) => l.id);
 r.episodes = OWL_EPISODE_LEDGER.map((e) => e.episode);
 r.unpublished = OWL_EPISODE_LEDGER.filter((e) => !e.published).map((e) => e.episode);
-// 최근 4편(15~18): jobs_income 2(15,17), pension 1, housing 1 / policy_countdown 3(15,16,18), income_jobs 1
+r.stock = OWL_UNNUMBERED_STOCK.map((s) => s.summary);
+r.ledgerSummaries = OWL_EPISODE_LEDGER.map((e) => e.summary);
+// 최근 4편(14~17, 2026-09-30 재배치 후): jobs_income 2(15,16), pension 1(14), housing 1(17) / policy_countdown 3(14,15,17), income_jobs 1(16)
 r.clean = assessOwlTopicProposal({ title: "전기요금 4분기 동결, 내 고지서는 그대로일까", lane: "living_costs", domain: "prices_utilities", titleShape: "contrast" });
 r.domainHeavy = assessOwlTopicProposal({ title: "청년 지원금 신청", lane: "deadline_benefit", domain: "jobs_income", titleShape: "contrast" });
 r.laneHeavy = assessOwlTopicProposal({ title: "다음 달부터 바뀌는 제도", lane: "policy_countdown", domain: "tax", titleShape: "contrast" });
@@ -46,9 +48,15 @@ if (r) {
   check("레인 8개, id 중복 없음", () => {
     assert(r.laneIds.length === 8 && new Set(r.laneIds).size === 8, JSON.stringify(r.laneIds));
   });
-  check("장부 1~18편, 16~18편은 게시 예정(15편 배포 2026-09-30)", () => {
-    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 18 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
-    assert(JSON.stringify(r.unpublished) === JSON.stringify([16, 17, 18]), JSON.stringify(r.unpublished));
+  check("장부 1~17편, 16~17편은 게시 예정(2026-09-30 재배치: 16=최저임금, 17=전세사기)", () => {
+    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 17 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
+    assert(JSON.stringify(r.unpublished) === JSON.stringify([16, 17]), JSON.stringify(r.unpublished));
+    assert(r.ledgerSummaries[15].includes("최저임금"), r.ledgerSummaries[15]);
+    assert(r.ledgerSummaries[16].includes("전세사기"), r.ledgerSummaries[16]);
+  });
+  check("퇴직연금은 번호 없는 예비 재고로만 있고 편 장부(쏠림 창)에는 없다", () => {
+    assert(r.stock.length === 1 && r.stock[0].includes("퇴직연금"), JSON.stringify(r.stock));
+    assert(!r.ledgerSummaries.some((s) => s.includes("퇴직연금")), JSON.stringify(r.ledgerSummaries));
   });
   check("쏠림 없는 제안은 경고 없음", () => assert(r.clean.ok, JSON.stringify(r.clean.warnings)));
   check("같은 영역 3편째면 경고(jobs_income)", () => assert(r.domainHeavy.warnings.some((w) => w.includes("같은 영역")), JSON.stringify(r.domainHeavy.warnings)));

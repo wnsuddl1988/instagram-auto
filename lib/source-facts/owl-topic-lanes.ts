@@ -61,7 +61,7 @@ export interface OwlEpisodeTopicRecord {
 }
 
 /**
- * 부엉박사 편 장부(표시 번호 기준). 1~14편 게시 완료, 15~18편은 제작 완료·순서대로 게시 예정(2026-09-30).
+ * 부엉박사 편 장부(표시 번호 기준). 1~15편 게시 완료, 16~17편은 제작 완료·순서대로 게시 예정(2026-09-30 재배치).
  * 새 편을 만들면 끝에 추가하고, 게시하면 published를 true로 바꾼다. 레인·영역은 소재 기준 사후 분류다.
  */
 export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
@@ -80,9 +80,18 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   { episode: 13, summary: "고용률 역대 최고인데 체감 안 되는 이유와 지원금", lane: "indicator", domain: "jobs_income", titleShape: "contrast", published: true },
   { episode: 14, summary: "국민연금 보험료 올해에 이어 내년 1월 또 인상", lane: "policy_countdown", domain: "pension", titleShape: "declaration", published: true },
   { episode: 15, summary: "실업급여 22년 만의 개편(정부안)", lane: "policy_countdown", domain: "jobs_income", titleShape: "declaration", published: true },
-  { episode: 16, summary: "퇴직연금 회사 옮겨도 상품 그대로 이전", lane: "policy_countdown", domain: "pension", titleShape: "question", published: false },
-  { episode: 17, summary: "최저임금 인상이 내 월급에 주는 영향", lane: "income_jobs", domain: "jobs_income", titleShape: "question", published: false },
-  { episode: 18, summary: "전세사기 최소보장제 11/13 시행", lane: "policy_countdown", domain: "housing", titleShape: "declaration", published: false },
+  // 2026-09-30 Owner 재배치: 퇴직연금은 번호 없는 예비 재고(아래 OWL_UNNUMBERED_STOCK)로 빼고,
+  // 최저임금이 16편, 전세사기가 17편이 된다. 파일·스펙 이름은 옛 번호(최저임금=ep17, 전세사기=ep18)를 그대로 쓴다.
+  { episode: 16, summary: "최저임금 인상이 내 월급에 주는 영향(실업급여 하한액 연결, 파일 ep17)", lane: "income_jobs", domain: "jobs_income", titleShape: "question", published: false },
+  { episode: 17, summary: "전세사기 최소보장제 11/13 시행(파일 ep18)", lane: "policy_countdown", domain: "housing", titleShape: "declaration", published: false },
+];
+
+/**
+ * 번호 없는 예비 재고(2026-09-30 Owner 결정): 배포할 소재가 없는 날 쓰고, 그때 다음 번호를 받는다.
+ * 배포 전에는 편 장부(쏠림 창)에 넣지 않는다. 파일·스펙: `_owl-v2-ep16-*`, `C:/tmp/owl-v2-ep16-final-v3`.
+ */
+export const OWL_UNNUMBERED_STOCK: readonly Omit<OwlEpisodeTopicRecord, "episode">[] = [
+  { summary: "퇴직연금 회사 옮겨도 상품 그대로 이전(파일 ep16)", lane: "policy_countdown", domain: "pension", titleShape: "question", published: false },
 ];
 
 export interface OwlTopicProposal {

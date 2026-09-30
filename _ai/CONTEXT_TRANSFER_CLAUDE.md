@@ -7,6 +7,7 @@
 - 부엉박사 18편은 배포 대기 — **배포 전 새 코드로 재조립 → CTA 결합 → `run-audio-finish-once.mjs` → `run-episode-qa-once.mjs`**(시험본은 `C:/tmp/quality-v2-test/owl-ep18-final/` 검수 통과).
 - **오후 추가(미커밋)**: ① 부엉 소재 도구(`owl-topic-lanes.ts`·레인 뉴스검색·쏠림점검) ② 고정 CTA 배치 v2 재제작 — 황소 `C:/tmp/bull-cta-fixed-v6/bull_cta_fixed_final_layout_v2.mp4`, 부엉 `C:/tmp/owl-cta-fixed-v3/owl_cta_fixed_v3_final_layout_v2.mp4`(`run-cta-layout-v2-rerender-once.mjs`, 결합 스크립트 등록, 시험 결합 PASS) ③ 부엉 15편 수정 진행 — s15 영상만 Owner 생성 대기(§7 "15편 진행"). 16·17편도 같은 방식(B안). 카드뉴스 중단·금박사 중단·배경음 없음 확정.
 - **2026-09-30 저녁 추가(미커밋 포함)**: 황소 11편 = 조선주(대본 초안 `_ai/bull-ep11-ship-script-draft.md`, 체크리스트 `_ai/bull-ep11-production-checklist.md`, Owner 대본 확정 대기). 규칙 21(씬 전환 싱크 v3)·22(역할 분담: 황소=투자자/부엉=경제뉴스·정책)·23(규칙 누락 금지, 체크리스트 첨부). 소재 탐색은 `node scripts/run-bull-topic-full-scan-once.mjs` 한 번에 7단계. 레인 ⑨⑩·영역 industrial 추가. 부엉 15편 배포 완료, 16·17·18편은 `final-v3` 배포 대기(배포 시기는 Owner가 지시).
+- **2026-09-30 밤 최신(먼저 읽을 것)**: ① 황소 11편 배포 완료(릴스 Dd6OQgkimBU, 유튜브 -noGZIex5sM), 유튜브 쇼츠 세로 칸 썸네일은 처리 미완 → **10/1 첫 작업으로 재확인**(메모리 `project_bull_ep11_deployed_2026_09_30`). ② 부엉 15편(실업급여) 역대 최고 반응 → 소재 기준을 "대상 폭·체감 크기" 최우선으로(규칙 13). ③ **부엉 재고 번호 재배치(Owner 확정)**: 표시 16=최저임금(파일 ep17)·17=전세사기(파일 ep18), 퇴직연금은 번호 없는 예비 재고(삭제 안 함, 배포할 게 없는 날 사용), 새 편은 18부터. **10/1 점심 슬롯 = 16편(최저임금) 배포**(Owner 지시 시). 경로표·배포 때 확인 사항은 CURRENT_STANDARDS §7 8번. 러너 장부 반영·테스트 완료(미커밋).
 - 플랫폼 권한: 인스타 SYSTEM_USER 무기한 토큰(insights·comments 포함, 권한 추가는 비즈니스 설정 → 시스템 사용자 → 새 토큰 "만료 안 함"으로만), 유튜브 관리·분석 권한 + Analytics API 활성화 완료.
 
 ---
