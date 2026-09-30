@@ -380,6 +380,10 @@ const BULL_EP8_16SCENE_ONLY = getArg("--bull-ep8-16scene-only");
 // 순번만 쓴다(bull_ep9_s1 ~ bull_ep9_s16). --bull-ep9-16scene-only "3,7" 처럼 선택 재생성.
 const BULL_EP9_16SCENE_MODE = argv.includes("--bull-ep9-16scene");
 const BULL_EP9_16SCENE_ONLY = getArg("--bull-ep9-16scene-only");
+// 황소특보 10편(저PBR 기업 공표 D-N) 17장면. 파일명은 scene 순번만 쓴다(bull_ep10_s1 ~
+// bull_ep10_s17). --bull-ep10-17scene-only "3,7" 처럼 선택 재생성.
+const BULL_EP10_17SCENE_MODE = argv.includes("--bull-ep10-17scene");
+const BULL_EP10_17SCENE_ONLY = getArg("--bull-ep10-17scene-only");
 // 황소특보 1편 배경 컨셉 비교(2안, 2026-09-23) — 최초 스펙이 CTA용 서재
 // 배경을 기계적으로 재사용해 "반도체 강세"라는 소재와 개연성이 없다는
 // Owner 지적으로 재설계. 트레이딩데스크/시황브리핑룸 vs 반도체 공장/클린룸
@@ -555,6 +559,12 @@ if ((BULL_EP8_16SCENE_MODE || BULL_EP8_16SCENE_ONLY) && CHARACTER !== "bull3dv1"
 if ((BULL_EP9_16SCENE_MODE || BULL_EP9_16SCENE_ONLY) && CHARACTER !== "bull3dv1") {
   console.error(
     `ABORT: --bull-ep9-16scene(-only)은 --character bull3dv1(황소특보)와 함께 써야 합니다. 받은 값: --character ${CHARACTER}`,
+  );
+  process.exit(1);
+}
+if ((BULL_EP10_17SCENE_MODE || BULL_EP10_17SCENE_ONLY) && CHARACTER !== "bull3dv1") {
+  console.error(
+    `ABORT: --bull-ep10-17scene(-only)은 --character bull3dv1(황소특보)와 함께 써야 합니다. 받은 값: --character ${CHARACTER}`,
   );
   process.exit(1);
 }
@@ -6380,6 +6390,188 @@ const POSES_BULL_EP9_16SCENE = [
   },
 ];
 
+// 황소특보 10편(저PBR 기업 공표 11/2, 회사 공시 마감 10/22) — 카드·보드 글자는 크고 짧게(줄당 12자 이내, 3줄 이내),
+// 소품은 감싸 쥐거나 바닥 거치, 동작은 빈 손에만(§0-1). 두 손 카드 씬은 영상 10초.
+// 배경은 소재에 맞게 편마다 새로 구성한다(2026-09-30 Owner 지시: 9편까지 같은 라운지 반복). 이번 편은
+// 한국거래소·공시 소재라 한 건물 안의 3개 구역을 씬 역할에 따라 나눠 쓴다.
+//  A 거래소 공표 로비(s1~s4 도입, s16~s17 마무리) / B 공시 접수 사무 구역(s8~s10, s13~s15 절차·확인)
+//  / C 밝은 분석실(s5~s7 개념, s11~s12 시각차·통찰). 글자가 있는 간판·전광판·서류 없음, 빈 큰 면 없음.
+const BULL_EP10_LAYOUT_RULE =
+  "구도 규칙: 카메라를 멀리 두고 넓게 잡아 캐릭터 전신이 화면 세로의 45% 안팎만 차지하게 하고 " +
+  "머리 위·발 아래에 배경 공간을 넉넉히 둔다. 캐릭터와 보드·카드를 합친 가로 폭은 화면 가로의 " +
+  "약 70% 이내로 화면 중앙에 두어, 양쪽 가장자리에서 최소 12% 떨어지게 하고 화면 밖으로 잘리거나 " +
+  "닿지 않게 한다.";
+const BULL_EP10_BG_A = wrapBull3dv1SceneBackground(
+  '증권거래소 공표 로비. 황소특보 뒤로 천장까지 닿는 큼직한 곡면 전광판 벽(줄무늬 막대와 둥근 가격표 ' +
+    '모양 아이콘만 은은하게 흐르는 단순화된 저폴리곤 그래픽, 글자·숫자 없음)이 넓게 펼쳐지고, 앞쪽에는 ' +
+    '매끈한 광택 로비 바닥과 둥근 화분 몇 개, 양옆에 둥근 기둥. 트레이딩 라운지·뉴스 스튜디오와 다른 ' +
+    '넓고 밝은 공공기관 로비 느낌. 은은한 골드·민트 조명. 글자가 적힌 간판·표지판·배너 없음.',
+) + ' ' + BULL_EP10_LAYOUT_RULE;
+const BULL_EP10_BG_B = wrapBull3dv1SceneBackground(
+  '상장기업 공시 접수 사무 구역. 황소특보 뒤로 유리 접수 창구 두세 개가 나란히 있고, 그 뒤 벽면에는 ' +
+    '두툼한 서류철(등에 글자 없음, 색만 다른 매끈한 상자 모양)이 가득 꽂힌 진열 선반, 창구 위에는 ' +
+    '둥근 펜던트 조명. 바닥은 매끈한 밝은 타일, 한쪽에 둥근 서류 트레이 탑. 글자가 적힌 표지판·번호표· ' +
+    '서류 없음, 서류철은 표지 글자 없이 단색으로만. 은은한 블루·화이트 조명.',
+) + ' ' + BULL_EP10_LAYOUT_RULE;
+const BULL_EP10_BG_C = wrapBull3dv1SceneBackground(
+  '밝은 분석실 겸 서재. 황소특보 뒤로 큼직한 통창(창밖에 매끈한 저폴리곤 도시 스카이라인)이 넓게 ' +
+    '펼쳐지고, 양옆에 책이 가득 꽂힌 높은 책장(책등에 글자 없음), 한쪽에 둥근 지구본과 낮은 라운지 ' +
+    '소파, 바닥에 둥근 러그. 글자가 적힌 포스터·칠판·간판 없음, 큰 빈 벽면 없이 책장과 창으로 채운다. ' +
+    '따뜻한 골드·크림 조명.',
+) + ' ' + BULL_EP10_LAYOUT_RULE;
+const POSES_BULL_EP10_17SCENE = [
+  {
+    id: "bull_ep10_s1",
+    file: "bull_ep10_s1.png",
+    first: true,
+    clause:
+      `장면 1 (훅): 황소가 궁금하다는 표정으로 '저PBR 태그'와 '최대 220곳'이 두 줄로 ` +
+      `크게 적힌 카드를 두 손으로 감싸 쥐고 보여주는 자세. ${BULL_EP10_BG_A}`,
+  },
+  {
+    id: "bull_ep10_s2",
+    file: "bull_ep10_s2.png",
+    first: false,
+    clause:
+      `장면 2 (훅 판돈): 황소 옆 바닥에 세운 보드(바닥 거치)에 '핵심 날짜'와 '10월 22일'이 ` +
+      `두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 진지하고 긴장한 ` +
+      `표정을 짓는 자세. ${BULL_EP10_BG_A}`,
+  },
+  {
+    id: "bull_ep10_s3",
+    file: "bull_ep10_s3.png",
+    first: false,
+    clause:
+      `장면 3 (오프닝): 황소가 정면을 보며 한 손으로 위를 가리키고 다른 손은 ` +
+      `허리에 얹은 채 밝고 명랑하게 웃는 포즈, 소품 없음. ${BULL_EP10_BG_A}`,
+  },
+  {
+    id: "bull_ep10_s4",
+    file: "bull_ep10_s4.png",
+    first: false,
+    clause:
+      `장면 4 (상황): 황소 옆 바닥에 세운 보드(바닥 거치)에 '11월 2일'과 '저PBR 첫 공표'가 ` +
+      `두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 가리키며 설명하는 ` +
+      `자세. ${BULL_EP10_BG_A}`,
+  },
+  {
+    id: "bull_ep10_s5",
+    file: "bull_ep10_s5.png",
+    first: false,
+    clause:
+      `장면 5 (핵심질문+정의): 황소 옆 바닥에 세운 보드(바닥 거치)에 'PBR'과 ` +
+      `'주가 ÷ 주당순자산'이 두 줄로 크게 적혀 있고, 황소가 빈 손 검지를 세워 ` +
+      `설명하는 자세. ${BULL_EP10_BG_C}`,
+  },
+  {
+    id: "bull_ep10_s6",
+    file: "bull_ep10_s6.png",
+    first: false,
+    clause:
+      `장면 6 (개념 예시): 황소 옆 바닥에 세운 보드(바닥 거치)에 '주가 1만 원', ` +
+      `'주당순자산 5천 원', 'PBR 2배'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 ` +
+      `톡톡 짚으며 차분히 설명하는 자세. ${BULL_EP10_BG_C}`,
+  },
+  {
+    id: "bull_ep10_s7",
+    file: "bull_ep10_s7.png",
+    first: false,
+    clause:
+      `장면 7 (기준): 황소 옆 바닥에 세운 보드(바닥 거치)에 '업종 안 3년 하위', ` +
+      `'코스피 25%', '코스닥 10%'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 손가락 ` +
+      `하나를 펴 보이며 설명하는 자세. ${BULL_EP10_BG_C}`,
+  },
+  {
+    id: "bull_ep10_s8",
+    file: "bull_ep10_s8.png",
+    first: false,
+    clause:
+      `장면 8 (회사 쪽 절차): 황소 옆 바닥에 세운 보드(바닥 거치)에 '10월 22일까지', ` +
+      `'계획 공시하면', '1년 명단 제외'가 세 줄로 크게 적혀 있고, 황소가 빈 손으로 ` +
+      `보드를 가리키며 설명하는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s9",
+    file: "bull_ep10_s9.png",
+    first: false,
+    clause:
+      `장면 9 (예외): 황소 옆 바닥에 세운 보드(바닥 거치)에 '6년 내내 하위권'과 ` +
+      `'공시해도 명단 포함'이 두 줄로 크게 적혀 있고, 황소가 빈 손으로 보드를 ` +
+      `가리키며 신중한 표정을 짓는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s10",
+    file: "bull_ep10_s10.png",
+    first: false,
+    clause:
+      `장면 10 (인과 고리): 황소 옆 바닥에 세운 보드(바닥 거치)에 '자본 효율 계획', ` +
+      `'유상증자·CB', '줄어들 전망'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 ` +
+      `보드를 가리키며 설명하는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s11",
+    file: "bull_ep10_s11.png",
+    first: false,
+    clause:
+      `장면 11 (시각차): 황소 옆 바닥에 세운 보드(바닥 거치)에 '낮음 = 가치주? 둔화?'와 ` +
+      `'높음 = 기대? 거품?'이 두 줄로 크게 적혀 있고, 황소가 빈 손을 위로 펴 보이며 ` +
+      `고민하는 표정을 짓는 자세. ${BULL_EP10_BG_C}`,
+  },
+  {
+    id: "bull_ep10_s12",
+    file: "bull_ep10_s12.png",
+    first: false,
+    clause:
+      `장면 12 (엔딩1 통찰): 황소가 '태그는 질문'과 '결론이 아니야'가 두 줄로 크게 ` +
+      `적힌 카드를 두 손으로 감싸 쥐고 확신에 찬 표정으로 보여주는 ` +
+      `자세. ${BULL_EP10_BG_C}`,
+  },
+  {
+    id: "bull_ep10_s13",
+    file: "bull_ep10_s13.png",
+    first: false,
+    clause:
+      `장면 13 (엔딩2 프레임): 황소 옆 바닥에 세운 보드(바닥 거치)에 '① 계획 공시', ` +
+      `'② 6년 하위권', '③ 사업 흐름'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 ` +
+      `보드를 가리키며 설명하는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s14",
+    file: "bull_ep10_s14.png",
+    first: false,
+    clause:
+      `장면 14 (사업 흐름): 황소 옆 바닥에 세운 보드(바닥 거치)에 '실적 늘고 있나'와 ` +
+      `'성장 여지는?'이 두 줄로 크게 적혀 있고, 황소가 빈 손으로 손가락 두 개를 ` +
+      `세워 보이며 설명하는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s15",
+    file: "bull_ep10_s15.png",
+    first: false,
+    clause:
+      `장면 15 (엔딩3 체크): 황소 옆 바닥에 세운 보드(바닥 거치)에 '10월 22일 전', ` +
+      `'계획 공시?', '전자공시 확인'이 세 줄로 크게 적혀 있고, 황소가 빈 손으로 ` +
+      `보드를 가리키며 설명하는 자세. ${BULL_EP10_BG_B}`,
+  },
+  {
+    id: "bull_ep10_s16",
+    file: "bull_ep10_s16.png",
+    first: false,
+    clause:
+      `장면 16 (엔딩4 이득): 황소가 '태그 말고'와 '이유를 읽어'가 두 줄로 크게 적힌 ` +
+      `카드를 두 손으로 감싸 쥐고 따뜻하고 차분한 미소로 보여주는 ` +
+      `자세. ${BULL_EP10_BG_A}`,
+  },
+  {
+    id: "bull_ep10_s17",
+    file: "bull_ep10_s17.png",
+    first: false,
+    clause:
+      `장면 17 (엔딩5 약속+댓글): 황소가 밝은 미소로 한 손을 가볍게 흔들고 ` +
+      `다른 손은 자연스럽게 내린 마무리 포즈, 소품 없이 빈 손. ${BULL_EP10_BG_A}`,
+  },
+];
+
 // 금박사 전용 클로징(팔로우 유도) — 2026-09-19 Owner 확정: 부엉이의 고정 CTA
 // (follow 8초+teaser 8초, 부엉이 캐릭터 등장)를 금박사 편 끝에 그대로 붙이면
 // 캐릭터가 갑자기 바뀌어 흐름이 끊긴다는 지적. 금박사는 비정기 게시라 "다음 편
@@ -7707,6 +7899,25 @@ const POSES_BULL_EP9_16SCENE_SINGLE = BULL_EP9_16SCENE_ONLY
     })()
   : null;
 
+const POSES_BULL_EP10_17SCENE_SINGLE = BULL_EP10_17SCENE_ONLY
+  ? (() => {
+      const requested = BULL_EP10_17SCENE_ONLY.split(",").map((s) => s.trim()).filter(Boolean);
+      const targets = requested.map((token) => {
+        const index = Number.parseInt(token, 10);
+        const target = Number.isInteger(index) ? POSES_BULL_EP10_17SCENE[index - 1] : undefined;
+        if (!target) {
+          console.error(
+            `ABORT: --bull-ep10-17scene-only "${token}" 에 해당하는 장면을 찾을 수 없습니다. ` +
+              `1~${POSES_BULL_EP10_17SCENE.length} 사이의 순번을 사용하세요.`,
+          );
+          process.exit(1);
+        }
+        return target;
+      });
+      return targets.map((t, i) => ({ ...t, first: i === 0 }));
+    })()
+  : null;
+
 const POSES_GEUMBAKSA_EP6_10SCENE_SINGLE = GEUMBAKSA_EP6_10SCENE_ONLY
   ? (() => {
       const requested = GEUMBAKSA_EP6_10SCENE_ONLY.split(",").map((s) => s.trim()).filter(Boolean);
@@ -7818,6 +8029,8 @@ const POSES = OWL_8SCENE_ONLY
   ? POSES_BULL_EP8_16SCENE_SINGLE
   : BULL_EP9_16SCENE_ONLY
   ? POSES_BULL_EP9_16SCENE_SINGLE
+  : BULL_EP10_17SCENE_ONLY
+  ? POSES_BULL_EP10_17SCENE_SINGLE
   : OWL_8SCENE_MODE
   ? POSES_OWL_8SCENE
   : OWL_EP2_8SCENE_MODE
@@ -7916,6 +8129,8 @@ const POSES = OWL_8SCENE_ONLY
   ? POSES_BULL_EP8_16SCENE
   : BULL_EP9_16SCENE_MODE
   ? POSES_BULL_EP9_16SCENE
+  : BULL_EP10_17SCENE_MODE
+  ? POSES_BULL_EP10_17SCENE
   : BULL_EP1_BG_COMPARE_MODE
   ? POSES_BULL_EP1_BG_COMPARE
   : GEUMBAKSA_CTA_FOLLOW_MODE

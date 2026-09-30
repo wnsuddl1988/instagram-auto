@@ -66,19 +66,19 @@ const clean: BullTopicProposal = {
 };
 results.clean = assessBullTopicProposal(clean);
 
-// 사건형 → 최근 4편(6~9)에 사건형이 이미 2편(7,8)이라 3편이 되어 경고
+// 사건형 → 최근 4편(7~10)에 사건형이 이미 2편(7,8)이라 3편이 되어 경고
 results.eventHeavy = assessBullTopicProposal({ ...clean, kind: "event", lane: "cause_explainer", titleShape: "declaration" });
 
-// 반도체 계열을 한 번 더 하면 (9편 포함 2편) 허용, 장부에 반도체 편이 더 있으면 경고
+// 반도체 계열을 한 번 더 하면 (9편 포함 2편) 허용, 장부에 반도체 편이 더 있으면 경고(가상 11편)
 const ledgerWithSemi10: BullEpisodeTopicRecord[] = [
   ...BULL_EPISODE_LEDGER,
-  { episode: 10, summary: "가상 10편", lane: "cause_explainer", kind: "concept", domain: "semiconductor", semiconductorRelated: true, titleShape: "declaration" },
+  { episode: 11, summary: "가상 11편", lane: "cause_explainer", kind: "concept", domain: "semiconductor", semiconductorRelated: true, titleShape: "declaration" },
 ];
-results.semiOnceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }); // 6~9 중 9편 반도체 → 총 2
-results.semiTwiceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }, ledgerWithSemi10); // 7~10 중 9,10 + 이번 → 3
+results.semiOnceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }); // 7~10 중 9편 반도체 → 총 2
+results.semiTwiceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }, ledgerWithSemi10); // 8~11 중 9,11 + 이번 → 3
 
-// 직전 9편과 같은 레인·같은 제목 모양
-results.sameLaneShape = assessBullTopicProposal({ ...clean, lane: "event_countdown", titleShape: "question" });
+// 직전 10편과 같은 레인·같은 제목 모양
+results.sameLaneShape = assessBullTopicProposal({ ...clean, lane: "policy_change", titleShape: "declaration" });
 
 // 금지 제목 틀
 results.bannedWhy = assessBullTopicProposal({ ...clean, title: "현대차 주가가 빠지는 진짜 이유" });
@@ -110,8 +110,8 @@ if (r) {
     assert(new Set(r.laneIds).size === 8, "duplicate lane ids");
   });
 
-  check("ledger covers episodes 1-9 without duplicates; 6 of 9 are semiconductor-related", () => {
-    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9]), JSON.stringify(r.ledgerEpisodes));
+  check("ledger covers episodes 1-10 without duplicates; 6 of 10 are semiconductor-related", () => {
+    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), JSON.stringify(r.ledgerEpisodes));
     assert(r.ledgerSemis === 6, `ledgerSemis ${r.ledgerSemis}`);
   });
 

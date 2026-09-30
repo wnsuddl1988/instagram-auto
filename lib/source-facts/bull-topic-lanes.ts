@@ -133,6 +133,7 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   { episode: 7, summary: "국내 바이오사 FDA 첫 승인 상한가", lane: "legacy", kind: "event", domain: "bio", semiconductorRelated: false },
   { episode: 8, summary: "삼성전자 -5%인 날 태양광만 +14%(미국 최저수입가격)", lane: "cause_explainer", kind: "event", domain: "energy", semiconductorRelated: false, titleShape: "contrast" },
   { episode: 9, summary: "오픈AI 신모델 취소 × 마이크론 실적 D-1", lane: "event_countdown", kind: "schedule", domain: "semiconductor", semiconductorRelated: true, titleShape: "question" },
+  { episode: 10, summary: "11/2 저PBR 기업 공표 × 10/22 공시 마감(PBR 개념·시각차)", lane: "policy_change", kind: "schedule", domain: "dividend_policy", semiconductorRelated: false, titleShape: "declaration" },
 ];
 
 export interface BullTopicProposal {
