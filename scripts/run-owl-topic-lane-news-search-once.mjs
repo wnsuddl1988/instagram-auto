@@ -31,7 +31,32 @@ const LANE_KEYWORDS = Object.freeze({
   "⑧ 신청 마감 임박": ["신청 마감 임박", "이번 달까지 신청", "환급 신청 기한", "지원금 신청 마감"],
 });
 
-const ALL_KEYWORDS = Object.values(LANE_KEYWORDS).flat();
+// ★ 영역 보강 그룹(2026-09-30 밤 Owner 지시: "처음 시작할 때 엄청 다양한 방면을 요청했다, 활용 못 한 러너는
+// 다시 활용하라"). 위 레인 키워드 32개만으로는 보험·세금·육아·노후·청년·교통통신·자영업 같은 "누구나 피부로
+// 와닿는" 방면이 아예 검색되지 않았다(15편 실업급여가 최고 반응 → 규칙 13 대상 폭·체감 크기 최우선).
+// 황소 러너의 DOMAIN_KEYWORDS와 같은 방식으로, 끝에 영역별 건수를 요약한다(0건이면 ⚠).
+const DOMAIN_KEYWORDS = Object.freeze({
+  "[영역] 세금·연말정산": ["연말정산 달라지는", "종합부동산세 고지", "상속세 증여세 개편", "유류세 인하 연장", "자동차세 개편"],
+  "[영역] 보험·의료비": ["실손보험 보험료 인상", "자동차보험료 인상", "건강보험료 인상", "의료비 본인부담 변경"],
+  "[영역] 출산·육아·교육": ["부모급여 아동수당", "출산지원금 확대", "학자금 대출 금리", "육아기 근로시간 단축"],
+  "[영역] 노후·연금": ["기초연금 인상", "국민연금 개혁 수령", "주택연금 가입", "노인 일자리 지원"],
+  "[영역] 청년": ["청년도약계좌", "청년 월세 지원", "청년 주택드림 청약", "청년 전세대출"],
+  "[영역] 교통·통신·생활": ["K-패스 환급", "기후동행카드", "알뜰폰 요금제", "택배비 인상", "배달앱 수수료"],
+  "[영역] 예금·카드·신용": ["예금금리 인하", "파킹통장 금리", "카드 혜택 축소", "휴면예금 찾기", "신용점수 올리기"],
+  "[영역] 자영업·소상공인": ["소상공인 지원금", "자영업자 대출 부담", "폐업 지원금", "소상공인 전기요금 지원"],
+  "[영역] 내 집 마련": ["생애최초 주택 대출", "디딤돌대출 금리", "신생아 특례대출", "청약 가점 개편"],
+  "[영역] 소비자 피해·디지털": ["개인정보 유출 보상", "스미싱 문자 주의", "구독료 인상", "소비자원 환불 피해"],
+  // 2026-09-30 밤 Owner가 다시 준 분야 목록(거시경제·금융지식·정부정책(학업·도시별)·법령변경·주요뉴스·환율)과 대조해 빈 곳 추가.
+  "[영역] 거시경제·환율(생활)": ["경제성장률 전망", "수출입동향 발표", "환율 해외직구 여행", "물가 전망 한국은행"],
+  "[영역] 금융 상식": ["금감원 금융꿀팁", "금융소비자 알아두면", "예금자보호 한도"],
+  "[영역] 교육·학업": ["국가장학금 신청", "사교육비 조사", "교육부 발표 학부모"],
+  "[영역] 지자체(도시별) 정책": ["서울시 지원 정책 시민", "경기도 지원금 신청", "지자체 지원금 신청"],
+  "[영역] 법령 변경": ["국회 본회의 통과 법안", "국무회의 의결 개정안", "법 개정 시행 국민"],
+  "[영역] 주요 경제 발표": ["기획재정부 발표", "금융위원회 발표", "국토교통부 발표", "보건복지부 발표", "고용노동부 발표"],
+});
+
+const ALL_GROUPS = Object.freeze({ ...LANE_KEYWORDS, ...DOMAIN_KEYWORDS });
+const ALL_KEYWORDS = Object.values(ALL_GROUPS).flat();
 
 const probe = `
 import { collectNaverNewsForKeywords } from "./naver-news-connector.js";
@@ -113,7 +138,8 @@ console.log(
 console.log("");
 
 const seen = new Set();
-for (const [lane, keywords] of Object.entries(LANE_KEYWORDS)) {
+const groupCounts = [];
+for (const [lane, keywords] of Object.entries(ALL_GROUPS)) {
   console.log(`──────── ${lane} ────────`);
   const items = result.items
     .filter((item) => keywords.includes(item.keyword))
@@ -129,7 +155,12 @@ for (const [lane, keywords] of Object.entries(LANE_KEYWORDS)) {
     console.log("");
   }
   if (printed === 0) console.log("(결과 없음)\n");
+  groupCounts.push([lane, printed]);
 }
+
+console.log("──────── 그룹별 건수 요약(레인 8 + 영역 16) ────────");
+for (const [group, n] of groupCounts) console.log(`${n === 0 ? "⚠" : " "} ${group}: ${n}건`);
+console.log(`키워드 ${ALL_KEYWORDS.length}개 검색`);
 
 if (result.failed.length > 0) {
   console.log(`키워드 검색 실패: ${result.failed.length}건`);

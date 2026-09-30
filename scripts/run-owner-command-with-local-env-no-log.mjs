@@ -134,6 +134,12 @@ const OWL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-owl-topic-lane-news-search-once.mjs",
 );
+// 2026-09-30 밤(Owner 승인 "2번 등록해"): 공식 지표 스냅샷(한국은행 ECOS 7개 + 통계청 KOSIS 2개).
+// 처음 만든 editorial-v2 지표 파이프라인은 .env.local을 직접 읽어 실행 금지였다 — 이 러너는 래퍼 주입만 쓴다.
+const OWL_INDICATOR_SNAPSHOT_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-owl-indicator-snapshot-once.mjs",
+);
 const OWL_BLOB_UPLOAD_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-instagram-blob-upload-from-request-once.mjs",
@@ -268,6 +274,13 @@ const BULL_TOPIC_RISK_AWARENESS_NEWS_SEARCH_ENV_KEY_NAMES = Object.freeze([
 const BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES = Object.freeze([
   "NAVER_CLIENT_ID",
   "NAVER_CLIENT_SECRET",
+]);
+// 공식 지표 스냅샷은 ECOS·KOSIS 키만 있으면 된다(2026-09-30 Owner 승인). 이름 목록은 각 transport의
+// ECOS_API_KEY_ENV_NAMES·KOSIS_API_KEY_ENV_NAMES와 같다.
+const OWL_INDICATOR_SNAPSHOT_ENV_KEY_NAMES = Object.freeze([
+  "ECOS_API_KEY",
+  "BOK_ECOS_API_KEY",
+  "KOSIS_API_KEY",
 ]);
 // Blob 업로드는 스토리지 토큰 하나만 있으면 된다. Instagram/YouTube 키는 주입하지
 // 않는다 — 이 단계는 아직 게시가 아니라 공개 URL을 만드는 것뿐이다.
@@ -721,6 +734,15 @@ const SUPPORTED_COMMANDS = Object.freeze({
     envKeyNames: BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
     validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "owl-topic-lane-news-search"),
+  },
+  "owl-indicator-snapshot": {
+    script: OWL_INDICATOR_SNAPSHOT_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: OWL_INDICATOR_SNAPSHOT_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "owl-indicator-snapshot"),
   },
   "youtube-analytics-collect": {
     script: YOUTUBE_ANALYTICS_COLLECT_RUNNER_PATH,

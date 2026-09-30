@@ -4,16 +4,17 @@
  *
  * 배경: Owner 지적 — "러너가 있는데 왜 안 돌리냐, 정해진 규칙은 누락하지 말고 다 진행하라." 규칙 11 ⓒ의
  * "기존 러너는 필요할 때만"이라는 문구를 핑계로 공시·섹터·종목뉴스·지수 스캔을 건너뛰었다. 이 스크립트는
- * 사람이 단계를 골라 돌리는 여지를 없앤다: 7개 전부 실행하고, 하나라도 실패·누락이면 비정상 종료한다.
+ * 사람이 단계를 골라 돌리는 여지를 없앤다: 8개 전부 실행하고(2026-09-30 밤 공식 지표 추가), 하나라도 실패·누락이면 비정상 종료한다.
  *
  * 실행 단계(순서 고정):
  *   1 일정(D-N)            run-bull-topic-calendar-once.mjs --days 14        (비밀값 없음)
  *   2 지수·대형주 임계치    bull-topic-scan --arm                              (KIS/AlphaVantage)
- *   3 레인 뉴스 + 영역 보강 bull-topic-lane-news-search --arm                  (네이버, 영역 10개 요약)
+ *   3 레인 뉴스 + 영역 보강 bull-topic-lane-news-search --arm                  (네이버, 레인+영역 요약 — 미국주식·원자재·코인 포함)
  *   4 중소형주·계약 뉴스    bull-topic-news-search --arm                       (네이버)
  *   5 공급계약·수주 공시    bull-topic-dart-scan --arm                         (DART)
  *   6 섹터·전망 뉴스        bull-topic-sector-news-search --arm                (네이버)
  *   7 위험고지·투자심리·수급 bull-topic-risk-awareness-news-search --arm      (네이버)
+ *   8 공식 지표            owl-indicator-snapshot --arm                       (ECOS·KOSIS, 2026-09-30 밤 추가)
  * 자격증명은 no-log 래퍼(run-owner-command-with-local-env-no-log.mjs)로만 주입된다(값 읽기 없음).
  *
  * 사용: node scripts/run-bull-topic-full-scan-once.mjs [--out-dir C:/tmp/bull-topic-scan-YYYY-MM-DD]
@@ -39,12 +40,15 @@ const STEPS = [
   { n: 5, name: "공급계약·수주 공시", file: "05-dart.txt", args: [WRAPPER, "bull-topic-dart-scan", "--arm"] },
   { n: 6, name: "섹터·전망 뉴스", file: "06-sector.txt", args: [WRAPPER, "bull-topic-sector-news-search", "--arm"] },
   { n: 7, name: "위험고지·투자심리·수급", file: "07-risk.txt", args: [WRAPPER, "bull-topic-risk-awareness-news-search", "--arm"] },
+  // 2026-09-30 밤 추가: 공식 지표(ECOS 기준금리·물가·환율·국고채3년·코스피·경상·상품수지 + KOSIS 고용률·실업률).
+  // 부엉과 같은 러너를 쓴다 — 매크로 번역·환율 소재의 숫자를 기사 대신 공식 발표값으로 대조한다.
+  { n: 8, name: "공식 지표 ECOS·KOSIS", file: "08-indicators.txt", args: [WRAPPER, "owl-indicator-snapshot", "--arm"] },
 ];
 
 const rows = [];
 for (const step of STEPS) {
   const started = Date.now();
-  process.stdout.write(`[${step.n}/7] ${step.name} … `);
+  process.stdout.write(`[${step.n}/${STEPS.length}] ${step.name} … `);
   const r = spawnSync("node", step.args, { cwd: process.cwd(), encoding: "utf8", maxBuffer: 128 * 1024 * 1024, timeout: 10 * 60 * 1000 });
   const text = `${r.stdout ?? ""}${r.stderr ?? ""}`;
   fs.writeFileSync(path.join(OUT_DIR, step.file), text, "utf8");
