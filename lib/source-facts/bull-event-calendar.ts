@@ -18,6 +18,7 @@ export type BullEventCategory =
   | "kr_cpi"
   | "earnings_season_start"
   | "earnings_us" // 미국 주요 기업 실적 발표
+  | "earnings_kr" // 한국 주요 기업 실적 발표(삼성전자 잠정실적 등)
   | "company_kpi" // 기업 월/분기 판매·인도량 등 KPI 발표
   | "kr_trade_data" // 한국 수출입동향 등 무역 통계
   | "other_macro";
@@ -142,9 +143,50 @@ export const BULL_SCHEDULED_EVENTS: readonly BullScheduledEvent[] = [
     displayName: "테슬라 2026년 3분기 생산·인도량 발표(미국 현지 10/2)",
     sourceNote: "디지털투데이·지이뉴스 2026-09-29 보도('테슬라는 10월 2일 3분기 생산·인도량 발표')",
   },
-  // TODO(공식 확정 공시 시 추가): 삼성전자 3분기 잠정실적(관행상 10월 7~8일 예상, 미확정),
-  // SK하이닉스 3분기 실적(10/27 보도 있으나 회사 IR 공시 미확인), 앤트로픽 나스닥 상장(11월 계획 보도만
-  // 있고 날짜 미확정). 규칙 계산으로 날짜를 만들지 않는다.
+  // ── 2026-10-01 추가(Owner "러너 보강"): 부엉 19편 소재 탐색 중 일정 러너에 빠진 것이 확인됨 ───────
+  // 삼성전자 잠정실적은 13편 마지막 씬에서 "제일 먼저 들고 올게"라고 약속한 일정인데 목록에 없었다.
+  {
+    id: "kr-cpi-2026-09",
+    category: "kr_cpi",
+    dateIso: "2026-10-02",
+    displayName: "9월 소비자물가동향 발표(통계청 08:00)",
+    sourceNote: "검색 요약(2026-10-01)만 확인 — 통계청 공표일정 원문 미확인, 공식 일정 재확인 필요",
+    status: "tentative",
+  },
+  {
+    id: "samsung-2026-q3-prelim",
+    category: "earnings_kr",
+    dateIso: "2026-10-07",
+    displayName:
+      "삼성전자 2026년 3분기 잠정실적 공시(관행: 분기 종료 후 5번째 영업일 — 개천절 대체공휴일 10/5를 반영하면 10/8)",
+    sourceNote:
+      "삼성 뉴스룸(2분기 잠정은 2026-07-07 공시) + 시장 보도 '10월 7일 전후'(검색 요약 2026-10-01). 삼성은 사전 공지 없이 당일 공시 — 날짜 재확인 필요",
+    status: "tentative",
+  },
+  {
+    id: "kr-gdp-2026-q3",
+    category: "other_macro",
+    dateIso: "2026-10-27",
+    displayName: "3분기 실질 GDP(속보) 발표(한국은행 08:00)",
+    sourceNote: "bok.or.kr 월간통계 공표일정(2026-10-01 확인)",
+  },
+  {
+    id: "bok-wavg-rate-2026-09",
+    category: "other_macro",
+    dateIso: "2026-10-29",
+    displayName: "9월 금융기관 가중평균금리 발표(한국은행 12:00, 주담대·신용대출·예금 금리)",
+    sourceNote: "bok.or.kr 월간통계 공표일정(2026-10-01 확인)",
+  },
+  {
+    id: "samsung-2026-q3-final",
+    category: "earnings_kr",
+    dateIso: "2026-10-29",
+    displayName: "삼성전자 3분기 확정실적·콘퍼런스콜(10/29~30 예정 보도)",
+    sourceNote: "검색 요약(2026-10-01) — 회사 IR 공지 미확인",
+    status: "tentative",
+  },
+  // TODO(공식 확정 공시 시 추가): SK하이닉스 3분기 실적(10/27 보도 있으나 회사 IR 공시 미확인),
+  // 앤트로픽 나스닥 상장(11월 계획 보도만 있고 날짜 미확정). 규칙 계산으로 날짜를 만들지 않는다.
 ];
 
 export interface BullUpcomingEventQuery {

@@ -98,6 +98,10 @@ results.eventIds = BULL_SCHEDULED_EVENTS.map((e) => e.id);
 results.dateFormatOk = BULL_SCHEDULED_EVENTS.every((e) => /^\\d{4}-\\d{2}-\\d{2}$/.test(e.dateIso) && Number.isFinite(Date.parse(e.dateIso + "T00:00:00Z")));
 results.tradeStatus = BULL_SCHEDULED_EVENTS.find((e) => e.id === "kr-trade-2026-09")?.status ?? null;
 results.micronStatus = BULL_SCHEDULED_EVENTS.find((e) => e.id === "micron-fy2026-q4")?.status ?? null;
+results.samsungStatus = BULL_SCHEDULED_EVENTS.find((e) => e.id === "samsung-2026-q3-prelim")?.status ?? null;
+results.cpiStatus = BULL_SCHEDULED_EVENTS.find((e) => e.id === "kr-cpi-2026-09")?.status ?? null;
+results.bokWavgStatus = BULL_SCHEDULED_EVENTS.find((e) => e.id === "bok-wavg-rate-2026-09")?.status ?? "confirmed";
+results.upcoming30 = findUpcomingBullEvents({ todayIso: "2026-10-01", withinDays: 30 }).map((e) => ({ id: e.id, d: e.daysUntil }));
 results.upcoming = findUpcomingBullEvents({ todayIso: "2026-09-30", withinDays: 3 }).map((e) => ({ id: e.id, d: e.daysUntil }));
 
 process.stdout.write(JSON.stringify(results));
@@ -162,6 +166,16 @@ if (r) {
     assert(r.dateFormatOk === true, "date format");
     assert(r.tradeStatus === "tentative", `tradeStatus ${r.tradeStatus}`);
     assert(r.micronStatus === null, `micronStatus ${r.micronStatus}`);
+  });
+
+  check("2026-10-01 보강: 삼성전자 3분기 잠정실적·소비자물가는 미확정, 한은 가중평균금리는 확정으로 등록되고 30일 창에 금통위(10/22)·FOMC(10/29)·삼성 잠정실적이 보인다", () => {
+    assert(r.samsungStatus === "tentative", `samsungStatus ${r.samsungStatus}`);
+    assert(r.cpiStatus === "tentative", `cpiStatus ${r.cpiStatus}`);
+    assert(r.bokWavgStatus === "confirmed", `bokWavgStatus ${r.bokWavgStatus}`);
+    const ids = r.upcoming30.map((e) => e.id);
+    for (const id of ["samsung-2026-q3-prelim", "bok-2026-10", "fomc-2026-10", "bok-wavg-rate-2026-09"]) {
+      assert(ids.includes(id), `30일 창에 ${id} 없음: ${JSON.stringify(ids)}`);
+    }
   });
 
   check("findUpcoming on 2026-09-30 (3 days) returns the D-1/D-1/D-2 events in order", () => {
