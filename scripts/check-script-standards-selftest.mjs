@@ -136,6 +136,16 @@ check("부엉: 금박사 언급은 반드시 수정, 황소 문구('다들,')는
   const r = checkScriptStandards({ character: "owl", scenes, hookType: "T3" });
   assert(r.fix.some((f) => /금박사/.test(f)) && hasWarn(r, /황소특보 고유/) && !r.fix.some((f) => /황소특보 고유/.test(f)), JSON.stringify(r));
 });
+check("황소: 압축형 오프닝 B안(Owner 2026-10-02)도 고정 문구로 인정, 엉뚱한 문구는 잡는다", () => {
+  const b = [...bullScenes];
+  b[1] = "안녕, 투자 소식 정리해주는 황소특보야. 핵심만 짚어줄게.";
+  const ok = checkScriptStandards({ character: "bull", scenes: b, hookType: "T1" });
+  assert(!ok.fix.some((f) => /오프닝/.test(f)), JSON.stringify(ok.fix));
+  const bad = [...bullScenes];
+  bad[1] = "안녕, 나는 황소야. 오늘도 잘 부탁해.";
+  const r = checkScriptStandards({ character: "bull", scenes: bad, hookType: "T1" });
+  assert(r.fix.some((f) => /오프닝 고정 문구 없음/.test(f)), JSON.stringify(r.fix));
+});
 check("오프닝이 첫 씬이면 잡는다(훅 뒤로)", () => {
   const scenes = [OWL18_GOOD[1], OWL18_GOOD[0], ...OWL18_GOOD.slice(2)];
   const r = checkScriptStandards({ character: "owl", scenes, hookType: "T3" });

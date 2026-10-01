@@ -122,6 +122,9 @@ if (!fs.existsSync(assPath)) {
     events.get(key).lines.push(text);
   }
   const blocks = [...events.values()].sort((a, b) => a.start - b.start);
+  // 폭 한도 안에 도저히 못 넣는 숫자 합산 표기("77조 2천억 원이야" 792px > 760)처럼 불가피한 경계만, 스펙에 사유와 함께
+  // 적은 `captionBoundaryExceptions: [{ left, right, reason }]`로 예외 승인한다(경고로 남김, 2026-10-02 황소 14편). 규칙 자체는 그대로.
+  const boundaryException = (L, R) => (spec.captionBoundaryExceptions ?? []).find((e) => e.left === L && e.right === R && e.reason);
   let prev = null;
   const smallCaption = new Set();
   for (const b of blocks) {
@@ -136,12 +139,20 @@ if (!fs.existsSync(assPath)) {
     if (b.lines.length === 2) {
       const L = b.lines[0].split(" ").at(-1);
       const R = b.lines[1].split(" ")[0];
-      if (!Number.isFinite(splitPenalty(L, R))) mustFix.push(`금지 경계 줄바꿈: "${b.lines[0]} / ${b.lines[1]}"`);
+      if (!Number.isFinite(splitPenalty(L, R))) {
+        const ex = boundaryException(L, R);
+        if (ex) warn.push(`금지 경계 줄바꿈(스펙 예외 승인): "${b.lines[0]} / ${b.lines[1]}" — ${ex.reason}`);
+        else mustFix.push(`금지 경계 줄바꿈: "${b.lines[0]} / ${b.lines[1]}"`);
+      }
     }
     if (prev && b.start - prev.end < 0.2) {
       const L = prev.lines.at(-1).split(" ").at(-1);
       const R = b.lines[0].split(" ")[0];
-      if (!Number.isFinite(splitPenalty(L, R))) mustFix.push(`금지 경계 블록 분할: "${prev.lines.join(" ")} || ${b.lines.join(" ")}"`);
+      if (!Number.isFinite(splitPenalty(L, R))) {
+        const ex = boundaryException(L, R);
+        if (ex) warn.push(`금지 경계 블록 분할(스펙 예외 승인): "${prev.lines.join(" ")} || ${b.lines.join(" ")}" — ${ex.reason}`);
+        else mustFix.push(`금지 경계 블록 분할: "${prev.lines.join(" ")} || ${b.lines.join(" ")}"`);
+      }
     }
     if (b.end - b.start < 0.6) warn.push(`0.6초 미만 자막: "${b.lines.join(" ")}" (${(b.end - b.start).toFixed(2)}s)`);
     if (b.lines.join(" ").split(" ").length === 1 && b.lines.join("").length <= 3) warn.push(`한 어절 자막: "${b.lines.join(" ")}"`);

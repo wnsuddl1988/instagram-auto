@@ -132,8 +132,11 @@ export function checkScriptStandards({ character, scenes, hookType = null }) {
   if (softRepeats.length) warn.push(`연속 씬 '~야' 종결(확인, 다른 어미로 바꾸면 좋음): ${softRepeats.join(", ")}`);
 
   // 8) 오프닝 고정 문구(훅 뒤 한 문장)
+  // 황소: 옛 고정 문구(13편까지)와 압축형 B안(Owner 2026-10-02 "오프닝 B안으로 진행하자", 14편부터)을 둘 다 인정한다.
   const OPENING =
-    character === "owl" ? /안녕, 매일 경제 뉴스를 콕 집어 전해주는 부엉박사야\./ : /안녕, 투자 소식을 쉽고 빠르게 정리해주는 황소특보야\./;
+    character === "owl"
+      ? /안녕, 매일 경제 뉴스를 콕 집어 전해주는 부엉박사야\./
+      : /안녕, 투자 소식(을 쉽고 빠르게)? 정리해주는 황소특보야\./;
   const openIdx = find(OPENING);
   if (openIdx < 0) fix.push("오프닝 고정 문구 없음");
   else if (openIdx === 0) fix.push("오프닝(자기소개)이 첫 씬 — 훅 뒤로(규칙 17 H2)");

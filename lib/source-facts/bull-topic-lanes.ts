@@ -154,6 +154,7 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   { episode: 12, summary: "서학개미 추석 연휴 미국주식 순매수(메타·샌디스크·KORU 등 예탁결제원 집계 9/24~25)와 파킹형 ETF(SGOV) 순매도", lane: "decoupling_flows", kind: "structure", domain: "other", semiconductorRelated: false, titleShape: "question" },
   // 2026-10-01 배포 완료(13편)
   { episode: 13, summary: "외국인 코스피 5개월 135조 순매도(9월 21조, 삼성전자·SK하이닉스 76.6%)와 복귀 조건(호실적 확인+내년 이익 전망 상향)·삼성전자 3분기 잠정실적 연결, 개인 양손투자", lane: "decoupling_flows", kind: "structure", domain: "flows_structure", semiconductorRelated: true, titleShape: "question" },
+  { episode: 14, summary: "마이크론 역대급 실적(매출 542억 달러·1년 전 4.8배)인데 주가는 발표 직후 내렸다가 2% 올랐다 — 이익률 전망 87→86.3%(CFO 성과급 확대) vs 수요 기대(CEO 내년·내후년 수급 빠듯), 한국 반응(코스피 1.95%·삼성 2.8%·SK하이닉스 3.2%)·삼성·SK 3분기 영업이익 전망 연결(9편 후속)", lane: "cause_explainer", kind: "event", domain: "semiconductor", semiconductorRelated: true, titleShape: "question" },
 ];
 
 export interface BullTopicProposal {

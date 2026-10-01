@@ -83,14 +83,21 @@ const mergeGap = (arr, gap) => { const out = []; for (const x of arr) { const l 
 const report = [];
 const anchors = []; // [alignmentTime, realTime]
 let fixedCount = 0;
+// 밀림은 연속적으로 변한다 — 이전 씬의 이동량에서 ±0.8초 안에서만 찾는다(2026-10-02 황소 14편 사고: 전체 범위를
+// 찾으면 s15가 다음 씬(s16) 발화에 걸려 이동 1.48초·발화끝이 s16 안으로 들어가는 가짜 최대값이 나왔다. 실제는 약 +0.56초).
+let prevShift = 0;
 for (const info of scenesInfo) {
-  let best = { sh: 0, sc: -1 };
-  for (let sh = -0.8; sh <= 1.8; sh += 0.02) {
+  let best = { sh: prevShift, sc: -1 };
+  for (let sh = prevShift - 0.8; sh <= prevShift + 0.8 + 1e-9; sh += 0.02) {
     let sc = 0;
     for (const w of info.ws) for (const a of speech) sc += ov([w.s + sh, w.e + sh], a);
+    // 앞 씬 이동량에서 멀수록 감점(0.4점/초) — 겹침 점수가 거의 평평한 씬(14편 s15: 0.56초 4.07 vs 1.36초 4.11)에서
+    // 다음 씬 발화에 걸린 가짜 최대값 대신 연속적인 이동량을 고르게 한다. 진짜 밀림 점프(0.6초 안팎)는 겹침 차이가 이보다 크다.
+    sc -= 0.4 * Math.abs(sh - prevShift);
     if (sc > best.sc + 1e-9) best = { sh, sc };
   }
   info.shift = best.sh;
+  prevShift = best.sh;
   const apply = Math.abs(best.sh) >= THRESHOLD;
   if (!apply) {
     // 정상 씬은 "이동 0" 앵커로 고정한다 — 앞뒤 보정 씬의 선형 보간이 정상 씬 안으로 번지지 않게

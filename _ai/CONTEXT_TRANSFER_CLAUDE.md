@@ -1,4 +1,13 @@
-# 진행 중 작업 인계 — 최신 2026-09-30
+# 진행 중 작업 인계 — 최신 2026-10-02
+
+## ★★ 2026-10-02 저장(Owner "여기까지 저장해놓고 나중에 다시 하자") — 부엉 표시 19편(파일 ep20) 일시 중단
+- **번호 주의: 표시 19편 = 파일 ep20.** 보고·문서에서는 "표시 19편"으로 쓴다(Owner 2026-10-02 정정).
+- 소재: 광고 최고금리 vs 내가 받는 금리(예금). 게시 예정 **10/4(일), 시점은 Owner 지시**. 적금 12% 씬(구 s12·s13)은 Owner 지시로 삭제 → **15씬·533자·본편 111.38초**.
+- 완료: 대본 v4(`C:/tmp/owl-ep19-draft/deposit-scenes-v4.json`, 검사기 수정 0) · TTS(output-v1 원본 + **output-v2 = 컷본, 조립 기준**: `C:/tmp/money-shorts-os/owl-ep20-tts/output-v2/`) · 스펙 `scripts/_owl-v2-ep20-assembly-spec.mjs`(15씬) · 이미지 15장 `C:/tmp/owl-v2-ep20-images/owl_ep20_s1~s15.png`(판정 기록 체크리스트 C) · 영상 프롬프트 `_ai/owl-ep20-video-generation-prompts.md`(8초 5·10초 10, 영상 저장명 1~15.mp4 규칙은 파일 상단 참조).
+- 재사용 도구: `scripts/cut-scenes-from-tts-once.mjs`(연속 TTS에서 씬 삭제 — 오디오·alignment·summary·tts-script 일괄).
+- **이어서 할 일(순서)**: ① Owner Veo 영상 생성 + output-v2 오디오 컷 이음매(s11→s12) 청취 확인 ② 영상 검수(입 멈춤·글자·워터마크) → 조립(`run-owl-assemble-shorts-v2.mjs`, output-v2 summary/tts-script) → CTA 결합(`owl-cta-fixed-v3`, `--scene8-start`≈111.38, `--alignment` output-v2) → 오디오 마감 → QA(edge-review 씬별) ③ **10/3 금리 재확인**(5대 은행 3.5% 안팎·저축은행 4.03%·지방은행 4.04%, 바뀌면 해당 씬만 재생성 여부 Owner 결정) → 커버(제목 "정체" 금지)·캡션(법인세 14조 8천억·은행채 설명, 추천 아님 고지)·preflight → 배포는 Owner 지시.
+- **미커밋**: 스펙·컷 도구·영상 프롬프트·초안 문서(`_ai/owl-ep20-deposit-rate-script-draft.md`)·체크리스트·장부(`lib/source-facts/owl-topic-lanes.ts` 19편)+테스트 수정. 커밋·푸시는 Owner 승인 후. 메모리 `project_owl_ep19_withholding_in_progress_2026_10_01.md`에 같은 내용.
+- 이 저장 직후 Owner 지시: **황소특보 다음 편 소재 선정** → 완료(후보 42개 보고, Owner가 1+2번 결합 선택). **황소 14편 = (교체됨) 마이크론 역대급 실적인데 주가 안 움직인 이유 × 삼성·SK 3분기 (Owner "3번 마이크론으로 교체해서 진행해", 9편 후속)**, 대본 `C:/tmp/bull-ep14-draft/micron-scenes-v3.json` 검사기 수정 0, Owner 대본 확정 대기(오프닝 A/B/C 결정 포함). 문서 `_ai/bull-ep14-micron-script-draft.md`(폐기된 증권사 리포트 소재 문서는 `_ai/bull-ep14-research-export-script-draft.md`로 보관, 6번 대미투자 발표는 15편 후보), 체크리스트 `_ai/bull-ep14-production-checklist.md`, 스캔 `C:/tmp/bull-topic-scan-ep14/`, 메모리 `project_bull_ep14_research_export_in_progress_2026_10_02.md`. **(2026-10-02 갱신) 14편 완성·배포 전 게이트 통과**(조립·CTA·QA 0·커버·압축·콘텐츠 유닛) — 자산 `C:/tmp/bull-ep14-final/owl_episode_final_mastered.mp4`, `C:/tmp/bull-ep14-publish/owl-content-unit.json`, 커버 `C:/tmp/bull-cover-ep14/`. **14편은 2026-10-02 배포 완료**(릴스 instagram.com/reel/Dd-AhpPDFh2/, 유튜브 youtube.com/shorts/IWe9UxbyqEc, 스토리 게시, 장부 14편 추가·테스트 14/14). 다음: 24~48시간 뒤 성과 수집, 삼성전자 3분기 잠정실적(10/7~8) 후속편, 6번 대미투자 발표 15편 후보(공식 자료 확인 먼저). 이 편에서 고친 도구: 정렬 보정 `fix-tts-alignment-from-audio-once.mjs`(탐색 범위 제한+연속성 감점), QA `captionBoundaryExceptions`(불가피한 자막 경계 예외), 오프닝 B안 검사기 규칙.
 
 ## ★ 2026-09-30 기준 — 먼저 읽을 것
 - 오늘 변경·결함 수정·미결 항목의 원문은 **`_ai/CURRENT_STANDARDS.md` §7 맨 위 "2026-09-30 변경 반영 현황과 미결 항목"** 과 최우선 규칙 11~17. 이 문서보다 그쪽이 우선한다.
