@@ -55,6 +55,8 @@ const results: Record<string, any> = {};
 results.laneIds = BULL_TOPIC_LANES.map((l) => l.id);
 results.ledgerEpisodes = BULL_EPISODE_LEDGER.map((e) => e.episode);
 results.ledgerSemis = BULL_EPISODE_LEDGER.filter((e) => e.semiconductorRelated).length;
+// 가상 시나리오 시험은 11편까지의 고정 장부로 한다(실제 장부에 12편 이후가 추가돼도 시험이 흔들리지 않게).
+const LEDGER_1_11 = BULL_EPISODE_LEDGER.filter((e) => e.episode <= 11);
 
 const clean: BullTopicProposal = {
   title: "코스피는 63% 올랐는데, 외국인은 170조를 팔았다",
@@ -64,11 +66,13 @@ const clean: BullTopicProposal = {
   semiconductorRelated: false,
   titleShape: "number",
 };
-results.clean = assessBullTopicProposal(clean);
+results.clean = assessBullTopicProposal(clean, LEDGER_1_11);
+// 실제 장부(12편 등록 후): 12편과 같은 레인(decoupling_flows)·같은 제목 모양(question)이면 경고
+results.realLaneConsec = assessBullTopicProposal({ ...clean, titleShape: "question" });
 
 // 사건형 → 장부에 가상 12·13편(사건형)을 더하면 최근 4편(10~13)에 사건형 2편 + 이번 = 3편이 되어 경고
 const ledgerEventHeavy: BullEpisodeTopicRecord[] = [
-  ...BULL_EPISODE_LEDGER,
+  ...LEDGER_1_11,
   { episode: 12, summary: "가상 12편", lane: "cause_explainer", kind: "event", domain: "energy", semiconductorRelated: false, titleShape: "question" },
   { episode: 13, summary: "가상 13편", lane: "policy_change", kind: "event", domain: "bio", semiconductorRelated: false, titleShape: "why" },
 ];
@@ -76,14 +80,14 @@ results.eventHeavy = assessBullTopicProposal({ ...clean, kind: "event", lane: "d
 
 // 반도체 계열을 한 번 더 하면 (9편 포함 2편) 허용, 장부에 반도체 편이 더 있으면 경고(가상 12편)
 const ledgerWithSemi12: BullEpisodeTopicRecord[] = [
-  ...BULL_EPISODE_LEDGER,
+  ...LEDGER_1_11,
   { episode: 12, summary: "가상 12편", lane: "cause_explainer", kind: "concept", domain: "semiconductor", semiconductorRelated: true, titleShape: "declaration" },
 ];
-results.semiOnceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }); // 8~11 중 9편 반도체 → 총 2
+results.semiOnceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }, LEDGER_1_11); // 8~11 중 9편 반도체 → 총 2
 results.semiTwiceMore = assessBullTopicProposal({ ...clean, semiconductorRelated: true }, ledgerWithSemi12); // 9~12 중 9,12 + 이번 → 3
 
 // 직전 11편과 같은 레인·같은 제목 모양
-results.sameLaneShape = assessBullTopicProposal({ ...clean, lane: "cause_explainer", titleShape: "contrast" });
+results.sameLaneShape = assessBullTopicProposal({ ...clean, lane: "cause_explainer", titleShape: "contrast" }, LEDGER_1_11);
 
 // 금지 제목 틀
 results.bannedWhy = assessBullTopicProposal({ ...clean, title: "현대차 주가가 빠지는 진짜 이유" });
@@ -115,9 +119,14 @@ if (r) {
     assert(new Set(r.laneIds).size === 10, "duplicate lane ids");
   });
 
-  check("ledger covers episodes 1-11 without duplicates; 6 of 11 are semiconductor-related", () => {
-    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), JSON.stringify(r.ledgerEpisodes));
+  check("ledger covers episodes 1-12 without duplicates; 6 of 12 are semiconductor-related", () => {
+    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), JSON.stringify(r.ledgerEpisodes));
     assert(r.ledgerSemis === 6, `ledgerSemis ${r.ledgerSemis}`);
+  });
+
+  check("real ledger: same lane and title shape as episode 12 are flagged", () => {
+    assert(r.realLaneConsec.warnings.some((w) => w.includes("직전 12편") && w.includes("같은 레인")), JSON.stringify(r.realLaneConsec.warnings));
+    assert(r.realLaneConsec.warnings.some((w) => w.includes("같은 제목 모양")), JSON.stringify(r.realLaneConsec.warnings));
   });
 
   check("clean proposal has no warnings and counts are reported", () => {

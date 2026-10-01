@@ -15,6 +15,8 @@
  *   6 섹터·전망 뉴스        bull-topic-sector-news-search --arm                (네이버)
  *   7 위험고지·투자심리·수급 bull-topic-risk-awareness-news-search --arm      (네이버)
  *   8 공식 지표            owl-indicator-snapshot --arm                       (ECOS·KOSIS, 2026-09-30 밤 추가)
+ *   9 인스타 성과          instagram-insights-collect --arm                   (읽기 전용, 2026-10-01 추가)
+ *  10 유튜브 성과          youtube-analytics-collect --arm                    (읽기 전용, 2026-10-01 추가)
  * 자격증명은 no-log 래퍼(run-owner-command-with-local-env-no-log.mjs)로만 주입된다(값 읽기 없음).
  *
  * 사용: node scripts/run-bull-topic-full-scan-once.mjs [--out-dir C:/tmp/bull-topic-scan-YYYY-MM-DD]
@@ -43,6 +45,10 @@ const STEPS = [
   // 2026-09-30 밤 추가: 공식 지표(ECOS 기준금리·물가·환율·국고채3년·코스피·경상·상품수지 + KOSIS 고용률·실업률).
   // 부엉과 같은 러너를 쓴다 — 매크로 번역·환율 소재의 숫자를 기사 대신 공식 발표값으로 대조한다.
   { n: 8, name: "공식 지표 ECOS·KOSIS", file: "08-indicators.txt", args: [WRAPPER, "owl-indicator-snapshot", "--arm"] },
+  // 2026-10-01 추가(Owner 지적 "러너 다 돌린 거 맞아?"): 황소 오케스트레이터에 성과 단계가 없어 12편 소재 선정 때 빠졌다.
+  // 어떤 소재·훅이 실제로 먹혔는지(조회·평균 시청·저장)를 순위에 반영하도록 읽기 전용 수집 2개를 포함한다(부엉 오케스트레이터와 동일).
+  { n: 9, name: "인스타 성과(읽기 전용)", file: "09-instagram-insights.txt", args: [WRAPPER, "instagram-insights-collect", "--arm"] },
+  { n: 10, name: "유튜브 성과(읽기 전용)", file: "10-youtube-analytics.txt", args: [WRAPPER, "youtube-analytics-collect", "--arm"] },
 ];
 
 const rows = [];
@@ -76,7 +82,7 @@ const md = [
   laneSummary,
   "```",
   "",
-  failed.length ? `★ 실패 ${failed.length}건: ${failed.map((x) => x.name).join(", ")} — 원인을 고치고 다시 실행하기 전에는 소재를 제안하지 않는다.` : "전 단계 실행 완료. 다음: 후보마다 run-bull-topic-lane-mix-check-once.mjs(쏠림) + 원문 팩트 확인 + 담당 캐릭터·특보 근접도 판정.",
+  failed.length ? `★ 실패 ${failed.length}건: ${failed.map((x) => x.name).join(", ")} — 원인을 고치고 다시 실행하기 전에는 소재를 제안하지 않는다.` : "전 단계 실행 완료. 다음: 09·10번 성과(편별 조회·평균 시청)를 읽고 \"황소에서 실제로 먹힌 소재·훅\"을 순위에 반영 → 후보마다 run-bull-topic-lane-mix-check-once.mjs(쏠림) + 원문 팩트 확인 + 담당 캐릭터·특보 근접도 판정.",
   "",
 ].join("\n");
 fs.writeFileSync(path.join(OUT_DIR, "SCAN_CHECKLIST.md"), md, "utf8");

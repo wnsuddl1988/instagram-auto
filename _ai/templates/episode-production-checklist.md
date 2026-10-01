@@ -31,7 +31,9 @@
 - ⬜ 입 멈춤 `check-clip-speech-timing-once.mjs` + 경고 클립 프레임 확인.
 
 ## E. 조립·마감(A-7 한 번에)
+- ⛔ **조립 전 TTS alignment 보정**(연속 TTS는 중간부터 0.6~0.9초 밀릴 수 있음, 12편 사고): `node scripts/fix-tts-alignment-from-audio-once.mjs --tts-summary … --tts-script …` → 보정되면 `…audio-fixed.json`·`…audio-fixed.alignment.json`을 조립·CTA 결합·QA에 사용(CTA `--scene8-start`·`--alignment`도 보정본 기준). 증거: 로그의 씬별 이동량.
 - ⬜ 조립 → CTA 결합(`cta-join-report.json` PASS) → 워터마크 제거 → 오디오 마감(-14 LUFS).
+- 👁 **제목·자막 크기·줄 수**(Owner 2026-10-02): 제목 문구는 바꾸지 말고 줄을 나눈다(최대 3줄, 줄별 실제 크기 ≥100px), 자막은 최대 2줄·96px(새 체계 편). 증거: QA 정보의 "제목 N줄, 실제 글자 …px" 한 줄 + 프레임 2~3장 육안.
 - 👁 QA가 만든 `qa/edge-review-*.png`(원본 1:1)를 보고 `qa/edge-review.json`에 **씬마다** ok/over 기록(over = 주황 안전선 넘음).
 - ⛔ **QA** `run-episode-qa-once.mjs` → 반드시 수정 0(대본 기준·훅·자막·싱크·워터마크·음량·edge-review 기록 포함).
 

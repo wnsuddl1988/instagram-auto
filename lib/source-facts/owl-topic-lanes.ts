@@ -84,6 +84,8 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   // 최저임금이 16편, 전세사기가 17편이 된다. 파일·스펙 이름은 옛 번호(최저임금=ep17, 전세사기=ep18)를 그대로 쓴다.
   { episode: 16, summary: "최저임금 인상이 내 월급에 주는 영향(실업급여 하한액 연결, 파일 ep17)", lane: "income_jobs", domain: "jobs_income", titleShape: "question", published: false },
   { episode: 17, summary: "전세사기 최소보장제 11/13 시행(파일 ep18)", lane: "policy_countdown", domain: "housing", titleShape: "declaration", published: false },
+  // 2026-10-01: 새 소재 첫 편. 배포 10/3 예정. 파일·스펙 이름은 ep19(ep18 파일은 전세사기가 사용 중).
+  { episode: 18, summary: "청년미래적금 2차 신청 10/7~16(유형 직접 선택·도약계좌 갈아타기, 파일 ep19)", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "countdown", published: false },
 ];
 
 /**

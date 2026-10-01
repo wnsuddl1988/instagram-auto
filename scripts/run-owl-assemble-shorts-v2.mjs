@@ -318,15 +318,19 @@ const OVERLAY_STYLE = {
 //     인스타는 y≈1720부터) → 하단 채널명 띠는 가려져 의미가 없어 뺀다(footerChannelBar: true인 스펙만 유지).
 //   - 리스크 고지도 하단(y≈1658~1758)이라 유튜브 "AI·공개·조회수" 줄에 가렸다 → 제목 바로 아래로 옮긴다.
 //   - 좌우 크롭은 실측 약 5%(원본 57px)라 안전폭 864px로 충분하다.
+// ★ 2026-10-02 Owner 검수 지적(황소 12편 "제목·자막 글자 크기가 너무 작게 느껴진다"): 제목은 줄이 12~13자라 폭 864px에 맞춰
+// 92px → 약 66px로 줄어 그려졌다. 새 체계(v2) 편은 기준 크기를 키우고(제목 92→108, 자막 84→96) **제목은 줄당 8자 이하**를 규칙으로 한다
+// (8자 × 108px ≈ 810px ≤ 864px). 옛 체계 편(재조립 시)은 기존 값 유지.
+const LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SPEC.captionLayout === "v2";
 const HEADER_BAR = Object.freeze({
   height: 0,            // 영상을 밀어내지 않는다
-  scrimHeight: 580,     // 제목 + 리스크 고지 뒤 어두운 층
+  scrimHeight: LAYOUT_V2 ? 650 : 580,     // 제목 + 리스크 고지 뒤 어두운 층
   scrimColor: "black@0.45",
   titleColor: "#FFFFFF",
   accentColor: "#FFD54A",
-  titleSize: 92,
+  titleSize: LAYOUT_V2 ? 108 : 92,
   topY: 232,
-  lineGap: 112,
+  lineGap: LAYOUT_V2 ? 126 : 112,
 });
 const FOOTER_BAR = Object.freeze({
   height: 150,
@@ -725,7 +729,7 @@ function rebuildCaptionText(caption, words, replacedWordTimings) {
 // y=1290 자막이 카드 글자를 덮는다(2026-09-30 부엉 18편 시험 조립에서 확인). 그런 편은 카드 아래 y=1470·폭 864로 둔다.
 const CAPTION_LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SPEC.captionLayout === "v2";
 const CAPTION_MAX_WIDTH_PX = CAPTION_LAYOUT_V2 ? 760 : TEXT_SAFE_WIDTH_PX;
-const CAPTION_FONT_SIZE = 84;
+const CAPTION_FONT_SIZE = CAPTION_LAYOUT_V2 ? 96 : 84; // 2026-10-02: v2 편 84→96(Owner "너무 작게 느껴진다"), 폭 760 안에서 줄당 약 8자
 const CAPTION_FIXED_X = 540;      // 항상 화면 중앙
 const CAPTION_FIXED_Y = CAPTION_LAYOUT_V2 ? 1290 : 1470;
 

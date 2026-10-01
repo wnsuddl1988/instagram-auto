@@ -250,13 +250,15 @@ function textWidthRatio(text) {
 
 // run-owl-assemble-shorts-v2.mjs의 HEADER_BAR와 동일한 값. 헤더만 그리고
 // 채널명 바는 그리지 않는다 — CTA 클립에는 이미 채널명 바가 고정으로 있다.
+// 2026-10-02: 새 체계(v2) 편은 조립기와 같이 제목 108px(줄당 8자 이하 전제)·줄 간격 126(Owner "글자 크기가 너무 작게 느껴진다").
+const LAYOUT_V2 = Boolean(OWL_ASSEMBLY_SPEC.sceneBackgrounds) || OWL_ASSEMBLY_SPEC.captionLayout === "v2";
 const HEADER_BAR = Object.freeze({
-  scrimHeight: 420,
+  scrimHeight: LAYOUT_V2 ? 540 : 420,
   titleColor: "#FFFFFF",
   accentColor: "#FFD54A",
-  titleSize: 92,
+  titleSize: LAYOUT_V2 ? 108 : 92,
   topY: 232, // 2026-09-30 배치 v2: 앱 상단 아이콘을 피해 조립기와 같은 높이로 내림
-  lineGap: 112,
+  lineGap: LAYOUT_V2 ? 126 : 112,
 });
 // 2026-09-30: 940 → 864. 화면비가 긴 폰에서 앱이 좌우를 각 약 10%씩 잘라내 헤더 끝 글자가
 // 잘릴 수 있다(조립기 TEXT_SAFE_WIDTH_PX와 같은 값).

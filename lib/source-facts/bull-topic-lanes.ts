@@ -150,6 +150,8 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   { episode: 9, summary: "오픈AI 신모델 취소 × 마이크론 실적 D-1", lane: "event_countdown", kind: "schedule", domain: "semiconductor", semiconductorRelated: true, titleShape: "question" },
   { episode: 10, summary: "11/2 저PBR 기업 공표 × 10/22 공시 마감(PBR 개념·시각차)", lane: "policy_change", kind: "schedule", domain: "dividend_policy", semiconductorRelated: false, titleShape: "declaration" },
   { episode: 11, summary: "조선주 고점 대비 -44~51%인데 조선 3사 이익 전망은 올해 9.8조→내년 11.8조(수주 시차·새 주문 점유율·환율)", lane: "cause_explainer", kind: "structure", domain: "industrial", semiconductorRelated: false, titleShape: "contrast" },
+  // 2026-10-01: 제작 중(배포 전)부터 등록 — 다음 소재 제안에서 같은 소재·쏠림을 잡기 위함(규칙 11). 배포 후에도 그대로 둔다.
+  { episode: 12, summary: "서학개미 추석 연휴 미국주식 순매수(메타·샌디스크·KORU 등 예탁결제원 집계 9/24~25)와 파킹형 ETF(SGOV) 순매도", lane: "decoupling_flows", kind: "structure", domain: "other", semiconductorRelated: false, titleShape: "question" },
 ];
 
 export interface BullTopicProposal {

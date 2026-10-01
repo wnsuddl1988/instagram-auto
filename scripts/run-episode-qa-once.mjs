@@ -12,6 +12,8 @@
  *   6. 안전선 시트 생성(이미지·완성본) — 사람이 마지막으로 눈으로 본다
  *   7. (2026-09-30 밤) 대본 기준 대조(_script-standards.mjs, 규칙 26) — 반드시 수정이면 QA도 막힌다
  *   8. (2026-09-30 밤) 보드·카드 씬 오른쪽 끝 확대 시트 + 판정 기록(edge-review.json) 필수 — 기록이 없거나 초과 씬이 있으면 반드시 수정
+ *   9. (2026-10-02) 자막-음성 대조: 완성본 오디오 무음 감지로 "발화가 끝나기 전에 자막이 사라지는 곳"이 있으면 반드시 수정
+ *  10. (2026-10-02) 글자 크기·줄 수: 자막 ASS의 실제 글자 크기(새 체계 편 96px 미만 금지)·자막 최대 2줄, 제목 줄별 실제 크기(100px 미만 금지)·제목 최대 3줄
  * 결과: <final-dir>/qa-report.md + 콘솔 요약. 반드시 고쳐야 하는 항목이 있으면 종료 코드 1.
  *
  * 사용:
@@ -45,8 +47,16 @@ if (!SPEC_MODULE || !SPEC_EXPORT || !TTS_SUMMARY || !ASSEMBLY_DIR || !FINAL) {
 }
 const spec = (await import(new URL(SPEC_MODULE, import.meta.url).href))[SPEC_EXPORT];
 // 조립기 값과 같아야 한다(run-owl-assemble-shorts-v2.mjs): 새 체계 편 760px, 그 전 편 864px.
-const CAPTION_FONT = 84;
-const CAPTION_WIDTH = spec.sceneBackgrounds || spec.captionLayout === "v2" ? 760 : 864;
+const LAYOUT_V2 = Boolean(spec.sceneBackgrounds) || spec.captionLayout === "v2";
+const CAPTION_WIDTH = LAYOUT_V2 ? 760 : 864;
+// 글자 크기 기준(Owner 2026-10-02 "제목·자막 글자가 작게 느껴진다" → 새 체계 편 제목 108px·자막 96px로 확정).
+// 아래 최소값은 그 확정 크기에서 도출한 Claude 설정 수치다(Owner가 숫자를 말한 것은 아님).
+const MIN_CAPTION_FONT_V2 = 96;
+const MIN_TITLE_PX_V2 = 100;   // 줄별로 실제 그려지는 크기(폭 864에 맞춰 줄어든 뒤)
+const TITLE_BASE_PX = LAYOUT_V2 ? 108 : 92;
+const TITLE_SAFE_WIDTH = 864;
+const MAX_TITLE_LINES = 3;      // Owner 2026-10-02 "제목은 3줄로 만들어도 괜찮아"
+const MAX_CAPTION_LINES = 2;    // Owner 2026-10-02 "자막은 2줄까지만"
 const mustFix = [];
 const warn = [];
 const info = [];
@@ -103,16 +113,20 @@ if (!fs.existsSync(assPath)) {
     if (!line.startsWith("Dialogue:")) continue;
     const parts = line.split(",");
     const text = line.slice(line.indexOf(",,", line.indexOf("OwlCaption")) + 2).replace(/^0,0,0,,/, "").replace(/\{[^}]*\}/g, "");
+    const fs = Number((/\\fs(\d+)/.exec(line) ?? [])[1]) || 84; // ASS에 실제로 기록된 글자 크기
     const key = `${parts[1]}|${parts[2]}`;
-    if (!events.has(key)) events.set(key, { start: toSec(parts[1]), end: toSec(parts[2]), lines: [] });
+    if (!events.has(key)) events.set(key, { start: toSec(parts[1]), end: toSec(parts[2]), lines: [], fs });
     events.get(key).lines.push(text);
   }
   const blocks = [...events.values()].sort((a, b) => a.start - b.start);
   let prev = null;
+  const smallCaption = new Set();
   for (const b of blocks) {
+    if (b.lines.length > MAX_CAPTION_LINES) mustFix.push(`자막 ${b.lines.length}줄(최대 ${MAX_CAPTION_LINES}줄, Owner 지시): "${b.lines.join(" / ")}"`);
+    if (LAYOUT_V2 && b.fs < MIN_CAPTION_FONT_V2) smallCaption.add(b.fs);
     for (const l of b.lines) {
-      const w = textWidthRatio(l) * CAPTION_FONT;
-      if (w > CAPTION_WIDTH + 1) mustFix.push(`자막 폭 초과 ${Math.round(w)}px: "${l}"`);
+      const w = textWidthRatio(l) * b.fs;
+      if (w > CAPTION_WIDTH + 1) mustFix.push(`자막 폭 초과 ${Math.round(w)}px(글자 ${b.fs}px): "${l}"`);
       if (/[일이삼사오육칠팔구십백천](년|월|개월|만|퍼센트)/.test(l)) mustFix.push(`읽는 표기 숫자 잔존: "${l}"`);
     }
     if (b.lines.length === 2) {
@@ -129,7 +143,19 @@ if (!fs.existsSync(assPath)) {
     if (b.lines.join(" ").split(" ").length === 1 && b.lines.join("").length <= 3) warn.push(`한 어절 자막: "${b.lines.join(" ")}"`);
     prev = b;
   }
-  info.push(`자막 ${blocks.length}블록`);
+  if (smallCaption.size) mustFix.push(`자막 글자가 너무 작음(${[...smallCaption].join("·")}px, 새 체계 편 최소 ${MIN_CAPTION_FONT_V2}px) → 조립기 CAPTION_FONT_SIZE 확인 후 재조립`);
+  info.push(`자막 ${blocks.length}블록, 글자 ${[...new Set(blocks.map((b) => b.fs))].join("·")}px, 최대 ${Math.max(...blocks.map((b) => b.lines.length))}줄`);
+
+  // 2-1) 제목(headerTitle): 줄별 실제 그려지는 크기 = 기준 크기를 폭 864에 맞춰 줄인 값(조립기와 같은 계산)
+  const title = spec.headerTitle ?? [];
+  if (title.length > MAX_TITLE_LINES) mustFix.push(`제목 ${title.length}줄(최대 ${MAX_TITLE_LINES}줄, Owner 지시)`);
+  const sizes = title.map((l) => {
+    const natural = textWidthRatio(l) * TITLE_BASE_PX;
+    return natural > TITLE_SAFE_WIDTH ? Math.floor(TITLE_BASE_PX * (TITLE_SAFE_WIDTH / natural)) : TITLE_BASE_PX;
+  });
+  const smallTitle = title.map((l, i) => ({ l, px: sizes[i] })).filter((x) => LAYOUT_V2 && x.px < MIN_TITLE_PX_V2);
+  if (smallTitle.length) mustFix.push(`제목 글자가 너무 작게 그려짐(최소 ${MIN_TITLE_PX_V2}px): ${smallTitle.map((x) => `"${x.l}" ${x.px}px`).join(", ")} → 문구는 그대로 두고 줄을 나눈다(최대 ${MAX_TITLE_LINES}줄, 줄이 길수록 폭에 맞춰 줄어듦)`);
+  info.push(`제목 ${title.length}줄, 실제 글자 ${sizes.join("·")}px`);
 }
 
 // 3) 리스크 고지(황소특보)
@@ -181,6 +207,32 @@ if (spec.imageCharacter === "bull3dv1" || spec.characterDisplayName === "황소�
     }
     const leads = cs.cuts.map((c) => c.leadSec);
     info.push(`씬 전환 싱크: 컷 ${cs.cuts.length}개, 화면이 발화보다 ${Math.min(...leads).toFixed(2)}~${Math.max(...leads).toFixed(2)}초 먼저 넘어감, 누적 오차 ${cs.maxDriftSec}s`);
+  }
+}
+
+// 4-0b) 자막 vs 실제 음성 대조(2026-10-02 황소 12편 사고 — 연속 TTS의 alignment가 중간부터 0.6~0.9초 밀려 s13~s16에서
+// 소리가 끝나기 전에 자막이 사라졌는데, 위 4-0은 조립 내부 정합만 봐서 통과시켰다). 완성본 오디오를 무음 감지해
+// 실제 발화 구간의 끝 직전(-0.25초)에 자막이 없으면 반드시 수정. 고정 CTA 구간(마지막 자막 이후)은 제외한다.
+// 해결: node scripts/fix-tts-alignment-from-audio-once.mjs 로 alignment를 보정한 요약으로 다시 조립.
+{
+  const assFile = path.join(ASSEMBLY_DIR, "owl_captions.ass");
+  if (fs.existsSync(assFile)) {
+    const toSec = (t) => { const [h, mm, s] = t.split(":"); return Number(h) * 3600 + Number(mm) * 60 + Number(s); };
+    const caps = fs.readFileSync(assFile, "utf8").split(/\r?\n/).filter((l) => l.startsWith("Dialogue:")).map((l) => {
+      const f = l.slice(9).split(",");
+      return { s: toSec(f[1].trim()), e: toSec(f[2].trim()) };
+    });
+    const lastCapEnd = Math.max(...caps.map((c) => c.e));
+    const r = spawnSync("ffmpeg", ["-hide_banner", "-i", FINAL, "-af", "silencedetect=noise=-38dB:d=0.18", "-vn", "-f", "null", "-"], { encoding: "utf8" });
+    const ss = [...r.stderr.matchAll(/silence_start: ([\d.]+)/g)].map((m) => Number(m[1]));
+    const se = [...r.stderr.matchAll(/silence_end: ([\d.]+)/g)].map((m) => Number(m[1]));
+    const speech = [];
+    let cur = 0;
+    for (let i = 0; i < ss.length; i += 1) { if (ss[i] - cur > 0.15) speech.push([cur, ss[i]]); cur = se[i] ?? 9999; }
+    const covered = (t) => caps.some((c) => t >= c.s - 0.02 && t <= c.e + 0.02);
+    const cut = speech.filter(([a, b]) => b - a >= 0.4 && a < lastCapEnd - 0.1 && !covered(b - 0.25));
+    if (cut.length) mustFix.push(`음성이 끝나기 전에 자막이 사라지는 발화 ${cut.length}곳(${cut.slice(0, 6).map(([a, b]) => `${a.toFixed(1)}~${b.toFixed(1)}초`).join(", ")}${cut.length > 6 ? " …" : ""}) → TTS alignment 밀림. fix-tts-alignment-from-audio-once.mjs로 보정한 요약·alignment로 다시 조립`);
+    else info.push(`자막-음성 대조: 발화 ${speech.filter(([a, b]) => b - a >= 0.4 && a < lastCapEnd - 0.1).length}곳 모두 끝까지 자막 표시`);
   }
 }
 

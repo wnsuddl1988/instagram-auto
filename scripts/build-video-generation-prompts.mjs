@@ -77,9 +77,10 @@ const scenes = spec.scenes.map((scene) => {
   const bg = spec.sceneBackgrounds?.[scene.bg];
   if (!bg?.videoStyle || !bg?.videoStatics) problems.push(`씬 ${scene.scene}: sceneBackgrounds["${scene.bg}"].videoStyle/videoStatics 없음`);
   if (!motion.action || !motion.mood) problems.push(`씬 ${scene.scene}: motion.action/mood 없음`);
-  // 티어: 8초/10초만. 두 손 카드는 8초 끝에서 카드가 사라지는 사고로 항상 10초.
+  // 티어: 8초/10초만. 소품(카드·보드)이 있는 씬은 항상 10초 — 8초 클립은 끝 0.5~1초에서 소품·글자가 사라진다
+  // (두 손 카드 사고 + 2026-10-01 황소 12편 s14 보드 글자 소실: 7.3s 흐려짐 → 7.9s 빈 보드). 10초 클립이면 사라지는 구간이 사용 구간(발화+쉼) 밖으로 밀린다.
   const raw = t?.raw ?? 0;
-  const tier = type === "card2" ? 10 : raw < 8 && 8 - raw >= 1 ? 8 : 10;
+  const tier = type !== "open" ? 10 : raw < 8 && 8 - raw >= 1 ? 8 : 10;
   return { scene, t, type, lines, bg, motion, tier };
 });
 if (problems.length > 0) {
@@ -133,14 +134,20 @@ MOTION DETAIL: ${motion.action} The character does not touch or move the board.
 MOTION DETAIL: ${motion.action} No props held.
 `;
   }
+  // 2026-10-01 강화(황소 12편 실측: 16개 중 15개가 대사 뒤 0.55~1.16초 입이 더 움직임): 2단계 구간 명시 + 목소리·음성도 금지
+  // + 끝에서 한 번 더 반복(recency). 효과는 다음 편에서 같은 도구(check-clip-speech-timing)로 측정해 12편 기준선(15/16 경고, 평균 초과 약 0.9초)과 비교한다.
   s += `
-SPEECH TIMING (HIGHEST PRIORITY): the character talks ONLY from ${s0}s to ${s1}s.
-During that time the mouth actively opens and closes in a natural speech
-rhythm — never closed-mouth talking. At ${s1}s the character finishes the
-sentence. From ${s1}s until the end of the clip (${T}s) the mouth stays gently
-closed in a soft, natural smile — no talking and no lip movement at all after
-${s1}s — while the eyes keep blinking and the head gives a small nod, as if
-waiting for the viewer's reaction.
+SPEECH TIMING (HIGHEST PRIORITY — this overrides every other instruction about the mouth and the voice):
+PHASE 1, from ${s0}s to ${s1}s: the character speaks. The mouth actively opens and
+closes in a natural speech rhythm — never closed-mouth talking.
+PHASE 2, from ${s1}s to the very last frame (${fmt(T - Number(s1))} seconds): the character is LISTENING, not speaking.
+The lips are fully closed and gently pressed together in a soft closed-mouth smile,
+and the jaw does not move at all. NO speech, NO syllables, NO mumbling, NO humming,
+NO vocal sounds, NO lip movement and NO mouth shapes of any kind. The audio track
+after ${s1}s contains only faint room ambience — no voice at all. The eyes keep
+blinking and the head gives slow, small nods, as if waiting for the viewer's reaction.
+Even if the character seems to be in the middle of a word at ${s1}s, finish that word
+and close the mouth immediately. Hold PHASE 2 until the very last frame.
 `;
   if (dialogue) {
     s += `
@@ -171,6 +178,10 @@ CRITICAL TEXT PRESERVATION (HIGHEST PRIORITY): treat the ${type === "board" ? "b
 ${T} seconds, including the very last frame. Render them exactly as pixels
 copied from the reference image, unchanged frame to frame, still fully
 visible and ${type === "board" ? "standing" : "held"} at the end.
+The text must be exactly as dark, sharp and fully readable in the LAST frame as in the FIRST frame.
+NO fade-out, NO dissolve, NO cross-fade, NO fade to white, NO washing-out, NO blurring and NO
+disappearing of the ${type === "board" ? "board" : "card"} or its text at any moment — especially in the final 2 seconds. The clip must
+not end with any transition effect; the last frame is a normal frame identical in text to the first.
 `;
   }
   s += `
@@ -178,15 +189,17 @@ NEGATIVE PROMPT: no face distortion, no proportion drift, no extra or
 malformed fingers, no warped, blurred, flickering, or misspelled text
 anywhere in the frame, no regenerated or reinterpreted signage, no
 background changes, no character redesign, no abrupt cut or freeze
-mid-motion, no talking or lip movement after ${s1}s, ${
+mid-motion, no talking, voice, mumbling or lip movement after ${s1}s, ${
     type === "board"
       ? "NO BOARD FALLING OVER OR SLIDING AT ANY POINT INCLUDING THE LAST SECOND, no board tilt or rotation at any point, "
       : type === "open"
         ? ""
         : "no card tilt or rotation at any point, "
-  }no camera zoom, crop, or framing drift at any point.
+  }${type !== "open" ? "no fade, dissolve, wash-out or disappearance of the text or props in the final seconds, " : ""}no camera zoom, crop, or framing drift at any point.
 
 MOOD: ${motion.mood}.
+
+FINAL REMINDER (read this last): the voice and all mouth movement STOP at ${s1}s. The last ${fmt(T - Number(s1))} seconds are silent, with the mouth closed${type !== "open" ? `, and the ${type === "board" ? "board" : "card"} text stays fully visible until the final frame` : ""}.
 `;
   return s;
 }
@@ -210,7 +223,8 @@ let doc = `# ${label} (${spec.title}, ${scenes.length}씬) 영상 생성 프롬�
 **★ 2026-09-30 변경 — 입 멈춤 시각(SPEECH TIMING):** 씬마다 "몇 초까지만 말하고 그 뒤엔 입을 다문다"를 넣었다
 (표의 '입 멈춤'). 받은 영상에서 입이 그 시각 뒤에도 계속 움직이면 검수에서 표시한다. 눈 깜빡임·호흡은 끝까지 유지.
 
-티어는 8초/10초 두 가지뿐. 발화 8초 미만·여유 1초 이상이면 8초, 그 외 10초, 두 손 카드 씬은 항상 10초.
+티어는 8초/10초 두 가지뿐. **소품(카드·보드) 씬은 항상 10초**(2026-10-01 — 8초 클립은 끝에서 글자·소품이 사라짐, 황소 12편 s14). 소품 없는 씬만 발화 8초 미만·여유 1초 이상이면 8초.
+**★ 2026-10-01 강화**: SPEECH TIMING을 "구간 2단계(말하는 구간 / 듣는 구간: 입 완전히 닫음·음성 없음)"로 바꾸고 프롬프트 끝에 FINAL REMINDER를 넣었다. 소품 씬엔 "끝 프레임까지 글자 선명, fade/dissolve 금지"를 더했다. 효과는 이 편 검수 때 12편 기준선(15/16 경고, 평균 초과 약 0.9초)과 비교한다.
 Gemini(Veo)로 배정하는 씬은 발화와 무관하게 항상 10초(입 멈춤 시각은 그대로).
 
 | 씬 | 이미지 | 저장할 영상 파일명 | 발화(raw) | 입 멈춤 | 티어 | 여유 | 샷 / 배경 | 형태 |
@@ -247,7 +261,7 @@ B안 영상은 \`{씬번호}b.mp4\`(예: \`${pilotItems[0].scene.scene}b.mp4\`)�
 doc += `## 완료 후 절차
 1. \`C:/Users/PC/Downloads/1.mp4\`~\`${scenes.length}.mp4\`(파일럿은 \`{n}b.mp4\`)로 저장하고 "${label} 영상 검수해줘"라고 알려주기
 2. 검수: 길이·시작/중반/끝 프레임·글자 보존·카메라 + \`scripts/check-clip-speech-timing-once.mjs\`로 입 멈춤 시각 측정
-3. 재생성이 필요한 씬은 같은 프롬프트로 다시 뽑는다(프롬프트 강화로 해결 시도 금지)
+3. 재생성이 필요한 씬은 같은 프롬프트로 다시 뽑는다. 글자 소실·입 멈춤 불이행은 위 강화 문구가 이미 들어 있으니 더 덧붙이지 말고 결과를 기록한다(효과 측정용)
 `;
 
 fs.mkdirSync(path.dirname(path.resolve(OUT)), { recursive: true });
