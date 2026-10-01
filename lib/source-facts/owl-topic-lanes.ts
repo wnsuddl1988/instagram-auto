@@ -86,6 +86,8 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   { episode: 17, summary: "전세사기 최소보장제 11/13 시행(파일 ep18)", lane: "policy_countdown", domain: "housing", titleShape: "declaration", published: false },
   // 2026-10-01: 새 소재 첫 편. 배포 10/3 예정. 파일·스펙 이름은 ep19(ep18 파일은 전세사기가 사용 중).
   { episode: 18, summary: "청년미래적금 2차 신청 10/7~16(유형 직접 선택·도약계좌 갈아타기, 파일 ep19)", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "countdown", published: false },
+  // 2026-10-01: 광고 최고금리 vs 내가 받는 금리(예금·적금). 배포 10/4(일) 예정. 파일·스펙 이름은 ep20(표시 19편 = 파일 ep20).
+  { episode: 19, summary: "광고 4% 예금의 기본금리·우대 조건(기본 3.54%+우대 0.5%p)·5대 은행 3.5% vs 저축은행 4.03%·적금 연 12%(기본 2%), 파일 ep20", lane: "money_calc", domain: "savings_deposit", titleShape: "contrast", published: false },
 ];
 
 /**
