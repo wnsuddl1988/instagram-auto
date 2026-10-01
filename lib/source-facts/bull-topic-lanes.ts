@@ -152,6 +152,8 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   { episode: 11, summary: "조선주 고점 대비 -44~51%인데 조선 3사 이익 전망은 올해 9.8조→내년 11.8조(수주 시차·새 주문 점유율·환율)", lane: "cause_explainer", kind: "structure", domain: "industrial", semiconductorRelated: false, titleShape: "contrast" },
   // 2026-10-01: 제작 중(배포 전)부터 등록 — 다음 소재 제안에서 같은 소재·쏠림을 잡기 위함(규칙 11). 배포 후에도 그대로 둔다.
   { episode: 12, summary: "서학개미 추석 연휴 미국주식 순매수(메타·샌디스크·KORU 등 예탁결제원 집계 9/24~25)와 파킹형 ETF(SGOV) 순매도", lane: "decoupling_flows", kind: "structure", domain: "other", semiconductorRelated: false, titleShape: "question" },
+  // 2026-10-01 배포 완료(13편)
+  { episode: 13, summary: "외국인 코스피 5개월 135조 순매도(9월 21조, 삼성전자·SK하이닉스 76.6%)와 복귀 조건(호실적 확인+내년 이익 전망 상향)·삼성전자 3분기 잠정실적 연결, 개인 양손투자", lane: "decoupling_flows", kind: "structure", domain: "flows_structure", semiconductorRelated: true, titleShape: "question" },
 ];
 
 export interface BullTopicProposal {

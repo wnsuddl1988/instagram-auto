@@ -67,7 +67,7 @@ const clean: BullTopicProposal = {
   titleShape: "number",
 };
 results.clean = assessBullTopicProposal(clean, LEDGER_1_11);
-// 실제 장부(12편 등록 후): 12편과 같은 레인(decoupling_flows)·같은 제목 모양(question)이면 경고
+// 실제 장부(13편 등록 후): 13편과 같은 레인(decoupling_flows)·같은 제목 모양(question)이면 경고
 results.realLaneConsec = assessBullTopicProposal({ ...clean, titleShape: "question" });
 
 // 사건형 → 장부에 가상 12·13편(사건형)을 더하면 최근 4편(10~13)에 사건형 2편 + 이번 = 3편이 되어 경고
@@ -119,13 +119,13 @@ if (r) {
     assert(new Set(r.laneIds).size === 10, "duplicate lane ids");
   });
 
-  check("ledger covers episodes 1-12 without duplicates; 6 of 12 are semiconductor-related", () => {
-    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]), JSON.stringify(r.ledgerEpisodes));
-    assert(r.ledgerSemis === 6, `ledgerSemis ${r.ledgerSemis}`);
+  check("ledger covers episodes 1-13 without duplicates; 7 of 13 are semiconductor-related", () => {
+    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]), JSON.stringify(r.ledgerEpisodes));
+    assert(r.ledgerSemis === 7, `ledgerSemis ${r.ledgerSemis}`);
   });
 
-  check("real ledger: same lane and title shape as episode 12 are flagged", () => {
-    assert(r.realLaneConsec.warnings.some((w) => w.includes("직전 12편") && w.includes("같은 레인")), JSON.stringify(r.realLaneConsec.warnings));
+  check("real ledger: same lane and title shape as episode 13 are flagged", () => {
+    assert(r.realLaneConsec.warnings.some((w) => w.includes("직전 13편") && w.includes("같은 레인")), JSON.stringify(r.realLaneConsec.warnings));
     assert(r.realLaneConsec.warnings.some((w) => w.includes("같은 제목 모양")), JSON.stringify(r.realLaneConsec.warnings));
   });
 
