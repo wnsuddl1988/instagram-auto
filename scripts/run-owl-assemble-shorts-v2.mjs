@@ -731,7 +731,9 @@ const CAPTION_LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SP
 const CAPTION_MAX_WIDTH_PX = CAPTION_LAYOUT_V2 ? 760 : TEXT_SAFE_WIDTH_PX;
 const CAPTION_FONT_SIZE = CAPTION_LAYOUT_V2 ? 96 : 84; // 2026-10-02: v2 편 84→96(Owner "너무 작게 느껴진다"), 폭 760 안에서 줄당 약 8자
 const CAPTION_FIXED_X = 540;      // 항상 화면 중앙
-const CAPTION_FIXED_Y = CAPTION_LAYOUT_V2 ? 1290 : 1470;
+// 2026-10-02 Owner "자막이 카드 문구를 가린다, 더 밑으로 내려도 된다"(부엉 19편 s4에서 카드 둘째 줄이 자막과 겹쳐 뭉개짐) → v2 편 1290→1360.
+// 두 줄 블록(줄 간격 110) 가운데가 1360이면 둘째 줄 아래 끝 ≈1470 — 유튜브 채널명·제목 줄(원본 y≈1510~)까지 약 40px 여유.
+const CAPTION_FIXED_Y = CAPTION_LAYOUT_V2 ? 1360 : 1470;
 
 // 강조는 세 색을 쓴다(모바일 재검수 2026-09-17: "노랑·빨강 두 색밖에 안 보인다,
 // 3색을 쓴다고 했는데" 지적 — number와 key가 같은 노랑을 공유해 실질 2색이었다).

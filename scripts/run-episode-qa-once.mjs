@@ -14,6 +14,8 @@
  *   8. (2026-09-30 밤) 보드·카드 씬 오른쪽 끝 확대 시트 + 판정 기록(edge-review.json) 필수 — 기록이 없거나 초과 씬이 있으면 반드시 수정
  *   9. (2026-10-02) 자막-음성 대조: 완성본 오디오 무음 감지로 "발화가 끝나기 전에 자막이 사라지는 곳"이 있으면 반드시 수정
  *  10. (2026-10-02) 글자 크기·줄 수: 자막 ASS의 실제 글자 크기(새 체계 편 96px 미만 금지)·자막 최대 2줄, 제목 줄별 실제 크기(100px 미만 금지)·제목 최대 3줄
+ *  11. (2026-10-02) 자막-카드 겹침: 카드 씬 자막 윗줄이 카드 글자 한계(60%)+여유(5%)보다 위거나 자막 아래 끝이 유튜브 제목 줄(y≈1510)에 닿으면
+ *      반드시 수정(자동, _card-caption-overlap.mjs) + qa/caption-card-*.png를 보고 edge-review.json의 captionOverlap에 씬별 ok/over 기록 필수
  * 결과: <final-dir>/qa-report.md + 콘솔 요약. 반드시 고쳐야 하는 항목이 있으면 종료 코드 1.
  *
  * 사용:
@@ -28,6 +30,7 @@ import path from "node:path";
 import { splitPenalty, textWidthRatio } from "./_caption-linebreak-ko.mjs";
 import { checkHook } from "./_hook-rules.mjs";
 import { checkScriptStandards } from "./_script-standards.mjs";
+import { readCaptionBlocks, checkCaptionGeometry, captionCardFrames } from "./_card-caption-overlap.mjs";
 
 const argv = process.argv.slice(2);
 function getArg(name) {
@@ -127,7 +130,8 @@ if (!fs.existsSync(assPath)) {
     for (const l of b.lines) {
       const w = textWidthRatio(l) * b.fs;
       if (w > CAPTION_WIDTH + 1) mustFix.push(`자막 폭 초과 ${Math.round(w)}px(글자 ${b.fs}px): "${l}"`);
-      if (/[일이삼사오육칠팔구십백천](년|월|개월|만|퍼센트)/.test(l)) mustFix.push(`읽는 표기 숫자 잔존: "${l}"`);
+      // 앞에 아라비아 숫자가 붙은 "6천만 원"은 정상 표기다(2026-10-02 부엉 19편 오탐 정정) — 한글로 푼 "육천만"·"삼백육십만"만 잡는다.
+      if (/(?<![0-9])[일이삼사오육칠팔구십백천](년|월|개월|만|퍼센트)/.test(l)) mustFix.push(`읽는 표기 숫자 잔존: "${l}"`);
     }
     if (b.lines.length === 2) {
       const L = b.lines[0].split(" ").at(-1);
@@ -346,6 +350,35 @@ sheets.push(path.join(reviewDir, "safe-video.png"));
       else if (missingScenes.length) mustFix.push(`edge-review.json에 판정 없는 씬: s${missingScenes.join(",s")}`);
       else if (over.length) mustFix.push(`글자가 안전선(좌 12%·우 88%)을 넘은 씬(판정 over): s${over.join(",s")} → 클립 이동 교정(A-6) 후 재조립`);
       else info.push(`보드·카드 글자 좌우 끝 판정 기록 확인(${textScenes.length}씬 모두 ok${review.note ? ` — ${review.note}` : ""})`);
+    }
+
+    // 8-2) 자막-카드 겹침(2026-10-02 부엉 19편 Owner "자막이 카드 문구를 가린다") — 자세한 배경은 _card-caption-overlap.mjs 머리말.
+    // ① 자동(기하): 카드 씬 자막 윗줄이 카드 글자 한계(60%)+여유(5%)보다 위면, 아래 끝이 유튜브 제목 줄(y≈1510)에 닿으면 반드시 수정.
+    // ② 사람 확인: qa/caption-card-*.png(카드 씬마다 두 줄 자막이 뜬 순간)를 보고 edge-review.json의 captionOverlap에 씬별 ok/over 기록.
+    {
+      const assFile = path.join(ASSEMBLY_DIR, "owl_captions.ass");
+      if (fs.existsSync(assFile)) {
+        const blocks = readCaptionBlocks(assFile);
+        const cardScenes = textScenes.map((n) => manifest.timeline.find((x) => x.scene === n)).filter(Boolean)
+          .map((t) => ({ scene: t.scene, start: t.start, end: t.start + t.duration }));
+        const geo = checkCaptionGeometry(blocks, cardScenes, { layoutV2: LAYOUT_V2 });
+        mustFix.push(...geo.mustFix);
+        fs.readdirSync(reviewDir).filter((f) => /^caption-card(-\d+)?\.png$/.test(f)).forEach((f) => fs.rmSync(path.join(reviewDir, f), { force: true }));
+        const frames = captionCardFrames({ video: FINAL, blocks, cardScenes, outPrefix: path.join(reviewDir, "caption-card") });
+        frames.sheets.forEach((s) => { if (fs.existsSync(s)) sheets.push(s); });
+        info.push(`자막-카드 간격(자동): 카드 씬 자막 윗줄 최소 y=${geo.minTopPx === null ? "-" : Math.round(geo.minTopPx)}px, 모든 자막 아래 끝 최대 y=${Math.round(geo.maxBottomPx)}px`);
+        const reviewFile = path.join(reviewDir, "edge-review.json");
+        if (LAYOUT_V2 && cardScenes.length && fs.existsSync(reviewFile)) {
+          const review = JSON.parse(fs.readFileSync(reviewFile, "utf8"));
+          const ids = cardScenes.map((c) => c.scene);
+          const rec = review.captionOverlap ?? {};
+          const missing = ids.filter((n) => !["ok", "over"].includes(rec[String(n)]));
+          const over = ids.filter((n) => rec[String(n)] === "over");
+          if (missing.length) mustFix.push(`자막-카드 겹침 판정 기록 없음(s${missing.join(",s")}) → qa/caption-card-*.png(카드 씬마다 두 줄 자막이 뜬 순간)를 보고 qa/edge-review.json의 captionOverlap에 씬마다 ok(자막이 카드 글자를 가리지 않고 간격 있음)/over(가리거나 카드 아래 모서리에 붙음)를 적은 뒤 QA 재실행`);
+          else if (over.length) mustFix.push(`자막이 카드 문구를 가리거나 붙은 씬(판정 over): s${over.join(",s")} → 자막 위치(조립기 CAPTION_FIXED_Y) 조정 후 재조립`);
+          else info.push(`자막-카드 겹침 판정 기록 확인(${ids.length}씬 모두 ok)`);
+        }
+      }
     }
   }
 }

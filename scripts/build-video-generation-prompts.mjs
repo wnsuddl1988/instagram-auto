@@ -36,6 +36,7 @@ const SPEC_MODULE = getArg("--spec-module");
 const SPEC_EXPORT = getArg("--spec-export");
 const TTS_SUMMARY = getArg("--tts-summary");
 const OUT = getArg("--out");
+const IMAGES_DIR_OVERRIDE = getArg("--images-dir"); // 실제 이미지 폴더 이름이 접두사 규칙과 다를 때(예: owl-v2-ep19-images)
 const PILOT = (getArg("--pilot-dialogue") ?? "").split(",").map((s) => Number.parseInt(s.trim(), 10)).filter(Number.isInteger);
 if (!SPEC_MODULE || !SPEC_EXPORT || !TTS_SUMMARY || !OUT) {
   console.error("ABORT: --spec-module --spec-export --tts-summary --out 가 필요합니다.");
@@ -215,7 +216,7 @@ const t10 = scenes.filter((s) => s.tier === 10);
 
 let doc = `# ${label} (${spec.title}, ${scenes.length}씬) 영상 생성 프롬프트 — 수동 진행용
 
-이미지 소스 폴더: \`C:/tmp/${prefix.replace(/_/g, "-")}-images/\`
+이미지 소스 폴더: \`${IMAGES_DIR_OVERRIDE ? IMAGES_DIR_OVERRIDE.replace(/\\/g, "/").replace(/\/?$/, "/") : `C:/tmp/${prefix.replace(/_/g, "-")}-images/`}\`
 영상 저장: **장면 번호로** \`C:/Users/PC/Downloads/1.mp4\` ~ \`${scenes.length}.mp4\` (CURRENT_STANDARDS §A-6, "${label}"이라고 알려주기)
 
 생성기: \`scripts/build-video-generation-prompts.mjs\` (TTS: \`${TTS_SUMMARY.replace(/\\/g, "/")}\`, 타임라인 ${summary.timelineDurationSec}초)
