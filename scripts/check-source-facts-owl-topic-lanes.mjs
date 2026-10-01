@@ -49,9 +49,10 @@ if (r) {
   check("레인 8개, id 중복 없음", () => {
     assert(r.laneIds.length === 8 && new Set(r.laneIds).size === 8, JSON.stringify(r.laneIds));
   });
-  check("장부 1~18편, 16~18편은 게시 예정(16=최저임금, 17=전세사기, 18=청년미래적금 2차)", () => {
+  // 2026-10-01 16편(최저임금) 배포 완료 → 미게시는 17·18편. 다음 편이 게시될 때마다 이 기대값을 함께 갱신한다.
+  check("장부 1~18편, 16편(최저임금)은 게시 완료, 17~18편은 게시 예정(17=전세사기, 18=청년미래적금 2차)", () => {
     assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 18 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
-    assert(JSON.stringify(r.unpublished) === JSON.stringify([16, 17, 18]), JSON.stringify(r.unpublished));
+    assert(JSON.stringify(r.unpublished) === JSON.stringify([17, 18]), JSON.stringify(r.unpublished));
     assert(r.ledgerSummaries[15].includes("최저임금"), r.ledgerSummaries[15]);
     assert(r.ledgerSummaries[16].includes("전세사기"), r.ledgerSummaries[16]);
     assert(r.ledgerSummaries[17].includes("청년미래적금"), r.ledgerSummaries[17]);

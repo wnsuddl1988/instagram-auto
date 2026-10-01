@@ -227,7 +227,9 @@ if (spec.imageCharacter === "bull3dv1" || spec.characterDisplayName === "황소�
       return { s: toSec(f[1].trim()), e: toSec(f[2].trim()) };
     });
     const lastCapEnd = Math.max(...caps.map((c) => c.e));
-    const r = spawnSync("ffmpeg", ["-hide_banner", "-i", FINAL, "-af", "silencedetect=noise=-38dB:d=0.18", "-vn", "-f", "null", "-"], { encoding: "utf8" });
+    // 기준 -32dB: 음량 마감(-14 LUFS) 뒤 말소리는 평균 -14dB·최대 -1dB인데 숨소리·태그 잡음은 최대 -34dB 안팎이라(부엉 17편 실측:
+    // 9.6~9.9초 잡음 평균 -45dB) -38dB로는 숨소리를 "발화"로 잡아 오탐이 났다(2026-10-02). 황소 12편 v1의 실제 결함(0.6초 이상 어긋남)은 -32dB에서도 잡힌다.
+    const r = spawnSync("ffmpeg", ["-hide_banner", "-i", FINAL, "-af", "silencedetect=noise=-32dB:d=0.18", "-vn", "-f", "null", "-"], { encoding: "utf8" });
     const ss = [...r.stderr.matchAll(/silence_start: ([\d.]+)/g)].map((m) => Number(m[1]));
     const se = [...r.stderr.matchAll(/silence_end: ([\d.]+)/g)].map((m) => Number(m[1]));
     const speech = [];
@@ -363,6 +365,7 @@ sheets.push(path.join(reviewDir, "safe-video.png"));
           .map((t) => ({ scene: t.scene, start: t.start, end: t.start + t.duration }));
         const geo = checkCaptionGeometry(blocks, cardScenes, { layoutV2: LAYOUT_V2 });
         mustFix.push(...geo.mustFix);
+        warn.push(...(geo.warn ?? []));
         fs.readdirSync(reviewDir).filter((f) => /^caption-card(-\d+)?\.png$/.test(f)).forEach((f) => fs.rmSync(path.join(reviewDir, f), { force: true }));
         const frames = captionCardFrames({ video: FINAL, blocks, cardScenes, outPrefix: path.join(reviewDir, "caption-card") });
         frames.sheets.forEach((s) => { if (fs.existsSync(s)) sheets.push(s); });

@@ -44,12 +44,21 @@ export function readCaptionBlocks(assPath, fallbackFont = 96) {
  */
 export function checkCaptionGeometry(blocks, cardScenes, { layoutV2 }) {
   const mustFix = [];
+  const warn = [];
   const limitTop = ((CARD_TEXT_LIMIT_PCT + CAPTION_CARD_MARGIN_PCT) / 100) * FRAME_H;
   let minTop = Infinity, maxBottom = 0;
+  const overBottom = [];
   for (const b of blocks) {
     if (b.bottom > maxBottom) maxBottom = b.bottom;
-    if (b.bottom > YOUTUBE_UI_TOP_PX - 10) {
-      mustFix.push(`자막 아래 끝 y=${Math.round(b.bottom)}px가 유튜브 채널명·제목 줄(y≈${YOUTUBE_UI_TOP_PX})에 닿음: ${b.start.toFixed(1)}초 블록`);
+    if (b.bottom > YOUTUBE_UI_TOP_PX - 10) overBottom.push(b);
+  }
+  if (overBottom.length) {
+    const worst = Math.round(Math.max(...overBottom.map((b) => b.bottom)));
+    if (layoutV2) {
+      mustFix.push(`자막 ${overBottom.length}개 블록의 아래 끝(최대 y=${worst}px)이 유튜브 채널명·제목 줄(y≈${YOUTUBE_UI_TOP_PX})에 닿음(예: ${overBottom[0].start.toFixed(1)}초) → 조립기 CAPTION_FIXED_Y 확인`);
+    } else {
+      // 옛 배치(자막 y=1470): 카드를 가슴 높이에 든 편에서 카드 아래 끝(약 68%)과 유튜브 UI 사이의 절충이라 확인만 권한다(2026-10-02, 부엉 17편 준비 중 판단 — Owner는 같은 배치의 15·16편을 검수·배포함).
+      warn.push(`옛 자막 배치(y=1470): 두 줄 자막 ${overBottom.length}개 블록의 아래 끝(최대 y=${worst}px)이 유튜브 채널명·제목 줄(y≈${YOUTUBE_UI_TOP_PX})에 닿을 수 있음 — 카드와 UI 사이 절충 배치(새 체계 편은 y=1360으로 해결)`);
     }
   }
   if (layoutV2) {
@@ -63,7 +72,7 @@ export function checkCaptionGeometry(blocks, cardScenes, { layoutV2 }) {
       }
     }
   }
-  return { mustFix: [...new Set(mustFix)], minTopPx: Number.isFinite(minTop) ? minTop : null, maxBottomPx: maxBottom };
+  return { mustFix: [...new Set(mustFix)], warn, minTopPx: Number.isFinite(minTop) ? minTop : null, maxBottomPx: maxBottom };
 }
 
 /**
