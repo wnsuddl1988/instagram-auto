@@ -12,6 +12,7 @@
 - ⬜ 팩트: 공식 원문 우선, 출처 2곳 이상, 불일치 수치는 제외 목록에 기록. 정부 제도명 운영 여부 확인.
 - ⛔ **대본 기준 검사** `node scripts/check-script-standards.mjs --character {owl|bull} --scenes <scenes.json> --hook-type T#` → 반드시 수정 0. 결과 표를 대본 문서와 보고에 붙인다. (통과 못 하면 TTS 게이트가 막는다.)
 - 👁 검사기가 못 보는 것 직접 대조 후 기록: 팩트·출처 / 훅 H3(구체 대상) / 매수 암시·종목 실명(황소) / 흐름.
+- 👁 **새 독자 읽기 점검(규칙 29, 2026-10-02)**: 검사기 통과 후 Owner에게 보이기 전에 [script-cold-read-prompt.md](script-cold-read-prompt.md) 절차로 대본 전체를 서브에이전트 1개에게 읽히고, Q3 "따로 논다"·Q2 "없음"·Q1 "모르겠음"이면 반려, Q4 목록은 항목마다 수정 또는 사유 기록. 증거: `_ai/{char}-ep{N}-cold-read.md`. (결함 탐지용 — 점수로 합격 판정하지 않는다.)
 - ⬜ Owner 대본 확정.
 
 ## B. 음성

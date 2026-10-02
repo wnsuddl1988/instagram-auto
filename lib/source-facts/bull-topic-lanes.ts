@@ -155,6 +155,7 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   // 2026-10-01 배포 완료(13편)
   { episode: 13, summary: "외국인 코스피 5개월 135조 순매도(9월 21조, 삼성전자·SK하이닉스 76.6%)와 복귀 조건(호실적 확인+내년 이익 전망 상향)·삼성전자 3분기 잠정실적 연결, 개인 양손투자", lane: "decoupling_flows", kind: "structure", domain: "flows_structure", semiconductorRelated: true, titleShape: "question" },
   { episode: 14, summary: "마이크론 역대급 실적(매출 542억 달러·1년 전 4.8배)인데 주가는 발표 직후 내렸다가 2% 올랐다 — 이익률 전망 87→86.3%(CFO 성과급 확대) vs 수요 기대(CEO 내년·내후년 수급 빠듯), 한국 반응(코스피 1.95%·삼성 2.8%·SK하이닉스 3.2%)·삼성·SK 3분기 영업이익 전망 연결(9편 후속)", lane: "cause_explainer", kind: "event", domain: "semiconductor", semiconductorRelated: true, titleShape: "question" },
+  { episode: 15, summary: "현대차 미국 9월 판매 역대 최대(77,439대·+9%, 하이브리드 +39%·팰리세이드 +52%, 아이오닉5 -65%는 작년 9월 세액공제 일몰 직전 몰림 기저효과)인데 같은 달 세계 판매는 307,998대로 -16.0%(국내 -25.7%·해외 -13.9%, 회사 설명 추석 연휴 영업일 감소, 1~9월 누적 -7.0%) — 현대차그룹 미국 3분기 약 50만 6천 대 첫 50만 돌파, 월 하나·지역 하나로 현대차 전체를 읽지 말 것", lane: "cause_explainer", kind: "event", domain: "mobility", semiconductorRelated: false, titleShape: "contrast" },
 ];
 
 export interface BullTopicProposal {
