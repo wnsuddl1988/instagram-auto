@@ -79,7 +79,7 @@ lines.forEach((text, i) => {
   const borderW = Math.max(8, Math.round(fontSize * 0.12));
   // 두꺼운 외곽선(+골드 그림자) 후 본문
   filters.push(
-    `drawtext=fontfile='${fontForFilter}':textfile='${fileForFilter}':fontsize=${fontSize}:fontcolor=${colors[i] ?? fill}:borderw=${borderW}:bordercolor=${stroke}:shadowcolor=0xFBBF24@0.75:shadowx=0:shadowy=${Math.round(fontSize * 0.07)}:x=(w-text_w)/2:y=${y}`,
+    `drawtext=fontfile='${fontForFilter}':textfile='${fileForFilter}':expansion=none:fontsize=${fontSize}:fontcolor=${colors[i] ?? fill}:borderw=${borderW}:bordercolor=${stroke}:shadowcolor=0xFBBF24@0.75:shadowx=0:shadowy=${Math.round(fontSize * 0.07)}:x=(w-text_w)/2:y=${y}`,
   );
   y += fontSize + gap;
 });
