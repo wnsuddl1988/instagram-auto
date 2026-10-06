@@ -1,6 +1,39 @@
-# 진행 중 작업 인계 — 최신 2026-10-02
+# 진행 중 작업 인계 — 최신 2026-10-03
 
-## ★★★ 2026-10-02 최신 — 황소 15편 배포 완료 + 규칙 29(새 독자 읽기 점검) 도입
+## ★★★★★★ 2026-10-03 밤 최신 상태 요약 (아래 낮 섹션보다 우선)
+- **배포 완료(10/3)**: 황소 16편(릴스 DeA5B2dCPA0·유튜브 i5K_ik3-F8Y), 황소 17편(커버 문구 "외국인 매도/산 종목 있다"를 Owner가 지적·삭제 → 새 커버 "외국인 팔 때/산 종목들?"로 재배포: 릴스 DeBuTfKo3yJ·유튜브 beZeuN-uplc, 폴더 `C:/tmp/bull-ep17-publish-v2/`, 옛 스토리 17987749158115024는 24시간 만료), 부엉 18편 청년미래적금 2차(릴스 DeBP__Tks4W·유튜브 pemJWqgl6_c).
+- **완성·배포 지시 대기**: 황소 18편(상폐 규정 법원 제동, `C:/tmp/bull-ep18-final/…mastered.mp4`, 커버 "시총 상폐에/법원 제동!" — 문구 뜻 재점검 필요, 게시 직전 거래소 항고·본안 일정 재확인), **부엉 표시 19편(파일 ep20, 광고 최고금리 예금) — 영상 수령·조립·CTA·QA 0·커버 모두 완료**(`C:/tmp/owl-v2-ep20-final/owl_episode_final_mastered.mp4`, 커버 `C:/tmp/owl-cover-ep20/00_owl_ep20_cover_thumb.png`). 부엉 19편 남은 것: 금리 재확인→압축·콘텐츠 유닛·배포 전 게이트, 배포는 Owner 지시.
+- **Owner Veo 대기(프롬프트 전달 완료)**: 부엉 표시 20편(파일 ep21, 은행 정보 유출 `_ai/owl-ep21-video-generation-prompts.md`: 8초 5·10초 11), 표시 21편(파일 ep22, 대환 금리 역전 `_ai/owl-ep22-video-generation-prompts.md`: 8초 6·10초 9) — Owner 요청으로 2026-10-03 재전달.
+- **교훈**: 커버 문구는 140px 게이트만 맞추지 말고 뜻·자연스러움을 직접 점검(메모리 feedback-cover-headline-must-read-naturally-2026-10-03). 메모리 색인이 낡았을 수 있으니 상태는 체크리스트·폴더로 확인(부엉 19편을 "Veo 대기"로 잘못 보고했다가 정정).
+- **미커밋**: 장부·테스트·스펙(황소 16·17·18·커버, 부엉 ep21·22)·문서 다수 — Owner 승인 대기.
+
+## ★★★★★★★ 2026-10-04 최신 — 황소 19·20·21편 대본·TTS·스펙·이미지·영상 프롬프트 완료(Owner Veo 대기)
+- **슬롯(Owner 지시)**: 황소 18편(상폐) 10/4 오전 배포 → **19편 10/4(일) 저녁, 20편 10/5(월) 오전, 21편 10/5(월) 저녁**. 부엉은 "다음 후보 정하자" 때 이관 ①(복지급여 "신청 안 해도 국가가" 직권 지급, 10/3)을 1순위로 올린다.
+- **19편 = S&P500 종목 80%↓ AI만↑**(TTS 121.08초, 스펙 `_bull-ep19-assembly-spec.mjs`, 이미지 `C:/tmp/bull-ep19-images/`), **20편 = 엔비디아 GPU 담보 수명 10년 vs 3~4년**(112.84초, `_bull-ep20-…`, 실명 엔비디아·코어위브·네이버), **21편 = 메모리 가격 상승 둔화×삼성 잠정실적**(117.80초, `_bull-ep21-…`, 삼성 컨센서스 수치는 출처마다 달라 대본 미사용, 잠정실적 10/8 예상 미확정). 대본·팩트표·새 독자 점검 `_ai/bull-ep19-21-scripts-draft.md`, 체크리스트 `_ai/bull-ep19·20·21-production-checklist.md`, 프롬프트 `_ai/bull-ep19·20·21-video-generation-prompts.md`(8초 3/4/2).
+- **다음**: Owner가 Veo 영상을 "황소특보 19편"처럼 알려주면 검수→조립→CTA→워터마크→마감→QA(edge-review·caption-card 직접 판정)→커버(문구 의미·자연스러움 직접 점검)까지, 배포는 "배포해줘" 때만. 게시 직전 재확인: 19편 美 증시·금리 흐름, 20편 담보 조건 확정 여부, 21편 삼성 잠정실적 공시 여부.
+- 황소 18편(상폐)·부엉 19편(예금 금리)은 완성·배포 지시 대기. 부엉 20·21편은 Veo 대기(프롬프트 전달 완료).
+
+## (이전) 2026-10-03 낮 — 황소 16편 완성(Owner 검수 대기), 17·18편 프롬프트까지 완료(Owner Veo 대기)
+- **번호**: 황소 16편=자사주(A), 17편=외국인 비반도체(B), 18편=상폐 규정 법원 제동(C), 파일 ep16·ep17·ep18. 대본·팩트표·새 독자 점검 기록 `_ai/bull-ep16-18-scripts-draft.md`, 체크리스트 `_ai/bull-ep16·17·18-production-checklist.md`.
+- **16편(완성)**: Veo 16개 검수 → 조립·CTA PASS·워터마크 제거·오디오 마감·QA 반드시 수정 0 → 커버. 최종 `C:/tmp/bull-ep16-final/owl_episode_final_mastered.mp4`(121.5초, 58.5MB), 커버 `C:/tmp/bull-cover-ep16/00_bull_ep16_cover_thumb.png`. 입 꼬리 보통 s7·s12, s10 클로즈 카드 하단이 자막 상단에 닿음(글자는 안 가려짐) — Owner에게 보고함. **압축·콘텐츠 유닛·배포는 Owner 지시 대기(삼성 자사주 종료 10/6이라 10/5까지, 게시 직전 매입 종료·잠정실적 날짜 재확인).**
+- **17편(B)**: TTS 123.80초, 스펙 `scripts/_bull-ep17-assembly-spec.mjs`, 이미지 16장 `C:/tmp/bull-ep17-images/`(s13~s15 카드 하단 62~64% → 조립 QA edge-review에서 자막 겹침 확인), 영상 프롬프트 `_ai/bull-ep17-video-generation-prompts.md`(8초 s2·s10·s16 / 10초 13).
+- **18편(C)**: TTS 103.40초(CTA 합쳐 ≈111.7초, 권고보다 짧음 — 흐름 우선), 스펙 `scripts/_bull-ep18-assembly-spec.mjs`, 이미지 15장 `C:/tmp/bull-ep18-images/`(1차 통과), 영상 프롬프트 `_ai/bull-ep18-video-generation-prompts.md`(8초 s2·s6·s10 / 10초 12).
+- **이미지 러너 주의**: `probe-character-consistency-chatgpt-v1.mjs`는 완료 감지 timeout이 한 번 나면 그대로 종료한다(ep17 s2·s11·s16). `--scene-spec-only 2,3,…`로 이어서 생성하면 된다.
+- **상폐 편 원문 확인(2026-10-03)**: 주연테크(코스피, 2026카합1541)·케이엠제약(코스닥, 2026카합1532) 가처분 — 본안 확정까지 상장폐지 결정 효력 정지·정리매매 금지, 본안 확정 판결 아님(회사 공시 + 법률신문). 못 본 것: 결정문 전문·거래소 항고 여부. 종목 실명은 Owner 허용, 법적 위험 확인은 Owner 몫. 게시 직전 항고 여부 재확인.
+- **미커밋(Owner 승인 후)**: 장부·테스트·일정 이벤트·스펙 7개(부엉 ep21·22, 황소 ep16·17·18, 커버 spec)·문서 다수.
+- **이어서 할 일(Owner 지시 대기)**: ① 16편 Owner 검수 → 배포 지시 시 압축·콘텐츠 유닛·preflight·배포 ② Owner가 Veo 영상을 보내면(황소 17·18, 부엉 20·21) 검수 → 조립·CTA·QA → 커버 ③ 장부 `BULL_EPISODE_LEDGER` 16편 추가는 배포 후.
+
+
+## ★★★★ 2026-10-02 밤 최신 — 부엉 표시 20편·21편 소재 확정, TTS·스펙·이미지까지 완료(영상 프롬프트부터 Owner 지시 대기)
+- **번호 주의**: 표시 20편 = 파일 ep21, 표시 21편 = 파일 ep22(표시 19편이 파일 ep20이라 +1 어긋남). 스펙 `scripts/_owl-v2-ep21-assembly-spec.mjs`(OWL_EP21_ASSEMBLY_SPEC, 16씬)·`_owl-v2-ep22-assembly-spec.mjs`(OWL_EP22_ASSEMBLY_SPEC, 15씬). 문서 `owl-ep20-*`는 표시 19편 것이라 재사용 금지.
+- **20편 = 시중은행 정보 유출, 내 정보 지키는 법(금융사기 예방)**: 대본 v5(`C:/tmp/owl-ep21-draft/leak-scenes-v5.json`, 16씬·598자), TTS 113.80초(`C:/tmp/money-shorts-os/owl-ep21-tts/output-v1`, 정렬 보정 불필요), 이미지 16장 `C:/tmp/owl-v2-ep21-images/owl_ep21_s1~s16.png`(1차 통과, 안전선 시트 판정 기록). **은행 실명 공개**(은행 직접 발표 사실). 게시 예정 10/5(월)·시점은 Owner. 문서 `_ai/owl-ep21-leak-script-draft.md`·`owl-ep21-cold-read.md`·`owl-ep21-production-checklist.md`. 진행형 사건 → **게시 직전 최신 사실 재확인**(추가 은행·규모 변동 시 대사·TTS 수정).
+- **21편 = 대출 갈아타기(대환) 금리 역전, 내 조건으로 따져볼 것**: 대본 v2(`C:/tmp/owl-ep22-draft/refi-scenes-v2.json`, 15씬·553자). 1차 17씬은 TTS가 130.36초·씬 11이 9.71초라 **정의 씬·계산 예시 씬(1억 원·0.5%p 가정)을 빼고** 다시 TTS(API 2회째), 최종 TTS **107.64초**(`C:/tmp/money-shorts-os/owl-ep22-tts/output-v2`, 최대 씬 7.77초, 정렬 보정 불필요). 이미지 15장 `C:/tmp/owl-v2-ep22-images/`(진행·결과는 체크리스트). **은행 실명 비공개**(평균 비교 자료 오해 소지). 금감원 자료 **7월 기준**(8월분 나왔는지 게시 전 재확인). 문서 `_ai/owl-ep22-refi-script-draft.md`·`owl-ep22-cold-read.md`·`owl-ep22-production-checklist.md`. 19편(예금)과 "금리 함정" 프레임 유사 — 게시 간격은 Owner.
+- 폐기: 임금체불 예비 대본(신선도 경계선, Owner "폐기"). 일정 이벤트(10/8 임금체불 시행)만 `lib/source-facts/owl-policy-calendar.ts`에 남김.
+- **교훈(대본 길이)**: 검사기 추정(씬 9.3초 이하)과 TTS 실측이 다를 수 있다 — 글자 수 638자가 130초가 됐다(20편 598자→113.8초). 새 대본은 560자 안팎이 안전. TTS는 API 호출이라 재생성 비용이 있으니, 길면 `cut-scenes-from-tts-once.mjs`(연속 씬 삭제)도 선택지.
+- 장부 `OWL_EPISODE_LEDGER` 20·21편 등록(예정), 장부 테스트 10/10. **미커밋**(Owner 승인 후): 장부·테스트·스펙 2개·문서 다수·일정 이벤트.
+- **이어서 할 일(Owner 지시 대기)**: ① 영상 프롬프트 생성(`build-video-generation-prompts.mjs`, 20편 → 21편 순서) → Owner Veo → 검수 → 조립·CTA(`--scene8-start`는 TTS 길이 기준)·워터마크·오디오 마감·QA → 커버 → 압축·콘텐츠 유닛 → 배포는 Owner 지시. ② 부엉 표시 18편(10/3)·19편(10/4) 배포는 Owner가 "배포해줘" 할 때(19편은 금리 재확인 먼저).
+
+## ★★★ 2026-10-02 — 황소 15편 배포 완료 + 규칙 29(새 독자 읽기 점검) 도입
 - **황소 15편(현대차 미국 신기록 vs 세계 -16%) 배포 완료**: 릴스 https://www.instagram.com/reel/Dd_OA9sCSFH/ , 유튜브 https://www.youtube.com/shorts/Lk0GUQuMhiE (public, 썸네일 set), 스토리 게시(24시간 만료), 결과 기록 `C:/tmp/bull-ep15-publish/`. 장부 15편 추가·테스트 14/14. 체크리스트 `_ai/bull-ep15-production-checklist.md`, 초안·팩트표 `_ai/bull-ep15-hyundai-script-draft.md`, 새 독자 점검 `_ai/bull-ep15-cold-read.md`.
 - **규칙 29(2026-10-02)**: 대본은 Owner에게 보이기 전 "새 독자 읽기 점검"(전체 대본 → 맥락 없는 서브에이전트 1개)을 거친다. 절차·시험 결과 `_ai/templates/script-cold-read-prompt.md`, 파일 생성 `scripts/make-cold-read-file-once.mjs`. 결함 탐지용(반응 예측 아님), 코드 게이트 아님. Owner 승인은 "1번 진행해"뿐이고 판정 기준은 Claude 제안.
 - **유튜브 썸네일(Owner 우려 2026-10-02)**: API `thumbnails.set`은 정상(15편 `maxresdefault.jpg`에 커버 저장 확인). 세로 쇼츠 칸(`oar1.jpg`)은 14편 기준 영상 프레임(오프닝 씬)이 자동 선택돼 커버가 아님 — API로 못 바꿈, Studio 수동만. 15편 oar1은 업로드 직후 404.

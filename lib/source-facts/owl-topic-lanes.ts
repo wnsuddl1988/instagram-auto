@@ -85,9 +85,15 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   { episode: 16, summary: "최저임금 인상이 내 월급에 주는 영향(실업급여 하한액 연결, 파일 ep17)", lane: "income_jobs", domain: "jobs_income", titleShape: "question", published: true },
   { episode: 17, summary: "전세사기 최소보장제 11/13 시행(파일 ep18)", lane: "policy_countdown", domain: "housing", titleShape: "declaration", published: true },
   // 2026-10-01: 새 소재 첫 편. 배포 10/3 예정. 파일·스펙 이름은 ep19(ep18 파일은 전세사기가 사용 중).
-  { episode: 18, summary: "청년미래적금 2차 신청 10/7~16(유형 직접 선택·도약계좌 갈아타기, 파일 ep19)", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "countdown", published: false },
+  { episode: 18, summary: "청년미래적금 2차 신청 10/7~16(유형 직접 선택·도약계좌 갈아타기, 파일 ep19)", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "countdown", published: true },
   // 2026-10-01: 광고 최고금리 vs 내가 받는 금리(예금·적금). 배포 10/4(일) 예정. 파일·스펙 이름은 ep20(표시 19편 = 파일 ep20).
-  { episode: 19, summary: "광고 4% 예금의 기본금리·우대 조건(기본 3.54%+우대 0.5%p)·5대 은행 3.5% vs 저축은행 4.03%·적금 연 12%(기본 2%), 파일 ep20", lane: "money_calc", domain: "savings_deposit", titleShape: "contrast", published: false },
+  { episode: 19, summary: "광고 4% 예금의 기본금리·우대 조건(기본 3.54%+우대 0.5%p)·5대 은행 3.5% vs 저축은행 4.03%·적금 연 12%(기본 2%), 파일 ep20", lane: "money_calc", domain: "savings_deposit", titleShape: "contrast", published: true },
+  // 2026-10-02 Owner 확정: 20편 = 시중은행 정보 유출(금융사기 예방). 2026-10-05 배포 완료(릴스 DeGbRGQDNus, 유튜브 cnmOkpvI-IU, 스토리). 표시 20편 = 파일 ep21.
+  { episode: 20, summary: "시중은행 정보 유출(신한 약 2.5만·국민 119·하나 89)·내 정보 지키는 법(금융사기 예방), 파일 ep21", lane: "fraud_prevention", domain: "other", titleShape: "question", published: true },
+  // 2026-10-02 Owner 확정: 21편 = 대환(갈아타기) 금리 역전(금감원 자료 7월 기준, 주담대 16곳 중 11곳). 표시 21편 = 파일 ep22.
+  { episode: 21, summary: "대출 갈아타기 금리가 신규보다 높은 은행 16곳 중 11곳·내 조건으로 비교, 파일 ep22", lane: "money_calc", domain: "loans_credit", titleShape: "contrast", published: false },
+  // 2026-10-05 Owner 선택("1번은 진행하는 걸로"): 22편 = 근로장려금 미신청 24만 가구·기한 후 신청 11/30(5% 감액). 표시 22편 = 파일 ep23. 대본 확정 대기.
+  { episode: 22, summary: "근로장려금 정기 신청 안 한 24만 가구(예상 2,220억)·기한 후 신청 11/30·5% 감액·소득재산 요건, 파일 ep23", lane: "deadline_benefit", domain: "jobs_income", titleShape: "number", published: false },
 ];
 
 /**

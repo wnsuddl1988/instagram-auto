@@ -71,6 +71,17 @@ if (HEADER_TITLE_OVERRIDE) {
   ASSEMBLY_SPEC = { ...ASSEMBLY_SPEC, headerTitle: HEADER_TITLE_OVERRIDE.split("|") };
 }
 
+// 첫 3초 시각 변화 실험(Owner 2026-10-05 "1번 진행해", 분석 `_ai/performance-report-2026-10-05.md`):
+// 잘 된 편·안 된 편 모두 첫 3초가 거의 정지 화면이라 변화를 준다. 기본 꺼짐(none) — 스펙 `openingMotion` 또는 `--opening-motion`.
+//   pushin = 첫 씬 영상 레이어를 천천히 확대(1.00→1.10), impact = 시작 순간 1.16배에서 빠르게 당겨 맞추고 이어서 천천히 확대(1.00→1.06).
+// 헤더·자막은 확대 뒤에 얹으므로 글자는 고정이다. 편마다 값을 manifest에 남겨 성과 비교에 쓴다.
+const OPENING_MOTION = String(getArg("--opening-motion") ?? ASSEMBLY_SPEC.openingMotion ?? "none");
+if (!["none", "pushin", "impact"].includes(OPENING_MOTION)) {
+  console.error(`ABORT: openingMotion은 none|pushin|impact 중 하나여야 합니다: ${OPENING_MOTION}`);
+  process.exit(2);
+}
+const OPENING_MOTION_SEC = Number(ASSEMBLY_SPEC.openingMotionSec ?? 3);
+
 const CLIP_DIR = getArg("--clip-dir") || "C:/tmp/owl-motion-final";
 const AUDIO_SUMMARY = getArg("--audio-summary");
 const TTS_SCRIPT = getArg("--tts-script");
@@ -389,6 +400,31 @@ function buildSceneRiskDisclosureFilters(scene) {
       "bordercolor=black@0.8",
       "expansion=none",
     ].join(":")}`),
+  ];
+}
+
+// Veo 워터마크 영역(scripts/run-remove-veo-watermark-once.mjs VEO_WATERMARK_REGIONS와 같은 값, 1080x1920 기준).
+// 첫 씬을 확대하면 클립에 박힌 워터마크도 같이 확대돼 최종 단계의 고정 좌표 제거가 빗나간다(부엉 22편에서 ✦가 첫 씬에 남음, 2026-10-06).
+// 그래서 확대 하기 전에 같은 좌표를 먼저 지운다. 두 파일의 좌표는 항상 같이 바꾼다.
+const OPENING_WATERMARK_REGIONS = Object.freeze([
+  { x: 856, y: 1692, w: 88, h: 96 },
+  { x: 1016, y: 1874, w: 50, h: 30 },
+]);
+
+// 첫 씬 전용 확대 필터. t는 씬 파일 시작(=영상 시작) 기준 초. 짝수 크기로 맞추고 가운데를 잘라 1080x1920을 유지한다.
+function buildOpeningMotionFilters() {
+  if (OPENING_MOTION === "none") return [];
+  const s = OPENING_MOTION_SEC;
+  const zoom = OPENING_MOTION === "pushin"
+    ? `1+0.10*(1-pow(1-min(t/${s},1),2))`
+    : `1+0.06*min(t/${s},1)+0.10*pow(max(1-t/0.35,0),2)`;
+  return [
+    // 확대 전에 워터마크부터 지운다(delogo는 1080x1920 안에서만 좌표가 맞는다).
+    ...(render.width === 1080 && render.height === 1920
+      ? OPENING_WATERMARK_REGIONS.map((r) => `delogo=x=${r.x}:y=${r.y}:w=${r.w}:h=${r.h}`)
+      : []),
+    `scale=w='2*trunc(${render.width}*(${zoom})/2)':h='2*trunc(${render.height}*(${zoom})/2)':eval=frame:flags=bicubic`,
+    `crop=${render.width}:${render.height}:(in_w-${render.width})/2:(in_h-${render.height})/2`,
   ];
 }
 
@@ -1187,6 +1223,7 @@ for (let i = 0; i < scenes.length; i++) {
   // 속도가 아니라 압축된 나레이션이 만드는 장면 전환 리듬이었다 — 이 부분은
   // 대본/씬 길이 설계로 풀 문제이지 영상 재생 속도로 풀 문제가 아니다. 앞부분만
   // 자르는 기본 동작(-t targetDuration)으로 복귀.
+  if (i === 0) vFilters.push(...buildOpeningMotionFilters());
   vFilters.push(...buildHeaderFooterFilters());
   vFilters.push(...buildOverlayFilters(scene.overlays));
   vFilters.push(...buildSceneRiskDisclosureFilters(scene));
@@ -1298,10 +1335,25 @@ if (!NO_CAPTIONS) {
     const endSec = Math.max(caption.startSec + 0.05, cap);
     return { ...caption, endSec, dwellSec: Number((endSec - caption.startSec).toFixed(3)) };
   });
+  // 선택 옵션(기본 꺼짐): 스펙 `captionGapBridgeSec`(예: 0.3)이 있으면, 같은 씬 안에서 다음 자막 시작까지 공백이 그 값 이하인
+  // 자막의 끝을 다음 자막 시작(−0.01초)으로 늘린다. TTS가 문장 중간에서 0.2~0.3초 자연스럽게 쉴 때 자막이 깜빡 꺼지는 것을
+  // 막는다(2026-10-04 황소 20편 "서야 | 할" 0.24초 공백, QA 자막-음성 대조에서 반드시 수정으로 잡힘). 다른 편은 스펙에 없으면 동작이 그대로다.
+  const GAP_BRIDGE_SEC = Number(ASSEMBLY_SPEC.captionGapBridgeSec ?? 0);
   // 표시 텍스트(숫자 그대로)로 바꾼 뒤 고정 크기·고정 위치로 스타일을 입힌다.
-  const captions = styleCaptions(
+  const styledCaptions = styleCaptions(
     applyDisplayText(cappedCaptions, ttsScript.scenes),
   );
+  // 재분할로 생긴 블록 사이 공백까지 메우도록 스타일링 이후에 적용한다(같은 씬 안에서만).
+  const captions = GAP_BRIDGE_SEC > 0
+    ? styledCaptions.map((caption, index, all) => {
+        const next = all[index + 1];
+        if (!next || next.sceneNumber !== caption.sceneNumber) return caption;
+        const gap = next.startSec - caption.endSec;
+        if (gap <= 0.02 || gap > GAP_BRIDGE_SEC) return caption;
+        const endSec = next.startSec - 0.01;
+        return { ...caption, endSec, dwellSec: Number((endSec - caption.startSec).toFixed(3)) };
+      })
+    : styledCaptions;
   captionAudit = { ...timelineResult.audit, ...fixedPlacementAudit(captions) };
   assPath = path.join(OUT_DIR, "owl_captions.ass");
   fs.writeFileSync(assPath, createOwlCaptionAss(captions), "utf8");
@@ -1369,6 +1421,7 @@ fs.writeFileSync(
     audioDurationSec: Number(audioDuration.toFixed(3)),
     silentVideoDurationSec: Number(silentDuration.toFixed(3)),
     captionsEnabled: !NO_CAPTIONS,
+    openingMotion: OPENING_MOTION === "none" ? "none" : { type: OPENING_MOTION, durationSec: OPENING_MOTION_SEC },
     captionAudit,
     render,
     totalDurationSec: Number(finalDuration.toFixed(3)),

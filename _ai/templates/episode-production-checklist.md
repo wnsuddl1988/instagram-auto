@@ -22,6 +22,7 @@
 
 ## C. 스펙·이미지
 - ⬜ 스펙 `scripts/_{char}-ep{F}-assembly-spec.mjs`(직전 편 복사): hookType·sceneBackgrounds·shot/bg/motion·emphasisTerms·headerTitle. 대본은 TTS 스크립트에서 그대로.
+- ⬜ **첫 3초 실험**(CURRENT_STANDARDS A-7 2-2): 스펙 `openingMotion`을 `pushin`/`impact` 중 직전 신작과 다른 값으로 지정하고 여기에 적는다: ______ (황소 22편부터, 21편·완성 재고는 none). 조립 후 첫 씬 프레임(0·0.4·1.5·3초)에서 팻말·글자가 안 잘렸는지 확인.
 - ⬜ 보드·카드 구도 예방 문구(A-4·A-6: 카드 씬은 미디엄, 보드는 긴 다리 이젤, 황소+보드 묶음 폭 ≤76%).
 - ⬜ **샘플 3장 먼저**(보드·카드·글자 없는 씬) → 안전선 시트 → 통과 후 나머지.
 - 👁 안전선 시트(`run-safe-zone-preview-once.mjs`)에서 글자 좌우 끝이 주황선(12%·88%) 안인지 **씬마다** 기록(눈대중 "대부분 괜찮음" 금지).
@@ -40,7 +41,7 @@
 - ⛔ **QA** `run-episode-qa-once.mjs` → 반드시 수정 0(대본 기준·훅·자막·싱크·워터마크·음량·edge-review 기록 포함).
 
 ## F. 자산·배포
-- ⛔ 커버·스토리: 글자 없는 생성 → `run-cover-headline-overlay-once.mjs`(줄당 8자 이하, 140px 미만이면 실패) → `.headline.json` 기록 생성.
+- ⛔ 커버·스토리: 글자 없는 생성 → `run-cover-headline-overlay-once.mjs`(★규칙 30: 문구 = 영상 제목 그대로, 요약·축약 금지 / 140px 미만이면 실패 — 줄이지 말고 Owner에게 보고) → `.headline.json` 기록 생성.
 - ⬜ 압축(35MB 이하) → 콘텐츠 유닛: `finalMasteredPath`·`qaReportPath`(필수), `youtubeTitle`에 #Shorts 없음.
 - ⛔ **배포 전 게이트** `node scripts/run-deploy-preflight-once.mjs --content-unit <…>` — 게시 명령(릴스·스토리·유튜브)이 자동으로 다시 돌린다. 유튜브는 `--privacy public` 없으면, 릴스는 커버 merge 결과가 아니면 막힌다.
 - ⬜ 배포는 **Owner 지시 시에만**(§5 순서). 부엉 배포 시점은 Owner가 정한다(제안 금지).

@@ -39,6 +39,14 @@ export const OWL_SCHEDULED_EVENTS: readonly OwlScheduledEvent[] = [
     status: "tentative",
   },
   {
+    id: "wage-arrears-penalty-up",
+    category: "policy_effective",
+    dateIso: "2026-10-08",
+    displayName: "임금체불 형사처벌 상향 시행(3년·3천만 원 → 5년·5천만 원, 근로기준법 개정)",
+    sourceNote: "근로기준법 개정안 국회 본회의 통과 2026-03-12(서울신문·뉴스핌, 공포 6개월 후 시행), 시행일 10/8은 전국인력신문(2026-07-27)·이데일리·법무법인 칼럼 복수 보도 — 법제처 공포일 원문 미확인, 2026-10-02 수동 웹 검색으로 추가(러너 일정에 없었음)",
+    status: "tentative",
+  },
+  {
     id: "youth-future-savings-2-open",
     category: "application_open",
     dateIso: "2026-10-07",

@@ -31,13 +31,13 @@ r.episodes = OWL_EPISODE_LEDGER.map((e) => e.episode);
 r.unpublished = OWL_EPISODE_LEDGER.filter((e) => !e.published).map((e) => e.episode);
 r.stock = OWL_UNNUMBERED_STOCK.map((s) => s.summary);
 r.ledgerSummaries = OWL_EPISODE_LEDGER.map((e) => e.summary);
-// 최근 5편(15~19, 2026-10-01 19편 등록 후): jobs_income 2(15,16), housing 1(17), savings_deposit 2(18,19) / policy_countdown 2(15,17), income_jobs 1(16), deadline_benefit 1(18), money_calc 1(19) / 제목 모양 직전 19편=contrast
+// 최근 5편(18~22, 2026-10-05 22편 등록 후): savings_deposit 2(18,19), other 1(20), loans_credit 1(21), jobs_income 1(22) / deadline_benefit 2(18,22), money_calc 2(19,21), fraud_prevention 1(20) / 제목 모양 직전 22편=number
 r.clean = assessOwlTopicProposal({ title: "전기요금 4분기 동결, 내 고지서는 그대로일까", lane: "living_costs", domain: "prices_utilities", titleShape: "quote" });
-// 쏠림 창 = 최근 4편(16~19) + 이번 제안. 영역은 savings_deposit이 18·19로 2편이라 3편째가 되고, 레인은 어느 것도 2편이 아니라 기준을 1편으로 낮춰 같은 경고 경로를 시험한다.
-r.domainHeavy = assessOwlTopicProposal({ title: "청년 지원금 신청", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "quote" });
-r.laneHeavy = assessOwlTopicProposal({ title: "다음 달부터 바뀌는 제도", lane: "policy_countdown", domain: "tax", titleShape: "quote" }, undefined, { maxSameLane: 1 });
-r.laneConsec = assessOwlTopicProposal({ title: "청년 월세 지원 신청", lane: "money_calc", domain: "housing", titleShape: "quote" });
-r.sameShape = assessOwlTopicProposal({ title: "보이스피싱 신종 수법", lane: "fraud_prevention", domain: "other", titleShape: "contrast" });
+// 쏠림 창 = 최근 4편(19~22) + 이번 제안. 영역은 어느 것도 2편이 아니라 기준을 1편으로 낮춰 같은 경고 경로를 시험한다(레인도 동일).
+r.domainHeavy = assessOwlTopicProposal({ title: "청년 지원금 신청", lane: "policy_countdown", domain: "savings_deposit", titleShape: "quote" }, undefined, { maxSameDomain: 1 });
+r.laneHeavy = assessOwlTopicProposal({ title: "내 대출 이자 계산법", lane: "money_calc", domain: "tax", titleShape: "quote" }, undefined, { maxSameLane: 1 });
+r.laneConsec = assessOwlTopicProposal({ title: "청년 월세 지원 신청", lane: "deadline_benefit", domain: "housing", titleShape: "quote" });
+r.sameShape = assessOwlTopicProposal({ title: "보이스피싱 신종 수법", lane: "fraud_prevention", domain: "other", titleShape: "number" });
 r.banned = assessOwlTopicProposal({ title: "월세가 오르는 진짜 이유", lane: "housing", domain: "housing", titleShape: "why" });
 process.stdout.write(JSON.stringify(r));
 `;
@@ -50,10 +50,15 @@ if (r) {
   check("레인 8개, id 중복 없음", () => {
     assert(r.laneIds.length === 8 && new Set(r.laneIds).size === 8, JSON.stringify(r.laneIds));
   });
-  // 2026-10-02 17편(전세사기) 배포 완료 → 미게시는 18·19편. 다음 편이 게시될 때마다 이 기대값을 함께 갱신한다.
-  check("장부 1~19편, 16편(최저임금)·17편(전세사기)은 게시 완료, 18·19편은 게시 예정(18=청년미래적금 2차, 19=광고 4% 예금 기본금리)", () => {
-    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 19 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
-    assert(JSON.stringify(r.unpublished) === JSON.stringify([18, 19]), JSON.stringify(r.unpublished));
+  // 2026-10-04 19편(광고 4% 예금 기본금리) 배포 완료 → 미게시는 20~21편(20=은행 정보 유출, 21=대환 금리 역전 등록). 다음 편이 게시될 때마다 이 기대값을 함께 갱신한다.
+  // 2026-10-05 22편(근로장려금, 대본 확정 대기) 등록.
+  // 2026-10-05 20편(은행 정보 유출) 게시 완료 → 미게시는 21~22편.
+  check("장부 1~22편, 16~20편(최저임금·전세사기·청년미래적금 2차·광고 4% 예금·은행 정보 유출)은 게시 완료, 21~22편은 게시 예정(21=대환 금리 역전, 22=근로장려금)", () => {
+    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 22 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
+    assert(JSON.stringify(r.unpublished) === JSON.stringify([21, 22]), JSON.stringify(r.unpublished));
+    assert(r.ledgerSummaries[21].includes("근로장려금"), r.ledgerSummaries[21]);
+    assert(r.ledgerSummaries[19].includes("정보 유출"), r.ledgerSummaries[19]);
+    assert(r.ledgerSummaries[20].includes("갈아타기"), r.ledgerSummaries[20]);
     assert(r.ledgerSummaries[15].includes("최저임금"), r.ledgerSummaries[15]);
     assert(r.ledgerSummaries[16].includes("전세사기"), r.ledgerSummaries[16]);
     assert(r.ledgerSummaries[17].includes("청년미래적금"), r.ledgerSummaries[17]);
@@ -64,9 +69,9 @@ if (r) {
     assert(!r.ledgerSummaries.some((s) => s.includes("퇴직연금")), JSON.stringify(r.ledgerSummaries));
   });
   check("쏠림 없는 제안은 경고 없음", () => assert(r.clean.ok, JSON.stringify(r.clean.warnings)));
-  check("같은 영역 3편째면 경고(savings_deposit)", () => assert(r.domainHeavy.warnings.some((w) => w.includes("같은 영역")), JSON.stringify(r.domainHeavy.warnings)));
-  check("같은 레인 과다면 경고(policy_countdown)", () => {
-    assert(r.laneHeavy.warnings.some((w) => w.includes("같은 레인(policy_countdown) 쏠림")), JSON.stringify(r.laneHeavy.warnings));
+  check("같은 영역 쏠림이면 경고(savings_deposit, 기준 1편으로 낮춰 시험)", () => assert(r.domainHeavy.warnings.some((w) => w.includes("같은 영역")), JSON.stringify(r.domainHeavy.warnings)));
+  check("같은 레인 과다면 경고(money_calc)", () => {
+    assert(r.laneHeavy.warnings.some((w) => w.includes("같은 레인(money_calc) 쏠림")), JSON.stringify(r.laneHeavy.warnings));
   });
   check("직전 편과 같은 레인이면 연속 경고(deadline_benefit)", () => {
     assert(r.laneConsec.warnings.some((w) => w.includes("연속")), JSON.stringify(r.laneConsec.warnings));

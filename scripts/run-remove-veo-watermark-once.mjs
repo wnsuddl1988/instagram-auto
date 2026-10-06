@@ -14,6 +14,10 @@
  *
  * 사용:
  *   node scripts/run-remove-veo-watermark-once.mjs --in <final.mp4> --out <final_nowm.mp4>
+ *
+ * ★ 첫 3초 시각 변화 실험(openingMotion pushin|impact)을 쓴 편: 조립기가 첫 씬을 확대하기 **전에** 같은 영역을 지운다
+ *   (run-owl-assemble-shorts-v2.mjs buildOpeningMotionFilters — 확대 뒤에는 워터마크가 밀려 이 도구의 고정 좌표 밖으로 나가므로).
+ *   영역 좌표를 바꾸면 조립기의 OPENING_WATERMARK_REGIONS도 같이 바꿔야 한다.
  */
 
 import { spawnSync } from "node:child_process";

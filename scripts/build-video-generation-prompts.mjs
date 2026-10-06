@@ -206,7 +206,12 @@ FINAL REMINDER (read this last): the voice and all mouth movement STOP at ${s1}s
 }
 
 const prefix = spec.imagePrefix;
-const label = `${spec.characterDisplayName} ${spec.episode}편`;
+// 부엉박사는 표시 번호 ≠ 파일 번호인 편이 있다(예: 표시 22편 = 파일 ep23). 스펙에 displayEpisode가 있고 다르면 둘 다 적는다(2026-10-05 Owner 지적).
+const hasDisplayNumber = Number.isInteger(spec.displayEpisode) && spec.displayEpisode !== spec.episode;
+const label = hasDisplayNumber
+  ? `${spec.characterDisplayName} 표시 ${spec.displayEpisode}편(파일 ep${spec.episode})`
+  : `${spec.characterDisplayName} ${spec.episode}편`;
+const numberNote = hasDisplayNumber ? `**번호 주의: 이 파일의 "표시 ${spec.displayEpisode}편" = 파일명·폴더의 ep${spec.episode}.**\n` : "";
 const rows = scenes
   .map(({ scene, t, tier, type }) =>
     `| s${scene.scene} ${scene.key.replace(/^s\d+_/, "")} | \`${prefix}_s${scene.scene}.png\` | \`${scene.video}\` | ${t.raw.toFixed(2)}초 | **${fmt(t.speechEnd + 0.1)}초** | **${tier}초** | ${(tier - t.raw).toFixed(2)}초 | ${scene.shot ?? "-"} / ${scene.bg ?? "-"} | ${type} |`)
@@ -216,7 +221,7 @@ const t10 = scenes.filter((s) => s.tier === 10);
 
 let doc = `# ${label} (${spec.title}, ${scenes.length}씬) 영상 생성 프롬프트 — 수동 진행용
 
-이미지 소스 폴더: \`${IMAGES_DIR_OVERRIDE ? IMAGES_DIR_OVERRIDE.replace(/\\/g, "/").replace(/\/?$/, "/") : `C:/tmp/${prefix.replace(/_/g, "-")}-images/`}\`
+${numberNote}이미지 소스 폴더: \`${IMAGES_DIR_OVERRIDE ? IMAGES_DIR_OVERRIDE.replace(/\\/g, "/").replace(/\/?$/, "/") : `C:/tmp/${prefix.replace(/_/g, "-")}-images/`}\`
 영상 저장: **장면 번호로** \`C:/Users/PC/Downloads/1.mp4\` ~ \`${scenes.length}.mp4\` (CURRENT_STANDARDS §A-6, "${label}"이라고 알려주기)
 
 생성기: \`scripts/build-video-generation-prompts.mjs\` (TTS: \`${TTS_SUMMARY.replace(/\\/g, "/")}\`, 타임라인 ${summary.timelineDurationSec}초)

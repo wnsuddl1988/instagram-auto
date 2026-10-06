@@ -50,4 +50,12 @@
 - ⬜ **10/3 배포 지시를 받으면(Owner 지시 시에만)**: ① 신선도 재확인(신청 일정 10/7~16·홀짝제 불변인지 최신 보도 재검색 — 9/30 발표 기준 10/2 확인) ② `run-deploy-preflight-once.mjs` 재실행 ③ §5 5~10단계(업로드 3건 → **커버 merge 필수** → 릴스 `coverUrl:` 확인 → 스토리(`--approval` 없이) → 유튜브 `--privacy public`) ④ 링크를 메모리·체크리스트에 기록, 장부 `OWL_EPISODE_LEDGER` 18편 `published: true`. 카드뉴스는 중단 상태라 만들지 않음.
 - ⬜ 조립·CTA 결합·워터마크·오디오 마감·QA·edge-review
 - ⬜ 커버·스토리(합성기 140px)·압축·콘텐츠 유닛·배포 전 게이트
-- ⬜ 배포는 Owner 지시 시(10/3 예정). 게시 후 장부 `published: true`.
+- ✅ **배포 완료(2026-10-03, Owner "부엉박사 18편 배포해줘")** — 아래 기록.
+
+## 배포 기록(2026-10-03)
+- ✅ 게시 직전 신선도 재확인(웹 검색): 2차 신청 10/7~16, 10/7~8 출생연도 끝자리 홀짝제·12~16일 누구나, 일반형 6%·우대형 12% — 대본·캡션과 일치(변경 없음). 못 본 것: 금융위 원문 재열람.
+- ✅ 압축본 `owl_episode_final_compressed.mp4`(final-v3 마스터링본 기준, 29.4MB), ⛔ 배포 전 게이트 **실패 0·경고 0·통과 7**.
+- ✅ 업로드 3건 UPLOADED → 커버 merge(병합 파일 coverImageUrl 확인) → 릴스 게시(로그 `coverUrl:` 실제 URL 확인) → 스토리 게시 → 유튜브 `--privacy public`.
+- **링크**: 릴스 https://www.instagram.com/reel/DeBP__Tks4W/ · 스토리 mediaId 18134930333044846(24시간 만료) · 유튜브 https://www.youtube.com/shorts/pemJWqgl6_c (public, 썸네일 set).
+- ✅ 부엉 장부 18편 `published: true` + 테스트 10/10.
+- ⬜ 확인 대기: 유튜브 썸네일 maxres/oar 반영(수 시간 뒤), 성과 수집. 못 본 것: 게시된 릴스·쇼츠 실제 재생 화면.
