@@ -44,3 +44,4 @@
 
 ## G. 이후 단계(Owner 지시 대기)
 - ⬜ 압축(**마스터 62.3MB → 1900k로 35MB 이하 확인**)·콘텐츠 유닛(finalMasteredPath·qaReportPath)·배포 전 게이트 → **배포는 Owner 지시**. 게시 직전 재확인: 금감원 8월분 비교공시가 나왔는지(나오면 7월 기준 대사·캡션 수정 필요), 4.84%→7.17%·16곳 중 11곳 수치. 표시 번호 21(파일 ep22). 로컬 변경은 Owner 커밋 승인 대기.
+- ✅ **배포 완료(2026-10-06, Owner "부엉박사 21편 배포해줘"→"어 게시해")**: 릴스 https://www.instagram.com/reel/DeJJ4vLj2Ky/ (커버 merge ok) · 스토리(커버 1장) · 유튜브 https://www.youtube.com/shorts/XC2eIiES1kg (public, 썸네일 set). 폴더 C:/tmp/owl-ep22-publish/, 게이트 7/7, **커버 v2(제목 그대로 4줄 143px, 규칙 30)** 사용 — 구버전은 C:/tmp/owl-cover-ep22. 금감원 8월분 비교공시는 검색에 없어 7월 기준 그대로.

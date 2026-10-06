@@ -959,17 +959,21 @@ function toStyledCaption(caption, cleaned, lines) {
     emphasisByWordIndex: emphasisMapFor(line),
   }));
   const halfHeight = Math.ceil(lines.length * CAPTION_FONT_SIZE * 0.72 + 18);
+  // 스펙 `captionYShiftByScene`({씬번호: +px})로 특정 씬 자막만 아래로 내린다(2026-10-06 황소 22편: 클로즈 샷 카드가 낮게 나와
+  // 자막 윗줄이 카드 둘째 줄을 덮은 s5·s9). 기본 0 — 지정하지 않은 편·씬은 그대로. 아래 끝이 유튜브 제목 줄(y≈1510)에 닿지 않게 +28 이하로 쓴다(QA 한계: 아래 끝 y≤1500).
+  const yShift = Number(ASSEMBLY_SPEC.captionYShiftByScene?.[caption.sceneNumber] ?? 0) || 0;
+  const yFixed = CAPTION_FIXED_Y + yShift;
   return {
     ...caption,
     x: CAPTION_FIXED_X,
-    y: CAPTION_FIXED_Y,
+    y: yFixed,
     fontSize: CAPTION_FONT_SIZE,
     displayText: cleaned,
     lineVisuals,
     displayLines: lines,
     placementId: "owl_fixed",
-    visualTop: CAPTION_FIXED_Y - halfHeight,
-    visualBottom: CAPTION_FIXED_Y + halfHeight,
+    visualTop: yFixed - halfHeight,
+    visualBottom: yFixed + halfHeight,
   };
 }
 
