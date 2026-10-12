@@ -1,0 +1,91 @@
+{
+  "id": "swissair-2001",
+  "title": "스위스에어 운항 중단",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "책임 공방(은행·경영진·정부) 단정 금지. 연료 외상 끊긴 하루 장면 중심",
+  "conditionResolved": true,
+  "finding": "2001.10.2 스위스에어가 연료비·공항 이용료를 못 내 전 노선을 세운 장면은 swissinfo와 Business Today Malta 2곳에서 원문 확인됐고, 정부 가교대출 SFr450million(swissinfo·위키피디아), 실제 대출 1.15bn(스위스 연방감사원·swissinfo), 당일 가용 현금 SFr50million 대 SAirGroup 주장 SFr14.5million(swissinfo·위키피디아) 등 숫자 사실도 서로 다른 2곳씩 확인됐다. 책임 공방은 단정하지 않고 '연료 외상이 끊긴 날'로 장면을 한정하면 조건이 풀린다. 다만 당일 현금 규모는 감사 결과와 전 CEO 반박이 갈려 대본에 단정해 쓰면 안 되고, 한국 시청자에게 익숙한 소재는 아니다.",
+  "coreMessage": "회사는 장부의 자산이 아니라, 거래처가 외상을 내주는 신용으로 하루를 버틴다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2001년 10월 2일 스위스에어는 연료비·공항 이용료를 내지 못했고 연료업체가 납품을 거부해 모든 운항을 중단했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "연료 납품 거부 시점·계약 관계는 출처마다 서술이 다름. 은행·정부·경영진 책임은 단정하지 말 것.",
+      "sources": [
+        { "name": "swissinfo 연표(The death throes of Swissair)", "url": "https://www.swissinfo.ch/eng/the-death-throes-of-swissair/2949522", "quote": "such as fuel bills and landing fees" },
+        { "name": "Business Today Malta(2001.10.3)", "url": "https://archive.businesstoday.com.mt/2001/1003/top3.html", "quote": "fuel suppliers refused to deliver" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "스위스 정부는 운항 중단 직후 SFr450 million 규모의 가교(긴급)대출을 해 주었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "대출 총액은 이후 CHF 1.45bn 한도·1.15bn 집행으로 커짐(f3). 첫 패키지 액수임.",
+      "sources": [
+        { "name": "swissinfo(Swissair debacle still leaves a bitter taste)", "url": "https://www.swissinfo.ch/eng/swissair-debacle-still-leaves-a-bitter-taste/2952088", "quote": "a bridging loan of SFr450 million" },
+        { "name": "Wikipedia(Swissair)", "url": "https://en.wikipedia.org/wiki/Swissair", "quote": "emergency loan of over CHF 450 million" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "연방 대출은 총 CHF 1.45bn 한도 중 CHF 1.15bn이 실제 집행됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "swissinfo는 '1.15bn loan'만 적고 1.45bn 한도는 연방감사원 요약에만 있음.",
+      "sources": [
+        { "name": "스위스 연방감사원 EFK 감사 요약", "url": "https://www.efk.admin.ch/en/?p=7527", "quote": "CHF 1.15 billion were paid out" },
+        { "name": "swissinfo(Time's up: Swissair pays back millions)", "url": "https://swissinfo.ch/eng/business/time-s-up_swissair-pays-back-millions-in-government-loan/42142440", "quote": "the CHF1.15 billion loan" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "SAirGroup은 10월 2일 현금이 SFr14.5 million뿐이라 했으나 Ernst & Young은 그날 아침 SFr50 million을 쓸 수 있었다고 봤다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전 CEO 코르티는 이 결론을 강하게 반박(자기 계좌 약 SFr4 million, 그룹 약 SFr10 million). 책임 공방이므로 대본에서 단정 금지, 쓰지 않는 편이 안전.",
+      "sources": [
+        { "name": "swissinfo(Swissair grounding could have been avoided)", "url": "https://www.swissinfo.ch/eng/archive-banking-fintech/swissair-grounding-could-have-been-avoided/3129472", "quote": "SFr50 million at its disposal" },
+        { "name": "Wikipedia(Swissair)", "url": "https://en.wikipedia.org/wiki/Swissair", "quote": "around CHF50 million were available" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "스위스에어의 운항 중단일은 2001년 10월 2일이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "swissinfo(2005.5.18)", "url": "https://www.swissinfo.ch/eng/banking-fintech/liquidator-turns-sights-on-swissair-partners/4513772", "quote": "Swissair was grounded on October 2." },
+        { "name": "blue News(Bluewin)", "url": "https://www.bluewin.ch/en/news/a-public-address-announcement-marked-the-end-of-swissair-li.3621425", "quote": "Zurich Airport on October 2, 2001" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "운항 중단 때 스위스에어의 부채는 SFr17 billion 규모로 보도됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "swissinfo 1곳(같은 도메인 2건은 1곳). 다른 사이트 출처 없음.",
+      "sources": [
+        { "name": "swissinfo(The death throes of Swissair)", "url": "https://www.swissinfo.ch/eng/the-death-throes-of-swissair/2949522", "quote": "under debts of SFr17 billion" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "Bluewin은 연료를 더 살 수 없어 항공기 260대가 묶였다고 쓴다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "260대는 bluewin 1곳뿐. 다른 출처에서 확인되지 않아 사용 금지.",
+      "sources": [
+        { "name": "blue News(Bluewin)", "url": "https://www.bluewin.ch/en/news/a-public-address-announcement-marked-the-end-of-swissair-li.3621425", "quote": "its 260 aircraft had to remain grounded" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 항공사의 2001년 종결 사건. 단, 경영진·은행·정부 책임 공방과 연방법원 무죄 판결이 있어 책임 단정은 금지." },
+  "remaining": "당일 현금 규모(f4)는 쓰지 말 것. 승객 수는 2만 명(bluewin) 대 3.9만 명(swissinfo)으로 갈려 사용 금지. 한국 시청자 인지도가 낮아 도입부에서 사건을 설명해야 하고, 인물 결단 장면이 약함.",
+  "toolCallsUsed": 17
+}

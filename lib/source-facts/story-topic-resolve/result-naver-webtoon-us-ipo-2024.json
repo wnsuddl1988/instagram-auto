@@ -1,0 +1,110 @@
+{
+  "id": "naver-webtoon-us-ipo-2024",
+  "title": "네이버웹툰 미국 상장",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "주가·투자 이야기에 가깝고 라인야후 이슈와 겹침",
+  "conditionResolved": false,
+  "finding": "공모가 21달러, 조달 3억1500만달러, 기업가치 26.7억달러, 상장 후 석 달 만의 반토막 등 숫자는 2출처로 확인된다. 그러나 이야기의 중심이 공모가·주가 등락이라 시청자가 가져갈 결정적 장면(결단과 그 결과)이 없고, 상장 선택의 동기를 밝힌 원문도 찾지 못했다. 지금도 주가가 공모가 아래이고 상장사 종목 이야기라 투자 권유로 읽힐 위험이 있어 쓰려면 별도 각도가 필요하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "웹툰엔터테인먼트는 2024년 6월 나스닥 상장 공모가를 희망 범위 최상단인 21달러로 확정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        {
+          "name": "이코노미스트(2024)",
+          "url": "https://economist.co.kr/article/view/ecn202406270011",
+          "quote": "공모가는 26일(현지시간) 희망 범위 최상단인 21달러로 확정됐다"
+        },
+        {
+          "name": "한경머니(2024)",
+          "url": "https://magazine.hankyung.com/money/article/202409194342c",
+          "quote": "공모가 상단인 21달러에 상장해 최고 25.7달러까지 상승했다가"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "공모가 최상단 확정으로 보통주 1500만주, 약 3억1500만달러(약 4300억원)를 조달하게 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "원화 환산액은 기사마다 4300억~4400억원으로 다름.",
+      "sources": [
+        {
+          "name": "이코노미스트(2024)",
+          "url": "https://economist.co.kr/article/view/ecn202406270011",
+          "quote": "3억1500만 달러(약 4300억원) 조달이 가능해졌다"
+        },
+        {
+          "name": "딜사이트(2024)",
+          "url": "https://dealsite.co.kr/articles/124100",
+          "quote": "최대 3억1500만달러(약 4300억원)를 조달하는 것이 목표다"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "공모가 기준 기업가치는 약 26억7000만달러(약 3조7000억원)로 책정됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        {
+          "name": "이코노미스트(2024)",
+          "url": "https://economist.co.kr/article/view/ecn202406270011",
+          "quote": "기업가치가 26억7000만 달러(약 3조7000억원)로 책정됐다"
+        },
+        {
+          "name": "딜사이트(2024)",
+          "url": "https://dealsite.co.kr/articles/124100",
+          "quote": "추산한 기업가치는 26억7000만달러(약 3조7000억원)"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "상장 후 석 달 만에 주가가 공모가 21달러의 반토막 수준(52주 최저 10.22달러)까지 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2024년 9~10월 기준. 이후 주가는 계속 변동.",
+      "sources": [
+        {
+          "name": "한경머니(2024)",
+          "url": "https://magazine.hankyung.com/money/article/202409194342c",
+          "quote": "상장한 후 석 달 만에 주가가 반토막이 났다"
+        },
+        {
+          "name": "아시아경제(2024)",
+          "url": "https://core.asiae.co.kr/article/2024101107403510504",
+          "quote": "공모가인 21달러와 비교하면 반토막 수준이다"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "상장 첫날 종가는 공모가보다 9.5% 높은 23.0달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "메트로신문 단일 출처로 확인. 다른 기사는 첫날 종가를 29달러로 적어 서로 다름(대본 사용 위험).",
+      "sources": [
+        {
+          "name": "메트로신문(2024)",
+          "url": "https://www.metroseoul.co.kr/article/20240628500005",
+          "quote": "공모가보다 9.5% 높은 23.0달러에 거래를 마쳤다"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "네이버웹툰은 영업 중인 기업이고 현재 상장 주식(주가가 공모가 아래)이라 종목·투자 이야기로 읽힐 위험이 있음. 법적·정치 이슈는 아님."
+  },
+  "remaining": "상장 결단의 결정적 장면과 전달 메시지가 서지 않고 주가·투자 이야기에 머묾. 라인야후 이슈와도 겹침.",
+  "toolCallsUsed": 12
+}

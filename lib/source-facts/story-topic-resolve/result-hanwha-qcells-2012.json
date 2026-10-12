@@ -1,0 +1,108 @@
+{
+  "id": "hanwha-qcells-2012",
+  "title": "한화 큐셀 인수",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "인수가 3,870만/4천만/5천만 유로 불일치, 총수 서사 위험",
+  "conditionResolved": true,
+  "finding": "인수가는 공식 발표가 없고(관재인 설명: 현금 인수가 '중간 두 자릿수 백만 유로' + 인수 부채 '낮은 세 자릿수 백만 유로') 보도가 3,870만(서울신문)·4천만 유로(산업일보·OPN)로 갈려, 대본에서는 '약 4천만 유로, 약 555억원(보도 기준·공식 미공개)'으로 쓰면 해소된다. 5천만 유로는 이번 조사에서 확인되지 않아 쓰지 않는다. 결정적 장면은 2012년 8월 29일 독일 채권자 회의의 매각 승인(1,550명 중 1,250명 인수)이며, 숫자 사실 8개가 서로 다른 사이트 2곳으로 확인되고 결과(가동률 20%→90%, 원가 53% 절감)도 뒷받침되어 usable로 제안한다. 총수 서사는 대본에서 배제해 회사 결정으로 쓴다.",
+  "coreMessage": "파산한 회사에서 한화가 산 것은 간판이 아니라 돌아갈 공장과 기술자 1,250명이었다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "독일 큐셀은 2012년 4월 3일 파산을 신청했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Evertiq(2012)", "url": "https://evertiq.com/news/22744", "quote": "filed for insolvency on 3 April 2012" },
+        { "name": "Optics & Photonics News(2012)", "url": "https://www.optica-opn.org/home/industry/2012/august/korean_solar_giant_hanwha_saves_troubled_q-cells", "quote": "filed for insolvency on April 3, 2012" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "큐셀은 2011년 한 해에만 8억 4,600만 유로의 적자를 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "원화 환산은 약 1조 2,600억원(뉴스토마토)·약 1조 2,241억원(서울신문)으로 달라 유로 금액만 사용",
+      "sources": [
+        { "name": "뉴스토마토(2012)", "url": "https://newstomato.com/ReadNews.aspx?no=278892", "quote": "지난해에만 8억4600만유로(약1조2600억원)의 적자를 기록" },
+        { "name": "서울신문(2013)", "url": "https://m.seoul.co.kr/news/2013/09/25/20130925005002", "quote": "큐셀의 2011년 적자가 8억 4600만 유로" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2012년 8월 26일 한화와 관재인이 계약을 맺고, 8월 29일 채권자 회의가 한화로의 매각을 승인했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "승인 주체는 법원이 아니라 채권자 회의. 최종 종결은 10월(19일) 이후",
+      "sources": [
+        { "name": "Solarserver(2012.8.30)", "url": "https://www.solarserver.de/2012/08/30/q-cells-glaeubiger-stimmen-dem-verkauf-an-hanwha-zu-suedkoreanischer-mischkonzern-will-den-grossteil-des-personals-an-standorten-in-deutschland-und-malaysia-uebernehmen/", "quote": "am 29.08.2012 in Dessau-Roßlau" },
+        { "name": "Optics & Photonics News(2012)", "url": "https://www.optica-opn.org/home/industry/2012/august/korean_solar_giant_hanwha_saves_troubled_q-cells", "quote": "inked August 29" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "한화는 큐셀 직원 약 1,550명 가운데 약 1,250명을 인수했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Solarserver(2012.8.30)", "url": "https://www.solarserver.de/2012/08/30/q-cells-glaeubiger-stimmen-dem-verkauf-an-hanwha-zu-suedkoreanischer-mischkonzern-will-den-grossteil-des-personals-an-standorten-in-deutschland-und-malaysia-uebernehmen/", "quote": "rund 1.250 der rund 1.550 Mitarbeiter" },
+        { "name": "Optics & Photonics News(2012)", "url": "https://www.optica-opn.org/home/industry/2012/august/korean_solar_giant_hanwha_saves_troubled_q-cells", "quote": "1,250 employees out of a headcount" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "자산양수도 계약의 현금 인수금액은 약 4천만 유로(약 555억원) 안팎으로 보도됐다(공식 미공개).",
+      "numeric": true,
+      "economy": true,
+      "caution": "관재인 공식 설명은 '현금 인수가 중간 두 자릿수 백만 유로'뿐. 서울신문은 3,870만 유로(약 555억원), 산업일보는 4천만 유로로 표기. 대본에는 '약 4천만 유로(보도 기준)'로 쓰고 정밀 금액처럼 쓰지 말 것",
+      "sources": [
+        { "name": "산업일보(2012)", "url": "https://kidd.co.kr/news/158708", "quote": "자산양수도 계약의 인수금액은 4천만 유로(약 555억 원)" },
+        { "name": "서울신문(2013)", "url": "https://m.seoul.co.kr/news/2013/09/25/20130925005002", "quote": "여기에 들인 돈은 3870만 유로(약 555억원)" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "한화는 큐셀 말레이시아 법인의 차입금 약 3천억원(8억 5천만 링깃, 약 3,100억원)도 함께 떠안았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "약 3천억원 vs 약 3,100억원 표기 차이",
+      "sources": [
+        { "name": "산업일보(2012)", "url": "https://kidd.co.kr/news/158708", "quote": "차입약정에 의한 대출금(약 3천억 원)을 인수하기로" },
+        { "name": "서울신문(2013)", "url": "https://m.seoul.co.kr/news/2013/09/25/20130925005002", "quote": "8억 5000만 링깃(약 3100억원)을 떠안은 정도" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "인수 1년 만에 큐셀 말레이시아 공장 가동률이 20%에서 90% 이상으로 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "파이낸셜뉴스(2013)", "url": "https://www.fnnews.com/news/201309160403548910", "quote": "가동률이 20%밖에 안 되던 한화큐셀 말레이시아 공장이" },
+        { "name": "서울신문(2013)", "url": "https://m.seoul.co.kr/news/2013/09/25/20130925006013", "quote": "공장 가동률을 20%에서 90% 이상으로 끌어올린" }
+      ]
+    },
+    {
+      "id": "f8",
+      "claim": "인수 이후 큐셀 말레이시아 공장의 셀 생산원가는 53% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "인수 당시(2012년 10월) 대비 기준",
+      "sources": [
+        { "name": "파이낸셜뉴스(2013)", "url": "https://www.fnnews.com/news/201309160403548910", "quote": "인수 후 원가를 53%나 절감했고" },
+        { "name": "서울신문(2013)", "url": "https://m.seoul.co.kr/news/2013/09/25/20130925006013", "quote": "인수 당시인 지난해 10월과 비교해 53%나 줄었다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "한화는 영업 중인 국내 대기업이나 2012년 종결된 인수 사건이며 소송·피해자 없음. 총수(김승연 회장) 서사·사법 이력과 한화솔루션 종목 이슈로 읽히는 문구는 대본에서 배제 필요"
+  },
+  "remaining": "인수가는 공식 미공개라 '약 4천만 유로(보도 기준)'로만 표기해야 함. 흑자 전환 시점은 보도마다 달라(2013년 월 단위 흑자 vs 2015년 2분기 합병 후 첫 흑자) 쓰지 말 것. 총수 이야기 제외, 회사 결정으로 서술.",
+  "toolCallsUsed": 17
+}

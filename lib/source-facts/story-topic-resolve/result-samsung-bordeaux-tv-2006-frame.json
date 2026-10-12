@@ -1,0 +1,71 @@
+{
+  "id": "samsung-bordeaux-tv-2006-frame",
+  "title": "삼성 보르도 TV — 소니를 처음 이긴 해",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "풀의 samsung-bordeaux-tv-2006과 합쳐 쓸 것, 이건희 디자인 관여는 근거 없음, 와인잔 모양·스피커 숨김 시각 디테일 보강 필요, '소니를 앞섰다'는 미국 기준",
+  "conditionResolved": true,
+  "finding": "와인잔 모양 디자인(2006년 4월경 출시)은 신문 2곳으로 확인되고, 출시 전 3월 미국 LCD TV 점유율 11.9%(3위)가 6월 17.2%(1위)로 오르고 연간 15.1%로 2005년 4위에서 1위가 된 숫자는 삼성 뉴스룸(NPD 인용)과 언론·업계지 2곳 이상에서 확인된다. 소니 14.4%(2위)는 미국 NPD 소매 기준이며 '스피커를 베젤 뒤로 숨김'은 2006년형 40인치가 아니라 일본 출시 19인치 LN19R71B(2007) 이야기라 시각 디테일로 쓰면 안 되고, 와인잔 모양 외형(2007년형은 투명 곡선 하단 베젤)만 쓸 것. 이건희 디자인 관여 근거는 못 찾음. 숫자가 전부 삼성 발표(NPD 인용) 기반이라 '미국 소매 기준'으로 한정하면 usable.",
+  "coreMessage": "성능이 비슷해지면 마지막 한 표는 디자인이 던진다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2006년 미국 LCD TV(10인치 이상) 판매량 점유율에서 삼성은 2005년 4위에서 1위(15.1%)로 올랐고, 소니는 14.4%로 2위였다(NPD, 미국 소매 기준).",
+      "numeric": true,
+      "economy": true,
+      "caution": "NPD 수치를 삼성이 인용해 발표한 것. DisplaySearch·iSuppli 등 출하량 기준 집계에서는 북미 1위가 필립스·소니로 다르게 나온다는 검색 요약이 있으나 직접 열람하지 못함 → 반드시 '미국 소매 판매량 기준(NPD)'로 한정.",
+      "sources": [
+        { "name": "WidescreenReview(2007.1.30)", "url": "https://widescreenreview.com/news_detail.php?id=12781", "quote": "(from the number four position in 2005) with a market share of 15.1 percent" },
+        { "name": "이투데이(2007)", "url": "https://www.etoday.co.kr/news/view/115119", "quote": "소니가 14.4%, 샤프가 11.6%로 2, 3위를 차지한 것으로 나타났다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2006년 미국 디지털 TV 판매대수 점유율은 삼성 20.0%, 소니 17.2%로 삼성이 1위(2005년은 소니 21.4% 1위, 삼성 14.5% 2위).",
+      "numeric": true,
+      "economy": true,
+      "caution": "NPD 인용, 판매대수 기준. 소니 17.2% 수치는 이투데이 단일 확인(삼성 20.0%는 2곳).",
+      "sources": [
+        { "name": "WidescreenReview(2007.1.30)", "url": "https://widescreenreview.com/news_detail.php?id=12781", "quote": "Samsung became America's choice for digital TVs in 2006 with total Digital TV unit share of 20.0 percent" },
+        { "name": "이투데이(2007)", "url": "https://www.etoday.co.kr/news/view/115119", "quote": "삼성전자가 20.0%, 소니 17.2%, 파나소닉 7.9%, 샤프 6.2% 순으로 나타났다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "보르도 출시 전인 2006년 3월 삼성 미국 LCD TV 점유율은 11.9%(3위)였고, 출시 후 6월에 처음 1위로 올라섰다(삼성 발표: 6월 17.2%, 7월 보도는 17.4%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "6월 점유율이 삼성 뉴스룸 17.2%, 2006.7.23 이투데이 17.4%로 서로 다름 → 대본에는 '17%대'로 쓸 것. 두 곳 모두 삼성 발표 기반.",
+      "sources": [
+        { "name": "삼성전자 뉴스룸(보르도 LCD TV 美 1위 보도자료)", "url": "https://news.samsung.com/kr/%ec%82%bc%ec%84%b1%ec%a0%84%ec%9e%90tv-29%eb%85%84%eb%a7%8c%ec%97%90-%eb%af%b8%ea%b5%ad%ec%8b%9c%ec%9e%a5-%ed%8f%89%ec%a0%95", "quote": "보르도’ LCD TV가 출시 되기 이전인 3월에 11.9%(3위)였으나" },
+        { "name": "이투데이(2006.7.23)", "url": "https://www.etoday.co.kr/news/view/93872", "quote": "이 회사의 LCD TV는 미국에서 지난 6월 처음으로 1위로 부상했고" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2007년형까지 합친 보르도 LCD TV 누계 판매는 출시 1년 4개월여 만에 글로벌 500만대를 기록했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2006년형+2007년형 합산 누계(삼성 발표). 2006년형만의 수치는 단일 출처(dt.co.kr 8개월 200만대)뿐.",
+      "sources": [
+        { "name": "머니투데이(2007.11.30)", "url": "https://www.mt.co.kr/stock/2007/11/30/2007112913080848153", "quote": "출시 1년 4개월 여만에 '글로벌 누계 판매 500만대' 기록" },
+        { "name": "이투데이(2007.8)", "url": "https://www.etoday.co.kr/news/view/137486", "quote": "'보르도 LCD TV 500만대 시대'를 열었다고 20일 밝혔다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "보르도는 와인잔 모양을 형상화한 감성 디자인으로 비슷비슷한 TV 시장에서 차별화했다(2007년형은 투명한 곡선 하단 베젤로 크리스털 와인잔 형상).",
+      "numeric": false,
+      "economy": false,
+      "caution": "스피커 숨김 디테일은 2006년형 40인치가 아니라 일본 출시 19인치(LN19R71B, 2007) 이야기라 쓰지 말 것. 이건희의 디자인 관여는 근거 없음.",
+      "sources": [
+        { "name": "머니투데이(2007.11.30)", "url": "https://www.mt.co.kr/stock/2007/11/30/2007112913080848153", "quote": "와인잔 모양의 감성적 디자인에 초점을 맞춰" },
+        { "name": "이투데이(2007)", "url": "https://www.etoday.co.kr/news/view/116236", "quote": "와인잔 모양을 감각적으로 형상화한 디자인의 '보르도' LCD TV" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "영업 중인 국내 기업 성공 사례이나 소송·제재·피해자 없음. 기업 홍보로 읽히지 않게 점유율은 NPD 미국 소매 기준으로 한정." },
+  "remaining": "점유율 수치가 모두 삼성 발표 기반(독립 교차 검증 없음), 출하량 기준 집계와 순위가 다를 수 있음. 결정적 장면이 인물의 선택이 아니라 '디자인 승부수' 제품 이야기라 장면 구성(와인잔을 본뜬 TV 한 대를 내놓은 선택)은 대본 단계에서 보강 필요.",
+  "toolCallsUsed": 22
+}

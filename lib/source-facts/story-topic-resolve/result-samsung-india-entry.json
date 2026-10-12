@@ -1,0 +1,71 @@
+{
+  "id": "samsung-india-entry",
+  "title": "삼성 인도 진출",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "스마트폰 1위 아님, 장면 약함",
+  "conditionResolved": false,
+  "finding": "숫자 사실(2018년 노이다 신공장 총투자 500억 루피≈7985억 원, 월 500만→1000만 대, 연 최대 1억 2000만 대)은 2곳씩 확인되지만 결정적 장면이 서지 않는다. 후보는 2018년 7월 노이다 준공식인데 문재인 대통령·모디 총리·이재용 부회장 동행의 외교·정치 행사로 읽히고(기사에 이재용 석방 직후 첫 행보 언급), 인도 1위 여부는 출처·집계마다 달라(2018년 샤오미 1위 → 2020년 3분기 또는 2022년 4분기·2023년 탈환 등) 결과를 바꾼 결단 서사가 없다. 1위 탈환에는 인도 정부의 샤오미 제재도 함께 언급돼 삼성 결정의 인과로 쓰기 어렵다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "삼성전자 노이다 신공장(2018년 7월 준공)의 총 투자 금액은 500억 루피(약 7985억 원)로, 2016년 처음 논의 때의 197억 루피보다 크게 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴시스는 7985억 원, 뉴스토마토는 약 8000억 원으로 표기. 197억 루피는 뉴시스 단독.",
+      "sources": [
+        { "name": "뉴시스(2018.7.5)", "url": "https://mobile.newsis.com/view/NISX20180705_0000355938", "quote": "총 투자 금액은 500억루피(약 7985억원)에 이른다" },
+        { "name": "뉴스토마토(2018.7)", "url": "https://newstomato.com/ReadNews.aspx?no=834718", "quote": "약 8000억원이 투입된 노이다 공장은" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "노이다 공장 증설로 휴대전화 월 생산량이 약 500만 대에서 1000만 대로 늘어난다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "아주경제(2018.7.5)", "url": "https://www.ajunews.com/view/20180705154428975", "quote": "현재 월 500만대 수준인 휴대전화 생산량이 1000만대로" },
+        { "name": "뉴시스(2018.7.5)", "url": "https://mobile.newsis.com/view/NISX20180705_0000355938", "quote": "공장이 완공되면 노이다 공장에서는 월 1000만대" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "노이다 공장의 연간 최대 생산능력은 1억 2000만 대다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "뉴시스(2018.7.5)", "url": "https://mobile.newsis.com/view/NISX20180705_0000355938", "quote": "연간 최대 생산량은 1억2000만대에 달해" },
+        { "name": "뉴스토마토(2018.7)", "url": "https://newstomato.com/ReadNews.aspx?no=834718", "quote": "연간 1억2000만대의 생산능력을 갖춘 것으로 알려졌다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "삼성 인도법인은 1995년 설립되어 이듬해 노이다 공장 초석을 놓았고 1997년 첫 TV를 생산했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "두 페이지가 같은 IANS 통신 기사의 재게시라 독립 출처로는 약함.",
+      "sources": [
+        { "name": "The News Minute(IANS, 2018)", "url": "https://www.thenewsminute.com/atom/samsung-sets-world-s-largest-mobile-factory-noida-84390", "quote": "Established in 1995, Samsung India" },
+        { "name": "The Quint(IANS, 2018)", "url": "https://www.thequint.com/hotwire-text/samsung-india-puts-noida-on-top-with-world-s-largest-mobile-factory", "quote": "laid the foundation stone of Noida plant" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "인도 스마트폰 시장에서 샤오미가 약 5년간 1위를 지킨 뒤 삼성전자가 1위를 되찾았다는 보도가 있다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "탈환 시점·기준이 출처마다 다름(아주경제 2020.10은 2020년 3분기 24% 점유율로 2년 만의 탈환, 머니투데이는 2022년 4분기, 서울경제는 2023년 1위, 2024년 3위로 주춤). 집계기관·기준(대수/금액)이 달라 대본에서 1위를 단정하면 위험.",
+      "sources": [
+        { "name": "머니투데이(2023.9)", "url": "https://www.mt.co.kr/world/2023/09/24/2023092018021530118", "quote": "5년 동안 1위를 지킨 샤오미가 지난해 4분기 삼성전자에게 1위를 내줬다" },
+        { "name": "서울경제(2025.7, 다음뉴스)", "url": "https://v.daum.net/v/20250730180945988", "quote": "삼성전자는 2023년 스마트폰 1위에 올랐다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": true, "note": "삼성전자는 현재도 영업 중인 국내 기업. 핵심 장면(2018.7 준공식)이 대통령 순방과 이재용 부회장 석방 직후 첫 행보와 얽혀 있어 정치·사법 맥락 소지가 있음." },
+  "remaining": "준공식이 아닌 별도의 결정적 선택 장면(예: 2017년 증설 결정, 1위 탈환의 삼성 측 원인)을 2곳 출처로 찾지 못함. 인도 1위 여부가 출처마다 달라 결과가 확정되지 않음. 41.8%(2017 점유율, 산업부 발언)는 뉴시스 단독이고 IDC 집계(약 25%)와 달라 사용 금지. 삼성 인도법인 2024년 매출 17조 489억 원·순이익 1조 4083억 원은 서울경제 단독.",
+  "toolCallsUsed": 14
+}

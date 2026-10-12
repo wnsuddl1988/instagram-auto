@@ -1,0 +1,75 @@
+{
+  "id": "samsung-harman-2016",
+  "title": "삼성 하만 인수",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장면 없음, 성과 평가가 해마다 엇갈림",
+  "conditionResolved": false,
+  "finding": "'성과 평가 엇갈림'은 숫자로 풀렸다: 인수 직전 2016년 영업이익 6,800억 원, 인수 첫해 2017년 574억 원, 2023년 1조 1,700억 원대로 처음 1조 원 돌파가 서로 다른 사이트 2곳에서 확인된다. 그러나 '장면 없음'은 풀리지 못했다. 확인되는 결정적 사건은 2016년 11월 14일 이사회 의결과 80억 달러 인수 발표(보도자료성 사실)뿐이고 인물의 발언·현장·망설임 같은 장면 자료가 없어, 이야기가 '인수 발표→7년 부진→반등'의 연표 구조가 된다. 근거는 충분하지만 장면이 약해 weak-scene 보류가 맞다.",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "삼성전자는 2016년 11월 14일 이사회에서 하만 인수를 의결했고, 주당 112달러·총액 80억 달러(약 9조 원대)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "원화 환산액이 기사마다 다르다(9조 3,760억 원 / '9조 원').",
+      "sources": [
+        { "name": "데일리안(2016.11.14)", "url": "https://www.dailian.co.kr/news/view/597706/", "quote": "인수 가격은 주당 112달러로" },
+        { "name": "비즈워치(2016.11.14)", "url": "https://news.bizwatch.co.kr/article/industry/2016/11/14/0019", "quote": "인수 가격은 주당 112달러, 인수 총액은 80억달러이다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "80억 달러 인수는 국내 기업의 해외기업 M&A 사상 최대 규모였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "이전 기록(2007년 두산 밥캣 5조 7천억 원)은 매일신문(연합뉴스) 1곳에서만 확인.",
+      "sources": [
+        { "name": "데일리안(2016.11.14)", "url": "https://www.dailian.co.kr/news/view/597706/", "quote": "국내기업의 해외기업 인수합병(M&A) 사상 최대 규모다" },
+        { "name": "비즈워치(2016.11.14)", "url": "https://news.bizwatch.co.kr/article/industry/2016/11/14/0019", "quote": "인수금액만 80억 달러(한화 9조원)에 달하는" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "인수 당시 하만의 직전 12개월 매출은 약 70억 달러, 영업이익은 7억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "데일리안(2016.11.14)", "url": "https://www.dailian.co.kr/news/view/597706/", "quote": "영업이익은 7억달러(직전 12개월 기준)에 달한다" },
+        { "name": "매일신문(2016.11.14, 연합뉴스)", "url": "https://www.imaeil.com/page/view/2016111418234690165", "quote": "영업이익 7억달러(직전 12개월 기준)에 달한다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "하만 영업이익은 인수 직전 2016년 6,800억 원 수준에서 인수 첫해 2017년 574억 원으로 급감했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "딜사이트는 2016년을 '6800억원 수준'으로 표기. 2016년 비교 시점·기준(회계연도 등)은 출처에 명시돼 있지 않음.",
+      "sources": [
+        { "name": "뉴시스(2024.2.2)", "url": "https://www.newsis.com/view/NISX20240201_0002613842", "quote": "인수 첫 해인 2017년 574억원으로 급락했다" },
+        { "name": "딜사이트(2023.12.6)", "url": "https://dealsite.co.kr/articles/114192", "quote": "2017년 영업이익은 574억원으로 급감했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "하만은 2023년 인수 후 처음으로 연간 영업이익 1조 원을 넘겼다(약 1조 1,700억 원).",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴시스는 '1조1700억원', 딜사이트는 '1조1737억원'으로 표기. 인수 후 6년 만.",
+      "sources": [
+        { "name": "뉴시스(2024.2.2)", "url": "https://www.newsis.com/view/NISX20240201_0002613842", "quote": "하만 연간 영업이익이 1조원을 돌파한 것은 처음이다" },
+        { "name": "딜사이트(2024.6.20)", "url": "https://dealsite.co.kr/articles/124119", "quote": "지난해(1조1737억원)에는 처음으로 1조원을 넘겼다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성전자는 영업 중이나 소송·제재 사건 아님. 인수 발표(2016.11)가 국정농단 정국과 겹쳐 이재용 부회장 관련 정치 맥락이 따라붙을 수 있으니 쓰게 되면 그 부분은 배제해야 함."
+  },
+  "remaining": "결정적 '장면'(인물의 발언·결단 순간·현장)이 이사회 의결 보도 외에 2곳 원문으로 확인되지 않음. 숫자 호는 완비돼 있어 Owner가 '연표형 구조를 받아들이고' 쓰겠다고 하면 승격 가능. 2025년 영업이익 1조 5,311억 원(헤럴드경제 1곳)은 2곳 확인 못 함.",
+  "toolCallsUsed": 12
+}

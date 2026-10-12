@@ -1,0 +1,71 @@
+{
+  "id": "ktx-sancheon-2005",
+  "title": "KTX-산천 국산 열차 입찰",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "연표형, 독립 언론 출처 없음(위키·사보), 초기 결함 이력 미확인",
+  "conditionResolved": false,
+  "finding": "초기 결함 이력은 확인됐다: 2010년 3월 영업 개시 후 2011년 3월까지 고장 41건(10일에 한 번꼴), 2011년 2월 광명역 탈선. 입찰 사실도 현대로템 자료와 2023년 아주경제 기사로 보인다(2005년 12월 100량 입찰에서 알스톰을 제치고 우선협상대상자). 하지만 독립 매체에서 2005년 입찰의 계약금액·가격 비교·결정 순간을 찾지 못했고(약 3,000억원은 영문 위키 단일, 2006년 계약 2,940억원도 단일), 이야기는 1994년 기술이전→HSR-350x→입찰→2010 개통의 연표로 흐르며 주인공의 선택 장면이 없다. 게다가 현대로템·코레일은 지금도 영업 중이고 초기 결함·탈선 이슈가 얽혀 있어 미담으로 쓰기 어렵다. 그래서 hold(weak-scene).",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "현대로템은 2005년 12월 코레일의 KTX-산천 100량 경쟁 입찰에서 알스톰을 제치고 우선협상대상자로 선정됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "현대로템 자료(현대자동차그룹 뉴스룸 게재, 자사 보도). 독립 언론 확인은 2023년 기사의 '2005년 알스톰 이후 처음'이라는 간접 문장뿐.",
+      "sources": [
+        { "name": "현대자동차그룹 뉴스룸(현대로템)", "url": "https://www.hyundaimotorgroup.com/ko/news/CONT0000000000153774", "quote": "KTX-산천 100량 경쟁 입찰에서 알스톰을 제치고 우선협상대상자로 선정됐다" },
+        { "name": "아주경제(2023.03.20)", "url": "https://www.ajunews.com/view/20230320152350807", "quote": "2005년 프랑스 알스톰 이후 처음이다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "KTX-산천은 2008년 첫 출고, 2010년 3월 첫 영업운행을 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "현대로템 자사 자료 단일.",
+      "sources": [
+        { "name": "현대자동차그룹 뉴스룸(현대로템)", "url": "https://www.hyundaimotorgroup.com/ko/news/CONT0000000000153774", "quote": "2010년 3월 첫 영업운행을 개시했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "KTX-산천은 영업 개시 후 2011년 3월까지 고장이 41건으로 10일에 한 번꼴이었고, 신호장치·공기배관이 각 10건이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "뉴스토마토 단일 출처 확인. 집계 기준에 따라 보도별 건수 상이(7월 보도는 40여건).",
+      "sources": [
+        { "name": "뉴스토마토", "url": "https://newstomato.com/ReadNews.aspx?no=156511", "quote": "영업개시 이후 3월까지 집계된 고장건수는 무려 41건으로" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2023년 KTX-산천 후속 136량 재입찰에서 현대로템의 낙찰 금액은 7100억원이었고, 이후 현대로템은 17년간 독점적 지위를 유지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "아주경제 단일 출처 확인(2005년 입찰이 아니라 2023년 재입찰 수치).",
+      "sources": [
+        { "name": "아주경제(2023.03.20)", "url": "https://www.ajunews.com/view/20230320152350807", "quote": "현대로템의 낙찰 금액은 7100억원이다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "KTX-산천 제작기간은 36개월로 프랑스 TGV의 60개월보다 짧았고, 시운전은 6천~1만2천km로 TGV의 20만km보다 훨씬 짧았다(감사원 2012년 검토).",
+      "numeric": true,
+      "economy": false,
+      "caution": "현대로템 블로그가 감사원 검토를 인용한 것으로 2차 출처. 비판적 맥락.",
+      "sources": [
+        { "name": "현대로템 블로그(KTX 개발 비화)", "url": "https://blog.hyundai-rotem.co.kr/693", "quote": "제작기간 36개월" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "현대로템·코레일은 지금도 영업 중이며 초기 결함·2011년 광명역 탈선 이슈가 있어 국산화 미담과 안전 논란이 함께 읽힘."
+  },
+  "remaining": "2005년 입찰의 계약 금액·가격 비교·결정 순간을 확인해 줄 독립 언론(2005~2006년 당시 기사) 필요. 사람의 선택 장면이 없음.",
+  "toolCallsUsed": 8
+}

@@ -1,0 +1,75 @@
+{
+  "id": "lg-lucky-cream-origin",
+  "title": "LG는 화장품 크림에서 시작했다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "크림 뚜껑 일화를 확인하지 못함",
+  "conditionResolved": true,
+  "finding": "크림 뚜껑 일화가 확인됐다: LG 공식 구인회 회장 소개 페이지에 '화장품 통 뚜껑이 절반 이상 깨지고 크림이 쏟아져 팔 수 없다는 도매상의 항의'가 적혀 있고, 경향신문이 이를 플라스틱 사업 진출의 '결정적인 계기'라고 보도했다. 이후 크림으로 번 돈 3억원을 투자해 사출성형기를 들여온 결단까지 서로 다른 사이트 2곳씩 원문 인용을 확보했다. 기업 저격이 아닌 불만이 새 산업을 연 창업 일화이고 민감성 문제는 없다.",
+  "coreMessage": "고객의 불만 하나를 그냥 넘기지 않고 뿌리까지 파고든 것이 새 산업의 시작이 됐다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "럭키크림은 잘 팔렸지만 화장품 통 뚜껑이 절반 이상 깨진다는 도매상의 항의가 이어졌고, 이것이 락희가 국내 최초로 플라스틱 사업에 뛰어든 결정적 계기가 됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'절반 이상'은 LG 공식 서술이며 실제 불량률은 확인 불가. 대본에서는 '뚜껑이 자꾸 깨져 항의가 줄지 않았다'로 쓰는 편이 안전.",
+      "sources": [
+        { "name": "LG 구인회 회장 소개(lg.co.kr)", "url": "https://lg.co.kr/chairman/1/1", "quote": "화장품 통 뚜껑이 절반 이상 깨지고 크림이 쏟아져 흘러서" },
+        { "name": "경향신문(2012.5.15)", "url": "https://www.khan.co.kr/article/201205151147501", "quote": "플라스틱을 만드는 사업에 뛰어들게 된 결정적인 계기가 됐다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "LG의 모태 락희화학공업사는 1947년 부산에서 설립돼 첫 제품 럭키크림을 생산했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "LG 구인회 회장 소개(lg.co.kr)", "url": "https://lg.co.kr/chairman/1/1", "quote": "LG의 모태가 되는 락희화학공업사는 이렇게 1947년 1월 5일" },
+        { "name": "경향신문(2012.5.15)", "url": "https://www.khan.co.kr/article/201205151147501", "quote": "1947년 부산에 락희화학공업사를 설립해" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "락희화학은 크림을 팔아 모은 3억원을 몽땅 투자해 플라스틱 사출성형기와 부산 공장을 마련했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'3억'은 당시 화폐 단위(환/원) 기준이라 현재 가치로 환산해 쓰면 안 됨. 한경 매거진은 '3억원(圓)'으로 표기.",
+      "sources": [
+        { "name": "한경 매거진(2021.3)", "url": "https://magazine.hankyung.com/business/article/202103045261b", "quote": "크림으로 번 돈 3억원(圓)을 몽땅 투자해" },
+        { "name": "LG화학 아카이브 100", "url": "https://www.lgchem.com/lg-chem-history/archives100/diggingLuckyCream", "quote": "화장품을 판매해 모은 3억의 거금을 과감히 투자해" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "락희화학은 1951년 10월 발주해 10개월을 기다려 받은 국내 1호 사출성형기를 들여와 1952년 국내 최초의 플라스틱 빗과 비눗갑을 만들었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "LG 공식 연혁은 '1952년 사출성형기 도입'으로, LG화학 아카이브는 '1951년 10월 발주 후 10개월 대기'로 적어 시점이 약간 다름(발주 1951 / 도입 1952).",
+      "sources": [
+        { "name": "LG 연혁(lg.co.kr)", "url": "https://www.lg.co.kr/about/history/1", "quote": "락희화학, 국내 최초 사출성형기 도입" },
+        { "name": "LG화학 아카이브 100", "url": "https://www.lgchem.com/lg-chem-history/archives100/diggingLuckyCream", "quote": "1951년 10월에 발주하여 10개월을 기다려 받은" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "칫솔과 플라스틱 그릇이 생산되기 무섭게 팔려 사출성형기는 '돈 찍는 기계'라는 별명을 얻었고 락희화학은 큰돈을 벌었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "전자신문(1999.4.22)", "url": "https://m.etnews.com/199904220115", "quote": "사출성형기는 「돈 찍는 기계」라는 별명을 얻기도 했다" },
+        { "name": "한국경제 김정호 교수 칼럼(2017)", "url": "https://sgsg.hankyung.com/article/2017042170021", "quote": "락희화학은 세기도 힘들 정도로 큰돈을 벌었다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "현재 영업 중인 LG 계열이지만 1940~50년대 창업 일화이며 소송·제재 등 진행 중 사건과 무관."
+  },
+  "remaining": "'절반 이상 깨졌다'는 LG 공식 서술 1건 기반의 수치라 단정 표현을 피할 것. 사출기 도입 연도(1951 발주/1952 도입)는 대본에서 '전쟁 중 주문해 이듬해 받았다' 정도로 표현.",
+  "toolCallsUsed": 12
+}

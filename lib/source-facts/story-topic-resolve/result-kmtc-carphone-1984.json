@@ -1,0 +1,85 @@
+{
+  "id": "kmtc-carphone-1984",
+  "title": "한국이동통신 카폰",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "사장님 폰 일화 위주로 경제 번역 약함, 가입비 불일치",
+  "conditionResolved": false,
+  "finding": "가입비 불일치는 풀렸다: 초기 가입비(설비비 88.5만원+채권 20만원 등) 116.8만원과 단말기 약 300만원이 별개 항목이라 합치면 약 410만원으로, 포니2 한 대 값(347만~350만원)과 맞먹는다는 숫자가 서로 다른 사이트 2곳으로 확인된다. 개통 한 달 만에 2천 명 신청, 첫해 2,658명 가입도 2곳 확인. 그러나 주인공의 선택·결단 장면이 없고(수요 쇄도·과시 소비 일화), 전달 메시지가 '비싼 건 신분값' 수준으로 얕아 Owner 이야기 기준(결단+교훈)에는 장면이 약하다. 숫자는 충분하므로 weak-scene 보류.",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1984년 카폰에 가입하려면 설비비 88만5천원과 채권 20만원 등 초기 가입비만 총 116만8천원을 내야 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단말기 값(약 300만원)은 이 금액에 포함되지 않음. 이 점이 '가입비 불일치'(116만8천원 vs 410만원)의 원인.",
+      "sources": [
+        { "name": "ZDNet Korea(2013)", "url": "https://zdnet.co.kr/view/?no=20131231092258", "quote": "초기 가입비만 총 116만8천원을 지불해야 했다" },
+        { "name": "영남일보(2021)", "url": "https://www.yeongnam.com/web/view.php?key=20210305010000772", "quote": "총 116만8천원을 내야 했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "카폰 단말기 가격은 제조사별로 300만~340만원 수준이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "ZDNet은 300만원 수준, 아이뉴스24는 업체별 300~340만원으로 서술이 다름.",
+      "sources": [
+        { "name": "ZDNet Korea(2013)", "url": "https://zdnet.co.kr/view/?no=20131231092258", "quote": "단말기 가격은 300만원 수준으로" },
+        { "name": "아이뉴스24(2023)", "url": "https://www.inews24.com/view/1448410", "quote": "각각의 단말기 가격은 330만원, 300만원" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1982년 출시된 포니2 승용차 1대 가격(약 347만~350만원)은 카폰 단말기와 가입비를 합친 값과 맞먹었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "포니2 가격이 출처마다 347만원/350만원가량으로 다름. 카폰 총비용도 200만~410만원으로 서술이 갈림.",
+      "sources": [
+        { "name": "ZDNet Korea(2013)", "url": "https://zdnet.co.kr/view/?no=20131231092258", "quote": "1982년 출시된 포니2 승용차 1대 가격은 347만원이었다" },
+        { "name": "영남일보(2021)", "url": "https://www.yeongnam.com/web/view.php?key=20210305010000772", "quote": "포니2 승용차 1대 가격이 350만원가량이었던" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "카폰 출시 첫해(1984) 가입자는 2,658명이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "아이뉴스24는 '실제 청약대상 회선수 2,652대'로 약간 다르게 적음.",
+      "sources": [
+        { "name": "ZDNet Korea(2013)", "url": "https://zdnet.co.kr/view/?no=20131231092258", "quote": "카폰 출시 첫해 가입자수는 2천658명에 달했다" },
+        { "name": "한국일보(2014)", "url": "https://www.hankookilbo.com/news/article/201403251899424734", "quote": "첫 해 2,658명이 가입했다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1984년 5월 7일 차량 전화 개통 후 한 달 만에 가입 신청이 2천 명을 넘어섰다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "개통일을 4월 2일로 적은 보도도 있음(노컷뉴스 일부). 5월 7일은 SKT 자료.",
+      "sources": [
+        { "name": "SK텔레콤 뉴스룸", "url": "https://news.sktelecom.com/223224", "quote": "개통 한 달 만에 가입자 2,000명을 돌파할 만큼" },
+        { "name": "노컷뉴스", "url": "https://www.nocutnews.co.kr/news/568022", "quote": "한 달 사이에 가입 신청을 한 사람이 2천 여명에 육박해" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "카폰 번호·회선을 소개해 주는 '카폰 복덕방'이 생겼고 대당 알선료가 40만~50만원선이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(노컷뉴스). 제조사별 알선료 25만~30만원 등 차이.",
+      "sources": [
+        { "name": "노컷뉴스", "url": "https://www.nocutnews.co.kr/news/568022", "quote": "대당 알선료는 금성전기, 삼성반도체통신 등에게서 40~50만원선" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "SK텔레콤의 40여 년 전 서비스 출범 일화로 현재 소송·정치 소지는 없음."
+  },
+  "remaining": "주인공의 선택·결단 장면이 없고 전달 메시지가 얕음. 쓴다면 '자동차 한 대 값 전화기가 한 달 만에 2천 명을 불러모았다'는 수요 쇄도·과시 소비 숫자 일화로만 가능하며, 결단 장면 중심의 Owner 기준에는 맞지 않아 보류.",
+  "toolCallsUsed": 9
+}

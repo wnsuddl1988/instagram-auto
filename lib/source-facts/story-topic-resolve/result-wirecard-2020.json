@@ -1,0 +1,93 @@
+{
+  "id": "wirecard-2020",
+  "title": "와이어카드 — 19억 유로가 통장에 없었다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "주범 재판이 진행 중이라 판결 단정 금지. 19억 유로가 없었다는 확인된 사실만",
+  "conditionResolved": true,
+  "finding": "감사인 EY가 19억 유로(현금 잔고)의 존재를 확인하지 못했고 회사가 2020-06-22 '존재하지 않을 가능성이 높다'고 인정했으며, 필리핀 은행·중앙은행도 돈이 들어온 적 없다고 밝힌 점이 서로 다른 출처 2곳 이상으로 확인된다. 이 금액은 장부 총자산의 약 4분의 1이고 DAX 편입 당시 시가총액 240억 유로 기업이 2020-06-25 파산 신청한 경제 숫자가 모두 있다. 주범 브라운 재판은 2022-12-08부터 진행 중(최종변론 2026-10-19 예정)이라 유죄·판결 단정은 하지 않고 '19억 유로가 없었다'는 확인된 사실과 '회사가 인정했다'까지만 쓰면 된다. 해외 파산 기업이라 국내 영업 중 기업 민감성은 없다.",
+  "coreMessage": "장부 위의 현금은 은행이 직접 확인해 주기 전까지는 숫자일 뿐이다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "감사인 EY(언스트앤영)는 와이어카드의 신탁계좌 현금 19억 유로의 존재를 확인하지 못했고, 이것이 2020년 6월 폭로의 결정적 장면이 됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "출처마다 EY / Ernst and Young 표기 다름. 통화는 19억 유로(약 21억 달러).",
+      "sources": [
+        { "name": "The Irish Times(2020)", "url": "https://www.irishtimes.com/business/technology/wirecard-shares-slump-on-missing-1-9-billion-1.4282352", "quote": "EY was unable to confirm the existence" },
+        { "name": "Finance Magnates(2020)", "url": "https://www.financemagnates.com/fintech/news/wirecard-files-for-insolvency-with-missing-e1-9-billion/", "quote": "€1.9 billion ($2.1 billion) in cash" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "사라진 19억 유로는 와이어카드 대차대조표(총자산)의 약 4분의 1에 해당했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'roughly a quarter' 표현이라 정확한 비율이 아닌 대략치로만 쓸 것.",
+      "sources": [
+        { "name": "City AM(2020)", "url": "https://www.cityam.com/wirecard-shares-plummet-as-firm-admits-e1-9bn-of-cash-is-missing/", "quote": "The €1.9bn cash hole is equivalent to" },
+        { "name": "IPS News/Fintech Futures 재게재(2020)", "url": "https://ipsnews.net/business/?p=28263", "quote": "roughly a quarter of its balance sheet" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "와이어카드는 2018년 독일 DAX 30에 편입될 때 시가총액이 240억 유로를 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'2년 전' 기준 보도라 연도는 2018로 환산(편입 시점 확인 필요).",
+      "sources": [
+        { "name": "City AM(2020)", "url": "https://www.cityam.com/wirecard-shares-plummet-as-firm-admits-e1-9bn-of-cash-is-missing/", "quote": "market value of €24bn at its launch" },
+        { "name": "IPS News/Fintech Futures 재게재(2020)", "url": "https://ipsnews.net/business/?p=28263", "quote": "more than €24 billion when it joined" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2020-06-18 발표 당일 와이어카드 주가는 개장 직후 60~70%대 급락했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "출처마다 낙폭이 다름(66% 이상 / 최대 71%). 대본에는 '60% 넘게' 정도로 쓸 것.",
+      "sources": [
+        { "name": "City AM(2020)", "url": "https://www.cityam.com/wirecard-shares-plummet-as-firm-admits-e1-9bn-of-cash-is-missing/", "quote": "plunged more than 66 per cent" },
+        { "name": "The Irish Times(2020)", "url": "https://www.irishtimes.com/business/technology/wirecard-shares-slump-on-missing-1-9-billion-1.4282352", "quote": "plunged as much as 71 per cent" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "필리핀 은행들은 와이어카드 계좌를 가진 적이 없다고 했고, 필리핀 중앙은행은 21억 달러가 필리핀 금융체계에 들어온 증거가 없다고 밝혔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "필리핀 변호사 트러스티 관련 책임은 단정하지 말 것.",
+      "sources": [
+        { "name": "Silicon Canals(2020)", "url": "https://siliconcanals.com/sc-v-wirecards-2-1b-in-missing-cash-was-supposedly-held-in-philippine-banks-that-say-they-never-had-an-account/", "quote": "had ever held an account for Wirecard" },
+        { "name": "IPS News(2020)", "url": "https://ipsnews.net/business/2020/06/22/philippines-central-bank-says-wirecard-deposits-never-made/?amp=1", "quote": "the money never entered the country" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "검찰은 공소장에서 대출기관 피해액을 약 30억 유로(31억 유로 안팎)로 본다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'3,1 Milliarden'(개시 때 보도)과 '30억 유로 넘게'(최근 보도) 표기 차이. 혐의 주장일 뿐 판결 아님.",
+      "sources": [
+        { "name": "Moneycab(2022)", "url": "https://www.moneycab.com/finanz/wirecard-prozess-beginnt-anklage-drei-milliarden-euro-schaden/amp/", "quote": "um 3,1 Milliarden Euro geprellt" },
+        { "name": "beck-aktuell(2026)", "url": "https://www.beck-aktuell.de/heute-im-recht/rechtsgeschehen/lg-muenchen-I-wirecard-prozess-braun-bellenhaus-urteil-schlussplaedoyers-2026-07-23", "quote": "gut drei Milliarden Euro" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "주범 마르쿠스 브라운 재판은 2022년 12월 8일 시작해 270회 넘는 기일을 거쳤고 아직 판결이 나지 않았다(최종변론 2026-10-19 이후 예정).",
+      "numeric": true,
+      "economy": false,
+      "caution": "판결 단정 금지. 브라운은 모든 혐의를 부인.",
+      "sources": [
+        { "name": "beck-aktuell(2026)", "url": "https://www.beck-aktuell.de/heute-im-recht/rechtsgeschehen/lg-muenchen-I-wirecard-prozess-braun-bellenhaus-urteil-schlussplaedoyers-2026-07-23", "quote": "läuft seit 8. Dezember 2022" },
+        { "name": "Börse Express(2026)", "url": "https://www.boerse-express.com/news/articles/wirecard-prozess-schlussplaedoyers-ab-oktober-nach-270-tagen-931598", "quote": "nach über 270 Verhandlungstagen" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "독일 기업, 2020-06-25 파산 신청한 해외 사건. 단 주범 형사재판이 진행 중이므로 유죄·판결 단정과 '사기꾼' 단정 표현 금지." },
+  "remaining": "f6 문구 정리 필요(31억 vs 30억 유로 표기), f3 DAX 편입 연도(2018) 별도 확인 권장. 대본에서 판결·개인 유죄 단정 금지.",
+  "toolCallsUsed": 14
+}

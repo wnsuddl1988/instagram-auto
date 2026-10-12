@@ -1,0 +1,80 @@
+{
+  "id": "starbucks-australia-2008",
+  "title": "스타벅스 호주 철수",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "월마트 한국 철수와 같은 교훈 계열(같은 시리즈에 붙이지 말 것). 누적 손실 1.05억 달러는 확인 필요",
+  "conditionResolved": false,
+  "finding": "61개/84개 폐점, 685명 감원, 잔존 23개, 2000년 진출은 서로 다른 사이트 2곳 이상에서 원문 확인됐다. 그러나 '누적 손실 1.05억 달러'는 CNBC만 말하고(페이지 403으로 원문 확인 불가) UNSW는 'A$143 million'으로 단위·금액이 달라 두 출처로 확정할 수 없다. 또 결과를 바꾼 결정적 장면이 인물 없는 기업 발표(2008.7.29 발표, 8.3 마감)이고 실패 원인은 전문가 의견뿐이라 경제 숫자 근거와 장면 모두 약하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "스타벅스는 2008년 호주 매장 84개 중 61개를 8월 3일까지 닫겠다고 발표했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "일부 후기 자료는 전체 매장을 87개로 적음. 2008년 당시 보도는 84개.",
+      "sources": [
+        { "name": "CBS News(2008)", "url": "https://www.cbsnews.com/news/starbucks-closing-up-shops-down-under/", "quote": "but 61 will close by Aug. 3." },
+        { "name": "UNSW BusinessThink", "url": "https://www.businessthink.unsw.edu.au/articles/marketing-lessons-whatever-happened-to-starbucks", "quote": "close 61 of its 84 Australian stores." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "폐점으로 685명의 일자리가 사라졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 매체는 '약 700명'으로 표기.",
+      "sources": [
+        { "name": "CBS News(2008)", "url": "https://www.cbsnews.com/news/starbucks-closing-up-shops-down-under/", "quote": "685 jobs would be lost because of the closures" },
+        { "name": "UNSW BusinessThink", "url": "https://www.businessthink.unsw.edu.au/articles/marketing-lessons-whatever-happened-to-starbucks", "quote": "including 685 jobs and A$143 million." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "폐점 뒤 호주에 남은 매장은 23개였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "UNSW BusinessThink", "url": "https://www.businessthink.unsw.edu.au/articles/marketing-lessons-whatever-happened-to-starbucks", "quote": "Just 23 Australian stores were left operating in prime locations." },
+        { "name": "Starbucks Form 10-K FY2008(SEC)", "url": "https://www.sec.gov/Archives/edgar/data/0000829224/000095013408021134/v50316e10vk.htm", "quote": "focusing on the remaining 23 stores in three key metro areas" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "스타벅스는 2000년 호주 시장에 진출했다(시드니 CBD 1호점).",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "AusFoodNews(2008)", "url": "https://www.ausfoodnews.com.au/?p=777", "quote": "first entered Australia in 2000 with a store in Sydney's CBD" },
+        { "name": "UNSW BusinessThink", "url": "https://www.businessthink.unsw.edu.au/articles/marketing-lessons-whatever-happened-to-starbucks", "quote": "entered the Australian market in 2000" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "스타벅스는 호주 폐점이 미국 등에서 600개 매장을 닫은 직후였다고 보도됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "CityHub 1곳만 문장 확인. ABC 기사의 'About 12,000 jobs were lost'는 미국 구조조정 수치로 보이며 호주와 무관해 사용 금지.",
+      "sources": [
+        { "name": "CityHub", "url": "https://cityhub.com.au/?p=253303", "quote": "Starbucks having also closed 600 outlets across the US and Canada." }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "호주 사업 손실 규모: UNSW는 A$143 million, CNBC는 첫 7년간 누적 US$105 million으로 서로 다르게 표기한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "통화·기간이 다르고 CNBC 원문은 403으로 확인 불가. 대본에 쓰려면 단일 확정 출처가 필요.",
+      "sources": [
+        { "name": "UNSW BusinessThink", "url": "https://www.businessthink.unsw.edu.au/articles/marketing-lessons-whatever-happened-to-starbucks", "quote": "Losses were enormous, including 685 jobs and A$143 million." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 종결된 2008년 사건. 국내 민감성 없음." },
+  "remaining": "호주 누적 손실액 2출처 확정, 주인공·한 장면(결정 순간)의 부재, 월마트 한국 철수와 같은 교훈 계열이라 시리즈 배치 주의.",
+  "toolCallsUsed": 12
+}

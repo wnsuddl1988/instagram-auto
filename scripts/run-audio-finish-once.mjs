@@ -30,7 +30,7 @@ const BGM_DB = Number(getArg("--bgm-db") ?? -26);
 const SFX_FROM = getArg("--sfx-cuts-from");
 const SFX_DB = Number(getArg("--sfx-db") ?? -24);
 const TARGET_LUFS = -14;
-const TARGET_TP = -1;
+const TARGET_TP = Number(getArg("--tp") ?? -1); // 기본 -1, AAC 인코딩 뒤 피크가 -0.5를 넘으면 --tp -2로 낮춘다(스토리 2편, 2026-10-07)
 if (!IN || !OUT) {
   console.error("ABORT: --in, --out 이 필요합니다.");
   process.exit(2);

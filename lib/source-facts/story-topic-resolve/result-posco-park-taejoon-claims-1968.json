@@ -1,0 +1,38 @@
+{
+  "id": "posco-park-taejoon-claims-1968",
+  "title": "포스코 박태준 대일청구권 자금",
+  "proposedVerdict": "hold",
+  "reason": "duplicate",
+  "originalCondition": "풀의 포스코(1973)와 같은 계열, 일화 단일 출처",
+  "conditionResolved": true,
+  "finding": "이 소재의 핵심 장면(국제 차관단 거절 뒤 귀국길에 대일청구권 자금 전용을 구상)은 풀의 posco-1973(result-posco-1973.json, usable)이 이미 결정적 장면으로 쓰는 것과 동일하다. 단일 출처 우려는 해소됐다(국가기록원·경북매일 2곳 원문 확인). 그러나 같은 장면·같은 숫자의 변형이라 별도 소재가 아니라 posco-1973에 흡수해야 하므로 duplicate 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "국제 차관단의 거절에 낙담한 박태준이 귀국길에 대일 청구권 자금을 전용해 제철소 건설자금 1억 달러를 마련하겠다는 구상을 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "청구권 자금 액수·사업비가 출처마다 다름(posco-1973 결과 참조).",
+      "sources": [
+        { "name": "국가기록원 대한민국 기록 포항제철", "url": "https://theme.archives.go.kr/next/koreaOfRecord/pohangJecheol.do", "quote": "청구권 자금을 전용하여 제철소 건설자금 1억 달러를 마련" },
+        { "name": "경북매일(2015)", "url": "https://kbmaeil.com/article/201506230133501", "quote": "대일청구권 자금을 전용하는 아이디어를 구상" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1973년 7월 3일 조강 연산 103만 톤 규모의 포항제철소 1기가 준공됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "국가기록원 대한민국 기록 포항제철", "url": "https://theme.archives.go.kr/next/koreaOfRecord/pohangJecheol.do", "quote": "103만 톤의 포항제철소 1기가 준공되었다" },
+        { "name": "포스코 뉴스룸", "url": "https://newsroom.posco.com/kr/?p=97452", "quote": "연산 103만톤 규모의 종합제철 공장이 준공됐다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "포스코는 영업 중이나 옛 건설 일화로 민감성 낮음. 한일청구권 자금 성격상 표현 주의." },
+  "remaining": "posco-1973과 병합 처리 필요(별도 편으로 쓰면 변형 중복).",
+  "toolCallsUsed": 5
+}

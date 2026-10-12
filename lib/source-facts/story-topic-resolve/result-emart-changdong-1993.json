@@ -1,0 +1,45 @@
+{
+  "id": "emart-changdong-1993",
+  "title": "이마트 창동점 — 공중전화로 '와 봐, 진짜 싸' 하던 주부들",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "출처 1건(2013 한경 기획). 결과 숫자 없음. 보강 조사 필요",
+  "conditionResolved": true,
+  "finding": "결과 숫자가 확보됐다: 1993.11.12 개점 첫날 약 2만6800명 방문·약 2억원 매출(신세계 뉴스룸은 1억8백만원으로 다름), 개점 초기 일 평균 9000만~1억3000만원에서 1년 후 일 매출 2억원 돌파. 이 4개 사실이 서로 다른 2곳 이상 출처에서 확인된다. 다만 '공중전화' 일화는 여전히 2013 한국경제 단일 출처라 장면 소재로 쓰려면 사실 단정 대신 '점장 회고에 따르면'으로 한정해야 하며, 결정적 장면은 2곳 확인된 개점 첫날 인파로 대체했다.",
+  "coreMessage": "싸게 파는 비결은 값을 깎는 게 아니라 쓰는 돈을 줄여 가격으로 돌려주는 것이고, 그러면 손님이 직접 입소문 광고가 된다.",
+  "decisiveFact": "f2",
+  "facts": [
+    { "id": "f1", "claim": "1993년 11월 12일 서울 창동에서 국내 최초 할인점 이마트 1호점이 문을 열었다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "이데일리, 1호점을 찾아서 ① 이마트 13조 매출 이곳에서 시작됐다", "url": "https://edaily.co.kr/News/Read?mediaCodeNo=257&newsId=01125046616127360", "quote": "1993년 11월 12일 창동역 서쪽 반경 100미터" },
+        { "name": "FETV, 숫자로 보는 이마트 30년(2023)", "url": "http://www.fetv.co.kr/news/articleView.html?idxno=151981", "quote": "1993년 11월 12일 서울 도봉구 창동역 인근에" }
+      ] },
+    { "id": "f2", "claim": "개점 첫날 창동점에 약 2만6800명의 고객이 몰려 하루에 2억원 가까운 매출을 올렸다.", "numeric": true, "economy": true,
+      "caution": "신세계그룹 뉴스룸·Daum은 첫날 매출을 1억8백만원(당시 물가 기준)으로 적음 — 출처마다 다르므로 대본에서는 '1억~2억 원'대 또는 방문객 수 중심으로 쓸 것.",
+      "sources": [
+        { "name": "이데일리", "url": "https://edaily.co.kr/News/Read?mediaCodeNo=257&newsId=01125046616127360", "quote": "약 2만 6800명의 고객이 몰렸고 2억원의 매출을 올렸다" },
+        { "name": "FETV(2023)", "url": "http://www.fetv.co.kr/news/articleView.html?idxno=151981", "quote": "하루에만 2억원에 가까운 매출을 올렸다" }
+      ] },
+    { "id": "f3", "claim": "개점 초기 일 평균 매출 9000만~1억3000만원이던 것이 1년 후 일 매출 2억원을 넘어섰다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "이데일리", "url": "https://edaily.co.kr/News/Read?mediaCodeNo=257&newsId=01125046616127360", "quote": "하루 평균 9000만~1억 3000만원 수준의 매출" },
+        { "name": "FETV(2023)", "url": "http://www.fetv.co.kr/news/articleView.html?idxno=151981", "quote": "하루 평균 9000만~1억3000만원 수준에서" }
+      ] },
+    { "id": "f4", "claim": "개점 첫날 방문 고객은 약 2만6800명이었다.", "numeric": true, "economy": false,
+      "caution": "아시아경제는 '2만7000명'으로 반올림 표기.",
+      "sources": [
+        { "name": "신세계그룹 뉴스룸, 이마트 1호점 창동점", "url": "https://www.shinsegaegroupnewsroom.com/korean-discount-store-emart-1st/", "quote": "2만6천8백여명의 고객이 내점하며" },
+        { "name": "FETV(2023)", "url": "http://www.fetv.co.kr/news/articleView.html?idxno=151981", "quote": "2만6800명의 고객이 몰리며" }
+      ] },
+    { "id": "f5", "claim": "당시 점장 회고: 주부들이 매장 안 공중전화로 이웃에게 '여기 물건이 정말 싸다'며 와 보라고 권했다.", "numeric": false, "economy": false,
+      "caution": "한국경제(2013) 단일 출처 — 2번째 출처를 찾지 못함. 대본에서는 '점장의 회고에 따르면'으로 한정하고 사실 단정 금지.",
+      "sources": [
+        { "name": "한국경제 생글생글, [Focus] 대형마트 20년(2013)", "url": "https://sgsg.hankyung.com/article/2013111529361", "quote": "주부들이 매장 안 공중전화에서 이웃집에 전화를 걸어" }
+      ] }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "이마트는 영업 중인 국내 대기업이나 1993년 개점 성공담이라 비난·소송 소지 낮음. 대형마트 영업규제 논쟁(정치 쟁점)은 다루지 않으면 됨." },
+  "remaining": "공중전화 일화(후킹 장면)는 단일 출처. 첫날 매출 1억8백만/2억 불일치. 한국 20~40대에게 이마트 1호점 일화가 낯설 수 있어 '지금의 대형마트 시작' 연결 필요.",
+  "toolCallsUsed": 22
+}

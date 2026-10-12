@@ -1,0 +1,66 @@
+{
+  "id": "concorde-sunk-cost",
+  "title": "콩코드 매몰비용",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "매몰비용 개념은 좋으나 비용 수치($70M~$1.3B)가 블로그 출처뿐. 근거 보강 필요",
+  "conditionResolved": false,
+  "finding": "위키피디아에서 1962년 조약 당시 사업비 추정 7천만 파운드, 1976년 비용 15억~21억 파운드, 양산 20대(영국항공·에어프랑스 각 7대 인도)를 원문으로 확인했다. 그러나 '13억 파운드'는 검색 요약과 블로그에만 있고 위키피디아에는 없으며, 초기 추정치도 출처마다 7천만·1.5~1.7억 파운드·1.6억 파운드로 달라 한 숫자로 확정할 수 없다. Britannica는 403, 대학 페이지는 404로 열리지 않아 서로 다른 사이트 2곳 확인에 실패했다. 또한 정부 간 협정 구조 이야기라 한국인이 아는 인물의 결단 장면이 서지 않는다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1962년 조약 당시 콩코드 개발 사업비는 7천만 파운드로 추정됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아 1곳. 학술·다른 자료는 1.5~1.7억 파운드, 1.6억 파운드로 달리 적어 기준 불일치.",
+      "sources": [
+        { "name": "Wikipedia(Concorde)", "url": "https://en.wikipedia.org/wiki/Concorde", "quote": "the programme cost was estimated at £70 million" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "지연과 비용 초과로 1976년 비용은 15억~21억 파운드로 불었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아 1곳. '13억 파운드' 설은 위키피디아 본문에 없고 블로그 계열 요약에만 있음.",
+      "sources": [
+        { "name": "Wikipedia(Concorde)", "url": "https://en.wikipedia.org/wiki/Concorde", "quote": "Delays and cost overruns pushed costs to £1.5–2.1 billion in 1976." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "콩코드는 총 20대만 생산됐고 구매자는 에어프랑스와 영국항공(각 7대)뿐이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키피디아 1곳. 20대에는 시제기·개발기가 포함됨.",
+      "sources": [
+        { "name": "Wikipedia(Concorde)", "url": "https://en.wikipedia.org/wiki/Concorde", "quote": "for a total production of twenty" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "양산 16대 총비용은 6억 5,400만 파운드였고 정부는 항공사 판매로 2억 7,800만 파운드만 회수했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "aerospaceweb.org 1곳(파운드 기호가 깨져 보임). 다른 사이트 확인 못 함.",
+      "sources": [
+        { "name": "Aerospaceweb.org", "url": "https://aerospaceweb.org/question/planes/q0186.shtml", "quote": "cost of the 16 production aircraft was" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "시제기 6대 제작은 1965년 2월 시작됐고 첫 비행은 1969년 3월 2일 툴루즈, 상업 취항은 1976년 1월 21일이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키피디아 1곳.",
+      "sources": [
+        { "name": "Wikipedia(Concorde)", "url": "https://en.wikipedia.org/wiki/Concorde", "quote": "Concorde entered service on 21 January 1976." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 정부 사업, 국내 민감성 없음." },
+  "remaining": "총 개발비를 영국·프랑스 정부 자료나 Britannica 등 서로 다른 사이트 2곳으로 확정, 초기 추정치 기준 통일, 매몰비용 오류(Arkes 1999)와 콩코드의 직접 연결 근거, 한 장면(인물의 결단) 부재.",
+  "toolCallsUsed": 8
+}

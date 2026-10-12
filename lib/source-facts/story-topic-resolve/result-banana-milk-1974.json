@@ -1,0 +1,72 @@
+{
+  "id": "banana-milk-1974",
+  "title": "빙그레 바나나맛우유",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "단지 디자인 일화 1차 자료 없음, 장애물 없음",
+  "conditionResolved": true,
+  "finding": "장애물이 있었다: 1970년대 초 정부가 우유 소비를 적극 장려했지만 다수 국민이 흰 우유에 거부 반응을 보여 효과가 없었고, 빙그레가 당시 동경의 대상이던 바나나를 입혀 내놓았다(데일리안·쿠키뉴스). 단지 디자인은 회사 설명(세계일보)과 쿠키뉴스가 모두 전통 달항아리 영감으로 적었고, 쿠키뉴스는 1973년 연구원들이 도자기 박람회에서 달항아리를 마주했다고 구체적으로 적는다. 숫자(하루 100만개, 누적 95억개, 연매출 2000억 원)는 서울신문·쿠키뉴스 2곳 일치. 단 항아리 유래를 이농 현상으로 설명한 기사(토요경제)가 있어 caution 처리.",
+  "coreMessage": "사람들이 외면하던 우유를, 동경하던 과일 맛과 눈에 익은 달항아리에 담았더니 50년을 팔렸다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1", "claim": "1974년 바나나맛우유 출시 당시 정부는 우유 소비를 적극 장려했지만 다수 국민이 흰 우유에 거부 반응을 보여 효과가 크지 않았다.", "numeric": true, "economy": false,
+      "caution": "흰 우유 거부감 서술은 데일리안(빙그레 설명)에만 있고 쿠키뉴스는 정부 장려 정책 시기만 언급. 비즈워치는 47년 전 상황을 설명할 사람이 없다고 함.",
+      "sources": [
+        { "name": "데일리안(2018) 뉴트로 감성", "url": "https://www.dailian.co.kr/news/view/814151/", "quote": "70년대 초반 정부가 우유 소비를 적극 장려했지만" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "정부의 장려 정책이 한창이던 1974년" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "빙그레 연구원들이 도자기 박람회에서 조선시대 달항아리를 보고 영감을 얻어 둥근 단지 용기를 만들었다.", "numeric": false, "economy": false,
+      "caution": "토요경제(2010)는 항아리 모양을 1970년대 이농 현상에서 얻은 아이디어라고 달리 설명한다. 대본은 회사 공식 설명인 달항아리 영감으로 쓸 것. 1973년 박람회 시점은 쿠키뉴스 기준.",
+      "sources": [
+        { "name": "세계일보(2024) 출시 50주년", "url": "https://www.segye.com/newsView/20240903514446", "quote": "우리나라 고유의 전통 달항아리에서 영감을 받아" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "도자기 박람회에서 조선시대 달항아리를 마주한다" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "출시 당시 바나나는 귀한 고급 과일로 한국인에게 동경의 대상이었다.", "numeric": false, "economy": false,
+      "caution": "비즈워치는 방송인 발언으로 1973년 바나나 한 개가 2000원, 하숙비가 월 9000원이었다고 소개하나 검증된 통계가 아님.",
+      "sources": [
+        { "name": "데일리안(2018) 뉴트로 감성", "url": "https://www.dailian.co.kr/news/view/814151/", "quote": "당시 고급 과일이었던 바나나를 이용해" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "한국인에게 동경의 대상이었다" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "바나나맛우유는 하루 평균 100만개가 팔린다.", "numeric": true, "economy": true,
+      "caution": "2018년 데일리안은 하루 약 80만개로 적음 — 최신(2025) 기준 100만개.",
+      "sources": [
+        { "name": "서울신문(2025) 한국 넘어 세계로", "url": "https://m.seoul.co.kr/news/2025/07/22/20250722500109", "quote": "하루 평균 100만개가 팔리고 있다" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "하루 평균 100만개 팔리며" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "바나나맛우유 누적 판매량은 약 95억개다(2023년까지).", "numeric": true, "economy": true,
+      "caution": "아시아경제 영문판은 누적 9 billion 등 다른 수치도 있음. 서울신문 2023년 기준을 따를 것.",
+      "sources": [
+        { "name": "서울신문(2025) 한국 넘어 세계로", "url": "https://m.seoul.co.kr/news/2025/07/22/20250722500109", "quote": "누적 판매량은 약 95억개에 달하며" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "누적 판매량만 95억개에 달한다" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "바나나맛우유 연매출은 2000억원을 넘는다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "서울신문(2025) 한국 넘어 세계로", "url": "https://m.seoul.co.kr/news/2025/07/22/20250722500109", "quote": "연매출은 2000억원을 웃돈다" },
+        { "name": "쿠키뉴스(2025) 바나나맛우유", "url": "https://www.kukinews.com/article/view/kuk202509040169", "quote": "연 매출은 2000억원을 돌파했고" }
+      ]
+    },
+    {
+      "id": "f7", "claim": "바나나맛우유는 가공유 시장 점유율 약 80%를 차지한다.", "numeric": true, "economy": true,
+      "caution": "데일리안은 바나나우유 시장 기준, 비즈워치는 전체 가공유 시장 기준이라 표현 차이가 있음.",
+      "sources": [
+        { "name": "데일리안(2018) 뉴트로 감성", "url": "https://www.dailian.co.kr/news/view/814151/", "quote": "바나나우유시장에서 80%의 시장점유율을 차지하고" },
+        { "name": "비즈워치(2020) 숫자로 보는 국내 최고", "url": "https://news.bizwatch.co.kr/article/consumer/2020/09/25/0001", "quote": "전체 가공유 시장에서 점유율 80%를 차지하고 있습니다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "빙그레는 영업 중인 국내 기업이나 소송·제재·피해자 없는 성공담." },
+  "remaining": "결정 주체가 이름 없는 연구원이라 스토리 설계 때 인물 없이 회사 선택으로 써야 함. 박람회 시점(1973)은 쿠키뉴스 1곳, 이농 설명과 상충 — 대본에 박람회 시점은 쓰지 말고 달항아리 영감까지만. 출시 당시 가격은 못 찾음.",
+  "toolCallsUsed": 14
+}

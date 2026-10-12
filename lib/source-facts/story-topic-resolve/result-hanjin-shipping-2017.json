@@ -1,0 +1,108 @@
+{
+  "id": "hanjin-shipping-2017",
+  "title": "한진해운 파산 — 바다 위에 멈춘 배들",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "마무리 보강 필수(결말 약함). 검증 파일 보관",
+  "conditionResolved": true,
+  "finding": "이전 검증 파일(hanjin-shipping-2017.json)의 인용을 다시 열어 원문 일치를 확인했다. 결정적 장면(2016.8.30 채권단 신규 지원 불가 만장일치)은 이투데이·아주경제 2곳으로 확인된다. 결말은 '석 달 만에 141척 하역 완료 → 2017.2.17 파산선고(청산가치 1조7980억원 > 계속기업가치) → 롱비치터미널은 MSC 80%·현대상선 20% → 2025년 법인 해체(딜사이트)'로 보강할 수 있어 결말 약함 조건이 해소됐다. 해운업 정책 책임 공방이 있어 책임 소재 단정은 피하고 '신용이 끊기면 짐도 멈춘다'에 집중하면 된다.",
+  "coreMessage": "신용이 끊기는 순간 배는 항구에 못 들어가고, 한 회사의 멈춤은 수출 기업 전체의 짐을 묶는다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2016년 8월 30일 한진해운 채권단이 만장일치로 신규 자금 지원 불가를 결정했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "채권단 결정 책임 공방이 있으므로 '누가 잘못했나'가 아닌 결과 중심으로 서술.",
+      "sources": [
+        { "name": "이투데이(2016)", "url": "https://www.etoday.co.kr/news/view/1378076", "quote": "전날 채권단은 만장일치로 한진해운에 대해 신규 지원 불가 결정을 내렸다" },
+        { "name": "아주경제(2016)", "url": "https://www.ajunews.com/view/20160906153415352", "quote": "한진해운 채권단이 만장일치로 신규 자금 지원 불가 결정을 내린 지난달 30일" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "한진해운 사태로 약 140억 달러어치 화물이 바다 위에 묶였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "추정치(estimated)로 보도됨. '약'을 붙여 쓸 것.",
+      "sources": [
+        { "name": "IndustryWeek(2016)", "url": "https://www.industryweek.com/supply-chain/article/21981448/scramble-to-stock-shelves-as-hanjin-strands-14-billion-in-goods-at-sea", "quote": "an estimated $14 billion in goods lie stranded on the high seas" },
+        { "name": "Global Trade Magazine(2016)", "url": "https://www.globaltrademag.com/breaking-news-hanjin-shipping-14-billion-cargo-drifting-sea/", "quote": "an estimated $14 billion worth of cargo stranded at sea" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "한진 선박에 실린 채 묶인 컨테이너는 약 50만 개였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국 해수부는 약 54만 TEU로 발표한 자료도 있어 출처마다 다름. '50만 개 안팎'으로 서술.",
+      "sources": [
+        { "name": "IndustryWeek(2016)", "url": "https://www.industryweek.com/supply-chain/article/21981448/scramble-to-stock-shelves-as-hanjin-strands-14-billion-in-goods-at-sea", "quote": "an estimated 500,000 containers stuck on its ships across the globe" },
+        { "name": "Global Trade Magazine(2016)", "url": "https://www.globaltrademag.com/breaking-news-hanjin-shipping-14-billion-cargo-drifting-sea/", "quote": "more than half a million cargo containers" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "한국무역협회 신고센터에 9월 18일 기준 국내 수출 기업 피해가 397건, 약 1억4700만 달러(1654억원) 접수됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "접수 누적치이며 시점별로 계속 증가한 값. 18일 기준임을 밝힐 것.",
+      "sources": [
+        { "name": "뉴스토마토(2016)", "url": "https://newstomato.com/ReadNews.aspx?no=690397", "quote": "피해 금액은 1억4700만 달러(1654억원)로 집계됐다" },
+        { "name": "토요경제(2016)", "url": "https://www.sateconomy.co.kr/news/view/179586763111384", "quote": "접수된 피해건수는 397건으로 피해규모는 1.47억 달러" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "삼일회계법인 조사에서 한진해운의 청산가치는 1조7980억원으로 계속기업가치보다 높았고, 법원은 회생절차를 폐지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "이전 검증 파일에서 청산가치>계속기업가치 문구까지 확인됨. 금융위 페이지의 띄어쓰기 그대로 인용.",
+      "sources": [
+        { "name": "시사저널/시대(2017)", "url": "https://www.sidae.com/article/2017021710078038707", "quote": "청산가치는 1조7980억 원이고" },
+        { "name": "금융위원회(2017)", "url": "https://www.fsc.go.kr/po010102/72588", "quote": "청산가치는 1조 7,980억 원" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "법정관리 두 달 뒤 11월 7일 기준 141척 중 137척(97.2%)의 짐을 내렸고, 11월 28일 하역이 모두 완료됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "뉴데일리경제(2016)", "url": "https://biz.newdaily.co.kr/site/data/html/2016/11/08/2016110810039.html", "quote": "141척 중 97.2%에 해당하는 137척에서 뱃짐을 내렸다" },
+        { "name": "금융위원회(2017)", "url": "https://www.fsc.go.kr/po010102/72588", "quote": "하역이 11.28일 완료되었으며" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "2017년 2월 17일 서울중앙지법 파산부가 한진해운에 파산선고를 내렸고, 법인은 8년 뒤 해체 절차에 들어갔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "딜사이트 기사는 2025년 법인 해체 기사. 해체 시점은 기사 날짜 확인 후 쓸 것.",
+      "sources": [
+        { "name": "시사저널/시대(2017)", "url": "https://www.sidae.com/article/2017021710078038707", "quote": "서울중앙지법 파산부는 17일 한진해운에 대한 파산선고를 내렸다" },
+        { "name": "딜사이트(2025)", "url": "https://dealsite.co.kr/articles/135586", "quote": "한진해운이 2017년 2월 파산 선고를 받은 지 8년 만에" }
+      ]
+    },
+    {
+      "id": "f8",
+      "claim": "한진해운이 갖고 있던 미국 롱비치터미널은 파산 뒤 MSC 계열이 80%, 현대상선이 20%를 1560만 달러에 사들여 나눠 갖게 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "현대상선(현 HMM) 영업 중 기업 언급. 매입 사실만 서술.",
+      "sources": [
+        { "name": "경향신문(2017)", "url": "https://www.khan.co.kr/article/201701191634001", "quote": "터미널 지분 20%를 1560만 달러(약 184억원)에 매입" },
+        { "name": "한경비즈니스(2017)", "url": "https://magazine.hankyung.com/business/article/201709128161b", "quote": "지분 80%를 소유한 스위스 선사 MSC의 자회사" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "한진해운은 청산·해체된 회사. 다만 한진그룹(대한항공)은 영업 중이고 정부·채권단 책임 공방이 있었으므로 책임 소재 단정 금지, 결과와 신용의 중요성에 집중."
+  },
+  "remaining": "정책·채권단 책임 논쟁은 서술에서 제외할 것. 운임 상승 64.5%(한경) vs 65.4%(다른 기사) 등 사후 수치는 출처마다 달라 쓰지 않음.",
+  "toolCallsUsed": 14
+}

@@ -1,0 +1,71 @@
+{
+  "id": "squid-game-profit",
+  "title": "오징어게임 — 1조를 벌었는데 제작사는?",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "제작사 정산 논란, 장면 약함 (weak-scene)",
+  "conditionResolved": true,
+  "finding": "장면을 '정산 논란'이 아니라 황동혁 감독 한 사람의 선택으로 바꾸면 선다: 2009년 대본을 완성했으나 투자자와 배우에게 모두 거절당했고(국내 2곳), 넷플릭스와 계약해 지식재산권을 넘기고 고정 대가를 받았다(영문 2곳). 제작비 약 2,140만 달러에 넷플릭스 내부 추정 가치 약 8.9억 달러라는 숫자 대비가 선명하다. 논란 소지가 있는 제작사 정산 주장은 쓰지 않고 감독 본인 발언('원래 계약대로 받았다')만 쓰면 된다.",
+  "coreMessage": "대박의 몫은 계약서에 적힌 만큼만 돌아온다 — 고정 대가를 받고 권리를 넘기면 성공의 이익은 내 것이 아니다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "오징어게임 시즌1 제작비는 약 2,140만 달러(약 253억 원)로 보도됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "환율에 따라 253억~254억 원으로 표기가 다름.",
+      "sources": [
+        { "name": "TheWrap(2021)", "url": "https://thewrap.com/squid-game-worth-nearly-900-million-netflix", "quote": "budget of just $21.4 million" },
+        { "name": "80.lv(2021)", "url": "https://80.lv/articles/squid-game-is-expected-to-generate-usd891m/", "quote": "Netflix paid $21.4 million" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "블룸버그가 입수한 넷플릭스 내부 문건은 오징어게임이 약 8.91억 달러(약 9억 달러) 규모의 가치를 낼 것으로 추정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'임팩트 밸류'라는 내부 평가 지표이며 실제 현금 매출이 아님. 대본에서 '1조를 벌었다'가 아니라 '가치 추정'으로 써야 함.",
+      "sources": [
+        { "name": "80.lv(2021)", "url": "https://80.lv/articles/squid-game-is-expected-to-generate-usd891m/", "quote": "the series to generate $891 million" },
+        { "name": "Complex(2024)", "url": "https://www.complex.com/pop-culture/a/jose-martinez/squid-game-creator-gets-no-royalties-ip-ownership-netflix", "quote": "value by an estimated $900 million" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "공개 후 23일 만에 약 1억 3,200만 명(가구)이 최소 2분 이상 시청했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "viewers(시청자)와 households(가구) 표기가 출처마다 다름.",
+      "sources": [
+        { "name": "TheWrap(2021)", "url": "https://thewrap.com/squid-game-worth-nearly-900-million-netflix", "quote": "132 million viewers saw at least" },
+        { "name": "80.lv(2021)", "url": "https://80.lv/articles/squid-game-is-expected-to-generate-usd891m/", "quote": "132 million Netflix households streamed" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "황동혁 감독은 2009년 시나리오를 완성했지만 투자자와 배우들에게 모두 거절당했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2008년 구상, 2009년 대본 완성으로 보도됨.",
+      "sources": [
+        { "name": "머니투데이(2021)", "url": "https://www.mt.co.kr/entertainment/2021/10/05/2021100413461310874", "quote": "2009년 시나리오를 완성했지만" },
+        { "name": "다음뉴스(2021)", "url": "https://v.daum.net/v/20210929173401448", "quote": "투자자, 배우들에게 다 거절을 당했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "황 감독은 넷플릭스와의 계약에서 지식재산권을 모두 넘기고 고정 선급금을 받았으며, 흥행 후 추가 러닝 개런티(잔여 수익)는 받지 못했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "블룸버그는 넷플릭스가 계약 의무 없이 일회성 보너스를 지급했다고도 보도(2021.11) — 대본에서 '한 푼도 못 받았다'로 단정 금지, '계약대로 받았다'로 써야 함.",
+      "sources": [
+        { "name": "Complex(2024)", "url": "https://www.complex.com/pop-culture/a/jose-martinez/squid-game-creator-gets-no-royalties-ip-ownership-netflix", "quote": "received no residuals" },
+        { "name": "Resonate(2024)", "url": "https://www.weareresonate.com/2024/12/squid-game-creator-hwang-dong-hyuk-didnt-make-much-from-hit-netflix-series", "quote": "exchange for an upfront payment" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "넷플릭스는 외국 기업이고 진행 중 소송은 없음(제작사 시레나픽처스 정산 주장은 쓰지 않음). 다만 넷플릭스 저격으로 읽히지 않게 '계약 구조' 교훈으로만 서술해야 함." },
+  "remaining": "한국 매체 2곳으로 '계약상 IP 이전' 사실을 추가 확인하면 더 안전함(현재는 영문 2곳). 노트북 판매 일화는 확인 못 해 사용 금지.",
+  "toolCallsUsed": 13
+}

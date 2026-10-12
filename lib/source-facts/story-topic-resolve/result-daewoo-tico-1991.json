@@ -1,0 +1,93 @@
+{
+  "id": "daewoo-tico-1991",
+  "title": "대우 티코",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "스즈키 라이선스 vs 독자 개발 자료 불일치, 경차 1위 확인 못 함",
+  "conditionResolved": true,
+  "finding": "라이선스 여부는 2001년 단종 당시 경향신문(스즈키와 손잡고 개발)과 서울경제(89년 스즈키사와 기술제휴)가 일치해 '스즈키 기술제휴 기반'으로 확정된다. '경차 1위'는 성립하지 않고(당시 국내 유일의 경승용차, 한국일보 1997 '티코가 독주해 온 경승용차시장') 대신 '유일한 경차였는데도 놀림만 받다가 정부 지원책(등록세·면허세 인하, 1가구 2차량 중과세 제외) 후 1996년 10만4천대·시장 10%로 뛴 반전'이 두 신문에서 같은 숫자로 확인된다. 결정적 장면은 사람의 결단이 아니라 제도 전환이므로 대본은 '놀림받던 차를 살린 건 차가 아니라 세금 규칙'으로 잡아야 한다.",
+  "coreMessage": "같은 차가 5년을 놀림받다 하루아침에 팔린 건 차가 바뀌어서가 아니라 세금 규칙이 바뀌어서였다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "티코는 1991년 일본 스즈키 알토를 기반으로 3기통 796cc 엔진을 얹어 출시된 한국 최초의 경승용차다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "알토는 657cc였고 티코는 한국 사정에 맞춰 796cc로 키웠다는 설명이 있음. 출시월은 5월(경향·더팩트)과 6월(2001 경향 단종 기사)로 출처마다 다름.",
+      "sources": [
+        { "name": "경향신문 자동차대백과(2011)", "url": "https://www.khan.co.kr/article/201101280936061", "quote": "3기통 796cc엔진을 장착했다" },
+        { "name": "더팩트(2019)", "url": "https://news.tf.co.kr/read/ogmeta/1771118.htm", "quote": "796cc의 엔진을 장착" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "티코는 1989년 대우(대우국민차)가 일본 스즈키와 기술제휴해 만든 차이며 독자 개발이 아니다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "양산 시작 시점이 서울경제는 91년 2월, 다른 기사는 91년 5~6월 출시로 표기 — 대본에서는 '1991년 출시'로만 쓸 것.",
+      "sources": [
+        { "name": "서울경제(2001)", "url": "https://www.sedaily.com/article/10178487", "quote": "지난 89년 일본 스즈키사와 기술제휴해 91년 2월부터 양산에 돌입" },
+        { "name": "경향신문(2001)", "url": "https://www.khan.co.kr/article/200103121916541", "quote": "일본 스즈키자동차와 손잡고 개발한 티코는" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "티코는 중·대형차를 선호하던 시기에도 출시 첫해인 1991년 국내에서 3만 대 이상 팔렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "경향신문(2001)", "url": "https://www.khan.co.kr/article/200103121916541", "quote": "첫해인 91년 3만대 이상이 팔려" },
+        { "name": "서울경제(2001)", "url": "https://www.sedaily.com/article/10178487", "quote": "시판 첫해 국내에서만 3만대 이상 판매실적" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "정부가 등록세·면허세를 내리고 1가구 2차량 중과세에서 제외하는 경차 지원책을 낸 1996년, 티코는 10만 대 이상(10만4천 대) 팔려 승용차 시장 점유율 10%에 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "경향은 10만4천 대, 서울경제는 10만 대 이상으로 표기. 지원책 발표 시점은 서울신문 1996.1.15 기사 기준 1995년 6월(이 기사 한 곳뿐이라 사실 목록에서 제외).",
+      "sources": [
+        { "name": "경향신문(2001)", "url": "https://www.khan.co.kr/article/200103121916541", "quote": "1가구 2차량 중과세 대상에서 제외한 96년에는 10만4천대가 팔려" },
+        { "name": "서울경제(2001)", "url": "https://www.sedaily.com/article/10178487", "quote": "지원책이 발표된 96년에는 10만대 이상 팔려" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "티코는 10년간 국내에서 약 41만3천 대가 팔리고 26만8천 대가 수출되어 총 약 68만 대가 생산·판매됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "경향은 '41만3천대가 팔렸고 이중 26만8천대가 수출'로 써 모호하나 서울경제·중앙데일리(총 681,218대 중 268,142대 해외)와 대조하면 국내 41.3만+수출 26.8만이 맞음. 일부 칼럼의 '100만대'는 과장.",
+      "sources": [
+        { "name": "서울경제(2001)", "url": "https://www.sedaily.com/article/10178487", "quote": "국내 판매량은 총 41만3,000여대" },
+        { "name": "JoongAng Daily(2010)", "url": "https://www.koreajoongangdaily.com/korea/mini-car-was-cramped-ugly-feeble-and-revolutionary/10814698", "quote": "a total of 681,218 units were sold" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "티코의 출시 가격은 300만 원대(대략 290만~319만 원)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "출처별로 2.9백만(Korea Herald 계열), 3.19백만(JoongAng), 300만~400만(경향)으로 다름 — 대본에서는 '300만 원 안팎'으로만 쓸 것.",
+      "sources": [
+        { "name": "경향신문 자동차대백과(2011)", "url": "https://www.khan.co.kr/article/201101280936061", "quote": "가격도 당시 300만~400만 원 정도로 저렴해" },
+        { "name": "JoongAng Daily(2010)", "url": "https://www.koreajoongangdaily.com/korea/mini-car-was-cramped-ugly-feeble-and-revolutionary/10814698", "quote": "the Tico started at 3.19 million won" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "티코는 1997년 현대 아토스가 나오기 전까지 국내 유일의 경승용차로 시장을 독주했다(따라서 '경차 1위'가 아니라 '유일한 경차').",
+      "numeric": false,
+      "economy": false,
+      "caution": "'경차 판매 1위' 표현은 쓰지 말 것.",
+      "sources": [
+        { "name": "한국일보(1997)", "url": "https://www.hankookilbo.com/news/article/199701230084563955", "quote": "대우자동차의 티코가 독주해 온 경승용차시장" },
+        { "name": "PPSS(자동차 경차 역사)", "url": "https://ppss.kr/archives/56530", "quote": "승용차 부문이 대우국민차의 티코가 유일한 모델이었다면" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "단종(2001)된 대우 브랜드 차종이라 진행 중 사건·정치 소지 없음. 김수환 추기경 광고 일화는 종교 민감 가능성과 2출처 미충족으로 제외." },
+  "remaining": "결정적 장면이 인물의 선택이 아니라 정부 지원책이라 이야기 장면은 '놀림받던 시절→지원책 발표→월 판매 858대(1995.5, 서울신문)→8,002대(1996.1)' 흐름으로 만들어야 함(월별 수치는 서울신문 단일 도메인이라 대본에서 쓰려면 추가 출처 필요). 1992년 87% 증가(5만9,522대)도 서울신문 단일 출처.",
+  "toolCallsUsed": 27
+}

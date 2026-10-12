@@ -1,0 +1,46 @@
+{
+  "id": "kyochon-parts-1991",
+  "title": "교촌통닭 — 소문을 잠재우려 닭 부위를 따로 빼 놓은 일",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "회사 측 서술 비중이 큼. 공급난 시기(1990년대/1996) 불일치. 가맹점 수익 악화 이슈 있음. 창업주 대사 금지. '최초 부분육'은 회사 주장",
+  "conditionResolved": false,
+  "finding": "소문 일화(한 세트에 닭다리 4개·날개 4개 → 품질 낮은 닭이라는 헛소문 → 다리·날개 2개씩 냉장고에 따로 보관 → 부위별 판매)는 매일신문 2022년 기사 1곳에서만 확인되고 연도(1991년)도 명시되지 않는다. 1991년 창업과 택시 면허 3300만 원 매각 일화는 비즈한국 1곳이다. 소문과 부분육 판매 효과를 2곳 출처로 확인하지 못했고 수치(매출·가맹점 수)도 없어 단일 출처라 보류한다. 회사 측 서술 의존이라는 풀의 우려도 해소되지 않았다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "창업 초기 교촌통닭 한 세트에는 닭다리 4개, 닭날개 4개가 포함됐고, 이 때문에 품질 낮은 닭을 대충 손질해 튀긴다는 헛소문이 돌았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "매일신문 단독. 소문 시기를 1991년으로 못 박은 자료는 없다.",
+      "sources": [
+        { "name": "매일신문, 2022", "url": "https://www.imaeil.com/page/view/2022020809034296108", "quote": "닭다리 4개, 닭날개 4개가 포함됐는데" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "창업주는 고민 끝에 다리와 날개 2개씩을 따로 빼내 냉장고에 보관했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "매일신문 단독이며 회사 측 서술에 가깝다. 창업주 대사는 쓰지 않는다.",
+      "sources": [
+        { "name": "매일신문, 2022", "url": "https://www.imaeil.com/page/view/2022020809034296108", "quote": "다리와 날개 2개씩은 따로 빼내 냉장고에 보관했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "권원강 회장은 1991년 개인택시 면허를 3300만 원에 팔아 치킨 장사를 시작했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "비즈한국 단독 확인.",
+      "sources": [
+        { "name": "비즈한국", "url": "http://bizhankook.com/articles/27586.html", "quote": "1991년 개인택시 면허를 3300만 원에 팔았다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "현재 영업 중인 교촌에프앤비 이야기이고 가맹점 수익 악화 논란이 있어 기업 홍보 또는 저격으로 읽힐 수 있음. 진행 중 소송 여부는 확인하지 않음." },
+  "remaining": "소문 일화의 2번째 출처가 없다. 부분육 판매 이후 성과를 보여 주는 숫자를 확인하지 못했고, '최초 부분육'은 회사 주장이다.",
+  "toolCallsUsed": 5
+}

@@ -1,0 +1,71 @@
+{
+  "id": "boryeong-mud-festival-1998",
+  "title": "보령 머드축제",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "첫해 방문객·IMF 연관 확인 못 함",
+  "conditionResolved": true,
+  "finding": "첫해 숫자는 확인됐다: 1998년 7월 16일부터 4일간 열린 제1회 축제에 30여만 명이 참여했고 지역경제 파급효과는 3억5천만 원이라고 보도됐다(매일신문·대전일보 2곳). IMF 외환위기와의 연관은 어느 자료에도 없으며, 실제 배경은 탄광 폐쇄와 바가지요금으로 외면받던 대천해수욕장의 지역 위기였다(IMF 서사는 쓰지 않는다). 결정적 장면은 1994년 박상돈 당시 대천시장이 TV 영화의 '온몸에 진흙을 바르고 데이트하는 장면'에서 영감을 얻어, 지저분하다고 오해받던 갯벌 진흙을 관광 상품으로 만들기로 한 것이며 보령축제관광재단과 시사뉴스 2곳이 같은 장면을 적었다. 4개 이상의 숫자 사실·결정적 장면·경제 숫자·전달 메시지가 모두 서므로 usable로 제안한다.",
+  "coreMessage": "남들이 지저분하다고 외면하던 진흙도, 다르게 보면 지역을 살리는 자원이 된다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "제1회 보령머드축제는 1998년 7월 16일부터 4일간 대천해수욕장에서 열렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "시사뉴스는 '1998년'만, 보령축제관광재단은 날짜까지 기재. 주최 측 공식 연혁 기준.",
+      "sources": [
+        { "name": "시사뉴스(2026)", "url": "https://www.sisunnews.co.kr/news/articleView.html?idxno=242042", "quote": "1998년 제1회 보령 머드축제를 세상에 처음 선보였고" },
+        { "name": "보령축제관광재단 공식 소개", "url": "https://www.mudfestival.or.kr/festival/contents/view?contentsNo=31&level=2&menuNo=16", "quote": "제1회 보령머드축제가 1998년 7월 16일부터 4일간 대천해수욕장에서 개최" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "보령시는 1996~1997년 머드팩 등 머드화장품 8종을 개발했지만 인지도가 낮아 판매는 지지부진했고, 이를 알리려고 축제를 열었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "매일신문·대전일보는 '1996년 머드팩 등 16종'으로 적어 종수가 다르다. 대본에서는 종수를 말하지 않거나 '여러 종'으로 처리.",
+      "sources": [
+        { "name": "시사뉴스(2026)", "url": "https://www.sisunnews.co.kr/news/articleView.html?idxno=242042", "quote": "8종의 머드 화장품을 개발했으나 인지도가 낮아 판매에 난항" },
+        { "name": "보령축제관광재단 공식 소개", "url": "https://www.mudfestival.or.kr/festival/contents/view?contentsNo=31&level=2&menuNo=16", "quote": "8종의 머드화장품을 개발하였는데 인지도가 없어 판매는 지지부진" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "제1회 축제에는 30여만 명의 관광객이 참여했고 지역경제 파급효과는 3억5천만 원으로 집계됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 매체 문장이 거의 같아 보령시 보도자료가 같은 원문일 가능성이 큼(자체 집계 수치, 독립 검증 아님). 대본에서는 '시 집계로'라고 표기 권장.",
+      "sources": [
+        { "name": "매일신문(2017-06-29)", "url": "https://www.imaeil.com/page/view/2017062900001247133", "quote": "30여만 명의 관광객이 참여하고 3억5천만원의 지역경제 파급 효과" },
+        { "name": "대전일보", "url": "https://www.daejonilbo.com/news/articleView.html?idxno=1270001", "quote": "30여만 명의 관광객 참여하고 3억 5000만 원의 지역경제 파급효과" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1994년 박상돈 당시 대천시장이 TV 영화에서 온몸에 진흙을 바르고 데이트하는 장면에서 영감을 얻어, 대천해수욕장 갯벌의 진흙을 관광 상품(머드 화장품)으로 만들기로 결심했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "영화 제목은 두 출처 모두 없음(TV 영화라고만 서술). 1994년은 보령군·대천시가 분리돼 있던 시기라 직함이 '대천시장'.",
+      "sources": [
+        { "name": "시사뉴스(2026)", "url": "https://www.sisunnews.co.kr/news/articleView.html?idxno=242042", "quote": "온몸에 진흙을 바르고 데이트를 즐기는 장면에서 영감을 얻어" },
+        { "name": "보령축제관광재단 공식 소개", "url": "https://www.mudfestival.or.kr/festival/contents/view?contentsNo=31&level=2&menuNo=16", "quote": "온몸에 진흙을 바르고 데이트를 즐기는 장면에서 착안하여" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1990년대 초 대천해수욕장은 갯벌 진흙 때문에 물이 지저분하다는 오해와 바가지요금으로 외면받았고, 정부의 석탄산업 합리화 조치로 보령 탄광이 폐쇄돼 지역 경제가 위기였다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "IMF 외환위기와 직접 연결한 자료는 없음. 위기 서사는 탄광 폐쇄·관광 외면으로 쓸 것.",
+      "sources": [
+        { "name": "시사뉴스(2026)", "url": "https://www.sisunnews.co.kr/news/articleView.html?idxno=242042", "quote": "보령지역의 탄광들이 줄줄이 폐쇄되면서" },
+        { "name": "보령축제관광재단 공식 소개", "url": "https://www.mudfestival.or.kr/festival/contents/view?contentsNo=31&level=2&menuNo=16", "quote": "보령지역의 탄광이 폐쇄됨으로써 지역 경제가 매우 심각한" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "지자체 축제 일화로 법적·정치 쟁점 없음. 지자체 홍보 서사로 읽히지 않게 시장 개인 영감→주민 진흙 오해 전환에 초점." },
+  "remaining": "(1) IMF 연관은 확인되지 않아 쓰지 말 것 (2) 첫해 30여만 명·3.5억은 시 자체 집계로 단일 원문 가능성 (3) 머드화장품 8종/16종 불일치 (4) 후속 숫자(2019년 181만 명, 2024년 165만1943명 등)는 각각 아주뉴스·트위그24 각각 단일 출처라 2곳 확인은 못 함.",
+  "toolCallsUsed": 6
+}

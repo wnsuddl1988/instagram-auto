@@ -1,0 +1,60 @@
+{
+  "id": "worgl-1932",
+  "title": "뵈르글 지역화폐",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "성과 수치가 지지자 글 중심, 종료 시점 엇갈림",
+  "conditionResolved": false,
+  "finding": "1% 월 스탬프(감가 화폐)와 1933년 9월 종료라는 뼈대는 Mises·Freitag·영문/독문 위키가 일치하지만, 핵심 숫자가 출처마다 다르다. 시작일(7/5 vs 7/31), 종료일(9/1 vs 11/18), 종료 주체(국립은행 vs 행정법원), 발행액(계획 32,000실링 vs 실제 12,000~12,600), 실업자 수(350 vs 400 vs 1,500)가 모두 엇갈린다. 성과(실업률 21%→15%, 유통 400회)는 지지자 성격 글(Mises, coinsweekly)과 위키에만 있고 독립 학술 출처 2곳으로 확인하지 못했으며, 영문 위키도 효과의 지속성에 의문이 제기됐다고 적는다. 결정 장면(시장 운트레구겐베르거의 결단)은 있으나 결과 수치를 2곳으로 못 묶어 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "뵈르글 지역화폐는 매월 액면의 1%를 스탬프(수수료)로 내야 유효한 감가 화폐였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "coinsweekly는 고정 비율 토큰이라고만 쓰고 1%를 명시하지 않음.",
+      "sources": [
+        { "name": "Mises Institute (Free Money Miracle)", "url": "https://mises.org/library/free-money-miracle", "quote": "The demurrage was set at 1% per month" },
+        { "name": "Der Freitag (Das Wunder von Wörgl)", "url": "https://www.freitag.de/autoren/der-freitag/das-wunder-von-worgl", "quote": "einprozentigen Abgabe" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "실험은 1933년 9월 1일 오스트리아 국립은행(화폐 발행 독점)과의 충돌로 끝났다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "coinsweekly는 1933년 11월 18일, 행정법원이 불법 선언했다고 씀. 종료 주체·날짜가 출처마다 다름.",
+      "sources": [
+        { "name": "Mises Institute (Free Money Miracle)", "url": "https://mises.org/library/free-money-miracle", "quote": "terminated by the Austrian National Bank" },
+        { "name": "Wikipedia (Wörgl)", "url": "https://en.wikipedia.org/wiki/Wörgl", "quote": "was ended by Austria's central bank" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "계획한 3만 2천 실링 가운데 실제 발행액은 약 1만 2천 실링대였다는 설과 3만 2천 전액 인쇄설이 갈린다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Mises는 32,000 인쇄/12,000 유통, coinsweekly는 12,600 발행으로 서로 다름.",
+      "sources": [
+        { "name": "Mises Institute (Free Money Miracle)", "url": "https://mises.org/library/free-money-miracle", "quote": "32,000 schillings worth of notes" },
+        { "name": "Coins Weekly (The Year of the Freigeld in Wörgl)", "url": "https://coinsweekly.com/?p=60168", "quote": "12.600 of the planned 32.000 shillings" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "뵈르글 실업자는 약 350~400명으로 전해지나 출처 간 수치가 다르다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "독어 위키는 1,500명 및 실업률 21%→15%를 제시. 통일된 수치 없음.",
+      "sources": [
+        { "name": "Mises Institute (Free Money Miracle)", "url": "https://mises.org/library/free-money-miracle", "quote": "Wörgl township counted 350 unemployed" },
+        { "name": "Coins Weekly (The Year of the Freigeld in Wörgl)", "url": "https://coinsweekly.com/?p=60168", "quote": "400 were out of job" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 옛 사건, 민감성 없음" },
+  "remaining": "시작·종료일, 발행액, 실업 감소 효과를 독립 학술 출처(경제사 논문) 2곳으로 확정해야 함. 지금은 지지자 글과 위키 요약뿐.",
+  "toolCallsUsed": 9
+}

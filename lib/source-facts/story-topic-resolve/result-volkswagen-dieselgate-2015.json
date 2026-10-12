@@ -1,0 +1,80 @@
+{
+  "id": "volkswagen-dieselgate-2015",
+  "title": "폭스바겐 디젤 게이트 — 배출가스 조작이 부른 수십조 원",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "해외 현 영업 기업. 확정된 합의·조작 사실만, 비난조 금지. 숫자 출처 확인 필요",
+  "conditionResolved": true,
+  "finding": "2015년 9월 18일 미국 EPA가 2009~2015년형 2.0리터 디젤차의 조작 소프트웨어를 공표했고, 전 세계 약 1,100만 대 연루, 질소산화물 최대 40배, 주가 하루 20%대 급락 등 핵심 숫자가 서로 다른 사이트 2곳에서 확인된다. 합의금 147억 달러·형사 포함 43억 달러·회계 충당금 162억 유로는 각 단일 공식 출처로 확인(2곳은 미충족)되어 대본에는 '확정된 합의·벌금' 문장 위주로만 쓰면 된다. 확정 사실만 쓰는 조건은 충족 가능하나 '기업 비리' 서사라 채널 원칙(미담·결단 중심)과의 적합성은 Owner 판단이 필요하다.",
+  "coreMessage": "시험 점수만 맞추는 속임수는 결국 더 큰 청구서로 돌아오고, 한 번 깨진 신뢰는 돈으로도 한참 걸려 갚는다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2015년 9월 18일(금) 미국 EPA는 폭스바겐이 2009~2015년형 2.0리터 디젤차에 배출가스 규제를 피하는 소프트웨어를 깔았다고 공표했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'금요일=9월 18일'은 EPA 공식 페이지의 날짜와 포춘의 'last Friday'를 맞춘 것. 폭스바겐이 9월 3일 EPA·CARB에 먼저 인정했다는 자료도 있음.",
+      "sources": [
+        { "name": "미국 EPA Learn About Volkswagen Violations", "url": "https://epa.gov/vw/learn-about-volkswagen-violations", "quote": "2009-2015 2.0 liter diesel cars" },
+        { "name": "Fortune(2015.9.23)", "url": "https://fortune.com/2015/09/23/volkswagen-stock-drop", "quote": "Agency announced last Friday" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "조작 소프트웨어가 설치된 차는 도로 주행 시 질소산화물을 기준의 최대 40배까지 내뿜었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "컨슈머리포트는 일반 주행에서는 10~20배에 가깝다고도 적음 — '최대 40배'로만 쓸 것.",
+      "sources": [
+        { "name": "미국 EPA Learn About Volkswagen Violations", "url": "https://epa.gov/vw/learn-about-volkswagen-violations", "quote": "up to 40 times more pollution" },
+        { "name": "Consumer Reports Guide to the Volkswagen Dieselgate Recall", "url": "https://www.consumerreports.org/cars-guide-to-the-volkswagen-dieselgate-emissions-recall", "quote": "up to 40 times the standard" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "폭스바겐은 전 세계 약 1,100만 대의 디젤차에 같은 문제가 있다고 밝혔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "1,100만은 전 세계 기준. 미국은 약 48만 2천 대(2015.9 보도) → 합의 대상 약 47.5만 대, 소송·형사 대상 약 59만 대로 범위가 다름.",
+      "sources": [
+        { "name": "폭스바겐그룹 2016 연차보고서 Key events", "url": "https://annualreport2016.volkswagenag.com/notes/basis-of-presentation/key-events.html", "quote": "around eleven million vehicles worldwide" },
+        { "name": "Consumer Reports", "url": "https://www.consumerreports.org/cars-guide-to-the-volkswagen-dieselgate-emissions-recall", "quote": "11 million vehicles worldwide" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "공표 직후 첫 거래일(9월 21일) 폭스바겐 주가는 20% 넘게 급락했고, 수요일까지 공표 전보다 약 30% 떨어졌다(160달러대→110달러대, ADR 기준).",
+      "numeric": true,
+      "economy": true,
+      "caution": "20%는 장중 낙폭, 종가는 약 17%라는 보도 있음. 30%는 포춘의 ADR 기준.",
+      "sources": [
+        { "name": "Christian Science Monitor(2015.9.21)", "url": "https://www.csmonitor.com/Business/2015/0921/Volkswagen-stock-plunges-20-after-false-emissions-data", "quote": "fell over 20 percent on Monday" },
+        { "name": "Fortune(2015.9.23)", "url": "https://fortune.com/2015/09/23/volkswagen-stock-drop", "quote": "stock price tumble about 30%" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2016년 미국 합의는 소유자 보상·환경 피해 복구를 포함해 총 147억 달러 규모였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처만 열람(컨슈머리포트). 다른 보도는 환경 기금 포함 약 153억 달러(주 정부 합의 포함)로 적음.",
+      "sources": [
+        { "name": "Consumer Reports", "url": "https://www.consumerreports.org/cars-guide-to-the-volkswagen-dieselgate-emissions-recall", "quote": "$14.7 billion settlement" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "2017년 1월 폭스바겐은 중범죄 3건을 인정하며 형사 벌금 28억 달러를 포함해 총 43억 달러(형사 28억 + 민사 15억)를 내기로 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 공식 출처(EPA 보도자료). 앞선 147억 달러 합의와 별개 금액이며 합산하지 말고 구분해서 쓸 것.",
+      "sources": [
+        { "name": "미국 EPA 보도자료(2017.1.11)", "url": "https://www.epa.gov/archive/epa/newsreleases/volkswagen-agrees-plead-guilty-pay-43-billion-criminal-and-civil-penalties.html", "quote": "pay a $2.8 billion criminal penalty" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 현 영업 기업이나 미국에서 확정된 합의·형사 인정 사실만 사용. 한국 내 폭스바겐·아우디 사건(국내 소송·판매 정지 등)은 건드리지 않을 것. 임원 개인 기소 서술은 피하고 '회사'가 인정·지불한 사실 중심, 비난조 금지." },
+  "remaining": "(1) 합의금·형사 벌금·충당금은 단일 출처라 2곳 요건을 못 채움 — f1~f4(숫자 4개)로 요건은 충족하나 경제 근거는 f4 하나뿐. (2) '결단·미담' 중심인 채널 원칙과 달리 기업 비리 서사라 Owner의 적합성 판단 필요. (3) 총비용 320억 유로 등 합산 수치는 확인하지 못했으니 쓰지 말 것.",
+  "toolCallsUsed": 14
+}

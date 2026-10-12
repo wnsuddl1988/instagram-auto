@@ -31,13 +31,13 @@ r.episodes = OWL_EPISODE_LEDGER.map((e) => e.episode);
 r.unpublished = OWL_EPISODE_LEDGER.filter((e) => !e.published).map((e) => e.episode);
 r.stock = OWL_UNNUMBERED_STOCK.map((s) => s.summary);
 r.ledgerSummaries = OWL_EPISODE_LEDGER.map((e) => e.summary);
-// 최근 5편(18~22, 2026-10-05 22편 등록 후): savings_deposit 2(18,19), other 1(20), loans_credit 1(21), jobs_income 1(22) / deadline_benefit 2(18,22), money_calc 2(19,21), fraud_prevention 1(20) / 제목 모양 직전 22편=number
+// 최근 5편(20~24, 2026-10-06 23·24편 등록 후): other 2(20,24), loans_credit 1(21), jobs_income 1(22), pension 1(23) / fraud_prevention 1(20), money_calc 2(21,24), deadline_benefit 1(22), policy_countdown 1(23) / 제목 모양 직전 24편=contrast
 r.clean = assessOwlTopicProposal({ title: "전기요금 4분기 동결, 내 고지서는 그대로일까", lane: "living_costs", domain: "prices_utilities", titleShape: "quote" });
-// 쏠림 창 = 최근 4편(19~22) + 이번 제안. 영역은 어느 것도 2편이 아니라 기준을 1편으로 낮춰 같은 경고 경로를 시험한다(레인도 동일).
-r.domainHeavy = assessOwlTopicProposal({ title: "청년 지원금 신청", lane: "policy_countdown", domain: "savings_deposit", titleShape: "quote" }, undefined, { maxSameDomain: 1 });
+// 쏠림 창 = 최근 4편(21~24) + 이번 제안. 영역은 어느 것도 2편이 아니라 기준을 1편으로 낮춰 같은 경고 경로를 시험한다(레인도 동일).
+r.domainHeavy = assessOwlTopicProposal({ title: "청년 지원금 신청", lane: "policy_countdown", domain: "pension", titleShape: "quote" }, undefined, { maxSameDomain: 1 });
 r.laneHeavy = assessOwlTopicProposal({ title: "내 대출 이자 계산법", lane: "money_calc", domain: "tax", titleShape: "quote" }, undefined, { maxSameLane: 1 });
-r.laneConsec = assessOwlTopicProposal({ title: "청년 월세 지원 신청", lane: "deadline_benefit", domain: "housing", titleShape: "quote" });
-r.sameShape = assessOwlTopicProposal({ title: "보이스피싱 신종 수법", lane: "fraud_prevention", domain: "other", titleShape: "number" });
+r.laneConsec = assessOwlTopicProposal({ title: "카드 소득공제 계산법", lane: "money_calc", domain: "tax", titleShape: "quote" });
+r.sameShape = assessOwlTopicProposal({ title: "보이스피싱 신종 수법", lane: "fraud_prevention", domain: "investing_protection", titleShape: "contrast" });
 r.banned = assessOwlTopicProposal({ title: "월세가 오르는 진짜 이유", lane: "housing", domain: "housing", titleShape: "why" });
 process.stdout.write(JSON.stringify(r));
 `;
@@ -53,9 +53,14 @@ if (r) {
   // 2026-10-04 19편(광고 4% 예금 기본금리) 배포 완료 → 미게시는 20~21편(20=은행 정보 유출, 21=대환 금리 역전 등록). 다음 편이 게시될 때마다 이 기대값을 함께 갱신한다.
   // 2026-10-05 22편(근로장려금, 대본 확정 대기) 등록.
   // 2026-10-05 20편(은행 정보 유출) 게시 완료 → 미게시는 21~22편.
-  check("장부 1~22편, 16~20편(최저임금·전세사기·청년미래적금 2차·광고 4% 예금·은행 정보 유출)은 게시 완료, 21~22편은 게시 예정(21=대환 금리 역전, 22=근로장려금)", () => {
-    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 22 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
-    assert(JSON.stringify(r.unpublished) === JSON.stringify([21, 22]), JSON.stringify(r.unpublished));
+  // 2026-10-06 21편(대출 갈아타기 금리 역전) 게시 완료 → 미게시는 22편(근로장려금)만.
+  // 2026-10-06 23편(국민연금 크레딧)·24편(아동수당 개편) 등록(대본 확정·TTS 승인 대기) → 미게시는 22~24편.
+  // 2026-10-09 23편(국민연금 크레딧) 게시 완료(릴스 DeRZhW4DaW6) → 미게시는 24편(아동수당 개편)만.
+  check("장부 1~24편, 16~23편(최저임금·전세사기·청년미래적금 2차·광고 4% 예금·은행 정보 유출·대환 금리 역전·근로장려금·국민연금 크레딧)은 게시 완료, 24편(아동수당 개편)은 게시 예정", () => {
+    assert(JSON.stringify(r.episodes) === JSON.stringify(Array.from({ length: 24 }, (_, i) => i + 1)), JSON.stringify(r.episodes));
+    assert(JSON.stringify(r.unpublished) === JSON.stringify([24]), JSON.stringify(r.unpublished));
+    assert(r.ledgerSummaries[22].includes("크레딧"), r.ledgerSummaries[22]);
+    assert(r.ledgerSummaries[23].includes("아동기본수당"), r.ledgerSummaries[23]);
     assert(r.ledgerSummaries[21].includes("근로장려금"), r.ledgerSummaries[21]);
     assert(r.ledgerSummaries[19].includes("정보 유출"), r.ledgerSummaries[19]);
     assert(r.ledgerSummaries[20].includes("갈아타기"), r.ledgerSummaries[20]);

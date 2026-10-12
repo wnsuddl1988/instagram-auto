@@ -68,7 +68,7 @@ const clean: BullTopicProposal = {
 };
 results.clean = assessBullTopicProposal(clean, LEDGER_1_11);
 // 실제 장부(15편 등록 후): 15편과 같은 레인(cause_explainer)·같은 제목 모양(contrast)이면 경고
-results.realLaneConsec = assessBullTopicProposal({ ...clean, lane: "event_countdown", titleShape: "declaration" });
+results.realLaneConsec = assessBullTopicProposal({ ...clean, lane: "cause_explainer", titleShape: "contrast" });
 
 // 사건형 → 장부에 가상 12·13편(사건형)을 더하면 최근 4편(10~13)에 사건형 2편 + 이번 = 3편이 되어 경고
 const ledgerEventHeavy: BullEpisodeTopicRecord[] = [
@@ -123,13 +123,13 @@ if (r) {
     assert(new Set(r.laneIds).size === 10, "duplicate lane ids");
   });
 
-  check("ledger covers episodes 1-21 without duplicates; 11 of 21 are semiconductor-related", () => {
-    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]), JSON.stringify(r.ledgerEpisodes));
-    assert(r.ledgerSemis === 11, `ledgerSemis ${r.ledgerSemis}`);
+  check("ledger covers episodes 1-23 without duplicates; 13 of 23 are semiconductor-related", () => {
+    assert(JSON.stringify(r.ledgerEpisodes) === JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]), JSON.stringify(r.ledgerEpisodes));
+    assert(r.ledgerSemis === 13, `ledgerSemis ${r.ledgerSemis}`);
   });
 
-  check("real ledger: same lane and title shape as episode 21 are flagged", () => {
-    assert(r.realLaneConsec.warnings.some((w) => w.includes("직전 21편") && w.includes("같은 레인")), JSON.stringify(r.realLaneConsec.warnings));
+  check("real ledger: same lane and title shape as episode 23 are flagged", () => {
+    assert(r.realLaneConsec.warnings.some((w) => w.includes("직전 23편") && w.includes("같은 레인")), JSON.stringify(r.realLaneConsec.warnings));
     assert(r.realLaneConsec.warnings.some((w) => w.includes("같은 제목 모양")), JSON.stringify(r.realLaneConsec.warnings));
   });
 

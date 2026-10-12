@@ -1,0 +1,16 @@
+{
+  "id": "salary-envelope-to-account",
+  "title": "월급봉투에서 계좌이체로",
+  "year": 1970,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "도입 시점·경위 확인 못 함",
+  "conditionResolved": false,
+  "finding": "도입 시점을 두 번 검색했으나 한국에서 급여 계좌이체가 언제 어떤 결정으로 시작됐는지 알려주는 신문·공공기관 자료를 찾지 못했다. 찾은 것은 1993년 금융실명제 직후에도 많은 기업이 월급을 현금으로 찾아 지급했다는 서울신문 기사(1993.08.26), 2010년 경기일보 기사(계좌입금 보편화 전 월급봉투 회고, 일부 기업은 계좌에서 봉투로 되돌림), 2008년 월급 회고 글 정도다. 단일 시점·인물·결단 장면이 없고 연도 근거가 없어 usable 불가.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "민감성 없음." },
+  "remaining": "도입 연도·주체·경위 출처 전무, 결정적 장면 없음. 원문 인용 확보 못 해 facts 비움.",
+  "toolCallsUsed": 3
+}

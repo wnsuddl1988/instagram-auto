@@ -1,0 +1,70 @@
+{
+  "id": "uri-satellite-1989",
+  "title": "우리별 1호 — 영국 실험실의 대학원생들",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "돈 이야기가 약해 경제번역소 톤이 흐려질 수 있음. 제작 시작 시점 불일치(1990.10/1991.4). '쓰레기통'은 헤드라인 표현",
+  "conditionResolved": false,
+  "finding": "1989년 KAIST 졸업생 5명의 서리대 파견과 1992년 8월 11일 발사는 서울신문(1992)·사이언스타임즈·머니투데이·사이언스온으로 2곳 이상 확인된다. 제작 시작 시점은 1990년 10월(전자신문), 1991년 4월(서울신문 1992), 1991년 1월(KAIST 자료)로 여전히 엇갈리고, '쓰레기통'은 서울신문 1992 소제목이며 본문은 '버려진 실험실의 메모지', 전자신문 2025는 '휴지통'이라 쓴다. 돈 이야기는 서리대 요구 230만 파운드(약 35억원)와 체신부 40억원 검토가 전자신문 단독이고 총예산(69억4천만원)·SSTL 자료(920만 달러)와 수치가 달라 2출처 경제 사실을 못 채웠고, 결정적 장면도 '5명 모집 공고' 정도로 출처 2곳 확정이 부족하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1989년 10월 KAIST 졸업생 5명이 위성 기술을 배우러 영국 서리대로 떠났다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "한국어 위키는 총 10명, 다른 자료는 2기 4명을 더한 9명으로 인원 표기가 엇갈림. 대본은 '처음 5명'만 사용.",
+      "sources": [
+        { "name": "사이언스타임즈", "url": "https://www.sciencetimes.co.kr/nscvrg/view/menu/259?thisPage=1&searchCategory=&searchSection=&sersYn=&serlYn=&nscvrgSn=260714", "quote": "1989년부터 3년간 KAIST 학생 5명이 1기 유학생으로 영국으로 떠났고" },
+        { "name": "서울신문(1992-08-11)", "url": "https://www.seoul.co.kr/news/1992/08/11/19920811015001", "quote": "영국 서리대에 유씨등 5명이 파견됐다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "우리별 1호는 1992년 8월 11일 남미 기아나 쿠루 기지에서 발사됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "영문 자료는 현지시각 기준 8월 10일로 적음.",
+      "sources": [
+        { "name": "사이언스타임즈", "url": "https://www.sciencetimes.co.kr/nscvrg/view/menu/259?thisPage=1&searchCategory=&searchSection=&sersYn=&serlYn=&nscvrgSn=260714", "quote": "1992년 8월 11일 밤 10시(한국시간), 우리별 1호는 아리안 4호 발사체에 실려 성공적으로 우주로 발사되었다." },
+        { "name": "머니투데이(2020-08-18)", "url": "https://www.mt.co.kr/tech/2020/08/18/2020081218094979547", "quote": "1992년 8월11일 남미 기아나 쿠루 우주기지에서 대한민국 최초의 국적 위성" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "우리별 1호는 유학생 9명이 서리대 위성개발팀과 함께 만들었다(무게 약 48.9kg).",
+      "numeric": true,
+      "economy": false,
+      "caution": "무게가 48.6kg(사이언스온)·48.9kg(서울신문 1992)·50kg(서울신문 발사 전 기사)로 엇갈림. 9명은 1기 5명+2기 4명.",
+      "sources": [
+        { "name": "사이언스온(KISTI)", "url": "https://scienceon.kisti.re.kr/srch/selectPORSrchTrend.do?cn=SCTM00245113", "quote": "한국인 유학생 9명이 영국 서리대의 위성개발팀과 함께 우리별 1호를 만들게 된다." },
+        { "name": "서울신문(1992-08-11)", "url": "https://www.seoul.co.kr/news/1992/08/11/19920811015001", "quote": "주역 9명 모두 과학기술대 졸업한 20대" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "서리대 측이 위성 개발 사업비로 230만 파운드(약 35억원)를 요구했고 체신부는 매년 10억원씩 4년 40억원 지원을 검토하겠다고 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문(2025) 단독이며 다른 출처 미확인. 영문 위키의 총 연구예산 69억4천만원, SSTL 자료의 KITSAT-1 920만 달러와 범위가 달라 대본 사용 시 별도 확인 필요.",
+      "sources": [
+        { "name": "전자신문(2025-06-17)", "url": "https://www.etnews.com/20250617000265", "quote": "서리대 측에서 인공위성 개발사업에 필요한 돈으로 230만파운드(약 35억원)를 요구했다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "서리대 위성 제작은 1990년 10월부터(전자신문), 1991년 4월(서울신문 1992)로 시작 시점이 출처마다 다르다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "충돌 사실 기록용. 대본은 '1년 3개월 영국 체류'(서울신문)만 쓰고 시작월을 단정하지 말 것.",
+      "sources": [
+        { "name": "전자신문(2025-06-17)", "url": "https://www.etnews.com/20250617000265", "quote": "1990년 10월부터 서리대 위성 제작에 참여한 학생들은" },
+        { "name": "서울신문(1992-08-11)", "url": "https://www.seoul.co.kr/news/1992/08/11/19920811015001", "quote": "1년3개월동안 영국의 서리대에서" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "KAIST 주도 공공 연구 일화로 소송·제재·정치 소지 없음." },
+  "remaining": "경제 근거(개발비·인적자본 투자액)를 독립 2출처로 확정해야 함(230만 파운드 vs 총예산 69.4억원 충돌 해소), 결정적 장면 1개(최순달 소장의 5명 모집·파견 결정 등)의 2출처 확보, 제작 시작 시점 충돌 해소 필요. 돈 이야기가 약한 채널 적합성도 여전히 열린 문제.",
+  "toolCallsUsed": 12
+}

@@ -97,7 +97,8 @@ check(
     /sceneDirectorTag/.test(builder),
 );
 check("SSML break spam is absent", !/<break time=/.test(builder));
-check("voice style is zero; legacy speed stays narrow while sample review permits official slower range", /style:\s*0/.test(builder) && /\[0\.7,\s*1\.2\]\s*:\s*\[0\.95,\s*1\.05\]/.test(builder));
+// 2026-10-06: 스토리형(formatProfile "story_v1")만 상한 1.1 허용 — 설명형(기본) 0.95~1.05는 그대로 고정.
+check("voice style is zero; legacy speed stays narrow while sample review permits official slower range", /style:\s*0/.test(builder) && /\[0\.7,\s*1\.2\]\s*:\s*storyFormatEnabled\s*\?\s*\[0\.95,\s*1\.1\]\s*:\s*\[0\.95,\s*1\.05\]/.test(builder) && /storyFormatEnabled\s*=\s*ttsScript\?\.formatProfile\s*===\s*"story_v1"/.test(builder));
 check("sample review adds v3 phrase pauses and scene beats", /\[pause\]/.test(builder) && /\[continues after a beat\]/.test(builder));
 check("cache fingerprint includes engine/model/profile/settings/full text", ["engineVersion", "modelId", "topicProfileId", "voiceSettings", "continuousText"].every((field) => builder.includes(field)));
 check("matching phase or continuous audio and alignment are reused without a paid call", /existsSync\(rawPath\) && existsSync\(alignmentCachePath\)/.test(builder) && /reused_continuous_aligned/.test(builder) && /reused_two_phase_aligned/.test(builder));

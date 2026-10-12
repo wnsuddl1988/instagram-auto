@@ -1,0 +1,69 @@
+{
+  "id": "pyeongchang-longpadding-2017",
+  "title": "평창 롱패딩 — 줄이 값을 매긴 날",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장애물·반전 약함(사건형). 재판매 물량 3,000/7,000장 불일치. 롯데 평양 롱패딩·청와대 청원 서술 금지",
+  "conditionResolved": false,
+  "finding": "물량 불일치는 풀렸다: 롯데백화점 기획 물량은 3만 장이고(뉴데일리·데일리안), 3,000장은 마지막 재판매분이다(경향·뉴데일리). 가격 14만 9천원, 11월 22일 3,000장이 판매 시작 전 매진, 중고 웃돈 5만~10만원도 확인된다. 그러나 사건형 소재로 주인공의 결단이나 반전이 없고 '결정적 장면 1개'를 2출처로 세우기 어려워 서사가 약하다는 조건이 그대로 남는다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "롯데백화점의 평창 롱패딩 한정 기획 물량은 3만 장이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "7,000장·3,000장 등 다른 수치는 재판매분 또는 마지막 판매분으로 보임. 뉴데일리 인용문은 요약 기반이라 재확인 필요.",
+      "sources": [
+        { "name": "데일리안", "url": "https://www.dailian.co.kr/news/view/696586/", "quote": "한정수량 3만장을 완판하는 등" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "최초 기획 물량 3만 장" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "11월 22일 롯데백화점은 재고 3,000장을 재판매했는데 판매 개시 전에 매진됐고, 일부 고객은 전날 저녁 7시부터 줄을 섰다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "뉴데일리는 11월 30일에도 마지막 3,000장을 판매한다고 보도해 두 번의 3,000장이 있었을 수 있음.",
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001", "quote": "3000장 재판매를 개시하기도 전에 매진됐다" },
+        { "name": "서울신문(2017.11.24)", "url": "https://m.seoul.co.kr/news/2017/11/24/20171124800002", "quote": "선착순 1000명에게만 평창 롱패딩 판매가 예고돼" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "평창 롱패딩 가격은 14만 9천원으로 시중 거위털 패딩의 절반 수준이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "표기가 '14만9000원'/'14만 9000원'/'14만원대'로 제각각이라 대본에서는 '약 15만 원'으로 쓰는 편이 안전.",
+      "sources": [
+        { "name": "위키트리", "url": "https://www.wikitree.co.kr/articles/319448", "quote": "통상 시중 브랜드 가격 절반 수준이다" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "가격은 14만9000원이며" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "중고거래 사이트에서는 정가보다 평균 5만~10만 원 비싼 웃돈 거래 글이 대부분이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "서울신문(2017.11.24)", "url": "https://m.seoul.co.kr/news/2017/11/24/20171124800002", "quote": "평균 5만∼10만원 가량 비싼 가격에 판매한다는 글이 대부분이다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "롯데백화점은 수량이 많지 않아 1인당 1개씩만 구매할 수 있게 했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "1인당 1개씩 구매 가능" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "롯데는 현 영업 중인 국내 기업이며 '평양 롱패딩'·청와대 청원 등 정치성 에피소드가 따라붙어 서술 금지 유지. 올림픽 라이선스 상품 논란(불매운동 보도)도 있음." },
+  "remaining": "결정적 장면(결과를 바꾼 선택)이 없고 줄서기·품귀 현상 서술에 그침. 가격 표기 불일치와 3,000장 재판매 시점(22일 vs 30일) 정리 필요. 2출처 확인된 숫자 사실이 f1~f3 정도에 그쳐 기준 a 미충족.",
+  "toolCallsUsed": 8
+}

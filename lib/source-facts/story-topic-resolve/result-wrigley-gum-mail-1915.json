@@ -1,0 +1,119 @@
+{
+  "id": "wrigley-gum-mail-1915",
+  "title": "리글리 껌 150만 가구 우편",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "1차 출처 못 찾음",
+  "conditionResolved": true,
+  "finding": "1차 기록(1915년 회사 문서)은 못 찾았지만, 서로 다른 사이트 2곳(펜실베이니아 주립대 인물사전, Today I Found Out)에서 1915년 150만 가구·1919년 약 700만 가구 우편 발송을 같은 숫자로 확인했다. 결정 장면은 1907년 공황 때 광고비가 폭락하자 25만 달러를 빌려 사흘 만에 정가 150만 달러어치 지면을 산 선택이고(encyclopedia.com·fundinguniverse 기업사), 그 뒤 매출이 17만 달러에서 300만 달러 이상으로 뛴 숫자가 경제 근거다. 1915년 우편은 '써보게 하는 것이 광고'라는 같은 교훈의 후속 장면으로 쓸 수 있다.",
+  "coreMessage": "남들이 움츠릴 때 값이 떨어진 기회를 사고, 일단 써보게 하면 시장이 열린다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1907년 공황으로 광고 단가가 폭락하자 리글리는 25만 달러를 빌려 사흘 만에 정가 150만 달러어치 광고 지면을 샀다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "Today I Found Out는 '25만 달러어치 광고를 샀다'고 적어 차입액/구매액 표현이 다름. 대본에는 '25만 달러를 빌려 정가 150만 달러어치'로 쓸 때 두 기업사 출처(encyclopedia.com, fundinguniverse)의 문장만 따를 것.",
+      "sources": [
+        {
+          "name": "Encyclopedia.com, Wm. Wrigley Jr. Company (International Directory of Company Histories)",
+          "url": "https://www.encyclopedia.com/social-sciences-and-law/economics-business-and-labor/businesses-and-occupations/wm-wrigley-jr-company",
+          "quote": "borrowed $250,000 and in three days"
+        },
+        {
+          "name": "FundingUniverse, Wm. Wrigley Jr. Company History",
+          "url": "http://www.fundinguniverse.com/company-histories/wm-wrigley-jr-company-history/",
+          "quote": "borrowed $250,000 and in three days"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "광고 공세 뒤 리글리 매출은 17만 달러에서 300만 달러 이상으로 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기업사는 1910년까지로, Today I Found Out는 기간 표기 없이 서술. 'n년 만에'라고 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "Encyclopedia.com, Wm. Wrigley Jr. Company",
+          "url": "https://www.encyclopedia.com/social-sciences-and-law/economics-business-and-labor/businesses-and-occupations/wm-wrigley-jr-company",
+          "quote": "from $170,000 to more than $3 million"
+        },
+        {
+          "name": "Today I Found Out (2015)",
+          "url": "https://www.todayifoundout.com/index.php/2015/10/scouring-soap-chewing-gum-william-wrigley-jr-freebies/",
+          "quote": "leapt from $170,000 to $3 million"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1915년 리글리는 전화번호부 주소를 모아 150만 가구 넘게 공짜 껌을 보냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "포장은 출처마다 '팩'/'4개입'/'스틱'으로 다름. '껌 한 통' 정도로만 표현.",
+      "sources": [
+        {
+          "name": "Penn State, Pennsylvania Center for the Book, William Wrigley",
+          "url": "https://pabook.libraries.psu.edu/wrigley__william",
+          "quote": "sent free packs of gum to over 1.5 million American homes in 1915",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "Today I Found Out (2015)",
+          "url": "https://www.todayifoundout.com/index.php/2015/10/scouring-soap-chewing-gum-william-wrigley-jr-freebies/",
+          "quote": "were shipped to over 1.5 million addresses in 1915"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "리글리는 1919년에도 약 700만 가구에 껌을 보냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'almost 7 million'(PSU) vs 'about 7 million'(TIFO). '약 700만'으로 표기.",
+      "sources": [
+        {
+          "name": "Penn State, Pennsylvania Center for the Book, William Wrigley",
+          "url": "https://pabook.libraries.psu.edu/wrigley__william",
+          "quote": "then to almost 7 million homes in 1919",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "Today I Found Out (2015)",
+          "url": "https://www.todayifoundout.com/index.php/2015/10/scouring-soap-chewing-gum-william-wrigley-jr-freebies/",
+          "quote": "to about 7 million homes in 1919"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "리글리는 1919년 회사를 상장했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "Encyclopedia.com, Wm. Wrigley Jr. Company",
+          "url": "https://www.encyclopedia.com/social-sciences-and-law/economics-business-and-labor/businesses-and-occupations/wm-wrigley-jr-company",
+          "quote": "he took his company public in 1919"
+        },
+        {
+          "name": "FundingUniverse, Wm. Wrigley Jr. Company History",
+          "url": "http://www.fundinguniverse.com/company-histories/wm-wrigley-jr-company-history/",
+          "quote": "he took his company public in 1919"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "미국 기업의 100년 전 일화. 민감 소지 없음."
+  },
+  "remaining": "encyclopedia.com과 fundinguniverse는 같은 기업사 원문을 싣는 사이트라 독립성이 약함(f1·f5). f2·f3·f4는 독립 출처. 1915년 우편의 1차 기록은 없음.",
+  "toolCallsUsed": 14
+}

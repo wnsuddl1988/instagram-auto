@@ -1,0 +1,56 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "대만 카스테라 매장이 전국에 400여 곳(400개 넘게) 문을 열었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "시사IN(2017.4.11)", "url": "https://www.sisain.co.kr/news/articleView.html?idxno=28805", "quote": "전국에 카스테라 매장 400여 곳이 문을 열었다" },
+        { "name": "시대(2017.4.13)", "url": "https://www.sidae.com/article/2017040514178056669", "quote": "1년 남짓한 기간에 전국에 400여개의 매장이 생겼다" },
+        { "name": "문화일보(2019.12.10)", "url": "https://www.munhwa.com/article/11162360", "quote": "전국에 400개가 넘는 매장이 들어섰다" }
+      ] },
+    { "id": "f2", "claim": "채널A '먹거리X파일'이 12일(2017년 3월 12일) 대왕카스테라를 다뤘다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "비즈엔터(2017.3.13)", "url": "https://enter.etoday.co.kr/news/view/100420", "quote": "12일 종합편성채널 채널A" },
+        { "name": "헤럴드경제(2017.3.28)", "url": "https://mbiz.heraldcorp.com/article/1277510", "quote": "앞서 지난 12일 방송되었던" },
+        { "name": "시대(2017.3.13)", "url": "https://www.sidae.com/article/2017031309328033277", "quote": "지난 12일 방송된 채널A" }
+      ] },
+    { "id": "f3", "claim": "방송은 반죽마다 식용유 700ml를 붓고 합성첨가물 등을 쓴다고 지적했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "시대(2017.3.13)", "url": "https://www.sidae.com/article/2017031309328033277", "quote": "반죽할 때마다 식용유를 700ml씩 들이 부었다" },
+        { "name": "비즈엔터(2017.3.13)", "url": "https://enter.etoday.co.kr/news/view/100420", "quote": "값싼 식용유, 합성첨가물 등을 사용했다" }
+      ] },
+    { "id": "f4", "claim": "업체 측은 한 판(10개)에 식용유 700ml, 한 개당 70ml라고 밝혔다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "헤럴드경제(2017.3.28)", "url": "https://mbiz.heraldcorp.com/article/1277510", "quote": "한판에 700ml이고 한 개당 들어가는 식용유의 양은 70ml" },
+        { "name": "뉴스핌(2017.3.30)", "url": "https://www.newspim.com/news/view/20170330000191", "quote": "10개(한 판)를 만드는 데 식용유 약 700㎖를 사용하고 있으며" }
+      ] },
+    { "id": "f5", "claim": "비슷한 대만 카스테라 브랜드가 상표 출원 기준 30여 개에 이르렀다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "시사IN(2017.4.11)", "url": "https://www.sisain.co.kr/news/articleView.html?idxno=28805", "quote": "상표 출원 업체가 30여 개에 이른다" },
+        { "name": "문화일보(2019.12.10)", "url": "https://www.munhwa.com/article/11162360", "quote": "유사한 브랜드만 30여 개가 생겨났고" }
+      ] },
+    { "id": "f6", "claim": "방송 이후 관련 매장 매출이 급격히 줄었고 일부 업체는 폐업했다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "헤럴드경제(2017.3.28)", "url": "https://mbiz.heraldcorp.com/article/1277510", "quote": "방송 이후 관련 매장 매출이 급격하게 감소하고 있는 것으로 전해졌다" },
+        { "name": "시사IN(2017.4.11)", "url": "https://www.sisain.co.kr/news/articleView.html?idxno=28805", "quote": "방송 이후 대만 카스테라 업체는 직격탄을 맞았다" }
+      ] },
+    { "id": "f7", "claim": "제작진은 3월 30일 보도자료에서 일부 매체와 점주 주장에 사실과 다른 부분이 있다고 밝혔다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "뉴스핌(2017.3.30)", "url": "https://www.newspim.com/news/view/20170330000191", "quote": "일부 매체의 내용이 사실과 다른 부분이 있어 알려드리고자 한다" },
+        { "name": "헤럴드경제(2017.3.28)", "url": "https://mbiz.heraldcorp.com/article/1277510", "quote": "후속편을 통해 국내 업체들의 해명을 담았지만" }
+      ] },
+    { "id": "f8", "claim": "짧은 기간에 너무 많은 유사 프랜차이즈가 난립했다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "시사IN(2017.4.11)", "url": "https://www.sisain.co.kr/news/articleView.html?idxno=28805", "quote": "순식간에 너무 많은 유사 프랜차이즈가 난립했다" },
+        { "name": "문화일보(2019.12.10)", "url": "https://www.munhwa.com/article/11162360", "quote": "유사한 브랜드만 30여 개가 생겨났고" }
+      ] },
+    { "id": "f9", "claim": "방송은 계기였을 뿐이라는 분석이 있다(핑계가 된 측면·위생 논란이 계기)", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "시사IN(2017.4.11)", "url": "https://www.sisain.co.kr/news/articleView.html?idxno=28805", "quote": "일부 대만 카스테라 프랜차이즈 본사에는 좋은 핑계가 된 측면이 있다" },
+        { "name": "문화일보(2019.12.10)", "url": "https://www.munhwa.com/article/11162360", "quote": "위생 논란이 계기가 되기는 했지만" }
+      ] },
+    { "id": "f10", "claim": "대만 카스테라는 선풍적인 인기를 끌었다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "비즈엔터(2017.3.13)", "url": "https://enter.etoday.co.kr/news/view/100420", "quote": "최근 선풍적인 인기를 끌고 있는 대왕카스테라" },
+        { "name": "시대(2017.4.13)", "url": "https://www.sidae.com/article/2017040514178056669", "quote": "한국에서도 인기를 끌어" }
+      ] }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "id": "sh-100-brick-phone-1988",
+  "title": "삼성 SH-100 벽돌폰",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "시대 일화에 가깝고 백색전화와 결 겹침, 단말 가격 165만/400만 불일치",
+  "conditionResolved": false,
+  "finding": "가격 불일치는 원인이 확인됐다(165만원은 삼성 뉴스룸의 SH-100 소비자가, 400만원은 1988년 이동전화 단말 일반 가격 보도). 다만 165만원은 삼성 뉴스룸 단일 출처뿐이라 2곳 교차확인이 안 된다. 결정적 장면이 없다 — SH-100 출시는 '선택·결단 후 결과'가 아니라 제품 출시이며, 판매 부진 이후 사업을 접지 않았다는 직접 근거도 찾지 못했다. 이후 전환점(애니콜·화형식)은 이미 쓴 소재와 겹친다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1988년 이동전화 서비스 첫 해 가입자는 784명에 불과했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "SH-100 판매량이 아니라 이동전화 서비스 전체 가입자 수.",
+      "sources": [
+        {
+          "name": "머니투데이(2008)",
+          "url": "https://www.mt.co.kr/stock/2008/06/30/2008063010421892918",
+          "quote": "1988년에 784명에 불과했던 이동전화 가입자수"
+        },
+        {
+          "name": "전자신문(2008)",
+          "url": "https://m.etnews.com/200806300058",
+          "quote": "이동통신서비스 가입자는 784명에서 4473만8000명으로"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1988년 이동전화 단말 가격은 400만원을 호가했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "SH-100 한 기종 가격이 아니라 당시 이동전화 단말 일반 가격 보도. 삼성 뉴스룸의 SH-100 소비자가 165만원과 다름.",
+      "sources": [
+        {
+          "name": "머니투데이(2008)",
+          "url": "https://www.mt.co.kr/stock/2008/06/30/2008063010421892918",
+          "quote": "이동전화 단말가격은 무려 400만원을 호가했다"
+        },
+        {
+          "name": "전자신문(2008)",
+          "url": "https://m.etnews.com/200806300058",
+          "quote": "이동전화 가격은 무려 400만원을 호가했다"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "SH-100 소비자 가격은 165만원, 당시 평균 임금은 64만원이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "삼성전자 뉴스룸 단일 출처. 다른 사이트에서 같은 금액을 찾지 못함 → 2출처 미충족.",
+      "sources": [
+        {
+          "name": "삼성전자 뉴스룸(2018)",
+          "url": "https://news.samsung.com/kr/%eb%89%b4%ec%8a%a4-cafe-%ec%82%bc%ec%84%b1%ec%a0%84%ec%9e%90-%ed%9c%b4%eb%8c%80%ec%a0%84%ed%99%94-30%eb%85%84",
+          "quote": "SH100의 소비자 가격은 무려 165만원이었는데요"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "삼성전자는 서울올림픽이 열리던 1988년 첫 휴대폰 SH-100을 선보였다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "출시 시점은 '1988년 올림픽 때 첫선, 이듬해 본격 출시'로 적은 자료도 있음.",
+      "sources": [
+        {
+          "name": "파이낸셜뉴스(2020)",
+          "url": "https://www.fnnews.com/news/202010251502213725",
+          "quote": "이건희 회장은 삼성 최초의 휴대폰 SH-100을 선보였다"
+        },
+        {
+          "name": "뉴시스(2026)",
+          "url": "https://mobile.newsis.com/view/NISX20260410_0003586566",
+          "quote": "1988년 서울 올림픽을 앞두고 삼성전자가 내놓은 국내 최초 휴대폰"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "당시 국내 휴대폰 시장에서 모토로라 점유율이 90% 이상이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "파이낸셜뉴스 단일 출처. 삼성 뉴스룸의 다른 기사는 70%로 적어 수치가 엇갈림(미확인).",
+      "sources": [
+        {
+          "name": "파이낸셜뉴스(2020)",
+          "url": "https://www.fnnews.com/news/202010251502213725",
+          "quote": "모토로라의 시장점유율이 90% 이상이었다"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성전자는 영업 중인 국내 기업이나 1988년 제품 일화라 소송·제재 소지 없음."
+  },
+  "remaining": "결정적 장면(선택·결단)과 SH-100 가격 2출처 확인이 없고, 후속 전환점은 이미 쓴 애니콜 소재와 겹침.",
+  "toolCallsUsed": 13
+}

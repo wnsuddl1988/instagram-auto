@@ -1,0 +1,56 @@
+{
+  "id": "tata-nano-2008",
+  "title": "타타 나노 — 가장 싼 차가 팔리지 않은 이유",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "낯선 나라. 1만 루피 가격은 실제와 달랐다는 보도. 싱구르 토지 분쟁 제외",
+  "conditionResolved": true,
+  "finding": "풀의 '1만 루피'는 오기이며 실제 발표가는 1 lakh(10만 루피)였고, 그마저 VAT·운송비 제외 가격이라 실제로는 그 값에 인도하지 못했다는 보도를 2곳으로 확인했다. 2018년 6월 생산이 1대라는 사실, 연 25만 대 생산능력 대비 절반 미만 가동, '싸구려' 이미지가 부유층·신흥 중산층에게 외면받았다는 분석이 모두 2곳 출처로 확인된다. 싱구르 분쟁은 쓰지 않으면 되므로 사용 가능.",
+  "coreMessage": "'가장 싼 차'라는 이름표가 붙으면, 싼 걸 원하던 사람도 사지 않는다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1", "claim": "나노는 2018년 6월 한 달 동안 단 1대만 생산됐다.", "numeric": true, "economy": true,
+      "caution": "같은 달 국내 판매 3대. 2017년 6월 생산은 275대(Bloomberg 인용 보도).",
+      "sources": [
+        { "name": "Autocar Professional(2018)", "url": "https://autocarpro.in/news-national/tata-motors-set-to-stop-making-the-nano-40348", "quote": "produced one single unit of the Nano" },
+        { "name": "Rushlane(2018)", "url": "https://www.rushlane.com/tata-nano-journey-comes-to-an-end-12257501.html", "quote": "only 1 Tata Nano was produced" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "타타는 2008년 나노를 10만 루피(1 lakh, 약 2천 달러) 가격으로 내놓겠다고 발표했다.", "numeric": true, "economy": true,
+      "caution": "'1만 루피'가 아니라 10만 루피. 시장 출시는 2009년이고 2008년 1월은 공개 발표. 미화 환산은 2,000~2,500달러로 출처마다 다름.",
+      "sources": [
+        { "name": "Daily News Egypt(2018)", "url": "https://www.dailynewsegypt.com/2018/09/10/tata-nano-end-of-the-road-for-worlds-cheapest-car/", "quote": "affordable price of 100,000 rupees" },
+        { "name": "The Tribune(2008)", "url": "https://www.tribuneindia.com/2008/20080111/main6.htm", "quote": "The standard version will cost Rs 1 lakh" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "10만 루피는 VAT·운송비를 제외한 기본형 가격이었고, 타타는 실제로 그 가격에 차를 인도하지 못했다.", "numeric": true, "economy": true,
+      "caution": "Business Today 2010년 기사 기준. 이후 2017년 기본형은 약 21.5만 루피까지 상승(위키피디아 1곳).",
+      "sources": [
+        { "name": "Business Today(2010)", "url": "https://www.businesstoday.in/auto/story/tatas-shed-rs-1-lakh-price-tag-and-up-nano-price-15396-2010-10-30", "quote": "managed to deliver the car at Rs 1 lakh" },
+        { "name": "The Tribune(2008)", "url": "https://www.tribuneindia.com/2008/20080111/main6.htm", "quote": "excluding VAT and transportation" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "나노 전용 공장은 연 25만 대 생산능력으로 계획됐지만 실제로는 능력의 절반에도 못 미치게 가동됐다.", "numeric": true, "economy": true,
+      "caution": "Gulf News의 '절반 미만 가동' 시점은 기사 내용상 2017 회계연도 말(3월 마감 전후)로 추정되나 날짜 미확인. 대본에서는 '한때'로 표현.",
+      "sources": [
+        { "name": "Daily News Egypt(2018)", "url": "https://www.dailynewsegypt.com/2018/09/10/tata-nano-end-of-the-road-for-worlds-cheapest-car/", "quote": "capacity of 250,000 units annually" },
+        { "name": "Gulf News", "url": "https://gulfnews.com/business/indias-tata-rebrands-worlds-cheapest-car--to-boost-sales-1.1223015", "quote": "running at less than half its capacity" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "'세계에서 가장 싼 차'라는 이미지가 오히려 역효과를 내, 지위를 의식하는 소비자들이 외면했다.", "numeric": false, "economy": false,
+      "caution": "분석·평가성 서술(언론 해석). 타타 측은 '가난한 사람의 차로 밀지 않았다'고 반박한 바 있음(IndustryWeek).",
+      "sources": [
+        { "name": "Daily News Egypt(2018)", "url": "https://www.dailynewsegypt.com/2018/09/10/tata-nano-end-of-the-road-for-worlds-cheapest-car/", "quote": "image backfired" },
+        { "name": "Gulf News", "url": "https://gulfnews.com/business/indias-tata-rebrands-worlds-cheapest-car--to-boost-sales-1.1223015", "quote": "consumers largely shunned the" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업·종결된 사건. 싱구르 토지 분쟁(정치 소지)은 대본에서 제외." },
+  "remaining": "한국 시청자에게 낯선 나라·브랜드라 '인도에서 가장 싼 차' 한 줄 설명 필요. 일부 수치(총 판매 약 30만 대, 2010년 11월 월 509대 등)는 단일 출처라 제외. 출시 연도는 공개 발표 2008, 시판 2009로 구분.",
+  "toolCallsUsed": 16
+}

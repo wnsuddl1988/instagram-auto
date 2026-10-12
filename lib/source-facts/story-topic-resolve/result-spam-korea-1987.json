@@ -1,0 +1,56 @@
+{
+  "id": "spam-korea-1987",
+  "title": "스팸 한국 — 미군 잔반에서 명절 선물까지",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "스팸·부대찌개 콘텐츠 많음 — 후반에. 한국전쟁 서술은 사실만, 결정적 장면 약함",
+  "conditionResolved": false,
+  "finding": "숫자 사실(1986년 3월 호멜 기술제휴, 첫해 500t, 누적 매출 약 4조 원, 선물세트 비중)은 출처 2곳으로 확인된다. 그러나 이야기는 '라이선스 계약 -> 출시 -> 명절 선물로 정착'이라는 연표형이고 주인공의 결단이나 결과를 가른 결정적 장면이 없다(미군 부대 유입 서술은 배경 설명 수준). 선물세트 비중도 출처마다 1/3과 60%로 달라 대본에 쓰기 위험하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "CJ제일제당은 1986년 3월 미국 호멜과 기술제휴를 맺고 1987년 스팸 생산을 시작했다.", "numeric": true, "economy": false,
+      "caution": "생산·출시 시점이 5월/6월로 출처마다 다름(한국경제 1987년 5월, 인사이트 1987년 6월).",
+      "sources": [
+        { "name": "한국경제매거진(2017)", "url": "https://magazine.hankyung.com/business/article/201708288684b", "quote": "1986년 3월 호멜과 기술제휴" },
+        { "name": "인사이트", "url": "https://www.insight.co.kr/news/198820", "quote": "1986년 3월 CJ제일제당은 미국 호멜사와 기술제휴를 맺고" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "한국산 스팸은 출시 첫해인 1987년에 예상을 뛰어넘어 500t이 팔렸다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "한국경제매거진(2017)", "url": "https://magazine.hankyung.com/business/article/201708288684b", "quote": "출시 첫해에 예상치를 훌쩍 뛰어넘은 500톤이 판매되며" },
+        { "name": "CJ 뉴스룸", "url": "https://cjnews.cj.net/?p=36224", "quote": "1987년 첫해에만 스팸 500t이 팔렸죠." }
+      ]
+    },
+    {
+      "id": "f3", "claim": "스팸 매출에서 명절 선물세트가 차지하는 비중이 크다(출처별로 약 1/3 또는 60%).", "numeric": true, "economy": true,
+      "caution": "한국경제는 추석·설 선물세트 매출 각 1000억 원으로 전체의 약 3분의 1, CJ 뉴스룸은 연간 매출의 60%로 서로 다름. 대본에 쓰려면 기준 연도 확정 필요.",
+      "sources": [
+        { "name": "한국경제매거진(2017)", "url": "https://magazine.hankyung.com/business/article/201708288684b", "quote": "전체 매출의 약 3분의 1을 차지했다" },
+        { "name": "CJ 뉴스룸", "url": "https://cjnews.cj.net/?p=35826", "quote": "스팸의 연간 매출 60%는 명절 선물세트에서 나온다" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "스팸의 누적 매출은 약 4조 원에 이른다(출시 후 31년 기준 3조 9천억 원).", "numeric": true, "economy": true,
+      "caution": "집계 시점이 다른 두 보도의 어림값. 최신 누적 판매량은 20억 5천만 개(2023년 말, 아시아경제)로 별도 수치.",
+      "sources": [
+        { "name": "인사이트", "url": "https://www.insight.co.kr/news/198820", "quote": "누적 매출은 3조 9천억원에 이른다" },
+        { "name": "CJ 뉴스룸", "url": "https://cjnews.cj.net/?p=35826", "quote": "누적 매출액 4조 원을 넘는 쾌거를 달성한" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "한국전쟁 때 파견된 미군 부대를 통해 스팸이 처음 들어왔고, 구하지 못한 사람들은 부대 쓰레기통까지 뒤졌다.", "numeric": false, "economy": false,
+      "caution": "한국전쟁 서술은 사실만, 부대찌개 유래 서술은 출처 성격상 단정 금지.",
+      "sources": [
+        { "name": "인사이트", "url": "https://www.insight.co.kr/news/198820", "quote": "한국에 파견된 미군 부대들에 의해 처음 스팸이 들어오게 됐다" },
+        { "name": "한국경제매거진(2017)", "url": "https://magazine.hankyung.com/business/article/201708288684b", "quote": "미군 부대 쓰레기통을 뒤져 남은 스팸이나" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "CJ제일제당은 현 영업 중인 국내 기업이나 소송·제재 등 민감 사건은 아님. 홍보성 자료 비중 높아 CJ 자료 단독 근거는 피할 것." },
+  "remaining": "결정적 장면이 없어 이야기가 연표형으로 흐름. 스팸 부대찌개·명절 선물 콘텐츠 포화. 선물세트 비중 수치 불일치.",
+  "toolCallsUsed": 9
+}

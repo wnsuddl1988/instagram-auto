@@ -1,0 +1,55 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "프리챌은 회원 1,000만 명대의 커뮤니티 서비스였다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "머니투데이(2020.6.26)", "url": "https://www.mt.co.kr/opinion/2020/06/26/2020062520044444620", "quote": "프리챌은 당시 회원 1000만명대로 네이버·다음과 겨룰 정도였고" },
+        { "name": "서울신문(2014.9.5)", "url": "https://www.seoul.co.kr/news/society/2014/09/05/20140905800018", "quote": "회원 수만 1천만명을 넘어서며" }
+      ] },
+    { "id": "f2", "claim": "프리챌은 커뮤니티(클럽) 운영자에게 월 3,000원을 받겠다고 했다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "디지털데일리(2011.3.13)", "url": "https://www.ddaily.co.kr/page/view/2011031315394398071", "quote": "동호회 서비스를 유지하기 위해 한달에 3000원의 사용료를 받겠다" },
+        { "name": "비즈한국", "url": "http://bizhankook.com/articles/20234.html", "quote": "커뮤니티 운영자에게 월 3000원을 받는 대신" }
+      ] },
+    { "id": "f3", "claim": "프리챌은 2002년 10월에 월 3,000원 유료화를 발표했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "여행신문(2002.11.11)", "url": "https://www.traveltimes.co.kr/news/articleView.html?idxno=29077", "quote": "월정액 3,000원을 부과한다는 내용을 지난 10월 발표했다" },
+        { "name": "전자신문(2002.10.29)", "url": "https://m.etnews.com/200210280197", "quote": "오는 11월 중순부터 커뮤니티에 전면 유료화를 도입하겠다고" }
+      ] },
+    { "id": "f4", "claim": "회사는 아바타 판매·배너 광고 수익의 한계와 늘어나는 이용자·클럽을 감당하기 어렵다는 이유를 들었다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "디지털데일리(2011.3.13)", "url": "https://www.ddaily.co.kr/page/view/2011031315394398071", "quote": "아바타 아이템 판매 수익, 배너광고 수익에는 한계가 있었다" },
+        { "name": "이투데이", "url": "https://www.etoday.co.kr/news/view/1015990", "quote": "배너 광고나 아바타 판매 등으로는 역부족이었다" }
+      ] },
+    { "id": "f5", "claim": "경쟁 사이트들이 평생 무료를 내걸고 프리챌 회원을 끌어들였다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "전자신문(2002.10.29)", "url": "https://m.etnews.com/200210280197", "quote": "인티즌, 하나로드림, 드림위즈 등은 일제히 평생 무료" },
+        { "name": "머니투데이(2020.6.26)", "url": "https://www.mt.co.kr/opinion/2020/06/26/2020062520044444620", "quote": "싸이월드 클럽서비스는 평생 무료입니다" }
+      ] },
+    { "id": "f6", "claim": "싸이월드·드림위즈·인티즌 등은 프리챌 클럽의 글을 옮겨 주는 백업 서비스·프로그램을 제공했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "여행신문(2002.11.11)", "url": "https://www.traveltimes.co.kr/news/articleView.html?idxno=29077", "quote": "게시판 백업 서비스를 제공하고 있다" },
+        { "name": "머니투데이(2020.6.26)", "url": "https://www.mt.co.kr/opinion/2020/06/26/2020062520044444620", "quote": "싸이월드 클럽 게시판의 글로 업로드할 수 있는" }
+      ] },
+    { "id": "f7", "claim": "유료화는 2002년 11월 중순(14일부터)에 모든 커뮤니티에 적용됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "전자신문(2002.10.29)", "url": "https://m.etnews.com/200210280197", "quote": "오는 11월 중순부터 커뮤니티에 전면 유료화를 도입하겠다고" },
+        { "name": "여행신문(2002.11.11)", "url": "https://www.traveltimes.co.kr/news/articleView.html?idxno=29077", "quote": "오는 14일부터 모든 커뮤니티에 월정액 3,000원을" }
+      ] },
+    { "id": "f8", "claim": "유료화 이후 110만 개이던 동호회(클럽)가 40만 개로 줄었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "디지털데일리(2011.3.13)", "url": "https://www.ddaily.co.kr/page/view/2011031315394398071", "quote": "유료화 이후 110만개의 동호회는 40만개로 줄어들었으며" },
+        { "name": "경향신문(2013.2.18)", "url": "https://www.khan.co.kr/article/201302181132591", "quote": "당시 110만개의 동호회가 40만개로 줄었고" },
+        { "name": "전자신문(2013.3.26)", "url": "https://m.etnews.com/201303260488", "quote": "2002년 당시 110만개의 동호회는 유료 결제 발표 이후 40만개로 줄었다" }
+      ] },
+    { "id": "f9", "claim": "프리챌은 2013년 2월 18일에 서비스를 종료했다(15년 만)", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "경향신문(2013.2.18)", "url": "https://www.khan.co.kr/article/201302181132591", "quote": "15년 만인 18일 문을 닫는다" },
+        { "name": "전자신문(2013.3.26)", "url": "https://m.etnews.com/201303260488", "quote": "프리챌은 15년 만인 지난 2월에 문을 닫았다" }
+      ] },
+    { "id": "f10", "claim": "이용자가 늘며 서버가 감당할 수 없는 트래픽이 생겼고 서비스를 유지하려면 많은 돈이 필요했다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "이투데이", "url": "https://www.etoday.co.kr/news/view/1015990", "quote": "서버가 감당할 수 없는 트래픽이 발생했고" },
+        { "name": "디지털데일리(2011.3.13)", "url": "https://www.ddaily.co.kr/page/view/2011031315394398071", "quote": "아바타 아이템 판매 수익, 배너광고 수익에는 한계가 있었다" }
+      ] }
+  ]
+}

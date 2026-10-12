@@ -1,0 +1,58 @@
+{
+  "id": "lg-chem-gm-volt-2009",
+  "title": "LG화학 GM 볼트 배터리",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "'20년 적자'·결단 근거 없음",
+  "conditionResolved": false,
+  "finding": "'20년 적자'는 이번에도 근거가 없고(자매 항목 lg-battery-20years-2005에서도 문화일보 단독), 대신 다른 각도로 2009년 1월 12일 GM이 볼트의 배터리 셀 공급사로 LG화학을 선정했고 A123 시스템즈와 경합했다는 사실을 Jalopnik·MIT Technology Review·LG 공식 자료 등 여러 곳에서 확인했다. 그러나 이는 GM의 공급사 선택이라는 기업 간 경쟁 결과일 뿐 LG 측 인물의 결단 한 순간이 아니고, 계약 주체도 LG화학이 아니라 미국 자회사 컴팩트파워(CPI)라는 보도가 있으며, 한국 기사에서 선정 경위·A123 경쟁을 확인한 곳은 없다. LG에너지솔루션·LG화학은 뜨거운 상장사라 주식 이슈로 읽힐 위험도 그대로다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2009년 1월 12일 GM이 쉐보레 볼트 배터리 셀 공급업체로 LG화학을 선정했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "계약 주체는 미국 자회사 컴팩트파워(CPI)라는 보도(Design News)가 있음. 한국 언론 선정 기사는 열람하지 못함.",
+      "sources": [
+        { "name": "Jalopnik(2009.1.12)", "url": "https://jalopnik.com/gm-ceo-rick-wagoner-announces-chevy-volt-battery-detail-5129294", "quote": "selected as the battery cell supplier" },
+        { "name": "LG 뉴스룸 보도자료", "url": "https://lg.co.kr/media/release/5298", "quote": "2009년 GM ‘볼트(Volt)’ 배터리 공급업체 선정" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "볼트 배터리 팩은 16kWh이며 순수 전기로 약 40마일(약 64km)을 주행한다(실제 사용은 8kWh).",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Jalopnik(2009.1.12)", "url": "https://jalopnik.com/gm-ceo-rick-wagoner-announces-chevy-volt-battery-detail-5129294", "quote": "Volt's 16 kWh T-shaped lithium-ion battery" },
+        { "name": "MIT Technology Review(2009.1.12)", "url": "https://www.technologyreview.com/2009/01/12/216535/gm-to-build-its-own-batteries/", "quote": "The pack stores 16 kilowatt-hours" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "선정 직전까지 LG화학과 미국 A123 시스템즈 두 업체가 경합했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "단일 출처 열람(MIT Technology Review). 탈락 업체를 GM은 공식 지명하지 않음.",
+      "sources": [
+        { "name": "MIT Technology Review(2009.1.12)", "url": "https://www.technologyreview.com/2009/01/12/216535/gm-to-build-its-own-batteries/", "quote": "Two battery companies, LG Chem and A123" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "GM 배터리 전기차 담당 임원이 LG화학에 대해 '20년간 이런 협력사는 없었다'고 평가했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "머니투데이 2010.1.14 르포 단독, 기업 홍보성 발언.",
+      "sources": [
+        { "name": "머니투데이(2010.1.14)", "url": "https://www.mt.co.kr/industry/2010/01/14/2010011410133189448", "quote": "GM에 20년간 다니면서 이런 협력사는 없었다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "LG화학·LG에너지솔루션은 영업·상장 중인 뜨거운 종목이라 주식 이슈로 읽힐 위험. 소송·리콜은 건드리지 않음." },
+  "remaining": "LG 측 인물의 결단 장면 없음(GM의 공급사 선택 결과). '20년 적자'는 단일 출처. 한국 언론 2곳의 선정 경위·경쟁사 기사 확보 못 함. 숫자(경제 근거)도 기술 사양 위주로 매출·계약액이 없음.",
+  "toolCallsUsed": 8
+}

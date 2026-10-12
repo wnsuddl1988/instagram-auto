@@ -1,0 +1,71 @@
+{
+  "id": "brazil-plano-real-1994",
+  "title": "브라질 플라누 헤알",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "개념 난도, 카르도주 정치 이력",
+  "conditionResolved": true,
+  "finding": "복잡하다던 개념은 '가격표를 먼저 새 단위(URV, 1URV=1달러)로 4개월간 병기한 뒤 1994년 7월 1일 CR$2,750을 R$1로 바꿨다'는 한 줄 순서로 줄일 수 있고, 1993년 물가 2,477%, 7~12월 물가 18.6% 등 숫자는 포르투갈어 매체 2곳 이상에서 원문으로 확인됐다. 결정 장면은 7월 1일 전환(재무장관 카르도주 팀의 선택)이고 두 사이트로 확인된다. 카르도주의 정치 이력은 브라질 국내 사안이라 '국내 정치 쟁점' 해당이 아니며, 대본에서는 이름 없이 '재무장관 팀'으로 써도 이야기가 선다.",
+  "coreMessage": "물가를 잡은 건 새 돈이 아니라, 새 돈이 나오기 전 넉 달 동안 가격의 눈금부터 바꾼 순서였다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "브라질 소비자물가는 1993년 한 해 동안 2,477%(IPCA 2,477.15%) 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1994년 6월 12개월 물가가 거의 5,000%라는 FGV 수치는 단일 출처라 쓰지 않는다.",
+      "sources": [
+        { "name": "Jornal do Comercio (2024)", "url": "https://www.jornaldocomercio.com/economia/2024/06/1160907-plano-real-completa-30-anos.html", "quote": "o IPCA chegou à marca de 2.477,15%" },
+        { "name": "Jornal do Brasil (2009)", "url": "https://www.jb.com.br/economia/noticias/2009/06/29/proximo-dos-15-anos-plano-real-acabou-com-a-hiperinflacao.html", "quote": "2.477% registrados apenas no ano de 1993" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1994년 7월 1일 CR$2,750(크루제이루 헤알)이 R$1(1헤알)로 바뀌었고 URV는 사라졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "jus.com.br 글은 전환일을 6월 30일/12월로 오기하는 곳이 있다. 날짜는 7월 1일로 쓴다.",
+      "sources": [
+        { "name": "Wikipedia pt, Plano Real", "url": "https://pt.wikipedia.org/wiki/Plano_Real", "quote": "CR$ 2 750,00 para cada R$ 1,00" },
+        { "name": "Jus.com.br, Plano Real", "url": "https://jus.com.br/artigos/57401/plano-real", "quote": "seriam convertidos em R$ 1 (um real)" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "URV는 달러와 1대1로 묶인 가상 단위였다(1 URV = 1달러).",
+      "numeric": true,
+      "economy": false,
+      "caution": "URV 초기값은 CR$647,50.",
+      "sources": [
+        { "name": "Jornal do Comercio (2024)", "url": "https://www.jornaldocomercio.com/economia/2024/06/1160907-plano-real-completa-30-anos.html", "quote": "1 URV era igual a 1 dólar" },
+        { "name": "Jus.com.br, Plano Real", "url": "https://jus.com.br/artigos/57401/plano-real", "quote": "fixada em CR$ 647,50, ou um dólar" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "헤알 도입 직후 1994년 7~12월 6개월 물가 상승률은 약 18.6%로 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "JB는 18,57%, 코메르시우는 18,6%로 표기.",
+      "sources": [
+        { "name": "Jornal do Brasil (2009)", "url": "https://www.jb.com.br/economia/noticias/2009/06/29/proximo-dos-15-anos-plano-real-acabou-com-a-hiperinflacao.html", "quote": "ficou em 18,57% de julho a dezembro" },
+        { "name": "Jornal do Comercio (2024)", "url": "https://www.jornaldocomercio.com/economia/2024/06/1160907-plano-real-completa-30-anos.html", "quote": "o índice desabou a 18,6%" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "URV는 약 4개월간 가격 표시용으로 쓰이다가 헤알이 되었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "시작일이 1994년 2월 28일/3월 1일로 출처마다 다르므로 개월 수만 쓴다.",
+      "sources": [
+        { "name": "FGV IBRE blog, 25 anos do Plano Real", "url": "https://blogdoibre.fgv.br/posts/25-anos-do-plano-real", "quote": "A URV foi utilizada por quatro meses" },
+        { "name": "Jus.com.br, Plano Real", "url": "https://jus.com.br/artigos/57401/plano-real", "quote": "em real, quatro meses depois" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 사례. 카르도주는 이후 대통령이 됐으나 한국 국내 정치 쟁점이 아니며 대본에서 이름 생략 가능." },
+  "remaining": "URV 설명을 슈퍼 가격표 이중 표기 한 장면으로 시각화해야 함(가격표를 붙이는 직원 일화는 이스토이 기사로 확인되나 수치 근거는 아님). 결정 장면이 한 사람의 선택이라기보다 팀의 순서 설계라는 점은 약점.",
+  "toolCallsUsed": 9
+}

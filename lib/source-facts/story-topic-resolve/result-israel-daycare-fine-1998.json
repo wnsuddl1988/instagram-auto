@@ -1,0 +1,82 @@
+{
+  "id": "israel-daycare-fine-1998",
+  "title": "어린이집 지각 벌금 — 벌금이 가격이 된 곳",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "실험이라 긴장 약함. 행동경제 입문서 단골이라 포화 추정. 논문 원문 미확인",
+  "conditionResolved": false,
+  "finding": "하이파 어린이집 10곳 실험(20주, 벌금 NIS 10/10분 초과, 주당 지각 평균 8건에서 약 20건)의 숫자는 오이스 논문 요약·ABC 뉴스(프리코노믹스 발췌)·zviran 요약 등 2곳 이상에서 확인된다. 그러나 이야기는 연구자가 설계한 실험이어서 주인공의 선택·결단이 걸린 한국인 누구나 아는 굵직한 장면이 없고(긴장 약함), 행동경제 입문서 단골이라는 점도 그대로다. 논문 PDF 원문은 텍스트 추출이 안 되어 직접 확인하지 못했다. 숫자는 사실 확인이 되므로 unverifiable이 아니라 장면이 약한 보류로 판정한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1998년 이스라엘 하이파의 사설 어린이집 10곳에서 실험이 진행됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "zviran 요약은 11곳이라고 적어 출처마다 다르다. 대본에는 논문 기준 10곳을 쓴다. 논문 원문은 직접 확인하지 못했다.",
+      "sources": [
+        { "name": "오이스(OECE) 요약(Gneezy & Rustichini)", "url": "https://oece.nz/public/big-issues/promoting-participation/more-childcare-hours/", "quote": "10 private day-care centers" },
+        { "name": "ABC News, 프리코노믹스 발췌", "url": "https://abcnews.go.com/print?id=1180187", "quote": "ten day-care centers in Haifa" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "실험 기간은 모두 20주였고 벌금은 5주째부터 도입됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "오이스(OECE) 요약", "url": "https://oece.nz/public/big-issues/promoting-participation/more-childcare-hours/", "quote": "overall period of the study was 20 weeks" },
+        { "name": "ABC News, 프리코노믹스 발췌", "url": "https://abcnews.go.com/print?id=1180187", "quote": "The study lasted twenty weeks" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "10분 넘게 늦으면 10셰켈(NIS 10)의 벌금을 물리겠다고 공지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "프리코노믹스는 같은 벌금을 아이 1명당 3달러(월 청구서 약 380달러)로 옮겨 적었다. 통화 환산 기준을 하나로 정해 써야 한다.",
+      "sources": [
+        { "name": "오이스(OECE) 요약", "url": "https://oece.nz/public/big-issues/promoting-participation/more-childcare-hours/", "quote": "NIS 10 for a delay of 10 minutes or more" },
+        { "name": "zviran 법률사무소 해설", "url": "https://zviran.co.il/en/monetary-fine-encourage-parents-to-pick-their-child-late-from-daycare-2/", "quote": "for more than 10 minutes late arrivals" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "벌금 도입 전 4주 동안 어린이집당 주당 평균 지각은 8건이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "zviran 법률사무소 해설", "url": "https://zviran.co.il/en/monetary-fine-encourage-parents-to-pick-their-child-late-from-daycare-2/", "quote": "average of 8 cases per week per daycare" },
+        { "name": "ABC News, 프리코노믹스 발췌", "url": "https://abcnews.go.com/print?id=1180187", "quote": "eight late pickups per week" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "벌금을 도입하자 지각은 원래 평균의 두 배 이상으로 늘었고, 프리코노믹스는 주당 20건이라고 적었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'두 배'는 두 출처가 일치하지만 '주당 20건'은 프리코노믹스 단독 수치다.",
+      "sources": [
+        { "name": "ABC News, 프리코노믹스 발췌", "url": "https://abcnews.go.com/print?id=1180187", "quote": "more than double the original average" },
+        { "name": "zviran 법률사무소 해설", "url": "https://zviran.co.il/en/monetary-fine-encourage-parents-to-pick-their-child-late-from-daycare-2/", "quote": "about twice the number of late arrivals" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "17주째에 벌금을 설명 없이 없앴지만 지각은 줄지 않았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "오이스(OECE) 요약", "url": "https://oece.nz/public/big-issues/promoting-participation/more-childcare-hours/", "quote": "the fine was removed with no explanation" },
+        { "name": "zviran 법률사무소 해설", "url": "https://zviran.co.il/en/monetary-fine-encourage-parents-to-pick-their-child-late-from-daycare-2/", "quote": "the fine was canceled" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 학술 실험으로 민감성 없음." },
+  "remaining": "주인공의 결단이 있는 굵직한 장면이 없다. 단독으로는 강한 이야기가 안 되어 장면을 보강할 수 없으면 보류를 유지해야 한다. 논문 PDF 원문 대조는 하지 못했다.",
+  "toolCallsUsed": 12
+}

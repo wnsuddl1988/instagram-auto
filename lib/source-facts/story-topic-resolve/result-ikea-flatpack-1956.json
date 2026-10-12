@@ -1,0 +1,44 @@
+{
+  "id": "ikea-flatpack-1956",
+  "title": "IKEA 플랫팩",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "'전설'이라는 헤지, 연도 1955/1956, 역사가 반박",
+  "conditionResolved": false,
+  "finding": "IKEA 공식 글은 1956년 LOVET 탁자 다리를 뗀 일에서 조립식 아이디어가 나왔다고 적고, 공식 플랫팩 글은 사진 스튜디오에 탁자를 나르던 룬드그렌이 '다리를 떼면 어때?'라고 물었다고 적는다. 그러나 연도는 1956(IKEA 공식)과 1959(Irish Times)로 엇갈리고, 다리를 푼 것인지 톱으로 잘랐는지도 출처마다 달라 'legend'라는 헤지가 남는다. IKEA 공식 글은 룬드그렌가 플랫팩 발명가가 아니라 대중화한 사람이라고 스스로 밝히고, 숫자 있는 경제 근거(배송비·부피 절감)는 블로그 수준 수치(1/5 부피, 28%)뿐이라 신뢰할 수 있는 2출처를 찾지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "IKEA는 1956년 LOVET 탁자의 다리를 떼어낸 데서 조립식·플랫팩 아이디어가 나왔다고 공식 소개한다.", "numeric": true, "economy": false,
+      "caution": "Irish Times는 1959년으로 적는다. 2번째 출처 확인 실패(IKEA 단독).",
+      "sources": [
+        { "name": "IKEA Our Heritage", "url": "https://www.ikea.com/jo/en/this-is-ikea/about-us/our-heritage-pubad29a981/", "quote": "we got the idea to take the legs off" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "룬드그렌은 카탈로그 사진 촬영용 탁자를 스튜디오로 나르다 차에 안 들어가자 다리를 떼자고 했다.", "numeric": false, "economy": false,
+      "caution": "푼 것인지 잘랐는지 출처 불일치(Fast Company는 둘 다 언급). IKEA 단독.",
+      "sources": [
+        { "name": "IKEA Philippines - story of flatpacks", "url": "https://www.ikea.com/ph/en/this-is-ikea/about-us/the-story-of-ikea-flatpacks-puba710ccb0/", "quote": "Why not take off the legs?" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "IKEA 창업자 캄프라드는 1943년 17세에 IKEA를 세웠다.", "numeric": true, "economy": false,
+      "caution": "배경 사실. IKEA 단독.",
+      "sources": [
+        { "name": "IKEA Our Heritage", "url": "https://www.ikea.com/jo/en/this-is-ikea/about-us/our-heritage-pubad29a981/", "quote": "founded IKEA in 1943 at the age of 17" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "룬드그렌이 디자인한 빌리 책장은 1억 4천만 개 넘게 생산됐다.", "numeric": true, "economy": false,
+      "caution": "플랫팩 전설의 인물 소개용. Wikipedia 단독.",
+      "sources": [
+        { "name": "Wikipedia Gillis Lundgren", "url": "https://en.wikipedia.org/wiki/Gillis_Lundgren", "quote": "Billy bookcase of which over 140" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "스웨덴 기업의 옛 일화. 민감성 없음. 현재 영업 중인 해외 기업." },
+  "remaining": "(1) 연도 1956/1959 불일치 해소 필요 (2) 푼 장면이 'legend' 수준 - 룬드그렌 본인 인터뷰(2012 Tenzing 수상)·Torekull 저서 원문 필요 (3) 숫자 있는 경제 근거(배송 부피·가격 인하율)를 신뢰 출처 2곳으로 확보 못 함. 이 셋이 풀리면 usable 가능.",
+  "toolCallsUsed": 9
+}

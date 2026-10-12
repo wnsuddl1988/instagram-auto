@@ -1,0 +1,47 @@
+{
+  "id": "hyundai-santro-india-1998",
+  "title": "현대차 샌트로 — 한국에서 단종된 경차가 인도의 국민차가 된 일",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "핵심 현지화 일화(터번 헤드룸 등)가 열람 기사에 없음 → 쓸 수 없음. 이름 공모 50만 건 중 3분의 2 'Santro'는 Autocar Pro 1곳. 현대 계열 반복",
+  "conditionResolved": false,
+  "finding": "터번 헤드룸 설계 일화는 공식 자료·언론에서 확인되지 않았고(포럼 글뿐), 이름 공모 50만 건 중 3분의 2가 Santro라는 사실도 Autocar Pro 1곳뿐이다. 확인된 것은 1998년 출시, 'Tall Boy' 디자인, 현대를 아무도 모르던 상황에서 샤룩 칸을 광고 모델로 쓴 결정(Subbu 회고, afaqs·Storyboard18 2곳)이며, 숫자 사실은 현대차 인도법인 연혁 등 단일 출처에 머문다. 또 풀의 훅('한국에서 안 팔려 단종')은 근거가 없다 — 아토스는 1998년 IMF 직후 국내 승용차 판매 약 절반을 차지했고(서울신문 1998 검색 요약) 생산이 계속됐다. 따라서 장면은 샤룩 칸 기용으로 바꿔야 하나 숫자 사실을 2곳으로 채우지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1998년 산트로 출시 때 인도에서 현대를 아는 사람이 거의 없어, 마케팅 책임자 Subbu가 스타(샤룩 칸)를 광고 모델로 세웠다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "Subbu 본인 회고에 의존(afaqs는 그의 저서 인용). 숫자 없음.",
+      "sources": [
+        { "name": "afaqs", "url": "https://afaqs.com/news/mktg/sustainability-over-momentary-success-hyundais-tarun-garg-on-24-year-long-association-with-shah-rukh", "quote": "nobody had heard of the company" },
+        { "name": "Storyboard18", "url": "https://www.storyboard18.com/brand-marketing/flashback-tales-shah-rukh-khan-as-a-surprising-choice-for-hyundais-blockbuster-entry-in-1998-45550.htm", "quote": "virtually unknown in India" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "이름 공모에 50만 건 넘는 응모가 들어왔고 3분의 2 이상이 Santro를 골랐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "출처 1곳(Autocar Pro)뿐 — 검색에서 다른 출처 못 찾음. 대본 사용 불가.",
+      "sources": [
+        { "name": "Autocar Pro(India@75)", "url": "https://www.autocarpro.in/feature/india@75-how-santro-created-the-magic-for-hyundai-92481", "quote": "Of the five lakh-plus entries that came in, over two-thirds opted for Santro." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "첸나이 공장은 기공(1996.12) 후 17개월 만에 시험 생산을 시작했고 가동 19개월 만에 10만 번째 차가 나왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "현대차 인도법인 연혁 1곳뿐. 독립 출처 미확보.",
+      "sources": [
+        { "name": "Hyundai Motor India 연혁(1996-2000)", "url": "https://www.hyundai.com/in/en/hyundai-story/hyundai-motor-india/history-1996-2000", "quote": "100,000th Car rolls out from the Chennai plant in just 19 months" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현대차 계열 반복(현대차 10년 보증 기사용). 법적·정치 소지는 없음." },
+  "remaining": "현지화 일화 미확인, 숫자 사실 2출처 미확보(누적 판매는 1백만 vs 1.85백만 등 불일치), 훅 전제 오류 — 소재를 쓰려면 '샤룩 칸 기용' 장면으로 재정의하고 신문·공식 자료 추가 확보 필요.",
+  "toolCallsUsed": 8
+}

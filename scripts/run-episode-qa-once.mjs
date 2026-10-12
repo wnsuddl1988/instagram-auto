@@ -64,8 +64,11 @@ const mustFix = [];
 const warn = [];
 const info = [];
 
-// 0) 훅(최우선 규칙 17)
-{
+// 0) 훅(최우선 규칙 17) — 설명형(부엉·황소) 훅 규칙 H1~H4. 스토리형(formatProfile story_v1)은 적용하지 않는다:
+//    스토리형 훅은 `_ai/story-format-structure-v1.md` 훅 점검표·설계 게이트가 본다(Owner 2026-10-07 "설명형 훅 규칙 쓰지 말고 벤치마크 방식").
+if (spec.formatProfile === "story_v1") {
+  info.push("스토리형: 설명형 훅 규칙(H1~H4) 미적용 — 훅은 스토리 기준(설계 게이트·훅 점검표)으로 검수");
+} else {
   const hook = checkHook(spec);
   mustFix.push(...hook.mustFix);
   warn.push(...hook.warn);
@@ -132,9 +135,15 @@ if (!fs.existsSync(assPath)) {
     if (LAYOUT_V2 && b.fs < MIN_CAPTION_FONT_V2) smallCaption.add(b.fs);
     for (const l of b.lines) {
       const w = textWidthRatio(l) * b.fs;
-      if (w > CAPTION_WIDTH + 1) mustFix.push(`자막 폭 초과 ${Math.round(w)}px(글자 ${b.fs}px): "${l}"`);
+      if (w > CAPTION_WIDTH + 1) {
+        // 스펙 `captionWidthExceptions: [{ line, reason }]`(2026-10-07 부엉 25편): 한 어절이 폭 한도를 넘는 줄은 안전폭 864px 안일 때만 사유와 함께 승인(경고로 남김).
+        const widthExc = (spec.captionWidthExceptions ?? []).find((e) => e.line === l && e.reason);
+        if (widthExc && w <= 864 + 1) warn.push(`자막 폭 예외 승인 ${Math.round(w)}px(글자 ${b.fs}px, 안전폭 864 이내): "${l}" — ${widthExc.reason}`);
+        else mustFix.push(`자막 폭 초과 ${Math.round(w)}px(글자 ${b.fs}px): "${l}"`);
+      }
       // 앞에 아라비아 숫자가 붙은 "6천만 원"은 정상 표기다(2026-10-02 부엉 19편 오탐 정정) — 한글로 푼 "육천만"·"삼백육십만"만 잡는다.
-      if (/(?<![0-9])[일이삼사오육칠팔구십백천](년|월|개월|만|퍼센트)/.test(l)) mustFix.push(`읽는 표기 숫자 잔존: "${l}"`);
+      // "이만큼"(2026-10-10 스토리 4편 오탐): '이(2)+만(10,000)'이 아니라 "이만큼" 한 낱말이므로 만 뒤에 '큼'이 오면 제외한다.
+      if (/(?<![0-9])[일이삼사오육칠팔구십백천](년|월|개월|만(?!큼)|퍼센트)/.test(l)) mustFix.push(`읽는 표기 숫자 잔존: "${l}"`);
     }
     if (b.lines.length === 2) {
       const L = b.lines[0].split(" ").at(-1);
@@ -161,8 +170,35 @@ if (!fs.existsSync(assPath)) {
   if (smallCaption.size) mustFix.push(`자막 글자가 너무 작음(${[...smallCaption].join("·")}px, 새 체계 편 최소 ${MIN_CAPTION_FONT_V2}px) → 조립기 CAPTION_FONT_SIZE 확인 후 재조립`);
   info.push(`자막 ${blocks.length}블록, 글자 ${[...new Set(blocks.map((b) => b.fs))].join("·")}px, 최대 ${Math.max(...blocks.map((b) => b.lines.length))}줄`);
 
+  // 자막 정돈도(2026-10-07 Owner 지적: 어떤 건 한 줄·한 단어·단어 사이 줄바꿈): 한 줄 비율·한 단어·짧은 노출을 수치로 남긴다.
+  {
+    const oneLine = blocks.filter((b) => b.lines.length === 1).length;
+    const oneWord = blocks.filter((b) => b.lines.join(" ").split(/\s+/).filter(Boolean).length === 1).length;
+    const shortDwell = blocks.filter((b) => b.end - b.start < 0.7).length;
+    info.push(`자막 정돈도: 2줄 ${blocks.length - oneLine}/${blocks.length} · 한 줄 ${oneLine} · 한 단어 ${oneWord} · 0.7초 미만 ${shortDwell}`);
+    if (blocks.length >= 20 && oneLine / blocks.length > 0.35) warn.push(`한 줄 자막 비율 ${Math.round((oneLine / blocks.length) * 100)}% (35% 초과) — 자막이 들쭉날쭉해 보일 수 있음`);
+    if (oneWord > 2) warn.push(`한 단어 자막 ${oneWord}개(2개 초과) — 이웃 블록과 합치거나 줄바꿈을 다시 확인`);
+  }
+
+  // 맞춤법·띄어쓰기 점검(확실한 오류만 — 오탐이 잦은 규칙은 넣지 않는다). 걸리면 대본·표시 문구 원문을 고친다.
+  {
+    const SPELLING = [
+      [/됬/, "됬 → 됐"], [/몇일/, "몇일 → 며칠"], [/웬지/, "웬지 → 왠지"], [/왠만/, "왠만 → 웬만"], [/금새/, "금새 → 금세"],
+      [/어떻해/, "어떻해 → 어떡해/어떻게"], [/일일히/, "일일히 → 일일이"], [/되요/, "되요 → 돼요"], [/바램/, "바램 → 바람"],
+      [/수있|수없(?!이)/, "'수 있다/없다'는 띄어 씀"], [/것같/, "'것 같다'는 띄어 씀"], [/\s{2,}/, "연속 공백"], [/\s[,.!?]/, "문장부호 앞 공백"],
+    ];
+    for (const b of blocks) {
+      const text = b.lines.join(" ");
+      for (const [re, msg] of SPELLING) if (re.test(text)) mustFix.push(`맞춤법·띄어쓰기: "${text}" — ${msg}`);
+    }
+  }
+
   // 2-1) 제목(headerTitle): 줄별 실제 그려지는 크기 = 기준 크기를 폭 864에 맞춰 줄인 값(조립기와 같은 계산)
   const title = spec.headerTitle ?? [];
+  // 스토리형 제목 안전 구간(Owner 2026-10-07): 인스타 피드 4:5는 위 15%, 그리드 3:4는 위 12.5%를 자른다 → 제목 시작 y ≥ 17%(≈326px).
+  if (spec.formatProfile === "story_v1" && title.length > 0 && Number(spec.headerTopY ?? 232) < 326) {
+    mustFix.push(`스토리형 제목 위치가 너무 위(headerTopY ${spec.headerTopY ?? 232} < 326, 세로 17%) — 인스타 피드·그리드 크롭에서 첫 줄이 잘림`);
+  }
   if (title.length > MAX_TITLE_LINES) mustFix.push(`제목 ${title.length}줄(최대 ${MAX_TITLE_LINES}줄, Owner 지시)`);
   const sizes = title.map((l) => {
     const natural = textWidthRatio(l) * TITLE_BASE_PX;

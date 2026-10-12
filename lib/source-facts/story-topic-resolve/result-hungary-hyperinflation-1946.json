@@ -1,0 +1,71 @@
+{
+  "id": "hungary-hyperinflation-1946",
+  "title": "헝가리 1946 하이퍼인플레이션",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "바이마르·짐바브웨와 주제 겹침",
+  "conditionResolved": true,
+  "finding": "바이마르·짐바브웨는 이미 쓴 소재 목록에 없어 '변형 중복'이 아니며, 헝가리 1946은 기록상 역대 최악(물가 약 15시간마다 2배, 100퀸틸리언 펜괴 지폐)으로 독립 소재가 된다. 핵심 숫자는 Guinness·위키·Daily News Hungary·PlanetBanknote에서 2곳씩 원문으로 확인했고, 결정 장면은 1946년 8월 1일 포린트 도입(4×10^29 펜괴=1포린트)과 그 직전 세금용 별도 단위 도입이다. 분모가 비정상적으로 커지는 숫자라 화면 설명은 쉽지만 '두 화폐 단위' 구조는 한 줄로 단순화해야 한다.",
+  "coreMessage": "돈의 가치가 시간 단위로 무너질 때 신뢰를 되살린 것은 새 지폐가 아니라, 세금·재정·통화량을 함께 묶은 개혁이었다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1946년 7월 헝가리에서는 물가가 약 15시간마다 두 배가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Kumar(JHU) 논문은 15.6시간, 다수 출처는 약 15시간, 일 물가상승률 207%. 대본은 약 15시간으로.",
+      "sources": [
+        { "name": "Guinness World Records (Highest inflation rate ever)", "url": "https://www.guinnessworldrecords.com/world-records/762605-highest-inflation-rate-ever", "quote": "doubled every 15 hours" },
+        { "name": "Wikipedia (Hungarian pengő)", "url": "https://en.wikipedia.org/wiki/Hungarian_pengő", "quote": "about 15 hours for prices to double" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "역대 최고액 지폐는 10경(100퀸틸리언, 10^20) 펜괴였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 출처는 1섹스틸리언 지폐를 말해 최고액 표기가 갈림. 실제 유통 여부는 불확실.",
+      "sources": [
+        { "name": "Daily News Hungary (Hungary's nightmare hyperinflation of 1946)", "url": "https://dailynewshungary.com/hungarys-nightmare-hyperinflation-of-1946/", "quote": "100 million trillion, or 100 quintillion" },
+        { "name": "Planet Banknote (Hungary 1946: The Worst Hyperinflation Ever)", "url": "https://planetbanknote.com/banknote-blog/hungary-1946-the-worst-hyperinflation-ever/", "quote": "100 quintillion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1946년 8월 1일 헝가리는 새 화폐 포린트를 도입해 펜괴를 대체했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "개혁에는 세제·은행·배상금 일정 조정이 함께 묶임. 포린트 도입일만 단독으로 말하면 과장.",
+      "sources": [
+        { "name": "Daily News Hungary (Hungary's nightmare hyperinflation of 1946)", "url": "https://dailynewshungary.com/hungarys-nightmare-hyperinflation-of-1946/", "quote": "On 1 August 1946, the forint was born" },
+        { "name": "Wikipedia (Hungarian pengő)", "url": "https://en.wikipedia.org/wiki/Hungarian_pengő", "quote": "On 1 August 1946" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "교환 비율은 펜괴 4×10^29(400 옥틸리언)가 1포린트였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Nuremberg.media는 1포린트=4억 펜괴로 틀리게 적음. 쓰지 말 것.",
+      "sources": [
+        { "name": "Wikipedia (Hungarian pengő)", "url": "https://en.wikipedia.org/wiki/Hungarian_pengő", "quote": "at a ratio of 400 octillion pengős to 1" },
+        { "name": "Planet Banknote (Hungary 1946: The Worst Hyperinflation Ever)", "url": "https://planetbanknote.com/banknote-blog/hungary-1946-the-worst-hyperinflation-ever/", "quote": "conversion rate of 400 octillion" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "포린트 이전에 정부는 세금용 단위 아도펭괴(adópengő)를 매일 환율 고시로 연동해 세수 증발을 막으려 했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "아도펭괴도 결국 인플레에 무너짐. 도입일 1946년 1월 1일은 위키 1곳만.",
+      "sources": [
+        { "name": "Wikipedia (Hungarian pengő)", "url": "https://en.wikipedia.org/wiki/Hungarian_pengő", "quote": "introduced the adópengő" },
+        { "name": "Daily News Hungary (Hungary's nightmare hyperinflation of 1946)", "url": "https://dailynewshungary.com/hungarys-nightmare-hyperinflation-of-1946/", "quote": "the adópengő (tax pengő)" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 1946년 사건, 소련 점령·배상 맥락은 한 줄 언급에 그칠 것" },
+  "remaining": "Hanke-Krus 원표(Cato)는 접근 못 함. 인물 중심 결정 장면(재무장관 Gordon 등)은 약하니 포린트 도입일 한 장면으로 구성. 주제상 바이마르와 겹치지 않게 '시간 단위' 속도를 훅으로.",
+  "toolCallsUsed": 12
+}

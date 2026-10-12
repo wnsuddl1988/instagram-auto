@@ -1,0 +1,71 @@
+{
+  "id": "pororo-2003",
+  "title": "뽀로로",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "제작비·로열티 수치 못 찾음(120억은 기사 한 줄)",
+  "conditionResolved": false,
+  "finding": "로열티는 서울시 미디어허브(연 120억 원, 2009년 기준 브랜드 가치 3,890억 원)·이투데이(연 150억 원)·경향 레이디(국내 연 130억 원) 등에서 확인돼 '연 100억 원대'로는 2곳 이상 근거가 생겼고, 극장판 제작비 80억 원·제작기간 3년도 이투데이·아주경제 2곳으로 확인됨. 그러나 이야기의 중심이 될 TV 시리즈(2003년) 제작비는 어느 출처에도 없고, 결과를 바꾼 결정적 장면 후보인 '디즈니의 1조 원 판권 제안과 거절'은 이투데이 1곳 단일 보도이며 다른 매체는 '인수 타진설'로만 쓰고 공식 확인이 없어 사실로 못 씀. 숫자(로열티·브랜드 가치)는 있으나 '누구의 어떤 선택이 결과를 갈랐나'라는 장면이 비어 있어 usable 요건 b를 못 채움.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "뽀로로 극장판(2013, 3D)은 제작비 80억 원, 제작기간 3년이 들어갔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2003년 TV 시리즈 제작비가 아니라 2013년 극장판 수치임.",
+      "sources": [
+        { "name": "이투데이(2014)", "url": "https://www.etoday.co.kr/news/view/884809", "quote": "제작기간 3년에 80억원이 들어간 작품으로" },
+        { "name": "아주경제(2013)", "url": "https://www.ajunews.com/view/20130110000171", "quote": "제작비 80억원, 제작기간 3년을 들였다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "뽀로로 상품 로열티 수익은 연 100억 원대(120억~150억 원)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "출처·연도마다 120억(서울시, 2009년경)·130억(경향 레이디, 2010)·150억(이투데이, 2014)으로 다름. 대본에는 '해마다 100억 원대'로만 쓸 것.",
+      "sources": [
+        { "name": "서울시 미디어허브", "url": "https://mediahub.seoul.go.kr/archives/161925", "quote": "연간 120억 원의 로열티 수익을 내고 있으며" },
+        { "name": "이투데이(2014)", "url": "https://www.etoday.co.kr/news/view/884809", "quote": "연간 상품 로열티와 판매액으로 각각 150억원과 6000억원" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "뽀로로의 브랜드 가치는 약 3,890억 원(3893억 원) 수준으로 추산되었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "kidd.co.kr 등 일부 매체는 8,500억 원으로 적어 시점별 편차가 큼. 2009~2010년 기준 값만 사용.",
+      "sources": [
+        { "name": "서울시 미디어허브", "url": "https://mediahub.seoul.go.kr/archives/161925", "quote": "브랜드 가치도 2009년 기준으로 3,890억 원에 이른다고 한다." },
+        { "name": "머니투데이(2011)", "url": "https://www.mt.co.kr/stock/2011/05/05/2011050411123194103", "quote": "추산한 뽀로로의 브랜드 가치는 3893억원 수준." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "뽀로로는 전 세계 110개국 이상에 수출·방송되었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "110·120·130개국으로 출처마다 다름(시점 차이).",
+      "sources": [
+        { "name": "경향 레이디(2010)", "url": "https://lady.khan.co.kr/issue/article/201011011714571", "quote": "브랜드 가치 약 5천여 억원, 전 세계 110개국 수출" },
+        { "name": "위키백과 '뽀롱뽀롱 뽀로로'", "url": "https://ko.wikipedia.org/wiki/뽀롱뽀롱_뽀로로", "quote": "110개국 이상 국가에서 방송" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2011년 디즈니가 뽀로로 판권을 1조 원에 넘기라고 제안했다는 보도가 있다(공식 확인 안 됨).",
+      "numeric": true,
+      "economy": true,
+      "caution": "이투데이 단독 서술이고 다른 매체는 '인수 타진설'로 씀. 설 수준이라 사실로 쓸 수 없음. 검색 스니펫 기준 경기일보 인용.",
+      "sources": [
+        { "name": "이투데이(2014)", "url": "https://www.etoday.co.kr/news/view/884809", "quote": "미국 디즈니사가 뽀로로 판권을 1조원에 넘기라는 제안을 하는가 하면" },
+        { "name": "경기일보(2011)", "url": "https://www.kyeonggi.com/article/201107200414227", "quote": "미국의 디즈니에서도 뽀로로를 탐내며" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 국내 콘텐츠사(아이코닉스·오콘) 성공 사례, 소송·정치 소지 없음(기업 홍보로 읽힐 수 있어 미담 톤 주의)" },
+  "remaining": "2003년 TV 시리즈 제작비와 초기 투자 구조(EBS·SK브로드밴드 등 지분)를 2출처로 확인 못함. 결정적 장면(선택·결단)이 문서로 확인된 것이 없음 — 디즈니 제안은 설. 아이코닉스 IPO 공시·오콘 보도자료로 보강 필요.",
+  "toolCallsUsed": 9
+}

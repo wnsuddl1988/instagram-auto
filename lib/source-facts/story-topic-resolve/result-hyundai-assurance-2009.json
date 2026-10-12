@@ -1,0 +1,120 @@
+{
+  "id": "hyundai-assurance-2009",
+  "title": "현대차 어슈어런스 — 직장을 잃으면 산 차를 돌려받는다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "6편 현대차 10년 보증과 같은 결(미국에서 불안을 없애 신뢰 얻기) → 연작처럼 보일 수 있어 Owner 판단. 매출 +14%(1월)/+2%(1~9월)/+8%(연간) 기간 섞지 말 것. 환매 건수 2대/50명 미만/75대 미만 시점별 다름. 크라프칙 대사 인용 금지, 첫 문장에 '미국' 명시",
+  "conditionResolved": true,
+  "finding": "2009년 1월 3일 시작한 '직장을 잃으면 12개월 안에 차를 돌려받는' 프로그램, 첫 달 미국 판매 +14%(시장 -37%), 차량 가치 하락 7,500달러까지 현대가 부담, 기획부터 출시까지 37일 등 숫자 사실이 서로 다른 매체 2곳씩으로 확인된다. 반환은 시점별로 2대(3월)→50명 미만→75대 미만으로 달라 '극소수'로만 쓰면 된다. 6편 10년 보증(1999년 보증기간)과는 시대·장치가 달라 같은 소재의 변형은 아니나, 연작 인상은 Owner 판단.",
+  "coreMessage": "사람이 못 사는 이유가 가격이 아니라 잃을까 봐 두려운 마음이라면, 그 위험을 파는 쪽이 안으면 팔린다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2009년 1월 3일 현대차 미국 법인은 구매 후 12개월 안에 실직하면 차를 되사주는 어슈어런스 프로그램을 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "첫 문장에 '미국' 명시. 비경영 사유 퇴사는 제외, 해고·비자발적 소득 상실만 해당.",
+      "sources": [
+        {
+          "name": "AutoGuide(2009-01)",
+          "url": "https://www.autoguide.com/auto-news/2009/01/hyundai-gets-a-return-policy.html",
+          "quote": "within 12 months of the purchase date",
+          "manualVerified": true
+        },
+        {
+          "name": "WardsAuto(2009)",
+          "url": "https://wardsauto.com/hyundai/car-buy-back-plan-spurs-hyundai-sales",
+          "quote": "lose their jobs within 12 months",
+          "manualVerified": true
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "프로그램 첫 달인 2009년 1월 현대차 미국 판매는 14% 늘었고 미국 신차 시장 전체는 37% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "+14%는 1월 한 달 기준. 2월은 -1%, 1~9월 +2%(just-auto)라 기간을 섞지 말 것. 2008년 1월 기저가 낮았다는 분석도 있어 프로그램만의 효과로 단정 금지.",
+      "sources": [
+        {
+          "name": "Wharton Knowledge(2009)",
+          "url": "https://knowledge.wharton.upenn.edu/article/how-hyundai-sells-more-when-everyone-else-is-selling-less/",
+          "quote": "U.S. sales were up 14% in January",
+          "manualVerified": true
+        },
+        {
+          "name": "WardsAuto(2009)",
+          "url": "https://wardsauto.com/hyundai/car-buy-back-plan-spurs-hyundai-sales",
+          "quote": "national new-car sales were down 37%",
+          "manualVerified": true
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "현대차는 차 값과 남은 대출의 차이(마이너스 지분)가 7,500달러까지는 부담하겠다고 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "7,500달러는 반환 시 차량 가치 하락의 상한. 구매자가 초과분 부담.",
+      "sources": [
+        {
+          "name": "AutoGuide(2009-01)",
+          "url": "https://www.autoguide.com/auto-news/2009/01/hyundai-gets-a-return-policy.html",
+          "quote": "actually worth is less than $7,500",
+          "manualVerified": true
+        },
+        {
+          "name": "WardsAuto(2009, 연장 기사)",
+          "url": "https://www.wardsauto.com/news/archive-wards-hyundai-to-extend-assurance-program/773356/",
+          "quote": "the first $7,500 of negative equity"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "이 프로그램은 기획에서 출시까지 37일이 걸렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "WardsAuto(2009, 연장 기사)",
+          "url": "https://www.wardsauto.com/news/archive-wards-hyundai-to-extend-assurance-program/773356/",
+          "quote": "a mere 37 days from concept to launch"
+        },
+        {
+          "name": "The Truth About Cars(2010-01)",
+          "url": "https://www.thetruthaboutcars.com/2010/01/fewer-than-100-vehicles-returned-under-hyundai-assurance/",
+          "quote": "took only 37 days to implement"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "실제로 차를 돌려준 사람은 2009년 하반기까지 75대 미만(50명 미만이라는 보도도)으로 극소수였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "환매 건수가 시점별로 다름(3월 2대, 가을 50명 미만, 75대 미만, 1년 100건 미만). '극소수'로만 쓰고 단일 숫자 단정 금지. 크라프칙 대사 인용 금지.",
+      "sources": [
+        {
+          "name": "6abc/AP(2009)",
+          "url": "https://6abc.com/archive/7076163",
+          "quote": "fewer than 75 vehicles"
+        },
+        {
+          "name": "just-auto(2009)",
+          "url": "https://www.just-auto.com/?p=31127",
+          "quote": "Under 50 buyers have returned"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외(미국) 시장의 2009년 마케팅 사례. 진행 중 소송·제재 없음."
+  },
+  "remaining": "6편 현대차 10년 보증과 같은 회사·'미국에서 불안 없애기' 결이라 연작처럼 보일 수 있어 간격을 두거나 Owner 판단. 광고 효과 인과 단정 금지.",
+  "toolCallsUsed": 19
+}

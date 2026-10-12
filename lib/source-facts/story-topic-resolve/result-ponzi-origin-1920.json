@@ -1,0 +1,93 @@
+{
+  "id": "ponzi-origin-1920",
+  "title": "찰스 폰지 — 사기 이름이 된 남자",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "폰지 계열은 이 항목 하나만(메이도프와 겹치지 않게). 우표 환매 장면. 범죄자 영웅화 금지, 사실만",
+  "conditionResolved": true,
+  "finding": "1920년 보스턴. 약속(45일 50%)·일 25만 달러 유입·바론의 계산(필요한 회신권 1억 6천만 장 vs 실제 유통 약 2만 7천 장)·보스턴 포스트 폭로·징역 5년이 모두 서로 다른 사이트 2곳 이상에서 원문 인용으로 확인됐다. 결정적 장면은 '회신권 개수를 계산해 보니 약속을 지킬 수 없었다'는 포스트의 산수다. 해외·종결된 약 100년 전 사건이라 민감성이 없고 폰지 계열 단일 항목 조건도 충족한다.",
+  "coreMessage": "높은 수익을 약속하는 돈은 어디서 나오는지 숫자로 한 번만 계산해 보면, 사기는 그 계산 앞에서 무너진다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "폰지는 45일에 원금의 50%, 90일에 100%의 수익을 주겠다고 약속하며 투자자를 모았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "출처에 따라 '90일에 50%'(archives.gov, ABA Journal) 또는 '90일에 100%'로 약속 조건이 다르게 적혀 있다. 대본에는 '45일 50%'를 쓰되 출처 편차를 인지할 것.",
+      "sources": [
+        { "name": "Wikipedia, Charles Ponzi", "url": "https://en.wikipedia.org/wiki/Charles_Ponzi", "quote": "50% profit within 45 days" },
+        { "name": "All That's Interesting, Charles Ponzi", "url": "https://allthatsinteresting.com/charles-ponzi", "quote": "return on investment in just 45 days" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "절정기에 폰지는 하루 약 25만 달러를 받아들였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "출처에 따라 '하루 50만 달러'(Irish Times)·'하루 25만 달러 가까이' 등 표현이 조금 다르다. 25만 달러가 가장 많은 출처에서 일치한다.",
+      "sources": [
+        { "name": "Vocal Media, Charles Ponzi", "url": "https://vocal.media/history/the-man-who-pulled-off-the-biggest-scam-in-history-charles-ponzi", "quote": "about $250,000 a day" },
+        { "name": "ABA Journal (Ponzi indicted, Nov. 1920)", "url": "https://www.abajournal.com/magazine/article/on-nov-30-1920-ponzi-was-indicted-by-suffolk-county-on-22-counts-of-larceny", "quote": "collected as much as $250,000 a day" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "금융 분석가 클래런스 바론이 계산해 보니, 폰지가 약속을 지키려면 국제 우편 회신권이 약 1억 6천만 장 필요했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "바론의 원문 기사나 우체국 원자료는 직접 확인하지 못했고 2차 자료 인용이다. 출처마다 '유통 중'과 '거래해야 할 수량'으로 표현이 조금 다르다.",
+      "sources": [
+        { "name": "Nova Scotia Securities Commission, Fraudster Friday: Charles Ponzi", "url": "https://nssc.novascotia.ca/node/1144133", "quote": "would require 160 million reply coupons" },
+        { "name": "Rare Newspapers, Ponzi Boston Post", "url": "https://www.rarenewspapers.com/view/597924", "quote": "160,000,000 postal reply coupons" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "그런데 당시 실제로 유통 중이던 국제 우편 회신권은 약 2만 7천 장뿐이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2만 7천 장은 우체국 발표를 인용한 2차 자료 수치다.",
+      "sources": [
+        { "name": "Nova Scotia Securities Commission, Fraudster Friday: Charles Ponzi", "url": "https://nssc.novascotia.ca/node/1144133", "quote": "only 27,000 reply coupons in circulation" },
+        { "name": "Rare Newspapers, Ponzi Boston Post", "url": "https://www.rarenewspapers.com/view/597924", "quote": "27,000 coupons were actually circulating" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1920년 8월 11일 보스턴 포스트가 폰지의 사기 전과를 폭로하는 기사를 실었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "포스트의 첫 보도는 7월 24일이다(Wikipedia, All That's Interesting). 8월 11일은 전과 폭로 기사. 체포는 이틀 뒤(8월 13일)라는 서술이 CrimeReads에 있으나 인용 대상에서는 뺐다.",
+      "sources": [
+        { "name": "CrimeReads, Fraud of the Century (2020)", "url": "https://crimereads.com/fraud-of-the-century-the-ponzi-scheme-100-years-later/", "quote": "published on August 11th" },
+        { "name": "The Jaxson, Jacksonville's notorious con artist Charles Ponzi", "url": "https://thejaxsonmag.com/article/jacksonvilles-notorious-con-artist-charles-ponzi", "quote": "On August 11, 1920, the Post published" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "폰지는 연방 우편사기 혐의를 인정하고 징역 5년을 선고받았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "실제 복역 기간은 출처마다 다르다(약 3년 반 등). 대본에는 '징역 5년 선고'까지만 쓰는 것이 안전하다.",
+      "sources": [
+        { "name": "Wikipedia, Charles Ponzi", "url": "https://en.wikipedia.org/wiki/Charles_Ponzi", "quote": "five years in federal prison" },
+        { "name": "ABA Journal (Ponzi indicted, Nov. 1920)", "url": "https://www.abajournal.com/magazine/article/on-nov-30-1920-ponzi-was-indicted-by-suffolk-county-on-22-counts-of-larceny", "quote": "sentenced to five years in prison" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "폰지는 약 8개월 동안 약 1,500만 달러를 끌어모았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "총액은 출처마다 다르다(1,000만 달러 이상 CrimeReads, 약 1,500만 달러 archives.gov, 피해액 약 2,000만 달러 Wikipedia). 대본에는 '1,000만 달러가 훌쩍 넘는'처럼 범위로 쓰는 것이 안전.",
+      "sources": [
+        { "name": "U.S. National Archives, Prologue (2010)", "url": "https://www.archives.gov/publications/prologue/2010/summer/ponzi-inmate-case-file", "quote": "Ponzi took in roughly $15 million" },
+        { "name": "All That's Interesting, Charles Ponzi", "url": "https://allthatsinteresting.com/charles-ponzi", "quote": "out of $15 million in just eight months" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외·약 100년 전 종결된 사건이라 국내 민감성 없음. 범죄자 영웅화 금지 조건은 사실만 서술하면 충족." },
+  "remaining": "총 모금액·복역 기간은 출처 편차가 커서 범위 표현 필요. 약속 조건(45일 50% vs 90일 50%)도 출처가 갈림. 바론 원문 기사는 미확인(2차 인용).",
+  "toolCallsUsed": 20
+}

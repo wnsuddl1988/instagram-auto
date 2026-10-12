@@ -1,0 +1,38 @@
+{
+  "id": "samsung-fire-anycar",
+  "title": "삼성화재 애니카 긴급출동",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "도입 시점 미확인",
+  "conditionResolved": false,
+  "finding": "긴급출동서비스의 도입 시점(풀 기재 1990년)은 삼성화재 공식 연혁에 긴급출동·애니카 항목이 1980~90년대 구간에 없고 언론·공식 자료에서도 확인되지 않아 해소하지 못했다. 확인된 것은 1989년 11월 국내 최초 24시간 심야보상서비스센터 개설과 2002년 4월 '삼성 애니카' 브랜드 발표뿐이며, 이는 긴급출동 도입이라는 원 소재의 결정적 장면이 아니다. 1996년 애니카 서비스 개시라는 협력업체 연혁은 단일 출처라 쓸 수 없다. 근거 부족이므로 unverifiable 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "삼성화재는 1989년 11월 심야보상서비스센터를 개설해 국내 최초로 24시간 운영체제를 가동했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "긴급출동서비스 자체의 도입이 아니라 심야 보상 접수 체계에 관한 사실",
+      "sources": [
+        { "name": "삼성화재 연혁(공식)", "url": "https://www.samsungfire.com/v2/html/company/01/M_010_010_013.html", "quote": "국내 최초 24시간 운영 심야보상서비스센터 개설" },
+        { "name": "디지털강남문화대전", "url": "https://www.grandculture.net/gangnam/toc/GC04801063", "quote": "심야보상서비스센터를 개설, 국내 최초로 24시간 운영체제를 가동했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "삼성 '애니카'는 2002년 4월 업계 최초의 자동차보험 브랜드로 발표(런칭)됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "브랜드 출범 연도이지 긴급출동 서비스 도입 연도가 아님",
+      "sources": [
+        { "name": "이투데이(금융특집)", "url": "https://www.etoday.co.kr/news/view/162558", "quote": "지난 2002년 4월 업계 최초의 자동차보험 브랜드로 런칭돼" },
+        { "name": "삼성화재 연혁(공식)", "url": "https://www.samsungfire.com/v2/html/company/01/M_010_010_013.html", "quote": "자동차보험 대표 브랜드" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 국내 대형 보험사의 브랜드·서비스 일화, 소송·제재 소지는 없음" },
+  "remaining": "긴급출동서비스 도입 연도 1차 자료(보도자료·사보·신문 아카이브) 미확보. 숫자 경제 근거(출동 건수·보험료·점유율)도 2곳 출처로 확보 못 함. 결정적 장면(선택·결단)이 서술된 자료 없음.",
+  "toolCallsUsed": 12
+}

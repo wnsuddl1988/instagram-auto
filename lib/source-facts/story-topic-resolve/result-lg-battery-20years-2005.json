@@ -1,0 +1,78 @@
+{
+  "id": "lg-battery-20years-2005",
+  "title": "LG 배터리 — 20년 넘게 적자를 버틴 끝",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "뜨거운 종목이라 주식 이슈로 읽힐 위험. 구본무 발언은 후임 사장의 간접 인용 → 직접 대사 금지. 흑자 전환 연도 없음, GM 볼트 공급은 열람 기사에 없음. 리콜·소송 건드리지 않음. 장면이 인물 일화에 기대 한 장면으로 모으기 어려움",
+  "conditionResolved": false,
+  "finding": "1992년 구본무의 영국 출장과 2005년 약 2000억 원 적자는 신문 2곳 이상에서 확인되지만, 흑자 전환은 보도마다 2013년 일시 흑자, 2019년 3분기 전지부문 흑자(LG화학 공식), 2020년 2분기 등으로 엇갈리고 '20여 년이 필요했다'는 표현만 문화일보 단독입니다. GM 볼트 공급은 외신에서 2008년 말 유력 보도·2009년 1월 발표로 확인되나 한국 기사 2곳 조건은 못 채웠습니다. 결과를 바꾼 한 장면 없이 연표형 서사에 구본무 발언도 간접 인용뿐이라 장면이 약하고, 뜨거운 종목이라는 위험도 그대로입니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1992년 구본무 당시 부회장이 영국 출장에서 접한 2차전지에 투자를 결정했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "출장지가 영국 일반(데일사이트·뉴스토마토)인지 영국원자력연구원(문화일보)인지 표현이 다름.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/107103", "quote": "1992년 구본무 당시 부회장이 영국 출장을 다녀오면서" },
+        { "name": "문화일보(K-배터리 30년 전쟁)", "url": "https://www.munhwa.com/article/11465870", "quote": "1992년 구본무 당시 LG그룹 부회장이 영국원자력연구원 출장에서" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2005년 배터리(2차전지) 사업은 약 2000억 원의 적자를 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "딜사이트는 '2000억원의 적자', 뉴스토마토는 '2000억원에 가까운 적자'로 표기가 다름.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/107103", "quote": "2005년에는 배터리 사업에서 2000억원의 적자가 났다" },
+        { "name": "뉴스토마토", "url": "https://newstomato.com/ReadNews.aspx?no=825216", "quote": "2005년 2차전지 사업이 2000억원에 가까운 적자를 냈을 때도" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "K-배터리가 흑자를 내기까지 20여 년이 필요했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처. 흑자 전환 연도는 2013(일시)/2019/2020으로 보도마다 다름.",
+      "sources": [
+        { "name": "문화일보(K-배터리 30년 전쟁)", "url": "https://www.munhwa.com/article/11465870", "quote": "흑자를 내기까지는 20여 년이 필요했다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2019년 3분기 LG화학 전지부문은 매출 2조 2,102억 원, 영업이익 712억 원을 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "LG 공식 보도자료 단독. 한경 기사는 접속 거부로 열람 못 함.",
+      "sources": [
+        { "name": "LG 뉴스룸 보도자료(2019.10.25)", "url": "https://www.lg.co.kr/media/release/21164", "quote": "전지부문은 매출 2조 2,102억원, 영업이익 712억원을 기록했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2009년 국내 최초로 전기차에 배터리 공급을 시작하며 본궤도에 올랐다는 평가.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처. GM 볼트는 외신상 2008년 말 유력 보도·2009년 1월 공식 발표.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/107103", "quote": "2009년 국내 최초로 전기차에 배터리 공급을 시작하면서" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "2005년 적자 때 '사업을 접자'는 의견이 나왔으나 구 회장은 길게 보고 투자와 R&D에 집중하라고 주문했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "구본무 발언은 기사 서술(간접)이므로 직접 대사로 쓸 수 없음.",
+      "sources": [
+        { "name": "뉴스토마토", "url": "https://newstomato.com/ReadNews.aspx?no=825216", "quote": "길게 보고 투자와 연구개발에 더욱 집중할 것" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "LG에너지솔루션·LG화학은 현재 영업·상장 중인 뜨거운 종목이라 주식 이슈로 읽힐 위험(법적 분쟁은 건드리지 않음)." },
+  "remaining": "한 장면으로 모을 결정적 순간 없음(연표). 흑자 전환 연도 기준 불일치. 구본무 직접 발언 사용 불가. 주식 이슈 읽힘 위험.",
+  "toolCallsUsed": 9
+}

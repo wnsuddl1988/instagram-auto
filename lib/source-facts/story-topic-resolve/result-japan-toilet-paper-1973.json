@@ -1,0 +1,60 @@
+{
+  "id": "japan-toilet-paper-1973",
+  "title": "일본 화장지 사재기",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "센리 슈퍼 세부가 일본어 단일 출처",
+  "conditionResolved": true,
+  "finding": "센리 뉴타운 슈퍼(다이마루 피콕 센리추오점)에 개점 전부터 주부 200명 이상이 줄을 섰다는 핵심 장면은 일본어 위키백과와 공명신문 칼럼 등 서로 다른 사이트 2곳 이상에서 원문 확인됐고, 1974년 3월 진정, 1974년 소비자물가 +23%, 1974년 1월 원유 공시가격 약 4배도 2곳 이상에서 확인됐다. 다만 줄이 선 날짜(10/31 또는 11/1), 나카소네 호소 날짜(10/19 또는 10/31), 인원(200명 이상 vs 200~300명), 행사 상품 가격(138엔 vs 신문 보도 200엔)은 출처마다 달라 날짜와 가격은 대본에서 '1973년 가을'과 '200명 넘는 주부'로만 쓰는 조건으로 사용 가능이다.",
+  "coreMessage": "물건이 모자라서가 아니라 모자랄 거라는 소문이 선반을 비운다 - 줄 하나가 전국 품귀가 됐고, 창고에는 물건이 남아 있었다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "오사카 센리 뉴타운 슈퍼의 화장지 특매에 개점 전부터 주부 200명 이상이 줄을 섰고, 이를 본 주민들 사이에 화장지가 없어진다는 소문이 번졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "날짜는 위키는 10월 31일, 국회도서관 레퍼런스(마이니치·고단샤 연표)는 11월 1일. J-Cast는 200~300명, 스이타시로 적음. 날짜·인원 단정 금지.",
+      "sources": [
+        { "name": "Wikipedia ja, トイレットペーパー騒動", "url": "https://ja.wikipedia.org/wiki/トイレットペーパー騒動", "quote": "開店前から200人以上の主婦らが列を作り" },
+        { "name": "公明新聞 コラム「北斗七星」(2023)", "url": "https://www.komei.or.jp/komeinews/p298905/", "quote": "開店前、主婦ら200人以上の列ができた" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "소동은 이듬해인 1974년 3월에 가라앉았고 재고도 평상 수준을 회복했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia ja, トイレットペーパー騒動", "url": "https://ja.wikipedia.org/wiki/トイレットペーパー騒動", "quote": "同年3月には騒動も沈静化し、在庫量も通常水準に回復した" },
+        { "name": "豊中市民の回覧板 toyo-2", "url": "https://toyo-2.jp/archives/48775434.html", "quote": "翌年3月に収束するまで" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "일본 소비자물가는 1974년 한 해 약 23% 올라 광란물가라는 말이 생겼다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "회계연도 기준으로는 1973년도 +15.6%, 1974년도 +20.9%(JCER·spaceshipearth). 달력연도 23%만 쓴다.",
+      "sources": [
+        { "name": "現代ビジネス gendai.media", "url": "https://gendai.media/articles/-/91698", "quote": "1974年には、そのCPIが前年に比べ23%上昇しました" },
+        { "name": "Wikipedia ja, オイルショック", "url": "https://ja.wikipedia.org/wiki/オイルショック", "quote": "1974年（昭和49年）は23 %上昇し" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "원유 공시가격은 1973년 10월 배럴당 3.01달러에서 5.12달러로 오른 데 이어 1974년 1월 11.65달러로 올라 약 4배가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "4배는 3.01달러 기준 약 3.9배. 화장지와 직접 관련 없는 물자까지 사재기가 번졌다는 점이 포인트.",
+      "sources": [
+        { "name": "Wikipedia ja, オイルショック", "url": "https://ja.wikipedia.org/wiki/オイルショック", "quote": "5.12ドルから11.65ドルへ引き上げると決定した" },
+        { "name": "日本経済研究センター JCER", "url": "https://www.jcer.or.jp/?p=137928", "quote": "原油の公示価格は４倍に引き上げられる" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 옛 사건. 나카소네 통산상(후에 총리) 언급은 사실 전달에 그침." },
+  "remaining": "한 사람의 결단보다 군중 심리가 중심이라 주인공이 약함. 나카소네 호소 날짜(10/19 대 10/31)와 특매 가격 138엔은 출처 상충/단일이라 쓰지 않음. 소동 뒤 유통 창고에서 대량의 화장지가 발견됐다는 일화는 PRESIDENT 글 1곳뿐이라 미사용.",
+  "toolCallsUsed": 17
+}

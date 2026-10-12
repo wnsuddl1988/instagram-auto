@@ -1,0 +1,75 @@
+{
+  "id": "miwon-vs-mipung-dashida",
+  "title": "미원 vs 미풍, 그리고 다시다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "MSG 유해 논란과 두 현 영업 기업(대상·CJ제일제당)의 비교 구도 → 중립 서술. 순금반지 이벤트 연도 1970/1960년대 엇갈림. 이병철 자서전 인용 금지",
+  "conditionResolved": true,
+  "finding": "경품 연도는 비즈워치가 '1970년 초'로, 천지일보 사진 설명은 '1950년 초'(본문과 맞지 않는 오기로 보임)로 달라 확정되지 않았으므로 연도는 빼고 '다시다 이전 시기'로만 쓴다. 대신 연도가 확실한 사실은 충분하다: 1963년 미풍 도전, 1975년 11월 다시다 출시와 두 달 만의 생산 10배 증가, 이후 시장점유율 80% 이상. 경품 이벤트(미원 5개 구매 인증 시 순금반지)도 두 곳에서 확인된다. MSG 논란 없이 '경품 출혈전 대 판을 바꾼 상품' 구도로 중립 서술이 가능하다.",
+  "coreMessage": "같은 판에서 경품으로 출혈 경쟁하기보다, 판 자체를 바꾸는 상품이 이긴다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1963년 제일제당이 '미풍'으로 미원이 독주하던 조미료 시장에 도전장을 냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "데일리안(2021)", "url": "https://www.dailian.co.kr/news/view/609915/", "quote": "1963년 제일제당공업이" },
+        { "name": "아이뉴스24 브랜드 스토리", "url": "https://www.inews24.com/view/1122134", "quote": "1963년에는 CJ제일제당이" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1975년 11월 20일 제일제당이 천연 재료를 섞은 종합조미료 '다시다'를 내놓았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "데일리안(2021)", "url": "https://www.dailian.co.kr/news/view/609915/", "quote": "1975년 11월 20일 다시다가 태어났다." },
+        { "name": "Korea JoongAng Daily(2009)", "url": "https://www.koreajoongangdaily.com/business/seasoning-still-retains-an-80-market-share/10319999", "quote": "went on sale in November 1975" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "다시다는 출시 2개월 만에 생산량을 초기 20톤에서 200톤으로(10배) 늘려야 할 만큼 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "20톤→200톤은 데일리안 구체 수치, CJ 사내 매체는 '10배'로만 표기.",
+      "sources": [
+        { "name": "데일리안(2021)", "url": "https://www.dailian.co.kr/news/view/609915/", "quote": "출시 2개월 만에 생산량을 초기 20톤에서 200톤으로" },
+        { "name": "CJ제일제당 뉴스룸(cjnews.cj.net)", "url": "https://cjnews.cj.net/?p=45094", "quote": "제품 출시 두 달 만에 생산량을 10배나 늘려야 했죠" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "다시다는 이후 국내 조미료 시장 점유율 80% 이상으로 1위를 지켜 왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "80%는 CJ 측 발표·보도 기준(2009년 중앙데일리도 80% 보도). 독립 시장조사는 확인 못 함. '가정용 종합조미료 시장' 기준으로 서술.",
+      "sources": [
+        { "name": "데일리안(2021)", "url": "https://www.dailian.co.kr/news/view/609915/", "quote": "시장점유율 80% 이상을 차지하는" },
+        { "name": "CJ제일제당 뉴스룸(cjnews.cj.net)", "url": "https://cjnews.cj.net/?p=45094", "quote": "점유율 80% 이상으로 부동의 1위" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "미원과 미풍은 빈 봉지·포장지 5개를 모아 보내면 순금반지를 주는 경품전을 벌였고, 정부 제재로 중단됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "행사 연도는 비즈워치 '1970년 초' vs 천지일보 사진 설명 '1950년 초'(오기로 보임)로 엇갈려 연도 미확정. 경품 중량도 한 돈/3g 등 표기가 다름. 대본에서 연도·중량 생략 권장.",
+      "sources": [
+        { "name": "비즈워치(2021)", "url": "https://news.bizwatch.co.kr/article/consumer/2021/07/12/0027", "quote": "빈 봉지 5장으로 순금반지 하나" },
+        { "name": "천지일보", "url": "https://www.newscj.com/news/articleView.html?idxno=945286", "quote": "순금 반지 한 돈을 제공한 것이다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "두 회사(대상·CJ제일제당)는 지금도 영업 중이나 약 50년 전 경쟁 이야기이며 진행 중 소송·제재 없음. MSG 유해 논란은 다루지 않고, 점유율 비교는 사실 서술로만. 이병철 자서전 인용 금지 유지."
+  },
+  "remaining": "경품 행사 연도와 순금반지 중량은 미확정이므로 대본에서 생략. MSG 논란과 두 회사 우열 평가는 넣지 않는다.",
+  "toolCallsUsed": 16
+}

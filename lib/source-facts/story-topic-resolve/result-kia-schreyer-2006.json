@@ -1,0 +1,36 @@
+{
+  "id": "kia-schreyer-2006",
+  "title": "기아 슈라이어 영입 — 눈에 안 띄는 차에 얼굴을 입히다",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "결정적 장면이 약하고 영입 설득 일화 없음. 정의선 서사로 읽히면 승계 논란과 얽힘. 판매 효과를 디자인 하나로 단정 금지. 판매 수치는 검색 요약만",
+  "conditionResolved": false,
+  "finding": "2006년 기아가 아우디 TT를 만든 슈라이어를 최고디자인책임자로 영입했고 2007년 프랑크푸르트 모터쇼 Kee 콘셉트카에서 '호랑이코' 그릴이 처음 나왔다는 줄거리는 확인된다. 그러나 영입 설득 일화나 결정적 장면이 보이지 않고, 디자인 덕분에 판매가 늘었음을 보여 주는 숫자 출처를 이번 조사에서 한 건도 열어 확인하지 못했다(2006년 판매 114만 1000대 등은 검색 요약뿐). 숫자 사실 4개를 각 2곳 출처로 채우지 못하고 장면도 약해 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "기아는 2006년 피터 슈라이어를 최고디자인책임자로 영입했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키피디아 1곳만 직접 열어 확인했다. Autocar 등은 접근 실패(402).",
+      "sources": [
+        { "name": "Wikipedia, Peter Schreyer", "url": "https://en.wikipedia.org/wiki/Peter_Schreyer", "quote": "2006 hiring of Schreyer as chief design officer" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2007년 프랑크푸르트 모터쇼의 Kee 콘셉트카가 새 기아 그릴('호랑이코')을 선보였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키피디아 1곳만 직접 확인. 양산차 적용 시점은 출처마다 다르게 서술된다.",
+      "sources": [
+        { "name": "Wikipedia, Peter Schreyer", "url": "https://en.wikipedia.org/wiki/Peter_Schreyer", "quote": "shown at the 2007 Frankfurt Motor Show" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "현재 영업 중인 기아·현대차그룹 이야기로, 정의선 회장 서사로 읽히면 승계 논란과 얽힐 수 있음. 진행 중 소송은 아님." },
+  "remaining": "판매·점유율 개선 숫자를 2곳 출처로 확인하지 못했고, 디자인 하나로 판매가 늘었다고 단정할 근거도 없다. 영입 장면(설득·결단)에 대한 자료를 찾지 못했다.",
+  "toolCallsUsed": 4
+}

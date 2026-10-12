@@ -335,12 +335,14 @@ const OVERLAY_STYLE = {
 const LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SPEC.captionLayout === "v2";
 const HEADER_BAR = Object.freeze({
   height: 0,            // 영상을 밀어내지 않는다
-  scrimHeight: LAYOUT_V2 ? 650 : 580,     // 제목 + 리스크 고지 뒤 어두운 층
+  scrimHeight: Number(ASSEMBLY_SPEC.headerScrimHeight ?? (LAYOUT_V2 ? 650 : 580)),     // 제목 + 리스크 고지 뒤 어두운 층(스펙 `headerScrimHeight`)
   scrimColor: "black@0.45",
   titleColor: "#FFFFFF",
   accentColor: "#FFD54A",
   titleSize: LAYOUT_V2 ? 108 : 92,
-  topY: 232,
+  // 스펙 `headerTopY`: 스토리형은 인스타 피드 4:5(위 15% 크롭)·그리드 3:4(위 12.5%)에서 첫 줄이 잘려 345 이상(≈18%)으로 내린다
+  // (Owner 2026-10-07 스토리 1편 지적 — 황소·부엉 설명형은 문제 없다고 확인, 기본값 232 유지).
+  topY: Number(ASSEMBLY_SPEC.headerTopY ?? 232),
   lineGap: LAYOUT_V2 ? 126 : 112,
 });
 const FOOTER_BAR = Object.freeze({
@@ -489,6 +491,24 @@ function buildHeaderFooterFilters() {
         "expansion=none",
       ].join(":")}`);
     });
+  }
+
+  // 스토리형(2026-10-07 Owner 합의): 화면 위쪽에 작은 "AI 재연" 표시. 스펙 `topLabel`이 있을 때만 그린다(없으면 기존 동작 그대로).
+  // 앱 상단 아이콘(원본 y≈168~210)을 피해 y=topLabelY(기본 236). 흰 글자 + 검은 외곽선, 안전폭 안.
+  if (ASSEMBLY_SPEC.topLabel) {
+    const labelSize = Number(ASSEMBLY_SPEC.topLabelSize ?? 44);
+    const labelY = Number(ASSEMBLY_SPEC.topLabelY ?? 236);
+    filters.push(`drawtext=${[
+      `fontfile='${OVERLAY_FONT_FOR_FILTER}'`,
+      `text='${escapeDrawtextValue(ASSEMBLY_SPEC.topLabel)}'`,
+      "x=(w-text_w)/2",
+      `y=${labelY}`,
+      `fontsize=${labelSize}`,
+      "fontcolor=white@0.88",
+      "borderw=4",
+      "bordercolor=black@0.85",
+      "expansion=none",
+    ].join(":")}`);
   }
 
   // 배치 v2: 하단 채널명 띠는 앱 UI(계정명·공유 버튼)에 가려져 기본으로 그리지 않는다.
@@ -764,12 +784,22 @@ function rebuildCaptionText(caption, words, replacedWordTimings) {
 // 그 전에 만든 편(부엉 18편·재고 15~17편, 금박사 9·10편 등)은 캐릭터가 카드를 가슴 높이(화면 60~70%)에 들고 있어
 // y=1290 자막이 카드 글자를 덮는다(2026-09-30 부엉 18편 시험 조립에서 확인). 그런 편은 카드 아래 y=1470·폭 864로 둔다.
 const CAPTION_LAYOUT_V2 = Boolean(ASSEMBLY_SPEC.sceneBackgrounds) || ASSEMBLY_SPEC.captionLayout === "v2";
-const CAPTION_MAX_WIDTH_PX = CAPTION_LAYOUT_V2 ? 760 : TEXT_SAFE_WIDTH_PX;
-const CAPTION_FONT_SIZE = CAPTION_LAYOUT_V2 ? 96 : 84; // 2026-10-02: v2 편 84→96(Owner "너무 작게 느껴진다"), 폭 760 안에서 줄당 약 8자
+// 스펙 `captionMaxWidthPx`로 조절(스토리형 글자 확대용, 안전폭 864 이하만 허용). 없으면 기존 값.
+const CAPTION_MAX_WIDTH_PX = Math.min(Number(ASSEMBLY_SPEC.captionMaxWidthPx ?? (CAPTION_LAYOUT_V2 ? 760 : TEXT_SAFE_WIDTH_PX)), TEXT_SAFE_WIDTH_PX);
+// 스토리형은 스펙 `captionFontSize`로 더 키울 수 있다(Owner 2026-10-07 "글자 폰트도 좀 더 크게 해도 되겠다"). 없으면 기존 값.
+const CAPTION_FONT_SIZE = Number(ASSEMBLY_SPEC.captionFontSize ?? (CAPTION_LAYOUT_V2 ? 96 : 84)); // 2026-10-02: v2 편 84→96(Owner "너무 작게 느껴진다"), 폭 760 안에서 줄당 약 8자
 const CAPTION_FIXED_X = 540;      // 항상 화면 중앙
 // 2026-10-02 Owner "자막이 카드 문구를 가린다, 더 밑으로 내려도 된다"(부엉 19편 s4에서 카드 둘째 줄이 자막과 겹쳐 뭉개짐) → v2 편 1290→1360.
 // 두 줄 블록(줄 간격 110) 가운데가 1360이면 둘째 줄 아래 끝 ≈1470 — 유튜브 채널명·제목 줄(원본 y≈1510~)까지 약 40px 여유.
-const CAPTION_FIXED_Y = CAPTION_LAYOUT_V2 ? 1360 : 1470;
+// 스펙 `captionY`로 위치를 조절한다(스토리형 Owner 2026-10-07 "자막 위치 조금만 더 내려도 좋겠다" → 1385). 두 줄 블록 아래 끝이 유튜브 제목 줄(y≈1510)에 닿지 않게 QA가 막는다.
+const CAPTION_FIXED_Y = Number(ASSEMBLY_SPEC.captionY ?? (CAPTION_LAYOUT_V2 ? 1360 : 1470));
+// 자막 계획기(2026-10-07 Owner "자막이 정돈이 안 된다 — 어떤 건 한 줄, 어떤 건 한 단어, 줄바꿈이 단어 사이에"): TTS 쉼 단위로 잘게 들어온 블록을
+// 장면 단위로 합친 뒤 한국어 줄바꿈 규칙(_caption-linebreak-ko.mjs)과 블록 점수로 다시 나눈다. 스펙 `captionPlanner: "scene_dp_v1"`일 때만(없으면 기존 동작).
+// 기본값: 새 체계(V2) 편은 계획기 사용(2026-10-07 Owner "기존 쇼츠영상에도 해당" — 부엉 23편 시험: 한 줄 21→9, 한 단어 2→1, 0.7초 미만 2→1, 블록 62→56). 옛 동작은 스펙 `captionPlanner: "legacy"`.
+const VIDEO_SHIFT_PX = Math.max(0, Math.round(Number(ASSEMBLY_SPEC.videoShiftDownPx ?? 0)));
+const VIDEO_SHIFT_FADE_PX = Math.max(1, Math.round(Number(ASSEMBLY_SPEC.videoShiftFadePx ?? 260)));
+const VIDEO_SCALE = Math.min(1,Math.max(0.5, Number(ASSEMBLY_SPEC.videoScale ?? 1)));
+const CAPTION_PLANNER = String(ASSEMBLY_SPEC.captionPlanner ?? (CAPTION_LAYOUT_V2 ? "scene_dp_v1" : "legacy"));
 
 // 강조는 세 색을 쓴다(모바일 재검수 2026-09-17: "노랑·빨강 두 색밖에 안 보인다,
 // 3색을 쓴다고 했는데" 지적 — number와 key가 같은 노랑을 공유해 실질 2색이었다).
@@ -831,6 +861,10 @@ if (SPEC_EMPHASIS_TERMS.length === 0) {
     `[WARN][assemble-v2] 스펙에 emphasisTerms가 없습니다 — 이 편의 핵심 개념어가 ` +
       `자막에서 전부 강조 없이 지나갈 수 있습니다. 스펙 파일에 emphasisTerms: [...] 를 추가하세요.`,
   );
+}
+// 스펙이 숫자 강조 패턴을 더할 수 있다(스토리형: 달러·톤·명·분의 같은 단위 — 기본 패턴은 원·%·월·일·년·위만 잡아 핵심 숫자가 칠해지지 않았다, 2026-10-07).
+if (Array.isArray(ASSEMBLY_SPEC.emphasisNumberPatterns)) {
+  for (const src of ASSEMBLY_SPEC.emphasisNumberPatterns) EMPHASIS_NUMBER_PATTERNS.push(new RegExp(src));
 }
 const SPEC_TOPIC_TERM = SPEC_EMPHASIS_TERMS[0] ?? null;
 EMPHASIS_KEY_TERMS.push(...SPEC_EMPHASIS_TERMS.filter((t) => !EMPHASIS_KEY_TERMS.includes(t)));
@@ -906,8 +940,8 @@ function emphasisMapFor(line) {
 // 2026-09-30: 줄바꿈 기준을 "폭 균형"에서 "의미 단위 우선, 폭 균형은 마지막"으로 교체했다
 // (Owner 지적: "11월 / 2일부터", "결론이 / 아니라"처럼 의미가 끊김). 규칙 본체와 회귀 사례는
 // _caption-linebreak-ko.mjs / check-caption-linebreak-ko.mjs. 아래 옛 구현은 참고용으로 남긴다.
-function wrapToLines(text, fontSize, maxWidth) {
-  return wrapToLinesKo(text, fontSize, maxWidth);
+function wrapToLines(text, fontSize, maxWidth, options = {}) {
+  return wrapToLinesKo(text, fontSize, maxWidth, options);
 }
 
 function wrapToLinesLegacyWidthBalance(text, fontSize, maxWidth) {
@@ -1005,10 +1039,29 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
   // 스쳐 지나가는 블록은 읽기 어려우므로 벌점을 준다.
   const MIN_BLOCK_DWELL_SEC = 0.6;
   const blockScore = (slice, from, to) => {
-    const scored = wrapToLinesScored(slice.join(" "), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
+    const planner = CAPTION_PLANNER === "scene_dp_v1";
+    const scored = wrapToLinesScored(slice.join(" "), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: planner });
     if (!scored) return null;
     const dwell = timings[to - 1].endSec - timings[from].startSec;
-    return scored.score + (dwell < MIN_BLOCK_DWELL_SEC ? 8 : 0);
+    let extra = dwell < MIN_BLOCK_DWELL_SEC ? 8 : 0;
+    if (planner) {
+      // 한 블록 안에 문장 끝(. ? !)이 중간에 끼면 안 된다 — 앞 문장 끝과 다음 문장 시작이 한 자막에 섞여 정돈이 안 돼 보인다.
+      // 예외 하나: 장면의 마지막 문장이 0.65초 미만으로 짧으면("설 수 있을까? / 댓글로 알려 줘") 앞 문장과 한 화면에 둔다.
+      // (장면 중간의 짧은 조각을 이웃 문장에 붙이는 완화안은 "미만이야. 재산은"처럼 더 지저분해서 폐기 — 부엉 23편 시험 2026-10-07.)
+      const ends = [];
+      slice.forEach((w, k) => { if (k < slice.length - 1 && /[.?!…]["'”’)]*$/u.test(w)) ends.push(k); });
+      if (ends.length > 1) return null;
+      if (ends.length === 1) {
+        const tail = timings[to - 1].endSec - timings[from + ends[0] + 1].startSec;
+        if (!(to === words.length && tail < 0.65)) return null;
+        extra += 4;
+      }
+      // 읽기 시간이 짧은 블록(0.9초 미만)과, 장면 중간에 끼는 짧은 한 줄 블록(폭 55% 미만)에 벌점 — 한 줄·한 단어 조각이 섞이지 않게.
+      if (dwell >= MIN_BLOCK_DWELL_SEC && dwell < 0.9) extra += 3;
+      const widthRatio = (textWidthRatio(slice.join(" ")) * CAPTION_FONT_SIZE) / CAPTION_MAX_WIDTH_PX;
+      if (scored.lines.length === 1 && widthRatio < 0.55 && to < words.length) extra += 3;
+    }
+    return scored.score + extra;
   };
   const ranges = segmentWordsIntoBlocks(words, blockScore);
   if (ranges && ranges.length === 1 && single) {
@@ -1020,13 +1073,17 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
       return toStyledCaption(
         { ...caption, startSec: timings[from].startSec, endSec: timings[to - 1].endSec },
         stripTrailingPunctuation(text),
-        wrapToLines(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX).map(stripTrailingPunctuation),
+        (wrapToLines(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: CAPTION_PLANNER === "scene_dp_v1" })
+          ?? wrapToLinesForced(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX)).map(stripTrailingPunctuation),
       );
     });
   }
 
   // 모든 조각 수를 시도해도 안 되면(사실상 불가능) 마지막 안전망으로 강제 2줄.
-  const forced = wrapToLinesForced(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
+  // (2026-10-10 스토리 4편 s12 "분식회계가 22조 9천억 원이었지": 폭을 무시하는 wrapToLinesForced가 944px 줄을 만들어 조립이 ABORT됐다.
+  //  숫자 덩어리 안에서라도 폭 한도에 맞는 2줄 해(allowForced, 벌점 60)가 있으면 그것을 먼저 쓴다 — 폭 초과를 통과시키는 게 아니라 줄이는 쪽이다.)
+  const forced = wrapToLines(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: true })
+    ?? wrapToLinesForced(cleaned, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX);
   return [toStyledCaption(caption, cleaned, forced.map(stripTrailingPunctuation))];
 }
 
@@ -1047,6 +1104,39 @@ function wrapToLinesForced(text, fontSize, maxWidth) {
 
 function styleCaptions(captions) {
   return captions.flatMap(splitCaptionIntoScreenSafeBlocks);
+}
+
+/**
+ * 장면 안의 자막 블록들을 하나로 합친다(자막 계획기). 합친 뒤에 splitCaptionIntoScreenSafeBlocks가 줄바꿈 규칙·블록 점수로 다시 나눈다.
+ * 블록마다 wordTimings 길이와 표시 어절 수가 맞는 장면만 합친다(안 맞으면 그 장면은 그대로 둔다).
+ */
+function mergeCaptionsByScene(captions) {
+  const out = [];
+  let i = 0;
+  while (i < captions.length) {
+    let j = i;
+    while (j + 1 < captions.length && captions[j + 1].sceneIndex === captions[i].sceneIndex) j += 1;
+    const group = captions.slice(i, j + 1);
+    const aligned = group.every((c) =>
+      Array.isArray(c.wordTimings) && c.wordTimings.length === String(c.displayText).split(/\s+/).filter(Boolean).length);
+    if (group.length === 1 || !aligned) {
+      out.push(...group);
+    } else {
+      const first = group[0];
+      const last = group[group.length - 1];
+      out.push({
+        ...first,
+        text: group.map((c) => c.text).join(" "),
+        displayText: group.map((c) => c.displayText).join(" "),
+        wordTimings: group.flatMap((c) => c.wordTimings),
+        startSec: first.startSec,
+        endSec: last.endSec,
+        sourceEndSec: last.sourceEndSec ?? last.endSec,
+      });
+    }
+    i = j + 1;
+  }
+  return out;
 }
 
 // ── ASS 생성 (어절 단위 색 강조) ─────────────────────────────────────────────
@@ -1106,6 +1196,10 @@ function createOwlCaptionAss(captions) {
         const before = word.slice(0, span.start);
         const target = word.slice(span.start, span.end);
         const after = word.slice(span.end);
+        // 스토리형(스펙 captionEmphasisPop): 강조 단어가 커진 채 나타나 제 크기로 돌아온다(자막이 심심하다는 Owner 지적 2026-10-07). 없으면 기존 그대로.
+        if (ASSEMBLY_SPEC.captionEmphasisPop === true) {
+          return `${escapeAssText(before)}{\\1c${color}\\fscx124\\fscy124\\t(0,260,\\fscx100\\fscy100)}${escapeAssText(target)}{\\1c${CAPTION_WHITE}\\fscx100\\fscy100}${escapeAssText(after)}`;
+        }
         return `${escapeAssText(before)}{\\1c${color}}${escapeAssText(target)}{\\1c${CAPTION_WHITE}}${escapeAssText(after)}`;
       }).join(" ");
       // 짧게 튀어오르는 진입. 자막이 자주 바뀌므로 모션은 가볍게 유지한다.
@@ -1133,13 +1227,21 @@ function createOwlCaptionAss(captions) {
 // 실패시킨다(mustPass 목록에 포함).
 function screenWidthAudit(captions) {
   const overflow = [];
+  const excepted = [];
+  // 스펙 `captionWidthExceptions: [{ line, reason }]`(2026-10-07 부엉 25편): 한 어절 자체가 폭 한도(760px)를 넘어 줄바꿈으로 못 푸는 줄
+  // ('아동기본수당으로' 768px, '지역사랑상품권이야' 864px)을 TTS 재생성(유료) 없이 사유와 함께 승인한다. 승인해도 휴대폰 안전폭
+  // (TEXT_SAFE_WIDTH_PX=864) 안이어야 하고, 글자 크기는 그대로 96px(줄이지 않음). 규칙 자체는 그대로, 승인된 줄은 경고로 남긴다.
+  const widthException = (line) => (ASSEMBLY_SPEC.captionWidthExceptions ?? []).find((e) => e.line === line && e.reason);
   for (const caption of captions) {
     for (const line of caption.displayLines ?? []) {
       const width = textWidthRatio(line) * caption.fontSize;
-      if (width > CAPTION_MAX_WIDTH_PX) overflow.push({ sceneNumber: caption.sceneNumber, line, width: Math.round(width) });
+      if (width > CAPTION_MAX_WIDTH_PX) {
+        if (widthException(line) && width <= TEXT_SAFE_WIDTH_PX + 1) excepted.push({ sceneNumber: caption.sceneNumber, line, width: Math.round(width) });
+        else overflow.push({ sceneNumber: caption.sceneNumber, line, width: Math.round(width) });
+      }
     }
   }
-  return { captionWidthPass: overflow.length === 0, captionWidthOverflow: overflow };
+  return { captionWidthPass: overflow.length === 0, captionWidthOverflow: overflow, captionWidthExcepted: excepted };
 }
 
 // displayUnitLengthPass는 원래 _money-shorts-dynamic-captions.mjs의
@@ -1218,6 +1320,38 @@ for (let i = 0; i < scenes.length; i++) {
     `scale=${render.width}:${render.height}:flags=lanczos`,
     "setsar=1",
   ];
+  // 스펙 `videoScale`(0.5~1, 기본 1=꽉 채움): 영상을 아래쪽에 붙여 줄여서 위쪽에 제목이 얹힐 여유를 만든다(2026-10-07 스토리 1편 —
+  // 제목이 8개 장면에서 인물 얼굴을 덮음). 남는 위·옆은 같은 영상을 흐리게 깐 배경. 워터마크는 줄이기 전에 지운다
+  // (줄이면 ✦ 위치가 최종 단계 고정 좌표에서 벗어나므로, 부엉 22편 첫 씬 확대와 같은 문제).
+  // 스펙 `videoShiftDownPx`(예: 230): 흐린 띠 없이 영상을 통째로 아래로 내리고(아래쪽 그만큼 잘림) 위쪽 빈 곳은 남색, 영상 위 가장자리는
+  // `videoShiftFadePx`만큼 어둡게 서서히 이어 붙인다(Owner 2026-10-07 "양옆·위 흐린 띠를 없애라" — 86% 축소+흐림 배경안 대체).
+  if (VIDEO_SHIFT_PX > 0) {
+    const s = VIDEO_SHIFT_PX;
+    const L = VIDEO_SHIFT_FADE_PX;
+    if (render.width === 1080 && render.height === 1920) {
+      vFilters.push(...OPENING_WATERMARK_REGIONS.map((r) => `delogo=x=${r.x}:y=${r.y}:w=${r.w}:h=${r.h}`));
+    }
+    const f = `min(1,max(0,(Y-${s})/${L}))`;
+    vFilters.push(
+      `pad=iw:ih+${s}:0:${s}:color=0x0B1026`,
+      `crop=iw:${render.height}:0:0`,
+      `format=yuv444p`,
+      `geq=lum='lum(X,Y)*(0.06+0.94*${f})+12*(1-${f})':cb='128+(cb(X,Y)-128)*${f}':cr='128+(cr(X,Y)-128)*${f}'`,
+      `format=yuv420p`,
+    );
+  }
+  if (VIDEO_SCALE < 1) {
+    const fw = 2 * Math.trunc((render.width * VIDEO_SCALE) / 2);
+    const fh = 2 * Math.trunc((render.height * VIDEO_SCALE) / 2);
+    const fx = Math.trunc((render.width - fw) / 2);
+    const fy = render.height - fh;
+    if (render.width === 1080 && render.height === 1920) {
+      vFilters.push(...OPENING_WATERMARK_REGIONS.map((r) => `delogo=x=${r.x}:y=${r.y}:w=${r.w}:h=${r.h}`));
+    }
+    vFilters.push(
+      `split=2[vbg][vfg];[vbg]boxblur=48:5,eq=brightness=-0.12[vbb];[vfg]scale=${fw}:${fh}:flags=lanczos[vff];[vbb][vff]overlay=${fx}:${fy}`,
+    );
+  }
   if (targetDuration > clipDuration + 0.05) {
     vFilters.push(`tpad=stop_mode=clone:stop_duration=${(targetDuration - clipDuration).toFixed(3)}`);
   }
@@ -1334,7 +1468,13 @@ if (!NO_CAPTIONS) {
   const cappedCaptions = timelineResult.captions.map((caption) => {
     const sceneEnd = Number(videoCutScenes[caption.sceneIndex]?.endSec);
     if (!Number.isFinite(sceneEnd)) return caption;
-    const cap = sceneEnd - CAPTION_SCENE_END_MARGIN_SEC;
+    // 스토리형(스펙 captionLastSceneNoMargin): 마지막 장면 뒤에 이어 붙는 CTA·다음 장면이 없어 "다음 화면에 이전 자막이 남는" 문제가 없다 —
+    // 마진을 빼야 마지막 말이 끝날 때까지 자막이 남는다(스토리 1편 QA: 마지막 자막이 음성보다 0.3초 먼저 사라짐, 2026-10-07).
+    const isLastScene = caption.sceneIndex === videoCutScenes.length - 1;
+    // 스토리형(스펙 captionSceneEndMarginSec): 장면 사이 쉼이 0.35초로 짧아 0.5초 여유가 마지막 말소리 0.3~0.5초를 자막 없이 남겼다
+    // (Owner 2026-10-07 "다음 씬으로 넘어가면서 자막이 씹힌다", 2→3 전환에서 "턱없이 모자랐지"가 소리보다 0.3초 먼저 사라짐). 없으면 기존 0.5초.
+    const sceneEndMargin = Number(ASSEMBLY_SPEC.captionSceneEndMarginSec ?? CAPTION_SCENE_END_MARGIN_SEC);
+    const cap = sceneEnd - (ASSEMBLY_SPEC.captionLastSceneNoMargin === true && isLastScene ? 0.02 : sceneEndMargin);
     if (caption.endSec <= cap) return caption;
     const endSec = Math.max(caption.startSec + 0.05, cap);
     return { ...caption, endSec, dwellSec: Number((endSec - caption.startSec).toFixed(3)) };
@@ -1344,11 +1484,12 @@ if (!NO_CAPTIONS) {
   // 막는다(2026-10-04 황소 20편 "서야 | 할" 0.24초 공백, QA 자막-음성 대조에서 반드시 수정으로 잡힘). 다른 편은 스펙에 없으면 동작이 그대로다.
   const GAP_BRIDGE_SEC = Number(ASSEMBLY_SPEC.captionGapBridgeSec ?? 0);
   // 표시 텍스트(숫자 그대로)로 바꾼 뒤 고정 크기·고정 위치로 스타일을 입힌다.
+  const displayCaptions = applyDisplayText(cappedCaptions, ttsScript.scenes);
   const styledCaptions = styleCaptions(
-    applyDisplayText(cappedCaptions, ttsScript.scenes),
+    CAPTION_PLANNER === "scene_dp_v1" ? mergeCaptionsByScene(displayCaptions) : displayCaptions,
   );
   // 재분할로 생긴 블록 사이 공백까지 메우도록 스타일링 이후에 적용한다(같은 씬 안에서만).
-  const captions = GAP_BRIDGE_SEC > 0
+  const bridgedCaptions = GAP_BRIDGE_SEC > 0
     ? styledCaptions.map((caption, index, all) => {
         const next = all[index + 1];
         if (!next || next.sceneNumber !== caption.sceneNumber) return caption;
@@ -1358,6 +1499,19 @@ if (!NO_CAPTIONS) {
         return { ...caption, endSec, dwellSec: Number((endSec - caption.startSec).toFixed(3)) };
       })
     : styledCaptions;
+  // 스토리형(스펙 captionLeadSec): 자막을 소리보다 조금 먼저 띄운다. alignment가 실제 첫 소리보다 0.1~0.35초 늦은 장면(스토리 1편 s5 +0.35·s12 +0.2·s9 +0.1)에서
+  // "첫 발화가 씹힌다"는 느낌이 났다(Owner 2026-10-07). 앞 자막 끝·그 장면의 화면 컷 시작보다 앞으로는 당기지 않는다. 없으면 기존 그대로.
+  const CAPTION_LEAD_SEC = Number(ASSEMBLY_SPEC.captionLeadSec ?? 0);
+  const captions = CAPTION_LEAD_SEC > 0
+    ? bridgedCaptions.map((caption, index, all) => {
+        const prevEnd = index > 0 ? all[index - 1].endSec : 0;
+        const cutStart = Number(videoCutScenes[caption.sceneIndex]?.startSec);
+        const floor = Math.max(prevEnd + 0.01, Number.isFinite(cutStart) ? cutStart : 0);
+        const startSec = Math.max(floor, caption.startSec - CAPTION_LEAD_SEC);
+        if (!(startSec < caption.startSec)) return caption;
+        return { ...caption, startSec, dwellSec: Number((caption.endSec - startSec).toFixed(3)) };
+      })
+    : bridgedCaptions;
   captionAudit = { ...timelineResult.audit, ...fixedPlacementAudit(captions) };
   assPath = path.join(OUT_DIR, "owl_captions.ass");
   fs.writeFileSync(assPath, createOwlCaptionAss(captions), "utf8");
@@ -1365,11 +1519,29 @@ if (!NO_CAPTIONS) {
   if (captionAudit.captionWidthOverflow.length > 0) {
     log(`WARN: 폭 초과 줄 ${captionAudit.captionWidthOverflow.length}개: ${JSON.stringify(captionAudit.captionWidthOverflow.slice(0, 3))}`);
   }
+  if ((captionAudit.captionWidthExcepted ?? []).length > 0) {
+    log(`폭 예외 승인(스펙 captionWidthExceptions, 안전폭 ${TEXT_SAFE_WIDTH_PX}px 이내) ${captionAudit.captionWidthExcepted.length}줄: ${JSON.stringify(captionAudit.captionWidthExcepted)}`);
+  }
 
   // 계약 위반은 조용히 넘기지 않는다 — 하단 고정 자막이 되어버리면 벤치마킹과 달라진다.
   // captionWidthPass/captionLineCountPass는 재검수(2026-09-17)에서 "자막이 화면을
   // 넘어간다"는 지적을 받고서야 추가됐다 — styleCaptions의 재분할 결과를 실측하지
   // 않고 넘어간 게 원인이었다. 이제는 매 실행마다 자동으로 막는다.
+  // 스펙 `captionDwellExceptions: [{ sceneNumber, maxDwellSec, reason }]`(2026-10-11 부엉 28편): 한 문장이 "쉽게 풀면," + 긴 설명 한 문장으로
+  // 이어져 재분할 전 블록(문장 단위)의 체류가 6.8초를 0.5초 남짓 넘는 경우, 실제로 화면에 뜨는 재분할 후 자막이 전부 6.8초 이하일 때만
+  // 사유와 함께 승인한다(경고로 남김). 승인 없는 초과·재분할 후에도 초과면 그대로 ABORT.
+  if (captionAudit.dwellPass !== true) {
+    const DWELL_LIMIT = 6.8 + 0.001;
+    const overPre = (timelineResult.captions ?? []).filter((c) => !(c.dwellSec > 0 && c.dwellSec <= DWELL_LIMIT));
+    const dwellExceptions = ASSEMBLY_SPEC.captionDwellExceptions ?? [];
+    const covered = overPre.length > 0 && overPre.every((c) =>
+      dwellExceptions.some((e) => Number(e.sceneNumber) === Number(c.sceneNumber) && e.reason && c.dwellSec <= Number(e.maxDwellSec) + 0.001));
+    const finalMax = Math.max(...captions.map((c) => c.endSec - c.startSec));
+    if (covered && finalMax <= DWELL_LIMIT) {
+      captionAudit.dwellPass = true;
+      log(`체류 예외 승인(스펙 captionDwellExceptions, 재분할 후 최대 ${finalMax.toFixed(2)}s): ${JSON.stringify(overPre.map((c) => ({ scene: c.sceneNumber, dwell: c.dwellSec })))}`);
+    }
+  }
   const mustPass = [
     "displayUnitLengthPass",
     "dwellPass",

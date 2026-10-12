@@ -91,9 +91,13 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   // 2026-10-02 Owner 확정: 20편 = 시중은행 정보 유출(금융사기 예방). 2026-10-05 배포 완료(릴스 DeGbRGQDNus, 유튜브 cnmOkpvI-IU, 스토리). 표시 20편 = 파일 ep21.
   { episode: 20, summary: "시중은행 정보 유출(신한 약 2.5만·국민 119·하나 89)·내 정보 지키는 법(금융사기 예방), 파일 ep21", lane: "fraud_prevention", domain: "other", titleShape: "question", published: true },
   // 2026-10-02 Owner 확정: 21편 = 대환(갈아타기) 금리 역전(금감원 자료 7월 기준, 주담대 16곳 중 11곳). 표시 21편 = 파일 ep22.
-  { episode: 21, summary: "대출 갈아타기 금리가 신규보다 높은 은행 16곳 중 11곳·내 조건으로 비교, 파일 ep22", lane: "money_calc", domain: "loans_credit", titleShape: "contrast", published: false },
+  { episode: 21, summary: "대출 갈아타기 금리가 신규보다 높은 은행 16곳 중 11곳·내 조건으로 비교, 파일 ep22", lane: "money_calc", domain: "loans_credit", titleShape: "contrast", published: true },
   // 2026-10-05 Owner 선택("1번은 진행하는 걸로"): 22편 = 근로장려금 미신청 24만 가구·기한 후 신청 11/30(5% 감액). 표시 22편 = 파일 ep23. 대본 확정 대기.
-  { episode: 22, summary: "근로장려금 정기 신청 안 한 24만 가구(예상 2,220억)·기한 후 신청 11/30·5% 감액·소득재산 요건, 파일 ep23", lane: "deadline_benefit", domain: "jobs_income", titleShape: "number", published: false },
+  { episode: 22, summary: "근로장려금 정기 신청 안 한 24만 가구(예상 2,220억)·기한 후 신청 11/30·5% 감액·소득재산 요건, 파일 ep23", lane: "deadline_benefit", domain: "jobs_income", titleShape: "number", published: true },
+  // 2026-10-06 Owner 위임("선정해봐")·"1번 진행해": 23편 = 국민연금법 개정(10/1 국회 통과, 2027.1.1 시행) 군복무 전 기간·둘째 출산 크레딧 확대. 표시 23편 = 파일 ep24. 대본 확정·TTS 승인 대기.
+  { episode: 23, summary: "국민연금법 개정 10/1 통과: 군복무 전 기간 크레딧(육군 18개월·월 +1만 2,880원)·둘째 출산크레딧 15개월, 2027.1.1 시행, 파일 ep24", lane: "policy_countdown", domain: "pension", titleShape: "question", published: true },
+  // 24편 = 2027 예산안(정부안, 국회 심의 중) 아동수당→아동기본수당 월 20만 원(절반 상품권)·아이맞이지원금. 표시 24편 = 파일 ep25. 대본 확정·TTS 승인 대기.
+  { episode: 24, summary: "2027 예산안 아동수당→아동기본수당 월 20만 원(절반 지역상품권)·아이맞이지원금 첫째 1,000만·정부안 국회 심의 중, 파일 ep25", lane: "money_calc", domain: "other", titleShape: "contrast", published: false },
 ];
 
 /**

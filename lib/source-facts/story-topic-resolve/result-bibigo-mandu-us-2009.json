@@ -1,0 +1,60 @@
+{
+  "id": "bibigo-mandu-us-2009",
+  "title": "비비고 만두 미국",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "인수합병이 중심이고 '미국 1위'와 '1조 원(국내외 합산)' 수치 범위가 섞임. 직접 열람 못 함 → 후반 재검증 후보",
+  "conditionResolved": true,
+  "finding": "수치 범위는 분리 가능: '1조 원'은 2020년 비비고 만두 단일 품목의 국내외 합산 연매출(fnnews, Korea Times 일치)이고, '미국 1위'는 미국 B2C 만두 시장 점유율(약 41%) 기준이라 서로 다른 지표로 구분해 쓰면 된다. 결정적 장면은 코스트코 위주 유통의 한계를 넘으려고 2019년 미국 2위 냉동식품 기업 슈완스를 18.4억 달러에 인수한 결단이며 중앙일보 영문판·FoodIngredientsFirst 2곳이 확인한다. 인수 후 3만 개 이상 점포망이 열린 것도 2곳에서 확인된다. 다만 점유율 연도별 수치(7.8%, 24.1%, 37.5%, 41.1%)는 출처마다 기준이 달라 대본에는 '약 40%' 수준으로만 쓰는 것이 안전하다.",
+  "coreMessage": "좋은 물건도 팔 길이 막히면 크지 못한다 — 비비고는 만드는 것보다 파는 길을 먼저 샀다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "CJ제일제당은 2019년 미국 냉동식품 기업 슈완스를 18억 4천만 달러(약 2조 원)에 인수했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "지분율은 출처마다 다름(FoodIngredientsFirst: 80%, 중앙일보 영문판: 99.98%). 대본에는 지분율 생략.",
+      "sources": [
+        { "name": "JoongAng Daily(CJ acquires Schwan's for $1.84 billion)", "url": "https://www.koreajoongangdaily.com/business/cj-acquires-schwans-for-184-billion/10366468", "quote": "for $1.84 billion" },
+        { "name": "FoodIngredientsFirst(2018)", "url": "https://www.foodingredientsfirst.com/news/cj-cheiljedang-buys-majority-stake-in-frozen-food-business-schwans-in-us184bn-deal.html", "quote": "for US$1.84 billion" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2020년 비비고 만두는 단일 품목으로 국내외 합산 연매출 1조 원을 돌파했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1조 원은 국내외 합산이며 미국 단독 수치가 아님.",
+      "sources": [
+        { "name": "파이낸셜뉴스(2023.12)", "url": "https://www.fnnews.com/news/202312061852242753", "quote": "국내외를 합쳐 연간 매출 1조 원을 돌파" },
+        { "name": "The Korea Times(2024.01)", "url": "https://www.koreatimes.co.kr/amp/business/companies/20240114/bibigo-features-in-harvard-business-school-case-study", "quote": "annual sales record of 1 trillion won" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "슈완스 인수로 비비고는 미국 전역 3만 개 이상 점포에서 소비자를 만날 수 있게 됐다(기존엔 코스트코 중심).",
+      "numeric": true,
+      "economy": true,
+      "caution": "다른 보도(더구루 2026)는 현재 약 6만 개 매장이라고 함 — 시점이 다름.",
+      "sources": [
+        { "name": "파이낸셜뉴스(2023.12)", "url": "https://www.fnnews.com/news/202312061852242753", "quote": "미국 전역에 거미줄처럼 퍼져있는 3만개 이상 점포" },
+        { "name": "Asia Economy(2020.10)", "url": "https://view.asiae.co.kr/en/article/2020102208324388845", "quote": "more than 30,000 stores nationwide" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "비비고 만두는 미국 B2C 만두 시장에서 점유율 약 41%로 1위다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "기준 연도가 다름: 파이낸셜뉴스(2023.10)는 '지난해'(2022) 41.1%, 더구루(2026)는 '지난해' 41%이면서 2023년 37.5%로 적어 출처 간 연도별 수치가 맞지 않음. 대본엔 '약 40%'로만 쓸 것. CJ 발표 기준이며 독립 조사 확인 못 함.",
+      "sources": [
+        { "name": "더구루(2026)", "url": "https://www.theguru.co.kr/news/article.html?no=102791", "quote": "점유율 41%를 기록하며 1위를 유지했다" },
+        { "name": "파이낸셜뉴스(2023.10)", "url": "https://www.fnnews.com/news/202310151908204880", "quote": "시장 점유율이 41.1%까지 높아졌다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "CJ제일제당은 영업 중인 국내 기업이나 진행 중 소송·제재 없이 성공 사례 중심. 홍보성 서술 주의." },
+  "remaining": "장면이 이사회 M&A 결단이라 시각화는 코스트코 매대→슈완스 트럭·냉동 진열장으로 풀어야 함. 점유율 연도별 수치는 쓰지 말 것.",
+  "toolCallsUsed": 11
+}

@@ -1,0 +1,63 @@
+{
+  "id": "k9-turkey-2001",
+  "title": "K9 자주포 튀르키예 첫 수출",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "연표형, 계약 금액 확인 못 함, 방산·진행 중 계약 이슈",
+  "conditionResolved": false,
+  "finding": "계약 금액은 확인됐다: 2001년 튀르키예와 방위산업 사상 단일 품목 최대 규모인 10억 달러(약 1조 3000억원) 수출 계약(국방일보·한국일보 2001). 또 연표가 아닌 이야기도 찾았다 — 터키가 독일 PzH2000 공동생산을 추진해 불투명하던 1999년, 이즈미트 대지진(사망 약 1만 7100명) 열흘 뒤 육군참모총장이 외국 장성으로는 처음 현장을 찾았고(중앙일보 사설·국방일보), 10월 주터키 국방무관 고현수 대령의 지상군사령관 면담이 20분 예정에서 50분으로 길어졌으며, 2001년 5월 12일 3000여 명이 참관한 TV 생중계 화력시범이 있었다. 그러나 면담·화력시범·1차 24문 6500만 달러 계약은 국방일보 한 곳뿐이고 한국일보는 6,000여만 달러로 달라 두 번째 사이트로 교차 확인하지 못했고, 지진 방문이 계약으로 이어졌다는 인과도 단일 출처라 결정적 장면을 2곳으로 확인할 수 없다. 방산 수출은 한화에어로스페이스가 지금도 계약을 진행 중인 사업이라 민감도도 있다. 그래서 hold(unverifiable).",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2001년 K9 터키 수출 계약은 방위산업 사상 단일 품목 최대 규모인 10억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국일보는 '부품 공급 수출계약'이라 표기하고, 국방부 발표 환산액은 약 1조 3000억원. 일부 한국 언론은 1조원으로도 표기.",
+      "sources": [
+        { "name": "국방일보 K9 32회(2022.06.17)", "url": "https://kookbang.dema.mil.kr/newsWeb/20220617/1/BBSMSTR_000000100185/view.do", "quote": "방위산업 사상 단일 품목으로 최대 규모인 10억 달러의 수출 계약" },
+        { "name": "한국일보(2001.07.21)", "url": "https://www.hankookilbo.com/news/article/200107210088135888", "quote": "K-9자주포부품 터키에 10억弗 수출계약" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1999년 8월 터키 대지진(사망 약 1만 7100명) 열흘 뒤 한국 육군참모총장이 외국 장성으로는 처음 현장을 방문했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "중앙일보 영문 사설과 국방일보 모두 확인되나 지진 방문이 K9 계약으로 이어졌다는 인과는 국방일보 서술뿐. 사설은 이를 2007년 KT-1 수출 등 방산 협력의 신뢰 기반으로 본다.",
+      "sources": [
+        { "name": "중앙데일리 사설(A friend in need)", "url": "https://www.koreajoongangdaily.com/opinion/editorial-a-friend-in-need-is-a-friend-indeed/11461198", "quote": "Ten days after the quake, our Army chief" },
+        { "name": "국방일보 K9 32회(2022.06.17)", "url": "https://kookbang.dema.mil.kr/newsWeb/20220617/1/BBSMSTR_000000100185/view.do", "quote": "면담 시간은 원래 20분이 계획돼 있었는데 질문이 많아 50분이 걸렸습니다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2001년 7월 터키 지상군사령부와 삼성테크윈이 1차 생산 24문 공급계약을 6500만 달러(850억원)에 체결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "국방일보 단일. 한국일보 2001년 기사는 '첫 생산분 20여대 부품 6,000여만 달러'로 수치가 다름.",
+      "sources": [
+        { "name": "국방일보 K9 34회(2022.07.06)", "url": "https://kookbang.dema.mil.kr/newsWeb/20220706/1/BBSMSTR_000000100185/view.do", "quote": "24문에 대한 공급계약을 6500만 달러(850억 원)에 체결했다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2001년 K9 자주포는 튀르키예 기술이전 사업으로 처음 해외 시장에 진출했고, 지금까지 누적 수출계약은 1500여문이다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "누적 수치는 2025년 말 기준 기사 서술이며 계속 변동.",
+      "sources": [
+        { "name": "대한경제(dt.co.kr)", "url": "https://www.dt.co.kr/article/12062579", "quote": "2001년 튀르키예 기술이전 사업으로 처음 해외 시장에 진출한" },
+        { "name": "뉴시스(2020.09.03)", "url": "https://mobile.newsis.com/view/NISX20200903_0001153759", "quote": "2001년 터키와 기술이전을 통한 현지생산 공급계약을 체결" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "한화에어로스페이스가 K9 해외 계약을 지금도 진행 중인 방산 사업이라 민감. 2001년 터키 계약 자체는 종결된 옛 사건."
+  },
+  "remaining": "고현수 대령 면담·2001.5.12 화력시범 3000여명 생중계·지진 후 여론 변화를 확인할 두 번째 사이트(2001~2002년 당시 언론 보도 등)와 1차 계약 금액(6500만 vs 6000여만 달러) 정리 필요.",
+  "toolCallsUsed": 14
+}

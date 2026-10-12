@@ -1,0 +1,76 @@
+{
+  "id": "bubble-wrap-1960",
+  "title": "뽁뽁이 — 벽지로 망하고 온실로 망한 비닐",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "IBM 거래 연도 1961/1963 엇갈림, 결과 숫자가 뽁뽁이 하나의 성과 아님",
+  "conditionResolved": true,
+  "finding": "IBM 거래 연도는 Wikipedia 1960, Smithsonian '이듬해(1961)', 그 밖 자료 1963으로 계속 엇갈려 확정할 수 없지만, 'IBM 1401 컴퓨터를 운송 중 보호하는 용도'라는 장면 자체는 Mental Floss·Wikipedia 두 곳에서 확인되므로 연도를 빼면 된다. 1957년 벽지 시도, 1960년 Sealed Air 창업, 매출 500만→30억 달러, IBM 1401 발표(1959-10-05)가 각각 2곳 이상 확인된다. 단 30억 달러는 뽁뽁이만의 성과가 아닌 Sealed Air 전체 매출이라 '회사 전체'로 한정해 써야 한다.",
+  "coreMessage": "물건의 쓸모는 만든 사람이 아니라, 그 물건이 필요한 문제를 가진 사람이 정한다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1957년 두 발명가가 질감 있는 벽지를 만들려다 공기 방울이 갇힌 비닐 시트를 얻었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Smithsonian Magazine", "url": "https://www.smithsonianmag.com/innovation/accidental-invention-bubble-wrap-180971325/", "quote": "create a textured wallpaper in 1957" },
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/history/bubble-wrap-was-originally-supposed-be-wallpaper", "quote": "In 1957, engineer Al Fielding" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "벽지가 실패하자 온실 단열재로 팔아 보았지만 벽지만큼 성공하지 못했고, 1960년 Sealed Air를 세워 포장재로 방향을 바꿨다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "온실 단열재 실패는 Smithsonian이 '벽지만큼 성공하지 못함'이라 서술. 창업 연도는 두 곳 일치.",
+      "sources": [
+        { "name": "Smithsonian Magazine", "url": "https://www.smithsonianmag.com/innovation/accidental-invention-bubble-wrap-180971325/", "quote": "founded Sealed Air Corp. in 1960" },
+        { "name": "Wikipedia(Sealed Air)", "url": "https://en.wikipedia.org/wiki/Sealed_Air", "quote": "Sealed Air was founded in 1960" },
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/history/bubble-wrap-was-originally-supposed-be-wallpaper", "quote": "invention as greenhouse insulation" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "Sealed Air의 연 매출은 한 경영자의 재임 중 500만 달러에서 30억 달러까지 늘었다(2000년 기준).",
+      "numeric": true,
+      "economy": true,
+      "caution": "뽁뽁이 하나의 성과가 아니라 Sealed Air 회사 전체 매출. 대본에서 '뽁뽁이 매출'로 쓰지 말 것. 경영자 실명은 쓰지 않아도 됨.",
+      "sources": [
+        { "name": "Smithsonian Magazine", "url": "https://www.smithsonianmag.com/innovation/accidental-invention-bubble-wrap-180971325/", "quote": "from $5 million in his first year" },
+        { "name": "Wikipedia(Sealed Air)", "url": "https://en.wikipedia.org/wiki/Sealed_Air", "quote": "sales grew from $5 million to $3 billion" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "IBM은 1959년 10월 5일 새 컴퓨터 IBM 1401을 발표했다(뽁뽁이 첫 대형 고객의 제품).",
+      "numeric": true,
+      "economy": false,
+      "caution": "발표 연도일 뿐 뽁뽁이 납품 연도(1960/1961/1963 엇갈림)와 다름. todayifoundout은 약한 출처라 보조용.",
+      "sources": [
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/history/bubble-wrap-was-originally-supposed-be-wallpaper", "quote": "October 5, 1959" },
+        { "name": "Today I Found Out(2011)", "url": "https://www.todayifoundout.com/index.php/2011/11/bubble-wrap-was-originally-designed-to-be-used-as-w", "quote": "On October the 5, 1959, IBM announced" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "Sealed Air의 영업 담당자가 IBM에 뽁뽁이를 운송 중 컴퓨터를 보호하는 포장재로 쓰자고 제안했고, IBM이 첫 대형 고객이 되었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "납품 연도는 확정되지 않아 쓰지 않는다. 담당자 실명은 쓰지 않아도 됨.",
+      "sources": [
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/history/bubble-wrap-was-originally-supposed-be-wallpaper", "quote": "protect the computer while it was being" },
+        { "name": "Wikipedia(Bubble Wrap brand)", "url": "https://en.wikipedia.org/wiki/Bubble_Wrap_(brand)", "quote": "the IBM 1401 computer during shipment" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "미국 발명 일화. 한국 기업·정치와 무관. Sealed Air는 현재도 영업 중이나 분쟁 소재 아님."
+  },
+  "remaining": "IBM 납품 연도(1960/1961/1963)는 미확정이라 연도 언급 금지. 파손 비용 절감 같은 직접 경제 숫자(뽁뽁이 도입 전후 파손율 등)는 찾지 못해 경제 번역은 '용도 재발견, 회사 매출 규모' 수준에 그침.",
+  "toolCallsUsed": 12
+}

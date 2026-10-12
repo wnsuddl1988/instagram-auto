@@ -1,0 +1,51 @@
+{
+  "id": "barcode-first-scan-1974",
+  "title": "바코드 첫 스캔 — 껌 한 통",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장애물·반전 약함, 시각·가격 엇갈림",
+  "conditionResolved": false,
+  "finding": "1974년 6월 26일 미국 오하이오 트로이의 마시 슈퍼마켓에서 리글리 주시프루트 껌 10개입이 처음 스캔된 사실은 서로 다른 사이트 2곳 이상으로 확인된다. 가격(67센트)은 한 곳에서만 확인되고 다른 곳은 아예 가격을 적지 않으며, 포장 크기(10개입 여부)·시각도 출처마다 엇갈린다. 첫 스캔 장면은 선명하지만 장애물·반전이 없고, '검색된 효과'를 보여 줄 경제 숫자(계산 시간 단축 등)를 서로 다른 출처로 찾지 못해 숫자 4개+경제 근거 조건을 못 채운다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1974년 6월 26일 오하이오주 트로이의 마시 슈퍼마켓에서 껌 한 통이 세계 최초로 소매점에서 스캔됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'바코드가 처음 붙은 상품'이 아니라 '소매점에서 처음 스캔된 상품'이 정확한 표현",
+      "sources": [
+        { "name": "Supermarket News(마시·NCR 35주년)", "url": "https://www.supermarketnews.com/latest-news/marsh-ncr-mark-35th-anniversary-first-product-scan", "quote": "On June 26, 1974, a 10-pack" },
+        { "name": "The Takeout", "url": "https://www.thetakeout.com/2052512/old-school-supermarket-chain-first-barcode/", "quote": "On June 26, 1974, a shopper" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "그 상품은 리글리 주시프루트 껌 10개입이었고 가격은 67센트였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "가격은 GS1 아일랜드 단일 출처만 확인. Supermarket News는 가격 미기재, 포장 크기 표기는 출처마다 다름",
+      "sources": [
+        { "name": "Checkout(GS1 40주년 기사)", "url": "https://www.checkout.ie/technology/40th-anniversary-of-first-gs1-barcode-5335", "quote": "It cost 67 cents" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "껌을 고른 이유는 UPC 바코드 인쇄에 도움을 준 리글리 브랜드에 감사를 표하려는 마시 경영진 클라이드 도슨의 선택이었다고 전해진다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "이유에 대해 '작은 상품에도 바코드가 붙는다는 걸 보이려 했다'는 다른 설명도 있어 단정 금지",
+      "sources": [
+        { "name": "Tasting Table", "url": "https://www.tastingtable.com/1236964/why-the-worlds-first-scanned-barcode-was-on-a-pack-of-gum", "quote": "his appreciation to the Wrigley brand" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 종결 사건. 민감성 문제 없음."
+  },
+  "remaining": "결정적 장면은 있으나 장애물·반전이 없고, 경제 근거 숫자(계산 시간·재고 비용·도입 점포 수 등)를 서로 다른 출처 2곳으로 못 찾음. 가격·포장 표기 불일치.",
+  "toolCallsUsed": 7
+}

@@ -1,0 +1,58 @@
+{
+  "id": "incheon-airport-asq",
+  "title": "인천공항 서비스 평가 12연패",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "일화 아닌 기록, 인과 근거 없음",
+  "conditionResolved": false,
+  "finding": "2005~2016년 ACI 공항서비스평가(ASQ) 12년 연속 1위, 개항 4년 만에 1위라는 기록은 2곳 이상 출처로 확인된다. 그러나 이 기록을 만든 '결정적 장면(누가 무엇을 선택해 결과가 바뀐 순간)'은 어느 보도에도 없고, 출처들은 '4만여 종사자의 합심·정부 정책 지원·서비스개선위원회' 같은 일반론만 제시한다. 개항 초기 수하물 문제와 1위 사이의 인과도 확인되지 않았다. 2017년 이후 제2터미널 준비를 위해 평가에 불참했다가 2023년 복귀한 사실은 문화일보 1곳 보도뿐이라 장면 후보로도 2출처 검증이 안 된다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "인천공항은 2005년부터 2016년까지 12년 연속 ACI 세계공항서비스평가(ASQ) 종합 1위를 차지했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인천공항 홈페이지 등 일부 자료는 '2005~2017년 12년'으로 표기해 기간 표기가 자료마다 다르다.",
+      "sources": [
+        {
+          "name": "시대일보(2017)",
+          "url": "https://www.sidae.com/article/2017030716188090998",
+          "quote": "2005년부터 지난해까지 12년 연속 1위를 지켰다는 데 의의가 있다."
+        },
+        {
+          "name": "문화일보(2024)",
+          "url": "https://www.munhwa.com/article/11455422",
+          "quote": "12년(2005∼2016년) 동안 1위의 자리를 유지한 바 있으며"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2001년 3월 29일 개항한 인천공항은 개항 4년 만인 2005년에 ASQ 1위에 올랐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "뉴스토마토(2016)",
+          "url": "https://newstomato.com/ReadNews.aspx?no=646917",
+          "quote": "개항 4년만에 세계 공항서비스 평가 1위에 올라서는"
+        },
+        {
+          "name": "시대일보(2017)",
+          "url": "https://www.sidae.com/article/2017030716188090998",
+          "quote": "특히 이번 수상은 개항 4년째인 2005년부터 지난해까지"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "공기업(인천국제공항공사) 서비스 성과 소재라 법적·정치적 민감성은 낮음. 2016년 수하물 지연·밀입국 사건은 별개 사건."
+  },
+  "remaining": "결정적 장면 없음(기록 나열). 개항 초기 수하물 대란이나 2017년 평가 불참 결정을 장면으로 삼으려면 별도 2출처 검증이 필요하나 인과가 입증되지 않아 현재는 보류.",
+  "toolCallsUsed": 9
+}

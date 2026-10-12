@@ -1,0 +1,53 @@
+{
+  "id": "lgcare-cha-seokyong-2005",
+  "title": "LG생활건강 차석용",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "17년 연속 성장이라 한 장면 없고 주식 이야기에 가까움",
+  "conditionResolved": false,
+  "finding": "숫자 사실은 풍부하다(2007년 코카콜라음료 인수 후 1년 만에 흑자, 2021년 매출 8조 915억·영업이익 1조 2,896억, 17년 연속 성장). 그러나 '한 장면'으로 세울 만한 결정적 순간을 서로 다른 2곳으로 찾지 못했다. 가장 가까운 코카콜라음료 인수도 인수 이유·반대·결단 과정이 기사에 없고 인수가도 3,853억원(더팩트 인용)과 3,521억원(이투데이)으로 엇갈린다. 지금도 영업 중인 상장사의 '실적·M&A 성공담'이라 주식 이야기로 읽히는 문제도 그대로 남아 weak-scene 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "차석용은 2007년 말 코카콜라음료를 인수해 1년 만에 흑자 기업으로 바꿨다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "인수가는 3,853억원(더팩트 인용 보도)과 3,521억원(이투데이)으로 엇갈려 대본에 금액을 쓰면 위험. 인수 배경·반대·결단 장면은 기사에 없음",
+      "sources": [
+        { "name": "이투데이 [CEO+]", "url": "https://www.etoday.co.kr/news/view/513979", "quote": "코카콜라음료를 지난 2007년 말에 사들여 1년만에 흑자 기업으로 탈바꿈시켰고" },
+        { "name": "한경매거진(2020)", "url": "https://magazine.hankyung.com/business/article/202002116237b", "quote": "2007년 말 코카콜라음료를 인수해 1년 만에 흑자 기업으로 탈바꿈시킨" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "LG생활건강은 2021년 매출 8조 915억원, 영업이익 1조 2,896억원을 달성했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "LG 보도자료(2022)", "url": "https://www.lg.co.kr/media/release/24407", "quote": "2021년 매출 8조 915억원, 영업이익 1조 2,896억원을 달성했다" },
+        { "name": "서울신문(2022)", "url": "https://m.seoul.co.kr/news/2022/11/24/20221124500167", "quote": "8조 915억 원의 매출을 올리며 17년 연속 매출 신화를 썼다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "매출과 영업이익 모두 2005년부터 2021년까지 17년 연속 성장했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "서울신문은 '분기 기준 66분기 연속 영업이익 증가(한 분기 제외)'로 표현해 기준이 다름",
+      "sources": [
+        { "name": "LG 보도자료(2022)", "url": "https://www.lg.co.kr/media/release/24407", "quote": "매출과 영업이익 모두 17년 연속 성장했고" },
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/101525", "quote": "17년 연속 매출 및 영업이익 증대라는 기록을 세웠다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "LG생활건강은 영업 중인 상장사이고 최근 M&A 후유증·음료 적자 보도가 이어져 주식·종목 이슈로 읽힐 소지"
+  },
+  "remaining": "결정적 한 장면 부재(연속 성장·M&A 28건 나열형). 코카콜라 인수의 결단 과정·인수가 2출처 확인 불가. 주식 이슈로 읽힘.",
+  "toolCallsUsed": 12
+}

@@ -89,7 +89,10 @@ export function splitPenalty(leftWord, rightWord) {
   if (/[0-9]/.test(L) && NUMBER_END.test(L) && UNIT_START.test(R)) return HARD_FORBIDDEN; // 5천 / 원, 3 / 년
   if (/[0-9](월|년)$/.test(L) && /^[0-9]/.test(R)) return HARD_FORBIDDEN;               // 11월 / 2일
   if (/(^|[0-9])(만|억|조|천)$/.test(L) && /^[0-9]/.test(R)) return HARD_FORBIDDEN;      // 6만 / 8천480원, 만 / 700원(한 숫자)
+  // 숫자 + 어림 표현("1 / 남짓", "3 / 안팎")은 숫자 뒤에서 끊어도 의미가 안 갈린다 — 금지가 아니라 벌점(스토리 1편, 2026-10-07).
+  if (/^[0-9.,]+$/.test(L) && /^(남짓|가량|안팎|정도|쯤|이상|이하|미만|초과)/u.test(R)) return 10;
   if (/^[0-9.,]+$/.test(L)) return HARD_FORBIDDEN;                                          // 숫자만 떨어짐
+  if (/[0-9]*(분|배|퍼센트|할)의$/.test(L) && /^[0-9]/.test(R)) return HARD_FORBIDDEN;      // 10분의 / 1 (분수, 스토리 1편 s9 2026-10-07)
   if (DEPENDENT_NOUN.test(R) && isAdnominal(L, R)) return HARD_FORBIDDEN;                     // ~는 / 게, 할 / 수
   if (ANI_START.test(R)) return HARD_FORBIDDEN;                                              // 결론이 / 아니라
 
@@ -119,32 +122,40 @@ function visibleChars(text) {
 /**
  * 한 자막 블록을 최대 2줄로 나눈다. 폭에 안 들어가면 null(호출부가 블록을 시간축으로 나눔).
  */
-export function wrapToLines(text, fontSize, maxWidth) {
-  return wrapToLinesScored(text, fontSize, maxWidth)?.lines ?? null;
+export function wrapToLines(text, fontSize, maxWidth, options = {}) {
+  return wrapToLinesScored(text, fontSize, maxWidth, options)?.lines ?? null;
 }
 
 /** wrapToLines와 같지만 고른 줄바꿈의 벌점(score)도 함께 돌려준다. 한 줄이면 score 0. */
-export function wrapToLinesScored(text, fontSize, maxWidth) {
+export function wrapToLinesScored(text, fontSize, maxWidth, options = {}) {
   const words = String(text).split(/\s+/).filter(Boolean);
   if (words.length === 0) return { lines: [String(text)], score: 0 };
   if (words.length === 1 || textWidthRatio(words.join(" ")) * fontSize <= maxWidth) {
     return { lines: [words.join(" ")], score: 0 };
   }
-  let best = null;
-  for (let split = 1; split < words.length; split += 1) {
-    const penalty = splitPenalty(words[split - 1], words[split]);
-    if (!Number.isFinite(penalty)) continue;
-    const left = words.slice(0, split).join(" ");
-    const right = words.slice(split).join(" ");
-    const leftWidth = textWidthRatio(left) * fontSize;
-    const rightWidth = textWidthRatio(right) * fontSize;
-    if (leftWidth > maxWidth || rightWidth > maxWidth) continue;
-    const balance = Math.abs(leftWidth - rightWidth) / maxWidth;
-    const orphan = (split === 1 && visibleChars(left) <= 2) || (split === words.length - 1 && visibleChars(right) <= 2) ? 8 : 0;
-    const score = penalty + balance * 4 + orphan;
-    if (!best || score < best.score) best = { score, lines: [left, right] };
-  }
-  return best;
+  // allowForced: 금지 자리밖에 폭에 맞는 해가 없을 때만 벌점 25로 그 자리를 허용한다(자막 계획기용).
+  // 블록 사이에서 갈라지는 것(숫자 | 단위가 서로 다른 화면)보다, 한 화면 안 두 줄에 같이 있는 쪽이 낫다.
+  const run = (allowForced) => {
+    let found = null;
+    for (let split = 1; split < words.length; split += 1) {
+      let penalty = splitPenalty(words[split - 1], words[split]);
+      if (!Number.isFinite(penalty)) {
+        if (!allowForced) continue;
+        penalty = 60; // 짧은 블록(≈33)보다 비싸게 — "확인할 / 건"처럼 어절을 가르는 것보다 짧은 조각이 낫다. 블록 사이 금지 경계(1000)보다는 싸다.
+      }
+      const left = words.slice(0, split).join(" ");
+      const right = words.slice(split).join(" ");
+      const leftWidth = textWidthRatio(left) * fontSize;
+      const rightWidth = textWidthRatio(right) * fontSize;
+      if (leftWidth > maxWidth || rightWidth > maxWidth) continue;
+      const balance = Math.abs(leftWidth - rightWidth) / maxWidth;
+      const orphan = (split === 1 && visibleChars(left) <= 2) || (split === words.length - 1 && visibleChars(right) <= 2) ? 8 : 0;
+      const score = penalty + balance * 4 + orphan;
+      if (!found || score < found.score) found = { score, lines: [left, right] };
+    }
+    return found;
+  };
+  return run(false) ?? (options.allowForced ? run(true) : null);
 }
 
 /**

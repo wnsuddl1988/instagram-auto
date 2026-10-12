@@ -1,0 +1,93 @@
+{
+  "id": "sony-walkman-1979",
+  "title": "소니 워크맨",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "첫 달 판매량 3,000/3만 개 엇갈림",
+  "conditionResolved": true,
+  "finding": "엇갈린 두 숫자는 서로 다른 기간이었다. '첫 달(7월) 약 3,000대'(History.com·Commoncog·bestcalendar 3곳)와 '초도 생산 3만 대 완판/발매 2개월에 3만 대 이상'(bestcalendar·Commoncog·Wikipedia·bizcommunity)이 모두 맞고, 완판 시점만 8월 말(History·Commoncog·bestcalendar) vs 9월(Sound&Vision)로 갈린다. 결정 장면은 사내 반대 속에서 모리타가 3만 대를 못 팔면 사장직을 내놓겠다고 한 순간(New World Encyclopedia·Commoncog)이다. 첫 달 3,000대로 부진 -> 두 번째 달에 폭증이라는 반전 구조로 쓸 수 있다.",
+  "coreMessage": "시장조사가 안 된다고 해도 내가 책임질 숫자를 걸고 시작하면 새 시장이 열린다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "사내 반대 속에서 모리타 아키오는 3만 대를 못 팔면 사장직을 내놓겠다고 했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'사퇴 공언' 표현은 출처마다 다름(NWE: 3만 대 기준 사장 사임, Commoncog: 제품이 안 팔리면 사임에 동의). 'Strategy Breakdowns'의 연말 10만 대 버전은 단일 출처라 쓰지 말 것. 대본에서는 '실패하면 물러나겠다고 했다' 정도로.",
+      "sources": [
+        { "name": "New World Encyclopedia, Akio Morita", "url": "https://www.newworldencyclopedia.org/entry/Akio_Morita", "quote": "if 30,000 of these machines could not be sold, he would resign as company president" },
+        { "name": "Commoncog Case Library, The Sony Walkman", "url": "https://commoncog.com/c/cases/sony-walkman/", "quote": "he agreed to resign if the product did not work" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1979년 7월 발매 첫 달 워크맨은 약 3,000대만 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "History.com, The first Sony Walkman goes on sale", "url": "https://www.history.com/this-day-in-history/july-1/the-first-sony-walkman-goes-on-sale", "quote": "only 3,000 were sold in July 1979" },
+        { "name": "bestcalendar.jp 워크맨의 날", "url": "https://bestcalendar.jp/dates/kinenbi/2813", "quote": "発売1ヶ月での売上はわずか3,000台。" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "소니는 초도 생산을 3만 대로 잡았다(당시 소니 카세트 데크 최다 판매는 약 1만 5천 대라는 설명이 있으나 단일 출처).",
+      "numeric": true,
+      "economy": true,
+      "caution": "'최다 1만 5천 대' 비교는 이 사실에서 제외, 대본에 쓰려면 별도 2출처 필요. 초도 3만 대 자체는 두 곳 확인.",
+      "sources": [
+        { "name": "History.com, The first Sony Walkman goes on sale", "url": "https://www.history.com/this-day-in-history/july-1/the-first-sony-walkman-goes-on-sale", "quote": "initial production run of 30,000 units" },
+        { "name": "bestcalendar.jp 워크맨의 날", "url": "https://bestcalendar.jp/dates/kinenbi/2813", "quote": "初回生産分の3万台が完売" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "초도 3만 대는 1979년 8월 말쯤 모두 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Sound&Vision은 '9월까지'로 서술. 대본에서는 '두세 달 안에'로 표현.",
+      "sources": [
+        { "name": "Commoncog Case Library, The Sony Walkman", "url": "https://commoncog.com/c/cases/sony-walkman/", "quote": "the initial batch of 30,000 devices had sold out" },
+        { "name": "bestcalendar.jp 워크맨의 날", "url": "https://bestcalendar.jp/dates/kinenbi/2813", "quote": "8月には初回生産分の3万台が完売" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "소니는 월 5,000대 정도를 예상했지만 첫 두 달에 3만 대 넘게 팔았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "월 5,000대 예상치는 Wikipedia 단독이라 대본에서 빼고 '3만 대 넘게'만 사용 권장.",
+      "sources": [
+        { "name": "Wikipedia, Walkman", "url": "https://en.wikipedia.org/wiki/Walkman", "quote": "it sold more than 30,000 in the first two months" },
+        { "name": "Bizcommunity", "url": "https://www.bizcommunity.com/Article/196/185/37475.html", "quote": "Sony sold 30,000 Walkmans in the first two months" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "워크맨은 발매 10년 만에 5,000만 대가 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Bizcommunity", "url": "https://www.bizcommunity.com/Article/196/185/37475.html", "quote": "and 50 million within a decade" },
+        { "name": "AFPBB News", "url": "https://www.afpbb.com/articles/-/2617118", "quote": "発売から10年で5000万台のウォークマンが売れた" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "초기 워크맨 가격은 3만 3천 엔 안팎이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "History.com은 30,000엔(약 150달러)로 표기. 대본에서는 '3만 엔대'로.",
+      "sources": [
+        { "name": "Wikipedia, Walkman", "url": "https://en.wikipedia.org/wiki/Walkman", "quote": "was sold for around ¥33,000" },
+        { "name": "bestcalendar.jp 워크맨의 날", "url": "https://bestcalendar.jp/dates/kinenbi/2813", "quote": "定価は33,000円" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "일본 기업 45년 전 사례. 민감 소지 없음." },
+  "remaining": "3만 대 완판 시점이 8월 말/9월로 엇갈림. 모리타 사퇴 공언은 회고 기반 일화라 각색 가능성이 있음(1차 사사 미확인). '소니 데크 최고 1만 5천 대' 비교는 2출처 미확보.",
+  "toolCallsUsed": 14
+}

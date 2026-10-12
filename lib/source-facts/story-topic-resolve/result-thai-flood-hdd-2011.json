@@ -1,0 +1,40 @@
+{
+  "id": "thai-flood-hdd-2011",
+  "title": "2011 태국 홍수 하드디스크 대란",
+  "year": 2011,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "한국 접점·감정 구조 약함",
+  "conditionResolved": false,
+  "finding": "한국 접점은 찾았다: 게임메카(2011.11.1)가 용산 도매상에서 '500GB 낱개 10만원, 1,000개 사려면 개당 15만원'이라는 역전 가격, 다나와 최저가 기준 WD 500GB 3만9,200원(9/13)→9만9,000원(11/1)을 보도했고, 한국 매체 inews24·머니투데이가 WD 물량의 60%·세계 HDD의 40%가 태국에서 나온다고 확인한다. 그러나 이는 재난과 시장 반응이지 주인공이 선택·결단한 순간이 아니고, 용산 장면과 가격표는 게임메카 한 사이트(기사 2건)뿐이라 2출처 요건을 못 채운다. 수치도 출처마다 갈린다(태국 점유율 40% vs 니혼게이자이 인용 60%, 가격 상승 20%·20~40%·약 3배·151%). 감정 구조는 있지만 '사재기하려던 제조사 직원 A씨' 한 일화에 기대는 이야기라 weak-scene으로 둔다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "WD는 하드디스크 물량의 약 60%를 태국 공장에서 생산했다.", "numeric": true, "economy": false,
+      "caution": "StorageNewsletter는 '60% of its units', inews24는 포브스 인용 '물량의 60% 가량'.",
+      "sources": [
+        { "name": "StorageNewsletter(2011.10.18)", "url": "https://www.storagenewsletter.com/2011/10/18/thailand-floods-to-significant-impact-wd/", "quote": "producing 60% of its units in Thailand" },
+        { "name": "아이뉴스24(포브스 인용, 2011.10)", "url": "https://www.inews24.com/view/611758", "quote": "물량의 60% 가량을 태국 현지 공장에서 생산하고 있다" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "태국은 당시 세계 하드디스크 생산량의 약 40%를 담당했다.", "numeric": true, "economy": true,
+      "caution": "아시아투데이(니혼게이자이 인용)는 '세계 HDD 공급량의 60%'로 적어 출처마다 다름.",
+      "sources": [
+        { "name": "아이뉴스24(2011.10)", "url": "https://www.inews24.com/view/611758", "quote": "전 세계 HDD 생산량의 40%를 책임지고 있다" },
+        { "name": "머니투데이(2011.12.19)", "url": "https://www.mt.co.kr/world/2011/12/19/2011121609372586027", "quote": "하드디스크드라이브(HDD) 생산량의 40%를 담당" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "한국 소매시장에서 HDD 가격이 3주 만에 거의 세 배 가까이 올랐다(WD 500GB 다나와 최저가 3만9,200원→9만9,000원).", "numeric": true, "economy": true,
+      "caution": "게임메카 단일 사이트(기사 2건). 같은 매체 다른 기사는 '2배 이상'. 독립 2출처 못 찾음.",
+      "sources": [
+        { "name": "게임메카 [HDD파동] 용산 시장(2011.11.1)", "url": "https://www.gamemeca.com/view.php?gid=113322", "quote": "무려 세 배 가까이 뛰었다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 자연재해·종결된 사건. 민감성 없음(WD·Seagate는 현재 영업 중이나 기업 비판이 아닌 공급망 사례)." },
+  "remaining": "주인공의 선택 한 순간 없음, 용산 일화·가격표는 단일 사이트. 인텔 4분기 매출 감소액은 머니투데이 '40억달러'와 인텔 발표(약 10억달러)가 어긋날 수 있어 쓰면 안 됨. 한국 접점(삼성 HDD 사업의 Seagate 매각, 2011.12.19 종료 약 14억달러)은 별도 소재 후보.",
+  "toolCallsUsed": 12
+}

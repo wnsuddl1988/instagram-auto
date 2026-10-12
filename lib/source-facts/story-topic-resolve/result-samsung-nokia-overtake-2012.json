@@ -1,0 +1,75 @@
+{
+  "id": "samsung-nokia-overtake-2012",
+  "title": "삼성의 노키아 추월",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "집계 기관마다 수치 다름, 갤럭시 노트와 결 겹침",
+  "conditionResolved": true,
+  "finding": "집계 기관 하나(스트래티지 애널리틱스, SA)로 기준을 고정하면 2012년 1분기 삼성 9,350만 대 대 노키아 8,270만 대, 점유율 25.4% 대 22.5%가 서로 다른 사이트 2곳에서 같게 확인된다(IDC 등 다른 기관은 23.5% 등으로 달라 섞으면 안 됨). 결정적 장면은 2011년 2월 노키아 CEO 엘롭의 사내 메모 '불타는 플랫폼'(Engadget, The Gadgeteer 2곳 확인)으로 갤럭시 노트와는 결이 겹치지 않는다. 다만 이 장면은 승자(삼성)가 아니라 패자(노키아) 쪽 장면이라 대본은 '1등의 선택' 구도로 써야 한다.",
+  "coreMessage": "14년 1등도 자기 발밑이 불타고 있다는 걸 늦게 인정하면 한 분기 만에 자리를 내준다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "SA 집계로 2012년 1분기 삼성전자 휴대폰 출하량은 9,350만 대, 노키아는 8,270만 대로 삼성이 처음 노키아를 앞섰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "집계 기관마다 수치가 다르다(IDC 기준 삼성 점유율 23.5% 등, 이투데이는 9,250만 대로 표기). 대본에는 반드시 'SA 집계'로 기관을 밝힐 것.",
+      "sources": [
+        { "name": "아이뉴스24(2012.4.27)", "url": "https://www.inews24.com/view/653508", "quote": "삼성은 1분기에 9천350만대를 출하하며 25.4% 시장 점유율을" },
+        { "name": "재경일보(2012.4.27, jkn)", "url": "https://news.jkn.co.kr/post/702584", "quote": "9천350만대의 휴대전화를 판매해 8천270만대를 판매한 노키아" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "SA 기준 1분기 세계 휴대폰 시장 점유율은 삼성 25.4%, 노키아 22.5%였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기관별로 25%/23% 안팎 등 표기가 다르다. 대본에는 '25% 안팎' 정도로 쓰는 것이 안전.",
+      "sources": [
+        { "name": "아이뉴스24(2012.4.27)", "url": "https://www.inews24.com/view/653508", "quote": "25.4% 시장 점유율을 기록해 1위 휴대폰 업체에 등극했다" },
+        { "name": "PCR(2012.4.29)", "url": "https://pcr-online.biz/2012/04/29/samsung-overtakes-nokia-as-top-phone-maker/", "quote": "powered ahead to 25.4 per cent" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "노키아의 1분기 출하량은 1년 전보다 24% 줄어 8,270만 대에 그쳤다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "아이뉴스24(2012.4.27)", "url": "https://www.inews24.com/view/653508", "quote": "출하량이 지난해보다 무려 24% 감소하며 8천270만대를 공급해" },
+        { "name": "PCR(2012.4.29)", "url": "https://pcr-online.biz/2012/04/29/samsung-overtakes-nokia-as-top-phone-maker/", "quote": "sales plummet 24 per cent" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "노키아는 1998년 모토로라를 제친 뒤 14년간 세계 휴대폰 판매 1위 자리를 지켰다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "아이뉴스24는 '1998년부터 2011년까지 14년'으로, 이투데이 등 일부 기사는 '10여 년'으로 표기한다. '14년'은 SA 발표 기준.",
+      "sources": [
+        { "name": "재경일보(2012.4.27, jkn)", "url": "https://news.jkn.co.kr/post/702584", "quote": "14년간 수위 자리를 지켜온 노키아" },
+        { "name": "PCR(2012.4.29)", "url": "https://pcr-online.biz/2012/04/29/samsung-overtakes-nokia-as-top-phone-maker/", "quote": "number one for 14 years" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2011년 2월 노키아 CEO 스티븐 엘롭은 사내 메모에서 '우리는 불타는 플랫폼 위에 서 있다'고 밝히며 위기를 인정했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "메모는 유출본이며 Engadget이 전문이라 보도했고 이후 진본으로 확인된 것으로 보도됨. 메모가 삼성의 추월을 '직접' 일으킨 것은 아니고 노키아 쪽 결정적 장면이다. 인용문은 영문 원문.",
+      "sources": [
+        { "name": "Engadget(2011.2.8)", "url": "https://www.engadget.com/2011/02/08/nokia-ceo-stephen-elop-rallies-troops-in-brutally-honest-burnin/", "quote": "we are standing on a burning platform" },
+        { "name": "The Gadgeteer(2011.2.11)", "url": "https://the-gadgeteer.com/2011/02/11/nokias-fight-part-2", "quote": "we are standing on a burning platform" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성전자는 영업 중인 국내 기업이나 진행 중 소송·제재·피해자 사건 아님(시장 점유 순위 사건). 노키아는 외국 기업."
+  },
+  "remaining": "삼성 쪽 결단 장면(2010년 갤럭시S 등)은 이번에 2곳 원문으로 확인하지 못했다. 결정적 장면이 노키아 메모라 '삼성 이야기'로 쓰려면 Owner가 노키아 시점 구도를 받아들여야 한다. 갤럭시 노트 소재와는 겹치지 않게 쓸 것.",
+  "toolCallsUsed": 22
+}

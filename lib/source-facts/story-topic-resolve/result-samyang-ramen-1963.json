@@ -1,0 +1,79 @@
+{
+  "id": "samyang-ramen-1963",
+  "title": "삼양라면 — 극장 앞에서 1년 동안 공짜로 끓여 준 라면",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "삼양 포화 위험(우지 건 지적), 정치인 자금 일화 제외, 꿀꿀이죽 5원 비교는 근거 없음",
+  "conditionResolved": false,
+  "finding": "출시(1963.9.15)와 가격 10원은 서로 다른 매체 2곳에서 원문 확인됐고, 극장·공원 등 무료 시식도 2곳에서 확인됐다. 그러나 '1년간'이라는 기간은 경기일보 1곳뿐이고, 꿀꿀이죽 5원 비교는 뉴시스 1곳이며 서울신문은 제목만 있다. 판매가 살아난 계기가 시식이 아니라 혼분식 장려정책(1965~66)이라 '결과를 바꾼 결정적 장면'이 서지 않고, 판매량 240만 봉지는 연간/월간 표기가 출처마다 달라 위험하다. 숫자 사실 4개 이상을 2출처로 못 채우므로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "삼양라면은 1963년 9월 15일 국내 최초 라면으로 출시됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "뉴시스(2020)", "url": "https://www.newsis.com/view/NISX20201113_0001232531", "quote": "1963년 9월15일 국내 최초로 라면을 선보였다." },
+        { "name": "아시아투데이", "url": "https://www.asiatoday.co.kr/kn/view.php?key=191245", "quote": "1963년 9월 '삼양라면'을 발매하기 시작했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "출시 당시 삼양라면 1봉지 가격은 10원이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "경기일보(2013)", "url": "https://kyeonggi.com/article/201309150531867", "quote": "당시 1봉지 가격은 10원이었다." },
+        { "name": "한국경제(2025)", "url": "https://www.hankyung.com/article/202511030055g", "quote": "가격은 10원이었다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "초기 반응이 냉담해 극장·공원 등에서 무료 시식회를 열었다(경기일보는 1년간).",
+      "numeric": true,
+      "economy": false,
+      "caution": "'1년간'은 경기일보 1곳뿐. 뉴시스는 기간 없이 극장·공원, 아시아투데이는 서울역·남대문시장으로 장소가 다름.",
+      "sources": [
+        { "name": "경기일보(2013)", "url": "https://kyeonggi.com/article/201309150531867", "quote": "극장ㆍ공원 등에서 1년간 무료 시식회를 열었다." },
+        { "name": "뉴시스(2020)", "url": "https://www.newsis.com/view/NISX20201113_0001232531", "quote": "극장이나 공원 등에서 무료시식 행사를 열어 라면을 알렸다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "꿀꿀이죽 5원을 감안해 삼양라면을 10원으로 책정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴시스 1곳만 문장으로 확인. 서울신문은 제목('5원짜리 꿀꿀이죽')뿐이라 본문 근거가 아님.",
+      "sources": [
+        { "name": "뉴시스(2020)", "url": "https://www.newsis.com/view/NISX20201113_0001232531", "quote": "꿀꿀이죽이 5원이었던 것을 감안, 삼양라면은 많은 사람들이 라면을 먹을 수 있도록 10원으로 책정했다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1965년 7월 한 달에 100만 봉지를 판매했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "아시아투데이 1곳뿐. 다른 출처는 '1966년 240만 봉지'(연간/11월 월간 표기 불일치), '1969년 월 1500만 봉지'로 달라 일관성 없음.",
+      "sources": [
+        { "name": "아시아투데이", "url": "https://www.asiatoday.co.kr/kn/view.php?key=191245", "quote": "65년 7월 한 달에만 100만 봉지를 판매하는 등" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "서울신문은 창업주가 농림부 배정 외화 10만 달러 중 5만 달러를 배정받았다고 쓴다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "서울신문 1곳. 정치인 자금 일화와 맞닿아 있어 사용 금지 대상일 수 있음.",
+      "sources": [
+        { "name": "서울신문(2026)", "url": "https://m.seoul.co.kr/news/2026/05/18/20260518500023", "quote": "농림부에 할당된 외화 10만 달러 중 절반인 5만 달러를 전 회장에게 배정했습니다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 국내 기업(삼양식품)의 옛 창업 일화로 진행 중 분쟁 없음. 정치인 자금 일화는 제외 방침." },
+  "remaining": "시식 기간(1년) 2출처, 판매 급증 원인(시식 vs 혼분식 정책) 확정, 연간/월간 판매량 기준 통일이 필요. 삼양 소재 포화 문제도 남음.",
+  "toolCallsUsed": 9
+}

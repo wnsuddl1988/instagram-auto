@@ -1,0 +1,86 @@
+{
+  "id": "daiso-1997",
+  "title": "다이소 — 천 원짜리 1,000개를 팔아도 1~2만 원 남던 가게",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "성공 비결 영상 다수 — 후반에. 일본 기업·불매 논란은 쓰지 않음, IMF 계기설은 근거 없음",
+  "conditionResolved": true,
+  "finding": "제목의 핵심 숫자(1,000원짜리 1,000개를 팔아야 매출 100만 원, 마진 1~2만 원)가 박정부 회장 저서 『천원을 경영하라』 인용을 통해 이코노미스트와 교보문고 발췌 2곳에서 확인되고, 가격을 먼저 정해 놓고 상품을 구현한다는 결정도 같은 2곳에서 확인된다. 1997년 5월 1호점, 6개 가격대, 2024년 매출 3조 9,689억 원도 2곳 이상에서 확인된다. 일본 지분·불매·IMF 계기설은 제외하고 쓰면 민감성은 없다.",
+  "coreMessage": "원가에 이윤을 얹어 가격을 정하지 않고, 고객이 받아들일 가격을 먼저 정한 뒤 거기에 원가를 맞춘 가게가 마진 1~2%에서 매출 4조 원에 가까운 회사가 됐다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "초창기 다이소는 1,000원짜리를 1,000개 팔아야 매출 100만 원이고 그중 마진은 1~2만 원 정도였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "저서 회고이며 회사 공시로 검증된 수치는 아님. 마진이 매출총이익인지 영업이익인지 불명확. 두 출처는 같은 책 기반.",
+      "sources": [
+        { "name": "이코노미스트(2023)", "url": "https://economist.co.kr/article/view/ecn202301100064", "quote": "마진은 고작 1~2만원 정도였다" },
+        { "name": "교보문고 전자책 발췌", "url": "https://ebook-product.kyobobook.co.kr/dig/epd/sam/E000005054639", "quote": "마진은 고작 1~2만 원 정도였다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "일반 기업과 반대로 다이소는 원가와 마진으로 가격을 정하지 않고 가격을 먼저 정해 놓은 뒤 상품을 구현한다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'가격을 먼저 정하고'라는 정확한 표현은 출처마다 '정해놓고'로 표기.",
+      "sources": [
+        { "name": "이코노미스트(2023)", "url": "https://economist.co.kr/article/view/ecn202301100064", "quote": "가격을 먼저 정해놓고 상품을 구현한다" },
+        { "name": "교보문고 전자책 발췌", "url": "https://ebook-product.kyobobook.co.kr/dig/epd/sam/E000005054639", "quote": "가격을 먼저 정해놓고 상품을 구현한다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "박정부 회장은 45세에 다니던 직장에 사표를 내고 무역업에 뛰어들었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "이코노미스트(2023)", "url": "https://economist.co.kr/article/view/ecn202301100064", "quote": "마흔다섯에 다니던 직장에 사표를 내고" },
+        { "name": "한경 sgsg(2023)", "url": "https://sgsg.hankyung.com/article/2023022499731", "quote": "45세에 회사를 그만두고" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "다이소 1호점은 1997년 5월 서울 천호동에 문을 열었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "13평이라는 면적은 이코노미스트 1곳만 확인.",
+      "sources": [
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/869901", "quote": "1997년 5월 천호동에" },
+        { "name": "이투데이(2015)", "url": "https://www.etoday.co.kr/news/view/1117831", "quote": "1997년 5월 1호점을 오픈한 다이소" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "다이소는 500원·1,000원·1,500원·2,000원·3,000원·5,000원 6개 가격대로만 판다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "뉴데일리(2025)", "url": "https://biz.newdaily.co.kr/site/data/html/2025/08/13/2025081300143.html", "quote": "사업 초기 결정한 6개 카테고리" },
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/90518", "quote": "6가지 가격대에서만 판매하는 것" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "아성다이소의 2024년 매출은 3조 9,689억 원, 영업이익은 3,711억 원이다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "감사보고서 기준 보도. 2025년 실적(4조 5천억 원대)이 공시돼 있어 '최신 연도'로 쓸 때 확인 필요.",
+      "sources": [
+        { "name": "SBS Biz(2025)", "url": "https://biz.sbs.co.kr/amp/article/20000228616", "quote": "매출과 영업이익은 각각 3조9천689억원" },
+        { "name": "한국경제(2025)", "url": "https://www.hankyung.com/article/202504140832g", "quote": "지난해 매출 3조9689억원, 영업이익 3711억원" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "현 영업 중인 국내 기업이나 진행 중 소송·제재는 확인되지 않음. 일본 다이소산교 지분·불매 논란(2023 지분 인수로 정리)과 IMF 계기설은 대본에서 제외."
+  },
+  "remaining": "'천 원짜리 1,000개 → 1~2만 원'은 저서 회고 수치라 '회장 회고에 따르면'으로 단서를 달 것. 극적 장면이 약한 편이라 45세 사표→천호동 가게→마진 1~2%를 감수한 가격 선결정으로 구성.",
+  "toolCallsUsed": 13
+}

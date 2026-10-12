@@ -1,0 +1,67 @@
+{
+  "id": "dram-chicken-game-2008",
+  "title": "D램 치킨게임",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "'삼성이 불황에 투자를 이어갔다'는 전제가 열람 기사와 어긋남, 주식 이슈로 읽힘",
+  "conditionResolved": false,
+  "finding": "키몬다 2009년 1월 파산, 512Mb DDR2 가격 0.5달러, 삼성 2008년 4분기 영업이익률 -14% 같은 숫자는 SK하이닉스 뉴스룸과 헤럴드경제에서 찾았지만 대부분 한 곳 단독이다. '삼성이 불황에 투자를 이어갔다'는 전제는 이번에도 기사 원문으로 확인하지 못했다(헤럴드는 삼성의 개별 투자·감산 결정이 없고 업계 전반이 증산했다고만 쓰고, SK하이닉스 뉴스룸은 1차 치킨게임 중 투자 지속 여부를 쓰지 않는다). 2008년 4분기 삼성도 적자(-14%)로 돌아섰기 때문에 '버틴 승자' 서사도 단정하기 어렵고, 한 사람의 결정적 선택 장면이 없어 산업 연표형이며, 삼성전자·SK하이닉스가 뜨거운 종목이라 주식 이슈로 읽힐 위험이 남는다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "독일 D램 업체 키몬다가 2009년 1월 파산하며 1차 치킨게임이 끝났다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "월(1월)은 헤럴드만 명시. SK하이닉스 뉴스룸은 연도만 쓴다.",
+      "sources": [
+        { "name": "헤럴드경제([반도체 치킨게임 2R])", "url": "https://biz.heraldcorp.com/article/909072", "quote": "2009년 1월 키몬다가 파산했고, 2월에는 엘피다가" },
+        { "name": "SK하이닉스 뉴스룸(반도체 치킨게임의 추억)", "url": "https://news.skhynix.co.kr/chicken-game-memories/", "quote": "'키몬다(Qimonda)' 파산으로 마무리됩니다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2008년 4분기 세계 최대 D램 업체 삼성전자도 영업이익률 -14%를 기록했다(3분기는 0%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처. 삼성이 이때 투자를 이어갔는지는 어느 출처에도 없음.",
+      "sources": [
+        { "name": "헤럴드경제([반도체 치킨게임 2R])", "url": "https://biz.heraldcorp.com/article/909072", "quote": "천하의 삼성전자도 -14%라는 숫자를 기록했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "금융위기가 겹치며 512Mb DDR2 D램 가격이 2009년 0.5달러 수준까지 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(SK하이닉스 뉴스룸).",
+      "sources": [
+        { "name": "SK하이닉스 뉴스룸(반도체 치킨게임의 추억)", "url": "https://news.skhynix.co.kr/chicken-game-memories/", "quote": "2009년에 0.5달러 수준까지 떨어집니다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "키몬다는 파산 직전 시장점유율이 5% 수준으로 곤두박질쳤다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "SK하이닉스 뉴스룸(반도체 치킨게임의 추억)", "url": "https://news.skhynix.co.kr/chicken-game-memories/", "quote": "파산 직전에는 5% 수준으로 점유율이 곤두박질쳤습니다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "삼성전자는 이후 D램 점유율을 40%에서 50% 초중반까지 끌어올렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처, 시점 불명확(치킨게임 전체 기간 서술). 검색 요약에는 2008년 30.2%→2010년 38.4%(삼성 발표 기준) 등 상충하는 수치가 있어 쓰면 안 됨.",
+      "sources": [
+        { "name": "헤럴드경제([반도체 치킨게임 2R])", "url": "https://biz.heraldcorp.com/article/909072", "quote": "삼성전자는 시장 점유율을 40%에서 50% 초중반까지 끌어올렸고" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "삼성전자·SK하이닉스는 영업 중인 뜨거운 상장사라 주식 이슈로 읽힐 위험(소송·제재는 없음)." },
+  "remaining": "삼성이 불황에 투자를 이어갔다는 근거(2곳) 없음, 결정적 선택 장면 없음(산업 연표), 대부분 숫자가 단일 출처, 주식 이슈 읽힘 위험.",
+  "toolCallsUsed": 8
+}

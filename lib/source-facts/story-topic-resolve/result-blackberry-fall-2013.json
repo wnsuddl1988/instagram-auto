@@ -1,0 +1,38 @@
+{
+  "id": "blackberry-fall-2013",
+  "title": "블랙베리 — 키보드를 고집하다 사라진 1등",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장면 약함",
+  "conditionResolved": false,
+  "finding": "2013년 9월 한 주(페어팩스 컨소시엄의 47억 달러·주당 9달러 인수 제안, 분기 순손실 9억 6,500만 달러, Z10 재고 평가손 약 9억 3,400만 달러, 4,500명 감원)는 숫자와 함께 확인된다. 그러나 이것은 몰락의 결과 장면이고, 몰락 원인인 '키보드 고집'은 한 번의 결단 장면이 아니라 2007~2012년에 걸친 흐름이며 CEO 발언·결정 시점을 2곳 출처로 못 잡았다. 점유율(2009년 약 20% → 2013~14년 1~5%)도 출처마다 값이 달라(Gartner·Comscore 등) 안전한 수치가 없다. 결정적 장면이 연표형 몰락 서술에 머물러 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "2013년 9월 블랙베리는 최대주주 페어팩스 주도 컨소시엄의 약 47억 달러(주당 9달러) 비공개 전환 제안을 잠정 수락했다.", "numeric": true, "economy": true,
+      "caution": "확정 계약이 아닌 의향서 단계였고 이후 무산되어 다른 방식으로 정리됨.",
+      "sources": [
+        { "name": "Fox Business(AP, 2013)", "url": "https://www.foxbusiness.com/features/blackberry-confirms-deep-loss-and-revenue-drop", "quote": "accepted its largest shareholder's tentative $4.7 billion bid to take it private" },
+        { "name": "Jamaica Observer(AP, 2013)", "url": "https://jamaicaobserver.com/2013/09/22/blackberry-agrees-to-buyout", "quote": "agreed to a $4.7 billion buyout by a consortium of investors" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "2013년 6~8월 분기 블랙베리의 순손실은 9억 6,500만 달러였고 매출은 전년보다 45% 줄었다.", "numeric": true, "economy": true,
+      "caution": "한 출처(Fox Business)만 원문 확인됨. 스코츠맨·비즈니스스탠다드는 접근 차단으로 확인 못 함.",
+      "sources": [
+        { "name": "Fox Business(AP, 2013)", "url": "https://www.foxbusiness.com/features/blackberry-confirms-deep-loss-and-revenue-drop", "quote": "said its net loss for the second quarter, ended on August 31, was $965 million, or $1.84 a share." }
+      ]
+    },
+    {
+      "id": "f3", "claim": "블랙베리는 4,500명(직원의 3분의 1 이상) 감원을 발표했고, 팔리지 않은 Z10 재고에 약 9억 3,400만 달러를 평가손으로 반영했다.", "numeric": true, "economy": true,
+      "caution": "한 출처(Fox Business)만 원문 확인됨. 일부 보도는 평가손을 최대 9억 6,000만 달러로 적음.",
+      "sources": [
+        { "name": "Fox Business(AP, 2013)", "url": "https://www.foxbusiness.com/features/blackberry-confirms-deep-loss-and-revenue-drop", "quote": "BlackBerry plans to shed 4,500 jobs, or more than one-third of its workforce" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업·옛 사건, 현재 소송 없음." },
+  "remaining": "(1) 키보드 고집을 보여 줄 단일 결단 장면(예: 아이폰 출시 직후 경영진 발언, 스톰 터치스크린 실패)을 2곳 출처로 못 찾음. (2) 점유율 수치가 출처마다 달라 쓸 수 있는 숫자 4개 미달. 쓰려면 2007 아이폰 공개 당시 경영진 반응 같은 장면 1개를 별도 출처 2곳으로 찾아야 함.",
+  "toolCallsUsed": 8
+}

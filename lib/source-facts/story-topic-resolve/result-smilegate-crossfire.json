@@ -1,0 +1,46 @@
+{
+  "id": "smilegate-crossfire",
+  "title": "스마일게이트 크로스파이어",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "한국 인지도 낮고 한 장면 약함, 이후 중국 매출 하락",
+  "conditionResolved": false,
+  "finding": "중국 동시접속자 300만(2011.9)·400만(2012.9) 돌파와 2007년 텐센트 서비스 결정 등 연표성 사실은 확인되나, 주인공(권혁빈)이 결과를 바꾼 결정적 장면(협상·선택)을 다룬 원문을 찾지 못했다(내부 경위 자료 부재). 동접 수치는 출처마다 달라(중국 400만 vs 800만, 시점 불명) 숫자 사실도 흔들린다. 이후 네오위즈 계약 파기·분쟁과 매출 하락은 영업 중인 국내 기업 분쟁이라 민감 소지도 있어 장면 약함으로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2012년 9월 텐센트는 크로스파이어 중국 동시접속자가 400만 명을 돌파했다고 발표했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "800만 명(딜사이트·시점 불명)·600만 명 등 출처마다 다름. 2번째 사이트 원문 대조 미완.",
+      "sources": [
+        { "name": "아이뉴스24(2012.9.25)", "url": "https://www.inews24.com/view/691767", "quote": "'크로스파이어' 중국 동시접속자 400만명 돌파를 깜짝 발표로 시작했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2011년 8월 크로스파이어 중국 동시접속자 300만 명은 중국 온라인게임 역대 최고 기록이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처만 원문 확인",
+      "sources": [
+        { "name": "게임메카(2011.9.1)", "url": "https://www.gamemeca.com/view.php?gid=97507", "quote": "동시접속자 300만 명은 중국 온라인게임 역대 최고 기록으로" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "크로스파이어는 중국 내 1위 게임으로 연 1조원 규모의 매출을 유지하고 있다고 보도됐다(2012년경, 네오위즈게임즈 매출의 약 30% 이상).",
+      "numeric": true,
+      "economy": true,
+      "caution": "'연매출 10억 달러(약 1000억원대)'라는 상이한 기사 존재 — 금액 출처 불일치.",
+      "sources": [
+        { "name": "이투데이(2012)", "url": "https://www.etoday.co.kr/news/view/664018", "quote": "크로스파이어가 중국 내 1위게임으로 연 1조원 규모의 매출을 유지하고 있다는 점에서" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "스마일게이트·네오위즈 모두 영업 중인 국내 기업이고 2012년 계약 분쟁 이력이 있어 서사화 시 민감 소지." },
+  "remaining": "결정적 장면 자료 없음. 억지로 쓰면 연표(출시→중국 서비스→동접 기록→분쟁) 나열이 됨. 인지도 낮음.",
+  "toolCallsUsed": 9
+}

@@ -1,0 +1,57 @@
+{
+  "id": "mcdonalds-real-estate",
+  "title": "맥도날드는 사실 부동산 회사다",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "10박자 미달, 수익 구조 해석 논쟁",
+  "conditionResolved": false,
+  "finding": "결정적 장면 후보는 1956년 해리 손본이 크록에게 '땅을 사서 가맹점에 임대하자'고 제안한 순간과 1961년 손본이 마련한 자금으로 맥도날드 형제를 270만 달러에 인수한 순간이다. 그러나 가장 유명한 '우리는 부동산 사업을 한다'류 발언은 영화 '파운더'의 대사이거나 출처 불명 인용이라 대본에 쓸 수 없고, 제안 연도(1955/1956/1957)가 출처마다 다르며, 임대료 가산율 20~40%는 위키 단일 출처뿐이다. 바이오그래피닷컴과 위키피디아에서 '270만 달러·손본 조력'만 서로 다른 사이트 2곳으로 확인돼 숫자 4개를 2곳씩 채우지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1961년 크록은 맥도날드 형제에게 270만 달러를 주고 사업을 인수했고, 손본이 이 자금 마련을 도왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "자금 조달 방식(대출 출처)은 출처마다 다르고 위키도 정확한 과정은 알려지지 않았다고 적음.",
+      "sources": [
+        { "name": "Biography.com", "url": "https://www.biography.com/business-figure/ray-kroc", "quote": "helped secure a $2.7 million loan" },
+        { "name": "Wikipedia - History of McDonald's", "url": "https://en.wikipedia.org/wiki/History_of_McDonald%27s", "quote": "asked for $2.7 million" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "손본의 조언으로 별도 회사 Franchise Realty Corp가 땅·건물 임대 계약을 맡고 가맹점주에게 20~40% 가산한 금액을 청구했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "20~40% 가산율은 위키피디아 단일 출처이며 1차 자료로 확인 못 함. 설립 연도도 1955/1956/1957로 갈림.",
+      "sources": [
+        { "name": "Wikipedia - History of McDonald's", "url": "https://en.wikipedia.org/wiki/History_of_McDonald%27s", "quote": "a 20-40% markup" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "'우리는 부동산 사업을 한다'는 손본의 유명한 대사는 영화 '파운더(2016)'의 대사이며 실제 발언으로 확인되지 않는다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "실제 손본 발언이라는 웹상 인용문(15센트 햄버거)은 1차 출처를 못 찾음 — 대본 사용 금지.",
+      "sources": [
+        { "name": "Wikipedia - Harry J. Sonneborn", "url": "https://en.wikipedia.org/wiki/Harry_J._Sonneborn", "quote": "You're not in the burger business" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "맥도날드는 프랜차이즈 점포에서 로열티의 약 2배인 61억 달러의 임대료를 가맹점주에게서 받았다(연차보고서 기준, 과거 연도).",
+      "numeric": true,
+      "economy": true,
+      "caution": "NRN 기사 인용이며 연도가 명시되지 않음. 최신 연차보고서(10-K)에서 직접 확인하지 못함.",
+      "sources": [
+        { "name": "Nation's Restaurant News", "url": "https://www.nrn.com/blog/why-mcdonalds-wont-ever-get-rid-its-real-estate", "quote": "worth of rent from franchisees" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업 옛 사건이라 민감성 없음. 단 '기업 수익 구조 폭로' 형태는 저격으로 읽힐 소지." },
+  "remaining": "손본 제안 장면의 날짜·대사를 1차 자료(존 러브 '맥도날드: 아치 뒤에서' 등)로 확인해야 하고, 임대료 비중은 최신 10-K 원문으로 2곳 확인 필요.",
+  "toolCallsUsed": 9
+}

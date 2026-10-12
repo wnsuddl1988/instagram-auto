@@ -1,0 +1,59 @@
+{
+  "id": "skchemical-sunpla-1999",
+  "title": "SK케미칼 선플라",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "국산 신약 1호 의미는 있으나 인지도 낮고 장면 약함",
+  "conditionResolved": false,
+  "finding": "숫자 사실은 확보됐다: 1989년 연구소 확대 후 10년 연구·81억 원 투입(이투데이·데일리안 2곳), 1999.7.15 국산신약 1호 승인, 출시 2년 차 2001년 매출 30억·2009년까지 누적 100억 미만, 2009년 생산 중단. 그러나 결과를 바꾼 결정적 장면(인물의 선택·결단)을 다룬 원문을 찾지 못했고, 부진 원인도 '다국적사 신약에 밀려'라는 일반 서술뿐이라 연표(연구 시작→허가→부진→허가취소) 나열에 가깝다. 국민 인지도도 낮아 장면 약함으로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "SK는 1989년 위암 신약을 연구소 1호 과제로 삼아 10년 연구에 81억 원(정부 지원금 13억6000만 원 포함)을 투입해 1999년 선플라를 개발했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'81억 원 총투입'은 두 기사 일치하나 '10년 연구'는 데일리안 한 곳 서술.",
+      "sources": [
+        { "name": "이투데이(2023.1.6)", "url": "https://www.etoday.co.kr/news/view/2210225", "quote": "정부 지원금 13억6000만 원을 포함해 총 81억 원의 자금이 투입됐지만" },
+        { "name": "데일리안", "url": "https://m.dailian.co.kr/news/view/1127963", "quote": "SK는 10년 연구에 당시로선 81억원이라는 막대한 금액을 투입했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "선플라주는 1999년 7월 15일 승인된 SK케미칼의 위암치료제로 국산신약 1호다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "메디게이트뉴스(2022.12.22)", "url": "https://medigatenews.com/news/663977757", "quote": "지난 1999년 7월 15일 승인된 SK케미칼의 위암치료제 선플라주다" },
+        { "name": "이투데이(2023.1.6)", "url": "https://www.etoday.co.kr/news/view/2210225", "quote": "1999년 국산 신약 1호로 지정된 ‘선플라주’의 허가가 취하됐다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "출시 2년 차인 2001년 선플라 매출은 30억 원 정도에 그쳤고 2009년까지 누적 매출은 100억 원이 채 되지 않았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 사이트 원문만 확인(이투데이). 다른 매체의 동일 숫자는 재인용 가능성.",
+      "sources": [
+        { "name": "이투데이(2023.1.6)", "url": "https://www.etoday.co.kr/news/view/2210225", "quote": "출시 2년 차인 2001년 매출은 30억 원 정도에 그쳤고" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "선플라는 다국적제약사 신약에 밀려 처방실적이 저조했고 2009년부터 생산실적이 없다가 2022년 12월 31일 허가 유효기간 만료로 품목허가가 취소됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "허가 취소 시점이 '2022년 말 유효기간 만료'와 '2023년 1월 취소'로 표기 다름.",
+      "sources": [
+        { "name": "메디게이트뉴스(2022.12.22)", "url": "https://medigatenews.com/news/663977757", "quote": "지난 2009년부터 생산실적이 없어 올해말 퇴출 수순을 밟을 전망이다" },
+        { "name": "이투데이(2023.1.6)", "url": "https://www.etoday.co.kr/news/view/2210225", "quote": "2009년 생산을 중단하고 허가만 유지해오고 있었다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "SK케미칼은 영업 중이나 진행 중 소송·피해자 없음. 실패 서사라 기업 저격으로 읽히지 않게 주의 필요." },
+  "remaining": "결정적 장면(인물·결단) 자료 없음. 부진 원인(효능·부작용·경쟁약) 구체 근거 미확인. 인지도 낮음. 만약 '81억 투입 vs 누적 100억 미만' 대비를 장면으로 삼아도 연표형이 됨.",
+  "toolCallsUsed": 9
+}

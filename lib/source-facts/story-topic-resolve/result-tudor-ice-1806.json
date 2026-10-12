@@ -1,0 +1,46 @@
+{
+  "id": "tudor-ice-1806",
+  "title": "프레더릭 튜더의 열대 얼음 수출",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "한국 20~40대와 접점 약함. 146,000톤은 일반 읽을거리 한 곳",
+  "conditionResolved": true,
+  "finding": "146,000톤은 Wikipedia(Ice trade)와 HistoryNet 두 곳에서 확인(단, 연도 1855/1856·단위 tuns/tons 혼재). 1806 마르티니크 130톤·손실 4,500달러, 1833 캘커타 180톤, 캘커타에서 번 22만 달러 이익이 각각 2곳 이상 확인된다. 숫자 사실 4개 이상, 결정적 장면(캘커타 항해), 경제 근거(이익 22만 달러), 전달 메시지가 모두 성립해 usable. 다만 한국 20~40대 접점은 약해 오늘의 연결 한 줄(냉장고 이전의 '시원함'을 파는 시장 창출)이 필요하다.",
+  "coreMessage": "시장은 이미 있는 걸 파는 곳이 아니라, 아무도 원하지 않던 걸 원하게 만들어 내는 곳일 수 있다.",
+  "decisiveFact": "f3",
+  "facts": [
+    { "id": "f1", "claim": "1806년 튜더는 가족 연못에서 캔 130톤의 얼음을 배에 실어 마르티니크로 보냈다.", "numeric": true, "economy": false,
+      "caution": "HistoryNet 다른 대목과 일부 2차 자료는 80톤으로 적음(출처마다 다름). 대본에는 '백수십 톤' 정도로 쓰거나 130톤 단일 표기 시 주의.",
+      "sources": [
+        { "name": "American Heritage, Cold Mine", "url": "https://www.americanheritage.com/cold-mine", "quote": "The 130-ton cargo was harvested" },
+        { "name": "HistoryNet, How Pioneering Entrepreneurs Helped 19th-Century America Keep Cool", "url": "https://www.historynet.com/how-pioneering-entrepreneurs-helped-19th-century-america-keep-cool/", "quote": "hauling 130 tons of blocks" }
+      ] },
+    { "id": "f2", "claim": "첫 마르티니크 항해는 얼음 보관 창고가 없어 배 위에서 팔았고 4,500달러 손실을 봤다.", "numeric": true, "economy": false,
+      "caution": "일부 블로그(fiftyplusadvocate)는 4,500달러를 이익으로 적음 — 손실이 다수 출처와 일치.",
+      "sources": [
+        { "name": "HistoryNet", "url": "https://www.historynet.com/how-pioneering-entrepreneurs-helped-19th-century-america-keep-cool/", "quote": "losing $4,500 but establishing" },
+        { "name": "Wikipedia, Frederic Tudor", "url": "https://en.wikipedia.org/wiki/Frederic_Tudor", "quote": "for a loss of $4,500 overall" }
+      ] },
+    { "id": "f3", "claim": "1833년 튜더는 톱밥으로 싼 얼음 180톤을 보스턴에서 인도 캘커타까지 배로 보냈다.", "numeric": true, "economy": false,
+      "caution": "도착 시 남은 양이 출처마다 다름(Wikipedia 100톤, varnam.org 2톤). 대본에서는 남은 양을 단정하지 말 것.",
+      "sources": [
+        { "name": "American Heritage, Cold Mine", "url": "https://www.americanheritage.com/cold-mine", "quote": "for Calcutta with 180 tons of ice" },
+        { "name": "HistoryNet", "url": "https://www.historynet.com/how-pioneering-entrepreneurs-helped-19th-century-america-keep-cool/", "quote": "shipped 180 tons of ice 16,000 miles" }
+      ] },
+    { "id": "f4", "claim": "뉴잉글랜드발 인도행 얼음 수출은 1856년 정점에 146,000톤이 선적됐다.", "numeric": true, "economy": false,
+      "caution": "Hudson River Maritime Museum 표는 1855년 146,000 'tuns'로 기록 — 연도·단위가 자료마다 다름. 대본에는 '15만 톤 안팎'으로 쓰는 편이 안전.",
+      "sources": [
+        { "name": "Wikipedia, Ice trade", "url": "https://en.wikipedia.org/wiki/Ice_trade", "quote": "146,000 tons (132 million kg)" },
+        { "name": "HistoryNet (p=3028771)", "url": "https://www.historynet.com/?p=3028771", "quote": "146,000 tons of ice shipped from Boston" }
+      ] },
+    { "id": "f5", "claim": "튜더는 20년 동안 캘커타 사업만으로 22만 달러의 이익을 내 커피 투기 빚을 갚았다.", "numeric": true, "economy": true,
+      "caution": "Wikipedia는 '추정(estimated)' 이익으로 표기.",
+      "sources": [
+        { "name": "Wikipedia, Frederic Tudor", "url": "https://en.wikipedia.org/wiki/Frederic_Tudor", "quote": "an estimated $220,000 in profits" },
+        { "name": "varnam.org, The Forgotten American Ice Trade (2010)", "url": "https://varnam.org/2010/04/the-forgotten-american-ice-trade/", "quote": "a profit of $220,000 just from Calcutta" }
+      ] }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "19세기 미국 사업가 일화, 국내 민감성 없음." },
+  "remaining": "한국 20~40대 접점이 약해 도입에서 오늘의 연결(냉장고 이전 시대, 냉동 유통) 한 줄 필요. 사실 f1·f3·f4는 수치 불일치가 있어 대본에서 반올림 표기. varnam.org는 블로그라 f5의 2번째 출처 강도가 약함(Wikipedia와 함께 쓰면 충분하나 보강 시 Tudor 전기 자료 권장).",
+  "toolCallsUsed": 10
+}

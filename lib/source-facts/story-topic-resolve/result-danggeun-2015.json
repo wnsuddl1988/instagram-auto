@@ -1,0 +1,69 @@
+{
+  "id": "danggeun-2015",
+  "title": "당근 — 수수료 없는 중고거래 앱의 흑자",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "훅 약함, 흑자 기준 혼선(별도 영업이익 376억 vs 연결 25억). 서비스 설명형이 되기 쉬움",
+  "conditionResolved": false,
+  "finding": "흑자 기준 혼선은 풀렸다: 별도 기준 첫 흑자는 2023년(173억, 창사 8년 만), 2024년은 별도 376억·연결 25억으로 2년 연속 흑자이며 연결 기준 첫 흑자다(풀의 '창사 9년 만 흑자' 훅은 틀림). 그러나 결과를 바꾼 결정적 장면(주인공의 선택)을 출처 2곳으로 확인한 자료는 없고, 매출의 95% 이상이 광고라는 구조 설명이 중심이라 서비스·수익모델 설명형이 된다. 따라서 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "당근은 2024년 별도 기준 영업이익 376억원으로 전년 대비 3.8배, 2년 연속 흑자였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "별도 기준이며 연결 영업이익은 25억원으로 다르다. 반드시 기준을 밝혀야 함.",
+      "sources": [
+        { "name": "이코노미스트(2025)", "url": "https://economist.co.kr/article/view/ecn202503280019", "quote": "376억원으로 전년 대비 3.8배 증가하며 2년 연속 흑자를 기록했다" },
+        { "name": "아시아경제(2025)", "url": "https://view.asiae.co.kr/article/2025100209415440434", "quote": "지난해 당근마켓의 매출은 1891억원, 영업이익은 376억원이었다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "당근은 2023년 별도 영업이익 173억원으로 창사 8년 만에 처음 흑자 전환했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 글이 이를 2024년 첫 흑자로 혼동함.",
+      "sources": [
+        { "name": "비즈워치(2024)", "url": "https://news.bizwatch.co.kr/article/consumer/2024/03/29/0015", "quote": "흑자 전환한 173억원을 기록했다" },
+        { "name": "아시아경제(2025)", "url": "https://view.asiae.co.kr/article/2025100209415440434", "quote": "창사 이래 8년 만에 처음 흑자 전환에 성공했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2024년 광고주 수 37%, 집행 광고 수 52% 증가로 광고 매출이 48% 성장했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "48%는 별도 전체 매출 증가율로도 쓰이니 광고 매출 증가율과 구분.",
+      "sources": [
+        { "name": "유니콘팩토리(2025)", "url": "https://www.unicornfactory.co.kr/article/2025032810260153483", "quote": "집행 광고 수는 52% 증가하면서 광고 매출이 48% 성장했다" },
+        { "name": "이코노미스트(2025)", "url": "https://economist.co.kr/article/view/ecn202503280019", "quote": "광고 매출 역시 48% 성장했다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2024년 연결 기준 영업이익 25억원, 당기순이익 84억원(연결 기준 첫 영업·순이익 흑자).",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 번째 출처의 원문 인용을 직접 확보하지 못함(이코노미스트 요약만 확인).",
+      "sources": [
+        { "name": "유니콘팩토리(2025)", "url": "https://www.unicornfactory.co.kr/article/2025032810260153483", "quote": "연결기준 영업이익과 당기순이익은 각각 25억원과 84억원이다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "당근은 출시 때부터 중고거래에 별도 수수료를 매기지 않고 있으며, 광고가 전체 매출의 95% 이상을 차지한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "아시아경제 단독 확인, 2곳째 미확보.",
+      "sources": [
+        { "name": "아시아경제(2025)", "url": "https://view.asiae.co.kr/article/2025100209415440434", "quote": "전체 매출의 95% 이상을 차지하는 광고 실적" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 국내 기업이나 진행 중 소송·제재 없음. 실적 칭찬 홍보로 읽힐 소지는 있음." },
+  "remaining": "결정적 장면(창업자·팀의 선택 한 장면)을 2출처로 확인하지 못함. 서비스·광고 모델 설명형이 되는 구조 문제는 자료로 해소 불가.",
+  "toolCallsUsed": 8
+}

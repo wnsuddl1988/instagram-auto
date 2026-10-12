@@ -1,0 +1,52 @@
+{
+  "id": "yamaichi-1997",
+  "title": "야마이치증권 폐업",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "손실 은폐 서술은 사실만, 경영진 눈물 회견 대사 지어내기 금지",
+  "conditionResolved": true,
+  "finding": "1997.11.24 자진폐업 발표, 숨긴 손실 약 2600억엔(국내 1583억+해외 1065억), 1998.3.31 전 직원 해고, 1897년 설립(101년 영업)이 각각 서로 다른 2곳 이상에서 확인됐다. 결정적 장면은 노자와 사장의 눈물 회견(Wikipedia, 겐다이.미디어)이며, 회견 발언은 직접 인용 없이 '눈물로 사과'라는 사실까지만 쓰면 조건(대사 지어내기 금지)을 지킬 수 있다. 해외 사건·종결돼 민감성이 없어 usable.",
+  "coreMessage": "숨긴 손실은 잠깐 시간을 벌어 줄 뿐, 드러나는 날 회사의 신용은 한꺼번에 무너진다.",
+  "decisiveFact": "f6",
+  "facts": [
+    { "id": "f1", "claim": "야마이치증권은 1997년 11월 24일 영업 중단(자진폐업)을 발표했다.", "numeric": true, "economy": false,
+      "caution": "일부 자료에 11월 4일 표기 오류가 있음 — 11월 24일이 다수 일치.",
+      "sources": [
+        { "name": "겐다이.미디어(gendai.media)", "url": "https://gendai.media/articles/-/53653", "quote": "1997年11月24日、金融不況のさなかに" },
+        { "name": "Wikipedia, Yamaichi Securities", "url": "https://en.wikipedia.org/wiki/Yamaichi_Securities", "quote": "cease operations on November 24, 1997" }
+      ] },
+    { "id": "f2", "claim": "숨겨 온 손실(장부 밖 채무)은 처음 2000억엔으로 알려졌다가 약 2600억엔으로 수정됐다.", "numeric": true, "economy": true,
+      "caution": "자료마다 2000억/2600억/2648억/3300억(총손실) 등으로 다름 — 대본에서는 '약 2600억엔'으로 쓰고 근거를 겐다이·Euromoney로 한정.",
+      "sources": [
+        { "name": "겐다이.미디어(gendai.media)", "url": "https://gendai.media/articles/-/53653", "quote": "約2600億円の債務隠しが発覚して" },
+        { "name": "Euromoney, And then there were three", "url": "https://www.euromoney.com/?p=99598", "quote": "This was later revised to ¥260 billion." }
+      ] },
+    { "id": "f3", "claim": "손실 중 국내에서 흡수한 것이 1583억엔, 호주 등 해외에 숨긴 것이 1065억엔이다.", "numeric": true, "economy": true,
+      "caution": "두 출처의 1065억 표현이 유사해 2차 인용 가능성 — 대본에는 합계 약 2650억엔 수준으로만 사용.",
+      "sources": [
+        { "name": "the-shashi.com, Yamaichi Securities 1997 voluntary closure", "url": "https://the-shashi.com/en/tse/8602/decisions/voluntary-closure-1997/", "quote": "¥106.5 billion offshore" },
+        { "name": "Wikipedia, Yamaichi Securities", "url": "https://en.wikipedia.org/wiki/Yamaichi_Securities", "quote": "losses of ¥106.5 billion being hidden" }
+      ] },
+    { "id": "f4", "claim": "야마이치는 1998년 3월 31일 전 직원을 해고하고 문을 닫았다.", "numeric": true, "economy": false,
+      "caution": "직원 수는 7,400명(Euromoney)·7,500명·1만여 명(서울신문)으로 다름 — 인원은 단정하지 말 것.",
+      "sources": [
+        { "name": "the-shashi.com", "url": "https://the-shashi.com/en/tse/8602/decisions/voluntary-closure-1997/", "quote": "every employee on 31 March 1998" },
+        { "name": "서울신문(1998.07.02)", "url": "https://www.seoul.co.kr/news/1998/07/02/19980702006004", "quote": "지난 3월31일 남아있던 40개 점포를 마지막 폐쇄하고" }
+      ] },
+    { "id": "f5", "claim": "야마이치증권은 1897년에 세워져 101년 동안 영업했다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia, Yamaichi Securities", "url": "https://en.wikipedia.org/wiki/Yamaichi_Securities", "quote": "which was formed in 1897" },
+        { "name": "the-shashi.com", "url": "https://the-shashi.com/en/tse/8602/decisions/voluntary-closure-1997/", "quote": "101 years after it opened" }
+      ] },
+    { "id": "f6", "claim": "폐업 발표 날 마지막 사장 노자와 쇼헤이가 일본 TV 기자회견에서 눈물로 사과했다.", "numeric": false, "economy": false,
+      "caution": "회견 중 발언(대사)은 인용하지 말고 '눈물로 사과했다'는 사실까지만 서술(Owner 조건).",
+      "sources": [
+        { "name": "Wikipedia, Yamaichi Securities", "url": "https://en.wikipedia.org/wiki/Yamaichi_Securities", "quote": "made a tearful public apology" },
+        { "name": "겐다이.미디어(gendai.media)", "url": "https://gendai.media/articles/-/53653", "quote": "涙の記者会見をしてから20年" }
+      ] }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "일본 증권사, 1999년 파산 종결. 국내 진행 사건 아님." },
+  "remaining": "총부채 3조엔(Euromoney)은 두 번째 출처를 못 구해 팩트 목록에서 제외. 직원 수는 자료 불일치로 단정 금지. 한국 시청자 접점(IMF 직전 금융위기 맥락)을 도입 한 줄로 연결 필요.",
+  "toolCallsUsed": 17
+}

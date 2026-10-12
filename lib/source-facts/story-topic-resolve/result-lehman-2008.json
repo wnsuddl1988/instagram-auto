@@ -1,0 +1,82 @@
+{
+  "id": "lehman-2008",
+  "title": "리먼 브라더스 파산 — 158년 은행이 하루아침에",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "금융 구조가 어려워 '158년 은행이 주말 사이에 사라졌다' 한 장면으로 좁혀야 함. 책임 공방 제외",
+  "conditionResolved": true,
+  "finding": "한 장면을 '2008년 9월 13~14일 주말, 뉴욕 연준에 모인 월가 CEO들 앞에서 정부가 공적자금은 없다고 선을 긋고 인수 협상(바클레이스)이 규제로 막힌 뒤 월요일 새벽 파산 신청'으로 좁힐 수 있다. 자산 6,390억 달러, 1850년 창업 후 158년, 자기자본 대비 차입 약 30배, 직원 약 2만 5천 명 등 숫자 사실은 서로 다른 사이트 2곳씩 확인됐다. 해외의 종결된 사건이라 민감성이 없고, 레버리지 하나만 풀면 이해되므로 책임 공방을 빼고 쓸 수 있다.",
+  "coreMessage": "빌린 돈으로 덩치를 키운 회사는 믿음이 끊기는 순간 158년 역사도 주말 하나로 끝난다.",
+  "decisiveFact": "f6",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "리먼은 파산 시 자산 6,390억 달러(부채 6,130억 달러)를 신고했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "6,390억은 2008년 5월 말 대차대조표 수치이며 파산 당일 값이 아님(위키 서술). 대본에서는 '파산 직전 약 6,390억 달러'로 표기.",
+      "sources": [
+        { "name": "HISTORY.com", "url": "https://www.history.com/this-day-in-history/september-15/lehman-brothers-collapses", "quote": "$639 billion in assets" },
+        { "name": "TIME (2009 파산 특집)", "url": "https://content.time.com/time/specials/packages/article/0,28804,1841334_1841431,00.html", "quote": "$639 billion in pre-filing assets" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "리먼은 1850년 창업 후 2008년까지 158년간 영업했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "창업 연도를 1844년(헨리 리먼 이민)으로 세면 164년. 158년은 1850년 기준이므로 대본에서 '1850년 창업 158년'으로 못박을 것.",
+      "sources": [
+        { "name": "Wikipedia: Lehman Brothers", "url": "https://en.wikipedia.org/wiki/Lehman_Brothers", "quote": "operational for 158 years" },
+        { "name": "Explaining History (2026)", "url": "https://explaininghistory.org/2026/05/04/the-fall-of-lehman-brothers-the-weekend-that-broke-the-world-economy/", "quote": "a 158-year-old institution" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "리먼의 자기자본 대비 차입(레버리지)은 약 30배를 넘었다(자기 돈 1달러당 약 31달러 차입).",
+      "numeric": true,
+      "economy": true,
+      "caution": "총자산/자기자본 기준의 총레버리지. 순레버리지는 12배대로 더 낮게 보고된 바 있음. 2007년 말 기준 수치.",
+      "sources": [
+        { "name": "Motley Fool (2010)", "url": "https://www.fool.com/investing/general/2010/06/22/how-to-avoid-the-next-lehman-brothers.aspx", "quote": "had exploded beyond 30-to-1" },
+        { "name": "Explaining History (2026)", "url": "https://explaininghistory.org/2026/05/04/the-fall-of-lehman-brothers-the-weekend-that-broke-the-world-economy/", "quote": "had borrowed nearly $31" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "파산 당시 리먼의 직원은 전 세계 약 2만 5천 명이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키 인포박스는 2008년 26,200명으로 적음. '약 2만 5천 명'으로 표기.",
+      "sources": [
+        { "name": "HISTORY.com", "url": "https://www.history.com/this-day-in-history/september-15/lehman-brothers-collapses", "quote": "some 25,000 employees worldwide" },
+        { "name": "Wikipedia: Lehman Brothers", "url": "https://en.wikipedia.org/wiki/Lehman_Brothers", "quote": "about 25,000 employees worldwide" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "리먼의 파산 신청(9월 15일 월요일)은 미국 역사상 최대 규모 파산이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'최대'는 신고 자산 기준.",
+      "sources": [
+        { "name": "TIME (2009 파산 특집)", "url": "https://content.time.com/time/specials/packages/article/0,28804,1841334_1841431,00.html", "quote": "the largest bankruptcy case in history" },
+        { "name": "Wikipedia: Lehman Brothers", "url": "https://en.wikipedia.org/wiki/Lehman_Brothers", "quote": "the largest in US history" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "2008년 9월 13~14일 주말 뉴욕 연준에 월가 CEO들이 모였으나 정부는 공적자금을 쓰지 않겠다고 선을 그었고, 리먼은 월요일 새벽 파산을 신청했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "폴슨의 발언 시점(금요일 9/12 vs 토요일) 서술이 출처마다 갈림. 대본은 '그 주말 연준에서 정부가 공적자금은 없다고 선을 그었다' 수준으로. 바클레이스 무산 사유(영국 규제당국)는 책임 공방으로 번지니 생략 권장.",
+      "sources": [
+        { "name": "Fox News/AP (2008.9.13)", "url": "https://www.foxnews.com/story/federal-officials-scramble-to-devise-rescue-for-lehman-brothers.amp", "quote": "drawn a line in the sand over using taxpayer money" },
+        { "name": "Explaining History (2026)", "url": "https://explaininghistory.org/2026/05/04/the-fall-of-lehman-brothers-the-weekend-that-broke-the-world-economy/", "quote": "no government money would be made available" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 금융사의 종결된 사건. 단, 정부 구제 여부는 미국 정치 논쟁 소지가 있으니 책임 공방 없이 사실만." },
+  "remaining": "6,390억 달러가 파산 당일 값이 아닌 점, 창업 연도(1844/1850) 표기, 주말 장면의 발언 시점은 대본에서 표현 조정 필요. 금융 구조(레버리지)는 '빌린 돈 약 31배' 한 줄로만 설명.",
+  "toolCallsUsed": 16
+}

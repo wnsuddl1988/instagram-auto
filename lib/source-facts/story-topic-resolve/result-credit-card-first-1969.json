@@ -1,0 +1,16 @@
+{
+  "id": "credit-card-first-1969",
+  "title": "신용카드 첫 발급",
+  "year": 1969,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "소수 임직원 대상, 연표형",
+  "conditionResolved": false,
+  "finding": "다른 각도를 찾았으나 1969년 신세계백화점이 삼성그룹 임직원 일부에게 자사 카드를 발급했다는 사실(서울신문 2001, 카드고릴라, 인뉴스24)뿐이고 발급 규모와 사용처가 작아(자사 백화점 한정) 소비자 결단/결과 장면이 없다. 검색에서 발급 장수, 금액, 이용 한도 같은 숫자나 이후 확산을 바꾼 한 순간(예: 1978 롯데/외환 카드 등)의 2출처 원문은 찾지 못했다. 현재 영업 중인 신세계와 연결돼 기업 홍보로 읽힐 소지도 있다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "신세계(현 영업 기업) 최초 기록이라 홍보성으로 읽힐 소지." },
+  "remaining": "숫자(발급 규모·한도) 근거와 결정적 장면 부재, 연표형 소재. 페이지 원문 인용을 확보하지 못해 facts 비움.",
+  "toolCallsUsed": 2
+}

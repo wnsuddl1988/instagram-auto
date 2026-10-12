@@ -1,0 +1,58 @@
+{
+  "id": "venezuela-hyperinflation",
+  "title": "베네수엘라 — 석유 부국이 돈 휴지가 된 나라로",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "현 정권 평가 없이 돈이 휴지가 된 일상 장면만. 짐바브웨·바이마르와 한 편만 쓸 것",
+  "conditionResolved": false,
+  "finding": "IMF의 '2018년 말 물가 100만% 전망'(AFP/ARY·파이낸셜 익스프레스)과 2018년 8월 20일 볼리바르에서 0 다섯 개를 지운 화폐개혁(알자지라·스태티스타)은 서로 다른 사이트 2곳으로 확인된다. 그러나 '일상 장면'(커피 한 잔 250만→25 볼리바르, 7월 물가 82,700%)은 스태티스타 단독이고, 지폐를 저울에 달아 쓴다는 장면은 국내외 2출처 원문 인용을 열람하지 못했다. 더 큰 문제는 이 소재가 주인공의 선택·결단 한 장면이 아니라 거시 붕괴 설명이라는 점이며, 100만%는 실제 물가가 아니라 논란 있는 '전망'(캐토 한케는 '엉터리'라 비판)이고 사후 추정치도 자료마다 크게 달라 숫자 사용이 위험하다. 베네수엘라 정권 평가 없이 쓰라는 조건은 지킬 수 있으나(한국 국내 정치 쟁점은 아님) 현재 시점의 정치 연상이 남는다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "IMF 서반구 국장 베르너는 2018년 말 베네수엘라 물가가 100만%까지 치솟을 것으로 전망했고 이를 1923년 독일에 비유했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "실제 물가가 아니라 전망이며 베르너 본인도 불확실성이 크다고 인정, 캐토 연구소 한케는 전망 자체를 비판. 2018년 실제 물가상승률 추정치는 출처마다 큰 차이.",
+      "sources": [
+        { "name": "ARY News(AFP, 2018-07-24)", "url": "https://arynews.tv/imf-venezuela-one-million-inflation", "quote": "We are projecting a surge in inflation to 1,000,000 percent by end-2018" },
+        { "name": "The Financial Express(2018-07-24)", "url": "https://thefinancialexpress.com.bd/print/1000000pc-inflation-to-hit-venezuela-in-2018-imf-says-1532423058", "quote": "We are projecting a surge in inflation to 1,000,000 per cent by end-2018" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2018년 8월 베네수엘라는 화폐 볼리바르에서 0을 다섯 개 지우는 화폐개혁(소버린 볼리바르 도입)을 단행했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2008년에 0 세 개를 지운 앞선 개편이 있어 누적 8개라는 표기도 있음.",
+      "sources": [
+        { "name": "Al Jazeera(2018-08-20)", "url": "https://www.aljazeera.com/news/2018/08/venezuela-rolls-currency-rampant-hyperinflation-180820143212003.html", "quote": "slashing five zeroes from the bolivar" },
+        { "name": "Statista(2018-08-23)", "url": "https://statista.com/chart/15186/price-of-basic-items-in-venezuela-and-equivalent-in-dollars", "quote": "removing five zeros from the old bolívar" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "카라카스에서 커피 한 잔 값이 구 볼리바르 250만에서 신 볼리바르 25로 바뀌었고 2018년 7월 물가상승률은 82,700%에 달했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "스태티스타 단독. 두 번째 출처 미확인. 82,700%는 의회 추정 계열 수치로 보이며 중앙은행 공식 통계는 중단된 상태.",
+      "sources": [
+        { "name": "Statista(2018-08-23)", "url": "https://statista.com/chart/15186/price-of-basic-items-in-venezuela-and-equivalent-in-dollars", "quote": "the price of a cup of coffee has gone from 2.5 million strong bolívars to 25 sovereign bolívars." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "IMF는 2018년 베네수엘라 경제가 18% 위축될 것으로 전망했고 6월 석유 생산은 30년 만의 최저인 하루 150만 배럴로 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "ARY News(AFP) 단독 확인.",
+      "sources": [
+        { "name": "ARY News(AFP, 2018-07-24)", "url": "https://arynews.tv/imf-venezuela-one-million-inflation", "quote": "Venezuela's economy is expected to contract by 18 percent this year" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "국내 정치 쟁점은 아님. 다만 마두로 정권·현 베네수엘라 정세 연상이 있어 정권 평가 없이 쓰려면 2018년 일상 장면에 한정해야 함." },
+  "remaining": "주인공의 선택 한 장면이 없는 거시 설명형이라 스토리 구조(장면→선택→결과)가 약함. 일상 장면(저울·가방 현금, 커피값)을 2출처 원문으로 확보하고, 물가 숫자는 '전망'과 '실측'을 구분해 일관된 출처로 정해야 함. 짐바브웨·바이마르 편과 택일 필요.",
+  "toolCallsUsed": 14
+}

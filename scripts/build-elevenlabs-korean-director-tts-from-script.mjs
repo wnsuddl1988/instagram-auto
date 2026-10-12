@@ -286,7 +286,10 @@ if (!apiKey) missingEnv.push("ELEVENLABS_API_KEY");
 if (!voiceId) missingEnv.push(voiceEnvNames.id);
 
 const baseSpeed = Number(topicProfile.baseSpeed);
-const speedBounds = sampleReviewEnabled ? [0.7, 1.2] : [0.95, 1.05];
+// 2026-10-06 스토리형 포맷(Owner 선택: 속도 1.1 + 후처리 없음): TTS 스크립트에 formatProfile "story_v1"이 있으면 상한만 1.1로 연다.
+// 설명형(기존 편)은 그대로 0.95~1.05. 쉼 길이는 자르지 않는다(자르면 alignment가 어긋나 자막·컷이 밀림).
+const storyFormatEnabled = ttsScript?.formatProfile === "story_v1";
+const speedBounds = sampleReviewEnabled ? [0.7, 1.2] : storyFormatEnabled ? [0.95, 1.1] : [0.95, 1.05];
 const voiceSettings = {
   stability: Number(clamp(Number(topicProfile.baseStability) || 0.5, 0.42, 0.58).toFixed(2)),
   similarity_boost: Number(clamp(Number(topicProfile.baseSimilarityBoost) || 0.87, 0.82, 0.9).toFixed(2)),

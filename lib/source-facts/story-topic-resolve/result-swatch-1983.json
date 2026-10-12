@@ -1,0 +1,64 @@
+{
+  "id": "swatch-1983",
+  "title": "스와치 — 부품 100개를 51개로 줄인 플라스틱 시계",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "쿼츠 위기 설명이 길어질 위험. 일자리 3분의 2 상실은 근거 못 찾음",
+  "conditionResolved": true,
+  "finding": "스위스 시계 고용이 1960년대 말 약 9만 명에서 1980년대 초 3만 5천 명 미만으로 줄었다는 수치와 '노동력의 3분의 2 상실' 표현이 서로 다른 사이트 2곳에서 확인되어 조건이 해소됐다. 부품 51개(일반 쿼츠 약 91개), 첫해 100만 개 판매, 가격 39.90~49.90프랑, 누적 약 3억 개도 2곳 출처로 확인된다. 쿼츠 위기는 '값싼 일본 시계에 청산 직전'이라는 한 문장으로 줄이면 설명이 길어지지 않는다.",
+  "coreMessage": "정밀로 이길 수 없는 싸움이면, 싸우는 기준부터 바꿔라.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "일반 쿼츠 시계 부품이 약 91개였는데 스와치는 51개로 줄여 원가를 낮췄다.", "numeric": true, "economy": true,
+      "caution": "기준 부품 수가 91개(스위스인포·WIPO)와 100개(스위스인포 20주년 기사·nssmag)로 출처마다 다름. 대본은 '약 90~100개 -> 51개'로 쓰거나 91개로 통일. 원가 80% 절감 수치는 단일 출처라 사용 금지.",
+      "sources": [
+        { "name": "swissinfo(25주년 기사)", "url": "https://www.swissinfo.ch/eng/swatch-clocks-up-a-quarter-of-a-century/6474224", "quote": "A Swatch had only 51." },
+        { "name": "WIPO Magazine(2010)", "url": "https://www.wipo.int/en/web/wipo-magazine/articles/a-tribute-to-the-man-behind-the-swatch-mr-nicolas-g-hayek-37364", "quote": "51 parts compared to the over 91 parts" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "스와치는 출시 첫해에 약 100만 개가 팔렸다.", "numeric": true, "economy": true,
+      "caution": "worn&wound는 1983년 1.1백만 개로 표기.",
+      "sources": [
+        { "name": "swissinfo(20주년 기사)", "url": "https://www.swissinfo.ch/eng/banking-fintech/the-swatch-celebrates-its-20th-birthday/3183378", "quote": "one million were sold within 12 months." },
+        { "name": "NSS Magazine(2023)", "url": "https://nssmag.com/en/fashion/32633/quarant-anni-di-swatch", "quote": "1 million watches in the first year" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "스위스 시계 산업 고용은 1960년대 말 약 9만 명에서 1980년대 초 3만 5천 명 미만으로 줄어 노동력의 약 3분의 2를 잃었다.", "numeric": true, "economy": true,
+      "caution": "9만 -> 3.5만 수치는 swissinfo 1곳, NSS는 '3분의 2' 표현만. '2/3 상실'은 두 출처 합산으로 약 61% 감소(9만 -> 3.5만)와 대략 일치하나 정확히 2/3는 아님. 대본에서는 '절반 넘게' 또는 '9만 명에서 3만 명대로'가 안전.",
+      "sources": [
+        { "name": "swissinfo(25주년 기사)", "url": "https://www.swissinfo.ch/eng/swatch-clocks-up-a-quarter-of-a-century/6474224", "quote": "plummeted to less than 35,000" },
+        { "name": "NSS Magazine(2023)", "url": "https://nssmag.com/en/fashion/32633/quarant-anni-di-swatch", "quote": "lost two thirds of its workforce" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "스와치는 지금까지 약 3억 개가 팔렸다.", "numeric": true, "economy": false,
+      "caution": "swissinfo 25주년 기사는 3억 5천만 개 이상이라고 적음. 시점별로 다름.",
+      "sources": [
+        { "name": "swissinfo(20주년 기사)", "url": "https://www.swissinfo.ch/eng/banking-fintech/the-swatch-celebrates-its-20th-birthday/3183378", "quote": "300 million Swatches have been sold" },
+        { "name": "WIPO Magazine(2010)", "url": "https://www.wipo.int/en/web/wipo-magazine/articles/a-tribute-to-the-man-behind-the-swatch-mr-nicolas-g-hayek-37364", "quote": "estimated 300 million Swatch timepieces" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "스위스 양대 시계 그룹 ASUAG와 SSIH가 청산 위기에 몰리자 은행들이 컨설턴트 하이에크에게 맡겼다.", "numeric": false, "economy": false,
+      "caution": "하이에크는 '청산 감독'을 요청받았으나 합병안(SMH)을 제안. 스와치 자체는 하이에크 합류 전 ETA의 토멕·목·뮐러 팀이 개발했고 하이에크가 다수 지분을 인수한 건 1985년. 대본에서 하이에크 단독 발명처럼 쓰면 사실 오류.",
+      "sources": [
+        { "name": "swissinfo(20주년 기사)", "url": "https://www.swissinfo.ch/eng/banking-fintech/the-swatch-celebrates-its-20th-birthday/3183378", "quote": "were facing liquidation" },
+        { "name": "WIPO Magazine(2010)", "url": "https://www.wipo.int/en/web/wipo-magazine/articles/a-tribute-to-the-man-behind-the-swatch-mr-nicolas-g-hayek-37364", "quote": "asked by a group of Swiss bankers" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "1983년 3월 첫 컬렉션 12종의 가격은 39.90~49.90스위스프랑이었다.", "numeric": true, "economy": true,
+      "caution": "같은 해 가을 50프랑으로 통일됐다고 swissinfo가 기술.",
+      "sources": [
+        { "name": "swissinfo(25주년 기사)", "url": "https://www.swissinfo.ch/eng/swatch-clocks-up-a-quarter-of-a-century/6474224", "quote": "SFr39.90 ($38.10) to SFr49.90" },
+        { "name": "Fratello Watches", "url": "https://www.fratellowatches.com/40-years-of-swatch-a-look-back-at-the-plastic-watch-that-changed-everything/", "quote": "between 39.90 and 49.90 Swiss francs" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업·종결된 옛 사건. 민감 소지 없음." },
+  "remaining": "스와치 개발 주체(ETA 팀 vs 하이에크) 서술이 출처마다 달라 주인공을 '스위스 시계업계/개발팀'으로 두는 편이 안전. 쿼츠 위기 설명은 1~2문장으로 압축 필요.",
+  "toolCallsUsed": 13
+}

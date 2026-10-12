@@ -1,0 +1,61 @@
+{
+  "id": "hair-export-1964",
+  "title": "머리카락을 팔아 만든 첫 수출 1억 달러",
+  "year": 1964,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "출처 얇음(국가기록원+기사 1). 가발 비중 불명. 정부 업적 서사로 읽히지 않게",
+  "conditionResolved": false,
+  "finding": "1964.11.30 수출 1억 달러 달성(국가기록원·KOTRA)과 머리카락을 저울에 달아 엿장수·가발공장에 판 풍경(fnnews 칼럼·MTN)은 2곳씩 확인된다. 그러나 '1억 달러'는 전체 수출액이지 가발 수출액이 아니고, 1964년 가발 수출은 1.4만 달러 수준이라는 보도(단일, 원문 미열람)만 있어 소재 제목의 전제(머리카락으로 번 1억 달러)가 사실과 어긋날 위험이 크다. 가발 비중도 '1960~70년대 10% 이상'(MTN)·'외화의 20%'(fnnews 칼럼 주장)로 갈리고 2출처로 못 맞췄다. 결정적 장면(주인공의 선택) 없이 집단 풍경이라 장면도 약하다. 핵심 숫자를 2출처로 못 채워 hold.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "한국은 1964년 11월 30일 수출 1억 달러를 처음 돌파했고 이날이 '수출의 날'이 됐다(1억 달러는 전체 수출액).",
+      "numeric": true,
+      "economy": true,
+      "caution": "1억 달러는 전체 수출액이며 가발만의 금액이 아님 — 소재 제목 오독 주의.",
+      "sources": [
+        { "name": "국가기록원 기록으로 보는 대한민국(수출)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/export.do", "quote": "1964년에는 수출 1억 달러를 달성하였고" },
+        { "name": "KOTRA 60주년 아카이브", "url": "https://www.kotra.or.kr/60th_archive/history01.html", "quote": "1964년 11월 30일 우리나라는 역사적인 수출 1억 달러를 돌파했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1960년대 한국 수출은 10년 동안 연평균 41% 늘었고, 합판·가발·신발 등 경공업 제품 비중이 20%선에서 80%선으로 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "국가기록원 단일 출처 — 2번째 출처 미확보.",
+      "sources": [
+        { "name": "국가기록원 기록으로 보는 대한민국(수출)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/export.do", "quote": "10년 동안 연평균 41%의 놀라운 수출신장을 기록하며" },
+        { "name": "국가기록원 기록으로 보는 대한민국(수출) - 동일 페이지", "url": "https://theme.archives.go.kr/next/koreaOfRecord/export.do", "quote": "합판, 가발, 신발 등 1차 경공업 제품의 수출비중이 20%선에서 80%선으로 향상되었고" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1960~70년대 가발은 전체 수출의 10% 이상을 차지하는 효자 품목이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "MTN 단일. fnnews 칼럼은 '가발 수출로 번 돈이 외화의 20%'라고 주장해 상충. 1964년 가발 수출액(1.4만 달러 보도)은 미확인.",
+      "sources": [
+        { "name": "MTN 뉴스(2026)", "url": "https://news.mtn.co.kr/news-detail/2026070209012582640", "quote": "1960~70년대 가발은 전체 수출의 10% 이상을 차지하는 핵심 효자 품목이었습니다." },
+        { "name": "파이낸셜뉴스 최진숙 칼럼(2024)", "url": "https://www.fnnews.com/news/202412161923449578", "quote": "가발 수출로 번 돈이 외화의 20%였다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "당시 여성들은 기른 머리카락을 엿장수나 가발공장에 팔았고, 머리카락을 저울에 달아 거래하는 풍경이 일상이었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "풍경 서술이며 개인 일화는 아님. 가격·무게 단가 등 숫자는 못 찾음.",
+      "sources": [
+        { "name": "파이낸셜뉴스 최진숙 칼럼(2024)", "url": "https://www.fnnews.com/news/202412161923449578", "quote": "길게 기른 머리카락을 엿장수에게 팔거나 직접 가발공장에 팔았다." },
+        { "name": "MTN 뉴스(2026)", "url": "https://news.mtn.co.kr/news-detail/2026070209012582640", "quote": "여성들의 머리카락를 저울에 달아 거래하는 풍경이 일상적이었습니다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "옛 사건이라 법적 민감 없음. 다만 수출 드라이브 = 정부 업적 서사로 읽힐 소지(정치 소지 낮음)." },
+  "remaining": "(1) 가발 수출액·비중의 1차 통계(무역협회/K-stat 연도별 품목 통계)로 2출처 확보 필요 — 현재 1964년 가발 1.4만 달러·1970년 9,375만 달러는 단일/미확인. (2) 개인 주인공 장면 부재(집단 풍경). (3) '머리카락으로 번 1억 달러' 프레임은 사실 오류이므로 제목 재정의 필요(예: 가발이 수출 10%를 차지한 시절).",
+  "toolCallsUsed": 9
+}

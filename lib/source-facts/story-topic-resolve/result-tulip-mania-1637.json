@@ -1,0 +1,82 @@
+{
+  "id": "tulip-mania-1637",
+  "title": "튤립 버블 — 꽃 한 송이가 집값이던 시절",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "역사학계에 과장 논쟁(가격·규모)이 있어 '전해진 이야기' 단서 필요. 투자 권유 금지",
+  "conditionResolved": true,
+  "finding": "1637년 2월 하를럼 경매에서 살 사람이 나타나지 않으며 계약 가격이 폭락한 장면이 위키피디아·Dutch Review 두 곳에서 확인되고, 숙련공 연 소득(약 300길더)의 10배 넘는 값, 최고가 튤립 센페르 아우구스투스 10,000길더 등 숫자도 서로 다른 사이트 2곳씩 확인된다. 다만 위키피디아도 현대 연구자들이 '파장이 매우 제한적이었다'고 보므로 대본은 '전해진 이야기' 단서와 '경제 전체를 무너뜨린 사건은 아니었다'는 선을 지켜야 한다. 투자 권유로 읽히지 않게 가격 형성 원리(다음 살 사람이 가격을 지탱)만 다루면 쓸 수 있다.",
+  "coreMessage": "꽃값을 올린 건 꽃이 아니라 '다음에 살 사람'이어서, 그 사람이 사라지는 순간 가격은 받쳐 줄 곳이 없다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1637년 2월 튤립 구근 계약 가격이 갑자기 폭락해 거래가 멈췄다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "붕괴 시점은 '1637년 2월'로 통일해 쓰고 정확한 일자는 단정하지 않는다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "contract prices collapsed abruptly" },
+        { "name": "WorldAtlas 'What Was Tulip Mania?'", "url": "https://www.worldatlas.com/articles/what-was-tulip-mania.html", "quote": "the Tulip market eventually collapsed" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "가장 비쌌던 품종 센페르 아우구스투스 구근 하나가 최고가 약 10,000길더에 이르렀다고 전해진다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 출처는 5,500길더(1633년), 5,000길더 등 달리 적고 실제 거래가 아니라 제시가였다는 설명도 있어 '전해진 가격'으로만 쓴다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "sold for ƒ10,000" },
+        { "name": "Tulipmania Art Journal", "url": "https://www.tulipmania.art/most-expensive-tulip-bulb/", "quote": "its price reached 10,000 guilders" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "당시 숙련공의 연 소득은 약 300길더 수준이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "TodayIFoundOut 등 일부 출처는 숙련공 연 소득을 약 150길더로 적어 출처마다 다르다. 대본에서는 '약 300길더(추정)'로 쓰거나 비율 표현을 쓴다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "earned about ƒ300 per year" },
+        { "name": "History Collection '20 Times in History...'", "url": "https://historycollection.com/20-times-in-history-that-financial-markets-collapsed/5/", "quote": "was approximately 300 guilders" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "정점에서 구근 하나가 숙련공 연 소득의 10배 이상 값에 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Wikipedia는 '10배 넘게', WorldAtlas는 '10배'로 적는다. 소득 기준이 기록마다 달라 '대략 열 배 이상'으로 쓴다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "more than 10 times the annual income" },
+        { "name": "WorldAtlas 'What Was Tulip Mania?'", "url": "https://www.worldatlas.com/articles/what-was-tulip-mania.html", "quote": "ten times the annual income" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1637년 2월 3일경 하를럼의 경매에서 구근을 사겠다는 사람이 나타나지 않으면서 붕괴가 시작됐다고 전해진다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "Wikipedia는 이 날짜를 당대 풍자글에서 가져왔다고 밝힌다. '2월 초 하를럼 경매에서 사겠다는 사람이 없었다'로 쓰고 2월 3일을 단정하지 않는다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "unravel on February 3 in Haarlem" },
+        { "name": "Dutch Review 'Tulip mania'", "url": "https://dutchreview.com/culture/tulip-mania-netherlands/", "quote": "in Haarlem, no buyers showed up" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "현대 연구자들은 튤립 버블이 알려진 것만큼 파괴적이지 않았고 경제적 여파도 매우 제한적이었다고 본다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "찰스 맥케이(1841)가 퍼뜨린 과장된 일화가 널리 퍼져 있다. 대본에 '전해진 이야기이며 규모는 학계에서 논쟁 중'이라는 단서를 넣는다.",
+      "sources": [
+        { "name": "Wikipedia 'Tulip mania'", "url": "https://en.wikipedia.org/wiki/Tulip_mania", "quote": "from the bubble was very limited" },
+        { "name": "Dutch Review 'Tulip mania'", "url": "https://dutchreview.com/culture/tulip-mania-netherlands/", "quote": "as disastrous as some modern myths claim" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 17세기 사건이라 국내 민감성 없음. 투자 권유로 읽히지 않게 '가격 원리' 중심으로만 서술하고 현재 자산(코인·주식)과 직접 연결하지 않는다." },
+  "remaining": "가격·규모가 출처마다 달라 대본에 '전해진 이야기' 단서 필수. Britannica·Focus Economics는 접근 불가(403)라 확인하지 못했다.",
+  "toolCallsUsed": 14
+}

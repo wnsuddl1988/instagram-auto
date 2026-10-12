@@ -1,0 +1,58 @@
+{
+  "id": "trash-bag-fee-1995",
+  "title": "쓰레기 종량제 — 값이 붙자 쓰레기가 줄었다",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "사람 주인공·장면 없음. 1인 1일 1.33kg→1.03kg만 안전",
+  "conditionResolved": false,
+  "finding": "1995년 1월 1일 전국 시행, 1인당 하루 쓰레기 1994년 1.33kg → 2004년 1.03kg(환경부 10년 평가)이라는 핵심 숫자는 확인됐다(1.33kg은 한국경제·경기일보 2곳). 그러나 이 소재는 제도 자체가 주인공이라 결과를 바꾼 결정적 '한 장면'(누가 무엇을 결단한 순간)이 없고, 시행 초기 신문 기사(서울신문 1995.1.7)는 '40% 감소 전망' 등 추산치뿐이다. 1.03kg(2004년)·6조 9천억 절감·매립 5만t→2만 7798t은 각각 단일 출처다. 제도 설명형이 되어 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "쓰레기 종량제는 1995년 1월 1일부터 전국에서 동시에 시행됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "한국경제 역사 속 숨은 경제이야기(2016)", "url": "https://sgsg.hankyung.com/article/2016012976041", "quote": "1995년 1월1일부터 전국 시·군·구에서" },
+        { "name": "YTN(2020)", "url": "https://www.ytn.co.kr/_ln/0103_202006031700015282", "quote": "1995년 1월 1일부터 전국적으로" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1994년 1인당 하루 쓰레기는 1.33kg이었고, 종량제 이후 2004년 1.03kg으로 줄었다(2001년 1.01kg).",
+      "numeric": true,
+      "economy": true,
+      "caution": "'발생량'과 '배출량' 용어가 출처마다 다름. 1.03kg(2004)은 경기일보 단독, 한국경제는 2001년 1.01kg. 인구·시민의식 변화 영향이 섞인 단순 비교.",
+      "sources": [
+        { "name": "경기일보(2020)", "url": "https://www.kyeonggi.com/article/202005171126322", "quote": "1994년 1.33kg에서 2004년 1.03kg으로 감소했고" },
+        { "name": "한국경제 역사 속 숨은 경제이야기(2016)", "url": "https://sgsg.hankyung.com/article/2016012976041", "quote": "1994년 1인당 하루 쓰레기 배출량이 1.33㎏이었던 것이" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "종량제 이후 쓰레기 수집·운반·매립 비용이 약 6조 9천239억 원 줄었다(환경부 10년 평가).",
+      "numeric": true,
+      "economy": true,
+      "caution": "경기일보 단독 확인. 처리비용 증가분 반영 순절감액(약 5조 7천억)은 다른 자료와 기준이 다름.",
+      "sources": [
+        { "name": "경기일보(2020)", "url": "https://www.kyeonggi.com/article/202005171126322", "quote": "약 6조9천239억 원 줄었습니다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "하루 매립·소각 쓰레기가 1994년 5만t 가까이에서 2003년 2만 7798t으로 절반 가까이 줄었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "YTN 단독 확인.",
+      "sources": [
+        { "name": "YTN(2020)", "url": "https://www.ytn.co.kr/_ln/0103_202006031700015282", "quote": "2003년에는 2만 7798t으로 쓰레기 배출량이 절반 가까이 감소했다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "정부 제도. 현 영업 기업·진행 중 사건 없음." },
+  "remaining": "사람 주인공과 결정적 장면 없음(시행 당일 거리 풍경 등 장면 자료도 2출처 미확보). 서울신문 1995.1.7은 시행 5일째 추산치(40% 감소 전망, 연 919만t 감소 전망)라 결과 숫자로 쓰기 부적합. 숫자 4개 2출처 요건 미충족.",
+  "toolCallsUsed": 8
+}

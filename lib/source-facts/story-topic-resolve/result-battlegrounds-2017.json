@@ -1,0 +1,58 @@
+{
+  "id": "battlegrounds-2017",
+  "title": "배틀그라운드 — 회사 소개서 한두 줄이던 게임",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "'위기를 넘긴 성공' 틀은 열람 근거 없음. 인물 대사 필요, 근무 환경 논란 미확인",
+  "conditionResolved": false,
+  "finding": "출시 13주 만에 1억 달러·400만 장, 개발 시작 때 프로그래머 20명이라는 숫자는 2출처로 확인된다. 그러나 '회사 소개서에 한두 줄', '내부에서도 믿지 않던 아이디어', '개발자에게 준 자유'라는 틀을 뒷받침하는 자료는 못 찾았고, 내부 반대('많은 사람이 반대')는 중앙데일리 단일 출처뿐이다. 결정적 장면(누가 어떤 선택을 했는지)을 2출처로 세울 수 없어 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "배틀그라운드는 스팀 얼리액세스 출시 13주 만에 누적 매출 1억 달러, 판매량 400만 장을 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "발표 기준일은 6월 22일 전후(출시 3월 23일).",
+      "sources": [
+        { "name": "뉴스토마토(2017) 김창한 PD 인터뷰", "url": "https://newstomato.com/ReadNews.aspx?no=761562", "quote": "출시 13주만에 누적 매출 1억달러를 돌파했으며, 판매량 400만장을 넘어섰다" },
+        { "name": "CGMagazine(2017)", "url": "https://www.cgmagonline.com/news/playerunknowns-battlegrounds-raises-100-million-13-weeks", "quote": "has generated $100 million in revenue after selling over four million copies" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "배틀그라운드 개발은 2016년 초 프로그래머 20명 규모의 작은 팀으로 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "그린 디렉터는 레드불 인터뷰에서 얼리액세스 전까지 약 40명이라고 말해 출처마다 다르다.",
+      "sources": [
+        { "name": "Korea JoongAng Daily(2018) How Bluehole defied the odds with Battlegrounds", "url": "https://www.koreajoongangdaily.com/business/how-bluehole-defied-the-odds-with-battlegrounds/10313262", "quote": "The project started in early 2016 with just 20 programmers" },
+        { "name": "뉴스토마토(2017) 김창한 PD 인터뷰", "url": "https://newstomato.com/ReadNews.aspx?no=761562", "quote": "20명 정도의 작은 규모로 1년 동안 빠른 속도로 얼리억세스 출시를 한다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "출시 사흘 만에 40만 장 이상이 팔려 1,100만 달러를 벌었고, 9월에는 1,200만 장 이상이 팔려 수익이 1억 달러를 크게 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "중앙데일리 단일 확인. 판매량 총계는 매체마다 다름(1,000만 장 vs 1,200만 장).",
+      "sources": [
+        { "name": "Korea JoongAng Daily(2018)", "url": "https://www.koreajoongangdaily.com/business/how-bluehole-defied-the-odds-with-battlegrounds/10313262", "quote": "More than 400,000 copies were sold in the first three days" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "블루홀의 2017년 총매출은 6,665억 원, 영업이익은 2,517억 원으로 2016년 매출 514억 원(테라 중심)의 약 13배였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "바이라인 단일 확인(게임메카 원문 열람 실패). 6,665억 중 2017년 인식분은 3,224억 원.",
+      "sources": [
+        { "name": "바이라인네트워크(2018)", "url": "https://byline.network/2018/03/30-6", "quote": "총 매출 6665억원, 영업이익은 2517억원이다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "크래프톤은 현 영업 중 국내 기업이나 2017년 흥행 일화 자체는 민감하지 않음. 근무 환경 논란은 확인하지 못함." },
+  "remaining": "결정적 장면(내부 반대에도 배틀로얄 장르·20명 팀·얼리액세스를 택한 결단)을 2출처로 확인하지 못함. '회사 소개서 한두 줄' 후크는 근거 없음. 근무 환경 논란 미확인. 인물 대사는 김창한 PD 인터뷰('성공 이력이 없는 PD'…)가 있으나 단일 출처.",
+  "toolCallsUsed": 12
+}

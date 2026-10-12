@@ -165,6 +165,10 @@ export const BULL_EPISODE_LEDGER: readonly BullEpisodeTopicRecord[] = [
   { episode: 19, summary: "S&P500 구성 종목 약 80% 하락(평균 -5%)인데 나스닥100은 +3%·지수는 사상 최고(9월, WSJ) — 기술·커뮤니케이션서비스 2개 업종만 상승, 시총 상위 100개 중 41개 vs 하위 100개 중 10개 상승, 10년물 4.7→5.3%·저신용 가산금리 +1%p, 10/2 고용 부진으로 금리 인상 우려 완화, AI 쏠림 신호", lane: "decoupling_flows", kind: "structure", domain: "other", semiconductorRelated: false, titleShape: "contrast" },
   { episode: 20, summary: "엔비디아 5,000억 달러 칩(GPU) 담보 대출 구상(로이터 10/1) — 수명 엔비디아 최대 10년 vs 은행 감가상각 3~4년, 은행·펀드 보증 확대 요구, 코어위브 85억 달러, 네이버 GPU 사업도 금융권이 교체주기 따져 대출 규모 산정, AI 붐의 돈줄", lane: "new_theme", kind: "concept", domain: "theme_new", semiconductorRelated: true, titleShape: "contrast" },
   { episode: 21, summary: "메모리 가격 상승 둔화(D램 월 상승률 7월 14.29→8월 4.17→9월 4%, 낸드 4월 36.29→8월 1.42·9월 보합)인데 가격은 사상 최고, 트렌드포스 4분기 D램 +10~15%·낸드 +15~20% 전망·마이크론 CEO 수요 초과, 삼성전자 3분기 영업이익 전망 하향·잠정실적 10/8 예상(미확정)", lane: "event_countdown", kind: "schedule", domain: "semiconductor", semiconductorRelated: true, titleShape: "declaration" },
+  // 22=2026-10-07 20:51 배포 완료(릴스 DeMSmmdgNuI, 유튜브 AreBhVn9eyY 21:51 공개 예약, 스토리).
+  { episode: 22, summary: "19조 원 반도체 ETF 8일(옵션만기일) 리밸런싱 — 순자산 합 약 18.9조 원(서울경제 10/6, 삼성증권 추산), 가장 큰 ETF 삼성전자 비중 26.98%로 상한 25% 초과해 약 2,098억 원 매도·SK하이닉스 약 900억 매수·장비·기판 중소형주 네 곳 각 200억 안팎 매수(일평균 거래대금 대비 최대 27.5%), 삼성전자 매물은 실적이 아니라 비중 규칙이 만든 수급, 잠정실적 10/8 예상(미확정), 아시아경제 10/1이 8일 집중·27.1%·약 2,000억 원 교차 확인", lane: "event_countdown", kind: "schedule", domain: "semiconductor", semiconductorRelated: true, titleShape: "declaration" },
+  // 2026-10-08 10:10 배포 완료(23편): 릴스 DeNuPVGGupK, 유튜브 -NRcdMNOQso(11:15 공개 예약), 스토리. 22편 CTA 예고("잠정실적 나오면 제일 먼저 들고 올게")를 지킨 편. 반도체 쏠림 경고(5편 중 4편)는 Owner 순서 결정으로 감수.
+  { episode: 23, summary: "삼성전자 3분기 잠정실적 — 영업이익 107.4조(전기 89.5조 +20%·작년 12.2조 8.8배)·매출 195조(DART 공정공시 10/8)인데 증권가 예상과 거의 같았다: 에프앤가이드 컨센서스 108조대(9월 중순 114조 안팎에서 하락)와 1% 안팎, 매출은 컨센서스 200조 안팎보다 3% 안팎 낮음, 8일 ETF 매물(22편)과 겹쳐 주가 움직임은 실적 하나로 못 읽음, 감사 전 잠정치·순이익 미공시", lane: "cause_explainer", kind: "event", domain: "semiconductor", semiconductorRelated: true, titleShape: "contrast" },
 ];
 
 export interface BullTopicProposal {

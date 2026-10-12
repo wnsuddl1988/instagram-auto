@@ -134,6 +134,16 @@ const OWL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH = join(
   SCRIPTS_DIR,
   "run-owl-topic-lane-news-search-once.mjs",
 );
+// 스토리형 소재 러너(2026-10-06) — 네이버 뉴스 읽기 전용, 키워드는 러너·풀 파일에 고정.
+const STORY_TOPIC_SCAN_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "run-story-topic-scan-once.mjs",
+);
+// 스토리형 배경음(2026-10-07 Owner "1번 3번 진행해") — ElevenLabs Music 1회 호출, API 키만 주입.
+const STORY_BGM_RUNNER_PATH = join(
+  SCRIPTS_DIR,
+  "build-story-bgm-elevenlabs-once.mjs",
+);
 // 2026-09-30 밤(Owner 승인 "2번 등록해"): 공식 지표 스냅샷(한국은행 ECOS 7개 + 통계청 KOSIS 2개).
 // 처음 만든 editorial-v2 지표 파이프라인은 .env.local을 직접 읽어 실행 금지였다 — 이 러너는 래퍼 주입만 쓴다.
 const OWL_INDICATOR_SNAPSHOT_RUNNER_PATH = join(
@@ -540,7 +550,7 @@ const SUPPORTED_COMMANDS = Object.freeze({
   "owl-voice-casting": {
     script: OWL_VOICE_CASTING_RUNNER_PATH,
     baseArgs: [],
-    passthrough: ["--mode", "--out-dir", "--voice-ids", "--line"],
+    passthrough: ["--mode", "--out-dir", "--voice-ids", "--line", "--speed"],
     passthroughFlags: ["--arm"],
     envKeyNames: TTS_VOICE_CASTING_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
@@ -735,6 +745,24 @@ const SUPPORTED_COMMANDS = Object.freeze({
     loadEnvInDryRun: false,
     validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "owl-topic-lane-news-search"),
   },
+  "story-topic-scan": {
+    script: STORY_TOPIC_SCAN_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: BULL_TOPIC_LANE_NEWS_SEARCH_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "story-topic-scan"),
+  },
+  "story-bgm": {
+    script: STORY_BGM_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: ["--plan", "--out-dir"],
+    passthroughFlags: ["--arm"],
+    envKeyNames: TTS_VOICE_CASTING_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: validateStoryBgmBeforeEnvAccess,
+  },
   "owl-indicator-snapshot": {
     script: OWL_INDICATOR_SNAPSHOT_RUNNER_PATH,
     baseArgs: [],
@@ -895,7 +923,7 @@ function validateOwlVoiceCastingBeforeEnvAccess(rawArgs) {
   if (!Array.isArray(rawArgs) || rawArgs[0] !== "owl-voice-casting") {
     return { ok: false, reason: "owl_voice_casting_command_position_invalid" };
   }
-  const valueFlags = new Set(["--env-path", "--mode", "--out-dir", "--voice-ids", "--line"]);
+  const valueFlags = new Set(["--env-path", "--mode", "--out-dir", "--voice-ids", "--line", "--speed"]);
   const values = Object.create(null);
   let armed = false;
   for (let index = 1; index < rawArgs.length; index += 1) {
@@ -919,6 +947,10 @@ function validateOwlVoiceCastingBeforeEnvAccess(rawArgs) {
   // 실제 대본 한두 문장 비교용이지 임의 텍스트 주입 통로가 아니다.
   if (values["--line"] !== undefined && values["--line"].length > 300) {
     return { ok: false, reason: "owl_voice_casting_line_too_long" };
+  }
+  // --speed 는 말 속도 비교 샘플용(2026-10-06). ElevenLabs 허용 범위 0.7~1.2의 숫자만 받는다.
+  if (values["--speed"] !== undefined && !/^(0\.[7-9]\d?|1(\.[01]\d?)?|1\.2(0)?)$/.test(values["--speed"])) {
+    return { ok: false, reason: "owl_voice_casting_speed_invalid" };
   }
   const mode = values["--mode"] ?? "";
   const outDir = values["--out-dir"] ?? "";
@@ -944,6 +976,51 @@ function validateOwlVoiceCastingBeforeEnvAccess(rawArgs) {
     if (!/^[A-Za-z0-9]{8,64}(,[A-Za-z0-9]{8,64}){0,5}$/.test(voiceIds)) {
       return { ok: false, reason: "owl_voice_casting_voice_ids_malformed" };
     }
+  }
+  return { ok: true };
+}
+
+/**
+ * story-bgm 인자 검증. env 접근 전에 수행한다.
+ * - --plan(json)과 --out-dir 는 money-shorts-os 미디어 루트 하위·저장소 밖 절대경로만 받는다.
+ * - 값 인자는 --plan/--out-dir/--env-path 뿐, --arm 은 한 번.
+ */
+function validateStoryBgmBeforeEnvAccess(rawArgs) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== "story-bgm") {
+    return { ok: false, reason: "story_bgm_command_position_invalid" };
+  }
+  const valueFlags = new Set(["--env-path", "--plan", "--out-dir"]);
+  const values = Object.create(null);
+  let armed = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") {
+      if (armed) return { ok: false, reason: "story_bgm_duplicate_arm" };
+      armed = true;
+      continue;
+    }
+    if (!valueFlags.has(token) || Object.hasOwn(values, token)) {
+      return { ok: false, reason: "story_bgm_unknown_or_duplicate_flag" };
+    }
+    const value = rawArgs[index + 1];
+    if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) {
+      return { ok: false, reason: "story_bgm_flag_value_invalid" };
+    }
+    values[token] = value;
+    index += 1;
+  }
+  const plan = values["--plan"] ?? "";
+  const outDir = values["--out-dir"] ?? "";
+  if (
+    !isAbsolute(plan) ||
+    !/\.json$/i.test(plan) ||
+    !MONEY_SHORTS_MEDIA_ROOT_RE.test(plan) ||
+    !isAbsolute(outDir) ||
+    !MONEY_SHORTS_MEDIA_ROOT_RE.test(outDir + "\\") ||
+    lexicalPathInside(REPO_ROOT, outDir) ||
+    (values["--env-path"] !== undefined && !isAbsolute(values["--env-path"]))
+  ) {
+    return { ok: false, reason: "story_bgm_required_paths_invalid" };
   }
   return { ok: true };
 }

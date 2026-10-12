@@ -1,0 +1,48 @@
+{
+  "id": "saeukkang-1971",
+  "title": "새우깡",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "장애물·반전 없음, 숫자 단일 매체",
+  "conditionResolved": true,
+  "finding": "장애물이 있었다: 농심 연구원들이 1년간 밤을 새우며 튀김 온도를 못 맞춰 제품을 수없이 태웠고, 그 과정에 쓴 밀가루만 4.5톤 트럭 80여 대분이었다(푸드투데이·비즈워치·이투데이 일치). 결과는 첫해 20만6000박스에서 다음 해 425만 박스로 20배(뉴시스·푸드투데이·이투데이 일치). 숫자 단일 매체 조건은 서로 다른 사이트 2~3곳으로 해소했다. 다만 결정 장면이 개인의 선택보다 팀의 끈기에 가깝고 일본 갓파에비센 모방설이 있어, '국내 최초 봉지 스낵' 표현으로 한정하는 조건으로 usable 제안.",
+  "coreMessage": "없던 시장은 태워 버린 실패의 양으로 먼저 값을 치러야 열린다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1", "claim": "새우깡 첫해(1971) 생산량은 20만6000박스였고 다음 해에는 20배인 425만 박스가 생산됐다.", "numeric": true, "economy": true,
+      "caution": "박스/상자 표기가 매체마다 다르고 나무위키는 20만5925박스로 적음 — 대본에는 약 20만 박스로 쓸 것.",
+      "sources": [
+        { "name": "뉴시스(2026) 장수브랜드 탄생비화", "url": "https://www.newsis.com/view/NISX20260224_0003524707", "quote": "첫 해 생산량은 20만6000박스에 불과했으나" },
+        { "name": "푸드투데이 식품비화(2)", "url": "https://foodtoday.or.kr/mobile/article.html?no=182382", "quote": "첫해 생산량이 20만6000박스에 불과했지만" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "새우깡 개발에 쓴 밀가루는 4.5톤 트럭 80여 대분이었다. 튀김 온도를 못 맞춰 시제품을 수도 없이 태웠기 때문이다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "푸드투데이 식품비화(2)", "url": "https://foodtoday.or.kr/mobile/article.html?no=182382", "quote": "사용된 밀가루 양만 4.5톤 트럭 80여대분에 이를 정도였다" },
+        { "name": "비즈워치(2020) 결정적 한끗", "url": "http://news.bizwatch.co.kr/article/consumer/2020/12/04/0012", "quote": "밀가루 양은 4.5톤 트럭 80대 분량에 달했습니다" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "농심 연구원들은 새우깡을 개발하려고 1년간 밤을 새워 연구했다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "뉴시스(2026) 장수브랜드 탄생비화", "url": "https://www.newsis.com/view/NISX20260224_0003524707", "quote": "1년간 밤새워 연구에 몰두했다" },
+        { "name": "이투데이(2018) 갓 오브 브랜드", "url": "https://www.etoday.co.kr/news/view/1648877", "quote": "1년간 밤을 새워가며 연구에 몰두했다" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "1971년 12월 출시된 새우깡은 국내 최초의 스낵이다.", "numeric": true, "economy": false,
+      "caution": "일본 가루비 갓파에비센(1964)과 닮았다는 모방 논란이 있음(비즈워치가 다룸). 대본에서는 국내 최초 봉지 스낵으로 한정할 것.",
+      "sources": [
+        { "name": "뉴시스(2026) 장수브랜드 탄생비화", "url": "https://www.newsis.com/view/NISX20260224_0003524707", "quote": "1971년 출시된 새우깡은 대한민국 최초의 스낵이다" },
+        { "name": "이투데이(2022) 연 매출 1000억 초읽기", "url": "https://www.etoday.co.kr/news/view/2198383", "quote": "1971년 출시된 우리나라 최초의 스낵인 새우깡이" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "농심은 영업 중인 국내 기업이나 소송·제재 없는 성공담. 신춘호-신격호 형제 분쟁과 롯데공업 기원 논쟁은 다루지 말 것." },
+  "remaining": "(1) 결정 장면이 개인의 선택이 아니라 팀의 끈기라 설계 시 연구원들이 태운 밀가루 80트럭 한 장면으로 모아야 함. (2) 연매출 1000억 달성은 이투데이 1곳뿐이라 facts에서 제외. (3) 갓파에비센 모방 논란 — 최초 표현 주의.",
+  "toolCallsUsed": 10
+}

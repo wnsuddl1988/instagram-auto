@@ -1,0 +1,59 @@
+{
+  "id": "pokemon-bread-2022",
+  "title": "포켓몬빵 재출시",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "허니버터칩과 같은 품귀 구조. 둘 중 한 편만. 숫자는 확인했다고 보고됨(43일 1,000만 개)",
+  "conditionResolved": false,
+  "finding": "1,000만 개 판매는 서울신문·뉴시스·쿠키뉴스가 모두 '40일/40여일'로 보도해 '43일'은 단일 계열 수치이며 기간 표기가 40일과 43일로 갈린다. 출시 일주일 150만 개, 신제품 평균의 6배 속도도 확인된다. 그러나 이야기의 주인공이 내린 결단·반전이 없고 '향수+띠부씰+품귀' 현상 서술이어서 결정적 장면 1개(2출처)를 세울 수 없다. 허니버터칩은 사용 목록에 없어 중복은 아니나, 같은 품귀 구조라 이 편은 후순위가 맞다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2022년 2월 24일 재출시한 포켓몬빵은 약 40일 만에 1,000만 개가 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "보도에 따라 40일/40여일/43일로 다름(SPC삼립 발표를 인용한 일부 기사는 43일).",
+      "sources": [
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "재출시된 지 40일 만에 약 1000만개가 팔렸다" },
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "재출시 40일 만에 1000만개 판매" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "출시 후 팔리는 속도가 SPC삼립 다른 신제품의 6배 이상이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "서울신문은 '판매 속도 6배', 이코노미스트는 '동일 기간 평균 판매량의 6배 이상'으로 기준 표현이 다름.",
+      "sources": [
+        { "name": "이코노미스트(2022.3.3)", "url": "https://economist.co.kr/2022/03/03/industry/distribution/20220303104316245.html", "quote": "동일 기간 평균 판매량보다 6배 이상" },
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "판매 속도보다 6배 정도 빠른 것" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "원조 포켓몬빵은 1998년 출시되어 2006년 단종됐고 약 16년 만에 재출시됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "쿠키뉴스는 원조 출시를 1999년으로 적음.",
+      "sources": [
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "1998년 처음 출시" },
+        { "name": "아시아경제(2022.3.10)", "url": "https://view.asiae.co.kr/article/2022031015062375922", "quote": "2006년 단종됐다가" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "원조 포켓몬빵은 전성기 월평균 500만 개가 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "아시아경제(2022.3.10)", "url": "https://view.asiae.co.kr/article/2022031015062375922", "quote": "월평균 판매량이 500만개에 달할 정도로" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "SPC삼립은 현 영업 중인 국내 기업으로, SPC 계열 이슈(2022년 하반기 평택 공장 사고 등)와 엮일 소지가 있어 긍정 소재라도 서술 범위를 한정해야 함." },
+  "remaining": "결정적 장면(주인공의 선택) 부재. 라이선스 계약·재출시 결정 과정을 2출처로 확인한 자료를 찾지 못함. 기간 40일/43일 불일치와 원조 출시 1998/1999 불일치 정리 필요.",
+  "toolCallsUsed": 9
+}

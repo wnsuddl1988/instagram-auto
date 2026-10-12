@@ -1,0 +1,10 @@
+{
+  "_note": "스토리형 편별 게시물 ID. 새 편을 게시하면 여기에 한 줄 추가한다(인스타 릴스 shortcode, 유튜브 video id). 1편은 재게시 이력으로 메모(DeLgYFXjbRA·gLVLqZ4Po_0)와 수집 결과의 현재 게시물이 다르다.",
+  "episodes": [
+    { "ep": 1, "title": "금 모으기", "ig": "DeLkk-AgYOC", "yt": "hvkOkqvYw1g" },
+    { "ep": 2, "title": "삼성 반도체", "ig": "DeOD_hzFM5H", "yt": "LAve_4Cp0tY" },
+    { "ep": 3, "title": "정주영 500원", "ig": "DeQrlLdiIto", "yt": "wd1l7PACzag" },
+    { "ep": 5, "title": "삼성 화형식", "ig": "DeTa6q1lRqD", "yt": "D8qmSqsvS5Q" },
+    { "ep": 6, "title": "현대 10년 보증", "ig": "DeV85uLiRZM", "yt": "VFELyLHmMsk" }
+  ]
+}

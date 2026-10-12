@@ -1,0 +1,82 @@
+{
+  "id": "mpman-1998",
+  "title": "MPMan",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "개발 주체·출시 연도 출처마다 다르고 특허 분쟁",
+  "conditionResolved": false,
+  "finding": "출시 시점(1998년 3월 아시아 첫선)은 영문 위키백과와 Sound & Vision 두 곳으로 확인되지만, 개발 주체는 중앙일보 영문판이 '새한정보시스템(현 엠피맨닷컴)', 산업일보(국가지식재산위원회 연구 인용)는 '벤처기업 디지털캐스트', 노컷뉴스는 '디지털캐스트가 특허를 재미교포 사업가에게 넘김'으로 서로 달라 하나의 이야기로 확정할 수 없다. 로열티 25센트·5년 합의, 추정 로열티 27억 달러, 2003년 7월 부도는 각각 한 곳 출처뿐이라 2출처 요건을 못 채웠고, '세계 최초' 표현도 위키백과 디지털 오디오 플레이어 항목이 Audio Highway(1996, 25대 제작)를 먼저 언급해 다툼이 있다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "새한정보시스템의 MPMan 플레이어는 1998년 3월 아시아에서 처음 선보였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "개발 완료 연도는 1997년(중앙일보 영문판·산업일보)으로 적힌 자료와 구분해야 한다. 한국어 위키백과는 1998년 3월 독일 하노버 세빗 공개로 기록.",
+      "sources": [
+        { "name": "Wikipedia MPMan(영문)", "url": "https://en.wikipedia.org/wiki/MPMan", "quote": "debuted in Asia in March 1998" },
+        { "name": "Sound & Vision(Flashback 1998)", "url": "https://www.soundandvision.com/content/flashback-1998-birth-mp3-player", "quote": "in March 1998—more than three years" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "세계 첫 MP3 플레이어는 1997년에 개발됐다고 보도되나, 개발 주체가 새한정보시스템과 디지털캐스트로 갈린다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "개발 주체 불일치(새한정보시스템 vs 디지털캐스트). 노컷뉴스(2017)는 1998년 개발로 적음.",
+      "sources": [
+        { "name": "Korea JoongAng Daily(2003.1.5)", "url": "https://www.koreajoongangdaily.com/business/treaty-ends-mp3-battle/11072245", "quote": "the world's first player in 1997" },
+        { "name": "산업일보(2012, 국가지식재산위원회 연구 인용)", "url": "https://kidd.co.kr/news/157333", "quote": "1997년 우리나라의 벤처기업인 디지털캐스트가 세계최초로 개발했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "엠피맨닷컴은 2003년 초 국내 5개 업체와 특허 합의를 맺고 대당 25센트씩 5년간 로열티를 받기로 했다(문광수 사장은 처음 요구한 로열티의 절반이라고 말함).",
+      "numeric": true,
+      "economy": true,
+      "caution": "한 곳(중앙일보 영문판)만 확인됨. 한국어 매체에서 같은 합의 내용을 찾지 못함.",
+      "sources": [
+        { "name": "Korea JoongAng Daily(2003.1.5)", "url": "https://www.koreajoongangdaily.com/business/treaty-ends-mp3-battle/11072245", "quote": "royalties of 25 cents per unit sold" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2001년 엠피맨닷컴은 국내 업체에 공급가의 3%를 기술료로 매길 계획을 밝혔고, 업체 모임 KPAC은 이를 수익의 절반 수준이라며 특허 무효화를 추진하겠다고 맞섰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문 한 곳. 문광수 사장은 3%는 수익 계산용 예상치일 뿐 확정이 아니라고 답함.",
+      "sources": [
+        { "name": "전자신문(2001.2.25)", "url": "https://www.etnews.com/200102250044", "quote": "공급가의 3%를 기술료로 부가할 계획이라고 하는데" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "국가지식재산위원회 연구는 2005~2010년 MP3 기술 적용 기기 판매 13억 대에 대당 2달러를 적용하면 약 27억 달러(약 3조 1,500억원)의 로열티를 얻을 수 있었다고 추정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "실제 수입이 아니라 가정(대당 2달러)에 따른 추정치. 단일 출처.",
+      "sources": [
+        { "name": "산업일보(2012)", "url": "https://kidd.co.kr/news/157333", "quote": "약 27억 달러(한화 약 3조 1,500억원)의 로열티 수익" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "엠피맨닷컴은 소송비 부담과 후발업체와의 경쟁에 밀려 2003년 7월 부도가 났고 2004년 11월 레인콤에 인수됐다고 한국어 위키백과는 적는다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키백과 단일 출처이며 신문 원문으로 교차 확인하지 못함. 노컷뉴스는 특허를 재미교포 사업가에게 넘겼다고 다르게 서술.",
+      "sources": [
+        { "name": "위키백과 디지털 오디오 플레이어", "url": "https://ko.wikipedia.org/wiki/MP3_플레이어", "quote": "엠피맨닷컴은 2003년 7월에 부도가 났고" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "종결된 옛 특허 분쟁(2003 합의)이며 현재 진행 중인 사건은 확인되지 않음. 다만 회사 부도·특허 소멸 경위가 출처마다 달라 사실 단정 위험."
+  },
+  "remaining": "개발 주체(새한정보시스템/디지털캐스트)와 특허 보유 관계, 2003년 합의 로열티, 부도·특허 소멸 경위를 신문 2곳으로 확정해야 함. '세계 최초'는 양산형 기준으로만 서술 가능.",
+  "toolCallsUsed": 15
+}

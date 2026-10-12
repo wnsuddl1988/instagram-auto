@@ -1044,6 +1044,36 @@ const CHARACTERS = {
       "머리에는 갈색 중절모(페도라)를 쓰고, 짧고 통통한 팔에 하얀 만화풍 장갑 손, " +
       "작고 둥근 갈색 구두. 사랑스럽고 순한 표정. " + STYLE_COMMON,
   },
+  // 스토리형 재연 장면(2026-10-07, `_ai/story-format-structure-v1.md` B 방식): 마스코트가 아니라 "같은 화풍의 재연 세계".
+  // 편마다 주인공 시민 1명(아래 정체성은 금 모으기 1편 — 편이 바뀌면 이 문구의 인물 묘사만 새 편 주인공으로 바꾼다)과 군중·소품·공간이 나온다.
+  // 부엉박사는 마지막 장면만 owl3dv5 스펙으로 따로 만든다(스토리 스펙의 18번은 owl 스펙 별도 파일).
+  story3d: {
+    label: "스토리형 재연 장면 3D (편마다 주인공 시민 1명)",
+    style3d: true,
+    identity:
+      "1998년 한국을 배경으로 한 재연 장면 시리즈의 첫 장면이야. 픽사/드림웍스 장편 애니메이션 같은 고품질 3D 렌더링. " +
+      "주인공은 30대 후반 한국 여성 시민: 짧은 파마머리, 둥근 얼굴, 크림색 가디건에 갈색 긴 치마, 작은 붉은 천 주머니를 가슴에 안고 있어. " +
+      "따뜻하고 조용히 결연한 표정. 이 주인공의 얼굴·머리·옷을 앞으로 모든 장면에서 똑같이 유지할 거야. " +
+      "부드러운 3점 조명, 따뜻하고 밝은 톤, 장난감 디오라마처럼 모서리를 둥글린 세트. 평면 2D 금지, 셀셰이딩 금지, 검정 외곽선 금지, 실사 사진 금지. 세로 9:16.",
+  },
+  // 반사실 3D 시험(2026-10-07 화풍 조사 — 성인 대상 3D 성공 사례 Zack D. Films형). 픽사 만화 비율이 아니라 사실적 비율의 CG 렌더.
+  storysemi: {
+    label: "스토리형 재연 장면 반사실 3D 시험",
+    style3d: true,
+    identity:
+      "1998년 한국을 배경으로 한 재연 장면 시리즈의 첫 장면이야. 화풍: 고품질 반사실 3D CG 렌더링(시네마틱 게임 컷신·CG 다큐 재연 화면 같은 느낌) — 사람의 얼굴·눈·머리·몸 비율은 실제 사람처럼 사실적으로, " +
+      "피부·옷·재질은 매끈한 CG 질감, 영화 같은 자연광과 부드러운 그림자, 차분하고 진지한 색감. 큰 눈·둥근 얼굴·과장된 만화 비율(픽사풍) 금지, 실제 사진처럼 보이는 실사도 금지. " +
+      "주인공은 30대 후반 한국 여성 시민: 짧은 파마머리, 크림색 가디건에 갈색 긴 치마, 작은 붉은 천 주머니를 가슴에 안고 있어. 조용히 결연한 표정. 이 주인공의 얼굴·머리·옷을 앞으로 모든 장면에서 똑같이 유지할 거야. 세로 9:16.",
+  },
+  // 화풍 비교 시험용(2026-10-07 Owner "너무 만화같지는 않을까" → 실사풍 시험 3장). 본 제작은 story3d. 같은 장면 설명(imageBrief)을 실사 스틸컷 화풍으로만 바꿔 비교한다.
+  storyreal: {
+    label: "스토리형 재연 장면 실사풍 시험",
+    style3d: false,
+    identity:
+      "1998년 한국을 배경으로 한 재연 장면 시리즈의 첫 장면이야. 시대극 영화의 실사 스틸컷처럼 사실적인 사진 화풍: 자연스러운 조명, 얕은 피사계심도, 사실적인 질감과 색감, 약한 필름 그레인. " +
+      "주인공은 30대 후반 한국 여성 시민: 짧은 파마머리, 둥근 얼굴, 크림색 가디건에 갈색 긴 치마, 작은 붉은 천 주머니를 가슴에 안고 있어. " +
+      "따뜻하고 조용히 결연한 표정. 이 주인공의 얼굴·머리·옷을 앞으로 모든 장면에서 똑같이 유지할 거야. 만화·애니메이션·3D 캐릭터·일러스트 느낌 금지. 세로 9:16.",
+  },
 };
 
 const CHAR_DEF = CHARACTERS[CHARACTER];
@@ -5182,6 +5212,20 @@ function wrapBull3dv1SceneBackground(sceneSpecificDescription) {
     "배경 내용: " + sceneSpecificDescription
   );
 }
+// 실사풍 시험(storyreal) 전용 — 장난감 디오라마 문구 대신 시대극 실사 스틸컷 화풍을 강제한다.
+function wrapStoryRealSceneBackground(sceneSpecificDescription) {
+  return (
+    "배경 스타일(최우선 규칙): 장난감·애니메이션·일러스트·3D 캐릭터 느낌 절대 금지. 1998년 한국을 재현한 시대극 영화의 실사 스틸컷처럼 " +
+    "자연광과 사실적인 질감·색감으로 그려. 배경 내용: " + sceneSpecificDescription
+  );
+}
+// 반사실 3D 시험(storysemi) 전용 — 장난감 디오라마 대신 사실적 비율의 CG 세트.
+function wrapStorySemiSceneBackground(sceneSpecificDescription) {
+  return (
+    "배경 스타일(최우선 규칙): 장난감 디오라마·둥글린 만화 세트 금지. 실제 공간 비율의 고품질 반사실 3D CG 세트(시네마틱 컷신 느낌), 실제 사진처럼 보이는 실사는 금지. " +
+    "배경 내용: " + sceneSpecificDescription
+  );
+}
 const BULL_EP1_BG = wrapBull3dv1SceneBackground(
   "반도체 공장 정문 앞. 황소특보 뒤로 대형 공장 건물(매끈한 상자 모양, " +
   "유리창이 격자무늬로 반복되어 반도체 회로 기판을 연상시킴)이 넓게 " +
@@ -7982,7 +8026,37 @@ const SHOT_FRAME_RULES = Object.freeze({
   close:
     "샷=클로즈(반드시): 무릎 위~머리가 이미지 세로의 60~70%. 표정과 카드가 크게, 머리 위 여백 10% 이상.",
 });
+// 스토리형 재연 장면(story3d) 전용 샷 규칙 — 마스코트가 아니라 인물·군중·소품·공간이 주인공이다. 자막(세로 63~71%)·하단 채널 띠 자리를 비워 둔다.
+const STORY_SHOT_FRAME_RULES = Object.freeze({
+  story_wide:
+    "샷=와이드(반드시): 카메라를 멀리 두고 공간 전체와 인물·소품이 함께 보이게. 핵심 피사체는 이미지 세로 15~62% 사이에 두고, " +
+    "아래 약 35%는 바닥과 배경 공간(자막 자리)으로 채워. 인물이 있으면 한 사람의 키는 이미지 세로의 25~35%.",
+  story_medium:
+    "샷=미디엄(반드시): 인물이 있으면 무릎~머리가 이미지 세로의 45~55%. 핵심 피사체는 세로 15~62% 사이, 머리 위·옆으로 배경 공간이 보인다. 상반신 클로즈업은 실패.",
+  story_close:
+    "샷=클로즈(반드시): 손과 소품 또는 오브젝트를 크게 보여 줘. 핵심 피사체는 세로 18~60% 사이, 위 12%와 아래 38%에도 배경이 또렷하게 이어져 빈 면이 없어야 해. 얼굴이 필요 없으면 얼굴은 그리지 마.",
+});
+const shotRuleFor = (shot) => SHOT_FRAME_RULES[shot] ?? STORY_SHOT_FRAME_RULES[shot];
 const SHOT_COMMON_RULE = "배경은 흐리게 하지 말고 공간과 소품이 또렷하게 보이게.";
+// 단독 재생성(--scene-spec-only) 전용 — 새 대화라 앞 장면이 없고, 주인공이 안 나오는 장면에 주인공이 끼어들지 않게 화풍만 지정한다.
+const STORY_STYLE_ONLY_IDENTITY =
+  "1998년 한국을 배경으로 한 재연 장면 시리즈의 한 장면이야. 픽사/드림웍스 장편 애니메이션 같은 고품질 3D 렌더링, 부드러운 3점 조명, 따뜻하고 밝은 톤, " +
+  "장난감 디오라마처럼 모서리를 둥글린 세트. 장면 설명에 나오는 인물 외에는 아무도 그리지 마. 평면 2D 금지, 셀셰이딩 금지, 검정 외곽선 금지, 실사 사진 금지. 세로 9:16.";
+const STORY_SEMI_STYLE_ONLY_IDENTITY =
+  "1998년 한국을 배경으로 한 재연 장면 시리즈의 한 장면이야. 화풍: 고품질 반사실 3D CG 렌더링(시네마틱 게임 컷신·CG 다큐 재연 화면 같은 느낌) — 사람의 얼굴·눈·머리·몸 비율은 실제 사람처럼 사실적으로, " +
+  "피부·옷·재질은 매끈한 CG 질감, 영화 같은 자연광과 부드러운 그림자, 차분하고 진지한 색감. 큰 눈·둥근 얼굴·과장된 만화 비율(픽사풍) 금지, 실제 사진처럼 보이는 실사도 금지. " +
+  "장면 설명에 나오는 인물 외에는 아무도 그리지 마. 세로 9:16.";
+const STORY_SEMI_SAME_STYLE_RULE =
+  "앞 장면들과 똑같은 반사실 3D CG 화풍(사실적인 사람 비율, 매끈한 CG 질감, 같은 시네마틱 조명·색감)을 유지해. 주인공 여성이 장면 설명에 나오면 앞에서 만든 그 여성과 얼굴·파마머리·크림색 가디건·갈색 치마가 똑같아야 해. " +
+  "장면 설명에 없는 인물·글자·숫자·로고는 넣지 마. 픽사풍 큰 눈·만화 비율 금지, 실사 사진 금지. 세로 9:16.";
+const STORY_REAL_SAME_STYLE_RULE =
+  "앞 장면들과 똑같은 실사 시대극 스틸컷 화풍(같은 색감·조명·질감)을 유지해. 주인공 여성이 장면 설명에 나오면 앞에서 만든 그 여성과 얼굴·파마머리·크림색 가디건·갈색 치마가 똑같아야 해. " +
+  "장면 설명에 없는 인물·글자·숫자·로고는 넣지 마. 만화·애니메이션·3D 캐릭터·일러스트 느낌 금지. 세로 9:16.";
+// 스토리형 후속 장면 고정 문구 — "같은 캐릭터" 대신 "같은 화풍 + 같은 주인공(나오는 장면만)". 장면 설명에 없는 글자·로고·인물은 넣지 않는다.
+const STORY_SAME_STYLE_RULE =
+  "앞 장면들과 똑같은 화풍(같은 픽사풍 3D 렌더링, 같은 색감과 조명, 장난감 디오라마처럼 둥글린 세트 질감)을 유지해. " +
+  "주인공 여성이 장면 설명에 나오면 앞에서 만든 그 여성과 얼굴·파마머리·크림색 가디건·갈색 치마가 똑같아야 해. " +
+  "장면 설명에 없는 인물·글자·숫자·로고는 넣지 마. 2D·셀셰이딩·외곽선·실사 금지. 세로 9:16.";
 // 글자 안전영역(2026-09-30 Owner 지적: 보드 글자가 실제 폰 화면에서 잘림). 화면비가 긴 폰은 앱이 영상
 // 좌우를 각 약 10%씩 잘라내고, 위에는 제목 띠·아래에는 자막이 올라간다.
 // 세로 60%까지: 배치 v2에서 자막이 y≈1215~1365(63~71%)로 올라가 그 아래까지 글자를 두면 자막과 겹친다.
@@ -7990,6 +8064,8 @@ const TEXT_SAFE_ZONE_RULE =
   "글자 안전영역(반드시): 보드·카드 등 글자 있는 소품은 좌우 가장자리에서 각각 이미지 가로의 12% 이상 " +
   "안쪽, 글자는 이미지 세로 22~60% 사이에만(그 아래는 자막 자리). 가장자리에 닿거나 잘리면 실패.";
 
+// 스토리형 2편부터: 1편 전용 문구(1998년 한국·주인공 여성)를 스펙이 바꿔 쓸 수 있게 한다(2026-10-07). 값이 없으면 기존 문구 그대로.
+const STORY_OVERRIDES = {};
 function buildScenePosesFromSpec(spec) {
   const backgrounds = spec.sceneBackgrounds ?? {};
   const prefix = spec.imagePrefix;
@@ -7998,7 +8074,9 @@ function buildScenePosesFromSpec(spec) {
     process.exit(1);
   }
   return spec.scenes.map((scene, index) => {
-    if (!SHOT_FRAME_RULES[scene.shot]) {
+    // 스토리형(story3d)은 같은 wide|medium|close 값을 쓰되 재연 장면용 샷 규칙(story_*)으로 바꿔 건다.
+    const shotKey = ["story3d", "storyreal", "storysemi"].includes(CHARACTER) ? `story_${scene.shot}` : scene.shot;
+    if (!shotRuleFor(shotKey)) {
       console.error(`ABORT: 씬 ${scene.scene}의 shot은 wide|medium|close 중 하나여야 합니다(받은 값: ${scene.shot}).`);
       process.exit(1);
     }
@@ -8011,8 +8089,9 @@ function buildScenePosesFromSpec(spec) {
       id: `${prefix}_s${scene.scene}`,
       file: `${prefix}_s${scene.scene}.png`,
       first: index === 0,
-      shot: scene.shot,
-      clause: `장면 ${scene.scene} (${scene.role}): ${scene.imageBrief} ${wrapBull3dv1SceneBackground(bg.image)}`,
+      styleOnly: scene.styleOnly === true,
+      shot: shotKey,
+      clause: `장면 ${scene.scene} (${scene.role}): ${scene.imageBrief} ${CHARACTER === "storyreal" ? wrapStoryRealSceneBackground(bg.image) : CHARACTER === "storysemi" ? wrapStorySemiSceneBackground(bg.image) : wrapBull3dv1SceneBackground(bg.image)}`,
     };
   });
 }
@@ -8035,6 +8114,8 @@ if (SCENE_SPEC_MODULE) {
     process.exit(1);
   }
   POSES_SCENE_SPEC = buildScenePosesFromSpec(sceneSpec);
+  if (sceneSpec.storyStyleOnlyIdentity) STORY_OVERRIDES.styleOnlyIdentity = sceneSpec.storyStyleOnlyIdentity;
+  if (sceneSpec.storySameStyleRule) STORY_OVERRIDES.sameStyleRule = sceneSpec.storySameStyleRule;
   if (SCENE_SPEC_ONLY) {
     POSES_SCENE_SPEC_SINGLE = SCENE_SPEC_ONLY.split(",").map((s) => s.trim()).filter(Boolean).map((token, i) => {
       const target = POSES_SCENE_SPEC[Number.parseInt(token, 10) - 1];
@@ -8408,10 +8489,13 @@ const VEO_SAFE_IMAGE_RULE =
 
 function buildPrompt(pose, toolMode) {
   if (pose.shot) {
-    const shotRules = `${SHOT_FRAME_RULES[pose.shot]} ${SHOT_COMMON_RULE} ${TEXT_SAFE_ZONE_RULE}`;
+    const isStory = ["story3d", "storyreal", "storysemi"].includes(CHARACTER);
+    const shotRules = isStory
+      ? `${shotRuleFor(pose.shot)} ${SHOT_COMMON_RULE}`
+      : `${shotRuleFor(pose.shot)} ${SHOT_COMMON_RULE} ${TEXT_SAFE_ZONE_RULE}`;
     const shotBody = pose.first
-      ? `${IDENTITY_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`
-      : `${SAME_CHARACTER_RULE_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`;
+      ? `${isStory && (pose.styleOnly || (CHARACTER === "storysemi" && STORY_OVERRIDES.styleOnlyIdentity)) ? (CHARACTER === "storysemi" ? (STORY_OVERRIDES.styleOnlyIdentity ?? STORY_SEMI_STYLE_ONLY_IDENTITY) : STORY_STYLE_ONLY_IDENTITY) : IDENTITY_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`
+      : `${CHARACTER === "storyreal" ? STORY_REAL_SAME_STYLE_RULE : CHARACTER === "storysemi" ? (STORY_OVERRIDES.sameStyleRule ?? STORY_SEMI_SAME_STYLE_RULE) : isStory ? STORY_SAME_STYLE_RULE : SAME_CHARACTER_RULE_SHOT} ${shotRules} ${pose.clause} ${KOREAN_TEXT_ONLY_RULE} ${VEO_SAFE_IMAGE_RULE}`;
     return toolMode === IMAGE_TOOL_PROMPT_ROUTING_FALLBACK
       ? `${CHATGPT_IMAGE_AUTOMATION_PROMPT_PREFIX} ${shotBody}`
       : shotBody;

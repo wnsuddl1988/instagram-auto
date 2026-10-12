@@ -1,0 +1,46 @@
+{
+  "id": "babysitting-coop-recession",
+  "title": "육아 품앗이 쿠폰 불황",
+  "year": 1977,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "사건·인물 없는 비유",
+  "conditionResolved": false,
+  "finding": "비유가 아니라 실제 모임(워싱턴 D.C. 캐피털힐 베이비시팅 협동조합)이고 인물도 있다: 조안·리처드 스위니 부부가 1977년 논문에서 자기 모임을 소개했고, 모임에서 '한 달에 두 번 이상 외출 규칙'(법적 해결)이 실패한 뒤 경제학자 몇 명이 '쿠폰을 더 발행하자'고 설득해 불황이 풀렸다는 결정 장면이 IMF 소식지와 IndustryWeek(둘 다 크루그먼 책 'Peddling Prosperity' 이야기를 옮김)에서 확인된다. 그러나 이 결정 장면은 크루그먼 재서술 한 계통뿐이고, 숫자가 출처마다 어긋난다: 부부 수 150쌍(IMF·IndustryWeek) vs 1970년대 초 200가족 이상(위키), 쿠폰 1장=30분(IMF·위키) vs 1시간(IndustryWeek), 추가 발행 1인당 10시간(IMF) vs 신규 가입자에게 30시간 주고 탈퇴 시 20시간 환수(위키). 또 Klein·Marginal Revolution은 크루그먼판이 원 논문의 뒷부분(쿠폰 과잉·가격 통제로 인한 부족)을 빼 놓았다고 지적한다. 못 채운 것: 스위니 부부 1977년 원 논문의 직접 확인, 독립 2출처로 맞는 숫자 4개.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "1970년대 워싱턴 D.C. 캐피털힐 베이비시팅 협동조합은 약 150쌍이 서로 아이를 봐 주기로 한 모임이었다.", "numeric": true, "economy": false,
+      "caution": "위키는 '1960년대 20가족에서 1970년대 초 200가족 이상으로 늘었다'고 적어 숫자가 다름. IMF와 IndustryWeek는 모두 크루그먼 서술을 옮긴 것.",
+      "sources": [
+        { "name": "IMF Survey(크루그먼 강연 기사, tau.ac.il 보관)", "url": "https://m.tau.ac.il/~razin/KrugmanIMFSurveyarticle.pdf", "quote": "150 couples agreed to baby-sit" },
+        { "name": "IndustryWeek 'MBA 101: Babysitting The Economy'(2008)", "url": "https://www.industryweek.com/innovation/article/22011321/mba-101-babysitting-the-economy", "quote": "about 150 young couples" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "경제학자들의 설득으로 조합원 1인당 10시간어치 쿠폰(scrip)을 추가 발행하자 외출과 육아 품앗이가 살아나 '불황'이 풀렸다.", "numeric": true, "economy": true,
+      "caution": "단일 계통(크루그먼 서술). 위키는 '신규 가입자에게 30시간 지급·탈퇴 시 20시간 환수'로 다르게 적음. 단일 출처 → 탈락 가능.",
+      "sources": [
+        { "name": "IMF Survey(크루그먼 강연 기사)", "url": "https://m.tau.ac.il/~razin/KrugmanIMFSurveyarticle.pdf", "quote": "10 additional hours of scrip" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "조합 쿠폰 1장은 30분의 아이 돌보기 값이었다.", "numeric": true, "economy": false,
+      "caution": "IndustryWeek는 '1시간'으로 적어 출처마다 다름.",
+      "sources": [
+        { "name": "Wikipedia 'Capitol Hill Babysitting Co-op'", "url": "https://en.wikipedia.org/wiki/Capitol_Hill_Babysitting_Co-op", "quote": "worth half an hour of babysitting time" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "2010년 조합은 20가족으로 줄었다(전성기 약 250가족이라는 서술도 있음).", "numeric": true, "economy": false,
+      "caution": "위키 단일 출처(본문에 '전성기 250가족'이라 적혀 있음).",
+      "sources": [
+        { "name": "Wikipedia 'Capitol Hill Babysitting Co-op'", "url": "https://en.wikipedia.org/wiki/Capitol_Hill_Babysitting_Co-op", "quote": "there were twenty families in the co-op" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 일화. 조합원이 '국회 인맥'이라는 서술이 있으나 정치 쟁점 아님. 크루그먼의 통화정책 주장은 정치·경제 논쟁이 있어 교훈을 '완화하면 된다'로 단정하지 말 것." },
+  "remaining": "결정 장면이 크루그먼 재서술에만 의존하고 숫자가 서로 어긋남. 한국인에게 낯선 미국 일화. 원 논문(Sweeney & Sweeney 1977, JMCB)을 직접 열어 확인해야 usable 가능.",
+  "toolCallsUsed": 9
+}

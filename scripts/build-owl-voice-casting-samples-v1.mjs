@@ -43,6 +43,13 @@ const outDirArg = getArg("--out-dir");
 const armed = args.includes("--arm");
 const CASTING_LINE = getArg("--line") || DEFAULT_CASTING_LINE;
 const usingCustomLine = Boolean(getArg("--line"));
+// --speed: 말 속도 비교용(2026-10-06 스토리형 포맷 속도 샘플). ElevenLabs 허용 범위 0.7~1.2. 없으면 기존처럼 속도 미지정.
+const SPEED_ARG = getArg("--speed");
+const SPEED = SPEED_ARG === null ? null : Number(SPEED_ARG);
+if (SPEED !== null && !(Number.isFinite(SPEED) && SPEED >= 0.7 && SPEED <= 1.2)) {
+  console.error("ABORT: --speed 는 0.7~1.2 사이 숫자여야 합니다.");
+  process.exit(2);
+}
 
 if (!mode || !["list", "sample"].includes(mode)) {
   console.error("ABORT: --mode 는 list 또는 sample 이어야 합니다.");
@@ -220,7 +227,7 @@ async function sampleMode() {
       body: JSON.stringify({
         text: CASTING_LINE,
         model_id: MODEL_ID,
-        voice_settings: { stability: 0.5, similarity_boost: 0.87, style: 0, use_speaker_boost: true },
+        voice_settings: { stability: 0.5, similarity_boost: 0.87, style: 0, use_speaker_boost: true, ...(SPEED !== null ? { speed: SPEED } : {}) },
       }),
     });
     if (!response.ok) {
@@ -230,7 +237,7 @@ async function sampleMode() {
       continue;
     }
     const buffer = Buffer.from(await response.arrayBuffer());
-    const suffix = usingCustomLine ? "-longer" : "";
+    const suffix = (usingCustomLine ? "-longer" : "") + (SPEED !== null ? `-speed${SPEED.toFixed(2)}` : "");
     const outPath = resolve(outDir, `owl-casting${suffix}-${voiceId.slice(0, 8)}.mp3`);
     writeFileSync(outPath, buffer);
     console.log(`  OK   ${voiceId.slice(0, 6)}*** → ${outPath}`);

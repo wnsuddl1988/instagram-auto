@@ -1,0 +1,71 @@
+{
+  "id": "samlip-hoppang-1971",
+  "title": "삼립 호빵 — 겨울에만 파는 빵",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장애물이 하나뿐이라 서사 얕음. '5원 빵의 4배' 근거 없음. SPC 계열 이슈는 호빵 탄생에서 끊을 것",
+  "conditionResolved": false,
+  "finding": "'5원 빵의 4배'는 근거가 있다: 전자신문(2017)이 출시가 20원·당시 다른 빵 5원을 적고 뉴스토마토가 '5원보다 4배나 비싼 20원'이라 적는다. 겨울 비수기를 노린 개발(문화일보·뉴스토마토)과 찜통 배포, 누적 60억 개도 확인된다. 하지만 첫해 최대 출하량이 100만 개(전자신문)와 160만 개(뉴스토마토)로 갈리고, 서사는 '비수기에 팔 빵을 찾음 → 찜통으로 성공' 단일 장애물이라 얕아 결정적 장면의 이중 출처 확인과 4개 이상의 숫자 사실 기준을 채우지 못한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1971년 호빵은 20원으로, 당시 다른 빵 5원의 4배였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "전자신문(2017.1.2)", "url": "https://m.etnews.com/20170102000075", "quote": "그 당시 다른 빵류 가격은 5원" },
+        { "name": "뉴스토마토", "url": "https://www.newstomato.com/ReadNews.aspx?no=1009784", "quote": "빵 값인 5원보다 4배나 비싼 20원" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "호빵 출시 첫해 하루 출하량이 100만 개를 넘었다(최대 160만 개라는 보도도 있음).",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문은 12월 31일 하루 100만 개 돌파, 뉴스토마토는 그해 최대 출고 하루 160만 개. 같은 사실인지 불명확.",
+      "sources": [
+        { "name": "전자신문(2017.1.2)", "url": "https://m.etnews.com/20170102000075", "quote": "1971년 12월 31일 하루 출하 100만개를 돌파했다" },
+        { "name": "뉴스토마토", "url": "https://www.newstomato.com/ReadNews.aspx?no=1009784", "quote": "하루 160만 개" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "삼립은 판매점에서 직접 쪄 팔 수 있는 호빵 판매용 찜통을 만들어 배포했고, 1972년부터 빨간 찜통이 공급돼 인기가 커졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "배포 시작일이 1972년 1월 1일이라는 서술은 이번 조사에서 별도 2출처로 확인 못 함.",
+      "sources": [
+        { "name": "전자신문(2017.1.2)", "url": "https://m.etnews.com/20170102000075", "quote": "호빵 판매용 찜통을 제작 배포했다" },
+        { "name": "뉴시스(2023.12.22)", "url": "https://mobile.newsis.com/view/NISX20231222_0002568463", "quote": "1972년부터 빨간 찜통이 공급돼 인기가 커졌다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "호빵 누적 판매량은 60억 개를 돌파했다(2020년 기준).",
+      "numeric": true,
+      "economy": true,
+      "caution": "기사 시점에 따라 57억(2015)·60억(2020)·61억(2021)·65억(2023)으로 다름.",
+      "sources": [
+        { "name": "뉴스토마토", "url": "https://www.newstomato.com/ReadNews.aspx?no=1009784", "quote": "누적 판매량 60억 개를 돌파" },
+        { "name": "문화일보", "url": "https://www.munhwa.com/article/11207274", "quote": "누적 판매량은 60억 개에 이른다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "삼립은 빵 비수기인 겨울철 매출을 늘리려고 겨울에 팔 호빵을 개발했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "허창성 명예회장의 일본 방문 시점이 1968년 말(재경일보)·1969년(인사이트)로 다름.",
+      "sources": [
+        { "name": "문화일보", "url": "https://www.munhwa.com/article/11207274", "quote": "빵의 비수기로 꼽히는 겨울철 매출을 늘리기 위해" },
+        { "name": "뉴스토마토", "url": "https://www.newstomato.com/ReadNews.aspx?no=1009784", "quote": "제빵업계의 비수기인 겨울철에 팔 수 있는 제품" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "SPC삼립은 현 영업 중인 국내 기업이며 SPC 계열 이슈(2022년 이후 공장 사고·논란)가 따라올 수 있어 호빵 탄생(1971~72)에서 서술을 끊어야 함." },
+  "remaining": "서사가 '비수기 극복 → 찜통' 한 줄이라 반전·장애물이 부족하다. 첫해 출하량 100만/160만 불일치, 누적 판매량 기준 연도 정리가 필요하다. 이 판정은 서사 약함이 본질이며, 인물(허창성) 중심으로 장면을 더 찾을 자료가 있으면 재검토 가능.",
+  "toolCallsUsed": 9
+}

@@ -1,0 +1,70 @@
+{
+  "id": "national-health-insurance-1989",
+  "title": "전 국민 건강보험 — 아파도 병원에 못 가던 나라",
+  "year": 1989,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "제도라 사람 장면 필요",
+  "conditionResolved": false,
+  "finding": "1977년 500인 이상 사업장 시작, 1988년 1월 농어촌 확대, 1989년 7월 도시지역 편입으로 전 국민 의료보험이 완성됐다는 연표는 국가기록원·언론 등 2출처로 확인된다. 그러나 특정 인물의 결단 장면은 찾지 못했고, '논 팔고 집 팔고 소까지 팔아야 했다'는 회고는 한 신문 칼럼(매일신문)뿐이며 일반화된 서술이라 장면 근거로 부족하다. 연표·기관 나열이 되기 쉬워 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1977년 7월 500인 이상 사업장 근로자를 대상으로 의료보험이 처음 시행됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "국가기록원 테마기록(의료보험)", "url": "https://theme.archives.go.kr//next/koreaOfRecord/medicalInsurance.do", "quote": "500명 이상의 사업장에 직장의료보험제도가 처음 실시" },
+        { "name": "매일신문(2013)", "url": "https://www.imaeil.com/page/view/2013071707334163310", "quote": "500인 이상 사업장 근로자들을 대상으로 의료보험을 최초로 시행했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1989년 7월 도시지역 의료보험이 시행되면서 전 국민 의료보험이 완성됐다(1977년 시작 후 12년 만).",
+      "numeric": true,
+      "economy": false,
+      "caution": "프레시안 문장은 '실시한 지 12년 만'으로 12년 계산은 이 출처에만 있음.",
+      "sources": [
+        { "name": "국가기록원 테마기록(의료보험)", "url": "https://theme.archives.go.kr//next/koreaOfRecord/medicalInsurance.do", "quote": "1989년 7월 마침내 도시지역 자영업자까지 의료보험제도에 포함되면서" },
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/132097", "quote": "1989년 7월 1일부터 117개의 의료 보험 조합을 통해" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1988년 1월 농어촌 지역 의료보험이 시행됐다(지역조합 138개).",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "국가기록원 테마기록(의료보험)", "url": "https://theme.archives.go.kr//next/koreaOfRecord/medicalInsurance.do", "quote": "1988년 1월부터 농어촌 주민을 지역조합을 통해" },
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/132097", "quote": "1988년 1월 1일 138개의 의료 보험 조합을 설립하여" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1977년 당시 의료보험 적용은 인구의 8.8%(약 310만 명)에 불과했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(프레시안). 310만 명은 검색 요약에만 있고 원문 대조 못 함.",
+      "sources": [
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/132097", "quote": "전체 인구의 8.8%에 불과했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "보험증이 없던 사람은 중병에 걸리면 논·집·소까지 팔아야 병원에 갈 수 있었다는 회고가 있다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "단일 출처, 개별 인물 일화 아님.",
+      "sources": [
+        { "name": "매일신문(2013)", "url": "https://www.imaeil.com/page/view/2013071707334163310", "quote": "논 팔고 집 팔고 소까지 팔아야 했다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "제도사. 국내 정치 쟁점(건보 재정·보장률·수가) 쪽으로 흐르지 않게 주의." },
+  "remaining": "실명 인물 장면(예: 의료보험 도입을 결정한 인물 또는 병원비 때문에 고통받은 특정 사례)을 2출처로 찾지 못함. 숫자 4개 2출처 중 f4가 단일 출처. 경제 근거(보험료·재정) 숫자 2출처 필요.",
+  "toolCallsUsed": 10
+}

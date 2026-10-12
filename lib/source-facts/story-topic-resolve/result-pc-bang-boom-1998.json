@@ -1,0 +1,60 @@
+{
+  "id": "pc-bang-boom-1998",
+  "title": "PC방 급증",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장면 없음, IMF와의 인과는 게임 매체의 서술 수준, 열람 출처 1건",
+  "conditionResolved": false,
+  "finding": "IMF와 스타크래프트가 PC방 증가를 이끌었다는 서술은 게임메카, 부산일보, 아이러브PC방 등 3곳 이상에서 확인되고, 연도별 PC방 수(2000년 21,460개, 2001년 23,548개)도 2곳 이상이다. 장면으로는 삼성SDS를 나온 김범수(후일 카카오 창업자)가 1998년 한양대 앞에 2억4천만 원으로 국내 최대급 PC방을 연 선택이 벤처스퀘어·다음 기사 등 여러 곳에서 확인된다. 그러나 김범수는 SM엔터 시세조종 혐의 재판 항소심 선고(2026년 11월 20일 예정)가 걸린 현역 기업 창업자라 그를 주인공으로 쓰는 것은 민감하고, 이름 없이 쓸 수 있는 다른 구체적 실직자 장면은 찾지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "전국 PC방 수는 2001년 23,548개로 정점을 찍었다(2000년 21,460개).",
+      "numeric": true,
+      "economy": true,
+      "caution": "1998년 3,000개는 게임메카 단독, 1999년은 15,000개(게임메카)/15,150개(PNN)로 엇갈림.",
+      "sources": [
+        { "name": "게임메카 (2007)", "url": "https://www.gamemeca.com/view.php?gid=36130", "quote": "2001년 23,548여 개로 증가하며 정점을 기록했다" },
+        { "name": "부산일보 (2016)", "url": "https://www.busan.com/view/busan/view.php?code=20160419000025", "quote": "2001년 2만 3천548곳으로 최고치를 기록한" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2000년 전국 PC방 수는 21,460개였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "게임메카 (2007)", "url": "https://www.gamemeca.com/view.php?gid=36130", "quote": "2000년 21,460여 개 2001년 23,548여 개" },
+        { "name": "아이러브PC방 (창간특집)", "url": "http://www.ilovepcbang.com/news/articleView.html?idxno=49385", "quote": "2000년 전국의 PC방 수를 21,460개로 기술하고 있다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "김범수는 1998년 삼성SDS에 사표를 내고 한게임을 창업했고, 한양대 앞에 2억4천만 원으로 국내 최대 규모 PC방을 열었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "투자액은 2억4천만 원(벤처스퀘어·다음) vs 사채 포함 2억5천만 원(한경 sgsg). 진행 중 재판 있는 인물이라 민감.",
+      "sources": [
+        { "name": "벤처스퀘어 (카카오도 벤처가 맞나)", "url": "https://www.venturesquare.net/2395/", "quote": "2억 4천만원이라는 거금으로 한양대 앞에" },
+        { "name": "한경 sgsg, 이공계 CEO 열전 8", "url": "https://sgsg.hankyung.com/article/2011120195821", "quote": "그는 당시 한양대 앞에 국내에서 가장 큰 규모의 PC방을 차렸다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "외환위기 때 명예퇴직 등으로 밀려난 퇴직자들이 적은 자본으로 PC방 창업에 뛰어들었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "게임메카는 IMF를 유일한 원인이 아니라 기폭제로 본다.",
+      "sources": [
+        { "name": "부산일보 (2016)", "url": "https://www.busan.com/view/busan/view.php?code=20160419000025", "quote": "명예퇴직 등으로 직장에서 밀려난 많은 퇴직자가" },
+        { "name": "아이러브PC방 (창간특집)", "url": "http://www.ilovepcbang.com/news/articleView.html?idxno=49385", "quote": "1997년 외환위기로 인한 대량 실직 사태와" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "유일하게 확인된 구체 장면의 주인공 김범수는 카카오 창업자로 SM엔터 시세조종 혐의 항소심이 진행 중(선고 2026-11-20 예정). 카카오 법인도 기소 대상." },
+  "remaining": "김범수 아닌 익명 실직자의 구체 장면(퇴직금 액수, 점포 수 등)은 찾지 못했다. 김범수 선고(11월 20일) 이후 결과를 보고 Owner가 허용하면 f3 장면으로 usable 재판정 가능: 숫자 4개(f1 f2 f3 투자액 + 1998 사표 시점)와 경제 근거는 이미 2곳 확인됨. 그때까지는 보류.",
+  "toolCallsUsed": 17
+}

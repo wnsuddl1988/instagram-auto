@@ -1,0 +1,72 @@
+{
+  "id": "taipei101-samsung",
+  "title": "삼성물산 타이베이101",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "삼성 시공 일화 확인 못 함, 2001 지진 인부 사망 언급",
+  "conditionResolved": false,
+  "finding": "타이베이 101 자체의 숫자(508m, 2004 완공, 660톤 감쇠기, 2002 지진 크레인 추락 5명 사망, 공사비 NT$58억)는 찾았으나 삼성물산이 이 건물에서 무엇을 결정했는지(결단·일화)는 어느 출처에서도 확인되지 않았다. 삼성물산의 역할도 자료마다 다르다(JV 공동 시공사 vs 마감 공사 담당 vs 시공 전체). 2002 지진 사고는 인명 사망이 있는 사건이라 주인공 결단 서사가 아니며, 삼성 일화를 지어내서는 안 되므로 근거 부족 hold(unverifiable).",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "타이베이 101 87~92층 사이에는 660톤짜리 강철 구체(동조질량감쇠기)가 설치돼 있다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "삼성물산이 설치를 결정했다는 근거는 없음(설계상 구조물).",
+      "sources": [
+        { "name": "Wikipedia Taipei 101", "url": "https://en.wikipedia.org/wiki/Taipei_101", "quote": "660-metric-ton (728-short-ton)" },
+        { "name": "아시아경제(2024)", "url": "https://www.asiae.co.kr/article/2024040415454034335", "quote": "660톤(t)짜리 강철 구체다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "삼성물산의 역할은 출처마다 다르다. 위키백과는 'Samsung C&T was responsible'로 쓰고, 아시아경제는 마감 공사를 삼성물산이 했다고 쓴다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "KTRT 조인트벤처(쿠마가이구미 등)의 일원이라는 자료도 있어 단독 시공으로 쓸 수 없음. 이것이 unverifiable의 핵심.",
+      "sources": [
+        { "name": "Wikipedia Taipei 101", "url": "https://en.wikipedia.org/wiki/Taipei_101", "quote": "Samsung C&T was responsible" },
+        { "name": "아시아경제(2024)", "url": "https://www.asiae.co.kr/article/2024040415454034335", "quote": "마감 공사를 삼성물산이 했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "타이베이 101은 높이 508m로 2004년 완공됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "아시아경제는 '500m가 넘어가는'으로만 표기. 508m 두 번째 출처 미확보.",
+      "sources": [
+        { "name": "Wikipedia Taipei 101", "url": "https://en.wikipedia.org/wiki/Taipei_101", "quote": "Taipei 101 was completed in 2004." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "공사 중이던 2002년 3월 31일 지진으로 타워크레인이 추락해 5명이 숨졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인명 사망 사건. 크레인 1대/2대, 공사 재개 시점이 자료마다 다름. 단일 출처만 인용 확인.",
+      "sources": [
+        { "name": "Wikipedia Taipei 101", "url": "https://en.wikipedia.org/wiki/Taipei_101", "quote": "struck Taiwan on 31 March 2002" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "타이베이 101 총공사비는 대만달러 580억(약 19억 달러)으로 기록돼 있다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "자료마다 17.6억~19억 달러, 약 2조 800억원 등으로 불일치. 단일 출처.",
+      "sources": [
+        { "name": "Wikipedia Taipei 101", "url": "https://en.wikipedia.org/wiki/Taipei_101", "quote": "NT$58 billion (US$1.9 billion)" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성물산은 현재 영업 중인 국내 기업이나 사건 자체는 민감하지 않음. 다만 2002 지진 인명 사고가 있고 삼성 책임 서사로 읽힐 위험."
+  },
+  "remaining": "삼성물산이 타이베이 101에서 내린 결단·일화를 입증하는 2곳 출처(삼성물산 뉴스룸·당시 신문 등)가 없음. 삼성물산 사사나 뉴스룸에서 수주·공법 일화를 찾지 못하면 소재로 쓸 수 없음.",
+  "toolCallsUsed": 5
+}

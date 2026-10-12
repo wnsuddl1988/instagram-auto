@@ -1,0 +1,69 @@
+{
+  "id": "hyundai-alpha-engine-1991",
+  "title": "현대 알파엔진",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "'미쓰비시 탈피' 근거 없음, 일화는 회고 1건",
+  "conditionResolved": false,
+  "finding": "1991년 국내 첫 독자 개발 엔진이라는 사실은 현대차그룹·딜사이트·위키트리 3곳에서 확인되고, 개발 착수는 1983년 9월(현대차그룹)과 1984년 7월(위키트리)로 엇갈린다. 정주영의 독자엔진 지시와 미쓰비시의 로열티 반값 회유(미쓰비시 엔진을 다시 쓰면 로열티를 반으로)는 여전히 자동차 매체 Car스텔라 재게시본 1건에만 있고 구보 도미오 이름도 다른 기사에서 확인되지 않아 결정적 장면을 2출처로 못 채웠다. 개발비도 알파엔진 1000억 원(위키트리, 고인 회고)과 알파·베타 합산 5000억 원(서울신문 1996)으로 범위가 달라 쓰기 어렵다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "알파엔진은 1991년 출시된 대한민국 최초의 독자 개발 엔진이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "딜사이트(2023)", "url": "https://dealsite.co.kr/articles/115390", "quote": "1991년 대한민국 최초의 독자개발 엔진인 '알파 엔진'을" },
+        { "name": "위키트리(송준국 부고)", "url": "https://www.wikitree.co.kr/articles/1135688", "quote": "1991년 현대자동차가 국내 기술로 처음 만들어 출시한 자동차 엔진이다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "개발 착수 시점은 출처마다 1983년 9월 또는 1984년 7월로 다르다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연도 불일치 — 대본에 쓰려면 하나로 못 박기 어렵다.",
+      "sources": [
+        { "name": "현대차그룹 스토리", "url": "https://www.hyundaimotorgroup.com/ko/story/CONT0000000000114240", "quote": "1983년 9월 ‘엔진개발실’을 발족하고" },
+        { "name": "위키트리(송준국 부고)", "url": "https://www.wikitree.co.kr/articles/1135688", "quote": "알파엔진은 1984년 7월 개발에 착수해 5년 반 걸려서 완성했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "개발비: 알파엔진 투자비 약 1000억 원(회고) vs 알파·베타엔진 총개발비 5000억 원(개발기간 5년).",
+      "numeric": true,
+      "economy": true,
+      "caution": "범위가 달라 직접 비교 불가. 1000억 원은 고인 회고 기반.",
+      "sources": [
+        { "name": "위키트리(송준국 부고)", "url": "https://www.wikitree.co.kr/articles/1135688", "quote": "투자비만도 대략 1000억 원 정도가 소요됐다" },
+        { "name": "서울신문(1996.3.4)", "url": "https://www.seoul.co.kr/news/1996/03/04/19960304008002", "quote": "개발기간 5년에 총개발비만 5천억원이 들어갔다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "시제품 엔진 약 300기와 시험차 150대로 총 420만 km 시험 운전을 했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "현대차그룹 자체 서술 단독.",
+      "sources": [
+        { "name": "현대차그룹 스토리", "url": "https://www.hyundaimotorgroup.com/ko/story/CONT0000000000114240", "quote": "총 420만 km의 시험 운전을 거쳐 내구성을 검증했다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "미쓰비시가 '다시 미쓰비시 엔진을 쓰면 로열티를 반으로 깎아주겠다'며 회유했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "Car스텔라 칼럼(자동차 커뮤니티 재게시) 단독. 구보 도미오 회장 이름·방문 연도는 다른 기사에서 확인 불가. 정주영/정세영 구분도 불명확.",
+      "sources": [
+        { "name": "Car스텔라 칼럼(getcha 재게시)", "url": "https://web.getcha.kr/community/all/50568?topic=13", "quote": "다시 미쓰비시 엔진을 쓰면 로열티를 반으로 깎아주겠다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현대차는 영업 중이나 소송·제재·피해자 사건 아님." },
+  "remaining": "'미쓰비시 탈피' 결정 장면을 신문·공식 자료 2곳으로 못 찾음. 개발 착수 연도와 개발비가 출처마다 다름. KBS스페셜(2016) 원본은 열람하지 못함.",
+  "toolCallsUsed": 12
+}

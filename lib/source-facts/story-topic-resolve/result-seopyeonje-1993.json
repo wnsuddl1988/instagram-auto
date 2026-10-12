@@ -1,0 +1,58 @@
+{
+  "id": "seopyeonje-1993",
+  "title": "서편제 100만 관객",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "제작비·경제 번역 소재 없음",
+  "conditionResolved": false,
+  "finding": "서울 100만 관객(한국영화 최초), 단성사 196일 상영, 터미네이터2(92만)·늑대와 춤을(98만) 능가 같은 흥행 숫자는 확인됨(앞 두 가지는 위키백과·위키트리 2곳 일치). 그러나 제작비·투자 구조·제작사 수익 수치는 신문·백과 어디에도 없어 '경제 번역' 근거가 비어 있고, 결과를 바꾼 결정적 선택(단관 장기 상영 결정 등)을 다룬 출처도 못 찾음. 영화 흥행 기록은 있지만 주인공의 결단 장면과 돈 숫자가 없어 스토리형 요건 b·c를 못 채움.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "서편제는 한국 영화 최초로 서울 기준 관객 100만 명을 넘겼다(1993).",
+      "numeric": true,
+      "economy": false,
+      "caution": "'서울 관객' 기준이며 전국 관객이 아님. 서울신문(2001)은 1999년 쉬리(200만)가 이 기록을 깼다고 적음.",
+      "sources": [
+        { "name": "위키백과 '서편제(영화)'", "url": "https://ko.wikipedia.org/wiki/서편제_(영화)", "quote": "한국 최초로 공식적 관객 숫자 100만 단위를 넘긴(서울 기준) 영화이다." },
+        { "name": "위키트리", "url": "https://www.wikitree.co.kr/articles/1003024", "quote": "한국 영화 최초로 서울 단일 지역에서 100만 관객을 달성한 작품이 됐다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "서편제는 단성사 한 극장에서 196일간 상영되며 서울 100만 관객을 모았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'단성사 단독'인지 '서울 전체 196일'인지 표현이 출처마다 약간 다름.",
+      "sources": [
+        { "name": "위키백과 '서편제(영화)'", "url": "https://ko.wikipedia.org/wiki/서편제_(영화)", "quote": "상영 196일 동안 서울에서 1백만 관객을 동원시키는" },
+        { "name": "위키트리", "url": "https://www.wikitree.co.kr/articles/1003024", "quote": "단성사는 서울에서 196일간 ‘서편제’를 상영했는데" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "'서편제'의 100만 기록은 6년 뒤 1999년 '쉬리'가 200만을 동원하며 깨졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처(서울신문 2001). 2번째 출처 미확보.",
+      "sources": [
+        { "name": "서울신문(2001)", "url": "https://www.seoul.co.kr/news/2001/12/04/20011204008004", "quote": "6년만에 ‘쉬리’가 200만을 동원해 서편제의기록을 깼다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "같은 시기 해외 대작 '늑대와 춤을'(1990)은 서울 98만, '터미네이터 2'(1991)는 92만을 기록했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처(위키트리). 2번째 출처 미확보.",
+      "sources": [
+        { "name": "위키트리", "url": "https://www.wikitree.co.kr/articles/1003024", "quote": "각각 서울에서 98만 명, 92만을 기록했다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "1993년 영화 흥행 사례, 현 영업 중인 기업·진행 중 사건·정치 소지 없음" },
+  "remaining": "서편제 제작비·투자·제작사 수익 수치를 찾지 못함(KMDb·씨네21 1993년 기사 필요). 결정적 장면(예: 단성사 단관 장기 상영 결단)과 경제 번역 숫자가 없어 스토리형 편으로는 약함.",
+  "toolCallsUsed": 8
+}

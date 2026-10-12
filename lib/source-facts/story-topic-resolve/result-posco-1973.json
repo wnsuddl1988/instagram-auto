@@ -1,0 +1,117 @@
+{
+  "id": "posco-1973",
+  "title": "포스코 — 용광로 기술도 돈도 없던 나라의 제철소",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "Owner 10/8 초안 반려(연표·기관 나열). 3편과 구조 겹침. 한 장면으로 다시 잡아야 함",
+  "conditionResolved": true,
+  "finding": "연표 대신 '국제 차관이 막힌 귀국길에 박태준이 대일청구권 자금(농림수산 몫)을 제철소 건설로 돌릴 생각을 떠올린 장면' 하나로 잡을 수 있고, 이 전용 구상은 국가기록원·경북매일·블록미디어(포철 20년사 인용) 등 여러 곳에서 확인된다. 결과 숫자(1기 103만 톤, 39개월, 투입 1,204억 원, 가동 1년 만의 242억 원 흑자)도 서로 다른 2곳씩 일치한다. 사업비·청구권 자금 액수가 출처마다 다른 점만 피하면 usable.",
+  "coreMessage": "돈이 막혔을 때는 새 돈을 구걸하기 전에, 이미 손에 있는 돈의 쓰임부터 다시 따져 봐라.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "국제 차관단이 등을 돌리자, 박태준 사장은 귀국길에 대일청구권 자금(농림수산 몫)을 제철소 건설에 돌리자는 아이디어를 떠올려 정부와 일본 정재계를 직접 설득했고, 이 방식으로 건설 계획이 수정됐다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "전용 구상 시점은 1968년 설·1969년 1월 귀국길 설로 자료마다 약간 다름(대본에는 '차관 교섭 실패 직후'로만). 전용 금액은 출처마다 5,080만/7,370만/8천만 달러로 달라 대본에 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "국가기록원 '포항제철소 건설' 기록으로 보는 한국(주제별)",
+          "url": "https://theme.archives.go.kr/next/koreaOfRecord/pohangJecheol.do",
+          "quote": "청구권 자금을 전용하여 제철소 건설자금 1억 달러를 마련"
+        },
+        {
+          "name": "경북매일 포스코 연혁 기사(2015)",
+          "url": "https://kbmaeil.com/article/201506230133501",
+          "quote": "대일청구권 자금을 전용하는 아이디어를 구상"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1973년 7월 3일 조강 연산 103만 톤 규모의 포항제철소 1기가 준공됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "국가기록원 '포항제철소 건설'",
+          "url": "https://theme.archives.go.kr/next/koreaOfRecord/pohangJecheol.do",
+          "quote": "103만 톤의 포항제철소 1기가 준공되었다",
+          "manualVerified": true
+        },
+        {
+          "name": "포스코 뉴스룸",
+          "url": "https://newsroom.posco.com/kr/?p=97452",
+          "quote": "연산 103만톤 규모의 종합제철 공장이 준공됐다",
+          "manualVerified": true
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1기 설비 건설에는 39개월이 걸렸고 공사에 연인원 315만 명이 투입됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "포스코 뉴스룸(종합준공 50주년)",
+          "url": "https://newsroom.posco.com/kr/?p=96407",
+          "quote": "39개월에 이르는 포항 1기 설비 건설기간"
+        },
+        {
+          "name": "매일신문(2026)",
+          "url": "https://www.imaeil.com/page/view/2026062216420222224",
+          "quote": "39개월간 연인원 315만 명이 동원된"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1기 건설에는 내자 493억 원, 외자 711억 원(1억 7,800만 달러), 합계 1,204억 원이 투입됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "경북매일·매일신문 2011 기사는 '총 사업비 600여억 원', 매일신문 2026은 '공사비 1,200억 원'으로 서로 다름 — 1,204억 원(포스코 뉴스룸·뉴데일리 일치)만 사용.",
+      "sources": [
+        {
+          "name": "포스코 뉴스룸(종합준공 50주년)",
+          "url": "https://newsroom.posco.com/kr/?p=96407",
+          "quote": "내자 493억 원, 외자 711억 원(1억 7800만 달러), 합계 1204억 원"
+        },
+        {
+          "name": "뉴데일리 경제(2011)",
+          "url": "https://biz.newdaily.co.kr/site/data/html/2011/12/13/2011121310005.html",
+          "quote": "외자 711억 원(1억 7,800만 달러), 내자 493억 원 합계"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "가동 1년 만인 1974년 7월 포항제철소는 242억 원 흑자를 냈고 매출액은 1억 달러를 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'세계 최초 첫해 흑자' 표현은 확인 안 됨 — 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "포스코 뉴스룸(종합준공 50주년)",
+          "url": "https://newsroom.posco.com/kr/?p=96407",
+          "quote": "1974년 7월에는 242억 원의 흑자를 기록"
+        },
+        {
+          "name": "국가기록원 '포항제철소 건설'",
+          "url": "https://theme.archives.go.kr/next/koreaOfRecord/pohangJecheol.do",
+          "quote": "매출액 1억 달러를 기록하며 흑자로 전환"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "포스코는 현 영업 중인 국내 기업이나 진행 중 소송·제재가 소재 자체는 아님. 다만 대일청구권 자금은 강제징용 배상 논쟁과 인접하므로 '피의 대가' 등 정치적 해석·협정 평가는 빼고 '농림수산 몫을 제철소로 돌렸다'까지만 쓸 것."
+  },
+  "remaining": "3편(현대 거북선 지폐)과 '차관이 막히자 다른 길을 찾는다'는 구조가 겹쳐 연작처럼 보일 수 있음 — Owner 판단. 10/8 초안은 연표형이라 반려됐으므로 귀국길 한 장면 + 결과(가동 1년 흑자)로만 구성해야 함.",
+  "toolCallsUsed": 17
+}

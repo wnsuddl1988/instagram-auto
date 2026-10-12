@@ -1,0 +1,84 @@
+{
+  "id": "perrier-benzene-1990",
+  "title": "페리에 벤젠 리콜",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "해명 번복이 핵심이라 장면 약함. 한국 20~40대에게 거리감",
+  "conditionResolved": false,
+  "finding": "리콜 규모(1억 6천만 병·120개국·3,500만 달러어치 폐기)와 원인(가스 라인 필터를 6주마다 갈아야 하는데 최대 3개월 방치)은 서로 다른 사이트 2곳으로 확인된다. 그러나 결과를 바꾼 '결정적 장면'은 미국 노스캐롤라이나 연구소 발견→'직원이 장비 세척에 벤젠 썼다'는 첫 해명→전 세계 리콜로 번복되는 흐름이라 해명 번복이 핵심이고, 한 장면(주인공의 선택)으로 서 있지 않다. 손실액도 3,500만~7,800만 달러(1990 보도)부터 1.5억·2.63억 달러(후일 추정)까지 출처마다 크게 달라 경제 근거 숫자를 하나로 못 박기 어렵다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "페리에는 1990년 2월 벤젠 오염으로 전 세계에서 약 1억 6천만 병을 리콜했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "영국 Marketing Week는 '영국 4천만 병, 전 세계 1억 6천만 병'으로 적음",
+      "sources": [
+        { "name": "UPI(1990.2.14)", "url": "https://www.upi.com/Archives/1990/02/14/Perrier-recalls-supplies-worldwide/9677634971600/", "quote": "recall 160 million bottles" },
+        { "name": "Deseret News(1990.2.15)", "url": "https://www.deseret.com/1990/2/15/18846581/perrier-says-failure-to-replace-filter-caused-benzene-contamination/", "quote": "160 million of the green bottles" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "리콜은 120개국의 유통센터와 매장 진열대에서 이뤄졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "UPI(1990.2.14)", "url": "https://www.upi.com/Archives/1990/02/14/Perrier-recalls-supplies-worldwide/9677634971600/", "quote": "store shelves in 120 countries" },
+        { "name": "Deseret News(1990.2.15)", "url": "https://www.deseret.com/1990/2/15/18846581/perrier-says-failure-to-replace-filter-caused-benzene-contamination/", "quote": "will be destroyed in 120 countries" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "폐기 대상 물량의 가치는 3,500만 달러어치였고 회사는 이 손실에 대한 보험이 없다고 밝혔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Tampa Bay 보도는 세전 7,000만 달러, Seattle Times는 회사 추정 리콜 비용 7,800만 달러, 후일 추정은 1.5억~2.63억 달러로 출처마다 다름",
+      "sources": [
+        { "name": "UPI(1990.2.14)", "url": "https://www.upi.com/Archives/1990/02/14/Perrier-recalls-supplies-worldwide/9677634971600/", "quote": "$35 million worth of the popular" },
+        { "name": "Deseret News(1990.2.15)", "url": "https://www.deseret.com/1990/2/15/18846581/perrier-says-failure-to-replace-filter-caused-benzene-contamination/", "quote": "worth $35 million will be destroyed" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "원인은 6주마다 교체해야 하는 가스 라인 필터를 최대 3개월까지 방치한 것이었고, 회사는 앞서 한 직원이 장비 세척에 벤젠을 썼다고 잘못 설명했었다(해명 번복).",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처(Deseret)만 확인. 두 번째 출처 미확보",
+      "sources": [
+        { "name": "Deseret News(1990.2.15)", "url": "https://www.deseret.com/1990/2/15/18846581/perrier-says-failure-to-replace-filter-caused-benzene-contamination/", "quote": "supposed to be changed every six weeks" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1989년 페리에의 미국 매출은 1억 200만 달러(시장 점유 4.4%)였고, 리콜 뒤 호텔·식당이 물량을 끊었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(Seattle Times 1990.6.26). 두 번째 출처 미확보",
+      "sources": [
+        { "name": "Seattle Times(1990.6.26)", "url": "https://archive.seattletimes.com/archive/19900626/1079093/bubble-trouble----perrier-struggles-to-regain-place-in-us-market", "quote": "posted U.S. sales of $102 million" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "리콜 뒤 연간 생산량은 12억 병에서 7억 병으로 줄었고, 페리에는 2년 뒤인 1992년 네슬레에 인수됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "생산량은 Marketing Week 단일 출처, 네슬레 1992 인수는 Wikipedia 확인",
+      "sources": [
+        { "name": "Marketing Week", "url": "https://www.marketingweek.com/can-perrier-sparkle-with-a-plastic-tactic/", "quote": "it has since fallen to 700 million" },
+        { "name": "Wikipedia(Perrier)", "url": "https://en.wikipedia.org/wiki/Perrier", "quote": "Perrier was bought by Nestlé" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외·종결된 1990년 사건. 민감성 문제 없음."
+  },
+  "remaining": "결정적 장면(노스캐롤라이나 환경보건국 연구소 발견→첫 해명 번복→전 세계 리콜)을 2곳 출처로 확정하지 못함(UNC 블로그 접속 실패로 단일 단서). 손실액 출처 불일치. 한국 시청자에게 거리감.",
+  "toolCallsUsed": 8
+}

@@ -1,0 +1,60 @@
+{
+  "id": "samsung-prelude-flng-2017",
+  "title": "삼성중공업 프렐류드 FLNG",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "규모는 풍부하나 결정적 인간 장면 없음",
+  "conditionResolved": false,
+  "finding": "규모·금액·일정 숫자는 두 곳 이상에서 확인된다(길이 488m·60만 톤, 연 LNG 360만 톤, 수주액 3.27조 원~36억 달러, 2017.6 거제 출항·5,800km 예인). 그러나 결과를 바꾼 결정적 장면은 조사해도 '쉘의 착수 통보(2011.5.30)'와 '거제 출항' 같은 기업·공정 이벤트뿐이고, 누구의 어떤 선택이 무엇을 바꿨는지 보여 줄 인물·결단이 출처에 없다. 한국인이 아는 한 장면+선택이라는 채널 기준에 맞지 않아 규모 자랑형 연표가 되기 쉬우므로 보류한다(법·정치 문제는 없음).",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "프렐류드 FLNG는 길이 488m·무게 60만 톤으로 폭 74m, 축구장 4개를 직렬로 놓은 크기의 세계 최대 부유식 설비다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "한국 기사 일부는 길이를 489m로 적음(488m가 원자료 표기). 60만 톤은 적재 시 배수량.",
+      "sources": [
+        { "name": "TechnipFMC 보도자료(2017)", "url": "https://www.technipenergies.com/media/news/archive-shell-prelude-facility-has-sailed-away-australia", "quote": "weighing 600,000 tonnes" },
+        { "name": "한경매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202112291512b", "quote": "길이 488m, 폭 74m로 축구 경기장 4개를 직렬 배열한 크기" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "삼성중공업은 2011년 쉘의 프렐류드 FLNG를 약 3조 원대(3.27조 원, 36억 달러)에 수주했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "금액이 출처마다 다름: 삼성중공업 공시 3.27조 원(약 30억 달러, Dow Jones) vs 한경매거진 36억 달러. 대본에서는 '3조 원대'로만 쓸 것. 쉘 측 설비 전체 추정은 108억~126억 달러(쉘 임원 발언, gCaptain 인용).",
+      "sources": [
+        { "name": "gCaptain/Dow Jones(2011)", "url": "https://gcaptain.com/samsung-shells-flng-facility", "quote": "will cost 3.27 trillion won ($3 billion)" },
+        { "name": "한경매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202112291512b", "quote": "‘프렐류드 FLNG’를 36억 달러에 수주했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "프렐류드 FLNG는 해상에서 연간 LNG 360만 톤을 생산하도록 설계됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "TechnipFMC 보도자료(2017)", "url": "https://www.technipenergies.com/media/news/archive-shell-prelude-facility-has-sailed-away-australia", "quote": "3.6 million tonnes per annum (mtpa)" },
+        { "name": "한경매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202112291512b", "quote": "연간 LNG 360만 톤을 생산한다는" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "프렐류드는 2017년 6월 거제조선소를 출발해 호주까지 5,800km를 항해했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "항해 거리는 5,550km(3,000해리)로 적은 매체도 있음.",
+      "sources": [
+        { "name": "Offshore Energy(2017)", "url": "https://offshore-energy.biz/2017/06/29/shells-prelude-flng-on-the-move", "quote": "begun the 5,800km journey to Australia" },
+        { "name": "한경매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202112291512b", "quote": "2017년 6월 거제조선소에서 출항했다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "삼성중공업은 영업 중인 국내 기업이나 진행 중 소송·제재 없음. 다만 쉘의 프렐류드 운영 부진·상각(추정 최대 90억 달러) 보도가 있어 '성공 자랑' 서술은 주의 필요." },
+  "remaining": "결정적 인물·선택 장면 부재(건조 주체도 테크닙-삼성 컨소시엄). 장면을 만들려면 2009년 7월 쉘과의 FLNG 독점 공급 장기계약(한경매거진 단일 출처) 체결 같은 결단을 2출처로 보강하고 담당자 일화를 찾아야 하나 현재 자료에는 없음.",
+  "toolCallsUsed": 9
+}

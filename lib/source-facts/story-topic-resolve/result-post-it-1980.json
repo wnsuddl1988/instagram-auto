@@ -1,0 +1,82 @@
+{
+  "id": "post-it-1980",
+  "title": "포스트잇 — 5년간 쓸 곳이 없던 풀",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "우연한 발명 단골이라 포화 높음",
+  "conditionResolved": true,
+  "finding": "1968년 실버의 접착제 개발, 쓸 곳을 못 찾은 5년, 1977년 4개 도시 시험판매 부진, 보이시(Boise) 무료 샘플 시험에서 시도자 약 90%가 사겠다고 답한 것, 1980년 4월 6일 전국 출시가 모두 서로 다른 두 사이트에서 원문 확인됐다. 결정적 장면은 시장 시험이 부진하자 무료 샘플을 직접 쥐여준 보이시 시험이다. 포화도는 소재 채택 기준(a~e)에 포함되지 않아 판정에 영향이 없다.",
+  "coreMessage": "해답은 문제를 안고 있는 사람의 현장에서 나온다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1968년 3M 연구원 스펜서 실버가 잘 붙지만 쉽게 떨어지는 접착제를 만들었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "스미소니언 블로그 등 일부는 연도를 달리 적음(본 인용 두 곳은 일치).",
+      "sources": [
+        { "name": "MNopedia (미네소타 역사협회)", "url": "https://www.mnhs.org/mnopedia/search/index/thing/post-it-notes", "quote": "In 1968, Spencer Silver, a scientist" },
+        { "name": "MIT Lemelson Center", "url": "https://lemelson.mit.edu/resources/art-fry-spencer-silver", "quote": "In 1968, Silver developed a" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "실버는 이후 5년간 사내에 접착제를 소개했지만 쓸 곳을 찾지 못했고, 1973년 시도한 재사용 게시판도 먼지 때문에 실패했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "프라이의 아이디어 시점은 1973(MNopedia) 또는 1974(발명가 명예의 전당)로 출처마다 다름.",
+      "sources": [
+        { "name": "MIT Lemelson Center", "url": "https://lemelson.mit.edu/resources/art-fry-spencer-silver", "quote": "Over the next five years, Silver shared" },
+        { "name": "National Inventors Hall of Fame", "url": "https://www.invent.org/blog/trends-stem/who-invented-post-it-notes", "quote": "Five years later, in 1973" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1977년 3M은 '프레스 앤 필'이라는 이름으로 4개 도시에서 시험 판매했으나 결과는 부진했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'부진' 서술은 위키백과 등 다른 출처 근거. 인용한 두 곳은 4개 도시·1977년을 확인.",
+      "sources": [
+        { "name": "National Inventors Hall of Fame", "url": "https://www.invent.org/blog/trends-stem/who-invented-post-it-notes", "quote": "released in four cities under the name" },
+        { "name": "History.com", "url": "https://www.history.com/this-day-in-history/april-6/post-it-notes-debut", "quote": "in four cities in 1977" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "포스트잇은 1980년 4월 6일 미국 전역에 판매가 시작됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "National Inventors Hall of Fame", "url": "https://www.invent.org/blog/trends-stem/who-invented-post-it-notes", "quote": "on April 6, 1980, Post-It Notes launched" },
+        { "name": "History.com", "url": "https://www.history.com/this-day-in-history/april-6/post-it-notes-debut", "quote": "On April 6, 1980, 3M begins sales" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "보이시(아이다호) 대규모 시험에서 무료 샘플을 써 본 사람의 약 90% 이상이 사겠다고 답했다(결정적 장면).",
+      "numeric": true,
+      "economy": true,
+      "caution": "시험 연도가 1978(MNopedia)/1977 다음 해(위키백과)/1979로 출처마다 다르고, 90%는 '구매 의향'이지 실제 재주문율이 아님(블로그는 재주문 90%로 적음 — 쓰지 말 것).",
+      "sources": [
+        { "name": "MNopedia (미네소타 역사협회)", "url": "https://www.mnhs.org/mnopedia/search/index/thing/post-it-notes", "quote": "90 percent of people who tried" },
+        { "name": "Wikipedia, Post-it note", "url": "https://en.wikipedia.org/wiki/Post-it_note", "quote": "more than 90 percent of those who" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "프라이는 성가대에서 찬송가집에 끼운 책갈피가 자꾸 떨어지는 문제에서 이 풀을 떠올렸다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "프라이의 정확한 시점은 1973/1974 불일치. 발명가 명예의 전당 문장은 요약 기반이라 대본 사용 전 재확인 권장.",
+      "sources": [
+        { "name": "MNopedia (미네소타 역사협회)", "url": "https://www.mnhs.org/mnopedia/search/index/thing/post-it-notes", "quote": "fell out of the hymnal" },
+        { "name": "National Inventors Hall of Fame", "url": "https://www.invent.org/blog/trends-stem/who-invented-post-it-notes", "quote": "bookmark that would stay" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 오래된 종결 사건. 국내 민감성 없음." },
+  "remaining": "한국 기준 '굵직한 장면'의 인지도는 보통(포스트잇 자체는 모두 앎). 연매출 등 경제 숫자는 이번 조사에서 2출처로 못 찾았고, 경제 번역은 '무료 샘플 → 구매의향 90%'(샘플 마케팅)으로 처리해야 함. 시험 연도 1977/1978/1979 불일치 때문에 대본에서는 연도를 '1980 전국 출시 전'으로만 표기할 것.",
+  "toolCallsUsed": 10
+}

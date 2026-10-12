@@ -207,6 +207,8 @@ async function graphJson(response) {
   }
 }
 
+let aiLabelApplied = null; // 컨테이너 생성 때 정해진다(true = is_ai_generated 라벨 적용, false = API가 거부해 라벨 없이 생성)
+
 function writeResult(status, extra) {
   const payload = {
     schemaVersion: "owl_instagram_publish_result_v1",
@@ -214,6 +216,7 @@ function writeResult(status, extra) {
     contentId: manifest.contentId,
     videoUrl,
     accountIdMasked,
+    aiLabelApplied,
     finishedAt: new Date().toISOString(),
     ...extra,
   };
@@ -233,14 +236,31 @@ const containerParams = {
 if (coverImageUrl) {
   containerParams.cover_url = coverImageUrl;
 }
-const containerResponse = await fetch(`${GRAPH_BASE}/${encodeURIComponent(accountId)}/media`, {
-  method: "POST",
-  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  body: new URLSearchParams(containerParams),
-  redirect: "error",
-  signal: AbortSignal.timeout(60_000),
-});
-const containerData = await graphJson(containerResponse);
+// AI 생성 콘텐츠 표시(Owner 2026-10-07 "AI 표시는 플랫폼 기능으로"): Instagram Content Publishing API의 `is_ai_generated=true`(Meta 변경 기록 2026-06-22)로
+// 게시물에 "AI info" 라벨을 붙인다. 게시 후에는 추가할 수 없어 컨테이너 생성 때만 가능하다. YouTube는 `containsSyntheticMedia: true`를 이미 보낸다.
+// 쓰는 Graph API 버전이 이 항목을 거부하면(오류에 is_ai_generated 언급) 라벨 없이 한 번만 다시 만들고, 결과 파일에 aiLabelApplied=false를 남긴다.
+// 스토리형(사실적인 3D CG 재연 영상)에만 적용한다 — manifest.aiLabel === true 또는 manifest.formatProfile === "story_v1".
+// 부엉·황소 설명형(만화 캐릭터)은 기존 동작 그대로 둔다(Meta의 AI info는 사실적 AI 콘텐츠 기준이고, 설명형에 일괄 적용하면 반응 영향을 모른다).
+const wantsAiLabel = manifest.aiLabel === true || manifest.formatProfile === "story_v1";
+if (wantsAiLabel) containerParams.is_ai_generated = "true";
+aiLabelApplied = wantsAiLabel ? true : false;
+const createContainer = async (params) => {
+  const response = await fetch(`${GRAPH_BASE}/${encodeURIComponent(accountId)}/media`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params),
+    redirect: "error",
+    signal: AbortSignal.timeout(60_000),
+  });
+  return { response, data: await graphJson(response) };
+};
+let { response: containerResponse, data: containerData } = await createContainer(containerParams);
+if (wantsAiLabel && !containerResponse.ok && /is_ai_generated/i.test(JSON.stringify(containerData?.error ?? containerData))) {
+  console.log("[owl-publish] 이 API 버전이 is_ai_generated를 거부 — 라벨 없이 한 번만 다시 생성(Owner에게 보고 필요)");
+  aiLabelApplied = false;
+  const { is_ai_generated: _drop, ...withoutLabel } = containerParams;
+  ({ response: containerResponse, data: containerData } = await createContainer(withoutLabel));
+}
 const containerId = typeof containerData?.id === "string" ? containerData.id : null;
 if (!containerResponse.ok || !containerId) {
   const detail = sanitize(JSON.stringify(containerData?.error ?? containerData));

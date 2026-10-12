@@ -1,0 +1,154 @@
+{
+  "id": "ever-given-suez-2021",
+  "title": "에버기븐호 — 배 한 척이 막은 수에즈",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "주인공·선택 없는 사고. 번역 지점은 풍부",
+  "conditionResolved": true,
+  "finding": "사고 자체는 주인공이 없지만, 결과를 바꾼 장면은 있다: 구조팀(SCA+스미트 샐비지)이 화물을 내리는 대신 모래를 파내고 보름달 만조(대조기)를 기다려 예인선으로 끌어낸 결단(3/29 오전 4시 30분 재부양). 12%·369척·하루 약 96억달러 등 숫자 사실이 한국·해외 매체 2곳씩 확인된다. 구조팀의 '기다림과 타이밍' 선택을 결정적 장면으로 쓰면 가능하나, 개인 주인공은 없다.",
+  "coreMessage": "효율을 위해 한 길목에 몰아넣은 세계 물류는, 배 한 척에 12%가 멈출 만큼 약하다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "수에즈 운하는 전 세계 교역량의 약 12%를 처리한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 자료는 13%로 집계(Allianz 인용 보도).",
+      "sources": [
+        {
+          "name": "뉴시스(2021.3.28)",
+          "url": "https://www.newsis.com/view/NISX20210328_0001386157",
+          "quote": "수에즈 운하는 전 세계 교역량의 12%를 처리했으며"
+        },
+        {
+          "name": "CNBC(2021.3.25)",
+          "url": "https://www.cnbc.com/2021/03/25/suez-canal-blockage-is-delaying-an-estimated-400-million-an-hour-in-goods.html",
+          "quote": "approximately 12% of total global trade"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "좌초 엿새째까지 운하 양쪽에 대기한 선박이 369척에 달했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "시점에 따라 숫자가 다름(3/28 기준 320척 이상, 3/29 SCA 발표 369척).",
+      "sources": [
+        {
+          "name": "파이낸셜뉴스(2021.3.29)",
+          "url": "https://www.fnnews.com/news/202103291541067627",
+          "quote": "369척의 선박들이 수에즈 운하 양쪽에서"
+        },
+        {
+          "name": "Business Insurance/Reuters(2021.3.29)",
+          "url": "https://www.businessinsurance.com/traffic-in-suez-canal-resumes-after-stranded-ship-refloated/",
+          "quote": "At least 369 vessels are waiting"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "에버기븐이 막은 동안 운하를 통과하지 못해 지연된 교역 규모는 하루 약 96억달러(시간당 약 4억달러)로 추정됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "실제 손실이 아니라 '지연된 화물 가치'. 출처마다 9억/96억 등 표기 차이(Lloyd's List 추정).",
+      "sources": [
+        {
+          "name": "Daily Mirror/BBC(2021.3.26)",
+          "url": "https://dailymirror.lk/print/business-news/Suez-blockage-is-holding-up-US-9-6bn-of-goods-a-day/273-208694",
+          "quote": "an estimated US $ 9.6 billion"
+        },
+        {
+          "name": "CNBC(2021.3.25)",
+          "url": "https://www.cnbc.com/2021/03/25/suez-canal-blockage-is-delaying-an-estimated-400-million-an-hour-in-goods.html",
+          "quote": "$400 million an hour in trade"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2021년 3월 23일 좌초된 에버기븐호는 29일 오전 4시 30분 다시 떠올라, 운하는 약 6일간 막혔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'6일'은 엿새째 표현 등 기사별 셈법 차이(약 6일).",
+      "sources": [
+        {
+          "name": "파이낸셜뉴스(2021.3.29)",
+          "url": "https://www.fnnews.com/news/202103291541067627",
+          "quote": "에버기븐호가 이날 오전 4시 30분에 다시 물에 떴다고"
+        },
+        {
+          "name": "머니투데이 김화진 칼럼(2023.9.6)",
+          "url": "https://www.mt.co.kr/opinion/2023/09/06/2023090616244674319",
+          "quote": "수에즈 운하가 6일 동안 막히는 대형 사고가 났다"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "구조팀은 며칠간 준설한 뒤 보름달 대조기 만조(약 24시간)를 이용해 예인선으로 배를 끌어내 재부양에 성공했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'보름달' 언급은 Smithsonian 한 곳이 명시, Reuters(Himalayan Times)는 '만조를 기다림'까지 확인. 준설 모래 양은 출처마다 달라(2.7만㎥/3만㎥) 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "Al Jazeera(2021.3.29)",
+          "url": "https://www.aljazeera.com/amp/news/2021/3/29/ever-given-refloated",
+          "quote": "when the full moon brought spring tide",
+          "manualVerified": true
+        },
+        {
+          "name": "Reuters via The Himalayan Times(2021.3.29)",
+          "url": "https://thehimalayantimes.com/world/huge-ship-blocking-suez-canal-partially-refloated-more-work-needed",
+          "quote": "once the tide rises later on Monday"
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "이집트 정부는 이번 사고로 운하 수입이 하루 1400만~1500만달러씩 줄었다고 주장했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1400만(경향)과 1500만(파이낸셜뉴스) 표기가 다름 — '약 1,400만~1,500만달러' 범위로만 사용.",
+      "sources": [
+        {
+          "name": "경향신문(2021.5)",
+          "url": "https://www.khan.co.kr/article/202105311425001",
+          "quote": "하루 1400만달러(158억원)씩 손해를 봤다"
+        },
+        {
+          "name": "파이낸셜뉴스(2021.3.29)",
+          "url": "https://www.fnnews.com/news/202103291541067627",
+          "quote": "일일 최대 1500만달러(약 169억원)의 손실이"
+        }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "2020년 한 해 약 1만9000척, 하루 평균 51.5척이 수에즈 운하를 통과했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        {
+          "name": "뉴시스(2021.3.28)",
+          "url": "https://www.newsis.com/view/NISX20210328_0001386157",
+          "quote": "하루 평균 51.5척의 선박이 수에즈 운하를 통과했다"
+        },
+        {
+          "name": "BusinessDay(2021.3)",
+          "url": "https://businessday.ng/maritime/article/10-things-to-know-about-the-blocked-suez-canal/",
+          "quote": "an average of 51.5 ships per day"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 사건, 종결됨. 이집트-선주 배상 합의액(5.4억달러)은 미확인이라 쓰지 말 것."
+  },
+  "remaining": "개인 주인공이 없는 사건이라 '구조팀의 결단(준설+만조 대기)'을 주체로 세워야 함. 전달 메시지는 Owner 확인 필요.",
+  "toolCallsUsed": 28
+}

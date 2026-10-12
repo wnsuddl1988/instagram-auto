@@ -1,0 +1,60 @@
+{
+  "id": "fila-acquisition-2007",
+  "title": "휠라코리아의 휠라 본사 인수",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "금융구조(선납 로열티) 번역 난도, 금액 엇갈림",
+  "conditionResolved": true,
+  "finding": "선납 로열티 구조는 '라이선시가 낼 로열티 7~8%의 절반을 미리 받는다' 한 문장으로 번역되고, 머니투데이(2010 윤윤수 강연 기사)와 Korea JoongAng Daily 두 곳이 같은 내용을 확인해 난도 조건이 풀린다. 결정 장면은 인수 자금이 모자란 윤윤수 회장이 라이선시에게 로열티 절반을 선납받는 계약을 설계한 것이고, 뒤이어 2011년 아큐시네트(타이틀리스트) 인수까지 이어져 지금은 매출 약 3조 원 중 60% 안팎이 아큐시네트에서 나온다. 인수 금액은 출처별로 3.9억/약 4억/4.5억 달러로 엇갈려 대본에서는 '약 4억 달러' 범위 표현만 쓰면 된다.",
+  "coreMessage": "돈이 모자라 포기하는 대신, 상대의 미래 이익을 먼저 당겨 쓰는 거래를 설계하면 불가능해 보이던 인수도 길이 열린다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "윤윤수 회장은 인수 자금을 마련하려고 라이선시가 계약 기간 내야 할 로열티(7~8%)의 절반을 미리 받는 새 라이선스 계약을 만들었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "로열티율이 한 출처는 '7~8%', 다른 출처는 '8%'로 표기됨. 대본에서는 '로열티의 절반을 먼저'로만 쓰는 것이 안전.",
+      "sources": [
+        { "name": "머니투데이(2010)", "url": "https://www.mt.co.kr/article/2010091719427087856", "quote": "보통 수수료율인 7~8%의 반을 먼저 현재가로 달라." },
+        { "name": "Korea JoongAng Daily", "url": "https://www.koreajoongangdaily.com/business/the-local-unit-that-took-over-a-global-brand/10209971", "quote": "half of the 8 percent royalties" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2007년 1월 휠라코리아가 휠라 브랜드 본사(휠라 룩셈부르크)를 약 4억 달러(3.9억 달러)에 인수했고, 대금은 인수 후 두 달 안에 치러야 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "금액 출처별 상이: 3.9억 달러(JoongAng), 4억 달러(머니투데이 2019), 인수자금 4억5천만 달러(머니투데이 2010). '약 4억 달러'로 표기.",
+      "sources": [
+        { "name": "머니투데이(2019)", "url": "https://www.mt.co.kr/world/2019/06/24/2019062416154656295", "quote": "2007년 1월, 윤 회장이 4억달러(약 4630억원)를 들여" },
+        { "name": "Korea JoongAng Daily", "url": "https://www.koreajoongangdaily.com/business/the-local-unit-that-took-over-a-global-brand/10209971", "quote": "for $390 million, which Yoon said" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2011년 휠라코리아는 미래에셋PEF와 함께 12억 달러대에 아큐시네트(타이틀리스트)를 인수했는데, 휠라코리아가 낸 돈은 1억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "인수가가 12.25억 달러(JoongAng) vs 12.3억 달러(Korea Times)로 반올림 차이. '약 12억 달러'로 표기.",
+      "sources": [
+        { "name": "Korea Times(2012)", "url": "https://www.koreatimes.co.kr/economy/20121130/entrepreneurship-risk-taking", "quote": "Fila invested only $100 million" },
+        { "name": "Korea JoongAng Daily(2011)", "url": "https://www.koreajoongangdaily.com/business/fila-and-mirae-buy-leading-golf-firm/10016218", "quote": "휠라코리아가 1억달러" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2018년 휠라코리아 매출은 약 3조 원(2조9550억 원)이었고, 그중 절반이 넘는 1조7976억 원(약 61%)이 아큐시네트에서 나왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "매출 총액 표기가 '3조원'(머니투데이)과 '2조9550억원'(아주경제)로 반올림 차이.",
+      "sources": [
+        { "name": "아주경제(2019)", "url": "https://www.ajunews.com/view/20191007091216873", "quote": "전체 매출의 절반이 넘는 1조7976억원을 기록했고" },
+        { "name": "머니투데이(2019)", "url": "https://www.mt.co.kr/world/2019/06/24/2019062416154656295", "quote": "이 중 61%가 아쿠쉬네트로부터 왔다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "휠라코리아는 현재 영업 중인 국내 기업이나 소송·제재 없는 성공 결단 미담이며 기업 저격이 아님." },
+  "remaining": "인수 금액 표기가 출처별로 다름(3.9억/4억/4.5억 달러) - 대본에서 '약 4억 달러' 또는 금액 생략. 선납 로열티 구조 설명은 한 문장으로 제한. 장면은 윤 회장 개인 서사 위주라 미국 휠라USA 적자 등 맥락은 최소화.",
+  "toolCallsUsed": 14
+}

@@ -1,0 +1,69 @@
+{
+  "id": "suwon-hwaseong-wages-1794",
+  "title": "수원 화성 임금 지급",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "공사비·임금 수치가 2차 자료뿐, 원전 미확인",
+  "conditionResolved": false,
+  "finding": "총공사비 87만여 냥(87만 3천 5백 17량)은 위키백과와 국가기록원 기획전시 2곳에서 확인되고, 10년 예정 공사가 약 3년(32~33개월)에 끝났다는 것도 2곳에서 확인됨. 그러나 이 소재의 핵심인 '임금 지급' 수치(일꾼 임금 총액 약 30만 냥, 인건비 비중, 직종별 일당)는 한국경제 기사 1곳뿐이고, 팔달문 인건비 수치는 논문 1건(자릿수 오류 의심)뿐이며, 석재 수량은 출처마다 18만 7,600덩어리와 201,403덩어리로 어긋남. '정조가 노동자에게 임금을 줬다'는 서술은 위키백과·한국경제·국립도시건축박물관 보도에서 확인되나 모두 정성적이고 임금 수치로 번역할 2출처 숫자가 없어 usable 요건(숫자 사실 4개 이상 각 2출처)을 못 채움. 화성성역의궤 원문(한국고전종합DB·규장각)을 열어 임금 항목을 직접 확인하면 해소 가능.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "화성 성역 공사비로 약 87만 냥(87만 3천 5백 17량 7전 9푼)이 조달·투입되었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'냥'과 '량' 표기 차이, 위키는 '87만여 냥'으로 반올림 표기. 일부 기사는 '87만 3520냥'으로 적어 끝자리가 다름.",
+      "sources": [
+        { "name": "위키백과 '화성성역의궤'", "url": "https://ko.wikipedia.org/wiki/화성성역의궤", "quote": "화성 성역 공사에는 87만여 냥이 조달되었고" },
+        { "name": "국가기록원 기록으로 보는 한국 '수원화성'", "url": "https://theme.archives.go.kr/next/koreaOfRecord/suwonHwaseong.do", "quote": "87만 3천 5백 17량 7전 9푼의 사업비를 들여" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "원래 10년으로 잡았던 화성 공사는 약 3년(32개월) 만에 끝났다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "완공 시점이 1796년 8월·9월 10일·10월 10일(양력)로 자료마다 다르고, 개월 수도 32·33개월로 갈림.",
+      "sources": [
+        { "name": "위키백과 '화성성역의궤'", "url": "https://ko.wikipedia.org/wiki/화성성역의궤", "quote": "32개월 만인 정조 20년(1796년) 완성되었다." },
+        { "name": "경기일보(2026)", "url": "https://www.kyeonggi.com/article/20260701580686", "quote": "10년 공기를 3년에 끝내는 실질적 효과를 얻은 것은 사실이다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "화성 공사에서 일꾼에게 지급된 임금 총액은 약 30만 냥(자재비 약 39만 냥)이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(한국경제 sgsg 기사). 39만+30만=69만 냥으로 총 87만 냥과 맞지 않아 항목 구분 확인 필요. 2출처 미확보.",
+      "sources": [
+        { "name": "한국경제 sgsg", "url": "https://sgsg.hankyung.com/tag/20170214073234485", "quote": "일꾼에게 지급된 총액이 30만 냥 정도였으니" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "성역의궤 분석 논문에 따르면 팔달문 건설 소요비용은 약 52,423냥, 인건비가 그 대부분을 차지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(논문 초록). 초록의 자재비·인건비 수치 자릿수가 총합과 맞지 않아 오기 의심.",
+      "sources": [
+        { "name": "한국건축시공학회지 2021 (KoreaScience)", "url": "https://koreascience.kr/article/JAKO202104961957307.do", "quote": "팔달문 건설의 소요비용의 총합은 약 52,423냥인데" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "화성 축성에 쓰인 석재 수량은 18만 7,600덩어리(경기일보) 또는 201,403덩어리(위키백과)로 출처마다 다르다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "두 출처 수치가 서로 어긋나 대본에 쓸 수 없음.",
+      "sources": [
+        { "name": "경기일보(2020)", "url": "https://www.kyeonggi.com/article/202011121145358", "quote": "모두 18만7천600덩어리가 수원화성 축성에 소요됐다." },
+        { "name": "위키백과 '수원 화성'", "url": "https://ko.wikipedia.org/wiki/수원_화성", "quote": "화성 축성에 사용된 석재의 수량은 모두 201,403덩어리로" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "1794~96년 역사 사업, 현 영업 기업·진행 중 사건·정치 소지 없음" },
+  "remaining": "임금 수치(30만 냥 등)를 2번째 사이트로 확인하지 못했고 석재 수량이 출처 간 불일치. 화성성역의궤 원문(경비·인력 권) 직접 확인 필요. 결정적 장면('강제 부역 대신 임금')은 정성 서술만 있어 숫자 번역점이 약함.",
+  "toolCallsUsed": 11
+}

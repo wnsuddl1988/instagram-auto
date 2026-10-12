@@ -1,0 +1,71 @@
+{
+  "id": "gyeongbu-expressway-1970",
+  "title": "경부고속도로 — 다들 반대한 길을 2년 5개월 만에",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "정치 논쟁 소지. 공사·사람 중심으로만",
+  "conditionResolved": true,
+  "finding": "착공·개통(1968.2.1~1970.7.7, 약 2년 5개월), 공사비 429억 원, 사망자 77명, 연인원 약 890만 명, 국가 예산 대비 비중이 모두 서로 다른 사이트 2곳으로 확인돼 공사·사람·비용만으로 대본을 구성할 수 있다. 정치 쟁점(당시 야당·대통령 평가)은 사실 목록에서 제외해도 이야기가 서므로 조건은 해소된다. 단 예산 비율은 출처마다 24%와 27.4%로 달라 '4분의 1 안팎'으로만 써야 한다.",
+  "coreMessage": "나라 살림의 4분의 1을 건 큰 투자는 890만 명의 땀과 77명의 희생 위에 섰다 — 큰 투자의 값은 돈만이 아니다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "경부고속도로는 1968년 2월 1일 착공해 1970년 7월 7일 개통됐고, 걸린 기간은 약 2년 5개월이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "건설부 자료는 완공 6월 30일, 개통 7월 7일로 구분. 주간경향 일부 기사에 '3년 5개월'이라는 오기가 있으므로 쓰지 말 것.",
+      "sources": [
+        { "name": "국가기록원 테마(대한민국기록)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/exway.do", "quote": "1970년 7월 7일 약 2년 5개월 만에 개통을 한 것이다" },
+        { "name": "아주경제(2020.7)", "url": "https://www.ajunews.com/view/20200723153438024", "quote": "착공 2년5개월 만인 1970년 7월 7일 준공됐다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "경부고속도로의 총공사비는 약 429억 원(429억 7천만 원)이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "착공 전 부처별 추정치는 330억~490억 원으로 달랐다. 완공 기준 429억 원을 쓸 것.",
+      "sources": [
+        { "name": "국가기록원 테마(대한민국기록)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/exway.do", "quote": "실제 완공되었을 때 든 비용이 429억 원이었으니까" },
+        { "name": "뉴시스(2020.7.1)", "url": "https://www.newsis.com/view/NISX20200701_0001080005", "quote": "총 공사비는 429억7000만원으로" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "건설 기간 중 공식적으로 77명이 목숨을 잃었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "주간경향은 '공식적으로는 77명'이라고 한정 표현. 대본에서 '공식 집계 77명'으로 쓸 것.",
+      "sources": [
+        { "name": "국가기록원 테마(대한민국기록)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/exway.do", "quote": "건설과정의 희생자는 77명이었다" },
+        { "name": "매일신문(2011)", "url": "https://www.imaeil.com/page/view/2011051914021471420", "quote": "2년 5개월 동안 77명이 목숨을 잃었다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "경부고속도로 건설에는 연인원 약 890만 명(893만 명)이 투입됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "주간경향 893만 명, 아주경제 890만 명. 대본에서는 '약 890만 명'으로 쓸 것.",
+      "sources": [
+        { "name": "주간경향(2010)", "url": "https://weekly.khan.co.kr/article/201002041145451", "quote": "경부고속도로 건설에는 연인원 893만명이 투입됐다" },
+        { "name": "아주경제(2020.7)", "url": "https://www.ajunews.com/view/20200723153438024", "quote": "890만명이 동원된 공사였다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "공사비 429억 원은 1967년 국가 예산의 4분의 1 안팎(24~27%)에 해당하는 규모였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴시스는 24%, 아주경제는 예산 1,643억 원의 27.4%로 서로 다름. 대본에서는 '국가 예산의 4분의 1 안팎'으로만 쓸 것.",
+      "sources": [
+        { "name": "뉴시스(2020.7.1)", "url": "https://www.newsis.com/view/NISX20200701_0001080005", "quote": "1967년 국가 예산의 24%에 해당하는 규모였다" },
+        { "name": "아주경제(2020.7)", "url": "https://www.ajunews.com/view/20200723153438024", "quote": "국가 예산 1643억원의 27.4%인 429억원" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "종결된 옛 사건이지만 건설을 둘러싼 야당·대통령 평가 논쟁은 지금도 정치색이 있다. 정당·인물 언급 없이 공사·인력·비용으로만 구성할 때 usable. 반대 여론 서술은 '정치권·언론·학계 우려' 정도로 최소화." },
+  "remaining": "'물류비 변화' 같은 개통 후 경제 효과는 숫자로 2출처 확인하지 못했다(필요하면 추가 조사). 사실 구성은 건설 규모·인력·희생 중심이라 '반대 속의 투자 판단'은 약하게만 나온다.",
+  "toolCallsUsed": 13
+}

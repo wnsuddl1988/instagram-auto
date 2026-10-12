@@ -1,0 +1,61 @@
+{
+  "id": "asiana-founding-1988",
+  "title": "아시아나 설립",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "허가 일화 확인 못 함, 2019 매각 이력 민감",
+  "conditionResolved": false,
+  "finding": "금호가 1988년 2월 제2민항(제2 민간정기항공운송사업자)으로 선정되고 2월 17일 서울항공으로 설립됐다는 연표는 확인되나, 허가를 둘러싼 결정적 일화(타 기업 거절, 금호 박성용의 결심)는 2곳 출처로 확인하지 못했다. 확인된 것은 '경향신문 보도 인용상 면허가 초스피드로 이뤄진 이례적 결정이었다'와 '호남 기업을 고려했다'는 정치적 해석뿐이라 주인공의 결단 장면으로 쓸 수 없고 정치·특혜 시비로 읽힐 위험이 있다. 숫자 사실도 서로 다른 사이트 2곳으로 확인된 것이 적어 근거 부족 hold(unverifiable).",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "아시아나항공은 1988년 2월 17일 서울항공으로 설립됐고 제2의 민간정기항공운송사업자로 금호그룹이 선정됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "선정 발표일이 자료마다 2월 12일/13일로 다름. 설립 시점을 1988년 12월로 적은 기사도 있음(취항 시점과 혼동).",
+      "sources": [
+        { "name": "위키백과 아시아나항공", "url": "https://ko.wikipedia.org/wiki/%EC%95%84%EC%8B%9C%EC%95%84%EB%82%98%ED%95%AD%EA%B3%B5", "quote": "1988년 2월 17일에 서울항공으로 설립되었으며" },
+        { "name": "다음 뉴스 커버스토리", "url": "https://v.daum.net/v/gTNrAKt5sa", "quote": "금호가 1988년 제2민간항공 인가를 받은 것도" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "제2민항 면허는 교통부가 2월 12일 공식 발표에 앞서 이뤄진 초스피드의 이례적 결정이었다고 기사는 평가한다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "정치적 평가·특혜 시비 소지. 근거는 한 기사(다음 뉴스 커버스토리)의 서술 하나.",
+      "sources": [
+        { "name": "다음 뉴스 커버스토리", "url": "https://v.daum.net/v/gTNrAKt5sa", "quote": "초스피드로 이뤄진 이례적 결정이었다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "서울항공은 1988년 12월 10일 B737-400 기종을 도입했고 김포-광주, 김포-부산 노선에 처음 취항했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처. 자본금(200억원/800억원)은 자료마다 달라 설립 당시 수치 미확정.",
+      "sources": [
+        { "name": "위키백과 아시아나항공", "url": "https://ko.wikipedia.org/wiki/%EC%95%84%EC%8B%9C%EC%95%84%EB%82%98%ED%95%AD%EA%B3%B5", "quote": "1988년 12월 10일 B737-400 기종을 도입하여" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2019년 4월 15일 금호아시아나그룹이 채무 자구안으로 아시아나항공 매각을 결정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "현재 영업 중인 항공사의 매각·합병(대한항공 통합) 이력으로 민감. 단일 출처.",
+      "sources": [
+        { "name": "위키백과 아시아나항공", "url": "https://ko.wikipedia.org/wiki/%EC%95%84%EC%8B%9C%EC%95%84%EB%82%98%ED%95%AD%EA%B3%B5", "quote": "2019년 4월 15일 모기업인 금호아시아나그룹의" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": true,
+    "note": "전두환 정권의 면허 속도·호남 안배 해석이 따라붙는 정치적 소지가 있고, 2019 매각·대한항공 합병 이력이 있는 국내 항공사라 민감."
+  },
+  "remaining": "허가 일화(타 기업 거절·금호의 결단)를 2곳 이상 출처로 입증하지 못함. 금호 50년사·당시 매일경제/경향신문 1988.2.13 원문 확보가 필요.",
+  "toolCallsUsed": 6
+}

@@ -1,0 +1,56 @@
+{
+  "id": "swiss-franc-shock-2015",
+  "title": "스위스 프랑 쇼크 — 한마디에 하루 만에 치솟은 통화",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "중앙은행 한마디에 하루 만에 통화가 뛴 장면. 환율 파생 구조 설명이 길어질 위험",
+  "conditionResolved": true,
+  "finding": "2015년 1월 15일 스위스 중앙은행(SNB)이 2011년 9월부터 지켜온 '유로당 1.20프랑' 하한을 예고 없이 폐기하자 프랑이 분 단위로 약 30% 급등하고 스위스 증시가 10%대 급락했다는 사실이 여러 사이트에서 일치한다. 이야기를 '유로당 1.20프랑 하한 + 하루 만에 약속 폐기'라는 환율 한 줄로만 풀면 파생 구조 설명 없이 가능하다. 다만 수치(상승률·증시 낙폭·저점)가 출처마다 달라 어림값으로만 써야 한다.",
+  "coreMessage": "'절대 지킨다'던 약속도 지키는 비용이 한계를 넘으면 한마디에 끝난다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "스위스 중앙은행은 2011년 9월 도입한 '유로당 1.20프랑' 최저 환율을 2015년 1월 15일 폐기했다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "swissinfo(2015)", "url": "https://www.swissinfo.ch/eng/euro-floor_swiss-national-bank-scraps-exchange-rate-ceiling/41217364", "quote": "exchange rate of CHF1.20 per euro" },
+        { "name": "Daily FT(스리랑카)", "url": "https://www.ft.lk/Financial-Services/switzerland-ends-euro-minimum-exchange-rate-cuts-interest-rate/42-382312", "quote": "exchange rate of 1.20 francs per euro" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "발표 직후 프랑은 유로 대비 약 30% 급등했다.", "numeric": true, "economy": true,
+      "caution": "상승률이 출처마다 다름: 29%(Reuters 인용 ft.lk), 최대 37%(City AM), 유로 대비 1.20 -> 0.85 기준으로 환산하면 약 41%. 방향이 '프랑 가치' 기준인지 'EUR/CHF 하락률' 기준인지에 따라 달라 '약 30%'로만 쓸 것.",
+      "sources": [
+        { "name": "swissinfo(2015)", "url": "https://www.swissinfo.ch/eng/euro-floor_swiss-national-bank-scraps-exchange-rate-ceiling/41217364", "quote": "the franc soared by almost 30% in value" },
+        { "name": "ANSA(2015)", "url": "https://www.ansa.it/english/news/2015/01/15/switzerland-scraps-francs-cap-against-euro_cc41675c-545c-433d-b19d-cbf82ff6a87a.html", "quote": "franc soared some 30% in chaotic trade" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "SNB는 같은 날 정책금리를 -0.25%에서 -0.75%로 내렸다.", "numeric": true, "economy": true,
+      "caution": "정확히는 일정 한도 초과 요구불예금에 적용되는 금리를 0.5%p 인하. 대본에서는 '예금 맡기면 이자를 내야 하는 마이너스 금리 심화' 정도로 단순화.",
+      "sources": [
+        { "name": "ANSA(2015)", "url": "https://www.ansa.it/english/news/2015/01/15/switzerland-scraps-francs-cap-against-euro_cc41675c-545c-433d-b19d-cbf82ff6a87a.html", "quote": "from -0.25% to -0.75%" },
+        { "name": "Daily FT(스리랑카)", "url": "https://www.ft.lk/Financial-Services/switzerland-ends-euro-minimum-exchange-rate-cuts-interest-rate/42-382312", "quote": "to negative 0.75%" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "발표 당일 스위스 증시는 10% 안팎 급락했다.", "numeric": true, "economy": true,
+      "caution": "낙폭이 출처마다 다름: ANSA 11% 이상, City AM 최대 10%, swissinfo SMI 10%, Reuters 8.6%, CRS 13% 이상. '10% 안팎'으로만 쓸 것.",
+      "sources": [
+        { "name": "ANSA(2015)", "url": "https://www.ansa.it/english/news/2015/01/15/switzerland-scraps-francs-cap-against-euro_cc41675c-545c-433d-b19d-cbf82ff6a87a.html", "quote": "stock market plummeted more than 11%" },
+        { "name": "City AM(2015)", "url": "https://www.cityam.com/swiss-national-bank-shock-what-does-it-all-mean/", "quote": "Swiss stocks shed as much as 10 per cent" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "유로 값이 1.20프랑에서 순식간에 0.8프랑대(0.81~0.85)로 떨어졌다.", "numeric": true, "economy": true,
+      "caution": "장중 저점이 출처마다 다름(ANSA 0.8052, ft.lk 0.8517, 일부 0.895/0.965). 대본은 '1.20에서 0.85 안팎'으로 쓰거나 저점 수치는 생략.",
+      "sources": [
+        { "name": "ANSA(2015)", "url": "https://www.ansa.it/english/news/2015/01/15/switzerland-scraps-francs-cap-against-euro_cc41675c-545c-433d-b19d-cbf82ff6a87a.html", "quote": "1.20 to the euro to 0.8052" },
+        { "name": "Daily FT(스리랑카)", "url": "https://www.ft.lk/Financial-Services/switzerland-ends-euro-minimum-exchange-rate-cuts-interest-rate/42-382312", "quote": "29% to 0.8517 against the euro" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 중앙은행의 종결된 옛 사건. 민감 소지 없음. 투자 권유로 읽히지 않게 외환 투자 언급 금지." },
+  "remaining": "한국 시청자에게 낯설고 '환율 하한제'를 한 문장으로 풀어야 함. 브로커 파산·FX 손실 등 부가 사실은 이번에 2곳 출처 확보 못해 제외. 증시·환율 수치는 출처 간 차이가 커 어림값 사용 필요.",
+  "toolCallsUsed": 14
+}

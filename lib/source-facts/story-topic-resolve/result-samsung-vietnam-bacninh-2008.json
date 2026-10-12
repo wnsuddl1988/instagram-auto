@@ -1,0 +1,82 @@
+{
+  "id": "samsung-vietnam-bacninh-2008",
+  "title": "삼성 베트남 박닌 공장",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "'논밭 부지' 못 찾음, 수출액은 검색 요약뿐",
+  "conditionResolved": true,
+  "finding": "'논밭 부지'는 영문 VietnamPlus 한 곳(주변이 들판뿐이었다는 직원 회상)만 확인되고 한국어·제2출처가 없어 대본에서 뺀다. 대신 결정적 장면을 '한국에서는 억대 물량을 만들 인력과 부지를 찾을 수 없어 베트남을 택했고 휴대폰 1대 인건비가 5달러에서 0.8달러로 줄었다'로 잡았으며 머니투데이(2013)와 서울신문(2013) 두 사이트가 같은 숫자를 확인한다. 수출액도 한국경제(2017)·ANT Consulting(2013)이 2012년 휴대전화 수출 126억 달러로, 베트남 일간지 2곳이 2016년 삼성 수출 비중 22.7%로 확인해 usable로 제안한다.",
+  "coreMessage": "휴대폰 한 대 인건비가 5달러에서 0.8달러로 바뀌는 선택이 한 나라의 수출 지도를 바꾼다 — 공장은 사람과 땅을 구할 수 있는 곳으로 간다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "삼성은 한국에서 억대 물량의 휴대폰을 만들 인력과 부지를 찾지 못해 베트남에 공장을 지었고, 휴대폰 1대 인건비는 한국 5달러 대비 베트남 0.8달러다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "머니투데이는 한국 5달러·베트남 0.8달러로, 서울신문은 구미 5달러·베트남 0.8달러로 표현. 수치의 근원이 같은 서울대 국제대학원 조사·삼성 관계자 발언일 수 있음.",
+      "sources": [
+        { "name": "머니투데이(2013)", "url": "https://www.mt.co.kr/industry/2013/06/26/2013062510254090208", "quote": "베트남에선 0.8달러(약 930원)에 해결할 수 있다" },
+        { "name": "서울신문(2013)", "url": "https://www.seoul.co.kr/news/2013/09/09/20130909004004", "quote": "장소를 경북 구미로 옮기면 인건비는 5달러까지 뛴다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "삼성이 베트남 생산으로 얻는 제조 비용 절감 효과는 연간 약 6억 8000만 달러(약 7900억 원)다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "머니투데이는 서울대 국제대학원 조사, 서울신문은 삼성 측 발언을 근거로 제시(2013년 기준 추정치).",
+      "sources": [
+        { "name": "머니투데이(2013)", "url": "https://www.mt.co.kr/industry/2013/06/26/2013062510254090208", "quote": "연간 제조 절감비용은 6억8000만 달러(약 7900억원)에 달한다" },
+        { "name": "서울신문(2013)", "url": "https://www.seoul.co.kr/news/2013/09/09/20130909004004", "quote": "비용 절감 효과만 연간 6억 8000만 달러에 달한다고 말했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "삼성전자는 2008년 베트남 북부 박닌성(옌퐁공단)에 휴대폰 1공장(SEV)을 설립했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연도 2008(투자 허가·착공·법인 설립) vs 2009(첫 양산 보도)가 엇갈림. 2008은 설립·착공 기준으로만 사용.",
+      "sources": [
+        { "name": "아세안익스프레스(2018)", "url": "https://aseanexpress.co.kr/news/article.html?no=8327", "quote": "2008년 베트남 북부 박닌성에 휴대폰 1공장을" },
+        { "name": "머니투데이(2013)", "url": "https://www.mt.co.kr/industry/2013/06/26/2013062510254090208", "quote": "2008년 법인 설립 후 5년 만에 만든 성과다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "베트남의 휴대전화 수출액은 2012년 126억 달러, 2013년 215억 달러로 늘었다(삼성 진출 이후).",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국경제는 휴대전화 수출액, ANT Consulting은 휴대전화·부품 합계(12.64 billion USD)로 같은 규모. 2011~2015년 수치는 한국경제 단일 출처.",
+      "sources": [
+        { "name": "한경매거진(2017)", "url": "https://magazine.hankyung.com/business/article/201702284080b", "quote": "2012년 126억 달러, 2013년 215억 달러" },
+        { "name": "ANT Consulting(2013)", "url": "https://www.antconsult.vn/news/samsung-vietnam-occupies-98-of-the-phone-export-turnover.html", "quote": "components reached 12.64 billion USD" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2016년 삼성 베트남 법인의 수출액은 약 399억 달러로 베트남 전체 수출의 22.7%를 차지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국 보도(jkn)는 24% 안팎으로 달리 표기. 비중은 베트남 통계총국 기준 22.7%.",
+      "sources": [
+        { "name": "Binh Duong Newspaper(VNA, 2017)", "url": "https://oldm.baobinhduong.vn/en/samsung-contributes-22-7-percent-to-vietnam-s-exports-a155497.html", "quote": "accounted for 22.7 percent" },
+        { "name": "Viet Nam News(2017)", "url": "https://vietnamnews.vn/economy/349485/samsung-contributes-227-to-countrys-exports.html", "quote": "Samsung contributes 22.7% to country" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "박닌 1공장은 3만 명이 넘는 직원이 연간 1억 2000만 대(서울신문은 3만 9000명·1억 5000만 대)의 휴대폰을 만드는 세계 최대급 생산기지다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "머니투데이(2013.6)는 3만 명 넘는 직원·연 1억 2000만 대, 서울신문(2013.9)은 3만 9000명·1억 5000만 대 이상으로 출처마다 다름. 대본에서는 3만 명 이상 정도로만 표기 권장.",
+      "sources": [
+        { "name": "머니투데이(2013)", "url": "https://www.mt.co.kr/industry/2013/06/26/2013062510254090208", "quote": "3만명이 넘는 직원들이 연간 1억2000만대의 휴대폰을 생산한다" },
+        { "name": "서울신문(2013)", "url": "https://www.seoul.co.kr/news/2013/09/09/20130909004004", "quote": "직원 수 3만 9000명이 연간 1억 5000만대가 넘는" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "삼성전자는 현재도 영업 중인 국내 기업이나 이 소재와 관련된 진행 중 소송·제재는 없음. 다만 국내 생산 이전·일자리 해외 유출 논쟁 소지와 베트남 저임금 프레이밍에 유의(비용 절감 숫자는 사실만, 평가·비난 어조 금지)." },
+  "remaining": "'논밭 부지' 장면은 영문 1곳뿐이라 사용 불가(대본에 쓰지 말 것). 첫 생산 시점은 2008(허가·착공)과 2009(양산)가 엇갈려 구체 연도 표기는 조심. 직원·생산량 숫자가 기사마다 달라 근사치로 표기.",
+  "toolCallsUsed": 17
+}

@@ -1,0 +1,67 @@
+{
+  "id": "starbucks-korea-1999",
+  "title": "스타벅스 이대점 1호",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "이야기 흔함 — 후반에. 장면이 모이지 않고 개점일(7/27·28)·가격(2,500/3,000원) 엇갈림",
+  "conditionResolved": false,
+  "finding": "개점일은 1999.7.27(뉴데일리·비즈워치 2곳)로 정리되고, 이대점 기념패의 7/28 표기는 별도 보도에서만 나온다. 2,500원은 1999년 숏 사이즈 가격이며(메트로신문 2023 원문) 톨 3,000원은 이번에 원문으로 확인하지 못했다. 그러나 개점 당시 줄·반응 같은 구체적 한 장면, 주인공의 결단이 전혀 확인되지 않고, 기사는 합작 설립·매장 수·매출 같은 연표 나열뿐이라 '이야기 흔함' 판단이 그대로다. 지분·불매 논란(2021)으로 국내 영업 중 기업의 민감성도 일부 있다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "스타벅스코리아 1호점 이대점은 1999년 7월 27일에 문을 열었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "이대점 기념패에는 7월 28일로 적혔다는 보도가 별도로 있음(원문 미확인).",
+      "sources": [
+        { "name": "뉴데일리(2019)", "url": "https://biz.newdaily.co.kr/site/data/html/2019/07/26/2019072600058.html", "quote": "1999년 7월27일 1호점 이대점 오픈" },
+        { "name": "비즈워치(2024)", "url": "https://news.bizwatch.co.kr/article/consumer/2024/10/02/0049", "quote": "마침내 1999년 7월 27일 1호점인 이대점을 개점했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "스타벅스 인터내셔널과 이마트가 각각 50%를 투자해 스타벅스코리아를 설립했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2017년 기사는 신세계가 1997년 합작사를 설립했다고 달리 적었다는 검색 요약이 있음. 뉴데일리 1곳만 원문 확인.",
+      "sources": [
+        { "name": "뉴데일리(2019)", "url": "https://biz.newdaily.co.kr/site/data/html/2019/07/26/2019072600058.html", "quote": "스타벅스 인터내셔널과 이마트가 각각 50%를 투자해 스타벅스코리아를 설립" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1999년 1호점 오픈 당시 아메리카노 숏 사이즈 가격은 2,500원이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2023년 2월 22~24일 행사 설명문에 나온 가격. 톨 3,000원은 이번에 원문 미확인. 당시 최저임금 대비 환산 근거도 미확보.",
+      "sources": [
+        { "name": "메트로신문(2023)", "url": "https://www.metroseoul.co.kr/article/20230221500086", "quote": "1999년 1호점 오픈 당시 숏 사이즈 가격인 2500원에 제공한다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "진출 첫해 매출은 6억원이었고 2016년 1조28억원으로 국내 커피전문점 최초로 1조원을 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴데일리 1곳만 원문 확인.",
+      "sources": [
+        { "name": "뉴데일리(2019)", "url": "https://biz.newdaily.co.kr/site/data/html/2019/07/26/2019072600058.html", "quote": "국내 진출 첫해 6억원이던 매출은" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "진출 5년 만인 2004년 매장 100개를 처음 돌파했고 2018년 매장 수는 1,262개다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "뉴데일리 1곳만 원문 확인(비즈한국도 1,262개를 쓰나 원문 대조 못 함).",
+      "sources": [
+        { "name": "뉴데일리(2019)", "url": "https://biz.newdaily.co.kr/site/data/html/2019/07/26/2019072600058.html", "quote": "진출 5년 만인 2004년 100개 매장을 처음 돌파한 데 이어" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "현 영업 중인 국내 기업(SCK컴퍼니, 신세계 계열)이며 2021년 지분 변동·불매 논란 이력이 있어 가볍게 다루기엔 주의." },
+  "remaining": "개점 당일 장면(줄·첫 손님·가격 반응)의 2출처, 주인공 결단 부재, 톨 3,000원·개점일 7/28 표기 대조, 당시 최저임금 대비 환산 근거.",
+  "toolCallsUsed": 8
+}

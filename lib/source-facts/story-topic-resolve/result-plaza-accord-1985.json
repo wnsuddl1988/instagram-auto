@@ -1,0 +1,53 @@
+{
+  "id": "plaza-accord-1985",
+  "title": "플라자 합의 — 호텔에서 달러값을 내리기로 한 5개국",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "일본 버블 원인 해석이 논쟁적",
+  "conditionResolved": true,
+  "finding": "버블 인과를 단정하지 않고 환율 변화(합의 직전 약 240엔 → 연말 200엔 아래 → 약 3년 뒤 127엔)와 G5 합의 날짜만 쓰면 논쟁 문제는 피할 수 있고, 이 숫자 사실들은 2곳씩 확인된다. 그러나 이야기가 5개국 재무장관의 정책 합의이고 주인공의 선택·결단이 없어 한 장면으로 서기 어렵고, 환율 개입·엔고 설명 없이는 이해가 어렵다. 한국 3저 호황과 연결하면 장면이 생길 수 있으나 2곳 출처가 없어 지금은 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "G5(미국·일본·독일·영국·프랑스) 재무장관은 1985년 9월 22일 뉴욕 플라자 호텔에서 달러 약세 유도에 합의했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "합의 성격(공동성명 vs 협정)은 출처마다 표현이 다름.",
+      "sources": [
+        { "name": "JBIC(2023)", "url": "https://www.jbic.go.jp/en/information/today/today_202310/jtd_202310_column1.html", "quote": "New York on September 22, 1985" },
+        { "name": "Wikipedia, Plaza Accord", "url": "https://en.wikipedia.org/wiki/Plaza_Accord", "quote": "signed on September 22, 1985" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "엔·달러 환율은 합의 직전 약 240엔에서 1987년 말 127엔까지 내려갔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시점 표현이 다름(JBIC: 3년 뒤 127엔, 한경: 87년 말 127엔). 한국 매체 일부는 120엔대로 표기하고 합의 직전도 240~260엔으로 제각각.",
+      "sources": [
+        { "name": "JBIC(2023)", "url": "https://www.jbic.go.jp/en/information/today/today_202310/jtd_202310_column1.html", "quote": "to 127 yen three years later" },
+        { "name": "한국경제 Cover Story(2010)", "url": "https://sgsg.hankyung.com/article/2010031199281", "quote": "87년말에는 127엔으로 내려앉았다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "엔·달러 환율은 합의 후 1985년 말까지 200엔 밑으로 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한경은 '200엔대'로 표기.",
+      "sources": [
+        { "name": "Toyota 75년사", "url": "https://www.toyota-global.com/company/history_of_toyota/75years/text/leaping_forward_as_a_global_corporation/chapter2/section2/item1.html", "quote": "fell below 200 yen by the end of 1985" },
+        { "name": "한국경제 Cover Story(2010)", "url": "https://sgsg.hankyung.com/article/2010031199281", "quote": "연말에는 200엔대로 급락했으며" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "종결된 해외 사건. 단 '플라자 합의가 일본 버블의 원인'이라는 서술은 논쟁적이라 단정 금지."
+  },
+  "remaining": "(1) 주인공의 결단이 있는 한 장면 부재 (2) 환율·엔고 설명 필요(complex 성향) (3) 한국 3저 호황 연결 사실 2곳 출처 미확보. 한국 입장 각도(1986~88 3저 호황)로 재조사하면 usable 가능성 있음.",
+  "toolCallsUsed": 8
+}

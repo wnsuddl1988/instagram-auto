@@ -1,0 +1,71 @@
+{
+  "id": "norway-oil-fund-1996",
+  "title": "노르웨이 석유 펀드",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "연표형, 결정적 장면 약함",
+  "conditionResolved": true,
+  "finding": "연표 대신 1996년 5월 30일 재무장관 시그비에른 요한센(Sigbjørn Johnsen)이 첫 자금 약 20억 크로네를 넣은 하루로 좁힐 수 있다(1990년에 법으로 만들고도 6년간 빈 펀드였다). 이 장면은 노르웨이 중앙은행/NBIM 발표문과 운용사 대표 연설을 인용한 매체 2곳으로 확인되고, 이후 펀드 가치 22,683조 크로네(2026년 6월 말), 월드 상장주식 1.5% 보유, 기대수익률 3%만 쓴다는 규칙 등 숫자도 2곳 이상 확인된다. 다만 한 사람의 극적 선택이라기보다 저축을 택한 제도 결정이라 이야기성은 보통이다.",
+  "coreMessage": "번 돈을 다 쓰지 않고 일부를 먼저 떼어 쌓아 둔 첫 입금이, 30년 뒤 세계 주식의 1.5%를 쥔 펀드가 됐다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1996년 5월 30일 재무장관이 석유 펀드에 첫 자금 약 20억 크로네(정확히 1,981,128,50x 크로네)를 입금했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "정확한 끝자리가 NBIM 연표는 503, 연설 인용 기사는 502 크로네이므로 '약 20억 크로네'로 쓴다. 일부 자료는 31일로도 적는다.",
+      "sources": [
+        { "name": "NBIM press release (2021) 25th anniversary", "url": "https://www.nbim.no/en/news-and-insights/the-press/press-releases/2021/government-pension-fund-global-twenty-fifth-anniversary/", "quote": "transfer of almost 2 billion kroner" },
+        { "name": "ScienceBlog (2026)", "url": "https://scienceblog.com/m-in-1996-norway-made-the-first-roughly-300-million-deposit-into-its-oil-fund-and-by-mid-2026-the-fund-was-worth-about-2-3-trillion-with-more-than-half-of-its-value-coming-from-investment-r/", "quote": "just under 2 billion kroner" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "펀드 가치는 2026년 6월 말 약 22.7조 크로네(22,683십억), 약 2.3조 달러다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단위 주의: 22,683 billion kroner = 22.683 trillion kroner. 달러 환산은 약 2.3 trillion.",
+      "sources": [
+        { "name": "Wikipedia, Government Pension Fund of Norway", "url": "https://en.wikipedia.org/wiki/Government_Pension_Fund_of_Norway", "quote": "valued at NOK 22.683 trillion" },
+        { "name": "ScienceBlog (2026)", "url": "https://scienceblog.com/m-in-1996-norway-made-the-first-roughly-300-million-deposit-into-its-oil-fund-and-by-mid-2026-the-fund-was-worth-about-2-3-trillion-with-more-than-half-of-its-value-coming-from-investment-r/", "quote": "was worth 22,683 billion kroner" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "이 펀드는 세계 상장기업 주식의 약 1.5%를 보유한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "NBIM, The fund in brief", "url": "https://www.nbim.no/en/the-fund/about-the-fund/", "quote": "almost 1.5 percent of all shares" },
+        { "name": "Wikipedia, Government Pension Fund of Norway", "url": "https://en.wikipedia.org/wiki/Government_Pension_Fund_of_Norway", "quote": "1.5% of the value of the world's" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1998년 채권만 들고 있던 펀드의 약 40%를 주식으로 바꿨다(최대 40%까지 주식 투자 허용).",
+      "numeric": true,
+      "economy": false,
+      "caution": "NBIM은 실제 전환 비율 약 40%, 위키백과는 최대 40% 허용으로 표현이 다르다.",
+      "sources": [
+        { "name": "NBIM, The history", "url": "https://www.nbim.no/en/the-fund/the-history/", "quote": "converts about 40 percent of the fund" },
+        { "name": "Wikipedia, Government Pension Fund of Norway", "url": "https://en.wikipedia.org/wiki/Government_Pension_Fund_of_Norway", "quote": "up to 40 percent of its portfolio" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "정부는 펀드에서 기대 실질수익률(현재 연 약 3%)만 쓰는 재정 규칙을 따른다(2001년 도입 당시는 4%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "4%는 2001년 도입 시 추정치, 현재 3%. 대본에서는 현재 3%만 쓴다.",
+      "sources": [
+        { "name": "NBIM, The fund in brief", "url": "https://www.nbim.no/en/the-fund/about-the-fund/", "quote": "to be around 3 percent per year" },
+        { "name": "Norwegian Petroleum, Management of revenues", "url": "https://www.norskpetroleum.no/en/economy/management-of-revenues/", "quote": "only its expected real return" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 국가 제도 사례. 국내 기업/진행 중 사건 아님." },
+  "remaining": "한 사람의 극적 선택은 약하다(1996.5.30 재무장관 입금 장면 + 2016 첫 인출 대비로 보강 가능하나 2016 인출 금액은 출처별 상이해 쓰지 않음). 1인당 보유액(노르웨이 정부 자료 약 380만 크로네)을 쓰려면 환산 후 재검증 필요.",
+  "toolCallsUsed": 14
+}

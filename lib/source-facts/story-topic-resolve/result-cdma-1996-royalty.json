@@ -1,0 +1,42 @@
+{
+  "id": "cdma-1996-royalty",
+  "title": "CDMA 세계 최초 상용화와 5% 로열티",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "5%·3.4조는 한경 1곳(무출처). 퀄컴 비판으로 읽히지 않게, '최악의 협상'은 신문 평가. 반쪽 성공",
+  "conditionResolved": false,
+  "finding": "세계 최초 상용화(1996)는 IEEE 마일스톤(ETHW)과 한국경제로 2곳 확인된다. 로열티율은 한국경제의 '5%'와 서울신문(2001)의 '내수 5.25%·수출 5.75%'로 거의 맞아 '5%대'로 쓸 수 있으나 5.25%와 5%는 숫자가 달라 주의가 필요하다. 그러나 누적 3조4천억 원(1995~2006)과 '최악의 협상' 평가는 한국경제 단일 출처이고, 서울신문의 단말기 내수 16.99조 원·내수 로열티 8,917억 원(한국식 조건)은 또 다른 단일 출처라 경제 번역의 핵심 숫자를 2곳으로 못 채웠다. 결정적 장면(계약 서명 순간·협상자)도 확인된 자료가 없다. 보조 출처를 못 구해 unverifiable로 보류한다(세션 한도로 조사 중단).",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "한국은 1996년 CDMA를 세계 최초로 상용화했다(한국이동통신, 1996년 1월 3일 개시, 4월 12일 수도권 상용 확대).",
+      "numeric": true,
+      "economy": false,
+      "caution": "상용 개시일이 1월 3일(ETHW)·4월 12일(중앙데일리)로 기준에 따라 다름. 연도 1996은 일치.",
+      "sources": [
+        { "name": "ETHW(IEEE Milestone)", "url": "https://ethw.org/Milestones:Large-Scale_Commercialization_of_a_CDMA_Cellular_Communication_System%2C_1996", "quote": "first successful CDMA commercial service" },
+        { "name": "한국경제(2007)", "url": "https://sgsg.hankyung.com/article/2007110170921", "quote": "세계 최초로 2세대 이동통신 표준 CDMA기술을 상용화했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "한국 업체는 CDMA 원천기술 보유사 퀄컴에 단말 매출의 약 5%대(1993년 계약: 내수 5.25%, 수출 5.75%)를 로열티로 내기로 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국경제는 '5%', 서울신문(2001)은 '내수 5.25%·수출 5.75%'로 숫자가 다름. 대본에서는 '5%대'로 쓰고 퀄컴 비판 어조 금지.",
+      "sources": [
+        { "name": "한국경제(2007)", "url": "https://sgsg.hankyung.com/article/2007110170921", "quote": "퀄컴과 계약하며 5% 로열티에 합의한 것은" },
+        { "name": "서울신문(2001-08-17)", "url": "https://www.seoul.co.kr/news/2001/08/17/20010817008003", "quote": "내수 매출의 5.25%,수출액의5.75%를 로열티로 지급하는 조건이었다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "퀄컴은 미국 기업으로 한국 공정위 제재(과징금 약 1조·2천억대) 사건이 있었으나 종결된 과거 쟁점. 다만 '퀄컴 때리기'로 읽히지 않게 주의. 현 영업 중 국내 기업 소송은 없음."
+  },
+  "remaining": "(1) 누적 로열티 3.4조 원(1995~2006)과 '최악의 협상' 평가는 한국경제 단일 출처; 서울신문의 한국식 조건 내수 8,917억 원·내수 단말 16조9,901억 원은 단일 출처. 두 번째 사이트(전자신문, 국회 국감자료 인용 기사, 퀄컴/SKT 공식 자료 등) 필요. (2) 결정적 장면(계약을 결정한 순간)이 없다. 1993년 퀄컴 계약 체결의 당사자·상황을 다룬 출처를 찾아야 한다. (3) 표준 선택 시점(1993년 고시 vs 1995년 10월 선언)이 출처마다 다름. (4) 세션 한도로 조사 중단, 도구 호출 약 9회 사용.",
+  "toolCallsUsed": 9
+}

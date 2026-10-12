@@ -1,0 +1,86 @@
+{
+  "id": "amorepacific-seo-sunghwan",
+  "title": "아모레퍼시픽 서성환",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "1932/1945 기점 갈림, 야쿠르트 아줌마와 비슷",
+  "conditionResolved": true,
+  "finding": "기점 갈림은 '1932년 개성에서 화장품 제조·판매 시작(모친 윤독정 등 가업)'과 '1945년 태평양화학공업사 창립'이 서로 다른 사건이라 정리된다. 야쿠르트 아줌마와 겹치는 방문판매 장면 대신, 한국전쟁 중 부산 피난 속에서도 생산을 멈추지 않고 1951년 식물성 'ABC포마드'를 내놓아 공전의 히트를 친 장면을 결정적 장면으로 잡으면 겹치지 않는다. 숫자 사실 5개와 점유율(70%+) 경제 근거가 서로 다른 사이트 2곳으로 확인돼 usable로 제안한다.",
+  "coreMessage": "전쟁통에도 놓지 않은 본업 하나가 훗날 회사의 뿌리가 된다.",
+  "decisiveFact": "f6",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1932년 개성에서 화장품(머릿기름·미안수) 제조·판매가 시작됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "주체가 출처마다 다름: 프레시안은 부친의 창성상회, 서울신문은 모친 윤독정 여사의 자가 제조. 대본에서는 '가족'으로 쓰는 것이 안전",
+      "sources": [
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/8300", "quote": "1932년부터 개성 송악산 밑에서 창성상회(昌盛商會)라는 잡화상으로" },
+        { "name": "서울신문(2015)", "url": "https://m.seoul.co.kr/news/2015/05/14/20150514019008", "quote": "윤씨는 1932년부터 민간에서 전해 내려오던 미안수를" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1945년 서울 남창동에 세운 태평양화학공업사가 아모레퍼시픽의 전신이다(1945년 9월 5일 창립).",
+      "numeric": true,
+      "economy": false,
+      "caution": "서울 정착 시점은 1947년이라는 기사도 있어(서울신문 2025) 창립 연도와 구분해 써야 함",
+      "sources": [
+        { "name": "아시아경제(2015)", "url": "https://view.asiae.co.kr/article/2015090915242636356", "quote": "1945년 선대회장이 서울 남창동에 세운 태평양화학공업사가 전신이다" },
+        { "name": "서울신문(2015)", "url": "https://m.seoul.co.kr/news/2015/05/14/20150514019008", "quote": "아모레퍼시픽그룹은 1945년 9월 5일 창립됐다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1951년 한국 최초의 순식물성 포마드 'ABC포마드'를 출시해 공전의 히트를 기록했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "아시아경제(2015)", "url": "https://view.asiae.co.kr/article/2015090915242636356", "quote": "1951년 한국 최초의 식물성 포마드" },
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/8300", "quote": "발매(51년)하여 공전의 히트를 기록한다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1954년 서울 후암동에 업계 최초의 화장품 연구실을 세웠다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "아시아경제(2015)", "url": "https://view.asiae.co.kr/article/2015090915242636356", "quote": "1954년 한국 최초 화장품 연구실을 후암동에 세웠다" },
+        { "name": "서울신문(2025)", "url": "https://m.seoul.co.kr/news/2025/10/14/20251014022001", "quote": "1954년 서울 후암동 공장 한쪽에 업계 최초의 화장품 연구실을 설립하며" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "태평양은 1970년대 초중반까지 화장품 시장점유율 70% 이상(1973년 73%)으로 업계 1위를 지켰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'73%'는 서울신문 단독 수치, 프레시안은 '70%가 넘는'으로만 표기",
+      "sources": [
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/8300", "quote": "70년대 초중반까지 70%가 넘는 시장점유율을 유지하면서" },
+        { "name": "서울신문(2025)", "url": "https://m.seoul.co.kr/news/2025/10/14/20251014022001", "quote": "1973년 73%에 달했던 태평양의 화장품 산업 시장점유율" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "한국전쟁으로 부산 초량동으로 피난한 중에도 생산을 멈추지 않고, 전쟁의 포화 속에서 피마자유로 포마드를 만들어 1951년 출시했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "피난 짐에 향료를 챙겼다는 디테일은 서울신문(2015·2026) 계열 단독이라 대본에서는 '원료를 챙겨 부산으로 내려갔다' 수준으로만 사용",
+      "sources": [
+        { "name": "프레시안", "url": "https://pressian.com/pages/articles/8300", "quote": "부산 초량동으로 피난하게 되지만 생산을 멈추지 않았다" },
+        { "name": "한경매거진(2016)", "url": "https://magazine.hankyung.com/business/article/201611158574b", "quote": "포화 속에서 식물성 원료인" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "아모레퍼시픽은 영업 중인 국내 기업이나 창업자의 1950년대 일화(미담·결단)이며 진행 중 소송·정치 소지 없음. 총수 일가·승계 이야기는 제외해야 함"
+  },
+  "remaining": "회사 창립(1945) 이전 가업 시작 시점 서술은 '1932년 개성에서 가족이 화장품을 만들기 시작'으로 통일 필요. 방문판매(아모레 아줌마) 장면은 야쿠르트 아줌마와 겹치므로 쓰지 말 것.",
+  "toolCallsUsed": 17
+}

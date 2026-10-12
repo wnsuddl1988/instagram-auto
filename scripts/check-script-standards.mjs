@@ -10,12 +10,15 @@
  *   node scripts/check-script-standards.mjs --character owl|bull --scenes <scenes.json> [--hook-type T3]
  *   node scripts/check-script-standards.mjs --character owl|bull --tts-script <tts-script.json> [--hook-type T3]
  *   node scripts/check-script-standards.mjs --character owl|bull --spec-module ./_owl-v2-ep19-assembly-spec.mjs --spec-export OWL_EP19_ASSEMBLY_SPEC
+ * 스토리형: --format story 를 붙이거나, TTS 스크립트에 formatProfile "story_v1"이 있으면 자동으로 스토리형 기준
+ *   (_story-script-standards.mjs, `_ai/story-format-structure-v1.md` v3)으로 검사한다(2026-10-07).
  * scenes.json = 씬별 narration 문자열 배열. 종료 코드: 반드시 수정 있으면 1.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { checkScriptStandards, formatScriptStandardsReport, scenesFromTtsScript } from "./_script-standards.mjs";
+import { checkStoryScriptStandards, formatStoryScriptStandardsReport, loadStoryLedger } from "./_story-script-standards.mjs";
 
 const argv = process.argv.slice(2);
 const arg = (n, d = null) => (argv.includes(`--${n}`) ? argv[argv.indexOf(`--${n}`) + 1] : d);
@@ -27,12 +30,29 @@ if (!["owl", "bull"].includes(character)) {
 
 let scenes;
 let hookType = arg("hook-type");
+let format = arg("format");
+if (format && format !== "story") {
+  console.error("ABORT: --format 은 story 만 허용합니다.");
+  process.exit(2);
+}
+// 스토리형: 지난 편과 문장 틀 비교용 대본 경로, 설계 파일(§9). --design 으로 직접 주거나 TTS 스크립트의 storyDesignPath.
+let scenesPath = null;
+let designPath = arg("design");
+let requireDesign = false;
 if (arg("scenes")) {
+  scenesPath = arg("scenes");
   scenes = JSON.parse(fs.readFileSync(arg("scenes"), "utf8")).map((t) => (typeof t === "string" ? t : t.narration));
 } else if (arg("tts-script")) {
   const json = JSON.parse(fs.readFileSync(arg("tts-script"), "utf8"));
   scenes = scenesFromTtsScript(json);
   hookType = hookType ?? json.hookType ?? null;
+  if (json.formatProfile === "story_v1") {
+    format = "story";
+    scenesPath = json.storyScenesPath ?? null;
+    designPath = designPath ?? json.storyDesignPath ?? null;
+    // 2026-10-07: 스토리형 TTS는 설계 파일이 있어야 한다(관심·긴장·반전·의미·출처를 건너뛰지 못하게). 이 규칙 이전에 TTS를 마친 1편은 대상 아님.
+    requireDesign = !json.storyDesignExempt;
+  }
 } else if (arg("spec-module") && arg("spec-export")) {
   const mod = await import(pathToFileURL(path.resolve("scripts", arg("spec-module"))).href);
   const spec = mod[arg("spec-export")];
@@ -43,6 +63,13 @@ if (arg("scenes")) {
   process.exit(2);
 }
 
-const result = checkScriptStandards({ character, scenes, hookType });
-console.log(`\n${formatScriptStandardsReport(result)}`);
+let result;
+if (format === "story") {
+  const design = designPath && fs.existsSync(designPath) ? JSON.parse(fs.readFileSync(designPath, "utf8")) : null;
+  if (designPath && !design) console.error(`경고: 설계 파일을 찾지 못함 ${designPath}`);
+  result = checkStoryScriptStandards({ scenes, scenesPath, priorEpisodes: loadStoryLedger(), design, requireDesign });
+} else {
+  result = checkScriptStandards({ character, scenes, hookType });
+}
+console.log(`\n${format === "story" ? formatStoryScriptStandardsReport(result) : formatScriptStandardsReport(result)}`);
 process.exit(result.fix.length ? 1 : 0);

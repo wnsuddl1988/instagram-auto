@@ -1,0 +1,60 @@
+{
+  "id": "tsmc-1987",
+  "title": "TSMC — 남의 칩만 만들겠다던 회사가 세계 1위가 된 이유",
+  "year": 1987,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장면 약함, 구조 설명이 길어짐",
+  "conditionResolved": false,
+  "finding": "설립 사실(1987년, 정부 48.3%·필립스 27.6%, 인텔·TI가 투자를 거절)은 서로 다른 출처로 확인된다. 그러나 결정적 장면이 '장 회장이 파운드리 모델을 제안하고 투자자를 못 구하다 필립스만 응했다' 정도라 사람의 선택 장면이 약하고, 이야기가 파운드리·팹리스 분업 구조 설명으로 흐른다. 한국 시청자가 아는 굵직한 한 장면이 아니라서 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "필립스는 TSMC 초기 자본의 약 27.6%를 댔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "Wikipedia 문서 안에서도 27.5%와 27.6%가 섞여 나오고, 자본 총액은 1억4500만 달러(Caixin) / 2억2000만 달러(다른 글)로 출처마다 다름.",
+      "sources": [
+        { "name": "Caixin Global(2026)", "url": "https://www.caixinglobal.com/2026-02-27/in-profile-how-morris-chang-built-tsmc-into-a-chipmaking-colossus-102417518.html", "quote": "in 1987 with $145 million in capital" },
+        { "name": "Wikipedia TSMC", "url": "https://en.wikipedia.org/wiki/TSMC", "quote": "a 27.6 percent stake in TSMC" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "대만 정부가 TSMC 초기 자본의 약 48.3%를 댔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Caixin Global(2026)", "url": "https://www.caixinglobal.com/2026-02-27/in-profile-how-morris-chang-built-tsmc-into-a-chipmaking-colossus-102417518.html", "quote": "from the Taiwan government (48.3%)" },
+        { "name": "Wikipedia TSMC", "url": "https://en.wikipedia.org/wiki/TSMC", "quote": "provided another 48.3 percent" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "텍사스인스트루먼츠와 인텔은 순수 파운드리 모델 투자를 거절했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia TSMC", "url": "https://en.wikipedia.org/wiki/TSMC", "quote": "Texas Instruments and Intel turned down" },
+        { "name": "Caixin Global(2026)", "url": "https://www.caixinglobal.com/2026-02-27/in-profile-how-morris-chang-built-tsmc-into-a-chipmaking-colossus-102417518.html", "quote": "Intel and Texas Instruments had rejected" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "현재 TSMC는 파운드리 시장의 약 70%를 차지한다는 서술이 있다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(Wikipedia), 기준 시점·정의 불명확. 2025년 매출 1224억 달러 서술도 같은 문서뿐.",
+      "sources": [
+        { "name": "Wikipedia TSMC", "url": "https://en.wikipedia.org/wiki/TSMC", "quote": "accounting for approximately 70%" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외(대만) 기업. 국내 민감성 없음. 다만 지금도 영업 중인 기업이라 투자 권유로 읽히지 않게 주의." },
+  "remaining": "한국인이 아는 한 장면(예: 장충모의 파운드리 제안 순간)을 2출처로 확인한 일화가 없다. 시장점유율·매출은 2출처 확보 안 됨. 필요하면 'Philips만 응한 투자 유치' 장면을 인터뷰 자료(Computer History Museum 2007 대담)로 보강해야 함.",
+  "toolCallsUsed": 8
+}

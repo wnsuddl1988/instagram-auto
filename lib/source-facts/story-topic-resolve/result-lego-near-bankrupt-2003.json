@@ -1,0 +1,71 @@
+{
+  "id": "lego-near-bankrupt-2003",
+  "title": "레고 — 파산 직전에서 장난감 1위가 된 이야기",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "Owner 10/8 초안 반려(설명 위주). 근거 2차 자료뿐",
+  "conditionResolved": true,
+  "finding": "2004년 순손실 19억 3천만 크로네, 2005년 레고랜드 4곳 매각, 2005년 매출 12% 반등은 NBC 뉴스와 위키백과로 서로 확인된다. 부채 약 8억 달러·약 1,000명 감원은 기업 분석 글 2곳으로 확인된다. 결정적 장면은 '테마파크를 팔고 본업으로 돌아간 결단'으로 잡을 수 있으나, 매각가·2005 순이익·2003 매출 감소율은 출처마다 달라 숫자는 보수적으로 골라 써야 한다. 이야기는 장면 중심(2003년 이사회 경고 → 매각 결단)으로 풀면 설명 위주 반려를 피할 수 있다.",
+  "coreMessage": "넓히다 망한 회사를 살린 건 새 사업이 아니라 가장 잘하는 것만 남기는 결단이었다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "레고는 2004년 순손실 약 19억 3천만 덴마크 크로네(약 3억 3천만 달러)로 회사 역사상 최대 손실을 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "달러 환산이 출처마다 3.2~3.3억으로 약간 다름",
+      "sources": [
+        { "name": "NBC News(2006)", "url": "https://www.nbcnews.com/id/wbna11367083", "quote": "net loss of 1.93 billion kroner" },
+        { "name": "Wikipedia The Lego Group", "url": "https://en.wikipedia.org/wiki/The_Lego_Group", "quote": "2004 net loss of kr. 1,931 million" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "레고는 2005년 레고랜드 테마파크 4곳을 사모펀드 블랙스톤 계열 머린에 약 3억 7,500만 유로에 팔고 장난감 본업에 집중했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "매각가가 출처마다 다름(3.75억 유로 / 약 4.6억 달러 / 머린 위키백과는 약 2.5억 파운드). 대본에는 '4곳을 팔았다'를 앞세우고 금액은 쓰려면 한 출처로 통일",
+      "sources": [
+        { "name": "NBC News(2006)", "url": "https://www.nbcnews.com/id/wbna11367083", "quote": "sold its four Legoland amusement parks" },
+        { "name": "Wikipedia The Lego Group", "url": "https://en.wikipedia.org/wiki/The_Lego_Group", "quote": "to sell all four parks for €375 million" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "매각과 구조조정 뒤 2005년 레고 매출은 전년 대비 12% 늘어 70억 5천만 크로네를 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2005 순이익은 NBC 5억 500만 크로네, 위키백과 7억 200만 크로네로 달라 대본에서 제외 권고",
+      "sources": [
+        { "name": "NBC News(2006)", "url": "https://www.nbcnews.com/id/wbna11367083", "quote": "rose 12 percent to 7.05 billion kroner" },
+        { "name": "Wikipedia The Lego Group", "url": "https://en.wikipedia.org/wiki/The_Lego_Group", "quote": "revenue by 12% to kr. 7,050 million" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "위기 당시 레고는 연말까지 약 8억 달러의 부채를 갚지 못할 수 있는 상태였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "같은 부채를 한 출처는 약 6억 2천만 파운드로 표기(환산 차이). 기업 분석 글이라 대본에는 '약 8억 달러' 대신 '매출 규모에 가까운 빚'처럼 완화 권고",
+      "sources": [
+        { "name": "Grant Thornton Greece(Rebuilding LEGO)", "url": "https://www.grant-thornton.gr/insights/article/rebuilding-lego--the-ultimate-toy-story/", "quote": "outstanding debt of nearly $800 million" },
+        { "name": "History for Operators", "url": "https://historyforoperators.substack.com/p/the-lego-turnaround", "quote": "debt had swollen to over $800 million" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "위기 속에서 레고는 약 1,000명을 감원했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "감원 시점이 출처마다 다름(위키백과 '이듬해', 다른 글 2004년 초). 2006년에는 별도로 1,200명 감원 발표가 있었음",
+      "sources": [
+        { "name": "Wikipedia The Lego Group", "url": "https://en.wikipedia.org/wiki/The_Lego_Group", "quote": "one thousand employees were laid off" },
+        { "name": "History for Operators", "url": "https://historyforoperators.substack.com/p/the-lego-turnaround", "quote": "about 1,000 jobs were cut" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 가족기업의 종결된 옛 위기. 지금도 영업 중인 해외 기업이나 진행 중 사건·정치 소지 없음." },
+  "remaining": "매각가·2005 순이익·2003 매출 감소율(26/29/30%)이 출처마다 달라 대본에서는 하나의 출처로 통일하거나 제외해야 함. 2003 '불타는 플랫폼' 경고 인용은 2차 블로그뿐이라 대사에 쓰려면 단정 대신 '전해진다' 처리.",
+  "toolCallsUsed": 20
+}

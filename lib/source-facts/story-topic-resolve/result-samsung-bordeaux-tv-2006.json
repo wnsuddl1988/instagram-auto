@@ -1,0 +1,38 @@
+{
+  "id": "samsung-bordeaux-tv-2006",
+  "title": "삼성 보르도 TV",
+  "proposedVerdict": "hold",
+  "reason": "duplicate",
+  "originalCondition": "samsung-bordeaux-tv-2006-frame(소니를 처음 이긴 해)으로 합쳐 사용 — 이 항목은 보류",
+  "conditionResolved": true,
+  "finding": "같은 소재(2006년 보르도 LCD TV로 미국 점유율 1위)의 다른 이름 항목이 samsung-bordeaux-tv-2006-frame이고, 그쪽은 이미 usable로 제안돼 있다(result-samsung-bordeaux-tv-2006-frame.json). 이번에 핵심 숫자(미국 LCD TV 점유율 삼성 15.1%·소니 14.4%, 디지털 TV 삼성 20.0%·소니 17.2%)를 이투데이와 WidescreenReview 원문에서 다시 열어 확인했다. 따라서 이 항목은 별도 소재로 쓰지 않고 frame 항목에 합치는 것이 맞아 duplicate로 둔다. 다른 장면·인물 각도는 찾지 못했고, 모든 수치가 삼성 발표(NPD 인용) 기반이라 '미국 소매 판매량 기준'으로 한정해야 한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2006년 미국 LCD TV(10인치 이상) 판매량 점유율 삼성 15.1%로 1위(2005년 4위), 소니 14.4%로 2위(NPD, 미국 소매 기준).",
+      "numeric": true,
+      "economy": true,
+      "caution": "NPD 수치를 삼성이 인용해 발표한 것. 출하량 기준 집계와 순위가 다를 수 있음.",
+      "sources": [
+        { "name": "이투데이(2007)", "url": "https://www.etoday.co.kr/news/view/115119", "quote": "소니가 14.4%, 샤프가 11.6%로 2, 3위를 차지한 것으로 나타났다." },
+        { "name": "WidescreenReview(2007.1.30)", "url": "https://widescreenreview.com/news_detail.php?id=12781", "quote": "(from the number four position in 2005) with a market share of 15.1 percent" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2006년 미국 디지털 TV 판매대수 점유율 삼성 20.0%, 소니 17.2%(2005년엔 소니 21.4%, 삼성 14.5%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "NPD 인용, 판매대수 기준.",
+      "sources": [
+        { "name": "이투데이(2007)", "url": "https://www.etoday.co.kr/news/view/115119", "quote": "삼성전자가 20.0%, 소니 17.2%, 파나소닉 7.9%, 샤프 6.2% 순으로 나타났다." },
+        { "name": "WidescreenReview(2007.1.30)", "url": "https://widescreenreview.com/news_detail.php?id=12781", "quote": "Samsung became America's choice for digital TVs in 2006 with total Digital TV unit share of 20.0 percent" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "영업 중인 국내 기업 성공 사례이나 소송·제재·피해자 없음. 홍보로 읽히지 않게 미국 소매 기준으로 한정." },
+  "remaining": "frame 항목(소니를 처음 이긴 해)으로 일원화 필요. 결정적 장면이 인물의 선택이 아닌 제품 디자인 승부수라는 약점은 frame 결과 파일의 remaining과 동일.",
+  "toolCallsUsed": 2
+}
