@@ -77,3 +77,8 @@ __pycache__/
 /tmp/
 /piq_diag_out.txt
 /shadow-list.txt
+
+# 2026-10-14: 예전 PC C:/tmp 복사본(인수인계용, 7.3GB) · 임시 디버그 스크립트 · 수정 전 백업 — 커밋하지 않음
+/_handoff/
+scripts/_*-tmp.mjs
+*.bak-before-*
