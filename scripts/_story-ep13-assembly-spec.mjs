@@ -181,7 +181,7 @@ export const STORY_EP13_FULL_SPEC = Object.freeze({
 
 export const STORY_EP13_ASSEMBLE_SPEC = Object.freeze({
   ...STORY_EP13_FULL_SPEC,
-  headerTitle: Object.freeze(["남의 이름 대신","자기 이름을 건","쿠쿠"]),
+  headerTitle: Object.freeze(["외환위기에","20억 건 하청이","밥솥 1위로"]),
   videoShiftDownPx: 230,
   videoShiftFadePx: 260,
   headerTopY: 345,
@@ -198,7 +198,11 @@ export const STORY_EP13_ASSEMBLE_SPEC = Object.freeze({
   captionLastSceneNoMargin: true,
   captionSceneEndMarginSec: 0.1,
   captionLeadSec: 0.12,
+  captionBoundaryExceptions: Object.freeze([
+    { left: "2015년", right: "3분기에는", reason: "'2015년 3분기에는 밥솥' 연도+분기가 한 줄(760px)에 안 들어가 '2015년 / 3분기에는 밥솥'으로 갈림, TTS 재생성 회피(2026-10-13)" },
+  ]),
   hookType: "story",
   render: STORY_RENDER,
   scenes: Object.freeze(STORY_EP13_FULL_SPEC.scenes.map((s) => Object.freeze({ ...s, overlays: [] }))),
 });
+

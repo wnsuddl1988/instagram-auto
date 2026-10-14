@@ -139,7 +139,7 @@ export const STORY_EP10_SEMI_SPEC = Object.freeze({
   scenes: Object.freeze([
     {
       scene: 1, key: "s1_hook", role: "hook", video: "story_ep10_s1_hook_motion.mp4",
-      narration: "외환위기 때 공장이 절반쯤밖에 안 돌았는데도, 유한킴벌리는 직원을 한 명도 해고하지 않았어.",
+      narration: "외환위기에 공장 기계가 놀고 있었는데도, 유한킴벌리는 직원을 한 명도 해고하지 않았어.",
       imageBrief: `넓은 제지·위생용품 공장 내부. 생산 라인의 왼쪽 절반은 불이 켜지고 설비가 돌아가며 흰 종이 롤이 감기고, 오른쪽 절반은 불이 꺼져 어둡고 멈춰 있다. 앞쪽에 ${WORKERS} 두세 명이 뒷모습으로 서서 불 켜진 쪽을 바라본다. ` + NO_TEXT + FACE_SAFE,
       shot: "medium", bg: "A",
       lock: "the workers stay seen from behind with no face ever shown; the left half keeps running and the right half stays dark and idle; the factory has no signs, logos or text; nobody else enters.",
@@ -179,7 +179,7 @@ export const STORY_EP10_SEMI_SPEC = Object.freeze({
     },
     {
       scene: 6, key: "s6_util50", role: "evidence", video: "story_ep10_s6_util50_motion.mp4",
-      narration: "1997년 외환위기가 닥치자 공장 가동률은 50%대까지 떨어졌어. 일감은 줄었는데 일할 사람은 그대로였지.",
+      narration: "1997년 외환위기가 닥치자 공장 가동률은 더 떨어졌어. 일감은 줄었는데 일할 사람은 그대로였지.",
       imageBrief: `공장 벽에 걸린 커다란 둥근 계기판. 글자·숫자 없이 눈금 무늬만 있고 바늘이 절반 아래쪽을 가리킨다. 그 앞에 ${WORKERS} 두 명이 뒷모습으로 서서 올려다본다. 형광등 불빛. ` + NO_TEXT + FACE_SAFE,
       shot: "medium", bg: "F",
       lock: "the two workers stay seen from behind with no face ever shown; the gauge keeps only plain tick marks with no numbers or text; the wall and the lights stay fixed.",
@@ -195,7 +195,7 @@ export const STORY_EP10_SEMI_SPEC = Object.freeze({
     },
     {
       scene: 8, key: "s8_union_accepts", role: "evidence", video: "story_ep10_s8_union_accepts_motion.mp4",
-      narration: "그런데 노조는 반대하지 않았어. 일하는 조를 셋에서 넷으로 늘리자는 안을 받아들였지.",
+      narration: "이번엔 노조가 반대하지 않았어. 일하는 조를 셋에서 넷으로 늘리자는 안을 받아들였지.",
       imageBrief: `노조 사무실의 칠판. 글자·숫자 없이 사람 모양 동그라미 세 무리가 한 줄로 그려져 있고, 그 아래에 네 무리로 다시 그려진 줄이 있다. ${WORKERS} 서너 명이 칠판 앞에서 뒷모습으로 고개를 끄덕인다. ` + NO_TEXT + FACE_SAFE,
       shot: "medium", bg: "H",
       lock: "the workers stay seen from behind with no face ever shown; the blackboard keeps only plain circles in groups with no text or numbers; the office stays fixed.",

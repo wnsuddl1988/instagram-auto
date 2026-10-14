@@ -188,7 +188,7 @@ export const STORY_EP16_FULL_SPEC = Object.freeze({
 
 export const STORY_EP16_ASSEMBLE_SPEC = Object.freeze({
   ...STORY_EP16_FULL_SPEC,
-  headerTitle: Object.freeze(["먹을 수 없다던","불닭볶음면이","다시 찾은 맛"]),
+  headerTitle: Object.freeze(["못 먹겠다던","라면이 매출","1,000억 돌파"]),
   videoShiftDownPx: 230,
   videoShiftFadePx: 260,
   headerTopY: 345,
@@ -209,3 +209,4 @@ export const STORY_EP16_ASSEMBLE_SPEC = Object.freeze({
   render: STORY_RENDER,
   scenes: Object.freeze(STORY_EP16_FULL_SPEC.scenes.map((s) => Object.freeze({ ...s, overlays: [] }))),
 });
+

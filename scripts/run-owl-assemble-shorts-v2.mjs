@@ -1040,7 +1040,9 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
   const MIN_BLOCK_DWELL_SEC = 0.6;
   const blockScore = (slice, from, to) => {
     const planner = CAPTION_PLANNER === "scene_dp_v1";
-    const scored = wrapToLinesScored(slice.join(" "), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: planner });
+    // 폭은 화면에 실제로 나가는 글자로 잰다 — 블록 끝 마침표·쉼표는 화면에서 지우므로(stripTrailingPunctuation) 폭 계산에서도 뺀다.
+    // (2026-10-14 부엉 53편 s14: "끝나는 건 아니야." 782px로 재서 한 줄(730px)에 들어갈 문장을 금지 자리 "건 / 아니야"로 갈랐다.)
+    const scored = wrapToLinesScored(stripTrailingPunctuation(slice.join(" ")), CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: planner });
     if (!scored) return null;
     const dwell = timings[to - 1].endSec - timings[from].startSec;
     let extra = dwell < MIN_BLOCK_DWELL_SEC ? 8 : 0;
@@ -1058,7 +1060,7 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
       }
       // 읽기 시간이 짧은 블록(0.9초 미만)과, 장면 중간에 끼는 짧은 한 줄 블록(폭 55% 미만)에 벌점 — 한 줄·한 단어 조각이 섞이지 않게.
       if (dwell >= MIN_BLOCK_DWELL_SEC && dwell < 0.9) extra += 3;
-      const widthRatio = (textWidthRatio(slice.join(" ")) * CAPTION_FONT_SIZE) / CAPTION_MAX_WIDTH_PX;
+      const widthRatio = (textWidthRatio(stripTrailingPunctuation(slice.join(" "))) * CAPTION_FONT_SIZE) / CAPTION_MAX_WIDTH_PX;
       if (scored.lines.length === 1 && widthRatio < 0.55 && to < words.length) extra += 3;
     }
     return scored.score + extra;
@@ -1069,10 +1071,10 @@ function splitCaptionIntoScreenSafeBlocks(caption) {
   }
   if (ranges && ranges.length >= 2) {
     return ranges.map(([from, to]) => {
-      const text = words.slice(from, to).join(" ");
+      const text = stripTrailingPunctuation(words.slice(from, to).join(" "));
       return toStyledCaption(
         { ...caption, startSec: timings[from].startSec, endSec: timings[to - 1].endSec },
-        stripTrailingPunctuation(text),
+        text,
         (wrapToLines(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX, { allowForced: CAPTION_PLANNER === "scene_dp_v1" })
           ?? wrapToLinesForced(text, CAPTION_FONT_SIZE, CAPTION_MAX_WIDTH_PX)).map(stripTrailingPunctuation),
       );

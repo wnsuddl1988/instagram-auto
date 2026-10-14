@@ -43,6 +43,7 @@
 ## F. 자산·배포
 - ⛔ 커버·스토리: 글자 없는 생성 → `run-cover-headline-overlay-once.mjs`(★규칙 30: 문구 = 영상 제목 그대로, 요약·축약 금지 / 140px 미만이면 실패 — 줄이지 말고 Owner에게 보고) → `.headline.json` 기록 생성.
 - ⬜ 압축(35MB 이하) → 콘텐츠 유닛: `finalMasteredPath`·`qaReportPath`(필수), `youtubeTitle`에 #Shorts 없음.
+- ⬜ **구독 안내 줄(규칙 35)**: 부엉 자동 생성 캡션은 이미 포함. 스토리형·수동 캡션은 `node scripts/patch-content-unit-subscribe-cta.mjs --content-unit <…>`(미리보기) → `--write`.
 - ⛔ **배포 전 게이트** `node scripts/run-deploy-preflight-once.mjs --content-unit <…>` — 게시 명령(릴스·스토리·유튜브)이 자동으로 다시 돌린다. 유튜브는 `--privacy public` 없으면, 릴스는 커버 merge 결과가 아니면 막힌다.
 - ⬜ 배포는 **Owner 지시 시에만**(§5 순서). 부엉 배포 시점은 Owner가 정한다(제안 금지).
 - ⬜ 게시 후: 링크를 §7·메모리에, 장부(`BULL_EPISODE_LEDGER`·`OWL_EPISODE_LEDGER`) 갱신·테스트. 유튜브 썸네일 반영(maxresdefault) 확인.

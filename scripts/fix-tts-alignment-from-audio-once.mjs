@@ -31,7 +31,7 @@ if (!SUMMARY || !TTS_SCRIPT) { console.error("ABORT: --tts-summary --tts-script 
 const sum = JSON.parse(fs.readFileSync(SUMMARY, "utf8"));
 const script = JSON.parse(fs.readFileSync(TTS_SCRIPT, "utf8"));
 const alDoc = JSON.parse(fs.readFileSync(sum.alignmentPath, "utf8"));
-const al = alDoc.alignment;
+let al = alDoc.alignment;
 const audioPath = sum.timelineAudioPath ?? sum.scenes[0].audioPath;
 const total = sum.timelineDurationSec;
 
@@ -43,6 +43,70 @@ const speech = [];
 let cur = 0;
 for (let i = 0; i < ss.length; i += 1) { if (ss[i] > cur + 0.02) speech.push([cur, ss[i]]); cur = se[i] ?? total; }
 if (cur < total) speech.push([cur, total]);
+
+// 1b) 끝 글자 붕괴 보정(2026-10-14, 부엉 52편 재녹음): eleven_v3 alignment의 마지막 몇 글자가 길이 0으로 한 점에 몰리는 때가 있다
+// ("궁금한 제도는 댓글로 남겨줘." 중 "댓글로 남겨줘."가 전부 111.30초, 실제 음성은 112.16초까지) → 자막이 소리 끝나기 전에 사라진다.
+// 뒤에서부터 길이 0인 글자가 3개 이상 이어지고, 오디오의 마지막 발화 끝이 마지막 정상 글자 끝보다 0.3초 이상 뒤면
+// 그 글자들을 [마지막 정상 글자 끝, 실제 발화 끝]에 고르게 편다. 장면 이동 보정(아래)과 별개로 항상 먼저 본다.
+let tailFix = null;
+{
+  const ch = al.characters;
+  const st = al.character_start_times_seconds;
+  const en = al.character_end_times_seconds;
+  let k = ch.length;
+  while (k > 0 && en[k - 1] - st[k - 1] < 0.005) k -= 1;
+  const run = ch.length - k;
+  const T0 = k > 0 ? en[k - 1] : 0;
+  const real = speech.length ? Math.min(speech[speech.length - 1][1], total) : null;
+  if (run >= 3 && real != null && real - T0 >= 0.3) {
+    const D = real - T0;
+    const st2 = st.slice();
+    const en2 = en.slice();
+    for (let i = k; i < ch.length; i += 1) {
+      st2[i] = +(T0 + ((i - k) / run) * D).toFixed(3);
+      en2[i] = +(T0 + ((i - k + 1) / run) * D).toFixed(3);
+    }
+    al = { ...al, character_start_times_seconds: st2, character_end_times_seconds: en2 };
+    tailFix = { chars: run, from: +T0.toFixed(2), to: +real.toFixed(2), text: ch.slice(k).join("").trim() };
+    console.log(`끝 글자 붕괴 보정: "${tailFix.text}" ${run}글자가 ${tailFix.from}초에 몰려 있음 → 실제 발화 끝 ${tailFix.to}초까지 펴서 배치`);
+  } else if (run >= 3) {
+    console.warn(`⚠ 끝 글자 ${run}개가 길이 0이지만 오디오 발화 끝(${real?.toFixed?.(2)})과 차이가 0.3초 미만 — 보정 안 함`);
+  }
+}
+
+// 1c) 태그가 첫 어절 발화를 먹는 경우(2026-10-14, 부엉 55편 재녹음): 장면 앞 연출 태그("[clearly]")에 alignment가 0.4초를 주고
+// 첫 어절("셋째,")은 그 뒤로 미뤘는데, 실제 소리는 태그 시각(78.99~79.41초)에 났다 → 자막이 소리보다 늦게 떠 QA "음성이 끝나기 전에
+// 자막이 사라지는 발화". 장면 전체 이동량은 -0.06초라 아래 ②에서 안 잡힌다. 태그 시작~첫 어절 시작 사이(0.25초 이상)에서
+// 0.2초 이상 이어지는 발화가 시작되면, 태그 글자를 [태그 시작, 발화 시작]에 몰고 첫 어절을 [발화 시작, 원래 끝]에 고르게 편다.
+const tagFixes = [];
+{
+  const ch = al.characters;
+  const st = al.character_start_times_seconds.slice();
+  const en = al.character_end_times_seconds.slice();
+  for (let i = 0; i < ch.length; i += 1) {
+    if (ch[i] !== "[") continue;
+    let j = i;
+    while (j < ch.length && ch[j] !== "]") j += 1;
+    if (j >= ch.length) break;
+    let w0 = j + 1;
+    while (w0 < ch.length && /\s/.test(ch[w0])) w0 += 1;
+    if (w0 >= ch.length || ch[w0] === "[") { i = j; continue; }
+    let w1 = w0;
+    while (w1 + 1 < ch.length && !/\s/.test(ch[w1 + 1]) && ch[w1 + 1] !== "[") w1 += 1;
+    const tagS = st[i], wS = st[w0], E = en[w1];
+    const a = wS - tagS >= 0.25 ? speech.find(([s, e]) => s >= tagS - 0.05 && s <= wS - 0.2 && e - s >= 0.2) : null;
+    if (a && a[0] < E - 0.1) {
+      const R = a[0];
+      for (let t = i; t < w0; t += 1) { st[t] = +(tagS + ((t - i) / (w0 - i)) * (R - tagS)).toFixed(3); en[t] = +(tagS + ((t - i + 1) / (w0 - i)) * (R - tagS)).toFixed(3); }
+      const n = w1 - w0 + 1;
+      for (let t = w0; t <= w1; t += 1) { st[t] = +(R + ((t - w0) / n) * (E - R)).toFixed(3); en[t] = +(R + ((t - w0 + 1) / n) * (E - R)).toFixed(3); }
+      tagFixes.push({ origS: wS, to: +R.toFixed(3), text: ch.slice(w0, w1 + 1).join("") });
+      console.log(`태그 뒤 첫 어절 보정: "${tagFixes.at(-1).text}" ${wS.toFixed(2)}초 → 실제 발화 시작 ${R.toFixed(2)}초 (태그 ${ch.slice(i, j + 1).join("")})`);
+    }
+    i = j;
+  }
+  if (tagFixes.length) al = { ...al, character_start_times_seconds: st, character_end_times_seconds: en };
+}
 
 // 2) alignment 어절(태그 제외) — 글자 인덱스 포함
 const words = [];
@@ -127,7 +191,7 @@ for (const info of scenesInfo) {
 console.log("씬별 이동량·보정 여부:");
 for (const x of report) console.log(`  s${x.scene}: 이동 ${x.shift}초 ${x.fixed ? `→ 보정(${x.mode}, 발화구간 ${x.intervals}/세그먼트 ${x.segments})` : "→ 정상(유지)"}`);
 
-if (fixedCount === 0) { console.log("보정할 씬 없음 — 원본 정렬 그대로 사용."); process.exit(0); }
+if (fixedCount === 0 && !tailFix && !tagFixes.length) { console.log("보정할 씬 없음 — 원본 정렬 그대로 사용."); process.exit(0); }
 
 // 5) 구간 선형 매핑: 앵커 사이는 선형 보간, 첫 앵커 앞은 0 이동(원본 유지), 마지막 앵커 뒤는 마지막 이동량 유지
 anchors.sort((a, b) => a[0] - b[0]);
@@ -158,13 +222,26 @@ const sc2 = sum.scenes.map((sc, idx) => {
   const A0 = mapAll(info.A0), A1 = mapAll(info.A1);
   return { ...sc, startSec: +A0.toFixed(3), spokenStartSec: +A0.toFixed(3), spokenEndSec: +A1.toFixed(3), _origStartSec: sc.startSec, _origSpokenEndSec: sc.spokenEndSec };
 });
+if (tailFix) { // 마지막 씬의 발화 끝도 실제 값으로(요약에 붕괴된 값이 들어 있을 수 있다)
+  const li = sc2.length - 1;
+  sc2[li] = { ...sc2[li], spokenEndSec: tailFix.to, _origSpokenEndSec: sc2[li]._origSpokenEndSec ?? sum.scenes[li].spokenEndSec };
+}
+// 태그 보정으로 첫 어절이 당겨진 씬(이동 보정 안 한 씬)은 시작도 실제 발화 시작으로 — 화면 컷이 소리보다 늦지 않게
+let firstTagIdx = Infinity;
+for (const tf of tagFixes) {
+  const idx = sum.scenes.findIndex((s) => Math.abs(s.startSec - tf.origS) < 0.03);
+  if (idx < 0 || Math.abs(scenesInfo[idx].shift) >= THRESHOLD) continue;
+  sc2[idx] = { ...sc2[idx], startSec: tf.to, spokenStartSec: tf.to, _origStartSec: sum.scenes[idx].startSec };
+  firstTagIdx = Math.min(firstTagIdx, idx);
+}
 // endSec = 다음 씬 startSec(마지막은 타임라인 끝)
-for (let i = firstFixedIdx - 1; i < sc2.length; i += 1) {
+const endFrom = Math.min(firstFixedIdx >= 0 ? firstFixedIdx : Infinity, firstTagIdx, tailFix ? sc2.length - 1 : Infinity);
+for (let i = Number.isFinite(endFrom) ? endFrom - 1 : sc2.length; i < sc2.length; i += 1) {
   if (i < 0) continue;
   sc2[i] = { ...sc2[i], endSec: +(i + 1 < sc2.length ? sc2[i + 1].startSec : Math.max(total, sc2[i].spokenEndSec)).toFixed(3) };
 }
 const sumOut = path.join(path.dirname(SUMMARY), path.basename(SUMMARY).replace(/\.json$/, ".audio-fixed.json"));
 fs.writeFileSync(sumOut, JSON.stringify({ ...sum, alignmentPath: alOut, scenes: sc2, audioFixedFrom: path.basename(SUMMARY), audioFixedAt: new Date().toISOString() }, null, 2));
-console.log(`\n보정 씬 ${fixedCount}개\n  alignment → ${alOut}\n  summary   → ${sumOut}`);
+console.log(`\n보정 씬 ${fixedCount}개${tailFix ? " + 끝 글자 붕괴 보정" : ""}${tagFixes.length ? ` + 태그 뒤 첫 어절 ${tagFixes.length}곳` : ""}\n  alignment → ${alOut}\n  summary   → ${sumOut}`);
 console.log("씬 시작·발화끝 변화:");
-sc2.forEach((s, i) => { if (i >= firstFixedIdx - 1) console.log(`  s${s.sceneNumber}: start ${sum.scenes[i].startSec} → ${s.startSec}, spokenEnd ${sum.scenes[i].spokenEndSec} → ${s.spokenEndSec}, end ${sum.scenes[i].endSec} → ${s.endSec}`); });
+sc2.forEach((s, i) => { if (fixedCount > 0 ? i >= firstFixedIdx - 1 : i === sc2.length - 1) console.log(`  s${s.sceneNumber}: start ${sum.scenes[i].startSec} → ${s.startSec}, spokenEnd ${sum.scenes[i].spokenEndSec} → ${s.spokenEndSec}, end ${sum.scenes[i].endSec} → ${s.endSec}`); });

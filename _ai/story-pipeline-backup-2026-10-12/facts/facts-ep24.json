@@ -1,0 +1,49 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "평창 롱패딩의 값은 14만 9천 원이었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "평창 롱패딩이 14만9000원인데" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "가격이 14만9000원으로 시중에서 판매되는 거위 털 패딩과 비교해 절반가량 저렴하고" }
+      ] },
+    { "id": "f2", "claim": "평창 롱패딩은 평창동계올림픽 공식 상품으로 출시됐고 롯데백화점이 판매했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "평창올림픽을 맞아 출시된" },
+        { "name": "서울신문(2017.11.22, 연합)", "url": "https://m.seoul.co.kr/news/2017/11/22/20171122800029", "quote": "평창동계올림픽 공식" }
+      ] },
+    { "id": "f3", "claim": "롯데백화점이 처음 기획한 물량은 3만 장이었고 소진된 뒤 남은 물량을 22일부터 다시 풀었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "아주경제(2017.11.21)", "url": "https://www.ajunews.com/view/20171121134327208", "quote": "최초 기획한 3만장 중에 지금까지 소진된 부분을 제외한" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "최초 기획한 3만장 중 현재까지 소진된 부분을 제외한" }
+      ] },
+    { "id": "f4", "claim": "그해 겨울 대부분의 롱패딩은 20만 원대 중반~30만 원대 초반이었고 평창 롱패딩은 그 절반 안팎이었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "올 겨울 대부분 롱패딩 제품 가격은 지난해 절반 수준인 20만원 중반~30만원 초반대에서 책정됐다" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "시중에서 판매되는 거위 털 패딩과 비교해 절반가량 저렴하고" }
+      ] },
+    { "id": "f5", "claim": "평창 롱패딩은 가성비 입소문을 탔다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "입소문을 탄 평창 롱패딩은" },
+        { "name": "위키트리(2017.11.14)", "url": "https://www.wikitree.co.kr/articles/319448", "quote": "입소문 타고 전량 품절된 평창동계올림픽 롱패딩" }
+      ] },
+    { "id": "f6", "claim": "다시 푸는 수량이 많지 않아 한 사람이 한 벌만 살 수 있었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "아주경제(2017.11.21)", "url": "https://www.ajunews.com/view/20171121134327208", "quote": "1인당 1개만 구매가능" },
+        { "name": "뉴데일리(2017.11.28)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/28/2017112810090.html", "quote": "수량이 많지 않아 1인당 1개씩만 구매 가능하다" }
+      ] },
+    { "id": "f7", "claim": "21일 저녁 7시에 첫 손님이 도착했고 순번표는 다음 날 아침 9시에 나눠 줬다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "서울신문(2017.11.22, 연합)", "url": "https://m.seoul.co.kr/news/2017/11/22/20171122800029", "quote": "첫번째 손님은 이미 오후 7시에 도착했고" },
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "전날 저녁 7시부터 줄을 섰다" }
+      ] },
+    { "id": "f8", "claim": "판매가 시작되기도 전에 매진됐다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "경향신문(2017.11.22)", "url": "https://www.khan.co.kr/article/201711221747001/amp", "quote": "재판매를 개시하기도 전에 매진됐다" },
+        { "name": "서울신문(2017.11.22, 연합)", "url": "https://m.seoul.co.kr/news/2017/11/22/20171122800029", "quote": "구매가 선착순으로 조기 마감됐다" }
+      ] },
+    { "id": "f9", "claim": "중고 사이트에는 정가에 파는 글이 거의 없고 대부분 5만~10만 원쯤 웃돈이 붙어 있었다(연합뉴스 보도)", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "서울신문(2017.11.24, 연합)", "url": "https://m.seoul.co.kr/news/2017/11/24/20171124800002", "quote": "평균 5만∼10만원 가량 비싼 가격에 판매한다는 글이 대부분이다" },
+        { "name": "뉴데일리(2017.11.24, 연합)", "url": "https://biz.newdaily.co.kr/site/data/html/2017/11/24/2017112410005.html", "quote": "정가 판매는 거의 없고, 평균 5만~10만원까지 웃돈이 붙어 판매되고 있는 실정이다" }
+      ] }
+  ]
+}

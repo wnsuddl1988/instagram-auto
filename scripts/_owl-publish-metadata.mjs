@@ -16,7 +16,10 @@
  *   - 한 태그에 몰지 않고 3층으로 나누는 게 도달에 유리하다는 게 일반적 통념이다.
  *   - 인스타그램 권장은 3~5개지만 실무에서는 10~15개가 흔하다. 15개로 맞춘다.
  *   - 영상 주제에서 자동 추출한 태그 + 채널 고정 태그를 합친다.
+ *   6. 구독 안내 — 뉴스레터 유입(해시태그 바로 위, 규칙 35)
  */
+
+import { SUBSCRIBE_CTA_INSTAGRAM, SUBSCRIBE_CTA_YOUTUBE } from "./_subscribe-cta.mjs";
 
 /** 주제 키워드 → 해시태그 매핑. 새 주제가 나오면 여기에 추가한다. */
 const TOPIC_TAG_MAP = Object.freeze({
@@ -202,6 +205,7 @@ export function buildOwlPublishMetadata(spec, options = {}) {
   if (sources.length > 0) {
     captionParts.push("", `출처: ${sources.join(", ")}`);
   }
+  captionParts.push("", ...SUBSCRIBE_CTA_INSTAGRAM);
   captionParts.push("", hashtags.map((tag) => `#${tag}`).join(" "));
 
   // 유튜브 제목은 검색 노출이 중요해 핵심 키워드를 앞에 둔다.
@@ -305,6 +309,8 @@ function buildYoutubeMetadata({ spec, hook, igHook, igPoints, summary, sources, 
   lines.push("기준금리, 물가, 환율 같은 경제 뉴스가 내 통장에 어떻게 닿는지");
   lines.push("매번 숫자 하나까지 확인해서 쉽게 풀어드립니다.");
   lines.push("구독해두시면 다음 소식도 가장 먼저 받아보실 수 있습니다.");
+  lines.push("");
+  for (const ctaLine of SUBSCRIBE_CTA_YOUTUBE) lines.push(ctaLine);
   lines.push("");
 
   // 해시태그는 설명 맨 위 3개가 제목 위에 표시된다. 가장 중요한 것부터.

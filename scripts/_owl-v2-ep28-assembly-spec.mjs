@@ -81,19 +81,8 @@ export const OWL_EP28_ASSEMBLY_SPEC = Object.freeze({
     "휴면",
     "부엉박사"
   ],
-  "captionBoundaryExceptions": [
-    {
-      "left": "2천억",
-      "right": "원이야",
-      "reason": "s6 '14조 2천억 / 원이야' — 한 줄 폭(760px)에 '14조 2천억 원이야'가 안 들어가 조립기 자동 분할이 이 경계를 선택. 대본 변경은 TTS 재생성(유료)이 필요해 승인(2026-10-11)"
-    }
-  ],
-  "captionWidthExceptions": [
-    {
-      "line": "은행·증권·보험",
-      "reason": "'은행·증권·보험' 한 어절 768px(한도 760 대비 +8px, 휴대폰 안전폭 864 이내), s10 — 대본 문구 변경은 TTS 재생성(유료·길이 변동)이 필요해 승인(2026-10-11)"
-    }
-  ],
+  "captionBoundaryExceptions": [],
+  "captionWidthExceptions": [],
   "captionDwellExceptions": [
     {
       "sceneNumber": 10,
@@ -200,7 +189,7 @@ export const OWL_EP28_ASSEMBLY_SPEC = Object.freeze({
       "key": "s6_situation_split",
       "role": "fact",
       "video": "owl_v2_ep28_s6_situation_split_motion.mp4",
-      "narration": "휴면은 1조 5천억 원, 장기미거래는 14조 2천억 원이야.",
+      "narration": "휴면은 1조 5천억 원, 장기미거래는 14조 2천억 원 규모야.",
       "imageBrief": "부엉이가 진지하고 또렷한 표정으로 '휴면 1.5조'와 '장기미거래 14.2조'가 두 줄로 크게 적힌 카드를 두 날개로 감싸 쥐고 보여주는 자세. 구도(반드시): 카드는 납작한 가로형 — 높이는 이미지 세로의 15% 이하, 폭은 가로의 55% 이하. 턱 바로 아래 가슴 윗부분에 붙여 들고 카드 전체가 세로 42~60% 안에 들어오게(카드가 배꼽·허리 높이로 내려가면 실패). 카드 글자는 굵고 크게 두 줄(둘째 줄이 길어도 카드 밖으로 넘치지 않게), 카드에 그림·화살표 없이 글자만.",
       "overlays": [],
       "shot": "medium",
@@ -264,7 +253,7 @@ export const OWL_EP28_ASSEMBLY_SPEC = Object.freeze({
       "key": "s10_point1",
       "role": "evidence",
       "video": "owl_v2_ep28_s10_point1_motion.mp4",
-      "narration": "첫째, 계좌부터 봐. 쉽게 풀면, 금융결제원 어카운트인포는 은행·증권·보험 계좌를 한 번에 찾아주는 창구야.",
+      "narration": "첫째, 계좌부터 봐. 쉽게 풀면, 금융결제원 어카운트인포는 은행, 증권, 보험 계좌를 한 번에 찾아주는 창구야.",
       "imageBrief": "부엉이가 또렷하고 친근한 표정으로 '첫째 어카운트인포'와 '계좌 한 번에 조회'가 두 줄로 크게 적힌 카드를 두 날개로 감싸 쥐고 보여주는 자세. 구도(반드시): 카드는 납작한 가로형 — 높이는 이미지 세로의 15% 이하, 폭은 가로의 55% 이하. 턱 바로 아래 가슴 윗부분에 붙여 들고 카드 전체가 세로 42~60% 안에 들어오게(카드가 배꼽·허리 높이로 내려가면 실패). 카드 글자는 굵고 크게 두 줄(둘째 줄이 길어도 카드 밖으로 넘치지 않게), 카드에 그림·화살표 없이 글자만. 카드 글자를 카드 안에 최대한 크게(카드 높이의 70% 이상 채우게) 쓰고, 카드는 턱 바로 아래 가슴 윗부분으로 더 높이 들어 올릴 것(카드 아래 끝이 세로 58%를 넘지 않게).",
       "overlays": [],
       "shot": "medium",

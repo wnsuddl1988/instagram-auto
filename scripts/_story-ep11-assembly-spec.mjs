@@ -174,7 +174,7 @@ export const STORY_EP11_FULL_SPEC = Object.freeze({
 
 export const STORY_EP11_ASSEMBLE_SPEC = Object.freeze({
   ...STORY_EP11_FULL_SPEC,
-  headerTitle: Object.freeze(["돈이 막히자","쓰임을 바꾼","포스코 제철소"]),
+  headerTitle: Object.freeze(["빌릴 곳 없자","농어업 몫을 돌려","지은 제철소"]),
   videoShiftDownPx: 230,
   videoShiftFadePx: 260,
   headerTopY: 345,
@@ -191,7 +191,11 @@ export const STORY_EP11_ASSEMBLE_SPEC = Object.freeze({
   captionLastSceneNoMargin: true,
   captionSceneEndMarginSec: 0.1,
   captionLeadSec: 0.12,
+  captionWidthExceptions: Object.freeze([
+    { line: "'시기상조'라고", reason: "한 어절 816px — 줄바꿈으로 못 품(안전폭 864 이내, 글자 크기 102px 유지)" },
+  ]),
   hookType: "story",
   render: STORY_RENDER,
   scenes: Object.freeze(STORY_EP11_FULL_SPEC.scenes.map((s) => Object.freeze({ ...s, overlays: [] }))),
 });
+

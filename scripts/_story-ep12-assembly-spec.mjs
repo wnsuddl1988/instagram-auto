@@ -130,7 +130,7 @@ export const STORY_EP12_SEMI_SPEC = Object.freeze({
       lock: "the people stay seen from behind with no face ever shown and do not resemble any real person; the model keeps no text, logos or characters; nobody else enters.",
       motion: motion("a white flash lights the model once and the people lean slightly forward, the podium and the model stay completely still", "the announcement") },
     { scene: 14, key: "s14_mult650", role: "evidence", video: "story_ep12_s14_mult650_motion.mp4",
-      narration: "공식 글에 따르면 발표 직후 근처 땅은 에이커당 13만 1천 달러에 팔렸어. 디즈니가 낸 값의 650배가 넘었지.",
+      narration: "발표가 나자 근처 땅값은 정말로 뛰기 시작했어. 디즈니가 낸 값보다 훨씬 비싼 값에 땅이 팔렸지.",
       imageBrief: "들판에 빈 나무 가격 푯말들이 줄지어 서 있고 오른쪽 한 푯말만 훨씬 높게 솟아 있다. 글자·숫자 없음. 사람 없음. 낮의 햇살. 화면 안에 글자·숫자·로고·브랜드 이름·회사 이름은 하나도 넣지 마(간판·서류·화면·계기판·상자·신문·지도 모두 무늬와 색 덩어리만).",
       shot: "medium", bg: "N",
       lock: "no people appear; the boards stay blank with no text or numbers; the row arrangement stays the same.",
@@ -181,7 +181,8 @@ export const STORY_EP12_FULL_SPEC = Object.freeze({
 
 export const STORY_EP12_ASSEMBLE_SPEC = Object.freeze({
   ...STORY_EP12_FULL_SPEC,
-  headerTitle: Object.freeze(["이름을 숨기고","사 모은 땅","디즈니월드"]),
+  // 2026-10-14 제목 교체: "근처 땅값 650배"는 디즈니 공식 글 1곳만 근거(다른 자료는 약 8만 달러로 달라 CASE 창 점검 지적) → 2출처 사실(평균 매입가 에이커당 200달러 미만=평당 1달러도 안 됨)로.
+  headerTitle: Object.freeze(["이름 숨긴 디즈니,","평당 1달러도","안 되게 샀다"]),
   videoShiftDownPx: 230,
   videoShiftFadePx: 260,
   headerTopY: 345,
@@ -198,7 +199,12 @@ export const STORY_EP12_ASSEMBLE_SPEC = Object.freeze({
   captionLastSceneNoMargin: true,
   captionSceneEndMarginSec: 0.1,
   captionLeadSec: 0.12,
+  captionBoundaryExceptions: Object.freeze([
+    { left: "\"그", right: "자체로는.\"", reason: "인용 대사 '\"그 자체로는.\"'(s?) — 짧은 인용이라 대안 분할이 0.6초 미만 블록/한 단어 블록을 만듦, TTS 재생성 회피(2026-10-13)" },
+    { left: "그", right: "자체로는.", reason: "인용 대사 '그 자체로는.' — 위와 같은 사유(따옴표 표기 차이 대비)" },
+  ]),
   hookType: "story",
   render: STORY_RENDER,
   scenes: Object.freeze(STORY_EP12_FULL_SPEC.scenes.map((s) => Object.freeze({ ...s, overlays: [] }))),
 });
+

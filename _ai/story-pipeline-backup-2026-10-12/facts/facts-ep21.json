@@ -1,0 +1,64 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "2005년 국내 딸기 재배면적에서 일본 품종이 85.9%(약 86%)를 차지했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "일본 품종이 85.9%를 차지했으나" },
+        { "name": "아주경제(2022.7.16)", "url": "https://www.ajunews.com/view/20220714165122815", "quote": "2005년 일본 품종 점유율은 85.9%로 사실상 대부분 농가가 일본 품종을 키운 것이다" }
+      ] },
+    { "id": "f2", "claim": "2006년 한일 협상에서 일본이 일본 딸기 품종에 대해 해마다 로열티를 요구했다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2022.2)", "url": "https://www.rda.go.kr/webzine/2022/02/sub1-3.html", "quote": "로열티로 주당 5원을 매년 요구해 왔다" },
+        { "name": "매일신문(2009.1.12)", "url": "https://www.imaeil.com/page/view/2009011006321973308", "quote": "2006년 열린 협상에서 일본측이 포기당 5원의 로열티를 요구한 바 있다" }
+      ] },
+    { "id": "f3", "claim": "한국이 품종 보호 협약(UPOV)에 가입하면서 한국에서 재배되는 외국 품종은 로열티를 내야 하게 됐다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2022.2)", "url": "https://www.rda.go.kr/webzine/2022/02/sub1-3.html", "quote": "품종보호권이 설정된 외국 딸기 품종 재배 시 로열티를 부담해야 하는 상황에 놓였다" },
+        { "name": "뉴시스(2018.3.8)", "url": "https://mobile.newsis.com/view/NISX20180308_0000246871", "quote": "한국에서 재배되는 외국 품종엔 로열티를 줘야 한다" }
+      ] },
+    { "id": "f4", "claim": "농가가 주로 심던 딸기는 일본에서 개발된 육보와 장희였다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "서울신문(2004.5.26)", "url": "https://m.seoul.co.kr/news/plan/2004/05/26/20040526011004", "quote": "육보(레드펄) 40%,장희 45% 등 일본산이 대부분을 차지하고 있고" },
+        { "name": "아주경제(2022.7.16)", "url": "https://www.ajunews.com/view/20220714165122815", "quote": "일본에서 개발된 두 품종은 맛이 우수하고, 저장성이 높아 농가들 사이에서 인기를 끌었다" }
+      ] },
+    { "id": "f5", "claim": "농촌진흥청은 2006년 협상 당시 해마다 약 30억 원의 로열티를 부담해야 하는 상황이었다고 적었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "연간 30억 원 내외의 로열티(품종사용료)를 부담해야 하는 상황이었다" },
+        { "name": "매일신문(2009.1.12)", "url": "https://www.imaeil.com/page/view/2009011006321973308", "quote": "딸기는 연간 약 30억원" }
+      ] },
+    { "id": "f6", "claim": "품종 하나를 연구개발하는 데는 짧아도 7년이 걸린다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "적게는 7년, 많게는 15년의 시간이 소요된다" },
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "대부분 7∼8년, 길게는 10∼20년이 걸린다" }
+      ] },
+    { "id": "f7", "claim": "설향은 2005년 논산딸기시험장에서 개발됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "설향은 2005년 논산딸기시험장에서" },
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "특히 2005년 개발한 설향은" }
+      ] },
+    { "id": "f8", "claim": "설향은 처음에 '너무 무르다'며 농가들에게 외면당했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "초창기에는 농가들에게 외면당하기 일쑤였습니다" },
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "농가들이 선호하지 않았다" }
+      ] },
+    { "id": "f9", "claim": "설향을 제대로 재배한 농가는 단 한 곳뿐이었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "설향을 제대로 재배한 곳은 단 1곳밖에 없었습니다" },
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "딸기 재배기술이 좋은 한 농가가 병에 강하고 수확량이 많은" }
+      ] },
+    { "id": "f10", "claim": "설향은 병에 강하고 수확량이 많아 재배가 수월한 품종으로 확인됐다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "세계일보(2014.3.24)", "url": "https://www.segye.com/view/20140323002431", "quote": "딸기 재배기술이 좋은 한 농가가 병에 강하고 수확량이 많은" },
+        { "name": "농촌진흥청 웹진(2022.2)", "url": "https://www.rda.go.kr/webzine/2022/02/sub1-3.html", "quote": "수량도 많고 재배가 수월하여 딸기 재배 농가의 선호도가 높은 품종입니다" }
+      ] },
+    { "id": "f11", "claim": "2015년 설향은 국내 딸기 재배면적의 81%를 차지했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "농촌진흥청 웹진(2022.2)", "url": "https://www.rda.go.kr/webzine/2022/02/sub1-3.html", "quote": "2015년 81%로 점유율이 증가하여" },
+        { "name": "뉴시스(2018.3.8)", "url": "https://mobile.newsis.com/view/NISX20180308_0000246871", "quote": "설향은 2015년 기준 국내 딸기 재배면적 81%를 차지하는 한국 대표 딸기품종이다" }
+      ] },
+    { "id": "f12", "claim": "설향이 보급되며 로열티 지급 부담을 크게 덜었고 한일 로열티 분쟁이 해소됐다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "뉴시스(2018.3.8)", "url": "https://mobile.newsis.com/view/NISX20180308_0000246871", "quote": "설향 덕분에 국내 딸기농가는 로열티 지급 부담을 크게 덜 수 있었다" },
+        { "name": "농촌진흥청 웹진(2020.2)", "url": "https://www.rda.go.kr/webzine/2020/02/sub1-4.html", "quote": "로열티 분쟁은 해소됐지만" }
+      ] }
+  ]
+}

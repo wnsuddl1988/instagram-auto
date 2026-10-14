@@ -310,6 +310,11 @@ async function submitScene(sceneKey) {
       return { sceneKey, page, outputVideo, error: "send_not_enabled" };
     }
 
+    if (process.argv.includes("--no-submit")) {
+      log(`${sceneKey}: --no-submit — 전송 직전까지 확인 완료(전송 안 함)`);
+      return { sceneKey, page, outputVideo, error: "no_submit_ok" };
+    }
+
     const RESPONSE_SELECTORS = [
       "main model-response",
       'main [data-test-id^="model-response"]',
@@ -321,7 +326,24 @@ async function submitScene(sceneKey) {
     const sendBtn = page.locator(
       'button[aria-label="메시지 보내기"], button[aria-label*="전송"], button[aria-label*="Send"]',
     ).first();
-    await sendBtn.click();
+    // 전송이 실제로 먹었는지 확인한다(2026-10-12: 클릭이 조용히 무시돼 입력창에 프롬프트만 남은 채 "전송 완료"로 기록된 사고).
+    // 성공 = 주소에 대화 id가 붙거나 응답 블록 수가 늘어남. 안 먹으면 탭을 앞으로 가져와 다시 클릭(최대 3회).
+    const sentOk = async () => {
+      if (/\/app\/[0-9a-f]{8,}/.test(page.url())) return true;
+      // 생성 중에는 전송 버튼이 "대답 생성 중지"로 바뀌고 입력창이 비워진다(주소·응답 블록은 한참 뒤에 바뀜 — 2026-10-12 오탐 사고)
+      if ((await page.locator('button[aria-label*="중지"], button[aria-label*="Stop"]').count()) > 0) return true;
+      for (const s of RESPONSE_SELECTORS) if ((await page.locator(s).count()) > (beforeCounts[s] ?? 0)) return true;
+      return false;
+    };
+    let sent = false;
+    for (let tryClick = 0; tryClick < 3 && !sent; tryClick += 1) {
+      await page.bringToFront();
+      await page.waitForTimeout(400);
+      await sendBtn.click({ timeout: 8_000 }).catch(() => {});
+      for (let w = 0; w < 8 && !sent; w += 1) { await page.waitForTimeout(1_000); sent = await sentOk(); }
+      if (!sent) log(`${sceneKey}: 전송 클릭 ${tryClick + 1}회 — 반영 안 됨, 재시도`);
+    }
+    if (!sent) return { sceneKey, page, outputVideo, error: "send_not_registered" };
 
     // Gemini 는 계정당 동시 생성 2개까지만 허용한다. 전송 직후 짧게 대기한 뒤
     // "동시 개수 초과" 응답이 왔는지 확인한다 — MAX_CONCURRENT 를 지켜도 이전

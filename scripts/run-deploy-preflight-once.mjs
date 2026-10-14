@@ -22,6 +22,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { OWL_CALC_LINKS, fileEpFrom } from "./_calc-links.mjs";
 
 const argv = process.argv.slice(2);
 const cuPath = argv.includes("--content-unit") ? argv[argv.indexOf("--content-unit") + 1] : null;
@@ -82,6 +83,28 @@ if (typeof cu.instagramCaption === "string") {
   const tags = cu.instagramCaption.match(/#[^\s#]+/g) ?? [];
   if (tags.length > 30) fail.push(`인스타 캡션 해시태그 ${tags.length}개(30개 초과)`);
   else ok.push(`캡션 ${cu.instagramCaption.length}자·해시태그 ${tags.length}개`);
+  // 규칙 35: 구독 안내 줄(뉴스레터 유입). 없으면 `node scripts/patch-content-unit-subscribe-cta.mjs --content-unit <json>`
+  if (!cu.instagramCaption.includes("이번 주 경제번역")) fail.push("인스타 캡션에 구독 안내 줄 없음(규칙 35 — patch-content-unit-subscribe-cta.mjs 실행)");
+  else ok.push("캡션 구독 안내 줄(규칙 35)");
+}
+if (typeof cu.youtubeDescription === "string" && cu.youtubeDescription.trim() !== "") {
+  if (!cu.youtubeDescription.includes("page.stibee.com/subscriptions/522827")) fail.push("유튜브 설명에 구독 안내 줄·주소 없음(규칙 35 — patch-content-unit-subscribe-cta.mjs 실행)");
+  else ok.push("유튜브 설명 구독 안내 줄(규칙 35)");
+}
+// 편 맞춤 계산기 링크(Owner 2026-10-14, scripts/_calc-links.mjs): 매핑된 편은 유튜브 설명란과 스레드 링크에 그 계산기 주소가 있어야 한다
+// (유튜브 설명은 업로드 뒤 수정 불가라 업로드 전에 반드시). 없으면 `node scripts/patch-content-unit-calc-link.mjs --content-unit <json> --write`.
+{
+  const calcEp = fileEpFrom(cu.contentId);
+  const calc = calcEp != null ? OWL_CALC_LINKS[calcEp] : null;
+  if (calc) {
+    const needle = `/tools/${calc.slug}`;
+    if (typeof cu.youtubeDescription !== "string" || !cu.youtubeDescription.includes(needle)) fail.push(`유튜브 설명에 이 편 계산기 링크(${needle}) 없음(patch-content-unit-calc-link.mjs 실행)`);
+    else if (!cu.youtubeDescription.includes("utm_source=youtube")) fail.push("유튜브 설명의 계산기 링크에 추적(utm_source=youtube)이 없음");
+    else ok.push(`유튜브 설명 계산기 링크(${calc.slug})`);
+    if (typeof cu.threadsLink !== "string" || !cu.threadsLink.includes(needle)) fail.push(`threadsLink에 이 편 계산기 링크(${needle}) 없음(patch-content-unit-calc-link.mjs 실행)`);
+    else ok.push("스레드 계산기 링크");
+    if (/광고\s*(를|좀)?\s*(눌러|클릭)/.test(`${cu.instagramCaption ?? ""}${cu.youtubeDescription ?? ""}`)) fail.push('광고 클릭 유도 문구("광고 눌러 달라") 있음 — 애드센스 정책 위반 위험');
+  }
 }
 
 // 3) 완성본

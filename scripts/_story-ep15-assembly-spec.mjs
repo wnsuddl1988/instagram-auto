@@ -181,7 +181,7 @@ export const STORY_EP15_FULL_SPEC = Object.freeze({
 
 export const STORY_EP15_ASSEMBLE_SPEC = Object.freeze({
   ...STORY_EP15_FULL_SPEC,
-  headerTitle: Object.freeze(["배는 멈췄고","짐은 묶였다","한진해운"]),
+  headerTitle: Object.freeze(["140억 달러","짐이 바다에","묶인 이유"]),
   videoShiftDownPx: 230,
   videoShiftFadePx: 260,
   headerTopY: 345,
@@ -198,7 +198,15 @@ export const STORY_EP15_ASSEMBLE_SPEC = Object.freeze({
   captionLastSceneNoMargin: true,
   captionSceneEndMarginSec: 0.1,
   captionLeadSec: 0.12,
+  captionBoundaryExceptions: Object.freeze([
+    { left: "7,980억", right: "원이었지", reason: "'1조 7,980억 원이었지'가 한 줄(760px)에 안 들어가 '1조 7,980억 / 원이었지'로 갈림, TTS 재생성 회피(2026-10-13)" },
+    { left: "2016년", right: "8월", reason: "'2016년 8월 30일' 연월일이 한 줄(760px)에 안 들어가 '2016년 / 8월 30일'로 갈림, TTS 재생성 회피(2026-10-13)" },
+    { left: "140억", right: "달러어치", reason: "'약 140억 달러어치'가 한 줄(760px)에 안 들어가 숫자 뒤에서 갈림, TTS 재생성 회피(2026-10-13)" },
+    { left: "4,700만", right: "달러가", reason: "'약 1억 4,700만 달러가 접수됐어'가 한 줄(760px)에 안 들어가 숫자 뒤에서 갈림, TTS 재생성 회피(2026-10-13)" },
+    { left: "2017년", right: "2월", reason: "'2017년 2월 17일' 연월일이 한 줄(760px)에 안 들어가 '2017년 / 2월 17일'로 갈림, TTS 재생성 회피(2026-10-13)" },
+  ]),
   hookType: "story",
   render: STORY_RENDER,
   scenes: Object.freeze(STORY_EP15_FULL_SPEC.scenes.map((s) => Object.freeze({ ...s, overlays: [] }))),
 });
+

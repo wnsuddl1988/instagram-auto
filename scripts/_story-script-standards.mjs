@@ -284,6 +284,8 @@ export function checkStoryDesign(d) {
 export const STORY_TOPIC_VETTING_DIR = "C:/tmp/story-topic-vetting";
 const urlOk = (u) => /^https?:\/\/[^\s/]+\.[^\s/]+/.test(String(u ?? ""));
 const hostOf = (u) => { try { return new URL(u).hostname.replace(/^(www|m)\./, ""); } catch { return ""; } };
+// 위키 계열 3차 자료(출처 개수에 안 셈, 원문을 찾는 길잡이로만 쓴다)
+export const isTertiaryHost = (h) => /(^|\.)(wikipedia\.org|wikiwand\.com|namu\.wiki|fandom\.com|wikia\.org)$/.test(String(h ?? ""));
 const srcOk = (s) => String(s?.name ?? "").trim().length >= 2 && urlOk(s?.url) && String(s?.quote ?? "").trim().length >= 10;
 export const vettingFactsHash = (v) => crypto.createHash("sha1").update(JSON.stringify({ facts: v?.facts ?? [], beats: v?.beats ?? [], decisiveFactId: v?.decisiveFactId })).digest("hex").slice(0, 12);
 export function checkStoryTopicVetting(v) {
@@ -296,13 +298,29 @@ export function checkStoryTopicVetting(v) {
   }
   const facts = Array.isArray(v?.facts) ? v.facts : [];
   const live = facts.filter((f) => f.status !== "excluded");
-  const good = (f) => {
-    const s = (Array.isArray(f.sources) ? f.sources : []).filter(srcOk);
+  const byId = new Map(facts.map((f) => [f.id, f]));
+  // 2026-10-14: 위키 계열(누구나 고치는 3차 자료)은 출처 2곳에 세지 않는다 — 소재를 버리라는 게 아니라 위키 각주의 원문(기사·공식 자료)으로
+  // 바꾸라는 것(6·7·12·14편 장부 점검에서 해외 소재가 영문 위키에 기댄 것이 드러남). 계산으로 나온 숫자는 derivedFrom(입력 사실 id)과
+  // formula(계산식)를 적으면, 입력 사실이 모두 출처 2곳일 때 출처 없이 통과한다(예: 80만 원×12×20년). 보도된 숫자는 계산으로 대신하지 않는다.
+  const srcs2 = (f) => (Array.isArray(f.sources) ? f.sources : []).filter(srcOk).filter((x) => !isTertiaryHost(hostOf(x.url)));
+  const good = (f, seen = new Set()) => {
+    if (Array.isArray(f.derivedFrom) && f.derivedFrom.length && filled(f.formula)) {
+      if (seen.has(f.id)) return false;
+      seen.add(f.id);
+      return f.derivedFrom.every((id) => byId.has(id) && byId.get(id).status !== "excluded" && good(byId.get(id), seen));
+    }
+    const s = srcs2(f);
     return s.length >= 2 && new Set(s.map((x) => hostOf(x.url))).size >= 2;
   };
-  for (const f of live) if (!good(f)) fix.push(`사실 "${f.claim ?? f.id}": 서로 다른 사이트 출처 2곳(이름·URL·원문 인용 10자 이상)이 없음 — 채우거나 status "excluded"`);
+  for (const f of live) {
+    if (good(f)) continue;
+    const wikiN = (Array.isArray(f.sources) ? f.sources : []).filter((x) => isTertiaryHost(hostOf(x?.url))).length;
+    if (Array.isArray(f.derivedFrom) && f.derivedFrom.length) fix.push(`사실 "${f.claim ?? f.id}": 계산 숫자인데 formula가 없거나 입력 사실(${f.derivedFrom.join(", ")}) 중 출처 2곳이 아닌 것이 있음`);
+    else if (wikiN) fix.push(`사실 "${f.claim ?? f.id}": 위키 계열 출처 ${wikiN}곳은 2곳에 세지 않음 — 위키 각주의 원문(기사·공식 자료)을 찾아 바꾸거나 status "excluded"`);
+    else fix.push(`사실 "${f.claim ?? f.id}": 서로 다른 사이트 출처 2곳(이름·URL·원문 인용 10자 이상)이 없음 — 채우거나 status "excluded"`);
+  }
   if (live.length > 12) warn.push(`살아 있는 사실 ${live.length}개 — 12개 이하 권장(과수집은 토큰 낭비, 삼양·삼성·한진 검증에서 소재당 26~37만 토큰이 든 원인). _ai/templates/story-topic-vetting-prompt.md`);
-  const goodFacts = live.filter(good);
+  const goodFacts = live.filter((f) => good(f));
   const goodIds = new Set(goodFacts.map((f) => f.id));
   const numeric = goodFacts.filter((f) => f.numeric === true && /\d/.test(f.claim ?? ""));
   // 2026-10-12 Owner "숫자 4개 규칙은 내가 만든 게 아니다, 완화해도 돼" — 개수 하한 폐지(fix→warn). 쓰는 숫자만 각각 출처 2곳이면 된다.

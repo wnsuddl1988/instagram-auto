@@ -302,6 +302,62 @@ const INSTAGRAM_ONLY_ENV_KEY_NAMES = Object.freeze([
   "INSTAGRAM_BUSINESS_ACCOUNT_ID",
   "INSTAGRAM_ACCESS_TOKEN",
 ]);
+// 페이스북 페이지(릴스 배포) 토큰 — 2026-10-13 Owner 승인(채널 전략 규칙 34, 배포 확장). 페이지 작업에만 주입.
+const FACEBOOK_PAGE_ONLY_ENV_KEY_NAMES = Object.freeze([
+  "FACEBOOK_PAGE_ACCESS_TOKEN",
+  "FACEBOOK_PAGE_ID",
+]);
+const FACEBOOK_PAGE_TOKEN_CHECK_RUNNER_PATH = join(SCRIPTS_DIR, "check-facebook-page-token-readonly-v1.mjs");
+const FACEBOOK_REELS_PUBLISH_RUNNER_PATH = join(SCRIPTS_DIR, "run-facebook-reels-publish-once.mjs");
+// 스레드 토큰 — 2026-10-13 Owner 승인(규칙 34 배포 확장). 스레드 작업에만 주입.
+const THREADS_ONLY_ENV_KEY_NAMES = Object.freeze(["THREADS_ACCESS_TOKEN"]);
+const THREADS_TOKEN_CHECK_RUNNER_PATH = join(SCRIPTS_DIR, "check-threads-token-readonly-v1.mjs");
+const THREADS_PUBLISH_RUNNER_PATH = join(SCRIPTS_DIR, "run-threads-publish-once.mjs");
+const THREADS_TOKEN_REFRESH_RUNNER_PATH = join(SCRIPTS_DIR, "run-threads-token-refresh-once.mjs");
+// threads-publish 인자 검증: 페이스북 릴스와 같은 계약 + 선택 --text-only.
+function validateThreadsPublishBeforeEnvAccess(rawArgs) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== "threads-publish") return { ok: false, reason: "threads_publish_command_position_invalid" };
+  const valueFlags = new Set(["--env-path", "--content-unit", "--blob-result", "--out-dir"]);
+  const values = Object.create(null);
+  const seen = new Set();
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm" || token === "--text-only") { if (seen.has(token)) return { ok: false, reason: "threads_publish_duplicate_flag" }; seen.add(token); continue; }
+    if (!valueFlags.has(token) || Object.hasOwn(values, token)) return { ok: false, reason: "threads_publish_unknown_or_duplicate_flag" };
+    const value = rawArgs[index + 1];
+    if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) return { ok: false, reason: "threads_publish_flag_value_invalid" };
+    values[token] = value;
+    index += 1;
+  }
+  const required = ["--content-unit", "--blob-result", "--out-dir"];
+  if (required.some((f) => !isAbsolute(values[f] ?? "")) || lexicalPathInside(REPO_ROOT, values["--out-dir"])) return { ok: false, reason: "threads_publish_required_paths_invalid" };
+  return { ok: true };
+}
+function validateThreadsTokenRefreshBeforeEnvAccess(rawArgs) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== "threads-token-refresh") return { ok: false, reason: "threads_token_refresh_command_position_invalid" };
+  const rest = rawArgs.slice(1);
+  if (rest.some((t) => t !== "--arm" && t !== "--force") || new Set(rest).size !== rest.length) return { ok: false, reason: "threads_token_refresh_unknown_flag" };
+  return { ok: true };
+}
+// facebook-reels-publish 인자 검증: 인스타 릴스와 같은 계약(--content-unit/--blob-result/--out-dir, 절대경로, out-dir은 저장소 밖).
+function validateFacebookReelsPublishBeforeEnvAccess(rawArgs) {
+  if (!Array.isArray(rawArgs) || rawArgs[0] !== "facebook-reels-publish") return { ok: false, reason: "facebook_reels_publish_command_position_invalid" };
+  const valueFlags = new Set(["--env-path", "--content-unit", "--blob-result", "--out-dir"]);
+  const values = Object.create(null);
+  let armed = false;
+  for (let index = 1; index < rawArgs.length; index += 1) {
+    const token = rawArgs[index];
+    if (token === "--arm") { if (armed) return { ok: false, reason: "facebook_reels_publish_duplicate_arm" }; armed = true; continue; }
+    if (!valueFlags.has(token) || Object.hasOwn(values, token)) return { ok: false, reason: "facebook_reels_publish_unknown_or_duplicate_flag" };
+    const value = rawArgs[index + 1];
+    if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) return { ok: false, reason: "facebook_reels_publish_flag_value_invalid" };
+    values[token] = value;
+    index += 1;
+  }
+  const required = ["--content-unit", "--blob-result", "--out-dir"];
+  if (required.some((f) => !isAbsolute(values[f] ?? "")) || lexicalPathInside(REPO_ROOT, values["--out-dir"])) return { ok: false, reason: "facebook_reels_publish_required_paths_invalid" };
+  return { ok: true };
+}
 const YOUTUBE_ONLY_REQUIRED_PATH_FLAGS = Object.freeze([
   "--source-publish-dir",
   "--recovery-out-dir",
@@ -735,6 +791,51 @@ const SUPPORTED_COMMANDS = Object.freeze({
     envKeyNames: INSTAGRAM_ONLY_ENV_KEY_NAMES,
     loadEnvInDryRun: false,
     validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "instagram-insights-collect"),
+  },
+  "facebook-reels-publish": {
+    script: FACEBOOK_REELS_PUBLISH_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: ["--content-unit", "--blob-result", "--out-dir"],
+    passthroughFlags: ["--arm"],
+    envKeyNames: FACEBOOK_PAGE_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: withDeployPreflight(validateFacebookReelsPublishBeforeEnvAccess, "facebook"),
+  },
+  "threads-publish": {
+    script: THREADS_PUBLISH_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: ["--content-unit", "--blob-result", "--out-dir"],
+    passthroughFlags: ["--arm", "--text-only"],
+    envKeyNames: THREADS_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: withDeployPreflight(validateThreadsPublishBeforeEnvAccess, "threads"),
+  },
+  "threads-token-refresh": {
+    script: THREADS_TOKEN_REFRESH_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm", "--force"],
+    envKeyNames: THREADS_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: validateThreadsTokenRefreshBeforeEnvAccess,
+  },
+  "threads-token-check": {
+    script: THREADS_TOKEN_CHECK_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: THREADS_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "threads-token-check"),
+  },
+  "facebook-page-token-check": {
+    script: FACEBOOK_PAGE_TOKEN_CHECK_RUNNER_PATH,
+    baseArgs: [],
+    passthrough: [],
+    passthroughFlags: ["--arm"],
+    envKeyNames: FACEBOOK_PAGE_ONLY_ENV_KEY_NAMES,
+    loadEnvInDryRun: false,
+    validateBeforeEnvAccess: (rawArgs) => validateArmOnlyBeforeEnvAccess(rawArgs, "facebook-page-token-check"),
   },
   "owl-topic-lane-news-search": {
     script: OWL_TOPIC_LANE_NEWS_SEARCH_RUNNER_PATH,

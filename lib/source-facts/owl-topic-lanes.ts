@@ -97,7 +97,11 @@ export const OWL_EPISODE_LEDGER: readonly OwlEpisodeTopicRecord[] = [
   // 2026-10-06 Owner 위임("선정해봐")·"1번 진행해": 23편 = 국민연금법 개정(10/1 국회 통과, 2027.1.1 시행) 군복무 전 기간·둘째 출산 크레딧 확대. 표시 23편 = 파일 ep24. 대본 확정·TTS 승인 대기.
   { episode: 23, summary: "국민연금법 개정 10/1 통과: 군복무 전 기간 크레딧(육군 18개월·월 +1만 2,880원)·둘째 출산크레딧 15개월, 2027.1.1 시행, 파일 ep24", lane: "policy_countdown", domain: "pension", titleShape: "question", published: true },
   // 24편 = 2027 예산안(정부안, 국회 심의 중) 아동수당→아동기본수당 월 20만 원(절반 상품권)·아이맞이지원금. 표시 24편 = 파일 ep25. 대본 확정·TTS 승인 대기.
-  { episode: 24, summary: "2027 예산안 아동수당→아동기본수당 월 20만 원(절반 지역상품권)·아이맞이지원금 첫째 1,000만·정부안 국회 심의 중, 파일 ep25", lane: "money_calc", domain: "other", titleShape: "contrast", published: false },
+  { episode: 24, summary: "2027 예산안 아동수당→아동기본수당 월 20만 원(절반 지역상품권)·아이맞이지원금 첫째 1,000만·정부안 국회 심의 중, 파일 ep25", lane: "money_calc", domain: "other", titleShape: "contrast", published: true },
+  // 2026-10-13 장부 정리: 24편 게시 반영(통합 47편 10/10), 25~27편 추가(Owner 확정 소재, 스펙 ep26~28). 표시 25 = 통합 49(게시 10/12), 표시 26 = 통합 50(10/13 예정), 표시 27 = 통합 51(10/14 예정, 기존 52에서 재배정).
+  { episode: 25, summary: "금리가 바뀌는 주담대 165조(4분기 변동금리 리셋, 3분기보다 21조 증가), 파일 ep26", lane: "indicator", domain: "loans_credit", titleShape: "question", published: true },
+  { episode: 26, summary: "개인투자용 국채 10월 청약(15일 마감 전 확인 3가지), 파일 ep27", lane: "deadline_benefit", domain: "savings_deposit", titleShape: "number", published: true },
+  { episode: 27, summary: "금융회사 잠자는 휴면·장기미거래 금융자산 15.7조·내 몫 조회 3곳, 파일 ep28", lane: "money_calc", domain: "savings_deposit", titleShape: "number", published: false },
 ];
 
 /**
