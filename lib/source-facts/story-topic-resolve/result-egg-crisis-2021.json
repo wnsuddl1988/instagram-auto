@@ -1,0 +1,47 @@
+{
+  "id": "egg-crisis-2021",
+  "title": "계란 대란",
+  "year": 2021,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "가격 그래프형, 2026년에도 반복",
+  "conditionResolved": false,
+  "finding": "다른 장면 후보로 2021.1.25 미국산 계란 항공 긴급 수송(20여 톤)과 관세 5만톤 면제를 찾았고 숫자(한판 3000원->7000원, 살처분 산란계 약 1100만~1700만 마리)도 있으나 출처마다 집계가 다르다. 사건 주체가 정부 부처이고 결정 한 순간의 인물이 없으며, 수입 손실 1023억원 같은 핵심 경제 숫자는 야당 의원 분석이라 정치 소지가 있다. 2026년에도 비슷한 수입 정책(헤럴드 2026-06 기사)이 반복돼 지금도 진행 중인 이슈로 읽힌다. 2출처 확인 가능한 사실은 일부뿐이라 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2021년 1월 25일 정부가 미국산 계란 20여 톤을 항공편으로 긴급 수송해 들여왔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "데일리안 1곳만 페이지에서 직접 확인(검색 결과 요약에는 같은 문장이 있으나 두 번째 사이트 원문 미확인).",
+      "sources": [
+        { "name": "데일리안(2021.01.26)", "url": "https://www.dailian.co.kr/news/view/958707/", "quote": "우선 20여 톤을 25일 항공편으로 수송해왔다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "정부는 5만톤 한도 내에서 6월까지 관세(8~30%)를 면제했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1곳만 직접 확인.",
+      "sources": [
+        { "name": "데일리안(2021.01.26)", "url": "https://www.dailian.co.kr/news/view/958707/", "quote": "5만톤 한도 내에서 오는 6월까지 관세(8~30%)를 면제해주기로 했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "3000원 내외이던 계란 한판 소비자 가격이 7000원 내외로 치솟았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'내외' 수치. 다른 집계는 aT 8일 기준 6082원.",
+      "sources": [
+        { "name": "데일리안(2021.01.26)", "url": "https://www.dailian.co.kr/news/view/958707/", "quote": "3000원 내외이던 계란 한판 소비자 가격이 7000원 내외로" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": true, "note": "정부 정책 평가와 야당 의원 분석(1023억 손실)이 얽혀 정치 소지, 가격 이슈가 지금도 반복." },
+  "remaining": "결정 한 순간의 인물이 없는 정책 사건, 숫자 출처 불일치(살처분 1100만/1700만/2077만), 핵심 경제 숫자가 정치적 분석.",
+  "toolCallsUsed": 8
+}

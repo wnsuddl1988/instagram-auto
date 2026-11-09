@@ -1,0 +1,96 @@
+{
+  "evidencePack": {
+    "verificationLevel": "structural_only",
+    "provenance": {
+      "rawHash": "raw",
+      "normalizedHash": "norm",
+      "researchCutoffDate": "2026-09-16",
+      "researchWindow": "30d",
+      "domain": "생활금융·부채",
+      "audience": "30대 직장인",
+      "targetDurationSeconds": 45,
+      "sourceImportSchemaVersion": "live-evidence-adapter-v1"
+    },
+    "sources": [
+      {
+        "sourceId": "stat-1-한국은행-기준금리",
+        "publisher": "한국은행 ECOS — 기준금리",
+        "title": "한국은행 기준금리 (2026년 8월)",
+        "url": "https://ecos.bok.or.kr/#/Short/722Y001",
+        "publishedAt": "2026-08-27T00:00:00.000Z",
+        "eventDate": null,
+        "freshness": "fresh",
+        "originalIndex": 0
+      },
+      {
+        "sourceId": "news-1-연합뉴스",
+        "publisher": "연합뉴스",
+        "title": "가계부채 역대 최대 경신…리볼빙 잔액도 3개월 연속 증가",
+        "url": "https://www.yna.co.kr/view/AKR20260915",
+        "publishedAt": "2026-09-15T09:00:00.000Z",
+        "eventDate": null,
+        "freshness": "fresh",
+        "originalIndex": 1
+      }
+    ],
+    "claims": [
+      {
+        "claimId": "claim:signal-1-fc-base-rate-202608",
+        "signalId": "signal-1-fc-base-rate-202608",
+        "headline": "한국은행 기준금리",
+        "claim": "한국은행이 2026년 8월 기준금리를 2.75%에서 3.00%로 +0.25%p 조정했다.",
+        "whyNow": "기준금리 변경은 발표 시점 기준이며, 향후 추가 변동 가능성은 이 수치에 반영되어 있지 않다.",
+        "audienceImpact": "2026년 8월 기준금리는 3.00%다.",
+        "sourceRefs": ["stat-1-한국은행-기준금리", "news-1-연합뉴스"],
+        "numberRefs": [
+          "number:signal-1-fc-base-rate-202608:1",
+          "number:signal-1-fc-base-rate-202608:2",
+          "number:signal-1-fc-base-rate-202608:3"
+        ]
+      }
+    ],
+    "numbers": [
+      {
+        "numberId": "number:signal-1-fc-base-rate-202608:1",
+        "signalId": "signal-1-fc-base-rate-202608",
+        "value": 3,
+        "unit": "%",
+        "currency": null,
+        "asOf": "2026년 8월",
+        "context": "한국은행이 2026년 8월 기준금리를 2.75%에서 3.00%로 +0.25%p 조정했다. (current)",
+        "sourceRefs": ["stat-1-한국은행-기준금리", "news-1-연합뉴스"]
+      },
+      {
+        "numberId": "number:signal-1-fc-base-rate-202608:2",
+        "signalId": "signal-1-fc-base-rate-202608",
+        "value": 2.75,
+        "unit": "%",
+        "currency": null,
+        "asOf": "2026년 8월",
+        "context": "한국은행이 2026년 8월 기준금리를 2.75%에서 3.00%로 +0.25%p 조정했다. (previous)",
+        "sourceRefs": ["stat-1-한국은행-기준금리", "news-1-연합뉴스"]
+      },
+      {
+        "numberId": "number:signal-1-fc-base-rate-202608:3",
+        "signalId": "signal-1-fc-base-rate-202608",
+        "value": 0.25,
+        "unit": "%",
+        "currency": null,
+        "asOf": "2026년 8월",
+        "context": "한국은행이 2026년 8월 기준금리를 2.75%에서 3.00%로 +0.25%p 조정했다. (change)",
+        "sourceRefs": ["stat-1-한국은행-기준금리", "news-1-연합뉴스"]
+      }
+    ],
+    "coverage": {
+      "sourceCount": 2,
+      "signalCount": 1,
+      "numberCount": 3,
+      "freshSourceCount": 2,
+      "signalCoverage": [
+        { "signalId": "signal-1-fc-base-rate-202608", "sourceCount": 2, "numberCount": 3, "freshSourceCount": 2 }
+      ],
+      "warnings": []
+    }
+  },
+  "audience": "30대 직장인"
+}

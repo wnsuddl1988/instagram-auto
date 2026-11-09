@@ -1,0 +1,70 @@
+{
+  "id": "hyosung-spandex",
+  "title": "효성 스판덱스",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "보도자료성 서술뿐, 개발 에피소드 없음",
+  "conditionResolved": false,
+  "finding": "1989년 사업 진출·1990년대 초 독자기술 개발 성공·1992년 크레오라 론칭·세계 1위(점유율 25~35%)까지 숫자 사실은 서로 다른 사이트 2곳으로 확인된다. 그러나 조석래 회장이 연구개발을 직접 지시했다는 한 줄 외에 '결과를 바꾼 결정적 장면'(난관·결단·실패 후 반전)은 어느 기사에서도 나오지 않는다. 사업 초기 프로젝트명을 Q(Question)로 지었다는 일화는 머니투데이 1곳뿐이라 장면으로 쓰기엔 약하고 2출처도 안 된다. 사실 근거가 아니라 장면이 없어 hold(weak-scene)로 둔다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "효성은 1992년 스판덱스 브랜드 '크레오라'를 론칭해 글로벌 시장에 진출했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "토마토뉴스(2012)", "url": "https://newstomato.com/ReadNews.aspx?no=318596", "quote": "효성은 지난 1992년 독자적인 스판덱스 브랜드인" },
+        { "name": "머니투데이(2015)", "url": "https://www.mt.co.kr/industry/2015/06/23/2015062112385364646", "quote": "효성이 1992년 론칭한 스판덱스 세계 1위 브랜드 크레오라는" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "효성은 1989년 국내에 독자기술이 없던 스판덱스 사업에 뛰어들어 1990년대 초 국내 최초 독자기술로 개발에 성공했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연구개발 시작 연도(1989)는 비즈워치 단일 출처, 1990년대 초 성공은 2곳 일치",
+      "sources": [
+        { "name": "비즈워치(2018)", "url": "https://news.bizwatch.co.kr/article/industry/2018/08/20/0025", "quote": "1990년대 초 국내 최초 독자기술로 스판덱스 개발에 성공했다" },
+        { "name": "데일리안(2024)", "url": "https://www.dailian.co.kr/news/view/1345371/", "quote": "1990년대 초 독자기술로 개발에 성공했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "효성 스판덱스는 후발주자였음에도 2010년 인비스타를 제치고 세계 1위가 되었고 세계 점유율은 25% 이상~35% 수준이다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "점유율이 기사 시점마다 25%·30%·35%로 다름(2012년 기사 25% 이상, 2015년 기사 35%). 대본에는 '3분의 1 안팎' 등 범위 표현 필요",
+      "sources": [
+        { "name": "머니투데이(2015)", "url": "https://www.mt.co.kr/industry/2015/06/23/2015062112385364646", "quote": "시장점유율을 35%까지 차지하며 격차를 벌리고 있다" },
+        { "name": "토마토뉴스(2012)", "url": "https://newstomato.com/ReadNews.aspx?no=318596", "quote": "전세계 점유율 25% 이상을 차지해 지금까지 글로벌 1위 자리를 지키고 있다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1999년 6월 스판덱스 공장 준공식이 열렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "사진 설명 문구 기준이며 어느 공장인지는 기사에 명시되지 않음",
+      "sources": [
+        { "name": "헤럴드경제(2024)", "url": "https://heraldk.com/2024/03/31/%ed%98%9c%ec%95%88%ec%9d%98-%ea%b8%b0%ec%88%a0-%ea%b2%bd%ec%98%81%ec%9d%b8-%ec%84%ac%ec%9c%a0-%eb%b0%98%eb%8f%84%ec%b2%b4-%ec%8a%a4%ed%8c%90%eb%8d%b1%ec%8a%a4-1%eb%93%b1/", "quote": "1999년 6월 스판덱스 공장 준공식 당시 조석래 효성그룹 명예회장이" },
+        { "name": "데일리안(2024)", "url": "https://www.dailian.co.kr/news/view/1345371/", "quote": "1999년 6월 스판덱스 공장 준공식 현장에서" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "크레오라는 일반 섬유보다 10배가량 비싼 1kg당 1만원 수준이며, 사업 초기 성공을 확신하지 못해 프로젝트명을 Q(Question)로 지었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "머니투데이 단일 출처(2곳 확인 못 함). 장면으로 쓰기에도 약함",
+      "sources": [
+        { "name": "머니투데이(2015)", "url": "https://www.mt.co.kr/industry/2015/06/23/2015062112385364646", "quote": "효성은 프로젝트 이름을 Q(Question)로 지었다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현재 영업 중인 국내 기업(효성)이지만 진행 중 소송·제재 소지는 확인되지 않음. 기업 홍보성 서술 위험은 있음" },
+  "remaining": "결과를 바꾼 결정적 장면(투자 결단·실패 후 반전)을 담은 2곳 이상의 출처가 없음. 효성 사사·조석래 회고록·사보 등 1차 서술 자료가 있으면 재조사 가능",
+  "toolCallsUsed": 9
+}

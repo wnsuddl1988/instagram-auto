@@ -1,0 +1,66 @@
+{
+  "id": "argentina-barter-2001",
+  "title": "아르헨티나 물물교환 클럽 — 종이쪽지 화폐",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "구체 인물 장면을 지어낼 수 없음. 붕괴 원인 근거 약함",
+  "conditionResolved": false,
+  "finding": "코랄리토(2001.12.1 계좌 동결, 처음 90일, 주 250페소 인출 한도)와 물물교환 화폐 '크레디토'의 규모는 영어 위키피디아에서만 원문 확인됐다(2001~2003 사용자 약 250만 명, 2001.5.6 기준 유통액 700만 달러 초과). 사용자 수는 학술 논문(700만 명 이상), 암비토 2002(250만 명 부양)로 출처마다 달라 한 숫자로 못 쓰고, 붕괴 원인(규모 확대에 따른 불신·위조·페소 선호)도 위키피디아 1곳이라 근거가 약하다. 인물 장면을 확인한 자료가 전혀 없어 결정적 장면이 서지 않으므로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2001년 12월 1일 아르헨티나 정부는 은행 계좌를 처음 90일 동안 동결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아 1곳만 원문 확인. 다른 사이트 출처 미확보.",
+      "sources": [
+        { "name": "Wikipedia(Corralito)", "url": "https://en.wikipedia.org/wiki/Corralito", "quote": "initially for 90 days" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "코랄리토 때 현금 인출은 주 250페소로 제한됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아 1곳. 이후 300페소로 상향됐다는 서술도 있음.",
+      "sources": [
+        { "name": "Wikipedia(Corralito)", "url": "https://en.wikipedia.org/wiki/Corralito", "quote": "250 Argentine pesos, then 300" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2001~2003년 약 250만 명의 아르헨티나인이 물물교환 화폐 크레디토를 사용한 것으로 추정된다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키피디아 1곳. 학술 논문은 2002년 700만 명 이상, 암비토(2002.2)는 250만 명 부양으로 서로 다름.",
+      "sources": [
+        { "name": "Wikipedia(Crédito)", "url": "https://en.wikipedia.org/wiki/Cr%C3%A9dito", "quote": "used the Crédito between 2001 and 2003" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2001년 5월 6일 기준 크레디토 유통액은 700만 달러(페소) 이상이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아 1곳. 통화 단위 표기가 '$'로만 되어 있음.",
+      "sources": [
+        { "name": "Wikipedia(Crédito)", "url": "https://en.wikipedia.org/wiki/Cr%C3%A9dito", "quote": "over $7 million worth of créditos were circulated" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "규모가 커지면서 제도에 대한 불신이 커졌고 위조가 늘며 2002년 정점 후 쇠퇴했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "위키피디아 1곳. 티엠포아르는 '10년 뒤 소수의 단절된 센터로 줄었다'고만 쓰고 원인은 설명하지 않음.",
+      "sources": [
+        { "name": "Wikipedia(Crédito)", "url": "https://en.wikipedia.org/wiki/Cr%C3%A9dito", "quote": "the increasing scale of use increased distrust in the system" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결 사건. 국내 민감성 없음." },
+  "remaining": "인물·한 장면 확인 자료 없음(지어내기 금지), 붕괴 원인과 사용자 수를 서로 다른 사이트 2곳으로 확정하지 못함. 학술 원문(Greco, Lub 2003 등) 접근 필요.",
+  "toolCallsUsed": 8
+}

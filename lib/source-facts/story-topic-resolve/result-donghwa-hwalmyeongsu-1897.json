@@ -1,0 +1,81 @@
+{
+  "id": "donghwa-hwalmyeongsu-1897",
+  "title": "동화약품 활명수 — 약을 팔아 독립운동 자금을 댔다",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "제품 단위 소재로 작은 소재에 가깝고 결정적 장면이 약함. 독립운동 자금 일화는 구체 금액·출처 약함, 독립기념관 등 공신력 기록 대조 필요. 상표 등록 1909/1910 불일치. 인물 대사 금지",
+  "conditionResolved": false,
+  "finding": "1897년 개발, 한 병 50전, 1937년 윤창식 인수, 1963년 독립장 추서는 서로 다른 매체 2곳에서 확인된다. 판매 수익이 독립운동 자금으로 쓰였다는 사실도 2곳에서 나오지만 구체 금액이 어디에도 없고, '중국에서 비싸게 팔았다'는 일화는 기사마다 '전해진다' 수준이다. 독립기념관·공훈록 원문은 찾지 못했고 상표 등록도 1910년 단일 출처(1909 대 1910 미해소)라 결정적 장면이 연표·일화 나열에 머물러 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "활명수는 1897년 궁중 선전관 민병호가 궁중 생약 비방으로 처음 만든 액체 소화제다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "창업주 표기가 기사마다 다름(민병호 / 민강). 대사·심리는 만들지 않는다.",
+      "sources": [
+        { "name": "서울신문 창업주의 비밀노트(2026)", "url": "https://m.go.seoul.co.kr/news/plan/founder-secret-notebook/2026/09/21/20260921500091", "quote": "활명수는 1897년 궁중 선전관이던 민병호" },
+        { "name": "뉴스1(활명수 독립자금)", "url": "https://www.news1.kr/bio/pharmaceutical-bio/5880394", "quote": "동화약품의 시작은 1897년이다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "당시 활명수 한 병 가격은 50전으로, 설렁탕 두 그릇과 막걸리 한 말을 살 수 있는 값이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'설렁탕 두 그릇+막걸리 한 말' 비교는 기사 속 서술이고 당시 물가표 원자료로는 확인 못 함.",
+      "sources": [
+        { "name": "서울신문 창업주의 비밀노트(2026)", "url": "https://m.go.seoul.co.kr/news/plan/founder-secret-notebook/2026/09/21/20260921500091", "quote": "활명수 한 병의 가격은 50전으로" },
+        { "name": "뉴스1(활명수 독립자금)", "url": "https://www.news1.kr/bio/pharmaceutical-bio/5880394", "quote": "활명수 한 병 값은 50전으로 설렁탕 두 그릇" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "민강의 독립운동으로 경영이 계속 어려워진 동화약방을 1937년 윤창식이 인수해 역사를 이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "서울신문 창업주의 비밀노트(2026)", "url": "https://m.go.seoul.co.kr/news/plan/founder-secret-notebook/2026/09/21/20260921500091", "quote": "1937년 보당 윤창식(1890~1963) 선생이 인수" },
+        { "name": "뉴스1(활명수 독립자금)", "url": "https://www.news1.kr/bio/pharmaceutical-bio/5880394", "quote": "1937년 민족기업인인 보당 윤창식 선생이 인수해" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "정부는 민강의 독립운동 공적을 인정해 1963년 건국훈장 독립장을 추서했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "공훈록 원문(국가보훈부)은 직접 열람하지 못함. 언론 기사 2곳 일치.",
+      "sources": [
+        { "name": "서울신문 창업주의 비밀노트(2026)", "url": "https://m.go.seoul.co.kr/news/plan/founder-secret-notebook/2026/09/21/20260921500091", "quote": "정부는 1963년 건국훈장 독립장을 추서했습니다" },
+        { "name": "데일리팜(광복 62주년 동화약품)", "url": "https://m.dailypharm.com/user/news/231932", "quote": "1963년 3월 1일자로 건국훈장 독립장" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "활명수를 판매한 수익금이 독립운동 자금으로 쓰였다(구체 금액은 어느 자료에도 없음).",
+      "numeric": false,
+      "economy": false,
+      "caution": "금액 없음. 중국에서 비싸게 팔아 자금을 만들었다는 일화는 기사마다 '전해진다' 수준의 전언이며 원자료 미확인.",
+      "sources": [
+        { "name": "서울신문 창업주의 비밀노트(2026)", "url": "https://m.go.seoul.co.kr/news/plan/founder-secret-notebook/2026/09/21/20260921500091", "quote": "활명수를 판매한 수익금을 독립운동 자금으로 제공했습니다" },
+        { "name": "뉴스1(활명수 독립자금)", "url": "https://www.news1.kr/bio/pharmaceutical-bio/5880394", "quote": "활명수를 판매한 금액으로 독립자금을 조달해" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "동화약방은 1910년 국내 최초로 부채표 상표를 등록했다는 기록이 있다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "단일 출처(더팩트 기사 1곳). 1909년이라는 자료와 1910년이라는 자료가 갈려 미해소 — 대본에서 쓰지 말 것.",
+      "sources": [
+        { "name": "더팩트(아는게 약이다 활명수)", "url": "https://news.tf.co.kr/read/economy/2171600.htm", "quote": "지난 1910년 국내 최초로" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현재 영업 중인 국내 기업이지만 미담 일화이고 진행 중 소송·제재 없음. 독립운동가 인물 묘사 시 대사 창작만 금지." },
+  "remaining": "결정적 장면(누가 언제 무엇을 결단했는가)이 없고 자금 금액이 없다. 독립기념관·공훈전자사료관 원문 대조는 못 함. 상표 1909/1910 불일치 미해소. 제품 단위 소재라는 한계.",
+  "toolCallsUsed": 12
+}

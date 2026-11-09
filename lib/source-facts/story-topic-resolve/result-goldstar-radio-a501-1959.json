@@ -1,0 +1,78 @@
+{
+  "id": "goldstar-radio-a501-1959",
+  "title": "금성사 국산 라디오 1호 — 모델명 속 '01'",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "단일 출처(전자신문 1999). 생산 80대/87대 불일치. 기술자 갈등은 대사를 지어내야 해서 금지",
+  "conditionResolved": false,
+  "finding": "금성사 설립(1958년)과 A-501 출시(1959년 11월, 국내 최초 진공관 라디오)는 한국민족문화대백과·LG 자료로 2곳 확인된다. 그러나 첫 출고 80대, 외제 3만3000환 대비 약 40% 저렴, 부품 서독 수입은 전자신문 한 곳뿐이고, 국가기록원은 첫해 87대·가격 2만 환으로 달리 적는다. 게다가 이후 재고 3000대에 성능이 밀수품에 밀려 존폐 논의까지 갔다는 기록이 있어 '국산이 이긴다'는 전달 메시지와도 어긋나므로 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "LG전자의 모태 금성사는 1958년 설립된 국내 최초의 전자회사다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "한국민족문화대백과(LG전자)", "url": "https://encykorea.aks.ac.kr/Article/E0036273", "quote": "1958년 10월에 설립된 금성사" },
+        { "name": "LG 보도자료(창립 70주년 기념 스피커)", "url": "https://lg.co.kr/media/release/7011", "quote": "1958년 국내 최초 전자회사인 금성사를 설립" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "금성사는 1959년 11월 국내 최초의 진공관식 국산 라디오 A-501을 내놓았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "제작 장소 부산 연지동 공장은 전자신문 1곳만. 월은 한국민족문화대백과·전자신문 일치, LG 자료는 연도만.",
+      "sources": [
+        { "name": "한국민족문화대백과(LG전자)", "url": "https://encykorea.aks.ac.kr/Article/E0036273", "quote": "1959년 11월에 국내 최초로 진공관식 국산 라디오" },
+        { "name": "LG 보도자료(창립 70주년 기념 스피커)", "url": "https://lg.co.kr/media/release/7011", "quote": "1959년 국내 최초로 개발한 라디오(A-501)" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "A-501의 첫 생산량은 80대였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "전자신문 단일 출처. 국가기록원은 첫해 생산량 87대로 적어 불일치(출하분 80대 대 연간 87대일 수도 있으나 미확인).",
+      "sources": [
+        { "name": "전자신문(5.16과 전자산업, 1999)", "url": "https://m.etnews.com/199904290051", "quote": "첫 생산량이 80대였으니" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "A-501의 가격은 2만 환이었고 첫해 생산량은 87대였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "국가기록원 단일 출처. 전자신문(80대)과 불일치.",
+      "sources": [
+        { "name": "국가기록원 테마기록(가전)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/appliances.do", "quote": "첫해 생산량은 87대" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "미군 PX에서 흘러나온 외제 라디오가 3만3000환이었으니 A-501은 약 40% 저렴했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문 단일 출처.",
+      "sources": [
+        { "name": "전자신문(금성사 출범과 국산 라디오, 1999)", "url": "https://m.etnews.com/199904220115", "quote": "약 40% 가량 저렴했던 셈이었다" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "이후 A-501 재고가 3000대까지 쌓였고 성능이 밀수품보다 떨어져 외면당해 금성사 존폐 논의까지 나왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문 단일 출처. '국산이 수입품을 이긴다'는 서사와 정면으로 어긋남.",
+      "sources": [
+        { "name": "전자신문(5.16과 전자산업, 1999)", "url": "https://m.etnews.com/199904290051", "quote": "3000대나 됐고 후속 모델로 250대를 생산한" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "1959년 사건. LG는 현 영업 중 기업이나 소송·제재 없는 연혁 소재." },
+  "remaining": "핵심 수치(80대/87대, 가격, 40%)를 2출처로 못 채움. 판매 부진·재고 3000대로 결과가 성공 서사가 아님. 기술자 갈등은 대사 창작이 필요해 금지.",
+  "toolCallsUsed": 14
+}

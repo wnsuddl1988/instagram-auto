@@ -1,0 +1,98 @@
+{
+  "id": "japan-rice-1993",
+  "title": "일본 헤이세이 쌀 파동",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "근거가 가장 약함, 수입량 일화 확인 못 함",
+  "conditionResolved": true,
+  "finding": "수입량 일화가 확인됐다: 1993년 호소카와 내각이 9월에 총 259만 톤의 쌀 긴급수입을 발표했고(일본어 위키백과, 닛케이), 쌀 생산량 783만 톤(전년 대비 273만 톤, 26% 감소)과 작황지수 74도 2곳 이상에서 원문 확인된다. 결정 장면은 쌀 한 톨도 안 들인다던 원칙을 접은 1993년 9월 긴급수입 결정이고, 12월에는 최소시장접근 4%(42.6만 톤)에서 8%로 가는 개방을 받아들였다(UPI, 일본어 위키백과). 수입 쌀 중 태국쌀은 입맛에 맞지 않아 외면받았다는 후일담까지 자료가 충분해 사용 가능으로 올린다.",
+  "coreMessage": "쌀 한 톨도 못 들인다던 나라가 흉작 한 해에 259만 톤을 들였다 - 원칙을 지킨다는 건 평소 곳간을 채워 둔다는 뜻이다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1993년 일본 쌀 생산량은 783만 톤으로 전년보다 273만 톤(26%) 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "다른 자료는 781만 톤대. 대본에는 약 780만 톤, 약 4분의 1 감소로 쓴다.",
+      "sources": [
+        {
+          "name": "日本経済新聞 (2024)",
+          "url": "https://www.nikkei.com/article/DGKKZO77594470R10C24A1EP0000/",
+          "quote": "コメ生産量は783万トンと前の年から273万トン（26%）も減った"
+        },
+        {
+          "name": "Wikipedia ja, 平成の米騒動",
+          "url": "https://ja.wikipedia.org/wiki/平成の米騒動",
+          "quote": "収穫量が783万トンになる事態となり"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "호소카와 내각은 1993년 9월 태국·중국·미국 등에서 합계 259만 톤의 쌀 긴급수입을 하겠다고 발표해, 쌀 수입 금지 방침을 접었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "수입 총량은 자료마다 259만~265만 톤(미 상원 결의안 약 265만 톤). 259만 톤으로 쓴다. 태국쌀만 259만은 아님(중국 108만·태국 77만 등은 노트 글이라 미사용).",
+      "sources": [
+        {
+          "name": "日本経済新聞 (2024)",
+          "url": "https://www.nikkei.com/article/DGKKZO77594470R10C24A1EP0000/",
+          "quote": "政府はタイや米国などから計259万トンを緊急輸入した"
+        },
+        {
+          "name": "Wikipedia ja, 平成の米騒動",
+          "url": "https://ja.wikipedia.org/wiki/平成の米騒動",
+          "quote": "合計259万トンのコメの緊急輸入を行うと発表した"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1993년 전국 작황지수는 74로 평년의 4분의 3 수준이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "작황지수 100이 평년작, 90 미만이 현저한 불량.",
+      "sources": [
+        {
+          "name": "現代ビジネス gendai.media",
+          "url": "https://gendai.media/articles/-/136101",
+          "quote": "作況指数で見ても74であり、まさに大不作"
+        },
+        {
+          "name": "Wikipedia ja, 平成の米騒動",
+          "url": "https://ja.wikipedia.org/wiki/平成の米騒動",
+          "quote": "全国の作況指数は74、東北地方で最も高かった"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1993년 12월 우루과이라운드 타결에서 일본은 쌀 수입을 소비량의 4%(42.6만 톤)에서 시작해 8%(85.2만 톤)까지 늘리는 최소시장접근을 받아들였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키는 4%를 1995년, 8%를 2000년으로 기술. UPI는 6년 유예 후 관세화로 설명.",
+      "sources": [
+        {
+          "name": "UPI (1993-12-24)",
+          "url": "https://www.upi.com/Archives/1993/12/24/Japanese-government-holds-rice-import-meeting/3808756709200/",
+          "quote": "4 percent of its domestic consumption",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "Wikipedia ja, 平成の米騒動",
+          "url": "https://ja.wikipedia.org/wiki/平成の米騒動",
+          "quote": "コメ消費量の4%（42.6万トン）を国家貿易で"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 옛 사건. 호소카와 내각은 과거 정권. 한국 쌀 시장 개방 논쟁과 겹치는 비교는 대본에서 하지 않을 것."
+  },
+  "remaining": "주인공 개인보다 내각의 결정이라 인물성이 약하다. 가격 상승률은 1993년 수치가 확인되지 않아(CSMonitor 8월 31일 경매가 미국의 약 8배는 1곳) 쓰지 않는다. 태국쌀 외면 일화는 위키(일본어)·여러 해설에 있으나 수치 없음.",
+  "toolCallsUsed": 14
+}

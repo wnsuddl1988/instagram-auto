@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "money_shorts_flux2_validation_prompts_v1",
+  "status": "data_only_prompts",
+  "taskId": "creative-v2-flux2-small-validation-v1",
+  "title": "FLUX.2 [pro] Small Validation Prompts v1 — 월급이 3일 만에 사라지는 이유 (4 scenes, benchmark-anchored)",
+  "purpose": "OpenAI recommended 3장 benchmark 대비 FLUX.2 [pro]가 강화 no-text/blank-object 계약을 따라오는지 소량 검증. scene 1/2/3은 benchmark와 직접 비교, scene 5는 missing coverage 중 FLUX2 약점(달력 숫자·동전/지폐 통화 디테일) 검증용.",
+  "topic": { "topicId": "salary-vanishes-3days-test", "label": "월급이 3일 만에 사라지는 이유", "role": "quality_grammar_test_topic_not_final" },
+  "provider": "flux_2_pro_bfl_only",
+  "endpoint": "https://api.bfl.ai/v1/flux-2-pro",
+  "sizeTarget": "1088x1936",
+  "maxCreateCalls": 4,
+  "costCeilingUsd": 1,
+  "benchmarkRef": "scripts/fixtures/golden_sample_visual_quality_benchmark.v1.json",
+  "sceneSelectionRationale": "scene 4(subscriptions_auto_pay)는 화면 타일이 주인공인 구도라 FLUX2 contract의 'screen device 최소화' 요건과 충돌하므로 이번 4장에서 제외. scene 5가 FLUX2의 실측 실패 유형(숫자/인쇄물)을 달력·동전으로 정면 검증하면서 missing coverage도 채운다.",
+  "hardRuleHead": "HARD RULE, HIGHEST PRIORITY — THIS IMAGE MUST CONTAIN ZERO READABLE MARKS: no text, no letters, no numerals, no digits, no words, no labels, no logos, no brand marks, no watermarks, no signatures, no UI chrome, no icons, no handwriting, no printed lines, anywhere in the frame.",
+  "hardRuleTail": "FINAL CHECK BEFORE RENDERING: every paper, slip, envelope, card, calculator, calendar, coin and screen in this image is completely blank and unmarked — if any letter, numeral, logo or interface element would appear, replace it with plain blank surface or pure abstract light. Zero glyphs of any kind.",
+  "prompts": [
+    {
+      "order": 1,
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "benchmarkCompare": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-01A-salary_arrival_hook.png",
+      "coreIdea": "월급 입금 순간의 짧은 안도",
+      "subjectDeliveryCheck": "월급이 방금 들어온 순간임이 이미지만으로 느껴진다",
+      "noTextRiskFocus": "폰 화면 — FLUX2 1차 테스트에서 한글 유사 텍스트+UI chrome 위반이 발생한 지점",
+      "finalPrompt": "HARD RULE, HIGHEST PRIORITY — THIS IMAGE MUST CONTAIN ZERO READABLE MARKS: no text, no letters, no numerals, no digits, no words, no labels, no logos, no brand marks, no watermarks, no signatures, no UI chrome, no icons, no handwriting, no printed lines, anywhere in the frame. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household morning — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning light. A smartphone lies face-up. Treat the phone screen as dark switched-off glass catching one single soft round blur of warm amber light — purely abstract glow, like a reflection on black glass, with absolutely nothing displayed: no notification, no icons, no status bar, no interface, no characters of any language. A visibly thin open wallet rests beside the phone; a hand enters the frame reaching toward the phone; a cup of coffee steams softly. Mood: one short breath of relief before the money starts leaving. Shallow depth of field, warm window light. No distorted hands, no visible face in focus, no stock-photo feel. FINAL CHECK BEFORE RENDERING: every paper, slip, envelope, card, calculator, calendar, coin and screen in this image is completely blank and unmarked — if any letter, numeral, logo or interface element would appear, replace it with plain blank surface or pure abstract light. Zero glyphs of any kind."
+    },
+    {
+      "order": 2,
+      "sceneRole": "scene_02_money_leak_order",
+      "benchmarkCompare": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-02A-money_leak_order.png",
+      "coreIdea": "돈이 들어오자마자 정해진 순서대로 새는 느낌",
+      "subjectDeliveryCheck": "돈이 정해진 순서로 '빠져나가는 중'이라는 방향성이 보인다",
+      "noTextRiskFocus": "봉투 인쇄/우표 — FLUX2 1차 테스트에서 봉투 printing+stamp 위반이 발생한 지점",
+      "finalPrompt": "HARD RULE, HIGHEST PRIORITY — THIS IMAGE MUST CONTAIN ZERO READABLE MARKS: no text, no letters, no numerals, no digits, no words, no labels, no logos, no brand marks, no watermarks, no signatures, no UI chrome, no icons, no handwriting, no printed lines, anywhere in the frame. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A dark wooden table. An open leather wallet tilts slightly at one side of the middle band, and a short trail of completely BLANK white paper slips slides out of it in one clear diagonal direction — like water quietly leaking from a container — toward a neat row of three plain unmarked envelopes standing at the far edge, as if the money already knows its fixed order of destinations. The slips are plain blank paper only — NOT banknotes: no currency, no denominations, no portraits, no engraving patterns. The envelopes are plain paper with no stamps, no address lines, no windows, no printing of any kind. One warm amber light accent traces the flow path; the rest stays calm and dim. No exploding-money cliché, no gambling mood, no distorted hands, no stock-photo feel. FINAL CHECK BEFORE RENDERING: every paper, slip, envelope, card, calculator, calendar, coin and screen in this image is completely blank and unmarked — if any letter, numeral, logo or interface element would appear, replace it with plain blank surface or pure abstract light. Zero glyphs of any kind."
+    },
+    {
+      "order": 3,
+      "sceneRole": "scene_03_fixed_cost_stack",
+      "benchmarkCompare": "output/money-shorts/openai-full-selected-image-candidates-v1/scene-03A-fixed_cost_stack.png",
+      "coreIdea": "고정비가 먼저 쌓여 월급을 압박",
+      "subjectDeliveryCheck": "고정 지출이 먼저 쌓여 있음이 무게감으로 보인다",
+      "noTextRiskFocus": "지폐 숫자/영수증 문자열 — FLUX2 1차 테스트에서 '500' 지폐 숫자와 영수증 텍스트 위반이 발생한 지점",
+      "finalPrompt": "HARD RULE, HIGHEST PRIORITY — THIS IMAGE MUST CONTAIN ZERO READABLE MARKS: no text, no letters, no numerals, no digits, no words, no labels, no logos, no brand marks, no watermarks, no signatures, no UI chrome, no icons, no handwriting, no printed lines, anywhere in the frame. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A home desk at night in the middle band of the frame. A thick, slightly uneven stack of completely BLANK white papers dominates; every sheet is pure blank paper — no receipts, no printed statements, no ruled lines, no banknotes anywhere in the frame. On top of the stack rests a single minimalist payment card shown as a plain dark card with only a metallic chip — no numbers, no name, no brand, no embossing. Beside the stack: one plain unmarked envelope and a small calculator whose display is dark and switched off, its keys plain and completely unlabeled blank buttons. Warm desk lamp glow, amber accent along the card edge, strong paper and wood textures, shallow depth of field. The stack reads as weight — fixed costs piling up first, pressing on the salary. No chart walls, no distorted hands, no stock-photo feel. FINAL CHECK BEFORE RENDERING: every paper, slip, envelope, card, calculator, calendar, coin and screen in this image is completely blank and unmarked — if any letter, numeral, logo or interface element would appear, replace it with plain blank surface or pure abstract light. Zero glyphs of any kind."
+    },
+    {
+      "order": 5,
+      "sceneRole": "scene_05_day3_empty_wallet",
+      "benchmarkCompare": null,
+      "coreIdea": "3일 뒤 빈 지갑 (missing coverage — OpenAI billing limit로 미생성)",
+      "subjectDeliveryCheck": "3일이 지났고 지갑이 비었다는 시간 경과가 보인다",
+      "noTextRiskFocus": "달력 숫자 + 동전 각인 — FLUX2가 숫자/인쇄물에서 실패했던 유형을 달력 grid와 동전으로 정면 검증",
+      "finalPrompt": "HARD RULE, HIGHEST PRIORITY — THIS IMAGE MUST CONTAIN ZERO READABLE MARKS: no text, no letters, no numerals, no digits, no words, no labels, no logos, no brand marks, no watermarks, no signatures, no UI chrome, no icons, no handwriting, no printed lines, anywhere in the frame. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A quiet desk corner in soft daylight. A paper desk calendar stands slightly out of focus showing ONLY an empty ruled grid of blank cells — absolutely no numbers, no letters, no month name, no weekday marks, every cell empty — with exactly three of its cells swiped by a warm amber highlighter, reading purely as 'three days passed'. Directly below in sharp focus, an open wallet lies visibly empty, card slots slack, with only a few small coins scattered beside it. The coins are plain smooth metal discs with soft reflections — no engraving, no numerals, no portraits, no mint marks. The contrast between the three amber marks and the empty wallet tells the whole story without a single word. Textures of paper and worn leather, warm-neutral grade. No despair melodrama, no horror lighting, no distorted hands, no stock-photo feel. FINAL CHECK BEFORE RENDERING: every paper, slip, envelope, card, calculator, calendar, coin and screen in this image is completely blank and unmarked — if any letter, numeral, logo or interface element would appear, replace it with plain blank surface or pure abstract light. Zero glyphs of any kind."
+    }
+  ],
+  "boundary": { "dataOnly": true, "noGeneration": true, "usedBy": "scripts/run-flux2-golden-sample-validation-v1.mjs" }
+}

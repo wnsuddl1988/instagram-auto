@@ -1,0 +1,108 @@
+{
+  "id": "stylenanda-sale-2018",
+  "title": "스타일난다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "매각가 4,000/6,000억 엇갈림, 장면 약함",
+  "conditionResolved": true,
+  "finding": "금액 엇갈림은 시점 차이로 설명된다: 2018-04 우선협상 단계 보도는 '지분 70% 약 4,000억'(데일리안·비즈워치), 5월 공식 발표는 100% 인수(중앙데일리·로레알 보도자료, 가격 비공개), 이후 기사는 '6,000억 안팎'(한국경제·뉴스에이드). 4,000억÷0.7로 환산하면 6,000억 안팎과 맞물리지만 최종가는 공식 비공개라 대본은 '보도로는 수천억 원' 정도로만 써야 한다. 약한 장면은 '2009년 의류 쇼핑몰이 화장품을 만들겠다 하자 주변은 안될 것이라 했고, 제조사를 50번 넘게 찾아가 부탁해 립스틱 5가지로 시작'이라는 결단·문전박대 장면(이코노미스트·뉴스에이드 2곳)으로 보강된다. 이 3CE가 매출 70%를 만들며 로레알 인수로 이어졌다는 숫자 사실이 2출처씩 확인되어 usable.",
+  "coreMessage": "남들이 안 된다고 한 일도, 고객이 원하는 것을 50번 넘게 찾아가 만들면 사업이 된다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "의류 쇼핑몰 스타일난다는 2009년 자체 화장품 브랜드 3CE를 론칭했고, 당시 주변에서는 '안될 것'이라 했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'안될 것' 반응은 이코노미스트 단독. 창업 연도는 2004(법인 설립 포함)/2005(쇼핑몰 오픈)로 매체마다 다름.",
+      "sources": [
+        { "name": "이코노미스트(2016)", "url": "https://economist.co.kr/article/view/ecn201608240019", "quote": "2009년 자체 화장품 브랜드 3CE를 론칭한다고 했을 때" },
+        { "name": "데일리안(2018)", "url": "https://www.dailian.co.kr/news/view/706206/", "quote": "스타일난다는 2009년 색조 화장품 브랜드 3CE를 론칭하고" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "김소희 대표는 화장품을 만들어 줄 곳을 50번 넘게(50곳 이상) 찾아다니며 부탁했고, 그렇게 립스틱 5가지로 3CE를 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "이코노미스트는 '제조사를 50번 넘게 찾아가 설명·부탁해 립스틱 5가지(5일 만에 1만 개 판매)'로, 뉴스에이드는 '립스틱을 찾기 위해 50곳 이상'으로 표현이 다름. '5일 만에 1만 개'는 이코노미스트 단독이라 쓰지 말 것. 비즈워치는 한국콜마에 거절당한 뒤 코스맥스와 인연을 맺었다고 함.",
+      "sources": [
+        { "name": "이코노미스트(2016)", "url": "https://economist.co.kr/article/view/ecn201608240019", "quote": "50번을 넘게 찾아가 설명하고 부탁해서" },
+        { "name": "뉴스에이드(다음 전재)", "url": "https://v.daum.net/v/UFstRLbDfA", "quote": "립스틱을 찾기 위해 50곳 이상을 찾아다녔으며" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "난다(스타일난다 운영사)의 2017년 매출은 1,675억 원이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 자료는 2017년 1,500억·2016년 1,287억으로 다르게 적음. 로레알 보도자료는 2017년 매출 1억 2,700만 유로(약 1,600억대).",
+      "sources": [
+        { "name": "비즈워치(2018)", "url": "https://news.bizwatch.co.kr/article/consumer/2018/04/16/0015", "quote": "난다는 지난해 1675억원의 매출을 올렸다." },
+        { "name": "뉴스에이드(다음 전재)", "url": "https://v.daum.net/v/UFstRLbDfA", "quote": "2017년에는 매출 1,675억 원을 달성해 냈죠" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "3CE가 회사 사업(매출)의 약 70%를 차지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "데일리안은 '화장품 부문 비중 절반 웃돈다'로 더 낮게 적음. 70%는 로레알 발표·중앙데일리 기준.",
+      "sources": [
+        { "name": "코리아중앙데일리(2018)", "url": "https://www.koreajoongangdaily.com/business/loreal-purchases-100-stake-in-stylenanda/11362958", "quote": "accounts for 70 percent of the company" },
+        { "name": "로레알 보도자료(2018-05-02)", "url": "https://loreal-finance.com/fr/communique/loreal-fait-lacquisition-marque-coreenne-stylenanda", "quote": "plus de 70 % de son activité" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2018년 5월 로레알은 스타일난다 운영사 난다 지분 100%를 인수한다고 발표했고, 지분 전부를 창업자 김소희 대표가 갖고 있었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "초기 보도는 70% 인수였으나 공식 발표는 100%. 가격은 공식 비공개.",
+      "sources": [
+        { "name": "코리아중앙데일리(2018)", "url": "https://www.koreajoongangdaily.com/business/loreal-purchases-100-stake-in-stylenanda/11362958", "quote": "acquired a 100 percent stake in" },
+        { "name": "로레알 보도자료(2018-05-02)", "url": "https://loreal-finance.com/fr/communique/loreal-fait-lacquisition-marque-coreenne-stylenanda", "quote": "annonce l'acquisition de 100 % de Nanda" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "우선협상 단계(2018-04) 보도에서 매각 대상 지분 70%의 가격은 약 4,000억 원으로 평가됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "최종 100% 인수 가격은 로레알이 공개하지 않음. 4,000억은 '70% 기준 추정'이지 최종 거래가가 아님.",
+      "sources": [
+        { "name": "데일리안(2018)", "url": "https://www.dailian.co.kr/news/view/706206/", "quote": "매각 지분 가격은 4000억원에 이를 것으로 평가된다" },
+        { "name": "비즈워치(2018)", "url": "https://news.bizwatch.co.kr/article/consumer/2018/04/16/0015", "quote": "매각 규모가 4000억원에 달하는 데다" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "이후 기사들은 로레알이 스타일난다를 6,000억 원(안팎)에 인수했다고 쓴다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "공식 발표가 아닌 후속 기사의 추정치. 대본에는 '보도에 따르면 수천억 원대'로만 쓰는 것이 안전.",
+      "sources": [
+        { "name": "한국경제(2026)", "url": "https://www.hankyung.com/article/2026062335781", "quote": "스타일난다를 6000억원에 인수했다" },
+        { "name": "뉴스에이드(다음 전재)", "url": "https://v.daum.net/v/UFstRLbDfA", "quote": "6,000억 원 안팎의 가격에 스타일 난다를 매각" }
+      ]
+    },
+    {
+      "id": "f8",
+      "claim": "스타일난다는 2014년 처음 연매출 1,000억 원을 넘겼다(2011년까지 영업손실, 300억 원대에서 1,151억 원으로 성장).",
+      "numeric": true,
+      "economy": true,
+      "caution": "다음 캐스트픽 기사는 '2015년 1,000억'으로 적음. 대본에는 '2014년 1,000억 돌파'.",
+      "sources": [
+        { "name": "이코노미스트(2016)", "url": "https://economist.co.kr/article/view/ecn201608240019", "quote": "2014년엔 매출 1000억원을 돌파했다" },
+        { "name": "데일리안(2018)", "url": "https://www.dailian.co.kr/news/view/706206/", "quote": "2014년에는 기존 300억원대에서 1151억원까지" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "창업자 성공담·M&A. 현재 3CE는 로레알 소유 브랜드, 진행 중 분쟁 없음. 김소희 전 대표는 2021년 퇴사한 개인이므로 사생활(주부 전환 등)은 쓰지 말 것."
+  },
+  "remaining": "최종 인수가는 공식 비공개라 '4,000억 vs 6,000억'은 70%/100% 기준 차이로 설명하고 단정하지 않는다. 장면 강도는 '한국인 누구나 아는 굵직한 장면'보다 약한 편(제조사 50곳 문전박대). 인용 f2의 두 출처는 표현이 달라 '50번 넘게 찾아다녔다' 수준으로만 쓸 것.",
+  "toolCallsUsed": 15
+}

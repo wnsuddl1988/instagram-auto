@@ -1,0 +1,37 @@
+{
+  "id": "iphone-korea-2009",
+  "title": "아이폰 한국 출시 지연",
+  "year": 2009,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "지연 원인이 끝내 불분명",
+  "conditionResolved": false,
+  "finding": "지연 원인은 위피 의무탑재(2009.4.1 폐지라는 기사 1곳), 위치정보법 충돌(방통위가 2009.9.23 KT 대행 가능 결론), 애플과의 협상(앱스토어로 이통사 서비스 잠식 우려) 등 복합 원인이라고만 나오고 하나의 결정적 장면으로 모이지 않는다. 출시 2009.11.28, 예약 4만6천여명, 100일 만에 40만대 같은 숫자는 있으나 KT 경영진이 어떤 선택을 했는지(이석채 협상 등)를 보여주는 2개 사이트 원문은 찾지 못했다. 현재 영업 중인 KT/삼성 관련 서술이라 민감 소지도 있다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "아이폰은 2007년 6월 미국 출시 후 2년여 뒤인 2009년 11월에야 한국에 들어왔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "전자신문 1곳만 페이지에서 직접 확인.",
+      "sources": [
+        { "name": "전자신문 100대 사건(2012)", "url": "https://www.etnews.com/201209110631", "quote": "우리나라에 들여온 것은 2년여 뒤인 2009년 11월." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "KT는 2008년부터 아이폰을 국내에 들여오기 위해 노력했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "1곳만 직접 확인.",
+      "sources": [
+        { "name": "전자신문 100대 사건(2012)", "url": "https://www.etnews.com/201209110631", "quote": "KT는 2008년부터 아이폰을 국내에 들여오기 위해 노력했다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "KT·삼성 등 현 영업 기업과 규제 책임(방통위) 서술이 얽힘." },
+  "remaining": "지연 원인 복합(위피·위치정보법·협상), 단일 결정 장면과 KT 경영진의 선택 근거(2출처) 부재.",
+  "toolCallsUsed": 5
+}

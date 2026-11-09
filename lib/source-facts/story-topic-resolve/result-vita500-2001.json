@@ -1,0 +1,32 @@
+{
+  "id": "vita500-2001",
+  "title": "비타500 — 약국 드링크 시장에 들어온 마시는 비타민",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "결정적 장면 부족. 약사-제약사 갈등(2005 병뚜껑 행사) 건드릴 수 있음. 첫해 매출 52.83억/49억 불일치",
+  "conditionResolved": false,
+  "finding": "첫해 매출은 이투데이(2008)와 파이낸셜뉴스(2007) 모두 '53억원'으로 일치해 불일치(49억)는 2004년 한국경제 한 곳만의 수치로 정리된다. 그러나 2003년 매출은 280억(파이낸셜뉴스)·274억(한국경제)·350억(데일리팜)으로 출처마다 달라 숫자 사실이 흔들린다. 무엇보다 '약국 드링크 시장에 슈퍼 채널로 들어갔다'는 흐름뿐 주인공의 결정적 선택 한 장면이 없고, 약사 갈등 자료는 찾지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    { "id": "f1", "claim": "비타500은 2001년 출시 첫해 53억원어치가 팔렸다.", "numeric": true, "economy": false,
+      "caution": "2004년 한국경제 기사는 49억원, 일부 자료는 52.83억으로 적음 — 회사 발표 53억 사용 권장.",
+      "sources": [
+        { "name": "이투데이(2008.04.24)", "url": "https://www.etoday.co.kr/news/view/164649", "quote": "시판 첫해 53억원어치가 팔렸다." },
+        { "name": "파이낸셜뉴스(2007.03.23)", "url": "https://www.fnnews.com/news/200703230919024042", "quote": "시판 첫해 53억원어치가 팔린 것을 시작으로" }
+      ] },
+    { "id": "f2", "claim": "2005년 비타500 매출은 1260억원으로 1000억원대를 돌파했다.", "numeric": true, "economy": true,
+      "caution": "2번째 사이트 원문 미확인(단일 출처). 연도별 매출은 출처마다 다름.",
+      "sources": [
+        { "name": "파이낸셜뉴스(2007.03.23)", "url": "https://www.fnnews.com/news/200703230919024042", "quote": "2005년에는 매출 1260억원을 기록하며" }
+      ] },
+    { "id": "f3", "claim": "출시 7년 만에 누적 판매량 20억병을 달성했다.", "numeric": true, "economy": false,
+      "caution": "단일 출처(광동제약 발표 기반).",
+      "sources": [
+        { "name": "이투데이(2008.04.24)", "url": "https://www.etoday.co.kr/news/view/164649", "quote": "7년 만에 누적판매량 20억병을 달성했다" }
+      ] }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "광동제약은 영업 중인 국내 기업이며 약사-제약사 갈등·유사제품 법정싸움 소지가 있으나, 이번 조사에서 약사 갈등 자료는 확인 못 함." },
+  "remaining": "결정적 장면(누가 어떤 선택을 했는지) 부재, 2003년 매출 불일치, 약사 갈등 미확인. 창업주·개발 담당자의 구체적 결단 일화를 찾지 못하면 usable 불가.",
+  "toolCallsUsed": 8
+}

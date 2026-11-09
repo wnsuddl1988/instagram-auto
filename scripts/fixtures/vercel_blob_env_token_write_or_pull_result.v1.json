@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "vercel_blob_env_token_write_or_pull_result_v1",
+  "taskId": "vercel-blob-env-token-write-or-pull-v1",
+  "approvalToken": "APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE_OR_PULL",
+  "createdAt": "2026-07-06",
+  "status": "STORE_LINK_BLOCKED_TOKEN_ABSENT_VERIFIED_REDACTED",
+  "docsRef": "docs/vercel-blob-env-token-write-or-pull-result.md",
+  "provisioningResultRef": "scripts/fixtures/vercel_blob_store_provisioning_result.v1.json",
+  "integrationResultRef": "scripts/fixtures/vercel_blob_dependency_code_integration_no_upload.v1.json",
+  "tokenPresenceCheckerRef": "scripts/check-vercel-blob-token-presence-redacted.mjs",
+
+  "projectLinked": true,
+  "projectName": "instagram-auto",
+  "storeName": "instagram-auto-instagram-media",
+  "storeId": "store_NyZYiaz51y6acaCQ",
+  "storeAccess": "public",
+  "storeRegion": "iad1",
+  "storeBaseUrlIsPublicReadEndpoint": true,
+
+  "storeConnectedToProject": false,
+  "storeLinkOutcome": "BLOCKED_VERCEL_BLOB_EXISTING_STORE_LINK_METHOD_UNAVAILABLE",
+  "storeLinkMethodAvailable": false,
+  "storeLinkAttemptCount": 0,
+  "connectionMutationCount": 0,
+  "newStoreCreatedCount": 0,
+
+  "blobReadWriteTokenName": "BLOB_READ_WRITE_TOKEN",
+  "blobReadWriteTokenPresent": false,
+  "tokenPresenceVerifiedRedacted": true,
+  "allowlistedTokenKeyReadForPresenceOnly": true,
+  "tokenValuePrinted": false,
+  "tokenValueHashed": false,
+  "tokenValueCopied": false,
+  "tokenValueRecorded": false,
+  "secretValueRecorded": false,
+
+  "envWriteCount": 0,
+  "envAddCount": 0,
+  "envRmCount": 0,
+  "broadEnvPullCount": 0,
+  "envLocalCreatedOrModified": false,
+  "envRunUsedNoFileWrite": true,
+
+  "externalMutationOccurred": false,
+
+  "blobObjectUploadCount": 0,
+  "blobPutCount": 0,
+  "publicUrlLivenessCheckCount": 0,
+  "instagramApiCallCount": 0,
+  "youtubeApiCallCount": 0,
+  "deployCount": 0,
+  "dependencyChangeCount": 0,
+
+  "rwTokenFlagUsed": false,
+  "tokenFlagUsed": false,
+
+  "cliCommandsReadOnly": [
+    "vercel --version",
+    "vercel blob get-store store_NyZYiaz51y6acaCQ",
+    "vercel env ls",
+    "vercel env run -e production -- node scripts/check-vercel-blob-token-presence-redacted.mjs",
+    "vercel blob --help",
+    "vercel blob create-store --help",
+    "vercel env run --help",
+    "vercel --help"
+  ],
+
+  "nextApprovalGates": [
+    "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+    "APPROVE_VERCEL_BLOB_PUBLIC_URL_LIVENESS",
+    "APPROVE_INSTAGRAM_ARM",
+    "APPROVE_VERCEL_BLOB_CLEANUP_RETENTION_JOB"
+  ],
+
+  "blockerResolutionCandidates": [
+    "Vercel Dashboard에서 store를 project instagram-auto에 수동 connect → BLOB_READ_WRITE_TOKEN 자동 생성",
+    "기존 standalone store 폐기 후 create-store --environment production으로 연결까지 재생성(별도 승인, store 2개 방지)",
+    "vercel connect [beta]가 Blob store connect를 지원하는지 Codex 문서 확인 후 별도 승인"
+  ],
+
+  "prohibitedDrift": {
+    "note": "아래 상태는 이 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "storeConnectedToProject가 true인데 storeLinkOutcome이 BLOCKED로 남아있음(불일치)",
+      "connectionMutationCount 또는 newStoreCreatedCount가 0이 아님",
+      "allowlistedTokenKeyReadForPresenceOnly가 false이거나 tokenValuePrinted/Hashed/Copied/Recorded 중 하나라도 true",
+      "secretValueRecorded가 true",
+      "tokenPresenceVerifiedRedacted가 false",
+      "envWriteCount/broadEnvPullCount/envLocalCreatedOrModified가 write를 나타냄",
+      "blobObjectUploadCount/blobPutCount/publicUrlLivenessCheckCount/instagramApiCallCount/deployCount 중 하나라도 0이 아님",
+      "rwTokenFlagUsed 또는 tokenFlagUsed가 true",
+      "externalMutationOccurred가 true",
+      "storeId가 store_NyZYiaz51y6acaCQ가 아니거나 storeAccess가 public이 아님",
+      "secret-like 토큰 리터럴이 fixture/docs에 기록됨"
+    ]
+  }
+}

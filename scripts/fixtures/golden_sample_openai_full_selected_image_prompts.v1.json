@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "money_shorts_openai_full_selected_image_prompts_v1",
+  "status": "data_only_prompts",
+  "title": "Golden Sample OpenAI Full Selected Image Prompts v1 — 월급이 3일 만에 사라지는 이유 (T2, 6 scenes × 2 candidates)",
+  "purpose": "OpenAI gpt-image-2 전용 6-scene full selected image 후보 생성. scene별 후보 2장(구도 변주 A/B), 총 12장 상한. 기존 4-scene test의 장점(생활감/무문자성/금융 은유/overlay 여백)을 유지하고, readable text/numbers/logos 위험을 더 강하게 차단한다.",
+  "topic": { "topicId": "salary-vanishes-3days-test", "label": "월급이 3일 만에 사라지는 이유", "role": "quality_grammar_test_topic_not_final" },
+  "provider": "openai_gpt_image_2_only",
+  "sizeTarget": "1088x1936",
+  "gate": "width>=1080 AND height>=1920 AND |aspect-0.5625|<=0.01",
+  "styleAnchor": "Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip of the frame clean and uncluttered so information cards and captions can be overlaid later.",
+  "strictNoTextRule": "ABSOLUTE NO-TEXT RULE: every paper, slip, envelope, bill, card, calendar, calculator, phone or tablet in the frame must be completely BLANK or abstract — zero letters, zero numerals, zero words, zero logos, zero brand marks, zero UI chrome, zero handwriting, zero printed lines. Calculator displays are dark and switched off. Phone and tablet screens show only a soft abstract glow or plain rounded color shapes with no glyphs. Do not depict real currency detail: use plain blank paper slips instead of banknotes, or keep any money completely blurred and abstract with no numerals or portraits. Calendars show only an empty grid with no numbers or month names.",
+  "globalMustAvoid": [
+    "readable text, letters, numbers, words, labels anywhere",
+    "watermark, logo, signature, UI chrome",
+    "distorted or malformed hands, extra fingers",
+    "generic smiling office worker, corporate cliché",
+    "fake or gibberish charts and graphs",
+    "stock-photo feel, oversaturated stock lighting",
+    "fear/horror mood, luxury-flex wealth-ad look",
+    "real banknote detail (numerals, portraits)"
+  ],
+  "scenes": [
+    {
+      "order": 1,
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "coreIdea": "월급 입금 순간의 짧은 안도",
+      "mustShow": ["glowing phone with abstract notification glow (no glyphs)", "thin open wallet", "a hand", "morning table"],
+      "subjectDeliveryCheck": "월급이 방금 들어온 순간임이 이미지만으로 느껴진다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "close-up table-level shot",
+          "finalPrompt": "[scene 1A — salary_arrival_hook] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household morning — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning light. A smartphone lies face-up, its dark screen holding one soft rounded amber glow — purely abstract light, no glyphs, no icons, no status bar — suggesting a payday deposit notification. A visibly thin open wallet rests beside the phone; a hand enters the frame reaching toward the phone; a cup of coffee steams softly. Mood: one short breath of relief before the money starts leaving. Shallow depth of field, warm window light. ABSOLUTE NO-TEXT RULE: the phone screen shows only that abstract glow with zero letters, numerals, icons or UI chrome; the wallet and everything else carry no printing, no logos, no watermarks. No distorted hands, no visible face in focus, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "wider morning-kitchen environmental shot",
+          "finalPrompt": "[scene 1B — salary_arrival_hook] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household morning — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A slightly wider view of a small Korean kitchen at dawn: soft window light, a modest breakfast table in the middle band of the frame. On it, a smartphone glows with a single soft abstract amber light on an otherwise dark screen — no glyphs, no icons, no interface — while a person's hand, seen from behind the shoulder line without a visible face, hovers over the phone. A thin open wallet and one plain white envelope sit nearby. The room feels quiet and briefly hopeful, the calm moment right after salary arrives. ABSOLUTE NO-TEXT RULE: every screen, paper and envelope in frame is completely blank — zero letters, numerals, logos, UI chrome or handwriting anywhere. No distorted hands, no smiling office worker, no stock-photo look."
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "sceneRole": "scene_02_money_leak_order",
+      "coreIdea": "돈이 들어오자마자 정해진 순서대로 새는 느낌",
+      "mustShow": ["wallet / cash-flow metaphor", "blank paper slips instead of receipts", "one clear direction of flow"],
+      "subjectDeliveryCheck": "돈이 정해진 순서로 '빠져나가는 중'이라는 방향성이 보인다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "table-level diagonal flow toward envelopes",
+          "finalPrompt": "[scene 2A — money_leak_order] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A dark wooden table. An open leather wallet tilts slightly at one side of the middle band, and a short trail of completely BLANK white paper slips slides out of it in one clear diagonal direction — like water quietly leaking from a container — toward a neat row of three plain unmarked envelopes standing at the far edge, as if the money already knows its fixed order of destinations. One warm amber light accent traces the flow path; the rest stays calm and dim. ABSOLUTE NO-TEXT RULE: all slips, envelopes and the wallet are completely blank — zero letters, numerals, printing, logos or handwriting; no real banknote detail anywhere. No exploding-money cliché, no gambling mood, no distorted hands, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "high-angle ordered sequence with coins",
+          "finalPrompt": "[scene 2B — money_leak_order] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A gentle high-angle view of a dark table's middle band. From an open wallet on the left, a clearly ordered sequence flows to the right: first a few completely blank white paper slips, then a small line of coins, then three plain unmarked envelopes — a quiet visual queue showing money leaving in a fixed order the moment it arrives. A single warm amber gradient lights the path of the flow; edges of the frame stay dim and uncluttered. ABSOLUTE NO-TEXT RULE: every slip, envelope, coin and the wallet is completely blank and abstract — zero letters, numerals, logos, printing or handwriting; no real currency detail. No flying-money explosion, no casino mood, no distorted hands, no stock-photo look."
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "sceneRole": "scene_03_fixed_cost_stack",
+      "coreIdea": "고정비가 먼저 쌓여 월급을 압박",
+      "mustShow": ["blank bills/papers", "credit card (no printing)", "calculator with dark blank display", "envelope", "stacked paper"],
+      "subjectDeliveryCheck": "고정 지출이 먼저 쌓여 있음이 무게감으로 보인다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "night desk, card on top of blank stack",
+          "finalPrompt": "[scene 3A — fixed_cost_stack] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A home desk at night in the middle band of the frame. A thick, slightly uneven stack of completely BLANK white papers dominates; on its top rests a single minimalist payment card shown as a plain dark card with only a metallic chip — no numbers, no name, no brand. Beside the stack: one plain unmarked envelope and a small calculator whose display is dark and switched off, its keys plain and unlabeled. Warm desk lamp glow, amber accent along the card edge, strong paper and wood textures, shallow depth of field. The stack reads as weight — fixed costs piling up first, pressing on the salary. ABSOLUTE NO-TEXT RULE: all papers, envelope, card and calculator are completely blank — zero letters, numerals, logos, key labels or printing anywhere. No chart walls, no distorted hands, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "side-angle emphasizing stack height vs thin wallet",
+          "finalPrompt": "[scene 3B — fixed_cost_stack] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A low side-angle across a desk at night: on one side, a tall stack of completely BLANK white papers with one plain unmarked envelope leaning against it; on the other side, a visibly thin, almost empty open wallet — the contrast tells the story: fixed costs stand tall, the salary lies flat. A plain dark payment card with only a metallic chip (no numbers, no name, no brand) rests between them, and a small calculator sits in soft-focus background, display dark and off, keys unlabeled. Warm lamp light with a single amber accent on the stack's top edge. ABSOLUTE NO-TEXT RULE: every paper, envelope, card and device is completely blank — zero letters, numerals, logos or printing. No charts, no distorted hands, no stock-photo look."
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "sceneRole": "scene_04_subscriptions_auto_pay",
+      "coreIdea": "작은 자동결제/구독이 조용히 빠져나감",
+      "mustShow": ["phone/tablet with abstract icon tiles only (no logos/text/numbers)", "small blank paper slips"],
+      "subjectDeliveryCheck": "작은 반복 결제들이 조용히 계속 나가고 있음이 보인다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "evening close-up, phone tiles + slip trail",
+          "finalPrompt": "[scene 4A — subscriptions_auto_pay] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: An evening close-up on a dim living-room side table. A smartphone lies propped at a slight angle, its dimmed screen showing ONLY a soft grid of plain rounded color tiles — pure abstract shapes in muted pastel colors, absolutely no logos, no glyphs, no letters, no numbers, no interface lines. From beneath the phone, a small trail of tiny completely blank white paper slips drifts toward the frame edge, like little payments quietly slipping away one by one. A few small coins rest at the end of the trail. Warm low lamp light, one amber accent on the nearest slip. ABSOLUTE NO-TEXT RULE: the screen tiles are plain colored shapes only; every slip and coin area is free of letters, numerals, logos or printing. No app branding, no UI chrome, no distorted hands, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "night tablet on table, dim tile grid, coins drifting",
+          "finalPrompt": "[scene 4B — subscriptions_auto_pay] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Night scene in the middle band of the frame: a tablet lies flat on a dark table, screen dimmed to a quiet grid of plain rounded color rectangles — abstract subscription-like tiles with zero logos, zero text, zero numbers, zero interface elements. Alongside the tablet, a loose line of small blank white paper slips and a few coins drifts off toward the shadowed edge of the table, as if small automatic payments keep leaving in the dark without being noticed. One warm amber glow touches the corner of the tablet. ABSOLUTE NO-TEXT RULE: the screen holds only plain colored shapes; all slips are completely blank; no letters, numerals, logos, brand marks or UI chrome anywhere. No distorted hands, no stock-photo look, no horror darkness — just quiet dimness."
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "sceneRole": "scene_05_day3_empty_wallet",
+      "coreIdea": "3일 뒤 빈 지갑",
+      "mustShow": ["three amber marks or three abstract blocks", "empty open wallet", "coins", "calendar grid with no numerals"],
+      "subjectDeliveryCheck": "3일이 지났고 지갑이 비었다는 시간 경과가 보인다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "desk calendar above, empty wallet below",
+          "finalPrompt": "[scene 5A — day3_empty_wallet] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A quiet desk corner in soft daylight. A paper desk calendar stands slightly out of focus showing ONLY an empty ruled grid — absolutely no numbers, no letters, no month name — with exactly three of its cells swiped by a warm amber highlighter, reading purely as 'three days passed'. Directly below in sharp focus, an open wallet lies visibly empty, card slots slack, with only a few small coins scattered beside it. The contrast between the three amber marks and the empty wallet tells the whole story without a single word. Textures of paper and worn leather, warm-neutral grade. ABSOLUTE NO-TEXT RULE: the calendar grid is completely free of numerals and words; the wallet and coins carry no readable detail; zero letters, numbers, logos or printing anywhere. No despair melodrama, no horror lighting, no distorted hands, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "wall calendar blurred behind, wallet foreground",
+          "finalPrompt": "[scene 5B — day3_empty_wallet] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: In the soft-focus background, a wall calendar hangs showing only a blank empty grid — no numerals, no letters — with three abstract amber blocks marked in a row across three cells. In the sharp foreground middle band, a hand gently holds open a completely empty wallet above the table, its bill compartment visibly hollow, while a few small coins lie on the wood below. Soft afternoon light, warm-neutral grade, one amber accent shared between the calendar marks and a single coin. The time-lapse story — three days, empty wallet — reads instantly with zero words. ABSOLUTE NO-TEXT RULE: the calendar grid and every object are completely free of letters, numerals, logos or printing. No melodrama, no dark horror mood, no distorted hands, no stock-photo look."
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "sceneRole": "scene_06_cashflow_reset_action",
+      "coreIdea": "해결 행동 — 월급날 돈 빠지는 순서를 다시 정리",
+      "mustShow": ["clean desk", "blank checklist cards", "wallet", "calendar grid (no numerals)", "calm action mood"],
+      "subjectDeliveryCheck": "돈 나가는 순서를 스스로 재정리하는 차분한 행동이 보인다",
+      "variants": [
+        {
+          "variant": "A",
+          "composition": "hands aligning blank cards in a row, morning light",
+          "finalPrompt": "[scene 6A — cashflow_reset_action] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A clean, tidy desk in fresh morning light. Two hands calmly place and align three completely BLANK white cards in a neat horizontal row across the middle band of the frame — an act of re-ordering, deciding anew which money leaves first. Beside the cards: a neatly closed wallet and a small desk calendar showing only an empty grid with no numerals. The mood is quiet control and a fresh start, not stress. One warm amber accent on the edge of the center card; soft shadows, clean negative space above and below. ABSOLUTE NO-TEXT RULE: all cards, the calendar and every object are completely blank — zero letters, numerals, logos, handwriting or printing anywhere. No pen actively writing words, no charts, no distorted hands, no smiling office worker, no stock-photo feel."
+        },
+        {
+          "variant": "B",
+          "composition": "gentle top-down column of cards with wallet and calendar",
+          "finalPrompt": "[scene 6B — cashflow_reset_action] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A gentle top-down view of a clean light-wood desk. In the middle band, three completely BLANK white cards are arranged in a tidy vertical column, the topmost slightly touched by a fingertip as if just placed — the quiet act of resetting the order in which money leaves on payday. To one side rest a neatly closed slim wallet and a small calendar card showing only an empty grid, no numerals. A capped pen lies parallel to the cards, not writing. Morning light, calm organized mood, one amber accent on the top card's corner, generous clean space at the top and bottom of the frame for overlays. ABSOLUTE NO-TEXT RULE: every card, calendar and object is completely blank — zero letters, numerals, logos, handwriting or printing. No charts, no distorted hands, no stock-photo look."
+        }
+      ]
+    }
+  ],
+  "boundary": { "dataOnly": true, "noGeneration": true, "usedBy": "scripts/run-openai-full-selected-image-candidates-v1.mjs" }
+}

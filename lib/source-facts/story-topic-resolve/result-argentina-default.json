@@ -1,0 +1,46 @@
+{
+  "id": "argentina-default",
+  "title": "아르헨티나 — 부자 나라가 9번 부도난 이유",
+  "proposedVerdict": "hold",
+  "reason": "complex",
+  "originalCondition": "연표형(9번 부도)이라 한 번의 부도 장면으로 좁혀야 함",
+  "conditionResolved": false,
+  "finding": "한 장면으로 좁히면 2001년 12월 23일 임시 대통령 로드리게스 사아가 대외 채무 지급 중단을 선언한 장면(의회가 환호)이 되고, 사건 자체는 '역사상 최대 규모의 국가 부도'로 2곳(미 의회조사국 보고서·AFP 20주년 기사)에서 확인된다. 그러나 이 장면은 1:1 태환제(통화위원회)·예금 인출 제한(코랄리토)·외채 구조조정을 설명해야 이해되고, 부도 금액이 출처마다 818억(채권 원금)·1,026억·1,000억·1,400억·1,510억 달러로 갈려 쓸 수 있는 숫자가 흔들린다. 의회 환호 장면도 이번 조사에서 원문 인용으로 확인하지 못했다. 2출처로 맞는 숫자 사실이 4개에 못 미치고 설명 없이는 이해가 어려워 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "1991년 도입된 태환제로 아르헨티나 페소는 미국 달러와 1대1 고정 비율로 묶였다.", "numeric": true, "economy": true,
+      "caution": "통화위원회 방식이라 대본에서 설명이 길어지고 설명 없이는 이해가 어려움.",
+      "sources": [
+        { "name": "미 의회조사국 CRS RL31582(everycrsreport 미러)", "url": "https://www.everycrsreport.com/reports/RL31582.html", "quote": "guaranteed the convertibility of peso currency to dollars at a one-to-one fixed rate" },
+        { "name": "MercoPress(2004)", "url": "https://en.mercopress.com/2004/07/30/imf-erred-failed-by-supporting-inadequate-policies-too-long", "quote": "the peso had been pegged at parity with the U.S. dollar since 1991." }
+      ]
+    },
+    {
+      "id": "f2", "claim": "2001년 12월 아르헨티나는 약 1,000억 달러 규모의 '역사상 최대' 국가 부도를 냈다.", "numeric": true, "economy": true,
+      "caution": "금액은 출처마다 다름: 채권 원금 818억(CRS), 이자 포함 1,026억(CRS), 1,000억(AFP), 1,400억(IMF IEO 외채 총액), 1,510억(CRS 연표). 대본에서 '1,000억 달러대'로만 쓰는 것이 안전.",
+      "sources": [
+        { "name": "미 의회조사국 CRS R41029(everycrsreport 미러)", "url": "https://www.everycrsreport.com/reports/R41029.html", "quote": "The default was unprecedented for its size ($102.6 billion)" },
+        { "name": "쿠웨이트 타임스(AFP, 2021)", "url": "https://kuwaittimes.com/trauma-of-argentine-great-crisis-lives-on-20-years-later", "quote": "decree the largest default in history: $100 billion." }
+      ]
+    },
+    {
+      "id": "f3", "claim": "코랄리토 때 은행 현금 인출은 주 250페소로 제한됐다.", "numeric": true, "economy": true,
+      "caution": "한 출처만 확인. CRS 연표는 월 1,000달러 제한(다른 시점)으로 적어 수치가 엇갈림.",
+      "sources": [
+        { "name": "쿠웨이트 타임스(AFP, 2021)", "url": "https://kuwaittimes.com/trauma-of-argentine-great-crisis-lives-on-20-years-later", "quote": "limited cash withdrawals to 250 pesos a week." }
+      ]
+    },
+    {
+      "id": "f4", "claim": "2005년 채무 교환에서 원금 818억 달러 중 623억 달러가 교환됐고 186억 달러는 교환을 거부(홀드아웃)했다.", "numeric": true, "economy": true,
+      "caution": "한 출처(CRS)만 확인.",
+      "sources": [
+        { "name": "미 의회조사국 CRS R41029(everycrsreport 미러)", "url": "https://www.everycrsreport.com/reports/R41029.html", "quote": "$62.3 billion of the $81.8 billion in principal owed was exchanged." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 국가 사건, 국내 소송·정치 쟁점 아님." },
+  "remaining": "(1) 2출처로 맞는 숫자 사실이 f1·f2 두 개뿐. (2) 장면이 의회 선언인데 환호 장면의 원문 인용을 못 찾음. (3) 태환제·코랄리토·홀드아웃 설명이 길어져 80~120초에 안 담김. (4) 원래 훅 '9번 부도'는 연표형이라 쓸 수 없음. 쓰려면 '2001년 12월 한 주'로 좁히고 금액을 하나로 정해 IMF IEO 자료와 AFP 등 2곳으로 맞춰야 함.",
+  "toolCallsUsed": 12
+}

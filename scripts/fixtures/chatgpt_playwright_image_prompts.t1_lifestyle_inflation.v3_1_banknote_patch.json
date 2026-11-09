@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "chatgpt_playwright_image_prompts_v3_1_banknote_patch",
+  "taskId": "golden-sample-chatgpt-playwright-korean-banknote-clarity-patch-v3-1",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "purpose": "v3 baseline에서 돈이 모자이크/빈종이/추상 종이로 보이는 money-dominant 컷 5장만 패치. 나머지 4장(img_32 problem/img_34 causeB/img_36 reframe/img_39 result)은 유지. 핵심: 한국 원화가 즉시 인식되는 선명한 지폐 질감 + 겹침/접힘/손가림/각도로 readable detail 차단 (블러/모자이크 방식 금지).",
+  "maxAdditionalSubmissions": 6,
+  "stopEarlyRule": "5장 전부 clarity 기준 통과 시 즉시 중단. 실패 컷만 예비 1회로 재생성.",
+  "global_rules": [
+    "vertical 9:16",
+    "지폐는 선명하고 초점 맞은 종이 질감 + 한국 원화 색 계열 (오만원 노랑/골드 위주, 만원 초록/청록·천원 파랑 일부 혼합) + 미세한 기요셰풍 추상 선 패턴 — 한눈에 '한국 돈'",
+    "readable detail 차단은 겹침/접힘/손가림/봉투 가림/기울기/심도로만 — 전체 노트 정면/초상/글자/숫자/일련번호 비노출",
+    "모자이크/픽셀/뭉개짐/블러 처리된 돈/무지 빈종이 돈 절대 금지",
+    "외국 지폐 느낌/낡은 자료 느낌/정체불명 화폐/깨진 문자·숫자 금지, 실제 지폐 정면 복사본처럼 보이는 이미지 금지",
+    "현대 한국 생활금융 맥락 유지, 로고/워터마크/읽히는 텍스트 금지"
+  ],
+
+  "prompts": [
+    {
+      "order": 1,
+      "imageId": "img_41_hook_envelope_vs_empty_jar_krw",
+      "beat": "hook",
+      "replaces": "img_31_hook_envelope_vs_empty_jar",
+      "evidence_goal": "hook 오프닝 — 두툼한 봉투 속 한국 지폐가 선명하게 보이면서 빈 병과 대비. 상단은 캡션 공간으로 부드럽게 비움",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright morning light on a clean modern Korean kitchen counter, main objects placed in the lower half of the frame with soft blurred kitchen background above. A hand holds a thick white salary envelope tilted open toward the camera: inside is a generous fanned stack of crisp, sharply focused paper banknotes in the unmistakable color families of Korean won — mostly warm yellow-gold notes like 50,000 won bills plus one or two green 10,000-won-style notes — each note showing clean realistic paper texture and fine abstract guilloche-style engraving linework. The notes overlap each other and are partly covered by the envelope edge and shot at a slight angle, so no full note face, no portrait, no letters, no numbers, no serial numbers are visible — only crisp color fields and fine abstract line patterns. Absolutely no mosaic, no pixelation, no smudged or blurred-out money, no blank featureless paper. Beside the envelope stands one clear empty glass jar with only two small coins at the bottom, strikingly empty in contrast. Premium editorial photo quality, shallow depth of field, contemporary Korean apartment kitchen. No readable text anywhere, no logos, no watermark, nothing old or archival."
+    },
+    {
+      "order": 2,
+      "imageId": "img_43_causeA_orderly_fixed_outflow_krw",
+      "beat": "cause_a",
+      "replaces": "img_33_causeA_orderly_fixed_outflow",
+      "evidence_goal": "정렬된 고정비 선차감 탑다운 — 지폐가 봉투에 반쯤 꽂혀 가림 처리되면서도 선명한 원화 질감/색",
+      "finalPrompt": "Cinematic vertical 9:16 top-down flat lay photograph on a dark walnut desk at night, warm desk lamp light. At the top, an opened plain white salary envelope with a fanned stack of crisp, sharply focused Korean-won-style paper banknotes — warm yellow-gold 50,000-won-style notes with clean paper texture and fine abstract guilloche-style engraving linework, overlapping so no full note face is visible. Below it, four plain white bill envelopes in a neat orderly row; into each envelope one crisp yellow-gold banknote is half-inserted, the lower half hidden inside the envelope, the visible half showing only sharp paper texture, warm gold color and fine abstract line patterns — as if fixed payments were automatically distributed one by one. No portraits, no letters, no numbers, no serial numbers visible anywhere; no mosaic, no pixelation, no blurred-out money, no blank featureless paper. Modern Korean home office desk, precise geometric arrangement, premium editorial photo quality. No readable text, no logos, no watermark, nothing old or archival."
+    },
+    {
+      "order": 3,
+      "imageId": "img_45_illusion_one_bill_vs_receipt_wall_krw",
+      "beat": "illusion",
+      "replaces": "img_35_illusion_one_bill_vs_receipt_wall",
+      "evidence_goal": "착시 컷 — 눈앞의 지폐 한 장이 '진짜 한국 오만원권 느낌'으로 선명 (손가락 가림+기울기로 디테일 차단), 배경은 영수증 벽",
+      "finalPrompt": "Cinematic vertical 9:16 photograph with extreme shallow depth of field, dim modern Korean home office at night. In the sharp foreground middle of the frame, a hand holds up one crisp paper banknote in the unmistakable style of a Korean 50,000 won bill — warm yellow-gold color, clean sharply focused paper texture with fine abstract guilloche-style engraving linework and a subtle vertical color band — held at a slight diagonal angle with the thumb and fingers covering the center and one corner folded back, so no portrait, no letters, no numbers, no serial numbers are visible: only crisp gold color fields and fine abstract line patterns, clearly real-looking modern Korean money at a glance. Absolutely no mosaic, no pixelation, no smudged or blurred-out money, no blank featureless paper, and not a perfect flat front-facing copy of a real bill. Far behind, a pinboard wall covered with dozens of small crumpled receipts fading deep out of focus into darkness. Strong cinematic spotlight contrast, contemporary Korean home context, premium editorial photo quality. No readable text, no logos, no watermark, nothing old or archival."
+    },
+    {
+      "order": 4,
+      "imageId": "img_47_actionA_dividing_into_jars_krw",
+      "beat": "action_a",
+      "replaces": "img_37_actionA_dividing_into_jars",
+      "evidence_goal": "월급날 나눠 담기 — 접힌 선명한 원화 지폐(노랑 위주+초록/파랑 소량)를 3개 병에 분배하는 손동작",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright fresh morning light on a clean modern Korean kitchen table. A woman's hands hold a small stack of crisp, sharply focused Korean-won-style paper banknotes — mostly warm yellow-gold 50,000-won-style notes plus a green 10,000-won-style note and a blue 1,000-won-style note peeking out — and she is placing one folded note into the middle of three open clear glass jars in a row, the left jar already holding a few folded notes. Every note is folded in half or overlapped so no full note face, no portrait, no letters, no numbers, no serial numbers are visible; the visible surfaces show clean realistic paper texture, vivid won color families and fine abstract guilloche-style engraving linework. Absolutely no mosaic, no pixelation, no smudged or blurred-out money, no blank featureless paper. Mid-action payday moment, warm inviting mood, contemporary Korean apartment, premium editorial photo quality, shallow depth of field. No readable text, no logos, no watermark, nothing old or archival."
+    },
+    {
+      "order": 5,
+      "imageId": "img_48_actionB_three_jars_color_ribbons_krw",
+      "beat": "action_b",
+      "replaces": "img_38_actionB_three_jars_color_ribbons",
+      "evidence_goal": "3개 자리 클로즈업 — 파랑/주황/노랑 리본 3병 유지 + 병 속 지폐가 선명한 원화 질감/색 (접힘으로 디테일 차단), 병은 프레임 하단 2/3에 배치",
+      "finalPrompt": "Cinematic vertical 9:16 close-up photograph, bright soft daylight on a clean modern Korean desk, the three jars placed in the lower two-thirds of the frame with softly blurred background above. Three clear glass jars in a row, each tied with a simple plain fabric ribbon around its neck: the left jar a deep blue ribbon, the middle jar an orange ribbon, the right jar a yellow ribbon — plain ribbons, no text. Each jar holds several crisp, sharply focused Korean-won-style paper banknotes folded in half — mostly warm yellow-gold 50,000-won-style notes, with a green 10,000-won-style note visible in one jar and a blue 1,000-won-style note in another — the visible surfaces showing clean realistic paper texture, vivid won color families and fine abstract guilloche-style engraving linework, clearly real-looking modern Korean money seen through the glass. All notes folded or overlapped so no full note face, no portrait, no letters, no numbers, no serial numbers are visible. Absolutely no mosaic, no pixelation, no smudged or blurred-out money, no blank featureless paper. Crisp shallow depth of field centered on the three jars, contemporary Korean lifestyle, premium editorial photo quality. No readable text, no logos, no watermark, nothing old or archival."
+    }
+  ],
+
+  "retained_v3_images": [
+    { "imageId": "img_32_problem_wallet_check_night", "reason": "돈 비노출 인물 감정 컷 — 패치 불필요" },
+    { "imageId": "img_34_causeB_scattered_lifestyle_spend", "reason": "카드/영수증/컵이 주연, 지폐는 구석 소품 — 최소 교체 원칙상 유지" },
+    { "imageId": "img_36_reframe_three_empty_jars", "reason": "빈 병 3개 — 돈 없음" },
+    { "imageId": "img_39_result_settled_morning_shelf", "reason": "리본 3병+아침 안정감이 주연, 지폐는 병 속 소형 — 유지 (frame QA에서 이질감 확인 시 예비 1회 사용 검토)" }
+  ],
+
+  "boundary": { "max_additional_submissions": 6, "auto_retry": false, "cost_usd": 0 }
+}

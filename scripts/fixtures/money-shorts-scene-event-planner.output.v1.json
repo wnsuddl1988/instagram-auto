@@ -1,0 +1,1361 @@
+{
+  "schemaVersion": "money_shorts_scene_event_planner_output_v1",
+  "status": "data_only_rule_based_dry_run",
+  "sourceContractRef": "scripts/fixtures/money-shorts-creative-quality-contract.v1.json",
+  "sourceContractSchemaVersion": "money_shorts_creative_quality_contract_v1",
+  "sourceScriptCompilerOutputRef": "scripts/fixtures/money-shorts-retention-script-compiler.output.v1.json",
+  "sourceScriptCompilerSchemaVersion": "money_shorts_retention_script_compiler_output_v1",
+  "plannerMode": "rule_based_v1",
+  "ruleBasedComponents": [
+    "RuleBasedSceneLayout",
+    "RuleBasedEventSplitter",
+    "RuleBasedMotionPlanner",
+    "RuleBasedSoundPlanner",
+    "RendererTemplateRegistryValidator"
+  ],
+  "futureLlmSlots": [
+    "LLMSceneEventPlanner"
+  ],
+  "isLlmGeneration": false,
+  "externalApiExecuted": false,
+  "renderExecuted": false,
+  "ttsExecuted": false,
+  "imageGenerationExecuted": false,
+  "rendererRegistryRef": "contract.rendererTemplateRegistry",
+  "safeFrameRef": "youtube_shorts_safe_frame_v1",
+  "artifactFileMapping": {
+    "scene_plan.json": "per-topic scenePlan (6 scenes, 24+ visual events)",
+    "motion_plan.json": "per-topic motionPlan (motion sequence + variety)",
+    "sound_plan.json": "per-topic soundPlan (sfx sequence, 8-12 range)",
+    "note": "Phase 3 산출물. Creative Quality Contract의 requiredFinalArtifacts와 동일 파일명(scene_plan.json/sound_plan.json)에 대응하며, motion_plan.json은 Phase 3 motion 세부 계획이다."
+  },
+  "phase3Outputs": [
+    "scene_plan.json",
+    "motion_plan.json",
+    "sound_plan.json"
+  ],
+  "topics": [
+    {
+      "topicId": "base-rate-hold-202605",
+      "contentPillar": "money_flow",
+      "selectedCandidateId": "base-rate-hold-202605-cand-1",
+      "scenePlan": {
+        "sceneCount": 6,
+        "totalVisualEvents": 24,
+        "scenes": [
+          {
+            "scene_index": 1,
+            "source_image": "image_01",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_01-ev-1",
+                "time_start": 0,
+                "time_end": 1.25,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "freeze_punch",
+                "caption": "금리 동결, 내 이자 신호.",
+                "overlay": "warning_card",
+                "sfx": "hit",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-2",
+                "time_start": 1.25,
+                "time_end": 2.5,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "push_in",
+                "caption": "금리 동결, 내 이자 신호.",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-3",
+                "time_start": 2.5,
+                "time_end": 3.75,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "red_box",
+                "caption": "금리 동결, 내 이자 신호.",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-4",
+                "time_start": 3.75,
+                "time_end": 5,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "freeze_punch",
+                "caption": "금리 동결, 내 이자 신호.",
+                "overlay": "number_card",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              }
+            ]
+          },
+          {
+            "scene_index": 2,
+            "source_image": "image_02",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_02-ev-1",
+                "time_start": 5,
+                "time_end": 6,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "checklist_pop",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-2",
+                "time_start": 6,
+                "time_end": 7,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "arrow_reveal",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-3",
+                "time_start": 7,
+                "time_end": 8,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "pan_left",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-4",
+                "time_start": 8,
+                "time_end": 9,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "pan_right",
+                "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              }
+            ]
+          },
+          {
+            "scene_index": 3,
+            "source_image": "image_03",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_03-ev-1",
+                "time_start": 9,
+                "time_end": 10.25,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "checklist_pop",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-2",
+                "time_start": 10.25,
+                "time_end": 11.5,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "arrow_reveal",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-3",
+                "time_start": 11.5,
+                "time_end": 12.75,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "pan_left",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-4",
+                "time_start": 12.75,
+                "time_end": 14,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "pan_right",
+                "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              }
+            ]
+          },
+          {
+            "scene_index": 4,
+            "source_image": "image_04",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_04-ev-1",
+                "time_start": 14,
+                "time_end": 15.25,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "number_countup",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "overlay": "number_card",
+                "sfx": "pop",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-2",
+                "time_start": 15.25,
+                "time_end": 16.5,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "push_in",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-3",
+                "time_start": 16.5,
+                "time_end": 17.75,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "pull_out",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-4",
+                "time_start": 17.75,
+                "time_end": 19,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "number_countup",
+                "caption": "둘째, 예금자는 더 나은 금리로 갈아탈 …",
+                "overlay": "number_card",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              }
+            ]
+          },
+          {
+            "scene_index": 5,
+            "source_image": "image_05",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_05-ev-1",
+                "time_start": 19,
+                "time_end": 20,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "checklist_pop",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-2",
+                "time_start": 20,
+                "time_end": 21,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "arrow_reveal",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-3",
+                "time_start": 21,
+                "time_end": 22,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "pan_left",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-4",
+                "time_start": 22,
+                "time_end": 23,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "pan_right",
+                "caption": "셋째, 변동금리라면 지금 상환 계획을 다…",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              }
+            ]
+          },
+          {
+            "scene_index": 6,
+            "source_image": "image_06",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_06-ev-1",
+                "time_start": 23,
+                "time_end": 24.75,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "freeze_punch",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "overlay": "warning_card",
+                "sfx": "hit",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-2",
+                "time_start": 24.75,
+                "time_end": 26.5,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "push_in",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-3",
+                "time_start": 26.5,
+                "time_end": 28.25,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "pull_out",
+                "caption": "가만두면 금리가 그대로여도 현금흐름은 새…",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-4",
+                "time_start": 28.25,
+                "time_end": 30,
+                "script_part": "action_save_reason",
+                "intent": "action",
+                "source_image": "image_06",
+                "motion_template": "final_card",
+                "caption": "지금 저장하고 오늘 내 대출 금리부터 확인해 보세요.",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 6
+              }
+            ]
+          }
+        ]
+      },
+      "motionPlan": {
+        "sequence": [
+          {
+            "event_id": "image_01-ev-1",
+            "motion_template": "freeze_punch",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-2",
+            "motion_template": "push_in",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-3",
+            "motion_template": "red_box",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-4",
+            "motion_template": "freeze_punch",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_02-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_04-ev-1",
+            "motion_template": "number_countup",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-2",
+            "motion_template": "push_in",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-3",
+            "motion_template": "pull_out",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-4",
+            "motion_template": "number_countup",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_05-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_06-ev-1",
+            "motion_template": "freeze_punch",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-2",
+            "motion_template": "push_in",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-3",
+            "motion_template": "pull_out",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-4",
+            "motion_template": "final_card",
+            "intent": "action"
+          }
+        ],
+        "distinctMotionCount": 10,
+        "motionVarietyScore": 100,
+        "sameMotionThreeInARow": false,
+        "intentMotionMappingSource": "contract.motionCaptionSoundSelection.intentToTemplateMapping"
+      },
+      "soundPlan": {
+        "sequence": [
+          {
+            "event_id": "image_01-ev-1",
+            "sfx": "hit",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-4",
+            "sfx": "click",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_02-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_04-ev-1",
+            "sfx": "pop",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-4",
+            "sfx": "click",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_05-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_06-ev-1",
+            "sfx": "hit",
+            "intent": "twist"
+          }
+        ],
+        "sfxCount": 8,
+        "recommendedRange": {
+          "min": 8,
+          "max": 12
+        },
+        "sfxWithinRecommended": true,
+        "everyCaptionHasSfx": false,
+        "sfxFocusIntents": [
+          "hook",
+          "number",
+          "checklist",
+          "twist",
+          "action"
+        ],
+        "soundDesignScoreSeed": 100
+      },
+      "eventTimingAudit": {
+        "totalVisualEvents": 24,
+        "first5sEventCount": 4,
+        "maxStaticDuration": 1.75,
+        "avgEventInterval": 1.25,
+        "hasHookImpactFirst2s": true,
+        "twistReframeEventInWindow": true,
+        "actionSaveEventInWindow": true,
+        "timelineStartSec": 0,
+        "timelineEndSec": 30,
+        "timelineCoversFullDuration": true,
+        "allDurationsPositive": true,
+        "allTimeStartBeforeEnd": true
+      },
+      "templateRegistryAudit": {
+        "motionTemplatesUsed": [
+          "freeze_punch",
+          "push_in",
+          "red_box",
+          "checklist_pop",
+          "arrow_reveal",
+          "pan_left",
+          "pan_right",
+          "number_countup",
+          "pull_out",
+          "final_card"
+        ],
+        "overlayTemplatesUsed": [
+          "warning_card",
+          "number_card",
+          "checklist",
+          "arrow",
+          "document_card"
+        ],
+        "sfxTemplatesUsed": [
+          "hit",
+          "none",
+          "click",
+          "pop"
+        ],
+        "allMotionSupported": true,
+        "allOverlaySupported": true,
+        "allSfxSupported": true,
+        "unsupportedTemplateUsedCount": 0,
+        "fallbackSubstitutions": []
+      },
+      "hard_fail_reasons": [],
+      "phase3Readiness": {
+        "sceneStructureIntact": true,
+        "minVisualEventsMet": true,
+        "staticPreventionOk": true,
+        "rendererRegistryOk": true,
+        "hasSelectablePlan": true,
+        "nextQualityScorerReady": true,
+        "finalDecisionHint": "scene_plan_ready_for_quality_scorer"
+      }
+    },
+    {
+      "topicId": "execution-gap-psychology-v1",
+      "contentPillar": "success_psychology",
+      "selectedCandidateId": "execution-gap-psychology-v1-cand-1",
+      "scenePlan": {
+        "sceneCount": 6,
+        "totalVisualEvents": 24,
+        "scenes": [
+          {
+            "scene_index": 1,
+            "source_image": "image_01",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_01-ev-1",
+                "time_start": 0,
+                "time_end": 1.25,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "freeze_punch",
+                "caption": "성공은 의지가 아니라 환경.",
+                "overlay": "warning_card",
+                "sfx": "hit",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-2",
+                "time_start": 1.25,
+                "time_end": 2.5,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "push_in",
+                "caption": "성공은 의지가 아니라 환경.",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-3",
+                "time_start": 2.5,
+                "time_end": 3.75,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "red_box",
+                "caption": "성공은 의지가 아니라 환경.",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              },
+              {
+                "event_id": "image_01-ev-4",
+                "time_start": 3.75,
+                "time_end": 5,
+                "script_part": "hook",
+                "intent": "hook_impact",
+                "source_image": "image_01",
+                "motion_template": "freeze_punch",
+                "caption": "성공은 의지가 아니라 환경.",
+                "overlay": "number_card",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 0
+              }
+            ]
+          },
+          {
+            "scene_index": 2,
+            "source_image": "image_02",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_02-ev-1",
+                "time_start": 5,
+                "time_end": 6,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "checklist_pop",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-2",
+                "time_start": 6,
+                "time_end": 7,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "arrow_reveal",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-3",
+                "time_start": 7,
+                "time_end": 8,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "pan_left",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              },
+              {
+                "event_id": "image_02-ev-4",
+                "time_start": 8,
+                "time_end": 9,
+                "script_part": "curiosity",
+                "intent": "explanation",
+                "source_image": "image_02",
+                "motion_template": "pan_right",
+                "caption": "왜 다 알면서도 아무도 실행하지 않을까요?",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 1
+              }
+            ]
+          },
+          {
+            "scene_index": 3,
+            "source_image": "image_03",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_03-ev-1",
+                "time_start": 9,
+                "time_end": 10.25,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "checklist_pop",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-2",
+                "time_start": 10.25,
+                "time_end": 11.5,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "arrow_reveal",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-3",
+                "time_start": 11.5,
+                "time_end": 12.75,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "pan_left",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              },
+              {
+                "event_id": "image_03-ev-4",
+                "time_start": 12.75,
+                "time_end": 14,
+                "script_part": "point_1",
+                "intent": "explanation",
+                "source_image": "image_03",
+                "motion_template": "pan_right",
+                "caption": "첫째, 기회는 정보가 없어서가 아니라 실…",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 2
+              }
+            ]
+          },
+          {
+            "scene_index": 4,
+            "source_image": "image_04",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_04-ev-1",
+                "time_start": 14,
+                "time_end": 15.25,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "number_countup",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "overlay": "number_card",
+                "sfx": "pop",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-2",
+                "time_start": 15.25,
+                "time_end": 16.5,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "push_in",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-3",
+                "time_start": 16.5,
+                "time_end": 17.75,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "pull_out",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "overlay": "number_card",
+                "sfx": "none",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              },
+              {
+                "event_id": "image_04-ev-4",
+                "time_start": 17.75,
+                "time_end": 19,
+                "script_part": "point_2",
+                "intent": "money_number",
+                "source_image": "image_04",
+                "motion_template": "number_countup",
+                "caption": "둘째, 성공은 의지가 아니라 쉬운 환경을…",
+                "overlay": "number_card",
+                "sfx": "click",
+                "duration": 1.25,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 3
+              }
+            ]
+          },
+          {
+            "scene_index": 5,
+            "source_image": "image_05",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_05-ev-1",
+                "time_start": 19,
+                "time_end": 20,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "checklist_pop",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-2",
+                "time_start": 20,
+                "time_end": 21,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "arrow_reveal",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "overlay": "arrow",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-3",
+                "time_start": 21,
+                "time_end": 22,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "pan_left",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "overlay": "document_card",
+                "sfx": "none",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              },
+              {
+                "event_id": "image_05-ev-4",
+                "time_start": 22,
+                "time_end": 23,
+                "script_part": "point_3",
+                "intent": "explanation",
+                "source_image": "image_05",
+                "motion_template": "pan_right",
+                "caption": "셋째, 오늘 할 수 있는 가장 작은 행동…",
+                "overlay": "checklist",
+                "sfx": "click",
+                "duration": 1,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 4
+              }
+            ]
+          },
+          {
+            "scene_index": 6,
+            "source_image": "image_06",
+            "event_count": 4,
+            "events": [
+              {
+                "event_id": "image_06-ev-1",
+                "time_start": 23,
+                "time_end": 24.75,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "freeze_punch",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "overlay": "warning_card",
+                "sfx": "hit",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-2",
+                "time_start": 24.75,
+                "time_end": 26.5,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "push_in",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-3",
+                "time_start": 26.5,
+                "time_end": 28.25,
+                "script_part": "twist_reframe",
+                "intent": "twist",
+                "source_image": "image_06",
+                "motion_template": "pull_out",
+                "caption": "돈이 되는 선택 앞에서도 사람들은 결정을 미룹니다.",
+                "overlay": "warning_card",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 5
+              },
+              {
+                "event_id": "image_06-ev-4",
+                "time_start": 28.25,
+                "time_end": 30,
+                "script_part": "action_save_reason",
+                "intent": "action",
+                "source_image": "image_06",
+                "motion_template": "final_card",
+                "caption": "지금 저장하고 오늘 실행할 행동 하나만 정하세요.",
+                "overlay": "checklist",
+                "sfx": "none",
+                "duration": 1.75,
+                "safe_frame_ref": "youtube_shorts_safe_frame_v1",
+                "source_caption_line_ref": 6
+              }
+            ]
+          }
+        ]
+      },
+      "motionPlan": {
+        "sequence": [
+          {
+            "event_id": "image_01-ev-1",
+            "motion_template": "freeze_punch",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-2",
+            "motion_template": "push_in",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-3",
+            "motion_template": "red_box",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-4",
+            "motion_template": "freeze_punch",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_02-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_02-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_04-ev-1",
+            "motion_template": "number_countup",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-2",
+            "motion_template": "push_in",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-3",
+            "motion_template": "pull_out",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-4",
+            "motion_template": "number_countup",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_05-ev-1",
+            "motion_template": "checklist_pop",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-2",
+            "motion_template": "arrow_reveal",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-3",
+            "motion_template": "pan_left",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_05-ev-4",
+            "motion_template": "pan_right",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_06-ev-1",
+            "motion_template": "freeze_punch",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-2",
+            "motion_template": "push_in",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-3",
+            "motion_template": "pull_out",
+            "intent": "twist"
+          },
+          {
+            "event_id": "image_06-ev-4",
+            "motion_template": "final_card",
+            "intent": "action"
+          }
+        ],
+        "distinctMotionCount": 10,
+        "motionVarietyScore": 100,
+        "sameMotionThreeInARow": false,
+        "intentMotionMappingSource": "contract.motionCaptionSoundSelection.intentToTemplateMapping"
+      },
+      "soundPlan": {
+        "sequence": [
+          {
+            "event_id": "image_01-ev-1",
+            "sfx": "hit",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_01-ev-4",
+            "sfx": "click",
+            "intent": "hook_impact"
+          },
+          {
+            "event_id": "image_02-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_03-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_04-ev-1",
+            "sfx": "pop",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_04-ev-4",
+            "sfx": "click",
+            "intent": "money_number"
+          },
+          {
+            "event_id": "image_05-ev-4",
+            "sfx": "click",
+            "intent": "explanation"
+          },
+          {
+            "event_id": "image_06-ev-1",
+            "sfx": "hit",
+            "intent": "twist"
+          }
+        ],
+        "sfxCount": 8,
+        "recommendedRange": {
+          "min": 8,
+          "max": 12
+        },
+        "sfxWithinRecommended": true,
+        "everyCaptionHasSfx": false,
+        "sfxFocusIntents": [
+          "hook",
+          "number",
+          "checklist",
+          "twist",
+          "action"
+        ],
+        "soundDesignScoreSeed": 100
+      },
+      "eventTimingAudit": {
+        "totalVisualEvents": 24,
+        "first5sEventCount": 4,
+        "maxStaticDuration": 1.75,
+        "avgEventInterval": 1.25,
+        "hasHookImpactFirst2s": true,
+        "twistReframeEventInWindow": true,
+        "actionSaveEventInWindow": true,
+        "timelineStartSec": 0,
+        "timelineEndSec": 30,
+        "timelineCoversFullDuration": true,
+        "allDurationsPositive": true,
+        "allTimeStartBeforeEnd": true
+      },
+      "templateRegistryAudit": {
+        "motionTemplatesUsed": [
+          "freeze_punch",
+          "push_in",
+          "red_box",
+          "checklist_pop",
+          "arrow_reveal",
+          "pan_left",
+          "pan_right",
+          "number_countup",
+          "pull_out",
+          "final_card"
+        ],
+        "overlayTemplatesUsed": [
+          "warning_card",
+          "number_card",
+          "checklist",
+          "arrow",
+          "document_card"
+        ],
+        "sfxTemplatesUsed": [
+          "hit",
+          "none",
+          "click",
+          "pop"
+        ],
+        "allMotionSupported": true,
+        "allOverlaySupported": true,
+        "allSfxSupported": true,
+        "unsupportedTemplateUsedCount": 0,
+        "fallbackSubstitutions": []
+      },
+      "hard_fail_reasons": [],
+      "phase3Readiness": {
+        "sceneStructureIntact": true,
+        "minVisualEventsMet": true,
+        "staticPreventionOk": true,
+        "rendererRegistryOk": true,
+        "hasSelectablePlan": true,
+        "nextQualityScorerReady": true,
+        "finalDecisionHint": "scene_plan_ready_for_quality_scorer"
+      }
+    }
+  ],
+  "boundary": {
+    "noLlmCall": true,
+    "noExternalApiCall": true,
+    "noRenderMuxFfmpeg": true,
+    "noTtsGeneration": true,
+    "noImageGeneration": true,
+    "noUploadOrPublish": true,
+    "noEnvOrSecretAccess": true,
+    "dataOnly": true
+  }
+}

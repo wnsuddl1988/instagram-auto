@@ -1,0 +1,70 @@
+{
+  "id": "kt1-indonesia-export",
+  "title": "KT-1 인도네시아 수출",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "수출 대수 7/12/17/20 엇갈림",
+  "conditionResolved": false,
+  "finding": "대수 엇갈림은 대부분 계약 단위 차이로 설명된다: 2001년 7대 + 2005년 추가 5대 = 12대(경향신문), 2018년 3대 추가 후 누계 20대(시대일보·파이낸셜뉴스 2곳). 그러나 12대에서 17대로 가는 중간 물량(Janes는 2008년 발주 7대, 한국 보도는 확인 불가)은 단일 출처뿐이라 계약별 대수를 2출처로 못 맞춘다. 또 인도네시아 수송기 CN-235 8대와 맞바꾼 상쇄 거래라는 핵심 장면은 위키백과(12대 맞교환)와 코리아타임스(구매 8대) 정도이고, 주인공의 결단이 있는 일화가 아니라 기록형이어서 이야기 장면도 약하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "KT-1B는 2003년 인도네시아로 수출 1호기가 나갔으며 한국 항공기 최초의 수출이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "계약은 2001년 2월, 인도는 2003년 4월(25일)이라 '수출 연도' 표기가 2001/2003으로 갈림",
+      "sources": [
+        { "name": "시대일보(2025)", "url": "https://www.sidae.com/article/2025031708463513631", "quote": "KT-1B는 2003년 수출 1호기를 시작으로 현재까지 총 20대가 수출됐다" },
+        { "name": "Wikipedia KAI KT-1 Woongbi", "url": "https://en.wikipedia.org/wiki/KAI_KT-1_Woongbi", "quote": "represented the first Korean aircraft export" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "KT-1 수출은 2001년 7대 계약에 이어 2005년 5대를 추가 계약해 12대가 되었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키백과는 2001년 초 KT-1 12대를 CN-235 8대와 교환했다고 적어 2001년 12대로 보는 서술도 있음(계약 단위 차이). 1차 출처 하나(경향)만 7+5 구조를 직접 확인",
+      "sources": [
+        { "name": "경향신문(2005.5.25)", "url": "https://www.khan.co.kr/article/200505251810311", "quote": "2001년 7대를 인도네시아에 수출한 데 이어 이번에 추가로 5대를 수출키로 계약함" },
+        { "name": "Wikipedia KAI KT-1 Woongbi", "url": "https://en.wikipedia.org/wiki/KAI_KT-1_Woongbi", "quote": "exchanged 8 CASA/IPTN CN-235 transport aircraft for 12 KT-1 trainers" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "인도네시아가 운용하는 KT-1B는 누계 20대이며 T-50i 22대와 합쳐 국산 항공기 42대다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2018년 3대 추가 계약 이후 누계 기준. 12→17→20 중간 단계 계약별 대수는 2출처로 확인하지 못함",
+      "sources": [
+        { "name": "시대일보(2025)", "url": "https://www.sidae.com/article/2025031708463513631", "quote": "KT-1B는 2003년 수출 1호기를 시작으로 현재까지 총 20대가 수출됐다" },
+        { "name": "파이낸셜뉴스(2026)", "url": "https://www.fnnews.com/news/202607161518046884", "quote": "인도네시아가 운용 중인 국산 항공기는 KT-1B 20대와 T-50i 22대 등 총 42대다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "한국은 2000년대 초 인도네시아 CN-235 8대를 구매했고, 인도네시아가 KT-1 편대와 군용차량 수백 대를 사 간 맞물린 상쇄 거래였으며 거래 규모는 1억 5천만 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1억 5천만 달러가 KT-1만의 금액이 아니라 KT-1·차량·CN-235를 합친 패키지 규모로 읽힘. 정부 1차 자료로 확인 못 함",
+      "sources": [
+        { "name": "Korea Times(2008.6.30)", "url": "https://www.koreatimes.co.kr/southkorea/defense/20080630/s-korea-to-ink-subs-for-aircraft-deal-with-indonesia", "quote": "Korea purchased eight CN-235s for VIP and transport units in the early 2000s" },
+        { "name": "Wikipedia KAI KT-1 Woongbi", "url": "https://en.wikipedia.org/wiki/KAI_KT-1_Woongbi", "quote": "exchanged 8 CASA/IPTN CN-235 transport aircraft for 12 KT-1 trainers" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "KAI는 2025년 3월 인도네시아 정부와 6400만달러(약 930억 원) 규모의 KT-1B 기체 수명연장 사업 계약을 체결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시대일보 단일 확인(쿠키뉴스 동일 보도 가능성은 원문 대조 필요)",
+      "sources": [
+        { "name": "시대일보(2025)", "url": "https://www.sidae.com/article/2025031708463513631", "quote": "6400만달러(약 930억 원) 규모로 현지 공군이 운용 중인 KT-1B" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "KAI(국내 방산기업) 사례이며 진행 중 소송·정치 쟁점 없음. 방산 수출이라 홍보성·상쇄 거래 해석에 주의" },
+  "remaining": "(1) 2001~2018년 계약별 대수를 2출처로 못 맞춤(Janes 2008년 7대 단일 출처, 합계 17대 불일치). (2) 주인공의 선택·결단이 있는 장면이 없고 기록형. 방위사업청·KAI 공시 등 1차 자료가 있어야 usable 후보가 됨",
+  "toolCallsUsed": 12
+}

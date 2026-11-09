@@ -1,0 +1,37 @@
+{
+  "facts": [
+    {"id":"f1","claim":"1997년 12월 한국의 외환보유액은 39억 달러 수준(12월 18일 39억 4천만 달러)까지 떨어졌다.","numeric":null,"hasNumber":true,"eventDate":"1997-12","sources":[
+      {"name":"한국경제신문 생글생글(2005-07-05)","url":"https://sgsg.hankyung.com/article/2005071480751","quote":"우리나라의 외환보유액은 외환위기를 맞은 97년 12월18일 39억4000만달러를 바닥으로 2003년 11월 1500억달러를 넘어섰고,2005년 2월 말 2021억6000만달러를 기록해 2000억달러를 넘었다."},
+      {"name":"뉴데일리(2009-08-02)","url":"https://www.newdaily.co.kr/site/data/html/2009/08/02/2009080200008.html","quote":"1997년 12월 외환보유액은 한때 39억 달러 수준까지 떨어졌으나 국제통화기금(IMF)에서 195억 달러의 구제금융을 받아 간신히 국가부도 사태는 피했다."},
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"'외환위기'때 39억 달러까지 떨어졌던 외환보유액은 이듬해인 1998년 말 520억 달러로 증가했다."}]},
+    {"id":"f2","claim":"한국이 IMF에서 실제로 빌린(인출한) 돈은 약 195억 달러다(약정 대기성차관은 약 210억 달러).","numeric":null,"hasNumber":true,"eventDate":"1997-12","sources":[
+      {"name":"IMF News Brief No.00/72(2000-08-23)","url":"https://www.imf.org/external/np/sec/nb/2000/nb0072.htm","quote":"Total drawn under the program: SDR 14.4 billion (about US$19.5 billion)."},
+      {"name":"뉴데일리(2009-08-02)","url":"https://www.newdaily.co.kr/site/data/html/2009/08/02/2009080200008.html","quote":"1997년 12월 외환보유액은 한때 39억 달러 수준까지 떨어졌으나 국제통화기금(IMF)에서 195억 달러의 구제금융을 받아 간신히 국가부도 사태는 피했다."},
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"뒤이어 12월 3일 우리나라는 IMF로부터 210억 달러의 구제금융을승인받았다."}]},
+    {"id":"f3","claim":"금 모으기 운동에서 사람들은 결혼반지·돌반지 같은 금붙이를 내놓았다.","numeric":null,"hasNumber":false,"eventDate":"1998-01","sources":[
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"결혼반지와 돌반지가 나왔고, 운동선수들은 금메달을 내놨다."},
+      {"name":"대구MBC 백투더투데이(2023-12-30)","url":"https://dgmbc.com/NewsArticle/611601","quote":"장롱 안에 있던 결혼 반지, 돌 반지가 나왔고 운동선수들은 금메달을, 김수환 추기경은 추기경 취임 때 받은 십자가까지 내놨습니다."}]},
+    {"id":"f4","claim":"김수환 추기경은 1998년 1월 자신의 금 십자가를 포함한 금 142.58g을 내놓았다(당시 기사는 신자들이 선물한 금붙이라고 썼고, '추기경 취임 때 받은 십자가'는 2023년 회고 기사에만 있음).","numeric":null,"hasNumber":true,"eventDate":"1998-01-12","sources":[
+      {"name":"한국일보(1998-01-13)","url":"https://www.hankookilbo.com/news/article/199801130048368163","quote":"「행운의 열쇠」 「금거북」과 신자가 기증한 금반지, 금십자가 등 1백42.58g의 금을 내놓았다."},
+      {"name":"가톨릭신문(1998-01-18)","url":"https://www.catholictimes.org/article/201007020277807","quote":"『예수님은 몸도 바쳤다』며 십자가를 접수대에 내밀었다."},
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"김수환 추기경도 금으로 된 자신의 십자가를 내놨다."}]},
+    {"id":"f5","claim":"금 모으기 운동에는 전국 351만 명이 참여해 금 약 227톤을 모았다(공식 종료 1998년 3월 14일, 농협은 4월까지 정리).","numeric":null,"hasNumber":true,"eventDate":"1998-03","sources":[
+      {"name":"한국민족문화대백과사전 금모으기운동","url":"https://encykorea.aks.ac.kr/Article/E0080908","quote":"이러한 금모으기운동을 통해서 걷힌 금은 약 227톤이며, 전국적으로 3백 51만 명이 참여하였다."},
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"그렇게 온 국민이 모은 금이 석 달 동안 227톤으로 18억 달러 어치, 현재 기준으로 2조 5천억 원어치였다."},
+      {"name":"뉴시스(2025-02-23)","url":"https://www.newsis.com/view/NISX20250221_0003074649","quote":"그렇게 모인 금은 약 227t에 달했다."}]},
+    {"id":"f6","claim":"모인 금은 대부분 해외에 수출됐고, 낸 사람은 수출 대금을 환율·국제 금 시세로 평가한 원화로 돌려받았으며, 수출액은 약 22억 달러(1998년 3월 발표 21억 7천만 달러)였다. 국가기록원은 18억 달러 어치로 적어 출처 간 차이가 있다.","numeric":null,"hasNumber":true,"eventDate":"1998-03","sources":[
+      {"name":"한국민족문화대백과사전 금모으기운동","url":"https://encykorea.aks.ac.kr/Article/E0080908","quote":"걷힌 금은 대부분 팔렸으며 수출액은 약 22억 달러 정도였다."},
+      {"name":"매일신문(1998-03-23)","url":"https://www.imaeil.com/page/view/1998032300241735710","quote":"수집 금(金) 2백25t, 환산된 달러 21억 7천만달러 당초예상 목표액 2백50억달러의 10%선이다."},
+      {"name":"뉴시스(2025-02-23)","url":"https://www.newsis.com/view/NISX20250221_0003074649","quote":"모인 금은 당시 가격으로 22억 달러에 수출됐다."}]},
+    {"id":"f7","claim":"한국은 2001년 8월 23일 IMF 차입금 195억 달러 가운데 남은 1억 4천만 달러를 갚아 전액 상환했고, 당초 예정(2004년 5월)보다 3년여 빨랐다.","numeric":null,"hasNumber":true,"eventDate":"2001-08-23","sources":[
+      {"name":"IMF News Brief No.01/82(2001-08-22)","url":"https://www.imf.org/external/np/sec/nb/2001/nb0182.htm","quote":"Korea's scheduled early repayment on August 23, 2001 of the final installment outstanding from 1997 IMF drawings under a stand-by credit."},
+      {"name":"국가기록원 기록으로 보는 대한민국-IMF","url":"https://theme.archives.go.kr/next/koreaOfRecord/imf.do","quote":"이로써 2004년 5월까지 갚도록 예정되어 있던 국제통화기금 차입금 전액인 195억 달러를 조기에 상환하였는데"},
+      {"name":"서울신문(2001-08-23)","url":"https://www.seoul.co.kr/news/2001/08/23/20010823005005","quote":"당초 2004년 5월까지 상환하기로 했던 돈을 3년여앞당겨 모두 갚는 것이다."}]},
+    {"id":"f8","claim":"1997년 외환위기 때 IMF 돈을 빌린 태국은 2003년 7월 31일 조기 상환을 마쳐, 한국(2001년 8월 23일)이 약 2년 먼저 다 갚았다. '아시아에서 가장 먼저'를 직접 쓴 출처는 찾지 못함.","numeric":null,"hasNumber":true,"eventDate":"2001-08-23","sources":[
+      {"name":"IMF Press Release No.03/131(2003-07-31)","url":"https://www.imf.org/external/np/sec/pr/2003/pr03131.htm","quote":"Thailand completed an early repayment of its outstanding obligations to the International Monetary Fund"},
+      {"name":"서울신문(2001-08-23)","url":"https://www.seoul.co.kr/news/2001/08/23/20010823005005","quote":"정부가 환란 이후 국제통화기금(IMF)에서 빌린 195억달러 가운데 그동안 갚고 남은 1억4,000만달러를 오늘 전액 상환한다."}]},
+    {"id":"f9","claim":"금 227톤은 약 729.8만 트로이온스(227,000,000g ÷ 31.1035g)이고, 2026년 10월 국제 금값(온스당 약 4,156~4,203달러)으로 치면 약 303~307억 달러, 곧 약 300억 달러다(금값은 시세 집계 사이트 기준).","numeric":null,"hasNumber":true,"eventDate":"2026-10","sources":[
+      {"name":"Trading Economics 한국어(2026-10-13)","url":"https://ko.tradingeconomics.com/commodity/gold","quote":"금 가격은 2026년 10월 13일 온스당 4,156.44달러로 하락해 전일 대비 0.37% 내렸습니다."},
+      {"name":"PriceGold.net(2026-10-11)","url":"https://pricegold.net/2026/october/11/","quote":"On Sunday, October 11, 2026, the gold price was $4,203.49 per ounce."}]}
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "coca-cola-medicine",
+  "title": "코카콜라는 원래 약이었다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "10박자 미달 (weak-scene)",
+  "conditionResolved": true,
+  "finding": "'원래 약이었다'만으로는 약하지만 같은 소재에 선명한 결정 장면이 있다: 1886년 첫해 하루 평균 9잔 팔리던 음료의 권리를, 발명자 펨버턴이 1888년 죽기 직전 아사 캔들러에게 팔았고(알려진 가격 2,300달러), 캔들러는 1892년 회사를 세운 뒤 1919년 2,500만 달러에 팔았다. 5센트·하루 9잔·2,300달러·1892·2,500만 달러를 서로 다른 사이트 2곳씩 확인했다(2,300달러는 '소문'이라는 단서가 붙음).",
+  "coreMessage": "자기 물건의 값어치를 모르고 판 사람은 2,300달러를 받았고, 알아본 사람은 그 회사를 2,500만 달러에 넘겼다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1886년 5월 애틀랜타 제이콥스 약국에서 코카콜라가 한 잔 5센트에 처음 판매됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "The Coca-Cola Company 공식 역사", "url": "https://www.coca-colacompany.com/about-us/history/the-birth-of-a-refreshing-idea", "quote": "placed on sale for five cents a glass" },
+        { "name": "Atlanta News First(2023)", "url": "https://www.atlantanewsfirst.com/2023/05/08/atlvault-may-8-1886-day-coca-cola-was-first-served", "quote": "served for five cents a glass" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "첫해 판매량은 하루 평균 9잔에 불과했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "첫해 매출 50달러·비용 70달러 수치는 저품질 사이트뿐이라 사용 금지.",
+      "sources": [
+        { "name": "The Coca-Cola Company 공식 역사", "url": "https://www.coca-colacompany.com/about-us/history/the-birth-of-a-refreshing-idea", "quote": "averaged a modest nine drinks per day" },
+        { "name": "Atlanta News First(2023)", "url": "https://www.atlantanewsfirst.com/2023/05/08/atlvault-may-8-1886-day-coca-cola-was-first-served", "quote": "nine drinks per day" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "펨버턴은 1888년 숨지기 전에 캔들러에게 제조법 권리를 약 2,300달러에 넘겼다고 전해진다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키피디아는 '소문으로 전해지는 금액'이라 적고, 매입 시기도 1887~1891로 출처마다 다름(총 투자액 2,300달러라는 설명도 있음). 대본에서 '알려진 바로는'으로 서술.",
+      "sources": [
+        { "name": "Atlanta News First(2023)", "url": "https://www.atlantanewsfirst.com/2023/05/08/atlvault-may-8-1886-day-coca-cola-was-first-served", "quote": "to sell the formula for $2,300" },
+        { "name": "Wikipedia - Asa Griggs Candler", "url": "https://en.wikipedia.org/wiki/Asa_Griggs_Candler", "quote": "for an amount rumored to be $2,300" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "캔들러는 1892년 코카콜라 컴퍼니를 설립했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "회사 FAQ는 1889년 매입 후 3년 뒤 설립이라고 적어 1892와 일치.",
+      "sources": [
+        { "name": "Georgia Historical Society 표지문", "url": "https://georgiahistory.com/?p=39156", "quote": "founded The Coca-Cola Company in 1892" },
+        { "name": "Wikipedia - Asa Griggs Candler", "url": "https://en.wikipedia.org/wiki/Asa_Griggs_Candler", "quote": "In 1892, he founded the Coca-Cola" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1919년 캔들러 측은 회사를 2,500만 달러에 어니스트 우드러프가 포함된 투자 그룹에 매각했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Georgia Historical Society 표지문", "url": "https://georgiahistory.com/?p=39156", "quote": "sold the company in 1919 for $25 million" },
+        { "name": "New Georgia Encyclopedia", "url": "https://www.georgiaencyclopedia.org/articles/business-economy/coca-cola/", "quote": "sale of the firm for $25 million" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 130여 년 전 사건이라 민감성 없음. 초기 코카잎·코카인 성분은 언급하되 선정적으로 다루지 않으면 됨." },
+  "remaining": "2,300달러가 '소문' 수준이라 대본에서 단정하지 말 것. 주인공 펨버턴의 선택 장면(병중에 권리 매각)을 시각화할 때 사실 범위를 넘지 않게 주의.",
+  "toolCallsUsed": 10
+}

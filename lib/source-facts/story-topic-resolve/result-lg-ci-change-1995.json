@@ -1,0 +1,38 @@
+{
+  "id": "lg-ci-change-1995",
+  "title": "럭키금성이 하루아침에 LG가 된 날",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "변경 후 성과 숫자·변경 비용이 어디에도 없음 → 엔딩이 약해 '그래서 뭐?' 위험. 반대 의견·구본무 결단은 뉴시스 2018 1곳",
+  "conditionResolved": false,
+  "finding": "1995년 1월 1일 신문 1면에 낯선 마크가 실리고 LG 브랜드가 공표됐다는 점(LG 공식 사이트·뉴데일리)과 1993년 3700여 명 의견조사 후 1994년 CI 변경 작업이 추진됐다는 점은 확인된다. 그러나 3700여 명 수치와 반대 의견, 구본무 부회장의 결단은 뉴시스 기사와 그 재게재(뉴데일리)로 사실상 같은 통신 기사 1건이고, CI 변경 비용이나 변경 후 성과 숫자는 이번에도 찾지 못했다. 엔딩 숫자가 없어 '그래서 뭐?'가 남으므로 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1995년 1월 1일 새해 아침, 신문 1면 하단에 낯선 마크가 실렸고 LG는 그날 LG 브랜드를 대내외에 공표했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "LG 공식 페이지는 1월 4일에 전면광고로 정체를 밝혔다고 적어, 공표일을 1월 1일로 보는 자료와 날짜 기준이 다르다.",
+      "sources": [
+        { "name": "LG 공식 CI 스토리", "url": "https://www.lg.co.kr/about/ci/story", "quote": "1면 하단에 처음 보는 생소한 마크" },
+        { "name": "뉴데일리, 2018", "url": "https://biz.newdaily.co.kr/site/data/html/2018/05/20/2018052010032.html", "quote": "1995년 1월 1일을 기해 LG 브랜드를 대내외에 공표했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "LG는 1993년 임직원과 국내외 고객 3700여 명을 대상으로 대규모 의견조사를 한 뒤 1994년 본격적으로 CI 변경 작업을 추진했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "뉴시스 기사와 뉴데일리는 사실상 같은 통신 기사라 독립 출처 2곳으로 보기 어렵다.",
+      "sources": [
+        { "name": "뉴시스, 2018.5.20", "url": "https://www.newsis.com/view/NISX20180520_0000313542", "quote": "1993년 임직원 및 국내외 고객 등 3700여명을 대상으로" },
+        { "name": "뉴데일리, 2018.5.20", "url": "https://biz.newdaily.co.kr/site/data/html/2018/05/20/2018052010032.html", "quote": "3700여명을 대상으로 한 대규모 의견조사" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "현재 영업 중인 LG그룹의 사명 변경 일화로 소송·제재와 무관하나, 구본무 회장 미화로 읽힐 수 있음." },
+  "remaining": "CI 변경 비용과 변경 후 성과를 보여 주는 숫자가 없고 반대 의견·구본무 결단의 독립 출처가 없다. 엔딩이 약하다.",
+  "toolCallsUsed": 5
+}

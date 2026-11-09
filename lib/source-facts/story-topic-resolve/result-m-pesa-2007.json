@@ -1,0 +1,64 @@
+{
+  "id": "m-pesa-2007",
+  "title": "M-Pesa 케냐",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "기업 서사, 한국 접점 약함, 에어타임 기원설 오류",
+  "conditionResolved": true,
+  "finding": "기업 서사 문제는 '기업 홍보'가 아니라 결단 한 장면으로 풀 수 있다: 출시 직후 Safaricom CEO 마이클 조지프가 첫해 목표 30만(30~35만) 명을 100만 명 이상으로 3배 넘게 올린 순간이 서로 다른 두 매체(The Standard, Business Today)에서 확인된다. 에어타임 기원설은 쓰지 않고, 시범(2005.10, 소액대출 상환 목적)에서 출발해 2007.3 출시, 시범 기간 KSh 5,070만 송금 등 숫자는 공식 보도자료·IFC 사례연구·위키 등으로 2곳씩 확인됐다. 한국 접점은 여전히 약하지만(한국인이 아는 장면은 아님) 채널 기준(결단+숫자+교훈)은 충족하므로 usable로 제안하되, 첫해 고객 수 출처가 엇갈리는 점(공식 1.6M vs 회고 2M)은 대본에서 '약 160만~200만'이 아니라 한 출처 숫자만 쓸 것.",
+  "coreMessage": "써 보는 사람들이 보여 준 쓰임새를 믿고 목표를 3배로 올린 결단이, 대출 상환 실험을 케냐 국민 결제망으로 키웠다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "출시 직후 Safaricom CEO 마이클 조지프가 M-Pesa 첫해 목표 고객 수를 30만 명대에서 100만 명 이상(3배 넘게)으로 올렸다.", "numeric": true, "economy": false,
+      "caution": "Business Today는 '출시 일주일 뒤'라고 쓰지만 The Standard는 시점을 적지 않음. 대본에서는 '출시 직후'로만 표현.",
+      "sources": [
+        { "name": "Business Today Kenya(15 interesting facts about M-PESA)", "url": "https://businesstoday.co.ke/?p=105893", "quote": "move the target to one million" },
+        { "name": "The Standard(2014.2.6, 'Kenyan did not invent famed M-Pesa')", "url": "https://www.standardmedia.co.ke/amp/article/2000104088/kenyan-did-not-invent-famed-m-pesa", "quote": "more than threefold to over a million" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "M-Pesa의 처음 목표는 첫해 고객 30만~35만 명 수준이었다.", "numeric": true, "economy": false,
+      "caution": "The Standard는 30만~35만, Business Today는 30만. 대본에서는 '30만 명 안팎'.",
+      "sources": [
+        { "name": "The Standard(2014)", "url": "https://www.standardmedia.co.ke/amp/article/2000104088/kenyan-did-not-invent-famed-m-pesa", "quote": "between 300,000 and 350,000 customers" },
+        { "name": "Business Today Kenya", "url": "https://businesstoday.co.ke/?p=105893", "quote": "Initial target was 300,000 customers" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "M-Pesa는 2007년 3월에 케냐에서 정식 출시됐다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Vodafone Group 공시(2008.2.11, M-Pesa reaches 1.6 million customers)", "url": "https://www.investegate.co.uk/announcement/rns/vodafone-group--vod/m-pesa-update/1754536", "quote": "launched in March 2007" },
+        { "name": "Retail Banker International(2009.3.10)", "url": "https://www.retailbankerinternational.com/comment/m-pesa-kenyas-revolutionary-new-bank/", "quote": "launched in March 2007" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "M-Pesa는 2005년 10월 시범 서비스로 시작했다(소액대출 상환 용도).", "numeric": true, "economy": false,
+      "caution": "Leaders League 인터뷰(수지 로니)는 시범이 500명 고객·대리점 약 15곳으로 시작했고 2006년 5월 끝났다고 말하나 단일 출처라 사실 칸에는 넣지 않음.",
+      "sources": [
+        { "name": "Leaders League 수지 로니 인터뷰", "url": "https://www.leadersleague.com/en/news/susie-lonie-m-pesa-i-knew-it-was-going-to-be-big", "quote": "October 2005 with 500 customers" },
+        { "name": "Wikipedia 'M-Pesa'", "url": "https://en.wikipedia.org/wiki/M-Pesa", "quote": "on a pilot basis in October 2005" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "시범 서비스 시작 약 5개월 만인 2006년 3월 1일까지 시스템을 통해 5,070만 케냐실링이 송금됐다.", "numeric": true, "economy": true,
+      "caution": "위키는 IFC 사례연구 문장을 옮긴 것으로 보임(문장 거의 동일).",
+      "sources": [
+        { "name": "IFC/세계은행 M-PESA Kenya 사례연구(mobile money toolkit)", "url": "https://documents1.worldbank.org/curated/en/832831500443778267/pdf/117403-WP-KE-Tool-6-7-Case-Study-M-PESA-Kenya-Series-IFC-mobile-money-toolkit-PUBLIC.pdf", "quote": "50.7 million Kshs had been transferred" },
+        { "name": "Wikipedia 'M-Pesa'", "url": "https://en.wikipedia.org/wiki/M-Pesa", "quote": "KSh 50.7 million had been transferred" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "출시 첫해 안에 고객 약 200만 명을 모았다고 회고된다.", "numeric": true, "economy": false,
+      "caution": "Vodafone 공식 보도자료(2008.2)는 12개월에 160만 명. 두 매체는 회고형 '약 200만'. 대본에서는 쓸 때 출처 하나로 통일하거나 '수백만 명'으로 표현.",
+      "sources": [
+        { "name": "FSD Kenya(M-PESA 101, 2015)", "url": "https://www.fsdkenya.org/?p=915", "quote": "2 million customers in less than a year" },
+        { "name": "Business Today Kenya", "url": "https://businesstoday.co.ke/?p=105893", "quote": "enroll two million customers" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외(케냐) 사례이며 진행 중 소송·정치 소지 없음. 일부 케냐인의 'M-Pesa 발명 주장 소송'은 쓰지 않으면 됨." },
+  "remaining": "한국 접점이 약하다(한국인이 아는 장면 아님). 에어타임 기원설은 대본에서 쓰지 말 것. 첫해 고객 수 출처 불일치(1.6M vs 2M) 주의. 3배 상향 시점(출시 1주 뒤 vs 불명) 불일치.",
+  "toolCallsUsed": 22
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "money_shorts_owner_upload_approval_v1",
+  "approvalId": "owner-approval-provider-candidate-ecos-base-rate-local-mock-001",
+  "mode": "local_mock",
+  "approvalStatus": "approved",
+  "approvedFor": "dry_run_upload_ready_packet_only",
+  "uploadPayloadId": "upload-payload-rp-provider-candidate-ecos-base-rate-local-mock",
+  "sourceManifestId": "rp-provider-candidate-ecos-base-rate",
+  "approvedPlatforms": ["youtube_shorts", "instagram_reels"],
+  "ownerApprovalRequired": true,
+  "actualUploadAllowed": false,
+  "actualUploadPerformed": false,
+  "approvalTimestamp": "2026-06-30T00:00:00.000Z",
+  "approvalNotes": "local_mock dry-run only — no real account, channel, token, credential, or upload allowed.",
+  "riskNotes": [
+    "local_mock: this is a simulated owner approval fixture for pipeline validation only.",
+    "actualUploadAllowed=false — no actual upload may occur from this approval.",
+    "actualUploadPerformed=false — confirmed no upload has been performed.",
+    "approvedFor=dry_run_upload_ready_packet_only — approval covers packet generation only.",
+    "TTS audio is local_mock (pink noise placeholder). ElevenLabs final-pass required before real upload.",
+    "Real upload requires a separate explicit Owner approval with live credentials, channel, and account.",
+    "ownerApprovalRequired=true must remain true in all derived artifacts."
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "당시 10원 동전은 구리 65%, 아연 35%의 황동이었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "황동(구리 65%, 아연 35%)" },
+        { "name": "경기일보(2005.11.12)", "url": "https://kyeonggi.com/article/200511120165287", "quote": "10원짜리는 65% 구리와 35% 아연 합금으로 제작된다" }
+      ] },
+    { "id": "f2", "claim": "10원 동전 하나를 만드는 비용이 액면가의 3배를 넘었고 한국은행은 제조단가를 40원대로 밝혔다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "제조단가도 40원대에서 20원대로 하락하여" },
+        { "name": "경기일보(2005.11.12)", "url": "https://kyeonggi.com/article/200511120165287", "quote": "10원짜리 동전을 1개 만드는 데 드는 비용은 액면가의 3배가 넘는다" }
+      ] },
+    { "id": "f3", "claim": "구리와 아연 값이 급등해 구리 값이 역대 최고치 수준이 됐다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "최근 구리와 아연 가격이 급상승하여" },
+        { "name": "경기일보(2005.11.12)", "url": "https://kyeonggi.com/article/200511120165287", "quote": "최근 구리 값이 역대 최고치 수준으로 올랐다" }
+      ] },
+    { "id": "f4", "claim": "동전의 소재 값이 액면 값을 넘어서면 '멜팅포인트를 넘었다'고 부르며 10원 동전의 소재가치가 액면을 크게 웃돌았다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "10원 동전의 소재가치가 액면금액을 크게 상회하고 있어" },
+        { "name": "아시아경제(2015.11.4)", "url": "https://view.asiae.co.kr/article/2015110410594239666", "quote": "소재 가격과 액면 가격이 같아지는 금액)를 넘어섰다" }
+      ] },
+    { "id": "f5", "claim": "2006년 8월 한국은행 금융통화위원회가 구리씌움 알루미늄 새 10원 동전 발행을 의결했고 12월에 발행됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "현 10원 동전 재질을 구리씌움 알루미늄으로 바꾸고 크기를 대폭 줄인 새 10원 동전을 발행하기로 의결함" },
+        { "name": "아시아경제(2015.11.4)", "url": "https://view.asiae.co.kr/article/2015110410594239666", "quote": "한은은 이런 멜팅포인트를 고려해 2006년 12월 신형 10원짜리 동전을 발행했다" }
+      ] },
+    { "id": "f6", "claim": "새 10원은 지름 22.86mm에서 18mm로, 무게 4g에서 1g 남짓으로 작고 가벼워졌다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "지름이 18.0㎜로 현재(22.86㎜)보다 4.86㎜ 작으며" },
+        { "name": "아시아경제(2015.11.4)", "url": "https://view.asiae.co.kr/article/2015110410594239666", "quote": "구형 10원짜리 동전은 지름 22.86㎜ 무게 4.06g" }
+      ] },
+    { "id": "f7", "claim": "새 10원의 원가는 20원 정도로 낮아졌다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)", "url": "https://www.newswire.co.kr/newsRead.php?no=176206", "quote": "제조단가도 40원대에서 20원대로 하락하여" },
+        { "name": "아시아경제(2015.11.4)", "url": "https://view.asiae.co.kr/article/2015110410594239666", "quote": "신형 10원 동전의 원가는 20원 정도인데 인건비와 관리비가 모두 들어간 가치" }
+      ] }
+  ]
+}

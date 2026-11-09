@@ -1,0 +1,71 @@
+{
+  "id": "cyprus-deposit-haircut-2013",
+  "title": "키프로스 — 은행 예금을 강제로 줄인 나라",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "예금 강제 삭감 장면. EU 정치 논쟁 제외",
+  "conditionResolved": true,
+  "finding": "2013년 3월 구제금융 조건으로 예금 전액에 6.75%/9.9% 일회성 부담금을 물리려던 안이 의회에서 찬성 0표로 부결되었고, 이후 폐쇄된 라이키은행·Bank of Cyprus의 10만 유로 초과 예금 47.5%가 삭감되는 것으로 바뀌었다. 부담금 비율, 부결 표결, 47.5%, 은행 규모, 구제금융 100억 유로가 각각 서로 다른 사이트 2곳에서 확인된다. EU 정치 논쟁을 빼고 '예금 보호 한도(10만 유로)의 의미'만 다루면 유리하다.",
+  "coreMessage": "통장의 돈은 보호 한도까지만 안전하다 — 은행이 무너질 때 한도 밖 돈은 지켜지지 않을 수 있다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "구제금융 조건으로 제안된 최초안은 10만 유로 미만 예금에 6.75%, 그 이상에 9.9%의 일회성 부담금을 물려 58억 유로를 걷는다는 것이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "표결 직전 2만 유로 미만 면제로 수정된 안이 부결됐다는 보도도 있음.",
+      "sources": [
+        { "name": "CBS News/AP(2013)", "url": "https://www.cbsnews.com/news/tiny-cyprus-threatens-euro-stability", "quote": "6.75 percent on all deposits" },
+        { "name": "Business Today(2013)", "url": "https://businesstoday.in/story/parliament-rejects-taxing-deposits-cyprus-nears-bankruptcy/1/193446.html", "quote": "levy of 6.75 per cent on deposits" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2013년 3월 19일 키프로스 의회는 예금 부담금안을 56석 중 반대 36, 기권 19, 찬성 0으로 부결했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "ESM은 '찬성 의원 한 명도 없음'만 적고 반대·기권 수는 Business Today에만 있음.",
+      "sources": [
+        { "name": "Business Today(2013)", "url": "https://businesstoday.in/story/parliament-rejects-taxing-deposits-cyprus-nears-bankruptcy/1/193446.html", "quote": "None voted in support" },
+        { "name": "ESM(유럽안정화기구) Crisis in Cyprus", "url": "https://www.esm.europa.eu/publications/safeguarding-euro/crisis-cyprus-no-negotiating-power-no-credibility", "quote": "without a single lawmaker in favour" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "최종 구제안에서 Bank of Cyprus의 10만 유로 초과 예금은 47.5%가 삭감(주식 전환)되었고, 10만 유로 이하 보험 예금은 보호되었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "라이키은행의 무보험 예금은 주식도 거의 못 받는 것으로 보도됨(Deseret).",
+      "sources": [
+        { "name": "Deseret News/AP(2013)", "url": "https://www.deseret.com/2013/7/29/20455243/bank-of-cyprus-depositors-lose-47-5-pct-of-savings/", "quote": "lose 47.5 percent of their savings" },
+        { "name": "Wikipedia 2012-2013 Cypriot financial crisis", "url": "https://en.wikipedia.org/wiki/2012%E2%80%932013_Cypriot_financial_crisis", "quote": "47.5% of all bank deposits" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "키프로스 은행 자산은 2012년 GDP의 657%였고, IMF는 경제 규모의 8배를 넘었다고 평가했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "ESM은 657%(2012), IMF는 '8배 이상'으로 기준 연도가 다름 — 대본에는 '경제 규모의 6~8배'처럼 범위로 쓰거나 한 출처만 인용.",
+      "sources": [
+        { "name": "ESM(2013 회고)", "url": "https://www.esm.europa.eu/publications/safeguarding-euro/crisis-cyprus-no-negotiating-power-no-credibility", "quote": "Bank assets were 657% of GDP in 2012" },
+        { "name": "IMF 키프로스 자료(2013)", "url": "https://www.imf.org/en/news/articles/2015/09/28/04/54/tr051713", "quote": "over eight times the size of the economy" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "유로존·IMF는 키프로스에 100억 유로 규모의 구제금융을 약속했고 예금 부담금이 그 조건이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Business Today(2013)", "url": "https://businesstoday.in/story/parliament-rejects-taxing-deposits-cyprus-nears-bankruptcy/1/193446.html", "quote": "10 billion euro ($13 billion)" },
+        { "name": "ESM(유럽안정화기구) Crisis in Cyprus", "url": "https://www.esm.europa.eu/publications/safeguarding-euro/crisis-cyprus-no-negotiating-power-no-credibility", "quote": "up to €10 billion in assistance" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 옛 사건. 다만 EU 정치 논쟁·러시아 자금 서사는 빼고 '예금 보호 한도' 교훈만 다룰 것(2025~26년 일부 보상 논의는 진행 중)." },
+  "remaining": "국내 예금자보호 한도(5천만 원) 비교를 넣으려면 예금보험공사 자료 2출처가 별도로 필요. 최종 삭감 비율은 은행별(라이키·BoC)로 다르니 한 은행만 특정해서 쓸 것.",
+  "toolCallsUsed": 12
+}

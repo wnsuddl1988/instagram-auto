@@ -1,0 +1,64 @@
+{
+  "id": "samsung-anycall-1995-top",
+  "title": "삼성 애니콜 1위 탈환",
+  "proposedVerdict": "hold",
+  "reason": "duplicate",
+  "originalCondition": "5편 화형식과 같은 흐름(독립 사건 아님)",
+  "conditionResolved": false,
+  "finding": "1995년 7~8월 애니콜의 국내 1위(점유율 51.5~52%, 모토로라 추월)는 2곳 원문으로 확인되지만, 출처들이 모두 1995년 3월 구미 불량품 화형식의 '결과'로만 서술한다(머니투데이는 화형식 항목 안에서 같이 서술). 별도의 결정적 장면이 따로 없고, 점유율은 화형식 전에도 25.8~30%에서 오르던 중이라 독립 사건으로 분리할 근거가 없다. 이미 쓴 '삼성 애니콜 화형식'의 후속·변형이므로 duplicate 보류가 맞다.",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "애니콜은 1995년 7~8월 국내 점유율 약 52%(51.5%)로 모토로라를 제치고 국내 1위에 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시점이 출처마다 한 달 다르다(머니투데이 8월·51.5%, 이코노미조선 7월·52%). 국내 점유율이며 세계 점유율이 아니다.",
+      "sources": [
+        { "name": "머니투데이(2020.10.25)", "url": "https://www.mt.co.kr/tech/2020/10/25/2020102218134671111", "quote": "모토로라를 제치고 51.5%의 점유율로" },
+        { "name": "이코노미조선(2005.4.7)", "url": "https://economychosun.com/site/data/html_dir/2005/04/07/2005040700064.html", "quote": "시장 점유율 52%로 모토로라를 누르고 국내 시장의 선두주자로" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "화형식 직전 삼성 단말기 불량률은 11.8%(약 12%)까지 올라 있었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "아주경제는 11.8%, 머니투데이는 '12%에 육박'으로 표기.",
+      "sources": [
+        { "name": "아주경제(2020.10.25)", "url": "https://www.ajunews.com/view/20201025130231535", "quote": "단말기 불량률 11.8%라는 씁쓸한 성적표" },
+        { "name": "머니투데이(2020.10.25)", "url": "https://www.mt.co.kr/tech/2020/10/25/2020102218134671111", "quote": "무선사업부 제품 불량률이 12%에 육박하자" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1995년 3월 구미 사업장에서 불태운 불량 단말기는 약 500억 원어치(15만 대)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "15만 대는 휴대폰만이 아니라 무선전화기·팩시밀리 등을 합친 수.",
+      "sources": [
+        { "name": "아주경제(2020.10.25)", "url": "https://www.ajunews.com/view/20201025130231535", "quote": "500억원 어치 단말기가 모두 불타 사라졌다" },
+        { "name": "세계일보(2012.11.23)", "url": "https://www.segye.com/newsView/20121123023500", "quote": "제품 가격이 500억원에 달했지만" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "화형식 전인 1994년 10월 삼성 국내 점유율은 25.8%로 모토로라 52.5%에 크게 뒤처져 있었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "아주경제는 화형식 뒤 점유율이 '30%에서 50% 수준'으로 급증했다고만 적어 기준이 다르다. 화형식이 점유율 상승의 원인이라고 단정한 출처는 못 찾았다.",
+      "sources": [
+        { "name": "헬로디디", "url": "https://www.hellodd.com/news/articleView.html?idxno=113161", "quote": "점유율이 25.8%로 모토로라의 52.5%에 크게 뒤처져 있었다" },
+        { "name": "아주경제(2020.10.25)", "url": "https://www.ajunews.com/view/20201025130231535", "quote": "국내 시장 점유율도 30%에서 50% 수준으로 급증했다" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성전자는 영업 중이나 진행 중 소송·제재·피해자 있는 사건 아님(30년 전 품질 일화)."
+  },
+  "remaining": "독립된 '1위 탈환' 장면이 없어 별도 편으로 쓸 수 없음. 이미 쓴 화형식 편의 결말 문장으로 흡수하는 것이 맞다.",
+  "toolCallsUsed": 5
+}

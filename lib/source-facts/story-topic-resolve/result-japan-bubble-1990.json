@@ -1,0 +1,57 @@
+{
+  "id": "japan-bubble-1990",
+  "title": "일본 버블 — 도쿄 땅값으로 미국을 살 수 있던 시절",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "버블 서사. 투자 권유 금지, 도쿄 땅값 장면 하나로 좁히기",
+  "conditionResolved": false,
+  "finding": "훅의 핵심인 '도쿄 땅을 팔면 미국 전체를 살 수 있다'는 비교는 정식 평가액이 아니라 당시 통용된 어림 추정이며, 출처들은 '황거 부지가 캘리포니아(또는 플로리다) 전체 부동산보다 비싸다'고 서로 다르게 적는다. 노스웨스턴대 블로그도 황거 평가액이 가정에 따라 8,525억 달러~5.1조 달러로 크게 갈린다고 밝힌다. 일본 전체 땅값 1,327조→2,452조 엔(RIETI)과 닛케이 38,915.87은 확인되나 모두 단일 출처이고, 거시 현상이라 주인공의 결정적 선택 장면도 없다. 따라서 핵심 훅을 2출처로 못 채워 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "일본 전체 땅값은 1986년 1,327조 엔에서 1990년 2,452조 엔으로 올랐다가 2003년 1,300조 엔으로 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(RIETI). 다른 자료는 약 2,000조 엔 등 다른 값을 적음.",
+      "sources": [
+        { "name": "RIETI (일본 경제산업연구소)", "url": "https://www.rieti.go.jp/en/publications/summary/21070015.html", "quote": "1,327 trillion yen (1986) to 2,452 trillion yen (1990)" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "닛케이225는 1989년 12월 29일 38,915.87로 마감하며 최고 수준에 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "장중 최고는 38,957.44. 마감 기준만 표기. 단일 출처 확인(위키백과), 두 번째 미확보.",
+      "sources": [
+        { "name": "Wikipedia: Japanese asset price bubble", "url": "https://en.wikipedia.org/wiki/Japanese_asset_price_bubble", "quote": "before closing at 38,915.87" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "버블 정점에 도쿄 황거 부지가 캘리포니아 전체 부동산보다 비싸다고 평가됐다(정식 평가가 아닌 추정).",
+      "numeric": false,
+      "economy": false,
+      "caution": "핵심 훅('미국 전체')과 다름. 출처는 캘리포니아 또는 플로리다로 갈림. 노스웨스턴 블로그는 평가액이 8,525억~5.1조 달러로 가정 의존적이라고 밝힘.",
+      "sources": [
+        { "name": "Wikipedia: Japanese asset price bubble", "url": "https://en.wikipedia.org/wiki/Japanese_asset_price_bubble", "quote": "entire real estate value of California" },
+        { "name": "Northwestern Amaral Lab 블로그", "url": "https://amaral.northwestern.edu/blog/how-much-was-japanese-imperial-palace-worth", "quote": "the combined real estate in California" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "미쓰비시지소는 1989년 록펠러센터를 14억 달러에 샀고, 록펠러 측은 6억 달러 손실이라고 주장했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(CS Monitor 1995). 손실액은 록펠러 측 주장. 소재 id와 다른 별도 장면.",
+      "sources": [
+        { "name": "Christian Science Monitor (1995)", "url": "https://www.csmonitor.com/1995/0515/15031.html", "quote": "paid $1.4 billion for the complex" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "일본 옛 사건. 다만 버블 서사는 '자산 투자 권유'로 읽히지 않게 주의 필요." },
+  "remaining": "'미국 전체' 비교의 출처 2곳 확인 불가. 거시 현상이라 한 인물의 결정적 선택 장면 없음. 록펠러센터 매입(미쓰비시지소)으로 좁히면 별도 소재로 재조사 필요.",
+  "toolCallsUsed": 9
+}

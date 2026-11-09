@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "money_shorts_selected_image_render_manifest_v1",
+  "status": "data_only_render_plan_visual_only",
+  "title": "Money Shorts OS — Selected Image Visual-Only Render Manifest (Caption v2)",
+  "purpose": "selected image set(v1)의 Scene 1~6 실제 이미지를 그대로 사용하되 caption 문구를 v2로 교체하고 captionFontSize를 84로 상향한 visual-only 렌더 계획. selected image 변경 없음, 렌더 실행 아님.",
+  "supersedes": {
+    "manifest": "scripts/fixtures/premium-editorial-selected-image-render-manifest.v1.json",
+    "reason": "caption v2: 문구를 짧고 임팩트 있는 한 줄로 교체 + captionFontSize 84 상향(쇼츠 가독성). selected image/assetPath는 동일 유지."
+  },
+  "sourceRefs": {
+    "selectedImageSet": {
+      "path": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+      "schemaVersion": "money_shorts_scene_selected_image_set_v1"
+    },
+    "ttsScriptV2": {
+      "path": "scripts/fixtures/provider-candidate-tts-script.yohan-koo.ecos-live-draft.voice-v2.json",
+      "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605-voice-v2"
+    }
+  },
+  "executionBoundaries": {
+    "imageGenerationExecuted": false,
+    "imageRegenerationExecuted": false,
+    "networkExecuted": false,
+    "renderExecuted": false,
+    "audioMuxExecuted": false,
+    "uploadExecuted": false,
+    "note": "이 manifest는 caption v2 visual-only silent mp4 렌더 계획을 data-only로 기록한다. selected image는 변경하지 않고 caption 문구/폰트만 v2로 갱신한다."
+  },
+  "outputSpec": {
+    "codec": "h264",
+    "container": "mp4",
+    "crf": 23,
+    "fps": 30,
+    "dimensions": {
+      "widthPx": 1080,
+      "heightPx": 1920
+    },
+    "audioMode": "silent_visual_only",
+    "captionFontSize": 84,
+    "plannedOutputPath": "premium-editorial-selected-image-visual-only-caption-v2.mp4"
+  },
+  "imageInputs": [
+    {
+      "sceneId": "scene_1",
+      "sceneIndex": 1,
+      "sceneRole": "scene_1_hook",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "first_run",
+      "durationSec": 4,
+      "motionType": "static_hold"
+    },
+    {
+      "sceneId": "scene_2",
+      "sceneIndex": 2,
+      "sceneRole": "scene_2_signal",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "retry_01",
+      "durationSec": 5,
+      "motionType": "static_hold"
+    },
+    {
+      "sceneId": "scene_3",
+      "sceneIndex": 3,
+      "sceneRole": "scene_3_context",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "first_run",
+      "durationSec": 6,
+      "motionType": "static_hold"
+    },
+    {
+      "sceneId": "scene_4",
+      "sceneIndex": 4,
+      "sceneRole": "scene_4_life_impact",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-04-scene_4_life_impact.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "first_run",
+      "durationSec": 6,
+      "motionType": "static_hold"
+    },
+    {
+      "sceneId": "scene_5",
+      "sceneIndex": 5,
+      "sceneRole": "scene_5_watch_point",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-05-scene_5_watch_point.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "first_run",
+      "durationSec": 4,
+      "motionType": "static_hold"
+    },
+    {
+      "sceneId": "scene_6",
+      "sceneIndex": 6,
+      "sceneRole": "scene_6_action_closing",
+      "assetPath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-06-scene_6_action_closing.png",
+      "assetSourceType": "selected_generated_image",
+      "sourceRun": "first_run",
+      "durationSec": 5,
+      "motionType": "static_hold"
+    }
+  ],
+  "captionOverlays": [
+    {
+      "sceneId": "scene_1",
+      "sceneIndex": 1,
+      "captionText": "경제 신호가 생활로 닿는 순간",
+      "captionCharCount": 16,
+      "showAtSec": 0,
+      "hideAtSec": 4,
+      "captionStyle": "bold_short_center_lower_v2"
+    },
+    {
+      "sceneId": "scene_2",
+      "sceneIndex": 2,
+      "captionText": "핵심 신호는 여기서 잡기",
+      "captionCharCount": 13,
+      "showAtSec": 4,
+      "hideAtSec": 9,
+      "captionStyle": "bold_short_center_lower_v2"
+    },
+    {
+      "sceneId": "scene_3",
+      "sceneIndex": 3,
+      "captionText": "물가와 가계를 함께 보기",
+      "captionCharCount": 13,
+      "showAtSec": 9,
+      "hideAtSec": 15,
+      "captionStyle": "bold_short_center_lower_v2"
+    },
+    {
+      "sceneId": "scene_4",
+      "sceneIndex": 4,
+      "captionText": "대출·예금 조건 점검",
+      "captionCharCount": 11,
+      "showAtSec": 15,
+      "hideAtSec": 21,
+      "captionStyle": "bold_short_center_lower_v2"
+    },
+    {
+      "sceneId": "scene_5",
+      "sceneIndex": 5,
+      "captionText": "지금 볼 체크포인트",
+      "captionCharCount": 10,
+      "showAtSec": 21,
+      "hideAtSec": 25,
+      "captionStyle": "bold_short_center_lower_v2"
+    },
+    {
+      "sceneId": "scene_6",
+      "sceneIndex": 6,
+      "captionText": "이번 달, 이것부터 정리",
+      "captionCharCount": 13,
+      "showAtSec": 25,
+      "hideAtSec": 30,
+      "captionStyle": "bold_short_center_lower_v2"
+    }
+  ],
+  "overlayPolicySummary": {
+    "exactValuesInImage": false,
+    "deterministicOverlayOwnsExactValues": true,
+    "captionsContainNoExactNumbersDatesSources": true,
+    "captionsAreSingleLine": true,
+    "note": "captionOverlays는 짧은 한 줄 v2 문구만 사용하며 정확 수치/날짜/출처 라벨을 포함하지 않는다."
+  },
+  "manifestAudit": {
+    "description": "Caption v2 render manifest가 selected image set(v1) + TTS v2 caption을 소비한 결과 요약.",
+    "sceneCount": 6,
+    "sceneOrders": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "totalDurationSec": 30,
+    "durationsSec": [
+      4,
+      5,
+      6,
+      6,
+      4,
+      5
+    ],
+    "captionFontSize": 84,
+    "scene2UsesRetry": true,
+    "allAssetPathsExistLocally": true,
+    "captionCount": 6,
+    "allCaptionsSingleLine": true,
+    "maxCaptionCharCount": 16,
+    "captionTimingContiguous": true
+  }
+}

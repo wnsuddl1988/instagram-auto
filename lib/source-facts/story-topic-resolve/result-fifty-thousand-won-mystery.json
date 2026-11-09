@@ -1,0 +1,19 @@
+{
+  "id": "fifty-thousand-won-mystery",
+  "title": "사라지는 5만 원권 — 찍은 만큼 돌아오지 않는 지폐",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "사건·장면 없음, 지하경제 추측",
+  "conditionResolved": false,
+  "finding": "다른 각도(2009년 발행 결단, 2014년 한은이 신권 배분 기준에 5만원권 환수 실적을 반영한 조치)를 찾아봤으나 모두 통계·제도 설명이고 당사자의 선택 한 순간이 없다. 환수율이 2009년 7.3%에서 2013년 48.6%, 2014년 25.8%, 2020년 24.2% 등으로 움직였다는 보도는 있지만 이번 조사에서 원문 페이지를 열어 인용을 확보하지 못했고(한경 페이지 403), 한은은 환수율 하락을 지하경제보다 예비용 수요 탓으로 설명해 '사라진 돈=지하경제'라는 핵심 가설은 입증되지 않는다. 장면이 없고 추측에 의존하므로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": true,
+    "note": "지하경제 양성화(박근혜 정부) 논란과 엮이면 정치 쟁점으로 읽힐 소지가 있음."
+  },
+  "remaining": "결정적 장면 없음(통계 현상). 환수율 연도별 수치는 한국은행 경제통계시스템 원문으로 2곳 확인이 필요하고, 출처마다 수치가 다름(2012년 61.7% vs 60.4%).",
+  "toolCallsUsed": 5
+}

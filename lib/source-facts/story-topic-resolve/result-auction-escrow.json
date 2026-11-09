@@ -1,0 +1,58 @@
+{
+  "id": "auction-escrow",
+  "title": "옥션 에스크로",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "옥션이 먼저라는 근거 없음, 제도는 2006 법 시행",
+  "conditionResolved": true,
+  "finding": "'옥션이 국내 최초로 에스크로를 도입했다'는 점은 경향신문 주간지(2003)와 디지털타임스(2007) 2곳에서 확인돼 근거 없음 조건은 해소됐고, 의무화는 2006년 4월 시행(매일신문 2006·디지털타임스)으로 확인됐다. 다만 도입 연도가 1998년 설(디지털타임스)과 2000년 설(경향)로 엇갈리고 풀의 2002는 근거가 없다. 또한 결과를 바꾼 '결정적 장면'(인물의 선택·사건)이 없는 서비스 제도 설명이고, 경제 숫자는 단일 출처뿐이라 장면형 쇼츠로 세우기엔 약하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "인터넷 경매 옥션이 국내에서 처음으로 에스크로(대금 예치 후 정산) 서비스를 도입했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "도입 연도가 출처마다 다름(경향 2003: 2000년, 디지털타임스: 1998년 서비스 시작과 함께 '국내 최초 도입'). 풀의 2002년은 근거 없음.",
+      "sources": [
+        { "name": "주간경향(2003.12)", "url": "https://weekly.khan.co.kr/article/6039", "quote": "인터넷 경매 전문인 옥션이 2000년에 도입, 시행하고 있다" },
+        { "name": "디지털타임스(2007)", "url": "https://www.dt.co.kr/article/10372364", "quote": "옥션은 후불제 시스템인 에스크로를 국내에서 처음으로 도입했습니다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "정부는 2006년 4월부터 소비자 피해 급증에 대응해 전자상거래 에스크로(결제대금예치)를 의무 도입했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "매일신문 기사 문구는 '도입하기로 했다'(예고)이며, 의무화 표현은 사용하지 않음",
+      "sources": [
+        { "name": "매일신문(2006.03.30)", "url": "https://www.imaeil.com/page/view/2006033009263315171", "quote": "정부는 오는 4월부터 전자상거래의 안전성을 확보하기 위해" },
+        { "name": "디지털타임스(2007)", "url": "https://www.dt.co.kr/article/10372364", "quote": "2006년부터는 '전자상거래 등에서의 소비자보호에 관한 법률'" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "옥션은 2002년 매출 366억 원, 총거래금액 4,429억 원으로 2년 만에 흑자 전환했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한국일보 단일 출처 — 2곳 확인 실패",
+      "sources": [
+        { "name": "한국일보(2003.01.22)", "url": "https://www.hankookilbo.com/news/article/200301220045851415", "quote": "총거래금액(GMS)도 4,429억원에 달해" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2009년 오픈마켓 에스크로 계좌를 악용한 사기로 확인된 피해 금액이 20억 원에 달했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시사저널 단일 출처",
+      "sources": [
+        { "name": "시사저널(2009.08.10)", "url": "https://www.sisajournal.com/news/articleView.html?idxno=126787", "quote": "확인된 피해 금액만 20억원이다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "옥션(이베이코리아)은 현 영업 중이나 제도 도입 일화이고 소송·제재 소지 없음" },
+  "remaining": "도입 연도 1998/2000 불일치, 결정적 장면(인물·사건) 없음, 경제 숫자는 단일 출처. 옥션 사기 피해 규모 등 도입 계기의 숫자를 2곳으로 확인하지 못함.",
+  "toolCallsUsed": 9
+}

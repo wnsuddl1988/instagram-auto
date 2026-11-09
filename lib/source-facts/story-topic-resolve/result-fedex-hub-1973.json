@@ -1,0 +1,55 @@
+{
+  "id": "fedex-hub-1973",
+  "title": "페덱스 허브 첫날",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "반전·결과 숫자 약함, 본문 확인 못 함",
+  "conditionResolved": true,
+  "finding": "'허브 첫날'이 아니라 같은 소재의 더 강한 장면인 1973~74년 자금 위기의 결정 순간(투자 거절 직후 남은 현금 5,000달러, 라스베이거스 블랙잭 27,000달러)을 찾았다. Fox Business와 airlinegeeks가 각각 같은 숫자(5,000/27,000/1,100만 달러)를 적어 서로 다른 사이트 2곳으로 확인된다. 첫 영업일 186개 소포도 Memphis 잡지와 Wikipedia에서 확인된다. 일화에 극적 각색이 섞여 있어 대본은 '회사 최후의 현금 5,000달러'와 '이후 1,100만 달러 추가 투자 유치'만 확정 사실로 쓰는 것이 안전하다.",
+  "coreMessage": "자금이 바닥났을 때 필요한 것은 해법이 아니라 다음 투자자를 만날 때까지 버틸 시간이다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "투자 거절 직후 프레드 스미스는 라스베이거스에서 블랙잭으로 27,000달러를 따 회사에 송금했다.", "numeric": true, "economy": true,
+      "caution": "Wikipedia는 '회사 마지막 5,000달러를 들고 갔다'고 쓰고(출처 보강 필요 태그), Fox는 '귀가길 우회'로 적는다. 연료비 24,000달러·'일주일 연명'은 Wikipedia 한 곳뿐이라 쓰지 말 것. 도박 미화로 읽히지 않도록 주의.",
+      "sources": [
+        { "name": "Fox Business (2023)", "url": "https://www.foxbusiness.com/money/fred-smith-fedex-blackjack-winning-formula", "quote": "won $27,000 playing blackjack" },
+        { "name": "Airline Geeks", "url": "https://airlinegeeks.com/?p=68630", "quote": "to win $27,000 at the blackjack tables" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "그 무렵 회사에 남은 현금은 5,000달러뿐이었다.", "numeric": true, "economy": true,
+      "caution": "Airline Geeks는 약 3,000만 달러 빚도 함께 적지만 한 곳뿐이라 쓰지 말 것.",
+      "sources": [
+        { "name": "Fox Business (2023)", "url": "https://www.foxbusiness.com/money/fred-smith-fedex-blackjack-winning-formula", "quote": "When the company had only $5,000 left" },
+        { "name": "Airline Geeks", "url": "https://airlinegeeks.com/?p=68630", "quote": "had $5,000 in cash" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "블랙잭 이후 스미스는 1,100만 달러가 넘는 추가 자금을 유치했다.", "numeric": true, "economy": true,
+      "caution": "Wikipedia는 전체 벤처자본을 9,100만 달러로 적어 합계가 다르다. '추가로 1,100만 달러'로 한정해 쓸 것.",
+      "sources": [
+        { "name": "Fox Business (2023)", "url": "https://www.foxbusiness.com/money/fred-smith-fedex-blackjack-winning-formula", "quote": "raise another $11 million" },
+        { "name": "Airline Geeks", "url": "https://airlinegeeks.com/?p=68630", "quote": "over $11 million in new funding" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "페덱스는 1973년 4월 17일 첫 야간 영업에서 소포 186개를 날랐다.", "numeric": true, "economy": false,
+      "caution": "항공기 14대·25개 도시는 Wikipedia 쪽 표기. 389는 도시가 아니라 직원 수.",
+      "sources": [
+        { "name": "Memphis Magazine (FedEx at Forty)", "url": "https://memphismagazine.com/features/fedex-at-forty-fred-smiths-million-dollar-dream-machine", "quote": "carrying a grand total of 186 packages" },
+        { "name": "Wikipedia FedEx Express", "url": "https://en.wikipedia.org/wiki/FedEx_Express", "quote": "overnight operations on April 17, 1973" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "General Dynamics 이사회는 마지막 추가 투자 요청을 거절했다(현금 5,000달러 시점).", "numeric": true, "economy": false,
+      "caution": "Fox 한 곳 확인. 보조 사실로만 사용.",
+      "sources": [
+        { "name": "Fox Business (2023)", "url": "https://www.foxbusiness.com/money/fred-smith-fedex-blackjack-winning-formula", "quote": "Smith pitched General Dynamics for more funding" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 50년 전 일화. 도박 일화라 '도박을 권한다'로 읽히지 않게 교훈을 '버틴 시간'에 두어야 함." },
+  "remaining": "연료비 24,000달러·'일주일 연명' 디테일은 단일 출처(Wikipedia, 출처 보강 필요 태그)라 대본에서 제외. 허브(멤피스) 장면은 보강 못 함 - 자금 위기 장면으로 각도를 바꿔야 함.",
+  "toolCallsUsed": 12
+}

@@ -1,0 +1,82 @@
+{
+  "id": "nokia-fall",
+  "title": "노키아 — 휴대폰 1등이 몇 년 만에 사라진 이유",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "구조가 복잡, 한 장면으로 모으기 어려움",
+  "conditionResolved": true,
+  "finding": "한 장면을 2011년 2월 8일 엘롭 CEO의 '불타는 플랫폼' 메모로 좁히면 복잡도가 해소된다. 2007년 4분기 점유율 40%, 2000년 시총 정점, 2013년 마이크로소프트 매각가 54억 4천만 유로, 이전 직원 3만 2천 명, 2013년 2분기 판매 740만 대까지 서로 다른 사이트 2곳 이상에서 원문 인용을 확보했다. 해외 기업이고 국내 민감성이 없다. 다만 점유율·시총은 출처마다 수치가 달라 범위 표기가 필요하다.",
+  "coreMessage": "잘 팔릴 때 바꾸지 못한 1등은, 바꿔야 한다고 말할 수 있게 됐을 때 이미 늦다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "노키아의 세계 휴대폰 점유율은 2007년 4분기에 사상 최고인 40%대(40.4%)에 이르렀다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연간 점유율은 37.8%(Gartner, TechCrunch) 또는 38.9%(전자신문)로 출처마다 다르고, 40%는 분기 수치다. 대본에는 '4분기 한때 40%'로 쓸 것. 영상 훅의 '절반'은 과장이다.",
+      "sources": [
+        { "name": "TechCrunch, Over a Billion Mobile Phones Sold in 2007 (2008)", "url": "https://techcrunch.com/2008/02/27/over-a-billion-mobile-phones-sold-in-2007/", "quote": "accounted for 40% of all sales" },
+        { "name": "Wikipedia, Nokia", "url": "https://en.wikipedia.org/wiki/Nokia", "quote": "all-time high figure of 40.4%" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "닷컴 거품기였던 2000년 노키아 시가총액은 한때 약 3천억 달러(유로) 안팎까지 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "출처마다 단위와 수치가 다르다(City A.M. 2,850억 달러, Silicon Canals 3,030억 유로). 대본에는 '3천억 안팎'처럼 근사치로 쓸 것.",
+      "sources": [
+        { "name": "City A.M., Samsung poised to seize Nokia crown", "url": "https://www.cityam.com/samsung-poised-seize-nokia-crown/", "quote": "from a high of $285bn (£174bn) in 2000" },
+        { "name": "Silicon Canals, Nokia rise and fall", "url": "https://siliconcanals.com/sc-q-how-did-a-nordic-company-that-started-by-making-rubber-boots-and-paper-pulp-become-the-worlds-biggest-mobile-phone-maker-by-2000-then-lose-almost-all-of-it-inside-seven-years/", "quote": "briefly touched €303 billion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2011년 2월 8일 스티븐 엘롭 CEO가 직원들에게 이른바 '불타는 플랫폼(burning platform)' 메모를 보냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "메모 날짜를 2월 11일로 적은 자료도 있다. 8일은 두 출처가 일치한다. 메모 이후 윈도폰 노선 전환은 Yle 등에서 확인되나 이 사실의 인용은 날짜까지만 뒷받침한다.",
+      "sources": [
+        { "name": "MediaNama, Key Events At Nokia Under Stephen Elop's Leadership (2013)", "url": "https://www.medianama.com/2013/09/223-key-events-at-nokia-under-stephen-elops-leadership-a-timeline/", "quote": "February 8, 2011" },
+        { "name": "roopc.net, Looking back at the burning-platform memo (2013)", "url": "https://roopc.net/posts/2013/looking-back-burning-platform-memo/", "quote": "burning-platform memo of Feb 08, 2011" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2013년 마이크로소프트는 노키아 단말기 사업과 특허 사용권을 합쳐 현금 54억 4천만 유로(약 72억 달러)에 인수했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "달러 환산액은 72억 달러 안팎으로 보도마다 조금 다르다. 단말기 37.9억 유로 + 특허 16.5억 유로.",
+      "sources": [
+        { "name": "Silicon Republic, Microsoft to acquire Nokia's devices business (2013)", "url": "https://siliconrepublic.com/?p=341726", "quote": "works out at €5.44bn in cash" },
+        { "name": "Yle, Nokia sells devices to Microsoft (2013)", "url": "https://yle.fi/a/3-6811414", "quote": "a deal worth 5.44 billion euros" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "매각과 함께 노키아 휴대폰 사업부 직원 약 3만 2천 명이 마이크로소프트로 옮겨 갔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "한국경제, 핀란드 간판 노키아 결국 美 MS에 팔리다 (2013)", "url": "https://sgsg.hankyung.com/article/2013090635531", "quote": "직원 3만2000여명도 MS로 옮긴다" },
+        { "name": "Yle, Nokia sells devices to Microsoft (2013)", "url": "https://yle.fi/a/3-6811414", "quote": "32,000 workers will transfer" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "매각 직전인 2013년 2분기 노키아의 스마트폰(루미아) 판매는 약 740만 대에 그쳤다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "전자신문은 같은 기사에서 삼성전자 7,240만 대와 비교해 10분의 1 수준이라고 적었다. 740만 대가 루미아 한정(MediaNama)인지 스마트폰 전체(전자신문)인지 표현 차이는 있으나 수치는 일치한다.",
+      "sources": [
+        { "name": "전자신문, 지금 우리는 불타는 플랫폼 위에 서있다 (2013)", "url": "https://www.etnews.com/201309050197", "quote": "올 2분기 노키아 스마트폰 판매는 740만대" },
+        { "name": "MediaNama, Key Events At Nokia Under Stephen Elop's Leadership (2013)", "url": "https://www.medianama.com/2013/09/223-key-events-at-nokia-under-stephen-elops-leadership-a-timeline/", "quote": "sell only 7.4 million Lumia handsets" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업 사례. 삼성·애플에 밀린 대목은 사실 서술만 하면 되고 국내 기업 저격 소지는 낮음." },
+  "remaining": "한 장면(엘롭 메모)으로 좁히지 않으면 시장 구조(심비안·앱 생태계) 설명이 길어진다. 엘롭 책임론(윈도폰 선택이 옳았는가)은 평가가 갈리므로 판단을 단정하지 말 것. 점유율·시총 수치는 범위 표기 필요.",
+  "toolCallsUsed": 17
+}

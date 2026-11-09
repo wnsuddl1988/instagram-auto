@@ -1,0 +1,80 @@
+{
+  "id": "yonsei-cream-bread-2022",
+  "title": "연세우유 생크림빵",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "협업 경위 없음, 장애물·반전 없음 (weak-scene)",
+  "conditionResolved": true,
+  "finding": "협업 경위(CU 신입 MD가 직접 연세우유 MD에게 연락)와 장애물(크림을 많이 넣으면 빵이 터지고 빵을 부드럽게 하면 크림이 터지는 딜레마, 수십 번 실패)이 인터뷰 기사 2곳에서 확인됐다. 반전은 상품기획 업무 두 달 차 신입 MD가 만든 빵이 첫 달 50만개, 출시 4년 3개월 만에 1억개가 된 점이다. 숫자 사실 4개 이상이 서로 다른 매체 2곳씩 확인되어 usable로 제안한다. 다만 보도자료성 기사가 많고 크림 함량·6개월 판매량 숫자가 매체마다 달라 대본에는 caution 항목을 피해 쓴다.",
+  "coreMessage": "경력 두 달 차 신입이 '크림이 눈에 보이게 많아야 한다'는 기준 하나를 끝까지 밀어붙이니, 빵 하나가 4년 만에 1억 개가 됐다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1", "claim": "CU 연세우유 크림빵은 2022년 1월 출시 약 4년 3개월 만에 누적 판매량 1억개를 돌파했다(2026년 4월 CU 발표).", "numeric": true, "economy": true,
+      "caution": "두 기사 모두 BGF리테일 보도자료 기반",
+      "sources": [
+        { "name": "헤럴드경제(2026)", "url": "https://biz.heraldcorp.com/article/10728946", "quote": "출시 4년 3개월 만에 누적 판매량 1억개를 돌파했다고" },
+        { "name": "한국경제(2026)", "url": "https://www.hankyung.com/article/202604307110g", "quote": "출시 약 4년 3개월 만에 누적 판매량 1억개를 돌파했다고" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "출시 첫 달(2022년 1~2월)에 50만개 이상이 팔렸다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "헤럴드경제(2026)", "url": "https://biz.heraldcorp.com/article/10728946", "quote": "첫 달 50만개가 팔렸다." },
+        { "name": "이코노미스트(2024)", "url": "https://economist.co.kr/article/view/ecn202406120030", "quote": "출시 한 달여 만에 50만개 이상 팔렸다." }
+      ]
+    },
+    {
+      "id": "f3", "claim": "기획자 김소연 MD(1996년생, 27세)는 디저트 상품기획 업무를 시작한 지 두 달밖에 안 된 신입이었다(2021년 12월 MD 시작, 2022년 7월 기준 8개월 차).", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "이투데이(2023)", "url": "https://www.etoday.co.kr/news/view/2282663", "quote": "상품기획 업무를 시작한 지 두 달밖에 안 됐던 김소연 MD" },
+        { "name": "이코노미조선(2022)", "url": "https://economychosun.com/site/data/html_dir/2022/07/18/2022071800016.html", "quote": "MD로서의 경력은 8개월 차인" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "개발 중 최대 장애물은 크림을 많이 넣으면 빵이 터지고 빵을 부드럽게 하면 크림이 터지는 딜레마였고, 수십 번의 실패와 크림 주입 테스트로 풀었다.", "numeric": false, "economy": false,
+      "caution": "수십 번 실패 표현은 매일일보(m-i) 인터뷰 기사만 명시",
+      "sources": [
+        { "name": "이코노미조선(2022)", "url": "https://economychosun.com/site/data/html_dir/2022/07/18/2022071800016.html", "quote": "크림을 많이 넣으면 빵이 터져서 모양 유지가 어렵고" },
+        { "name": "매일일보(2022)", "url": "https://www.m-i.kr/news/articleView.html?idxno=945724", "quote": "빵이 부드러우면 크림이 터지고, 크림을 많이 넣으면" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "CU는 연세크림빵이 전체 중량의 약 80%를 크림으로 채워 기존 상품과 차별점을 뒀다고 밝혔다.", "numeric": true, "economy": false,
+      "caution": "성분표 기준은 식물성크림 26.46%+가공유크림 16.54%+연세우유 3.31%(이코노미스트 2024), 이코노미조선은 130~150g 중 크림 75~80g이라 80% 수치는 회사 주장으로만 쓸 것",
+      "sources": [
+        { "name": "한국경제(2026)", "url": "https://www.hankyung.com/article/202604307110g", "quote": "전체 중량의 약 80%를 크림으로 채워" },
+        { "name": "뉴시스(2022)", "url": "https://www.newsis.com/view/NISX20220727_0001957928", "quote": "생크림이 전체 중량의 80%를 차지할 정도로" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "출시 후 하루 평균 약 6만개 넘게(2년차 6만8000개, 4년 평균 6만4500개), 분당 45개 안팎으로 팔렸다.", "numeric": true, "economy": true,
+      "caution": "기간이 달라 숫자가 다름(2년 기준 6만8000개/4년 기준 6만4500개)",
+      "sources": [
+        { "name": "이코노미스트(2024)", "url": "https://economist.co.kr/article/view/ecn202406120030", "quote": "하루 6만8000개, 1분에 47개씩 팔린 셈이다." },
+        { "name": "헤럴드경제(2026)", "url": "https://biz.heraldcorp.com/article/10728946", "quote": "하루 평균 약 6만4500개, 분당 약 45개꼴로 팔렸다" }
+      ]
+    },
+    {
+      "id": "f7", "claim": "신입 MD는 연세우유 전용목장과 깨끗한 이미지에 끌려 직접 연세우유 MD에게 연락해 협업을 성사시켰다.", "numeric": false, "economy": false,
+      "caution": "누가 먼저 제안했는지는 기사마다 표현 차이, 이코노미조선(MD 본인 발언) 기준으로 쓸 것",
+      "sources": [
+        { "name": "이코노미조선(2022)", "url": "https://economychosun.com/site/data/html_dir/2022/07/18/2022071800016.html", "quote": "무작정 연세우유 MD를 찾아 연락처를 받았다" },
+        { "name": "매일일보(2022)", "url": "https://www.m-i.kr/news/articleView.html?idxno=945724", "quote": "전용목장에서 생산해 믿을 수 있고 깨끗한 이미지" }
+      ]
+    },
+    {
+      "id": "f8", "claim": "출시 5개월 시점(2022년 7월) CU 디저트 카테고리 매출 중 연세크림빵 시리즈 비중이 62.5%에 달했다.", "numeric": true, "economy": true,
+      "caution": "두 기사는 같은 통신 기사 배포본, 2023년 이투데이는 비중 50.8%로 시점별 차이 있음",
+      "sources": [
+        { "name": "뉴시스(2022)", "url": "https://www.newsis.com/view/NISX20220727_0001957928", "quote": "연세크림빵 시리즈가 차지한 비중은 62.5%에 달한다" },
+        { "name": "파이낸셜뉴스(2022)", "url": "https://www.fnnews.com/news/202207271558373751", "quote": "연세크림빵 시리즈가 차지한 비중은 62.5%에 달한다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "연세유업·CU 모두 영업 중인 국내 기업이나 소송·제재 없음, 미담·성과 중심. 보도자료성 홍보 기사가 많아 광고처럼 읽히지 않게 주의." },
+  "remaining": "출시 6개월 판매량이 매체마다 400만(이코노미조선)/600만(뉴시스, 7월)/800만(매일일보, 8월)/2000만(비즈워치, 반년)으로 달라 대본에서는 쓰지 않는다. 연세유업 연매출 증가(3000억대) 수치는 신뢰 출처로 확인하지 못함. 인용문은 WebFetch 추출본이므로 자동 대조 필요.",
+  "toolCallsUsed": 12
+}

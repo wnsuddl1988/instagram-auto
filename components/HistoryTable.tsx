@@ -45,13 +45,6 @@ export default function HistoryTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-2xl font-bold text-white">📋 생성 이력</h2>
-        <span className="px-3 py-1 rounded-full bg-indigo-600/30 text-indigo-300 text-sm font-medium">
-          {generations.length}건
-        </span>
-      </div>
-
       <div className="overflow-x-auto glass-card rounded-3xl border border-slate-700/50">
         <table className="w-full">
           <thead>
@@ -94,8 +87,28 @@ export default function HistoryTable({
                     <span className="text-xl mr-2">{gen.category_emoji}</span>
                     <span className="text-slate-300">{gen.category_name}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-300 max-w-xs truncate">
-                    {gen.title}
+                  <td className="px-6 py-4 text-sm max-w-xs">
+                    <p className="text-slate-300 truncate">{gen.title}</p>
+                    {/* meta_snapshot 배지 — DB 컬럼 추가 후 자동 활성화, null-safe */}
+                    {gen.meta_snapshot && (gen.meta_snapshot.accountPresetName || gen.meta_snapshot.subTopicName) && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {gen.meta_snapshot.accountPresetName && (
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 leading-none whitespace-nowrap">
+                            {gen.meta_snapshot.accountPresetName}
+                          </span>
+                        )}
+                        {gen.meta_snapshot.subTopicName && (
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-slate-700/50 text-slate-400 border border-slate-600/30 leading-none whitespace-nowrap">
+                            {gen.meta_snapshot.subTopicName}
+                          </span>
+                        )}
+                        {gen.meta_snapshot.topicMode && (
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 leading-none whitespace-nowrap">
+                            {gen.meta_snapshot.topicMode}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color}`}>

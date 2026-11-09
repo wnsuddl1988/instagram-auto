@@ -1,0 +1,71 @@
+{
+  "id": "kleenex-1930",
+  "title": "크리넥스",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "판매 2배는 자사 소개 1곳, 연도 1929/1930",
+  "conditionResolved": true,
+  "finding": "'판매 2배'는 자사 소개 외에 백과사전(encyclopedia.com, 'sales doubled within a year'), 기업사 블로그(backthenhistory), 신문 칼럼(Dickinson Press) 3곳에서 확인돼 단일 자사 출처 문제는 해소됐다. 연도는 키네넥스 영국 자사 페이지만 1929이고(열람 불가로 원문 대조 못 함), 나머지는 1930년 전국 광고 개시/1930년 재포지셔닝으로 일치해 1930년으로 쓰면 된다. 결정 장면은 '얼굴 크림 제거용'(1924)으로 팔던 제품을 고객 편지·소비자 조사로 알게 된 '코 푸는 용도'로 1930년에 재포지셔닝한 선택이고, 피오리아 신문 조사 60%도 2곳에서 확인됐다. 다만 한 사람의 결단이 아니라 회사의 마케팅 전환이고, 조사 방식(독자 투표 vs 광고 테스트)이 출처마다 다르다.",
+  "coreMessage": "고객이 이미 쓰는 방식을 알아채고 제품의 정체를 바꾸면 같은 물건이 두 배로 팔린다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "크리넥스는 1924년 얼굴 크림(콜드크림) 제거용 제품으로 처음 팔렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Back Then History, The History of Kleenex", "url": "https://www.backthenhistory.com/articles/the-history-of-kleenex", "quote": "Kleenex tissues debuted in 1924" },
+        { "name": "The Origin Zone, Origin of Kleenex (2025)", "url": "https://theoriginzone.com/2025/01/17/origin-of-kleenex/", "quote": "In 1924, Kimberly-Clark introduced Kleenex" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "소비자들이 크리넥스를 일회용 손수건으로 쓰는 걸 안 킴벌리클라크는 1930년 '버리는 손수건'으로 광고를 바꿨다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연도는 출처에 따라 1929(영국 자사 페이지, 미열람)/1930. 1930 기준 2곳 일치. 슬로건 표기도 'The handkerchief you can throw away'/'disposable handkerchief' 등 다양.",
+      "sources": [
+        { "name": "The Origin Zone, Origin of Kleenex (2025)", "url": "https://theoriginzone.com/2025/01/17/origin-of-kleenex/", "quote": "Kimberly-Clark repositioned Kleenex as" },
+        { "name": "Encyclopedia.com, Kimberly-Clark Corp", "url": "https://www.encyclopedia.com/social-sciences-and-law/economics-business-and-labor/businesses-and-occupations/kimberly-clark-corp", "quote": "Kleenex as a disposable handkerchief" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "손수건 용도로 광고를 바꾼 뒤 크리넥스 판매는 1년 안에 두 배가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Encyclopedia.com은 '1930년 광고 개시 후 1년 안에', backthenhistory는 'by 1930'으로 시점 표현이 다름. 대본에서는 '광고를 바꾼 뒤 1년 안에 두 배'로 표현.",
+      "sources": [
+        { "name": "Encyclopedia.com, Kimberly-Clark Corp", "url": "https://www.encyclopedia.com/social-sciences-and-law/economics-business-and-labor/businesses-and-occupations/kimberly-clark-corp", "quote": "began in 1930, and sales doubled within a year" },
+        { "name": "Back Then History, The History of Kleenex", "url": "https://www.backthenhistory.com/articles/the-history-of-kleenex", "quote": "by 1930, sales had doubled!" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1926년 피오리아(일리노이) 신문 조사에서 독자의 60퍼센트가 크리넥스를 코를 푸는 데 쓴다고 답했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "조사 방식이 출처마다 '독자 리뷰'(Wikipedia)/'독자 투표'(Dickinson Press)/'광고 테스트'(Vitality Medical)로 다름. 61%라는 수치는 없고 모두 60%. 킴벌리클라크 자사 설명에는 이 조사가 없어 보조 근거로만.",
+      "sources": [
+        { "name": "Wikipedia, Facial tissue", "url": "https://en.wikipedia.org/wiki/Facial_tissue", "quote": "found that 60% of the users used it for blowing their nose" },
+        { "name": "The Dickinson Press, Hope's Corner (칼럼)", "url": "https://www.thedickinsonpress.com/opinion/columns/hopes-corner-kleenex-is-not-an-invention-to-be-sneezed-at", "quote": "A whopping 60 percent of readers were on Team Sneeze." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "킴벌리클라크는 고객들이 크리넥스의 다른 쓰임새를 알려 오는 편지를 받기 시작했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "편지 시점이 1926년(Dickinson)/1930년(자사 소개)으로 다름. 시점 없이 '고객 편지'로만 쓸 것.",
+      "sources": [
+        { "name": "The Origin Zone, Origin of Kleenex (2025)", "url": "https://theoriginzone.com/2025/01/17/origin-of-kleenex/", "quote": "Kimberly-Clark began receiving letters from people who were using Kleenex" },
+        { "name": "The Dickinson Press, Hope's Corner (칼럼)", "url": "https://www.thedickinsonpress.com/opinion/columns/hopes-corner-kleenex-is-not-an-invention-to-be-sneezed-at", "quote": "were receiving letters outlining additional uses for their product" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 90여 년 전 마케팅 사례. 민감 소지 없음." },
+  "remaining": "한 사람의 결단이 아니라 회사 마케팅 전환이라 장면의 인물성이 약함. 판매 2배의 정확한 시점(1929/1930)과 조사 방식이 출처마다 다르므로 대본은 '고객 편지→광고 전환→1년 안에 판매 두 배' 순서만 쓰고 연도를 단정하지 말 것. Kleenex 자사 사이트(영국·미국)와 Kimberly-Clark PDF는 열람 불가.",
+  "toolCallsUsed": 12
+}

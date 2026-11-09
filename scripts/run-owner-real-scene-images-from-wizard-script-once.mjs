@@ -1,0 +1,3108 @@
+#!/usr/bin/env node
+/**
+ * run-owner-real-scene-images-from-wizard-script-once.mjs
+ * task: owner-web-real-script-voice-visual-generation-pipeline-v1
+ *
+ * 웹 위저드 확정 대본(script-final.json)의 흐름 기반 동적 장면(visualCue) 기준으로
+ * ChatGPT+Playwright(로그인된 CDP Chrome) 실제 장면 이미지를 생성한다.
+ * 감지/저장 로직은 fresh-image-set-v3에서 실증된 방식 그대로:
+ *   · 제출 후 25초 passive(중단 조건만 감시) → 1.8초 간격 active poll
+ *   · page-wide estuary/oaiusercontent/blob 수집 (user 첨부 제외, baseline cid 제외)
+ *   · 신규 후보 3회 연속 stable(같은 key+크기)이면 즉시 저장
+ *   · 150초 미감지: current-page intercept 회수 1회 → 180초 회수 불가: TIMEOUT_BLOCKED
+ *
+ * fail-closed 계약:
+ *   · ALLOW_CHATGPT_IMAGE=1 없으면 즉시 종료(exit 3, summary BLOCKED_GATE) — 어떤 브라우저도 열지 않음
+ *   · ChatGPT 미로그인/세션 불가 → exit 3, summary BLOCKED_SESSION
+ *   · 기본 장면당 제출 1회. 명시적인 신규/편집 라우팅 오인 응답에만 새 대화 1회 복구 허용
+ *   · 이미 저장된 장면 파일은 건너뜀(재실행 시 모자란 장면만 생성)
+ *
+ * 보안: OpenAI/FLUX2/Gemini/Midjourney/유료 API 금지. .env.local/.money-shorts-local/secret 접근 금지.
+ *       fetch는 CDP 확인/estuary 회수 용도만. 업로드/DB/OAuth 없음. out-dir은 repo 밖 필수.
+ *
+ * exit codes: 0 = 전체 장면 SAVED_OK · 1 = 일부 실패 · 2 = usage 오류 · 3 = gate/session 차단
+ */
+
+import path from "path";
+import fs from "fs";
+import { spawnSync } from "node:child_process";
+import { createHash } from "crypto";
+import { fileURLToPath } from "url";
+import {
+  buildPendingManualVisualReviewState,
+  moneyShortsImageSetSha256,
+} from "../lib/money-shorts-manual-visual-review.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "..");
+
+// ── CLI args ─────────────────────────────────────────────────────────────────
+const args = process.argv.slice(2);
+function getArg(name) {
+  const idx = args.indexOf(name);
+  return idx !== -1 && args[idx + 1] ? args[idx + 1] : null;
+}
+const scriptArg = getArg("--script");
+const outDirArg = getArg("--out-dir");
+const characterReferenceArg = getArg("--character-reference");
+const characterReferenceSha256Arg = getArg("--character-reference-sha256");
+const characterIdArg = getArg("--character-id");
+const characterNameArg = getArg("--character-name");
+const regenerateScenesArg = getArg("--regenerate-scenes");
+const ownerSelectedSceneBindingsArg = getArg("--owner-selected-scene-bindings");
+const expectedImageSetSha256Arg = getArg("--expected-image-set-sha256");
+const modeOverridePacketArg = getArg("--mode-override-packet");
+const sceneRepairPacketArg = getArg("--scene-repair-packet");
+const positiveCompositionCanaryPacketArg = getArg("--positive-composition-canary-packet");
+const existingAssetRebindPacketArg = getArg("--existing-asset-rebind-packet");
+const promptAuditOutArg = getArg("--prompt-audit-out");
+const ownerApprovalArg = getArg("--owner-approval");
+const promptAuditOnly = args.includes("--prompt-audit-only");
+const refreshSummaryFromExistingAssets = args.includes("--refresh-summary-from-existing-assets");
+const executeApprovedModeOverride = args.includes("--execute-approved-mode-override");
+const executeApprovedSceneRepairs = args.includes("--execute-approved-scene-repairs");
+const executeApprovedPositiveCompositionCanary = args.includes("--execute-approved-positive-composition-canary");
+const exactOwnerSelectedScenes = args.includes("--exact-owner-selected-scenes");
+const noRetry = args.includes("--no-retry");
+if (!scriptArg || !outDirArg || !characterReferenceArg || !characterReferenceSha256Arg || !characterIdArg || !characterNameArg) {
+  console.error("Usage: node run-owner-real-scene-images-from-wizard-script-once.mjs --script <script-final.json> --out-dir <abs> --character-reference <selected.png> --character-reference-sha256 <sha256> --character-id <id> --character-name <name> [--refresh-summary-from-existing-assets [--existing-asset-rebind-packet <packet.json>] | --regenerate-scenes 4,5] [--owner-selected-scene-bindings 4:<sha256>,5:<sha256> --expected-image-set-sha256 <sha256> --exact-owner-selected-scenes --no-retry] [--mode-override-packet <packet.json> (--prompt-audit-only | --execute-approved-mode-override --owner-approval <exact>)] [--scene-repair-packet <packet.json> (--prompt-audit-only | --execute-approved-scene-repairs --no-retry --owner-approval <exact>)] [--positive-composition-canary-packet <packet.json> (--prompt-audit-only | --execute-approved-positive-composition-canary --no-retry --owner-approval <exact>)]");
+  process.exit(2);
+}
+const scriptAbs = path.resolve(scriptArg);
+const OUT_DIR = path.resolve(outDirArg);
+const CHARACTER_REFERENCE_ABS = path.resolve(characterReferenceArg);
+const MODE_OVERRIDE_PACKET_ABS = modeOverridePacketArg ? path.resolve(modeOverridePacketArg) : null;
+const SCENE_REPAIR_PACKET_ABS = sceneRepairPacketArg ? path.resolve(sceneRepairPacketArg) : null;
+const POSITIVE_COMPOSITION_CANARY_PACKET_ABS = positiveCompositionCanaryPacketArg ? path.resolve(positiveCompositionCanaryPacketArg) : null;
+const EXISTING_ASSET_REBIND_PACKET_ABS = existingAssetRebindPacketArg ? path.resolve(existingAssetRebindPacketArg) : null;
+const PROMPT_AUDIT_OUT_ABS = promptAuditOutArg ? path.resolve(promptAuditOutArg) : null;
+const CHARACTER_REFERENCE_SHA256 = String(characterReferenceSha256Arg).toLowerCase();
+const EXPECTED_IMAGE_SET_SHA256 = expectedImageSetSha256Arg
+  ? String(expectedImageSetSha256Arg).toLowerCase()
+  : null;
+const CHARACTER_ID = String(characterIdArg);
+const CHARACTER_NAME = String(characterNameArg).trim();
+const CAST_DATA_PATH = path.join(REPO_ROOT, "lib", "finance-character-cast-data.json");
+const castData = JSON.parse(fs.readFileSync(CAST_DATA_PATH, "utf8"));
+const CHARACTER_PROFILE = castData.characters?.find((character) => character.id === CHARACTER_ID);
+if (!CHARACTER_PROFILE || CHARACTER_PROFILE.name !== CHARACTER_NAME || CHARACTER_PROFILE.selectedCandidateNumber !== 2) {
+  console.error("ABORT: Owner-approved fixed character profile does not match the requested character id/name.");
+  process.exit(2);
+}
+if (castData.selectionStatus !== "owner_approved_candidate_2_fixed_v1" || typeof CHARACTER_PROFILE.motionProfile !== "string") {
+  console.error("ABORT: Owner-approved candidate-2 selection or character motion profile is missing.");
+  process.exit(2);
+}
+const CHARACTER_MOTION_PROFILE = CHARACTER_PROFILE.motionProfile;
+const CAST_SCENE_INTEGRATION_CONTRACT = String(castData.sceneIntegrationContract ?? "");
+const CAST_MOTION_READY_CONTRACT = String(castData.motionReadyContract ?? "");
+const CAST_FORBIDDEN_VISUAL_CONTRACT = String(castData.forbiddenVisualContract ?? "");
+
+// 산출물 루트 강제 — repo 밖 아무 곳이 아니라 C:\tmp\money-shorts-os\ 하위만 허용(fail-closed).
+// 브라우저/Playwright import 이전에 검사하므로 경로가 어긋나면 어떤 외부 접근도 일어나지 않는다.
+const MEDIA_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+/i;
+if (!MEDIA_ROOT_RE.test(OUT_DIR + path.sep)) {
+  console.error(`ABORT: --out-dir must be under C:\\tmp\\money-shorts-os\\. out-dir: ${OUT_DIR}`);
+  process.exit(2);
+}
+if (!MEDIA_ROOT_RE.test(scriptAbs) || !scriptAbs.toLowerCase().endsWith(".json")) {
+  console.error(`ABORT: --script must be a .json under C:\\tmp\\money-shorts-os\\. script: ${scriptAbs}`);
+  process.exit(2);
+}
+if (OUT_DIR.startsWith(REPO_ROOT + "\\") || OUT_DIR.startsWith(REPO_ROOT + "/")) {
+  console.error(`ABORT: --out-dir must be outside repo root. out-dir: ${OUT_DIR}`);
+  process.exit(2);
+}
+if ([scriptAbs, OUT_DIR].some((p) => p.includes(".money-shorts-local"))) {
+  console.error("ABORT: .money-shorts-local access forbidden.");
+  process.exit(2);
+}
+if (MODE_OVERRIDE_PACKET_ABS && (!MEDIA_ROOT_RE.test(MODE_OVERRIDE_PACKET_ABS) || !MODE_OVERRIDE_PACKET_ABS.toLowerCase().endsWith(".json") || MODE_OVERRIDE_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --mode-override-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (SCENE_REPAIR_PACKET_ABS && (!MEDIA_ROOT_RE.test(SCENE_REPAIR_PACKET_ABS) || !SCENE_REPAIR_PACKET_ABS.toLowerCase().endsWith(".json") || SCENE_REPAIR_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --scene-repair-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (POSITIVE_COMPOSITION_CANARY_PACKET_ABS && (!MEDIA_ROOT_RE.test(POSITIVE_COMPOSITION_CANARY_PACKET_ABS) || !POSITIVE_COMPOSITION_CANARY_PACKET_ABS.toLowerCase().endsWith(".json") || POSITIVE_COMPOSITION_CANARY_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --positive-composition-canary-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (EXISTING_ASSET_REBIND_PACKET_ABS && (!MEDIA_ROOT_RE.test(EXISTING_ASSET_REBIND_PACKET_ABS) || !EXISTING_ASSET_REBIND_PACKET_ABS.toLowerCase().endsWith(".json") || EXISTING_ASSET_REBIND_PACKET_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --existing-asset-rebind-packet must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if (PROMPT_AUDIT_OUT_ABS && (!promptAuditOnly || !MEDIA_ROOT_RE.test(PROMPT_AUDIT_OUT_ABS) || !PROMPT_AUDIT_OUT_ABS.toLowerCase().endsWith(".json") || PROMPT_AUDIT_OUT_ABS.includes(".money-shorts-local"))) {
+  console.error("ABORT: --prompt-audit-out is allowed only with --prompt-audit-only and must be a JSON file under C:\\tmp\\money-shorts-os\\.");
+  process.exit(2);
+}
+if ([MODE_OVERRIDE_PACKET_ABS, SCENE_REPAIR_PACKET_ABS, POSITIVE_COMPOSITION_CANARY_PACKET_ABS, EXISTING_ASSET_REBIND_PACKET_ABS].filter(Boolean).length > 1) {
+  console.error("ABORT: only one packet type may be combined with an image runner invocation.");
+  process.exit(3);
+}
+if (EXISTING_ASSET_REBIND_PACKET_ABS && !refreshSummaryFromExistingAssets) {
+  console.error("ABORT: --existing-asset-rebind-packet is allowed only with --refresh-summary-from-existing-assets.");
+  process.exit(3);
+}
+if (MODE_OVERRIDE_PACKET_ABS && !promptAuditOnly && !executeApprovedModeOverride) {
+  console.error("ABORT: --mode-override-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedModeOverride && (!MODE_OVERRIDE_PACKET_ABS || promptAuditOnly)) {
+  console.error("ABORT: --execute-approved-mode-override requires one mode override packet and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if (SCENE_REPAIR_PACKET_ABS && !promptAuditOnly && !executeApprovedSceneRepairs) {
+  console.error("ABORT: --scene-repair-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedSceneRepairs && (!SCENE_REPAIR_PACKET_ABS || promptAuditOnly || !noRetry)) {
+  console.error("ABORT: --execute-approved-scene-repairs requires one repair packet, --no-retry and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if (POSITIVE_COMPOSITION_CANARY_PACKET_ABS && !promptAuditOnly && !executeApprovedPositiveCompositionCanary) {
+  console.error("ABORT: --positive-composition-canary-packet requires --prompt-audit-only or the separate Owner-approved execution path.");
+  process.exit(3);
+}
+if (executeApprovedPositiveCompositionCanary && (!POSITIVE_COMPOSITION_CANARY_PACKET_ABS || promptAuditOnly || !noRetry)) {
+  console.error("ABORT: --execute-approved-positive-composition-canary requires one canary packet, --no-retry and cannot be combined with --prompt-audit-only.");
+  process.exit(3);
+}
+if ([executeApprovedModeOverride, executeApprovedSceneRepairs, executeApprovedPositiveCompositionCanary].filter(Boolean).length > 1) {
+  console.error("ABORT: only one approved external image execution path may be active.");
+  process.exit(3);
+}
+if (
+  exactOwnerSelectedScenes &&
+  (
+    !regenerateScenesArg ||
+    !ownerSelectedSceneBindingsArg ||
+    !/^[a-f0-9]{64}$/i.test(expectedImageSetSha256Arg ?? "") ||
+    !noRetry ||
+    promptAuditOnly ||
+    refreshSummaryFromExistingAssets ||
+    MODE_OVERRIDE_PACKET_ABS ||
+    SCENE_REPAIR_PACKET_ABS ||
+    POSITIVE_COMPOSITION_CANARY_PACKET_ABS ||
+    executeApprovedModeOverride ||
+    executeApprovedSceneRepairs ||
+    executeApprovedPositiveCompositionCanary
+  )
+) {
+  console.error("ABORT: --exact-owner-selected-scenes requires exact bindings, --regenerate-scenes and --no-retry, with no other image mode.");
+  process.exit(3);
+}
+if ((ownerSelectedSceneBindingsArg || expectedImageSetSha256Arg || exactOwnerSelectedScenes) && !exactOwnerSelectedScenes) {
+  console.error("ABORT: Owner-selected scene bindings are valid only in exact Owner-selected mode.");
+  process.exit(3);
+}
+if (
+  refreshSummaryFromExistingAssets &&
+  (
+    promptAuditOnly ||
+    regenerateScenesArg ||
+    MODE_OVERRIDE_PACKET_ABS ||
+    SCENE_REPAIR_PACKET_ABS ||
+    POSITIVE_COMPOSITION_CANARY_PACKET_ABS ||
+    executeApprovedModeOverride ||
+    executeApprovedSceneRepairs ||
+    executeApprovedPositiveCompositionCanary ||
+    ownerApprovalArg ||
+    ownerSelectedSceneBindingsArg ||
+    expectedImageSetSha256Arg ||
+    exactOwnerSelectedScenes ||
+    noRetry
+  )
+) {
+  console.error("ABORT: --refresh-summary-from-existing-assets is an isolated no-external mode and cannot be combined with audit, regeneration, packet, approval or retry flags.");
+  process.exit(3);
+}
+if (refreshSummaryFromExistingAssets && process.env.ALLOW_CHATGPT_IMAGE === "1") {
+  console.error("ABORT: --refresh-summary-from-existing-assets requires ALLOW_CHATGPT_IMAGE to be absent so browser generation cannot be enabled accidentally.");
+  process.exit(3);
+}
+const CHARACTER_REFERENCE_ROOT_RE = /^C:[\\/]+tmp[\\/]+money-shorts-os[\\/]+web-wizard-create-v1[\\/]+character-cast-v1[\\/]+(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)[\\/]+candidate-2\.png$/i;
+if (!CHARACTER_REFERENCE_ROOT_RE.test(CHARACTER_REFERENCE_ABS)) {
+  console.error(`ABORT: selected character reference path is outside the approved cast root: ${CHARACTER_REFERENCE_ABS}`);
+  process.exit(2);
+}
+if (!/^(?:harin_daily|junho_cashflow|seoyun_safety|minjae_horizon)$/.test(CHARACTER_ID) || !CHARACTER_NAME) {
+  console.error("ABORT: approved character id/name required.");
+  process.exit(2);
+}
+if (!/^[a-f0-9]{64}$/.test(CHARACTER_REFERENCE_SHA256) || !fs.existsSync(CHARACTER_REFERENCE_ABS)) {
+  console.error("ABORT: selected character reference file/hash is missing.");
+  process.exit(2);
+}
+const actualCharacterReferenceSha256 = createHash("sha256").update(fs.readFileSync(CHARACTER_REFERENCE_ABS)).digest("hex");
+if (actualCharacterReferenceSha256 !== CHARACTER_REFERENCE_SHA256) {
+  console.error("ABORT: selected character reference SHA-256 mismatch.");
+  process.exit(3);
+}
+
+function ts() { return new Date().toISOString().slice(11, 19); }
+function log(m) { console.log(`[${ts()}][wizard-scene-img] ${m}`); }
+function warn(m) { console.warn(`[WARN][wizard-scene-img] ${m}`); }
+
+fs.mkdirSync(OUT_DIR, { recursive: true });
+const SUMMARY_PATH = path.join(OUT_DIR, "scene-images-summary.json");
+const EVIDENCE_ENGINE_VERSION = "money_shorts_finance_3d_editorial_sequence_v12";
+const VISUAL_STYLE_CONTRACT = "money_shorts_bright_integrated_motion_ready_family_3d_v3";
+const CHARACTER_CONTINUITY_VERSION = "money_shorts_selected_character_reference_v1";
+const outputVisualEngineVersion = EVIDENCE_ENGINE_VERSION;
+const IMAGE_CONTROLLER_VERSION = "chatgpt_picture_v2_character_reference_v9";
+const VISUAL_MODALITY_VERSION = "money_shorts_visual_modality_sequence_v1";
+const FINANCE_SCENE_DIVERSITY_VERSION = "money_shorts_finance_scene_diversity_v3";
+const COMPOSITION_BLUEPRINT_VERSION = "money_shorts_positive_composition_blueprint_v2";
+
+function writeSummary(partial) {
+  const summary = {
+    schemaVersion: "wizard_scene_images_summary_v1",
+    mode: "chatgpt_playwright",
+    generatedAt: new Date().toISOString(),
+    notUploaded: true,
+    visualEngineVersion: outputVisualEngineVersion,
+    imageControllerVersion: IMAGE_CONTROLLER_VERSION,
+    visualModalityVersion: VISUAL_MODALITY_VERSION,
+    visualModalityAudit: {
+      version: VISUAL_MODALITY_VERSION,
+      passed: false,
+    },
+    financeSceneDiversityVersion: FINANCE_SCENE_DIVERSITY_VERSION,
+    compositionBlueprintVersion: COMPOSITION_BLUEPRINT_VERSION,
+    financeSceneDiversityAudit: {
+      version: FINANCE_SCENE_DIVERSITY_VERSION,
+      passed: false,
+    },
+    characterContinuityAudit: {
+      version: CHARACTER_CONTINUITY_VERSION,
+      promptCoveragePassed: false,
+      targetedRegenerationScenes: [],
+      targetedRegenerationPassed: false,
+      manualVisualReviewRequired: true,
+    },
+    motionPlanAudit: {
+      version: "money_shorts_scene_motion_plan_v1",
+      promptCoveragePassed: false,
+      evidenceCoveragePassed: false,
+      manualVideoReviewRequired: true,
+      passed: false,
+    },
+    manualVisualReview: buildPendingManualVisualReviewState(),
+    characterReference: {
+      characterId: CHARACTER_ID,
+      characterName: CHARACTER_NAME,
+      referenceFileName: path.basename(CHARACTER_REFERENCE_ABS),
+      referenceImageSha256: CHARACTER_REFERENCE_SHA256,
+      hashVerified: true,
+    },
+    expectedCount: 0,
+    routingRecoveriesUsed: 0,
+    ...partial,
+  };
+  fs.writeFileSync(SUMMARY_PATH, JSON.stringify(summary, null, 2), "utf8");
+  return summary;
+}
+
+// ── gate 1: 명시 실행 마커 (없으면 브라우저/네트워크 어떤 것도 열지 않음) ──────
+if (!promptAuditOnly && !refreshSummaryFromExistingAssets && process.env.ALLOW_CHATGPT_IMAGE !== "1") {
+  writeSummary({ allReady: false, blockerCode: "BLOCKED_GATE", scenes: [], submissionsUsed: 0,
+    note: "ALLOW_CHATGPT_IMAGE=1 실행 마커 없음 — 브라우저를 열지 않고 종료(fail-closed)." });
+  console.error("ABORT: ALLOW_CHATGPT_IMAGE=1 이 설정되지 않음 (fail-closed).");
+  process.exit(3);
+}
+
+// ── 확정 대본 로드 ────────────────────────────────────────────────────────────
+let record;
+try {
+  record = JSON.parse(fs.readFileSync(scriptAbs, "utf8"));
+} catch (e) {
+  console.error(`ABORT: script-final.json 읽기 실패: ${e.message}`);
+  process.exit(2);
+}
+if (record.schemaVersion !== "wizard_script_final_v1" || !record.script || !Array.isArray(record.script.scenes)) {
+  console.error("ABORT: wizard_script_final_v1 스키마가 아님.");
+  process.exit(2);
+}
+const scenes = record.script.scenes;
+const MIN_SCENES = 4;
+const MAX_SCENES = 18;
+if (scenes.length < MIN_SCENES || scenes.length > MAX_SCENES) {
+  console.error(`ABORT: scenes ${MIN_SCENES}~${MAX_SCENES}개 기대 — 실제 ${scenes.length}개.`);
+  process.exit(2);
+}
+const sceneCount = scenes.length;
+const topicId = record.topicId ?? null;
+const rootTopicId = typeof record.production?.rootTopicId === "string" ? record.production.rootTopicId : topicId;
+const targetedRegenerationSceneIndexes = new Set();
+if (regenerateScenesArg) {
+  for (const token of String(regenerateScenesArg).split(",")) {
+    const sceneNumber = Number(token.trim());
+    if (!Number.isInteger(sceneNumber) || sceneNumber < 1 || sceneNumber > sceneCount) {
+      console.error(`ABORT: --regenerate-scenes must contain scene numbers between 1 and ${sceneCount}. received: ${regenerateScenesArg}`);
+      process.exit(2);
+    }
+    targetedRegenerationSceneIndexes.add(sceneNumber);
+  }
+}
+const targetedRegenerationScenes = [...targetedRegenerationSceneIndexes].sort((a, b) => a - b);
+const ownerSelectedSceneBindings = new Map();
+if (exactOwnerSelectedScenes) {
+  for (const token of String(ownerSelectedSceneBindingsArg).split(",")) {
+    const match = /^([1-9]\d*):([a-f0-9]{64})$/i.exec(token.trim());
+    const sceneNumber = match ? Number(match[1]) : null;
+    const imageSha256 = match?.[2]?.toLowerCase() ?? null;
+    if (
+      !Number.isInteger(sceneNumber) ||
+      sceneNumber < 1 ||
+      sceneNumber > sceneCount ||
+      !imageSha256 ||
+      ownerSelectedSceneBindings.has(sceneNumber)
+    ) {
+      console.error("ABORT: --owner-selected-scene-bindings must contain unique in-range scene:sha256 pairs.");
+      process.exit(2);
+    }
+    ownerSelectedSceneBindings.set(sceneNumber, imageSha256);
+  }
+  const bindingIndexes = [...ownerSelectedSceneBindings.keys()].sort((a, b) => a - b);
+  if (
+    bindingIndexes.length === 0 ||
+    bindingIndexes.length !== targetedRegenerationScenes.length ||
+    bindingIndexes.some((sceneNumber, index) => sceneNumber !== targetedRegenerationScenes[index])
+  ) {
+    console.error("ABORT: Owner-selected bindings must match every and only --regenerate-scenes target.");
+    process.exit(3);
+  }
+}
+const visualEvidenceReady = scenes.every((scene) =>
+  scene?.visualEvidence?.version === EVIDENCE_ENGINE_VERSION &&
+  scene.visualEvidence.visualStyle === VISUAL_STYLE_CONTRACT &&
+  typeof scene.visualEvidence.sceneIdentity === "string" &&
+  scene.visualEvidence.sceneIdentity.length === 12 &&
+  typeof scene.visualEvidence.mustShow === "string" &&
+  typeof scene.visualEvidence.visibleAction === "string" &&
+  typeof scene.visualEvidence.editorialProof === "string" &&
+  typeof scene.visualEvidence.sceneSpecificSignal === "string" &&
+  typeof scene.visualEvidence.sceneSetting === "string" &&
+  typeof scene.visualEvidence.visualForm === "string" &&
+  typeof scene.visualEvidence.cameraPlan === "string" &&
+  typeof scene.visualEvidence.lightingPlan === "string" &&
+  typeof scene.visualEvidence.sceneIntegrationPlan === "string" &&
+  typeof scene.visualEvidence.motionPlan === "string" &&
+  typeof scene.visualEvidence.differenceContract === "string" &&
+  typeof scene.visualEvidence.causalComposition === "string" &&
+  typeof scene.visualEvidence.continuityState === "string" &&
+  typeof scene.visualEvidence.mustNotShow === "string"
+);
+if (!visualEvidenceReady) {
+  writeSummary({
+    topicId,
+    expectedCount: sceneCount,
+    allReady: false,
+    blockerCode: "VISUAL_EVIDENCE_V11_REQUIRED",
+    scenes: [],
+    submissionsUsed: 0,
+    note: "장면별 bright integrated motion-ready family 3D sequence v11 계약이 없는 구버전 대본입니다. 대본을 다시 확정한 뒤 이미지를 생성해야 합니다.",
+  });
+  console.error("ABORT: bright integrated motion-ready family 3D sequence v11이 없는 구버전 대본 — 이미지 전송 없이 차단.");
+  process.exit(3);
+}
+
+const ADJACENT_CONTRACT_FIELDS = [
+  "sceneSetting",
+  "visualForm",
+  "cameraPlan",
+  "lightingPlan",
+  "motionPlan",
+  "heroSubject",
+  "visibleAction",
+  "causalComposition",
+];
+const adjacentContractFailures = scenes.flatMap((scene, index) => {
+  if (index === 0) return [];
+  const previous = scenes[index - 1].visualEvidence;
+  const current = scene.visualEvidence;
+  const differences = ADJACENT_CONTRACT_FIELDS.filter((field) => previous[field] !== current[field]);
+  return differences.length >= 4 ? [] : [{ previousScene: index, currentScene: index + 1, differences }];
+});
+if (adjacentContractFailures.length > 0) {
+  writeSummary({
+    topicId,
+    expectedCount: sceneCount,
+    allReady: false,
+    blockerCode: "VISUAL_SEQUENCE_CONTRACT_FAILED",
+    scenes: [],
+    submissionsUsed: 0,
+    adjacentContractFailures,
+    note: "인접 장면은 공간·시각 형식·카메라·조명·주인공·행동·인과 구도 중 최소 4개가 달라야 합니다.",
+  });
+  console.error("ABORT: 인접 장면 시각 차별화 계약 실패 — 이미지 전송 없이 차단.");
+  process.exit(3);
+}
+
+// ── 스타일/해상도 지시 — Owner 승인 방향: 밝고 자연스럽게 통합된 생활형 3D 장면 ──
+const STYLE_PREFIX =
+  "Money Shorts original bright family-feature-quality cinematic 3D animation without copying any studio, franchise, film or known character. " +
+  "Make it unmistakably stylized rather than live action, with believable Korean adult facial proportions, eyes only subtly larger than real life, restrained catchlights, defined eyelids, natural jaw structure and gentle facial asymmetry. " +
+  "Use shaped hair, tactile woven fabric, physically grounded hands, bright natural daylight, warm color bounce, open facial shadows and rich but controlled color. " +
+  "Generate the character, setting, props and lighting together as one authored shot in the narration-specific Korean location: home, transit, bank, market, shop, workplace, public service space or outdoor neighborhood. Keep every person, place and furnishing full-size and physically inhabitable. Do not default to a home, desk, dining table or kitchen when the story supports a more specific real-world location. ";
+const CHARACTER_CONTINUITY_INSTRUCTION =
+  `CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: use the attached ${CHARACTER_NAME} identity board only as a strict identity reference. ` +
+  "Whenever a full or upper body person is visible, show the exact same single character with matching face, age, hairstyle, hair color, body proportions and fixed wardrobe. " +
+  "Reduce glossy oversized eye geometry and beauty-filter perfection while preserving the recognizable adult identity. Render one natural story view only; never copy the reference board layout, duplicate the character or show multiple portrait views. " +
+  `CHARACTER MOTION PROFILE: ${CHARACTER_MOTION_PROFILE}. Hands-only scenes may omit the head. `;
+const STYLE_REJECTION =
+  "STRICT STYLE REJECTION: no photography, no live action, no documentary realism, no photorealistic room or person, " +
+  "no miniature, dollhouse, diorama, cutaway toy room, scale model, tiny house model, desktop house model, showroom-perfect advertising set or catalog portrait. " +
+  "No laboratory, vault, factory, machine room, industrial apparatus, black-metal architecture, fantasy battle, energy effect or gloomy finance world. " +
+  "No cutout character, pasted-on subject, green-screen edge, composited look, lunging, reaching toward the camera, superhero stance or exaggerated shock. " +
+  "Never change the selected character's face, age, hairstyle, hair color, body proportions or fixed wardrobe, and never recreate the multi-view identity-board composition. " +
+  `${CAST_SCENE_INTEGRATION_CONTRACT} ${CAST_MOTION_READY_CONTRACT} ${CAST_FORBIDDEN_VISUAL_CONTRACT} `;
+const NEW_IMAGE_INSTRUCTION =
+  "GENERATE ONE BRAND-NEW ORIGINAL TEXT-TO-IMAGE ASSET. Start from a blank canvas and create the scene described below.";
+const RESOLUTION_INSTRUCTION =
+  "Output one vertical 9:16 portrait image at the highest available resolution (target 1080x1920 or higher). " +
+  "No readable text, letters, numbers, UI, logo, brand or watermark. When a person is required, preserve the exact selected character identity and fixed wardrobe from the attached reference. " +
+  "Keep the lower caption area connected to the scene instead of leaving a blank black floor or void.";
+const PROMPT_MAX_CHARS = 4800;
+const PROMPT_HARD_MAX_CHARS = 6200;
+
+const STORYBOARD_ROLES = [
+  {
+    role: "HOOK",
+    event: "an immediate topic-defining event with one unmistakable hero subject and strong depth",
+    camera: "candid eye-level medium-wide or human-height medium view, not an overhead desk still life",
+    light: "bright natural or practical attention light with warm color bounce, clear facial exposure and open shadows",
+    avoid: "no pile of every finance symbol, no generic bank-plus-chain combination",
+  },
+  {
+    role: "HIDDEN PROBLEM",
+    event: "a cause-and-effect mechanism becoming visible through a different setting and different hero subject",
+    camera: "eye-level side or over-shoulder view in one continuous lived-in space, clearly different from scene 1",
+    light: "clear window or practical side light with open shadows and one restrained topic accent",
+    avoid: "do not repeat scene 1's hero object, camera or silhouette",
+  },
+  {
+    role: "EVERYDAY REALITY",
+    event: "a recognizable transit, bank, market, grocery, workplace, public-service, home or payment moment selected by the narration",
+    camera: "eye-level environmental scene with human-scale objects and lived-in depth",
+    light: "natural daylight or warm practical indoor light",
+    avoid: "no classical bank facade, chains, giant percent signs, giant arrows or abstract chart wall",
+  },
+  {
+    role: "ECONOMIC RESULT",
+    event: "visible personal evidence of the financial result, such as a changed bill, basket, repayment calendar, wallet or cash-flow comparison",
+    camera: "clean before-and-after, split-depth or close evidence shot",
+    light: "neutral paper-white analytical light with one meaningful accent",
+    avoid: "no decorative finance icon pile and no repeated psychological-pressure silhouette",
+  },
+  {
+    role: "PSYCHOLOGY",
+    event: "the recurring Korean adult making, avoiding or delaying one small decision in the narration's most specific real-world setting",
+    camera: "candid eye-level medium-wide or intimate over-shoulder view with a natural adult face and hands, not another object stack",
+    light: "soft reflective daylight with restrained contrast and clear facial exposure",
+    avoid: "no bank temple, no giant metal key, no receipt mountain and no literal text",
+  },
+  {
+    role: "TURNING POINT",
+    event: "the moment confusion becomes a clear standard through one visible reordering, comparison or completed choice in an everyday setting",
+    camera: "eye-level three-quarter view with more air and directional depth",
+    light: "brighter transitional light entering the frame; visibly clearer than the earlier warning scenes",
+    avoid: "no chains, crushing weights, falling arrows or hopeless black-on-black mood",
+  },
+  {
+    role: "PRACTICAL HABIT",
+    event: "grounded adult hands or the recurring Korean adult performing the narration's one concrete action in a practical setting",
+    camera: "close tactile action shot or calm eye-level three-quarter workspace view",
+    light: "clean daylight, warm neutral light or optimistic studio light",
+    avoid: "no oversized abstract symbol as the main subject and no disaster imagery",
+  },
+  {
+    role: "SAVE AND RECALL",
+    event: "a calm resolved final image with one memorable object or path that represents control and continuation",
+    camera: "open balanced composition with meaningful depth and a distinct silhouette from every earlier frame",
+    light: "clear hopeful daylight or soft golden light unless the narration explicitly ends in warning",
+    avoid: "no repeated opening frame, no heavy chain, no black void and no crowded collage",
+  },
+  {
+    role: "RECOMMENDATION",
+    event: "a concise success standard visualized as an organized choice or repeatable system",
+    camera: "calm eye-level narration-specific everyday composition with ample but textured caption space",
+    light: "bright natural daylight or warm practical light",
+    avoid: "no warning-symbol overload and no reuse of the previous scene's main object",
+  },
+  {
+    role: "CLOSING",
+    event: "a final forward-moving scene that leaves motivation rather than pressure",
+    camera: "wide open finish with a clear visual destination",
+    light: "uplifting natural or golden light",
+    avoid: "no dark object pile, no chain and no falling market imagery",
+  },
+];
+
+const STORYBOARD_ROLE_INDEX_BY_SCENE_ID = {
+  hook: 0,
+  problem: 1,
+  situation: 2,
+  consequence: 3,
+  psychology: 4,
+  mindset: 5,
+  habit: 6,
+  save: 7,
+  recommendation: 8,
+};
+
+const VISUAL_MODES = {
+  VEO_FULL_CHARACTER: {
+    presence: "character",
+    instruction: "VEO FULL-CHARACTER REFERENCE: show the one recurring character completely from head to both feet in one uncropped environmental wide shot. Keep the face, both hands, torso, legs and both feet clearly visible, with comfortable space above the head and below the shoes. Use one small whole-body action with grounded feet and a motion-safe background; no seated crop, close-up, upper-body crop, hands-only framing, foreground occlusion or background-only composition.",
+  },
+  CHARACTER_EVENT: {
+    presence: "character",
+    instruction: "Show the recurring character in the plausible middle of one small topic-defining action inside a bright full-scale everyday environment. Use restrained gaze, hands and weight shift with natural spatial depth; no presenter pose or frozen catalog portrait.",
+  },
+  ENVIRONMENTAL_CHARACTER: {
+    presence: "character",
+    instruction: "Show the recurring character naturally completing one small action in a recognizable full-scale everyday place. The room, hands, gaze and story prop must carry the meaning together; never reach toward the camera or force a standing action pose.",
+  },
+  OBJECT_MECHANISM: {
+    presence: "none",
+    instruction: "Build a life-size 3D causal chain from the topic-specific everyday objects inside a recognizable lived-in place. Show input, pressure and result through physical connection and depth, with no desk portrait, oversized machinery or generic icon pile.",
+  },
+  ARCHITECTURAL_CROSS_SECTION: {
+    presence: "none",
+    instruction: "Use a bright full-scale narration-specific place-to-place or near-to-far view to expose the hidden economic mechanism through ordinary objects and natural depth. It must read as warm human-scale space with natural materials, never a technical cutaway, industrial machine room, vault, miniature, dollhouse or tabletop model.",
+  },
+  SPLIT_EVIDENCE: {
+    presence: "none",
+    instruction: "Use a clean daylight vertical or depth-based before-versus-after evidence composition with two physically connected life-size everyday states. Make the changed condition obvious without a person, desk portrait, industrial machinery or floating finance icons.",
+  },
+  SYMBOLIC_CHARACTER: {
+    presence: "character",
+    instruction: "Place the recurring character in the narration's most specific bright everyday location where the tempting cue, ignored condition and consequence are all physically present. Use a restrained eye or head turn and relaxed posture, never an abstract corridor, threshold, chamber or theatrical stance.",
+  },
+  HANDS_ACTION: {
+    presence: "hands",
+    instruction: "Use a tight tactile action shot of hands completing one concrete step on real full-size objects. No visible head or upper-body portrait; the action and its completed result must fill the frame.",
+  },
+  OBJECT_CHECKLIST: {
+    presence: "none",
+    instruction: "Show one main full-size everyday decision object in a bright practical place, with at most two quiet contextual cues naturally separated in foreground, side depth and far room depth. It must read as a lived-in habit moment, not a three-way allocation display, checklist board or exhibit. No person, no screen UI, no readable text, no industrial machine bank and no generic traffic-light icon row.",
+  },
+  FUTURE_CHARACTER: {
+    presence: "character",
+    instruction: "Show the recurring character calmly carrying the changed rule into a clearly different bright everyday setting with directional depth. Use one measured head, eye or hand movement and do not reuse an earlier room silhouette.",
+  },
+  OBJECT_RESOLUTION: {
+    presence: "none",
+    instruction: "Resolve the story with a bright person-free full-scale everyday system: protected household cash, a bounded decision object and an open next step. Use natural daylight, warm materials and a new open silhouette, not another desk still life, vault or machine room.",
+  },
+};
+
+function sceneRoleBeat(scene, sceneIndex) {
+  return scenes.slice(0, sceneIndex + 1).filter((candidate) => candidate?.id === scene?.id).length;
+}
+
+function visualModeForScene(scene, sceneIndex, totalScenes) {
+  const beat = sceneRoleBeat(scene, sceneIndex);
+  const id = String(scene?.id ?? "");
+  if (id === "hook") {
+    const modeId = beat % 2 === 1 ? "CHARACTER_EVENT" : "OBJECT_MECHANISM";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
+  if (id === "problem") return { id: "OBJECT_MECHANISM", ...VISUAL_MODES.OBJECT_MECHANISM };
+  if (id === "situation") {
+    const modeId = beat % 2 === 1 ? "ENVIRONMENTAL_CHARACTER" : "OBJECT_MECHANISM";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
+  if (id === "consequence") {
+    const modeId = beat % 2 === 1 ? "SPLIT_EVIDENCE" : "OBJECT_MECHANISM";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
+  if (id === "psychology") return { id: "SYMBOLIC_CHARACTER", ...VISUAL_MODES.SYMBOLIC_CHARACTER };
+  if (id === "mindset") return { id: "ENVIRONMENTAL_CHARACTER", ...VISUAL_MODES.ENVIRONMENTAL_CHARACTER };
+  if (id === "habit") {
+    const modeId = beat % 2 === 1 ? "HANDS_ACTION" : "OBJECT_CHECKLIST";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
+  if (id === "save") {
+    const modeId = beat % 2 === 1 ? "FUTURE_CHARACTER" : "OBJECT_RESOLUTION";
+    return { id: modeId, ...VISUAL_MODES[modeId] };
+  }
+  if (id === "recommendation") return { id: "OBJECT_RESOLUTION", ...VISUAL_MODES.OBJECT_RESOLUTION };
+  const fallbackIds = [
+    "CHARACTER_EVENT",
+    "OBJECT_MECHANISM",
+    "ARCHITECTURAL_CROSS_SECTION",
+    "SPLIT_EVIDENCE",
+    "SYMBOLIC_CHARACTER",
+    "HANDS_ACTION",
+    "OBJECT_CHECKLIST",
+    "FUTURE_CHARACTER",
+    "OBJECT_RESOLUTION",
+  ];
+  const relative = totalScenes <= 1 ? 0 : sceneIndex / (totalScenes - 1);
+  const modeId = fallbackIds[Math.min(fallbackIds.length - 1, Math.round(relative * (fallbackIds.length - 1)))];
+  return { id: modeId, ...VISUAL_MODES[modeId] };
+}
+
+function resolveTopicScopedModeOverride() {
+  if (!MODE_OVERRIDE_PACKET_ABS) return null;
+  let packet;
+  try {
+    packet = JSON.parse(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS, "utf8"));
+  } catch (error) {
+    console.error(`ABORT: mode override packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const targetIndex = packet?.targetScene?.index;
+  const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
+  const proposedModeId = packet?.targetScene?.proposed?.visualModeId;
+  const proposedPresence = packet?.targetScene?.proposed?.presenceMode;
+  const scenePromptAppend = packet?.targetScene?.proposed?.scenePromptAppend;
+  const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
+  const actualScriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const packetSha256 = createHash("sha256").update(fs.readFileSync(MODE_OVERRIDE_PACKET_ABS)).digest("hex");
+  const packetPartSegment = typeof packet?.productionPartId === "string" ? `${path.sep}${packet.productionPartId}${path.sep}` : "";
+  const approvalPrefix = packet?.executionPolicy?.requiredOwnerApprovalPrefix;
+  const requiredOwnerApprovalWording = typeof approvalPrefix === "string" ? `${approvalPrefix}${packetSha256}` : null;
+  const valid =
+    packet?.schemaVersion === "money_shorts_scene_mode_correction_packet_v1" &&
+    packet?.status === "data_only_pending_owner_review" &&
+    packet?.topicId === rootTopicId &&
+    packetPartSegment !== "" && scriptAbs.includes(packetPartSegment) &&
+    packet?.sourceBinding?.scriptSha256 === actualScriptSha256 &&
+    packet?.sourceBinding?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    packet?.executionPolicy?.imageGenerationExecuted === false &&
+    packet?.executionPolicy?.defaultSharedModeMapperMustRemainUnchanged === true &&
+    Number.isInteger(targetIndex) && targetIndex >= 1 && targetIndex <= sceneCount &&
+    packet?.targetScene?.id === targetScene?.id &&
+    (
+      (packet?.targetScene?.current?.visualModeId === expectedMode?.id &&
+        packet?.targetScene?.current?.presenceMode === expectedMode?.presence) ||
+      (packet?.targetScene?.current?.visualModeId === proposedModeId &&
+        packet?.targetScene?.current?.presenceMode === proposedPresence)
+    ) &&
+    typeof proposedModeId === "string" && proposedModeId in VISUAL_MODES &&
+    proposedPresence === VISUAL_MODES[proposedModeId].presence &&
+    proposedModeId !== expectedMode?.id &&
+    typeof packet?.targetScene?.proposed?.promptFingerprint === "string" &&
+    /^[a-f0-9]{16}$/.test(packet.targetScene.proposed.promptFingerprint) &&
+    (scenePromptAppend === undefined || (typeof scenePromptAppend === "string" && scenePromptAppend.trim().length >= 80 && scenePromptAppend.trim().length <= 2400)) &&
+    typeof approvalPrefix === "string" && approvalPrefix.startsWith("APPROVE_SCENE_MODE_OVERRIDE_IMAGE:") &&
+    packet?.executionPolicy?.maxSubmissions === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.existingSceneImageMustBePreserved === true;
+  if (!valid) {
+    console.error("ABORT: topic-scoped mode override packet does not match the locked script, character reference or default mode mapping.");
+    process.exit(3);
+  }
+  if (
+    targetedRegenerationSceneIndexes.size !== 1 ||
+    !targetedRegenerationSceneIndexes.has(targetIndex)
+  ) {
+    console.error("ABORT: a mode override audit or execution requires the single approved regeneration scene.");
+    process.exit(3);
+  }
+  if (executeApprovedModeOverride && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for the mode override execution.");
+    process.exit(3);
+  }
+  return {
+    packetPath: MODE_OVERRIDE_PACKET_ABS,
+    packetSha256,
+    sceneIndex: targetIndex,
+    visualModeId: proposedModeId,
+    scenePromptAppend: typeof scenePromptAppend === "string" ? scenePromptAppend.trim() : null,
+    promptFingerprint: packet.targetScene.proposed.promptFingerprint,
+    currentImageSha256: packet.targetScene.current.imageSha256,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedModeOverride,
+  };
+}
+
+function resolveTopicScopedSceneRepairs() {
+  if (!SCENE_REPAIR_PACKET_ABS) return null;
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(SCENE_REPAIR_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: targeted scene repair packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const packetSha256 = createHash("sha256").update(packetBuffer).digest("hex");
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const partMatch = scriptAbs.match(/[\\/](part-[12])[\\/]/i);
+  const productionPartId = partMatch?.[1]?.toLowerCase() ?? null;
+  const sourceScriptSha256 = productionPartId === "part-1"
+    ? packet?.sourceBindings?.part1ScriptSha256
+    : productionPartId === "part-2"
+      ? packet?.sourceBindings?.part2ScriptSha256
+      : null;
+  const qaPath = path.join(path.dirname(SCENE_REPAIR_PACKET_ABS), "scene-image-visual-qa.v1.json");
+  const qaSha256 = fs.existsSync(qaPath)
+    ? createHash("sha256").update(fs.readFileSync(qaPath)).digest("hex")
+    : null;
+  const allTargets = Array.isArray(packet?.targets) ? packet.targets : [];
+  const targetKeys = allTargets.map((target) => `${target?.partId}:${target?.sceneIndex}`);
+  const uniqueTargetKeys = new Set(targetKeys);
+  const targetShapesValid = allTargets.length === 6 && allTargets.every((target) =>
+    /^(?:part-1|part-2)$/.test(target?.partId ?? "") &&
+    Number.isInteger(target?.sceneIndex) && target.sceneIndex >= 1 && target.sceneIndex <= MAX_SCENES &&
+    typeof target?.sceneId === "string" && target.sceneId.length > 0 &&
+    /^[a-f0-9]{64}$/.test(target?.currentImageSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(target?.currentPromptFingerprint ?? "") &&
+    typeof target?.currentVisualMode === "string" && target.currentVisualMode in VISUAL_MODES &&
+    typeof target?.repairDirection === "string" &&
+    target.repairDirection.trim().length >= 180 && target.repairDirection.trim().length <= 2400);
+  const forbiddenActions = packet?.executionPolicy?.forbiddenActions;
+  const approvalTextTemplate = packet?.approvalTextTemplate;
+  const normalizedPacketTopicId = typeof packet?.topicId === "string" ? packet.topicId.replace(/_/g, "-") : null;
+  const normalizedRootTopicId = typeof rootTopicId === "string" ? rootTopicId.replace(/_/g, "-") : null;
+  const requiredOwnerApprovalWording = typeof approvalTextTemplate === "string"
+    ? approvalTextTemplate.replace("<packet-sha256>", packetSha256)
+    : null;
+  const packetValid =
+    packet?.schemaVersion === "money_shorts_targeted_scene_image_repair_packet_v1" &&
+    packet?.status === "data_only_pending_owner_approval" &&
+    normalizedPacketTopicId === normalizedRootTopicId &&
+    packet?.provider === "ChatGPT+Playwright" &&
+    packet?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    productionPartId != null &&
+    sourceScriptSha256 === scriptSha256 &&
+    packet?.sourceBindings?.visualQaSha256 === qaSha256 &&
+    targetShapesValid && uniqueTargetKeys.size === allTargets.length &&
+    packet?.executionPolicy?.maximumSubmissions === 6 &&
+    packet?.executionPolicy?.submissionsPerTargetScene === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.stopOnFirstFailure === true &&
+    packet?.executionPolicy?.existingImagesMustBePreserved === true &&
+    Array.isArray(forbiddenActions) &&
+    ["TTS", "Flow", "render", "upload"].every((action) => forbiddenActions.includes(action)) &&
+    typeof approvalTextTemplate === "string" &&
+    approvalTextTemplate.includes("<packet-sha256>") &&
+    approvalTextTemplate.startsWith(`APPROVE_TARGETED_SCENE_IMAGE_REPAIRS: ${packet.topicId}`);
+  if (!packetValid) {
+    console.error("ABORT: targeted scene repair packet does not match the locked topic, scripts, QA evidence, character reference or execution policy.");
+    process.exit(3);
+  }
+
+  const partTargets = allTargets.filter((target) => target.partId === productionPartId);
+  const requestedTargets = [...targetedRegenerationSceneIndexes].sort((a, b) => a - b);
+  const packetTargetIndexes = partTargets.map((target) => target.sceneIndex).sort((a, b) => a - b);
+  if (
+    partTargets.length === 0 ||
+    requestedTargets.length !== packetTargetIndexes.length ||
+    requestedTargets.some((sceneIndex, index) => sceneIndex !== packetTargetIndexes[index])
+  ) {
+    console.error(`ABORT: --regenerate-scenes must exactly match the approved ${productionPartId} target set: ${packetTargetIndexes.join(",")}.`);
+    process.exit(3);
+  }
+  if (
+    !reusablePreviousSummary ||
+    previousSummary?.allReady !== true ||
+    previousSummary?.visualModalityAudit?.passed !== true ||
+    previousSummary?.financeSceneDiversityAudit?.passed !== true
+  ) {
+    console.error("ABORT: targeted repairs require the verified complete existing image summary.");
+    process.exit(3);
+  }
+
+  const targets = partTargets.map((target) => {
+    const scene = scenes[target.sceneIndex - 1];
+    const expectedMode = visualModeForScene(scene, target.sceneIndex - 1, sceneCount);
+    const previousScene = previousSummary.scenes.find((candidate) => candidate?.sceneIndex === target.sceneIndex);
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    const currentBindingValid =
+      target.sceneId === scene?.id &&
+      target.currentVisualMode === expectedMode?.id &&
+      previousScene?.status === "SAVED_OK" &&
+      previousScene?.visualModeId === target.currentVisualMode &&
+      previousScene?.promptFingerprint === target.currentPromptFingerprint &&
+      previousScene?.imageSha256 === target.currentImageSha256 &&
+      fs.existsSync(targetFile) &&
+      imageSha256(targetFile) === target.currentImageSha256;
+    if (!currentBindingValid) {
+      console.error(`ABORT: ${productionPartId} scene ${target.sceneIndex} no longer matches the approved existing image/prompt/mode binding.`);
+      process.exit(3);
+    }
+    return {
+      partId: productionPartId,
+      sceneIndex: target.sceneIndex,
+      sceneId: target.sceneId,
+      visualModeId: target.currentVisualMode,
+      currentImageSha256: target.currentImageSha256,
+      currentPromptFingerprint: target.currentPromptFingerprint,
+      repairDirection: target.repairDirection.trim(),
+    };
+  });
+  if (executeApprovedSceneRepairs && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for targeted scene repair execution.");
+    process.exit(3);
+  }
+  return {
+    packetPath: SCENE_REPAIR_PACKET_ABS,
+    packetSha256,
+    productionPartId,
+    qaPath,
+    qaSha256,
+    targets,
+    targetIndexes: packetTargetIndexes,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedSceneRepairs,
+  };
+}
+
+function resolvePositiveCompositionCanary() {
+  if (!POSITIVE_COMPOSITION_CANARY_PACKET_ABS) return null;
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(POSITIVE_COMPOSITION_CANARY_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: positive composition canary packet read failed: ${String(error?.message ?? error)}`);
+    process.exit(2);
+  }
+  const packetSha256 = createHash("sha256").update(packetBuffer).digest("hex");
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const partMatch = scriptAbs.match(/[\\/](part-[12])[\\/]/i);
+  const productionPartId = partMatch?.[1]?.toLowerCase() ?? null;
+  const targetIndex = packet?.targetScene?.index;
+  const targetScene = Number.isInteger(targetIndex) ? scenes[targetIndex - 1] : null;
+  const expectedMode = targetScene ? visualModeForScene(targetScene, targetIndex - 1, sceneCount) : null;
+  const defaultPromptAuditFileName = productionPartId
+    ? `positive-composition-prompt-audit.${productionPartId}.v1.json`
+    : null;
+  const promptAuditFileName = typeof packet?.sourceBindings?.promptAuditFileName === "string"
+    ? packet.sourceBindings.promptAuditFileName
+    : defaultPromptAuditFileName;
+  const promptAuditFileNameValid = typeof promptAuditFileName === "string" &&
+    /^positive-composition(?:-v[0-9]+)?-prompt-audit\.part-[12]\.v1\.json$/i.test(promptAuditFileName);
+  const promptAuditPath = productionPartId && promptAuditFileNameValid
+    ? path.join(path.dirname(POSITIVE_COMPOSITION_CANARY_PACKET_ABS), promptAuditFileName)
+    : null;
+  let promptAudit;
+  let promptAuditSha256 = null;
+  try {
+    const promptAuditBuffer = promptAuditPath ? fs.readFileSync(promptAuditPath) : null;
+    promptAudit = promptAuditBuffer ? JSON.parse(promptAuditBuffer.toString("utf8")) : null;
+    promptAuditSha256 = promptAuditBuffer ? createHash("sha256").update(promptAuditBuffer).digest("hex") : null;
+  } catch {
+    promptAudit = null;
+  }
+  const auditedTarget = promptAudit?.rows?.find((scene) => scene?.sceneIndex === targetIndex);
+  const auditedPromptSha256 = typeof auditedTarget?.prompt === "string"
+    ? createHash("sha256").update(auditedTarget.prompt).digest("hex")
+    : null;
+  const previousTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === targetIndex);
+  const targetFile = targetScene ? sceneFile(targetIndex - 1) : null;
+  const normalizedPacketTopicId = typeof packet?.topicId === "string" ? packet.topicId.replace(/_/g, "-") : null;
+  const normalizedRootTopicId = typeof rootTopicId === "string" ? rootTopicId.replace(/_/g, "-") : null;
+  const approvalTextTemplate = packet?.approvalTextTemplate;
+  const requiredOwnerApprovalWording = typeof approvalTextTemplate === "string"
+    ? approvalTextTemplate.replace("<packet-sha256>", packetSha256)
+    : null;
+  const forbiddenActions = packet?.executionPolicy?.forbiddenActions;
+  const positiveComposition = packet?.positiveComposition;
+  const auditedBlueprint = auditedTarget?.sceneDiversityPlan?.compositionBlueprint;
+  const acceptedApprovalPrefix =
+    approvalTextTemplate?.startsWith(`APPROVE_POSITIVE_COMPOSITION_CANARY_IMAGE: ${packet.topicId}`) === true ||
+    approvalTextTemplate?.startsWith(`APPROVE_POSITIVE_COMPOSITION_V2_CANARY_IMAGE: ${packet.topicId}`) === true;
+  const packetValid =
+    packet?.schemaVersion === "money_shorts_positive_composition_canary_packet_v1" &&
+    packet?.status === "data_only_pending_owner_approval" &&
+    packet?.provider === "ChatGPT+Playwright" &&
+    normalizedPacketTopicId === normalizedRootTopicId &&
+    packet?.productionPartId === productionPartId &&
+    productionPartId != null &&
+    packet?.sourceBindings?.scriptSha256 === scriptSha256 &&
+    packet?.sourceBindings?.characterReferenceSha256 === CHARACTER_REFERENCE_SHA256 &&
+    promptAuditFileNameValid &&
+    packet?.sourceBindings?.promptAuditSha256 === promptAuditSha256 &&
+    promptAudit?.passed === true &&
+    promptAudit?.externalActionPerformed === false &&
+    Number.isInteger(targetIndex) && targetIndex >= 1 && targetIndex <= sceneCount &&
+    packet?.targetScene?.id === targetScene?.id &&
+    packet?.targetScene?.currentVisualMode === expectedMode?.id &&
+    packet?.targetScene?.currentPresenceMode === expectedMode?.presence &&
+    /^[a-f0-9]{64}$/.test(packet?.targetScene?.currentImageSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(packet?.targetScene?.currentPromptFingerprint ?? "") &&
+    /^[a-f0-9]{64}$/.test(packet?.sourceBindings?.promptSha256 ?? "") &&
+    /^[a-f0-9]{16}$/.test(packet?.sourceBindings?.promptFingerprint ?? "") &&
+    Number.isInteger(packet?.sourceBindings?.promptLength) && packet.sourceBindings.promptLength > 0 &&
+    packet?.sourceBindings?.externalActionPerformedDuringAudit === false &&
+    auditedTarget?.promptFingerprint === packet.sourceBindings.promptFingerprint &&
+    auditedPromptSha256 === packet.sourceBindings.promptSha256 &&
+    auditedTarget?.promptLength === packet.sourceBindings.promptLength &&
+    auditedTarget?.semanticCompositionPassed === true &&
+    auditedBlueprint?.version === positiveComposition?.version &&
+    auditedBlueprint?.id === positiveComposition?.id &&
+    auditedBlueprint?.layoutFamily === positiveComposition?.layoutFamily &&
+    auditedBlueprint?.maxSupportingObjectGroups === positiveComposition?.maxSupportingObjectGroups &&
+    Array.isArray(positiveComposition?.requiredIncomeCues) && positiveComposition.requiredIncomeCues.length === 3 &&
+    Array.isArray(positiveComposition?.forbiddenSemanticArrangements) &&
+    ["line", "row", "trail", "chain", "conveyor", "connected tube", "repeated compartment", "display system", "token board"].every((item) => positiveComposition.forbiddenSemanticArrangements.includes(item)) &&
+    packet?.executionPolicy?.maximumSubmissions === 1 &&
+    packet?.executionPolicy?.submissionsPerTargetScene === 1 &&
+    packet?.executionPolicy?.automaticRetryAllowed === false &&
+    packet?.executionPolicy?.stopOnFirstFailure === true &&
+    packet?.executionPolicy?.existingImageMustBePreserved === true &&
+    packet?.executionPolicy?.externalGenerationExecuted === false &&
+    Array.isArray(forbiddenActions) && ["TTS", "Flow", "render", "upload"].every((action) => forbiddenActions.includes(action)) &&
+    typeof approvalTextTemplate === "string" &&
+    approvalTextTemplate.includes("<packet-sha256>") &&
+    acceptedApprovalPrefix &&
+    reusablePreviousSummary &&
+    previousSummary?.allReady === true &&
+    previousSummary?.visualModalityAudit?.passed === true &&
+    previousTarget?.status === "SAVED_OK" &&
+    previousTarget?.imageSha256 === packet.targetScene.currentImageSha256 &&
+    previousTarget?.promptFingerprint === packet.targetScene.currentPromptFingerprint &&
+    targetFile != null && fs.existsSync(targetFile) && imageSha256(targetFile) === packet.targetScene.currentImageSha256;
+  if (!packetValid) {
+    console.error("ABORT: positive composition canary packet does not match the locked script, source prompt audit, current image or execution policy.");
+    process.exit(3);
+  }
+  if (targetedRegenerationSceneIndexes.size !== 1 || !targetedRegenerationSceneIndexes.has(targetIndex)) {
+    console.error("ABORT: positive composition canary requires exactly its single approved regeneration scene.");
+    process.exit(3);
+  }
+  if (executeApprovedPositiveCompositionCanary && ownerApprovalArg !== requiredOwnerApprovalWording) {
+    console.error("ABORT: exact Owner approval is missing for positive composition canary execution.");
+    process.exit(3);
+  }
+  return {
+    packetPath: POSITIVE_COMPOSITION_CANARY_PACKET_ABS,
+    packetSha256,
+    promptAuditPath,
+    promptAuditFileName,
+    promptAuditSha256,
+    productionPartId,
+    sceneIndex: targetIndex,
+    currentImageSha256: packet.targetScene.currentImageSha256,
+    currentPromptFingerprint: packet.targetScene.currentPromptFingerprint,
+    promptFingerprint: packet.sourceBindings.promptFingerprint,
+    promptSha256: packet.sourceBindings.promptSha256,
+    promptLength: packet.sourceBindings.promptLength,
+    compositionBlueprintId: positiveComposition.id,
+    requiredOwnerApprovalWording,
+    executionApproved: executeApprovedPositiveCompositionCanary,
+  };
+}
+
+function presenceInstructionForMode(mode) {
+  if (mode.presence === "character") {
+    return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED IN THIS SCENE. ${CHARACTER_CONTINUITY_INSTRUCTION}`;
+  }
+  if (mode.presence === "hands") {
+    return `PRESENCE GATE: HANDS ONLY. Show no head, face, hair, torso portrait, seated person or background person. Use the attached ${CHARACTER_NAME} identity board only to keep the adult hands, skin tone and visible fixed-wardrobe sleeves consistent; crop the head and upper body fully outside the frame and never recreate the identity-board layout.`;
+  }
+  return "PRESENCE GATE: NO PERSON. Show no human, head, face, hair, hands, body, silhouette, mannequin or background figure. Carry the meaning entirely with full-scale 3D space, objects and causal motion.";
+}
+
+function styleRejectionForMode(mode) {
+  if (mode.presence === "character") return STYLE_REJECTION;
+  return "STRICT STYLE REJECTION: no photography, live action, documentary realism, photorealistic person, miniature, dollhouse, diorama, cutaway toy room, scale model, tiny house model, desktop model, readable text, logo or watermark. No vault, factory, laboratory, machine room, industrial apparatus, black-metal architecture, fantasy energy effect, gloomy finance world, showroom-perfect advertising set or machine-like finance diagram. Obey the current person-free or hands-only PRESENCE GATE exactly.";
+}
+
+function stylePrefixForMode(mode) {
+  if (mode.presence === "character") return STYLE_PREFIX;
+  if (mode.presence === "hands") {
+    return "Money Shorts original bright family-feature-quality cinematic 3D animation: naturally grounded hands, full-size everyday topic objects, tactile fabrics, painted wood, paper, glass and warm ceramics, bright natural or warm practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every room, furnishing, hand and object is adult-scale and physically usable. ";
+  }
+  return "Money Shorts original bright family-feature-quality cinematic 3D animation made from full-size everyday topic objects in a narration-specific Korean transit, bank, market, shop, workplace, public-service, outdoor-neighborhood or home setting. Use tactile materials, bright natural or practical light, open shadows, rich controlled color and cinematic depth. Keep the same stylized render language as the character scenes. Every place, furnishing and object is adult-scale and physically usable. Include no character or human body part. ";
+}
+
+function compactStylePrefixForMode(mode) {
+  if (mode.presence === "character") {
+    return "Money Shorts original bright family-feature-quality cinematic 3D animation: one naturally proportioned Korean adult, tactile clothing and full-scale lived-in space, warm daylight, open shadows, controlled color and grounded cinematic depth. Generate character, room, props and lighting as one authored shot.";
+  }
+  if (mode.presence === "hands") {
+    return "Money Shorts original bright family-feature-quality cinematic 3D animation: grounded adult hands, tactile full-size objects, warm daylight, open shadows and lived-in Korean space. Generate hands, props and lighting as one authored shot.";
+  }
+  return "Money Shorts original bright family-feature-quality cinematic 3D animation: full-size tactile everyday objects in a warm lived-in Korean space, bright daylight, open shadows and grounded cinematic depth. No person or body part.";
+}
+
+function compactPresenceInstructionForMode(mode) {
+  if (mode.id === "VEO_FULL_CHARACTER") {
+    return `PRESENCE GATE: ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO. CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: match the attached ${CHARACTER_NAME} identity board's exact face, age, hairstyle, hair color, body proportions and fixed wardrobe. Show the same character completely from head to both feet, including both hands and both shoes, in one natural uncropped environmental wide shot; no duplicate, reference-board layout, seated crop, upper-body crop, hands-only frame or body-part close-up.`;
+  }
+  if (mode.presence === "character") {
+    return `PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED. CHARACTER CONTINUITY CONTRACT ${CHARACTER_CONTINUITY_VERSION}: match the attached ${CHARACTER_NAME} identity board's exact face, age, hairstyle, hair color, body proportions and fixed wardrobe in one natural story view; no duplicate or reference-board layout. Use restrained facial acting and physically grounded hand-object contact.`;
+  }
+  if (mode.presence === "hands") {
+    return `PRESENCE GATE: HANDS ONLY. Match the attached ${CHARACTER_NAME} reference's skin tone and fixed-wardrobe sleeves; show no head, face, hair, torso or background person.`;
+  }
+  return "PRESENCE GATE: NO PERSON. Show no human, head, face, hair, hands, body, silhouette, mannequin or background figure.";
+}
+
+function compactStyleRejectionForMode(mode) {
+  const presenceRejection = mode.presence === "character"
+    ? "no changed identity, duplicate character, pasted-on subject or theatrical pose"
+    : mode.presence === "hands"
+      ? "no portrait, head, torso or extra hands"
+      : "no person or body part";
+  return `STRICT STYLE REJECTION: no photography, live action, miniature, diorama, readable text, logo or watermark; no laboratory, vault, factory, machine room, black-metal architecture, gloomy finance world or industrial apparatus; ${presenceRejection}.`;
+}
+
+function resolutionInstructionForMode(mode) {
+  if (mode.presence === "character") return RESOLUTION_INSTRUCTION;
+  if (mode.presence === "hands") {
+    return "Output one vertical 9:16 portrait image at the highest available resolution (target 1080x1920 or higher). No readable text, letters, numbers, UI, logo, brand or watermark. Show only the required hands and full-size action objects; no head, portrait or background person. Keep the lower caption area connected to the scene instead of leaving a blank void.";
+  }
+  return "Output one vertical 9:16 portrait image at the highest available resolution (target 1080x1920 or higher). No readable text, letters, numbers, UI, logo, brand or watermark. Show no person or human body part. Keep the lower caption area connected to the full-scale object or architectural scene instead of leaving a blank void.";
+}
+
+const MODE_SETTING_OVERRIDES = {
+  VEO_FULL_CHARACTER: "use the narration-specific everyday setting at full scale with a clear walkable floor plane and enough environmental depth for a complete uncropped head-to-feet character action",
+  CHARACTER_EVENT: "use the topic-specific lived-in setting at full scale, with the decision object in the foreground and its household consequence in a separate background zone; place the character off-center in a natural mid-action moment",
+  ENVIRONMENTAL_CHARACTER: "use the topic-specific everyday setting at full scale, divided naturally into a decision area, a changed-condition area and a household-cash boundary; let the character complete one small action within the room",
+  OBJECT_MECHANISM: "keep the topic-specific lived-in setting recognizable while its everyday objects form one visible input-action-result relationship; no portrait, industrial apparatus or dark architecture",
+  ARCHITECTURAL_CROSS_SECTION: "show the topic-specific real-world setting as a bright full-scale near-to-far view connecting cause, action and result through ordinary objects; use natural materials, no technical cutaway, machine room, tabletop or miniature",
+  SPLIT_EVIDENCE: "show two life-size connected evidence areas inside the topic-specific everyday setting with a clearly changed boundary between before and after; no portrait, machine room or vault",
+  HANDS_ACTION: "a full-size standing action counter or practical work surface in a distinct location, framed tightly enough that no head enters the image",
+  OBJECT_CHECKLIST: "one principal full-size topic-specific decision object with up to two quiet contextual cues in distinct foreground, side-depth and far-depth zones of the selected location; never line them up on one shelf, counter, wall, tray or floor path, and never turn them into a three-way allocation display",
+  SYMBOLIC_CHARACTER: "the narration's bright specific everyday location where the temptation, ignored condition and cash-safety boundary are naturally visible around the character",
+  FUTURE_CHARACTER: "an open bright everyday location with a doorway, street, platform, aisle, window or work route that gives protected household cash and the next decision clear directional depth",
+  OBJECT_RESOLUTION: "a bright open full-scale everyday location where the protected topic objects lead toward a clear next step; no desk still life, vault or industrial architecture",
+};
+
+function topicSpecificSetting(evidence, mode) {
+  const sourceSetting = String(evidence?.sceneSetting ?? "").split("; arrange this place specifically for")[0].trim();
+  const modeDirection = MODE_SETTING_OVERRIDES[mode.id] ?? "use a distinct bright full-scale everyday setting with natural materials";
+  return `${sourceSetting || "a recognizable topic-specific everyday place"}; ${modeDirection}`;
+}
+
+const CHARACTER_ACTION_OVERRIDES = {
+  VEO_FULL_CHARACTER: "the recurring character completes one restrained whole-body action with both feet grounded, a small weight shift, relaxed shoulders and one purposeful hand-object interaction while remaining fully visible from head to shoes",
+  CHARACTER_EVENT: "the recurring character pauses in the middle of one small decision, shifts their gaze from the topic object to its household consequence and completes one relaxed hand movement",
+  ENVIRONMENTAL_CHARACTER: "the recurring character completes one ordinary topic-specific action with purposeful hands, relaxed shoulders and a gentle weight shift while the changed condition remains visible nearby",
+  SYMBOLIC_CHARACTER: "the recurring character makes a restrained eye or head turn from the tempting cue toward the ignored condition, with quiet breathing and no theatrical body movement",
+  FUTURE_CHARACTER: "the recurring character calmly settles one story prop and makes a measured head or eye turn toward the bright next step",
+};
+
+const CHARACTER_CAMERA_OVERRIDES = {
+  VEO_FULL_CHARACTER: "motion-safe eye-level environmental full shot showing the complete character from head to both feet with clear floor contact, both hands visible and comfortable margin above the head and below the shoes",
+  CHARACTER_EVENT: "candid eye-level three-quarter medium-wide view with off-center placement, a near everyday object for parallax and clear room depth",
+  ENVIRONMENTAL_CHARACTER: "eye-level environmental medium-wide view showing the character, purposeful hands, story prop and three natural depth planes in one coherent room",
+  SYMBOLIC_CHARACTER: "intimate eye-level or over-shoulder composition where the character, tempting cue and ignored condition remain visible in one lived-in setting",
+  FUTURE_CHARACTER: "wide side or rear three-quarter view with a relaxed character silhouette, foreground room texture and a clear everyday destination",
+};
+
+function evidenceForVisualMode(evidence, mode) {
+  if (mode.presence === "character") {
+    const topicObjects = compactNarration(evidence.sceneSpecificSignal || evidence.heroSubject, 300);
+    const economicMeaning = compactNarration(evidence.economicMeaning, 220);
+    return {
+      mustShow: `the recurring character actively confronting the exact topic evidence ${topicObjects}; economic meaning ${economicMeaning}`,
+      heroSubject: `the recurring character physically interacting with ${topicObjects}`,
+      visibleAction: CHARACTER_ACTION_OVERRIDES[mode.id] ?? evidence.visibleAction,
+      sceneSetting: topicSpecificSetting(evidence, mode),
+      visualForm: mode.instruction,
+      cameraPlan: CHARACTER_CAMERA_OVERRIDES[mode.id] ?? evidence.cameraPlan,
+      lightingPlan: evidence.lightingPlan,
+      sceneIntegrationPlan: evidence.sceneIntegrationPlan,
+      motionPlan: `${evidence.motionPlan}; apply ${CHARACTER_NAME}'s motion profile: ${CHARACTER_MOTION_PROFILE}`,
+      causalComposition: "connect the character's restrained micro-action, the topic-specific decision object and its economic result across one coherent full-scale room; preserve matched perspective, contact shadows and ambient color bounce",
+      mustNotShow: evidence.mustNotShow,
+    };
+  }
+  const topicObjects = compactNarration(evidence.sceneSpecificSignal || evidence.heroSubject, 300);
+  const economicMeaning = compactNarration(evidence.economicMeaning, 220);
+  const sceneSetting = topicSpecificSetting(evidence, mode);
+  const common = {
+    mustShow: `the exact topic evidence ${topicObjects}, physically changing from cause to result; economic meaning ${economicMeaning}`,
+    heroSubject: topicObjects,
+    sceneSetting,
+    visualForm: mode.instruction,
+    lightingPlan: evidence.lightingPlan,
+    sceneIntegrationPlan: evidence.sceneIntegrationPlan,
+    motionPlan: evidence.motionPlan,
+    mustNotShow: "any person forbidden by the PRESENCE GATE; generic finance icon piles; unrelated bank symbols; photography; miniature; readable text; a composition reusable for an adjacent narration",
+  };
+  if (mode.presence === "hands") {
+    return {
+      ...common,
+      visibleAction: `only two hands complete the narration's exact concrete step on ${topicObjects}, with the completed state visible beside the action`,
+      cameraPlan: "tight tactile macro or close three-quarter action view with hands and full-size objects filling the frame; no head or torso",
+      causalComposition: "center the hand action and connect it directly to the changed object state in the same frame; no portrait or background figure",
+    };
+  }
+  return {
+    ...common,
+    visibleAction: `the topic objects themselves move, separate, drain, lock, open or rebalance to reveal the narration's cause and result; no human action`,
+    cameraPlan: mode.id === "ARCHITECTURAL_CROSS_SECTION"
+      ? "wide bright human-scale room-to-room view with strong foreground-to-background causal depth, natural materials and no figure"
+      : mode.id === "SPLIT_EVIDENCE"
+        ? "clean frontal or three-quarter comparison view with two connected life-size states and no figure"
+        : "bold macro, compressed side view or wide object-system view selected to differ from adjacent modes; no figure",
+    causalComposition: "make the topic-specific objects carry the complete cause-decision-result chain without a person, hand, portrait or generic symbol row",
+  };
+}
+
+function storyboardRoleForScene(scene, sceneIndex, totalScenes) {
+  const byId = STORYBOARD_ROLE_INDEX_BY_SCENE_ID[String(scene?.id ?? "")];
+  if (Number.isInteger(byId)) return STORYBOARD_ROLES[byId];
+  const relative = totalScenes <= 1 ? 0 : sceneIndex / (totalScenes - 1);
+  const fallbackIndex = Math.min(STORYBOARD_ROLES.length - 1, Math.round(relative * (STORYBOARD_ROLES.length - 1)));
+  return STORYBOARD_ROLES[fallbackIndex];
+}
+
+function compactNarration(value, max = 320) {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return text.length <= max ? text : `${text.slice(0, max).trimEnd()}...`;
+}
+
+function cueField(cue, startLabel, endLabels) {
+  const start = cue.indexOf(startLabel);
+  if (start < 0) return "";
+  const contentStart = start + startLabel.length;
+  const candidateEnds = endLabels
+    .map((label) => cue.indexOf(label, contentStart))
+    .filter((index) => index >= 0);
+  const end = candidateEnds.length > 0 ? Math.min(...candidateEnds) : cue.length;
+  return cue.slice(contentStart, end).replace(/\s+/g, " ").trim().replace(/[. ]+$/, "");
+}
+
+function compactSceneArtDirection(scene) {
+  const evidence = scene?.visualEvidence;
+  if (evidence?.version === EVIDENCE_ENGINE_VERSION) {
+    return [
+      `Evidence ID: ${evidence.sceneIdentity}.`,
+      `Scene-specific objects: ${compactNarration(evidence.sceneSpecificSignal, 260)}.`,
+      `Real setting: ${compactNarration(evidence.sceneSetting, 180)}.`,
+      `MUST SHOW: ${compactNarration(evidence.mustShow, 360)}.`,
+      `Visible action: ${compactNarration(evidence.visibleAction, 180)}.`,
+      `Scene integration plan: ${compactNarration(evidence.sceneIntegrationPlan, 260)}.`,
+      `Motion plan: ${compactNarration(evidence.motionPlan, 280)}.`,
+      `Editorial proof: ${compactNarration(evidence.editorialProof, 180)}.`,
+      `Causal composition: ${compactNarration(evidence.causalComposition, 220)}.`,
+      `Continuity state: ${compactNarration(evidence.continuityState, 200)}.`,
+      `MUST NOT SHOW: ${compactNarration(evidence.mustNotShow, 320)}.`,
+      `Hero subject: ${compactNarration(evidence.heroSubject, 180)}.`,
+      `Economic meaning: ${compactNarration(evidence.economicMeaning, 160)}.`,
+      `Continuity anchor only, never the hero: ${compactNarration(evidence.continuityAnchor, 140)}.`,
+      `Keep ${compactNarration(evidence.captionSafeZone, 120)} visually quiet but textured.`,
+    ].join(" ");
+  }
+  const cue = String(scene?.visualCue ?? "").replace(/\s+/g, " ").trim();
+  if (!cue) return "Use the narration's most concrete economic object as the single hero subject.";
+  const intent = cueField(cue, "Scene intent:", ["Show ", "Camera:"]);
+  const objects = cueField(cue, "Topic object reference only:", ["Supporting texture:", "Color family:"]);
+  const texture = cueField(cue, "Supporting texture:", ["Color family:", "Anti-repetition:"]);
+  const color = cueField(cue, "Color family:", ["Anti-repetition:"]);
+  const compact = [
+    intent ? `Scene concept: ${intent}.` : "",
+    objects ? `Object options: ${objects}.` : "",
+    texture ? `Texture: ${texture}.` : "",
+    color ? `Palette: ${color}.` : "",
+  ].filter(Boolean).join(" ");
+  return compact || compactNarration(cue, 520);
+}
+
+const FINANCE_SCENE_DIVERSITY_LOCATIONS_BY_SUBTOPIC = {
+  economy_literacy: ["commuter rail platform", "neighborhood market aisle", "workplace break area", "bank service lobby", "street-side purchase point", "public information space", "commute coffee stand", "home consequence zone"],
+  inflation_living_cost: ["grocery aisle", "traditional market stall", "convenience-store checkout", "lunch-district food counter", "public transit fare gate", "neighborhood pharmacy", "street-side produce stand", "home pantry consequence"],
+  interest_debt: ["bank consultation booth", "ATM vestibule", "workplace payday area", "vehicle or housing contract counter", "public service desk", "commuter station bill-check moment", "neighborhood bank lobby", "home statement check"],
+  consumption_psychology: ["retail checkout", "convenience-store aisle", "commuter train seat", "daylight cafe counter", "shopping street", "delivery pickup point", "event merchandise area", "home parcel consequence"],
+  sns_comparison: ["event entrance", "restaurant gathering", "shopping street", "workplace celebration area", "weekend public plaza", "cafe group table", "transit meeting point", "home aftermath zone"],
+  labor_income: ["workplace payroll area", "coworking lobby", "commuter platform", "bank transfer kiosk", "side-income worksite", "office cafeteria", "neighborhood service counter", "home allocation check"],
+  investing_assets: ["securities consultation lounge", "public library finance corner", "commuter coffee stand", "coworking window area", "bank investment counter", "quiet public courtyard", "workplace break area", "home protected-cash check"],
+  housing_asset_gap: ["rental viewing", "transit station exit", "real-estate consultation counter", "apartment entrance", "neighborhood street approach", "commute transfer point", "building management office", "home total-cost check"],
+  anxiety_avoidance: ["bank waiting area", "quiet commuter bench", "public library desk", "neighborhood service counter", "clinic waiting area", "postal counter", "calm public courtyard", "home avoidance cue"],
+  success_habits: ["workplace payday area", "bank transfer kiosk", "commuter station concourse", "grocery checkout", "coworking entrance", "neighborhood errands route", "public library planning desk", "home routine check"],
+  crisis_risk: ["workplace exit", "neighborhood market", "bank consultation area", "transit concourse", "public service center", "pharmacy essentials aisle", "community support desk", "home emergency plan"],
+  time_retirement: ["pension consultation counter", "neighborhood park walkway", "workplace corridor", "community service center", "bank transfer area", "public library long-view aisle", "commuter bridge", "home automatic-transfer check"],
+};
+const FINANCE_SCENE_DIVERSITY_DEFAULT_LOCATIONS = [
+  "commuter setting",
+  "neighborhood market",
+  "bank or service counter",
+  "workplace setting",
+  "public everyday space",
+  "street-side decision point",
+  "shop or cafe",
+  "home only when narration requires it",
+];
+const FINANCE_SCENE_DIVERSITY_CAMERAS = [
+  "eye-level medium-wide with room depth",
+  "oblique three-quarter evidence view",
+  "side environmental view",
+  "low foreground close with a deep background",
+  "doorway or threshold wide view",
+  "seated over-shoulder or side-close view",
+  "window-side medium-long view",
+  "open resolved wide composition",
+];
+const FINANCE_SCENE_DIVERSITY_FOCI = [
+  "price or valuation decision",
+  "cash-reserve boundary",
+  "bill, order or reason check",
+  "chart or statement reading",
+  "household purchase consequence",
+  "portfolio or position choice",
+  "calendar or timing marker",
+  "rule or checklist resolution",
+];
+
+const COMPOSITION_BLUEPRINTS_BY_MODE = {
+  VEO_FULL_CHARACTER: [
+    {
+      id: "full_character_motion_lane",
+      layoutFamily: "full_character_environmental_lane",
+      primaryAnchor: "place the complete recurring character from head to both feet in one off-center full-body action lane with both hands and shoes visible",
+      supportPlacement: "place one narration-specific result deeper in the same environment without covering any body part",
+      openSpace: "keep clear floor contact, margin around the full silhouette and an unobstructed motion-safe path",
+    },
+    {
+      id: "full_character_side_action_depth",
+      layoutFamily: "full_character_side_depth",
+      primaryAnchor: "show the complete character in a natural side three-quarter whole-body action with grounded feet and one compact story prop",
+      supportPlacement: "place one supporting economic condition at a different depth and height outside the body silhouette",
+      openSpace: "leave the body contour, floor plane and likely motion direction visually clear",
+    },
+  ],
+  CHARACTER_EVENT: [
+    {
+      id: "off_center_decision_triangle",
+      layoutFamily: "asymmetric_triangle",
+      primaryAnchor: "place the character and one decision object together in one off-center lower-third action cluster",
+      supportPlacement: "place one household consequence as a separate background anchor across the room, forming a loose triangle with a quiet foreground texture",
+      openSpace: "keep the center and caption side as uninterrupted room depth",
+    },
+    {
+      id: "side_action_open_background",
+      layoutFamily: "side_anchor_open_depth",
+      primaryAnchor: "place the character at one side completing one small action on one localized object group",
+      supportPlacement: "show the changed condition once in the far background on separate furniture",
+      openSpace: "preserve a broad clean floor or wall interval between action and result",
+    },
+  ],
+  ENVIRONMENTAL_CHARACTER: [
+    {
+      id: "room_diagonal_action",
+      layoutFamily: "room_diagonal",
+      primaryAnchor: "place the character and the active object together near one room corner",
+      supportPlacement: "place one consequence diagonally deeper in the same lived-in room",
+      openSpace: "leave the diagonal between them visually open so depth, not repeated props, explains the relationship",
+    },
+    {
+      id: "over_shoulder_local_decision",
+      layoutFamily: "over_shoulder_depth",
+      primaryAnchor: "use a side or over-shoulder character action with one compact decision cluster",
+      supportPlacement: "show one separate background condition beyond the shoulder line",
+      openSpace: "keep the middle distance free of explanatory objects",
+    },
+    {
+      id: "window_side_action_result",
+      layoutFamily: "window_side_depth",
+      primaryAnchor: "place the character beside one window-side action surface with one hero object",
+      supportPlacement: "place the household result on a different-height surface deeper in the room",
+      openSpace: "use daylight and empty room depth as the visual separation",
+    },
+  ],
+  OBJECT_MECHANISM: [
+    {
+      id: "single_anchor_near_far_result",
+      layoutFamily: "single_anchor_near_far",
+      primaryAnchor: "use one compact everyday finance object group as the dominant foreground anchor",
+      supportPlacement: "show one changed household condition once in the far background on separate furniture",
+      openSpace: "leave a large clear gap between the foreground anchor and background result",
+    },
+    {
+      id: "l_corner_boundary",
+      layoutFamily: "l_shaped_room_corner",
+      primaryAnchor: "place one bounded decision object at the inside corner of an L-shaped counter or room edge",
+      supportPlacement: "place one consequence around the corner in a deeper room zone",
+      openSpace: "keep the counter run mostly clear and let the room corner create the relationship",
+    },
+    {
+      id: "two_heights_separate_furniture",
+      layoutFamily: "separate_heights",
+      primaryAnchor: "place one hero object low and close on a single ordinary surface",
+      supportPlacement: "place one supporting condition higher and farther away on different furniture",
+      openSpace: "show clean wall or room space between the two anchors",
+    },
+    {
+      id: "doorway_cause_result",
+      layoutFamily: "doorway_depth",
+      primaryAnchor: "place one localized cause object beside a doorway or threshold",
+      supportPlacement: "show one result condition through the doorway in the next full-scale room",
+      openSpace: "keep the doorway path completely clear and readable",
+    },
+  ],
+  ARCHITECTURAL_CROSS_SECTION: [
+    {
+      id: "room_to_room_depth",
+      layoutFamily: "room_to_room",
+      primaryAnchor: "place one cause anchor in the near full-scale room",
+      supportPlacement: "place one result anchor in the connected room beyond a natural opening",
+      openSpace: "use the doorway and floor depth as the only connector",
+    },
+    {
+      id: "wide_corner_cause_result",
+      layoutFamily: "wide_corner",
+      primaryAnchor: "place one cause cluster at one edge of a wide lived-in room",
+      supportPlacement: "place one result condition at the opposite depth corner",
+      openSpace: "keep the room center calm and usable",
+    },
+  ],
+  SPLIT_EVIDENCE: [
+    {
+      id: "continuous_near_far_change",
+      layoutFamily: "continuous_depth_change",
+      primaryAnchor: "show the earlier condition as one compact near anchor in a single continuous room",
+      supportPlacement: "show the changed condition once in the deeper zone of that same room",
+      openSpace: "use furniture depth and lighting transition between states, with no panel boundary",
+    },
+    {
+      id: "side_to_depth_change",
+      layoutFamily: "side_to_depth",
+      primaryAnchor: "place one condition at the side foreground of one coherent room",
+      supportPlacement: "place the consequence deeper toward a window or doorway",
+      openSpace: "keep a clean diagonal of floor or counter between the two states",
+    },
+  ],
+  SYMBOLIC_CHARACTER: [
+    {
+      id: "glance_between_two_anchors",
+      layoutFamily: "character_two_anchor_glance",
+      primaryAnchor: "place the character with one tempting or worrying object in one localized side cluster",
+      supportPlacement: "place the ignored condition once across the room at a different depth",
+      openSpace: "let the character's gaze cross clear room space between the anchors",
+    },
+    {
+      id: "quiet_pause_background_condition",
+      layoutFamily: "quiet_pause_depth",
+      primaryAnchor: "place the character in one quiet pause beside one story object",
+      supportPlacement: "show one background condition beyond the character without additional explanatory props",
+      openSpace: "preserve a calm open middle plane",
+    },
+  ],
+  HANDS_ACTION: [
+    {
+      id: "single_tactile_action",
+      layoutFamily: "tight_single_action",
+      primaryAnchor: "fill the frame with one pair of hands completing one step on one compact object group",
+      supportPlacement: "use only one small finished-state cue behind the hands",
+      openSpace: "keep the remaining work surface visibly clear",
+    },
+    {
+      id: "corner_action_clear_surface",
+      layoutFamily: "corner_close_action",
+      primaryAnchor: "place the hands and one action object at one corner of a practical surface",
+      supportPlacement: "place one completed result cue at the opposite depth edge",
+      openSpace: "leave most of the surface empty and tactile",
+    },
+  ],
+  OBJECT_CHECKLIST: [
+    {
+      id: "one_anchor_two_context_depths",
+      layoutFamily: "asymmetric_anchor_context_depth",
+      primaryAnchor: "place one principal everyday decision object in the near foreground as the only finance anchor",
+      supportPlacement: "place at most one small contextual cue at a side depth and one ordinary room-use cue far behind it; use different object types and never make matching containers",
+      openSpace: "leave the middle of the frame open and walkable; do not align the cues on a shelf, counter, wall, tray or display tier",
+    },
+    {
+      id: "lived_in_action_with_context",
+      layoutFamily: "single_habit_action_room_context",
+      primaryAnchor: "show one ordinary household habit object in active use at one edge of a bright lived-in room",
+      supportPlacement: "use no more than two unlike supporting details in separate room depths, each functioning as natural context rather than a labeled checklist item",
+      openSpace: "preserve a clear visual route through the room and avoid any three-item lineup, staged display or repeated storage vessels",
+    },
+  ],
+  FUTURE_CHARACTER: [
+    {
+      id: "character_open_exit",
+      layoutFamily: "character_open_path",
+      primaryAnchor: "place the character finishing one calm action beside one protected object group",
+      supportPlacement: "place the bright next step at an open window, balcony or doorway",
+      openSpace: "keep a clear visual path from the character toward the opening",
+    },
+    {
+      id: "settled_rule_forward_depth",
+      layoutFamily: "settled_rule_depth",
+      primaryAnchor: "place the character settling one rule object on one side surface",
+      supportPlacement: "show one open everyday destination deeper in the frame",
+      openSpace: "leave the foreground-to-background path free of finance props",
+    },
+  ],
+  OBJECT_RESOLUTION: [
+    {
+      id: "wall_pocket_open_exit",
+      layoutFamily: "wall_anchor_open_exit",
+      primaryAnchor: "place one compact rule or protection object in a wall pocket or single side shelf",
+      supportPlacement: "place the open next step at a bright doorway, balcony or window in the far depth",
+      openSpace: "keep the floor and visual route between them completely clear",
+    },
+    {
+      id: "single_rule_bright_destination",
+      layoutFamily: "single_rule_destination",
+      primaryAnchor: "place one localized rule object at one edge of a lived-in room",
+      supportPlacement: "show one bright destination beyond the room as the only secondary anchor",
+      openSpace: "use open room depth, not repeated objects, to connect rule and future",
+    },
+  ],
+};
+
+const SEMANTIC_LINEAR_MOTIF_PATTERNS = [
+  { id: "linear_row", pattern: /\b(?:long\s+)?(?:row|line|trail|chain|string|sequence)\s+of\b/i },
+  { id: "connected_apparatus", pattern: /\b(?:connected|linked)\s+(?:tube|pipe|container|compartment|station)s?\b/i },
+  { id: "mechanical_transport", pattern: /\b(?:conveyor|roller|chute|machine bank|token board)\b/i },
+  { id: "serial_container", pattern: /\b(?:series|array|wall)\s+of\s+(?:jar|box|tray|envelope|container|compartment)s?\b/i },
+  { id: "korean_linear_arrangement", pattern: /(?:줄지어|일렬|행렬|나열|연결관|컨베이어|칸막이|트레이)/i },
+];
+
+function sourceMotifHazards(scene) {
+  const evidence = scene?.visualEvidence ?? {};
+  const positiveSource = [
+    evidence.mustShow,
+    evidence.visibleAction,
+    evidence.sceneSpecificSignal,
+    evidence.heroSubject,
+    evidence.causalComposition,
+    evidence.sceneIntegrationPlan,
+    evidence.visualForm,
+  ].filter(Boolean).join(" ");
+  return SEMANTIC_LINEAR_MOTIF_PATTERNS
+    .filter(({ pattern }) => pattern.test(positiveSource))
+    .map(({ id }) => id);
+}
+
+function compositionBlueprintForScene(scene, sceneIndex, totalScenes, visualMode, resolvedVisualModes = null) {
+  const variants = COMPOSITION_BLUEPRINTS_BY_MODE[visualMode.id] ?? COMPOSITION_BLUEPRINTS_BY_MODE.OBJECT_MECHANISM;
+  let modeOccurrence = 0;
+  for (let index = 0; index <= sceneIndex; index += 1) {
+    const candidateMode = resolvedVisualModes?.[index] ?? visualModeForScene(scenes[index], index, totalScenes);
+    if (candidateMode.id === visualMode.id) modeOccurrence += 1;
+  }
+  const selected = variants[(modeOccurrence - 1) % variants.length];
+  const sourceHazards = sourceMotifHazards(scene);
+  return {
+    version: COMPOSITION_BLUEPRINT_VERSION,
+    id: selected.id,
+    layoutFamily: selected.layoutFamily,
+    primaryAnchor: selected.primaryAnchor,
+    supportPlacement: selected.supportPlacement,
+    openSpace: selected.openSpace,
+    actionRule: "show one localized action and one localized consequence; each appears once",
+    financeEvidencePolicy: "cash, banknotes, charts, statements or documents may appear as one compact localized group only when they directly prove the beat; never use money or coins as repeated matching cue markers",
+    connectionPolicy: "separate object groups with clear open space; show cause through ordinary action and room depth, never arrows, floating coins, trails, apparatus or repeated display vessels",
+    maxSupportingObjectGroups: visualMode.id === "OBJECT_CHECKLIST" ? 2 : 1,
+    sourceMotifHazards: sourceHazards,
+    sourceMotifNeutralizationRequired: sourceHazards.length > 0,
+    semanticSignature: `${visualMode.id}:${selected.layoutFamily}`,
+  };
+}
+
+function sceneDiversityPlan(scene, sceneIndex, totalScenes, visualMode = null, resolvedVisualModes = null) {
+  const subtopic = String(scene?.visualEvidence?.financeSubtopic ?? "");
+  const locationFamilies = FINANCE_SCENE_DIVERSITY_LOCATIONS_BY_SUBTOPIC[subtopic] ??
+    FINANCE_SCENE_DIVERSITY_DEFAULT_LOCATIONS;
+  const cycleIndex = sceneIndex % locationFamilies.length;
+  const selectedVisualMode = visualMode ?? visualModeForScene(scene, sceneIndex, totalScenes);
+  return {
+    version: FINANCE_SCENE_DIVERSITY_VERSION,
+    locationFamily: locationFamilies[cycleIndex],
+    cameraFamily: FINANCE_SCENE_DIVERSITY_CAMERAS[cycleIndex],
+    financeFocus: FINANCE_SCENE_DIVERSITY_FOCI[cycleIndex],
+    sceneIndex: sceneIndex + 1,
+    totalScenes,
+    sceneId: String(scene?.id ?? "unknown"),
+    compositionBlueprint: compositionBlueprintForScene(scene, sceneIndex, totalScenes, selectedVisualMode, resolvedVisualModes),
+  };
+}
+
+function financeSceneDiversityInstruction(plan, previousPlan, nextPlan, compact = false) {
+  const blueprint = plan.compositionBlueprint;
+  const previousBlueprint = previousPlan?.compositionBlueprint;
+  const nextBlueprint = nextPlan?.compositionBlueprint;
+  const sourceMotifTranslation = blueprint.sourceMotifNeutralizationRequired
+    ? `SOURCE MOTIF TRANSLATION REQUIRED (${blueprint.sourceMotifHazards.join(", ")}): preserve the meaning but translate serial or connected cues into separate anchors and open room depth.`
+    : "SOURCE MOTIF TRANSLATION: preserve the localized-anchor design.";
+  if (compact) {
+    return [
+      `FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}: ${plan.financeFocus}; ${plan.cameraFamily}; ${plan.locationFamily}.`,
+      `POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}, layout ${blueprint.layoutFamily}.`,
+      `Primary anchor: ${blueprint.primaryAnchor}. Supporting placement: ${blueprint.supportPlacement}.`,
+      `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
+      `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
+      `Connection policy: ${blueprint.connectionPolicy}.`,
+      "SEMANTIC REPETITION GUARD: keep money, coins, envelopes, cards, charts and containers inside localized anchor groups; reject any line, row, trail, chain, conveyor, connected tube, repeated compartment, display system, directional arrow, floating coin or matching-container trio.",
+      sourceMotifTranslation,
+      "Cash, banknotes, charts, statements and documents are allowed when relevant; keep them localized rather than removing relevant finance evidence.",
+      "Do not repeat the immediately previous scene's exact combination; follow the current blueprint and reserve the adjacent blueprints.",
+    ].join(" ");
+  }
+  return [
+    `FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}: use ${plan.financeFocus} as this beat's primary finance focus, with a ${plan.cameraFamily} and a ${plan.locationFamily} whenever compatible with the narration's required setting.`,
+    `POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}, layout ${blueprint.layoutFamily}.`,
+    `Primary anchor: ${blueprint.primaryAnchor}. Supporting placement: ${blueprint.supportPlacement}.`,
+    `Action and result: ${blueprint.actionRule}. Open-space requirement: ${blueprint.openSpace}.`,
+    `Finance evidence allowance: ${blueprint.financeEvidencePolicy}. Maximum supporting object groups: ${blueprint.maxSupportingObjectGroups}.`,
+    `Connection policy: ${blueprint.connectionPolicy}.`,
+    "SEMANTIC REPETITION GUARD: money, coins, envelopes, cards, charts and containers must stay inside their localized anchor group. Reject and rebuild before output if they form a line, row, trail, chain, conveyor, connected tube, repeated compartment, display system, directional arrow, floating coin or matching-container trio.",
+    sourceMotifTranslation,
+    "Cash, banknotes, charts, statements and documents are allowed whenever they directly prove this finance beat; keep them localized rather than removing relevant finance evidence.",
+    "Do not repeat the immediately previous scene's exact combination of room silhouette, desk position, loose-cash arrangement, paper layout, chart placement and camera angle. Change at least three of location zone, dominant finance prop, camera, character presence/action and household consequence.",
+    previousPlan ? `The previous planned focus was ${previousPlan.financeFocus} in ${previousPlan.locationFamily} using ${previousBlueprint?.id}; use the current positive blueprint instead.` : "Establish this positive opening blueprint rather than a generic home-desk finance still life.",
+    nextPlan ? `Reserve ${nextPlan.financeFocus} in ${nextPlan.locationFamily} with ${nextBlueprint?.id} for the next beat.` : "Finish with this resolved blueprint and open depth.",
+  ].join(" ");
+}
+
+function scenePrompt(scene, sceneIndex, totalScenes, resolvedVisualModes = null, resolvedDiversityPlans = null) {
+  const evidence = scene.visualEvidence;
+  const role = storyboardRoleForScene(scene, sceneIndex, totalScenes);
+  const roleBeat = sceneRoleBeat(scene, sceneIndex);
+  const visualMode = resolvedVisualModes?.[sceneIndex] ?? visualModeForScene(scene, sceneIndex, totalScenes);
+  const directedEvidence = evidenceForVisualMode(evidence, visualMode);
+  const previousVisualMode = sceneIndex > 0
+    ? (resolvedVisualModes?.[sceneIndex - 1] ?? visualModeForScene(scenes[sceneIndex - 1], sceneIndex - 1, totalScenes))
+    : null;
+  const nextVisualMode = sceneIndex + 1 < totalScenes
+    ? (resolvedVisualModes?.[sceneIndex + 1] ?? visualModeForScene(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes))
+    : null;
+  const diversityPlan = resolvedDiversityPlans?.[sceneIndex] ?? sceneDiversityPlan(scene, sceneIndex, totalScenes);
+  const previousDiversityPlan = sceneIndex > 0
+    ? (resolvedDiversityPlans?.[sceneIndex - 1] ?? sceneDiversityPlan(scenes[sceneIndex - 1], sceneIndex - 1, totalScenes))
+    : null;
+  const nextDiversityPlan = sceneIndex + 1 < totalScenes
+    ? (resolvedDiversityPlans?.[sceneIndex + 1] ?? sceneDiversityPlan(scenes[sceneIndex + 1], sceneIndex + 1, totalScenes))
+    : null;
+  const narration = compactNarration(scene.narration ?? scene.captionText ?? "");
+  const previousEvidence = scenes[sceneIndex - 1]?.visualEvidence;
+  const nextEvidence = scenes[sceneIndex + 1]?.visualEvidence;
+  const transition = [
+    previousEvidence ? `Advance from the previous ${previousEvidence.stage} result: ${compactNarration(previousEvidence.economicMeaning, 100)}.` : "Open the story with the unresolved contradiction.",
+    nextEvidence ? `Leave a clear visual cause for the next ${nextEvidence.stage} beat.` : "Resolve the story without returning to the opening image.",
+  ].join(" ");
+  const essential = [
+    NEW_IMAGE_INSTRUCTION,
+    stylePrefixForMode(visualMode),
+    `VISUAL MODALITY CONTRACT ${VISUAL_MODALITY_VERSION}: mode ${visualMode.id}. ${visualMode.instruction}`,
+    presenceInstructionForMode(visualMode),
+    styleRejectionForMode(visualMode),
+    `Storyboard scene ${sceneIndex + 1} of ${totalScenes}; role ${role.role}, beat ${roleBeat}.`,
+    `Visualize this Korean narration directly: "${narration}".`,
+    `MUST SHOW this exact economic event: ${compactNarration(directedEvidence.mustShow, 360)}.`,
+    `Hero subject: ${compactNarration(directedEvidence.heroSubject, 180)}. Visible action: ${compactNarration(directedEvidence.visibleAction, 190)}.`,
+    `Distinct setting: ${compactNarration(directedEvidence.sceneSetting, 230)}.`,
+    `Visual form: ${compactNarration(directedEvidence.visualForm, 220)}. Camera: ${compactNarration(directedEvidence.cameraPlan, 170)}. Lighting: ${compactNarration(directedEvidence.lightingPlan, 140)}.`,
+    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan),
+    `SCENE INTEGRATION: ${compactNarration(directedEvidence.sceneIntegrationPlan, 280)}.`,
+    `MOTION PLAN for later video: ${compactNarration(directedEvidence.motionPlan, 320)}. Show only a plausible mid-action instant in this still.`,
+    `Causal proof: ${compactNarration(directedEvidence.causalComposition, 190)}. Editorial proof: ${compactNarration(evidence.editorialProof, 150)}.`,
+    `Storyboard transition: ${transition}`,
+    `MODALITY DIFFERENCE: previous mode ${previousVisualMode?.id ?? "NONE"}; current mode ${visualMode.id}; next mode ${nextVisualMode?.id ?? "NONE"}. The current silhouette, human presence and spatial form must visibly differ from both adjacent modes.`,
+    previousEvidence
+      ? `ADJACENT DIFFERENCE: the previous scene used mode ${previousVisualMode.id}. Do not repeat its human presence, spatial form, camera distance, setting silhouette or hero.`
+      : "ADJACENT DIFFERENCE: establish a unique opening silhouette that no later scene should repeat.",
+    nextEvidence
+      ? `Reserve a different silhouette and presence pattern for the next scene mode ${nextVisualMode.id}.`
+      : "End with a new resolved silhouette rather than recreating the opening frame.",
+    `Use one hero subject and at most two supporting object groups. ${role.avoid}. If this image could illustrate an adjacent narration unchanged, reject it.`,
+    `Continuity may use only ${compactNarration(evidence.continuityAnchor, 100)} as a tiny secondary marker; it must never become the hero or force repeated composition.`,
+    `MUST NOT SHOW: ${compactNarration(directedEvidence.mustNotShow, 360)}.`,
+    `Keep the ${compactNarration(evidence.captionSafeZone, 100)} calm but textured for later captions.`,
+    resolutionInstructionForMode(visualMode),
+  ];
+  const prompt = essential.join(" ").replace(/\s+/g, " ").trim();
+  if (prompt.length <= PROMPT_MAX_CHARS) return prompt;
+  return [
+    NEW_IMAGE_INSTRUCTION,
+    compactStylePrefixForMode(visualMode),
+    `VISUAL MODALITY CONTRACT ${VISUAL_MODALITY_VERSION}: mode ${visualMode.id}. ${visualMode.instruction}`,
+    compactPresenceInstructionForMode(visualMode),
+    compactStyleRejectionForMode(visualMode),
+    `Storyboard scene ${sceneIndex + 1} of ${totalScenes}; role ${role.role}, beat ${roleBeat}.`,
+    `Visualize this narration directly: "${compactNarration(narration, 220)}".`,
+    `MUST SHOW: ${compactNarration(directedEvidence.mustShow, 320)}. Hero: ${compactNarration(directedEvidence.heroSubject, 140)}. Action: ${compactNarration(directedEvidence.visibleAction, 150)}.`,
+    `Setting: ${compactNarration(directedEvidence.sceneSetting, 190)}. Form: ${compactNarration(directedEvidence.visualForm, 180)}. Camera: ${compactNarration(directedEvidence.cameraPlan, 140)}. Light: ${compactNarration(directedEvidence.lightingPlan, 110)}.`,
+    financeSceneDiversityInstruction(diversityPlan, previousDiversityPlan, nextDiversityPlan, true),
+    `SCENE INTEGRATION: ${compactNarration(directedEvidence.sceneIntegrationPlan, 220)}. MOTION PLAN: ${compactNarration(directedEvidence.motionPlan, 240)}. Show only a plausible mid-action instant in this still.`,
+    `Use one hero subject. ${role.avoid}. Reject any image reusable for an adjacent narration; change hero, action, location and camera.`,
+    `MUST NOT SHOW: ${compactNarration(directedEvidence.mustNotShow, 260)}.`,
+    resolutionInstructionForMode(visualMode),
+  ].join(" ").replace(/\s+/g, " ").trim();
+}
+const sceneFile = (i) => path.join(OUT_DIR, `scene-${String(i + 1).padStart(2, "0")}.png`);
+
+// ── 이미지 바이너리 차원 sniff (png/jpeg/webp) ────────────────────────────────
+function sniffImageDims(buf) {
+  if (!buf || buf.length < 32) return null;
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+    return { format: "png", w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  }
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let p = 2;
+    while (p + 9 < buf.length) {
+      if (buf[p] !== 0xff) { p++; continue; }
+      const marker = buf[p + 1];
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+        return { format: "jpeg", w: buf.readUInt16BE(p + 7), h: buf.readUInt16BE(p + 5) };
+      }
+      p += 2 + buf.readUInt16BE(p + 2);
+    }
+    return { format: "jpeg", w: null, h: null };
+  }
+  if (buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WEBP") {
+    return { format: "webp", w: null, h: null };
+  }
+  return null;
+}
+
+const MIN_W = 900;
+const MIN_H = 1200;
+function dimsAcceptable(d) {
+  return d && typeof d.w === "number" && typeof d.h === "number" && d.w >= MIN_W && d.h >= MIN_H && d.h >= Math.round(d.w * 1.2);
+}
+
+function imageSha256(file) {
+  return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+}
+
+const PERCEPTUAL_AUDIT_VERSION = "ffmpeg_dhash64_v1";
+const MIN_ADJACENT_DHASH_DISTANCE = 12;
+const MIN_ANY_PRIOR_DHASH_DISTANCE = 8;
+
+function imagePerceptualHash(file) {
+  const result = spawnSync(
+    "ffmpeg",
+    ["-v", "error", "-i", file, "-vf", "scale=9:8:flags=area,format=gray", "-frames:v", "1", "-f", "rawvideo", "pipe:1"],
+    { shell: false, windowsHide: true, encoding: null, maxBuffer: 1024 * 1024 },
+  );
+  const pixels = Buffer.isBuffer(result.stdout) ? result.stdout : Buffer.from(result.stdout ?? []);
+  if (result.status !== 0 || pixels.length < 72) return null;
+  let bits = 0n;
+  for (let y = 0; y < 8; y += 1) {
+    for (let x = 0; x < 8; x += 1) {
+      bits = (bits << 1n) | BigInt(pixels[y * 9 + x] > pixels[y * 9 + x + 1] ? 1 : 0);
+    }
+  }
+  return bits.toString(16).padStart(16, "0");
+}
+
+function perceptualDistance(left, right) {
+  if (!/^[a-f0-9]{16}$/i.test(left ?? "") || !/^[a-f0-9]{16}$/i.test(right ?? "")) return null;
+  let xor = BigInt(`0x${left}`) ^ BigInt(`0x${right}`);
+  let distance = 0;
+  while (xor > 0n) {
+    distance += Number(xor & 1n);
+    xor >>= 1n;
+  }
+  return distance;
+}
+
+function nearestPriorVisual(sceneStates, currentIndex, perceptualHash) {
+  let nearest = null;
+  for (let index = 0; index < currentIndex; index += 1) {
+    const prior = sceneStates[index];
+    if (prior.status !== "SAVED_OK" || typeof prior.perceptualHash !== "string") continue;
+    const distance = perceptualDistance(prior.perceptualHash, perceptualHash);
+    if (distance == null) continue;
+    if (!nearest || distance < nearest.distance) nearest = { sceneIndex: index + 1, distance };
+  }
+  return nearest;
+}
+
+function isNearDuplicate(currentIndex, nearest) {
+  if (!nearest) return false;
+  const adjacent = nearest.sceneIndex === currentIndex;
+  return nearest.distance < (adjacent ? MIN_ADJACENT_DHASH_DISTANCE : MIN_ANY_PRIOR_DHASH_DISTANCE);
+}
+
+// ── 같은 검증 컨트롤러로 저장된 장면만 건너뛴다(재실행 = 모자란 장면만) ───────
+let previousSummary = null;
+try {
+  previousSummary = fs.existsSync(SUMMARY_PATH)
+    ? JSON.parse(fs.readFileSync(SUMMARY_PATH, "utf8"))
+    : null;
+} catch {
+  previousSummary = null;
+}
+const reusablePreviousSummary =
+  previousSummary?.visualEngineVersion === outputVisualEngineVersion &&
+  previousSummary?.imageControllerVersion === IMAGE_CONTROLLER_VERSION &&
+  previousSummary?.visualModalityVersion === VISUAL_MODALITY_VERSION &&
+  previousSummary?.characterReference?.characterId === CHARACTER_ID &&
+  previousSummary?.characterReference?.referenceImageSha256 === CHARACTER_REFERENCE_SHA256 &&
+  previousSummary?.characterReference?.hashVerified === true &&
+  previousSummary?.expectedCount === sceneCount &&
+  Array.isArray(previousSummary?.scenes);
+if (exactOwnerSelectedScenes) {
+  const completeCurrentSetReady =
+    reusablePreviousSummary &&
+    previousSummary?.allReady === true &&
+    previousSummary?.visualDifferenceAudit?.passed === true &&
+    previousSummary?.visualModalityAudit?.passed === true &&
+    previousSummary?.financeSceneDiversityAudit?.passed === true &&
+    previousSummary?.characterContinuityAudit?.passed === true &&
+    previousSummary?.motionPlanAudit?.passed === true &&
+    moneyShortsImageSetSha256(previousSummary?.scenes) === EXPECTED_IMAGE_SET_SHA256 &&
+    previousSummary.scenes.length === sceneCount &&
+    previousSummary.scenes.every((scene, index) => {
+      const file = sceneFile(index);
+      return scene?.sceneIndex === index + 1 &&
+        scene?.status === "SAVED_OK" &&
+        typeof scene?.imageSha256 === "string" &&
+        /^[a-f0-9]{64}$/.test(scene.imageSha256) &&
+        fs.existsSync(file) &&
+        imageSha256(file) === scene.imageSha256;
+    }) &&
+    [...ownerSelectedSceneBindings].every(([sceneNumber, expectedSha256]) =>
+      previousSummary.scenes[sceneNumber - 1]?.imageSha256 === expectedSha256 &&
+      imageSha256(sceneFile(sceneNumber - 1)) === expectedSha256);
+  if (!completeCurrentSetReady) {
+    console.error("ABORT: exact Owner-selected regeneration requires the complete current image set and matching selected hashes.");
+    process.exit(3);
+  }
+}
+const topicScopedModeOverride = resolveTopicScopedModeOverride();
+const topicScopedSceneRepairs = resolveTopicScopedSceneRepairs();
+const topicScopedPositiveCompositionCanary = resolvePositiveCompositionCanary();
+const topicScopedSceneRepairByIndex = new Map(
+  (topicScopedSceneRepairs?.targets ?? []).map((target) => [target.sceneIndex, target]),
+);
+const sceneVisualModes = scenes.map((scene, index) => {
+  if (scene?.mediaStrategy === "veo_motion") {
+    return { id: "VEO_FULL_CHARACTER", ...VISUAL_MODES.VEO_FULL_CHARACTER };
+  }
+  if (topicScopedModeOverride?.sceneIndex === index + 1) {
+    return { id: topicScopedModeOverride.visualModeId, ...VISUAL_MODES[topicScopedModeOverride.visualModeId] };
+  }
+  return visualModeForScene(scene, index, sceneCount);
+});
+const sceneDiversityPlans = scenes.map((scene, index) =>
+  sceneDiversityPlan(scene, index, sceneCount, sceneVisualModes[index], sceneVisualModes));
+const scenePrompts = scenes.map((scene, index) => {
+  const targetedSceneRepair = topicScopedSceneRepairByIndex.get(index + 1) ?? null;
+  const targetedPositiveCompositionCanary = topicScopedPositiveCompositionCanary?.sceneIndex === index + 1;
+  const scenePromptAppend = topicScopedModeOverride?.sceneIndex === index + 1
+    ? topicScopedModeOverride.scenePromptAppend
+    : null;
+  const sceneRepairPromptAppend = targetedSceneRepair
+    ? [
+        `OWNER-APPROVED TARGETED SCENE REPAIR ${topicScopedSceneRepairs.packetSha256}, ${targetedSceneRepair.partId} scene ${targetedSceneRepair.sceneIndex}.`,
+        "Preserve the existing visual mode, presence gate, recurring-character contract and narration meaning, but replace the rejected composition exactly as follows:",
+        targetedSceneRepair.repairDirection,
+        "This repair direction overrides any generic manual-regeneration example for another scene. Do not recreate the rejected image composition.",
+      ].join(" ")
+    : null;
+  const basePrompt = [
+    scenePrompt(scene, index, sceneCount, sceneVisualModes, sceneDiversityPlans),
+    scenePromptAppend,
+    sceneRepairPromptAppend,
+  ].filter(Boolean).join(" ");
+  if (targetedSceneRepair || targetedPositiveCompositionCanary) return basePrompt;
+  if (!targetedRegenerationSceneIndexes.has(index + 1)) return basePrompt;
+  const qualityReset = [
+    "MANUAL VISUAL QUALITY REGENERATION REQUIRED: the earlier result was rejected for dark, mechanical, infographic-like, showroom-like, staged-still-life or continuity-drift qualities.",
+    "Rebuild this as ONE bright coherent full-scale Korean everyday scene with ONE immediately understandable action and natural lived-in depth.",
+    "ABSOLUTELY NO split or stacked panels, before-and-after collage, transparent cash display box, safe or vault box, paper roller, conveyor, mechanical finance mechanism, dark half-frame, giant arrow, arrow printed on a mat, showroom exhibit or decorative finance-prop still life.",
+    "Cash, banknotes, charts, statements and documents remain allowed when they physically prove the narration's exact cause-and-result moment; use only the few full-size everyday objects needed for that proof, never an unmotivated currency stack, coin pile or chart wall. Show no readable text or numbers.",
+  ];
+  if (sceneVisualModes[index].presence === "none") {
+    return [
+      basePrompt,
+      ...qualityReset,
+      "Keep the scene person-free and make the ordinary objects themselves reveal the exact economic change without becoming a diagram or machine.",
+    ].join(" ");
+  }
+  if (sceneVisualModes[index].presence === "hands") {
+    return [
+      basePrompt,
+      ...qualityReset,
+      `The earlier hands-only result also broke ${CHARACTER_NAME}'s wardrobe continuity. Match the attached identity board's visible fixed-wardrobe sleeves exactly, with natural adult male hands and restrained finger action; show no beige knitwear and keep the head, face, hair and torso fully outside the frame.`,
+    ].join(" ");
+  }
+  return [
+    basePrompt,
+    ...qualityReset,
+    "CHARACTER QUALITY REGENERATION REQUIRED: the earlier result drifted away from the selected character identity reference.",
+    `Restore the exact ${CHARACTER_NAME} face, age, hairstyle, hair color, body proportions and fixed wardrobe from the attached identity board while preserving the economic event, setting, action and camera plan.`,
+  ].join(" ");
+});
+const sceneRequirements = scenes.map((scene, index) => {
+  const prompt = scenePrompts[index];
+  return {
+    visualEvidenceId: scene.visualEvidence.sceneIdentity,
+    visualModeId: sceneVisualModes[index].id,
+    presenceMode: sceneVisualModes[index].presence,
+    veoMotionEligibility: scene.mediaStrategy === "veo_motion" &&
+      sceneVisualModes[index].id === "VEO_FULL_CHARACTER"
+      ? "full_character"
+      : "not_required",
+    characterReferenceRequired: sceneVisualModes[index].presence !== "none",
+    sceneIntegrationPlan: scene.visualEvidence.sceneIntegrationPlan,
+    motionPlan: scene.visualEvidence.motionPlan,
+    sceneDiversityPlan: sceneDiversityPlans[index],
+    promptFingerprint: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
+  };
+});
+let existingAssetSemanticRebind = null;
+if (EXISTING_ASSET_REBIND_PACKET_ABS) {
+  let packet;
+  let packetBuffer;
+  try {
+    packetBuffer = fs.readFileSync(EXISTING_ASSET_REBIND_PACKET_ABS);
+    packet = JSON.parse(packetBuffer.toString("utf8"));
+  } catch (error) {
+    console.error(`ABORT: existing-asset rebind packet read failed: ${error.message}`);
+    process.exit(3);
+  }
+  const targets = Array.isArray(packet?.targetScenes)
+    ? packet.targetScenes.slice().sort((left, right) => Number(left.sceneIndex) - Number(right.sceneIndex))
+    : [];
+  const scriptSha256 = createHash("sha256").update(fs.readFileSync(scriptAbs)).digest("hex");
+  const previousSummaryBuffer = fs.existsSync(SUMMARY_PATH) ? fs.readFileSync(SUMMARY_PATH) : null;
+  const previousSummarySha256 = previousSummaryBuffer
+    ? createHash("sha256").update(previousSummaryBuffer).digest("hex")
+    : null;
+  const packetContractValid =
+    packet?.schemaVersion === "money_shorts_existing_asset_semantic_rebind_v1" &&
+    packet?.status === "AI_REVIEWED_OWNER_RECHECK_REQUIRED" &&
+    packet?.externalActionAllowed === false &&
+    packet?.browserAllowed === false &&
+    packet?.imageGenerationAllowed === false &&
+    packet?.manualOwnerReviewStillRequired === true &&
+    packet?.topicId === topicId &&
+    packet?.productionPartId === record.production?.partId &&
+    path.resolve(String(packet?.scriptPath ?? "")) === scriptAbs &&
+    packet?.scriptSha256 === scriptSha256 &&
+    path.resolve(String(packet?.previousSummaryPath ?? "")) === SUMMARY_PATH &&
+    packet?.previousSummarySha256 === previousSummarySha256 &&
+    path.resolve(String(packet?.destinationAssetDir ?? "")) === OUT_DIR &&
+    MEDIA_ROOT_RE.test(path.resolve(String(packet?.sourceAssetDir ?? "")) + path.sep) &&
+    packet?.compatibilityReview?.reviewerRole === "main_ai" &&
+    packet?.compatibilityReview?.decision === "semantically_compatible" &&
+    packet?.compatibilityReview?.ownerRecheckRequired === true &&
+    targets.length >= 1 &&
+    targets.length <= 2;
+  if (!packetContractValid || !previousSummary || !previousSummaryBuffer) {
+    console.error("ABORT: existing-asset semantic rebind packet contract or prior summary binding is invalid.");
+    process.exit(3);
+  }
+  const targetIndexes = targets.map((target) => Number(target.sceneIndex));
+  if (new Set(targetIndexes).size !== targetIndexes.length) {
+    console.error("ABORT: existing-asset semantic rebind target indexes must be unique.");
+    process.exit(3);
+  }
+  const evidenceMismatchIndexes = sceneRequirements
+    .map((requirement, index) => ({
+      sceneIndex: index + 1,
+      currentVisualEvidenceId: requirement.visualEvidenceId,
+      previousVisualEvidenceId: previousSummary.scenes?.[index]?.visualEvidenceId,
+    }))
+    .filter((row) => row.currentVisualEvidenceId !== row.previousVisualEvidenceId)
+    .map((row) => row.sceneIndex);
+  if (JSON.stringify(evidenceMismatchIndexes) !== JSON.stringify(targetIndexes)) {
+    console.error("ABORT: existing-asset semantic rebind targets must equal every and only changed visual-evidence binding.");
+    process.exit(3);
+  }
+  for (const target of targets) {
+    const index = Number(target.sceneIndex) - 1;
+    const requirement = sceneRequirements[index];
+    const previousScene = previousSummary.scenes?.[index];
+    const destinationImagePath = sceneFile(index);
+    const sourceImagePath = path.resolve(String(target.sourceImagePath ?? ""));
+    const currentNarrationSha256 = createHash("sha256").update(String(scenes[index]?.narration ?? "")).digest("hex");
+    const targetValid =
+      Number.isInteger(target.sceneIndex) &&
+      target.sceneIndex >= 1 &&
+      target.sceneIndex <= sceneCount &&
+      target.previousVisualEvidenceId === previousScene?.visualEvidenceId &&
+      target.currentVisualEvidenceId === requirement?.visualEvidenceId &&
+      target.previousVisualEvidenceId !== target.currentVisualEvidenceId &&
+      target.previousPromptFingerprint === previousScene?.promptFingerprint &&
+      target.currentPromptFingerprint === requirement?.promptFingerprint &&
+      target.currentNarrationSha256 === currentNarrationSha256 &&
+      target.imageSha256 === previousScene?.imageSha256 &&
+      path.resolve(String(target.destinationImagePath ?? "")) === destinationImagePath &&
+      path.dirname(sourceImagePath) === path.resolve(String(packet.sourceAssetDir)) &&
+      fs.existsSync(sourceImagePath) &&
+      fs.existsSync(destinationImagePath) &&
+      imageSha256(sourceImagePath) === target.imageSha256 &&
+      imageSha256(destinationImagePath) === target.imageSha256 &&
+      typeof target.semanticCompatibilityAssessment === "string" &&
+      target.semanticCompatibilityAssessment.length >= 40;
+    if (!targetValid) {
+      console.error(`ABORT: existing-asset semantic rebind target ${target.sceneIndex} does not match the exact current script, prior summary and preserved image.`);
+      process.exit(3);
+    }
+  }
+  existingAssetSemanticRebind = {
+    schemaVersion: packet.schemaVersion,
+    packetSha256: createHash("sha256").update(packetBuffer).digest("hex"),
+    sourceAssetDir: path.resolve(packet.sourceAssetDir),
+    destinationAssetDir: OUT_DIR,
+    targetScenes: targets,
+    manualOwnerReviewStillRequired: true,
+    externalActionPerformed: false,
+  };
+}
+if (topicScopedModeOverride) {
+  const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
+  if (targetRequirement?.promptFingerprint !== topicScopedModeOverride.promptFingerprint) {
+    console.error(`ABORT: mode override packet prompt fingerprint does not match the exact regeneration prompt. expected=${topicScopedModeOverride.promptFingerprint} actual=${targetRequirement?.promptFingerprint ?? "missing"}`);
+    process.exit(3);
+  }
+}
+if (topicScopedPositiveCompositionCanary) {
+  const targetPrompt = scenePrompts[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const targetRequirement = sceneRequirements[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const actualPromptSha256 = typeof targetPrompt === "string"
+    ? createHash("sha256").update(targetPrompt).digest("hex")
+    : null;
+  if (
+    targetRequirement?.promptFingerprint !== topicScopedPositiveCompositionCanary.promptFingerprint ||
+    actualPromptSha256 !== topicScopedPositiveCompositionCanary.promptSha256 ||
+    targetPrompt?.length !== topicScopedPositiveCompositionCanary.promptLength
+  ) {
+    console.error("ABORT: positive composition canary does not match the exact audited shared-engine prompt.");
+    process.exit(3);
+  }
+}
+if (topicScopedModeOverride?.executionApproved) {
+  const targetRequirement = sceneRequirements[topicScopedModeOverride.sceneIndex - 1];
+  let priorPromptAudit = null;
+  let priorImageSummary = null;
+  try {
+    priorPromptAudit = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "prompt-audit.json"), "utf8"));
+    priorImageSummary = JSON.parse(fs.readFileSync(SUMMARY_PATH, "utf8"));
+  } catch {
+    // 아래 binding gate가 fail-closed로 처리한다.
+  }
+  const priorTarget = priorImageSummary?.scenes?.find((scene) => scene?.sceneIndex === topicScopedModeOverride.sceneIndex);
+  const auditedTarget = priorPromptAudit?.rows?.find((scene) => scene?.sceneIndex === topicScopedModeOverride.sceneIndex);
+  const targetFile = sceneFile(topicScopedModeOverride.sceneIndex - 1);
+  const executionBindingsReady =
+    targetRequirement?.promptFingerprint === topicScopedModeOverride.promptFingerprint &&
+    priorPromptAudit?.passed === true &&
+    priorPromptAudit?.externalActionPerformed === false &&
+    priorPromptAudit?.topicScopedModeOverride?.packetSha256 === topicScopedModeOverride.packetSha256 &&
+    priorPromptAudit?.visualModalityAudit?.passed === true &&
+    auditedTarget?.promptFingerprint === topicScopedModeOverride.promptFingerprint &&
+    priorImageSummary?.allReady === true &&
+    priorTarget?.promptFingerprint !== targetRequirement?.promptFingerprint &&
+    priorTarget?.imageSha256 === topicScopedModeOverride.currentImageSha256 &&
+    fs.existsSync(targetFile) &&
+    imageSha256(targetFile) === topicScopedModeOverride.currentImageSha256;
+  if (!executionBindingsReady) {
+    console.error("ABORT: approved override execution is not bound to the current prompt audit and existing target image.");
+    process.exit(3);
+  }
+}
+if (topicScopedPositiveCompositionCanary?.executionApproved) {
+  const targetRequirement = sceneRequirements[topicScopedPositiveCompositionCanary.sceneIndex - 1];
+  const targetFile = sceneFile(topicScopedPositiveCompositionCanary.sceneIndex - 1);
+  const previousTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === topicScopedPositiveCompositionCanary.sceneIndex);
+  const executionBindingsReady =
+    targetRequirement?.promptFingerprint === topicScopedPositiveCompositionCanary.promptFingerprint &&
+    fs.existsSync(targetFile) &&
+    imageSha256(targetFile) === topicScopedPositiveCompositionCanary.currentImageSha256 &&
+    previousTarget?.imageSha256 === topicScopedPositiveCompositionCanary.currentImageSha256 &&
+    previousTarget?.promptFingerprint === topicScopedPositiveCompositionCanary.currentPromptFingerprint;
+  if (!executionBindingsReady) {
+    console.error("ABORT: positive composition canary execution is no longer bound to the current original image and audited prompt.");
+    process.exit(3);
+  }
+}
+if (topicScopedSceneRepairs?.executionApproved) {
+  let priorPromptAudit = null;
+  try {
+    priorPromptAudit = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "prompt-audit.json"), "utf8"));
+  } catch {
+    // 아래 binding gate가 fail-closed로 처리한다.
+  }
+  const auditedTargetIndexes = priorPromptAudit?.topicScopedSceneRepairs?.targetIndexes;
+  const targetBindingsReady = topicScopedSceneRepairs.targets.every((target) => {
+    const targetRequirement = sceneRequirements[target.sceneIndex - 1];
+    const priorTarget = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === target.sceneIndex);
+    const auditedTarget = priorPromptAudit?.rows?.find((scene) => scene?.sceneIndex === target.sceneIndex);
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    return targetRequirement?.promptFingerprint !== target.currentPromptFingerprint &&
+      auditedTarget?.promptFingerprint === targetRequirement?.promptFingerprint &&
+      priorTarget?.promptFingerprint === target.currentPromptFingerprint &&
+      priorTarget?.imageSha256 === target.currentImageSha256 &&
+      fs.existsSync(targetFile) &&
+      imageSha256(targetFile) === target.currentImageSha256;
+  });
+  const executionBindingsReady =
+    priorPromptAudit?.passed === true &&
+    priorPromptAudit?.externalActionPerformed === false &&
+    priorPromptAudit?.topicScopedSceneRepairs?.packetSha256 === topicScopedSceneRepairs.packetSha256 &&
+    priorPromptAudit?.topicScopedSceneRepairs?.productionPartId === topicScopedSceneRepairs.productionPartId &&
+    Array.isArray(auditedTargetIndexes) &&
+    auditedTargetIndexes.length === topicScopedSceneRepairs.targetIndexes.length &&
+    auditedTargetIndexes.every((sceneIndex, index) => sceneIndex === topicScopedSceneRepairs.targetIndexes[index]) &&
+    priorPromptAudit?.visualModalityAudit?.passed === true &&
+    priorPromptAudit?.financeSceneDiversityAudit?.passed === true &&
+    targetBindingsReady;
+  if (!executionBindingsReady) {
+    console.error("ABORT: approved targeted repairs are not bound to the current prompt audit and existing target images.");
+    process.exit(3);
+  }
+}
+if (promptAuditOnly) {
+  const legacyPresenceConflictPatterns = [
+    /sculpted faceless characters and objects/i,
+    /physically inhabitable by the adult character/i,
+    /faceless stylized person acts/i,
+    /show a hand or faceless figure/i,
+    /person, decision object/i,
+    /human-centered wide composition/i,
+    /small faceless figure performing/i,
+  ];
+  const retiredDirectionPatterns = [
+    /the recurring character lunges or reaches between/i,
+    /dynamic low three-quarter medium-wide action view/i,
+    /full-scale corridor or threshold with separate temptation/i,
+    /use dark warning light only when the narration requires it/i,
+  ];
+  const rows = scenePrompts.map((prompt, index) => {
+    const mode = sceneVisualModes[index];
+    const conflicts = mode.presence === "character"
+      ? []
+      : legacyPresenceConflictPatterns.filter((pattern) => pattern.test(prompt)).map((pattern) => pattern.source);
+    const presenceGatePassed = mode.id === "VEO_FULL_CHARACTER"
+      ? /PRESENCE GATE: ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO/i.test(prompt)
+      : mode.presence === "character"
+        ? /PRESENCE GATE: ONE RECURRING CHARACTER IS ALLOWED/i.test(prompt)
+      : mode.presence === "hands"
+        ? /PRESENCE GATE: HANDS ONLY/i.test(prompt)
+        : /PRESENCE GATE: NO PERSON/i.test(prompt);
+    const semanticCompositionPassed =
+      new RegExp(`POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}`).test(prompt) &&
+      /Primary anchor:/i.test(prompt) &&
+      /Supporting placement:/i.test(prompt) &&
+      /Open-space requirement:/i.test(prompt) &&
+      /Finance evidence allowance:/i.test(prompt) &&
+      /Connection policy:/i.test(prompt) &&
+      /SEMANTIC REPETITION GUARD:/i.test(prompt) &&
+      /SOURCE MOTIF TRANSLATION/i.test(prompt);
+    const promptLengthPassed = prompt.length <= PROMPT_HARD_MAX_CHARS;
+    const contractPassed =
+      /bright family-feature-quality cinematic 3D animation/i.test(prompt) &&
+      /SCENE INTEGRATION:/i.test(prompt) &&
+      /MOTION PLAN/i.test(prompt) &&
+      /plausible mid-action instant/i.test(prompt) &&
+      new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
+      /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
+      semanticCompositionPassed &&
+      promptLengthPassed &&
+      (scenes[index]?.mediaStrategy !== "veo_motion" ||
+        (
+          mode.id === "VEO_FULL_CHARACTER" &&
+          /ONE RECURRING FULL-BODY CHARACTER IS REQUIRED FOR VEO/i.test(prompt) &&
+          /head to both feet/i.test(prompt) &&
+          /both hands and both shoes/i.test(prompt)
+        )) &&
+      retiredDirectionPatterns.every((pattern) => !pattern.test(prompt));
+    return {
+      sceneIndex: index + 1,
+      sceneId: scenes[index].id,
+      visualModeId: mode.id,
+      presenceMode: mode.presence,
+      veoMotionEligibility: sceneRequirements[index].veoMotionEligibility,
+      sceneDiversityPlan: sceneDiversityPlans[index],
+      presenceGatePassed,
+      semanticCompositionPassed,
+      promptLength: prompt.length,
+      promptLengthPassed,
+      contractPassed,
+      legacyPresenceConflicts: conflicts,
+      promptFingerprint: sceneRequirements[index].promptFingerprint,
+      prompt,
+    };
+  });
+  // 실제 생성 뒤에 적용되는 시퀀스 다양성 게이트를 무전송 패킷에도 동일하게 적용한다.
+  // 개별 프롬프트가 모두 유효해도 캐릭터/비캐릭터 비율이 어긋나면 외부 생성 전에 차단해야 한다.
+  const promptVisualModalityAudit = buildVisualModalityAudit(rows);
+  const promptFinanceSceneDiversityAudit = buildFinanceSceneDiversityAudit(rows);
+  const audit = {
+    schemaVersion: "money_shorts_scene_prompt_audit_v2",
+    visualModalityVersion: VISUAL_MODALITY_VERSION,
+    financeSceneDiversityVersion: FINANCE_SCENE_DIVERSITY_VERSION,
+    topicId,
+    sceneCount,
+    externalActionPerformed: false,
+    topicScopedModeOverride,
+    topicScopedSceneRepairs,
+    topicScopedPositiveCompositionCanary,
+    visualModalityAudit: promptVisualModalityAudit,
+    financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
+    passed:
+      rows.every((row) => row.presenceGatePassed && row.contractPassed && row.legacyPresenceConflicts.length === 0) &&
+      promptVisualModalityAudit.passed &&
+      promptFinanceSceneDiversityAudit.passed,
+    rows,
+  };
+  const auditPath = PROMPT_AUDIT_OUT_ABS ?? path.join(OUT_DIR, "prompt-audit.json");
+  fs.mkdirSync(path.dirname(auditPath), { recursive: true });
+  fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2), "utf8");
+  console.log(JSON.stringify({
+    passed: audit.passed,
+    auditPath,
+    visualModalityAudit: promptVisualModalityAudit,
+    financeSceneDiversityAudit: promptFinanceSceneDiversityAudit,
+    rows: rows.map((row) => ({
+      sceneIndex: row.sceneIndex,
+      sceneId: row.sceneId,
+      visualModeId: row.visualModeId,
+      presenceMode: row.presenceMode,
+      presenceGatePassed: row.presenceGatePassed,
+      semanticCompositionPassed: row.semanticCompositionPassed,
+      promptLength: row.promptLength,
+      promptLengthPassed: row.promptLengthPassed,
+      compositionBlueprintId: row.sceneDiversityPlan?.compositionBlueprint?.id ?? null,
+      sourceMotifHazards: row.sceneDiversityPlan?.compositionBlueprint?.sourceMotifHazards ?? [],
+      contractPassed: row.contractPassed,
+      legacyPresenceConflicts: row.legacyPresenceConflicts,
+      promptFingerprint: row.promptFingerprint,
+    })),
+  }, null, 2));
+  process.exit(audit.passed ? 0 : 1);
+}
+const semanticRebindTargetBySceneIndex = new Map(
+  (existingAssetSemanticRebind?.targetScenes ?? []).map((target) => [target.sceneIndex, target]),
+);
+const reusableSceneIndexes = new Set(
+  reusablePreviousSummary
+    ? previousSummary.scenes
+        .filter((scene) => {
+          if (scene?.status !== "SAVED_OK" || !Number.isInteger(scene?.sceneIndex)) return false;
+          if (targetedRegenerationSceneIndexes.has(scene.sceneIndex)) return false;
+          const requirement = sceneRequirements[scene.sceneIndex - 1];
+          const file = sceneFile(scene.sceneIndex - 1);
+          const promptMatches = scene.promptFingerprint === requirement?.promptFingerprint;
+          const semanticRebindTarget = semanticRebindTargetBySceneIndex.get(scene.sceneIndex);
+          const visualEvidenceBindingMatches =
+            scene.visualEvidenceId === requirement?.visualEvidenceId ||
+            (
+              semanticRebindTarget?.previousVisualEvidenceId === scene.visualEvidenceId &&
+              semanticRebindTarget?.currentVisualEvidenceId === requirement?.visualEvidenceId &&
+              semanticRebindTarget?.imageSha256 === scene.imageSha256
+            );
+          const verifiedExistingOutput =
+            previousSummary?.allReady === true &&
+            previousSummary?.visualModalityAudit?.passed === true;
+          const modeContractMatches =
+            scene.visualModeId === requirement.visualModeId &&
+            scene.presenceMode === requirement.presenceMode &&
+            scene.veoMotionEligibility === requirement.veoMotionEligibility;
+          return requirement &&
+            visualEvidenceBindingMatches &&
+            modeContractMatches &&
+            (promptMatches || verifiedExistingOutput) &&
+            typeof scene.imageSha256 === "string" &&
+            scene.imageSha256.length === 64 &&
+            typeof scene.perceptualHash === "string" &&
+            scene.perceptualHash.length === 16 &&
+            fs.existsSync(file) &&
+            imageSha256(file) === scene.imageSha256 &&
+            imagePerceptualHash(file) === scene.perceptualHash;
+        })
+        .map((scene) => scene.sceneIndex)
+    : [],
+);
+
+const sceneStates = scenes.map((s, i) => {
+  const file = sceneFile(i);
+  const requirement = sceneRequirements[i];
+  if (reusableSceneIndexes.has(i + 1) && fs.existsSync(file)) {
+    const dims = sniffImageDims(fs.readFileSync(file));
+    if (dimsAcceptable(dims)) {
+      const previousScene = previousSummary?.scenes?.find((scene) => scene?.sceneIndex === i + 1);
+      return {
+        sceneIndex: i + 1,
+        file,
+        ...requirement,
+        promptFingerprint: targetedRegenerationSceneIndexes.size > 0 && typeof previousScene?.promptFingerprint === "string"
+          ? previousScene.promptFingerprint
+          : requirement.promptFingerprint,
+        imageSha256: imageSha256(file),
+        perceptualHash: imagePerceptualHash(file),
+        nearestVisualSceneIndex: null,
+        nearestVisualDistance: null,
+        width: dims.w,
+        height: dims.h,
+        referenceAttached: previousScene?.referenceAttached === true,
+        status: "SAVED_OK",
+        method: "existing_file_skip",
+      };
+    }
+  }
+  return {
+    sceneIndex: i + 1,
+    file,
+    ...requirement,
+    imageSha256: null,
+    perceptualHash: null,
+    nearestVisualSceneIndex: null,
+    nearestVisualDistance: null,
+    width: null,
+    height: null,
+    referenceAttached: false,
+    status: "PENDING",
+    method: null,
+  };
+});
+
+const reusedHashes = new Map();
+for (const state of sceneStates) {
+  if (state.status !== "SAVED_OK" || typeof state.imageSha256 !== "string") continue;
+  const previousIndex = reusedHashes.get(state.imageSha256);
+  if (previousIndex != null) {
+    state.status = "PENDING";
+    state.imageSha256 = null;
+    state.method = `duplicate_existing_image_of_scene_${previousIndex}_regenerate`;
+  } else {
+    reusedHashes.set(state.imageSha256, state.sceneIndex);
+  }
+}
+
+for (let index = 0; index < sceneStates.length; index += 1) {
+  const state = sceneStates[index];
+  if (state.status !== "SAVED_OK" || typeof state.perceptualHash !== "string") continue;
+  const nearest = nearestPriorVisual(sceneStates, index, state.perceptualHash);
+  state.nearestVisualSceneIndex = nearest?.sceneIndex ?? null;
+  state.nearestVisualDistance = nearest?.distance ?? null;
+  if (isNearDuplicate(index, nearest)) {
+    state.status = "PENDING";
+    state.imageSha256 = null;
+    state.perceptualHash = null;
+    state.method = `near_duplicate_existing_scene_${nearest.sceneIndex}_distance_${nearest.distance}_regenerate`;
+  }
+}
+
+function buildVisualDifferenceAudit(states) {
+  const checked = states.filter((state) => state.status === "SAVED_OK" && typeof state.perceptualHash === "string");
+  return {
+    version: PERCEPTUAL_AUDIT_VERSION,
+    adjacentMinimumDistance: MIN_ADJACENT_DHASH_DISTANCE,
+    anyPriorMinimumDistance: MIN_ANY_PRIOR_DHASH_DISTANCE,
+    checkedCount: checked.length,
+    passed: checked.length === sceneCount && states.every((state) =>
+      state.status === "SAVED_OK" &&
+      typeof state.perceptualHash === "string" &&
+      (state.nearestVisualDistance == null || !isNearDuplicate(state.sceneIndex - 1, {
+        sceneIndex: state.nearestVisualSceneIndex,
+        distance: state.nearestVisualDistance,
+      }))),
+  };
+}
+
+function buildVisualModalityAudit(states) {
+  const characterCount = sceneVisualModes.filter((mode) => mode.presence === "character").length;
+  const handsOnlyCount = sceneVisualModes.filter((mode) => mode.presence === "hands").length;
+  const noPersonCount = sceneVisualModes.filter((mode) => mode.presence === "none").length;
+  const distinctModeCount = new Set(sceneVisualModes.map((mode) => mode.id)).size;
+  // VEO 후보는 손/배경 장면이 아니라 전신 캐릭터 장면만 허용한다. 따라서 인물 장면은
+  // 장면 흐름의 주축이 될 수 있고, 비인물 장면은 전환·근거 장면으로 최소만 유지한다.
+  // 기존 45/55 비율은 이 계약과 충돌해 정상 저장된 전신 VEO 장면을 미완료로 오판했다.
+  const minNonCharacterCount = Math.max(1, Math.floor(sceneCount * 0.25));
+  const maxCharacterCount = sceneCount - minNonCharacterCount;
+  const requiredDistinctModes = Math.min(6, Math.max(3, sceneCount - 1));
+  const sceneContractsPassed = states.length === sceneCount && states.every((state, index) =>
+    state.visualModeId === sceneVisualModes[index].id &&
+    state.presenceMode === sceneVisualModes[index].presence);
+  return {
+    version: VISUAL_MODALITY_VERSION,
+    modeIds: sceneVisualModes.map((mode) => mode.id),
+    characterCount,
+    handsOnlyCount,
+    noPersonCount,
+    nonCharacterCount: handsOnlyCount + noPersonCount,
+    maxCharacterCount,
+    minNonCharacterCount,
+    distinctModeCount,
+    requiredDistinctModes,
+    sceneContractsPassed,
+    manualVisualReviewRequired: true,
+    passed:
+      sceneContractsPassed &&
+      characterCount <= maxCharacterCount &&
+      handsOnlyCount + noPersonCount >= minNonCharacterCount &&
+      distinctModeCount >= requiredDistinctModes,
+  };
+}
+
+function buildFinanceSceneDiversityAudit(states) {
+  const plans = states.map((state) => state?.sceneDiversityPlan ?? null);
+  const expectedPlans = scenes.map((scene, index) => sceneDiversityPlans[index] ??
+    sceneDiversityPlan(scene, index, sceneCount, sceneVisualModes[index], sceneVisualModes));
+  const sceneContractsPassed =
+    states.length === sceneCount &&
+    plans.every((plan, index) =>
+      plan?.version === FINANCE_SCENE_DIVERSITY_VERSION &&
+      plan?.sceneIndex === index + 1 &&
+      plan?.sceneId === expectedPlans[index].sceneId &&
+      plan?.locationFamily === expectedPlans[index].locationFamily &&
+      plan?.cameraFamily === expectedPlans[index].cameraFamily &&
+      plan?.financeFocus === expectedPlans[index].financeFocus &&
+      plan?.compositionBlueprint?.version === COMPOSITION_BLUEPRINT_VERSION &&
+      plan?.compositionBlueprint?.id === expectedPlans[index].compositionBlueprint.id &&
+      plan?.compositionBlueprint?.semanticSignature === expectedPlans[index].compositionBlueprint.semanticSignature &&
+      plan?.compositionBlueprint?.connectionPolicy === expectedPlans[index].compositionBlueprint.connectionPolicy &&
+      Array.isArray(plan?.compositionBlueprint?.sourceMotifHazards));
+  const adjacentRepeatFailures = [];
+  const adjacentSemanticRepeatFailures = [];
+  for (let index = 1; index < plans.length; index += 1) {
+    const previous = plans[index - 1];
+    const current = plans[index];
+    if (!previous || !current) continue;
+    const repeatedFields = ["locationFamily", "cameraFamily", "financeFocus"]
+      .filter((field) => previous[field] === current[field]);
+    if (repeatedFields.length > 0) {
+      adjacentRepeatFailures.push({ previousScene: index, currentScene: index + 1, repeatedFields });
+    }
+    if (
+      previous?.compositionBlueprint?.semanticSignature &&
+      previous.compositionBlueprint.semanticSignature === current?.compositionBlueprint?.semanticSignature
+    ) {
+      adjacentSemanticRepeatFailures.push({
+        previousScene: index,
+        currentScene: index + 1,
+        semanticSignature: current.compositionBlueprint.semanticSignature,
+      });
+    }
+  }
+  const distinctLocationCount = new Set(plans.map((plan) => plan?.locationFamily).filter(Boolean)).size;
+  const distinctCameraCount = new Set(plans.map((plan) => plan?.cameraFamily).filter(Boolean)).size;
+  const distinctFinanceFocusCount = new Set(plans.map((plan) => plan?.financeFocus).filter(Boolean)).size;
+  const distinctCompositionCount = new Set(
+    plans.map((plan) => plan?.compositionBlueprint?.semanticSignature).filter(Boolean),
+  ).size;
+  const requiredDistinctCount = Math.min(6, sceneCount);
+  const requiredDistinctCompositionCount = Math.min(6, sceneCount);
+  const sourceMotifHazardScenes = plans
+    .filter((plan) => plan?.compositionBlueprint?.sourceMotifHazards?.length > 0)
+    .map((plan) => ({
+      sceneIndex: plan.sceneIndex,
+      hazards: plan.compositionBlueprint.sourceMotifHazards,
+      neutralizationRequired: plan.compositionBlueprint.sourceMotifNeutralizationRequired === true,
+    }));
+  const promptCoveragePassed = scenePrompts.every((prompt) =>
+    new RegExp(`FINANCE SCENE DIVERSITY CONTRACT ${FINANCE_SCENE_DIVERSITY_VERSION}`).test(prompt) &&
+    /Cash, banknotes, charts, statements and documents are allowed/i.test(prompt) &&
+    /Do not repeat the immediately previous scene's exact combination/i.test(prompt));
+  const semanticMotifGuardPassed = scenePrompts.every((prompt, index) => {
+    const blueprint = plans[index]?.compositionBlueprint;
+    return blueprint?.version === COMPOSITION_BLUEPRINT_VERSION &&
+      prompt.includes(`POSITIVE COMPOSITION BLUEPRINT ${COMPOSITION_BLUEPRINT_VERSION}: ${blueprint.id}`) &&
+      /Primary anchor:/i.test(prompt) &&
+      /Supporting placement:/i.test(prompt) &&
+      /Open-space requirement:/i.test(prompt) &&
+      /Connection policy:/i.test(prompt) &&
+      /SEMANTIC REPETITION GUARD:/i.test(prompt) &&
+      /SOURCE MOTIF TRANSLATION/i.test(prompt) &&
+      /keep them localized rather than removing relevant finance evidence/i.test(prompt) &&
+      prompt.length <= PROMPT_HARD_MAX_CHARS;
+  });
+  const promptLengths = scenePrompts.map((prompt) => prompt.length);
+  const promptLengthAudit = {
+    hardMaximum: PROMPT_HARD_MAX_CHARS,
+    minimum: Math.min(...promptLengths),
+    maximum: Math.max(...promptLengths),
+    average: Math.round(promptLengths.reduce((sum, length) => sum + length, 0) / Math.max(1, promptLengths.length)),
+    passed: promptLengths.every((length) => length <= PROMPT_HARD_MAX_CHARS),
+  };
+  return {
+    version: FINANCE_SCENE_DIVERSITY_VERSION,
+    compositionBlueprintVersion: COMPOSITION_BLUEPRINT_VERSION,
+    sceneContractsPassed,
+    promptCoveragePassed,
+    semanticMotifGuardPassed,
+    promptLengthAudit,
+    adjacentRepeatFailures,
+    adjacentSemanticRepeatFailures,
+    distinctLocationCount,
+    distinctCameraCount,
+    distinctFinanceFocusCount,
+    distinctCompositionCount,
+    requiredDistinctCount,
+    requiredDistinctCompositionCount,
+    sourceMotifHazardScenes,
+    allowedFinanceProps: ["cash", "banknotes", "charts", "statements", "documents"],
+    manualVisualReviewRequired: true,
+    passed:
+      sceneContractsPassed &&
+      promptCoveragePassed &&
+      semanticMotifGuardPassed &&
+      promptLengthAudit.passed &&
+      adjacentRepeatFailures.length === 0 &&
+      adjacentSemanticRepeatFailures.length === 0 &&
+      distinctLocationCount >= requiredDistinctCount &&
+      distinctCameraCount >= requiredDistinctCount &&
+      distinctFinanceFocusCount >= requiredDistinctCount &&
+      distinctCompositionCount >= requiredDistinctCompositionCount,
+  };
+}
+
+function buildCharacterContinuityAudit(states) {
+  const promptCoveragePassed = scenePrompts.every((prompt, index) => {
+    const mode = sceneVisualModes[index];
+    if (mode.presence === "character") {
+      return prompt.includes(CHARACTER_CONTINUITY_VERSION) &&
+        /attached .* identity board/i.test(prompt) &&
+        /identity board(?:'s)? exact face, age, hairstyle, hair color, body proportions and fixed wardrobe/i.test(prompt);
+    }
+    if (mode.presence === "hands") {
+      return /PRESENCE GATE: HANDS ONLY/i.test(prompt) &&
+        /attached .* reference(?:'s)? skin tone and fixed-wardrobe sleeves/i.test(prompt) &&
+        /no head, face, hair/i.test(prompt);
+    }
+    return /PRESENCE GATE: NO PERSON/i.test(prompt) && /no human, head, face, hair, hands/i.test(prompt);
+  });
+  const targetedRegenerationPassed = targetedRegenerationScenes.every((sceneNumber) => {
+    const state = states[sceneNumber - 1];
+    return state?.status === "SAVED_OK" && state?.method !== "existing_file_skip";
+  });
+  const referenceRequiredSceneStates = states.filter((state) => state.characterReferenceRequired === true);
+  const referenceAttachmentPassed =
+    referenceRequiredSceneStates.length > 0 &&
+    referenceRequiredSceneStates.every((state) => state.status === "SAVED_OK" && state.referenceAttached === true);
+  return {
+    version: CHARACTER_CONTINUITY_VERSION,
+    promptCoveragePassed,
+    referenceHashVerified: actualCharacterReferenceSha256 === CHARACTER_REFERENCE_SHA256,
+    referenceAttachmentPassed,
+    characterId: CHARACTER_ID,
+    characterName: CHARACTER_NAME,
+    referenceImageSha256: CHARACTER_REFERENCE_SHA256,
+    targetedRegenerationScenes,
+    targetedRegenerationPassed,
+    passed: promptCoveragePassed && referenceAttachmentPassed && targetedRegenerationPassed,
+    manualVisualReviewRequired: true,
+    characterSceneCount: sceneVisualModes.filter((mode) => mode.presence === "character").length,
+    handsOnlySceneCount: sceneVisualModes.filter((mode) => mode.presence === "hands").length,
+    noPersonSceneCount: sceneVisualModes.filter((mode) => mode.presence === "none").length,
+    referenceRequiredSceneCount: sceneVisualModes.filter((mode) => mode.presence !== "none").length,
+    requiredIdentity: "exact selected character face, age, hairstyle, hair color, body proportions and fixed wardrobe",
+    rejectedIdentityDrift: ["changed face", "changed age", "changed hairstyle", "changed hair color", "changed body proportions", "changed wardrobe", "multi-view board recreation"],
+  };
+}
+
+function buildMotionPlanAudit(states) {
+  const promptCoveragePassed = scenePrompts.every((prompt) =>
+    /SCENE INTEGRATION:/i.test(prompt) && /MOTION PLAN/i.test(prompt) && /plausible mid-action instant/i.test(prompt));
+  const evidenceCoveragePassed = scenes.every((scene) =>
+    typeof scene?.visualEvidence?.sceneIntegrationPlan === "string" &&
+    scene.visualEvidence.sceneIntegrationPlan.length >= 120 &&
+    typeof scene.visualEvidence.motionPlan === "string" &&
+    scene.visualEvidence.motionPlan.length >= 180);
+  const stateCoveragePassed = states.length === sceneCount && states.every((state, index) =>
+    state.sceneIntegrationPlan === scenes[index].visualEvidence.sceneIntegrationPlan &&
+    state.motionPlan === scenes[index].visualEvidence.motionPlan);
+  return {
+    version: "money_shorts_scene_motion_plan_v1",
+    promptCoveragePassed,
+    evidenceCoveragePassed,
+    stateCoveragePassed,
+    manualVideoReviewRequired: true,
+    passed: promptCoveragePassed && evidenceCoveragePassed && stateCoveragePassed,
+  };
+}
+
+const pendingCount = sceneStates.filter((s) => s.status === "PENDING").length;
+if (exactOwnerSelectedScenes) {
+  const pendingSceneIndexes = sceneStates
+    .filter((scene) => scene.status === "PENDING")
+    .map((scene) => scene.sceneIndex);
+  const retainedScenesReady = sceneStates
+    .filter((scene) => !targetedRegenerationSceneIndexes.has(scene.sceneIndex))
+    .every((scene) =>
+      scene.status === "SAVED_OK" &&
+      typeof scene.imageSha256 === "string" &&
+      scene.imageSha256 === previousSummary.scenes[scene.sceneIndex - 1]?.imageSha256);
+  if (
+    pendingSceneIndexes.length !== targetedRegenerationScenes.length ||
+    pendingSceneIndexes.some((sceneIndex, index) => sceneIndex !== targetedRegenerationScenes[index]) ||
+    !retainedScenesReady
+  ) {
+    console.error("ABORT: exact Owner-selected regeneration must leave every and only the selected scenes pending.");
+    process.exit(3);
+  }
+  const backupDir = path.join(OUT_DIR, "superseded-owner-review-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  for (const [sceneNumber, expectedSha256] of ownerSelectedSceneBindings) {
+    const sourceFile = sceneFile(sceneNumber - 1);
+    const backupFile = path.join(
+      backupDir,
+      `scene-${String(sceneNumber).padStart(2, "0")}-${expectedSha256.slice(0, 16)}.png`,
+    );
+    if (!fs.existsSync(backupFile)) fs.copyFileSync(sourceFile, backupFile);
+    if (imageSha256(backupFile) !== expectedSha256) {
+      console.error(`ABORT: Owner-selected scene ${sceneNumber} backup hash mismatch.`);
+      process.exit(3);
+    }
+  }
+}
+if (refreshSummaryFromExistingAssets && pendingCount > 0) {
+  const pendingSceneIndexes = sceneStates
+    .filter((scene) => scene.status === "PENDING")
+    .map((scene) => scene.sceneIndex);
+  console.error(`ABORT: existing-asset summary refresh would require image generation for scenes ${pendingSceneIndexes.join(",")}; no summary or image was changed.`);
+  process.exit(3);
+}
+if (topicScopedModeOverride?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (pendingSceneIndexes.length !== 1 || pendingSceneIndexes[0] !== topicScopedModeOverride.sceneIndex) {
+    console.error("ABORT: approved override execution must have exactly one pending target scene.");
+    process.exit(3);
+  }
+  const targetFile = sceneFile(topicScopedModeOverride.sceneIndex - 1);
+  const backupDir = path.join(OUT_DIR, "superseded-v1");
+  const backupFile = path.join(backupDir, `scene-${String(topicScopedModeOverride.sceneIndex).padStart(2, "0")}-${topicScopedModeOverride.currentImageSha256.slice(0, 16)}.png`);
+  fs.mkdirSync(backupDir, { recursive: true });
+  if (!fs.existsSync(backupFile)) fs.copyFileSync(targetFile, backupFile);
+  if (imageSha256(backupFile) !== topicScopedModeOverride.currentImageSha256) {
+    console.error("ABORT: existing target image backup hash mismatch.");
+    process.exit(3);
+  }
+}
+if (topicScopedSceneRepairs?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (
+    pendingSceneIndexes.length !== topicScopedSceneRepairs.targetIndexes.length ||
+    pendingSceneIndexes.some((sceneIndex, index) => sceneIndex !== topicScopedSceneRepairs.targetIndexes[index])
+  ) {
+    console.error("ABORT: approved targeted repair execution must have only the exact packet targets pending.");
+    process.exit(3);
+  }
+  const backupDir = path.join(OUT_DIR, "superseded-targeted-repair-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  const summaryBackupFile = path.join(
+    backupDir,
+    `scene-images-summary-before-${topicScopedSceneRepairs.productionPartId}-${topicScopedSceneRepairs.packetSha256.slice(0, 16)}.json`,
+  );
+  if (!fs.existsSync(summaryBackupFile)) fs.copyFileSync(SUMMARY_PATH, summaryBackupFile);
+  for (const target of topicScopedSceneRepairs.targets) {
+    const targetFile = sceneFile(target.sceneIndex - 1);
+    const backupFile = path.join(
+      backupDir,
+      `scene-${String(target.sceneIndex).padStart(2, "0")}-${target.currentImageSha256.slice(0, 16)}.png`,
+    );
+    if (!fs.existsSync(backupFile)) fs.copyFileSync(targetFile, backupFile);
+    if (imageSha256(backupFile) !== target.currentImageSha256) {
+      console.error(`ABORT: existing target image backup hash mismatch for scene ${target.sceneIndex}.`);
+      process.exit(3);
+    }
+  }
+}
+if (topicScopedPositiveCompositionCanary?.executionApproved) {
+  const pendingSceneIndexes = sceneStates.filter((scene) => scene.status === "PENDING").map((scene) => scene.sceneIndex);
+  if (
+    pendingSceneIndexes.length !== 1 ||
+    pendingSceneIndexes[0] !== topicScopedPositiveCompositionCanary.sceneIndex
+  ) {
+    console.error("ABORT: approved positive composition canary execution must have exactly its one packet target pending.");
+    process.exit(3);
+  }
+  const targetFile = sceneFile(topicScopedPositiveCompositionCanary.sceneIndex - 1);
+  const backupDir = path.join(OUT_DIR, "superseded-positive-composition-canary-v1");
+  fs.mkdirSync(backupDir, { recursive: true });
+  const summaryBackupFile = path.join(
+    backupDir,
+    `scene-images-summary-before-${topicScopedPositiveCompositionCanary.productionPartId}-${topicScopedPositiveCompositionCanary.packetSha256.slice(0, 16)}.json`,
+  );
+  const imageBackupFile = path.join(
+    backupDir,
+    `scene-${String(topicScopedPositiveCompositionCanary.sceneIndex).padStart(2, "0")}-${topicScopedPositiveCompositionCanary.currentImageSha256.slice(0, 16)}.png`,
+  );
+  if (!fs.existsSync(summaryBackupFile)) fs.copyFileSync(SUMMARY_PATH, summaryBackupFile);
+  if (!fs.existsSync(imageBackupFile)) fs.copyFileSync(targetFile, imageBackupFile);
+  if (imageSha256(imageBackupFile) !== topicScopedPositiveCompositionCanary.currentImageSha256) {
+    console.error("ABORT: positive composition canary original image backup hash mismatch.");
+    process.exit(3);
+  }
+}
+log(`scenes: ${sceneCount}, 이미 저장됨: ${sceneCount - pendingCount}, 생성 대상: ${pendingCount}`);
+if (pendingCount === 0) {
+  let metadataRefresh = null;
+  if (refreshSummaryFromExistingAssets) {
+    if (!previousSummary || !fs.existsSync(SUMMARY_PATH)) {
+      console.error("ABORT: existing-asset summary refresh requires the prior summary as migration evidence.");
+      process.exit(3);
+    }
+    const previousSummaryBuffer = fs.readFileSync(SUMMARY_PATH);
+    const previousSummarySha256 = createHash("sha256").update(previousSummaryBuffer).digest("hex");
+    const backupDir = path.join(OUT_DIR, "superseded-summary-metadata-refresh-v1");
+    const backupFile = path.join(backupDir, `scene-images-summary-${previousSummarySha256.slice(0, 16)}.json`);
+    fs.mkdirSync(backupDir, { recursive: true });
+    if (!fs.existsSync(backupFile)) fs.writeFileSync(backupFile, previousSummaryBuffer);
+    const backupSha256 = createHash("sha256").update(fs.readFileSync(backupFile)).digest("hex");
+    if (backupSha256 !== previousSummarySha256) {
+      console.error("ABORT: existing-asset summary refresh backup hash mismatch.");
+      process.exit(3);
+    }
+    metadataRefresh = {
+      version: "money_shorts_existing_asset_summary_refresh_v1",
+      externalActionPerformed: false,
+      browserOpened: false,
+      imageGenerationPerformed: false,
+      previousSummarySha256,
+      previousSummaryBackupFile: path.relative(OUT_DIR, backupFile).replace(/\\/g, "/"),
+      preservedImageSha256: sceneStates.map((scene) => scene.imageSha256),
+      semanticRebind: existingAssetSemanticRebind ? {
+        schemaVersion: existingAssetSemanticRebind.schemaVersion,
+        packetSha256: existingAssetSemanticRebind.packetSha256,
+        targetSceneIndexes: existingAssetSemanticRebind.targetScenes.map((target) => target.sceneIndex),
+        manualOwnerReviewStillRequired: true,
+        externalActionPerformed: false,
+      } : null,
+    };
+  }
+  writeSummary({
+    topicId,
+    expectedCount: sceneCount,
+    allReady: true,
+    blockerCode: null,
+    scenes: sceneStates,
+    visualDifferenceAudit: buildVisualDifferenceAudit(sceneStates),
+    visualModalityAudit: buildVisualModalityAudit(sceneStates),
+    financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
+    characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
+    motionPlanAudit: buildMotionPlanAudit(sceneStates),
+    targetedSceneRepair: topicScopedSceneRepairs ? {
+      packetSha256: topicScopedSceneRepairs.packetSha256,
+      productionPartId: topicScopedSceneRepairs.productionPartId,
+      targetIndexes: topicScopedSceneRepairs.targetIndexes,
+      executionApproved: topicScopedSceneRepairs.executionApproved,
+    } : null,
+    positiveCompositionCanary: topicScopedPositiveCompositionCanary ? {
+      packetSha256: topicScopedPositiveCompositionCanary.packetSha256,
+      productionPartId: topicScopedPositiveCompositionCanary.productionPartId,
+      sceneIndex: topicScopedPositiveCompositionCanary.sceneIndex,
+      compositionBlueprintId: topicScopedPositiveCompositionCanary.compositionBlueprintId,
+      executionApproved: topicScopedPositiveCompositionCanary.executionApproved,
+    } : null,
+    metadataRefresh,
+    submissionsUsed: 0,
+  });
+  log(refreshSummaryFromExistingAssets
+    ? "기존 장면 이미지 해시를 보존한 채 요약 메타데이터만 갱신 — 브라우저/외부 생성 없이 종료."
+    : "모든 장면 이미지가 이미 준비됨 — 생성 없이 종료.");
+  process.exit(0);
+}
+
+if (refreshSummaryFromExistingAssets) {
+  console.error("ABORT: existing-asset summary refresh cannot continue into Playwright.");
+  process.exit(3);
+}
+
+// ── Playwright + ChatGPT (여기서부터만 브라우저 접근) ─────────────────────────
+const { chromium } = await import("playwright");
+const {
+  CDP_PORT_GPT1,
+  USER_DATA_GPT1,
+  ensureChrome,
+  openFreshImageChat,
+  detectStop,
+  activateImageTool,
+  verifyImageToolActive,
+  attachRef,
+  typePrompt,
+  checkSendEnabled,
+  sendPrompt,
+  interceptRecover,
+} =
+  await import("./_chatgpt-image-core.mjs");
+
+const retryDisabled = topicScopedModeOverride?.executionApproved || topicScopedSceneRepairs?.executionApproved || topicScopedPositiveCompositionCanary?.executionApproved || noRetry;
+const ROUTING_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
+const VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE = retryDisabled ? 0 : 1;
+const SUBMISSION_HARD_CAP = exactOwnerSelectedScenes
+  ? targetedRegenerationScenes.length
+  : topicScopedModeOverride?.executionApproved
+  ? 1
+  : topicScopedSceneRepairs?.executionApproved
+    ? topicScopedSceneRepairs.targets.length
+  : topicScopedPositiveCompositionCanary?.executionApproved
+    ? 1
+  : sceneCount * (1 + ROUTING_RECOVERY_LIMIT_PER_SCENE + VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE);
+let submissionCount = 0;
+let routingRecoveryCount = 0;
+let visualDifferenceRecoveryCount = 0;
+
+const PASSIVE_UNTIL_MS = 25000;
+const POLL_INTERVAL_MS = 1800;
+const STABLE_POLLS = 3;
+const DIAG_AT_MS = 150000;
+const HARD_TIMEOUT_MS = 180000;
+
+// page-wide 생성 이미지 수집 (user 첨부 제외) — fresh-v3 실증 로직
+async function collectGenImagesPageWide(page) {
+  return await page.evaluate(() => {
+    function cid(s) { const m = (s || "").match(/[?&]id=([^&]+)/); return m ? m[1] : null; }
+    return Array.from(document.querySelectorAll("img"))
+      .filter((i) => i.naturalWidth >= 200 && !i.closest('[data-message-author-role="user"]'))
+      .map((i) => ({
+        src: i.src || i.currentSrc || "", cid: cid(i.src),
+        w: i.naturalWidth, h: i.naturalHeight,
+        gen: /backend-api\/estuary\/content|backend-api\/files|oaiusercontent/.test(i.src || ""),
+      }))
+      .filter((x) => x.gen || x.src.startsWith("blob:"));
+  });
+}
+
+async function collectCandidateUrlsDeep(page) {
+  return await page.evaluate(() => {
+    function cid(s) { const m = (s || "").match(/[?&]id=([^&]+)/); return m ? m[1] : null; }
+    const out = [];
+    const seen = new Set();
+    for (const img of Array.from(document.querySelectorAll("img"))) {
+      if (img.naturalWidth < 200) continue;
+      if (img.closest('[data-message-author-role="user"]')) continue;
+      const src = img.src || img.currentSrc || "";
+      if (!src) continue;
+      const gen = /backend-api\/estuary\/content|backend-api\/files|oaiusercontent/.test(src);
+      if (!gen && !src.startsWith("blob:")) continue;
+      const key = cid(src) || src.slice(0, 100);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const urls = [{ url: src, kind: "src" }];
+      for (const entry of (img.srcset || "").split(",")) {
+        const u = entry.trim().split(/\s+/)[0];
+        if (u && u !== src) urls.push({ url: u, kind: "srcset" });
+      }
+      const a = img.closest("a");
+      if (a && a.href && a.href !== src) urls.push({ url: a.href, kind: "anchor" });
+      out.push({ cid: cid(src), gen, naturalW: img.naturalWidth, naturalH: img.naturalHeight, urls });
+    }
+    return out;
+  });
+}
+
+async function measureUrlInPage(page, url) {
+  return await page.evaluate(async (u) => {
+    try {
+      const r = await fetch(u);
+      if (!r.ok) return { ok: false, status: r.status };
+      const blob = await r.blob();
+      const bmp = await createImageBitmap(blob);
+      const out = { ok: true, w: bmp.width, h: bmp.height, bytes: blob.size };
+      bmp.close();
+      return out;
+    } catch (e) { return { ok: false, error: String(e).slice(0, 120) }; }
+  }, url).catch((e) => ({ ok: false, error: String(e).slice(0, 120) }));
+}
+
+async function saveBestImage(page, destPath, baselineCids) {
+  const groups = await collectCandidateUrlsDeep(page);
+  const freshGen = groups.filter((g) => g.gen && (!g.cid || !baselineCids.has(g.cid)));
+  const freshAny = groups.filter((g) => g.naturalW >= 400 && (!g.cid || !baselineCids.has(g.cid)));
+  const usable = freshGen.length > 0 ? freshGen : freshAny.length > 0 ? freshAny : groups.filter((g) => g.gen);
+  let best = null;
+  for (const g of usable) {
+    for (const cand of g.urls) {
+      const m = await measureUrlInPage(page, cand.url);
+      if (m.ok && (!best || m.w * m.h > best.m.w * best.m.h)) best = { url: cand.url, kind: cand.kind, m };
+    }
+  }
+  if (best) {
+    const buf = await page.evaluate(async (u) => {
+      try {
+        const r = await fetch(u);
+        const ab = await r.arrayBuffer();
+        return Array.from(new Uint8Array(ab));
+      } catch { return null; }
+    }, best.url).catch(() => null);
+    if (buf && buf.length > 10000) {
+      const b = Buffer.from(buf);
+      fs.writeFileSync(destPath, b);
+      const dims = sniffImageDims(b);
+      return { ok: true, method: `best_candidate_${best.kind}`, w: dims?.w ?? best.m.w, h: dims?.h ?? best.m.h, bytes: b.length };
+    }
+  }
+  // current-page intercept 회수 (sidebar/old conversation 스캔 금지)
+  const intercepted = await interceptRecover(page, page.url(), log);
+  let biggest = null;
+  for (const [, body] of intercepted) {
+    const dims = sniffImageDims(body);
+    if (!dims) continue;
+    if (!biggest || dims.w * dims.h > biggest.dims.w * biggest.dims.h) biggest = { body, dims };
+  }
+  if (biggest && biggest.body.length > 10000) {
+    fs.writeFileSync(destPath, biggest.body);
+    return { ok: true, method: "intercept_reload", w: biggest.dims.w, h: biggest.dims.h, bytes: biggest.body.length };
+  }
+  return { ok: false, method: "none" };
+}
+
+function stableKey(img) {
+  return `${img.cid || String(img.src).slice(0, 80)}|${img.w}x${img.h}`;
+}
+
+const IMAGE_TOOL_TEXT_FAILURE_PATTERN =
+  /이미지를 만들지 못|이미지 생성 도구.{0,80}(잘못 인식|생성되지)|기존 이미지 없이 새 이미지|could(?: not|n't) (?:create|generate).{0,40}image|image generation tool.{0,80}(misread|failed)/i;
+
+async function detectImageToolTextFailure(page, baselineAssistantCount) {
+  return await page.evaluate(({ baselineCount, failureSource }) => {
+    const messages = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+    if (messages.length <= baselineCount) return null;
+    const last = messages[messages.length - 1];
+    const hasGeneratedImage = Array.from(last.querySelectorAll("img")).some((img) =>
+      img.naturalWidth >= 200 && /backend-api\/estuary\/content|backend-api\/files|oaiusercontent|^blob:/.test(img.src || ""),
+    );
+    if (hasGeneratedImage) return null;
+    const text = String(last.textContent || "").replace(/\s+/g, " ").trim();
+    return new RegExp(failureSource, "i").test(text) ? text.slice(0, 240) : null;
+  }, { baselineCount: baselineAssistantCount, failureSource: IMAGE_TOOL_TEXT_FAILURE_PATTERN.source });
+}
+
+async function generateOneScene(ctx, sceneIdx, prompt, destPath, attemptLabel = "primary") {
+  let page = null;
+  try {
+    try {
+      page = await ctx.newPage();
+    } catch (error) {
+      throw new Error(`IMAGE_TOOL_CHAT_OPEN_FAILED: unable to open image tab (${String(error?.message ?? error).slice(0, 80)})`);
+    }
+    // 임시 채팅에는 이미지 도구가 없다. 일반 새 대화를 사용하되 사람의 미전송 초안은 절대 지우지 않는다.
+    await openFreshImageChat(page, log);
+    await detectStop(page);
+    const imageToolActivation = await activateImageTool(page, log, warn);
+    const explicitImageTool = imageToolActivation?.mode === "explicit-tool";
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: pre-submit verification failed");
+    const characterReferenceRequired = sceneVisualModes[sceneIdx].presence !== "none";
+    const referenceAttachment = characterReferenceRequired
+      ? await attachRef(page, CHARACTER_REFERENCE_ABS, log)
+      : null;
+    if (characterReferenceRequired && explicitImageTool && !(await verifyImageToolActive(page))) {
+      throw new Error("IMAGE_TOOL_NOT_ACTIVE: reference attach removed image mode");
+    }
+    await typePrompt(page, prompt, log);
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: post-type verification failed");
+    if (!(await checkSendEnabled(page))) throw new Error("send button disabled");
+
+    const baseline = new Set([
+      ...(referenceAttachment?.baselineCids ?? []),
+      ...(await collectGenImagesPageWide(page)).map((x) => x.cid).filter(Boolean),
+    ]);
+    const baselineAssistantCount = await page.locator('[data-message-author-role="assistant"]').count();
+    if (submissionCount >= SUBMISSION_HARD_CAP) throw new Error(`SUBMISSION_HARD_CAP(${SUBMISSION_HARD_CAP}) 도달`);
+    submissionCount += 1;
+    if (explicitImageTool && !(await verifyImageToolActive(page))) throw new Error("IMAGE_TOOL_NOT_ACTIVE: final submit verification failed");
+    await sendPrompt(page);
+    const submittedAt = Date.now();
+    log(`scene-${sceneIdx + 1} 제출 [${attemptLabel}] (${submissionCount}/${SUBMISSION_HARD_CAP}) — passive ${PASSIVE_UNTIL_MS / 1000}s`);
+
+    let stable = { key: null, count: 0 };
+    let diagDone = false;
+    while (Date.now() - submittedAt < HARD_TIMEOUT_MS) {
+      const elapsed = Date.now() - submittedAt;
+      await page.waitForTimeout(elapsed < PASSIVE_UNTIL_MS ? 2500 : POLL_INTERVAL_MS);
+      await detectStop(page);
+      const textFailure = await detectImageToolTextFailure(page, baselineAssistantCount);
+      if (textFailure) {
+        return { ok: false, method: "assistant_text_failure", error: `IMAGE_TOOL_TEXT_RESPONSE: ${textFailure}` };
+      }
+      if (Date.now() - submittedAt < PASSIVE_UNTIL_MS) continue;
+
+      const fresh = (await collectGenImagesPageWide(page)).filter((x) => x.w >= 400 && (!x.cid || !baseline.has(x.cid)));
+      if (fresh.length > 0) {
+        const key = stableKey(fresh[fresh.length - 1]);
+        stable = stable.key === key ? { key, count: stable.count + 1 } : { key, count: 1 };
+        if (stable.count >= STABLE_POLLS) {
+          const saved = await saveBestImage(page, destPath, baseline);
+          if (saved.ok) return { ok: true, ...saved, referenceAttached: characterReferenceRequired, latencyMs: Date.now() - submittedAt };
+          stable = { key: null, count: 0 }; // 저장 실패 — 계속 관찰
+        }
+      } else if (!diagDone && elapsed >= DIAG_AT_MS) {
+        diagDone = true;
+        warn(`scene-${sceneIdx + 1} ${DIAG_AT_MS / 1000}s 미감지 — current-page intercept 회수 시도`);
+        const saved = await saveBestImage(page, destPath, baseline);
+        if (saved.ok) return { ok: true, ...saved, referenceAttached: characterReferenceRequired, latencyMs: Date.now() - submittedAt };
+      }
+    }
+    // 마지막 회수 시도 후 타임아웃 처리
+    const lastTry = await saveBestImage(page, destPath, baseline);
+    if (lastTry.ok) return { ok: true, ...lastTry, referenceAttached: characterReferenceRequired, latencyMs: Date.now() - submittedAt };
+    return { ok: false, method: "timeout", error: "TIMEOUT_BLOCKED" };
+  } finally {
+    if (page) await page.close().catch(() => {});
+  }
+}
+
+function auditSavedScene(state, sceneIndex, result) {
+  const dims = { w: result.w ?? null, h: result.h ?? null };
+  state.width = dims.w;
+  state.height = dims.h;
+  state.referenceAttached = result.referenceAttached === true;
+  state.method = result.method;
+  state.status = dimsAcceptable(dims) ? "SAVED_OK" : "SAVED_LOW_QUALITY";
+  state.imageSha256 = fs.existsSync(state.file) ? imageSha256(state.file) : null;
+  state.perceptualHash = fs.existsSync(state.file) ? imagePerceptualHash(state.file) : null;
+  state.nearestVisualSceneIndex = null;
+  state.nearestVisualDistance = null;
+  if (state.status !== "SAVED_OK") return { accepted: false, reason: "image_dimensions_below_contract" };
+  if (typeof state.perceptualHash !== "string") {
+    state.status = "REJECTED_PERCEPTUAL_AUDIT_UNAVAILABLE";
+    state.method = "ffmpeg_dhash_failed";
+    return { accepted: false, reason: "perceptual_audit_unavailable" };
+  }
+  const duplicateOf = sceneStates.find((candidate, index) =>
+    index < sceneIndex && candidate.status === "SAVED_OK" && candidate.imageSha256 === state.imageSha256);
+  const nearest = nearestPriorVisual(sceneStates, sceneIndex, state.perceptualHash);
+  state.nearestVisualSceneIndex = nearest?.sceneIndex ?? null;
+  state.nearestVisualDistance = nearest?.distance ?? null;
+  if (duplicateOf) {
+    state.status = "REJECTED_DUPLICATE_IMAGE";
+    state.method = `exact_duplicate_of_scene_${duplicateOf.sceneIndex}`;
+    return { accepted: false, reason: state.method, priorSceneIndex: duplicateOf.sceneIndex };
+  }
+  if (isNearDuplicate(sceneIndex, nearest)) {
+    state.status = "REJECTED_NEAR_DUPLICATE_IMAGE";
+    state.method = `near_duplicate_of_scene_${nearest.sceneIndex}_distance_${nearest.distance}`;
+    return { accepted: false, reason: state.method, priorSceneIndex: nearest.sceneIndex };
+  }
+  return { accepted: true, reason: null };
+}
+
+// ── 실행 ─────────────────────────────────────────────────────────────────────
+let browser = null;
+let blockerCode = null;
+try {
+  await ensureChrome(CDP_PORT_GPT1, USER_DATA_GPT1, log);
+  browser = await chromium.connectOverCDP(`http://localhost:${CDP_PORT_GPT1}`);
+  const ctx = browser.contexts()[0] ?? (await browser.newContext());
+
+  for (let i = 0; i < sceneCount; i++) {
+    const st = sceneStates[i];
+    if (st.status === "SAVED_OK") continue;
+    const prompt = scenePrompts[i];
+    try {
+      let r = await generateOneScene(ctx, i, prompt, st.file);
+      if (String(r.error ?? "").startsWith("IMAGE_TOOL_TEXT_RESPONSE:") && ROUTING_RECOVERY_LIMIT_PER_SCENE > 0) {
+        routingRecoveryCount += 1;
+        warn(`scene-${i + 1}: 신규 이미지 요청이 편집으로 오인됨 — 새 대화에서 1회만 재전송`);
+        r = await generateOneScene(ctx, i, prompt, st.file, "new-chat-routing-recovery");
+        if (r.ok) r.method = `routing_recovery_${r.method}`;
+      }
+      let visualDifferenceAttempts = 0;
+      let audit = null;
+      while (r.ok) {
+        audit = auditSavedScene(st, i, r);
+        if (audit.accepted || visualDifferenceAttempts >= VISUAL_DIFFERENCE_RECOVERY_LIMIT_PER_SCENE) break;
+        visualDifferenceAttempts += 1;
+        visualDifferenceRecoveryCount += 1;
+        const priorEvidence = Number.isInteger(audit.priorSceneIndex)
+          ? scenes[audit.priorSceneIndex - 1]?.visualEvidence
+          : null;
+        const recoveryPrompt = [
+          prompt,
+          `QUALITY REGENERATION REQUIRED: the first result failed the program visual-difference audit (${audit.reason}).`,
+          priorEvidence
+            ? `Create a clearly different silhouette from scene ${audit.priorSceneIndex}: do not reuse its ${compactNarration(priorEvidence.visualForm, 100)}, ${compactNarration(priorEvidence.cameraPlan, 90)}, setting layout or hero ${compactNarration(priorEvidence.heroSubject, 90)}.`
+            : "Create a structurally different image while preserving the exact scene evidence and 3D editorial style.",
+          "Change the spatial layout, camera distance, foreground/background balance and hero action. Do not switch to photography.",
+        ].join(" ");
+        warn(`scene-${i + 1}: 시각 유사도 검사 실패 — 장면 차별화 프롬프트로 1회 재생성`);
+        st.status = "PENDING";
+        st.imageSha256 = null;
+        st.perceptualHash = null;
+        r = await generateOneScene(ctx, i, recoveryPrompt, st.file, "visual-difference-recovery");
+        if (r.ok) r.method = `visual_difference_recovery_${r.method}`;
+      }
+      if (r.ok) {
+        if (!audit?.accepted) blockerCode = "NEAR_DUPLICATE_SCENE_IMAGE";
+        log(`scene-${i + 1} 저장: ${st.status} ${st.width}x${st.height} (${r.method}, ${(r.latencyMs / 1000).toFixed(1)}s, nearest=${st.nearestVisualDistance ?? "n/a"})`);
+        if (noRetry && !audit?.accepted) break;
+      } else {
+        st.status = String(r.error ?? "").startsWith("IMAGE_TOOL_") ? "BLOCKED_IMAGE_TOOL" : "TIMEOUT_BLOCKED";
+        st.method = String(r.error ?? r.method ?? "unknown").slice(0, 240);
+        if (st.status === "BLOCKED_IMAGE_TOOL") blockerCode = "BLOCKED_IMAGE_TOOL";
+        warn(`scene-${i + 1} 실패: ${r.error ?? r.method}`);
+        if (st.status === "BLOCKED_IMAGE_TOOL" || noRetry) break;
+      }
+    } catch (e) {
+      const msg = String(e?.message ?? e);
+      if (/LOGIN_REQUIRED|Not logged in/i.test(msg)) {
+        blockerCode = "BLOCKED_SESSION";
+        st.status = "BLOCKED_SESSION";
+        warn(`scene-${i + 1}: ChatGPT 로그인 필요 — 이후 장면 생성 중단(fail-closed)`);
+        break;
+      }
+      if (/STOP_DETECTED|CAPTCHA_DETECTED/.test(msg)) {
+        blockerCode = "BLOCKED_RATE_OR_CAPTCHA";
+        st.status = "BLOCKED_RATE_OR_CAPTCHA";
+        warn(`scene-${i + 1}: ${msg.slice(0, 100)} — 이후 장면 생성 중단`);
+        break;
+      }
+      if (/IMAGE_TOOL_/.test(msg)) {
+        blockerCode = "BLOCKED_IMAGE_TOOL";
+        st.status = "BLOCKED_IMAGE_TOOL";
+        st.method = msg.slice(0, 500);
+        warn(`scene-${i + 1}: 이미지 생성 모드 검증 실패 — 이후 장면 생성 중단`);
+        break;
+      }
+      st.status = "ERROR";
+      st.method = msg.slice(0, 120);
+      warn(`scene-${i + 1} 오류: ${msg.slice(0, 160)}`);
+      if (noRetry) break;
+    }
+  }
+} catch (e) {
+  const msg = String(e?.message ?? e);
+  blockerCode = blockerCode ?? (/CDP not available/i.test(msg) ? "BLOCKED_SESSION" : "RUNNER_ERROR");
+  warn(`runner 오류: ${msg.slice(0, 200)}`);
+} finally {
+  // CDP attach만 끊는다 — Owner의 Chrome 자체는 닫지 않는다.
+  if (browser) await browser.close().catch(() => {});
+}
+
+const allReady = sceneStates.every((s) => s.status === "SAVED_OK");
+if (!allReady && !blockerCode) blockerCode = "PARTIAL_GENERATION";
+const summary = writeSummary({
+  topicId,
+  visualEngineVersion: outputVisualEngineVersion,
+  expectedCount: sceneCount,
+  allReady,
+  blockerCode: allReady ? null : blockerCode,
+  scenes: sceneStates,
+  visualDifferenceAudit: buildVisualDifferenceAudit(sceneStates),
+  visualModalityAudit: buildVisualModalityAudit(sceneStates),
+  financeSceneDiversityAudit: buildFinanceSceneDiversityAudit(sceneStates),
+  characterContinuityAudit: buildCharacterContinuityAudit(sceneStates),
+  motionPlanAudit: buildMotionPlanAudit(sceneStates),
+  ownerSelectedRegeneration: exactOwnerSelectedScenes ? {
+    targetSceneIndexes: targetedRegenerationScenes,
+    previousImageSetSha256: EXPECTED_IMAGE_SET_SHA256,
+    priorImageBindings: [...ownerSelectedSceneBindings].map(([sceneIndex, imageSha256]) => ({
+      sceneIndex,
+      imageSha256,
+    })),
+    noRetry: true,
+    submissionHardCap: SUBMISSION_HARD_CAP,
+  } : null,
+  targetedSceneRepair: topicScopedSceneRepairs ? {
+    packetSha256: topicScopedSceneRepairs.packetSha256,
+    productionPartId: topicScopedSceneRepairs.productionPartId,
+    targetIndexes: topicScopedSceneRepairs.targetIndexes,
+    executionApproved: topicScopedSceneRepairs.executionApproved,
+  } : null,
+  positiveCompositionCanary: topicScopedPositiveCompositionCanary ? {
+    packetSha256: topicScopedPositiveCompositionCanary.packetSha256,
+    productionPartId: topicScopedPositiveCompositionCanary.productionPartId,
+    sceneIndex: topicScopedPositiveCompositionCanary.sceneIndex,
+    compositionBlueprintId: topicScopedPositiveCompositionCanary.compositionBlueprintId,
+    executionApproved: topicScopedPositiveCompositionCanary.executionApproved,
+  } : null,
+  submissionsUsed: submissionCount,
+  routingRecoveriesUsed: routingRecoveryCount,
+  visualDifferenceRecoveriesUsed: visualDifferenceRecoveryCount,
+});
+log(`summary: ${SUMMARY_PATH}`);
+log(`결과: ${sceneStates.filter((s) => s.status === "SAVED_OK").length}/${sceneCount} SAVED_OK, allReady=${summary.allReady}`);
+process.exit(
+  allReady
+    ? 0
+    : ["BLOCKED_GATE", "BLOCKED_SESSION", "BLOCKED_IMAGE_TOOL"].includes(blockerCode)
+      ? 3
+      : 1,
+);

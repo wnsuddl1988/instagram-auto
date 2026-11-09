@@ -1,0 +1,75 @@
+{
+  "id": "line-birth-2011",
+  "title": "라인의 탄생 — 지진으로 전화가 끊긴 뒤 두 달 만에 만든 앱",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "2024 라인야후 지분·정보보안 이슈는 금지(2011년 일화만), 개발 주체·아이디어 제공자 단정 금지, 회사 공식 설명은 '소중한 사람과 연락이 안 됐던 경험', 열람 2곳(venturesquare, lycorp)",
+  "conditionResolved": true,
+  "finding": "공식 연혁(LY Corp)과 블록미디어가 2011년 3월 동일본 대지진 때 연락이 끊긴 경험과 6월 23일 출시를 확인한다. 숫자 사실은 1억명 19개월·5천만명 약 1년·스티커 월 10억엔·2013년 1분기 스티커 약 30% 등 5개로 각각 2곳 출처가 있다. '두 달 만에 개발'은 venturesquare 단일 출처라 제목의 '두 달'은 쓰지 않거나 '출시까지 석 달'로 바꿔야 한다. 개발 주체는 '네이버 재팬(NHN Japan)'까지만 쓰고 특정 인물 단정을 피하면 쓸 수 있다.",
+  "coreMessage": "사람들이 가장 절실했던 순간의 불편에서 출발한 서비스는 연락 수단을 넘어 돈이 되는 플랫폼의 문이 된다",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2011년 3월 동일본 대지진으로 연락 수단이 끊긴 일을 지켜본 네이버가 라인을 지인 간 커뮤니케이션 수단으로 방향을 잡았고, 지진 3개월 뒤인 2011년 6월 23일 출시했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "venturesquare는 출시일을 6월 27일로 적어 출처마다 다르다. 6월 23일은 회사 공식 연혁 기준. 개발 주체는 네이버 재팬(NHN Japan)까지만, 특정 인물의 아이디어 제공 단정 금지. '2개월 개발'은 단일 출처라 사용 금지.",
+      "sources": [
+        { "name": "LY Corporation LINE 연혁", "url": "https://www.lycorp.co.jp/en/company/history/line/", "quote": "unable to contact family and friends" },
+        { "name": "블록미디어(라인 성장 기사)", "url": "https://www.blockmedia.co.kr/archives/541265", "quote": "라인이 출시되기 3개월 전인 지난 2011년 3월" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "라인은 출시 약 19개월 만인 2013년 1월 18일 전 세계 가입자 1억 명을 돌파했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "네이버 보도자료는 트위터 약 49개월·페이스북 약 54개월과 비교했으나 이 비교는 단일 출처라 쓰려면 별도 확인 필요.",
+      "sources": [
+        { "name": "네이버 보도자료(2013)", "url": "https://navercorp.com/media/pressReleasesDetail?seq=28756", "quote": "서비스 출시 약 19개월 만에 전세계 가입자수 1억 명을 돌파했다." },
+        { "name": "아이뉴스24(2013)", "url": "https://www.inews24.com/view/718700", "quote": "지난 2011년 6월 서비스 출시 후 19개월 만의 성과다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "라인은 출시 약 1년 만인 2012년 7월 25일 전 세계 가입자 5천만 명을 넘었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "블록미디어는 '1년 1개월 만'으로 적어 표현이 약간 다르다(2011.6.23→2012.7.25는 약 13개월).",
+      "sources": [
+        { "name": "Kyodo News PR Wire(NHN Japan 보도자료, 2012)", "url": "https://kyodonewsprwire.jp/release/201207255907", "quote": "exceeded a total figure of 50 million worldwide" },
+        { "name": "블록미디어(라인 성장 기사)", "url": "https://www.blockmedia.co.kr/archives/541265", "quote": "출시 1년 1개월 만에 가입자 5000만명을 돌파한" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2013년 중반 라인의 유료 스티커 매출은 월간 10억 엔을 넘어섰다(전년 같은 시기 연간 3억 엔 수준에서 성장).",
+      "numeric": true,
+      "economy": true,
+      "caution": "'작년 유료스티커 매출 3억엔'은 아이뉴스24 단일 출처. 10억엔은 월간 기준.",
+      "sources": [
+        { "name": "이투데이(2013)", "url": "https://www.etoday.co.kr/news/view/780393", "quote": "스티커 월간 매출이 10억엔을 넘어선 것은" },
+        { "name": "아이뉴스24(2013)", "url": "https://www.inews24.com/view/767063", "quote": "유료스티커 매출이 월간 10억엔을 넘어섰다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "라인의 2013년 1분기 매출 58.2억 엔(약 5,890만 달러) 가운데 유료 스티커가 약 30%(약 1,700만 달러)를 차지했고 일본 비중이 80%였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "TechCrunch는 '약 3분의 1(30%)', TNW는 '30%, 1,700만 달러 남짓'으로 표현이 약간 다르다. 2013년 2분기는 스티커 27%(아이뉴스24).",
+      "sources": [
+        { "name": "The Next Web(2013-05-10)", "url": "http://thenextweb.com/news/first-earnings-from-messaging-service-line-show-revenue-of-58m-in-q1-2013-17m-from-stickers-alone", "quote": "revenue from stickers (a form of rich emoticon) was 30 percent" },
+        { "name": "TechCrunch(2013-05-09)", "url": "https://techcrunch.com/2013/05/09/line-reports-q1-2013-earnings-of-58-9m-half-from-game-in-app-purchases-30-from-stickers-80-from-japan", "quote": "generated around a third (30%)" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "2024 라인야후 지분·정보보안 한일 이슈가 현재 진행 중이므로 2011년 일화만 쓰고 현재 지분·보안 이야기는 금지. 대본에서 네이버=한국 기업의 일본 성공담으로 읽히는 국가 서사는 피함."
+  },
+  "remaining": "제목의 '두 달 만에'는 단일 출처라 '석 달 뒤 출시'로 수정 필요.",
+  "toolCallsUsed": 15
+}

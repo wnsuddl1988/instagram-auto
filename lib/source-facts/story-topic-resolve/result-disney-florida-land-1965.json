@@ -1,0 +1,64 @@
+{
+  "id": "disney-florida-land-1965",
+  "title": "디즈니 플로리다 땅 매입",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "숫자·날짜가 팬사이트 중심으로 엇갈림, 1차 자료 없음",
+  "conditionResolved": true,
+  "finding": "팬사이트가 아닌 디즈니 컴퍼니 공식 글, Florida 현지 매체(Spectrum News 13), 올랜도 센티널 재수록 기사, 백과사전(Wikipedia)에서 핵심 사실을 서로 다른 사이트 2곳씩 확인했다. 결정적 장면은 1965년 10월 센티널 기사로 비밀이 새자 디즈니가 주지사에게 확인 허락을 내주고 11월 15일 정식 발표로 이어진 순간이다. 에이커당 200달러 미만이라는 숫자는 공식 글과 총액 약 510만 달러(Wikipedia)가 서로 맞물려 경제 번역이 된다. 다만 총 에이커 수(27,433/27,443/27,440)와 기사 날짜(10/21 vs 10/24)는 출처마다 달라 대본에서는 '2만 7천여 에이커', '1965년 10월'처럼 뭉뚱그려 쓰는 것이 안전하다.",
+  "coreMessage": "값이 오르기 전에 조용히 사 모은 사람이 가격을 정한다 - 디즈니는 정체를 숨겨 2만 7천 에이커를 에이커당 200달러 아래로 샀다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1", "claim": "디즈니는 약 2만 7천 에이커를 에이커당 평균 200달러 미만, 총 약 510만 달러에 사들였다.", "numeric": true, "economy": true,
+      "caution": "총액은 Wikipedia의 '추정치'이고, Wikipedia WDW 문서는 큰 필지가 에이커당 100달러까지 내려갔다고 적는다. 대본에서는 '에이커당 200달러 안팎'으로 쓸 것.",
+      "sources": [
+        { "name": "The Walt Disney Company (Florida Project press conference)", "url": "https://thewaltdisneycompany.com/news/origins-disney-parks-expansion-florida-project-press-conference/", "quote": "average price of less than $200 an acre" },
+        { "name": "Wikipedia EPCOT (concept)", "url": "https://en.wikipedia.org/wiki/EPCOT_(concept)", "quote": "for an estimated $5.1 million" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "디즈니가 가명 회사들로 사들인 땅은 모두 2만 7천여 에이커(맨해튼의 두 배)였다.", "numeric": true, "economy": false,
+      "caution": "에이커 수가 27,433(EPCOT 문서) / 27,443(WDW 문서·Spectrum) / 27,440+(디즈니 공식)로 엇갈린다. '2만 7천여 에이커'로 쓸 것.",
+      "sources": [
+        { "name": "Spectrum News 13 (Orlando, 2013)", "url": "https://mynews13.com/fl/orlando/news/2013/11/21/walt_disney_orlando", "quote": "portions of land totaling 27,443 acres" },
+        { "name": "Wikipedia Walt Disney World", "url": "https://en.wikipedia.org/wiki/Walt_Disney_World", "quote": "to acquire 27,443 acres" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "땅 매입은 1964년 4월에 시작해 거의 2년간 비밀로 진행됐다.", "numeric": true, "economy": false,
+      "caution": "Spectrum은 '거의 2년'만, Wikipedia는 시작 시점(1964년 4월)만 적는다. 두 출처를 합쳐 쓸 것.",
+      "sources": [
+        { "name": "Spectrum News 13 (Orlando, 2013)", "url": "https://mynews13.com/fl/orlando/news/2013/11/21/walt_disney_orlando", "quote": "Disney kept it a secret for almost two years." },
+        { "name": "Wikipedia Walt Disney World", "url": "https://en.wikipedia.org/wiki/Walt_Disney_World", "quote": "beginning in April 1964" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "1965년 10월 센티널 기사로 비밀이 새자, 디즈니는 10월 25일 플로리다 주지사 번스가 사실을 확인하도록 허락했다.", "numeric": true, "economy": false,
+      "caution": "기사 날짜가 10/21(Bavar 첫 기사)과 10/24(후속 1면 기사)로 갈린다. 디즈니 공식 글은 10/24 기사, 다음 날 허락이라고 적는다.",
+      "sources": [
+        { "name": "The Walt Disney Company (Florida Project press conference)", "url": "https://thewaltdisneycompany.com/news/origins-disney-parks-expansion-florida-project-press-conference/", "quote": "Burns permission to confirm the article" },
+        { "name": "Wikipedia Emily Bavar", "url": "https://en.wikipedia.org/wiki/Emily_Bavar", "quote": "extended to your governor the privilege" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "에밀리 바바르의 센티널 기사는 1965년 10월 21일에 나갔고, 이름을 단정하지 못한 채 디즈니를 지목했다.", "numeric": true, "economy": false,
+      "caution": "5월 20일 센티널 기사(소문 부인)도 따로 있음. 10월 기사는 오렌지카운티 '3만 에이커 미스터리 산업 부지'로 표현.",
+      "sources": [
+        { "name": "Orlando Sentinel 150 (Yahoo reprint)", "url": "https://www.yahoo.com/entertainment/celebrity/articles/orlando-sentinel-150-disney-world-142800503.html", "quote": "as it appeared on Oct. 21, 1965" },
+        { "name": "Wikipedia Walt Disney World", "url": "https://en.wikipedia.org/wiki/Walt_Disney_World", "quote": "to write a story on October 21, 1965" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "디즈니는 원래 1965년 11월 15일 발표를 계획했고, 실제 공식 기자회견도 그날 열렸다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "The Walt Disney Company (Florida Project press conference)", "url": "https://thewaltdisneycompany.com/news/origins-disney-parks-expansion-florida-project-press-conference/", "quote": "held on November 15, 1965" },
+        { "name": "Wikipedia Walt Disney World", "url": "https://en.wikipedia.org/wiki/Walt_Disney_World", "quote": "Disney World on November 15, 1965" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 60년 전 일화. 국내 사건·정치 소지 없음." },
+  "remaining": "에이커 수·기사 날짜가 출처마다 달라 대본에서 반올림 표현 필요. Wikipedia 의존도가 높아 확정 전 올랜도 센티널 원문 아카이브(10/21, 10/24)로 한 번 더 대조하면 좋음. 총액 510만 달러는 '추정'.",
+  "toolCallsUsed": 17
+}

@@ -43,8 +43,42 @@ next-env.d.ts
 
 # AutoShorts AI
 /output/
+/public/voice-test/
 *.mp4
 *.mp3
 python/__pycache__/
 
 .vercel
+
+env
+.env.local
+.env.*.local
+
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+
+*.log
+.DS_Store
+
+# Money Shorts OS — local owner state (never commit approval data)
+/.money-shorts-local/
+
+# Legacy Coin/Piggy 자산·실행 결과, 일회성 임시 스크립트 (삭제하지 않고 추적만 제외)
+/assets/editorial-v2/
+/_ai/live-topic-runs/
+/_tmp_*.mjs
+/scripts/_patch-*-once.mjs
+/scripts/_diag-*.mjs
+
+# Local generated QA / diagnostic artifacts
+/.tmp/
+/tmp/
+/piq_diag_out.txt
+/shadow-list.txt
+
+# 2026-10-14: 예전 PC C:/tmp 복사본(인수인계용, 7.3GB) · 임시 디버그 스크립트 · 수정 전 백업 — 커밋하지 않음
+/_handoff/
+scripts/_*-tmp.mjs
+*.bak-before-*

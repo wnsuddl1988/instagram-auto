@@ -1,0 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+const source = readFileSync(resolve(process.cwd(), "lib/editorial-v2/pa5b-full-production-candidate-node.ts"), "utf8"); let pass = 0; let fail = 0;
+function check(label, valid) { if (valid) pass += 1; else { fail += 1; console.error(`FAIL: ${label}`); } }
+for (const [label, value] of [["8-scene cap", "PA5B_SCENE_COUNT = 8"], ["180 character cap", "PA5B_MAX_NARRATION_CHARACTERS = 180"], ["one request per scene", "PA5B_PER_SCENE_TTS_REQUEST_MAX = 1"], ["retry zero", "PA5B_AUTOMATIC_RETRY_LIMIT = 0"], ["fallback zero", "PA5B_FALLBACK_LIMIT = 0"], ["canonical plan", "buildVoiceMaterializationPlan"], ["audio descriptor identity", "readVoiceSceneAudioDescriptor"], ["provider timestamp subtitles", "buildAudioAlignedSubtitleTrack"], ["full render plan", "buildPa5bFullCandidateRenderPlan"], ["original graphic mode", "original_evidence_first_information_graphic"], ["all-audio render gate", "fullLocalRenderBlockedUntilAllAudioValid: scenes.some"], ["external zero", "externalRequestsMade: 0"], ["no provider adapter", !source.includes("elevenlabs-timestamp-tts-node")], ["no fetch", !source.includes("fetch(")]]) check(label, typeof value === "string" ? source.includes(value) : value);
+console.log(`PA5B_CHECKER: ${pass}/${pass + fail} PASS`); if (fail) process.exit(1);

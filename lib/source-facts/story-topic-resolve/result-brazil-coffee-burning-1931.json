@@ -1,0 +1,60 @@
+{
+  "id": "brazil-coffee-burning-1931",
+  "title": "브라질 커피 소각",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "기관차 연료 일화 근거 없음, 정책 주체 불명확",
+  "conditionResolved": true,
+  "finding": "정책 주체는 바르가스 정부(1931년 국가커피위원회·후신 국가커피국)로 확인되고(infoescola: 바르가스가 1931년 창설, 재고 일부 소각), 소각 총량 약 7,800만 포대(1931~44)는 3곳 이상이 일치한다. 기관차 연료 일화는 1932년 신문 기사의 시험 계획 수준이라 대본에서 빼면 되고, 소각 자체의 결정 장면과 가격 붕괴 숫자(22.5센트→8센트, 포대당 20만 레이스→2만 1천)는 서로 다른 사이트 2곳씩 확인된다. 결정 장면이 인물 선택보다 정책 결단이라 약하지만 '불태워서 가격을 지키려 한 나라'로 쓰기에 충분하다.",
+  "coreMessage": "값이 무너질 때 공급을 태워 버려도 가격은 잠깐 버틸 뿐, 근본 원인(과잉 생산)을 안 풀면 비용만 커진다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "브라질은 1931~1944년 약 7,820만 포대(약 103억 파운드)의 수출용 커피를 불태웠다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Time은 1932년 시점에 1,400만 포대 이상이라 보도(누적 시점 차). 총량 7,800만은 대중 출처 위주로 학술 원문 미확인.",
+      "sources": [
+        { "name": "Daily Coffee News (2021)", "url": "https://dailycoffeenews.com/2021/09/22/90-years-ago-seeking-salvation-brazil-burned-billions-of-pounds-of-coffee", "quote": "78.2 million bags of exportable coffee" },
+        { "name": "Jayarr Coffee (Brazilian Coffee Kingdom)", "url": "https://jayarr.coffee/blog/brazilian-coffee-kingdom-history/", "quote": "78 million bags destroyed" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "커피 값은 1929년 파운드당 22.5센트에서 1931년 8센트로 폭락했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1938년 네덜란드 자료는 1930년 8월 11.5센트로 다른 구간을 제시.",
+      "sources": [
+        { "name": "Uncommon Grounds (Pendergrast, erenow 전문)", "url": "https://erenow.org/common/uncommon-grounds-the-history-of-coffee/12.php", "quote": "tumbled from 22.5 cents a pound in 1929" },
+        { "name": "Jayarr Coffee (Brazilian Coffee Kingdom)", "url": "https://jayarr.coffee/blog/brazilian-coffee-kingdom-history/", "quote": "22.5¢/lb in 1929 to 8¢ by 1931" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "커피 한 포대는 1929년 초 약 20만 레이스였는데 이듬해 2만 1천 레이스까지 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Daily Coffee News는 1929년 말 기준 값이 '10%'라고 쓰고, 신문은 1년 뒤 21,000으로 표기해 기준 시점이 약간 다름.",
+      "sources": [
+        { "name": "Daily Coffee News (2021)", "url": "https://dailycoffeenews.com/2021/09/22/90-years-ago-seeking-salvation-brazil-burned-billions-of-pounds-of-coffee", "quote": "worth 200,000 Réis" },
+        { "name": "Jornal do Comércio (2019)", "url": "https://www.jornaldocomercio.com/_conteudo/economia/2019/10/amp/709138-crise-acaba-com-era-de-ouro-do-cafe-no-brasil.html", "quote": "desabasse para 21 mil réis" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1920년대 브라질은 세계 커피 생산의 약 80%를 차지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "대중 가이드 사이트 포함. 70~80% 등 표기 차 가능.",
+      "sources": [
+        { "name": "Wikipedia (Coffee production in Brazil)", "url": "https://en.wikipedia.org/wiki/Coffee_production_in_Brazil", "quote": "supplying 80% of the world's coffee" },
+        { "name": "Two Chimps Coffee (Coffee Origins: Brazil)", "url": "https://twochimpscoffee.com/guides/coffee-origins-brazilian-coffee/", "quote": "an astonishing 80% of the" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 1930년대 사건, 민감성 없음" },
+  "remaining": "기관차 연료 일화는 1932년 신문 계획 기사 수준(Daily Coffee News도 were to fuel로 표기)이라 사실로 쓰지 말 것. 기관 명칭(국가커피위원회 1931 vs 안정화위원회 1932 vs 국가커피국 1933)이 출처마다 달라 '브라질 정부'로 통칭 권장.",
+  "toolCallsUsed": 17
+}

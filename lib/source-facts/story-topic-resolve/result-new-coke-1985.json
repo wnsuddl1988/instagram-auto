@@ -1,0 +1,75 @@
+{
+  "id": "new-coke-1985",
+  "title": "뉴코크 철회",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "마케팅 교과서 단골 — 후반에. 79일 철회는 공식 페이지로 확인, '40만 통 전화'는 1곳 출처",
+  "conditionResolved": true,
+  "finding": "79일 철회는 코카콜라 공식 페이지와 위키피디아 등 2곳 이상에서 확인된다. '40만 통'은 오기로 보이며 실제는 약 4만 건(편지·전화)으로 History.com과 위키피디아 2곳에서 확인된다. 99년 만의 첫 배합 변경, 400만 달러 연구, 19~20만 명 시음 등 숫자 사실도 2곳씩 확인되어 쓸 수 있다.",
+  "coreMessage": "19만 번의 시음이 증명한 더 맛있다보다, 사람들이 지키고 싶은 익숙함이 더 비싸다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "코카콜라는 뉴코크 출시 79일 만인 1985년 7월 11일 기존 배합을 '코카콜라 클래식'으로 되돌렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "CBS 등 일부는 77일로 표기. 4월 23일~7월 11일은 79일.",
+      "sources": [
+        { "name": "The Coca-Cola Company", "url": "https://www.coca-colacompany.com/about-us/history/new-coke-the-most-memorable-marketing-blunder-ever.html", "quote": "put the cap on 79 days" },
+        { "name": "Wikipedia, New Coke", "url": "https://en.wikipedia.org/wiki/New_Coke", "quote": "79 days after New Coke's introduction" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "뉴코크는 코카콜라가 99년 만에 처음 바꾼 배합이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "The Coca-Cola Company", "url": "https://www.coca-colacompany.com/about-us/history/new-coke-the-most-memorable-marketing-blunder-ever.html", "quote": "first formula change in 99 years" },
+        { "name": "History.com", "url": "https://history.com/this-day-in-history/new-coke-debuts-one-of-the-biggest-product-flops-in-history", "quote": "for the first time in 99 years" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "코카콜라는 새 음료를 만들고 시험 판매하는 데 약 400만 달러의 연구 프로그램을 썼다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "EBSCO Research Starters", "url": "https://www.ebsco.com/research-starters/history/coca-cola-introduces-new-formula", "quote": "$4 million research and experimentation" },
+        { "name": "Damn Interesting", "url": "https://www.damninteresting.com/the-american-gustation-crisis-of-1985", "quote": "After $4 million in research" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "출시 전 약 19만~20만 명을 대상으로 한 블라인드 시음에서 새 배합이 선호됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인원이 출처마다 다름(History.com 190,000 블라인드 시음, 코카콜라 공식 nearly 200,000명). 대본에서는 '거의 20만 명'으로.",
+      "sources": [
+        { "name": "History.com(Klein)", "url": "https://www.history.com/news/why-coca-cola-new-coke-flopped", "quote": "190,000 blind taste tests" },
+        { "name": "The Coca-Cola Company", "url": "https://www.coca-colacompany.com/about-us/history/new-coke-the-most-memorable-marketing-blunder-ever.html", "quote": "taste tests of nearly 200,000 consumers" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "출시 후 코카콜라에는 약 4만 건의 항의 편지(전화 포함)가 쏟아졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "풀 메모의 '40만 통'은 오류로 보임. History.com은 편지 4만 통, 위키는 전화·편지 합계 4만 건 이상. 대본에서는 '약 4만 건'.",
+      "sources": [
+        { "name": "History.com", "url": "https://history.com/this-day-in-history/new-coke-debuts-one-of-the-biggest-product-flops-in-history", "quote": "some 40,000 complaint letters" },
+        { "name": "Wikipedia, New Coke", "url": "https://en.wikipedia.org/wiki/New_Coke", "quote": "over 40,000 calls and letters" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "외국 기업의 종결된 1985년 사건. 민감성 없음."
+  },
+  "remaining": "하루 8,000통 전화는 History.com 한 사이트에서만 확인(코카콜라 공식은 하루 1,500통, 총 31,600통으로 달라) 대본에서 제외. 매출 회복 수치는 2곳 확인 못 함. 마케팅 교과서 단골이라 '19만 번 시음도 묻지 못한 질문' 각도 권장.",
+  "toolCallsUsed": 9
+}

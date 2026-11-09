@@ -1,0 +1,70 @@
+{
+  "id": "tylenol-recall-1982",
+  "title": "타이레놀 독극물 리콜",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "살인 사건(미해결)이 배경이라 희생자 서술 최소, 회수 결단 중심. 병 수·점유율 회복 숫자 엇갈림",
+  "conditionResolved": true,
+  "finding": "회수 병 수(약 3,100만 병)는 3개 사이트가 일치하고, 비용 약 1억 달러는 '소매가치'(위키)와 '비용'(PR 자료)으로 표현만 갈린다. 점유율은 사건 전 35~37%에서 8% 안팎으로 추락했다는 선까지만 일치하며, 회복 속도는 자료마다 달라(5개월 70%, 1년 80%, 연말 24%p) 대본에는 '1년 안에 대부분 회복' 정도의 질적 표현만 권한다. 오염은 시카고 지역에서만 발견됐는데 전국 회수를 택한 결단을 장면으로 잡고 희생자 서술은 '7명 사망' 한 줄로 최소화하면 된다.",
+  "coreMessage": "신뢰는 장부에 없는 자산이라, 큰 비용을 치르고 먼저 물러서야 지킬 수 있다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1982년 10월 제조사(존슨앤드존슨 자회사 맥닐)는 전국에서 약 3,100만 병의 타이레놀을 회수했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "맥닐 회수 vs J&J 결정 표현이 자료마다 다름. 오염 발견은 시카고 지역에 국한된 사실도 같이 쓸 것.",
+      "sources": [
+        { "name": "History.com(How the 1982 Tylenol Poisonings Nearly Canceled Halloween)", "url": "https://www.history.com/articles/extra-strength-tylenol-poisonings-1982", "quote": "roughly 31 million bottles of Tylenol" },
+        { "name": "Everything-PR J&J Tylenol Crisis", "url": "https://everything-pr.com/johnson-johnson-tylenol-crisis-modern-crisis-communications", "quote": "approximately 31 million bottles" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "회수 대상 병의 소매가치(또는 회수 비용)는 약 1억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키는 '소매 가치 1억 달러 이상', PR 자료는 '비용 약 1억 달러'. 대본에는 '약 1억 달러어치'로 쓰고 '손실'로 단정하지 말 것.",
+      "sources": [
+        { "name": "Wikipedia Chicago Tylenol murders", "url": "https://en.wikipedia.org/wiki/Chicago_Tylenol_murders", "quote": "retail value of over US$100 million" },
+        { "name": "Everything-PR J&J Tylenol Crisis", "url": "https://everything-pr.com/johnson-johnson-tylenol-crisis-modern-crisis-communications", "quote": "an estimated cost of $100 million" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1982년 9월 29~30일 시카고 지역에서 청산가리가 든 타이레놀을 먹은 7명이 숨졌다(범인은 아직 미확인).",
+      "numeric": true,
+      "economy": false,
+      "caution": "희생자 서술은 이 한 줄로 최소화. 미해결 사건이므로 범인 단정 금지.",
+      "sources": [
+        { "name": "History.com", "url": "https://www.history.com/articles/extra-strength-tylenol-poisonings-1982", "quote": "seven people in the Chicago area died" },
+        { "name": "Packaging Gateway", "url": "https://www.packaging-gateway.com/comment/tylenol-murders-forever-product-packaging/", "quote": "seven individuals lost their lives" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "타이레놀은 사건 전 미국 진통제 시장 점유율 35~37%의 선두였으나, 사건 직후 8% 안팎까지 떨어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "사건 전 점유율 35%(위키) vs 37%(PR 자료), 사건 후 7%(일부 자료) vs 8%(위키)로 엇갈림 — '30%대 중반에서 한 자릿수'로 쓸 것.",
+      "sources": [
+        { "name": "Wikipedia Chicago Tylenol murders", "url": "https://en.wikipedia.org/wiki/Chicago_Tylenol_murders", "quote": "from 35 percent to 8 percent" },
+        { "name": "Communique PR The Tylenol Murders: A Case Study", "url": "https://www.communiquepr.com/the-tylenol-murders-a-case-study/", "quote": "a controlling 37 percent share" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "타이레놀은 1년 안에 사건 전 점유율의 약 80%를 되찾았고 3년 안에 선두 자리로 돌아왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(PR 자료). 다른 자료는 '5개월 70%', '12월 기준 24%' 등 서로 다름 — 대본에서는 '1년 안에 대부분 회복' 정도의 질적 표현만 권장.",
+      "sources": [
+        { "name": "Everything-PR J&J Tylenol Crisis", "url": "https://everything-pr.com/johnson-johnson-tylenol-crisis-modern-crisis-communications", "quote": "recovered approximately 80%" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 사건이나 미해결 살인(희생자 7명)이 배경 — 희생자·범인 서술 최소화하고 회수 결단·포장 변화 중심. J&J는 현 영업 기업이지만 40년 전 사건의 확정 사실만 사용." },
+  "remaining": "회수 후 트리플 실 포장 재출시 시점(1982년 11월, 약 10주 후)은 위키 단일 확인. 'FBI·FDA가 전국 회수를 말렸다'는 통설은 2출처로 확인하지 못했으니 쓰지 말 것. 신문 원문(WaPo 1982)은 접근 불가.",
+  "toolCallsUsed": 14
+}

@@ -1,0 +1,40 @@
+{
+  "id": "coffee-mix-1976",
+  "title": "동서식품 커피믹스 — 세 가지를 한 봉지에",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장애물·반전 없음, 아이디어 주인 불명, 회고록 1건",
+  "conditionResolved": false,
+  "finding": "조필제 전 부회장 별세 기사(한국경제·스마트투데이)에서 1976년 12월 출시, 프리마 공장 준공(1974), 품질관리 사원의 아이디어 발단은 2곳으로 확인했다. 그러나 결정 장면의 주인공은 끝까지 이름 모를 품질관리 사원이며 동서식품도 누구인지 확인이 어렵다고 밝혔고, 출시 초기 장애물·판매 부진을 다룬 기사는 찾지 못했다. 오마이뉴스는 출시 당시 광고도 안 했다고 하고 한국경제는 나오자마자 인기였다고 해 초기 반응 서술이 서로 엇갈린다. 경제 숫자(모카골드 1초 170개 등)는 1989년 후속 제품 것이라 1976년 장면과 연결되지 않는다. 상표 미등록 아쉬움은 회고일 뿐 결단 장면이 아니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "동서식품은 1976년 12월 세계 최초로 커피-프림 일체형 제품 커피믹스를 출시했다.", "numeric": true, "economy": false,
+      "caution": "출시를 1980년으로 적은 기사도 있고, 초기 반응은 매체마다 엇갈림.",
+      "sources": [
+        { "name": "한국경제(2026) 조필제 별세", "url": "https://www.hankyung.com/article/202604216307Y", "quote": "1976년 12월 세계 최초 커피-프림 일체형 제품" },
+        { "name": "스마트투데이(2026) 조필제 별세", "url": "https://www.smarttoday.co.kr/ko-kr/articles/106769", "quote": "1976년 12월 세계 최초로 커피-프림 일체형 제품" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "커피믹스 개발의 발단은 이름이 알려지지 않은 품질관리 담당 사원의 아이디어였다.", "numeric": false, "economy": false,
+      "caution": "회사도 누구인지 확인이 어렵다고 밝힘 — 결정적 장면의 주인공으로 쓸 수 없음.",
+      "sources": [
+        { "name": "한국경제(2026) 조필제 별세", "url": "https://www.hankyung.com/article/202604216307Y", "quote": "품질관리 담당 사원이 커피와 프리마와 설탕을 한꺼번에 배합해서" },
+        { "name": "스마트투데이(2026) 조필제 별세", "url": "https://www.smarttoday.co.kr/ko-kr/articles/106769", "quote": "품질관리 담당 사원이 커피와 프리마와 설탕을 한꺼번에 배합해서 물만 타면" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "조필제는 1974년 부사장으로 옮긴 뒤 식물성 크리머 프리마 대량 생산 공장을 준공했다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "스마트투데이(2026) 조필제 별세", "url": "https://www.smarttoday.co.kr/ko-kr/articles/106769", "quote": "식물성 크리머 '프리마'를 대량 생산할 공장을 준공했다." },
+        { "name": "한국경제(2026) 조필제 별세", "url": "https://www.hankyung.com/article/202604216307Y", "quote": "식물성 크리머 '프리마'를 대량 생산할 공장을 부평에 준공했고" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "동서식품은 영업 중인 국내 기업이나 진행 중 소송·제재 없음. 문제는 민감성이 아니라 장면 부재." },
+  "remaining": "결정 장면의 주인공 불명(익명 사원), 출시 초기 장애물·반전 기록 없음, 경제 숫자는 후속 제품(모카골드 1989) 중심이라 1976년 장면과 이어지지 않음. 1차 자료인 조필제 회고록 원문은 확인 못 함.",
+  "toolCallsUsed": 8
+}

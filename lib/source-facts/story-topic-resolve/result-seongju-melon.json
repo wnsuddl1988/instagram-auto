@@ -1,0 +1,71 @@
+{
+  "id": "seongju-melon",
+  "title": "성주 참외",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "상업 재배 시작점 1950년대/1970년, 점유율 67~85% 엇갈림",
+  "conditionResolved": true,
+  "finding": "엇갈리던 숫자는 정리됐다: 성주 참외는 1950년대 고깔 재배로 시작됐고 상업 재배의 시작점은 1970년(성주읍 연산리 故백준현 씨의 노지 재배)이며, 점유율은 전국 재배면적·생산의 약 70%(다른 보도 79~85%는 기준이 달라 대본에는 '70% 안팎')다. 조수입은 2023년 6000억 원 돌파(6014억 원), 농가 3800여 곳 중 억대 매출 농가가 약 1860~1880호다(각 2곳 확인). 하지만 '한국인이 아는 굵직한 한 장면'이나 결과를 바꾼 한 사람·한 회사의 결단이 자료에 없다: 백준현 씨 일화는 시작 연도·장소 한 줄뿐이고 하우스 전환·규격박스 도입은 군·농협 사업 서술이다. 그래서 숫자는 해소됐지만 장면이 약해 weak-scene 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "성주 참외의 본격 상업 재배는 1970년(대 초)에 시작됐다. 성주군은 1970년 성주읍 연산리 故백준현 씨가 노지에 참외를 재배한 것을 상업 재배의 시작으로 본다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'온천 참외'는 '은천참외' 오기로 보임(품종명). 그 이전에 1950년대 고깔 재배, 1960년대 직파·온상육묘가 있었다는 기록과 구분해야 함.",
+      "sources": [
+        { "name": "농식품올바로(식품나라) 성주 참외", "url": "https://www.foodnuri.go.kr/portal/bbs/B0000290/view.do?nttId=228624&menuNo=300093&deleteCd=0&pageIndex=1", "quote": "성주읍 연산리 故백준현 씨가 노지에 온천 참외를 재배한 것을" },
+        { "name": "농민신문(2024-01-10)", "url": "https://www.nongmin.com/article/20240110500885", "quote": "성주에선 1970년대 초부터 참외를 본격적으로 재배하기 시작했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "성주군의 참외 재배는 1950년대 고깔을 이용한 재배에서 시작됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'1949년 이전 보리 사이짓기'까지 거슬러 올라가는 기록도 있음. 상업 재배 시작(1970)과 구분.",
+      "sources": [
+        { "name": "성주군청 참외의 역사", "url": "https://www.sj.go.kr/page.do?mnu_uid=1238", "quote": "1950년대부터 고깔을 이용한 참외 재배부터 시작하여" },
+        { "name": "농식품올바로(식품나라) 성주 참외", "url": "https://www.foodnuri.go.kr/portal/bbs/B0000290/view.do?nttId=228624&menuNo=300093&deleteCd=0&pageIndex=1", "quote": "1950년대부터 고깔을 이용한 재배에 이어" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "성주 참외는 전국 참외 생산·재배면적의 약 70%를 차지한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기준이 섞여 있음: 대구일보 본문은 '생산의 70%'이나 사진설명은 '국내 참외 79%', 다른 보도는 생산량 85%. 식품나라는 '재배면적 70% 이상'. 대본에서는 '70% 안팎'으로만 쓸 것.",
+      "sources": [
+        { "name": "대구일보(2025)", "url": "https://www.idaegu.com/news/articleView.html?idxno=631198", "quote": "전국 참외생산의 70%를 담당하고 있는 명품 성주참외" },
+        { "name": "농식품올바로(식품나라) 성주 참외", "url": "https://www.foodnuri.go.kr/portal/bbs/B0000290/view.do?nttId=228624&menuNo=300093&deleteCd=0&pageIndex=1", "quote": "전국 참외 재배면적의 70% 이상을 차지하고 있죠" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "성주 참외 조수입은 2023년 6000억 원을 넘어(6014억 원) 기초지자체 단일 품목으로 6000억 시대를 열었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "대구일보는 2024년 조수입을 6200억 원으로 적음. 조수입은 농가 매출 기준이며 생산액(약 7000억)과 구분. 지자체·농협 발표 수치.",
+      "sources": [
+        { "name": "농민신문(2024-01-10)", "url": "https://www.nongmin.com/article/20240110500885", "quote": "조수입이 지난해 6014억원을 기록했다" },
+        { "name": "대구일보(2025)", "url": "https://www.idaegu.com/news/articleView.html?idxno=631198", "quote": "2023년 조수입 6천억 시대 개막에 이어" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "성주 참외 농가는 3800여 곳이며 이 중 억대 매출 농가가 약 1860~1880호(절반 가까이)다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "연도별로 다름: 2022년 기준 1713가구(44.6%, 농식품신유통연구원), 농민신문 2023 기준 1862명, 대구일보 2024 기준 1880호(49%). 연도를 밝히거나 '약 절반'으로 표기.",
+      "sources": [
+        { "name": "농민신문(2024-01-10)", "url": "https://www.nongmin.com/article/20240110500885", "quote": "농가는 3800여명, 이 가운데 억대 매출을 올리는 농가는 1862명" },
+        { "name": "대구일보(2025)", "url": "https://www.idaegu.com/news/articleView.html?idxno=631198", "quote": "억대농가도 전체 3천800여 농가중 49%인 1천880호로 늘어났다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "성주는 사드 배치 지역이라 지역 이슈 연상 가능성이 있으나 참외 소재 자체는 정치·법적 쟁점 없음. 성주군·농협 홍보 자료 기반 서사가 많음." },
+  "remaining": "(1) 결과를 바꾼 결정적 장면 없음: 백준현 씨 일화는 한 줄(1970년 연산리 노지 재배)이며 동기·성과가 자료에 없음 (2) 하우스 전환·규격박스 도입은 연도가 출처별로 다름(2006년경 vs 2011년) (3) 쓰려면 초창기 농가(백준현·문상근 씨 증언 등)의 구체 일화를 2곳 확보해야 함.",
+  "toolCallsUsed": 8
+}

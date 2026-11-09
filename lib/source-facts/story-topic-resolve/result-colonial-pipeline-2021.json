@@ -1,0 +1,71 @@
+{
+  "id": "colonial-pipeline-2021",
+  "title": "콜로니얼 송유관 — 해킹 하나에 줄 선 미국 주유소",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "해킹 범인·몸값 서술 최소, 줄 선 주유소 장면과 공급망 중심. 한 장면으로 모이는지 확인",
+  "conditionResolved": true,
+  "finding": "한 장면으로 모인다: 2021년 5월 7일 송유관이 멈추고(약 6일) 기름이 모자라서가 아니라 모자랄까 봐 사재기가 번지며 주유소가 비는 장면이다. 5,500마일·하루 250만 배럴·동부 해안 연료의 약 45%라는 규모는 EIA, CNBC(NBC보스턴), Fox, 위키 등 서로 다른 사이트에서 확인된다. 몸값 75비트코인과 미 법무부의 63.7비트코인 회수는 보조 사실로만 쓰고 범인 서술은 뺄 수 있다. 외국(미국) 종결 사건이라 legal·political 해당 없음.",
+  "coreMessage": "한 곳에 몰린 공급망은 한 번 멈추면 불안이 사재기를 부르고, 사재기가 진짜 품귀를 만든다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "콜로니얼 송유관은 하루 약 250만 배럴을 나르는 약 5,500마일 길이의 시스템이다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "미국 EIA(Today in Energy)", "url": "https://www.eia.gov/todayinenergy/detail.php?id=47917", "quote": "approximately 5,500 miles of pipeline" },
+        { "name": "CNBC(NBC Boston 재게재, 2021.05.12)", "url": "https://www.nbcboston.com/news/business/money-report/colonial-pipeline-restarts-after-hack-but-supply-chain-wont-return-to-normal-for-a-few-days/2378743/", "quote": "The pipeline stretches 5,500 miles" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "이 송유관은 미국 동부 해안에서 소비되는 연료의 약 45%를 공급한다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "CNBC는 '거의 절반'으로 표기. 위키백과를 한 출처로 사용 — 대본 작성 시 Fox/CNBC 표현에 맞출 것.",
+      "sources": [
+        { "name": "Fox News(2021.05)", "url": "https://www.foxnews.com/us/pipeline-outage-causes-u-s-gasoline-supply-crunch-panic-buying", "quote": "delivers about 45% of the fuel" },
+        { "name": "Wikipedia(Colonial Pipeline ransomware attack)", "url": "https://en.wikipedia.org/wiki/Colonial_Pipeline_ransomware_attack", "quote": "About 45% of all fuel consumed" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "콜로니얼은 공격 다음 날 해커에게 75비트코인(당시 약 440만 달러)을 몸값으로 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "달러 환산이 출처마다 다름(440만 달러 vs 'nearly $5 million'). 대본에는 '75비트코인'만 쓰는 것을 권장. 범인·수법 서술은 최소화.",
+      "sources": [
+        { "name": "Claims Journal(AP, 2021.06.09)", "url": "https://www.claimsjournal.com/news/national/2021/06/09/304191.htm", "quote": "paid a ransom of 75 bitcoin" },
+        { "name": "TBS News(2021.06)", "url": "https://www.tbsnews.net/world/us-seizes-23-mln-bitcoin-paid-colonial-pipeline-hackers-257431", "quote": "initial 75 bitcoin payment" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "미 법무부는 몸값 중 63.7비트코인(약 84%)을 회수했다(당시 가치 약 230만 달러).",
+      "numeric": true,
+      "economy": true,
+      "caution": "비트코인 가격 하락으로 회수액 가치는 원래 몸값의 절반 수준.",
+      "sources": [
+        { "name": "TBS News(2021.06)", "url": "https://www.tbsnews.net/world/us-seizes-23-mln-bitcoin-paid-colonial-pipeline-hackers-257431", "quote": "investigators had seized 63.7 bitcoins" },
+        { "name": "Wikipedia(Colonial Pipeline ransomware attack)", "url": "https://en.wikipedia.org/wiki/Colonial_Pipeline_ransomware_attack", "quote": "recovered 63.7 of the bitcoins" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "송유관은 2021년 5월 7일 멈춘 뒤 약 6일 만인 5월 12일 오후 5시경 재가동됐고, 그 사이 불안한 소비자들이 주유소로 몰렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "재가동 후에도 정상화에는 며칠 더 걸림. 일부 주유소 품절은 공급 부족보다 사재기가 원인이라고 당국이 경고(Fox).",
+      "sources": [
+        { "name": "Wikipedia(Colonial Pipeline ransomware attack)", "url": "https://en.wikipedia.org/wiki/Colonial_Pipeline_ransomware_attack", "quote": "ending a six-day shutdown" },
+        { "name": "CNBC(NBC Boston 재게재, 2021.05.12)", "url": "https://www.nbcboston.com/news/business/money-report/colonial-pipeline-restarts-after-hack-but-supply-chain-wont-return-to-normal-for-a-few-days/2378743/", "quote": "restarted operations around 5 p.m. ET" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업·종결 사건. 국내 진행 중 소송·정치 소지 없음. 해킹 그룹 서술만 최소화." },
+  "remaining": "한국 시청자에게 익숙한 사건은 아님(후크에서 맥락 설명 필요). 주유소 품절 비율은 출처마다 달라(NC 68%, 샬럿 71%) 대본에서 하나만 골라 출처 표기.",
+  "toolCallsUsed": 12
+}

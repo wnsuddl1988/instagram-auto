@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "money_shorts_golden_sample_blueprint_v1",
+  "status": "blueprint_locked_render_ready_pending_image_gate",
+  "title": "Money Shorts OS — Golden Sample Blueprint v1 (rate freeze / 금리 동결)",
+  "purpose": "30초 금리 동결 Golden Sample의 단일 source of truth. script, scene/card timeline, image prompt mapping, TTS phrase mapping, perceptual event plan, card-image hybrid 설계를 한 파일로 고정한다. 이 blueprint가 script/caption/image prompt/voice/screen text/renderer/audit의 공유 기준이 된다.",
+  "topic": { "topicId": "base-rate-hold-202605", "label": "금리 동결", "contentPillar": "money_flow" },
+  "fullDurationSec": 30,
+  "canvas": { "widthPx": 1080, "heightPx": 1920, "fps": 30 },
+  "sourceRefs": {
+    "stopState": "scripts/fixtures/creative-v2-stop-state.v1.json",
+    "imageGenerationContract": "scripts/fixtures/image_generation_contract.json",
+    "visualDirectorPrompts": "scripts/fixtures/visual_director_prompts.rate_freeze.v1.json",
+    "ttsFirstTimelineContract": "scripts/fixtures/tts_first_timeline_contract.v1.json",
+    "cardImageHybridRenderManifest": "scripts/fixtures/card_image_hybrid_render_manifest.v1.json",
+    "selectedImageSet": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json"
+  },
+  "narrationOneShotText": "금리 동결? 아직 안심하면 안 됩니다. 금리는 멈췄지만, 내 이자는 바로 안 멈출 수 있습니다. 첫째, 변동금리는 반영 시점을 확인해야 합니다. 둘째, 예금은 갈아타기 전에 만기와 손실을 봐야 합니다. 셋째, 대출자는 월 납입액을 다시 계산해야 합니다. 뉴스는 금리를 말하지만, 내 지갑은 현금흐름이 결정합니다. 오늘은 금리보다 고정비부터 확인하세요.",
+  "narrationCharCount": 168,
+  "ttsStrategyPreferred": "full_narration_one_shot",
+  "phases": [
+    {
+      "phaseId": "hook",
+      "timeStartSec": 0.0,
+      "timeEndSec": 2.0,
+      "voice": "금리 동결? 아직 안심하면 안 됩니다.",
+      "screenText": "아직 안심 금지",
+      "imageSceneId": "scene_1",
+      "cardTemplate": "big_hook_card",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "card_punch_zoom",
+      "perceptualEvents": ["big_hook_card", "card_punch_zoom"],
+      "visualNote": "dim/blur 고품질 배경 + 중앙 big hook card + 임팩트 모션. 첫 2초에 반드시 hook card 존재. dim/blur 배경은 모든 phase에 정적으로 적용되는 처리 방식이라 perceptual event로 세지 않는다(전환만 이벤트)."
+    },
+    {
+      "phaseId": "curiosity",
+      "timeStartSec": 2.0,
+      "timeEndSec": 5.0,
+      "voice": "금리는 멈췄지만, 내 이자는 바로 안 멈출 수 있습니다.",
+      "screenText": "내 이자는 다릅니다",
+      "imageSceneId": "scene_2",
+      "cardTemplate": "curiosity_contrast_card",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "card_slide_in",
+      "perceptualEvents": ["curiosity_contrast_card", "card_slide_in"],
+      "visualNote": "금리 뉴스 카드 vs 지갑/대출 카드 대비."
+    },
+    {
+      "phaseId": "point_1",
+      "timeStartSec": 5.0,
+      "timeEndSec": 10.0,
+      "voice": "첫째, 변동금리는 반영 시점을 확인해야 합니다.",
+      "screenText": "변동금리: 반영 시점",
+      "imageSceneId": "scene_3",
+      "cardTemplate": "checklist_card_1",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "checklist_pop",
+      "perceptualEvents": ["checklist_card_1", "checklist_pop", "hard_cut"],
+      "visualNote": "변동금리 / 반영 시점 / 다음 납입일 checklist card."
+    },
+    {
+      "phaseId": "point_2",
+      "timeStartSec": 10.0,
+      "timeEndSec": 15.0,
+      "voice": "둘째, 예금은 갈아타기 전에 만기와 손실을 봐야 합니다.",
+      "screenText": "예금: 만기·손실 확인",
+      "imageSceneId": "scene_4",
+      "cardTemplate": "checklist_card_2",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "checklist_pop",
+      "perceptualEvents": ["checklist_card_2", "checklist_pop", "hard_cut"],
+      "visualNote": "예금 갈아타기 / 만기 / 중도해지 손실 checklist card."
+    },
+    {
+      "phaseId": "point_3",
+      "timeStartSec": 15.0,
+      "timeEndSec": 20.0,
+      "voice": "셋째, 대출자는 월 납입액을 다시 계산해야 합니다.",
+      "screenText": "대출: 월 납입액",
+      "imageSceneId": "scene_5",
+      "cardTemplate": "checklist_card_3",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "checklist_pop",
+      "perceptualEvents": ["checklist_card_3", "checklist_pop", "hard_cut"],
+      "visualNote": "대출 / 월 납입액 / 고정비 checklist card."
+    },
+    {
+      "phaseId": "twist",
+      "timeStartSec": 20.0,
+      "timeEndSec": 26.0,
+      "voice": "뉴스는 금리를 말하지만, 내 지갑은 현금흐름이 결정합니다.",
+      "screenText": "내 지갑은 현금흐름",
+      "imageSceneId": "scene_6",
+      "cardTemplate": "twist_single_sentence_card",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "freeze_punch",
+      "perceptualEvents": ["twist_single_sentence_card", "freeze_punch", "background_dim_transition"],
+      "visualNote": "single-sentence big card, 임팩트 전 짧은 pause."
+    },
+    {
+      "phaseId": "action",
+      "timeStartSec": 26.0,
+      "timeEndSec": 30.0,
+      "voice": "오늘은 금리보다 고정비부터 확인하세요.",
+      "screenText": "오늘 할 일: 고정비 확인",
+      "imageSceneId": "scene_6",
+      "cardTemplate": "final_action_card",
+      "backgroundTemplate": "dim_blur_background",
+      "cardMotion": "card_slide_in",
+      "perceptualEvents": ["final_action_card", "card_slide_in"],
+      "visualNote": "final action checklist card."
+    }
+  ],
+  "imagePromptMapping": [
+    { "phaseId": "hook", "imageSceneId": "scene_1", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_1" },
+    { "phaseId": "curiosity", "imageSceneId": "scene_2", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_2" },
+    { "phaseId": "point_1", "imageSceneId": "scene_3", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_3" },
+    { "phaseId": "point_2", "imageSceneId": "scene_4", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_4" },
+    { "phaseId": "point_3", "imageSceneId": "scene_5", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_5" },
+    { "phaseId": "twist", "imageSceneId": "scene_6", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_6" },
+    { "phaseId": "action", "imageSceneId": "scene_6", "visualDirectorPromptRef": "visual_director_prompts.rate_freeze.v1.json#scene_6" }
+  ],
+  "ttsPhraseMapping": [
+    { "phraseId": "hook", "text": "금리 동결? 아직 안심하면 안 됩니다.", "targetVisualStartSec": 0.0, "targetVisualEndSec": 2.0 },
+    { "phraseId": "curiosity", "text": "금리는 멈췄지만, 내 이자는 바로 안 멈출 수 있습니다.", "targetVisualStartSec": 2.0, "targetVisualEndSec": 5.0 },
+    { "phraseId": "point_1", "text": "첫째, 변동금리는 반영 시점을 확인해야 합니다.", "targetVisualStartSec": 5.0, "targetVisualEndSec": 10.0 },
+    { "phraseId": "point_2", "text": "둘째, 예금은 갈아타기 전에 만기와 손실을 봐야 합니다.", "targetVisualStartSec": 10.0, "targetVisualEndSec": 15.0 },
+    { "phraseId": "point_3", "text": "셋째, 대출자는 월 납입액을 다시 계산해야 합니다.", "targetVisualStartSec": 15.0, "targetVisualEndSec": 20.0 },
+    { "phraseId": "twist", "text": "뉴스는 금리를 말하지만, 내 지갑은 현금흐름이 결정합니다.", "targetVisualStartSec": 20.0, "targetVisualEndSec": 26.0 },
+    { "phraseId": "action", "text": "오늘은 금리보다 고정비부터 확인하세요.", "targetVisualStartSec": 26.0, "targetVisualEndSec": 30.0 }
+  ],
+  "ttsPhraseNote": "targetVisual*는 목표값이다. 실제 render 전에 full narration one-shot의 actual audio timing으로 reflow한다. padding으로 무음을 늘려 맞추지 않는다.",
+  "perceptualEventPlan": {
+    "plannedPerceptualEventCount": 18,
+    "plannedPerceptualEventCountSource": "sum of every phases[].perceptualEvents array length (single source of truth; renderer/report/static-guard must all derive from this same array, not a separate hardcoded count)",
+    "countedEventTypes": [
+      "big_hook_card", "curiosity_contrast_card", "checklist_card_1", "checklist_card_2",
+      "checklist_card_3", "twist_single_sentence_card", "final_action_card",
+      "card_slide_in", "card_punch_zoom", "checklist_pop",
+      "freeze_punch", "background_dim_transition", "hard_cut"
+    ],
+    "notCountedAsPerceptualEvent": [
+      "slow pan of same image", "slow zoom of same image", "tiny icon appearance",
+      "bottom subtitle swap only", "decorative overlay", "barely visible micro movement",
+      "dim_blur_background (static background treatment applied to every phase, not a transition)"
+    ],
+    "minPerceptualEventCountForPass": 12,
+    "note": "planned_event_count와 perceptual_event_count를 분리한다. 게이트는 perceptual_event_count를 쓴다. 새 카드/큰 hook 카드/체크리스트/배경 dim 전환(twist에서 1회)/hard cut/freeze punch만 센다. dim/blur 배경 자체는 모든 phase에 정적으로 적용되는 처리 방식이라 카운트하지 않는다(pan/zoom/미세 이동과 동일 취급)."
+  },
+  "cardImageHybridDesign": {
+    "principle": "card-first는 이미지를 버리는 것이 아니라 고품질 이미지 + 정보 카드 + 모션그래픽 결합이다.",
+    "backgroundRole": "selected 고품질 LLM 이미지를 dim/blur/crop/parallax 배경으로 사용.",
+    "cardRole": "카드가 주요 정보 표면(primary information surface).",
+    "cardPresenceTargetRatio": 0.9,
+    "fullScreenImageDominanceMaxRatio": 0.25,
+    "firstTwoSecondHookCardRequired": true,
+    "requiredCardTemplates": [
+      "big_hook_card", "curiosity_contrast_card", "checklist_card_1", "checklist_card_2",
+      "checklist_card_3", "twist_single_sentence_card", "final_action_card"
+    ],
+    "requiredBackgroundAndMotionTemplates": [
+      "dim_blur_background", "card_slide_in", "card_punch_zoom", "checklist_pop", "safe_frame_text_layout"
+    ]
+  },
+  "renderReadinessGate": {
+    "requiresSelectedImageSetPass": true,
+    "currentImageResolution": "941x1672",
+    "meetsResolutionGate": false,
+    "gateVerdict": "BLOCKED_image_resolution_below_1080x1920",
+    "finalRenderAllowed": false,
+    "note": "blueprint는 완성됐고 render-ready 구조로 고정됐다. 그러나 image_generation_contract의 1080x1920 게이트 미달로 final render를 차단한다. 이미지 재생성(live ChatGPT, Owner 승인) 후 render 진행."
+  },
+  "boundary": {
+    "noImageGeneration": true,
+    "noRender": true,
+    "noTts": true,
+    "noUpload": true,
+    "uploadReady": false,
+    "dataOnly": true
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "stockholm-congestion-2006",
+  "title": "스톡홀름 혼잡통행료 — 반대가 찬성으로 바뀐 7개월",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "사람 주인공 없음. 투표일 7월/9월, 찬성률 51.7/53% 엇갈림. 총선과 같은 날 투표라 정치색",
+  "conditionResolved": false,
+  "finding": "투표일은 2006년 9월 17일(총선과 같은 날)로 확정되고, 7월은 시범 종료월이다. 찬성률 51.7%는 개표 초기 수치이고 53%는 최종 결과로 정리된다. 시범 2006.1~7월, 교통량 20~25% 감소, 요금 10~20크로나, 수입 약 4억 크로나, 시행 전 반대 60~80%는 모두 2곳 이상에서 원문으로 확인돼 숫자 요건은 충족한다. 그러나 사람 주인공이 없는 제도 연표이고(조건 미해소), 시범 자체가 소수당(녹색당)의 정부 지지 대가로 강행됐다는 정치 맥락이 얽혀 한 장면 이야기로 만들기 어렵다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "스톡홀름 혼잡통행료 시범은 2006년 1월 3일부터 7월 31일까지 7개월간 실시됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia, Stockholm congestion tax", "url": "https://en.wikipedia.org/wiki/Stockholm_congestion_tax", "quote": "between 3 January 2006 and 31 July 2006" },
+        { "name": "Vital City NYC, How London and Stockholm made congestion pricing politics work", "url": "https://www.vitalcitynyc.org/articles/how-london-and-stockholm-made-congestion-pricing-politics-work", "quote": "from January to July 2006" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "시범 기간 도심 교통량은 20~25% 줄어, 정부가 잡은 10~15% 감소 목표를 웃돌았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "개시 첫 주에는 25~30% 감소, 일부 보도는 22%로 적는다. 대본에는 '20%대'로 쓸 것.",
+      "sources": [
+        { "name": "Wikipedia, Stockholm congestion tax", "url": "https://en.wikipedia.org/wiki/Stockholm_congestion_tax", "quote": "reduced by between 20 and 25%" },
+        { "name": "The Local Sweden (2006-07-31)", "url": "https://www.thelocal.se/20060731/4475", "quote": "down between 20 and 25 percent" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "운전자는 도심 진입·진출 때마다 10~20크로나(시간대별)를 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "하루 상한은 60크로나(The Local, ITDP). 2007년 영구 시행 때 요금이 올랐다(Wikipedia).",
+      "sources": [
+        { "name": "Streetsblog NYC (2006-09-18)", "url": "https://nyc.streetsblog.org/2006/09/18/stockholm-voters-ok-congestion-charging", "quote": "10 kronor and 20 kronor" },
+        { "name": "The Local Sweden (2006-09-13)", "url": "https://www.thelocal.se/20060913/4885", "quote": "between 10 and 20 kronor" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "시범 기간 통행료 수입은 약 4억 크로나(3.99억)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "The Local은 시스템 구축비가 38억 크로나였다고도 적는다.",
+      "sources": [
+        { "name": "Wikipedia, Stockholm congestion tax", "url": "https://en.wikipedia.org/wiki/Stockholm_congestion_tax", "quote": "raised 399 m SEK during the period" },
+        { "name": "The Local Sweden (2006-07-31)", "url": "https://www.thelocal.se/20060731/4475", "quote": "revenues of around 400 million kronor" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2006년 9월 17일 주민투표에서 스톡홀름 시민 과반이 통행료 유지에 찬성했다(약 51.7~53%).",
+      "numeric": true,
+      "economy": false,
+      "caution": "Streetsblog의 51.7%는 개표 거의 끝난 시점 수치, EMTA의 53%(찬성 53 대 반대 46)는 최종 결과 쪽이다. 대본에는 '과반, 약 반반에 가까운 찬성'으로 쓸 것. 투표는 총선과 같은 날이었고 법적 구속력은 없었다.",
+      "sources": [
+        { "name": "EMTA, Stockholm votes YES to congestion charge, but...", "url": "https://www.emta.com/news/stockholm-votes-yes-to-congestion-charge-but/", "quote": "A 53% majority voted in favour" },
+        { "name": "Streetsblog NYC (2006-09-18)", "url": "https://nyc.streetsblog.org/2006/09/18/stockholm-voters-ok-congestion-charging", "quote": "51.7 percent of Stockholm voters" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "시행 전에는 시민 다수가 반대해 반대가 60~80%라는 보도도, 지지가 40% 미만이라는 조사도 있었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "조사마다 수치가 크게 다르다('3분의 2 반대'는 단일 출처로 확인 못 함). 대본에는 '시민 다수가 반대'로만 쓸 것.",
+      "sources": [
+        { "name": "ITDP (2006-02)", "url": "https://itdp.org/?p=361", "quote": "ranging from 60% to 80% of all citizens" },
+        { "name": "Vital City NYC, How London and Stockholm made congestion pricing politics work", "url": "https://www.vitalcitynyc.org/articles/how-london-and-stockholm-made-congestion-pricing-politics-work", "quote": "fewer than 40% of Stockholm residents" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": true, "note": "해외 사례로 국내 정치 쟁점은 아니나, 투표가 스웨덴 총선과 같은 날이었고 시범 도입 자체가 녹색당의 정부 지지 대가였다는 정치 맥락이 있어 설명 없이 쓰기 어렵다. 국내에서 혼잡통행료·도심 진입료는 서울 남산 혼잡통행료 등과 겹쳐 댓글이 갈릴 수 있음." },
+  "remaining": "사람 주인공이 없고(조건 미해소) 제도·투표 연표 중심이라 '주인공의 선택·결단' 기준에 맞지 않는다. 숫자 사실은 충분하므로, Owner가 '집단 결정(시민 투표)을 장면으로 인정'하면 usable로 재분류 가능. 그 경우 찬성률은 '과반'으로, 시행 전 반대는 '시민 다수'로 표기.",
+  "toolCallsUsed": 17
+}

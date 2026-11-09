@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "golden_sample_tts_first_mux_manifest_t2_v1",
+  "taskId": "creative-v2-golden-sample-tts-first-mux-audit-v1",
+  "status": "approved_tts_first_mux_audit_config",
+  "createdAt": "2026-07-02",
+  "ownerApproval": "승인 — 기존 ElevenLabs 경로를 사용해 30초 TTS-first narration을 생성하고, 실제 phrase/word timing에 dynamic caption을 재앵커한 뒤 visual+audio mux 및 post-render audit까지 진행한다. 추가 이미지 생성/API, upload는 금지한다.",
+
+  "baseVisualManifest": "scripts/fixtures/golden_sample_visual_only_render_manifest.t2.v1_1_typography.json",
+  "renderer": "scripts/render-golden-sample-visual-only-v1.mjs",
+  "narrationSource": "base manifest provisionalNarration 기반 + 1차 실측 후 pause 과다 구두점만 미세 조정 (의미 불변)",
+  "narrationOverride": {
+    "reason": "1차 one-shot 실측(attempt1): first5s silence 0.87s(>0.8), total silence ratio 0.2249(>0.18), p2 발화 시작 3.19s(이벤트 maxGap>3.0). 전부 구두점 유발 pause — 무음 padding/threshold 완화 대신 대본 구두점 미세 조정으로 재생성. 트위스트 직전 '3일째…' 연출 pause는 유지",
+    "phrases": [
+      { "phraseId": "p1_hook", "text": "월급이 들어왔는데 3일이면 사라져요." },
+      { "phraseId": "p2_contrast", "text": "들어올 땐 한 번인데 나갈 땐 순서대로 빠져나가요. 통장은 스쳐갈 뿐이죠." },
+      { "phraseId": "p3_fixed_costs", "text": "먼저 고정비, 월세, 통신비, 보험료와 할부가 제일 먼저 빠집니다." },
+      { "phraseId": "p4_number", "text": "그래서 월급의 체감 수명은 하루, 이틀, 딱 3일이에요." },
+      { "phraseId": "p5_graph", "text": "잔액은 하루하루 이렇게 줄어들죠. 그리고 3일째…" },
+      { "phraseId": "p6_twist", "text": "문제는 금액이 아니라 순서입니다." },
+      { "phraseId": "p7_action", "text": "월급날 나가는 순서 3개만 먼저 정하세요. 오늘 바로 저장하고 시작하세요." }
+    ]
+  },
+
+  "tts": {
+    "provider": "elevenlabs",
+    "strategy": "full_narration_one_shot",
+    "endpointKind": "text_to_speech_with_timestamps",
+    "outputFormat": "mp3_44100_128",
+    "modelIdEnvKey": "ELEVENLABS_MODEL_ID",
+    "modelIdDefault": "eleven_multilingual_v2",
+    "voiceResolutionOrder": [
+      "ELEVENLABS_YOHAN_KOO_VOICE_ID",
+      "ELEVENLABS_VOICE_ID_YOHAN_KOO",
+      "YOHAN_KOO_ELEVENLABS_VOICE_ID",
+      "ELEVENLABS_VOICE_ID"
+    ],
+    "voicePresetId": "confident_v3",
+    "voiceSettings": { "stability": 0.68, "similarity_boost": 0.9, "style": 0.22, "use_speaker_boost": true },
+    "voicePresetNote": "accepted baseline(v3-1 tailfit)이 사용한 confident_v3 preset 재사용 — 기존 경로 준수",
+    "apiCallBudgetMax": 2,
+    "apiCallBudgetNote": "1차 실측 + 대본 미세조정 재생성 1차 = 총 2회 상한 (소량 호출 범위)",
+    "retry": false,
+    "reuseExistingAudioIfPresent": true,
+    "sceneLevelShortTts": "금지 — one-shot full narration만. 불가 시 3-block까지만 고려하고 이유 보고",
+    "requireLiveTtsGuard": true,
+    "allowEnvKey": "ALLOW_ELEVENLABS",
+    "allowCliFlag": "--allow-live-tts",
+    "liveTtsGuardNote": "기존 narration audio + alignment 재사용 시에는 API 호출이 없으므로 guard 불필요. 신규 live ElevenLabs 호출이 필요한 경우에만, env ALLOW_ELEVENLABS=1(또는 true) 또는 CLI --allow-live-tts 중 하나가 있어야 fetch 진입. 둘 다 없으면 API 호출 전 즉시 abort."
+  },
+
+  "reflow": {
+    "principle": "TTS-first — 실제 audio duration/word alignment 기준으로 scene/card/caption/event 타임라인을 재계산. 무음 padding/apad/atempo 금지",
+    "holdAfterSpeechSec": 0.6,
+    "holdAfterSpeechMaxSec": 0.8,
+    "captionEntryToleranceMs": 120,
+    "emphasisAnchorToleranceMs": 80,
+    "maxCaptionDwellSec": 1.6,
+    "noCaptionWithinCardImpactSec": 0.3,
+    "pauseBeforeTwistImpactSec": 0.4,
+    "frameGridFps": 30
+  },
+
+  "captionStyleJudgment": {
+    "ownerNote": "자막 폰트가 조금 더 진하게 강조되었으면 좋겠다 — 품질 판단 후 반영 여부 결정",
+    "candidate": { "outline": 6, "shadow": 2.6 },
+    "baselineV11": { "outline": 5, "shadow": 2.2 },
+    "rule": "candidate로 render 후 v1.1 프레임과 비교 — 과하거나 싸구려 PPT 느낌이면 baseline으로 되돌려 재render. bottom-fixed bar/full-width box 금지 유지"
+  },
+
+  "audioQualityGates": {
+    "first5sSilenceMaxSec": 0.8,
+    "totalSilenceRatioMax": 0.18,
+    "speechActiveRatioMin": 0.72,
+    "silencedetectNoiseDb": -35,
+    "silencedetectMinSilenceSec": 0.35,
+    "measurementNote": "ratio는 발화 구간(audio duration) 기준으로 산출하고, 영상 tail hold는 별도 표기"
+  },
+
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\golden-sample-tts-first-mux-audit-v1",
+    "narrationAudio": "golden_sample_t2_narration_elevenlabs.mp3",
+    "alignmentRaw": "elevenlabs_alignment_raw.json",
+    "timingSummary": "elevenlabs_tts_timing_summary.json",
+    "ttsAnchoredManifestFixture": "scripts/fixtures/golden_sample_visual_render_manifest.t2.v1_2_tts_anchored.json",
+    "visualMp4": "golden_sample_t2_salary_3days_visual_tts_anchored.mp4",
+    "muxMp4": "golden_sample_t2_salary_3days_tts_mux.mp4",
+    "captionTimeline": "dynamic_caption_timeline_tts_anchored.json",
+    "auditReport": "post_render_artifact_audit_tts_mux.json"
+  },
+
+  "boundary": {
+    "noImageGeneration": true,
+    "noOtherExternalApi": true,
+    "elevenLabsCallsMax": 1,
+    "noUpload": true,
+    "noEnvSecretModification": true,
+    "noKeyValueInLogsOrFiles": true,
+    "sourceImagesReadOnly": true,
+    "existingHybridRendererPreserved": true,
+    "uploadReady": false
+  }
+}

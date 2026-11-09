@@ -1,0 +1,72 @@
+{
+  "id": "tongin-market-yeopjeon-2012",
+  "title": "통인시장 엽전 도시락",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "전후 매출 비교 없음, 시작 연도 불일치",
+  "conditionResolved": false,
+  "finding": "시작 연도는 해소됐다: 2011년 상인회가 마을기업으로 전환했고 도시락카페 '통'은 2012년 1월 문을 열었다(서로 다른 사이트 2곳). 장면 후보도 찾았다 — 손님이 몰리자 쉽게 찢어지는 500원 종이쿠폰 대신 엽전을 쓰자는 아이디어가 '반짝'한 순간. 그러나 이 장면과 핵심 숫자(연간 방문객 2012년 5만명, 2013년 9.5만명, 2014년 17만명, 2015년 20만명)는 원불교신문 1곳에서만 나오고 교차 확인할 두 번째 사이트를 찾지 못했다. 전후 매출 비교는 어떤 기사에도 없고(회계상 수익은 '그리 크지 않다', 엽전 1000원당 운영기금 20%·세금 3% 공제 후 700원 남짓), 가맹점이 76개 중 24곳뿐이고 비가맹점은 임대료만 올랐다는 비판 기사가 있어 미담 단일 서사도 위험하다. 그래서 hold(unverifiable).",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "도시락카페 '통(通)'은 2012년 1월부터 통인시장에서 운영을 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'2012년 1월 오픈'은 이코노믹리뷰, '2012년부터 운영'은 서울시 내 손안에 서울로 확인.",
+      "sources": [
+        { "name": "이코노믹리뷰", "url": "https://www.econovill.com/news/articleView.html?idxno=317890", "quote": "2012년 1월부터 통인시장에서 운영하고 있는" },
+        { "name": "내 손안에 서울", "url": "https://mediahub.seoul.go.kr/archives/1206661", "quote": "2012년부터 운영한 도시락카페는" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "엽전은 10개 한 꾸러미에 5,000원이다(개당 500원).",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "이코노믹리뷰", "url": "https://www.econovill.com/news/articleView.html?idxno=317890", "quote": "엽전은 한 꾸러미(10개)에 5000원이다." },
+        { "name": "내 손안에 서울", "url": "https://mediahub.seoul.go.kr/archives/1206661", "quote": "엽전 10개 한 묶음을 받는다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "통인시장 연간 방문객은 2012년 5만명에서 2013년 9만5천명, 2014년 17만명, 2015년 20만명으로 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "원불교신문 단일 출처. 교차 확인 실패.",
+      "sources": [
+        { "name": "원불교신문", "url": "https://www.wonnews.co.kr/news/articleView.html?idxno=118050", "quote": "2012년 5만 명에서 2013년 9만5천 명, 2014년 17만 명" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "손님이 몰리자 쉽게 훼손되는 500원짜리 종이쿠폰 대신 엽전을 쓰자는 아이디어가 나왔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "원불교신문 단일 출처. 다른 기사는 경복궁 옆 조선시대 시장이라는 점에 착안한 관광 콘셉트로 설명해 도입 계기가 출처마다 다름.",
+      "sources": [
+        { "name": "원불교신문", "url": "https://www.wonnews.co.kr/news/articleView.html?idxno=118050", "quote": "쉽게 훼손되는 종이쿠폰 대신 엽전을 쓰자는 아이디어가" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "엽전 수익 1000원당 운영기금 20%와 세금 3%를 떼면 700원 남짓 남고, 76개 점포 중 24개만 가맹점이 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "스토리오브서울 단일 출처. 비가맹점 임대료 상승 등 부작용 비판이 같이 실려 있음.",
+      "sources": [
+        { "name": "스토리오브서울", "url": "http://www.storyofseoul.com/news/articleView.html?idxno=3423", "quote": "엽전 수익 1000원당 20%의 운영기금과 3%의 세금을 떼면 700원 남짓 남는데" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "종로구 전통시장 상인회 사업. 비가맹 상인 불만·임대료 상승 비판 기사가 있어 일방적 미담으로 쓰면 위험."
+  },
+  "remaining": "(1) 연간 방문객 추이와 '종이쿠폰 훼손 → 엽전' 장면을 확인할 두 번째 사이트 필요(종로구청 보도자료·서울시 전통시장 사업 보고서 등). (2) 도입 전후 매출 비교는 확인 불가. 이 둘이 확인되면 usable 재검토 가능.",
+  "toolCallsUsed": 8
+}

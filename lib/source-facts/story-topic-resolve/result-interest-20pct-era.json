@@ -1,0 +1,19 @@
+{
+  "id": "interest-20pct-era",
+  "title": "예금 이자 20% 시대 — 부모님 세대는 어떻게 돈을 모았나",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "10박자 미달(위기 장면 약함)",
+  "conditionResolved": false,
+  "finding": "같은 시대에서 당사자의 선택 한 순간을 찾아봤으나 확인되지 않았다. 1998년 외환위기 때는 콜금리가 연 30%까지, 6월 말 콜금리 14.41%였다는 시장금리 자료는 있지만 '정기예금 연 20%'라는 구체 수치는 검증 자료에서 나오지 않았고, 1980년대 연 20%대 예금금리도 찾지 못했다(1994년 정기예금은 8.5% 보도). 인물·결단 없이 시대 현상(금리 수준)만 있어 연표·통계 나열형이므로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "민감성 문제 없음. 다만 '고금리 시절 예금으로 돈 모으자'는 식이면 금융상품 권유로 읽힐 수 있음."
+  },
+  "remaining": "결정적 장면(인물의 선택) 없음. 예금금리 시계열은 한국은행 ECOS 등 공식 통계 원문 2곳 인용이 필요. 1972년 8·3 조치 등 인접 소재는 이미 별도 검증 파일(aug3-curb-market-1972)이 있어 중복 우려.",
+  "toolCallsUsed": 5
+}

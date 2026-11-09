@@ -1,0 +1,47 @@
+{
+  "id": "gap-logo-2010",
+  "title": "갭 로고 철회",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "짧고 번역 약함",
+  "conditionResolved": false,
+  "finding": "다른 각도를 찾아봤다: 결정 한 순간(2010년 10월 6일 로고 교체 → 약 일주일 만에 20년 된 파란 박스 로고로 복귀, 페이스북 '디자인 공모'도 철회)과 마리카 핸슨 사장의 '제대로 하지 못했다' 인정은 출처 2곳으로 확인된다. 그러나 경제 숫자가 막혔다: 로고 제작·교체 비용은 어느 출처에도 없고(1억 달러 설은 베트남어 재게시물 한 곳뿐), 매출 부진(9월 동일매장 -1%/-2%, 6개월 연속 하락)은 로고와 무관하다는 평이 다수라 로고 때문에 생긴 손실로 번역할 수 없다. 결과적으로 '짧은 해프닝 + 번역할 숫자 없음'이라 쇼츠 한 편의 결과·경제 번역이 서지 않는다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "갭은 새 로고를 낸 지 약 일주일 만에 20년 된 파란 박스 로고로 되돌렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'6일'(5일)~'일주일' 출처마다 표현이 다름.",
+      "sources": [
+        { "name": "Marketing Week (2010-10-12)", "url": "https://www.marketingweek.com/gap-scraps-new-logo/", "quote": "return to using its 20-year old" },
+        { "name": "Globe and Mail (2010)", "url": "https://www.theglobeandmail.com/technology/the-gaffe-at-the-gap-a-rebranding-is-reversed/article576965", "quote": "only days after unveiling it online" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "갭 북미 사장 마크 핸슨은 이번 과정을 제대로 하지 못했다고 인정했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Globe and Mail (2010)", "url": "https://www.theglobeandmail.com/technology/the-gaffe-at-the-gap-a-rebranding-is-reversed/article576965", "quote": "did not go about this in the right way" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "갭 북미 기존 매장 매출은 6개월 연속 감소 중이었고 9월에는 약 1% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "9월 감소폭이 Globe는 1%, 다른 보도는 2%. 로고와 인과관계 없음 — 변화 이전부터의 추세.",
+      "sources": [
+        { "name": "Globe and Mail (2010)", "url": "https://www.theglobeandmail.com/technology/the-gaffe-at-the-gap-a-rebranding-is-reversed/article576965", "quote": "declined for six consecutive months" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업·2010년 종결. 민감성 없음." },
+  "remaining": "로고 제작·철회 비용 공식 수치 없음, 로고와 매출을 잇는 근거 없음. 대안으로 '갭 사건을 소비자 목소리를 크라우드소싱한 실패'로 틀어도 숫자는 페이스북 댓글 수(1,000~2,000건, 출처마다 다름)뿐.",
+  "toolCallsUsed": 12
+}

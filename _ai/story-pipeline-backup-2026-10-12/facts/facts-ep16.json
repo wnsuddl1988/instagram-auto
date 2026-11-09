@@ -1,0 +1,49 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "삼양식품 임원이 명동의 매운 음식점에서 젊은이들이 땀을 뻘뻘 흘리면서도 스트레스를 풀며 먹는 모습을 보고 강한 매운맛 라면을 구상했다(연도는 출처에 따라 2010·2011로 상충해 대본에서 생략)", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "명동 매운 음식점에서 젊은이들이 땀을 뻘뻘 흘리면서도" },
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "명동에서 젊은이들이 땀을 뻘뻘 흘리며 매운 음식을 먹으면서도" }
+      ] },
+    { "id": "f2", "claim": "불닭볶음면은 2012년 4월에 출시됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "2012년 4월 출시한 불닭볶음면은 초기에는" },
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "불닭볶음면은 2012년 4월 출시됐다" }
+      ] },
+    { "id": "f3", "claim": "출시 초기에는 '너무 매워서 도저히 사람이 먹을 수 없다'는 평가를 받았다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "너무 매워서 도저히 사람이 먹을 수 없는 수준" },
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "너무 매워서 도저히 사람이 먹을 수 없다" }
+      ] },
+    { "id": "f4", "claim": "개발에 1년 남짓 매운 소스 2톤과 닭 1,200마리가 투입됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "1년여 동안 매운 소스 2t, 닭 1200마리가 투입됐다" },
+        { "name": "데일리안(2019.7.1)", "url": "https://m.dailian.co.kr/news/view/807157", "quote": "1년간 매운 소스 2톤, 닭 1200마리를 투입해 만든" }
+      ] },
+    { "id": "f5", "claim": "출시 초기 국내 월 매출은 7억 원 안팎(7~8억 원)이었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "2012년 출시 초기 국내 매출은 월 7~8억원 정도였는데" },
+        { "name": "아이뉴스24(2020.4.16)", "url": "https://www.inews24.com/view/1258400", "quote": "출시 초반에는 월 매출액이 7억 원 수준에 머물렀다" }
+      ] },
+    { "id": "f6", "claim": "출시 1년 만에 월 매출이 30억 원대로 올랐다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "출시 1년 만에 월 30억원대의 매출을 기록했다" },
+        { "name": "아이뉴스24(2020.4.16)", "url": "https://www.inews24.com/view/1258400", "quote": "1년 만에 약 30억 원으로 4배 이상 뛰었고" }
+      ] },
+    { "id": "f7", "claim": "영국 유튜버의 먹기 도전 영상이 올라온 뒤 불닭볶음면 챌린지가 세계적으로 유행했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "불닭볶음면 먹기에 도전하는 영상을" },
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "Fire Noodle Challenge" }
+      ] },
+    { "id": "f8", "claim": "초창기 75억 원이던 불닭 브랜드 매출은 2016년 1,000억 원을 넘어섰다(2016년 글로벌 매출 1,418억 원)", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "데일리안(2019.7.1)", "url": "https://m.dailian.co.kr/news/view/807157", "quote": "불닭브랜드 매출은 2016년 1000억원을 넘어섰고" },
+        { "name": "아이뉴스24(2020.4.16)", "url": "https://www.inews24.com/view/1258400", "quote": "2016년 1천418억 원으로 2배 이상 늘었다" }
+      ] },
+    { "id": "f9", "claim": "'중독성 강한 매운맛'이라는 입소문과 함께 마니아층이 형성됐다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "세계일보(2024.1.16)", "url": "https://www.segye.com/newsView/20240116515186", "quote": "중독성 강한 매운맛" },
+        { "name": "뉴시스(2022.11.13)", "url": "https://www.newsis.com/view/NISX20221111_0002082675", "quote": "중독성 강한 매운맛" }
+      ] }
+  ]
+}

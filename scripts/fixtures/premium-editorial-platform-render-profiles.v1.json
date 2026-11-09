@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "money_shorts_platform_render_profiles_v1",
+  "profileVersion": "1.0.0",
+  "status": "data_only_platform_render_profile_contract",
+  "title": "Money Shorts OS — Platform Render Profiles (Instagram Reels vs YouTube Shorts)",
+  "purpose": "다음 영상부터 적용할 플랫폼별 render/export contract를 data-only로 고정한다. Instagram Reels는 현재 full-vertical caption-safe 방식을 유지하고, YouTube Shorts는 플랫폼 UI(제목/채널/액션 버튼)를 고려한 상하 safe-frame profile을 갖는다. 이 fixture는 렌더/업로드를 실행하지 않으며, 기존 게시물/영상/렌더를 수정하지 않는다. 미래 orchestrator가 render/upload 전에 플랫폼 profile을 선택하기 위한 소스가 된다.",
+
+  "platforms": ["instagram_reels", "youtube_shorts"],
+
+  "sharedBaseSpec": {
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "aspectRatio": "9:16",
+    "fps": 30,
+    "codec": "h264",
+    "container": "mp4",
+    "audioCodec": "aac",
+    "durationSec": {
+      "expected": 30,
+      "minSec": 29.5,
+      "maxSec": 30.5,
+      "rationale": "accepted candidate(v3.1 tailfit)가 30.0s이며, 양 플랫폼 Shorts/Reels 모두 30s 안팎을 안정 구간으로 사용한다."
+    },
+    "canvasPolicy": "canvas remains 1080x1920 for all platforms; platform differences are expressed as safe-zone/caption placement, NOT as canvas resize.",
+    "rationale": "두 플랫폼 모두 동일한 9:16 1080x1920 캔버스/코덱/프레임레이트를 공유한다. 플랫폼 차이는 캔버스 크기가 아니라 안전 영역(safe zone)과 caption/critical 요소 배치로만 표현한다."
+  },
+
+  "platformProfiles": {
+    "instagram_reels": {
+      "profileId": "instagram_reels_full_vertical_v1",
+      "displayName": "Instagram Reels — Full Vertical (caption-safe)",
+      "fillPolicy": "full_frame",
+      "forcedTopMatte": false,
+      "forcedBottomMatte": false,
+      "topSafePaddingPx": 0,
+      "bottomSafePaddingPx": 0,
+      "captionBehavior": {
+        "alignment": "bottom_center",
+        "captionMarginV": 130,
+        "captionFontSize": 104,
+        "captionOutline": 6,
+        "captionShadow": 3,
+        "note": "현재 caption v3 outputSpec(마진 130, 하단 중앙)을 그대로 유지한다. Owner 기준상 Instagram Reels는 현재 방식으로 충분하다."
+      },
+      "keepCurrentCaptionSafeBehavior": true,
+      "rationale": "Owner 확인: Instagram Reels는 현재 full-vertical + 하단 caption(marginV 130) 방식으로 큰 문제가 없다. 강제 상/하 matte를 넣지 않는다.",
+      "platformUiRiskNotes": [
+        "Reels 하단 caption/액션 UI가 있으나 현재 marginV 130으로 실사용상 가림 문제 없다고 Owner가 확인.",
+        "이 profile은 강제 letterbox/matte를 넣지 않는다(no forced top/bottom matte)."
+      ]
+    },
+
+    "youtube_shorts": {
+      "profileId": "youtube_shorts_safe_frame_v1",
+      "displayName": "YouTube Shorts — Safe Frame (top/bottom UI aware)",
+      "fillPolicy": "full_frame_background_with_safe_text_zones",
+      "forcedTopMatte": false,
+      "forcedBottomMatte": false,
+      "topSafePaddingPx": 150,
+      "bottomSafePaddingPx": 320,
+      "unsafeBands": {
+        "topUnsafeBand": { "fromYPx": 0, "toYPx": 150 },
+        "bottomUnsafeBand": { "fromYPx": 1600, "toYPx": 1920 }
+      },
+      "captionSafeZone": {
+        "minYPx": 150,
+        "maxYPx": 1600,
+        "recommendedCaptionBaselineMaxYPx": 1560,
+        "note": "caption baseline(텍스트 하단)은 bottom unsafe band(1600~1920) 위에 있어야 한다. 하단 안전 마진을 위해 baseline은 1560px 이하 Y에 위치하도록 권장."
+      },
+      "recommendedCaptionMarginV": 340,
+      "marginVPolicy": "captionMarginV(하단에서 위로 올리는 px)는 bottomSafePaddingPx(320) 이상이어야 하며, 권장값 340으로 하단 UI 위에 caption을 안전하게 띄운다. Instagram profile의 130보다 크다.",
+      "visualCriticalZone": {
+        "minYPx": 150,
+        "maxYPx": 1600,
+        "minXPx": 0,
+        "maxXPx": 1080,
+        "note": "핵심 시각 주체(주요 오브젝트/얼굴/핵심 수치 오버레이)는 top/bottom unsafe band 밖 중앙 세로 구간(150~1600px)에 있어야 한다. 배경/이미지는 full frame을 채워도 되지만 핵심 텍스트/오브젝트/caption은 unsafe band에 두지 않는다."
+      },
+      "textPlacementPolicy": {
+        "noImportantTextInTopUnsafeBand": true,
+        "noImportantTextInBottomUnsafeBand": true,
+        "note": "제목/핵심 요약/출처·수치 등 중요한 텍스트는 상단(0~150px)·하단(1600~1920px) unsafe band에 배치하지 않는다."
+      },
+      "sourceDateValueOverlayPolicy": {
+        "noExactSourceDateValueBakedIntoImageBody": true,
+        "deterministicOverlayOnly": true,
+        "note": "정확한 출처/날짜/수치(예: '2026년 5월', '2.5%', '한국은행 ECOS')는 생성 이미지 본문에 baked-in 하지 않는다. sourceFact 기반 deterministic overlay로만 표기해 정확성/정합성을 코드가 통제한다.",
+        "rationale": "생성 이미지 본문에 수치를 그리면 hallucination/불일치 리스크가 있다. deterministic overlay만 허용하면 sourceFact와 표시값이 항상 일치한다."
+      },
+      "platformUiRiskNotes": [
+        "YouTube Shorts는 하단에 영상 제목(최대 2줄) + 채널명 + 좋아요/댓글/공유/리믹스 액션 버튼 UI가 겹친다 → 하단 약 300px 이상이 가려질 수 있음.",
+        "상단에는 검색/뒤로가기/Shorts 라벨 등의 UI가 겹칠 수 있음 → 상단 약 120~150px 주의.",
+        "많은 Shorts 영상이 상하 여백(safe frame)을 두고 업로드되는 것은 이 UI 가림을 피하기 위함.",
+        "따라서 YouTube Shorts export는 핵심 텍스트/오브젝트/caption을 topSafePaddingPx(150)~ (height - bottomSafePaddingPx = 1600) 사이 central zone에 유지해야 한다."
+      ],
+      "rationale": "topSafePaddingPx=150은 상단 Shorts UI를 피하는 보수적 하한이고, bottomSafePaddingPx=320은 제목 2줄+채널+액션 버튼이 차지하는 하단 UI를 덮는 보수적 값이다(bottom이 top보다 큰 이유: 하단 UI가 훨씬 넓다). 값은 canvas resize 없이 안전 영역/캡션 배치로만 적용된다."
+    }
+  },
+
+  "rendererContract": {
+    "rendererMustConsumePlatformProfile": true,
+    "rendererMustNotHardcodeOneProfileForBothPlatforms": true,
+    "youtubeExportMustUseYoutubeShortsProfile": true,
+    "instagramExportMayUseInstagramReelsProfile": true,
+    "captionMarginVSource": "renderer는 caption MarginV를 대상 플랫폼 profile(instagram_reels.captionBehavior.captionMarginV 또는 youtube_shorts.recommendedCaptionMarginV)에서 가져와야 하며, 두 플랫폼에 동일 값을 하드코딩하지 않는다.",
+    "note": "이 contract는 data-only 선언이다. 실제 renderer 코드 변경은 별도 승인된 작업에서 수행한다. 현재 renderer(render-premium-editorial-selected-image-visual-only-v1.mjs)는 manifest outputSpec.captionMarginV를 소비하므로, 미래에는 platform profile이 그 값을 공급하는 구조로 연결한다."
+  },
+
+  "acceptanceGuardContract": {
+    "finalAcceptanceMustKnowTargetPlatform": true,
+    "youtubeAcceptanceMustVerifySafeFrameMetadata": true,
+    "youtubeAcceptanceMustVerifyCaptionZoneMetadata": true,
+    "note": "final video acceptance는 대상 플랫폼(instagram_reels|youtube_shorts)을 알아야 하고, YouTube 대상일 때 safe-frame/caption zone 메타데이터가 profile 기준을 만족하는지 검증해야 한다. 이 contract는 미래 acceptance guard가 참조할 기준이다."
+  },
+
+  "automationContract": {
+    "futureOrchestratorMustSelectPlatformRenderProfileBeforeRenderAndUpload": true,
+    "profileSelectionKey": "targetPlatform ∈ {instagram_reels, youtube_shorts} → platformProfiles[targetPlatform]",
+    "note": "미래 Automation Orchestrator는 render/upload 이전에 대상 플랫폼 render profile을 반드시 선택해야 한다. YouTube 업로드는 youtube_shorts profile을, Instagram 업로드는 instagram_reels profile을 사용한다."
+  },
+
+  "boundary": {
+    "noUploadExecuted": true,
+    "noYoutubeInstagramApiCall": true,
+    "noRenderMuxFfmpegExecuted": true,
+    "noExistingPostModified": true,
+    "dataOnly": true
+  },
+
+  "riskNotes": [
+    "data-only contract — 렌더/업로드/기존 게시물 수정을 수행하지 않는다.",
+    "픽셀 safe padding 값은 보수적 권장값이며, 실제 육안 QA 후 Owner가 미세 조정할 수 있다(topSafePaddingPx 120~180, bottomSafePaddingPx 240~360 범위 내).",
+    "이 fixture에는 env/secret/token/credential/upload URL이 포함되지 않는다.",
+    "renderer/acceptance/automation 실제 코드 연결은 별도 승인 작업에서 수행한다 — 이 fixture는 기준만 고정한다."
+  ]
+}

@@ -1,0 +1,83 @@
+.shell {
+  --ink: #071a2d;
+  --navy: #0b365a;
+  --teal: #2f9f96;
+  --mint: #dff7f2;
+  --gold: #ffd166;
+  --paper: #f5f8fb;
+  max-width: 1180px;
+  margin: 40px auto;
+  padding: 0 24px 80px;
+  color: var(--ink);
+}
+
+.hero {
+  padding: 36px;
+  border-radius: 28px;
+  color: #f8fbff;
+  background: radial-gradient(circle at 85% 10%, #20736e 0, transparent 34%), linear-gradient(135deg, #071a2d, #0b365a 62%, #102f4f);
+  box-shadow: 0 24px 56px rgb(7 26 45 / 18%);
+}
+
+.hero h1 { margin: 8px 0 12px; font-size: clamp(2rem, 5vw, 3.6rem); line-height: .98; letter-spacing: -.05em; }
+.hero p { max-width: 800px; line-height: 1.65; }
+.eyebrow { margin: 0; color: #8ae8df; font-size: .8rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+
+.step {
+  margin-top: 26px;
+  padding: 26px;
+  border: 1px solid #dbe4ec;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgb(7 26 45 / 7%);
+}
+
+.step h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; letter-spacing: -.025em; }
+.step h2 > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: var(--navy); font-size: .9rem; }
+.step code { overflow-wrap: anywhere; font-size: .76rem; }
+.notice, .blocked { padding: 12px 14px; border-radius: 12px; background: #fff4d6; color: #634600; }
+.blocked { background: #fff0ee; color: #7e2119; }
+
+.summaryGrid, .copyGrid, .formGrid, .readinessSummary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.summaryGrid article, .copyGrid article { min-width: 0; padding: 15px; border-radius: 16px; background: var(--paper); }
+.summaryGrid small, .summaryGrid code { display: block; }
+
+.sceneGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+.sceneCard { padding: 18px; border: 1px solid #dbe4ec; border-radius: 18px; background: linear-gradient(180deg, #fff, #f7fafc); }
+.sceneCard header { display: flex; align-items: center; gap: 10px; color: var(--navy); }
+.sceneCard header span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #fff; background: var(--teal); font-weight: 800; }
+.sceneCard dl { display: grid; grid-template-columns: 74px 1fr; gap: 7px 10px; font-size: .85rem; }
+.sceneCard dt { color: #687d8e; font-weight: 700; }
+.sceneCard dd { margin: 0; overflow-wrap: anywhere; }
+
+.directionGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.directionGrid article { padding: 18px; border: 2px solid #dbe4ec; border-radius: 18px; background: #f9fbfc; }
+.directionGrid article[data-selected="true"] { border-color: var(--teal); background: var(--mint); }
+.radio, .checkbox { display: flex; align-items: flex-start; gap: 9px; line-height: 1.45; }
+.checkbox { margin: 12px 0; }
+.checkbox input, .radio input { margin-top: .25em; }
+
+.formGrid label { display: grid; gap: 7px; font-weight: 700; font-size: .88rem; }
+.formGrid input { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #b9c8d5; border-radius: 10px; color: var(--ink); background: #fff; }
+.copyGrid { margin-top: 18px; }
+.copyGrid p { white-space: pre-line; }
+.pinned { padding: 22px; border-left: 7px solid var(--gold); border-radius: 18px; background: #fff8e6; }
+
+.readinessSummary strong { padding: 14px; border-radius: 14px; background: var(--mint); }
+.tableWrap { margin-top: 16px; overflow-x: auto; }
+.tableWrap table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.tableWrap th, .tableWrap td { padding: 10px; border-bottom: 1px solid #dbe4ec; text-align: left; vertical-align: top; }
+.tableWrap tr[data-blocking="true"] { background: #fff7f5; }
+.issueList { max-height: 330px; overflow: auto; padding: 14px 14px 14px 34px; border-radius: 14px; background: var(--paper); }
+.issueList li { margin: 6px 0; }
+.issueList li[data-blocking="true"] { color: #9b281c; font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.actions button { padding: 11px 16px; border: 0; border-radius: 10px; color: #fff; background: var(--navy); font-weight: 800; cursor: pointer; }
+.actions button:disabled { opacity: .42; cursor: not-allowed; }
+.actions .secondary { color: var(--navy); background: #e7eef4; }
+.success { padding: 12px 14px; border-radius: 12px; color: #07584f; background: var(--mint); font-weight: 800; }
+
+@media (max-width: 820px) {
+  .directionGrid { grid-template-columns: 1fr; }
+  .step, .hero { padding: 20px; }
+}

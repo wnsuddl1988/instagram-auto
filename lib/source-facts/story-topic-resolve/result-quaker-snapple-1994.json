@@ -1,0 +1,74 @@
+{
+  "id": "quaker-snapple-1994",
+  "title": "퀘이커-스내플 — 17억 달러에 사서 3억 달러에 판 음료",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "장면이 회의실. 한국에서 낯섦. 인수 연도 1993/1994 엇갈림",
+  "conditionResolved": false,
+  "finding": "인수 연도는 1994년(17억 달러), 매각은 1997년(3억 달러, 약 14억 달러 손실)으로 정리되고 숫자 사실은 서로 다른 사이트 2곳으로 확인된다. 다만 결정적 장면은 '게토레이 성공에 고무된 퀘이커가 스내플을 게토레이와 같은 유통망에 넣었다'는 경영 판단뿐이라 회의실·재무 숫자 중심이고, 시청자가 눈앞에 그릴 한 장면(사람의 선택 순간)이 없다. 한국 20~40대에게 스내플 인지도가 낮고, 인수가를 14억 달러로 적은 매체와 1994년 매출을 6.74억/7.74억 달러로 달리 적은 매체가 있어 숫자도 흔들린다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "퀘이커 오츠는 1994년 스내플을 17억 달러에 인수했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Mental Floss는 '3년 전 14억 달러'로 적어 인수가가 출처마다 다름(14억은 손실액과 혼동 가능). 인수 연도는 1994로 확정 가능",
+      "sources": [
+        { "name": "Encyclopedia.com(Snapple Beverage Corp.)", "url": "https://www.encyclopedia.com/economics/economics-magazines/snapple-beverage-corp", "quote": "Quaker Oats for $1.7 billion" },
+        { "name": "Wikipedia(Snapple)", "url": "https://en.wikipedia.org/wiki/Snapple", "quote": "Quaker Oats Company for $1.7 billion" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "퀘이커는 1997년 스내플을 트라이아크(Triarc)에 3억 달러에 팔았다(1997년 3월 27일 합의 발표, 5월 22일 종료).",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Encyclopedia.com(Snapple Beverage Corp.)", "url": "https://www.encyclopedia.com/economics/economics-magazines/snapple-beverage-corp", "quote": "in 1997 for $300 million" },
+        { "name": "Wikipedia(Snapple)", "url": "https://en.wikipedia.org/wiki/Snapple", "quote": "Triarc in 1997 for $300 million" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "퀘이커는 매각으로 약 14억 달러의 손실(비현금 세전 평가손)을 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "미국 SEC 제출 8-K(Quaker Oats, 1997)", "url": "https://www.sec.gov/Archives/edgar/data/0000081371/000008137197000003/0000081371-97-000003.txt", "quote": "pretax charge of about $1.4 billion" },
+        { "name": "Encyclopedia.com(Snapple Beverage Corp.)", "url": "https://www.encyclopedia.com/economics/economics-magazines/snapple-beverage-corp", "quote": "a loss of $1.4 billion for Quaker" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "퀘이커는 게토레이 성공에 고무돼 스내플을 게토레이와 같은 유통망에 넣었고, 스내플은 원래 작은 독립 매장 중심 판매로 성장한 브랜드였다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'원인' 분석은 분석가·박물관 해석이며 단정 금지",
+      "sources": [
+        { "name": "Encyclopedia.com(Snapple Beverage Corp.)", "url": "https://www.encyclopedia.com/economics/economics-magazines/snapple-beverage-corp", "quote": "the same distribution chain as Gatorade" },
+        { "name": "Museum of Failure(Snapple)", "url": "https://museumoffailure.com/exhibition/snapple", "quote": "Flush from their success with Gatorade" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "스내플 매출은 퀘이커 소유 중 6억 7,400만 달러(1994)에서 5억 5,000만 달러(1996)로 22.6% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Mental Floss는 1994년 매출을 7억 7,400만 달러로 적어 출처 간 불일치. 단일 출처만 확인",
+      "sources": [
+        { "name": "Encyclopedia.com(Snapple Beverage Corp.)", "url": "https://www.encyclopedia.com/economics/economics-magazines/snapple-beverage-corp", "quote": "sales for Snapple plunged 22.6 percent" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 기업의 종결된 1990년대 거래. 민감성 문제 없음."
+  },
+  "remaining": "주인공의 선택이 드러나는 구체적 장면(예: 인수 발표일 경영진의 발언)을 2곳 출처로 못 찾음. 한국 인지도 낮음. 인수가(17억/14억)와 1994 매출(6.74억/7.74억) 출처 불일치.",
+  "toolCallsUsed": 9
+}

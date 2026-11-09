@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "youtube_letterbox_source_plan_v1",
+  "_note": "Sample youtube-letterbox-source-plan.json for the render-request preparer guard only. no-live/no-execute. instagramSourcePath intentionally does not exist so the preparer reports inputExists:false (fail-closed visibility, not an abort) — the preparer still writes a deterministic request JSON either way.",
+  "mode": "local_mock",
+  "noLive": true,
+  "envSecretValuesAccessedThisRun": false,
+  "willExecuteFfmpeg": false,
+  "sourceContentUnitManifestPath": "C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\dual_platform_content_unit.generated.json",
+  "contentId": "t3_letterbox_plan_fixture",
+  "version": "v1_local_draft",
+  "instagramSourcePath": "C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\instagram_reels_full_frame_1080x1920_v1_local_draft.mp4",
+  "plannedYoutubeSourcePath": "C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\youtube_shorts_letterbox_1080x1920_v1_local_draft.mp4",
+  "inputExists": false,
+  "outputDirOutsideRepo": true,
+  "renderProfile": {
+    "canvas": "1080x1920",
+    "backgroundColor": "black",
+    "contentBox": "864x1536",
+    "centered": true,
+    "margins": { "topBottomPx": 192, "sidePx": 108 },
+    "codec": { "video": "h264", "pixelFormat": "yuv420p", "faststart": true, "audio": "aac" },
+    "note": "Matches scripts/create-youtube-shorts-letterbox-variant.mjs PROFILE exactly — scale to fit content box, pad to full 1080x1920 canvas with black background, centered."
+  },
+  "ffmpegPlanCommandString": "ffmpeg -y -i C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\instagram_reels_full_frame_1080x1920_v1_local_draft.mp4 -vf scale=w=864:h=1536:force_original_aspect_ratio=decrease,pad=w=1080:h=1920:x=(ow-iw)/2:y=(oh-ih)/2:color=black -c:v h264 -pix_fmt yuv420p -movflags +faststart -c:a aac -map 0:v:0 -map 0:a:0? C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\youtube_shorts_letterbox_1080x1920_v1_local_draft.mp4",
+  "recommendedNextCommand": "node scripts/create-youtube-shorts-letterbox-variant.mjs --input \"C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\instagram_reels_full_frame_1080x1920_v1_local_draft.mp4\" --output \"C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\youtube_shorts_letterbox_1080x1920_v1_local_draft.mp4\" --dry-run",
+  "sideEffectCounters": {
+    "ffmpegExecutionCount": 0,
+    "mediaFilesGeneratedCount": 0,
+    "apiCallCount": 0,
+    "envSecretReadCount": 0,
+    "contentUnitManifestMutationCount": 0
+  },
+  "riskNotes": [
+    "no-live: no ffmpeg execution, no media generation, no API/network/env access performed by this planner.",
+    "The content unit manifest passed via --content-unit was read-only; this planner never mutates it.",
+    "plannedYoutubeSourcePath is a deterministic placeholder path — no file exists there until a later approved local media step actually runs scripts/create-youtube-shorts-letterbox-variant.mjs (or an equivalent) with --run.",
+    "nextStep: after the planned mp4 exists at plannedYoutubeSourcePath, rebuild/attach the content unit with --youtube-source \"C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\youtube_shorts_letterbox_1080x1920_v1_local_draft.mp4\" and re-run --preflight --content-unit <manifest>."
+  ]
+}

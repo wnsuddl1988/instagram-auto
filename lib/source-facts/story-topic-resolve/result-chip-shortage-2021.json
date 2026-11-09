@@ -1,0 +1,71 @@
+{
+  "id": "chip-shortage-2021",
+  "title": "반도체 부족 — 부품 하나에 멈춘 자동차 공장",
+  "year": 2021,
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "한 장면으로 모으기 어려움",
+  "conditionResolved": false,
+  "finding": "피해 규모(AlixPartners: 2021년 매출 2100억 달러, 770만 대 생산 손실)와 르네사스 나카 공장 화재(23대 장비 손상)는 2출처로 확인된다. 후보 장면은 '2020년 상반기 완성차업계의 칩 주문 취소'(Wards Auto·Reuters 재게재)와 '2021-03-19 르네사스 화재'인데, 둘 다 주인공 한 명의 결단이 아니라 업계 전체의 흐름이고 원인도 수요 반등·파운드리 우선순위·화재·텍사스 한파 등 여럿이라 한 장면으로 묶으면 단순화 위험이 크다. 그래서 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "AlixPartners는 2021년 반도체 부족으로 완성차 업계 매출 2100억 달러가 날아갈 것으로 추정했다(5월 추정치 1100억 달러의 거의 두 배).",
+      "numeric": true,
+      "economy": true,
+      "caution": "추정치(예측)이며 일부 매체는 '매출'이 아닌 '이익'으로 잘못 표기.",
+      "sources": [
+        { "name": "AlixPartners 보도자료(2021)", "url": "https://www.alixpartners.com/media-center/press-releases/press-release-shortages-related-to-semiconductors-to-cost-the-auto-industry-210-billion-in-revenues-this-year-says-new-alixpartners-forecast/", "quote": "$210 billion in lost revenues this year" },
+        { "name": "FenderBender(2021)", "url": "https://www.fenderbender.com/articles/16965-semiconductor-shortage-to-cost-industry-210-billion", "quote": "$210 billion in revenues this year" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "같은 추정에서 2021년 자동차 생산 손실은 770만 대(5월 추정 390만 대)였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "예측치.",
+      "sources": [
+        { "name": "AlixPartners 보도자료(2021)", "url": "https://www.alixpartners.com/media-center/press-releases/press-release-shortages-related-to-semiconductors-to-cost-the-auto-industry-210-billion-in-revenues-this-year-says-new-alixpartners-forecast/", "quote": "7.7 million units will be lost in 2021" },
+        { "name": "FenderBender(2021)", "url": "https://www.fenderbender.com/articles/16965-semiconductor-shortage-to-cost-industry-210-billion", "quote": "production of 7.7 million vehicles" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2021년 3월 19일 르네사스 나카 공장 화재로 장비 23대가 손상·파손됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "초기 11대 → 20대 안팎 → 23대로 보도마다 다름. 재가동 시점도 '100일'/'3개월 이상' 등 엇갈림.",
+      "sources": [
+        { "name": "Embedded Computing(2021)", "url": "https://embeddedcomputing.com/technology/analog-and-power/renesas-fire-worse-than-anticipated-3-month-restart-prompts-production-cuts-at-toyota-nissan", "quote": "23 machines were damaged or destroyed" },
+        { "name": "Nippon.com(Reuters 재게재, 2021)", "url": "https://www.nippon.com/en/news/reu20210601KCN2DD21J/", "quote": "with 23 machines destroyed" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "르네사스는 전 세계 차량용 마이크로컨트롤러 칩의 거의 3분의 1을 만든다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 URL 모두 nippon.com이라 서로 다른 사이트 2곳이 아님(1곳으로 침). 다른 출처 보강 필요.",
+      "sources": [
+        { "name": "Nippon.com(Reuters 재게재, 2021)", "url": "https://www.nippon.com/en/news/reu20210601KCN2DD21J/", "quote": "nearly a third of the microcontroller" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "완성차 업체들은 2020년 상반기 대만 파운드리에 낸 칩 주문을 줄였고, 주문을 취소하면 대기열 맨 뒤로 밀린다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "원인에 대한 해석이 갈림(완성차 예측 오류 vs 파운드리의 전자제품 우선).",
+      "sources": [
+        { "name": "BusinessDay(Reuters 재게재, 2021)", "url": "https://www.businessday.co.za/bd/world/2021-01-11-carmakers-cut-output-as-chipmakers-turn-to-consumer-electronics/", "quote": "cut orders with Taiwanese foundries" },
+        { "name": "Wards Auto(2021)", "url": "https://www.wardsauto.com/news/archive-wards-chip-shortage-stress-testing-supply-chain/794992/", "quote": "automatically lose your place in line" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 산업 현상. 특정 국내 기업 소송·제재 없음." },
+  "remaining": "한 사람의 결단 장면이 없다. 만든다면 '2020년 봄 칩 주문 취소 → 되돌릴 수 없었다'로 단일 장면을 잡고 2출처(Reuters 원문·Bloomberg 등) 보강, 숫자 4개 2출처(포드 이익 영향 10억~25억 달러 등) 추가 확인이 필요.",
+  "toolCallsUsed": 20
+}

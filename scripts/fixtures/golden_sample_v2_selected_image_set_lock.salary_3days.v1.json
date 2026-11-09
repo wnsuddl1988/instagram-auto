@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "golden_sample_v2_selected_image_set_lock_salary_3days_v1",
+  "taskId": "creative-v2-golden-sample-v2-selected-image-set-lock-v1",
+  "createdAt": "2026-07-02",
+  "topic": "월급이 3일 만에 사라지는 이유",
+  "designPrinciple": "Story-Causality First + Visual Evidence Second — 이미지는 스토리의 증거다",
+  "blueprintSource": "scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json",
+  "ownerNote": "_ai/GOLDEN_SAMPLE_V2_SELECTED_IMAGE_SET_LOCK_V1.md",
+
+  "lockContract": {
+    "status": "LOCKED_AS_RENDER_INPUT_CANDIDATE",
+    "renderReady": false,
+    "uploadReady": false,
+    "integrityRule": "다음 render slice는 시작 시 이 manifest의 6장 전부에 대해 path 실존 + width/height + fileSizeBytes + MD5를 재검증해야 하며, 하나라도 불일치하면 render를 시작하지 않고 abort한다.",
+    "sourceImagesReadOnly": "원본 수정/이동/repo 복사 금지 — output 경로의 원본을 read-only 입력으로만 사용한다.",
+    "conditionalScenes": ["s4", "s6"],
+    "conditionalRule": "s4/s6의 renderConditions는 lock의 일부다. 조건 미충족 render는 lock 위반이며 QA에서 reject된다."
+  },
+
+  "gateSummary": "6/6 native 1088x1936 (>=1080x1920, aspect 0.562) — 전 장 PASS_1080x1920_NATIVE. 단순 upscale/crop-as-fix 아님, 전량 FLUX.2 [pro] native 생성.",
+
+  "scenes": [
+    {
+      "sceneId": "s1_problem_empty_wallet",
+      "stage": "problem",
+      "candidateId": "s1_B",
+      "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s1_problem_empty_wallet-s1_B.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 604622,
+      "md5": "8F1BBF1298BC672B7FD28268A9DC547A",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1 (checkpoint 29c7569)",
+      "storyEvidenceRole": "월급 3일 후 잔액 공포의 물리적 형태 — 거의 빈 지갑 + 소수의 지폐, 어두운 긴장 조명 (s6과 톤 반전 대비의 출발점)",
+      "selectedReason": "wide-table 구도가 빈 지갑의 고립감을 살림. 후보 s1_A는 브랜드 유사 문자('cada') + 대형 액면으로 hard reject",
+      "riskNote": "SOFT_RISK_DENOMINATION — 원본 '500'/'100' 2~3곳 readable → denomination probe에서 dim/blur+hook card로 사실상 비가독 (PASS_WITH_MINOR_RISK)",
+      "renderConditions": ["hook card 상시 존재 구간 유지 (background-only 구간이 길어지지 않게)"]
+    },
+    {
+      "sceneId": "s2_cause_outflow",
+      "stage": "cause",
+      "candidateId": "s2_A",
+      "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s2_cause_outflow-s2_A.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 935655,
+      "md5": "BA70F0ED5EDB038F0C252EF746DFDCF4",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1 (checkpoint 29c7569)",
+      "storyEvidenceRole": "월급 봉투에서 여러 청구서 봉투로 갈라져 나가는 방사형 흐름 — '내 의지와 무관하게 빠져나가는 고정비'의 시각 문법",
+      "selectedReason": "부감 방사형 구도가 유출 방향성을 가장 직관적으로 전달",
+      "riskNote": "SOFT_RISK_DENOMINATION — 엔화풍 '10000'/'1000' 산재 → 상단은 checklist 카드 가림, 하단 잔존은 문양 수준 흐릿 (PASS_WITH_MINOR_RISK)",
+      "renderConditions": ["checklist 카드가 상단 지폐 노출부를 덮는 기존 배치 유지"]
+    },
+    {
+      "sceneId": "s3_illusion_mixed_pile",
+      "stage": "illusion",
+      "candidateId": "s3_A",
+      "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s3_illusion_mixed_pile-s3_A.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 1069163,
+      "md5": "2D82FD5F8873A944E01AB58813500D76",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1 (checkpoint 29c7569)",
+      "storyEvidenceRole": "구분선 없이 섞인 현금 더미 — '한 통장' 착시의 물리적 은유, s4 3분할과의 before/after 대비 전제 장면",
+      "selectedReason": "순수 부감 + 워시드 톤 — 12장 중 최고 클린 원본",
+      "riskNote": "NEAR_CLEAN — dim/blur 후 완전 비가독 (PASS_DENOMINATION_NOT_READABLE, 무조건부)",
+      "renderConditions": []
+    },
+    {
+      "sceneId": "s4_solution_three_slots",
+      "stage": "solution",
+      "candidateId": "s4_A",
+      "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s4_solution_three_slots-s4_A.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 945779,
+      "md5": "88CF9BE76626100C8A4BA6FA2324C180",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1 (checkpoint 29c7569)",
+      "storyEvidenceRole": "정확히 3칸으로 나뉜 현금/봉투 — 해결책('돈의 자리 3분할') 자체의 형태. 3-slot 카드(고정비/생활비/저축)가 hard fail #5('3개가 무엇인지') 대응",
+      "selectedReason": "flat-lay 봉투 3열이 '3'이라는 숫자를 구도로 전달. 후보 s4_B는 깨진 글자('NEL'/'HL')로 hard reject",
+      "riskNote": "SOFT_RISK_DENOMINATION 조건부 — 밝은 배경이라 dim 완화 효과 약함, 봉투 지폐 상단 '100'/'10'이 FAINT~CLEAR 경계. 3-slot 카드 가림 상태에서만 FAINT (PASS_WITH_MINOR_RISK, 조건부)",
+      "renderConditions": [
+        "CONDITIONAL_LOCK — 3-slot 카드가 stage cut 직후 즉시 진입해야 함",
+        "background-only 노출 <= 0.3s (카드 없는 구간이 길면 우측 '100'이 CLEAR 경계까지 상승)"
+      ]
+    },
+    {
+      "sceneId": "s5_action_hands_dividing",
+      "stage": "action",
+      "candidateId": "s5_B",
+      "image": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s5_action_hands_dividing-s5_B.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 580863,
+      "md5": "77ADCD1DA5A651278B8A6AE6B4F20382",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1 (checkpoint 29c7569)",
+      "storyEvidenceRole": "지폐를 봉투에 나눠 넣는 진행 중인 손 — 시청자가 따라 할 신체 동작의 시연 (행동 단계는 동작으로 증명)",
+      "selectedReason": "over-shoulder 구도가 '내가 하는 동작'의 시점 이입을 만듦",
+      "riskNote": "SOFT_RISK_DENOMINATION — 전경 무더기 '1000' 등 readable → 사선 구도+dim/blur로 흐릿 + action 카드가 우측 절반 가림 (PASS_WITH_MINOR_RISK)",
+      "renderConditions": ["action 카드 하단 배치 유지 (전경 무더기 자연 가림)"]
+    },
+    {
+      "sceneId": "s6_result_clear_after",
+      "stage": "action_result",
+      "candidateId": "s6_P_A",
+      "image": "output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/gsv2-s6_result_clear_after-s6_P_A.jpg",
+      "width": 1088, "height": 1936, "fileSizeBytes": 515012,
+      "md5": "A5B5A602828E1F9C9829AC6A8F5A1A83",
+      "gate": "PASS_1080x1920_NATIVE",
+      "sourceRun": "creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1 (checkpoint 65527d9) + card occlusion reprobe (checkpoint fdc9187)",
+      "storyEvidenceRole": "정돈된 3봉투 + 접힌 현금이 든 열린 지갑, 밝은 아침 톤 — s1의 어두운 빈 지갑과 반전 대비로 스토리 결말('쓸 수 있는 돈이 정확히 보인다')을 완결",
+      "selectedReason": "접힌 지폐 구도(patch lever)로 액면 노출이 s6_B 대비 실질 완화 + story evidence 전항 PASS. card occlusion reprobe에서 shiftV1 카드로 COVERED_NOT_READABLE 확인 (PASS_BY_CARD_OCCLUSION_PROBE)",
+      "riskNote": "NOT_RAW_CLEAN — s6_P_A는 raw clean 이미지가 아니다. 접힌 최상단 지폐 면에 visible '2'(x430~700, y1100~1230)가 잔존하며, raw 단독 verdict는 PATCH_STILL_NEEDED였다. shiftV1 카드 가림 조건에서만 채택된다.",
+      "renderConditions": [
+        "CONDITIONAL_LOCK — card occlusion 조건에서만 채택 (raw clean으로 취급 금지)",
+        "final/save 카드 좌표: x200~880, y1080~1250 (shiftV1) — 텍스트 라인 y1122/fs56 기준",
+        "세로 slide entry 금지 — 이동 경로에서 '2' 노출 순간이 생김",
+        "고정 위치 fade/scale-in 또는 동급 entry만 허용",
+        "s6 stage cut 직후 카드 즉시 진입 (background-only <= 0.3s), 마지막 hold까지 카드 유지"
+      ]
+    }
+  ],
+
+  "rejectedAlternatives": [
+    { "candidateId": "s6_B", "reason": "denomination render probe에서 지폐 상단 '5'가 dim/blur/card 후에도 viewer frame 중앙에서 선명히 읽힘 — PATCH_NEEDED (checkpoint 3d6122d)" },
+    { "candidateId": "s6_P_B", "reason": "hard text — 달러 유사 앞면 + 깨진 유사문자열('ЗЕН1Q'류) + 모서리 액면. REJECT_FOR_HARD_TEXT (checkpoint 65527d9)" },
+    { "candidateId": "s1_A", "reason": "브랜드 유사 문자('cada' 등) + 대형 액면 — hard reject (후보 vision QA)" },
+    { "candidateId": "s4_B", "reason": "깨진 글자('NEL'/'HL') — hard reject (후보 vision QA)" },
+    { "candidateId": "s6_A", "reason": "봉투 오브젝트 실패 + 인장 유사 마크 — hard reject (후보 vision QA)" }
+  ],
+
+  "evidenceReports": [
+    "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/qa-report-golden-sample-v2-flux2-image-candidates.json",
+    "output/money-shorts/golden-sample-v2-denomination-render-probe-v1/qa-report-golden-sample-v2-denomination-render-probe.json",
+    "output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1/qa-report-golden-sample-v2-s6-flux2-denomination-patch.json",
+    "output/money-shorts/golden-sample-v2-s6-card-occlusion-reprobe-v1/qa-report-golden-sample-v2-s6-card-occlusion-reprobe.json"
+  ],
+
+  "boundary": {
+    "thisSliceExecuted": "lock_manifest_and_doc_only",
+    "costUsd": 0,
+    "noImageGeneration": true,
+    "noExternalApiCalls": true,
+    "noRenderTtsMuxUpload": true,
+    "noSourceImageModification": true,
+    "renderReady": false,
+    "uploadReady": false
+  }
+}

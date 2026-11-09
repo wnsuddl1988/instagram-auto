@@ -1,0 +1,64 @@
+{
+  "id": "jeju-samdasoo-1998",
+  "title": "제주 삼다수",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "순탄한 성공이라 서사 없음",
+  "conditionResolved": true,
+  "finding": "순탄한 성공이 아니라 제도 선택의 장면이 있었다: 1990년대 중반 먹는샘물 판매가 풀리자 제주도는 민간 난개발을 막으려고 1995년 3월 도 공기업(제주개발공사)을 세워 지방공기업만 먹는샘물 사업을 할 수 있게 했다(뉴스제주·제주일보 일치, 디지털제주문화대전도 설립 목적을 난개발 방지로 기록). 결과는 1998년 3월 출시 한 달 만에 5000톤 판매, 출시 4개월째 생산물량 전량 판매·품절(아이뉴스24·뉴스제주 일치)과 20년 넘는 1위다. 이익이 도민에게 환원되는 구조라 미담·제도형 소재에 맞고 경제 숫자도 충분하다.",
+  "coreMessage": "모두의 물은 민간이 먼저 퍼 가기 전에 모두의 몫으로 틀을 먼저 짜야 이익이 모두에게 남는다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "제주도는 1995년 3월 도 공기업 제주도지방개발공사를 설립해 먹는샘물 사업을 시작했다.", "numeric": true, "economy": false,
+      "caution": "설립 인가는 1994년 12월(디지털제주문화대전), 법인 업무 개시는 1995년 3월. 취수 성공일도 1994년·1995년 12월로 기사마다 다름 — 1995년 3월 설립만 쓸 것.",
+      "sources": [
+        { "name": "뉴스제주(2018) 제주삼다수 출시 20주년", "url": "https://www.newsjeju.net/news/articleView.html?idxno=310937", "quote": "1995년 3월 9일에 제주개발공사를 설립하고" },
+        { "name": "제주일보 공수화 개념 도입", "url": "https://www.jejunews.com/news/articleView.html?idxno=1969965", "quote": "아울러 제주도는 1995년 3월" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "제주도는 민간 난개발을 막으려고 제주도가 설립한 지방공기업만 먹는샘물 목적으로 지하수를 개발할 수 있게 제한했다.", "numeric": false, "economy": false,
+      "caution": "현재 제주 지하수 공수화 원칙 삭제·한진 증산 논란이 진행 중 — 대본은 1995년 결정까지만 쓰고 현재 논쟁은 다루지 말 것.",
+      "sources": [
+        { "name": "뉴스제주(2018) 제주삼다수 출시 20주년", "url": "https://www.newsjeju.net/news/articleView.html?idxno=310937", "quote": "지방공기업에서만 먹는 샘물 사업을 할 수 있게끔" },
+        { "name": "제주일보 공수화 개념 도입", "url": "https://www.jejunews.com/news/articleView.html?idxno=1969965", "quote": "제주도가 설립한 지방공기업이 아니면 먹는샘물의 제조·판매 목적으로" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "제주개발공사의 설립 목적은 청정 지하수의 난개발 방지와 삼다수의 브랜드 육성이었다.", "numeric": false, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "뉴스제주(2018) 제주삼다수 출시 20주년", "url": "https://www.newsjeju.net/news/articleView.html?idxno=310937", "quote": "민간기업에 의한 난개발을 막고자" },
+        { "name": "디지털제주문화대전 제주특별자치도개발공사", "url": "https://jeju.grandculture.net/jeju/toc/GC00710830", "quote": "청정 지하수의 난개발 방지 및 제주삼다수의 세계적 브랜드 육성" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "1998년 3월 5일 출시한 제주삼다수는 출시 한 달 만에 5000톤이 판매됐다.", "numeric": true, "economy": true,
+      "caution": "아이뉴스24는 5천톤, 뉴스제주는 5000톤 표기.",
+      "sources": [
+        { "name": "아이뉴스24 브랜드 스토리 제주삼다수", "url": "https://www.inews24.com/view/1099727", "quote": "출시 한 달 만에 5천톤이 판매되는 기록을 세웠다" },
+        { "name": "뉴스제주(2018) 제주삼다수 출시 20주년", "url": "https://www.newsjeju.net/news/articleView.html?idxno=310937", "quote": "출시 한 달 만에 5000톤이 판매되는 기록을 세웠다" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "삼다수는 출시 4개월째에 생산물량 전량이 판매돼 품절 사태까지 벌어졌다.", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "아이뉴스24 브랜드 스토리 제주삼다수", "url": "https://www.inews24.com/view/1099727", "quote": "생산물량 전량이 판매되며 품절 사태까지 벌어질 정도로" },
+        { "name": "뉴스제주(2018) 제주삼다수 출시 20주년", "url": "https://www.newsjeju.net/news/articleView.html?idxno=310937", "quote": "생산물량 전량이 판매됐고, 품절 사태까지 벌어졌다" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "삼다수는 1998년 출시 이후 20년 넘게(24~26년) 먹는샘물 시장 1위를 지켰다.", "numeric": true, "economy": true,
+      "caution": "기사 작성 연도마다 년수가 다름(24년·26년) — 대본은 20년 넘게로 쓸 것.",
+      "sources": [
+        { "name": "아시아경제(2024) 먹는 샘물 26년 1위", "url": "https://www.asiae.co.kr/article/2024012914405914334", "quote": "1998년 출시 이후 26년간 국내 먹는샘물 업계에서 1위를 유지한" },
+        { "name": "데일리안(2022) 1등 생수 삼다수", "url": "https://www.dailian.co.kr/news/view/1075871/", "quote": "출시한 이래 24년간 생수 시장 1위를 지키고 있다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "제주개발공사는 도 공기업으로 출시 당시 결정은 미담·제도형. 다만 현재 제주 지하수 공수화 원칙 삭제 논란, 한국공항(한진) 증산, 판매권 소송(농심 2012)이 별도로 있어 1995~1998년 장면에 한정해야 정치 쟁점 소지를 피함." },
+  "remaining": "인물(신구범 지사 공약 등)은 뉴스1 부제 1곳이라 facts에 못 넣음 — 주인공이 사람이 아니라 제주도라 스토리 설계 시 인물 없는 제도 서사가 됨. 연매출 3000억(2021)은 데일리안 1곳, 도민 환원액은 수치가 매체마다 달라 제외. 점유율은 40% 안팎으로 정체 중.",
+  "toolCallsUsed": 17
+}

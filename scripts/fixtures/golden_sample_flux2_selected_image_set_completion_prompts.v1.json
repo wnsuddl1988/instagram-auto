@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "money_shorts_flux2_selected_image_set_completion_prompts_v1",
+  "taskId": "creative-v2-flux2-selected-image-set-completion-v1",
+  "status": "data_only_prompt_fixture",
+  "createdAt": "2026-07-02",
+  "baseContract": "scripts/fixtures/golden_sample_flux2_object_whitelist_contract.v2.json",
+  "priorPatch": "scripts/fixtures/golden_sample_flux2_object_whitelist_v2_1_wallet_patch_prompts.json",
+  "evidenceRefs": [
+    "output/money-shorts/flux2-object-whitelist-validation-v2/qa-report-flux2-object-whitelist-validation-v2.json",
+    "output/money-shorts/flux2-object-whitelist-v2-1-wallet-patch-validation/qa-report-flux2-object-whitelist-v2-1-wallet-patch-validation.json"
+  ],
+  "ownerApproval": "FLUX2 selected image set 완성용 2장 검증 승인 — FLUX.2 [pro] 최대 2장(scene 1, 6), 비용 $0.50 상한, BFL_API_KEY 사용 허용, render/TTS/mux/upload 없이 이미지 QA 보고 후 중단",
+
+  "designRationale": {
+    "confirmedRootCause": "지갑 '외부 전면 패널'이 프레임에 보이면 emboss/stamp 발생 (실측 3/3: v1 scene5, v2 scene1, v2.1 scene1). '내부만 보이는' 선명 히어로 구도만 클린 실증 (1/1: v2.1 scene5). WALLET RULE 7종 문구 강화로도 소멸 실패 — 프롬프트가 아니라 구도(표면 노출) 문제로 확정",
+    "scene1Decision": "지갑 완전 제거 — handoff가 제거를 우선 허용('가능하면 지갑을 제거'). defocus 배경 소품의 방향(내부만 보이기)은 프롬프트로 통제 불가하므로 부분 노출 옵션보다 제거가 유일한 저위험 경로. hook 코어(개봉 봉투+blank slips+bare hand+아침광)는 v2/v2.1에서 delivery PASS 실증분 그대로 유지. 자발적 지갑 등장 차단을 위해 banned에 'NO wallets, NO leather goods' 명시 추가 (비열거 오브젝트 자발 등장 = 머그 교훈)",
+    "scene6Decision": "contract v2 scene 6 프롬프트 승계하되 'closed slim wallet' 소품 제거 — 닫힌 지갑은 정의상 외부 전면 패널 노출 구도라 확정 각인 클래스이며 handoff가 scene 6에서 wallet external front panel을 명시 금지. reset/action 은유는 두 손이 blank 카드 3장을 순서 정렬(첫 장 반 발짝 앞=우선순위)하는 행위 자체가 담당하므로 지갑 없이 성립. 'NO pens' 금지 유지(contract v2 승계)"
+  },
+
+  "apiParams": { "width": 1088, "height": 1936, "endpoint": "https://api.bfl.ai/v1/flux-2-pro", "fallback": "none" },
+
+  "scenes": [
+    {
+      "order": 1,
+      "sceneRole": "scene_01_salary_arrival_hook",
+      "version": "v2.2",
+      "priorFindings": "v2: 지갑 상단 각인 1건 / v2.1: soft-focus 강등+WALLET RULE에도 defocus 전면 임프레션 1건 — 외부 전면 노출이 원인으로 확정. hook 전달력은 두 번 모두 PASS",
+      "changes": [
+        "지갑을 구성에서 완전 제거 (objectsUsed 및 프롬프트 전체에서 삭제)",
+        "banned 목록에 'NO wallets, NO leather goods' 명시 추가 — 자발 등장 차단",
+        "지갑이 차지하던 자리는 wood grain + 아침광의 clean negative space로 대체",
+        "hook 코어(개봉 봉투/blank slips/bare hand/앰버 아침광)는 v2.1 PASS 검증 문구 유지"
+      ],
+      "objectsUsed": ["plain unmarked envelope (just opened, flap raised)", "fresh blank white paper slips", "warm wooden kitchen table", "morning window light with one amber beam", "one bare hand"],
+      "subjectDeliveryCheck": "봉투에서 새 돈(빈 슬립)이 방금 나왔다는 '도착+안도' hook이 지갑 없이 이미지만으로 읽힌다",
+      "walletExteriorPanelCheck": "지갑 자체가 등장하지 않아야 함 — 등장 시 whitelist 위반 fail",
+      "finalPrompt": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: one plain unmarked paper envelope, fresh blank white paper slips, a warm wooden kitchen table, morning window light, one bare hand. Every visible man-made object must come from this list; do not add any other object. Strictly NO wallets, NO leather goods, NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: Close-up on a warm wooden kitchen table in early morning window light. A bare hand lifts a small sheaf of crisp, fresh blank white paper slips out of a just-opened plain unmarked envelope, its flap still raised; a single warm amber beam of morning light catches the clean edges of the fresh slips so they glow softly — money that has just arrived. The just-opened envelope and the glowing fresh slips are the only subjects, holding the sharp focal plane, surrounded by generous calm negative space of warm wood grain and soft morning light. Mood: one short breath of relief on payday morning, quiet and hopeful. Shallow depth of field, warm window light, strong paper and wood textures. ALL SURFACES BLANK: every paper, slip and envelope is completely blank; the hand is bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no embossed or impressed marks, no printed lines — anywhere in the frame."
+    },
+    {
+      "order": 6,
+      "sceneRole": "scene_06_cashflow_reset_action",
+      "version": "v1_no_wallet",
+      "priorFindings": "미검증 신규 씬. contract v2 프롬프트에 closed wallet 소품 포함 — 닫힌 지갑 = 외부 전면 패널 노출 = 확정 각인 클래스라 제거",
+      "changes": [
+        "contract v2 scene 6 finalPromptV2에서 'closed slim leather wallet' 소품 제거",
+        "banned 목록에 'NO wallets, NO leather goods' 추가 (NO pens는 contract v2 승계 유지)",
+        "두 손 + blank 카드 3장 정렬(첫 장 반 발짝 앞) 코어와 스타일/negative space/앰버 액센트는 contract v2 그대로 유지"
+      ],
+      "objectsUsed": ["three blank white paper cards (deliberate ordered row, first card set slightly ahead)", "clean light-wood desk", "fresh morning light", "two bare hands"],
+      "subjectDeliveryCheck": "돈 나가는 순서를 스스로 다시 정하는 차분한 통제/리셋 행동이 카드 정렬만으로 읽힌다. 라벨/체크리스트 텍스트는 renderer 카드 담당",
+      "walletExteriorPanelCheck": "지갑 자체가 등장하지 않아야 함 — 등장 시 whitelist 위반 fail",
+      "finalPrompt": "COMPOSITION RULE, HIGHEST PRIORITY — BUILD THIS SCENE USING ONLY THESE OBJECTS: three blank white paper cards, a clean light-wood desk, two bare hands. Every visible man-made object must come from this list; do not add any other object. Strictly NO wallets, NO leather goods, NO pens, NO phones, NO screens, NO calculators, NO calendars, NO clocks, NO watches, NO coins, NO banknotes, NO receipts, NO keyboards, NO mugs or cups, NO charts, NO branded or printed items of any kind. Background: softly blurred plain domestic surfaces only — no recognizable appliances, no posters, no labels. Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not an advertisement, not a posed stock photo. Face-minimized: only hands, objects and space. Keep the lower third and the top strip of the frame relatively clean for overlay cards. Scene subject: A clean, tidy light-wood desk in fresh morning light. Two bare hands calmly place three completely blank white paper cards into one deliberate horizontal row across the middle band, the first card set slightly ahead of the other two as the clear priority — the quiet act of re-deciding the order in which money leaves on payday. Generous clean negative space above and below the row of cards. Mood: calm control and a fresh start, not stress. One warm amber accent on the edge of the first card; soft shadows, fine paper and wood textures. ALL SURFACES BLANK: every card is completely blank; hands are bare with no watch and no jewelry. FINAL CHECK BEFORE RENDERING: zero readable marks — no letters, no numerals, no logos, no stamps, no embossed or impressed marks, no printed lines — anywhere in the frame."
+    }
+  ],
+
+  "qaGate": {
+    "inherits": "qaGateV2 전 항목 (contract v2) — 해상도(native 1088x1936, upscale 금지)/no-text/whitelist compliance/subject delivery/safe-area/hand-object",
+    "scene1WalletExteriorQa": "지갑(또는 유사 가죽 소품) 등장 여부 별도 판정 — 등장 자체가 whitelist fail",
+    "scene6ActionQa": "reset/action 전달력 + blank 카드 정렬(첫 장 우선) + 두 손 해부학 무결성 판정",
+    "verdictSet": ["PASS", "REGENERATE_NEEDED", "REJECT", "FAIL_GATE"],
+    "onBothPass": "clean 후보 풀 6/6 가능 상태로 보고. 단 renderReady=false / uploadReady=false 유지 — Owner 시각 QA와 selected set lock 전 render 금지"
+  },
+
+  "forbidden": ["scene 2/3/4/5 생성", "3장 이상 생성", "OpenAI/ChatGPT/Gemini/Midjourney 호출", "render/TTS/mux/upload", "941x1672 재사용", "placeholder/stock/upscale/crop-as-fix", "endpoint/size/provider fallback"],
+  "renderReadinessNote": "이 fixture는 프롬프트 데이터다. renderReady=false / uploadReady=false 상태를 변경하지 않는다.",
+  "boundary": { "dataOnly": true, "noRender": true }
+}

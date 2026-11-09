@@ -1,0 +1,138 @@
+{
+  "id": "barbie-ruth-handler",
+  "title": "바비 루스 핸들러",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "후일 회계 문제 이력을 확인하지 못한 채 뺐음 — 쓰려면 조사부터",
+  "conditionResolved": true,
+  "finding": "후일 이력은 확인됐다: 1970년대 초 매출 부풀리기로 SEC 조사, 1978년 기소, 무죄를 주장하며 불항쟁(no contest) 답변, 벌금 5만 7천 달러와 사회봉사 2,500시간(출처에 따라 '배상금' 표현 차이). 40년 이상 지난 외국 종결 사건이라 못 씀 사유가 아니다. 이야기는 '전원 남성인 경영진이 반대한 어른 체형 인형을 밀어붙임 → 1959년 토이페어 출시 → 첫해 약 35만 대, 개당 3달러, 인형은 원가 수준·수익은 옷과 액세서리'로 장면·경제 번역이 모두 서로 다른 2곳 출처로 채워졌다. 후일 스캔들은 대본에서 뺄지 한 줄 반전으로 쓸지 Owner가 정하면 된다.",
+  "coreMessage": "모두가 안 된다고 한 아이디어도, 인형은 싸게 팔고 옷으로 버는 식으로 구조를 바꾸면 시장이 된다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "바비는 1959년 3월 9일 뉴욕 아메리칸 인터내셔널 토이페어에서 처음 공개됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "Nashua Telegraph (2011)",
+          "url": "https://www.nashuatelegraph.com/news/local-news/2011/03/09/daily-twip-barbie-makes-her-debut-at-the-american-international-toy-fair-today-in-1959/",
+          "quote": "(March 9th) in 1959"
+        },
+        {
+          "name": "CBS Detroit",
+          "url": "https://www.cbsnews.com/detroit/news/this-day-in-history-barbie-doll-makes-her-debut-in-1959/",
+          "quote": "March 9, 1959, the Barbie doll debuted"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "바비는 출시 첫해에 약 35만 개가 팔렸고 개당 가격은 3달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "MIT Lemelson은 351,000개, Nashua Telegraph는 약 350,000개 — 대본에는 '약 35만 개'로 쓸 것.",
+      "sources": [
+        {
+          "name": "MIT Lemelson Center",
+          "url": "https://lemelson.mit.edu/resources/ruth-handler",
+          "quote": "351,000 dolls were sold at $3 each"
+        },
+        {
+          "name": "Nashua Telegraph (2011)",
+          "url": "https://www.nashuatelegraph.com/news/local-news/2011/03/09/daily-twip-barbie-makes-her-debut-at-the-american-international-toy-fair-today-in-1959/",
+          "quote": "sold approximately 350,000 Barbies"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "루스 핸들러가 어른 체형 인형 아이디어를 가져가자 마텔의 (그녀를 뺀 전원 남성) 경영진 위원회가 너무 비싸고 시장성이 없다며 반대했고, 그녀는 밀어붙였다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "Lemelson은 'all-male committee', The Conversation은 '루스를 제외한 전원 남성'이라 표현이 다름(후자가 정확). 대본에는 '남자들뿐인 경영진' 정도로.",
+      "sources": [
+        {
+          "name": "MIT Lemelson Center",
+          "url": "https://lemelson.mit.edu/resources/ruth-handler",
+          "quote": "all-male committee rejected the idea"
+        },
+        {
+          "name": "The Conversation (2019)",
+          "url": "https://theconversation.com/the-real-story-of-the-barbie-doll-strong-female-leadership-behind-the-scenes-118708",
+          "quote": "composed entirely of men except for Ruth"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "루스·엘리엇 핸들러 부부는 1945년 마텔을 공동 창업했다(처음엔 액자 사업).",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "TIME (2023)",
+          "url": "https://time.com/6293762/barbie-movie-ruth-handler/",
+          "quote": "Mattel with her husband in 1945",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "CBS Detroit",
+          "url": "https://www.cbsnews.com/detroit/news/this-day-in-history-barbie-doll-makes-her-debut-in-1959/",
+          "quote": "with her husband in 1945"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "바비는 3달러에 팔렸고 핸들러는 인형을 원가 수준으로 팔고 이익은 옷과 액세서리에서 내는 구조를 택했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'원가로 판매'는 핸들러 본인 설명에 근거한 서술이라 대본에서는 '거의 남기지 않고'로 완화 권장.",
+      "sources": [
+        {
+          "name": "PBS They Made America",
+          "url": "https://www.pbs.org/wgbh/theymadeamerica/filmmore/s3_pt.html",
+          "quote": "The doll sold for only $3."
+        },
+        {
+          "name": "The Conversation (2019)",
+          "url": "https://theconversation.com/the-real-story-of-the-barbie-doll-strong-female-leadership-behind-the-scenes-118708",
+          "quote": "make a doll that would be sold at cost"
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "핸들러는 1978년 SEC에 허위 재무제표를 낸 혐의로 기소돼 불항쟁 답변을 했고 5만 7천 달러 벌금과 사회봉사 2,500시간을 선고받았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "ABC는 '$57,000 reparations(배상금)'로, TIME은 fine으로 표기. 시간도 출처 하나가 500시간으로 다르게 적음. 대본에 쓸 경우 '수만 달러 벌금과 사회봉사' 수준으로 완화.",
+      "sources": [
+        {
+          "name": "TIME (2023)",
+          "url": "https://time.com/6293762/barbie-movie-ruth-handler/",
+          "quote": "She was fined $57,000",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "ABC News Australia (2023)",
+          "url": "https://www.abc.net.au/news/2023-08-05/the-real-story-behind-barbie-creator-ruth-handler/102672884",
+          "quote": "$US57,000 in reparations"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "미국 기업·1970년대 종결된 외국 사건. 후일 SEC 사건은 한 줄로 언급하거나 빼도 이야기가 성립."
+  },
+  "remaining": "후일 스캔들을 넣을지 여부는 Owner 결정(미담 톤과 충돌 가능). 2차 출처 일부는 콘텐츠팜이라 이번에 쓰지 않았음.",
+  "toolCallsUsed": 22
+}

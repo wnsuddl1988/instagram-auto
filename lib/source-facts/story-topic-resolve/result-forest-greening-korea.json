@@ -1,0 +1,57 @@
+{
+  "id": "forest-greening-korea",
+  "title": "산림녹화 — '회복 불가능'이라던 민둥산 나라",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "또치킨 679만 등 포화 — 후반에. 정권 평가 없이 나무·사람 중심으로",
+  "conditionResolved": false,
+  "finding": "숫자 근거는 풍부하다(1953년 ha당 임목축적 5.7㎥에 산림 절반이 황폐지 → 2023년 176㎥, 1990~2015년 50→148㎥로 증가율 세계 1위, 1978년 신탄 비중 8%로 하락). 그러나 이 소재는 1973~1987년 두 차례 10개년 국가 프로그램의 '연표형' 성취 이야기이며, 결과를 바꾼 단일 결정적 장면(인물의 선택)을 출처 2곳으로 잡을 수 있는 사실을 찾지 못했다. 사람·나무 중심으로 쓰려 해도 치산녹화 10개년 계획 자체가 박정희 정부 사업이라 정권 평가를 피한 장면 구성이 어렵고, 핵심 1953년 수치 5.7㎥는 국가기록원 단일 출처(다른 사이트는 2차 인용)다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "6·25 종료 해인 1953년 산림면적의 절반은 황폐지였고 ha당 임목축적은 5.7㎥에 불과했으며, 2023년에는 176㎥로 33배가 되었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "국가기록원(theme.archives.go.kr) 단일 출처 확인. 산림청은 '29배'로 달리 설명하고, FAO 계열 자료는 1960년대 약 10㎥로 기준이 다름(산림 정의·조사 방식 차이, FAO도 과거 축적량 과소추정 인정) → 숫자 인용 시 출처 명시 필수.",
+      "sources": [
+        { "name": "국가기록원 산림녹화 의미(2025)", "url": "https://theme.archives.go.kr/next/forest/overview/meaningofReforestation.do", "quote": "산림면적의 반은 헐벗은 황폐지였고 ha당 임목축적은 5.7㎥에 불과했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1990~2015년 25년간 한국의 ha당 임목축적은 50㎥에서 148㎥로 196% 증가했고 증가율은 세계 1위였다(FAO 산림위원회 보고서 인용).",
+      "numeric": true,
+      "economy": false,
+      "caution": "두 곳 모두 2020년 FAO COFO 보고서를 인용한 기사. 절대량은 뉴질랜드·스위스·독일보다 낮다. '39개국 중 1위'는 JoongAng Daily 단독.",
+      "sources": [
+        { "name": "서울신문(2020.10.13)", "url": "https://m.go.seoul.co.kr/news/2020/10/13/20201013500088", "quote": "임목 축적은 1㏊당 50㎥에서 148㎥로 196%(98㎥) 증가했다." },
+        { "name": "Korea JoongAng Daily", "url": "https://www.koreajoongangdaily.com/business/united-nations-ranks-korea-first-for-forest-expansion/11362910", "quote": "It grew from 50 cubic meters (1,766 cubic feet) per hectare to 148 as of 2018." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1973~1987년 국가 산림녹화 프로그램으로 국토의 약 20%에 해당하는 황폐 산림을 복구했고, 제1차 계획 때 헐벗은 263만ha 복구·10년간 100만ha 식재를 목표로 했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "국가기록원 단일 출처. 계획 주체가 박정희 정부라 정권 평가 없이 서술하기 어려움.",
+      "sources": [
+        { "name": "국가기록원 결론 및 교훈", "url": "https://theme.archives.go.kr/next/forest/outcomes/conclusionsAndLessonsLearned.do", "quote": "국토의 약 20%에 해당하는 황폐된 산림을 복구하였다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "제1차 치산녹화 계획이 끝나는 1978년 1차 에너지원 중 신탄(땔감) 비중은 8%로 줄었다(연탄 등 연료 대체).",
+      "numeric": true,
+      "economy": true,
+      "caution": "국가기록원 단일 출처 확인. 1960년 신탄 62.5%는 검색 요약에서만 확인(원문 미열람).",
+      "sources": [
+        { "name": "국가기록원 결론 및 교훈", "url": "https://theme.archives.go.kr/next/forest/outcomes/conclusionsAndLessonsLearned.do", "quote": "1차 에너지원에서 신탄이 차지하는 비율은 8%로 감소하였다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": true, "note": "소송·피해자는 없으나 1970년대 박정희 정부 사업이라 정권 평가 소지. 또치킨 679만 등으로 유튜브 포화(풀 기재)." },
+  "remaining": "(1) 결정적 단일 장면 없음 — 연표형이라 '그래서 뭐?' 위험. (2) 핵심 수치 2곳 교차 확인 부족(5.7㎥ 단일). (3) 포화. 쓰려면 특정 마을·인물의 사례(예: 연탄 전환 한 장면)를 새로 찾아 2출처로 확인해야 함.",
+  "toolCallsUsed": 10
+}

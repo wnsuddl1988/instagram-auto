@@ -1,0 +1,82 @@
+{
+  "id": "west-germany-currency-reform-1948",
+  "title": "서독 화폐개혁(월요일 아침의 진열장)",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "에르하르트 공로 서사 논쟁, 냉전 정치는 제외하고 진열창이 하루 만에 가득 찬 월요일만",
+  "conditionResolved": true,
+  "finding": "1948년 6월 20일(일) 새 화폐 도입 직후 가게마다 없던 물건이 채워지고 암시장이 빠르게 사라졌다는 점이 독일연방은행·연방정치교육원·콘라트아데나워재단·독일사 사료집(GHDI)에서 확인된다. 1인당 40마르크 교환(+20마르크 추가), 구 화폐 100 대 신 화폐 6.5 같은 숫자 사실이 서로 다른 사이트 2곳씩으로 확보된다. 에르하르트 공로·냉전(베를린 봉쇄)은 빼고 '돈이 믿을 만해지자 숨어 있던 물건이 나왔다'는 월요일 진열창 장면만 쓰면 정치 쟁점 없이 성립한다.",
+  "coreMessage": "돈이 다시 믿을 만해지는 순간, 창고에 숨어 있던 물건이 시장으로 나온다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1948년 6월 20일 서독 3개 점령지구 주민은 1인당 40마르크(DM)를 구 화폐와 1대1로 바꿔 받았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "대부분이 받은 1인당 총액은 40 + 20 = 60 DM이었음. 예금·현금의 일반 환산은 10:1(이후 100:6.5)로 따로임.",
+      "sources": [
+        { "name": "독일사 사료집 GHDI(Currency Reform, June 20, 1948)", "url": "https://germanhistorydocs.org/en/occupation-and-the-emergence-of-two-states-1945-1961/currency-reform-june-20-1948", "quote": "start-up money in the amount of 40 DM" },
+        { "name": "연방정치교육원 bpb(화폐개혁 사건사)", "url": "https://www.bpb.de/apuz/271679/kleine-ereignisgeschichte-der-waehrungsreform-194", "quote": "Kopfquote 40 DM im Umtausch gegen 40 RM" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "40 DM에 이어 두 번째로 20 DM이 더 지급되어, 1인당 총 60 DM이 되었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "지급 시기 출처마다 다름(약 4주 뒤 / 9월 교환 가능). 대본에는 '곧이어 20마르크 추가' 정도로만.",
+      "sources": [
+        { "name": "독일사 사료집 GHDI(Currency Reform, June 20, 1948)", "url": "https://germanhistorydocs.org/en/occupation-and-the-emergence-of-two-states-1945-1961/currency-reform-june-20-1948", "quote": "A second installment of 20 DM" },
+        { "name": "연방정치교육원 bpb(화폐개혁 사건사)", "url": "https://www.bpb.de/apuz/271679/kleine-ereignisgeschichte-der-waehrungsreform-194", "quote": "Teil der Kopfquote in Höhe von 20 DM" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "구 화폐 100라이히스마르크는 결국 6.5 DM이 되었다(1000 RM이 65 DM). 저축·현금 가치가 크게 줄어든 대신 새 돈의 신뢰가 만들어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "6월에는 10:1로 우선 환산했고, 1948년 10월 법으로 100:6.5가 확정됨. 임금·임대료 등은 1:1.",
+      "sources": [
+        { "name": "독일연방은행(Währungsreform 1948)", "url": "https://www.bundesbank.de/de/aufgaben/themen/waehrungsreform-1948-614040", "quote": "Umstellungsverhältnis von 100:6,5" },
+        { "name": "콘라트아데나워재단 KAS(75년 화폐개혁)", "url": "https://www.kas.de/de/web/die-politische-meinung/blog/detail/-/content/75-jahre-waehrungsreform", "quote": "blieben am Ende nur 6,50 D-Mark" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "화폐 교환일인 1948년 6월 20일 같은 날 에르하르트 측이 대부분의 가격 통제를 풀겠다고 발표했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "발표 주체가 출처마다 다름(bpb: 에르하르트가 라디오로 발표 / KAS: 대변인이 발표). 대본에서는 '가격 통제도 풀렸다'만 쓰고 에르하르트 공로 논쟁은 피함.",
+      "sources": [
+        { "name": "독일연방은행(경제·화폐개혁 기고)", "url": "https://www.bundesbank.de/de/presse/gastbeitraege/die-wirtschafts-und-waehrungsreform-von-1948-basis-fuer-stabiles-geld-915264", "quote": "20. Juni 1948 wurden die Preise" },
+        { "name": "콘라트아데나워재단 KAS(75년 화폐개혁)", "url": "https://www.kas.de/de/web/die-politische-meinung/blog/detail/-/content/75-jahre-waehrungsreform", "quote": "Geldumtauschs, dem 20. Juni 1948" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "교환 다음 날(6월 21일 월요일)부터 가게 진열창에 평소 보이지 않던 상품이 갑자기 가득 찼다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'월요일'은 KAS가 직접 쓴 표현, bpb는 '교환 다음 날'. 물건은 새로 생산된 것이 아니라 상당수가 쌓아 두었던 재고(연방은행: 유동성이 급한 기업이 풀었다).",
+      "sources": [
+        { "name": "연방정치교육원 bpb(화폐개혁 사건사)", "url": "https://www.bpb.de/apuz/271679/kleine-ereignisgeschichte-der-waehrungsreform-194", "quote": "Warenvielfalt in Schaufenstern" },
+        { "name": "콘라트아데나워재단 KAS(75년 화폐개혁)", "url": "https://www.kas.de/de/web/die-politische-meinung/blog/detail/-/content/75-jahre-waehrungsreform", "quote": "über Nacht plötzlich wieder gefüllt" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "교환 뒤 암시장이 사실상 하룻밤 사이에 사라졌다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'하룻밤'은 사료집 표현, bpb는 '곧(bald)'. 단정 대신 '빠르게'로 쓸 것.",
+      "sources": [
+        { "name": "독일사 사료집 GHDI(Currency Reform, June 20, 1948)", "url": "https://germanhistorydocs.org/en/occupation-and-the-emergence-of-two-states-1945-1961/currency-reform-june-20-1948", "quote": "black market disappeared virtually" },
+        { "name": "연방정치교육원 bpb(화폐개혁 사건사)", "url": "https://www.bpb.de/apuz/271679/kleine-ereignisgeschichte-der-waehrungsreform-194", "quote": "verschwanden bald die schwarzen Märkte" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "1948년 독일 사건이라 국내 민감성 없음. 에르하르트 공로·베를린 봉쇄·냉전은 쓰지 않으면 정치 소지 없음." },
+  "remaining": "산업생산 증가율은 학계에서 통계 착시 논쟁이 있어 숫자로 쓰지 말 것. 대본에서 에르하르트 개인 공로를 서사의 중심에 두지 않도록 주의.",
+  "toolCallsUsed": 14
+}

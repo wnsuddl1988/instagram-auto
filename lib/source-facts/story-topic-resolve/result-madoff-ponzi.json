@@ -1,0 +1,75 @@
+{
+  "id": "madoff-ponzi",
+  "title": "메이도프 — 역사상 최대 폰지 사기",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "폰지 계열은 한 편만. 실존 인물 대사 지어내기 금지, 판결 사실만",
+  "conditionResolved": true,
+  "finding": "2008년 한 해 약 120억 달러가 인출됐고 그중 절반인 약 60억 달러가 체포 직전 석 달에 빠져나갔다는 점, 2009년 6월 150년형 선고, 명세서상 규모 약 650억 달러(실제 원금 손실은 175억~200억 달러 추정)가 각각 2곳 이상에서 확인된다. 결정적 장면은 불황으로 환매 요구가 몰려 새 돈이 환매를 못 따라간 시점이며, 재판 기록·보도 사실만으로 쓸 수 있어 가공 대사는 필요 없다. 폰지 계열 한 편 제한 조건 아래서 이 소재가 대표 편으로 적합하다.",
+  "coreMessage": "남들보다 늘 꾸준히 높은 수익을 약속하는 곳은, 수익이 아니라 신규 자금으로 돌아가는 건 아닌지 먼저 의심하라.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2009년 6월 메이도프는 최고형인 징역 150년을 선고받았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "ABA Journal(2009)", "url": "https://www.abajournal.com/news/article/madoff_gets_150_years", "quote": "sentenced to a 150-year prison term" },
+        { "name": "Accounting Today(2009)", "url": "https://www.accountingtoday.com/news/madoff-receives-150-year-sentence", "quote": "maximum term of 150 years in prison" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "폰지 사기의 규모는 고객 명세서 기준 최대 650억 달러로 추정됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "650억은 가짜 수익이 얹힌 명세서상 금액(검찰 64.8억 달러 표현). 투자자가 실제로 넣은 원금 손실과 구분해 서술.",
+      "sources": [
+        { "name": "ABA Journal(2009)", "url": "https://www.abajournal.com/news/article/madoff_gets_150_years", "quote": "as much as $65 billion" },
+        { "name": "Accounting Today(2009)", "url": "https://www.accountingtoday.com/news/madoff-receives-150-year-sentence", "quote": "estimated to have totaled $65 billion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "투자자가 실제로 넣었다가 잃은 원금은 약 175억~200억 달러로 추정된다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "175억(관재인 이후 집계)과 200억(체포 직후 추정)이 출처마다 다름. 대본에는 '약 200억 달러 안팎'.",
+      "sources": [
+        { "name": "NBC News(2020)", "url": "https://www.nbcnews.com/news/us-news/innocent-madoff-investors-must-pay-back-profits-court-rules-n1241040", "quote": "over $17.5 billion that they invested" },
+        { "name": "ABA Journal, Madoff trustee's tally", "url": "https://www.abajournal.com/news/article/madoff_trustees_tally_7.6b_recovered_175.5m_sought_in_legal_fees", "quote": "lost some $20 billion in principal" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2008년 한 해 동안 메이도프 회사 계좌에서 약 120억 달러가 인출됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "뉴욕타임스가 기록을 아는 관계자 분석을 인용한 보도(NBC·Fox가 같은 내용 전함). 다른 보도의 '70억 달러 환매 요구'는 단일 출처라 쓰지 않는다.",
+      "sources": [
+        { "name": "NBC News(2009)", "url": "https://www.nbcnews.com/news/amp/wbna30715166", "quote": "$12 billion was pulled out of accounts" },
+        { "name": "Fox News(2009)", "url": "https://www.foxnews.com/story/report-billions-of-dollars-pulled-from-bernard-madoffs-accounts-before-arrest.amp", "quote": "$12 billion was withdrawn from the accounts" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "그 인출액 중 절반인 약 60억 달러가 체포 직전 석 달 동안 빠져나갔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "NBC News(2009)", "url": "https://www.nbcnews.com/news/amp/wbna30715166", "quote": "About $6 billion, or half, was taken out" },
+        { "name": "Fox News(2009)", "url": "https://www.foxnews.com/story/report-billions-of-dollars-pulled-from-bernard-madoffs-accounts-before-arrest.amp", "quote": "another $6 billion was taken out" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 사건, 2009년 판결 종결, 메이도프 2021년 사망. 실존 인물 대사는 지어내지 않고 판결·보도 사실만 사용. 투자 권유로 읽히지 않게 '의심' 메시지로 마무리."
+  },
+  "remaining": "아들들에게 한 고백 대사는 가족 회고록 기반이라 따옴표 대사로 쓰지 않는다. 폰지 계열은 이 편 하나로 제한.",
+  "toolCallsUsed": 14
+}

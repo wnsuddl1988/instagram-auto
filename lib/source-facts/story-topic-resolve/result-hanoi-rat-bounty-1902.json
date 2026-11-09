@@ -1,0 +1,82 @@
+{
+  "id": "hanoi-rat-bounty-1902",
+  "title": "하노이 쥐 꼬리 현상금",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "꼬리 농장 일화는 신문·블로그 근거, 총계 크게 엇갈림",
+  "conditionResolved": true,
+  "finding": "꼬리 제출 현상금(쥐 1마리당 1센트), 꼬리 없는 쥐 출현, 변두리의 쥐 사육 사실은 위키백과·사이공니어·월드히스토리커넥티드(마이클 반 인터뷰) 등 서로 다른 사이트 2곳 이상에서 원문으로 확인됐다. 총계(5,500만 마리 등)는 위키백과 단독이라 쓰지 않고, 하루 최고치 20,112마리(6월 21일)와 1센트, 이후 흑사병 사망 263명만 쓰면 출처가 엇갈리지 않는다. '꼬리를 자르고 놓아줬다'는 직접 서술은 없고 '꼬리 없는 쥐가 돌아다녔다'만 확인되므로 대본에서는 후자까지만 쓴다.",
+  "coreMessage": "숫자로 보상하면 사람들은 목표가 아니라 그 숫자를 만들어 낸다 - 쥐가 줄지 않고 꼬리만 늘었다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "프랑스 당국은 쥐 꼬리 1개당 1센트의 현상금을 걸고 시청 사무소에 꼬리를 제출하게 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키백과 문장은 1 cent per rat 으로 적혀 있으나 제출물은 꼬리라는 점을 같은 글이 설명한다.",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "set a bounty of 1 cent per rat" },
+        { "name": "Saigoneer, The Great Hanoi Rat Massacre", "url": "https://saigoneer.com/vietnam-heritage/10344-the-great-hanoi-rat-massacre-how-hanoi-fought-the-plague,-and-win", "quote": "bounty (one cent per rat)" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1902년 6월 21일 하루에 20,112마리가 잡혔다고 보고됐다(하루 최고치).",
+      "numeric": true,
+      "economy": false,
+      "caution": "사이공니어의 마이클 반 인터뷰 기사는 6월 12일 20,114마리로 적어 날짜와 끝자리가 다르다. 대본에는 '하루 2만 마리 넘게'로만 쓰는 것이 안전하다. 총계는 출처마다 크게 달라 쓰지 않는다.",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "killed as many as 20,112 rats" },
+        { "name": "Saigoneer, The Great Hanoi Rat Massacre", "url": "https://saigoneer.com/vietnam-heritage/10344-the-great-hanoi-rat-massacre-how-hanoi-fought-the-plague,-and-win", "quote": "20,112 rats were killed in one day" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1906~1908년 프랑스 보건당국이 기록한 흑사병 사망자는 263명이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키백과는 1906~1908년 기록, 사이공니어는 at least 263 로 표현이 조금 다르다.",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "officially recorded 263 deaths" },
+        { "name": "Saigoneer, The Great Hanoi Rat Massacre", "url": "https://saigoneer.com/vietnam-heritage/10344-the-great-hanoi-rat-massacre-how-hanoi-fought-the-plague,-and-win", "quote": "At least 263 people died" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "현상금 정책이 끝난 뒤인 1906년에 하노이에서 흑사병이 다시 크게 번졌다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "사이공니어는 1906년 발병을 감염된 쥐 개체군 탓으로 설명한다.",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "Between the years 1906 and 1908" },
+        { "name": "Saigoneer, The Great Hanoi Rat Massacre", "url": "https://saigoneer.com/vietnam-heritage/10344-the-great-hanoi-rat-massacre-how-hanoi-fought-the-plague,-and-win", "quote": "By 1906, there was an outbreak of plague" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "변두리 주민들이 꼬리를 얻으려고 쥐를 사육하기 시작했다는 것을 프랑스 보건 감독관이 발견했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "rat farming operations popping up" },
+        { "name": "World History Connected, Michael Vann interview", "url": "https://worldhistoryconnected.press.uillinois.edu/15.2/vann_interview.html", "quote": "farming rats for their tails" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "프랑스인들이 꼬리 없이 멀쩡히 돌아다니는 쥐를 보기 시작했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "꼬리를 자르고 풀어줬다는 직접 서술은 위 출처에 없다. '꼬리 없는 쥐가 보였다'까지만 쓴다.",
+      "sources": [
+        { "name": "Wikipedia, Great Hanoi Rat Massacre", "url": "https://en.wikipedia.org/wiki/Great_Hanoi_Rat_Massacre", "quote": "rats running around without their tails" },
+        { "name": "Saigoneer, The Great Hanoi Rat Massacre", "url": "https://saigoneer.com/vietnam-heritage/10344-the-great-hanoi-rat-massacre-how-hanoi-fought-the-plague,-and-win", "quote": "tailless rats proliferating" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 식민지 시기 옛 사건이며 국내 기업/진행 중 사건 아님. 식민 통치 서술은 가치판단 없이 사실만 쓸 것." },
+  "remaining": "한국인 누구나 아는 소재는 아님(코브라 효과 소개로 접근 가능). 총계와 하루 최고치 날짜가 출처마다 달라 대본에서 구체 총계는 쓰지 않는다. 꼬리 절단 후 방사 장면은 직접 근거가 없어 단정 금지.",
+  "toolCallsUsed": 9
+}

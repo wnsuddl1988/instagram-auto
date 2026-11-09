@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "golden_sample_v2_flux2_image_candidate_prompts_salary_3days_v1",
+  "taskId": "creative-v2-golden-sample-v2-flux2-image-candidate-generation-v1",
+  "createdAt": "2026-07-02",
+  "blueprintSource": "scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json",
+  "designPrinciple": "Story-Causality First + Visual Evidence Second — 이미지는 스토리의 증거다. 각 후보 prompt는 blueprint scene의 claim/required_visual_evidence/must_show/must_not_show를 구도로 번역한다.",
+  "provider": "flux_2_pro_bfl",
+  "endpoint": "https://api.bfl.ai/v1/flux-2-pro",
+  "size": { "width": 1088, "height": 1936 },
+  "createCallHardCap": 12,
+  "costCeilingUsd": 3.0,
+  "candidateStrategy": "후보 A/B는 스타일 차이가 아니라 같은 visual evidence를 증명하는 서로 다른 구도(카메라 앵글/배치/스토리텔링 밀도) 차이다. QA에서 evidence 전달력이 더 강한 쪽을 selected로 추천한다.",
+  "textRiskLessons": [
+    "FLUX2 실측 교훈 1 (whitelist 계약 v2): negative 나열보다 명시적 오브젝트 구도 서술이 no-text 성공률을 높인다",
+    "FLUX2 실측 교훈 2 (scene1 v2.3): 봉투는 thick opaque plain matte paper + completely blank surfaces로 서술해야 glassine 워터마크류 마크가 안 생긴다",
+    "신규 리스크: money-like objects 허용으로 지폐 표면 인쇄 텍스트가 readable하게 나올 수 있음 — 모든 지폐를 generic + abstract engraving pattern + unreadable surface printing (soft focus)으로 서술"
+  ],
+  "commonStyle": "premium editorial financial photography, cinematic, realistic, high detail, vertical 9:16 portrait composition",
+  "commonNoTextClause": "Every paper surface is completely blank plain matte paper with no printed text, no logos, no stamps, no watermarks. All banknotes are generic fictional notes showing only soft abstract engraving patterns; any surface printing is unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere in the image.",
+  "scenes": [
+    {
+      "sceneId": "s1_problem_empty_wallet",
+      "stage": "problem",
+      "what_story_claim_this_scene_proves": "월급 들어온 지 3일 만에 쓸 수 있는 돈이 바닥처럼 느껴진다",
+      "required_visual_evidence": "거의 비어 있는 지갑과 몇 장 남지 않은 지폐 — 잔액 공포의 물리적 형태",
+      "must_show": ["열려 있는 거의 빈 지갑", "지폐 두세 장만 남은 상태", "일상 공간", "긴장감 있는 어두운 조명"],
+      "must_not_show": ["읽히는 글자/숫자", "브랜드 로고/워터마크", "웃는 스톡 인물", "가짜 은행 앱 UI"],
+      "why_this_image_delivers_topic_without_caption": "빈 지갑 + 소수의 지폐는 돈이 이미 빠져나간 상태를 자막 없이 즉시 전달하는 보편 기호다",
+      "candidates": [
+        {
+          "candidateId": "s1_A",
+          "compositionIdea": "낮은 정면 앵글 클로즈업 — 빈 지갑 내부의 공허가 화면 주연",
+          "prompt": "A nearly empty open leather wallet standing upright on a small dining table at night, its bill compartment gaping open with only two thin generic banknotes left inside, photographed from a low front angle so the emptiness inside the wallet dominates the frame, moody dim warm lamp light from one side, deep shadows, shallow depth of field, tense quiet late-night atmosphere, premium editorial financial photography, cinematic, realistic, high detail, vertical 9:16 portrait composition. Every paper surface is completely blank plain matte paper with no printed text, no logos, no stamps, no watermarks. The banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s1_B",
+          "compositionIdea": "부감 — 빈 지갑 + 흩어진 지폐 2~3장 + 넓은 빈 테이블 면적으로 결핍의 맥락 강조",
+          "prompt": "Top-down overhead view of an open nearly empty leather wallet lying on a dark wooden dining table at night, two crumpled generic banknotes lying loose beside it and one still inside, a large expanse of empty table surface around them emphasizing scarcity, a single warm lamp glow from the corner casting long soft shadows, quiet tense domestic night mood, premium editorial financial photography, cinematic, realistic, high detail, vertical 9:16 portrait composition. Every paper surface is completely blank plain matte paper with no printed text, no logos, no stamps, no watermarks. The banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    },
+    {
+      "sceneId": "s2_cause_outflow",
+      "stage": "cause",
+      "what_story_claim_this_scene_proves": "월급이 여러 개의 고정비로 자동으로 갈라져 나간다",
+      "required_visual_evidence": "월급 봉투(현금 다발)에서 여러 청구서 봉투 더미로 지폐가 흩어져 나가는 방향성 있는 흐름",
+      "must_show": ["두툼한 월급 봉투 또는 현금 다발 (출발점)", "청구서/고지서 느낌의 봉투 더미 여러 개 (도착점)", "지폐가 갈라져 이동하는 흐름/방향성", "부감 또는 사선 구도"],
+      "must_not_show": ["봉투 위 읽히는 글자", "가짜 고지서 본문 텍스트", "사람 얼굴", "달력/계산기의 읽히는 숫자"],
+      "why_this_image_delivers_topic_without_caption": "한 뭉치에서 여러 봉투로 갈라지는 돈의 흐름은 내 의지와 무관하게 빠져나가는 고정비를 시각 문법으로 직접 보여준다",
+      "candidates": [
+        {
+          "candidateId": "s2_A",
+          "compositionIdea": "부감 방사형 — 중앙의 두툼한 월급 봉투에서 네 방향의 고지서 봉투로 지폐가 뻗어나감",
+          "prompt": "Overhead flat-lay of one thick salary envelope bulging with generic banknotes at the center of a dark wooden desk, loose banknotes fanning outward in four directions like rays toward four plain blank bill envelopes placed near the corners, a clear radiating flow of money away from the center, dramatic directional side light, premium editorial financial photography, cinematic, realistic, high detail, vertical 9:16 portrait composition. Every envelope is thick opaque plain matte paper, completely blank with no printed text, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s2_B",
+          "compositionIdea": "사선 선형 흐름 — 왼쪽 월급 봉투에서 오른쪽 고지서 봉투 군집으로 지폐가 행진하듯 이동",
+          "prompt": "Diagonal perspective across a dark wooden table: on the left a thick envelope packed with generic banknotes, a trail of single banknotes laid across the table surface leading rightward into a tight cluster of plain blank bill envelopes standing slightly upright, the money visually marching away from its source, cinematic low side light with long shadows, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Every envelope is thick opaque plain matte paper, completely blank with no printed text, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    },
+    {
+      "sceneId": "s3_illusion_mixed_pile",
+      "stage": "illusion",
+      "what_story_claim_this_scene_proves": "나갈 돈과 쓸 돈이 한 곳에 섞여 있어 전부 내 돈처럼 보인다",
+      "required_visual_evidence": "구분선 없이 한 덩어리로 섞여 쌓인 현금 더미 — 한 통장의 물리적 은유",
+      "must_show": ["경계 없이 섞인 지폐 한 무더기", "위에서 내려다보는 구도(A) 또는 그에 준하는 혼합 강조(B)", "일부 지폐는 청구서 봉투에 반쯤 걸쳐 있어 이미 나갈 돈임을 암시"],
+      "must_not_show": ["읽히는 글자", "통장/앱 화면의 가짜 숫자", "정리된 칸막이 (착시 단계에서는 분리가 없어야 함)"],
+      "why_this_image_delivers_topic_without_caption": "섞인 돈 더미는 구분이 안 되는 상태를 그대로 보여준다 — 다음 scene의 3분할과 시각적 대비를 만드는 전제 장면",
+      "candidates": [
+        {
+          "candidateId": "s3_A",
+          "compositionIdea": "완전 부감 — 한 덩어리 무더기, 가장자리 봉투에 지폐 반삽입",
+          "prompt": "One single undivided messy heap of generic banknotes photographed from directly above on a dark table, dozens of notes overlapping in every direction with no separation and no dividers, at the heap's edge a few notes half-tucked into two plain blank envelopes as if already claimed, chaotic mixed single-mass feeling, cinematic contrast lighting, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Every envelope is thick opaque plain matte paper, completely blank with no printed text, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s3_B",
+          "compositionIdea": "낮은 시선 — 산처럼 쌓인 혼돈 덩어리 + 파묻힌 봉투 모서리, 배경 어둡게",
+          "prompt": "Low eye-level close view of a disordered mound of generic banknotes piled like a small mountain on a dark table, the corners of several plain blank envelopes buried inside the mound with notes half-inserted into them, background falling into deep dark blur, the mound reading as one single confusing indistinguishable mass of money, moody cinematic lighting, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Every envelope is thick opaque plain matte paper, completely blank with no printed text, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    },
+    {
+      "sceneId": "s4_solution_three_slots",
+      "stage": "solution",
+      "what_story_claim_this_scene_proves": "해결책은 돈의 자리를 3개로 나누는 구조다 — 그리고 그 3개는 고정비/생활비/저축이다",
+      "required_visual_evidence": "현금/봉투가 명확히 3칸으로 나뉜 구도 — 3분할이 이미지 단독으로 읽혀야 한다",
+      "must_show": ["3개의 봉투 또는 3칸 트레이로 명확히 분리된 현금", "각 칸의 시각적 등가성 (3이라는 숫자가 구도로 보임)", "정돈된 밝은 톤 (착시 scene과 대비)"],
+      "must_not_show": ["봉투 위 읽히는 라벨 글자 (이름은 renderer 카드가 얹음)", "4칸 이상 또는 2칸 (반드시 3분할)", "어수선한 배경"],
+      "why_this_image_delivers_topic_without_caption": "3칸으로 나뉜 돈은 분리 구조라는 해결책 자체의 형태다 — s3의 섞인 더미와 나란히 보면 자막 없이도 before/after가 성립한다",
+      "candidates": [
+        {
+          "candidateId": "s4_A",
+          "compositionIdea": "부감 — 정확히 3개의 봉투가 등간격으로 나란히, 각 봉투에 현금 뭉치",
+          "prompt": "Overhead flat-lay of generic banknotes divided into exactly three equal neat stacks, each stack resting on top of its own thick plain blank matte paper envelope, the three envelopes aligned side by side in one precise row with even spacing on a clean light wooden table, bright clean organized daylight, calm orderly mood in strong contrast to chaos, the number three unmistakable in the composition, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Exactly three envelopes, not two, not four. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s4_B",
+          "compositionIdea": "정면 — 3칸 우드 트레이/오거나이저에 각각 지폐 스택, 구조물 자체가 3분할을 발화",
+          "prompt": "Front view of a minimalist three-slot light wooden desk organizer tray on a tidy desk, each of the three open slots holding one neat upright stack of generic banknotes, the three-part division of the tray structure itself unmistakably visible, bright soft daylight, tidy calm background with gentle bokeh, sense of a clear simple system, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Exactly three slots, not two, not four. No printed text, no labels, no logos, no stamps, no watermarks anywhere. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    },
+    {
+      "sceneId": "s5_action_hands_dividing",
+      "stage": "action",
+      "what_story_claim_this_scene_proves": "월급날 가장 먼저 하는 행동은 소비가 아니라 나누기다",
+      "required_visual_evidence": "손이 현금을 3개의 봉투에 나눠 넣는 진행 중인 동작",
+      "must_show": ["지폐를 봉투에 넣는 손 (동작 진행형)", "3개의 봉투가 나란히", "생활 테이블 위 자연광/따뜻한 톤"],
+      "must_not_show": ["읽히는 글자", "얼굴", "돈을 세며 웃는 스톡 연출"],
+      "why_this_image_delivers_topic_without_caption": "넣는 손은 시청자가 따라 할 신체 동작을 그대로 시연한다 — 행동 단계는 상태가 아니라 동작으로 증명한다",
+      "candidates": [
+        {
+          "candidateId": "s5_A",
+          "compositionIdea": "클로즈업 — 두 손이 가운데 봉투에 지폐를 넣는 순간, 3봉투 나란히",
+          "prompt": "Close-up of two hands placing a small stack of generic banknotes into the middle one of three thick plain blank matte paper envelopes lying side by side on a warm wooden table, the action clearly in progress with the notes halfway into the envelope, natural window daylight, hopeful practical everyday mood, no face visible, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Exactly three envelopes in a row. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s5_B",
+          "compositionIdea": "사선 어깨너머 — 테이블 전체가 보이는 분배 장면: 하나는 이미 채워 세워짐, 손은 두 번째 진행 중",
+          "prompt": "Over-the-shoulder diagonal view of a person at a warm wooden table dividing a pile of generic banknotes into three thick plain blank matte paper envelopes arranged in a row, the first envelope already filled and standing upright, both hands mid-motion inserting notes into the second envelope, the third still open and empty, warm afternoon window light, practical focused mood, face not visible, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Exactly three envelopes. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    },
+    {
+      "sceneId": "s6_result_clear_after",
+      "stage": "action_result",
+      "what_story_claim_this_scene_proves": "나눈 뒤에는 3일이 지나도 쓸 수 있는 돈이 정확히 보인다 — hook의 공포가 해소된 상태",
+      "required_visual_evidence": "정돈되어 나란히 선 3개의 봉투와 그 옆의 열린 지갑 — s1의 빈 지갑과 반전 대비",
+      "must_show": ["가지런한 3개의 봉투", "적당한 현금이 보이는 열린 지갑", "밝고 안정된 톤 (s1 어두운 톤과 대비)"],
+      "must_not_show": ["읽히는 글자", "과도한 부/사치 연출 (현실감 유지)"],
+      "why_this_image_delivers_topic_without_caption": "s1(어두운 빈 지갑)→s6(밝은 정돈된 자리)의 톤/상태 반전이 스토리의 결말을 이미지만으로 완결한다",
+      "candidates": [
+        {
+          "candidateId": "s6_A",
+          "compositionIdea": "정면 — 3봉투 나란히 세워짐 + 열린 지갑에 적당한 현금, 아침광",
+          "prompt": "Three thick plain blank matte paper envelopes standing neatly upright in a row on a clean bright table, next to them an open leather wallet holding a comfortable modest amount of generic banknotes clearly visible, tidy bright morning light streaming across the scene, calm resolved reassuring atmosphere, realistic modest amount of money not luxury excess, premium editorial financial photography, realistic, high detail, vertical 9:16 portrait composition. Exactly three envelopes. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        },
+        {
+          "candidateId": "s6_B",
+          "compositionIdea": "사이드 소프트포커스 — 전경 선명한 열린 지갑(현금 보임), 배경에 정돈된 3봉투",
+          "prompt": "Side view with shallow depth of field: in the sharp foreground an open leather wallet showing a comfortable modest amount of generic banknotes inside, in the softly blurred background three thick plain blank matte paper envelopes propped tidily against a small shelf, bright airy morning tone, sense of order control and quiet relief, realistic not luxurious, premium editorial financial photography, high detail, vertical 9:16 portrait composition. Exactly three envelopes in the background. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with only soft abstract engraving patterns, unreadable and softly out of focus; no readable numerals, letters, portraits, or currency symbols anywhere."
+        }
+      ]
+    }
+  ]
+}

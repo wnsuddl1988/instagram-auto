@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "money_shorts_creative_quality_contract_v1",
+  "contractVersion": "1.0.0",
+  "status": "data_only_creative_quality_contract",
+  "title": "Money Shorts OS — Creative Quality Contract v1",
+  "purpose": "Creative Automation Layer는 별도 실험 도구가 아니라 기존 money-shorts 자동화 production pipeline의 일부다. 이 contract는 다음 Phase의 Retention Script Compiler, Scene/Event Planner, Quality Scorer, Automation Orchestrator가 읽어 소비할 data-only 계약이다. 이 fixture는 이미지/TTS/render/upload를 실행하지 않는다.",
+
+  "productionGoal": {
+    "description": "topic list부터 analytics feedback loop까지 이어지는 자동화 production pipeline의 창의 품질 계약을 고정한다.",
+    "productionFlow": [
+      "topic_list",
+      "topic_classification",
+      "source_gate",
+      "hook_candidates_generation",
+      "hook_scoring",
+      "retention_script_candidates_generation",
+      "tts_script_duration_guard",
+      "scene_event_plan_generation",
+      "renderer_template_registry_validation",
+      "motion_caption_sound_plan_generation",
+      "originality_variation_guard",
+      "quality_scoring",
+      "candidate_selection",
+      "final_render",
+      "platform_metadata_generation",
+      "upload_queue_readiness",
+      "analytics_feedback_loop_later"
+    ],
+    "requiredFinalArtifacts": [
+      "script.json",
+      "hook_candidates.json",
+      "scene_plan.json",
+      "caption_plan.json",
+      "sound_plan.json",
+      "quality_report.json",
+      "selected_candidate.json",
+      "platform_metadata.json",
+      "final_video.mp4"
+    ],
+    "intermediateArtifacts": [
+      "classified_topic",
+      "source_gate_record",
+      "selected_hook",
+      "retention_script",
+      "scene_event_plan",
+      "motion_caption_sound_plan"
+    ],
+    "productionPrinciples": {
+      "isPartOfProductionPipelineNotExperiment": true,
+      "noPerVideoHumanPreviewOrManualEdit": true,
+      "qualityGateIsCandidateSelectorNotProductionHalt": true,
+      "maxCandidatesPerTopic": 3,
+      "previewIsDevOnlyNotOperationalReviewGate": true,
+      "note": "Creative Layer는 실험 도구가 아니라 production pipeline의 일부다. 사람이 매 영상마다 preview/manual edit하지 않는다. quality gate는 생산을 멈추는 장치가 아니라 후보 선택 장치이며(topic당 최대 3후보 중 선택), preview는 개발용이고 운영 필수 검수 단계가 아니다."
+    },
+    "note": "Creative Automation Layer is part of the existing automation production pipeline, not a separate experiment tool. requiredFinalArtifacts는 실제 production plan의 파일 산출물 9개(script.json 등)이며, intermediateArtifacts는 파이프라인 중간 단계의 개념형 산출물이다."
+  },
+
+  "channelPosition": {
+    "channelLine": "돈의 흐름, 기회 정보, 성공 심리를 30초 안에 번역하는 쇼츠",
+    "everyVideoMustConnectToOneOf": ["돈", "기회", "선택", "행동"],
+    "psychologyRule": "심리/성공 콘텐츠는 일반 자기계발 명언으로 만들지 않는다. 반드시 돈/기회/실행력/행동 구조와 연결한다.",
+    "note": "channelLine은 고정 문구다. 모든 후보는 이 포지셔닝에 부합해야 하며 channel_fit_score로 평가된다."
+  },
+
+  "contentPillars": [
+    {
+      "id": "money_flow",
+      "displayName": "돈의 흐름",
+      "sourceRequired": true,
+      "note": "금리/환율/정책/시장 흐름 등 사실 기반. 출처 필수."
+    },
+    {
+      "id": "opportunity_info",
+      "displayName": "기회 정보",
+      "sourceRequired": true,
+      "note": "지원금/정책/제도/마감일 등 사실 기반. 출처 필수."
+    },
+    {
+      "id": "money_psychology",
+      "displayName": "돈 심리",
+      "sourceRequired": false,
+      "note": "돈을 지키고 쓰는 행동 심리. 반드시 돈/기회/실행 구조와 연결."
+    },
+    {
+      "id": "success_psychology",
+      "displayName": "성공 심리",
+      "sourceRequired": false,
+      "note": "실행력/선택/행동 심리. 일반 자기계발 명언 금지, 반드시 돈/기회/실행 구조와 연결."
+    }
+  ],
+
+  "forbiddenLanguagePolicy": {
+    "forbiddenDirections": [
+      "당신은 할 수 있습니다",
+      "긍정적으로 생각하면 성공합니다",
+      "부자처럼 생각하세요",
+      "성공하려면 노력하세요"
+    ],
+    "forbiddenDirectionReason": "공허한 자기계발 명언은 채널 포지셔닝(돈/기회/실행 번역)과 맞지 않고 저품질로 감지된다.",
+    "goodDirectionExamples": [
+      "기회를 놓치는 사람들은 정보가 없어서가 아니라 실행을 미루기 때문입니다.",
+      "성공하는 사람은 의지가 강한 게 아니라 시작하기 쉬운 환경을 만들어둡니다.",
+      "돈을 지키는 사람들은 감정이 흔들릴 때 바로 결정하지 않습니다.",
+      "정책은 모두에게 열려 있지만 챙기는 사람에게만 도착합니다."
+    ],
+    "investmentSolicitationForbidden": true,
+    "guaranteedReturnForbidden": true,
+    "exaggerationForbidden": true,
+    "note": "금지 표현/투자 권유/확정 수익/과장 표현이 포함되면 Hard Fail이다."
+  },
+
+  "sourceGate": {
+    "sourceRequiredPillars": ["money_flow", "opportunity_info"],
+    "requiredSourceMetadataFields": [
+      "source_urls",
+      "source_titles",
+      "checked_at",
+      "published_date",
+      "policy_date",
+      "key_numbers",
+      "deadline_date",
+      "target_condition",
+      "uncertainty_note"
+    ],
+    "processingRules": {
+      "sourceRequiredButMissingDisallowsRender": true,
+      "sourceRequiredButMissingDisallowsRenderBestCandidate": true,
+      "policyTopicMissingTargetPeriodConditionDisallowsRender": true,
+      "dateCriticalWithoutCheckedAtIsHardFail": true,
+      "investmentTopicForbidsSpecificBuySellGuaranteedReturnExaggeration": true,
+      "insufficientSourceTopicMustRegenerateAllOrSkip": true
+    },
+    "note": "money_flow/opportunity_info는 source_required=true. source 없으면 render와 render_best_candidate 모두 금지. 날짜가 중요한데 checked_at 없으면 Hard Fail."
+  },
+
+  "hardSoftFailPolicy": {
+    "hardFailReasonsExamples": [
+      "forbidden_phrase_included",
+      "looks_like_investment_solicitation",
+      "guaranteed_return_or_exaggeration",
+      "policy_or_subsidy_info_without_source",
+      "date_critical_info_without_checked_at",
+      "missing_target_period_or_condition",
+      "copyright_risk_source",
+      "channel_fit_score_severely_low",
+      "renderer_unsupported_template_included",
+      "source_required_true_but_source_metadata_missing"
+    ],
+    "hardFailDisallowsRender": true,
+    "hardFailDisallowsRenderBestCandidate": true,
+    "hardFailAllowedDecisions": ["skip_topic", "regenerate_all"],
+    "softFailReasonsExamples": [
+      "hook_score_slightly_below_threshold",
+      "visual_event_count_22_to_23",
+      "motion_variety_score_slightly_low",
+      "sfx_count_slightly_below_recommended",
+      "caption_density_slightly_high"
+    ],
+    "softFailAllowsRenderBestCandidate": true,
+    "note": "render_best_candidate는 Soft Fail에만 허용. Hard Fail이 하나라도 있으면 render_best_candidate 금지이고 final_decision은 skip_topic 또는 regenerate_all이어야 한다."
+  },
+
+  "hookContract": {
+    "candidatesPerTopic": 10,
+    "hookTypes": ["loss", "gain", "twist", "question", "number", "risk", "wallet_impact", "psychology"],
+    "evaluationCriteria": [
+      "understood_within_first_2s",
+      "has_loss_risk_curiosity_or_twist",
+      "not_exaggerated_or_false",
+      "directly_connected_to_topic",
+      "recoverable_within_30s",
+      "viewer_feels_so_why"
+    ],
+    "selectedHookMinScore": 75,
+    "note": "topic당 hook 후보 10개 생성. selected hook은 최소 75점 이상이어야 한다."
+  },
+
+  "retentionScriptContract": {
+    "totalDurationSec": 30,
+    "structure": [
+      { "part": "hook", "timeStartSec": 0, "timeEndSec": 2 },
+      { "part": "curiosity", "timeStartSec": 2, "timeEndSec": 6 },
+      { "part": "point_1_2_3", "timeStartSec": 6, "timeEndSec": 18 },
+      { "part": "twist_reframe", "timeStartSec": 18, "timeEndSec": 25 },
+      { "part": "action_save_reason", "timeStartSec": 25, "timeEndSec": 30 }
+    ],
+    "scriptSchemaRequiredFields": [
+      "estimated_voiceover_duration",
+      "target_duration",
+      "needs_compression"
+    ],
+    "durationGuard": {
+      "fullVoiceoverMinSec": 27,
+      "fullVoiceoverMaxSec": 30,
+      "over30sRequiresCompression": true,
+      "hookMinSec": 1.5,
+      "hookMaxSec": 2.5,
+      "sentencePreferredMinSec": 1.5,
+      "sentencePreferredMaxSec": 3.5,
+      "longSentenceTriggersCaptionOrScriptCompression": true
+    },
+    "note": "full_voiceover는 TTS 기준 27~30초. 30초 초과 시 script compression 필요. hook 1.5~2.5초, 각 문장 가능하면 1.5~3.5초."
+  },
+
+  "captionContract": {
+    "captionSafeReference": "youtube_shorts_safe_frame_v1",
+    "captionDensityPolicy": "caption density가 과하면 soft fail. 한 화면에 과도한 텍스트 금지.",
+    "captionPerEvent": "각 visual event는 최대 1개의 핵심 caption을 갖는다(짧고 읽히는 문장).",
+    "captionCompressionRule": "문장이 너무 길면 caption/script compression 대상이 된다.",
+    "note": "caption은 platform safe-frame profile(youtube_shorts_safe_frame_v1)의 caption zone을 벗어나지 않아야 한다."
+  },
+
+  "visualEventContract": {
+    "keepSixImageStructure": true,
+    "sceneCount": 6,
+    "eventsPerSceneMin": 4,
+    "eventsPerSceneMax": 6,
+    "totalVisualEventMin": 24,
+    "first2sHookImpactEventRequired": true,
+    "first5sVisualEventMin": 4,
+    "maxStaticDurationSec": 2.2,
+    "sameMotionTemplateConsecutiveLimit": 2,
+    "sameMotionTemplateThreeInARowForbidden": true,
+    "twistReframeEventWindowSec": { "startSec": 20, "endSec": 27 },
+    "actionSaveReasonEventWindowSec": { "startSec": 27, "endSec": 30 },
+    "youtubeSafeFrameProfileRef": "youtube_shorts_safe_frame_v1",
+    "visualEventSchemaRequiredFields": [
+      "event_id",
+      "time_start",
+      "time_end",
+      "script_part",
+      "intent",
+      "source_image",
+      "motion_template",
+      "caption",
+      "overlay",
+      "sfx",
+      "duration"
+    ],
+    "note": "기존 6장 이미지 구조 유지하되 정적 슬라이드가 아니라 각 이미지를 4~6 event로 쪼갠다. 전체 최소 24 event, 같은 이미지 무변화 2.2초 초과 금지, 같은 motion 3연속 금지."
+  },
+
+  "rendererTemplateRegistry": {
+    "rules": {
+      "motionTemplateNotInRegistryFails": true,
+      "rendererUnsupportedTemplateIsHardFail": true,
+      "everyTemplateMustHaveFallbackTemplate": true,
+      "fallbackMustBeRendererSupported": true,
+      "plannerMustNotUseUnsupportedTemplate": true
+    },
+    "motion": [
+      { "id": "push_in", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "pull_out", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "pan_left", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "pan_right", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "parallax", "renderer_support": false, "fallback_template": "push_in" },
+      { "id": "freeze_punch", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "checklist_pop", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "number_countup", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "red_box", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "arrow_reveal", "renderer_support": true, "fallback_template": "push_in" },
+      { "id": "split_screen", "renderer_support": false, "fallback_template": "push_in" },
+      { "id": "blur_focus", "renderer_support": false, "fallback_template": "push_in" },
+      { "id": "final_card", "renderer_support": true, "fallback_template": "push_in" }
+    ],
+    "overlay": [
+      { "id": "none", "renderer_support": true, "fallback_template": "none" },
+      { "id": "warning_card", "renderer_support": true, "fallback_template": "none" },
+      { "id": "number_card", "renderer_support": true, "fallback_template": "none" },
+      { "id": "checklist", "renderer_support": true, "fallback_template": "none" },
+      { "id": "arrow", "renderer_support": true, "fallback_template": "none" },
+      { "id": "underline", "renderer_support": true, "fallback_template": "none" },
+      { "id": "document_card", "renderer_support": true, "fallback_template": "none" },
+      { "id": "graph_card", "renderer_support": false, "fallback_template": "none" },
+      { "id": "calendar_card", "renderer_support": true, "fallback_template": "none" }
+    ],
+    "sfx": [
+      { "id": "none", "renderer_support": true, "fallback_template": "none" },
+      { "id": "hit", "renderer_support": true, "fallback_template": "none" },
+      { "id": "whoosh", "renderer_support": true, "fallback_template": "none" },
+      { "id": "click", "renderer_support": true, "fallback_template": "none" },
+      { "id": "beep", "renderer_support": true, "fallback_template": "none" },
+      { "id": "pop", "renderer_support": true, "fallback_template": "none" },
+      { "id": "riser", "renderer_support": false, "fallback_template": "none" }
+    ],
+    "note": "planner가 생성한 motion_template/overlay/sfx는 반드시 registry에 존재하고 renderer_support=true여야 한다. renderer_support=false는 planner가 사용하지 않고, 사용되면 Hard Fail. 모든 template은 renderer가 지원하는 fallback_template을 가진다."
+  },
+
+  "motionCaptionSoundSelection": {
+    "intentToTemplateMapping": {
+      "hook_impact": { "motion": ["freeze_punch"], "overlay": ["warning_card", "number_card"], "sfx": ["hit"] },
+      "risk": { "motion": ["red_box"], "overlay": ["warning_card"], "sfx": ["beep"] },
+      "money_number": { "motion": ["number_countup"], "overlay": ["number_card"], "sfx": ["pop"] },
+      "policy_deadline": { "motion": ["arrow_reveal"], "overlay": ["calendar_card", "underline"], "sfx": ["click"] },
+      "explanation": { "motion": ["checklist_pop"], "overlay": ["checklist", "arrow", "document_card"], "sfx": ["click"] },
+      "comparison": { "motion": ["pan_left", "pan_right"], "overlay": ["arrow"], "sfx": ["whoosh"] },
+      "psychology": { "motion": ["push_in"], "overlay": ["none", "underline"], "sfx": ["none"] },
+      "twist": { "motion": ["freeze_punch"], "overlay": ["warning_card"], "sfx": ["hit"] },
+      "action": { "motion": ["final_card"], "overlay": ["checklist"], "sfx": ["click"] }
+    },
+    "sfxRules": {
+      "recommendedSfxCountMin": 8,
+      "recommendedSfxCountMax": 12,
+      "notEveryCaptionGetsSfx": true,
+      "sfxFocusIntents": ["hook", "number", "checklist", "twist", "action"],
+      "tooManySfxIsCheapQualityRisk": true
+    },
+    "note": "intent별 의미 기반 motion/overlay/sfx 매핑. 30초 기준 sfx 8~12개 권장, 모든 자막에 효과음 금지, 과다 sfx는 감점."
+  },
+
+  "ttsRhythmPolicy": {
+    "voice": "elevenlabs_scene_paced",
+    "targetFullVoiceoverSec": { "minSec": 27, "maxSec": 30 },
+    "perSentencePacingSec": { "preferredMinSec": 1.5, "preferredMaxSec": 3.5 },
+    "hookPacingSec": { "minSec": 1.5, "maxSec": 2.5 },
+    "silenceGapPolicy": "scene 간 과도한 무음 금지. tail trim으로 30초 이내 정합.",
+    "note": "TTS rhythm은 retention script duration guard와 정합해야 한다. 30초 초과 시 script compression 유도."
+  },
+
+  "originalityVariationGuard": {
+    "compareDimensions": [
+      "hook_structure",
+      "first_2s_caption_style",
+      "motion_sequence",
+      "caption_template_sequence",
+      "bgm_sfx_pattern",
+      "script_opening_phrase",
+      "final_action_phrase",
+      "image_composition"
+    ],
+    "compareAgainstPreviousNVideos": 10,
+    "highSimilarityLowersOriginalityScore": true,
+    "lowScoreTriggersRegeneration": ["hook", "script", "scene_plan"],
+    "openingPhraseAndMotionSequenceRepetitionForbiddenWithinPillar": true,
+    "minimumOriginalityVariationScore": 70,
+    "v1DryRunPolicy": "v1에서는 실제 과거 영상 DB가 없으면 sample history fixture 기반 dry-run으로 시작한다.",
+    "note": "직전 N개 영상과 8개 요소를 비교. 유사도가 높으면 originality_variation_score를 낮추고 hook/script/scene_plan 재생성을 유도한다."
+  },
+
+  "qualityReportContract": {
+    "qualityReportSchemaRequiredFields": [
+      "topic",
+      "content_pillar",
+      "hook_score",
+      "retention_score",
+      "visual_event_count",
+      "first_5s_event_count",
+      "avg_event_interval",
+      "max_static_duration",
+      "subtitle_density",
+      "motion_variety_score",
+      "sfx_count",
+      "sound_design_score",
+      "script_clarity_score",
+      "channel_fit_score",
+      "originality_variation_score",
+      "hard_fail_reasons",
+      "soft_fail_reasons",
+      "final_decision",
+      "reasons"
+    ],
+    "thresholds": {
+      "hook_score": 75,
+      "retention_score": 75,
+      "visual_event_count": 24,
+      "first_5s_event_count": 4,
+      "max_static_duration": 2.2,
+      "motion_variety_score": 70,
+      "script_clarity_score": 75,
+      "channel_fit_score": 80,
+      "originality_variation_score": 70
+    },
+    "thresholdDirection": {
+      "max_static_duration": "lte",
+      "default": "gte"
+    },
+    "finalDecisionEnum": [
+      "render",
+      "regenerate_script",
+      "regenerate_scene_plan",
+      "regenerate_all",
+      "render_best_candidate",
+      "skip_topic"
+    ],
+    "hardFailDisallowsRender": true,
+    "hardFailDisallowsRenderBestCandidate": true,
+    "softFailAllowsRenderBestCandidate": true,
+    "note": "Quality Report는 위 필드 전체를 채워야 하고 threshold를 만족해야 render. max_static_duration은 lte(<=)로 판정, 나머지는 gte(>=)."
+  },
+
+  "candidateSelectionPolicy": {
+    "maxCandidatesPerTopic": 3,
+    "ifPassingCandidateExistsRenderHighest": true,
+    "ifNoPassingButNoHardFailRenderBestCandidate": true,
+    "hardFailForbidsRenderBestCandidate": true,
+    "criticalSourceRiskForbiddenIssueSkipsTopic": true,
+    "alwaysLeaveRegenerateTargetToAvoidInfiniteReject": true,
+    "note": "topic별 최대 3 candidate. 통과 후보 있으면 최고 점수 render. 전부 미달이어도 Hard Fail 없으면 최고 점수 render_best_candidate. 무한 reject 방지를 위해 regenerate target을 남긴다."
+  },
+
+  "platformMetadataPolicy": {
+    "generatesTitleDescriptionCaptionHashtags": true,
+    "noSourceDateValueHallucination": true,
+    "exactValuesFromSourceFactOnly": true,
+    "noExactSourceDateValueBakedIntoImageBody": true,
+    "deterministicOverlayForNumbersOnly": true,
+    "perPlatform": {
+      "youtube_shorts": { "renderProfileId": "youtube_shorts_safe_frame_v1", "categoryId": "27" },
+      "instagram_reels": { "renderProfileId": "instagram_reels_full_vertical_v1" }
+    },
+    "note": "platform metadata(title/description/caption/hashtags)는 sourceFact의 값만 사용하고 날짜/수치를 hallucinate하지 않는다. 정확한 수치는 deterministic overlay로만 표기."
+  },
+
+  "sourceRiskDisclosurePolicy": {
+    "mustDiscloseSourceForFactualPillars": true,
+    "mustDiscloseCheckedAtForDateCriticalInfo": true,
+    "mustIncludeUncertaintyNoteWhenApplicable": true,
+    "notInvestmentAdviceDisclosureRequired": true,
+    "noGuaranteedReturnClaims": true,
+    "copyrightRiskSourceForbidden": true,
+    "note": "사실 기반 콘텐츠는 출처를 공개하고, 날짜가 중요한 정보는 checked_at을 공개한다. 투자 권고 아님 고지, 확정 수익 주장 금지, 저작권 위험 소스 금지."
+  },
+
+  "phaseRoadmap": [
+    { "phase": 1, "name": "Creative Quality Contract v1", "status": "this_phase" },
+    { "phase": 2, "name": "Retention Script Compiler v1", "status": "planned" },
+    { "phase": 3, "name": "Scene/Event Planner v1", "status": "planned" },
+    { "phase": 4, "name": "Quality Scorer v1", "status": "planned" },
+    { "phase": 5, "name": "Preview Renderer v1", "status": "planned_dev_only_not_operational_gate" },
+    { "phase": 6, "name": "Existing Automation Orchestrator Integration", "status": "planned" },
+    { "phase": 7, "name": "Upload Queue Readiness", "status": "planned" },
+    { "phase": 8, "name": "Analytics Feedback Loop v1", "status": "roadmap_not_implemented_v1" }
+  ],
+
+  "phase8Metrics": [
+    "views",
+    "average_view_duration",
+    "first_3s_dropoff_rate",
+    "rewatches",
+    "like_rate",
+    "comment_rate",
+    "save_rate",
+    "share_rate",
+    "follow_conversion",
+    "platform_performance_delta"
+  ],
+
+  "boundary": {
+    "noExternalApiCall": true,
+    "noImageGeneration": true,
+    "noTtsGeneration": true,
+    "noRenderMuxFfmpeg": true,
+    "noUploadOrPublish": true,
+    "noDeploy": true,
+    "noEnvOrSecretAccess": true,
+    "noSourceRequery": true,
+    "noDependencyChange": true,
+    "dataOnly": true
+  },
+
+  "riskNotes": [
+    "data-only creative quality contract — 어떤 외부 서비스도 호출하지 않고, 이미지/TTS/render/upload를 실행하지 않는다.",
+    "이 contract는 후속 Phase(Retention Script Compiler, Scene/Event Planner, Quality Scorer, Orchestrator)가 소비할 shared production contract다. 필드/enum 변경은 후속 모듈 재작업을 유발할 수 있으므로 신중히 버전업한다.",
+    "renderer_support=false로 표시된 template(parallax, split_screen, blur_focus, graph_card, riser)은 v1 planner가 사용하지 않는다. 사용되면 Hard Fail.",
+    "이 fixture에는 env/secret/token/credential/OAuth code가 포함되지 않는다.",
+    "originality guard는 v1에서 실제 과거 영상 DB 없이 sample history fixture dry-run으로 시작한다 — 실제 history 연동은 후속 Phase.",
+    "Phase 8 Analytics Feedback Loop는 roadmap only이며 이 contract에서 구현하지 않는다."
+  ]
+}

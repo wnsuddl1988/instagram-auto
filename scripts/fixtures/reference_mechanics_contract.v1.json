@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "golden_sample_reference_mechanics_contract_v1",
+  "taskId": "golden-sample-direction-reset-money-economy-psychology-v1",
+  "createdAt": "2026-07-03",
+  "principle": "Reference is not a topic. Reference is a production grammar.",
+  "principle_ko": "레퍼런스는 주제가 아니라 제작 문법이다 — 가져오는 것은 만드는 방식이지 내용이 아니다.",
+  "source_note": "Owner 지정 레퍼런스 영상은 제작 문법 영감으로만 사용한다. 주제 복사 요청이 아니며, KOSPI/실시간 시황으로 전환하라는 지시도 아니다. 이 계약은 레퍼런스에서 승계할 6개 문법 축만 정의한다.",
+
+  "mechanics": {
+    "hook": {
+      "rule": "첫 1.5~2초 안에 화면을 정지시키는 대형 텍스트 훅 + '오늘 이걸 봐야 하는 이유'를 즉시 제시",
+      "self_relevance": "시청자가 '내 얘기인데?'라고 느끼는 2인칭/보편 경험 소구 필수",
+      "forbidden": ["제목처럼 들리는 설명형 훅", "로고/인트로/빌드업", "첫 2초 무변화 정지 화면"]
+    },
+    "story": {
+      "rule": "문제 → 원인 → 착시 → 해결책 → 행동 → 결과 인과 사슬 유지 (addendum 승계)",
+      "bridge": "단계 사이마다 '왜 다음 단계로 넘어가는가' bridge 문장 필수 — 없으면 reject",
+      "forbidden": ["추상어 단독 종결(순서/관리/정리 등)", "해결책 3요소를 말하면서 정체를 안 보여주는 구성"]
+    },
+    "fact_density": {
+      "rule": "약 5초당 최소 1개의 새 정보 요소(팩트/숫자/단계/규칙)가 화면과 대본에 등장",
+      "numbers_on_cards": "정확한 숫자/라벨은 이미지가 아니라 renderer 카드 타이포가 담당 (이미지 내 글자 신뢰 금지 원칙 승계)",
+      "forbidden": ["추상 문장 3연속", "검증 안 된 통계/실시간 수치 인용", "가짜 정밀도(fake chart)"]
+    },
+    "typography": {
+      "rule": "bold_info_shorts_font_contract.v1.json 전면 준수 — ExtraBold/Black + 8px+ 검정 외곽선 + 흰색 기본 + 노랑/주황/빨강/파랑 강조",
+      "forbidden": ["기본 Malgun Gothic 느낌", "얇은 weight", "하단 고정 받아쓰기 자막"]
+    },
+    "visual_rhythm": {
+      "rule": "1.5~3초 간격의 perceptual event 리듬 (hard cut/카드 전환/강조 전환) — 30초당 14+ events 비율 유지 (기존 card motion contract 승계)",
+      "perceptual_only": "pan/zoom 단독은 event가 아니다 (absolute rules 기준 승계)",
+      "forbidden": ["이미지 1장이 3초 이상 주연으로 고정", "슬라이드쇼 페이스"]
+    },
+    "cta": {
+      "rule": "마지막 2~4초에 '저장/실행할 이유' 1문장 고정 카드 — 행동 지시는 1개만",
+      "forbidden": ["복수 행동 요구", "맥락 없는 팔로우 구걸"]
+    }
+  },
+
+  "prohibitions": {
+    "no_exact_clone": "레퍼런스 영상의 exact clone 금지",
+    "no_asset_copy": "레퍼런스의 로고/채널명/고유 문장/디자인 트레이싱/워터마크 복사 금지",
+    "no_topic_copy": "레퍼런스의 주제/소재를 복사하지 않는다 — 주제는 topic_candidate_report에서 Owner가 선택",
+    "no_live_macro_switch": "레퍼런스가 시황형이어도 KOSPI/실시간 거시 뉴스로 임의 전환 금지"
+  },
+
+  "precedence": "_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md 원문 > _ai/GOLDEN_SAMPLE_OWNER_FEEDBACK_ABSOLUTE_RULES_ADDENDUM_V1.md > 본 계약 > 기존 card motion/dynamic caption 계약의 세부 표현",
+  "boundary": { "data_only_contract": true, "cost_usd": 0, "render_ready": false, "upload_ready": false }
+}

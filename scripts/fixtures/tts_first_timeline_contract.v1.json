@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "money_shorts_tts_first_timeline_contract_v1",
+  "status": "contract_locked",
+  "title": "Money Shorts OS — TTS-first Timeline Contract v1",
+  "purpose": "TTS를 먼저 만들고 실제 오디오 타이밍으로 timeline을 reflow한다. 짧은 TTS를 무음 padding으로 늘려 길이를 맞추지 않는다. 6개 씬별 짧은 TTS 호출을 기본값으로 쓰지 않는다.",
+  "topic": { "topicId": "base-rate-hold-202605", "label": "금리 동결" },
+  "tts_strategy": "full_narration_one_shot | three_block",
+  "strategyPriority": [
+    { "rank": 1, "strategy": "full_narration_one_shot", "note": "전체 narration을 한 번에 TTS. rhythm/consistency 최상. accepted baseline이 이 방식(raw ~29.99s, padding 0)." },
+    { "rank": 2, "strategy": "three_block", "note": "hook / body / closing 3블록 TTS. one-shot이 불가할 때만." }
+  ],
+  "forbiddenStrategy": {
+    "six_scene_level_tts_as_default": true,
+    "reason": "scene별 6회 TTS는 rhythm을 깨고 각 씬 raw가 target보다 짧아 padding을 유발한다. rejected v2가 이 방식이었다."
+  },
+  "measurementRequirements": {
+    "measure_actual_audio_duration_before_visual_timing": true,
+    "measure_speech_active_duration_before_visual_timing": true,
+    "reflow_scene_timeline_from_real_tts_timing": true,
+    "silenceDetectParams": { "noiseDb": -40, "minSilenceSec": 0.4 }
+  },
+  "paddingPolicy": {
+    "do_not_pad_short_tts_with_silence": true,
+    "apad_whole_dur_forbidden": true,
+    "silence_stretch_to_fake_duration_forbidden": true,
+    "on_tts_too_short": "treat_as_script_or_timeline_problem_not_padding",
+    "note": "TTS가 짧으면 script를 늘리거나 timeline을 reflow한다. 무음으로 늘리지 않는다."
+  },
+  "acceptanceThresholds": {
+    "maxFirstFiveSecondSilenceSec": 0.8,
+    "maxTotalSilenceRatio": 0.18,
+    "minSpeechActiveRatio": 0.72,
+    "note": "첫 5초 긴 무음 금지. 30s short로는 speech density가 충분해야 한다. rejected v2는 첫 5초 무음 3.55s / 총 무음 비율 ~30%로 이 임계를 크게 위반한다."
+  },
+  "phrase_alignment": [
+    { "phrase_id": "hook", "text": "금리 동결? 아직 안심하면 안 됩니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 0.0, "visual_end": 2.0 },
+    { "phrase_id": "curiosity", "text": "금리는 멈췄지만, 내 이자는 바로 안 멈출 수 있습니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 2.0, "visual_end": 5.0 },
+    { "phrase_id": "point_1", "text": "첫째, 변동금리는 반영 시점을 확인해야 합니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 5.0, "visual_end": 10.0 },
+    { "phrase_id": "point_2", "text": "둘째, 예금은 갈아타기 전에 만기와 손실을 봐야 합니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 10.0, "visual_end": 15.0 },
+    { "phrase_id": "point_3", "text": "셋째, 대출자는 월 납입액을 다시 계산해야 합니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 15.0, "visual_end": 20.0 },
+    { "phrase_id": "twist", "text": "뉴스는 금리를 말하지만, 내 지갑은 현금흐름이 결정합니다.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 20.0, "visual_end": 26.0 },
+    { "phrase_id": "action", "text": "오늘은 금리보다 고정비부터 확인하세요.", "audio_start": 0.0, "audio_end": 0.0, "visual_start": 26.0, "visual_end": 30.0 }
+  ],
+  "phraseAlignmentNote": "audio_start/audio_end는 real TTS 측정 후 채운다. visual_start/visual_end는 그 타이밍으로 reflow한다.",
+  "actual_audio_duration": 0.0,
+  "speech_active_duration": 0.0,
+  "silence_ratio": 0.0,
+  "padding_used": false,
+  "requires_script_rewrite": false,
+  "requires_timeline_reflow": false,
+  "rejectedV2Evidence": {
+    "strategyUsed": "six_scene_level_tts_calls",
+    "sceneCount": 6,
+    "apiCallCount": 6,
+    "allScenesPadded": true,
+    "firstFiveSecondSilenceSec": 3.55,
+    "totalSilenceRatioApprox": 0.30,
+    "verdict": "violates_tts_first_timeline_contract",
+    "note": "6개 씬 모두 apad=whole_dur padding. scene 1 hook raw 1.81s → 5s padding. 이 계약의 forbiddenStrategy + paddingPolicy + acceptanceThresholds를 모두 위반한다."
+  },
+  "acceptedBaselineEvidence": {
+    "strategyUsed": "full_narration_one_shot",
+    "rawAudioDurationSec": 29.99,
+    "paddingUsed": false,
+    "firstFiveSecondSilenceSec": 0.4,
+    "totalSilenceRatioApprox": 0.11,
+    "verdict": "satisfies_tts_first_timeline_contract",
+    "note": "reference로만 취급. 새 Golden Sample의 upload 자격을 부여하지 않는다."
+  },
+  "boundary": { "noTtsGeneration": true, "noRender": true, "dataOnly": true }
+}

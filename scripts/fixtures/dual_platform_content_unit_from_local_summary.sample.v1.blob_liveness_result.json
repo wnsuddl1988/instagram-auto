@@ -1,0 +1,7 @@
+{
+  "_note": "Static sample fixture for --blob-liveness-result smoke testing only. Shape-valid, no real Blob object exists behind this URL. No network request is made by the builder to validate this — it only checks the JSON shape.",
+  "url": "https://7iq7vppwlaha2vuo.public.blob.vercel-storage.com/instagram/reels/local_sample-bridge-fixture/instagram_reels_full_frame_1080x1920/v1_local_draft/sample.mp4",
+  "headStatus": 200,
+  "contentType": "video/mp4",
+  "contentLength": 123456
+}

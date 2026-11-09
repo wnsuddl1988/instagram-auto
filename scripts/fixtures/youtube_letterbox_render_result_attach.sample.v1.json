@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "youtube_letterbox_render_result_v1",
+  "_note": "Sample render result JSON for exercising --youtube-render-result attach validation in scripts/check-dual-platform-content-unit-from-local-summary-static.mjs. outputPath points at the real, already-generated, repo-outside mp4 from task youtube-letterbox-local-render-execution-once-v1 (approved local render). No secrets appear here; this fixture is read-only reference data, not executed.",
+  "mode": "local_render_once",
+  "approvalToken": "APPROVE_YOUTUBE_LETTERBOX_LOCAL_RENDER_EXECUTION_ONCE",
+  "noLive": true,
+  "executed": true,
+  "envSecretValuesAccessedThisRun": false,
+  "sourcePath": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+  "sourceSizeBytes": 20294549,
+  "outputPath": "C:\\tmp\\money-shorts-os\\youtube-letterbox-local-render-execution-once-v1\\golden_sample_t1_lifestyle_inflation_youtube_letterbox_v3_2_once.mp4",
+  "outputSizeBytes": 7349425,
+  "ffmpegConversionCount": 1,
+  "ffprobeReadOnlyCount": 2,
+  "allVerificationsPass": true,
+  "sideEffectCounters": {
+    "ffmpegConversionCount": 1,
+    "ffprobeReadOnlyCount": 2,
+    "outputFilesWrittenCount": 1,
+    "apiCallCount": 0,
+    "uploadCount": 0,
+    "envSecretReadCount": 0,
+    "deployCount": 0,
+    "requestMutationCount": 0
+  }
+}

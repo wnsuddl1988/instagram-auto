@@ -1,0 +1,48 @@
+{
+  "id": "toyota-andon",
+  "title": "도요타 안돈",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "연표형, 컨설팅 블로그 출처뿐",
+  "conditionResolved": false,
+  "finding": "안돈 줄 자체는 공식·공공 출처 없이 컨설팅·벤더 블로그뿐이었고(1950~60년대 정도로만 적힘) 장면이 서지 않는다. 같은 소재에서 더 강한 결정 장면으로 1929년 사키치 도요다의 자동직기 특허를 영국 플랫 브러더스에 10만 파운드에 넘긴 계약을 찾았고, 금액·연도는 Wikipedia·Toyota UK·AllAboutLean·TCMIT·Toyota 공식 연표에서 확인된다. 그러나 이 돈이 자동차 사업 자금이 됐다는 핵심 연결은 Toyota UK가 '자본'이라 하는 반면 AllAboutLean은 '직원 보너스로 쓰였고 새 회사는 통상 방식으로 조달했다'고 반박해 사실이 갈린다. 따라서 메시지가 서지 않아 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "1929년 플랫 브러더스는 도요다 자동직기 특허 권리 대가로 10만 파운드를 지급하기로 했다.", "numeric": true, "economy": true,
+      "caution": "TCMIT는 당시 약 100만 엔, Toyota 공식은 4회 분할(회당 2만 5천 파운드, 약 25만 엔)에 1934년 7월 잔액 감액으로 총 8만 3,500파운드라고 적는다. 실수령은 10만이 아님.",
+      "sources": [
+        { "name": "Wikipedia Platt Brothers", "url": "https://en.wikipedia.org/wiki/Platt_Brothers", "quote": "paid £100,000 for the patent rights" },
+        { "name": "AllAboutLean - 150th Anniversary of Sakichi Toyoda", "url": "https://www.allaboutlean.com/150th-anniversary-sakichi-toyoda/", "quote": "agreed to a sales price of GBP 100,000" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "도요다 자동직기 제작소는 1933년 자동차 부문을 세웠다.", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Toyota Motor Corporation - Trajectory of Toyota", "url": "https://global.toyota/en/company/trajectory-of-toyota/history/01/", "quote": "established Automotive Division" },
+        { "name": "Wikipedia Kiichiro Toyoda", "url": "https://en.wikipedia.org/wiki/Kiichiro_Toyoda", "quote": "In 1933, Toyota Industries" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "도요타 자동차는 1937년 독립 회사로 설립됐다.", "numeric": true, "economy": false,
+      "caution": "Toyota 공식은 1937년 8월 28일, 일부 자료는 4월 등록으로 적어 월일이 갈림.",
+      "sources": [
+        { "name": "Toyota Motor Corporation - Trajectory of Toyota", "url": "https://global.toyota/en/company/trajectory-of-toyota/history/01/", "quote": "Toyota Motor Co., Ltd. Established" },
+        { "name": "Wikipedia Kiichiro Toyoda", "url": "https://en.wikipedia.org/wiki/Kiichiro_Toyoda", "quote": "In 1937, it became independent" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "플랫 계약 대금이 자동차 사업 자금이 됐는지는 출처가 정반대로 갈린다.", "numeric": false, "economy": true,
+      "caution": "핵심 연결 고리. 한쪽은 자동차 자본, 다른 쪽은 직원 보너스로 썼다고 한다. 대본에 단정 불가.",
+      "sources": [
+        { "name": "Toyota UK Magazine - Toyota history", "url": "https://mag.toyota.co.uk/75-years-of-", "quote": "provided Kiichiro with the capital" },
+        { "name": "AllAboutLean - 150th Anniversary of Sakichi Toyoda", "url": "https://www.allaboutlean.com/150th-anniversary-sakichi-toyoda/", "quote": "spent on bonuses for the employees" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "일본 기업의 90년 전 일화. 민감성 없음." },
+  "remaining": "(1) 플랫 대금의 용처를 Toyota 75년사 원문(Part1 Ch1 Sec4 Item2~4)의 해당 문장으로 확정해야 함 (2) 안돈 줄 자체의 도입 시기·일화는 오노 다이이치 저서 등 1차 자료 필요 (3) 이 소재가 '안돈'에서 '특허 매각'으로 각도가 바뀌므로 Owner 확인 필요. (1)이 풀리면 usable 후보.",
+  "toolCallsUsed": 15
+}

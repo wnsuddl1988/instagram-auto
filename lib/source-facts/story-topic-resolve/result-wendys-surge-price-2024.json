@@ -1,0 +1,48 @@
+{
+  "id": "wendys-surge-price-2024",
+  "title": "웬디스 가변 가격",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "최근 사건, 확인하지 않음",
+  "conditionResolved": true,
+  "finding": "사실 확인은 됐다: 2024년 2월 실적 발표에서 CEO가 약 2천만 달러를 들여 미국 매장 디지털 메뉴판을 설치하고 2025년부터 '다이내믹 프라이싱'을 시험하겠다고 했고, 서프 프라이싱 논란과 워런 상원의원 비판 직후 회사가 '서프 프라이싱은 하지 않겠다'고 해명했다. 그러나 결정 장면이 '실적 발표 중 한 문장 → 이틀 만의 해명'이라 주인공의 선택·결단이 없고, 실제 가격 변경이 일어나지 않아 결과도 없다. 주가 반응은 0.49% 하락(2% 소폭 반등 보도도 있음) 수준이라 경제 번역할 큰 숫자도 약하다. 장면이 부족해 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "웬디스는 미국 매장 디지털 메뉴판에 약 2천만 달러를 투자하겠다고 밝혔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "해외 매장에는 추가 1천만 달러(Fox 단일 출처).",
+      "sources": [
+        { "name": "FOX TV Stations (2024-02-28)", "url": "https://www.fox7austin.com/news/wendys-backlash-surge-pricing-reports-denies-claims", "quote": "investing $20 million to install" },
+        { "name": "Audacy/AP (2024)", "url": "https://www.audacy.com/wxrt/news/local/wendys-says-it-will-not-use-surge-pricing-at-restaurants", "quote": "invest about $20 million" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "논란 직후 웬디스는 '서프 프라이싱(수요가 높을 때 가격을 올리는 방식)은 시행하지 않겠다'고 밝혔다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Audacy/AP (2024)", "url": "https://www.audacy.com/wxrt/news/local/wendys-says-it-will-not-use-surge-pricing-at-restaurants", "quote": "will not implement surge pricing" },
+        { "name": "Benzinga (2024)", "url": "https://cdn3.benzinga.com/general/restaurants/24/02/37407897/wendys-clarifies-dynamic-pricing-comments-after-public-outcry-elizabeth-warren-criticism", "quote": "will not implement surge pricing" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "해명이 나온 날 웬디스 주가는 0.49% 하락한 18.11달러로 마감했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Benzinga 단일 출처, 다른 보도는 '소폭 반등 2%'로 상이. 큰 충격이 없었음.",
+      "sources": [
+        { "name": "Benzinga (2024)", "url": "https://cdn3.benzinga.com/general/restaurants/24/02/37407897/wendys-clarifies-dynamic-pricing-comments-after-public-outcry-elizabeth-warren-criticism", "quote": "down 0.49% to $18.11" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": true, "note": "미국 기업·2024년 사건. 워런 상원의원 비판이 낀 미국 정치 소지가 약간 있으나 국내 정치 아님." },
+  "remaining": "실제 가격 변경·매출 영향 없음, 결정 장면이 CEO 발언과 해명뿐. 다른 각도(다이내믹 프라이싱 일반론: 우버·항공)로 틀면 웬디스 소재가 아니라 별개 소재가 됨.",
+  "toolCallsUsed": 14
+}

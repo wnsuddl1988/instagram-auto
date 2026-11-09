@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "money_shorts_image_source_test_prompts_v1",
+  "status": "data_only_prompts",
+  "title": "Golden Sample Image Source Test Prompts v1 — 월급이 3일 만에 사라지는 이유 (T2)",
+  "purpose": "provider 소량 실측 테스트용 공통 프롬프트 4종. 주제는 품질 문법 테스트용이며 최종 자동화 주제 고정이 아니다. 모든 provider(ChatGPT control / OpenAI gpt-image-2 / FLUX.2 pro)에 동일 프롬프트를 사용해 해상도·주제 전달력을 공정 비교한다.",
+  "topic": { "topicId": "salary-vanishes-3days-test", "label": "월급이 3일 만에 사라지는 이유", "role": "quality_grammar_test_topic_not_final" },
+  "sizeTargets": { "primary": "1088x1936", "fallbackOnce": "1088x1920", "gate": "width>=1080 AND height>=1920 AND |aspect-0.5625|<=0.01" },
+  "styleAnchor": "Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip of the frame clean and uncluttered so information cards and captions can be overlaid later.",
+  "globalMustAvoid": [
+    "no readable text, letters, numbers, words, or labels rendered inside the image",
+    "no watermark, no logo, no signature, no UI chrome",
+    "no distorted or malformed hands, no extra fingers",
+    "no generic smiling office worker, no corporate cliché",
+    "no fake or unreadable charts, no gibberish graphs",
+    "no low-quality stock-photo feel, no oversaturated stock lighting",
+    "no fear/horror mood, no luxury-flex 'wealth ad' look"
+  ],
+  "prompts": [
+    {
+      "order": 1,
+      "sceneRole": "hook_salary_arrival",
+      "visualMetaphor": "입금 알림의 빛 = 잠깐의 안도",
+      "objectDensity": 3,
+      "mustShow": ["smartphone with a glowing banking-deposit notification (screen content soft-focus, illegible)", "open wallet beside the phone", "a hand reaching toward the phone"],
+      "mustAvoid": ["legible screen text or numbers", "full face in focus", "office desk look"],
+      "subjectDeliveryCheck": "월급이 방금 들어온 순간임이 이미지만으로 느껴진다",
+      "finalPrompt": "[scene 1 — hook_salary_arrival] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip clean for overlay cards. Scene subject: Early morning Korean kitchen table. A smartphone lies face-up, its screen softly glowing with the unmistakable shape of a banking deposit notification — the screen content is soft-focus and illegible, only the warm glow and layout suggest 'salary just arrived'. An open but thin wallet rests beside it, a hand reaches toward the phone, a cup of coffee steams nearby. Mood: brief relief with an undertone of tension, the calm moment before the money starts leaving. Shallow depth of field, warm window light, amber accent on the notification glow. Do NOT render any readable text, numbers, letters, watermark or logo anywhere in the image; no distorted hands; no smiling office worker; no stock-photo feel."
+    },
+    {
+      "order": 2,
+      "sceneRole": "cashflow_leak",
+      "visualMetaphor": "미끄러져 흐르는 지폐 = 새는 현금흐름",
+      "objectDensity": 3,
+      "mustShow": ["open wallet with banknotes slipping/flowing out in one direction", "a drift of receipts where the money flows toward", "dark table with a single amber light accent"],
+      "mustAvoid": ["flying money explosion cliché", "casino/gambling mood", "legible currency text"],
+      "subjectDeliveryCheck": "돈이 '빠져나가는 중'이라는 방향성이 보인다",
+      "finalPrompt": "[scene 2 — cashflow_leak] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip clean for overlay cards. Scene subject: A dark wooden table. An open leather wallet tilts slightly, and a few banknotes slide out of it in one clear direction — like water quietly leaking from a container — drifting toward a loose pile of crumpled receipts at the frame edge. The movement direction reads clearly: money is leaving, not arriving. One warm amber light accent traces the flow path; the rest of the scene stays calm and dim. Currency details and any printed text remain soft-focus and illegible. Do NOT render any readable text, numbers, watermark or logo; no exploding-money cliché; no gambling mood; no distorted hands; no stock-photo feel."
+    },
+    {
+      "order": 3,
+      "sceneRole": "fixed_cost_stack",
+      "visualMetaphor": "쌓인 종이의 무게 = 고정비",
+      "objectDensity": 4,
+      "mustShow": ["credit card resting on a stack of receipts", "monthly rent envelope", "calculator", "small abstract subscription-tile shapes on a dimmed screen (illegible)"],
+      "mustAvoid": ["readable app logos or brand marks", "chart walls", "office meeting look"],
+      "subjectDeliveryCheck": "고정 지출 항목들이 쌓여 있음이 보인다",
+      "finalPrompt": "[scene 3 — fixed_cost_stack] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip clean for overlay cards. Scene subject: A home desk at night. A single credit card rests on top of a thick stack of paper receipts; beside it a plain monthly-rent envelope, a small calculator, and in the soft-focus background a dimmed tablet screen showing only abstract rounded subscription-tile shapes — all completely illegible. The stack reads as weight: recurring costs piling up quietly. Warm desk lamp, amber accent on the credit card edge, strong paper and leather textures, shallow depth of field. Do NOT render any readable text, numbers, app logos, brand marks, watermark; no chart walls; no distorted hands; no stock-photo feel."
+    },
+    {
+      "order": 4,
+      "sceneRole": "day3_empty_wallet",
+      "visualMetaphor": "달력의 3칸 = 3일, 빈 지갑 = 결과",
+      "objectDensity": 3,
+      "mustShow": ["wall or desk calendar page with exactly three day-cells highlighted by an amber marker (numerals soft-focus, illegible)", "an open, visibly empty wallet below it", "a few scattered coins"],
+      "mustAvoid": ["legible calendar numbers or month names", "dramatic despair pose", "dark horror lighting"],
+      "subjectDeliveryCheck": "며칠 만에 지갑이 비었다는 시간 경과가 느껴진다",
+      "finalPrompt": "[scene 4 — day3_empty_wallet] Premium editorial financial-life explainer still, cinematic, photographic realism (not 3D, not illustration, not animation), high detail, sharp focus, vertical 9:16 frame. Calm warm-neutral editorial color grade with a single amber/warm-yellow accent. Grounded, believable Korean household setting — not a glossy advertisement, not a posed stock photo. Face-minimized: focus on hands, objects, documents and space. Keep the lower third and the top strip clean for overlay cards. Scene subject: A quiet desk corner. A paper desk calendar page stands slightly out of focus — its numerals illegible — with exactly three day-cells swiped by a warm amber highlighter, reading as 'three days passed'. Directly below, an open wallet lies visibly empty, its card slots slack, with only a few small coins scattered beside it. The contrast between the marked three days and the empty wallet tells the story without any words. Soft daylight, warm-neutral grade, textures of paper and worn leather. Do NOT render any readable numbers, letters, month names, watermark; no despair melodrama; no horror lighting; no distorted hands; no stock-photo feel."
+    }
+  ],
+  "boundary": { "dataOnly": true, "noGeneration": true, "usedBy": "scripts/run-golden-sample-image-source-test-v1.mjs" }
+}

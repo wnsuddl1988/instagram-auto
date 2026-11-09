@@ -1,0 +1,75 @@
+{
+  "id": "chrysler-bailout-1979",
+  "title": "크라이슬러 구제금융",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "정부 보증액 12/15억 달러 엇갈림, 아이아코카 대사 지어내기 금지",
+  "conditionResolved": true,
+  "finding": "엇갈림은 한도와 실사용액의 차이로 풀렸다: 1979년 법이 정한 보증 한도는 15억 달러, 실제로 쓴 금액은 12억 달러(의회조사국 보고서·Reason 모두 일치). 1979년 손실 11억 달러, 정부가 받은 주식인수권을 크라이슬러가 3억 1,100만 달러에 되사 정부는 손실 없이 끝난 점까지 두 곳 이상에서 확인된다. 결정적 장면(정부 보증 요청과 의회 통과)과 숫자 사실 4개 이상이 모두 2출처로 채워져 usable. 다만 아이아코카 개인 대사는 출처 확인분만 쓰고 지어내지 않는다.",
+  "coreMessage": "망하기엔 너무 큰 회사도 공짜로 살려주지 않는다 — 정부 보증은 비용 절감과 양보를 조건으로 섰고, 회사가 약속을 지켜 빚을 일찍 갚았기에 끝까지 신뢰가 남았다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1979년 크라이슬러는 파산을 피하려 정부에 15억 달러 규모의 대출 보증을 요청했고, 의회가 그해 12월 보증 한도를 15억 달러로 정한 법을 통과시켰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "보증 '한도'가 15억 달러이고 실제 사용은 12억 달러(f2). 법 통과는 1979년 12월, 카터 대통령 서명은 Reed Brothers 기준 12월 20일 의회 비준 뒤.",
+      "sources": [
+        { "name": "미 의회조사국 CRS R40005", "url": "https://www.everycrsreport.com/reports/R40005.html", "quote": "exceed $1.5 billion in aggregate" },
+        { "name": "Reed Brothers Dodge History(2020)", "url": "https://reedbrothersdodgehistory.com/2020/09/07/september-7-1979-the-first-chrysler-bailout/", "quote": "for $1.5 billion in loan guarantees" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "한도 15억 달러 가운데 크라이슬러가 실제로 쓴 보증 대출은 12억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "미 의회조사국 CRS R40005", "url": "https://www.everycrsreport.com/reports/R40005.html", "quote": "used $1.2 billion of the $1.5 billion" },
+        { "name": "Reason(1985)", "url": "https://reason.com/1985/12/01/lose-a-billion-get-a-check/", "quote": "only $1.2 billion was actually tapped" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "크라이슬러의 1979년 한 해 손실은 약 11억 달러(정확히 11억 2,600만 달러)로 미국 기업 사상 최대급이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'최대 기록' 표현은 Reason의 'all-time major-league record' 서술이라 단정 대신 '당시 미국 기업 최대급'으로 쓰기. 정확한 값은 CRS의 11억 2,600만 달러.",
+      "sources": [
+        { "name": "미 의회조사국 CRS R40005", "url": "https://www.everycrsreport.com/reports/R40005.html", "quote": "loss for the year was $1.126 billion" },
+        { "name": "Reason(1985)", "url": "https://reason.com/1985/12/01/lose-a-billion-get-a-check/", "quote": "$1.1 billion in 1979" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "크라이슬러는 보증 대출을 만기보다 7년 앞서 모두 갚았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "상환 완료 시점이 자료마다 다르다(CRS는 1982년 중 상환 기록, 1983년 기사들은 1983년 8월 잔액 8억 달러 상환 발표). 연도는 대본에 쓰지 않고 '7년 일찍'만 쓰기.",
+      "sources": [
+        { "name": "Reed Brothers Dodge History(2020)", "url": "https://reedbrothersdodgehistory.com/2020/09/07/september-7-1979-the-first-chrysler-bailout/", "quote": "pay off its loans a full seven years" },
+        { "name": "Ate Up With Motor(Chrysler Bailout Part 2)", "url": "https://ateupwithmotor.com/editorials-commentary/chrysler-bailout-part-2/", "quote": "seven years ahead of schedule" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "정부가 보증 대가로 받은 주식인수권(1,440만 주)을 1983년 크라이슬러가 3억 1,100만 달러에 되사, 정부는 보증으로 손실 없이 이익을 남겼다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "CRS는 이를 정부의 '이익'으로 해석 가능하다고 서술. Reason은 '3억 달러 넘게'로 표기.",
+      "sources": [
+        { "name": "미 의회조사국 CRS R40005", "url": "https://www.everycrsreport.com/reports/R40005.html", "quote": "Chrysler purchased them for $311 million" },
+        { "name": "Christian Science Monitor(1983-09-14)", "url": "https://www.csmonitor.com/layout/set/amphtml/1983/0914/091423.html", "quote": "pay the Treasury Department $311 million" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외(미국) 1979~83년 종결 사건. 한국 기업·정치 쟁점 아님. 회사는 이후 합병 등으로 이어져 현재도 존속하나 사건 자체는 종결."
+  },
+  "remaining": "'20억 달러 양보' 같은 조건 금액은 이번 조사에서 출처로 확인하지 못했고(다른 글에는 6억 달러 노조·납품업체 양보) 대본에서는 '비용 절감과 양보가 조건'으로만 쓰기. 아이아코카 대사·내면 묘사 금지.",
+  "toolCallsUsed": 14
+}

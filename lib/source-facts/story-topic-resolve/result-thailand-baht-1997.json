@@ -1,0 +1,71 @@
+{
+  "id": "thailand-baht-1997",
+  "title": "태국 바트 붕괴 — 한국 외환위기의 방아쇠",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "투기세력 서사로 기울면 투자담이 됨. 주의",
+  "conditionResolved": true,
+  "finding": "투기세력이 아니라 '중앙은행의 결단'을 장면으로 잡으면 투자담을 피할 수 있다. 1997년 7월 2일 태국이 13년간 지켜온 달러 페그를 포기했고, 그 전에 중앙은행이 공개하지 않은 선물환 인도 의무가 234억 달러였다는 사실이 서로 다른 사이트 2곳에서 확인된다. 바트는 절반 이상 폭락했고 그 여파가 한국까지 번져 원/달러가 800원 안팎에서 1,700원 이상으로 뛰었다는 경제 숫자도 2곳씩 확인된다.",
+  "coreMessage": "달러가 바닥난 채 환율을 억지로 붙들면 약점이 숨겨질 뿐, 결국 한꺼번에 터지고 옆 나라까지 흔든다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1997년 7월 2일 태국 정부는 13년간 유지해 온 달러 페그제를 포기했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "표현은 '페그 포기·변동환율제(관리변동) 전환'으로 통일. IMF는 'managed float'로 표기.",
+      "sources": [
+        { "name": "NBER Currency and Financial Crises: The Case of Thailand", "url": "https://www2.nber.org/crisis/thai_report.html", "quote": "abandon the 13 year old dollar peg" },
+        { "name": "샌프란시스코 연준(FRBSF)", "url": "https://www.frbsf.org/?p=19355", "quote": "abandoned the peg on July 2, 1997" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "태국 중앙은행은 공개한 외환보유액과 별도로 선물환 시장에서 234억 달러를 인도할 의무를 지고 있었고, 이를 공개하지 않았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "외환보유액 수치가 출처마다 다름(FRBSF: 1996년 12월 372억 달러→1997년 6월 309억 달러, NBER: 6월 26일 발표 333억 달러). 보유액 수치는 대본에 쓰지 말 것.",
+      "sources": [
+        { "name": "NBER Currency and Financial Crises: The Case of Thailand", "url": "https://www2.nber.org/crisis/thai_report.html", "quote": "which amounted to US$23.4 billion" },
+        { "name": "샌프란시스코 연준(FRBSF)", "url": "https://www.frbsf.org/?p=19355", "quote": "obligations to deliver $23.4 billion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "변동환율제 전환 후 바트는 가치의 절반 이상(약 55%)을 잃었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "FRBSF는 10월 24일까지 60% 하락, NBER는 6개월간 약 55% 하락, 위키는 1998년 7월까지 40.2%(기준 상이). '절반 안팎'으로만 쓸 것.",
+      "sources": [
+        { "name": "NBER Currency and Financial Crises: The Case of Thailand", "url": "https://www2.nber.org/crisis/thai_report.html", "quote": "lost around 55 percent of its value" },
+        { "name": "Wikipedia 1997 Asian financial crisis", "url": "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis", "quote": "lost more than half of its value" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "위기가 번지며 한국의 원/달러 환율은 800원 안팎에서 1,700원 넘게 올랐고, 1997년 12월 23일에는 1,962원에 마감하며 역대 최고치를 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키는 '1,700 이상', 한국언론은 종가 1,962원(장중 고점은 더 높을 수 있음). '800원대→1,900원대 후반'으로 쓰려면 1,962원 단일 출처만 사용.",
+      "sources": [
+        { "name": "Wikipedia 1997 Asian financial crisis", "url": "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis", "quote": "more than 1,700 per U.S. dollar" },
+        { "name": "한국기자협회 기자협회보 기사", "url": "https://www.journalist.or.kr/ezview/article_main.html?no=50931", "quote": "1962원에 마감하며 역대 최고치를 기록했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "바트 폭락의 여파는 말레이시아·인도네시아·필리핀·싱가포르를 거쳐 한국까지 번졌다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "서울신문은 싱가포르까지 나열하나 다른 자료는 일본·한국으로 적음. 전염 경로 설명은 단순화.",
+      "sources": [
+        { "name": "서울신문(2002.6.22)", "url": "https://www.seoul.co.kr/news/2002/06/22/20020622012007", "quote": "싱가포르를 거쳐 한국을 강타했다" },
+        { "name": "Wikipedia 1997 Asian financial crisis", "url": "https://en.wikipedia.org/wiki/1997_Asian_financial_crisis", "quote": "South Korea saw slumping currencies" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "종결된 옛 해외 사건. 한국 대목은 환율 숫자까지만 쓰고 정권·재벌 책임 논쟁은 제외. 헤지펀드·투기세력 서사로 쓰지 말 것(소로스 등 인물 단정은 이번 조사에서 확인하지 않음)." },
+  "remaining": "한국 외환위기·IMF 구제금융(이미 별도 소재 imf-bailout-1997)과 앵글 겹침 주의: 이 편은 태국 중앙은행의 결단까지만. 서울신문 문장의 '싱가포르 포함'은 다른 자료와 다름.",
+  "toolCallsUsed": 14
+}

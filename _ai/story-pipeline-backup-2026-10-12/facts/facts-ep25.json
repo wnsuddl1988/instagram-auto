@@ -1,0 +1,40 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "애니팡은 지하철과 버스에서 '팡팡' 소리가 들릴 만큼 국민 게임이 됐지만 만든 선데이토즈라는 이름은 덜 알려져 있었다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "주간경향(2012.10.23)", "url": "https://weekly.khan.co.kr/article/201210231153281", "quote": "지하철, 버스 등 사람이 모이는 곳에서는 팡팡 하는 소리를 쉽게 들을 수 있다" },
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "국민게임으로 떠오르며" }
+      ] },
+    { "id": "f2", "claim": "선데이토즈는 PC 소셜게임 아쿠아 스토리로 성과를 냈고 모바일은 처음 도전한 분야였다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "모바일게임 분야로 넘어오며 첫 번째 파트너로 바로 카카오톡을 선택하게 된 것이다" },
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/748674", "quote": "선데이토즈가 처음 도전한 분야는 모바일게임이 아닌 PC 기반 소셜게임이다" }
+      ] },
+    { "id": "f3", "claim": "대표는 모바일 시대에 전화번호부 기반의 카카오톡이 눈에 들어와 전화번호를 이용한 소셜 플랫폼이라 성공할 자신이 있었다고 밝혔다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "눈에 들어온 것이 바로 전화번호부를 기반으로 한 카카오톡이라는 메신저였다" },
+        { "name": "주간경향(2012.10.23)", "url": "https://weekly.khan.co.kr/article/201210231153281", "quote": "카카오톡이 전화번호를 이용한 소셜 플랫폼이었기 때문에 성공할 자신이 있었다" }
+      ] },
+    { "id": "f4", "claim": "애니팡은 2012년 7월 30일 카카오톡 게임하기와 함께 출시됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "7월 30일 카카오톡 게임하기와 동시에 런칭된" },
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/687625", "quote": "카카오톡 '게임하기' 서비스 오픈과 함께 공개된 소셜 퍼즐 게임이다" }
+      ] },
+    { "id": "f5", "claim": "게임을 하려면 하트가 필요했고 하트는 카카오톡 친구끼리 주고받을 수 있었다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "게임메카(2012.11)", "url": "https://www.gamemeca.com/view.php?gid=103850", "quote": "플레이 하는데 필요한 아이템으로, 카카오톡에 등록된 지인끼리 나눌 수 있다" },
+        { "name": "주간경향(2012.10.23)", "url": "https://weekly.khan.co.kr/article/201210231153281", "quote": "하트라는 매개체를 서로 주고 받으면서" }
+      ] },
+    { "id": "f6", "claim": "애니팡 설치는 한 달 남짓 만에 1천만을 넘었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "한 달만에 다운로드 횟수 1000만 기록을 세웠으며" },
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/687625", "quote": "출시 1달여만에 1천만 설치 이용자" }
+      ] },
+    { "id": "f7", "claim": "애니팡 설치는 두 달 남짓 만에 2천만을 넘었다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "주간경향(2012.10.23)", "url": "https://weekly.khan.co.kr/article/201210231153281", "quote": "게임 출시 2개월 만에 누적 다운로드 이용자가 2000만명을 넘어서는 기록을 세우기도 했다" },
+        { "name": "게임메카(2012.11.10)", "url": "https://www.gamemeca.com/view.php?gid=214938", "quote": "2달 후에는 그 수치가 2000만에 달한다" }
+      ] }
+  ]
+}
+

@@ -1,0 +1,82 @@
+{
+  "id": "kfc-uk-chicken-2018",
+  "title": "KFC 영국 치킨 대란",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "번역 지점이 공급망 하나로 쏠림, PR 이야기로 기울 위험. 물류사 탓 단정 금지",
+  "conditionResolved": true,
+  "finding": "KFC 영국이 2018년 2월 치킨 유통을 Bidvest에서 DHL로 바꾸자 약 900개 매장 중 대부분이 며칠간 문을 닫았고(Fortune 기준 한때 562곳 휴업), 3월 Bidvest가 북부 최대 350개 매장 공급을 다시 맡았으며 2018년 영국 동일매장 매출은 -6.8%였다. 번역 지점은 '물류를 한 번에 갈아탄 결정 → 매출·매장 가동 숫자'로 숫자 4개 이상을 출처 2곳으로 확인했다. 비용 절감 동기는 노조(GMB) 주장뿐이라 쓰지 않고, 책임 소재(KFC는 DHL의 '초기 문제'라 설명, DHL은 '운영상 문제' 인정)도 단정하지 않는 조건으로 쓸 수 있다. 다만 한국 시청자 인지도는 낮은 편.",
+  "coreMessage": "새 길이 검증되기 전에 옛 길을 닫으면, 장사는 가게 문부터 닫는다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "KFC 영국은 약 900개 매장이 있었고, 물류 전환 직후 대부분이 며칠간 문을 닫았다(한때 562곳 휴업).",
+      "numeric": true,
+      "economy": false,
+      "caution": "휴업 매장 수가 시점마다 다름(562곳, 600곳 이상, 700곳 이상 보도). '대부분'으로 쓰거나 시점을 밝힐 것.",
+      "sources": [
+        { "name": "The Grocer(2018)", "url": "https://thegrocer.co.uk/news/kfc-returns-to-bidvest-after-chicken-supply-crisis-/564293.article", "quote": "most of its 900 restaurants had to close" },
+        { "name": "Fortune(2018)", "url": "https://www.fortune.com/2018/02/19/kfc-closed-chicken-shortage", "quote": "562 KFC restaurants in the U.K." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2018년 2월 KFC 영국은 닭 유통업체를 Bidvest에서 DHL로 바꿨고, 새 공급사의 문제로 닭 배송이 끊겼다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "책임 단정 금지: KFC는 DHL의 초기 문제라 했고 DHL은 '운영상 문제로 배송이 불완전·지연'이라고 인정. 전환 결정과 결과만 서술할 것.",
+      "sources": [
+        { "name": "Fortune(2018)", "url": "https://fortune.com/2018/02/23/kfc-chicken-shortage-apology", "quote": "KFC switched suppliers to DHL" },
+        { "name": "Marketing Week(2018)", "url": "https://www.marketingweek.com/kfc-print-advert-to-apologise-for-chicken-shortage/", "quote": "problems at its new chicken supplier DHL" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "위기 수습 뒤 KFC 영국은 900개 매장 중 97% 이상이 다시 영업 중이라고 밝혔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "상당수는 한동안 축소 메뉴로 운영.",
+      "sources": [
+        { "name": "The Grocer(2018)", "url": "https://thegrocer.co.uk/news/kfc-returns-to-bidvest-after-chicken-supply-crisis-/564293.article", "quote": "over 97% of our 900 restaurants" },
+        { "name": "Verdict Foodservice(2018)", "url": "https://www.verdictfoodservice.com/news/kfc-reinstates-bidvest-supplier-following-chicken-shortage", "quote": "over 97% of our 900 restaurants" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "KFC 영국은 북부 최대 350개 매장의 공급을 다시 원래 업체 Bidvest에 맡겼다(3월 26일부터).",
+      "numeric": true,
+      "economy": false,
+      "caution": "3월 26일 날짜는 The Grocer 기준, Verdict는 날짜 없음.",
+      "sources": [
+        { "name": "The Grocer(2018)", "url": "https://thegrocer.co.uk/news/kfc-returns-to-bidvest-after-chicken-supply-crisis-/564293.article", "quote": "up to 350 of KFC's restaurants" },
+        { "name": "Verdict Foodservice(2018)", "url": "https://www.verdictfoodservice.com/news/kfc-reinstates-bidvest-supplier-following-chicken-shortage", "quote": "for up to 350 restaurants in the UK" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "물류 위기 여파로 KFC 영국의 2018년 동일매장 매출은 6.8% 감소했다(2017년은 3.8% 성장).",
+      "numeric": true,
+      "economy": true,
+      "caution": "The Caterer 문장은 문구가 어색('6.8% all in sales'), 두 출처의 지표 정의(동일매장/전체)가 조금 다름. 같은 해 91개 매장 재프랜차이즈로 매출액은 급감했으므로 매출액 숫자는 쓰지 말 것.",
+      "sources": [
+        { "name": "Restaurant Online(2019)", "url": "https://www.restaurantonline.co.uk/Article/2019/10/07/KFC-sees-profits-drop-following-distribution-crisis", "quote": "same store sales decline of 6.8%" },
+        { "name": "The Caterer(2019)", "url": "https://thecaterer.com/all-content/kfc-reveals-how-distribution-crisis-hit-sales", "quote": "led to a 6.8% all in sales" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "2018년 2월 23일 KFC는 빈 양동이 글자를 'FCK'로 바꿔 사과하는 전면 광고를 영국 신문에 냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "게재 지면이 출처마다 다름(Metro·Sun / Evening Standard). 지면은 쓰지 말 것. PR 이야기로 기울지 않게 결말 1문장으로만.",
+      "sources": [
+        { "name": "Marketing Week(2018)", "url": "https://www.marketingweek.com/kfc-print-advert-to-apologise-for-chicken-shortage/", "quote": "letters switched round to spell" },
+        { "name": "Fortune(2018)", "url": "https://fortune.com/2018/02/23/kfc-chicken-shortage-apology", "quote": "reordering of the brand name's lettering" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업, 7년 전 종결된 사건. 노조의 '비용 절감용 전환' 주장은 단독 주장이라 사용 금지." },
+  "remaining": "한국 시청자 인지도가 낮고 비용 절감 동기는 확인 불가(GMB 노조 주장뿐). 전달 메시지를 비용 절감으로 쓰지 말 것. 6.8% 정의 차이는 대본에서 '동일매장 매출'로 통일.",
+  "toolCallsUsed": 19
+}

@@ -1,0 +1,47 @@
+{
+  "id": "debeers-diamonds-1947",
+  "title": "디 비어스 '다이아는 영원히'",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "과거 반독점 이력은 사실만, 비난조 금지. 보급률 수치 엇갈림",
+  "conditionResolved": false,
+  "finding": "N.W. 에이어 광고사 카피라이터 프랜시스 게레티가 '다이아는 영원히'를 쓴 장면과, 1938~41년 미국 다이아 판매 55% 증가, 전쟁 전 약 10%이던 다이아 약혼반지가 이후 80% 안팎으로 늘었다는 흐름이 확인된다. 하지만 보급률은 출처마다 시점이 달라(광고 3년 뒤 80% vs 1990년 80% 이상) 한 숫자로 못 박기 어렵고, 가장 강한 근거인 에드워드 제이 엡스타인의 애틀랜틱 기사(1982)는 접근이 막혀 '1939년 2,300만 달러 → 1979년 21억 달러' 같은 핵심 수치를 신뢰할 만한 두 번째 출처로 확인하지 못했다. 슬로건 연도도 1947(드럼·라디오웍스)과 1948(내셔널지오그래픽)로 갈린다. 2출처로 맞는 숫자 사실이 4개에 못 미쳐 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "1938년부터 1941년 사이 미국 다이아몬드 판매는 55% 늘었다(에이어 광고사의 자체 보고).", "numeric": true, "economy": true,
+      "caution": "광고사가 1941년에 De Beers에 보고한 자체 주장이라 독립 검증된 통계는 아님.",
+      "sources": [
+        { "name": "Daily Maverick(2021)", "url": "https://www.dailymaverick.co.za/article/2021-09-20-the-history-of-the-diamond-engagement-ring/", "quote": "US diamond sales had increased 55% since 1938" },
+        { "name": "Diamond Rocks Magazine", "url": "https://www.diamondrocks.co.uk/magazine/diamond-revival-1930s/", "quote": "Between 1938 and 1941, US diamond sales increased 55%." }
+      ]
+    },
+    {
+      "id": "f2", "claim": "미국에서 다이아 약혼반지 비율은 2차 대전 전 약 10%였고 이후 80% 안팎까지 올랐다.", "numeric": true, "economy": true,
+      "caution": "시점이 출처마다 다름: Diamond Rocks는 '1990년까지 80% 이상', American RadioWorks는 '슬로건 3년 안에 80%(추정)'. 10%도 한 곳(Diamond Rocks)만 원문 확인.",
+      "sources": [
+        { "name": "Diamond Rocks Magazine", "url": "https://www.diamondrocks.co.uk/magazine/diamond-revival-1930s/", "quote": "That figure had risen to more than 80% by 1990." },
+        { "name": "American RadioWorks(미국 공영라디오)", "url": "https://americanradioworks.publicradio.org/features/diamonds/mystique2.html", "quote": "an estimated 80 percent of wedding engagements in America were consecrated with diamond rings" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "'A Diamond Is Forever'는 N.W. 에이어의 카피라이터 프랜시스 게레티가 1947년에 썼고, 1948년부터 모든 De Beers 약혼 광고에 쓰였다.", "numeric": true, "economy": false,
+      "caution": "내셔널지오그래픽은 슬로건 탄생을 1948년으로 적음(1947 작성·1948 광고 시작이 다수설).",
+      "sources": [
+        { "name": "The Drum", "url": "https://www.thedrum.com/news/1948-de-beers-diamond-forever-campaign-invents-the-modern-day-engagement-ring", "quote": "was written by copywriter Frances Gerety at Philadelphia agency NW Ayer in 1947." },
+        { "name": "American RadioWorks(미국 공영라디오)", "url": "https://americanradioworks.publicradio.org/features/diamonds/mystique2.html", "quote": "In 1947, a maiden lady copywriter at N.W. Ayer, Frances Gerety, created the most durable" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "De Beers의 미국 다이아 도매 판매액은 1939년 2,300만 달러에서 1979년 21억 달러로 늘었다.", "numeric": true, "economy": true,
+      "caution": "Daily Maverick(엡스타인 인용) 한 곳만 원문 확인. 다른 곳(러시아어 기사·북메이트)은 2차 인용이라 제외. 애틀랜틱 원문은 접근 불가.",
+      "sources": [
+        { "name": "Daily Maverick(2021)", "url": "https://www.dailymaverick.co.za/article/2021-09-20-the-history-of-the-diamond-engagement-ring/", "quote": "from a mere $23-million in 1939, to $2.1-billion at the wholesale level in 1979" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업. 과거 반독점 이력은 사실 서술만 하면 되고 국내 소송·정치 쟁점 없음." },
+  "remaining": "(1) 2출처로 맞는 숫자 사실이 f1~f3(f3은 연도)뿐이고 핵심 수치 f4가 단일 출처. (2) 보급률 시점 불일치. (3) 슬로건 연도 1947/1948 불일치. 쓰려면 애틀랜틱 1982 기사 원문 또는 학술 자료에서 2,300만→21억 달러와 3/4이 약혼반지용이었다는 수치를 독립 출처로 확인해야 함.",
+  "toolCallsUsed": 16
+}

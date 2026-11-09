@@ -1,0 +1,55 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "SPC삼립은 2022년 2월 말 포켓몬빵을 다시 내놨다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "SPC삼립이 지난 2월 말 출시한 '돌아온 포켓몬빵'은" },
+        { "name": "비즈워치(2022.4.8)", "url": "https://news.bizwatch.co.kr/article/consumer/2022/04/08/0008", "quote": "포켓몬빵을 지난 2월 말 다시 내놨고" }
+      ] },
+    { "id": "f2", "claim": "재출시 40여 일(40~43일) 만에 약 1,000만 개가 팔렸다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "1000만개 팔린 ‘포켓몬빵’ 사려고 노숙" },
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "포켓몬빵은 재출시 40일 만에 약 1000만개가 팔린 것으로 확인됐다" },
+        { "name": "비즈워치(2022.4.8)", "url": "https://news.bizwatch.co.kr/article/consumer/2022/04/08/0008", "quote": "출시 43일만에 1000만봉이 팔려나갔다" }
+      ] },
+    { "id": "f3", "claim": "대형마트는 1인당 구매 물량을 제한했고, 매장에 따라 1인 1묶음만 판매했다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "대형마트는 1인당 구매 물량을 제한하고 있다" },
+        { "name": "아주경제(2022.4.11)", "url": "https://www.ajunews.com/view/20220411150958674", "quote": "1인 1묶음만 구매할 수 있고" }
+      ] },
+    { "id": "f4", "claim": "사람들이 새벽부터 줄을 서거나 전날부터 텐트를 치고 노숙하며 기다렸다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "아주경제(2022.4.11)", "url": "https://www.ajunews.com/view/20220411150958674", "quote": "새벽 4시부터 도착해 대기했다" },
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "전날부터 텐트치고 노숙" }
+      ] },
+    { "id": "f5", "claim": "편의점에서는 조기 품절이 잇따르며 품절 대란이 이어졌다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "더팩트(2022.3.23)", "url": "https://news.tf.co.kr/read/ogmeta/1926257.htm", "quote": "적은 수량으로 조기 품절이 잇따르면서" },
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/1457560", "quote": "품절대란'은 당분간 이어질 전망이다" }
+      ] },
+    { "id": "f6", "claim": "빵 속 띠부씰만 따로 사고파는 사람이 생겼고 씰 없는 빵이 따로 판매됐다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "빵 속 스티커만 사고파는 이들도 보인다" },
+        { "name": "이투데이", "url": "https://www.etoday.co.kr/news/view/2114841", "quote": "스티커도 뺀 포켓몬 빵을 정가에" }
+      ] },
+    { "id": "f7", "claim": "SPC삼립은 생산설비를 24시간 가동하는데도 공급이 어렵다며 사과문을 올렸다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "더팩트(2022.3.23)", "url": "https://news.tf.co.kr/read/ogmeta/1926257.htm", "quote": "생산설비를 24시간 내내 가동하고 있음에도" },
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "포켓몬빵을 사고 싶어도 못 산다는 불만이 이어지자 SPC삼립" }
+      ] },
+    { "id": "f8", "claim": "보도들은 인기 요인으로 학창 시절을 함께한 30대의 향수를 꼽았다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "서울신문(2022.4.5)", "url": "https://m.seoul.co.kr/news/life/2022/04/05/20220405500187", "quote": "현재 30대의 향수를 자극한 게 인기 요인으로 분석된다" },
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/1457560", "quote": "3040세대는 포켓몬빵과 학창시절을 함께 한 만큼 제품 재출시에 가장 열광했다" }
+      ] },
+    { "id": "f10", "claim": "회사는 '그때 그 추억 소환'을 내세워 포켓몬빵을 다시 선보였다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "파이낸셜뉴스(2022.2.23)", "url": "https://www.fnnews.com/news/202202230911072628", "quote": "‘그때 그 추억 소환’을 콘셉트로" },
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "2030 세대의 추억을 소환해 큰 인기를 얻고 있는" }
+      ] },
+    { "id": "f11", "claim": "편의점 앞에서도 오픈런이 벌어졌고 영업시간 전부터 줄을 섰다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "비즈워치(2022.4.8)", "url": "https://news.bizwatch.co.kr/article/consumer/2022/04/08/0008", "quote": "최근 오픈런 현상을 빚고 있는 포켓몬빵" },
+        { "name": "뉴시스(2022.4.6)", "url": "https://mobile.newsis.com/view/NISX20220406_0001822771", "quote": "영업시간 전부터 포켓몬 빵을 구매하기 위해 줄을 서고 있다" }
+      ] }
+  ]
+}

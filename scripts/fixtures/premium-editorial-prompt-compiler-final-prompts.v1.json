@@ -1,0 +1,432 @@
+{
+  "schemaVersion": "money_shorts_prompt_compiler_final_prompts_v1",
+  "status": "deterministic_final_prompt_text_only",
+  "title": "Money Shorts OS — Prompt Compiler Final Prompts v1",
+  "purpose": "compiled visual plan을 소비해 6 scene용 deterministic finalPrompt(텍스트 prompt)를 생성한 결과. 이미지 생성 요청 아님. ChatGPT/Playwright/OpenAI 실행 아님. 정확 수치/날짜/출처는 deterministic overlay가 소유한다.",
+  "sourceRefs": {
+    "ruleContract": {
+      "path": "scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json",
+      "schemaVersion": "money_shorts_visual_system_rule_contract_v1",
+      "visualProfileId": "premium_editorial_life_economy_realism_v2"
+    },
+    "compiledVisualPlan": {
+      "path": "scripts/fixtures/premium-editorial-prompt-compiler-compiled-visual-plan.v1.json",
+      "schemaVersion": "money_shorts_prompt_compiler_compiled_visual_plan_v1"
+    },
+    "boundaryDoc": "_ai/MONEY_SHORTS_OS_PROMPT_COMPILER_V1_BOUNDARY.md"
+  },
+  "generationBoundaries": {
+    "finalPromptText": true,
+    "image": false,
+    "network": false,
+    "openaiRequestBody": false,
+    "note": "이 payload는 finalPrompt 텍스트만 생성한다. 이미지 생성/네트워크/OpenAI request body는 생성하지 않는다."
+  },
+  "scenes": [
+    {
+      "sceneId": "scene_1",
+      "order": 1,
+      "sceneRole": "scene_1_hook",
+      "selectedVisualCategory": "banking_notification_moment",
+      "selectedObjectFamilies": [
+        "banking_objects"
+      ],
+      "spaceType": "indoor_personal",
+      "cameraDistance": "close_up",
+      "finalPrompt": "[scene_1 — scene_1_hook] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Hook intent: instantly make the viewer feel an economic signal touching their own daily life, giving a reason to stop and watch. 시청 유발 — 경제 신호가 '내 생활'에 닿는 순간을 즉시 체감시키는 후킹. Visual category \"banking_notification_moment\": 은행/금융앱 알림이 도착하는 순간. Use objects from the \"banking_objects\" visual family (e.g. bankbook, app screen, loan alert; varied within the family, not a fixed single prop) as the object focus. Set the scene in an intimate personal indoor space, with close-up framing on hands and the key object. Graphic layer for this scene: a subtle supporting financial graphic accent only (no large numbers). Avoid: forbidden object: full_face_closeup; forbidden object: luxury_items; forbidden object: cash_pile; forbidden object: panic_imagery; forbidden composition: fullscreen_data_card; forbidden composition: news_briefing_dominance; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Hook intent: instantly make the viewer feel an economic signal touching their own daily life, giving a reason to stop and watch. 시청 유발 — 경제 신호가 '내 생활'에 닿는 순간을 즉시 체감시키는 후킹. Visual category \"banking_notification_moment\": 은행/금융앱 알림이 도착하는 순간. Use objects from the \"banking_objects\" visual family (e.g. bankbook, app screen, loan alert; varied within the family, not a fixed single prop) as the object focus. Set the scene in an intimate personal indoor space, with close-up framing on hands and the key object. Graphic layer for this scene: a subtle supporting financial graphic accent only (no large numbers).",
+      "negativePromptRules": [
+        "forbidden object: full_face_closeup",
+        "forbidden object: luxury_items",
+        "forbidden object: cash_pile",
+        "forbidden object: panic_imagery",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: news_briefing_dominance",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": null,
+        "previousVisualCategory": null,
+        "previousObjectFamilies": [],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'indoor_personal'는 직전 scene('none')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [banking_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=not-listed.",
+          "smartphone-centered family 사용 — 누적 1/2 (smartphone_centered_repeat_limit)."
+        ],
+        "differentiateFromPreviousScene": true
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "realistic_not_stock",
+        "not_face_centered",
+        "subtitle_safe_zone",
+        "graphic_layer_not_dominant"
+      ]
+    },
+    {
+      "sceneId": "scene_2",
+      "order": 2,
+      "sceneRole": "scene_2_signal",
+      "selectedVisualCategory": "institutional_data_macro_signal",
+      "selectedObjectFamilies": [
+        "data_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "finalPrompt": "[scene_2 — scene_2_signal] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Signal intent: present where and how the core economic signal is captured, in a trustworthy, calm way. 핵심 신호/수치가 어디서 어떻게 잡히는지 — 신뢰 가능한 신호 제시. Visual category \"institutional_data_macro_signal\": 제도/거시 데이터가 신호로 잡히는 추상적 순간. Use objects from the \"data_objects\" visual family (e.g. dashboard, report sheet, chart chip; varied within the family, not a fixed single prop) as the object focus. Set the scene in a calm indoor desk / work surface, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting graphic layer with neutral numeric placeholder and a source-label chip area (no real values). Avoid: forbidden object: exact_numbers_as_truth; forbidden object: investment_promise; forbidden composition: fullscreen_data_card; forbidden composition: chart_only_scene; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Signal intent: present where and how the core economic signal is captured, in a trustworthy, calm way. 핵심 신호/수치가 어디서 어떻게 잡히는지 — 신뢰 가능한 신호 제시. Visual category \"institutional_data_macro_signal\": 제도/거시 데이터가 신호로 잡히는 추상적 순간. Use objects from the \"data_objects\" visual family (e.g. dashboard, report sheet, chart chip; varied within the family, not a fixed single prop) as the object focus. Set the scene in a calm indoor desk / work surface, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting graphic layer with neutral numeric placeholder and a source-label chip area (no real values).",
+      "negativePromptRules": [
+        "forbidden object: exact_numbers_as_truth",
+        "forbidden object: investment_promise",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: chart_only_scene",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": "indoor_personal",
+        "previousVisualCategory": "banking_notification_moment",
+        "previousObjectFamilies": [
+          "banking_objects"
+        ],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'indoor_desk'는 직전 scene('indoor_personal')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [data_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+        ],
+        "differentiateFromPreviousScene": true
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "source_of_truth_overlay"
+      ]
+    },
+    {
+      "sceneId": "scene_3",
+      "order": 3,
+      "sceneRole": "scene_3_context",
+      "selectedVisualCategory": "household_cost_moment",
+      "selectedObjectFamilies": [
+        "household_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "finalPrompt": "[scene_3 — scene_3_context] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Context intent: show the cause / wider context — why this is happening across prices, economy, and household flow. 원인/맥락 — 이 신호 하나만이 아니라 물가/경제/가계 흐름을 함께 읽어야 하는 이유. Visual category \"household_cost_moment\": 생활비/공과금/주거비가 가계에 닿는 순간. Use objects from the \"household_objects\" visual family (e.g. grocery bag, utility bill, rent notice; varied within the family, not a fixed single prop) as the object focus. Set the scene in a warm indoor living space, with medium shot balancing objects and surrounding space. Graphic layer for this scene: only minimal auxiliary graphic support, real-life scene first. Avoid: forbidden object: news_briefing_set; forbidden object: luxury_items; forbidden composition: fullscreen_data_card; forbidden composition: news_briefing_dominance; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Context intent: show the cause / wider context — why this is happening across prices, economy, and household flow. 원인/맥락 — 이 신호 하나만이 아니라 물가/경제/가계 흐름을 함께 읽어야 하는 이유. Visual category \"household_cost_moment\": 생활비/공과금/주거비가 가계에 닿는 순간. Use objects from the \"household_objects\" visual family (e.g. grocery bag, utility bill, rent notice; varied within the family, not a fixed single prop) as the object focus. Set the scene in a warm indoor living space, with medium shot balancing objects and surrounding space. Graphic layer for this scene: only minimal auxiliary graphic support, real-life scene first.",
+      "negativePromptRules": [
+        "forbidden object: news_briefing_set",
+        "forbidden object: luxury_items",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: news_briefing_dominance",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": "indoor_desk",
+        "previousVisualCategory": "institutional_data_macro_signal",
+        "previousObjectFamilies": [
+          "data_objects"
+        ],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'indoor_living'는 직전 scene('indoor_desk')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [household_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+        ],
+        "differentiateFromPreviousScene": true
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "realistic_not_stock",
+        "subtitle_safe_zone"
+      ]
+    },
+    {
+      "sceneId": "scene_4",
+      "order": 4,
+      "sceneRole": "scene_4_life_impact",
+      "selectedVisualCategory": "city_commute_public_economy",
+      "selectedObjectFamilies": [
+        "city_economy_objects"
+      ],
+      "spaceType": "outdoor_urban",
+      "cameraDistance": "wide",
+      "finalPrompt": "[scene_4 — scene_4_life_impact] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Life-impact intent: show how the same signal reaches a borrower / saver / living cost differently in real life. 생활 영향 — 같은 신호가 대출자/예금자/생활비에 다르게 닿는 접점. Visual category \"city_commute_public_economy\": 출근길/도심 등 공적 경제 공간. Use objects from the \"city_economy_objects\" visual family (e.g. subway, office district, storefront; varied within the family, not a fixed single prop) as the object focus. Set the scene in an outdoor urban / commute setting, with wide shot emphasizing the space and lived-in context. Graphic layer for this scene: only minimal auxiliary graphic support, real-life scene first. Avoid: forbidden object: luxury_items; forbidden object: cash_pile; forbidden composition: fullscreen_data_card; forbidden composition: closeup_face; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Life-impact intent: show how the same signal reaches a borrower / saver / living cost differently in real life. 생활 영향 — 같은 신호가 대출자/예금자/생활비에 다르게 닿는 접점. Visual category \"city_commute_public_economy\": 출근길/도심 등 공적 경제 공간. Use objects from the \"city_economy_objects\" visual family (e.g. subway, office district, storefront; varied within the family, not a fixed single prop) as the object focus. Set the scene in an outdoor urban / commute setting, with wide shot emphasizing the space and lived-in context. Graphic layer for this scene: only minimal auxiliary graphic support, real-life scene first.",
+      "negativePromptRules": [
+        "forbidden object: luxury_items",
+        "forbidden object: cash_pile",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: closeup_face",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": "indoor_living",
+        "previousVisualCategory": "household_cost_moment",
+        "previousObjectFamilies": [
+          "household_objects"
+        ],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'outdoor_urban'는 직전 scene('indoor_living')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [city_economy_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+        ],
+        "differentiateFromPreviousScene": true
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "not_face_centered",
+        "realistic_not_stock"
+      ]
+    },
+    {
+      "sceneId": "scene_5",
+      "order": 5,
+      "sceneRole": "scene_5_watch_point",
+      "selectedVisualCategory": "checklist_decision_moment",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "finalPrompt": "[scene_5 — scene_5_watch_point] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Watch-point intent: a checklist / decision moment showing what to verify next. 관찰/체크 포인트 — 앞으로 무엇을 확인해야 하는지. Visual category \"checklist_decision_moment\": 체크리스트로 판단/점검하는 순간. Use objects from the \"planning_objects\" visual family (e.g. notebook, calendar, checklist; varied within the family, not a fixed single prop) as the object focus. Set the scene in a calm indoor desk / work surface, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting checkpoint-card placeholder area (no real text values). Avoid: forbidden object: panic_imagery; forbidden object: exact_numbers_as_truth; forbidden composition: fullscreen_data_card; forbidden composition: news_briefing_dominance; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Watch-point intent: a checklist / decision moment showing what to verify next. 관찰/체크 포인트 — 앞으로 무엇을 확인해야 하는지. Visual category \"checklist_decision_moment\": 체크리스트로 판단/점검하는 순간. Use objects from the \"planning_objects\" visual family (e.g. notebook, calendar, checklist; varied within the family, not a fixed single prop) as the object focus. Set the scene in a calm indoor desk / work surface, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting checkpoint-card placeholder area (no real text values).",
+      "negativePromptRules": [
+        "forbidden object: panic_imagery",
+        "forbidden object: exact_numbers_as_truth",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: news_briefing_dominance",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": "outdoor_urban",
+        "previousVisualCategory": "city_commute_public_economy",
+        "previousObjectFamilies": [
+          "city_economy_objects"
+        ],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'indoor_desk'는 직전 scene('outdoor_urban')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [planning_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=not-listed."
+        ],
+        "differentiateFromPreviousScene": true
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "smartphone_notebook_coffee_table_repeat",
+        "subtitle_safe_zone"
+      ]
+    },
+    {
+      "sceneId": "scene_6",
+      "order": 6,
+      "sceneRole": "scene_6_action_closing",
+      "selectedVisualCategory": "closing_action_cue",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "finalPrompt": "[scene_6 — scene_6_action_closing] Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes. Action-closing intent: an organized wrap-up of this month's actions with a soft call to action. 액션/마무리 — 이번 달 점검할 행동 정리 + CTA. Visual category \"closing_action_cue\": 마무리 행동을 유도하는 정리 큐. Use objects from the \"planning_objects\" visual family (e.g. notebook, calendar, checklist; varied within the family, not a fixed single prop) as the object focus. Set the scene in a warm indoor living space, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting wrap-up / CTA-card placeholder area (no real text values). Object family planning_objects repeats from the previous scene (within the allowed 2-scene limit). Therefore enforce strong composition separation: the previous scene is a checklist / watch-point visual (\"checklist_decision_moment\", a calm indoor desk / work surface), while THIS scene is a closing / CTA / budget-wrap-up visual (\"closing_action_cue\", a warm indoor living space) with a different graphic layer role (a supporting wrap-up / CTA-card placeholder area (no real text values)). Different space, different category, different graphic-layer plan — the two scenes must NOT look alike, and must NOT converge into the wood-table + hand + smartphone + notebook + coffee combo. Avoid: forbidden object: investment_promise; forbidden object: cash_pile; forbidden object: panic_imagery; forbidden composition: fullscreen_data_card; forbidden composition: luxury_display; no full-screen data card; graphic layer must stay supporting; no face-centered stock-photo look; no wood-table + hand + smartphone + notebook + coffee convergence; no repeated scene look from the previous scene (different space / category / object family / composition); no exact numbers, dates, or source labels rendered as trustworthy text in the image. Note: exact numbers, dates, and source labels are added later by a deterministic overlay stage — do not bake them into this image.",
+      "promptFixedPart": "Premium editorial life-economy realism, photographic look (not 3D, not animation, not illustration). Korean / Asian personal-finance short-form vertical 9:16 visual tone, calm warm-neutral editorial color grade. Everyday Korean household / urban economic life setting, grounded and believable — not a posed stock photo, not a glossy advertisement. Face-minimized: do not center on a person's full face; keep focus on hands, objects, and space (faces only incidental / background / cropped). Subtitle safe-zone: keep the lower portion of the frame clear and uncluttered for burned-in caption text. Fixed financial graphic layer is SUPPORTING ONLY — subtle premium accent, never a full-screen data card, never the dominant element. Deterministic overlay owns exact values: do NOT render any exact numbers, percentages, dates, or official source labels as trustworthy text inside the image. Exact numbers / dates / source labels are added later by a separate deterministic overlay stage; here use only neutral placeholder / chip areas with no real values. Do not converge into the failure combo: avoid the repeated wood-table + hand + smartphone + notebook + coffee composition across scenes.",
+      "promptVariablePart": "Action-closing intent: an organized wrap-up of this month's actions with a soft call to action. 액션/마무리 — 이번 달 점검할 행동 정리 + CTA. Visual category \"closing_action_cue\": 마무리 행동을 유도하는 정리 큐. Use objects from the \"planning_objects\" visual family (e.g. notebook, calendar, checklist; varied within the family, not a fixed single prop) as the object focus. Set the scene in a warm indoor living space, with medium shot balancing objects and surrounding space. Graphic layer for this scene: a supporting wrap-up / CTA-card placeholder area (no real text values).",
+      "negativePromptRules": [
+        "forbidden object: investment_promise",
+        "forbidden object: cash_pile",
+        "forbidden object: panic_imagery",
+        "forbidden composition: fullscreen_data_card",
+        "forbidden composition: luxury_display",
+        "no full-screen data card; graphic layer must stay supporting",
+        "no face-centered stock-photo look",
+        "no wood-table + hand + smartphone + notebook + coffee convergence",
+        "no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicy": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ],
+        "note": "정확한 숫자/날짜/출처/차트 값은 finalPrompt(이미지)에 넣지 않는다. 후속 deterministic overlay 단계가 소유한다. dataPeriod와 lastPolicyDecisionDate는 서로 다른 개념이며 이미지 안에 직접 넣지 않는다.",
+        "sourceOfTruthPolicyRef": "deterministic_overlay"
+      },
+      "repetitionControlApplied": {
+        "previousSpaceType": "indoor_desk",
+        "previousVisualCategory": "checklist_decision_moment",
+        "previousObjectFamilies": [
+          "planning_objects"
+        ],
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": true,
+        "adjacentVisualCategoryRepeat": false,
+        "forbiddenRepetitionNotes": [
+          "spaceType 'indoor_living'는 직전 scene('indoor_desk')과 다름 — same_space_repeat_limit 충족.",
+          "objectFamily [planning_objects]가 직전 scene과 겹침 — 2연속 한도 내 허용 (same_object_family_repeat_limit: max 2연속). 이 scene(closing_action_cue, indoor_living)과 직전 scene의 selectedVisualCategory·spaceType·graphicLayerMode가 다르므로 구도·맥락은 분리됨. 다음 finalPrompt 단계에서 checklist/notebook/pen 구도(직전)와 closing/CTA/budget-wrap-up 구도(현 scene)를 명확히 분리할 것. wood_table/hand/smartphone/note/coffee 수렴 조합으로 연결되면 실패.",
+          "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+        ],
+        "differentiateFromPreviousScene": true,
+        "planningRepeatAllowedWithinLimit": true,
+        "finalPromptCompositionSeparationRequired": true,
+        "compositionSeparationDirective": "Object family planning_objects repeats from the previous scene (within the allowed 2-scene limit). Therefore enforce strong composition separation: the previous scene is a checklist / watch-point visual (\"checklist_decision_moment\", a calm indoor desk / work surface), while THIS scene is a closing / CTA / budget-wrap-up visual (\"closing_action_cue\", a warm indoor living space) with a different graphic layer role (a supporting wrap-up / CTA-card placeholder area (no real text values)). Different space, different category, different graphic-layer plan — the two scenes must NOT look alike, and must NOT converge into the wood-table + hand + smartphone + notebook + coffee combo."
+      },
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "no_uniform_hand_object_pattern",
+        "source_of_truth_overlay",
+        "subtitle_safe_zone"
+      ]
+    }
+  ],
+  "promptCompilerAudit": {
+    "description": "Final prompt compiler가 compiled visual plan을 소비해 6 scene deterministic finalPrompt를 생성한 결과 요약. static guard가 구조/일관성을 대조한다.",
+    "sceneCount": 6,
+    "fixedPartElements": [
+      "premium_editorial_life_economy_realism",
+      "korean_asian_personal_finance_short_form_tone",
+      "no_stock_photo_look",
+      "no_3d_animation",
+      "face_minimized",
+      "subtitle_safe_zone",
+      "supporting_financial_graphic_layer_only",
+      "no_fullscreen_data_card",
+      "deterministic_overlay_owns_exact_values",
+      "no_wood_table_hand_smartphone_note_coffee_convergence"
+    ],
+    "variablePartElements": [
+      "경제 신호",
+      "scene role",
+      "visual category",
+      "object family",
+      "공간/구도 (spaceType / cameraDistance)",
+      "그래픽 레이어 역할"
+    ],
+    "allScenesHaveFinalPrompt": true,
+    "allScenesDistinctFinalPrompt": true,
+    "scenesWithAdjacentFamilyRepeat": [
+      6
+    ],
+    "deterministicOverlayOwnsExactValues": true,
+    "exactValuesInImage": false
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "id": "skhynix-wuxi-fire-2013",
+  "title": "SK하이닉스 우시 공장 화재",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "D램 가격 상승이 분기 평균 5.4%로 제한적, 하이닉스 소재로 주식 이슈로 읽힘",
+  "conditionResolved": false,
+  "finding": "5.4%의 정체는 확인됐다: 3분기 하이닉스 D램 평균판매단가(ASP) 상승률(출하량은 1.8% 감소)이고, 현물가는 화재 직후 36%(TrendForce) 급등했으나 하이닉스 자신은 4분기에 D램 출하량 13% 감소·영업이익 전분기 대비 33% 감소를 겪었다. 숫자 사실은 서로 다른 사이트 2곳으로 충분히 모이지만, 이야기는 '사고 후 복구'이고 주인공의 선택·결단 장면이 없으며(본사 비상근무·복구팀 파견 정도) 지금도 영업 중인 상장사 종목 이슈로 읽힌다. 하이닉스 소재(2002 매각안·인수·HBM)를 Owner가 이미 폐기한 전례가 있어 weak-scene 보류, 쓰려면 Owner 정책 판단 필요.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2013년 9월 4일 SK하이닉스 중국 우시 공장에서 화재가 나 생산이 멈췄다(오후 4시 50분께 발생).",
+      "numeric": true,
+      "economy": false,
+      "caution": "발생 시각이 기사마다 달라(4시 50분/3시 30분) 날짜만 쓰는 것이 안전",
+      "sources": [
+        { "name": "시사저널e(2013)", "url": "https://www.sidae.com/article/2013111414548041463", "quote": "지난 9월4일 SK하이닉스의 중국 우시공장에서 화재가 발생했다." },
+        { "name": "디지털타임스(2013)", "url": "https://www.dt.co.kr/article/10805322", "quote": "4일 오후 4시 50분께 발생한 화재로 SK하이닉스 우시 반도체 공장은 생산을 멈췄다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "우시 공장은 SK하이닉스 D램 전체 생산량의 약 49%를 담당했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "JoongAng Daily는 'half'로 표기. 49%/49.1% 모두 같은 취지",
+      "sources": [
+        { "name": "시사저널e(2013)", "url": "https://www.sidae.com/article/2013111414548041463", "quote": "SK하이닉스 D램의 49%가 우시공장에서 생산되기 때문이다." },
+        { "name": "디지털타임스(2013)", "url": "https://www.dt.co.kr/article/10805322", "quote": "전체 생산량 가운데 49.1%를 담당하기 때문에" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "화재 직후 D램 현물가가 급등했다(대표 칩 2Gb 가격 하루 30센트 상승, 화재일 이후 36% 상승).",
+      "numeric": true,
+      "economy": true,
+      "caution": "36%(TrendForce 9/25 기준)·40%(10/21) 등 집계 시점별로 다름. 계약가는 같은 시기 6.25% 상승에 그쳐 현물과 계약 괴리 있음",
+      "sources": [
+        { "name": "Korea JoongAng Daily(2013)", "url": "https://www.koreajoongangdaily.com/business/sk-hynix-fire-leads-to-jump-in-memory-chip-prices/10341401", "quote": "jumped 30 cents, the biggest increase since September 2010" },
+        { "name": "TrendForce(2013)", "url": "https://www.trendforce.com/presscenter/news/20130927-7809.html", "quote": "have soared by a whopping 36% since the day of the fire" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "3분기 하이닉스 D램 출하량은 화재로 전분기보다 약 2%(1.8%) 줄었지만 평균판매단가는 5.4% 올라 D램 매출은 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "5.4% ASP는 시사저널e 단독. 게임메카는 출하량 2% 감소만 표기",
+      "sources": [
+        { "name": "시사저널e(2013)", "url": "https://www.sidae.com/article/2013111414548041463", "quote": "D램 출하량은 2분기보다 1.8% 줄었지만" },
+        { "name": "게임메카(2013)", "url": "https://www.gamemeca.com/view.php?gid=442043", "quote": "출하량은 2% 감소한 것으로 나타났다." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "4분기에는 우시 화재 여파로 D램 출하량이 전분기 대비 13% 줄고 영업이익이 33% 감소한 7,850억원을 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "SK하이닉스 뉴스룸(2014)", "url": "https://news.skhynix.co.kr/achieved-record-breaking-business-performance-in-2013/", "quote": "전 분기대비 D램은 13%, 낸드플래시는 14% 각각 감소했다" },
+        { "name": "아주경제(2014)", "url": "https://www.ajunews.com/view/20140128114408690", "quote": "영업이익은 전 분기 대비 33% 줄어든 7850억 원" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "SK하이닉스는 2013년 매출 14조 1,650억원, 영업이익 3조 3,800억원으로 사상 최대 실적을 달성했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "공식 자료는 매출 14조 1천6백5십억 원 표기",
+      "sources": [
+        { "name": "SK하이닉스 뉴스룸(2014)", "url": "https://news.skhynix.co.kr/achieved-record-breaking-business-performance-in-2013/", "quote": "영업이익 3조3천8백억 원, 순이익 2조8천7백3십억 원으로 사상 최대" },
+        { "name": "아주경제(2014)", "url": "https://www.ajunews.com/view/20140128114408690", "quote": "2013년 연간 매출액 14조1650억 원, 영업이익 3조3800억 원" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "SK하이닉스는 영업 중인 국내 상장사. 인명 피해 없는 사고라 법적 문제는 없으나 종목 이슈로 읽히며 Owner가 하이닉스 소재를 반복 폐기한 전례 있음"
+  },
+  "remaining": "결단 장면 부재(사고→복구 서술). 소재 자체의 주식 이슈 읽힘은 Owner 정책 판단 사항. 한 공장 불이 시장 가격을 흔든 '공급망 집중 리스크' 프레임은 가능하나 하이닉스 본인은 4분기 이익이 줄어 경제 번역이 복잡.",
+  "toolCallsUsed": 17
+}

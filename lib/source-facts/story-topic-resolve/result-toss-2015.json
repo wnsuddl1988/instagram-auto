@@ -1,0 +1,89 @@
+{
+  "id": "toss-2015",
+  "title": "토스 — 통장 잔고 2만 원에서 시작한 송금 앱",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "현재 영업·상장 이야기가 따라붙어 투자·주식 이야기로 흐르지 않게. 대사 금지, '한 의사 출신 창업자'로 풀기. 잔고 2만 원은 블룸버그 인용 → '보도에 따르면'. 창업 연도 2011/2013, 실패 기간 7년/5년 불일치. 열람 3곳(American Banker, Fortune, asiae)",
+  "conditionResolved": false,
+  "finding": "8번 실패와 잔고 2만 원은 American Banker·Fortune·아시아경제에서 확인되지만 2만 원은 둘 다 블룸버그 원보도 하나에서 나온 것이라 독립 2출처가 아니고 시점도 '한때'뿐이며, 실패 기간(블룸버그 7년/포춘 5년)과 창업 연도(포춘 2011/CNBC 2014)도 엇갈립니다. 2015년 2월 출시, 누적 송금액 26조 원(2018.11) 등 숫자는 한 곳씩만 확인되고, 2015년 금융당국 합법 판단은 American Banker 단독이며 국내 신문에서 8번 실패를 직접 확인하지 못했습니다. 2출처 숫자 사실이 4개에 못 미치고 결정적 장면도 없어 보류합니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "토스 창업자는 여덟 번의 실패(앱) 끝에 토스를 냈다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "기간이 블룸버그 7년, 포춘 '처음 5년'으로 다름. 창업 연도도 2011(포춘)/2014(CNBC)로 엇갈림.",
+      "sources": [
+        { "name": "American Banker(블룸버그 전재)", "url": "https://www.americanbanker.com/payments/articles/dentist-quits-samsung-to-disrupt-south-korean-payments-system", "quote": "Seven years and eight failed apps later" },
+        { "name": "아시아경제(영문)", "url": "https://www.asiae.co.kr/en/article/2020070811034878524", "quote": "launched after eight business failures" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "창업자는 한때 은행 잔고가 2만 원뿐이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처 모두 블룸버그 보도에 근거(포춘이 2018 블룸버그를 인용) — 독립 2출처 아님. 시점 불명('한때'). '보도에 따르면'으로만.",
+      "sources": [
+        { "name": "American Banker(블룸버그 전재)", "url": "https://www.americanbanker.com/payments/articles/dentist-quits-samsung-to-disrupt-south-korean-payments-system", "quote": "he had just 20,000 won in the bank" },
+        { "name": "Fortune(2025.4.23)", "url": "https://fortune.com/asia/2025/04/23/toss-founder-lee-seunggun-south-korea-viva-republica", "quote": "had just 20,000 won ($14) in the bank" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "토스는 2015년 2월 출시됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "한경 매거진(2018.11)", "url": "https://magazine.hankyung.com/business/article/201811204456b", "quote": "토스는 2015년 2월 론칭했다" },
+        { "name": "아시아경제(영문)", "url": "https://www.asiae.co.kr/en/article/2020070811034878524", "quote": "mobile financial service Toss in 2015" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "창업자는 치과의사 시절 저축 1억 5천만 원을 새 사업에 쏟아부었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Fortune 단독. American Banker는 금액 없이 '치과 저축 투입'만.",
+      "sources": [
+        { "name": "Fortune(2025.4.23)", "url": "https://fortune.com/asia/2025/04/23/toss-founder-lee-seunggun-south-korea-viva-republica", "quote": "He devoted 150 million won of savings" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2018년 11월 기준 토스 누적 송금액은 26조 원이다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "한경 매거진 단독 열람(다른 기사 본문 미확인).",
+      "sources": [
+        { "name": "한경 매거진(2018.11)", "url": "https://magazine.hankyung.com/business/article/201811204456b", "quote": "토스의 누적 송금액은 26조원에 달한다" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "금융당국이 개인 간 송금을 합법으로 판단한 뒤 토스가 본격 성장했다(American Banker).",
+      "numeric": false,
+      "economy": true,
+      "caution": "단일 출처. 포춘은 규제 언급 없음.",
+      "sources": [
+        { "name": "American Banker(블룸버그 전재)", "url": "https://www.americanbanker.com/payments/articles/dentist-quits-samsung-to-disrupt-south-korean-payments-system", "quote": "financial watchdog ruled such person-to-person transfers were legal" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "2024년 비바리퍼블리카는 순이익 213억 원(전년 2,166억 원 손실)을 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Fortune 단독. 현재 영업 실적이라 투자 이야기로 읽힐 위험.",
+      "sources": [
+        { "name": "Fortune(2025.4.23)", "url": "https://fortune.com/asia/2025/04/23/toss-founder-lee-seunggun-south-korea-viva-republica", "quote": "a net profit of 21.3 billion Korean won" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "비바리퍼블리카는 현재 영업 중이고 상장 이야기가 따라붙는 국내 기업 — 실적·상장을 건드리면 투자 이슈로 읽힘(소송·제재는 이번 조사에서 다루지 않음)." },
+  "remaining": "독립 2출처 숫자 사실 부족(8번 실패 외 대부분 단독). 2만 원 잔고 시점·실패 기간·창업 연도 불일치. 국내 신문의 8번 실패 직접 확인 못 함. 결정적 장면(결과를 바꾼 순간)이 보도마다 달라 특정 불가.",
+  "toolCallsUsed": 9
+}

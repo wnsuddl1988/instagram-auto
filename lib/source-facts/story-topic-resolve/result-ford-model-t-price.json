@@ -1,0 +1,71 @@
+{
+  "id": "ford-model-t-price",
+  "title": "포드 T형 가격 하락",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "포드 일당 5달러와 겹침, 가격 엇갈림",
+  "conditionResolved": true,
+  "finding": "채널에서 이미 쓴 소재 목록에 포드 일당 5달러는 없어 '이미 쓴 소재의 변형'(duplicate)은 아니다. 다만 풀에 '일당 5달러' 항목이 따로 있으므로 이 소재는 일당이 아니라 '조립 방식을 바꿔 가격을 850달러에서 260달러로 낮춘' 한 가지에 초점을 맞춰야 겹치지 않는다. 가격은 시작 연도(1908 $825 vs 1909 $850)와 끝 연도(1924 vs 1925)가 출처마다 달라 '850달러(또는 825)에서 260달러로'만 쓰면 되고, 조립 시간 12시간 8분(12.5시간) -> 93분, 1913년 12월 이동식 조립라인 도입, 1,500만 대 이상 생산은 서로 다른 두 곳 이상에서 확인됐다.",
+  "coreMessage": "가격을 낮추는 건 깎는 일이 아니라 만드는 방식을 바꾸는 일이고, 그러면 사치품이 생필품이 된다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "T형 포드 가격은 1909년 850달러에서 1924년 260달러까지 내려갔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시작 가격과 연도: Lane Motor Museum·Alameda Post는 1908년 825달러, 끝 연도는 1924(Detroit·Lane) vs 1925(Alameda). 대본에는 '800달러대에서 260달러'로 표기 권장.",
+      "sources": [
+        { "name": "Detroit Historical Society, Model T", "url": "https://detroithistorical.org/learn/encyclopedia-of-detroit/model-t", "quote": "the price had gone down to only $260" },
+        { "name": "The Henry Ford, K-12 Research Guide: Assembly Line", "url": "https://askus.thehenryford.org/K12/faq/433848", "quote": "dropped from $850 to as little as $260" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "차 한 대 섀시 조립 시간이 12시간 남짓에서 93분으로 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Lane Motor Museum은 '12시간에서 2시간 반'으로 다르게 적음. 93분(1914년 초 연속 라인 기준)을 쓰되 출처 기준 명시.",
+      "sources": [
+        { "name": "Detroit Historical Society, Model T", "url": "https://detroithistorical.org/learn/encyclopedia-of-detroit/model-t", "quote": "by 1914 it only took 93 minutes" },
+        { "name": "The Henry Ford, K-12 Research Guide: Assembly Line", "url": "https://askus.thehenryford.org/K12/faq/433848", "quote": "produced every 93 minutes" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "T형은 1908년부터 1927년까지 1,500만 대 넘게 만들어졌다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Alameda Post는 판매 1,650만 대로 표기. '1,500만 대 넘게'로 쓸 것.",
+      "sources": [
+        { "name": "Detroit Historical Society, Model T", "url": "https://detroithistorical.org/learn/encyclopedia-of-detroit/model-t", "quote": "after producing more than 15 million" },
+        { "name": "The Henry Ford, K-12 Research Guide: Assembly Line", "url": "https://askus.thehenryford.org/K12/faq/433848", "quote": "produced over 15 million Model T cars" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "포드는 1913년 12월 하이랜드파크 공장에서 이동식 조립라인을 가동했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "이동식 조립라인을 처음 도입한 건 포드가 아님(Lane: 올즈모빌이 1901년부터 조립라인 사용). '포드가 발명'이라고 쓰지 말고 '포드가 대규모로 가동'으로 표현.",
+      "sources": [
+        { "name": "Lane Motor Museum, Ford Model T", "url": "https://www.lanemotormuseum.org/?p=811", "quote": "line debuted in December 1913" },
+        { "name": "Alameda Post, This Day in History: Moving Assembly Line", "url": "https://alamedapost.com/features/automotive/this-day-in-history-moving-assembly-line/", "quote": "Highland Park Plant on December 1, 1913" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "T형은 1908년 825달러에서 1925년 260달러로 가격이 내려갔다고도 기록된다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "f1과 같은 사실의 다른 연도 표기. 대본에서 연도를 쓰려면 한 출처 기준으로 통일.",
+      "sources": [
+        { "name": "Alameda Post, This Day in History: Moving Assembly Line", "url": "https://alamedapost.com/features/automotive/this-day-in-history-moving-assembly-line/", "quote": "by 1925 the price had dropped to $260" },
+        { "name": "Lane Motor Museum, Ford Model T", "url": "https://www.lanemotormuseum.org/?p=811", "quote": "the price sank to $260" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업 100년 전 사례. 헨리 포드의 반유대주의 등 인물 논란은 이 소재 범위 밖이므로 대본에서 인물 미화 표현을 피할 것." },
+  "remaining": "풀의 '포드 일당 5달러' 항목과 같은 인물·시기라 두 편을 동시에 쓰면 겹쳐 보일 수 있음. 가격 시작·끝 연도가 출처마다 다름. 포드의 개인 결단 일화(누가 언제 어떻게 가격 인하를 정했는지)는 출처 못 찾아 장면은 '1913년 이동식 조립라인 도입' 수준임.",
+  "toolCallsUsed": 5
+}

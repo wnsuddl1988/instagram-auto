@@ -1,0 +1,8 @@
+import { createRequire } from "node:module";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+const require = createRequire(import.meta.url); const ts = require("typescript"); const root = resolve(dirname(fileURLToPath(import.meta.url)), ".."); const cache = new Map();
+function resolveTs(from, specifier) { const base = resolve(dirname(from), specifier); for (const path of [base, `${base}.ts`, `${base}.tsx`]) if (existsSync(path)) return path; throw new Error(`cannot resolve ${specifier}`); }
+function loadTs(path) { const absolute = resolve(root, path); if (cache.has(absolute)) return cache.get(absolute).exports; const module = { exports: {} }; cache.set(absolute, module); const output = ts.transpileModule(readFileSync(absolute, "utf8"), { fileName: absolute, compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText; const localRequire = (specifier) => specifier.startsWith(".") ? loadTs(resolveTs(absolute, specifier)) : require(specifier); new Function("require", "module", "exports", "__filename", "__dirname", output)(localRequire, module, module.exports, absolute, dirname(absolute)); return module.exports; }
+const persistence = loadTs("lib/editorial-v2/persistence-data-root.ts"); const renderer = loadTs("lib/editorial-v2/pa5b-full-production-candidate-render-node.ts"); const result = await renderer.renderPa5bFullProductionCandidate(persistence.resolveEditorialV2LocalStoreConfiguration(), "shorts-editorial-os-v2-20-pilot-8e9ba35c13b4"); console.log(JSON.stringify(result, null, 2));

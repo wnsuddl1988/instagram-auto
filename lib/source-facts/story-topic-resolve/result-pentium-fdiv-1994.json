@@ -1,0 +1,82 @@
+{
+  "id": "pentium-fdiv-1994",
+  "title": "인텔 펜티엄 계산 오류",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "기술 설명이 길어짐. 27,000년/24일은 2차 블로그 출처. 20대는 펜티엄을 모름",
+  "conditionResolved": true,
+  "finding": "27,000년(인텔)·24일(IBM)은 1994년 12월 Washington Technology 기사와 BYTE(1995) 등 당시 매체에서 원문 확인됐고, 4.75억 달러 손실 충전은 인텔 공식 실적 보도자료(SEC 제출)와 대학 게시 기사로 확인됐다. 결정적 장면은 IBM이 펜티엄 PC 판매를 중단하자 인텔이 12월 20일 전량 교체로 돌아선 것이다. 설명은 '나눗셈 칩 오류' 수준으로 줄여도 이해되고, 숫자(27,000년/24일/4.75억 달러)가 서사 축이라 쓸 수 있다.",
+  "coreMessage": "실수보다 비싼 건, 실수를 인정하지 않고 버티는 시간이다.",
+  "decisiveFact": "f6",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "인텔은 일반 사용자가 이 오류를 겪을 확률을 '27,000년에 한 번'이라고 주장했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인텔 추정은 하루 나눗셈 1,000회를 가정한 값(BYTE).",
+      "sources": [
+        { "name": "Washington Technology (1994.12.22)", "url": "https://washingtontechnology.com/1994/12/understanding-the-pentium-disaster/327379", "quote": "a failure once in 27,000 years" },
+        { "name": "Pittsburgh 게시 기사(1995 인용)", "url": "https://sites.pitt.edu/~mitnick/EBEweb/Pentiumkeep95.html", "quote": "once every 27,000 years" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "IBM은 일반 스프레드시트 사용자가 '24일에 한 번' 오류를 겪을 수 있다고 반박했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "IBM 추정은 하루 나눗셈 420만 회를 가정한 값(BYTE). 두 추정 모두 가정 차이가 쟁점.",
+      "sources": [
+        { "name": "Washington Technology (1994.12.22)", "url": "https://washingtontechnology.com/1994/12/understanding-the-pentium-disaster/327379", "quote": "could expect a glitch every 24 days" },
+        { "name": "BYTE (1995.3)", "url": "https://halfhill.com/byte/1995-3_truth.html", "quote": "could happen once every 24 days" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "인텔은 1995년 1월 17일 결함 칩 교체 비용으로 4억 7,500만 달러의 일회성 세전 비용을 반영했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "추정 교체 비용이며 이후 일부 환입 가능성이 보도됨. 1994년 매출 115.2억 달러, 순이익 22.9억 달러(전년 23.0억)는 인텔 자료 단일 출처.",
+      "sources": [
+        { "name": "Intel 1994 실적 보도자료(SEC 8-K 첨부)", "url": "https://www.intc.com/filings-reports/all-sec-filings/content/0000050863-95-000001/EX-99.txt", "quote": "one-time pretax charge of $475 million" },
+        { "name": "Pittsburgh 게시 기사(1995 인용)", "url": "https://sites.pitt.edu/~mitnick/EBEweb/Pentiumkeep95.html", "quote": "$475 million charge to Intel's earnings" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "인텔이 밝힌 실제 오류 빈도는 '무작위 숫자 쌍 90억 개당 1번'이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Intel 1994 실적 보도자료(SEC 8-K 첨부)", "url": "https://www.intc.com/filings-reports/all-sec-filings/content/0000050863-95-000001/EX-99.txt", "quote": "once in every nine billion" },
+        { "name": "Pittsburgh 게시 기사(1995 인용)", "url": "https://sites.pitt.edu/~mitnick/EBEweb/Pentiumkeep95.html", "quote": "once in every nine billion" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "인텔은 1994년 12월 20일 요청하는 모든 사용자에게 결함 펜티엄 칩을 교체해 주겠다고 입장을 바꿨다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "그 전에는 교체를 '필요를 입증한 사용자'로 제한하고 있었음(위키백과).",
+      "sources": [
+        { "name": "Washington Technology (1994.12.22)", "url": "https://washingtontechnology.com/1994/12/understanding-the-pentium-disaster/327379", "quote": "would replace every flawed Pentium chip" },
+        { "name": "Wikipedia, Pentium FDIV bug", "url": "https://en.wikipedia.org/wiki/Pentium_FDIV_bug", "quote": "replace all flawed Pentium processors" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "연말 대목에 IBM이 펜티엄 PC 판매를 중단하자 압박을 받은 인텔이 곧바로 전량 교체로 돌아섰다(결정적 장면).",
+      "numeric": false,
+      "economy": false,
+      "caution": "보도마다 '판매 중단'과 '출하 중단' 표현이 다름.",
+      "sources": [
+        { "name": "Washington Technology (1994.12.22)", "url": "https://washingtontechnology.com/1994/12/understanding-the-pentium-disaster/327379", "quote": "a halt in the middle of the holiday" },
+        { "name": "Pittsburgh 게시 기사(1995 인용)", "url": "https://sites.pitt.edu/~mitnick/EBEweb/Pentiumkeep95.html", "quote": "halting shipments of Pentium computers" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 종결된 1994~95년 사건. 국내 민감성 없음." },
+  "remaining": "한국 20대는 펜티엄을 모르므로 '컴퓨터 칩의 나눗셈 오류' 한 문장 정도로 소개가 필요. 실제 교체율은 10% 미만(약 50만 개, WSJ 인용 게시 기사 단일 출처)이라 결과 서술 시 '전량 교체를 약속했지만 실제 교체 요청은 소수'라는 단서가 필요. 인텔 사전 인지 시점(1994년 6월) 서술은 위키백과 단일 출처라 쓰지 말 것.",
+  "toolCallsUsed": 11
+}

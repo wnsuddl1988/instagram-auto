@@ -1,0 +1,59 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "유일한은 1971년에 세상을 떠났다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "브라보마이라이프(2015.8.21)", "url": "https://bravo.etoday.co.kr/view/atc_view/4463", "quote": "1971년 봄에 별세한 유한양행의 창업주" },
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0041964", "quote": "창설자 유일한은 1971년 3월 죽었는데" }
+      ] },
+    { "id": "f2", "claim": "유언장에는 손녀의 학자금 1만 달러와 딸에게 맡긴 땅 5,000평이 적혀 있었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "서울신문(1999.8.6)", "url": "https://m.seoul.co.kr/news/1999/08/06/19990806007005", "quote": "손녀에게 대학까지의 학자금 1만달러를 준다.딸에게는 유한공고 안에 있는 묘소와 주변 땅 5,000평을 물려준다" },
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "학자금 1만 달러만을 지원하도록 했다" }
+      ] },
+    { "id": "f3", "claim": "유일한은 자기 소유 주식 14만 941주를 전부 한국 사회 및 교육원조 신탁기금에 기증했다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "서울신문(1999.8.6)", "url": "https://m.seoul.co.kr/news/1999/08/06/19990806007005", "quote": "나의 소유 유한양행 주식 14만941주는 한국 사회 및 교육원조 신탁기금에 기증한다" },
+        { "name": "브라보마이라이프(2015.8.21)", "url": "https://bravo.etoday.co.kr/view/atc_view/4463", "quote": "내 소유 주식 14만 941주는 전부" }
+      ] },
+    { "id": "f4", "claim": "아들에게는 대학까지 공부시켰으니 스스로 살아가라는 유언을 남겼다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "브라보마이라이프(2015.8.21)", "url": "https://bravo.etoday.co.kr/view/atc_view/4463", "quote": "아들 일선은 대학까지 졸업시켰으니 앞으로 자립해서 살아가거라" },
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "대학까지 공부시켰으니 앞으로는 스스로 살아가라" }
+      ] },
+    { "id": "f5", "claim": "딸에게 맡긴 땅 5,000평은 학생들이 쓰는 유한동산이 됐다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "학생들이 자유롭게 이용하는" },
+        { "name": "비즈한국(2015)", "url": "https://bizhankook.com/articles/5093.html", "quote": "유한동산 부지 5000 평을 관리 명목으로 물려주었을 뿐이다" }
+      ] },
+    { "id": "f6", "claim": "1962년 유한양행은 제약업계에서 처음으로 주식을 증권시장에 상장했다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0041964", "quote": "제약업계로서는 처음으로, 국내기업 중에는 두 번째로 기업공개를 단행하고 주식을 상장하여" },
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "소유 분산은 1962년 기업공개로 이어졌다" }
+      ] },
+    { "id": "f7", "claim": "상장을 통해 자본과 경영을 분리하는 현대적 경영체제를 갖췄다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0041964", "quote": "자본과 경영을 분리하여 현대적 경영체제를 갖추어" },
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "자본과 경영의 분리를 한층 강화했다" }
+      ] },
+    { "id": "f8", "claim": "1969년 유일한은 부사장이던 아들을 비롯한 친인척을 경영에서 물러나게 하고 전문 경영인에게 사장직을 맡겼다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "친인척을 회사 경영에서 물러나게 하고" },
+        { "name": "비즈한국(2015)", "url": "https://bizhankook.com/articles/5093.html", "quote": "전문 경영인 조권순 씨에게 사장직을 맡겼다" }
+      ] },
+    { "id": "f9", "claim": "유일한은 친척이 회사에 있으면 회사 발전에 지장을 받는다고 보았다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "이투데이(2015.2.16)", "url": "https://www.etoday.co.kr/news/view/1075430", "quote": "조직에 친척 있으면 회사 발전에 지장을 받는다" },
+        { "name": "비즈한국(2015)", "url": "https://bizhankook.com/articles/5093.html", "quote": "경영을 일가에 맡길 경우 양심과 겸손을 잃을 수 있다는 이유에서다" }
+      ] },
+    { "id": "f10", "claim": "신탁기금은 1977년 유한재단이 되어 장학·복지 사업을 맡았다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "한국사회 및 교육원조신탁기금은 1977년 공익법인 관련 법률에 따라 재단법인 유한재단으로 전환됐다" },
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0041964", "quote": "각종 교육장학사업과 사회복지사업을 관장하고 있다" }
+      ] },
+    { "id": "f11", "claim": "딸 유재라는 별세를 앞두고 200억 원쯤의 전 재산을 재단에 기증했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "데일리팜(2026)", "url": "https://www.dailypharm.com/user/news/339388", "quote": "당시 시가 200억원 상당 전 재산을 재단에 기증했다" },
+        { "name": "비즈한국(2015)", "url": "https://bizhankook.com/articles/5093.html", "quote": "200억 원 대로 불어난 재산 전부를" }
+      ] }
+  ]
+}

@@ -1,0 +1,582 @@
+{
+  "schemaVersion": "money_shorts_prompt_compiler_compiled_visual_plan_v1",
+  "status": "minimal_contract_consumer",
+  "title": "Money Shorts OS — Prompt Compiler Compiled Visual Plan v1",
+  "purpose": "Visual Rule Contract와 Preflight Fixture를 소비해 6 scene의 compiled visual plan을 deterministic하게 산출한 결과. finalPrompt 생성 아님. 이미지 생성 아님. 다음 단계 finalPrompt compiler로 넘어갈 수 있는 구조적 plan이다.",
+  "sourceRefs": {
+    "ruleContract": {
+      "path": "scripts/fixtures/premium-editorial-visual-system.rule-contract.v1.json",
+      "schemaVersion": "money_shorts_visual_system_rule_contract_v1",
+      "visualProfileId": "premium_editorial_life_economy_realism_v2"
+    },
+    "preflight": {
+      "path": "scripts/fixtures/premium-editorial-prompt-compiler-preflight.v1.json",
+      "schemaVersion": "money_shorts_prompt_compiler_preflight_v1"
+    },
+    "boundaryDoc": "_ai/MONEY_SHORTS_OS_PROMPT_COMPILER_V1_BOUNDARY.md"
+  },
+  "generationBoundaries": {
+    "textPrompt": false,
+    "image": false,
+    "network": false,
+    "note": "이 plan은 finalPrompt/이미지/네트워크를 생성하지 않는다. compiled visual plan(중간 계획 레이어)만 산출한다."
+  },
+  "scenes": [
+    {
+      "sceneId": "scene_1",
+      "order": 1,
+      "sceneRole": "scene_1_hook",
+      "sceneRoleCommunicates": "시청 유발 — 경제 신호가 '내 생활'에 닿는 순간을 즉시 체감시키는 후킹.",
+      "selectedVisualCategory": "banking_notification_moment",
+      "selectedObjectFamilies": [
+        "banking_objects"
+      ],
+      "spaceType": "indoor_personal",
+      "cameraDistance": "close_up",
+      "compositionNotes": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": [
+          "hand_holding_phone",
+          "notification_glow",
+          "warm_neutral_light"
+        ],
+        "forbiddenComboTags": [],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "subtle_supporting_only",
+        "notes": "은은한 보조 레이어만 허용. 큰 숫자 금지. 전체화면 data-card 금지.",
+        "rolePolicy": "은은한 보조 레이어 허용, 큰 숫자 금지",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "full_face_closeup",
+        "luxury_items",
+        "cash_pile",
+        "panic_imagery"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "news_briefing_dominance"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'indoor_personal'는 직전 scene('none')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [banking_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=not-listed.",
+        "smartphone-centered family 사용 — 누적 1/2 (smartphone_centered_repeat_limit)."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "realistic_not_stock",
+        "not_face_centered",
+        "subtitle_safe_zone",
+        "graphic_layer_not_dominant"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": null,
+        "previousObjectFamilies": [],
+        "previousVisualCategory": null,
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": true,
+        "planningObjectsThisScene": false,
+        "convergenceComboBlocked": true
+      }
+    },
+    {
+      "sceneId": "scene_2",
+      "order": 2,
+      "sceneRole": "scene_2_signal",
+      "sceneRoleCommunicates": "핵심 신호/수치가 어디서 어떻게 잡히는지 — 신뢰 가능한 신호 제시.",
+      "selectedVisualCategory": "institutional_data_macro_signal",
+      "selectedObjectFamilies": [
+        "data_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "compositionNotes": {
+        "primaryFocus": "objects_and_space",
+        "faceFocus": "minimized",
+        "tags": [
+          "source_chip_area",
+          "numeric_placeholder",
+          "warm_neutral_light"
+        ],
+        "forbiddenComboTags": [
+          "wood_table_notebook_coffee_hand"
+        ],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "supporting_with_placeholder",
+        "notes": "숫자 placeholder + 소스 라벨 chip 자리 보조 레이어 허용. 전체화면 data-card 금지.",
+        "rolePolicy": "숫자 placeholder + 소스 라벨 chip 자리 보조 레이어 허용 (전체화면 data-card 금지)",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "exact_numbers_as_truth",
+        "investment_promise"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "chart_only_scene"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'indoor_desk'는 직전 scene('indoor_personal')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [data_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "source_of_truth_overlay"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": "indoor_personal",
+        "previousObjectFamilies": [
+          "banking_objects"
+        ],
+        "previousVisualCategory": "banking_notification_moment",
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": false,
+        "planningObjectsThisScene": false,
+        "convergenceComboBlocked": true
+      }
+    },
+    {
+      "sceneId": "scene_3",
+      "order": 3,
+      "sceneRole": "scene_3_context",
+      "sceneRoleCommunicates": "원인/맥락 — 이 신호 하나만이 아니라 물가/경제/가계 흐름을 함께 읽어야 하는 이유.",
+      "selectedVisualCategory": "household_cost_moment",
+      "selectedObjectFamilies": [
+        "household_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "compositionNotes": {
+        "primaryFocus": "objects_and_space",
+        "faceFocus": "minimized",
+        "tags": [
+          "daily_expense_papers",
+          "kitchen_table_area",
+          "soft_natural_light"
+        ],
+        "forbiddenComboTags": [
+          "wood_table_notebook_coffee_hand"
+        ],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "minimal_auxiliary_only",
+        "notes": "필요 시 최소 보조만. 전체화면 data-card 금지.",
+        "rolePolicy": "필요 시 최소 보조만",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "news_briefing_set",
+        "luxury_items"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "news_briefing_dominance"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'indoor_living'는 직전 scene('indoor_desk')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [household_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "realistic_not_stock",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": "indoor_desk",
+        "previousObjectFamilies": [
+          "data_objects"
+        ],
+        "previousVisualCategory": "institutional_data_macro_signal",
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": false,
+        "planningObjectsThisScene": false,
+        "convergenceComboBlocked": true
+      }
+    },
+    {
+      "sceneId": "scene_4",
+      "order": 4,
+      "sceneRole": "scene_4_life_impact",
+      "sceneRoleCommunicates": "생활 영향 — 같은 신호가 대출자/예금자/생활비에 다르게 닿는 접점.",
+      "selectedVisualCategory": "city_commute_public_economy",
+      "selectedObjectFamilies": [
+        "city_economy_objects"
+      ],
+      "spaceType": "outdoor_urban",
+      "cameraDistance": "wide",
+      "compositionNotes": {
+        "primaryFocus": "space_and_context",
+        "faceFocus": "background_only_crowd",
+        "tags": [
+          "commute_scene",
+          "public_space",
+          "morning_light"
+        ],
+        "forbiddenComboTags": [
+          "wood_table_notebook_coffee_hand"
+        ],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "minimal_auxiliary_only",
+        "notes": "최소 보조 (리얼 생활 장면 우선). 전체화면 data-card 금지.",
+        "rolePolicy": "최소 보조 (리얼 생활 장면 우선)",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "luxury_items",
+        "cash_pile"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "closeup_face"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'outdoor_urban'는 직전 scene('indoor_living')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [city_economy_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "no_uniform_hand_object_pattern",
+        "not_face_centered",
+        "realistic_not_stock"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": "indoor_living",
+        "previousObjectFamilies": [
+          "household_objects"
+        ],
+        "previousVisualCategory": "household_cost_moment",
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": false,
+        "planningObjectsThisScene": false,
+        "convergenceComboBlocked": true
+      }
+    },
+    {
+      "sceneId": "scene_5",
+      "order": 5,
+      "sceneRole": "scene_5_watch_point",
+      "sceneRoleCommunicates": "관찰/체크 포인트 — 앞으로 무엇을 확인해야 하는지.",
+      "selectedVisualCategory": "checklist_decision_moment",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "compositionNotes": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": [
+          "checklist_action",
+          "pen_and_notebook",
+          "focused_light"
+        ],
+        "forbiddenComboTags": [],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "supporting_checkpoint_card",
+        "notes": "체크포인트 카드 자리 보조 레이어 허용 (텍스트 없는 placeholder만). 전체화면 data-card 금지.",
+        "rolePolicy": "체크포인트 카드 자리 보조 레이어 허용 (전체화면 data-card 금지)",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "panic_imagery",
+        "exact_numbers_as_truth"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "news_briefing_dominance"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'indoor_desk'는 직전 scene('outdoor_urban')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [planning_objects]는 직전 scene과 겹치지 않음 — same_object_family_repeat_limit 충족.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=not-listed."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "smartphone_notebook_coffee_table_repeat",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": "outdoor_urban",
+        "previousObjectFamilies": [
+          "city_economy_objects"
+        ],
+        "previousVisualCategory": "city_commute_public_economy",
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": false,
+        "planningObjectsThisScene": true,
+        "convergenceComboBlocked": true
+      }
+    },
+    {
+      "sceneId": "scene_6",
+      "order": 6,
+      "sceneRole": "scene_6_action_closing",
+      "sceneRoleCommunicates": "액션/마무리 — 이번 달 점검할 행동 정리 + CTA.",
+      "selectedVisualCategory": "closing_action_cue",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "compositionNotes": {
+        "primaryFocus": "hands_and_objects",
+        "faceFocus": "minimized",
+        "tags": [
+          "organized_wrap_up",
+          "bankbook_or_budget_notebook",
+          "calm_warm_light"
+        ],
+        "forbiddenComboTags": [
+          "wood_table_notebook_coffee_hand"
+        ],
+        "derivedFrom": "preflight.compositionProfile + rule contract face-minimized policy"
+      },
+      "graphicLayerPlan": {
+        "mode": "supporting_cta_card",
+        "notes": "정리/CTA 카드 자리 보조 레이어 허용 (placeholder only). 전체화면 data-card 금지.",
+        "rolePolicy": "정리/CTA 카드 자리 보조 레이어 허용 (전체화면 data-card 금지)",
+        "fullscreenDataCardBlocked": true,
+        "derivedFrom": "preflight.graphicLayerMode + sceneRoleContract.graphicLayerPolicy"
+      },
+      "forbiddenObjects": [
+        "investment_promise",
+        "cash_pile",
+        "panic_imagery"
+      ],
+      "forbiddenCompositions": [
+        "fullscreen_data_card",
+        "luxury_display"
+      ],
+      "forbiddenRepetitionNotes": [
+        "spaceType 'indoor_living'는 직전 scene('indoor_desk')과 다름 — same_space_repeat_limit 충족.",
+        "objectFamily [planning_objects]가 직전 scene과 겹침 — 2연속 한도 내 허용 (same_object_family_repeat_limit: max 2연속). 이 scene(closing_action_cue, indoor_living)과 직전 scene의 selectedVisualCategory·spaceType·graphicLayerMode가 다르므로 구도·맥락은 분리됨. 다음 finalPrompt 단계에서 checklist/notebook/pen 구도(직전)와 closing/CTA/budget-wrap-up 구도(현 scene)를 명확히 분리할 것. wood_table/hand/smartphone/note/coffee 수렴 조합으로 연결되면 실패.",
+        "wood_table_notebook_coffee_hand 수렴 조합 차단: forbidden_combo_tags=blocked."
+      ],
+      "qaExpectations": [
+        "role_differentiation",
+        "adjacent_scene_similarity",
+        "graphic_layer_present",
+        "graphic_layer_not_dominant",
+        "no_uniform_hand_object_pattern",
+        "source_of_truth_overlay",
+        "subtitle_safe_zone"
+      ],
+      "sourceOfTruthPolicyRef": "deterministic_overlay",
+      "diversityEvidence": {
+        "previousSpaceType": "indoor_desk",
+        "previousObjectFamilies": [
+          "planning_objects"
+        ],
+        "previousVisualCategory": "checklist_decision_moment",
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": true,
+        "adjacentVisualCategoryRepeat": false,
+        "smartphoneCenteredThisScene": false,
+        "planningObjectsThisScene": true,
+        "convergenceComboBlocked": true,
+        "planningRepeatAllowedWithinLimit": true,
+        "finalPromptCompositionSeparationRequired": true,
+        "differentVisualCategoryFromPrev": true,
+        "differentSpaceTypeFromPrev": true
+      }
+    }
+  ],
+  "diversityAudit": {
+    "description": "Compiled visual plan이 Rule Contract diversityRules를 소비한 결과. static guard가 실제 계산값과 대조한다.",
+    "smartphoneCenteredSceneCount": 1,
+    "smartphoneCenteredLimit": 2,
+    "planningObjectsSceneCount": 2,
+    "planningObjectsLimit": 2,
+    "spaceTypeSequence": [
+      "indoor_personal",
+      "indoor_desk",
+      "indoor_living",
+      "outdoor_urban",
+      "indoor_desk",
+      "indoor_living"
+    ],
+    "cameraDistanceSequence": [
+      "close_up",
+      "medium",
+      "medium",
+      "wide",
+      "medium",
+      "medium"
+    ],
+    "objectFamilySequence": [
+      [
+        "banking_objects"
+      ],
+      [
+        "data_objects"
+      ],
+      [
+        "household_objects"
+      ],
+      [
+        "city_economy_objects"
+      ],
+      [
+        "planning_objects"
+      ],
+      [
+        "planning_objects"
+      ]
+    ],
+    "visualCategorySequence": [
+      "banking_notification_moment",
+      "institutional_data_macro_signal",
+      "household_cost_moment",
+      "city_commute_public_economy",
+      "checklist_decision_moment",
+      "closing_action_cue"
+    ],
+    "adjacentSpaceTypeRepeatCount": 0,
+    "adjacentObjectFamilyRepeatCount": 1,
+    "woodTableNotebookCoffeeHandComboDetected": false,
+    "fullscreenDataCardDetected": false
+  },
+  "repetitionControlEvidence": {
+    "previousSceneHistoryUsed": true,
+    "diversityRulesUsed": [
+      "same_space_repeat_limit",
+      "same_camera_distance_repeat_limit",
+      "same_object_family_repeat_limit",
+      "smartphone_centered_repeat_limit",
+      "wood_table_notebook_coffee_hand_combo_limit",
+      "fullscreen_data_card_ban",
+      "hand_table_smartphone_convergence_ban",
+      "scene_category_must_differ",
+      "previous_history_as_compiler_input"
+    ],
+    "objectFamilySequence": [
+      [
+        "banking_objects"
+      ],
+      [
+        "data_objects"
+      ],
+      [
+        "household_objects"
+      ],
+      [
+        "city_economy_objects"
+      ],
+      [
+        "planning_objects"
+      ],
+      [
+        "planning_objects"
+      ]
+    ],
+    "spaceTypeSequence": [
+      "indoor_personal",
+      "indoor_desk",
+      "indoor_living",
+      "outdoor_urban",
+      "indoor_desk",
+      "indoor_living"
+    ],
+    "visualCategorySequence": [
+      "banking_notification_moment",
+      "institutional_data_macro_signal",
+      "household_cost_moment",
+      "city_commute_public_economy",
+      "checklist_decision_moment",
+      "closing_action_cue"
+    ],
+    "cameraDistanceSequence": [
+      "close_up",
+      "medium",
+      "medium",
+      "wide",
+      "medium",
+      "medium"
+    ],
+    "adjacentObjectFamilyRepeatCount": 1,
+    "adjacentSpaceTypeRepeatCount": 0,
+    "adjacentCameraDistanceRepeatCount": 2,
+    "maxObjectFamilyConsecutiveRun": 2,
+    "maxCameraDistanceConsecutiveRun": 2,
+    "maxCloseUpCameraDistanceConsecutiveRun": 1,
+    "sameObjectFamilyRepeatLimitSatisfied": true,
+    "sameCameraDistanceRepeatLimitSatisfied": true,
+    "adjacentObjectFamilyRepeatPairs": [
+      {
+        "sceneOrders": [
+          5,
+          6
+        ],
+        "repeatedFamilies": [
+          "planning_objects"
+        ],
+        "allowedWithinLimit": true,
+        "mitigationNote": "scene5과 scene6의 planning_objects 2연속 반복은 Rule Contract \"2 scene 초과 금지\" 기준상 허용. finalPrompt 단계에서 두 scene의 selectedVisualCategory(checklist_decision_moment vs closing_action_cue), spaceType(indoor_desk vs indoor_living), graphicLayerMode(supporting_checkpoint_card vs supporting_cta_card)가 다르므로 구도·맥락 분리 필요. wood_table/hand/smartphone/note/coffee 수렴 조합 금지."
+      }
+    ],
+    "adjacentSpaceTypeRepeatPairs": [],
+    "adjacentCameraDistanceRepeatPairs": [
+      {
+        "sceneOrders": [
+          2,
+          3
+        ],
+        "repeatedCameraDistance": "medium"
+      },
+      {
+        "sceneOrders": [
+          5,
+          6
+        ],
+        "repeatedCameraDistance": "medium"
+      }
+    ],
+    "smartphoneCenteredSceneCount": 1,
+    "planningObjectsSceneCount": 2,
+    "woodTableHandSmartphoneNoteCoffeeConvergenceDetected": false,
+    "woodTableHandSmartphoneNoteCoffeeConvergenceBlocked": true
+  }
+}

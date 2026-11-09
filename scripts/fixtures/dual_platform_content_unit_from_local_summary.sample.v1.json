@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "money_shorts_render_manifest_local_run_summary_v1",
+  "mode": "local_mock",
+  "flowStatus": "completed_dry_run",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "finishedAt": "2026-01-01T00:00:10.000Z",
+  "manifestPath": "scripts/fixtures/provider-candidate-render-manifest.visual-only.json",
+  "steps": [
+    { "step": "build_local_pipeline_inputs", "status": "pass", "exitCode": 0 },
+    { "step": "run_local_pipeline", "status": "pass", "exitCode": 0 }
+  ],
+  "artifacts": {
+    "generatedTtsScript": "C:\\tmp\\money-shorts-os\\sample-bridge-fixture\\inputs\\generated-tts-script.local-mock.json",
+    "generatedUploadMetadata": "C:\\tmp\\money-shorts-os\\sample-bridge-fixture\\inputs\\generated-upload-metadata.local-mock.json",
+    "generatedOwnerApproval": "C:\\tmp\\money-shorts-os\\sample-bridge-fixture\\inputs\\generated-owner-upload-approval.local-mock.json",
+    "pipelineRunSummary": "C:\\tmp\\money-shorts-os\\sample-bridge-fixture\\run\\pipeline-run-summary.local-mock.json",
+    "uploadReadyPacket": "scripts/fixtures/dual_platform_content_unit_from_local_summary.sample.v1.owner_approved_upload_ready_packet.json"
+  },
+  "actualUploadAllowed": false,
+  "actualUploadPerformed": false,
+  "notUploaded": true,
+  "ownerApprovalRequired": true,
+  "riskNotes": [
+    "This is a static sample fixture for the content-unit-from-local-summary bridge guard only.",
+    "local_mock dry-run: no actual upload performed.",
+    "nextStep: live_upload_requires_explicit_owner_approval_and_credentials"
+  ]
+}

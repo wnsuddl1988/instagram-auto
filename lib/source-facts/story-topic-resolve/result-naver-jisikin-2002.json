@@ -1,0 +1,37 @@
+{
+  "id": "naver-jisikin-2002",
+  "title": "네이버 지식iN",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "현 영업 독점 논란 기업이라 2002~2005 사건만. 장면(질문에 대답하는 사람들)이 약해 보강 필요",
+  "conditionResolved": false,
+  "finding": "2002년 10월 7일 지식iN 출시와 2003년 8월 검색 1위 교체, 2005년 검색 PV 점유율 68%는 확인되지만 대부분 경향신문 주간지 1곳이거나 네이버 보도자료(자사 발표)다. 출시 당시 일일 질문 1,300건·답변 2,800건 등 초기 수치는 네이버 보도 계열로만 확인되고 독립 신문 2곳 확보에 실패했다. 결정적 장면(누가 무엇을 결단했나)이 없어 '이용자들이 대답했다'는 현상 서술에 그치고 숫자도 부족하다. 또 현 독점 논란 기업이라 2005년까지로 한정해야 하는 제약이 있어 쓸 만한 보강 자료를 찾지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "네이버 지식iN은 2002년 10월 업계 최초로 지식검색 서비스로 출시됐다(10월 7일).",
+      "numeric": true,
+      "economy": false,
+      "caution": "네이버 공식 보도자료와 경향신문 2곳으로 출시 시점은 확인.",
+      "sources": [
+        { "name": "경향신문 주간경향(커버스토리)", "url": "https://weekly.khan.co.kr/article/9906", "quote": "2002년 10월 업계 최초로 ‘지식인(지식iN)’이란 이름으로" },
+        { "name": "네이버 보도자료(2012.10)", "url": "https://navercorp.com/media/pressReleasesDetail?seq=28650", "quote": "지식iN은 2002년 10월 7일, 이용자들이 직접 묻고 답할 수 있는" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2005년 4월 네이버는 검색 페이지뷰 점유율 68%로 1위였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "경향신문 주간지 1곳. 네이버 보도자료에도 유사 수치가 있으나 자사 발표. 독립 2출처 아님.",
+      "sources": [
+        { "name": "경향신문 주간경향(커버스토리)", "url": "https://weekly.khan.co.kr/article/9905", "quote": "검색 페이지뷰(PV) 점유율에서 68%로 압도적인 1위" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "현재도 영업 중이며 독점 논란이 있는 국내 기업 — 2002~2005년 사건에 한정해야 함." },
+  "remaining": "결정적 장면 부재, 초기 수치 독립 2출처 부족, 기업 성장 홍보로 읽힐 위험(미담·결단 중심이 아님).",
+  "toolCallsUsed": 8
+}

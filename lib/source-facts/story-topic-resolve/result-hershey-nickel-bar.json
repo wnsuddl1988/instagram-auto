@@ -1,0 +1,38 @@
+{
+  "id": "hershey-nickel-bar",
+  "title": "허쉬 5센트 바",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "니켈 콜라와 겹침, 수치가 포럼 글 수준",
+  "conditionResolved": false,
+  "finding": "허쉬 공식 아카이브가 '5센트 가격을 지키려 카카오 값이 오르면 바를 줄이고 내리면 늘렸다', '1969년 11월 24일 5센트 바를 없애고 두 배가 넘는 무게의 10센트 바가 표준이 됐다'고 적어 포럼 수준은 벗어났다. 그러나 이야기가 한 사람의 결단 장면이 아니라 70년에 걸친 가격 정책(그리고 사실상 크기 줄이기)이라 결정적 장면 1개가 서지 않는다. 시작 연도도 1900(아카이브·2차)과 1921(Funding Universe)로 엇갈리고, 구체 무게 수치(7/8온스, 3/4온스)는 신뢰 출처가 없다. 니켈 콜라와 구조(가격 고정)가 같아 변주 이상의 새 장면을 못 찾았다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "허쉬는 캔디바 가격을 5센트로 유지하기로 했고, 대신 원료값에 따라 바의 무게를 바꿨다.", "numeric": true, "economy": true,
+      "caution": "허쉬 아카이브 단독 확인. 'Milton Hershey 개인의 결단'이라는 직접 증거는 못 찾음.",
+      "sources": [
+        { "name": "Hershey Community Archives", "url": "https://hersheyarchives.org/?p=8246", "quote": "maintaining a five cent ($.05) price" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "허쉬는 1969년 11월 24일 5센트 바를 중단했고 두 배가 넘는 무게의 10센트 바가 표준이 됐다.", "numeric": true, "economy": true,
+      "caution": "아카이브의 날짜는 확인. Funding Universe는 날짜 없이 1969년 10센트 인상으로만 적음(2번째 출처로 약함).",
+      "sources": [
+        { "name": "Hershey Community Archives", "url": "https://hersheyarchives.org/?p=8246", "quote": "bar on November 24, 1969" },
+        { "name": "Funding Universe - Hershey Foods history", "url": "http://www.fundinguniverse.com/company-histories/hershey-foods-corporation-history/", "quote": "which had been five cents since 1921" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "5센트 가격의 시작 연도가 출처마다 다르다(1900 vs 1921).", "numeric": true, "economy": false,
+      "caution": "허쉬 아카이브/2차 자료는 1900년, Funding Universe는 1921년. 대본에 연도를 못 박을 수 없음.",
+      "sources": [
+        { "name": "Funding Universe - Hershey Foods history", "url": "http://www.fundinguniverse.com/company-histories/hershey-foods-corporation-history/", "quote": "which had been five cents since 1921" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업의 옛 가격 정책. 민감성 없음." },
+  "remaining": "결정 장면(밀턴 허쉬가 가격을 고정하겠다고 한 순간 또는 1969년 인상 결정 회의)의 1차 자료, 1900/1921 불일치 해소, 연도별 바 무게 수치 필요. 니켈 콜라와 합쳐 '가격 고정 vs 크기 줄이기' 비교 소재로 묶는 편이 낫다.",
+  "toolCallsUsed": 8
+}

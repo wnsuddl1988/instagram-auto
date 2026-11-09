@@ -1,0 +1,82 @@
+{
+  "id": "pony-export-1976",
+  "title": "포니 — 한국 첫 국산차가 해외로",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "현대 3·6편과 계열 반복, 정주영 영웅담 위험",
+  "conditionResolved": true,
+  "finding": "1976년 첫 수출(에콰도르), 포니 첫해 국내 판매 1만 726대·점유율 43.6%, 50년 누적 수출 7,654만 8,569대, 지난해 자동차 수출 720억 달러, 미쓰비시 기술 제휴가 서로 다른 사이트 2곳으로 확인된다. 정주영 500원 지폐·10년 보증과 다른 별개 사건이고 인물 영웅담 없이 '빌린 엔진으로 시작한 첫 수출 → 50년 뒤 7,600만 대'로 구성 가능하다. 단 첫 수출 대수가 출처마다 5대/6대/5대+버스 1대로 갈려 '몇 대 안 되는 첫 수출'로만 써야 한다.",
+  "coreMessage": "처음엔 남의 엔진을 빌려 시작했어도, 몇 대짜리 첫 수출이 50년 7,600만 대의 출발이 됐다 — 시작은 빌려도 방향은 내 것이다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1976년 현대차는 포니를 에콰도르에 처음 수출했다(보도 기준 6대).",
+      "numeric": true,
+      "economy": false,
+      "caution": "대수가 출처마다 다르다: 6대(아이뉴스24·위드뉴스·중앙일보 계열), 5대(스마트투데이·중앙데일리), 승용 5대+대형버스 1대(한경 매거진). 시기도 6월(서울신문) 7월(한경 매거진). 대본에서는 '여섯 대 남짓'이 아닌 '몇 대'로 쓰거나 숫자를 빼는 것이 안전.",
+      "sources": [
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/1264082", "quote": "6대를 수출하며 세계 시장에 첫발을 내딛었다" },
+        { "name": "위드뉴스(2026)", "url": "https://car.withnews.kr/economy/korea-auto-export-50th-anniversary?amp=1", "quote": "6대가 에콰도르로 향하며 시작된 한국 자동차 수출의 역사" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "포니는 1976년 출시 첫해 국내에서 1만 726대가 팔려 국내 승용차 판매의 43.6%를 차지했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "현대자동차그룹 스토리", "url": "https://www.hyundaimotorgroup.com/ko/story/CONT0000000000114205", "quote": "출시 첫해에만 1만 726대가 판매돼 국내 승용차 판매의 43.6%를 차지했고" },
+        { "name": "한경 매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202102235360b", "quote": "포니는 1976년 한 해에 1만726대가 팔려 시장점유율 43.6%를 차지했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "한국 자동차는 1976년 첫 수출 이래 2026년 4월까지 누적 7,654만 8,569대를 수출했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기사 도입부에 7,665만 대 표기도 있어 본문 KAMA 기준 7,654만 대를 쓸 것.",
+      "sources": [
+        { "name": "스마트투데이(2026)", "url": "https://www.smarttoday.co.kr/ko-kr/articles/107407", "quote": "올해 4월까지 총 7654만8569대가 수출됐다" },
+        { "name": "위드뉴스(2026)", "url": "https://car.withnews.kr/economy/korea-auto-export-50th-anniversary?amp=1", "quote": "총 7,654만 8,569대의 누적 수출량을 기록했다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "지난해(2025년) 한국의 자동차 수출액은 720억 달러(약 100조 원)로 사상 최대였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "서울신문(2026.5.12)", "url": "https://m.seoul.co.kr/news/2026/05/12/20260512500278", "quote": "지난해 자동차 수출은 720억 달러" },
+        { "name": "스마트투데이(2026)", "url": "https://www.smarttoday.co.kr/ko-kr/articles/107407", "quote": "자동차 단일 품목 수출액은 720억 달러다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "수출 첫해(1976) 물량은 1천 대 남짓이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1,019대(이투데이 브라보, 포니 기준 추정)와 13개국 1,042대(매일신문, 현대차 전체)로 숫자·범위가 다르다. '1천 대 남짓'으로만 쓸 것.",
+      "sources": [
+        { "name": "이투데이 브라보", "url": "https://bravo.etoday.co.kr/view/atc_view/4641", "quote": "첫해 1019대였던 수출 물량은 1977년 4523대" },
+        { "name": "매일신문(2016)", "url": "https://www.imaeil.com/page/view/2016113017142300247", "quote": "1976년 13개국에 1,042대의 차를 수출했고" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "현대차는 포니 개발을 위해 일본 미쓰비시와 기술 제휴를 맺고 엔진(1,238cc)을 들여왔다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'국산화율 90% 육박'은 현대차그룹 스토리 1곳만 확인(엔진·변속기는 제외로 알려짐). 쓰지 말 것.",
+      "sources": [
+        { "name": "이투데이 브라보", "url": "https://bravo.etoday.co.kr/view/atc_view/4641", "quote": "일본 미쓰비시와 기술이전 협약을 체결했다" },
+        { "name": "한경 매거진(2021)", "url": "https://magazine.hankyung.com/business/article/202102235360b", "quote": "가솔린엔진(1238cc 수냉식 새턴엔진) 등 제조 기술 제휴를 맺고" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현재도 영업 중인 현대차지만 종결된 옛 사건이고 법적 쟁점 없음. 정주영 등 인물 영웅담 배제, 현대 3·6편과 기법 차별화(수출 '처음 몇 대→50년 누적') 필요." },
+  "remaining": "첫 수출 대수(5/6)와 시기(6월/7월)가 갈려 숫자는 얼버무리거나 '몇 대'로 처리해야 한다. 엔진 도입의 경제적 의미(로열티 등) 수치는 확인 못함.",
+  "toolCallsUsed": 14
+}

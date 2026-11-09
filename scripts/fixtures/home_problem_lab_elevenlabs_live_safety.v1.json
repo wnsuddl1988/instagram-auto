@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "credentialPresence": {
+    "apiKey": "unchecked",
+    "lumiVoiceId": "unchecked"
+  },
+  "authorizationCases": [
+    { "id": "live-not-authorized", "liveCallAuthorized": false, "expectedError": "HOME_PROBLEM_LAB_TTS_LIVE_NOT_AUTHORIZED" },
+    { "id": "credential-unchecked", "credentialPresence": { "apiKey": "unchecked", "lumiVoiceId": "unchecked" }, "expectedError": "HOME_PROBLEM_LAB_TTS_CREDENTIALS_NOT_PRESENT" },
+    { "id": "credential-missing", "credentialPresence": { "apiKey": "missing", "lumiVoiceId": "missing" }, "expectedError": "HOME_PROBLEM_LAB_TTS_CREDENTIALS_NOT_PRESENT" },
+    { "id": "budget-over-one", "maxExternalCalls": 2, "expectedError": "HOME_PROBLEM_LAB_TTS_CALL_LIMIT_EXCEEDED" },
+    { "id": "engine-mismatch", "engineId": "other_engine", "expectedError": "HOME_PROBLEM_LAB_TTS_ENGINE_MISMATCH" },
+    { "id": "profile-mismatch", "voiceProfileId": "other_profile", "expectedError": "HOME_PROBLEM_LAB_TTS_PROFILE_MISMATCH" }
+  ],
+  "callGuardCases": [
+    { "id": "duplicate-request", "requestIds": ["duplicate-live-request", "duplicate-live-request"], "expectedError": "HOME_PROBLEM_LAB_TTS_DUPLICATE_REQUEST" },
+    { "id": "call-limit", "requestIds": ["first-live-request", "second-live-request"], "expectedError": "HOME_PROBLEM_LAB_TTS_CALL_LIMIT_EXCEEDED" }
+  ],
+  "audioResponseCases": [
+    { "id": "valid-mp3-metadata", "status": 200, "contentType": "audio/mpeg", "byteLength": 2048, "timedOut": false, "expectedPassed": true },
+    { "id": "empty-body", "status": 200, "contentType": "audio/mpeg", "byteLength": 0, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_AUDIO_TOO_SMALL" },
+    { "id": "json-error", "status": 500, "contentType": "application/json", "byteLength": 300, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_HTTP_FAILURE" },
+    { "id": "html-error", "status": 502, "contentType": "text/html", "byteLength": 300, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_HTTP_FAILURE" },
+    { "id": "wrong-content-type", "status": 200, "contentType": "application/octet-stream", "byteLength": 2048, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_INVALID_CONTENT_TYPE" },
+    { "id": "too-small", "status": 200, "contentType": "audio/mpeg", "byteLength": 512, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_AUDIO_TOO_SMALL" },
+    { "id": "too-large", "status": 200, "contentType": "audio/mpeg", "byteLength": 26214401, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_AUDIO_TOO_LARGE" },
+    { "id": "timeout", "status": 0, "contentType": null, "byteLength": 0, "timedOut": true, "expectedError": "HOME_PROBLEM_LAB_TTS_TIMEOUT" },
+    { "id": "rate-limit", "status": 429, "contentType": "application/json", "byteLength": 128, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_HTTP_FAILURE" },
+    { "id": "unauthorized", "status": 401, "contentType": "application/json", "byteLength": 128, "timedOut": false, "expectedError": "HOME_PROBLEM_LAB_TTS_HTTP_FAILURE" }
+  ],
+  "redaction": {
+    "forbiddenFieldNames": ["apiKey", "voiceId", "authorization", "requestUrl", "headers", "secret"],
+    "allowedCredentialStatuses": ["present", "missing", "unchecked"]
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "money_shorts_render_plan_v1",
+  "manifestId": "rp-ecos-live-base-rate-202605-yohan-koo-draft",
+  "sourceId": "money-shorts-scene-package-fact-card-ecos-live-base-rate-raw-ecos-722Y001-0101000-202605",
+  "sourceType": "script_package",
+  "factCardIds": ["fact-card-ecos-live-base-rate-draft-raw-ecos-722Y001-0101000-202605"],
+  "sourceCitationIds": ["citation-ecos-live-base-rate-draft-raw-ecos-722Y001-0101000-202605"],
+  "timelineId": "timeline-money-shorts-scene-package-fact-card-ecos-live-base-rate-raw-ecos-722Y001-0101000-202605",
+  "ttsPackageId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605",
+  "imagePromptPackageId": null,
+  "chartCardPackageId": null,
+  "riskLevel": "unchecked",
+  "createdAt": "2026-06-30T00:00:00+09:00",
+  "riskNotes": [
+    "ECOS live draft — sourceProviderId: provider-ecos-live, indicatorName: 한국은행 기준금리, latestPeriod: 202605, currentValueText: 2.5%, verifiedPublishedDate: 2025-05-29.",
+    "isMock=false, isPublishable=false — draft only. Publishable flag is never set true here.",
+    "No rate hike/cut is asserted. Captions reflect 'current level + watch points' framing only.",
+    "qualityAccepted=false until Owner accepts Yohan Koo listening review.",
+    "no upload performed."
+  ],
+  "outputSpec": {
+    "codec": "h264",
+    "audioCodec": "aac",
+    "container": "mp4",
+    "crf": 23,
+    "audioBitrateKbps": 128,
+    "fps": 30,
+    "dimensions": {
+      "widthPx": 1080,
+      "heightPx": 1920
+    },
+    "plannedOutputPath": "output/planned/ecos-live-base-rate-202605-yohan-koo-draft.mp4"
+  },
+  "imageInputs": [
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-1",
+      "sceneIndex": 1,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-1.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 4,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-2",
+      "sceneIndex": 2,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-2.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 5,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-3",
+      "sceneIndex": 3,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-3.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 6,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-4",
+      "sceneIndex": 4,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-4.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 6,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-5",
+      "sceneIndex": 5,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-5.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 4,
+      "motionType": "card_slide"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-6",
+      "sceneIndex": 6,
+      "assetPath": "assets/images/ecos-live-base-rate-202605-yohan-koo-draft/scene-6.jpg",
+      "assetSourceType": "placeholder",
+      "imagePromptPackageId": null,
+      "sceneImagePromptId": null,
+      "chartCardPackageId": null,
+      "durationSec": 5,
+      "motionType": "card_slide"
+    }
+  ],
+  "audioInput": {
+    "ttsPackageId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605",
+    "voiceProfileId": "voice-yohan-koo-elevenlabs-scene-paced",
+    "provider": "elevenlabs",
+    "assetPath": "assets/audio/tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605.m4a",
+    "plannedDurationSec": 30
+  },
+  "captionOverlays": [
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-1",
+      "sceneIndex": 1,
+      "captionText": "기준금리, 지금 어느 수준일까?",
+      "showAtSec": 0,
+      "hideAtSec": 4,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-2",
+      "sceneIndex": 2,
+      "captionText": "현재 기준금리 2.5% (한국은행 ECOS)",
+      "showAtSec": 4,
+      "hideAtSec": 9,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-3",
+      "sceneIndex": 3,
+      "captionText": "최근 월별 자료에선 같은 수준 유지",
+      "showAtSec": 9,
+      "hideAtSec": 15,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-4",
+      "sceneIndex": 4,
+      "captionText": "대출자·예금자, 지금 조건 점검",
+      "showAtSec": 15,
+      "hideAtSec": 21,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-5",
+      "sceneIndex": 5,
+      "captionText": "물가와 실제 대출금리를 함께 보기",
+      "showAtSec": 21,
+      "hideAtSec": 25,
+      "captionStyle": "bold_short_center_lower"
+    },
+    {
+      "sceneId": "scene-ecos-live-base-rate-202605-yohan-koo-draft-6",
+      "sceneIndex": 6,
+      "captionText": "오늘은 고정비·대출 조건부터 정리",
+      "showAtSec": 25,
+      "hideAtSec": 30,
+      "captionStyle": "bold_short_center_lower"
+    }
+  ],
+  "sourceOverlays": [
+    {
+      "sourceName": "한국은행 ECOS — 기준금리",
+      "sourceUrl": "https://ecos.bok.or.kr/#/Short/722Y001",
+      "officialDecisionSourceUrl": "https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643",
+      "publishedDate": "2025-05-29",
+      "showAtSec": 27,
+      "hideAtSec": 30
+    }
+  ],
+  "ffmpegPlan": {
+    "fullCommand": "ffmpeg (data-only placeholder — not executed from JSON)",
+    "fragments": [],
+    "plannedOutputPath": "output/planned/ecos-live-base-rate-202605-yohan-koo-draft.mp4",
+    "estimatedDurationSec": 30
+  }
+}

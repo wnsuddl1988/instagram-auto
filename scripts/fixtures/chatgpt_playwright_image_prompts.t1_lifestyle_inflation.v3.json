@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "chatgpt_playwright_image_prompts_v3",
+  "taskId": "golden-sample-chatgpt-playwright-fresh-image-set-visual-only-v3",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "purpose": "완전히 새로운 9 beat 이미지 세트 — v2 이미지 재사용 없음 (fallback 비교용으로만 보존). 핵심 시각 장치: 유리병 3개 모티프(hook의 안 쌓이는 병 → reframe의 빈 병 3개 → action의 나눠 담기 → 색 리본 구분 → result의 정돈된 선반)로 스토리 연속성 부여. 병 리본 색(파랑/주황/노랑)은 renderer 카드 슬롯 색과 매칭.",
+  "maxAdditionalSubmissions": 12,
+  "stopEarlyRule": "9 beat 전부 강한 이미지가 확보되면 즉시 중단. 약한 beat는 12회 한도 안에서 재생성.",
+  "global_rules": [
+    "vertical 9:16",
+    "이미지 안 readable text/numerals/로고/워터마크 금지 (지폐 표면·영수증·고지서·폰 화면 전부 흐림/뒤집기/무지 처리)",
+    "외국 지폐/낡은 화폐/정체불명 화폐/오래된 자료 느낌 금지 — 한국 돈 느낌은 warm yellow-gold 지폐 톤/현대 생활 맥락/구도로만 암시",
+    "현대 한국 생활금융 맥락 (아파트/주방/데스크/모바일 라이프)",
+    "정확한 정보/라벨/숫자는 renderer 카드가 담당 — 이미지는 각 beat의 시각 증거"
+  ],
+
+  "prompts": [
+    {
+      "order": 1,
+      "imageId": "img_31_hook_envelope_vs_empty_jar",
+      "beat": "hook",
+      "evidence_goal": "인상(두툼한 봉투)과 안 쌓임(동전 몇 개뿐인 유리병)을 한 프레임에 — 모순의 직접 증거 + 병 모티프 씨앗",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright morning light on a clean modern Korean kitchen counter. In the foreground a hand holds a thick plain white salary envelope, slightly open so the layered edges of warm yellow-gold toned paper bills peek out, bills clearly abundant. Right beside it on the counter stands one clear empty glass jar with only two or three small coins at the bottom, looking strikingly empty in contrast. Soft steam from a coffee cup in the blurred background, modern Korean apartment kitchen, premium editorial photo quality, shallow depth of field, high detail. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 2,
+      "imageId": "img_32_problem_wallet_check_night",
+      "beat": "problem",
+      "evidence_goal": "월말 밤, 얇은 지갑을 확인하며 허탈한 30대 한국 여성 — '더 버는데 잔액 제자리'의 감정 증거 (v2의 소파 남성과 공간/인물 차별화)",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, late night in a modern Korean kitchen, warm under-cabinet lighting. A Korean woman in her early thirties wearing comfortable home clothes stands at the kitchen island, holding a thin slim wallet open and looking into it with a quietly deflated, tired expression, one hand resting on the counter. On the counter: a half-finished cup of tea and a smartphone lying face-down. The wallet is clearly almost empty but no readable contents visible. Realistic contemporary Korean home, end-of-month mood, premium editorial photo quality, shallow depth of field. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 3,
+      "imageId": "img_33_causeA_orderly_fixed_outflow",
+      "beat": "cause_a",
+      "evidence_goal": "고정비/자동이체의 기계적 선차감 — 봉투에서 나온 지폐가 가지런히 정렬된 무지 고지서 봉투들 위로 한 장씩 배분되는 질서 있는 유출 (v1의 사방 유출과 다른 '정렬된 차감')",
+      "finalPrompt": "Cinematic vertical 9:16 top-down flat lay photograph on a dark walnut desk at night, warm desk lamp light from one side. At the top, an opened plain white salary envelope with warm yellow-gold toned bills spilling slightly out. Below it, four plain white bill envelopes arranged in a neat orderly row, and on top of each one lies a single warm yellow-gold toned banknote, as if payments were automatically distributed one by one, mechanical and inevitable. All bill surfaces smoothly blurred, all envelopes blank. Modern Korean home office desk, precise geometric arrangement, premium editorial photo quality. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 4,
+      "imageId": "img_34_causeB_scattered_lifestyle_spend",
+      "beat": "cause_b",
+      "evidence_goal": "카드값/구독료/생활비의 분산 유출 — 어질러진 거실 테이블의 소비 흔적(엎어진 카드들, 영수증, 테이크아웃 컵)과 그 사이에 흩어진 지폐 (v1 부엌 탑다운과 다른 거실 사선 구도)",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, low angle across a modern Korean living room coffee table at night, moody warm lamp light. Scattered across the table: three or four face-down payment cards in different dark and gold tones, several crumpled blurred receipts, two takeaway coffee cups, and a few warm yellow-gold toned banknotes lying apart from each other in different corners as if money quietly slipped away in many small directions. Blurred sofa and warm city window lights in the background, contemporary Korean apartment living room, premium editorial photo quality, shallow depth of field. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 5,
+      "imageId": "img_35_illusion_one_bill_vs_receipt_wall",
+      "beat": "illusion",
+      "evidence_goal": "인상액 하나만 크게 기억되는 착시 — 눈앞에 크게 들린 선명한 지폐 한 장 vs 뒤편에 흐릿하게 사라지는 수십 장의 작은 영수증들 (v2 다발 구도와 다른 '한 장 vs 영수증 벽')",
+      "finalPrompt": "Cinematic vertical 9:16 photograph with extreme shallow depth of field, dim modern Korean home office at night. In the sharp foreground, a hand holds up one single large warm yellow-gold toned banknote close to the camera under a focused spotlight, its surface smoothly blurred with no readable details, dominating the frame like the only thing remembered. Far behind it, a pinboard wall and desk covered with dozens of small crumpled receipts fading deep out of focus into darkness, countless and invisible. Strong cinematic contrast between the one bright remembered bill and the blurred cloud of forgotten small papers. Contemporary Korean home context, premium editorial photo quality. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 6,
+      "imageId": "img_36_reframe_three_empty_jars",
+      "beat": "reframe",
+      "evidence_goal": "'돈의 자리가 없었다'의 문자 그대로 시각화 — 아침 창가의 빈 유리병 3개, 조용한 전환점 톤",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, soft calm morning light through a window in a tidy modern Korean home workspace. On a clean light-wood desk, three identical empty clear glass jars stand side by side in a neat row, completely empty, no labels, gentle window light passing through the glass. Minimal composition, a small green plant leaf blurred at the edge of frame, quiet hopeful turning-point mood, contemporary Korean lifestyle, premium editorial photo quality, shallow depth of field. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 7,
+      "imageId": "img_37_actionA_dividing_into_jars",
+      "beat": "action_a",
+      "evidence_goal": "받는 날 먼저 나누기 — 지폐 뭉치에서 몇 장을 3개의 열린 유리병에 나눠 넣는 진행형 동작 (v1 봉투 나누기와 다른 병 모티프)",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright fresh morning light on a clean modern Korean kitchen table. A woman's hands hold a small stack of warm yellow-gold toned banknotes, actively placing one bill into the middle of three open clear glass jars arranged in a row, the first jar already holding a few folded bills, mid-action moment of deliberately dividing money on payday. All bill surfaces smoothly blurred. Warm inviting morning mood, contemporary Korean apartment, premium editorial photo quality, shallow depth of field. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 8,
+      "imageId": "img_38_actionB_three_jars_color_ribbons",
+      "beat": "action_b",
+      "evidence_goal": "3개의 구체적 자리 — 지폐가 담긴 3개 병이 파랑/주황/노랑 리본(무텍스트)으로 구분된 클로즈업. 리본 색은 카드 슬롯 색과 매칭",
+      "finalPrompt": "Cinematic vertical 9:16 close-up photograph, bright soft daylight on a clean modern Korean desk. Three clear glass jars in a row, each holding several neatly folded warm yellow-gold toned paper bills whose surfaces are completely plain with a smooth soft color gradient only — absolutely no printed patterns, no floral motifs, no emblems, no watermark-like shapes, no markings of any kind on the bills. Each jar is tied with a simple plain fabric ribbon around its neck in a different color: the left jar a deep blue ribbon, the middle jar an orange ribbon, the right jar a yellow ribbon. Plain ribbons with no text or labels anywhere. Crisp shallow depth of field centered on the three jars, contemporary Korean lifestyle, premium editorial photo quality. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 9,
+      "imageId": "img_39_result_settled_morning_shelf",
+      "beat": "result",
+      "evidence_goal": "자리가 잡힌 다음 달 — 정돈된 데스크 선반 위 채워진 3병 + 커피 + 식물 + 창밖 한국 도시 아침, 안정과 체감의 결과 장면",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright peaceful morning in a tidy modern Korean home workspace by a large window. On a clean white desk shelf, three clear glass jars stand neatly in a row, each holding folded warm yellow-gold toned paper bills whose surfaces are completely plain with a smooth soft color gradient only — no printed patterns, no floral motifs, no emblems, no watermark-like shapes. Each jar is tied with a plain fabric ribbon in exactly these colors and this order: deep blue ribbon on the left jar, orange ribbon on the middle jar, yellow ribbon on the right jar. Beside the jars a warm cup of coffee with soft steam and a small green potted plant. Outside the window, a softly blurred bright Korean city morning skyline with apartment buildings. Calm, accomplished, start-of-a-better-month feeling, contemporary Korean lifestyle, premium editorial photo quality, shallow depth of field. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    }
+  ],
+
+  "boundary": { "max_additional_submissions": 12, "auto_retry": false, "cost_usd": 0 }
+}

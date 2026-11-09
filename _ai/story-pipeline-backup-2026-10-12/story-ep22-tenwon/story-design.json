@@ -1,0 +1,410 @@
+{
+  "episode": 22,
+  "topic": "2006년 구리·아연 값이 올라 10원 동전을 만드는 돈이 10원의 서너 배가 되자, 한국은행 금융통화위원회가 8월 구리씌움 알루미늄 새 10원 동전 발행을 의결해 금속값과 만드는 값을 낮춘 이야기",
+  "topicVettingPath": "C:/tmp/story-topic-vetting/story-ep22-tenwon-2006.json",
+  "designMemo": "scenes-v1(Owner '이 방식대로 진행' 10/12, 22편은 스타벅스→10원 동전 교체). 한국은행 단독 수치(24원·5~6원·공중전화기·60억 장·1968년 1원 동전·연 40억 원)는 대본에서 '한국은행은 ~라고 밝혔어/봤지'로 귀속하고 facts에는 넣지 않음. 구형 10원 600만 개 녹임 사건은 방법 서술 위험이라 미사용. 신주화 제작비 40원(매일신문 2008)은 한은 20원대와 상충해 미사용. 새 10원 구리 48%·알루미늄 52%·1.22g는 미사용(무게는 '4g에서 1g 남짓').",
+  "coreMessage": "재료값이 오르면 값을 올리거나 크기를 줄이거나 재료를 바꾼다. 과자 봉지가 작아지는 것도 10원 동전을 바꾼 것과 같은 계산이다.",
+  "channelFit": "액면(약속)과 재료값·만드는 값(시장)이 어긋날 때 나라도 동전을 바꾸는 장면이 우리가 겪는 물가·슈링크플레이션(과자가 작아짐) 일상 경제로 번역된다.",
+  "messageKeywords": [
+    "동전"
+  ],
+  "spine": {
+    "who": "한국은행과 10원 동전",
+    "situation": "2006년 구리·아연 값이 올라 10원 동전을 하나 만드는 돈이 10원의 서너 배가 된 일",
+    "stake": "한국은행은 동전 속 금속값이 약 24원, 만드는 돈이 40원대라고 밝혔고 찍을수록 손해였다",
+    "action": "2006년 8월 한국은행 금융통화위원회가 구리씌움 알루미늄으로 크기를 줄인 새 10원 동전 발행을 의결했다",
+    "outcome": "새 10원의 금속값은 5~6원, 만드는 값은 20원대로 낮아졌고 한국은행은 해마다 약 40억 원을 아낄 수 있다고 봤다",
+    "decisiveScene": "2006년 8월 금융통화위원회의 새 10원 동전 발행 의결(한국은행 보도자료 2006.8.10 + 아시아경제 2015)",
+    "whoTerms": [
+      "10원"
+    ],
+    "situationTerms": [
+      "만드는",
+      "서너 배"
+    ]
+  },
+  "interest": {
+    "hook": "10원짜리 동전 하나를 만드는 데, 10원의 서너 배가 들던 때가 있었어.",
+    "candidates": [
+      "H1(채택) 10원짜리 동전 하나를 만드는 데, 10원의 서너 배가 들던 때가 있었어. — 내 주머니 속 동전의 역설, 이유 숨김",
+      "H2 2006년 한국은행은 10원짜리 동전을 새로 만들기로 했어. 구리 값이 너무 올랐거든. — 풀이형",
+      "H3 10원 동전을 녹이면 돈이 더 된다는 말이 나돌던 때가 있었어. — 훼손 범죄 연상, 방법 서술 위험"
+    ],
+    "whyChosen": "훅 점검표 0 주인공(동전)·상황(만드는 돈)·이상한 점(액면의 서너 배) 통과 / 1 역설 통과 / 2 배경 몰라도 이해 통과 / 3 해법 숨김 통과 / 4 사실과 다른 인과 없음 통과 / 5 16~21편 훅 틀과 다름 통과"
+  },
+  "tension": [
+    "동전 하나를 만드는 데 10원의 서너 배가 든다(1·7번)",
+    "동전 속 금속값이 10원보다 비싸다(6번)",
+    "새 동전은 일부 공중전화기에서 쓸 수 없다(12번)"
+  ],
+  "choice": "한국은행 금융통화위원회가 재료를 구리씌움 알루미늄으로 바꾸고 크기를 줄이기로 의결했다. 1968년 1원 동전도 같은 이유로 재료를 바꾼 적이 있다. 한 사람의 영웅담이 아니라 기관의 결정이다.",
+  "reversal": {
+    "result": "새 10원의 금속값은 5~6원으로 내려갔고 만드는 값은 20원대로 떨어졌으며 한국은행은 해마다 약 40억 원을 아낄 수 있다고 봤다."
+  },
+  "meaning": "재료값이 오르면 값을 올리거나 크기를 줄이거나 재료를 바꾼다. 과자 봉지가 작아지는 것도 이 동전과 같은 계산이다.",
+  "narration": "만드는 돈이 10원의 서너 배(훅) → 2006 한국은행 결정 → 어떻게 해야 했나 → 황동 → 구리·아연 값 급등 → 금속값 24원 → 만드는 돈 40원대 → 방법이 있었나 → 재료를 바꿈(8월 의결) → 크기 줄어듦 → 기계가 알아볼까 → 공중전화기·옛 10원 60억 장 → 1968년 1원 동전 → 금속값 5~6원·만드는 값 20원대 → 연 40억 원 절감 → 재료값이 오르면 → 과자 봉지+팔로우",
+  "economicLink": "10원 동전의 구리 65%·아연 35%, 금속값 약 24원, 만드는 돈 40원대→20원대, 새 10원 금속값 5~6원",
+  "differentFromPrevious": "회사·농가가 아니라 중앙은행이 재료를 바꾼 결정형. 훅은 동전의 역설 단일 문장, 마무리는 슈링크플레이션에 빗댄 생활 경제 지식.",
+  "improvedFrom": "스타벅스 프리퀀시(소재 논란)를 10원 동전으로 교체. 마무리는 요약이 아니라 과자 봉지에 빗댄 생활 경제 지식으로 작성.",
+  "politicalCheck": "영업 중 기업이 아닌 한국은행의 종결된 2006년 결정. 정치·소송 쟁점 아님. 동전 녹이기는 사례·방법 서술하지 않음.",
+  "sceneLinks": [
+    "훅: 동전의 역설",
+    "1번이 던진 시점과 주인공",
+    "2번이 던진 퍼즐",
+    "3번 퍼즐의 배경: 동전의 재료",
+    "4번 재료의 값이 오름",
+    "5번 뒤 금속값이 액면을 넘음(경제 번역)",
+    "6번 뒤 만드는 돈의 손해(경제 번역)",
+    "7번이 만든 열린 고리",
+    "8번 질문의 답: 재료 교체 결정",
+    "9번 결정의 결과: 작고 가벼워짐",
+    "10번 뒤 열린 고리",
+    "11번 질문의 답: 불편과 병행 통용",
+    "12번 뒤 같은 결정의 선례",
+    "13번 결정이 가져온 결과(결말 처음 공개, 경제 번역)",
+    "14번 결과가 가져온 효과",
+    "15번 결과를 우리 생활 경제에 빗댄 지식",
+    "생활 사례(과자 봉지) + 팔로우(마무리)"
+  ],
+  "economyScenes": [
+    6,
+    7,
+    14
+  ],
+  "economyTranslation": [
+    {
+      "scene": 6,
+      "text": "한국은행은 그해 7월 말 동전 속 금속값이 약 24원이라고 밝혔다. 10원짜리 안에 10원보다 비싼 금속이 들어 있었다",
+      "basis": "한국은행 보도자료(2006.8.10)·경기일보(2005.11.12)"
+    },
+    {
+      "scene": 7,
+      "text": "만드는 돈도 40원대였으니 찍을수록 손해였다",
+      "basis": "한국은행 보도자료(2006.8.10)·경기일보(2005.11.12: 액면가의 3배 넘음)"
+    },
+    {
+      "scene": 14,
+      "text": "새 10원의 금속값은 5~6원으로 내려갔고 만드는 값은 20원대로 떨어졌다",
+      "basis": "한국은행 보도자료(2006.8.10)·아시아경제(2015.11.4: 원가 20원 정도)"
+    }
+  ],
+  "ownerChecklist": [
+    {
+      "id": "context-first",
+      "ok": true,
+      "evidence": "첫 문장에 주인공(동전)·상황(만드는 돈)·이상한 점(액면의 서너 배)"
+    },
+    {
+      "id": "hook-benchmark",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "scene-count-detail",
+      "ok": true,
+      "evidence": "17장면, 장면마다 한 가지, 동전 녹이기 사건·신주화 40원·구리 48%는 단독·상충이라 삭제"
+    },
+    {
+      "id": "economy-link",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "team-not-one-person",
+      "ok": true,
+      "evidence": "한국은행 금융통화위원회의 기관 결정이고 한 사람의 영웅담이 아님"
+    },
+    {
+      "id": "political",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "facts-two-sources",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "no-template-repeat",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "all-ages",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "closing-one-point",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "closing-summary-follow",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "tension-device",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "clear-message-channel-fit",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "base-structure",
+      "ok": true,
+      "evidence": "훅 1 → 퍼즐 2~3 → 맥락 4~7 → 질문 8 → 선택 9~10 → 장애물 11~12 → 선례 13 → 결과 14~15 → 생활 경제 지식 16~17"
+    },
+    {
+      "id": "open-loop-table",
+      "ok": true,
+      "evidence": "열린 고리 표 17행, 결과(새 10원 금속값·만드는 값)는 14번에서 처음"
+    },
+    {
+      "id": "topic-locked",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "numbers-by-number",
+      "ok": true,
+      "evidence": "65·35%·서너 배·20원대·22.86mm는 서로 다른 사이트 2곳 이상, 24원·5~6원·60억 장·1968년·40억 원은 한국은행 단독이라 대본에서 귀속"
+    },
+    {
+      "id": "dates-2-3",
+      "ok": true,
+      "evidence": "연도 2개(2006·1968)"
+    },
+    {
+      "id": "owner-eye-twice",
+      "ok": true,
+      "evidence": "Owner 시점으로 2회 읽고 한국은행 단독 수치 귀속·마무리를 과자 봉지 생활 지식으로 작성"
+    }
+  ],
+  "openLoopTable": [
+    {
+      "scene": 1,
+      "whyNext": "훅: 동전의 역설",
+      "endingRevealed": false
+    },
+    {
+      "scene": 2,
+      "whyNext": "1번이 던진 시점과 주인공",
+      "endingRevealed": false
+    },
+    {
+      "scene": 3,
+      "whyNext": "2번이 던진 퍼즐",
+      "endingRevealed": false
+    },
+    {
+      "scene": 4,
+      "whyNext": "3번 퍼즐의 배경: 동전의 재료",
+      "endingRevealed": false
+    },
+    {
+      "scene": 5,
+      "whyNext": "4번 재료의 값이 오름",
+      "endingRevealed": false
+    },
+    {
+      "scene": 6,
+      "whyNext": "5번 뒤 금속값이 액면을 넘음(경제 번역)",
+      "endingRevealed": false
+    },
+    {
+      "scene": 7,
+      "whyNext": "6번 뒤 만드는 돈의 손해(경제 번역)",
+      "endingRevealed": false
+    },
+    {
+      "scene": 8,
+      "whyNext": "7번이 만든 열린 고리",
+      "endingRevealed": false
+    },
+    {
+      "scene": 9,
+      "whyNext": "8번 질문의 답: 재료 교체 결정",
+      "endingRevealed": false
+    },
+    {
+      "scene": 10,
+      "whyNext": "9번 결정의 결과: 작고 가벼워짐",
+      "endingRevealed": false
+    },
+    {
+      "scene": 11,
+      "whyNext": "10번 뒤 열린 고리",
+      "endingRevealed": false
+    },
+    {
+      "scene": 12,
+      "whyNext": "11번 질문의 답: 불편과 병행 통용",
+      "endingRevealed": false
+    },
+    {
+      "scene": 13,
+      "whyNext": "12번 뒤 같은 결정의 선례",
+      "endingRevealed": false
+    },
+    {
+      "scene": 14,
+      "whyNext": "13번 결정이 가져온 결과(결말 처음 공개, 경제 번역)",
+      "endingRevealed": true
+    },
+    {
+      "scene": 15,
+      "whyNext": "14번 결과가 가져온 효과",
+      "endingRevealed": true
+    },
+    {
+      "scene": 16,
+      "whyNext": "15번 결과를 우리 생활 경제에 빗댄 지식",
+      "endingRevealed": true
+    },
+    {
+      "scene": 17,
+      "whyNext": "생활 사례(과자 봉지) + 팔로우(마무리)",
+      "endingRevealed": true
+    }
+  ],
+  "facts": [
+    {
+      "id": "t_f1",
+      "claim": "당시 10원 동전은 구리 65%, 아연 35%의 황동이었다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "황동(구리 65%, 아연 35%)"
+        },
+        {
+          "name": "경기일보(2005.11.12)",
+          "url": "https://kyeonggi.com/article/200511120165287",
+          "quote": "10원짜리는 65% 구리와 35% 아연 합금으로 제작된다"
+        }
+      ]
+    },
+    {
+      "id": "t_f2",
+      "claim": "10원 동전 하나를 만드는 비용이 액면가의 3배를 넘었고 한국은행은 제조단가를 40원대로 밝혔다",
+      "numeric": true,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "제조단가도 40원대에서 20원대로 하락하여"
+        },
+        {
+          "name": "경기일보(2005.11.12)",
+          "url": "https://kyeonggi.com/article/200511120165287",
+          "quote": "10원짜리 동전을 1개 만드는 데 드는 비용은 액면가의 3배가 넘는다"
+        }
+      ]
+    },
+    {
+      "id": "t_f3",
+      "claim": "구리와 아연 값이 급등해 구리 값이 역대 최고치 수준이 됐다",
+      "numeric": false,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "최근 구리와 아연 가격이 급상승하여"
+        },
+        {
+          "name": "경기일보(2005.11.12)",
+          "url": "https://kyeonggi.com/article/200511120165287",
+          "quote": "최근 구리 값이 역대 최고치 수준으로 올랐다"
+        }
+      ]
+    },
+    {
+      "id": "t_f4",
+      "claim": "동전의 소재 값이 액면 값을 넘어서면 '멜팅포인트를 넘었다'고 부르며 10원 동전의 소재가치가 액면을 크게 웃돌았다",
+      "numeric": false,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "10원 동전의 소재가치가 액면금액을 크게 상회하고 있어"
+        },
+        {
+          "name": "아시아경제(2015.11.4)",
+          "url": "https://view.asiae.co.kr/article/2015110410594239666",
+          "quote": "소재 가격과 액면 가격이 같아지는 금액)를 넘어섰다"
+        }
+      ]
+    },
+    {
+      "id": "t_f5",
+      "claim": "2006년 8월 한국은행 금융통화위원회가 구리씌움 알루미늄 새 10원 동전 발행을 의결했고 12월에 발행됐다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "현 10원 동전 재질을 구리씌움 알루미늄으로 바꾸고 크기를 대폭 줄인 새 10원 동전을 발행하기로 의결함"
+        },
+        {
+          "name": "아시아경제(2015.11.4)",
+          "url": "https://view.asiae.co.kr/article/2015110410594239666",
+          "quote": "한은은 이런 멜팅포인트를 고려해 2006년 12월 신형 10원짜리 동전을 발행했다"
+        }
+      ]
+    },
+    {
+      "id": "t_f6",
+      "claim": "새 10원은 지름 22.86mm에서 18mm로, 무게 4g에서 1g 남짓으로 작고 가벼워졌다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "지름이 18.0㎜로 현재(22.86㎜)보다 4.86㎜ 작으며"
+        },
+        {
+          "name": "아시아경제(2015.11.4)",
+          "url": "https://view.asiae.co.kr/article/2015110410594239666",
+          "quote": "구형 10원짜리 동전은 지름 22.86㎜ 무게 4.06g"
+        }
+      ]
+    },
+    {
+      "id": "t_f7",
+      "claim": "새 10원의 원가는 20원 정도로 낮아졌다",
+      "numeric": true,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국은행 보도자료(2006.8.10, 뉴스와이어)",
+          "url": "https://www.newswire.co.kr/newsRead.php?no=176206",
+          "quote": "제조단가도 40원대에서 20원대로 하락하여"
+        },
+        {
+          "name": "아시아경제(2015.11.4)",
+          "url": "https://view.asiae.co.kr/article/2015110410594239666",
+          "quote": "신형 10원 동전의 원가는 20원 정도인데 인건비와 관리비가 모두 들어간 가치"
+        }
+      ]
+    }
+  ]
+}

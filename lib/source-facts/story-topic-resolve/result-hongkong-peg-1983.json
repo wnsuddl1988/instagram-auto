@@ -1,0 +1,130 @@
+{
+  "id": "hongkong-peg-1983",
+  "title": "홍콩 달러 페그 — 블랙 새터데이",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "영중 반환 협상 정치 배경. 쌀 사재기는 미확인. 한국 1997과 연결 가능",
+  "conditionResolved": true,
+  "finding": "2026-10-10 직접 확인: UPI 아카이브 페이지는 제목·요약만 있어 9.55·3분의 1 인용이 본문에 없다. HKMA(9.60)와 SCMP 인용 전재(9.6, 연초 6.5)로 환율 사실은 확인되나 연초 6.5는 단일 사이트라 2출처 숫자 사실이 3개(9.6·7.80 고정·2005년 밴드)뿐. 4개를 못 채워 보류. 쌀 사재기는 UPI(1983)와 홍콩금융관리국(HKMA) 회고 두 곳에서 확인됐고, 상점이 미국 달러로 값을 매긴 것도 Wikipedia와 Finshots 두 곳에서 확인됐다. 달러당 9.6 홍콩달러(연초 6.5, 가치 약 3분의 1 하락) 폭락과 1983년 10월 17일 7.80 고정 선언이 모두 서로 다른 사이트 2곳 이상으로 입증된다. 정치 배경(영중 반환 협상)은 외국 사건이고 1983년에 종결된 일이라 민감하지 않아 usable.",
+  "coreMessage": "무너진 믿음은 설명이 아니라 지킬 수 있는 약속 하나(환율 7.80 고정)로 다시 세운다 — 돈의 값은 곧 신뢰다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1983년 9월 24일 '블랙 새터데이'에 홍콩 달러는 미국 달러당 약 9.6(9.55~9.60)까지 떨어져 사상 최저를 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "최저치가 9.55(1983년 당시 UPI)와 9.60(HKMA)로 갈림. 대본에는 '약 9.6'.",
+      "sources": [
+        {
+          "name": "HKMA(Joseph Yam 회고, 1999)",
+          "url": "https://www.hkma.gov.hk/eng/news-and-media/insight/1999/11/19991104",
+          "quote": "hit 9.60 on the Saturday morning"
+        },
+        {
+          "name": "UPI Archives(1983-10-23)",
+          "url": "https://www.upi.com/Archives/1983/10/23/Hong-Kongs-future-as-financial-supermarketin-doubt/6933435729600/",
+          "quote": "all-time low of 9.55 to $1"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "홍콩 달러는 연초 달러당 6.5에서 그해 9월까지 약 3분의 1의 가치를 잃었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "6.5라는 출발 환율은 Finshots(substack 재게재) 서술. 대본에서는 '연초 대비 가치 약 3분의 1 하락'으로 쓰기.",
+      "sources": [
+        {
+          "name": "UPI Archives(1983-10-23)",
+          "url": "https://www.upi.com/Archives/1983/10/23/Hong-Kongs-future-as-financial-supermarketin-doubt/6933435729600/",
+          "quote": "a loss of a third of its value"
+        },
+        {
+          "name": "Finshots(The Currency Assault on Hong Kong)",
+          "url": "https://breezy.substack.com/p/the-currency-assault-on-hong-kong",
+          "quote": "down from 6.5 per US dollar"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "홍콩 정부는 1983년 10월 17일 연계환율제를 시행해 홍콩 달러를 미국 달러당 7.80으로 고정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "HKMA는 10월 15일(토) 발표, 10월 17일(월) 시행이라 적음. 대본은 '10월 17일 시행'.",
+      "sources": [
+        {
+          "name": "UPI Archives(1983-10-23)",
+          "url": "https://www.upi.com/Archives/1983/10/23/Hong-Kongs-future-as-financial-supermarketin-doubt/6933435729600/",
+          "quote": "indirectly valued at 7.80 to $1"
+        },
+        {
+          "name": "Our China Story(17 October 1983)",
+          "url": "https://www.ourchinastory.com/en/amp/13231",
+          "quote": "On October 17, 1983, the Linked"
+        },
+        {
+          "name": "HKMA Insight(2013)",
+          "url": "https://www.hkma.gov.hk/chi/news-and-media/insight/2013/10/20131014",
+          "quote": "其後香港政府在1983年10月17日推出聯繫匯率制度"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "폭락 때 시민들이 쌀 등 생필품을 사재기해 상점 선반이 비었고, 일부 상점은 미국 달러로 값을 매기며 홍콩 달러 지폐를 받지 않았다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "쌀 사재기(UPI·HKMA)와 상점의 달러 표기·수령 거부(Wikipedia·Finshots)는 출처가 다른 사실이라 나눠 쓰면 안전.",
+      "sources": [
+        {
+          "name": "UPI Archives(1983-10-23)",
+          "url": "https://www.upi.com/Archives/1983/10/23/Hong-Kongs-future-as-financial-supermarketin-doubt/6933435729600/",
+          "quote": "stores clean of rice and other staples"
+        },
+        {
+          "name": "HKMA(Joseph Yam 회고, 1999)",
+          "url": "https://www.hkma.gov.hk/eng/news-and-media/insight/1999/11/19991104",
+          "quote": "buying up rice and toilet paper"
+        },
+        {
+          "name": "Wikipedia(Black Saturday 1983)",
+          "url": "https://en.wikipedia.org/wiki/Black_Saturday_(1983)",
+          "quote": "stores began quoting products in US dollar prices"
+        },
+        {
+          "name": "Finshots(The Currency Assault on Hong Kong)",
+          "url": "https://articles.finshots.in/currency-assault-on-hong-kong",
+          "quote": "Shops began to quote prices in US dollars"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2005년부터는 7.80을 중심으로 7.75~7.85 범위에서 움직이게 해 고정 환율이 지금도 유지된다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'지금도 유지'는 연계환율제 기본 구조에 한정. 중심값 7.80.",
+      "sources": [
+        {
+          "name": "Wikipedia(Linked exchange rate system in Hong Kong)",
+          "url": "https://en.wikipedia.org/wiki/Linked_exchange_rate_system_in_Hong_Kong",
+          "quote": "symmetry around the Linked Rate of 7.80"
+        },
+        {
+          "name": "Our China Story(17 October 1983)",
+          "url": "https://www.ourchinastory.com/en/amp/13231",
+          "quote": "HK$7.75 per U.S. dollar"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "외국 사건, 1983년에 종결. 영중 반환 협상은 배경 한 줄로만 쓰고 한국 정치 쟁점과 무관. 한국 1997 외환위기 연결은 가능하나 별도 사실 검증 필요."
+  },
+  "remaining": "연초 6.5→9.6 하락폭을 독립 2출처로 보강하면 usable 가능(예: SCMP 원문·한국은행/IMF 자료). Hang Seng 하락(7월 1,102→9월 말 758)은 HKMA 단일 출처라 쓰지 않기. 이틀간 약 15% 하락도 HKMA 단일 출처. 한국 1997 연결은 이번 조사 범위 밖.",
+  "toolCallsUsed": 19
+}

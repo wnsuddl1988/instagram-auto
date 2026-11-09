@@ -1,0 +1,63 @@
+{
+  "id": "handok-1964",
+  "title": "한독 1964 독일 합작",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "인지도 낮고 한 장면 없음",
+  "conditionResolved": false,
+  "finding": "1964년 독일 훽스트와의 50대 50 합작과 49년 뒤인 2012년 합작 정리(홀로서기)는 신문 두 곳으로 확인되고, 2012년 오너가가 250억원 블록딜 등으로 지분을 인수한 숫자도 있다. 그러나 확인된 내용은 합작사 지분 구조 변화(훽스트→아벤티스→사노피)와 오너가 지배구조 개편이라는 연표·지분 이야기이며, 1964년 계약 체결 장면·창업자의 구체적 선택 일화는 어떤 출처에서도 확인되지 않았다. 기업 인지도도 낮아 이야기 한 편의 결정적 장면이 없다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "한독은 1964년 독일 훽스트와 합작회사를 세웠다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "한독 측은 '국내 제약업계 최초 합작'이라 소개하나 독립 검증은 못 함.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/71990", "quote": "1964년 합작투자사 설립 등으로" },
+        { "name": "메디칼타임즈(2012)", "url": "https://www.medicaltimes.com/Main/view.html?ID=1077723", "quote": "1964년 사노피 전신인 독일제약사" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "합작 지분은 한독과 훽스트가 50대 50이었고, 2012년 합작 정리 때 훽스트가 가진 한독 지분 50%가 시장에 나왔다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "메디칼타임즈(2012)", "url": "https://www.medicaltimes.com/Main/view.html?ID=1077723", "quote": "50대 50 합작관계를 맺었다" },
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/71990", "quote": "훽스트가 갖고 있는 한독 지분 50%를 내놓았다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "한독은 2012년 사노피와 합작 지분 구조를 정리해 합작 49년 만에 홀로서기에 나섰다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "합작 정리 후에도 사노피와 전략적 파트너십은 유지한다고 한독이 밝힘.",
+      "sources": [
+        { "name": "메디칼타임즈(2012)", "url": "https://www.medicaltimes.com/Main/view.html?ID=1077723", "quote": "49년 만에 홀로서기에 나선 것이다" },
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/71990", "quote": "한독은 지난 2012년 10월 경영의 대전환점을 맞았다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2012년 지분 정리 때 오너가 및 특수관계법인이 약 20%를 인수했고, 김동한 상무의 비상장법인이 250억원으로 14.05%를 블록딜로 샀다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "딜사이트 단일 출처. 일부 자료는 사노피 몫을 김영진 회장과 IMM PE가 인수했다고 다르게 서술.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/71990", "quote": "250억원을 들여 훽스트 소유 한독 지분 중 14.05%를" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "현재 영업 중인 국내 기업이나 이 일화와 관련된 진행 중 사건은 확인되지 않음. 오너가 승계·지배구조 서술은 기업 저격으로 읽힐 소지."
+  },
+  "remaining": "1964년 합작을 결정한 장면(창업자 김신권의 선택, 계약 서명, 자본금 규모)을 확인할 신문·사사 출처가 없음. 합작 이후 성과를 숫자로 보여줄 자료도 부족.",
+  "toolCallsUsed": 5
+}

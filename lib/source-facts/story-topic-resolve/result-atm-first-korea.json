@@ -1,0 +1,16 @@
+{
+  "id": "atm-first-korea",
+  "title": "현금자동지급기 첫 도입",
+  "year": 1975,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "도입 연도·은행이 출처마다 엇갈림",
+  "conditionResolved": false,
+  "finding": "엇갈림이 해소되지 않았다. 검색에서 1975년(기계화전시회 첫 선보임), 1978년 1월 외환은행 본점 설치(김화진 칼럼 news1 등), 1979년 조흥은행 명동지점(AI 위키), 1984년 조흥은행이 일본에서 대당 8000만원에 들여옴(신문 기사) 등 네 가지가 나왔고 어느 쪽도 신문 원문 2곳으로 확정되지 않았다. 대당 가격은 1984년 8000만원 한 건뿐이다. 인물의 선택 장면도 없다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "민감성 없음(하나은행/신한은행 등 현 영업 기업 언급은 중립적)." },
+  "remaining": "도입 연도·은행 불일치(1975/1978/1979/1984), 가격 근거 단일, 결정 장면 부재. 원문 인용 확보 못 해 facts 비움.",
+  "toolCallsUsed": 5
+}

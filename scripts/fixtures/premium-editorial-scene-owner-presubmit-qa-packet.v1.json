@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "money_shorts_scene_owner_presubmit_qa_packet_v1",
+  "status": "data_only_pending_owner_review",
+  "title": "Money Shorts OS — Scene 3~6 Owner Pre-Submit QA Packet v1",
+  "purpose": "Scene 3~6 image generation request pack을 Owner가 이미지 생성 전에 검토할 수 있도록 data-only QA packet으로 요약한 결과. 이미지 생성/네트워크/ChatGPT·Playwright/OpenAI 실행 아님.",
+  "sourceRefs": {
+    "requestPack": {
+      "path": "scripts/fixtures/premium-editorial-scene-image-request-pack.v1.json",
+      "schemaVersion": "money_shorts_scene_image_request_pack_v1"
+    }
+  },
+  "submissionBlockedUntilOwnerApproval": true,
+  "imageGenerationExecuted": false,
+  "networkExecuted": false,
+  "anchorReferences": [
+    {
+      "id": "scene1_hook_anchor_fix_v1",
+      "sceneRole": "scene_1_hook",
+      "status": "owner_approved",
+      "excludedFromQaTargets": true,
+      "note": "Owner 승인 anchor — 재검토/재생성 대상 아님, 참조만 보존."
+    },
+    {
+      "id": "scene2_signal_anchor_v2",
+      "sceneRole": "scene_2_signal",
+      "status": "owner_approved",
+      "excludedFromQaTargets": true,
+      "note": "Owner 승인 anchor — 재검토/재생성 대상 아님, 참조만 보존."
+    }
+  ],
+  "qaEntries": [
+    {
+      "sceneId": "scene_3",
+      "order": 3,
+      "sceneRole": "scene_3_context",
+      "selectedVisualCategory": "household_cost_moment",
+      "selectedObjectFamilies": [
+        "household_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "promptSummary": "scene_3_context / household_cost_moment — household_objects 오브젝트 패밀리, indoor_living 공간, medium 카메라.",
+      "mustPreserve": [
+        "Premium editorial life-economy realism — photographic look (3D/animation/illustration 금지)",
+        "Face-minimized — 얼굴 클로즈업/정면 구도 금지",
+        "Subtitle safe-zone — 하단 자막 영역 비움",
+        "Fixed financial graphic layer는 supporting only — 화면 전체를 덮는 데이터 카드 금지",
+        "정확한 숫자/퍼센트/날짜/출처 라벨은 이미지에 직접 렌더링하지 않음 — 후속 deterministic overlay 단계 소유",
+        "직전 scene과 공간/카테고리/오브젝트 패밀리/구도가 달라야 함"
+      ],
+      "mustRejectIf": [
+        "이미지가 다음에 해당하면 반려: forbidden object: news_briefing_set",
+        "이미지가 다음에 해당하면 반려: forbidden object: luxury_items",
+        "이미지가 다음에 해당하면 반려: forbidden composition: fullscreen_data_card",
+        "이미지가 다음에 해당하면 반려: forbidden composition: news_briefing_dominance",
+        "이미지가 다음에 해당하면 반려: no full-screen data card; graphic layer must stay supporting",
+        "이미지가 다음에 해당하면 반려: no face-centered stock-photo look",
+        "이미지가 다음에 해당하면 반려: no wood-table + hand + smartphone + notebook + coffee convergence",
+        "이미지가 다음에 해당하면 반려: no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "이미지가 다음에 해당하면 반려: no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicySummary": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ]
+      },
+      "repetitionRiskSummary": {
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "riskLevel": "low",
+        "note": "직전 scene과 spaceType/objectFamily/visualCategory 반복 없음."
+      },
+      "expectedVisualDifferenceFromPreviousScene": "이전 scene(spaceType=indoor_desk, category=institutional_data_macro_signal)과 비교해 이 scene은 spaceType=indoor_living, category=household_cost_moment로 차별화되어야 함.",
+      "approvalRecommendation": "ready_for_owner_review"
+    },
+    {
+      "sceneId": "scene_4",
+      "order": 4,
+      "sceneRole": "scene_4_life_impact",
+      "selectedVisualCategory": "city_commute_public_economy",
+      "selectedObjectFamilies": [
+        "city_economy_objects"
+      ],
+      "spaceType": "outdoor_urban",
+      "cameraDistance": "wide",
+      "promptSummary": "scene_4_life_impact / city_commute_public_economy — city_economy_objects 오브젝트 패밀리, outdoor_urban 공간, wide 카메라.",
+      "mustPreserve": [
+        "Premium editorial life-economy realism — photographic look (3D/animation/illustration 금지)",
+        "Face-minimized — 얼굴 클로즈업/정면 구도 금지",
+        "Subtitle safe-zone — 하단 자막 영역 비움",
+        "Fixed financial graphic layer는 supporting only — 화면 전체를 덮는 데이터 카드 금지",
+        "정확한 숫자/퍼센트/날짜/출처 라벨은 이미지에 직접 렌더링하지 않음 — 후속 deterministic overlay 단계 소유",
+        "직전 scene과 공간/카테고리/오브젝트 패밀리/구도가 달라야 함"
+      ],
+      "mustRejectIf": [
+        "이미지가 다음에 해당하면 반려: forbidden object: luxury_items",
+        "이미지가 다음에 해당하면 반려: forbidden object: cash_pile",
+        "이미지가 다음에 해당하면 반려: forbidden composition: fullscreen_data_card",
+        "이미지가 다음에 해당하면 반려: forbidden composition: closeup_face",
+        "이미지가 다음에 해당하면 반려: no full-screen data card; graphic layer must stay supporting",
+        "이미지가 다음에 해당하면 반려: no face-centered stock-photo look",
+        "이미지가 다음에 해당하면 반려: no wood-table + hand + smartphone + notebook + coffee convergence",
+        "이미지가 다음에 해당하면 반려: no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "이미지가 다음에 해당하면 반려: no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicySummary": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ]
+      },
+      "repetitionRiskSummary": {
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "riskLevel": "low",
+        "note": "직전 scene과 spaceType/objectFamily/visualCategory 반복 없음."
+      },
+      "expectedVisualDifferenceFromPreviousScene": "이전 scene(spaceType=indoor_living, category=household_cost_moment)과 비교해 이 scene은 spaceType=outdoor_urban, category=city_commute_public_economy로 차별화되어야 함.",
+      "approvalRecommendation": "ready_for_owner_review"
+    },
+    {
+      "sceneId": "scene_5",
+      "order": 5,
+      "sceneRole": "scene_5_watch_point",
+      "selectedVisualCategory": "checklist_decision_moment",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "promptSummary": "scene_5_watch_point / checklist_decision_moment — planning_objects 오브젝트 패밀리, indoor_desk 공간, medium 카메라.",
+      "mustPreserve": [
+        "Premium editorial life-economy realism — photographic look (3D/animation/illustration 금지)",
+        "Face-minimized — 얼굴 클로즈업/정면 구도 금지",
+        "Subtitle safe-zone — 하단 자막 영역 비움",
+        "Fixed financial graphic layer는 supporting only — 화면 전체를 덮는 데이터 카드 금지",
+        "정확한 숫자/퍼센트/날짜/출처 라벨은 이미지에 직접 렌더링하지 않음 — 후속 deterministic overlay 단계 소유",
+        "직전 scene과 공간/카테고리/오브젝트 패밀리/구도가 달라야 함"
+      ],
+      "mustRejectIf": [
+        "이미지가 다음에 해당하면 반려: forbidden object: panic_imagery",
+        "이미지가 다음에 해당하면 반려: forbidden object: exact_numbers_as_truth",
+        "이미지가 다음에 해당하면 반려: forbidden composition: fullscreen_data_card",
+        "이미지가 다음에 해당하면 반려: forbidden composition: news_briefing_dominance",
+        "이미지가 다음에 해당하면 반려: no full-screen data card; graphic layer must stay supporting",
+        "이미지가 다음에 해당하면 반려: no face-centered stock-photo look",
+        "이미지가 다음에 해당하면 반려: no wood-table + hand + smartphone + notebook + coffee convergence",
+        "이미지가 다음에 해당하면 반려: no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "이미지가 다음에 해당하면 반려: no exact numbers, dates, or source labels rendered as trustworthy text in the image"
+      ],
+      "overlayPolicySummary": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ]
+      },
+      "repetitionRiskSummary": {
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": false,
+        "adjacentVisualCategoryRepeat": false,
+        "riskLevel": "low",
+        "note": "직전 scene과 spaceType/objectFamily/visualCategory 반복 없음."
+      },
+      "expectedVisualDifferenceFromPreviousScene": "이전 scene(spaceType=outdoor_urban, category=city_commute_public_economy)과 비교해 이 scene은 spaceType=indoor_desk, category=checklist_decision_moment로 차별화되어야 함.",
+      "approvalRecommendation": "ready_for_owner_review"
+    },
+    {
+      "sceneId": "scene_6",
+      "order": 6,
+      "sceneRole": "scene_6_action_closing",
+      "selectedVisualCategory": "closing_action_cue",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "promptSummary": "scene_6_action_closing / closing_action_cue — planning_objects 오브젝트 패밀리, indoor_living 공간, medium 카메라.",
+      "mustPreserve": [
+        "Premium editorial life-economy realism — photographic look (3D/animation/illustration 금지)",
+        "Face-minimized — 얼굴 클로즈업/정면 구도 금지",
+        "Subtitle safe-zone — 하단 자막 영역 비움",
+        "Fixed financial graphic layer는 supporting only — 화면 전체를 덮는 데이터 카드 금지",
+        "정확한 숫자/퍼센트/날짜/출처 라벨은 이미지에 직접 렌더링하지 않음 — 후속 deterministic overlay 단계 소유",
+        "직전 scene과 공간/카테고리/오브젝트 패밀리/구도가 달라야 함"
+      ],
+      "mustRejectIf": [
+        "이미지가 다음에 해당하면 반려: forbidden object: investment_promise",
+        "이미지가 다음에 해당하면 반려: forbidden object: cash_pile",
+        "이미지가 다음에 해당하면 반려: forbidden object: panic_imagery",
+        "이미지가 다음에 해당하면 반려: forbidden composition: fullscreen_data_card",
+        "이미지가 다음에 해당하면 반려: forbidden composition: luxury_display",
+        "이미지가 다음에 해당하면 반려: no full-screen data card; graphic layer must stay supporting",
+        "이미지가 다음에 해당하면 반려: no face-centered stock-photo look",
+        "이미지가 다음에 해당하면 반려: no wood-table + hand + smartphone + notebook + coffee convergence",
+        "이미지가 다음에 해당하면 반려: no repeated scene look from the previous scene (different space / category / object family / composition)",
+        "이미지가 다음에 해당하면 반려: no exact numbers, dates, or source labels rendered as trustworthy text in the image",
+        "실제 이미지가 직전 scene(checklist/notebook/pen 구도)과 시각적으로 유사하면 반려 — planning_objects 반복은 2연속 한도 내 허용이지만 구도 분리가 실제 이미지에서 확인되지 않으면 반려"
+      ],
+      "overlayPolicySummary": {
+        "exactValuesInImage": false,
+        "deterministicOverlayOwnsExactValues": true,
+        "ownedByOverlay": [
+          "exact_numbers",
+          "percentages",
+          "dates",
+          "source_labels",
+          "chart_values"
+        ]
+      },
+      "repetitionRiskSummary": {
+        "adjacentSpaceTypeRepeat": false,
+        "adjacentObjectFamilyRepeat": true,
+        "adjacentVisualCategoryRepeat": false,
+        "riskLevel": "controlled_within_limit_requires_composition_separation",
+        "note": "planning_objects 패밀리가 직전 scene과 반복됨 — 2연속 허용 한도 내이나 구도 분리 필수. 실제 이미지에서 분리 미확인 시 반려 대상."
+      },
+      "expectedVisualDifferenceFromPreviousScene": "이전 scene(spaceType=indoor_desk, category=checklist_decision_moment)과 비교해 이 scene은 spaceType=indoor_living, category=closing_action_cue로 차별화되어야 함.",
+      "approvalRecommendation": "ready_for_owner_review"
+    }
+  ],
+  "packetAudit": {
+    "description": "Owner pre-submit QA packet이 request pack(v1)을 소비해 Scene 3~6 검토 항목을 구성한 결과 요약.",
+    "totalGenerationTargets": 4,
+    "generationTargetOrders": [
+      3,
+      4,
+      5,
+      6
+    ],
+    "scenesWithComposedSeparationRisk": [
+      6
+    ],
+    "allEntriesReadyForOwnerReview": true,
+    "approvedAnchorReferenceCount": 2
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "lg-chocolate-prada-2006",
+  "title": "LG 초콜릿폰·프라다폰",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "1,000만 대 시점 불일치, 풀의 LG 스마트폰 철수와 한 줄기",
+  "conditionResolved": false,
+  "finding": "'1,000만 대 시점 불일치'는 풀렸다: 초콜릿폰은 2007년 4월 중순(4월 20일 기준) 누적 1,000만 대를 넘겼고 LG 단일 모델로는 처음이었다(코리아타임스 + 키디, 같은 달; 일부 기사의 '2005년 1,000만 대'는 해외 출시가 2006년 5월이라 맞지 않음). 그러나 결정적 장면은 못 찾았다. 확인되는 것은 '모든 것을 디자인에 맞췄다'는 안승권 본부장의 사후 발언뿐이고 개발·결단 순간에 대한 2곳 원문이 없으며, 프라다폰은 판매량(70만~100만 대)을 2곳 원문으로 확인하지 못했다. 또 이미 쓴 'LG 스마트폰 철수' 소재가 초콜릿폰 1,000만 대·2008년 세계 3위를 사실로 쓰고 있어 독립 편으로는 장면 없는 제품 성공담이 된다.",
+  "coreMessage": null,
+  "decisiveFact": "",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "LG 초콜릿폰(VX-8500)은 2007년 4월 중순(4월 20일 기준) 누적 판매 1,000만 대를 돌파했고 LG 단일 모델로는 처음이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 국내 기사가 '2005년 1,000만 대'로 적어 연도가 틀림. 시점은 2007년 4월이 맞다. 해외 첫 출시는 2006년 5월, 국내 출시는 2005년 말.",
+      "sources": [
+        { "name": "코리아타임스(2007.4.26)", "url": "https://www.koreatimes.co.kr/amp/business/tech-science/20070426/lgs-chocolate-phone-sales-top-10-million", "quote": "topped 10 million as of April 20" },
+        { "name": "키디(2007.12.5)", "url": "https://kidd.co.kr/news/109657", "quote": "지난 4월 중순 1,000만대 판매를 돌파" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "초콜릿폰은 해외 첫 출시 18개월 만인 2007년 12월 3일 세계 판매 1,500만 대를 기록했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2곳 원문 확인 못 함(키디 1곳). 아래 sources 두 번째는 1,000만 대 이상 판매를 적은 별도 기사로 f2 자체를 입증하지 않는다.",
+      "sources": [
+        { "name": "키디(2007.12.5)", "url": "https://kidd.co.kr/news/109657", "quote": "세계 판매 1천500만대 기록을 3일에 세웠다" },
+        { "name": "아시아투데이(2007.7.26)", "url": "https://www.asiatoday.co.kr/kn/view.php?key=78712", "quote": "세계적으로 1000만대 이상 팔린 성공한 제품" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "LG 안승권 MC사업본부장은 초콜릿폰의 성공이 모든 것을 디자인에 맞췄기 때문이라고 말했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "사후(2007.7) 회사 측 평가 발언이며 개발 당시 결단 장면이 아니다. 코리아타임스는 'basically about design(가격·기능이 아니라)'으로 같은 취지를 전한다.",
+      "sources": [
+        { "name": "아시아투데이(2007.7.26)", "url": "https://www.asiatoday.co.kr/kn/view.php?key=78712", "quote": "초콜릿폰의 성공은 모든 것을 디자인에 맞췄기 때문에 가능했다" },
+        { "name": "코리아타임스(2007.4.26)", "url": "https://www.koreatimes.co.kr/amp/business/tech-science/20070426/lgs-chocolate-phone-sales-top-10-million", "quote": "basically about design" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "LG전자는 영업 중이나 소송·제재 사건 아님(2007년 제품 성공담). 단 LG 휴대폰 철수(이미 사용) 소재와 사실이 겹침."
+  },
+  "remaining": "(1) 결정적 장면(개발·계약·발표 현장의 결단) 2곳 원문 미확인 (2) 프라다폰 판매량·출시 장면 2곳 원문 미확인 (3) LG 스마트폰 철수 편과 사실 중복. 이 셋이 해소되지 않으면 쓸 수 없음.",
+  "toolCallsUsed": 12
+}

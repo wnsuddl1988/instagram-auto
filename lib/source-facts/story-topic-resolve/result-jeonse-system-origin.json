@@ -1,0 +1,46 @@
+{
+  "id": "jeonse-system-origin",
+  "title": "전세는 왜 한국에만 있을까",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "10박자 미달",
+  "conditionResolved": false,
+  "finding": "전세는 특정 인물의 결단이 아니라 제도 설명이다. 기원부터 학계에서도 '정확한 기원을 알기란 어렵다'고 하고(경향신문), 1970년대 산업화·도시 인구 급증·은행 대출 부족 속에 집주인이 보증금을 '이자 없는 대출'처럼 썼다는 설명(부동산 매체)은 결정적 장면 없이 배경 나열에 그친다. 대안 장면 후보인 최근 전세사기·임대차 3법은 현재 진행 중 피해 사건이거나 정치 쟁점이라 쓸 수 없고, 서울 인구 244만→543만 같은 핵심 숫자도 페이지 원문에서 확인하지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "전세 관련 공식 자료 중 가장 이른 것은 1910년 조선총독부의 관습조사보고서이며, 보증금은 가옥 가격의 절반~7·8할로 기록됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처만 원문 확인. 학계는 조선시대 전당제도가 전세로 발전했다고 보나 정확한 기원은 불명이라고 함.",
+      "sources": [
+        { "name": "경향신문(2015)", "url": "https://www.khan.co.kr/article/201503080851491/amp", "quote": "가옥 가격의 반액 내지 7·8할" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1970년대 산업화·도시 인구 급증기에 전세가 본격 제도화됐고, 은행이 개인 주택대출을 거의 해주지 않자 집주인은 세입자 보증금을 이자 없는 대출처럼 썼다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "부동산 정보업체 글 단일 출처. 학술·공식 자료로 교차 확인하지 못함.",
+      "sources": [
+        { "name": "부동산R114", "url": "https://r114.com/trends/wiki/rent/38b4a6fa-284b-80af-bd22-dfee36bab299", "quote": "1970년대 산업화 시기 도시 인구 급증과 함께" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "전세의 기원은 관행처럼 행해져 정확히 알기 어렵다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'한국에만 있다'도 볼리비아 안티크레티코 등 유사 제도가 있어 과장일 수 있음.",
+      "sources": [
+        { "name": "경향신문(2015)", "url": "https://www.khan.co.kr/article/201503080851491/amp", "quote": "정확한 기원을 알기란 어렵다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": true, "note": "현재 전세사기 피해와 임대차 3법 등 국내 정치 쟁점이 얽혀 있어 최근 사건 쪽으로 풀면 민감." },
+  "remaining": "특정 인물·결단 장면이 없음(제도 해설 영상에 적합, 스토리형엔 부적합). 서울 인구 증가·전세가율 등 숫자는 공식 통계(통계청·한국은행)로 2곳 확인이 추가로 필요.",
+  "toolCallsUsed": 5
+}

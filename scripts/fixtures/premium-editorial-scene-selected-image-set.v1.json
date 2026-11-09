@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "money_shorts_scene_selected_image_set_v1",
+  "status": "data_only_selected_not_rendered",
+  "title": "Money Shorts OS — Scene 1~6 Selected Image Set v1",
+  "purpose": "v2 request pack의 sceneRole/category/family와 Owner가 확정한 Scene 1~6 선택 이미지를 묶어 다음 render 단계가 소비할 수 있는 data-only manifest로 잠근 결과. 이미지 생성/렌더/mp4/mux/업로드 아님.",
+  "sourceRefs": {
+    "requestPack": {
+      "path": "scripts/fixtures/premium-editorial-scene-image-request-pack.v2.json",
+      "schemaVersion": "money_shorts_scene_image_request_pack_v2"
+    }
+  },
+  "executionBoundaries": {
+    "imageGenerationExecuted": false,
+    "networkExecuted": false,
+    "renderExecuted": false,
+    "muxExecuted": false,
+    "uploadExecuted": false,
+    "note": "이 manifest는 Owner가 확정한 Scene 1~6 선택 이미지를 data-only로 잠근 결과다. 이미지 생성/네트워크/렌더/mux/업로드를 수행하지 않는다."
+  },
+  "renderReadyCandidate": true,
+  "deterministicOverlayRequired": true,
+  "ownerReviewRequired": true,
+  "renderNotYetPerformed": true,
+  "mp4NotYetGenerated": true,
+  "muxNotYetPerformed": true,
+  "uploadNotYetPerformed": true,
+  "selectedScenes": [
+    {
+      "sceneOrder": 1,
+      "sceneId": "scene_1",
+      "sceneRole": "scene_1_hook",
+      "selectedVisualCategory": "banking_notification_moment",
+      "selectedObjectFamilies": [
+        "banking_objects"
+      ],
+      "spaceType": "indoor_personal",
+      "cameraDistance": "close_up",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "sourceRun": "first_run",
+      "selectionVerdict": "keep",
+      "warnings": [],
+      "supersededPaths": [],
+      "localFileExists": true
+    },
+    {
+      "sceneOrder": 2,
+      "sceneId": "scene_2",
+      "sceneRole": "scene_2_signal",
+      "selectedVisualCategory": "institutional_data_macro_signal",
+      "selectedObjectFamilies": [
+        "data_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "sourceRun": "retry_01",
+      "selectionVerdict": "keep_candidate",
+      "warnings": [
+        "손에 든 종이에 라인차트+bar 영역이 잔존 — chart-only/dominance는 아니나 완전히 제거되지 않음."
+      ],
+      "supersededPaths": [
+        "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal.png"
+      ],
+      "localFileExists": true
+    },
+    {
+      "sceneOrder": 3,
+      "sceneId": "scene_3",
+      "sceneRole": "scene_3_context",
+      "selectedVisualCategory": "household_cost_moment",
+      "selectedObjectFamilies": [
+        "household_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "sourceRun": "first_run",
+      "selectionVerdict": "keep",
+      "warnings": [],
+      "supersededPaths": [],
+      "localFileExists": true
+    },
+    {
+      "sceneOrder": 4,
+      "sceneId": "scene_4",
+      "sceneRole": "scene_4_life_impact",
+      "selectedVisualCategory": "city_commute_public_economy",
+      "selectedObjectFamilies": [
+        "city_economy_objects"
+      ],
+      "spaceType": "outdoor_urban",
+      "cameraDistance": "wide",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-04-scene_4_life_impact.png",
+      "sourceRun": "first_run",
+      "selectionVerdict": "keep",
+      "warnings": [],
+      "supersededPaths": [],
+      "localFileExists": true
+    },
+    {
+      "sceneOrder": 5,
+      "sceneId": "scene_5",
+      "sceneRole": "scene_5_watch_point",
+      "selectedVisualCategory": "checklist_decision_moment",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_desk",
+      "cameraDistance": "medium",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-05-scene_5_watch_point.png",
+      "sourceRun": "first_run",
+      "selectionVerdict": "keep",
+      "warnings": [],
+      "supersededPaths": [],
+      "localFileExists": true
+    },
+    {
+      "sceneOrder": 6,
+      "sceneId": "scene_6",
+      "sceneRole": "scene_6_action_closing",
+      "selectedVisualCategory": "closing_action_cue",
+      "selectedObjectFamilies": [
+        "planning_objects"
+      ],
+      "spaceType": "indoor_living",
+      "cameraDistance": "medium",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-06-scene_6_action_closing.png",
+      "sourceRun": "first_run",
+      "selectionVerdict": "keep",
+      "warnings": [
+        "Scene 5와 동일한 planning_objects(노트+펜 계획 모티프) 반복 — 2연속 한도 내 허용 범위, 구도/공간/그래픽 레이어는 분리됨."
+      ],
+      "supersededPaths": [],
+      "localFileExists": true
+    }
+  ],
+  "visualRhythmEvaluation": {
+    "description": "Scene 1~6 선택 세트의 공간/카메라/톤 리듬 평가 (Owner 시각 QA 기반, 재판정 아님).",
+    "spaceTypeSequence": [
+      "indoor_personal",
+      "indoor_desk",
+      "indoor_living",
+      "outdoor_urban",
+      "indoor_desk",
+      "indoor_living"
+    ],
+    "cameraDistanceSequence": [
+      "close_up",
+      "medium",
+      "medium",
+      "wide",
+      "medium",
+      "medium"
+    ],
+    "rhythmAssessment": "현관(1, close_up) → 데스크(2, medium) → 주방(3, medium) → 도심(4, wide) → 데스크(5, medium) → 거실(6, medium)로 공간과 카메라가 변주되며 생활공간 톤 일관성을 유지한다. Scene 2는 retry-01 채택으로 오피스 stock-photo 이질감이 해소되어 세트 전체 리듬에 자연스럽게 편입된다."
+  },
+  "repetitionConvergenceEvidence": {
+    "description": "우드테이블+손+스마트폰+노트+커피 수렴 조합 및 반복 수렴 여부 평가.",
+    "woodTableHandSmartphoneNotebookCoffeeConvergenceDetected": false,
+    "planningObjectsAdjacentRepeat": {
+      "scenes": [
+        5,
+        6
+      ],
+      "withinAllowedLimit": true,
+      "compositionSeparationConfirmedInImage": true,
+      "note": "Scene 5(데스크 클립보드 체크리스트, top-down)와 Scene 6(거실 낮은 테이블 플래너, 어깨너머 시점)은 공간/시점/그래픽 레이어가 실제 이미지에서 분리 확인됨. 오브젝트 패밀리(planning_objects) 유사성만 경고로 잔존."
+    }
+  },
+  "overlayPolicySummary": {
+    "exactValuesInImage": false,
+    "deterministicOverlayOwnsExactValues": true,
+    "note": "선택된 6장 이미지 어디에도 신뢰 가능한 정확 숫자/퍼센트/날짜/출처 라벨은 없다. 정확 값은 후속 deterministic overlay 단계가 소유한다."
+  },
+  "setAudit": {
+    "description": "선택 이미지 세트가 v2 request pack과 Owner 확정 선택을 소비한 결과 요약. static guard가 order/role/path 정합성을 대조한다.",
+    "selectedSceneCount": 6,
+    "selectedSceneOrders": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "scenesWithWarnings": [
+      2,
+      6
+    ],
+    "scenesUsingRetry": [
+      2
+    ],
+    "allImagesExistLocally": true,
+    "renderReadyCandidate": true
+  }
+}

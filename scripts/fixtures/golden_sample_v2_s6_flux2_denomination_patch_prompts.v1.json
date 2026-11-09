@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "golden_sample_v2_s6_flux2_denomination_patch_prompts_v1",
+  "taskId": "creative-v2-golden-sample-v2-s6-flux2-denomination-patch-v1",
+  "createdAt": "2026-07-02",
+  "sceneId": "s6_result_clear_after",
+  "blueprintSource": "scripts/fixtures/golden_sample_blueprint.salary_3days.v2.json",
+
+  "patchReason": {
+    "baselineCandidate": "s6_B",
+    "baselineImage": "output/money-shorts/golden-sample-v2-flux2-image-candidates-v1/gsv2-s6_result_clear_after-s6_B.jpg",
+    "baselineVerdict": "PATCH_NEEDED — denomination render probe에서 지폐 최상단 '5' 액면이 dim/blur/card overlay 후에도 viewer frame 중앙에서 선명히 읽힘 (still_visible)",
+    "baselineEvidence": "output/money-shorts/golden-sample-v2-denomination-render-probe-v1/qa-report-golden-sample-v2-denomination-render-probe.json",
+    "lessonLearned": "기존 s6_B prompt에도 'no readable numerals' 언어적 금지가 있었으나 FLUX2가 무시함 — 이번 패치는 언어적 negative가 아니라 기하학적 차단(접힌 지폐 뒷면/액면부 아래/다발 각도)으로 액면 노출 자체를 제거한다"
+  },
+
+  "storyEvidenceRequired": {
+    "what_story_claim_this_scene_proves": "나눈 뒤에는 3일이 지나도 쓸 수 있는 돈이 정확히 보인다 — hook의 공포가 해소된 상태",
+    "must_show": ["가지런한 3개의 봉투 (정확히 3개)", "적당한 현금이 보이는 열린 지갑", "밝고 안정된 아침 톤 (s1 어두운 톤과 대비)"],
+    "must_not_show": ["읽히는 글자/숫자/통화기호", "카메라를 향한 초상", "브랜드/워터마크/스탬프", "과도한 부/사치 연출 (현실감 유지)"],
+    "mandatoryDenominationConstraints": [
+      "banknote back side",
+      "folded notes",
+      "denomination side facing down",
+      "no visible numeral",
+      "no readable currency symbol",
+      "no portraits facing camera"
+    ]
+  },
+
+  "candidates": [
+    {
+      "candidateId": "s6_P_A",
+      "compositionIdea": "s6_B 검증 구도 유지 (사이드 소프트포커스 — 전경 선명한 열린 지갑, 배경 정돈된 3봉투) + 지폐를 반으로 접어 뒷면/접힌 모서리만 카메라를 향하게, 액면면은 접힘 안쪽으로 숨김",
+      "patchLever": "folded_notes_back_side_down",
+      "prompt": "Side view with shallow depth of field: in the sharp foreground an open leather wallet on a clean bright table holding a modest stack of generic banknotes that are all folded in half, tucked into the wallet so only their plain blank back sides and rounded folded edges face the camera, the printed denomination side of every note facing down and completely hidden inside the fold; in the softly blurred background three thick plain blank matte paper envelopes propped tidily against a small shelf, bright airy morning light, sense of order control and quiet relief, realistic not luxurious, premium editorial financial photography, high detail, vertical 9:16 portrait composition. Exactly three envelopes in the background. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. The visible surfaces of all banknotes are plain muted paper with only a faint abstract guilloche texture — no visible numeral, no readable currency symbol, no letters, no portraits facing camera, no text of any kind anywhere in the image."
+    },
+    {
+      "candidateId": "s6_P_B",
+      "compositionIdea": "같은 구도, 지갑 안쪽 현금 다발 각도 변경 — 지폐가 지갑 포켓에 가파른 사선으로 꽂혀 얇은 윗모서리만 보이고 액면면은 카메라 반대편을 향함, 일부 지폐는 부드럽게 접힘",
+      "patchLever": "steep_oblique_angle_edges_only",
+      "prompt": "An open leather wallet in sharp focus on a clean bright table, seen from a slightly elevated three-quarter side angle: the generic banknotes sit deep in the wallet pocket at a steep oblique angle so only their thin top edges rise into view, every note face turned away from the camera showing nothing but plain blank paper backs, some notes softly folded in half with the printed denomination side facing down and hidden; in the softly blurred background exactly three thick plain matte paper envelopes stand tidily in a row, bright airy morning light, calm resolved after-state, sense of order and control, realistic modest household money not luxury excess, premium editorial financial photography, high detail, vertical 9:16 portrait composition. Every envelope is completely blank with no printed text, no labels, no logos, no stamps, no watermarks. All banknotes are generic fictional notes with no visible numeral, no readable currency symbol, no letters, no portraits facing camera, faint abstract engraving texture only, no text of any kind anywhere in the image."
+    }
+  ],
+
+  "probe": {
+    "comparabilityNote": "backgroundTreatment/overlayStyle/sceneOverlay는 직전 probe(golden_sample_v2_denomination_render_probe_manifest.v1.json s6 스펙)와 정확히 동일하게 유지 — 기존 s6_B PATCH_NEEDED 판정과 직접 비교 가능해야 한다. caption emphasis '정확히'가 text에 없어 전체 white로 렌더되는 동작도 직전 probe와 동일하게 유지한다 (비교성 우선).",
+    "canvas": { "widthPx": 1080, "heightPx": 1920 },
+    "backgroundTreatment": {
+      "scaleCrop": "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+      "dim": "eq=brightness=-0.12:contrast=0.94:saturation=1.02",
+      "blur": "gblur=sigma=2.5",
+      "driftZoomMid": 1.06,
+      "expectedChain": "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,eq=brightness=-0.12:contrast=0.94:saturation=1.02,gblur=sigma=2.5,scale=1144:2036,crop=1080:1920,format=rgb24"
+    },
+    "overlayStyle": {
+      "font": "Malgun Gothic",
+      "captionOutline": 6,
+      "captionShadow": 2.6,
+      "cardTextOutline": 4,
+      "panelFillAssBgr": "&H0F1417",
+      "panelAlpha": "&H3C&",
+      "colorsAssBgr": { "white": "&H00E8EFF2", "red": "&H002B2BE8", "yellow": "&H0033C5FF", "green": "&H0059C734", "amber": "&H0033AEFF" }
+    },
+    "sceneOverlay": {
+      "caption": { "text": "쓸 수 있는 돈이 보입니다", "emphasis": "정확히", "emphasisColor": "green", "posX": 540, "posY": 290, "fs": 66 },
+      "card": {
+        "cardId": "save_cta_card",
+        "role": "save_cta",
+        "panel": { "x1": 200, "y1": 1320, "x2": 880, "y2": 1480 },
+        "lines": [ { "y": 1362, "fs": 56, "runs": [ { "t": "저장", "c": "green" }, { "t": "해두고 월급날 그대로", "c": "white" } ] } ]
+      }
+    },
+    "denominationZoomCrop": {
+      "note": "evidence 전용 (viewer 판정에 사용하지 않음). 신규 생성물의 지갑/현금 위치는 사전에 알 수 없으므로 기본 창을 넓게 잡고, 실제 리스크 영역이 벗어나면 --probe-only 재실행으로 좌표만 조정한다 (create 재호출 없음).",
+      "perCandidate": {
+        "s6_P_A": { "x": 280, "y": 880, "w": 520, "h": 440, "scale": 2, "targets": "전경 지갑 내 지폐 노출부" },
+        "s6_P_B": { "x": 280, "y": 880, "w": 520, "h": 440, "scale": 2, "targets": "전경 지갑 내 지폐 윗모서리 노출부" }
+      }
+    },
+    "framesPerCandidate": [
+      { "kind": "background_probe", "role": "viewer frame 판정용 — dim/blur/crop, 카드 없음" },
+      { "kind": "overlay_probe", "role": "viewer frame 판정용 — 동일 frame + card/caption" },
+      { "kind": "denomination_zoom_crop", "role": "evidence 전용 — dim/blur 후 액면부 2x 확대" }
+    ]
+  },
+
+  "outputs": {
+    "outDir": "output/money-shorts/golden-sample-v2-s6-flux2-denomination-patch-v1",
+    "runSummary": "summary-golden-sample-v2-s6-flux2-denomination-patch.json",
+    "qaReport": "qa-report-golden-sample-v2-s6-flux2-denomination-patch.json"
+  },
+
+  "verdictScale": {
+    "perCandidate": ["PASS_DENOMINATION_NOT_READABLE", "PASS_WITH_MINOR_RISK", "PATCH_STILL_NEEDED", "REJECT_FOR_HARD_TEXT"],
+    "final": ["s6_PATCH_PASS_CANDIDATE", "BLOCKED_S6_PATCH_FAILED"],
+    "finalRule": "1장 이상 PASS 계열이면 s6_PATCH_PASS_CANDIDATE (selected 후보 1개 추천, lock은 하지 않음). 2장 모두 실패하면 BLOCKED_S6_PATCH_FAILED로 보고하고 추가 호출 금지."
+  },
+
+  "boundary": {
+    "provider": "flux_2_pro_bfl_only",
+    "endpoint": "https://api.bfl.ai/v1/flux-2-pro",
+    "createCallHardCap": 2,
+    "costCeilingUsd": 0.5,
+    "sceneScope": "s6_result_clear_after only — s1~s5 생성/수정 금지",
+    "noTtsMuxUploadRender": true,
+    "noSelectedImageSetLock": true,
+    "renderReady": false,
+    "uploadReady": false,
+    "noEnvSecretModification": true,
+    "secretValuesLogged": false
+  }
+}

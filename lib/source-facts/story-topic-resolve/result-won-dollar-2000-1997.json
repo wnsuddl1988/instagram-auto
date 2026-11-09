@@ -1,0 +1,51 @@
+{
+  "id": "won-dollar-2000-1997",
+  "title": "환율 2,000원 — 1997년 12월의 달러",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "IMF 배경과 같은 시대. 한 장면(달러 사려는 줄, 해외 유학생 가정 등)으로 모아야 함. 1편과 간격 두기",
+  "conditionResolved": false,
+  "finding": "1997년 12월 23일 원·달러 환율이 종가 1,962원으로 역대 최고를 기록했다는 숫자는 서로 다른 사이트 2곳으로 확인된다(2,000원 돌파 자체는 확인 못 함, 훅의 '2,000원 가까이'가 정확). 그러나 한 장면으로 모을 소재(달러 사재기 줄, 유학생 가정)는 당시 한국 신문 출처를 찾지 못했고, 유학생 사례는 1998년 1월 미국 대학 학생신문 기사에만 있다. 거시 지표만 있고 주인공의 선택·결단이 없어 연표·지표 나열이 되기 쉬우며 IMF 배경(금 모으기)과 겹쳐 간격 관리도 필요하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1997년 12월 23일 원·달러 환율은 1,962원까지 치솟았다(종가 기준 역대 최고).",
+      "numeric": true,
+      "economy": true,
+      "caution": "종가 1,962원이며 장중 2,000원 돌파는 확인 못 함",
+      "sources": [
+        { "name": "한국기자협회 기자협회보(2022)", "url": "https://journalist.or.kr/news/article.html?no=50931", "quote": "당시 원·달러 환율은 1962원에 마감하며 역대 최고치를 기록했다" },
+        { "name": "뉴시스(2022.9.22)", "url": "https://www.newsis.com/view/NISX20220922_0002022994", "quote": "1997년 12월 23일에는 원·달러 환율이 1962.0원까지 치솟았고" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "자율변동환율제 도입 이후 환율이 1,400원을 넘은 것은 외환위기와 2008~2009년 금융위기 두 차례뿐이다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2022년 시점 기사 기준(이후 상황은 달라졌을 수 있음)",
+      "sources": [
+        { "name": "뉴시스(2022.9.22)", "url": "https://www.newsis.com/view/NISX20220922_0002022994", "quote": "1400원 돌파 이번이 역대 세번째" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1998년 1월 기준 미국 대학에서는 한국 유학생 등록이 가을 학기 대비 약 18% 줄었고, 환율이 1달러 800원대에서 1,600원대로 올라 학비 부담이 급증했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "미국 대학 학생신문(영문) 단일 출처이고 기사 속 원화 환산액(160만→360만 원)은 학비 2만 달러 기준과 맞지 않아 인용 금지. 한국 신문 출처 없음",
+      "sources": [
+        { "name": "GW Hatchet(1998.1.29)", "url": "https://www.gwhatchet.com/1998/01/29/gwus-asian-students-explore-financial-options/", "quote": "Korean student enrollment is down about 18 percent" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "종결된 옛 사건. 민감성 문제 없으나 IMF 소재(금 모으기 등)와 간격 두기 필요."
+  },
+  "remaining": "한국 신문으로 확인된 '한 장면'(달러 사재기·유학생 가정 등)이 없음. 숫자는 지표뿐이라 장면 소재로 서지 않음. 장중 2,000원 돌파 미확인.",
+  "toolCallsUsed": 9
+}

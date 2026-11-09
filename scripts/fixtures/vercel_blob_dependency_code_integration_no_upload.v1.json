@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "vercel_blob_dependency_code_integration_no_upload_v1",
+  "taskId": "vercel-blob-dependency-code-integration-no-upload-v1",
+  "approvalToken": "APPROVE_VERCEL_BLOB_DEPENDENCY_AND_CODE_INTEGRATION_NO_UPLOAD",
+  "createdAt": "2026-07-06",
+  "status": "DEPENDENCY_INSTALLED_CODE_INTEGRATED_NO_UPLOAD",
+  "docsRef": "docs/vercel-blob-dependency-code-integration-no-upload.md",
+  "integrationPacketRef": "scripts/fixtures/vercel_blob_instagram_integration_packet.v1.json",
+  "provisioningResultRef": "scripts/fixtures/vercel_blob_store_provisioning_result.v1.json",
+  "libModuleRef": "lib/instagram-blob-media.ts",
+  "plannerRef": "scripts/plan-vercel-blob-instagram-upload-no-upload.mjs",
+
+  "dependency": {
+    "packageName": "@vercel/blob",
+    "installedVersion": "2.5.0",
+    "packageJsonRange": "^2.5.0",
+    "packageManager": "pnpm",
+    "pnpmVersionUsed": "11.7.0",
+    "onlyThisDependencyChanged": true,
+    "lockfileChangeAdditiveOnly": true,
+    "note": "pnpm 11.7.0 바이너리 + base store-dir로 설치. package.json에 @vercel/blob ^2.5.0 1줄 추가, pnpm-lock.yaml은 additive(+183, 삭제 0). pnpm 11이 자동 추가한 pnpm-workspace.yaml allowBuilds 스텁은 @vercel/blob와 무관하여 되돌렸다."
+  },
+
+  "platform": "instagram_only",
+  "instagramVariantId": "instagram_reels_full_frame_1080x1920",
+  "youtubeUsesBlob": false,
+
+  "codeIntegration": {
+    "deterministicPathnamePattern": "instagram/reels/{contentId}/{variantId}/{version}/{sha256_12}.mp4",
+    "instagramOnlyGuard": true,
+    "variantGuard": "instagram_reels_full_frame_1080x1920",
+    "sizeCapBytes": 36700160,
+    "sizeCapMb": 35,
+    "sizeGuardFailClosed": true,
+    "extensionGuard": "mp4",
+    "contentTypeGuard": "video/mp4",
+    "putOptionPlan": {
+      "access": "public",
+      "addRandomSuffix": false,
+      "allowOverwrite": false,
+      "multipart": true,
+      "contentType": "video/mp4"
+    },
+    "noUploadPlanBuilder": true,
+    "uploadFunctionFailClosed": true,
+    "uploadApprovalToken": "APPROVE_VERCEL_BLOB_OBJECT_UPLOAD_TEST",
+    "uploadBlockedError": "INSTAGRAM_BLOB_UPLOAD_BLOCKED_NO_APPROVAL",
+    "note": "lib/instagram-blob-media.ts는 pathname builder + platform/variant/size/extension/content-type guard + put 옵션 plan + no-upload plan builder를 제공한다. uploadInstagramBlob()은 approvalToken/ownerApproved 입력과 무관하게 항상 uploaded:false를 반환하며 put()을 호출하는 코드 경로가 없다(fail-closed)."
+  },
+
+  "noUploadPlannerResult": {
+    "mode": "NO_UPLOAD_DRY_PLAN",
+    "input": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "expectedBytes": 20294549,
+    "sizeBytes": 20294549,
+    "sizeMatchesExpected": true,
+    "withinSizeCap": true,
+    "sha256_12": "54957450ac10",
+    "pathname": "instagram/reels/t1_lifestyle_inflation/instagram_reels_full_frame_1080x1920/v3_2/54957450ac10.mp4",
+    "status": "PLANNED_NO_UPLOAD",
+    "uploadPerformed": false
+  },
+
+  "blobObjectUploadCount": 0,
+  "publicUrlLivenessCheckCount": 0,
+  "envSecretAccessCount": 0,
+  "projectConnectionCount": 0,
+  "putCallCount": 0,
+  "deployCount": 0,
+  "instagramApiCallCount": 0,
+  "youtubeApiCallCount": 0,
+  "otherDependencyChangeCount": 0,
+
+  "secretValueRecorded": false,
+  "tokenValueRecorded": false,
+
+  "forbiddenBehavior": [
+    "@vercel/blob put/list/head/get/delete/copy 호출",
+    "Blob object upload",
+    "public URL liveness check",
+    "env/secret/token read/write/print/copy",
+    ".env.local access",
+    "vercel env pull",
+    "Blob store project link",
+    "deploy/DNS/domain change",
+    "Instagram API/--arm",
+    "YouTube API/OAuth/upload",
+    "render/mux/TTS/image/browser/ffmpeg/media generation",
+    "@vercel/blob 외 dependency 추가",
+    "routing Blob/public URL to YouTube",
+    "recording secret/token values"
+  ],
+
+  "prohibitedDrift": {
+    "note": "아래 상태는 이 integration 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "dependency.packageName이 @vercel/blob가 아님",
+      "onlyThisDependencyChanged 또는 lockfileChangeAdditiveOnly가 false",
+      "platform이 instagram_only가 아니거나 youtubeUsesBlob이 true",
+      "codeIntegration.putOptionPlan에서 access!=public 또는 addRandomSuffix/allowOverwrite!=false 또는 multipart!=true",
+      "codeIntegration.uploadFunctionFailClosed가 false 또는 uploadApprovalToken 누락",
+      "sizeGuardFailClosed가 false 또는 sizeCap이 35MB가 아님",
+      "putCallCount/blobObjectUploadCount/envSecretAccessCount/deployCount/instagramApiCallCount 중 하나라도 0이 아님",
+      "noUploadPlannerResult.uploadPerformed가 true 또는 sizeMatchesExpected가 false",
+      "secretValueRecorded 또는 tokenValueRecorded가 true"
+    ]
+  }
+}

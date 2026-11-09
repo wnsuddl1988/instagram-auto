@@ -1,0 +1,60 @@
+{
+  "id": "airbnb-cereal-2008",
+  "title": "에어비앤비 시리얼 — 4달러 상자를 40달러에",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "숫자 대부분이 창업자 진술, 홍보로 읽힐 위험, 정치 후보 균형",
+  "conditionResolved": false,
+  "finding": "시리얼 한 상자 40달러, 총 약 3만 달러, YC 2만 달러에 지분 6%, 2009년 4월 세쿼이아 60만 달러는 서로 다른 매체 2곳에서 확인된다. 그러나 3만 달러와 YC 합격이 시리얼 덕분이었다는 핵심 고리는 모두 체스키·게비아의 회고에서 나온 것이고 독립 검증(그레이엄 본인 확인 등)이 없다. 판매 수량도 500개씩, 약 800개, 1000개 이상으로 출처마다 달라 결정적 장면을 2출처 사실로 못 박을 수 없어 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2008년 에어비앤비 창업자들은 대선 후보를 내세운 시리얼 상자를 한 상자 40달러에 팔았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "상자 수량이 출처마다 다름(500개씩 / 약 800개 / 1000개 이상). 판매 장소(덴버 전당대회)는 약한 출처뿐.",
+      "sources": [
+        { "name": "Fortune(2023)", "url": "https://fortune.com/2023/04/19/airbnb-ceo-cereal-box-investors-changed-everything-billion-dollar-company", "quote": "A $40 cereal box was responsible" },
+        { "name": "시카고대 폴스키센터(2021)", "url": "https://polsky.uchicago.edu/2021/05/24/fireside-chat-polsky-airbnb-cofounder-nathan-blecharczyk/", "quote": "sold the cereal boxes at $40 a pop" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "시리얼 판매로 약 3만 달러를 벌어 신용카드 빚과 운영비에 썼다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "3만 달러는 체스키 본인 발언 기준. 매출인지 이익인지 출처마다 다르고 2만~3만 달러로 적은 곳도 있음.",
+      "sources": [
+        { "name": "Fortune(2023)", "url": "https://fortune.com/2023/04/19/airbnb-ceo-cereal-box-investors-changed-everything-billion-dollar-company", "quote": "earned around $30,000 from that" },
+        { "name": "Wikipedia(Airbnb)", "url": "https://en.wikipedia.org/wiki/Airbnb", "quote": "raised $30,000 by selling cereal" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "와이콤비네이터(YC)는 에어비앤비에 2만 달러를 투자하고 지분 6%를 받았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "시점이 출처마다 다름(Fortune 2008년 / 다른 자료 2009년 1월).",
+      "sources": [
+        { "name": "Fortune(2023)", "url": "https://fortune.com/2023/04/19/airbnb-ceo-cereal-box-investors-changed-everything-billion-dollar-company", "quote": "$20,000 in exchange for a 6% share" },
+        { "name": "Wikipedia(Airbnb)", "url": "https://en.wikipedia.org/wiki/Airbnb", "quote": "$20,000 in funding in exchange" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2009년 4월 에어비앤비는 세쿼이아캐피털에서 60만 달러 시드 투자를 받았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia(Airbnb)", "url": "https://en.wikipedia.org/wiki/Airbnb", "quote": "$600,000 in seed money from Sequoia" },
+        { "name": "The Peak Magazine(싱가포르)", "url": "https://www.thepeakmagazine.com.sg/people/how-the-founders-of-airbnb-went-from-cash-strapped-roommates-to-billionaires", "quote": "$600,000 in seed funding from Sequoia" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 스타트업 일화. 후보 이름(오바마·매케인)을 쓰면 균형을 지키되 정치 쟁점은 아님." },
+  "remaining": "시리얼이 YC 합격의 결정 요인이었다는 폴 그레이엄 발언은 체스키·게비아 회고뿐이라 독립 2출처 없음. 수량 불일치(500개씩/약 800개/1000개 이상) 미해소. 숫자가 홍보성 회고라는 위험이 그대로 남음.",
+  "toolCallsUsed": 17
+}

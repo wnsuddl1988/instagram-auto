@@ -1,0 +1,118 @@
+{
+  "id": "samsung-vs-apple-2012",
+  "title": "삼성 vs 애플 — 1조 원 평결이 나온 날",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "삼성 반복(2·5편). 소송 승패 평가 금지, 평결 하루 장면과 금액 구조 중심",
+  "conditionResolved": true,
+  "finding": "2012년 8월 24일 샌호세 배심원단이 삼성에 약 10억 5천만 달러 배상을 평결했고, 애플이 요구한 25억 달러에는 못 미쳤다는 점이 AP 계열 기사 2곳과 다른 매체로 확인된다. 이후 2018년 5월 재산정 평결 5억 3,900만 달러, 삼성이 먼저 지급한 3억 9,900만 달러, 7년 끈 분쟁이라는 금액 구조도 서로 다른 출처 2곳씩 확인된다. 2018년 6월 합의로 종결된 사건이라 진행 중 소송 문제는 없다. 다만 주인공의 '결단'보다 평결 장면이 중심이라 장면은 약한 편이며, 승패 평가 없이 금액 구조(요구액→평결액→재산정→기지급액)로 풀어야 한다.",
+  "coreMessage": "스마트폰 시대에는 제품의 모양도 값이 매겨지는 자산이라, 권리 하나가 수천억에서 조 단위 금액을 가른다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2012년 8월 미국 샌호세 배심원단은 삼성이 애플 특허를 침해했다며 약 10억 5천만 달러(약 1조 1천억 원)를 지급하라고 평결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "AP 기사는 10억 5천만 달러, ABA·VentureBeat는 '10억 달러'로 반올림 표기. 판사가 오류 2건으로 약 250만 달러를 곧바로 조정함",
+      "sources": [
+        {
+          "name": "MPR News(AP, 2012)",
+          "url": "https://www.mprnews.org/story/2012/08/24/verdict-reached-for-apple-in-samsung-case",
+          "quote": "Samsung to pay Apple $1.05 billion"
+        },
+        {
+          "name": "VentureBeat(2018)",
+          "url": "https://venturebeat.com/business/apple-and-samsung-settle-7-year-u-s-patent-dispute",
+          "quote": "an initial $1 billion verdict in 2012",
+          "manualVerified": true
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "애플은 삼성에 약 25억 달러를 요구했으나 배심원단은 전액을 인정하지 않고 약 10억 5천만 달러만 인정했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처 모두 AP 통신 기사 기반(매체는 다름). 애플 요구액은 25억 달러 또는 25억 2,500만 달러로 표기가 갈림",
+      "sources": [
+        {
+          "name": "MPR News(AP, 2012)",
+          "url": "https://www.mprnews.org/story/2012/08/24/verdict-reached-for-apple-in-samsung-case",
+          "quote": "declining to award the full $2.5 billion"
+        },
+        {
+          "name": "Christian Science Monitor(AP, 2012)",
+          "url": "https://proof.csmonitor.com/Business/Latest-News-Wires/2012/0824/Apple-vs.-Samsung-California-jury-awards-Apple-1-billion",
+          "quote": "demand $2.5 billion from its top"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "소송은 2011년부터 약 7년을 끌었고 2018년 6월 합의로 끝났다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "합의 조건은 공개되지 않음",
+      "sources": [
+        {
+          "name": "ABA Journal(2018)",
+          "url": "https://www.abajournal.com/news/article/apple_and_samsung_settle_patent_litigation_case_finally",
+          "quote": "After seven years of litigation"
+        },
+        {
+          "name": "매일신문(연합뉴스, 2018)",
+          "url": "https://www.imaeil.com/page/view/2018052508072245384",
+          "quote": "무려 7년을 끌어왔다"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2018년 5월 재산정 재판에서 배심원단은 삼성이 애플에 5억 3,900만 달러(약 5,816억 원)를 배상해야 한다고 평결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "이 금액은 합의금이 아니라 재산정 평결액. 디자인 침해 5억 3,300만, 실용특허 530만 달러로 구성",
+      "sources": [
+        {
+          "name": "VentureBeat(2018)",
+          "url": "https://venturebeat.com/business/apple-and-samsung-settle-7-year-u-s-patent-dispute",
+          "quote": "a U.S. jury awarded Apple $539 million",
+          "manualVerified": true
+        },
+        {
+          "name": "매일신문(연합뉴스, 2018)",
+          "url": "https://www.imaeil.com/page/view/2018052508072245384",
+          "quote": "5억3천900만 달러(약 5천816억원)를 배상해야"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "삼성은 이미 앞서 애플에 3억 9,900만 달러를 지급한 상태였다(디자인 특허 침해분).",
+      "numeric": true,
+      "economy": true,
+      "caution": "연합뉴스는 2015년 말 총 5억 4,800만 달러를 먼저 지급했고 그중 디자인 침해분이 3억 9,900만 달러라고 표기",
+      "sources": [
+        {
+          "name": "VentureBeat(2018)",
+          "url": "https://venturebeat.com/business/apple-and-samsung-settle-7-year-u-s-patent-dispute",
+          "quote": "Samsung had previously paid Apple $399 million",
+          "manualVerified": true
+        },
+        {
+          "name": "매일신문(연합뉴스, 2018)",
+          "url": "https://www.imaeil.com/page/view/2018052508072245384",
+          "quote": "3억9천900만 달러에 달했다"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "삼성전자는 현재 영업 중인 국내 기업이나 이 소송은 2018년 합의로 종결됨. 진행 중 사건 아님. 단 소송 승패·삼성 편들기 서술은 피해야 함."
+  },
+  "remaining": "주인공의 선택·결단이 약하고 삼성 소재 3번째 사용. 대본은 '평결 하루 + 요구액 25억 → 평결 10.5억 → 재산정 5.4억 → 기지급 4억' 금액 구조 중심으로 짜야 하며, 2013·2016 재심 과정은 이번 조사에서 미확인이라 쓰지 말 것.",
+  "toolCallsUsed": 14
+}

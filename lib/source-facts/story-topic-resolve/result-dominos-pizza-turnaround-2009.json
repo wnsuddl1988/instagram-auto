@@ -1,0 +1,82 @@
+{
+  "id": "dominos-pizza-turnaround-2009",
+  "title": "도미노피자 2009",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "마케팅 중심, 효과 분리 불가",
+  "conditionResolved": true,
+  "finding": "마케팅만이 아니라 제품 자체를 갈아엎은 결정이었음이 확인된다: 2009년 레시피를 통째로 폐기·재설계했고, 도일은 '크러스트, 소스, 치즈를 다 바꿨다'고 했으며, 효과를 묻자 '전부(All of it)'라고 답했다. 결정 장면은 신임 CMO가 고객 혹평을 광고로 쓰자고 제안하고 충격이 가신 뒤 도일이 승인한 순간이다. 2010년 1분기 미국 동일매장 매출 +14.3%, 연간 +9.9%는 NRN·SEC 보도자료·Marketplace 등 서로 다른 사이트로 확인된다.",
+  "coreMessage": "고객의 혹평을 광고로 쓸 용기는 맛부터 진짜로 바꾼 뒤에야 통한다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "새 피자 출시 후 2010년 1분기 도미노 미국 동일매장 매출이 14.3% 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "SEC 보도자료는 회사 자료. 회사가 '이 속도가 계속되진 않을 것'이라 덧붙임.",
+      "sources": [
+        { "name": "Nation's Restaurant News (2010)", "url": "https://www.nrn.com/restaurant-finance/domino-s-new-pizza-delivers-sales-surge-2010", "quote": "14.3-percent increase in U.S." },
+        { "name": "Domino's Q1 2010 보도자료 (SEC 8-K)", "url": "https://www.sec.gov/Archives/edgar/data/1286681/000119312510105392/dex991.htm", "quote": "domestic same store sales grew 14.3%" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2010 회계연도 전체 동일매장 매출은 9.9% 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Nation's Restaurant News (도일 퇴임 기사)", "url": "https://www.nrn.com/people/patrick-doyle-leaves-legacy-success-domino-s", "quote": "same-store sales rose 9.9 percent" },
+        { "name": "Marketplace (2015)", "url": "https://www.marketplace.org/story/2015/09/24/dominos-ceo-patrick-doyle-tech-side-pizza", "quote": "up 9.9 percent for the year" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "도일이 CEO를 맡은 2010년부터 퇴임까지 도미노 주가는 2,000% 넘게 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "주가 수치는 결과 설명용. 종목 권유로 읽히지 않게 '지금도 오른다'류 표현 금지. 시작·끝 시점이 출처마다 약간 다름(2,000% 이상 vs 2,200%).",
+      "sources": [
+        { "name": "Stratrix Decision Forks", "url": "https://www.stratrix.com/turnaround/domino-s-stock-that-outran-google", "quote": "appreciated more than 2,000%" },
+        { "name": "Motley Fool (2022)", "url": "https://www.fool.com/investing/2022/11/19/restaurant-brands-stock-set-to-skyrocket/", "quote": "greater than 2,200% gain" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "변화 전 도미노 미국 동일매장 매출은 2006~2008년 합계 약 10% 하락했고, 2008년 한 해만도 약 5% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처가 보는 기간이 다름(NRN=2006~2008 누적 10%, NBC=2008년 단년 약 5%). 대본에는 둘 중 하나만 쓸 것.",
+      "sources": [
+        { "name": "Nation's Restaurant News (도일 퇴임 기사)", "url": "https://www.nrn.com/people/patrick-doyle-leaves-legacy-success-domino-s", "quote": "fell a total of 10 percent" },
+        { "name": "NBC News/AP (2009)", "url": "https://www.nbcnews.com/id/wbna34812047", "quote": "sagged nearly 5 percent" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2009년 도미노는 49년 된 레시피를 통째로 폐기하고 새로 설계했으며, 신임 마케팅 책임자의 '고객 혹평을 그대로 보여주자'는 제안을 도일이 승인했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "annarbor.com은 '레시피 전면 재설계', sbnonline은 '2009년 레시피 폐기 결정' 확인용. CMO 제안·도일 승인은 Ann Arbor Observer 단일 보도라 대본 서술 시 '알려진 바로는' 정도로.",
+      "sources": [
+        { "name": "AnnArbor.com", "url": "https://www.annarbor.com/business-review/patrick-doyle-pizza-relaunch-could-have-been-the-end-of-dominos/", "quote": "completely redesign its pizza recipe" },
+        { "name": "SBN Online", "url": "https://sbnonline.com/?p=35829", "quote": "scrap its old pizza recipe in 2009" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "신제품이 매출 증가에 얼마나 기여했냐는 질문에 도일은 '전부'라고 답했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "NRN 단일 출처의 CEO 발언. 대본에 쓰려면 '도일은 이렇게 말했다' 형식으로.",
+      "sources": [
+        { "name": "Nation's Restaurant News (2010)", "url": "https://www.nrn.com/restaurant-finance/domino-s-new-pizza-delivers-sales-surge-2010", "quote": "\"All of it.\"" },
+        { "name": "AnnArbor.com", "url": "https://www.annarbor.com/business-review/dominos-pizza-formulas-remade-from-crust-to-cheese/", "quote": "We changed everything on our pizza from the crust up" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 기업·2009~2010년 종결 사건. 한국 도미노(별개 운영사)와 무관하게 서술. 주가는 결과 설명으로만." },
+  "remaining": "f5의 마케팅 책임자 제안 부분은 단일 출처. 광고비 7,500만 달러 수치는 AnnArbor.com 한 곳에서만 확인되어 이번 facts에서 제외.",
+  "toolCallsUsed": 27
+}

@@ -1,0 +1,80 @@
+{
+  "id": "samyang-beef-tallow-1989",
+  "title": "삼양 우지 파동 — 투서 한 장과 불닭의 역전",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "언락 코리아 192만 등 포화 — 후반 배치. 현 영업 기업이라 무죄 확정(1997) 사실 위주, 같은 구조 따라 하지 않는 각도 필요",
+  "conditionResolved": true,
+  "finding": "이전 검증 파일(C:/tmp/story-topic-vetting/samyang-beef-tallow-1989.json)의 출처를 다시 열어 인용이 모두 페이지에 그대로 있음을 확인했다. 1997년 대법원 무죄 확정(종결 사건)이라 진행 중 소송이 아니며, 사실은 판결·공시·언론 보도 위주로만 쓰면 되어 legal에 해당하지 않는다. 각도는 '무죄가 나와도 믿음(점유율)은 늦게 돌아왔고, 외환위기로 화의까지 갔다가 2011년 명동 한 장면에서 불닭으로 역전'으로 잡을 수 있다. 포화는 순서(후반 배치) 문제이고 판정 기준이 아니다.",
+  "coreMessage": "억울함이 풀려도 믿음은 늦게 돌아온다 — 그 시간을 버티며 만든 하나가 회사를 다시 세운다",
+  "decisiveFact": "f8",
+  "facts": [
+    {
+      "id": "f1", "claim": "투서로 시작된 우지 사건은 8년 뒤인 1997년 8월 대법원에서 무죄가 확정됐다", "numeric": true, "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "법률신문(2025)", "url": "https://www.lawtimes.co.kr/news/212926", "quote": "8년 뒤인 1997년 8월 대법원에서 무죄가 확정됐다" },
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/1951.html", "quote": "8년 뒤 대법원에서 무죄 판결을 받았지만" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "삼양식품은 라면 100만 박스 이상을 폐기했다", "numeric": true, "economy": true,
+      "caution": "박스/상자 표기 차이만 있음",
+      "sources": [
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0079957", "quote": "삼양식품은 100만 박스 이상을 폐기하고" },
+        { "name": "헤럴드경제(2026)", "url": "https://www.heraldk.com/article/2026053106200069068", "quote": "라면 100만 상자를 폐기했고" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "사건 직후 삼양식품의 라면 시장 점유율이 한 자릿수~15% 수준으로 급락했다", "numeric": true, "economy": true,
+      "caution": "출처마다 시작값(31%·40%·60%)과 끝값(10% 이하·15%·5%)이 달라 구체 숫자를 못 박지 말고 '급락'과 한 가지 출처 숫자만 쓸 것",
+      "sources": [
+        { "name": "법률신문(2025)", "url": "https://www.lawtimes.co.kr/news/212926", "quote": "60%에 달했던 시장 점유율은 15%로 떨어졌다" },
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0079957", "quote": "시장 점유율이 10% 이하로 급락하였고" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "삼양은 우지가 팜유보다 수입 단가가 톤당 100달러 더 비싸 싼 기름을 쓴 게 아니라고 해명했다", "numeric": true, "economy": true,
+      "caution": "삼양 측 주장임을 명시",
+      "sources": [
+        { "name": "한국민족문화대백과", "url": "https://encykorea.aks.ac.kr/Article/E0079957", "quote": "우지 수입 비용이 톤당 100$ 더 비쌌다는 점" },
+        { "name": "미디어오늘(다음, 2025)", "url": "https://v.daum.net/v/20251109025312155", "quote": "우지 수입 단가가 팜유 수입가보다 톤당 100달러가 비싼데도" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "무죄 뒤에도 외환위기로 1998년 초 4개 계열사가 화의를 신청했고 2005년에야 화의가 끝났다", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/1951.html", "quote": "1998년 초 삼양식품은 4개 계열사 화의를 신청했고" },
+        { "name": "법률신문(2025)", "url": "https://www.lawtimes.co.kr/news/212926", "quote": "1998년 화의(和議)에 들어갔다" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "불닭볶음면은 출시 1년 만에 월 30억원대 매출을 기록했다", "numeric": true, "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "뉴시스(2022)", "url": "https://mobile.newsis.com/view/NISX20221111_0002082675", "quote": "출시 1년 만에 월 30억원대의 매출을 기록했다" },
+        { "name": "한경비즈니스(2023)", "url": "https://magazine.hankyung.com/business/article/202312200444b", "quote": "출시 1년 만에 월 30억원대 매출을 기록했다" }
+      ]
+    },
+    {
+      "id": "f7", "claim": "2025년 삼양식품은 식품업계 최초로 시가총액 10조 원을 돌파했다", "numeric": true, "economy": true,
+      "caution": "주가·종목 권유처럼 읽히지 않게 '기록' 사실로만 쓸 것",
+      "sources": [
+        { "name": "SBS Biz(2025)", "url": "https://biz.sbs.co.kr/amp/article/20000243579", "quote": "식품업계 처음으로 시가총액 10조 원을 돌파했습니다" },
+        { "name": "메트로신문(2025)", "url": "https://www.metroseoul.co.kr/article/20250701500401", "quote": "국내 식품업계 최초로 시가총액 10조 원을 돌파한" }
+      ]
+    },
+    {
+      "id": "f8", "claim": "2011년 김정수 부회장이 명동 매운 음식점에서 젊은이들이 땀을 뻘뻘 흘리며 먹는 모습을 보고 불닭 아이디어를 얻었다", "numeric": true, "economy": false,
+      "caution": "기업 홍보 서사로 읽히지 않게 담담히",
+      "sources": [
+        { "name": "한경비즈니스(2023)", "url": "https://magazine.hankyung.com/business/article/202312200444b", "quote": "명동 매운 음식점에서 젊은이들이" },
+        { "name": "뉴시스(2022)", "url": "https://mobile.newsis.com/view/NISX20221111_0002082675", "quote": "명동 매운 음식점에서 젊은이들이 땀을 뻘뻘 흘리면서도" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 국내 기업이나 1997년 무죄 확정으로 종결된 사건. 검찰 표적수사설·농심 사주설 등 근거 없는 설은 쓰지 않음" },
+  "remaining": "유튜브 포화(JTBC 57만, 삼양 공식 66만 등 2025-11 재출시 시기 조회) — 후반 배치 권장. 점유율 숫자는 출처별로 달라 하나만 사용",
+  "toolCallsUsed": 13
+}

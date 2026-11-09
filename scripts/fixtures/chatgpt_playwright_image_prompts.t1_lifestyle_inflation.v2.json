@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "chatgpt_playwright_image_prompts_v2",
+  "taskId": "golden-sample-chatgpt-playwright-visual-only-revision-v2",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "purpose": "revision v2 추가 이미지 — 6~7 beat 구성용 신규 3장 (problem 전용 / awkward img3 교체 / result 전용). 기존 img1(hook)·img2(cause)·img4(action)는 재사용.",
+  "maxAdditionalSubmissions": 8,
+  "stopEarlyRule": "6~7 beat를 구성할 좋은 이미지가 확보되면 추가 생성 중단",
+  "global_rules": [
+    "vertical 9:16",
+    "이미지 안 readable text/numerals/로고/워터마크 금지 (지폐 표면·영수증·폰 화면 전부 흐림/뒤집기/비노출)",
+    "외국 지폐/낡은 화폐/오래된 자료 느낌 금지 — 한국 돈 느낌은 warm yellow-gold 지폐 톤/생활 맥락/구도로 암시",
+    "현대 한국 생활금융 맥락",
+    "정확한 정보/라벨/숫자는 renderer 카드가 담당"
+  ],
+
+  "prompts": [
+    {
+      "order": 5,
+      "imageId": "img_05_problem_month_end",
+      "beat": "problem",
+      "evidence_goal": "월말 저녁, 거의 빈 지갑을 확인하는 지친 직장인 — '더 버는데 잔액은 그대로'의 감정적 증거 (hook 이미지와 다른 공간/구도로 dwell 단조로움 해소)",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, late evening in a modern Korean living room. A tired Korean office worker in comfortable home clothes sits on the sofa leaning forward under warm low lamp light, holding an open, nearly empty slim leather wallet and looking into it with a quiet disappointed expression, face partially in soft shadow. On the low table in front: one blurred crumpled receipt and a smartphone lying face-down. Quiet end-of-month feeling, realistic contemporary Korean home, shallow depth of field, premium editorial photo quality, high detail. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 6,
+      "imageId": "img_06_illusion_bundle_vs_scattered",
+      "beat": "illusion",
+      "evidence_goal": "img_03 교체 — 한 덩어리로 기억되는 인상액(선명한 지폐 묶음) vs 흩어져 안 보이는 지출(어둠 속 동전/영수증) 대비. v1 실패 원인(지폐가 무지 봉투처럼 보임)을 '여러 장이 겹친 지폐 다발'로 교정",
+      "finalPrompt": "Cinematic vertical 9:16 photograph with extreme shallow depth of field, dim modern Korean living room at night. In sharp focus in the upper foreground, a hand holds up one neat small stack of several overlapping warm yellow-gold toned banknotes — clearly multiple paper bills fanned slightly so the layered edges are visible, each bill surface smoothly blurred with no readable text, no numbers, no portraits, held together as one bright memorable bundle under a soft spotlight. Far below in the blurred dark background, a wide table covered with dozens of small scattered coins, crumpled receipts and face-down payment cards, all nearly dissolving into shadow. One bright bundle you remember, countless scattered spending you never see. Strong cinematic light contrast, contemporary Korean home context, premium editorial photo quality. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 7,
+      "imageId": "img_07_result_settled_morning",
+      "beat": "result",
+      "evidence_goal": "행동 이후 '자리가 잡힌 상태' — 정돈된 아침 데스크에 나눠 담긴 봉투 3개가 안정적으로 놓인 결과 장면 (img4의 진행형 동작과 구분되는 완료/정돈 상태)",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, bright fresh morning light in a tidy modern Korean home workspace by a window. On the clean white desk, three plain kraft envelopes stand upright side by side in a simple light-wood desk organizer, each envelope gently filled and clearly separate, no labels. Next to the organizer: a warm cup of coffee with soft steam, a closed plain notebook, and a small green potted plant. Outside the window, a bright softly-blurred Korean city morning. Calm, organized, hopeful start-of-month feeling, contemporary Korean lifestyle, premium editorial photo quality, high detail. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    }
+  ],
+
+  "boundary": { "max_additional_submissions": 8, "auto_retry": false, "cost_usd": 0 }
+}

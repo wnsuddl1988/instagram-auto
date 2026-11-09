@@ -1,0 +1,70 @@
+{
+  "id": "pepsi-12oz-1934",
+  "title": "펩시 12온스 — 코카콜라가 세 번 거절한 회사",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "파산 연도 1923/1931 엇갈림. 니켈 콜라와 같은 코카콜라 계열이라 한 편만",
+  "conditionResolved": false,
+  "finding": "파산 연도는 1923년(브래덤 파산)과 1931년(후속 National Pepsi-Cola 파산)이 서로 다른 두 사건임이 확인돼 엇갈림은 풀렸다. 그러나 훅인 '코카콜라가 세 번 거절'은 위키백과 한 문장(1922~1933 사이 3회 인수 제안 거절)에만 있고 미러 사이트가 베낀 것이며 독립된 두 번째 출처가 없다. 또한 코카콜라 병 크기는 출처에 따라 6온스(Mental Floss)로 나오고 6.5온스는 찾지 못했으며, 12온스 5센트 도입 시점도 1934년(위키)과 1931년 직후(브리태니카)로 갈린다. 핵심 사실을 2출처로 못 채워 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "펩시콜라는 1923년 설탕 가격 투기 손실로 파산했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1931년에는 후속회사 National Pepsi-Cola Corp.가 다시 파산. 연도가 두 사건임을 명시해야 함.",
+      "sources": [
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/food/beverages/11-things-you-probably-didnt-know-about-pepsi", "quote": "in 1923 Bradham declared bankruptcy" },
+        { "name": "Wikipedia: Pepsi", "url": "https://en.wikipedia.org/wiki/Pepsi", "quote": "Pepsi-Cola Company entered bankruptcy" },
+        { "name": "Funding Universe 회사사", "url": "https://www.fundinguniverse.com/company-histories/the-pepsi-bottling-group-inc-history/", "quote": "declaring bankruptcy in 1923" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "대공황기 펩시는 같은 5센트에 12온스 병을 팔았다(경쟁사는 더 작은 병).",
+      "numeric": true,
+      "economy": true,
+      "caution": "경쟁사 병 크기가 Mental Floss는 6온스, 통념은 6.5온스. 6.5온스 출처 미확보. 도입 연도도 1934년(위키)과 1931년 직후(브리태니카 서술)로 갈림.",
+      "sources": [
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/food/beverages/11-things-you-probably-didnt-know-about-pepsi", "quote": "Pepsi began selling 12-ounce bottles" },
+        { "name": "Funding Universe 회사사", "url": "https://www.fundinguniverse.com/company-histories/the-pepsi-bottling-group-inc-history/", "quote": "instead of the usual six" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "코카콜라는 1922~1933년 사이 세 차례 펩시 인수 제안을 받고 매번 거절했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "위키백과 단일 서술이며 미러 사이트가 그대로 복제. 1차 자료(Guth v. Loft 판결 등)로 미확인.",
+      "sources": [
+        { "name": "Wikipedia: Pepsi", "url": "https://en.wikipedia.org/wiki/Pepsi", "quote": "On three occasions between 1922 and 1933" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "12온스 전략 이후 펩시의 이익이 두 배가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처. 시기(1936~38 vs 1934) 서술 불일치.",
+      "sources": [
+        { "name": "Mental Floss", "url": "https://www.mentalfloss.com/food/beverages/11-things-you-probably-didnt-know-about-pepsi", "quote": "Their profits doubled." }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "펩시는 1934년 흑자 회사가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키는 1934년 12온스 병 도입으로 서술해 두 출처 모두 '1934' 시점은 있으나 같은 사실의 직접 인용은 아님.",
+      "sources": [
+        { "name": "Funding Universe 회사사", "url": "https://www.fundinguniverse.com/company-histories/the-pepsi-bottling-group-inc-history/", "quote": "By 1934 the company was profitable" },
+        { "name": "Wikipedia: Pepsi", "url": "https://en.wikipedia.org/wiki/Pepsi", "quote": "introduction in 1934 of a 12-ounce" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업 옛 사건. 국내 민감성 없음. 현재도 영업 중인 글로벌 브랜드라 비교 저격 표현은 피할 것." },
+  "remaining": "'세 번 거절'의 독립 출처, 코카콜라 병 6.5온스 출처, 12온스 도입 연도 확정이 필요. 니켈 콜라(코카콜라 계열)와 한 편만 쓴다는 제약은 별도 확인 대상.",
+  "toolCallsUsed": 9
+}

@@ -1,0 +1,48 @@
+{
+  "id": "toys-r-us-2017",
+  "title": "토이저러스 — 빚에 무너진 장난감 가게",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "사모펀드 부채 인수 구조 설명 필요",
+  "conditionResolved": true,
+  "finding": "2005년 베인·KKR·보르나도가 레버리지 인수(66억~75억 달러)로 회사를 사들였고, 2017년 파산 신청 때 부채가 50억 달러 이상, 이자만 연 약 4억 달러였다는 사실이 서로 다른 사이트 2곳으로 확인된다. 부채 인수 구조는 '산 돈을 회사 빚으로 넘겼다'는 한 문장으로 줄일 수 있어 설명이 길지 않다. 다만 파산 원인에 아마존 등 온라인 경쟁도 있으므로 빚만 단독 원인으로 단정하면 안 된다.",
+  "coreMessage": "빚으로 산 회사는 장사가 안 돼도 이자가 먼저 가게 문을 닫게 만든다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1", "claim": "2005년 베인캐피털·KKR·보르나도가 토이저러스를 레버리지 인수(LBO)로 사들였다.", "numeric": true, "economy": true,
+      "caution": "인수 금액이 출처마다 다름: 위키피디아 66억 달러, Fortune 75억 달러(부채 포함 여부 차이로 추정). 대본은 '60억~70억 달러대'로 쓰거나 금액 생략.",
+      "sources": [
+        { "name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Toys_R_Us", "quote": "a $6.6 billion leveraged buyout" },
+        { "name": "Fortune(2018)", "url": "https://fortune.com/2018/03/08/toys-r-us-bankruptcy-liquidation", "quote": "a $7.5 billion leveraged buyout in 2005" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "2017년 9월 파산 신청 때 토이저러스는 50억 달러 이상의 장기 부채를 지고 있었다.", "numeric": true, "economy": true,
+      "caution": "In These Times 등 일부 보도는 인수 직후 부채 76억 달러로 표기. 파산 시점 수치는 '50억 달러 이상'으로 통일.",
+      "sources": [
+        { "name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Toys_R_Us", "quote": "deal with $5 billion in long-term debt" },
+        { "name": "Private Equity Stakeholder Project", "url": "https://pestakeholder.org/kkr-bain-capital-vornado-repeatedly-rewarded-themselves-for-adding-debt-to-toys-r-us", "quote": "more than $5 billion in debt" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "토이저러스는 빚을 갚느라 매년 약 4억 달러의 이자를 냈다.", "numeric": true, "economy": true,
+      "caution": "연도에 따라 최대 5억 달러까지 썼다는 Bloomberg Intelligence 인용 보도(IBJ)도 있음. '약 4억 달러'로 통일. 홍보 성격의 비영리 단체(pestakeholder)의 분석 포함.",
+      "sources": [
+        { "name": "Wikipedia", "url": "https://en.wikipedia.org/wiki/Toys_R_Us", "quote": "US$400 million per year to service" },
+        { "name": "Private Equity Stakeholder Project", "url": "https://pestakeholder.org/kkr-bain-capital-vornado-repeatedly-rewarded-themselves-for-adding-debt-to-toys-r-us", "quote": "$400 million a year just to service" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "2018년 초 미국에 800여 개 매장이 있었고, 정리 과정에서 매장 800개를 닫고 직원 3만 3천 명이 일자리를 잃었다.", "numeric": true, "economy": false,
+      "caution": "800개는 '미국 매장 수'와 '폐점 수'를 각 출처가 다르게 서술(Fortune은 보유 매장, PESP는 폐점·해고). 33,000명은 PESP 1곳만. 대본에서는 '미국 800여 개 매장이 문을 닫았다' 정도로 사용.",
+      "sources": [
+        { "name": "Fortune(2018)", "url": "https://fortune.com/2018/03/09/toys-r-us-closing-us-stores-bankruptcy", "quote": "more than 800 stores in the U.S." },
+        { "name": "Private Equity Stakeholder Project", "url": "https://pestakeholder.org/kkr-bain-capital-vornado-repeatedly-rewarded-themselves-for-adding-debt-to-toys-r-us", "quote": "closing 800 stores and laying off" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 종결된 사건. 사모펀드 비판 서술은 주장이 섞인 출처가 있어 '사실(부채·이자)'만 사용. 투자 권유로 읽히지 않게 주의." },
+  "remaining": "파산 원인은 빚 외에 온라인(아마존)·월마트 경쟁도 있음(위키피디아) — 대본에서 빚을 유일 원인으로 단정 금지. 사모펀드의 수수료·이자 수령 464백만 달러는 1곳 출처라 제외.",
+  "toolCallsUsed": 12
+}

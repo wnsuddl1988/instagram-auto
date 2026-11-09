@@ -1,0 +1,82 @@
+{
+  "id": "cheongdo-gamwine-tunnel",
+  "title": "청도 감와인터널",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "방문객·매출 숫자 없음",
+  "conditionResolved": true,
+  "finding": "방문객·투자 숫자는 2곳 출처로 확보했다: 폐터널 조성에 약 10억원 투입, 20년 누적 방문객 500만 명(iMBC·TV리포트, 같은 방송 근거라는 한계 있음). 결정적 장면은 1937년 철도 사용이 끊겨 방치되던 옛 경부선 터널을 2006년 3월 감와인 숙성 저장고·카페 '와인터널'로 바꾼 것(건축사신문·한국관광공사). 연 매출은 2곳 출처로 못 찾았으나 숫자 사실 6개와 경제 근거 2개가 갖춰져 usable로 제안한다.",
+  "coreMessage": "쓸모를 잃고 버려진 것도 쓰임을 바꾸면 그 자리에 사람이 찾아오는 새 일터가 된다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "청도 와인터널은 옛 경부선 철도터널로 1896년께 착공해 1904년 완공됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "개통 연도는 1905년(경부선 개통)으로 표기하는 자료도 있고 서울신문(2008)은 '메이지 37년(1904년)'으로 씀",
+      "sources": [
+        { "name": "주간경향", "url": "https://weekly.khan.co.kr/article/12765", "quote": "1896년께 착공해 1904년 완공한 철도터널" },
+        { "name": "대한민국 구석구석(한국관광공사)", "url": "https://korean.visitkorea.or.kr/detail/rem_detail.do?cotid=c94d71e2-5082-4a66-a05b-fcf2f76c5fdf", "quote": "1904년에 터널이 완공되었음을 의미한다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1937년 새 철로가 놓이면서 이 터널은 철도로 쓰이지 않고 폐터널로 방치됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "1898년 완공이라는 매일신문(2014) 서술 등 완공 연도는 출처마다 다름",
+      "sources": [
+        { "name": "서울신문(2008)", "url": "https://www.seoul.co.kr/news/plan/2008/11/20/20081120018005", "quote": "1937년 마을 아래편에 새 철로가 놓일 때까지" },
+        { "name": "iMBC(2026, EBS 방송 소개)", "url": "https://enews.imbc.com/News/ViewAmp/516535", "quote": "1937년 사용이 중단된 터널에" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "청도와인(주)이 방치된 옛 경부선 터널을 정비해 2006년 3월 감와인 숙성 목적의 '와인터널'로 개장했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "개장 이전 터널은 임차(하상오 대표가 소유하지 않고 매년 임대료를 냄: TV리포트)",
+      "sources": [
+        { "name": "건축사신문(대한건축사협회)", "url": "https://www.ancnews.kr/news/articleView.html?idxno=17626", "quote": "2006년 3월에 감와인 숙성을 목적으로 개장" },
+        { "name": "대한민국 구석구석(한국관광공사)", "url": "https://korean.visitkorea.or.kr/detail/rem_detail.do?cotid=c94d71e2-5082-4a66-a05b-fcf2f76c5fdf", "quote": "감와인을 숙성하는 와인터널로 개장한 것이 2006년이다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "폐터널을 현재의 와인터널 공간으로 조성하는 데 약 10억원이 투입됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "소유권 취득 비용이 아니라 조성·운영 투자(터널은 임차). 방송 소개 기사 2건이 같은 방송 내용에 근거",
+      "sources": [
+        { "name": "iMBC(2026, EBS 방송 소개)", "url": "https://enews.imbc.com/News/ViewAmp/516535", "quote": "터널에 하상오는 10억 원을 투자했다" },
+        { "name": "TV리포트(2026)", "url": "https://tvreport.co.kr/broadcast/article/1072906/", "quote": "폐터널을 현재의 공간으로 조성하는 데는 약 10억 원이 투입됐다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "개장 후 20년 동안 와인터널을 찾은 누적 방문객은 500만 명을 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "방송 소개 2건이 같은 근거(홍보성 가능). 건축사신문 등은 '연간 100만 명'이라 쓰는데 20년 누적 500만 명(연 평균 25만)과 어긋나므로 연 100만 명은 쓰지 말 것",
+      "sources": [
+        { "name": "iMBC(2026, EBS 방송 소개)", "url": "https://enews.imbc.com/News/ViewAmp/516535", "quote": "20년 동안 누적 방문객만 500만 명에 이른다" },
+        { "name": "TV리포트(2026)", "url": "https://tvreport.co.kr/broadcast/article/1072906/", "quote": "누적 방문객은 500만 명을 넘어섰다" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "와인터널은 길이 1.01km 규모로 15만 병이 넘는 감와인을 저장·숙성하고 있다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "2011년 보도(매일신문)는 저장 능력 80만 병이라 썼음(능력 vs 현재 보유)",
+      "sources": [
+        { "name": "대한민국 구석구석(한국관광공사)", "url": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=004abc12-2452-4fc6-b7cf-5e9aec5fc916", "quote": "15만병이 넘는 와인을 저장, 숙성하고 있다" },
+        { "name": "경북매일", "url": "https://www.kbmaeil.com/945300", "quote": "15만 병이 넘는 와인이 저장·숙성되고 있다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 중소 와인업체의 지역 관광 일화이나 소송·제재·정치 소지 없음. 투자 권유로 읽힐 요소 없음" },
+  "remaining": "연 매출은 2곳 출처로 못 찾음(경제 숫자는 투자 10억·방문객 500만에 한정). 방문객·투자 수치 출처가 2026년 EBS 방송 소개 기사 2건(같은 근거)이라 대본 사용 시 '방송에 따르면' 식 한정 필요. 감와인 개발 5년·백화점 판매 부진 후 청도로 고객을 초대한 결단은 TV리포트 단일 서술(2곳 미확인).",
+  "toolCallsUsed": 17
+}

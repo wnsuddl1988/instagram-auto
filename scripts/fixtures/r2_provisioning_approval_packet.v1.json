@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "r2_provisioning_approval_packet_v1",
+  "taskId": "r2-primary-provisioning-approval-packet-v1",
+  "status": "R2_PROVISIONING_APPROVAL_PACKET_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "Cloudflare R2를 media.buildgongjakso.com sustained media provider primary로 실제 provisioning하기 전에 Owner가 승인해야 할 bucket/custom domain/token/env 이름/DNS/rollback/검증 순서를 고정하는 no-secret/no-provisioning 승인 패킷. 이 패킷은 실제 bucket/token 생성·DNS/custom domain 변경·env/secret write·deploy·object upload·live liveness check·Instagram --arm을 승인하지 않는다.",
+  "docsRef": "docs/r2-provisioning-approval-packet.md",
+  "strategyRef": "scripts/fixtures/stable_public_media_url_strategy.v1.json",
+  "providerDecisionRef": "scripts/fixtures/media_provider_decision_packet.v1.json",
+
+  "provider": "cloudflare_r2",
+  "sustainedHost": "media.buildgongjakso.com",
+  "sustainedHostPreserved": true,
+  "noLiveThisSlice": true,
+
+  "proposedBucketName": "buildgongjakso-media",
+  "customDomain": "media.buildgongjakso.com",
+
+  "objectKeyPolicy": {
+    "prefixPattern": "<schemaGroup>/<version>/<topicId>/<artifact>.mp4",
+    "deterministic": true,
+    "noRandomSuffix": true,
+    "objectKeyEqualsUrlPath": true,
+    "examplePublicUrl": "https://media.buildgongjakso.com/golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "exampleObjectKey": "golden-sample/v3-2/t1_lifestyle_inflation/golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "note": "R2 custom domain은 bucket root를 도메인 root에 매핑하므로 object key = public URL path. stable-strategy 결정론적 key 상속, 무작위 접미사 금지."
+  },
+
+  "requiredEnvNames": [
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET",
+    "R2_ENDPOINT",
+    "PUBLIC_MEDIA_BASE_URL"
+  ],
+  "envNamesOnlyNoValues": true,
+  "envRoles": {
+    "R2_ACCOUNT_ID": "Cloudflare account ID (R2 endpoint 구성)",
+    "R2_ACCESS_KEY_ID": "R2 API token access key",
+    "R2_SECRET_ACCESS_KEY": "R2 API token secret",
+    "R2_BUCKET": "bucket name (buildgongjakso-media)",
+    "R2_ENDPOINT": "S3-compatible endpoint (업로드 전용, public read 아님)",
+    "PUBLIC_MEDIA_BASE_URL": "public read base (https://media.buildgongjakso.com) — uploader가 결정론적 URL 조립"
+  },
+  "publicReadViaCustomDomainOnly": true,
+  "r2DevEndpointForProductionForbidden": true,
+
+  "setupSequence": [
+    { "step": 1, "id": "account_zone_prereq_check", "detail": "buildgongjakso.com이 R2 bucket과 같은 account의 Cloudflare zone인지 확인" },
+    { "step": 2, "id": "bucket_creation", "detail": "buildgongjakso-media bucket 생성" },
+    { "step": 3, "id": "public_bucket_custom_domain", "detail": "media.buildgongjakso.com public bucket custom domain 연결 (DNS record + status active)" },
+    { "step": 4, "id": "api_token_creation", "detail": "최소 권한(해당 bucket read/write) R2 API token 생성" },
+    { "step": 5, "id": "env_secret_config", "detail": "requiredEnvNames 이름으로만 설정, 값 별도 승인" },
+    { "step": 6, "id": "code_integration", "detail": "렌더 산출물을 결정론적 key로 R2 업로드 + PUBLIC_MEDIA_BASE_URL URL 조립 uploader" },
+    { "step": 7, "id": "deploy", "detail": "Vercel deploy" },
+    { "step": 8, "id": "controlled_object_upload_test", "detail": "승인된 단일 샘플 mp4 1건 업로드 테스트" },
+    { "step": 9, "id": "public_url_verifier_check", "detail": "HTTPS/allowed host/2xx|206/video/reject html/unauth/reject redirect (stable-strategy verifier 상속)" },
+    { "step": 10, "id": "instagram_arm", "detail": "검증된 public mp4 URL로 Instagram 1회 업로드" }
+  ],
+
+  "approvalGates": {
+    "provisioning": true,
+    "dnsCustomDomain": true,
+    "envSecretWrite": true,
+    "codeIntegration": true,
+    "deploy": true,
+    "objectUploadTest": true,
+    "liveLivenessCheck": true,
+    "instagramArm": true,
+    "note": "각 게이트는 별도 Owner 명시 승인 없이는 진행하지 않는다. 이 slice는 어느 게이트도 실행하지 않는다."
+  },
+
+  "unknowns": [
+    "U1 buildgongjakso.com이 이미 이 Cloudflare account의 zone인지 (현 evidence상 Vercel org buildgongjakso-home에서 서비스 중 → Cloudflare zone 여부 별도 확인)",
+    "U2 도메인이 Cloudflare 관리가 아니면 partial(CNAME) setup 필요 여부",
+    "U3 최종 Cloudflare account ID (R2_ACCOUNT_ID)",
+    "U4 최종 bucket name (Owner가 buildgongjakso-media 외 선호 시)",
+    "U5 DNS record 추가 위치 (registrar/DNS provider가 Vercel인지 Cloudflare인지) → full zone vs partial CNAME 좌우"
+  ],
+
+  "rollback": [
+    "disable domain access — public bucket public access(custom domain) 비활성화로 노출 즉시 차단",
+    "remove custom domain connection — media.buildgongjakso.com custom domain 연결 제거(DNS record 회수)",
+    "revoke token — R2 API token 폐기(업로드 credential 무효화)",
+    "remove env values — R2_* / PUBLIC_MEDIA_BASE_URL 값 제거(이름만 남김)",
+    "stop uploader path — code integration uploader 경로 비활성화",
+    "one-off repo public/ fallback only if explicitly approved — 명시 승인 시에만 긴급 단발 발행 (*.mp4 gitignore → git add -f 필요)"
+  ],
+
+  "futureApprovalSnippets": {
+    "provisioning": "APPROVE_R2_PROVISIONING: buildgongjakso-media bucket 생성 + public bucket custom domain(media.buildgongjakso.com) 연결 + 최소권한 R2 API token 생성을 승인한다.",
+    "dnsCustomDomain": "APPROVE_R2_DNS_CUSTOM_DOMAIN: media.buildgongjakso.com을 R2 public bucket custom domain으로 연결하는 DNS record 추가/전환을 승인한다.",
+    "envSecretWrite": "APPROVE_R2_ENV_WRITE: R2_* + PUBLIC_MEDIA_BASE_URL 값 설정을 승인한다. 값은 로그/report/fixture 기록 금지.",
+    "codeIntegration": "APPROVE_R2_CODE_INTEGRATION: 렌더 산출물을 결정론적 key로 R2 업로드 + PUBLIC_MEDIA_BASE_URL URL 조립 uploader slice를 승인한다.",
+    "deploy": "APPROVE_R2_DEPLOY: uploader 통합본 Vercel deploy를 승인한다.",
+    "objectUploadAndLiveness": "APPROVE_R2_UPLOAD_TEST_AND_LIVENESS: 승인된 단일 샘플 mp4 1건 R2 업로드 + media.buildgongjakso.com public URL verifier live check를 승인한다.",
+    "instagramArm": "APPROVE_INSTAGRAM_ARM_WITH_R2_URL: 검증된 media.buildgongjakso.com public mp4 URL로 Instagram 1회 업로드(--arm)를 승인한다."
+  },
+
+  "verifierGatesInheritedFromStrategy": {
+    "requireHttps": true,
+    "requireAllowedHost": true,
+    "requireHttp2xxOr206": true,
+    "requireVideoContentType": true,
+    "rejectTextHtml": true,
+    "requireUnauthenticatedAccess": true,
+    "rejectLoginOrHtmlRedirect": true,
+    "uploadOnlyWithVerifiedUrl": true
+  },
+
+  "officialDocRefs": {
+    "r2PublicBuckets": "https://developers.cloudflare.com/r2/buckets/public-buckets/",
+    "r2ApiTokens": "https://developers.cloudflare.com/r2/api/tokens/",
+    "keyPoints": [
+      "public bucket은 명시 권한이 있을 때만 인터넷 노출",
+      "custom domain(Owner 제어)이 지원 public bucket 경로",
+      "r2.dev는 비-production 용도",
+      "도메인은 R2 bucket과 같은 account의 Cloudflare zone이어야 함",
+      "미관리 도메인은 partial CNAME setup 가능",
+      "custom domain 연결은 DNS record 추가 후 status 전환으로 active",
+      "R2 API token은 최소 권한 scope 권장"
+    ]
+  },
+
+  "forbiddenBehavior": [
+    "Cloudflare login / account query / mutation / provisioning",
+    "R2 bucket creation",
+    "R2 token creation",
+    "DNS/custom domain change",
+    "env/secret write",
+    "secret value read/print/write",
+    "deploy / Vercel deploy",
+    "object upload",
+    "public URL liveness network check against generated mp4 URLs",
+    "Instagram upload or --arm",
+    "Instagram credential/env read",
+    "broad .env.local parsing",
+    "YouTube/Supabase/DB/render/mux/TTS/image/browser side effects",
+    "dependency/lockfile/font change",
+    "secret logging",
+    "commit/push in this slice"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "cookie-run-kingdom",
+  "title": "쿠키런 킹덤",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "흑자 후 다시 적자로 마무리 나쁨",
+  "conditionResolved": false,
+  "finding": "2021년 쿠키런: 킹덤 흥행으로 매출 3693억원·영업이익 흑자전환(6년 적자 탈출)까지는 2곳 출처로 확인되나, 2022년 매출 2146억원·영업손실 202억원으로 곧바로 적자전환한 사실도 2곳으로 확인돼 '흑자 후 다시 적자'라는 마무리 문제가 해소되지 않는다. 결과를 바꾼 결정적 장면(주인공의 선택·결단)에 해당하는 출처 2곳 확인 사실도 없고(개발 기간·결단 서술 기사 없음), 교훈 한 줄이 '흥행 후 신작 부재' 같은 약한 메시지에 그쳐 weak-scene으로 보류한다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "데브시스터즈는 쿠키런: 킹덤 흥행으로 2021년 연결기준 매출 3693억원, 영업이익 약 563억원(출처별 562~566억 차이)을 내며 흑자전환했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "영업이익이 출처마다 562억/563억/566억으로 다름",
+      "sources": [
+        { "name": "뉴데일리경제(2022)", "url": "https://biz.newdaily.co.kr/site/data/html/2022/02/14/2022021400194.amp.html", "quote": "2021년 연결기준 매출 3693억 원, 영업이익 563억 원" },
+        { "name": "딜사이트(2023)", "url": "https://dealsite.co.kr/articles/99885", "quote": "2021년 매출 3693억원, 영업이익 562억원을 기록하며 흑자전환에 성공했다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "쿠키런: 킹덤은 2021년 4월 13일경 구글플레이 게임 매출 순위에서 리니지2M을 제치고 2위에 올랐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "이후 4위로 하락했다는 보도 있음",
+      "sources": [
+        { "name": "스포츠경향(2021)", "url": "https://sports.khan.co.kr/article/202104131125003", "quote": "제치고 2위에 등극했다" },
+        { "name": "이코노미스트(2021)", "url": "https://economist.co.kr/article/view/ecn202104210009", "quote": "구글 플레이 게임매출 2위에 등극했다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2022년 연간 매출은 2146억원, 영업손실은 202억원으로 2021년 흑자에서 1년 만에 다시 적자로 돌아섰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "다른 보도는 매출 2144억·영업손실 199억(연결 확정치 차이)",
+      "sources": [
+        { "name": "뉴데일리경제(2023)", "url": "https://biz.newdaily.co.kr/site/data/html/2023/02/14/2023021400190.amp.html", "quote": "2022년 연간 누적 매출 2146억 원, 영업손실 202억 원" },
+        { "name": "딜사이트(2023)", "url": "https://dealsite.co.kr/articles/99885", "quote": "매출 2146억원, 영업손실 202억원을 기록하며 적자전환했다" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "현 영업 중인 상장 게임사의 최근 실적 서사라 민감성은 낮으나 종목 권유로 읽힐 소지 약간" },
+  "remaining": "결정적 장면(4년 개발·폐업 위기 속 킹덤 투자 결단)을 2곳 출처로 확인 못 함. 흑자 후 다시 적자 결말 때문에 교훈 전달이 약함. 2015~2020 매년 적자 사실은 1곳(딜사이트)만 확인.",
+  "toolCallsUsed": 8
+}

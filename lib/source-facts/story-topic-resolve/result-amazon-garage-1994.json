@@ -1,0 +1,117 @@
+{
+  "id": "amazon-garage-1994",
+  "title": "아마존 — 차고에서 책을 팔던 회사",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "성공 신화 포화 가능성",
+  "conditionResolved": true,
+  "finding": "포화 가능성은 판정 기준(a~e)에 해당하지 않으며, 사실 자료는 충분하다. 1994년 월가 D.E. Shaw 재직 중 웹 상거래가 연 2,300% 성장한다는 보고서를 보고 시애틀 교외에서 시작한 결단, 부모의 245,573달러 투자, 1996년 1,570만 달러에서 1997년 1억 4,780만 달러로 838% 성장이 각각 2곳에서 확인된다. 다만 차고에서 시작했다는 점은 출처마다 시기·표현이 달라 단정 금지.",
+  "coreMessage": "안정된 직장을 버리고 작게 시작한 결정도, 고객에게 집착하면 1년 만에 매출이 9배로 자란다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1994년 월가 D.E. Shaw에 있던 제프 베조스는 웹 상거래가 연 2,300% 성장한다는 보고서를 보고 직장을 떠나 인터넷 서점을 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'직장을 그만뒀다'는 부분은 위키피디아 위주. 보고서 2,300%는 두 곳 모두 확인. 일부 출처는 구상이 월가에서 이뤄졌다고 비판하며, 개점은 1995년 7월이라는 아마존 공식 설명과 설립 1994년 7월이 공존함.",
+      "sources": [
+        {
+          "name": "Wikipedia, History of Amazon",
+          "url": "https://en.wikipedia.org/wiki/History_of_Amazon",
+          "quote": "annual web commerce growth at 2,300%"
+        },
+        {
+          "name": "Flagpole(2014)",
+          "url": "https://flagpole.com/news/news-features/2014/09/24/how-amazon-was-born",
+          "quote": "grow by 2,300 percent a year",
+          "manualVerified": true,
+          "manualNote": "2026-10-10 WebFetch 직접 확인: 본문에 quote 그대로 있음"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "베조스의 부모는 1995년 아마존에 약 245,573달러를 투자했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "투자인지 대출인지 출처마다 다름(1997년 상장 서류 기준 보도).",
+      "sources": [
+        {
+          "name": "Fortune(2018)",
+          "url": "https://www.fortune.com/2018/07/31/jeff-bezos-family-investment-amazon",
+          "quote": "plowed $245,573 into their son's"
+        },
+        {
+          "name": "Wikipedia, History of Amazon",
+          "url": "https://en.wikipedia.org/wiki/History_of_Amazon",
+          "quote": "parents invested almost $245,573"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "개점 후 얼마 안 돼 아마존은 미국 50개 주와 45개국 이상에 책을 팔았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "기간이 출처마다 다름(아마존 공식: 첫 한 달, 위키: 첫 두 달).",
+      "sources": [
+        {
+          "name": "Wikipedia, History of Amazon",
+          "url": "https://en.wikipedia.org/wiki/History_of_Amazon",
+          "quote": "all 50 states and over 45 countries"
+        },
+        {
+          "name": "Amazon(aboutamazon.in)",
+          "url": "https://www.aboutamazon.in/news/workplace/jeff-bezos-started-amazon-in-this-garage",
+          "quote": "shipped books to all 50 states"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "아마존의 매출은 1996년 1,570만 달러에서 1997년 1억 4,780만 달러로 838% 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처 모두 1997년 주주서한 전재본(1차 자료 동일).",
+      "sources": [
+        {
+          "name": "Amazon 1997 주주서한(aboutamazon.com)",
+          "url": "https://www.aboutamazon.com/news/company-news/amazons-original-1997-letter-to-shareholders",
+          "quote": "$15.7 million in 1996 to $147.8 million"
+        },
+        {
+          "name": "Visible.vc 1997 주주서한 전재",
+          "url": "https://visible.vc/blog/investor-letters-amazon-1997/",
+          "quote": "Sales grew from $15.7 million in 1996"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "누적 고객 계정은 1996년 18만 개에서 1997년 151만 개로 늘었다(738% 증가).",
+      "numeric": true,
+      "economy": true,
+      "caution": "f4와 같은 주주서한 기반.",
+      "sources": [
+        {
+          "name": "Amazon 1997 주주서한(aboutamazon.com)",
+          "url": "https://www.aboutamazon.com/news/company-news/amazons-original-1997-letter-to-shareholders",
+          "quote": "from 180,000 to 1,510,000"
+        },
+        {
+          "name": "Visible.vc 1997 주주서한 전재",
+          "url": "https://visible.vc/blog/investor-letters-amazon-1997/",
+          "quote": "from 180,000 to 1,510,000"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "외국 기업의 옛 창업 일화. 현재 소송·제재 쟁점은 쓰지 않으면 문제 없음."
+  },
+  "remaining": "한국 시청자에게 포화된 성공 신화라 차별 각도(2,300% 보고서를 보고 직장을 던진 결단 장면 중심)가 필요. 베조스의 '후회 최소화' 일화는 2곳 원문 미확인이라 대본에서 제외 권장. 차고 표현은 '차고에서 사무를 시작했다는 설명이 널리 알려져 있다' 수준으로.",
+  "toolCallsUsed": 14
+}

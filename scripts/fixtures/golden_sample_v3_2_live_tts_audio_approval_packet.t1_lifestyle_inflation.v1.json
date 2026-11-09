@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "golden_sample_live_tts_audio_approval_packet_v1",
+  "taskId": "golden-sample-v3-2-existing-image-set-acceptance-and-live-tts-audio-approval-prep-v1",
+  "status": "LIVE_TTS_AUDIO_APPROVAL_PACKET_FUTURE_USE_ONLY_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "no-live 승인 요청서(future-use-only) fixture — (1) 첫 live image/browser slice의 기존 9개 이미지 세트 채택을 기록하고, (2) 미래 Owner 결정에 쓸 TTS/audio 전용 live 승인 요청 template를 기계판독 고정한다. 이 packet의 존재/통과는 어떤 TTS/audio 실행도 승인하지 않는다(approvalGrantedNow=false, liveTtsAudioApprovedNow=false). 이것은 '다음 승인 준비물'이며 '승인'이 아니다. 실제 live TTS/audio 승인은 Owner가 아래 requiredOwnerApprovalWording를 명시 발화할 때에만, 그리고 별도 live TTS/audio slice에서만 발생한다. 이미지 재생성은 승인되지 않으며, render/mux/upload/env/secret은 계속 차단이다.",
+
+  "isApprovalRequestOnly": true,
+  "approvalGrantedNow": false,
+  "isPlanningArtifactOnly": true,
+  "isFutureUseOnly": true,
+  "futureUseOnlyLabel": "FUTURE_USE_ONLY_NOT_APPROVED_NOW",
+  "currentApprovalIsZeroLiveExecution": true,
+
+  "ownerAcceptance": {
+    "exactText": "APPROVE_EXISTING_IMAGE_SET_AND_PREPARE_LIVE_TTS_AUDIO: t1_lifestyle_inflation — existing 9 images accepted, no image regeneration, prepare next approval packet for TTS/audio only",
+    "topicId": "t1_lifestyle_inflation",
+    "acceptedDomain": "existing_image_set_acceptance_plus_tts_audio_packet_prep",
+    "approvalSource": "Owner 명시 승인 (Codex handoff `_ai/HANDOFF_NOW.md` Current Approved Slice에 기록)",
+    "scopeNote": "이 승인은 (a) 기존 9개 이미지 세트 채택 기록 + (b) no-live TTS/audio approval packet 준비에만 유효하다. live TTS/audio 실행 승인이 아니며, 이미지 재생성 승인도 아니다."
+  },
+
+  "existingImageSetAcceptance": {
+    "accepted": true,
+    "topicId": "t1_lifestyle_inflation",
+    "imageRegenerationApprovedNow": false,
+    "sourceRunPlan": "scripts/fixtures/golden_sample_v3_2_live_image_browser_run_plan.t1_lifestyle_inflation.v1.json",
+    "sourceSummary": "output/money-shorts/chatgpt-playwright-fresh-image-set-v3/image-generation-summary.v3.json",
+    "sourceLatencyReport": "output/money-shorts/chatgpt-playwright-fresh-image-set-v3/generation-latency-report.v3.json",
+    "savedImages": 9,
+    "submitted": 0,
+    "submissionHardCap": 12,
+    "costUsd": 0,
+    "autoRetryPerformed": false,
+    "placeholderUsed": false,
+    "saveMethodAll": "existing_file_skip",
+    "acceptedImageProfile": "vertical 9:16 (v3 lineage 실측 941x1672), readable text/로고/워터마크 금지 프롬프트 규칙 적용",
+    "acceptedMd5Set": [
+      { "order": 1, "imageId": "img_31_hook_envelope_vs_empty_jar", "md5": "a7a3150aa3a54fba9e8f392bcf3fa136" },
+      { "order": 2, "imageId": "img_32_problem_wallet_check_night", "md5": "8953f340162d56d27ea78d925545d6a9" },
+      { "order": 3, "imageId": "img_33_causeA_orderly_fixed_outflow", "md5": "196553d78e229c4514f74afaed4110fd" },
+      { "order": 4, "imageId": "img_34_causeB_scattered_lifestyle_spend", "md5": "9e197e342098dc4e86356200d8811692" },
+      { "order": 5, "imageId": "img_35_illusion_one_bill_vs_receipt_wall", "md5": "7b0a355c8494f658e0b7ec485d9737fb" },
+      { "order": 6, "imageId": "img_36_reframe_three_empty_jars", "md5": "f0f2ff998462126ef66ac395b3e37b2f" },
+      { "order": 7, "imageId": "img_37_actionA_dividing_into_jars", "md5": "dc7b0c55dfac4f0bcd4fae55e1873a38" },
+      { "order": 8, "imageId": "img_38_actionB_three_jars_color_ribbons", "md5": "5e6d0112198f104a391af2767cf3a506" },
+      { "order": 9, "imageId": "img_39_result_settled_morning_shelf", "md5": "93f665f652170a2a3101b8da611f5701" }
+    ],
+    "acceptanceNote": "첫 live image/browser slice(ff1847f) 결과 = 신규 제출 0회, 기존 9개 파일 existing_file_skip으로 재확인, cost $0. Owner가 이 9개 세트를 채택했으므로 이미지 재생성은 승인되지 않는다. 이 세트가 다음 TTS/audio 단계의 시각 입력이다."
+  },
+
+  "currentApprovalFlags": {
+    "approvalGrantedNow": false,
+    "liveTtsAudioApprovedNow": false,
+    "providerSelectedNow": false,
+    "callCapEffectiveNow": false,
+    "costCapEffectiveNow": false,
+    "uploadApprovedNow": false,
+    "renderApprovedNow": false,
+    "muxApprovedNow": false,
+    "envSecretAccessApprovedNow": false,
+    "imageRegenerationApprovedNow": false
+  },
+
+  "prohibitedReadinessFlags": {
+    "note": "아래 flag 중 하나라도 이 packet 또는 그 소비자가 명시 Owner 승인 없이 true로 만들면 fail-closed.",
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveAudioAnalysisApproved": false,
+    "liveRenderApproved": false,
+    "ownerQaPassed": false,
+    "productionReady": false
+  },
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "unchangedBy": "이 TTS/audio approval packet은 verdict를 승격하지 않는다. 기존 이미지 채택 기록 + 미래 TTS/audio 승인 요청 항목만 기술한다.",
+    "isNot": ["upload_ready", "production_live_ready", "automation_ready", "render_ready", "tts_live_ready", "audio_analysis_ready", "owner_final_approved", "any_live_approved"]
+  },
+
+  "references": {
+    "liveImageBrowserRunPlan": "scripts/fixtures/golden_sample_v3_2_live_image_browser_run_plan.t1_lifestyle_inflation.v1.json",
+    "liveActionApprovalPacket": "scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json",
+    "liveActionApprovalPacketMd": "_ai/GOLDEN_SAMPLE_V3_2_LIVE_ACTION_APPROVAL_PACKET.md",
+    "futureExecutionPlanGate": "scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json",
+    "ttsAudioAuditContract": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+    "ttsAudioAuditSamplePlan": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json",
+    "ttsAudioAuditStandardHarness": "scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs",
+    "paidImageAllowGuardPolicy": "scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json",
+    "ownerDecisionState": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "uploadHardBlockPolicy": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "humanReadablePacket": "_ai/GOLDEN_SAMPLE_V3_2_LIVE_TTS_AUDIO_APPROVAL_PACKET.md",
+    "note": "이 packet은 위 계약/게이트/정책/plan을 참조·정규화만 한다. 어떤 참조도 실행 승인이 아니다."
+  },
+
+  "ttsAudioApprovalTemplate": {
+    "domain": "tts_and_audio",
+    "currentStatus": "blocked_not_approved",
+    "requiredOwnerApprovalWording": "APPROVE_LIVE_TTS_AUDIO: t1_lifestyle_inflation — provider <ALLOW_OPENAI_TTS|ALLOW_ELEVENLABS> TTS/audio 실행을 명시 승인함 (call cap N, cost cap $X, stop 조건 명시)",
+    "providerSelectionIsFutureOwnerDecision": true,
+    "allowedFutureProviders": ["ALLOW_OPENAI_TTS", "ALLOW_ELEVENLABS"],
+    "providerAllowGuardRef": "scripts/fixtures/golden_sample_v3_2_paid_image_allow_guard_policy.v1.json",
+    "ttsAuditContractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+    "ttsAuditSamplePlanRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json",
+    "masterSwitch": "PAID_API_ENABLED",
+    "suggestedCaps": {
+      "callCountCapMax": null,
+      "costCapUsdMax": null,
+      "apiCallBudgetMaxReference": 2,
+      "apiCallBudgetSource": "ttsAudioAuditContract.ttsStandard.apiCallBudgetMax = 2 (1차 primary + 조건부 2차). 이 값은 계약 상한 참조일 뿐 현재 예산이 아니다.",
+      "effectiveNow": false
+    },
+    "requiredFutureFields": {
+      "note": "미래 live TTS/audio 승인이 유효하려면 아래 항목을 전부 명시해야 한다. 지금은 어느 것도 선택/활성화되지 않았다.",
+      "providerAllowFlag": "ALLOW_OPENAI_TTS 또는 ALLOW_ELEVENLABS 중 Owner가 명시 선택 (지금 미선택)",
+      "callCap": "TTS API 호출 상한 (계약 apiCallBudgetMax 2 이내, Script Impact Gate PASS 전에는 0회)",
+      "costCap": "USD 비용 상한 (지금 미설정)",
+      "stopConditions": [
+        "TTS provider 오류/거절 즉시 중단",
+        "call cap 초과 즉시 중단",
+        "cost cap 초과 즉시 중단",
+        "Script Impact Gate FAIL(required 점수 미달 또는 hard-fail 1건+) 시 TTS 호출 전 중단",
+        "script impact gate provenance 불일치/누락 시 중단",
+        "audio quality gate 6개 서브체크 중 fail 시 중단",
+        "예상치 못한 provider/응답/artifact 시 중단"
+      ],
+      "scriptImpactGateProvenance": {
+        "role": "live TTS 선행 gate — required 6 점수 충족 + hard-fail 0 + codex_judge provenance 완비여야 TTS stage 진입. 실패 시 TTS 호출 전 abort(fail-closed).",
+        "contractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json#scriptImpactGateStandard",
+        "requiredAuthority": "codex_judge",
+        "requiredScoreProvenanceCount": 6,
+        "requiredHardFailProvenanceCount": 7,
+        "notLiveApprovalRule": "provenance 완비 + Script Impact Gate PASS는 기술 gate 통과일 뿐 live TTS/mux/upload/Owner QA 승인이 아니다."
+      },
+      "audioQualityGateAudit": {
+        "role": "mux 후 audio gate — 6개 서브체크 AND. 이 packet은 threshold를 재정의하지 않고 계약을 참조만 한다.",
+        "contractRef": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json#audioQualityGateStandard",
+        "subCheckKeys": ["beginningPass", "first5sPass", "ratioPass", "speechActivePass", "tailHoldPass", "notClippedTail"]
+      },
+      "artifactAuditPlan": "생성 오디오는 tts audit contract의 audio quality gate + script impact gate provenance(#1) + word/phrase re-anchor tolerance 대비 audit. 자동 gate PASS는 Owner viewing/listening QA를 대체하지 않는다.",
+      "uploadImplication": false
+    },
+    "note": "OpenAI TTS / ElevenLabs live TTS 및 audio 분석 경로. 지금 승인 아님. provider 미선택, suggestedCaps effectiveNow=false. render/mux/upload는 이 template에 포함되지 않으며 계속 차단이다."
+  },
+
+  "futureUseApprovalSnippets": {
+    "note": "미래 사용 전용 — 지금 승인 아님. 아래 문구는 Owner가 실제로 발화할 때에만 효력이 있으며, 이 fixture에 존재한다는 사실은 어떤 승인도 의미하지 않는다.",
+    "notApprovedNow": true,
+    "labelPrefix": "FUTURE_USE_ONLY_NOT_APPROVED_NOW",
+    "snippets": [
+      { "domain": "ttsAudioOpenAi", "futureUseOnly": true, "text": "FUTURE_USE_ONLY_NOT_APPROVED_NOW — APPROVE_LIVE_TTS_AUDIO: t1_lifestyle_inflation — provider ALLOW_OPENAI_TTS, call cap N, cost cap $X, Script Impact Gate PASS 선행, stop on provider error/cap/gate fail" },
+      { "domain": "ttsAudioElevenLabs", "futureUseOnly": true, "text": "FUTURE_USE_ONLY_NOT_APPROVED_NOW — APPROVE_LIVE_TTS_AUDIO: t1_lifestyle_inflation — provider ALLOW_ELEVENLABS, call cap N, cost cap $X, Script Impact Gate PASS 선행, stop on provider error/cap/gate fail" }
+    ]
+  },
+
+  "renderMuxUploadStillBlocked": {
+    "renderApprovedNow": false,
+    "muxApprovedNow": false,
+    "uploadApprovedNow": false,
+    "note": "이 TTS/audio packet은 render/mux/upload와 무관하다. render/mux/upload는 각각 별도 도메인 승인 + 순서 규칙(TTS/audio → render/mux → Owner QA actual pass → upload)을 따르며 계속 차단이다.",
+    "approvalSequenceRef": "scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json#approvalSequenceRule"
+  },
+
+  "ownerQaSeparation": {
+    "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+    "ownerQaPassed": false,
+    "note": "이 slice의 기존 이미지 채택은 Owner 직접 시청/청취 QA 통과가 아니다. upload 승인의 선행 조건인 Owner QA actual pass는 여전히 PENDING이며, 미래 TTS/audio 실행의 기술 pass도 Owner QA를 대체하지 않는다."
+  },
+
+  "uploadHardBlock": {
+    "active": true,
+    "policyRef": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+    "note": "upload hard block은 계속 active. 이 packet은 upload를 활성화하지 않으며, upload 실행은 별도 upload slice + Owner QA actual pass + 별도 명시 Owner 승인 전까지 차단 유지."
+  },
+
+  "ownerDecisionState": {
+    "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "resolvedCount": 10,
+    "pendingCount": 0,
+    "note": "Owner policy decision 10개 전부 resolved / 0 pending. 정책 확정은 실행 승인이 아니다."
+  },
+
+  "prohibitedInterpretations": [
+    "이 packet 존재/통과를 현재 live TTS/audio 실행 승인으로 해석",
+    "approvalGrantedNow 또는 liveTtsAudioApprovedNow flag를 명시 Owner 승인 없이 true로 승격",
+    "allowedFutureProviders 목록 존재를 provider 선택으로 해석 (providerSelectedNow=false)",
+    "suggestedCaps 값 또는 apiCallBudgetMax 참조를 실행 예산으로 해석 (effectiveNow=false)",
+    "futureUseApprovalSnippets를 현재 유효한 승인으로 해석",
+    "기존 9개 이미지 채택을 이미지 재생성 승인으로 해석 (imageRegenerationApprovedNow=false)",
+    "이 packet을 render/mux/upload 승인으로 해석",
+    "Script Impact Gate PASS 또는 audio gate PASS를 Owner viewing/listening QA 통과로 해석",
+    "readinessVerdict를 STANDARDIZED_NO_LIVE_READY 위로 승격"
+  ],
+
+  "forbiddenBehavior": [
+    "approvalGrantedNow 또는 currentApprovalFlags 중 하나라도 true로 설정",
+    "prohibitedReadinessFlags 중 하나라도 true로 승격",
+    "liveTtsAudioApprovedNow/providerSelectedNow/callCapEffectiveNow/costCapEffectiveNow를 true로 설정",
+    "imageRegenerationApprovedNow를 true로 설정",
+    "allowedFutureProviders를 ALLOW_OPENAI_TTS/ALLOW_ELEVENLABS 외 값으로 변경",
+    "acceptedMd5Set/savedImages/submitted/costUsd 값을 summary 증거와 다르게 변조",
+    "ownerQaPassed를 true로 설정 또는 ownerViewingListeningActualStatus를 실제 확인 없이 PASS로 설정",
+    "upload hard block 비활성화",
+    "suggestedCaps.effectiveNow를 true로 설정",
+    "stop condition 또는 script impact gate provenance/audio gate audit 참조 제거",
+    "provider allow guard 참조 제거",
+    "futureUseApprovalSnippets에서 future-use-only 라벨 제거 또는 현재 승인으로 표기",
+    "이 packet을 근거로 live TTS/audio/render/mux/image generation/upload/env/secret/dependency/DB/deploy 실행",
+    "live TTS/audio API 호출 또는 audio/video/image binary read",
+    "새 live TTS runner 생성 또는 production TTS runner 수정",
+    "prior Slice 0~6 및 첫 live image slice 산출물 수정",
+    "commit/push"
+  ],
+
+  "basedOn": {
+    "liveImageBrowserRunPlan": "scripts/fixtures/golden_sample_v3_2_live_image_browser_run_plan.t1_lifestyle_inflation.v1.json",
+    "ttsAudioAuditContract": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+    "liveActionApprovalPacket": "scripts/fixtures/golden_sample_v3_2_live_action_approval_packet.v1.json",
+    "note": "이 packet은 첫 live image slice run plan + TTS/audio audit 계약 + live action approval packet의 ttsAudio template을 참조·정규화만 한다. readiness verdict를 승격하지 않으며 결정 상태를 변경하지 않는다."
+  }
+}

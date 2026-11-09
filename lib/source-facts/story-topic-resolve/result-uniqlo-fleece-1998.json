@@ -1,0 +1,71 @@
+{
+  "id": "uniqlo-fleece-1998",
+  "title": "유니클로 후리스",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "판매량 2,000/2,600만 출처 확인 안 됨",
+  "conditionResolved": true,
+  "finding": "서로 다른 두 곳(포터상 사이트, RIETI의 야나이 회장 강연 기록)에서 후리스 판매량이 1998년 200만 장, 1999년 850만 장, 2000년 2,000만 장으로 같게 확인됐다. 풀에 있던 '2,600만'은 WWD재팬·데이터맥스 등 일부 일본 매체의 수치(2000-01 가을겨울)이고 야나이 본인 강연은 2,000만이라 출처마다 달라, 대본에는 야나이 강연 기준 숫자만 쓰면 된다. 결정 장면은 1998년 11월 하라주쿠 도심 1호점 개점과 후리스 한 품목 집중(1,900엔·다색)이다.",
+  "coreMessage": "여러 가지를 조금씩 팔기보다 하나를 싸고 선명하게 밀면 시장이 먼저 알아본다.",
+  "decisiveFact": "f6",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "유니클로는 1998년 가을겨울에 후리스를 200만 장 팔았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Porter Prize 2009 (Winners / Selection Rationale)", "url": "https://www.porterprize.org/english/pastwinner/2009/12/03114807.html", "quote": "sold 2 million fleece pullovers and jackets in 1998" },
+        { "name": "RIETI BBL 야나이 다다시 강연 (2001)", "url": "https://www.rieti.go.jp/en/events/bbl/01060801.html", "quote": "selling 2 million in autumn/winter 1998" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "후리스 판매량은 1999년 850만 장으로 4배 넘게 늘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "the-shashi.com은 '800만 착 이상'(2000년 8월기)으로 표기. 850만이 두 곳 일치.",
+      "sources": [
+        { "name": "Porter Prize 2009 (Winners / Selection Rationale)", "url": "https://www.porterprize.org/english/pastwinner/2009/12/03114807.html", "quote": "8.5 million in 1999, and 20 million in 2000" },
+        { "name": "RIETI BBL 야나이 다다시 강연 (2001)", "url": "https://www.rieti.go.jp/en/events/bbl/01060801.html", "quote": "8.5 million in autumn/winter 1999" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2000년 가을겨울 후리스 판매량은 2,000만 장이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "WWD재팬·데이터맥스는 2,600만 장으로 보도. 출처마다 다르므로 대본에서는 '2,000만 장'(야나이 강연 기준) 또는 '2천만 장 안팎'으로 쓸 것.",
+      "sources": [
+        { "name": "Porter Prize 2009 (Winners / Selection Rationale)", "url": "https://www.porterprize.org/english/pastwinner/2009/12/03114807.html", "quote": "8.5 million in 1999, and 20 million in 2000" },
+        { "name": "RIETI BBL 야나이 다다시 강연 (2001)", "url": "https://www.rieti.go.jp/en/events/bbl/01060801.html", "quote": "selling a total of 20 million fleeces" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1998년 후리스 가격은 1,900엔이었고 색을 여러 가지로 갖췄다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "RIETI 강연에는 가격이 없음. 두 출처는 Porter Prize와 the-shashi(일본어).",
+      "sources": [
+        { "name": "Porter Prize 2009 (Winners / Selection Rationale)", "url": "https://www.porterprize.org/english/pastwinner/2009/12/03114807.html", "quote": "sold for 1,900 yen in 1998" },
+        { "name": "the-shashi.com, 후리스 붐(2000)", "url": "https://the-shashi.com/tse/9983/decisions/fleece-boom-2000/", "quote": "1着1900円で多色をそろえたフリース" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "유니클로는 1998년 11월 도쿄 하라주쿠 도심 1호점을 열고 후리스 한 품목에 집중해 알렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "하라주쿠 출점 결정자가 야나이 개인이라는 직접 서술은 못 찾음. '하라주쿠 개점+후리스 성공'을 회사의 세 번째 전환점으로 꼽은 것은 야나이 본인 강연.",
+      "sources": [
+        { "name": "RIETI BBL 야나이 다다시 강연 (2001)", "url": "https://www.rieti.go.jp/en/events/bbl/01060801.html", "quote": "the opening of the Harajuku store in Tokyo in 1998" },
+        { "name": "the-shashi.com, 후리스 붐(2000)", "url": "https://the-shashi.com/tse/9983/decisions/fleece-boom-2000/", "quote": "1998年11月の原宿店開業を機に" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "일본 기업 25년 전 사례. 다만 한국에서 2019년 불매운동 대상이었던 브랜드라 정치·감정 소지가 약간 있어 대본에서 한일 관계 언급은 피할 것." },
+  "remaining": "2000년 8월기 순이익률 15%는 the-shashi 단독이라 facts에서 뺌(대본에 쓰지 말 것). 2000년 판매량이 출처마다 2,000만/2,600만으로 다름. 하라주쿠 개점 때 줄이 섰다는 식의 극적 장면은 출처 없음.",
+  "toolCallsUsed": 12
+}

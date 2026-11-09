@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "money_shorts_owner_approved_upload_flow_v1",
+  "mode": "local_mock",
+  "flowStatus": "upload_ready_dry_run",
+  "actualUploadAllowed": false,
+  "actualUploadPerformed": false,
+  "notUploaded": true,
+  "ownerApprovalRequired": true,
+  "approval": {
+    "approvalId": "owner-approval-sample-bridge-fixture-local-mock",
+    "approvalStatus": "approved",
+    "approvedFor": "dry_run_upload_ready_packet_only",
+    "approvedPlatforms": ["youtube_shorts", "instagram_reels"],
+    "approvalTimestamp": "2026-01-01T00:00:00.000Z"
+  },
+  "uploadPayloadId": "upload-payload-sample-bridge-fixture-local-mock",
+  "sourceManifestId": "sample-bridge-fixture",
+  "sourceVideoPath": "C:\\tmp\\money-shorts-os\\sample-bridge-fixture\\tts-audio-mux\\sample-bridge-fixture-tts-mux.mp4",
+  "artifact": {
+    "durationSec": 30,
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioStreamCount": 1,
+    "fileSizeBytes": 600000,
+    "ffprobeVerified": true
+  },
+  "platformPayloads": [
+    {
+      "platform": "youtube_shorts",
+      "title": "샘플 브릿지 픽스처 제목 #샘플 #브릿지테스트",
+      "description": "[샘플 fixture — 실제 콘텐츠 아님]\n\nstatic guard 검증 전용 데이터.\n\n#샘플 #브릿지테스트 #가드검증",
+      "hashtags": ["샘플", "브릿지테스트", "가드검증", "Shorts"],
+      "visibilityPlan": "owner_review_first",
+      "categoryId": "27",
+      "defaultLanguage": "ko",
+      "madeForKids": false,
+      "notUploaded": true,
+      "ownerApprovalRequired": true
+    },
+    {
+      "platform": "instagram_reels",
+      "caption": "샘플 브릿지 픽스처 캡션 — static guard 검증 전용 데이터입니다.\n\n#샘플 #브릿지테스트 #가드검증",
+      "hashtags": ["샘플", "브릿지테스트", "가드검증", "Shorts"],
+      "visibilityPlan": "owner_review_first",
+      "notUploaded": true,
+      "ownerApprovalRequired": true
+    }
+  ],
+  "nextStep": "live_upload_requires_explicit_owner_approval_and_credentials",
+  "builtAt": "2026-01-01T00:00:00.000Z",
+  "riskNotes": [
+    "This is a static sample fixture for the content-unit-from-local-summary bridge guard only.",
+    "actualUploadAllowed=false — no actual upload may occur from this approval.",
+    "actualUploadPerformed=false — confirmed no upload has been performed.",
+    "No platform credentials, tokens, or API keys are present in this fixture.",
+    "sourceVideoPath intentionally does not exist — used to exercise instagramSourceReady:false in the guard."
+  ]
+}

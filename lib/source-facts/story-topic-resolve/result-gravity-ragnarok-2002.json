@@ -1,0 +1,63 @@
+{
+  "id": "gravity-ragnarok-2002",
+  "title": "그라비티 라그나로크 일본",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "수치 기준 혼재, 인지도 낮음",
+  "conditionResolved": false,
+  "finding": "2002년 도쿄 임페리얼 호텔 조인식에서 그라비티가 겅호 온라인 엔터테인먼트와 상용서비스 후 2년간 순매출 40% 러닝 로열티 계약을 맺은 사실은 두 곳으로 확인된다. 그러나 이 계약 장면은 '주인공의 결단과 그 뒤 결과'로 이어지는 서사가 아니라 라이선스 계약 체결이고, 회원·가입자·동접·액티브 계정 등 수치 기준이 기사마다 달라 비교가 어렵다. 이후 서사는 김정률 회장의 2005년 지분 매각, 회삿돈 유용 의혹과 집단소송 합의 등 미담이 아닌 지배구조·분쟁 이야기로 흘러 채널 기준(미담·결단·제도)에 맞는 한 장면이 없다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "그라비티는 겅호 온라인 엔터테인먼트와의 일본 계약에서 상용서비스 후 2년간 순매출의 40%를 러닝 로열티로 받기로 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기사에는 10월 상용서비스 예정으로 나오나 다른 기사에는 2002년 12월 정식서비스로 나와 시점이 어긋남.",
+      "sources": [
+        { "name": "게임메카(2002)", "url": "https://www.gamemeca.com/view.php?gid=40820", "quote": "2년간 순매출의 40%에 해당하는 러닝 로열티를 받게 된다" },
+        { "name": "오마이뉴스(2002)", "url": "https://www.ohmynews.com/NWS_Web/View/at_pg.aspx?CNTN_CD=A0000083771", "quote": "2년간 순매출의 40%에 해당하는 러닝로열티를" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "계약 당시 라그나로크 일본 회원(가입자)은 55만 명, 동시접속자는 2만 2천 명이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "회원수·가입자수·유료회원·액티브 계정 등 집계 기준이 기사마다 다름.",
+      "sources": [
+        { "name": "게임메카(2002)", "url": "https://www.gamemeca.com/view.php?gid=40820", "quote": "일본 회원 55만명, 동시접속자 2만 2천명" },
+        { "name": "오마이뉴스(2002)", "url": "https://www.ohmynews.com/NWS_Web/View/at_pg.aspx?CNTN_CD=A0000083771", "quote": "가입자수 55만 명, 동시접속자 2만 2천 명" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "겅호 온라인 엔터테인먼트는 라그나로크 일본 동시접속자가 10만 명을 돌파했다고 밝혔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "게임메카 단일 출처, 기사 날짜 미확인.",
+      "sources": [
+        { "name": "게임메카", "url": "https://www.gamemeca.com/view.php?gid=49518", "quote": "동시접속자가 10만명을 돌파했다고 밝혔다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "그라비티는 2005년 2월 나스닥에 상장했고, 김정률 대주주는 같은 해 8월 지분 52%를 매각했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "위키백과(한·영) 단일 도메인. 김정률의 회삿돈 약 600만 달러 유용과 2007년 1천만 달러 집단소송 합의가 같은 항목에 있어 민감.",
+      "sources": [
+        { "name": "Wikipedia Gravity(영문)", "url": "https://en.wikipedia.org/wiki/Gravity_(Korean_company)", "quote": "sold his 52% stake and set plans" },
+        { "name": "위키백과 그라비티(한국어)", "url": "https://ko.wikipedia.org/wiki/%EA%B7%B8%EB%9D%BC%EB%B9%84%ED%8B%B0_(%EA%B8%B0%EC%97%85)", "quote": "2005년 2월 이후 국내 게임 기업으로는 유일하게 나스닥에 상장" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": true,
+    "political": false,
+    "note": "그라비티는 현재도 영업 중(일본 겅호 자회사)이며 대주주 자금 유용 의혹·집단소송 이력이 있어 계약 이후 서사는 민감. 2002년 계약 자체는 문제 없음."
+  },
+  "remaining": "한 장면(결단)이 없고 수치 기준이 혼재. 라그나로크 자체의 일본 흥행을 다룬 두 번째 신문 출처의 매출·수출액이 있어야 하며, 쓴다면 2002년 일본 진출 계약까지로 범위를 제한해야 함.",
+  "toolCallsUsed": 7
+}

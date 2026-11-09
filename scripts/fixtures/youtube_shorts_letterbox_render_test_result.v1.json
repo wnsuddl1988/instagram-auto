@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "youtube_shorts_letterbox_render_test_result_fixture_v1",
+  "taskId": "youtube-shorts-letterbox-variant-render-test-v1",
+  "status": "RENDER_TEST_ACCEPTED_LOCAL_ONLY",
+  "createdAt": "2026-07-06",
+  "approvalToken": "APPROVE_PLATFORM_VARIANT_RENDER_TEST",
+  "docsRef": "docs/youtube-shorts-letterbox-render-test-result.md",
+  "plannerContractRef": "scripts/fixtures/youtube_shorts_letterbox_render_profile.v1.json",
+  "runnerRef": "scripts/run-youtube-shorts-letterbox-render-test-once.mjs",
+  "resultJsonRef": "output/youtube-shorts-letterbox-render-test-v1/render-test-result.json",
+  "nature": "APPROVE_PLATFORM_VARIANT_RENDER_TEST 승인 범위에서 실행된 YouTube Shorts letterbox 실제 렌더 테스트 1회의 증거 fixture. 소스는 기존 로컬 Instagram/full-frame mp4(golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4) 1개이며, ffmpeg 변환은 정확히 1회만 실행되었다. 이 fixture는 upload/API/OAuth/env/deploy/DNS/provider provisioning을 승인하거나 수행하지 않는다.",
+
+  "approvedSource": {
+    "path": "C:\\tmp\\money-shorts-os\\golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit\\golden_sample_t1_lifestyle_inflation_tts_mux_v3_2.mp4",
+    "sizeBytes": 20294549,
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "durationSec": 53.966667,
+    "hasAudio": true
+  },
+
+  "approvedOutputDir": "output/youtube-shorts-letterbox-render-test-v1/",
+  "outputMp4Path": "output/youtube-shorts-letterbox-render-test-v1/golden_sample_t1_lifestyle_inflation_youtube_letterbox_v1.mp4",
+
+  "ffmpegConversionCount": 1,
+  "ffmpegConversionCountMustBeExactlyOne": true,
+  "scaleFilter": "scale=w=864:h=1536:force_original_aspect_ratio=decrease,pad=w=1080:h=1920:x=(ow-iw)/2:y=(oh-ih)/2:color=black",
+
+  "profile": {
+    "canvas": { "widthPx": 1080, "heightPx": 1920, "backgroundColor": "black" },
+    "contentBox": { "widthPx": 864, "heightPx": 1536, "centered": true },
+    "marginTopBottomPx": 192,
+    "marginSidePx": 108,
+    "codec": { "video": "h264", "pixelFormat": "yuv420p", "faststart": true, "audio": "aac" }
+  },
+
+  "outputVerified": {
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "codecName": "h264",
+    "pixFmt": "yuv420p",
+    "durationCloseToSource": true,
+    "audioPreserved": true
+  },
+
+  "requiresPublicBlobUrl": false,
+  "youtubeUsesBlobUrl": false,
+  "uploadPerformed": false,
+  "youtubeApiCalled": false,
+  "instagramApiCalled": false,
+
+  "forbiddenBehaviorConfirmedAbsent": [
+    "second or additional ffmpeg conversion",
+    "ffmpeg screenshot/frame-extraction/blackdetect/probe-like analysis beyond read-only ffprobe",
+    "Remotion/render regeneration, mux/TTS/image/browser regeneration",
+    "upload",
+    "YouTube API/OAuth",
+    "Instagram API/--arm",
+    "Vercel Blob provisioning/token/env/.env.local access",
+    "deploy/DNS/Cloudflare/R2/wrangler action",
+    "dependency/lockfile/font change",
+    "commit/push",
+    "writes outside output/youtube-shorts-letterbox-render-test-v1/"
+  ],
+
+  "prohibitedDrift": {
+    "note": "아래 상태는 이 render test 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "ffmpegConversionCount가 1이 아님",
+      "outputVerified.widthPx/heightPx가 1080x1920에서 벗어남",
+      "outputVerified.audioPreserved가 false인데 source has audio",
+      "requiresPublicBlobUrl 또는 youtubeUsesBlobUrl이 true",
+      "uploadPerformed/youtubeApiCalled/instagramApiCalled가 true",
+      "approvedSource.path/sizeBytes가 승인된 값과 다름",
+      "approvedOutputDir 밖에 output 파일이 기록됨"
+    ]
+  }
+}

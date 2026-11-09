@@ -1,0 +1,117 @@
+{
+  "id": "iceland-banks-2008",
+  "title": "아이슬란드 — 나라의 3대 은행이 일주일 만에 무너졌다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "은행가 기소 서술 제외, 나라 경제보다 10배 큰 은행 구조와 일주일 붕괴 중심",
+  "conditionResolved": true,
+  "finding": "은행가 기소·책임 서술 없이도 '나라 경제의 10배 넘는 은행 3곳(글리트니르·란즈방키·카우프싱)이 2008년 10월 6~9일, IMF 표현으로 '일주일도 안 돼' 무너졌다'는 구조가 2출처(IMF 보도자료·Wikipedia 날짜, 유럽 매체·오만 옵서버 배율)로 확인된다. 결과 숫자도 있다: 크로나가 1~9월에 유로 대비 35% 이상 하락, 10월 9일 유로당 340크로나, IMF 21억 달러 스탠바이 승인(11월 19일). 은행 자산/GDP 배율이 출처별로 10배·11배·14배로 달라 '10배 넘는'으로 쓰면 안전하다. 해외 종결 사건이라 민감성 문제 없음.",
+  "coreMessage": "나라보다 덩치가 10배 큰 은행은, 쓰러질 때 나라도 구할 수 없다.",
+  "decisiveFact": "f2",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "붕괴 직전 아이슬란드 3대 은행의 자산 규모는 나라 GDP의 10배를 넘었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "배율이 출처마다 다름: 의회조사/CRS는 1,680억 달러=GDP의 14배, Wikipedia는 14.437조 크로나로 11배 이상, 케임브리지 워킹페이퍼는 9배 이상. 대본에는 '10배가 넘는'으로 한정.",
+      "sources": [
+        {
+          "name": "European CEO: Iceland's financial meltdown",
+          "url": "https://europeanceo.com/?p=5682",
+          "quote": "10 times the size of its economy"
+        },
+        {
+          "name": "Oman Observer: 10 years ago, Iceland's financial crisis erupted (2018)",
+          "url": "https://www.omanobserver.om/ampArticle/48664",
+          "quote": "more than 10 times the gross domestic"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "3대 은행(글리트니르·란즈방키·카우프싱)은 2008년 10월 초 일주일도 안 되는 사이에 무너졌다: 의회가 10월 6일 긴급법을 통과시켰고 란즈방키·글리트니르는 7일, 카우프싱은 9일 관리 체제에 들어갔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "Wikipedia는 '일주일 붕괴' 표현은 없고 날짜(7일, 9일)만 제공. 'less than one week'는 IMF 표현. 글리트니르는 9월 29일 국유화 발표가 앞섬(1주 안에 몰린 것은 10월 6~9일).",
+      "sources": [
+        {
+          "name": "IMF Press Release 08/296 (2008.11.19)",
+          "url": "https://www.imf.org/en/News/Articles/2015/09/14/01/49/pr08296",
+          "quote": "collapsed within less than one week",
+          "manualVerified": true
+        },
+        {
+          "name": "Wikipedia: 2008-2011 Icelandic financial crisis",
+          "url": "https://en.wikipedia.org/wiki/2008%E2%80%932011_Icelandic_financial_crisis",
+          "quote": "Kaupthing was placed into receivership"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "IMF 이사회는 2008년 11월 19일 SDR 14억(약 21억 달러) 규모 2년 스탠바이 협약을 승인했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "Oman Observer는 21억 달러가 '10월'이라 적었으나 이는 직원급 합의(10.24)이고 이사회 승인은 11.19. 총 구제 패키지는 약 60억 달러(+북유럽 25억 달러).",
+      "sources": [
+        {
+          "name": "IMF Press Release 08/296 (2008.11.19)",
+          "url": "https://www.imf.org/en/News/Articles/2015/09/14/01/49/pr08296",
+          "quote": "SDR 1.4 billion (about US$2.1 billion)",
+          "manualVerified": true
+        },
+        {
+          "name": "CRS Report RS22988: Iceland's Financial Crisis",
+          "url": "https://www.everycrsreport.com/reports/RS22988.html",
+          "quote": "a $2.1 billion loan from the IMF"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "아이슬란드 크로나는 2008년 1~9월에 유로 대비 35% 이상 하락했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처의 문장이 사실상 동일해 한쪽이 다른 쪽을 인용했을 가능성.",
+      "sources": [
+        {
+          "name": "European CEO: Iceland's financial meltdown",
+          "url": "https://europeanceo.com/?p=5682",
+          "quote": "declined more than 35 percent"
+        },
+        {
+          "name": "Wikipedia: 2008-2011 Icelandic financial crisis",
+          "url": "https://en.wikipedia.org/wiki/2008%E2%80%932011_Icelandic_financial_crisis",
+          "quote": "declined more than 35% against the euro"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "10월 8일 유로당 131이던 크로나는 하루 만에 340까지 폭락했다(10월 9일 340 거래).",
+      "numeric": true,
+      "economy": true,
+      "caution": "European CEO는 10월 8일 하루 사이 131→340, Wikipedia는 '10월 9일 340'만 기재 — 131 시작값은 단일 출처이므로 대본에는 '며칠 새 유로당 340크로나'로 쓸 것.",
+      "sources": [
+        {
+          "name": "European CEO: Iceland's financial meltdown",
+          "url": "https://europeanceo.com/?p=5682",
+          "quote": "it crashed to 340 in a single day"
+        },
+        {
+          "name": "Wikipedia: 2008-2011 Icelandic financial crisis",
+          "url": "https://en.wikipedia.org/wiki/2008%E2%80%932011_Icelandic_financial_crisis",
+          "quote": "trading at 340 to the euro"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 종결 사건. 은행가 기소·책임 서술은 제외해야 하며(풀 조건) 영국의 테러법 자산동결 등 외교 갈등도 생략 권장."
+  },
+  "remaining": "한국인에게 익숙한 소재는 아님 — 도입에 '나라 경제의 10배' 한 줄 필요. 배율 출처 불일치(10/11/14배)로 '10배 넘는'으로 한정. 시청자가 가져갈 한국 연결(외환위기·은행 규모) 한 줄을 대본에서 설계할 것.",
+  "toolCallsUsed": 17
+}

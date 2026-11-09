@@ -1,0 +1,64 @@
+{
+  "id": "burj-khalifa-samsung-2004",
+  "title": "삼성물산 부르즈 칼리파 — 낮에는 콘크리트를 붓지 못한 건물",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "얼음 콘크리트는 해외 쇼츠에서 흔함(포화). 이주노동자 저임금·여권 압수 이슈 → 노동 문제. 이건희 방문 대사 쓰지 않음. 페트로나스와 같은 삼성물산 → 함께 쓰면 연작",
+  "conditionResolved": true,
+  "finding": "여름에 콘크리트에 얼음을 섞고 밤에 타설했다는 장면은 영어 출처 2곳(위키백과, TheConstructor)에서 확인됐고, 삼성물산이 주계약자라는 점은 위키백과·걸프뉴스 2곳으로 확인됐다. 노동 이슈는 위키백과의 이주노동자 불만 서술이며 장면 핵심이 아니므로 쓰지 않으면 되고, 종결·진행 중 국내 사건이 아니라 legal에 해당하지 않는다. 다만 공사비(15억 달러 vs 40억 달러)·층수(162/163/209)·착공 시점이 출처마다 달라 구체 숫자는 신중히 골라야 한다. 얼음·야간 타설을 삼성물산이 직접 결정했다는 근거는 없어 '현장 조건이 정한 공법'으로 쓰고 주체를 삼성으로 단정하지 않는다.",
+  "coreMessage": "가장 높은 곳을 짓는 일은 가장 사소한 변수(온도)와의 싸움이고, 그 싸움에서 쌓은 기술이 다음 수주의 신용이 된다",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1", "claim": "한여름 두바이에서는 콘크리트에 얼음을 섞고 공기가 선선한 밤에 타설했다", "numeric": false, "economy": false,
+      "caution": "얼음·야간 타설 결정 주체가 삼성물산이라는 근거는 없음",
+      "sources": [
+        { "name": "Wikipedia(Burj Khalifa)", "url": "https://en.wikipedia.org/wiki/Burj_Khalifa", "quote": "poured at night when the air was cooler" },
+        { "name": "TheConstructor", "url": "https://theconstructor.org/structures/structural-details-burj-khalifa-concrete-grade-foundations/20512/", "quote": "pouring process was carried out at night" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "부르즈 칼리파의 높이는 828m로 세계에서 가장 높은 건물이다", "numeric": true, "economy": false,
+      "caution": "층수는 출처마다 162·163·209층으로 달라 쓰지 않음",
+      "sources": [
+        { "name": "Wikipedia(Burj Khalifa)", "url": "https://en.wikipedia.org/wiki/Burj_Khalifa", "quote": "of 828 m (2,717 ft)" },
+        { "name": "시대(2025)", "url": "https://www.sidae.com/article/2025123109365486398", "quote": "높이 828m, 지상 163층의" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "전체 공사비는 약 15억 달러로 알려져 있다", "numeric": true, "economy": true,
+      "caution": "시대는 공사비만 40억2000만달러, TheConstructor는 42억 달러로 다르게 씀 — 대본에는 '약 15억 달러(자료마다 다름)'로 쓰거나 금액 생략 권장",
+      "sources": [
+        { "name": "Wikipedia(Burj Khalifa)", "url": "https://en.wikipedia.org/wiki/Burj_Khalifa", "quote": "to be about US$1.5 billion" },
+        { "name": "다음 뉴스(건설 기사)", "url": "https://v.daum.net/v/WmIeRZf5ed", "quote": "공사비는 약 15억 달러(2010년 기준)로 집계됐다" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "콘크리트를 한 번에 약 600m 높이까지 압송했다", "numeric": true, "economy": false,
+      "caution": "정확한 기록은 606m(영문 자료) — 한국 기사는 600m로 씀",
+      "sources": [
+        { "name": "머니투데이(2012)", "url": "https://www.mt.co.kr/estate/2012/06/12/2012061114130641060", "quote": "적용된 기술이 600m였으니" },
+        { "name": "TheConstructor", "url": "https://theconstructor.org/structures/structural-details-burj-khalifa-concrete-grade-foundations/20512/", "quote": "pump concrete to height up to 600 m" }
+      ]
+    },
+    {
+      "id": "f5", "claim": "건물은 2010년 1월 4일 문을 열었다", "numeric": true, "economy": false,
+      "caution": "착공일은 2004년 1월(위키)과 9월(시대)로 달라 쓰지 않음",
+      "sources": [
+        { "name": "Wikipedia(Burj Khalifa)", "url": "https://en.wikipedia.org/wiki/Burj_Khalifa", "quote": "officially opened on 4 January 2010" },
+        { "name": "시대(2025)", "url": "https://www.sidae.com/article/2025123109365486398", "quote": "2010년 1월4일(이하 현지시각) 아랍에미리트 두바이에" }
+      ]
+    },
+    {
+      "id": "f6", "claim": "삼성물산은 이 프로젝트의 주계약자였다(11개월 입찰을 거쳐 선정)", "numeric": true, "economy": false,
+      "caution": "계약 금액은 비공개(걸프뉴스: 'The value of the contract has not been divulged'). 위키는 베식스·아랍텍과 공동 시공으로 서술",
+      "sources": [
+        { "name": "Wikipedia(Burj Khalifa)", "url": "https://en.wikipedia.org/wiki/Burj_Khalifa", "quote": "The primary contractor was Samsung C&T" },
+        { "name": "Gulf News(2004)", "url": "https://gulfnews.com/uae/samsung-is-main-contractor-to-build-burj-dubai-1.341049", "quote": "chosen Samsung Corporation as the main" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 준공 사건이며 삼성물산은 영업 중이나 진행 중 분쟁 없음. 이주노동자 저임금·여권 압수 이슈(위키)는 쓰지 않거나 언급 최소화, 이건희 방문 대사는 쓰지 않음" },
+  "remaining": "공사비·층수·착공일이 출처마다 달라 경제 숫자가 약함(경제 번역은 '공사 시간대·기간 가름' 수준). 삼성의 직접 결단 장면이 없어 이야기가 '현장 조건과의 싸움'으로 흐름. 얼음 콘크리트는 해외 쇼츠 포화. 삼성물산 독자 개발 압송기술은 머니투데이 한 곳뿐이라 쓰지 않음",
+  "toolCallsUsed": 21
+}

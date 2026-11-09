@@ -1,0 +1,75 @@
+{
+  "id": "enron-2001",
+  "title": "엔론 — 미국 7위 기업의 가짜 장부",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "이미 해체된 회사. 개인 실명·형량 서술 최소, 가짜 장부 장면 중심",
+  "conditionResolved": true,
+  "finding": "엔론은 2001년 12월 2일 파산 신청 후 해체된 회사이며, 실명·형량 없이 '빚을 자회사·특수목적 법인에 숨겨 이익을 부풀린 장부'만으로 이야기를 세울 수 있다. 주가 90.75달러에서 0.26달러, 2000년 매출 약 1,000억 달러, 사상 최대 규모 파산, 약 4,000명 해고 등 숫자 사실이 각각 서로 다른 사이트 2곳에서 확인된다. 자산·매출·해고 숫자는 출처마다 달라 대본에는 '약'과 범위로만 쓰면 된다.",
+  "coreMessage": "이익이 장부에만 있고 실제 현금과 신뢰가 받쳐주지 않으면, 가장 큰 회사도 하루아침에 무너진다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "엔론 주가는 2000년 8월 90.75달러에서 2001년 11월 30일 종가 0.26달러까지 떨어졌다(약 100일).",
+      "numeric": true,
+      "economy": true,
+      "caution": "고점 시점을 Wikipedia는 '1990년대 중반'으로 적은 곳도 있어 History.com·City AM의 '2000년 8월' 기준으로 쓰기.",
+      "sources": [
+        { "name": "History.com This Day in History", "url": "https://www.history.com/this-day-in-history/enron-files-for-bankruptcy", "quote": "from $90.75 in August 2000 to $0.26" },
+        { "name": "City AM(On this day: Enron files for bankruptcy)", "url": "https://www.cityam.com/on-this-day-enron-files-for-bankruptcy/", "quote": "100 days later it was $0.26" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "엔론이 발표한 2000년 매출은 약 1,000억 달러였다(1996년 133억 달러에서 급증).",
+      "numeric": true,
+      "economy": true,
+      "caution": "History.com은 1,110억 달러로 적는 등 출처별 차이가 있음. 대본에는 '약 1,000억 달러'로만 쓰기.",
+      "sources": [
+        { "name": "City AM(On this day: Enron files for bankruptcy)", "url": "https://www.cityam.com/on-this-day-enron-files-for-bankruptcy/", "quote": "claimed revenue of $100bn in 2000" },
+        { "name": "Wikipedia(Enron scandal)", "url": "https://en.wikipedia.org/wiki/Enron_scandal", "quote": "to $100.7 billion in 2000." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "엔론은 2001년 12월 2일 파산보호를 신청했고, 신고 자산은 수백억 달러(약 500억~650억 달러)로 당시 미국 최대 규모의 파산이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "자산 숫자가 출처마다 다름: 498억(Gulf News), 634억(Wikipedia), 655억(City AM). 대본에는 정확한 자산 숫자를 쓰지 말고 '미국 역사상 최대 규모 파산(당시)'만 사용. 이후 WorldCom이 기록을 갱신.",
+      "sources": [
+        { "name": "Gulf News(2001-12-02)", "url": "https://gulfnews.com/today-history/december-2-2001-enron-files-for-biggest-bankruptcy-1.1938449", "quote": "it would be the biggest in US history." },
+        { "name": "City AM(On this day: Enron files for bankruptcy)", "url": "https://www.cityam.com/on-this-day-enron-files-for-bankruptcy/", "quote": "biggest bankruptcy in US history" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "파산 신청 때 엔론은 직원 약 4,000명을 해고하겠다고 밝혔다(연말까지 약 5,600명 실직·약 21억 달러 연금 소멸이라는 집계도 있음).",
+      "numeric": true,
+      "economy": false,
+      "caution": "4,000명(신청 시점 발표)과 5,600명(연말 집계)은 기준이 다름.",
+      "sources": [
+        { "name": "Gulf News(2001-12-02)", "url": "https://gulfnews.com/today-history/december-2-2001-enron-files-for-biggest-bankruptcy-1.1938449", "quote": "lay off about 4,000 employees" },
+        { "name": "Wikipedia(Enron scandal)", "url": "https://en.wikipedia.org/wiki/Enron_scandal", "quote": "4,000 lost jobs" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "엔론은 빚과 손실을 자회사·특수목적 법인(장부 밖 동업 법인)에 숨겨 이익을 부풀렸고, 그 사실이 드러나며 신뢰가 끊겨 무너졌다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "개인 실명·형량은 쓰지 않는다.",
+      "sources": [
+        { "name": "City AM(On this day: Enron files for bankruptcy)", "url": "https://www.cityam.com/on-this-day-enron-files-for-bankruptcy/", "quote": "concealed billions of dollars of debt" },
+        { "name": "History.com This Day in History", "url": "https://www.history.com/this-day-in-history/enron-files-for-bankruptcy", "quote": "hiding debts and losses" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "미국 회사, 2001년 파산 후 해체. 한국 기업 아님·진행 중 사건 아님. 개인 실명·형량 서술 금지만 지키면 됨."
+  },
+  "remaining": "자산·매출·해고 숫자가 출처마다 달라 대본에는 '약'과 범위로만 쓰기. 586백만 달러 재작성 숫자는 이번 조사에서 인용문으로 확인하지 못해 쓰지 않음. '미국 7위' 표현은 출처 없음(쓰지 않기).",
+  "toolCallsUsed": 12
+}

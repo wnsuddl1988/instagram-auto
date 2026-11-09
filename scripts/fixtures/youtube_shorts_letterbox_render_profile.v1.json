@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "youtube_shorts_letterbox_render_profile_v1",
+  "taskId": "youtube-shorts-letterbox-variant-renderer-dryrun-v1",
+  "status": "PROFILE_FIXED_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "docsRef": "docs/youtube-shorts-letterbox-variant-renderer.md",
+  "activeArchitectureRef": "scripts/fixtures/dual_platform_variant_publish_architecture.v1.json",
+  "variantId": "youtube_shorts_letterbox_1080x1920",
+  "nature": "YouTube Shorts letterbox variant의 결정론적 렌더 프로필(no-live). 최종 mp4는 1080x1920 검정 canvas + 864x1536 중앙 콘텐츠 박스 + 위/아래 검은 여백을 갖는다. Vercel Blob/public URL을 필요로 하지 않으며 YouTube Data API direct file upload 대상이다. 이 fixture는 설계 고정이며 ffmpeg 실행/upload/env/network를 승인하지 않는다.",
+
+  "canvas": {
+    "widthPx": 1080,
+    "heightPx": 1920,
+    "backgroundColor": "black",
+    "backgroundColorHex": "#000000"
+  },
+
+  "contentBox": {
+    "widthPx": 864,
+    "heightPx": 1536,
+    "centered": true,
+    "preserveAspectRatio": true,
+    "stretchForbidden": true,
+    "allowSideGutter": true
+  },
+
+  "margins": {
+    "topBottomPx": 192,
+    "topBottomBasis": "9:16 source",
+    "sidePx": 108,
+    "sideBasis": "9:16 source, aspect-ratio preservation gutter"
+  },
+
+  "codec": {
+    "video": "h264",
+    "pixelFormat": "yuv420p",
+    "faststart": true,
+    "audio": "aac",
+    "audioPolicy": "preserve_or_reencode_if_present"
+  },
+
+  "layout": "centered_with_black_top_bottom_space",
+  "letterbox": true,
+  "blackTopBottomSpace": true,
+  "centeredContent": true,
+  "background": "black",
+
+  "requiresPublicBlobUrl": false,
+  "youtubeUsesBlobUrl": false,
+  "uploadMode": "youtube_data_api_direct_file_upload",
+
+  "conflatesWithInstagramVariant": false,
+  "instagramVariantId": "instagram_reels_full_frame_1080x1920",
+  "instagramVariantUnaffected": true,
+
+  "cliContract": {
+    "requiredArgs": ["--input", "--output"],
+    "defaultMode": "dry_run_no_write",
+    "supportedFlags": ["--dry-run", "--example", "--run"],
+    "runExecutesInThisSlice": false,
+    "exampleModeRequiresNoInputFile": true,
+    "outputPathSafetyValidated": true,
+    "envSecretRead": false,
+    "networkAccess": false
+  },
+
+  "forbiddenBehavior": [
+    "ffmpeg execution to generate a new mp4 in this slice",
+    "render/mux/TTS/image/browser regeneration",
+    "upload",
+    "YouTube API/OAuth",
+    "Instagram API/--arm",
+    "Vercel Blob provisioning/token/env",
+    ".env.local access",
+    "deploy/domain/DNS change",
+    "Cloudflare/R2/wrangler action",
+    "dependency/lockfile/font change",
+    "commit/push",
+    "routing YouTube variant through Blob/public URL",
+    "modifying or conflating the Instagram full-frame variant"
+  ],
+
+  "prohibitedDrift": {
+    "note": "아래 상태는 이 프로필 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "canvas가 1080x1920에서 벗어남",
+      "contentBox가 864x1536에서 벗어남",
+      "background가 black이 아님",
+      "centered가 false",
+      "top/bottom margin이 0이거나 top/bottom black space가 사라짐",
+      "requiresPublicBlobUrl 또는 youtubeUsesBlobUrl이 true",
+      "conflatesWithInstagramVariant가 true",
+      "cliContract.defaultMode가 dry_run_no_write가 아님",
+      "cliContract.runExecutesInThisSlice가 true",
+      "cliContract.envSecretRead 또는 networkAccess가 true"
+    ]
+  }
+}

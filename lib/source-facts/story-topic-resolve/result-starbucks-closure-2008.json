@@ -1,0 +1,136 @@
+{
+  "id": "starbucks-closure-2008",
+  "title": "스타벅스 2008 매장 교육 휴업",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "비용 비공개, 구조 약함",
+  "conditionResolved": true,
+  "finding": "비용은 끝내 비공개지만 구조는 약하지 않다: 2008년 2월 26일 하워드 슐츠가 미국 직영점 전체(약 7,100곳)를 저녁에 문 닫고 13만 5천 명 바리스타를 재교육했다. 직전 주가가 2006년 말 이후 약 50% 빠진 상태였고, 같은 해 4분기 순이익은 97% 급감하고 600여 곳을 닫았다. 즉 '매출을 포기하고 기본기를 되찾겠다'는 결정과 실제 숫자(매장 수·직원 수·실적 급락)가 서로 다른 사이트 2곳으로 확인된다. 이 휴업이 실적 급락을 막지 못했다는 점이 이야기의 한계이자 반전이다.",
+  "coreMessage": "규모가 커질수록 잃어버리기 쉬운 기본기는 매출을 잠시 멈추고서라도 다시 가르쳐야 한다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "슐츠는 2008년 2월 26일 저녁 미국 직영점 전체를 닫고 직원을 교육하겠다고 결정했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "휴업 시간은 출처마다 5:30~8:30(UPI)와 5:30~9시(Salon·RetailCX)로 다름. 약 3시간 이상 정도로 표현.",
+      "sources": [
+        {
+          "name": "UPI (2008-02-26)",
+          "url": "https://www.upi.com/Odd_News/2008/02/26/Starbucks-closes-for-training/60231204067653/",
+          "quote": "all of our U.S. company-operated stores",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        },
+        {
+          "name": "Salon (2008-02-26)",
+          "url": "https://salon.com/2008/02/26/starbucks_closing",
+          "quote": "all of our U.S. company-operated stores"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "이날 미국 직영점 약 7,100곳이 문을 닫았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "Retail Customer Experience (2008)",
+          "url": "https://www.retailcustomerexperience.com/news/starbucks-closes-7100-stores-for-training/",
+          "quote": "shut down nearly 7,100 stores"
+        },
+        {
+          "name": "NBC News/AP (2008)",
+          "url": "https://www.nbcnews.com/news/amp/wbna23369336",
+          "quote": "Nearly 7,100 company-operated"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "교육 대상은 매장 직원 약 13만 5천 명이었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        {
+          "name": "Salon (2008-02-26)",
+          "url": "https://salon.com/2008/02/26/starbucks_closing",
+          "quote": "135,000 in-store employees"
+        },
+        {
+          "name": "NBC News/AP (2008)",
+          "url": "https://www.nbcnews.com/news/amp/wbna23369336",
+          "quote": "135,000 baristas who got the refresher"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2008년 4분기(10~12월 분기) 스타벅스 순이익은 97% 감소했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "구조조정 비용 반영 수치. 휴업 때문이라고 단정하지 말 것.",
+      "sources": [
+        {
+          "name": "HeraldNet/AP (2008)",
+          "url": "https://heraldnet.com/business/starbucks-profits-nosedive-by-97",
+          "quote": "profit in the quarter fell 97 percent"
+        },
+        {
+          "name": "Nation's Restaurant News (2008)",
+          "url": "https://www.nrn.com/restaurant-finance/starbucks-4th-q-profit-plummets-97-",
+          "quote": "97-percent decline in fourth quarter"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "같은 시기 스타벅스는 미국 약 600곳 매장을 닫는 구조조정을 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "600곳 폐점은 2008년 7월 발표로 2월 휴업보다 뒤의 사건. 순서 주의.",
+      "sources": [
+        {
+          "name": "HeraldNet/AP (2008)",
+          "url": "https://heraldnet.com/business/starbucks-profits-nosedive-by-97",
+          "quote": "closing about 600 stores in the U.S."
+        },
+        {
+          "name": "Nation's Restaurant News (2008)",
+          "url": "https://www.nrn.com/restaurant-finance/starbucks-4th-q-profit-plummets-97-",
+          "quote": "planned closure of more than 600 stores"
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "같은 분기 미국 동일매장 매출은 8% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        {
+          "name": "HeraldNet/AP (2008)",
+          "url": "https://heraldnet.com/business/starbucks-profits-nosedive-by-97",
+          "quote": "dropped 8 percent in the U.S."
+        },
+        {
+          "name": "Nation's Restaurant News (2008)",
+          "url": "https://www.nrn.com/restaurant-finance/starbucks-4th-q-profit-plummets-97-",
+          "quote": "an 8-percent decline in U.S. same-store"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "미국 기업·2008년 종결 사건. 한국 스타벅스(SCK)와 무관."
+  },
+  "remaining": "휴업의 직접 비용(2~4백만 달러 추정은 Daily Record 단일 출처, 회사는 비공개)은 대본에 숫자로 쓰지 말 것. 이후 2009년 이후 회복 수치는 이번에 확인하지 않음 — '교훈'을 성공담으로 쓰려면 회복 근거를 2곳으로 추가 확인 필요. 주가 하락 약 50%는 NBC 단일 출처.",
+  "toolCallsUsed": 17
+}

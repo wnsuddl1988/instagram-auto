@@ -1,0 +1,93 @@
+{
+  "id": "nintendo-hanafuda",
+  "title": "닌텐도는 화투 회사였다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "10박자 미달 (weak-scene)",
+  "conditionResolved": true,
+  "finding": "'화투 회사였다'는 사실 나열만으로는 장면이 약하지만, 같은 소재에 결정 장면이 있다: 카드 시장이 포화되고 택시·즉석밥·러브호텔 사업이 실패한 뒤, 야마우치 히로시 사장이 공장 유지보수 직원 요코이 군페이의 장난감 늘어나는 팔을 보고 상품으로 개발하라고 지시했고 이것이 100만 개 이상 팔린 '울트라 핸드'가 됐다(출처 2곳). 1889 창업, 21세 사장 취임, 디즈니 카드 60만 팩, 울트라 핸드 100만 개 등 숫자 4개 이상을 서로 다른 사이트 2곳씩 확인했다.",
+  "coreMessage": "위기의 돌파구는 멀리서 사 온 신사업이 아니라 현장 직원의 작은 아이디어를 알아본 한 번의 결정이었다.",
+  "decisiveFact": "f6",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "닌텐도는 1889년 교토에서 야마우치 후사지로가 화투(하나후다)를 만들어 팔며 시작했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "goes all the way back to 1889" },
+        { "name": "SUPERJUMP Magazine", "url": "https://www.superjumpmagazine.com/the-early-years-of-nintendo/", "quote": "Yamauchi founded a company in 1889" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1949년 야마우치 히로시가 21세의 나이로 3대 사장에 취임했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "PBS는 22세로 적음. 생년월일(1927.11.7) 기준 21세가 다수.",
+      "sources": [
+        { "name": "Kill Screen(2013)", "url": "https://killscreen.com/rip-hiroshi-yamauchi-man-who-turned-nintendo-nintendo", "quote": "president of Nintendo. He was 21." },
+        { "name": "SUPERJUMP Magazine", "url": "https://www.superjumpmagazine.com/the-early-years-of-nintendo/", "quote": "At the tender age of 21, Hiroshi" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "디즈니 캐릭터 카드는 첫해 60만 팩 이상 팔리며 닌텐도 성장의 계기가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "연도가 1958/1959로 출처마다 다름. '첫해'와 '1959년'도 표기가 다름.",
+      "sources": [
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "over 600,000 packs were sold" },
+        { "name": "SUPERJUMP Magazine", "url": "https://www.superjumpmagazine.com/the-early-years-of-nintendo/", "quote": "around 600,000 card packs sold in 1959" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "요코이 군페이는 1965년 닌텐도 조립 라인의 유지보수 엔지니어로 입사했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "In 1965, the company hired a new" },
+        { "name": "Pure Nintendo", "url": "https://purenintendo.com/the-life-and-legacy-of-gunpei-yokoi/", "quote": "in 1965 as a lowly maintenance" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "닌텐도는 카드 사업 한계로 택시 회사, 즉석밥, 숙박업 등으로 다각화했으나 대부분 실패했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "SUPERJUMP는 택시 회사 Daiya만 상업적으로 성공했다고 적음 — '전부 실패'로 단정 금지.",
+      "sources": [
+        { "name": "PBS NewsHour(2013)", "url": "https://www.pbs.org/newshour/nation/a-look-at-the-legacy-of-nintendos-yamauchi", "quote": "individually rationed instant rice" },
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "an instant rice food company" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "야마우치 사장은 요코이가 만든 늘어나는 팔 장난감을 보고 제품으로 개발하라고 지시(요청)했고, 이것이 울트라 핸드가 됐다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "시점이 1966(출시)과 '1970 공장 시찰'(Gizmodo)로 엇갈림. 지시 vs 요청 표현 차이.",
+      "sources": [
+        { "name": "Pure Nintendo", "url": "https://purenintendo.com/the-life-and-legacy-of-gunpei-yokoi/", "quote": "develop the arm into a marketable toy" },
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "develop his arm as a proper product" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "울트라 핸드는 100만 개 이상 팔린 히트작이 되어 닌텐도의 장난감 사업을 열었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "일부 출처는 120만 개로 표기. '100만 개 이상'만 사용.",
+      "sources": [
+        { "name": "Gizmodo", "url": "https://gizmodo.com/the-surprisingly-long-history-of-nintendo-1354286257", "quote": "Selling over a million units" },
+        { "name": "Wikipedia - Ultra Hand", "url": "https://en.wikipedia.org/wiki/Ultra_Hand", "quote": "selling more than one million units" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 옛 사건이라 민감성 없음. 한국 시청자에게 화투 소재는 친숙." },
+  "remaining": "일부 출처가 서로 다른 연도를 적어(디즈니 계약 1958/1959, 울트라 핸드 1966/1970) 대본에서는 연도를 단정하지 않아야 함. 스톡 900엔→60엔 낙폭은 Gizmodo 단일 출처라 사용 금지.",
+  "toolCallsUsed": 12
+}

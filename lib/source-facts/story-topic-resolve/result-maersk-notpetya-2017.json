@@ -1,0 +1,75 @@
+{
+  "id": "maersk-notpetya-2017",
+  "title": "머스크 해킹 — 컴퓨터 한 대에서 시작된 세계 1위 해운사의 마비",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "국가 배후 서술 단정 금지. 컴퓨터 한 대가 세계 1위 해운사를 멈춘 장면 중심",
+  "conditionResolved": true,
+  "finding": "배후(국가) 서술 없이도 이야기가 선다. 전 세계 도메인 컨트롤러가 전부 지워진 가운데 가나 사무소의 한 대만 정전으로 꺼져 있어 살아남았고, 이것이 복구의 씨앗이 됐다는 장면이 2곳에서 확인된다. 서버 약 4,000대·PC 약 45,000대 재설치, 약 10일, 손실 2~3억 달러, 물량 약 20% 감소가 각각 2곳 이상에서 확인된다. 감염 경로는 우크라이나 쪽 해킹된 업데이트로 표현하고 배후는 쓰지 않는다.",
+  "coreMessage": "백업은 일부가 고장 날 때가 아니라 전부가 동시에 사라질 때를 가정해야 하고, 그날 회사를 살린 건 정전으로 꺼져 있던 컴퓨터 한 대였다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "머스크는 NotPetya 이후 서버 약 4,000대, PC 약 45,000대, 애플리케이션 약 2,500개를 다시 설치했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "수치는 머스크 회장 스나베가 2018년 다보스에서 밝힌 것으로 외부 감사 수치는 아님. 일부 매체는 '5만 대'로 반올림.",
+      "sources": [
+        { "name": "Security Affairs(2018)", "url": "https://securityaffairs.com/68227/security/maersk-notpetya-attack.html", "quote": "4,000 new servers, 45,000 new PCs" },
+        { "name": "GetTransport blog", "url": "https://blog.gettransport.com/cs/maersk-and-notpetya-how-the-cyberattack-reshaped-global-shipping/", "quote": "roughly 4,000 servers, 45,000 PCs" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "이 전면 재구축에 약 10일이 걸렸다(회장은 통상 6개월 걸릴 일이라고 말함).",
+      "numeric": true,
+      "economy": false,
+      "caution": "'6개월' 비교는 회장 발언이며 1곳(Supply Chain Dive) 외 원문 대조 미완이라 대본에서는 10일만 쓰는 것이 안전.",
+      "sources": [
+        { "name": "BTW Media", "url": "https://btw.media/en/the-day-global-shipping-lost-its-digital-memory-maersk-notpetya-and-operational-accountability", "quote": "2,500 applications in ten days" },
+        { "name": "GetTransport blog", "url": "https://blog.gettransport.com/cs/maersk-and-notpetya-how-the-cyberattack-reshaped-global-shipping/", "quote": "took about ten days" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "머스크는 이 공격이 2017년 실적에 2억~3억 달러의 손실을 낼 것으로 추산했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2분기 보고서 추산은 2~3억 달러, 이후 일부 보도(Supply Chain Dive 등)는 2.5~3억 달러로 적음. 대본에서는 '약 2~3억 달러(3천억 원대)'로 범위 표기.",
+      "sources": [
+        { "name": "Fox Business(2017)", "url": "https://www.foxbusiness.com/features/worlds-biggest-shipper-cyberattack-cost-up-to-300-million", "quote": "between $200 million and $300 million" },
+        { "name": "SiliconANGLE(2017, 머스크 CEO 성명 인용)", "url": "https://siliconangle.com/2017/08/16/shipping-giant-maesrk-says-notpetya-attack-cost-300m/", "quote": "negatively by USD 200-300m" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "마비 기간 머스크의 처리 물량은 약 20% 줄었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "회장 발언 기준. 수동 처리로 80%를 유지했다는 표현은 2곳 확인 못 함.",
+      "sources": [
+        { "name": "Security Affairs(2018)", "url": "https://securityaffairs.com/68227/security/maersk-notpetya-attack.html", "quote": "a 20 per cent drop in volumes" },
+        { "name": "GetTransport blog", "url": "https://blog.gettransport.com/cs/maersk-and-notpetya-how-the-cyberattack-reshaped-global-shipping/", "quote": "roughly twenty percent drop" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "전 세계 도메인 컨트롤러가 모두 지워졌지만 가나 사무소의 컨트롤러 한 대만 정전으로 네트워크에서 끊겨 있어 살아남았고, 복구의 출발점이 됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "이 컨트롤러가 '유일한' 사본이라는 표현과 데이터를 가나에서 어떻게 옮겼는지는 출처마다 다름(Wired 원문은 접근 불가). 대본에는 '살아남은 한 대'까지만 쓸 것.",
+      "sources": [
+        { "name": "BTW Media", "url": "https://btw.media/en/the-day-global-shipping-lost-its-digital-memory-maersk-notpetya-and-operational-accountability", "quote": "disconnected during a power outage" },
+        { "name": "GetTransport blog", "url": "https://blog.gettransport.com/cs/maersk-and-notpetya-how-the-cyberattack-reshaped-global-shipping/", "quote": "office in Ghana had survived" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "외국 기업·종결된 2017년 사건. 감염은 우크라이나 회계 소프트웨어 업데이트 경유로 알려졌으나 국가 배후(러시아 등)는 단정하지 않는다."
+  },
+  "remaining": "'컴퓨터 한 대에서 시작'이라는 풀 제목 표현은 확인되지 않음(감염 시작점 한 대가 아니라 해킹된 업데이트). 제목·훅은 '살아남은 한 대'로 바꿀 것. 2번째 출처가 약한 블로그(GetTransport)라 대본 확정 전 Wired 등 1차 보도 재확인 권장.",
+  "toolCallsUsed": 17
+}

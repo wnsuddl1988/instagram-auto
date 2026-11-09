@@ -1,0 +1,55 @@
+{
+  "facts": [
+    { "id": "f1", "claim": "다저스의 최고 응찰액은 2,573만 7,737달러 33센트(약 280억 원)였다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "경향신문 영문(2012.11.13)", "url": "https://www.khan.co.kr/article/201211131045267/amp", "quote": "LA Dodgers bid an astonishing $25,737,737.33" },
+        { "name": "코리아타임스(2012.11.11)", "url": "https://www.koreatimes.co.kr/sports/20121111/eagles-hurler-eyes-big-deal", "quote": "The Dodgers made the winning bid of $25.7 million (27.9 billion won)" }
+      ] },
+    { "id": "f2", "claim": "11월 10일 오전 KBO가 응찰액을 한화에 전달했고 한화는 곧이어 이를 수락했다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "경향신문 영문(2012.11.13)", "url": "https://www.khan.co.kr/article/201211131045267/amp", "quote": "delivered the bid to Hanwha and Hanwha accepted it shortly after" },
+        { "name": "한국일보(2012.12.7)", "url": "https://www.hankookilbo.com/news/article/201212071258335397", "quote": "다저스는 지난달 10일 포스팅시스템" }
+      ] },
+    { "id": "f3", "claim": "최고 응찰액을 낸 구단은 류현진과 30일간 독점(단독) 협상권을 얻었다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "OSEN(2012.11.8)", "url": "https://osen.co.kr/article/G1109495968", "quote": "최고 입찰액 구단과 30일간 단독 협상하게 된다" },
+        { "name": "코리아타임스(2012.11.11)", "url": "https://www.koreatimes.co.kr/sports/20121111/eagles-hurler-eyes-big-deal", "quote": "negotiate a contract over a 30-day period" },
+        { "name": "서울신문(2012.12.5)", "url": "https://www.seoul.co.kr/news/sport/2012/12/05/20121205800077", "quote": "30일간 독점 협상권을 따냈다" }
+      ] },
+    { "id": "f4", "claim": "첫 협상에서 다저스가 장기 계약을 제시했지만 류현진 쪽이 즉각 거절했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "서울신문(2012.12.5)", "url": "https://www.seoul.co.kr/news/sport/2012/12/05/20121205800077", "quote": "류현진이 다저스의 장기계약 제안을 즉각 거절했다" },
+        { "name": "한국일보(2012.12.7)", "url": "https://www.hankookilbo.com/news/article/201212071258335397", "quote": "첫 협상이었던 지난 4일 류현진 측에 장기 계약을 제시했지만 바로 거절" }
+      ] },
+    { "id": "f5", "claim": "에이전트는 류현진이 일본에서 뛸 수도 있다며 다저스를 압박했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "서울신문(2012.12.5)", "url": "https://www.seoul.co.kr/news/sport/2012/12/05/20121205800077", "quote": "류현진이 일본에서 뛸 수도 있다" },
+        { "name": "한국일보(2012.12.7)", "url": "https://www.hankookilbo.com/news/article/201212071258335397", "quote": "다저스와의 협상이 불발될 경우 일본으로 갈 수도 있다" }
+      ] },
+    { "id": "f6", "claim": "다저스와 계약하지 못하면 류현진은 다음 해 한화에 남아야 했다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "서울신문(2012.12.5)", "url": "https://www.seoul.co.kr/news/sport/2012/12/05/20121205800077", "quote": "다저스와 계약하지 못하면 류현진은 내년 한화에서 다시 뛰어야 한다" },
+        { "name": "코리아타임스(2012.11.11)", "url": "https://www.koreatimes.co.kr/sports/20121111/eagles-hurler-eyes-big-deal", "quote": "he will remain with the Korean club" }
+      ] },
+    { "id": "f7", "claim": "협상 마감은 우리 시간 12월 10일 오전 7시였다", "numeric": true, "economy": false,
+      "sources": [
+        { "name": "서울신문(2012.12.7)", "url": "https://www.seoul.co.kr/news/sport/2012/12/07/20121207025016", "quote": "10일 오전 7시(현지 시간 9일 오후 5시)에 만료된다" },
+        { "name": "한국일보(2012.12.7)", "url": "https://www.hankookilbo.com/news/article/201212071258335397", "quote": "마감일시는 10일 오전 7시다" }
+      ] },
+    { "id": "f8", "claim": "류현진은 다저스와 6년 3,600만 달러에 계약했다", "numeric": true, "economy": true,
+      "sources": [
+        { "name": "MLB트레이드루머스(2012.12)", "url": "https://mlbtraderumors.com/2012/12/dodgers-sign-hyun-jin-ryu.html", "quote": "for $36MM over six years" },
+        { "name": "더페닌슐라(2012.12.11)", "url": "https://thepeninsulaqatar.com/article/11/12/2012/baseball-dodgers-reach-36m-deal-with-ryu", "quote": "Dodgers reach $36m deal with Ryu" }
+      ] },
+    { "id": "f9", "claim": "계약은 마감 직전에 맺어졌다", "numeric": false, "economy": false,
+      "sources": [
+        { "name": "MLB트레이드루머스(2012.12)", "url": "https://mlbtraderumors.com/2012/12/dodgers-sign-hyun-jin-ryu.html", "quote": "just prior to the 4pm CT deadline" },
+        { "name": "더페닌슐라(2012.12.11)", "url": "https://thepeninsulaqatar.com/article/11/12/2012/baseball-dodgers-reach-36m-deal-with-ryu", "quote": "The Ryu deal beat the afternoon deadline" }
+      ] },
+    { "id": "f10", "claim": "응찰액은 선수 몸값이 아니라 독점 협상권의 대가로, 한화 쪽으로 가는 포스팅 금액이다", "numeric": false, "economy": true,
+      "sources": [
+        { "name": "더페닌슐라(2012.12.11)", "url": "https://thepeninsulaqatar.com/article/11/12/2012/baseball-dodgers-reach-36m-deal-with-ryu", "quote": "which will now go to Ryu’s Korean team" },
+        { "name": "OSEN(2012.11.8)", "url": "https://osen.co.kr/article/G1109495968", "quote": "계약금 및 연봉을 놓고 류현진의 구체적인 몸값이 매겨지는 시기" }
+      ] }
+  ]
+}

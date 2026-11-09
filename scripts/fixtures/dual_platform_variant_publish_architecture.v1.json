@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "dual_platform_variant_publish_architecture_v1",
+  "taskId": "dual-platform-variant-publish-architecture-no-live-v1",
+  "status": "DUAL_PLATFORM_ARCHITECTURE_NO_LIVE",
+  "createdAt": "2026-07-06",
+  "nature": "하나의 생성 콘텐츠를 Instagram Reels + YouTube Shorts 두 플랫폼용 렌더 변형 2종으로 만들고, Instagram은 Vercel Blob public direct URL, YouTube는 YouTube Data API direct file upload로 발행하는 운영 아키텍처를 no-live로 고정하는 결정 패킷. Cloudflare/R2는 기술 실패가 아니라 Owner preference로 suspended. 이 패킷은 store 생성/provisioning/token/env write/deploy/object upload/live liveness/Instagram --arm/YouTube upload/OAuth를 승인하거나 수행하지 않는다.",
+  "docsRef": "docs/dual-platform-variant-publish-architecture.md",
+  "strategyRef": "scripts/fixtures/stable_public_media_url_strategy.v1.json",
+  "providerDecisionRef": "scripts/fixtures/media_provider_decision_packet.v1.json",
+  "r2ResultRef": "scripts/fixtures/r2_bucket_provisioning_result.v1.json",
+  "noLiveThisSlice": true,
+
+  "cloudflareR2Status": {
+    "state": "suspended",
+    "reason": "owner_preference_not_technical_failure",
+    "bucketCreated": false,
+    "note": "R2 provisioning은 기술적으로 BLOCKED_CLOUDFLARE_TOOL_UNAVAILABLE였으나, 현재 suspended의 근본 사유는 Owner preference다. R2/wrangler/DNS/custom domain 경로는 이 아키텍처에서 사용하지 않는다."
+  },
+
+  "primaryPublicUrlProviderForInstagram": "vercel_blob_public_direct_url",
+  "youtubeUploadMode": "youtube_data_api_direct_file_upload",
+  "youtubeUsesBlobUrl": false,
+
+  "contentUnit": {
+    "definition": "하나의 생성 콘텐츠 item이 script/audio/captions/scene manifest/metadata/publish plan을 소유한다.",
+    "ownsPublishPlan": true
+  },
+
+  "renderVariants": [
+    {
+      "id": "instagram_reels_full_frame_1080x1920",
+      "platform": "instagram_reels",
+      "width": 1080,
+      "height": 1920,
+      "layout": "full_frame_vertical",
+      "background": "content_full_bleed",
+      "letterbox": false,
+      "visualStyle": "existing_current_style",
+      "requiresPublicBlobUrl": true,
+      "note": "현재/기존 full-frame 세로 스타일 그대로. Instagram Reels 발행용."
+    },
+    {
+      "id": "youtube_shorts_letterbox_1080x1920",
+      "platform": "youtube_shorts",
+      "width": 1080,
+      "height": 1920,
+      "layout": "centered_with_black_top_bottom_space",
+      "background": "black",
+      "letterbox": true,
+      "centeredContent": true,
+      "blackTopBottomSpace": true,
+      "requiresPublicBlobUrl": false,
+      "avoidTextInYoutubeUiRiskZones": true,
+      "note": "최종 파일은 1080x1920 세로 mp4 유지. 배경은 검정, 메인 영상은 중앙 배치 + 위/아래 검은 여백. YouTube UI(진행바/제목/버튼) 위험 영역에 중요한 자막 배치 회피. YouTube Data API direct file upload로 발행."
+    }
+  ],
+
+  "publishJobs": [
+    {
+      "id": "instagram_job",
+      "platform": "instagram_reels",
+      "sourceVariant": "instagram_reels_full_frame_1080x1920",
+      "deliveryMode": "public_unauthenticated_https_video_url",
+      "provider": "vercel_blob",
+      "uploadsToBlob": true,
+      "retentionDays": "1-7",
+      "deleteAfterIngestOrRetention": true,
+      "note": "Instagram Graph API는 public unauthenticated HTTPS video_url을 요구한다. Vercel Blob public direct URL을 free-first 경로로 쓰고, 성공 ingest 후 또는 1-7일 짧은 retention 후 삭제/만료."
+    },
+    {
+      "id": "youtube_job",
+      "platform": "youtube_shorts",
+      "sourceVariant": "youtube_shorts_letterbox_1080x1920",
+      "deliveryMode": "direct_media_file_upload",
+      "provider": "youtube_data_api",
+      "uploadsToBlob": false,
+      "requiresFutureOAuthApproval": true,
+      "note": "YouTube Data API videos.insert는 mp4 파일을 direct(resumable) media upload로 받는다. Blob 호스팅 public URL이 필요 없다. OAuth/credential은 별도 미래 승인 필요."
+    }
+  ],
+
+  "blobRequiredVariantsOnly": ["instagram_reels_full_frame_1080x1920"],
+  "blobStoragePressureSource": "instagram_public_url_variants_only",
+
+  "dailyCapacityBaseline": {
+    "onePerDay": { "contents": 1, "renderVariants": 2, "publishJobs": 2, "breakdown": "Instagram 1 + YouTube 1" },
+    "twoPerDay": { "contents": 2, "renderVariants": 4, "publishJobs": 4, "breakdown": "content당 Instagram 1 + YouTube 1 = 4 jobs" },
+    "publishJobsPerContent": 2,
+    "note": "1 content/day = 2 publish jobs/day, 2 contents/day = 4 publish jobs/day. Blob에 올라가는 것은 Instagram variant 뿐이므로 Blob storage pressure는 하루 콘텐츠 수와 동일한 object 수."
+  },
+
+  "freeTierFeasibility": {
+    "provider": "vercel_blob",
+    "plan": "hobby_free_tier",
+    "assumedVariantSizeMb": "20-30",
+    "assumedRetentionDays": "1-7",
+    "assumedInstagramObjectsPerDay": "1-2",
+    "plausibleUnderAssumptions": true,
+    "unlimited": false,
+    "guaranteedFree": false,
+    "note": "2 contents/day, Instagram Blob object당 20-30MB, 1-7일 retention이면 짧은 retention 덕에 동시 저장량이 작아 Vercel Blob Hobby free-tier 운영이 plausible. 단 무제한도 보장 무료도 아니며, Vercel Blob은 storage/data transfer/operations(및 advanced/cache 항목)에 usage-based 과금 요소가 있으므로 hard cost/usage guard 필수."
+  },
+
+  "costAndQuotaGuards": [
+    "Instagram variant만 Blob 업로드(YouTube variant는 Blob 금지)로 저장/전송량 최소화",
+    "성공 ingest 후 또는 1-7일 내 Blob object 삭제/만료로 누적 storage 억제",
+    "장기 mp4 아카이브 금지(별도 승인 없이 long-term 보관 금지)",
+    "하루 발행 상한(예: 2 contents/day) 초과 시 발행 job 생성 차단",
+    "Blob usage/청구 임계 도달 시 자동 업로드 중단(fail-closed)",
+    "결정론적 key 사용으로 중복 object 누적 방지",
+    "retention/삭제는 성공 확인 이후에만 수행(발행 실패 시 조기 삭제 금지)"
+  ],
+
+  "repoPublicFallback": {
+    "role": "one_off_manual_only",
+    "isSustainedDefault": false,
+    "note": "repo public/ static mp4 + deploy는 긴급/수동 단발 fallback으로만 유지. sustained default 아님. Instagram sustained 경로는 Vercel Blob public URL."
+  },
+
+  "futureApprovalSequence": [
+    "APPROVE_DUAL_PLATFORM_ARCHITECTURE",
+    "APPROVE_YOUTUBE_VARIANT_RENDER_SPEC",
+    "APPROVE_VERCEL_BLOB_STORE_PROVISIONING",
+    "APPROVE_VERCEL_BLOB_ENV_TOKEN_WRITE",
+    "APPROVE_BLOB_INSTAGRAM_UPLOAD_CODE_INTEGRATION",
+    "APPROVE_YOUTUBE_OAUTH_AND_UPLOAD_INTEGRATION",
+    "APPROVE_PLATFORM_VARIANT_RENDER_TEST",
+    "APPROVE_INSTAGRAM_BLOB_URL_LIVENESS",
+    "APPROVE_YOUTUBE_UPLOAD_TEST",
+    "APPROVE_DUAL_PLATFORM_ARM"
+  ],
+
+  "verifierGatesInheritedFromStrategy": {
+    "requireHttps": true,
+    "requireVideoContentType": true,
+    "rejectTextHtml": true,
+    "requireUnauthenticatedAccess": true,
+    "uploadOnlyWithVerifiedUrl": true,
+    "note": "Instagram Blob public URL도 stable-strategy의 verifier gate(HTTPS/video content-type/reject html/unauth/verified-only)를 그대로 상속해 fail-closed로 검증 후에만 Instagram video_url로 사용."
+  },
+
+  "officialDocRefs": {
+    "vercelBlobOverview": "https://vercel.com/docs/vercel-blob",
+    "vercelBlobPricing": "https://vercel.com/docs/vercel-blob/usage-and-pricing",
+    "vercelBlobPublicStorage": "https://vercel.com/docs/vercel-blob/public-storage",
+    "youtubeVideosInsert": "https://developers.google.com/youtube/v3/docs/videos/insert",
+    "youtubeShortsUploadHelp": "https://support.google.com/youtube/answer/12779649",
+    "keyPoints": [
+      "Vercel Blob은 public access object에 direct HTTPS URL을 제공한다(public-storage)",
+      "Vercel Blob은 usage-based 과금(storage/data transfer/operations 등)이며 무제한/보장 무료 아님",
+      "YouTube Data API videos.insert는 mp4를 direct(resumable) media upload로 받으며 외부 public URL 호스팅이 필요 없다",
+      "YouTube Shorts는 세로(예: 1080x1920) 짧은 영상 포맷"
+    ]
+  },
+
+  "forbiddenBehavior": [
+    "Cloudflare/R2/wrangler action",
+    "Vercel Blob store creation/provisioning",
+    "token/env/secret read/write",
+    ".env.local access or broad env parsing",
+    "deploy/domain/DNS change",
+    "object upload",
+    "public URL liveness check",
+    "Instagram upload or --arm",
+    "YouTube upload/API/OAuth execution",
+    "render/mux/TTS/image/browser regeneration",
+    "dependency/lockfile/font change",
+    "secret logging",
+    "commit/push in this slice",
+    "promoting repo public/ fallback to sustained default"
+  ],
+
+  "prohibitedArchitectureDrift": {
+    "note": "아래 상태는 이 아키텍처 계약 위반이며 static guard가 fail-closed로 잡아야 한다.",
+    "cases": [
+      "Cloudflare/R2가 다시 primary로 승격됨",
+      "YouTube를 Vercel Blob URL 경로로 발행하도록 바뀜(direct upload 아님)",
+      "YouTube가 first-class publish target에서 누락됨",
+      "one content -> two variants -> two publish jobs 모델 누락",
+      "1 content/day -> 2 jobs 또는 2 contents/day -> 4 jobs 수식 누락",
+      "YouTube variant의 black top/bottom space 또는 centered content 요구 누락",
+      "Instagram variant 외의 variant가 Blob-required로 표시됨",
+      "free-tier feasibility가 unlimited/guaranteed로 서술됨",
+      "cost/retention guard 누락",
+      "token/env/provision/deploy/upload/liveness/Instagram/YouTube live action 허용",
+      "repo public/ fallback이 sustained default로 승격",
+      "공식 Vercel/YouTube source URL 누락"
+    ]
+  }
+}

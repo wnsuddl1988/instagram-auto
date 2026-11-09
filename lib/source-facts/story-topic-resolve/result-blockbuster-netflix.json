@@ -1,0 +1,46 @@
+{
+  "id": "blockbuster-netflix",
+  "title": "블록버스터 — 넷플릭스를 살 기회를 거절한 회사",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "넷플릭스 거절 일화는 당사자 주장이 엇갈림",
+  "conditionResolved": false,
+  "finding": "2000년 9월 댈러스 회의에서 넷플릭스가 5천만 달러에 인수를 제안했고 블록버스터가 웃어넘겼다는 이야기는 마크 랜돌프(공동창업자)와 당시 CFO 배리 매카시 쪽 증언뿐이고, 안티오코 당시 CEO는 뉴스위크를 통해 '그 회의에 참석하지 않았고 진지한 인수 협상은 없었다'며 정면으로 부인했다. 즉 서로 독립된 2곳이 확인한 사실이 아니라 한쪽 증언을 여러 매체가 되풀이한 것이다. 대안 장면으로 2004.12 연체료 폐지 결정(블록버스터 공시 확인)을 찾았지만, 그것이 몰락의 결정적 원인이었다는 인과가 불분명하고(이후 이사회·아이칸 갈등, 2010 파산) 다른 숫자 4개를 서로 다른 사이트 2곳씩 확인하지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "랜돌프 증언: 2000년 회의에서 넷플릭스가 블록버스터에 5천만 달러에 인수를 제안했으나 안티오코는 웃음을 참는 모습이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "랜돌프 쪽 증언이며 안티오코가 부인함 — 확정 사실로 쓸 수 없음. 5천만 달러도 '올해 최소 5천만 달러 손실 전망'에서 나온 숫자라는 해석이 있음.",
+      "sources": [
+        { "name": "TodayIFoundOut(2019)", "url": "https://todayifoundout.com/?p=60247", "quote": "John Antioco was struggling not to laugh" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "안티오코의 반박: 회의에 참석하지 않았고 5천만 달러의 가치가 있다고 본 사람은 넷플릭스 포함 아무도 없었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "당사자 주장이 엇갈림이 핵심 보류 사유.",
+      "sources": [
+        { "name": "Newsweek(2022)", "url": "https://www.newsweek.com/fact-check-did-blockbuster-turn-down-chance-buy-netflix-50-million-1575557", "quote": "I was not a part of that meeting" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "블록버스터는 2005년 1월 1일부터 미국 내 4,500여 개 매장에서 연체료를 전면 폐지한다고 2004년 12월 발표했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "블록버스터 보도자료(SEC 8-K) 단일 확인. 연체료가 영업이익 약 2.5~3억 달러에 기여했을 것이라고 회사가 밝힘.",
+      "sources": [
+        { "name": "Blockbuster 8-K(2004)", "url": "https://www.sec.gov/Archives/edgar/data/0001085734/000119312504212358/dex991.htm", "quote": "there will be no more late fees charged on any movie or game rental" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업·종결 사건이라 민감성 없음." },
+  "remaining": "넷플릭스 거절 장면을 쓰려면 안티오코 쪽 부인을 함께 다루는 '엇갈린 기억' 구조여야 하는데 이는 스토리형 단일 결단 장면과 맞지 않음. 연체료 폐지 장면은 인과(몰락 원인) 근거 부족.",
+  "toolCallsUsed": 9
+}

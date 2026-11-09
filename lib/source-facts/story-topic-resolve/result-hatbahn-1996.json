@@ -1,0 +1,60 @@
+{
+  "id": "hatbahn-1996",
+  "title": "햇반 — '맨밥을 누가 사 먹냐'던 사내 반대",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "서서히 변한 이야기라 결정적 장면 약함. 1997년 매출 40억 원 서술은 근거 없음",
+  "conditionResolved": false,
+  "finding": "1997년 매출 '40억 원이 채 안 됨'은 뉴데일리(2016)와 한경비즈니스(2018) 2곳에서 원문 확인되어 근거 문제는 해소됐다(100억 원 투자·영업이익 10%도 2곳). 그러나 소재의 핵심인 '사내 반발·맨밥을 누가 사 먹겠냐' 일화는 아이뉴스24(단일) 한 곳뿐이고, CJ 공식 소식은 '출시 직후부터 돌풍'이라고 서술해 서사가 엇갈린다. 결정적 장면(회장/경영진 결단의 구체 장면)은 2출처로 확인되지 않아 연표·성장 서사에 머문다. 따라서 장면이 약한 hold.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "햇반 출시 때 무균포장 기술 도입에 회사 영업이익의 약 10%인 100억 원 이상을 투자했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'영업이익 10%' 표현은 한경비즈니스에만 있고 뉴데일리는 '초기 100억 원'만 언급.",
+      "sources": [
+        { "name": "뉴데일리 경제(2016)", "url": "https://biz.newdaily.co.kr/site/data/html/2016/12/15/2016121510042.html", "quote": "초기에만 100억 원에 달하는 투자가 필요했다." },
+        { "name": "한경비즈니스(2018)", "url": "https://magazine.hankyung.com/business/article/201810056774b", "quote": "회사 영업이익의 10% 수준인 100억원 이상의 거금을 투자했다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "햇반의 1997년 연간 매출은 40억 원이 채 되지 않았다(이후 2017년 3,200억 원 — 80배 이상).",
+      "numeric": true,
+      "economy": true,
+      "caution": "2016년 매출은 뉴데일리가 '1,600억 원 예상(링크아즈텍 기준)', 한경비즈니스는 '지난해 3,200억 원'으로 서로 크게 다름. 1997년 40억 원의 최초 출처는 회사 발표로 추정.",
+      "sources": [
+        { "name": "뉴데일리 경제(2016)", "url": "https://biz.newdaily.co.kr/site/data/html/2016/12/15/2016121510042.html", "quote": "1997년의 연간 매출이 40억원이 채 되지 않았던 것에 비해" },
+        { "name": "한경비즈니스(2018)", "url": "https://magazine.hankyung.com/business/article/201810056774b", "quote": "1997년 40억원이 채 되지 않았던 것에 비해 80배 이상 성장했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "제일제당이 즉석밥 개발에 나선 것은 1989년(1980년대 말)부터다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "CJ제일제당 뉴스룸(CJ News)", "url": "https://cjnews.cj.net/%ea%b0%93-%ec%a7%80%ec%9d%80-%eb%b0%a5%eb%a7%9b-%eb%94%b0%eb%9d%bc%ec%98%ac-%ec%88%98-%ec%97%86%eb%8a%94-%ed%96%87%eb%b0%98%ec%9d%98-%ea%b8%b0%ec%88%a0/", "quote": "제일제당이 즉석밥 개발에 나선 건 1989년부터다." },
+        { "name": "뉴데일리 경제(2016)", "url": "https://biz.newdaily.co.kr/site/data/html/2016/12/15/2016121510042.html", "quote": "1980년대 말, CJ제일제당이 처음으로 밥의 상품화를 시작했을 당시에는" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1996년 당시에는 밥을 사서 먹는다는 개념 자체가 낯설었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "'사내 반발·맨밥을 누가 사 먹겠냐'는 아이뉴스24 단일 출처. CJ 소식(cjnews)은 '출시 직후부터 돌풍'이라 서술해 상충 — 대본에서 사내 반대를 단정하면 위험.",
+      "sources": [
+        { "name": "아이뉴스24", "url": "https://www.inews24.com/view/860398", "quote": "밥을 만들어 판다는 것만으로도 생소하게 여기던 때여서" },
+        { "name": "뉴시스(2021)", "url": "https://www.newsis.com/view/NISX20210129_0001322317", "quote": "'밥을 사서 먹는다'는 개념조차 없던 20년 전" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "영업 중인 CJ제일제당 소재이나 소송·제재 없음. 기업 홍보로 읽히지 않게만 주의." },
+  "remaining": "사내 반대 일화의 2번째 독립 출처, 그리고 회장/경영진이 출시를 밀어붙인 구체적 장면(누가·언제·무슨 말)이 없다. 있으면 usable 후보. 현재는 성장 서사뿐.",
+  "toolCallsUsed": 8
+}

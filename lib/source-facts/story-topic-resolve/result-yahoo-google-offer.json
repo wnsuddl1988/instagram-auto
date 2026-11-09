@@ -1,0 +1,47 @@
+{
+  "id": "yahoo-google-offer",
+  "title": "야후 — 구글을 살 수 있었던 회사",
+  "year": 2002,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "당사자 증언에 기댐, 근거 보강 필요",
+  "conditionResolved": false,
+  "finding": "2002년 야후가 구글 인수를 협상했다는 큰 줄기는 여러 곳에 있으나 금액이 출처마다 다르다: 구글 요구가 10억 달러(Semel 위키) / 30억 달러(Semel 위키 후반) / 50억 달러(Yahoo 위키), 야후 최종 제시가 30억 달러. 1998년 100만 달러 제안은 블로그·모음글 수준이다. 원문(Wired 2007, Fortune, Business Insider)은 열람하지 못했고 신뢰할 2출처로 확인되는 금액이 없어 보류한다. 2008년 마이크로소프트의 446억 달러 인수 제안 거절은 확인 가능한 대안 장면이지만 '구글을 살 수 있었던' 소재와 다른 이야기다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2002년 야후 CEO 테리 세멜이 구글 인수 협상에 나섰고 야후의 최종 제시액은 30억 달러였다는 서술이 있다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Wikipedia 문서끼리 금액이 다름(10억/30억/50억). 같은 도메인이라 1곳으로 침. 원전 Wired·Business Insider 미열람.",
+      "sources": [
+        { "name": "Wikipedia Yahoo", "url": "https://en.wikipedia.org/wiki/Yahoo", "quote": "Yahoo's final offer was $3 billion" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2008년 2월 마이크로소프트는 야후에 446억 달러 인수를 제안했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처만 원문 확인(Wikipedia). 주당 31달러 제안, 33달러로 올렸다가 철회.",
+      "sources": [
+        { "name": "Wikipedia Yahoo", "url": "https://en.wikipedia.org/wiki/Yahoo", "quote": "bid to acquire Yahoo for $44.6 billion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2016년 버라이즌은 야후 핵심 인터넷 사업을 48억 3천만 달러에 인수하기로 발표했다(이후 3억 5천만 달러 인하).",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처 원문 확인. 최종 인수가는 약 44억 8천만 달러로 보도됨.",
+      "sources": [
+        { "name": "Wikipedia Yahoo", "url": "https://en.wikipedia.org/wiki/Yahoo", "quote": "core Internet business for $4.83 billion" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업 사례. 국내 민감성 없음. 현존 기업이므로 투자 권유로 읽히지 않게 주의." },
+  "remaining": "2002년 협상 금액·누가 협상을 끝냈는지를 신뢰 가능한 2출처(Wired 2007 원문, Fortune, NYT 등)로 확인해야 함. 현재는 위키와 블로그의 서로 다른 금액뿐.",
+  "toolCallsUsed": 8
+}

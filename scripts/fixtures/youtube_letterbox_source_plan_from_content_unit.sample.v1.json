@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "dual_platform_content_unit_v1",
+  "_note": "Sample content unit manifest for the YouTube letterbox source planning bridge guard only. no-live/no-execute. instagramSourcePath intentionally does not exist so the planner reports inputExists:false (fail-closed visibility, not an abort) — the planner still writes a deterministic plan JSON either way.",
+  "contentId": "t3_letterbox_plan_fixture",
+  "version": "v1_local_draft",
+  "instagramSourcePath": "C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\instagram_reels_full_frame_1080x1920_v1_local_draft.mp4",
+  "youtubeSourcePath": "C:\\tmp\\money-shorts-os\\t3_letterbox_plan_fixture\\youtube_shorts_letterbox_1080x1920_v1_local_draft.mp4",
+  "instagramMetadata": {
+    "captionFirstLineHook": "샘플 letterbox plan 픽스처 훅",
+    "caption": "샘플 letterbox plan 픽스처 캡션 — static guard 검증 전용 데이터입니다.",
+    "hashtags": ["샘플", "플랜테스트", "가드검증", "Shorts", "정보", "일상", "꿀팁", "Reels"],
+    "callToAction": "저장하고 다음에 다시 보기 · 팔로우하면 더 많은 정보를 받아보세요",
+    "forbiddenUnrelatedTrendTags": true
+  },
+  "youtubeMetadata": {
+    "titleBase": "샘플 letterbox plan 픽스처 제목",
+    "titleWithShortsSuffix": "샘플 letterbox plan 픽스처 제목 #Shorts",
+    "descriptionBase": "샘플 letterbox plan 픽스처 설명 — static guard 검증 전용 데이터입니다.",
+    "tags": ["샘플", "플랜테스트", "가드검증", "Shorts"],
+    "categoryId": "27",
+    "defaultLanguage": "ko",
+    "privacyStatus": "private",
+    "selfDeclaredMadeForKids": false
+  },
+  "existingPublishedKeys": []
+}

@@ -1,0 +1,97 @@
+{
+  "id": "kodak-digital-camera",
+  "title": "코닥 — 디지털카메라를 발명하고 망한 회사",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "'디지털 발명하고 망했다'는 통념이 부정확(디지털 판매 1위였던 시기 있음). 재조사 필요",
+  "conditionResolved": true,
+  "finding": "1975년 코닥 기술자가 첫 휴대형 디지털카메라(100x100화소, 기록 23초)를 만들었고 경영진은 시장이 없다고 봤다는 점, 2004~2005년 코닥이 미국 디지털카메라 판매 1위(2005년 점유율 24.9%, 705만 대)였다는 점, 2012년 부채 67억 5천만 달러로 파산보호를 신청했다는 점이 각각 2곳 이상에서 확인된다. 따라서 '디지털을 발명하고 디지털 때문에 망했다'는 통념은 부정확하며, '디지털 1위였는데도 파산했다'로 바로잡아 쓸 수 있다. 다만 파산의 단일 원인을 단정하지 말고 장면(1975년 외면)과 결과(2012년)를 나란히 놓는 서술이 필요하다.",
+  "coreMessage": "새 판을 먼저 만들고도 돈 되는 옛 판을 놓지 못하면, 1위를 해도 늦은 것이다.",
+  "decisiveFact": "f3",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1975년 코닥 기술자 스티브 새슨이 만든 첫 휴대형 디지털카메라는 100x100화소 흑백 이미지를 찍었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "BGR, The Invention Of Digital Cameras Was Almost Buried At Kodak", "url": "https://www.bgr.com/2246470/kodak-invention-digital-camera-explained/", "quote": "100 pixels square" },
+        { "name": "IEEE Spectrum, first digital camera history", "url": "https://spectrum.ieee.org/first-digital-camera-history", "quote": "100 by 100 pixels" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "그 카메라는 사진 한 장을 카세트테이프에 기록하는 데 23초가 걸렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "BGR, The Invention Of Digital Cameras Was Almost Buried At Kodak", "url": "https://www.bgr.com/2246470/kodak-invention-digital-camera-explained/", "quote": "took 23 seconds to record a photo" },
+        { "name": "IEEE Spectrum, first digital camera history", "url": "https://spectrum.ieee.org/first-digital-camera-history", "quote": "23 seconds to record it to the tape" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1975년 시연을 본 코닥 경영진은 이 카메라에 시장이 있다고 보지 않아 상품화하지 않았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "'필름 사업을 잠식할까 봐'라는 동기는 해석일 뿐 확정 사실이 아님. 대본에서 동기를 단정하지 말 것.",
+      "sources": [
+        { "name": "IEEE Spectrum, first digital camera history", "url": "https://spectrum.ieee.org/first-digital-camera-history", "quote": "see a market for it" },
+        { "name": "BGR, The Invention Of Digital Cameras Was Almost Buried At Kodak", "url": "https://www.bgr.com/2246470/kodak-invention-digital-camera-explained/", "quote": "particularly impressed" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2005년 코닥은 미국 디지털카메라 시장 점유율 24.9%로 1위였고 705만 대를 미국 소매점에 공급했다(2004년은 21%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "두 출처 모두 AP 계열 동일 보도(IDC 자료). 조사기관마다 순위 다름(NPD는 2005년 초 소니·캐논 공동 1위로 발표). 대본에는 'IDC 기준'을 붙일 것.",
+      "sources": [
+        { "name": "NBC News(AP), Kodak tops U.S. digital-camera market", "url": "https://www.nbcnews.com/id/wbna11258928", "quote": "market share leaped to 24.9 percent" },
+        { "name": "Layers Magazine, Kodak tops U.S. digital-camera market again", "url": "https://layersmagazine.com/kodak-tops-us-digital-camera-market-again.html", "quote": "Kodak shipped 7.05 million digital cameras" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2012년 1월 코닥은 파산보호(챕터 11)를 신청했고, 부채는 67억 5천만 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "67억 5천만 달러는 매체에 따라 '부채'(printandpromo) 또는 '부채(liabilities)'(Fiscal Times)로 표기. 총자산은 51억 달러.",
+      "sources": [
+        { "name": "The Fiscal Times(2012)", "url": "https://www.thefiscaltimes.com/2012/01/19/Kodak-Files-Bankruptcy", "quote": "liabilities of $6.75 billion" },
+        { "name": "Print & Promo Marketing(2013)", "url": "https://www.printandpromomarketing.com/article/kodak-emerges-bankruptcy-smaller-focused-commercial-printing/2/", "quote": "$6.75 billion in debts" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "코닥이 갖고 있던 디지털 특허 1,100여 건은 약 30억 달러로 평가됐으나 5억 2,500만 달러에 팔렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "기대 매각가는 매체별로 20억 달러 이상(Gulf News) 또는 약 30억 달러(Print & Promo)로 다름. 대본에는 '수십억 달러 기대 대비 5억 2,500만 달러'로.",
+      "sources": [
+        { "name": "Gulf News(2013)", "url": "https://gulfnews.com/technology/kodak-emerges-from-bankruptcy-with-focus-on-commercial-printing-1.1227346", "quote": "drew only $525 million for the portfolio" },
+        { "name": "Print & Promo Marketing(2013)", "url": "https://www.printandpromomarketing.com/article/kodak-emerges-bankruptcy-smaller-focused-commercial-printing/2/", "quote": "valued at approximately $3 billion" }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "코닥은 1980년대 정점에 14만 5천 명을 고용했으나 2012년 파산 신청 때는 남은 직원이 약 1만 9천 명이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "남은 직원 수는 1만 7천(Fiscal Times)~1만 9천(AP) 등 출처마다 다름. 두 출처는 AP 동일 보도.",
+      "sources": [
+        { "name": "IndustryWeek(AP, 2012)", "url": "https://www.industryweek.com/regulations/photography-pioneer-eastman-kodak-files-bankruptcy", "quote": "it had 145,000 workers" },
+        { "name": "Hurriyet Daily News(AP, 2012)", "url": "https://hurriyetdailynews.com/kodak-files-for-bankruptcy-11817", "quote": "19,000 remaining employees" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "해외 기업, 2012~2013년 종결된 파산 절차. 현재 코닥은 소규모로 존속하나 진행 중 소송 없음."
+  },
+  "remaining": "'디지털 때문에 망했다'가 아니라 '디지털 1위였는데도 파산했다'로 서술해야 하며, 파산 원인(연금·필름 의존·스마트폰 등)을 한 가지로 단정하지 않는다. 장면은 1975년 외면, 결과는 2012년 파산이며 중간 인과는 여러 요인으로 처리.",
+  "toolCallsUsed": 18
+}

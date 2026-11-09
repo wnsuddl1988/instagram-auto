@@ -1,0 +1,33 @@
+{
+  "id": "yap-stone-money",
+  "title": "야프섬 라이 스톤",
+  "year": 1900,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "근거가 1910년 책과 구전",
+  "conditionResolved": false,
+  "finding": "구전/1910년 책 외의 독립 출처를 찾아봤다. NPR Planet Money(2010)·Habele Institute·벨기에 국립은행 박물관·Archaeology 매거진·위키가 '석재가 움직이지 않고 주인만 바뀐다'와 '폭풍에 가라앉은 돌도 여전히 가치가 있다'는 이야기를 다루지만, 가라앉은 돌은 NPR이 직접 '섬의 구전(oral tradition)'이라고 밝히고, 독일 관리의 검은 십자가 표시 장면은 Habele가 'B.A. 글씨였다는 기록과 갈린다'고 밝혀 결정적 장면이 2출처 확정 사실이 되지 못한다. 숫자도 출처마다 달라(팔라우 거리 250마일/300마일/400km, 최대 돌 지름 3.6m·4m·10피트, 무게 2톤·4.5톤·6톤·8톤) 숫자 사실 4개를 2출처로 맞출 수 없다. 못 채운 것: 결정적 장면의 독립 2출처 확인, 일관된 숫자(무게·크기·개수), 한국 접점.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "야프의 돌은 약 400km(250마일) 떨어진 팔라우의 석회암 채석장에서 배로 실어 왔다.", "numeric": true, "economy": false,
+      "caution": "Archaeology 매거진은 '300마일'이라고 적어 출처마다 거리가 다름(250~300마일).",
+      "sources": [
+        { "name": "Habele Institute wiki 'Rai Stones'", "url": "https://habeleinstitute.org/wiki/Rai_Stones", "quote": "400 kilometers (250 miles)" },
+        { "name": "벨기에 국립은행 박물관(NBB Museum)", "url": "https://museum.nbb.be/en/node/140", "quote": "400 kilometres away" }
+      ]
+    },
+    {
+      "id": "f2", "claim": "큰 돌의 소유권은 돌의 위치가 아니라 구전으로 기록된 내력으로 정해졌다(돌이 움직이지 않고 주인만 바뀜).", "numeric": false, "economy": false,
+      "caution": "숫자 없는 사실. NPR은 '바다 밑 돌도 가치가 있다'를 구전이라고 명시함.",
+      "sources": [
+        { "name": "NPR Planet Money(2010)", "url": "https://www.npr.org/sections/money/2011/02/15/131934618/the-island-of-stone-money", "quote": "seen it for over 100 years or more" },
+        { "name": "Wikipedia 'Rai stones'", "url": "https://en.wikipedia.org/wiki/Rai_stones", "quote": "tradition rather than by its location" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외·역사 사례. 민감성 없음. 다만 위키가 2022년 논문(Walton)을 들어 프리드먼 등 서구 경제학자들의 야프 서술에 오류·누락이 있다고 소개함." },
+  "remaining": "장면(가라앉은 돌·독일의 표시)이 구전이거나 출처 간 상충, 숫자도 상충. 한국 접점 없음. 1910년 Furness 원본·1915 Keynes 논문·1991 Friedman 논문을 직접 열어 원문 인용을 따오면 보강 가능하나 이는 1차 자료 단일 계열이라 2출처 요건을 못 채움.",
+  "toolCallsUsed": 8
+}

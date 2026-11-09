@@ -1,0 +1,113 @@
+{
+  "schema": "EDITORIAL_V2_PRODUCTION_STYLE_TOKENS_V1",
+  "purpose": "Default reusable typography, narration-subtitle, and environment-variation contract for Coin production scenes.",
+  "inheritance": {
+    "defaultForFutureCoinScenes": true,
+    "sceneSpecificCoordinatesAllowed": true,
+    "sceneSpecificCoordinatesMustNotOverrideVisualSystem": true
+  },
+  "fonts": {
+    "daishin_title_extra_bold": {
+      "family": "Daishin Title Extra Bold",
+      "path": "C:\\Windows\\Fonts\\Daishin Title Extra Bold.TTF",
+      "nativeWeight": 800
+    }
+  },
+  "narrationSubtitle": {
+    "fontKey": "daishin_title_extra_bold",
+    "baselinePx1080x1920": 84,
+    "outlinePx": 9,
+    "maxVisibleLines": 2,
+    "directSceneOverlay": true,
+    "goldenSampleFamily": "PA5L_R1_SCENE01_HEAVY_TYPOGRAPHY",
+    "composition": {
+      "defaultAlignment": "CENTERED_LOWER_CAPTION",
+      "alignmentAss": 2,
+      "marginLeftPx": 72,
+      "marginRightPx": 72,
+      "marginVerticalPx": 315,
+      "notEdgeFloating": true
+    },
+    "semanticHighlights": {
+      "maximumPerEvent": 2,
+      "balanceOrRemaining": "cyan_teal",
+      "nextStepOrCarryover": "amber_yellow",
+      "warningOrRisk": "red"
+    },
+    "criticalFinancialTermIntegrity": {
+      "classification": "SEMI_AUTOMATABLE",
+      "requireSingleCaptionEventWhenTermMetadataProvided": true,
+      "lineBreakWithinSingleEventAllowed": true,
+      "ownerVisualReviewRequired": true
+    },
+    "forbiddenTreatments": [
+      "detached_black_subtitle_slab",
+      "blue_data_card_subtitle",
+      "tiny_helper_caption",
+      "whole_narration_paragraph"
+    ],
+    "ass": {
+      "primaryColor": "&H00FFFFFF",
+      "outlineColor": "&H00000000",
+      "backColor": "&H00000000",
+      "borderStyle": 1,
+      "shadow": 0,
+      "alignment": 2
+    }
+  },
+  "dataOverlay": {
+    "fontKey": "daishin_title_extra_bold",
+    "nativeWeight": 800,
+    "baselinePx1080x1920": {
+      "support": 54,
+      "standard": 60,
+      "primary": 66
+    },
+    "noThinOrFaintNarrationRelevantText": true,
+    "minimumRoleTier": "support",
+    "minNormalizedLuminanceDelta": 0.35,
+    "rendering": {
+      "classification": "SEMI_AUTOMATABLE_PLUS_OWNER_CHATGPT_VISUAL_REVIEW",
+      "requireCrispGlyphSilhouette": true,
+      "requireHighLocalContrast": true,
+      "maxTextExtrudeSceneUnits": 0.0,
+      "maxTextBevelSceneUnits": 0.0,
+      "prohibitExcessiveTextShadowDuplication": true,
+      "phoneScaleHangulSharpnessRequired": true,
+      "cardShadow": "small_soft_only"
+    },
+    "complexity": {
+      "classification": "SEMI_AUTOMATABLE_PLUS_OWNER_CHATGPT_VISUAL_REVIEW",
+      "maxSimultaneousRoleBlocksPerBeat": 3,
+      "requiredRoleOrder": ["primary_header", "primary_result_or_action", "optional_supporting_label"],
+      "redundantSimultaneousCardsForbidden": true,
+      "nonOverlapAloneIsNotVisualQualityPass": true
+    }
+  },
+  "fastProductionLoop": {
+    "version": "FAST_PRODUCTION_LOOP_V1",
+    "defaultForFutureCoinScenes": true,
+    "steps": [
+      "canonical_package_no_render",
+      "keyframe_layout_proof_4_to_6_frames",
+      "owner_chatgpt_layout_gate",
+      "approved_narration_and_one_bounded_tts",
+      "one_integrated_final_av_render",
+      "owner_chatgpt_full_timeline_review"
+    ],
+    "fullSilentRenderBeforeLayoutGate": "prohibited_by_default",
+    "localized_regressions_onlyAfterFullTimelineReview": true
+  },
+  "backgroundVariation": {
+    "localBlenderPreferred": true,
+    "minimumMeaningfulAxesChanged": 2,
+    "allowedAxes": [
+      "backdrop_structure",
+      "set_dressing_or_contextual_props",
+      "lighting_or_depth_treatment",
+      "camera_or_negative_space_composition"
+    ],
+    "trivialPanelOrTintOnlyIsInsufficient": true,
+    "aiAssetEscalationWhenLocalInsufficient": true
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "jcpenney-no-sales-2012",
+  "title": "J.C.페니 — 세일을 없앴더니 손님이 사라졌다",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "CEO 한 명의 판단 실패라 장면 약함. 25%(연)/32%(4분기)/28.4%(연말) 지표 구분. 대사 지어내기 금지",
+  "conditionResolved": true,
+  "finding": "2012년 CEO 론 존슨이 쿠폰과 세일(클리어런스)을 없앤 결정을 결정적 장면으로 삼을 수 있고, 그 뒤 결과는 SEC 공시 보도자료와 언론 2곳 이상으로 확인된다: 연 매출 24.8% 감소(129억 8500만 달러), 4분기 매출 28.4% 감소(38억 8400만 달러), 4분기 동일점포 매출 31.7% 감소, 연 순손실 9억 8500만 달러. 지표가 다른 25%/32%/28.4%는 각각 연 동일점포(25.2%)/4분기 동일점포(31.7%)/4분기 총매출(28.4%)로 구분된다. 해외 기업이고 종결된 사건이라 민감성이 없다. 장면은 CEO 한 명의 결정이므로 대사는 쓰지 않고 결정과 숫자 결과 중심으로 써야 한다.",
+  "coreMessage": "손님은 가격표만이 아니라 '싸게 샀다'는 기분을 사기 때문에, 가격 체계를 통째로 바꾸려면 먼저 작게 시험해 봐야 한다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "론 존슨 CEO는 J.C.페니의 쿠폰과 세일(클리어런스)을 없애는 가격 정책을 밀어붙였고, 이것이 핵심 고객을 떠나게 했다고 평가받는다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "정책 도입 시점을 2012년 초로 쓰려면 별도 출처가 더 필요하다. 'We didn't test at Apple' 같은 대사는 1곳(Chief Executive)에서만 확인되어 쓰지 않는다.",
+      "sources": [
+        { "name": "NPR(KUNC 재게재), 2013", "url": "https://www.kunc.org/npr-news/2013-04-08/his-makeover-strategy-in-shambles-j-c-penney-ceo-ron-johnson-is-out", "quote": "doing away with clearances and coupons" },
+        { "name": "Chief Executive, 2013", "url": "https://chiefexecutive.net/5-critical-errors-that-triggered-ron-johnsons-removal-at-jc-penney/", "quote": "removed their beloved coupons and sales" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "2012 회계연도 J.C.페니의 총매출은 24.8% 줄어 129억 8500만 달러가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "연 총매출 -24.8%이고, 연 동일점포 매출은 -25.2%로 다른 지표다.",
+      "sources": [
+        { "name": "J.C.페니 SEC 8-K 보도자료(2013.2.27)", "url": "https://www.sec.gov/Archives/edgar/data/1166126/000116612613000009/exhibit99feb2013.htm", "quote": "24.8 percent to $12.985 billion" },
+        { "name": "JCK 온라인, 2013", "url": "https://www.jckonline.com/editorial-article/jc-penney-lost-nearly-1-billion-in-2012/", "quote": "24.8 percent to $12.985 billion" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2012년 4분기 총매출은 28.4% 줄어 38억 8400만 달러가 됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "53주째 매출 포함 총매출 기준이다. 동일점포 기준은 -31.7%로 다르다.",
+      "sources": [
+        { "name": "J.C.페니 SEC 8-K 보도자료(2013.2.27)", "url": "https://www.sec.gov/Archives/edgar/data/1166126/000116612613000009/exhibit99feb2013.htm", "quote": "28.4 percent to $3.884 billion" },
+        { "name": "Fox Business", "url": "https://foxbusiness.com/features/j-c-penney-reveals-28-tumble-in-4q-sales", "quote": "Sales tumbled 28.4% to $3.88 billion" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "2012년 4분기 동일점포 매출은 31.7% 감소했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "동일점포(53주째 제외) 기준이며 총매출 -28.4%와 구분해서 써야 한다. 일부 보도는 32%로 반올림했다.",
+      "sources": [
+        { "name": "J.C.페니 SEC 8-K 보도자료(2013.2.27)", "url": "https://www.sec.gov/Archives/edgar/data/1166126/000116612613000009/exhibit99feb2013.htm", "quote": "declined 31.7 percent" },
+        { "name": "Fox Business", "url": "https://foxbusiness.com/features/j-c-penney-reveals-28-tumble-in-4q-sales", "quote": "Same-store sales plunged 31.7%" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2012 회계연도 J.C.페니의 순손실은 9억 8500만 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "J.C.페니 SEC 8-K 보도자료(2013.2.27)", "url": "https://www.sec.gov/Archives/edgar/data/1166126/000116612613000009/exhibit99feb2013.htm", "quote": "net loss of $985 million" },
+        { "name": "JCK 온라인, 2013", "url": "https://www.jckonline.com/editorial-article/jc-penney-lost-nearly-1-billion-in-2012/", "quote": "lost $985 million over fiscal year 2012" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "2012 회계연도 동일점포 매출은 25.2% 감소했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "연 동일점포 -25.2%와 연 총매출 -24.8%를 '25%'로 뭉뚱그릴 때는 지표를 밝혀야 한다.",
+      "sources": [
+        { "name": "J.C.페니 SEC 8-K 보도자료(2013.2.27)", "url": "https://www.sec.gov/Archives/edgar/data/1166126/000116612613000009/exhibit99feb2013.htm", "quote": "declined 25.2 percent" },
+        { "name": "JCK 온라인, 2013", "url": "https://www.jckonline.com/editorial-article/jc-penney-lost-nearly-1-billion-in-2012/", "quote": "store sales declined 25.2 percent" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 종결된 2012~2013년 사건이라 국내 민감성·정치 소지 없음." },
+  "remaining": "'존슨이 전면 도입 전에 시험하지 않았다'는 서술은 CEO 발언 인용 1곳뿐이라 쓰지 말 것. 장면이 CEO 결정 중심이라 약하다는 풀의 우려는 남으며, 대사를 넣지 않고 숫자 결과로 엔딩을 세워야 한다.",
+  "toolCallsUsed": 12
+}

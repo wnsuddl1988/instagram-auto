@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "money_shorts_creative_v2_stop_state_v1",
+  "status": "stop_state_locked",
+  "taskId": "creative-v2-rate-freeze-golden-sample-recovery-v1",
+  "title": "Creative v2 Stop State Lock — rate freeze (금리 동결) recovery",
+  "purpose": "Owner의 최신 품질 지시를 현재 절대 실행 범위로 고정한다. Creative v2를 공식 rejected sample로, accepted final을 baseline/reference로 잠근다. 이 recovery의 목표는 audit 도구 생성이 아니라 하나의 좋은 금리 동결 Golden Sample 구조를 파이프라인에 고정하는 것이다.",
+  "lockedAt": "2026-07-02",
+  "topic": {
+    "topicId": "base-rate-hold-202605",
+    "label": "금리 동결",
+    "sourceFactPillar": "money_flow"
+  },
+  "samples": {
+    "acceptedBaseline": {
+      "role": "reference_baseline",
+      "verdict": "reference",
+      "mp4": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\premium-editorial-selected-image-visual-only-v1-tts-mux.mp4",
+      "muxSummary": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
+      "ttsStrategy": "full_narration_one_shot",
+      "note": "full narration one-shot 방식(raw ~29.99s, apad 없음). TTS-first recovery의 검증된 기준. reference/pass_with_known_limits로만 취급하며 새 Golden Sample의 upload 자격을 부여하지 않는다."
+    },
+    "rejectedCreativeV2": {
+      "role": "rejected_sample",
+      "verdict": "rejected",
+      "mp4": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\money-shorts-creative-final-visual-youtube-safe-frame-v1-tts-mux.mp4",
+      "report": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\creative-voice-sound-mux-elevenlabs-v2-report.json",
+      "ttsSummary": "C:\\tmp\\money-shorts-os\\creative-voice-sound-mux-elevenlabs-v2-first-run\\elevenlabs-scene-paced-tts-summary.json",
+      "ttsStrategy": "six_scene_level_tts_calls",
+      "measuredDefects": [
+        "scene별 6회 TTS 호출 방식 사용 (default) — HANDOFF 금지 항목",
+        "6개 씬 모두 apad=whole_dur 무음 padding 적용 — HANDOFF 금지 항목",
+        "첫 5초에 약 3.55s 무음 (scene 1 hook raw 1.81s를 5s로 padding) — First 5s long silence Hard Fail",
+        "총 무음 비율 약 30% (silencedetect -40dB:0.4s 실측) — 30s short로는 speech density 부족",
+        "full-screen image + bottom caption 지배 구조 — card-first 아님, 6장의 느린 이미지처럼 보임",
+        "pre-render JSON scoring만 수행 — 실제 mp4 무음/rhythm/card impact 미검사"
+      ],
+      "note": "이 mp4는 공식 rejected sample이다. ffprobe media validity는 quality pass가 아니다. Post-Render Artifact Audit에서 반드시 fail로 판정되어야 한다."
+    }
+  },
+  "guards": {
+    "uploadReady": false,
+    "uploadQueueReadinessGenerated": false,
+    "sfxOnlyWorkForbidden": true,
+    "thresholdOnlyTuningForbidden": true,
+    "newTopicExpansionForbidden": true,
+    "bulkCandidateGenerationForbidden": true,
+    "auditOnlySliceForbidden": true,
+    "placeholderOrStockFallbackFinalImageForbidden": true,
+    "sixSceneShortTtsDefaultForbidden": true,
+    "silencePaddingToFakeDurationForbidden": true,
+    "commitPushDeployForbidden": true,
+    "protectedFilesNoTouch": [
+      "_ai/CONTEXT_TRANSFER_CODEX.md",
+      "piq_diag_out.txt"
+    ]
+  },
+  "imageQualityBlocker": {
+    "blockerActive": true,
+    "reason": "현재 selected image set(scene-1-6-fullset-first-run-v1) 6장은 실제 해상도 941x1672로, image_generation_contract의 min_resolution 1080x1920 게이트를 미달한다. 9:16 비율(0.5628 vs 0.5625)은 정확히 맞는다.",
+    "ownerDecision": "blocker로 멈춤 — 이미지 재생성 필요. upscale/placeholder/stock fallback로 우회하지 않는다.",
+    "regeneratePath": "run-premium-editorial-scene-1-6-fullset-image-generation-v2-first-run.mjs (live ChatGPT + Playwright + Chrome CDP). Owner 명시 승인 + ALLOW_CHATGPT_IMAGE 필요.",
+    "effectOnFinalRender": "Golden Sample final mp4 render는 image quality gate 통과 전까지 진행하지 않는다. 계약/blueprint/renderer/audit 코드는 render-ready 상태로 고정한다."
+  },
+  "boundary": {
+    "noImageGeneration": true,
+    "noRenderExecutedInThisSlice": true,
+    "noTtsGeneration": true,
+    "noUploadOrPublish": true,
+    "noCommitPushDeploy": true,
+    "dataOnly": true
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "golden_sample_integrated_production_readiness_plan_v1",
+  "taskId": "golden-sample-v3-2-integrated-production-readiness-standardization-v1",
+  "topicId": "t1_lifestyle_inflation",
+  "topic": "월급이 올라도 통장이 그대로인 이유",
+  "createdAt": "2026-07-04",
+  "nature": "no-live 통합 readiness plan — t1_lifestyle_inflation accepted lineage(Slice 0~4 산출물)를 합성해 현재 readiness가 STANDARDIZED_NO_LIVE_READY임을 표현. 신규 live 승인 아님.",
+
+  "contractRef": "scripts/fixtures/golden_sample_v3_2_integrated_production_readiness_contract.v1.json",
+
+  "flags": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "implementationApproved": false,
+    "liveTtsApproved": false,
+    "liveMuxApproved": false,
+    "liveRenderApproved": false,
+    "liveImageGenerationApproved": false,
+    "chatgptPlaywrightApproved": false,
+    "liveAudioAnalysisApproved": false,
+    "ownerQaPassed": false,
+    "productionReady": false
+  },
+
+  "readinessVerdict": {
+    "current": "STANDARDIZED_NO_LIVE_READY",
+    "note": "Slice 0~4 표준이 이 topic에 대해 계약/harness/guard로 고정됐고 no-live 정적 검증을 통과. live/upload/automation은 미승인."
+  },
+
+  "sliceComposition": [
+    {
+      "slice": 0,
+      "id": "upload-hard-block",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_upload_hard_block_policy.v1.json",
+      "guardPath": "scripts/check-golden-sample-upload-hard-block-static.mjs",
+      "status": "ACTIVE_BLOCKING",
+      "note": "uploadBlocked=true 유지 — 이 plan은 업로드를 활성화하지 않는다."
+    },
+    {
+      "slice": 1,
+      "id": "story-visual-evidence",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_story_visual_evidence_sample.t1_lifestyle_inflation.v1.json",
+      "guardPath": "scripts/check-golden-sample-v3-2-story-visual-evidence-static.mjs",
+      "status": "STANDARD_FIXED_NO_LIVE"
+    },
+    {
+      "slice": 2,
+      "id": "chatgpt-playwright-runner",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_chatgpt_playwright_runner_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-chatgpt-playwright-standard-image-runner-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-chatgpt-playwright-runner-static.mjs",
+      "status": "STANDARD_FIXED_NO_LIVE"
+    },
+    {
+      "slice": 3,
+      "id": "pillow-renderer",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_pillow_renderer_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-pillow-renderer-standard-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-pillow-renderer-static.mjs",
+      "status": "STANDARD_FIXED_NO_LIVE"
+    },
+    {
+      "slice": 4,
+      "id": "tts-audio-audit",
+      "contractPath": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_contract.v1.json",
+      "samplePath": "scripts/fixtures/golden_sample_v3_2_tts_audio_audit_sample_plan.t1_lifestyle_inflation.v1.json",
+      "harnessPath": "scripts/run-golden-sample-tts-audio-audit-standard-v1.mjs",
+      "guardPath": "scripts/check-golden-sample-v3-2-tts-audio-audit-static.mjs",
+      "status": "STANDARD_FIXED_NO_LIVE"
+    }
+  ],
+
+  "acceptedLineage": {
+    "acceptanceLock": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "lockStatus": "ACCEPTED_AS_GOLDEN_SAMPLE_FINAL_CANDIDATE",
+    "lockedMuxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "meaning": "품질 기준 후보 lock — 배포 승인 아님. 이 plan은 그 lock을 참조만 하며 재생성/재승인하지 않는다.",
+    "interpretationGuard": "이 lineage 참조는 live 실행 승인으로 해석되어서는 안 된다."
+  },
+
+  "ownerDecisionStateAcknowledged": {
+    "decisionStateRef": "scripts/fixtures/golden_sample_v3_2_owner_decision_resolution_state.v1.json",
+    "contractSection": "ownerDecisionState",
+    "resolvedCount": 10,
+    "pendingCount": 0,
+    "resolvedKeys": ["script_impact_gate_score_authority", "legacy_line_scope", "upload_endpoint_disposition", "blueprint_schema_unification", "md5_locked_image_durability", "font_vendoring", "contract_duality_resolution", "image_script_allow_guard", "poll_25s_passive_window", "owner_viewing_listening_qa"],
+    "pendingKeys": [],
+    "ownerViewingListeningActualStatus": "PENDING_DIRECT_OWNER_REVIEW",
+    "note": "10개 정책 결정 전부 safe default로 확정됐고 이 통합 plan에서 pending blocker로 재취급하지 않는다. 정책 확정은 live TTS/render/mux/image/upload/browser/Owner QA/production 승인이 아니다 — readiness는 STANDARDIZED_NO_LIVE_READY 불변, upload hard block 유지. owner_viewing_listening_qa는 정책만 resolved이고 실제 QA 통과는 ownerViewingListeningActualStatus로 별도 추적된다 (ownerQaPassed 계속 false)."
+  },
+
+  "unresolvedOwnerDecisionsAcknowledged": [],
+
+  "qaReadiness": {
+    "uploadReady": false,
+    "automationExpansionReady": false,
+    "ownerViewingListeningPass": "PENDING — Owner 직접 시청/청취 대기 (정책은 수동 필수로 resolved됐으나 실제 QA는 자동/기술 pass로 대체 불가)",
+    "technicalNoLivePass": "PASS — Slice 0~4 no-live 정적 검증 통과",
+    "note": "technicalNoLivePass는 STANDARDIZED_NO_LIVE_READY의 근거일 뿐, upload/production/Owner-final approval이 아니다. owner_viewing_listening_qa 정책 resolved ≠ 실제 QA pass."
+  },
+
+  "executionMode": {
+    "approvedNow": "dry_run_static_validation_only",
+    "liveTtsApprovedNow": false,
+    "liveMuxApprovedNow": false,
+    "liveRenderApprovedNow": false,
+    "liveImageGenerationApprovedNow": false,
+    "chatgptPlaywrightApprovedNow": false,
+    "uploadApprovedNow": false,
+    "automationExpansionApprovedNow": false
+  },
+
+  "futureExecutionPlanGateAcknowledged": {
+    "gateRef": "scripts/fixtures/golden_sample_v3_2_future_execution_plan_gate.v1.json",
+    "gateStatus": "FUTURE_EXECUTION_PLAN_GATE_NO_LIVE",
+    "note": "미래 어떤 live/action 실행도 이 no-live plan gate 요건(명시 Owner 승인 + call/cost cap + stop 조건 + provider allow guard + artifact audit + Owner QA 분리)을 충족한 별도 승인 slice 전까지 승인되지 않는다. 이 plan은 gate를 참조·인지만 하며 readiness를 승격하지 않는다. 모든 executionMode approvedNow flag는 false, upload hard block 유지, Owner QA actual PENDING."
+  }
+}

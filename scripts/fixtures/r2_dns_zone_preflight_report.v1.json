@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "r2_dns_zone_preflight_report_v1",
+  "taskId": "r2-provisioning-preflight-dns-zone-check-v1",
+  "status": "R2_DNS_ZONE_PREFLIGHT_READONLY",
+  "createdAt": "2026-07-06",
+  "nature": "실제 R2 provisioning 전에 buildgongjakso.com이 Cloudflare zone인지, media.buildgongjakso.com에 partial CNAME setup이 필요한지, DNS record 추가 위치가 어디인지를 read-only(public DNS + local Vercel/config)로 확인해 보고하는 preflight. 이 보고서는 bucket/token/custom domain provisioning, DNS 변경, env/secret write, deploy, object upload, live liveness check, Instagram --arm을 승인하거나 수행하지 않는다.",
+  "docsRef": "docs/r2-dns-zone-preflight-report.md",
+  "approvalPacketRef": "scripts/fixtures/r2_provisioning_approval_packet.v1.json",
+  "strategyRef": "scripts/fixtures/stable_public_media_url_strategy.v1.json",
+
+  "domain": "buildgongjakso.com",
+  "customDomain": "media.buildgongjakso.com",
+  "provider": "cloudflare_r2",
+  "sustainedHost": "media.buildgongjakso.com",
+  "noLiveThisSlice": true,
+  "actualProvisioningExecuted": false,
+
+  "dnsClassification": "PARTIAL_CNAME_SETUP_LIKELY",
+  "dnsClassificationAllowed": [
+    "CLOUDFLARE_ZONE_CONFIRMED",
+    "PARTIAL_CNAME_SETUP_LIKELY",
+    "DNS_PROVIDER_UNCLEAR_OWNER_DASHBOARD_REQUIRED",
+    "BLOCKED_NO_SAFE_READONLY_EVIDENCE"
+  ],
+
+  "evidence": [
+    {
+      "target": "buildgongjakso.com",
+      "recordType": "NS",
+      "value": "ns1.gabia.co.kr / ns.gabia.net / ns.gabia.co.kr",
+      "readOnly": true,
+      "interpretation": "gabia 위임 — Cloudflare NS 아님"
+    },
+    {
+      "target": "buildgongjakso.com",
+      "recordType": "A",
+      "value": "216.198.79.1",
+      "readOnly": true,
+      "interpretation": "apex → Vercel 대역"
+    },
+    {
+      "target": "www.buildgongjakso.com",
+      "recordType": "CNAME",
+      "value": "36c1ec111c10a4f6.vercel-dns-017.com",
+      "readOnly": true,
+      "interpretation": "www → Vercel(vercel-dns-017)"
+    },
+    {
+      "target": "media.buildgongjakso.com",
+      "recordType": "CNAME/A",
+      "value": "NXDOMAIN (Non-existent domain)",
+      "readOnly": true,
+      "interpretation": "미생성 — 아직 어떤 record도 없음"
+    },
+    {
+      "target": ".vercel/project.json",
+      "recordType": "local",
+      "value": "projectName=instagram-auto (orgId/projectId는 식별자, secret 아님)",
+      "readOnly": true,
+      "interpretation": "Vercel 프로젝트 연결 확인, secret 미조회"
+    },
+    {
+      "target": "vercel.json",
+      "recordType": "local",
+      "value": "framework=nextjs, buildCommand=pnpm build",
+      "readOnly": true,
+      "interpretation": "secret 없음"
+    }
+  ],
+
+  "answers": {
+    "isCloudflareZone": false,
+    "isCloudflareZoneEvidence": "NS = gabia(ns1.gabia.co.kr 등), Cloudflare NS 아님",
+    "partialCnameLikely": true,
+    "partialCnameEvidence": "도메인이 Cloudflare 관리가 아니므로 R2 custom domain은 partial CNAME setup 경로가 유력",
+    "dnsRecordLocation": "gabia (현 authoritative DNS) — media 서브도메인 CNAME을 Cloudflare partial setup 대상으로 추가",
+    "safeToProceedToProvisioning": "partial: bucket 생성은 DNS 독립이라 가능, custom domain 연결은 Owner Cloudflare 계정 + gabia DNS 접근 확인 선행 필요"
+  },
+
+  "unknowns": [
+    "U-A Owner가 Cloudflare 계정 보유했는지 (R2 사용 전제)",
+    "U-B R2 custom domain partial 연결 시 Cloudflare가 발급하는 정확한 CNAME 대상 호스트 (연결 UI에서 확인)",
+    "U-C gabia DNS 콘솔에서 media CNAME record 추가 권한/접근 여부",
+    "U-D 최종 Cloudflare account ID (R2_ACCOUNT_ID) — 계정 확정 후"
+  ],
+
+  "nextRecommendedGate": "APPROVE_R2_DNS_CUSTOM_DOMAIN (선행: Owner의 Cloudflare 계정 보유 U-A + gabia DNS 접근 U-C 확인). bucket 생성은 DNS 독립이라 분리 진행 가능.",
+  "nextRecommendedActions": [
+    "Owner 확인: Cloudflare 계정 보유(U-A) + gabia DNS 접근(U-C)",
+    "bucket 생성 승인 (buildgongjakso-media, DNS 독립 저위험)",
+    "APPROVE_R2_DNS_CUSTOM_DOMAIN: Cloudflare partial zone 추가 + gabia에 media CNAME 등록 + R2 custom domain 연결",
+    "이후 token/env/code/deploy/upload/liveness/Instagram --arm 각각 별도 승인"
+  ],
+
+  "readOnlyBoundary": {
+    "publicDnsReadOnly": true,
+    "localConfigReadOnly": true,
+    "noCloudflareLogin": true,
+    "noCloudflareMutation": true,
+    "noVercelMutation": true,
+    "noSecretRead": true,
+    "noGeneratedMp4LivenessCheck": true
+  },
+
+  "officialDocRefs": {
+    "r2PublicBuckets": "https://developers.cloudflare.com/r2/buckets/public-buckets/",
+    "r2ApiTokens": "https://developers.cloudflare.com/r2/api/tokens/",
+    "keyPoints": [
+      "custom domain은 R2 bucket과 같은 account의 Cloudflare zone을 통해 연결",
+      "도메인이 Cloudflare 관리가 아니면 partial (CNAME) setup 가능",
+      "R2 API token은 최소 권한 scope 권장"
+    ]
+  },
+
+  "forbiddenBehavior": [
+    "Cloudflare login / account query requiring auth / mutation / provisioning",
+    "R2 bucket creation",
+    "R2 token creation",
+    "DNS/custom domain change",
+    "env/secret write",
+    "secret value read/print/write",
+    "deploy / Vercel deploy",
+    "object upload",
+    "public URL liveness network check against generated mp4 URLs",
+    "Instagram upload or --arm",
+    "Instagram credential/env read",
+    "broad .env.local parsing",
+    "YouTube/Supabase/DB/render/mux/TTS/image/browser side effects",
+    "dependency/lockfile/font change",
+    "secret logging",
+    "commit/push in this slice"
+  ]
+}

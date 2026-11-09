@@ -1,0 +1,336 @@
+{
+  "schemaVersion": "money_shorts_creative_preview_render_manifest_v1",
+  "status": "data_only_preview_manifest",
+  "previewIsDevelopmentOnly": true,
+  "operationalRequiredReview": false,
+  "sourceRefs": {
+    "contract": "scripts/fixtures/money-shorts-creative-quality-contract.v1.json",
+    "scriptCompilerOutput": "scripts/fixtures/money-shorts-retention-script-compiler.output.v1.json",
+    "sceneEventPlannerOutput": "scripts/fixtures/money-shorts-scene-event-planner.output.v1.json",
+    "qualityScorerOutput": "scripts/fixtures/money-shorts-quality-scorer.output.v1.json",
+    "selectedImageSet": "scripts/fixtures/premium-editorial-scene-selected-image-set.v1.json",
+    "platformRenderProfiles": "scripts/fixtures/premium-editorial-platform-render-profiles.v1.json"
+  },
+  "selectedTopicId": "base-rate-hold-202605",
+  "selectedCandidateId": "base-rate-hold-202605-cand-1",
+  "previewDurationSec": 12,
+  "canvas": {
+    "widthPx": 1080,
+    "heightPx": 1920
+  },
+  "targetPlatformProfile": "youtube_shorts_safe_frame_v1",
+  "actualImageInputs": [
+    {
+      "sceneOrder": 1,
+      "sceneId": "scene_1",
+      "sourceImageKey": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "declaredLocalFileExists": true
+    },
+    {
+      "sceneOrder": 2,
+      "sceneId": "scene_2",
+      "sourceImageKey": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "declaredLocalFileExists": true
+    },
+    {
+      "sceneOrder": 3,
+      "sceneId": "scene_3",
+      "sourceImageKey": "image_03",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "declaredLocalFileExists": true
+    },
+    {
+      "sceneOrder": 4,
+      "sceneId": "scene_4",
+      "sourceImageKey": "image_04",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-04-scene_4_life_impact.png",
+      "declaredLocalFileExists": true
+    },
+    {
+      "sceneOrder": 5,
+      "sceneId": "scene_5",
+      "sourceImageKey": "image_05",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-05-scene_5_watch_point.png",
+      "declaredLocalFileExists": true
+    },
+    {
+      "sceneOrder": 6,
+      "sceneId": "scene_6",
+      "sourceImageKey": "image_06",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-06-scene_6_action_closing.png",
+      "declaredLocalFileExists": true
+    }
+  ],
+  "beforeTimeline": [
+    {
+      "index": 0,
+      "time_start": 0,
+      "time_end": 4,
+      "duration": 4,
+      "source_image": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "motion_template": "none",
+      "caption": ""
+    },
+    {
+      "index": 1,
+      "time_start": 4,
+      "time_end": 8,
+      "duration": 4,
+      "source_image": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "motion_template": "none",
+      "caption": ""
+    },
+    {
+      "index": 2,
+      "time_start": 8,
+      "time_end": 12,
+      "duration": 4,
+      "source_image": "image_03",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "motion_template": "none",
+      "caption": ""
+    }
+  ],
+  "afterEventTimeline": [
+    {
+      "event_id": "image_01-ev-1",
+      "time_start": 0,
+      "time_end": 1.25,
+      "duration": 1.25,
+      "script_part": "hook",
+      "intent": "hook_impact",
+      "source_image": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "motion_template": "freeze_punch",
+      "fallbackApplied": false,
+      "caption": "금리 동결, 내 이자 신호.",
+      "overlay": "warning_card",
+      "sfx": "hit",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_01-ev-2",
+      "time_start": 1.25,
+      "time_end": 2.5,
+      "duration": 1.25,
+      "script_part": "hook",
+      "intent": "hook_impact",
+      "source_image": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "motion_template": "push_in",
+      "fallbackApplied": false,
+      "caption": "금리 동결, 내 이자 신호.",
+      "overlay": "number_card",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_01-ev-3",
+      "time_start": 2.5,
+      "time_end": 3.75,
+      "duration": 1.25,
+      "script_part": "hook",
+      "intent": "hook_impact",
+      "source_image": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "motion_template": "red_box",
+      "fallbackApplied": false,
+      "caption": "금리 동결, 내 이자 신호.",
+      "overlay": "warning_card",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_01-ev-4",
+      "time_start": 3.75,
+      "time_end": 5,
+      "duration": 1.25,
+      "script_part": "hook",
+      "intent": "hook_impact",
+      "source_image": "image_01",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-01-scene_1_hook.png",
+      "motion_template": "freeze_punch",
+      "fallbackApplied": false,
+      "caption": "금리 동결, 내 이자 신호.",
+      "overlay": "number_card",
+      "sfx": "click",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_02-ev-1",
+      "time_start": 5,
+      "time_end": 6,
+      "duration": 1,
+      "script_part": "curiosity",
+      "intent": "explanation",
+      "source_image": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "motion_template": "checklist_pop",
+      "fallbackApplied": false,
+      "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+      "overlay": "checklist",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_02-ev-2",
+      "time_start": 6,
+      "time_end": 7,
+      "duration": 1,
+      "script_part": "curiosity",
+      "intent": "explanation",
+      "source_image": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "motion_template": "arrow_reveal",
+      "fallbackApplied": false,
+      "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+      "overlay": "arrow",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_02-ev-3",
+      "time_start": 7,
+      "time_end": 8,
+      "duration": 1,
+      "script_part": "curiosity",
+      "intent": "explanation",
+      "source_image": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "motion_template": "pan_left",
+      "fallbackApplied": false,
+      "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+      "overlay": "document_card",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_02-ev-4",
+      "time_start": 8,
+      "time_end": 9,
+      "duration": 1,
+      "script_part": "curiosity",
+      "intent": "explanation",
+      "source_image": "image_02",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-02-scene_2_signal-retry-01.png",
+      "motion_template": "pan_right",
+      "fallbackApplied": false,
+      "caption": "동결인데 왜 내 대출 이자는 그대로일까요…",
+      "overlay": "checklist",
+      "sfx": "click",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_03-ev-1",
+      "time_start": 9,
+      "time_end": 10.25,
+      "duration": 1.25,
+      "script_part": "point_1",
+      "intent": "explanation",
+      "source_image": "image_03",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "motion_template": "checklist_pop",
+      "fallbackApplied": false,
+      "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+      "overlay": "checklist",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_03-ev-2",
+      "time_start": 10.25,
+      "time_end": 11.5,
+      "duration": 1.25,
+      "script_part": "point_1",
+      "intent": "explanation",
+      "source_image": "image_03",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "motion_template": "arrow_reveal",
+      "fallbackApplied": false,
+      "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+      "overlay": "arrow",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    },
+    {
+      "event_id": "image_03-ev-3",
+      "time_start": 11.5,
+      "time_end": 12,
+      "duration": 0.5,
+      "script_part": "point_1",
+      "intent": "explanation",
+      "source_image": "image_03",
+      "imagePath": "output/money-shorts/scene-1-6-fullset-first-run-v1/scene-03-scene_3_context.png",
+      "motion_template": "pan_left",
+      "fallbackApplied": false,
+      "caption": "첫째, 동결은 대출자에게 당장 이득이 되…",
+      "overlay": "document_card",
+      "sfx": "none",
+      "safe_frame_ref": "youtube_shorts_safe_frame_v1"
+    }
+  ],
+  "captionPlan": {
+    "captionSafeReference": "youtube_shorts_safe_frame_v1",
+    "recommendedCaptionMarginV": 340,
+    "style": "single_line_bold_bottom_safe",
+    "oneLinePolicy": true,
+    "autoTruncateIfTwoLines": true,
+    "captionLinesRef": "money-shorts-retention-script-compiler.output.v1.json caption_plan"
+  },
+  "motionPlan": {
+    "motionTemplatesUsedAfter": [
+      "freeze_punch",
+      "push_in",
+      "red_box",
+      "checklist_pop",
+      "arrow_reveal",
+      "pan_left",
+      "pan_right"
+    ],
+    "motionTemplatesUsedBefore": [
+      "none"
+    ],
+    "rendererSupportedV1": [
+      "push_in",
+      "pull_out",
+      "pan_left",
+      "pan_right",
+      "freeze_punch",
+      "number_countup",
+      "checklist_pop",
+      "red_box",
+      "arrow_reveal",
+      "final_card"
+    ]
+  },
+  "soundPlan": {
+    "sfxPlannedCount": 3,
+    "sfxPlannedButAudioNotRendered": true,
+    "audioRendered": false,
+    "note": "Phase 5 preview는 TTS/SFX 오디오를 렌더하지 않는다. sfx plan은 report에만 기록."
+  },
+  "fallbackPolicy": {
+    "unsupportedTemplateReplacedWithFallback": true,
+    "fallbackTemplatesApplied": [],
+    "fallbackRecordedNotSilentlyDropped": true
+  },
+  "outputPaths": {
+    "outDir": "C:\\tmp\\money-shorts-os\\creative-preview-renderer-v1",
+    "beforeMp4": "C:\\tmp\\money-shorts-os\\creative-preview-renderer-v1\\preview_before.mp4",
+    "afterMp4": "C:\\tmp\\money-shorts-os\\creative-preview-renderer-v1\\preview_after.mp4",
+    "qualityReport": "C:\\tmp\\money-shorts-os\\creative-preview-renderer-v1\\preview_quality_report.json"
+  },
+  "boundary": {
+    "previewIsDevelopmentOnly": true,
+    "noUploadOrPublish": true,
+    "noImageGeneration": true,
+    "noTtsGeneration": true,
+    "noExistingFinalVideoOverwrite": true,
+    "localFfmpegRenderOnly": true,
+    "dataOnlyManifest": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "id": "samsung-korea-semiconductor-1974",
+  "title": "삼성 한국반도체 인수 — TV도 못 만들던 때 부도 직전 반도체 회사를 산 날",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "출처가 크게 엇갈림(이건희 사재냐 삼성전자냐, 50만 달러 vs 미기재, 이병철 반대 여부). 세 당사자 모두 고인이라 확정 불가, 대사를 만들어야 하는 구조. 2편 삼성 반도체와 같은 줄기라 반복 주의",
+  "conditionResolved": false,
+  "finding": "1974년 12월 한국반도체 지분 인수라는 큰 줄기는 여러 곳이 일치하지만, 인수 주체가 삼성 뉴스룸은 '삼성전자', 뉴데일리·아시아경제·폭스비즈니스는 '이건희 사재'로 갈립니다. 50만 달러는 아시아경제 단독이고, 이병철 반대 여부는 삼성 뉴스룸이 '내부 반대 많았다'로만 쓰고 뉴데일리는 언급이 없으며 폭스비즈니스는 '아버지가 초기 회의론자'라고 해 서로 다릅니다. 숫자 사실이 2출처로 확정되는 것은 '1974년·지분 50%·개인 돈' 하나뿐이라 usable의 4개 조건을 못 채우고, 경제 근거(수치) 사실과 결정적 장면 확정 출처도 없어 보류합니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1974년 이건희가 개인 돈으로 한국반도체의 지분 50%를 인수했다(보도 기준).",
+      "numeric": true,
+      "economy": false,
+      "caution": "삼성 공식 뉴스룸은 인수 주체를 삼성전자로 적어 상충함.",
+      "sources": [
+        { "name": "아시아경제(다음 뷰, 2023)", "url": "https://v.daum.net/v/20230123091014717", "quote": "한국반도체의 한국측 투자 지분을 50% 인수했다" },
+        { "name": "Fox Business(How Samsung Got Into the Chip Business)", "url": "https://foxbusiness.com/features/how-samsung-got-into-the-chip-business", "quote": "personal money to buy a 50% stake" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1974년 12월 이건희 회장이 사재를 털어 한국반도체 지분을 인수했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "사재 표현은 뉴데일리(삼성 사료 보도 기반)와 아시아경제에 있고 삼성 뉴스룸은 삼성전자 인수로 적음.",
+      "sources": [
+        { "name": "뉴데일리경제(2015)", "url": "https://biz.newdaily.co.kr/site/data/html/2015/02/16/2015021610054.html", "quote": "1974년 12월 이건희 회장이 사재를 털어 한국반도체 지분을 인수한" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "투자 금액은 50만 달러(개인자금)라는 보도가 있다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "아시아경제 단독 수치. 다른 곳에서 확인 안 됨.",
+      "sources": [
+        { "name": "아시아경제(다음 뷰, 2023)", "url": "https://v.daum.net/v/20230123091014717", "quote": "1974년 개인자금(50만 달러)으로 한국반도체의" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "삼성 공식 뉴스룸은 1974년 12월 삼성전자가 파산 직전의 한국반도체를 인수했다고 적는다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인수 주체가 개인(이건희)이냐 법인(삼성전자)이냐 상충.",
+      "sources": [
+        { "name": "삼성반도체 뉴스룸", "url": "https://news.samsungsemiconductor.com/kr/?p=12017", "quote": "삼성전자는 공장 설립 과정에서 파산 직전인" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "당시 그룹 비서실은 한국반도체가 사업성이 없다고 판단했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "이병철 반대 여부는 출처마다 다름(뉴데일리 미언급, 폭스비즈니스는 아버지가 초기 회의론자, 삼성 뉴스룸은 내부 반대 다수).",
+      "sources": [
+        { "name": "아시아경제(다음 뷰, 2023)", "url": "https://v.daum.net/v/20230123091014717", "quote": "비서실에서는 한국반도체가 사업성이 없다는 판단을 내렸다" },
+        { "name": "Fox Business(How Samsung Got Into the Chip Business)", "url": "https://foxbusiness.com/features/how-samsung-got-into-the-chip-business", "quote": "Among the initial doubters was his father" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "삼성전자는 현재 영업 중이나 1974년 옛 사건이고 소송·제재 없음. 다만 2편 삼성 반도체와 같은 줄기라 반복 소지." },
+  "remaining": "인수 주체(사재 vs 삼성전자), 금액(50만 달러 단독), 이병철 반응이 2출처로 확정되지 않음. 경제 근거 수치(예: 당시 한국반도체 규모·손실)를 못 찾음. 당사자가 모두 고인이라 장면 대사는 지어내야 함.",
+  "toolCallsUsed": 7
+}

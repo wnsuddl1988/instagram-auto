@@ -1,0 +1,175 @@
+{
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "양육비 선지급제는 못 받은 양육비를 국가가 먼저 지급하고 나중에 양육비 채무자에게서 회수하는 제도다.",
+      "numeric": null,
+      "hasNumber": false,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "경향신문(2026-07-05)",
+          "url": "https://www.khan.co.kr/article/202607051349001",
+          "quote": "미성년 자녀 1인당 월 20만원씩 국가가 먼저 양육비를 준 뒤 양육비 채무자에게서 이를 회수하는 제도다."
+        },
+        {
+          "name": "성평등가족부 양육비 선지급 안내 페이지",
+          "url": "https://www.mogef.go.kr/cs/opf/cs_opf_f998.do",
+          "quote": "추후 양육비 채무자에게 회수하는 제도"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "양육비 선지급제의 소득 기준(기준 중위소득 150% 이하)이 2026-10-29부터 폐지된다.",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": "2026-10",
+      "sources": [
+        {
+          "name": "대한민국 정책브리핑(2026-10-01)",
+          "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148972822",
+          "quote": "오는 29일부터 양육비 선지급제의 소득기준이 폐지된다."
+        },
+        {
+          "name": "CBC뉴스(2026-10-01)",
+          "url": "https://www.cbci.co.kr/news/articleView.html?idxno=611590",
+          "quote": "오는 10월 29일부터 양육비 선지급제의 기준 중위소득 150% 이하 요건이 폐지된다."
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "원래는 가구 소득이 기준 중위소득 150% 이하여야 신청할 수 있었고, 이제는 소득과 관계없이 신청할 수 있다.",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": "2026-10",
+      "sources": [
+        {
+          "name": "대한민국 정책브리핑(2026-10-01)",
+          "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148972822",
+          "quote": "그동안 기준 중위소득 150% 이하 가구만 신청할 수 있었지만, 앞으로는 소득과 관계없이 신청할 수 있다."
+        },
+        {
+          "name": "경향신문(2026-07-05)",
+          "url": "https://www.khan.co.kr/article/202607051349001",
+          "quote": "현재는 가구의 소득인정액이 기준 중위소득 150% 이하일 때 선지급을 신청할 수 있다."
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "지급액은 자녀 1명당 월 최대 20만 원이다(지급 기간은 정부 자료에 '성년까지'와 '18세까지'가 함께 있음).",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "성평등가족부 양육비 선지급 신청 안내 보도자료(2025)",
+          "url": "https://www.mogef.go.kr/nw/rpd/nw_rpd_s001d.do?mid=news405&bbtSn=710552",
+          "quote": "자녀 1인당 월 20만 원 한도"
+        },
+        {
+          "name": "인사이트(2026-09)",
+          "url": "https://www.insight.co.kr/news/574595",
+          "quote": "자녀가 성년이 될 때까지 자녀 1명당 매달 최대 20만원을 받을 수 있다."
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "소득기준 폐지는 법 시행일(10월 29일) 이후 결정되는 10월 선지급분부터 적용되며 이전 달로 소급되지 않는다.",
+      "numeric": null,
+      "hasNumber": false,
+      "eventDate": "2026-10",
+      "sources": [
+        {
+          "name": "인사이트(2026-09)",
+          "url": "https://www.insight.co.kr/news/574595",
+          "quote": "소득기준 폐지는 법 시행일인 10월 29일 이후 결정되는 10월분 선지급부터 적용된다."
+        },
+        {
+          "name": "CBC뉴스(2026-10-01)",
+          "url": "https://www.cbci.co.kr/news/articleView.html?idxno=611590",
+          "quote": "소득기준 폐지는 10월 29일 법률 시행일 이후 결정된 10월 선지급 지급분부터 적용된다."
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "신청 직전 3개월 또는 연속 3회 동안 실제 받은 양육비의 월평균이 선지급금보다 적어야 한다(아예 못 받았거나 적게 받은 경우).",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "인사이트(2026-09)",
+          "url": "https://www.insight.co.kr/news/574595",
+          "quote": "신청 전 3개월 또는 연속 3회 동안 실제로 받은 양육비의 월평균 금액이 선지급금보다 적어야 한다는 조건도 유지된다."
+        },
+        {
+          "name": "뉴스핌(2026-09)",
+          "url": "https://www.newspim.com/news/view/20260918000963",
+          "quote": "신청 직전 3개월 또는 연속 3회 동안 실제 받은 양육비의 월평균 금액이 선지급금보다 적어야 한다."
+        }
+      ]
+    },
+    {
+      "id": "f7",
+      "claim": "양육비이행관리원에 법률지원이나 채권추심지원을 신청했거나 이행확보 절차를 진행 중(또는 종료)이어야 한다.",
+      "numeric": null,
+      "hasNumber": false,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "성평등가족부 양육비 선지급 신청 안내 보도자료(2025)",
+          "url": "https://www.mogef.go.kr/nw/rpd/nw_rpd_s001d.do?mid=news405&bbtSn=710552",
+          "quote": "양육비이행관리원에 법률지원이나 채권 추심지원을 신청했거나, 양육비 이행확보 절차를 종료했거나 진행 중일 것"
+        },
+        {
+          "name": "인사이트(2026-09)",
+          "url": "https://www.insight.co.kr/news/574595",
+          "quote": "양육비이행관리원에 법률지원이나 채권추심지원을 신청하는 등 양육비 이행 확보를 위한 절차를 진행 중이어야 한다."
+        }
+      ]
+    },
+    {
+      "id": "f8",
+      "claim": "신청은 양육비이행관리원 누리집이나 우편으로 하고, 문의는 1644-6621이다.",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "성평등가족부 양육비 선지급 신청 안내 보도자료(2025)",
+          "url": "https://www.mogef.go.kr/nw/rpd/nw_rpd_s001d.do?mid=news405&bbtSn=710552",
+          "quote": "양육비 선지급을 희망하는 양육비 채권자는 양육비이행관리원 누리집(www.childsupport.or.kr) 또는 우편으로 신청서를 제출하면 된다."
+        },
+        {
+          "name": "성평등가족부 양육비 선지급 안내 페이지",
+          "url": "https://www.mogef.go.kr/cs/opf/cs_opf_f998.do",
+          "quote": "(전화) 1644-6621 (평일 9시~18시)"
+        }
+      ]
+    },
+    {
+      "id": "f9",
+      "claim": "조사를 거쳐 통상 매월 25일에 선지급금을 지급한다.",
+      "numeric": null,
+      "hasNumber": true,
+      "eventDate": null,
+      "sources": [
+        {
+          "name": "성평등가족부 양육비 선지급 신청 안내 보도자료(2025)",
+          "url": "https://www.mogef.go.kr/nw/rpd/nw_rpd_s001d.do?mid=news405&bbtSn=710552",
+          "quote": "신청 요건의 충족 여부에 대한 조사를 거쳐 매월 25일에 선지급금을 지급받을 수 있다."
+        },
+        {
+          "name": "CBC뉴스(2026-10-01)",
+          "url": "https://www.cbci.co.kr/news/articleView.html?idxno=611590",
+          "quote": "선지급금은 통상 매월 25일 지급된다는 것이 정부 안내다."
+        }
+      ]
+    }
+  ]
+}

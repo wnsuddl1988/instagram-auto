@@ -1,0 +1,75 @@
+{
+  "id": "woori-cheonil-bank-1899",
+  "title": "우리은행 대한천일은행",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "연표형, 설립일·자본금 불일치, 황실 정치색",
+  "conditionResolved": false,
+  "finding": "설립일(1899.1.30 설립, 1.22 청원·2.1 인가는 절차 단계)과 자본금(5만6천원 중 3만원이 고종 내탕금, 불입 2만8천원)은 서로 다른 사이트 2곳으로 정리돼 불일치는 풀렸다. 그러나 결정적 장면은 '고종이 내탕금 3만원 출자 지시'와 '조선인만 주주 가능' 정관 정도로, 장애물-선택-결과로 이어지는 한 장면이 아니라 설립 사실의 나열(설립-증자-개명)에 머문다. 또한 고종·황실 중심 서사라 정치색 소지가 남는다. 따라서 숫자는 충분하나 장면이 약해 weak-scene 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "대한천일은행은 1899년 1월 30일 설립됐다(1월 22일 청원, 2월 1일 인가는 절차 단계).",
+      "numeric": true,
+      "economy": false,
+      "caution": "인천시 자료는 1월 22일 청원·2월 1일 인가를 적어 단계가 다름. 설립일은 1월 30일로 통일 가능",
+      "sources": [
+        { "name": "한국민족문화대백과사전 '한국상업은행'", "url": "https://encykorea.aks.ac.kr/Article/E0061249", "quote": "1899년 1월 30일 대한천일은행(大韓天一銀行)이라는 상호로 설립되었다" },
+        { "name": "이투데이(2019)", "url": "https://www.etoday.co.kr/news/view/450446", "quote": "대한천일은행은 1899년 1월30일 설립됐다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "설립 자본금은 5만6천원이었고 이 가운데 실제 불입자본금은 2만8천원이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'현재 가치 60억원' 환산은 인사이트 1곳에만 있어 대본에 쓰지 않는 편이 안전",
+      "sources": [
+        { "name": "한국민족문화대백과사전 '한국상업은행'", "url": "https://encykorea.aks.ac.kr/Article/E0061249", "quote": "자본금 5만 6000원으로 운영을 시작하였다" },
+        { "name": "이투데이 '역대 은행장 황태자도 있었다'", "url": "https://www.etoday.co.kr/news/view/477846", "quote": "자본금 5만6000원과 불입자본금 2만8000원으로 출발한 대한천일은행" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "고종은 황실 내탕금 3만원을 자본금으로 출자했다(창립 자본금의 약 54%).",
+      "numeric": true,
+      "economy": true,
+      "caution": "'3만원 납입'과 '3만원 출자 지시'로 표현이 다름. 자본금 5만6천원과 별개 수치가 아니라 그 중 황실분",
+      "sources": [
+        { "name": "인사이트", "url": "https://www.insight.co.kr/news/174241", "quote": "3만원을 자본금으로 출자하도록 직접 지시했다" },
+        { "name": "이투데이(2019)", "url": "https://www.etoday.co.kr/news/view/450446", "quote": "고종황제가 최초의 운영자금으로 3만원을 납입했으며" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "창립 정관에 조선인만 주식을 매매할 수 있다고 명시했다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "숫자 없음. 정관 시행 시점과 실제 적용 여부는 대본에서 단정하지 말 것",
+      "sources": [
+        { "name": "Wikipedia 'Daehan Cheon-il Bank'", "url": "https://en.wikipedia.org/wiki/Daehan_Cheon-il_Bank", "quote": "Only Korean nationals were allowed" },
+        { "name": "SAT 이코노미 인터뷰", "url": "https://sateconomy.co.kr/news/view/179586575022110", "quote": "조선인만이 주식을 매매할 수 있다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "1906년 6월 자본금을 15만원으로 증자했다(설립 자본금의 약 2.7배).",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "한국민족문화대백과사전 '한국상업은행'", "url": "https://encykorea.aks.ac.kr/Article/E0061249", "quote": "1906년 6월에는 자본금을 15만 원으로 증자하여" },
+        { "name": "이투데이 '역대 은행장 황태자도 있었다'", "url": "https://www.etoday.co.kr/news/view/477846", "quote": "1906년 6월 자본금을 15만원 증자한 이후" }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": true,
+    "note": "우리은행은 현 영업 중인 국내 은행이나 1899년 옛 사건. 고종·황실 중심 서사라 정치색 해석 소지 있음"
+  },
+  "remaining": "한 장면으로 선 결정적 선택-결과 구조 없음(설립·증자·개명 연표형). 불입 2만8천원·국고금 5만원 대여는 이투데이 1곳만 확인.",
+  "toolCallsUsed": 13
+}

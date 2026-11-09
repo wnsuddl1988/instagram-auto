@@ -1,0 +1,142 @@
+{
+  "id": "shinsegae-centum-guinness-2009",
+  "title": "신세계 센텀시티 기네스",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "면적 기준 12.6만/29만㎡ 불일치, 장면 약함",
+  "conditionResolved": true,
+  "finding": "면적 불일치는 정의 차이로 해소됐다: 기네스 인증 기준은 연면적 293,905㎡(메이시 198,500㎡보다 95,405㎡ 큼)이고, 12.5만~12.6만㎡는 같은 시기 보도의 '매장(영업)면적' 수치다. 장면은 '당초 기네스를 목표로 지은 건물이 아니었는데 개점 뒤 부회장이 세계 최대 여부 확인을 지시해 메이시를 넘은 사실이 드러난 것'과, 전체 면적의 약 35%를 판매가 아닌 찜질방·골프연습장·아이스링크로 채운 결정(→ 개점 7년 만에 지방 백화점 최초 1조 매출)으로 2곳 이상 출처에서 확인됐다. 숫자 사실 4개 이상 각 2곳 충족.",
+  "coreMessage": "물건을 쌓는 데 그치지 않고 사람이 머물 이유를 채운 백화점이, 세계 최대 기록과 지방 최초 1조 매출을 함께 얻었다.",
+  "decisiveFact": "f4",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "신세계 센텀시티는 2009년 연면적 293,905㎡로 기네스 월드 레코드 '세계 최대 백화점'에 공인됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "기네스 기준은 연면적(전체 바닥면적)이다. 같은 시기 보도의 매장(영업)면적은 12만5620~12만6612㎡로 다르고(2016년 증설 후 13만1901㎡), 일부 보도는 293,906㎡ 또는 29만3909㎡로 1~4㎡ 차이가 난다. 대본에서는 '연면적 약 29만㎡'로 쓸 것.",
+      "sources": [
+        {
+          "name": "아시아투데이(2009)",
+          "url": "https://www.asiatoday.co.kr/kn/view.php?key=260901",
+          "quote": "연면적 293,905㎡ (88,906평)로 기존 세계 최대 백화점인"
+        },
+        {
+          "name": "Guinness World Records 뉴스(2009)",
+          "url": "https://www.guinnessworldrecords.com/news/2009/6/largest-department-store-57643",
+          "quote": "huge 293,905",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "기존 기록 보유자 미국 뉴욕 메이시 백화점(연면적 198,500㎡)보다 95,405㎡ 더 넓다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "메이시 수치도 연면적 기준. 기네스 영문 뉴스는 'by over 95,000 m²'로 표기.",
+      "sources": [
+        {
+          "name": "sidae.com(2010)",
+          "url": "https://www.sidae.com/article/2010030417468029577",
+          "quote": "미국 뉴욕 메이시백화점(19만8500㎡)보다 9만5405㎡이 더 큰 면적"
+        },
+        {
+          "name": "아시아투데이(2009)",
+          "url": "https://www.asiatoday.co.kr/kn/view.php?key=260901",
+          "quote": "메이시 백화점(연면적 198,500㎡, 60,046평)"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "센텀시티는 처음부터 기네스 인증을 목표로 지은 건물이 아니었고, 개점 뒤 구학서 부회장이 세계 최대 여부 확인을 지시해 메이시보다 큰 사실이 확인되자 한국기록원을 통해 인증을 받았다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "신세계 측 설명에 기반한 일화(두 보도 모두 같은 출처 계열). 'TV리포트'는 연예 매체이므로 단독 근거로 쓰지 말고 신세계 보도자료(아시아투데이)와 함께 쓸 것.",
+      "sources": [
+        {
+          "name": "아시아투데이(2009)",
+          "url": "https://www.asiatoday.co.kr/kn/view.php?key=260901",
+          "quote": "당초 기네스 월드 레코드 인증을 목표로 해서 세워진 건물이 아니다"
+        },
+        {
+          "name": "TV리포트(2022경)",
+          "url": "https://tvreport.co.kr/msn/article/804478/",
+          "quote": "부회장의 지시에 따라 세계 최대 규모 백화점이라는 사실을 확인"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "개점 당시 국내 유통시설로는 유일하게 전체 면적의 약 35%를 찜질방·골프연습장·아이스링크 등 체험·여가 시설로 채운 '라이프스타일 백화점'으로 열었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "35%는 신세계 측 설명 수치(독립 실측 아님). 연면적 대비 매장면적 비율(약 43%)과 혼동하지 말 것.",
+      "sources": [
+        {
+          "name": "데일리안(2019)",
+          "url": "https://www.dailian.co.kr/news/view/776990/",
+          "quote": "당시 국내 유통시설에서 유일하게 전체 면적의 약 35%를"
+        },
+        {
+          "name": "이투데이(2019)",
+          "url": "https://www.etoday.co.kr/news/view/1729985",
+          "quote": "개점 당시 국내 유통 시설 중 유일하게 전체 면적의 35%가량을",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "개점 1년(2009.3~2010.2) 동안 방문객 1600만 명, 매출 5460억 원으로 국내 백화점 개장 1년차 최고 기록을 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "2019년 신세계 발표는 '2009년 약 4500억 원'으로 적어 연도 기준이 다르다(1년 단위 vs 2009 회계연도). 대본에서는 '개점 첫 1년 5460억 원'으로 한정.",
+      "sources": [
+        {
+          "name": "서울신문(2010)",
+          "url": "https://m.seoul.co.kr/news/2010/03/02/20100302010011",
+          "quote": "1600만명이 찾아 5460억원의 매출을 올렸다"
+        },
+        {
+          "name": "이투데이(2010)",
+          "url": "https://www.etoday.co.kr/news/view/293304",
+          "quote": "1600만명의 방문객, 5460억원의 매출 실적을 기록했다",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "센텀시티점은 개점 7년 만인 2016년 매출 1조 원 클럽에 가입해 국내 백화점 최단 기간, 지방 백화점 최초 1조 달성 기록을 세웠다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "신세계 자체 발표 기반 기록 주장(2019년 보도자료).",
+      "sources": [
+        {
+          "name": "데일리안(2019)",
+          "url": "https://www.dailian.co.kr/news/view/776990/",
+          "quote": "개점 7년만인 지난 2016년 매출 1조 클럽에 가입해"
+        },
+        {
+          "name": "이투데이(2019)",
+          "url": "https://www.etoday.co.kr/news/view/1729985",
+          "quote": "개점 7년만인 지난 2016년에는 매출 1조 클럽에 가입해",
+          "manualVerified": true,
+          "manualVerifiedNote": "2026-10-10 WebFetch로 원문 확인"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "현 영업 중인 국내 기업(신세계)이나 소송·제재·피해자 이슈 없는 긍정 성과 일화. 기업 저격 아님."
+  },
+  "remaining": "출처 대부분이 신세계 발표 기반이라 '35%'·'1조 최단'은 회사 주장임을 대본에서 단정하지 말 것. 영업 중인 특정 기업 홍보로 읽히지 않도록 교훈(머물 이유)을 중심에 둘 것. 시각 장면은 '기네스 인증서 수여(2009.6.26)'와 체험 공간이 후보.",
+  "toolCallsUsed": 22
+}

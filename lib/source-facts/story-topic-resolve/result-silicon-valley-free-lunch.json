@@ -1,0 +1,26 @@
+{
+  "id": "silicon-valley-free-lunch",
+  "title": "구글 공짜 점심의 진짜 이유",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "10박자 미달",
+  "conditionResolved": false,
+  "finding": "다른 각도로 1999년 창업자들이 요리사 찰리 에이어스를 채용하며 음식값을 받지 않겠다고 한 결정을 찾았으나, 그 발언은 에이어스 본인 회고(언론 인터뷰)뿐이고 창업자 결정을 확인한 두 번째 사이트가 없었다. '사무실 어디서든 150피트 안에 음식'은 KQED가 'Google lore'라고 쓴 전설이고 다른 곳은 200피트라고 해 수치가 엇갈린다. 무료 식사 비용이나 효과를 보여 주는 숫자 있는 경제 근거(연간 비용, 생산성 수치)는 2곳으로 확인되는 것이 없어 경제번역 지점도 채우지 못했다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "구글 사내 전설에 따르면 모든 사무실에서 150피트 이내에 음식이 있다(다른 보도는 200피트).",
+      "numeric": true,
+      "economy": false,
+      "caution": "KQED는 'lore'로 표기, 다른 출처는 200피트(브린 발언)라고 하여 수치 불일치. 단독 출처라 사실로 쓸 수 없음.",
+      "sources": [
+        { "name": "KQED Bay Area Bites", "url": "https://www.kqed.org/bayareabites/2843/dining-at-google-part-1", "quote": "there is food within 150 feet of every office." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업 복지 일화로 법적·정치 민감성 없음." },
+  "remaining": "창업자의 무료 식사 결정(에이어스 채용 1998/1999 시점도 출처별로 다름)과 비용·효과 숫자를 서로 다른 신뢰 출처 2곳으로 확인해야 usable 가능. 라즐로 복 'Work Rules!' 원문(도서)이나 구글 공식 블로그 인용 확보 시 재검토.",
+  "toolCallsUsed": 8
+}

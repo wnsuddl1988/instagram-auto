@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "money_shorts_upload_readiness_v1",
+  "status": "data_only_upload_readiness_record",
+  "title": "Money Shorts OS — Upload Readiness (Voice+Caption v3.1 Tailfit, Dry-Run Only)",
+  "purpose": "accepted candidate(voice_caption_v3_1_tailfit)의 upload payload dry-run 결과를 참조하는 data-only readiness 기록. 실제 업로드/게시는 수행하지 않는다.",
+
+  "acceptanceManifestRef": "scripts/fixtures/premium-editorial-final-video-acceptance.v1.json",
+
+  "dryRunPayload": {
+    "builderScript": "scripts/build-upload-payload-from-tts-mux-summary.mjs",
+    "builderScriptModified": false,
+    "summaryInput": "C:\\tmp\\money-shorts-os\\selected-image-elevenlabs-tts-mux-voice-caption-v3-1-tailfit\\tts-mux-summary.json",
+    "metadataInput": "scripts/fixtures/provider-candidate-upload-metadata.local-mock.json",
+    "metadataSourceFactAligned": true,
+    "outputPath": "C:\\tmp\\money-shorts-os\\final-video-upload-payload-sourcefact-aligned-v1\\provider-candidate-upload-payload.local-mock.json",
+    "uploadPayloadId": "upload-payload-rp-provider-ecos-live-base-rate-202605-local-mock",
+    "sourceManifestId": "rp-provider-ecos-live-base-rate-202605",
+    "mode": "local_mock",
+    "ffprobeVerified": true,
+    "allProbeChecksPassed": true,
+    "platforms": ["youtube_shorts", "instagram_reels"]
+  },
+
+  "uploadBoundary": {
+    "uploadExecuted": false,
+    "publishExecuted": false,
+    "requiresOwnerUploadApproval": true,
+    "noOAuthNoApiCredentials": true,
+    "noYoutubeInstagramApiCallsMade": true
+  },
+
+  "readinessChecklist": {
+    "finalVideoAccepted": true,
+    "mediaProbePassed": true,
+    "uploadPayloadDryRunBuilt": true,
+    "metadataSourceFactAligned": true,
+    "youtubeCategoryConfirmed": true,
+    "ownerUploadFirstRunApproved": true,
+    "ownerApprovalObtainedForUpload": true,
+    "note": "video/media 검증, metadata sourceFact 정합성 정정, YouTube category 27(Education) 확정, Owner upload first-run 승인이 모두 완료됨. 단, live preflight에서 credential/public-video-url 조건이 충족되지 않으면 실제 업로드는 실행하지 않고 BLOCKED로 기록한다(자세한 것은 live-upload-first-run record 참조)."
+  },
+
+  "riskNotes": [
+    "RESOLVED: metadata fixture(provider-candidate-upload-metadata.local-mock.json)의 stale '2025.01' 표기를 제거하고 sourceManifestId를 rp-provider-ecos-live-base-rate-202605로, description/caption을 2026년 5월·연 2.5%·한국은행 ECOS 기준으로 정정함.",
+    "RESOLVED: YouTube categoryId를 27(Education)으로 Owner 확정 반영함. 이전 categoryId=22 placeholder 리스크 해소.",
+    "RESOLVED: metadata riskNotes의 pink-noise/ElevenLabs final-pass placeholder 문구를 제거하고, accepted candidate가 실제 ElevenLabs 음성(v3.1 tailfit, Owner listening-approved)임을 반영함.",
+    "no rate hike/cut is asserted in metadata — sourceFact.changeDirection is unchanged_month_over_month only.",
+    "이 fixture는 data-only 기록이며 향후 재실행 시 값이 달라질 수 있는 산출물(C:\\tmp)을 참조만 한다.",
+    "live upload first-run은 Owner 승인 완료. 단 실제 업로드 실행 여부는 live preflight(credential presence + Instagram public video URL)에 따라 결정되며, 조건 미충족 시 실제 업로드 없이 BLOCKED record를 남긴다."
+  ]
+}

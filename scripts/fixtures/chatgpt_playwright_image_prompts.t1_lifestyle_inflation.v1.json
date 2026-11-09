@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "chatgpt_playwright_image_prompts_v1",
+  "taskId": "golden-sample-chatgpt-playwright-visual-only-candidate-v1",
+  "createdAt": "2026-07-03",
+  "topicId": "t1_lifestyle_inflation",
+  "derivedFrom": "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v1.json — 각 프롬프트는 blueprint의 visual_evidence에서 도출됨",
+  "maxPrompts": 4,
+  "global_rules": [
+    "vertical 9:16",
+    "이미지 안 readable text/numerals 금지 (지폐 표면·영수증·고지서·폰 화면 전부 흐림/뒤집기/비노출)",
+    "외국 지폐/낡은 화폐/오래된 자료 느낌 금지 — 한국 돈 느낌은 warm yellow-gold 지폐 톤/봉투/생활 맥락/구도로 암시",
+    "현대 한국 생활금융 맥락 (아파트/원룸/사무 책상/모바일 금융 감성)",
+    "정확한 정보/라벨/숫자는 renderer 카드가 담당"
+  ],
+
+  "prompts": [
+    {
+      "order": 1,
+      "imageId": "img_01_hook_raise_no_change",
+      "scenes": ["s1", "s2"],
+      "evidence_goal": "두툼한 월급 봉투(인상) vs 얇은 지갑(체감 없음) 대비 — 캡션 없이 hook/problem 전달",
+      "finalPrompt": "Cinematic vertical 9:16 photograph inside a modern Korean apartment at evening. On a clean dining table under warm lamp light, a Korean office worker's hands are opening a very thin, almost empty slim wallet. Right next to it lies a noticeably thick, clean white salary envelope, slightly open, with warm yellow-gold toned banknote edges just barely visible inside — the bill surfaces are completely blurred and out of focus, with no readable text, no numbers, no portraits. The visual contrast is clear: the envelope looks full, the wallet looks thin. Shallow depth of field, realistic contemporary Korean lifestyle, tense but relatable mood, premium editorial photo quality, high detail. No readable text anywhere, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 2,
+      "imageId": "img_02_cause_absorbed_outflow",
+      "scenes": ["s3"],
+      "evidence_goal": "봉투에서 여러 갈래로 빠져나가는 지폐 흐름 — 고정비/카드/구독/생활비가 먼저 흡수함을 물리화",
+      "finalPrompt": "Cinematic vertical 9:16 photograph, high-angle top-down view of a modern Korean kitchen table at night. From one open white salary envelope at the top of the frame, several warm yellow-gold toned banknotes (surfaces fully blurred, no readable text or numbers) fan outward and slide toward separate destinations arranged below: a thick stack of out-of-focus paper receipts, several payment cards lying face-down, a small pile of folded utility-bill-like papers with all print blurred beyond reading, and a smartphone lying face-down. The composition reads like money automatically leaving in many directions at once. Moody realistic lighting, contemporary Korean daily-finance feeling, premium editorial photo quality, high detail. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 3,
+      "imageId": "img_03_illusion_scattered_spending",
+      "scenes": ["s4", "s5"],
+      "evidence_goal": "선명한 지폐 한 장(기억되는 인상액) vs 흐릿하게 흩어진 지출 흔적 — 착시를 심도 대비로 시각화",
+      "finalPrompt": "Cinematic vertical 9:16 photograph with extreme shallow depth of field, inside a dim modern Korean living room at night. In sharp focus in the foreground, fingers hold up one single crisp banknote in warm yellow-gold tone — the bill surface itself is smoothly blurred with no readable text, no numbers, no portrait, only the clean paper shape and color. Far behind it, on a dark table, a wide messy scatter of many small receipts, coins, payment cards and crumpled papers sits deep out of focus, barely visible in the shadows. The one bright bill is memorable; the scattered spending almost disappears into the dark. Strong cinematic contrast, contemporary Korean home context, premium editorial photo quality. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    },
+    {
+      "order": 4,
+      "imageId": "img_04_action_divide_on_payday",
+      "scenes": ["s6", "s7"],
+      "evidence_goal": "받는 날 지폐를 3개의 무지 봉투로 나누는 손 — '자리를 먼저 만드는 행동'의 증거, 밝은 결과 톤",
+      "finalPrompt": "Cinematic vertical 9:16 photograph in bright, hopeful morning light, a clean modern Korean home desk by a window. Korean hands calmly place warm yellow-gold toned banknotes (surfaces fully blurred, no readable text or numbers) into three identical plain kraft envelopes arranged in a neat horizontal row on the tidy white desk. The three envelopes are clearly separate, unlabeled, evenly spaced. Beside them: a closed plain notebook and a small green potted plant. Organized, calm, optimistic fresh-start mood, contemporary Korean lifestyle, premium editorial photo quality, high detail. No readable text, no numerals, no logos, no watermark, no foreign currency design, nothing old or archival."
+    }
+  ],
+
+  "boundary": { "max_image_submissions": 4, "auto_retry": false, "cost_usd": 0 }
+}

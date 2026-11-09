@@ -1,0 +1,475 @@
+{
+  "episode": 23,
+  "topic": "유한양행 창업주 유일한이 1962년 상장, 1969년 친인척의 경영 퇴진과 전문 경영인 체제를 거쳐 1971년 유언장에서 아들에게는 자립을, 주식 14만 941주는 전부 신탁기금에 기증해 회사의 이익이 갈 곳을 바꾼 이야기",
+  "topicVettingPath": "C:/tmp/story-topic-vetting/story-ep23-yuhan-will-1971.json",
+  "designMemo": "scenes-v1(Owner '이 방식대로 진행' 10/12). 마무리는 요약이 아니라 시청자의 일에 빗댄 생활 경제 지식(Owner 10/12 정정). 친척 발언은 이투데이 1곳이라 직접 인용하지 않고 '~라고 해'로 처리. 비즈한국의 주식 15만 주·타계 1991 표기는 오기로 보고 미사용, 별세 나이·40% 출연·재단 현재 지분율 미사용. 총수 승계 논란과 비교하지 않음.",
+  "coreMessage": "회사가 번 돈이 어디로 가는지는 그 회사의 주식을 누가 쥐고 있느냐가 정한다. 내가 일하는 회사의 주인이 누구인지 아는 것도 내 돈 공부다.",
+  "channelFit": "회사의 이익(배당)이 주식을 가진 사람 몫으로 돌아간다는 구조와, 소유와 경영을 나누는 일을 우리 월급·연금·내 회사의 주인이 누구인가라는 일상 경제로 번역한다.",
+  "messageKeywords": [
+    "회사"
+  ],
+  "spine": {
+    "who": "유한양행 창업주 유일한과 그의 아들·딸",
+    "situation": "회사를 일군 창업주가 1971년 유언장에 아들에게는 자립하라는 한 줄만 남기고 주식 전부를 신탁기금에 기증한 일",
+    "stake": "회사의 주인이 한 집안이 될지, 사회가 될지가 걸려 있었다",
+    "action": "1962년 제약업계 최초로 상장하고, 1969년 부사장이던 아들을 비롯한 친인척을 경영에서 물러나게 한 뒤 전문 경영인에게 사장을 맡겼으며, 유언에서 주식 14만 941주를 신탁기금에 기증했다",
+    "outcome": "신탁기금은 훗날 유한재단이 되어 장학과 복지 사업을 맡았고 딸도 200억 원쯤의 전 재산을 재단에 기증했다",
+    "decisiveScene": "1969년 부사장이던 아들을 비롯한 친인척을 경영에서 물러나게 하고 전문 경영인에게 사장직을 맡긴 선택(데일리팜 2026 + 비즈한국 2015)",
+    "whoTerms": [
+      "창업주",
+      "아들"
+    ],
+    "situationTerms": [
+      "유언",
+      "한 줄"
+    ]
+  },
+  "interest": {
+    "hook": "아들에게 남긴 유언이 '대학까지 졸업시켰으니 자립해서 살아가거라' 한 줄뿐인 창업주가 있었어.",
+    "candidates": [
+      "H1(채택) 아들에게 남긴 유언이 '대학까지 졸업시켰으니 자립해서 살아가거라' 한 줄뿐인 창업주가 있었어. — 우리 기업 창업주의 낯선 유언, 이유 숨김",
+      "H2 회사를 일군 창업주가 주식을 전부 재단에 내놓은 일이 있었어. — 결말 선공개",
+      "H3 1971년, 한 창업주의 유언장이 공개됐어. — 연도·이름만으로 시작, 걸린 것 없음"
+    ],
+    "whyChosen": "훅 점검표 0 주인공(창업주)·상황(아들에게 한 줄 유언)·이상한 점(회사를 안 남김) 통과 / 1 낯선 대비 통과 / 2 배경 몰라도 이해 통과 / 3 주식의 행방 숨김 통과 / 4 사실과 다른 인과 없음 통과 / 5 16~22편 훅 틀과 다름 통과"
+  },
+  "tension": [
+    "회사를 일군 사람이 아들에게 회사를 남기지 않는다(3번)",
+    "1969년 부사장이던 아들을 비롯한 친인척을 경영에서 물러나게 한다(6번)",
+    "회사 주식은 누구 몫이 되는가(10번)"
+  ],
+  "choice": "유일한은 1962년 상장, 1969년 친인척 경영 퇴진, 1971년 유언에서 주식 기증을 선택했다. 한 사람의 영웅담이 아니라 소유와 경영을 나눈 일련의 결정과 이를 이어받은 재단·딸의 이야기로 쓴다.",
+  "reversal": {
+    "result": "주식 14만 941주가 신탁기금에 기증돼 훗날 유한재단이 되었고, 딸도 200억 원쯤의 전 재산을 재단에 기증했다."
+  },
+  "meaning": "회사가 번 돈의 일부는 그 회사의 주식을 쥔 사람 몫으로 돌아간다. 내가 일하는 회사의 주인이 누구인지 알아 두는 것도 내 돈 공부다.",
+  "narration": "아들에게 한 줄 유언(훅) → 유일한·1971 → 왜 안 남겼나 → 1962 상장 → 자본과 경영 분리 → 1969 친인척 퇴진 → 친척 있으면 지장 → 유언장(학자금·땅) → 유한동산 → 주식은 → 신탁기금 기증 → 유한재단 → 딸도 200억 → 번 돈은 주식 쥔 사람 몫 → 내 회사 주인 알아 두기+팔로우",
+  "economicLink": "상장(1962), 자본과 경영의 분리, 주식 14만 941주, 신탁기금→유한재단, 회사 이익이 주식을 가진 사람 몫으로 돌아감",
+  "differentFromPrevious": "회사 성공담이 아니라 창업주의 소유 포기형. 훅은 낯선 유언 단일 문장, 마무리는 내가 일하는 회사의 주인에 빗댄 생활 경제 지식.",
+  "improvedFrom": "1차 설계 줄의 약점(총수 승계 논란과 겹침, 마지막 추상 일반론)을 비교 금지·생활 경제 지식으로 보완.",
+  "politicalCheck": "지금의 총수 승계 논란이나 특정 기업과 비교하지 않는다. 종결된 1971년 유언과 재단 설립 사실만 쓴다. 현재 실적·주가 언급 없음.",
+  "sceneLinks": [
+    "훅: 낯선 유언",
+    "1번이 던진 주인공과 시점",
+    "1~2번이 만든 퍼즐",
+    "3번 퍼즐의 첫 단서: 상장",
+    "4번 상장의 의미(경제 번역)",
+    "5번 뒤 결정적 선택",
+    "6번 선택 뒤 열린 고리",
+    "6번 선택의 이유",
+    "7번 뒤 유언장의 내용",
+    "8번 땅의 행방",
+    "9번 뒤 열린 고리",
+    "10번 질문의 답(결말 처음 공개)",
+    "11번 기증의 뒷이야기(경제 번역)",
+    "12번 뜻이 이어짐",
+    "13번을 우리 생활 경제에 빗댄 지식",
+    "생활 교훈 + 팔로우(마무리)"
+  ],
+  "economyScenes": [
+    5,
+    15
+  ],
+  "economyTranslation": [
+    {
+      "scene": 5,
+      "text": "주식을 나누면 회사는 한 집안의 것이 아니게 되고, 그는 돈을 대는 일과 경영을 나누는 쪽을 택했다",
+      "basis": "한국민족문화대백과·데일리팜(2026)"
+    },
+    {
+      "scene": 15,
+      "text": "회사가 번 돈의 일부는 그 회사의 주식을 쥔 사람 몫으로 돌아간다",
+      "basis": "주식과 배당의 일반 상식, 위 재단 사실에 빗댄 생활 경제 지식"
+    }
+  ],
+  "ownerChecklist": [
+    {
+      "id": "context-first",
+      "ok": true,
+      "evidence": "첫 문장에 주인공(창업주)·상황(아들에게 한 줄 유언)·이상한 점(회사를 안 남김)"
+    },
+    {
+      "id": "hook-benchmark",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "scene-count-detail",
+      "ok": true,
+      "evidence": "15장면, 장면마다 한 가지, 15만 주 표기·40% 출연·별세 나이는 상충·단독이라 삭제"
+    },
+    {
+      "id": "economy-link",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "team-not-one-person",
+      "ok": true,
+      "evidence": "유일한 한 사람의 영웅담이 아니라 상장·전문 경영인·신탁기금·재단·딸로 이어진 이야기"
+    },
+    {
+      "id": "political",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "facts-two-sources",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "no-template-repeat",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "all-ages",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "closing-one-point",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "closing-summary-follow",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "tension-device",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "clear-message-channel-fit",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "base-structure",
+      "ok": true,
+      "evidence": "훅 1 → 퍼즐 2~3 → 맥락 4~7 → 유언 8~9 → 질문 10 → 결과 11~13 → 생활 경제 지식 14~15"
+    },
+    {
+      "id": "open-loop-table",
+      "ok": true,
+      "evidence": "열린 고리 표 15행, 결과(주식 기증)는 11번에서 처음"
+    },
+    {
+      "id": "topic-locked",
+      "ok": true,
+      "evidence": "대본(Owner '이 방식대로 진행' 10/12)과 기본 베이스 구조 점검표·열린 고리 표·숫자 장부 기준으로 확인(_ai/story-ep21-seolhyang-design-2026-10-12.md §8)"
+    },
+    {
+      "id": "numbers-by-number",
+      "ok": true,
+      "evidence": "1971·1962·1969·1만 달러·5,000평·14만 941주·200억 원쯤은 서로 다른 사이트 2곳 이상"
+    },
+    {
+      "id": "dates-2-3",
+      "ok": true,
+      "evidence": "연도 3개(1971·1962·1969)"
+    },
+    {
+      "id": "owner-eye-twice",
+      "ok": true,
+      "evidence": "Owner 시점으로 2회 읽고 친척 발언 직접 인용 제거·마무리를 내 회사의 주인 생활 지식으로 작성"
+    }
+  ],
+  "openLoopTable": [
+    {
+      "scene": 1,
+      "whyNext": "훅: 낯선 유언",
+      "endingRevealed": false
+    },
+    {
+      "scene": 2,
+      "whyNext": "1번이 던진 주인공과 시점",
+      "endingRevealed": false
+    },
+    {
+      "scene": 3,
+      "whyNext": "1~2번이 만든 퍼즐",
+      "endingRevealed": false
+    },
+    {
+      "scene": 4,
+      "whyNext": "3번 퍼즐의 첫 단서: 상장",
+      "endingRevealed": false
+    },
+    {
+      "scene": 5,
+      "whyNext": "4번 상장의 의미(경제 번역)",
+      "endingRevealed": false
+    },
+    {
+      "scene": 6,
+      "whyNext": "5번 뒤 결정적 선택",
+      "endingRevealed": false
+    },
+    {
+      "scene": 7,
+      "whyNext": "6번 선택 뒤 열린 고리",
+      "endingRevealed": false
+    },
+    {
+      "scene": 8,
+      "whyNext": "6번 선택의 이유",
+      "endingRevealed": false
+    },
+    {
+      "scene": 9,
+      "whyNext": "7번 뒤 유언장의 내용",
+      "endingRevealed": false
+    },
+    {
+      "scene": 10,
+      "whyNext": "8번 땅의 행방",
+      "endingRevealed": false
+    },
+    {
+      "scene": 11,
+      "whyNext": "9번 뒤 열린 고리",
+      "endingRevealed": false
+    },
+    {
+      "scene": 12,
+      "whyNext": "10번 질문의 답(결말 처음 공개)",
+      "endingRevealed": true
+    },
+    {
+      "scene": 13,
+      "whyNext": "11번 기증의 뒷이야기(경제 번역)",
+      "endingRevealed": true
+    },
+    {
+      "scene": 14,
+      "whyNext": "12번 뜻이 이어짐",
+      "endingRevealed": true
+    },
+    {
+      "scene": 15,
+      "whyNext": "13번을 우리 생활 경제에 빗댄 지식",
+      "endingRevealed": true
+    },
+    {
+      "scene": 16,
+      "whyNext": "생활 교훈 + 팔로우(마무리)",
+      "endingRevealed": true
+    }
+  ],
+  "facts": [
+    {
+      "id": "y_f1",
+      "claim": "유일한은 1971년에 세상을 떠났다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "브라보마이라이프(2015.8.21)",
+          "url": "https://bravo.etoday.co.kr/view/atc_view/4463",
+          "quote": "1971년 봄에 별세한 유한양행의 창업주"
+        },
+        {
+          "name": "한국민족문화대백과",
+          "url": "https://encykorea.aks.ac.kr/Article/E0041964",
+          "quote": "창설자 유일한은 1971년 3월 죽었는데"
+        }
+      ]
+    },
+    {
+      "id": "y_f2",
+      "claim": "유언장에는 손녀의 학자금 1만 달러와 딸에게 맡긴 땅 5,000평이 적혀 있었다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "서울신문(1999.8.6)",
+          "url": "https://m.seoul.co.kr/news/1999/08/06/19990806007005",
+          "quote": "손녀에게 대학까지의 학자금 1만달러를 준다.딸에게는 유한공고 안에 있는 묘소와 주변 땅 5,000평을 물려준다"
+        },
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "학자금 1만 달러만을 지원하도록 했다"
+        }
+      ]
+    },
+    {
+      "id": "y_f3",
+      "claim": "유일한은 자기 소유 주식 14만 941주를 전부 한국 사회 및 교육원조 신탁기금에 기증했다",
+      "numeric": true,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "서울신문(1999.8.6)",
+          "url": "https://m.seoul.co.kr/news/1999/08/06/19990806007005",
+          "quote": "나의 소유 유한양행 주식 14만941주는 한국 사회 및 교육원조 신탁기금에 기증한다"
+        },
+        {
+          "name": "브라보마이라이프(2015.8.21)",
+          "url": "https://bravo.etoday.co.kr/view/atc_view/4463",
+          "quote": "내 소유 주식 14만 941주는 전부"
+        }
+      ]
+    },
+    {
+      "id": "y_f4",
+      "claim": "아들에게는 대학까지 공부시켰으니 스스로 살아가라는 유언을 남겼다",
+      "numeric": false,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "브라보마이라이프(2015.8.21)",
+          "url": "https://bravo.etoday.co.kr/view/atc_view/4463",
+          "quote": "아들 일선은 대학까지 졸업시켰으니 앞으로 자립해서 살아가거라"
+        },
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "대학까지 공부시켰으니 앞으로는 스스로 살아가라"
+        }
+      ]
+    },
+    {
+      "id": "y_f5",
+      "claim": "딸에게 맡긴 땅 5,000평은 학생들이 쓰는 유한동산이 됐다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "학생들이 자유롭게 이용하는"
+        },
+        {
+          "name": "비즈한국(2015)",
+          "url": "https://bizhankook.com/articles/5093.html",
+          "quote": "유한동산 부지 5000 평을 관리 명목으로 물려주었을 뿐이다"
+        }
+      ]
+    },
+    {
+      "id": "y_f6",
+      "claim": "1962년 유한양행은 제약업계에서 처음으로 주식을 증권시장에 상장했다",
+      "numeric": true,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국민족문화대백과",
+          "url": "https://encykorea.aks.ac.kr/Article/E0041964",
+          "quote": "제약업계로서는 처음으로, 국내기업 중에는 두 번째로 기업공개를 단행하고 주식을 상장하여"
+        },
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "소유 분산은 1962년 기업공개로 이어졌다"
+        }
+      ]
+    },
+    {
+      "id": "y_f7",
+      "claim": "상장을 통해 자본과 경영을 분리하는 현대적 경영체제를 갖췄다",
+      "numeric": false,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "한국민족문화대백과",
+          "url": "https://encykorea.aks.ac.kr/Article/E0041964",
+          "quote": "자본과 경영을 분리하여 현대적 경영체제를 갖추어"
+        },
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "자본과 경영의 분리를 한층 강화했다"
+        }
+      ]
+    },
+    {
+      "id": "y_f8",
+      "claim": "1969년 유일한은 부사장이던 아들을 비롯한 친인척을 경영에서 물러나게 하고 전문 경영인에게 사장직을 맡겼다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "친인척을 회사 경영에서 물러나게 하고"
+        },
+        {
+          "name": "비즈한국(2015)",
+          "url": "https://bizhankook.com/articles/5093.html",
+          "quote": "전문 경영인 조권순 씨에게 사장직을 맡겼다"
+        }
+      ]
+    },
+    {
+      "id": "y_f9",
+      "claim": "유일한은 친척이 회사에 있으면 회사 발전에 지장을 받는다고 보았다",
+      "numeric": false,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "이투데이(2015.2.16)",
+          "url": "https://www.etoday.co.kr/news/view/1075430",
+          "quote": "조직에 친척 있으면 회사 발전에 지장을 받는다"
+        },
+        {
+          "name": "비즈한국(2015)",
+          "url": "https://bizhankook.com/articles/5093.html",
+          "quote": "경영을 일가에 맡길 경우 양심과 겸손을 잃을 수 있다는 이유에서다"
+        }
+      ]
+    },
+    {
+      "id": "y_f10",
+      "claim": "신탁기금은 1977년 유한재단이 되어 장학·복지 사업을 맡았다",
+      "numeric": true,
+      "economy": true,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "한국사회 및 교육원조신탁기금은 1977년 공익법인 관련 법률에 따라 재단법인 유한재단으로 전환됐다"
+        },
+        {
+          "name": "한국민족문화대백과",
+          "url": "https://encykorea.aks.ac.kr/Article/E0041964",
+          "quote": "각종 교육장학사업과 사회복지사업을 관장하고 있다"
+        }
+      ]
+    },
+    {
+      "id": "y_f11",
+      "claim": "딸 유재라는 별세를 앞두고 200억 원쯤의 전 재산을 재단에 기증했다",
+      "numeric": true,
+      "economy": false,
+      "status": "ok",
+      "sources": [
+        {
+          "name": "데일리팜(2026)",
+          "url": "https://www.dailypharm.com/user/news/339388",
+          "quote": "당시 시가 200억원 상당 전 재산을 재단에 기증했다"
+        },
+        {
+          "name": "비즈한국(2015)",
+          "url": "https://bizhankook.com/articles/5093.html",
+          "quote": "200억 원 대로 불어난 재산 전부를"
+        }
+      ]
+    }
+  ]
+}

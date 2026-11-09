@@ -1,0 +1,60 @@
+{
+  "id": "pepsi-soviet-navy-1989",
+  "title": "펩시의 소련 군함 거래",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "거래 구성·동기가 출처마다 다름",
+  "conditionResolved": true,
+  "finding": "1989년 거래의 구성은 History.com·Amusing Planet·MEL(1989 NYT 인용)이 일치한다: 잠수함 17척과 순양함·호위함·구축함 각 1척을 노르웨이 업체 합작사를 통해 고철로 되팔았고, 잠수함 척당 15만 달러라는 값도 3곳이 같다. 갈리는 것은 동기(보드카 불매 vs 재고)와 30억 달러 계약의 연도(1989 vs 1990, 선박 건조 계약)뿐이라 대본에서 동기는 'SU 루블이 태환되지 않아 물물교환'으로만 쓰고 30억은 1990년 별도 계약으로 분리하면 된다. 단 '펩시가 세계 6위 해군'은 전설이라(History·MEL이 반박) 반드시 바로잡는 각도로 써야 한다.",
+  "coreMessage": "돈이 통하지 않는 시장에서는 가진 것으로 값을 치르고, 물건이 곧 화폐가 된다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1989년 펩시는 소련으로부터 잠수함 17척과 순양함·호위함·구축함 각 1척을 대금 대신 넘겨받았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "펩시가 실제 해군을 운영한 것이 아니라 중개자였다고 History.com이 명시. Atlas Obscura는 선박 10척이라 적어 척수가 다름.",
+      "sources": [
+        { "name": "History.com (Christopher Klein)", "url": "https://www.history.com/articles/pepsi-navy-soviet-submarines", "quote": "a cruiser, frigate and destroyer" },
+        { "name": "Amusing Planet (2021)", "url": "https://www.amusingplanet.com/2021/01/why-soviet-union-exchanged-warships-for.html", "quote": "17 submarines, a cruiser" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "잠수함은 한 척에 15만 달러 가격으로 거래되었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "Amusing Planet은 출처를 달지 않음. History.com과 MEL(NYT 인용)이 같은 값.",
+      "sources": [
+        { "name": "History.com (Christopher Klein)", "url": "https://www.history.com/articles/pepsi-navy-soviet-submarines", "quote": "at a price of $150,000 each" },
+        { "name": "Amusing Planet (2021)", "url": "https://www.amusingplanet.com/2021/01/why-soviet-union-exchanged-warships-for.html", "quote": "Each submarine fetched them $150,000" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "펩시는 이후 소련과 30억 달러 이상 규모의 거래를 맺었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "연도가 1990년(History.com)이라 1989 함정 거래와 별개. 상선 건조 계약이며 소련 붕괴로 무산. 펩시 콜라·보드카 10년 매출 추정에 근거한 금액.",
+      "sources": [
+        { "name": "History.com (Christopher Klein)", "url": "https://www.history.com/articles/pepsi-navy-soviet-submarines", "quote": "Valued at more than $3 billion" },
+        { "name": "Amusing Planet (2021)", "url": "https://www.amusingplanet.com/2021/01/why-soviet-union-exchanged-warships-for.html", "quote": "USD 3 billion worth of soda" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "펩시는 받은 함정을 노르웨이 업체와의 합작사를 통해 고철로 팔았다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "Amusing Planet은 노르웨이 언급 없음.",
+      "sources": [
+        { "name": "History.com (Christopher Klein)", "url": "https://www.history.com/articles/pepsi-navy-soviet-submarines", "quote": "to a Norwegian shipping firm for scrap" },
+        { "name": "Amusing Planet (2021)", "url": "https://www.amusingplanet.com/2021/01/why-soviet-union-exchanged-warships-for.html", "quote": "Pepsi quickly sold them for scrap" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업의 종결된 1989~90년 거래. 냉전 소재지만 국내 정치 쟁점 아님. 현재 러시아 관련 시사 연결은 피할 것." },
+  "remaining": "NYT 1989 원문은 접근 못 해 MEL 인용 2차로만 확인. 동기(보드카 불매 vs 재고)는 출처 불일치라 단정 금지. 1972년 콜라-보드카 맞교환 시작은 History.com 1곳만 확인.",
+  "toolCallsUsed": 9
+}

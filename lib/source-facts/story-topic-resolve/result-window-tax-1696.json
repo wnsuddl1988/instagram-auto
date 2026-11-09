@@ -1,0 +1,71 @@
+{
+  "id": "window-tax-1696",
+  "title": "영국 창문세",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "막힌 창문이 전부 세금 때문은 아니라는 지적(도시전설)",
+  "conditionResolved": true,
+  "finding": "세율·도입·폐지 숫자는 영문 위키·Lincoln Institute·Conversable Economist(JEP 논문 소개)에서 2곳씩 원문으로 확인된다. 도시전설 문제는 위키 스스로 '창문이 막힌 모든 건물이 세금 때문'이라는 통념은 대체로 사실이 아니라고 밝히고(건축 장식용 막힌 창문), 반면 1747년 법이 창문 막기를 규제한 사실과 집주인들이 창문을 막은 사례는 실제로 있으므로 '모든 막힌 창문이 아니라, 일부는 실제로 세금 회피'라는 정확한 표현으로 소재화할 수 있다. 영국 도입이 '결정 장면'으로 약하다면 1696년 윌리엄 3세 정부가 소득세 논란을 피해 집의 창문 수를 부 지표로 삼은 선택이 장면이다.",
+  "coreMessage": "세금은 사람의 행동을 바꾼다 — 창문 수에 세금을 매기자 사람들은 햇빛을 줄여 세금을 피했다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "창문세는 1696년 윌리엄 3세 때 영국에 도입됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "도입 동기(화폐 재주조 비용)는 JEP 논문 서술이며 위키 본문에는 없음.",
+      "sources": [
+        { "name": "Wikipedia (Window tax)", "url": "https://en.wikipedia.org/wiki/Window_tax", "quote": "introduced in England and Wales in 1696" },
+        { "name": "Conversable Economist (The Window Tax: A Tale of Excess Burden)", "url": "https://conversableeconomist.com/2015/11/06/the-window-tax-a-tale-of-excess-burden/?amp=1", "quote": "first imposed in England in 1696" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "처음 세율은 집마다 2실링에 창문 10~20개면 4실링 추가였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1747년 개정, 1761년 8~9개 창문 집에 창문당 1실링 등 이후 세율은 바뀜.",
+      "sources": [
+        { "name": "Wikipedia (Window tax)", "url": "https://en.wikipedia.org/wiki/Window_tax", "quote": "two shillings per house" },
+        { "name": "Lincoln Institute (The Window Tax)", "url": "https://www.lincolninst.edu/publications/articles/window-tax", "quote": "additional charge of 4 shillings" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "창문이 20개를 넘는 집은 8실링을 더 냈다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "Wikipedia (Window tax)", "url": "https://en.wikipedia.org/wiki/Window_tax", "quote": "those above twenty windows" },
+        { "name": "Lincoln Institute (The Window Tax)", "url": "https://www.lincolninst.edu/publications/articles/window-tax", "quote": "8 shillings on houses with more than 20" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "창문세는 1851년에 폐지됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "스코틀랜드 창문세는 별도 제도(1748년 이후).",
+      "sources": [
+        { "name": "Wikipedia (Window tax)", "url": "https://en.wikipedia.org/wiki/Window_tax", "quote": "repealed on 24 July 1851" },
+        { "name": "Lincoln Institute (The Window Tax)", "url": "https://www.lincolninst.edu/publications/articles/window-tax", "quote": "finally repealed in 1851" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "세금을 피하려 집주인들이 창문을 막거나 창문 수를 줄이는 일이 실제로 있었다(다만 막힌 창문 전부가 세금 때문은 아님).",
+      "numeric": false,
+      "economy": false,
+      "caution": "위키는 창문을 막아서 세금을 피했다는 통념을 대체로 사실이 아니라고 하고 막힌 창은 장식용 가능성을 지적. 대본에 '모든 막힌 창문' 표현 금지.",
+      "sources": [
+        { "name": "Lincoln Institute (The Window Tax)", "url": "https://www.lincolninst.edu/publications/articles/window-tax", "quote": "the practice of blocking up" },
+        { "name": "Conversable Economist (The Window Tax: A Tale of Excess Burden)", "url": "https://conversableeconomist.com/2015/11/06/the-window-tax-a-tale-of-excess-burden/?amp=1", "quote": "landlords blocked up windows" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 1696~1851년 제도, 민감성 없음" },
+  "remaining": "도시전설 구분은 위키 한 문장(대체로 사실 아님)에 의존. 막힌 창문 규모를 수치로 보여 주는 학술 출처(Oates & Schwab 등)는 열람 못 함. 대본은 '일부'로 한정할 것. 대표 인물 선택 장면이 약해 제도 도입 장면 중심.",
+  "toolCallsUsed": 5
+}

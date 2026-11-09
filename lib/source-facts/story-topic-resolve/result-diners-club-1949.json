@@ -1,0 +1,47 @@
+{
+  "id": "diners-club-1949",
+  "title": "다이너스 클럽 - 지갑을 두고 온 저녁",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "지갑 일화가 apocryphal 가능성, 최초 보도 2년 뒤",
+  "conditionResolved": false,
+  "finding": "의심이 사실로 확인됐다. Wikipedia는 회사 홍보 담당 Matty Simmons가 이 이야기가 '일어난 적 없고 지어낸 것'이라 말했다고 적고, PYMNTS도 자신들이 찾은 가장 이른 판본이 2년 뒤 Newsweek 기사이며 후대 기자가 식사를 저녁으로 바꿨다고 적는다. 대안 장면(14개 식당과 카드 200장으로 닭-달걀 문제를 푼 1950년 2월 출범)을 보려 했으나 식당 수(14/27/28), 첫해 회원수(1만/2만), 회비($5/$21), 자본금($1.5M/$1.8M)이 출처마다 엇갈려 2출처로 맞는 숫자를 4개 못 채웠다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "회사 홍보 담당은 '지갑을 두고 온 저녁' 일화가 지어낸 이야기라고 말했다.", "numeric": false, "economy": false,
+      "caution": "Wikipedia가 전하는 발언. PYMNTS는 가장 이른 판본이 Newsweek(2년 뒤)이라고만 적음. 회사 공식 페이지(BMO)는 사실로 소개.",
+      "sources": [
+        { "name": "Wikipedia Diners Club International", "url": "https://en.wikipedia.org/wiki/Diners_Club_International", "quote": "the story was invented" },
+        { "name": "PYMNTS - More Than Money (2010)", "url": "https://www.pymnts.com/news/2010/more-than-money/", "quote": "This is the earliest rendition of the story we've found." }
+      ]
+    },
+    {
+      "id": "f2", "claim": "첫 1주년(1951년 말) 카드 회원은 4만 2천 명이었다.", "numeric": true, "economy": true,
+      "caution": "BMO 공식은 첫해 1만 명, Wikipedia는 1950년 말 2만 명. 숫자가 갈린다.",
+      "sources": [
+        { "name": "PYMNTS - More Than Money (2010)", "url": "https://www.pymnts.com/news/2010/more-than-money/", "quote": "there were 42,000 cardholders" },
+        { "name": "Wikipedia Diners Club International", "url": "https://en.wikipedia.org/wiki/Diners_Club_International", "quote": "42,000 by the end of 1951" }
+      ]
+    },
+    {
+      "id": "f3", "claim": "출범 때 제휴 식당 수는 14곳(PYMNTS), 27곳(Wikipedia), 28곳+호텔 2곳(BMO)으로 엇갈린다.", "numeric": true, "economy": false,
+      "caution": "2출처 일치 실패.",
+      "sources": [
+        { "name": "PYMNTS - More Than Money (2010)", "url": "https://www.pymnts.com/news/2010/more-than-money/", "quote": "signed up fourteen New York City" },
+        { "name": "Diners Club (BMO) - company story", "url": "https://dinersclubus.bmo.com/home/about/dinersclub/story", "quote": "28 restaurants and two hotels" }
+      ]
+    },
+    {
+      "id": "f4", "claim": "가맹점은 고객 청구액의 평균 7%를 다이너스 클럽에 냈다.", "numeric": true, "economy": true,
+      "caution": "PYMNTS 단독 확인(Wikipedia는 7%라고 적으나 인용 미확보). 회원 연회비는 $5(Wikipedia)와 $21(PYMNTS)로 불일치.",
+      "sources": [
+        { "name": "PYMNTS - More Than Money (2010)", "url": "https://www.pymnts.com/news/2010/more-than-money/", "quote": "they paid an average of 7 percent" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "미국 카드사의 옛 일화. 민감성 없음. 다만 '지어낸 일화일 수 있음'이 핵심 위험." },
+  "remaining": "지갑 일화를 빼고 '카드를 쓸 가게도 사람도 없던 상태에서 14~27개 식당+200명으로 시작'으로 장면을 바꾸려면 출범 식당 수·회비·첫해 회원수의 단일 기준(예: 1950년대 Time/Newsweek 원문 또는 Diners Club 공식 연표)이 필요하다.",
+  "toolCallsUsed": 6
+}

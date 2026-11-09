@@ -1,0 +1,56 @@
+{
+  "id": "skhynix-hbm",
+  "title": "SK하이닉스 HBM",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "'팔리지 않았다' 근거 없음, 뜨거운 종목이라 주식 이슈로 읽힘",
+  "conditionResolved": false,
+  "finding": "HBM1이 2015년 출시됐으나 흥행에 실패했고 재고가 쌓였다는 점은 한국경제(2026.2)와 딜사이트·다이아몬드 기사에서 확인되지만, 구체적 판매량('불과 1만여 개')은 다이아몬드 칼럼 단독이고 한국경제에는 판매량 숫자가 없다. 박성욱의 개발팀 확대·곽노정의 오더 컷 속 후공정 가동 유지 같은 결단 장면도 단일 칼럼에만 있고 다른 기사로 확인되지 않았다. 지금도 가장 뜨거운 상장사 종목의 성공담이라 주식 이슈로 읽힐 위험이 그대로이며, 숫자(투자액·점유율)도 기사에 없거나 단일 출처다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "최초 1세대 HBM1은 불과 1만여 개만 판매되는 데 그쳤다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "다이아몬드 칼럼(daum 전재) 단독. 한국경제 기사에는 판매량 숫자가 없음.",
+      "sources": [
+        { "name": "이덕주의 반도체플러스(Daum 전재, 2026.5.5)", "url": "https://v.daum.net/v/20260505175103442", "quote": "HBM1은 불과 1만여 개만 판매되는 데 그칩니다." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "HBM1은 2015년 출시됐지만 흥행에 실패했고, GPU 소비자는 엔비디아 제품을 택했으나 회사엔 재고가 쌓였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "한국경제 단독 열람(기사 리드 요약 문장). 판매량·금액은 없음.",
+      "sources": [
+        { "name": "한국경제(2026.2.15)", "url": "https://www.hankyung.com/article/202602156610i", "quote": "고성능 게임을 구현할 수 있는 엔비디아 제품을 택했다." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "HBM1에 대한 고객사의 관심은 컸고 문의는 이어졌다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "한국경제 단독.",
+      "sources": [
+        { "name": "한국경제(2026.2.15)", "url": "https://www.hankyung.com/article/202602156610i", "quote": "고객사의 관심은 컸고, 문의는 이어졌다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "HBM3 양산 시기 SK하이닉스는 2분기 매출 7조 3059억 원, 영업손실 2조 8821억 원을 기록했다(HBM 비중 약 10%로 전망).",
+      "numeric": true,
+      "economy": true,
+      "caution": "딜사이트 기사 단독 열람, 연도가 2023년으로 추정되나 기사에서 직접 확인하지 못함. 인용문은 페이지 요약이라 자동 대조 시 탈락 가능 → 사용 금지.",
+      "sources": [
+        { "name": "딜사이트", "url": "https://dealsite.co.kr/articles/107526", "quote": "2분기 매출은 7조3059억원, 영업손실은 2조8821억원" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": false, "note": "SK하이닉스는 현재 가장 뜨거운 상장사 중 하나라 HBM 성공담은 주식·종목 홍보로 읽힐 위험이 큼(소송·제재는 없음)." },
+  "remaining": "'팔리지 않았다'의 판매량 숫자를 2곳으로 못 채움, 결단 장면(개발 지속 결정) 단일 칼럼, 주식 이슈 읽힘 위험, 경제 숫자(투자액·매출) 부족.",
+  "toolCallsUsed": 6
+}

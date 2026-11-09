@@ -1,0 +1,71 @@
+{
+  "id": "noraebang-1991",
+  "title": "노래방 탄생",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "부산 기원(4월/5월) 출처 엇갈림, 일본 가라오케 개조",
+  "conditionResolved": true,
+  "finding": "4월/5월 엇갈림은 해소됨: 1991년 4월 부산 동아대 앞 로얄전자오락실에 번호식 노래 부스가 설치됐고(업계 통설, 공식 기록 없음), 5월 부산 광안리·민락동에 노래연습장(하와이비치)이 열려 '업소로서의 시초'로 불린다. 일본 가라오케 기원도 확인됨. 다만 결정적 장면의 주인공(오락실 주인이 일본식 기계를 개조해 번호식 부스로 만든 선택)은 중앙일보 단일 보도뿐이고 '공식 기록 없음'이며, 곡당 요금도 300원/500원으로 엇갈려 대본의 한 장면으로 세우기엔 약하다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "최초의 노래방 부스는 1991년 4월 부산 동아대 앞 로얄전자오락실에 설치됐다(공식 기록은 없고 업계 통설).",
+      "numeric": true,
+      "economy": false,
+      "caution": "공식 기록 없음, '알려져 있다' 수준",
+      "sources": [
+        { "name": "부산시 미래유산 자료(부산광역시)", "url": "https://www.busan.go.kr/futureheritage/simin01/1754565", "quote": "1991년 4월, 부산 동아대학교 앞 로얄전자오락실에서 시작된" },
+        { "name": "중앙일보(노래방 20년 기사)", "url": "https://www.koreajoongangdaily.com/lifestyle/sing-sing-a-song-noraebang-turns-20/10858216", "quote": "업계에서는 1991년 4월 부산 동아대 앞 로얄전자오락실을 최초로 본다" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "업소로서의 노래연습장 시초는 1991년 5월 부산 광안리(하와이비치 노래연습장)로 알려져 있다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "ajunews는 '광안리와 충무동', 중앙일보는 '민락동 하와이비치'로 위치 표기가 조금 다름",
+      "sources": [
+        { "name": "머니투데이(2012)", "url": "https://www.mt.co.kr/article/2012092713383721088", "quote": "1991년 5월 부산 광안리" },
+        { "name": "아주경제(2020)", "url": "https://www.ajunews.com/view/20200603161514987", "quote": "1991년 5월 부산 광안리와 충무동에 개업한 노래연습장이 시초라고 알려졌다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "초기 노래방 요금은 한 곡 300원으로 전해진다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "다른 기사는 500원이라 하여 요금이 출처마다 다름. 두 번째 출처(maily)는 뉴스레터라 신뢰도 낮음.",
+      "sources": [
+        { "name": "중앙일보 영문(노래방 20년)", "url": "https://www.koreajoongangdaily.com/lifestyle/sing-sing-a-song-noraebang-turns-20/10858216", "quote": "Users paid 300 won for one song." },
+        { "name": "maily.so 뉴스레터", "url": "https://maily.so/zizikzizik/posts/1gz2ey0nz3q", "quote": "300원에 노래 한 곡을 부를 수 있는 1.6평짜리 노래연습장" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "전국 노래방 수는 2011년 약 3만5천 개로 정점을 찍은 뒤 감소세다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "정점 연도·수치가 매체마다 다름(2005년 3만7천 설 vs 2011년 3만5316개)",
+      "sources": [
+        { "name": "뉴시스(2019)", "url": "https://www.newsis.com/view/NISX20190728_0000724449", "quote": "2011년 3만5316개를 정점으로 감소세를 보이고 있다" },
+        { "name": "YTN(2019)", "url": "https://www.ytn.co.kr/_ln/0103_201907282200278282", "quote": "2011년 3만 5천여 곳으로 정점을 찍은 뒤" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "노래방의 뿌리는 일본 가라오케이며 한국 노래방은 이를 개조·변형해 시작됐다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "인천광역시 자료", "url": "https://www.incheon.go.kr/moo/MOO030101/1957949", "quote": "노래방의 기원은 일본이라고 할 수 있다" },
+        { "name": "중앙일보 영문(노래방 20년)", "url": "https://www.koreajoongangdaily.com/lifestyle/sing-sing-a-song-noraebang-turns-20/10858216", "quote": "Stemming from Japanese karaoke" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "민간 생활 문화 소재로 민감성 없음" },
+  "remaining": "오락실 주인(화교 출신 형충당)의 개조 선택을 2곳 출처로 확인하지 못함(단일 보도), 요금 300/500원 불일치, 1~2년 내 확산 업소 수 통계 미확인",
+  "toolCallsUsed": 15
+}

@@ -1,0 +1,71 @@
+{
+  "id": "nixon-shock-1971",
+  "title": "닉슨 쇼크 — 금과 달러를 끊은 TV 연설",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "TV 연설 장면 강함, 금본위 개념 난도",
+  "conditionResolved": true,
+  "finding": "연준 역사 에세이·미 국무부 역사실·IMF 자료 등 서로 다른 사이트에서 핵심 사실이 교차 확인된다: 1971.8.13~15 주말 캠프 데이비드에서 닉슨과 보좌진 15명이 결정, 8.15 TV 연설로 금 1온스=35달러 교환 창구 폐쇄, 수입품 10% 추가 관세, 90일 임금·물가 동결. 경제 근거는 IMF의 '미국 보유 금 100억 달러 vs 부채 400억 달러'(금보다 달러가 훨씬 많음)로 숫자 번역이 쉬워 '금본위 개념'을 '창고에 100원 있는데 400원어치 교환권을 찍어 둔 상태'로 풀면 설명 부담이 작다. 장면은 TV 연설+주말 비밀회의로 충분히 강하다.",
+  "coreMessage": "창고에 있는 것보다 많은 교환권을 약속하면, 약속은 결국 한 사람의 연설로 끊긴다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1971년 8월 15일 닉슨 대통령이 TV 연설로 달러의 금 교환(1온스당 35달러) 창구를 닫는다고 발표했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Federal Reserve History: Gold Convertibility Ends", "url": "https://www.federalreservehistory.org/essays/gold-convertibility-ends", "quote": "fixed exchange rate of $35 an ounce" },
+        { "name": "U.S. Office of the Historian: Nixon and the End of the Bretton Woods System", "url": "https://history.state.gov/milestones/1969-1976/nixon-shock", "quote": "price of $35 per ounce" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "같은 발표에서 모든 과세 수입품에 10% 추가 관세(수입 부과금)를 매겼다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연준 자료는 'surcharge', 국무부 자료는 'tariff'로 표현이 다름.",
+      "sources": [
+        { "name": "Federal Reserve History: Gold Convertibility Ends", "url": "https://www.federalreservehistory.org/essays/gold-convertibility-ends", "quote": "import surcharge was set at 10 percent" },
+        { "name": "U.S. Office of the Historian: Nixon and the End of the Bretton Woods System", "url": "https://history.state.gov/milestones/1969-1976/nixon-shock", "quote": "extra 10 percent tariff be levied" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "임금과 물가를 90일간 동결하는 조치도 함께 발표됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "Federal Reserve History: Gold Convertibility Ends", "url": "https://www.federalreservehistory.org/essays/gold-convertibility-ends", "quote": "a 90-day freeze on wages and prices" },
+        { "name": "U.S. Office of the Historian: Nixon and the End of the Bretton Woods System", "url": "https://history.state.gov/milestones/1969-1976/nixon-shock", "quote": "a 90-day freeze on prices and wages" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "당시 미국 보유 금은 100억 달러인데 달러 부채(해외에 풀린 달러)는 400억 달러로, 금이 달러 교환 요구를 감당하지 못하는 상태였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "100억/400억 수치는 IMF F&D(가튼 책 서평) 인용 단일 수치. 국무부 자료는 '달러를 덮을 금이 없었다'는 정성적 서술만 있음. 대본에서 숫자를 쓸 때 IMF 서평 출처 명시.",
+      "sources": [
+        { "name": "IMF Finance & Development 2021.8 (Three Days at Camp David 서평)", "url": "https://www.imf.org/external/pubs/ft/fandd/2021/08/book-review-three-days-at-camp-david-garten.htm", "quote": "$10 billion (against $40 billion" },
+        { "name": "U.S. Office of the Historian: Nixon and the End of the Bretton Woods System", "url": "https://history.state.gov/milestones/1969-1976/nixon-shock", "quote": "United States did not have enough gold" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "결정은 1971년 8월 13~15일 주말 캠프 데이비드 별장에서 닉슨과 보좌관 15명이 모여 내렸다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연준 에세이는 'Nixon and fifteen advisers'로 인원 표기, IMF는 날짜 표기(합쳐서 확인).",
+      "sources": [
+        { "name": "IMF Finance & Development 2021.8 (Three Days at Camp David 서평)", "url": "https://www.imf.org/external/pubs/ft/fandd/2021/08/book-review-three-days-at-camp-david-garten.htm", "quote": "over the weekend of August 13–15, 1971" },
+        { "name": "Federal Reserve History: Gold Convertibility Ends", "url": "https://www.federalreservehistory.org/essays/gold-convertibility-ends", "quote": "Nixon and fifteen advisers" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 종결된 옛 사건, 국내 정치·진행 중 사건 소지 없음." },
+  "remaining": "'소재가 한국인에게 얼마나 와닿는가'(한국 연결 고리) 약함 — 대본에서 한국 환율·달러 연결 한 줄이 필요할 수 있음. 1973년 변동환율 전환 후 수치는 이번에 2출처로 확인하지 않음(결과 부분은 대본에서 생략 권장). 영국의 30억 달러 금 교환 요청 일화는 BullionStar 단일(블로그)이라 사용 금지.",
+  "toolCallsUsed": 8
+}

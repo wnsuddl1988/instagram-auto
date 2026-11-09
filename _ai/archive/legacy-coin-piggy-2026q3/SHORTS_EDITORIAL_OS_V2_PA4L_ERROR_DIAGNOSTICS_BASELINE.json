@@ -1,0 +1,110 @@
+{
+  "manifestVersion": "1.0.0",
+  "capturedAtUtc": "2026-08-09T01:43:51.491Z",
+  "repository": "Shorts Editorial OS V2",
+  "activationSlice": "PA-4L-DIAG_HTTP_400_GENERATION_ZERO_DIAGNOSTICS",
+  "ownerApproval": "APPROVE_PA4L_HTTP400_GENERATION_ZERO_DIAGNOSTICS_AND_SANITIZED_ERROR_CAPTURE",
+  "git": {
+    "branch": "codex/source-first-blueprint-clean",
+    "head": "a5a7591bb24840a914e076cac32c356897b56a09",
+    "parent": "d774ab277756a730ed603501d9c4ce1467aa2a3b",
+    "tree": "040d7aeb4f85d76c7950eeb5efd090c3ad84a7cc",
+    "upstream": { "ahead": 14, "behind": 0 },
+    "inheritedModifiedCount": 21,
+    "inheritedUntrackedCount": 3,
+    "inheritedStagedCount": 0,
+    "inheritedStatusPathCount": 24
+  },
+  "protectedDirtyBaselineManifest": {
+    "path": "_ai/SHORTS_EDITORIAL_OS_V2_PA4_BASELINE.json",
+    "sha256": "569b09c7219a1240576ced8b4c43ac6e22be05dc1f8bddfb2e940d9a3ec583a2",
+    "reuseStatusPathsAndHashes": true
+  },
+  "pa4lDiagAllowlist": [
+    { "path": "lib/editorial-v2/elevenlabs-timestamp-tts-node.ts", "expectedAction": "modified", "originalBlob": "9f3bda89434f8bf33a6c2ec8f181692cc3cc5f5c" },
+    { "path": "lib/editorial-v2/voice-materialization-contracts.ts", "expectedAction": "modified", "originalBlob": "2711a58cb0d21af9bca160b904ee0f0224d58e5d" },
+    { "path": "lib/editorial-v2/voice-materialization-node.ts", "expectedAction": "modified", "originalBlob": "6021e926ca33cf739f2eaa83431cd08093d29b41" },
+    { "path": "scripts/check-shorts-editorial-os-v2-pa4l-error-diagnostics.mjs", "expectedAction": "new" },
+    { "path": "scripts/probe-shorts-editorial-os-v2-pa4l-error-diagnostics.mjs", "expectedAction": "new" },
+    { "path": "_ai/SHORTS_EDITORIAL_OS_V2_PA4L_ERROR_DIAGNOSTICS_BASELINE.json", "expectedAction": "new" },
+    { "path": "_ai/PROJECT_STATE.md", "expectedAction": "modified" },
+    { "path": "_ai/NEXT_ACTION.md", "expectedAction": "modified" }
+  ],
+  "governanceFiles": [
+    { "path": "AGENTS.md", "sha256": "331fffc22782535d4bc842a9132d5bb9954964f245077f7114371ab20f0868f2" },
+    { "path": "_ai/SHORTS_EDITORIAL_OS_V2_GOVERNANCE.md", "sha256": "d4c7b29ae81a48fd32736098e894af05f0c7112b1697ceeeecb621215635e3f1" },
+    { "path": "_ai/SHORTS_EDITORIAL_OS_V2_PA4L_SINGLE_SCENE_GUARD_BASELINE.json", "sha256": "b7053333e07b538114e23ce50c64f5546320c579e83fa23678d73be1693348a7" }
+  ],
+  "protectedConfigFiles": [
+    { "path": "package.json", "status": " M", "headBlob": "1b1fd7729548c483585a500fe1b5a89c6884f262", "workingBlob": "3f649c7468fae381df54fd592fb47f10386dd539", "sha256": "d93f0746133417780d3a77cac602d63a490d5ddc8b5f9db372e15bb71abeeff8", "expectedHeadIdentical": false },
+    { "path": "pnpm-workspace.yaml", "status": "", "headBlob": "581a9d5b591dfcd01516bf429db120be05a6534f", "workingBlob": "581a9d5b591dfcd01516bf429db120be05a6534f", "sha256": "3ff85564ea77ba0e86c05a6a3cce42828d01a6546f0ba56bb10d6fc046f65845", "expectedHeadIdentical": true },
+    { "path": "pnpm-lock.yaml", "status": "", "headBlob": "9c4f045a2127fc86731cae6ff58dad69cca31508", "workingBlob": "9c4f045a2127fc86731cae6ff58dad69cca31508", "sha256": "497a5abf58598c52cfe9881fabb9c761280963cd4b9bf82035f93d4ad8adc4e9", "expectedHeadIdentical": true },
+    { "path": "next.config.ts", "status": "", "headBlob": "10e92406d1c5ad93741bf6aabd333b8c7c07ec73", "workingBlob": "10e92406d1c5ad93741bf6aabd333b8c7c07ec73", "sha256": "243100a6dd2fecc7cf9a4e67b4a774476183ff993b7125070517eac41f780ea1", "expectedHeadIdentical": true },
+    { "path": "tsconfig.json", "status": "", "headBlob": "023f9ccd773b1d1ac2fc62003acaecf18286da36", "workingBlob": "023f9ccd773b1d1ac2fc62003acaecf18286da36", "sha256": "2d569364ee05f87ce47d653394a6bb324cc3a219cdb7b087e1c38de4677961f3", "expectedHeadIdentical": true }
+  ],
+  "failedLiveAttempt": {
+    "projectId": "shorts-editorial-os-v2-20-pilot-8e9ba35c13b4",
+    "projectRevision": 6,
+    "sourceRenderCheckpointHash": "9b1fd21420628a01c25833190c88443fe03ca09b6617da352c5a86ecebabdf93",
+    "selectedSceneId": "selected-angle:revolving-balance-not-erased:scene:04",
+    "voiceId": "4JJwo477JUAx3HV0T7n7",
+    "modelId": "eleven_multilingual_v2",
+    "outputFormat": "mp3_44100_128",
+    "materializationSetId": "voice-set-ea6195e9f8890c6cd0221a5ceb434ab7664a5f9ad8f5ae4d91c84488f4d11dba",
+    "createdAtIso": "2026-08-09T01:18:36.478Z",
+    "updatedAtIso": "2026-08-09T01:18:36.945Z",
+    "httpFailureCode": "ELEVENLABS_HTTP_400",
+    "externalGenerationRequests": 1,
+    "automaticRetries": 0,
+    "fallbackRequests": 0,
+    "audioCreated": false
+  },
+  "externalReadOnlyDiagnostics": {
+    "status": "NOT_EXECUTED_SECURITY_APPROVAL_REQUIRED",
+    "actualRequests": 0,
+    "maximumApprovedRequests": 4,
+    "generationRequests": 0,
+    "retries": 0,
+    "fallbacks": 0,
+    "credentialOutput": false,
+    "requiredDirectApproval": "APPROVE_PA4L_ELEVENLABS_READONLY_DIAGNOSTICS_WITH_API_KEY_NO_SECRET_OUTPUT"
+  },
+  "rootCauseClassification": "PROVIDER_CAUSE_STILL_UNKNOWN",
+  "allowedRootCauseClassifications": [
+    "INVALID_VOICE",
+    "INVALID_MODEL",
+    "MODEL_ACCESS",
+    "INVALID_PARAMETER",
+    "MISSING_REQUIRED_FIELD",
+    "QUOTA_OR_BILLING",
+    "AUTHENTICATION",
+    "ACCOUNT_PERMISSION",
+    "REQUEST_FORMAT",
+    "PROVIDER_OTHER_CONFIRMED",
+    "PROVIDER_CAUSE_STILL_UNKNOWN"
+  ],
+  "sanitizedProviderErrorContract": {
+    "preservedFields": ["provider", "httpStatus", "type", "code", "message", "param", "requestId", "legacyStatus", "truncated"],
+    "shortFieldMaximumCharacters": 128,
+    "longFieldMaximumCharacters": 256,
+    "messageMaximumCharacters": 2000,
+    "fallback": "PROVIDER_ERROR_DETAIL_UNAVAILABLE",
+    "exactApiKeyRedacted": true,
+    "credentialLikePatternsRedacted": true,
+    "rawBodyStored": false,
+    "headersStored": false,
+    "responseReaderCapBytes": 33554432
+  },
+  "expectedPreCommitTree": { "modified": 26, "untracked": 6, "staged": 0, "statusPaths": 32 },
+  "expectedPostCommitTree": { "modified": 21, "untracked": 3, "staged": 0, "statusPaths": 24 },
+  "constraints": {
+    "actualTtsGenerationRequests": 0,
+    "paidGeneration": "PROHIBITED",
+    "automaticRetryLimit": 0,
+    "fallbackRequestLimit": 0,
+    "secondLiveRequest": "NOT_AUTHORIZED",
+    "build": "PROHIBITED",
+    "deploy": "PROHIBITED",
+    "push": "NOT_AUTHORIZED"
+  }
+}

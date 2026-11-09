@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "money_shorts_reels_dynamic_caption_contract_v1",
+  "taskId": "creative-v2-flux2-selected-image-set-lock-and-caption-contract-v1",
+  "status": "data_only_contract",
+  "createdAt": "2026-07-02",
+  "ownerRequest": {
+    "verbatim": "요즘은 자막을 밑에 고정시키고 사용하지 않고 아래 링크의 영상처럼 사용한다. 이 방식으로 자막을 나오게 해줘.",
+    "referenceUrl": "https://www.instagram.com/reel/DaRa298Smpy/?igsh=MTFrZXpyazg3YWdsbA==",
+    "referenceNote": "Owner가 지정한 스타일 reference로만 기록한다. 이번 slice에서 Instagram/외부 브라우저 자동화는 수행하지 않았으므로 exact visual clone 계약이 아니며, 아래 규칙은 Owner 설명(하단 고정 아님 + 발화 따라 등장)과 최신 Reels 관행을 계약화한 것이다. 세부 톤은 Owner 시각 QA에서 보정한다."
+  },
+  "principle": "자막은 하단 받아쓰기 띠가 아니라 음성의 리듬을 시각화하는 동적 레이어다. 카드가 '정보의 주연'(card motion contract), 자막은 '발화의 그림자' — 말이 나올 때만, 말이 있는 곳에서 짧게 살아 움직인다.",
+
+  "coreRules": {
+    "bottomFixedSubtitleBar": "금지 — 화면 하단에 고정된 subtitle bar/band 방식 전면 금지",
+    "fullSentenceBottomLock": "금지 — 긴 문장 전체를 하단에 고정 노출하는 방식 금지",
+    "unit": "phrase/keyword-level captions — 발화 구/핵심 단어 단위로 쪼개 등장",
+    "wordsPerCaptionBlock": "1회 caption block은 1~5단어 중심 (한국어 어절 기준). 초과 필요 시 블록을 분할한다",
+    "timingSource": "TTS phrase/word timing 기반 등장 — TTS-first timeline의 word/phrase 타임스탬프가 caption 타임라인을 결정한다",
+    "placement": "active visual focus 근처 또는 lower-middle safe zone에 짧게 등장 — 씬의 시각 초점(글로우 슬립/지갑/카드 행렬)을 따라 위치를 옮길 수 있다",
+    "emphasis": "블록당 강조 단어 1~2개 — 색(앰버)/크기/weight/scale 중 최대 2속성으로 차별. 전부 강조 금지",
+    "motionVocabulary": "pop/slide/scale/reveal 계열 짧은 모션 (0.15~0.35s, ease-out 진입/ease-in 퇴장). fade 단독/linear 금지 — card motion contract easing 표준 승계",
+    "entranceAnchor": "caption 진입은 해당 음성 phrase 시작에 ±120ms 이내 앵커",
+    "keywordHighlightAnchor": "강조 단어 highlight는 해당 단어 발화 순간에 ±80ms 이내 앵커",
+    "noSpeechNoCaption": "무발화 구간 caption 유지 금지 — phrase 종료 후 caption은 퇴장한다 (pause_before_impact 정적 구간 포함)",
+    "language": "한국어 어절/의미 단위로만 분할 — 조사·어미에서 어색하게 끊지 않는다"
+  },
+
+  "safeZoneRules": {
+    "subjectOcclusion": "caption이 이미지 주제 오브젝트(글로우 슬립/봉투/지갑 내부/탭 행렬/카드 3장)를 가리지 않는다 — selected image set lock manifest의 씬별 safeAreaNote를 배치 입력으로 사용",
+    "cardOcclusion": "caption이 활성 카드의 핵심 텍스트/숫자를 가리지 않는다",
+    "mobileSafeArea": "상단 180px(플랫폼 UI)·하단 340px(캡션/버튼)·좌우 각 60px 내 caption 핵심 텍스트 배치 금지 — card motion contract readabilityGate 승계",
+    "bottom15PercentRule": "하단 15% 영역의 상시(permanent) caption 점유는 audit fail — 일시 통과(모션 경로)만 허용"
+  },
+
+  "cardCaptionPriorityRules": {
+    "noDualDominance": "card UI와 caption이 동시에 화면을 지배하지 않는다 — 대형 카드(hook/twist/number) 활성 중 caption은 보조 크기/저강도로 제한하거나 생략",
+    "cardFirstMoments": "카드 진입 임팩트 순간(±0.3s)에는 caption 신규 진입 금지 — 지배 모션 1개 원칙(card motion contract) 승계",
+    "captionFirstMoments": "카드 부재 구간(이미지+내레이션만)에는 caption이 발화 리듬을 단독 시각화한다",
+    "checklistException": "checklist pop 구간에는 항목 텍스트가 caption 역할을 겸한다 — 동일 내용 caption 중복 노출 금지"
+  },
+
+  "antiCheapPptRules": [
+    "기본 하단 흰색/검정 subtitle band 금지",
+    "karaoke 스타일 전체 줄 고정 + 단어 색만 바뀌는 방식 금지",
+    "full-width caption box 금지 — caption 폭은 내용 폭에 맞춘다",
+    "긴 문장 2줄 이상 상시 노출 금지",
+    "TTS와 무관한 decorative caption bounce/wiggle 금지 — 모든 caption 모션은 발화 앵커에 근거"
+  ],
+
+  "auditQaRules": {
+    "screenshotTimesSec": [0, 2, 5, 10, 15, 20, 26, 30],
+    "perFrameChecks": [
+      "caption이 주제 오브젝트/활성 카드와 overlap하지 않는지",
+      "해당 시점 발화 phrase와 caption 내용/타이밍 일치 여부",
+      "caption 크기/잘림/safe-area 침범 여부"
+    ],
+    "readabilityContrast": "caption 대비비 4.5:1 이상 — 밝거나 복잡한 배경 위에는 dim/blur backing 필수 (단 full-width band 형태 금지)",
+    "bottomOccupancyGate": "하단 15% 영역 상시 subtitle 점유 감지 시 해당 render 후보 fail",
+    "captionDwell": "phrase당 caption 노출 1.6s 이하 권장 — 2.2s 초과는 명시적 사유(느린 발화/의도적 강조) 기록 필요",
+    "firstTwoSeconds": "첫 2s 안에 hook caption이 dynamic style(pop/scale 계열)로 반드시 등장 — 카드 hook과 동시 지배 금지 규칙은 유지(카드 임팩트 직후 진입 허용)",
+    "gate": "caption audit fail 1건 이상 = 해당 render 후보 reject"
+  },
+
+  "relationToOtherContracts": {
+    "cardMotionContract": "scripts/fixtures/golden_sample_card_motion_contract.v1.json — 카드 레이어의 canonical 계약 (검사 결과 bottom-fixed subtitle 가정 없음 → 무수정 유지). 본 계약은 caption 레이어를 신설하며 카드 규칙을 변경하지 않는다",
+    "selectedImageSetLock": "scripts/fixtures/golden_sample_flux2_selected_image_set_lock.v1.json — caption 배치의 씬별 safe-area 입력",
+    "absoluteRules": "_ai/CREATIVE_V2_GOLDEN_SAMPLE_ABSOLUTE_RULES.md — 'caption as design element, not bottom subtitle only' 원문과 정합",
+    "precedence": "충돌 시 절대규칙 원문 > 본 caption 계약 > card motion contract의 자막 관련 표현"
+  },
+
+  "renderReady": false,
+  "uploadReady": false,
+  "renderReadinessNote": "이 계약은 설계 문서다. render/TTS/mux/upload는 별도 Owner 승인 전 금지 유지. 다음 render 단계는 본 계약을 필수 적용한다.",
+  "boundary": { "dataOnly": true, "noGeneration": true, "noRender": true }
+}

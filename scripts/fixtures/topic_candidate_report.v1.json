@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "golden_sample_topic_candidate_report_v1",
+  "taskId": "golden-sample-direction-reset-money-economy-psychology-v1",
+  "createdAt": "2026-07-03",
+  "requires_owner_approval": true,
+  "channel_line": "돈 + 경제 + 심리 + 성공패턴",
+  "allowed_axes": ["money_flow", "opportunity_info", "money_psychology", "success_pattern"],
+  "rules": {
+    "no_topic_finalization_by_ai": "Codex/Claude는 주제를 확정하지 않는다 — 이 보고서는 제안이며 Owner 선택 대기 상태다.",
+    "no_live_macro_first": "실시간 시황/KOSPI 급락/거시경제 뉴스형 주제는 Owner가 직접 고르기 전 우선 추천하지 않는다 (본 후보 5개에서 제외됨).",
+    "salary_3days_note": "salary_3days는 Owner가 원하면 후보로 되살릴 수 있으나, 직전 reject 맥락을 존중해 이 보고서에서는 계속 밀지 않는다. locked image set 재사용 금지.",
+    "korean_context_required": "돈/경제 주제는 한국 시청자 즉시성 필수 — 외국 지폐 느낌/오래된 자료 느낌/정체불명 화폐 느낌은 hard fail (HANDOFF_NOW 기준 승계)."
+  },
+
+  "candidates": [
+    {
+      "topic_id": "t1_lifestyle_inflation",
+      "title": "월급이 올라도 통장이 그대로인 이유",
+      "content_axis": "money_psychology",
+      "core_hook": "연봉 오르면 나아질 줄 알았죠? 그 기대가 통장을 비웁니다",
+      "why_people_care": "승급/이직/연봉협상 시즌마다 겪는 보편 경험. '더 벌면 해결된다'는 믿음이 깨지는 순간을 정면으로 건드려 자기 관련성이 최고 수준.",
+      "facts_or_info_elements": [
+        "라이프스타일 인플레이션 정의 — 소득이 늘어난 만큼 소비 기준선이 함께 올라가는 현상 (용어 단독 사용 금지, 정의 문장 동반)",
+        "고정비 업그레이드(주거/차량/구독)의 비가역성 — 한 번 올린 기준은 내리기 어렵다",
+        "해결 장치 — 인상분의 일정 비율 자동 선저축 규칙 (구체 비율 문구는 제작 전 확정)"
+      ],
+      "storyline": "문제(월급 인상 후에도 월말 잔액 동일) → 원인(소비 기준선이 소득을 따라 자동 상승) → 착시('더 벌면 모인다'는 믿음) → 해결책(인상분을 보이기 전에 분리하는 자동 규칙) → 행동(다음 인상/이직 때 1회 설정) → 결과(수입 증가가 처음으로 자산 증가로 연결)",
+      "visual_evidence_ideas": [
+        "같은 식탁 before/after — 소박한 소비 오브젝트 vs 업그레이드된 소비 오브젝트 대비 (글자/브랜드 없음)",
+        "커지는 월급 봉투 옆에 같이 커지는 지출 오브젝트 더미 병렬",
+        "인상분 지폐를 별도 봉투로 먼저 떼어내는 손 동작",
+        "한국 생활 맥락 오브젝트(체크카드/커피/배달 용기 실루엣) — 원화 사실 묘사 대신 색감/구도 암시"
+      ],
+      "monetization_angle": "evergreen 저장형 자산 + '돈의 심리' 시리즈 앵커로 팔로우 전환. 향후 가계부/자동저축 서비스 제휴 여지.",
+      "scores": { "hook_strength": 90, "visual_clarity": 82, "information_density": 80, "automation_suitability": 85, "channel_fit": 95 },
+      "risk_notes": [
+        "원화 지폐 사실 묘사는 초상/한글 깨짐 위험 → 봉투/카드/색감 암시로 처리 (no readable text 원칙)",
+        "'라이프스타일 인플레이션'을 설명 없이 쓰면 추상어 hard fail — 정의 문장 필수"
+      ]
+    },
+    {
+      "topic_id": "t2_card_billing_lag",
+      "title": "월급날인데 이미 마이너스인 이유",
+      "content_axis": "money_flow",
+      "core_hook": "카드값은 지난달의 내가 보낸 청구서입니다",
+      "why_people_care": "월급일과 카드 결제일이 겹치는 한국 직장인 보편 현금흐름 경험 — '들어오자마자 빠져나간다'는 체감을 구조로 설명해준다.",
+      "facts_or_info_elements": [
+        "신용카드 청구 주기 구조 — 이용 시점과 결제일의 시차가 만드는 현금흐름 지연",
+        "결제일 직후 잔액이 '이번 달 쓸 돈'처럼 보이는 가용액 착시",
+        "해결 장치 — 결제일 직후 '진짜 가용액' 계산 습관 또는 체크카드 전환 (표현은 제작 전 검수)"
+      ],
+      "storyline": "문제(월급날 잔액이 바로 줄어듦) → 원인(지난달 소비가 이번 달에 청구되는 시차) → 착시(청구 전 잔액을 쓸 수 있는 돈으로 인식) → 해결책(결제일 기준 진짜 가용액 계산) → 행동(오늘 내 결제일 1개 확인) → 결과(월급날 마이너스 반복 차단)",
+      "visual_evidence_ideas": [
+        "'지난달' 봉투에서 '이번 달' 지갑으로 넘어오는 지폐 흐름 (시차의 물리화, 글자 없음)",
+        "카드 단말기와 얇아진 지갑 대비 — 브랜드/숫자 없음",
+        "월급 봉투 도착과 동시에 비워지는 봉투 연출"
+      ],
+      "monetization_angle": "현금흐름 시리즈의 앵커 콘텐츠 — 반복 시청/저장률 높음. 후속(고정비/자동이체 편)으로 시리즈 확장.",
+      "scores": { "hook_strength": 88, "visual_clarity": 80, "information_density": 85, "automation_suitability": 82, "channel_fit": 90 },
+      "risk_notes": [
+        "카드사/브랜드 연상 오브젝트 금지",
+        "금융 조언 단정 톤 주의 — 구조 설명 중심으로 서술"
+      ]
+    },
+    {
+      "topic_id": "t3_anchoring_sale_trap",
+      "title": "반값 세일이 지갑을 여는 방식",
+      "content_axis": "money_psychology",
+      "core_hook": "당신은 5만원을 아낀 게 아니라 5만원을 쓴 겁니다",
+      "why_people_care": "세일/쿠폰/원플러스원은 전 국민 보편 경험 — '아꼈다'는 계산이 뒤집히는 순간의 반전 쾌감이 강하다.",
+      "facts_or_info_elements": [
+        "앵커링 효과 정의 — 처음 본 가격(정가)이 판단 기준점이 되는 심리 편향 (정의 문장 동반)",
+        "판단 규칙 전환 — '할인율 대비'가 아니라 '실제 지출 금액' 기준으로 다시 계산",
+        "실행 장치 — 장바구니 대기 규칙 등 (문구는 제작 전 확정)"
+      ],
+      "storyline": "문제(세일 기간마다 지출 증가) → 원인(정가 앵커가 기준점이 됨) → 착시('원래 10만원인데 5만원이면 이득') → 해결책(지출 금액 기준 재계산 규칙) → 행동(다음 세일에서 1회 적용) → 결과(불필요 지출 차단, 진짜 필요만 구매)",
+      "visual_evidence_ideas": [
+        "가격표 오브젝트 대비 연출 — 취소선/숫자는 renderer 카드 타이포가 담당, 이미지에는 글자 없음",
+        "쌓인 택배 박스 더미 vs 얇아진 지갑 대비",
+        "포장도 안 뜯은 물건 더미 (충동 소비의 물리적 증거)"
+      ],
+      "monetization_angle": "소비심리 시리즈 확장축 — 세일 시즌마다 재부상하는 evergreen. 참여형 댓글(나의 세일 실패담) 유도.",
+      "scores": { "hook_strength": 85, "visual_clarity": 88, "information_density": 82, "automation_suitability": 84, "channel_fit": 88 },
+      "risk_notes": [
+        "특정 쇼핑몰/브랜드/실제 세일 사례 연상 금지 — 일반화된 오브젝트만",
+        "숫자 예시는 renderer 카드로만 표기 (이미지 내 글자 금지)"
+      ]
+    },
+    {
+      "topic_id": "t4_rule_of_72",
+      "title": "내 돈이 2배 되는 시간, 3초 계산법",
+      "content_axis": "opportunity_info",
+      "core_hook": "72를 금리로 나누면 끝. 계산기도 필요 없습니다",
+      "why_people_care": "지금 바로 내 적금/투자에 적용 가능한 공식 — 시청 즉시 효용이 생기고 저장할 이유가 명확하다.",
+      "facts_or_info_elements": [
+        "72의 법칙 — 72 ÷ 연수익률(%) ≈ 원금이 2배 되는 대략의 연수 (복리 전제 근사 공식임을 명시)",
+        "가상의 고정 예시 수치로 시연 (예: 연 4% → 약 18년) — 실시간 금리/특정 상품 인용 금지",
+        "활용법 — 상품 비교 시 '2배 시간'이라는 공통 잣대 제공"
+      ],
+      "storyline": "문제(돈이 안 불어나는 막막함) → 원인(복리의 시간 감각 부재) → 착시(높은 금리 숫자만 보고 체감 없이 선택) → 해결책(72의 법칙 3초 공식) → 행동(내 상품 수익률로 즉시 계산) → 결과(상품을 비교하는 나만의 기준 생김)",
+      "visual_evidence_ideas": [
+        "숫자 '72' 초대형 타이포 카드 (renderer 담당 — 이미지 아님)",
+        "동전 1더미 vs 2더미의 물리적 2배 대비",
+        "모래시계/시계와 돈 오브젝트의 시간×돈 연출 (글자 없음)"
+      ],
+      "monetization_angle": "공식형 콘텐츠는 저장률 최상급 — '3초 계산법' 시리즈 브랜드화 여지. 금융 카테고리 광고 단가 프리미엄.",
+      "scores": { "hook_strength": 82, "visual_clarity": 90, "information_density": 95, "automation_suitability": 92, "channel_fit": 90 },
+      "risk_notes": [
+        "근사 공식임을 화면/대본에 명시 (정밀 계산 아님 — 팩트 정확성)",
+        "특정 상품/수익률 추천 금지, 예시는 가상의 고정 수치만",
+        "실시간 금리 인용 금지 (Owner가 직접 지정하는 경우 제외)"
+      ]
+    },
+    {
+      "topic_id": "t5_24hour_rule",
+      "title": "부자들이 사기 전에 하루 기다리는 이유",
+      "content_axis": "success_pattern",
+      "core_hook": "충동은 24시간을 못 버팁니다",
+      "why_people_care": "월말 카드값에서 기억나지 않는 소비를 발견한 경험 + '부자 습관' 프레임의 열망 소구가 결합된다.",
+      "facts_or_info_elements": [
+        "24시간 룰 — 비계획 구매를 하루 보류하는 결정 지연 장치 (개념 정의)",
+        "충동 소비 욕구의 시간 감쇠 — 일반 원리로 서술 (구체 통계 인용 시 제작 전 출처 검증 필수)",
+        "실행 장치 — 장바구니/위시리스트를 '보류함'으로 쓰는 방법"
+      ],
+      "storyline": "문제(월말 카드값 속 기억 안 나는 소비) → 원인(원클릭 즉시 결제 환경) → 착시('지금 아니면 못 산다'는 긴급감) → 해결책(24시간 룰) → 행동(오늘 장바구니 1개만 하루 보류) → 결과(하루 뒤에도 사고 싶은 것만 남음 — 잔액과 후회가 동시에 줄어듦)",
+      "visual_evidence_ideas": [
+        "결제 직전 스마트폰을 내려놓는 손 (화면 글자 없음)",
+        "밤 → 아침 톤 전환으로 '하루 경과' 시각화",
+        "위시리스트 메모지/보류 박스 오브젝트"
+      ],
+      "monetization_angle": "'부자 습관' 시리즈 확장축 — 참여형(나의 룰 공유) 댓글 유도, 습관 앱 제휴 여지.",
+      "scores": { "hook_strength": 80, "visual_clarity": 78, "information_density": 75, "automation_suitability": 80, "channel_fit": 85 },
+      "risk_notes": [
+        "'부자들' 일반화 과장 주의 — 단정 대신 패턴 서술",
+        "통계 수치를 쓰려면 제작 전 출처 검증 필수 (미검증 수치 화면 표기 금지)"
+      ]
+    }
+  ],
+
+  "recommended": [
+    {
+      "topic_id": "t1_lifestyle_inflation",
+      "why": "채널 정체성(돈+심리) 정중앙 + hook 자기 관련성 최고 + 착시 단계가 구조적으로 내장된 주제라 Story-Causality 체인이 자연스럽다."
+    },
+    {
+      "topic_id": "t4_rule_of_72",
+      "why": "정보 밀도/저장 효용 최상급 + 숫자 타이포 중심이라 이미지 의존도가 낮아 자동화 적합성과 시각 리스크 관리에 가장 유리하다."
+    }
+  ],
+  "recommendation_note": "추천은 제안일 뿐이며 최종 선택은 Owner가 한다. 두 후보는 성격이 달라(심리 공감형 vs 공식 효용형) 첫 Golden Sample의 톤 방향 결정을 겸한다.",
+
+  "boundary": {
+    "this_slice": "topic proposal only — 주제 확정/이미지 생성/render 없음",
+    "cost_usd": 0,
+    "render_ready": false,
+    "upload_ready": false
+  }
+}

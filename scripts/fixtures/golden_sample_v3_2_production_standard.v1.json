@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "golden_sample_production_standard_v1",
+  "taskId": "golden-sample-v3-2-production-standard-contract-v1",
+  "status": "PRODUCTION_STANDARD_CONTRACT_V1",
+  "uploadReady": false,
+  "automationExpansionReady": false,
+  "createdAt": "2026-07-03",
+  "nature": "문서/계약 — 자동화 구현 아님. 이 계약의 존재가 자동화 가동 승인을 의미하지 않음.",
+
+  "basedOn": {
+    "goldenSample": "Golden Sample v3.2 / t1_lifestyle_inflation",
+    "topic": "월급이 올라도 통장이 그대로인 이유",
+    "acceptanceLockFixture": "scripts/fixtures/golden_sample_v3_2_acceptance_lock.t1_lifestyle_inflation.json",
+    "acceptanceLockDoc": "_ai/GOLDEN_SAMPLE_V3_2_ACCEPTANCE_LOCK.md",
+    "finalQaPacket": "_ai/GOLDEN_SAMPLE_V3_2_FINAL_QA_PACKET.md",
+    "muxMd5": "9f5ad22c02cb4f4f813a1ed16fd658b0",
+    "checkpoint": "062eb02 docs(golden-sample): lock v3.2 acceptance qa"
+  },
+
+  "pipelineOrder": [
+    { "step": 1,  "name": "owner_topic_confirmation", "rule": "Owner가 주제를 확정하기 전 어떤 생성도 시작하지 않는다" },
+    { "step": 2,  "name": "story_causality_first", "rule": "problem → cause → illusion → reframe/solution → action → result 인과 사슬 설계. beat = phrase = scene 1:1" },
+    { "step": 3,  "name": "visual_evidence_second", "rule": "각 이미지는 claim의 증거이지 예쁜 배경이 아니다. §visualEvidenceStandard 6필드 blueprint 필수" },
+    { "step": 4,  "name": "image_generation", "rule": "ChatGPT+Playwright 경로 (§imageGenerationStandard)" },
+    { "step": 5,  "name": "image_qa_md5_lock", "rule": "이미지 QA 통과 후 md5 고정 — 이후 단계는 md5 일치 검증" },
+    { "step": 6,  "name": "pillow_typography_render", "rule": "§typographyCaptionStandard" },
+    { "step": 7,  "name": "tts_first_one_shot_narration", "rule": "Script Impact Gate 통과 후에만 live TTS (§ttsFirstStandard)" },
+    { "step": 8,  "name": "word_phrase_anchored_captions", "rule": "실측 word/phrase 타이밍에 caption/card re-anchor" },
+    { "step": 9,  "name": "artifact_audit", "rule": "media/audio/captionCard/story 게이트 + vision 프레임 QA" },
+    { "step": 10, "name": "owner_viewing_listening_qa", "rule": "Owner 체감 QA — technical pass가 이를 대체할 수 없다" },
+    { "step": 11, "name": "separate_upload_or_automation_approval", "rule": "10까지 전부 PASS여도 upload/자동화 확장은 별도 Owner 승인" }
+  ],
+
+  "storyGate": {
+    "appliesBefore": "live TTS 호출 전 (runner가 코드로 강제, 미통과 시 TTS fetch 전 abort)",
+    "requiredScores": {
+      "hook_self_relevance": 90,
+      "story_causality": 90,
+      "problem_solution_bridge": 90,
+      "solution_specificity": 90,
+      "save_worthiness": 88,
+      "spoken_naturalness": 88
+    },
+    "hardFails": [
+      "generic_hook",
+      "weak_problem_solution_bridge",
+      "abstract_only_solution",
+      "three_things_mentioned_but_not_named_or_shown",
+      "invented_statistics_or_facts",
+      "topic_changed_without_owner_approval"
+    ],
+    "v32PassedExample": { "hook_self_relevance": 91, "story_causality": 92, "problem_solution_bridge": 91, "solution_specificity": 92, "save_worthiness": 89, "spoken_naturalness": 90 }
+  },
+
+  "visualEvidenceStandard": {
+    "perImageRequiredFields": [
+      { "field": "claim", "meaning": "이 이미지가 증명하는 주장" },
+      { "field": "must_show", "meaning": "반드시 보여야 하는 것" },
+      { "field": "must_not_show", "meaning": "나오면 안 되는 것" },
+      { "field": "understandable_without_card", "meaning": "카드 없이도 시청자가 뜻을 아는 이유" },
+      { "field": "card_caption_adds", "meaning": "카드/caption이 이미지에 더하는 것" },
+      { "field": "reject_reasons", "meaning": "재생성 트리거 조건" }
+    ],
+    "cardRule": "카드는 이미지를 강화한다 — 무관한 이미지를 구조하지 않는다. 카드 제거 시 이미지가 스토리와 무관해 보이면 fail"
+  },
+
+  "imageGenerationStandard": {
+    "preferredPath": "ChatGPT+Playwright (CDP) — 이 품질 문법의 preferred Golden Sample image path",
+    "paidProviderFallback": "별도 Owner 승인 필수 (FLUX2/OpenAI 등 자동 fallback 금지)",
+    "nativeResolution": { "value": "941x1672", "risk": "알려진 기술 리스크로 기록", "acceptanceRule": "viewer-frame 기준 Owner QA 수용 시 pass" },
+    "imageCountPolicy": { "rule": "story-driven — 4/6/9 고정 금지", "avoid": "단일 이미지 장기 dwell" },
+    "regenerationTriggers": ["visual evidence 불충족", "한국 맥락 이탈", "money clarity fail"],
+    "regenerationHardCap": "slice별 hard cap을 생성 시작 전 Owner 승인 필수",
+    "speedOps": {
+      "expectedCompletionSec": { "typicalMin": 30, "typicalMax": 90, "slowUpperBand": 110 },
+      "pollIntervalSec": { "min": 1, "max": 2, "scope": "제출 후 page-wide image candidate poll" },
+      "detectToSaveTargetSec": 30,
+      "overTargetAction": "detect-to-save 30s 초과 시 보고서에 즉시 원인 진단 기록",
+      "idleProhibition": "완성 이미지 3~5분 방치 금지",
+      "sidebarScanProhibited": true,
+      "oldConversationReuse": "금지 — 같은 승인 run의 known current image 회수 목적만 예외",
+      "collectionMethod": "page-wide estuary/image collection (user attachment 제외)",
+      "collectionReason": "현 ChatGPT UI는 생성 이미지를 assistant-role scoped DOM 밖에 렌더할 수 있음"
+    }
+  },
+
+  "koreanMoneyVisualStandard": {
+    "hardFails": [
+      "foreign_currency_feel",
+      "old_archive_or_dated_finance_texture",
+      "unknown_money",
+      "fake_readable_text_or_numbers",
+      "broken_glyphs",
+      "mosaic_or_blurred_money_when_money_should_be_clear",
+      "blank_paper_pretending_to_be_money"
+    ],
+    "accepted": [
+      "원화풍 색 계열 (50k 웜 옐로우골드 / 10k 그린티일 / 1k 블루) + 기요셰풍 문양 질감",
+      "위폐 수준 복제 없이 돈이라는 확신을 주는 선명함",
+      "현대 한국 생활금융 맥락 (월급봉투/유리병/자동이체/영수증)",
+      "디테일 가림은 겹침/접힘/손가림/각도로 — 블러/모자이크 금지"
+    ],
+    "textResponsibility": "정확한 라벨/팩트/숫자는 renderer(Pillow 카드) 책임 — 이미지 내 텍스트 금지"
+  },
+
+  "typographyCaptionStandard": {
+    "renderer": "Pillow — 동등성 검증 전 대체 금지",
+    "font": "Noto Sans KR Black (VF) 또는 승인된 bold Korean font",
+    "forbiddenLook": "Malgun Gothic 계열",
+    "stroke": "두꺼운 검은 stroke",
+    "emphasis": "강한 강조색 (옐로우 등)",
+    "captionStyle": "짧은 phrase/keyword 중심 — 문장 낭독 자막 금지",
+    "bottomFixedSubtitleBar": false,
+    "karaokeFixedLowerLine": false,
+    "safeFrame": { "canvas": "1080x1920", "textMaxY": 1580, "graphicMaxY": 1632, "note": "읽기 가능한 줄 길이 상한 준수" }
+  },
+
+  "ttsFirstStandard": {
+    "scriptImpactGateBeforeLiveTts": true,
+    "oneShotOnly": true,
+    "sceneBySceneTts": "금지",
+    "paddingToForceDuration": "금지",
+    "fixedDurationTarget": "금지 (30/40/60s 등)",
+    "speechHardTrim": "금지",
+    "naturalLengthRule": "최종 길이는 대본의 자연 발화가 결정 (v3.2 = 53.97s)",
+    "wordPhraseReAnchor": { "mandatory": true, "entryToleranceMs": 120, "v32MeasuredMaxDeltaMs": 50 },
+    "audioQualityGates": {
+      "beginningSilenceMaxSec": 0.6,
+      "first5sSilenceMaxSec": 0.8,
+      "totalSilenceRatioMax": 0.18,
+      "speechActiveRatioMin": 0.72,
+      "clippedTail": "금지",
+      "tailHoldSecRange": [0.3, 0.8]
+    },
+    "liveCallPolicy": {
+      "capPerSlice": "slice별 Owner 승인 (v3.2 = 2회)",
+      "guardConvention": "--allow-live-tts CLI flag 또는 ALLOW_ELEVENLABS env — env 파일 수정 금지, secret 값 출력/저장 금지",
+      "secondCallCondition": "명확한 artifact / severe pause / timing audit block일 때만"
+    },
+    "punctuationDesign": "punch 마침표는 임팩트 지점에만 — 과도한 구두점은 pause 폭증으로 ratio fail (v3.1 attempt1 선례: ratio 0.2667)"
+  },
+
+  "qaReadiness": {
+    "preUploadGates": [
+      "media_audit_pass",
+      "story_gate_pass",
+      "visual_evidence_pass",
+      "typography_caption_pass",
+      "tts_audio_artifact_pass",
+      "owner_viewing_listening_pass"
+    ],
+    "flags": {
+      "uploadReadyRule": "Owner의 명시적 업로드 승인 전까지 false 유지",
+      "automationExpansionReadyRule": "별도 자동화 구현 승인 전까지 false 유지"
+    },
+    "principle": "technical pass never equals Golden Sample pass — 기술 게이트 전부 통과해도 Owner 체감 QA에서 reject 가능 (v3.1 선례)"
+  },
+
+  "referenceImplementation": {
+    "note": "구현 시 참조할 v3.2 검증 소스 (checkpoint 062eb02 / a34d703)",
+    "files": [
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_tts_first_mux_manifest.v3_2.json",
+      "scripts/run-golden-sample-chatgpt-playwright-v3-2-script-voice-mux-audit.mjs",
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_visual_render_manifest.v3_2_tts_anchored.json",
+      "scripts/fixtures/golden_sample_t1_lifestyle_inflation_story_blueprint.v3_1_banknote_patch.json",
+      "scripts/run-chatgpt-playwright-korean-banknote-patch-v3-1.mjs"
+    ]
+  },
+
+  "changeControl": {
+    "modification": "Owner 승인 slice로만 수정 가능",
+    "versioning": "새 샘플이 더 나은 기준을 세우면 v2 계약으로 승격 — 이 v1을 소급 수정하지 않음"
+  },
+
+  "docs": {
+    "humanReadable": "_ai/GOLDEN_SAMPLE_V3_2_PRODUCTION_STANDARD.md"
+  }
+}

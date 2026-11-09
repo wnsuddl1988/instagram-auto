@@ -1,0 +1,25 @@
+{
+  "id": "pow-cigarette-money-1945",
+  "title": "포로수용소 담배 화폐",
+  "year": 1945,
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "관찰 서술, 사건·장면 없음",
+  "conditionResolved": false,
+  "finding": "Radford(1945, Economica) 원문(gwern.net 보관 PDF)을 직접 열어 보니 관찰 서술 속에 하나의 장면이 있다: 1944년 D-Day 무렵 수용소 오락위원회가 식당을 열고 상점과 함께 '식량 100% 지급보증' 종이돈 BMk(Bully Mark, 1BMk=담배 1개)를 발행했으나, 8월 소포·담배 배급이 반으로 줄고 수용소가 폭격당하자 식당이 닫히고 BMk에서 담배로 돌아가는 '화폐 이탈'이 일어났다. 하지만 숫자(BMk=담배 1개, 주당 담배 25~50개 지급, 최대 수용 5만 명, 배급 절반)는 모두 Radford 한 편에만 있고, 다른 사이트(Mindhacks, Finance Watch, New Economic Perspectives)는 같은 논문을 인용·요약한 것이라 독립 2출처가 아니다. 한 편의 일화로는 배경도 영국군 포로 일반이고 한국 접점이 없다. 못 채운 것: 독립된 2번째 출처, 숫자 4개 이상의 2출처 확인.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1", "claim": "1944년 D-Day 무렵 수용소 오락위원회가 식당을 열었고 식당·상점이 식량을 담보로 한 종이돈(BMk)을 발행했다.", "numeric": false, "economy": false,
+      "caution": "두 사이트가 같은 Radford 원문 문장을 옮긴 것이라 독립 출처가 아님.",
+      "sources": [
+        { "name": "Radford(1945) 원문 PDF (gwern.net 보관)", "url": "https://gwern.net/doc/economics/1945-radford.pdf", "quote": "food and cigarettes were plentiful" },
+        { "name": "Mindhacks(2008, Radford 인용)", "url": "https://mindhacks.com/2008/07/06/the-economics-of-a-prisoner-of-war-camp/", "quote": "food and cigarettes were plentiful" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "2차대전 영국군 포로 사례, 해외·종결 사건. 민감성 없음." },
+  "remaining": "독립 2번째 출처 없음(모두 Radford 1편에서 파생), 한국 접점·주인공 없음, 숫자는 Radford 1편뿐. Radford 원문 외 포로 경제를 다룬 독립 1차 연구(예: 수용소 역사서)를 찾으면 재심 가능.",
+  "toolCallsUsed": 8
+}

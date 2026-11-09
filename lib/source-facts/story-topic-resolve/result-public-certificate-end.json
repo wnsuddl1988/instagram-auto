@@ -1,0 +1,82 @@
+{
+  "id": "public-certificate-end",
+  "title": "공인인증서 21년 — 모두가 싫어했는데 왜 못 없앴나",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "장면 없음",
+  "conditionResolved": true,
+  "finding": "다른 각도의 결정 장면을 찾았다: 2014년 3월 20일 규제개혁 끝장토론에서 대통령이 공인인증서 때문에 해외 팬이 천송이 코트를 못 산다고 지적했고, 두 달 뒤 30만원 이상 결제 시 공인인증서 의무가 풀렸다. 이후 2020년 12월 21년 만에 공인 지위가 폐지되고 민간 인증 가입자(6646만)가 공인(4676만)을 앞질렀다는 숫자가 이어진다. 장면 2곳, 숫자 6개 사실을 서로 다른 사이트로 확인했다.",
+  "coreMessage": "모두가 불편해하며 참아 온 독점도, 누군가 '왜 이게 꼭 필요하죠?'라고 한 번 물으면 풀리기 시작한다.",
+  "decisiveFact": "f1",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2014년 3월 20일 규제개혁 끝장토론에서 박근혜 대통령은 공인인증서가 쇼핑몰 해외 진출의 걸림돌이라며 드라마 속 천송이 코트를 해외 팬이 못 사는 문제를 지적했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "경향신문(2014.7)은 '천송이 코트는 실제로 중국 소비자가 살 수 있었다'고 보도함. 대본은 '대통령이 그렇게 지적했다'까지만 쓰고 '실제로 못 샀다'고 단정하지 않는다.",
+      "sources": [
+        { "name": "한국경제 sgsg(2014)", "url": "https://sgsg.hankyung.com/article/2014032873621", "quote": "공인인증서가 국내 쇼핑몰의 해외 진출에 걸림돌이 되고 있는 것" },
+        { "name": "주간경향(2014)", "url": "https://weekly.khan.co.kr/article/201408041807101", "quote": "지난 3월 20일 진행된 규제개혁 끝장토론에서 박근혜 대통령은" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "당시 금융당국은 30만원 이상 전자결제에서 공인인증서만 쓰도록 제한했고, 대통령 지적 두 달 뒤 이 강제 조항을 없앴다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "폐지 시점(2014년 5월)은 데일리안 기사 기준. 시행 세칙 개정 시점 표현은 출처별로 다를 수 있음.",
+      "sources": [
+        { "name": "데일리안(2014)", "url": "https://www.dailian.co.kr/news/view/428776/", "quote": "30만원 이상 결제에 대해선 공인인증서만 사용하도록 제한" },
+        { "name": "주간경향(2014)", "url": "https://weekly.khan.co.kr/article/201408041807101", "quote": "30만원 이상 되는 물품을 대형쇼핑몰에서 공인인증서 등이 없이" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "공인인증서는 1999년 시행되어 21년 동안 운영되다 2020년 12월 10일 전자서명법 개정으로 공인 제도가 폐지됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "바이라인네트워크(2020)", "url": "https://byline.network/2020/12/9-77/", "quote": "21년 동안 운영해온 공인전자서명 제도가 폐지된다." },
+        { "name": "이투데이(2020)", "url": "https://www.etoday.co.kr/news/view/1971850", "quote": "1999년 개발돼 시행된 이후 21년 만이다." }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "폐지 직전인 2020년 11월 말 민간 전자서명 가입자는 6646만 건으로 공인 서비스 가입자 4676만 건을 이미 넘어섰다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "'가입자 수'는 건수 기준이며 중복 가입 포함.",
+      "sources": [
+        { "name": "바이라인네트워크(2020)", "url": "https://byline.network/2020/12/9-77/", "quote": "민간 인증 가입자 수가 6646만건으로" },
+        { "name": "이투데이(2020)", "url": "https://www.etoday.co.kr/news/view/1971850", "quote": "민간 전자서명서비스 가입자(6646만 건)가" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "2014년 3월 전경련 설문(700명)에서 응답자의 78.6%가 액티브X 폐지에 찬성했고 반대는 6.7%였다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "설문 대상은 액티브X이며 공인인증서와 직결된 문항은 아님.",
+      "sources": [
+        { "name": "서울경제 sateconomy(2014)", "url": "https://sateconomy.co.kr/news/view/179586669290023", "quote": "응답자의 78.6%가 폐지에 찬성한다고 답했으며" },
+        { "name": "Korea JoongAng Daily(2014)", "url": "https://www.koreajoongangdaily.com/business/poll-finds-no-love-lost-with-activex/10006056", "quote": "78.6 percent of the respondents" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "같은 설문에서 응답자의 88%가 액티브X 때문에 불편을 겪었다고 답했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "",
+      "sources": [
+        { "name": "서울경제 sateconomy(2014)", "url": "https://sateconomy.co.kr/news/view/179586669290023", "quote": "응답자 88%는 액티브X로 인해 불편이나 애로를 겪은 경험" },
+        { "name": "Korea JoongAng Daily(2014)", "url": "https://www.koreajoongangdaily.com/business/poll-finds-no-love-lost-with-activex/10006056", "quote": "88 percent said they had experienced" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "역대 대통령 발언이 계기이나 정당 쟁점이 아닌 규제개혁 사례. 현직 정치 평가는 배제하고 사실만 서술." },
+  "remaining": "천송이 코트 일화는 실제로 구매 가능했다는 반론 보도가 있어 단정 표현 금지. 경제 숫자를 더 강하게 하려면 해외직구 결제 1조원 vs 외국인 국내 결제 2000억원(데일리안 단일 출처)을 두 번째 출처로 보강하면 좋음.",
+  "toolCallsUsed": 12
+}

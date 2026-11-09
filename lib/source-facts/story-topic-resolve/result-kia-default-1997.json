@@ -1,0 +1,68 @@
+{
+  "id": "kia-default-1997",
+  "title": "기아 부도 — 자동차 회사가 무너진 1997년",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "당시 정부·재벌 논쟁이 얽힘. 회사 사건 중심으로만",
+  "conditionResolved": false,
+  "finding": "기아가 1997년 7월 부도유예협약 대상이 되고 1998년 10월 현대차에 낙찰된 큰 줄기는 신문 2곳에서 확인됩니다. 그러나 법정관리 시점이 이코노미스트(1997년 10월 22일)와 비즈한국(1998년 4월)에서 엇갈리고, 회사가 선택·결단한 하나의 장면 대신 경영권 공방·화의 신청·정부와 채권단 방침 번복·삼성/포드/대우 입찰 등 기관 나열형 연표라 '회사 사건 중심' 한 장면으로 모으기 어렵습니다. 부채 약 10조 원 등 핵심 수치는 검색 요약에서만 보고 본문 인용으로는 확인하지 못했습니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "기아는 1997년 7월 부도(부도유예협약 대상)를 맞았다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "법정관리 시점: 이코노미스트 1997년 10월 22일 vs 비즈한국 1998년 4월 — 불일치. 대본에 쓰려면 법정관리 시점을 피하거나 확정 출처가 더 필요.",
+      "sources": [
+        { "name": "이코노미스트", "url": "https://economist.co.kr/article/view/ecn201702050005", "quote": "부도유예협약 대상이 된 1997년 7월 15일 이후 약 100일을 끈 끝에" },
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/21612.html", "quote": "1997년 7월 부도를 맞았고" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "기아차는 1998년 10월 현대그룹(현대자동차)에 낙찰됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "인수계약은 1998년 12월 1일(이코노미스트 사진설명). 낙찰 금액은 확인 못 함.",
+      "sources": [
+        { "name": "이코노미스트", "url": "https://economist.co.kr/article/view/ecn201702050005", "quote": "1998년 10월 현대자동차에 낙찰됐다" },
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/21612.html", "quote": "기아차는 1998년 10월 현대그룹에 낙찰된다" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "1996년 기아그룹은 자동차 수출 30억 달러, 재계 순위 8위에 올랐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(비즈한국). 주간경향의 '1997년 총자산 14조2870억원 재계 8위'는 본문 미열람.",
+      "sources": [
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/21612.html", "quote": "자동차 수출 30억 달러, 재계 순위 8위에 올랐다" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "1996년 아시아자동차 294억 원, 기아특수강 895억 원, 기산 67억 원 적자.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "비즈한국", "url": "https://bizhankook.com/articles/21612.html", "quote": "1996년 아시아자동차 294억 원 적자" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "부도유예 직후 기아그룹은 협력업체 물품대금 480억 원을 어음으로 지급하려 했고, 정부는 협력업체(5천여 개) 특례보증을 5천억 원에서 1조 원으로 늘렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(서울신문 1997.7.17). 원문 표기 '4백80억원'.",
+      "sources": [
+        { "name": "서울신문(1997.7.17)", "url": "https://www.seoul.co.kr/news/1997/07/17/19970717001003", "quote": "협력업체의 이달치 두번째 물품대금 4백80억원을" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": true, "political": true, "note": "기아는 현재 현대차그룹 계열 영업 중. 정부 개입·재벌 인수·김선홍 회장 경영권 논란이 정치 쟁점화된 옛 사건이라 회사 중심으로만 다뤄야 함." },
+  "remaining": "결정적 장면 부재(연표·기관 나열). 법정관리 시점 출처 불일치. 부채 10조 원·낙찰가 등 핵심 숫자 2출처 미확보. 현대차 인수는 정치·재벌 논쟁과 얽힘.",
+  "toolCallsUsed": 9
+}

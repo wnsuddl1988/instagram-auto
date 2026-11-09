@@ -1,0 +1,48 @@
+{
+  "id": "tropicana-redesign-2009",
+  "title": "트로피카나 포장 리뉴얼 철회",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "매출 -20%는 AdAge 추정치(공식 아님). 분량 짧음",
+  "conditionResolved": false,
+  "finding": "2009년 2월 포장을 바꾼 지 약 두 달 만에 매출이 20% 줄어 원래 디자인(빨대 꽂힌 오렌지)으로 되돌렸다는 줄거리는 여러 2차 자료(Wikipedia·kottke·The Branding Journal·Astuteo)가 일치한다. 그러나 20%는 Ad Age 추정치를 옮긴 것이고(Bloomberg 2009 요약: 개수 -20%, 금액 -19%로 1~2월 22일 사이 약 3,300만 달러 감소 — 페이지 접근 차단으로 원문 확인 못 함), 숫자 사실은 -20%·약 두 달 정도뿐이며 3,500만 달러 비용은 단일 출처다. 신뢰할 만한 1차 매체(NYT·Bloomberg·Ad Age)를 열지 못해 숫자 4개를 2곳 출처로 확인하지 못했으므로 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "트로피카나는 포장을 바꾼 뒤 약 두 달간 부정적 반응과 매출 20% 하락을 겪고 원래 디자인으로 되돌렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "20%는 Ad Age 추정치(개수 기준, 금액은 -19%)로 공식 발표 아님. 대본에서 '추정'으로 밝혀야 함.",
+      "sources": [
+        { "name": "Wikipedia: Tropicana Products", "url": "https://en.wikipedia.org/wiki/Tropicana_Products", "quote": "a 20% drop in sales" },
+        { "name": "kottke.org", "url": "https://kottke.org/tag/tropicana", "quote": "20% fewer sales." }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "새 디자인은 2009년 2월 미국 내 전 제품에 적용됐고(Arnell Group 제작), 두 달 안팎에 원래 디자인으로 복귀했다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "정확한 날짜(2월 23일 철회 발표)는 이번 조사에서 원문 확인 못 함.",
+      "sources": [
+        { "name": "Wikipedia: Tropicana Products", "url": "https://en.wikipedia.org/wiki/Tropicana_Products", "quote": "created by the Arnell Group." },
+        { "name": "The Branding Journal(2015)", "url": "https://www.thebrandingjournal.com/2015/05/what-to-learn-from-tropicanas-packaging-redesign-failure/", "quote": "created by the same agency: Arnell." }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "트로피카나는 이 광고·리뉴얼 캠페인에 3,500만 달러를 투자했다고 알려져 있다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(Branding Journal). 다른 자료는 3,000만~5,000만 달러 추정 또는 비공개.",
+      "sources": [
+        { "name": "The Branding Journal(2015)", "url": "https://www.thebrandingjournal.com/2015/05/what-to-learn-from-tropicanas-packaging-redesign-failure/", "quote": "invested 35 million dollars in an advertising campaign" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "해외 기업, 종결된 15년 전 사건. 민감성 없음(2024년 별도 재디자인 논란과 혼동 주의)." },
+  "remaining": "NYT·Bloomberg·Ad Age 원문을 열지 못해 매출 -20%(개수)/-19%(금액), 철회 발표일(2/23), 소비자 항의 규모 등을 2곳 출처로 확인하지 못함. 이야기가 짧고 숫자가 적어 분량 부족 위험도 큼.",
+  "toolCallsUsed": 8
+}

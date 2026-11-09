@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "money_shorts_tts_script_v1",
+  "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605-voice-v3",
+  "manifestId": "rp-provider-ecos-live-base-rate-202605",
+  "factCardId": "fact-card-ecos-live-base-rate-draft-raw-ecos-722Y001-0101000-202605",
+  "ttsProvider": "elevenlabs",
+  "ttsMode": "elevenlabs_scene_paced",
+  "voiceProfile": "yohan_koo",
+  "voicePreset": "confident_v3",
+  "targetDurationSec": 30,
+  "supersedes": {
+    "scriptId": "tts-script-provider-ecos-live-base-rate-yohan-koo-draft-202605-voice-v2",
+    "reason": "voice-v3 correction: v2의 과압축(6 scene 전부 padded, 긴 silence)을 폐기하고 v1 리듬을 복구. Scene 4/5만 tail trim을 피하려 아주 소폭 축소. confident_v3 preset(style↑로 문장 종결 강화, stability↓로 단조로움 완화). factual meaning은 ECOS 기준 그대로 유지."
+  },
+  "sourceFact": {
+    "sourceProviderId": "provider-ecos-live",
+    "isMock": false,
+    "isPublishable": false,
+    "indicatorName": "한국은행 기준금리",
+    "latestPeriod": "202605",
+    "dataPeriod": "2026년 5월",
+    "currentValueText": "2.5%",
+    "previousPeriod": "202604",
+    "previousValueText": "2.5%",
+    "changeValueText": "0.0%p",
+    "changeDirection": "unchanged_month_over_month",
+    "verifiedPublishedDate": "2025-05-29",
+    "sourceName": "한국은행 ECOS — 기준금리",
+    "sourceUrl": "https://ecos.bok.or.kr/#/Short/722Y001",
+    "officialDecisionSourceName": "한국은행 통화정책방향 결정회의 — 기준금리 변경 이력",
+    "officialDecisionSourceUrl": "https://www.bok.or.kr/portal/singl/baseRate/list.do?dataSeCd=01&menuNo=200643"
+  },
+  "riskNotes": [
+    "official source validated: ECOS live (722Y001/0101000) latest period 202605 = 2.5%; previous 202604 = 2.5% (month-over-month unchanged); BOK publishedDate 2025-05-29 verified by value matching, not derived from ECOS period.",
+    "Direction is reported as 'current level + watch points' only. No rate hike/cut is asserted.",
+    "isMock=false, isPublishable=false — draft only; publishable flag is never set true here.",
+    "not yet Owner voice-approved for final publish; qualityAccepted remains false until Owner accepts the Yohan Koo listening review.",
+    "no upload performed.",
+    "voice-v3 correction: v2 과압축을 폐기하고 v1 narration 리듬을 복구. Scene 4/5만 tail trim 회피 위해 소폭 축소. 목표 raw duration ratio 0.85~1.03.",
+    "voice-v3: confident_v3 preset (stability 0.68, similarity_boost 0.9, style 0.22) — 말끝 흐림/단조로움 완화, speaker identity 유지."
+  ],
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "sceneRole": "hook",
+      "durationSec": 4,
+      "startSec": 0,
+      "endSec": 4,
+      "ttsText": "지금 기준금리가 어느 수준인지, 핵심만 바로 확인해 드립니다.",
+      "narration": "지금 기준금리가 어느 수준에 있는지, 바로 확인해 드립니다.",
+      "captionText": "기준금리, 지금 확인"
+    },
+    {
+      "sceneNumber": 2,
+      "sceneRole": "signal",
+      "durationSec": 5,
+      "startSec": 4,
+      "endSec": 9,
+      "ttsText": "한국은행 ECOS 자료 기준으로, 현재 기준금리는 연 2.5%입니다.",
+      "narration": "한국은행 ECOS 자료 기준으로, 현재 기준금리는 연 2.5% 수준입니다.",
+      "captionText": "현재 기준금리 2.5%"
+    },
+    {
+      "sceneNumber": 3,
+      "sceneRole": "why_expert_interpretation",
+      "durationSec": 6,
+      "startSec": 9,
+      "endSec": 15,
+      "ttsText": "직전 달과 비교해도 같은 수준이 이어져, 큰 변화 없이 유지되는 흐름으로 봐야 합니다.",
+      "narration": "최근 월별 자료에서는 직전 달과 비교해도 이 수준이 그대로 유지되고 있습니다.",
+      "captionText": "변화 없이 유지 중"
+    },
+    {
+      "sceneNumber": 4,
+      "sceneRole": "life_impact",
+      "durationSec": 6,
+      "startSec": 15,
+      "endSec": 21,
+      "ttsText": "대출자는 이자 부담을, 예금자는 예금 조건을 지금 한 번 더 점검할 때입니다.",
+      "narration": "그래서 대출자는 이자 부담을, 예금자는 예금 조건을 지금 기준으로 각각 점검해야 합니다.",
+      "captionText": "대출·예금 조건 점검"
+    },
+    {
+      "sceneNumber": 5,
+      "sceneRole": "watch_scenario_outlook",
+      "durationSec": 4,
+      "startSec": 21,
+      "endSec": 25,
+      "ttsText": "앞으로는 물가와 실제 대출금리 흐름을 함께 확인해 보세요.",
+      "narration": "앞으로는 기준금리 자체보다 물가와 실제 대출금리가 같이 움직이는지를 보세요.",
+      "captionText": "물가와 대출금리 보기"
+    },
+    {
+      "sceneNumber": 6,
+      "sceneRole": "action_closing",
+      "durationSec": 5,
+      "startSec": 25,
+      "endSec": 30,
+      "ttsText": "오늘은 대출 조건과 고정비, 변동비를 나눠 현금흐름을 점검해 보세요.",
+      "narration": "오늘은 내 고정비와 대출 조건부터 한 번 정리해 보면서 현금흐름을 점검해 보세요.",
+      "captionText": "이번 달 현금흐름 정리"
+    }
+  ]
+}

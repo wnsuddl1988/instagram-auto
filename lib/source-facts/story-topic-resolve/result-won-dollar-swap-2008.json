@@ -1,0 +1,69 @@
+{
+  "id": "won-dollar-swap-2008",
+  "title": "한미 통화스와프 — 달러가 막힌 나라를 살린 협정",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "경제 번역 풍부하나 정부 협상이라 장면 약함",
+  "conditionResolved": false,
+  "finding": "2008년 10월 30일 한국은행-연준 300억 달러 스와프, 외환보유액 2600억(2007말)→2000억(2008), 환율 1500원대 급등 등 경제 숫자는 신문 2곳에서 확인됩니다. 그러나 결과를 바꾼 결정적 장면은 '정부·중앙은행 간 협정 체결'로 주인공의 선택·결단 장면이 없고, 체결 후 환율은 1200원대로 내렸다가 연말 다시 오르고 이듬해 3월 1550원을 넘어 '살린 협정'이라는 서사도 단정하기 어렵습니다. 장면이 약해 usable 조건 b를 못 채웁니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "2008년 10월 한국은행과 미 연준이 300억 달러 규모 통화스와프를 체결했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "서울신문(2017)", "url": "https://www.seoul.co.kr/news/2017/09/23/20170923022001", "quote": "300억 달러 규모의 통화 스와프 계약을 체결해" },
+        { "name": "한국경제(2020)", "url": "https://sgsg.hankyung.com/article/2020041010611", "quote": "2008년 10월 30일 체결한 300억달러 계약" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "금융위기 직전인 2007년 말 외환보유액은 약 2600억 달러였다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "",
+      "sources": [
+        { "name": "서울신문(2017)", "url": "https://www.seoul.co.kr/news/2017/09/23/20170923022001", "quote": "2007년 2600억 달러에 이르던 외환보유액은" },
+        { "name": "머니투데이(글로벌 금융위기 10년)", "url": "https://www.mt.co.kr/index.php/mtreport/275", "quote": "금융위기 전인 2007년 말 2600억달러와 비교해" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "2008년 금융위기 때 원/달러 환율이 900원대에서 1500원대까지 치솟았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "체결 당일 환율 하락폭은 출처마다 다름(1420→1269원 151원 하락 vs 주간 12.4% 하락) — 대본에 쓰려면 하나만 고정.",
+      "sources": [
+        { "name": "서울신문(2017)", "url": "https://www.seoul.co.kr/news/2017/09/23/20170923022001", "quote": "1500원대까지 치솟아 사실상 외환위기로 치닫고 있었다" },
+        { "name": "머니투데이(글로벌 금융위기 10년)", "url": "https://www.mt.co.kr/index.php/mtreport/275", "quote": "금융위기 이후 1500원을 웃돌았다가" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "외환보유액은 2008년 2000억 달러까지 감소했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처.",
+      "sources": [
+        { "name": "서울신문(2017)", "url": "https://www.seoul.co.kr/news/2017/09/23/20170923022001", "quote": "2008년 2000억 달러까지 감소했다" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "체결 후 환율이 1400원대에서 1200원대로 내렸지만 연말에 다시 오르고 이듬해 3월 1550원을 넘었다. 계약은 2010년 2월 1일 종료됐다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(한국경제). 효과가 오래가지 않았다는 점이 '살린 협정' 서사와 충돌.",
+      "sources": [
+        { "name": "한국경제(2020)", "url": "https://sgsg.hankyung.com/article/2020041010611", "quote": "한·미 통화스와프 체결 후 1200원대로 떨어졌지만" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "종결된 2008년 사건, 정부 정책이나 평가를 빼면 정치 소지 낮음." },
+  "remaining": "주인공의 결단 장면이 없음(정부·중앙은행 협상). 체결 당일 환율 수치 출처 불일치. 결정적 장면을 2출처로 세울 앵글(예: 체결 발표 직후 시장 반응 하루)을 새로 잡아야 함.",
+  "toolCallsUsed": 6
+}

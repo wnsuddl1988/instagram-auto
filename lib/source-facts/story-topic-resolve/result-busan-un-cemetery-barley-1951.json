@@ -1,0 +1,120 @@
+{
+  "id": "busan-un-cemetery-barley-1951",
+  "title": "정주영 부산 UN묘지 보리 파종",
+  "proposedVerdict": "usable",
+  "reason": null,
+  "originalCondition": "근거가 2023 칼럼 1곳",
+  "conditionResolved": true,
+  "finding": "서울신문 2023 칼럼 외에 이코노텔링·고령신문·세종데일리·부산 남구신문(구청 소식지, 주민 증언)에서 같은 일화가 확인된다. '푸른 풀이면 된다'는 요구의 본질을 읽고 공사비의 3배 계약 후 트럭 30대로 낙동강 보리밭을 통째로 옮겨 심은 장면과 숫자 사실 4개가 2곳 이상 일치한다. 시기는 1951년이 아니라 1952년 12월(묘지 조성은 1951년 1월)이므로 소재 연도를 정정해야 한다.",
+  "coreMessage": "상대가 원한 것은 잔디가 아니라 '푸른 묘지'였다 — 요구의 본질을 읽으면 불가능한 주문에도 답이 보인다.",
+  "decisiveFact": "f5",
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "정주영은 아이디어 비용을 포함해 실제 공사비의 3배를 요구했고 미8군은 즉석에서 계약했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "정주영 회고 기반 일화. 실제 계약서·금액 근거는 확인되지 않음(공사비 절대액 미상). '성공 시 3배, 실패 시 3배 배상' 조건은 일부 웹 글에만 있어 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "이코노텔링(2018경)",
+          "url": "http://www.econotelling.com/news/articleView.html?idxno=15266",
+          "quote": "아이디어 비용을 포함해서 실제 공사비의 세 배를 요구했다"
+        },
+        {
+          "name": "고령신문",
+          "url": "http://www.goryeongnews.com/news/articleView.html?idxno=16042",
+          "quote": "아이디어 경비를 포함해 실제 공사비의 3배를 요구했다"
+        }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "계약 직후 트럭 30대를 끌어모아 낙동강 둔치의 보리밭으로 갔다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "보리밭 위치가 이코노텔링은 '낙동강 주변 모래벌판', 세종데일리는 '낙동강 연안 남지', 고령신문은 '둔치'로 표기가 다름('낙동강 보리밭'까지만 쓸 것).",
+      "sources": [
+        {
+          "name": "이코노텔링(2018경)",
+          "url": "http://www.econotelling.com/news/articleView.html?idxno=15266",
+          "quote": "즉시 주변에 있는 트럭 30대를 끌어모았다"
+        },
+        {
+          "name": "고령신문",
+          "url": "http://www.goryeongnews.com/news/articleView.html?idxno=16042",
+          "quote": "계약을 맺자마자 트럭 30대를 끌어모아 낙동강 둔치의 보리밭으로 갔다"
+        }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "이 일은 휴전 직전인 1952년 12월 한겨울에 있었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "소재 풀의 '1951' 연도는 묘지 조성 시기(1951.1)와 혼동된 것으로 보임 → 1952년 12월로 정정. 참배·방문 주체가 '각국 사절단'(이코노텔링 본문·세종데일리) 대 '아이젠하워 당선인'(남구신문 증언·이코노텔링 사진설명)으로 갈림.",
+      "sources": [
+        {
+          "name": "이코노텔링(2018경)",
+          "url": "http://www.econotelling.com/news/articleView.html?idxno=15266",
+          "quote": "휴전 직전인 52년 12월, 정 회장의 뚝심과 아이디어가"
+        },
+        {
+          "name": "세종데일리",
+          "url": "http://www.sjdailynews.co.kr/news/articleView.html?idxno=10408",
+          "quote": "1952년 12월, 미8군의 절대적 신임을 받고 있던 현대건설은"
+        }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "부산 유엔군 묘지는 한국전쟁 이듬해인 1951년 1월 유엔군사령부가 조성을 시작해 약 3개월 공사 끝에 같은 해 4월 완공됐다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "면적 표기가 서울신문 '약 8만 5000평' 대 다른 자료 약 13만5천㎡(약 4만 평)로 달라 면적은 쓰지 말 것.",
+      "sources": [
+        {
+          "name": "K-Trip Tips(재한유엔기념공원)",
+          "url": "https://www.ktriptips.com/kor/tourspot/126195",
+          "quote": "1951년 1월, 전사자 매장을 위하여 유엔군 사령부가 조성하였으며"
+        },
+        {
+          "name": "서울신문(2023)",
+          "url": "https://m.seoul.co.kr/news/2023/02/27/20230227031004",
+          "quote": "1951년 1월부터 유엔군이 부산 남구 대연동에 약 8만 5000평의"
+        }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "정주영은 낙동강 보리밭을 통째로 사서 푸른 보리싹을 떠다 묘지에 옮겨 심어 한겨울 묘지를 푸르게 만들었다.",
+      "numeric": false,
+      "economy": false,
+      "caution": "원전은 정주영 자서전 계열 회고이고 위 매체들은 이를 재서술한 것(독립 사료는 아님). 부산 남구신문 증언은 별도 구술. '잔디 대신 보리' 핵심은 모든 매체가 일치.",
+      "sources": [
+        {
+          "name": "이코노텔링(2018경)",
+          "url": "http://www.econotelling.com/news/articleView.html?idxno=15266",
+          "quote": "정 회장은 보리밭을 통째로 산 뒤 보리싹들을 떠서 묘지에 옮겨 심었다"
+        },
+        {
+          "name": "세종데일리",
+          "url": "http://www.sjdailynews.co.kr/news/articleView.html?idxno=10408",
+          "quote": "보리밭을 통째 구입, 파란 보리 포기들을 뗏장 떠서 묘지에 옮겨 심었다"
+        },
+        {
+          "name": "부산 남구신문",
+          "url": "https://www.bsnamgu.go.kr/board/view.namgu?boardId=BBS_0000088&menuCd=DOM_000000114005000000&startPage=24&dataSid=512441",
+          "quote": "정주영 사장이 잔디 대신 보리를 옮겨 심는 아이디어를 냈어요"
+        }
+      ]
+    }
+  ],
+  "sensitivity": {
+    "domesticSensitive": false,
+    "political": false,
+    "note": "현대건설은 현 영업 기업이나 소송·제재 이슈 없는 창업 일화. 정주영 회고 기반 영웅담 톤 주의(이미 쓴 '500원 지폐'와 별개 일화)."
+  },
+  "remaining": "일화 전체가 정주영 회고 단일 원전에서 파생돼 독립 사료로 교차검증되지는 않음(대본에서 '회고에 따르면'으로 쓸 것). 방문 주체(사절단 vs 아이젠하워)는 대본에서 특정하지 말 것. 소재 연도는 1952년 12월로 정정 필요.",
+  "toolCallsUsed": 12
+}

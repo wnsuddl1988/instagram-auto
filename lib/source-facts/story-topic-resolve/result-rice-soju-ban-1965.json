@@ -1,0 +1,36 @@
+{
+  "id": "rice-soju-ban-1965",
+  "title": "쌀 소주 금지·희석식 소주",
+  "proposedVerdict": "hold",
+  "reason": "weak-scene",
+  "originalCondition": "한 장면으로 모이지 않음, 정권 정책",
+  "conditionResolved": false,
+  "finding": "다른 결정 장면을 찾았으나 모두 정부 정책 단계였다(1962 주세법 개정으로 증류식에 희석식의 3.6배 세율 -> 1964.12.8 양곡소비 절약 지침 -> 1965 양곡관리법 -> 1966.8 막걸리 쌀 전면 금지 -> 1976 소주업체 254개를 10개로 정리). 업체 쪽 선택 사례(대한양조가 1964.6 희석식 소주 생산 시작)는 지역 양조장 1곳의 사사 수준이라 국민 누구나 아는 인물/장면이 아니다. 핵심 연도도 자료마다 1963/1964/1965/1966으로 갈리고, 양조용 쌀 사용량 같은 경제 숫자는 찾지 못했다. 연표형이라 usable 조건 a~b를 못 채워 보류.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "1965년 양곡관리법 시행으로 증류식 소주가 사라지고 주정을 희석한 희석식 소주로 바뀌었다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "연도가 자료마다 1963(막걸리 백미 제한)/1964.12(주정 지침)/1965(법)/1966.8(막걸리 전면 금지)로 섞여 있음. 출처는 국가기록원 1곳만 페이지에서 직접 확인함.",
+      "sources": [
+        { "name": "국가기록원 기록으로 보는 한국(소주·막걸리)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/sojunMakgeolli.do", "quote": "1965년 「양곡관리법」 시행에 따라" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "1976년 전국 254개 소주 업체가 정리되어 도마다 1개씩 총 10개의 희석식 소주 업체만 남았다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1곳만 직접 확인. 정권 주도 통폐합이라 정치 소지가 있을 수 있음.",
+      "sources": [
+        { "name": "국가기록원 기록으로 보는 한국(소주·막걸리)", "url": "https://theme.archives.go.kr/next/koreaOfRecord/sojunMakgeolli.do", "quote": "각 도에 한 개씩 총 10개의 희석식 소주 업체가 남았다." }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": true, "note": "박정희 정권의 양곡 정책/업체 통폐합 서술이라 정치 소지 약간. 현 영업 기업 저격은 아님." },
+  "remaining": "주인공의 선택 장면 없음, 양조용 쌀 사용량 등 숫자 근거 못 찾음, 핵심 연도 불일치.",
+  "toolCallsUsed": 5
+}

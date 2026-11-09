@@ -1,0 +1,80 @@
+{
+  "id": "sk-yemen-oil-1984",
+  "title": "SK 북예멘 유전·베트남 15-1",
+  "proposedVerdict": "hold",
+  "reason": "unverifiable",
+  "originalCondition": "발견 주체와 성공 확률 근거 엇갈림",
+  "conditionResolved": false,
+  "finding": "발견 주체는 SK(유공)가 아니라 미국 헌트 오일(1984년 7월 발표, 3곳 확인)이고 한국 컨소시엄(유공 주도, 4사)은 24.5% 지분을 가졌다(2곳 확인). 따라서 SK가 직접 유전을 찾았다는 전제의 소재는 사실이 아니다. 대신 한국 컨소시엄이 파이프라인 자금을 대는 조건으로 헌트 지분 24.5%를 사들였다는 결정적 장면은 MERIP(1985) 한 곳에서만 확인되고 두 번째 출처가 없다. 1~2% 성공률은 해외 유전개발 일반 수치(서울신문 1991 단독)라 마리브·베트남 15-1의 성공 확률 근거가 아니다.",
+  "coreMessage": null,
+  "decisiveFact": null,
+  "facts": [
+    {
+      "id": "f1",
+      "claim": "북예멘 마리브 유전은 1984년 미국 헌트 오일이 발견했다(Alif-1 시추, 초기 산출 7,800배럴/일).",
+      "numeric": true,
+      "economy": false,
+      "caution": "발견 주체는 SK가 아님. MERIP는 1984년 7월 발견 발표, geoexpro는 첫 상업적 발견을 1984년으로 기술.",
+      "sources": [
+        { "name": "MERIP(1985)", "url": "https://merip.org/1985/02/oil-find-could-alter-yar-saudi-relations/", "quote": "announced it had struck oil" },
+        { "name": "GEO ExPro", "url": "https://geoexpro.com/petroleum-basins-of-yemen/", "quote": "first commercial discovery came in 1984" },
+        { "name": "Christian Science Monitor(1988)", "url": "https://www.csmonitor.com/layout/set/amphtml/1988/0621/oyem.html", "quote": "found in 1984 by a United States firm" }
+      ]
+    },
+    {
+      "id": "f2",
+      "claim": "한국 컨소시엄(유공 주도, 삼환·현대·유개공 등 4사)이 헌트 광구 지분 24.5%를 보유했고 훗날 SK(구 유공)가 24.5% 지분으로 표기된다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1988년 MEES는 유공 65%, 현대 10%로 소개(유료 기사라 원문 미확인).",
+      "sources": [
+        { "name": "서울신문(1991)", "url": "https://www.seoul.co.kr/news/1991/02/18/19910218005001", "quote": "삼환·현대·유개공 등 4개사가 모두 24.5%의 지분을 갖고 있다" },
+        { "name": "Energy Intelligence", "url": "https://www.energyintel.com/0000017b-a7a7-de4c-a17b-e7e7f9fd0000", "quote": "SK of Korea holds 24.5%" }
+      ]
+    },
+    {
+      "id": "f3",
+      "claim": "마리브 유전의 추정 매장량은 20억~30억 배럴, 하루 생산량은 18만 배럴이었다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "1988년 CSM은 저류층 문제로 생산이 하루 18만 배럴에 묶여 있다고 표현(일일 피크 18만 배럴은 Energy Intelligence도 확인).",
+      "sources": [
+        { "name": "서울신문(1991)", "url": "https://www.seoul.co.kr/news/1991/02/18/19910218005001", "quote": "매장량은 20억∼30억배럴이며 하루 생산량은 18만배럴" },
+        { "name": "Christian Science Monitor(1988)", "url": "https://www.csmonitor.com/layout/set/amphtml/1988/0621/oyem.html", "quote": "production to 180,000 barrels per day" }
+      ]
+    },
+    {
+      "id": "f4",
+      "claim": "헌트는 필드·파이프라인 투자 자금을 마련하려고 예멘 광구 지분 24.5%를 한국 컨소시엄에 팔았고, 컨소시엄은 10억~20억 달러 개발자본의 49.5%를 대기로 했다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(MERIP 1985). 두 번째 출처 없음 — 대본에 쓰기 위험.",
+      "sources": [
+        { "name": "MERIP(1985)", "url": "https://merip.org/1985/02/oil-find-could-alter-yar-saudi-relations/", "quote": "Hunt has sold 24.5 percent of its" }
+      ]
+    },
+    {
+      "id": "f5",
+      "claim": "해외 유전개발의 성공률은 불과 1~2%다.",
+      "numeric": true,
+      "economy": false,
+      "caution": "해외 유전개발 일반 수치(1991년 기사 단독)이며 마리브·15-1의 성공 확률이 아님.",
+      "sources": [
+        { "name": "서울신문(1991)", "url": "https://www.seoul.co.kr/news/1991/02/18/19910218005001", "quote": "그러나 유전개발의 성공률은 불과 1∼2%" }
+      ]
+    },
+    {
+      "id": "f6",
+      "claim": "유공은 1995년 예멘 마리브·이집트 자파라나 광구에서 투자비 대비 271%인 521억 원의 수익을 올렸다.",
+      "numeric": true,
+      "economy": true,
+      "caution": "단일 출처(서울신문 1996).",
+      "sources": [
+        { "name": "서울신문(1996)", "url": "https://www.seoul.co.kr/news/1996/05/25/19960525012002", "quote": "투자비 대비 2백71%인 5백21억원규모의 수익을 올렸고" }
+      ]
+    }
+  ],
+  "sensitivity": { "domesticSensitive": false, "political": false, "note": "SK(구 유공)는 현재도 영업 중인 국내 기업이나 이 소재와 관련된 진행 중 소송·제재 없음. 다만 'SK가 유전을 발견했다'는 표현은 사실과 달라 쓰면 안 됨." },
+  "remaining": "결정적 장면(컨소시엄의 지분 매입·1988년 1월 첫 원유 도착)을 2곳 출처로 확인하지 못함(MEES·SK 사사는 유료/조회 불가, 1988년 서울 도착 vs 울산 도착도 출처 상이). 소재 전제를 '유공이 헌트의 발견 지분을 사들여 한국 최초의 자체 개발 원유를 들여온 이야기'로 바꾸고 제2출처를 확보하면 재심사 가능. 베트남 15-1은 2003년 상업생산이나 SK 지분 9%의 소수 파트너라 별개 소재.",
+  "toolCallsUsed": 16
+}
